@@ -798,8 +798,19 @@ function renderMachineReportsTab(allMachines) {
 
   // Available cascading dropdown options based on current selection
   const availUnits = units.filter(u => !machineReportFilterState.groupId || u.groupId === machineReportFilterState.groupId);
-  const availFloors = floors.filter(f => !machineReportFilterState.unitId || f.unitId === machineReportFilterState.unitId);
-  const availLines = lines.filter(l => !machineReportFilterState.floorId || l.floorId === machineReportFilterState.floorId);
+  const availUnitIds = new Set(availUnits.map(u => u.id));
+  const availFloors = floors.filter(f => {
+    if (machineReportFilterState.unitId) return f.unitId === machineReportFilterState.unitId;
+    if (machineReportFilterState.groupId) return availUnitIds.has(f.unitId);
+    return true;
+  });
+  const availFloorIds = new Set(availFloors.map(f => f.id));
+  const availLines = lines.filter(l => {
+    if (machineReportFilterState.lineId && l.id === machineReportFilterState.lineId) return true;
+    if (machineReportFilterState.floorId) return l.floorId === machineReportFilterState.floorId;
+    if (machineReportFilterState.unitId || machineReportFilterState.groupId) return availFloorIds.has(l.floorId);
+    return true;
+  });
 
   // Active location label
   const currentGroup = grpMap.get(machineReportFilterState.groupId);
@@ -1706,10 +1717,17 @@ export function initReportsEvents() {
   const spUnt = document.getElementById('sp-filter-unit');
   if (spUnt) {
     spUnt.addEventListener('change', (e) => {
-      spareFilterState.unitId = e.target.value;
+      const unitId = e.target.value;
+      spareFilterState.unitId = unitId;
       spareFilterState.floorId = '';
       spareFilterState.lineId = '';
       spareFilterState.machineId = '';
+      if (unitId) {
+        const unit = masterDataService.getUnitById(unitId) || storage.getItem(TABLE_NAMES.UNITS, unitId);
+        if (unit && unit.groupId) {
+          spareFilterState.groupId = unit.groupId;
+        }
+      }
       refreshReportsView();
     });
   }
@@ -1717,9 +1735,20 @@ export function initReportsEvents() {
   const spFlr = document.getElementById('sp-filter-floor');
   if (spFlr) {
     spFlr.addEventListener('change', (e) => {
-      spareFilterState.floorId = e.target.value;
+      const floorId = e.target.value;
+      spareFilterState.floorId = floorId;
       spareFilterState.lineId = '';
       spareFilterState.machineId = '';
+      if (floorId) {
+        const floor = masterDataService.getFloorById(floorId) || storage.getItem(TABLE_NAMES.FLOORS, floorId);
+        if (floor && floor.unitId) {
+          spareFilterState.unitId = floor.unitId;
+          const unit = masterDataService.getUnitById(floor.unitId) || storage.getItem(TABLE_NAMES.UNITS, floor.unitId);
+          if (unit && unit.groupId) {
+            spareFilterState.groupId = unit.groupId;
+          }
+        }
+      }
       refreshReportsView();
     });
   }
@@ -1727,8 +1756,23 @@ export function initReportsEvents() {
   const spLin = document.getElementById('sp-filter-line');
   if (spLin) {
     spLin.addEventListener('change', (e) => {
-      spareFilterState.lineId = e.target.value;
+      const lineId = e.target.value;
+      spareFilterState.lineId = lineId;
       spareFilterState.machineId = '';
+      if (lineId) {
+        const line = masterDataService.getLineById(lineId) || storage.getItem(TABLE_NAMES.LINES, lineId);
+        if (line && line.floorId) {
+          spareFilterState.floorId = line.floorId;
+          const floor = masterDataService.getFloorById(line.floorId) || storage.getItem(TABLE_NAMES.FLOORS, line.floorId);
+          if (floor && floor.unitId) {
+            spareFilterState.unitId = floor.unitId;
+            const unit = masterDataService.getUnitById(floor.unitId) || storage.getItem(TABLE_NAMES.UNITS, floor.unitId);
+            if (unit && unit.groupId) {
+              spareFilterState.groupId = unit.groupId;
+            }
+          }
+        }
+      }
       refreshReportsView();
     });
   }
@@ -1839,9 +1883,16 @@ export function initReportsEvents() {
   const mrUnt = document.getElementById('mr-filter-unit');
   if (mrUnt) {
     mrUnt.addEventListener('change', (e) => {
-      machineReportFilterState.unitId = e.target.value;
+      const unitId = e.target.value;
+      machineReportFilterState.unitId = unitId;
       machineReportFilterState.floorId = '';
       machineReportFilterState.lineId = '';
+      if (unitId) {
+        const unit = masterDataService.getUnitById(unitId) || storage.getItem(TABLE_NAMES.UNITS, unitId);
+        if (unit && unit.groupId) {
+          machineReportFilterState.groupId = unit.groupId;
+        }
+      }
       refreshReportsView();
     });
   }
@@ -1849,8 +1900,19 @@ export function initReportsEvents() {
   const mrFlr = document.getElementById('mr-filter-floor');
   if (mrFlr) {
     mrFlr.addEventListener('change', (e) => {
-      machineReportFilterState.floorId = e.target.value;
+      const floorId = e.target.value;
+      machineReportFilterState.floorId = floorId;
       machineReportFilterState.lineId = '';
+      if (floorId) {
+        const floor = masterDataService.getFloorById(floorId) || storage.getItem(TABLE_NAMES.FLOORS, floorId);
+        if (floor && floor.unitId) {
+          machineReportFilterState.unitId = floor.unitId;
+          const unit = masterDataService.getUnitById(floor.unitId) || storage.getItem(TABLE_NAMES.UNITS, floor.unitId);
+          if (unit && unit.groupId) {
+            machineReportFilterState.groupId = unit.groupId;
+          }
+        }
+      }
       refreshReportsView();
     });
   }
@@ -1858,7 +1920,22 @@ export function initReportsEvents() {
   const mrLin = document.getElementById('mr-filter-line');
   if (mrLin) {
     mrLin.addEventListener('change', (e) => {
-      machineReportFilterState.lineId = e.target.value;
+      const lineId = e.target.value;
+      machineReportFilterState.lineId = lineId;
+      if (lineId) {
+        const line = masterDataService.getLineById(lineId) || storage.getItem(TABLE_NAMES.LINES, lineId);
+        if (line && line.floorId) {
+          machineReportFilterState.floorId = line.floorId;
+          const floor = masterDataService.getFloorById(line.floorId) || storage.getItem(TABLE_NAMES.FLOORS, line.floorId);
+          if (floor && floor.unitId) {
+            machineReportFilterState.unitId = floor.unitId;
+            const unit = masterDataService.getUnitById(floor.unitId) || storage.getItem(TABLE_NAMES.UNITS, floor.unitId);
+            if (unit && unit.groupId) {
+              machineReportFilterState.groupId = unit.groupId;
+            }
+          }
+        }
+      }
       refreshReportsView();
     });
   }
@@ -1897,9 +1974,25 @@ export function initReportsEvents() {
         machineReportFilterState.unitId = id;
         machineReportFilterState.floorId = '';
         machineReportFilterState.lineId = '';
+        if (id) {
+          const unit = masterDataService.getUnitById(id) || storage.getItem(TABLE_NAMES.UNITS, id);
+          if (unit && unit.groupId) {
+            machineReportFilterState.groupId = unit.groupId;
+          }
+        }
       } else if (level === 'floor') {
         machineReportFilterState.floorId = id;
         machineReportFilterState.lineId = '';
+        if (id) {
+          const floor = masterDataService.getFloorById(id) || storage.getItem(TABLE_NAMES.FLOORS, id);
+          if (floor && floor.unitId) {
+            machineReportFilterState.unitId = floor.unitId;
+            const unit = masterDataService.getUnitById(floor.unitId) || storage.getItem(TABLE_NAMES.UNITS, floor.unitId);
+            if (unit && unit.groupId) {
+              machineReportFilterState.groupId = unit.groupId;
+            }
+          }
+        }
       }
       refreshReportsView();
     });
