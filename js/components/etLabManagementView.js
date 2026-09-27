@@ -2127,10 +2127,10 @@ function openActionModal(board, initialActionType = null) {
 
   const modalHtml = `
     <div class="modal-overlay" id="ent-action-modal-overlay">
-      <div class="modal-dialog" style="max-width: 660px; box-shadow: 0 10px 40px rgba(0,0,0,0.85); border: 1.5px solid #38bdf8;">
+      <div class="modal-dialog" style="max-width: 660px; max-height: 88vh; display: flex; flex-direction: column; min-height: 0; box-shadow: 0 10px 40px rgba(0,0,0,0.85); border: 1.5px solid #38bdf8; border-radius: 12px; overflow: hidden; background: var(--bg-card);">
         
         <!-- Header -->
-        <div class="modal-header" style="background: linear-gradient(135deg, #0284c7, #0369a1); padding: 14px 20px; display: flex; justify-content: space-between; align-items: center;">
+        <div class="modal-header" style="background: linear-gradient(135deg, #0284c7, #0369a1); padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
           <div style="display: flex; align-items: center; gap: 10px; color: #fff;">
             <span style="font-size: 24px;">⚡</span>
             <div>
@@ -2141,8 +2141,8 @@ function openActionModal(board, initialActionType = null) {
           <button type="button" class="btn btn-ghost btn-sm btn-close-modal" style="color: #fff; font-size: 18px;">✕</button>
         </div>
 
-        <form id="form-action-execution">
-          <div class="modal-body" style="padding: 20px; display: flex; flex-direction: column; gap: 14px; max-height: 75vh; overflow-y: auto;">
+        <form id="form-action-execution" style="display: flex; flex-direction: column; flex: 1; min-height: 0; margin: 0;">
+          <div class="modal-body" style="padding: 20px; display: flex; flex-direction: column; gap: 14px; overflow-y: auto; flex: 1; min-height: 0;">
             
             <!-- 1. ACTION TYPE SELECTION (STEP 1) -->
             <div class="form-group" style="background: rgba(15, 23, 42, 0.85); border: 2px solid #38bdf8; border-radius: 8px; padding: 12px 14px;">
@@ -2575,12 +2575,11 @@ function openActionModal(board, initialActionType = null) {
               <!-- Employee Name at the very last -->
               ${renderPersonnelSelector('reassign-by', 'Assigned By', '', '#818cf8')}
             </div>
-            </div>
 
           </div>
 
           <!-- Footer -->
-          <div class="modal-footer" style="padding: 14px 20px; background: var(--bg-card); display: flex; justify-content: flex-end; gap: 10px;">
+          <div class="modal-footer" style="padding: 14px 20px; background: #0f172a; border-top: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: flex-end; align-items: center; gap: 10px; flex-shrink: 0;">
             <button type="button" class="btn btn-secondary btn-close-modal">Cancel</button>
             <button type="submit" class="btn btn-primary" style="font-weight: 800; background: linear-gradient(135deg, #0284c7, #0369a1); border-color: #38bdf8; box-shadow: 0 2px 10px rgba(2, 132, 199, 0.4);">
               💾 Save Action &amp; Update History
