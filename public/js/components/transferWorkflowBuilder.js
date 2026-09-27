@@ -97,20 +97,20 @@ export function renderTransferWorkflowBuilder() {
     <div class="page-view wf-builder-wrapper">
       
       <!-- 1. COMPACT TOP HEADER BAR -->
-      <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-xl); padding: 18px 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
-        <div>
-          <h1 style="font-size: 20px; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 10px; margin: 0;">
+      <div class="view-header-row" style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-xl); padding: 14px 18px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+        <div style="min-width: 0; flex: 1;">
+          <h1 style="font-size: 20px; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 10px; margin: 0; word-break: break-word;">
             <span>⚙️ Transfer Approval Configuration &amp; Workflows</span>
           </h1>
-          <p style="font-size: 13px; color: var(--text-secondary); margin: 4px 0 0 0;">
+          <p style="font-size: 12.5px; color: var(--text-secondary); margin: 4px 0 0 0;">
             Configure who authorizes machinery relocations between factory lines and manages gate pass policies.
           </p>
         </div>
 
-        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <label style="font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Active Rule:</label>
-            <select id="wf-select-switcher" class="form-control" style="width: auto; min-width: 270px; font-weight: 700; font-size: 13px; background: var(--bg-card); border-color: #38bdf8;">
+        <div class="view-header-actions" style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+          <div style="display: flex; align-items: center; gap: 8px; flex: 1 1 240px; min-width: 0; width: 100%;">
+            <label style="font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; white-space: nowrap;">Active Rule:</label>
+            <select id="wf-select-switcher" class="form-control" style="flex: 1; min-width: 0; width: 100%; font-weight: 700; font-size: 13px; background: var(--bg-card); border-color: #38bdf8;">
               ${workflows.map(w => `
                 <option value="${w.id}" ${currentWf.id === w.id ? 'selected' : ''}>
                   ${w.name} ${w.isDefault ? '⭐ [DEFAULT]' : ''}

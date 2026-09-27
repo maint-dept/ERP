@@ -73,12 +73,12 @@ export function renderSparePartsManagementView() {
     <div class="spare-parts-view-container" style="display: flex; flex-direction: column; gap: 8px; height: 100%; min-height: 0; overflow: hidden; width: 100%;">
       
       <!-- Top Title & KPI Cards Header -->
-      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; flex-shrink: 0;">
-        <div>
+      <div class="view-header-row" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; flex-shrink: 0;">
+        <div style="min-width: 0; flex: 1;">
           <div style="display: flex; align-items: center; gap: 8px;">
             <div style="font-size: 20px;">⚙️</div>
             <div>
-              <h1 style="font-size: 16px; font-weight: 800; color: #fff; margin: 0; letter-spacing: -0.3px;">
+              <h1 style="font-size: 16px; font-weight: 800; color: #fff; margin: 0; letter-spacing: -0.3px; word-break: break-word;">
                 Spare Parts Management &amp; Configuration
               </h1>
               <div style="font-size: 11px; color: #38bdf8; font-weight: 600; margin-top: 1px;">
@@ -90,19 +90,19 @@ export function renderSparePartsManagementView() {
 
         <!-- Quick Summary KPI Pills -->
         <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-          <div style="background: rgba(2, 132, 199, 0.15); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: var(--radius-md); padding: 4px 10px; text-align: center; min-width: 90px;">
+          <div style="background: rgba(2, 132, 199, 0.15); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: var(--radius-md); padding: 4px 10px; text-align: center; min-width: 80px; flex: 1 1 auto;">
             <div style="font-size: 9px; font-weight: 700; color: #38bdf8; text-transform: uppercase;">Total Master Items</div>
             <div style="font-size: 15px; font-weight: 800; color: #fff; line-height: 1.2;">${kpis.totalParts}</div>
           </div>
-          <div style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(52, 211, 153, 0.3); border-radius: var(--radius-md); padding: 4px 10px; text-align: center; min-width: 90px;">
+          <div style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(52, 211, 153, 0.3); border-radius: var(--radius-md); padding: 4px 10px; text-align: center; min-width: 80px; flex: 1 1 auto;">
             <div style="font-size: 9px; font-weight: 700; color: #34d399; text-transform: uppercase;">Active (Searchable)</div>
             <div style="font-size: 15px; font-weight: 800; color: #34d399; line-height: 1.2;">${kpis.activeParts}</div>
           </div>
-          <div style="background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(251, 191, 36, 0.3); border-radius: var(--radius-md); padding: 4px 10px; text-align: center; min-width: 90px;">
+          <div style="background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(251, 191, 36, 0.3); border-radius: var(--radius-md); padding: 4px 10px; text-align: center; min-width: 80px; flex: 1 1 auto;">
             <div style="font-size: 9px; font-weight: 700; color: #fbbf24; text-transform: uppercase;">Inactive / Preserved</div>
             <div style="font-size: 15px; font-weight: 800; color: #fbbf24; line-height: 1.2;">${kpis.inactiveParts}</div>
           </div>
-          <div style="background: rgba(139, 92, 246, 0.15); border: 1px solid rgba(167, 139, 250, 0.3); border-radius: var(--radius-md); padding: 4px 10px; text-align: center; min-width: 90px;">
+          <div style="background: rgba(139, 92, 246, 0.15); border: 1px solid rgba(167, 139, 250, 0.3); border-radius: var(--radius-md); padding: 4px 10px; text-align: center; min-width: 80px; flex: 1 1 auto;">
             <div style="font-size: 9px; font-weight: 700; color: #c084fc; text-transform: uppercase;">Lifetime Replacements</div>
             <div style="font-size: 15px; font-weight: 800; color: #c084fc; line-height: 1.2;">${kpis.totalReplacements} <span style="font-size: 10px;">PCS</span></div>
           </div>
@@ -114,15 +114,15 @@ export function renderSparePartsManagementView() {
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
           
           <!-- Filters (Search, Category, Status, Usage) -->
-          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; flex: 1; min-width: 280px;">
+          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; flex: 1; min-width: 0; width: 100%;">
             <!-- Live Search -->
-            <div style="position: relative; flex: 1; min-width: 180px; max-width: 320px;">
+            <div style="position: relative; flex: 1 1 180px; min-width: 0; max-width: 100%;">
               <input type="text" id="inp-spare-search" class="form-control" placeholder="🔍 Search Item Name, Brand, Code..." value="${searchFilter}" style="padding-left: 28px; font-size: 12px; height: 32px;" />
               <span style="position: absolute; left: 8px; top: 50%; transform: translateY(-50%); font-size: 11px; opacity: 0.5;">🔍</span>
             </div>
 
             <!-- Category Filter -->
-            <select id="sel-spare-category" class="filter-select" style="width: auto; min-width: 120px; font-size: 11.5px; height: 32px; padding: 4px 8px;">
+            <select id="sel-spare-category" class="filter-select" style="width: auto; min-width: 110px; font-size: 11.5px; height: 32px; padding: 4px 8px; flex: 1 1 auto;">
               <option value="ALL" ${categoryFilter === 'ALL' ? 'selected' : ''}>All Categories</option>
               <option value="Mechanical" ${categoryFilter === 'Mechanical' ? 'selected' : ''}>Mechanical</option>
               <option value="Electrical" ${categoryFilter === 'Electrical' ? 'selected' : ''}>Electrical</option>
@@ -131,14 +131,14 @@ export function renderSparePartsManagementView() {
             </select>
 
             <!-- Status Filter -->
-            <select id="sel-spare-status" class="filter-select" style="width: auto; min-width: 110px; font-size: 11.5px; height: 32px; padding: 4px 8px;">
+            <select id="sel-spare-status" class="filter-select" style="width: auto; min-width: 100px; font-size: 11.5px; height: 32px; padding: 4px 8px; flex: 1 1 auto;">
               <option value="ALL" ${statusFilter === 'ALL' ? 'selected' : ''}>All Statuses</option>
               <option value="ACTIVE" ${statusFilter === 'ACTIVE' ? 'selected' : ''}>🟢 Active</option>
               <option value="INACTIVE" ${statusFilter === 'INACTIVE' ? 'selected' : ''}>⏸️ Inactive</option>
             </select>
 
             <!-- Usage Filter -->
-            <select id="sel-spare-usage" class="filter-select" style="width: auto; min-width: 135px; font-size: 11.5px; height: 32px; padding: 4px 8px;">
+            <select id="sel-spare-usage" class="filter-select" style="width: auto; min-width: 120px; font-size: 11.5px; height: 32px; padding: 4px 8px; flex: 1 1 auto;">
               <option value="ALL" ${usageFilter === 'ALL' ? 'selected' : ''}>All Machine Usage</option>
               <option value="USED" ${usageFilter === 'USED' ? 'selected' : ''}>🧵 Used in Machines (>0)</option>
               <option value="UNUSED" ${usageFilter === 'UNUSED' ? 'selected' : ''}>📦 Unused in Machines (0)</option>
@@ -146,7 +146,7 @@ export function renderSparePartsManagementView() {
           </div>
 
           <!-- Action Buttons -->
-          <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+          <div class="view-header-actions" style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
             <button id="btn-spare-consumption-report" class="btn btn-primary btn-sm" style="font-weight: 700; background: linear-gradient(135deg, #0284c7, #0369a1); font-size: 11.5px; padding: 6px 11px;" title="View Hierarchical Consumption & Usage Analytics">
               📊 Usage Report
             </button>

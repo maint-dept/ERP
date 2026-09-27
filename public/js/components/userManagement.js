@@ -266,7 +266,7 @@ export function renderUserManagement() {
 
         <!-- Search & Filter Controls -->
         <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-          <div style="flex: 1; min-width: 260px; max-width: 360px; position: relative;">
+          <div style="flex: 1 1 200px; min-width: 0; max-width: 100%; position: relative;">
             <input 
               type="text" 
               id="user-search-input" 
@@ -595,7 +595,7 @@ export function renderUserManagement() {
 
           <!-- Presets Content (Cards or Table) -->
           ${presetViewMode === 'CARDS' ? `
-            <div style="padding: 16px 20px; display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; background: rgba(11, 17, 33, 0.5);">
+            <div style="padding: 16px 20px; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); gap: 14px; background: rgba(11, 17, 33, 0.5);">
               ${presets.map(p => {
                 const assignedUsers = users.filter(u => {
                   if (u.presetId) return u.presetId === p.id || u.presetId === p.code;

@@ -113,7 +113,7 @@ function renderEntBoardsContent(kpi, allBoards, filteredBoards, currentBoard, co
       <div style="background: var(--bg-surface); border: 1.5px solid var(--border-color); border-radius: var(--radius-lg); padding: 12px 18px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; box-shadow: var(--shadow-sm);">
         
         <!-- Search Box with Live Dropdown Autocomplete -->
-        <div style="flex: 1; min-width: 320px; position: relative;">
+        <div style="flex: 1 1 260px; min-width: 0; width: 100%; position: relative;">
           <div style="position: relative; display: flex; align-items: center;">
             <input 
               type="text" 
@@ -121,7 +121,7 @@ function renderEntBoardsContent(kpi, allBoards, filteredBoards, currentBoard, co
               class="form-control" 
               placeholder="🔍 Search Board ID, S/N, Model, Name, or Machine (e.g. BRD-00025, TS-01)..." 
               value="${currentBoard ? `${currentBoard.boardSerial} — ${currentBoard.partName}` : ''}"
-              style="height: 42px; font-size: 13.5px; font-weight: 800; padding-left: 14px; padding-right: 36px; background: rgba(30, 41, 59, 0.95); border: 1.5px solid #38bdf8; color: #fff; box-shadow: 0 0 12px rgba(56, 189, 248, 0.25); border-radius: 6px;"
+              style="height: 42px; font-size: 13px; font-weight: 800; padding-left: 14px; padding-right: 36px; background: rgba(30, 41, 59, 0.95); border: 1.5px solid #38bdf8; color: #fff; box-shadow: 0 0 12px rgba(56, 189, 248, 0.25); border-radius: 6px; width: 100%;"
               autocomplete="off"
             />
             <button 
@@ -135,7 +135,7 @@ function renderEntBoardsContent(kpi, allBoards, filteredBoards, currentBoard, co
         </div>
 
         <!-- Quick Jump Chips -->
-        <div style="display: flex; align-items: center; gap: 6px; overflow-x: auto; max-width: 440px;">
+        <div style="display: flex; align-items: center; gap: 6px; overflow-x: auto; max-width: 100%; flex-wrap: wrap;">
           ${filteredBoards.slice(0, 5).map(b => {
             const isSel = currentBoard && b.boardSerial === currentBoard.boardSerial;
             return `

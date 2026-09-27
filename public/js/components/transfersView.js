@@ -29,17 +29,17 @@ export function renderTransfersView() {
   return `
     <div class="page-view">
       <!-- Header -->
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-        <div>
-          <h1 style="font-size: 22px; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 8px;">
+      <div class="view-header-row" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+        <div style="min-width: 0; flex: 1;">
+          <h1 style="font-size: 20px; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 8px; margin: 0 0 4px 0; word-break: break-word;">
             <span>🔄 Machine Relocation &amp; Transfer Management</span>
           </h1>
-          <p style="font-size: 12.5px; color: var(--text-secondary);">
+          <p style="font-size: 12px; color: var(--text-secondary); margin: 0;">
             Track plant machinery movement, multi-stage approval workflows, management permission letters, and official gate passes.
           </p>
         </div>
 
-        <div style="display: flex; gap: 10px;">
+        <div class="view-header-actions" style="display: flex; gap: 8px; flex-wrap: wrap;">
           <button id="btn-export-transfers-excel" class="btn btn-secondary" title="Export filtered transfer records to Excel">
             📊 Export Excel
           </button>
@@ -55,7 +55,7 @@ export function renderTransfersView() {
       </div>
 
       <!-- KPI Summary Cards -->
-      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 20px;">
+      <div class="kpi-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px;">
         <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 16px; display: flex; align-items: center; gap: 14px;">
           <div style="font-size: 28px; background: rgba(56, 189, 248, 0.1); width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; border-radius: var(--radius-md);">
             🔄
@@ -98,9 +98,9 @@ export function renderTransfersView() {
       </div>
 
       <!-- Filter Bar & Search -->
-      <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 16px 20px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap;">
+      <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 12px 14px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;">
         <!-- Search Input -->
-        <div style="flex: 1; min-width: 280px; position: relative;">
+        <div style="flex: 1 1 260px; min-width: 0; width: 100%; position: relative;">
           <input 
             type="text" 
             id="transfers-search-input" 

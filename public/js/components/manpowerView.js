@@ -85,24 +85,24 @@ export function renderManpowerView() {
   return `
     <div class="page-view" style="display: flex; flex-direction: column; gap: 12px; width: 100%; max-width: 100%; height: 100%; overflow: hidden; box-sizing: border-box; padding: 12px 20px;">
       
-      <!-- Top Title Bar (Fixed Height) -->
-      <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 12px 18px; display: flex; justify-content: space-between; align-items: center; flex-wrap: nowrap; gap: 14px; flex-shrink: 0; overflow-x: auto; scrollbar-width: none;">
-        <div style="min-width: 0;">
-          <div style="display: flex; align-items: center; gap: 10px;">
+      <!-- Top Title Bar (Responsive) -->
+      <div class="view-header-row" style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; flex-shrink: 0;">
+        <div style="min-width: 0; flex: 1;">
+          <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
             <span style="font-size: 22px;">👥</span>
-            <h1 style="font-size: 18px; font-weight: 800; color: #fff; margin: 0; white-space: nowrap;">
+            <h1 style="font-size: 18px; font-weight: 800; color: #fff; margin: 0; word-break: break-word;">
               Manpower Management
             </h1>
             <span class="badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); font-size: 11px; padding: 2px 8px; white-space: nowrap;">
               ${stats.total} Total Workforce
             </span>
           </div>
-          <p style="font-size: 11.5px; color: var(--text-secondary); margin-top: 2px; margin-bottom: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+          <p style="font-size: 11.5px; color: var(--text-secondary); margin-top: 2px; margin-bottom: 0;">
             Manage plant mechanics, technicians, line supervisors, floor allocations, and leave rosters.
           </p>
         </div>
 
-        <div style="display: flex; gap: 8px; flex-shrink: 0; align-items: center;">
+        <div class="view-header-actions" style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
           <button id="btn-manpower-add-emp" class="btn btn-primary btn-sm" style="font-weight: 700; background: linear-gradient(135deg, #0284c7, #0369a1); box-shadow: 0 2px 10px rgba(2, 132, 199, 0.35); white-space: nowrap;">
             ➕ Add Employee
           </button>

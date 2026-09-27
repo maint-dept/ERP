@@ -702,25 +702,7 @@ export function renderRelocateView() {
           margin-top: -2px;
         }
 
-        /* Bottom Sheet for Modals */
-        .modal-overlay {
-          padding: 0 !important;
-          align-items: flex-end !important;
-          background: rgba(0, 0, 0, 0.8) !important;
-        }
-
-        .modal-dialog {
-          max-width: 100% !important;
-          width: 100% !important;
-          max-height: 90vh !important;
-          border-radius: 20px 20px 0 0 !important;
-          margin: 0 !important;
-          box-shadow: 0 -10px 35px rgba(0, 0, 0, 0.8) !important;
-          border: 1px solid rgba(56, 189, 248, 0.4) !important;
-          border-bottom: none !important;
-          padding-bottom: max(16px, env(safe-area-inset-bottom, 16px)) !important;
-        }
-
+        /* Relocate modal inherits smooth centered layout from components.css */
         .modal-body {
           padding: 14px 16px !important;
         }

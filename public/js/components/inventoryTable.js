@@ -472,7 +472,7 @@ export function renderInventoryTable() {
         </div>
 
         <!-- Action Buttons (+ Add Machine | Delete Selected | Import | Export | Template | More) -->
-        <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+        <div class="inventory-top-actions-group" style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
           
           ${authService.hasAccess('machines', 'ADD') ? `
             <button id="btn-add-machine-modal" class="btn btn-primary btn-sm" style="font-weight: 700; padding: 5px 12px; font-size: 12px;">

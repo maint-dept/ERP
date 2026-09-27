@@ -169,8 +169,8 @@ export function renderQrScannerModal() {
           padding: 0 !important;
         }
         .qr-scanner-modal-card {
-          width: 100vw !important;
-          max-width: 100vw !important;
+          width: 100% !important;
+          max-width: 100% !important;
           height: 100% !important;
           height: 100dvh !important;
           max-height: 100dvh !important;
