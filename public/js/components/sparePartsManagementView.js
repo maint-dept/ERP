@@ -70,18 +70,18 @@ export function renderSparePartsManagementView() {
   });
 
   return `
-    <div class="page-view" style="padding: 20px 24px; display: flex; flex-direction: column; gap: 18px; overflow-y: auto; height: 100%;">
+    <div class="spare-parts-view-container" style="display: flex; flex-direction: column; gap: 8px; height: 100%; min-height: 0; overflow: hidden; width: 100%;">
       
       <!-- Top Title & KPI Cards Header -->
-      <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; flex-shrink: 0;">
         <div>
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <div style="font-size: 26px;">⚙️</div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <div style="font-size: 20px;">⚙️</div>
             <div>
-              <h1 style="font-size: 20px; font-weight: 800; color: #fff; margin: 0; letter-spacing: -0.3px;">
+              <h1 style="font-size: 16px; font-weight: 800; color: #fff; margin: 0; letter-spacing: -0.3px;">
                 Spare Parts Management &amp; Configuration
               </h1>
-              <div style="font-size: 12px; color: #38bdf8; font-weight: 600; margin-top: 2px;">
+              <div style="font-size: 11px; color: #38bdf8; font-weight: 600; margin-top: 1px;">
                 Enterprise Master Catalog, Machine Usage Ledger &amp; Maintenance History Linkage
               </div>
             </div>
@@ -89,40 +89,40 @@ export function renderSparePartsManagementView() {
         </div>
 
         <!-- Quick Summary KPI Pills -->
-        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-          <div style="background: rgba(2, 132, 199, 0.15); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: var(--radius-md); padding: 8px 14px; text-align: center;">
-            <div style="font-size: 10px; font-weight: 700; color: #38bdf8; text-transform: uppercase;">Total Master Items</div>
-            <div style="font-size: 18px; font-weight: 800; color: #fff;">${kpis.totalParts}</div>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <div style="background: rgba(2, 132, 199, 0.15); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: var(--radius-md); padding: 4px 10px; text-align: center; min-width: 90px;">
+            <div style="font-size: 9px; font-weight: 700; color: #38bdf8; text-transform: uppercase;">Total Master Items</div>
+            <div style="font-size: 15px; font-weight: 800; color: #fff; line-height: 1.2;">${kpis.totalParts}</div>
           </div>
-          <div style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(52, 211, 153, 0.3); border-radius: var(--radius-md); padding: 8px 14px; text-align: center;">
-            <div style="font-size: 10px; font-weight: 700; color: #34d399; text-transform: uppercase;">Active (Searchable)</div>
-            <div style="font-size: 18px; font-weight: 800; color: #34d399;">${kpis.activeParts}</div>
+          <div style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(52, 211, 153, 0.3); border-radius: var(--radius-md); padding: 4px 10px; text-align: center; min-width: 90px;">
+            <div style="font-size: 9px; font-weight: 700; color: #34d399; text-transform: uppercase;">Active (Searchable)</div>
+            <div style="font-size: 15px; font-weight: 800; color: #34d399; line-height: 1.2;">${kpis.activeParts}</div>
           </div>
-          <div style="background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(251, 191, 36, 0.3); border-radius: var(--radius-md); padding: 8px 14px; text-align: center;">
-            <div style="font-size: 10px; font-weight: 700; color: #fbbf24; text-transform: uppercase;">Inactive / Preserved</div>
-            <div style="font-size: 18px; font-weight: 800; color: #fbbf24;">${kpis.inactiveParts}</div>
+          <div style="background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(251, 191, 36, 0.3); border-radius: var(--radius-md); padding: 4px 10px; text-align: center; min-width: 90px;">
+            <div style="font-size: 9px; font-weight: 700; color: #fbbf24; text-transform: uppercase;">Inactive / Preserved</div>
+            <div style="font-size: 15px; font-weight: 800; color: #fbbf24; line-height: 1.2;">${kpis.inactiveParts}</div>
           </div>
-          <div style="background: rgba(139, 92, 246, 0.15); border: 1px solid rgba(167, 139, 250, 0.3); border-radius: var(--radius-md); padding: 8px 14px; text-align: center;">
-            <div style="font-size: 10px; font-weight: 700; color: #c084fc; text-transform: uppercase;">Lifetime Replacements</div>
-            <div style="font-size: 18px; font-weight: 800; color: #c084fc;">${kpis.totalReplacements} <span style="font-size: 11px;">PCS</span></div>
+          <div style="background: rgba(139, 92, 246, 0.15); border: 1px solid rgba(167, 139, 250, 0.3); border-radius: var(--radius-md); padding: 4px 10px; text-align: center; min-width: 90px;">
+            <div style="font-size: 9px; font-weight: 700; color: #c084fc; text-transform: uppercase;">Lifetime Replacements</div>
+            <div style="font-size: 15px; font-weight: 800; color: #c084fc; line-height: 1.2;">${kpis.totalReplacements} <span style="font-size: 10px;">PCS</span></div>
           </div>
         </div>
       </div>
 
       <!-- Action Toolbar -->
-      <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 14px 18px; display: flex; flex-direction: column; gap: 12px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+      <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 8px 12px; display: flex; flex-direction: column; gap: 8px; flex-shrink: 0;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
           
           <!-- Filters (Search, Category, Status, Usage) -->
-          <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; flex: 1;">
+          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; flex: 1; min-width: 280px;">
             <!-- Live Search -->
-            <div style="position: relative; min-width: 240px; flex: 1; max-width: 380px;">
-              <input type="text" id="inp-spare-search" class="form-control" placeholder="🔍 Search Item Name, Brand, Area of Use, Code..." value="${searchFilter}" style="padding-left: 32px; font-size: 12.5px;" />
-              <span style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); opacity: 0.5;">🔍</span>
+            <div style="position: relative; flex: 1; min-width: 180px; max-width: 320px;">
+              <input type="text" id="inp-spare-search" class="form-control" placeholder="🔍 Search Item Name, Brand, Code..." value="${searchFilter}" style="padding-left: 28px; font-size: 12px; height: 32px;" />
+              <span style="position: absolute; left: 8px; top: 50%; transform: translateY(-50%); font-size: 11px; opacity: 0.5;">🔍</span>
             </div>
 
             <!-- Category Filter -->
-            <select id="sel-spare-category" class="filter-select" style="min-width: 140px; font-size: 12px;">
+            <select id="sel-spare-category" class="filter-select" style="width: auto; min-width: 120px; font-size: 11.5px; height: 32px; padding: 4px 8px;">
               <option value="ALL" ${categoryFilter === 'ALL' ? 'selected' : ''}>All Categories</option>
               <option value="Mechanical" ${categoryFilter === 'Mechanical' ? 'selected' : ''}>Mechanical</option>
               <option value="Electrical" ${categoryFilter === 'Electrical' ? 'selected' : ''}>Electrical</option>
@@ -131,14 +131,14 @@ export function renderSparePartsManagementView() {
             </select>
 
             <!-- Status Filter -->
-            <select id="sel-spare-status" class="filter-select" style="min-width: 130px; font-size: 12px;">
+            <select id="sel-spare-status" class="filter-select" style="width: auto; min-width: 110px; font-size: 11.5px; height: 32px; padding: 4px 8px;">
               <option value="ALL" ${statusFilter === 'ALL' ? 'selected' : ''}>All Statuses</option>
               <option value="ACTIVE" ${statusFilter === 'ACTIVE' ? 'selected' : ''}>🟢 Active</option>
               <option value="INACTIVE" ${statusFilter === 'INACTIVE' ? 'selected' : ''}>⏸️ Inactive</option>
             </select>
 
             <!-- Usage Filter -->
-            <select id="sel-spare-usage" class="filter-select" style="min-width: 150px; font-size: 12px;">
+            <select id="sel-spare-usage" class="filter-select" style="width: auto; min-width: 135px; font-size: 11.5px; height: 32px; padding: 4px 8px;">
               <option value="ALL" ${usageFilter === 'ALL' ? 'selected' : ''}>All Machine Usage</option>
               <option value="USED" ${usageFilter === 'USED' ? 'selected' : ''}>🧵 Used in Machines (>0)</option>
               <option value="UNUSED" ${usageFilter === 'UNUSED' ? 'selected' : ''}>📦 Unused in Machines (0)</option>
@@ -146,19 +146,19 @@ export function renderSparePartsManagementView() {
           </div>
 
           <!-- Action Buttons -->
-          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-            <button id="btn-spare-consumption-report" class="btn btn-primary btn-sm" style="font-weight: 700; background: linear-gradient(135deg, #0284c7, #0369a1);" title="View Hierarchical Consumption & Usage Analytics">
-              📊 Usage &amp; Consumption Report
+          <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+            <button id="btn-spare-consumption-report" class="btn btn-primary btn-sm" style="font-weight: 700; background: linear-gradient(135deg, #0284c7, #0369a1); font-size: 11.5px; padding: 6px 11px;" title="View Hierarchical Consumption & Usage Analytics">
+              📊 Usage Report
             </button>
             ${canEdit ? `
-              <button id="btn-spare-add-new" class="btn btn-secondary btn-sm" style="font-weight: 700;">
+              <button id="btn-spare-add-new" class="btn btn-secondary btn-sm" style="font-weight: 700; font-size: 11.5px; padding: 6px 11px;">
                 ➕ Add Spare Part
               </button>
             ` : ''}
-            <button id="btn-spare-excel-import" class="btn btn-secondary btn-sm" title="Upload Clean 3-Column Excel Master">
+            <button id="btn-spare-excel-import" class="btn btn-secondary btn-sm" style="font-size: 11.5px; padding: 6px 11px;" title="Upload Clean 3-Column Excel Master">
               📥 Excel Import
             </button>
-            <button id="btn-spare-excel-export" class="btn btn-secondary btn-sm" title="Download Master Catalog to Excel with Usage Counters">
+            <button id="btn-spare-excel-export" class="btn btn-secondary btn-sm" style="font-size: 11.5px; padding: 6px 11px;" title="Download Master Catalog to Excel with Usage Counters">
               📤 Export Excel
             </button>
           </div>
@@ -166,39 +166,39 @@ export function renderSparePartsManagementView() {
 
         <!-- Bulk Action Strip (Visible when rows selected) -->
         ${selectedItemIds.size > 0 ? `
-          <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(2, 132, 199, 0.12); border: 1px dashed #38bdf8; border-radius: var(--radius-md); padding: 8px 14px; margin-top: 4px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(2, 132, 199, 0.12); border: 1px dashed #38bdf8; border-radius: var(--radius-sm); padding: 6px 12px; margin-top: 2px;">
             <div style="display: flex; align-items: center; gap: 8px;">
-              <span style="font-size: 12.5px; font-weight: 700; color: #38bdf8;">
+              <span style="font-size: 12px; font-weight: 700; color: #38bdf8;">
                 ✓ ${selectedItemIds.size} spare part(s) selected
               </span>
             </div>
             <div style="display: flex; align-items: center; gap: 6px;">
-              <button id="btn-spare-bulk-activate" class="btn btn-success btn-sm" style="font-size: 11px;">Activate</button>
-              <button id="btn-spare-bulk-deactivate" class="btn btn-secondary btn-sm" style="font-size: 11px;">Deactivate</button>
-              <button id="btn-spare-bulk-edit" class="btn btn-primary btn-sm" style="font-size: 11px;">Bulk Edit</button>
+              <button id="btn-spare-bulk-activate" class="btn btn-success btn-sm" style="font-size: 11px; padding: 4px 8px;">Activate</button>
+              <button id="btn-spare-bulk-deactivate" class="btn btn-secondary btn-sm" style="font-size: 11px; padding: 4px 8px;">Deactivate</button>
+              <button id="btn-spare-bulk-edit" class="btn btn-primary btn-sm" style="font-size: 11px; padding: 4px 8px;">Bulk Edit</button>
               ${canDelete ? `
-                <button id="btn-spare-bulk-delete" class="btn btn-danger btn-sm" style="font-size: 11px;">Safe Delete</button>
+                <button id="btn-spare-bulk-delete" class="btn btn-danger btn-sm" style="font-size: 11px; padding: 4px 8px;">Safe Delete</button>
               ` : ''}
             </div>
           </div>
         ` : ''}
       </div>
 
-      <!-- Spare Parts Data Table -->
-      <div style="overflow-x: auto; border: 1px solid var(--border-color); border-radius: var(--radius-lg); background: var(--bg-surface); box-shadow: 0 4px 20px rgba(0,0,0,0.2);">
-        <table class="excel-grid-table" style="margin: 0; width: 100%;">
+      <!-- Spare Parts Data Table Container (Screen Fit 100% Flex Viewport) -->
+      <div class="spare-parts-table-container" id="spare-parts-table-scroll-viewport">
+        <table class="excel-grid-table spare-parts-table" style="margin: 0; width: 100%; min-width: 980px; table-layout: auto;">
           <thead>
-            <tr>
-              <th style="width: 40px; text-align: center;">
+            <tr style="position: sticky; top: 0; z-index: 20;">
+              <th style="width: 40px; text-align: center; position: sticky; top: 0; z-index: 20; background-color: #0b1329;">
                 <input type="checkbox" id="chk-spare-select-all" ${filtered.length > 0 && selectedItemIds.size === filtered.length ? 'checked' : ''} />
               </th>
-              <th style="width: 55px; text-align: center;">SL</th>
-              <th style="min-width: 180px;">Item Name &amp; Code</th>
-              <th style="min-width: 220px;">Area of Use / Description</th>
-              <th style="min-width: 160px;">Brand / Model / Origin</th>
-              <th style="text-align: center; width: 140px;">Machine Usage</th>
-              <th style="text-align: center; width: 95px;">Status</th>
-              <th style="text-align: center; width: 170px;">Actions</th>
+              <th style="width: 55px; text-align: center; position: sticky; top: 0; z-index: 20; background-color: #0b1329;">SL</th>
+              <th style="min-width: 180px; position: sticky; top: 0; z-index: 20; background-color: #0b1329;">Item Name &amp; Code</th>
+              <th style="min-width: 220px; position: sticky; top: 0; z-index: 20; background-color: #0b1329;">Area of Use / Description</th>
+              <th style="min-width: 160px; position: sticky; top: 0; z-index: 20; background-color: #0b1329;">Brand / Model / Origin</th>
+              <th style="text-align: center; width: 130px; position: sticky; top: 0; z-index: 20; background-color: #0b1329;">Machine Usage</th>
+              <th style="text-align: center; width: 90px; position: sticky; top: 0; z-index: 20; background-color: #0b1329;">Status</th>
+              <th style="text-align: center; width: 140px; position: sticky; top: 0; z-index: 20; background-color: #0b1329;">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -309,6 +309,17 @@ export function renderSparePartsManagementView() {
             }).join('')}
           </tbody>
         </table>
+      </div>
+
+      <!-- Compact Footer Status Strip (Screen Fit Indicator) -->
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 14px; background: rgba(15, 23, 42, 0.7); border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 11.5px; color: var(--text-muted); flex-shrink: 0;">
+        <div>
+          Showing <strong style="color: #fff;">${filtered.length}</strong> of <strong style="color: #38bdf8;">${master.length}</strong> master items
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #34d399; box-shadow: 0 0 6px rgba(52, 211, 153, 0.6);"></span>
+          <span>Screen Fit 100% Active</span>
+        </div>
       </div>
 
       <!-- Active Modal Rendering Layer -->
@@ -571,6 +582,11 @@ function renderSpareModalLayer() {
 
 export function initSparePartsManagementEvents() {
   const refresh = () => {
+    const activeEl = document.activeElement;
+    const isSearchFocused = activeEl && activeEl.id === 'inp-spare-search';
+    const cursorStart = isSearchFocused ? activeEl.selectionStart : null;
+    const cursorEnd = isSearchFocused ? activeEl.selectionEnd : null;
+
     const entContainer = document.getElementById('ent-tab-content-area');
     const mainContainer = document.getElementById('main-view-container');
     if (entContainer) {
@@ -579,6 +595,16 @@ export function initSparePartsManagementEvents() {
     } else if (mainContainer) {
       mainContainer.innerHTML = renderSparePartsManagementView();
       initSparePartsManagementEvents();
+    }
+
+    if (isSearchFocused) {
+      const newSearch = document.getElementById('inp-spare-search');
+      if (newSearch) {
+        newSearch.focus();
+        if (cursorStart !== null && cursorEnd !== null) {
+          try { newSearch.setSelectionRange(cursorStart, cursorEnd); } catch(_) {}
+        }
+      }
     }
   };
 

@@ -54,11 +54,13 @@ export function renderEtLabManagementView() {
   const boardHistory = currentBoard ? etLabService.getBoardHistory(currentBoard.boardSerial) : [];
   const recentHistory = boardHistory.slice(0, 3);
 
+  const isSparePartsTab = activeEntTab === 'spare-parts';
+
   return `
-    <div class="page-view ent-lab-page-container" style="padding: 16px 22px; display: flex; flex-direction: column; gap: 14px; overflow-y: auto; height: 100%;">
+    <div class="page-view ent-lab-page-container" style="${isSparePartsTab ? 'padding: 10px 18px 8px 18px; display: flex; flex-direction: column; gap: 8px; overflow: hidden; height: 100%; box-sizing: border-box;' : 'padding: 16px 22px; display: flex; flex-direction: column; gap: 14px; overflow-y: auto; height: 100%;'}">
       
       <!-- Top Navigation Tabs for ENT Lab Management -->
-      <div class="ent-header-tabs" style="display: flex; gap: 10px; border-bottom: 2px solid var(--border-color); padding-bottom: 12px; margin-bottom: 4px; flex-wrap: wrap; align-items: center; justify-content: space-between;">
+      <div class="ent-header-tabs" style="display: flex; gap: 10px; border-bottom: 2px solid var(--border-color); ${isSparePartsTab ? 'padding-bottom: 6px; margin-bottom: 0px;' : 'padding-bottom: 12px; margin-bottom: 4px;'} flex-wrap: wrap; align-items: center; justify-content: space-between; flex-shrink: 0;">
         <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
           <button 
             id="ent-tab-btn-boards" 
@@ -93,7 +95,7 @@ export function renderEtLabManagementView() {
       </div>
 
       <!-- Tab Content Area -->
-      <div id="ent-tab-content-area" style="display: flex; flex-direction: column; gap: 14px; flex: 1; min-height: 0;">
+      <div id="ent-tab-content-area" style="display: flex; flex-direction: column; ${isSparePartsTab ? 'gap: 8px; flex: 1; min-height: 0; overflow: hidden;' : 'gap: 14px; flex: 1; min-height: 0;'}">
         ${activeEntTab === 'spare-parts' ? renderSparePartsManagementView() : 
           activeEntTab === 'lab-config' ? renderEntLabConfigInlineView() : 
           renderEntBoardsContent(kpi, allBoards, filteredBoards, currentBoard, connectedMachine, boardHistory, recentHistory, isAdmin)}
