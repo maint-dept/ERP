@@ -7,6 +7,7 @@ import { storage } from '../db/storage.js';
 import { TABLE_NAMES } from '../db/schema.js';
 import { authService } from './authService.js';
 import { auditService } from './auditService.js';
+import { getSignaturesForReport } from '../components/settingsView.js';
 
 class PDFService {
   /**
@@ -265,14 +266,7 @@ class PDFService {
         </table>
 
         ${(() => {
-          let signatures = settings.signatures;
-          if (!Array.isArray(signatures) || signatures.length === 0) {
-            signatures = [
-              { id: 'sig-1', name: settings.sig1Name || settings.signatory1Name || user.name || 'Engr. Motaher Hossain', title: settings.sig1Title || settings.signatory1Title || 'Prepared By (Engineer)', enabled: settings.showSig1 !== false },
-              { id: 'sig-2', name: settings.sig2Name || settings.signatory2Name || 'Engr. Delwar Hossain', title: settings.sig2Title || settings.signatory2Title || 'Verified By (AGM / Sr. AGM)', enabled: settings.showSig2 !== false },
-              { id: 'sig-3', name: settings.sig3Name || settings.signatory3Name || 'Mohammad Liton Miah', title: settings.sig3Title || settings.signatory3Title || 'Approved By (GM)', enabled: settings.showSig3 !== false }
-            ];
-          }
+          const signatures = getSignaturesForReport('MACHINE_SUMMARY');
           const activeSigs = signatures.filter(s => s.enabled !== false && ((s.name && s.name.trim()) || (s.title && s.title.trim())));
           if (activeSigs.length === 0) return '';
           return `
@@ -597,24 +591,30 @@ class PDFService {
         </table>
 
         <!-- Formal Signatures -->
-        <div class="signatures">
-          <div class="sig-box">
-            <strong>${req.requestedByName}</strong>
-            <div class="sig-role">Requester / Maintenance Tech</div>
+        ${(() => {
+          const transferSigs = getSignaturesForReport('TRANSFER_GATE_PASS').filter(s => s.enabled !== false && ((s.name && s.name.trim()) || (s.title && s.title.trim())));
+          if (transferSigs.length > 0) {
+            const cols = Math.max(1, Math.min(transferSigs.length, 4));
+            return `
+            <div class="signatures" style="display: grid; grid-template-columns: repeat(${cols}, 1fr); gap: 14px; margin-top: 32px; page-break-inside: avoid;">
+              ${transferSigs.map(sig => `
+                <div class="sig-box" style="text-align: center; border-top: 1.5px solid #334155; padding-top: 8px;">
+                  <strong style="display: block; font-size: 11px; color: #0f172a;">${sig.name || ''}</strong>
+                  <div class="sig-role" style="font-size: 9.5px; color: #64748b; margin-top: 2px;">${sig.title || ''}</div>
+                </div>
+              `).join('')}
+            </div>
+            `;
+          }
+          return `
+          <div class="signatures" style="display: grid; grid-template-columns: 1fr; gap: 14px; margin-top: 32px; page-break-inside: avoid;">
+            <div class="sig-box" style="text-align: center; border-top: 1.5px solid #334155; padding-top: 8px;">
+              <strong style="display: block; font-size: 11px; color: #0f172a;">${req.requestedByName || 'Requester'}</strong>
+              <div class="sig-role" style="font-size: 9.5px; color: #64748b; margin-top: 2px;">Requester / Maintenance Tech</div>
+            </div>
           </div>
-          <div class="sig-box">
-            <strong>Engr. Floor In-Charge</strong>
-            <div class="sig-role">Source Location Releasing Officer</div>
-          </div>
-          <div class="sig-box">
-            <strong>Engr. Receiving Officer</strong>
-            <div class="sig-role">Destination Floor Receiving Officer</div>
-          </div>
-          <div class="sig-box">
-            <strong>Engr. Tanvir Ahmed</strong>
-            <div class="sig-role">Chief Maintenance Admin</div>
-          </div>
-        </div>
+          `;
+        })()}
 
         <div class="footer">
           <div>Al-Muslim Group &bull; Maintenance Department ERP &bull; Official Machine Movement Pass &bull; Request ID: ${req.requestNumber}</div>
@@ -647,14 +647,7 @@ class PDFService {
     const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
     // Build Active Dynamic Signatures List
-    let signatures = settings.signatures;
-    if (!Array.isArray(signatures) || signatures.length === 0) {
-      signatures = [
-        { id: 'sig-1', name: settings.sig1Name || settings.signatory1Name || user.name || 'Engr. Motaher Hossain', title: settings.sig1Title || settings.signatory1Title || 'Prepared By (Engineer)', enabled: settings.showSig1 !== false },
-        { id: 'sig-2', name: settings.sig2Name || settings.signatory2Name || 'Engr. Delwar Hossain', title: settings.sig2Title || settings.signatory2Title || 'Verified By (AGM / Sr. AGM)', enabled: settings.showSig2 !== false },
-        { id: 'sig-3', name: settings.sig3Name || settings.signatory3Name || 'Mohammad Liton Miah', title: settings.sig3Title || settings.signatory3Title || 'Approved By (GM)', enabled: settings.showSig3 !== false }
-      ];
-    }
+    const signatures = getSignaturesForReport('MACHINE_SUMMARY');
     const activeSignatures = signatures.filter(s => s.enabled !== false && ((s.name && s.name.trim()) || (s.title && s.title.trim())));
 
     // Build Table Body Rows with merged Sl. and Machine Name and Grand Total cells per machine category
@@ -1264,17 +1257,20 @@ class PDFService {
           </tbody>
         </table>
 
-        <div style="margin-top: 24px; display: flex; justify-content: space-between; page-break-inside: avoid;">
-          <div style="width: 25%; text-align: center; border-top: 1px solid #475569; padding-top: 4px; font-size: 9.5px;">
-            <strong>ENT Lab In-Charge</strong>
+        ${(() => {
+          const etLabSigs = getSignaturesForReport('ENT_LAB_REPORT').filter(s => s.enabled !== false && ((s.name && s.name.trim()) || (s.title && s.title.trim())));
+          if (etLabSigs.length === 0) return '';
+          return `
+          <div style="margin-top: 28px; display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; page-break-inside: avoid; flex-wrap: wrap;">
+            ${etLabSigs.map(sig => `
+              <div style="flex: 1; min-width: 140px; text-align: center; border-top: 1.5px solid #334155; padding-top: 6px; font-size: 10px;">
+                <strong style="display: block; font-size: 11px; color: #0f172a;">${sig.name || ''}</strong>
+                <div style="font-size: 9px; color: #64748b; margin-top: 2px;">${sig.title || ''}</div>
+              </div>
+            `).join('')}
           </div>
-          <div style="width: 25%; text-align: center; border-top: 1px solid #475569; padding-top: 4px; font-size: 9.5px;">
-            <strong>Maintenance Lead Engineer</strong>
-          </div>
-          <div style="width: 25%; text-align: center; border-top: 1px solid #475569; padding-top: 4px; font-size: 9.5px;">
-            <strong>General Manager (Maintenance)</strong>
-          </div>
-        </div>
+          `;
+        })()}
       </body>
       </html>
     `;

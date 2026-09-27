@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Al-Muslim Group Garments Factory Maintenance Machine ERP
  * System Settings, Approval Policies & JSON Backup/Restore Component
  */
@@ -8,21 +8,107 @@ import { TABLE_NAMES } from '../db/schema.js';
 import { state } from '../state.js';
 import { masterDataService } from '../services/masterDataService.js';
 
-export function getSignaturesList(settings = {}) {
+export const REPORT_TYPES = [
+  { key: 'ALL', label: 'All Reports (Default / সব Reports)', description: 'Universal baseline signature template for all reports' },
+  { key: 'MACHINE_SUMMARY', label: 'Machine Summary & Inventory Report', description: 'Reports & Analytics → Machine Reports & Inventory Grid' },
+  { key: 'TRANSFER_GATE_PASS', label: 'Transfer Gate Pass / Delivery Challan', description: 'Machine Movement & Transfer Gate Pass' },
+  { key: 'ENT_LAB_REPORT', label: 'ENT Lab Management Report', description: 'Reports & Analytics → ENT Lab Management Report' },
+  { key: 'PREVENTIVE_MAINTENANCE', label: 'Preventive Maintenance & Inspection Sheet', description: 'Periodic machine inspection sheets & PM schedule' },
+  { key: 'SERVICE_MAINTENANCE', label: 'Service & Maintenance History Report', description: 'Machine Passport & lifetime maintenance history log' },
+  { key: 'TOOLS_EQUIPMENT', label: 'Tools & Equipment Inspection Report', description: 'Tools and equipment handover & inspection registers' },
+  { key: 'SPARE_PARTS', label: 'Spare Parts Consumption Report', description: 'Spare parts requisition & replacement logs' }
+];
+
+export function getAvailableSignatoryEmployees() {
+  const list = [];
+  const seen = new Set();
+
+  try {
+    const users = storage.getTable(TABLE_NAMES.USERS) || [];
+    users.forEach(u => {
+      const name = (u.name || u.fullName || u.username || '').trim();
+      if (name && !seen.has(name.toLowerCase())) {
+        seen.add(name.toLowerCase());
+        list.push({
+          id: u.id,
+          name: name,
+          designation: u.designation || u.role || 'Officer',
+          department: u.department || 'Administration'
+        });
+      }
+    });
+  } catch (e) {
+    console.warn('Error fetching users for signatories:', e);
+  }
+
+  try {
+    const employees = storage.getTable(TABLE_NAMES.EMPLOYEES) || [];
+    employees.forEach(e => {
+      const name = (e.name || '').trim();
+      if (name && !seen.has(name.toLowerCase())) {
+        seen.add(name.toLowerCase());
+        list.push({
+          id: e.id,
+          name: name,
+          cardNumber: e.cardNumber || '',
+          designation: e.designation || 'Staff',
+          department: e.department || ''
+        });
+      }
+    });
+  } catch (e) {
+    console.warn('Error fetching employees for signatories:', e);
+  }
+
+  return list.sort((a, b) => a.name.localeCompare(b.name));
+}
+
+export function getSignaturesForReport(reportKey = 'ALL', checkCustomOnly = false) {
+  const settings = storage.getTable(TABLE_NAMES.SETTINGS) || {};
+  const reportSignatures = settings.reportSignatures || {};
+
+  if (checkCustomOnly) {
+    if (reportKey && reportKey !== 'ALL' && Array.isArray(reportSignatures[reportKey]) && reportSignatures[reportKey].length > 0) {
+      return reportSignatures[reportKey];
+    }
+    return null;
+  }
+
+  // 1. Check report-specific signatures
+  if (reportKey && reportKey !== 'ALL' && Array.isArray(reportSignatures[reportKey]) && reportSignatures[reportKey].length > 0) {
+    return reportSignatures[reportKey];
+  }
+
+  // 2. Check 'ALL' in reportSignatures
+  if (Array.isArray(reportSignatures['ALL']) && reportSignatures['ALL'].length > 0) {
+    return reportSignatures['ALL'];
+  }
+
+  // 3. Check legacy settings.signatures
   if (Array.isArray(settings.signatures) && settings.signatures.length > 0) {
     return settings.signatures;
   }
+
+  // 4. Default baseline 3 signatures
   return [
-    { id: 'sig-1', name: settings.sig1Name || settings.signatory1Name || 'Engr. Motaher Hossain', title: settings.sig1Title || settings.signatory1Title || 'Prepared By (Engineer)', enabled: settings.showSig1 !== false },
-    { id: 'sig-2', name: settings.sig2Name || settings.signatory2Name || 'Engr. Delwar Hossain', title: settings.sig2Title || settings.signatory2Title || 'Verified By (AGM / Sr. AGM)', enabled: settings.showSig2 !== false },
-    { id: 'sig-3', name: settings.sig3Name || settings.signatory3Name || 'Mohammad Liton Miah', title: settings.sig3Title || settings.signatory3Title || 'Approved By (GM)', enabled: settings.showSig3 !== false }
+    { id: 'sig-1', name: settings.sig1Name || 'Engr. Motaher Hossain', title: settings.sig1Title || 'Prepared By (Engineer)', enabled: true },
+    { id: 'sig-2', name: settings.sig2Name || 'Engr. Delwar Hossain', title: settings.sig2Title || 'Verified By (AGM / Sr. AGM)', enabled: true },
+    { id: 'sig-3', name: settings.sig3Name || 'Mohammad Liton Miah', title: settings.sig3Title || 'Approved By (GM)', enabled: true }
   ];
 }
 
-function renderSignatorySlotHtml(sig, index) {
+export function getSignaturesList(settings = {}) {
+  return getSignaturesForReport('ALL');
+}
+
+export function renderSignatorySlotHtml(sig, index, availableEmployees = null) {
   const num = index + 1;
   const isEnabled = sig.enabled !== false;
   const id = sig.id || `sig-${Date.now()}-${index}`;
+  const emps = availableEmployees || getAvailableSignatoryEmployees();
+
+  const currentName = (sig.name || '').trim().toLowerCase();
+  const matchedEmp = emps.find(e => e.name.toLowerCase() === currentName);
 
   return `
     <div class="signature-slot-card" data-sig-id="${id}" style="background: rgba(15, 23, 42, 0.65); border: 1.5px solid var(--border-color); border-radius: 8px; padding: 14px; display: flex; flex-direction: column; gap: 10px; position: relative;">
@@ -41,13 +127,32 @@ function renderSignatorySlotHtml(sig, index) {
           </button>
         </div>
       </div>
+
+      <div class="form-group" style="margin-bottom: 0;">
+        <label class="form-label" style="font-size: 11.5px; font-weight: 600; margin-bottom: 4px; color: #38bdf8;">
+          👤 Select Employee from System
+        </label>
+        <select class="form-control sig-slot-employee-select" style="font-size: 12px; background: #0f172a; border-color: rgba(56, 189, 248, 0.35); color: #f8fafc;">
+          <option value="">-- Choose Employee / Officer --</option>
+          ${emps.map(emp => {
+            const isSel = matchedEmp && matchedEmp.id === emp.id;
+            const extra = emp.cardNumber ? ` (${emp.cardNumber})` : '';
+            return `<option value="${emp.name.replace(/"/g, '&quot;')}" data-designation="${(emp.designation || '').replace(/"/g, '&quot;')}" ${isSel ? 'selected' : ''}>
+              ${emp.name} — ${emp.designation}${extra}
+            </option>`;
+          }).join('')}
+          <option value="__custom__">✏️ Custom / External Officer...</option>
+        </select>
+      </div>
+
       <div class="form-group" style="margin-bottom: 0;">
         <label class="form-label" style="font-size: 11.5px; font-weight: 600; margin-bottom: 4px;">Officer / Engineer Name</label>
-        <input type="text" class="form-control sig-slot-name" value="${sig.name || ''}" placeholder="e.g. Engr. Tanvir Ahmed" />
+        <input type="text" class="form-control sig-slot-name" value="${(sig.name || '').replace(/"/g, '&quot;')}" placeholder="e.g. Engr. Tanvir Ahmed" />
       </div>
+
       <div class="form-group" style="margin-bottom: 0;">
-        <label class="form-label" style="font-size: 11.5px; font-weight: 600; margin-bottom: 4px;">Designation / Title</label>
-        <input type="text" class="form-control sig-slot-title" value="${sig.title || ''}" placeholder="e.g. Prepared By (Maintenance In-Charge)" />
+        <label class="form-label" style="font-size: 11.5px; font-weight: 600; margin-bottom: 4px;">Designation / Title on Report</label>
+        <input type="text" class="form-control sig-slot-title" value="${(sig.title || '').replace(/"/g, '&quot;')}" placeholder="e.g. Prepared By (Engineer)" />
       </div>
     </div>
   `;
@@ -55,7 +160,10 @@ function renderSignatorySlotHtml(sig, index) {
 
 export function renderSettingsView() {
   const settings = storage.getTable(TABLE_NAMES.SETTINGS) || {};
-  const signaturesList = getSignaturesList(settings);
+  const activeReportKey = 'ALL';
+  const signaturesList = getSignaturesForReport(activeReportKey);
+  const availableEmployees = getAvailableSignatoryEmployees();
+  const hasCustom = getSignaturesForReport(activeReportKey, true) !== null;
 
   return `
     <div class="page-view">
@@ -71,36 +179,70 @@ export function renderSettingsView() {
       <!-- Settings Cards Grid -->
       <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px;">
         
-        <!-- Top Full-Width Card: PDF & Print Report Signatures Customization (Add More / Edit / Remove) -->
+        <!-- Top Full-Width Card: PDF & Print Report Signatures Customization -->
         <div style="background: var(--bg-surface); border: 1.5px solid rgba(168, 85, 247, 0.45); border-radius: var(--radius-lg); padding: 22px; display: flex; flex-direction: column; gap: 16px; grid-column: 1 / -1; box-shadow: 0 4px 24px rgba(168, 85, 247, 0.12);">
-          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; flex-wrap: wrap; gap: 10px;">
-            <div>
+          
+          <!-- Card Header & Report Type Dropdown -->
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid var(--border-color); padding-bottom: 14px; flex-wrap: wrap; gap: 14px;">
+            <div style="flex: 1; min-width: 320px;">
               <h3 style="font-size: 16px; font-weight: 800; color: #c084fc; display: flex; align-items: center; gap: 8px; margin: 0;">
                 <span>✍️ PDF &amp; Print Report Signatures Customization</span>
               </h3>
               <div style="font-size: 12.5px; color: var(--text-secondary); margin-top: 4px;">
-                Customize, add more signatories, edit titles/names, or remove signatures. Only enabled signatures will appear at the bottom of generated PDF &amp; Print reports.
+                Configure signatories for PDF and print reports. Select "All Reports" for global baseline signatures, or choose a specific report to set individual custom signatures.
               </div>
             </div>
+
             <div style="display: flex; align-items: center; gap: 10px;">
               <button type="button" id="btn-add-signature-slot" class="btn btn-secondary btn-sm" style="font-weight: 700; color: #c084fc; border-color: rgba(168, 85, 247, 0.4);">
-                ➕ Add More Signatory
+                ➕ Add Signature
               </button>
             </div>
           </div>
 
+          <!-- Report Selector Control Bar -->
+          <div style="background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 8px; padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+            <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap; flex: 1;">
+              <label for="report-signature-type-select" style="font-size: 13.5px; font-weight: 700; color: #f8fafc; margin: 0; white-space: nowrap; display: flex; align-items: center; gap: 6px;">
+                <span>📄 Report Type:</span>
+              </label>
+              <select id="report-signature-type-select" class="form-control" style="width: auto; min-width: 320px; font-weight: 700; color: #38bdf8; background: #0f172a; border: 1.5px solid #0284c7; padding: 6px 12px; font-size: 13px;">
+                ${REPORT_TYPES.map(rt => `
+                  <option value="${rt.key}" ${rt.key === activeReportKey ? 'selected' : ''}>${rt.label}</option>
+                `).join('')}
+              </select>
+              <span id="report-sig-status-badge" class="badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.4); padding: 4px 10px; font-size: 11.5px;">
+                🌐 Global Default Template (Applies to all reports)
+              </span>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <button type="button" id="btn-reset-report-signatures" class="btn btn-secondary btn-sm" style="display: none; font-size: 11.5px; color: #f59e0b; border-color: rgba(245, 158, 11, 0.4);" title="Revert to All Reports default signatures">
+                🔄 Reset to Default Template
+              </button>
+            </div>
+          </div>
+
+          <!-- Report Context Helper Info -->
+          <div id="report-sig-context-desc" style="font-size: 12px; color: var(--text-muted); padding: 0 4px;">
+            Universal baseline signatures for all reports unless overridden by a specific report selection above.
+          </div>
+
           <!-- Dynamic Signatures Grid Container -->
-          <div id="signatures-list-container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px;">
-            ${signaturesList.map((sig, idx) => renderSignatorySlotHtml(sig, idx)).join('')}
+          <div id="signatures-list-container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(310px, 1fr)); gap: 16px;">
+            ${signaturesList.map((sig, idx) => renderSignatorySlotHtml(sig, idx, availableEmployees)).join('')}
           </div>
 
           <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px; border-top: 1px solid var(--border-color); padding-top: 12px;">
             <button type="button" id="btn-add-signature-slot-bottom" class="btn btn-secondary btn-sm" style="font-weight: 600; color: #c084fc;">
               ➕ Add Another Signatory
             </button>
-            <button type="button" id="btn-save-signature-settings" class="btn btn-primary btn-sm" style="font-weight: 700; background: linear-gradient(135deg, #a855f7, #7c3aed); border-color: #a855f7; padding: 8px 22px;">
-              💾 Save Changes
-            </button>
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <span id="save-sig-feedback-msg" style="font-size: 12px; color: #34d399; font-weight: 600; display: none;"></span>
+              <button type="button" id="btn-save-signature-settings" class="btn btn-primary btn-sm" style="font-weight: 700; background: linear-gradient(135deg, #a855f7, #7c3aed); border-color: #a855f7; padding: 8px 24px;">
+                💾 Save Changes
+              </button>
+            </div>
           </div>
         </div>
 
@@ -305,6 +447,121 @@ export function initSettingsEvents() {
     });
   }
 
+  // Active selected report key in Admin Settings
+  let currentActiveReportKey = 'ALL';
+
+  function updateReportStatusIndicator(reportKey) {
+    const badge = document.getElementById('report-sig-status-badge');
+    const resetBtn = document.getElementById('btn-reset-report-signatures');
+    const descEl = document.getElementById('report-sig-context-desc');
+    const repInfo = REPORT_TYPES.find(r => r.key === reportKey) || { label: reportKey, description: '' };
+
+    if (descEl) {
+      descEl.textContent = repInfo.description || '';
+    }
+
+    if (reportKey === 'ALL') {
+      if (badge) {
+        badge.innerHTML = '🌐 Global Default Template (Applies to all reports)';
+        badge.style.background = 'rgba(56, 189, 248, 0.15)';
+        badge.style.color = '#38bdf8';
+        badge.style.borderColor = 'rgba(56, 189, 248, 0.4)';
+      }
+      if (resetBtn) resetBtn.style.display = 'none';
+    } else {
+      const isCustom = getSignaturesForReport(reportKey, true) !== null;
+      if (isCustom) {
+        if (badge) {
+          badge.innerHTML = `🎯 Custom Signatures Active for ${repInfo.label}`;
+          badge.style.background = 'rgba(168, 85, 247, 0.2)';
+          badge.style.color = '#c084fc';
+          badge.style.borderColor = 'rgba(168, 85, 247, 0.5)';
+        }
+        if (resetBtn) resetBtn.style.display = 'inline-flex';
+      } else {
+        if (badge) {
+          badge.innerHTML = `📋 Inheriting from "All Reports" Template`;
+          badge.style.background = 'rgba(234, 179, 8, 0.15)';
+          badge.style.color = '#facc15';
+          badge.style.borderColor = 'rgba(234, 179, 8, 0.4)';
+        }
+        if (resetBtn) resetBtn.style.display = 'none';
+      }
+    }
+  }
+
+  function loadReportSignaturesIntoDOM(reportKey) {
+    const container = document.getElementById('signatures-list-container');
+    if (!container) return;
+    const sigs = getSignaturesForReport(reportKey);
+    const availableEmployees = getAvailableSignatoryEmployees();
+    container.innerHTML = sigs.map((sig, idx) => renderSignatorySlotHtml(sig, idx, availableEmployees)).join('');
+    updateReportStatusIndicator(reportKey);
+  }
+
+  // Report Type Dropdown Change Listener
+  const reportTypeSelect = document.getElementById('report-signature-type-select');
+  if (reportTypeSelect) {
+    reportTypeSelect.addEventListener('change', (e) => {
+      currentActiveReportKey = e.target.value;
+      loadReportSignaturesIntoDOM(currentActiveReportKey);
+    });
+  }
+
+  // Reset to Default Template Button
+  const btnResetReportSig = document.getElementById('btn-reset-report-signatures');
+  if (btnResetReportSig) {
+    btnResetReportSig.addEventListener('click', async (e) => {
+      e.preventDefault();
+      if (currentActiveReportKey === 'ALL') return;
+      const repInfo = REPORT_TYPES.find(r => r.key === currentActiveReportKey) || { label: currentActiveReportKey };
+      if (!confirm(`Are you sure you want to remove the custom signatures for "${repInfo.label}" and revert back to the "All Reports" default template?`)) {
+        return;
+      }
+      const current = storage.getTable(TABLE_NAMES.SETTINGS) || {};
+      if (current.reportSignatures && current.reportSignatures[currentActiveReportKey]) {
+        delete current.reportSignatures[currentActiveReportKey];
+        storage.data[TABLE_NAMES.SETTINGS] = {
+          ...current,
+          reportSignatures: { ...current.reportSignatures }
+        };
+        await storage.saveTable(TABLE_NAMES.SETTINGS, true);
+      }
+      loadReportSignaturesIntoDOM(currentActiveReportKey);
+    });
+  }
+
+  // Employee Select Change Listener (Event Delegation)
+  const signaturesContainer = document.getElementById('signatures-list-container');
+  if (signaturesContainer) {
+    signaturesContainer.addEventListener('change', (e) => {
+      const selectEl = e.target.closest('.sig-slot-employee-select');
+      if (!selectEl) return;
+      const card = selectEl.closest('.signature-slot-card');
+      if (!card) return;
+
+      const nameInput = card.querySelector('.sig-slot-name');
+      const titleInput = card.querySelector('.sig-slot-title');
+      const selectedVal = selectEl.value;
+
+      if (selectedVal === '__custom__') {
+        if (nameInput) {
+          nameInput.focus();
+        }
+        return;
+      }
+
+      if (selectedVal) {
+        if (nameInput) nameInput.value = selectedVal;
+        const opt = selectEl.selectedOptions[0];
+        const desig = opt ? opt.getAttribute('data-designation') : '';
+        if (titleInput && (!titleInput.value || titleInput.value.trim() === '')) {
+          titleInput.value = desig ? `Prepared By (${desig})` : 'Prepared By';
+        }
+      }
+    });
+  }
+
   // Re-indexing helper for dynamic signatory cards
   function reindexSignatureSlots() {
     const container = document.getElementById('signatures-list-container');
@@ -325,21 +582,25 @@ export function initSettingsEvents() {
     if (!container) return;
     const currentCount = container.querySelectorAll('.signature-slot-card').length;
     const newIdx = currentCount;
+    const defaultRoles = ['Prepared By', 'Verified By', 'Approved By', 'Checked By', 'Recommending Authority'];
+    const assignedRole = defaultRoles[newIdx] || `Signatory ${newIdx + 1}`;
+
     const newSig = {
       id: `sig-${Date.now()}`,
       name: '',
-      title: '',
+      title: assignedRole,
       enabled: true
     };
     
     const wrapper = document.createElement('div');
-    wrapper.innerHTML = renderSignatorySlotHtml(newSig, newIdx).trim();
+    const availableEmployees = getAvailableSignatoryEmployees();
+    wrapper.innerHTML = renderSignatorySlotHtml(newSig, newIdx, availableEmployees).trim();
     const newCard = wrapper.firstElementChild;
     container.appendChild(newCard);
     reindexSignatureSlots();
 
-    const nameInput = newCard.querySelector('.sig-slot-name');
-    if (nameInput) nameInput.focus({ preventScroll: true });
+    const empSelect = newCard.querySelector('.sig-slot-employee-select');
+    if (empSelect) empSelect.focus({ preventScroll: true });
   }
 
   const btnAddTop = document.getElementById('btn-add-signature-slot');
@@ -359,7 +620,6 @@ export function initSettingsEvents() {
   }
 
   // Remove Signatory Handler (Event Delegation)
-  const signaturesContainer = document.getElementById('signatures-list-container');
   if (signaturesContainer) {
     signaturesContainer.addEventListener('click', (e) => {
       const removeBtn = e.target.closest('.btn-remove-signature-slot');
@@ -375,9 +635,11 @@ export function initSettingsEvents() {
           const nameEl = card.querySelector('.sig-slot-name');
           const titleEl = card.querySelector('.sig-slot-title');
           const enabledEl = card.querySelector('.sig-slot-enabled');
+          const selEl = card.querySelector('.sig-slot-employee-select');
           if (nameEl) nameEl.value = '';
           if (titleEl) titleEl.value = '';
           if (enabledEl) enabledEl.checked = false;
+          if (selEl) selEl.value = '';
         }
         return;
       }
@@ -387,7 +649,7 @@ export function initSettingsEvents() {
     });
   }
 
-  // Save Signatures Handler
+  // Save Signatures Handler (Per Report Type)
   const saveSig = document.getElementById('btn-save-signature-settings');
   if (saveSig) {
     saveSig.addEventListener('click', async (e) => {
@@ -410,41 +672,58 @@ export function initSettingsEvents() {
       });
 
       const current = storage.getTable(TABLE_NAMES.SETTINGS) || {};
-      
-      // Also map first 3 to legacy properties for backwards compatibility
+      const currentReportSignatures = { ...(current.reportSignatures || {}) };
+      currentReportSignatures[currentActiveReportKey] = signaturesList;
+
+      // Also map first 3 to legacy properties if editing 'ALL' for backwards compatibility
       const sig1 = signaturesList[0] || {};
       const sig2 = signaturesList[1] || {};
       const sig3 = signaturesList[2] || {};
 
-      storage.data[TABLE_NAMES.SETTINGS] = {
+      const updatedSettings = {
         ...current,
-        signatures: signaturesList,
-        sig1Name: sig1.name || '',
-        sig1Title: sig1.title || '',
-        showSig1: sig1.enabled !== false,
-        sig2Name: sig2.name || '',
-        sig2Title: sig2.title || '',
-        showSig2: sig2.enabled !== false,
-        sig3Name: sig3.name || '',
-        sig3Title: sig3.title || '',
-        showSig3: sig3.enabled !== false,
-        signatory1Name: sig1.name || '',
-        signatory1Title: sig1.title || '',
-        signatory2Name: sig2.name || '',
-        signatory2Title: sig2.title || '',
-        signatory3Name: sig3.name || '',
-        signatory3Title: sig3.title || '',
-        showSignaturesOnPdf: signaturesList.some(s => s.enabled)
+        reportSignatures: currentReportSignatures
       };
+
+      if (currentActiveReportKey === 'ALL') {
+        updatedSettings.signatures = signaturesList;
+        updatedSettings.sig1Name = sig1.name || '';
+        updatedSettings.sig1Title = sig1.title || '';
+        updatedSettings.showSig1 = sig1.enabled !== false;
+        updatedSettings.sig2Name = sig2.name || '';
+        updatedSettings.sig2Title = sig2.title || '';
+        updatedSettings.showSig2 = sig2.enabled !== false;
+        updatedSettings.sig3Name = sig3.name || '';
+        updatedSettings.sig3Title = sig3.title || '';
+        updatedSettings.showSig3 = sig3.enabled !== false;
+        updatedSettings.signatory1Name = sig1.name || '';
+        updatedSettings.signatory1Title = sig1.title || '';
+        updatedSettings.signatory2Name = sig2.name || '';
+        updatedSettings.signatory2Title = sig2.title || '';
+        updatedSettings.signatory3Name = sig3.name || '';
+        updatedSettings.signatory3Title = sig3.title || '';
+        updatedSettings.showSignaturesOnPdf = signaturesList.some(s => s.enabled);
+      }
+
+      storage.data[TABLE_NAMES.SETTINGS] = updatedSettings;
 
       try {
         await storage.saveTable(TABLE_NAMES.SETTINGS, true);
-        saveSig.innerHTML = '✓ Saved';
+        saveSig.innerHTML = '✓ Saved Changes';
+        updateReportStatusIndicator(currentActiveReportKey);
+        const fbMsg = document.getElementById('save-sig-feedback-msg');
+        if (fbMsg) {
+          const repInfo = REPORT_TYPES.find(r => r.key === currentActiveReportKey) || { label: currentActiveReportKey };
+          fbMsg.textContent = `✓ Signatures saved for "${repInfo.label}"`;
+          fbMsg.style.display = 'inline';
+          setTimeout(() => { fbMsg.style.display = 'none'; }, 3000);
+        }
         setTimeout(() => {
           saveSig.disabled = false;
           saveSig.innerHTML = origText;
         }, 1500);
       } catch (err) {
+        console.error('Error saving signature settings:', err);
         saveSig.innerHTML = '✓ Saved';
         setTimeout(() => {
           saveSig.disabled = false;

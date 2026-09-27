@@ -873,6 +873,7 @@ export const DEFAULT_SETTINGS = {
     { id: 'sig-2', name: 'Engr. Delwar Hossain', title: 'Verified By (AGM / Sr. AGM)', enabled: true },
     { id: 'sig-3', name: 'Mohammad Liton Miah', title: 'Approved By (GM)', enabled: true }
   ],
+  reportSignatures: {},
   sig1Name: 'Engr. Motaher Hossain',
   sig1Title: 'Prepared By (Engineer)',
   showSig1: true,
