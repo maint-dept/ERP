@@ -1029,12 +1029,18 @@ export function initInventoryTableEvents() {
   if (btnMoreTrigger && moreMenu) {
     btnMoreTrigger.addEventListener('click', (e) => {
       e.stopPropagation();
-      moreMenu.classList.toggle('show');
+      const isOpen = moreMenu.classList.contains('show');
+      closeAllActionMenus();
+      if (!isOpen) {
+        moreMenu.classList.add('show');
+        window.__isActionMenuOpen = true;
+      }
     });
   }
 
   // Helper to cleanly close all action menus
   const closeAllActionMenus = () => {
+    window.__isActionMenuOpen = false;
     if (moreMenu) moreMenu.classList.remove('show');
     document.querySelectorAll('.actions-dropdown-menu.show').forEach(m => {
       m.classList.remove('show');
@@ -1046,26 +1052,102 @@ export function initInventoryTableEvents() {
     });
     document.querySelectorAll('tr.row-actions-active').forEach(r => r.classList.remove('row-actions-active'));
     document.querySelectorAll('td.td-actions-active').forEach(d => d.classList.remove('td-actions-active'));
+    window.dispatchEvent(new CustomEvent('erp:menu-closed'));
   };
 
-  // Close menus on outside click or Escape key
-  document.addEventListener('click', (e) => {
-    if (!e.target.closest('.actions-dropdown-container') && !e.target.closest('.actions-dropdown-menu')) {
-      closeAllActionMenus();
+  // Helper to dynamically track and reposition the open menu on table scroll without closing it abruptly
+  const repositionOpenMenu = () => {
+    const activeBtn = document.querySelector('.btn-trigger-row-actions.active');
+    if (!activeBtn) return;
+    const id = activeBtn.getAttribute('data-id');
+    const menu = document.getElementById(`actions-menu-${id}`);
+    if (!menu || !menu.classList.contains('show')) return;
+
+    const rect = activeBtn.getBoundingClientRect();
+    const vp = document.getElementById('inventory-table-scroll-viewport');
+    if (vp) {
+      const vpRect = vp.getBoundingClientRect();
+      // If the row scrolled completely out of the viewport top/bottom by >15px, close cleanly
+      if (rect.bottom < vpRect.top - 15 || rect.top > vpRect.bottom + 15) {
+        closeAllActionMenus();
+        return;
+      }
     }
-  });
 
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') closeAllActionMenus();
-  });
+    const menuWidth = 215;
+    const menuHeight = menu.offsetHeight || 235;
 
-  // Table horizontal and vertical scroll listener (closes open floating menus to prevent detaching)
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const spaceAbove = rect.top;
+
+    let isDropup = false;
+    let top;
+
+    if (spaceBelow < (menuHeight + 15) && spaceAbove > spaceBelow) {
+      isDropup = true;
+      top = Math.max(10, rect.top - menuHeight - 4);
+    } else {
+      isDropup = false;
+      top = rect.bottom + 4;
+      if (top + menuHeight > window.innerHeight - 10) {
+        if (spaceAbove > menuHeight) {
+          isDropup = true;
+          top = Math.max(10, rect.top - menuHeight - 4);
+        } else {
+          top = Math.max(10, window.innerHeight - menuHeight - 10);
+        }
+      }
+    }
+
+    let left = rect.right - menuWidth;
+    if (left < 10) left = 10;
+    if (left + menuWidth > window.innerWidth - 10) {
+      left = window.innerWidth - menuWidth - 10;
+    }
+
+    menu.style.position = 'fixed';
+    menu.style.top = `${top}px`;
+    menu.style.left = `${left}px`;
+    menu.style.right = 'auto';
+    menu.style.bottom = 'auto';
+    menu.style.width = `${menuWidth}px`;
+    menu.style.zIndex = '999999';
+
+    activeBtn.innerHTML = isDropup ? '⋮ Actions ▴' : '⋮ Actions ▾';
+  };
+
+  window.__closeAllActionMenus = closeAllActionMenus;
+  window.__repositionOpenActionMenu = repositionOpenMenu;
+
+  // Single idempotent registration of global document/window listeners
+  if (!window.__inventoryActionsGlobalListenersAttached) {
+    window.__inventoryActionsGlobalListenersAttached = true;
+
+    // Close menus on outside click
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.actions-dropdown-container') && !e.target.closest('.actions-dropdown-menu')) {
+        if (window.__closeAllActionMenus) window.__closeAllActionMenus();
+      }
+    });
+
+    // Close on Escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        if (window.__closeAllActionMenus) window.__closeAllActionMenus();
+      }
+    });
+
+    // Smoothly reposition menu on window resize
+    window.addEventListener('resize', () => {
+      if (window.__repositionOpenActionMenu) window.__repositionOpenActionMenu();
+    }, { passive: true });
+  }
+
+  // Table horizontal and vertical scroll: dynamically repositions floating menu instead of abruptly closing it
   const scrollViewport = document.getElementById('inventory-table-scroll-viewport');
   if (scrollViewport) {
-    scrollViewport.addEventListener('scroll', closeAllActionMenus, { passive: true });
+    scrollViewport.addEventListener('scroll', repositionOpenMenu, { passive: true });
   }
-  window.addEventListener('scroll', closeAllActionMenus, { passive: true });
-  window.addEventListener('resize', closeAllActionMenus, { passive: true });
 
   const btnExportCsv = document.getElementById('btn-export-csv');
   if (btnExportCsv) {
@@ -1190,6 +1272,7 @@ export function initInventoryTableEvents() {
         btn.classList.add('active');
         if (tr) tr.classList.add('row-actions-active');
         if (td) td.classList.add('td-actions-active');
+        window.__isActionMenuOpen = true;
 
         // Smart floating coordinates: completely escapes table overflow-y/x clipping
         const rect = btn.getBoundingClientRect();

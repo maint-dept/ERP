@@ -77,7 +77,8 @@ function captureAppState() {
     hasInvViewport: !!invViewport,
     focusedId: activeEl && activeEl.id ? activeEl.id : null,
     selectionStart: activeEl && typeof activeEl.selectionStart === 'number' ? activeEl.selectionStart : null,
-    selectionEnd: activeEl && typeof activeEl.selectionEnd === 'number' ? activeEl.selectionEnd : null
+    selectionEnd: activeEl && typeof activeEl.selectionEnd === 'number' ? activeEl.selectionEnd : null,
+    openActionMenuId: document.querySelector('.table-row-actions-menu.show')?.id?.replace('actions-menu-', '') || null
   };
 }
 
@@ -140,6 +141,13 @@ function restoreAppState(saved) {
         } catch (e) { }
       }
     }
+
+    if (saved.openActionMenuId) {
+      const menuBtn = document.querySelector(`.btn-trigger-row-actions[data-id="${saved.openActionMenuId}"]`);
+      if (menuBtn && !menuBtn.classList.contains('active')) {
+        menuBtn.click();
+      }
+    }
   };
 
   // Immediate synchronous restore: guarantees zero flicker and prevents intermediate zero-state capture
@@ -169,6 +177,10 @@ function _initInvScrollGuard() {
       _invScrollActive = false;
       if (vp) vp._isScrolling = false;
       if (_invPendingReRender) {
+        if (window.__erpApp && window.__erpApp.isUserEditing()) {
+          console.log('[ERP] Pending scroll re-render deferred: user is actively interacting or menu is open');
+          return;
+        }
         _invPendingReRender = false;
         if (window.__erpApp) {
           window.__erpApp.queueBackgroundRender();
@@ -268,6 +280,13 @@ class ERPApplication {
 
     window.addEventListener('erp:audit-logs-updated', () => {
       this.queueBackgroundRender();
+    });
+
+    window.addEventListener('erp:menu-closed', () => {
+      if (_invPendingReRender && !this.isUserEditing()) {
+        _invPendingReRender = false;
+        this.queueBackgroundRender();
+      }
     });
 
     window.__appLoaded = true;
@@ -453,12 +472,17 @@ class ERPApplication {
 
   isUserEditing() {
     try {
+      if (typeof window !== 'undefined' && window.__isActionMenuOpen) return true;
       const el = typeof document !== 'undefined' ? document.activeElement : null;
       if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT')) {
         return true;
       }
       if (el && el.isContentEditable) return true;
       if (typeof state !== 'undefined' && state.get('activeModal')) return true;
+      if (typeof document !== 'undefined') {
+        const hasOpenMenu = document.querySelector('.actions-dropdown-menu.show, .dropdown-menu.show, .btn-actions-trigger.active, .table-row-actions-menu.show');
+        if (hasOpenMenu) return true;
+      }
     } catch (_) {}
     return false;
   }
@@ -474,7 +498,8 @@ class ERPApplication {
     try {
       if (isBackgroundSync) {
         if (this.isUserEditing()) {
-          console.log('[ERP] Background re-render skipped: user is actively editing');
+          console.log('[ERP] Background re-render skipped: user is actively editing or menu is open');
+          _invPendingReRender = true;
           return;
         }
         // Skip background re-render while user is actively scrolling the inventory table or page

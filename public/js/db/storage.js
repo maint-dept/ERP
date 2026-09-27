@@ -121,6 +121,13 @@ class StorageEngine {
             this.handleRemoteManifestUpdate(pending);
           }
         });
+        window.addEventListener('erp:menu-closed', () => {
+          if (this._pendingRemoteManifest && !this.isUserTyping()) {
+            const pending = this._pendingRemoteManifest;
+            this._pendingRemoteManifest = null;
+            this.handleRemoteManifestUpdate(pending);
+          }
+        });
         // 1. Start official Google Cloud Firestore onSnapshot real-time listener
         this.initRealtimeSyncListener();
 
@@ -509,6 +516,7 @@ class StorageEngine {
 
   isUserTyping() {
     try {
+      if (typeof window !== 'undefined' && window.__isActionMenuOpen) return true;
       const active = typeof document !== 'undefined' ? document.activeElement : null;
       if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.tagName === 'SELECT')) {
         return true;
@@ -516,6 +524,10 @@ class StorageEngine {
       if (active && active.isContentEditable) return true;
       if (typeof window !== 'undefined' && window.state && window.state.get('activeModal')) {
         return true;
+      }
+      if (typeof document !== 'undefined') {
+        const hasOpenMenu = document.querySelector('.actions-dropdown-menu.show, .dropdown-menu.show, .btn-actions-trigger.active, .table-row-actions-menu.show');
+        if (hasOpenMenu) return true;
       }
       // Also block sync re-render if the user is actively scrolling the inventory table
       if (typeof document !== 'undefined') {
