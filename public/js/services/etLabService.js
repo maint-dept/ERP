@@ -418,6 +418,7 @@ class EtLabService {
     removedBy = null,
     removedByCard = null,
     removedByArea = null,
+    partsSerial = null,
     removalReason = '',
     nextStatus = 'AVAILABLE_SPARE', // 'AVAILABLE_SPARE', 'UNDER_INHOUSE_REPAIR', 'SENT_EXTERNAL'
     nextLocation = 'ENT Lab Shelf (Removed)',
@@ -447,6 +448,11 @@ class EtLabService {
       updatedAt: new Date().toISOString()
     };
 
+    if (partsSerial !== undefined && partsSerial !== null && partsSerial.trim() !== '') {
+      updatedBoard.slNo = partsSerial.trim();
+      updatedBoard.jukiSlNo = partsSerial.trim();
+    }
+
     storage.update(TABLE_NAMES.ET_BOARDS, board.id, updatedBoard);
 
     // 1. Add record to ENT Board History (Never overwrite previous installation history)
@@ -462,6 +468,7 @@ class EtLabService {
       performedByName: finalRemovedBy,
       performedByCard: finalCard,
       performedByArea: finalArea,
+      partsSerial: partsSerial ? partsSerial.trim() : (board.jukiSlNo || board.slNo || ''),
       removalReason: removalReason || 'Routine maintenance / issue detected',
       remarks: remarks || `Removed from Machine ${currentMachineSerial}. Reason: ${removalReason || 'N/A'}`
     });
@@ -548,6 +555,7 @@ class EtLabService {
     repairedBy = null,
     repairedByCard = null,
     repairedByArea = null,
+    partsSerial = null,
     details = '',
     remarks = ''
   }) {
@@ -576,6 +584,11 @@ class EtLabService {
       updatedAt: new Date().toISOString()
     };
 
+    if (partsSerial !== undefined && partsSerial !== null && partsSerial.trim() !== '') {
+      updatedBoard.slNo = partsSerial.trim();
+      updatedBoard.jukiSlNo = partsSerial.trim();
+    }
+
     storage.update(TABLE_NAMES.ET_BOARDS, board.id, updatedBoard);
 
     this.addHistoryRecord({
@@ -591,6 +604,7 @@ class EtLabService {
       performedByName: finalTech,
       performedByCard: finalCard,
       performedByArea: finalArea,
+      partsSerial: partsSerial ? partsSerial.trim() : (board.jukiSlNo || board.slNo || ''),
       remarks: remarks || `In-House Repair started. Problem: ${problem || 'N/A'}`
     });
 
@@ -606,6 +620,7 @@ class EtLabService {
     repairedBy = null,
     repairedByCard = null,
     repairedByArea = null,
+    partsSerial = null,
     repairDetails = '',
     remarks = ''
   }) {
@@ -636,6 +651,11 @@ class EtLabService {
       updatedAt: new Date().toISOString()
     };
 
+    if (partsSerial !== undefined && partsSerial !== null && partsSerial.trim() !== '') {
+      updatedBoard.slNo = partsSerial.trim();
+      updatedBoard.jukiSlNo = partsSerial.trim();
+    }
+
     storage.update(TABLE_NAMES.ET_BOARDS, board.id, updatedBoard);
 
     this.addHistoryRecord({
@@ -651,6 +671,7 @@ class EtLabService {
       performedByName: finalTech,
       performedByCard: finalCard,
       performedByArea: finalArea,
+      partsSerial: partsSerial ? partsSerial.trim() : (board.jukiSlNo || board.slNo || ''),
       remarks: remarks || `In-House repair completed successfully by ${finalTech} [${finalCard}]`
     });
 
@@ -674,6 +695,7 @@ class EtLabService {
     sentByCard = null,
     sentByArea = null,
     performedByName = null,
+    partsSerial = null,
     remarks = ''
   }) {
     const user = authService.getCurrentUser();
@@ -709,6 +731,11 @@ class EtLabService {
       updatedAt: new Date().toISOString()
     };
 
+    if (partsSerial !== undefined && partsSerial !== null && partsSerial.trim() !== '') {
+      updatedBoard.slNo = partsSerial.trim();
+      updatedBoard.jukiSlNo = partsSerial.trim();
+    }
+
     storage.update(TABLE_NAMES.ET_BOARDS, board.id, updatedBoard);
 
     this.addHistoryRecord({
@@ -725,6 +752,7 @@ class EtLabService {
       performedByName: finalSentBy,
       performedByCard: finalCard,
       performedByArea: finalArea,
+      partsSerial: partsSerial ? partsSerial.trim() : (board.jukiSlNo || board.slNo || ''),
       remarks: `${remarks ? remarks + '. ' : ''}Sent to ${companyName} by ${finalSentBy} [${finalCard}]. Previous Bill: ${billCheck.hasPreviousBill ? billCheck.billNo : 'None'}`
     });
 
@@ -752,7 +780,8 @@ class EtLabService {
     repairDetails = '',
     remarks = '',
     resendCompany = null,
-    resendExpectedDate = null
+    resendExpectedDate = null,
+    partsSerial = null
   }) {
     const user = authService.getCurrentUser();
     let board = boardId ? this.getBoardById(boardId) : this.getBoardBySerial(boardSerial);
@@ -850,6 +879,11 @@ class EtLabService {
       updatedAt: new Date().toISOString()
     };
 
+    if (partsSerial !== undefined && partsSerial !== null && partsSerial.trim() !== '') {
+      updatedBoard.slNo = partsSerial.trim();
+      updatedBoard.jukiSlNo = partsSerial.trim();
+    }
+
     storage.update(TABLE_NAMES.ET_BOARDS, board.id, updatedBoard);
 
     // 1. Add record to immutable ENT Board History for this completed repair attempt
@@ -871,6 +905,9 @@ class EtLabService {
       repairDetails: repairDetails || `Received from ${companyName}`,
       performedBy: user?.id || 'usr-super-admin',
       performedByName: finalReceivedBy,
+      performedByCard: finalRecCard,
+      performedByArea: finalRecArea,
+      partsSerial: partsSerial ? partsSerial.trim() : (board.jukiSlNo || board.slNo || ''),
       remarks: `[Repair #${attemptNumber}] Result: ${resultDisplay} → Status: ${acceptanceLabel}. Received By: ${finalReceivedBy}, Verified By: ${finalVerifier} (${finalVerificationDate}). ${remarks || ''}`
     });
 

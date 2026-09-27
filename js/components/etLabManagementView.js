@@ -2222,8 +2222,7 @@ function openActionModal(board, initialActionType = null) {
                 </div>
               </div>
 
-              ${renderPersonnelSelector('install-assigned-to', 'Assigned To / Installed By', '', '#38bdf8')}
-
+              <!-- Parts Serial Number / Board S/N (No default, user inputs) -->
               <div class="form-group">
                 <label class="form-label" style="font-weight: 800; color: #38bdf8; display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
                   <span>Parts Serial Number / Board S/N:</span>
@@ -2234,7 +2233,7 @@ function openActionModal(board, initialActionType = null) {
                   id="install-parts-serial" 
                   class="form-control" 
                   placeholder="Enter parts serial number (e.g. JK-CPU-99026, SN-88321)..." 
-                  value="${board.jukiSlNo || board.slNo || ''}"
+                  value=""
                   style="font-family: var(--font-mono); font-weight: 800; font-size: 13px; height: 38px; background: #0f172a; border: 1.5px solid #334155; color: #fff;"
                   autocomplete="off"
                 />
@@ -2250,6 +2249,9 @@ function openActionModal(board, initialActionType = null) {
                   <input type="text" id="install-remarks" class="form-control" placeholder="Installation remarks or work note..." style="height: 38px;" />
                 </div>
               </div>
+
+              <!-- Employee Name at the very last -->
+              ${renderPersonnelSelector('install-assigned-to', 'Assigned To / Installed By', '', '#38bdf8')}
             </div>
 
             <!-- ACTION 2: REMOVE -->
@@ -2258,8 +2260,6 @@ function openActionModal(board, initialActionType = null) {
                 <label class="form-label required" style="font-weight: 800; color: #f59e0b;">Removal Reason / Problem Symptom</label>
                 <input type="text" id="remove-reason" class="form-control" placeholder="e.g. Error Code E-02, Trimmer pulse failed, Scheduled maintenance..." required />
               </div>
-
-              ${renderPersonnelSelector('remove-by', 'Removed By', curUserName, '#f59e0b')}
 
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                 <div class="form-group">
@@ -2277,10 +2277,30 @@ function openActionModal(board, initialActionType = null) {
                 </div>
               </div>
 
+              <!-- Parts Serial Number / Board S/N (No default, user inputs) -->
+              <div class="form-group">
+                <label class="form-label" style="font-weight: 800; color: #f59e0b; display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                  <span>Parts Serial Number / Board S/N:</span>
+                  <span style="font-size: 10.5px; font-weight: 600; color: #94a3b8;">(Part SL No / JUKI S/N)</span>
+                </label>
+                <input 
+                  type="text" 
+                  id="remove-parts-serial" 
+                  class="form-control" 
+                  placeholder="Enter parts serial number (e.g. JK-CPU-99026)..." 
+                  value=""
+                  style="font-family: var(--font-mono); font-weight: 800; font-size: 13px; height: 38px; background: #0f172a; border: 1.5px solid #334155; color: #fff;"
+                  autocomplete="off"
+                />
+              </div>
+
               <div class="form-group">
                 <label class="form-label">Remarks</label>
                 <input type="text" id="remove-remarks" class="form-control" placeholder="Optional notes for removal record..." />
               </div>
+
+              <!-- Employee Name at the very last -->
+              ${renderPersonnelSelector('remove-by', 'Removed By', '', '#f59e0b')}
             </div>
 
             <!-- ACTION 3: IN-HOUSE REPAIR -->
@@ -2292,8 +2312,6 @@ function openActionModal(board, initialActionType = null) {
                   <option value="COMPLETE" ${board.status === 'UNDER_INHOUSE_REPAIR' ? 'selected' : ''}>✅ Mark In-House Repair Completed (Restore to Spares)</option>
                 </select>
               </div>
-
-              ${renderPersonnelSelector('inhouse-repaired-by', 'Repaired By', board.inhouseRepair?.repairedBy || curUserName, '#f97316')}
 
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                 <div class="form-group">
@@ -2311,10 +2329,30 @@ function openActionModal(board, initialActionType = null) {
                 <textarea id="inhouse-details" class="form-control" rows="2" placeholder="Replaced IC, diode testing passed...">${board.inhouseRepair?.details || ''}</textarea>
               </div>
 
+              <!-- Parts Serial Number / Board S/N (No default, user inputs) -->
+              <div class="form-group">
+                <label class="form-label" style="font-weight: 800; color: #f97316; display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                  <span>Parts Serial Number / Board S/N:</span>
+                  <span style="font-size: 10.5px; font-weight: 600; color: #94a3b8;">(Part SL No / JUKI S/N)</span>
+                </label>
+                <input 
+                  type="text" 
+                  id="inhouse-parts-serial" 
+                  class="form-control" 
+                  placeholder="Enter parts serial number (e.g. JK-CPU-99026)..." 
+                  value=""
+                  style="font-family: var(--font-mono); font-weight: 800; font-size: 13px; height: 38px; background: #0f172a; border: 1.5px solid #334155; color: #fff;"
+                  autocomplete="off"
+                />
+              </div>
+
               <div class="form-group">
                 <label class="form-label">Remarks</label>
                 <input type="text" id="inhouse-remarks" class="form-control" placeholder="Optional notes..." value="${board.inhouseRepair?.remarks || ''}" />
               </div>
+
+              <!-- Employee Name at the very last -->
+              ${renderPersonnelSelector('inhouse-repaired-by', 'Repaired By', '', '#f97316')}
             </div>
 
             <!-- ACTION 4: SEND TO EXTERNAL COMPANY -->
@@ -2325,8 +2363,6 @@ function openActionModal(board, initialActionType = null) {
                   ${companies.map(c => `<option value="${c.name}">${c.name} (${c.contactPerson || 'Service Partner'})</option>`).join('')}
                 </select>
               </div>
-
-              ${renderPersonnelSelector('send-by', 'Sent By', curUserName, '#a855f7')}
 
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                 <div class="form-group">
@@ -2344,10 +2380,30 @@ function openActionModal(board, initialActionType = null) {
                 <textarea id="send-problem" class="form-control" rows="2" placeholder="Describe fault sent to outside lab..." required></textarea>
               </div>
 
+              <!-- Parts Serial Number / Board S/N (No default, user inputs) -->
+              <div class="form-group">
+                <label class="form-label" style="font-weight: 800; color: #a855f7; display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                  <span>Parts Serial Number / Board S/N:</span>
+                  <span style="font-size: 10.5px; font-weight: 600; color: #94a3b8;">(Part SL No / JUKI S/N)</span>
+                </label>
+                <input 
+                  type="text" 
+                  id="send-parts-serial" 
+                  class="form-control" 
+                  placeholder="Enter parts serial number (e.g. JK-CPU-99026)..." 
+                  value=""
+                  style="font-family: var(--font-mono); font-weight: 800; font-size: 13px; height: 38px; background: #0f172a; border: 1.5px solid #334155; color: #fff;"
+                  autocomplete="off"
+                />
+              </div>
+
               <div class="form-group">
                 <label class="form-label">Remarks</label>
                 <input type="text" id="send-remarks" class="form-control" placeholder="Optional notes for gate pass / tracking..." />
               </div>
+
+              <!-- Employee Name at the very last -->
+              ${renderPersonnelSelector('send-by', 'Sent By', '', '#a855f7')}
             </div>
 
             <!-- ACTION 5: RECEIVE WITH REPAIR VERIFICATION -->
@@ -2359,8 +2415,6 @@ function openActionModal(board, initialActionType = null) {
                     ${board.externalRepair?.companyName ? `Vendor: ${board.externalRepair.companyName}` : 'External Return'}
                   </span>
                 </div>
-
-                ${renderPersonnelSelector('receive-by', 'Received By', curUserName, '#34d399')}
 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                   <div class="form-group">
@@ -2399,8 +2453,6 @@ function openActionModal(board, initialActionType = null) {
                   </div>
                 </div>
 
-                ${renderPersonnelSelector('receive-verified-by', 'Verified By', curUserName, '#34d399')}
-
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                   <div class="form-group">
                     <label class="form-label required" style="font-weight: 700; color: #cbd5e1;">Verification Date</label>
@@ -2411,6 +2463,27 @@ function openActionModal(board, initialActionType = null) {
                     <input type="text" id="receive-details" class="form-control" placeholder="Testing findings, replaced components..." style="height: 38px;" />
                   </div>
                 </div>
+
+                <!-- Parts Serial Number / Board S/N (No default, user inputs) -->
+                <div class="form-group">
+                  <label class="form-label" style="font-weight: 800; color: #34d399; display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                    <span>Parts Serial Number / Board S/N:</span>
+                    <span style="font-size: 10.5px; font-weight: 600; color: #94a3b8;">(Part SL No / JUKI S/N)</span>
+                  </label>
+                  <input 
+                    type="text" 
+                    id="receive-parts-serial" 
+                    class="form-control" 
+                    placeholder="Enter parts serial number (e.g. JK-CPU-99026)..." 
+                    value=""
+                    style="font-family: var(--font-mono); font-weight: 800; font-size: 13px; height: 38px; background: #0f172a; border: 1.5px solid #334155; color: #fff;"
+                    autocomplete="off"
+                  />
+                </div>
+
+                ${renderPersonnelSelector('receive-by', 'Received By', '', '#34d399')}
+                <!-- Employee Name at the very last -->
+                ${renderPersonnelSelector('receive-verified-by', 'Verified By', '', '#34d399')}
               </div>
             </div>
 
@@ -2471,8 +2544,7 @@ function openActionModal(board, initialActionType = null) {
                 </div>
               </div>
 
-              ${renderPersonnelSelector('reassign-by', 'Assigned By', '', '#818cf8')}
-
+              <!-- Parts Serial Number / Board S/N (No default, user inputs) -->
               <div class="form-group">
                 <label class="form-label" style="font-weight: 800; color: #818cf8; display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
                   <span>Parts Serial Number / Board S/N:</span>
@@ -2483,7 +2555,7 @@ function openActionModal(board, initialActionType = null) {
                   id="reassign-parts-serial" 
                   class="form-control" 
                   placeholder="Enter parts serial number (e.g. JK-CPU-99026, SN-88321)..." 
-                  value="${board.jukiSlNo || board.slNo || ''}"
+                  value=""
                   style="font-family: var(--font-mono); font-weight: 800; font-size: 13px; height: 38px; background: #0f172a; border: 1.5px solid #334155; color: #fff;"
                   autocomplete="off"
                 />
@@ -2499,6 +2571,10 @@ function openActionModal(board, initialActionType = null) {
                   <input type="text" id="reassign-remarks" class="form-control" placeholder="Reassignment reason or notes..." style="height: 38px;" />
                 </div>
               </div>
+
+              <!-- Employee Name at the very last -->
+              ${renderPersonnelSelector('reassign-by', 'Assigned By', '', '#818cf8')}
+            </div>
             </div>
 
           </div>
@@ -2805,13 +2881,16 @@ function openActionModal(board, initialActionType = null) {
           remarks: remarks
         });
       } else if (actionType === 'REMOVE') {
-        const removedByName = document.getElementById('remove-by-name')?.value.trim();
+        const removedByName = document.getElementById('remove-by-name')?.value.trim() || document.getElementById('remove-by-search')?.value.trim();
         const removedByCard = document.getElementById('remove-by-card')?.value.trim();
         const removedByArea = document.getElementById('remove-by-area')?.value.trim();
+        const partsSerial = document.getElementById('remove-parts-serial')?.value.trim();
         const removeDate = document.getElementById('remove-date')?.value || todayStr;
         const reason = document.getElementById('remove-reason')?.value.trim();
         const nextStatus = document.getElementById('remove-next-status')?.value;
         const remarks = document.getElementById('remove-remarks')?.value.trim() || '';
+
+        if (!removedByName) throw new Error('Please select or enter the Removed By employee name.');
 
         etLabService.removeBoardFromMachine({
           boardSerial: board.boardSerial,
@@ -2819,19 +2898,23 @@ function openActionModal(board, initialActionType = null) {
           removedBy: removedByName,
           removedByCard: removedByCard,
           removedByArea: removedByArea,
+          partsSerial: partsSerial,
           removalReason: reason,
           nextStatus: nextStatus,
           remarks: remarks
         });
       } else if (actionType === 'INHOUSE_REPAIR') {
         const stage = document.getElementById('inhouse-stage')?.value;
-        const repairedByName = document.getElementById('inhouse-repaired-by-name')?.value.trim();
+        const repairedByName = document.getElementById('inhouse-repaired-by-name')?.value.trim() || document.getElementById('inhouse-repaired-by-search')?.value.trim();
         const repairedByCard = document.getElementById('inhouse-repaired-by-card')?.value.trim();
         const repairedByArea = document.getElementById('inhouse-repaired-by-area')?.value.trim();
+        const partsSerial = document.getElementById('inhouse-parts-serial')?.value.trim();
         const repairDate = document.getElementById('inhouse-date')?.value || todayStr;
         const problem = document.getElementById('inhouse-problem')?.value.trim();
         const details = document.getElementById('inhouse-details')?.value.trim();
         const remarks = document.getElementById('inhouse-remarks')?.value.trim() || '';
+
+        if (!repairedByName) throw new Error('Please select or enter the Repaired By employee name.');
 
         if (stage === 'START') {
           etLabService.startInHouseRepair({
@@ -2841,6 +2924,7 @@ function openActionModal(board, initialActionType = null) {
             repairedBy: repairedByName,
             repairedByCard: repairedByCard,
             repairedByArea: repairedByArea,
+            partsSerial: partsSerial,
             details: details,
             remarks: remarks
           });
@@ -2851,19 +2935,23 @@ function openActionModal(board, initialActionType = null) {
             repairedBy: repairedByName,
             repairedByCard: repairedByCard,
             repairedByArea: repairedByArea,
+            partsSerial: partsSerial,
             repairDetails: details || problem,
             remarks: remarks
           });
         }
       } else if (actionType === 'SEND_OUTSIDE') {
         const company = document.getElementById('send-company-name')?.value;
-        const sentByName = document.getElementById('send-by-name')?.value.trim();
+        const sentByName = document.getElementById('send-by-name')?.value.trim() || document.getElementById('send-by-search')?.value.trim();
         const sentByCard = document.getElementById('send-by-card')?.value.trim();
         const sentByArea = document.getElementById('send-by-area')?.value.trim();
+        const partsSerial = document.getElementById('send-parts-serial')?.value.trim();
         const sendDate = document.getElementById('send-date')?.value || todayStr;
         const expDate = document.getElementById('send-expected-date')?.value;
         const problem = document.getElementById('send-problem')?.value.trim();
         const remarks = document.getElementById('send-remarks')?.value.trim() || '';
+
+        if (!sentByName) throw new Error('Please select or enter the Sent By employee name.');
 
         etLabService.sendToExternalCompany({
           boardSerial: board.boardSerial,
@@ -2875,21 +2963,25 @@ function openActionModal(board, initialActionType = null) {
           sentByCard: sentByCard,
           sentByArea: sentByArea,
           performedByName: sentByName,
+          partsSerial: partsSerial,
           remarks: remarks
         });
       } else if (actionType === 'RECEIVE') {
-        const receivedByName = document.getElementById('receive-by-name')?.value.trim();
+        const receivedByName = document.getElementById('receive-by-name')?.value.trim() || document.getElementById('receive-by-search')?.value.trim();
         const receivedByCard = document.getElementById('receive-by-card')?.value.trim();
         const receivedByArea = document.getElementById('receive-by-area')?.value.trim();
         const receiveDate = document.getElementById('receive-return-date')?.value || todayStr;
         const vDate = document.getElementById('receive-verification-date')?.value || receiveDate;
-        const vByName = document.getElementById('receive-verified-by-name')?.value.trim();
-        const vByCard = document.getElementById('receive-verified-by-card')?.value.trim();
-        const vByArea = document.getElementById('receive-verified-by-area')?.value.trim();
+        const vByName = document.getElementById('receive-verified-by-name')?.value.trim() || document.getElementById('receive-verified-by-search')?.value.trim() || receivedByName;
+        const vByCard = document.getElementById('receive-verified-by-card')?.value.trim() || receivedByCard;
+        const vByArea = document.getElementById('receive-verified-by-area')?.value.trim() || receivedByArea;
+        const partsSerial = document.getElementById('receive-parts-serial')?.value.trim();
         const result = document.getElementById('receive-repair-result')?.value || 'SUCCESSFUL';
         const details = document.getElementById('receive-details')?.value.trim();
         const resendComp = document.getElementById('resend-company-select')?.value;
         const resendExpDate = document.getElementById('resend-expected-date')?.value;
+
+        if (!receivedByName) throw new Error('Please select or enter the Received By employee name.');
 
         etLabService.receiveFromExternalCompany({
           boardSerial: board.boardSerial,
@@ -2905,7 +2997,8 @@ function openActionModal(board, initialActionType = null) {
           repairDetails: details,
           remarks: details,
           resendCompany: resendComp,
-          resendExpectedDate: resendExpDate
+          resendExpectedDate: resendExpDate,
+          partsSerial: partsSerial
         });
       } else if (actionType === 'ASSIGN_ANOTHER') {
         const mSerial = document.getElementById('reassign-machine-serial')?.value.trim();
