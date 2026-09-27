@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Al-Muslim Group Garments Factory Maintenance Machine ERP
  * 🔧 ENT Lab Management — Action-Focused Single Page Interface
  * 
@@ -2040,12 +2040,26 @@ function openActionModal(board, initialActionType = null) {
   const curUserName = user?.name || user?.username || 'Engr. Tanvir Ahmed';
 
   // Helper to render searchable employee selector with Card Number, Name, Working Area
-  const renderPersonnelSelector = (id, label, defaultName = curUserName, color = '#38bdf8') => {
-    const initialPerson = allPersonnel.find(p => p.name === defaultName) || allPersonnel[0] || {
-      name: defaultName,
-      cardNumber: '1001',
-      workingArea: 'Central ENT Lab'
+  const renderPersonnelSelector = (id, label, defaultName = '', color = '#38bdf8') => {
+    let initialPerson = {
+      name: '',
+      cardNumber: '',
+      workingArea: ''
     };
+    if (defaultName) {
+      const match = allPersonnel.find(p => p.name === defaultName);
+      if (match) {
+        initialPerson = match;
+      } else {
+        initialPerson = {
+          name: defaultName,
+          cardNumber: '',
+          workingArea: ''
+        };
+      }
+    }
+
+    const hasInitial = Boolean(initialPerson.name);
 
     return `
       <div class="form-group ent-person-select-wrapper" style="position: relative;">
@@ -2056,9 +2070,9 @@ function openActionModal(board, initialActionType = null) {
         
         <!-- Hidden payload fields to store exact identification -->
         <input type="hidden" id="${id}-name" value="${initialPerson.name}" />
-        <input type="hidden" id="${id}-card" value="${initialPerson.cardNumber || '1001'}" />
-        <input type="hidden" id="${id}-area" value="${initialPerson.workingArea || 'Central ENT Lab'}" />
-        <input type="hidden" id="${id}-id" value="${initialPerson.id || 'usr-super-admin'}" />
+        <input type="hidden" id="${id}-card" value="${initialPerson.cardNumber || ''}" />
+        <input type="hidden" id="${id}-area" value="${initialPerson.workingArea || ''}" />
+        <input type="hidden" id="${id}-id" value="${initialPerson.id || ''}" />
 
         <!-- Searchable Selector Input -->
         <div style="position: relative;">
@@ -2068,7 +2082,7 @@ function openActionModal(board, initialActionType = null) {
             class="form-control ent-person-search-box" 
             data-target="${id}" 
             placeholder="🔍 Search Card No (e.g. 10235), Name, or Working Area..." 
-            value="${initialPerson.cardNumber ? `Card: ${initialPerson.cardNumber} | ${initialPerson.name} | ${initialPerson.workingArea}` : initialPerson.name}"
+            value="${hasInitial ? (initialPerson.cardNumber ? `Card: ${initialPerson.cardNumber} | ${initialPerson.name} | ${initialPerson.workingArea}` : initialPerson.name) : ''}"
             style="font-weight: 800; height: 38px; font-size: 12px; background: #0f172a; border: 1.5px solid #334155; color: #fff; padding-right: 28px;" 
             autocomplete="off" 
             required
@@ -2085,7 +2099,7 @@ function openActionModal(board, initialActionType = null) {
         <div id="${id}-display-card" style="background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 6px; padding: 6px 10px; margin-top: 4px; display: grid; grid-template-columns: 1.2fr 1fr 1.2fr; gap: 4px; font-size: 11px;">
           <div>
             <span style="color: #94a3b8; font-size: 10px;">Employee Name:</span><br/>
-            <strong id="${id}-disp-name" style="color: #fff; font-size: 12px;">${initialPerson.name}</strong>
+            <strong id="${id}-disp-name" style="color: #fff; font-size: 12px;">${initialPerson.name || '—'}</strong>
           </div>
           <div>
             <span style="color: #94a3b8; font-size: 10px;">Card Number:</span><br/>
@@ -2093,7 +2107,7 @@ function openActionModal(board, initialActionType = null) {
           </div>
           <div>
             <span style="color: #94a3b8; font-size: 10px;">Working Area:</span><br/>
-            <strong id="${id}-disp-area" style="color: #86efac; font-size: 11.5px;">${initialPerson.workingArea || 'ENT Lab'}</strong>
+            <strong id="${id}-disp-area" style="color: #86efac; font-size: 11.5px;">${initialPerson.workingArea || '—'}</strong>
           </div>
         </div>
       </div>
@@ -2172,19 +2186,59 @@ function openActionModal(board, initialActionType = null) {
               </div>
 
               <!-- Auto-Filled Live Machine Details Card -->
-              <div id="install-auto-machine-card" style="background: rgba(15, 23, 42, 0.7); border: 1.5px solid rgba(56, 189, 248, 0.3); border-radius: 8px; padding: 10px 14px; font-size: 12px;">
-                <div style="font-size: 11px; font-weight: 800; color: #38bdf8; text-transform: uppercase; margin-bottom: 6px;">
-                  📍 Auto-Filled Machine Details:
+              <div id="install-auto-machine-card" style="background: rgba(15, 23, 42, 0.85); border: 1.5px solid rgba(56, 189, 248, 0.4); border-radius: 8px; padding: 12px 14px; font-size: 12px;">
+                <div style="font-size: 11px; font-weight: 800; color: #38bdf8; text-transform: uppercase; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
+                  <span>📍 Auto-Filled Machine Details (Machine Inventory):</span>
+                  <span id="ins-auto-status" style="font-size: 10px; font-weight: 700; color: #86efac; background: rgba(34, 197, 94, 0.15); padding: 2px 6px; border-radius: 4px; display: none;"></span>
                 </div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
-                  <div>Machine Name: <strong id="ins-auto-name" style="color: #fff;">—</strong></div>
-                  <div>Machine Serial: <strong id="ins-auto-serial" style="color: #38bdf8; font-family: var(--font-mono);">—</strong></div>
-                  <div>Unit / Factory: <strong id="ins-auto-unit" style="color: #cbd5e1;">—</strong></div>
-                  <div>Floor &amp; Line: <strong id="ins-auto-location" style="color: #86efac;">—</strong></div>
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px 12px;">
+                  <div>
+                    <span style="color: #94a3b8; font-size: 10.5px;">Machine Name:</span><br/>
+                    <strong id="ins-auto-name" style="color: #fff; font-size: 12.5px;">—</strong>
+                  </div>
+                  <div>
+                    <span style="color: #94a3b8; font-size: 10.5px;">Model:</span><br/>
+                    <strong id="ins-auto-model" style="color: #cbd5e1; font-size: 12.5px; font-family: var(--font-mono);">—</strong>
+                  </div>
+                  <div>
+                    <span style="color: #94a3b8; font-size: 10.5px;">Brand:</span><br/>
+                    <strong id="ins-auto-brand" style="color: #facc15; font-size: 12.5px;">—</strong>
+                  </div>
+                  <div>
+                    <span style="color: #94a3b8; font-size: 10.5px;">Machine Serial:</span><br/>
+                    <strong id="ins-auto-serial" style="color: #38bdf8; font-family: var(--font-mono); font-size: 12.5px;">—</strong>
+                  </div>
+                  <div>
+                    <span style="color: #94a3b8; font-size: 10.5px;">Floor:</span><br/>
+                    <strong id="ins-auto-floor" style="color: #cbd5e1; font-size: 12.5px;">—</strong>
+                  </div>
+                  <div>
+                    <span style="color: #94a3b8; font-size: 10.5px;">Line:</span><br/>
+                    <strong id="ins-auto-line" style="color: #86efac; font-size: 12.5px; font-weight: 800;">—</strong>
+                  </div>
+                </div>
+                <div style="margin-top: 8px; padding-top: 6px; border-top: 1px dashed rgba(255,255,255,0.08); font-size: 11px; color: #94a3b8;">
+                  Unit / Factory: <strong id="ins-auto-unit" style="color: #e2e8f0;">—</strong>
                 </div>
               </div>
 
-              ${renderPersonnelSelector('install-assigned-to', 'Assigned To / Installed By', curUserName, '#38bdf8')}
+              ${renderPersonnelSelector('install-assigned-to', 'Assigned To / Installed By', '', '#38bdf8')}
+
+              <div class="form-group">
+                <label class="form-label" style="font-weight: 800; color: #38bdf8; display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                  <span>Parts Serial Number / Board S/N:</span>
+                  <span style="font-size: 10.5px; font-weight: 600; color: #94a3b8;">(Part SL No / JUKI S/N)</span>
+                </label>
+                <input 
+                  type="text" 
+                  id="install-parts-serial" 
+                  class="form-control" 
+                  placeholder="Enter parts serial number (e.g. JK-CPU-99026, SN-88321)..." 
+                  value="${board.jukiSlNo || board.slNo || ''}"
+                  style="font-family: var(--font-mono); font-weight: 800; font-size: 13px; height: 38px; background: #0f172a; border: 1.5px solid #334155; color: #fff;"
+                  autocomplete="off"
+                />
+              </div>
 
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                 <div class="form-group">
@@ -2381,19 +2435,59 @@ function openActionModal(board, initialActionType = null) {
               </div>
 
               <!-- Auto-Filled Live Machine Details Card -->
-              <div id="reassign-auto-machine-card" style="background: rgba(15, 23, 42, 0.7); border: 1.5px solid rgba(99, 102, 241, 0.4); border-radius: 8px; padding: 10px 14px; font-size: 12px;">
-                <div style="font-size: 11px; font-weight: 800; color: #a5b4fc; text-transform: uppercase; margin-bottom: 6px;">
-                  📍 New Machine Information:
+              <div id="reassign-auto-machine-card" style="background: rgba(15, 23, 42, 0.85); border: 1.5px solid rgba(99, 102, 241, 0.4); border-radius: 8px; padding: 12px 14px; font-size: 12px;">
+                <div style="font-size: 11px; font-weight: 800; color: #a5b4fc; text-transform: uppercase; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
+                  <span>📍 New Machine Information (Machine Inventory):</span>
+                  <span id="re-auto-status" style="font-size: 10px; font-weight: 700; color: #86efac; background: rgba(34, 197, 94, 0.15); padding: 2px 6px; border-radius: 4px; display: none;"></span>
                 </div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
-                  <div>Machine Name: <strong id="re-auto-name" style="color: #fff;">—</strong></div>
-                  <div>Machine Serial: <strong id="re-auto-serial" style="color: #38bdf8; font-family: var(--font-mono);">—</strong></div>
-                  <div>Unit / Factory: <strong id="re-auto-unit" style="color: #cbd5e1;">—</strong></div>
-                  <div>Floor &amp; Line: <strong id="re-auto-location" style="color: #86efac;">—</strong></div>
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px 12px;">
+                  <div>
+                    <span style="color: #94a3b8; font-size: 10.5px;">Machine Name:</span><br/>
+                    <strong id="re-auto-name" style="color: #fff; font-size: 12.5px;">—</strong>
+                  </div>
+                  <div>
+                    <span style="color: #94a3b8; font-size: 10.5px;">Model:</span><br/>
+                    <strong id="re-auto-model" style="color: #cbd5e1; font-size: 12.5px; font-family: var(--font-mono);">—</strong>
+                  </div>
+                  <div>
+                    <span style="color: #94a3b8; font-size: 10.5px;">Brand:</span><br/>
+                    <strong id="re-auto-brand" style="color: #facc15; font-size: 12.5px;">—</strong>
+                  </div>
+                  <div>
+                    <span style="color: #94a3b8; font-size: 10.5px;">Machine Serial:</span><br/>
+                    <strong id="re-auto-serial" style="color: #38bdf8; font-family: var(--font-mono); font-size: 12.5px;">—</strong>
+                  </div>
+                  <div>
+                    <span style="color: #94a3b8; font-size: 10.5px;">Floor:</span><br/>
+                    <strong id="re-auto-floor" style="color: #cbd5e1; font-size: 12.5px;">—</strong>
+                  </div>
+                  <div>
+                    <span style="color: #94a3b8; font-size: 10.5px;">Line:</span><br/>
+                    <strong id="re-auto-line" style="color: #86efac; font-size: 12.5px; font-weight: 800;">—</strong>
+                  </div>
+                </div>
+                <div style="margin-top: 8px; padding-top: 6px; border-top: 1px dashed rgba(255,255,255,0.08); font-size: 11px; color: #94a3b8;">
+                  Unit / Factory: <strong id="re-auto-unit" style="color: #e2e8f0;">—</strong>
                 </div>
               </div>
 
-              ${renderPersonnelSelector('reassign-by', 'Assigned By', curUserName, '#818cf8')}
+              ${renderPersonnelSelector('reassign-by', 'Assigned By', '', '#818cf8')}
+
+              <div class="form-group">
+                <label class="form-label" style="font-weight: 800; color: #818cf8; display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                  <span>Parts Serial Number / Board S/N:</span>
+                  <span style="font-size: 10.5px; font-weight: 600; color: #94a3b8;">(Part SL No / JUKI S/N)</span>
+                </label>
+                <input 
+                  type="text" 
+                  id="reassign-parts-serial" 
+                  class="form-control" 
+                  placeholder="Enter parts serial number (e.g. JK-CPU-99026, SN-88321)..." 
+                  value="${board.jukiSlNo || board.slNo || ''}"
+                  style="font-family: var(--font-mono); font-weight: 800; font-size: 13px; height: 38px; background: #0f172a; border: 1.5px solid #334155; color: #fff;"
+                  autocomplete="off"
+                />
+              </div>
 
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                 <div class="form-group">
@@ -2436,21 +2530,64 @@ function openActionModal(board, initialActionType = null) {
     const dropdown = document.getElementById(`${targetId}-dropdown`);
     if (!dropdown) return;
 
+    const syncCustomOrClear = (typedVal) => {
+      const trimmed = (typedVal || '').trim();
+      const elName = document.getElementById(`${targetId}-name`);
+      const elCard = document.getElementById(`${targetId}-card`);
+      const elArea = document.getElementById(`${targetId}-area`);
+      const elDispName = document.getElementById(`${targetId}-disp-name`);
+      const elDispCard = document.getElementById(`${targetId}-disp-card`);
+      const elDispArea = document.getElementById(`${targetId}-disp-area`);
+
+      if (!trimmed) {
+        if (elName) elName.value = '';
+        if (elCard) elCard.value = '';
+        if (elArea) elArea.value = '';
+        if (elDispName) elDispName.textContent = '—';
+        if (elDispCard) elDispCard.textContent = '—';
+        if (elDispArea) elDispArea.textContent = '—';
+        return;
+      }
+
+      if (trimmed.startsWith('Card:')) {
+        return;
+      }
+
+      const match = allPersonnel.find(p => 
+        (p.cardNumber && p.cardNumber.toLowerCase() === trimmed.toLowerCase()) ||
+        (p.name && p.name.toLowerCase() === trimmed.toLowerCase())
+      );
+      if (match) {
+        if (elName) elName.value = match.name;
+        if (elCard) elCard.value = match.cardNumber || '';
+        if (elArea) elArea.value = match.workingArea || '';
+        if (elDispName) elDispName.textContent = match.name;
+        if (elDispCard) elDispCard.textContent = match.cardNumber || '—';
+        if (elDispArea) elDispArea.textContent = match.workingArea || '—';
+      } else {
+        if (elName) elName.value = trimmed;
+        if (elDispName) elDispName.textContent = trimmed;
+        if (elDispCard) elDispCard.textContent = '—';
+        if (elDispArea) elDispArea.textContent = '—';
+      }
+    };
+
     const renderMatches = (q) => {
       const term = q.trim().toLowerCase();
+      const cleanTerm = term.startsWith('card:') ? '' : term;
       const matches = allPersonnel.filter(p => {
-        if (!term) return true;
-        return (p.cardNumber && p.cardNumber.toLowerCase().includes(term)) ||
-               (p.name && p.name.toLowerCase().includes(term)) ||
-               (p.workingArea && p.workingArea.toLowerCase().includes(term)) ||
-               (p.designation && p.designation.toLowerCase().includes(term)) ||
-               (p.department && p.department.toLowerCase().includes(term));
+        if (!cleanTerm) return true;
+        return (p.cardNumber && p.cardNumber.toLowerCase().includes(cleanTerm)) ||
+               (p.name && p.name.toLowerCase().includes(cleanTerm)) ||
+               (p.workingArea && p.workingArea.toLowerCase().includes(cleanTerm)) ||
+               (p.designation && p.designation.toLowerCase().includes(cleanTerm)) ||
+               (p.department && p.department.toLowerCase().includes(cleanTerm));
       });
 
       if (matches.length === 0) {
         dropdown.innerHTML = `
-          <div style="padding: 12px; color: var(--text-muted); text-align: center; font-size: 11.5px;">
-            No employee found matching "<strong>${q}</strong>".
+          <div style="padding: 10px 12px; color: var(--text-muted); font-size: 11.5px; display: flex; justify-content: space-between; align-items: center;">
+            <span>Staff not found in directory. Use "<strong>${q}</strong>" as typed name.</span>
           </div>
         `;
       } else {
@@ -2496,7 +2633,10 @@ function openActionModal(board, initialActionType = null) {
     };
 
     searchBox.addEventListener('focus', () => renderMatches(searchBox.value));
-    searchBox.addEventListener('input', (e) => renderMatches(e.target.value));
+    searchBox.addEventListener('input', (e) => {
+      renderMatches(e.target.value);
+      syncCustomOrClear(e.target.value);
+    });
   };
 
   overlay.querySelectorAll('.ent-person-search-box').forEach(sb => setupEmployeeSearchInput(sb));
@@ -2510,6 +2650,18 @@ function openActionModal(board, initialActionType = null) {
         sBox.value = '';
         sBox.focus({ preventScroll: true });
       }
+      const elName = document.getElementById(`${targetId}-name`);
+      const elCard = document.getElementById(`${targetId}-card`);
+      const elArea = document.getElementById(`${targetId}-area`);
+      const elDispName = document.getElementById(`${targetId}-disp-name`);
+      const elDispCard = document.getElementById(`${targetId}-disp-card`);
+      const elDispArea = document.getElementById(`${targetId}-disp-area`);
+      if (elName) elName.value = '';
+      if (elCard) elCard.value = '';
+      if (elArea) elArea.value = '';
+      if (elDispName) elDispName.textContent = '—';
+      if (elDispCard) elDispCard.textContent = '—';
+      if (elDispArea) elDispArea.textContent = '—';
     });
   });
 
@@ -2560,44 +2712,68 @@ function openActionModal(board, initialActionType = null) {
   }
 
   // Live Auto-Fill for Machine Serials
-  const bindMachineLookup = (inputId, nameId, serialId, unitId, locId) => {
+  const bindMachineLookup = (inputId, prefix) => {
     const input = document.getElementById(inputId);
     if (!input) return;
 
-    const lookup = (val) => {
-      const elName = document.getElementById(nameId);
-      const elSerial = document.getElementById(serialId);
-      const elUnit = document.getElementById(unitId);
-      const elLoc = document.getElementById(locId);
+    const lookup = (rawVal) => {
+      const elName = document.getElementById(`${prefix}-name`);
+      const elModel = document.getElementById(`${prefix}-model`);
+      const elBrand = document.getElementById(`${prefix}-brand`);
+      const elSerial = document.getElementById(`${prefix}-serial`);
+      const elFloor = document.getElementById(`${prefix}-floor`);
+      const elLine = document.getElementById(`${prefix}-line`);
+      const elUnit = document.getElementById(`${prefix}-unit`);
+      const elStatus = document.getElementById(`${prefix}-status`);
 
-      if (!val || !val.trim()) {
+      let val = (rawVal || '').trim();
+      if (val.includes('—')) val = val.split('—')[0].trim();
+      else if (val.includes(' - ')) val = val.split(' - ')[0].trim();
+
+      if (!val) {
         if (elName) elName.textContent = '—';
+        if (elModel) elModel.textContent = '—';
+        if (elBrand) elBrand.textContent = '—';
         if (elSerial) elSerial.textContent = '—';
+        if (elFloor) elFloor.textContent = '—';
+        if (elLine) elLine.textContent = '—';
         if (elUnit) elUnit.textContent = '—';
-        if (elLoc) elLoc.textContent = '—';
+        if (elStatus) elStatus.style.display = 'none';
         return;
       }
 
-      const mach = etLabService.getMachineDetailsForBoard(val.trim());
+      const mach = etLabService.getMachineDetailsForBoard(val);
       if (mach) {
-        if (elName) elName.textContent = `${mach.machineName} (${mach.model})`;
-        if (elSerial) elSerial.textContent = mach.serialNumber;
-        if (elUnit) elUnit.textContent = mach.unitName;
-        if (elLoc) elLoc.textContent = `${mach.floorName} • ${mach.lineName}`;
+        if (elName) elName.textContent = mach.machineName || '—';
+        if (elModel) elModel.textContent = mach.model || '—';
+        if (elBrand) elBrand.textContent = mach.brand || '—';
+        if (elSerial) elSerial.textContent = mach.serialNumber || val;
+        if (elFloor) elFloor.textContent = mach.floorName || '—';
+        if (elLine) elLine.textContent = mach.lineName || '—';
+        if (elUnit) elUnit.textContent = mach.unitName || '—';
+        if (elStatus) {
+          elStatus.textContent = `✓ ${mach.status || 'ACTIVE'}`;
+          elStatus.style.display = 'inline-block';
+        }
       } else {
         if (elName) elName.textContent = '⚠️ Not Found in Inventory';
+        if (elModel) elModel.textContent = '—';
+        if (elBrand) elBrand.textContent = '—';
         if (elSerial) elSerial.textContent = val;
+        if (elFloor) elFloor.textContent = '—';
+        if (elLine) elLine.textContent = '—';
         if (elUnit) elUnit.textContent = '—';
-        if (elLoc) elLoc.textContent = '—';
+        if (elStatus) elStatus.style.display = 'none';
       }
     };
 
     input.addEventListener('input', (e) => lookup(e.target.value));
+    input.addEventListener('change', (e) => lookup(e.target.value));
     if (input.value) lookup(input.value);
   };
 
-  bindMachineLookup('install-machine-serial', 'ins-auto-name', 'ins-auto-serial', 'ins-auto-unit', 'ins-auto-location');
-  bindMachineLookup('reassign-machine-serial', 're-auto-name', 're-auto-serial', 're-auto-unit', 're-auto-location');
+  bindMachineLookup('install-machine-serial', 'ins-auto');
+  bindMachineLookup('reassign-machine-serial', 're-auto');
 
   // Form Submission
   document.getElementById('form-action-execution').addEventListener('submit', (e) => {
@@ -2607,13 +2783,16 @@ function openActionModal(board, initialActionType = null) {
     try {
       if (actionType === 'INSTALL') {
         const mSerial = document.getElementById('install-machine-serial')?.value.trim();
-        const assignedToName = document.getElementById('install-assigned-to-name')?.value.trim();
+        const assignedToName = document.getElementById('install-assigned-to-name')?.value.trim() || document.getElementById('install-assigned-to-search')?.value.trim();
         const assignedToCard = document.getElementById('install-assigned-to-card')?.value.trim();
         const assignedToArea = document.getElementById('install-assigned-to-area')?.value.trim();
+        const partsSerial = document.getElementById('install-parts-serial')?.value.trim();
         const installDate = document.getElementById('install-date')?.value || todayStr;
         const remarks = document.getElementById('install-remarks')?.value.trim() || '';
 
         if (!mSerial) throw new Error('Please enter or select target Machine Serial.');
+        if (!assignedToName) throw new Error('Please select or enter the Assigned To / Installed By employee name.');
+
         etLabService.installBoardToMachine({
           boardSerial: board.boardSerial,
           machineSerial: mSerial,
@@ -2622,6 +2801,7 @@ function openActionModal(board, initialActionType = null) {
           installedBy: assignedToName,
           installedByCard: assignedToCard,
           installedByArea: assignedToArea,
+          partsSerial: partsSerial,
           remarks: remarks
         });
       } else if (actionType === 'REMOVE') {
@@ -2729,13 +2909,16 @@ function openActionModal(board, initialActionType = null) {
         });
       } else if (actionType === 'ASSIGN_ANOTHER') {
         const mSerial = document.getElementById('reassign-machine-serial')?.value.trim();
-        const assignedByName = document.getElementById('reassign-by-name')?.value.trim();
+        const assignedByName = document.getElementById('reassign-by-name')?.value.trim() || document.getElementById('reassign-by-search')?.value.trim();
         const assignedByCard = document.getElementById('reassign-by-card')?.value.trim();
         const assignedByArea = document.getElementById('reassign-by-area')?.value.trim();
+        const partsSerial = document.getElementById('reassign-parts-serial')?.value.trim();
         const reassignDate = document.getElementById('reassign-date')?.value || todayStr;
         const remarks = document.getElementById('reassign-remarks')?.value.trim() || '';
 
         if (!mSerial) throw new Error('Please enter or select target Machine Serial.');
+        if (!assignedByName) throw new Error('Please select or enter Employee Name in "Assigned By".');
+
         etLabService.reassignBoardToAnotherMachine({
           boardSerial: board.boardSerial,
           targetMachineSerial: mSerial,
@@ -2743,6 +2926,7 @@ function openActionModal(board, initialActionType = null) {
           assignedBy: assignedByName,
           assignedByCard: assignedByCard,
           assignedByArea: assignedByArea,
+          partsSerial: partsSerial,
           remarks: remarks
         });
       }

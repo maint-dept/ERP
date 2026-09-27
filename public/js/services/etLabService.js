@@ -233,6 +233,7 @@ class EtLabService {
     const floorMap = new Map((storage.getTable(TABLE_NAMES.FLOORS) || []).map(f => [f.id, f.name]));
     const lineMap = new Map((storage.getTable(TABLE_NAMES.LINES) || []).map(l => [l.id, l.name]));
     const nameMap = new Map((storage.getTable(TABLE_NAMES.MACHINE_NAMES) || []).map(n => [n.id, n.name]));
+    const brandMap = new Map((storage.getTable(TABLE_NAMES.BRANDS) || []).map(b => [b.id, b.name]));
     const modelMap = new Map((storage.getTable(TABLE_NAMES.MODELS) || []).map(m => [m.id, m.name]));
 
     return machines.map(m => {
@@ -240,28 +241,33 @@ class EtLabService {
       const fName = floorMap.get(m.floorId) || m.floorStr || 'Floor';
       const lName = lineMap.get(m.lineId) || m.lineStr || 'Line';
       const mName = nameMap.get(m.machineNameId) || m.machineNameStr || 'Machine';
+      const bName = brandMap.get(m.brandId) || m.brandStr || m.brand || '';
       const modName = modelMap.get(m.modelId) || m.modelStr || '';
 
+      const brandModelStr = [bName, modName].filter(Boolean).join(' ');
       return {
         id: m.id,
         serialNumber: m.serialNumber,
         machineName: mName,
+        brand: bName,
         model: modName,
         unitName: uName,
         floorName: fName,
         lineName: lName,
-        displayText: `${m.serialNumber} — ${mName} (${modName}) [${fName} • ${lName}]`
+        displayText: `${m.serialNumber} — ${mName} ${brandModelStr ? `(${brandModelStr})` : ''} [${fName} • ${lName}]`
       };
     });
   }
 
   /**
    * Lookup machine info strictly from Machine Inventory
-   * Automatically extracts Unit, Floor, Line, Machine Name, Model
+   * Automatically extracts Unit, Floor, Line, Machine Name, Brand, Model
    */
   getMachineDetailsForBoard(machineSerialOrId) {
     if (!machineSerialOrId) return null;
-    const clean = machineSerialOrId.trim().toUpperCase();
+    let clean = machineSerialOrId.trim().toUpperCase();
+    if (clean.includes('—')) clean = clean.split('—')[0].trim();
+    else if (clean.includes(' - ')) clean = clean.split(' - ')[0].trim();
     const cleanNoDash = clean.replace(/[\s\-_]/g, '');
     const machines = storage.getTable(TABLE_NAMES.MACHINES) || [];
     
@@ -270,6 +276,10 @@ class EtLabService {
       const sNoDash = s.replace(/[\s\-_]/g, '');
       const id = (m.id || '').toUpperCase();
       return s === clean || sNoDash === cleanNoDash || id === clean;
+    }) || machines.find(m => {
+      const mStr = (m.modelStr || '').toUpperCase();
+      const nStr = (m.machineNameStr || '').toUpperCase();
+      return (mStr && mStr === clean) || (nStr && nStr === clean);
     });
     if (!matched) return null;
 
@@ -285,8 +295,8 @@ class EtLabService {
       id: matched.id,
       serialNumber: matched.serialNumber,
       machineName: machineName?.name || matched.machineNameStr || 'Sewing Machine',
-      brand: brand?.name || matched.brandStr || 'JUKI',
-      model: model?.name || matched.modelStr || 'DDL-8700-7',
+      brand: brand?.name || matched.brandStr || matched.brand || '—',
+      model: model?.name || matched.modelStr || matched.model || '—',
       groupName: group?.name || 'Al-Muslim Group',
       unitName: unit?.name || matched.unitStr || 'Pacific Blue (Jeans Wear) Ltd.',
       floorName: floor?.name || matched.floorStr || 'Jamuna Floor',
@@ -309,6 +319,7 @@ class EtLabService {
     installedByCard = null,
     installedByArea = null,
     installedDate = null,
+    partsSerial = null,
     remarks = ''
   }) {
     const user = authService.getCurrentUser();
@@ -343,6 +354,11 @@ class EtLabService {
       updatedAt: new Date().toISOString()
     };
 
+    if (partsSerial !== undefined && partsSerial !== null && partsSerial.trim() !== '') {
+      updatedBoard.slNo = partsSerial.trim();
+      updatedBoard.jukiSlNo = partsSerial.trim();
+    }
+
     storage.update(TABLE_NAMES.ET_BOARDS, board.id, updatedBoard);
 
     // 1. Add record to immutable ENT Board History
@@ -358,6 +374,7 @@ class EtLabService {
       performedByName: finalInstalledBy,
       performedByCard: finalCard,
       performedByArea: finalArea,
+      partsSerial: partsSerial ? partsSerial.trim() : (board.jukiSlNo || board.slNo || ''),
       remarks: remarks || `Installed on ${machineInfo.machineName} (${machineInfo.model}) at ${machineInfo.fullLocationText}`
     });
 
@@ -377,7 +394,7 @@ class EtLabService {
         problemComplaint: 'Board replacement / installation',
         workPerformed: `Installed Board ${board.boardSerial} (${board.partName})`,
         sparePartsUsed: board.partName,
-        sparePartSerial: board.boardSerial,
+        sparePartSerial: partsSerial ? partsSerial.trim() : (board.jukiSlNo || board.slNo || board.boardSerial),
         sparePartQty: 1,
         technician: finalInstalledBy,
         remarks: remarks || 'Board assigned via ENT Lab Management'
@@ -479,6 +496,7 @@ class EtLabService {
     assignedBy = null,
     assignedByCard = null,
     assignedByArea = null,
+    partsSerial = null,
     removalReason = '',
     remarks = ''
   }) {
@@ -513,6 +531,7 @@ class EtLabService {
       installedBy: assignedBy,
       installedByCard: assignedByCard,
       installedByArea: assignedByArea,
+      partsSerial: partsSerial,
       remarks: remarks || (prevMachine ? `Transferred from Machine ${prevMachine} to ${targetMachineSerial}` : `Assigned to Machine ${targetMachineSerial}`)
     });
   }
