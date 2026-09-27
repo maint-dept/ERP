@@ -744,6 +744,22 @@ body.modal-open {
   margin: 0;
 }
 
+.header-title-short {
+  display: none;
+}
+.header-title-full {
+  display: inline;
+}
+
+@media (max-width: 480px) {
+  .header-title-short {
+    display: inline !important;
+  }
+  .header-title-full {
+    display: none !important;
+  }
+}
+
 .header-sub-text {
   font-size: 11.5px;
   color: #38bdf8;

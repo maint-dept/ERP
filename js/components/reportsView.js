@@ -64,9 +64,9 @@ export function renderReportsView() {
     <div class="page-view" style="display: flex; flex-direction: column; gap: 12px; height: 100%; overflow: hidden; box-sizing: border-box; padding: 12px 20px;">
       
       <!-- Top Title Bar (Fixed Height) -->
-      <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 12px 18px; display: flex; justify-content: space-between; align-items: center; flex-wrap: nowrap; gap: 14px; flex-shrink: 0; overflow-x: auto; scrollbar-width: none;">
+      <div class="reports-top-bar" style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 12px 18px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; flex-shrink: 0;">
         <div style="min-width: 0;">
-          <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
             <span style="font-size: 22px;">📊</span>
             <h1 style="font-size: 18px; font-weight: 800; color: #fff; margin: 0; white-space: nowrap;">
               Reports &amp; Excel Export Center
@@ -75,12 +75,12 @@ export function renderReportsView() {
               Enterprise Analytics
             </span>
           </div>
-          <p style="font-size: 11.5px; color: var(--text-secondary); margin-top: 2px; margin-bottom: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+          <p style="font-size: 11.5px; color: var(--text-secondary); margin-top: 2px; margin-bottom: 0; overflow: hidden; text-overflow: ellipsis;">
             Comprehensive reporting across Machine Inventory, Inter-Floor Transfers, Spare Parts Replacements, and ENT Lab Diagnostics.
           </p>
         </div>
 
-        <div style="display: flex; gap: 8px; flex-shrink: 0; align-items: center;">
+        <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
           <button id="btn-toggle-reports-guide" class="btn btn-secondary btn-sm" style="font-weight: 700; white-space: nowrap;" title="View section purpose and module functions">
             ℹ️ Purpose &amp; Guide
           </button>
@@ -871,7 +871,7 @@ function renderMachineReportsTab(allMachines) {
     <div style="display: flex; flex-direction: column; gap: 14px;">
       
       <!-- 1. Sleek Filter Toolbar (Compact Horizontal Bar) -->
-      <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.2);">
+      <div class="reports-filter-toolbar" style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.2);">
         
         <!-- Left: Filters Grouped with Clear Mini-Labels -->
         <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; flex: 1; min-width: 0;">
@@ -938,7 +938,7 @@ function renderMachineReportsTab(allMachines) {
         </div>
 
         <!-- Right: Export & Print Actions -->
-        <div style="display: flex; gap: 8px; align-items: center; flex-shrink: 0;">
+        <div class="reports-filter-actions" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
           <button id="btn-export-machine-report-excel" class="btn btn-primary btn-sm" style="font-weight: 700; background: linear-gradient(135deg, #0284c7, #0369a1); box-shadow: 0 2px 8px rgba(2, 132, 199, 0.35); height: 32px; white-space: nowrap;">
             📊 Export Excel (.xlsx)
           </button>

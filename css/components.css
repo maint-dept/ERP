@@ -3600,3 +3600,46 @@ td.td-actions-active {
   background: rgba(2, 132, 199, 0.25) !important;
   color: #fff !important;
 }
+
+/* Reports view responsive toolbar enhancements */
+@media (max-width: 768px) {
+  .reports-top-bar {
+    flex-wrap: wrap !important;
+  }
+  .reports-filter-toolbar {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+  .reports-filter-actions {
+    width: 100% !important;
+    justify-content: flex-start !important;
+    flex-wrap: wrap !important;
+    margin-top: 6px !important;
+    padding-top: 8px !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+  }
+}
+
+/* Tools management responsive enhancements */
+@media (max-width: 950px) {
+  .tools-tab-navbar {
+    overflow-x: auto !important;
+    flex-wrap: nowrap !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+  }
+  .tools-tab-navbar::-webkit-scrollbar {
+    display: none;
+  }
+  .tools-tab-navbar .tools-tab-btn {
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+  }
+}
+
+@media (max-width: 600px) {
+  .emp-banner-actions {
+    width: 100% !important;
+    margin-top: 4px !important;
+  }
+}

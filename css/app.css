@@ -102,7 +102,8 @@ body.modal-open {
 #app-root {
   height: 100vh;
   height: 100dvh;
-  width: 100vw;
+  width: 100%;
+  max-width: 100%;
   overflow: hidden;
   position: relative;
 }
@@ -144,7 +145,8 @@ body.modal-open {
 .app-container {
   display: flex;
   height: 100vh;
-  width: 100vw;
+  width: 100%;
+  max-width: 100%;
   overflow: hidden;
   min-height: 0;
   min-width: 0;
@@ -740,6 +742,22 @@ body.modal-open {
   text-overflow: ellipsis;
   line-height: 1.25;
   margin: 0;
+}
+
+.header-title-short {
+  display: none;
+}
+.header-title-full {
+  display: inline;
+}
+
+@media (max-width: 480px) {
+  .header-title-short {
+    display: inline !important;
+  }
+  .header-title-full {
+    display: none !important;
+  }
 }
 
 .header-sub-text {
@@ -1486,10 +1504,29 @@ body.modal-open {
 
   .header-left {
     gap: 8px;
+    min-width: 0;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  .header-view-badge {
+    min-width: 0;
+    flex: 1;
+    overflow: hidden;
+    gap: 8px;
+  }
+
+  .header-title-container {
+    min-width: 0;
+    flex: 1;
+    overflow: hidden;
   }
 
   .header-title-text {
     font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .header-sub-text {
@@ -1503,29 +1540,50 @@ body.modal-open {
 
   .page-view {
     padding: 12px 14px 20px 14px;
+    max-width: 100%;
+    min-width: 0;
   }
 }
 
-/* Smartphone Breakpoint (<= 768px) */
+/* Tablet & Mobile Clean Breakpoint (<= 768px) */
 @media (max-width: 768px) {
   :root {
-    --header-height: 56px;
+    --header-height: 54px;
   }
 
   .app-header {
-    height: 56px;
-    min-height: 56px;
-    max-height: 56px;
+    height: 54px;
+    min-height: 54px;
+    max-height: 54px;
     padding: 0 10px;
+    gap: 8px;
+  }
+
+  .header-left {
+    min-width: 0;
+    flex: 1;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  .header-view-badge {
+    min-width: 0;
+    flex: 1;
     gap: 6px;
+    overflow: hidden;
   }
 
   .header-sub-text {
-    display: none;
+    display: none !important;
   }
 
   .header-title-text {
-    font-size: 13.5px;
+    font-size: 14px;
+    font-weight: 800;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
   }
 
   .role-switcher-select {
@@ -1535,7 +1593,10 @@ body.modal-open {
   }
 
   .page-view {
-    padding: 10px 10px 18px 10px;
+    padding: 10px 10px 28px 10px;
+    gap: 8px;
+    max-width: 100%;
+    min-width: 0;
   }
 
   /* Full-width responsive toolbars & action bars */
@@ -1544,18 +1605,29 @@ body.modal-open {
   .grid-actions-bar {
     flex-direction: column;
     align-items: stretch !important;
-    gap: 10px;
+    gap: 8px;
   }
 
   .grid-actions-left,
   .grid-actions-right {
     flex-wrap: wrap;
     width: 100%;
+    gap: 6px;
   }
 
   .grid-actions-left > *,
   .grid-actions-right > * {
     flex: 1 1 auto;
+  }
+
+  .nav-profile-name,
+  .nav-profile-role-badge {
+    display: none !important;
+  }
+
+  .nav-profile-capsule {
+    padding: 2px 6px 2px 2px !important;
+    gap: 4px !important;
   }
 }
 
@@ -1574,31 +1646,127 @@ body.modal-open {
   transition: all 0.2s ease;
 }
 
-/* Extra Small Mobile Breakpoint (<= 480px) */
-@media (max-width: 480px) {
-  .db-status-text {
-    display: none;
+/* Intermediate Small Screen (<= 640px) */
+@media (max-width: 640px) {
+  /* Move decorative view icon wrap & divider out on mobile so title has full room */
+  .header-view-icon-wrap {
+    display: none !important;
+  }
+
+  .header-v-divider {
+    display: none !important;
   }
 
   .nav-db-status-pill {
-    padding: 4px 6px !important;
+    display: none !important;
+  }
+}
+
+/* Smartphone & Compact Screen (<= 480px) */
+@media (max-width: 480px) {
+  :root {
+    --header-height: 52px;
   }
 
-  .nav-profile-name {
-    display: none;
+  .app-header {
+    height: 52px !important;
+    min-height: 52px !important;
+    max-height: 52px !important;
+    padding: 0 8px !important;
+    gap: 6px !important;
+  }
+
+  .header-left {
+    gap: 6px !important;
+  }
+
+  .header-title-text {
+    font-size: 13.5px !important;
+  }
+
+  /* Secondary actions moved to user profile hub on xs screens */
+  .header-right .btn-theme-toggle {
+    display: none !important;
+  }
+
+  .nav-icon-btn {
+    width: 34px !important;
+    height: 34px !important;
+  }
+
+  .btn-mobile-sidebar-toggle {
+    width: 34px !important;
+    height: 34px !important;
   }
 
   .nav-user-dropdown {
-    width: 290px;
-    right: -6px;
+    position: fixed !important;
+    top: 54px !important;
+    right: 8px !important;
+    left: auto !important;
+    width: min(330px, calc(100% - 16px)) !important;
+    max-width: calc(100% - 16px) !important;
+    max-height: calc(100dvh - 64px) !important;
+    overflow-y: auto !important;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.85) !important;
+    border: 1px solid rgba(56, 189, 248, 0.35) !important;
+  }
+
+  .page-view {
+    padding: 8px 8px 24px 8px !important;
   }
 
   .toast {
-    min-width: calc(100vw - 32px);
-    max-width: calc(100vw - 32px);
-    left: 16px;
-    right: 16px;
-    bottom: 16px;
+    min-width: min(340px, calc(100% - 24px)) !important;
+    max-width: calc(100% - 24px) !important;
+    left: 12px !important;
+    right: 12px !important;
+    bottom: 12px !important;
+  }
+}
+
+/* Ultra-Compact Screen Breakpoint (<= 360px down to 320px) */
+@media (max-width: 360px) {
+  :root {
+    --header-height: 48px;
+  }
+
+  .app-header {
+    height: 48px !important;
+    min-height: 48px !important;
+    max-height: 48px !important;
+    padding: 0 6px !important;
+    gap: 4px !important;
+  }
+
+  .header-left {
+    gap: 4px !important;
+  }
+
+  .header-title-text {
+    font-size: 12.5px !important;
+    letter-spacing: -0.2px !important;
+  }
+
+  .nav-icon-btn {
+    width: 30px !important;
+    height: 30px !important;
+  }
+
+  .btn-mobile-sidebar-toggle {
+    width: 30px !important;
+    height: 30px !important;
+  }
+
+  .nav-user-dropdown {
+    width: calc(100% - 12px) !important;
+    max-width: calc(100% - 12px) !important;
+    right: 6px !important;
+    top: 50px !important;
+  }
+
+  .page-view {
+    padding: 6px 6px 20px 6px !important;
   }
 }
 

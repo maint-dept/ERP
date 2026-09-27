@@ -382,16 +382,16 @@ function renderScreen1UserIdPage() {
         <!-- Top Title Banner with Collapse/Expand Toggle -->
         <div style="background: linear-gradient(90deg, #65a30d, #84cc16); color: #000; padding: 8px 14px; border-radius: 6px; font-weight: 800; font-size: 15px; letter-spacing: 0.5px; border: 1px solid #4d7c0f; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.3);">
           <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-            <span>Employe Information Form:</span>
+            <span>Employee Information Form:</span>
             <button id="btn-toggle-emp-form-collapse" style="background: rgba(0,0,0,0.25); color: #000; border: 1px solid rgba(0,0,0,0.4); padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 800; cursor: pointer;" title="Toggle form minimize/expand">
               <span id="txt-toggle-emp-form">🔼 Minimize</span>
             </button>
           </div>
-          <div style="display: flex; gap: 6px; flex-wrap: wrap;">
-            <button id="btn-open-excel-import-modal" style="background: #0f172a; color: #fff; border: 1px solid #334155; padding: 4px 12px; border-radius: 4px; font-size: 12px; font-weight: 700; cursor: pointer;">
+          <div class="emp-banner-actions" style="display: flex; gap: 6px; flex-wrap: wrap;">
+            <button id="btn-open-excel-import-modal" style="background: #0f172a; color: #fff; border: 1px solid #334155; padding: 4px 10px; border-radius: 4px; font-size: 11.5px; font-weight: 700; cursor: pointer;">
               📥 Bulk Import History (Excel / CSV)
             </button>
-            <button id="btn-download-sample-template" style="background: #1e293b; color: #e2e8f0; border: 1px solid #334155; padding: 4px 12px; border-radius: 4px; font-size: 12px; cursor: pointer;">
+            <button id="btn-download-sample-template" style="background: #1e293b; color: #e2e8f0; border: 1px solid #334155; padding: 4px 10px; border-radius: 4px; font-size: 11.5px; cursor: pointer;">
               📄 Download Excel Template
             </button>
           </div>

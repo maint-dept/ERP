@@ -52,27 +52,29 @@ export function renderNavbar() {
   }).join('');
 
   const viewTitles = {
-    'dashboard': { icon: '🏠', title: 'Dashboard', sub: 'Factory Health & Uptime Metrics' },
-    'inventory': { icon: '📦', title: 'Machine Inventory', sub: 'Machinery Registry & Asset Control' },
-    'relocate': { icon: '📍', title: 'Relocate & Physical Verification', sub: 'Mobile QR Scan, Auto-Idle Detection & Location Reconciliation' },
-    'qr-codes': { icon: '🏁', title: 'QR Code & Label Studio', sub: 'Enterprise Asset Tagging, A4 Sheet Printing & Location Labels' },
-    'machine-history': { icon: '📜', title: 'Machine History', sub: 'Complete Lifetime & Spare Parts History' },
-    'transfers': { icon: '🔄', title: 'Machine Transfers', sub: 'Machine Movement, Gate Passes & Relocation Tracking' },
-    'spare-parts': { icon: '⚙️', title: 'Spare Parts Catalog', sub: 'Enterprise Master Catalog & Machine Usage' },
-    'manpower': { icon: '👥', title: 'Manpower Management', sub: 'Factory Workforce, Placements & Dynamic Parameters' },
-    'reports': { icon: '📊', title: 'Reports & Analytics', sub: 'Summary Reports & Excel Export Hub' },
-    'resource-library': { icon: '📚', title: 'Document & Resource Library', sub: 'Technical Manuals, SOPs, Web Portals & Factory Archives' },
-    'et-lab': { icon: '🔧', title: 'ENT Lab Management', sub: 'Board Master, Machine Connection & Lifetime History' },
-    'users': { icon: '👥', title: 'User Management', sub: 'User Accounts, Roles & Status Administration' },
-    'homepage-manager': { icon: '🏠', title: 'Home Page Management', sub: 'Admin-Controlled Dynamic Content & Section Builder' },
-    'email-config': { icon: '✉️', title: 'Email Configuration', sub: 'SMTP Mail Server & Password Recovery Settings' },
-    'master-data': { icon: '🏢', title: 'Plant Hierarchy & Master Data', sub: '7-Level Factory, Floor, Line & Machine Hierarchy' },
-    'transfer-workflows': { icon: '⛓️', title: 'Transfer Workflows', sub: 'Approval Stage Builder & Route Logic' },
-    'custom-fields': { icon: '📐', title: 'Custom Parameters', sub: 'Dynamic Technical Attributes' },
-    'excel-manager': { icon: '📊', title: 'Excel Structure & Templates', sub: 'Import / Export Layout Designer' },
-    'storage': { icon: '📦', title: 'Master Data Storage', sub: 'Single Source of Truth & Quality Gate Studio' },
-    'audit-logs': { icon: '📝', title: 'Activity Logs', sub: 'User & Admin Activity Audit Trail' },
-    'settings': { icon: '🔧', title: 'System Settings', sub: 'Policies, Serial Number Formats & Recovery' }
+    'dashboard': { icon: '🏠', title: 'Dashboard', shortTitle: 'Dashboard', sub: 'Factory Health & Uptime Metrics' },
+    'inventory': { icon: '📦', title: 'Machine Inventory', shortTitle: 'Inventory', sub: 'Machinery Registry & Asset Control' },
+    'relocate': { icon: '📍', title: 'Relocate & Verify', shortTitle: 'Relocate', sub: 'Mobile QR Scan, Auto-Idle Detection & Location Reconciliation' },
+    'qr-codes': { icon: '🏁', title: 'QR Code & Label Studio', shortTitle: 'QR Studio', sub: 'Enterprise Asset Tagging, A4 Sheet Printing & Location Labels' },
+    'machine-history': { icon: '📜', title: 'Machine History', shortTitle: 'History', sub: 'Complete Lifetime & Spare Parts History' },
+    'preventive-maintenance': { icon: '🛡️', title: 'Preventive Maintenance', shortTitle: 'PM Schedule', sub: 'Servicing Schedules, Reminders & Machine Health Profiles' },
+    'transfers': { icon: '🔄', title: 'Machine Transfers', shortTitle: 'Transfers', sub: 'Machine Movement, Gate Passes & Relocation Tracking' },
+    'transfer-workflows': { icon: '⛓️', title: 'Transfer Workflows', shortTitle: 'Workflows', sub: 'Approval Stage Builder & Route Logic' },
+    'tools-management': { icon: '🛠️', title: 'Tools & Accessories', shortTitle: 'Tools & Equip.', sub: 'Tool Assignments, Mechanic Toolkits & Accessories' },
+    'spare-parts': { icon: '⚙️', title: 'Spare Parts Catalog', shortTitle: 'Spare Parts', sub: 'Enterprise Master Catalog & Machine Usage' },
+    'manpower': { icon: '👥', title: 'Manpower Management', shortTitle: 'Manpower', sub: 'Factory Workforce, Placements & Dynamic Parameters' },
+    'reports': { icon: '📊', title: 'Reports & Analytics', shortTitle: 'Reports', sub: 'Summary Reports & Excel Export Hub' },
+    'resource-library': { icon: '📚', title: 'Resource & SOP Library', shortTitle: 'Library', sub: 'Technical Manuals, SOPs, Web Portals & Factory Archives' },
+    'et-lab': { icon: '🔧', title: 'ENT Lab Management', shortTitle: 'ENT Lab', sub: 'Board Master, Machine Connection & Lifetime History' },
+    'users': { icon: '👥', title: 'User Management', shortTitle: 'Users', sub: 'User Accounts, Roles & Status Administration' },
+    'homepage-manager': { icon: '🏠', title: 'Home Page Management', shortTitle: 'Home Mgr', sub: 'Admin-Controlled Dynamic Content & Section Builder' },
+    'email-config': { icon: '✉️', title: 'Email Configuration', shortTitle: 'Email Config', sub: 'SMTP Mail Server & Password Recovery Settings' },
+    'master-data': { icon: '🏢', title: 'Plant Hierarchy & Master Data', shortTitle: 'Master Data', sub: '7-Level Factory, Floor, Line & Machine Hierarchy' },
+    'custom-fields': { icon: '📐', title: 'Custom Parameters', shortTitle: 'Parameters', sub: 'Dynamic Technical Attributes' },
+    'excel-manager': { icon: '📊', title: 'Excel Structure & Templates', shortTitle: 'Excel Setup', sub: 'Import / Export Layout Designer' },
+    'storage': { icon: '📦', title: 'Master Data Storage', shortTitle: 'Storage & DB', sub: 'Single Source of Truth & Quality Gate Studio' },
+    'audit-logs': { icon: '📝', title: 'Activity Logs', shortTitle: 'Audit Logs', sub: 'User & Admin Activity Audit Trail' },
+    'settings': { icon: '🔧', title: 'System Settings', shortTitle: 'Settings', sub: 'Policies, Serial Number Formats & Recovery' }
   };
 
   const curView = state.get('currentView') || 'dashboard';
@@ -92,7 +94,10 @@ export function renderNavbar() {
         <div class="header-view-badge">
           <div class="header-view-icon-wrap">${headerInfo.icon}</div>
           <div class="header-title-container">
-            <h1 class="header-title-text">${headerInfo.title}</h1>
+            <h1 class="header-title-text">
+              <span class="header-title-full">${headerInfo.title}</span>
+              <span class="header-title-short">${headerInfo.shortTitle || headerInfo.title}</span>
+            </h1>
             <div class="header-sub-text">${headerInfo.sub}</div>
           </div>
         </div>
@@ -143,6 +148,20 @@ export function renderNavbar() {
                 <div class="nav-user-dropdown-name">${displayName}</div>
                 <div class="nav-user-dropdown-email">@${user?.username || 'user'}${user?.email ? ` • ${user.email}` : ''}</div>
                 <div class="nav-user-dropdown-role-badge">👑 ${roleName}</div>
+              </div>
+            </div>
+
+            <!-- Mobile Utility Row (Cloud Sync Status & Theme Switcher) -->
+            <div class="nav-user-dropdown-section" style="padding-bottom: 6px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(15, 23, 42, 0.6); padding: 8px 10px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.08); gap: 8px;">
+                <div style="display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; color: #38bdf8; font-weight: 700;">
+                  <span class="nav-db-pulse-dot" style="width: 7px; height: 7px;"></span>
+                  <span>Cloud Synced</span>
+                </div>
+                <button type="button" id="btn-dropdown-theme-toggle" class="btn btn-ghost btn-xs" style="color: #f1f5f9; font-size: 11.5px; display: inline-flex; align-items: center; gap: 5px; padding: 4px 8px; border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 6px; background: rgba(56, 189, 248, 0.12); cursor: pointer;" title="Toggle Light / Dark Theme">
+                  <span class="dropdown-theme-icon">${currentTheme === 'light' ? '🌙' : '☀️'}</span>
+                  <span>${currentTheme === 'light' ? 'Dark' : 'Light'}</span>
+                </button>
               </div>
             </div>
 
@@ -227,6 +246,48 @@ export function initNavbarEvents() {
 
   if (profilePill) {
     profilePill.addEventListener('click', toggleDropdown);
+  }
+
+  // Mobile Hamburger Toggle
+  const mobileSidebarBtn = document.getElementById('btn-mobile-sidebar-toggle');
+  if (mobileSidebarBtn) {
+    mobileSidebarBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      closeDropdown();
+      const appContainer = document.querySelector('.app-container');
+      if (appContainer) {
+        appContainer.classList.toggle('sidebar-mobile-open');
+      }
+    });
+  }
+
+  // Sidebar Backdrop Overlay Click to Close
+  const sidebarBackdrop = document.getElementById('sidebar-backdrop');
+  if (sidebarBackdrop) {
+    sidebarBackdrop.addEventListener('click', () => {
+      const appContainer = document.querySelector('.app-container');
+      if (appContainer) {
+        appContainer.classList.remove('sidebar-mobile-open');
+      }
+    });
+  }
+
+  // Dropdown Theme Toggle Button
+  const dropdownThemeBtn = document.getElementById('btn-dropdown-theme-toggle');
+  if (dropdownThemeBtn) {
+    dropdownThemeBtn.addEventListener('click', () => {
+      const isLight = document.body.classList.toggle('theme-light');
+      localStorage.setItem('al_muslim_theme', isLight ? 'light' : 'dark');
+      const topThemeBtn = document.getElementById('btn-theme-toggle');
+      if (topThemeBtn) {
+        const topIcon = topThemeBtn.querySelector('.theme-icon') || topThemeBtn;
+        topIcon.innerHTML = isLight ? '🌙' : '☀️';
+      }
+      const icon = dropdownThemeBtn.querySelector('.dropdown-theme-icon') || dropdownThemeBtn;
+      icon.innerHTML = isLight ? '🌙' : '☀️';
+      const text = dropdownThemeBtn.querySelector('span:last-child');
+      if (text) text.textContent = isLight ? 'Dark' : 'Light';
+    });
   }
 
   // Prevent dropdown inside clicks from closing itself (e.g. interacting with select)
