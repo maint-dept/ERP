@@ -2175,8 +2175,8 @@ function openActionModal(board, initialActionType = null) {
                   id="install-machine-serial" 
                   list="install-machines-datalist" 
                   class="form-control" 
-                  placeholder="Type machine serial (e.g. JA-01, TS-01, GB-05)..." 
-                  value="${board.currentMachineSerial || ''}"
+                  placeholder="Type or scan machine serial (e.g. JA-01, TS-01, GB-05)..." 
+                  value=""
                   style="font-family: var(--font-mono); font-weight: 800; font-size: 13.5px; height: 38px;"
                   autocomplete="off"
                 />
@@ -2498,7 +2498,8 @@ function openActionModal(board, initialActionType = null) {
                   id="reassign-machine-serial" 
                   list="reassign-machines-datalist" 
                   class="form-control" 
-                  placeholder="Select new machine serial (e.g. JA-02, BG-01)..." 
+                  placeholder="Type or scan new machine serial (e.g. JA-02, BG-01)..." 
+                  value=""
                   style="font-family: var(--font-mono); font-weight: 800; font-size: 13.5px; height: 38px;"
                   autocomplete="off"
                 />
@@ -2842,6 +2843,12 @@ function openActionModal(board, initialActionType = null) {
       }
     };
 
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        lookup(input.value);
+      }
+    });
     input.addEventListener('input', (e) => lookup(e.target.value));
     input.addEventListener('change', (e) => lookup(e.target.value));
     if (input.value) lookup(input.value);
