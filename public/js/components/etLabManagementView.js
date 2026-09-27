@@ -2114,6 +2114,79 @@ function openActionModal(board, initialActionType = null) {
     `;
   };
 
+  const renderMachineSearchAndDetails = (inputId, prefix, labelText, themeColor) => `
+    <div class="form-group">
+      <label class="form-label" style="font-weight: 800; color: ${themeColor};">
+        ${labelText}
+      </label>
+      <input 
+        type="text" 
+        id="${inputId}" 
+        list="shared-machines-datalist" 
+        class="form-control" 
+        placeholder="Type or scan machine serial (e.g. JA-01, TS-01, GB-05)..." 
+        value=""
+        style="font-family: var(--font-mono); font-weight: 800; font-size: 13.5px; height: 38px;"
+        autocomplete="off"
+      />
+    </div>
+
+    <!-- Auto-Filled Live Machine Details Card -->
+    <div id="${prefix}-auto-machine-card" style="background: rgba(15, 23, 42, 0.85); border: 1.5px solid ${themeColor}66; border-radius: 8px; padding: 12px 14px; font-size: 12px;">
+      <div style="font-size: 11px; font-weight: 800; color: ${themeColor}; text-transform: uppercase; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
+        <span>📍 Auto-Filled Machine Details (Machine Inventory):</span>
+        <span id="${prefix}-status" style="font-size: 10px; font-weight: 700; color: #86efac; background: rgba(34, 197, 94, 0.15); padding: 2px 6px; border-radius: 4px; display: none;"></span>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px 12px;">
+        <div>
+          <span style="color: #94a3b8; font-size: 10.5px;">Machine Name:</span><br/>
+          <strong id="${prefix}-name" style="color: #fff; font-size: 12.5px;">—</strong>
+        </div>
+        <div>
+          <span style="color: #94a3b8; font-size: 10.5px;">Model:</span><br/>
+          <strong id="${prefix}-model" style="color: #cbd5e1; font-size: 12.5px; font-family: var(--font-mono);">—</strong>
+        </div>
+        <div>
+          <span style="color: #94a3b8; font-size: 10.5px;">Brand:</span><br/>
+          <strong id="${prefix}-brand" style="color: #facc15; font-size: 12.5px;">—</strong>
+        </div>
+        <div>
+          <span style="color: #94a3b8; font-size: 10.5px;">Machine Serial:</span><br/>
+          <strong id="${prefix}-serial" style="color: ${themeColor}; font-family: var(--font-mono); font-size: 12.5px;">—</strong>
+        </div>
+        <div>
+          <span style="color: #94a3b8; font-size: 10.5px;">Floor:</span><br/>
+          <strong id="${prefix}-floor" style="color: #cbd5e1; font-size: 12.5px;">—</strong>
+        </div>
+        <div>
+          <span style="color: #94a3b8; font-size: 10.5px;">Line:</span><br/>
+          <strong id="${prefix}-line" style="color: #86efac; font-size: 12.5px; font-weight: 800;">—</strong>
+        </div>
+      </div>
+      <div style="margin-top: 8px; padding-top: 6px; border-top: 1px dashed rgba(255,255,255,0.08); font-size: 11px; color: #94a3b8;">
+        Unit / Factory: <strong id="${prefix}-unit" style="color: #e2e8f0;">—</strong>
+      </div>
+    </div>
+  `;
+
+  const renderPartsSerialField = (inputId, themeColor) => `
+    <div class="form-group">
+      <label class="form-label" style="font-weight: 800; color: ${themeColor}; display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+        <span>Parts Serial Number / Board S/N:</span>
+        <span style="font-size: 10.5px; font-weight: 600; color: #94a3b8;">(Part SL No / JUKI S/N)</span>
+      </label>
+      <input 
+        type="text" 
+        id="${inputId}" 
+        class="form-control" 
+        placeholder="Enter parts serial number (e.g. JK-CPU-99026, SN-88321)..." 
+        value=""
+        style="font-family: var(--font-mono); font-weight: 800; font-size: 13px; height: 38px; background: #0f172a; border: 1.5px solid #334155; color: #fff;"
+        autocomplete="off"
+      />
+    </div>
+  `;
+
   const todayStr = new Date().toISOString().split('T')[0];
 
   // Determine initial action selection
@@ -2164,80 +2237,15 @@ function openActionModal(board, initialActionType = null) {
             <!-- 2. ACTION-SPECIFIC FIELDS (ONLY SELECTED ACTION IS SHOWN) -->
             <!-- ========================================================= -->
 
+            <!-- Shared Machines Datalist for fast auto-complete across all actions -->
+            <datalist id="shared-machines-datalist">
+              ${machineOptions.map(m => `<option value="${m.serialNumber}">${m.displayText}</option>`).join('')}
+            </datalist>
+
             <!-- ACTION 1: INSTALL / ASSIGN -->
             <div id="fields-install" class="action-field-group" style="display: none; flex-direction: column; gap: 10px;">
-              <div class="form-group">
-                <label class="form-label required" style="font-weight: 800; color: #38bdf8;">
-                  Search Target Machine Number / Serial Number:
-                </label>
-                <input 
-                  type="text" 
-                  id="install-machine-serial" 
-                  list="install-machines-datalist" 
-                  class="form-control" 
-                  placeholder="Type or scan machine serial (e.g. JA-01, TS-01, GB-05)..." 
-                  value=""
-                  style="font-family: var(--font-mono); font-weight: 800; font-size: 13.5px; height: 38px;"
-                  autocomplete="off"
-                />
-                <datalist id="install-machines-datalist">
-                  ${machineOptions.map(m => `<option value="${m.serialNumber}">${m.displayText}</option>`).join('')}
-                </datalist>
-              </div>
-
-              <!-- Auto-Filled Live Machine Details Card -->
-              <div id="install-auto-machine-card" style="background: rgba(15, 23, 42, 0.85); border: 1.5px solid rgba(56, 189, 248, 0.4); border-radius: 8px; padding: 12px 14px; font-size: 12px;">
-                <div style="font-size: 11px; font-weight: 800; color: #38bdf8; text-transform: uppercase; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
-                  <span>📍 Auto-Filled Machine Details (Machine Inventory):</span>
-                  <span id="ins-auto-status" style="font-size: 10px; font-weight: 700; color: #86efac; background: rgba(34, 197, 94, 0.15); padding: 2px 6px; border-radius: 4px; display: none;"></span>
-                </div>
-                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px 12px;">
-                  <div>
-                    <span style="color: #94a3b8; font-size: 10.5px;">Machine Name:</span><br/>
-                    <strong id="ins-auto-name" style="color: #fff; font-size: 12.5px;">—</strong>
-                  </div>
-                  <div>
-                    <span style="color: #94a3b8; font-size: 10.5px;">Model:</span><br/>
-                    <strong id="ins-auto-model" style="color: #cbd5e1; font-size: 12.5px; font-family: var(--font-mono);">—</strong>
-                  </div>
-                  <div>
-                    <span style="color: #94a3b8; font-size: 10.5px;">Brand:</span><br/>
-                    <strong id="ins-auto-brand" style="color: #facc15; font-size: 12.5px;">—</strong>
-                  </div>
-                  <div>
-                    <span style="color: #94a3b8; font-size: 10.5px;">Machine Serial:</span><br/>
-                    <strong id="ins-auto-serial" style="color: #38bdf8; font-family: var(--font-mono); font-size: 12.5px;">—</strong>
-                  </div>
-                  <div>
-                    <span style="color: #94a3b8; font-size: 10.5px;">Floor:</span><br/>
-                    <strong id="ins-auto-floor" style="color: #cbd5e1; font-size: 12.5px;">—</strong>
-                  </div>
-                  <div>
-                    <span style="color: #94a3b8; font-size: 10.5px;">Line:</span><br/>
-                    <strong id="ins-auto-line" style="color: #86efac; font-size: 12.5px; font-weight: 800;">—</strong>
-                  </div>
-                </div>
-                <div style="margin-top: 8px; padding-top: 6px; border-top: 1px dashed rgba(255,255,255,0.08); font-size: 11px; color: #94a3b8;">
-                  Unit / Factory: <strong id="ins-auto-unit" style="color: #e2e8f0;">—</strong>
-                </div>
-              </div>
-
-              <!-- Parts Serial Number / Board S/N (No default, user inputs) -->
-              <div class="form-group">
-                <label class="form-label" style="font-weight: 800; color: #38bdf8; display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                  <span>Parts Serial Number / Board S/N:</span>
-                  <span style="font-size: 10.5px; font-weight: 600; color: #94a3b8;">(Part SL No / JUKI S/N)</span>
-                </label>
-                <input 
-                  type="text" 
-                  id="install-parts-serial" 
-                  class="form-control" 
-                  placeholder="Enter parts serial number (e.g. JK-CPU-99026, SN-88321)..." 
-                  value=""
-                  style="font-family: var(--font-mono); font-weight: 800; font-size: 13px; height: 38px; background: #0f172a; border: 1.5px solid #334155; color: #fff;"
-                  autocomplete="off"
-                />
-              </div>
+              ${renderMachineSearchAndDetails('install-machine-serial', 'ins-auto', 'Search Target Machine Number / Serial Number:', '#38bdf8')}
+              ${renderPartsSerialField('install-parts-serial', '#38bdf8')}
 
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                 <div class="form-group">
@@ -2256,6 +2264,9 @@ function openActionModal(board, initialActionType = null) {
 
             <!-- ACTION 2: REMOVE -->
             <div id="fields-remove" class="action-field-group" style="display: none; flex-direction: column; gap: 10px;">
+              ${renderMachineSearchAndDetails('remove-machine-serial', 'remove-auto', 'Search Machine Number / Serial Number:', '#f59e0b')}
+              ${renderPartsSerialField('remove-parts-serial', '#f59e0b')}
+
               <div class="form-group">
                 <label class="form-label required" style="font-weight: 800; color: #f59e0b;">Removal Reason / Problem Symptom</label>
                 <input type="text" id="remove-reason" class="form-control" placeholder="e.g. Error Code E-02, Trimmer pulse failed, Scheduled maintenance..." required />
@@ -2277,23 +2288,6 @@ function openActionModal(board, initialActionType = null) {
                 </div>
               </div>
 
-              <!-- Parts Serial Number / Board S/N (No default, user inputs) -->
-              <div class="form-group">
-                <label class="form-label" style="font-weight: 800; color: #f59e0b; display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                  <span>Parts Serial Number / Board S/N:</span>
-                  <span style="font-size: 10.5px; font-weight: 600; color: #94a3b8;">(Part SL No / JUKI S/N)</span>
-                </label>
-                <input 
-                  type="text" 
-                  id="remove-parts-serial" 
-                  class="form-control" 
-                  placeholder="Enter parts serial number (e.g. JK-CPU-99026)..." 
-                  value=""
-                  style="font-family: var(--font-mono); font-weight: 800; font-size: 13px; height: 38px; background: #0f172a; border: 1.5px solid #334155; color: #fff;"
-                  autocomplete="off"
-                />
-              </div>
-
               <div class="form-group">
                 <label class="form-label">Remarks</label>
                 <input type="text" id="remove-remarks" class="form-control" placeholder="Optional notes for removal record..." />
@@ -2305,6 +2299,9 @@ function openActionModal(board, initialActionType = null) {
 
             <!-- ACTION 3: IN-HOUSE REPAIR -->
             <div id="fields-inhouse" class="action-field-group" style="display: none; flex-direction: column; gap: 10px;">
+              ${renderMachineSearchAndDetails('inhouse-machine-serial', 'inhouse-auto', 'Search Machine Number / Serial Number:', '#f97316')}
+              ${renderPartsSerialField('inhouse-parts-serial', '#f97316')}
+
               <div class="form-group">
                 <label class="form-label required" style="font-weight: 800; color: #f97316;">Repair Stage</label>
                 <select id="inhouse-stage" class="form-control" style="font-weight: 700; height: 38px;">
@@ -2329,23 +2326,6 @@ function openActionModal(board, initialActionType = null) {
                 <textarea id="inhouse-details" class="form-control" rows="2" placeholder="Replaced IC, diode testing passed...">${board.inhouseRepair?.details || ''}</textarea>
               </div>
 
-              <!-- Parts Serial Number / Board S/N (No default, user inputs) -->
-              <div class="form-group">
-                <label class="form-label" style="font-weight: 800; color: #f97316; display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                  <span>Parts Serial Number / Board S/N:</span>
-                  <span style="font-size: 10.5px; font-weight: 600; color: #94a3b8;">(Part SL No / JUKI S/N)</span>
-                </label>
-                <input 
-                  type="text" 
-                  id="inhouse-parts-serial" 
-                  class="form-control" 
-                  placeholder="Enter parts serial number (e.g. JK-CPU-99026)..." 
-                  value=""
-                  style="font-family: var(--font-mono); font-weight: 800; font-size: 13px; height: 38px; background: #0f172a; border: 1.5px solid #334155; color: #fff;"
-                  autocomplete="off"
-                />
-              </div>
-
               <div class="form-group">
                 <label class="form-label">Remarks</label>
                 <input type="text" id="inhouse-remarks" class="form-control" placeholder="Optional notes..." value="${board.inhouseRepair?.remarks || ''}" />
@@ -2357,6 +2337,9 @@ function openActionModal(board, initialActionType = null) {
 
             <!-- ACTION 4: SEND TO EXTERNAL COMPANY -->
             <div id="fields-send-outside" class="action-field-group" style="display: none; flex-direction: column; gap: 10px;">
+              ${renderMachineSearchAndDetails('send-machine-serial', 'send-auto', 'Search Machine Number / Serial Number:', '#a855f7')}
+              ${renderPartsSerialField('send-parts-serial', '#a855f7')}
+
               <div class="form-group">
                 <label class="form-label required" style="font-weight: 800; color: #a855f7;">External Repair Company</label>
                 <select id="send-company-name" class="form-control" style="font-weight: 700; height: 38px;" required>
@@ -2380,23 +2363,6 @@ function openActionModal(board, initialActionType = null) {
                 <textarea id="send-problem" class="form-control" rows="2" placeholder="Describe fault sent to outside lab..." required></textarea>
               </div>
 
-              <!-- Parts Serial Number / Board S/N (No default, user inputs) -->
-              <div class="form-group">
-                <label class="form-label" style="font-weight: 800; color: #a855f7; display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                  <span>Parts Serial Number / Board S/N:</span>
-                  <span style="font-size: 10.5px; font-weight: 600; color: #94a3b8;">(Part SL No / JUKI S/N)</span>
-                </label>
-                <input 
-                  type="text" 
-                  id="send-parts-serial" 
-                  class="form-control" 
-                  placeholder="Enter parts serial number (e.g. JK-CPU-99026)..." 
-                  value=""
-                  style="font-family: var(--font-mono); font-weight: 800; font-size: 13px; height: 38px; background: #0f172a; border: 1.5px solid #334155; color: #fff;"
-                  autocomplete="off"
-                />
-              </div>
-
               <div class="form-group">
                 <label class="form-label">Remarks</label>
                 <input type="text" id="send-remarks" class="form-control" placeholder="Optional notes for gate pass / tracking..." />
@@ -2408,6 +2374,9 @@ function openActionModal(board, initialActionType = null) {
 
             <!-- ACTION 5: RECEIVE WITH REPAIR VERIFICATION -->
             <div id="fields-receive" class="action-field-group" style="display: none; flex-direction: column; gap: 10px;">
+              ${renderMachineSearchAndDetails('receive-machine-serial', 'receive-auto', 'Search Machine Number / Serial Number:', '#34d399')}
+              ${renderPartsSerialField('receive-parts-serial', '#34d399')}
+
               <div style="background: rgba(16, 185, 129, 0.1); border: 1.5px solid #10b981; border-radius: 8px; padding: 12px 14px; display: flex; flex-direction: column; gap: 10px;">
                 <div style="font-size: 12.5px; font-weight: 800; color: #34d399; display: flex; align-items: center; justify-content: space-between;">
                   <span>🔬 Repair Verification &amp; Acceptance</span>
@@ -2463,104 +2432,22 @@ function openActionModal(board, initialActionType = null) {
                     <input type="text" id="receive-details" class="form-control" placeholder="Testing findings, replaced components..." style="height: 38px;" />
                   </div>
                 </div>
-
-                <!-- Parts Serial Number / Board S/N (No default, user inputs) -->
-                <div class="form-group">
-                  <label class="form-label" style="font-weight: 800; color: #34d399; display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                    <span>Parts Serial Number / Board S/N:</span>
-                    <span style="font-size: 10.5px; font-weight: 600; color: #94a3b8;">(Part SL No / JUKI S/N)</span>
-                  </label>
-                  <input 
-                    type="text" 
-                    id="receive-parts-serial" 
-                    class="form-control" 
-                    placeholder="Enter parts serial number (e.g. JK-CPU-99026)..." 
-                    value=""
-                    style="font-family: var(--font-mono); font-weight: 800; font-size: 13px; height: 38px; background: #0f172a; border: 1.5px solid #334155; color: #fff;"
-                    autocomplete="off"
-                  />
-                </div>
-
-                ${renderPersonnelSelector('receive-by', 'Received By', '', '#34d399')}
-                <!-- Employee Name at the very last -->
-                ${renderPersonnelSelector('receive-verified-by', 'Verified By', '', '#34d399')}
               </div>
+
+              <div class="form-group">
+                <label class="form-label">Remarks</label>
+                <input type="text" id="receive-remarks" class="form-control" placeholder="Optional notes for receiving record..." />
+              </div>
+
+              ${renderPersonnelSelector('receive-by', 'Received By', '', '#34d399')}
+              <!-- Employee Name at the very last -->
+              ${renderPersonnelSelector('receive-verified-by', 'Verified By', '', '#34d399')}
             </div>
 
             <!-- ACTION 6: ASSIGN TO ANOTHER MACHINE -->
             <div id="fields-assign-another" class="action-field-group" style="display: none; flex-direction: column; gap: 10px;">
-              <div class="form-group">
-                <label class="form-label required" style="font-weight: 800; color: #6366f1;">
-                  Search New Target Machine Number / Serial Number:
-                </label>
-                <input 
-                  type="text" 
-                  id="reassign-machine-serial" 
-                  list="reassign-machines-datalist" 
-                  class="form-control" 
-                  placeholder="Type or scan new machine serial (e.g. JA-02, BG-01)..." 
-                  value=""
-                  style="font-family: var(--font-mono); font-weight: 800; font-size: 13.5px; height: 38px;"
-                  autocomplete="off"
-                />
-                <datalist id="reassign-machines-datalist">
-                  ${machineOptions.map(m => `<option value="${m.serialNumber}">${m.displayText}</option>`).join('')}
-                </datalist>
-              </div>
-
-              <!-- Auto-Filled Live Machine Details Card -->
-              <div id="reassign-auto-machine-card" style="background: rgba(15, 23, 42, 0.85); border: 1.5px solid rgba(99, 102, 241, 0.4); border-radius: 8px; padding: 12px 14px; font-size: 12px;">
-                <div style="font-size: 11px; font-weight: 800; color: #a5b4fc; text-transform: uppercase; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
-                  <span>📍 New Machine Information (Machine Inventory):</span>
-                  <span id="re-auto-status" style="font-size: 10px; font-weight: 700; color: #86efac; background: rgba(34, 197, 94, 0.15); padding: 2px 6px; border-radius: 4px; display: none;"></span>
-                </div>
-                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px 12px;">
-                  <div>
-                    <span style="color: #94a3b8; font-size: 10.5px;">Machine Name:</span><br/>
-                    <strong id="re-auto-name" style="color: #fff; font-size: 12.5px;">—</strong>
-                  </div>
-                  <div>
-                    <span style="color: #94a3b8; font-size: 10.5px;">Model:</span><br/>
-                    <strong id="re-auto-model" style="color: #cbd5e1; font-size: 12.5px; font-family: var(--font-mono);">—</strong>
-                  </div>
-                  <div>
-                    <span style="color: #94a3b8; font-size: 10.5px;">Brand:</span><br/>
-                    <strong id="re-auto-brand" style="color: #facc15; font-size: 12.5px;">—</strong>
-                  </div>
-                  <div>
-                    <span style="color: #94a3b8; font-size: 10.5px;">Machine Serial:</span><br/>
-                    <strong id="re-auto-serial" style="color: #38bdf8; font-family: var(--font-mono); font-size: 12.5px;">—</strong>
-                  </div>
-                  <div>
-                    <span style="color: #94a3b8; font-size: 10.5px;">Floor:</span><br/>
-                    <strong id="re-auto-floor" style="color: #cbd5e1; font-size: 12.5px;">—</strong>
-                  </div>
-                  <div>
-                    <span style="color: #94a3b8; font-size: 10.5px;">Line:</span><br/>
-                    <strong id="re-auto-line" style="color: #86efac; font-size: 12.5px; font-weight: 800;">—</strong>
-                  </div>
-                </div>
-                <div style="margin-top: 8px; padding-top: 6px; border-top: 1px dashed rgba(255,255,255,0.08); font-size: 11px; color: #94a3b8;">
-                  Unit / Factory: <strong id="re-auto-unit" style="color: #e2e8f0;">—</strong>
-                </div>
-              </div>
-
-              <!-- Parts Serial Number / Board S/N (No default, user inputs) -->
-              <div class="form-group">
-                <label class="form-label" style="font-weight: 800; color: #818cf8; display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                  <span>Parts Serial Number / Board S/N:</span>
-                  <span style="font-size: 10.5px; font-weight: 600; color: #94a3b8;">(Part SL No / JUKI S/N)</span>
-                </label>
-                <input 
-                  type="text" 
-                  id="reassign-parts-serial" 
-                  class="form-control" 
-                  placeholder="Enter parts serial number (e.g. JK-CPU-99026, SN-88321)..." 
-                  value=""
-                  style="font-family: var(--font-mono); font-weight: 800; font-size: 13px; height: 38px; background: #0f172a; border: 1.5px solid #334155; color: #fff;"
-                  autocomplete="off"
-                />
-              </div>
+              ${renderMachineSearchAndDetails('reassign-machine-serial', 're-auto', 'Search New Target Machine Number / Serial Number:', '#6366f1')}
+              ${renderPartsSerialField('reassign-parts-serial', '#6366f1')}
 
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                 <div class="form-group">
@@ -2753,12 +2640,30 @@ function openActionModal(board, initialActionType = null) {
   const switchActionFields = (val) => {
     document.querySelectorAll('.action-field-group').forEach(el => el.style.display = 'none');
     
-    // Disable required validation on hidden sections
-    document.getElementById('install-machine-serial').required = (val === 'INSTALL');
-    document.getElementById('remove-reason').required = (val === 'REMOVE');
-    document.getElementById('inhouse-problem').required = (val === 'INHOUSE_REPAIR');
-    document.getElementById('send-problem').required = (val === 'SEND_OUTSIDE');
-    document.getElementById('reassign-machine-serial').required = (val === 'ASSIGN_ANOTHER');
+    // Toggle required fields cleanly
+    const setReq = (id, req) => {
+      const el = document.getElementById(id);
+      if (el) el.required = req;
+    };
+
+    setReq('install-machine-serial', val === 'INSTALL');
+    setReq('install-assigned-to-search', val === 'INSTALL');
+    
+    setReq('remove-reason', val === 'REMOVE');
+    setReq('remove-by-search', val === 'REMOVE');
+    
+    setReq('inhouse-problem', val === 'INHOUSE_REPAIR');
+    setReq('inhouse-repaired-by-search', val === 'INHOUSE_REPAIR');
+    
+    setReq('send-company-name', val === 'SEND_OUTSIDE');
+    setReq('send-problem', val === 'SEND_OUTSIDE');
+    setReq('send-by-search', val === 'SEND_OUTSIDE');
+    
+    setReq('receive-by-search', val === 'RECEIVE');
+    setReq('receive-verified-by-search', val === 'RECEIVE');
+    
+    setReq('reassign-machine-serial', val === 'ASSIGN_ANOTHER');
+    setReq('reassign-by-search', val === 'ASSIGN_ANOTHER');
 
     if (val === 'INSTALL') {
       document.getElementById('fields-install').style.display = 'flex';
@@ -2855,6 +2760,10 @@ function openActionModal(board, initialActionType = null) {
   };
 
   bindMachineLookup('install-machine-serial', 'ins-auto');
+  bindMachineLookup('remove-machine-serial', 'remove-auto');
+  bindMachineLookup('inhouse-machine-serial', 'inhouse-auto');
+  bindMachineLookup('send-machine-serial', 'send-auto');
+  bindMachineLookup('receive-machine-serial', 'receive-auto');
   bindMachineLookup('reassign-machine-serial', 're-auto');
 
   // Form Submission
@@ -2887,6 +2796,7 @@ function openActionModal(board, initialActionType = null) {
           remarks: remarks
         });
       } else if (actionType === 'REMOVE') {
+        const mSerial = document.getElementById('remove-machine-serial')?.value.trim();
         const removedByName = document.getElementById('remove-by-name')?.value.trim() || document.getElementById('remove-by-search')?.value.trim();
         const removedByCard = document.getElementById('remove-by-card')?.value.trim();
         const removedByArea = document.getElementById('remove-by-area')?.value.trim();
@@ -2900,6 +2810,7 @@ function openActionModal(board, initialActionType = null) {
 
         etLabService.removeBoardFromMachine({
           boardSerial: board.boardSerial,
+          machineSerial: mSerial,
           removalDate: removeDate,
           removedBy: removedByName,
           removedByCard: removedByCard,
@@ -2910,6 +2821,7 @@ function openActionModal(board, initialActionType = null) {
           remarks: remarks
         });
       } else if (actionType === 'INHOUSE_REPAIR') {
+        const mSerial = document.getElementById('inhouse-machine-serial')?.value.trim();
         const stage = document.getElementById('inhouse-stage')?.value;
         const repairedByName = document.getElementById('inhouse-repaired-by-name')?.value.trim() || document.getElementById('inhouse-repaired-by-search')?.value.trim();
         const repairedByCard = document.getElementById('inhouse-repaired-by-card')?.value.trim();
@@ -2925,6 +2837,7 @@ function openActionModal(board, initialActionType = null) {
         if (stage === 'START') {
           etLabService.startInHouseRepair({
             boardSerial: board.boardSerial,
+            machineSerial: mSerial,
             problem: problem,
             startDate: repairDate,
             repairedBy: repairedByName,
@@ -2937,6 +2850,7 @@ function openActionModal(board, initialActionType = null) {
         } else {
           etLabService.completeInHouseRepair({
             boardSerial: board.boardSerial,
+            machineSerial: mSerial,
             completeDate: repairDate,
             repairedBy: repairedByName,
             repairedByCard: repairedByCard,
@@ -2947,6 +2861,7 @@ function openActionModal(board, initialActionType = null) {
           });
         }
       } else if (actionType === 'SEND_OUTSIDE') {
+        const mSerial = document.getElementById('send-machine-serial')?.value.trim();
         const company = document.getElementById('send-company-name')?.value;
         const sentByName = document.getElementById('send-by-name')?.value.trim() || document.getElementById('send-by-search')?.value.trim();
         const sentByCard = document.getElementById('send-by-card')?.value.trim();
@@ -2961,6 +2876,7 @@ function openActionModal(board, initialActionType = null) {
 
         etLabService.sendToExternalCompany({
           boardSerial: board.boardSerial,
+          machineSerial: mSerial,
           companyName: company,
           sendDate: sendDate,
           expectedReturnDate: expDate,
@@ -2973,6 +2889,7 @@ function openActionModal(board, initialActionType = null) {
           remarks: remarks
         });
       } else if (actionType === 'RECEIVE') {
+        const mSerial = document.getElementById('receive-machine-serial')?.value.trim();
         const receivedByName = document.getElementById('receive-by-name')?.value.trim() || document.getElementById('receive-by-search')?.value.trim();
         const receivedByCard = document.getElementById('receive-by-card')?.value.trim();
         const receivedByArea = document.getElementById('receive-by-area')?.value.trim();
@@ -2991,6 +2908,7 @@ function openActionModal(board, initialActionType = null) {
 
         etLabService.receiveFromExternalCompany({
           boardSerial: board.boardSerial,
+          machineSerial: mSerial,
           returnDate: receiveDate,
           receivedBy: receivedByName,
           receivedByCard: receivedByCard,

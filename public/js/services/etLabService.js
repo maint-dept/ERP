@@ -414,6 +414,7 @@ class EtLabService {
   removeBoardFromMachine({
     boardId = null,
     boardSerial = null,
+    machineSerial = null,
     removalDate = null,
     removedBy = null,
     removedByCard = null,
@@ -428,8 +429,8 @@ class EtLabService {
     let board = boardId ? this.getBoardById(boardId) : this.getBoardBySerial(boardSerial);
     if (!board) throw new Error('Board record not found.');
 
-    const currentMachineSerial = board.currentMachineSerial || 'Unknown Machine';
-    const currentMachineId = board.currentMachineId;
+    const currentMachineSerial = machineSerial || board.currentMachineSerial || 'Unknown Machine';
+    const currentMachineId = machineSerial ? (this.getMachineDetailsForBoard(machineSerial)?.id || board.currentMachineId) : board.currentMachineId;
     const finalDate = removalDate || new Date().toISOString().split('T')[0];
     const finalRemovedBy = removedBy || user?.name || 'Engr. Tanvir Ahmed';
     const finalCard = removedByCard || '1001';
@@ -550,6 +551,7 @@ class EtLabService {
   startInHouseRepair({
     boardId = null,
     boardSerial = null,
+    machineSerial = null,
     problem = '',
     startDate = null,
     repairedBy = null,
@@ -574,6 +576,7 @@ class EtLabService {
       location: 'ENT Lab Workstation (In-House Repair)',
       inhouseRepair: {
         problem: problem || 'Component defect / signal fault',
+        machineSerial: machineSerial || board.currentMachineSerial || null,
         startDate: finalStartDate,
         repairedBy: finalTech,
         repairedByCard: finalCard,
@@ -596,7 +599,7 @@ class EtLabService {
       action: 'INHOUSE_START',
       actionLabel: 'Started In-House Repair',
       timestamp: new Date().toISOString(),
-      machineSerial: null,
+      machineSerial: machineSerial || board.currentMachineSerial || null,
       location: 'ENT Lab Workstation',
       repairType: 'In-House',
       problem: problem || 'In-House repair diagnosis',
@@ -616,6 +619,7 @@ class EtLabService {
   completeInHouseRepair({
     boardId = null,
     boardSerial = null,
+    machineSerial = null,
     completeDate = null,
     repairedBy = null,
     repairedByCard = null,
@@ -639,6 +643,7 @@ class EtLabService {
       location: 'ENT Lab Shelf A-01 (Tested & Ready)',
       lastInhouseRepair: {
         problem: board.inhouseRepair?.problem || 'Internal Repair',
+        machineSerial: machineSerial || board.inhouseRepair?.machineSerial || board.currentMachineSerial || null,
         startDate: board.inhouseRepair?.startDate || finalCompleteDate,
         completeDate: finalCompleteDate,
         repairedBy: finalTech,
@@ -663,7 +668,7 @@ class EtLabService {
       action: 'INHOUSE_COMPLETE',
       actionLabel: 'Completed In-House Repair',
       timestamp: new Date().toISOString(),
-      machineSerial: null,
+      machineSerial: machineSerial || board.inhouseRepair?.machineSerial || board.currentMachineSerial || null,
       location: 'ENT Lab Ready Stock',
       repairType: 'In-House',
       repairDetails: repairDetails || 'In-house repair completed & tested',
@@ -687,6 +692,7 @@ class EtLabService {
   sendExternalRepair({
     boardId = null,
     boardSerial = null,
+    machineSerial = null,
     companyName,
     problem = '',
     sendDate = null,
@@ -718,6 +724,7 @@ class EtLabService {
       location: `External: ${companyName}`,
       externalRepair: {
         companyName: companyName.trim(),
+        machineSerial: machineSerial || board.currentMachineSerial || null,
         problem: problem || 'External specialized diagnosis',
         sendDate: finalSendDate,
         expectedReturnDate: expectedReturnDate || '',
@@ -743,7 +750,7 @@ class EtLabService {
       action: 'SEND_EXTERNAL',
       actionLabel: 'Sent to External Company',
       timestamp: new Date().toISOString(),
-      machineSerial: null,
+      machineSerial: machineSerial || board.currentMachineSerial || null,
       location: `External: ${companyName}`,
       companyName: companyName.trim(),
       repairType: 'External Company',
@@ -768,6 +775,7 @@ class EtLabService {
   receiveExternalRepair({
     boardId = null,
     boardSerial = null,
+    machineSerial = null,
     returnDate = null,
     receivedBy = null,
     receivedByCard = null,
@@ -892,7 +900,7 @@ class EtLabService {
       action: 'RECEIVE_EXTERNAL',
       actionLabel: `Received & Verified (Attempt #${attemptNumber})`,
       timestamp: new Date().toISOString(),
-      machineSerial: null,
+      machineSerial: machineSerial || board.currentMachineSerial || null,
       location: updatedBoard.location,
       companyName,
       repairType: 'External Company',
