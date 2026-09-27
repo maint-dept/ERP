@@ -14,6 +14,8 @@ import { notificationService } from '../services/notificationService.js';
 import { smartStorageService } from '../services/smartStorageService.js';
 import { formatDisplayLine } from '../services/excelService.js';
 import { CloudSaveError } from '../db/storage.js';
+import { qrCodeService } from '../services/qrCodeService.js';
+import { renderQrScannerModal, initQrScannerModalEvents } from './qrScannerModal.js?v=4.7.4';
 import { state } from '../state.js';
 
 export function renderMachineModal() {
@@ -102,16 +104,23 @@ export function renderMachineModal() {
               </select>
             </div>
             <div class="form-group">
-              <label class="form-label">Serial Number <span class="req">*</span></label>
-              <input
-                type="text"
-                id="modal-field-serial-number"
-                class="form-control"
-                placeholder="e.g. 1234, JA-01"
-                value="${machine?.serialNumber || ''}"
-                required
-                style="font-family: var(--font-mono); font-size: 14px; font-weight: 700; color: #38bdf8;"
-              />
+              <label class="form-label" style="display: flex; justify-content: space-between; align-items: center;">
+                <span>Serial Number <span class="req">*</span></span>
+              </label>
+              <div style="display: flex; gap: 8px;">
+                <input
+                  type="text"
+                  id="modal-field-serial-number"
+                  class="form-control"
+                  placeholder="e.g. 1234, JA-01"
+                  value="${machine?.serialNumber || ''}"
+                  required
+                  style="font-family: var(--font-mono); font-size: 14px; font-weight: 700; color: #38bdf8; flex: 1;"
+                />
+                <button type="button" id="btn-modal-scan-serial-qr" class="btn btn-secondary" style="border-color: #38bdf8; color: #38bdf8; font-weight: 700; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; padding: 0 12px;" title="Scan Machine QR Code / Barcode with Camera">
+                  <span style="font-size: 15px;">📷</span> Scan
+                </button>
+              </div>
               <div id="serial-conflict-alert" style="display: none; margin-top: 6px; font-size: 12px; color: #f87171; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 4px; padding: 6px 10px;"></div>
             </div>
           </div>
@@ -188,7 +197,12 @@ export function initMachineModalEvents() {
   const closeBtn = document.getElementById('btn-close-machine-modal');
   const cancelBtn = document.getElementById('btn-cancel-machine');
 
-  const closeModal = () => state.set('activeModal', null);
+  const closeModal = () => {
+    const scannerSlot = document.getElementById('machine-modal-qr-scanner-slot');
+    if (scannerSlot) scannerSlot.remove();
+    document.getElementById('modal-qr-scanner-overlay')?.remove();
+    state.set('activeModal', null);
+  };
 
   if (closeBtn) closeBtn.addEventListener('click', closeModal);
   if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
@@ -278,6 +292,46 @@ export function initMachineModalEvents() {
   // Serial number and conflict alert elements
   const serialInp = document.getElementById('modal-field-serial-number');
   const conflictAlert = document.getElementById('serial-conflict-alert');
+  const btnScanSerial = document.getElementById('btn-modal-scan-serial-qr');
+
+  // Camera QR & Barcode Scanner for Serial Number
+  if (btnScanSerial && serialInp) {
+    btnScanSerial.addEventListener('click', () => {
+      let scannerSlot = document.getElementById('machine-modal-qr-scanner-slot');
+      if (!scannerSlot) {
+        scannerSlot = document.createElement('div');
+        scannerSlot.id = 'machine-modal-qr-scanner-slot';
+        document.body.appendChild(scannerSlot);
+      }
+      scannerSlot.innerHTML = renderQrScannerModal();
+      initQrScannerModalEvents({
+        onScanSuccess: (decodedText) => {
+          scannerSlot.innerHTML = '';
+          const parsed = qrCodeService.parseQrPayload(decodedText);
+          const rawId = (parsed.identifier || decodedText || '').trim();
+          const allMachines = storage.getTable(TABLE_NAMES.MACHINES) || [];
+          const existing = allMachines.find(m => 
+            (m.id && m.id.toLowerCase() === rawId.toLowerCase()) ||
+            (m.permanentMachineId && m.permanentMachineId.toLowerCase() === rawId.toLowerCase()) ||
+            (m.serialNumber && m.serialNumber.toString().toLowerCase() === rawId.toLowerCase())
+          );
+          const scannedSerial = existing ? existing.serialNumber : rawId;
+          serialInp.value = scannedSerial;
+          serialInp.dispatchEvent(new Event('input'));
+          serialInp.dispatchEvent(new Event('change'));
+          serialInp.focus();
+          notificationService.success(`Scanned Serial Number: ${scannedSerial}`);
+        },
+        onManualSearchRequest: () => {
+          scannerSlot.innerHTML = '';
+          serialInp.focus();
+        },
+        onClose: () => {
+          scannerSlot.innerHTML = '';
+        }
+      });
+    });
+  }
 
   // Smart Serial Auto-Correction on Blur
   if (serialInp) {

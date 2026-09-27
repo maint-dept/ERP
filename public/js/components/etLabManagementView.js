@@ -14,6 +14,8 @@ import { TABLE_NAMES, ET_BOARD_STATUSES, ET_ACTIONS } from '../db/schema.js';
 import { etLabService } from '../services/etLabService.js';
 import { authService } from '../services/authService.js';
 import { notificationService } from '../services/notificationService.js';
+import { qrCodeService } from '../services/qrCodeService.js';
+import { renderQrScannerModal, initQrScannerModalEvents } from './qrScannerModal.js?v=4.7.4';
 import { renderSparePartsManagementView, initSparePartsManagementEvents } from './sparePartsManagementView.js';
 
 // Local view state
@@ -2119,16 +2121,21 @@ function openActionModal(board, initialActionType = null) {
       <label class="form-label" style="font-weight: 800; color: ${themeColor};">
         ${labelText}
       </label>
-      <input 
-        type="text" 
-        id="${inputId}" 
-        list="shared-machines-datalist" 
-        class="form-control" 
-        placeholder="Type or scan machine serial (e.g. JA-01, TS-01, GB-05)..." 
-        value=""
-        style="font-family: var(--font-mono); font-weight: 800; font-size: 13.5px; height: 38px;"
-        autocomplete="off"
-      />
+      <div style="display: flex; gap: 8px;">
+        <input 
+          type="text" 
+          id="${inputId}" 
+          list="shared-machines-datalist" 
+          class="form-control" 
+          placeholder="Type or scan machine serial (e.g. JA-01, TS-01, GB-05)..." 
+          value=""
+          style="font-family: var(--font-mono); font-weight: 800; font-size: 13.5px; height: 38px; flex: 1;"
+          autocomplete="off"
+        />
+        <button type="button" class="btn btn-secondary btn-scan-machine-qr" data-input-id="${inputId}" style="border-color: ${themeColor}; color: ${themeColor}; font-weight: 700; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; padding: 0 12px; height: 38px;" title="Scan Machine QR Code with Camera">
+          <span style="font-size: 15px;">📷</span> Scan
+        </button>
+      </div>
     </div>
 
     <!-- Auto-Filled Live Machine Details Card -->
@@ -2480,8 +2487,11 @@ function openActionModal(board, initialActionType = null) {
   `;
 
   document.body.insertAdjacentHTML('beforeend', modalHtml);
-  const overlay = document.getElementById('ent-action-modal-overlay');
-  const close = () => overlay?.remove();
+  const close = () => {
+    document.getElementById('ent-qr-scanner-slot')?.remove();
+    document.getElementById('modal-qr-scanner-overlay')?.remove();
+    overlay?.remove();
+  };
 
   overlay.querySelectorAll('.btn-close-modal').forEach(b => b.addEventListener('click', close));
 
@@ -2765,6 +2775,49 @@ function openActionModal(board, initialActionType = null) {
   bindMachineLookup('send-machine-serial', 'send-auto');
   bindMachineLookup('receive-machine-serial', 'receive-auto');
   bindMachineLookup('reassign-machine-serial', 're-auto');
+
+  // Camera QR & Barcode Scanner for Machine Serials in Action Forms
+  overlay.querySelectorAll('.btn-scan-machine-qr').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const targetInputId = btn.getAttribute('data-input-id');
+      const targetInput = document.getElementById(targetInputId);
+      if (!targetInput) return;
+
+      let scannerSlot = document.getElementById('ent-qr-scanner-slot');
+      if (!scannerSlot) {
+        scannerSlot = document.createElement('div');
+        scannerSlot.id = 'ent-qr-scanner-slot';
+        document.body.appendChild(scannerSlot);
+      }
+      scannerSlot.innerHTML = renderQrScannerModal();
+      initQrScannerModalEvents({
+        onScanSuccess: (decodedText) => {
+          scannerSlot.innerHTML = '';
+          const parsed = qrCodeService.parseQrPayload(decodedText);
+          const rawId = (parsed.identifier || decodedText || '').trim();
+          const allMachines = storage.getTable(TABLE_NAMES.MACHINES) || [];
+          const existing = allMachines.find(m => 
+            (m.id && m.id.toLowerCase() === rawId.toLowerCase()) ||
+            (m.permanentMachineId && m.permanentMachineId.toLowerCase() === rawId.toLowerCase()) ||
+            (m.serialNumber && m.serialNumber.toString().toLowerCase() === rawId.toLowerCase())
+          );
+          const scannedSerial = existing ? existing.serialNumber : rawId;
+          targetInput.value = scannedSerial;
+          targetInput.dispatchEvent(new Event('input'));
+          targetInput.dispatchEvent(new Event('change'));
+          targetInput.focus();
+          notificationService.success(`Scanned Machine: ${scannedSerial}`);
+        },
+        onManualSearchRequest: () => {
+          scannerSlot.innerHTML = '';
+          targetInput.focus();
+        },
+        onClose: () => {
+          scannerSlot.innerHTML = '';
+        }
+      });
+    });
+  });
 
   // Form Submission
   document.getElementById('form-action-execution').addEventListener('submit', (e) => {

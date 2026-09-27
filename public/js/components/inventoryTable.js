@@ -13,6 +13,8 @@ import { authService } from '../services/authService.js';
 import { excelService, formatDisplayLine } from '../services/excelService.js';
 import { pdfService } from '../services/pdfService.js';
 import { notificationService } from '../services/notificationService.js';
+import { qrCodeService } from '../services/qrCodeService.js';
+import { renderQrScannerModal, initQrScannerModalEvents } from './qrScannerModal.js?v=4.7.4';
 import { state } from '../state.js';
 
 // Local UI state for collapsible advanced filters
@@ -457,7 +459,7 @@ export function renderInventoryTable() {
         <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap; width: 100%;">
           
           <!-- Unified Search Input -->
-          <div class="filter-search-wrap" style="flex: 1.5; min-width: 180px;">
+          <div class="filter-search-wrap" style="flex: 1.5; min-width: 180px; position: relative;">
             <span class="filter-search-icon" style="font-size: 12px; left: 8px;">🔍</span>
             <input 
               type="text" 
@@ -465,8 +467,9 @@ export function renderInventoryTable() {
               class="filter-search-input" 
               placeholder="Search Machine, Serial, Brand, Model..." 
               value="${filters.search || ''}"
-              style="height: 30px; font-size: 12px; padding: 4px 10px 4px 28px;"
+              style="height: 30px; font-size: 12px; padding: 4px ${filters.search ? '54px' : '32px'} 4px 28px;"
             />
+            <button id="btn-inventory-scan-qr" type="button" class="btn btn-ghost btn-sm" style="position: absolute; right: ${filters.search ? '26px' : '4px'}; top: 50%; transform: translateY(-50%); padding: 0 4px; font-size: 13px; color: #38bdf8; height: 22px; display: flex; align-items: center; justify-content: center; line-height: 1;" title="Scan Machine QR Code / Barcode with Camera">📷</button>
             ${filters.search ? `
               <button id="btn-clear-search" type="button" class="btn btn-ghost btn-sm" style="position: absolute; right: 4px; top: 50%; transform: translateY(-50%); padding: 0 4px; font-size: 11px; color: var(--text-muted);" title="Clear Search">✕</button>
             ` : ''}
@@ -687,6 +690,44 @@ export function initInventoryTableEvents() {
   if (clearSearchBtn) {
     clearSearchBtn.addEventListener('click', () => {
       state.updateFilters({ search: '', page: 1 });
+    });
+  }
+
+  // Camera QR & Barcode Scanner for Inventory Quick Search
+  const btnScanSearch = document.getElementById('btn-inventory-scan-qr');
+  if (btnScanSearch) {
+    btnScanSearch.addEventListener('click', () => {
+      let scannerSlot = document.getElementById('inventory-qr-scanner-slot');
+      if (!scannerSlot) {
+        scannerSlot = document.createElement('div');
+        scannerSlot.id = 'inventory-qr-scanner-slot';
+        document.body.appendChild(scannerSlot);
+      }
+      scannerSlot.innerHTML = renderQrScannerModal();
+      initQrScannerModalEvents({
+        onScanSuccess: (decodedText) => {
+          scannerSlot.innerHTML = '';
+          const parsed = qrCodeService.parseQrPayload(decodedText);
+          const idOrSerial = (parsed.identifier || decodedText || '').trim();
+          if (!idOrSerial) return;
+          const allMachines = storage.getTable(TABLE_NAMES.MACHINES) || [];
+          const match = allMachines.find(m => 
+            (m.id && m.id.toLowerCase() === idOrSerial.toLowerCase()) ||
+            (m.permanentMachineId && m.permanentMachineId.toLowerCase() === idOrSerial.toLowerCase()) ||
+            (m.serialNumber && m.serialNumber.toString().toLowerCase() === idOrSerial.toLowerCase())
+          );
+          const targetSerial = match ? match.serialNumber : idOrSerial;
+          state.updateFilters({ search: targetSerial, page: 1 });
+          notificationService.success(`Scanned machine: ${targetSerial}`);
+        },
+        onManualSearchRequest: () => {
+          scannerSlot.innerHTML = '';
+          if (searchInput) searchInput.focus();
+        },
+        onClose: () => {
+          scannerSlot.innerHTML = '';
+        }
+      });
     });
   }
 

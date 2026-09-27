@@ -19,6 +19,8 @@ import { transferService } from '../services/transferService.js';
 import { historyService } from '../services/historyService.js';
 import { authService } from '../services/authService.js';
 import { notificationService } from '../services/notificationService.js';
+import { qrCodeService } from '../services/qrCodeService.js';
+import { renderQrScannerModal, initQrScannerModalEvents } from './qrScannerModal.js?v=4.7.4';
 import { state } from '../state.js';
 
 let attachedDocuments = [];
@@ -87,8 +89,8 @@ export function renderTransferModal() {
 
             <!-- Serial Search Input & Dropdown -->
             <div style="position: relative;">
-              <div style="display: flex; gap: 10px;">
-                <div style="position: relative; flex: 1;">
+              <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <div style="position: relative; flex: 1; min-width: 220px;">
                   <input 
                     type="text" 
                     id="inp-transfer-search-serial" 
@@ -103,8 +105,11 @@ export function renderTransferModal() {
                     <button type="button" id="btn-clear-transfer-machine" title="Clear and search another machine" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.35); color: #f87171; font-size: 11px; cursor: pointer; padding: 3px 8px; border-radius: 4px; font-weight: 700;">✕ Clear</button>
                   ` : ''}
                 </div>
-                <button type="button" id="btn-search-serial-trigger" class="btn btn-primary" style="font-weight: 700;">
+                <button type="button" id="btn-search-serial-trigger" class="btn btn-primary" style="font-weight: 700; white-space: nowrap;">
                   Find Machine
+                </button>
+                <button type="button" id="btn-transfer-scan-qr" class="btn" style="background: linear-gradient(135deg, #0284c7, #0369a1); border: 1.5px solid #38bdf8; color: #fff; font-weight: 800; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 10px rgba(2, 132, 199, 0.4); white-space: nowrap;" title="Scan Machine QR Code or Barcode with Camera">
+                  <span style="font-size: 16px;">📷</span> Scan QR
                 </button>
               </div>
 
@@ -382,6 +387,9 @@ export function initTransferModalEvents() {
   const cancelBtn = document.getElementById('btn-cancel-transfer');
 
   const closeModal = () => {
+    const scannerSlot = document.getElementById('transfer-qr-scanner-slot');
+    if (scannerSlot) scannerSlot.remove();
+    document.getElementById('modal-qr-scanner-overlay')?.remove();
     attachedDocuments = [];
     selectedDest = { groupId: '', unitId: '', floorId: '', lineId: '', searchQuery: '' };
     state.set('activeMachineId', null);
@@ -536,6 +544,44 @@ export function initTransferModalEvents() {
     if (btnFindSerial) {
       btnFindSerial.addEventListener('click', () => {
         performSearch(inpSerial.value);
+      });
+    }
+
+    const btnScanQr = document.getElementById('btn-transfer-scan-qr');
+    if (btnScanQr) {
+      btnScanQr.addEventListener('click', () => {
+        let scannerSlot = document.getElementById('transfer-qr-scanner-slot');
+        if (!scannerSlot) {
+          scannerSlot = document.createElement('div');
+          scannerSlot.id = 'transfer-qr-scanner-slot';
+          document.body.appendChild(scannerSlot);
+        }
+        scannerSlot.innerHTML = renderQrScannerModal();
+        initQrScannerModalEvents({
+          onScanSuccess: (decodedText) => {
+            scannerSlot.innerHTML = '';
+            const parsed = qrCodeService.parseQrPayload(decodedText);
+            const idOrSerial = (parsed.identifier || decodedText || '').trim();
+            if (!idOrSerial) return;
+            const match = allMachines.find(m => 
+              (m.id && m.id.toLowerCase() === idOrSerial.toLowerCase()) ||
+              (m.permanentMachineId && m.permanentMachineId.toLowerCase() === idOrSerial.toLowerCase()) ||
+              (m.serialNumber && m.serialNumber.toString().toLowerCase() === idOrSerial.toLowerCase())
+            );
+            const targetSerial = match ? match.serialNumber : idOrSerial;
+            if (inpSerial) {
+              inpSerial.value = targetSerial;
+            }
+            performSearch(targetSerial);
+          },
+          onManualSearchRequest: () => {
+            scannerSlot.innerHTML = '';
+            if (inpSerial) inpSerial.focus({ preventScroll: true });
+          },
+          onClose: () => {
+            scannerSlot.innerHTML = '';
+          }
+        });
       });
     }
 
