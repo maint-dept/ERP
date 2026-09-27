@@ -190,15 +190,6 @@ class PDFService {
             color: #64748b;
             margin-top: 2px;
           }
-          .report-footer {
-            border-top: 1px solid #e2e8f0;
-            padding-top: 8px;
-            margin-top: 20px;
-            display: flex;
-            justify-content: space-between;
-            font-size: 10px;
-            color: #94a3b8;
-          }
           @media print {
             body { padding: 0; }
             .no-print { display: none; }
@@ -471,15 +462,6 @@ class PDFService {
             font-size: 9.5px;
             color: #64748b;
           }
-          .footer {
-            border-top: 1px solid #e2e8f0;
-            padding-top: 8px;
-            margin-top: 24px;
-            display: flex;
-            justify-content: space-between;
-            font-size: 10px;
-            color: #94a3b8;
-          }
           @media print {
             body { padding: 0; }
             .no-print { display: none; }
@@ -616,10 +598,6 @@ class PDFService {
           `;
         })()}
 
-        <div class="footer">
-          <div>Al-Muslim Group &bull; Maintenance Department ERP &bull; Official Machine Movement Pass &bull; Request ID: ${req.requestNumber}</div>
-          <div>Confidential Document &bull; Generated on ${dateStr} ${timeStr}</div>
-        </div>
       </body>
       </html>
     `;
@@ -843,15 +821,6 @@ class PDFService {
             color: #64748b;
             margin-top: 2px;
           }
-          .report-footer {
-            border-top: 1px solid #e2e8f0;
-            padding-top: 6px;
-            margin-top: 16px;
-            display: flex;
-            justify-content: space-between;
-            font-size: 9px;
-            color: #94a3b8;
-          }
           @media print {
             body {
               padding: 0 !important;
@@ -1024,12 +993,6 @@ class PDFService {
             `).join('')}
           </div>
           ` : ''}
-
-          <div class="report-footer">
-            <div>🏭 ${companyName} &bull; Maintenance Department ERP</div>
-            <div>Official Machine Summary Report &bull; Page Setup: A4 Auto-Paging</div>
-          </div>
-
         </div>
       </body>
       </html>
