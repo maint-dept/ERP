@@ -9,7 +9,7 @@ import { state } from '../state.js';
 import { masterDataService } from '../services/masterDataService.js';
 
 export const REPORT_TYPES = [
-  { key: 'ALL', label: 'All Reports (Default / সব Reports)', description: 'Universal baseline signature template for all reports' },
+  { key: 'ALL', label: 'All Reports (Default)', description: 'Universal baseline signature template for all reports' },
   { key: 'MACHINE_SUMMARY', label: 'Machine Summary & Inventory Report', description: 'Reports & Analytics → Machine Reports & Inventory Grid' },
   { key: 'TRANSFER_GATE_PASS', label: 'Transfer Gate Pass / Delivery Challan', description: 'Machine Movement & Transfer Gate Pass' },
   { key: 'ENT_LAB_REPORT', label: 'ENT Lab Management Report', description: 'Reports & Analytics → ENT Lab Management Report' },
