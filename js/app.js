@@ -17,6 +17,7 @@ import { renderMachineModal, initMachineModalEvents } from './components/machine
 import { renderMachineDetails, initMachineDetailsEvents } from './components/machineDetails.js';
 import { renderTransferModal, initTransferModalEvents } from './components/transferModal.js';
 import { renderTransferDetailsModal, initTransferDetailsModalEvents } from './components/transferDetailsModal.js';
+import { renderEditTransferModal, initEditTransferModalEvents } from './components/editTransferModal.js';
 import { renderTransfersView, initTransfersViewEvents } from './components/transfersView.js';
 import { renderTransferWorkflowBuilder, initTransferWorkflowBuilderEvents } from './components/transferWorkflowBuilder.js';
 import { renderMasterDataView, initMasterDataEvents } from './components/masterDataView.js';
@@ -699,6 +700,8 @@ class ERPApplication {
         return renderTransferModal();
       case 'transfer-details':
         return renderTransferDetailsModal();
+      case 'edit-transfer':
+        return renderEditTransferModal();
       case 'import-excel':
         return renderExcelImportModal();
       case 'column-visibility':
@@ -811,6 +814,9 @@ class ERPApplication {
         break;
       case 'transfer-details':
         initTransferDetailsModalEvents();
+        break;
+      case 'edit-transfer':
+        initEditTransferModalEvents();
         break;
       case 'import-excel':
         initExcelImportEvents();

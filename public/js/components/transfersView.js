@@ -286,6 +286,11 @@ export function renderTransfersView() {
                             View
                           </button>
                         `}
+                        ${!isCompleted && !isRejected && (req.requestedBy === authService.getCurrentUser()?.id || authService.isAdmin()) ? `
+                          <button class="btn btn-warning btn-sm btn-edit-transfer-row" data-id="${req.id}" title="Edit destination location before approval" style="font-size: 10px; padding: 4px 7px; font-weight: 700; white-space: nowrap; background: rgba(245, 158, 11, 0.2); border: 1px solid #f59e0b; color: #fbbf24;">
+                            ✏️ Edit
+                          </button>
+                        ` : ''}
                         <button class="btn btn-ghost btn-sm btn-print-transfer-row" data-id="${req.id}" title="Print Official PDF Gate Pass" style="font-size: 11px; padding: 4px 6px; color: #38bdf8;">
                           🖨️
                         </button>
@@ -327,6 +332,18 @@ export function initTransfersViewEvents() {
       if (id) {
         state.set('activeTransferRequestId', id);
         state.set('activeModal', 'transfer-details');
+      }
+    });
+  });
+
+  // Edit transfer request button
+  document.querySelectorAll('.btn-edit-transfer-row').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const id = btn.getAttribute('data-id');
+      if (id) {
+        state.set('activeTransferRequestId', id);
+        state.set('activeModal', 'edit-transfer');
       }
     });
   });

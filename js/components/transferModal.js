@@ -51,6 +51,9 @@ export function renderTransferModal() {
   const servicesCount = historyRecords.filter(h => h.type === 'SERVICE_REPAIR' || h.actionType === 'SERVICE').length;
   const sparePartsCount = historyRecords.filter(h => h.type === 'SPARE_PART_REPLACEMENT').length;
 
+  // Active transfer request check for duplicate prevention
+  const activeExistingTransfer = machine ? transferService.getActiveTransferForMachine(machine.id) : null;
+
   const currentGroupName = machine?.group?.name || groups.find(g => g.id === machine?.groupId)?.name || '';
   const currentPath = machine ? `${currentGroupName ? currentGroupName + ' > ' : ''}${machine.unit?.name || 'Unit'} > ${machine.floor?.name || 'Floor'} > ${machine.line?.name || 'Line'}` : 'Not Selected';
   const currentFloorName = machine?.floor?.name || 'Current Floor';
@@ -155,6 +158,28 @@ export function renderTransferModal() {
                     <span style="color: var(--text-muted);">Service / Repairs:</span> <strong style="color: #34d399;">${servicesCount + sparePartsCount} events</strong>
                   </div>
                 </div>
+
+                ${activeExistingTransfer ? `
+                  <div style="margin-top: 12px; background: rgba(239, 68, 68, 0.12); border: 1.5px solid #ef4444; border-radius: var(--radius-md); padding: 12px 14px; display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+                    <div style="display: flex; align-items: flex-start; gap: 10px;">
+                      <span style="font-size: 20px;">⚠️</span>
+                      <div>
+                        <div style="font-size: 13px; font-weight: 800; color: #f87171;">
+                          Active Transfer Request Already in Progress (#${activeExistingTransfer.requestNumber})
+                        </div>
+                        <div style="font-size: 11.5px; color: #cbd5e1; margin-top: 2px; line-height: 1.4;">
+                          Machine <strong>${machine.serialNumber}</strong> is currently awaiting transfer: 
+                          <span class="badge badge-maint" style="font-size: 10px; padding: 1px 6px;">${activeExistingTransfer.status.replace(/_/g, ' ')}</span>
+                          &bull; Requested by <strong>${activeExistingTransfer.requestedByName || 'User'}</strong> on ${new Date(activeExistingTransfer.requestedAt).toLocaleDateString()}.
+                          <br/><span style="color: #fca5a5; font-weight: 600;">A machine cannot have multiple transfer requests at the same time.</span>
+                        </div>
+                      </div>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-secondary btn-view-existing-active-transfer" data-id="${activeExistingTransfer.id}" style="font-size: 11px; font-weight: 700; white-space: nowrap; border-color: #38bdf8; color: #38bdf8;">
+                      👁️ View Active Request
+                    </button>
+                  </div>
+                ` : ''}
               </div>
             ` : `
               <div style="margin-top: 14px; background: rgba(15, 23, 42, 0.45); border: 1.5px dashed rgba(56, 189, 248, 0.25); border-radius: var(--radius-md); padding: 18px 20px; text-align: center;">
@@ -303,7 +328,7 @@ export function renderTransferModal() {
           </div>
           <div style="display: flex; gap: 10px;">
             <button type="button" id="btn-cancel-transfer" class="btn btn-secondary">Cancel</button>
-            <button type="submit" form="form-transfer-request" id="btn-submit-transfer-request" class="btn btn-primary" style="font-weight: 800; padding: 8px 20px;">
+            <button type="submit" form="form-transfer-request" id="btn-submit-transfer-request" class="btn btn-primary" style="font-weight: 800; padding: 8px 20px; ${activeExistingTransfer ? 'opacity: 0.45; cursor: not-allowed;' : ''}" ${activeExistingTransfer ? 'disabled title="Cannot submit: An active transfer request already exists for this machine."' : ''}>
               🚀 Submit Transfer Request
             </button>
           </div>
@@ -972,20 +997,36 @@ export function initTransferModalEvents() {
 
   bindDocActionButtons();
 
-  // Submit Request Form — Async, confirmed cloud write before closing modal
+  // Bind View Existing Active Request button (if machine already has ongoing transfer)
+  document.querySelectorAll('.btn-view-existing-active-transfer').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const reqId = btn.getAttribute('data-id');
+      if (reqId) {
+        closeModal();
+        state.set('activeTransferRequestId', reqId);
+        state.set('activeModal', 'transfer-details');
+      }
+    });
+  });
+
+  // Submit Request Form — Async, protected against double-click and duplicate requests
+  let isSubmittingTransfer = false;
   const form = document.getElementById('form-transfer-request');
   if (form) {
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
 
-      const submitBtn = form.querySelector('button[type="submit"]');
-      const originalBtnText = submitBtn ? submitBtn.innerHTML : '';
-
-      // 1. Disable button + show saving spinner (prevents double-submit)
-      if (submitBtn) {
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = '<span style="display:inline-flex;align-items:center;gap:6px;"><span style="display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.7s linear infinite;"></span>Submitting to Cloud...</span>';
+      if (isSubmittingTransfer) {
+        console.warn('Transfer request submission already in progress.');
+        return;
       }
+
+      const submitBtn = document.getElementById('btn-submit-transfer-request') || form.querySelector('button[type="submit"]');
+      const cancelBtn = document.getElementById('btn-cancel-transfer');
+      const closeBtn = document.getElementById('btn-close-transfer-modal');
+      const originalBtnText = submitBtn ? submitBtn.innerHTML : '🚀 Submit Transfer Request';
 
       let machineId = state.get('activeMachineId');
       const allM = storage.getTable(TABLE_NAMES.MACHINES) || [];
@@ -1003,15 +1044,25 @@ export function initTransferModalEvents() {
       }
 
       if (!machineId) {
-        if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = originalBtnText; }
         notificationService.warning('Please enter or select a valid Machine Serial Number first.');
         const inpS = document.getElementById('inp-transfer-search-serial');
         if (inpS) inpS.focus({ preventScroll: true });
         return;
       }
 
+      // Check if machine already has an active transfer request before proceeding
+      const activeExisting = transferService.getActiveTransferForMachine(machineId);
+      if (activeExisting) {
+        notificationService.error(`Machine already has an active Transfer Request (#${activeExisting.requestNumber}) in status "${activeExisting.status.replace(/_/g, ' ')}". Multiple requests for the same machine are not allowed.`);
+        if (submitBtn) {
+          submitBtn.disabled = true;
+          submitBtn.style.opacity = '0.5';
+          submitBtn.style.cursor = 'not-allowed';
+        }
+        return;
+      }
+
       if (!authService.canRequestTransfer()) {
-        if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = originalBtnText; }
         notificationService.error('Access Denied: You do not have permission to create a Machine Transfer Request.');
         return;
       }
@@ -1024,13 +1075,23 @@ export function initTransferModalEvents() {
       const remarks = document.getElementById('transfer-remarks')?.value?.trim() || '';
 
       if (!destGroupId || !destUnitId || !destFloorId || !destLineId) {
-        if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = originalBtnText; }
         notificationService.warning('Please select the Target Destination Group, Factory/Unit, Floor, and Production Line.');
         return;
       }
 
+      // 1. Guard and show immediate loading spinner to user
+      isSubmittingTransfer = true;
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.style.opacity = '0.7';
+        submitBtn.style.cursor = 'wait';
+        submitBtn.innerHTML = '<span style="display:inline-flex;align-items:center;gap:8px;"><span style="display:inline-block;width:15px;height:15px;border:2px solid rgba(255,255,255,0.3);border-top-color:#38bdf8;border-radius:50%;animation:spin 0.6s linear infinite;"></span>Submitting Transfer Request...</span>';
+      }
+      if (cancelBtn) cancelBtn.disabled = true;
+      if (closeBtn) closeBtn.disabled = true;
+
       try {
-        // 2. Await confirmed cloud write (throws CloudSaveError if Firestore write fails)
+        // 2. Await confirmed cloud write
         const createdRequest = await transferService.createTransferRequest({
           machineId,
           destGroupId,
@@ -1049,17 +1110,24 @@ export function initTransferModalEvents() {
         state.emit('inventory:updated');
 
       } catch (err) {
-        // 4. Keep modal open on failure — re-enable button, show error
+        // 4. Re-enable button on failure and show error
+        isSubmittingTransfer = false;
         if (submitBtn) {
           submitBtn.disabled = false;
+          submitBtn.style.opacity = '1';
+          submitBtn.style.cursor = 'pointer';
           submitBtn.innerHTML = originalBtnText;
         }
+        if (cancelBtn) cancelBtn.disabled = false;
+        if (closeBtn) closeBtn.disabled = false;
 
         if (err.name === 'CloudSaveError') {
           notificationService.error(err.message || '❌ Cloud Save Failed: Transfer request was not saved to the cloud.');
         } else {
           notificationService.error('Transfer Request Error: ' + err.message);
         }
+      } finally {
+        isSubmittingTransfer = false;
       }
     });
   }

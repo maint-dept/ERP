@@ -358,10 +358,10 @@ export function renderTransferDetailsModal() {
             Logged in as: <strong style="color: #fff;">${user.name}</strong> (${user.role})
           </div>
 
-          <div style="display: flex; gap: 10px;">
-            ${req.status === TRANSFER_STATUSES.REVISION_REQUESTED && (req.requestedBy === user.id || authService.isAdmin()) ? `
-              <button id="btn-action-resubmit-transfer" class="btn btn-primary" data-id="${req.id}">
-                🔄 Edit &amp; Resubmit Request
+          <div style="display: flex; gap: 10px; align-items: center;">
+            ${!isCompleted && !isRejected && (req.requestedBy === user.id || authService.isAdmin()) ? `
+              <button id="btn-action-edit-transfer" class="btn btn-warning" data-id="${req.id}" style="font-weight: 700; font-size: 12px; padding: 6px 14px; background: #f59e0b; border-color: #f59e0b; color: #000;">
+                ✏️ Edit Destination / Location
               </button>
             ` : ''}
 
@@ -474,6 +474,15 @@ export function initTransferDetailsModalEvents() {
           alert('Error: ' + err.message);
         }
       }
+    });
+  }
+
+  // Edit Destination / Location Action
+  const btnEdit = document.getElementById('btn-action-edit-transfer');
+  if (btnEdit && req) {
+    btnEdit.addEventListener('click', () => {
+      state.set('activeTransferRequestId', req.id);
+      state.set('activeModal', 'edit-transfer');
     });
   }
 

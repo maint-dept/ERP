@@ -85,6 +85,25 @@ class TransferService {
   }
 
   /**
+   * Returns any currently active (pending / in-progress / revision) transfer request for a machine.
+   * If found, indicates that a duplicate request cannot be submitted.
+   */
+  getActiveTransferForMachine(machineIdOrSerial) {
+    const all = storage.getTable(TABLE_NAMES.TRANSFER_REQUESTS) || [];
+    const m = storage.getItem(TABLE_NAMES.MACHINES, machineIdOrSerial) || 
+              (storage.getTable(TABLE_NAMES.MACHINES) || []).find(x => x.serialNumber === machineIdOrSerial);
+    const mId = m?.id || machineIdOrSerial;
+    const mSerial = m?.serialNumber || machineIdOrSerial;
+
+    return all.find(r => 
+      (r.machineId === mId || r.machineInfo?.serialNumber === mSerial) &&
+      r.status !== TRANSFER_STATUSES.COMPLETED &&
+      r.status !== TRANSFER_STATUSES.REJECTED &&
+      r.status !== 'CANCELLED'
+    ) || null;
+  }
+
+  /**
    * Helper to generate human-readable unique sequential Transfer Request ID (e.g. TR-2026-000001)
    */
   generateRequestNumber() {
@@ -108,6 +127,12 @@ class TransferService {
 
     const machine = storage.getItem(TABLE_NAMES.MACHINES, machineId);
     if (!machine) throw new Error('Machine record not found in ERP database.');
+
+    // 0.1 Duplicate Request Prevention: One machine cannot have multiple active/pending transfer requests
+    const activeExisting = this.getActiveTransferForMachine(machine.id);
+    if (activeExisting) {
+      throw new Error(`Machine [${machine.serialNumber}] already has an active Transfer Request (#${activeExisting.requestNumber}) in status "${activeExisting.status.replace(/_/g, ' ')}" requested by ${activeExisting.requestedByName || 'User'}. Multiple transfer requests cannot be submitted for the same machine until the active request is completed, rejected, or cancelled.`);
+    }
 
     // 1. Validate destination is not identical to source
     if (machine.unitId === destUnitId && machine.floorId === destFloorId && machine.lineId === destLineId) {
@@ -638,6 +663,149 @@ class TransferService {
     // Confirmed cloud write
     const ok = await storage.saveTable(TABLE_NAMES.TRANSFER_REQUESTS, true);
     if (!ok) throw new CloudSaveError('❌ Cloud Save Failed: Transfer resubmission could not be saved to the cloud.');
+
+    return updated;
+  }
+
+  /**
+   * Allows requester or Admin to edit transfer request destination location, reason, remarks, and documents
+   * before the transfer request is approved/completed.
+   * CONFIRMED WRITE: awaits Firestore HTTP 200.
+   */
+  async updateTransferRequest(requestId, { destGroupId, destUnitId, destFloorId, destLineId, reason, remarks, documents }) {
+    const user = authService.getCurrentUser() || { id: 'usr-1', name: 'Authorized User', role: 'USER' };
+    const req = this.getTransferRequestById(requestId);
+    if (!req) throw new Error('Transfer request not found.');
+
+    if (req.status === TRANSFER_STATUSES.COMPLETED) {
+      throw new Error('This transfer request has already been approved and completed. Destination location cannot be modified.');
+    }
+    if (req.status === TRANSFER_STATUSES.REJECTED) {
+      throw new Error('This transfer request has been rejected and cannot be edited.');
+    }
+
+    if (req.requestedBy !== user.id && !authService.isAdmin()) {
+      throw new Error('Access Denied: Only the original requester or an Administrator can edit this transfer request.');
+    }
+
+    const machine = storage.getItem(TABLE_NAMES.MACHINES, req.machineId);
+    if (machine && machine.unitId === destUnitId && machine.floorId === destFloorId && machine.lineId === destLineId) {
+      throw new Error('Invalid Destination: Target Line is identical to the machine\'s current location.');
+    }
+
+    if (!destUnitId || !destFloorId || !destLineId) {
+      throw new Error('Destination Unit, Floor, and Production Line are required.');
+    }
+
+    const destPath = masterDataService.getFullLocationPath(destUnitId, destFloorId, destLineId, destGroupId);
+    const destUnit = storage.getItem(TABLE_NAMES.UNITS, destUnitId)?.name || 'Unit';
+    const destFloor = storage.getItem(TABLE_NAMES.FLOORS, destFloorId)?.name || 'Floor';
+    const destLine = storage.getItem(TABLE_NAMES.LINES, destLineId)?.name || 'Line';
+
+    const now = new Date();
+    const oldDestPath = req.destPath || 'Previous Location';
+
+    const updatedHistory = [
+      ...(req.approvalHistory || []),
+      {
+        level: req.currentLevel,
+        action: 'DESTINATION_EDITED',
+        approverName: user.name,
+        approverRole: user.role,
+        date: now.toLocaleDateString('en-GB'),
+        time: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        timestamp: now.toISOString(),
+        remarks: `Destination location edited from "${oldDestPath}" to "${destPath}". Note: ${reason || 'Location correction'}`
+      }
+    ];
+
+    // Re-evaluate approval workflow if destination location changed
+    let newLevels = req.levels;
+    let newWorkflowName = req.workflowName;
+    let newWorkflowId = req.workflowId;
+    if (req.destUnitId !== destUnitId || req.destFloorId !== destFloorId || req.destLineId !== destLineId) {
+      try {
+        const mn = machine ? storage.getItem(TABLE_NAMES.MACHINE_NAMES, machine.machineNameId) : null;
+        const matchedWf = workflowService.matchWorkflow({
+          sourceGroupId: req.sourceGroupId,
+          sourceUnitId: req.sourceUnitId,
+          sourceFloorId: req.sourceFloorId,
+          sourceLineId: req.sourceLineId,
+          destUnitId,
+          destFloorId,
+          destLineId,
+          categoryId: mn?.categoryId
+        });
+        if (matchedWf && matchedWf.levels?.length) {
+          newWorkflowId = matchedWf.id;
+          newWorkflowName = matchedWf.name;
+          newLevels = matchedWf.levels.map(lvl => ({
+            level: lvl.level,
+            title: lvl.title,
+            approverType: lvl.approverType,
+            approverRole: lvl.approverRole || '',
+            approverUserId: lvl.approverUserId || '',
+            description: lvl.description || '',
+            status: 'PENDING',
+            approvedBy: null,
+            approvedByName: null,
+            approvedAt: null,
+            remarks: null
+          }));
+        }
+      } catch (_) {}
+    }
+
+    const updatedFields = {
+      destGroupId: destGroupId || req.destGroupId,
+      destUnitId,
+      destFloorId,
+      destLineId,
+      destLocation: { unit: destUnit, floor: destFloor, line: destLine },
+      destPath,
+      reason: (reason && reason.trim()) ? reason.trim() : req.reason,
+      remarks: remarks !== undefined ? remarks.trim() : req.remarks,
+      workflowId: newWorkflowId,
+      workflowName: newWorkflowName,
+      levels: newLevels,
+      currentLevel: 1, // Reset to Level 1 verification for the new destination
+      status: req.status === TRANSFER_STATUSES.REVISION_REQUESTED ? TRANSFER_STATUSES.PENDING_APPROVAL : req.status,
+      approvalHistory: updatedHistory,
+      updatedAt: now.toISOString()
+    };
+
+    if (documents && Array.isArray(documents)) {
+      updatedFields.documents = documents;
+    }
+
+    const updated = storage.update(TABLE_NAMES.TRANSFER_REQUESTS, req.id, updatedFields);
+
+    auditService.log(
+      'TRANSFER_REQUEST_EDITED',
+      'TRANSFER',
+      req.requestNumber,
+      `Destination edited to ${destPath} by ${user.name}`
+    );
+
+    // Confirmed cloud write
+    const ok = await storage.saveTable(TABLE_NAMES.TRANSFER_REQUESTS, true);
+    if (!ok) throw new CloudSaveError('❌ Cloud Save Failed: Transfer request update could not be saved to the cloud.');
+
+    // Notify approvers at new location
+    notificationService.notify({
+      title: '✏️ Transfer Request Destination Updated',
+      message: `${user.name} updated destination of transfer request ${req.requestNumber} for Machine ${req.machineInfo?.serialNumber} to ${destLine} on ${destFloor}.`,
+      type: 'APPROVAL_REQUEST',
+      module: 'transfers',
+      action: 'APPROVE',
+      entityType: 'TRANSFER',
+      entityId: req.id,
+      targetUrl: '#approvals',
+      locationScope: {
+        unitId: destUnitId,
+        floorId: destFloorId
+      }
+    });
 
     return updated;
   }
