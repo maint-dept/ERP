@@ -21,6 +21,13 @@ class GlobalState {
       if (stored) savedCols = JSON.parse(stored);
     } catch (e) {}
 
+    const defaultFrozenCols = ['machineName', 'model', 'serialNumber'];
+    let savedFrozenCols = null;
+    try {
+      const storedFrozen = localStorage.getItem('erp_frozen_columns_v1');
+      if (storedFrozen) savedFrozenCols = JSON.parse(storedFrozen);
+    } catch (e) {}
+
     const activeUserId = typeof localStorage !== 'undefined' ? localStorage.getItem('al_muslim_active_user_id') : null;
     let initialView = 'home';
     try {
@@ -55,7 +62,7 @@ class GlobalState {
         sortOrder: 'asc'
       },
       selectedMachineIds: new Set(),
-      frozenColumns: ['sl', 'select', 'machineName'],
+      frozenColumns: savedFrozenCols && Array.isArray(savedFrozenCols) ? savedFrozenCols : defaultFrozenCols,
       visibleColumns: new Set(savedCols && Array.isArray(savedCols) && savedCols.length > 0 ? savedCols : defaultCols),
       activeModal: null,
       activeMachineId: null,
@@ -132,6 +139,36 @@ class GlobalState {
       localStorage.setItem('erp_visible_columns_v3', JSON.stringify(Array.from(this.state.visibleColumns)));
     } catch (e) {}
     this.emit('columns:changed', Array.from(this.state.visibleColumns));
+  }
+
+  setFrozenColumns(colsArray) {
+    if (!Array.isArray(colsArray)) return;
+    this.state.frozenColumns = colsArray;
+    try {
+      localStorage.setItem('erp_frozen_columns_v1', JSON.stringify(colsArray));
+    } catch (e) {}
+    this.emit('frozenColumns:changed', colsArray);
+    this.emit('columns:changed', Array.from(this.state.visibleColumns));
+  }
+
+  toggleFreezeColumn(colKey) {
+    let current = Array.isArray(this.state.frozenColumns) ? [...this.state.frozenColumns] : ['machineName', 'model', 'serialNumber'];
+    const idx = current.indexOf(colKey);
+    if (idx >= 0) {
+      current.splice(idx, 1);
+    } else {
+      current.push(colKey);
+    }
+    this.setFrozenColumns(current);
+  }
+
+  isColumnFrozen(colKey) {
+    return Array.isArray(this.state.frozenColumns) && this.state.frozenColumns.includes(colKey);
+  }
+
+  resetFrozenColumns() {
+    const defaultFrozenCols = ['machineName', 'model', 'serialNumber'];
+    this.setFrozenColumns(defaultFrozenCols);
   }
 
   on(event, callback) {

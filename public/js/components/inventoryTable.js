@@ -103,45 +103,256 @@ export function renderInventoryTable() {
 
   const hasActiveFilters = activeTags.length > 0;
 
-  // 4. Render Table Header Columns with explicit fixed widths
+  // 4. Dynamic Frozen Columns Layout Calculation
+  const frozenColKeys = state.get('frozenColumns') || ['machineName', 'model', 'serialNumber'];
+
+  // Base Column Definitions
+  const allColDefs = [
+    {
+      key: 'machineName',
+      label: 'Machine Name',
+      width: 180,
+      renderTh: (thStyle, thClass) => `<th class="th-sortable ${thClass}" data-sort="machineName" style="width: 180px; min-width: 180px; max-width: 180px; cursor: pointer; ${thStyle}">Machine Name</th>`,
+      renderTd: (m, meta, tdStyle, tdClass) => `<td class="${tdClass}" style="font-weight: 600; color: #fff; overflow: hidden; text-overflow: ellipsis; ${tdStyle}">${mnMap.get(m.machineNameId) || m.machineName || '—'}</td>`
+    },
+    {
+      key: 'model',
+      label: 'Model',
+      width: 150,
+      renderTh: (thStyle, thClass) => `<th class="th-sortable ${thClass}" data-sort="model" style="width: 150px; min-width: 150px; max-width: 150px; cursor: pointer; ${thStyle}">Model</th>`,
+      renderTd: (m, meta, tdStyle, tdClass) => `<td class="${tdClass}" style="overflow: hidden; text-overflow: ellipsis; font-family: var(--font-mono); font-weight: 600; ${tdStyle}">${mdlMap.get(m.modelId) || m.model || '—'}</td>`
+    },
+    {
+      key: 'serialNumber',
+      label: 'Serial Number',
+      width: 160,
+      renderTh: (thStyle, thClass) => `<th class="th-sortable ${thClass}" data-sort="serialNumber" style="width: 160px; min-width: 160px; max-width: 160px; cursor: pointer; ${thStyle}">Serial Number</th>`,
+      renderTd: (m, meta, tdStyle, tdClass) => `<td class="${tdClass}" style="${tdStyle}"><a href="javascript:void(0)" class="machine-serial-link btn-inspect-machine" data-id="${m.id}" title="Click to view full machine lifetime & specifications">${m.serialNumber || '—'}</a></td>`
+    },
+    {
+      key: 'brand',
+      label: 'Brand',
+      width: 130,
+      renderTh: (thStyle, thClass) => `<th class="th-sortable ${thClass}" data-sort="brand" style="width: 130px; min-width: 130px; max-width: 130px; cursor: pointer; ${thStyle}">Brand</th>`,
+      renderTd: (m, meta, tdStyle, tdClass) => `<td class="${tdClass}" style="overflow: hidden; text-overflow: ellipsis; ${tdStyle}">${brdMap.get(m.brandId) || m.brand || '—'}</td>`
+    },
+    {
+      key: 'group',
+      label: 'Group',
+      width: 150,
+      renderTh: (thStyle, thClass) => `<th class="th-sortable ${thClass}" data-sort="group" style="width: 150px; min-width: 150px; max-width: 150px; cursor: pointer; ${thStyle}">Group</th>`,
+      renderTd: (m, meta, tdStyle, tdClass) => `<td class="${tdClass}" style="overflow: hidden; text-overflow: ellipsis; ${tdStyle}">${grpMap.get(m.groupId) || m.group || '—'}</td>`
+    },
+    {
+      key: 'unit',
+      label: 'Unit / Factory',
+      width: 190,
+      renderTh: (thStyle, thClass) => `<th class="th-sortable ${thClass}" data-sort="unit" style="width: 190px; min-width: 190px; max-width: 190px; cursor: pointer; ${thStyle}">Unit / Factory</th>`,
+      renderTd: (m, meta, tdStyle, tdClass) => `<td class="${tdClass}" style="overflow: hidden; text-overflow: ellipsis; ${tdStyle}">${untMap.get(m.unitId) || m.unit || '—'}</td>`
+    },
+    {
+      key: 'floor',
+      label: 'Floor',
+      width: 130,
+      renderTh: (thStyle, thClass) => `<th class="th-sortable ${thClass}" data-sort="floor" style="width: 130px; min-width: 130px; max-width: 130px; cursor: pointer; ${thStyle}">Floor</th>`,
+      renderTd: (m, meta, tdStyle, tdClass) => `<td class="${tdClass}" style="overflow: hidden; text-overflow: ellipsis; ${tdStyle}">${flrMap.get(m.floorId) || m.floor || '—'}</td>`
+    },
+    {
+      key: 'line',
+      label: 'Line',
+      width: 130,
+      renderTh: (thStyle, thClass) => `<th class="th-sortable ${thClass}" data-sort="line" style="width: 130px; min-width: 130px; max-width: 130px; cursor: pointer; ${thStyle}">Line</th>`,
+      renderTd: (m, meta, tdStyle, tdClass) => {
+        const fullLine = linMap.get(m.lineId) || m.line || '—';
+        const cleanLine = formatDisplayLine(fullLine, 'NORMAL');
+        const isPrefixed = fullLine.includes('-') && cleanLine !== fullLine;
+        return `<td class="${tdClass}" style="overflow: hidden; text-overflow: ellipsis; ${tdStyle}" title="Line: ${cleanLine} (Full Code: ${fullLine})"><span style="font-weight: 800; color: #38bdf8; font-size: 12px;">${cleanLine}</span>${isPrefixed ? `<span style="font-size: 10px; color: var(--text-muted); margin-left: 4px; font-weight: 500;">(${fullLine})</span>` : ''}</td>`;
+      }
+    },
+    {
+      key: 'running',
+      label: 'Running',
+      width: 100,
+      renderTh: (thStyle, thClass) => `<th class="${thClass}" style="width: 100px; min-width: 100px; max-width: 100px; text-align: center; ${thStyle}">Running</th>`,
+      renderTd: (m, meta, tdStyle, tdClass) => `<td class="${tdClass}" style="text-align: center; ${tdStyle}"><span class="qty-badge qty-running">${meta.rQty}</span></td>`
+    },
+    {
+      key: 'usable_idle',
+      label: 'Usable Idle',
+      width: 110,
+      renderTh: (thStyle, thClass) => `<th class="${thClass}" style="width: 110px; min-width: 110px; max-width: 110px; text-align: center; ${thStyle}">Usable Idle</th>`,
+      renderTd: (m, meta, tdStyle, tdClass) => `<td class="${tdClass}" style="text-align: center; ${tdStyle}"><span class="qty-badge qty-usable">${meta.uQty}</span></td>`
+    },
+    {
+      key: 'repairable_idle',
+      label: 'Repairable Idle',
+      width: 130,
+      renderTh: (thStyle, thClass) => `<th class="${thClass}" style="width: 130px; min-width: 130px; max-width: 130px; text-align: center; ${thStyle}">Repairable Idle</th>`,
+      renderTd: (m, meta, tdStyle, tdClass) => `<td class="${tdClass}" style="text-align: center; ${tdStyle}"><span class="qty-badge qty-repair">${meta.rpQty}</span></td>`
+    },
+    {
+      key: 'total_quantity',
+      label: 'Total',
+      width: 100,
+      renderTh: (thStyle, thClass) => `<th class="${thClass}" style="width: 100px; min-width: 100px; max-width: 100px; text-align: center; ${thStyle}">Total</th>`,
+      renderTd: (m, meta, tdStyle, tdClass) => `<td class="${tdClass}" style="text-align: center; ${tdStyle}"><span class="qty-badge qty-total">${meta.totalQty}</span></td>`
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      width: 120,
+      renderTh: (thStyle, thClass) => `<th class="th-sortable ${thClass}" data-sort="status" style="width: 120px; min-width: 120px; max-width: 120px; text-align: center; cursor: pointer; ${thStyle}">Status</th>`,
+      renderTd: (m, meta, tdStyle, tdClass) => `<td class="${tdClass}" style="text-align: center; ${tdStyle}"><span class="badge ${meta.statusBadgeClass}">${(m.status || 'ACTIVE').replace('_', ' ')}</span></td>`
+    },
+    {
+      key: 'purchase_date',
+      label: 'Purchase Date',
+      width: 120,
+      renderTh: (thStyle, thClass) => `<th class="${thClass}" style="width: 120px; min-width: 120px; max-width: 120px; ${thStyle}">Purchase Date</th>`,
+      renderTd: (m, meta, tdStyle, tdClass) => `<td class="${tdClass}" style="${tdStyle}">${m.purchase_date || m.purchaseDate || '—'}</td>`
+    },
+    {
+      key: 'installation_date',
+      label: 'Install Date',
+      width: 120,
+      renderTh: (thStyle, thClass) => `<th class="${thClass}" style="width: 120px; min-width: 120px; max-width: 120px; ${thStyle}">Install Date</th>`,
+      renderTd: (m, meta, tdStyle, tdClass) => `<td class="${tdClass}" style="${tdStyle}">${m.installation_date || m.installationDate || '—'}</td>`
+    },
+    {
+      key: 'supplier_name',
+      label: 'Supplier',
+      width: 140,
+      renderTh: (thStyle, thClass) => `<th class="${thClass}" style="width: 140px; min-width: 140px; max-width: 140px; ${thStyle}">Supplier</th>`,
+      renderTd: (m, meta, tdStyle, tdClass) => `<td class="${tdClass}" style="${tdStyle}">${m.supplier_name || m.supplier || '—'}</td>`
+    },
+    {
+      key: 'country_of_origin',
+      label: 'Origin',
+      width: 120,
+      renderTh: (thStyle, thClass) => `<th class="${thClass}" style="width: 120px; min-width: 120px; max-width: 120px; ${thStyle}">Origin</th>`,
+      renderTd: (m, meta, tdStyle, tdClass) => `<td class="${tdClass}" style="${tdStyle}">${m.country_of_origin || m.origin || '—'}</td>`
+    },
+    {
+      key: 'machine_capacity',
+      label: 'Capacity',
+      width: 130,
+      renderTh: (thStyle, thClass) => `<th class="${thClass}" style="width: 130px; min-width: 130px; max-width: 130px; ${thStyle}">Capacity</th>`,
+      renderTd: (m, meta, tdStyle, tdClass) => `<td class="${tdClass}" style="${tdStyle}">${m.machine_capacity || m.capacity || '—'}</td>`
+    },
+    {
+      key: 'remarks',
+      label: 'Remarks',
+      width: 230,
+      renderTh: (thStyle, thClass) => `<th class="${thClass}" style="width: 230px; min-width: 230px; max-width: 230px; ${thStyle}">Remarks</th>`,
+      renderTd: (m, meta, tdStyle, tdClass) => `<td class="${tdClass}" style="font-size: 11.5px; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; ${tdStyle}" title="${m.remarks || ''}">${m.remarks || '—'}</td>`
+    }
+  ];
+
+  // Dynamic Custom Fields
+  customFields.forEach(cf => {
+    allColDefs.push({
+      key: cf.code,
+      label: cf.label,
+      width: 130,
+      renderTh: (thStyle, thClass) => `<th class="${thClass}" style="width: 130px; min-width: 130px; max-width: 130px; ${thStyle}">${cf.label}</th>`,
+      renderTd: (m, meta, tdStyle, tdClass) => `<td class="${tdClass}" style="${tdStyle}">${m.customValues?.[cf.code] ?? '—'}</td>`
+    });
+  });
+
+  // Actions Menu Column
+  allColDefs.push({
+    key: 'actions',
+    label: 'Actions',
+    width: 110,
+    renderTh: (thStyle, thClass) => `<th class="${thClass}" style="width: 110px; min-width: 110px; max-width: 110px; text-align: center; ${thStyle}">Actions</th>`,
+    renderTd: (m, meta, tdStyle, tdClass) => `
+      <td class="${tdClass}" style="text-align: center; ${tdStyle}">
+        <div class="actions-dropdown-container">
+          <button type="button" class="btn-actions-trigger btn-trigger-row-actions" data-id="${m.id}" title="Open Action Menu">
+            ⋮ Actions ▾
+          </button>
+          <div id="actions-menu-${m.id}" class="actions-dropdown-menu table-row-actions-menu">
+            <button type="button" class="actions-menu-item btn-inspect-machine" data-id="${m.id}">
+              🔍 Machine Details &amp; Lifetime
+            </button>
+            <button type="button" class="actions-menu-item btn-history-machine" data-id="${m.id}">
+              🕒 Timeline &amp; Transfer Log
+            </button>
+            <button type="button" class="actions-menu-item btn-spare-parts-machine" data-id="${m.id}">
+              ⚙️ Spare Parts Usage
+            </button>
+            ${authService.hasAccess('transfers', 'ADD') ? `
+              <button type="button" class="actions-menu-item btn-transfer-machine" data-id="${m.id}">
+                🔄 Transfer Machine
+              </button>
+            ` : ''}
+            ${authService.hasAccess('machines', 'EDIT') ? `
+              <div class="actions-menu-divider"></div>
+              <button type="button" class="actions-menu-item btn-edit-machine" data-id="${m.id}">
+                ✏️ Edit Machine
+              </button>
+            ` : ''}
+            ${authService.hasAccess('machines', 'DELETE') ? `
+              <button type="button" class="actions-menu-item danger-item btn-delete-machine" data-id="${m.id}">
+                🗑️ Delete Machine
+              </button>
+            ` : ''}
+          </div>
+        </div>
+      </td>
+    `
+  });
+
+  // Filter only visible columns
+  const visibleColDefs = allColDefs.filter(c => visibleCols.has(c.key));
+
+  // Partition: Frozen columns pinned to left in configured order, followed by unfrozen columns
+  const frozenList = [];
+  const frozenSet = new Set(frozenColKeys);
+  frozenColKeys.forEach(k => {
+    const found = visibleColDefs.find(c => c.key === k);
+    if (found) frozenList.push(found);
+  });
+  const unfrozenList = visibleColDefs.filter(c => !frozenSet.has(c.key));
+  const orderedCols = [...frozenList, ...unfrozenList];
+
+  // Dynamic sticky left offset calculation
+  let stickyOffset = 94; // SL (50px) + Check (44px)
+  const columnLayout = orderedCols.map((c, idx) => {
+    const isFrozen = frozenSet.has(c.key);
+    let leftOffset = 0;
+    if (isFrozen) {
+      leftOffset = stickyOffset;
+      stickyOffset += c.width;
+    }
+    const isLastFrozen = isFrozen && (idx === frozenList.length - 1);
+    return {
+      ...c,
+      isFrozen,
+      isLastFrozen,
+      leftOffset
+    };
+  });
+
+  const checkIsLastFrozen = frozenList.length === 0;
+
+  // Build Table Header Columns
   let headerHtml = `
     <tr>
       <th class="col-freeze-sl" style="width: 50px; min-width: 50px; max-width: 50px; text-align: center;">SL</th>
-      <th class="col-freeze-check" style="width: 44px; min-width: 44px; max-width: 44px; text-align: center;">
+      <th class="col-freeze-check ${checkIsLastFrozen ? 'col-frozen-boundary' : ''}" style="width: 44px; min-width: 44px; max-width: 44px; text-align: center;">
         <input type="checkbox" id="check-select-all" title="Select all visible machines" ${machines.length > 0 && selectedIds.size >= machines.length ? 'checked' : ''} />
       </th>
   `;
 
-  if (visibleCols.has('machineName')) headerHtml += `<th class="col-freeze-name th-sortable" data-sort="machineName" style="width: 180px; min-width: 180px; max-width: 180px; cursor: pointer;">Machine Name</th>`;
-  if (visibleCols.has('brand')) headerHtml += `<th class="th-sortable" data-sort="brand" style="width: 130px; min-width: 130px; max-width: 130px; cursor: pointer;">Brand</th>`;
-  if (visibleCols.has('model')) headerHtml += `<th class="th-sortable" data-sort="model" style="width: 150px; min-width: 150px; max-width: 150px; cursor: pointer;">Model</th>`;
-  if (visibleCols.has('serialNumber')) headerHtml += `<th class="th-sortable" data-sort="serialNumber" style="width: 160px; min-width: 160px; max-width: 160px; cursor: pointer;">Serial Number</th>`;
-  if (visibleCols.has('group')) headerHtml += `<th class="th-sortable" data-sort="group" style="width: 150px; min-width: 150px; max-width: 150px; cursor: pointer;">Group</th>`;
-  if (visibleCols.has('unit')) headerHtml += `<th class="th-sortable" data-sort="unit" style="width: 190px; min-width: 190px; max-width: 190px; cursor: pointer;">Unit / Factory</th>`;
-  if (visibleCols.has('floor')) headerHtml += `<th class="th-sortable" data-sort="floor" style="width: 130px; min-width: 130px; max-width: 130px; cursor: pointer;">Floor</th>`;
-  if (visibleCols.has('line')) headerHtml += `<th class="th-sortable" data-sort="line" style="width: 130px; min-width: 130px; max-width: 130px; cursor: pointer;">Line</th>`;
-  if (visibleCols.has('running')) headerHtml += `<th style="width: 100px; min-width: 100px; max-width: 100px; text-align: center;">Running</th>`;
-  if (visibleCols.has('usable_idle')) headerHtml += `<th style="width: 110px; min-width: 110px; max-width: 110px; text-align: center;">Usable Idle</th>`;
-  if (visibleCols.has('repairable_idle')) headerHtml += `<th style="width: 130px; min-width: 130px; max-width: 130px; text-align: center;">Repairable Idle</th>`;
-  if (visibleCols.has('total_quantity')) headerHtml += `<th style="width: 100px; min-width: 100px; max-width: 100px; text-align: center;">Total</th>`;
-  if (visibleCols.has('status')) headerHtml += `<th class="th-sortable" data-sort="status" style="width: 120px; min-width: 120px; max-width: 120px; text-align: center; cursor: pointer;">Status</th>`;
-
-  // Optional Specification Columns (Purchased date, Supplier, etc.)
-  if (visibleCols.has('purchase_date')) headerHtml += `<th style="width: 120px; min-width: 120px; max-width: 120px;">Purchase Date</th>`;
-  if (visibleCols.has('installation_date')) headerHtml += `<th style="width: 120px; min-width: 120px; max-width: 120px;">Install Date</th>`;
-  if (visibleCols.has('supplier_name')) headerHtml += `<th style="width: 140px; min-width: 140px; max-width: 140px;">Supplier</th>`;
-  if (visibleCols.has('country_of_origin')) headerHtml += `<th style="width: 120px; min-width: 120px; max-width: 120px;">Origin</th>`;
-  if (visibleCols.has('machine_capacity')) headerHtml += `<th style="width: 130px; min-width: 130px; max-width: 130px;">Capacity</th>`;
-  if (visibleCols.has('remarks')) headerHtml += `<th style="width: 230px; min-width: 230px; max-width: 230px;">Remarks</th>`;
-
-  // Custom Field Headers
-  customFields.forEach(cf => {
-    if (visibleCols.has(cf.code)) {
-      headerHtml += `<th style="width: 130px; min-width: 130px; max-width: 130px;">${cf.label}</th>`;
-    }
+  columnLayout.forEach(col => {
+    const thStyle = col.isFrozen 
+      ? `position: sticky !important; left: ${col.leftOffset}px !important; z-index: 30 !important; background-color: #070d1e !important;` 
+      : '';
+    const boundaryClass = col.isLastFrozen ? 'col-frozen-boundary' : '';
+    const thClass = col.isFrozen ? `col-frozen-cell ${boundaryClass}` : '';
+    headerHtml += col.renderTh(thStyle, thClass);
   });
-
-  if (visibleCols.has('actions')) headerHtml += `<th style="width: 110px; min-width: 110px; max-width: 110px; text-align: center;">Actions</th>`;
 
   headerHtml += `</tr>`;
 
@@ -150,7 +361,7 @@ export function renderInventoryTable() {
   if (machines.length === 0) {
     rowsHtml = `
       <tr>
-        <td colspan="20" style="text-align: center; padding: 48px 20px;">
+        <td colspan="${columnLayout.length + 2}" style="text-align: center; padding: 48px 20px;">
           <div style="font-size: 32px; margin-bottom: 8px;">🔍</div>
           <div style="font-size: 15px; font-weight: 700; color: var(--text-primary);">No machines found</div>
           <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px; max-width: 380px; margin-left: auto; margin-right: auto;">
@@ -180,148 +391,21 @@ export function renderInventoryTable() {
 
       let row = `<tr class="${isSelected ? 'selected' : ''}" data-id="${m.id}">`;
 
-      // 1. SL (Sticky Left)
+      // 1. SL (Sticky Left: 0px)
       row += `<td class="col-freeze-sl" style="text-align: center; color: var(--text-muted); font-weight: 700; font-family: var(--font-mono); font-size: 11.5px;">${displaySlNo}</td>`;
 
-      // Selection Checkbox (Sticky Left)
-      row += `<td class="col-freeze-check" style="text-align: center;"><input type="checkbox" class="machine-row-check" data-id="${m.id}" ${isSelected ? 'checked' : ''}/></td>`;
+      // 2. Selection Checkbox (Sticky Left: 50px)
+      row += `<td class="col-freeze-check ${checkIsLastFrozen ? 'col-frozen-boundary' : ''}" style="text-align: center;"><input type="checkbox" class="machine-row-check" data-id="${m.id}" ${isSelected ? 'checked' : ''}/></td>`;
 
-      // 2. Machine Name (Sticky Left with Shadow)
-      if (visibleCols.has('machineName')) {
-        row += `
-          <td class="col-freeze-name" style="font-weight: 600; color: #fff; overflow: hidden; text-overflow: ellipsis;">
-            ${mnMap.get(m.machineNameId) || m.machineName || '—'}
-          </td>
-        `;
-      }
-
-      // 3. Brand
-      if (visibleCols.has('brand')) row += `<td style="overflow: hidden; text-overflow: ellipsis;">${brdMap.get(m.brandId) || m.brand || '—'}</td>`;
-
-      // 4. Model
-      if (visibleCols.has('model')) row += `<td style="overflow: hidden; text-overflow: ellipsis;">${mdlMap.get(m.modelId) || m.model || '—'}</td>`;
-
-      // 5. Machine Serial Number (Clickable link to Machine Details / Lifetime)
-      if (visibleCols.has('serialNumber')) {
-        row += `
-          <td>
-            <a href="javascript:void(0)" class="machine-serial-link btn-inspect-machine" data-id="${m.id}" title="Click to view full machine lifetime & specifications">
-              ${m.serialNumber || '—'}
-            </a>
-          </td>
-        `;
-      }
-
-      // 5b. Group
-      if (visibleCols.has('group')) row += `<td style="overflow: hidden; text-overflow: ellipsis;">${grpMap.get(m.groupId) || m.group || '—'}</td>`;
-
-      // 6. Unit / Factory
-      if (visibleCols.has('unit')) row += `<td style="overflow: hidden; text-overflow: ellipsis;">${untMap.get(m.unitId) || m.unit || '—'}</td>`;
-
-      // 7. Floor
-      if (visibleCols.has('floor')) row += `<td style="overflow: hidden; text-overflow: ellipsis;">${flrMap.get(m.floorId) || m.floor || '—'}</td>`;
-
-      // 8. Line (Clean Normal A, B, C with full code)
-      if (visibleCols.has('line')) {
-        const fullLine = linMap.get(m.lineId) || m.line || '—';
-        const cleanLine = formatDisplayLine(fullLine, 'NORMAL');
-        const isPrefixed = fullLine.includes('-') && cleanLine !== fullLine;
-        row += `
-          <td style="overflow: hidden; text-overflow: ellipsis;" title="Line: ${cleanLine} (Full Code: ${fullLine})">
-            <span style="font-weight: 800; color: #38bdf8; font-size: 12px;">${cleanLine}</span>
-            ${isPrefixed ? `<span style="font-size: 10px; color: var(--text-muted); margin-left: 4px; font-weight: 500;">(${fullLine})</span>` : ''}
-          </td>
-        `;
-      }
-
-      // 9. Running
-      if (visibleCols.has('running')) {
-        row += `<td style="text-align: center;"><span class="qty-badge qty-running">${rQty}</span></td>`;
-      }
-
-      // 10. Usable Idle
-      if (visibleCols.has('usable_idle')) {
-        row += `<td style="text-align: center;"><span class="qty-badge qty-usable">${uQty}</span></td>`;
-      }
-
-      // 11. Repairable Idle
-      if (visibleCols.has('repairable_idle')) {
-        row += `<td style="text-align: center;"><span class="qty-badge qty-repair">${rpQty}</span></td>`;
-      }
-
-      // 12. Total Quantity (System Calculated)
-      if (visibleCols.has('total_quantity')) {
-        row += `<td style="text-align: center;"><span class="qty-badge qty-total">${totalQty}</span></td>`;
-      }
-
-      // 13. Status
-      if (visibleCols.has('status')) {
-        row += `
-          <td style="text-align: center;">
-            <span class="badge ${statusBadgeClass}">${(m.status || 'ACTIVE').replace('_', ' ')}</span>
-          </td>
-        `;
-      }
-
-      // Optional Spec Columns
-      if (visibleCols.has('purchase_date')) row += `<td>${m.purchase_date || m.purchaseDate || '—'}</td>`;
-      if (visibleCols.has('installation_date')) row += `<td>${m.installation_date || m.installationDate || '—'}</td>`;
-      if (visibleCols.has('supplier_name')) row += `<td>${m.supplier_name || m.supplier || '—'}</td>`;
-      if (visibleCols.has('country_of_origin')) row += `<td>${m.country_of_origin || m.origin || '—'}</td>`;
-      if (visibleCols.has('machine_capacity')) row += `<td>${m.machine_capacity || m.capacity || '—'}</td>`;
-
-      // Remarks
-      if (visibleCols.has('remarks')) {
-        row += `<td style="font-size: 11.5px; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis;" title="${m.remarks || ''}">${m.remarks || '—'}</td>`;
-      }
-
-      // Custom Fields
-      customFields.forEach(cf => {
-        if (visibleCols.has(cf.code)) {
-          const val = m.customValues?.[cf.code] ?? '—';
-          row += `<td>${val}</td>`;
-        }
+      // Render columns in calculated sequence
+      columnLayout.forEach(col => {
+        const tdStyle = col.isFrozen 
+          ? `position: sticky !important; left: ${col.leftOffset}px !important; z-index: 10 !important; background-color: var(--bg-surface) !important;` 
+          : '';
+        const boundaryClass = col.isLastFrozen ? 'col-frozen-boundary' : '';
+        const tdClass = col.isFrozen ? `col-frozen-cell ${boundaryClass}` : '';
+        row += col.renderTd(m, { rQty, uQty, rpQty, totalQty, statusBadgeClass }, tdStyle, tdClass);
       });
-
-      // 14. Action Menu Dropdown (⋮ Actions)
-      if (visibleCols.has('actions')) {
-        row += `
-          <td style="text-align: center;">
-            <div class="actions-dropdown-container">
-              <button type="button" class="btn-actions-trigger btn-trigger-row-actions" data-id="${m.id}" title="Open Action Menu">
-                ⋮ Actions ▾
-              </button>
-              <div id="actions-menu-${m.id}" class="actions-dropdown-menu table-row-actions-menu">
-                <button type="button" class="actions-menu-item btn-inspect-machine" data-id="${m.id}">
-                  🔍 Machine Details &amp; Lifetime
-                </button>
-                <button type="button" class="actions-menu-item btn-history-machine" data-id="${m.id}">
-                  🕒 Timeline &amp; Transfer Log
-                </button>
-                <button type="button" class="actions-menu-item btn-spare-parts-machine" data-id="${m.id}">
-                  ⚙️ Spare Parts Usage
-                </button>
-                ${authService.hasAccess('transfers', 'ADD') ? `
-                  <button type="button" class="actions-menu-item btn-transfer-machine" data-id="${m.id}">
-                    🔄 Transfer Machine
-                  </button>
-                ` : ''}
-                ${authService.hasAccess('machines', 'EDIT') ? `
-                  <div class="actions-menu-divider"></div>
-                  <button type="button" class="actions-menu-item btn-edit-machine" data-id="${m.id}">
-                    ✏️ Edit Machine
-                  </button>
-                ` : ''}
-                ${authService.hasAccess('machines', 'DELETE') ? `
-                  <button type="button" class="actions-menu-item danger-item btn-delete-machine" data-id="${m.id}">
-                    🗑️ Delete Machine
-                  </button>
-                ` : ''}
-              </div>
-            </div>
-          </td>
-        `;
-      }
 
       row += `</tr>`;
       rowsHtml += row;
@@ -539,8 +623,9 @@ export function renderInventoryTable() {
             ↺ Reset
           </button>
 
-          <button id="btn-column-picker-inline" class="btn btn-ghost btn-sm" style="font-size: 11.5px; padding: 4px 8px; color: var(--text-secondary); height: 30px;" title="Configure visible columns">
-            Columns ▾
+          <button id="btn-column-picker-inline" class="btn btn-ghost btn-sm" style="font-size: 11.5px; padding: 4px 10px; color: #38bdf8; height: 30px; display: inline-flex; align-items: center; gap: 6px; border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 6px; background: rgba(56, 189, 248, 0.08);" title="Configure visible and frozen columns">
+            <span>Columns &amp; Freeze ▾</span>
+            ${frozenColKeys.length > 0 ? `<span class="badge" style="background: rgba(56, 189, 248, 0.25); color: #38bdf8; font-size: 10px; padding: 1px 5px; font-weight: 800; border: 1px solid rgba(56, 189, 248, 0.4);">❄️ ${frozenColKeys.length}</span>` : ''}
           </button>
 
         </div>

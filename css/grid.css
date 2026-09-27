@@ -340,6 +340,34 @@ tbody tr.selected td.col-freeze-name {
   background-color: #1e3a8a !important;
 }
 
+/* Dynamic Admin-Configurable Frozen Table Columns */
+.col-frozen-cell {
+  position: sticky !important;
+  background-color: #0f172a !important;
+}
+
+thead th.col-frozen-cell {
+  z-index: 30 !important;
+  background-color: #070d1e !important;
+}
+
+tbody tr td.col-frozen-cell {
+  background-color: var(--bg-surface) !important;
+}
+
+tbody tr:hover td.col-frozen-cell {
+  background-color: #172554 !important;
+}
+
+tbody tr.selected td.col-frozen-cell {
+  background-color: #1e3a8a !important;
+}
+
+.col-frozen-boundary {
+  border-right: 2.5px solid #38bdf8 !important;
+  box-shadow: 4px 0 14px rgba(0, 0, 0, 0.65) !important;
+}
+
 /* Table Cells */
 .excel-grid-table tbody td {
   border-bottom: 1px solid var(--border-light);

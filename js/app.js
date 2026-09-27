@@ -206,6 +206,7 @@ class ERPApplication {
     state.on('change:masterDataActiveTab', () => this.renderMainContent());
     state.on('filters:changed', () => this.renderMainContent());
     state.on('columns:changed', () => this.renderMainContent());
+    state.on('frozenColumns:changed', () => this.renderMainContent());
     state.on('inventory:updated', () => this.queueBackgroundRender());
     state.on('change:agentPanelOpen', () => this.renderAgentPanel());
 
