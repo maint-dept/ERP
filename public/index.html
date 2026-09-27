@@ -12,6 +12,8 @@
   <!-- Modern Industrial Typography -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
+  <link rel="dns-prefetch" href="https://firestore.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
 
   <!-- Core ERP Stylesheets (Cache-Busted v4.7.4) -->
@@ -20,41 +22,22 @@
   <link rel="stylesheet" href="css/components.css?v=4.7.4">
   <link rel="stylesheet" href="css/print.css?v=4.7.4">
 
-  <!-- SheetJS (XLSX) Library for Excel Import & Export (Local Offline + CDN Fallback) -->
-  <script src="lib/xlsx.full.min.js"></script>
-  <script>
-    if (typeof XLSX === 'undefined') {
-      document.write('<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"><\/script>');
-    }
-  </script>
+  <!-- Deferred Heavy Third-Party Libraries (Non-Render Blocking) -->
+  <!-- SheetJS (XLSX) Library for Excel Import & Export -->
+  <script defer src="lib/xlsx.full.min.js" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js'"></script>
 
-  <!-- HTML5 QR Code Library for Camera & Mobile Scanning (Local Offline + CDN Fallback) -->
-  <script src="lib/html5-qrcode.min.js"></script>
-  <script>
-    if (typeof Html5Qrcode === 'undefined') {
-      document.write('<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"><\/script>');
-    }
-  </script>
+  <!-- HTML5 QR Code Library for Camera & Mobile Scanning -->
+  <script defer src="lib/html5-qrcode.min.js" onerror="this.onerror=null;this.src='https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js'"></script>
 
   <!-- QRCode.js Library for High-Resolution Client-Side QR Generation & A4 Label Printing -->
-  <script src="lib/qrcode.min.js"></script>
-  <script>
-    if (typeof QRCode === 'undefined') {
-      document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script>');
-    }
-  </script>
+  <script defer src="lib/qrcode.min.js" onerror="this.onerror=null;this.src='https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js'"></script>
 
-  <!-- Tesseract.js Library for OCR Screenshot / PDF Snippet Auto-Fill (Local Offline + CDN Fallback) -->
-  <script src="lib/tesseract.min.js"></script>
-  <script>
-    if (typeof Tesseract === 'undefined') {
-      document.write('<script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"><\/script>');
-    }
-  </script>
+  <!-- Tesseract.js Library for OCR Screenshot / PDF Snippet Auto-Fill -->
+  <script defer src="lib/tesseract.min.js" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js'"></script>
 
   <!-- Official Google Firebase App & Firestore SDKs for Instant Real-Time Listeners -->
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
   <!-- Single Page Application Shell Root -->

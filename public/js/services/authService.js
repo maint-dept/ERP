@@ -37,6 +37,10 @@ class AuthService {
     } else {
       this.currentUser = null;
     }
+
+    if (typeof window !== 'undefined' && !window.__authReadyTime && typeof performance !== 'undefined') {
+      window.__authReadyTime = performance.now();
+    }
   }
 
   isAuthenticated() {

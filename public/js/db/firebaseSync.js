@@ -70,7 +70,7 @@ function fromFirestoreValue(val) {
  * @param {string} updateTime - Server-confirmed ISO timestamp from the write response
  * @param {number} timeoutMs - Timeout for the PATCH request
  */
-export async function updateSyncManifest(tableName, updateTime, timeoutMs = 4000) {
+export async function updateSyncManifest(tableName, updateTime, timeoutMs = 8000) {
   try {
     const nowIso = updateTime || new Date().toISOString();
     const url = `${BASE_URL}/${encodeURIComponent(SYNC_MANIFEST_DOC)}?updateMask.fieldPaths=${encodeURIComponent(tableName)}&updateMask.fieldPaths=lastModifiedTable&updateMask.fieldPaths=updatedAt`;

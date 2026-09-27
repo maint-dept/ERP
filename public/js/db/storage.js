@@ -48,6 +48,91 @@ export class CloudSaveError extends Error {
   }
 }
 
+/**
+ * Critical Tables required for initial page shell, auth, and primary dashboard/inventory view
+ * Loaded in parallel immediately on startup (<400ms target)
+ */
+export const CRITICAL_TABLES = [
+  TABLE_NAMES.MACHINES,
+  TABLE_NAMES.UNITS,
+  TABLE_NAMES.FLOORS,
+  TABLE_NAMES.LINES,
+  TABLE_NAMES.GROUPS,
+  TABLE_NAMES.MACHINE_NAMES,
+  TABLE_NAMES.BRANDS,
+  TABLE_NAMES.MODELS,
+  TABLE_NAMES.CATEGORIES,
+  TABLE_NAMES.SETTINGS,
+  TABLE_NAMES.USERS,
+  TABLE_NAMES.ROLES,
+  TABLE_NAMES.PERMISSION_PRESETS,
+  TABLE_NAMES.CUSTOM_FIELDS,
+  TABLE_NAMES.HOMEPAGE_CONFIG
+];
+
+/**
+ * Secondary Tables deferred to background idle streaming or loaded on-demand
+ */
+export const SECONDARY_TABLES = [
+  TABLE_NAMES.PREVENTIVE_MAINTENANCE,
+  TABLE_NAMES.PREVENTIVE_CONFIG,
+  TABLE_NAMES.MACHINE_HISTORY,
+  TABLE_NAMES.AUDIT_LOGS,
+  TABLE_NAMES.SPARE_PARTS,
+  TABLE_NAMES.SPARE_PARTS_MASTER,
+  TABLE_NAMES.TRANSFERS,
+  TABLE_NAMES.TRANSFER_REQUESTS,
+  TABLE_NAMES.TRANSFER_WORKFLOWS,
+  TABLE_NAMES.APPROVAL_REQUESTS,
+  TABLE_NAMES.TOOLS_MASTER,
+  TABLE_NAMES.ACCESSORIES_MASTER,
+  TABLE_NAMES.TOOL_ALLOCATIONS,
+  TABLE_NAMES.TOOL_CHANGE_HISTORY,
+  TABLE_NAMES.EMPLOYEES,
+  TABLE_NAMES.EMPLOYEE_CUSTOM_FIELDS,
+  TABLE_NAMES.EMPLOYEE_TRANSFERS,
+  TABLE_NAMES.EMPLOYEE_LEAVES,
+  TABLE_NAMES.ET_BOARDS,
+  TABLE_NAMES.ET_BOARD_HISTORY,
+  TABLE_NAMES.ET_COMPANIES,
+  TABLE_NAMES.ET_CATEGORIES,
+  TABLE_NAMES.ET_TECHNICIANS,
+  TABLE_NAMES.STORAGE_MASTER,
+  TABLE_NAMES.STORAGE_CORRECTION_RULES,
+  TABLE_NAMES.RELOCATE_SESSIONS,
+  TABLE_NAMES.RELOCATION_HISTORY,
+  TABLE_NAMES.RELOCATION_APPROVALS,
+  TABLE_NAMES.NOTIFICATIONS,
+  TABLE_NAMES.DOCUMENTS,
+  TABLE_NAMES.EXCEL_STRUCTURES,
+  TABLE_NAMES.IMPORT_HISTORY
+];
+
+/**
+ * Mapping of view IDs to required tables for on-demand module loading
+ */
+export const MODULE_TABLE_MAP = {
+  'dashboard': [TABLE_NAMES.MACHINES, TABLE_NAMES.SETTINGS],
+  'inventory': [TABLE_NAMES.MACHINES, TABLE_NAMES.CUSTOM_FIELDS, TABLE_NAMES.UNITS, TABLE_NAMES.FLOORS, TABLE_NAMES.LINES],
+  'preventive-maintenance': [TABLE_NAMES.PREVENTIVE_MAINTENANCE, TABLE_NAMES.PREVENTIVE_CONFIG, TABLE_NAMES.MACHINES],
+  'machine-history': [TABLE_NAMES.MACHINE_HISTORY, TABLE_NAMES.MACHINES],
+  'spare-parts': [TABLE_NAMES.SPARE_PARTS, TABLE_NAMES.SPARE_PARTS_MASTER],
+  'transfers': [TABLE_NAMES.TRANSFERS, TABLE_NAMES.TRANSFER_REQUESTS, TABLE_NAMES.MACHINES],
+  'transfer-workflows': [TABLE_NAMES.TRANSFER_WORKFLOWS, TABLE_NAMES.TRANSFERS, TABLE_NAMES.MACHINES],
+  'tools-management': [TABLE_NAMES.TOOLS_MASTER, TABLE_NAMES.ACCESSORIES_MASTER, TABLE_NAMES.TOOL_ALLOCATIONS, TABLE_NAMES.TOOL_CHANGE_HISTORY],
+  'manpower': [TABLE_NAMES.EMPLOYEES, TABLE_NAMES.EMPLOYEE_LEAVES, TABLE_NAMES.EMPLOYEE_TRANSFERS, TABLE_NAMES.EMPLOYEE_CUSTOM_FIELDS],
+  'et-lab': [TABLE_NAMES.ET_BOARDS, TABLE_NAMES.ET_BOARD_HISTORY, TABLE_NAMES.ET_COMPANIES, TABLE_NAMES.ET_CATEGORIES, TABLE_NAMES.ET_TECHNICIANS],
+  'storage': [TABLE_NAMES.STORAGE_MASTER, TABLE_NAMES.STORAGE_CORRECTION_RULES],
+  'relocate': [TABLE_NAMES.RELOCATE_SESSIONS, TABLE_NAMES.RELOCATION_HISTORY, TABLE_NAMES.RELOCATION_APPROVALS, TABLE_NAMES.MACHINES],
+  'reports': [TABLE_NAMES.MACHINES, TABLE_NAMES.PREVENTIVE_MAINTENANCE, TABLE_NAMES.MACHINE_HISTORY, TABLE_NAMES.SPARE_PARTS, TABLE_NAMES.TRANSFERS],
+  'qr-codes': [TABLE_NAMES.MACHINES],
+  'resource-library': [TABLE_NAMES.DOCUMENTS],
+  'audit-logs': [TABLE_NAMES.AUDIT_LOGS],
+  'users': [TABLE_NAMES.USERS, TABLE_NAMES.ROLES, TABLE_NAMES.PERMISSION_PRESETS],
+  'settings': [TABLE_NAMES.SETTINGS],
+  'homepage-manager': [TABLE_NAMES.HOMEPAGE_CONFIG]
+};
+
 class StorageEngine {
   constructor() {
     this.data = {};
@@ -74,6 +159,11 @@ class StorageEngine {
     // Map<tableName, serverUpdateTime> — tracks the server-confirmed updateTime for each table.
     // Used for clock-skew-safe remote change detection without relying on local clock.
     this.syncedDocVersions = new Map();
+    this._hasCriticalSyncCompleted = false;
+    this._hasFullSecondarySyncCompleted = false;
+    this._isDeferredSyncRunning = false;
+    this._loadedSecondaryTables = new Set();
+    this._realtimeListenerStarted = false;
   }
 
   init() {
@@ -563,25 +653,33 @@ class StorageEngine {
 
       if (tablesToUpdate.length > 0) {
         console.log(`[Storage Multi-Device Sync] 🔄 Remote changes detected in ${tablesToUpdate.length} tables:`, tablesToUpdate);
-        let anyUpdated = false;
-        for (const tbl of tablesToUpdate) {
-          const result = await firebaseSync.fetchTableFromFirestore(tbl);
+        const fetchResults = await Promise.all(
+          tablesToUpdate.map(async (tbl) => {
+            try {
+              const result = await firebaseSync.fetchTableFromFirestore(tbl);
+              return { tbl, result };
+            } catch (_) {
+              return { tbl, result: null };
+            }
+          })
+        );
+
+        const recordsToApply = {};
+        for (const { tbl, result } of fetchResults) {
           if (result !== null && result !== undefined) {
-            // result is { data, updateTime } from updated fetchTableFromFirestore
             const tableData = result.data !== undefined ? result.data : result;
             const remoteUpdateTime = result.updateTime || manifest[tbl];
-
             if (tableData !== null && tableData !== undefined) {
-              this.applyIncomingDatabaseRecords({ [tbl]: tableData }, `Remote Cloud (${tbl})`);
+              recordsToApply[tbl] = tableData;
+              if (!this.lastTableUpdates) this.lastTableUpdates = {};
               this.lastTableUpdates[tbl] = Date.now();
-              // Mark that we know about this server version — prevent re-fetching our own writes
-              const effectiveTs = remoteUpdateTime && remoteUpdateTime > remoteTs ? remoteUpdateTime : remoteTs;
+              const effectiveTs = remoteUpdateTime && remoteUpdateTime > manifest[tbl] ? remoteUpdateTime : manifest[tbl];
               this.syncedDocVersions.set(tbl, effectiveTs);
-              anyUpdated = true;
             }
           }
         }
-        if (anyUpdated) {
+        if (Object.keys(recordsToApply).length > 0) {
+          this.applyIncomingDatabaseRecords(recordsToApply, `Remote Cloud (${Object.keys(recordsToApply).join(', ')})`);
           this.updateStatusBadge('saved');
         }
       }
@@ -597,6 +695,11 @@ class StorageEngine {
    */
   initRealtimeSyncListener() {
     if (typeof window === 'undefined') return;
+    if (this._realtimeListenerStarted) return;
+    this._realtimeListenerStarted = true;
+    if (!window.__firebaseInitTime && typeof performance !== 'undefined') {
+      window.__firebaseInitTime = performance.now();
+    }
     try {
       firebaseSync.startRealtimeSync({
         onManifestUpdate: (manifest) => {
@@ -619,6 +722,21 @@ class StorageEngine {
    */
   async handleRemoteManifestUpdate(manifest) {
     if (!manifest || typeof manifest !== 'object' || Object.keys(manifest).length === 0) return;
+
+    // On very first snapshot on page startup, seed syncedDocVersions with current remote timestamps
+    // so we don't redundantly re-fetch tables that are already loaded / being loaded by startup sync
+    if (!this._hasReceivedInitialManifest) {
+      this._hasReceivedInitialManifest = true;
+      for (const [tbl, ts] of Object.entries(manifest)) {
+        if (ts && typeof ts === 'string') {
+          if (!this.syncedDocVersions.has(tbl)) {
+            this.syncedDocVersions.set(tbl, ts);
+          }
+        }
+      }
+      return;
+    }
+
     if (this._isHandlingRealtimeUpdate) return;
     if (this.isUserTyping()) {
       this._pendingRemoteManifest = { ...(this._pendingRemoteManifest || {}), ...manifest };
@@ -634,10 +752,8 @@ class StorageEngine {
         if (!remoteTs || typeof remoteTs !== 'string') continue;
         if (tbl === TABLE_NAMES.SETTINGS && isViewingSettings) continue;
 
-        // Skip our own recent local writes (less than 2.5 seconds old)
-        const localAge = Date.now() - (this.lastTableUpdates?.[tbl] || 0);
-        if (localAge < 2500) {
-          this.syncedDocVersions.set(tbl, remoteTs);
+        // If our own write for this table is in-flight, let it complete
+        if (this._tableSavePromises && this._tableSavePromises.has(tbl)) {
           continue;
         }
 
@@ -651,25 +767,35 @@ class StorageEngine {
 
       console.log(`[Firebase Realtime] ⚡ Real-time push: ${tablesToUpdate.length} table(s) updated:`, tablesToUpdate.map(t => t.tbl));
 
-      let anyUpdated = false;
-      for (const { tbl, remoteTs } of tablesToUpdate) {
-        const result = await firebaseSync.fetchTableFromFirestore(tbl);
+      const fetchResults = await Promise.all(
+        tablesToUpdate.map(async ({ tbl, remoteTs }) => {
+          try {
+            const result = await firebaseSync.fetchTableFromFirestore(tbl);
+            return { tbl, remoteTs, result };
+          } catch (_) {
+            return { tbl, remoteTs, result: null };
+          }
+        })
+      );
+
+      const recordsToApply = {};
+      for (const { tbl, remoteTs, result } of fetchResults) {
         if (result !== null && result !== undefined) {
           const tableData = result.data !== undefined ? result.data : result;
           const remoteUpdateTime = result.updateTime || remoteTs;
 
           if (tableData !== null && tableData !== undefined) {
-            this.applyIncomingDatabaseRecords({ [tbl]: tableData }, `Real-time Firebase Push (${tbl})`);
+            recordsToApply[tbl] = tableData;
             if (!this.lastTableUpdates) this.lastTableUpdates = {};
             this.lastTableUpdates[tbl] = Date.now();
             const effectiveTs = remoteUpdateTime && remoteUpdateTime > remoteTs ? remoteUpdateTime : remoteTs;
             this.syncedDocVersions.set(tbl, effectiveTs);
-            anyUpdated = true;
           }
         }
       }
 
-      if (anyUpdated) {
+      if (Object.keys(recordsToApply).length > 0) {
+        this.applyIncomingDatabaseRecords(recordsToApply, `Real-time Firebase Push (${Object.keys(recordsToApply).join(', ')})`);
         this._isCloudConnected = true;
         this.updateStatusBadge('saved');
       }
@@ -797,6 +923,30 @@ class StorageEngine {
             window.state.emit('inventory:updated');
           }
         }
+        if (TABLE_NAMES.PREVENTIVE_MAINTENANCE in serverRecs) {
+          window.dispatchEvent(new CustomEvent('erp:preventive-maintenance-updated'));
+        }
+        if (TABLE_NAMES.AUDIT_LOGS in serverRecs) {
+          window.dispatchEvent(new CustomEvent('erp:audit-logs-updated'));
+        }
+        if (TABLE_NAMES.MACHINE_HISTORY in serverRecs) {
+          window.dispatchEvent(new CustomEvent('erp:history-updated'));
+        }
+        if (TABLE_NAMES.SPARE_PARTS in serverRecs || TABLE_NAMES.SPARE_PARTS_MASTER in serverRecs) {
+          window.dispatchEvent(new CustomEvent('erp:spare-parts-updated'));
+        }
+        if (TABLE_NAMES.TOOLS_MASTER in serverRecs || TABLE_NAMES.TOOL_ALLOCATIONS in serverRecs) {
+          window.dispatchEvent(new CustomEvent('erp:tools-updated'));
+        }
+        if (TABLE_NAMES.EMPLOYEES in serverRecs) {
+          window.dispatchEvent(new CustomEvent('erp:employees-updated'));
+        }
+        if (TABLE_NAMES.ET_BOARDS in serverRecs || TABLE_NAMES.ET_BOARD_HISTORY in serverRecs) {
+          window.dispatchEvent(new CustomEvent('erp:et-lab-updated'));
+        }
+        if (TABLE_NAMES.RELOCATE_SESSIONS in serverRecs || TABLE_NAMES.RELOCATION_HISTORY in serverRecs) {
+          window.dispatchEvent(new CustomEvent('erp:relocate-updated'));
+        }
         // Dispatch homepage-specific event when homepage_config is updated from remote
         if (serverRecs && serverRecs[TABLE_NAMES.HOMEPAGE_CONFIG]) {
           window.dispatchEvent(new CustomEvent('erp:homepage-updated', {
@@ -810,30 +960,107 @@ class StorageEngine {
 
   async syncWithServerDatabase() {
     let cloudLoadedSuccessfully = false;
+    const fetchStartTime = Date.now();
 
-    // 1. Google Cloud Firestore sync (Primary Single Source of Truth)
+    // 1. Google Cloud Firestore sync (Critical Path First, Secondary Deferred)
     try {
-      const cloudData = await firebaseSync.fetchAllFromFirestore();
-      if (cloudData && typeof cloudData === 'object' && !cloudData._isEmpty && Object.keys(cloudData).length > 0) {
-        this._isCloudConnected = true;
+      // Step A: Fetch lightweight manifest to know what's present in cloud
+      let manifest = null;
+      try {
+        manifest = await firebaseSync.fetchSyncManifest(4000);
+      } catch (e) {
+        console.warn('[Storage] fetchSyncManifest note:', e.message);
+      }
 
-        // Seed syncedDocVersions with server updateTimes to prevent immediately
-        // re-detecting our own startup write as a "remote change" during the first poll cycle
-        const updateTimes = cloudData._updateTimes || {};
-        for (const [tbl, ts] of Object.entries(updateTimes)) {
-          if (ts) this.syncedDocVersions.set(tbl, ts);
+      if (manifest && typeof manifest === 'object' && Object.keys(manifest).length > 0) {
+        // Step B: Parallel fetch ONLY the critical tables needed for Shell & Dashboard
+        const criticalTablesToFetch = CRITICAL_TABLES.filter(tbl => manifest[tbl] !== undefined);
+        
+        console.log(`[Storage] ⚡ Loading ${criticalTablesToFetch.length} critical table(s) in parallel...`);
+        const fetchResults = await Promise.all(
+          criticalTablesToFetch.map(async (tbl) => {
+            try {
+              const res = await firebaseSync.fetchTableFromFirestore(tbl);
+              return { tbl, res };
+            } catch (_) {
+              return { tbl, res: null };
+            }
+          })
+        );
+
+        const safeDataToApply = {};
+        for (const { tbl, res } of fetchResults) {
+          if (res !== null && res !== undefined) {
+            const tableData = res.data !== undefined ? res.data : res;
+            const remoteUpdateTime = res.updateTime || manifest[tbl];
+            const lastLocalWrite = this.lastTableUpdates?.[tbl] || 0;
+            if (lastLocalWrite >= fetchStartTime) {
+              console.log(`[Storage] Preserving local modifications made to ${tbl} during startup sync.`);
+              continue;
+            }
+            if (tableData !== null && tableData !== undefined) {
+              safeDataToApply[tbl] = tableData;
+              if (remoteUpdateTime) {
+                this.syncedDocVersions.set(tbl, remoteUpdateTime);
+              }
+            }
+          }
         }
 
-        this.applyIncomingDatabaseRecords(cloudData, 'Google Cloud Firestore REST');
-        cloudLoadedSuccessfully = true;
-      } else if (cloudData && cloudData._isEmpty === true && Array.isArray(this.data[TABLE_NAMES.MACHINES]) && this.data[TABLE_NAMES.MACHINES].length > 0) {
-        console.log('[Firebase Sync] Cloud database is newly created and empty. Seeding initial factory records...');
-        firebaseSync.saveAllToFirestore(this.data).then(ok => {
-          if (ok) {
-            this._isCloudConnected = true;
-            this.updateStatusBadge('saved');
+        if (Object.keys(safeDataToApply).length > 0) {
+          this.applyIncomingDatabaseRecords(safeDataToApply, 'Google Cloud Firestore Critical');
+          cloudLoadedSuccessfully = true;
+          this._isCloudConnected = true;
+          this._hasCriticalSyncCompleted = true;
+          this._hasInitialSyncCompleted = true;
+          this.updateStatusBadge('saved');
+          if (typeof window !== 'undefined') {
+            if (!window.__firstFirestoreDataTime && typeof performance !== 'undefined') {
+              window.__firstFirestoreDataTime = performance.now();
+            }
+            window.dispatchEvent(new CustomEvent('erp:critical-data-ready'));
+            window.dispatchEvent(new CustomEvent('erp:storage-updated'));
           }
-        }).catch(() => {});
+        }
+
+        // Step C: Trigger deferred background sync for secondary tables
+        this.scheduleDeferredSecondarySync(manifest);
+
+      } else {
+        // Fallback: If manifest is empty or failed, attempt fetchAllFromFirestore
+        console.log('[Storage] Manifest empty or unreachable, attempting fetchAllFromFirestore fallback...');
+        const cloudData = await firebaseSync.fetchAllFromFirestore(8000);
+        if (cloudData && typeof cloudData === 'object' && !cloudData._isEmpty && Object.keys(cloudData).length > 0) {
+          this._isCloudConnected = true;
+          const updateTimes = cloudData._updateTimes || {};
+          const safeDataToApply = {};
+
+          for (const [tbl, val] of Object.entries(cloudData)) {
+            if (tbl === '_updateTimes') continue;
+            const lastLocalWrite = this.lastTableUpdates?.[tbl] || 0;
+            if (lastLocalWrite >= fetchStartTime) continue;
+            safeDataToApply[tbl] = val;
+            if (updateTimes[tbl]) {
+              this.syncedDocVersions.set(tbl, updateTimes[tbl]);
+            }
+          }
+
+          if (Object.keys(safeDataToApply).length > 0) {
+            this.applyIncomingDatabaseRecords(safeDataToApply, 'Google Cloud Firestore REST');
+          }
+          cloudLoadedSuccessfully = true;
+          this._hasCriticalSyncCompleted = true;
+          this._hasInitialSyncCompleted = true;
+          this._hasFullSecondarySyncCompleted = true;
+        } else if (cloudData && cloudData._isEmpty === true && Array.isArray(this.data[TABLE_NAMES.MACHINES]) && this.data[TABLE_NAMES.MACHINES].length > 0) {
+          console.log('[Firebase Sync] Cloud database is newly created and empty. Seeding initial factory records...');
+          firebaseSync.saveAllToFirestore(this.data).then(ok => {
+            if (ok) {
+              this._isCloudConnected = true;
+              this.updateStatusBadge('saved');
+            }
+          }).catch(() => {});
+        }
       }
     } catch (cloudErr) {
       console.warn('[Database Store] Firebase cloud check note:', cloudErr.message);
@@ -877,6 +1104,163 @@ class StorageEngine {
         } catch (_) {}
       }
     }
+  }
+
+  /**
+   * Schedules a non-blocking background fetch for secondary tables in small batches
+   * Ensures the main thread and UI remain responsive while secondary data streams in
+   */
+  scheduleDeferredSecondarySync(manifest) {
+    if (this._isDeferredSyncRunning || this._hasFullSecondarySyncCompleted) return;
+    this._isDeferredSyncRunning = true;
+
+    const runDeferred = async () => {
+      try {
+        const tablesToFetch = SECONDARY_TABLES.filter(tbl => {
+          if (!manifest || manifest[tbl] === undefined) return false;
+          // If we already loaded this table and its version matches the manifest, skip it
+          const knownTs = this.syncedDocVersions.get(tbl);
+          if (knownTs && manifest[tbl] <= knownTs && this._loadedSecondaryTables.has(tbl)) {
+            return false;
+          }
+          return true;
+        });
+
+        if (tablesToFetch.length === 0) {
+          this._hasFullSecondarySyncCompleted = true;
+          this._isDeferredSyncRunning = false;
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('erp:secondary-data-ready'));
+          }
+          return;
+        }
+
+        console.log(`[Storage] 📦 Background loading ${tablesToFetch.length} secondary table(s) in batches...`);
+        const BATCH_SIZE = 4;
+        for (let i = 0; i < tablesToFetch.length; i += BATCH_SIZE) {
+          // Pause if user is actively typing or editing
+          if (this.isUserTyping()) {
+            await new Promise(r => setTimeout(r, 400));
+          }
+
+          const batch = tablesToFetch.slice(i, i + BATCH_SIZE);
+          const batchResults = await Promise.all(
+            batch.map(async (tbl) => {
+              try {
+                const res = await firebaseSync.fetchTableFromFirestore(tbl);
+                return { tbl, res };
+              } catch (_) {
+                return { tbl, res: null };
+              }
+            })
+          );
+
+          const recordsToApply = {};
+          for (const { tbl, res } of batchResults) {
+            if (res !== null && res !== undefined) {
+              const tableData = res.data !== undefined ? res.data : res;
+              const remoteUpdateTime = res.updateTime || manifest[tbl];
+              if (tableData !== null && tableData !== undefined) {
+                recordsToApply[tbl] = tableData;
+                if (remoteUpdateTime) {
+                  this.syncedDocVersions.set(tbl, remoteUpdateTime);
+                }
+                this._loadedSecondaryTables.add(tbl);
+              }
+            }
+          }
+
+          if (Object.keys(recordsToApply).length > 0) {
+            this.applyIncomingDatabaseRecords(recordsToApply, `Deferred Background (${batch.join(', ')})`);
+          }
+
+          // Yield execution to browser rendering
+          await new Promise(r => setTimeout(r, 60));
+        }
+
+        this._hasFullSecondarySyncCompleted = true;
+        console.log('[Storage] ✅ Full secondary background sync completed.');
+        if (typeof window !== 'undefined') {
+          if (!window.__fullSecondaryDataLoadedTime && typeof performance !== 'undefined') {
+            window.__fullSecondaryDataLoadedTime = performance.now();
+          }
+          window.dispatchEvent(new CustomEvent('erp:secondary-data-ready'));
+        }
+      } catch (err) {
+        console.warn('[Storage] Deferred secondary sync note:', err.message);
+      } finally {
+        this._isDeferredSyncRunning = false;
+      }
+    };
+
+    // Delay start by 150ms so first paint and initial DOM settle smoothly
+    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+      window.requestIdleCallback(() => runDeferred(), { timeout: 1000 });
+    } else {
+      setTimeout(runDeferred, 150);
+    }
+  }
+
+  /**
+   * On-demand loader for a list of tables
+   * Used when user navigates directly to a module before background sync finishes
+   */
+  async ensureTablesLoaded(tableList) {
+    if (!Array.isArray(tableList) || tableList.length === 0) return true;
+    const needed = tableList.filter(tbl => {
+      if (CRITICAL_TABLES.includes(tbl) && this._hasCriticalSyncCompleted) return false;
+      if (this._loadedSecondaryTables.has(tbl)) return false;
+      return true;
+    });
+
+    if (needed.length === 0) return true;
+
+    try {
+      console.log(`[Storage] ⚡ On-demand loading for ${needed.join(', ')}...`);
+      const results = await Promise.all(
+        needed.map(async (tbl) => {
+          try {
+            const res = await firebaseSync.fetchTableFromFirestore(tbl);
+            return { tbl, res };
+          } catch (_) {
+            return { tbl, res: null };
+          }
+        })
+      );
+
+      const recordsToApply = {};
+      for (const { tbl, res } of results) {
+        if (res !== null && res !== undefined) {
+          const tableData = res.data !== undefined ? res.data : res;
+          if (tableData !== null && tableData !== undefined) {
+            recordsToApply[tbl] = tableData;
+            if (res.updateTime) {
+              this.syncedDocVersions.set(tbl, res.updateTime);
+            }
+            this._loadedSecondaryTables.add(tbl);
+          }
+        }
+      }
+
+      if (Object.keys(recordsToApply).length > 0) {
+        this.applyIncomingDatabaseRecords(recordsToApply, `On-Demand Module (${needed.join(', ')})`);
+      }
+      return true;
+    } catch (e) {
+      console.warn('[Storage] ensureTablesLoaded note:', e.message);
+      return false;
+    }
+  }
+
+  /**
+   * On-demand loader for a specific view route
+   */
+  async ensureTablesForView(view) {
+    const tables = MODULE_TABLE_MAP[view];
+    if (tables && tables.length > 0) {
+      return this.ensureTablesLoaded(tables);
+    }
+    return true;
   }
 
   async persistToServerDatabase() {

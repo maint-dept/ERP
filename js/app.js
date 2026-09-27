@@ -45,6 +45,8 @@ import { smartStorageService } from './services/smartStorageService.js';
 import { renderRelocateView, initRelocateViewEvents } from './components/relocateView.js?v=4.7.0';
 import { renderQrCodeView, initQrCodeEvents } from './components/qrCodeView.js?v=4.6.6';
 import { chatService } from './services/chatService.js';
+import { historyService } from './services/historyService.js';
+import { auditService } from './services/auditService.js';
 
 /**
  * Captures all active scroll, viewport, and focused input states.
@@ -282,6 +284,30 @@ class ERPApplication {
       this.queueBackgroundRender();
     });
 
+    window.addEventListener('erp:history-updated', () => {
+      this.queueBackgroundRender();
+    });
+
+    window.addEventListener('erp:spare-parts-updated', () => {
+      this.queueBackgroundRender();
+    });
+
+    window.addEventListener('erp:tools-updated', () => {
+      this.queueBackgroundRender();
+    });
+
+    window.addEventListener('erp:employees-updated', () => {
+      this.queueBackgroundRender();
+    });
+
+    window.addEventListener('erp:critical-data-ready', () => {
+      this.queueBackgroundRender();
+    });
+
+    window.addEventListener('erp:secondary-data-ready', () => {
+      this.queueBackgroundRender();
+    });
+
     window.addEventListener('erp:menu-closed', () => {
       if (_invPendingReRender && !this.isUserEditing()) {
         _invPendingReRender = false;
@@ -290,6 +316,9 @@ class ERPApplication {
     });
 
     window.__appLoaded = true;
+    if (typeof window !== 'undefined' && !window.__pageUsableTime && typeof performance !== 'undefined') {
+      window.__pageUsableTime = performance.now();
+    }
 
     // Initialize Agent Chat Service (loads from localStorage + server)
     chatService.init().catch(e => console.warn('ChatService init notice:', e.message));
@@ -413,6 +442,11 @@ class ERPApplication {
       if (!authService.getCurrentUser() && newView !== 'home' && newView !== 'login') {
         newView = 'login';
         state.set('currentView', 'login');
+      }
+
+      // Trigger non-blocking on-demand table loading for this view
+      if (typeof storage !== 'undefined' && typeof storage.ensureTablesForView === 'function') {
+        storage.ensureTablesForView(newView).catch(() => {});
       }
 
       // If entering or leaving standalone views (home or login), do full render
@@ -982,6 +1016,11 @@ export const app = new ERPApplication();
 if (typeof window !== 'undefined') {
   window.app = app;
   window.__erpApp = app;
+  window.storage = storage;
+  window.state = state;
+  window.authService = authService;
+  window.historyService = historyService;
+  window.auditService = auditService;
 }
 
 if (typeof document !== 'undefined') {

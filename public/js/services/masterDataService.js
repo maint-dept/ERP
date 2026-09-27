@@ -133,7 +133,7 @@ class MasterDataService {
   constructor() {
     setTimeout(() => {
       try {
-        this.syncMachinesHierarchy();
+        this.syncMachinesHierarchy(false);
       } catch (_) {}
     }, 150);
   }
@@ -1631,7 +1631,7 @@ class MasterDataService {
    * lineId -> floorId -> unitId -> groupId
    * Keeps m.line, m.floor, m.unit, m.group names strictly updated in storage
    */
-  syncMachinesHierarchy() {
+  syncMachinesHierarchy(persistToCloud = false) {
     try {
       const machines = storage.getTable(TABLE_NAMES.MACHINES) || [];
       if (!machines || machines.length === 0) return { updatedCount: 0 };
@@ -1755,7 +1755,13 @@ class MasterDataService {
       });
 
       if (updatedCount > 0) {
-        storage.saveTable(TABLE_NAMES.MACHINES);
+        if (persistToCloud) {
+          storage.saveTable(TABLE_NAMES.MACHINES);
+        } else {
+          try {
+            localStorage.setItem('al_muslim_erp_' + TABLE_NAMES.MACHINES, JSON.stringify(machines));
+          } catch (_) {}
+        }
         storage.rebuildAllIndexes();
         console.log(`[Master Hierarchy Sync] Synchronized ${updatedCount} machine records with latest Master Data.`);
       }
@@ -1801,7 +1807,7 @@ class MasterDataService {
   }
 
   _broadcastChange() {
-    this.syncMachinesHierarchy();
+    this.syncMachinesHierarchy(true);
     this.validateAndCleanFilters();
     window.dispatchEvent(new CustomEvent('erp:master-data-updated'));
     try {
