@@ -566,7 +566,7 @@ export function renderAuditLogsView() {
             </div>
 
             <!-- Page Buttons -->
-            <div style="display: flex; align-items: center; gap: 6px;">
+            <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: center;">
               <button id="btn-audit-page-first" class="btn btn-ghost btn-xs" ${auditFilters.page <= 1 ? 'disabled style="opacity: 0.4;"' : ''}>⏮ First</button>
               <button id="btn-audit-page-prev" class="btn btn-ghost btn-xs" ${auditFilters.page <= 1 ? 'disabled style="opacity: 0.4;"' : ''}>◀ Prev</button>
               <span style="font-size: 11.5px; font-weight: 700; color: #fff; padding: 0 6px;">

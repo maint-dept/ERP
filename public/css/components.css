@@ -2013,6 +2013,15 @@ td.td-actions-active {
   .pm-profile-grid {
     grid-template-columns: 1fr;
   }
+  .pm-tabs-bar {
+    overflow-x: auto !important;
+    flex-wrap: nowrap !important;
+    -webkit-overflow-scrolling: touch !important;
+    padding-bottom: 4px !important;
+    scrollbar-width: none !important;
+    max-width: 100% !important;
+  }
+  .pm-tabs-bar::-webkit-scrollbar { display: none; }
 }
 
 @media (max-width: 950px) {
@@ -3216,6 +3225,8 @@ td.td-actions-active {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
   margin-bottom: 14px;
 }
 
@@ -3235,6 +3246,7 @@ td.td-actions-active {
 .wf-step-actions {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 6px;
 }
 

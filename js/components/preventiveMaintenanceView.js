@@ -229,7 +229,7 @@ export function renderPreventiveMaintenanceView() {
         </div>
 
         <!-- Right Side Quick Action Buttons -->
-        <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+        <div class="inventory-top-actions-group" style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
           <button id="btn-pm-open-scanner" class="btn btn-secondary btn-sm" style="font-weight: 600; padding: 4px 10px; font-size: 12px;" title="Scan QR Code or Barcode">
             📷 Scan Barcode
           </button>

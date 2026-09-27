@@ -672,15 +672,15 @@ function renderFastCascadingEntryView() {
         </div>
 
         <!-- Group Controls Row: Select Existing OR Type New -->
-        <div style="display: grid; grid-template-columns: 1fr 1.3fr; gap: 16px; align-items: start;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 16px; align-items: start;">
           
           <!-- Option A: Select Existing Group -->
           <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 14px; display: flex; flex-direction: column; gap: 8px;">
             <label style="font-size: 11.5px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase;">
               Select Existing Group:
             </label>
-            <div style="display: flex; gap: 8px;">
-              <select id="fast-sel-group" class="filter-select" style="flex: 1; font-weight: 700; font-size: 13.5px; border-color: rgba(251, 191, 36, 0.4);">
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+              <select id="fast-sel-group" class="filter-select" style="flex: 1 1 180px; min-width: 0; font-weight: 700; font-size: 13.5px; border-color: rgba(251, 191, 36, 0.4);">
                 ${groups.length === 0 ? `<option value="">(No groups created yet)</option>` : 
                   groups.map(g => `<option value="${g.id}" ${g.id === cascadeGroupId ? 'selected' : ''}>🏢 ${g.name} (${g.code})</option>`).join('')}
               </select>
@@ -700,15 +700,15 @@ function renderFastCascadingEntryView() {
             <label style="font-size: 11.5px; font-weight: 700; color: #fbbf24; text-transform: uppercase;">
               ➕ Enter &amp; Create New Group:
             </label>
-            <div style="display: flex; gap: 8px;">
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
               <input 
                 type="text" 
                 id="inp-quick-group-name" 
                 class="form-control" 
                 placeholder="Type Group Name (e.g. Al-Muslim Group, ABC Group)..." 
-                style="flex: 1; font-size: 13px;" 
+                style="flex: 1 1 180px; min-width: 0; font-size: 13px;" 
               />
-              <button id="btn-quick-create-group" class="btn btn-primary" style="font-weight: 700; background: linear-gradient(135deg, #f59e0b, #d97706); color: #000; white-space: nowrap; padding: 7px 16px; font-size: 12.5px;">
+              <button id="btn-quick-create-group" class="btn btn-primary" style="font-weight: 700; background: linear-gradient(135deg, #f59e0b, #d97706); color: #000; white-space: nowrap; padding: 7px 16px; font-size: 12.5px; flex: 0 1 auto;">
                 ➕ Create Group
               </button>
             </div>
@@ -740,15 +740,15 @@ function renderFastCascadingEntryView() {
             <span style="font-size: 11px; color: var(--text-muted);">Press Enter or click Add</span>
           </div>
 
-          <div style="display: flex; gap: 10px;">
+          <div style="display: flex; gap: 10px; flex-wrap: wrap;">
             <input 
               type="text" 
               id="inp-batch-units-text" 
               class="form-control" 
               placeholder="e.g. Unit-01, Unit-02, Unit-03, Washing Plant, Cutting Section, Finishing Section..." 
-              style="flex: 1; font-size: 13.5px; font-weight: 600; padding: 10px 14px; border: 1.5px solid rgba(52, 211, 153, 0.4);" 
+              style="flex: 1 1 200px; min-width: 0; font-size: 13.5px; font-weight: 600; padding: 10px 14px; border: 1.5px solid rgba(52, 211, 153, 0.4);" 
             />
-            <button id="btn-save-batch-units" class="btn btn-primary" style="font-weight: 800; background: linear-gradient(135deg, #10b981, #059669); white-space: nowrap; padding: 10px 22px; font-size: 13px; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);">
+            <button id="btn-save-batch-units" class="btn btn-primary" style="font-weight: 800; background: linear-gradient(135deg, #10b981, #059669); white-space: nowrap; padding: 10px 22px; font-size: 13px; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35); flex: 0 1 auto;">
               ➕ Add All Units (1-Click)
             </button>
           </div>
