@@ -1059,21 +1059,47 @@ class TransferService {
     const rows = [headers];
 
     requests.forEach((r, idx) => {
-      const isCompleted = r.status === TRANSFER_STATUSES.COMPLETED;
-      const approvalDate = isCompleted && r.completedAt ? new Date(r.completedAt).toLocaleDateString('en-GB') : (r.status === TRANSFER_STATUSES.REJECTED ? 'Rejected' : 'Pending');
-      const approvedBy = r.completedByName || (r.approvalHistory?.find(h => h.action === 'APPROVED')?.approverName) || (isCompleted ? 'Admin' : '—');
+      const isCompleted = r.status === TRANSFER_STATUSES.COMPLETED || r.status === 'COMPLETED';
+      let approvalDate = 'Pending';
+      if (isCompleted) {
+        approvalDate = r.completedAt && r.completedAt !== '—' ? new Date(r.completedAt).toLocaleDateString('en-GB') : 'Completed';
+      } else if (r.status === TRANSFER_STATUSES.REJECTED || r.status === 'REJECTED') {
+        approvalDate = 'Rejected';
+      } else if (r.status === 'CANCELLED') {
+        approvalDate = 'Cancelled';
+      }
+
+      const approvedBy = r.completedByName || (r.approvalHistory?.find(h => h.action === 'APPROVED')?.approverName) || r.approvedBy || (isCompleted ? 'Admin' : '—');
+
+      const mName = r.machineInfo?.machineName || r.machineName || 'Machine';
+      const mBrand = r.machineInfo?.brand || r.machineBrand || '';
+      const mModel = r.machineInfo?.model || r.machineModel || '';
+      const modelDetails = [mBrand, mModel].filter(Boolean).join(' ');
+      const fullMachineTitle = modelDetails ? `${mName} (${modelDetails})` : mName;
+
+      const sourceLoc = r.sourcePath || (typeof r.sourceLocation === 'string' ? r.sourceLocation : `${r.sourceLocation?.unit || ''} > ${r.sourceLocation?.floor || ''} > ${r.sourceLocation?.line || ''}`) || '—';
+      const destLoc = r.destPath || (typeof r.destLocation === 'string' ? r.destLocation : `${r.destLocation?.unit || ''} > ${r.destLocation?.floor || ''} > ${r.destLocation?.line || ''}`) || '—';
+
+      let reqDate = '—';
+      if (r.requestedAt && r.requestedAt !== '—') {
+        try {
+          reqDate = new Date(r.requestedAt).toLocaleDateString('en-GB');
+        } catch (_) { reqDate = r.requestedAt; }
+      }
+
+      const requester = r.requestedByName ? `${r.requestedByName} (${r.requestedByRole || 'Staff'})` : (r.transferredBy || 'User');
 
       rows.push([
         String(idx + 1).padStart(2, '0'),
         r.machineInfo?.serialNumber || r.machineSerial || '—',
-        `${r.machineInfo?.machineName || 'Machine'} (${r.machineInfo?.brand || ''} ${r.machineInfo?.model || ''})`.trim(),
-        r.sourcePath || `${r.sourceLocation?.unit || ''} > ${r.sourceLocation?.floor || ''} > ${r.sourceLocation?.line || ''}`,
-        r.destPath || `${r.destLocation?.unit || ''} > ${r.destLocation?.floor || ''} > ${r.destLocation?.line || ''}`,
-        r.requestedAt ? new Date(r.requestedAt).toLocaleDateString('en-GB') : '—',
+        fullMachineTitle,
+        sourceLoc,
+        destLoc,
+        reqDate,
         approvalDate,
-        `${r.requestedByName || 'User'} (${r.requestedByRole || 'Staff'})`,
+        requester,
         approvedBy,
-        r.status === 'PENDING_APPROVAL' ? 'Pending' : r.status.replace(/_/g, ' '),
+        (r.status === 'PENDING_APPROVAL' ? 'Pending' : (r.status || '—')).replace(/_/g, ' '),
         r.reason || r.remarks || '—'
       ]);
     });

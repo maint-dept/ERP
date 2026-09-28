@@ -1247,6 +1247,146 @@ class PDFService {
       auditService.log('ET_LAB_PDF_REPORT_GENERATED', 'REPORT', 'ENT Lab Report', `Generated ENT Lab Management PDF/Print Report.`);
     } else {
       alert('Pop-up window was blocked. Please allow pop-ups for this site to view/print reports.');
+  /**
+   * Generates Official Machine Transfer & Relocation Audit Log PDF / Print Report
+   */
+  generateTransferReportPDF({ rows = [], filterSummary = '', generatedBy = null }) {
+    const user = generatedBy || authService.getCurrentUser();
+    const settings = storage.getTable(TABLE_NAMES.SETTINGS) || {};
+    const companyName = settings.companyName || 'AL-MUSLIM GROUP';
+    const deptName = settings.departmentName || 'Central Engineering & Maintenance Operations';
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    const totalTransfers = rows.length;
+    const completedCount = rows.filter(r => r.status === 'COMPLETED' || r.status === 'APPROVED').length;
+    const pendingCount = rows.filter(r => r.status === 'PENDING_APPROVAL' || r.status === 'PARTIALLY_APPROVED' || r.status === 'REVISION_REQUESTED').length;
+    const rejectedCount = rows.filter(r => r.status === 'REJECTED').length;
+    const cancelledCount = rows.filter(r => r.status === 'CANCELLED').length;
+
+    const rowsHtml = rows.map((r, i) => {
+      const d = r.requestedAt && r.requestedAt !== '—'
+        ? (() => {
+            try {
+              const dt = new Date(r.requestedAt);
+              return dt.toLocaleDateString('en-GB') + ' ' + dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            } catch (_) { return r.requestedAt; }
+          })()
+        : '—';
+      const statusColor = r.status === 'COMPLETED' || r.status === 'APPROVED' ? '#16a34a'
+        : (r.status === 'REJECTED' || r.status === 'CANCELLED' ? '#dc2626' : '#d97706');
+      return `
+        <tr>
+          <td style="text-align: center; padding: 5px 4px; font-weight: bold;">${i + 1}</td>
+          <td style="font-family: monospace; font-weight: 700; color: #0284c7; padding: 5px 6px;">${r.id || '—'}</td>
+          <td style="font-family: monospace; font-weight: 700; color: #0f172a; padding: 5px 6px;">${r.machineSerial || '—'}</td>
+          <td style="font-weight: 600; padding: 5px 6px;">${r.machineName || '—'}</td>
+          <td style="padding: 5px 6px; font-size: 9.5px; color: #475569;">${r.sourceLocation || '—'}</td>
+          <td style="padding: 5px 6px; font-size: 9.5px; font-weight: 600; color: #0f172a;">${r.destLocation || '—'}</td>
+          <td style="padding: 5px 6px; font-family: monospace; font-size: 9.5px; white-space: nowrap;">${d}</td>
+          <td style="padding: 5px 6px; font-size: 9.5px; font-weight: 600;">${r.transferredBy || '—'}</td>
+          <td style="text-align: center; padding: 5px 6px;">
+            <span style="font-weight: 700; font-size: 8.5px; padding: 2px 6px; border-radius: 3px; background: ${statusColor}15; color: ${statusColor}; border: 1px solid ${statusColor}40;">
+              ${r.status}
+            </span>
+          </td>
+          <td style="padding: 5px 6px; font-size: 9px; color: #64748b;">${r.reason || '—'}${r.remarks ? ` (${r.remarks})` : ''}</td>
+        </tr>
+      `;
+    }).join('');
+
+    const reportHtml = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8"/>
+        <title>Machine Transfer &amp; Relocation Audit Report - ${companyName}</title>
+        <style>
+          @page { size: landscape; margin: 10mm; }
+          body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10px; color: #1e293b; background: #fff; margin: 0; padding: 12px; }
+          .report-header { border-bottom: 2px solid #0284c7; padding-bottom: 8px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+          .company-title { font-size: 18px; font-weight: 800; color: #0f172a; }
+          .dept-title { font-size: 11px; font-weight: 600; color: #0284c7; }
+          .report-meta { text-align: right; font-size: 9.5px; color: #64748b; }
+          .kpi-bar { display: flex; gap: 10px; margin-bottom: 12px; }
+          .kpi-item { flex: 1; border: 1px solid #cbd5e1; border-radius: 5px; padding: 6px 10px; background: #f8fafc; }
+          .kpi-label { font-size: 9px; font-weight: 700; text-transform: uppercase; color: #64748b; }
+          .kpi-val { font-size: 16px; font-weight: 800; color: #0f172a; margin-top: 2px; }
+          table.report-table { width: 100%; border-collapse: collapse; font-size: 9.5px; }
+          table.report-table th { background: #0f172a; color: #f8fafc; font-weight: 700; text-transform: uppercase; font-size: 8.5px; padding: 6px 4px; border: 1px solid #334155; }
+          table.report-table td { border: 1px solid #e2e8f0; vertical-align: middle; }
+          table.report-table tr:nth-child(even) { background: #f8fafc; }
+        </style>
+      </head>
+      <body>
+        <div class="report-header">
+          <div>
+            <div class="company-title">${companyName}</div>
+            <div class="dept-title">${deptName}</div>
+            <div style="font-size: 13px; font-weight: 800; color: #0f172a; margin-top: 4px;">
+              🔄 Machine Transfer &amp; Relocation Audit Log Report
+            </div>
+            ${filterSummary ? `<div style="font-size: 9.5px; color: #64748b; margin-top: 2px;">Filters: ${filterSummary}</div>` : ''}
+          </div>
+          <div class="report-meta">
+            <div><strong>Generated:</strong> ${dateStr} ${timeStr}</div>
+            <div><strong>Generated By:</strong> ${user?.name || 'Administrator'}</div>
+            <div><strong>Total Records:</strong> ${totalTransfers}</div>
+          </div>
+        </div>
+
+        <div class="kpi-bar">
+          <div class="kpi-item">
+            <div class="kpi-label">Total Records</div>
+            <div class="kpi-val" style="color: #0284c7;">${totalTransfers}</div>
+          </div>
+          <div class="kpi-item">
+            <div class="kpi-label">Completed</div>
+            <div class="kpi-val" style="color: #16a34a;">${completedCount}</div>
+          </div>
+          <div class="kpi-item">
+            <div class="kpi-label">Pending Approval</div>
+            <div class="kpi-val" style="color: #d97706;">${pendingCount}</div>
+          </div>
+          <div class="kpi-item">
+            <div class="kpi-label">Rejected / Cancelled</div>
+            <div class="kpi-val" style="color: #dc2626;">${rejectedCount + cancelledCount}</div>
+          </div>
+        </div>
+
+        <table class="report-table">
+          <thead>
+            <tr>
+              <th style="width: 25px;">SL</th>
+              <th style="width: 90px;">Transfer ID</th>
+              <th style="width: 85px;">Serial #</th>
+              <th style="width: 110px;">Machine Name</th>
+              <th>Previous Location (From)</th>
+              <th>New Location (To)</th>
+              <th style="width: 105px;">Transfer Date</th>
+              <th style="width: 95px;">Transferred By</th>
+              <th style="width: 75px;">Status</th>
+              <th>Reason / Remarks</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows.length === 0 ? '<tr><td colspan="10" style="text-align: center; padding: 20px; color: #64748b;">No transfer records match the filter criteria.</td></tr>' : rowsHtml}
+          </tbody>
+        </table>
+      </body>
+      </html>
+    `;
+
+    const printWin = window.open('', '_blank');
+    if (printWin) {
+      printWin.document.open();
+      printWin.document.write(reportHtml);
+      printWin.document.close();
+      printWin.document.title = 'Machine Transfer & Relocation Report';
+      auditService.log('TRANSFER_PDF_REPORT_GENERATED', 'REPORT', 'Transfer Report', `Generated Transfer Audit Log PDF/Print Report (${rows.length} rows).`);
+    } else {
+      alert('Pop-up window was blocked. Please allow pop-ups for this site to view/print reports.');
     }
   }
 }

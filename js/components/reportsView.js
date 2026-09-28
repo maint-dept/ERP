@@ -1185,8 +1185,158 @@ function buildTransferAuditLog(allRequests, completedTransfers) {
   return rows;
 }
 
+let transferReportFilterState = {
+  groupId: '',
+  unitId: '',
+  floorId: '',
+  lineId: '',
+  prevFloor: '',
+  newFloor: '',
+  prevLine: '',
+  newLine: '',
+  status: 'ALL',
+  transferredBy: 'ALL',
+  dateFrom: '',
+  dateTo: '',
+  search: '',
+  sortField: 'requestedAt',
+  sortDirection: 'desc',
+  page: 1,
+  pageSize: 25,
+  viewMode: 'TABLE' // 'TABLE' or 'CARDS'
+};
+
+function filterTransferAuditRows(allRows) {
+  return allRows.filter(r => {
+    // Status
+    if (transferReportFilterState.status !== 'ALL') {
+      const st = (r.status || '').toUpperCase();
+      if (transferReportFilterState.status === 'COMPLETED' && st !== 'COMPLETED' && st !== 'APPROVED') return false;
+      if (transferReportFilterState.status === 'REJECTED' && st !== 'REJECTED') return false;
+      if (transferReportFilterState.status === 'CANCELLED' && st !== 'CANCELLED') return false;
+      if (transferReportFilterState.status === 'PENDING' && st !== 'PENDING_APPROVAL' && st !== 'PARTIALLY_APPROVED' && st !== 'REVISION_REQUESTED') return false;
+    }
+
+    // Transferred By
+    if (transferReportFilterState.transferredBy !== 'ALL' && r.transferredBy !== transferReportFilterState.transferredBy) {
+      return false;
+    }
+
+    // Previous Floor / New Floor
+    if (transferReportFilterState.prevFloor && r.prevFloor !== transferReportFilterState.prevFloor) return false;
+    if (transferReportFilterState.newFloor && r.newFloor !== transferReportFilterState.newFloor) return false;
+
+    // Previous Line / New Line
+    if (transferReportFilterState.prevLine && r.prevLine !== transferReportFilterState.prevLine) return false;
+    if (transferReportFilterState.newLine && r.newLine !== transferReportFilterState.newLine) return false;
+
+    // Hierarchy Filter: Group / Unit / Floor / Line
+    if (transferReportFilterState.groupId) {
+      const grp = masterDataService.getGroupById(transferReportFilterState.groupId);
+      if (grp && !r.sourceLocation.includes(grp.name) && !r.destLocation.includes(grp.name)) return false;
+    }
+    if (transferReportFilterState.unitId) {
+      const unt = masterDataService.getUnitById(transferReportFilterState.unitId);
+      if (unt && !r.sourceLocation.includes(unt.name) && !r.destLocation.includes(unt.name)) return false;
+    }
+    if (transferReportFilterState.floorId) {
+      const flr = masterDataService.getFloorById(transferReportFilterState.floorId);
+      if (flr && r.prevFloor !== flr.name && r.newFloor !== flr.name && !r.sourceLocation.includes(flr.name) && !r.destLocation.includes(flr.name)) return false;
+    }
+    if (transferReportFilterState.lineId) {
+      const lin = masterDataService.getLineById(transferReportFilterState.lineId);
+      if (lin && r.prevLine !== lin.name && r.newLine !== lin.name && !r.sourceLocation.includes(lin.name) && !r.destLocation.includes(lin.name)) return false;
+    }
+
+    // Date Range: dateFrom / dateTo
+    if (transferReportFilterState.dateFrom) {
+      const rowDate = r.requestedAt && r.requestedAt !== '\u2014' ? r.requestedAt.split('T')[0] : '';
+      if (rowDate && rowDate < transferReportFilterState.dateFrom) return false;
+    }
+    if (transferReportFilterState.dateTo) {
+      const rowDate = r.requestedAt && r.requestedAt !== '\u2014' ? r.requestedAt.split('T')[0] : '';
+      if (rowDate && rowDate > transferReportFilterState.dateTo) return false;
+    }
+
+    // Global Search
+    if (transferReportFilterState.search) {
+      const q = transferReportFilterState.search.toLowerCase().trim();
+      const match = (r.id || '').toLowerCase().includes(q) ||
+        (r.machineSerial || '').toLowerCase().includes(q) ||
+        (r.machineName || '').toLowerCase().includes(q) ||
+        (r.machineBrand || '').toLowerCase().includes(q) ||
+        (r.machineModel || '').toLowerCase().includes(q) ||
+        (r.sourceLocation || '').toLowerCase().includes(q) ||
+        (r.destLocation || '').toLowerCase().includes(q) ||
+        (r.prevFloor || '').toLowerCase().includes(q) ||
+        (r.newFloor || '').toLowerCase().includes(q) ||
+        (r.prevLine || '').toLowerCase().includes(q) ||
+        (r.newLine || '').toLowerCase().includes(q) ||
+        (r.transferredBy || '').toLowerCase().includes(q) ||
+        (r.reason || '').toLowerCase().includes(q) ||
+        (r.remarks || '').toLowerCase().includes(q) ||
+        (r.status || '').toLowerCase().includes(q);
+      if (!match) return false;
+    }
+
+    return true;
+  });
+}
+
+function sortTransferAuditRows(rows) {
+  const { sortField, sortDirection } = transferReportFilterState;
+  const factor = sortDirection === 'asc' ? 1 : -1;
+  return [...rows].sort((a, b) => {
+    const valA = a[sortField] || '';
+    const valB = b[sortField] || '';
+    if (sortField === 'requestedAt') {
+      const dateA = new Date(valA || 0).getTime() || 0;
+      const dateB = new Date(valB || 0).getTime() || 0;
+      return (dateA - dateB) * factor;
+    }
+    return String(valA).localeCompare(String(valB)) * factor;
+  });
+}
+
+function paginateTransferAuditRows(rows) {
+  const { page, pageSize } = transferReportFilterState;
+  if (pageSize === 'ALL') {
+    return { paginatedRows: rows, totalPages: 1, currentPage: 1, startIdx: 0, endIdx: rows.length };
+  }
+  const size = parseInt(pageSize, 10) || 25;
+  const totalPages = Math.max(1, Math.ceil(rows.length / size));
+  const currentPage = Math.min(Math.max(1, page), totalPages);
+  transferReportFilterState.page = currentPage;
+  const startIdx = (currentPage - 1) * size;
+  const endIdx = Math.min(startIdx + size, rows.length);
+  const paginatedRows = rows.slice(startIdx, endIdx);
+  return { paginatedRows, totalPages, currentPage, startIdx, endIdx };
+}
+
 function renderTransferReportsTab(allRequests, completedTransfers) {
-  const auditRows = buildTransferAuditLog(allRequests, completedTransfers);
+  const allAuditRows = buildTransferAuditLog(allRequests, completedTransfers);
+  const filteredRows = filterTransferAuditRows(allAuditRows);
+  const sortedRows = sortTransferAuditRows(filteredRows);
+  const { paginatedRows, totalPages, currentPage, startIdx, endIdx } = paginateTransferAuditRows(sortedRows);
+
+  // Extract distinct values for dropdown filters
+  const groups = masterDataService.getGroups() || [];
+  const units = masterDataService.getUnits(transferReportFilterState.groupId) || [];
+  const floors = masterDataService.getFloors(transferReportFilterState.unitId, transferReportFilterState.groupId) || [];
+  const lines = masterDataService.getLines(transferReportFilterState.floorId, transferReportFilterState.unitId, transferReportFilterState.groupId) || [];
+
+  const distinctPrevFloors = Array.from(new Set(allAuditRows.map(r => r.prevFloor).filter(f => f && f !== '\u2014'))).sort();
+  const distinctNewFloors = Array.from(new Set(allAuditRows.map(r => r.newFloor).filter(f => f && f !== '\u2014'))).sort();
+  const distinctPrevLines = Array.from(new Set(allAuditRows.map(r => r.prevLine).filter(l => l && l !== '\u2014'))).sort();
+  const distinctNewLines = Array.from(new Set(allAuditRows.map(r => r.newLine).filter(l => l && l !== '\u2014'))).sort();
+  const distinctUsers = Array.from(new Set(allAuditRows.map(r => r.transferredBy).filter(u => u && u !== '\u2014'))).sort();
+
+  // KPI Metrics Counts
+  const totalCount = allAuditRows.length;
+  const completedCount = allAuditRows.filter(r => r.status === 'COMPLETED' || r.status === 'APPROVED').length;
+  const pendingCount = allAuditRows.filter(r => r.status === 'PENDING_APPROVAL' || r.status === 'PARTIALLY_APPROVED' || r.status === 'REVISION_REQUESTED').length;
+  const rejectedCount = allAuditRows.filter(r => r.status === 'REJECTED').length;
+  const cancelledCount = allAuditRows.filter(r => r.status === 'CANCELLED').length;
 
   const statusBadge = (status) => {
     const map = {
@@ -1202,87 +1352,397 @@ function renderTransferReportsTab(allRequests, completedTransfers) {
     return `<span class="badge ${s.cls}" style="font-size: 10px; padding: 2px 6px; white-space: nowrap;">${s.label}</span>`;
   };
 
+  const getSortIndicator = (field) => {
+    if (transferReportFilterState.sortField !== field) return '<span style="color: #64748b; font-size: 10px;">↕</span>';
+    return `<span style="color: #38bdf8; font-size: 10px; font-weight: 800;">${transferReportFilterState.sortDirection === 'asc' ? '▲' : '▼'}</span>`;
+  };
+
   return `
-    <div style="display: flex; flex-direction: column; gap: 16px;">
+    <div style="display: flex; flex-direction: column; gap: 14px; width: 100%;">
 
-      <!-- Action Bar -->
-      <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 14px 18px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-          <span style="font-size: 13px; font-weight: 700; color: #fff;">🔄 Machine Transfer &amp; Relocation Audit Log</span>
-          <span style="font-size: 12px; color: var(--text-muted);">(${auditRows.length} record${auditRows.length !== 1 ? 's' : ''})</span>
-          <span style="font-size: 11px; color: #34d399; background: rgba(52,211,153,0.1); border: 1px solid rgba(52,211,153,0.3); border-radius: 4px; padding: 2px 8px; font-weight: 700;">🔴 Live Firebase Data</span>
+      <!-- 1. TOP SUMMARY KPI CARDS -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px;">
+        
+        <div class="tr-kpi-card" data-tr-kpi-status="ALL" style="background: rgba(15, 23, 42, 0.85); border: 1.5px solid ${transferReportFilterState.status === 'ALL' ? '#38bdf8' : 'rgba(56, 189, 248, 0.25)'}; border-radius: 8px; padding: 12px 16px; cursor: pointer; transition: all 0.2s;" title="Click to show all records">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 11px; font-weight: 700; color: #38bdf8; text-transform: uppercase;">🔄 Total Transfers</span>
+            <span style="font-size: 14px;">📋</span>
+          </div>
+          <div style="font-size: 22px; font-weight: 800; color: #fff; margin-top: 4px;">${totalCount}</div>
+          <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">${filteredRows.length} matching filters</div>
         </div>
-        <div style="display: flex; gap: 8px;">
-          <button id="btn-export-transfer-report-excel" class="btn btn-secondary btn-sm" style="font-weight: 700;">
-            📊 Export Transfers (Excel)
-          </button>
+
+        <div class="tr-kpi-card" data-tr-kpi-status="COMPLETED" style="background: rgba(15, 23, 42, 0.85); border: 1.5px solid ${transferReportFilterState.status === 'COMPLETED' ? '#34d399' : 'rgba(52, 211, 153, 0.25)'}; border-radius: 8px; padding: 12px 16px; cursor: pointer; transition: all 0.2s;" title="Click to filter Completed relocations">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 11px; font-weight: 700; color: #34d399; text-transform: uppercase;">✅ Completed</span>
+            <span style="font-size: 14px;">🚚</span>
+          </div>
+          <div style="font-size: 22px; font-weight: 800; color: #34d399; margin-top: 4px;">${completedCount}</div>
+          <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">Fully Relocated</div>
         </div>
+
+        <div class="tr-kpi-card" data-tr-kpi-status="PENDING" style="background: rgba(15, 23, 42, 0.85); border: 1.5px solid ${transferReportFilterState.status === 'PENDING' ? '#fbbf24' : 'rgba(251, 191, 36, 0.25)'}; border-radius: 8px; padding: 12px 16px; cursor: pointer; transition: all 0.2s;" title="Click to filter Pending requests">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 11px; font-weight: 700; color: #fbbf24; text-transform: uppercase;">⏳ In Approval</span>
+            <span style="font-size: 14px;">⏳</span>
+          </div>
+          <div style="font-size: 22px; font-weight: 800; color: #fbbf24; margin-top: 4px;">${pendingCount}</div>
+          <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">Pending / Revision</div>
+        </div>
+
+        <div class="tr-kpi-card" data-tr-kpi-status="REJECTED" style="background: rgba(15, 23, 42, 0.85); border: 1.5px solid ${transferReportFilterState.status === 'REJECTED' || transferReportFilterState.status === 'CANCELLED' ? '#f43f5e' : 'rgba(244, 63, 94, 0.25)'}; border-radius: 8px; padding: 12px 16px; cursor: pointer; transition: all 0.2s;" title="Click to filter Rejected &amp; Cancelled">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 11px; font-weight: 700; color: #f43f5e; text-transform: uppercase;">❌ Rejected / Cancelled</span>
+            <span style="font-size: 14px;">🚫</span>
+          </div>
+          <div style="font-size: 22px; font-weight: 800; color: #f43f5e; margin-top: 4px;">${rejectedCount + cancelledCount}</div>
+          <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">${rejectedCount} Rejected · ${cancelledCount} Cancelled</div>
+        </div>
+
       </div>
 
-      <!-- Audit Log Table -->
-      <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); overflow-x: auto; box-shadow: var(--shadow-sm);">
-        <table class="data-table" style="width: 100%; min-width: 1400px; border-collapse: collapse; margin: 0;">
-          <thead>
-            <tr style="background: rgba(15,23,42,0.95); border-bottom: 2px solid var(--border-color); font-size: 10.5px; text-transform: uppercase; color: #94a3b8; white-space: nowrap;">
-              <th style="width: 44px; text-align: center; padding: 9px 8px;">SL</th>
-              <th style="min-width: 140px; text-align: left; padding: 9px 10px;">Transfer ID / Ref #</th>
-              <th style="min-width: 130px; text-align: left; padding: 9px 10px;">Machine ID / Serial</th>
-              <th style="min-width: 120px; text-align: left; padding: 9px 10px;">Machine Name</th>
-              <th style="min-width: 180px; text-align: left; padding: 9px 10px;">Previous Location</th>
-              <th style="min-width: 180px; text-align: left; padding: 9px 10px;">New Location</th>
-              <th style="min-width: 100px; text-align: left; padding: 9px 10px;">Prev Floor</th>
-              <th style="min-width: 100px; text-align: left; padding: 9px 10px;">New Floor</th>
-              <th style="min-width: 100px; text-align: left; padding: 9px 10px;">Prev Line</th>
-              <th style="min-width: 100px; text-align: left; padding: 9px 10px;">New Line</th>
-              <th style="min-width: 145px; text-align: left; padding: 9px 10px;">Transfer Date &amp; Time</th>
-              <th style="min-width: 130px; text-align: left; padding: 9px 10px;">Transferred By</th>
-              <th style="min-width: 120px; text-align: center; padding: 9px 10px;">Status</th>
-              <th style="min-width: 180px; text-align: left; padding: 9px 10px;">Reason / Notes</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${auditRows.length === 0 ? `
-              <tr>
-                <td colspan="14" style="text-align: center; padding: 40px; color: var(--text-muted);">
-                  <div style="font-size: 32px; margin-bottom: 8px;">🚫</div>
-                  <div style="font-size: 14px; font-weight: 700; color: #fff; margin-bottom: 4px;">No Transfer Records Found</div>
-                  <div style="font-size: 12px;">Transfer records will appear here in real time after a machine is transferred.</div>
-                </td>
-              </tr>
-            ` : auditRows.map((row, idx) => {
-              const dateStr = row.requestedAt && row.requestedAt !== '\u2014'
-                ? (() => {
-                    try {
-                      const d = new Date(row.requestedAt);
-                      return d.toLocaleDateString('en-GB') + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                    } catch (_) { return row.requestedAt; }
-                  })()
-                : '\u2014';
-              const reasonStr = row.reason || '\u2014';
-              const remarksStr = row.remarks ? ` <span style="color: #64748b;">(${row.remarks})</span>` : '';
-              return `
-                <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);" class="hover-row">
-                  <td style="text-align: center; color: var(--text-muted); font-weight: 700; padding: 8px;">${idx + 1}</td>
-                  <td style="font-family: var(--font-mono); font-weight: 800; color: #38bdf8; white-space: nowrap; padding: 8px 10px; font-size: 11.5px;">${row.id}</td>
-                  <td style="font-family: var(--font-mono); font-weight: 700; color: #fff; white-space: nowrap; padding: 8px 10px; font-size: 11.5px;">${row.machineSerial}</td>
-                  <td style="font-weight: 600; color: #e2e8f0; padding: 8px 10px; font-size: 11.5px; white-space: nowrap;">${row.machineName}</td>
-                  <td style="font-size: 11px; color: #94a3b8; padding: 8px 10px; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${row.sourceLocation}">${row.sourceLocation}</td>
-                  <td style="font-size: 11px; color: #86efac; font-weight: 600; padding: 8px 10px; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${row.destLocation}">${row.destLocation}</td>
-                  <td style="font-size: 11.5px; color: #94a3b8; padding: 8px 10px; white-space: nowrap;">${row.prevFloor}</td>
-                  <td style="font-size: 11.5px; color: #86efac; font-weight: 600; padding: 8px 10px; white-space: nowrap;">${row.newFloor}</td>
-                  <td style="font-size: 11.5px; color: #94a3b8; padding: 8px 10px; white-space: nowrap;">${row.prevLine}</td>
-                  <td style="font-size: 11.5px; color: #86efac; font-weight: 600; padding: 8px 10px; white-space: nowrap;">${row.newLine}</td>
-                  <td style="font-family: var(--font-mono); font-size: 11px; color: #fbbf24; padding: 8px 10px; white-space: nowrap;">${dateStr}</td>
-                  <td style="font-size: 11.5px; color: #c084fc; font-weight: 600; padding: 8px 10px; white-space: nowrap;">${row.transferredBy}</td>
-                  <td style="text-align: center; padding: 8px;">${statusBadge(row.status)}</td>
-                  <td style="font-size: 11px; color: #94a3b8; padding: 8px 10px; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${reasonStr}">${reasonStr}${remarksStr}</td>
+      <!-- 2. COMPREHENSIVE FILTER TOOLBAR CONTAINER -->
+      <div style="background: var(--bg-surface); border: 1.5px solid rgba(56, 189, 248, 0.35); border-radius: var(--radius-lg); padding: 16px 18px; display: flex; flex-direction: column; gap: 12px; box-shadow: var(--shadow-sm); width: 100%; box-sizing: border-box;">
+        
+        <!-- Header & Action Buttons -->
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 10px; flex-wrap: wrap; gap: 10px;">
+          <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+            <span style="font-size: 18px;">🔍</span>
+            <div>
+              <div style="font-size: 14px; font-weight: 800; color: #38bdf8; text-transform: uppercase; letter-spacing: 0.5px;">
+                Machine Transfer &amp; Relocation Audit Filter Engine
+              </div>
+              <div style="font-size: 11px; color: var(--text-muted);">
+                Showing ${filteredRows.length} of ${allAuditRows.length} records · Zero-jump dynamic filtering
+              </div>
+            </div>
+            <span style="font-size: 11px; color: #34d399; background: rgba(52,211,153,0.1); border: 1px solid rgba(52,211,153,0.3); border-radius: 4px; padding: 2px 8px; font-weight: 700;">🔴 Live Firebase Data</span>
+          </div>
+
+          <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+            <button id="btn-export-transfer-report-excel" class="btn btn-primary btn-sm" style="font-weight: 700; background: linear-gradient(135deg, #0284c7, #0369a1); height: 32px;" title="Export filtered records to formatted Excel spreadsheet">
+              📊 Export Transfers (Excel)
+            </button>
+            <button id="btn-export-transfer-report-pdf" class="btn btn-secondary btn-sm" style="font-weight: 700; height: 32px;" title="Generate printable PDF audit log">
+              🖨️ PDF / Print
+            </button>
+            <button id="tr-btn-clear-filters" class="btn btn-ghost btn-sm" style="height: 32px; font-weight: 700; color: #94a3b8;" title="Reset all filters and search">
+              ↺ Clear Filters
+            </button>
+            <div style="display: flex; border: 1px solid var(--border-color); border-radius: 6px; overflow: hidden; height: 30px;">
+              <button class="btn btn-xs ${transferReportFilterState.viewMode === 'TABLE' ? 'btn-primary' : 'btn-ghost'}" data-tr-view-mode="TABLE" style="padding: 0 10px; font-size: 11px;" title="Table View">
+                ▦ Table
+              </button>
+              <button class="btn btn-xs ${transferReportFilterState.viewMode === 'CARDS' ? 'btn-primary' : 'btn-ghost'}" data-tr-view-mode="CARDS" style="padding: 0 10px; font-size: 11px;" title="Cards View (Mobile friendly)">
+                🗂️ Cards
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Row 1: Plant Location Hierarchy -->
+        <div>
+          <div style="font-size: 10.5px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">
+            🏢 1. Plant Location Hierarchy:
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px;">
+            <div class="filter-group">
+              <label class="filter-label" style="font-size: 10px; font-weight: 700; color: #cbd5e1; margin-bottom: 2px;">Group</label>
+              <select id="tr-filter-group" class="filter-select" style="height: 34px; font-size: 11.5px; width: 100%;">
+                <option value="">All Groups (${groups.length})</option>
+                ${groups.map(g => `<option value="${g.id}" ${transferReportFilterState.groupId === g.id ? 'selected' : ''}>${g.name}</option>`).join('')}
+              </select>
+            </div>
+
+            <div class="filter-group">
+              <label class="filter-label" style="font-size: 10px; font-weight: 700; color: #cbd5e1; margin-bottom: 2px;">Unit / Factory</label>
+              <select id="tr-filter-unit" class="filter-select" style="height: 34px; font-size: 11.5px; width: 100%;">
+                <option value="">All Units (${units.length})</option>
+                ${units.map(u => `<option value="${u.id}" ${transferReportFilterState.unitId === u.id ? 'selected' : ''}>${u.name}</option>`).join('')}
+              </select>
+            </div>
+
+            <div class="filter-group">
+              <label class="filter-label" style="font-size: 10px; font-weight: 700; color: #cbd5e1; margin-bottom: 2px;">Floor</label>
+              <select id="tr-filter-floor" class="filter-select" style="height: 34px; font-size: 11.5px; width: 100%;">
+                <option value="">All Floors (${floors.length})</option>
+                ${floors.map(f => `<option value="${f.id}" ${transferReportFilterState.floorId === f.id ? 'selected' : ''}>${f.name}</option>`).join('')}
+              </select>
+            </div>
+
+            <div class="filter-group">
+              <label class="filter-label" style="font-size: 10px; font-weight: 700; color: #cbd5e1; margin-bottom: 2px;">Production Line</label>
+              <select id="tr-filter-line" class="filter-select" style="height: 34px; font-size: 11.5px; width: 100%;">
+                <option value="">All Lines (${lines.length})</option>
+                ${lines.map(l => `<option value="${l.id}" ${transferReportFilterState.lineId === l.id ? 'selected' : ''}>${l.name}</option>`).join('')}
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Row 2: Movement Specific Filters -->
+        <div>
+          <div style="font-size: 10.5px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">
+            🔄 2. Movement Specific Filters (Source vs. Destination):
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px;">
+            <div class="filter-group">
+              <label class="filter-label" style="font-size: 10px; font-weight: 700; color: #cbd5e1; margin-bottom: 2px;">Previous Floor (Source)</label>
+              <select id="tr-filter-prev-floor" class="filter-select" style="height: 34px; font-size: 11.5px; width: 100%;">
+                <option value="">All Source Floors (${distinctPrevFloors.length})</option>
+                ${distinctPrevFloors.map(f => `<option value="${f}" ${transferReportFilterState.prevFloor === f ? 'selected' : ''}>${f}</option>`).join('')}
+              </select>
+            </div>
+
+            <div class="filter-group">
+              <label class="filter-label" style="font-size: 10px; font-weight: 700; color: #86efac; margin-bottom: 2px;">New Floor (Destination)</label>
+              <select id="tr-filter-new-floor" class="filter-select" style="height: 34px; font-size: 11.5px; width: 100%; border-color: rgba(134,239,172,0.4);">
+                <option value="">All Dest Floors (${distinctNewFloors.length})</option>
+                ${distinctNewFloors.map(f => `<option value="${f}" ${transferReportFilterState.newFloor === f ? 'selected' : ''}>${f}</option>`).join('')}
+              </select>
+            </div>
+
+            <div class="filter-group">
+              <label class="filter-label" style="font-size: 10px; font-weight: 700; color: #cbd5e1; margin-bottom: 2px;">Previous Line (Source)</label>
+              <select id="tr-filter-prev-line" class="filter-select" style="height: 34px; font-size: 11.5px; width: 100%;">
+                <option value="">All Source Lines (${distinctPrevLines.length})</option>
+                ${distinctPrevLines.map(l => `<option value="${l}" ${transferReportFilterState.prevLine === l ? 'selected' : ''}>${l}</option>`).join('')}
+              </select>
+            </div>
+
+            <div class="filter-group">
+              <label class="filter-label" style="font-size: 10px; font-weight: 700; color: #86efac; margin-bottom: 2px;">New Line (Destination)</label>
+              <select id="tr-filter-new-line" class="filter-select" style="height: 34px; font-size: 11.5px; width: 100%; border-color: rgba(134,239,172,0.4);">
+                <option value="">All Dest Lines (${distinctNewLines.length})</option>
+                ${distinctNewLines.map(l => `<option value="${l}" ${transferReportFilterState.newLine === l ? 'selected' : ''}>${l}</option>`).join('')}
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Row 3: Audit, Time & Status -->
+        <div>
+          <div style="font-size: 10.5px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">
+            ⚡ 3. Audit, Date Range &amp; Search:
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px;">
+            <div class="filter-group">
+              <label class="filter-label" style="font-size: 10px; font-weight: 700; color: #cbd5e1; margin-bottom: 2px;">Status</label>
+              <select id="tr-filter-status" class="filter-select" style="height: 34px; font-size: 11.5px; width: 100%;">
+                <option value="ALL" ${transferReportFilterState.status === 'ALL' ? 'selected' : ''}>All Statuses</option>
+                <option value="COMPLETED" ${transferReportFilterState.status === 'COMPLETED' ? 'selected' : ''}>🟢 Completed</option>
+                <option value="PENDING" ${transferReportFilterState.status === 'PENDING' ? 'selected' : ''}>🟡 Pending Approval</option>
+                <option value="REJECTED" ${transferReportFilterState.status === 'REJECTED' ? 'selected' : ''}>🔴 Rejected</option>
+                <option value="CANCELLED" ${transferReportFilterState.status === 'CANCELLED' ? 'selected' : ''}>⚪ Cancelled</option>
+              </select>
+            </div>
+
+            <div class="filter-group">
+              <label class="filter-label" style="font-size: 10px; font-weight: 700; color: #cbd5e1; margin-bottom: 2px;">Transferred By</label>
+              <select id="tr-filter-by" class="filter-select" style="height: 34px; font-size: 11.5px; width: 100%;">
+                <option value="ALL" ${transferReportFilterState.transferredBy === 'ALL' ? 'selected' : ''}>All Staff (${distinctUsers.length})</option>
+                ${distinctUsers.map(u => `<option value="${u}" ${transferReportFilterState.transferredBy === u ? 'selected' : ''}>${u}</option>`).join('')}
+              </select>
+            </div>
+
+            <div class="filter-group">
+              <label class="filter-label" style="font-size: 10px; font-weight: 700; color: #cbd5e1; margin-bottom: 2px;">Date From</label>
+              <input type="date" id="tr-filter-date-from" class="form-control" value="${transferReportFilterState.dateFrom || ''}" style="height: 34px; font-size: 11.5px; padding: 4px 8px; width: 100%; box-sizing: border-box;" />
+            </div>
+
+            <div class="filter-group">
+              <label class="filter-label" style="font-size: 10px; font-weight: 700; color: #cbd5e1; margin-bottom: 2px;">Date To</label>
+              <input type="date" id="tr-filter-date-to" class="form-control" value="${transferReportFilterState.dateTo || ''}" style="height: 34px; font-size: 11.5px; padding: 4px 8px; width: 100%; box-sizing: border-box;" />
+            </div>
+
+            <div class="filter-group" style="grid-column: span 2;">
+              <label class="filter-label" style="font-size: 10px; font-weight: 700; color: #38bdf8; margin-bottom: 2px;">🔍 Global Search</label>
+              <input 
+                type="text" 
+                id="tr-filter-search" 
+                class="form-control" 
+                placeholder="Search Machine Serial, Name, Location, Staff, Reason..." 
+                value="${transferReportFilterState.search || ''}"
+                style="height: 34px; font-size: 11.5px; padding: 4px 10px; width: 100%; box-sizing: border-box;" 
+              />
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- 3. AUDIT LOG DATA TABLE CONTAINER (RESPONSIVE, NO HORIZONTAL SCROLL) -->
+      ${transferReportFilterState.viewMode === 'CARDS' ? `
+        <!-- CARDS VIEW -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px;">
+          ${paginatedRows.length === 0 ? `
+            <div style="grid-column: 1 / -1; text-align: center; padding: 50px 20px; background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); color: var(--text-muted);">
+              <div style="font-size: 32px; margin-bottom: 8px;">🚫</div>
+              <div style="font-size: 14px; font-weight: 700; color: #fff;">No Transfer Records Match the Selected Filters</div>
+              <div style="font-size: 12px; margin-top: 4px;">Click "Clear Filters" or adjust your query criteria.</div>
+            </div>
+          ` : paginatedRows.map((row, idx) => {
+            const dateStr = row.requestedAt && row.requestedAt !== '\u2014'
+              ? (() => {
+                  try {
+                    const d = new Date(row.requestedAt);
+                    return d.toLocaleDateString('en-GB') + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                  } catch (_) { return row.requestedAt; }
+                })()
+              : '\u2014';
+            return `
+              <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; box-shadow: var(--shadow-sm);">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 8px;">
+                  <div>
+                    <div style="font-family: var(--font-mono); font-weight: 800; color: #38bdf8; font-size: 13px;">🧵 ${row.machineSerial}</div>
+                    <div style="font-size: 11px; color: #e2e8f0; font-weight: 600;">${row.machineName}</div>
+                  </div>
+                  <div>${statusBadge(row.status)}</div>
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11.5px;">
+                  <div style="background: rgba(15,23,42,0.6); padding: 6px 8px; border-radius: 4px; border-left: 3px solid #64748b;">
+                    <div style="font-size: 9.5px; color: #94a3b8; font-weight: 700; text-transform: uppercase;">From Location:</div>
+                    <div style="font-weight: 600; color: #cbd5e1;">${row.prevFloor} <span style="color: #64748b;">›</span> ${row.prevLine}</div>
+                  </div>
+
+                  <div style="background: rgba(16,185,129,0.08); padding: 6px 8px; border-radius: 4px; border-left: 3px solid #34d399;">
+                    <div style="font-size: 9.5px; color: #86efac; font-weight: 700; text-transform: uppercase;">➔ To Location:</div>
+                    <div style="font-weight: 700; color: #86efac;">${row.newFloor} <span style="color: rgba(134,239,172,0.6);">›</span> ${row.newLine}</div>
+                  </div>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 8px; font-size: 11px;">
+                  <span style="color: #fbbf24; font-family: var(--font-mono);">${dateStr}</span>
+                  <span style="color: #c084fc; font-weight: 600;">👤 ${row.transferredBy}</span>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      ` : `
+        <!-- TABLE VIEW (CLEAN, NO HORIZONTAL SCROLL ON DESKTOP) -->
+        <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-sm); width: 100%;">
+          <div style="overflow-x: auto; width: 100%;">
+            <table class="data-table" style="width: 100%; border-collapse: collapse; margin: 0; table-layout: fixed;">
+              <thead>
+                <tr style="background: rgba(15,23,42,0.98); border-bottom: 2px solid var(--border-color); font-size: 11px; text-transform: uppercase; color: #94a3b8; user-select: none;">
+                  <th style="width: 48px; text-align: center; padding: 10px 4px;">SL</th>
+                  <th style="width: 16%; text-align: left; padding: 10px 8px; cursor: pointer;" data-tr-sort="machineSerial" title="Click to sort by Machine Serial">
+                    Machine &amp; Serial ${getSortIndicator('machineSerial')}
+                  </th>
+                  <th style="width: 20%; text-align: left; padding: 10px 8px;">
+                    Previous Location (From)
+                  </th>
+                  <th style="width: 22%; text-align: left; padding: 10px 8px; cursor: pointer;" data-tr-sort="destLocation" title="Click to sort by Destination">
+                    <span style="color: #86efac; font-weight: 700;">➔ New Location (To)</span> ${getSortIndicator('destLocation')}
+                  </th>
+                  <th style="width: 14%; text-align: left; padding: 10px 8px; cursor: pointer;" data-tr-sort="requestedAt" title="Click to sort by Transfer Date">
+                    Date &amp; Time ${getSortIndicator('requestedAt')}
+                  </th>
+                  <th style="width: 12%; text-align: left; padding: 10px 8px; cursor: pointer;" data-tr-sort="transferredBy" title="Click to sort by Requester">
+                    Transferred By ${getSortIndicator('transferredBy')}
+                  </th>
+                  <th style="width: 9%; text-align: center; padding: 10px 6px; cursor: pointer;" data-tr-sort="status" title="Click to sort by Status">
+                    Status ${getSortIndicator('status')}
+                  </th>
+                  <th style="width: 7%; text-align: left; padding: 10px 8px;">Reason</th>
                 </tr>
-              `;
-            }).join('')}
-          </tbody>
-        </table>
-      </div>
+              </thead>
+              <tbody>
+                ${paginatedRows.length === 0 ? `
+                  <tr>
+                    <td colspan="8" style="text-align: center; padding: 45px 20px; color: var(--text-muted);">
+                      <div style="font-size: 32px; margin-bottom: 8px;">🚫</div>
+                      <div style="font-size: 14px; font-weight: 700; color: #fff; margin-bottom: 4px;">No Transfer Records Match the Selected Filters</div>
+                      <div style="font-size: 12px;">Click "Clear Filters" or adjust your query criteria.</div>
+                    </td>
+                  </tr>
+                ` : paginatedRows.map((row, idx) => {
+                  let dDate = '\u2014';
+                  let dTime = '';
+                  if (row.requestedAt && row.requestedAt !== '\u2014') {
+                    try {
+                      const dt = new Date(row.requestedAt);
+                      dDate = dt.toLocaleDateString('en-GB');
+                      dTime = dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    } catch (_) { dDate = row.requestedAt; }
+                  }
+                  const reasonStr = row.reason || '\u2014';
+                  const remarksStr = row.remarks ? ` (${row.remarks})` : '';
+                  const rowNum = (currentPage - 1) * (transferReportFilterState.pageSize === 'ALL' ? totalCount : parseInt(transferReportFilterState.pageSize, 10)) + idx + 1;
+                  return `
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);" class="hover-row">
+                      <td style="text-align: center; color: var(--text-muted); font-weight: 700; padding: 8px 4px; font-size: 11px;">
+                        <div>${rowNum}</div>
+                        <div style="font-family: var(--font-mono); font-size: 9px; color: #64748b;" title="Ref ID: ${row.id}">${row.id.replace(/^trq-/, '').slice(-6)}</div>
+                      </td>
+                      <td style="padding: 8px 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                        <div style="font-family: var(--font-mono); font-weight: 800; color: #38bdf8; font-size: 11.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="Machine Serial: ${row.machineSerial}">🧵 ${row.machineSerial}</div>
+                        <div style="font-size: 10.5px; color: #cbd5e1; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${row.machineName} (${row.machineBrand} ${row.machineModel})">${row.machineName}</div>
+                      </td>
+                      <td style="padding: 8px 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                        <div style="font-size: 11px; font-weight: 600; color: #cbd5e1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${row.sourceLocation}">🏢 ${row.prevFloor} <span style="color: #64748b;">›</span> ${row.prevLine}</div>
+                        <div style="font-size: 9.5px; color: #64748b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${row.sourceLocation}">${row.sourceLocation}</div>
+                      </td>
+                      <td style="padding: 8px 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                        <div style="font-size: 11.5px; font-weight: 700; color: #86efac; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${row.destLocation}">➔ ${row.newFloor} <span style="color: rgba(134,239,172,0.6);">›</span> ${row.newLine}</div>
+                        <div style="font-size: 9.5px; color: rgba(134,239,172,0.7); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${row.destLocation}">${row.destLocation}</div>
+                      </td>
+                      <td style="padding: 8px 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                        <div style="font-family: var(--font-mono); font-size: 11px; color: #fbbf24; font-weight: 600; white-space: nowrap;">📅 ${dDate}</div>
+                        <div style="font-size: 10px; color: #94a3b8; white-space: nowrap;">⏰ ${dTime}</div>
+                      </td>
+                      <td style="padding: 8px 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                        <div style="font-size: 11px; color: #c084fc; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${row.transferredBy}">👤 ${row.transferredBy}</div>
+                      </td>
+                      <td style="text-align: center; padding: 8px 4px; white-space: nowrap;">
+                        ${statusBadge(row.status)}
+                      </td>
+                      <td style="padding: 8px 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                        <div style="font-size: 10.5px; color: #94a3b8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${reasonStr}${remarksStr}">
+                          ${reasonStr}${remarksStr}
+                        </div>
+                      </td>
+                    </tr>
+                  `;
+                }).join('')}
+              </tbody>
+            </table>
+          </div>
+
+          <!-- 4. PAGINATION BAR -->
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 18px; border-top: 1px solid var(--border-color); background: rgba(15, 23, 42, 0.95); flex-wrap: wrap; gap: 10px; font-size: 11.5px;">
+            <div style="color: var(--text-muted);">
+              Showing <strong style="color: #fff;">${filteredRows.length === 0 ? 0 : startIdx + 1}</strong> to <strong style="color: #fff;">${endIdx}</strong> of <strong style="color: #38bdf8;">${filteredRows.length}</strong> records (Page ${currentPage} of ${totalPages})
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 14px;">
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <label style="color: #94a3b8; font-size: 11px;">Per page:</label>
+                <select id="tr-page-size" class="filter-select" style="height: 28px; font-size: 11px; padding: 2px 6px;">
+                  <option value="25" ${transferReportFilterState.pageSize === 25 || transferReportFilterState.pageSize === '25' ? 'selected' : ''}>25</option>
+                  <option value="50" ${transferReportFilterState.pageSize === 50 || transferReportFilterState.pageSize === '50' ? 'selected' : ''}>50</option>
+                  <option value="100" ${transferReportFilterState.pageSize === 100 || transferReportFilterState.pageSize === '100' ? 'selected' : ''}>100</option>
+                  <option value="ALL" ${transferReportFilterState.pageSize === 'ALL' ? 'selected' : ''}>All</option>
+                </select>
+              </div>
+
+              <div style="display: flex; gap: 4px;">
+                <button class="btn btn-xs ${currentPage === 1 ? 'btn-ghost' : 'btn-secondary'}" data-tr-page="1" ${currentPage === 1 ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : ''} title="First page">« First</button>
+                <button class="btn btn-xs ${currentPage === 1 ? 'btn-ghost' : 'btn-secondary'}" data-tr-page="${currentPage - 1}" ${currentPage === 1 ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : ''} title="Previous page">‹ Prev</button>
+                <span style="padding: 2px 8px; font-weight: 700; color: #38bdf8; background: rgba(56, 189, 248, 0.1); border-radius: 4px; display: inline-flex; align-items: center;">${currentPage} / ${totalPages}</span>
+                <button class="btn btn-xs ${currentPage >= totalPages ? 'btn-ghost' : 'btn-secondary'}" data-tr-page="${currentPage + 1}" ${currentPage >= totalPages ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : ''} title="Next page">Next ›</button>
+                <button class="btn btn-xs ${currentPage >= totalPages ? 'btn-ghost' : 'btn-secondary'}" data-tr-page="${totalPages}" ${currentPage >= totalPages ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : ''} title="Last page">Last »</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      `}
+
     </div>
+  `;
+}
   `;
 }
 
@@ -2225,14 +2685,316 @@ export function initReportsEvents() {
   window.addEventListener('erp:inventory-updated', handleTransfersUpdated);
   window.addEventListener('erp:storage-updated', handleTransfersUpdated);
 
-  // Transfer Report Excel Export
+  // Helper to re-render Transfer Reports tab in place without page jump
+  const refreshTransferReportsTabInPlace = () => {
+    if (currentReportTab === 'transfers') {
+      const tabContent = document.getElementById('reports-tab-content');
+      if (tabContent) {
+        const allMachines = machineService.getMachines({ limit: 'ALL' }).items || [];
+        const allTransfers = transferService.getTransferRequests({ status: 'ALL' }) || [];
+        const completedTransfers = storage.getTable(TABLE_NAMES.TRANSFERS) || [];
+        const allHistory = historyService.getMachineHistory() || [];
+        const sparePartsMaster = historyService.getSparePartsMaster() || [];
+        const etLabBoards = etLabService.getBoards() || [];
+        const floors = storage.getTable(TABLE_NAMES.FLOORS) || [];
+        const replacementLogs = allHistory.filter(h => h.actionType === 'SPARE_PART_REPLACEMENT' || h.sparePart);
+        tabContent.innerHTML = renderActiveTabHtml({ allMachines, allTransfers, completedTransfers, replacementLogs, sparePartsMaster, etLabBoards, floors });
+        initReportsEvents();
+      } else {
+        refreshReportsView();
+      }
+    } else {
+      refreshReportsView();
+    }
+  };
+
+  // ==========================================
+  // TRANSFER REPORTS INTERACTIVE ENGINE HANDLERS
+  // ==========================================
+  // 1. Plant Location Hierarchy:
+  const trGrp = document.getElementById('tr-filter-group');
+  if (trGrp) {
+    trGrp.addEventListener('change', (e) => {
+      transferReportFilterState.groupId = e.target.value;
+      transferReportFilterState.unitId = '';
+      transferReportFilterState.floorId = '';
+      transferReportFilterState.lineId = '';
+      transferReportFilterState.page = 1;
+      refreshTransferReportsTabInPlace();
+    });
+  }
+
+  const trUnt = document.getElementById('tr-filter-unit');
+  if (trUnt) {
+    trUnt.addEventListener('change', (e) => {
+      const unitId = e.target.value;
+      transferReportFilterState.unitId = unitId;
+      transferReportFilterState.floorId = '';
+      transferReportFilterState.lineId = '';
+      transferReportFilterState.page = 1;
+      if (unitId) {
+        const unit = masterDataService.getUnitById(unitId) || storage.getItem(TABLE_NAMES.UNITS, unitId);
+        if (unit && unit.groupId) {
+          transferReportFilterState.groupId = unit.groupId;
+        }
+      }
+      refreshTransferReportsTabInPlace();
+    });
+  }
+
+  const trFlr = document.getElementById('tr-filter-floor');
+  if (trFlr) {
+    trFlr.addEventListener('change', (e) => {
+      const floorId = e.target.value;
+      transferReportFilterState.floorId = floorId;
+      transferReportFilterState.lineId = '';
+      transferReportFilterState.page = 1;
+      if (floorId) {
+        const floor = masterDataService.getFloorById(floorId) || storage.getItem(TABLE_NAMES.FLOORS, floorId);
+        if (floor && floor.unitId) {
+          transferReportFilterState.unitId = floor.unitId;
+          const unit = masterDataService.getUnitById(floor.unitId) || storage.getItem(TABLE_NAMES.UNITS, floor.unitId);
+          if (unit && unit.groupId) {
+            transferReportFilterState.groupId = unit.groupId;
+          }
+        }
+      }
+      refreshTransferReportsTabInPlace();
+    });
+  }
+
+  const trLin = document.getElementById('tr-filter-line');
+  if (trLin) {
+    trLin.addEventListener('change', (e) => {
+      const lineId = e.target.value;
+      transferReportFilterState.lineId = lineId;
+      transferReportFilterState.page = 1;
+      if (lineId) {
+        const line = masterDataService.getLineById(lineId) || storage.getItem(TABLE_NAMES.LINES, lineId);
+        if (line && line.floorId) {
+          transferReportFilterState.floorId = line.floorId;
+          const floor = masterDataService.getFloorById(line.floorId) || storage.getItem(TABLE_NAMES.FLOORS, line.floorId);
+          if (floor && floor.unitId) {
+            transferReportFilterState.unitId = floor.unitId;
+            const unit = masterDataService.getUnitById(floor.unitId) || storage.getItem(TABLE_NAMES.UNITS, floor.unitId);
+            if (unit && unit.groupId) {
+              transferReportFilterState.groupId = unit.groupId;
+            }
+          }
+        }
+      }
+      refreshTransferReportsTabInPlace();
+    });
+  }
+
+  // 2. Movement Specific Filters:
+  const trPrevFlr = document.getElementById('tr-filter-prev-floor');
+  if (trPrevFlr) {
+    trPrevFlr.addEventListener('change', (e) => {
+      transferReportFilterState.prevFloor = e.target.value;
+      transferReportFilterState.page = 1;
+      refreshTransferReportsTabInPlace();
+    });
+  }
+
+  const trNewFlr = document.getElementById('tr-filter-new-floor');
+  if (trNewFlr) {
+    trNewFlr.addEventListener('change', (e) => {
+      transferReportFilterState.newFloor = e.target.value;
+      transferReportFilterState.page = 1;
+      refreshTransferReportsTabInPlace();
+    });
+  }
+
+  const trPrevLin = document.getElementById('tr-filter-prev-line');
+  if (trPrevLin) {
+    trPrevLin.addEventListener('change', (e) => {
+      transferReportFilterState.prevLine = e.target.value;
+      transferReportFilterState.page = 1;
+      refreshTransferReportsTabInPlace();
+    });
+  }
+
+  const trNewLin = document.getElementById('tr-filter-new-line');
+  if (trNewLin) {
+    trNewLin.addEventListener('change', (e) => {
+      transferReportFilterState.newLine = e.target.value;
+      transferReportFilterState.page = 1;
+      refreshTransferReportsTabInPlace();
+    });
+  }
+
+  // 3. Status, Transferred By, Date Range & Global Search:
+  const trStat = document.getElementById('tr-filter-status');
+  if (trStat) {
+    trStat.addEventListener('change', (e) => {
+      transferReportFilterState.status = e.target.value;
+      transferReportFilterState.page = 1;
+      refreshTransferReportsTabInPlace();
+    });
+  }
+
+  const trBy = document.getElementById('tr-filter-by');
+  if (trBy) {
+    trBy.addEventListener('change', (e) => {
+      transferReportFilterState.transferredBy = e.target.value;
+      transferReportFilterState.page = 1;
+      refreshTransferReportsTabInPlace();
+    });
+  }
+
+  const trDateFrom = document.getElementById('tr-filter-date-from');
+  if (trDateFrom) {
+    trDateFrom.addEventListener('change', (e) => {
+      transferReportFilterState.dateFrom = e.target.value;
+      transferReportFilterState.page = 1;
+      refreshTransferReportsTabInPlace();
+    });
+  }
+
+  const trDateTo = document.getElementById('tr-filter-date-to');
+  if (trDateTo) {
+    trDateTo.addEventListener('change', (e) => {
+      transferReportFilterState.dateTo = e.target.value;
+      transferReportFilterState.page = 1;
+      refreshTransferReportsTabInPlace();
+    });
+  }
+
+  const trSearch = document.getElementById('tr-filter-search');
+  if (trSearch) {
+    trSearch.addEventListener('input', (e) => {
+      transferReportFilterState.search = e.target.value;
+      transferReportFilterState.page = 1;
+      clearTimeout(window._trSearchTimer);
+      window._trSearchTimer = setTimeout(() => {
+        refreshTransferReportsTabInPlace();
+      }, 300);
+    });
+  }
+
+  // 4. Reset / Clear Filters Button:
+  const trClearBtn = document.getElementById('tr-btn-clear-filters');
+  if (trClearBtn) {
+    trClearBtn.addEventListener('click', () => {
+      transferReportFilterState = {
+        groupId: '',
+        unitId: '',
+        floorId: '',
+        lineId: '',
+        prevFloor: '',
+        newFloor: '',
+        prevLine: '',
+        newLine: '',
+        status: 'ALL',
+        transferredBy: 'ALL',
+        dateFrom: '',
+        dateTo: '',
+        search: '',
+        sortField: 'requestedAt',
+        sortDirection: 'desc',
+        page: 1,
+        pageSize: 25,
+        viewMode: transferReportFilterState.viewMode || 'TABLE'
+      };
+      notificationService.info('Transfer report filters cleared.');
+      refreshTransferReportsTabInPlace();
+    });
+  }
+
+  // 5. Top KPI Card Click Handlers:
+  document.querySelectorAll('[data-tr-kpi-status]').forEach(card => {
+    card.addEventListener('click', () => {
+      const st = card.getAttribute('data-tr-kpi-status');
+      if (transferReportFilterState.status === st && st !== 'ALL') {
+        transferReportFilterState.status = 'ALL';
+      } else {
+        transferReportFilterState.status = st;
+      }
+      transferReportFilterState.page = 1;
+      refreshTransferReportsTabInPlace();
+    });
+  });
+
+  // 6. Sortable Column Headers:
+  document.querySelectorAll('[data-tr-sort]').forEach(th => {
+    th.addEventListener('click', () => {
+      const field = th.getAttribute('data-tr-sort');
+      if (transferReportFilterState.sortField === field) {
+        transferReportFilterState.sortDirection = transferReportFilterState.sortDirection === 'asc' ? 'desc' : 'asc';
+      } else {
+        transferReportFilterState.sortField = field;
+        transferReportFilterState.sortDirection = 'asc';
+      }
+      refreshTransferReportsTabInPlace();
+    });
+  });
+
+  // 7. Pagination Controls:
+  document.querySelectorAll('[data-tr-page]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const targetPage = parseInt(btn.getAttribute('data-tr-page'), 10);
+      if (targetPage && !isNaN(targetPage) && targetPage !== transferReportFilterState.page) {
+        transferReportFilterState.page = targetPage;
+        refreshTransferReportsTabInPlace();
+      }
+    });
+  });
+
+  const trPageSize = document.getElementById('tr-page-size');
+  if (trPageSize) {
+    trPageSize.addEventListener('change', (e) => {
+      transferReportFilterState.pageSize = e.target.value === 'ALL' ? 'ALL' : parseInt(e.target.value, 10);
+      transferReportFilterState.page = 1;
+      refreshTransferReportsTabInPlace();
+    });
+  }
+
+  // 8. View Mode Toggle (Table vs Cards):
+  document.querySelectorAll('[data-tr-view-mode]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      transferReportFilterState.viewMode = btn.getAttribute('data-tr-view-mode');
+      refreshTransferReportsTabInPlace();
+    });
+  });
+
+  // 9. Excel Export of Filtered Records:
   const btnExpTrans = document.getElementById('btn-export-transfer-report-excel');
   if (btnExpTrans) {
     btnExpTrans.addEventListener('click', () => {
       notificationService.withLoading(btnExpTrans, async () => {
-        const allTransfers = transferService.getTransferRequests({ status: 'ALL' });
-        await transferService.exportTransfersToExcel(allTransfers);
-      }, 'Exporting Transfers...', 'Transfer records exported successfully!');
+        const allTransfers = transferService.getTransferRequests({ status: 'ALL' }) || [];
+        const completedTransfers = storage.getTable(TABLE_NAMES.TRANSFERS) || [];
+        const allRows = buildTransferAuditLog(allTransfers, completedTransfers);
+        const filteredRows = filterTransferAuditRows(allRows);
+        const sortedRows = sortTransferAuditRows(filteredRows);
+        await transferService.exportTransfersToExcel(sortedRows);
+      }, 'Exporting Transfers...', 'Transfer records exported to Excel successfully!');
+    });
+  }
+
+  // 10. PDF / Print Export:
+  const btnExpTransPdf = document.getElementById('btn-export-transfer-report-pdf');
+  if (btnExpTransPdf) {
+    btnExpTransPdf.addEventListener('click', () => {
+      const allTransfers = transferService.getTransferRequests({ status: 'ALL' }) || [];
+      const completedTransfers = storage.getTable(TABLE_NAMES.TRANSFERS) || [];
+      const allRows = buildTransferAuditLog(allTransfers, completedTransfers);
+      const filteredRows = filterTransferAuditRows(allRows);
+      const sortedRows = sortTransferAuditRows(filteredRows);
+
+      let filterSummary = `Status: ${transferReportFilterState.status}`;
+      if (transferReportFilterState.transferredBy !== 'ALL') filterSummary += ` | Requester: ${transferReportFilterState.transferredBy}`;
+      if (transferReportFilterState.prevFloor) filterSummary += ` | From: ${transferReportFilterState.prevFloor}`;
+      if (transferReportFilterState.newFloor) filterSummary += ` | To: ${transferReportFilterState.newFloor}`;
+      if (transferReportFilterState.dateFrom) filterSummary += ` | From Date: ${transferReportFilterState.dateFrom}`;
+      if (transferReportFilterState.dateTo) filterSummary += ` | To Date: ${transferReportFilterState.dateTo}`;
+      if (transferReportFilterState.search) filterSummary += ` | Search: "${transferReportFilterState.search}"`;
+
+      pdfService.generateTransferReportPDF({
+        rows: sortedRows,
+        filterSummary: `${filterSummary} | Total: ${sortedRows.length} records`
+      });
     });
   }
 
