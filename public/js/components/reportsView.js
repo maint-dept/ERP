@@ -14,7 +14,7 @@ import { TABLE_NAMES, TRANSFER_STATUSES } from '../db/schema.js';
 import { machineService } from '../services/machineService.js';
 import { masterDataService } from '../services/masterDataService.js';
 import { excelService, formatDisplayLine } from '../services/excelService.js';
-import { pdfService } from '../services/pdfService.js';
+import { pdfService } from '../services/pdfService.js?v=4.7.7';
 import { transferService } from '../services/transferService.js';
 import { historyService } from '../services/historyService.js';
 import { auditService } from '../services/auditService.js';
