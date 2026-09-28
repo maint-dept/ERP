@@ -1743,8 +1743,6 @@ function renderTransferReportsTab(allRequests, completedTransfers) {
     </div>
   `;
 }
-  `;
-}
 
 // 3. SPARE PARTS REPORTS & CONSUMPTION ANALYTICS TAB
 function renderSparePartsReportsTab() {

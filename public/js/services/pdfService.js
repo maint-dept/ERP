@@ -1247,6 +1247,9 @@ class PDFService {
       auditService.log('ET_LAB_PDF_REPORT_GENERATED', 'REPORT', 'ENT Lab Report', `Generated ENT Lab Management PDF/Print Report.`);
     } else {
       alert('Pop-up window was blocked. Please allow pop-ups for this site to view/print reports.');
+    }
+  }
+
   /**
    * Generates Official Machine Transfer & Relocation Audit Log PDF / Print Report
    */
