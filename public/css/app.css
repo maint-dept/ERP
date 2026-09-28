@@ -1885,3 +1885,13 @@ body.modal-open {
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   background: inherit;
 }
+/* Responsive table wrapper to allow sticky headers on desktop but scrolling on mobile */
+.responsive-table-wrapper {
+  overflow-x: visible;
+  width: 100%;
+}
+@media (max-width: 768px) {
+  .responsive-table-wrapper {
+    overflow-x: auto;
+  }
+}
