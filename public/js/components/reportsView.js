@@ -142,8 +142,8 @@ export function renderReportsView() {
         </button>
       </div>
 
-      <!-- Tab Content Area (Scrollable flex 1) -->
-      <div id="reports-tab-content" style="display: flex; flex-direction: column; gap: 14px; flex: 1; min-height: 0; overflow-y: auto;">
+      <!-- Tab Content Area (Scrollable inner tables) -->
+      <div id="reports-tab-content" style="display: flex; flex-direction: column; gap: 14px; flex: 1; min-height: 0; overflow: hidden;">
         ${renderActiveTabHtml({ allMachines, allTransfers, completedTransfers, replacementLogs, sparePartsMaster, etLabBoards, floors })}
       </div>
     </div>
@@ -880,10 +880,10 @@ function renderMachineReportsTab(allMachines) {
   }
 
   return `
-    <div style="display: flex; flex-direction: column; gap: 14px;">
+    <div style="display: flex; flex-direction: column; gap: 14px; height: 100%;">
       
-      <!-- 1. Sleek Filter Toolbar (Compact Horizontal Bar) -->
-      <div class="reports-filter-toolbar" style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.2);">
+      <!-- 1. Sleek Filter Toolbar (Compact Horizontal Bar, Fixed at top) -->
+      <div class="reports-filter-toolbar" style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.2); flex-shrink: 0; position: relative; z-index: 30;">
         
         <!-- Left: Filters Grouped with Clear Mini-Labels -->
         <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; flex: 1; min-width: 0;">
@@ -1360,55 +1360,53 @@ function renderTransferReportsTab(allRequests, completedTransfers) {
     return `<span style="color: #38bdf8; font-size: 10px; font-weight: 800;">${transferReportFilterState.sortDirection === 'asc' ? '▲' : '▼'}</span>`;
   };
 
-  return `
-    <div style="display: flex; flex-direction: column; gap: 14px; width: 100%;">
-
-      <!-- 1. TOP SUMMARY KPI CARDS -->
-      <div id="tr-kpi-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px;">
+  if (currentReportTab === 'transfers') {
+    return `
+      <div id="transfer-reports-content" style="display: flex; flex-direction: column; gap: 12px; height: 100%; overflow: hidden;">
         
-        <div class="tr-kpi-card" data-tr-kpi-status="ALL" style="background: rgba(15, 23, 42, 0.85); border: 1.5px solid ${transferReportFilterState.status === 'ALL' ? '#38bdf8' : 'rgba(56, 189, 248, 0.25)'}; border-radius: 8px; padding: 12px 16px; cursor: pointer; transition: all 0.2s;" title="Click to show all records">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 11px; font-weight: 700; color: #38bdf8; text-transform: uppercase;">🔄 Total Transfers</span>
-            <span style="font-size: 14px;">📋</span>
+        <!-- 1. TOP SUMMARY KPI CARDS (Compact layout) -->
+        <div id="tr-kpi-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; flex-shrink: 0;">
+          
+          <div class="tr-kpi-card" data-tr-kpi-status="ALL" style="background: rgba(15, 23, 42, 0.85); border: 1.5px solid ${transferReportFilterState.status === 'ALL' ? '#38bdf8' : 'rgba(56, 189, 248, 0.25)'}; border-radius: 8px; padding: 8px 12px; cursor: pointer; transition: all 0.2s;" title="Click to show all records">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-size: 11px; font-weight: 700; color: #38bdf8; text-transform: uppercase;">🔄 Total Transfers</span>
+              <span style="font-size: 14px;">📋</span>
+            </div>
+            <div style="font-size: 20px; font-weight: 800; color: #fff; margin-top: 4px;">${totalCount}</div>
+            <div style="font-size: 10px; color: #94a3b8; margin-top: 2px;">${filteredRows.length} matching filters</div>
           </div>
-          <div style="font-size: 22px; font-weight: 800; color: #fff; margin-top: 4px;">${totalCount}</div>
-          <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">${filteredRows.length} matching filters</div>
+
+          <div class="tr-kpi-card" data-tr-kpi-status="COMPLETED" style="background: rgba(15, 23, 42, 0.85); border: 1.5px solid ${transferReportFilterState.status === 'COMPLETED' ? '#34d399' : 'rgba(52, 211, 153, 0.25)'}; border-radius: 8px; padding: 8px 12px; cursor: pointer; transition: all 0.2s;" title="Click to filter Completed relocations">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-size: 11px; font-weight: 700; color: #34d399; text-transform: uppercase;">✅ Completed</span>
+              <span style="font-size: 14px;">🚚</span>
+            </div>
+            <div style="font-size: 20px; font-weight: 800; color: #34d399; margin-top: 4px;">${completedCount}</div>
+          </div>
+
+          <div class="tr-kpi-card" data-tr-kpi-status="PENDING" style="background: rgba(15, 23, 42, 0.85); border: 1.5px solid ${transferReportFilterState.status === 'PENDING' ? '#fbbf24' : 'rgba(251, 191, 36, 0.25)'}; border-radius: 8px; padding: 8px 12px; cursor: pointer; transition: all 0.2s;" title="Click to filter Pending requests">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-size: 11px; font-weight: 700; color: #fbbf24; text-transform: uppercase;">⏳ In Approval</span>
+              <span style="font-size: 14px;">⏳</span>
+            </div>
+            <div style="font-size: 20px; font-weight: 800; color: #fbbf24; margin-top: 4px;">${pendingCount}</div>
+          </div>
+
+          <div class="tr-kpi-card" data-tr-kpi-status="REJECTED" style="background: rgba(15, 23, 42, 0.85); border: 1.5px solid ${transferReportFilterState.status === 'REJECTED' || transferReportFilterState.status === 'CANCELLED' ? '#f43f5e' : 'rgba(244, 63, 94, 0.25)'}; border-radius: 8px; padding: 8px 12px; cursor: pointer; transition: all 0.2s;" title="Click to filter Rejected &amp; Cancelled">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-size: 11px; font-weight: 700; color: #f43f5e; text-transform: uppercase;">❌ Rejected</span>
+              <span style="font-size: 14px;">🚫</span>
+            </div>
+            <div style="font-size: 20px; font-weight: 800; color: #f43f5e; margin-top: 4px;">${rejectedCount + cancelledCount}</div>
+          </div>
+
         </div>
 
-        <div class="tr-kpi-card" data-tr-kpi-status="COMPLETED" style="background: rgba(15, 23, 42, 0.85); border: 1.5px solid ${transferReportFilterState.status === 'COMPLETED' ? '#34d399' : 'rgba(52, 211, 153, 0.25)'}; border-radius: 8px; padding: 12px 16px; cursor: pointer; transition: all 0.2s;" title="Click to filter Completed relocations">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 11px; font-weight: 700; color: #34d399; text-transform: uppercase;">✅ Completed</span>
-            <span style="font-size: 14px;">🚚</span>
-          </div>
-          <div style="font-size: 22px; font-weight: 800; color: #34d399; margin-top: 4px;">${completedCount}</div>
-          <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">Fully Relocated</div>
-        </div>
-
-        <div class="tr-kpi-card" data-tr-kpi-status="PENDING" style="background: rgba(15, 23, 42, 0.85); border: 1.5px solid ${transferReportFilterState.status === 'PENDING' ? '#fbbf24' : 'rgba(251, 191, 36, 0.25)'}; border-radius: 8px; padding: 12px 16px; cursor: pointer; transition: all 0.2s;" title="Click to filter Pending requests">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 11px; font-weight: 700; color: #fbbf24; text-transform: uppercase;">⏳ In Approval</span>
-            <span style="font-size: 14px;">⏳</span>
-          </div>
-          <div style="font-size: 22px; font-weight: 800; color: #fbbf24; margin-top: 4px;">${pendingCount}</div>
-          <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">Pending / Revision</div>
-        </div>
-
-        <div class="tr-kpi-card" data-tr-kpi-status="REJECTED" style="background: rgba(15, 23, 42, 0.85); border: 1.5px solid ${transferReportFilterState.status === 'REJECTED' || transferReportFilterState.status === 'CANCELLED' ? '#f43f5e' : 'rgba(244, 63, 94, 0.25)'}; border-radius: 8px; padding: 12px 16px; cursor: pointer; transition: all 0.2s;" title="Click to filter Rejected &amp; Cancelled">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 11px; font-weight: 700; color: #f43f5e; text-transform: uppercase;">❌ Rejected / Cancelled</span>
-            <span style="font-size: 14px;">🚫</span>
-          </div>
-          <div style="font-size: 22px; font-weight: 800; color: #f43f5e; margin-top: 4px;">${rejectedCount + cancelledCount}</div>
-          <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">${rejectedCount} Rejected · ${cancelledCount} Cancelled</div>
-        </div>
-
-      </div>
-
-      <!-- 2. COMPREHENSIVE FILTER TOOLBAR CONTAINER -->
-      <div style="background: var(--bg-surface); border: 1.5px solid rgba(56, 189, 248, 0.35); border-radius: var(--radius-lg); padding: 16px 18px; display: flex; flex-direction: column; gap: 12px; box-shadow: var(--shadow-sm); width: 100%; box-sizing: border-box;">
-        
-        <!-- Header & Action Buttons -->
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 10px; flex-wrap: wrap; gap: 10px;">
+        <!-- 2. COMPREHENSIVE FILTER TOOLBAR CONTAINER (Fixed at top, Scrollable content on mobile) -->
+        <div style="background: var(--bg-surface); border: 1.5px solid rgba(56, 189, 248, 0.35); border-radius: var(--radius-lg); padding: 12px 16px; display: flex; flex-direction: column; gap: 10px; box-shadow: var(--shadow-sm); width: 100%; box-sizing: border-box; flex-shrink: 0; max-height: 35vh; overflow-y: auto; overflow-x: hidden;">
+          
+          <!-- Header & Action Buttons -->
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 10px; flex-wrap: wrap; gap: 10px; position: sticky; top: 0; background: var(--bg-surface); z-index: 10;">
           <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
             <span style="font-size: 18px;">🔍</span>
             <div id="tr-filter-header-count">
@@ -1622,11 +1620,11 @@ function renderTransferReportsTab(allRequests, completedTransfers) {
           }).join('')}
         </div>
       ` : `
-        <!-- TABLE VIEW (CLEAN, NO HORIZONTAL SCROLL ON DESKTOP) -->
-        <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-sm); width: 100%;">
-          <div style="overflow-x: auto; width: 100%;">
+        <!-- TABLE VIEW (FLEX SCROLL CONTAINER) -->
+        <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-sm); width: 100%; display: flex; flex-direction: column; flex: 1; min-height: 0;">
+          <div style="overflow: auto; flex: 1; width: 100%;">
             <table class="data-table" style="width: 100%; border-collapse: collapse; margin: 0; table-layout: fixed;">
-              <thead>
+              <thead style="position: sticky; top: 0; z-index: 20;">
                 <tr style="background: rgba(15,23,42,0.98); border-bottom: 2px solid var(--border-color); font-size: 11px; text-transform: uppercase; color: #94a3b8; user-select: none;">
                   <th style="width: 48px; text-align: center; padding: 10px 4px;">SL</th>
                   <th style="width: 16%; text-align: left; padding: 10px 8px; cursor: pointer;" data-tr-sort="machineSerial" title="Click to sort by Machine Serial">
