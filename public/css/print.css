@@ -176,6 +176,26 @@
   .qr-sticker-sheet-print .qr-sticker-card input[type="checkbox"] {
     display: none !important;
   }
+
+  /* Table Footer (Grand Total) Page Break Fix */
+  tfoot {
+    display: table-row-group !important;
+  }
+  tfoot tr {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    page-break-after: avoid !important;
+    break-after: avoid !important;
+  }
+
+  /* Signature Section Flow Fix */
+  .signature-section {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    page-break-before: avoid !important;
+    break-before: avoid !important;
+    margin-top: 50px !important;
+  }
 }
 
 

@@ -1317,10 +1317,11 @@ function renderTransferReportsTab(allRequests, completedTransfers) {
   const { paginatedRows, totalPages, currentPage, startIdx, endIdx } = paginateTransferAuditRows(sortedRows);
 
   // Extract distinct values for dropdown filters
-  const groups = masterDataService.getGroups() || [];
-  const units = masterDataService.getUnits(transferReportFilterState.groupId) || [];
-  const floors = masterDataService.getFloors(transferReportFilterState.unitId, transferReportFilterState.groupId) || [];
-  const lines = masterDataService.getLines(transferReportFilterState.floorId, transferReportFilterState.unitId, transferReportFilterState.groupId) || [];
+  const allLocationStrings = allAuditRows.flatMap(r => [r.sourceLocation, r.destLocation]).filter(Boolean).join('|||');
+  const groups = (masterDataService.getGroups() || []).filter(g => allLocationStrings.includes(g.name));
+  const units = (masterDataService.getUnits(transferReportFilterState.groupId) || []).filter(u => allLocationStrings.includes(u.name));
+  const floors = (masterDataService.getFloors(transferReportFilterState.unitId, transferReportFilterState.groupId) || []).filter(f => allLocationStrings.includes(f.name));
+  const lines = (masterDataService.getLines(transferReportFilterState.floorId, transferReportFilterState.unitId, transferReportFilterState.groupId) || []).filter(l => allLocationStrings.includes(l.name));
 
   const distinctPrevFloors = Array.from(new Set(allAuditRows.map(r => r.prevFloor).filter(f => f && f !== '\u2014'))).sort();
   const distinctNewFloors = Array.from(new Set(allAuditRows.map(r => r.newFloor).filter(f => f && f !== '\u2014'))).sort();
@@ -1363,7 +1364,7 @@ function renderTransferReportsTab(allRequests, completedTransfers) {
     <div style="display: flex; flex-direction: column; gap: 14px; width: 100%;">
 
       <!-- 1. TOP SUMMARY KPI CARDS -->
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px;">
+      <div id="tr-kpi-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px;">
         
         <div class="tr-kpi-card" data-tr-kpi-status="ALL" style="background: rgba(15, 23, 42, 0.85); border: 1.5px solid ${transferReportFilterState.status === 'ALL' ? '#38bdf8' : 'rgba(56, 189, 248, 0.25)'}; border-radius: 8px; padding: 12px 16px; cursor: pointer; transition: all 0.2s;" title="Click to show all records">
           <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -1410,7 +1411,7 @@ function renderTransferReportsTab(allRequests, completedTransfers) {
         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 10px; flex-wrap: wrap; gap: 10px;">
           <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
             <span style="font-size: 18px;">🔍</span>
-            <div>
+            <div id="tr-filter-header-count">
               <div style="font-size: 14px; font-weight: 800; color: #38bdf8; text-transform: uppercase; letter-spacing: 0.5px;">
                 Machine Transfer &amp; Relocation Audit Filter Engine
               </div>
@@ -1571,6 +1572,7 @@ function renderTransferReportsTab(allRequests, completedTransfers) {
       </div>
 
       <!-- 3. AUDIT LOG DATA TABLE CONTAINER (RESPONSIVE, NO HORIZONTAL SCROLL) -->
+      <div id="tr-table-container">
       ${transferReportFilterState.viewMode === 'CARDS' ? `
         <!-- CARDS VIEW -->
         <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px;">
@@ -1738,6 +1740,7 @@ function renderTransferReportsTab(allRequests, completedTransfers) {
           </div>
         </div>
       `}
+      </div>
 
     </div>
   `;
@@ -2695,8 +2698,78 @@ export function initReportsEvents() {
         const etLabBoards = etLabService.getBoards() || [];
         const floors = storage.getTable(TABLE_NAMES.FLOORS) || [];
         const replacementLogs = allHistory.filter(h => h.actionType === 'SPARE_PART_REPLACEMENT' || h.sparePart);
-        tabContent.innerHTML = renderActiveTabHtml({ allMachines, allTransfers, completedTransfers, replacementLogs, sparePartsMaster, etLabBoards, floors });
-        initReportsEvents();
+        
+        const newHtml = renderActiveTabHtml({ allMachines, allTransfers, completedTransfers, replacementLogs, sparePartsMaster, etLabBoards, floors });
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = newHtml;
+
+        const kpiOld = document.getElementById('tr-kpi-container');
+        const kpiNew = tempDiv.querySelector('#tr-kpi-container');
+        if (kpiOld && kpiNew) kpiOld.innerHTML = kpiNew.innerHTML;
+
+        const tableOld = document.getElementById('tr-table-container');
+        const tableNew = tempDiv.querySelector('#tr-table-container');
+        if (tableOld && tableNew) tableOld.innerHTML = tableNew.innerHTML;
+
+        const headerOld = document.getElementById('tr-filter-header-count');
+        const headerNew = tempDiv.querySelector('#tr-filter-header-count');
+        if (headerOld && headerNew) headerOld.innerHTML = headerNew.innerHTML;
+
+        const filterIds = [
+          'tr-filter-group', 'tr-filter-unit', 'tr-filter-floor', 'tr-filter-line',
+          'tr-filter-prev-floor', 'tr-filter-new-floor', 'tr-filter-prev-line', 'tr-filter-new-line',
+          'tr-filter-status', 'tr-filter-by'
+        ];
+        filterIds.forEach(id => {
+          const oldSelect = document.getElementById(id);
+          const newSelect = tempDiv.querySelector('#' + id);
+          if (oldSelect && newSelect && document.activeElement !== oldSelect) {
+            oldSelect.innerHTML = newSelect.innerHTML;
+            oldSelect.value = newSelect.value;
+          }
+        });
+
+        document.querySelectorAll('#tr-kpi-container [data-tr-kpi-status]').forEach(card => {
+          card.addEventListener('click', () => {
+            const st = card.getAttribute('data-tr-kpi-status');
+            transferReportFilterState.status = st === 'ALL' ? 'ALL' : st;
+            transferReportFilterState.page = 1;
+            refreshTransferReportsTabInPlace();
+          });
+        });
+
+        document.querySelectorAll('#tr-table-container [data-tr-sort]').forEach(th => {
+          th.addEventListener('click', () => {
+            const field = th.getAttribute('data-tr-sort');
+            if (transferReportFilterState.sortField === field) {
+              transferReportFilterState.sortDirection = transferReportFilterState.sortDirection === 'asc' ? 'desc' : 'asc';
+            } else {
+              transferReportFilterState.sortField = field;
+              transferReportFilterState.sortDirection = 'asc';
+            }
+            refreshTransferReportsTabInPlace();
+          });
+        });
+
+        document.querySelectorAll('#tr-table-container [data-tr-page]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const targetPage = parseInt(btn.getAttribute('data-tr-page'), 10);
+            if (targetPage && !isNaN(targetPage) && targetPage !== transferReportFilterState.page) {
+              transferReportFilterState.page = targetPage;
+              refreshTransferReportsTabInPlace();
+            }
+          });
+        });
+
+        const trPageSize = document.getElementById('tr-page-size');
+        if (trPageSize && !trPageSize.dataset.boundForTr) {
+          trPageSize.dataset.boundForTr = 'true';
+          trPageSize.addEventListener('change', (e) => {
+            transferReportFilterState.pageSize = e.target.value === 'ALL' ? 'ALL' : parseInt(e.target.value, 10);
+            transferReportFilterState.page = 1;
+            refreshTransferReportsTabInPlace();
+          });
+        }
       } else {
         refreshReportsView();
       }
