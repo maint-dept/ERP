@@ -68,7 +68,7 @@ export function renderReportsView() {
       <div class="reports-top-bar" style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 12px 18px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; flex-shrink: 0;">
         <div style="min-width: 0;">
           <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-            <span style="font-size: 22px;">📊</span>
+            <span style="font-size: 20px;">📊</span>
             <h1 style="font-size: 18px; font-weight: 800; color: #fff; margin: 0; white-space: nowrap;">
               Reports &amp; Excel Export Center
             </h1>
@@ -308,29 +308,29 @@ function renderEtLabReportsTab(boards) {
       
       <!-- Top Metrics KPIs -->
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px;">
-        <div style="background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 8px; padding: 12px 16px;">
+        <div style="background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 8px; padding: 8px 12px;">
           <div style="font-size: 11px; font-weight: 700; color: #38bdf8; text-transform: uppercase;">Total Matching Boards</div>
-          <div style="font-size: 22px; font-weight: 800; color: #fff; margin-top: 4px;">${filteredRows.length} Units</div>
+          <div style="font-size: 20px; font-weight: 800; color: #fff; margin-top: 4px;">${filteredRows.length} Units</div>
         </div>
 
-        <div style="background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 8px; padding: 12px 16px;">
+        <div style="background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 8px; padding: 8px 12px;">
           <div style="font-size: 11px; font-weight: 700; color: #34d399; text-transform: uppercase;">Installed on Machine</div>
-          <div style="font-size: 22px; font-weight: 800; color: #34d399; margin-top: 4px;">${filteredRows.filter(r => r.status === 'INSTALLED').length} Units</div>
+          <div style="font-size: 20px; font-weight: 800; color: #34d399; margin-top: 4px;">${filteredRows.filter(r => r.status === 'INSTALLED').length} Units</div>
         </div>
 
-        <div style="background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(2, 132, 199, 0.3); border-radius: 8px; padding: 12px 16px;">
+        <div style="background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(2, 132, 199, 0.3); border-radius: 8px; padding: 8px 12px;">
           <div style="font-size: 11px; font-weight: 700; color: #38bdf8; text-transform: uppercase;">Available Spares</div>
-          <div style="font-size: 22px; font-weight: 800; color: #38bdf8; margin-top: 4px;">${filteredRows.filter(r => r.status === 'AVAILABLE_SPARE' || r.status === 'REPAIR_ACCEPTED').length} Units</div>
+          <div style="font-size: 20px; font-weight: 800; color: #38bdf8; margin-top: 4px;">${filteredRows.filter(r => r.status === 'AVAILABLE_SPARE' || r.status === 'REPAIR_ACCEPTED').length} Units</div>
         </div>
 
-        <div style="background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 8px; padding: 12px 16px;">
+        <div style="background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 8px; padding: 8px 12px;">
           <div style="font-size: 11px; font-weight: 700; color: #fbbf24; text-transform: uppercase;">Under In-House Repair</div>
-          <div style="font-size: 22px; font-weight: 800; color: #fbbf24; margin-top: 4px;">${filteredRows.filter(r => r.status === 'UNDER_INHOUSE_REPAIR' || r.status === 'REPAIR_REJECTED').length} Units</div>
+          <div style="font-size: 20px; font-weight: 800; color: #fbbf24; margin-top: 4px;">${filteredRows.filter(r => r.status === 'UNDER_INHOUSE_REPAIR' || r.status === 'REPAIR_REJECTED').length} Units</div>
         </div>
 
-        <div style="background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px; padding: 12px 16px;">
+        <div style="background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px; padding: 8px 12px;">
           <div style="font-size: 11px; font-weight: 700; color: #f87171; text-transform: uppercase;">Sent to External Co.</div>
-          <div style="font-size: 22px; font-weight: 800; color: #f87171; margin-top: 4px;">${filteredRows.filter(r => r.status === 'SENT_EXTERNAL').length} Units</div>
+          <div style="font-size: 20px; font-weight: 800; color: #f87171; margin-top: 4px;">${filteredRows.filter(r => r.status === 'SENT_EXTERNAL').length} Units</div>
         </div>
       </div>
 
@@ -985,7 +985,7 @@ function renderMachineReportsTab(allMachines) {
       <!-- 3. Top Overall Summary Cards (Running | Usable Idle | Repairable Idle | Total) -->
       <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;">
         
-        <div style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.85)); border: 1px solid rgba(52, 211, 153, 0.3); border-top: 3px solid #10b981; border-radius: var(--radius-md); padding: 12px 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.25);">
+        <div style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.85)); border: 1px solid rgba(52, 211, 153, 0.3); border-top: 3px solid #10b981; border-radius: var(--radius-md); padding: 8px 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.25);">
           <div style="display: flex; justify-content: space-between; align-items: center;">
             <span style="font-size: 11px; color: #34d399; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">🟢 Running Machines</span>
             <span class="badge badge-active" style="font-size: 10px; padding: 1px 6px;">Operational</span>
@@ -994,7 +994,7 @@ function renderMachineReportsTab(allMachines) {
           <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">${activeRate}% of total machinery deployed</div>
         </div>
 
-        <div style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.85)); border: 1px solid rgba(56, 189, 248, 0.3); border-top: 3px solid #0284c7; border-radius: var(--radius-md); padding: 12px 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.25);">
+        <div style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.85)); border: 1px solid rgba(56, 189, 248, 0.3); border-top: 3px solid #0284c7; border-radius: var(--radius-md); padding: 8px 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.25);">
           <div style="display: flex; justify-content: space-between; align-items: center;">
             <span style="font-size: 11px; color: #38bdf8; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">🔵 Usable Idle</span>
             <span class="badge badge-idle" style="font-size: 10px; padding: 1px 6px;">Standby</span>
@@ -1003,7 +1003,7 @@ function renderMachineReportsTab(allMachines) {
           <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">Standby machines ready for lines</div>
         </div>
 
-        <div style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.85)); border: 1px solid rgba(251, 191, 36, 0.3); border-top: 3px solid #f59e0b; border-radius: var(--radius-md); padding: 12px 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.25);">
+        <div style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.85)); border: 1px solid rgba(251, 191, 36, 0.3); border-top: 3px solid #f59e0b; border-radius: var(--radius-md); padding: 8px 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.25);">
           <div style="display: flex; justify-content: space-between; align-items: center;">
             <span style="font-size: 11px; color: #fbbf24; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">🟡 Repairable Idle</span>
             <span class="badge badge-maint" style="font-size: 10px; padding: 1px 6px;">Servicing</span>
@@ -1012,7 +1012,7 @@ function renderMachineReportsTab(allMachines) {
           <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">Under scheduled servicing or repair</div>
         </div>
 
-        <div style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.85)); border: 1px solid rgba(148, 163, 184, 0.3); border-top: 3px solid #38bdf8; border-radius: var(--radius-md); padding: 12px 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.25);">
+        <div style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.85)); border: 1px solid rgba(148, 163, 184, 0.3); border-top: 3px solid #38bdf8; border-radius: var(--radius-md); padding: 8px 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.25);">
           <div style="display: flex; justify-content: space-between; align-items: center;">
             <span style="font-size: 11px; color: #e2e8f0; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">🏭 Total Machinery</span>
             <span class="badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; font-size: 10px; padding: 1px 6px; border: 1px solid rgba(56, 189, 248, 0.3);">Enterprise</span>
@@ -1366,39 +1366,39 @@ function renderTransferReportsTab(allRequests, completedTransfers) {
       <!-- 1. TOP SUMMARY KPI CARDS -->
       <div id="tr-kpi-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px;">
         
-        <div class="tr-kpi-card" data-tr-kpi-status="ALL" style="background: rgba(15, 23, 42, 0.85); border: 1.5px solid ${transferReportFilterState.status === 'ALL' ? '#38bdf8' : 'rgba(56, 189, 248, 0.25)'}; border-radius: 8px; padding: 12px 16px; cursor: pointer; transition: all 0.2s;" title="Click to show all records">
+        <div class="tr-kpi-card" data-tr-kpi-status="ALL" style="background: rgba(15, 23, 42, 0.85); border: 1.5px solid ${transferReportFilterState.status === 'ALL' ? '#38bdf8' : 'rgba(56, 189, 248, 0.25)'}; border-radius: 8px; padding: 8px 12px; cursor: pointer; transition: all 0.2s;" title="Click to show all records">
           <div style="display: flex; justify-content: space-between; align-items: center;">
             <span style="font-size: 11px; font-weight: 700; color: #38bdf8; text-transform: uppercase;">🔄 Total Transfers</span>
             <span style="font-size: 14px;">📋</span>
           </div>
-          <div style="font-size: 22px; font-weight: 800; color: #fff; margin-top: 4px;">${totalCount}</div>
+          <div style="font-size: 20px; font-weight: 800; color: #fff; margin-top: 4px;">${totalCount}</div>
           <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">${filteredRows.length} matching filters</div>
         </div>
 
-        <div class="tr-kpi-card" data-tr-kpi-status="COMPLETED" style="background: rgba(15, 23, 42, 0.85); border: 1.5px solid ${transferReportFilterState.status === 'COMPLETED' ? '#34d399' : 'rgba(52, 211, 153, 0.25)'}; border-radius: 8px; padding: 12px 16px; cursor: pointer; transition: all 0.2s;" title="Click to filter Completed relocations">
+        <div class="tr-kpi-card" data-tr-kpi-status="COMPLETED" style="background: rgba(15, 23, 42, 0.85); border: 1.5px solid ${transferReportFilterState.status === 'COMPLETED' ? '#34d399' : 'rgba(52, 211, 153, 0.25)'}; border-radius: 8px; padding: 8px 12px; cursor: pointer; transition: all 0.2s;" title="Click to filter Completed relocations">
           <div style="display: flex; justify-content: space-between; align-items: center;">
             <span style="font-size: 11px; font-weight: 700; color: #34d399; text-transform: uppercase;">✅ Completed</span>
             <span style="font-size: 14px;">🚚</span>
           </div>
-          <div style="font-size: 22px; font-weight: 800; color: #34d399; margin-top: 4px;">${completedCount}</div>
+          <div style="font-size: 20px; font-weight: 800; color: #34d399; margin-top: 4px;">${completedCount}</div>
           <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">Fully Relocated</div>
         </div>
 
-        <div class="tr-kpi-card" data-tr-kpi-status="PENDING" style="background: rgba(15, 23, 42, 0.85); border: 1.5px solid ${transferReportFilterState.status === 'PENDING' ? '#fbbf24' : 'rgba(251, 191, 36, 0.25)'}; border-radius: 8px; padding: 12px 16px; cursor: pointer; transition: all 0.2s;" title="Click to filter Pending requests">
+        <div class="tr-kpi-card" data-tr-kpi-status="PENDING" style="background: rgba(15, 23, 42, 0.85); border: 1.5px solid ${transferReportFilterState.status === 'PENDING' ? '#fbbf24' : 'rgba(251, 191, 36, 0.25)'}; border-radius: 8px; padding: 8px 12px; cursor: pointer; transition: all 0.2s;" title="Click to filter Pending requests">
           <div style="display: flex; justify-content: space-between; align-items: center;">
             <span style="font-size: 11px; font-weight: 700; color: #fbbf24; text-transform: uppercase;">⏳ In Approval</span>
             <span style="font-size: 14px;">⏳</span>
           </div>
-          <div style="font-size: 22px; font-weight: 800; color: #fbbf24; margin-top: 4px;">${pendingCount}</div>
+          <div style="font-size: 20px; font-weight: 800; color: #fbbf24; margin-top: 4px;">${pendingCount}</div>
           <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">Pending / Revision</div>
         </div>
 
-        <div class="tr-kpi-card" data-tr-kpi-status="REJECTED" style="background: rgba(15, 23, 42, 0.85); border: 1.5px solid ${transferReportFilterState.status === 'REJECTED' || transferReportFilterState.status === 'CANCELLED' ? '#f43f5e' : 'rgba(244, 63, 94, 0.25)'}; border-radius: 8px; padding: 12px 16px; cursor: pointer; transition: all 0.2s;" title="Click to filter Rejected &amp; Cancelled">
+        <div class="tr-kpi-card" data-tr-kpi-status="REJECTED" style="background: rgba(15, 23, 42, 0.85); border: 1.5px solid ${transferReportFilterState.status === 'REJECTED' || transferReportFilterState.status === 'CANCELLED' ? '#f43f5e' : 'rgba(244, 63, 94, 0.25)'}; border-radius: 8px; padding: 8px 12px; cursor: pointer; transition: all 0.2s;" title="Click to filter Rejected &amp; Cancelled">
           <div style="display: flex; justify-content: space-between; align-items: center;">
             <span style="font-size: 11px; font-weight: 700; color: #f43f5e; text-transform: uppercase;">❌ Rejected / Cancelled</span>
             <span style="font-size: 14px;">🚫</span>
           </div>
-          <div style="font-size: 22px; font-weight: 800; color: #f43f5e; margin-top: 4px;">${rejectedCount + cancelledCount}</div>
+          <div style="font-size: 20px; font-weight: 800; color: #f43f5e; margin-top: 4px;">${rejectedCount + cancelledCount}</div>
           <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">${rejectedCount} Rejected · ${cancelledCount} Cancelled</div>
         </div>
 
@@ -1423,6 +1423,9 @@ function renderTransferReportsTab(allRequests, completedTransfers) {
           </div>
 
           <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+            <button onclick="const body = document.getElementById('tr-filter-body'); const isHidden = body.style.display === 'none'; body.style.display = isHidden ? 'flex' : 'none'; this.innerHTML = isHidden ? '▲ Hide Filters' : '▼ Show Filters'; transferReportFilterState.isExpanded = isHidden;" class="btn btn-ghost btn-sm" style="height: 32px; font-weight: 700; color: #cbd5e1; border: 1px solid rgba(255,255,255,0.1);" title="Toggle Advanced Filter Engine">
+              ${transferReportFilterState.isExpanded !== false ? '▲ Hide Filters' : '▼ Show Filters'}
+            </button>
             <button id="btn-export-transfer-report-excel" class="btn btn-primary btn-sm" style="font-weight: 700; background: linear-gradient(135deg, #0284c7, #0369a1); height: 32px;" title="Export filtered records to formatted Excel spreadsheet">
               📊 Export Transfers (Excel)
             </button>
@@ -1443,8 +1446,9 @@ function renderTransferReportsTab(allRequests, completedTransfers) {
           </div>
         </div>
 
-        <!-- Row 1: Plant Location Hierarchy -->
-        <div>
+        <div id="tr-filter-body" style="display: ${transferReportFilterState.isExpanded !== false ? 'flex' : 'none'}; flex-direction: column; gap: 12px; margin-top: 4px;">
+          <!-- Row 1: Plant Location Hierarchy -->
+          <div>
           <div style="font-size: 10.5px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">
             🏢 1. Plant Location Hierarchy:
           </div>
@@ -1568,6 +1572,7 @@ function renderTransferReportsTab(allRequests, completedTransfers) {
             </div>
           </div>
         </div>
+        </div> <!-- End tr-filter-body -->
 
       </div>
 
@@ -1934,7 +1939,7 @@ function renderSparePartsReportsTab() {
         <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px;">
           
           <!-- Card 1: Total Issued -->
-          <div style="background: rgba(2, 132, 199, 0.12); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: var(--radius-md); padding: 12px 16px;">
+          <div style="background: rgba(2, 132, 199, 0.12); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: var(--radius-md); padding: 8px 12px;">
             <div style="font-size: 11px; font-weight: 700; color: #38bdf8; text-transform: uppercase;">Total Issued</div>
             <div style="font-size: 24px; font-weight: 900; color: #fff; margin-top: 4px;">
               ${kpi.totalIssued} <span style="font-size: 12px; color: #94a3b8; font-weight: 600;">pcs</span>
@@ -1943,7 +1948,7 @@ function renderSparePartsReportsTab() {
           </div>
 
           <!-- Card 2: Total Used (Highlight) -->
-          <div style="background: rgba(16, 185, 129, 0.15); border: 1.5px solid #10b981; border-radius: var(--radius-md); padding: 12px 16px; box-shadow: 0 0 15px rgba(16, 185, 129, 0.15);">
+          <div style="background: rgba(16, 185, 129, 0.15); border: 1.5px solid #10b981; border-radius: var(--radius-md); padding: 8px 12px; box-shadow: 0 0 15px rgba(16, 185, 129, 0.15);">
             <div style="font-size: 11px; font-weight: 800; color: #34d399; text-transform: uppercase;">Total Spare Parts Used</div>
             <div style="font-size: 26px; font-weight: 900; color: #34d399; margin-top: 4px;">
               ${kpi.totalUsed} <span style="font-size: 13px; color: #a7f3d0; font-weight: 700;">pcs</span>
@@ -1952,7 +1957,7 @@ function renderSparePartsReportsTab() {
           </div>
 
           <!-- Card 3: Total Returned -->
-          <div style="background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(251, 191, 36, 0.3); border-radius: var(--radius-md); padding: 12px 16px;">
+          <div style="background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(251, 191, 36, 0.3); border-radius: var(--radius-md); padding: 8px 12px;">
             <div style="font-size: 11px; font-weight: 700; color: #fbbf24; text-transform: uppercase;">Total Returned</div>
             <div style="font-size: 24px; font-weight: 900; color: #fbbf24; margin-top: 4px;">
               ${kpi.totalReturned} <span style="font-size: 12px; color: #94a3b8; font-weight: 600;">pcs</span>
@@ -1961,7 +1966,7 @@ function renderSparePartsReportsTab() {
           </div>
 
           <!-- Card 4: Current / Unreturned -->
-          <div style="background: rgba(139, 92, 246, 0.12); border: 1px solid rgba(167, 139, 250, 0.3); border-radius: var(--radius-md); padding: 12px 16px;">
+          <div style="background: rgba(139, 92, 246, 0.12); border: 1px solid rgba(167, 139, 250, 0.3); border-radius: var(--radius-md); padding: 8px 12px;">
             <div style="font-size: 11px; font-weight: 700; color: #c084fc; text-transform: uppercase;">Current / Unreturned</div>
             <div style="font-size: 24px; font-weight: 900; color: #c084fc; margin-top: 4px;">
               ${kpi.currentUnreturned} <span style="font-size: 12px; color: #94a3b8; font-weight: 600;">pcs</span>
@@ -1970,9 +1975,9 @@ function renderSparePartsReportsTab() {
           </div>
 
           <!-- Card 5: Estimated Cost / Value -->
-          <div style="background: rgba(244, 63, 94, 0.12); border: 1px solid rgba(251, 113, 133, 0.3); border-radius: var(--radius-md); padding: 12px 16px;">
+          <div style="background: rgba(244, 63, 94, 0.12); border: 1px solid rgba(251, 113, 133, 0.3); border-radius: var(--radius-md); padding: 8px 12px;">
             <div style="font-size: 11px; font-weight: 700; color: #fb7185; text-transform: uppercase;">Total Consumption Value</div>
-            <div style="font-size: 22px; font-weight: 900; color: #fff; margin-top: 4px;">
+            <div style="font-size: 20px; font-weight: 900; color: #fff; margin-top: 4px;">
               BDT ${kpi.totalValue.toLocaleString()}
             </div>
             <div style="font-size: 10.5px; color: var(--text-muted); margin-top: 2px;">Replacement Valuation</div>
@@ -2217,7 +2222,7 @@ function renderExportCenterTab(machines, transfers, logs, catalog) {
           <div style="grid-column: span 2; background: linear-gradient(135deg, rgba(2, 132, 199, 0.12), rgba(15, 23, 42, 0.8)); border: 1.5px solid rgba(56, 189, 248, 0.4); border-radius: var(--radius-lg); padding: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
             <div>
               <div style="display: flex; align-items: center; gap: 8px;">
-                <span style="font-size: 22px;">📜</span>
+                <span style="font-size: 20px;">📜</span>
                 <div style="font-size: 16px; font-weight: 800; color: #fff;">Complete Corporate Master ERP Workbook</div>
               </div>
               <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px; line-height: 1.4;">
