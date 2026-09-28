@@ -1361,220 +1361,163 @@ function renderTransferReportsTab(allRequests, completedTransfers) {
   };
 
   return `
-    <div style="display: flex; flex-direction: column; gap: 14px; width: 100%;">
+    <div style="display: flex; flex-direction: column; gap: 10px; width: 100%;">
 
-      <!-- 1. TOP SUMMARY KPI CARDS -->
-      <div id="tr-kpi-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px;">
+      <!-- 1. COMPACT INLINE KPI BAR + ACTION BUTTONS -->
+      <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 8px 14px; box-shadow: var(--shadow-sm);">
         
-        <div class="tr-kpi-card" data-tr-kpi-status="ALL" style="background: rgba(15, 23, 42, 0.85); border: 1.5px solid ${transferReportFilterState.status === 'ALL' ? '#38bdf8' : 'rgba(56, 189, 248, 0.25)'}; border-radius: 8px; padding: 8px 12px; cursor: pointer; transition: all 0.2s;" title="Click to show all records">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 11px; font-weight: 700; color: #38bdf8; text-transform: uppercase;">🔄 Total Transfers</span>
-            <span style="font-size: 14px;">📋</span>
+        <!-- KPI Chips (clickable status filters) -->
+        <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+          <div class="tr-kpi-card" data-tr-kpi-status="ALL" style="display:flex;align-items:center;gap:6px;background:${transferReportFilterState.status === 'ALL' ? 'rgba(56,189,248,0.15)' : 'rgba(56,189,248,0.05)'};border:1.5px solid ${transferReportFilterState.status === 'ALL' ? '#38bdf8' : 'rgba(56,189,248,0.2)'};border-radius:20px;padding:3px 12px;cursor:pointer;transition:all 0.2s;" title="All Transfers">
+            <span style="font-size:10px;font-weight:700;color:#38bdf8;">ALL</span>
+            <span style="font-size:15px;font-weight:800;color:#fff;">${totalCount}</span>
           </div>
-          <div style="font-size: 20px; font-weight: 800; color: #fff; margin-top: 4px;">${totalCount}</div>
-          <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">${filteredRows.length} matching filters</div>
+          <div class="tr-kpi-card" data-tr-kpi-status="COMPLETED" style="display:flex;align-items:center;gap:6px;background:${transferReportFilterState.status === 'COMPLETED' ? 'rgba(52,211,153,0.15)' : 'rgba(52,211,153,0.05)'};border:1.5px solid ${transferReportFilterState.status === 'COMPLETED' ? '#34d399' : 'rgba(52,211,153,0.2)'};border-radius:20px;padding:3px 12px;cursor:pointer;transition:all 0.2s;" title="Completed">
+            <span style="font-size:10px;font-weight:700;color:#34d399;">✅ DONE</span>
+            <span style="font-size:15px;font-weight:800;color:#34d399;">${completedCount}</span>
+          </div>
+          <div class="tr-kpi-card" data-tr-kpi-status="PENDING" style="display:flex;align-items:center;gap:6px;background:${transferReportFilterState.status === 'PENDING' ? 'rgba(251,191,36,0.15)' : 'rgba(251,191,36,0.05)'};border:1.5px solid ${transferReportFilterState.status === 'PENDING' ? '#fbbf24' : 'rgba(251,191,36,0.2)'};border-radius:20px;padding:3px 12px;cursor:pointer;transition:all 0.2s;" title="Pending Approval">
+            <span style="font-size:10px;font-weight:700;color:#fbbf24;">⏳ PENDING</span>
+            <span style="font-size:15px;font-weight:800;color:#fbbf24;">${pendingCount}</span>
+          </div>
+          <div class="tr-kpi-card" data-tr-kpi-status="REJECTED" style="display:flex;align-items:center;gap:6px;background:${(transferReportFilterState.status === 'REJECTED' || transferReportFilterState.status === 'CANCELLED') ? 'rgba(244,63,94,0.15)' : 'rgba(244,63,94,0.05)'};border:1.5px solid ${(transferReportFilterState.status === 'REJECTED' || transferReportFilterState.status === 'CANCELLED') ? '#f43f5e' : 'rgba(244,63,94,0.2)'};border-radius:20px;padding:3px 12px;cursor:pointer;transition:all 0.2s;" title="Rejected/Cancelled">
+            <span style="font-size:10px;font-weight:700;color:#f43f5e;">❌ REJ/CXL</span>
+            <span style="font-size:15px;font-weight:800;color:#f43f5e;">${rejectedCount + cancelledCount}</span>
+          </div>
+          <span style="font-size:11px;color:var(--text-muted);padding-left:4px;">${filteredRows.length} of ${allAuditRows.length} shown</span>
         </div>
 
-        <div class="tr-kpi-card" data-tr-kpi-status="COMPLETED" style="background: rgba(15, 23, 42, 0.85); border: 1.5px solid ${transferReportFilterState.status === 'COMPLETED' ? '#34d399' : 'rgba(52, 211, 153, 0.25)'}; border-radius: 8px; padding: 8px 12px; cursor: pointer; transition: all 0.2s;" title="Click to filter Completed relocations">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 11px; font-weight: 700; color: #34d399; text-transform: uppercase;">✅ Completed</span>
-            <span style="font-size: 14px;">🚚</span>
+        <!-- Action Buttons -->
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+          <span style="font-size:10px;color:#34d399;background:rgba(52,211,153,0.1);border:1px solid rgba(52,211,153,0.3);border-radius:4px;padding:2px 8px;font-weight:700;">🔴 Live</span>
+          <button id="btn-export-transfer-report-excel" class="btn btn-primary btn-sm" style="font-weight:700;background:linear-gradient(135deg,#0284c7,#0369a1);height:30px;font-size:11px;">📊 Excel</button>
+          <button id="btn-export-transfer-report-pdf" class="btn btn-secondary btn-sm" style="font-weight:700;height:30px;font-size:11px;">🖨️ Print</button>
+          <div style="display:flex;border:1px solid var(--border-color);border-radius:6px;overflow:hidden;height:30px;">
+            <button class="btn btn-xs ${transferReportFilterState.viewMode === 'TABLE' ? 'btn-primary' : 'btn-ghost'}" data-tr-view-mode="TABLE" style="padding:0 10px;font-size:11px;">▦ Table</button>
+            <button class="btn btn-xs ${transferReportFilterState.viewMode === 'CARDS' ? 'btn-primary' : 'btn-ghost'}" data-tr-view-mode="CARDS" style="padding:0 10px;font-size:11px;">🗂️ Cards</button>
           </div>
-          <div style="font-size: 20px; font-weight: 800; color: #34d399; margin-top: 4px;">${completedCount}</div>
-          <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">Fully Relocated</div>
         </div>
-
-        <div class="tr-kpi-card" data-tr-kpi-status="PENDING" style="background: rgba(15, 23, 42, 0.85); border: 1.5px solid ${transferReportFilterState.status === 'PENDING' ? '#fbbf24' : 'rgba(251, 191, 36, 0.25)'}; border-radius: 8px; padding: 8px 12px; cursor: pointer; transition: all 0.2s;" title="Click to filter Pending requests">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 11px; font-weight: 700; color: #fbbf24; text-transform: uppercase;">⏳ In Approval</span>
-            <span style="font-size: 14px;">⏳</span>
-          </div>
-          <div style="font-size: 20px; font-weight: 800; color: #fbbf24; margin-top: 4px;">${pendingCount}</div>
-          <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">Pending / Revision</div>
-        </div>
-
-        <div class="tr-kpi-card" data-tr-kpi-status="REJECTED" style="background: rgba(15, 23, 42, 0.85); border: 1.5px solid ${transferReportFilterState.status === 'REJECTED' || transferReportFilterState.status === 'CANCELLED' ? '#f43f5e' : 'rgba(244, 63, 94, 0.25)'}; border-radius: 8px; padding: 8px 12px; cursor: pointer; transition: all 0.2s;" title="Click to filter Rejected &amp; Cancelled">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 11px; font-weight: 700; color: #f43f5e; text-transform: uppercase;">❌ Rejected / Cancelled</span>
-            <span style="font-size: 14px;">🚫</span>
-          </div>
-          <div style="font-size: 20px; font-weight: 800; color: #f43f5e; margin-top: 4px;">${rejectedCount + cancelledCount}</div>
-          <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">${rejectedCount} Rejected · ${cancelledCount} Cancelled</div>
-        </div>
-
       </div>
 
-      <!-- 2. COMPREHENSIVE FILTER TOOLBAR CONTAINER -->
-      <div style="background: var(--bg-surface); border: 1.5px solid rgba(56, 189, 248, 0.35); border-radius: var(--radius-lg); padding: 16px 18px; display: flex; flex-direction: column; gap: 12px; box-shadow: var(--shadow-sm); width: 100%; box-sizing: border-box;">
+      <!-- 2. COMPACT FILTER TOOLBAR (single row, always visible) -->
+      <div style="background: var(--bg-surface); border: 1px solid rgba(56,189,248,0.25); border-radius: var(--radius-lg); padding: 8px 12px; box-shadow: var(--shadow-sm);">
         
-        <!-- Header & Action Buttons -->
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 10px; flex-wrap: wrap; gap: 10px;">
-          <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-            <span style="font-size: 18px;">🔍</span>
-            <div id="tr-filter-header-count">
-              <div style="font-size: 14px; font-weight: 800; color: #38bdf8; text-transform: uppercase; letter-spacing: 0.5px;">
-                Machine Transfer &amp; Relocation Audit Filter Engine
-              </div>
-              <div style="font-size: 11px; color: var(--text-muted);">
-                Showing ${filteredRows.length} of ${allAuditRows.length} records · Zero-jump dynamic filtering
-              </div>
-            </div>
-            <span style="font-size: 11px; color: #34d399; background: rgba(52,211,153,0.1); border: 1px solid rgba(52,211,153,0.3); border-radius: 4px; padding: 2px 8px; font-weight: 700;">🔴 Live Firebase Data</span>
+        <!-- Main filter row -->
+        <div style="display: flex; align-items: flex-end; gap: 8px; flex-wrap: wrap;">
+          
+          <div style="display: flex; flex-direction: column; gap: 3px; min-width: 120px; flex: 1;">
+            <label style="font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase;">Status</label>
+            <select id="tr-filter-status" class="filter-select" style="height: 32px; font-size: 11.5px; width: 100%;">
+              <option value="ALL" ${transferReportFilterState.status === 'ALL' ? 'selected' : ''}>All Statuses</option>
+              ${distinctStatuses.map(s => `<option value="${s.toUpperCase()}" ${transferReportFilterState.status === s.toUpperCase() ? 'selected' : ''}>${s.replace(/_/g, ' ')}</option>`).join('')}
+            </select>
           </div>
 
-          <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-            <button onclick="const body = document.getElementById('tr-filter-body'); const isHidden = body.style.display === 'none'; body.style.display = isHidden ? 'flex' : 'none'; this.innerHTML = isHidden ? '▲ Hide Filters' : '▼ Show Filters'; transferReportFilterState.isExpanded = isHidden;" class="btn btn-ghost btn-sm" style="height: 32px; font-weight: 700; color: #cbd5e1; border: 1px solid rgba(255,255,255,0.1);" title="Toggle Advanced Filter Engine">
-              ${transferReportFilterState.isExpanded !== false ? '▲ Hide Filters' : '▼ Show Filters'}
+          <div style="display: flex; flex-direction: column; gap: 3px; min-width: 130px; flex: 1;">
+            <label style="font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase;">Staff</label>
+            <select id="tr-filter-by" class="filter-select" style="height: 32px; font-size: 11.5px; width: 100%;">
+              <option value="ALL" ${transferReportFilterState.transferredBy === 'ALL' ? 'selected' : ''}>All Staff (${distinctUsers.length})</option>
+              ${distinctUsers.map(u => `<option value="${u}" ${transferReportFilterState.transferredBy === u ? 'selected' : ''}>${u}</option>`).join('')}
+            </select>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 3px; min-width: 120px; flex: 1;">
+            <label style="font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase;">From Date</label>
+            <input type="date" id="tr-filter-date-from" class="form-control" value="${transferReportFilterState.dateFrom || ''}" style="height: 32px; font-size: 11.5px; padding: 4px 8px; width: 100%; box-sizing: border-box;" />
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 3px; min-width: 120px; flex: 1;">
+            <label style="font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase;">To Date</label>
+            <input type="date" id="tr-filter-date-to" class="form-control" value="${transferReportFilterState.dateTo || ''}" style="height: 32px; font-size: 11.5px; padding: 4px 8px; width: 100%; box-sizing: border-box;" />
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 3px; min-width: 200px; flex: 3;">
+            <label style="font-size: 10px; font-weight: 700; color: #38bdf8; text-transform: uppercase;">🔍 Search</label>
+            <input type="text" id="tr-filter-search" class="form-control" placeholder="Machine serial, name, location, staff, reason..." value="${transferReportFilterState.search || ''}" style="height: 32px; font-size: 11.5px; padding: 4px 10px; width: 100%; box-sizing: border-box;" />
+          </div>
+
+          <div style="display: flex; gap: 6px; flex-shrink: 0;">
+            <button id="tr-btn-clear-filters" class="btn btn-ghost btn-sm" style="height: 32px; font-weight: 700; color: #94a3b8; white-space: nowrap;" title="Reset all filters">↺ Clear</button>
+            <button id="tr-btn-toggle-advanced" onclick="const adv = document.getElementById('tr-advanced-filters'); const isHidden = adv.style.display === 'none'; adv.style.display = isHidden ? 'block' : 'none'; this.textContent = isHidden ? '▲ Less' : '▼ Advanced'; transferReportFilterState.isExpanded = isHidden;" class="btn btn-ghost btn-sm" style="height: 32px; font-weight: 700; color: #64748b; border: 1px solid rgba(255,255,255,0.08); white-space: nowrap; font-size: 11px;">
+              ${transferReportFilterState.isExpanded ? '▲ Less' : '▼ Advanced'}
             </button>
-            <button id="btn-export-transfer-report-excel" class="btn btn-primary btn-sm" style="font-weight: 700; background: linear-gradient(135deg, #0284c7, #0369a1); height: 32px;" title="Export filtered records to formatted Excel spreadsheet">
-              📊 Export Transfers (Excel)
-            </button>
-            <button id="btn-export-transfer-report-pdf" class="btn btn-secondary btn-sm" style="font-weight: 700; height: 32px;" title="Generate printable PDF audit log">
-              🖨️ PDF / Print
-            </button>
-            <button id="tr-btn-clear-filters" class="btn btn-ghost btn-sm" style="height: 32px; font-weight: 700; color: #94a3b8;" title="Reset all filters and search">
-              ↺ Clear Filters
-            </button>
-            <div style="display: flex; border: 1px solid var(--border-color); border-radius: 6px; overflow: hidden; height: 30px;">
-              <button class="btn btn-xs ${transferReportFilterState.viewMode === 'TABLE' ? 'btn-primary' : 'btn-ghost'}" data-tr-view-mode="TABLE" style="padding: 0 10px; font-size: 11px;" title="Table View">
-                ▦ Table
-              </button>
-              <button class="btn btn-xs ${transferReportFilterState.viewMode === 'CARDS' ? 'btn-primary' : 'btn-ghost'}" data-tr-view-mode="CARDS" style="padding: 0 10px; font-size: 11px;" title="Cards View (Mobile friendly)">
-                🗂️ Cards
-              </button>
-            </div>
           </div>
         </div>
 
-        <div id="tr-filter-body" style="display: ${transferReportFilterState.isExpanded !== false ? 'flex' : 'none'}; flex-direction: column; gap: 12px; margin-top: 4px;">
-          <!-- Row 1: Plant Location Hierarchy -->
-          <div>
-          <div style="font-size: 10.5px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">
-            🏢 1. Plant Location Hierarchy:
-          </div>
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px;">
-            <div class="filter-group">
-              <label class="filter-label" style="font-size: 10px; font-weight: 700; color: #cbd5e1; margin-bottom: 2px;">Group</label>
-              <select id="tr-filter-group" class="filter-select" style="height: 34px; font-size: 11.5px; width: 100%;">
+        <!-- ADVANCED FILTERS: Location + Movement (hidden by default) -->
+        <div id="tr-advanced-filters" style="display: ${transferReportFilterState.isExpanded ? 'block' : 'none'}; margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.08);">
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px;">
+            
+            <div style="display: flex; flex-direction: column; gap: 3px;">
+              <label style="font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase;">🏢 Group</label>
+              <select id="tr-filter-group" class="filter-select" style="height: 32px; font-size: 11px; width: 100%;">
                 <option value="">All Groups (${groups.length})</option>
                 ${groups.map(g => `<option value="${g.id}" ${transferReportFilterState.groupId === g.id ? 'selected' : ''}>${g.name}</option>`).join('')}
               </select>
             </div>
 
-            <div class="filter-group">
-              <label class="filter-label" style="font-size: 10px; font-weight: 700; color: #cbd5e1; margin-bottom: 2px;">Unit / Factory</label>
-              <select id="tr-filter-unit" class="filter-select" style="height: 34px; font-size: 11.5px; width: 100%;">
+            <div style="display: flex; flex-direction: column; gap: 3px;">
+              <label style="font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase;">🏭 Unit</label>
+              <select id="tr-filter-unit" class="filter-select" style="height: 32px; font-size: 11px; width: 100%;">
                 <option value="">All Units (${units.length})</option>
                 ${units.map(u => `<option value="${u.id}" ${transferReportFilterState.unitId === u.id ? 'selected' : ''}>${u.name}</option>`).join('')}
               </select>
             </div>
 
-            <div class="filter-group">
-              <label class="filter-label" style="font-size: 10px; font-weight: 700; color: #cbd5e1; margin-bottom: 2px;">Floor</label>
-              <select id="tr-filter-floor" class="filter-select" style="height: 34px; font-size: 11.5px; width: 100%;">
+            <div style="display: flex; flex-direction: column; gap: 3px;">
+              <label style="font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase;">Floor</label>
+              <select id="tr-filter-floor" class="filter-select" style="height: 32px; font-size: 11px; width: 100%;">
                 <option value="">All Floors (${floors.length})</option>
                 ${floors.map(f => `<option value="${f.id}" ${transferReportFilterState.floorId === f.id ? 'selected' : ''}>${f.name}</option>`).join('')}
               </select>
             </div>
 
-            <div class="filter-group">
-              <label class="filter-label" style="font-size: 10px; font-weight: 700; color: #cbd5e1; margin-bottom: 2px;">Production Line</label>
-              <select id="tr-filter-line" class="filter-select" style="height: 34px; font-size: 11.5px; width: 100%;">
+            <div style="display: flex; flex-direction: column; gap: 3px;">
+              <label style="font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase;">Line</label>
+              <select id="tr-filter-line" class="filter-select" style="height: 32px; font-size: 11px; width: 100%;">
                 <option value="">All Lines (${lines.length})</option>
                 ${lines.map(l => `<option value="${l.id}" ${transferReportFilterState.lineId === l.id ? 'selected' : ''}>${l.name}</option>`).join('')}
               </select>
             </div>
-          </div>
-        </div>
 
-        <!-- Row 2: Movement Specific Filters -->
-        <div>
-          <div style="font-size: 10.5px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">
-            🔄 2. Movement Specific Filters (Source vs. Destination):
-          </div>
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px;">
-            <div class="filter-group">
-              <label class="filter-label" style="font-size: 10px; font-weight: 700; color: #cbd5e1; margin-bottom: 2px;">Previous Floor (Source)</label>
-              <select id="tr-filter-prev-floor" class="filter-select" style="height: 34px; font-size: 11.5px; width: 100%;">
-                <option value="">All Source Floors (${distinctPrevFloors.length})</option>
+            <div style="display: flex; flex-direction: column; gap: 3px;">
+              <label style="font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase;">📍 From Floor</label>
+              <select id="tr-filter-prev-floor" class="filter-select" style="height: 32px; font-size: 11px; width: 100%;">
+                <option value="">All Source Floors</option>
                 ${distinctPrevFloors.map(f => `<option value="${f}" ${transferReportFilterState.prevFloor === f ? 'selected' : ''}>${f}</option>`).join('')}
               </select>
             </div>
 
-            <div class="filter-group">
-              <label class="filter-label" style="font-size: 10px; font-weight: 700; color: #86efac; margin-bottom: 2px;">New Floor (Destination)</label>
-              <select id="tr-filter-new-floor" class="filter-select" style="height: 34px; font-size: 11.5px; width: 100%; border-color: rgba(134,239,172,0.4);">
-                <option value="">All Dest Floors (${distinctNewFloors.length})</option>
+            <div style="display: flex; flex-direction: column; gap: 3px;">
+              <label style="font-size: 10px; font-weight: 700; color: #86efac; text-transform: uppercase;">→ To Floor</label>
+              <select id="tr-filter-new-floor" class="filter-select" style="height: 32px; font-size: 11px; width: 100%; border-color: rgba(134,239,172,0.4);">
+                <option value="">All Dest Floors</option>
                 ${distinctNewFloors.map(f => `<option value="${f}" ${transferReportFilterState.newFloor === f ? 'selected' : ''}>${f}</option>`).join('')}
               </select>
             </div>
 
-            <div class="filter-group">
-              <label class="filter-label" style="font-size: 10px; font-weight: 700; color: #cbd5e1; margin-bottom: 2px;">Previous Line (Source)</label>
-              <select id="tr-filter-prev-line" class="filter-select" style="height: 34px; font-size: 11.5px; width: 100%;">
-                <option value="">All Source Lines (${distinctPrevLines.length})</option>
+            <div style="display: flex; flex-direction: column; gap: 3px;">
+              <label style="font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase;">📍 From Line</label>
+              <select id="tr-filter-prev-line" class="filter-select" style="height: 32px; font-size: 11px; width: 100%;">
+                <option value="">All Source Lines</option>
                 ${distinctPrevLines.map(l => `<option value="${l}" ${transferReportFilterState.prevLine === l ? 'selected' : ''}>${l}</option>`).join('')}
               </select>
             </div>
 
-            <div class="filter-group">
-              <label class="filter-label" style="font-size: 10px; font-weight: 700; color: #86efac; margin-bottom: 2px;">New Line (Destination)</label>
-              <select id="tr-filter-new-line" class="filter-select" style="height: 34px; font-size: 11.5px; width: 100%; border-color: rgba(134,239,172,0.4);">
-                <option value="">All Dest Lines (${distinctNewLines.length})</option>
+            <div style="display: flex; flex-direction: column; gap: 3px;">
+              <label style="font-size: 10px; font-weight: 700; color: #86efac; text-transform: uppercase;">→ To Line</label>
+              <select id="tr-filter-new-line" class="filter-select" style="height: 32px; font-size: 11px; width: 100%; border-color: rgba(134,239,172,0.4);">
+                <option value="">All Dest Lines</option>
                 ${distinctNewLines.map(l => `<option value="${l}" ${transferReportFilterState.newLine === l ? 'selected' : ''}>${l}</option>`).join('')}
               </select>
             </div>
+
           </div>
         </div>
-
-        <!-- Row 3: Audit, Time & Status -->
-        <div>
-          <div style="font-size: 10.5px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">
-            ⚡ 3. Audit, Date Range &amp; Search:
-          </div>
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px;">
-            <div class="filter-group">
-              <label class="filter-label" style="font-size: 10px; font-weight: 700; color: #cbd5e1; margin-bottom: 2px;">Status</label>
-              <select id="tr-filter-status" class="filter-select" style="height: 34px; font-size: 11.5px; width: 100%;">
-                <option value="ALL" ${transferReportFilterState.status === 'ALL' ? 'selected' : ''}>All Statuses (${distinctStatuses.length})</option>
-                ${distinctStatuses.map(s => `<option value="${s.toUpperCase()}" ${transferReportFilterState.status === s.toUpperCase() ? 'selected' : ''}>${s.replace(/_/g, ' ')}</option>`).join('')}
-              </select>
-            </div>
-
-            <div class="filter-group">
-              <label class="filter-label" style="font-size: 10px; font-weight: 700; color: #cbd5e1; margin-bottom: 2px;">Transferred By</label>
-              <select id="tr-filter-by" class="filter-select" style="height: 34px; font-size: 11.5px; width: 100%;">
-                <option value="ALL" ${transferReportFilterState.transferredBy === 'ALL' ? 'selected' : ''}>All Staff (${distinctUsers.length})</option>
-                ${distinctUsers.map(u => `<option value="${u}" ${transferReportFilterState.transferredBy === u ? 'selected' : ''}>${u}</option>`).join('')}
-              </select>
-            </div>
-
-            <div class="filter-group">
-              <label class="filter-label" style="font-size: 10px; font-weight: 700; color: #cbd5e1; margin-bottom: 2px;">Date From</label>
-              <input type="date" id="tr-filter-date-from" class="form-control" value="${transferReportFilterState.dateFrom || ''}" style="height: 34px; font-size: 11.5px; padding: 4px 8px; width: 100%; box-sizing: border-box;" />
-            </div>
-
-            <div class="filter-group">
-              <label class="filter-label" style="font-size: 10px; font-weight: 700; color: #cbd5e1; margin-bottom: 2px;">Date To</label>
-              <input type="date" id="tr-filter-date-to" class="form-control" value="${transferReportFilterState.dateTo || ''}" style="height: 34px; font-size: 11.5px; padding: 4px 8px; width: 100%; box-sizing: border-box;" />
-            </div>
-
-            <div class="filter-group" style="grid-column: span 2;">
-              <label class="filter-label" style="font-size: 10px; font-weight: 700; color: #38bdf8; margin-bottom: 2px;">🔍 Global Search</label>
-              <input 
-                type="text" 
-                id="tr-filter-search" 
-                class="form-control" 
-                placeholder="Search Machine Serial, Name, Location, Staff, Reason..." 
-                value="${transferReportFilterState.search || ''}"
-                style="height: 34px; font-size: 11.5px; padding: 4px 10px; width: 100%; box-sizing: border-box;" 
-              />
-            </div>
-          </div>
-        </div>
-        </div> <!-- End tr-filter-body -->
 
       </div>
+
+
 
       <!-- 3. AUDIT LOG DATA TABLE CONTAINER (RESPONSIVE, NO HORIZONTAL SCROLL) -->
       <div id="tr-table-container">
