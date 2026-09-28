@@ -230,6 +230,9 @@ class TransferService {
       id: requestId,
       requestNumber: reqNumber,
       machineId: machine.id,
+      serialNumber: machine.serialNumber,
+      machineSerial: machine.serialNumber,
+      machineName: mn?.name || 'Machine',
       machineInfo: {
         machineName: mn?.name || 'Machine',
         brand: brd?.name || 'Brand',
@@ -243,12 +246,15 @@ class TransferService {
       sourceLineId: machine.lineId,
       sourceLocation: { unit: sourceUnit, floor: sourceFloor, line: sourceLine },
       sourcePath: sourcePath,
+      sourceFloorName: sourceFloor,
       destGroupId: destGroupId || machine.groupId,
       destUnitId: destUnitId,
       destFloorId: destFloorId,
       destLineId: destLineId,
       destLocation: { unit: destUnit, floor: destFloor, line: destLine },
       destPath: destPath,
+      targetFloorName: destFloor,
+      targetLocation: destPath,
       reason: cleanReason,
       remarks: remarks?.trim() || '',
       workflowId: workflow.id,
@@ -301,6 +307,12 @@ class TransferService {
       const idx = requests.findIndex(r => r.id === newRequest.id);
       if (idx !== -1) requests.splice(idx, 1);
       throw new CloudSaveError('❌ Cloud Save Failed: Transfer request could not be saved to the cloud. Check your connection.');
+    }
+
+    // Trigger local and cross-component updates immediately
+    window.dispatchEvent(new CustomEvent('erp:transfers-updated'));
+    if (window.state && typeof window.state.emit === 'function') {
+      window.state.emit('transfers:updated');
     }
 
     // Send notifications to approvers (Destination Floor Manager & Super Admin)
@@ -1008,6 +1020,11 @@ class TransferService {
       newValue: { location: req.destPath },
       remarks: req.remarks || req.reason
     });
+
+    window.dispatchEvent(new CustomEvent('erp:transfers-updated'));
+    if (window.state && typeof window.state.emit === 'function') {
+      window.state.emit('transfers:updated');
+    }
 
     return updated;
   }

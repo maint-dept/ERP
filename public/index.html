@@ -16,11 +16,11 @@
   <link rel="dns-prefetch" href="https://firestore.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
 
-  <!-- Core ERP Stylesheets (Cache-Busted v4.7.5) -->
-  <link rel="stylesheet" href="css/app.css?v=4.7.5">
-  <link rel="stylesheet" href="css/grid.css?v=4.7.5">
-  <link rel="stylesheet" href="css/components.css?v=4.7.5">
-  <link rel="stylesheet" href="css/print.css?v=4.7.5">
+  <!-- Core ERP Stylesheets (Cache-Busted v4.7.6) -->
+  <link rel="stylesheet" href="css/app.css?v=4.7.6">
+  <link rel="stylesheet" href="css/grid.css?v=4.7.6">
+  <link rel="stylesheet" href="css/components.css?v=4.7.6">
+  <link rel="stylesheet" href="css/print.css?v=4.7.6">
 
   <!-- Deferred Heavy Third-Party Libraries (Non-Render Blocking) -->
   <!-- SheetJS (XLSX) Library for Excel Import & Export -->
@@ -157,16 +157,27 @@
     };
 
     // Auto cache flush on new deployment build version
-    var CURRENT_BUILD = '4.7.5';
-    if (localStorage.getItem('al_muslim_build_ver') !== CURRENT_BUILD) {
-      try { localStorage.removeItem('al_muslim_build_ver'); } catch(_) {}
+    var CURRENT_BUILD = '4.7.6';
+    var prevBuild = localStorage.getItem('al_muslim_build_ver');
+    if (prevBuild && prevBuild !== CURRENT_BUILD) {
       try { localStorage.removeItem('erp_last_active_tab'); } catch(_) {}
+      localStorage.setItem('al_muslim_build_ver', CURRENT_BUILD);
+      try {
+        if (window.caches) {
+          caches.keys().then(function(keys) {
+            keys.forEach(function(k) { caches.delete(k); });
+          });
+        }
+      } catch(_) {}
+      var base = window.location.origin + window.location.pathname;
+      window.location.replace(base + '?v=' + CURRENT_BUILD + '&_cb=' + Date.now() + window.location.hash);
+    } else {
       localStorage.setItem('al_muslim_build_ver', CURRENT_BUILD);
     }
   </script>
 
-  <!-- Main ES Module Application Entrypoint (Cache-Busted v4.7.5) -->
-  <script type="module" src="js/app.js?v=4.7.5"></script>
+  <!-- Main ES Module Application Entrypoint (Cache-Busted v4.7.6) -->
+  <script type="module" src="js/app.js?v=4.7.6"></script>
 
   <style>
     @keyframes spin {

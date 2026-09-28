@@ -52,6 +52,7 @@ export function renderReportsView() {
 
   const allMachines = machineService.getMachines({ limit: 'ALL' }).items || [];
   const allTransfers = transferService.getTransferRequests({ status: 'ALL' }) || [];
+  const completedTransfers = storage.getTable(TABLE_NAMES.TRANSFERS) || [];
   const allHistory = historyService.getMachineHistory() || [];
   const sparePartsMaster = historyService.getSparePartsMaster() || [];
   const etLabBoards = etLabService.getBoards() || [];
@@ -143,17 +144,17 @@ export function renderReportsView() {
 
       <!-- Tab Content Area (Scrollable flex 1) -->
       <div id="reports-tab-content" style="display: flex; flex-direction: column; gap: 14px; flex: 1; min-height: 0; overflow-y: auto;">
-        ${renderActiveTabHtml({ allMachines, allTransfers, replacementLogs, sparePartsMaster, etLabBoards, floors })}
+        ${renderActiveTabHtml({ allMachines, allTransfers, completedTransfers, replacementLogs, sparePartsMaster, etLabBoards, floors })}
       </div>
     </div>
   `;
 }
 
-function renderActiveTabHtml({ allMachines, allTransfers, replacementLogs, sparePartsMaster, etLabBoards, floors }) {
+function renderActiveTabHtml({ allMachines, allTransfers, completedTransfers, replacementLogs, sparePartsMaster, etLabBoards, floors }) {
   if (currentReportTab === 'machines') {
     return renderMachineReportsTab(allMachines, floors);
   } else if (currentReportTab === 'transfers') {
-    return renderTransferReportsTab(allTransfers);
+    return renderTransferReportsTab(allTransfers, completedTransfers || []);
   } else if (currentReportTab === 'spareparts') {
     return renderSparePartsReportsTab(replacementLogs, sparePartsMaster);
   } else if (currentReportTab === 'etlab') {
@@ -1075,16 +1076,142 @@ function renderMachineReportsTab(allMachines) {
 
 
 // 2. TRANSFER REPORTS TAB
-function renderTransferReportsTab(transfers) {
+// Builds a unified audit log from both TRANSFER_REQUESTS and TRANSFERS tables.
+// TRANSFER_REQUESTS = all states (pending/approved/completed/rejected).
+// TRANSFERS = permanent completed-transfer ledger written on final approval.
+// We merge both tables; for completed transfers the TRANSFERS record has flatter fields.
+function buildTransferAuditLog(allRequests, completedTransfers) {
+  const units  = storage.getTable(TABLE_NAMES.UNITS)  || [];
+  const floors = storage.getTable(TABLE_NAMES.FLOORS) || [];
+  const lines  = storage.getTable(TABLE_NAMES.LINES)  || [];
+
+  const unitMap  = new Map(units.map(u  => [u.id, u.name]));
+  const floorMap = new Map(floors.map(f => [f.id, f.name]));
+  const lineMap  = new Map(lines.map(l  => [l.id, l.name]));
+
+  // Resolve any location representation to a readable string (100% immune to [object Object])
+  function resolveLocation(locObj, unitId, floorId, lineId, path) {
+    if (path && typeof path === 'string' && path.trim() && path !== '[object Object]') return path;
+    if (locObj) {
+      if (typeof locObj === 'string' && locObj.trim() && locObj !== '[object Object]') return locObj;
+      if (typeof locObj === 'object') {
+        const parts = [locObj.unit, locObj.floor, locObj.line].filter(p => p && typeof p === 'string' && p.trim() && p !== '[object Object]');
+        if (parts.length) return parts.join(' > ');
+      }
+    }
+    const u = unitMap.get(unitId) || '';
+    const f = floorMap.get(floorId) || '';
+    const l = lineMap.get(lineId) || '';
+    const joined = [u, f, l].filter(Boolean).join(' > ');
+    return joined || '\u2014';
+  }
+
+  function resolveFloor(floorId, locObj) {
+    if (floorMap.has(floorId)) return floorMap.get(floorId);
+    if (locObj && typeof locObj === 'object' && typeof locObj.floor === 'string' && locObj.floor.trim()) return locObj.floor;
+    if (typeof locObj === 'string' && locObj.trim() && locObj !== '[object Object]') return locObj;
+    return '\u2014';
+  }
+
+  function resolveLine(lineId, locObj) {
+    if (lineMap.has(lineId)) return lineMap.get(lineId);
+    if (locObj && typeof locObj === 'object' && typeof locObj.line === 'string' && locObj.line.trim()) return locObj.line;
+    if (typeof locObj === 'string' && locObj.trim() && locObj !== '[object Object]') return locObj;
+    return '\u2014';
+  }
+
+  // Index completed transfer records by requestId for fast lookup
+  const completedMap = new Map();
+  (completedTransfers || []).forEach(ct => {
+    if (ct.requestId) completedMap.set(ct.requestId, ct);
+  });
+
+  const rows = [];
+  const seenRequestIds = new Set();
+
+  // Process all TRANSFER_REQUESTS as the primary source
+  (allRequests || []).forEach(req => {
+    seenRequestIds.add(req.id);
+    const ct = completedMap.get(req.id);
+    rows.push({
+      id:            req.requestNumber || req.id || '\u2014',
+      machineSerial: req.machineInfo?.serialNumber || req.serialNumber || req.machineSerial || ct?.serialNumber || ct?.machineSerial || '\u2014',
+      machineName:   req.machineInfo?.machineName  || req.machineName   || ct?.machineName   || '\u2014',
+      machineBrand:  req.machineInfo?.brand        || req.brandName     || '\u2014',
+      machineModel:  req.machineInfo?.model        || req.modelName     || '\u2014',
+      sourceLocation: resolveLocation(req.sourceLocation, req.sourceUnitId, req.sourceFloorId, req.sourceLineId, req.sourcePath),
+      destLocation:   resolveLocation(req.destLocation || req.targetLocation, req.destUnitId, req.destFloorId, req.destLineId, req.destPath),
+      prevFloor:     resolveFloor(req.sourceFloorId, req.sourceLocation),
+      newFloor:      resolveFloor(req.destFloorId,   req.destLocation || req.targetLocation),
+      prevLine:      resolveLine(req.sourceLineId,  req.sourceLocation),
+      newLine:       resolveLine(req.destLineId,    req.destLocation || req.targetLocation),
+      requestedAt:   req.requestedAt || ct?.transferredAt || '\u2014',
+      completedAt:   req.completedAt || ct?.completedAt   || null,
+      transferredBy: req.requestedByName  || ct?.transferredByName  || '\u2014',
+      approvedBy:    req.completedByName  || ct?.completedByName    || (req.approvalHistory || []).find(h => h.action === 'APPROVED' || h.action === 'FINAL_APPROVAL_COMPLETED')?.approverName || '\u2014',
+      reason:        req.reason   || ct?.reason   || '\u2014',
+      remarks:       req.remarks  || ct?.remarks  || '',
+      status:        req.status   || 'PENDING_APPROVAL'
+    });
+  });
+
+  // Add any completed TRANSFERS records that have no matching request (orphaned legacy records)
+  (completedTransfers || []).forEach(ct => {
+    if (!ct.requestId || !seenRequestIds.has(ct.requestId)) {
+      rows.push({
+        id:            ct.requestNumber || ct.id || '\u2014',
+        machineSerial: ct.serialNumber || ct.machineSerial || '\u2014',
+        machineName:   ct.machineName  || '\u2014',
+        machineBrand:  '\u2014', machineModel: '\u2014',
+        sourceLocation: resolveLocation(ct.sourceLocation, ct.sourceUnitId, ct.sourceFloorId, ct.sourceLineId, ct.sourcePath),
+        destLocation:   resolveLocation(ct.destLocation || ct.targetLocation, ct.destUnitId, ct.destFloorId, ct.destLineId, ct.destPath),
+        prevFloor:     floorMap.get(ct.sourceFloorId) || '\u2014',
+        newFloor:      floorMap.get(ct.destFloorId)   || '\u2014',
+        prevLine:      lineMap.get(ct.sourceLineId)   || '\u2014',
+        newLine:       lineMap.get(ct.destLineId)     || '\u2014',
+        requestedAt:   ct.transferredAt || ct.completedAt || '\u2014',
+        completedAt:   ct.completedAt   || null,
+        transferredBy: ct.transferredByName || '\u2014',
+        approvedBy:    ct.completedByName  || ct.approvedBy || '\u2014',
+        reason:        ct.reason  || '\u2014',
+        remarks:       ct.remarks || '',
+        status:        'COMPLETED'
+      });
+    }
+  });
+
+  // Sort most-recent first
+  rows.sort((a, b) => new Date(b.requestedAt || 0) - new Date(a.requestedAt || 0));
+  return rows;
+}
+
+function renderTransferReportsTab(allRequests, completedTransfers) {
+  const auditRows = buildTransferAuditLog(allRequests, completedTransfers);
+
+  const statusBadge = (status) => {
+    const map = {
+      'COMPLETED':          { cls: 'badge-active',    label: 'COMPLETED'  },
+      'APPROVED':           { cls: 'badge-active',    label: 'APPROVED'   },
+      'REJECTED':           { cls: 'badge-breakdown', label: 'REJECTED'   },
+      'CANCELLED':          { cls: 'badge-breakdown', label: 'CANCELLED'  },
+      'PENDING_APPROVAL':   { cls: 'badge-maint',     label: 'PENDING'    },
+      'PARTIALLY_APPROVED': { cls: 'badge-maint',     label: 'PARTIAL'    },
+      'REVISION_REQUESTED': { cls: 'badge-maint',     label: 'REVISION'   },
+    };
+    const s = map[status] || { cls: 'badge-maint', label: (status || '\u2014').replace(/_/g, ' ') };
+    return `<span class="badge ${s.cls}" style="font-size: 10px; padding: 2px 6px; white-space: nowrap;">${s.label}</span>`;
+  };
+
   return `
     <div style="display: flex; flex-direction: column; gap: 16px;">
+
       <!-- Action Bar -->
       <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 14px 18px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-        <div style="display: flex; gap: 10px; align-items: center;">
+        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
           <span style="font-size: 13px; font-weight: 700; color: #fff;">🔄 Machine Transfer &amp; Relocation Audit Log</span>
-          <span style="font-size: 12px; color: var(--text-muted);">(${transfers.length} records)</span>
+          <span style="font-size: 12px; color: var(--text-muted);">(${auditRows.length} record${auditRows.length !== 1 ? 's' : ''})</span>
+          <span style="font-size: 11px; color: #34d399; background: rgba(52,211,153,0.1); border: 1px solid rgba(52,211,153,0.3); border-radius: 4px; padding: 2px 8px; font-weight: 700;">🔴 Live Firebase Data</span>
         </div>
-
         <div style="display: flex; gap: 8px;">
           <button id="btn-export-transfer-report-excel" class="btn btn-secondary btn-sm" style="font-weight: 700;">
             📊 Export Transfers (Excel)
@@ -1092,39 +1219,66 @@ function renderTransferReportsTab(transfers) {
         </div>
       </div>
 
-      <!-- Table -->
+      <!-- Audit Log Table -->
       <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); overflow-x: auto; box-shadow: var(--shadow-sm);">
-        <table class="data-table" style="width: 100%; min-width: 980px; border-collapse: collapse; margin: 0;">
+        <table class="data-table" style="width: 100%; min-width: 1400px; border-collapse: collapse; margin: 0;">
           <thead>
-            <tr>
-              <th style="width: 48px; text-align: center;">SL</th>
-              <th style="width: 130px; text-align: left;">Tracking #</th>
-              <th style="width: 140px; text-align: left;">Machine Serial</th>
-              <th style="min-width: 180px; text-align: left;">Source Location</th>
-              <th style="min-width: 180px; text-align: left;">Destination Location</th>
-              <th style="text-align: center; width: 110px;">Status</th>
-              <th style="width: 120px; text-align: left;">Requested Date</th>
-              <th style="min-width: 180px; text-align: left;">Reason</th>
+            <tr style="background: rgba(15,23,42,0.95); border-bottom: 2px solid var(--border-color); font-size: 10.5px; text-transform: uppercase; color: #94a3b8; white-space: nowrap;">
+              <th style="width: 44px; text-align: center; padding: 9px 8px;">SL</th>
+              <th style="min-width: 140px; text-align: left; padding: 9px 10px;">Transfer ID / Ref #</th>
+              <th style="min-width: 130px; text-align: left; padding: 9px 10px;">Machine ID / Serial</th>
+              <th style="min-width: 120px; text-align: left; padding: 9px 10px;">Machine Name</th>
+              <th style="min-width: 180px; text-align: left; padding: 9px 10px;">Previous Location</th>
+              <th style="min-width: 180px; text-align: left; padding: 9px 10px;">New Location</th>
+              <th style="min-width: 100px; text-align: left; padding: 9px 10px;">Prev Floor</th>
+              <th style="min-width: 100px; text-align: left; padding: 9px 10px;">New Floor</th>
+              <th style="min-width: 100px; text-align: left; padding: 9px 10px;">Prev Line</th>
+              <th style="min-width: 100px; text-align: left; padding: 9px 10px;">New Line</th>
+              <th style="min-width: 145px; text-align: left; padding: 9px 10px;">Transfer Date &amp; Time</th>
+              <th style="min-width: 130px; text-align: left; padding: 9px 10px;">Transferred By</th>
+              <th style="min-width: 120px; text-align: center; padding: 9px 10px;">Status</th>
+              <th style="min-width: 180px; text-align: left; padding: 9px 10px;">Reason / Notes</th>
             </tr>
           </thead>
           <tbody>
-            ${transfers.length === 0 ? `
-              <tr><td colspan="8" style="text-align: center; padding: 30px; color: var(--text-muted);">No transfer records found.</td></tr>
-            ` : transfers.map((t, idx) => {
-    const stBadge = t.status === 'COMPLETED' ? 'badge-active' : (t.status === 'APPROVED' ? 'badge-active' : (t.status === 'REJECTED' ? 'badge-breakdown' : 'badge-maint'));
-    return `
+            ${auditRows.length === 0 ? `
+              <tr>
+                <td colspan="14" style="text-align: center; padding: 40px; color: var(--text-muted);">
+                  <div style="font-size: 32px; margin-bottom: 8px;">🚫</div>
+                  <div style="font-size: 14px; font-weight: 700; color: #fff; margin-bottom: 4px;">No Transfer Records Found</div>
+                  <div style="font-size: 12px;">Transfer records will appear here in real time after a machine is transferred.</div>
+                </td>
+              </tr>
+            ` : auditRows.map((row, idx) => {
+              const dateStr = row.requestedAt && row.requestedAt !== '\u2014'
+                ? (() => {
+                    try {
+                      const d = new Date(row.requestedAt);
+                      return d.toLocaleDateString('en-GB') + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    } catch (_) { return row.requestedAt; }
+                  })()
+                : '\u2014';
+              const reasonStr = row.reason || '\u2014';
+              const remarksStr = row.remarks ? ` <span style="color: #64748b;">(${row.remarks})</span>` : '';
+              return `
                 <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);" class="hover-row">
-                  <td style="text-align: center; color: var(--text-muted); font-weight: 700;">${idx + 1}</td>
-                  <td style="font-family: var(--font-mono); font-weight: 700; color: #38bdf8; white-space: nowrap;">${t.trackingNumber || t.id}</td>
-                  <td style="font-family: var(--font-mono); font-weight: 700; color: #fff; white-space: nowrap;">${t.machineSerial || t.serialNumber || '—'}</td>
-                  <td style="font-size: 12px; color: #cbd5e1;">${t.sourceFloorName || t.sourceLocation || '—'}</td>
-                  <td style="font-size: 12px; color: #cbd5e1;">${t.targetFloorName || t.targetLocation || '—'}</td>
-                  <td style="text-align: center; white-space: nowrap;"><span class="badge ${stBadge}">${t.status}</span></td>
-                  <td style="font-size: 12px; white-space: nowrap;">${t.requestedAt ? t.requestedAt.split('T')[0] : (t.requestDate || '—')}</td>
-                  <td style="font-size: 12px; color: var(--text-secondary);">${t.reason || '—'}</td>
+                  <td style="text-align: center; color: var(--text-muted); font-weight: 700; padding: 8px;">${idx + 1}</td>
+                  <td style="font-family: var(--font-mono); font-weight: 800; color: #38bdf8; white-space: nowrap; padding: 8px 10px; font-size: 11.5px;">${row.id}</td>
+                  <td style="font-family: var(--font-mono); font-weight: 700; color: #fff; white-space: nowrap; padding: 8px 10px; font-size: 11.5px;">${row.machineSerial}</td>
+                  <td style="font-weight: 600; color: #e2e8f0; padding: 8px 10px; font-size: 11.5px; white-space: nowrap;">${row.machineName}</td>
+                  <td style="font-size: 11px; color: #94a3b8; padding: 8px 10px; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${row.sourceLocation}">${row.sourceLocation}</td>
+                  <td style="font-size: 11px; color: #86efac; font-weight: 600; padding: 8px 10px; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${row.destLocation}">${row.destLocation}</td>
+                  <td style="font-size: 11.5px; color: #94a3b8; padding: 8px 10px; white-space: nowrap;">${row.prevFloor}</td>
+                  <td style="font-size: 11.5px; color: #86efac; font-weight: 600; padding: 8px 10px; white-space: nowrap;">${row.newFloor}</td>
+                  <td style="font-size: 11.5px; color: #94a3b8; padding: 8px 10px; white-space: nowrap;">${row.prevLine}</td>
+                  <td style="font-size: 11.5px; color: #86efac; font-weight: 600; padding: 8px 10px; white-space: nowrap;">${row.newLine}</td>
+                  <td style="font-family: var(--font-mono); font-size: 11px; color: #fbbf24; padding: 8px 10px; white-space: nowrap;">${dateStr}</td>
+                  <td style="font-size: 11.5px; color: #c084fc; font-weight: 600; padding: 8px 10px; white-space: nowrap;">${row.transferredBy}</td>
+                  <td style="text-align: center; padding: 8px;">${statusBadge(row.status)}</td>
+                  <td style="font-size: 11px; color: #94a3b8; padding: 8px 10px; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${reasonStr}">${reasonStr}${remarksStr}</td>
                 </tr>
               `;
-  }).join('')}
+            }).join('')}
           </tbody>
         </table>
       </div>
@@ -1655,13 +1809,14 @@ export function initReportsEvents() {
     if (tabContent) {
       const allMachines = machineService.getMachines({ limit: 'ALL' }).items || [];
       const allTransfers = transferService.getTransferRequests({ status: 'ALL' }) || [];
+      const completedTransfers = storage.getTable(TABLE_NAMES.TRANSFERS) || [];
       const allHistory = historyService.getMachineHistory() || [];
       const sparePartsMaster = historyService.getSparePartsMaster() || [];
       const etLabBoards = etLabService.getBoards() || [];
       const floors = storage.getTable(TABLE_NAMES.FLOORS) || [];
       const replacementLogs = allHistory.filter(h => h.actionType === 'SPARE_PART_REPLACEMENT' || h.sparePart);
 
-      tabContent.innerHTML = renderActiveTabHtml({ allMachines, allTransfers, replacementLogs, sparePartsMaster, etLabBoards, floors });
+      tabContent.innerHTML = renderActiveTabHtml({ allMachines, allTransfers, completedTransfers, replacementLogs, sparePartsMaster, etLabBoards, floors });
       initReportsEvents();
     } else {
       refreshReportsView();
@@ -2039,6 +2194,36 @@ export function initReportsEvents() {
       });
     });
   }
+
+  // Real-time Firebase & local listeners for Transfer Reports tab —
+  // Fires when any device writes to TRANSFERS or TRANSFER_REQUESTS in Firestore or locally.
+  const handleTransfersUpdated = () => {
+    if (currentReportTab === 'transfers') {
+      const tabContent = document.getElementById('reports-tab-content');
+      if (tabContent) {
+        const allMachines = machineService.getMachines({ limit: 'ALL' }).items || [];
+        const allTransfers = transferService.getTransferRequests({ status: 'ALL' }) || [];
+        const completedTransfers = storage.getTable(TABLE_NAMES.TRANSFERS) || [];
+        const allHistory = historyService.getMachineHistory() || [];
+        const sparePartsMaster = historyService.getSparePartsMaster() || [];
+        const etLabBoards = etLabService.getBoards() || [];
+        const floors = storage.getTable(TABLE_NAMES.FLOORS) || [];
+        const replacementLogs = allHistory.filter(h => h.actionType === 'SPARE_PART_REPLACEMENT' || h.sparePart);
+        tabContent.innerHTML = renderActiveTabHtml({ allMachines, allTransfers, completedTransfers, replacementLogs, sparePartsMaster, etLabBoards, floors });
+        initReportsEvents();
+      }
+    }
+  };
+
+  if (window._reportsTransferListener) {
+    window.removeEventListener('erp:transfers-updated', window._reportsTransferListener);
+    window.removeEventListener('erp:inventory-updated', window._reportsTransferListener);
+    window.removeEventListener('erp:storage-updated', window._reportsTransferListener);
+  }
+  window._reportsTransferListener = handleTransfersUpdated;
+  window.addEventListener('erp:transfers-updated', handleTransfersUpdated);
+  window.addEventListener('erp:inventory-updated', handleTransfersUpdated);
+  window.addEventListener('erp:storage-updated', handleTransfersUpdated);
 
   // Transfer Report Excel Export
   const btnExpTrans = document.getElementById('btn-export-transfer-report-excel');

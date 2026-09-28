@@ -1089,25 +1089,35 @@ function buildTransferAuditLog(allRequests, completedTransfers) {
   const floorMap = new Map(floors.map(f => [f.id, f.name]));
   const lineMap  = new Map(lines.map(l  => [l.id, l.name]));
 
-  // Resolve any location representation to a readable string
+  // Resolve any location representation to a readable string (100% immune to [object Object])
   function resolveLocation(locObj, unitId, floorId, lineId, path) {
-    if (path && typeof path === 'string') return path;
-    if (locObj && typeof locObj === 'object') {
-      const parts = [locObj.unit, locObj.floor, locObj.line].filter(Boolean);
-      if (parts.length) return parts.join(' > ');
+    if (path && typeof path === 'string' && path.trim() && path !== '[object Object]') return path;
+    if (locObj) {
+      if (typeof locObj === 'string' && locObj.trim() && locObj !== '[object Object]') return locObj;
+      if (typeof locObj === 'object') {
+        const parts = [locObj.unit, locObj.floor, locObj.line].filter(p => p && typeof p === 'string' && p.trim() && p !== '[object Object]');
+        if (parts.length) return parts.join(' > ');
+      }
     }
     const u = unitMap.get(unitId) || '';
     const f = floorMap.get(floorId) || '';
     const l = lineMap.get(lineId) || '';
-    return [u, f, l].filter(Boolean).join(' > ') || '\u2014';
+    const joined = [u, f, l].filter(Boolean).join(' > ');
+    return joined || '\u2014';
   }
 
   function resolveFloor(floorId, locObj) {
-    return floorMap.get(floorId) || (locObj && typeof locObj === 'object' ? locObj.floor : null) || '\u2014';
+    if (floorMap.has(floorId)) return floorMap.get(floorId);
+    if (locObj && typeof locObj === 'object' && typeof locObj.floor === 'string' && locObj.floor.trim()) return locObj.floor;
+    if (typeof locObj === 'string' && locObj.trim() && locObj !== '[object Object]') return locObj;
+    return '\u2014';
   }
 
   function resolveLine(lineId, locObj) {
-    return lineMap.get(lineId) || (locObj && typeof locObj === 'object' ? locObj.line : null) || '\u2014';
+    if (lineMap.has(lineId)) return lineMap.get(lineId);
+    if (locObj && typeof locObj === 'object' && typeof locObj.line === 'string' && locObj.line.trim()) return locObj.line;
+    if (typeof locObj === 'string' && locObj.trim() && locObj !== '[object Object]') return locObj;
+    return '\u2014';
   }
 
   // Index completed transfer records by requestId for fast lookup
@@ -1125,16 +1135,16 @@ function buildTransferAuditLog(allRequests, completedTransfers) {
     const ct = completedMap.get(req.id);
     rows.push({
       id:            req.requestNumber || req.id || '\u2014',
-      machineSerial: req.machineInfo?.serialNumber || req.serialNumber || ct?.serialNumber || '\u2014',
-      machineName:   req.machineInfo?.machineName  || ct?.machineName  || '\u2014',
-      machineBrand:  req.machineInfo?.brand        || '\u2014',
-      machineModel:  req.machineInfo?.model        || '\u2014',
+      machineSerial: req.machineInfo?.serialNumber || req.serialNumber || req.machineSerial || ct?.serialNumber || ct?.machineSerial || '\u2014',
+      machineName:   req.machineInfo?.machineName  || req.machineName   || ct?.machineName   || '\u2014',
+      machineBrand:  req.machineInfo?.brand        || req.brandName     || '\u2014',
+      machineModel:  req.machineInfo?.model        || req.modelName     || '\u2014',
       sourceLocation: resolveLocation(req.sourceLocation, req.sourceUnitId, req.sourceFloorId, req.sourceLineId, req.sourcePath),
-      destLocation:   resolveLocation(req.destLocation,   req.destUnitId,   req.destFloorId,   req.destLineId,   req.destPath),
+      destLocation:   resolveLocation(req.destLocation || req.targetLocation, req.destUnitId, req.destFloorId, req.destLineId, req.destPath),
       prevFloor:     resolveFloor(req.sourceFloorId, req.sourceLocation),
-      newFloor:      resolveFloor(req.destFloorId,   req.destLocation),
+      newFloor:      resolveFloor(req.destFloorId,   req.destLocation || req.targetLocation),
       prevLine:      resolveLine(req.sourceLineId,  req.sourceLocation),
-      newLine:       resolveLine(req.destLineId,    req.destLocation),
+      newLine:       resolveLine(req.destLineId,    req.destLocation || req.targetLocation),
       requestedAt:   req.requestedAt || ct?.transferredAt || '\u2014',
       completedAt:   req.completedAt || ct?.completedAt   || null,
       transferredBy: req.requestedByName  || ct?.transferredByName  || '\u2014',
@@ -1150,11 +1160,11 @@ function buildTransferAuditLog(allRequests, completedTransfers) {
     if (!ct.requestId || !seenRequestIds.has(ct.requestId)) {
       rows.push({
         id:            ct.requestNumber || ct.id || '\u2014',
-        machineSerial: ct.serialNumber  || '\u2014',
-        machineName:   ct.machineName   || '\u2014',
+        machineSerial: ct.serialNumber || ct.machineSerial || '\u2014',
+        machineName:   ct.machineName  || '\u2014',
         machineBrand:  '\u2014', machineModel: '\u2014',
-        sourceLocation: resolveLocation(null, ct.sourceUnitId, ct.sourceFloorId, ct.sourceLineId, ct.sourcePath),
-        destLocation:   resolveLocation(null, ct.destUnitId,   ct.destFloorId,   ct.destLineId,   ct.destPath),
+        sourceLocation: resolveLocation(ct.sourceLocation, ct.sourceUnitId, ct.sourceFloorId, ct.sourceLineId, ct.sourcePath),
+        destLocation:   resolveLocation(ct.destLocation || ct.targetLocation, ct.destUnitId, ct.destFloorId, ct.destLineId, ct.destPath),
         prevFloor:     floorMap.get(ct.sourceFloorId) || '\u2014',
         newFloor:      floorMap.get(ct.destFloorId)   || '\u2014',
         prevLine:      lineMap.get(ct.sourceLineId)   || '\u2014',
@@ -2185,13 +2195,9 @@ export function initReportsEvents() {
     });
   }
 
-  // Real-time Firebase listener for Transfer Reports tab —
-  // Fires when any device writes to TRANSFERS or TRANSFER_REQUESTS in Firestore.
-  // Remove any stale listener before attaching a new one.
-  if (window._reportsTransferListener) {
-    window.removeEventListener('erp:transfers-updated', window._reportsTransferListener);
-  }
-  window._reportsTransferListener = () => {
+  // Real-time Firebase & local listeners for Transfer Reports tab —
+  // Fires when any device writes to TRANSFERS or TRANSFER_REQUESTS in Firestore or locally.
+  const handleTransfersUpdated = () => {
     if (currentReportTab === 'transfers') {
       const tabContent = document.getElementById('reports-tab-content');
       if (tabContent) {
@@ -2208,7 +2214,16 @@ export function initReportsEvents() {
       }
     }
   };
-  window.addEventListener('erp:transfers-updated', window._reportsTransferListener);
+
+  if (window._reportsTransferListener) {
+    window.removeEventListener('erp:transfers-updated', window._reportsTransferListener);
+    window.removeEventListener('erp:inventory-updated', window._reportsTransferListener);
+    window.removeEventListener('erp:storage-updated', window._reportsTransferListener);
+  }
+  window._reportsTransferListener = handleTransfersUpdated;
+  window.addEventListener('erp:transfers-updated', handleTransfersUpdated);
+  window.addEventListener('erp:inventory-updated', handleTransfersUpdated);
+  window.addEventListener('erp:storage-updated', handleTransfersUpdated);
 
   // Transfer Report Excel Export
   const btnExpTrans = document.getElementById('btn-export-transfer-report-excel');
