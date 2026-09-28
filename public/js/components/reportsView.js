@@ -1211,10 +1211,7 @@ function filterTransferAuditRows(allRows) {
     // Status
     if (transferReportFilterState.status !== 'ALL') {
       const st = (r.status || '').toUpperCase();
-      if (transferReportFilterState.status === 'COMPLETED' && st !== 'COMPLETED' && st !== 'APPROVED') return false;
-      if (transferReportFilterState.status === 'REJECTED' && st !== 'REJECTED') return false;
-      if (transferReportFilterState.status === 'CANCELLED' && st !== 'CANCELLED') return false;
-      if (transferReportFilterState.status === 'PENDING' && st !== 'PENDING_APPROVAL' && st !== 'PARTIALLY_APPROVED' && st !== 'REVISION_REQUESTED') return false;
+      if (st !== transferReportFilterState.status) return false;
     }
 
     // Transferred By
@@ -1327,9 +1324,14 @@ function renderTransferReportsTab(allRequests, completedTransfers) {
 
   const distinctPrevFloors = Array.from(new Set(allAuditRows.map(r => r.prevFloor).filter(f => f && f !== '\u2014'))).sort();
   const distinctNewFloors = Array.from(new Set(allAuditRows.map(r => r.newFloor).filter(f => f && f !== '\u2014'))).sort();
-  const distinctPrevLines = Array.from(new Set(allAuditRows.map(r => r.prevLine).filter(l => l && l !== '\u2014'))).sort();
-  const distinctNewLines = Array.from(new Set(allAuditRows.map(r => r.newLine).filter(l => l && l !== '\u2014'))).sort();
+  const distinctPrevLines = Array.from(new Set(allAuditRows
+      .filter(r => !transferReportFilterState.prevFloor || r.prevFloor === transferReportFilterState.prevFloor)
+      .map(r => r.prevLine).filter(l => l && l !== '\u2014'))).sort();
+  const distinctNewLines = Array.from(new Set(allAuditRows
+      .filter(r => !transferReportFilterState.newFloor || r.newFloor === transferReportFilterState.newFloor)
+      .map(r => r.newLine).filter(l => l && l !== '\u2014'))).sort();
   const distinctUsers = Array.from(new Set(allAuditRows.map(r => r.transferredBy).filter(u => u && u !== '\u2014'))).sort();
+  const distinctStatuses = Array.from(new Set(allAuditRows.map(r => r.status).filter(s => s && s !== '\u2014'))).sort();
 
   // KPI Metrics Counts
   const totalCount = allAuditRows.length;
@@ -1529,11 +1531,8 @@ function renderTransferReportsTab(allRequests, completedTransfers) {
             <div class="filter-group">
               <label class="filter-label" style="font-size: 10px; font-weight: 700; color: #cbd5e1; margin-bottom: 2px;">Status</label>
               <select id="tr-filter-status" class="filter-select" style="height: 34px; font-size: 11.5px; width: 100%;">
-                <option value="ALL" ${transferReportFilterState.status === 'ALL' ? 'selected' : ''}>All Statuses</option>
-                <option value="COMPLETED" ${transferReportFilterState.status === 'COMPLETED' ? 'selected' : ''}>🟢 Completed</option>
-                <option value="PENDING" ${transferReportFilterState.status === 'PENDING' ? 'selected' : ''}>🟡 Pending Approval</option>
-                <option value="REJECTED" ${transferReportFilterState.status === 'REJECTED' ? 'selected' : ''}>🔴 Rejected</option>
-                <option value="CANCELLED" ${transferReportFilterState.status === 'CANCELLED' ? 'selected' : ''}>⚪ Cancelled</option>
+                <option value="ALL" ${transferReportFilterState.status === 'ALL' ? 'selected' : ''}>All Statuses (${distinctStatuses.length})</option>
+                ${distinctStatuses.map(s => `<option value="${s.toUpperCase()}" ${transferReportFilterState.status === s.toUpperCase() ? 'selected' : ''}>${s.replace(/_/g, ' ')}</option>`).join('')}
               </select>
             </div>
 
@@ -2790,6 +2789,7 @@ export function initReportsEvents() {
   if (trPrevFlr) {
     trPrevFlr.addEventListener('change', (e) => {
       transferReportFilterState.prevFloor = e.target.value;
+      transferReportFilterState.prevLine = ''; // cascade clear
       transferReportFilterState.page = 1;
       refreshTransferReportsTabInPlace();
     });
@@ -2799,6 +2799,7 @@ export function initReportsEvents() {
   if (trNewFlr) {
     trNewFlr.addEventListener('change', (e) => {
       transferReportFilterState.newFloor = e.target.value;
+      transferReportFilterState.newLine = ''; // cascade clear
       transferReportFilterState.page = 1;
       refreshTransferReportsTabInPlace();
     });
