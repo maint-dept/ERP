@@ -64,14 +64,14 @@ export function renderDashboard() {
   return `
     <div class="page-view">
       <!-- Title Bar -->
-      <div style="display: flex; justify-content: space-between; align-items: center;">
-        <div>
-          <h1 style="font-size: 22px; font-weight: 800; color: #fff;">📊 Central Maintenance KPI & Equipment Analytics</h1>
-          <p style="font-size: 12.5px; color: var(--text-secondary);">
+      <div class="view-header-row" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+        <div style="min-width: 0; flex: 1;">
+          <h1 style="font-size: 20px; font-weight: 800; color: #fff; margin: 0 0 4px 0; word-break: break-word;">📊 Central Maintenance KPI & Equipment Analytics</h1>
+          <p style="font-size: 12px; color: var(--text-secondary); margin: 0;">
             Real-time physical asset health across Groups, Factories, Floors, and Production Lines.
           </p>
         </div>
-        <div style="display: flex; gap: 8px;">
+        <div class="view-header-actions" style="display: flex; gap: 8px; flex-wrap: wrap;">
           <button id="btn-dash-inventory" class="btn btn-primary btn-sm">🧵 Open Inventory Grid</button>
         </div>
       </div>
@@ -120,7 +120,7 @@ export function renderDashboard() {
       </div>
 
       <!-- Equipment Distribution Breakdown Grid -->
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px;">
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 14px;">
         <!-- Card 1: Machine Name-wise Distribution -->
         <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 18px;">
           <h3 style="font-size: 15px; font-weight: 700; color: #38bdf8; margin-bottom: 12px; display: flex; justify-content: space-between;">

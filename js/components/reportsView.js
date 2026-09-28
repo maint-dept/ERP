@@ -68,7 +68,7 @@ export function renderReportsView() {
       <div class="reports-top-bar" style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 12px 18px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; flex-shrink: 0;">
         <div style="min-width: 0;">
           <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-            <span style="font-size: 22px;">📊</span>
+            <span style="font-size: 20px;">📊</span>
             <h1 style="font-size: 18px; font-weight: 800; color: #fff; margin: 0; white-space: nowrap;">
               Reports &amp; Excel Export Center
             </h1>
@@ -308,29 +308,29 @@ function renderEtLabReportsTab(boards) {
       
       <!-- Top Metrics KPIs -->
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px;">
-        <div style="background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 8px; padding: 12px 16px;">
+        <div style="background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 8px; padding: 8px 12px;">
           <div style="font-size: 11px; font-weight: 700; color: #38bdf8; text-transform: uppercase;">Total Matching Boards</div>
-          <div style="font-size: 22px; font-weight: 800; color: #fff; margin-top: 4px;">${filteredRows.length} Units</div>
+          <div style="font-size: 20px; font-weight: 800; color: #fff; margin-top: 4px;">${filteredRows.length} Units</div>
         </div>
 
-        <div style="background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 8px; padding: 12px 16px;">
+        <div style="background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 8px; padding: 8px 12px;">
           <div style="font-size: 11px; font-weight: 700; color: #34d399; text-transform: uppercase;">Installed on Machine</div>
-          <div style="font-size: 22px; font-weight: 800; color: #34d399; margin-top: 4px;">${filteredRows.filter(r => r.status === 'INSTALLED').length} Units</div>
+          <div style="font-size: 20px; font-weight: 800; color: #34d399; margin-top: 4px;">${filteredRows.filter(r => r.status === 'INSTALLED').length} Units</div>
         </div>
 
-        <div style="background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(2, 132, 199, 0.3); border-radius: 8px; padding: 12px 16px;">
+        <div style="background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(2, 132, 199, 0.3); border-radius: 8px; padding: 8px 12px;">
           <div style="font-size: 11px; font-weight: 700; color: #38bdf8; text-transform: uppercase;">Available Spares</div>
-          <div style="font-size: 22px; font-weight: 800; color: #38bdf8; margin-top: 4px;">${filteredRows.filter(r => r.status === 'AVAILABLE_SPARE' || r.status === 'REPAIR_ACCEPTED').length} Units</div>
+          <div style="font-size: 20px; font-weight: 800; color: #38bdf8; margin-top: 4px;">${filteredRows.filter(r => r.status === 'AVAILABLE_SPARE' || r.status === 'REPAIR_ACCEPTED').length} Units</div>
         </div>
 
-        <div style="background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 8px; padding: 12px 16px;">
+        <div style="background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 8px; padding: 8px 12px;">
           <div style="font-size: 11px; font-weight: 700; color: #fbbf24; text-transform: uppercase;">Under In-House Repair</div>
-          <div style="font-size: 22px; font-weight: 800; color: #fbbf24; margin-top: 4px;">${filteredRows.filter(r => r.status === 'UNDER_INHOUSE_REPAIR' || r.status === 'REPAIR_REJECTED').length} Units</div>
+          <div style="font-size: 20px; font-weight: 800; color: #fbbf24; margin-top: 4px;">${filteredRows.filter(r => r.status === 'UNDER_INHOUSE_REPAIR' || r.status === 'REPAIR_REJECTED').length} Units</div>
         </div>
 
-        <div style="background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px; padding: 12px 16px;">
+        <div style="background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px; padding: 8px 12px;">
           <div style="font-size: 11px; font-weight: 700; color: #f87171; text-transform: uppercase;">Sent to External Co.</div>
-          <div style="font-size: 22px; font-weight: 800; color: #f87171; margin-top: 4px;">${filteredRows.filter(r => r.status === 'SENT_EXTERNAL').length} Units</div>
+          <div style="font-size: 20px; font-weight: 800; color: #f87171; margin-top: 4px;">${filteredRows.filter(r => r.status === 'SENT_EXTERNAL').length} Units</div>
         </div>
       </div>
 
@@ -985,7 +985,7 @@ function renderMachineReportsTab(allMachines) {
       <!-- 3. Top Overall Summary Cards (Running | Usable Idle | Repairable Idle | Total) -->
       <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;">
         
-        <div style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.85)); border: 1px solid rgba(52, 211, 153, 0.3); border-top: 3px solid #10b981; border-radius: var(--radius-md); padding: 12px 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.25);">
+        <div style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.85)); border: 1px solid rgba(52, 211, 153, 0.3); border-top: 3px solid #10b981; border-radius: var(--radius-md); padding: 8px 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.25);">
           <div style="display: flex; justify-content: space-between; align-items: center;">
             <span style="font-size: 11px; color: #34d399; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">🟢 Running Machines</span>
             <span class="badge badge-active" style="font-size: 10px; padding: 1px 6px;">Operational</span>
@@ -994,7 +994,7 @@ function renderMachineReportsTab(allMachines) {
           <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">${activeRate}% of total machinery deployed</div>
         </div>
 
-        <div style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.85)); border: 1px solid rgba(56, 189, 248, 0.3); border-top: 3px solid #0284c7; border-radius: var(--radius-md); padding: 12px 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.25);">
+        <div style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.85)); border: 1px solid rgba(56, 189, 248, 0.3); border-top: 3px solid #0284c7; border-radius: var(--radius-md); padding: 8px 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.25);">
           <div style="display: flex; justify-content: space-between; align-items: center;">
             <span style="font-size: 11px; color: #38bdf8; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">🔵 Usable Idle</span>
             <span class="badge badge-idle" style="font-size: 10px; padding: 1px 6px;">Standby</span>
@@ -1003,7 +1003,7 @@ function renderMachineReportsTab(allMachines) {
           <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">Standby machines ready for lines</div>
         </div>
 
-        <div style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.85)); border: 1px solid rgba(251, 191, 36, 0.3); border-top: 3px solid #f59e0b; border-radius: var(--radius-md); padding: 12px 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.25);">
+        <div style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.85)); border: 1px solid rgba(251, 191, 36, 0.3); border-top: 3px solid #f59e0b; border-radius: var(--radius-md); padding: 8px 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.25);">
           <div style="display: flex; justify-content: space-between; align-items: center;">
             <span style="font-size: 11px; color: #fbbf24; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">🟡 Repairable Idle</span>
             <span class="badge badge-maint" style="font-size: 10px; padding: 1px 6px;">Servicing</span>
@@ -1012,7 +1012,7 @@ function renderMachineReportsTab(allMachines) {
           <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">Under scheduled servicing or repair</div>
         </div>
 
-        <div style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.85)); border: 1px solid rgba(148, 163, 184, 0.3); border-top: 3px solid #38bdf8; border-radius: var(--radius-md); padding: 12px 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.25);">
+        <div style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.85)); border: 1px solid rgba(148, 163, 184, 0.3); border-top: 3px solid #38bdf8; border-radius: var(--radius-md); padding: 8px 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.25);">
           <div style="display: flex; justify-content: space-between; align-items: center;">
             <span style="font-size: 11px; color: #e2e8f0; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">🏭 Total Machinery</span>
             <span class="badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; font-size: 10px; padding: 1px 6px; border: 1px solid rgba(56, 189, 248, 0.3);">Enterprise</span>
@@ -1037,7 +1037,7 @@ function renderMachineReportsTab(allMachines) {
           <span style="font-size: 12px; color: #cbd5e1; font-weight: 600;">Auto-calculated dynamically from Machine Inventory</span>
         </div>
 
-        <div style="overflow-x: auto;">
+        <div class="responsive-table-wrapper">
           <table class="mach-summary-table">
             <thead>
               <tr>
@@ -1211,10 +1211,7 @@ function filterTransferAuditRows(allRows) {
     // Status
     if (transferReportFilterState.status !== 'ALL') {
       const st = (r.status || '').toUpperCase();
-      if (transferReportFilterState.status === 'COMPLETED' && st !== 'COMPLETED' && st !== 'APPROVED') return false;
-      if (transferReportFilterState.status === 'REJECTED' && st !== 'REJECTED') return false;
-      if (transferReportFilterState.status === 'CANCELLED' && st !== 'CANCELLED') return false;
-      if (transferReportFilterState.status === 'PENDING' && st !== 'PENDING_APPROVAL' && st !== 'PARTIALLY_APPROVED' && st !== 'REVISION_REQUESTED') return false;
+      if (st !== transferReportFilterState.status) return false;
     }
 
     // Transferred By
@@ -1320,16 +1317,22 @@ function renderTransferReportsTab(allRequests, completedTransfers) {
   const { paginatedRows, totalPages, currentPage, startIdx, endIdx } = paginateTransferAuditRows(sortedRows);
 
   // Extract distinct values for dropdown filters
-  const groups = masterDataService.getGroups() || [];
-  const units = masterDataService.getUnits(transferReportFilterState.groupId) || [];
-  const floors = masterDataService.getFloors(transferReportFilterState.unitId, transferReportFilterState.groupId) || [];
-  const lines = masterDataService.getLines(transferReportFilterState.floorId, transferReportFilterState.unitId, transferReportFilterState.groupId) || [];
+  const allLocationStrings = allAuditRows.flatMap(r => [r.sourceLocation, r.destLocation]).filter(Boolean).join('|||');
+  const groups = (masterDataService.getGroups() || []).filter(g => allLocationStrings.includes(g.name));
+  const units = (masterDataService.getUnits(transferReportFilterState.groupId) || []).filter(u => allLocationStrings.includes(u.name));
+  const floors = (masterDataService.getFloors(transferReportFilterState.unitId, transferReportFilterState.groupId) || []).filter(f => allLocationStrings.includes(f.name));
+  const lines = (masterDataService.getLines(transferReportFilterState.floorId, transferReportFilterState.unitId, transferReportFilterState.groupId) || []).filter(l => allLocationStrings.includes(l.name));
 
   const distinctPrevFloors = Array.from(new Set(allAuditRows.map(r => r.prevFloor).filter(f => f && f !== '\u2014'))).sort();
   const distinctNewFloors = Array.from(new Set(allAuditRows.map(r => r.newFloor).filter(f => f && f !== '\u2014'))).sort();
-  const distinctPrevLines = Array.from(new Set(allAuditRows.map(r => r.prevLine).filter(l => l && l !== '\u2014'))).sort();
-  const distinctNewLines = Array.from(new Set(allAuditRows.map(r => r.newLine).filter(l => l && l !== '\u2014'))).sort();
+  const distinctPrevLines = Array.from(new Set(allAuditRows
+      .filter(r => !transferReportFilterState.prevFloor || r.prevFloor === transferReportFilterState.prevFloor)
+      .map(r => r.prevLine).filter(l => l && l !== '\u2014'))).sort();
+  const distinctNewLines = Array.from(new Set(allAuditRows
+      .filter(r => !transferReportFilterState.newFloor || r.newFloor === transferReportFilterState.newFloor)
+      .map(r => r.newLine).filter(l => l && l !== '\u2014'))).sort();
   const distinctUsers = Array.from(new Set(allAuditRows.map(r => r.transferredBy).filter(u => u && u !== '\u2014'))).sort();
+  const distinctStatuses = Array.from(new Set(allAuditRows.map(r => r.status).filter(s => s && s !== '\u2014'))).sort();
 
   // KPI Metrics Counts
   const totalCount = allAuditRows.length;
@@ -1358,220 +1361,166 @@ function renderTransferReportsTab(allRequests, completedTransfers) {
   };
 
   return `
-    <div style="display: flex; flex-direction: column; gap: 14px; width: 100%;">
+    <div style="display: flex; flex-direction: column; gap: 10px; width: 100%;">
 
-      <!-- 1. TOP SUMMARY KPI CARDS -->
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px;">
+      <!-- 1. COMPACT INLINE KPI BAR + ACTION BUTTONS -->
+      <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 8px 14px; box-shadow: var(--shadow-sm);">
         
-        <div class="tr-kpi-card" data-tr-kpi-status="ALL" style="background: rgba(15, 23, 42, 0.85); border: 1.5px solid ${transferReportFilterState.status === 'ALL' ? '#38bdf8' : 'rgba(56, 189, 248, 0.25)'}; border-radius: 8px; padding: 12px 16px; cursor: pointer; transition: all 0.2s;" title="Click to show all records">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 11px; font-weight: 700; color: #38bdf8; text-transform: uppercase;">🔄 Total Transfers</span>
-            <span style="font-size: 14px;">📋</span>
+        <!-- KPI Chips (clickable status filters) -->
+        <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+          <div class="tr-kpi-card" data-tr-kpi-status="ALL" style="display:flex;align-items:center;gap:6px;background:${transferReportFilterState.status === 'ALL' ? 'rgba(56,189,248,0.15)' : 'rgba(56,189,248,0.05)'};border:1.5px solid ${transferReportFilterState.status === 'ALL' ? '#38bdf8' : 'rgba(56,189,248,0.2)'};border-radius:20px;padding:3px 12px;cursor:pointer;transition:all 0.2s;" title="All Transfers">
+            <span style="font-size:10px;font-weight:700;color:#38bdf8;">ALL</span>
+            <span style="font-size:15px;font-weight:800;color:#fff;">${totalCount}</span>
           </div>
-          <div style="font-size: 22px; font-weight: 800; color: #fff; margin-top: 4px;">${totalCount}</div>
-          <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">${filteredRows.length} matching filters</div>
+          <div class="tr-kpi-card" data-tr-kpi-status="COMPLETED" style="display:flex;align-items:center;gap:6px;background:${transferReportFilterState.status === 'COMPLETED' ? 'rgba(52,211,153,0.15)' : 'rgba(52,211,153,0.05)'};border:1.5px solid ${transferReportFilterState.status === 'COMPLETED' ? '#34d399' : 'rgba(52,211,153,0.2)'};border-radius:20px;padding:3px 12px;cursor:pointer;transition:all 0.2s;" title="Completed">
+            <span style="font-size:10px;font-weight:700;color:#34d399;">✅ DONE</span>
+            <span style="font-size:15px;font-weight:800;color:#34d399;">${completedCount}</span>
+          </div>
+          <div class="tr-kpi-card" data-tr-kpi-status="PENDING" style="display:flex;align-items:center;gap:6px;background:${transferReportFilterState.status === 'PENDING' ? 'rgba(251,191,36,0.15)' : 'rgba(251,191,36,0.05)'};border:1.5px solid ${transferReportFilterState.status === 'PENDING' ? '#fbbf24' : 'rgba(251,191,36,0.2)'};border-radius:20px;padding:3px 12px;cursor:pointer;transition:all 0.2s;" title="Pending Approval">
+            <span style="font-size:10px;font-weight:700;color:#fbbf24;">⏳ PENDING</span>
+            <span style="font-size:15px;font-weight:800;color:#fbbf24;">${pendingCount}</span>
+          </div>
+          <div class="tr-kpi-card" data-tr-kpi-status="REJECTED" style="display:flex;align-items:center;gap:6px;background:${(transferReportFilterState.status === 'REJECTED' || transferReportFilterState.status === 'CANCELLED') ? 'rgba(244,63,94,0.15)' : 'rgba(244,63,94,0.05)'};border:1.5px solid ${(transferReportFilterState.status === 'REJECTED' || transferReportFilterState.status === 'CANCELLED') ? '#f43f5e' : 'rgba(244,63,94,0.2)'};border-radius:20px;padding:3px 12px;cursor:pointer;transition:all 0.2s;" title="Rejected/Cancelled">
+            <span style="font-size:10px;font-weight:700;color:#f43f5e;">❌ REJ/CXL</span>
+            <span style="font-size:15px;font-weight:800;color:#f43f5e;">${rejectedCount + cancelledCount}</span>
+          </div>
+          <span style="font-size:11px;color:var(--text-muted);padding-left:4px;">${filteredRows.length} of ${allAuditRows.length} shown</span>
         </div>
 
-        <div class="tr-kpi-card" data-tr-kpi-status="COMPLETED" style="background: rgba(15, 23, 42, 0.85); border: 1.5px solid ${transferReportFilterState.status === 'COMPLETED' ? '#34d399' : 'rgba(52, 211, 153, 0.25)'}; border-radius: 8px; padding: 12px 16px; cursor: pointer; transition: all 0.2s;" title="Click to filter Completed relocations">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 11px; font-weight: 700; color: #34d399; text-transform: uppercase;">✅ Completed</span>
-            <span style="font-size: 14px;">🚚</span>
+        <!-- Action Buttons -->
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+          <span style="font-size:10px;color:#34d399;background:rgba(52,211,153,0.1);border:1px solid rgba(52,211,153,0.3);border-radius:4px;padding:2px 8px;font-weight:700;">🔴 Live</span>
+          <button id="btn-export-transfer-report-excel" class="btn btn-primary btn-sm" style="font-weight:700;background:linear-gradient(135deg,#0284c7,#0369a1);height:30px;font-size:11px;">📊 Excel</button>
+          <button id="btn-export-transfer-report-pdf" class="btn btn-secondary btn-sm" style="font-weight:700;height:30px;font-size:11px;">🖨️ Print</button>
+          <div style="display:flex;border:1px solid var(--border-color);border-radius:6px;overflow:hidden;height:30px;">
+            <button class="btn btn-xs ${transferReportFilterState.viewMode === 'TABLE' ? 'btn-primary' : 'btn-ghost'}" data-tr-view-mode="TABLE" style="padding:0 10px;font-size:11px;">▦ Table</button>
+            <button class="btn btn-xs ${transferReportFilterState.viewMode === 'CARDS' ? 'btn-primary' : 'btn-ghost'}" data-tr-view-mode="CARDS" style="padding:0 10px;font-size:11px;">🗂️ Cards</button>
           </div>
-          <div style="font-size: 22px; font-weight: 800; color: #34d399; margin-top: 4px;">${completedCount}</div>
-          <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">Fully Relocated</div>
         </div>
-
-        <div class="tr-kpi-card" data-tr-kpi-status="PENDING" style="background: rgba(15, 23, 42, 0.85); border: 1.5px solid ${transferReportFilterState.status === 'PENDING' ? '#fbbf24' : 'rgba(251, 191, 36, 0.25)'}; border-radius: 8px; padding: 12px 16px; cursor: pointer; transition: all 0.2s;" title="Click to filter Pending requests">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 11px; font-weight: 700; color: #fbbf24; text-transform: uppercase;">⏳ In Approval</span>
-            <span style="font-size: 14px;">⏳</span>
-          </div>
-          <div style="font-size: 22px; font-weight: 800; color: #fbbf24; margin-top: 4px;">${pendingCount}</div>
-          <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">Pending / Revision</div>
-        </div>
-
-        <div class="tr-kpi-card" data-tr-kpi-status="REJECTED" style="background: rgba(15, 23, 42, 0.85); border: 1.5px solid ${transferReportFilterState.status === 'REJECTED' || transferReportFilterState.status === 'CANCELLED' ? '#f43f5e' : 'rgba(244, 63, 94, 0.25)'}; border-radius: 8px; padding: 12px 16px; cursor: pointer; transition: all 0.2s;" title="Click to filter Rejected &amp; Cancelled">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 11px; font-weight: 700; color: #f43f5e; text-transform: uppercase;">❌ Rejected / Cancelled</span>
-            <span style="font-size: 14px;">🚫</span>
-          </div>
-          <div style="font-size: 22px; font-weight: 800; color: #f43f5e; margin-top: 4px;">${rejectedCount + cancelledCount}</div>
-          <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">${rejectedCount} Rejected · ${cancelledCount} Cancelled</div>
-        </div>
-
       </div>
 
-      <!-- 2. COMPREHENSIVE FILTER TOOLBAR CONTAINER -->
-      <div style="background: var(--bg-surface); border: 1.5px solid rgba(56, 189, 248, 0.35); border-radius: var(--radius-lg); padding: 16px 18px; display: flex; flex-direction: column; gap: 12px; box-shadow: var(--shadow-sm); width: 100%; box-sizing: border-box;">
+      <!-- 2. COMPACT FILTER TOOLBAR (single row, always visible) -->
+      <div style="background: var(--bg-surface); border: 1px solid rgba(56,189,248,0.25); border-radius: var(--radius-lg); padding: 8px 12px; box-shadow: var(--shadow-sm);">
         
-        <!-- Header & Action Buttons -->
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 10px; flex-wrap: wrap; gap: 10px;">
-          <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-            <span style="font-size: 18px;">🔍</span>
-            <div>
-              <div style="font-size: 14px; font-weight: 800; color: #38bdf8; text-transform: uppercase; letter-spacing: 0.5px;">
-                Machine Transfer &amp; Relocation Audit Filter Engine
-              </div>
-              <div style="font-size: 11px; color: var(--text-muted);">
-                Showing ${filteredRows.length} of ${allAuditRows.length} records · Zero-jump dynamic filtering
-              </div>
-            </div>
-            <span style="font-size: 11px; color: #34d399; background: rgba(52,211,153,0.1); border: 1px solid rgba(52,211,153,0.3); border-radius: 4px; padding: 2px 8px; font-weight: 700;">🔴 Live Firebase Data</span>
+        <!-- Main filter row -->
+        <div style="display: flex; align-items: flex-end; gap: 8px; flex-wrap: wrap;">
+          
+          <div style="display: flex; flex-direction: column; gap: 3px; min-width: 120px; flex: 1;">
+            <label style="font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase;">Status</label>
+            <select id="tr-filter-status" class="filter-select" style="height: 32px; font-size: 11.5px; width: 100%;">
+              <option value="ALL" ${transferReportFilterState.status === 'ALL' ? 'selected' : ''}>All Statuses</option>
+              ${distinctStatuses.map(s => `<option value="${s.toUpperCase()}" ${transferReportFilterState.status === s.toUpperCase() ? 'selected' : ''}>${s.replace(/_/g, ' ')}</option>`).join('')}
+            </select>
           </div>
 
-          <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-            <button id="btn-export-transfer-report-excel" class="btn btn-primary btn-sm" style="font-weight: 700; background: linear-gradient(135deg, #0284c7, #0369a1); height: 32px;" title="Export filtered records to formatted Excel spreadsheet">
-              📊 Export Transfers (Excel)
+          <div style="display: flex; flex-direction: column; gap: 3px; min-width: 130px; flex: 1;">
+            <label style="font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase;">Staff</label>
+            <select id="tr-filter-by" class="filter-select" style="height: 32px; font-size: 11.5px; width: 100%;">
+              <option value="ALL" ${transferReportFilterState.transferredBy === 'ALL' ? 'selected' : ''}>All Staff (${distinctUsers.length})</option>
+              ${distinctUsers.map(u => `<option value="${u}" ${transferReportFilterState.transferredBy === u ? 'selected' : ''}>${u}</option>`).join('')}
+            </select>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 3px; min-width: 120px; flex: 1;">
+            <label style="font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase;">From Date</label>
+            <input type="date" id="tr-filter-date-from" class="form-control" value="${transferReportFilterState.dateFrom || ''}" style="height: 32px; font-size: 11.5px; padding: 4px 8px; width: 100%; box-sizing: border-box;" />
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 3px; min-width: 120px; flex: 1;">
+            <label style="font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase;">To Date</label>
+            <input type="date" id="tr-filter-date-to" class="form-control" value="${transferReportFilterState.dateTo || ''}" style="height: 32px; font-size: 11.5px; padding: 4px 8px; width: 100%; box-sizing: border-box;" />
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 3px; min-width: 200px; flex: 3;">
+            <label style="font-size: 10px; font-weight: 700; color: #38bdf8; text-transform: uppercase;">🔍 Search</label>
+            <input type="text" id="tr-filter-search" class="form-control" placeholder="Machine serial, name, location, staff, reason..." value="${transferReportFilterState.search || ''}" style="height: 32px; font-size: 11.5px; padding: 4px 10px; width: 100%; box-sizing: border-box;" />
+          </div>
+
+          <div style="display: flex; gap: 6px; flex-shrink: 0;">
+            <button id="tr-btn-clear-filters" class="btn btn-ghost btn-sm" style="height: 32px; font-weight: 700; color: #94a3b8; white-space: nowrap;" title="Reset all filters">↺ Clear</button>
+            <button id="tr-btn-toggle-advanced" onclick="const adv = document.getElementById('tr-advanced-filters'); const isHidden = adv.style.display === 'none'; adv.style.display = isHidden ? 'block' : 'none'; this.textContent = isHidden ? '▲ Less' : '▼ Advanced'; transferReportFilterState.isExpanded = isHidden;" class="btn btn-ghost btn-sm" style="height: 32px; font-weight: 700; color: #64748b; border: 1px solid rgba(255,255,255,0.08); white-space: nowrap; font-size: 11px;">
+              ${transferReportFilterState.isExpanded ? '▲ Less' : '▼ Advanced'}
             </button>
-            <button id="btn-export-transfer-report-pdf" class="btn btn-secondary btn-sm" style="font-weight: 700; height: 32px;" title="Generate printable PDF audit log">
-              🖨️ PDF / Print
-            </button>
-            <button id="tr-btn-clear-filters" class="btn btn-ghost btn-sm" style="height: 32px; font-weight: 700; color: #94a3b8;" title="Reset all filters and search">
-              ↺ Clear Filters
-            </button>
-            <div style="display: flex; border: 1px solid var(--border-color); border-radius: 6px; overflow: hidden; height: 30px;">
-              <button class="btn btn-xs ${transferReportFilterState.viewMode === 'TABLE' ? 'btn-primary' : 'btn-ghost'}" data-tr-view-mode="TABLE" style="padding: 0 10px; font-size: 11px;" title="Table View">
-                ▦ Table
-              </button>
-              <button class="btn btn-xs ${transferReportFilterState.viewMode === 'CARDS' ? 'btn-primary' : 'btn-ghost'}" data-tr-view-mode="CARDS" style="padding: 0 10px; font-size: 11px;" title="Cards View (Mobile friendly)">
-                🗂️ Cards
-              </button>
-            </div>
           </div>
         </div>
 
-        <!-- Row 1: Plant Location Hierarchy -->
-        <div>
-          <div style="font-size: 10.5px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">
-            🏢 1. Plant Location Hierarchy:
-          </div>
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px;">
-            <div class="filter-group">
-              <label class="filter-label" style="font-size: 10px; font-weight: 700; color: #cbd5e1; margin-bottom: 2px;">Group</label>
-              <select id="tr-filter-group" class="filter-select" style="height: 34px; font-size: 11.5px; width: 100%;">
+        <!-- ADVANCED FILTERS: Location + Movement (hidden by default) -->
+        <div id="tr-advanced-filters" style="display: ${transferReportFilterState.isExpanded ? 'block' : 'none'}; margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.08);">
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px;">
+            
+            <div style="display: flex; flex-direction: column; gap: 3px;">
+              <label style="font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase;">🏢 Group</label>
+              <select id="tr-filter-group" class="filter-select" style="height: 32px; font-size: 11px; width: 100%;">
                 <option value="">All Groups (${groups.length})</option>
                 ${groups.map(g => `<option value="${g.id}" ${transferReportFilterState.groupId === g.id ? 'selected' : ''}>${g.name}</option>`).join('')}
               </select>
             </div>
 
-            <div class="filter-group">
-              <label class="filter-label" style="font-size: 10px; font-weight: 700; color: #cbd5e1; margin-bottom: 2px;">Unit / Factory</label>
-              <select id="tr-filter-unit" class="filter-select" style="height: 34px; font-size: 11.5px; width: 100%;">
+            <div style="display: flex; flex-direction: column; gap: 3px;">
+              <label style="font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase;">🏭 Unit</label>
+              <select id="tr-filter-unit" class="filter-select" style="height: 32px; font-size: 11px; width: 100%;">
                 <option value="">All Units (${units.length})</option>
                 ${units.map(u => `<option value="${u.id}" ${transferReportFilterState.unitId === u.id ? 'selected' : ''}>${u.name}</option>`).join('')}
               </select>
             </div>
 
-            <div class="filter-group">
-              <label class="filter-label" style="font-size: 10px; font-weight: 700; color: #cbd5e1; margin-bottom: 2px;">Floor</label>
-              <select id="tr-filter-floor" class="filter-select" style="height: 34px; font-size: 11.5px; width: 100%;">
+            <div style="display: flex; flex-direction: column; gap: 3px;">
+              <label style="font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase;">Floor</label>
+              <select id="tr-filter-floor" class="filter-select" style="height: 32px; font-size: 11px; width: 100%;">
                 <option value="">All Floors (${floors.length})</option>
                 ${floors.map(f => `<option value="${f.id}" ${transferReportFilterState.floorId === f.id ? 'selected' : ''}>${f.name}</option>`).join('')}
               </select>
             </div>
 
-            <div class="filter-group">
-              <label class="filter-label" style="font-size: 10px; font-weight: 700; color: #cbd5e1; margin-bottom: 2px;">Production Line</label>
-              <select id="tr-filter-line" class="filter-select" style="height: 34px; font-size: 11.5px; width: 100%;">
+            <div style="display: flex; flex-direction: column; gap: 3px;">
+              <label style="font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase;">Line</label>
+              <select id="tr-filter-line" class="filter-select" style="height: 32px; font-size: 11px; width: 100%;">
                 <option value="">All Lines (${lines.length})</option>
                 ${lines.map(l => `<option value="${l.id}" ${transferReportFilterState.lineId === l.id ? 'selected' : ''}>${l.name}</option>`).join('')}
               </select>
             </div>
-          </div>
-        </div>
 
-        <!-- Row 2: Movement Specific Filters -->
-        <div>
-          <div style="font-size: 10.5px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">
-            🔄 2. Movement Specific Filters (Source vs. Destination):
-          </div>
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px;">
-            <div class="filter-group">
-              <label class="filter-label" style="font-size: 10px; font-weight: 700; color: #cbd5e1; margin-bottom: 2px;">Previous Floor (Source)</label>
-              <select id="tr-filter-prev-floor" class="filter-select" style="height: 34px; font-size: 11.5px; width: 100%;">
-                <option value="">All Source Floors (${distinctPrevFloors.length})</option>
+            <div style="display: flex; flex-direction: column; gap: 3px;">
+              <label style="font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase;">📍 From Floor</label>
+              <select id="tr-filter-prev-floor" class="filter-select" style="height: 32px; font-size: 11px; width: 100%;">
+                <option value="">All Source Floors</option>
                 ${distinctPrevFloors.map(f => `<option value="${f}" ${transferReportFilterState.prevFloor === f ? 'selected' : ''}>${f}</option>`).join('')}
               </select>
             </div>
 
-            <div class="filter-group">
-              <label class="filter-label" style="font-size: 10px; font-weight: 700; color: #86efac; margin-bottom: 2px;">New Floor (Destination)</label>
-              <select id="tr-filter-new-floor" class="filter-select" style="height: 34px; font-size: 11.5px; width: 100%; border-color: rgba(134,239,172,0.4);">
-                <option value="">All Dest Floors (${distinctNewFloors.length})</option>
+            <div style="display: flex; flex-direction: column; gap: 3px;">
+              <label style="font-size: 10px; font-weight: 700; color: #86efac; text-transform: uppercase;">→ To Floor</label>
+              <select id="tr-filter-new-floor" class="filter-select" style="height: 32px; font-size: 11px; width: 100%; border-color: rgba(134,239,172,0.4);">
+                <option value="">All Dest Floors</option>
                 ${distinctNewFloors.map(f => `<option value="${f}" ${transferReportFilterState.newFloor === f ? 'selected' : ''}>${f}</option>`).join('')}
               </select>
             </div>
 
-            <div class="filter-group">
-              <label class="filter-label" style="font-size: 10px; font-weight: 700; color: #cbd5e1; margin-bottom: 2px;">Previous Line (Source)</label>
-              <select id="tr-filter-prev-line" class="filter-select" style="height: 34px; font-size: 11.5px; width: 100%;">
-                <option value="">All Source Lines (${distinctPrevLines.length})</option>
+            <div style="display: flex; flex-direction: column; gap: 3px;">
+              <label style="font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase;">📍 From Line</label>
+              <select id="tr-filter-prev-line" class="filter-select" style="height: 32px; font-size: 11px; width: 100%;">
+                <option value="">All Source Lines</option>
                 ${distinctPrevLines.map(l => `<option value="${l}" ${transferReportFilterState.prevLine === l ? 'selected' : ''}>${l}</option>`).join('')}
               </select>
             </div>
 
-            <div class="filter-group">
-              <label class="filter-label" style="font-size: 10px; font-weight: 700; color: #86efac; margin-bottom: 2px;">New Line (Destination)</label>
-              <select id="tr-filter-new-line" class="filter-select" style="height: 34px; font-size: 11.5px; width: 100%; border-color: rgba(134,239,172,0.4);">
-                <option value="">All Dest Lines (${distinctNewLines.length})</option>
+            <div style="display: flex; flex-direction: column; gap: 3px;">
+              <label style="font-size: 10px; font-weight: 700; color: #86efac; text-transform: uppercase;">→ To Line</label>
+              <select id="tr-filter-new-line" class="filter-select" style="height: 32px; font-size: 11px; width: 100%; border-color: rgba(134,239,172,0.4);">
+                <option value="">All Dest Lines</option>
                 ${distinctNewLines.map(l => `<option value="${l}" ${transferReportFilterState.newLine === l ? 'selected' : ''}>${l}</option>`).join('')}
               </select>
             </div>
-          </div>
-        </div>
 
-        <!-- Row 3: Audit, Time & Status -->
-        <div>
-          <div style="font-size: 10.5px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">
-            ⚡ 3. Audit, Date Range &amp; Search:
-          </div>
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px;">
-            <div class="filter-group">
-              <label class="filter-label" style="font-size: 10px; font-weight: 700; color: #cbd5e1; margin-bottom: 2px;">Status</label>
-              <select id="tr-filter-status" class="filter-select" style="height: 34px; font-size: 11.5px; width: 100%;">
-                <option value="ALL" ${transferReportFilterState.status === 'ALL' ? 'selected' : ''}>All Statuses</option>
-                <option value="COMPLETED" ${transferReportFilterState.status === 'COMPLETED' ? 'selected' : ''}>🟢 Completed</option>
-                <option value="PENDING" ${transferReportFilterState.status === 'PENDING' ? 'selected' : ''}>🟡 Pending Approval</option>
-                <option value="REJECTED" ${transferReportFilterState.status === 'REJECTED' ? 'selected' : ''}>🔴 Rejected</option>
-                <option value="CANCELLED" ${transferReportFilterState.status === 'CANCELLED' ? 'selected' : ''}>⚪ Cancelled</option>
-              </select>
-            </div>
-
-            <div class="filter-group">
-              <label class="filter-label" style="font-size: 10px; font-weight: 700; color: #cbd5e1; margin-bottom: 2px;">Transferred By</label>
-              <select id="tr-filter-by" class="filter-select" style="height: 34px; font-size: 11.5px; width: 100%;">
-                <option value="ALL" ${transferReportFilterState.transferredBy === 'ALL' ? 'selected' : ''}>All Staff (${distinctUsers.length})</option>
-                ${distinctUsers.map(u => `<option value="${u}" ${transferReportFilterState.transferredBy === u ? 'selected' : ''}>${u}</option>`).join('')}
-              </select>
-            </div>
-
-            <div class="filter-group">
-              <label class="filter-label" style="font-size: 10px; font-weight: 700; color: #cbd5e1; margin-bottom: 2px;">Date From</label>
-              <input type="date" id="tr-filter-date-from" class="form-control" value="${transferReportFilterState.dateFrom || ''}" style="height: 34px; font-size: 11.5px; padding: 4px 8px; width: 100%; box-sizing: border-box;" />
-            </div>
-
-            <div class="filter-group">
-              <label class="filter-label" style="font-size: 10px; font-weight: 700; color: #cbd5e1; margin-bottom: 2px;">Date To</label>
-              <input type="date" id="tr-filter-date-to" class="form-control" value="${transferReportFilterState.dateTo || ''}" style="height: 34px; font-size: 11.5px; padding: 4px 8px; width: 100%; box-sizing: border-box;" />
-            </div>
-
-            <div class="filter-group" style="grid-column: span 2;">
-              <label class="filter-label" style="font-size: 10px; font-weight: 700; color: #38bdf8; margin-bottom: 2px;">🔍 Global Search</label>
-              <input 
-                type="text" 
-                id="tr-filter-search" 
-                class="form-control" 
-                placeholder="Search Machine Serial, Name, Location, Staff, Reason..." 
-                value="${transferReportFilterState.search || ''}"
-                style="height: 34px; font-size: 11.5px; padding: 4px 10px; width: 100%; box-sizing: border-box;" 
-              />
-            </div>
           </div>
         </div>
 
       </div>
 
+
+
       <!-- 3. AUDIT LOG DATA TABLE CONTAINER (RESPONSIVE, NO HORIZONTAL SCROLL) -->
+      <div id="tr-table-container">
       ${transferReportFilterState.viewMode === 'CARDS' ? `
         <!-- CARDS VIEW -->
         <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px;">
@@ -1623,7 +1572,7 @@ function renderTransferReportsTab(allRequests, completedTransfers) {
       ` : `
         <!-- TABLE VIEW (CLEAN, NO HORIZONTAL SCROLL ON DESKTOP) -->
         <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-sm); width: 100%;">
-          <div style="overflow-x: auto; width: 100%;">
+          <div class="responsive-table-wrapper">
             <table class="data-table" style="width: 100%; border-collapse: collapse; margin: 0; table-layout: fixed;">
               <thead>
                 <tr style="background: rgba(15,23,42,0.98); border-bottom: 2px solid var(--border-color); font-size: 11px; text-transform: uppercase; color: #94a3b8; user-select: none;">
@@ -1739,6 +1688,7 @@ function renderTransferReportsTab(allRequests, completedTransfers) {
           </div>
         </div>
       `}
+      </div>
 
     </div>
   `;
@@ -1932,7 +1882,7 @@ function renderSparePartsReportsTab() {
         <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px;">
           
           <!-- Card 1: Total Issued -->
-          <div style="background: rgba(2, 132, 199, 0.12); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: var(--radius-md); padding: 12px 16px;">
+          <div style="background: rgba(2, 132, 199, 0.12); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: var(--radius-md); padding: 8px 12px;">
             <div style="font-size: 11px; font-weight: 700; color: #38bdf8; text-transform: uppercase;">Total Issued</div>
             <div style="font-size: 24px; font-weight: 900; color: #fff; margin-top: 4px;">
               ${kpi.totalIssued} <span style="font-size: 12px; color: #94a3b8; font-weight: 600;">pcs</span>
@@ -1941,7 +1891,7 @@ function renderSparePartsReportsTab() {
           </div>
 
           <!-- Card 2: Total Used (Highlight) -->
-          <div style="background: rgba(16, 185, 129, 0.15); border: 1.5px solid #10b981; border-radius: var(--radius-md); padding: 12px 16px; box-shadow: 0 0 15px rgba(16, 185, 129, 0.15);">
+          <div style="background: rgba(16, 185, 129, 0.15); border: 1.5px solid #10b981; border-radius: var(--radius-md); padding: 8px 12px; box-shadow: 0 0 15px rgba(16, 185, 129, 0.15);">
             <div style="font-size: 11px; font-weight: 800; color: #34d399; text-transform: uppercase;">Total Spare Parts Used</div>
             <div style="font-size: 26px; font-weight: 900; color: #34d399; margin-top: 4px;">
               ${kpi.totalUsed} <span style="font-size: 13px; color: #a7f3d0; font-weight: 700;">pcs</span>
@@ -1950,7 +1900,7 @@ function renderSparePartsReportsTab() {
           </div>
 
           <!-- Card 3: Total Returned -->
-          <div style="background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(251, 191, 36, 0.3); border-radius: var(--radius-md); padding: 12px 16px;">
+          <div style="background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(251, 191, 36, 0.3); border-radius: var(--radius-md); padding: 8px 12px;">
             <div style="font-size: 11px; font-weight: 700; color: #fbbf24; text-transform: uppercase;">Total Returned</div>
             <div style="font-size: 24px; font-weight: 900; color: #fbbf24; margin-top: 4px;">
               ${kpi.totalReturned} <span style="font-size: 12px; color: #94a3b8; font-weight: 600;">pcs</span>
@@ -1959,7 +1909,7 @@ function renderSparePartsReportsTab() {
           </div>
 
           <!-- Card 4: Current / Unreturned -->
-          <div style="background: rgba(139, 92, 246, 0.12); border: 1px solid rgba(167, 139, 250, 0.3); border-radius: var(--radius-md); padding: 12px 16px;">
+          <div style="background: rgba(139, 92, 246, 0.12); border: 1px solid rgba(167, 139, 250, 0.3); border-radius: var(--radius-md); padding: 8px 12px;">
             <div style="font-size: 11px; font-weight: 700; color: #c084fc; text-transform: uppercase;">Current / Unreturned</div>
             <div style="font-size: 24px; font-weight: 900; color: #c084fc; margin-top: 4px;">
               ${kpi.currentUnreturned} <span style="font-size: 12px; color: #94a3b8; font-weight: 600;">pcs</span>
@@ -1968,9 +1918,9 @@ function renderSparePartsReportsTab() {
           </div>
 
           <!-- Card 5: Estimated Cost / Value -->
-          <div style="background: rgba(244, 63, 94, 0.12); border: 1px solid rgba(251, 113, 133, 0.3); border-radius: var(--radius-md); padding: 12px 16px;">
+          <div style="background: rgba(244, 63, 94, 0.12); border: 1px solid rgba(251, 113, 133, 0.3); border-radius: var(--radius-md); padding: 8px 12px;">
             <div style="font-size: 11px; font-weight: 700; color: #fb7185; text-transform: uppercase;">Total Consumption Value</div>
-            <div style="font-size: 22px; font-weight: 900; color: #fff; margin-top: 4px;">
+            <div style="font-size: 20px; font-weight: 900; color: #fff; margin-top: 4px;">
               BDT ${kpi.totalValue.toLocaleString()}
             </div>
             <div style="font-size: 10.5px; color: var(--text-muted); margin-top: 2px;">Replacement Valuation</div>
@@ -2215,7 +2165,7 @@ function renderExportCenterTab(machines, transfers, logs, catalog) {
           <div style="grid-column: span 2; background: linear-gradient(135deg, rgba(2, 132, 199, 0.12), rgba(15, 23, 42, 0.8)); border: 1.5px solid rgba(56, 189, 248, 0.4); border-radius: var(--radius-lg); padding: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
             <div>
               <div style="display: flex; align-items: center; gap: 8px;">
-                <span style="font-size: 22px;">📜</span>
+                <span style="font-size: 20px;">📜</span>
                 <div style="font-size: 16px; font-weight: 800; color: #fff;">Complete Corporate Master ERP Workbook</div>
               </div>
               <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px; line-height: 1.4;">
@@ -2696,8 +2646,78 @@ export function initReportsEvents() {
         const etLabBoards = etLabService.getBoards() || [];
         const floors = storage.getTable(TABLE_NAMES.FLOORS) || [];
         const replacementLogs = allHistory.filter(h => h.actionType === 'SPARE_PART_REPLACEMENT' || h.sparePart);
-        tabContent.innerHTML = renderActiveTabHtml({ allMachines, allTransfers, completedTransfers, replacementLogs, sparePartsMaster, etLabBoards, floors });
-        initReportsEvents();
+        
+        const newHtml = renderActiveTabHtml({ allMachines, allTransfers, completedTransfers, replacementLogs, sparePartsMaster, etLabBoards, floors });
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = newHtml;
+
+        const kpiOld = document.getElementById('tr-kpi-container');
+        const kpiNew = tempDiv.querySelector('#tr-kpi-container');
+        if (kpiOld && kpiNew) kpiOld.innerHTML = kpiNew.innerHTML;
+
+        const tableOld = document.getElementById('tr-table-container');
+        const tableNew = tempDiv.querySelector('#tr-table-container');
+        if (tableOld && tableNew) tableOld.innerHTML = tableNew.innerHTML;
+
+        const headerOld = document.getElementById('tr-filter-header-count');
+        const headerNew = tempDiv.querySelector('#tr-filter-header-count');
+        if (headerOld && headerNew) headerOld.innerHTML = headerNew.innerHTML;
+
+        const filterIds = [
+          'tr-filter-group', 'tr-filter-unit', 'tr-filter-floor', 'tr-filter-line',
+          'tr-filter-prev-floor', 'tr-filter-new-floor', 'tr-filter-prev-line', 'tr-filter-new-line',
+          'tr-filter-status', 'tr-filter-by'
+        ];
+        filterIds.forEach(id => {
+          const oldSelect = document.getElementById(id);
+          const newSelect = tempDiv.querySelector('#' + id);
+          if (oldSelect && newSelect && document.activeElement !== oldSelect) {
+            oldSelect.innerHTML = newSelect.innerHTML;
+            oldSelect.value = newSelect.value;
+          }
+        });
+
+        document.querySelectorAll('#tr-kpi-container [data-tr-kpi-status]').forEach(card => {
+          card.addEventListener('click', () => {
+            const st = card.getAttribute('data-tr-kpi-status');
+            transferReportFilterState.status = st === 'ALL' ? 'ALL' : st;
+            transferReportFilterState.page = 1;
+            refreshTransferReportsTabInPlace();
+          });
+        });
+
+        document.querySelectorAll('#tr-table-container [data-tr-sort]').forEach(th => {
+          th.addEventListener('click', () => {
+            const field = th.getAttribute('data-tr-sort');
+            if (transferReportFilterState.sortField === field) {
+              transferReportFilterState.sortDirection = transferReportFilterState.sortDirection === 'asc' ? 'desc' : 'asc';
+            } else {
+              transferReportFilterState.sortField = field;
+              transferReportFilterState.sortDirection = 'asc';
+            }
+            refreshTransferReportsTabInPlace();
+          });
+        });
+
+        document.querySelectorAll('#tr-table-container [data-tr-page]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const targetPage = parseInt(btn.getAttribute('data-tr-page'), 10);
+            if (targetPage && !isNaN(targetPage) && targetPage !== transferReportFilterState.page) {
+              transferReportFilterState.page = targetPage;
+              refreshTransferReportsTabInPlace();
+            }
+          });
+        });
+
+        const trPageSize = document.getElementById('tr-page-size');
+        if (trPageSize && !trPageSize.dataset.boundForTr) {
+          trPageSize.dataset.boundForTr = 'true';
+          trPageSize.addEventListener('change', (e) => {
+            transferReportFilterState.pageSize = e.target.value === 'ALL' ? 'ALL' : parseInt(e.target.value, 10);
+            transferReportFilterState.page = 1;
+            refreshTransferReportsTabInPlace();
+          });
+        }
       } else {
         refreshReportsView();
       }
@@ -2790,6 +2810,7 @@ export function initReportsEvents() {
   if (trPrevFlr) {
     trPrevFlr.addEventListener('change', (e) => {
       transferReportFilterState.prevFloor = e.target.value;
+      transferReportFilterState.prevLine = ''; // cascade clear
       transferReportFilterState.page = 1;
       refreshTransferReportsTabInPlace();
     });
@@ -2799,6 +2820,7 @@ export function initReportsEvents() {
   if (trNewFlr) {
     trNewFlr.addEventListener('change', (e) => {
       transferReportFilterState.newFloor = e.target.value;
+      transferReportFilterState.newLine = ''; // cascade clear
       transferReportFilterState.page = 1;
       refreshTransferReportsTabInPlace();
     });

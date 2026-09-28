@@ -845,11 +845,15 @@ class PDFService {
               display: table-header-group !important; /* REPEATS HEADER ON EVERY PRINT PAGE */
             }
             tfoot {
-              display: table-footer-group !important;
+              display: table-row-group !important;
             }
             tr {
               page-break-inside: avoid !important;
               break-inside: avoid !important;
+            }
+            tfoot tr {
+              page-break-after: avoid !important;
+              break-after: avoid !important;
             }
             .report-header, .report-title-box, .kpi-bar {
               page-break-inside: avoid !important;
@@ -858,7 +862,9 @@ class PDFService {
             .signature-section {
               page-break-inside: avoid !important;
               break-inside: avoid !important;
-              margin-top: 25px !important;
+              page-break-before: avoid !important;
+              break-before: avoid !important;
+              margin-top: 50px !important;
             }
           }
         </style>

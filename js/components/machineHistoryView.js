@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Al-Muslim Group Garments Factory Maintenance Machine ERP
  * Machine Complete History & Spare Parts Tracking Dashboard
  * Search by Machine Serial Number Only (No Model or Asset ID Required)
@@ -188,19 +188,19 @@ export function renderMachineHistoryView() {
     <div class="page-view history-page-wrapper" style="gap: 12px; padding: 16px;">
       
       <!-- Top Action Command Bar -->
-      <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; box-shadow: var(--shadow-sm);">
-        <div>
-          <div style="font-weight: 800; font-size: 17px; color: var(--text-primary); display: flex; align-items: center; gap: 10px;">
+      <div class="view-header-row" style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; box-shadow: var(--shadow-sm);">
+        <div style="min-width: 0; flex: 1;">
+          <div style="font-weight: 800; font-size: 16px; color: var(--text-primary); display: flex; align-items: center; gap: 8px; word-break: break-word;">
             <span style="font-size: 20px;">📜</span>
             <span>Machine History &amp; Maintenance Ledger</span>
           </div>
-          <div style="font-size: 12.5px; color: var(--text-secondary); margin-top: 2px;">
+          <div style="font-size: 12px; color: var(--text-secondary); margin-top: 2px;">
             Search by <strong>Machine Serial Number</strong> (Format: <code>[Floor Short Code]-[Machine Number]</code>, e.g. <code>JA-01</code>, <code>BG-01</code>, <code>TT-01</code>, <code>5369</code>).
           </div>
         </div>
 
         <!-- Machine History Actions -->
-        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+        <div class="view-header-actions" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
           ${authService.hasAccess('service_repair', 'ADD') ? `
             <button id="btn-open-service-modal" class="btn btn-primary btn-sm" style="font-weight: 700; height: 36px; background: linear-gradient(135deg, #0284c7, #0369a1); box-shadow: 0 2px 10px rgba(2, 132, 199, 0.35);">
               🛠️ Log Service &amp; Repair
@@ -247,7 +247,7 @@ export function renderMachineHistoryView() {
         </div>
 
         <!-- Row 1: Cascading Dropdowns (Group -> Unit -> Floor -> Line) in One Aligned Grid -->
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; align-items: flex-end;">
+        <div class="history-filters-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr)); gap: 10px; align-items: flex-end;">
           
           <!-- 1. Group Dropdown -->
           <div style="display: flex; flex-direction: column; gap: 5px;">
@@ -292,7 +292,7 @@ export function renderMachineHistoryView() {
         </div>
 
         <!-- Row 2: Direct Search on Left + Filtered Matching Machine Dropdown on Right -->
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; align-items: flex-end; padding-top: 8px; border-top: 1px solid rgba(255, 255, 255, 0.07);">
+        <div class="history-search-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 12px; align-items: flex-end; padding-top: 8px; border-top: 1px solid rgba(255, 255, 255, 0.07);">
           
           <!-- Direct Machine Serial Search Input -->
           <div style="display: flex; flex-direction: column; gap: 5px;">
@@ -300,8 +300,8 @@ export function renderMachineHistoryView() {
               <span>🎯 Search Machine Serial:</span>
               <span style="font-size: 10.5px; font-weight: 500; color: var(--text-muted); text-transform: none;">(Type serial or scan barcode)</span>
             </label>
-            <div style="display: flex; gap: 8px; position: relative;">
-              <div style="position: relative; flex: 1;">
+            <div style="display: flex; gap: 8px; position: relative; flex-wrap: wrap;">
+              <div style="position: relative; flex: 1; min-width: 180px;">
                 <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 14px; color: #38bdf8;">🔍</span>
                 <input 
                   type="text" 
@@ -310,7 +310,7 @@ export function renderMachineHistoryView() {
                   class="form-control" 
                   placeholder="Enter Serial (e.g. 5369, 4712, 76, JA-01)..." 
                   value="${searchedSerial || ''}"
-                  style="padding-left: 36px; padding-right: 32px; font-family: var(--font-mono); font-size: 13.5px; font-weight: 700; height: 38px; background: #080d1a; border: 1.5px solid rgba(56, 189, 248, 0.5); color: #38bdf8; border-radius: 6px;"
+                  style="padding-left: 36px; padding-right: 32px; font-family: var(--font-mono); font-size: 13.5px; font-weight: 700; height: 38px; background: #080d1a; border: 1.5px solid rgba(56, 189, 248, 0.5); color: #38bdf8; border-radius: 6px; width: 100%; box-sizing: border-box;"
                 />
                 <datalist id="machine-serials-datalist">
                   ${allMachines.slice(0, 300).map(m => `<option value="${m.serialNumber}">${m.serialNumber} — ${(storage.getItem(TABLE_NAMES.MACHINE_NAMES, m.machineNameId)?.name) || m.machineName || 'Machine'} • ${(storage.getItem(TABLE_NAMES.FLOORS, m.floorId)?.name) || 'Floor'}</option>`).join('')}
@@ -319,7 +319,7 @@ export function renderMachineHistoryView() {
                   <button id="btn-clear-serial-search" type="button" class="btn btn-ghost btn-sm" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); padding: 2px 6px; font-size: 12px; color: var(--text-muted);" title="Clear Search">✕</button>
                 ` : ''}
               </div>
-              <button id="btn-execute-serial-search" class="btn btn-primary" style="font-weight: 700; height: 38px; padding: 0 18px; white-space: nowrap; box-shadow: 0 2px 10px rgba(2, 132, 199, 0.4); font-size: 12.5px;">
+              <button id="btn-execute-serial-search" class="btn btn-primary" style="font-weight: 700; height: 38px; padding: 0 16px; white-space: nowrap; box-shadow: 0 2px 10px rgba(2, 132, 199, 0.4); font-size: 12.5px;">
                 Search Machine
               </button>
             </div>

@@ -458,20 +458,65 @@ export function renderQrCodeView() {
       /* Mobile responsiveness */
       @media (max-width: 768px) {
         .qr-studio-root {
-          padding: 8px 10px 40px 10px;
+          padding: 8px 8px 32px 8px;
         }
         .qr-studio-header-card {
           flex-direction: column;
           align-items: stretch;
           padding: 10px 12px;
+          gap: 10px;
+        }
+        .qr-header-metrics {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 6px;
+          width: 100%;
+        }
+        .qr-metric-pill {
+          flex: 1 1 calc(33.333% - 6px);
+          min-width: 90px;
         }
         .qr-studio-tabs {
-          overflow-x: auto;
-          white-space: nowrap;
-          padding-bottom: 2px;
+          display: flex;
+          flex-wrap: wrap;
+          gap: 6px;
         }
-        .qr-labels-grid {
-          grid-template-columns: 1fr;
+        .btn-studio-tab {
+          flex: 1 1 calc(50% - 4px);
+          text-align: center;
+          justify-content: center;
+        }
+        .qr-filters-row {
+          grid-template-columns: repeat(2, 1fr) !important;
+          gap: 6px !important;
+        }
+        .qr-actions-row {
+          flex-direction: column !important;
+          align-items: stretch !important;
+          gap: 8px !important;
+        }
+        .qr-print-settings-bar {
+          width: 100% !important;
+          box-sizing: border-box !important;
+          justify-content: space-between !important;
+          flex-wrap: wrap !important;
+          gap: 6px !important;
+        }
+        .qr-labels-grid,
+        .location-placards-grid {
+          grid-template-columns: 1fr !important;
+        }
+      }
+
+      @media (max-width: 480px) {
+        .qr-filters-row {
+          grid-template-columns: 1fr !important;
+        }
+        .qr-metric-pill {
+          flex: 1 1 100%;
+        }
+        .btn-studio-tab {
+          flex: 1 1 100%;
         }
       }
 
@@ -882,7 +927,7 @@ function renderLocationQrTab(locationQrs) {
     </div>
 
     <!-- Location Placard Cards Grid -->
-    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px; overflow-y: auto;">
+    <div class="location-placards-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr)); gap: 14px; overflow-y: auto;">
       ${locationQrs.map((loc, idx) => `
         <div class="location-placard-card" style="background: #ffffff; color: #0f172a; border: 2.5px solid #0f172a; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 4px 14px rgba(0,0,0,0.3);">
           
