@@ -1360,9 +1360,8 @@ function renderTransferReportsTab(allRequests, completedTransfers) {
     return `<span style="color: #38bdf8; font-size: 10px; font-weight: 800;">${transferReportFilterState.sortDirection === 'asc' ? '▲' : '▼'}</span>`;
   };
 
-  if (currentReportTab === 'transfers') {
-    return `
-      <div id="transfer-reports-content" style="display: flex; flex-direction: column; gap: 12px; height: 100%; overflow: hidden;">
+  return `
+    <div id="transfer-reports-content" style="display: flex; flex-direction: column; gap: 12px; height: 100%; overflow: hidden;">
         
         <!-- 1. TOP SUMMARY KPI CARDS (Compact layout) -->
         <div id="tr-kpi-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; flex-shrink: 0;">
