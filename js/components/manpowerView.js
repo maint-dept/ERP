@@ -30,9 +30,50 @@ let filterState = {
   search: '',
   department: 'ALL',
   designation: 'ALL',
+  groupId: 'ALL',
   unitId: 'ALL',
   floorId: 'ALL'
 };
+
+/**
+ * Formats a joinDate value to DD-MM-YYYY display format.
+ * Handles:
+ *   - ISO strings: 'YYYY-MM-DD' or 'YYYY-MM-DDTHH:mm:ss...'
+ *   - Excel serial date numbers (e.g. 45638)
+ *   - Already-formatted 'DD-MM-YYYY' strings (returned as-is)
+ */
+function formatJoinDate(val) {
+  if (!val && val !== 0) return '—';
+
+  // If it's a number (or numeric string) treat as Excel serial date
+  const num = Number(val);
+  if (!isNaN(num) && num > 1000) {
+    // Excel serial: days since 1900-01-00 (note: Excel wrongly counts 1900 as leap year)
+    const excelEpoch = new Date(1899, 11, 30); // Dec 30, 1899
+    const ms = excelEpoch.getTime() + num * 86400000;
+    const d = new Date(ms);
+    if (isNaN(d.getTime())) return String(val);
+    const dd = String(d.getDate()).padStart(2, '0');
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const yyyy = d.getFullYear();
+    return `${dd}-${mm}-${yyyy}`;
+  }
+
+  // If it's a string, try to parse it
+  const s = String(val).trim();
+
+  // Already in DD-MM-YYYY format
+  if (/^\d{2}-\d{2}-\d{4}$/.test(s)) return s;
+
+  // ISO format: YYYY-MM-DD or YYYY-MM-DDTHH:mm:ss
+  const isoMatch = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (isoMatch) {
+    return `${isoMatch[3]}-${isoMatch[2]}-${isoMatch[1]}`;
+  }
+
+  // Fallback: return raw value
+  return s || '—';
+}
 
 function formatEmployeesForExport(employees) {
   const customFields = employeeCustomFieldService.getActiveFields();
@@ -187,8 +228,13 @@ function renderActiveTabContent({ stats, activeEmployees, inactiveEmployees, tra
 // 1. ACTIVE & INACTIVE EMPLOYEE TABLE
 // ---------------------------------------------------------------------------
 function renderEmployeeListTable({ title, subtitle, employees, isInactiveView }) {
-  const units = masterDataService.getUnits(null, true);
-  const floors = masterDataService.getFloors(filterState.unitId !== 'ALL' ? filterState.unitId : null, null, true);
+  const groups = masterDataService.getGroups(true);
+  const units  = masterDataService.getUnits(filterState.groupId !== 'ALL' ? filterState.groupId : null, true);
+  const floors = masterDataService.getFloors(
+    filterState.unitId  !== 'ALL' ? filterState.unitId  : null,
+    filterState.groupId !== 'ALL' ? filterState.groupId : null,
+    true
+  );
 
   const flrMap = new Map((storage.getTable(TABLE_NAMES.FLOORS) || []).map(x => [x.id, x.name]));
   const untMap = new Map((storage.getTable(TABLE_NAMES.UNITS) || []).map(x => [x.id, x.name]));
@@ -220,14 +266,6 @@ function renderEmployeeListTable({ title, subtitle, employees, isInactiveView })
             />
           </div>
 
-          <!-- Department Filter (Dynamic from actual employee data) -->
-          <div style="flex: 1; min-width: 140px;">
-            <select id="mp-filter-dept" class="filter-select" style="font-size: 12px; height: 34px;">
-              <option value="ALL">All Departments</option>
-              ${employeeService.getDistinctDepartments().map(d => `<option value="${d}" ${filterState.department === d ? 'selected' : ''}>${d}</option>`).join('')}
-            </select>
-          </div>
-
           <!-- Designation Filter (Dynamic from actual employee data) -->
           <div style="flex: 1; min-width: 140px;">
             <select id="mp-filter-desig" class="filter-select" style="font-size: 12px; height: 34px;">
@@ -236,7 +274,17 @@ function renderEmployeeListTable({ title, subtitle, employees, isInactiveView })
             </select>
           </div>
 
-          <!-- Unit / Factory Filter -->
+          <!-- Group Filter (from Master Data) -->
+          ${groups.length > 0 ? `
+          <div style="flex: 1; min-width: 130px;">
+            <select id="mp-filter-group" class="filter-select" style="font-size: 12px; height: 34px;">
+              <option value="ALL">All Groups</option>
+              ${groups.map(g => `<option value="${g.id}" ${filterState.groupId === g.id ? 'selected' : ''}>${g.name}</option>`).join('')}
+            </select>
+          </div>
+          ` : ''}
+
+          <!-- Unit / Factory Filter (cascades from Group) -->
           <div style="flex: 1; min-width: 130px;">
             <select id="mp-filter-unit" class="filter-select" style="font-size: 12px; height: 34px;">
               <option value="ALL">All Factories / Units</option>
@@ -244,7 +292,7 @@ function renderEmployeeListTable({ title, subtitle, employees, isInactiveView })
             </select>
           </div>
 
-          <!-- Floor Filter -->
+          <!-- Floor Filter (cascades from Unit) -->
           <div style="flex: 1; min-width: 130px;">
             <select id="mp-filter-floor" class="filter-select" style="font-size: 12px; height: 34px;">
               <option value="ALL">All Floors</option>
@@ -361,16 +409,16 @@ function renderEmployeeListTable({ title, subtitle, employees, isInactiveView })
                   </td>
                 </tr>
               ` : employees.map((emp, idx) => {
-                const isActive = emp.status === 'ACTIVE';
-                const isSelected = selectedEmployeeIds.has(emp.id);
-                const floorName = flrMap.get(emp.floorId) || emp.floorName || '';
-                const unitName = untMap.get(emp.unitId) || emp.unitName || '';
-                const lineName = linMap.get(emp.lineId) || emp.lineName || '';
-                const locationStr = unitName || floorName ? `${unitName}${floorName ? ' • ' + floorName : ''}${lineName ? ' (' + lineName + ')' : ''}` : (emp.workingArea || '—');
+    const isActive = emp.status === 'ACTIVE';
+    const isSelected = selectedEmployeeIds.has(emp.id);
+    const floorName = flrMap.get(emp.floorId) || emp.floorName || '';
+    const unitName = untMap.get(emp.unitId) || emp.unitName || '';
+    const lineName = linMap.get(emp.lineId) || emp.lineName || '';
+    const locationStr = unitName || floorName ? `${unitName}${floorName ? ' • ' + floorName : ''}${lineName ? ' (' + lineName + ')' : ''}` : (emp.workingArea || '—');
 
-                const statusBadge = isActive ? 'badge-active' : (emp.status === 'ON_LEAVE' ? 'badge-maint' : 'badge-breakdown');
+    const statusBadge = isActive ? 'badge-active' : (emp.status === 'ON_LEAVE' ? 'badge-maint' : 'badge-breakdown');
 
-                return `
+    return `
                   <tr class="${isSelected ? 'manpower-row-selected' : ''}" style="background: ${isSelected ? 'rgba(2, 132, 199, 0.16) !important;' : (!isActive ? 'rgba(239, 68, 68, 0.03)' : 'transparent')}; cursor: pointer;" data-row-emp-id="${emp.id}">
                     <!-- Checkbox -->
                     <td style="text-align: center; vertical-align: middle;" onclick="event.stopPropagation();">
@@ -422,7 +470,7 @@ function renderEmployeeListTable({ title, subtitle, employees, isInactiveView })
 
                     <!-- Joining Date -->
                     <td style="text-align: center; vertical-align: middle; font-family: var(--font-mono); font-size: 12px; color: var(--text-secondary);">
-                      ${emp.joinDate || '—'}
+                      ${formatJoinDate(emp.joinDate)}
                     </td>
 
                     <!-- Status -->
@@ -471,7 +519,7 @@ function renderEmployeeListTable({ title, subtitle, employees, isInactiveView })
                     </td>
                   </tr>
                 `;
-              }).join('')}
+  }).join('')}
             </tbody>
           </table>
         </div>
@@ -1013,7 +1061,7 @@ export function initManpowerEvents() {
         newInp.focus();
         try {
           newInp.setSelectionRange(start, end);
-        } catch (_) {}
+        } catch (_) { }
       }
     });
   }
@@ -1034,10 +1082,21 @@ export function initManpowerEvents() {
     });
   }
 
+  // Group filter — cascades to reset unit & floor
+  const selGroup = document.getElementById('mp-filter-group');
+  if (selGroup) {
+    selGroup.addEventListener('change', (e) => {
+      filterState.groupId = e.target.value;
+      filterState.unitId  = 'ALL';
+      filterState.floorId = 'ALL';
+      refreshView();
+    });
+  }
+
   const selUnit = document.getElementById('mp-filter-unit');
   if (selUnit) {
     selUnit.addEventListener('change', (e) => {
-      filterState.unitId = e.target.value;
+      filterState.unitId  = e.target.value;
       filterState.floorId = 'ALL';
       refreshView();
     });
@@ -1059,6 +1118,7 @@ export function initManpowerEvents() {
         search: '',
         department: 'ALL',
         designation: 'ALL',
+        groupId: 'ALL',
         unitId: 'ALL',
         floorId: 'ALL'
       };

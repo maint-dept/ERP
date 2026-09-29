@@ -7231,7 +7231,8 @@ export function openSmartOcrModal(initialBlob = null, initialText = '') {
   let mechanicFilterText = '';
   let detectedRequisitionNo = '';
 
-  const allEmps = (typeof employeeService !== 'undefined' ? employeeService.getAllEmployees() : []) || [];
+  // allEmps is fetched fresh each render so it always has latest Manpower data
+  let allEmps = (typeof employeeService !== 'undefined' ? employeeService.getAllEmployees({ status: 'ACTIVE' }) : []) || [];
 
   let detectedMechanic = {
     empId: '',
@@ -7369,12 +7370,19 @@ Tools User - Shojib - 132694 [New]`;
   }
 
   function renderModalUI() {
+    // Always fetch fresh Manpower data on each render
+    allEmps = (typeof employeeService !== 'undefined' ? employeeService.getAllEmployees({ status: 'ACTIVE' }) : []) || [];
+
     const qFilter = mechanicFilterText.toLowerCase().trim();
     const filteredEmps = allEmps.filter(e => {
       if (!qFilter) return true;
-      const nm = (e.name || '').toLowerCase();
-      const cd = (e.cardNumber || '').toLowerCase();
-      return nm.includes(qFilter) || cd.includes(qFilter);
+      const nm  = (e.name        || '').toLowerCase();
+      const cd  = (e.cardNumber  || '').toLowerCase();
+      const deg = (e.designation || '').toLowerCase();
+      const dep = (e.department  || '').toLowerCase();
+      const ph  = (e.phone       || '').toLowerCase();
+      return nm.includes(qFilter) || cd.includes(qFilter) ||
+             deg.includes(qFilter) || dep.includes(qFilter) || ph.includes(qFilter);
     });
 
     modalLayer.innerHTML = `
@@ -7422,12 +7430,15 @@ Tools User - Shojib - 132694 [New]`;
                 <!-- Mechanic Dropdown -->
                 <select id="sel-modal-manpower-emp" style="flex: 2; min-width: 280px; background: #0f172a; color: #fff; border: 1px solid #38bdf8; border-radius: 6px; padding: 6px 10px; font-size: 12.5px; font-weight: 700;">
                   <option value="">-- Choose or Search Mechanic from Manpower --</option>
+                  ${filteredEmps.length === 0 ? `<option value="" disabled>— No matching employees found —</option>` : ''}
                   ${filteredEmps.map(emp => {
       const isSel = (detectedMechanic.empId && detectedMechanic.empId === emp.id) ||
         (detectedMechanic.idNumber && emp.cardNumber && emp.cardNumber.includes(detectedMechanic.idNumber)) ||
         (detectedMechanic.name && emp.name && (emp.name.toLowerCase().includes(detectedMechanic.name.toLowerCase()) || detectedMechanic.name.toLowerCase().includes(emp.name.toLowerCase())));
+      const cardNum = (emp.cardNumber || '').replace(/^AMG-?0*/i, '') || emp.cardNumber || emp.id;
+      const area = emp.workingArea || emp.lineName || emp.floorName || emp.department || '';
       return `<option value="${emp.id}" ${isSel ? 'selected' : ''}>
-                      ${emp.name} (${emp.cardNumber}) — ${emp.designation || 'Mechanic'} [${emp.workingArea || emp.department || 'Sewing'}]
+                      ${emp.name} (${cardNum}) — ${emp.designation || 'Mechanic'}${area ? ' | ' + area : ''}
                     </option>`;
     }).join('')}
                 </select>
@@ -7760,19 +7771,19 @@ Tools User - Shojib - 132694 [New]`;
       };
     }
 
-    // Mechanic search filter
+    // Mechanic search filter — re-render dropdown with matched results
     const inpSearch = document.getElementById('inp-search-modal-emp');
     if (inpSearch) {
       inpSearch.oninput = () => {
         mechanicFilterText = inpSearch.value;
-        const q = mechanicFilterText.toLowerCase().trim();
-        const sel = document.getElementById('sel-modal-manpower-emp');
-        if (sel) {
-          Array.from(sel.options).forEach(opt => {
-            if (!opt.value) return;
-            const txt = opt.textContent.toLowerCase();
-            opt.style.display = (!q || txt.includes(q)) ? '' : 'none';
-          });
+        renderModalUI();
+        // After re-render, restore focus to the search input
+        const newInp = document.getElementById('inp-search-modal-emp');
+        if (newInp) {
+          newInp.focus();
+          // Move cursor to end
+          const len = newInp.value.length;
+          newInp.setSelectionRange(len, len);
         }
       };
     }
