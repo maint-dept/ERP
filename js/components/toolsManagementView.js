@@ -7385,6 +7385,20 @@ Tools User - Shojib - 132694 [New]`;
              deg.includes(qFilter) || dep.includes(qFilter) || ph.includes(qFilter);
     });
 
+    // AUTO-SELECT LOGIC: If filtering, automatically select the first match so badges update instantly
+    if (qFilter && filteredEmps.length > 0) {
+      const currentStillMatches = filteredEmps.some(e => e.id === detectedMechanic.empId);
+      if (!currentStillMatches) {
+        const autoSel = filteredEmps[0];
+        detectedMechanic.empId = autoSel.id;
+        detectedMechanic.name = autoSel.name;
+        detectedMechanic.cardNumber = autoSel.cardNumber;
+        detectedMechanic.idNumber = (autoSel.cardNumber || '').replace(/^AMG-?0*/i, '') || autoSel.cardNumber || autoSel.id;
+        detectedMechanic.jobTitle = autoSel.designation || 'Mechanic';
+        detectedMechanic.workingArea = autoSel.workingArea || autoSel.department || 'General';
+      }
+    }
+
     modalLayer.innerHTML = `
       <div id="ocr-modal-root" class="modal-overlay" style="position: fixed; inset: 0; background: rgba(3, 7, 18, 0.94); display: flex; align-items: center; justify-content: center; z-index: 10000; padding: 12px; backdrop-filter: blur(10px);">
         <div style="background: #0f172a; border: 2px solid #38bdf8; border-radius: 14px; width: 100%; max-width: 1120px; max-height: 95vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 25px 60px -12px rgba(56, 189, 248, 0.4);">
