@@ -40,10 +40,10 @@ export function renderHomepageView(isDraft = false) {
   const activeModules = (modules.items || []).filter(m => m.status !== 'INACTIVE');
 
   return `
-    <div class="public-homepage-wrapper" style="min-height: 100%; width: 100%; background: #0b0f19; color: #f8fafc; font-family: var(--font-main); overflow-x: hidden; display: flex; flex-direction: column;">
+    <div class="public-homepage-wrapper" style="min-height: 100%; width: 100%; background: #0b0f19; color: #f8fafc; font-family: var(--font-main); overflow: visible; display: flex; flex-direction: column; position: relative;">
       
       <!-- 1. STICKY USER-FRIENDLY PUBLIC HEADER -->
-      <header class="public-header" style="position: sticky; top: 0; left: 0; right: 0; z-index: 1000; background: rgba(11, 15, 25, 0.95); backdrop-filter: blur(16px); border-bottom: 1px solid rgba(56, 189, 248, 0.2); padding: 12px 32px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 25px rgba(0,0,0,0.6);">
+      <header class="public-header" style="position: -webkit-sticky; position: sticky; top: 0; left: 0; right: 0; z-index: 1000; background: rgba(11, 15, 25, 0.95); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-bottom: 1px solid rgba(56, 189, 248, 0.2); padding: 12px 32px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 25px rgba(0,0,0,0.6); flex-shrink: 0;">
         
         <!-- Brand Logo -->
         <div class="header-brand" style="display: flex; align-items: center; gap: 12px; cursor: pointer;" id="home-brand-logo">
