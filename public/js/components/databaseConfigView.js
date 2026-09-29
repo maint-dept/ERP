@@ -71,7 +71,7 @@ export function initDatabaseConfigEvents() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = \`Al_Muslim_ERP_Backup_\${new Date().toISOString().slice(0, 10)}.json\`;
+      a.download = `Al_Muslim_ERP_Backup_${new Date().toISOString().slice(0, 10)}.json`;
       a.click();
       URL.revokeObjectURL(url);
     });
@@ -87,7 +87,7 @@ export function initDatabaseConfigEvents() {
       reader.onload = (evt) => {
         const res = storage.importBackup(evt.target.result);
         if (res.success) {
-          alert(\`Database restored successfully (\${res.count} machines loaded).\`);
+          alert(`Database restored successfully (${res.count} machines loaded).`);
           window.location.reload();
         } else {
           alert('Restore Failed: ' + res.error);
