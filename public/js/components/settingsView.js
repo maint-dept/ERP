@@ -7,6 +7,7 @@ import { storage } from '../db/storage.js';
 import { TABLE_NAMES } from '../db/schema.js';
 import { state } from '../state.js';
 import { masterDataService } from '../services/masterDataService.js';
+import { renderMultiDatabaseBackupHTML, initMultiDatabaseBackupEvents } from './databaseBackupView.js';
 
 export const REPORT_TYPES = [
   { key: 'ALL', label: 'All Reports (Default)', description: 'Universal baseline signature template for all reports' },
@@ -414,12 +415,16 @@ export function renderSettingsView() {
             </button>
           </div>
         </div>
+
+        ${renderMultiDatabaseBackupHTML()}
       </div>
     </div>
   `;
 }
 
 export function initSettingsEvents() {
+  initMultiDatabaseBackupEvents();
+
   const saveGen = document.getElementById('btn-save-general-settings');
   if (saveGen) {
     saveGen.addEventListener('click', async () => {

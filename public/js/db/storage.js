@@ -6,6 +6,7 @@
 import { INITIAL_DATA } from './initialData.js';
 import { TABLE_NAMES, DEFAULT_SETTINGS, SCHEMA_VERSION, DEFAULT_PERMISSION_PRESETS } from './schema.js';
 import * as firebaseSync from './firebaseSync.js';
+import { syncManager } from './syncManager.js';
 
 const STORAGE_KEY_PREFIX = 'al_muslim_erp_';
 
@@ -518,7 +519,7 @@ class StorageEngine {
       const currentPromise = (async () => {
         try {
           const currentRecords = this.data[table];
-          const result = await firebaseSync.saveTableToFirestore(table, currentRecords);
+          const result = await syncManager.saveTable(table, currentRecords);
           if (result && result.success) {
             this._isCloudConnected = true;
             // Store server-confirmed updateTime for clock-skew-safe remote detection
@@ -1342,7 +1343,7 @@ class StorageEngine {
         if (this._cloudPersistDebounces[table]) {
           clearTimeout(this._cloudPersistDebounces[table]);
           this._cloudPersistDebounces[table] = null;
-          firebaseSync.saveTableToFirestore(table, this.data[table]).catch(() => {});
+          syncManager.saveTable(table, this.data[table]).catch(() => {});
         }
       });
     }
