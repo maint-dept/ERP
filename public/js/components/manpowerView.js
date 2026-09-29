@@ -34,6 +34,46 @@ let filterState = {
   floorId: 'ALL'
 };
 
+/**
+ * Formats a joinDate value to DD-MM-YYYY display format.
+ * Handles:
+ *   - ISO strings: 'YYYY-MM-DD' or 'YYYY-MM-DDTHH:mm:ss...'
+ *   - Excel serial date numbers (e.g. 45638)
+ *   - Already-formatted 'DD-MM-YYYY' strings (returned as-is)
+ */
+function formatJoinDate(val) {
+  if (!val && val !== 0) return '—';
+
+  // If it's a number (or numeric string) treat as Excel serial date
+  const num = Number(val);
+  if (!isNaN(num) && num > 1000) {
+    // Excel serial: days since 1900-01-00 (note: Excel wrongly counts 1900 as leap year)
+    const excelEpoch = new Date(1899, 11, 30); // Dec 30, 1899
+    const ms = excelEpoch.getTime() + num * 86400000;
+    const d = new Date(ms);
+    if (isNaN(d.getTime())) return String(val);
+    const dd = String(d.getDate()).padStart(2, '0');
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const yyyy = d.getFullYear();
+    return `${dd}-${mm}-${yyyy}`;
+  }
+
+  // If it's a string, try to parse it
+  const s = String(val).trim();
+
+  // Already in DD-MM-YYYY format
+  if (/^\d{2}-\d{2}-\d{4}$/.test(s)) return s;
+
+  // ISO format: YYYY-MM-DD or YYYY-MM-DDTHH:mm:ss
+  const isoMatch = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (isoMatch) {
+    return `${isoMatch[3]}-${isoMatch[2]}-${isoMatch[1]}`;
+  }
+
+  // Fallback: return raw value
+  return s || '—';
+}
+
 function formatEmployeesForExport(employees) {
   const customFields = employeeCustomFieldService.getActiveFields();
   return employees.map((emp, index) => {
@@ -361,16 +401,16 @@ function renderEmployeeListTable({ title, subtitle, employees, isInactiveView })
                   </td>
                 </tr>
               ` : employees.map((emp, idx) => {
-                const isActive = emp.status === 'ACTIVE';
-                const isSelected = selectedEmployeeIds.has(emp.id);
-                const floorName = flrMap.get(emp.floorId) || emp.floorName || '';
-                const unitName = untMap.get(emp.unitId) || emp.unitName || '';
-                const lineName = linMap.get(emp.lineId) || emp.lineName || '';
-                const locationStr = unitName || floorName ? `${unitName}${floorName ? ' • ' + floorName : ''}${lineName ? ' (' + lineName + ')' : ''}` : (emp.workingArea || '—');
+    const isActive = emp.status === 'ACTIVE';
+    const isSelected = selectedEmployeeIds.has(emp.id);
+    const floorName = flrMap.get(emp.floorId) || emp.floorName || '';
+    const unitName = untMap.get(emp.unitId) || emp.unitName || '';
+    const lineName = linMap.get(emp.lineId) || emp.lineName || '';
+    const locationStr = unitName || floorName ? `${unitName}${floorName ? ' • ' + floorName : ''}${lineName ? ' (' + lineName + ')' : ''}` : (emp.workingArea || '—');
 
-                const statusBadge = isActive ? 'badge-active' : (emp.status === 'ON_LEAVE' ? 'badge-maint' : 'badge-breakdown');
+    const statusBadge = isActive ? 'badge-active' : (emp.status === 'ON_LEAVE' ? 'badge-maint' : 'badge-breakdown');
 
-                return `
+    return `
                   <tr class="${isSelected ? 'manpower-row-selected' : ''}" style="background: ${isSelected ? 'rgba(2, 132, 199, 0.16) !important;' : (!isActive ? 'rgba(239, 68, 68, 0.03)' : 'transparent')}; cursor: pointer;" data-row-emp-id="${emp.id}">
                     <!-- Checkbox -->
                     <td style="text-align: center; vertical-align: middle;" onclick="event.stopPropagation();">
@@ -422,7 +462,7 @@ function renderEmployeeListTable({ title, subtitle, employees, isInactiveView })
 
                     <!-- Joining Date -->
                     <td style="text-align: center; vertical-align: middle; font-family: var(--font-mono); font-size: 12px; color: var(--text-secondary);">
-                      ${emp.joinDate || '—'}
+                      ${formatJoinDate(emp.joinDate)}
                     </td>
 
                     <!-- Status -->
@@ -471,7 +511,7 @@ function renderEmployeeListTable({ title, subtitle, employees, isInactiveView })
                     </td>
                   </tr>
                 `;
-              }).join('')}
+  }).join('')}
             </tbody>
           </table>
         </div>
@@ -1013,7 +1053,7 @@ export function initManpowerEvents() {
         newInp.focus();
         try {
           newInp.setSelectionRange(start, end);
-        } catch (_) {}
+        } catch (_) { }
       }
     });
   }
