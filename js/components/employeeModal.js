@@ -100,14 +100,14 @@ function renderAddEditEmployeeModal({ type, employeeId }) {
               <div class="form-group">
                 <label class="form-label" style="font-size: 12px; font-weight: 700; color: #fff;">Designation *</label>
                 <select id="emp-field-designation" class="filter-select" required>
-                  ${DESIGNATIONS.map(d => `<option value="${d}" ${emp.designation === d ? 'selected' : ''}>${d}</option>`).join('')}
+                  ${(() => { const desigs = employeeService.getDistinctDesignations(); const cur = emp.designation || ''; if (cur && !desigs.includes(cur)) desigs.unshift(cur); return desigs.map(d => `<option value="${d}" ${emp.designation === d ? 'selected' : ''}>${d}</option>`).join(''); })()}
                 </select>
               </div>
 
               <div class="form-group">
                 <label class="form-label" style="font-size: 12px; font-weight: 700; color: #fff;">Department *</label>
                 <select id="emp-field-department" class="filter-select" required>
-                  ${DEPARTMENTS.map(d => `<option value="${d}" ${emp.department === d ? 'selected' : ''}>${d}</option>`).join('')}
+                  ${(() => { const depts = employeeService.getDistinctDepartments(); const cur = emp.department || ''; if (cur && !depts.includes(cur)) depts.unshift(cur); return depts.map(d => `<option value="${d}" ${emp.department === d ? 'selected' : ''}>${d}</option>`).join(''); })()}
                 </select>
               </div>
 
@@ -361,14 +361,14 @@ function renderTransferEmployeeModal({ employeeId }) {
               <div class="form-group">
                 <label class="form-label" style="font-size: 12px; font-weight: 700; color: #fff;">Department *</label>
                 <select id="emp-tr-department" class="filter-select" required>
-                  ${DEPARTMENTS.map(d => `<option value="${d}" ${emp.department === d ? 'selected' : ''}>${d}</option>`).join('')}
+                  ${(() => { const depts = employeeService.getDistinctDepartments(); const cur = emp.department || ''; if (cur && !depts.includes(cur)) depts.unshift(cur); return depts.map(d => `<option value="${d}" ${emp.department === d ? 'selected' : ''}>${d}</option>`).join(''); })()}
                 </select>
               </div>
 
               <div class="form-group">
                 <label class="form-label" style="font-size: 12px; font-weight: 700; color: #fff;">Designation *</label>
                 <select id="emp-tr-designation" class="filter-select" required>
-                  ${DESIGNATIONS.map(d => `<option value="${d}" ${emp.designation === d ? 'selected' : ''}>${d}</option>`).join('')}
+                  ${(() => { const desigs = employeeService.getDistinctDesignations(); const cur = emp.designation || ''; if (cur && !desigs.includes(cur)) desigs.unshift(cur); return desigs.map(d => `<option value="${d}" ${emp.designation === d ? 'selected' : ''}>${d}</option>`).join(''); })()}
                 </select>
               </div>
 

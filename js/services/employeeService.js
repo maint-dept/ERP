@@ -536,11 +536,172 @@ class EmployeeService {
 
   constructor() {
     this._ensureSeedData();
+    this.autoHealEmployeeUnits();
   }
 
   _ensureSeedData() {
     // Single source of truth is Firestore and StorageEngine.
     // Never resurrect deleted employees or overwrite user data with mock seeds.
+  }
+
+  /**
+   * Automatically heals and reconciles employee Unit & Group IDs with Master Data
+   */
+  autoHealEmployeeUnits() {
+    try {
+      const table = storage.getTable(TABLE_NAMES.EMPLOYEES) || [];
+      let modified = false;
+      table.forEach(emp => {
+        // If employee has a floorId, ensure unitId aligns with the floor's parent unit
+        if (emp.floorId) {
+          const flr = masterDataService.getFloorById ? masterDataService.getFloorById(emp.floorId) : null;
+          if (flr && flr.unitId && (!emp.unitId || emp.unitId !== flr.unitId)) {
+            emp.unitId = flr.unitId;
+            emp.groupId = flr.groupId || (masterDataService.getUnitById ? masterDataService.getUnitById(flr.unitId)?.groupId : null) || emp.groupId || 'grp-1';
+            modified = true;
+          }
+        }
+        // If employee has unitName, attempt master data lookup
+        if (emp.unitName && (!emp.unitId || emp.unitId === 'unt-1')) {
+          const matched = this.resolveUnitFromMasterData(emp.unitName);
+          if (matched && emp.unitId !== matched.id) {
+            emp.unitId = matched.id;
+            emp.groupId = matched.groupId || emp.groupId || 'grp-1';
+            modified = true;
+          }
+        }
+      });
+      if (modified) {
+        storage.setTable(TABLE_NAMES.EMPLOYEES, table);
+        storage.saveTable(TABLE_NAMES.EMPLOYEES);
+      }
+    } catch (_) {}
+  }
+
+  /**
+   * Resolves a Unit from Master Data by text (ID, code, exact name, or normalized name)
+   */
+  resolveUnitFromMasterData(rawUnitText) {
+    if (!rawUnitText || typeof rawUnitText !== 'string') return null;
+    const clean = rawUnitText.trim().toLowerCase();
+    if (!clean) return null;
+    const allUnits = masterDataService.getUnits ? masterDataService.getUnits(null, true) : [];
+    
+    // 1. Match by exact ID
+    let found = allUnits.find(u => u.id && u.id.toLowerCase() === clean);
+    if (found) return found;
+
+    // 2. Match by Unit Code (e.g. 'AKM', 'PBJ', 'AMA', 'AGA', 'AMFS')
+    found = allUnits.find(u => u.code && u.code.toLowerCase() === clean);
+    if (found) return found;
+
+    // 3. Match by exact Unit Name
+    found = allUnits.find(u => u.name && u.name.toLowerCase() === clean);
+    if (found) return found;
+
+    // 4. Match normalized (e.g. "akm knitwear" vs "akm knit wear ltd")
+    const cleanNorm = clean.replace(/[^a-z0-9]/g, '');
+    found = allUnits.find(u => {
+      const uNorm = (u.name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+      const cNorm = (u.code || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+      return uNorm === cleanNorm || cNorm === cleanNorm ||
+             (cleanNorm.length >= 3 && (uNorm.includes(cleanNorm) || cleanNorm.includes(uNorm)));
+    });
+    if (found) return found;
+
+    return null;
+  }
+
+  /**
+   * Resolves a Floor from Master Data by text
+   */
+  resolveFloorFromMasterData(rawFloorText, unitId = null) {
+    if (!rawFloorText || typeof rawFloorText !== 'string') return null;
+    const clean = rawFloorText.trim().toLowerCase();
+    if (!clean) return null;
+    const allFloors = masterDataService.getFloors ? masterDataService.getFloors(unitId, null, true) : [];
+
+    // 1. Match by exact ID
+    let found = allFloors.find(f => f.id && f.id.toLowerCase() === clean);
+    if (found) return found;
+
+    // 2. Match by exact Name
+    found = allFloors.find(f => f.name && f.name.toLowerCase() === clean);
+    if (found) return found;
+
+    // 3. Match substring
+    found = allFloors.find(f => f.name && (f.name.toLowerCase().includes(clean) || clean.includes(f.name.toLowerCase())));
+    if (found) return found;
+
+    // Search across all floors if scoped unit search failed
+    if (unitId) {
+      const globalFloors = masterDataService.getFloors ? masterDataService.getFloors(null, null, true) : [];
+      found = globalFloors.find(f => f.name && (f.name.toLowerCase() === clean || f.name.toLowerCase().includes(clean) || clean.includes(f.name.toLowerCase())));
+      if (found) return found;
+    }
+
+    return null;
+  }
+
+  /**
+   * Resolves a Line from Master Data by text
+   */
+  resolveLineFromMasterData(rawLineText, floorId = null, unitId = null) {
+    if (!rawLineText || typeof rawLineText !== 'string') return null;
+    const clean = rawLineText.trim().toLowerCase();
+    if (!clean) return null;
+    const allLines = masterDataService.getLines ? masterDataService.getLines(floorId, unitId, null, true) : [];
+
+    let found = allLines.find(l => l.id && l.id.toLowerCase() === clean);
+    if (found) return found;
+    found = allLines.find(l => l.name && l.name.toLowerCase() === clean);
+    if (found) return found;
+    found = allLines.find(l => l.name && (l.name.toLowerCase().includes(clean) || clean.includes(l.name.toLowerCase())));
+    if (found) return found;
+
+    if (floorId || unitId) {
+      const globalLines = masterDataService.getLines ? masterDataService.getLines(null, null, null, true) : [];
+      found = globalLines.find(l => l.name && (l.name.toLowerCase() === clean || l.name.toLowerCase().includes(clean) || clean.includes(l.name.toLowerCase())));
+      if (found) return found;
+    }
+
+    return null;
+  }
+
+  /**
+   * Dynamically extracts all distinct departments from actual workforce data + defaults
+   */
+  getDistinctDepartments() {
+    const table = storage.getTable(TABLE_NAMES.EMPLOYEES) || [];
+    const set = new Set();
+    table.forEach(e => {
+      if (e.department && typeof e.department === 'string') {
+        const d = e.department.trim();
+        if (d && d !== 'ALL') set.add(d);
+      }
+    });
+    DEPARTMENTS.forEach(d => {
+      if (d) set.add(d.trim());
+    });
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }
+
+  /**
+   * Dynamically extracts all distinct designations from actual workforce data + defaults
+   */
+  getDistinctDesignations() {
+    const table = storage.getTable(TABLE_NAMES.EMPLOYEES) || [];
+    const set = new Set();
+    table.forEach(e => {
+      if (e.designation && typeof e.designation === 'string') {
+        const d = e.designation.trim();
+        if (d && d !== 'ALL') set.add(d);
+      }
+    });
+    DESIGNATIONS.forEach(d => {
+      if (d) set.add(d.trim());
+    });
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
   }
 
   /**
@@ -570,14 +731,16 @@ class EmployeeService {
       list = list.filter(e => e.status === filters.status);
     }
 
-    // 3. Department Filter
+    // 3. Department Filter (Case-insensitive & trimmed)
     if (filters.department && filters.department !== 'ALL') {
-      list = list.filter(e => e.department === filters.department);
+      const targetDept = filters.department.trim().toLowerCase();
+      list = list.filter(e => (e.department || '').trim().toLowerCase() === targetDept);
     }
 
-    // 4. Designation Filter
+    // 4. Designation Filter (Case-insensitive & trimmed)
     if (filters.designation && filters.designation !== 'ALL') {
-      list = list.filter(e => e.designation === filters.designation);
+      const targetDesig = filters.designation.trim().toLowerCase();
+      list = list.filter(e => (e.designation || '').trim().toLowerCase() === targetDesig);
     }
 
     // 5. Plant Hierarchy Filters (Group -> Unit -> Floor -> Line)
@@ -585,7 +748,18 @@ class EmployeeService {
       list = list.filter(e => e.groupId === filters.groupId);
     }
     if (filters.unitId && filters.unitId !== 'ALL') {
-      list = list.filter(e => e.unitId === filters.unitId);
+      list = list.filter(e => {
+        if (e.unitId === filters.unitId) return true;
+        if (e.floorId) {
+          const flr = masterDataService.getFloorById ? masterDataService.getFloorById(e.floorId) : null;
+          if (flr && flr.unitId === filters.unitId) return true;
+        }
+        if (e.unitName) {
+          const uObj = masterDataService.getUnitById ? masterDataService.getUnitById(filters.unitId) : null;
+          if (uObj && (uObj.name.toLowerCase() === e.unitName.trim().toLowerCase() || (uObj.code && uObj.code.toLowerCase() === e.unitName.trim().toLowerCase()))) return true;
+        }
+        return false;
+      });
     }
     if (filters.floorId && filters.floorId !== 'ALL') {
       list = list.filter(e => e.floorId === filters.floorId);
@@ -615,19 +789,39 @@ class EmployeeService {
    */
   enrichEmployee(emp) {
     if (!emp) return null;
-    const group = emp.groupId ? masterDataService.getGroupById(emp.groupId) : null;
-    const unit = emp.unitId ? masterDataService.getUnitById(emp.unitId) : null;
-    const floor = emp.floorId ? masterDataService.getFloorById(emp.floorId) : null;
-    const line = emp.lineId ? masterDataService.getLineById(emp.lineId) : null;
+    let unitId = emp.unitId || null;
+    let floorId = emp.floorId || null;
 
-    const locationPath = [group?.name, unit?.name, floor?.name, line?.name || emp.workingArea].filter(Boolean).join(' > ');
+    let floor = floorId ? (masterDataService.getFloorById ? masterDataService.getFloorById(floorId) : null) : null;
+    if (!unitId && floor && floor.unitId) {
+      unitId = floor.unitId;
+    }
+
+    let unit = unitId ? (masterDataService.getUnitById ? masterDataService.getUnitById(unitId) : null) : null;
+    if (!unit && emp.unitName) {
+      unit = this.resolveUnitFromMasterData(emp.unitName);
+      if (unit) unitId = unit.id;
+    }
+
+    let groupId = emp.groupId || unit?.groupId || floor?.groupId || 'grp-1';
+    let group = groupId ? (masterDataService.getGroupById ? masterDataService.getGroupById(groupId) : null) : null;
+    let line = emp.lineId ? (masterDataService.getLineById ? masterDataService.getLineById(emp.lineId) : null) : null;
+
+    const groupName = group?.name || emp.groupName || 'Al-Muslim Group';
+    const unitName = unit?.name || emp.unitName || '';
+    const floorName = floor?.name || emp.floorName || emp.floor || '';
+    const lineName = line?.name || emp.lineName || '';
+
+    const locationPath = [groupName, unitName, floorName, lineName || emp.workingArea].filter(Boolean).join(' > ');
 
     return {
       ...emp,
-      groupName: group?.name || emp.groupName || 'Al-Muslim Group',
-      unitName: unit?.name || emp.unitName || 'AKM Knitwear Ltd.',
-      floorName: floor?.name || emp.floorName || emp.floor || 'General Floor',
-      lineName: line?.name || emp.lineName || emp.workingArea || 'Production Bay',
+      groupId,
+      unitId,
+      groupName,
+      unitName,
+      floorName,
+      lineName,
       locationPath: locationPath || 'Unassigned Location'
     };
   }
@@ -731,16 +925,20 @@ class EmployeeService {
       throw new Error(`Employee/Card ID '${cardNumber}' is already assigned to another employee.`);
     }
 
+    const resolvedUnitId = data.unitId || (data.floorId ? masterDataService.getFloorById?.(data.floorId)?.unitId : null) || null;
+    const resolvedGroupId = data.groupId || (resolvedUnitId ? masterDataService.getUnitById?.(resolvedUnitId)?.groupId : null) || 'grp-1';
+
     const newEmp = {
       id: `emp-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
       name,
       cardNumber,
       designation: (data.designation || 'Senior Machine Operator').trim(),
       department: (data.department || 'Sewing & Assembly').trim(),
-      groupId: data.groupId || 'grp-1',
-      unitId: data.unitId || 'unt-1',
-      floorId: data.floorId || 'flr-4',
-      lineId: data.lineId || 'lin-1',
+      groupId: resolvedGroupId,
+      unitId: resolvedUnitId,
+      unitName: data.unitName || (resolvedUnitId ? masterDataService.getUnitById?.(resolvedUnitId)?.name : '') || '',
+      floorId: data.floorId || null,
+      lineId: data.lineId || null,
       workingArea: (data.workingArea || '').trim(),
       phone: (data.phone || '').trim(),
       joinDate: data.joinDate || new Date().toISOString().split('T')[0],
@@ -780,13 +978,24 @@ class EmployeeService {
       }
     }
 
+    const resolvedUpdates = { ...updates };
+    if (resolvedUpdates.floorId && !resolvedUpdates.unitId) {
+      const flr = masterDataService.getFloorById ? masterDataService.getFloorById(resolvedUpdates.floorId) : null;
+      if (flr && flr.unitId) {
+        resolvedUpdates.unitId = flr.unitId;
+        if (!resolvedUpdates.groupId) {
+          resolvedUpdates.groupId = flr.groupId || masterDataService.getUnitById?.(flr.unitId)?.groupId || existing.groupId;
+        }
+      }
+    }
+
     const mergedCustomFields = {
       ...(existing.customFields || {}),
-      ...(updates.customFields || {})
+      ...(resolvedUpdates.customFields || {})
     };
 
     const payload = {
-      ...updates,
+      ...resolvedUpdates,
       customFields: mergedCustomFields,
       updatedAt: new Date().toISOString()
     };
@@ -1166,7 +1375,7 @@ class EmployeeService {
         'Full Name': emp.name,
         'Designation': emp.designation,
         'Department': emp.department,
-        'Factory / Unit': emp.unitName || 'AKM Knitwear Ltd.',
+        'Factory / Unit': emp.unitName || '',
         'Plant Floor': emp.floorName || emp.floor || '',
         'Line / Working Area': emp.workingArea || emp.lineName || '',
         'Phone Number': emp.phone || '',
@@ -1194,7 +1403,7 @@ class EmployeeService {
         'Full Name': 'Md. Shamim Hossain',
         'Designation': 'Senior Mechanic',
         'Department': 'Mechanical Maintenance',
-        'Factory / Unit': 'AKM Knitwear Ltd.',
+        'Factory / Unit': 'AKM Knit Wear Ltd.',
         'Plant Floor': 'Sewing - Model Line',
         'Line / Working Area': 'Sewing - Model Line',
         'Phone Number': '+880 1635-667788',
@@ -1207,7 +1416,7 @@ class EmployeeService {
         'Full Name': 'Md. Jahid Khan',
         'Designation': 'Assistant Mechanic (W)',
         'Department': 'Mechanical Maintenance',
-        'Factory / Unit': 'AKM Knitwear Ltd.',
+        'Factory / Unit': 'Pacific Blue (Jeans Wear) Ltd.',
         'Plant Floor': 'Special M/C (P.A)',
         'Line / Working Area': 'Special M/C (P.A)',
         'Phone Number': '+880 1724-556677',
@@ -1220,7 +1429,7 @@ class EmployeeService {
         'Full Name': 'Ashraful Alam Shahed',
         'Designation': 'Senior Mechanic',
         'Department': 'Mechanical Maintenance',
-        'Factory / Unit': 'AKM Knitwear Ltd.',
+        'Factory / Unit': 'Al-Muslim Apparels Ltd.',
         'Plant Floor': 'Sewing - Jamuna',
         'Line / Working Area': 'Sewing - Jamuna',
         'Phone Number': '+880 1712-345678',
@@ -1251,7 +1460,7 @@ class EmployeeService {
   /**
    * Previews parsed Excel rows before applying changes:
    * Counts how many records will be updated, how many promotions detected,
-   * how many floor transfers detected, how many new employees to add.
+   * how many unit/floor transfers detected, how many new employees to add.
    */
   previewManpowerImport(rows = []) {
     let updatedCount = 0;
@@ -1283,9 +1492,15 @@ class EmployeeService {
       }
 
       const designation = this._extractCell(row, ['Designation', 'Designation Name', 'Position', 'Rank', 'পদবী', 'পদবি']);
+      const unit = this._extractCell(row, [
+        'Factory / Unit', 'Factory/Unit', 'Unit / Factory', 'Unit/Factory',
+        'Unit', 'Factory', 'Plant', 'Company', 'Unit Name', 'Factory Name',
+        'Company Name', 'Plant Unit', 'ইউনিট', 'কারখানা', 'প্রতিষ্ঠান'
+      ]);
       const workingArea = this._extractCell(row, ['Line / Working Area', 'Working Area', 'Area', 'Line', 'Line Name', 'Section', 'কর্মক্ষেত্র', 'লাইন', 'সেকশন']);
       const floor = this._extractCell(row, ['Plant Floor', 'Floor', 'Floor Name', 'ফ্লোর']);
 
+      const matchedUnit = this.resolveUnitFromMasterData(unit);
       const existing = this.findEmployeeByFlexibleCard(cardNumber);
       if (existing) {
         updatedCount++;
@@ -1302,17 +1517,18 @@ class EmployeeService {
             });
           }
         }
-        // Check transfer (floor / working area change)
-        const currentLoc = (existing.workingArea || existing.floorName || '').toLowerCase();
-        const newLoc = (workingArea || floor || '').toLowerCase();
-        if (newLoc && currentLoc && currentLoc !== newLoc) {
+        // Check transfer (unit / floor / working area change)
+        const currentLoc = [existing.unitName, existing.floorName || existing.workingArea].filter(Boolean).join(' • ');
+        const targetUnitName = matchedUnit ? matchedUnit.name : (unit || '');
+        const newLoc = [targetUnitName, floor || workingArea].filter(Boolean).join(' • ');
+        if (newLoc && currentLoc && currentLoc.toLowerCase() !== newLoc.toLowerCase()) {
           transferredCount++;
           if (sampleTransfers.length < 5) {
             sampleTransfers.push({
               name: existing.name,
               card: existing.cardNumber,
-              fromLoc: existing.workingArea || existing.floorName || 'General',
-              toLoc: workingArea || floor
+              fromLoc: currentLoc || 'General',
+              toLoc: newLoc
             });
           }
         }
@@ -1322,7 +1538,8 @@ class EmployeeService {
           sampleAdded.push({
             name: name || `Employee #${cardNumber}`,
             card: cardNumber,
-            designation: designation || 'Technician'
+            designation: designation || 'Technician',
+            unit: matchedUnit?.name || unit || ''
           });
         }
       }
@@ -1344,9 +1561,10 @@ class EmployeeService {
   /**
    * Bulk imports manpower data from Excel:
    * 1. Matches employee by Card Number flexibly (supporting both worker 'AMG0000000' and staff 'AMG-0000000' hyphen formats)
-   * 2. Auto-updates designations (promotions), working areas, plant floors, departments, phones, status
-   * 3. Creates new employees for unrecognized cards
-   * 4. Immediately synchronizes Tools Management allocations so ID Card printouts and registers update automatically!
+   * 2. Resolves Factory / Unit, Floor, and Line from Master Data Hierarchy
+   * 3. Auto-updates designations (promotions), units, working areas, plant floors, departments, phones, status
+   * 4. Creates new employees with correct Plant Hierarchy linking
+   * 5. Immediately synchronizes Tools Management allocations so ID Card printouts and registers update automatically!
    */
   importManpowerData(rows = []) {
     let addedCount = 0;
@@ -1383,12 +1601,34 @@ class EmployeeService {
 
         const designation = this._extractCell(row, ['Designation', 'Designation Name', 'Position', 'Rank', 'Job Title', 'পদবী', 'পদবি']);
         const department = this._extractCell(row, ['Department', 'Dept', 'Department Name', 'Section', 'বিভাগ']);
+        const unit = this._extractCell(row, [
+          'Factory / Unit', 'Factory/Unit', 'Unit / Factory', 'Unit/Factory',
+          'Unit', 'Factory', 'Plant', 'Company', 'Unit Name', 'Factory Name',
+          'Company Name', 'Plant Unit', 'ইউনিট', 'কারখানা', 'প্রতিষ্ঠান'
+        ]);
         const workingArea = this._extractCell(row, ['Line / Working Area', 'Working Area', 'Area', 'Line', 'Line Name', 'Production Bay', 'Section', 'কর্মক্ষেত্র', 'লাইন', 'সেকশন']);
         const floor = this._extractCell(row, ['Plant Floor', 'Floor', 'Floor Name', 'ফ্লোর']);
         const phone = this._extractCell(row, ['Phone Number', 'Phone', 'Mobile', 'Mobile No', 'Contact Number', 'Contact', 'মোবাইল', 'ফোন']);
         const joinDate = this._extractCell(row, ['Joining Date', 'Join Date', 'DOJ', 'Date of Joining', 'যোগদানের তারিখ']);
         const rawStatus = this._extractCell(row, ['Status', 'Employment Status', 'Active', 'স্ট্যাটাস']).toUpperCase();
         const status = (rawStatus === 'INACTIVE' || rawStatus === 'TERMINATED' || rawStatus === 'ON_LEAVE') ? rawStatus : 'ACTIVE';
+
+        // Master Data Plant Hierarchy Resolution (Unit -> Floor -> Line)
+        let matchedUnit = this.resolveUnitFromMasterData(unit);
+        let matchedFloor = this.resolveFloorFromMasterData(floor, matchedUnit?.id);
+        if (!matchedUnit && matchedFloor && matchedFloor.unitId) {
+          matchedUnit = masterDataService.getUnitById ? masterDataService.getUnitById(matchedFloor.unitId) : null;
+        }
+        let matchedLine = this.resolveLineFromMasterData(workingArea, matchedFloor?.id, matchedUnit?.id);
+        if (!matchedFloor && matchedLine && matchedLine.floorId) {
+          matchedFloor = masterDataService.getFloorById ? masterDataService.getFloorById(matchedLine.floorId) : null;
+          if (!matchedUnit && matchedFloor && matchedFloor.unitId) {
+            matchedUnit = masterDataService.getUnitById ? masterDataService.getUnitById(matchedFloor.unitId) : null;
+          }
+        }
+
+        const resolvedUnitId = matchedUnit?.id || matchedFloor?.unitId || null;
+        const resolvedGroupId = matchedUnit?.groupId || (matchedFloor?.unitId ? masterDataService.getUnitById?.(matchedFloor.unitId)?.groupId : null) || 'grp-1';
 
         // Dynamic custom fields extraction
         const empCustomFields = {};
@@ -1422,17 +1662,31 @@ class EmployeeService {
             });
           }
 
-          // Working Area & Floor change (Relocation / Transfer)
+          // Unit, Floor, and Working Area change (Relocation / Transfer)
+          if (resolvedUnitId && resolvedUnitId !== existing.unitId) {
+            updates.unitId = resolvedUnitId;
+            updates.groupId = resolvedGroupId;
+            updates.unitName = matchedUnit?.name || unit || '';
+            transferredCount++;
+            transfersList.push({
+              name: existing.name,
+              card: existing.cardNumber,
+              from: existing.unitName || 'Unassigned',
+              to: updates.unitName
+            });
+          }
+          if (matchedFloor && matchedFloor.id !== existing.floorId) {
+            updates.floorId = matchedFloor.id;
+            if (!updates.unitId && matchedFloor.unitId) {
+              updates.unitId = matchedFloor.unitId;
+              updates.groupId = matchedFloor.groupId || resolvedGroupId;
+            }
+          }
+          if (matchedLine && matchedLine.id !== existing.lineId) {
+            updates.lineId = matchedLine.id;
+          }
           if (workingArea && workingArea !== existing.workingArea) {
             updates.workingArea = workingArea;
-          }
-          if (floor) {
-            // Check master data floors
-            const allFloors = masterDataService.getFloors ? masterDataService.getFloors() : [];
-            const matchedFloor = allFloors.find(f => f.name && f.name.toLowerCase().includes(floor.toLowerCase()));
-            if (matchedFloor) {
-              updates.floorId = matchedFloor.id;
-            }
           }
 
           // Card Format Upgrade: If worker promoted to staff with hyphen (e.g. AMG0144906 -> AMG-0144906)
@@ -1456,27 +1710,25 @@ class EmployeeService {
             cardNumber,
             designation: designation || 'Senior Machine Operator',
             department: department || 'Sewing & Assembly',
-            workingArea: workingArea || floor || '',
+            groupId: resolvedGroupId,
+            unitId: resolvedUnitId,
+            unitName: matchedUnit?.name || unit || '',
+            floorId: matchedFloor?.id || null,
+            lineId: matchedLine?.id || null,
+            workingArea: workingArea || (matchedFloor?.name || floor || ''),
             phone: phone || '',
             joinDate: joinDate || new Date().toISOString().split('T')[0],
             status: status || 'ACTIVE',
             customFields: empCustomFields
           };
 
-          if (floor) {
-            const allFloors = masterDataService.getFloors ? masterDataService.getFloors() : [];
-            const matchedFloor = allFloors.find(f => f.name && f.name.toLowerCase().includes(floor.toLowerCase()));
-            if (matchedFloor) {
-              newEmpData.floorId = matchedFloor.id;
-            }
-          }
-
           const created = this.createEmployee(newEmpData);
           addedCount++;
           addedList.push({
             name: created.name,
             card: created.cardNumber,
-            designation: created.designation
+            designation: created.designation,
+            unit: created.unitName
           });
         }
       } catch (err) {

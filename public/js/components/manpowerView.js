@@ -43,7 +43,7 @@ function formatEmployeesForExport(employees) {
       'Full Name': emp.name,
       'Designation': emp.designation,
       'Department': emp.department,
-      'Factory / Unit': emp.unitName || 'AKM Knitwear Ltd.',
+      'Factory / Unit': emp.unitName || '',
       'Plant Floor': emp.floorName || emp.floor || '',
       'Line / Working Area': emp.workingArea || emp.lineName || '',
       'Phone Number': emp.phone || '',
@@ -220,19 +220,19 @@ function renderEmployeeListTable({ title, subtitle, employees, isInactiveView })
             />
           </div>
 
-          <!-- Department Filter -->
+          <!-- Department Filter (Dynamic from actual employee data) -->
           <div style="flex: 1; min-width: 140px;">
             <select id="mp-filter-dept" class="filter-select" style="font-size: 12px; height: 34px;">
               <option value="ALL">All Departments</option>
-              ${DEPARTMENTS.map(d => `<option value="${d}" ${filterState.department === d ? 'selected' : ''}>${d}</option>`).join('')}
+              ${employeeService.getDistinctDepartments().map(d => `<option value="${d}" ${filterState.department === d ? 'selected' : ''}>${d}</option>`).join('')}
             </select>
           </div>
 
-          <!-- Designation Filter -->
+          <!-- Designation Filter (Dynamic from actual employee data) -->
           <div style="flex: 1; min-width: 140px;">
             <select id="mp-filter-desig" class="filter-select" style="font-size: 12px; height: 34px;">
               <option value="ALL">All Designations</option>
-              ${DESIGNATIONS.map(d => `<option value="${d}" ${filterState.designation === d ? 'selected' : ''}>${d}</option>`).join('')}
+              ${employeeService.getDistinctDesignations().map(d => `<option value="${d}" ${filterState.designation === d ? 'selected' : ''}>${d}</option>`).join('')}
             </select>
           </div>
 
