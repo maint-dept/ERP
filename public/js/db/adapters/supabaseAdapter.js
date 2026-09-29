@@ -13,6 +13,15 @@ export class SupabaseAdapter extends BaseAdapter {
     });
     this.url = config.url || '';
     this.anonKey = config.anonKey || '';
+
+    // Auto-parse from a single raw connStr if provided
+    if (config.connStr) {
+      const urlMatch = config.connStr.match(/https:\/\/[^\s"',]+/i);
+      const keyMatch = config.connStr.match(/eyJ[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+/i);
+      
+      if (urlMatch) this.url = urlMatch[0];
+      if (keyMatch) this.anonKey = keyMatch[0];
+    }
   }
 
   _getHeaders() {
