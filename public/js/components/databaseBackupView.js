@@ -153,12 +153,12 @@ export function initMultiDatabaseBackupEvents() {
     // 2. Render Simple List
     let listHtml = '';
     dbList.forEach(db => {
-      listHtml += \`
+      listHtml += `
         <div style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; color: #e2e8f0; background: rgba(255,255,255,0.04); padding: 8px 14px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1);">
           <span style="font-size: 14px;">●</span>
-          <strong style="color: #38bdf8;">\${db.name}</strong> — \${db.role}
+          <strong style="color: #38bdf8;">${db.name}</strong> — ${db.role}
         </div>
-      \`;
+      `;
     });
     listContainer.innerHTML = listHtml;
 
@@ -171,24 +171,24 @@ export function initMultiDatabaseBackupEvents() {
       const syncedCount = isMain ? totalRecords : Math.max(0, totalRecords - db.pending);
       const syncPercent = ((syncedCount / totalRecords) * 100).toFixed(1);
 
-      statusHtml += \`
-        <div style="background: rgba(15,23,42,0.8); border: 1px solid rgba(255,255,255,0.15); border-left: 4px solid \${borderCol}; border-radius: 8px; padding: 14px; display: flex; flex-direction: column; gap: 8px;">
-          <div style="font-weight: 800; font-size: 14.5px; color: #fff;">\${db.name} — \${db.role}</div>
-          <div style="font-size: 13px; font-weight: 700; color: \${borderCol};">\${db.statusIcon} \${db.statusText}</div>
+      statusHtml += `
+        <div style="background: rgba(15,23,42,0.8); border: 1px solid rgba(255,255,255,0.15); border-left: 4px solid ${borderCol}; border-radius: 8px; padding: 14px; display: flex; flex-direction: column; gap: 8px;">
+          <div style="font-weight: 800; font-size: 14.5px; color: #fff;">${db.name} — ${db.role}</div>
+          <div style="font-size: 13px; font-weight: 700; color: ${borderCol};">${db.statusIcon} ${db.statusText}</div>
           
           <div style="display: grid; grid-template-columns: 100px 1fr; gap: 4px; font-size: 12px; color: #cbd5e1; margin-top: 4px;">
-            <span style="color: #94a3b8;">Data Sync:</span> <strong style="color: #fff;">\${syncPercent}%</strong>
-            <span style="color: #94a3b8;">Data Matched:</span> <strong style="color: #fff;">\${syncPercent}%</strong>
-            <span style="color: #94a3b8;">Last Sync:</span> <span>\${db.lastSync}</span>
-            <span style="color: #94a3b8;">Pending:</span> <span style="color: \${db.pending > 0 ? '#f59e0b' : '#34d399'}; font-weight: 700;">\${formatNumber(db.pending)}</span>
-            <span style="color: #94a3b8;">Failed:</span> <span style="color: \${db.failed > 0 ? '#ef4444' : '#34d399'}; font-weight: 700;">\${formatNumber(db.failed)}</span>
+            <span style="color: #94a3b8;">Data Sync:</span> <strong style="color: #fff;">${syncPercent}%</strong>
+            <span style="color: #94a3b8;">Data Matched:</span> <strong style="color: #fff;">${syncPercent}%</strong>
+            <span style="color: #94a3b8;">Last Sync:</span> <span>${db.lastSync}</span>
+            <span style="color: #94a3b8;">Pending:</span> <span style="color: ${db.pending > 0 ? '#f59e0b' : '#34d399'}; font-weight: 700;">${formatNumber(db.pending)}</span>
+            <span style="color: #94a3b8;">Failed:</span> <span style="color: ${db.failed > 0 ? '#ef4444' : '#34d399'}; font-weight: 700;">${formatNumber(db.failed)}</span>
           </div>
 
           <div style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed rgba(255,255,255,0.1); font-size: 12px; color: #94a3b8;">
-            Sync Progress: <strong style="color: #38bdf8;">\${formatNumber(syncedCount)} / \${formatNumber(totalRecords)} records → \${syncPercent}%</strong>
+            Sync Progress: <strong style="color: #38bdf8;">${formatNumber(syncedCount)} / ${formatNumber(totalRecords)} records → ${syncPercent}%</strong>
           </div>
         </div>
-      \`;
+      `;
     });
     
     statusContainer.innerHTML = statusHtml;
@@ -240,7 +240,7 @@ export function initMultiDatabaseBackupEvents() {
     localStorage.setItem('erp_multi_db_config', JSON.stringify(existing));
     
     syncManager.loadConfig().then(() => {
-      notificationService.toast(\`✅ Added \${name} as \${role}.\`);
+      notificationService.toast(`✅ Added ${name} as ${role}.`);
       modal.style.display = 'none';
       renderDatabases();
     });
