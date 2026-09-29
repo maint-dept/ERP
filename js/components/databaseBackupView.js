@@ -114,18 +114,31 @@ export function initMultiDatabaseBackupEvents() {
     // Fetch pending failures
     const pendingStats = await retryQueue.getPending();
 
-    // 1. Build Data List
+    const fbFailures = pendingStats.filter(p => p.dbId === 'default_fb').length;
+    let fbStatusIcon = '🟢';
+    let fbStatusText = 'Connected';
+    
+    // Failover active detection
+    let isFailoverActive = false;
+    let activeDatabaseName = 'Firebase';
+
+    if (fbFailures > 0) {
+      fbStatusIcon = '🔴';
+      fbStatusText = 'Connection Error (Failover Active)';
+      isFailoverActive = true;
+    }
+
     let dbList = [
       { 
         id: 'default_fb', 
         name: 'Firebase', 
         type: 'Firebase', 
         role: 'Main Database', 
-        statusIcon: '🟢', 
-        statusText: 'Connected', 
-        pending: 0, 
+        statusIcon: fbStatusIcon, 
+        statusText: fbStatusText, 
+        pending: fbFailures, 
         failed: 0,
-        lastSync: 'Just now'
+        lastSync: fbFailures > 0 ? 'Failing...' : 'Just now'
       }
     ];
 
@@ -134,8 +147,18 @@ export function initMultiDatabaseBackupEvents() {
       const dbFailures = pendingStats.filter(p => p.dbId === c.id).length;
       let sIcon = '🟢';
       let sText = 'Connected';
-      if (!c.enabled) { sIcon = '⚪'; sText = 'Disabled'; }
-      else if (dbFailures > 0) { sIcon = '🟡'; sText = 'Syncing...'; }
+      if (!c.enabled) { 
+        sIcon = '⚪'; sText = 'Disabled'; 
+      }
+      else if (dbFailures > 0) { 
+        sIcon = '🟡'; sText = 'Syncing...'; 
+      }
+      else if (isFailoverActive && activeDatabaseName === 'Firebase') {
+        // If failover is active, the first healthy secondary is now the active DB!
+        sIcon = '🟢'; 
+        sText = 'Active (Handling Failover)';
+        activeDatabaseName = c.name;
+      }
 
       dbList.push({
         id: c.id,
@@ -145,7 +168,7 @@ export function initMultiDatabaseBackupEvents() {
         statusIcon: sIcon,
         statusText: sText,
         pending: dbFailures,
-        failed: 0, // We can track max retry failures here if needed
+        failed: 0,
         lastSync: c.lastSync || 'Never'
       });
     });

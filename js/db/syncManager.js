@@ -5,6 +5,9 @@ import { retryQueue } from './retryQueue.js';
 class SyncManager {
   constructor() {
     this.primaryAdapter = new FirebaseAdapter();
+    this.primaryAdapter.id = 'default_fb';
+    this.primaryAdapter.name = 'Firebase Primary';
+    this.primaryAdapter.config = { retryEnabled: true, enabled: true };
     this.secondaryAdapters = new Map(); // dbId -> adapter
     this.configLoaded = false;
   }
@@ -45,17 +48,31 @@ class SyncManager {
   async saveTable(collection, dataObj) {
     await this._ensureConfig();
     
-    // 1. MUST succeed on Primary (Firebase)
+    // 1. Try Primary
     const primaryResult = await this.primaryAdapter.saveTable(collection, dataObj);
-    if (!primaryResult.success) {
-      // If primary fails, we throw to maintain the existing error handling (CloudSaveError)
-      throw new Error(primaryResult.error || 'Primary database write failed');
+    if (primaryResult.success) {
+      this._fanoutTableSave(collection, dataObj);
+      return primaryResult;
     }
 
-    // 2. Fan-out to secondaries asynchronously (Do not await to avoid blocking UI)
-    this._fanoutTableSave(collection, dataObj);
+    // 2. PRIMARY FAILED -> Initiate Automatic Failover
+    console.warn(`Primary DB failed on ${collection}. Initiating automatic failover...`);
+    this._queueRetry(this.primaryAdapter, collection, null, 'SAVE_TABLE', dataObj, primaryResult.error);
 
-    return primaryResult;
+    for (const [id, adapter] of this.secondaryAdapters.entries()) {
+      if (!adapter.config.enabled) continue;
+
+      const failoverResult = await adapter.saveTable(collection, dataObj);
+      if (failoverResult.success) {
+        console.log(`✅ Failover successful on ${adapter.name}`);
+        this._fanoutTableSave(collection, dataObj, id); // Fan out to the rest
+        return failoverResult;
+      } else {
+        this._queueRetry(adapter, collection, null, 'SAVE_TABLE', dataObj, failoverResult.error);
+      }
+    }
+
+    throw new Error('CRITICAL: Primary and all Secondary databases failed to write.');
   }
 
   /**
@@ -64,18 +81,36 @@ class SyncManager {
   async saveRecord(collection, docId, data) {
     await this._ensureConfig();
 
+    // 1. Try Primary
     const primaryResult = await this.primaryAdapter.saveRecord(collection, docId, data);
-    if (!primaryResult.success) {
-      throw new Error(primaryResult.error || 'Primary database write failed');
+    if (primaryResult.success) {
+      this._fanoutRecordSave(collection, docId, data);
+      return primaryResult;
     }
 
-    this._fanoutRecordSave(collection, docId, data);
-    return primaryResult;
+    // 2. PRIMARY FAILED -> Initiate Automatic Failover
+    console.warn(`Primary DB failed on record ${docId}. Initiating failover...`);
+    this._queueRetry(this.primaryAdapter, collection, docId, 'SAVE_RECORD', data, primaryResult.error);
+
+    for (const [id, adapter] of this.secondaryAdapters.entries()) {
+      if (!adapter.config.enabled) continue;
+
+      const failoverResult = await adapter.saveRecord(collection, docId, data);
+      if (failoverResult.success) {
+        console.log(`✅ Failover successful on ${adapter.name}`);
+        this._fanoutRecordSave(collection, docId, data, id); // Fan out to the rest
+        return failoverResult;
+      } else {
+        this._queueRetry(adapter, collection, docId, 'SAVE_RECORD', data, failoverResult.error);
+      }
+    }
+
+    throw new Error('CRITICAL: Primary and all Secondary databases failed to write.');
   }
 
-  async _fanoutTableSave(collection, dataObj) {
+  async _fanoutTableSave(collection, dataObj, excludeDbId = null) {
     for (const [id, adapter] of this.secondaryAdapters.entries()) {
-      if (!adapter.config.autoSync) continue;
+      if (!adapter.config.autoSync || id === excludeDbId) continue;
       
       adapter.saveTable(collection, dataObj).then(res => {
         if (!res.success) {
@@ -88,9 +123,9 @@ class SyncManager {
     }
   }
 
-  async _fanoutRecordSave(collection, docId, data) {
+  async _fanoutRecordSave(collection, docId, data, excludeDbId = null) {
     for (const [id, adapter] of this.secondaryAdapters.entries()) {
-      if (!adapter.config.autoSync) continue;
+      if (!adapter.config.autoSync || id === excludeDbId) continue;
 
       adapter.saveRecord(collection, docId, data).then(res => {
         if (!res.success) {
@@ -127,7 +162,9 @@ class SyncManager {
     await this._ensureConfig();
     const pending = await retryQueue.getPending();
     for (const item of pending) {
-      const adapter = this.secondaryAdapters.get(item.dbId);
+      let adapter = this.secondaryAdapters.get(item.dbId);
+      if (item.dbId === 'default_fb') adapter = this.primaryAdapter;
+      
       if (!adapter) continue; // Database removed or disabled
 
       try {
