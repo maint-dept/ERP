@@ -386,7 +386,7 @@ export function renderSettingsView() {
         <!-- Card 5: Database JSON Backup & Restore -->
         <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 20px; display: flex; flex-direction: column; gap: 14px; grid-column: 1 / -1;">
           <h3 style="font-size: 15px; font-weight: 700; color: #fbbf24; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">
-            💾 Database JSON Backup & Disaster Recovery
+            💾 Backup & Recovery
           </h3>
 
           <!-- Persistent Server Database Status Banner -->
@@ -396,22 +396,22 @@ export function renderSettingsView() {
               <span style="font-size: 11.5px; color: var(--text-secondary);">All database records (Master Data, Machines, Spare Parts, Lines &amp; Rooms) are actively synchronized and stored to server disk.</span>
             </div>
             <button type="button" id="btn-sync-server-db" class="btn btn-secondary btn-sm" style="font-weight: 700; color: #34d399; border-color: rgba(16, 185, 129, 0.4);">
-              🔄 Force Save Records to Database File
+              Save Now
             </button>
           </div>
 
           <div style="display: flex; gap: 12px; align-items: center;">
             <button id="btn-download-db-backup" class="btn btn-primary">
-              📥 Export Complete Database Backup (.json)
+              Backup Data
             </button>
 
             <label class="btn btn-secondary" style="cursor: pointer;">
-              📤 Restore Database from JSON Backup
+              Restore Data
               <input type="file" id="db-restore-file-input" accept=".json" style="display: none;" />
             </label>
 
             <button id="btn-factory-reset" class="btn btn-danger btn-sm" style="margin-left: auto;">
-              ⚠️ Factory Reset Database
+              Reset Data
             </button>
           </div>
         </div>
