@@ -30,6 +30,7 @@ let filterState = {
   search: '',
   department: 'ALL',
   designation: 'ALL',
+  groupId: 'ALL',
   unitId: 'ALL',
   floorId: 'ALL'
 };
@@ -227,8 +228,13 @@ function renderActiveTabContent({ stats, activeEmployees, inactiveEmployees, tra
 // 1. ACTIVE & INACTIVE EMPLOYEE TABLE
 // ---------------------------------------------------------------------------
 function renderEmployeeListTable({ title, subtitle, employees, isInactiveView }) {
-  const units = masterDataService.getUnits(null, true);
-  const floors = masterDataService.getFloors(filterState.unitId !== 'ALL' ? filterState.unitId : null, null, true);
+  const groups = masterDataService.getGroups(true);
+  const units  = masterDataService.getUnits(filterState.groupId !== 'ALL' ? filterState.groupId : null, true);
+  const floors = masterDataService.getFloors(
+    filterState.unitId  !== 'ALL' ? filterState.unitId  : null,
+    filterState.groupId !== 'ALL' ? filterState.groupId : null,
+    true
+  );
 
   const flrMap = new Map((storage.getTable(TABLE_NAMES.FLOORS) || []).map(x => [x.id, x.name]));
   const untMap = new Map((storage.getTable(TABLE_NAMES.UNITS) || []).map(x => [x.id, x.name]));
@@ -260,14 +266,6 @@ function renderEmployeeListTable({ title, subtitle, employees, isInactiveView })
             />
           </div>
 
-          <!-- Department Filter (Dynamic from actual employee data) -->
-          <div style="flex: 1; min-width: 140px;">
-            <select id="mp-filter-dept" class="filter-select" style="font-size: 12px; height: 34px;">
-              <option value="ALL">All Departments</option>
-              ${employeeService.getDistinctDepartments().map(d => `<option value="${d}" ${filterState.department === d ? 'selected' : ''}>${d}</option>`).join('')}
-            </select>
-          </div>
-
           <!-- Designation Filter (Dynamic from actual employee data) -->
           <div style="flex: 1; min-width: 140px;">
             <select id="mp-filter-desig" class="filter-select" style="font-size: 12px; height: 34px;">
@@ -276,7 +274,17 @@ function renderEmployeeListTable({ title, subtitle, employees, isInactiveView })
             </select>
           </div>
 
-          <!-- Unit / Factory Filter -->
+          <!-- Group Filter (from Master Data) -->
+          ${groups.length > 0 ? `
+          <div style="flex: 1; min-width: 130px;">
+            <select id="mp-filter-group" class="filter-select" style="font-size: 12px; height: 34px;">
+              <option value="ALL">All Groups</option>
+              ${groups.map(g => `<option value="${g.id}" ${filterState.groupId === g.id ? 'selected' : ''}>${g.name}</option>`).join('')}
+            </select>
+          </div>
+          ` : ''}
+
+          <!-- Unit / Factory Filter (cascades from Group) -->
           <div style="flex: 1; min-width: 130px;">
             <select id="mp-filter-unit" class="filter-select" style="font-size: 12px; height: 34px;">
               <option value="ALL">All Factories / Units</option>
@@ -284,7 +292,7 @@ function renderEmployeeListTable({ title, subtitle, employees, isInactiveView })
             </select>
           </div>
 
-          <!-- Floor Filter -->
+          <!-- Floor Filter (cascades from Unit) -->
           <div style="flex: 1; min-width: 130px;">
             <select id="mp-filter-floor" class="filter-select" style="font-size: 12px; height: 34px;">
               <option value="ALL">All Floors</option>
@@ -1074,10 +1082,21 @@ export function initManpowerEvents() {
     });
   }
 
+  // Group filter — cascades to reset unit & floor
+  const selGroup = document.getElementById('mp-filter-group');
+  if (selGroup) {
+    selGroup.addEventListener('change', (e) => {
+      filterState.groupId = e.target.value;
+      filterState.unitId  = 'ALL';
+      filterState.floorId = 'ALL';
+      refreshView();
+    });
+  }
+
   const selUnit = document.getElementById('mp-filter-unit');
   if (selUnit) {
     selUnit.addEventListener('change', (e) => {
-      filterState.unitId = e.target.value;
+      filterState.unitId  = e.target.value;
       filterState.floorId = 'ALL';
       refreshView();
     });
@@ -1099,6 +1118,7 @@ export function initManpowerEvents() {
         search: '',
         department: 'ALL',
         designation: 'ALL',
+        groupId: 'ALL',
         unitId: 'ALL',
         floorId: 'ALL'
       };
