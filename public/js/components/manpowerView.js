@@ -439,7 +439,7 @@ function renderEmployeeListTable({ title, subtitle, employees, isInactiveView })
                     <!-- Card # / ID: distinct pill/badge for instant eye recognition -->
                     <td style="vertical-align: middle;">
                       <span style="display: inline-block; font-family: var(--font-mono); font-weight: 800; color: #38bdf8; background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.28); padding: 3px 8px; border-radius: 4px; font-size: 12px; letter-spacing: 0.4px;">
-                        #${emp.cardNumber || emp.id}
+                        ${emp.cardNumber || emp.id}
                       </span>
                     </td>
 
@@ -1012,7 +1012,7 @@ export function initManpowerEvents() {
 
       const confirmed = await notificationService.confirm({
         title: 'Delete Employee Record',
-        message: `Are you sure you want to delete <strong>${emp.name}</strong> [#${emp.cardNumber || emp.id}]? This action cannot be undone.`,
+        message: `Are you sure you want to delete <strong>${emp.name}</strong> [${emp.cardNumber || emp.id}]? This action cannot be undone.`,
         icon: '🗑️',
         confirmText: 'Delete Employee',
         isDestructive: true
