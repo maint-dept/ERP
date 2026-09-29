@@ -4,7 +4,7 @@
  */
 
 import { storage } from '../db/storage.js';
-import { renderMultiDatabaseBackupHTML, initMultiDatabaseBackupEvents } from './databaseBackupView.js?v=4.10.0';
+import { renderMultiDatabaseBackupHTML, initMultiDatabaseBackupEvents } from './databaseBackupView.js?v=4.13.0';
 
 export function renderDatabaseConfigView() {
   return `
