@@ -680,9 +680,6 @@ class EmployeeService {
         if (d && d !== 'ALL') set.add(d);
       }
     });
-    DEPARTMENTS.forEach(d => {
-      if (d) set.add(d.trim());
-    });
     return Array.from(set).sort((a, b) => a.localeCompare(b));
   }
 
@@ -697,9 +694,6 @@ class EmployeeService {
         const d = e.designation.trim();
         if (d && d !== 'ALL') set.add(d);
       }
-    });
-    DESIGNATIONS.forEach(d => {
-      if (d) set.add(d.trim());
     });
     return Array.from(set).sort((a, b) => a.localeCompare(b));
   }
