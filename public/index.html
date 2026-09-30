@@ -16,11 +16,11 @@
   <link rel="dns-prefetch" href="https://firestore.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
 
-  <!-- Core ERP Stylesheets (Cache-Busted v4.20.0) -->
-  <link rel="stylesheet" href="css/app.css?v=4.20.0">
-  <link rel="stylesheet" href="css/grid.css?v=4.20.0">
-  <link rel="stylesheet" href="css/components.css?v=4.20.0">
-  <link rel="stylesheet" href="css/print.css?v=4.20.0">
+  <!-- Core ERP Stylesheets (Cache-Busted v4.21.0) -->
+  <link rel="stylesheet" href="css/app.css?v=4.21.0">
+  <link rel="stylesheet" href="css/grid.css?v=4.21.0">
+  <link rel="stylesheet" href="css/components.css?v=4.21.0">
+  <link rel="stylesheet" href="css/print.css?v=4.21.0">
 
   <!-- Deferred Heavy Third-Party Libraries (Non-Render Blocking) -->
   <!-- SheetJS (XLSX) Library for Excel Import & Export -->
@@ -156,8 +156,8 @@
       window.location.replace(base + '?t=' + Date.now() + window.location.hash);
     };
 
-    // Build version v4.20.0 — silent cache clear, NO URL redirect
-    var CURRENT_BUILD = '4.20.0';
+    // Build version v4.21.0 — silent cache clear, NO URL redirect
+    var CURRENT_BUILD = '4.21.0';
 
     // Silently unregister any old Service Workers and clear all caches
     // NO window.location.replace — URL stays clean
@@ -173,12 +173,12 @@
         if ('serviceWorker' in navigator) {
           navigator.serviceWorker.getRegistrations().then(function(regs) {
             regs.forEach(function(r) {
-              console.log('[ERP v4.20.0] Unregistering old SW:', r.scope);
+              console.log('[ERP v4.21.0] Unregistering old SW:', r.scope);
               r.unregister();
             });
           });
           // Register new pass-through SW (no caching)
-          navigator.serviceWorker.register('./sw.js?v=4.20.0').catch(function(e) {
+          navigator.serviceWorker.register('./sw.js?v=4.21.0').catch(function(e) {
             console.warn('[ERP] SW register failed (non-critical):', e);
           });
         }
@@ -188,8 +188,8 @@
     })();
   </script>
 
-  <!-- Main ES Module Application Entrypoint (Cache-Busted v4.20.0) -->
-  <script type="module" src="js/app.js?v=4.20.0"></script>
+  <!-- Main ES Module Application Entrypoint (Cache-Busted v4.21.0) -->
+  <script type="module" src="js/app.js?v=4.21.0"></script>
 
   <style>
     @keyframes spin {

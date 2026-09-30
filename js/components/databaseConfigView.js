@@ -306,7 +306,7 @@ export function renderDatabaseConfigView() {
           <div style="display: flex; align-items: center; gap: 12px;">
             <h1 style="font-size: 26px; font-weight: 800; color: #fff; margin: 0; letter-spacing: -0.5px;">🗄️ Data Engine</h1>
             <span style="background: rgba(16, 185, 129, 0.15); border: 1px solid #10b981; color: #34d399; font-size: 11px; font-weight: 700; padding: 3px 12px; border-radius: 999px;">
-              v4.20.0 Active
+              v4.21.0 Active
             </span>
             <span id="badge-auto-sync" style="background: ${state.autoSync ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)'}; border: 1px solid ${state.autoSync ? '#10b981' : '#ef4444'}; color: ${state.autoSync ? '#34d399' : '#f87171'}; font-size: 11px; font-weight: 700; padding: 3px 12px; border-radius: 999px;">
               ${state.autoSync ? '🟢 Auto Sync ON' : '🔴 Auto Sync OFF'}
@@ -393,7 +393,7 @@ export function renderDatabaseConfigView() {
           </div>
 
           <p style="font-size: 12px; color: var(--text-secondary); margin: 0 0 16px;">
-            কোন database থেকে data পরিবর্তন করলে কোনগুলোতে automatically যাবে, সেটা সরাসরি দেখানো:
+            Real-time fan-out topology showing automatic sync destinations on master data changes:
           </p>
 
           <div style="background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 18px; font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size: 13.5px; line-height: 2;">
@@ -569,7 +569,7 @@ export function renderDatabaseConfigView() {
               <h2 style="font-size: 16px; font-weight: 800; color: #fbbf24; margin: 0; font-family: 'JetBrains Mono', monospace; letter-spacing: 0.5px;">DATA DIFFERENCES</h2>
             </div>
             <p style="font-size: 12px; color: var(--text-secondary); margin: 4px 0 0;">
-              Missing data-র জন্য আলাদা অংশ রাখুন — Audit discrepancies and resolve missing documents across clusters:
+              Discrepancy Audit &amp; Missing Records &mdash; Track differences and reconcile unsynchronized documents across database clusters:
             </p>
           </div>
 
@@ -758,7 +758,7 @@ export function renderDatabaseConfigView() {
           <div>
             <h2 style="font-size: 18px; font-weight: 800; color: #fff; margin: 0;">Database List &amp; Provider Settings</h2>
             <p style="font-size: 12px; color: var(--text-secondary); margin: 3px 0 0;">
-              প্রতিটি provider select করলে তার required fields দেখাবে — Test connection &amp; configure endpoints.
+              Select any provider to view connection fields, run live ping tests, and save credentials.
             </p>
           </div>
         </div>
