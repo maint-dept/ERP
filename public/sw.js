@@ -1,79 +1,72 @@
-// Al-Muslim Group ERP - Service Worker
-// Handles automatic cache invalidation on new deployments
+// Al-Muslim Group ERP - Service Worker v4.19.0
+// KILL SWITCH: Clears ALL old caches, unregisters self, passes all requests direct to network.
+// This replaces broken v4.9.9 and all previous cached versions.
 
-var CACHE_NAME = 'al-muslim-erp-v4.18.0';
-var STATIC_ASSETS = [
-  './',
-  './index.html',
-  './css/app.css',
-  './css/grid.css',
-  './css/components.css',
-  './css/print.css',
-  './js/app.js'
-];
+var SW_VERSION = 'kill-v4.19.0';
 
-// Install: cache core assets
+// INSTALL: Skip waiting immediately so this SW takes over right away
 self.addEventListener('install', function(event) {
+  console.log('[SW Kill] Installing kill-switch SW ' + SW_VERSION);
+  // Force immediate activation — no waiting
   self.skipWaiting();
   event.waitUntil(
-    caches.open(CACHE_NAME).then(function(cache) {
-      return cache.addAll(STATIC_ASSETS);
-    }).catch(function(e) {
-      console.warn('SW: cache install failed', e);
-    })
-  );
-});
-
-// Activate: clear OLD caches
-self.addEventListener('activate', function(event) {
-  event.waitUntil(
+    // Nuke ALL caches
     caches.keys().then(function(keys) {
-      return Promise.all(
-        keys.filter(function(key) { return key !== CACHE_NAME; })
-            .map(function(key) {
-              console.log('SW: Deleting old cache:', key);
-              return caches.delete(key);
-            })
-      );
-    }).then(function() {
-      return self.clients.claim();
+      console.log('[SW Kill] Deleting all caches:', keys);
+      return Promise.all(keys.map(function(key) {
+        return caches.delete(key);
+      }));
     })
   );
 });
 
-// Fetch: network-first strategy (always try server, fallback to cache)
-self.addEventListener('fetch', function(event) {
-  // Only handle GET requests
-  if (event.request.method !== 'GET') return;
-
-  event.respondWith(
-    fetch(event.request).then(function(response) {
-      // Cache fresh responses
-      if (response && response.status === 200) {
-        var responseClone = response.clone();
-        caches.open(CACHE_NAME).then(function(cache) {
-          cache.put(event.request, responseClone);
+// ACTIVATE: Claim all open clients immediately, then self-unregister
+self.addEventListener('activate', function(event) {
+  console.log('[SW Kill] Activating kill-switch SW — wiping all caches and unregistering');
+  event.waitUntil(
+    // Delete all remaining caches
+    caches.keys().then(function(keys) {
+      return Promise.all(keys.map(function(key) {
+        return caches.delete(key);
+      }));
+    }).then(function() {
+      // Claim all clients so they get the network-fresh version
+      return self.clients.claim();
+    }).then(function() {
+      // Notify all clients to reload
+      return self.clients.matchAll({ includeUncontrolled: true }).then(function(clients) {
+        clients.forEach(function(client) {
+          console.log('[SW Kill] Telling client to reload:', client.url);
+          client.postMessage({ type: 'SW_KILLED', action: 'RELOAD' });
         });
-      }
-      return response;
-    }).catch(function() {
-      // Network failed, serve from cache
+      });
+    }).then(function() {
+      // Self-unregister so no SW remains installed
+      return self.registration.unregister();
+    })
+  );
+});
+
+// FETCH: Pure network pass-through — NO caching whatsoever
+self.addEventListener('fetch', function(event) {
+  if (event.request.method !== 'GET') return;
+  // Go direct to network, no cache read or write
+  event.respondWith(
+    fetch(event.request.clone()).catch(function(err) {
+      console.warn('[SW Kill] Network fetch failed:', event.request.url, err);
+      // Last resort: try cache (won't exist after kill but safe fallback)
       return caches.match(event.request);
     })
   );
 });
 
-// Message: force refresh from admin panel
+// MESSAGE: Handle any manual clear-cache requests
 self.addEventListener('message', function(event) {
-  if (event.data && event.data.type === 'CLEAR_CACHE') {
+  if (event.data && (event.data.type === 'CLEAR_CACHE' || event.data.type === 'KILL')) {
     caches.keys().then(function(keys) {
       return Promise.all(keys.map(function(key) { return caches.delete(key); }));
     }).then(function() {
-      self.clients.matchAll().then(function(clients) {
-        clients.forEach(function(client) {
-          client.postMessage({ type: 'CACHE_CLEARED' });
-        });
-      });
+      self.registration.unregister();
     });
   }
 });
