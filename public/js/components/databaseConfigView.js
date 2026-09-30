@@ -118,9 +118,9 @@ export function renderDatabaseConfigView() {
       <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; flex-wrap: wrap; gap: 14px;">
         <div>
           <div style="display: flex; align-items: center; gap: 10px;">
-            <h1 style="font-size: 24px; font-weight: 800; color: #fff; margin: 0;">🗄️ Database Admin Panel</h1>
+            <h1 style="font-size: 24px; font-weight: 800; color: #fff; margin: 0;">🗄️ Data Engine</h1>
             <span style="background: rgba(16, 185, 129, 0.15); border: 1px solid #10b981; color: #34d399; font-size: 11px; font-weight: 700; padding: 2px 10px; border-radius: 999px;">
-              v4.15.0 Active
+              v4.17.0 Active
             </span>
           </div>
           <p style="font-size: 13px; color: var(--text-secondary); margin: 6px 0 0;">
