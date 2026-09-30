@@ -1,7 +1,12 @@
-import { FirebaseAdapter } from './adapters/firebaseAdapter.js';
-import { SupabaseAdapter } from './adapters/supabaseAdapter.js';
-import { retryQueue } from './retryQueue.js';
-import { storage } from './storage.js';
+import { FirebaseAdapter }     from './adapters/firebaseAdapter.js';
+import { SupabaseAdapter }     from './adapters/supabaseAdapter.js';
+import { PostgresAdapter }     from './adapters/postgresAdapter.js';
+import { TursoAdapter }        from './adapters/tursoAdapter.js';
+import { CloudflareD1Adapter } from './adapters/cloudflareD1Adapter.js';
+import { NeonAdapter }         from './adapters/neonAdapter.js';
+import { retryQueue }          from './retryQueue.js';
+import { storage }             from './storage.js';
+
 
 class SyncManager {
   constructor() {
@@ -32,9 +37,15 @@ class SyncManager {
       if (configs && Array.isArray(configs)) {
         configs.forEach(conf => {
           if (conf && conf.enabled) {
-            if (conf.type === 'SUPABASE') {
-              this.secondaryAdapters.set(conf.id, new SupabaseAdapter(conf));
-            }
+            let adapter = null;
+            const t = (conf.type || '').toUpperCase();
+            if (t === 'SUPABASE')       adapter = new SupabaseAdapter(conf);
+            else if (t === 'FIREBASE')  adapter = new FirebaseAdapter(conf);
+            else if (t === 'POSTGRESQL' || t === 'POSTGRES') adapter = new PostgresAdapter(conf);
+            else if (t === 'TURSO')     adapter = new TursoAdapter(conf);
+            else if (t === 'CLOUDFLARE_D1' || t === 'CLOUDFLARE D1') adapter = new CloudflareD1Adapter(conf);
+            else if (t === 'NEON')      adapter = new NeonAdapter(conf);
+            if (adapter) this.secondaryAdapters.set(conf.id, adapter);
           }
         });
         try { localStorage.setItem('erp_multi_db_config', JSON.stringify(configs)); } catch (_) {}
@@ -244,7 +255,11 @@ class SyncManager {
 
   _saveConfigs() {
     const configs = Array.from(this.secondaryAdapters.values()).map(a => a.config);
-    localStorage.setItem('erp_multi_db_config', JSON.stringify(configs));
+    if (storage && typeof storage.saveMultiDbConfigs === 'function') {
+      storage.saveMultiDbConfigs(configs).catch(() => {});
+    } else {
+      localStorage.setItem('erp_multi_db_config', JSON.stringify(configs));
+    }
   }
 }
 
