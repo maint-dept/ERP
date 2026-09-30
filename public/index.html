@@ -156,65 +156,36 @@
       window.location.replace(base + '?t=' + Date.now() + window.location.hash);
     };
 
-    // Auto cache flush on new deployment build version
+    // Build version v4.19.0 — silent cache clear, NO URL redirect
     var CURRENT_BUILD = '4.19.0';
 
-    // Listen for SW kill-switch message → hard reload to get fresh files
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.addEventListener('message', function(event) {
-        if (event.data && event.data.type === 'SW_KILLED') {
-          console.log('[ERP] SW killed — reloading for fresh content...');
-          // Small delay so SW can finish unregistering
-          setTimeout(function() {
-            var base = window.location.origin + window.location.pathname;
-            window.location.replace(base + '?v=4.19.0&_purge=' + Date.now());
-          }, 300);
-        }
-      });
-
-      // Register the kill-switch SW
-      navigator.serviceWorker.register('./sw.js?v=4.19.0').then(function(reg) {
-        console.log('[ERP] SW registered:', reg.scope);
-        reg.onupdatefound = function() {
-          var ins = reg.installing;
-          if (!ins) return;
-          ins.onstatechange = function() {
-            if (ins.state === 'installed' && navigator.serviceWorker.controller) {
-              if (window.caches) { caches.keys().then(function(k) { k.forEach(function(n) { caches.delete(n); }); }); }
-            }
-          };
-        };
-      }).catch(function(e) { console.warn('SW registration failed:', e); });
-    }
-
-    // Aggressive cache nuke on build version change
-    var prevBuild = localStorage.getItem('al_muslim_build_ver');
-    if (prevBuild && prevBuild !== CURRENT_BUILD) {
-      try { localStorage.removeItem('erp_last_active_tab'); } catch(_) {}
-      localStorage.setItem('al_muslim_build_ver', CURRENT_BUILD);
-      // Nuke ALL caches
+    // Silently unregister any old Service Workers and clear all caches
+    // NO window.location.replace — URL stays clean
+    (function() {
       try {
+        // Nuke all caches immediately
         if (window.caches) {
           caches.keys().then(function(keys) {
             keys.forEach(function(k) { caches.delete(k); });
           });
         }
-      } catch(_) {}
-      // Unregister any existing SW before redirect
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistrations().then(function(regs) {
-          regs.forEach(function(r) { r.unregister(); });
-        }).then(function() {
-          var base = window.location.origin + window.location.pathname;
-          window.location.replace(base + '?v=' + CURRENT_BUILD + '&_cb=' + Date.now());
-        });
-      } else {
-        var base = window.location.origin + window.location.pathname;
-        window.location.replace(base + '?v=' + CURRENT_BUILD + '&_cb=' + Date.now());
-      }
-    } else {
-      localStorage.setItem('al_muslim_build_ver', CURRENT_BUILD);
-    }
+        // Unregister ALL service workers silently
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.getRegistrations().then(function(regs) {
+            regs.forEach(function(r) {
+              console.log('[ERP v4.19.0] Unregistering old SW:', r.scope);
+              r.unregister();
+            });
+          });
+          // Register new pass-through SW (no caching)
+          navigator.serviceWorker.register('./sw.js?v=4.19.0').catch(function(e) {
+            console.warn('[ERP] SW register failed (non-critical):', e);
+          });
+        }
+        // Update build version in localStorage
+        localStorage.setItem('al_muslim_build_ver', CURRENT_BUILD);
+      } catch(e) { /* non-critical */ }
+    })();
   </script>
 
   <!-- Main ES Module Application Entrypoint (Cache-Busted v4.19.0) -->
