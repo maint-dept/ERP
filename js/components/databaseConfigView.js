@@ -19,7 +19,7 @@ import { db } from '../db/dbClient.js';
 import { PostgresAdapter } from '../db/adapters/postgresAdapter.js';
 import { TursoAdapter } from '../db/adapters/tursoAdapterV2.js';
 import { FirebaseAdapter } from '../db/adapters/firebaseAdapterV2.js';
-import { CloudflareD1Adapter } from '../db/adapters/cloudflareD1Adapter.js';
+import { CloudflareD1Adapter } from '../db/adapters/cloudflareD1AdapterV2.js';
 import { NeonAdapter } from '../db/adapters/neonAdapter.js';
 import { MongoAdapter } from '../db/adapters/mongoAdapter.js';
 import { MysqlAdapter } from '../db/adapters/mysqlAdapter.js';
@@ -128,14 +128,15 @@ export const PROVIDER_SPECS = {
   CLOUDFLARE_D1: {
     key: 'CLOUDFLARE_D1',
     name: 'Cloudflare D1',
-    badge: 'Edge SQL · Serverless',
+    badge: 'Edge SQL · Serverless (Worker Proxy)',
     icon: '☁️',
     color: '#f97316',
-    description: 'Serverless SQL database powered by Cloudflare Workers and global edge infrastructure.',
+    description: 'Serverless SQL database on Cloudflare edge. Note: Browser direct access to api.cloudflare.com is blocked by CORS. Use a Worker Proxy URL for browser sync, or use Turso / Supabase / Firebase for zero-setup direct browser sync.',
     fields: [
-      { id: 'accountId', label: 'Account ID', type: 'text', placeholder: 'cf_account_id_32_chars', required: true },
-      { id: 'databaseId', label: 'Database ID', type: 'text', placeholder: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', required: true },
-      { id: 'apiToken', label: 'API Token', type: 'password', placeholder: 'Cloudflare API Token with D1 permissions', required: true }
+      { id: 'workerUrl', label: 'Worker Proxy URL (Recommended for Browser)', type: 'text', placeholder: 'https://my-d1-proxy.your-name.workers.dev', note: 'Bypasses Cloudflare api.cloudflare.com browser CORS restrictions' },
+      { id: 'accountId', label: 'Account ID', type: 'text', placeholder: 'cf_account_id_32_chars' },
+      { id: 'databaseId', label: 'Database ID', type: 'text', placeholder: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx' },
+      { id: 'apiToken', label: 'API Token', type: 'password', placeholder: 'Cloudflare API Token with D1 permissions' }
     ]
   }
 };

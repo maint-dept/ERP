@@ -2,7 +2,7 @@ import { FirebaseAdapter }     from './adapters/firebaseAdapterV2.js';
 import { SupabaseAdapter }     from './adapters/supabaseAdapterV2.js';
 import { PostgresAdapter }     from './adapters/postgresAdapter.js';
 import { TursoAdapter }        from './adapters/tursoAdapterV2.js';
-import { CloudflareD1Adapter } from './adapters/cloudflareD1Adapter.js';
+import { CloudflareD1Adapter } from './adapters/cloudflareD1AdapterV2.js';
 import { NeonAdapter }         from './adapters/neonAdapter.js';
 import { MongoAdapter }        from './adapters/mongoAdapter.js';
 import { MysqlAdapter }        from './adapters/mysqlAdapter.js';
@@ -243,8 +243,22 @@ class SyncManager {
         totalFailed++;
         console.error(`Full Sync failed for table ${tableName} on ${adapter.name}:`, result.error);
 
-        // Abort early if the database table hasn't been created or credentials are invalid
-        if (result.isTableMissing || result.isAuthError || (result.error && (result.error.includes('not found') || result.error.includes('Authentication failed')))) {
+        // Abort early if credentials invalid, network blocked, CORS, or table missing
+        const errStr = (result.error || '').toLowerCase();
+        const isFatal = result.isTableMissing || result.isAuthError || 
+          errStr.includes('not found') || 
+          errStr.includes('authentication') || 
+          errStr.includes('failed to fetch') || 
+          errStr.includes('network') || 
+          errStr.includes('cors') || 
+          errStr.includes('blocked') ||
+          errStr.includes('permission denied') ||
+          errStr.includes('unauthorized') ||
+          errStr.includes('cannot reach') ||
+          errStr.includes('consumer_invalid') ||
+          errStr.includes('invalid');
+
+        if (isFatal) {
           throw new Error(result.error);
         }
 

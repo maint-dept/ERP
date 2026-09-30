@@ -14,27 +14,59 @@ import { BaseAdapter } from './baseAdapter.js';
 const CF_API = 'https://api.cloudflare.com/client/v4';
 
 export class CloudflareD1Adapter extends BaseAdapter {
-  constructor(config) {
-    super(config);
-    this.type = 'CLOUDFLARE_D1';
-    this.accountId  = config.accountId  || '';
-    this.databaseId = config.databaseId || '';
-    this.apiToken   = config.apiToken   || '';
+  constructor(config = {}) {
+    super({
+      role: 'BACKUP',
+      type: 'CLOUDFLARE_D1',
+      ...config
+    });
+    this.accountId  = (config.accountId  || '').trim();
+    this.databaseId = (config.databaseId || '').trim();
+    this.apiToken   = (config.apiToken   || '').trim().replace(/^Bearer\s+/i, '').replace(/^["']|["']$/g, '');
+    this.workerUrl  = (config.workerUrl  || '').trim();
   }
 
   get _endpoint() {
+    if (this.workerUrl) {
+      return this.workerUrl;
+    }
     return `${CF_API}/accounts/${this.accountId}/d1/database/${this.databaseId}/query`;
   }
 
   async _query(sql, params = []) {
-    const res = await fetch(this._endpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type':  'application/json',
-        'Authorization': `Bearer ${this.apiToken}`
-      },
-      body: JSON.stringify({ sql, params })
-    });
+    if (!this.workerUrl && (!this.accountId || !this.databaseId || !this.apiToken)) {
+      throw new Error('Missing Cloudflare D1 Account ID, Database ID, or API Token.');
+    }
+
+    let res;
+    try {
+      res = await fetch(this._endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type':  'application/json',
+          'Authorization': `Bearer ${this.apiToken}`
+        },
+        body: JSON.stringify({ sql, params }),
+        signal: AbortSignal.timeout(15000)
+      });
+    } catch (err) {
+      if (err.name === 'TypeError' || (err.message && err.message.includes('Failed to fetch'))) {
+        throw new Error('Cloudflare API (api.cloudflare.com) blocked by browser CORS policy. Cloudflare does not allow direct browser-to-API calls from external domains. Deploy a Cloudflare Worker Proxy or use Turso / Supabase / Firebase for instant browser sync.');
+      }
+      throw err;
+    }
+
+    if (!res.ok) {
+      const txt = await res.text().catch(() => '');
+      if (res.status === 401 || res.status === 403) {
+        throw new Error(`Cloudflare D1 authentication failed (HTTP ${res.status}). Please verify your Cloudflare API Token.`);
+      }
+      if (res.status === 404) {
+        throw new Error(`Cloudflare D1 database or account not found (HTTP 404). Check Account ID and Database ID.`);
+      }
+      throw new Error(`Cloudflare D1 HTTP ${res.status}: ${txt.substring(0, 200)}`);
+    }
+
     const json = await res.json();
     if (!json.success) {
       throw new Error((json.errors || []).map(e => e.message).join('; ') || 'D1 query failed');
