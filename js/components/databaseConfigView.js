@@ -789,7 +789,7 @@ export function renderDatabaseConfigView() {
           </span>
         </div>
 
-        <div style="display: grid; grid-template-columns: minmax(280px, 340px) 1fr; gap: 20px; align-items: start; min-width: 0; overflow: hidden;">
+        <div style="display: grid; grid-template-columns: minmax(280px, 340px) 1fr; gap: 20px; align-items: start; min-width: 0;">
           
           <!-- Left Column: Multi-Database Manager & Provider Templates -->
           <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 18px; display: flex; flex-direction: column; gap: 14px;">
@@ -866,8 +866,8 @@ export function renderDatabaseConfigView() {
           </div>
 
           <!-- Right Column: Interactive Configuration Form for Selected Provider -->
-          <div id="provider-config-container" style="background: var(--bg-surface); border: 1.5px solid #0284c7; border-radius: var(--radius-lg); padding: 24px; box-shadow: 0 4px 25px rgba(2, 132, 199, 0.1); overflow: hidden; min-width: 0;">
-            <div id="provider-form-content" style="overflow-y: auto; max-height: 75vh;"></div>
+          <div id="provider-config-container" style="background: var(--bg-surface); border: 1.5px solid #0284c7; border-radius: var(--radius-lg); padding: 24px; box-shadow: 0 4px 25px rgba(2, 132, 199, 0.1); min-width: 0;">
+            <div id="provider-form-content"></div>
           </div>
 
         </div>
