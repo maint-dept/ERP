@@ -659,7 +659,7 @@ class ERPApplication {
       };
 
       const requiredModule = viewToModuleMap[currentView];
-      if (requiredModule && !authService.isModuleAllowed(requiredModule)) {
+      if (requiredModule && !authService.isAdmin() && !authService.isModuleAllowed(requiredModule)) {
         return `
           <div class="page-view" style="display: flex; align-items: center; justify-content: center; min-height: 60vh;">
             <div style="background: var(--bg-surface); border: 1.5px solid rgba(239, 68, 68, 0.4); border-radius: var(--radius-xl); padding: 40px; text-align: center; max-width: 500px; box-shadow: 0 10px 40px rgba(0,0,0,0.5);">

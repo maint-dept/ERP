@@ -200,7 +200,10 @@ export function renderSidebar() {
     { id: 'adm-settings', targetView: 'settings', moduleKey: 'settings', label: 'System Settings', icon: '⚙️' }
   ];
 
-  const allowedAdminItems = adminMenuItems.filter(it => authService.isAdmin() || authService.isModuleAllowed(it.moduleKey || it.targetView));
+  const allowedAdminItems = adminMenuItems.filter(it =>
+    it.id === 'adm-database' || it.id === 'adm-settings' ||
+    authService.isAdmin() || authService.isModuleAllowed(it.moduleKey || it.targetView)
+  );
 
   let html = `
     <aside class="app-sidebar" id="app-sidebar-root">
