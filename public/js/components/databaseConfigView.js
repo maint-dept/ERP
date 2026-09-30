@@ -86,17 +86,17 @@ export const PROVIDER_SPECS = {
   },
   FIREBASE: {
     key: 'FIREBASE',
-    name: 'Firebase (Cloud Firestore / RTDB)',
+    name: 'Firebase (Cloud Firestore)',
     badge: 'NoSQL · Real-time Sync',
     icon: '🔥',
     color: '#f59e0b',
     description: 'Google Cloud managed real-time NoSQL with offline synchronization and instant change listeners.',
     fields: [
-      { id: 'projectId', label: 'Project ID', type: 'text', placeholder: 'al-muslim-erp', required: true },
+      { id: 'projectId', label: 'Project ID', type: 'text', placeholder: 'maint-dept-erp', required: true },
       { id: 'apiKey', label: 'API Key', type: 'password', placeholder: 'AIzaSyD-xxxxxxxxxxx', required: true },
-      { id: 'authDomain', label: 'Auth Domain', type: 'text', placeholder: 'al-muslim-erp.firebaseapp.com', required: true },
-      { id: 'storageBucket', label: 'Storage Bucket', type: 'text', placeholder: 'al-muslim-erp.appspot.com', required: false },
-      { id: 'databaseURL', label: 'Database URL (RTDB)', type: 'text', placeholder: 'https://al-muslim-erp-default-rtdb.firebaseio.com', required: false }
+      { id: 'authDomain', label: 'Auth Domain', type: 'text', placeholder: 'maint-dept-erp.firebaseapp.com', required: true },
+      { id: 'storageBucket', label: 'Storage Bucket (Optional)', type: 'text', placeholder: 'maint-dept-erp.appspot.com', required: false },
+      { id: 'databaseURL', label: 'Database URL (RTDB — Optional)', type: 'text', placeholder: 'Leave empty. Only needed if using Realtime DB instead of Firestore.', note: 'Cloud Firestore does NOT require RTDB URL. Leave blank.', required: false }
     ]
   },
   CLOUDFLARE_D1: {
@@ -393,7 +393,7 @@ export function renderDatabaseConfigView() {
           </div>
 
           <p style="font-size: 12px; color: var(--text-secondary); margin: 0 0 16px;">
-            Real-time fan-out topology showing automatic sync destinations on master data changes:
+            Real-time broadcast flow: mutations in master automatically fan out to target databases:
           </p>
 
           <div style="background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 18px; font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size: 13.5px; line-height: 2;">
@@ -569,7 +569,7 @@ export function renderDatabaseConfigView() {
               <h2 style="font-size: 16px; font-weight: 800; color: #fbbf24; margin: 0; font-family: 'JetBrains Mono', monospace; letter-spacing: 0.5px;">DATA DIFFERENCES</h2>
             </div>
             <p style="font-size: 12px; color: var(--text-secondary); margin: 4px 0 0;">
-              Discrepancy Audit &amp; Missing Records &mdash; Track differences and reconcile unsynchronized documents across database clusters:
+              Audit discrepancies, compare record totals, and reconcile missing documents across databases:
             </p>
           </div>
 
@@ -758,7 +758,7 @@ export function renderDatabaseConfigView() {
           <div>
             <h2 style="font-size: 18px; font-weight: 800; color: #fff; margin: 0;">Database List &amp; Provider Settings</h2>
             <p style="font-size: 12px; color: var(--text-secondary); margin: 3px 0 0;">
-              Select any provider to view connection fields, run live ping tests, and save credentials.
+              Select any provider to view connection fields, test live responsiveness, and configure credentials.
             </p>
           </div>
         </div>
@@ -1139,7 +1139,10 @@ function renderProviderForm(providerKey) {
 
       <!-- Specific Required Fields -->
       ${spec.fields.map(f => {
-        const val = existing[f.id] !== undefined ? existing[f.id] : (f.defaultValue || '');
+        let val = existing[f.id] !== undefined ? existing[f.id] : (f.defaultValue || '');
+        if (f.id === 'databaseURL' && (val === 'https://al-muslim-erp-default-rtdb.firebaseio.com' || val.includes('default-rtdb'))) {
+          val = '';
+        }
         if (f.type === 'checkbox') {
           return `
             <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
@@ -1225,16 +1228,19 @@ function renderProviderForm(providerKey) {
         const testRes = await adapter.testConnection();
 
         resultBox.style.display = 'block';
-        if (testRes.success) {
+        const isSuccess = testRes === true || (testRes && testRes.success === true);
+        if (isSuccess) {
           resultBox.style.background = 'rgba(16, 185, 129, 0.12)';
           resultBox.style.border = '1px solid rgba(16, 185, 129, 0.4)';
           resultBox.style.color = '#34d399';
-          resultBox.innerHTML = `✅ <strong>Connected Successfully!</strong> Connection to ${spec.name} is verified and responsive.${testRes.latency ? ` Latency: ${testRes.latency}ms` : ''}`;
+          const latency = (testRes && testRes.latency) ? ` Latency: ${testRes.latency}ms` : '';
+          resultBox.innerHTML = `✅ <strong>Connected Successfully!</strong> Connection to ${spec.name} is verified and responsive.${latency}`;
         } else {
           resultBox.style.background = 'rgba(239, 68, 68, 0.12)';
           resultBox.style.border = '1px solid rgba(239, 68, 68, 0.4)';
           resultBox.style.color = '#f87171';
-          resultBox.innerHTML = `❌ <strong>Connection Notice:</strong> ${testRes.error || 'Failed to ping endpoint'}`;
+          const errMsg = (testRes && testRes.error) ? testRes.error : 'Could not reach database endpoint. Please verify credentials.';
+          resultBox.innerHTML = `❌ <strong>Connection Notice:</strong> ${errMsg}`;
         }
       } catch (err) {
         resultBox.style.display = 'block';
