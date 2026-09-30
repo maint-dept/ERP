@@ -23,7 +23,14 @@ export class CloudflareD1Adapter extends BaseAdapter {
     this.accountId  = (config.accountId  || '').trim();
     this.databaseId = (config.databaseId || '').trim();
     this.apiToken   = (config.apiToken   || '').trim().replace(/^Bearer\s+/i, '').replace(/^["']|["']$/g, '');
-    this.workerUrl  = (config.workerUrl  || '').trim();
+    let rawWorker = (config.workerUrl || '').trim();
+    if (rawWorker) {
+      rawWorker = rawWorker.replace(/\/$/, '');
+      if (!/^https?:\/\//i.test(rawWorker)) {
+        rawWorker = 'https://' + rawWorker;
+      }
+    }
+    this.workerUrl = rawWorker;
   }
 
   get _endpoint() {
@@ -50,6 +57,9 @@ export class CloudflareD1Adapter extends BaseAdapter {
         signal: AbortSignal.timeout(15000)
       });
     } catch (err) {
+      if (this.workerUrl) {
+        throw new Error(`Cannot reach Cloudflare Worker Proxy at "${this.workerUrl}". Verify the URL format (e.g. https://<worker-name>.subdomain.workers.dev) and ensure the Worker is deployed.`);
+      }
       if (err.name === 'TypeError' || (err.message && err.message.includes('Failed to fetch'))) {
         throw new Error('Cloudflare API (api.cloudflare.com) blocked by browser CORS policy. Cloudflare does not allow direct browser-to-API calls from external domains. Deploy a Cloudflare Worker Proxy or use Turso / Supabase / Firebase for instant browser sync.');
       }
@@ -58,6 +68,9 @@ export class CloudflareD1Adapter extends BaseAdapter {
 
     if (!res.ok) {
       const txt = await res.text().catch(() => '');
+      if (res.status === 405) {
+        throw new Error(`HTTP 405 Method Not Allowed received from "${this._endpoint}". If this is a Cloudflare Worker, ensure your worker script handles POST requests.`);
+      }
       if (res.status === 401 || res.status === 403) {
         throw new Error(`Cloudflare D1 authentication failed (HTTP ${res.status}). Please verify your Cloudflare API Token.`);
       }

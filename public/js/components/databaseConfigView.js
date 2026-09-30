@@ -25,6 +25,42 @@ import { MongoAdapter } from '../db/adapters/mongoAdapter.js';
 import { MysqlAdapter } from '../db/adapters/mysqlAdapter.js';
 import { SupabaseAdapter, SUPABASE_SETUP_SQL } from '../db/adapters/supabaseAdapterV2.js';
 
+export const CLOUDFLARE_WORKER_CODE = `// Cloudflare Worker CORS Proxy for D1
+// 1. In Cloudflare Dashboard → Workers & Pages → Create Application → Create Worker
+// 2. Paste this code and click Deploy
+// 3. Go to Worker Settings → Bindings → Add D1 Database with Variable name: DB
+export default {
+  async fetch(request, env) {
+    const cors = {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    };
+    if (request.method === "OPTIONS") return new Response(null, { headers: cors });
+
+    if (request.method !== "POST") {
+      return new Response("Cloudflare D1 Worker Proxy is Active! Send POST with SQL to execute.", { headers: cors });
+    }
+
+    try {
+      const { sql, params = [] } = await request.json();
+      if (!env.DB) {
+        return new Response(JSON.stringify({ success: false, errors: [{ message: "D1 Database binding missing! In Worker Settings -> Bindings, bind your D1 database with variable name 'DB'." }] }), { status: 500, headers: { ...cors, "Content-Type": "application/json" } });
+      }
+      const stmt = env.DB.prepare(sql);
+      const res = await (params.length ? stmt.bind(...params).all() : stmt.all());
+      return new Response(JSON.stringify({ success: true, result: [res] }), {
+        headers: { ...cors, "Content-Type": "application/json" }
+      });
+    } catch (err) {
+      return new Response(JSON.stringify({ success: false, errors: [{ message: err.message }] }), {
+        status: 400,
+        headers: { ...cors, "Content-Type": "application/json" }
+      });
+    }
+  }
+};`;
+
 // Provider specifications with fields, default values, and documentation
 export const PROVIDER_SPECS = {
   POSTGRESQL: {
@@ -1380,6 +1416,29 @@ service cloud.firestore {
         </div>
       ` : ''}
 
+      ${spec.key === 'CLOUDFLARE_D1' ? `
+        <div style="background: rgba(249, 115, 22, 0.08); border: 1.5px solid rgba(249, 115, 22, 0.35); border-radius: 8px; padding: 14px 16px; margin-top: 4px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 16px;">☁️</span>
+              <span style="font-size: 13px; font-weight: 800; color: #f97316;">Cloudflare D1 Worker Proxy (Required for Browser)</span>
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <button type="button" id="btn-copy-cf-worker" class="btn btn-sm" style="background: #f97316; color: #fff; font-weight: 800; font-size: 11.5px; padding: 4px 12px; border-radius: 6px; border: none; cursor: pointer; display: flex; align-items: center; gap: 5px;">
+                <span>📋</span> <span>Copy Worker Code</span>
+              </button>
+              <a href="https://dash.cloudflare.com" target="_blank" class="btn btn-sm" style="background: rgba(249, 115, 22, 0.15); color: #fb923c; border: 1px solid rgba(249, 115, 22, 0.4); font-weight: 700; font-size: 11.5px; padding: 4px 12px; border-radius: 6px; text-decoration: none; display: flex; align-items: center; gap: 5px;">
+                <span>↗️</span> <span>Open Cloudflare Dashboard</span>
+              </a>
+            </div>
+          </div>
+          <p style="font-size: 11.5px; color: #cbd5e1; margin: 0 0 8px; line-height: 1.4;">
+            Direct calls to <code>api.cloudflare.com</code> are blocked by browser CORS. In Cloudflare Dashboard, create a Worker, paste this code, bind your D1 database as <strong>DB</strong>, and enter your Worker URL (e.g. <code>https://my-worker.subdomain.workers.dev</code>):
+          </p>
+          <pre style="background: #090d16; border: 1px solid rgba(255,255,255,0.08); padding: 10px 12px; border-radius: 6px; font-size: 11px; color: #fed7aa; margin: 0; overflow-x: auto; font-family: monospace; line-height: 1.4;">${CLOUDFLARE_WORKER_CODE.trim()}</pre>
+        </div>
+      ` : ''}
+
       <!-- Options: Role & AutoSync -->
       <div style="background: rgba(15, 23, 42, 0.8); border: 1px solid #1e293b; border-radius: 8px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; margin-top: 6px;">
         <div style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase;">
@@ -1441,6 +1500,20 @@ service cloud.firestore {
           notificationService.toast('✅ Supabase setup SQL copied to clipboard! Paste and run it in Supabase SQL Editor.', 'success');
         }).catch(() => {
           notificationService.toast('Setup SQL copied!', 'info');
+        });
+      }
+    });
+  }
+
+  // Attach Cloudflare Worker Copy Code handler
+  const btnCopyWorker = document.getElementById('btn-copy-cf-worker');
+  if (btnCopyWorker) {
+    btnCopyWorker.addEventListener('click', () => {
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(CLOUDFLARE_WORKER_CODE).then(() => {
+          notificationService.toast('✅ Cloudflare Worker code copied to clipboard!', 'success');
+        }).catch(() => {
+          notificationService.toast('Worker code copied!', 'info');
         });
       }
     });
