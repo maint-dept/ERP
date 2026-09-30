@@ -5,6 +5,7 @@ import { syncManager } from '../db/syncManager.js';
 import { retryQueue } from '../db/retryQueue.js';
 import { notificationService } from '../services/notificationService.js';
 import { storage } from '../db/storage.js';
+import { SupabaseAdapter, SUPABASE_SETUP_SQL } from '../db/adapters/supabaseAdapter.js';
 
 export function renderMultiDatabaseBackupHTML() {
   return [
@@ -50,6 +51,13 @@ export function renderMultiDatabaseBackupHTML() {
             '<div>',
               '<label style="font-size: 12px; font-weight: 700; color: #94a3b8; display: block; margin-bottom: 4px;">Supabase Anon / Publishable Key</label>',
               '<input type="password" id="add-db-supa-key" class="form-control" placeholder="eyJ..." style="background: #1e293b; border-color: #475569; color: #fff; font-size: 13px;" />',
+            '</div>',
+            '<div style="background: rgba(62, 207, 142, 0.08); border: 1px solid rgba(62, 207, 142, 0.3); border-radius: 6px; padding: 10px; margin-top: 2px;">',
+              '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">',
+                '<span style="font-size: 11.5px; font-weight: 700; color: #3ecf8e;">⚡ Supabase Setup (Run Once)</span>',
+                '<button type="button" id="btn-copy-supa-backup-sql" style="background: #3ecf8e; color: #0b1329; border: none; font-size: 10.5px; font-weight: 800; padding: 3px 8px; border-radius: 4px; cursor: pointer;">📋 Copy SQL</button>',
+              '</div>',
+              '<div style="font-size: 11px; color: #94a3b8; line-height: 1.3;">Run this SQL in your Supabase SQL Editor to create <code>erp_tables</code>.</div>',
             '</div>',
           '</div>',
           '<div id="firebase-inputs" style="display: none; flex-direction: column; gap: 14px;">',
@@ -236,9 +244,44 @@ export function initMultiDatabaseBackupEvents() {
   document.getElementById('btn-close-add-db').onclick = function() {
     modal.style.display = 'none';
   };
-  document.getElementById('btn-test-add-db').onclick = function() {
-    notificationService.toast('Testing connection...', 'info');
-    setTimeout(function() { notificationService.toast('Connection test successful!'); }, 800);
+
+  var copyBtn = document.getElementById('btn-copy-supa-backup-sql');
+  if (copyBtn) {
+    copyBtn.onclick = function() {
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(SUPABASE_SETUP_SQL).then(function() {
+          notificationService.toast('✅ Supabase setup SQL copied! Paste & run in Supabase SQL Editor.', 'success');
+        });
+      }
+    };
+  }
+
+  document.getElementById('btn-test-add-db').onclick = async function() {
+    var type = document.getElementById('add-db-type').value;
+    if (type === 'Supabase') {
+      var url = document.getElementById('add-db-supa-url').value.trim();
+      var key = document.getElementById('add-db-supa-key').value.trim();
+      if (!url || !key) {
+        notificationService.toast('Please enter Supabase URL and Anon Key first', 'error');
+        return;
+      }
+      notificationService.toast('Testing Supabase connection...', 'info');
+      try {
+        var adapter = new SupabaseAdapter({ url: url, anonKey: key });
+        var res = await adapter.testConnection();
+        if (res && res.success) {
+          notificationService.toast('✅ Supabase connected successfully! (Latency: ' + (res.latency || 0) + 'ms)', 'success');
+        } else {
+          var msg = (res && res.error) ? res.error : 'Connection failed';
+          notificationService.toast('❌ ' + msg, 'error');
+        }
+      } catch (err) {
+        notificationService.toast('❌ Connection error: ' + err.message, 'error');
+      }
+    } else {
+      notificationService.toast('Testing connection...', 'info');
+      setTimeout(function() { notificationService.toast('Connection test successful!'); }, 800);
+    }
   };
   document.getElementById('add-db-type').onchange = function(e) {
     var isSupa = e.target.value === 'Supabase';

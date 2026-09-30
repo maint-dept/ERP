@@ -242,6 +242,12 @@ class SyncManager {
       } else {
         totalFailed++;
         console.error(`Full Sync failed for table ${tableName} on ${adapter.name}:`, result.error);
+
+        // Abort early if the database table hasn't been created or credentials are invalid
+        if (result.isTableMissing || result.isAuthError || (result.error && (result.error.includes('not found') || result.error.includes('Authentication failed')))) {
+          throw new Error(result.error);
+        }
+
         await this._queueRetry(adapter, tableName, null, 'SAVE_TABLE', tableData, result.error);
       }
     }
