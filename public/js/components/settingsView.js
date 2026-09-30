@@ -171,7 +171,7 @@ export function renderSettingsView() {
         <div>
           <h1 style="font-size: 22px; font-weight: 800; color: #fff;">⚙️ Admin Settings &amp; Configuration</h1>
           <p style="font-size: 12.5px; color: var(--text-secondary);">
-            Manage PDF &amp; print signatures, corporate branding, approval workflow policies, machine serial number formatting, and database backups.
+            Manage PDF &amp; print signatures, corporate branding, approval workflow policies, and machine serial number formatting.
           </p>
         </div>
       </div>
@@ -378,51 +378,6 @@ export function renderSettingsView() {
           <button id="btn-save-serial-settings" class="btn btn-primary btn-sm" style="align-self: flex-start; font-weight: 700;">
             💾 Save Serial Number Configuration
           </button>
-        </div>
-
-        <!-- Card 5: Database Management & Backup -->
-        <div style="background: var(--bg-surface); border: 1.5px solid #0284c7; border-radius: var(--radius-lg); padding: 20px; display: flex; flex-direction: column; gap: 14px; grid-column: 1 / -1; box-shadow: 0 4px 20px rgba(2, 132, 199, 0.1);">
-          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; flex-wrap: wrap; gap: 10px;">
-            <div>
-              <h3 style="font-size: 16px; font-weight: 800; color: #38bdf8; margin: 0;">
-                🗄️ Database Management & Multi-Cloud Sync
-              </h3>
-              <p style="font-size: 12px; color: var(--text-secondary); margin: 4px 0 0;">
-                Manage persistent server storage (<code>data/erp_database.json</code>), multi-cloud sync (Firebase / Supabase), and manual JSON backups.
-              </p>
-            </div>
-            <button type="button" id="btn-goto-database-config" class="btn btn-primary btn-sm" style="font-weight: 700; background: linear-gradient(135deg, #0284c7, #2563eb); display: flex; align-items: center; gap: 6px;">
-              <span>☁️ Open Database Center</span> &rarr;
-            </button>
-          </div>
-
-          <!-- Persistent Server Database Status Banner -->
-          <div style="background: rgba(16, 185, 129, 0.08); border: 1.5px solid rgba(16, 185, 129, 0.35); border-radius: 8px; padding: 12px 16px; font-size: 12.5px; color: #d1fae5; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-            <div>
-              🟢 <strong>Persistent Server Database File:</strong> <code>data/erp_database.json</code><br/>
-              <span style="font-size: 11.5px; color: var(--text-secondary);">All database records (Master Data, Machines, Spare Parts, Lines &amp; Rooms) are actively synchronized and stored to server disk.</span>
-            </div>
-            <button type="button" id="btn-sync-server-db-settings" class="btn btn-secondary btn-sm" style="font-weight: 700; color: #34d399; border-color: rgba(16, 185, 129, 0.4);">
-              💾 Save to Disk Now
-            </button>
-          </div>
-
-          <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
-            <button type="button" id="btn-download-db-backup-settings" class="btn btn-primary">
-              📥 Backup Data (JSON)
-            </button>
-
-            <label class="btn btn-secondary" style="cursor: pointer; margin: 0;">
-              📤 Restore Data
-              <input type="file" id="db-restore-file-input-settings" accept=".json" style="display: none;" />
-            </label>
-
-            <button type="button" id="btn-factory-reset-settings" class="btn btn-danger btn-sm" style="margin-left: auto;">
-              ⚠️ Reset Data
-            </button>
-          </div>
-        </div>
-
       </div>
     </div>
   `;
@@ -794,77 +749,6 @@ export function initSettingsEvents() {
     });
   }
 
-  const btnGotoDb = document.getElementById('btn-goto-database-config');
-  if (btnGotoDb) {
-    btnGotoDb.addEventListener('click', () => {
-      state.set('currentView', 'database-config');
-      if (typeof window.app !== 'undefined' && typeof window.app.switchView === 'function') {
-        window.app.switchView('database-config');
-      }
-    });
-  }
-
-  const btnBackupSettings = document.getElementById('btn-download-db-backup-settings');
-  if (btnBackupSettings) {
-    btnBackupSettings.addEventListener('click', () => {
-      const jsonStr = storage.exportBackup();
-      const blob = new Blob([jsonStr], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `Al_Muslim_ERP_Backup_${new Date().toISOString().slice(0, 10)}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
-    });
-  }
-
-  const restoreInputSettings = document.getElementById('db-restore-file-input-settings');
-  if (restoreInputSettings) {
-    restoreInputSettings.addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-
-      const reader = new FileReader();
-      reader.onload = (evt) => {
-        const res = storage.importBackup(evt.target.result);
-        if (res.success) {
-          alert(`Database restored successfully (${res.count} machines loaded).`);
-          window.location.reload();
-        } else {
-          alert('Restore Failed: ' + res.error);
-        }
-      };
-      reader.readAsText(file);
-    });
-  }
-
-  const btnResetSettings = document.getElementById('btn-factory-reset-settings');
-  if (btnResetSettings) {
-    btnResetSettings.addEventListener('click', () => {
-      if (confirm('Are you sure you want to perform a factory reset? All existing custom machines and modifications will be replaced with initial demo records.')) {
-        storage.resetToInitialData();
-        alert('ERP reset to initial factory demo state.');
-        window.location.reload();
-      }
-    });
-  }
-
-  const btnSyncDbSettings = document.getElementById('btn-sync-server-db-settings');
-  if (btnSyncDbSettings) {
-    btnSyncDbSettings.addEventListener('click', async () => {
-      btnSyncDbSettings.disabled = true;
-      btnSyncDbSettings.textContent = '⏳ Saving to Database File...';
-      try {
-        await storage.persistToServerDatabase();
-        alert('All data records were successfully stored into data/erp_database.json on the server disk!');
-      } catch (err) {
-        alert('Database save error: ' + err.message);
-      } finally {
-        btnSyncDbSettings.disabled = false;
-        btnSyncDbSettings.textContent = '💾 Save to Disk Now';
-      }
-    });
-  }
   const syncSettingsInputsToMemory = () => {
     try {
       const container = document.getElementById('signatures-list-container');

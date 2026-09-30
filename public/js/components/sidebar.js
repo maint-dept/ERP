@@ -196,8 +196,8 @@ export function renderSidebar() {
     { id: 'adm-email-config', targetView: 'email-config', moduleKey: 'email_config', label: 'Email Configuration', icon: '✉️' },
     { id: 'adm-homepage', targetView: 'homepage-manager', moduleKey: 'homepage_management', label: 'Home Page Management', icon: '🏠' },
     { id: 'adm-activity-logs', targetView: 'audit-logs', moduleKey: 'audit_logs', label: 'Activity & Audit Logs', icon: '📝' },
-    { id: 'adm-settings', targetView: 'settings', moduleKey: 'settings', label: 'System Settings', icon: '⚙️' },
-    { id: 'adm-database', targetView: 'database-config', moduleKey: 'settings', label: 'Database Backup & Sync', icon: '☁️' }
+    { id: 'adm-database', targetView: 'database-config', moduleKey: 'settings', label: 'Database Features & Sync', icon: '🗄️' },
+    { id: 'adm-settings', targetView: 'settings', moduleKey: 'settings', label: 'System Settings', icon: '⚙️' }
   ];
 
   const allowedAdminItems = adminMenuItems.filter(it => authService.isModuleAllowed(it.moduleKey || it.targetView));
