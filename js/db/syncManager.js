@@ -1,5 +1,5 @@
-import { FirebaseAdapter }     from './adapters/firebaseAdapter.js';
-import { SupabaseAdapter }     from './adapters/supabaseAdapter.js';
+import { FirebaseAdapter }     from './adapters/firebaseAdapterV2.js';
+import { SupabaseAdapter }     from './adapters/supabaseAdapterV2.js';
 import { PostgresAdapter }     from './adapters/postgresAdapter.js';
 import { TursoAdapter }        from './adapters/tursoAdapter.js';
 import { CloudflareD1Adapter } from './adapters/cloudflareD1Adapter.js';
@@ -242,6 +242,12 @@ class SyncManager {
       } else {
         totalFailed++;
         console.error(`Full Sync failed for table ${tableName} on ${adapter.name}:`, result.error);
+
+        // Abort early if the database table hasn't been created or credentials are invalid
+        if (result.isTableMissing || result.isAuthError || (result.error && (result.error.includes('not found') || result.error.includes('Authentication failed')))) {
+          throw new Error(result.error);
+        }
+
         await this._queueRetry(adapter, tableName, null, 'SAVE_TABLE', tableData, result.error);
       }
     }

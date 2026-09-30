@@ -18,17 +18,16 @@ CREATE TABLE IF NOT EXISTS erp_tables (
 -- Enable Row Level Security (RLS)
 ALTER TABLE erp_tables ENABLE ROW LEVEL SECURITY;
 
--- Allow Anon API Key to Read, Insert, and Update ERP tables
-DO $$
-BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_policies 
-    WHERE tablename = 'erp_tables' AND policyname = 'Allow anon full access'
-  ) THEN
-    CREATE POLICY "Allow anon full access" ON erp_tables
-      FOR ALL USING (true) WITH CHECK (true);
-  END IF;
-END $$;
+-- Allow Anon & Authenticated API Keys full read/write access
+DROP POLICY IF EXISTS "Allow anon full access" ON erp_tables;
+CREATE POLICY "Allow anon full access" ON erp_tables
+  FOR ALL
+  TO anon, authenticated
+  USING (true)
+  WITH CHECK (true);
+
+-- Ensure table permissions for Supabase PostgREST
+GRANT ALL ON erp_tables TO anon, authenticated, service_role;
 `;
 
 /**

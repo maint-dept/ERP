@@ -1,5 +1,5 @@
-import { FirebaseAdapter }     from './adapters/firebaseAdapter.js';
-import { SupabaseAdapter }     from './adapters/supabaseAdapter.js';
+import { FirebaseAdapter }     from './adapters/firebaseAdapterV2.js';
+import { SupabaseAdapter }     from './adapters/supabaseAdapterV2.js';
 import { PostgresAdapter }     from './adapters/postgresAdapter.js';
 import { TursoAdapter }        from './adapters/tursoAdapter.js';
 import { CloudflareD1Adapter } from './adapters/cloudflareD1Adapter.js';

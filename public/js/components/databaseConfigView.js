@@ -18,12 +18,12 @@ import { notificationService } from '../services/notificationService.js';
 import { db } from '../db/dbClient.js';
 import { PostgresAdapter } from '../db/adapters/postgresAdapter.js';
 import { TursoAdapter } from '../db/adapters/tursoAdapter.js';
-import { FirebaseAdapter } from '../db/adapters/firebaseAdapter.js';
+import { FirebaseAdapter } from '../db/adapters/firebaseAdapterV2.js';
 import { CloudflareD1Adapter } from '../db/adapters/cloudflareD1Adapter.js';
 import { NeonAdapter } from '../db/adapters/neonAdapter.js';
 import { MongoAdapter } from '../db/adapters/mongoAdapter.js';
 import { MysqlAdapter } from '../db/adapters/mysqlAdapter.js';
-import { SupabaseAdapter, SUPABASE_SETUP_SQL } from '../db/adapters/supabaseAdapter.js';
+import { SupabaseAdapter, SUPABASE_SETUP_SQL } from '../db/adapters/supabaseAdapterV2.js';
 
 // Provider specifications with fields, default values, and documentation
 export const PROVIDER_SPECS = {

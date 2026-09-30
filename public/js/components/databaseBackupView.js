@@ -5,7 +5,8 @@ import { syncManager } from '../db/syncManager.js';
 import { retryQueue } from '../db/retryQueue.js';
 import { notificationService } from '../services/notificationService.js';
 import { storage } from '../db/storage.js';
-import { SupabaseAdapter, SUPABASE_SETUP_SQL } from '../db/adapters/supabaseAdapter.js';
+import { SupabaseAdapter, SUPABASE_SETUP_SQL } from '../db/adapters/supabaseAdapterV2.js';
+import { FirebaseAdapter } from '../db/adapters/firebaseAdapterV2.js';
 
 export function renderMultiDatabaseBackupHTML() {
   return [
@@ -279,8 +280,24 @@ export function initMultiDatabaseBackupEvents() {
         notificationService.toast('❌ Connection error: ' + err.message, 'error');
       }
     } else {
-      notificationService.toast('Testing connection...', 'info');
-      setTimeout(function () { notificationService.toast('Connection test successful!'); }, 800);
+      var fbConf = document.getElementById('add-db-fb-config').value.trim();
+      if (!fbConf) {
+        notificationService.toast('Please enter Firebase Config JSON first', 'error');
+        return;
+      }
+      notificationService.toast('Testing Firebase connection...', 'info');
+      try {
+        var fbAdapter = new FirebaseAdapter({ connStr: fbConf });
+        var fbRes = await fbAdapter.testConnection();
+        if (fbRes && fbRes.success) {
+          notificationService.toast('✅ Firebase connected successfully! (Latency: ' + (fbRes.latency || 0) + 'ms)', 'success');
+        } else {
+          var fbMsg = (fbRes && fbRes.error) ? fbRes.error : 'Connection failed';
+          notificationService.toast('❌ ' + fbMsg, 'error');
+        }
+      } catch (err) {
+        notificationService.toast('❌ Connection error: ' + err.message, 'error');
+      }
     }
   };
   document.getElementById('add-db-type').onchange = function (e) {

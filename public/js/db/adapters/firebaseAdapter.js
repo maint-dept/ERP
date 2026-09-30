@@ -61,8 +61,8 @@ export class FirebaseAdapter extends BaseAdapter {
     }
     const startTime = Date.now();
     try {
-      let url = `https://firestore.googleapis.com/v1/projects/${encodeURIComponent(this.projectId)}/databases/(default)/documents`;
-      if (this.apiKey) url += `?key=${encodeURIComponent(this.apiKey)}`;
+      let url = `https://firestore.googleapis.com/v1/projects/${encodeURIComponent(this.projectId)}/databases/(default)/documents/erp_tables?pageSize=1`;
+      if (this.apiKey) url += `&key=${encodeURIComponent(this.apiKey)}`;
 
       const res = await fetch(url, {
         method: 'GET',
@@ -77,11 +77,19 @@ export class FirebaseAdapter extends BaseAdapter {
       }
 
       const errText = await res.text().catch(() => '');
+      if (errText.includes('CONSUMER_INVALID') || errText.includes('SERVICE_DISABLED')) {
+        return {
+          success: false,
+          isAuthError: true,
+          error: `Cloud Firestore is not enabled or Database is not created on project "${this.projectId}". Please go to Firebase Console (https://console.firebase.google.com/project/${encodeURIComponent(this.projectId)}/firestore) and click "Create database".`
+        };
+      }
+
       if (res.status === 401 || res.status === 403) {
         return {
           success: false,
           isAuthError: true,
-          error: `Firebase authentication / permission denied (HTTP ${res.status}). In Firebase Console → Firestore Database → Rules tab, ensure rules allow read and write.`
+          error: `Firebase authentication / permission denied (HTTP ${res.status}). In Firebase Console → Firestore Database → Rules tab, ensure rules allow read and write (allow read, write: if true;).`
         };
       }
 
@@ -164,6 +172,13 @@ export class FirebaseAdapter extends BaseAdapter {
         }
 
         const errText = await res.text().catch(() => '');
+        if (errText.includes('CONSUMER_INVALID') || errText.includes('SERVICE_DISABLED')) {
+          return {
+            success: false,
+            isAuthError: true,
+            error: `Cloud Firestore is not enabled on project "${this.projectId}". Please open Firebase Console and click "Create database" under Firestore Database.`
+          };
+        }
         if (res.status === 401 || res.status === 403) {
           return {
             success: false,
