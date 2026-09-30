@@ -96,7 +96,14 @@ export function initMultiDatabaseBackupEvents() {
     }
     if (totalRecords === 0) totalRecords = 1;
 
-    var pendingStats = await retryQueue.getPending();
+    var pendingStats = [];
+    try {
+      if (retryQueue && typeof retryQueue.getPending === 'function') {
+        pendingStats = (await retryQueue.getPending()) || [];
+      }
+    } catch (e) {
+      console.warn('Retry queue stats read notice:', e);
+    }
     var fbFailures = pendingStats.filter(function(p) { return p.dbId === 'default_fb'; }).length;
     var isFailoverActive = fbFailures > 0;
     var fbIcon = isFailoverActive ? 'red' : 'green';
@@ -115,7 +122,13 @@ export function initMultiDatabaseBackupEvents() {
       lastSync: fbFailures > 0 ? 'Failing...' : 'Just now'
     }];
 
-    var configs = JSON.parse(localStorage.getItem('erp_multi_db_config') || '[]');
+    var configs = [];
+    if (storage && typeof storage.getMultiDbConfigs === 'function') {
+      configs = storage.getMultiDbConfigs();
+    }
+    if ((!configs || configs.length === 0) && typeof localStorage !== 'undefined') {
+      try { configs = JSON.parse(localStorage.getItem('erp_multi_db_config') || '[]'); } catch (_) {}
+    }
     configs.forEach(function(c) {
       var dbFails = pendingStats.filter(function(p) { return p.dbId === c.id; }).length;
       var ico = 'green';
@@ -202,8 +215,13 @@ export function initMultiDatabaseBackupEvents() {
     statusContainer.querySelectorAll('.btn-delete-db').forEach(function(btn) {
       btn.onclick = function() {
         var id = btn.getAttribute('data-id');
-        var cfgs = JSON.parse(localStorage.getItem('erp_multi_db_config') || '[]');
-        localStorage.setItem('erp_multi_db_config', JSON.stringify(cfgs.filter(function(c) { return c.id !== id; })));
+        var cfgs = (storage && typeof storage.getMultiDbConfigs === 'function') ? storage.getMultiDbConfigs() : JSON.parse(localStorage.getItem('erp_multi_db_config') || '[]');
+        var updated = cfgs.filter(function(c) { return c.id !== id; });
+        if (storage && typeof storage.saveMultiDbConfigs === 'function') {
+          storage.saveMultiDbConfigs(updated);
+        } else {
+          localStorage.setItem('erp_multi_db_config', JSON.stringify(updated));
+        }
         syncManager.loadConfig().then(renderDatabases);
         notificationService.toast('Database removed.');
       };
@@ -261,9 +279,13 @@ export function initMultiDatabaseBackupEvents() {
       }
     }
 
-    var existing = JSON.parse(localStorage.getItem('erp_multi_db_config') || '[]');
+    var existing = (storage && typeof storage.getMultiDbConfigs === 'function') ? storage.getMultiDbConfigs() : JSON.parse(localStorage.getItem('erp_multi_db_config') || '[]');
     existing.push(newCfg);
-    localStorage.setItem('erp_multi_db_config', JSON.stringify(existing));
+    if (storage && typeof storage.saveMultiDbConfigs === 'function') {
+      storage.saveMultiDbConfigs(existing);
+    } else {
+      localStorage.setItem('erp_multi_db_config', JSON.stringify(existing));
+    }
 
     syncManager.loadConfig().then(function() {
       notificationService.toast('Added ' + name + ' as ' + role + '.');
@@ -274,7 +296,7 @@ export function initMultiDatabaseBackupEvents() {
 
   document.getElementById('btn-sync-all-dbs').onclick = function() {
     notificationService.toast('Syncing all databases...');
-    var cfgs = JSON.parse(localStorage.getItem('erp_multi_db_config') || '[]');
+    var cfgs = (storage && typeof storage.getMultiDbConfigs === 'function') ? storage.getMultiDbConfigs() : JSON.parse(localStorage.getItem('erp_multi_db_config') || '[]');
     cfgs.forEach(function(c) {
       if (c.enabled) syncManager.runFullSync(c.id).catch(function(e) { console.error(e); });
     });

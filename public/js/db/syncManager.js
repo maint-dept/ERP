@@ -1,6 +1,7 @@
 import { FirebaseAdapter } from './adapters/firebaseAdapter.js';
 import { SupabaseAdapter } from './adapters/supabaseAdapter.js';
 import { retryQueue } from './retryQueue.js';
+import { storage } from './storage.js';
 
 class SyncManager {
   constructor() {
@@ -13,22 +14,30 @@ class SyncManager {
   }
 
   /**
-   * Load configurations from localStorage or secure Firestore collection
+   * Load configurations from storage engine or localStorage
    */
   async loadConfig() {
     try {
-      const stored = localStorage.getItem('erp_multi_db_config');
-      if (stored) {
-        const configs = JSON.parse(stored);
-        this.secondaryAdapters.clear();
+      let configs = [];
+      if (storage && typeof storage.getMultiDbConfigs === 'function') {
+        configs = storage.getMultiDbConfigs();
+      }
+      if ((!configs || configs.length === 0) && typeof localStorage !== 'undefined') {
+        const stored = localStorage.getItem('erp_multi_db_config');
+        if (stored) {
+          try { configs = JSON.parse(stored); } catch (_) {}
+        }
+      }
+      this.secondaryAdapters.clear();
+      if (configs && Array.isArray(configs)) {
         configs.forEach(conf => {
-          if (conf.enabled) {
+          if (conf && conf.enabled) {
             if (conf.type === 'SUPABASE') {
               this.secondaryAdapters.set(conf.id, new SupabaseAdapter(conf));
             }
-            // Add other adapters here later
           }
         });
+        try { localStorage.setItem('erp_multi_db_config', JSON.stringify(configs)); } catch (_) {}
       }
       this.configLoaded = true;
     } catch (e) {

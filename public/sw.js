@@ -1,7 +1,7 @@
 // Al-Muslim Group ERP - Service Worker
 // Handles automatic cache invalidation on new deployments
 
-var CACHE_NAME = 'al-muslim-erp-v4.13.0';
+var CACHE_NAME = 'al-muslim-erp-v4.14.0';
 var STATIC_ASSETS = [
   './',
   './index.html',

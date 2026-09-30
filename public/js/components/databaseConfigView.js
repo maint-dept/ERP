@@ -4,16 +4,16 @@
  */
 
 import { storage } from '../db/storage.js';
-import { renderMultiDatabaseBackupHTML, initMultiDatabaseBackupEvents } from './databaseBackupView.js?v=4.13.0';
+import { renderMultiDatabaseBackupHTML, initMultiDatabaseBackupEvents } from './databaseBackupView.js?v=4.14.0';
 
 export function renderDatabaseConfigView() {
   return `
     <div class="page-view">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
         <div>
-          <h1 style="font-size: 22px; font-weight: 800; color: #fff;">☁️ Database Backup & Sync</h1>
+          <h1 style="font-size: 22px; font-weight: 800; color: #fff;">🗄️ Database Management & Sync</h1>
           <p style="font-size: 12.5px; color: var(--text-secondary);">
-            Manage multi-database connections, automatic failover sync, and manual JSON backups.
+            Manage multi-database connections, automatic failover sync, persistent disk storage, and manual JSON backups.
           </p>
         </div>
       </div>
