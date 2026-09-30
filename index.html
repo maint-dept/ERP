@@ -16,11 +16,11 @@
   <link rel="dns-prefetch" href="https://firestore.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
 
-  <!-- Core ERP Stylesheets (Cache-Busted v4.9.9) -->
-  <link rel="stylesheet" href="css/app.css?v=4.9.9">
-  <link rel="stylesheet" href="css/grid.css?v=4.9.9">
-  <link rel="stylesheet" href="css/components.css?v=4.9.9">
-  <link rel="stylesheet" href="css/print.css?v=4.9.9">
+  <!-- Core ERP Stylesheets (Cache-Busted v4.20.0) -->
+  <link rel="stylesheet" href="css/app.css?v=4.20.0">
+  <link rel="stylesheet" href="css/grid.css?v=4.20.0">
+  <link rel="stylesheet" href="css/components.css?v=4.20.0">
+  <link rel="stylesheet" href="css/print.css?v=4.20.0">
 
   <!-- Deferred Heavy Third-Party Libraries (Non-Render Blocking) -->
   <!-- SheetJS (XLSX) Library for Excel Import & Export -->
@@ -156,43 +156,40 @@
       window.location.replace(base + '?t=' + Date.now() + window.location.hash);
     };
 
-    // Auto cache flush on new deployment build version
-    var CURRENT_BUILD = '4.9.9';
+    // Build version v4.20.0 — silent cache clear, NO URL redirect
+    var CURRENT_BUILD = '4.20.0';
 
-    // Register Service Worker for automatic cache invalidation
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./sw.js').then(function(reg) {
-        reg.onupdatefound = function() {
-          var ins = reg.installing;
-          ins.onstatechange = function() {
-            if (ins.state === 'installed' && navigator.serviceWorker.controller) {
-              // New SW installed - clear caches and reload
-              if (window.caches) { caches.keys().then(function(k) { k.forEach(function(n) { caches.delete(n); }); }); }
-            }
-          };
-        };
-      }).catch(function(e) { console.warn('SW registration failed:', e); });
-    }
-    var prevBuild = localStorage.getItem('al_muslim_build_ver');
-    if (prevBuild && prevBuild !== CURRENT_BUILD) {
-      try { localStorage.removeItem('erp_last_active_tab'); } catch(_) {}
-      localStorage.setItem('al_muslim_build_ver', CURRENT_BUILD);
+    // Silently unregister any old Service Workers and clear all caches
+    // NO window.location.replace — URL stays clean
+    (function() {
       try {
+        // Nuke all caches immediately
         if (window.caches) {
           caches.keys().then(function(keys) {
             keys.forEach(function(k) { caches.delete(k); });
           });
         }
-      } catch(_) {}
-      var base = window.location.origin + window.location.pathname;
-      window.location.replace(base + '?v=' + CURRENT_BUILD + '&_cb=' + Date.now() + window.location.hash);
-    } else {
-      localStorage.setItem('al_muslim_build_ver', CURRENT_BUILD);
-    }
+        // Unregister ALL service workers silently
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.getRegistrations().then(function(regs) {
+            regs.forEach(function(r) {
+              console.log('[ERP v4.20.0] Unregistering old SW:', r.scope);
+              r.unregister();
+            });
+          });
+          // Register new pass-through SW (no caching)
+          navigator.serviceWorker.register('./sw.js?v=4.20.0').catch(function(e) {
+            console.warn('[ERP] SW register failed (non-critical):', e);
+          });
+        }
+        // Update build version in localStorage
+        localStorage.setItem('al_muslim_build_ver', CURRENT_BUILD);
+      } catch(e) { /* non-critical */ }
+    })();
   </script>
 
-  <!-- Main ES Module Application Entrypoint (Cache-Busted v4.9.9) -->
-  <script type="module" src="js/app.js?v=4.9.9"></script>
+  <!-- Main ES Module Application Entrypoint (Cache-Busted v4.20.0) -->
+  <script type="module" src="js/app.js?v=4.20.0"></script>
 
   <style>
     @keyframes spin {

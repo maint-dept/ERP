@@ -1,8 +1,8 @@
-// Al-Muslim Group ERP - Service Worker v4.19.0
+// Al-Muslim Group ERP - Service Worker v4.20.0
 // KILL SWITCH: Clears ALL old caches, unregisters self, passes all requests direct to network.
 // This replaces broken v4.9.9 and all previous cached versions.
 
-var SW_VERSION = 'kill-v4.19.0';
+var SW_VERSION = 'kill-v4.20.0';
 
 // INSTALL: Skip waiting immediately so this SW takes over right away
 self.addEventListener('install', function(event) {

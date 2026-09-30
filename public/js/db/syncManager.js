@@ -4,6 +4,8 @@ import { PostgresAdapter }     from './adapters/postgresAdapter.js';
 import { TursoAdapter }        from './adapters/tursoAdapter.js';
 import { CloudflareD1Adapter } from './adapters/cloudflareD1Adapter.js';
 import { NeonAdapter }         from './adapters/neonAdapter.js';
+import { MongoAdapter }        from './adapters/mongoAdapter.js';
+import { MysqlAdapter }        from './adapters/mysqlAdapter.js';
 import { retryQueue }          from './retryQueue.js';
 import { storage }             from './storage.js';
 
@@ -45,6 +47,8 @@ class SyncManager {
             else if (t === 'TURSO')     adapter = new TursoAdapter(conf);
             else if (t === 'CLOUDFLARE_D1' || t === 'CLOUDFLARE D1') adapter = new CloudflareD1Adapter(conf);
             else if (t === 'NEON')      adapter = new NeonAdapter(conf);
+            else if (t === 'MONGODB' || t === 'MONGO') adapter = new MongoAdapter(conf);
+            else if (t === 'MYSQL')     adapter = new MysqlAdapter(conf);
             if (adapter) this.secondaryAdapters.set(conf.id, adapter);
           }
         });
