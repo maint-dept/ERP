@@ -1,6 +1,14 @@
-import { FirebaseAdapter } from './adapters/firebaseAdapter.js';
-import { SupabaseAdapter } from './adapters/supabaseAdapter.js';
-import { retryQueue } from './retryQueue.js';
+import { FirebaseAdapter }     from './adapters/firebaseAdapter.js';
+import { SupabaseAdapter }     from './adapters/supabaseAdapter.js';
+import { PostgresAdapter }     from './adapters/postgresAdapter.js';
+import { TursoAdapter }        from './adapters/tursoAdapter.js';
+import { CloudflareD1Adapter } from './adapters/cloudflareD1Adapter.js';
+import { NeonAdapter }         from './adapters/neonAdapter.js';
+import { MongoAdapter }        from './adapters/mongoAdapter.js';
+import { MysqlAdapter }        from './adapters/mysqlAdapter.js';
+import { retryQueue }          from './retryQueue.js';
+import { storage }             from './storage.js';
+
 
 class SyncManager {
   constructor() {
@@ -13,22 +21,38 @@ class SyncManager {
   }
 
   /**
-   * Load configurations from localStorage or secure Firestore collection
+   * Load configurations from storage engine or localStorage
    */
   async loadConfig() {
     try {
-      const stored = localStorage.getItem('erp_multi_db_config');
-      if (stored) {
-        const configs = JSON.parse(stored);
-        this.secondaryAdapters.clear();
+      let configs = [];
+      if (storage && typeof storage.getMultiDbConfigs === 'function') {
+        configs = storage.getMultiDbConfigs();
+      }
+      if ((!configs || configs.length === 0) && typeof localStorage !== 'undefined') {
+        const stored = localStorage.getItem('erp_multi_db_config');
+        if (stored) {
+          try { configs = JSON.parse(stored); } catch (_) {}
+        }
+      }
+      this.secondaryAdapters.clear();
+      if (configs && Array.isArray(configs)) {
         configs.forEach(conf => {
-          if (conf.enabled) {
-            if (conf.type === 'SUPABASE') {
-              this.secondaryAdapters.set(conf.id, new SupabaseAdapter(conf));
-            }
-            // Add other adapters here later
+          if (conf && conf.enabled) {
+            let adapter = null;
+            const t = (conf.type || '').toUpperCase();
+            if (t === 'SUPABASE')       adapter = new SupabaseAdapter(conf);
+            else if (t === 'FIREBASE')  adapter = new FirebaseAdapter(conf);
+            else if (t === 'POSTGRESQL' || t === 'POSTGRES') adapter = new PostgresAdapter(conf);
+            else if (t === 'TURSO')     adapter = new TursoAdapter(conf);
+            else if (t === 'CLOUDFLARE_D1' || t === 'CLOUDFLARE D1') adapter = new CloudflareD1Adapter(conf);
+            else if (t === 'NEON')      adapter = new NeonAdapter(conf);
+            else if (t === 'MONGODB' || t === 'MONGO') adapter = new MongoAdapter(conf);
+            else if (t === 'MYSQL')     adapter = new MysqlAdapter(conf);
+            if (adapter) this.secondaryAdapters.set(conf.id, adapter);
           }
         });
+        try { localStorage.setItem('erp_multi_db_config', JSON.stringify(configs)); } catch (_) {}
       }
       this.configLoaded = true;
     } catch (e) {
@@ -235,7 +259,11 @@ class SyncManager {
 
   _saveConfigs() {
     const configs = Array.from(this.secondaryAdapters.values()).map(a => a.config);
-    localStorage.setItem('erp_multi_db_config', JSON.stringify(configs));
+    if (storage && typeof storage.saveMultiDbConfigs === 'function') {
+      storage.saveMultiDbConfigs(configs).catch(() => {});
+    } else {
+      localStorage.setItem('erp_multi_db_config', JSON.stringify(configs));
+    }
   }
 }
 

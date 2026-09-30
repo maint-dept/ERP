@@ -7,7 +7,6 @@ import { storage } from '../db/storage.js';
 import { TABLE_NAMES } from '../db/schema.js';
 import { state } from '../state.js';
 import { masterDataService } from '../services/masterDataService.js';
-import { renderMultiDatabaseBackupHTML, initMultiDatabaseBackupEvents } from './databaseBackupView.js?v=4.9.9';
 
 export const REPORT_TYPES = [
   { key: 'ALL', label: 'All Reports (Default)', description: 'Universal baseline signature template for all reports' },
@@ -172,7 +171,7 @@ export function renderSettingsView() {
         <div>
           <h1 style="font-size: 22px; font-weight: 800; color: #fff;">⚙️ Admin Settings &amp; Configuration</h1>
           <p style="font-size: 12.5px; color: var(--text-secondary);">
-            Manage PDF &amp; print signatures, corporate branding, approval workflow policies, machine serial number formatting, and database backups.
+            Manage PDF &amp; print signatures, corporate branding, approval workflow policies, and machine serial number formatting.
           </p>
         </div>
       </div>
@@ -379,52 +378,12 @@ export function renderSettingsView() {
           <button id="btn-save-serial-settings" class="btn btn-primary btn-sm" style="align-self: flex-start; font-weight: 700;">
             💾 Save Serial Number Configuration
           </button>
-        </div>
-
-
-
-        <!-- Card 5: Database JSON Backup & Restore -->
-        <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 20px; display: flex; flex-direction: column; gap: 14px; grid-column: 1 / -1;">
-          <h3 style="font-size: 15px; font-weight: 700; color: #fbbf24; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">
-            💾 Backup & Recovery
-          </h3>
-
-          <!-- Persistent Server Database Status Banner -->
-          <div style="background: rgba(16, 185, 129, 0.08); border: 1.5px solid rgba(16, 185, 129, 0.35); border-radius: 8px; padding: 12px 16px; font-size: 12.5px; color: #d1fae5; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-            <div>
-              🟢 <strong>Persistent Server Database File:</strong> <code>data/erp_database.json</code><br/>
-              <span style="font-size: 11.5px; color: var(--text-secondary);">All database records (Master Data, Machines, Spare Parts, Lines &amp; Rooms) are actively synchronized and stored to server disk.</span>
-            </div>
-            <button type="button" id="btn-sync-server-db" class="btn btn-secondary btn-sm" style="font-weight: 700; color: #34d399; border-color: rgba(16, 185, 129, 0.4);">
-              Save Now
-            </button>
-          </div>
-
-          <div style="display: flex; gap: 12px; align-items: center;">
-            <button id="btn-download-db-backup" class="btn btn-primary">
-              Backup Data
-            </button>
-
-            <label class="btn btn-secondary" style="cursor: pointer;">
-              Restore Data
-              <input type="file" id="db-restore-file-input" accept=".json" style="display: none;" />
-            </label>
-
-            <button id="btn-factory-reset" class="btn btn-danger btn-sm" style="margin-left: auto;">
-              Reset Data
-            </button>
-          </div>
-        </div>
-
-        ${renderMultiDatabaseBackupHTML()}
       </div>
     </div>
   `;
 }
 
 export function initSettingsEvents() {
-  initMultiDatabaseBackupEvents();
-
   const saveGen = document.getElementById('btn-save-general-settings');
   if (saveGen) {
     saveGen.addEventListener('click', async () => {
@@ -790,69 +749,6 @@ export function initSettingsEvents() {
     });
   }
 
-  const btnBackup = document.getElementById('btn-download-db-backup');
-  if (btnBackup) {
-    btnBackup.addEventListener('click', () => {
-      const jsonStr = storage.exportBackup();
-      const blob = new Blob([jsonStr], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `Al_Muslim_ERP_Backup_${new Date().toISOString().slice(0, 10)}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
-    });
-  }
-
-  const restoreInput = document.getElementById('db-restore-file-input');
-  if (restoreInput) {
-    restoreInput.addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-
-      const reader = new FileReader();
-      reader.onload = (evt) => {
-        const res = storage.importBackup(evt.target.result);
-        if (res.success) {
-          alert(`Database restored successfully (${res.count} machines loaded).`);
-          window.location.reload();
-        } else {
-          alert('Restore Failed: ' + res.error);
-        }
-      };
-      reader.readAsText(file);
-    });
-  }
-
-  const btnReset = document.getElementById('btn-factory-reset');
-  if (btnReset) {
-    btnReset.addEventListener('click', () => {
-      if (confirm('Are you sure you want to perform a factory reset? All existing custom machines and modifications will be replaced with initial demo records.')) {
-        storage.resetToInitialData();
-        alert('ERP reset to initial factory demo state.');
-        window.location.reload();
-      }
-    });
-  }
-
-  const btnSyncDb = document.getElementById('btn-sync-server-db');
-  if (btnSyncDb) {
-    btnSyncDb.addEventListener('click', async () => {
-      btnSyncDb.disabled = true;
-      btnSyncDb.textContent = '⏳ Saving to Database File...';
-      try {
-        await storage.persistToServerDatabase();
-        alert('All data records were successfully stored into data/erp_database.json on the server disk!');
-      } catch (err) {
-        alert('Database save error: ' + err.message);
-      } finally {
-        btnSyncDb.disabled = false;
-        btnSyncDb.textContent = '🔄 Force Save Records to Database File';
-      }
-    });
-  }
-
-  // Live in-memory sync for all settings inputs to guarantee user edits are NEVER lost before clicking Save
   const syncSettingsInputsToMemory = () => {
     try {
       const container = document.getElementById('signatures-list-container');

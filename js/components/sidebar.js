@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Al-Muslim Group Garments Factory Maintenance Machine ERP
  * Ultra-Modern Enterprise Navigation Sidebar Component
  * 
@@ -48,7 +48,7 @@ export function renderSidebar() {
     expandedGroups.add('group-reports');
   } else if (currentView === 'manpower') {
     expandedGroups.add('group-manpower');
-  } else if (['users', 'email-config', 'master-data', 'transfer-workflows', 'excel-manager', 'audit-logs', 'settings', 'storage', 'homepage-manager'].includes(currentView)) {
+  } else if (['users', 'email-config', 'master-data', 'transfer-workflows', 'excel-manager', 'audit-logs', 'settings', 'database-config', 'storage', 'homepage-manager'].includes(currentView)) {
     expandedGroups.add('group-admin');
   }
 
@@ -196,10 +196,14 @@ export function renderSidebar() {
     { id: 'adm-email-config', targetView: 'email-config', moduleKey: 'email_config', label: 'Email Configuration', icon: '✉️' },
     { id: 'adm-homepage', targetView: 'homepage-manager', moduleKey: 'homepage_management', label: 'Home Page Management', icon: '🏠' },
     { id: 'adm-activity-logs', targetView: 'audit-logs', moduleKey: 'audit_logs', label: 'Activity & Audit Logs', icon: '📝' },
+    { id: 'adm-database', targetView: 'database-config', moduleKey: 'settings', label: 'Data Engine', icon: '🗄️' },
     { id: 'adm-settings', targetView: 'settings', moduleKey: 'settings', label: 'System Settings', icon: '⚙️' }
   ];
 
-  const allowedAdminItems = adminMenuItems.filter(it => authService.isModuleAllowed(it.moduleKey || it.targetView));
+  const allowedAdminItems = adminMenuItems.filter(it =>
+    it.id === 'adm-database' || it.id === 'adm-settings' ||
+    authService.isAdmin() || authService.isModuleAllowed(it.moduleKey || it.targetView)
+  );
 
   let html = `
     <aside class="app-sidebar" id="app-sidebar-root">

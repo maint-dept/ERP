@@ -1656,6 +1656,49 @@ class StorageEngine {
       return { success: false, error: e.message };
     }
   }
+
+  // Multi-Database Configuration Persistence (Survives cache flushes and syncs across devices)
+  getMultiDbConfigs() {
+    try {
+      const settingsTable = this.getTable(TABLE_NAMES.SETTINGS) || [];
+      const dbConfigRow = settingsTable.find(r => r.key === 'multi_db_config' || r.id === 'multi_db_config');
+      if (dbConfigRow && Array.isArray(dbConfigRow.value) && dbConfigRow.value.length > 0) {
+        return dbConfigRow.value;
+      }
+    } catch (_) {}
+    try {
+      const local = localStorage.getItem('erp_multi_db_config');
+      if (local) return JSON.parse(local);
+    } catch (_) {}
+    return [];
+  }
+
+  async saveMultiDbConfigs(configs) {
+    try {
+      localStorage.setItem('erp_multi_db_config', JSON.stringify(configs));
+    } catch (_) {}
+    try {
+      let settingsTable = this.getTable(TABLE_NAMES.SETTINGS) || [];
+      let row = settingsTable.find(r => r.key === 'multi_db_config' || r.id === 'multi_db_config');
+      if (row) {
+        row.value = configs;
+        row.updatedAt = new Date().toISOString();
+      } else {
+        settingsTable.push({
+          id: 'multi_db_config',
+          key: 'multi_db_config',
+          value: configs,
+          updatedAt: new Date().toISOString()
+        });
+      }
+      this.saveTable(TABLE_NAMES.SETTINGS);
+      if (typeof this.persistToServerDatabase === 'function') {
+        this.persistToServerDatabase().catch(() => {});
+      }
+    } catch (e) {
+      console.warn('Failed to persist multi_db_config to server/cloud:', e);
+    }
+  }
 }
 
 export const storage = new StorageEngine();

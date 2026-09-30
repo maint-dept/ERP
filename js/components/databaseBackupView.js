@@ -42,9 +42,21 @@ export function renderMultiDatabaseBackupHTML() {
             '<label style="font-size: 12px; font-weight: 700; color: #94a3b8; display: block; margin-bottom: 4px;">Database Name</label>',
             '<input type="text" id="add-db-name" class="form-control" placeholder="e.g. Supabase Backup" style="background: #1e293b; border-color: #475569; color: #fff; font-size: 13px;" />',
           '</div>',
-          '<div>',
-            '<label style="font-size: 12px; font-weight: 700; color: #94a3b8; display: block; margin-bottom: 4px;">Connection Details (URL, API Key, etc.)</label>',
-            '<textarea id="add-db-conn" class="form-control" rows="3" placeholder="Supabase URL &amp; Anon Key or Firebase Config JSON" style="background: #1e293b; border-color: #475569; color: #fff; font-size: 13px;"></textarea>',
+          '<div id="supabase-inputs" style="display: flex; flex-direction: column; gap: 14px;">',
+            '<div>',
+              '<label style="font-size: 12px; font-weight: 700; color: #94a3b8; display: block; margin-bottom: 4px;">Supabase Project URL</label>',
+              '<input type="text" id="add-db-supa-url" class="form-control" placeholder="https://xxxx.supabase.co" style="background: #1e293b; border-color: #475569; color: #fff; font-size: 13px;" />',
+            '</div>',
+            '<div>',
+              '<label style="font-size: 12px; font-weight: 700; color: #94a3b8; display: block; margin-bottom: 4px;">Supabase Anon / Publishable Key</label>',
+              '<input type="password" id="add-db-supa-key" class="form-control" placeholder="eyJ..." style="background: #1e293b; border-color: #475569; color: #fff; font-size: 13px;" />',
+            '</div>',
+          '</div>',
+          '<div id="firebase-inputs" style="display: none; flex-direction: column; gap: 14px;">',
+            '<div>',
+              '<label style="font-size: 12px; font-weight: 700; color: #94a3b8; display: block; margin-bottom: 4px;">Firebase Config JSON</label>',
+              '<textarea id="add-db-fb-config" class="form-control" rows="4" placeholder=\'{ "apiKey": "...", "authDomain": "...", ... }\' style="background: #1e293b; border-color: #475569; color: #fff; font-size: 13px;"></textarea>',
+            '</div>',
           '</div>',
           '<div>',
             '<label style="font-size: 12px; font-weight: 700; color: #94a3b8; display: block; margin-bottom: 6px;">Role</label>',
@@ -84,7 +96,14 @@ export function initMultiDatabaseBackupEvents() {
     }
     if (totalRecords === 0) totalRecords = 1;
 
-    var pendingStats = await retryQueue.getPending();
+    var pendingStats = [];
+    try {
+      if (retryQueue && typeof retryQueue.getPending === 'function') {
+        pendingStats = (await retryQueue.getPending()) || [];
+      }
+    } catch (e) {
+      console.warn('Retry queue stats read notice:', e);
+    }
     var fbFailures = pendingStats.filter(function(p) { return p.dbId === 'default_fb'; }).length;
     var isFailoverActive = fbFailures > 0;
     var fbIcon = isFailoverActive ? 'red' : 'green';
@@ -103,7 +122,13 @@ export function initMultiDatabaseBackupEvents() {
       lastSync: fbFailures > 0 ? 'Failing...' : 'Just now'
     }];
 
-    var configs = JSON.parse(localStorage.getItem('erp_multi_db_config') || '[]');
+    var configs = [];
+    if (storage && typeof storage.getMultiDbConfigs === 'function') {
+      configs = storage.getMultiDbConfigs();
+    }
+    if ((!configs || configs.length === 0) && typeof localStorage !== 'undefined') {
+      try { configs = JSON.parse(localStorage.getItem('erp_multi_db_config') || '[]'); } catch (_) {}
+    }
     configs.forEach(function(c) {
       var dbFails = pendingStats.filter(function(p) { return p.dbId === c.id; }).length;
       var ico = 'green';
@@ -190,8 +215,13 @@ export function initMultiDatabaseBackupEvents() {
     statusContainer.querySelectorAll('.btn-delete-db').forEach(function(btn) {
       btn.onclick = function() {
         var id = btn.getAttribute('data-id');
-        var cfgs = JSON.parse(localStorage.getItem('erp_multi_db_config') || '[]');
-        localStorage.setItem('erp_multi_db_config', JSON.stringify(cfgs.filter(function(c) { return c.id !== id; })));
+        var cfgs = (storage && typeof storage.getMultiDbConfigs === 'function') ? storage.getMultiDbConfigs() : JSON.parse(localStorage.getItem('erp_multi_db_config') || '[]');
+        var updated = cfgs.filter(function(c) { return c.id !== id; });
+        if (storage && typeof storage.saveMultiDbConfigs === 'function') {
+          storage.saveMultiDbConfigs(updated);
+        } else {
+          localStorage.setItem('erp_multi_db_config', JSON.stringify(updated));
+        }
         syncManager.loadConfig().then(renderDatabases);
         notificationService.toast('Database removed.');
       };
@@ -210,34 +240,52 @@ export function initMultiDatabaseBackupEvents() {
     notificationService.toast('Testing connection...', 'info');
     setTimeout(function() { notificationService.toast('Connection test successful!'); }, 800);
   };
+  document.getElementById('add-db-type').onchange = function(e) {
+    var isSupa = e.target.value === 'Supabase';
+    document.getElementById('supabase-inputs').style.display = isSupa ? 'flex' : 'none';
+    document.getElementById('firebase-inputs').style.display = isSupa ? 'none' : 'flex';
+  };
+
   document.getElementById('btn-save-add-db').onclick = function() {
     var type = document.getElementById('add-db-type').value;
     var name = document.getElementById('add-db-name').value.trim() || type;
-    var conn = document.getElementById('add-db-conn').value.trim();
     var roleEl = document.querySelector('input[name="db_role"]:checked');
     var role = roleEl ? roleEl.value : 'Backup';
     var autoSync = document.getElementById('add-db-autosync').checked;
-
-    if (!conn) {
-      notificationService.toast('Connection Details are required!', 'error');
-      return;
-    }
 
     var newCfg = {
       id: 'db_' + Date.now(),
       name: name,
       type: type.toUpperCase(),
       role: role,
-      connStr: conn,
       enabled: true,
       autoSync: autoSync,
       retryEnabled: true,
       lastSync: 'Just now'
     };
 
-    var existing = JSON.parse(localStorage.getItem('erp_multi_db_config') || '[]');
+    if (type === 'Supabase') {
+      newCfg.url = document.getElementById('add-db-supa-url').value.trim();
+      newCfg.anonKey = document.getElementById('add-db-supa-key').value.trim();
+      if (!newCfg.url || !newCfg.anonKey) {
+        notificationService.toast('Supabase URL and Anon Key are required!', 'error');
+        return;
+      }
+    } else {
+      newCfg.connStr = document.getElementById('add-db-fb-config').value.trim();
+      if (!newCfg.connStr) {
+        notificationService.toast('Firebase Config is required!', 'error');
+        return;
+      }
+    }
+
+    var existing = (storage && typeof storage.getMultiDbConfigs === 'function') ? storage.getMultiDbConfigs() : JSON.parse(localStorage.getItem('erp_multi_db_config') || '[]');
     existing.push(newCfg);
-    localStorage.setItem('erp_multi_db_config', JSON.stringify(existing));
+    if (storage && typeof storage.saveMultiDbConfigs === 'function') {
+      storage.saveMultiDbConfigs(existing);
+    } else {
+      localStorage.setItem('erp_multi_db_config', JSON.stringify(existing));
+    }
 
     syncManager.loadConfig().then(function() {
       notificationService.toast('Added ' + name + ' as ' + role + '.');
@@ -248,7 +296,7 @@ export function initMultiDatabaseBackupEvents() {
 
   document.getElementById('btn-sync-all-dbs').onclick = function() {
     notificationService.toast('Syncing all databases...');
-    var cfgs = JSON.parse(localStorage.getItem('erp_multi_db_config') || '[]');
+    var cfgs = (storage && typeof storage.getMultiDbConfigs === 'function') ? storage.getMultiDbConfigs() : JSON.parse(localStorage.getItem('erp_multi_db_config') || '[]');
     cfgs.forEach(function(c) {
       if (c.enabled) syncManager.runFullSync(c.id).catch(function(e) { console.error(e); });
     });

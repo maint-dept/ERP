@@ -31,6 +31,7 @@ import { renderReportsView, initReportsEvents } from './components/reportsView.j
 import { renderAuditLogsView, initAuditLogsEvents } from './components/auditLogsView.js';
 import { renderNotificationsDrawer, initNotificationsDrawerEvents } from './components/notificationsDrawer.js?v=3.2.0';
 import { renderSettingsView, initSettingsEvents } from './components/settingsView.js';
+import { renderDatabaseConfigView, initDatabaseConfigEvents } from './components/databaseConfigView.js';
 import { renderResourceLibraryView, initResourceLibraryEvents } from './components/resourceLibraryView.js';
 import { renderColumnVisibilityModal, initColumnVisibilityEvents } from './components/columnVisibilityModal.js';
 import { renderMachineHistoryView, initMachineHistoryEvents } from './components/machineHistoryView.js';
@@ -653,11 +654,12 @@ class ERPApplication {
         'email-config': 'email_config',
         'audit-logs': 'audit_logs',
         'settings': 'settings',
+        'database-config': 'settings',
         'resource-library': 'document_library'
       };
 
       const requiredModule = viewToModuleMap[currentView];
-      if (requiredModule && !authService.isModuleAllowed(requiredModule)) {
+      if (requiredModule && !authService.isAdmin() && !authService.isModuleAllowed(requiredModule)) {
         return `
           <div class="page-view" style="display: flex; align-items: center; justify-content: center; min-height: 60vh;">
             <div style="background: var(--bg-surface); border: 1.5px solid rgba(239, 68, 68, 0.4); border-radius: var(--radius-xl); padding: 40px; text-align: center; max-width: 500px; box-shadow: 0 10px 40px rgba(0,0,0,0.5);">
@@ -729,6 +731,8 @@ class ERPApplication {
           return renderAuditLogsView();
         case 'settings':
           return renderSettingsView();
+        case 'database-config':
+          return renderDatabaseConfigView();
         default:
           return renderDashboard();
       }
@@ -851,6 +855,9 @@ class ERPApplication {
         break;
       case 'settings':
         initSettingsEvents();
+        break;
+      case 'database-config':
+        initDatabaseConfigEvents();
         break;
     }
   }
