@@ -789,7 +789,7 @@ export function renderDatabaseConfigView() {
           </span>
         </div>
 
-        <div style="display: grid; grid-template-columns: 340px 1fr; gap: 20px; align-items: start;">
+        <div style="display: grid; grid-template-columns: minmax(280px, 340px) 1fr; gap: 20px; align-items: start; min-width: 0; overflow: hidden;">
           
           <!-- Left Column: Multi-Database Manager & Provider Templates -->
           <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 18px; display: flex; flex-direction: column; gap: 14px;">
@@ -866,8 +866,8 @@ export function renderDatabaseConfigView() {
           </div>
 
           <!-- Right Column: Interactive Configuration Form for Selected Provider -->
-          <div id="provider-config-container" style="background: var(--bg-surface); border: 1.5px solid #0284c7; border-radius: var(--radius-lg); padding: 24px; box-shadow: 0 4px 25px rgba(2, 132, 199, 0.1);">
-            <div id="provider-form-content"></div>
+          <div id="provider-config-container" style="background: var(--bg-surface); border: 1.5px solid #0284c7; border-radius: var(--radius-lg); padding: 24px; box-shadow: 0 4px 25px rgba(2, 132, 199, 0.1); overflow: hidden; min-width: 0;">
+            <div id="provider-form-content" style="overflow-y: auto; max-height: 75vh;"></div>
           </div>
 
         </div>
@@ -1387,7 +1387,7 @@ function renderProviderForm(providerKey, dbId = null) {
           <p style="font-size: 11.5px; color: #cbd5e1; margin: 0 0 8px; line-height: 1.4;">
             PostgreSQL requires the storage table before syncing. Copy this SQL, open the SQL Editor in your Supabase dashboard, paste and click <strong>Run</strong>:
           </p>
-          <pre style="background: #090d16; border: 1px solid rgba(255,255,255,0.08); padding: 10px 12px; border-radius: 6px; font-size: 11px; color: #a7f3d0; margin: 0; overflow-x: auto; font-family: monospace; line-height: 1.4; user-select: all;">${SUPABASE_SETUP_SQL.trim()}</pre>
+          <pre style="background: #090d16; border: 1px solid rgba(255,255,255,0.08); padding: 10px 12px; border-radius: 6px; font-size: 11px; color: #a7f3d0; margin: 0; overflow-x: auto; overflow-y: auto; max-height: 160px; font-family: monospace; line-height: 1.4; user-select: all; white-space: pre;">${SUPABASE_SETUP_SQL.trim()}</pre>
         </div>
       ` : ''}
 
@@ -1405,7 +1405,7 @@ function renderProviderForm(providerKey, dbId = null) {
           <p style="font-size: 11.5px; color: #cbd5e1; margin: 0 0 8px; line-height: 1.4;">
             If Cloud Firestore is in locked mode, sync writes will be blocked. In your Firebase Console, open <strong>Firestore Database → Rules</strong> tab, paste and <strong>Publish</strong>:
           </p>
-          <pre style="background: #090d16; border: 1px solid rgba(255,255,255,0.08); padding: 10px 12px; border-radius: 6px; font-size: 11px; color: #fde68a; margin: 0; overflow-x: auto; font-family: monospace; line-height: 1.4;">rules_version = '2';
+          <pre style="background: #090d16; border: 1px solid rgba(255,255,255,0.08); padding: 10px 12px; border-radius: 6px; font-size: 11px; color: #fde68a; margin: 0; overflow-x: auto; overflow-y: auto; max-height: 120px; font-family: monospace; line-height: 1.4; white-space: pre;">rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     match /{document=**} {
@@ -1435,7 +1435,7 @@ service cloud.firestore {
           <p style="font-size: 11.5px; color: #cbd5e1; margin: 0 0 8px; line-height: 1.4;">
             Direct calls to <code>api.cloudflare.com</code> are blocked by browser CORS. In Cloudflare Dashboard, create a Worker, paste this code, bind your D1 database as <strong>DB</strong>, and enter your Worker URL (e.g. <code>https://my-worker.subdomain.workers.dev</code>):
           </p>
-          <pre style="background: #090d16; border: 1px solid rgba(255,255,255,0.08); padding: 10px 12px; border-radius: 6px; font-size: 11px; color: #fed7aa; margin: 0; overflow-x: auto; font-family: monospace; line-height: 1.4;">${CLOUDFLARE_WORKER_CODE.trim()}</pre>
+          <pre style="background: #090d16; border: 1px solid rgba(255,255,255,0.08); padding: 10px 12px; border-radius: 6px; font-size: 11px; color: #fed7aa; margin: 0; overflow-x: auto; overflow-y: auto; max-height: 200px; font-family: monospace; line-height: 1.4; white-space: pre; word-break: normal;">${CLOUDFLARE_WORKER_CODE.trim()}</pre>
         </div>
       ` : ''}
 
