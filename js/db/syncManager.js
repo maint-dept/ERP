@@ -1,7 +1,7 @@
 import { FirebaseAdapter }     from './adapters/firebaseAdapterV2.js';
 import { SupabaseAdapter }     from './adapters/supabaseAdapterV2.js';
 import { PostgresAdapter }     from './adapters/postgresAdapter.js';
-import { TursoAdapter }        from './adapters/tursoAdapter.js';
+import { TursoAdapter }        from './adapters/tursoAdapterV2.js';
 import { CloudflareD1Adapter } from './adapters/cloudflareD1Adapter.js';
 import { NeonAdapter }         from './adapters/neonAdapter.js';
 import { MongoAdapter }        from './adapters/mongoAdapter.js';

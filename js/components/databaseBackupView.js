@@ -7,6 +7,7 @@ import { notificationService } from '../services/notificationService.js';
 import { storage } from '../db/storage.js';
 import { SupabaseAdapter, SUPABASE_SETUP_SQL } from '../db/adapters/supabaseAdapterV2.js';
 import { FirebaseAdapter } from '../db/adapters/firebaseAdapterV2.js';
+import { TursoAdapter } from '../db/adapters/tursoAdapterV2.js';
 
 export function renderMultiDatabaseBackupHTML() {
   return [
@@ -38,11 +39,12 @@ export function renderMultiDatabaseBackupHTML() {
     '<select id="add-db-type" class="form-control" style="background: #1e293b; border-color: #475569; color: #fff; font-size: 13px;">',
     '<option value="Firebase">Firebase</option>',
     '<option value="Supabase" selected>Supabase</option>',
+    '<option value="Turso">Turso (LibSQL)</option>',
     '</select>',
     '</div>',
     '<div>',
     '<label style="font-size: 12px; font-weight: 700; color: #94a3b8; display: block; margin-bottom: 4px;">Database Name</label>',
-    '<input type="text" id="add-db-name" class="form-control" placeholder="e.g. Supabase Backup" style="background: #1e293b; border-color: #475569; color: #fff; font-size: 13px;" />',
+    '<input type="text" id="add-db-name" class="form-control" placeholder="e.g. Backup DB" style="background: #1e293b; border-color: #475569; color: #fff; font-size: 13px;" />',
     '</div>',
     '<div id="supabase-inputs" style="display: flex; flex-direction: column; gap: 14px;">',
     '<div>',
@@ -65,6 +67,20 @@ export function renderMultiDatabaseBackupHTML() {
     '<div>',
     '<label style="font-size: 12px; font-weight: 700; color: #94a3b8; display: block; margin-bottom: 4px;">Firebase Config JSON</label>',
     '<textarea id="add-db-fb-config" class="form-control" rows="4" placeholder=\'{ "apiKey": "...", "authDomain": "...", ... }\' style="background: #1e293b; border-color: #475569; color: #fff; font-size: 13px;"></textarea>',
+    '</div>',
+    '</div>',
+    '<div id="turso-inputs" style="display: none; flex-direction: column; gap: 14px;">',
+    '<div>',
+    '<label style="font-size: 12px; font-weight: 700; color: #94a3b8; display: block; margin-bottom: 4px;">Turso Database URL</label>',
+    '<input type="text" id="add-db-turso-url" class="form-control" placeholder="https://my-db.turso.io (or libsql://...)" style="background: #1e293b; border-color: #475569; color: #fff; font-size: 13px;" />',
+    '</div>',
+    '<div>',
+    '<label style="font-size: 12px; font-weight: 700; color: #94a3b8; display: block; margin-bottom: 4px;">Turso Auth Token</label>',
+    '<input type="password" id="add-db-turso-token" class="form-control" placeholder="eyJ..." style="background: #1e293b; border-color: #475569; color: #fff; font-size: 13px;" />',
+    '</div>',
+    '<div style="background: rgba(79, 255, 145, 0.08); border: 1px solid rgba(79, 255, 145, 0.3); border-radius: 6px; padding: 10px; margin-top: 2px;">',
+    '<div style="font-size: 11.5px; color: #4fff91; font-weight: 700;">⚡ Zero Setup Needed</div>',
+    '<div style="font-size: 11px; color: #94a3b8; line-height: 1.3;">Turso automatically initializes and maintains the storage table. Zero manual SQL required!</div>',
     '</div>',
     '</div>',
     '<div>',
@@ -207,18 +223,57 @@ export function initMultiDatabaseBackupEvents() {
 
     // Attach card action events
     statusContainer.querySelectorAll('.btn-test-db').forEach(function (btn) {
-      btn.onclick = function () {
-        notificationService.toast('Testing connection...', 'info');
-        setTimeout(function () { notificationService.toast('Connection test complete.'); }, 800);
+      btn.onclick = async function () {
+        var id = btn.getAttribute('data-id');
+        var cfgs = (storage && typeof storage.getMultiDbConfigs === 'function') ? storage.getMultiDbConfigs() : JSON.parse(localStorage.getItem('erp_multi_db_config') || '[]');
+        var target = cfgs.find(function(c) { return c.id === id; });
+        if (!target) {
+          notificationService.toast('Database not found', 'error');
+          return;
+        }
+        notificationService.toast('Testing connection to ' + target.name + '...', 'info');
+        btn.textContent = 'Testing...';
+        btn.disabled = true;
+        try {
+          var adapter = null;
+          var t = (target.type || '').toUpperCase();
+          if (t === 'SUPABASE') adapter = new SupabaseAdapter(target);
+          else if (t === 'TURSO') adapter = new TursoAdapter(target);
+          else if (t === 'FIREBASE') adapter = new FirebaseAdapter(target);
+          if (adapter) {
+            var res = await adapter.testConnection();
+            if (res && res.success) {
+              notificationService.toast('✅ ' + target.name + ' connected successfully! (' + (res.latency || 0) + 'ms)', 'success');
+            } else {
+              notificationService.toast('❌ ' + target.name + ': ' + ((res && res.error) || 'Failed'), 'error');
+            }
+          } else {
+            notificationService.toast('Adapter for ' + target.name + ' is ready.', 'info');
+          }
+        } catch (err) {
+          notificationService.toast('❌ Error: ' + err.message, 'error');
+        } finally {
+          btn.textContent = 'Test';
+          btn.disabled = false;
+        }
       };
     });
     statusContainer.querySelectorAll('.btn-full-sync-db').forEach(function (btn) {
-      btn.onclick = function () {
+      btn.onclick = async function () {
         var id = btn.getAttribute('data-id');
         notificationService.toast('Starting Full Sync...');
-        syncManager.runFullSync(id).catch(function (e) {
-          notificationService.toast('Full Sync failed: ' + e.message, 'error');
-        });
+        btn.textContent = 'Syncing...';
+        btn.disabled = true;
+        try {
+          await syncManager.runFullSync(id);
+          notificationService.toast('✅ Full Sync Successful!', 'success');
+          renderDatabases();
+        } catch (e) {
+          notificationService.toast('❌ Full Sync failed: ' + e.message, 'error');
+        } finally {
+          btn.textContent = 'Full Sync';
+          btn.disabled = false;
+        }
       };
     });
     statusContainer.querySelectorAll('.btn-delete-db').forEach(function (btn) {
@@ -279,6 +334,26 @@ export function initMultiDatabaseBackupEvents() {
       } catch (err) {
         notificationService.toast('❌ Connection error: ' + err.message, 'error');
       }
+    } else if (type === 'Turso') {
+      var tUrl = document.getElementById('add-db-turso-url').value.trim();
+      var tToken = document.getElementById('add-db-turso-token').value.trim();
+      if (!tUrl || !tToken) {
+        notificationService.toast('Please enter Turso Database URL and Auth Token', 'error');
+        return;
+      }
+      notificationService.toast('Testing Turso connection...', 'info');
+      try {
+        var tAdapter = new TursoAdapter({ databaseUrl: tUrl, authToken: tToken });
+        var tRes = await tAdapter.testConnection();
+        if (tRes && tRes.success) {
+          notificationService.toast('✅ Turso connected successfully! (Latency: ' + (tRes.latency || 0) + 'ms)', 'success');
+        } else {
+          var tMsg = (tRes && tRes.error) ? tRes.error : 'Connection failed';
+          notificationService.toast('❌ ' + tMsg, 'error');
+        }
+      } catch (err) {
+        notificationService.toast('❌ Connection error: ' + err.message, 'error');
+      }
     } else {
       var fbConf = document.getElementById('add-db-fb-config').value.trim();
       if (!fbConf) {
@@ -301,9 +376,10 @@ export function initMultiDatabaseBackupEvents() {
     }
   };
   document.getElementById('add-db-type').onchange = function (e) {
-    var isSupa = e.target.value === 'Supabase';
-    document.getElementById('supabase-inputs').style.display = isSupa ? 'flex' : 'none';
-    document.getElementById('firebase-inputs').style.display = isSupa ? 'none' : 'flex';
+    var val = e.target.value;
+    document.getElementById('supabase-inputs').style.display = val === 'Supabase' ? 'flex' : 'none';
+    document.getElementById('firebase-inputs').style.display = val === 'Firebase' ? 'flex' : 'none';
+    document.getElementById('turso-inputs').style.display = val === 'Turso' ? 'flex' : 'none';
   };
 
   document.getElementById('btn-save-add-db').onclick = function () {
@@ -331,6 +407,13 @@ export function initMultiDatabaseBackupEvents() {
         notificationService.toast('Supabase URL and Anon Key are required!', 'error');
         return;
       }
+    } else if (type === 'Turso') {
+      newCfg.databaseUrl = document.getElementById('add-db-turso-url').value.trim();
+      newCfg.authToken = document.getElementById('add-db-turso-token').value.trim();
+      if (!newCfg.databaseUrl || !newCfg.authToken) {
+        notificationService.toast('Turso Database URL and Auth Token are required!', 'error');
+        return;
+      }
     } else {
       newCfg.connStr = document.getElementById('add-db-fb-config').value.trim();
       if (!newCfg.connStr) {
@@ -354,12 +437,40 @@ export function initMultiDatabaseBackupEvents() {
     });
   };
 
-  document.getElementById('btn-sync-all-dbs').onclick = function () {
-    notificationService.toast('Syncing all databases...');
-    var cfgs = (storage && typeof storage.getMultiDbConfigs === 'function') ? storage.getMultiDbConfigs() : JSON.parse(localStorage.getItem('erp_multi_db_config') || '[]');
-    cfgs.forEach(function (c) {
-      if (c.enabled) syncManager.runFullSync(c.id).catch(function (e) { console.error(e); });
-    });
+  document.getElementById('btn-sync-all-dbs').onclick = async function () {
+    var btn = document.getElementById('btn-sync-all-dbs');
+    btn.disabled = true;
+    btn.textContent = '⏳ Syncing All...';
+    notificationService.toast('Syncing all configured databases...');
+    try {
+      var cfgs = (storage && typeof storage.getMultiDbConfigs === 'function') ? storage.getMultiDbConfigs() : JSON.parse(localStorage.getItem('erp_multi_db_config') || '[]');
+      var enabled = cfgs.filter(function(c) { return c.enabled; });
+      if (enabled.length === 0) {
+        notificationService.toast('No enabled secondary databases configured.', 'info');
+        return;
+      }
+      var okCount = 0, failCount = 0;
+      for (var i = 0; i < enabled.length; i++) {
+        try {
+          await syncManager.runFullSync(enabled[i].id);
+          okCount++;
+        } catch (e) {
+          console.error(e);
+          failCount++;
+        }
+      }
+      if (failCount > 0) {
+        notificationService.toast('⚠️ Sync finished: ' + okCount + ' succeeded, ' + failCount + ' failed.', 'warning');
+      } else {
+        notificationService.toast('✅ All ' + okCount + ' database(s) synced successfully!', 'success');
+      }
+      renderDatabases();
+    } catch (err) {
+      notificationService.toast('Sync error: ' + err.message, 'error');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '&#x1F504; Sync All Now';
+    }
   };
 
   renderDatabases();

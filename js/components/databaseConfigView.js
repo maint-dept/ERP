@@ -17,7 +17,7 @@ import { syncManager } from '../db/syncManager.js';
 import { notificationService } from '../services/notificationService.js';
 import { db } from '../db/dbClient.js';
 import { PostgresAdapter } from '../db/adapters/postgresAdapter.js';
-import { TursoAdapter } from '../db/adapters/tursoAdapter.js';
+import { TursoAdapter } from '../db/adapters/tursoAdapterV2.js';
 import { FirebaseAdapter } from '../db/adapters/firebaseAdapterV2.js';
 import { CloudflareD1Adapter } from '../db/adapters/cloudflareD1Adapter.js';
 import { NeonAdapter } from '../db/adapters/neonAdapter.js';

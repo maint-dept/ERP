@@ -44,16 +44,22 @@ export class SupabaseAdapter extends BaseAdapter {
       type: 'SUPABASE',
       ...config
     });
-    this.url = (config.url || '').trim().replace(/\/$/, '');
-    this.anonKey = (config.anonKey || '').trim();
+    let rawUrl = (config.url || '').trim().replace(/\/$/, '');
+    let rawKey = (config.anonKey || '').trim();
 
     // Auto-parse from a single raw connStr if provided
     if (config.connStr) {
-      const urlMatch = config.connStr.match(/https:\/\/[^\s"',]+/i);
+      const urlMatch = config.connStr.match(/https?:\/\/[^\s"',]+/i);
       const keyMatch = config.connStr.match(/eyJ[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+/i);
-      if (urlMatch) this.url = urlMatch[0].trim().replace(/\/$/, '');
-      if (keyMatch) this.anonKey = keyMatch[0].trim();
+      if (urlMatch) rawUrl = urlMatch[0].trim().replace(/\/$/, '');
+      if (keyMatch) rawKey = keyMatch[0].trim();
     }
+
+    if (rawUrl && !/^https?:\/\//i.test(rawUrl)) {
+      rawUrl = 'https://' + rawUrl;
+    }
+    this.url = rawUrl;
+    this.anonKey = rawKey.replace(/^Bearer\s+/i, '').replace(/^["']|["']$/g, '');
   }
 
   /**

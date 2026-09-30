@@ -52,19 +52,17 @@ export class CloudflareD1Adapter extends BaseAdapter {
     }
   }
 
-  async _ensureTable(collection) {
+  async _ensureTable() {
     await this._query(
-      `CREATE TABLE IF NOT EXISTS "${collection}" (id TEXT PRIMARY KEY, data TEXT NOT NULL, updated_at TEXT)`
+      `CREATE TABLE IF NOT EXISTS erp_tables (table_name TEXT PRIMARY KEY, raw_json TEXT NOT NULL DEFAULT '[]', item_count INTEGER DEFAULT 0, updated_at TEXT)`
     );
   }
 
   async saveRecord(collection, docId, data) {
     try {
-      await this._ensureTable(collection);
-      await this._query(
-        `INSERT INTO "${collection}" (id, data, updated_at) VALUES (?, ?, ?) ON CONFLICT(id) DO UPDATE SET data=excluded.data, updated_at=excluded.updated_at`,
-        [docId, JSON.stringify(data), new Date().toISOString()]
-      );
+      if (typeof window !== 'undefined' && window.storage && window.storage.data && window.storage.data[collection]) {
+        return this.saveTable(collection, window.storage.data[collection]);
+      }
       return { success: true };
     } catch (e) {
       return { success: false, error: e.message };
@@ -73,25 +71,23 @@ export class CloudflareD1Adapter extends BaseAdapter {
 
   async saveTable(collection, dataObj) {
     try {
-      await this._ensureTable(collection);
-      const entries = Array.isArray(dataObj)
-        ? dataObj.map(r => [r.id || r._id || String(Math.random()), r])
-        : Object.entries(dataObj);
-      if (entries.length === 0) return { success: true };
-      const now = new Date().toISOString();
-      // D1 has a 100-statement batch limit; chunk accordingly
-      const CHUNK = 90;
-      for (let i = 0; i < entries.length; i += CHUNK) {
-        const chunk = entries.slice(i, i + CHUNK);
-        // Use a multi-row INSERT with individual ON CONFLICT statements
-        for (const [id, row] of chunk) {
-          await this._query(
-            `INSERT INTO "${collection}" (id, data, updated_at) VALUES (?, ?, ?) ON CONFLICT(id) DO UPDATE SET data=excluded.data, updated_at=excluded.updated_at`,
-            [String(id), JSON.stringify(row), now]
-          );
+      await this._ensureTable();
+      let records = dataObj;
+      if (records && !Array.isArray(records) && typeof records === 'object') {
+        const vals = Object.values(records);
+        if (vals.length > 0 && vals[0] && typeof vals[0] === 'object' && vals[0].id) {
+          records = vals;
         }
       }
-      return { success: true };
+      const rawJson = JSON.stringify(records ?? []);
+      const itemCount = Array.isArray(records) ? records.length : 1;
+      const now = new Date().toISOString();
+
+      await this._query(
+        `INSERT INTO erp_tables (table_name, raw_json, item_count, updated_at) VALUES (?, ?, ?, ?) ON CONFLICT(table_name) DO UPDATE SET raw_json=excluded.raw_json, item_count=excluded.item_count, updated_at=excluded.updated_at`,
+        [collection, rawJson, itemCount, now]
+      );
+      return { success: true, updateTime: now };
     } catch (e) {
       return { success: false, error: e.message };
     }
