@@ -34,15 +34,12 @@ export class MysqlAdapter extends BaseAdapter {
       const res = await fetch(`${this.endpoint}/ping`, {
         method: 'POST',
         headers: this._headers()
-      }).catch(() => null);
-
+      });
       if (res && res.ok) return { success: true, latency: 35 };
-      if (this.host && this.database && this.username) {
-        return { success: true, latency: 42 };
-      }
-      return { success: false, error: 'Could not connect to MySQL server. Please check host, port and credentials.' };
+      const errText = await res.text().catch(() => '');
+      return { success: false, error: errText || `MySQL server unreachable at ${this.endpoint}` };
     } catch (e) {
-      return { success: false, error: e.message };
+      return { success: false, error: `Cannot reach MySQL endpoint (${this.endpoint}): ${e.message}` };
     }
   }
 
@@ -52,19 +49,42 @@ export class MysqlAdapter extends BaseAdapter {
         method: 'POST',
         headers: this._headers(),
         body: JSON.stringify({ collection, docId, data })
-      }).catch(() => null);
+      });
       if (res && res.ok) return { success: true };
-      return { success: true };
+      const errText = await res.text().catch(() => '');
+      return { success: false, error: errText || `MySQL upsert failed: HTTP ${res.status}` };
     } catch (e) {
-      return { success: false, error: e.message };
+      return { success: false, error: `MySQL upsert failed: ${e.message}` };
     }
   }
 
   async saveTable(collection, dataObj) {
-    return { success: true };
+    try {
+      const res = await fetch(`${this.endpoint}/save-table`, {
+        method: 'POST',
+        headers: this._headers(),
+        body: JSON.stringify({ collection, data: dataObj })
+      });
+      if (res && res.ok) return { success: true };
+      const errText = await res.text().catch(() => '');
+      return { success: false, error: errText || `MySQL save-table failed: HTTP ${res.status}` };
+    } catch (e) {
+      return { success: false, error: `MySQL save-table failed: ${e.message}` };
+    }
   }
 
   async deleteRecord(collection, docId) {
-    return { success: true };
+    try {
+      const res = await fetch(`${this.endpoint}/delete`, {
+        method: 'POST',
+        headers: this._headers(),
+        body: JSON.stringify({ collection, docId })
+      });
+      if (res && res.ok) return { success: true };
+      const errText = await res.text().catch(() => '');
+      return { success: false, error: errText || `MySQL delete failed: HTTP ${res.status}` };
+    } catch (e) {
+      return { success: false, error: `MySQL delete failed: ${e.message}` };
+    }
   }
 }

@@ -15,21 +15,19 @@ export class MongoAdapter extends BaseAdapter {
 
   async testConnection() {
     try {
-      if (this.uri && (this.uri.startsWith('mongodb://') || this.uri.startsWith('mongodb+srv://'))) {
-        return { success: true, latency: 48 };
+      if (!this.uri) {
+        return { success: false, error: 'MongoDB Connection URI is required.' };
       }
       const res = await fetch(`${this.endpoint}/ping`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ uri: this.uri, database: this.database })
-      }).catch(() => null);
-
-      if (res && res.ok) return { success: true, latency: 52 };
-      // Fallback for valid URI syntax
-      if (this.uri && this.uri.length > 10) return { success: true, latency: 64 };
-      return { success: false, error: 'Invalid MongoDB connection URI or cluster unreachable.' };
+      });
+      if (res && res.ok) return { success: true, latency: 45 };
+      const errText = await res.text().catch(() => '');
+      return { success: false, error: errText || `MongoDB cluster unreachable at ${this.endpoint}` };
     } catch (e) {
-      return { success: false, error: e.message };
+      return { success: false, error: `Cannot reach MongoDB endpoint (${this.endpoint}): ${e.message}` };
     }
   }
 
@@ -39,19 +37,42 @@ export class MongoAdapter extends BaseAdapter {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ collection, docId, data, database: this.database })
-      }).catch(() => null);
+      });
       if (res && res.ok) return { success: true };
-      return { success: true }; // Queued in client adapter
+      const errText = await res.text().catch(() => '');
+      return { success: false, error: errText || `MongoDB upsert failed: HTTP ${res.status}` };
     } catch (e) {
-      return { success: false, error: e.message };
+      return { success: false, error: `MongoDB upsert failed: ${e.message}` };
     }
   }
 
   async saveTable(collection, dataObj) {
-    return { success: true };
+    try {
+      const res = await fetch(`${this.endpoint}/save-table`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ collection, data: dataObj, database: this.database })
+      });
+      if (res && res.ok) return { success: true };
+      const errText = await res.text().catch(() => '');
+      return { success: false, error: errText || `MongoDB save-table failed: HTTP ${res.status}` };
+    } catch (e) {
+      return { success: false, error: `MongoDB save-table failed: ${e.message}` };
+    }
   }
 
   async deleteRecord(collection, docId) {
-    return { success: true };
+    try {
+      const res = await fetch(`${this.endpoint}/delete`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ collection, docId, database: this.database })
+      });
+      if (res && res.ok) return { success: true };
+      const errText = await res.text().catch(() => '');
+      return { success: false, error: errText || `MongoDB delete failed: HTTP ${res.status}` };
+    } catch (e) {
+      return { success: false, error: `MongoDB delete failed: ${e.message}` };
+    }
   }
 }

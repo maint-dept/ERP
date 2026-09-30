@@ -23,6 +23,7 @@ import { CloudflareD1Adapter } from '../db/adapters/cloudflareD1Adapter.js';
 import { NeonAdapter } from '../db/adapters/neonAdapter.js';
 import { MongoAdapter } from '../db/adapters/mongoAdapter.js';
 import { MysqlAdapter } from '../db/adapters/mysqlAdapter.js';
+import { SupabaseAdapter } from '../db/adapters/supabaseAdapter.js';
 
 // Provider specifications with fields, default values, and documentation
 export const PROVIDER_SPECS = {
@@ -43,19 +44,6 @@ export const PROVIDER_SPECS = {
       { id: 'endpoint', label: 'Proxy Endpoint URL (Optional)', type: 'text', placeholder: '/api/db/pg', note: 'Direct TCP from browser is blocked by browsers; uses REST proxy' }
     ]
   },
-  MONGODB: {
-    key: 'MONGODB',
-    name: 'MongoDB',
-    badge: 'NoSQL · Document Store',
-    icon: '🍃',
-    color: '#10aa50',
-    description: 'Document-oriented NoSQL database with high horizontal scalability and flexible BSON schema.',
-    fields: [
-      { id: 'uri', label: 'Connection URI', type: 'password', placeholder: 'mongodb+srv://admin:pass@cluster0.mongodb.net/al_muslim_erp?retryWrites=true', required: true },
-      { id: 'database', label: 'Database Name', type: 'text', placeholder: 'al_muslim_erp', defaultValue: 'al_muslim_erp', required: true },
-      { id: 'endpoint', label: 'REST Proxy Route (Optional)', type: 'text', placeholder: '/api/db/mongo', defaultValue: '/api/db/mongo' }
-    ]
-  },
   MYSQL: {
     key: 'MYSQL',
     name: 'MySQL',
@@ -69,19 +57,21 @@ export const PROVIDER_SPECS = {
       { id: 'database', label: 'Database', type: 'text', placeholder: 'al_muslim_erp', required: true },
       { id: 'username', label: 'Username', type: 'text', placeholder: 'root', required: true },
       { id: 'password', label: 'Password', type: 'password', placeholder: '••••••••••••', required: true },
-      { id: 'ssl', label: 'Require SSL / TLS', type: 'checkbox', defaultValue: false }
+      { id: 'ssl', label: 'Require SSL / TLS', type: 'checkbox', defaultValue: false },
+      { id: 'endpoint', label: 'Proxy Endpoint URL (Optional)', type: 'text', placeholder: '/api/db/mysql', note: 'Direct TCP blocked by browser; uses REST proxy' }
     ]
   },
-  TURSO: {
-    key: 'TURSO',
-    name: 'Turso (LibSQL)',
-    badge: 'Edge SQLite · Serverless',
-    icon: '🚀',
-    color: '#4fff91',
-    description: 'Ultra-low latency serverless SQLite database distributed at the edge. Supports direct HTTP pipeline.',
+  MONGODB: {
+    key: 'MONGODB',
+    name: 'MongoDB',
+    badge: 'NoSQL · Document Store',
+    icon: '🍃',
+    color: '#10aa50',
+    description: 'Document-oriented NoSQL database with high horizontal scalability and flexible BSON schema.',
     fields: [
-      { id: 'databaseUrl', label: 'Database URL', type: 'text', placeholder: 'https://al-muslim-erp-org.turso.io', required: true },
-      { id: 'authToken', label: 'Auth Token', type: 'password', placeholder: 'eyJhbGciOi...', required: true }
+      { id: 'uri', label: 'Connection URI', type: 'password', placeholder: 'mongodb+srv://admin:pass@cluster0.mongodb.net/al_muslim_erp?retryWrites=true', required: true },
+      { id: 'database', label: 'Database Name', type: 'text', placeholder: 'al_muslim_erp', defaultValue: 'al_muslim_erp', required: true },
+      { id: 'endpoint', label: 'REST Proxy Route (Optional)', type: 'text', placeholder: '/api/db/mongo', defaultValue: '/api/db/mongo' }
     ]
   },
   FIREBASE: {
@@ -99,17 +89,16 @@ export const PROVIDER_SPECS = {
       { id: 'databaseURL', label: 'Database URL (RTDB — Optional)', type: 'text', placeholder: 'Leave empty. Only needed if using Realtime DB instead of Firestore.', note: 'Cloud Firestore does NOT require RTDB URL. Leave blank.', required: false }
     ]
   },
-  CLOUDFLARE_D1: {
-    key: 'CLOUDFLARE_D1',
-    name: 'Cloudflare D1',
-    badge: 'Edge SQL · Serverless',
-    icon: '☁️',
-    color: '#f97316',
-    description: 'Serverless SQL database powered by Cloudflare Workers and global edge infrastructure.',
+  SUPABASE: {
+    key: 'SUPABASE',
+    name: 'Supabase (PostgreSQL)',
+    badge: 'PostgreSQL · PostgREST',
+    icon: '⚡',
+    color: '#3ecf8e',
+    description: 'Hosted Postgres with auto-generated RESTful API (PostgREST) and real-time subscriptions.',
     fields: [
-      { id: 'accountId', label: 'Account ID', type: 'text', placeholder: 'cf_account_id_32_chars', required: true },
-      { id: 'databaseId', label: 'Database ID', type: 'text', placeholder: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', required: true },
-      { id: 'apiToken', label: 'API Token', type: 'password', placeholder: 'Cloudflare API Token with D1 permissions', required: true }
+      { id: 'url', label: 'Project URL', type: 'text', placeholder: 'https://xyzcompany.supabase.co', required: true },
+      { id: 'anonKey', label: 'Anon / Publishable API Key', type: 'password', placeholder: 'eyJhbGciOi...', required: true }
     ]
   },
   NEON: {
@@ -122,6 +111,31 @@ export const PROVIDER_SPECS = {
     fields: [
       { id: 'connectionString', label: 'Connection String', type: 'password', placeholder: 'postgres://user:password@ep-cool-fog-123456.us-east-2.aws.neon.tech/neondb?sslmode=require', required: true },
       { id: 'proxyUrl', label: 'Backend Proxy URL (Optional)', type: 'text', placeholder: '/api/db/neon', note: 'Keeps connection credentials secure on the backend server' }
+    ]
+  },
+  TURSO: {
+    key: 'TURSO',
+    name: 'Turso (LibSQL)',
+    badge: 'Edge SQLite · Serverless',
+    icon: '🚀',
+    color: '#4fff91',
+    description: 'Ultra-low latency serverless SQLite database distributed at the edge. Supports direct HTTP pipeline.',
+    fields: [
+      { id: 'databaseUrl', label: 'Database URL', type: 'text', placeholder: 'https://al-muslim-erp-org.turso.io', required: true },
+      { id: 'authToken', label: 'Auth Token', type: 'password', placeholder: 'eyJhbGciOi...', required: true }
+    ]
+  },
+  CLOUDFLARE_D1: {
+    key: 'CLOUDFLARE_D1',
+    name: 'Cloudflare D1',
+    badge: 'Edge SQL · Serverless',
+    icon: '☁️',
+    color: '#f97316',
+    description: 'Serverless SQL database powered by Cloudflare Workers and global edge infrastructure.',
+    fields: [
+      { id: 'accountId', label: 'Account ID', type: 'text', placeholder: 'cf_account_id_32_chars', required: true },
+      { id: 'databaseId', label: 'Database ID', type: 'text', placeholder: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', required: true },
+      { id: 'apiToken', label: 'API Token', type: 'password', placeholder: 'Cloudflare API Token with D1 permissions', required: true }
     ]
   }
 };
@@ -141,11 +155,12 @@ export const CORE_SCHEMAS = [
   { name: 'audit_logs', icon: '📜', desc: 'Tamper-evident logs of all ERP data updates and actions' }
 ];
 
-// Local state storage key for sync metrics
-const SYNC_STATE_KEY = 'erp_data_engine_sync_state';
+// Storage keys
+const SYNC_STATE_KEY    = 'erp_data_engine_sync_state';    // auto-sync ON/OFF preference
+const SYNC_METRICS_KEY  = 'erp_data_engine_sync_metrics';  // per-db real sync metrics
 
 /**
- * Calculates current total records across active memory/storage
+ * Calculates current total records across active in-memory storage.
  */
 function getTotalRecordCount() {
   if (storage && storage.data) {
@@ -155,144 +170,185 @@ function getTotalRecordCount() {
       if (Array.isArray(val)) count += val.length;
       else if (val && typeof val === 'object') count += Object.keys(val).length;
     }
-    if (count > 1000) return count;
+    if (count > 100) return count;
   }
-  return 5162;
+  return 0;
 }
 
 /**
- * Returns dashboard state with fallback to initial topology
+ * Persist a per-db sync metric update.
+ * Called by the Sync All / Re-sync handlers after a real operation.
+ */
+export function recordSyncMetric(dbId, patch) {
+  let metrics = {};
+  try { metrics = JSON.parse(localStorage.getItem(SYNC_METRICS_KEY) || '{}'); } catch (_) {}
+  metrics[dbId] = { ...(metrics[dbId] || {}), ...patch, lastUpdated: new Date().toISOString() };
+  try { localStorage.setItem(SYNC_METRICS_KEY, JSON.stringify(metrics)); } catch (_) {}
+}
+
+/**
+ * Builds the real dashboard state from:
+ *   1. erp_multi_db_config  — user-saved secondary databases
+ *   2. erp_data_engine_sync_metrics — per-db sync outcomes written by real sync ops
+ *   3. erp_data_engine_sync_state  — auto-sync preference toggle
+ * No hardcoded demo rows. If nothing is configured the databases array is empty.
  */
 function getDashboardSyncState() {
   const total = getTotalRecordCount();
+
+  // ── One-time migration: wipe legacy mock databases array from sync_state if present ──
   try {
-    const raw = localStorage.getItem(SYNC_STATE_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (parsed && parsed.databases) {
-        if (parsed.master) parsed.master.total = total;
-        return parsed;
-      }
+    const old = JSON.parse(localStorage.getItem(SYNC_STATE_KEY) || '{}');
+    if (Array.isArray(old.databases)) {
+      localStorage.setItem(SYNC_STATE_KEY, JSON.stringify({
+        autoSync: old.autoSync !== false,
+        lastSyncTime: old.lastSyncTime || '—'
+      }));
+      console.log('[Data Engine] Auto-migration: wiped legacy mock databases from sync_state.');
     }
   } catch (_) {}
 
+  // Auto-sync preference (persisted toggle)
+  let autoSync = true;
+  let lastSyncTime = '—';
+  try {
+    const pref = JSON.parse(localStorage.getItem(SYNC_STATE_KEY) || '{}');
+    if (typeof pref.autoSync === 'boolean') autoSync = pref.autoSync;
+    if (pref.lastSyncTime) lastSyncTime = pref.lastSyncTime;
+  } catch (_) {}
+
+  // Real per-db metrics written by sync operations
+  let metrics = {};
+  try { metrics = JSON.parse(localStorage.getItem(SYNC_METRICS_KEY) || '{}'); } catch (_) {}
+
+  // Real configured secondary databases saved by the user
+  let rawConfigs = [];
+  try {
+    const stored = localStorage.getItem('erp_multi_db_config');
+    if (stored) rawConfigs = JSON.parse(stored);
+  } catch (_) {}
+  if ((!rawConfigs || rawConfigs.length === 0) && storage && typeof storage.getMultiDbConfigs === 'function') {
+    try { rawConfigs = storage.getMultiDbConfigs() || []; } catch (_) {}
+  }
+
+  // Filter out any invalid or legacy entries without valid ID
+  rawConfigs = (rawConfigs || []).filter(c => c && c.id && c.type);
+
+  // Map provider type → display icon
+  const TYPE_ICONS = {
+    POSTGRESQL: '🐘', POSTGRES: '🐘',
+    MONGODB: '🍃', MONGO: '🍃',
+    MYSQL: '🐬',
+    FIREBASE: '🔥',
+    TURSO: '🚀',
+    NEON: '🌿',
+    CLOUDFLARE_D1: '☁️',
+    SUPABASE: '⚡'
+  };
+
+  const databases = rawConfigs.map(conf => {
+    const type  = (conf.type || '').toUpperCase();
+    const m     = metrics[conf.id] || {};
+    const name  = conf.name || conf.type || 'Unknown';
+    const icon  = TYPE_ICONS[type] || '🗄️';
+
+    // Determine status from real metric data
+    let status, statusLabel, statusColor;
+    if (!conf.enabled) {
+      status = 'DISABLED';   statusLabel = 'Disabled';       statusColor = '#64748b';
+    } else if (!m.lastUpdated) {
+      status = 'PENDING';    statusLabel = 'Not Synced Yet'; statusColor = '#94a3b8';
+    } else if (m.failed > 0) {
+      status = 'FAILED';     statusLabel = 'Failed';         statusColor = '#ef4444';
+    } else if (m.missing > 0) {
+      status = 'MISSING';    statusLabel = 'Missing';        statusColor = '#f59e0b';
+    } else {
+      status = 'SYNCED';     statusLabel = 'Synced';         statusColor = '#10b981';
+    }
+
+    const matched   = (m.matched   !== undefined) ? m.matched   : (status === 'SYNCED' ? total : 0);
+    const missing   = (m.missing   !== undefined) ? m.missing   : 0;
+    const failed    = (m.failed    !== undefined) ? m.failed    : 0;
+    const duplicates= (m.duplicates!== undefined) ? m.duplicates: 0;
+    const syncPct   = total > 0 ? +((matched / total) * 100).toFixed(1) : 0;
+    const lastSync  = m.lastSyncTime || (m.lastUpdated ? new Date(m.lastUpdated).toLocaleString() : '—');
+
+    return {
+      id:              conf.id,
+      name,
+      type,
+      icon,
+      role:            'SECONDARY',
+      enabled:         !!conf.enabled,
+      status,
+      statusLabel,
+      statusColor,
+      total,
+      matched,
+      missing,
+      duplicates,
+      failed,
+      syncPct,
+      autoSyncEnabled: !!conf.enabled,
+      lastSync
+    };
+  });
+
+  // Aggregate failed / pending counts
+  const failedCount  = databases.reduce((a, d) => a + (d.failed  || 0), 0);
+  const pendingCount = databases.filter(d => d.status === 'PENDING').length;
+
+  // Collect real missing records from metrics
+  const missingRecords = [];
+  for (const db of databases) {
+    const m = metrics[db.id] || {};
+    if (Array.isArray(m.missingRecords)) {
+      m.missingRecords.forEach(r => missingRecords.push({ ...r, db: db.name }));
+    }
+  }
+
   return {
-    autoSync: true,
-    lastSyncTime: 'Just now',
-    pendingCount: 0,
-    failedCount: 0,
-    duplicateCount: 0,
+    autoSync,
+    lastSyncTime,
+    pendingCount,
+    failedCount,
+    duplicateCount: databases.reduce((a, d) => a + (d.duplicates || 0), 0),
     master: {
       name: 'Firebase',
       label: 'Main Database — Firebase',
       status: 'CONNECTED',
-      total: total,
+      total,
       matched: total,
       missing: 0,
       duplicates: 0,
       failed: 0,
       syncPct: 100.0,
-      lastSync: 'Just now'
+      lastSync: lastSyncTime
     },
-    databases: [
-      {
-        id: 'db_pg',
-        name: 'PostgreSQL',
-        type: 'POSTGRESQL',
-        icon: '🐘',
-        role: 'SECONDARY',
-        status: 'SYNCED',
-        statusLabel: 'Synced',
-        statusColor: '#10b981',
-        total: total,
-        matched: total,
-        missing: 0,
-        duplicates: 0,
-        failed: 0,
-        syncPct: 100.0,
-        autoSyncEnabled: true,
-        lastSync: 'Just now'
-      },
-      {
-        id: 'db_mongo',
-        name: 'MongoDB',
-        type: 'MONGODB',
-        icon: '🍃',
-        role: 'SECONDARY',
-        status: 'MISSING',
-        statusLabel: 'Missing',
-        statusColor: '#f59e0b',
-        total: total,
-        matched: total - 22,
-        missing: 22,
-        duplicates: 0,
-        failed: 0,
-        syncPct: +(((total - 22) / total) * 100).toFixed(1),
-        autoSyncEnabled: true,
-        lastSync: '12 mins ago'
-      },
-      {
-        id: 'db_mysql',
-        name: 'MySQL',
-        type: 'MYSQL',
-        icon: '🐬',
-        role: 'SECONDARY',
-        status: 'SYNCED',
-        statusLabel: 'Synced',
-        statusColor: '#10b981',
-        total: total,
-        matched: total,
-        missing: 0,
-        duplicates: 0,
-        failed: 0,
-        syncPct: 100.0,
-        autoSyncEnabled: true,
-        lastSync: 'Just now'
-      }
-    ],
-    missingRecords: [
-      { id: 'mac-1788870296741-262', table: 'machines', name: 'Brother S-7200C Double Needle', category: 'Sewing', db: 'MongoDB', issue: 'Network timeout on batch write', timestamp: '10 mins ago' },
-      { id: 'mac-1788870296741-927', table: 'machines', name: 'Pegasus M900 Overlock Machine', category: 'Overlock', db: 'MongoDB', issue: 'Unsynchronized modification', timestamp: '11 mins ago' },
-      { id: 'sp-1082-needle-dpx5', table: 'spare_parts', name: 'Organ Needles DPx5 #14 (Box)', category: 'Needles', db: 'MongoDB', issue: 'Write buffer timeout', timestamp: '12 mins ago' },
-      { id: 'sp-1094-rotary-hook', table: 'spare_parts', name: 'Hirose Rotary Hook HSH-7.94', category: 'Hooks', db: 'MongoDB', issue: 'Replication lag', timestamp: '12 mins ago' },
-      { id: 'pm-2026-09-001', table: 'maintenance', name: 'PM-Card: Line 4 Juki Overlock Lubrication', category: 'Job Cards', db: 'MongoDB', issue: 'Pending replication', timestamp: '15 mins ago' },
-      { id: 'mac-1788870296741-484', table: 'machines', name: 'Zipper Joint Machine (Siruba)', category: 'Sewing', db: 'MongoDB', issue: 'Network timeout', timestamp: '16 mins ago' },
-      { id: 'mac-1788870296741-259', table: 'machines', name: 'Multi Needle Chain Stitch Machine (Kansai)', category: 'Sewing', db: 'MongoDB', issue: 'Replication lag', timestamp: '18 mins ago' },
-      { id: 'sp-1102-looper-left', table: 'spare_parts', name: 'Overlock Left Looper #LP-02', category: 'Loopers', db: 'MongoDB', issue: 'Socket disconnect', timestamp: '20 mins ago' },
-      { id: 'tl-1004-torque-wrench', table: 'tools_master', name: 'Digital Torque Wrench 1/4" (Tohnichi)', category: 'Tools', db: 'MongoDB', issue: 'Buffer write fail', timestamp: '22 mins ago' },
-      { id: 'sp-1115-timing-belt', table: 'spare_parts', name: 'Synchronous Timing Belt 150-XL', category: 'Belts', db: 'MongoDB', issue: 'Network timeout', timestamp: '24 mins ago' },
-      { id: 'pm-2026-09-008', table: 'maintenance', name: 'Breakdown Ticket: Bar-tack Solenoid', category: 'Breakdown', db: 'MongoDB', issue: 'Socket lag', timestamp: '25 mins ago' },
-      { id: 'mac-1788870296742-5', table: 'machines', name: 'Sleeve Joint Machine (Brother)', category: 'Sewing', db: 'MongoDB', issue: 'Replication lag', timestamp: '26 mins ago' },
-      { id: 'sp-1120-presser-foot', table: 'spare_parts', name: 'Teflon Presser Foot #NT-11', category: 'Presser Feet', db: 'MongoDB', issue: 'Cluster sync lag', timestamp: '28 mins ago' },
-      { id: 'mac-1788870296742-799', table: 'machines', name: 'Snap Button Machine (Hydraulic)', category: 'Finishing', db: 'MongoDB', issue: 'Buffer write fail', timestamp: '30 mins ago' },
-      { id: 'sp-1132-needle-plate', table: 'spare_parts', name: 'Needle Plate 3-Needle Kansai Special', category: 'Plates', db: 'MongoDB', issue: 'Network timeout', timestamp: '32 mins ago' },
-      { id: 'loc-floor-3-line-12', table: 'locations', name: 'Floor 3 - Line 12 Section B', category: 'Layout', db: 'MongoDB', issue: 'Replication lag', timestamp: '35 mins ago' },
-      { id: 'mac-1788870296742-252', table: 'machines', name: 'Feed of The Arm Machine (Brother)', category: 'Special', db: 'MongoDB', issue: 'Socket timeout', timestamp: '37 mins ago' },
-      { id: 'sp-1144-cutting-blade', table: 'spare_parts', name: 'Eastman 8" Straight Knife Blade', category: 'Cutting', db: 'MongoDB', issue: 'Buffer lag', timestamp: '40 mins ago' },
-      { id: 'tl-1012-multimeter', table: 'tools_master', name: 'Fluke 115 Digital Multimeter', category: 'Electrical', db: 'MongoDB', issue: 'Network timeout', timestamp: '42 mins ago' },
-      { id: 'sp-1155-oil-filter', table: 'spare_parts', name: 'High-Flow Machine Lubrication Oil Filter', category: 'Oil & Lube', db: 'MongoDB', issue: 'Cluster sync lag', timestamp: '45 mins ago' },
-      { id: 'pm-2026-09-012', table: 'maintenance', name: 'Preventive Schedule: Auto Cutter Sharpening', category: 'Schedules', db: 'MongoDB', issue: 'Pending replication', timestamp: '48 mins ago' },
-      { id: 'mac-1788870296742-107', table: 'machines', name: 'Button Hole Machine (Juki LBH-1790AN)', category: 'Button Hole', db: 'MongoDB', issue: 'Replication lag', timestamp: '50 mins ago' }
-    ]
+    databases,
+    missingRecords
   };
 }
 
-function saveDashboardSyncState(state) {
-  try {
-    localStorage.setItem(SYNC_STATE_KEY, JSON.stringify(state));
-  } catch (_) {}
+function saveDashboardSyncState(patch) {
+  // Only persist user preferences (autoSync toggle, lastSyncTime) — NOT the entire state
+  let stored = {};
+  try { stored = JSON.parse(localStorage.getItem(SYNC_STATE_KEY) || '{}'); } catch (_) {}
+  const merged = { ...stored, ...patch };
+  try { localStorage.setItem(SYNC_STATE_KEY, JSON.stringify(merged)); } catch (_) {}
 }
 
 export function renderDatabaseConfigView() {
-  const configs = storage.getMultiDbConfigs ? storage.getMultiDbConfigs() : [];
+  // Read real saved secondary-DB configs from localStorage
+  let configs = [];
+  try {
+    const raw = localStorage.getItem('erp_multi_db_config');
+    if (raw) configs = JSON.parse(raw);
+  } catch (_) {}
+
   const state = getDashboardSyncState();
   const totalRecords = state.master.total;
-  const formattedTotal = totalRecords.toLocaleString();
-
-  // Find MongoDB, PostgreSQL, MySQL from state
-  const pgDb = state.databases.find(d => d.type === 'POSTGRESQL') || state.databases[0];
-  const mongoDb = state.databases.find(d => d.type === 'MONGODB') || state.databases[1];
-  const mysqlDb = state.databases.find(d => d.type === 'MYSQL') || state.databases[2];
+  const formattedTotal = totalRecords > 0 ? totalRecords.toLocaleString() : '—';
 
   const hasMissing = state.databases.some(d => d.missing > 0);
   const totalMissing = state.databases.reduce((acc, d) => acc + (d.missing || 0), 0);
@@ -306,7 +362,7 @@ export function renderDatabaseConfigView() {
           <div style="display: flex; align-items: center; gap: 12px;">
             <h1 style="font-size: 26px; font-weight: 800; color: #fff; margin: 0; letter-spacing: -0.5px;">🗄️ Data Engine</h1>
             <span style="background: rgba(16, 185, 129, 0.15); border: 1px solid #10b981; color: #34d399; font-size: 11px; font-weight: 700; padding: 3px 12px; border-radius: 999px;">
-              v4.21.0 Active
+              v4.22.0 Active
             </span>
             <span id="badge-auto-sync" style="background: ${state.autoSync ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)'}; border: 1px solid ${state.autoSync ? '#10b981' : '#ef4444'}; color: ${state.autoSync ? '#34d399' : '#f87171'}; font-size: 11px; font-weight: 700; padding: 3px 12px; border-radius: 999px;">
               ${state.autoSync ? '🟢 Auto Sync ON' : '🔴 Auto Sync OFF'}
@@ -380,7 +436,7 @@ export function renderDatabaseConfigView() {
           </div>
         </div>
 
-        <!-- Screenshot 3 Card: DATA FLOW (Direct Auto Sync Fan-Out) -->
+        <!-- DATA FLOW Card — dynamic from real configured databases -->
         <div style="background: #090e1a; border: 1.5px solid rgba(56, 189, 248, 0.35); border-radius: 12px; padding: 22px; box-shadow: 0 10px 30px rgba(0,0,0,0.45); display: flex; flex-direction: column;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
             <div style="display: flex; align-items: center; gap: 8px;">
@@ -388,55 +444,45 @@ export function renderDatabaseConfigView() {
               <h2 style="font-size: 16px; font-weight: 800; color: #e2e8f0; margin: 0; font-family: 'JetBrains Mono', monospace; letter-spacing: 0.5px;">DATA FLOW</h2>
             </div>
             <span style="font-size: 11px; color: #94a3b8; background: rgba(255,255,255,0.06); padding: 3px 8px; border-radius: 6px;">
-              Real-time Fan-Out Active
+              ${state.databases.length > 0 ? 'Real-time Fan-Out Active' : 'No Targets Configured'}
             </span>
           </div>
 
           <p style="font-size: 12px; color: var(--text-secondary); margin: 0 0 16px;">
-            Real-time broadcast flow: mutations in master automatically fan out to target databases:
+            Real-time broadcast flow: every ERP write in Firebase fans out to all configured secondary databases.
           </p>
 
           <div style="background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 18px; font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size: 13.5px; line-height: 2;">
             <div style="color: #ffffff; font-weight: 700; margin-bottom: 4px;">
-              Firebase <span style="font-size: 11px; color: #38bdf8; font-weight: normal; margin-left: 6px;">(Primary Source)</span>
+              🔥 Firebase <span style="font-size: 11px; color: #38bdf8; font-weight: normal; margin-left: 6px;">(Main Database / Source)</span>
             </div>
-            
-            <div style="display: flex; justify-content: space-between; align-items: center; color: #cbd5e1;">
-              <span>│</span>
-            </div>
+            <div style="color: #cbd5e1;">│</div>
 
-            <!-- PostgreSQL Line -->
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-              <span style="color: #cbd5e1;">├── Auto Sync ──&gt; PostgreSQL</span>
-              <span style="display: flex; align-items: center; gap: 6px; font-weight: 700; color: #34d399;">
-                <span style="display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: #10b981; box-shadow: 0 0 6px #10b981;"></span>
-                ${pgDb.syncPct.toFixed(1)}%
-              </span>
-            </div>
-
-            <!-- MongoDB Line -->
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-              <span style="color: #cbd5e1;">├── Auto Sync ──&gt; MongoDB</span>
-              <span style="display: flex; align-items: center; gap: 8px; font-weight: 700; color: ${mongoDb.missing > 0 ? '#fbbf24' : '#34d399'};">
-                <span style="display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: ${mongoDb.missing > 0 ? '#f59e0b' : '#10b981'}; box-shadow: 0 0 6px ${mongoDb.missing > 0 ? '#f59e0b' : '#10b981'};"></span>
-                <span>${mongoDb.syncPct.toFixed(1)}%</span>
-                ${mongoDb.missing > 0 ? `<span style="background: rgba(245, 158, 11, 0.2); border: 1px solid #f59e0b; padding: 0 6px; border-radius: 4px; font-size: 11px; color: #fde68a;">⚠️ ${mongoDb.missing} missing</span>` : ''}
-              </span>
-            </div>
-
-            <!-- MySQL Line -->
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-              <span style="color: #cbd5e1;">└── Auto Sync ──&gt; MySQL</span>
-              <span style="display: flex; align-items: center; gap: 6px; font-weight: 700; color: #34d399;">
-                <span style="display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: #10b981; box-shadow: 0 0 6px #10b981;"></span>
-                ${mysqlDb.syncPct.toFixed(1)}%
-              </span>
-            </div>
+            ${state.databases.length === 0
+              ? `<div style="color: #64748b; font-size: 12px; padding: 8px 0;">└── (No secondary databases configured yet)</div>`
+              : state.databases.map((d, i) => {
+                  const isLast  = i === state.databases.length - 1;
+                  const prefix  = isLast ? '└──' : '├──';
+                  const dotCol  = d.status === 'SYNCED' ? '#10b981' : d.status === 'MISSING' ? '#f59e0b' : d.status === 'FAILED' ? '#ef4444' : '#64748b';
+                  const txtCol  = d.status === 'SYNCED' ? '#34d399' : d.status === 'MISSING' ? '#fbbf24' : d.status === 'FAILED' ? '#f87171' : '#94a3b8';
+                  const pct     = d.status === 'PENDING' ? '—' : d.syncPct.toFixed(1) + '%';
+                  return `
+                  <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="color: #cbd5e1;">${prefix} Auto Sync ──&gt; ${d.icon} ${d.name}</span>
+                    <span style="display: flex; align-items: center; gap: 6px; font-weight: 700; color: ${txtCol};">
+                      <span style="display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: ${dotCol}; box-shadow: 0 0 6px ${dotCol};"></span>
+                      ${pct}
+                      ${d.missing > 0 ? `<span style="background: rgba(245,158,11,0.2); border: 1px solid #f59e0b; padding: 0 6px; border-radius: 4px; font-size: 11px; color: #fde68a;">⚠️ ${d.missing} missing</span>` : ''}
+                      ${d.status === 'PENDING' ? `<span style="font-size: 11px; color: #64748b;">Not synced yet</span>` : ''}
+                    </span>
+                  </div>`;
+                }).join('')
+            }
           </div>
 
           <div style="margin-top: 14px; font-size: 11.5px; color: #94a3b8; display: flex; align-items: center; gap: 6px;">
             <span>ℹ️</span>
-            <span>Any record inserted or updated in ERP automatically broadcasts across this topology.</span>
+            <span>Add secondary databases below via <strong style="color:#38bdf8;">Database List &amp; Provider Settings</strong>.</span>
           </div>
         </div>
 
@@ -475,64 +521,50 @@ export function renderDatabaseConfigView() {
             </div>
           </div>
 
-          <!-- Tree Branches Connectors (ASCII + SVG) -->
-          <div style="max-width: 680px; margin: 0 auto; text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 14px; line-height: 1.1; color: #64748b; padding: 6px 0;">
-            <div style="color: #94a3b8;">│</div>
-            <div style="color: #94a3b8;">┌────────────────────────┼────────────────────────┐</div>
-            <div style="color: #94a3b8;">▼                        ▼                        ▼</div>
-          </div>
-
-          <!-- 3 Secondary Databases Boxes -->
-          <div style="display: grid; grid-template-columns: repeat(3, minmax(200px, 1fr)); gap: 16px; max-width: 760px; margin: 0 auto;">
-            
-            <!-- PostgreSQL Card -->
-            <div style="background: rgba(15, 23, 42, 0.9); border: 1.5px solid ${pgDb.missing > 0 ? '#f59e0b' : '#10b981'}; border-radius: 8px; padding: 14px; font-family: 'JetBrains Mono', monospace;">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                <div style="font-weight: 800; font-size: 14px; color: #fff;">PostgreSQL</div>
-                <div style="display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 700; color: #34d399;">
-                  <span style="display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: #10b981; box-shadow: 0 0 6px #10b981;"></span>
-                  Synced
-                </div>
-              </div>
-              <div style="font-size: 12.5px; color: #cbd5e1; line-height: 1.6;">
-                <div>${pgDb.matched.toLocaleString()} / ${formattedTotal}</div>
-                <div style="color: #34d399;">Missing: ${pgDb.missing}</div>
-              </div>
+          <!-- Dynamic Tree Branches Connectors -->
+          ${state.databases.length === 0 ? `
+            <div style="max-width: 680px; margin: 0 auto; text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 14px; line-height: 1.1; color: #64748b; padding: 8px 0;">
+              <div style="color: #64748b;">│</div>
+              <div style="color: #64748b;">▼</div>
             </div>
-
-            <!-- MongoDB Card -->
-            <div style="background: rgba(15, 23, 42, 0.9); border: 1.5px solid ${mongoDb.missing > 0 ? '#f59e0b' : '#10b981'}; border-radius: 8px; padding: 14px; font-family: 'JetBrains Mono', monospace; box-shadow: ${mongoDb.missing > 0 ? '0 0 15px rgba(245, 158, 11, 0.2)' : 'none'};">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                <div style="font-weight: 800; font-size: 14px; color: #fff;">MongoDB</div>
-                <div style="display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 700; color: ${mongoDb.missing > 0 ? '#fbbf24' : '#34d399'};">
-                  <span style="display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: ${mongoDb.missing > 0 ? '#f59e0b' : '#10b981'}; box-shadow: 0 0 6px ${mongoDb.missing > 0 ? '#f59e0b' : '#10b981'};"></span>
-                  ${mongoDb.missing > 0 ? 'Missing' : 'Synced'}
-                </div>
-              </div>
-              <div style="font-size: 12.5px; color: #cbd5e1; line-height: 1.6;">
-                <div>${mongoDb.matched.toLocaleString()} / ${formattedTotal}</div>
-                <div style="color: ${mongoDb.missing > 0 ? '#fbbf24' : '#34d399'}; font-weight: ${mongoDb.missing > 0 ? '700' : 'normal'};">
-                  Missing: ${mongoDb.missing}
-                </div>
-              </div>
+          ` : state.databases.length === 1 ? `
+            <div style="max-width: 680px; margin: 0 auto; text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 14px; line-height: 1.1; color: #38bdf8; padding: 8px 0;">
+              <div style="color: #38bdf8;">│</div>
+              <div style="color: #38bdf8;">▼</div>
             </div>
-
-            <!-- MySQL Card -->
-            <div style="background: rgba(15, 23, 42, 0.9); border: 1.5px solid ${mysqlDb.missing > 0 ? '#f59e0b' : '#10b981'}; border-radius: 8px; padding: 14px; font-family: 'JetBrains Mono', monospace;">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                <div style="font-weight: 800; font-size: 14px; color: #fff;">MySQL</div>
-                <div style="display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 700; color: #34d399;">
-                  <span style="display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: #10b981; box-shadow: 0 0 6px #10b981;"></span>
-                  Synced
-                </div>
-              </div>
-              <div style="font-size: 12.5px; color: #cbd5e1; line-height: 1.6;">
-                <div>${mysqlDb.matched.toLocaleString()} / ${formattedTotal}</div>
-                <div style="color: #34d399;">Missing: ${mysqlDb.missing}</div>
-              </div>
+          ` : `
+            <div style="max-width: 680px; margin: 0 auto; text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 14px; line-height: 1.1; color: #38bdf8; padding: 8px 0;">
+              <div style="color: #38bdf8;">│</div>
+              <div style="color: #38bdf8;">┌────────────────────────┼────────────────────────┐</div>
+              <div style="color: #38bdf8;">▼                        ▼                        ▼</div>
             </div>
+          `}
 
-          </div>
+          <!-- Secondary Database Boxes — dynamically rendered from real config -->
+          ${state.databases.length === 0
+            ? `<div style="max-width: 760px; margin: 0 auto; background: rgba(15,23,42,0.7); border: 1px dashed rgba(255,255,255,0.12); border-radius: 8px; padding: 20px; text-align: center; font-size: 13px; color: #64748b; font-family: 'JetBrains Mono', monospace;">
+                No secondary databases configured yet.<br/>
+                <span style="font-size: 11.5px;">Add a provider below via <strong style="color:#38bdf8;">Database List &amp; Provider Settings</strong>.</span>
+               </div>`
+            : `<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; max-width: 760px; margin: 0 auto;">
+                ${state.databases.map(d => `
+                  <div style="background: rgba(15,23,42,0.9); border: 1.5px solid ${d.statusColor}; border-radius: 8px; padding: 14px; font-family: 'JetBrains Mono', monospace; box-shadow: ${d.status === 'MISSING' ? '0 0 15px rgba(245,158,11,0.2)' : 'none'};">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                      <div style="font-weight: 800; font-size: 13.5px; color: #fff;">${d.icon} ${d.name}</div>
+                      <div style="display: flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 700; color: ${d.statusColor};">
+                        <span style="display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: ${d.statusColor}; box-shadow: 0 0 6px ${d.statusColor};"></span>
+                        ${d.statusLabel}
+                      </div>
+                    </div>
+                    <div style="font-size: 12px; color: #cbd5e1; line-height: 1.7;">
+                      <div>${d.status === 'PENDING' ? '— / ' + (formattedTotal || '—') : d.matched.toLocaleString() + ' / ' + (formattedTotal || '—')}</div>
+                      <div style="color: ${d.missing > 0 ? '#fbbf24' : '#94a3b8'}; font-weight: ${d.missing > 0 ? '700' : 'normal'};">Missing: ${d.missing}</div>
+                      <div style="font-size: 11px; color: #64748b; margin-top: 2px;">Last sync: ${d.lastSync}</div>
+                    </div>
+                  </div>
+                `).join('')}
+               </div>`
+          }
 
           <!-- Bottom Summary Line from Screenshot 2 -->
           <div style="max-width: 760px; margin: 24px auto 0; padding-top: 16px; border-top: 1px dashed rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; font-family: 'JetBrains Mono', monospace; font-size: 13px;">
@@ -600,101 +632,51 @@ export function renderDatabaseConfigView() {
               </tr>
             </thead>
             <tbody>
-              <!-- Master: Firebase -->
+              <!-- Master: Firebase (always real) -->
               <tr style="border-bottom: 1px solid rgba(255,255,255,0.06); background: rgba(56, 189, 248, 0.03);">
-                <td style="padding: 12px 14px; font-weight: 700; color: #fff;">
-                  🔥 Firebase
-                </td>
-                <td style="padding: 12px 14px; color: #38bdf8; font-size: 11.5px; font-weight: 700;">
-                  Master (Source)
-                </td>
+                <td style="padding: 12px 14px; font-weight: 700; color: #fff;">🔥 Firebase</td>
+                <td style="padding: 12px 14px; color: #38bdf8; font-size: 11.5px; font-weight: 700;">Master (Source)</td>
                 <td style="padding: 12px 14px; color: #fff;">${formattedTotal}</td>
                 <td style="padding: 12px 14px; color: #34d399; font-weight: 700;">${formattedTotal}</td>
                 <td style="padding: 12px 14px; color: #34d399;">0</td>
                 <td style="padding: 12px 14px; color: #94a3b8;">0</td>
                 <td style="padding: 12px 14px; color: #94a3b8;">0</td>
                 <td style="padding: 12px 14px;">
-                  <span style="display: inline-flex; align-items: center; gap: 5px; color: #34d399; font-weight: 700; font-size: 12px;">
-                    🟢 Synced
-                  </span>
+                  <span style="display: inline-flex; align-items: center; gap: 5px; color: #34d399; font-weight: 700; font-size: 12px;">🟢 Connected</span>
                 </td>
                 <td style="padding: 12px 14px; text-align: right;">
                   <span style="font-size: 11px; color: #64748b;">Source of Truth</span>
                 </td>
               </tr>
 
-              <!-- PostgreSQL -->
-              <tr style="border-bottom: 1px solid rgba(255,255,255,0.06);">
-                <td style="padding: 12px 14px; font-weight: 700; color: #fff;">
-                  🐘 PostgreSQL
-                </td>
-                <td style="padding: 12px 14px; color: #94a3b8; font-size: 11.5px;">Secondary Target</td>
-                <td style="padding: 12px 14px; color: #fff;">${formattedTotal}</td>
-                <td style="padding: 12px 14px; color: #34d399; font-weight: 700;">${pgDb.matched.toLocaleString()}</td>
-                <td style="padding: 12px 14px; color: #34d399;">${pgDb.missing}</td>
-                <td style="padding: 12px 14px; color: #94a3b8;">0</td>
-                <td style="padding: 12px 14px; color: #94a3b8;">0</td>
-                <td style="padding: 12px 14px;">
-                  <span style="display: inline-flex; align-items: center; gap: 5px; color: #34d399; font-weight: 700; font-size: 12px;">
-                    🟢 Synced
-                  </span>
-                </td>
-                <td style="padding: 12px 14px; text-align: right;">
-                  <button class="btn btn-secondary btn-sm btn-resync-db" data-db="POSTGRESQL" style="font-size: 11px; padding: 2px 8px;">
-                    🔄 Re-sync
-                  </button>
-                </td>
-              </tr>
-
-              <!-- MongoDB -->
-              <tr style="border-bottom: 1px solid rgba(255,255,255,0.06); background: ${mongoDb.missing > 0 ? 'rgba(245, 158, 11, 0.05)' : 'transparent'};">
-                <td style="padding: 12px 14px; font-weight: 700; color: #fff;">
-                  🍃 MongoDB
-                </td>
-                <td style="padding: 12px 14px; color: #94a3b8; font-size: 11.5px;">Secondary Target</td>
-                <td style="padding: 12px 14px; color: #fff;">${formattedTotal}</td>
-                <td style="padding: 12px 14px; color: ${mongoDb.missing > 0 ? '#fbbf24' : '#34d399'}; font-weight: 700;">
-                  ${mongoDb.matched.toLocaleString()}
-                </td>
-                <td style="padding: 12px 14px; color: ${mongoDb.missing > 0 ? '#fbbf24' : '#34d399'}; font-weight: 800;">
-                  ${mongoDb.missing}
-                </td>
-                <td style="padding: 12px 14px; color: #94a3b8;">0</td>
-                <td style="padding: 12px 14px; color: #94a3b8;">0</td>
-                <td style="padding: 12px 14px;">
-                  <span style="display: inline-flex; align-items: center; gap: 5px; color: ${mongoDb.missing > 0 ? '#fbbf24' : '#34d399'}; font-weight: 700; font-size: 12px;">
-                    ${mongoDb.missing > 0 ? '🟡 Missing' : '🟢 Synced'}
-                  </span>
-                </td>
-                <td style="padding: 12px 14px; text-align: right;">
-                  <button class="btn btn-warning btn-sm btn-resync-db" data-db="MONGODB" style="font-size: 11px; padding: 2px 8px; font-weight: 700;">
-                    ⚡ Fix &amp; Sync
-                  </button>
-                </td>
-              </tr>
-
-              <!-- MySQL -->
-              <tr style="border-bottom: 1px solid rgba(255,255,255,0.06);">
-                <td style="padding: 12px 14px; font-weight: 700; color: #fff;">
-                  🐬 MySQL
-                </td>
-                <td style="padding: 12px 14px; color: #94a3b8; font-size: 11.5px;">Secondary Target</td>
-                <td style="padding: 12px 14px; color: #fff;">${formattedTotal}</td>
-                <td style="padding: 12px 14px; color: #34d399; font-weight: 700;">${mysqlDb.matched.toLocaleString()}</td>
-                <td style="padding: 12px 14px; color: #34d399;">${mysqlDb.missing}</td>
-                <td style="padding: 12px 14px; color: #94a3b8;">0</td>
-                <td style="padding: 12px 14px; color: #94a3b8;">0</td>
-                <td style="padding: 12px 14px;">
-                  <span style="display: inline-flex; align-items: center; gap: 5px; color: #34d399; font-weight: 700; font-size: 12px;">
-                    🟢 Synced
-                  </span>
-                </td>
-                <td style="padding: 12px 14px; text-align: right;">
-                  <button class="btn btn-secondary btn-sm btn-resync-db" data-db="MYSQL" style="font-size: 11px; padding: 2px 8px;">
-                    🔄 Re-sync
-                  </button>
-                </td>
-              </tr>
+              <!-- Configured Secondary Databases (real data only) -->
+              ${state.databases.length === 0
+                ? `<tr><td colspan="9" style="padding: 20px 14px; text-align: center; color: #64748b; font-size: 12.5px; font-family: 'JetBrains Mono', monospace;">No secondary databases configured. Add a provider below.</td></tr>`
+                : state.databases.map(d => {
+                    const statusEmoji = d.status === 'SYNCED' ? '🟢' : d.status === 'MISSING' ? '🟡' : d.status === 'FAILED' ? '🔴' : '⚪';
+                    const actionBtn = d.status === 'DISABLED'
+                      ? `<span style="font-size: 11px; color: #64748b;">Disabled</span>`
+                      : d.status === 'PENDING'
+                      ? `<button class="btn btn-secondary btn-sm btn-resync-db" data-db-id="${d.id}" style="font-size: 11px; padding: 2px 8px;">▶ First Sync</button>`
+                      : d.missing > 0 || d.status === 'FAILED'
+                      ? `<button class="btn btn-warning btn-sm btn-resync-db" data-db-id="${d.id}" style="font-size: 11px; padding: 2px 8px; font-weight: 700;">⚡ Fix &amp; Sync</button>`
+                      : `<button class="btn btn-secondary btn-sm btn-resync-db" data-db-id="${d.id}" style="font-size: 11px; padding: 2px 8px;">🔄 Re-sync</button>`;
+                    return `
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.06); background: ${d.missing > 0 ? 'rgba(245,158,11,0.04)' : d.status === 'FAILED' ? 'rgba(239,68,68,0.04)' : 'transparent'};">
+                      <td style="padding: 12px 14px; font-weight: 700; color: #fff;">${d.icon} ${d.name}</td>
+                      <td style="padding: 12px 14px; color: #94a3b8; font-size: 11.5px;">Secondary Target</td>
+                      <td style="padding: 12px 14px; color: #fff;">${formattedTotal}</td>
+                      <td style="padding: 12px 14px; color: ${d.status === 'SYNCED' ? '#34d399' : '#fbbf24'}; font-weight: 700;">${d.status === 'PENDING' ? '—' : d.matched.toLocaleString()}</td>
+                      <td style="padding: 12px 14px; color: ${d.missing > 0 ? '#fbbf24' : '#34d399'}; font-weight: ${d.missing > 0 ? '800' : 'normal'}">${d.missing}</td>
+                      <td style="padding: 12px 14px; color: #94a3b8;">${d.duplicates}</td>
+                      <td style="padding: 12px 14px; color: ${d.failed > 0 ? '#f87171' : '#94a3b8'}; font-weight: ${d.failed > 0 ? '700' : 'normal'}">${d.failed}</td>
+                      <td style="padding: 12px 14px;">
+                        <span style="display: inline-flex; align-items: center; gap: 5px; color: ${d.statusColor}; font-weight: 700; font-size: 12px;">${statusEmoji} ${d.statusLabel}</span>
+                      </td>
+                      <td style="padding: 12px 14px; text-align: right;">${actionBtn}</td>
+                    </tr>`;
+                  }).join('')
+              }
             </tbody>
           </table>
         </div>
@@ -705,13 +687,14 @@ export function renderDatabaseConfigView() {
             <div style="display: flex; align-items: center; gap: 8px;">
               <span style="font-size: 16px;">🔍</span>
               <strong style="color: #fbbf24; font-size: 14px; font-family: 'JetBrains Mono', monospace;">
-                Missing &amp; Desynchronized Record Details (${state.missingRecords.length} Items)
+                Missing &amp; Desynchronized Records (${state.missingRecords.length})
               </strong>
             </div>
             <div style="display: flex; gap: 8px;">
+              ${state.missingRecords.length > 0 ? `
               <button id="btn-reconcile-missing-now" class="btn btn-primary btn-sm" style="font-size: 11.5px; background: #10b981; border: none; font-weight: 700;">
                 ⚡ Sync All ${state.missingRecords.length} Missing Records Now
-              </button>
+              </button>` : ''}
               <button id="btn-close-missing-panel" class="btn btn-secondary btn-sm" style="font-size: 11.5px; padding: 2px 8px;">
                 ✕ Close
               </button>
@@ -719,25 +702,27 @@ export function renderDatabaseConfigView() {
           </div>
 
           <div style="max-height: 260px; overflow-y: auto;">
-            <table style="width: 100%; border-collapse: collapse; font-family: 'JetBrains Mono', monospace; font-size: 12px; text-align: left;">
+            ${state.missingRecords.length === 0
+              ? `<div style="text-align: center; padding: 20px; color: #34d399; font-size: 13px; font-family: 'JetBrains Mono', monospace;">✅ No missing records — all databases are in sync.</div>`
+              : `<table style="width: 100%; border-collapse: collapse; font-family: 'JetBrains Mono', monospace; font-size: 12px; text-align: left;">
               <thead>
                 <tr style="border-bottom: 1px solid rgba(255,255,255,0.1); color: #94a3b8;">
                   <th style="padding: 6px 10px;">Table</th>
                   <th style="padding: 6px 10px;">Record ID</th>
                   <th style="padding: 6px 10px;">Item Name / Description</th>
                   <th style="padding: 6px 10px;">Target DB</th>
-                  <th style="padding: 6px 10px;">Diagnosis / Reason</th>
+                  <th style="padding: 6px 10px;">Reason</th>
                   <th style="padding: 6px 10px; text-align: right;">Action</th>
                 </tr>
               </thead>
               <tbody>
                 ${state.missingRecords.map(m => `
                   <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);">
-                    <td style="padding: 8px 10px; color: #38bdf8;">${m.table}</td>
+                    <td style="padding: 8px 10px; color: #38bdf8;">${m.table || '—'}</td>
                     <td style="padding: 8px 10px; color: #fff;"><code>${m.id}</code></td>
-                    <td style="padding: 8px 10px; color: #cbd5e1;">${m.name}</td>
-                    <td style="padding: 8px 10px; color: #fbbf24; font-weight: 700;">${m.db}</td>
-                    <td style="padding: 8px 10px; color: #94a3b8;">${m.issue}</td>
+                    <td style="padding: 8px 10px; color: #cbd5e1;">${m.name || '—'}</td>
+                    <td style="padding: 8px 10px; color: #fbbf24; font-weight: 700;">${m.db || '—'}</td>
+                    <td style="padding: 8px 10px; color: #94a3b8;">${m.issue || 'Unknown'}</td>
                     <td style="padding: 8px 10px; text-align: right;">
                       <button class="btn btn-secondary btn-sm btn-sync-single-record" data-id="${m.id}" style="font-size: 10.5px; padding: 1px 6px;">
                         ⚡ Re-sync
@@ -746,7 +731,8 @@ export function renderDatabaseConfigView() {
                   </tr>
                 `).join('')}
               </tbody>
-            </table>
+            </table>`
+            }
           </div>
         </div>
 
@@ -754,44 +740,92 @@ export function renderDatabaseConfigView() {
 
       <!-- SECTION 4: DATABASE PROVIDERS CONFIGURATION & ADAPTER MANAGEMENT -->
       <div style="margin-bottom: 30px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
           <div>
             <h2 style="font-size: 18px; font-weight: 800; color: #fff; margin: 0;">Database List &amp; Provider Settings</h2>
             <p style="font-size: 12px; color: var(--text-secondary); margin: 3px 0 0;">
-              Select any provider to view connection fields, test live responsiveness, and configure credentials.
+              Connect multiple database instances (PostgreSQL, MySQL, MongoDB, Firebase, Supabase, Neon, Turso). Every added connection syncs with the Main Database.
             </p>
           </div>
+          <span style="font-size: 11.5px; color: #38bdf8; background: rgba(2, 132, 199, 0.12); border: 1px solid rgba(2, 132, 199, 0.3); padding: 4px 10px; border-radius: 6px; font-weight: 700;">
+            Multi-Database Active: ${configs.length} Target(s) Configured
+          </span>
         </div>
 
-        <div style="display: grid; grid-template-columns: 320px 1fr; gap: 20px; align-items: start;">
+        <div style="display: grid; grid-template-columns: 340px 1fr; gap: 20px; align-items: start;">
           
-          <!-- Left Column: Database Provider Selection Menu -->
-          <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 16px; display: flex; flex-direction: column; gap: 10px;">
-            <div style="font-size: 11px; font-weight: 800; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; padding-bottom: 4px; border-bottom: 1px solid rgba(255,255,255,0.06);">
-              Available Providers
-            </div>
+          <!-- Left Column: Multi-Database Manager & Provider Templates -->
+          <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 18px; display: flex; flex-direction: column; gap: 14px;">
+            
+            <!-- Create New Instance Button -->
+            <button type="button" id="btn-create-new-db" class="btn btn-primary" style="width: 100%; font-weight: 800; font-size: 13px; padding: 11px 14px; background: linear-gradient(135deg, #0284c7, #2563eb); border: none; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 15px rgba(2, 132, 199, 0.35); border-radius: 8px; cursor: pointer;">
+              <span>➕ Add New Database Connection</span>
+            </button>
 
-            <!-- Provider Tabs -->
-            ${Object.values(PROVIDER_SPECS).map(p => `
-              <div class="db-provider-tab" data-provider="${p.key}" style="display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-radius: 8px; border: 1.5px solid rgba(255,255,255,0.06); background: rgba(15, 23, 42, 0.5); cursor: pointer; transition: all 0.2s ease;">
-                <div style="display: flex; align-items: center; gap: 10px;">
-                  <span style="font-size: 20px;">${p.icon}</span>
-                  <div>
-                    <div style="font-weight: 700; font-size: 13.5px; color: #fff;">${p.name}</div>
-                    <div style="font-size: 11px; color: var(--text-secondary);">${p.badge}</div>
-                  </div>
-                </div>
-                <div style="display: flex; align-items: center; gap: 6px;">
-                  <span class="provider-status-dot" data-provider-dot="${p.key}" style="display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: #10b981; box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);"></span>
-                </div>
+            <!-- Configured Secondary Databases List -->
+            <div>
+              <div style="font-size: 11px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; padding-bottom: 6px; border-bottom: 1px solid rgba(255,255,255,0.06); margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+                <span>Configured Databases</span>
+                <span style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; font-size: 10.5px; padding: 1px 7px; border-radius: 999px;">${configs.length}</span>
               </div>
-            `).join('')}
 
-            <!-- Registered Saved Connections Count -->
-            <div style="margin-top: 10px; padding: 10px 12px; background: rgba(56, 189, 248, 0.05); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 8px; font-size: 11.5px; color: #94a3b8; display: flex; justify-content: space-between; align-items: center;">
-              <span>Configured Secondary DBs:</span>
-              <strong style="color: #38bdf8;">${configs.length}</strong>
+              <div id="configured-db-list" style="display: flex; flex-direction: column; gap: 8px; max-height: 240px; overflow-y: auto;">
+                ${configs.length === 0 ? `
+                  <div style="font-size: 12px; color: #64748b; padding: 14px 10px; text-align: center; border: 1px dashed rgba(255,255,255,0.1); border-radius: 8px; line-height: 1.5;">
+                    No secondary databases added yet.<br/>
+                    <span style="font-size: 11px; color: #94a3b8;">Click "+ Add New Database Connection" or a template below to add one.</span>
+                  </div>
+                ` : configs.map(c => {
+                  const isSelected = currentEditingDbId === c.id;
+                  const typeUpper = (c.type || '').toUpperCase();
+                  const pIcon = (PROVIDER_SPECS[typeUpper] && PROVIDER_SPECS[typeUpper].icon) || '🗄️';
+                  const m = state.databases.find(d => d.id === c.id);
+                  const dotCol = m ? m.statusColor : '#94a3b8';
+                  const statusTxt = m ? m.statusLabel : 'Ready';
+
+                  return `
+                    <div class="configured-db-item" data-db-id="${c.id}" style="display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; border-radius: 8px; border: 1.5px solid ${isSelected ? '#38bdf8' : 'rgba(255,255,255,0.08)'}; background: ${isSelected ? 'rgba(2, 132, 199, 0.18)' : 'rgba(15, 23, 42, 0.6)'}; cursor: pointer; transition: all 0.2s ease;">
+                      <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
+                        <span style="font-size: 18px; flex-shrink: 0;">${pIcon}</span>
+                        <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                          <div style="font-weight: 700; font-size: 13px; color: #fff; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">${c.name || c.type}</div>
+                          <div style="font-size: 11px; color: #94a3b8; display: flex; align-items: center; gap: 6px;">
+                            <span>${c.type || 'DB'}</span> · 
+                            <span style="color: ${dotCol}; display: inline-flex; align-items: center; gap: 4px;">
+                              <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: ${dotCol};"></span>
+                              ${statusTxt}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      <button type="button" class="btn-delete-configured-db" data-delete-id="${c.id}" title="Remove Connection" style="background: transparent; border: none; color: #64748b; font-size: 14px; cursor: pointer; padding: 4px 6px; border-radius: 4px; transition: color 0.15s ease;" onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='#64748b'">
+                        🗑️
+                      </button>
+                    </div>
+                  `;
+                }).join('')}
+              </div>
             </div>
+
+            <!-- Provider Templates (Quick Add) -->
+            <div>
+              <div style="font-size: 11px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; padding-bottom: 6px; border-bottom: 1px solid rgba(255,255,255,0.06); margin-bottom: 8px;">
+                Supported Provider Templates
+              </div>
+
+              <div style="display: flex; flex-direction: column; gap: 6px;">
+                ${Object.values(PROVIDER_SPECS).map(p => `
+                  <div class="provider-template-item" data-provider="${p.key}" style="display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.05); background: rgba(15, 23, 42, 0.4); cursor: pointer; transition: all 0.15s ease;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                      <span style="font-size: 16px;">${p.icon}</span>
+                      <span style="font-size: 12px; font-weight: 600; color: #cbd5e1;">${p.name}</span>
+                    </div>
+                    <span style="font-size: 10.5px; color: #38bdf8; font-weight: 700;">+ Add</span>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+
           </div>
 
           <!-- Right Column: Interactive Configuration Form for Selected Provider -->
@@ -895,75 +929,133 @@ export function renderDatabaseConfigView() {
 // ─────────────────────────────────────────────────────────────────────────────
 // Event Initialization and Interactive Configuration Handlers
 // ─────────────────────────────────────────────────────────────────────────────
+// Current selection state for editing/adding database instances
+let currentEditingDbId = null; // null if adding new database, string if editing
+let currentProviderKey = 'POSTGRESQL';
+
 export function initDatabaseConfigEvents() {
-  let activeProviderKey = 'POSTGRESQL';
+  // ── One-time migration: wipe old sync_state that contained fake databases array ──
+  try {
+    const old = JSON.parse(localStorage.getItem('erp_data_engine_sync_state') || '{}');
+    if (Array.isArray(old.databases)) {
+      localStorage.setItem('erp_data_engine_sync_state', JSON.stringify({
+        autoSync: old.autoSync !== false,
+        lastSyncTime: old.lastSyncTime || '—'
+      }));
+      console.log('[Data Engine] Migrated: removed legacy mock databases from sync_state.');
+    }
+  } catch (_) {}
 
   // 1. Initial render of provider form
-  renderProviderForm(activeProviderKey);
+  renderProviderForm(currentProviderKey, currentEditingDbId);
 
-  // 2. Provider tab click handlers
-  const tabs = document.querySelectorAll('.db-provider-tab');
-  tabs.forEach(tab => {
-    tab.addEventListener('click', () => {
-      const pKey = tab.getAttribute('data-provider');
-      if (!pKey || !PROVIDER_SPECS[pKey]) return;
-      activeProviderKey = pKey;
+  // 2. "➕ Add New Database Connection" button
+  document.getElementById('btn-create-new-db')?.addEventListener('click', () => {
+    currentEditingDbId = null;
+    renderProviderForm(currentProviderKey, null);
+    notificationService.toast('Ready to configure a new database connection.');
+  });
 
-      tabs.forEach(t => {
-        t.style.border = '1.5px solid rgba(255,255,255,0.06)';
-        t.style.background = 'rgba(15, 23, 42, 0.5)';
-      });
-      tab.style.border = '1.5px solid #38bdf8';
-      tab.style.background = 'rgba(2, 132, 199, 0.15)';
-
-      renderProviderForm(activeProviderKey);
+  // 3. Configured Databases card clicks (select to edit)
+  document.querySelectorAll('.configured-db-item').forEach(item => {
+    item.addEventListener('click', (e) => {
+      if (e.target.closest('.btn-delete-configured-db')) return;
+      const dbId = item.getAttribute('data-db-id');
+      let configs = [];
+      try { configs = JSON.parse(localStorage.getItem('erp_multi_db_config') || '[]'); } catch (_) {}
+      const found = configs.find(c => c.id === dbId);
+      if (found) {
+        currentEditingDbId = dbId;
+        currentProviderKey = (found.type || 'POSTGRESQL').toUpperCase();
+        renderProviderForm(currentProviderKey, dbId);
+        
+        // Update selection highlight
+        document.querySelectorAll('.configured-db-item').forEach(el => {
+          el.style.borderColor = 'rgba(255,255,255,0.08)';
+          el.style.background = 'rgba(15, 23, 42, 0.6)';
+        });
+        item.style.borderColor = '#38bdf8';
+        item.style.background = 'rgba(2, 132, 199, 0.18)';
+      }
     });
   });
 
-  if (tabs[0]) {
-    tabs[0].style.border = '1.5px solid #38bdf8';
-    tabs[0].style.background = 'rgba(2, 132, 199, 0.15)';
-  }
+  // 4. Quick Delete buttons on configured databases
+  document.querySelectorAll('.btn-delete-configured-db').forEach(delBtn => {
+    delBtn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const dbId = delBtn.getAttribute('data-delete-id');
+      let configs = [];
+      try { configs = JSON.parse(localStorage.getItem('erp_multi_db_config') || '[]'); } catch (_) {}
+      const target = configs.find(c => c.id === dbId);
+      const name = target ? (target.name || target.type) : 'this connection';
 
-  // 3. Auto Sync Toggle handlers
+      if (!confirm(`Are you sure you want to remove the database "${name}"?`)) return;
+
+      const updated = configs.filter(c => c.id !== dbId);
+      localStorage.setItem('erp_multi_db_config', JSON.stringify(updated));
+      if (storage && typeof storage.saveMultiDbConfigs === 'function') {
+        await storage.saveMultiDbConfigs(updated).catch(() => {});
+      }
+      try {
+        const metrics = JSON.parse(localStorage.getItem(SYNC_METRICS_KEY) || '{}');
+        delete metrics[dbId];
+        localStorage.setItem(SYNC_METRICS_KEY, JSON.stringify(metrics));
+      } catch (_) {}
+
+      syncManager.configLoaded = false;
+      await syncManager.loadConfig();
+
+      if (currentEditingDbId === dbId) currentEditingDbId = null;
+      notificationService.toast(`🗑️ Removed "${name}".`);
+      reRenderView();
+    });
+  });
+
+  // 5. Provider Template clicks (+ Add template)
+  document.querySelectorAll('.provider-template-item').forEach(tpl => {
+    tpl.addEventListener('click', () => {
+      const pKey = tpl.getAttribute('data-provider');
+      if (!pKey || !PROVIDER_SPECS[pKey]) return;
+      currentProviderKey = pKey;
+      currentEditingDbId = null;
+      renderProviderForm(currentProviderKey, null);
+      notificationService.toast(`Ready to configure a new ${PROVIDER_SPECS[pKey].name} connection.`);
+    });
+  });
+
+  // 6. Auto Sync Toggle
   const handleToggleAutoSync = () => {
     const state = getDashboardSyncState();
-    state.autoSync = !state.autoSync;
-    saveDashboardSyncState(state);
+    const newVal = !state.autoSync;
+    saveDashboardSyncState({ autoSync: newVal });
 
     const badge = document.getElementById('badge-auto-sync');
     if (badge) {
-      badge.textContent = state.autoSync ? '🟢 Auto Sync ON' : '🔴 Auto Sync OFF';
-      badge.style.background = state.autoSync ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)';
-      badge.style.borderColor = state.autoSync ? '#10b981' : '#ef4444';
-      badge.style.color = state.autoSync ? '#34d399' : '#f87171';
+      badge.textContent = newVal ? '🟢 Auto Sync ON' : '🔴 Auto Sync OFF';
+      badge.style.background = newVal ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)';
+      badge.style.borderColor = newVal ? '#10b981' : '#ef4444';
+      badge.style.color = newVal ? '#34d399' : '#f87171';
     }
-
     const treeStatus = document.getElementById('tree-auto-sync-status');
     if (treeStatus) {
-      treeStatus.innerHTML = `<span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: ${state.autoSync ? '#10b981' : '#ef4444'};"></span> ${state.autoSync ? 'ON' : 'OFF'}`;
-      treeStatus.style.color = state.autoSync ? '#34d399' : '#f87171';
+      treeStatus.innerHTML = `<span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: ${newVal ? '#10b981' : '#ef4444'};"></span> ${newVal ? 'ON' : 'OFF'}`;
+      treeStatus.style.color = newVal ? '#34d399' : '#f87171';
     }
-
     const btn1 = document.getElementById('btn-toggle-auto-sync');
     if (btn1) {
-      btn1.innerHTML = `<span>${state.autoSync ? '⏸️ Turn Auto-Sync OFF' : '▶️ Turn Auto-Sync ON'}</span>`;
-      btn1.style.borderColor = state.autoSync ? '#10b981' : '#64748b';
-      btn1.style.color = state.autoSync ? '#34d399' : '#cbd5e1';
+      btn1.innerHTML = `<span>${newVal ? '⏸️ Turn Auto-Sync OFF' : '▶️ Turn Auto-Sync ON'}</span>`;
+      btn1.style.borderColor = newVal ? '#10b981' : '#64748b';
+      btn1.style.color = newVal ? '#34d399' : '#cbd5e1';
     }
-
     const btn2 = document.getElementById('btn-toggle-auto-sync-2');
-    if (btn2) {
-      btn2.textContent = `Toggle Auto Sync (${state.autoSync ? 'ON' : 'OFF'})`;
-    }
-
-    notificationService.toast(`Auto Sync is now ${state.autoSync ? 'ENABLED' : 'PAUSED'}.`);
+    if (btn2) btn2.textContent = `Toggle Auto Sync (${newVal ? 'ON' : 'OFF'})`;
+    notificationService.toast(`Auto Sync is now ${newVal ? 'ENABLED' : 'PAUSED'}.`);
   };
-
   document.getElementById('btn-toggle-auto-sync')?.addEventListener('click', handleToggleAutoSync);
   document.getElementById('btn-toggle-auto-sync-2')?.addEventListener('click', handleToggleAutoSync);
 
-  // 4. View Missing Records toggle
+  // 7. View Missing Records toggle
   const missingPanel = document.getElementById('missing-records-panel');
   const btnViewMissing = document.getElementById('btn-view-missing-records');
   if (btnViewMissing && missingPanel) {
@@ -974,167 +1066,239 @@ export function initDatabaseConfigEvents() {
       }
     });
   }
-
   document.getElementById('btn-close-missing-panel')?.addEventListener('click', () => {
     if (missingPanel) missingPanel.style.display = 'none';
   });
 
-  // 5. Reconcile / Fix All Missing Records
-  const handleReconcileAll = async () => {
-    const btn = document.getElementById('btn-fix-all-missing') || document.getElementById('btn-reconcile-all-records');
-    if (btn) {
-      btn.disabled = true;
-      btn.innerHTML = '⏳ Reconciling 22 records...';
-    }
-
-    try {
-      notificationService.toast('Reconciling missing records with MongoDB cluster...');
-      await new Promise(r => setTimeout(r, 600));
-
-      const state = getDashboardSyncState();
-      const mongo = state.databases.find(d => d.type === 'MONGODB');
-      if (mongo) {
-        mongo.matched = mongo.total;
-        mongo.missing = 0;
-        mongo.syncPct = 100.0;
-        mongo.status = 'SYNCED';
-        mongo.statusLabel = 'Synced';
-        mongo.statusColor = '#10b981';
-        mongo.lastSync = 'Just now';
-      }
-      state.missingRecords = [];
-      state.lastSyncTime = 'Just now';
-      saveDashboardSyncState(state);
-
-      notificationService.toast('✅ All 22 missing records reconciled and synced to MongoDB successfully!');
-      
-      // Re-render view to show all green
-      const appContainer = document.getElementById('app-view-container');
-      if (appContainer) {
-        appContainer.innerHTML = renderDatabaseConfigView();
-        initDatabaseConfigEvents();
-      }
-    } catch (err) {
-      notificationService.toast('Reconciliation error: ' + err.message);
+  // Helper: re-render the full view after state changes
+  const reRenderView = () => {
+    const appContainer = document.getElementById('app-view-container');
+    if (appContainer) {
+      appContainer.innerHTML = renderDatabaseConfigView();
+      initDatabaseConfigEvents();
     }
   };
 
+  // Helper: run a REAL full sync for a single configured database by its id
+  const runRealSync = async (dbId, dbName, btn, originalLabel) => {
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ Syncing...'; }
+    notificationService.toast(`Syncing ${dbName || dbId}...`);
+    try {
+      await syncManager.loadConfig();
+      await syncManager.runFullSync(dbId);
+      // Record REAL success metrics
+      const total = getTotalRecordCount();
+      recordSyncMetric(dbId, {
+        matched: total,
+        missing: 0,
+        failed: 0,
+        duplicates: 0,
+        lastSyncTime: new Date().toLocaleString(),
+        lastError: null
+      });
+      saveDashboardSyncState({ lastSyncTime: new Date().toLocaleString() });
+      notificationService.toast(`✅ ${dbName || dbId}: sync complete — ${total.toLocaleString()} records written.`);
+      reRenderView();
+    } catch (err) {
+      // Record REAL failure metrics
+      recordSyncMetric(dbId, {
+        failed: 1,
+        matched: 0,
+        lastSyncTime: new Date().toLocaleString(),
+        lastError: err.message
+      });
+      notificationService.toast(`❌ Sync FAILED for ${dbName || dbId}: ${err.message}`);
+      if (btn) { btn.disabled = false; btn.textContent = originalLabel || '🔄 Re-sync'; }
+      reRenderView();
+    }
+  };
+
+  // 8. Re-sync buttons on the Differences table (use real data-db-id)
+  document.querySelectorAll('.btn-resync-db').forEach(b => {
+    b.addEventListener('click', async () => {
+      const dbId = b.getAttribute('data-db-id');
+      if (!dbId) return;
+      let dbName = dbId;
+      try {
+        const cfgs = JSON.parse(localStorage.getItem('erp_multi_db_config') || '[]');
+        const found = cfgs.find(c => c.id === dbId);
+        if (found) dbName = found.name || found.type || dbId;
+      } catch (_) {}
+      await runRealSync(dbId, dbName, b, b.textContent);
+    });
+  });
+
+  // 9. "Fix & Re-sync All Missing" button — runs real sync on every configured DB that has issues
+  const handleReconcileAll = async () => {
+    const btn = document.getElementById('btn-fix-all-missing') || document.getElementById('btn-reconcile-all-records') || document.getElementById('btn-reconcile-missing-now');
+    if (btn) { btn.disabled = true; btn.innerHTML = '⏳ Syncing all databases...'; }
+    notificationService.toast('Running full sync across all configured databases...');
+    try {
+      let cfgs = [];
+      try { cfgs = JSON.parse(localStorage.getItem('erp_multi_db_config') || '[]'); } catch (_) {}
+      await syncManager.loadConfig();
+      let successCount = 0, failCount = 0;
+      const total = getTotalRecordCount();
+      for (const c of cfgs) {
+        if (!c.enabled) continue;
+        try {
+          await syncManager.runFullSync(c.id);
+          recordSyncMetric(c.id, {
+            matched: total, missing: 0, failed: 0, duplicates: 0,
+            lastSyncTime: new Date().toLocaleString(),
+            lastError: null
+          });
+          successCount++;
+        } catch (err) {
+          recordSyncMetric(c.id, { failed: 1, matched: 0, lastSyncTime: new Date().toLocaleString(), lastError: err.message });
+          failCount++;
+        }
+      }
+      saveDashboardSyncState({ lastSyncTime: new Date().toLocaleString() });
+      if (failCount > 0) {
+        notificationService.toast(`⚠️ Sync complete: ${successCount} succeeded, ${failCount} failed. Check status.`);
+      } else if (successCount > 0) {
+        notificationService.toast(`✅ All ${successCount} database(s) synced successfully!`);
+      } else {
+        notificationService.toast('ℹ️ No enabled secondary databases to sync. Add a database below.');
+      }
+      reRenderView();
+    } catch (err) {
+      notificationService.toast(`Sync error: ${err.message}`);
+      if (btn) { btn.disabled = false; btn.innerHTML = '⚡ Fix & Re-sync Missing'; }
+    }
+  };
   document.getElementById('btn-fix-all-missing')?.addEventListener('click', handleReconcileAll);
   document.getElementById('btn-reconcile-all-records')?.addEventListener('click', handleReconcileAll);
   document.getElementById('btn-reconcile-missing-now')?.addEventListener('click', handleReconcileAll);
 
-  // Single Record Re-sync handler
+  // 10. Single Record Re-sync
   document.querySelectorAll('.btn-sync-single-record').forEach(b => {
-    b.addEventListener('click', async (e) => {
+    b.addEventListener('click', async () => {
       const recordId = b.getAttribute('data-id');
       b.disabled = true;
       b.textContent = '⏳ Syncing...';
-      await new Promise(r => setTimeout(r, 300));
-      b.textContent = '✅ Synced';
-      b.style.color = '#34d399';
-      notificationService.toast(`Record ${recordId} synced successfully.`);
-    });
-  });
-
-  // Re-sync specific DB buttons in differences table
-  document.querySelectorAll('.btn-resync-db').forEach(b => {
-    b.addEventListener('click', async () => {
-      const dbType = b.getAttribute('data-db');
-      b.disabled = true;
-      b.textContent = '⏳ Syncing...';
-      await new Promise(r => setTimeout(r, 500));
-      if (dbType === 'MONGODB') {
-        handleReconcileAll();
-      } else {
+      notificationService.toast(`Attempting record sync: ${recordId}`);
+      try {
+        const tableName = recordId.startsWith('mac') ? 'machines'
+          : recordId.startsWith('sp') ? 'spare_parts'
+          : recordId.startsWith('pm') ? 'preventive_maintenance'
+          : recordId.startsWith('tl') ? 'tools_master'
+          : recordId.startsWith('loc') ? 'locations' : 'unknown';
+        const record = storage.data?.[tableName]?.find?.(r => r.id === recordId)
+          || Object.values(storage.data?.[tableName] || {}).find?.(r => r.id === recordId);
+        if (!record) throw new Error(`Record ${recordId} not found in local data.`);
+        await syncManager._ensureConfig();
+        let synced = 0, failed = 0;
+        for (const [id, adapter] of syncManager.secondaryAdapters.entries()) {
+          const res = await adapter.saveRecord(tableName, recordId, record).catch(e => ({ success: false, error: e.message }));
+          if (res.success) synced++; else failed++;
+        }
+        if (failed > 0 && synced === 0) throw new Error('All adapters failed.');
         b.textContent = '✅ Synced';
-        notificationService.toast(`Synchronized all records with ${dbType}.`);
-        setTimeout(() => { b.disabled = false; b.textContent = '🔄 Re-sync'; }, 2000);
+        b.style.color = '#34d399';
+        notificationService.toast(`✅ Record ${recordId} synced to ${synced} database(s).`);
+      } catch (err) {
+        b.textContent = '❌ Failed';
+        b.style.color = '#f87171';
+        notificationService.toast(`❌ Record sync failed: ${err.message}`);
+        setTimeout(() => { b.disabled = false; b.textContent = '⚡ Re-sync'; b.style.color = ''; }, 3000);
       }
     });
   });
 
-  // Refresh Topology button
+  // 11. Refresh Topology button
   document.getElementById('btn-refresh-topology')?.addEventListener('click', () => {
-    const state = getDashboardSyncState();
-    state.lastSyncTime = 'Just now';
-    saveDashboardSyncState(state);
-    const lastSyncEl = document.getElementById('stat-last-sync-time');
-    if (lastSyncEl) lastSyncEl.textContent = 'Just now';
-    const treeLastSync = document.getElementById('tree-last-sync');
-    if (treeLastSync) treeLastSync.textContent = 'Just now';
-    notificationService.toast('Sync topology refreshed.');
+    reRenderView();
+    notificationService.toast('Sync topology refreshed from live config.');
   });
 
-  // 6. Sync All Databases Button
+  // 12. Sync All Databases button
   const btnSyncAll = document.getElementById('btn-sync-all-providers');
   if (btnSyncAll) {
     btnSyncAll.addEventListener('click', async () => {
       btnSyncAll.disabled = true;
-      btnSyncAll.innerHTML = '⏳ Syncing Databases...';
-      try {
-        notificationService.toast('Initiating multi-database synchronization...');
-        const cfgs = storage.getMultiDbConfigs ? storage.getMultiDbConfigs() : [];
-        for (const c of cfgs) {
-          if (c.enabled) {
-            await syncManager.runFullSync(c.id).catch(e => console.warn(e));
-          }
-        }
-        const state = getDashboardSyncState();
-        state.lastSyncTime = 'Just now';
-        saveDashboardSyncState(state);
-        notificationService.toast('Multi-database synchronization complete!');
-      } catch (err) {
-        notificationService.toast('Sync completed with notices: ' + err.message);
-      } finally {
-        btnSyncAll.disabled = false;
-        btnSyncAll.innerHTML = '🔄 Sync All Databases';
-      }
+      btnSyncAll.innerHTML = '⏳ Syncing All Databases...';
+      await handleReconcileAll();
+      btnSyncAll.disabled = false;
+      btnSyncAll.innerHTML = '🔄 Sync All Databases';
     });
   }
 
-  // 7. Backup & Restore Handlers
+  // 13. Backup & Restore Handlers
   initBackupHandlers();
 }
 
-function renderProviderForm(providerKey) {
+function renderProviderForm(providerKey, dbId = null) {
   const container = document.getElementById('provider-form-content');
   if (!container) return;
 
-  const spec = PROVIDER_SPECS[providerKey];
-  if (!spec) return;
+  const spec = PROVIDER_SPECS[providerKey] || PROVIDER_SPECS.POSTGRESQL;
+  currentProviderKey = spec.key;
+  currentEditingDbId = dbId;
 
-  const allConfigs = storage.getMultiDbConfigs ? storage.getMultiDbConfigs() : [];
-  const existing = allConfigs.find(c => (c.type || '').toUpperCase() === providerKey) || {};
+  // Load real saved configs from localStorage
+  let allConfigs = [];
+  try { allConfigs = JSON.parse(localStorage.getItem('erp_multi_db_config') || '[]'); } catch (_) {}
+  
+  let existing = {};
+  if (dbId) {
+    existing = allConfigs.find(c => c.id === dbId) || {};
+  }
+
+  const isEditing = !!(existing && existing.id);
+  const formTitle = isEditing ? `Edit: ${existing.name || spec.name}` : `Add New ${spec.name} Connection`;
+  const badgeLabel = isEditing ? `EDITING (#${existing.id})` : '➕ NEW DATABASE INSTANCE';
+  const badgeStyle = isEditing
+    ? 'background: rgba(14, 165, 233, 0.15); border: 1px solid #0284c7; color: #38bdf8;'
+    : 'background: rgba(16, 185, 129, 0.15); border: 1px solid #10b981; color: #34d399;';
 
   container.innerHTML = `
-    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; margin-bottom: 16px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 14px; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
       <div style="display: flex; align-items: center; gap: 10px;">
-        <span style="font-size: 24px;">${spec.icon}</span>
+        <span style="font-size: 26px;">${spec.icon}</span>
         <div>
-          <h3 style="font-size: 16px; font-weight: 800; color: ${spec.color}; margin: 0;">
-            ${spec.name} Configuration
+          <h3 style="font-size: 16px; font-weight: 800; color: ${spec.color || '#38bdf8'}; margin: 0;">
+            ${formTitle}
           </h3>
           <p style="font-size: 12px; color: var(--text-secondary); margin: 2px 0 0;">
             ${spec.description}
           </p>
         </div>
       </div>
-      <div style="display: flex; align-items: center; gap: 8px;">
-        <span style="font-size: 11px; font-weight: 700; color: #34d399; background: rgba(16, 185, 129, 0.1); border: 1px solid #10b981; padding: 2px 8px; border-radius: 4px;">
-          ${existing.id ? 'CONFIGURED' : 'READY TO CONFIGURE'}
+      <div>
+        <span style="${badgeStyle} font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 4px;">
+          ${badgeLabel}
         </span>
       </div>
     </div>
 
-    <!-- Provider Form Fields -->
+    <!-- Provider Form -->
     <form id="form-provider-config" style="display: flex; flex-direction: column; gap: 14px;">
       
-      <!-- Connection Nickname -->
+      <!-- Provider Type Dropdown -->
       <div>
         <label style="display: block; font-size: 12px; font-weight: 700; color: #cbd5e1; margin-bottom: 4px;">
-          Connection Name
+          Database Provider Type
         </label>
-        <input type="text" id="cfg-conn-name" class="form-control" value="${existing.name || spec.name}" placeholder="e.g. Primary ${spec.name}" style="background: #0f172a; border-color: #334155; color: #fff; font-size: 13px;" />
+        <select id="cfg-provider-select" class="form-control" style="background: #0f172a; border-color: #38bdf8; color: #fff; font-size: 13px; font-weight: 700;">
+          ${Object.values(PROVIDER_SPECS).map(p => `
+            <option value="${p.key}" ${p.key === spec.key ? 'selected' : ''}>
+              ${p.icon} ${p.name} (${p.badge})
+            </option>
+          `).join('')}
+        </select>
+      </div>
+
+      <!-- Connection Name / Nickname -->
+      <div>
+        <label style="display: block; font-size: 12px; font-weight: 700; color: #cbd5e1; margin-bottom: 4px;">
+          Connection Name / Label <span style="color: #ef4444;">*</span>
+        </label>
+        <input type="text" id="cfg-conn-name" class="form-control" value="${existing.name || spec.name + ' Connection'}" placeholder="e.g. Primary ${spec.name} or Branch 2 Replica" style="background: #0f172a; border-color: #334155; color: #fff; font-size: 13px;" required />
+        <span style="font-size: 11px; color: #64748b; margin-top: 2px; display: block;">
+          Displayed in Data Flow and Database Sync Status diagrams.
+        </span>
       </div>
 
       <!-- Specific Required Fields -->
@@ -1179,7 +1343,7 @@ function renderProviderForm(providerKey) {
           </label>
           <label style="display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: #e2e8f0; cursor: pointer;">
             <input type="radio" name="cfg-db-role" value="BACKUP" ${existing.role !== 'PRIMARY' ? 'checked' : ''} style="accent-color: #38bdf8;" />
-            Backup Database (Failover Target)
+            Backup Database (Secondary Target)
           </label>
         </div>
         <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
@@ -1194,10 +1358,10 @@ function renderProviderForm(providerKey) {
       <div id="test-connection-result" style="display: none; padding: 10px 14px; border-radius: 6px; font-size: 12.5px; font-weight: 600;"></div>
 
       <!-- Action Buttons -->
-      <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px; border-top: 1px solid var(--border-color); padding-top: 14px;">
-        ${existing.id ? `
-          <button type="button" id="btn-delete-provider-db" class="btn btn-danger btn-sm" style="margin-right: auto;">
-            🗑️ Remove Connection
+      <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px; border-top: 1px solid var(--border-color); padding-top: 14px; flex-wrap: wrap;">
+        ${isEditing ? `
+          <button type="button" id="btn-delete-provider-db" class="btn btn-danger btn-sm" style="margin-right: auto; display: flex; align-items: center; gap: 6px;">
+            🗑️ Remove Database
           </button>
         ` : ''}
         
@@ -1205,49 +1369,59 @@ function renderProviderForm(providerKey) {
           <span>🔌 [ Test Connection ]</span>
         </button>
 
-        <button type="button" id="btn-save-provider-config" class="btn btn-primary" style="background: linear-gradient(135deg, #0284c7, #2563eb); font-weight: 700; display: flex; align-items: center; gap: 6px;">
-          <span>💾 [ Save ]</span>
+        <button type="button" id="btn-save-provider-config" class="btn btn-primary" style="background: linear-gradient(135deg, #0284c7, #2563eb); font-weight: 700; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 15px rgba(2, 132, 199, 0.35);">
+          <span>💾 ${isEditing ? '[ Update Database ]' : '[ Add & Save Database ]'}</span>
         </button>
       </div>
 
     </form>
   `;
 
-  // Attach Test Connection Handler
+  // Attach Provider Selector onChange
+  document.getElementById('cfg-provider-select')?.addEventListener('change', (e) => {
+    const selectedKey = e.target.value;
+    renderProviderForm(selectedKey, dbId);
+  });
+
+  // Attach Test Connection Handler (Real check, real error)
   const btnTest = document.getElementById('btn-test-connection');
   if (btnTest) {
     btnTest.addEventListener('click', async () => {
       btnTest.disabled = true;
       btnTest.innerHTML = '⏳ Testing Connection...';
       const resultBox = document.getElementById('test-connection-result');
-      resultBox.style.display = 'none';
+      if (resultBox) resultBox.style.display = 'none';
 
       try {
         const payload = extractFormValues(spec);
-        const adapter = createTestAdapter(providerKey, payload);
+        const adapter = createTestAdapter(spec.key, payload);
         const testRes = await adapter.testConnection();
 
-        resultBox.style.display = 'block';
-        const isSuccess = testRes === true || (testRes && testRes.success === true);
-        if (isSuccess) {
-          resultBox.style.background = 'rgba(16, 185, 129, 0.12)';
-          resultBox.style.border = '1px solid rgba(16, 185, 129, 0.4)';
-          resultBox.style.color = '#34d399';
-          const latency = (testRes && testRes.latency) ? ` Latency: ${testRes.latency}ms` : '';
-          resultBox.innerHTML = `✅ <strong>Connected Successfully!</strong> Connection to ${spec.name} is verified and responsive.${latency}`;
-        } else {
+        if (resultBox) {
+          resultBox.style.display = 'block';
+          const isSuccess = testRes === true || (testRes && testRes.success === true);
+          if (isSuccess) {
+            resultBox.style.background = 'rgba(16, 185, 129, 0.12)';
+            resultBox.style.border = '1px solid rgba(16, 185, 129, 0.4)';
+            resultBox.style.color = '#34d399';
+            const latency = (testRes && testRes.latency) ? ` Latency: ${testRes.latency}ms` : '';
+            resultBox.innerHTML = `✅ <strong>Connected Successfully!</strong> Connection to ${spec.name} is verified and responsive.${latency}`;
+          } else {
+            resultBox.style.background = 'rgba(239, 68, 68, 0.12)';
+            resultBox.style.border = '1px solid rgba(239, 68, 68, 0.4)';
+            resultBox.style.color = '#f87171';
+            const errMsg = (testRes && testRes.error) ? testRes.error : 'Could not reach database endpoint. Please verify credentials.';
+            resultBox.innerHTML = `❌ <strong>Connection Notice:</strong> ${errMsg}`;
+          }
+        }
+      } catch (err) {
+        if (resultBox) {
+          resultBox.style.display = 'block';
           resultBox.style.background = 'rgba(239, 68, 68, 0.12)';
           resultBox.style.border = '1px solid rgba(239, 68, 68, 0.4)';
           resultBox.style.color = '#f87171';
-          const errMsg = (testRes && testRes.error) ? testRes.error : 'Could not reach database endpoint. Please verify credentials.';
-          resultBox.innerHTML = `❌ <strong>Connection Notice:</strong> ${errMsg}`;
+          resultBox.innerHTML = `❌ <strong>Error:</strong> ${err.message}`;
         }
-      } catch (err) {
-        resultBox.style.display = 'block';
-        resultBox.style.background = 'rgba(239, 68, 68, 0.12)';
-        resultBox.style.border = '1px solid rgba(239, 68, 68, 0.4)';
-        resultBox.style.color = '#f87171';
-        resultBox.innerHTML = `❌ <strong>Error:</strong> ${err.message}`;
       } finally {
         btnTest.disabled = false;
         btnTest.innerHTML = '🔌 [ Test Connection ]';
@@ -1255,7 +1429,7 @@ function renderProviderForm(providerKey) {
     });
   }
 
-  // Attach Save Handler
+  // Attach Save Handler (Supports multiple instances of the same DB!)
   const btnSave = document.getElementById('btn-save-provider-config');
   if (btnSave) {
     btnSave.addEventListener('click', async () => {
@@ -1263,17 +1437,21 @@ function renderProviderForm(providerKey) {
       btnSave.innerHTML = '⏳ Saving...';
       try {
         const payload = extractFormValues(spec);
-        const connName = document.getElementById('cfg-conn-name')?.value.trim() || spec.name;
+        const connName = document.getElementById('cfg-conn-name')?.value.trim() || `${spec.name} Connection`;
         const role = document.querySelector('input[name="cfg-db-role"]:checked')?.value || 'BACKUP';
         const autoSync = document.getElementById('cfg-auto-sync')?.checked !== false;
 
-        const allConfigs = storage.getMultiDbConfigs ? storage.getMultiDbConfigs() : [];
-        const existingIdx = allConfigs.findIndex(c => (c.type || '').toUpperCase() === providerKey);
+        let currentConfigs = [];
+        try { currentConfigs = JSON.parse(localStorage.getItem('erp_multi_db_config') || '[]'); } catch (_) {}
+
+        // Use currentEditingDbId if editing, or create a unique instance ID
+        const targetId = currentEditingDbId || `db_${spec.key.toLowerCase()}_${Date.now()}`;
+        const existingIdx = currentConfigs.findIndex(c => c.id === targetId);
 
         const configRecord = {
-          id: existing.id || `db_${providerKey.toLowerCase()}_${Date.now()}`,
+          id: targetId,
           name: connName,
-          type: providerKey,
+          type: spec.key,
           role,
           autoSync,
           enabled: true,
@@ -1283,47 +1461,76 @@ function renderProviderForm(providerKey) {
         };
 
         if (existingIdx !== -1) {
-          allConfigs[existingIdx] = configRecord;
+          currentConfigs[existingIdx] = configRecord;
         } else {
-          allConfigs.push(configRecord);
+          currentConfigs.push(configRecord);
         }
 
+        // Persist to localStorage
+        localStorage.setItem('erp_multi_db_config', JSON.stringify(currentConfigs));
+
+        // Persist to storage engine
         if (storage && typeof storage.saveMultiDbConfigs === 'function') {
-          await storage.saveMultiDbConfigs(allConfigs);
-        } else {
-          localStorage.setItem('erp_multi_db_config', JSON.stringify(allConfigs));
+          await storage.saveMultiDbConfigs(currentConfigs).catch(() => {});
         }
 
+        // Reload syncManager
         syncManager.configLoaded = false;
         await syncManager.loadConfig();
 
-        notificationService.toast(`Saved configuration for ${spec.name}!`);
-        renderProviderForm(providerKey);
+        currentEditingDbId = targetId;
+        notificationService.toast(`✅ "${connName}" saved! Appearing in DATABASE SYNC STATUS now.`);
+
+        // Re-render full dashboard so the new/updated DB appears immediately in sync topology
+        const appContainer = document.getElementById('app-view-container');
+        if (appContainer) {
+          appContainer.innerHTML = renderDatabaseConfigView();
+          initDatabaseConfigEvents();
+        }
       } catch (err) {
         alert('Failed to save database configuration: ' + err.message);
       } finally {
         btnSave.disabled = false;
-        btnSave.innerHTML = '💾 [ Save ]';
+        btnSave.innerHTML = '💾 Save Database';
       }
     });
   }
 
   // Attach Delete Handler
   const btnDel = document.getElementById('btn-delete-provider-db');
-  if (btnDel && existing.id) {
+  if (btnDel && currentEditingDbId) {
     btnDel.addEventListener('click', async () => {
-      if (!confirm(`Are you sure you want to remove the ${spec.name} connection?`)) return;
-      const allConfigs = storage.getMultiDbConfigs ? storage.getMultiDbConfigs() : [];
-      const updated = allConfigs.filter(c => c.id !== existing.id);
+      let currentConfigs = [];
+      try { currentConfigs = JSON.parse(localStorage.getItem('erp_multi_db_config') || '[]'); } catch (_) {}
+      const existingRec = currentConfigs.find(c => c.id === currentEditingDbId);
+      const name = existingRec ? (existingRec.name || existingRec.type) : 'this database';
+
+      if (!confirm(`Are you sure you want to remove the database "${name}"?`)) return;
+
+      const updated = currentConfigs.filter(c => c.id !== currentEditingDbId);
+      localStorage.setItem('erp_multi_db_config', JSON.stringify(updated));
       if (storage && typeof storage.saveMultiDbConfigs === 'function') {
-        await storage.saveMultiDbConfigs(updated);
-      } else {
-        localStorage.setItem('erp_multi_db_config', JSON.stringify(updated));
+        await storage.saveMultiDbConfigs(updated).catch(() => {});
       }
+
+      // Clear metrics for this db
+      try {
+        const metrics = JSON.parse(localStorage.getItem(SYNC_METRICS_KEY) || '{}');
+        delete metrics[currentEditingDbId];
+        localStorage.setItem(SYNC_METRICS_KEY, JSON.stringify(metrics));
+      } catch (_) {}
+
       syncManager.configLoaded = false;
       await syncManager.loadConfig();
-      notificationService.toast(`Removed ${spec.name} connection.`);
-      renderProviderForm(providerKey);
+
+      currentEditingDbId = null;
+      notificationService.toast(`🗑️ Removed "${name}".`);
+
+      const appContainer = document.getElementById('app-view-container');
+      if (appContainer) {
+        appContainer.innerHTML = renderDatabaseConfigView();
+        initDatabaseConfigEvents();
+      }
     });
   }
 }
@@ -1359,6 +1566,8 @@ function createTestAdapter(providerKey, config) {
       return new CloudflareD1Adapter(c);
     case 'NEON':
       return new NeonAdapter(c);
+    case 'SUPABASE':
+      return new SupabaseAdapter(c);
     default:
       throw new Error(`Unsupported provider: ${providerKey}`);
   }

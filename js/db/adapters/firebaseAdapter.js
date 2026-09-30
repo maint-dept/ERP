@@ -30,8 +30,14 @@ export class FirebaseAdapter extends BaseAdapter {
         if (apiKey) url += `?key=${encodeURIComponent(apiKey)}`;
         const res = await fetch(url, { method: 'GET' }).catch(() => null);
         const latency = Date.now() - startTime;
-        if (res && (res.ok || res.status === 403 || res.status === 404)) {
+        if (res && res.ok) {
           return { success: true, latency: latency || 35 };
+        }
+        if (res && (res.status === 401 || res.status === 403)) {
+          return { success: false, error: 'Firebase authentication failed (403/401): Invalid API key or permission denied.' };
+        }
+        if (res && res.status === 404) {
+          return { success: false, error: `Firebase project "${projectId}" not found (404). Check Project ID.` };
         }
       }
 
@@ -40,11 +46,6 @@ export class FirebaseAdapter extends BaseAdapter {
       const latency = Date.now() - startTime;
       if (manifest !== null) {
         return { success: true, latency: latency || 40 };
-      }
-
-      // 3. Fallback: if project ID is provided, consider endpoint reached
-      if (projectId && projectId.length > 3) {
-        return { success: true, latency: 45 };
       }
 
       return { success: false, error: 'Could not reach Firebase Firestore. Please verify Project ID and API Key.' };
