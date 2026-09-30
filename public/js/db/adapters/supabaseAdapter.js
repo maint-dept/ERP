@@ -87,6 +87,14 @@ export class SupabaseAdapter extends BaseAdapter {
     if (!this.url || !this.anonKey) {
       return { success: false, error: 'Missing Supabase Project URL or Anon API Key.' };
     }
+
+    if (this.anonKey && !this.anonKey.startsWith('eyJ') && this.anonKey.length < 80) {
+      return {
+        success: false,
+        isAuthError: true,
+        error: 'Invalid API Key format! A Supabase Anon Key is a long token starting with "eyJ..." (~200+ characters), found in Supabase Dashboard → Settings → API. Please do NOT use your Database Password.'
+      };
+    }
     const startTime = Date.now();
     try {
       // 1. Verify endpoint & credentials by pinging root PostgREST OpenAPI schema
