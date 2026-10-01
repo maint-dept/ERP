@@ -207,7 +207,7 @@ function getTotalRecordCount() {
       if (Array.isArray(val)) count += val.length;
       else if (val && typeof val === 'object') count += Object.keys(val).length;
     }
-    if (count > 100) return count;
+    return count;
   }
   return 0;
 }
@@ -1040,8 +1040,7 @@ export function initDatabaseConfigEvents() {
         localStorage.setItem(SYNC_METRICS_KEY, JSON.stringify(metrics));
       } catch (_) {}
 
-      syncManager.configLoaded = false;
-      await syncManager.loadConfig();
+      await syncManager.reloadConfig();
 
       if (currentEditingDbId === dbId) currentEditingDbId = null;
       notificationService.toast(`🗑️ Removed "${name}".`);
@@ -1121,7 +1120,7 @@ export function initDatabaseConfigEvents() {
     if (btn) { btn.disabled = true; btn.textContent = '⏳ Syncing...'; }
     notificationService.toast(`Syncing ${dbName || dbId}...`);
     try {
-      await syncManager.loadConfig();
+      await syncManager.reloadConfig();
       await syncManager.runFullSync(dbId);
       // Record REAL success metrics
       const total = getTotalRecordCount();
@@ -1173,7 +1172,7 @@ export function initDatabaseConfigEvents() {
     try {
       let cfgs = [];
       try { cfgs = JSON.parse(localStorage.getItem('erp_multi_db_config') || '[]'); } catch (_) {}
-      await syncManager.loadConfig();
+      await syncManager.reloadConfig();
       let successCount = 0, failCount = 0;
       const total = getTotalRecordCount();
       for (const c of cfgs) {
@@ -1650,9 +1649,8 @@ service cloud.firestore {
           await storage.saveMultiDbConfigs(currentConfigs).catch(() => {});
         }
 
-        // Reload syncManager
-        syncManager.configLoaded = false;
-        await syncManager.loadConfig();
+        // Reload syncManager with fresh config
+        await syncManager.reloadConfig();
 
         currentEditingDbId = targetId;
         notificationService.toast(`✅ "${connName}" saved! Appearing in DATABASE SYNC STATUS now.`);
@@ -1696,8 +1694,7 @@ service cloud.firestore {
         localStorage.setItem(SYNC_METRICS_KEY, JSON.stringify(metrics));
       } catch (_) {}
 
-      syncManager.configLoaded = false;
-      await syncManager.loadConfig();
+      await syncManager.reloadConfig();
 
       currentEditingDbId = null;
       notificationService.toast(`🗑️ Removed "${name}".`);
