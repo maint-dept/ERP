@@ -171,6 +171,31 @@ export class MysqlAdapter extends BaseAdapter {
     }
   }
 
+  async getTableTimestamps() {
+    try {
+      const url = this._getUrl('stats');
+      const res = await fetch(url, {
+        method: 'GET',
+        headers: this._headers()
+      });
+      if (res && res.ok) {
+        const json = await res.json();
+        const timestamps = {};
+        if (Array.isArray(json.tables)) {
+          json.tables.forEach(t => {
+            if (t.table_name && t.updated_at) {
+              timestamps[t.table_name] = t.updated_at;
+            }
+          });
+        }
+        return { success: true, timestamps, totalTables: json.totalTables || Object.keys(timestamps).length };
+      }
+      return { success: false, timestamps: {} };
+    } catch (e) {
+      return { success: false, error: e.message, timestamps: {} };
+    }
+  }
+
   async deleteRecord(collection, docId) {
     try {
       const url = this._getUrl('delete');
@@ -187,3 +212,4 @@ export class MysqlAdapter extends BaseAdapter {
     }
   }
 }
+

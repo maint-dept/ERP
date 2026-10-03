@@ -98,6 +98,23 @@ class SyncManager {
         });
         try { localStorage.setItem('erp_multi_db_config', JSON.stringify(configs)); } catch (_) {}
       }
+
+      // Ensure default Firebase Firestore adapter is always registered as an active secondary (enables instant onSnapshot real-time push to all devices)
+      const hasFirebase = Array.from(this.secondaryAdapters.values()).some(a => a.type === 'FIREBASE') || (this.primaryAdapter?.type === 'FIREBASE');
+      if (!hasFirebase) {
+        const fbAdapter = new FirebaseAdapter({
+          id: 'default_fb',
+          name: 'Google Cloud Firestore',
+          type: 'FIREBASE',
+          role: 'BACKUP',
+          projectId: 'maint-dept-erp',
+          enabled: true,
+          autoSync: true,
+          retryEnabled: true
+        });
+        this.secondaryAdapters.set('default_fb', fbAdapter);
+      }
+
       this.configLoaded = true;
     } catch (e) {
       console.error('Failed to load DB config', e);

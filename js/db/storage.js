@@ -222,7 +222,7 @@ class StorageEngine {
         // 1. Start official Google Cloud Firestore onSnapshot real-time listener
         this.initRealtimeSyncListener();
 
-        // 2. Multi-device sync backup heartbeat (polls every 8s as fallback if WebSocket sleeps)
+        // 2. Multi-device sync backup heartbeat (polls every 3.5s for fast multi-device sync)
         if (!this._remoteSyncTimer) {
           this._remoteSyncTimer = setInterval(() => {
             if (this._pendingRemoteManifest && !this.isUserTyping()) {
@@ -233,7 +233,7 @@ class StorageEngine {
             if (!this.isUserTyping()) {
               this.checkAndSyncRemoteChanges();
             }
-          }, 8000);
+          }, 3500);
         }
       }
 
@@ -633,56 +633,112 @@ class StorageEngine {
     if (this._isCheckingRemote || this.isUserTyping()) return;
     this._isCheckingRemote = true;
     try {
-      // Fetch sync_manifest: single lightweight document read (~150ms, 1 Firestore read)
-      const manifest = await firebaseSync.fetchSyncManifest();
-      if (!manifest || typeof manifest !== 'object' || Object.keys(manifest).length === 0) return;
-
       const isViewingSettings = typeof window !== 'undefined' && window.state && window.state.get('currentView') === 'settings';
 
-      const tablesToUpdate = [];
-      for (const [tbl, remoteTs] of Object.entries(manifest)) {
-        if (!remoteTs) continue;
-        // Never pull settings in background while user is viewing settings
-        if (tbl === TABLE_NAMES.SETTINGS && isViewingSettings) continue;
+      // 1. Primary MySQL Adapter Real-Time Multi-Device Sync Check (<30ms check across all tables)
+      if (syncManager && syncManager.primaryAdapter && syncManager.primaryAdapter.type === 'MYSQL') {
+        try {
+          const mysqlTsRes = await syncManager.primaryAdapter.getTableTimestamps();
+          if (mysqlTsRes && mysqlTsRes.success && mysqlTsRes.timestamps) {
+            const mysqlUpdates = [];
+            for (const [tbl, remoteTs] of Object.entries(mysqlTsRes.timestamps)) {
+              if (!remoteTs) continue;
+              if (tbl === TABLE_NAMES.SETTINGS && isViewingSettings) continue;
+              if (this._tableSavePromises && this._tableSavePromises.has(tbl)) continue;
 
-        // Use server-confirmed updateTime for comparison (clock-skew-safe)
-        const knownServerTs = this.syncedDocVersions.get(tbl) || '';
-        if (remoteTs > knownServerTs) {
-          tablesToUpdate.push(tbl);
+              const knownTs = this.syncedDocVersions.get('mysql_' + tbl) || '';
+              if (remoteTs > knownTs) {
+                mysqlUpdates.push({ tbl, remoteTs });
+              }
+            }
+
+            if (mysqlUpdates.length > 0) {
+              console.log(`[Storage Multi-Device Sync] 🐬 Remote MySQL changes detected in ${mysqlUpdates.length} tables:`, mysqlUpdates.map(u => u.tbl));
+              const fetchResults = await Promise.all(
+                mysqlUpdates.map(async ({ tbl, remoteTs }) => {
+                  try {
+                    const res = await syncManager.primaryAdapter.getTable(tbl);
+                    return { tbl, remoteTs, res };
+                  } catch (_) {
+                    return { tbl, remoteTs, res: null };
+                  }
+                })
+              );
+
+              const recordsToApply = {};
+              for (const { tbl, remoteTs, res } of fetchResults) {
+                if (res && res.success && res.data !== undefined) {
+                  recordsToApply[tbl] = res.data;
+                  if (!this.lastTableUpdates) this.lastTableUpdates = {};
+                  this.lastTableUpdates[tbl] = Date.now();
+                  this.syncedDocVersions.set('mysql_' + tbl, remoteTs);
+                  this.syncedDocVersions.set(tbl, remoteTs);
+                }
+              }
+
+              if (Object.keys(recordsToApply).length > 0) {
+                this.applyIncomingDatabaseRecords(recordsToApply, `MySQL Remote (${Object.keys(recordsToApply).join(', ')})`);
+                this._isCloudConnected = true;
+                this.updateStatusBadge('saved');
+              }
+            }
+          }
+        } catch (myErr) {
+          console.warn('[Storage Multi-Device Sync] MySQL check note:', myErr.message);
         }
       }
 
-      if (tablesToUpdate.length > 0) {
-        console.log(`[Storage Multi-Device Sync] 🔄 Remote changes detected in ${tablesToUpdate.length} tables:`, tablesToUpdate);
-        const fetchResults = await Promise.all(
-          tablesToUpdate.map(async (tbl) => {
-            try {
-              const result = await firebaseSync.fetchTableFromFirestore(tbl);
-              return { tbl, result };
-            } catch (_) {
-              return { tbl, result: null };
-            }
-          })
-        );
+      // 2. Also check Firebase Firestore Sync Manifest (for multi-client cloud push/pull)
+      try {
+        const manifest = await firebaseSync.fetchSyncManifest();
+        if (manifest && typeof manifest === 'object' && Object.keys(manifest).length > 0) {
+          const tablesToUpdate = [];
+          for (const [tbl, remoteTs] of Object.entries(manifest)) {
+            if (!remoteTs) continue;
+            if (tbl === TABLE_NAMES.SETTINGS && isViewingSettings) continue;
+            if (this._tableSavePromises && this._tableSavePromises.has(tbl)) continue;
 
-        const recordsToApply = {};
-        for (const { tbl, result } of fetchResults) {
-          if (result !== null && result !== undefined) {
-            const tableData = result.data !== undefined ? result.data : result;
-            const remoteUpdateTime = result.updateTime || manifest[tbl];
-            if (tableData !== null && tableData !== undefined) {
-              recordsToApply[tbl] = tableData;
-              if (!this.lastTableUpdates) this.lastTableUpdates = {};
-              this.lastTableUpdates[tbl] = Date.now();
-              const effectiveTs = remoteUpdateTime && remoteUpdateTime > manifest[tbl] ? remoteUpdateTime : manifest[tbl];
-              this.syncedDocVersions.set(tbl, effectiveTs);
+            const knownServerTs = this.syncedDocVersions.get('fb_' + tbl) || '';
+            if (remoteTs > knownServerTs) {
+              tablesToUpdate.push(tbl);
+            }
+          }
+
+          if (tablesToUpdate.length > 0) {
+            console.log(`[Storage Multi-Device Sync] 🔄 Remote Firestore changes detected in ${tablesToUpdate.length} tables:`, tablesToUpdate);
+            const fetchResults = await Promise.all(
+              tablesToUpdate.map(async (tbl) => {
+                try {
+                  const result = await firebaseSync.fetchTableFromFirestore(tbl);
+                  return { tbl, result };
+                } catch (_) {
+                  return { tbl, result: null };
+                }
+              })
+            );
+
+            const recordsToApply = {};
+            for (const { tbl, result } of fetchResults) {
+              if (result !== null && result !== undefined) {
+                const tableData = result.data !== undefined ? result.data : result;
+                const remoteUpdateTime = result.updateTime || manifest[tbl];
+                if (tableData !== null && tableData !== undefined) {
+                  recordsToApply[tbl] = tableData;
+                  if (!this.lastTableUpdates) this.lastTableUpdates = {};
+                  this.lastTableUpdates[tbl] = Date.now();
+                  const effectiveTs = remoteUpdateTime && remoteUpdateTime > manifest[tbl] ? remoteUpdateTime : manifest[tbl];
+                  this.syncedDocVersions.set('fb_' + tbl, effectiveTs);
+                }
+              }
+            }
+            if (Object.keys(recordsToApply).length > 0) {
+              this.applyIncomingDatabaseRecords(recordsToApply, `Remote Firestore (${Object.keys(recordsToApply).join(', ')})`);
+              this.updateStatusBadge('saved');
             }
           }
         }
-        if (Object.keys(recordsToApply).length > 0) {
-          this.applyIncomingDatabaseRecords(recordsToApply, `Remote Cloud (${Object.keys(recordsToApply).join(', ')})`);
-          this.updateStatusBadge('saved');
-        }
+      } catch (fbErr) {
+        console.warn('[Storage Multi-Device Sync] Firebase check note:', fbErr.message);
       }
     } catch (err) {
       console.warn('[Storage Multi-Device Sync] Remote check note:', err.message);
@@ -985,6 +1041,17 @@ class StorageEngine {
           this.applyIncomingDatabaseRecords(mysqlRes.tables, 'MySQL Primary');
           this._isCloudConnected = true;
           this.updateStatusBadge('saved');
+
+          // Seed syncedDocVersions with initial MySQL timestamps so multi-device polling tracks incremental changes cleanly
+          syncManager.primaryAdapter.getTableTimestamps().then(tsRes => {
+            if (tsRes && tsRes.success && tsRes.timestamps) {
+              for (const [tbl, ts] of Object.entries(tsRes.timestamps)) {
+                this.syncedDocVersions.set('mysql_' + tbl, ts);
+                this.syncedDocVersions.set(tbl, ts);
+              }
+            }
+          }).catch(() => {});
+
           return;
         }
       }

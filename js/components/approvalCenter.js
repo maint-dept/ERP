@@ -353,16 +353,19 @@ export function initApprovalCenterEvents() {
 
   // Quick Approve Transfer from Card
   document.querySelectorAll('.btn-transfer-action-approve').forEach(btn => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', async () => {
       const id = btn.getAttribute('data-id');
       const req = transferService.getTransferRequestById(id);
       const remarks = prompt(`Enter approval verification remarks for Level ${req?.currentLevel || 1}:`, 'Approved for relocation.');
       if (remarks !== null) {
         try {
-          transferService.approveStep(id, remarks);
-          alert('Transfer approval recorded!');
+          btn.disabled = true;
+          await transferService.approveStep(id, remarks);
+          alert('Transfer approval recorded and synchronized across all databases!');
           state.emit('inventory:updated');
+          window.dispatchEvent(new CustomEvent('erp:transfers-updated'));
         } catch (e) {
+          btn.disabled = false;
           alert('Error: ' + e.message);
         }
       }
@@ -371,7 +374,7 @@ export function initApprovalCenterEvents() {
 
   // Quick Reject Transfer
   document.querySelectorAll('.btn-transfer-action-reject').forEach(btn => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', async () => {
       const id = btn.getAttribute('data-id');
       const reason = prompt('Please enter the mandatory rejection reason:');
       if (reason !== null) {
@@ -380,10 +383,13 @@ export function initApprovalCenterEvents() {
           return;
         }
         try {
-          transferService.rejectTransfer(id, reason);
+          btn.disabled = true;
+          await transferService.rejectTransfer(id, reason);
           alert('Transfer rejected.');
           state.emit('inventory:updated');
+          window.dispatchEvent(new CustomEvent('erp:transfers-updated'));
         } catch (e) {
+          btn.disabled = false;
           alert('Error: ' + e.message);
         }
       }
@@ -392,7 +398,7 @@ export function initApprovalCenterEvents() {
 
   // Quick Return for Revision
   document.querySelectorAll('.btn-transfer-action-revise').forEach(btn => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', async () => {
       const id = btn.getAttribute('data-id');
       const comments = prompt('Enter required adjustments / missing permission note for technician:');
       if (comments !== null) {
@@ -401,10 +407,13 @@ export function initApprovalCenterEvents() {
           return;
         }
         try {
-          transferService.returnForRevision(id, comments);
+          btn.disabled = true;
+          await transferService.returnForRevision(id, comments);
           alert('Revision request sent to technician.');
           state.emit('inventory:updated');
+          window.dispatchEvent(new CustomEvent('erp:transfers-updated'));
         } catch (e) {
+          btn.disabled = false;
           alert('Error: ' + e.message);
         }
       }

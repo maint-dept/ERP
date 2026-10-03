@@ -6,6 +6,7 @@
 import { storage } from '../db/storage.js';
 import { CloudSaveError } from '../db/storage.js';
 import { syncManager } from '../db/syncManager.js';
+import * as firebaseSync from '../db/firebaseSync.js';
 import { TABLE_NAMES, TRANSFER_STATUSES, ROLES, APPROVER_TYPES } from '../db/schema.js';
 import { authService } from './authService.js';
 import { masterDataService } from './masterDataService.js';
@@ -412,7 +413,7 @@ class TransferService {
     // Check if this was the final level
     if (req.currentLevel >= req.totalLevels) {
       // All approval levels completed! Execute final machine relocation
-      return this.executeFinalTransfer(requestId, updatedHistory, updatedDocs);
+      return await this.executeFinalTransfer(requestId, updatedHistory, updatedDocs);
     } else {
       // Advance to next approval level
       const nextLevel = req.currentLevel + 1;
@@ -882,8 +883,13 @@ class TransferService {
     const req = this.getTransferRequestById(requestId);
     if (!req) throw new Error('Transfer request not found.');
 
-    const machine = storage.getItem(TABLE_NAMES.MACHINES, req.machineId);
-    if (!machine) throw new Error('Machine not found.');
+    let machine = storage.getItem(TABLE_NAMES.MACHINES, req.machineId);
+    if (!machine && (req.serialNumber || req.machineSerial)) {
+      const sn = req.serialNumber || req.machineSerial;
+      const allM = storage.getTable(TABLE_NAMES.MACHINES) || [];
+      machine = allM.find(m => m.serialNumber === sn || m.machineSerial === sn);
+    }
+    if (!machine) throw new Error(`Machine [${req.serialNumber || req.machineId}] not found in live inventory.`);
 
     const now = new Date();
     const dateStr = now.toLocaleDateString('en-GB');
@@ -902,6 +908,16 @@ class TransferService {
         remarks: 'All approval levels completed. Physical machine location updated in live inventory.'
       }
     ];
+
+    // Mark all workflow levels as APPROVED
+    const finalLevels = (req.levels || []).map(lvl => ({
+      ...lvl,
+      status: 'APPROVED',
+      approvedBy: lvl.approvedBy || user.id,
+      approvedByName: lvl.approvedByName || user.name,
+      approvedAt: lvl.approvedAt || now.toISOString(),
+      remarks: lvl.remarks || 'Approved for relocation.'
+    }));
 
     // 1. Atomically UPDATE PHYSICAL MACHINE LOCATION in live inventory database
     storage.update(TABLE_NAMES.MACHINES, machine.id, {
@@ -947,6 +963,8 @@ class TransferService {
     // 3. Mark Transfer Request as COMPLETED
     const updated = storage.update(TABLE_NAMES.TRANSFER_REQUESTS, req.id, {
       status: TRANSFER_STATUSES.COMPLETED,
+      currentLevel: req.totalLevels,
+      levels: finalLevels,
       approvalHistory: finalHistory,
       documents: docs || req.documents,
       completedAt: now.toISOString(),
@@ -970,12 +988,29 @@ class TransferService {
       `Physical location moved from [${req.sourcePath}] to [${req.destPath}] via Request ${req.requestNumber}. Approved by ${user.name}.`
     );
 
-    // Optimistic atomic save & background sync
-    storage.saveTable(TABLE_NAMES.MACHINES, false);
-    storage.saveTable(TABLE_NAMES.TRANSFERS, false);
-    storage.saveTable(TABLE_NAMES.TRANSFER_REQUESTS, false);
+    // 5. Confirmed persistence: Guarantee immediate write to Primary MySQL & secondary Cloud Firestore
+    await Promise.all([
+      storage.saveTable(TABLE_NAMES.MACHINES, true),
+      storage.saveTable(TABLE_NAMES.TRANSFERS, true),
+      storage.saveTable(TABLE_NAMES.TRANSFER_REQUESTS, true)
+    ]);
 
-    // 5. Automatic Machine Lifecycle History Record
+    // 6. Direct instant single-record upsert for guaranteed zero-latency cross-device synchronization
+    if (typeof syncManager !== 'undefined' && syncManager.primaryAdapter) {
+      const updatedMachine = storage.getItem(TABLE_NAMES.MACHINES, machine.id);
+      syncManager.saveRecord(TABLE_NAMES.MACHINES, machine.id, updatedMachine).catch(e => console.warn('Sync machine notice:', e.message));
+      syncManager.saveRecord(TABLE_NAMES.TRANSFERS, transferRecord.id, transferRecord).catch(e => console.warn('Sync transfer record notice:', e.message));
+      syncManager.saveRecord(TABLE_NAMES.TRANSFER_REQUESTS, req.id, updated).catch(e => console.warn('Sync transfer request notice:', e.message));
+    }
+
+    // 7. Direct instant cloud fanout to Firestore
+    try {
+      firebaseSync.saveTableToFirestore(TABLE_NAMES.MACHINES, storage.getTable(TABLE_NAMES.MACHINES)).catch(() => {});
+      firebaseSync.saveTableToFirestore(TABLE_NAMES.TRANSFERS, storage.getTable(TABLE_NAMES.TRANSFERS)).catch(() => {});
+      firebaseSync.saveTableToFirestore(TABLE_NAMES.TRANSFER_REQUESTS, storage.getTable(TABLE_NAMES.TRANSFER_REQUESTS)).catch(() => {});
+    } catch (_) {}
+
+    // 8. Automatic Machine Lifecycle History Record
     historyService.recordActivity({
       machineId: machine.id,
       serialNumber: machine.serialNumber,
@@ -1003,11 +1038,15 @@ class TransferService {
       previousValue: { location: req.sourcePath },
       newValue: { location: req.destPath },
       remarks: req.remarks || req.reason
-    });
+    }).catch(e => console.warn('History activity record note:', e.message));
 
+    // 9. Dispatch instant UI & cross-component update events
     window.dispatchEvent(new CustomEvent('erp:transfers-updated'));
+    window.dispatchEvent(new CustomEvent('erp:inventory-updated'));
+    window.dispatchEvent(new CustomEvent('erp:storage-updated'));
     if (window.state && typeof window.state.emit === 'function') {
       window.state.emit('transfers:updated');
+      window.state.emit('inventory:updated');
     }
 
     return updated;
