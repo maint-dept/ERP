@@ -735,12 +735,13 @@ export function renderDatabaseConfigView() {
                     <span style="font-size: 11px; color: #94a3b8;">Click "+ Add New Database Connection" or a template below to add one.</span>
                   </div>
                 ` : configs.map(c => {
-                  const isSelected = currentEditingDbId === c.id;
+                  const isSelected = isConfigFormOpen && currentEditingDbId === c.id;
+                  const isPrimary = c.role === 'PRIMARY' || c.id === 'mysql_primary';
                   const typeUpper = (c.type || '').toUpperCase();
                   const pIcon = (PROVIDER_SPECS[typeUpper] && PROVIDER_SPECS[typeUpper].icon) || '🗄️';
                   const m = state.databases.find(d => d.id === c.id);
-                  const dotCol = m ? m.statusColor : '#94a3b8';
-                  const statusTxt = m ? m.statusLabel : 'Ready';
+                  const dotCol = isPrimary ? '#10b981' : (m ? m.statusColor : '#94a3b8');
+                  const statusTxt = isPrimary ? 'Connected (Master)' : (m ? m.statusLabel : 'Ready');
 
                   return `
                     <div class="configured-db-item" data-db-id="${c.id}" style="display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; border-radius: 8px; border: 1.5px solid ${isSelected ? '#38bdf8' : 'rgba(255,255,255,0.08)'}; background: ${isSelected ? 'rgba(2, 132, 199, 0.18)' : 'rgba(15, 23, 42, 0.6)'}; cursor: pointer; transition: all 0.2s ease;">
@@ -757,9 +758,15 @@ export function renderDatabaseConfigView() {
                           </div>
                         </div>
                       </div>
-                      <button type="button" class="btn-delete-configured-db" data-delete-id="${c.id}" title="Remove Connection" style="background: transparent; border: none; color: #64748b; font-size: 14px; cursor: pointer; padding: 4px 6px; border-radius: 4px; transition: color 0.15s ease;" onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='#64748b'">
-                        🗑️
-                      </button>
+                      ${isPrimary ? `
+                        <span style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); color: #34d399; font-size: 10px; font-weight: 800; padding: 2px 7px; border-radius: 4px; white-space: nowrap;">
+                          PRIMARY
+                        </span>
+                      ` : `
+                        <button type="button" class="btn-delete-configured-db" data-delete-id="${c.id}" title="Remove Connection" style="background: transparent; border: none; color: #64748b; font-size: 14px; cursor: pointer; padding: 4px 6px; border-radius: 4px; transition: color 0.15s ease;" onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='#64748b'">
+                          🗑️
+                        </button>
+                      `}
                     </div>
                   `;
                 }).join('')}
@@ -788,7 +795,7 @@ export function renderDatabaseConfigView() {
           </div>
 
           <!-- Right Column: Interactive Configuration Form for Selected Provider -->
-          <div id="provider-config-container" style="background: var(--bg-surface); border: 1.5px solid #0284c7; border-radius: var(--radius-lg); padding: 24px; box-shadow: 0 4px 25px rgba(2, 132, 199, 0.1); min-width: 0;">
+          <div id="provider-config-container" style="background: var(--bg-surface); border: 1.5px solid ${isConfigFormOpen ? '#0284c7' : 'rgba(255,255,255,0.1)'}; border-radius: var(--radius-lg); padding: 24px; box-shadow: ${isConfigFormOpen ? '0 4px 25px rgba(2, 132, 199, 0.18)' : 'none'}; min-width: 0; transition: border-color 0.2s, box-shadow 0.2s;">
             <div id="provider-form-content"></div>
           </div>
 
@@ -891,6 +898,69 @@ export function renderDatabaseConfigView() {
 // Current selection state for editing/adding database instances
 let currentEditingDbId = null; // null if adding new database, string if editing
 let currentProviderKey = 'POSTGRESQL';
+let isConfigFormOpen = false; // Closed by default — opens only when user clicks/selects a database!
+
+// Helper: re-render the full view after state changes
+function reRenderView() {
+  if (window.app && typeof window.app.renderMainContent === 'function') {
+    window.app.renderMainContent(true);
+    return;
+  }
+  if (window.app && typeof window.app.render === 'function') {
+    window.app.render(false, true);
+    return;
+  }
+  const appContainer = document.getElementById('main-view-container') || document.getElementById('app-view-container');
+  if (appContainer) {
+    appContainer.innerHTML = renderDatabaseConfigView();
+    initDatabaseConfigEvents();
+  }
+}
+
+function openConfigForm(providerKey = 'POSTGRESQL', dbId = null) {
+  isConfigFormOpen = true;
+  currentProviderKey = providerKey || 'POSTGRESQL';
+  currentEditingDbId = dbId;
+
+  const container = document.getElementById('provider-config-container');
+  if (container) {
+    container.style.borderColor = '#0284c7';
+    container.style.boxShadow = '0 4px 25px rgba(2, 132, 199, 0.18)';
+  }
+  renderProviderForm(currentProviderKey, currentEditingDbId);
+
+  // Update selection highlight on sidebar items
+  document.querySelectorAll('.configured-db-item').forEach(el => {
+    if (dbId && el.getAttribute('data-db-id') === dbId) {
+      el.style.borderColor = '#38bdf8';
+      el.style.background = 'rgba(2, 132, 199, 0.18)';
+    } else {
+      el.style.borderColor = 'rgba(255,255,255,0.08)';
+      el.style.background = 'rgba(15, 23, 42, 0.6)';
+    }
+  });
+
+  if (container) {
+    container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+}
+
+function closeConfigForm() {
+  isConfigFormOpen = false;
+  currentEditingDbId = null;
+
+  const container = document.getElementById('provider-config-container');
+  if (container) {
+    container.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+    container.style.boxShadow = 'none';
+  }
+  renderProviderPlaceholder();
+
+  document.querySelectorAll('.configured-db-item').forEach(el => {
+    el.style.borderColor = 'rgba(255,255,255,0.08)';
+    el.style.background = 'rgba(15, 23, 42, 0.6)';
+  });
+}
 
 export function initDatabaseConfigEvents() {
   // ── One-time migration: wipe old sync_state that contained fake databases array ──
@@ -905,36 +975,34 @@ export function initDatabaseConfigEvents() {
     }
   } catch (_) {}
 
-  // 1. Initial render of provider form
-  renderProviderForm(currentProviderKey, currentEditingDbId);
+  // 1. Initial render: placeholder hub by default (form opens only on user request)
+  if (isConfigFormOpen) {
+    renderProviderForm(currentProviderKey, currentEditingDbId);
+  } else {
+    renderProviderPlaceholder();
+  }
 
   // 2. "➕ Add New Database Connection" button
   document.getElementById('btn-create-new-db')?.addEventListener('click', () => {
-    currentEditingDbId = null;
-    renderProviderForm(currentProviderKey, null);
+    openConfigForm('POSTGRESQL', null);
     notificationService.toast('Ready to configure a new database connection.');
   });
 
-  // 3. Configured Databases card clicks (select to edit)
+  // 3. Configured Databases card clicks (select to edit, or toggle close)
   document.querySelectorAll('.configured-db-item').forEach(item => {
     item.addEventListener('click', (e) => {
       if (e.target.closest('.btn-delete-configured-db')) return;
       const dbId = item.getAttribute('data-db-id');
+      if (isConfigFormOpen && currentEditingDbId === dbId) {
+        closeConfigForm();
+        return;
+      }
       let configs = [];
       try { configs = JSON.parse(localStorage.getItem('erp_multi_db_config') || '[]'); } catch (_) {}
       const found = configs.find(c => c.id === dbId);
       if (found) {
-        currentEditingDbId = dbId;
-        currentProviderKey = (found.type || 'POSTGRESQL').toUpperCase();
-        renderProviderForm(currentProviderKey, dbId);
-        
-        // Update selection highlight
-        document.querySelectorAll('.configured-db-item').forEach(el => {
-          el.style.borderColor = 'rgba(255,255,255,0.08)';
-          el.style.background = 'rgba(15, 23, 42, 0.6)';
-        });
-        item.style.borderColor = '#38bdf8';
-        item.style.background = 'rgba(2, 132, 199, 0.18)';
+        const pKey = (found.type || 'POSTGRESQL').toUpperCase();
+        openConfigForm(pKey, dbId);
       }
     });
   });
@@ -964,7 +1032,10 @@ export function initDatabaseConfigEvents() {
 
       await syncManager.reloadConfig();
 
-      if (currentEditingDbId === dbId) currentEditingDbId = null;
+      if (currentEditingDbId === dbId) {
+        currentEditingDbId = null;
+        isConfigFormOpen = false;
+      }
       notificationService.toast(`🗑️ Removed "${name}".`);
       reRenderView();
     });
@@ -975,9 +1046,7 @@ export function initDatabaseConfigEvents() {
     tpl.addEventListener('click', () => {
       const pKey = tpl.getAttribute('data-provider');
       if (!pKey || !PROVIDER_SPECS[pKey]) return;
-      currentProviderKey = pKey;
-      currentEditingDbId = null;
-      renderProviderForm(currentProviderKey, null);
+      openConfigForm(pKey, null);
       notificationService.toast(`Ready to configure a new ${PROVIDER_SPECS[pKey].name} connection.`);
     });
   });
@@ -1028,14 +1097,7 @@ export function initDatabaseConfigEvents() {
     if (missingPanel) missingPanel.style.display = 'none';
   });
 
-  // Helper: re-render the full view after state changes
-  const reRenderView = () => {
-    const appContainer = document.getElementById('app-view-container');
-    if (appContainer) {
-      appContainer.innerHTML = renderDatabaseConfigView();
-      initDatabaseConfigEvents();
-    }
-  };
+
 
   // Helper: run a REAL full sync for a single configured database by its id
   const runRealSync = async (dbId, dbName, btn, originalLabel) => {
@@ -1187,6 +1249,138 @@ export function initDatabaseConfigEvents() {
   initBackupHandlers();
 }
 
+/**
+ * Clean Overview Hub rendered when no database configuration form is actively open.
+ * Shows status cards for MySQL Primary and PostgreSQL, with one-click Edit / Connect actions.
+ */
+function renderProviderPlaceholder() {
+  const container = document.getElementById('provider-form-content');
+  if (!container) return;
+
+  // Retrieve current configs
+  let configs = [];
+  try { configs = JSON.parse(localStorage.getItem('erp_multi_db_config') || '[]'); } catch (_) {}
+  const mysqlDb = configs.find(c => c.role === 'PRIMARY' || c.id === 'mysql_primary' || (c.type || '').toUpperCase() === 'MYSQL');
+  const pgDb = configs.find(c => ((c.type || '').toUpperCase() === 'POSTGRESQL' || (c.type || '').toUpperCase() === 'POSTGRES') && c.role !== 'PRIMARY');
+
+  container.innerHTML = `
+    <div style="display: flex; flex-direction: column; gap: 20px;">
+      <!-- Header -->
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="font-size: 26px;">🗄️</span>
+          <div>
+            <h3 style="font-size: 16px; font-weight: 800; color: #fff; margin: 0;">
+              Database Connection Hub
+            </h3>
+            <p style="font-size: 12px; color: var(--text-secondary); margin: 2px 0 0;">
+              Select a database from the list on the left to edit credentials, or click below to add a new connection.
+            </p>
+          </div>
+        </div>
+        <button type="button" id="btn-placeholder-create-db" class="btn btn-primary btn-sm" style="background: linear-gradient(135deg, #0284c7, #2563eb); font-weight: 700; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 15px rgba(2, 132, 199, 0.35); padding: 7px 14px; border-radius: 6px;">
+          <span>➕ Add Connection</span>
+        </button>
+      </div>
+
+      <!-- Quick Inspection / Edit Cards -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;">
+        <!-- MySQL Primary Master Card -->
+        <div style="background: rgba(0, 117, 143, 0.08); border: 1.5px solid rgba(0, 117, 143, 0.4); border-radius: 10px; padding: 18px; display: flex; flex-direction: column; justify-content: space-between; gap: 14px;">
+          <div>
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 24px;">🐬</span>
+                <div>
+                  <div style="font-size: 14.5px; font-weight: 800; color: #38bdf8;">MySQL Database</div>
+                  <div style="font-size: 11px; color: #94a3b8;">Primary Master · Single Source of Truth</div>
+                </div>
+              </div>
+              <span style="background: rgba(16, 185, 129, 0.15); border: 1px solid #10b981; color: #34d399; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 999px;">
+                ACTIVE MASTER
+              </span>
+            </div>
+
+            <div style="font-size: 12px; color: #cbd5e1; line-height: 1.6; font-family: monospace; background: rgba(0,0,0,0.3); padding: 10px 12px; border-radius: 6px; display: flex; flex-direction: column; gap: 3px;">
+              <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                <span style="color: #64748b;">Endpoint:</span> <span style="color: #38bdf8;">${mysqlDb && mysqlDb.endpoint ? mysqlDb.endpoint : 'https://moviezonex.com/mysql_api.php'}</span>
+              </div>
+              <div>
+                <span style="color: #64748b;">Database:</span> <span style="color: #34d399;">${mysqlDb && mysqlDb.database ? mysqlDb.database : 'motaherh_maint-erp'}</span>
+              </div>
+              <div>
+                <span style="color: #64748b;">User:</span> <span style="color: #fed7aa;">${mysqlDb && mysqlDb.username ? mysqlDb.username : 'motaherh_mainterp'}</span>
+              </div>
+            </div>
+          </div>
+
+          <button type="button" id="btn-placeholder-edit-mysql" class="btn btn-secondary btn-sm" style="width: 100%; font-weight: 700; border-color: rgba(56, 189, 248, 0.4); color: #38bdf8; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 7px 12px; border-radius: 6px;">
+            <span>⚙️ View / Edit MySQL Credentials</span>
+          </button>
+        </div>
+
+        <!-- PostgreSQL Secondary Card -->
+        <div style="background: rgba(51, 103, 145, 0.08); border: 1.5px solid rgba(51, 103, 145, 0.4); border-radius: 10px; padding: 18px; display: flex; flex-direction: column; justify-content: space-between; gap: 14px;">
+          <div>
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 24px;">🐘</span>
+                <div>
+                  <div style="font-size: 14.5px; font-weight: 800; color: #60a5fa;">PostgreSQL Database</div>
+                  <div style="font-size: 11px; color: #94a3b8;">Secondary Replica · Backup Sync Target</div>
+                </div>
+              </div>
+              <span style="background: ${pgDb ? 'rgba(16, 185, 129, 0.15)' : 'rgba(148, 163, 184, 0.12)'}; border: 1px solid ${pgDb ? '#10b981' : '#64748b'}; color: ${pgDb ? '#34d399' : '#94a3b8'}; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 999px;">
+                ${pgDb ? 'CONFIGURED' : 'READY TO CONNECT'}
+              </span>
+            </div>
+
+            <div style="font-size: 12px; color: #cbd5e1; line-height: 1.6; font-family: monospace; background: rgba(0,0,0,0.3); padding: 10px 12px; border-radius: 6px; display: flex; flex-direction: column; gap: 3px;">
+              ${pgDb ? `
+                <div><span style="color: #64748b;">Host:</span> <span style="color: #60a5fa;">${pgDb.host || '—'}</span></div>
+                <div><span style="color: #64748b;">Database:</span> <span style="color: #34d399;">${pgDb.database || '—'}</span></div>
+                <div><span style="color: #64748b;">User:</span> <span style="color: #fed7aa;">${pgDb.username || '—'}</span></div>
+              ` : `
+                <div style="color: #94a3b8; font-family: sans-serif; font-size: 11.5px; padding: 8px 0; text-align: center;">
+                  No PostgreSQL instance configured yet.<br/>
+                  Click below to enter PostgreSQL connection settings.
+                </div>
+              `}
+            </div>
+          </div>
+
+          <button type="button" id="btn-placeholder-edit-postgres" class="btn btn-secondary btn-sm" style="width: 100%; font-weight: 700; border-color: rgba(96, 165, 250, 0.4); color: #93c5fd; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 7px 12px; border-radius: 6px;">
+            <span>${pgDb ? '⚙️ View / Edit PostgreSQL Credentials' : '➕ Connect PostgreSQL Database'}</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Clean Help / Instruction Card -->
+      <div style="background: rgba(15, 23, 42, 0.5); border: 1px dashed rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 14px 18px; display: flex; align-items: center; gap: 12px;">
+        <span style="font-size: 20px;">💡</span>
+        <div style="font-size: 12px; color: #94a3b8; line-height: 1.5;">
+          <strong>Tip:</strong> The configuration edit form opens only when you click on a database or choose to add one. Click <strong style="color: #38bdf8;">⚙️ View / Edit</strong> above or click any item in <strong style="color: #e2e8f0;">Configured Databases</strong> on the left.
+        </div>
+      </div>
+    </div>
+  `;
+
+  // Attach button events inside placeholder
+  document.getElementById('btn-placeholder-create-db')?.addEventListener('click', () => {
+    openConfigForm('POSTGRESQL', null);
+  });
+  document.getElementById('btn-placeholder-edit-mysql')?.addEventListener('click', () => {
+    openConfigForm('MYSQL', 'mysql_primary');
+  });
+  document.getElementById('btn-placeholder-edit-postgres')?.addEventListener('click', () => {
+    if (pgDb) {
+      openConfigForm('POSTGRESQL', pgDb.id);
+    } else {
+      openConfigForm('POSTGRESQL', null);
+    }
+  });
+}
+
 function renderProviderForm(providerKey, dbId = null) {
   const container = document.getElementById('provider-form-content');
   if (!container) return;
@@ -1194,6 +1388,7 @@ function renderProviderForm(providerKey, dbId = null) {
   const spec = PROVIDER_SPECS[providerKey] || PROVIDER_SPECS.POSTGRESQL;
   currentProviderKey = spec.key;
   currentEditingDbId = dbId;
+  isConfigFormOpen = true;
 
   // Load real saved configs from localStorage
   let allConfigs = [];
@@ -1224,10 +1419,13 @@ function renderProviderForm(providerKey, dbId = null) {
           </p>
         </div>
       </div>
-      <div>
-        <span style="${badgeStyle} font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 4px;">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="${badgeStyle} font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 4px;">
           ${badgeLabel}
         </span>
+        <button type="button" id="btn-close-provider-form" class="btn btn-secondary btn-sm" title="Close Form" style="border-color: rgba(255,255,255,0.25); color: #cbd5e1; font-weight: 700; display: flex; align-items: center; gap: 5px; padding: 4px 10px; font-size: 12px; border-radius: 6px; cursor: pointer;">
+          <span>✕</span> <span>Close Form</span>
+        </button>
       </div>
     </div>
 
@@ -1344,11 +1542,15 @@ function renderProviderForm(providerKey, dbId = null) {
 
       <!-- Action Buttons -->
       <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px; border-top: 1px solid var(--border-color); padding-top: 14px; flex-wrap: wrap;">
-        ${isEditing ? `
+        ${isEditing && existing.role !== 'PRIMARY' && existing.id !== 'mysql_primary' ? `
           <button type="button" id="btn-delete-provider-db" class="btn btn-danger btn-sm" style="margin-right: auto; display: flex; align-items: center; gap: 6px;">
             🗑️ Remove Database
           </button>
         ` : ''}
+
+        <button type="button" id="btn-cancel-provider-config" class="btn btn-secondary" style="${(isEditing && (existing.role === 'PRIMARY' || existing.id === 'mysql_primary')) || !isEditing ? 'margin-right: auto;' : ''} display: flex; align-items: center; gap: 6px; font-weight: 700;">
+          ✕ Cancel / Close
+        </button>
         
         <button type="button" id="btn-test-connection" class="btn btn-secondary" style="border-color: #38bdf8; color: #38bdf8; font-weight: 700; display: flex; align-items: center; gap: 6px;">
           <span>🔌 [ Test Connection ]</span>
@@ -1366,6 +1568,14 @@ function renderProviderForm(providerKey, dbId = null) {
   document.getElementById('cfg-provider-select')?.addEventListener('change', (e) => {
     const selectedKey = e.target.value;
     renderProviderForm(selectedKey, dbId);
+  });
+
+  // Attach Close & Cancel Form Handlers
+  document.getElementById('btn-close-provider-form')?.addEventListener('click', () => {
+    closeConfigForm();
+  });
+  document.getElementById('btn-cancel-provider-config')?.addEventListener('click', () => {
+    closeConfigForm();
   });
 
 
@@ -1464,15 +1674,12 @@ function renderProviderForm(providerKey, dbId = null) {
         // Reload syncManager with fresh config
         await syncManager.reloadConfig();
 
-        currentEditingDbId = targetId;
+        isConfigFormOpen = false;
+        currentEditingDbId = null;
         notificationService.toast(`✅ "${connName}" saved! Appearing in DATABASE SYNC STATUS now.`);
 
         // Re-render full dashboard so the new/updated DB appears immediately in sync topology
-        const appContainer = document.getElementById('app-view-container');
-        if (appContainer) {
-          appContainer.innerHTML = renderDatabaseConfigView();
-          initDatabaseConfigEvents();
-        }
+        reRenderView();
       } catch (err) {
         alert('Failed to save database configuration: ' + err.message);
       } finally {
@@ -1509,13 +1716,10 @@ function renderProviderForm(providerKey, dbId = null) {
       await syncManager.reloadConfig();
 
       currentEditingDbId = null;
+      isConfigFormOpen = false;
       notificationService.toast(`🗑️ Removed "${name}".`);
 
-      const appContainer = document.getElementById('app-view-container');
-      if (appContainer) {
-        appContainer.innerHTML = renderDatabaseConfigView();
-        initDatabaseConfigEvents();
-      }
+      reRenderView();
     });
   }
 }
