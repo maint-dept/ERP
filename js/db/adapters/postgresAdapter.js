@@ -3,8 +3,7 @@
  * Al-Muslim Group ERP — Multi-Database Adapter Layer
  *
  * NOTE: Direct TCP connections are impossible from browser JS.
- * This adapter communicates with a REST proxy (self-hosted or via Neon HTTP API).
- * For Neon, use the NeonAdapter which speaks Neon's serverless HTTP driver directly.
+ * This adapter communicates with a REST proxy (self-hosted).
  */
 import { BaseAdapter } from './baseAdapter.js';
 

@@ -3,9 +3,8 @@
  * Al-Muslim Group ERP — Database Architecture
  *
  * Core Design Decision:
- * All ERP modules interact with this unified client interface regardless of
- * whether the active underlying provider is MySQL, PostgreSQL, Turso,
- * Cloudflare D1, or Neon.
+ * All ERP modules interact with this unified client interface.
+ * Supported databases: MySQL (Primary RDBMS) & PostgreSQL (Secondary Replica).
  *
  * Examples:
  *   const machines = await db.machines.getAll();

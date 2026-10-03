@@ -17,48 +17,7 @@ import { syncManager } from '../db/syncManager.js';
 import { notificationService } from '../services/notificationService.js';
 import { db } from '../db/dbClient.js';
 import { PostgresAdapter } from '../db/adapters/postgresAdapter.js';
-import { TursoAdapter } from '../db/adapters/tursoAdapterV2.js';
-import { CloudflareD1Adapter } from '../db/adapters/cloudflareD1AdapterV2.js';
-import { NeonAdapter } from '../db/adapters/neonAdapter.js';
-import { MongoAdapter } from '../db/adapters/mongoAdapter.js';
 import { MysqlAdapter } from '../db/adapters/mysqlAdapter.js';
-import { SupabaseAdapter, SUPABASE_SETUP_SQL } from '../db/adapters/supabaseAdapterV2.js';
-
-export const CLOUDFLARE_WORKER_CODE = `// Cloudflare Worker CORS Proxy for D1
-// 1. In Cloudflare Dashboard → Workers & Pages → Create Application → Create Worker
-// 2. Paste this code and click Deploy
-// 3. Go to Worker Settings → Bindings → Add D1 Database with Variable name: DB
-export default {
-  async fetch(request, env) {
-    const cors = {
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type, Authorization",
-    };
-    if (request.method === "OPTIONS") return new Response(null, { headers: cors });
-
-    if (request.method !== "POST") {
-      return new Response("Cloudflare D1 Worker Proxy is Active! Send POST with SQL to execute.", { headers: cors });
-    }
-
-    try {
-      const { sql, params = [] } = await request.json();
-      if (!env.DB) {
-        return new Response(JSON.stringify({ success: false, errors: [{ message: "D1 Database binding missing! In Worker Settings -> Bindings, bind your D1 database with variable name 'DB'." }] }), { status: 500, headers: { ...cors, "Content-Type": "application/json" } });
-      }
-      const stmt = env.DB.prepare(sql);
-      const res = await (params.length ? stmt.bind(...params).all() : stmt.all());
-      return new Response(JSON.stringify({ success: true, result: [res] }), {
-        headers: { ...cors, "Content-Type": "application/json" }
-      });
-    } catch (err) {
-      return new Response(JSON.stringify({ success: false, errors: [{ message: err.message }] }), {
-        status: 400,
-        headers: { ...cors, "Content-Type": "application/json" }
-      });
-    }
-  }
-};`;
 
 // Provider specifications with fields, default values, and documentation
 export const PROVIDER_SPECS = {
@@ -1327,51 +1286,7 @@ function renderProviderForm(providerKey, dbId = null) {
         `;
       }).join('')}
 
-      ${spec.key === 'SUPABASE' ? `
-        <div style="background: rgba(62, 207, 142, 0.08); border: 1.5px solid rgba(62, 207, 142, 0.35); border-radius: 8px; padding: 14px 16px; margin-top: 4px;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <span style="font-size: 16px;">⚡</span>
-              <span style="font-size: 13px; font-weight: 800; color: #3ecf8e;">Supabase Setup (Run Once in SQL Editor)</span>
-            </div>
-            <div style="display: flex; gap: 8px;">
-              <button type="button" id="btn-copy-supa-sql" class="btn btn-sm" style="background: #3ecf8e; color: #0b1329; font-weight: 800; font-size: 11.5px; padding: 4px 12px; border-radius: 6px; border: none; cursor: pointer; display: flex; align-items: center; gap: 5px;">
-                <span>📋</span> <span>Copy Setup SQL</span>
-              </button>
-              <a id="link-open-supa-sql" href="https://supabase.com/dashboard" target="_blank" class="btn btn-sm" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); font-weight: 700; font-size: 11.5px; padding: 4px 12px; border-radius: 6px; text-decoration: none; display: flex; align-items: center; gap: 5px;">
-                <span>↗️</span> <span>Open Supabase SQL Editor</span>
-              </a>
-            </div>
-          </div>
-          <p style="font-size: 11.5px; color: #cbd5e1; margin: 0 0 8px; line-height: 1.4;">
-            PostgreSQL requires the storage table before syncing. Copy this SQL, open the SQL Editor in your Supabase dashboard, paste and click <strong>Run</strong>:
-          </p>
-          <pre style="background: #090d16; border: 1px solid rgba(255,255,255,0.08); padding: 10px 12px; border-radius: 6px; font-size: 11px; color: #a7f3d0; margin: 0; overflow-x: auto; overflow-y: auto; max-height: 160px; font-family: monospace; line-height: 1.4; user-select: all; white-space: pre;">${SUPABASE_SETUP_SQL.trim()}</pre>
-        </div>
-      ` : ''}
 
-      ${spec.key === 'CLOUDFLARE_D1' ? `
-        <div style="background: rgba(249, 115, 22, 0.08); border: 1.5px solid rgba(249, 115, 22, 0.35); border-radius: 8px; padding: 14px 16px; margin-top: 4px;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <span style="font-size: 16px;">☁️</span>
-              <span style="font-size: 13px; font-weight: 800; color: #f97316;">Cloudflare D1 Worker Proxy (Required for Browser)</span>
-            </div>
-            <div style="display: flex; gap: 8px;">
-              <button type="button" id="btn-copy-cf-worker" class="btn btn-sm" style="background: #f97316; color: #fff; font-weight: 800; font-size: 11.5px; padding: 4px 12px; border-radius: 6px; border: none; cursor: pointer; display: flex; align-items: center; gap: 5px;">
-                <span>📋</span> <span>Copy Worker Code</span>
-              </button>
-              <a href="https://dash.cloudflare.com" target="_blank" class="btn btn-sm" style="background: rgba(249, 115, 22, 0.15); color: #fb923c; border: 1px solid rgba(249, 115, 22, 0.4); font-weight: 700; font-size: 11.5px; padding: 4px 12px; border-radius: 6px; text-decoration: none; display: flex; align-items: center; gap: 5px;">
-                <span>↗️</span> <span>Open Cloudflare Dashboard</span>
-              </a>
-            </div>
-          </div>
-          <p style="font-size: 11.5px; color: #cbd5e1; margin: 0 0 8px; line-height: 1.4;">
-            Direct calls to <code>api.cloudflare.com</code> are blocked by browser CORS. In Cloudflare Dashboard, create a Worker, paste this code, bind your D1 database as <strong>DB</strong>, and enter your Worker URL (e.g. <code>https://my-worker.subdomain.workers.dev</code>):
-          </p>
-          <pre style="background: #090d16; border: 1px solid rgba(255,255,255,0.08); padding: 10px 12px; border-radius: 6px; font-size: 11px; color: #fed7aa; margin: 0; overflow-x: auto; overflow-y: auto; max-height: 200px; font-family: monospace; line-height: 1.4; white-space: pre; word-break: normal;">${CLOUDFLARE_WORKER_CODE.trim()}</pre>
-        </div>
-      ` : ''}
 
       ${spec.key === 'MYSQL' ? `
         <div style="background: rgba(0, 117, 143, 0.08); border: 1.5px solid rgba(0, 117, 143, 0.4); border-radius: 8px; padding: 14px 16px; margin-top: 4px;">
@@ -1453,49 +1368,7 @@ function renderProviderForm(providerKey, dbId = null) {
     renderProviderForm(selectedKey, dbId);
   });
 
-  // Attach Supabase Copy SQL & Dynamic Link handlers
-  const btnCopySql = document.getElementById('btn-copy-supa-sql');
-  if (btnCopySql) {
-    btnCopySql.addEventListener('click', () => {
-      if (navigator.clipboard) {
-        navigator.clipboard.writeText(SUPABASE_SETUP_SQL).then(() => {
-          notificationService.toast('✅ Supabase setup SQL copied to clipboard! Paste and run it in Supabase SQL Editor.', 'success');
-        }).catch(() => {
-          notificationService.toast('Setup SQL copied!', 'info');
-        });
-      }
-    });
-  }
 
-  // Attach Cloudflare Worker Copy Code handler
-  const btnCopyWorker = document.getElementById('btn-copy-cf-worker');
-  if (btnCopyWorker) {
-    btnCopyWorker.addEventListener('click', () => {
-      if (navigator.clipboard) {
-        navigator.clipboard.writeText(CLOUDFLARE_WORKER_CODE).then(() => {
-          notificationService.toast('✅ Cloudflare Worker code copied to clipboard!', 'success');
-        }).catch(() => {
-          notificationService.toast('Worker code copied!', 'info');
-        });
-      }
-    });
-  }
-
-  const supaUrlInput = document.getElementById('cfg-url');
-  const supaLink = document.getElementById('link-open-supa-sql');
-  if (supaUrlInput && supaLink) {
-    const updateLink = () => {
-      const u = supaUrlInput.value.trim();
-      const m = u.match(/https:\/\/([a-z0-9_-]+)\.supabase\.co/i);
-      if (m && m[1]) {
-        supaLink.href = `https://supabase.com/dashboard/project/${m[1]}/sql/new`;
-      } else {
-        supaLink.href = 'https://supabase.com/dashboard';
-      }
-    };
-    supaUrlInput.addEventListener('input', updateLink);
-    updateLink();
-  }
 
   // Attach Test Connection Handler (Real check, real error)
   const btnTest = document.getElementById('btn-test-connection');
@@ -1525,16 +1398,7 @@ function renderProviderForm(providerKey, dbId = null) {
             resultBox.style.border = '1px solid rgba(239, 68, 68, 0.4)';
             resultBox.style.color = '#f87171';
             const errMsg = (testRes && testRes.error) ? testRes.error : 'Could not reach database endpoint. Please verify credentials.';
-            if (testRes && testRes.isTableMissing) {
-              resultBox.innerHTML = `
-                <div style="display: flex; flex-direction: column; gap: 6px;">
-                  <div>❌ <strong>Table Missing:</strong> ${errMsg}</div>
-                  <div style="font-size: 11.5px; color: #cbd5e1;">Click "Copy Setup SQL" above, run it in your Supabase SQL Editor, and test again.</div>
-                </div>
-              `;
-            } else {
               resultBox.innerHTML = `❌ <strong>Connection Notice:</strong> ${errMsg}`;
-            }
           }
         }
       } catch (err) {
@@ -1677,20 +1541,10 @@ function extractFormValues(spec) {
 function createTestAdapter(providerKey, config) {
   const c = { id: 'temp_test', name: 'Test Instance', ...config };
   switch (providerKey) {
-    case 'POSTGRESQL':
-      return new PostgresAdapter(c);
-    case 'MONGODB':
-      return new MongoAdapter(c);
     case 'MYSQL':
       return new MysqlAdapter(c);
-    case 'TURSO':
-      return new TursoAdapter(c);
-    case 'CLOUDFLARE_D1':
-      return new CloudflareD1Adapter(c);
-    case 'NEON':
-      return new NeonAdapter(c);
-    case 'SUPABASE':
-      return new SupabaseAdapter(c);
+    case 'POSTGRESQL':
+      return new PostgresAdapter(c);
     default:
       throw new Error(`Unsupported provider: ${providerKey}`);
   }

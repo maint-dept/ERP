@@ -686,8 +686,6 @@ class StorageEngine {
           console.warn('[Storage Multi-Device Sync] MySQL check note:', myErr.message);
         }
       }
-
-      }
     } catch (err) {
       console.warn('[Storage Multi-Device Sync] Remote check note:', err.message);
     } finally {

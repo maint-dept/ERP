@@ -13,6 +13,7 @@ export class RetryQueue {
   }
 
   async _initDB() {
+    if (typeof indexedDB === 'undefined') return;
     return new Promise((resolve, reject) => {
       const request = indexedDB.open(DB_NAME, DB_VERSION);
       request.onerror = (e) => reject('IndexedDB error: ' + e.target.error);

@@ -1,12 +1,7 @@
-import { SupabaseAdapter }     from './adapters/supabaseAdapterV2.js';
-import { PostgresAdapter }     from './adapters/postgresAdapter.js';
-import { TursoAdapter }        from './adapters/tursoAdapterV2.js';
-import { CloudflareD1Adapter } from './adapters/cloudflareD1AdapterV2.js';
-import { NeonAdapter }         from './adapters/neonAdapter.js';
-import { MongoAdapter }        from './adapters/mongoAdapter.js';
-import { MysqlAdapter }        from './adapters/mysqlAdapter.js';
-import { retryQueue }          from './retryQueue.js';
-import { storage }             from './storage.js';
+import { MysqlAdapter }    from './adapters/mysqlAdapter.js';
+import { PostgresAdapter } from './adapters/postgresAdapter.js';
+import { retryQueue }      from './retryQueue.js';
+import { storage }         from './storage.js';
 
 
 class SyncManager {
@@ -68,13 +63,8 @@ class SyncManager {
           if (conf && conf.enabled) {
             let adapter = null;
             const t = (conf.type || '').toUpperCase();
-            if (t === 'SUPABASE')       adapter = new SupabaseAdapter(conf);
+            if (t === 'MYSQL') adapter = new MysqlAdapter(conf);
             else if (t === 'POSTGRESQL' || t === 'POSTGRES') adapter = new PostgresAdapter(conf);
-            else if (t === 'TURSO')     adapter = new TursoAdapter(conf);
-            else if (t === 'CLOUDFLARE_D1' || t === 'CLOUDFLARE D1') adapter = new CloudflareD1Adapter(conf);
-            else if (t === 'NEON')      adapter = new NeonAdapter(conf);
-            else if (t === 'MONGODB' || t === 'MONGO') adapter = new MongoAdapter(conf);
-            else if (t === 'MYSQL')     adapter = new MysqlAdapter(conf);
 
             if (adapter) {
               // If configured as PRIMARY, assign as primaryAdapter
