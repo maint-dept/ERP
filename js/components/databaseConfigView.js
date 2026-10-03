@@ -1500,13 +1500,13 @@ service cloud.firestore {
             </div>
           </div>
           <p style="font-size: 12px; color: #cbd5e1; margin: 0 0 10px; line-height: 1.5;">
-            Paid Hosting (cPanel / Hostinger / Namecheap)-এ সরাসরি ব্রাউজার থেকে MySQL TCP (port 3306) কানেক্ট হতে পারে না। তাই সহজে কানেক্ট করার জন্য ৩টি সহজ ধাপ অনুসরণ করুন:
+            Paid Hosting (cPanel / Hostinger / Namecheap / VPS) blocks direct TCP socket connections (port 3306) from browsers. Follow these 4 quick steps to connect seamlessly:
           </p>
           <div style="background: #090d16; border: 1px solid rgba(255,255,255,0.08); padding: 12px 14px; border-radius: 6px; font-size: 11.5px; color: #e2e8f0; line-height: 1.6;">
-            <strong>ধাপ ১:</strong> আপনার Paid Hosting cPanel-এ গিয়ে <em>MySQL Databases</em> থেকে নতুন ডাটাবেজ ও ইউজার তৈরি করুন এবং All Privileges দিন।<br/>
-            <strong>ধাপ ২:</strong> <em>phpMyAdmin</em> ওপেন করে ডাটাবেজ সিলেক্ট করে <strong>Import</strong> ট্যাবে ক্লিক করে <code>erp_mysql_dump.sql</code> ফাইলটি আপলোড করুন। (সব ফ্যাক্টরি ডাটা ও টেবিল তৈরি হয়ে যাবে)।<br/>
-            <strong>ধাপ ৩:</strong> cPanel <em>File Manager</em>-এ গিয়ে <code>public_html/api/</code> ফোল্ডারে <code>mysql_api.php</code> ফাইলটি আপলোড করুন এবং ফাইলের শুরুতে আপনার ডাটাবেজের ইউজার ও পাসওয়ার্ড লিখে দিন।<br/>
-            <strong>ধাপ ৪:</strong> উপরের <strong>Hosting REST API Endpoint URL</strong> ঘরে আপনার ওয়েবসাইটের লিংক দিন (যেমন: <code>https://yourdomain.com/api/mysql_api.php</code>) এবং নিচে <strong>[ Test Connection ]</strong> চাপুন!
+            <strong>Step 1:</strong> In your Paid Hosting cPanel, navigate to <em>MySQL Databases</em>, create database <code>maint_erp</code>, user <code>mainterp</code>, password <code>Maint@456</code>, and grant All Privileges.<br/>
+            <strong>Step 2:</strong> Open <em>phpMyAdmin</em>, select database <code>maint_erp</code>, click the <strong>Import</strong> tab, and upload <code>erp_mysql_dump.sql</code>. (All factory tables and records will be initialized instantly).<br/>
+            <strong>Step 3:</strong> In cPanel <em>File Manager</em>, upload <code>mysql_api.php</code> into <code>public_html/api/</code> (credentials are already pre-configured inside).<br/>
+            <strong>Step 4:</strong> Enter your hosting URL in the <strong>Hosting REST API Endpoint URL</strong> field above (e.g. <code>https://yourdomain.com/api/mysql_api.php</code>) and click <strong>[ Test Connection ]</strong> below!
           </div>
         </div>
       ` : ''}
