@@ -103,9 +103,7 @@ async function fetchAllFirestoreTables() {
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
 
--- 1. Create and Select Database: maint_erp
-CREATE DATABASE IF NOT EXISTS \`maint_erp\` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE \`maint_erp\`;
+-- 1. Create Core ERP Storage Table (Auto-imports directly into selected cPanel database)
 
 -- 2. Create Core ERP Storage Table
 CREATE TABLE IF NOT EXISTS \`erp_tables\` (

@@ -13,11 +13,11 @@
  * =========================================================================================
  */
 
-// --- 1. CONFIGURATION (PRE-CONFIGURED FOR YOUR PAID HOSTING) ---
+// --- 1. CONFIGURATION (PRE-CONFIGURED FOR YOUR CPANEL HOSTING) ---
 $DB_HOST = 'localhost';          // Standard localhost on cPanel / Paid Hosting
 $DB_PORT = 3306;                 // Default MySQL port
-$DB_NAME = 'maint_erp';          // User Database Name
-$DB_USER = 'mainterp';           // User Database Username
+$DB_NAME = 'motaherh_maint-erp'; // From your cPanel phpMyAdmin: motaherh_maint-erp
+$DB_USER = 'motaherh_mainterp';  // In cPanel, user is usually motaherh_mainterp
 $DB_PASS = 'Maint@456';          // User Database Password
 $API_KEY = '';                   // Optional: Set a secret key if desired
 
@@ -71,20 +71,36 @@ if (!empty($API_KEY)) {
 }
 
 // --- 4. DATABASE CONNECTION ---
-try {
-    $dsn = "mysql:host={$DB_HOST};port={$DB_PORT};dbname={$DB_NAME};charset=utf8mb4";
-    $pdo = new PDO($dsn, $DB_USER, $DB_PASS, [
-        PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
-        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-        PDO::ATTR_EMULATE_PREPARES   => false,
-        PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci"
-    ]);
-} catch (PDOException $e) {
+$dbCandidates = array_unique([$DB_NAME, 'motaherh_maint-erp', 'motaherh_maint_erp', 'maint_erp']);
+$userCandidates = array_unique([$DB_USER, 'motaherh_mainterp', 'mainterp']);
+$pdo = null;
+$lastError = '';
+
+foreach ($dbCandidates as $candidateDb) {
+    foreach ($userCandidates as $candidateUser) {
+        try {
+            $dsn = "mysql:host={$DB_HOST};port={$DB_PORT};dbname={$candidateDb};charset=utf8mb4";
+            $pdo = new PDO($dsn, $candidateUser, $DB_PASS, [
+                PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                PDO::ATTR_EMULATE_PREPARES   => false,
+                PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci"
+            ]);
+            $DB_NAME = $candidateDb;
+            $DB_USER = $candidateUser;
+            break 2;
+        } catch (PDOException $e) {
+            $lastError = $e->getMessage();
+        }
+    }
+}
+
+if (!$pdo) {
     http_response_code(500);
     echo json_encode([
         'success' => false,
-        'error' => 'Database connection failed: ' . $e->getMessage(),
-        'tip' => 'Please check your MySQL host, database name, username and password in mysql_api.php'
+        'error' => 'Database connection failed: ' . $lastError,
+        'tip' => 'Please check your MySQL database name and user in cPanel'
     ]);
     exit;
 }

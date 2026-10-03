@@ -4,15 +4,13 @@
 -- Database User: mainterp
 -- Target Engine: InnoDB / utf8mb4
 -- Backed up from: Firebase Cloud Firestore + ERP Data Engine
--- Date: 2026-10-03T04:01:51.615Z
+-- Date: 2026-10-03T04:16:04.925Z
 -- =============================================================================
 
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
 
--- 1. Create and Select Database: maint_erp
-CREATE DATABASE IF NOT EXISTS `maint_erp` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE `maint_erp`;
+-- 1. Create Core ERP Storage Table (Auto-imports directly into selected cPanel database)
 
 -- 2. Create Core ERP Storage Table
 CREATE TABLE IF NOT EXISTS `erp_tables` (
