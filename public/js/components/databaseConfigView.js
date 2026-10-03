@@ -264,8 +264,26 @@ function getDashboardSyncState() {
     const stored = localStorage.getItem('erp_multi_db_config');
     if (stored) rawConfigs = JSON.parse(stored);
   } catch (_) {}
-  if ((!rawConfigs || rawConfigs.length === 0) && storage && typeof storage.getMultiDbConfigs === 'function') {
-    try { rawConfigs = storage.getMultiDbConfigs() || []; } catch (_) {}
+  // Default active database: MySQL maint_erp
+  if (!rawConfigs || rawConfigs.length === 0) {
+    rawConfigs = [{
+      id: 'mysql_primary',
+      name: 'MySQL (maint_erp)',
+      type: 'MYSQL',
+      role: 'PRIMARY',
+      host: 'localhost',
+      port: 3306,
+      database: 'maint_erp',
+      username: 'mainterp',
+      password: 'Maint@456',
+      endpoint: 'api/mysql_api.php',
+      apiKey: '',
+      enabled: true,
+      autoSync: true,
+      retryEnabled: true,
+      updatedAt: new Date().toISOString()
+    }];
+    try { localStorage.setItem('erp_multi_db_config', JSON.stringify(rawConfigs)); } catch (_) {}
   }
 
   // Filter out any invalid or legacy entries without valid ID
@@ -315,7 +333,7 @@ function getDashboardSyncState() {
       name,
       type,
       icon,
-      role:            'SECONDARY',
+      role:            conf.role || 'SECONDARY',
       enabled:         !!conf.enabled,
       status,
       statusLabel,
@@ -344,24 +362,51 @@ function getDashboardSyncState() {
     }
   }
 
+  // Determine Master (Primary) database: MySQL or Firebase
+  const primaryDb = databases.find(d => d.role === 'PRIMARY') || (rawConfigs.find(c => c.role === 'PRIMARY') ? {
+    name: 'MySQL (maint_erp)',
+    label: 'Main Database — MySQL (maint_erp)',
+    status: 'CONNECTED',
+    total,
+    matched: total,
+    missing: 0,
+    duplicates: 0,
+    failed: 0,
+    syncPct: 100.0,
+    lastSync: lastSyncTime
+  } : null);
+
+  const masterObj = primaryDb ? {
+    name: primaryDb.name,
+    label: `Main Database — ${primaryDb.name}`,
+    status: 'CONNECTED',
+    total,
+    matched: total,
+    missing: 0,
+    duplicates: 0,
+    failed: 0,
+    syncPct: 100.0,
+    lastSync: lastSyncTime
+  } : {
+    name: 'Firebase',
+    label: 'Main Database — Firebase',
+    status: 'CONNECTED',
+    total,
+    matched: total,
+    missing: 0,
+    duplicates: 0,
+    failed: 0,
+    syncPct: 100.0,
+    lastSync: lastSyncTime
+  };
+
   return {
     autoSync,
     lastSyncTime,
     pendingCount,
     failedCount,
     duplicateCount: databases.reduce((a, d) => a + (d.duplicates || 0), 0),
-    master: {
-      name: 'Firebase',
-      label: 'Main Database — Firebase',
-      status: 'CONNECTED',
-      total,
-      matched: total,
-      missing: 0,
-      duplicates: 0,
-      failed: 0,
-      syncPct: 100.0,
-      lastSync: lastSyncTime
-    },
+    master: masterObj,
     databases,
     missingRecords
   };

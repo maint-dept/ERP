@@ -725,17 +725,29 @@ class StorageEngine {
     if (!manifest || typeof manifest !== 'object' || Object.keys(manifest).length === 0) return;
 
     // On very first snapshot on page startup, seed syncedDocVersions with current remote timestamps
-    // so we don't redundantly re-fetch tables that are already loaded / being loaded by startup sync
+    // IMPORTANT: Only skip refetch if critical data is already loaded from Firebase startup sync.
+    // If local data is still initial/empty (startup sync not yet done), allow fetch to proceed.
     if (!this._hasReceivedInitialManifest) {
       this._hasReceivedInitialManifest = true;
+
+      // Check if critical data was already loaded by syncWithServerDatabase (startup sync)
+      const criticalDataAlreadyLoaded = this._hasCriticalSyncCompleted;
+
       for (const [tbl, ts] of Object.entries(manifest)) {
         if (ts && typeof ts === 'string') {
           if (!this.syncedDocVersions.has(tbl)) {
-            this.syncedDocVersions.set(tbl, ts);
+            // Only pre-seed version if critical sync already loaded this table from cloud
+            // If not yet loaded, leave syncedDocVersions empty so next poll/check will fetch it
+            if (criticalDataAlreadyLoaded) {
+              this.syncedDocVersions.set(tbl, ts);
+            }
           }
         }
       }
-      return;
+
+      // If critical sync hasn't completed yet, let the normal syncWithServerDatabase handle it
+      if (criticalDataAlreadyLoaded) return;
+      // Otherwise fall through to fetch logic below
     }
 
     if (this._isHandlingRealtimeUpdate) return;
@@ -968,7 +980,7 @@ class StorageEngine {
       // Step A: Fetch lightweight manifest to know what's present in cloud
       let manifest = null;
       try {
-        manifest = await firebaseSync.fetchSyncManifest(4000);
+        manifest = await firebaseSync.fetchSyncManifest(8000);
       } catch (e) {
         console.warn('[Storage] fetchSyncManifest note:', e.message);
       }
@@ -981,7 +993,7 @@ class StorageEngine {
         const fetchResults = await Promise.all(
           criticalTablesToFetch.map(async (tbl) => {
             try {
-              const res = await firebaseSync.fetchTableFromFirestore(tbl);
+              const res = await firebaseSync.fetchTableFromFirestore(tbl, 10000);
               return { tbl, res };
             } catch (_) {
               return { tbl, res: null };
@@ -1030,7 +1042,7 @@ class StorageEngine {
       } else {
         // Fallback: If manifest is empty or failed, attempt fetchAllFromFirestore
         console.log('[Storage] Manifest empty or unreachable, attempting fetchAllFromFirestore fallback...');
-        const cloudData = await firebaseSync.fetchAllFromFirestore(8000);
+        const cloudData = await firebaseSync.fetchAllFromFirestore(12000);
         if (cloudData && typeof cloudData === 'object' && !cloudData._isEmpty && Object.keys(cloudData).length > 0) {
           this._isCloudConnected = true;
           const updateTimes = cloudData._updateTimes || {};
@@ -1668,9 +1680,28 @@ class StorageEngine {
     } catch (_) {}
     try {
       const local = localStorage.getItem('erp_multi_db_config');
-      if (local) return JSON.parse(local);
+      if (local) {
+        const parsed = JSON.parse(local);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
     } catch (_) {}
-    return [];
+    return [{
+      id: 'mysql_primary',
+      name: 'MySQL (maint_erp)',
+      type: 'MYSQL',
+      role: 'PRIMARY',
+      host: 'localhost',
+      port: 3306,
+      database: 'maint_erp',
+      username: 'mainterp',
+      password: 'Maint@456',
+      endpoint: 'api/mysql_api.php',
+      apiKey: '',
+      enabled: true,
+      autoSync: true,
+      retryEnabled: true,
+      updatedAt: new Date().toISOString()
+    }];
   }
 
   async saveMultiDbConfigs(configs) {

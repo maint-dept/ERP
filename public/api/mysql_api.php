@@ -13,13 +13,13 @@
  * =========================================================================================
  */
 
-// --- 1. CONFIGURATION (EDIT THESE FOR YOUR PAID HOSTING) ---
-$DB_HOST = 'localhost';          // Usually 'localhost' on shared hosting / cPanel
+// --- 1. CONFIGURATION (PRE-CONFIGURED FOR YOUR PAID HOSTING) ---
+$DB_HOST = 'localhost';          // Standard localhost on cPanel / Paid Hosting
 $DB_PORT = 3306;                 // Default MySQL port
-$DB_NAME = 'al_muslim_erp';      // Your cPanel Database Name (e.g. cpaneluser_erp)
-$DB_USER = 'root';               // Your cPanel Database Username (e.g. cpaneluser_admin)
-$DB_PASS = '';                   // Your cPanel Database Password
-$API_KEY = '';                   // Optional: Set a secret key (e.g. 'al_muslim_secret_2026')
+$DB_NAME = 'maint_erp';          // User Database Name
+$DB_USER = 'mainterp';           // User Database Username
+$DB_PASS = 'Maint@456';          // User Database Password
+$API_KEY = '';                   // Optional: Set a secret key if desired
 
 // --- 2. CORS HEADERS (Allows GitHub Pages & any frontend domain to connect) ---
 header('Access-Control-Allow-Origin: *');

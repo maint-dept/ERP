@@ -1680,9 +1680,28 @@ class StorageEngine {
     } catch (_) {}
     try {
       const local = localStorage.getItem('erp_multi_db_config');
-      if (local) return JSON.parse(local);
+      if (local) {
+        const parsed = JSON.parse(local);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
     } catch (_) {}
-    return [];
+    return [{
+      id: 'mysql_primary',
+      name: 'MySQL (maint_erp)',
+      type: 'MYSQL',
+      role: 'PRIMARY',
+      host: 'localhost',
+      port: 3306,
+      database: 'maint_erp',
+      username: 'mainterp',
+      password: 'Maint@456',
+      endpoint: 'api/mysql_api.php',
+      apiKey: '',
+      enabled: true,
+      autoSync: true,
+      retryEnabled: true,
+      updatedAt: new Date().toISOString()
+    }];
   }
 
   async saveMultiDbConfigs(configs) {
