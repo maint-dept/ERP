@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Al-Muslim Group Garments Factory Maintenance Machine ERP
  * Machine History & Lifecycle Tracking Service
  * Handles Automatic Activity Tracking, Location Audits, Service & Repair Logs, Spare Parts & Passport Generation
@@ -589,7 +589,7 @@ class HistoryService {
 
     const partsTable = storage.getTable(TABLE_NAMES.SPARE_PARTS) || [];
     partsTable.unshift(partRecord);
-    // CONFIRMED WRITE: await Firebase HTTP 200
+    // CONFIRMED WRITE: await Database write
     const ok = await storage.saveTable(TABLE_NAMES.SPARE_PARTS);
     if (!ok) throw new CloudSaveError('❌ Cloud Save Failed: Spare part replacement was not confirmed by the cloud.');
 

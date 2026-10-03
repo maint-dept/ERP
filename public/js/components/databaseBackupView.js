@@ -6,7 +6,6 @@ import { retryQueue } from '../db/retryQueue.js';
 import { notificationService } from '../services/notificationService.js';
 import { storage } from '../db/storage.js';
 import { SupabaseAdapter, SUPABASE_SETUP_SQL } from '../db/adapters/supabaseAdapterV2.js';
-import { FirebaseAdapter } from '../db/adapters/firebaseAdapterV2.js';
 import { TursoAdapter } from '../db/adapters/tursoAdapterV2.js';
 
 export function renderMultiDatabaseBackupHTML() {
@@ -37,7 +36,6 @@ export function renderMultiDatabaseBackupHTML() {
     '<div>',
     '<label style="font-size: 12px; font-weight: 700; color: #94a3b8; display: block; margin-bottom: 4px;">Database Type</label>',
     '<select id="add-db-type" class="form-control" style="background: #1e293b; border-color: #475569; color: #fff; font-size: 13px;">',
-    '<option value="Firebase">Firebase</option>',
     '<option value="Supabase" selected>Supabase</option>',
     '<option value="Turso">Turso (LibSQL)</option>',
     '</select>',
@@ -61,12 +59,6 @@ export function renderMultiDatabaseBackupHTML() {
     '<button type="button" id="btn-copy-supa-backup-sql" style="background: #3ecf8e; color: #0b1329; border: none; font-size: 10.5px; font-weight: 800; padding: 3px 8px; border-radius: 4px; cursor: pointer;">📋 Copy SQL</button>',
     '</div>',
     '<div style="font-size: 11px; color: #94a3b8; line-height: 1.3;">Run this SQL in your Supabase SQL Editor to create <code>erp_tables</code>.</div>',
-    '</div>',
-    '</div>',
-    '<div id="firebase-inputs" style="display: none; flex-direction: column; gap: 14px;">',
-    '<div>',
-    '<label style="font-size: 12px; font-weight: 700; color: #94a3b8; display: block; margin-bottom: 4px;">Firebase Config JSON</label>',
-    '<textarea id="add-db-fb-config" class="form-control" rows="4" placeholder=\'{ "apiKey": "...", "authDomain": "...", ... }\' style="background: #1e293b; border-color: #475569; color: #fff; font-size: 13px;"></textarea>',
     '</div>',
     '</div>',
     '<div id="turso-inputs" style="display: none; flex-direction: column; gap: 14px;">',
@@ -129,22 +121,21 @@ export function initMultiDatabaseBackupEvents() {
     } catch (e) {
       console.warn('Retry queue stats read notice:', e);
     }
-    var fbFailures = pendingStats.filter(function (p) { return p.dbId === 'default_fb'; }).length;
-    var isFailoverActive = fbFailures > 0;
-    var fbIcon = isFailoverActive ? 'red' : 'green';
-    var fbStatus = isFailoverActive ? 'Connection Error (Failover Active)' : 'Connected';
-    var failoverHandledBy = null;
+    var primaryFailures = pendingStats.filter(function (p) { return p.dbId === 'mysql_primary'; }).length;
+    var isFailoverActive = primaryFailures > 0;
+    var primaryIcon = isFailoverActive ? 'red' : 'green';
+    var primaryStatus = isFailoverActive ? 'Connection Error (Failover Active)' : 'Connected';
 
     var dbList = [{
-      id: 'default_fb',
-      name: 'Firebase',
-      type: 'Firebase',
-      role: 'Main Database',
-      iconColor: fbIcon,
-      statusText: fbStatus,
-      pending: fbFailures,
+      id: 'mysql_primary',
+      name: 'MySQL (maint_erp)',
+      type: 'MySQL',
+      role: 'Primary Database',
+      iconColor: primaryIcon,
+      statusText: primaryStatus,
+      pending: primaryFailures,
       failed: 0,
-      lastSync: fbFailures > 0 ? 'Failing...' : 'Just now'
+      lastSync: primaryFailures > 0 ? 'Failing...' : 'Live Synced'
     }];
 
     var configs = [];
@@ -239,7 +230,6 @@ export function initMultiDatabaseBackupEvents() {
           var t = (target.type || '').toUpperCase();
           if (t === 'SUPABASE') adapter = new SupabaseAdapter(target);
           else if (t === 'TURSO') adapter = new TursoAdapter(target);
-          else if (t === 'FIREBASE') adapter = new FirebaseAdapter(target);
           if (adapter) {
             var res = await adapter.testConnection();
             if (res && res.success) {
@@ -354,31 +344,11 @@ export function initMultiDatabaseBackupEvents() {
       } catch (err) {
         notificationService.toast('❌ Connection error: ' + err.message, 'error');
       }
-    } else {
-      var fbConf = document.getElementById('add-db-fb-config').value.trim();
-      if (!fbConf) {
-        notificationService.toast('Please enter Firebase Config JSON first', 'error');
-        return;
-      }
-      notificationService.toast('Testing Firebase connection...', 'info');
-      try {
-        var fbAdapter = new FirebaseAdapter({ connStr: fbConf });
-        var fbRes = await fbAdapter.testConnection();
-        if (fbRes && fbRes.success) {
-          notificationService.toast('✅ Firebase connected successfully! (Latency: ' + (fbRes.latency || 0) + 'ms)', 'success');
-        } else {
-          var fbMsg = (fbRes && fbRes.error) ? fbRes.error : 'Connection failed';
-          notificationService.toast('❌ ' + fbMsg, 'error');
-        }
-      } catch (err) {
-        notificationService.toast('❌ Connection error: ' + err.message, 'error');
-      }
     }
   };
   document.getElementById('add-db-type').onchange = function (e) {
     var val = e.target.value;
     document.getElementById('supabase-inputs').style.display = val === 'Supabase' ? 'flex' : 'none';
-    document.getElementById('firebase-inputs').style.display = val === 'Firebase' ? 'flex' : 'none';
     document.getElementById('turso-inputs').style.display = val === 'Turso' ? 'flex' : 'none';
   };
 
@@ -412,12 +382,6 @@ export function initMultiDatabaseBackupEvents() {
       newCfg.authToken = document.getElementById('add-db-turso-token').value.trim();
       if (!newCfg.databaseUrl || !newCfg.authToken) {
         notificationService.toast('Turso Database URL and Auth Token are required!', 'error');
-        return;
-      }
-    } else {
-      newCfg.connStr = document.getElementById('add-db-fb-config').value.trim();
-      if (!newCfg.connStr) {
-        notificationService.toast('Firebase Config is required!', 'error');
         return;
       }
     }

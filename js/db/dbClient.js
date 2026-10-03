@@ -4,7 +4,7 @@
  *
  * Core Design Decision:
  * All ERP modules interact with this unified client interface regardless of
- * whether the active underlying provider is PostgreSQL, Turso, Firebase,
+ * whether the active underlying provider is MySQL, PostgreSQL, Turso,
  * Cloudflare D1, or Neon.
  *
  * Examples:

@@ -2,13 +2,13 @@
  * Al-Muslim Group ERP — Data Engine & Multi-Provider Sync Dashboard
  *
  * Provides a comprehensive real-time synchronization view:
- * 1. Master / Source Database identification (Firebase)
- * 2. Visual Database Sync Topology Tree (Firebase -> PostgreSQL, MongoDB, MySQL, etc.)
+ * 1. Master / Source Database identification (MySQL Primary)
+ * 2. Visual Database Sync Topology Tree (MySQL Primary -> PostgreSQL, etc.)
  * 3. Data Flow fan-out view showing auto-sync percentages
  * 4. Data Differences table showing Total, Matched, Missing, Duplicates, Failed records
  * 5. Auto Sync ON/OFF toggle and Last Sync timestamp
  * 6. Interactive Missing Records viewer and instant Reconciliation repair
- * 7. Multi-Provider Configuration forms (PostgreSQL, MongoDB, MySQL, Turso, Firebase, Cloudflare D1, Neon)
+ * 7. Multi-Provider Configuration forms (MySQL, PostgreSQL)
  * 8. Unified Core Schema preview & Persistent Disk Storage backup/restore
  */
 
@@ -18,7 +18,6 @@ import { notificationService } from '../services/notificationService.js';
 import { db } from '../db/dbClient.js';
 import { PostgresAdapter } from '../db/adapters/postgresAdapter.js';
 import { TursoAdapter } from '../db/adapters/tursoAdapterV2.js';
-import { FirebaseAdapter } from '../db/adapters/firebaseAdapterV2.js';
 import { CloudflareD1Adapter } from '../db/adapters/cloudflareD1AdapterV2.js';
 import { NeonAdapter } from '../db/adapters/neonAdapter.js';
 import { MongoAdapter } from '../db/adapters/mongoAdapter.js';
@@ -390,7 +389,7 @@ export function renderDatabaseConfigView() {
       <!-- SECTION 1: TWO-COLUMN OVERVIEW (Database Status Card & Data Flow Tree) -->
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 20px; margin-bottom: 24px;">
         
-        <!-- Screenshot 1 Card: Database Status (Firebase Main Database) -->
+        <!-- Screenshot 1 Card: Database Status (MySQL Main Database) -->
         <div style="background: #090e1a; border: 1.5px solid #10b981; border-left: 4px solid #10b981; border-radius: 12px; padding: 22px; box-shadow: 0 10px 30px rgba(0,0,0,0.45); display: flex; flex-direction: column; justify-content: space-between;">
           <div>
             <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
@@ -1304,9 +1303,6 @@ function renderProviderForm(providerKey, dbId = null) {
       <!-- Specific Required Fields -->
       ${spec.fields.map(f => {
         let val = existing[f.id] !== undefined ? existing[f.id] : (f.defaultValue || '');
-        if (f.id === 'databaseURL' && (val === 'https://al-muslim-erp-default-rtdb.firebaseio.com' || val.includes('default-rtdb'))) {
-          val = '';
-        }
         if (f.type === 'checkbox') {
           return `
             <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
@@ -1351,31 +1347,6 @@ function renderProviderForm(providerKey, dbId = null) {
             PostgreSQL requires the storage table before syncing. Copy this SQL, open the SQL Editor in your Supabase dashboard, paste and click <strong>Run</strong>:
           </p>
           <pre style="background: #090d16; border: 1px solid rgba(255,255,255,0.08); padding: 10px 12px; border-radius: 6px; font-size: 11px; color: #a7f3d0; margin: 0; overflow-x: auto; overflow-y: auto; max-height: 160px; font-family: monospace; line-height: 1.4; user-select: all; white-space: pre;">${SUPABASE_SETUP_SQL.trim()}</pre>
-        </div>
-      ` : ''}
-
-      ${spec.key === 'FIREBASE' ? `
-        <div style="background: rgba(245, 158, 11, 0.08); border: 1.5px solid rgba(245, 158, 11, 0.35); border-radius: 8px; padding: 14px 16px; margin-top: 4px;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <span style="font-size: 16px;">🔥</span>
-              <span style="font-size: 13px; font-weight: 800; color: #f59e0b;">Cloud Firestore Rules Setup (Required Once)</span>
-            </div>
-            <a id="link-open-fb-rules" href="https://console.firebase.google.com" target="_blank" class="btn btn-sm" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); font-weight: 700; font-size: 11.5px; padding: 4px 12px; border-radius: 6px; text-decoration: none; display: flex; align-items: center; gap: 5px;">
-              <span>↗️</span> <span>Open Firestore Rules Tab</span>
-            </a>
-          </div>
-          <p style="font-size: 11.5px; color: #cbd5e1; margin: 0 0 8px; line-height: 1.4;">
-            If Cloud Firestore is in locked mode, sync writes will be blocked. In your Firebase Console, open <strong>Firestore Database → Rules</strong> tab, paste and <strong>Publish</strong>:
-          </p>
-          <pre style="background: #090d16; border: 1px solid rgba(255,255,255,0.08); padding: 10px 12px; border-radius: 6px; font-size: 11px; color: #fde68a; margin: 0; overflow-x: auto; overflow-y: auto; max-height: 120px; font-family: monospace; line-height: 1.4; white-space: pre;">rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /{document=**} {
-      allow read, write: if true;
-    }
-  }
-}</pre>
         </div>
       ` : ''}
 
@@ -1524,21 +1495,6 @@ service cloud.firestore {
     };
     supaUrlInput.addEventListener('input', updateLink);
     updateLink();
-  }
-
-  const fbProjInput = document.getElementById('cfg-projectId');
-  const fbRulesLink = document.getElementById('link-open-fb-rules');
-  if (fbProjInput && fbRulesLink) {
-    const updateFbLink = () => {
-      const p = fbProjInput.value.trim();
-      if (p) {
-        fbRulesLink.href = `https://console.firebase.google.com/project/${encodeURIComponent(p)}/firestore/rules`;
-      } else {
-        fbRulesLink.href = 'https://console.firebase.google.com';
-      }
-    };
-    fbProjInput.addEventListener('input', updateFbLink);
-    updateFbLink();
   }
 
   // Attach Test Connection Handler (Real check, real error)
@@ -1729,8 +1685,6 @@ function createTestAdapter(providerKey, config) {
       return new MysqlAdapter(c);
     case 'TURSO':
       return new TursoAdapter(c);
-    case 'FIREBASE':
-      return new FirebaseAdapter(c);
     case 'CLOUDFLARE_D1':
       return new CloudflareD1Adapter(c);
     case 'NEON':

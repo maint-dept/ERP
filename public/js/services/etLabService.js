@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Al-Muslim Group Garments Factory Maintenance Machine ERP
  * ENT Lab Management Service
  * 
@@ -182,7 +182,7 @@ class EtLabService {
       updatedAt: new Date().toISOString()
     };
 
-    // CONFIRMED WRITE: await Firebase HTTP 200 before success
+    // CONFIRMED WRITE: await Database write before success
     await storage.writeAndConfirm(TABLE_NAMES.ET_BOARDS, (tbl) => {
       const idx = tbl.findIndex(b => b.id === id);
       if (idx !== -1) tbl[idx] = updated;
@@ -210,7 +210,7 @@ class EtLabService {
       throw new Error(`Cannot delete board [${existing.boardSerial}] because it is currently installed on machine ${existing.currentMachineSerial}. Please remove it first.`);
     }
 
-    // CONFIRMED WRITE: await Firebase HTTP 200 before success
+    // CONFIRMED WRITE: await Database write before success
     await storage.writeAndConfirm(TABLE_NAMES.ET_BOARDS, (tbl) => {
       const idx = tbl.findIndex(b => b.id === id);
       if (idx !== -1) tbl.splice(idx, 1);

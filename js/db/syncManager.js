@@ -1,4 +1,3 @@
-import { FirebaseAdapter }     from './adapters/firebaseAdapterV2.js';
 import { SupabaseAdapter }     from './adapters/supabaseAdapterV2.js';
 import { PostgresAdapter }     from './adapters/postgresAdapter.js';
 import { TursoAdapter }        from './adapters/tursoAdapterV2.js';
@@ -70,7 +69,6 @@ class SyncManager {
             let adapter = null;
             const t = (conf.type || '').toUpperCase();
             if (t === 'SUPABASE')       adapter = new SupabaseAdapter(conf);
-            else if (t === 'FIREBASE')  adapter = new FirebaseAdapter(conf);
             else if (t === 'POSTGRESQL' || t === 'POSTGRES') adapter = new PostgresAdapter(conf);
             else if (t === 'TURSO')     adapter = new TursoAdapter(conf);
             else if (t === 'CLOUDFLARE_D1' || t === 'CLOUDFLARE D1') adapter = new CloudflareD1Adapter(conf);
@@ -99,22 +97,6 @@ class SyncManager {
         try { localStorage.setItem('erp_multi_db_config', JSON.stringify(configs)); } catch (_) {}
       }
 
-      // Ensure default Firebase Firestore adapter is always registered as an active secondary (enables instant onSnapshot real-time push to all devices)
-      const hasFirebase = Array.from(this.secondaryAdapters.values()).some(a => a.type === 'FIREBASE') || (this.primaryAdapter?.type === 'FIREBASE');
-      if (!hasFirebase) {
-        const fbAdapter = new FirebaseAdapter({
-          id: 'default_fb',
-          name: 'Google Cloud Firestore',
-          type: 'FIREBASE',
-          role: 'BACKUP',
-          projectId: 'maint-dept-erp',
-          enabled: true,
-          autoSync: true,
-          retryEnabled: true
-        });
-        this.secondaryAdapters.set('default_fb', fbAdapter);
-      }
-
       this.configLoaded = true;
     } catch (e) {
       console.error('Failed to load DB config', e);
@@ -137,7 +119,7 @@ class SyncManager {
   }
 
   /**
-   * Save an entire table to Primary (Firebase), then Fan-out to Secondaries
+   * Save an entire table to Primary (MySQL), then Fan-out to Secondaries
    */
   async saveTable(collection, dataObj) {
     await this._ensureConfig();
@@ -170,7 +152,7 @@ class SyncManager {
   }
 
   /**
-   * Save a single record to Primary (Firebase), then Fan-out to Secondaries
+   * Save a single record to Primary (MySQL), then Fan-out to Secondaries
    */
   async saveRecord(collection, docId, data) {
     await this._ensureConfig();
@@ -291,8 +273,8 @@ class SyncManager {
   }
 
   /**
-   * Run a Full Initial Sync / Migration from Primary (Firebase) to a specific Secondary Database.
-   * Reads all tables from in-memory storage (mirrors Firebase) and bulk-upserts to the target.
+   * Run a Full Initial Sync / Migration from Primary (MySQL) to a specific Secondary Database.
+   * Reads all tables from in-memory storage (mirrors MySQL Primary) and bulk-upserts to the target.
    */
   async runFullSync(dbId) {
     await this._ensureConfig();

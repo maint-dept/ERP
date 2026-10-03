@@ -40,7 +40,7 @@ if not exist ".git" (
 
 echo [3/3] Adding files, committing and pushing to GitHub...
 "%GIT_EXE%" add .
-"%GIT_EXE%" commit -m "Update ERP system and Firebase cloud synchronization"
+"%GIT_EXE%" commit -m "Update ERP system and MySQL database synchronization"
 echo.
 echo Now pushing to https://github.com/maint-dept/ERP ...
 echo (If a GitHub login window appears in your browser, click 'Sign in with your browser')
@@ -50,7 +50,7 @@ echo.
 if %ERRORLEVEL% equ 0 (
     echo.
     echo =========================================================================
-    echo  [SUCCESS] All files and Firebase updates pushed to GitHub!
+    echo  [SUCCESS] All files and MySQL database updates pushed to GitHub!
     echo  GitHub Pages is now deploying your site.
     echo  Please check in 1-2 minutes:
     echo  https://maint-dept.github.io/ERP/

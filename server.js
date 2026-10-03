@@ -1,7 +1,6 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
-const serverFirebase = require('./serverFirebase');
 
 const PORT = process.env.PORT || 3030;
 const PUBLIC_DIR = path.join(__dirname, 'public');
@@ -58,20 +57,7 @@ const server = http.createServer((req, res) => {
     return res.end(JSON.stringify({ status: 'ok', system: 'Al-Muslim Group - Maintenance Department ERP' }));
   }
 
-  // Firebase status check endpoint
-  if (urlPath === '/api/firebase/status') {
-    serverFirebase.checkFirestoreReady().then(ready => {
-      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-      res.end(JSON.stringify({ 
-        configured: serverFirebase.isServiceAccountAvailable(),
-        firestoreReady: ready 
-      }));
-    }).catch(err => {
-      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-      res.end(JSON.stringify({ configured: true, firestoreReady: false, error: err.message }));
-    });
-    return;
-  }
+
 
   // SMTP Email Helper with auto-sanitization
   function createSmtpTransporter(cfg) {
@@ -293,11 +279,6 @@ const server = http.createServer((req, res) => {
 
             const byteCount = Buffer.byteLength(serialized);
             console.log(`[SERVER DB] ✅ Stored ${parsed.machines.length} machines, ${parsed.lines.length} lines, ${parsed.floors.length} floors to data/erp_database.json (${byteCount} bytes) at ${new Date().toLocaleTimeString()}`);
-
-            // Automatically mirror local changes to Google Cloud Firestore in background
-            serverFirebase.syncAllToFirestore(parsed).then(count => {
-              if (count) console.log(`[SERVER CLOUD SYNC] ☁️ Synchronized ${count} tables to Google Cloud Firestore.`);
-            }).catch(e => console.warn('[SERVER CLOUD SYNC] Note:', e.message));
 
             res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
             return res.end(JSON.stringify({

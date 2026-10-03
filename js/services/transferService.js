@@ -6,7 +6,6 @@
 import { storage } from '../db/storage.js';
 import { CloudSaveError } from '../db/storage.js';
 import { syncManager } from '../db/syncManager.js';
-import * as firebaseSync from '../db/firebaseSync.js';
 import { TABLE_NAMES, TRANSFER_STATUSES, ROLES, APPROVER_TYPES } from '../db/schema.js';
 import { authService } from './authService.js';
 import { masterDataService } from './masterDataService.js';
@@ -1003,14 +1002,7 @@ class TransferService {
       syncManager.saveRecord(TABLE_NAMES.TRANSFER_REQUESTS, req.id, updated).catch(e => console.warn('Sync transfer request notice:', e.message));
     }
 
-    // 7. Direct instant cloud fanout to Firestore
-    try {
-      firebaseSync.saveTableToFirestore(TABLE_NAMES.MACHINES, storage.getTable(TABLE_NAMES.MACHINES)).catch(() => {});
-      firebaseSync.saveTableToFirestore(TABLE_NAMES.TRANSFERS, storage.getTable(TABLE_NAMES.TRANSFERS)).catch(() => {});
-      firebaseSync.saveTableToFirestore(TABLE_NAMES.TRANSFER_REQUESTS, storage.getTable(TABLE_NAMES.TRANSFER_REQUESTS)).catch(() => {});
-    } catch (_) {}
-
-    // 8. Automatic Machine Lifecycle History Record
+    // 7. Automatic Machine Lifecycle History Record
     historyService.recordActivity({
       machineId: machine.id,
       serialNumber: machine.serialNumber,

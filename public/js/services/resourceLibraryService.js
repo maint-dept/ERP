@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Al-Muslim Group Garments Factory Maintenance Machine ERP
  * Document & Resource Library Service
  * Handles File Previews, Downloads, URL Navigation, Folder Hierarchy, and Role-Based Access Control
@@ -484,7 +484,7 @@ class ResourceLibraryService {
       createdById: user?.id || 'usr-1'
     };
 
-    // CONFIRMED WRITE: await Firebase HTTP 200
+    // CONFIRMED WRITE: await Database write
     await storage.writeAndConfirm(TABLE_NAMES.DOCUMENTS, (tbl) => { tbl.push(newRes); });
     auditService.log('ADD_RESOURCE', `Added new resource '${newRes.name}' (${newRes.type})`);
     return newRes;
@@ -492,7 +492,7 @@ class ResourceLibraryService {
 
   async updateResource(id, updateData) {
     this.ensureInitialized();
-    // CONFIRMED WRITE: await Firebase HTTP 200
+    // CONFIRMED WRITE: await Database write
     let updated;
     await storage.writeAndConfirm(TABLE_NAMES.DOCUMENTS, (tbl) => {
       const idx = tbl.findIndex(r => r.id === id);

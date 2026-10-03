@@ -549,8 +549,8 @@ export function initMachineModalEvents() {
         }
 
         if (err.name === 'CloudSaveError') {
-          // Distinct cloud save failure — data was not persisted to Firebase
-          notificationService.error(err.message || '❌ Cloud Save Failed: Firebase write was not confirmed.');
+          // Distinct cloud save failure — data was not persisted to Database
+          notificationService.error(err.message || '❌ Cloud Save Failed: Database write was not confirmed.');
         } else {
           // Validation errors, duplicate serial, permission errors etc.
           notificationService.error(err.message || 'Failed to save machine record.');

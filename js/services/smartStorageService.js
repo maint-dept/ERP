@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Al-Muslim Group Garments Factory Maintenance Machine ERP
  * Smart Storage Library & Intelligent Auto-Correction Service
  * 
@@ -45,7 +45,7 @@ class SmartStorageService {
     item.status = item.status || 'ACTIVE';
     item.aliases = Array.isArray(item.aliases) ? item.aliases : this.generateAutoAliases(item);
 
-    // CONFIRMED WRITE: await Firebase HTTP 200
+    // CONFIRMED WRITE: await Database write
     await storage.writeAndConfirm(TABLE_NAMES.STORAGE_MASTER, (tbl) => { tbl.push(item); });
     this._broadcastStorageChange();
     return item;
@@ -59,7 +59,7 @@ class SmartStorageService {
       ...updates,
       updatedAt: new Date().toISOString()
     };
-    // CONFIRMED WRITE: await Firebase HTTP 200
+    // CONFIRMED WRITE: await Database write
     await storage.writeAndConfirm(TABLE_NAMES.STORAGE_MASTER, (tbl) => {
       const idx = tbl.findIndex(it => it.id === id);
       if (idx !== -1) tbl[idx] = updated;
@@ -69,7 +69,7 @@ class SmartStorageService {
   }
 
   async deleteStorageItem(id) {
-    // CONFIRMED WRITE: await Firebase HTTP 200
+    // CONFIRMED WRITE: await Database write
     await storage.writeAndConfirm(TABLE_NAMES.STORAGE_MASTER, (tbl) => {
       const idx = tbl.findIndex(it => it.id === id);
       if (idx !== -1) tbl.splice(idx, 1);

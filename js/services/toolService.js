@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Al-Muslim Group Garments Factory Maintenance Machine ERP
  * Tools, Equipment & Accessories Management Service
  * 
@@ -94,7 +94,7 @@ class ToolService {
     };
 
     list.push(newTool);
-    // CONFIRMED WRITE: await Firebase HTTP 200
+    // CONFIRMED WRITE: await Database write
     const ok = await storage.saveTable(TABLE_NAMES.TOOLS_MASTER, list);
     if (!ok) throw new CloudSaveError('❌ Cloud Save Failed: Tool master record was not confirmed by the cloud.');
 
@@ -118,7 +118,7 @@ class ToolService {
       updatedAt: new Date().toISOString()
     };
 
-    // CONFIRMED WRITE: await Firebase HTTP 200
+    // CONFIRMED WRITE: await Database write
     const ok = await storage.saveTable(TABLE_NAMES.TOOLS_MASTER, list);
     if (!ok) throw new CloudSaveError('❌ Cloud Save Failed: Tool master update was not confirmed by the cloud.');
     return list[idx];
@@ -130,7 +130,7 @@ class ToolService {
     if (!target) throw new Error('Master tool not found.');
 
     list = list.filter(t => t.id !== id);
-    // CONFIRMED WRITE: await Firebase HTTP 200
+    // CONFIRMED WRITE: await Database write
     const ok = await storage.saveTable(TABLE_NAMES.TOOLS_MASTER, list);
     if (!ok) throw new CloudSaveError('❌ Cloud Save Failed: Tool deletion was not confirmed by the cloud.');
 
@@ -183,7 +183,7 @@ class ToolService {
     };
 
     list.push(newAcc);
-    // CONFIRMED WRITE: await Firebase HTTP 200
+    // CONFIRMED WRITE: await Database write
     const ok = await storage.saveTable(TABLE_NAMES.ACCESSORIES_MASTER, list);
     if (!ok) throw new CloudSaveError('❌ Cloud Save Failed: Accessory master record was not confirmed by the cloud.');
     return newAcc;
@@ -200,7 +200,7 @@ class ToolService {
       updatedAt: new Date().toISOString()
     };
 
-    // CONFIRMED WRITE: await Firebase HTTP 200
+    // CONFIRMED WRITE: await Database write
     const ok = await storage.saveTable(TABLE_NAMES.ACCESSORIES_MASTER, list);
     if (!ok) throw new CloudSaveError('❌ Cloud Save Failed: Accessory update was not confirmed by the cloud.');
     return list[idx];
@@ -210,7 +210,7 @@ class ToolService {
     let list = storage.getTable(TABLE_NAMES.ACCESSORIES_MASTER) || [];
     const target = list.find(a => a.id === id);
     list = list.filter(a => a.id !== id);
-    // CONFIRMED WRITE: await Firebase HTTP 200
+    // CONFIRMED WRITE: await Database write
     const ok = await storage.saveTable(TABLE_NAMES.ACCESSORIES_MASTER, list);
     if (!ok) throw new CloudSaveError('❌ Cloud Save Failed: Accessory deletion was not confirmed by the cloud.');
 
@@ -804,7 +804,7 @@ class ToolService {
       }
     });
 
-    // CONFIRMED WRITE: await Firebase HTTP 200 for all 3 tables
+    // CONFIRMED WRITE: await Database write for all 3 tables
     const allocOk = await storage.saveTable(TABLE_NAMES.TOOL_ALLOCATIONS, list);
     const toolsOk = await storage.saveTable(TABLE_NAMES.TOOLS_MASTER, masterTools);
     const accsOk = await storage.saveTable(TABLE_NAMES.ACCESSORIES_MASTER, masterAccs);
@@ -836,7 +836,7 @@ class ToolService {
       updatedAt: new Date().toISOString()
     };
 
-    // CONFIRMED WRITE: await Firebase HTTP 200
+    // CONFIRMED WRITE: await Database write
     const ok = await storage.saveTable(TABLE_NAMES.TOOL_ALLOCATIONS, list);
     if (!ok) throw new CloudSaveError('❌ Cloud Save Failed: Tool allocation update was not confirmed by the cloud.');
 
@@ -855,7 +855,7 @@ class ToolService {
     if (!target) throw new Error('Allocation record not found.');
 
     list = list.filter(a => a.id !== id);
-    // CONFIRMED WRITE: await Firebase HTTP 200
+    // CONFIRMED WRITE: await Database write
     const ok = await storage.saveTable(TABLE_NAMES.TOOL_ALLOCATIONS, list);
     if (!ok) throw new CloudSaveError('❌ Cloud Save Failed: Tool allocation deletion was not confirmed by the cloud.');
 
@@ -872,7 +872,7 @@ class ToolService {
     let list = storage.getTable(TABLE_NAMES.TOOL_ALLOCATIONS) || [];
     const count = list.filter(a => String(a.regNo).trim() === String(regNo).trim()).length;
     list = list.filter(a => String(a.regNo).trim() !== String(regNo).trim());
-    // CONFIRMED WRITE: await Firebase HTTP 200
+    // CONFIRMED WRITE: await Database write
     const ok = await storage.saveTable(TABLE_NAMES.TOOL_ALLOCATIONS, list);
     if (!ok) throw new CloudSaveError('❌ Cloud Save Failed: Registration batch deletion was not confirmed by the cloud.');
 
@@ -892,7 +892,7 @@ class ToolService {
     const initialCount = list.length;
     list = list.filter(a => !idSet.has(a.id));
     const deletedCount = initialCount - list.length;
-    // CONFIRMED WRITE: await Firebase HTTP 200
+    // CONFIRMED WRITE: await Database write
     const ok = await storage.saveTable(TABLE_NAMES.TOOL_ALLOCATIONS, list);
     if (!ok) throw new CloudSaveError('❌ Cloud Save Failed: Bulk tool allocation deletion was not confirmed by the cloud.');
 

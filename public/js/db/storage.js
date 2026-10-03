@@ -5,7 +5,6 @@
 
 import { INITIAL_DATA } from './initialData.js';
 import { TABLE_NAMES, DEFAULT_SETTINGS, SCHEMA_VERSION, DEFAULT_PERMISSION_PRESETS } from './schema.js';
-import * as firebaseSync from './firebaseSync.js';
 import { syncManager } from './syncManager.js';
 
 const STORAGE_KEY_PREFIX = 'al_muslim_erp_';
@@ -43,7 +42,7 @@ const duplicateIdMap = DUPLICATE_ID_MAP;
  * UI components catch this to keep modals open and show error toast without showing false success.
  */
 export class CloudSaveError extends Error {
-  constructor(message = 'Cloud Save Failed: Firebase write was not confirmed.') {
+  constructor(message = 'Cloud Save Failed: Database write was not confirmed.') {
     super(message);
     this.name = 'CloudSaveError';
   }
@@ -533,7 +532,7 @@ class StorageEngine {
           this.updateStatusBadge('error');
           return false;
         } catch (e) {
-          console.warn(`[Storage] Firebase save warning for ${table}:`, e.message);
+          console.warn(`[Storage] Remote save warning for ${table}:`, e.message);
           this.updateStatusBadge('error');
           return false;
         } finally {
@@ -599,7 +598,7 @@ class StorageEngine {
         localStorage.setItem(STORAGE_KEY_PREFIX + tableName, JSON.stringify(snapshot));
       } catch (_) {}
       this.updateStatusBadge('error');
-      throw new CloudSaveError(`❌ Cloud Save Failed: Firebase write for '${tableName}' was not confirmed. Check your connection.`);
+      throw new CloudSaveError(`❌ Cloud Save Failed: Database write for '${tableName}' was not confirmed. Check your connection.`);
     }
 
     return this.data[tableName];
@@ -688,57 +687,6 @@ class StorageEngine {
         }
       }
 
-      // 2. Also check Firebase Firestore Sync Manifest (for multi-client cloud push/pull)
-      try {
-        const manifest = await firebaseSync.fetchSyncManifest();
-        if (manifest && typeof manifest === 'object' && Object.keys(manifest).length > 0) {
-          const tablesToUpdate = [];
-          for (const [tbl, remoteTs] of Object.entries(manifest)) {
-            if (!remoteTs) continue;
-            if (tbl === TABLE_NAMES.SETTINGS && isViewingSettings) continue;
-            if (this._tableSavePromises && this._tableSavePromises.has(tbl)) continue;
-
-            const knownServerTs = this.syncedDocVersions.get('fb_' + tbl) || '';
-            if (remoteTs > knownServerTs) {
-              tablesToUpdate.push(tbl);
-            }
-          }
-
-          if (tablesToUpdate.length > 0) {
-            console.log(`[Storage Multi-Device Sync] 🔄 Remote Firestore changes detected in ${tablesToUpdate.length} tables:`, tablesToUpdate);
-            const fetchResults = await Promise.all(
-              tablesToUpdate.map(async (tbl) => {
-                try {
-                  const result = await firebaseSync.fetchTableFromFirestore(tbl);
-                  return { tbl, result };
-                } catch (_) {
-                  return { tbl, result: null };
-                }
-              })
-            );
-
-            const recordsToApply = {};
-            for (const { tbl, result } of fetchResults) {
-              if (result !== null && result !== undefined) {
-                const tableData = result.data !== undefined ? result.data : result;
-                const remoteUpdateTime = result.updateTime || manifest[tbl];
-                if (tableData !== null && tableData !== undefined) {
-                  recordsToApply[tbl] = tableData;
-                  if (!this.lastTableUpdates) this.lastTableUpdates = {};
-                  this.lastTableUpdates[tbl] = Date.now();
-                  const effectiveTs = remoteUpdateTime && remoteUpdateTime > manifest[tbl] ? remoteUpdateTime : manifest[tbl];
-                  this.syncedDocVersions.set('fb_' + tbl, effectiveTs);
-                }
-              }
-            }
-            if (Object.keys(recordsToApply).length > 0) {
-              this.applyIncomingDatabaseRecords(recordsToApply, `Remote Firestore (${Object.keys(recordsToApply).join(', ')})`);
-              this.updateStatusBadge('saved');
-            }
-          }
-        }
-      } catch (fbErr) {
-        console.warn('[Storage Multi-Device Sync] Firebase check note:', fbErr.message);
       }
     } catch (err) {
       console.warn('[Storage Multi-Device Sync] Remote check note:', err.message);
@@ -748,131 +696,18 @@ class StorageEngine {
   }
 
   /**
-   * Initialize native Firebase Firestore onSnapshot real-time listener
+   * Real-time sync listener — MySQL primary adapter runs fast timestamp polling (3.5s)
    */
   initRealtimeSyncListener() {
     if (typeof window === 'undefined') return;
     if (this._realtimeListenerStarted) return;
     this._realtimeListenerStarted = true;
-    if (!window.__firebaseInitTime && typeof performance !== 'undefined') {
-      window.__firebaseInitTime = performance.now();
-    }
-    try {
-      firebaseSync.startRealtimeSync({
-        onManifestUpdate: (manifest) => {
-          this.handleRemoteManifestUpdate(manifest);
-        },
-        onStatusChange: (status) => {
-          if (status === 'connected') {
-            this._isCloudConnected = true;
-            this.updateStatusBadge('saved');
-          }
-        }
-      });
-    } catch (e) {
-      console.warn('[Storage] Real-time listener init warning:', e.message);
-    }
+    this._isCloudConnected = true;
+    this.updateStatusBadge('saved');
   }
 
-  /**
-   * Handle real-time push notification from Firestore onSnapshot listener (<100ms latency)
-   */
   async handleRemoteManifestUpdate(manifest) {
-    if (!manifest || typeof manifest !== 'object' || Object.keys(manifest).length === 0) return;
-
-    // On very first snapshot on page startup, seed syncedDocVersions with current remote timestamps
-    // IMPORTANT: Only skip refetch if critical data is already loaded from Firebase startup sync.
-    // If local data is still initial/empty (startup sync not yet done), allow fetch to proceed.
-    if (!this._hasReceivedInitialManifest) {
-      this._hasReceivedInitialManifest = true;
-
-      // Check if critical data was already loaded by syncWithServerDatabase (startup sync)
-      const criticalDataAlreadyLoaded = this._hasCriticalSyncCompleted;
-
-      for (const [tbl, ts] of Object.entries(manifest)) {
-        if (ts && typeof ts === 'string') {
-          if (!this.syncedDocVersions.has(tbl)) {
-            // Only pre-seed version if critical sync already loaded this table from cloud
-            // If not yet loaded, leave syncedDocVersions empty so next poll/check will fetch it
-            if (criticalDataAlreadyLoaded) {
-              this.syncedDocVersions.set(tbl, ts);
-            }
-          }
-        }
-      }
-
-      // If critical sync hasn't completed yet, let the normal syncWithServerDatabase handle it
-      if (criticalDataAlreadyLoaded) return;
-      // Otherwise fall through to fetch logic below
-    }
-
-    if (this._isHandlingRealtimeUpdate) return;
-    if (this.isUserTyping()) {
-      this._pendingRemoteManifest = { ...(this._pendingRemoteManifest || {}), ...manifest };
-      return;
-    }
-    this._isHandlingRealtimeUpdate = true;
-
-    try {
-      const isViewingSettings = typeof window !== 'undefined' && window.state && window.state.get('currentView') === 'settings';
-      const tablesToUpdate = [];
-
-      for (const [tbl, remoteTs] of Object.entries(manifest)) {
-        if (!remoteTs || typeof remoteTs !== 'string') continue;
-        if (tbl === TABLE_NAMES.SETTINGS && isViewingSettings) continue;
-
-        // If our own write for this table is in-flight, let it complete
-        if (this._tableSavePromises && this._tableSavePromises.has(tbl)) {
-          continue;
-        }
-
-        const knownServerTs = this.syncedDocVersions.get(tbl) || '';
-        if (remoteTs > knownServerTs) {
-          tablesToUpdate.push({ tbl, remoteTs });
-        }
-      }
-
-      if (tablesToUpdate.length === 0) return;
-
-      console.log(`[Firebase Realtime] ⚡ Real-time push: ${tablesToUpdate.length} table(s) updated:`, tablesToUpdate.map(t => t.tbl));
-
-      const fetchResults = await Promise.all(
-        tablesToUpdate.map(async ({ tbl, remoteTs }) => {
-          try {
-            const result = await firebaseSync.fetchTableFromFirestore(tbl);
-            return { tbl, remoteTs, result };
-          } catch (_) {
-            return { tbl, remoteTs, result: null };
-          }
-        })
-      );
-
-      const recordsToApply = {};
-      for (const { tbl, remoteTs, result } of fetchResults) {
-        if (result !== null && result !== undefined) {
-          const tableData = result.data !== undefined ? result.data : result;
-          const remoteUpdateTime = result.updateTime || remoteTs;
-
-          if (tableData !== null && tableData !== undefined) {
-            recordsToApply[tbl] = tableData;
-            if (!this.lastTableUpdates) this.lastTableUpdates = {};
-            this.lastTableUpdates[tbl] = Date.now();
-            const effectiveTs = remoteUpdateTime && remoteUpdateTime > remoteTs ? remoteUpdateTime : remoteTs;
-            this.syncedDocVersions.set(tbl, effectiveTs);
-          }
-        }
-      }
-
-      if (Object.keys(recordsToApply).length > 0) {
-        this.applyIncomingDatabaseRecords(recordsToApply, `Real-time Firebase Push (${Object.keys(recordsToApply).join(', ')})`);
-        this._isCloudConnected = true;
-        this.updateStatusBadge('saved');
-      }
-    } catch (err) {
-      console.warn('[Firebase Realtime] Remote manifest update handling error:', err.message);
-    } finally {
-      this._isHandlingRealtimeUpdate = false;
-    }
+    // Handled directly via MySQL timestamp checks in checkAndSyncRemoteChanges
   }
 
   saveAll() {
@@ -1040,6 +875,11 @@ class StorageEngine {
           console.log(`[Storage] 🐬 Loaded ${Object.keys(mysqlRes.tables).length} tables from MySQL Primary (${syncManager.primaryAdapter.endpoint})`);
           this.applyIncomingDatabaseRecords(mysqlRes.tables, 'MySQL Primary');
           this._isCloudConnected = true;
+          cloudLoadedSuccessfully = true;
+          this._hasCriticalSyncCompleted = true;
+          this._hasInitialSyncCompleted = true;
+          this._hasFullSecondarySyncCompleted = true;
+          Object.keys(mysqlRes.tables).forEach(t => this._loadedSecondaryTables.add(t));
           this.updateStatusBadge('saved');
 
           // Seed syncedDocVersions with initial MySQL timestamps so multi-device polling tracks incremental changes cleanly
@@ -1052,115 +892,17 @@ class StorageEngine {
             }
           }).catch(() => {});
 
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('erp:critical-data-ready'));
+            window.dispatchEvent(new CustomEvent('erp:storage-updated'));
+            window.dispatchEvent(new CustomEvent('erp:secondary-data-ready'));
+          }
+
           return;
         }
       }
     } catch (e) {
       console.warn('[Storage] MySQL Primary startup sync notice:', e.message);
-    }
-
-    // 1. Google Cloud Firestore sync (Critical Path First, Secondary Deferred)
-    try {
-      // Step A: Fetch lightweight manifest to know what's present in cloud
-      let manifest = null;
-      try {
-        manifest = await firebaseSync.fetchSyncManifest(8000);
-      } catch (e) {
-        console.warn('[Storage] fetchSyncManifest note:', e.message);
-      }
-
-      if (manifest && typeof manifest === 'object' && Object.keys(manifest).length > 0) {
-        // Step B: Parallel fetch ONLY the critical tables needed for Shell & Dashboard
-        const criticalTablesToFetch = CRITICAL_TABLES.filter(tbl => manifest[tbl] !== undefined);
-        
-        console.log(`[Storage] ⚡ Loading ${criticalTablesToFetch.length} critical table(s) in parallel...`);
-        const fetchResults = await Promise.all(
-          criticalTablesToFetch.map(async (tbl) => {
-            try {
-              const res = await firebaseSync.fetchTableFromFirestore(tbl, 10000);
-              return { tbl, res };
-            } catch (_) {
-              return { tbl, res: null };
-            }
-          })
-        );
-
-        const safeDataToApply = {};
-        for (const { tbl, res } of fetchResults) {
-          if (res !== null && res !== undefined) {
-            const tableData = res.data !== undefined ? res.data : res;
-            const remoteUpdateTime = res.updateTime || manifest[tbl];
-            const lastLocalWrite = this.lastTableUpdates?.[tbl] || 0;
-            if (lastLocalWrite >= fetchStartTime) {
-              console.log(`[Storage] Preserving local modifications made to ${tbl} during startup sync.`);
-              continue;
-            }
-            if (tableData !== null && tableData !== undefined) {
-              safeDataToApply[tbl] = tableData;
-              if (remoteUpdateTime) {
-                this.syncedDocVersions.set(tbl, remoteUpdateTime);
-              }
-            }
-          }
-        }
-
-        if (Object.keys(safeDataToApply).length > 0) {
-          this.applyIncomingDatabaseRecords(safeDataToApply, 'Google Cloud Firestore Critical');
-          cloudLoadedSuccessfully = true;
-          this._isCloudConnected = true;
-          this._hasCriticalSyncCompleted = true;
-          this._hasInitialSyncCompleted = true;
-          this.updateStatusBadge('saved');
-          if (typeof window !== 'undefined') {
-            if (!window.__firstFirestoreDataTime && typeof performance !== 'undefined') {
-              window.__firstFirestoreDataTime = performance.now();
-            }
-            window.dispatchEvent(new CustomEvent('erp:critical-data-ready'));
-            window.dispatchEvent(new CustomEvent('erp:storage-updated'));
-          }
-        }
-
-        // Step C: Trigger deferred background sync for secondary tables
-        this.scheduleDeferredSecondarySync(manifest);
-
-      } else {
-        // Fallback: If manifest is empty or failed, attempt fetchAllFromFirestore
-        console.log('[Storage] Manifest empty or unreachable, attempting fetchAllFromFirestore fallback...');
-        const cloudData = await firebaseSync.fetchAllFromFirestore(12000);
-        if (cloudData && typeof cloudData === 'object' && !cloudData._isEmpty && Object.keys(cloudData).length > 0) {
-          this._isCloudConnected = true;
-          const updateTimes = cloudData._updateTimes || {};
-          const safeDataToApply = {};
-
-          for (const [tbl, val] of Object.entries(cloudData)) {
-            if (tbl === '_updateTimes') continue;
-            const lastLocalWrite = this.lastTableUpdates?.[tbl] || 0;
-            if (lastLocalWrite >= fetchStartTime) continue;
-            safeDataToApply[tbl] = val;
-            if (updateTimes[tbl]) {
-              this.syncedDocVersions.set(tbl, updateTimes[tbl]);
-            }
-          }
-
-          if (Object.keys(safeDataToApply).length > 0) {
-            this.applyIncomingDatabaseRecords(safeDataToApply, 'Google Cloud Firestore REST');
-          }
-          cloudLoadedSuccessfully = true;
-          this._hasCriticalSyncCompleted = true;
-          this._hasInitialSyncCompleted = true;
-          this._hasFullSecondarySyncCompleted = true;
-        } else if (cloudData && cloudData._isEmpty === true && Array.isArray(this.data[TABLE_NAMES.MACHINES]) && this.data[TABLE_NAMES.MACHINES].length > 0) {
-          console.log('[Firebase Sync] Cloud database is newly created and empty. Seeding initial factory records...');
-          firebaseSync.saveAllToFirestore(this.data).then(ok => {
-            if (ok) {
-              this._isCloudConnected = true;
-              this.updateStatusBadge('saved');
-            }
-          }).catch(() => {});
-        }
-      }
-    } catch (cloudErr) {
-      console.warn('[Database Store] Firebase cloud check note:', cloudErr.message);
     }
 
     // 2. Local Node.js server sync (Secondary / Offline Backup only)
@@ -1208,93 +950,10 @@ class StorageEngine {
    * Ensures the main thread and UI remain responsive while secondary data streams in
    */
   scheduleDeferredSecondarySync(manifest) {
-    if (this._isDeferredSyncRunning || this._hasFullSecondarySyncCompleted) return;
-    this._isDeferredSyncRunning = true;
-
-    const runDeferred = async () => {
-      try {
-        const tablesToFetch = SECONDARY_TABLES.filter(tbl => {
-          if (!manifest || manifest[tbl] === undefined) return false;
-          // If we already loaded this table and its version matches the manifest, skip it
-          const knownTs = this.syncedDocVersions.get(tbl);
-          if (knownTs && manifest[tbl] <= knownTs && this._loadedSecondaryTables.has(tbl)) {
-            return false;
-          }
-          return true;
-        });
-
-        if (tablesToFetch.length === 0) {
-          this._hasFullSecondarySyncCompleted = true;
-          this._isDeferredSyncRunning = false;
-          if (typeof window !== 'undefined') {
-            window.dispatchEvent(new CustomEvent('erp:secondary-data-ready'));
-          }
-          return;
-        }
-
-        console.log(`[Storage] 📦 Background loading ${tablesToFetch.length} secondary table(s) in batches...`);
-        const BATCH_SIZE = 4;
-        for (let i = 0; i < tablesToFetch.length; i += BATCH_SIZE) {
-          // Pause if user is actively typing or editing
-          if (this.isUserTyping()) {
-            await new Promise(r => setTimeout(r, 400));
-          }
-
-          const batch = tablesToFetch.slice(i, i + BATCH_SIZE);
-          const batchResults = await Promise.all(
-            batch.map(async (tbl) => {
-              try {
-                const res = await firebaseSync.fetchTableFromFirestore(tbl);
-                return { tbl, res };
-              } catch (_) {
-                return { tbl, res: null };
-              }
-            })
-          );
-
-          const recordsToApply = {};
-          for (const { tbl, res } of batchResults) {
-            if (res !== null && res !== undefined) {
-              const tableData = res.data !== undefined ? res.data : res;
-              const remoteUpdateTime = res.updateTime || manifest[tbl];
-              if (tableData !== null && tableData !== undefined) {
-                recordsToApply[tbl] = tableData;
-                if (remoteUpdateTime) {
-                  this.syncedDocVersions.set(tbl, remoteUpdateTime);
-                }
-                this._loadedSecondaryTables.add(tbl);
-              }
-            }
-          }
-
-          if (Object.keys(recordsToApply).length > 0) {
-            this.applyIncomingDatabaseRecords(recordsToApply, `Deferred Background (${batch.join(', ')})`);
-          }
-
-          // Yield execution to browser rendering
-          await new Promise(r => setTimeout(r, 60));
-        }
-
-        this._hasFullSecondarySyncCompleted = true;
-        console.log('[Storage] ✅ Full secondary background sync completed.');
-        if (typeof window !== 'undefined') {
-          if (!window.__fullSecondaryDataLoadedTime && typeof performance !== 'undefined') {
-            window.__fullSecondaryDataLoadedTime = performance.now();
-          }
-          window.dispatchEvent(new CustomEvent('erp:secondary-data-ready'));
-        }
-      } catch (err) {
-        console.warn('[Storage] Deferred secondary sync note:', err.message);
-      } finally {
-        this._isDeferredSyncRunning = false;
-      }
-    };
-
-    // Delay start by 150ms so first paint and initial DOM settle smoothly
-    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
-      window.requestIdleCallback(() => runDeferred(), { timeout: 1000 });
-    } else {
-      setTimeout(runDeferred, 150);
+    this._hasFullSecondarySyncCompleted = true;
+    this._isDeferredSyncRunning = false;
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('erp:secondary-data-ready'));
     }
   }
 
@@ -1317,8 +976,11 @@ class StorageEngine {
       const results = await Promise.all(
         needed.map(async (tbl) => {
           try {
-            const res = await firebaseSync.fetchTableFromFirestore(tbl);
-            return { tbl, res };
+            if (syncManager.primaryAdapter && typeof syncManager.primaryAdapter.getTable === 'function') {
+              const res = await syncManager.primaryAdapter.getTable(tbl);
+              return { tbl, res };
+            }
+            return { tbl, res: null };
           } catch (_) {
             return { tbl, res: null };
           }
@@ -1327,15 +989,9 @@ class StorageEngine {
 
       const recordsToApply = {};
       for (const { tbl, res } of results) {
-        if (res !== null && res !== undefined) {
-          const tableData = res.data !== undefined ? res.data : res;
-          if (tableData !== null && tableData !== undefined) {
-            recordsToApply[tbl] = tableData;
-            if (res.updateTime) {
-              this.syncedDocVersions.set(tbl, res.updateTime);
-            }
-            this._loadedSecondaryTables.add(tbl);
-          }
+        if (res && res.success && res.data !== undefined) {
+          recordsToApply[tbl] = res.data;
+          this._loadedSecondaryTables.add(tbl);
         }
       }
 
@@ -1344,7 +1000,7 @@ class StorageEngine {
       }
       return true;
     } catch (e) {
-      console.warn('[Storage] ensureTablesLoaded note:', e.message);
+      console.warn('[Storage] On-demand load note:', e.message);
       return false;
     }
   }
@@ -1634,8 +1290,8 @@ class StorageEngine {
   }
 
   /**
-   * Confirmed mutation methods: guarantees Firestore write confirmation (HTTP 200)
-   * If Firebase write fails, state is automatically rolled back and CloudSaveError is thrown.
+   * Confirmed mutation methods: guarantees database write confirmation
+   * If database write fails, state is automatically rolled back and CloudSaveError is thrown.
    */
   async insertConfirmed(tableName, item) {
     if (!this.data[tableName]) this.data[tableName] = [];
@@ -1656,7 +1312,7 @@ class StorageEngine {
       try {
         localStorage.setItem(STORAGE_KEY_PREFIX + tableName, JSON.stringify(snapshot));
       } catch (_) {}
-      throw new CloudSaveError(`❌ Cloud Save Failed: Firebase write for '${tableName}' was not confirmed. Check your connection.`);
+      throw new CloudSaveError(`❌ Cloud Save Failed: Database write for '${tableName}' was not confirmed. Check your connection.`);
     }
     return item;
   }
@@ -1681,7 +1337,7 @@ class StorageEngine {
       try {
         localStorage.setItem(STORAGE_KEY_PREFIX + tableName, JSON.stringify(table));
       } catch (_) {}
-      throw new CloudSaveError(`❌ Cloud Save Failed: Firebase write for '${tableName}' was not confirmed. Check your connection.`);
+      throw new CloudSaveError(`❌ Cloud Save Failed: Database write for '${tableName}' was not confirmed. Check your connection.`);
     }
     return table[index];
   }
@@ -1703,7 +1359,7 @@ class StorageEngine {
       try {
         localStorage.setItem(STORAGE_KEY_PREFIX + tableName, JSON.stringify(snapshot));
       } catch (_) {}
-      throw new CloudSaveError(`❌ Cloud Save Failed: Firebase write for '${tableName}' was not confirmed. Check your connection.`);
+      throw new CloudSaveError(`❌ Cloud Save Failed: Database write for '${tableName}' was not confirmed. Check your connection.`);
     }
     return removed;
   }
@@ -1720,7 +1376,7 @@ class StorageEngine {
       try {
         localStorage.setItem(STORAGE_KEY_PREFIX + tableName, JSON.stringify(snapshot));
       } catch (_) {}
-      throw new CloudSaveError(`❌ Cloud Save Failed: Firebase write for '${tableName}' was not confirmed. Check your connection.`);
+      throw new CloudSaveError(`❌ Cloud Save Failed: Database write for '${tableName}' was not confirmed. Check your connection.`);
     }
     return this.data[tableName];
   }

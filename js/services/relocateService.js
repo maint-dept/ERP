@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Al-Muslim Group Garments Factory Maintenance Machine ERP
  * Machine Relocation, Physical Verification, Idle Identification & Reconciliation Service
  */
@@ -114,7 +114,7 @@ class RelocateService {
       reconciliation: null
     };
 
-    // CONFIRMED WRITE: await Firebase HTTP 200 before success
+    // CONFIRMED WRITE: await Database write before success
     const ok = await storage.saveTable(TABLE_NAMES.RELOCATE_SESSIONS,
       [...(storage.getTable(TABLE_NAMES.RELOCATE_SESSIONS) || []), newSession]
     );
@@ -819,7 +819,7 @@ class RelocateService {
     app.reviewedBy = user.name;
     app.reviewedAt = nowIso;
     app.reviewNotes = reason || 'Rejected by reviewer';
-    // CONFIRMED WRITE: await Firebase HTTP 200
+    // CONFIRMED WRITE: await Database write
     await storage.writeAndConfirm(TABLE_NAMES.RELOCATION_APPROVALS, (tbl) => {
       const idx = tbl.findIndex(a => a.id === app.id);
       if (idx !== -1) tbl[idx] = app;

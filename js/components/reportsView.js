@@ -2603,8 +2603,8 @@ export function initReportsEvents() {
     });
   }
 
-  // Real-time Firebase & local listeners for Transfer Reports tab —
-  // Fires when any device writes to TRANSFERS or TRANSFER_REQUESTS in Firestore or locally.
+  // Real-time database & local listeners for Transfer Reports tab —
+  // Fires when any device writes to TRANSFERS or TRANSFER_REQUESTS or locally.
   const handleTransfersUpdated = () => {
     if (currentReportTab === 'transfers') {
       const tabContent = document.getElementById('reports-tab-content');

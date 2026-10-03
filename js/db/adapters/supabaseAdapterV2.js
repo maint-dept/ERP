@@ -34,7 +34,7 @@ GRANT ALL ON erp_tables TO anon, authenticated, service_role;
  * Supabase PostgreSQL Adapter — JSON Blob Store Design
  *
  * Uses a SINGLE table `erp_tables` as a key-value JSON blob store,
- * mirroring the Firebase REST design. Each ERP table = one row:
+ * mirroring the unified JSON store design. Each ERP table = one row:
  *   { table_name (PK), raw_json TEXT, item_count INT, updated_at TIMESTAMPTZ }
  */
 export class SupabaseAdapter extends BaseAdapter {

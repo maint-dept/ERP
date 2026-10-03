@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Al-Muslim Group Garments Factory Maintenance Machine ERP
  * Super Admin Role & Granular Individual Access Control (IAC) Service
  */
@@ -204,7 +204,7 @@ class AuthService {
     if (!this.currentUser && typeof localStorage !== 'undefined' && localStorage.getItem('al_muslim_active_user_id')) {
       this.init();
     }
-    // Refresh from storage to get latest permissions (e.g. updated by another device via Firebase sync)
+    // Refresh from storage to get latest permissions (e.g. updated by another device via database sync)
     if (this.currentUser?.id) {
       const fresh = storage.getItem(TABLE_NAMES.USERS, this.currentUser.id);
       if (fresh && fresh.status === 'ACTIVE') {

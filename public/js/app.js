@@ -269,7 +269,7 @@ class ERPApplication {
       this.queueBackgroundRender();
     });
 
-    // Re-render when homepage config changes from another device (via Firebase polling)
+    // Re-render when homepage config changes from another device (via database sync)
     window.addEventListener('erp:homepage-updated', () => {
       const cv = state.get('currentView');
       if (cv === 'home') {
@@ -792,7 +792,7 @@ class ERPApplication {
         break;
       case 'inventory':
         initInventoryTableEvents();
-        // Attach scroll guard after events are initialized — protects against Firebase re-render during scroll
+        // Attach scroll guard after events are initialized — protects against background re-render during scroll
         _initInvScrollGuard();
         break;
       case 'relocate':

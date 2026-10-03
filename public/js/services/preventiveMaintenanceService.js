@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Al-Muslim Group Garments Factory Maintenance Machine ERP
  * Preventive Machine Maintenance Core Service
  * 
@@ -344,7 +344,7 @@ class PreventiveMaintenanceService {
       auditService.log('CONFIG', 'PREVENTIVE_MAINTENANCE', id, `Created Preventive Schedule Config for ${record.machineType}`);
     }
 
-    // CONFIRMED WRITE: await Firebase HTTP 200
+    // CONFIRMED WRITE: await Database write
     const ok = await storage.saveTable(TABLE_NAMES.PREVENTIVE_CONFIG, existingConfigs);
     if (!ok) throw new CloudSaveError('❌ Cloud Save Failed: PM config was not confirmed by the cloud.');
     window.dispatchEvent(new CustomEvent('erp:preventive-maintenance-updated'));
@@ -352,7 +352,7 @@ class PreventiveMaintenanceService {
   }
 
   async deleteConfig(id) {
-    // CONFIRMED WRITE: await Firebase HTTP 200
+    // CONFIRMED WRITE: await Database write
     await storage.writeAndConfirm(TABLE_NAMES.PREVENTIVE_CONFIG, (tbl) => {
       const idx = tbl.findIndex(c => c.id === id);
       if (idx !== -1) tbl.splice(idx, 1);
@@ -412,7 +412,7 @@ class PreventiveMaintenanceService {
       configs.push(config);
     }
 
-    // CONFIRMED WRITE: await Firebase HTTP 200
+    // CONFIRMED WRITE: await Database write
     const ok = await storage.saveTable(TABLE_NAMES.PREVENTIVE_CONFIG, configs);
     if (!ok) throw new CloudSaveError('❌ Cloud Save Failed: Checklist update was not confirmed by the cloud.');
     auditService.log('CONFIG', 'PREVENTIVE_MAINTENANCE', config.id, `Admin updated inspection checklist (${cleanItems.length} items) for ${config.machineType}`);
@@ -1317,7 +1317,7 @@ class PreventiveMaintenanceService {
       updatedAt: new Date().toISOString()
     };
 
-    // CONFIRMED WRITE: await Firebase HTTP 200
+    // CONFIRMED WRITE: await Database write
     await storage.writeAndConfirm(TABLE_NAMES.PREVENTIVE_MAINTENANCE, (tbl) => {
       const idx = tbl.findIndex(r => r.id === recordId);
       if (idx !== -1) tbl[idx] = updated;
@@ -1331,7 +1331,7 @@ class PreventiveMaintenanceService {
     const existing = storage.getItem(TABLE_NAMES.PREVENTIVE_MAINTENANCE, recordId);
     if (!existing) return false;
 
-    // CONFIRMED WRITE: await Firebase HTTP 200
+    // CONFIRMED WRITE: await Database write
     await storage.writeAndConfirm(TABLE_NAMES.PREVENTIVE_MAINTENANCE, (tbl) => {
       const idx = tbl.findIndex(r => r.id === recordId);
       if (idx !== -1) tbl.splice(idx, 1);
@@ -1355,7 +1355,7 @@ class PreventiveMaintenanceService {
     const oldSerial = record.serviceStickerSerial;
     const updatedRecord = { ...record, serviceStickerSerial: cleanSerial, updatedAt: new Date().toISOString() };
 
-    // CONFIRMED WRITE: await Firebase HTTP 200
+    // CONFIRMED WRITE: await Database write
     await storage.writeAndConfirm(TABLE_NAMES.PREVENTIVE_MAINTENANCE, (tbl) => {
       const idx = tbl.findIndex(r => r.id === recordId);
       if (idx !== -1) tbl[idx] = updatedRecord;

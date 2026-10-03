@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Al-Muslim Group Garments Factory Maintenance Machine ERP
  * Comprehensive Manpower & Workforce Management Service
  * Handles Employee Profiles, Dynamic Custom Fields, Hierarchical Placement,
@@ -943,7 +943,7 @@ class EmployeeService {
 
     const table = storage.getTable(TABLE_NAMES.EMPLOYEES) || [];
     table.unshift(newEmp);
-    // CONFIRMED WRITE: await Firebase HTTP 200 before success
+    // CONFIRMED WRITE: await Database write before success
     const ok = await storage.saveTable(TABLE_NAMES.EMPLOYEES, table);
     if (!ok) {
       // Rollback local state
@@ -997,7 +997,7 @@ class EmployeeService {
     // Snapshot for rollback
     const snapshot = JSON.parse(JSON.stringify(existing));
     const updated = storage.update(TABLE_NAMES.EMPLOYEES, id, payload);
-    // CONFIRMED WRITE: await Firebase HTTP 200
+    // CONFIRMED WRITE: await Database write
     const ok = await storage.saveTable(TABLE_NAMES.EMPLOYEES);
     if (!ok) {
       // Rollback
@@ -1022,7 +1022,7 @@ class EmployeeService {
     // Snapshot for rollback
     const snapshot = JSON.parse(JSON.stringify(existing));
     storage.delete(TABLE_NAMES.EMPLOYEES, id);
-    // CONFIRMED WRITE: await Firebase HTTP 200
+    // CONFIRMED WRITE: await Database write
     const ok = await storage.saveTable(TABLE_NAMES.EMPLOYEES);
     if (!ok) {
       // Rollback — re-add deleted record
@@ -1180,7 +1180,7 @@ class EmployeeService {
 
     const leaves = storage.getTable(TABLE_NAMES.EMPLOYEE_LEAVES) || [];
     leaves.unshift(leaveRecord);
-    // CONFIRMED WRITE: await Firebase HTTP 200
+    // CONFIRMED WRITE: await Database write
     const ok = await storage.saveTable(TABLE_NAMES.EMPLOYEE_LEAVES, leaves);
     if (!ok) {
       throw new CloudSaveError('❌ Cloud Save Failed: Leave record was not confirmed by the cloud.');
@@ -1210,7 +1210,7 @@ class EmployeeService {
     const oldStatus = leave.status;
     leave.status = newStatus;
     leave.updatedAt = new Date().toISOString();
-    // CONFIRMED WRITE: await Firebase HTTP 200
+    // CONFIRMED WRITE: await Database write
     const ok = await storage.saveTable(TABLE_NAMES.EMPLOYEE_LEAVES, leaves);
     if (!ok) {
       // Rollback
@@ -1240,7 +1240,7 @@ class EmployeeService {
 
     const leaveSnapshot = JSON.parse(JSON.stringify(leave));
     storage.delete(TABLE_NAMES.EMPLOYEE_LEAVES, leaveId);
-    // CONFIRMED WRITE: await Firebase HTTP 200
+    // CONFIRMED WRITE: await Database write
     const ok = await storage.saveTable(TABLE_NAMES.EMPLOYEE_LEAVES);
     if (!ok) {
       // Rollback — re-add leave

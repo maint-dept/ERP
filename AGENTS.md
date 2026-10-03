@@ -11,7 +11,7 @@ The live website is deployed to:
 - **NEVER** reset or revert the Git repository to an older commit to implement a new feature.
 - **ALWAYS** start every task from the latest, current codebase in this repository (`HEAD` on `main`).
 - **ALWAYS** make only targeted, required changes to the current/latest files.
-- **ALWAYS** preserve all existing features, bug fixes, configurations, Firebase sync settings, authentication logic, roles, permissions, and user data.
+- **ALWAYS** preserve all existing features, bug fixes, configurations, MySQL Primary and multi-database sync settings, authentication logic, roles, permissions, and user data.
 
 ### 2. Single Authoritative Source of Truth: `public/`
 - **`public/` is the ONLY canonical source of truth** for all frontend files (`public/index.html`, `public/js/`, `public/css/`, `public/lib/`).
@@ -39,7 +39,7 @@ Before pushing any changes to GitHub:
 - ❌ Do NOT reset/revert repository to an older commit to implement a new feature.
 - ❌ Do NOT replace entire source code with a previously generated or cached version.
 - ❌ Do NOT copy root files over `public/`.
-- ❌ Do NOT remove existing Firebase configuration (`firebaseConfig.js`, `firebaseSync.js`).
+- ❌ Do NOT remove existing database configurations (MySQL Primary & PostgreSQL sync).
 - ❌ Do NOT remove existing Admin/User authentication, roles, or permission structures.
 - ❌ Do NOT overwrite newer code with older code.
 - ❌ Do NOT assume an old file is newer just because it already existed.

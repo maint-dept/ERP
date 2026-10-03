@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Al-Muslim Group Garments Factory Maintenance Machine ERP
  * Dynamic Transfer Approval Workflow Service
  * Configurable multi-level routing, location-based scoping rules & permission evaluator
@@ -445,7 +445,7 @@ class WorkflowService {
     if (wf?.isDefault) {
       throw new Error('Cannot delete the system default workflow.');
     }
-    // CONFIRMED WRITE: await Firebase HTTP 200
+    // CONFIRMED WRITE: await Database write
     await storage.writeAndConfirm(TABLE_NAMES.TRANSFER_WORKFLOWS, (tbl) => {
       const idx = tbl.findIndex(w => w.id === workflowId);
       if (idx !== -1) tbl.splice(idx, 1);

@@ -3,7 +3,7 @@
 -- Database Name: maint_erp
 -- Database User: mainterp
 -- Target Engine: InnoDB / utf8mb4
--- Backed up from: Firebase Cloud Firestore + ERP Data Engine
+-- Backed up from: ERP Data Engine (MySQL Primary)
 -- Date: 2026-10-03T04:16:04.925Z
 -- =============================================================================
 

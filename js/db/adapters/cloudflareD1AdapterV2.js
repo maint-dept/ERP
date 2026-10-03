@@ -61,7 +61,7 @@ export class CloudflareD1Adapter extends BaseAdapter {
         throw new Error(`Cannot reach Cloudflare Worker Proxy at "${this.workerUrl}". Verify the URL format (e.g. https://<worker-name>.subdomain.workers.dev) and ensure the Worker is deployed.`);
       }
       if (err.name === 'TypeError' || (err.message && err.message.includes('Failed to fetch'))) {
-        throw new Error('Cloudflare API (api.cloudflare.com) blocked by browser CORS policy. Cloudflare does not allow direct browser-to-API calls from external domains. Deploy a Cloudflare Worker Proxy or use Turso / Supabase / Firebase for instant browser sync.');
+        throw new Error('Cloudflare API (api.cloudflare.com) blocked by browser CORS policy. Cloudflare does not allow direct browser-to-API calls from external domains. Deploy a Cloudflare Worker Proxy or use Turso / Supabase / MySQL for instant browser sync.');
       }
       throw err;
     }

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Al-Muslim Group Garments Factory Maintenance Machine ERP
  * Dynamic Custom Fields Engine - Admin Full Control & Global Synchronization
  */
@@ -58,7 +58,7 @@ class CustomFieldService {
     fieldData.showInFilter = fieldData.showInFilter !== undefined ? fieldData.showInFilter : true;
     fieldData.required = Boolean(fieldData.required);
 
-    // CONFIRMED WRITE: await Firebase HTTP 200
+    // CONFIRMED WRITE: await Database write
     await storage.writeAndConfirm(TABLE_NAMES.CUSTOM_FIELDS, (tbl) => { tbl.push(fieldData); });
     const created = fieldData;
     
@@ -82,7 +82,7 @@ class CustomFieldService {
       updates.options = updates.options.map(o => String(o).trim()).filter(Boolean);
     }
 
-    // CONFIRMED WRITE: await Firebase HTTP 200
+    // CONFIRMED WRITE: await Database write
     let updated;
     await storage.writeAndConfirm(TABLE_NAMES.CUSTOM_FIELDS, (tbl) => {
       const idx = tbl.findIndex(f => f.id === id);
@@ -142,7 +142,7 @@ class CustomFieldService {
     // Remove from Excel structures
     this._removeExcelStructureColumn(field.code);
 
-    // CONFIRMED WRITE: await Firebase HTTP 200
+    // CONFIRMED WRITE: await Database write
     await storage.writeAndConfirm(TABLE_NAMES.CUSTOM_FIELDS, (tbl) => {
       const idx = tbl.findIndex(f => f.id === id);
       if (idx !== -1) tbl.splice(idx, 1);
