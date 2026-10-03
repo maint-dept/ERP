@@ -3880,3 +3880,259 @@ body.theme-light .nav-icon-btn#btn-theme-toggle {
   border: 1.5px solid #94a3b8 !important;
   color: #0284c7 !important;
 }
+
+/* ==========================================================================
+   GLOBAL HIGH-CONTRAST & TEXT READABILITY ENHANCEMENT
+   Ensures sharp, legible text across all modules, tables, forms, popups, and mobile
+   ========================================================================== */
+
+/* 1. Global Anti-Blur & Sharp Text Rendering */
+body, input, select, textarea, button, table, th, td, label, p, span, h1, h2, h3, h4, h5, h6 {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* 2. Universal Table Text Brightness & Contrast (Every Table & Grid) */
+th,
+.data-table thead th,
+.excel-grid-table thead th,
+.pm-table thead th,
+.transfers-table thead th {
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.3px;
+}
+
+td,
+.data-table tbody td,
+.excel-grid-table tbody td,
+.pm-table tbody td,
+.transfers-table tbody td {
+  color: #f8fafc !important;
+}
+
+td span:not(.badge):not(.pill):not([class*="badge-"]):not([class*="status-"]),
+td p,
+td div:not(.badge):not(.pill):not([class*="badge-"]):not([class*="status-"]) {
+  color: inherit;
+}
+
+body.theme-light th,
+body.theme-light .data-table thead th,
+body.theme-light .excel-grid-table thead th,
+body.theme-light .pm-table thead th,
+body.theme-light .transfers-table thead th {
+  color: #090e1a !important;
+}
+
+body.theme-light td,
+body.theme-light .data-table tbody td,
+body.theme-light .excel-grid-table tbody td,
+body.theme-light .pm-table tbody td,
+body.theme-light .transfers-table tbody td {
+  color: #0f172a !important;
+}
+
+/* 3. Universal Form Labels, Filter Labels, and Option Texts */
+label,
+.form-label,
+.filter-label,
+.form-check-label,
+.modal-label,
+.setting-label {
+  color: #f8fafc !important;
+  font-weight: 600 !important;
+}
+
+body.theme-light label,
+body.theme-light .form-label,
+body.theme-light .filter-label,
+body.theme-light .form-check-label,
+body.theme-light .modal-label,
+body.theme-light .setting-label {
+  color: #090e1a !important;
+}
+
+/* 4. Inputs, Selects, and Textareas High-Contrast Text */
+input,
+select,
+textarea,
+.form-control,
+.filter-select,
+.filter-input,
+.search-input {
+  color: #ffffff !important;
+}
+
+body.theme-light input,
+body.theme-light select,
+body.theme-light textarea,
+body.theme-light .form-control,
+body.theme-light .filter-select,
+body.theme-light .filter-input,
+body.theme-light .search-input {
+  color: #090e1a !important;
+}
+
+select option,
+.filter-select option {
+  background-color: #0f172a !important;
+  color: #ffffff !important;
+}
+
+body.theme-light select option,
+body.theme-light .filter-select option {
+  background-color: #ffffff !important;
+  color: #090e1a !important;
+}
+
+/* 5. Crisp, High-Visibility Placeholders */
+::placeholder,
+input::placeholder,
+textarea::placeholder,
+.form-control::placeholder,
+.filter-input::placeholder {
+  color: #cbd5e1 !important;
+  opacity: 1 !important;
+  font-weight: 500 !important;
+}
+
+body.theme-light ::placeholder,
+body.theme-light input::placeholder,
+body.theme-light textarea::placeholder,
+body.theme-light .form-control::placeholder,
+body.theme-light .filter-input::placeholder {
+  color: #64748b !important;
+  opacity: 1 !important;
+}
+
+/* 6. Muted, Secondary, Hints & Subtitles (Eliminate Dim/Blurry Text) */
+.text-muted,
+.text-secondary,
+.form-hint,
+.form-text,
+.help-text,
+.card-subtitle,
+.subtext,
+.meta-text,
+.info-label,
+small,
+.small {
+  color: #cbd5e1 !important;
+}
+
+body.theme-light .text-muted,
+body.theme-light .text-secondary,
+body.theme-light .form-hint,
+body.theme-light .form-text,
+body.theme-light .help-text,
+body.theme-light .card-subtitle,
+body.theme-light .subtext,
+body.theme-light .meta-text,
+body.theme-light .info-label,
+body.theme-light small,
+body.theme-light .small {
+  color: #334155 !important;
+}
+
+/* 7. Modal, Popup & Drawer High-Contrast Typography */
+.modal-title,
+.modal-header h1,
+.modal-header h2,
+.modal-header h3,
+.modal-header h4,
+.modal-card-title,
+.popup-title {
+  color: #ffffff !important;
+  font-weight: 700 !important;
+}
+
+.modal-body,
+.modal-body p,
+.modal-body span:not(.badge):not(.pill),
+.modal-body li {
+  color: #f8fafc;
+}
+
+body.theme-light .modal-title,
+body.theme-light .modal-header h1,
+body.theme-light .modal-header h2,
+body.theme-light .modal-header h3,
+body.theme-light .modal-header h4,
+body.theme-light .modal-card-title,
+body.theme-light .popup-title {
+  color: #090e1a !important;
+}
+
+body.theme-light .modal-body,
+body.theme-light .modal-body p,
+body.theme-light .modal-body span:not(.badge):not(.pill),
+body.theme-light .modal-body li {
+  color: #0f172a;
+}
+
+/* 8. Quick Filter Pills, Badges & Pagination Info */
+.quick-pill {
+  color: #e2e8f0 !important;
+}
+
+.quick-pill:hover,
+.quick-pill.active {
+  color: #ffffff !important;
+}
+
+.pagination-info,
+.page-info,
+.table-meta,
+.table-footer {
+  color: #cbd5e1 !important;
+  font-weight: 500;
+}
+
+body.theme-light .pagination-info,
+body.theme-light .page-info,
+body.theme-light .table-meta,
+body.theme-light .table-footer {
+  color: #334155 !important;
+}
+
+/* 9. High-Contrast Disabled Inputs & Buttons */
+input:disabled,
+select:disabled,
+textarea:disabled,
+.form-control:disabled {
+  color: #cbd5e1 !important;
+  -webkit-text-fill-color: #cbd5e1 !important;
+  opacity: 0.85 !important;
+}
+
+body.theme-light input:disabled,
+body.theme-light select:disabled,
+body.theme-light textarea:disabled,
+body.theme-light .form-control:disabled {
+  color: #475569 !important;
+  -webkit-text-fill-color: #475569 !important;
+  opacity: 0.85 !important;
+}
+
+/* 10. Mobile View Text Crispness & Contrast */
+@media (max-width: 768px) {
+  body {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  .form-label, label {
+    font-size: 13px !important;
+    font-weight: 600 !important;
+  }
+
+  th {
+    font-size: 11.5px !important;
+  }
+
+  td {
+    font-size: 12px !important;
+  }
+}
+
