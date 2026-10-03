@@ -15,10 +15,10 @@ import { renderDashboard, initDashboardEvents } from './components/dashboard.js'
 import { renderInventoryTable, initInventoryTableEvents, syncInventorySelectionDOM } from './components/inventoryTable.js';
 import { renderMachineModal, initMachineModalEvents } from './components/machineModal.js';
 import { renderMachineDetails, initMachineDetailsEvents } from './components/machineDetails.js';
-import { renderTransferModal, initTransferModalEvents } from './components/transferModal.js';
-import { renderTransferDetailsModal, initTransferDetailsModalEvents } from './components/transferDetailsModal.js';
-import { renderEditTransferModal, initEditTransferModalEvents } from './components/editTransferModal.js';
-import { renderTransfersView, initTransfersViewEvents } from './components/transfersView.js';
+import { renderTransferModal, initTransferModalEvents } from './components/transferModal.js?v=4.22.6';
+import { renderTransferDetailsModal, initTransferDetailsModalEvents } from './components/transferDetailsModal.js?v=4.22.6';
+import { renderEditTransferModal, initEditTransferModalEvents } from './components/editTransferModal.js?v=4.22.6';
+import { renderTransfersView, initTransfersViewEvents } from './components/transfersView.js?v=4.22.6';
 import { renderTransferWorkflowBuilder, initTransferWorkflowBuilderEvents } from './components/transferWorkflowBuilder.js';
 import { renderMasterDataView, initMasterDataEvents } from './components/masterDataView.js';
 import { renderCustomFieldsMgr, initCustomFieldsEvents } from './components/customFieldsMgr.js';

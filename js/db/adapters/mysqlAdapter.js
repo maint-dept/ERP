@@ -141,6 +141,25 @@ export class MysqlAdapter extends BaseAdapter {
     }
   }
 
+  async saveMultipleTables(tablesObj) {
+    try {
+      const url = this._getUrl('save_multiple_tables');
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: this._headers(),
+        body: JSON.stringify({ action: 'save_multiple_tables', tables: tablesObj, apiKey: this.apiKey })
+      });
+      if (res && res.ok) {
+        const json = await res.json().catch(() => ({}));
+        return { success: true, ...json, updateTime: json.updatedAt || json.updateTime };
+      }
+      const errText = await res.text().catch(() => '');
+      return { success: false, error: errText || `MySQL save-multiple-tables failed: HTTP ${res.status}` };
+    } catch (e) {
+      return { success: false, error: `MySQL save-multiple-tables failed: ${e.message}` };
+    }
+  }
+
   async getTable(collection) {
     try {
       let url = this._getUrl('get_table');

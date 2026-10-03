@@ -12,6 +12,7 @@ import { approvalService } from './approvalService.js';
 import { auditService } from './auditService.js';
 import { notificationService } from './notificationService.js';
 import { historyService } from './historyService.js';
+import { syncManager } from '../db/syncManager.js';
 
 class MachineService {
   /**
@@ -405,19 +406,29 @@ class MachineService {
       return { machine: created, pendingApproval: true };
     }
 
-    // Direct insert (admin/authorized user)
-    const created = storage.insert(TABLE_NAMES.MACHINES, newMachine);
-
-    // Confirmed cloud write — await HTTP 200
-    const ok = await storage.saveTable(TABLE_NAMES.MACHINES, true);
-    if (!ok) {
-      // Rollback insert
-      const machines = storage.getTable(TABLE_NAMES.MACHINES);
-      const idx = machines.findIndex(m => m.id === created.id);
-      if (idx !== -1) machines.splice(idx, 1);
-      storage.rebuildAllIndexes();
-      throw new CloudSaveError('❌ Cloud Save Failed: Machine registration was not saved to the cloud. Check your connection.');
+    // Pre-generate ID and timestamps so we can write to MySQL first
+    if (!newMachine.id) {
+      newMachine.id = `mac-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
     }
+    newMachine.createdAt = newMachine.createdAt || new Date().toISOString();
+    newMachine.updatedAt = new Date().toISOString();
+
+    // CONFIRMED CLOUD WRITE FIRST (MySQL Single Source of Truth)
+    const dbResult = await syncManager.saveRecord(TABLE_NAMES.MACHINES, newMachine.id, newMachine);
+    if (!dbResult.success) {
+      throw new CloudSaveError('❌ Database Transaction Failed: ' + dbResult.error);
+    }
+
+    // Now update local cache and memory
+    if (!storage.data[TABLE_NAMES.MACHINES]) {
+      storage.data[TABLE_NAMES.MACHINES] = [];
+    }
+    storage.data[TABLE_NAMES.MACHINES].push(newMachine);
+    storage.rebuildAllIndexes();
+    try {
+      localStorage.setItem('al_muslim_erp_' + TABLE_NAMES.MACHINES, JSON.stringify(storage.data[TABLE_NAMES.MACHINES]));
+    } catch (_) {}
+    const created = newMachine;
 
     auditService.log('MACHINE_ADDED', 'MACHINE', created.serialNumber, `Added machine: ${created.serialNumber}`);
 
@@ -539,16 +550,20 @@ class MachineService {
       updatedAt: new Date().toISOString()
     };
 
-    // Direct Admin update (in-memory)
-    const updated = storage.update(TABLE_NAMES.MACHINES, id, enrichedUpdates);
+    // PREPARE UPDATED OBJECT
+    const targetUpdateObj = { ...existing, ...enrichedUpdates };
 
-    // Confirmed cloud write — await HTTP 200
-    const ok = await storage.saveTable(TABLE_NAMES.MACHINES, true);
-    if (!ok) {
-      // Rollback — restore previous state
-      storage.update(TABLE_NAMES.MACHINES, id, existing);
-      throw new CloudSaveError('❌ Cloud Save Failed: Machine update was not saved to the cloud. Check your connection.');
+    // CONFIRMED CLOUD WRITE FIRST (MySQL Single Source of Truth)
+    const dbResult = await syncManager.saveRecord(TABLE_NAMES.MACHINES, id, targetUpdateObj);
+    if (!dbResult.success) {
+      throw new CloudSaveError('❌ Database Transaction Failed: ' + dbResult.error);
     }
+
+    // Direct Admin update (in-memory & cache only AFTER cloud success)
+    const updated = storage.update(TABLE_NAMES.MACHINES, id, enrichedUpdates);
+    try {
+      localStorage.setItem('al_muslim_erp_' + TABLE_NAMES.MACHINES, JSON.stringify(storage.data[TABLE_NAMES.MACHINES]));
+    } catch (_) {}
 
     auditService.log('MACHINE_UPDATED', 'MACHINE', updated.serialNumber, `Updated machine ${updated.serialNumber}`, existing, updated);
 
@@ -752,19 +767,19 @@ class MachineService {
       throw new Error('Access Denied: You do not have permission to delete machines.');
     }
 
+    // CONFIRMED CLOUD WRITE FIRST (MySQL Single Source of Truth)
+    const dbResult = await syncManager.primaryAdapter.deleteRecord(TABLE_NAMES.MACHINES, id);
+    if (!dbResult.success) {
+      throw new CloudSaveError('❌ Database Transaction Failed: ' + dbResult.error);
+    }
+
+    // Direct Admin update (in-memory & cache only AFTER cloud success)
     const removed = storage.delete(TABLE_NAMES.MACHINES, id);
     if (removed) {
       storage.rebuildAllIndexes();
-
-      // Confirmed cloud write
-      const ok = await storage.saveTable(TABLE_NAMES.MACHINES, true);
-      if (!ok) {
-        // Rollback — re-insert the record
-        if (!storage.data[TABLE_NAMES.MACHINES]) storage.data[TABLE_NAMES.MACHINES] = [];
-        storage.data[TABLE_NAMES.MACHINES].push(existing);
-        storage.rebuildAllIndexes();
-        throw new CloudSaveError('❌ Cloud Save Failed: Machine deletion was not confirmed by the cloud. Record restored locally.');
-      }
+      try {
+        localStorage.setItem('al_muslim_erp_' + TABLE_NAMES.MACHINES, JSON.stringify(storage.data[TABLE_NAMES.MACHINES]));
+      } catch (_) {}
 
       auditService.log(
         'MACHINE_PERMANENT_DELETED',
@@ -812,19 +827,21 @@ class MachineService {
     });
 
     if (deletedCount > 0) {
-      storage.rebuildAllIndexes();
+      // PREPARE UPDATED TABLE IN MEMORY FIRST
+      const newTable = storage.getTable(TABLE_NAMES.MACHINES).filter(m => !machineIds.includes(m.id));
 
-      // Confirmed cloud write
-      const ok = await storage.saveTable(TABLE_NAMES.MACHINES, true);
-      if (!ok) {
-        // Rollback — re-insert all deleted records
-        deletedRecords.forEach(m => {
-          if (!storage.data[TABLE_NAMES.MACHINES]) storage.data[TABLE_NAMES.MACHINES] = [];
-          storage.data[TABLE_NAMES.MACHINES].push(m);
-        });
-        storage.rebuildAllIndexes();
-        throw new CloudSaveError(`❌ Cloud Save Failed: Bulk deletion of ${deletedCount} machines was not confirmed. Records restored locally.`);
+      // CONFIRMED CLOUD WRITE FIRST (MySQL Single Source of Truth)
+      const dbResult = await syncManager.primaryAdapter.saveTable(TABLE_NAMES.MACHINES, newTable);
+      if (!dbResult.success) {
+        throw new CloudSaveError('❌ Database Transaction Failed: ' + dbResult.error);
       }
+
+      // NOW update local memory & cache
+      storage.data[TABLE_NAMES.MACHINES] = newTable;
+      storage.rebuildAllIndexes();
+      try {
+        localStorage.setItem('al_muslim_erp_' + TABLE_NAMES.MACHINES, JSON.stringify(newTable));
+      } catch (_) {}
 
       auditService.log(
         'BULK_MACHINE_PERMANENT_DELETED',

@@ -123,7 +123,7 @@ export function renderTransferModal() {
                 <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 10px;">
                   <div>
                     <div style="display: flex; align-items: center; gap: 8px;">
-                      <span style="font-size: 15px; font-weight: 800; color: #fff;">${machine.machineName?.name || 'Sewing Machine'}</span>
+                      <span style="font-size: 15px; font-weight: 800; color: #fff;">${machine.machineName?.name || (typeof machine.machineName === 'string' ? machine.machineName : 'Sewing Machine')}</span>
                       <span class="badge" style="background: rgba(2, 132, 199, 0.3); color: #38bdf8; font-family: var(--font-mono); font-weight: 800; font-size: 12px; border: 1px solid rgba(56, 189, 248, 0.4);">
                         ${machine.serialNumber}
                       </span>
@@ -132,8 +132,8 @@ export function renderTransferModal() {
                       </span>
                     </div>
                     <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">
-                      <strong>Brand &amp; Model:</strong> ${machine.brand?.name || '—'} &bull; ${machine.model?.name || '—'} | 
-                      <strong>Type:</strong> ${machine.machineName?.categoryName || 'Standard Machine'}
+                      <strong>Brand &amp; Model:</strong> ${machine.brand?.name || machine.brand || '—'} &bull; ${machine.model?.name || machine.model || '—'} | 
+                      <strong>Type:</strong> ${machine.machineName?.categoryName || machine.category || 'Standard Machine'}
                     </div>
                   </div>
 

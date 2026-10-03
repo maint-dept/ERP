@@ -508,10 +508,10 @@ class PDFService {
           <div class="section-card">
             <div class="section-title">🧵 1. Machine Asset Identity</div>
             <div style="font-size: 11.5px; display: flex; flex-direction: column; gap: 4px;">
-              <div><strong>Machine Name:</strong> ${req.machineInfo.machineName}</div>
-              <div><strong>Brand &amp; Model:</strong> ${req.machineInfo.brand} — ${req.machineInfo.model}</div>
-              <div><strong>Serial Number:</strong> <span style="font-family: monospace; font-weight: 800; color: #0284c7;">${req.machineInfo.serialNumber}</span></div>
-              <div><strong>Category:</strong> ${req.machineInfo.category || 'Garments Machinery'}</div>
+              <div><strong>Machine Name:</strong> ${req.machineInfo?.machineName || req.machineName || 'Machine'}</div>
+              <div><strong>Brand &amp; Model:</strong> ${req.machineInfo?.brand || 'Unknown'} — ${req.machineInfo?.model || 'Unknown'}</div>
+              <div><strong>Serial Number:</strong> <span style="font-family: monospace; font-weight: 800; color: #0284c7;">${req.machineInfo?.serialNumber || req.serialNumber || req.machineSerial || 'Unknown'}</span></div>
+              <div><strong>Category:</strong> ${req.machineInfo?.category || 'Garments Machinery'}</div>
             </div>
           </div>
 

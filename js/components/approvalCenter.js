@@ -123,10 +123,10 @@ export function renderApprovalCenter() {
                           ${req.requestNumber}
                         </span>
                         <span style="font-weight: 700; color: #fff; font-size: 13.5px;">
-                          ${req.machineInfo.machineName} (${req.machineInfo.brand} ${req.machineInfo.model})
+                          ${req.machineInfo?.machineName || req.machineName || 'Machine'} (${req.machineInfo?.brand || '—'} ${req.machineInfo?.model || '—'})
                         </span>
                         <span style="font-family: var(--font-mono); font-size: 12px; color: #38bdf8; font-weight: 700;">
-                          SN: ${req.machineInfo.serialNumber}
+                          SN: ${req.machineInfo?.serialNumber || req.serialNumber || req.machineSerial || 'N/A'}
                         </span>
                       </div>
 

@@ -61,13 +61,13 @@ export function renderTransferDetailsModal() {
                 🧵 Equipment Details
               </div>
               <div style="font-size: 15px; font-weight: 800; color: #fff;">
-                ${req.machineInfo.machineName}
+                ${req.machineInfo?.machineName || req.machineName || 'Machine'}
               </div>
               <div style="font-size: 12.5px; color: var(--text-secondary); margin-top: 2px;">
-                ${req.machineInfo.brand} &bull; ${req.machineInfo.model}
+                ${req.machineInfo?.brand || '—'} &bull; ${req.machineInfo?.model || '—'}
               </div>
               <div style="display: flex; gap: 16px; margin-top: 8px; font-size: 12px;">
-                <div><span style="color: var(--text-muted);">Serial No:</span> <strong style="color: #38bdf8; font-family: var(--font-mono);">${req.machineInfo.serialNumber}</strong></div>
+                <div><span style="color: var(--text-muted);">Serial No:</span> <strong style="color: #38bdf8; font-family: var(--font-mono);">${req.machineInfo?.serialNumber || req.serialNumber || req.machineSerial || 'N/A'}</strong></div>
               </div>
             </div>
 
