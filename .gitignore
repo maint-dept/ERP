@@ -10,3 +10,4 @@ data/*serviceAccountKey*.json
 data/*.backup.json
 data/*_backup*.json
 data/chat_history.json
+.vscode/

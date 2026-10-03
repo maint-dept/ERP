@@ -86,15 +86,15 @@ export const PROVIDER_SPECS = {
     badge: 'SQL · Relational RDBMS',
     icon: '🐬',
     color: '#00758f',
-    description: 'High-performance SQL database engine with InnoDB transaction guarantees and indexing.',
+    description: 'High-performance SQL database engine with InnoDB transaction guarantees and indexing. Works on any Paid Hosting (cPanel, Hostinger, VPS, Namecheap).',
     fields: [
-      { id: 'host', label: 'Host', type: 'text', placeholder: '127.0.0.1 or db.almuslim.com', required: true },
-      { id: 'port', label: 'Port', type: 'number', placeholder: '3306', defaultValue: '3306', required: true },
-      { id: 'database', label: 'Database', type: 'text', placeholder: 'al_muslim_erp', required: true },
-      { id: 'username', label: 'Username', type: 'text', placeholder: 'root', required: true },
-      { id: 'password', label: 'Password', type: 'password', placeholder: '••••••••••••', required: true },
-      { id: 'ssl', label: 'Require SSL / TLS', type: 'checkbox', defaultValue: false },
-      { id: 'endpoint', label: 'Proxy Endpoint URL (Optional)', type: 'text', placeholder: '/api/db/mysql', note: 'Direct TCP blocked by browser; uses REST proxy' }
+      { id: 'endpoint', label: 'Hosting REST API Endpoint URL', type: 'text', placeholder: 'https://yourdomain.com/api/mysql_api.php', required: true, note: 'Upload mysql_api.php to your paid hosting and enter its full URL here.' },
+      { id: 'apiKey', label: 'API Secret Key (Optional)', type: 'password', placeholder: 'e.g. secret_key_123', note: 'Matches $API_KEY defined in mysql_api.php for secure authentication.' },
+      { id: 'database', label: 'Database Name', type: 'text', placeholder: 'e.g. cpaneluser_almuslim_erp', defaultValue: 'al_muslim_erp', required: false },
+      { id: 'username', label: 'Database User', type: 'text', placeholder: 'e.g. cpaneluser_dbuser', required: false },
+      { id: 'password', label: 'Database Password', type: 'password', placeholder: '••••••••••••', required: false },
+      { id: 'host', label: 'Database Host', type: 'text', placeholder: 'localhost', defaultValue: 'localhost', required: false },
+      { id: 'port', label: 'Port', type: 'number', placeholder: '3306', defaultValue: '3306', required: false }
     ]
   },
   MONGODB: {
@@ -1435,6 +1435,34 @@ service cloud.firestore {
             Direct calls to <code>api.cloudflare.com</code> are blocked by browser CORS. In Cloudflare Dashboard, create a Worker, paste this code, bind your D1 database as <strong>DB</strong>, and enter your Worker URL (e.g. <code>https://my-worker.subdomain.workers.dev</code>):
           </p>
           <pre style="background: #090d16; border: 1px solid rgba(255,255,255,0.08); padding: 10px 12px; border-radius: 6px; font-size: 11px; color: #fed7aa; margin: 0; overflow-x: auto; overflow-y: auto; max-height: 200px; font-family: monospace; line-height: 1.4; white-space: pre; word-break: normal;">${CLOUDFLARE_WORKER_CODE.trim()}</pre>
+        </div>
+      ` : ''}
+
+      ${spec.key === 'MYSQL' ? `
+        <div style="background: rgba(0, 117, 143, 0.08); border: 1.5px solid rgba(0, 117, 143, 0.4); border-radius: 8px; padding: 14px 16px; margin-top: 4px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 18px;">🐬</span>
+              <span style="font-size: 13.5px; font-weight: 800; color: #38bdf8;">MySQL Paid Hosting Setup (cPanel / Hostinger / VPS)</span>
+            </div>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+              <a href="api/mysql_api.php" download="mysql_api.php" class="btn btn-sm" style="background: #0284c7; color: #fff; font-weight: 800; font-size: 11.5px; padding: 6px 12px; border-radius: 6px; text-decoration: none; display: flex; align-items: center; gap: 5px; box-shadow: 0 2px 8px rgba(2, 132, 199, 0.3);">
+                <span>📥</span> <span>Download mysql_api.php</span>
+              </a>
+              <a href="data/erp_mysql_dump.sql" download="erp_mysql_dump.sql" class="btn btn-sm" style="background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); font-weight: 800; font-size: 11.5px; padding: 6px 12px; border-radius: 6px; text-decoration: none; display: flex; align-items: center; gap: 5px;">
+                <span>📥</span> <span>Download Seed SQL (.sql)</span>
+              </a>
+            </div>
+          </div>
+          <p style="font-size: 12px; color: #cbd5e1; margin: 0 0 10px; line-height: 1.5;">
+            Paid Hosting (cPanel / Hostinger / Namecheap)-এ সরাসরি ব্রাউজার থেকে MySQL TCP (port 3306) কানেক্ট হতে পারে না। তাই সহজে কানেক্ট করার জন্য ৩টি সহজ ধাপ অনুসরণ করুন:
+          </p>
+          <div style="background: #090d16; border: 1px solid rgba(255,255,255,0.08); padding: 12px 14px; border-radius: 6px; font-size: 11.5px; color: #e2e8f0; line-height: 1.6;">
+            <strong>ধাপ ১:</strong> আপনার Paid Hosting cPanel-এ গিয়ে <em>MySQL Databases</em> থেকে নতুন ডাটাবেজ ও ইউজার তৈরি করুন এবং All Privileges দিন।<br/>
+            <strong>ধাপ ২:</strong> <em>phpMyAdmin</em> ওপেন করে ডাটাবেজ সিলেক্ট করে <strong>Import</strong> ট্যাবে ক্লিক করে <code>erp_mysql_dump.sql</code> ফাইলটি আপলোড করুন। (সব ফ্যাক্টরি ডাটা ও টেবিল তৈরি হয়ে যাবে)।<br/>
+            <strong>ধাপ ৩:</strong> cPanel <em>File Manager</em>-এ গিয়ে <code>public_html/api/</code> ফোল্ডারে <code>mysql_api.php</code> ফাইলটি আপলোড করুন এবং ফাইলের শুরুতে আপনার ডাটাবেজের ইউজার ও পাসওয়ার্ড লিখে দিন।<br/>
+            <strong>ধাপ ৪:</strong> উপরের <strong>Hosting REST API Endpoint URL</strong> ঘরে আপনার ওয়েবসাইটের লিংক দিন (যেমন: <code>https://yourdomain.com/api/mysql_api.php</code>) এবং নিচে <strong>[ Test Connection ]</strong> চাপুন!
+          </div>
         </div>
       ` : ''}
 

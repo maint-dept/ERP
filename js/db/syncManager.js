@@ -15,13 +15,14 @@ class SyncManager {
     this.primaryAdapter = new FirebaseAdapter();
     this.primaryAdapter.id = 'default_fb';
     this.primaryAdapter.name = 'Firebase Primary';
-    this.primaryAdapter.config = { retryEnabled: true, enabled: true };
+    this.primaryAdapter.config = { retryEnabled: true, enabled: true, autoSync: true };
     this.secondaryAdapters = new Map(); // dbId -> adapter
     this.configLoaded = false;
   }
 
   /**
-   * Load configurations from storage engine or localStorage
+   * Load configurations from storage engine or localStorage.
+   * Always clears old adapters and rebuilds fresh from latest saved configs.
    */
   async loadConfig() {
     try {
@@ -35,7 +36,10 @@ class SyncManager {
           try { configs = JSON.parse(stored); } catch (_) {}
         }
       }
+
+      // Always clear old adapters before rebuilding (prevents stale adapter bug)
       this.secondaryAdapters.clear();
+
       if (configs && Array.isArray(configs)) {
         configs.forEach(conf => {
           if (conf && conf.enabled) {
@@ -49,7 +53,23 @@ class SyncManager {
             else if (t === 'NEON')      adapter = new NeonAdapter(conf);
             else if (t === 'MONGODB' || t === 'MONGO') adapter = new MongoAdapter(conf);
             else if (t === 'MYSQL')     adapter = new MysqlAdapter(conf);
-            if (adapter) this.secondaryAdapters.set(conf.id, adapter);
+
+            if (adapter) {
+              // If configured as PRIMARY, assign as primaryAdapter
+              if (conf.role === 'PRIMARY') {
+                adapter.id = conf.id;
+                adapter.name = conf.name || `${conf.type} Primary`;
+                adapter.config = {
+                  ...conf,
+                  retryEnabled: conf.retryEnabled !== false,
+                  autoSync: true,
+                  enabled: true
+                };
+                this.primaryAdapter = adapter;
+              } else {
+                this.secondaryAdapters.set(conf.id, adapter);
+              }
+            }
           }
         });
         try { localStorage.setItem('erp_multi_db_config', JSON.stringify(configs)); } catch (_) {}
@@ -67,11 +87,20 @@ class SyncManager {
   }
 
   /**
+   * Force a fresh reload of all secondary adapter configs.
+   * Call this whenever configs are saved, updated, or deleted.
+   */
+  async reloadConfig() {
+    this.configLoaded = false;
+    await this.loadConfig();
+  }
+
+  /**
    * Save an entire table to Primary (Firebase), then Fan-out to Secondaries
    */
   async saveTable(collection, dataObj) {
     await this._ensureConfig();
-    
+
     // 1. Try Primary
     const primaryResult = await this.primaryAdapter.saveTable(collection, dataObj);
     if (primaryResult.success) {
@@ -134,11 +163,14 @@ class SyncManager {
 
   async _fanoutTableSave(collection, dataObj, excludeDbId = null) {
     for (const [id, adapter] of this.secondaryAdapters.entries()) {
-      if (!adapter.config.autoSync || id === excludeDbId) continue;
-      
+      // Primary gate: adapter must be enabled
+      if (!adapter.config.enabled || id === excludeDbId) continue;
+      // Secondary gate: real-time auto-sync must be ON
+      if (adapter.config.autoSync === false) continue;
+
       adapter.saveTable(collection, dataObj).then(res => {
         if (!res.success) {
-          console.warn(`Sync failed for ${adapter.name} on ${collection}`);
+          console.warn(`[SyncManager] Fan-out failed for ${adapter.name} on ${collection}: ${res.error}`);
           this._queueRetry(adapter, collection, null, 'SAVE_TABLE', dataObj, res.error);
         }
       }).catch(err => {
@@ -149,7 +181,8 @@ class SyncManager {
 
   async _fanoutRecordSave(collection, docId, data, excludeDbId = null) {
     for (const [id, adapter] of this.secondaryAdapters.entries()) {
-      if (!adapter.config.autoSync || id === excludeDbId) continue;
+      if (!adapter.config.enabled || id === excludeDbId) continue;
+      if (adapter.config.autoSync === false) continue;
 
       adapter.saveRecord(collection, docId, data).then(res => {
         if (!res.success) {
@@ -188,7 +221,7 @@ class SyncManager {
     for (const item of pending) {
       let adapter = this.secondaryAdapters.get(item.dbId);
       if (item.dbId === 'default_fb') adapter = this.primaryAdapter;
-      
+
       if (!adapter) continue; // Database removed or disabled
 
       try {
@@ -202,59 +235,63 @@ class SyncManager {
         if (result.success) {
           await retryQueue.update(item.id, { status: 'SUCCESS', lastError: null });
         } else {
-          await retryQueue.update(item.id, { 
-            retryCount: item.retryCount + 1, 
-            lastError: result.error 
+          await retryQueue.update(item.id, {
+            retryCount: item.retryCount + 1,
+            lastError: result.error
           });
         }
       } catch (e) {
-        await retryQueue.update(item.id, { 
-          retryCount: item.retryCount + 1, 
-          lastError: e.message 
+        await retryQueue.update(item.id, {
+          retryCount: item.retryCount + 1,
+          lastError: e.message
         });
       }
     }
   }
 
   /**
-   * Run a Full Initial Sync / Migration from Primary (Firebase) to a specific Secondary Database
-   * Reads all tables from memory (which matches Firebase) and bulk-upserts to the backup.
+   * Run a Full Initial Sync / Migration from Primary (Firebase) to a specific Secondary Database.
+   * Reads all tables from in-memory storage (mirrors Firebase) and bulk-upserts to the target.
    */
   async runFullSync(dbId) {
     await this._ensureConfig();
     const adapter = this.secondaryAdapters.get(dbId);
-    if (!adapter) throw new Error('Database not found or disabled.');
+    if (!adapter) throw new Error('Database not found or disabled. Make sure the database is enabled and config is saved.');
 
     const { storage } = await import('./storage.js');
     const allData = storage.data;
     const tables = Object.keys(allData);
-    
+
     let totalSuccess = 0;
-    let totalFailed = 0;
+    let totalFailed  = 0;
 
     for (const tableName of tables) {
       const tableData = allData[tableName];
-      if (!tableData || Object.keys(tableData).length === 0) continue;
+
+      // Fix: correctly skip truly empty tables (works for both arrays and plain objects)
+      if (tableData === null || tableData === undefined) continue;
+      if (Array.isArray(tableData) && tableData.length === 0) continue;
+      if (!Array.isArray(tableData) && typeof tableData === 'object' && Object.keys(tableData).length === 0) continue;
 
       const result = await adapter.saveTable(tableName, tableData);
       if (result.success) {
         totalSuccess++;
       } else {
         totalFailed++;
-        console.error(`Full Sync failed for table ${tableName} on ${adapter.name}:`, result.error);
+        console.error(`[SyncManager] Full Sync failed for table "${tableName}" on "${adapter.name}":`, result.error);
 
-        // Abort early if credentials invalid, network blocked, CORS, or table missing
+        // Abort early on fatal / unrecoverable errors
         const errStr = (result.error || '').toLowerCase();
-        const isFatal = result.isTableMissing || result.isAuthError || 
-          errStr.includes('not found') || 
-          errStr.includes('authentication') || 
-          errStr.includes('failed to fetch') || 
-          errStr.includes('network') || 
-          errStr.includes('cors') || 
-          errStr.includes('blocked') ||
+        const isFatal = result.isTableMissing || result.isAuthError ||
+          errStr.includes('not found')        ||
+          errStr.includes('authentication')   ||
+          errStr.includes('failed to fetch')  ||
+          errStr.includes('network')          ||
+          errStr.includes('cors')             ||
+          errStr.includes('blocked')          ||
           errStr.includes('permission denied') ||
-          errStr.includes('unauthorized') ||
-          errStr.includes('cannot reach') ||
+          errStr.includes('unauthorized')     ||
+          errStr.includes('cannot reach')     ||
           errStr.includes('consumer_invalid') ||
           errStr.includes('invalid');
 
@@ -267,13 +304,13 @@ class SyncManager {
     }
 
     if (totalFailed > 0) {
-      throw new Error(`Sync completed with ${totalFailed} failed table(s).`);
+      throw new Error(`Sync completed with ${totalFailed} failed table(s). Check console for details.`);
     }
 
-    // Update last sync time
+    // Persist updated lastSync timestamp back into config
     adapter.config.lastSync = new Date().toLocaleString();
     this._saveConfigs();
-    
+
     return true;
   }
 
@@ -282,7 +319,7 @@ class SyncManager {
     if (storage && typeof storage.saveMultiDbConfigs === 'function') {
       storage.saveMultiDbConfigs(configs).catch(() => {});
     } else {
-      localStorage.setItem('erp_multi_db_config', JSON.stringify(configs));
+      try { localStorage.setItem('erp_multi_db_config', JSON.stringify(configs)); } catch (_) {}
     }
   }
 }

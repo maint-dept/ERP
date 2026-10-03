@@ -55,14 +55,20 @@ class SyncManager {
             else if (t === 'MYSQL')     adapter = new MysqlAdapter(conf);
 
             if (adapter) {
-              // Ensure adapter.config carries all necessary flags merged from saved conf
-              adapter.config = {
-                ...conf,
-                retryEnabled: conf.retryEnabled !== false,
-                autoSync:     conf.autoSync !== false,  // default ON unless explicitly false
-                enabled:      true
-              };
-              this.secondaryAdapters.set(conf.id, adapter);
+              // If configured as PRIMARY, assign as primaryAdapter
+              if (conf.role === 'PRIMARY') {
+                adapter.id = conf.id;
+                adapter.name = conf.name || `${conf.type} Primary`;
+                adapter.config = {
+                  ...conf,
+                  retryEnabled: conf.retryEnabled !== false,
+                  autoSync: true,
+                  enabled: true
+                };
+                this.primaryAdapter = adapter;
+              } else {
+                this.secondaryAdapters.set(conf.id, adapter);
+              }
             }
           }
         });
