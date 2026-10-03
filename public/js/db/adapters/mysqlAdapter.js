@@ -12,14 +12,25 @@ export class MysqlAdapter extends BaseAdapter {
     this.name = config.name || 'MySQL Database';
     this.host = config.host || 'localhost';
     this.port = config.port || 3306;
-    this.database = config.database || 'al_muslim_erp';
-    this.username = config.username || '';
-    this.password = config.password || '';
+    this.database = config.database && config.database !== 'al_muslim_erp' ? config.database : 'motaherh_maint-erp';
+    this.username = config.username || 'motaherh_mainterp';
+    this.password = config.password || 'Maint@456';
     this.apiKey = config.apiKey || '';
     this.ssl = config.ssl !== false;
-    let rawEndpoint = (config.endpoint || '/api/db/mysql').trim().replace(/\/$/, '');
-    if (rawEndpoint && !rawEndpoint.startsWith('/') && !/^https?:\/\//i.test(rawEndpoint)) {
-      rawEndpoint = 'https://' + rawEndpoint;
+    let rawEndpoint = (config.endpoint || '').trim().replace(/\/$/, '');
+    if (!rawEndpoint ||
+        rawEndpoint === 'api/mysql_api.php' ||
+        rawEndpoint === '/api/mysql_api.php' ||
+        rawEndpoint.includes('://api/mysql_api.php') ||
+        rawEndpoint === '/api/db/mysql' ||
+        (rawEndpoint.includes('api/mysql_api.php') && !rawEndpoint.startsWith('http'))) {
+      rawEndpoint = 'https://moviezonex.com/mysql_api.php';
+    } else if (!/^https?:\/\//i.test(rawEndpoint)) {
+      if (typeof window !== 'undefined' && window.location && window.location.hostname.includes('github.io')) {
+        rawEndpoint = 'https://moviezonex.com/mysql_api.php';
+      } else {
+        rawEndpoint = 'https://' + rawEndpoint;
+      }
     }
     this.endpoint = rawEndpoint;
   }
@@ -121,7 +132,7 @@ export class MysqlAdapter extends BaseAdapter {
       });
       if (res && res.ok) {
         const json = await res.json().catch(() => ({}));
-        return { success: true, ...json };
+        return { success: true, ...json, updateTime: json.updatedAt || json.updateTime };
       }
       const errText = await res.text().catch(() => '');
       return { success: false, error: errText || `MySQL save-table failed: HTTP ${res.status}` };

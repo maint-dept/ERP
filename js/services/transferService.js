@@ -295,9 +295,9 @@ class TransferService {
 
     storage.insert(TABLE_NAMES.TRANSFER_REQUESTS, newRequest);
 
-    // Optimistic instant local storage save & background cloud writes
-    storage.saveTable(TABLE_NAMES.MACHINES, false);
-    storage.saveTable(TABLE_NAMES.TRANSFER_REQUESTS, false);
+    // Guaranteed instant storage save & immediate cloud commit to MySQL
+    storage.saveTable(TABLE_NAMES.MACHINES, true);
+    storage.saveTable(TABLE_NAMES.TRANSFER_REQUESTS, true);
 
     // Direct background sync with primary MySQL adapter (single record upsert takes <200ms)
     if (typeof syncManager !== 'undefined' && syncManager.primaryAdapter) {
@@ -425,8 +425,8 @@ class TransferService {
         updatedAt: now.toISOString()
       });
 
-      // Instant local persistence & non-blocking background sync
-      storage.saveTable(TABLE_NAMES.TRANSFER_REQUESTS, false);
+      // Instant local persistence & immediate cloud sync
+      storage.saveTable(TABLE_NAMES.TRANSFER_REQUESTS, true);
       if (typeof syncManager !== 'undefined' && syncManager.primaryAdapter) {
         syncManager.saveRecord(TABLE_NAMES.TRANSFER_REQUESTS, req.id, updated).catch(e => console.warn('Sync transfer request notice:', e.message));
       }
@@ -513,9 +513,9 @@ class TransferService {
       updatedAt: now.toISOString()
     });
 
-    // Optimistic save & background sync
-    storage.saveTable(TABLE_NAMES.MACHINES, false);
-    storage.saveTable(TABLE_NAMES.TRANSFER_REQUESTS, false);
+    // Immediate save & cloud sync
+    storage.saveTable(TABLE_NAMES.MACHINES, true);
+    storage.saveTable(TABLE_NAMES.TRANSFER_REQUESTS, true);
 
     notificationService.notify(
       'Machine Transfer Rejected',
@@ -573,8 +573,8 @@ class TransferService {
       updatedAt: now.toISOString()
     });
 
-    // Optimistic save & background sync
-    storage.saveTable(TABLE_NAMES.TRANSFER_REQUESTS, false);
+    // Immediate save & cloud sync
+    storage.saveTable(TABLE_NAMES.TRANSFER_REQUESTS, true);
 
     notificationService.notify(
       'Transfer Returned for Revision',
@@ -667,8 +667,8 @@ class TransferService {
       `Resubmitted with new destination ${destPath}.`
     );
 
-    // Optimistic save & background sync
-    storage.saveTable(TABLE_NAMES.TRANSFER_REQUESTS, false);
+    // Immediate save & cloud sync
+    storage.saveTable(TABLE_NAMES.TRANSFER_REQUESTS, true);
 
     return updated;
   }
@@ -793,8 +793,8 @@ class TransferService {
       `Destination edited to ${destPath} by ${user.name}`
     );
 
-    // Instant local persistence & non-blocking background sync
-    storage.saveTable(TABLE_NAMES.TRANSFER_REQUESTS, false);
+    // Instant local persistence & immediate cloud sync
+    storage.saveTable(TABLE_NAMES.TRANSFER_REQUESTS, true);
     if (typeof syncManager !== 'undefined' && syncManager.primaryAdapter) {
       syncManager.saveRecord(TABLE_NAMES.TRANSFER_REQUESTS, req.id, updated).catch(e => console.warn('Sync transfer request notice:', e.message));
     }
@@ -870,9 +870,9 @@ class TransferService {
       `Transfer ${req.requestNumber} cancelled by ${user.name}: ${reason}`
     );
 
-    // Optimistic save & background sync
-    storage.saveTable(TABLE_NAMES.MACHINES, false);
-    storage.saveTable(TABLE_NAMES.TRANSFER_REQUESTS, false);
+    // Immediate save & cloud sync
+    storage.saveTable(TABLE_NAMES.MACHINES, true);
+    storage.saveTable(TABLE_NAMES.TRANSFER_REQUESTS, true);
 
     return updated;
   }
@@ -991,10 +991,10 @@ class TransferService {
       `Physical location moved from [${req.sourcePath}] to [${req.destPath}] via Request ${req.requestNumber}. Approved by ${user.name}.`
     );
 
-    // 5. Instant local persistence & non-blocking background sync to Primary MySQL & replicas
-    storage.saveTable(TABLE_NAMES.MACHINES, false);
-    storage.saveTable(TABLE_NAMES.TRANSFERS, false);
-    storage.saveTable(TABLE_NAMES.TRANSFER_REQUESTS, false);
+    // 5. Instant local persistence & immediate cloud commit to Primary MySQL & replicas
+    storage.saveTable(TABLE_NAMES.MACHINES, true);
+    storage.saveTable(TABLE_NAMES.TRANSFERS, true);
+    storage.saveTable(TABLE_NAMES.TRANSFER_REQUESTS, true);
 
     // 6. Direct instant single-record upsert for guaranteed zero-latency cross-device synchronization
     if (typeof syncManager !== 'undefined' && syncManager.primaryAdapter) {

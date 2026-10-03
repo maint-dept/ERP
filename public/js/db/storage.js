@@ -522,8 +522,10 @@ class StorageEngine {
           if (result && result.success) {
             this._isCloudConnected = true;
             // Store server-confirmed updateTime for clock-skew-safe remote detection
-            if (result.updateTime) {
-              this.syncedDocVersions.set(table, result.updateTime);
+            const confirmedTs = result.updatedAt || result.updateTime;
+            if (confirmedTs) {
+              this.syncedDocVersions.set('mysql_' + table, confirmedTs);
+              this.syncedDocVersions.set(table, confirmedTs);
             }
             this.updateStatusBadge('saved');
             return true;
@@ -1409,13 +1411,47 @@ class StorageEngine {
     }
   }
 
+  _sanitizeDbConfigs(configs) {
+    if (!Array.isArray(configs) || configs.length === 0) return null;
+    return configs.map(c => {
+      if (!c) return c;
+      const clone = { ...c };
+      if (clone.id === 'mysql_primary' || (clone.type === 'MYSQL' && clone.role === 'PRIMARY')) {
+        let ep = (clone.endpoint || '').trim().replace(/\/$/, '');
+        if (!ep || ep === 'api/mysql_api.php' || ep === '/api/mysql_api.php' || ep.includes('://api/mysql_api.php') || ep === '/api/db/mysql' || (ep.includes('api/mysql_api.php') && !ep.startsWith('http'))) {
+          ep = 'https://moviezonex.com/mysql_api.php';
+        } else if (!/^https?:\/\//i.test(ep)) {
+          if (typeof window !== 'undefined' && window.location && window.location.hostname.includes('github.io')) {
+            ep = 'https://moviezonex.com/mysql_api.php';
+          } else {
+            ep = 'https://' + ep;
+          }
+        }
+        clone.endpoint = ep;
+        if (!clone.database || clone.database === 'al_muslim_erp' || clone.database === 'maint_erp') clone.database = 'motaherh_maint-erp';
+        if (!clone.username || clone.username === 'mainterp') clone.username = 'motaherh_mainterp';
+        if (!clone.password) clone.password = 'Maint@456';
+        clone.enabled = true;
+        clone.autoSync = true;
+        clone.role = 'PRIMARY';
+      }
+      return clone;
+    });
+  }
+
   // Multi-Database Configuration Persistence (Survives cache flushes and syncs across devices)
   getMultiDbConfigs() {
     try {
       const settingsTable = this.getTable(TABLE_NAMES.SETTINGS) || [];
-      const dbConfigRow = settingsTable.find(r => r.key === 'multi_db_config' || r.id === 'multi_db_config');
-      if (dbConfigRow && Array.isArray(dbConfigRow.value) && dbConfigRow.value.length > 0) {
-        return dbConfigRow.value;
+      if (Array.isArray(settingsTable)) {
+        const dbConfigRow = settingsTable.find(r => r.key === 'multi_db_config' || r.id === 'multi_db_config');
+        if (dbConfigRow && Array.isArray(dbConfigRow.value) && dbConfigRow.value.length > 0) {
+          return this._sanitizeDbConfigs(dbConfigRow.value);
+        }
+      }
+      const settingsObj = this.data[TABLE_NAMES.SETTINGS];
+      if (settingsObj && Array.isArray(settingsObj.multi_db_config) && settingsObj.multi_db_config.length > 0) {
+        return this._sanitizeDbConfigs(settingsObj.multi_db_config);
       }
     } catch (_) {}
     try {
@@ -1423,17 +1459,9 @@ class StorageEngine {
       if (local) {
         const parsed = JSON.parse(local);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          const myPrimary = parsed.find(c => c.id === 'mysql_primary' || (c.type === 'MYSQL' && c.role === 'PRIMARY'));
-          if (myPrimary) {
-            if (!myPrimary.endpoint || myPrimary.endpoint === 'api/mysql_api.php' || !myPrimary.endpoint.startsWith('http')) {
-              myPrimary.endpoint = 'https://moviezonex.com/mysql_api.php';
-              myPrimary.database = 'motaherh_maint-erp';
-              myPrimary.username = 'motaherh_mainterp';
-              myPrimary.password = 'Maint@456';
-              localStorage.setItem('erp_multi_db_config', JSON.stringify(parsed));
-            }
-          }
-          return parsed;
+          const sanitized = this._sanitizeDbConfigs(parsed);
+          try { localStorage.setItem('erp_multi_db_config', JSON.stringify(sanitized)); } catch (_) {}
+          return sanitized;
         }
       }
     } catch (_) {}
@@ -1457,24 +1485,30 @@ class StorageEngine {
   }
 
   async saveMultiDbConfigs(configs) {
+    const sanitized = this._sanitizeDbConfigs(configs) || configs;
     try {
-      localStorage.setItem('erp_multi_db_config', JSON.stringify(configs));
+      localStorage.setItem('erp_multi_db_config', JSON.stringify(sanitized));
     } catch (_) {}
     try {
       let settingsTable = this.getTable(TABLE_NAMES.SETTINGS) || [];
-      let row = settingsTable.find(r => r.key === 'multi_db_config' || r.id === 'multi_db_config');
-      if (row) {
-        row.value = configs;
-        row.updatedAt = new Date().toISOString();
-      } else {
-        settingsTable.push({
-          id: 'multi_db_config',
-          key: 'multi_db_config',
-          value: configs,
-          updatedAt: new Date().toISOString()
-        });
+      if (Array.isArray(settingsTable)) {
+        let row = settingsTable.find(r => r.key === 'multi_db_config' || r.id === 'multi_db_config');
+        if (row) {
+          row.value = sanitized;
+          row.updatedAt = new Date().toISOString();
+        } else {
+          settingsTable.push({
+            id: 'multi_db_config',
+            key: 'multi_db_config',
+            value: sanitized,
+            updatedAt: new Date().toISOString()
+          });
+        }
       }
-      this.saveTable(TABLE_NAMES.SETTINGS);
+      if (this.data[TABLE_NAMES.SETTINGS] && typeof this.data[TABLE_NAMES.SETTINGS] === 'object' && !Array.isArray(this.data[TABLE_NAMES.SETTINGS])) {
+        this.data[TABLE_NAMES.SETTINGS].multi_db_config = sanitized;
+      }
+      this.saveTable(TABLE_NAMES.SETTINGS, true);
       if (typeof this.persistToServerDatabase === 'function') {
         this.persistToServerDatabase().catch(() => {});
       }

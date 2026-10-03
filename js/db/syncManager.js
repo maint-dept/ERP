@@ -63,8 +63,21 @@ class SyncManager {
           if (conf && conf.enabled) {
             let adapter = null;
             const t = (conf.type || '').toUpperCase();
-            if (t === 'MYSQL') adapter = new MysqlAdapter(conf);
-            else if (t === 'POSTGRESQL' || t === 'POSTGRES') adapter = new PostgresAdapter(conf);
+            if (t === 'MYSQL') {
+              let ep = (conf.endpoint || '').trim().replace(/\/$/, '');
+              if (!ep || ep === 'api/mysql_api.php' || ep === '/api/mysql_api.php' || ep.includes('://api/mysql_api.php') || ep === '/api/db/mysql' || (ep.includes('api/mysql_api.php') && !ep.startsWith('http'))) {
+                ep = 'https://moviezonex.com/mysql_api.php';
+              } else if (!/^https?:\/\//i.test(ep) && typeof window !== 'undefined' && window.location && window.location.hostname.includes('github.io')) {
+                ep = 'https://moviezonex.com/mysql_api.php';
+              }
+              conf.endpoint = ep;
+              if (!conf.database || conf.database === 'al_muslim_erp' || conf.database === 'maint_erp') conf.database = 'motaherh_maint-erp';
+              if (!conf.username || conf.username === 'mainterp') conf.username = 'motaherh_mainterp';
+              if (!conf.password) conf.password = 'Maint@456';
+              adapter = new MysqlAdapter(conf);
+            } else if (t === 'POSTGRESQL' || t === 'POSTGRES') {
+              adapter = new PostgresAdapter(conf);
+            }
 
             if (adapter) {
               // If configured as PRIMARY, assign as primaryAdapter
