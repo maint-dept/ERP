@@ -12,6 +12,7 @@ import { transferService } from '../services/transferService.js';
 import { workflowService } from '../services/workflowService.js';
 import { authService } from '../services/authService.js';
 import { pdfService } from '../services/pdfService.js';
+import { notificationService } from '../services/notificationService.js';
 import { state } from '../state.js';
 
 let activeApprovalTab = 'transfers'; // 'transfers' | 'edits'
@@ -351,23 +352,24 @@ export function initApprovalCenterEvents() {
     });
   });
 
-  // Quick Approve Transfer from Card
+  // Quick Approve Transfer from Card (1-Click Instant Approval)
   document.querySelectorAll('.btn-transfer-action-approve').forEach(btn => {
     btn.addEventListener('click', async () => {
       const id = btn.getAttribute('data-id');
       const req = transferService.getTransferRequestById(id);
-      const remarks = prompt(`Enter approval verification remarks for Level ${req?.currentLevel || 1}:`, 'Approved for relocation.');
-      if (remarks !== null) {
-        try {
-          btn.disabled = true;
-          await transferService.approveStep(id, remarks);
-          alert('Transfer approval recorded and synchronized across all databases!');
-          state.emit('inventory:updated');
-          window.dispatchEvent(new CustomEvent('erp:transfers-updated'));
-        } catch (e) {
-          btn.disabled = false;
-          alert('Error: ' + e.message);
-        }
+      if (!req) return;
+      const originalText = btn.innerHTML;
+      try {
+        btn.disabled = true;
+        btn.innerHTML = '⚡ Approved!';
+        await transferService.approveStep(id, 'Approved for relocation.');
+        notificationService.success(`Transfer Request ${req.requestNumber} approved successfully!`);
+        state.emit('inventory:updated');
+        window.dispatchEvent(new CustomEvent('erp:transfers-updated'));
+      } catch (e) {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+        notificationService.error('Error: ' + e.message);
       }
     });
   });

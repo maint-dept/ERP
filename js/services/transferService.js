@@ -425,9 +425,11 @@ class TransferService {
         updatedAt: now.toISOString()
       });
 
-      // Confirmed cloud write
-      const ok = await storage.saveTable(TABLE_NAMES.TRANSFER_REQUESTS, true);
-      if (!ok) throw new CloudSaveError('❌ Cloud Save Failed: Transfer approval step could not be saved to the cloud.');
+      // Instant local persistence & non-blocking background sync
+      storage.saveTable(TABLE_NAMES.TRANSFER_REQUESTS, false);
+      if (typeof syncManager !== 'undefined' && syncManager.primaryAdapter) {
+        syncManager.saveRecord(TABLE_NAMES.TRANSFER_REQUESTS, req.id, updated).catch(e => console.warn('Sync transfer request notice:', e.message));
+      }
 
       notificationService.notify(
         'Transfer Advanced to Next Level',
@@ -791,9 +793,11 @@ class TransferService {
       `Destination edited to ${destPath} by ${user.name}`
     );
 
-    // Confirmed cloud write
-    const ok = await storage.saveTable(TABLE_NAMES.TRANSFER_REQUESTS, true);
-    if (!ok) throw new CloudSaveError('❌ Cloud Save Failed: Transfer request update could not be saved to the cloud.');
+    // Instant local persistence & non-blocking background sync
+    storage.saveTable(TABLE_NAMES.TRANSFER_REQUESTS, false);
+    if (typeof syncManager !== 'undefined' && syncManager.primaryAdapter) {
+      syncManager.saveRecord(TABLE_NAMES.TRANSFER_REQUESTS, req.id, updated).catch(e => console.warn('Sync transfer request notice:', e.message));
+    }
 
     // Notify approvers at new location
     notificationService.notify({
@@ -987,12 +991,10 @@ class TransferService {
       `Physical location moved from [${req.sourcePath}] to [${req.destPath}] via Request ${req.requestNumber}. Approved by ${user.name}.`
     );
 
-    // 5. Confirmed persistence: Guarantee immediate write to Primary MySQL & secondary Cloud Firestore
-    await Promise.all([
-      storage.saveTable(TABLE_NAMES.MACHINES, true),
-      storage.saveTable(TABLE_NAMES.TRANSFERS, true),
-      storage.saveTable(TABLE_NAMES.TRANSFER_REQUESTS, true)
-    ]);
+    // 5. Instant local persistence & non-blocking background sync to Primary MySQL & replicas
+    storage.saveTable(TABLE_NAMES.MACHINES, false);
+    storage.saveTable(TABLE_NAMES.TRANSFERS, false);
+    storage.saveTable(TABLE_NAMES.TRANSFER_REQUESTS, false);
 
     // 6. Direct instant single-record upsert for guaranteed zero-latency cross-device synchronization
     if (typeof syncManager !== 'undefined' && syncManager.primaryAdapter) {

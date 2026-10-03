@@ -10,6 +10,8 @@ import { transferService } from '../services/transferService.js';
 import { masterDataService } from '../services/masterDataService.js';
 import { pdfService } from '../services/pdfService.js';
 import { authService } from '../services/authService.js';
+import { workflowService } from '../services/workflowService.js';
+import { notificationService } from '../services/notificationService.js';
 import { state } from '../state.js';
 
 let transferSearchQuery = '';
@@ -156,6 +158,8 @@ export function renderTransfersView() {
                 const isRejected = req.status === TRANSFER_STATUSES.REJECTED;
                 const isRevision = req.status === TRANSFER_STATUSES.REVISION_REQUESTED;
                 const isPending = req.status === TRANSFER_STATUSES.PENDING_APPROVAL || req.status === TRANSFER_STATUSES.PARTIALLY_APPROVED;
+                const currentUser = authService.getCurrentUser();
+                const canApprove = isPending && workflowService.canUserApproveStep(req, currentUser);
 
                 const statusBadge = isCompleted ? 'badge-active' : (isRejected ? 'badge-breakdown' : (isRevision ? 'badge-maint' : 'badge-idle'));
 
@@ -277,15 +281,14 @@ export function renderTransfersView() {
                     <!-- Actions -->
                     <td style="text-align: center;" onclick="event.stopPropagation();">
                       <div style="display: flex; justify-content: center; gap: 4px; align-items: center;">
-                        ${isPending ? `
-                          <button class="btn btn-primary btn-sm btn-view-transfer-details" data-id="${req.id}" style="font-size: 10.5px; padding: 4px 8px; font-weight: 800; background: linear-gradient(135deg, #10b981, #059669); border-color: #10b981; box-shadow: 0 2px 6px rgba(16, 185, 129, 0.4); white-space: nowrap;">
-                            Approve
+                        ${isPending && canApprove ? `
+                          <button class="btn btn-success btn-sm btn-quick-approve-transfer" data-id="${req.id}" title="One-Click Instant Approval" style="font-size: 10px; padding: 4px 7px; font-weight: 800; background: linear-gradient(135deg, #10b981, #059669); border-color: #10b981; box-shadow: 0 2px 6px rgba(16, 185, 129, 0.4); white-space: nowrap; cursor: pointer;">
+                            ⚡ 1-Click Approve
                           </button>
-                        ` : `
-                          <button class="btn btn-secondary btn-sm btn-view-transfer-details" data-id="${req.id}" style="font-size: 10px; padding: 4px 7px; font-weight: 700; white-space: nowrap;">
-                            View
-                          </button>
-                        `}
+                        ` : ''}
+                        <button class="btn ${isPending && !canApprove ? 'btn-primary' : 'btn-secondary'} btn-sm btn-view-transfer-details" data-id="${req.id}" style="font-size: 10px; padding: 4px 7px; font-weight: 700; white-space: nowrap;">
+                          ${isPending ? 'Details' : 'View'}
+                        </button>
                         ${!isCompleted && !isRejected && (req.requestedBy === authService.getCurrentUser()?.id || authService.isAdmin()) ? `
                           <button class="btn btn-warning btn-sm btn-edit-transfer-row" data-id="${req.id}" title="Edit destination location before approval" style="font-size: 10px; padding: 4px 7px; font-weight: 700; white-space: nowrap; background: rgba(245, 158, 11, 0.2); border: 1px solid #f59e0b; color: #fbbf24;">
                             ✏️ Edit
@@ -322,6 +325,29 @@ export function initTransfersViewEvents() {
     btn.addEventListener('click', () => {
       transferStatusFilter = btn.getAttribute('data-status');
       state.emit('inventory:updated');
+    });
+  });
+
+  // 1-Click Quick Approve from Table Row
+  document.querySelectorAll('.btn-quick-approve-transfer').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const id = btn.getAttribute('data-id');
+      const req = transferService.getTransferRequestById(id);
+      if (!req) return;
+      const originalText = btn.innerHTML;
+      try {
+        btn.disabled = true;
+        btn.innerHTML = '⚡ Approved!';
+        await transferService.approveStep(id, '1-Click Approved for relocation.');
+        notificationService.success(`Transfer Request ${req.requestNumber} approved successfully!`);
+        state.emit('inventory:updated');
+        window.dispatchEvent(new CustomEvent('erp:transfers-updated'));
+      } catch (err) {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+        notificationService.error('Approval Error: ' + err.message);
+      }
     });
   });
 

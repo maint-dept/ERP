@@ -294,8 +294,8 @@ export function renderTransferDetailsModal() {
               </div>
 
               <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                <button id="btn-action-approve-transfer" class="btn btn-success" data-id="${req.id}" style="font-weight: 800; font-size: 13px; padding: 8px 18px; background: linear-gradient(135deg, #10b981, #059669); border-color: #10b981; box-shadow: 0 2px 10px rgba(16, 185, 129, 0.4);">
-                  ✓ Approve Level ${req.currentLevel} ${req.currentLevel === req.totalLevels ? '(Final Gate Pass)' : ''}
+                <button id="btn-action-approve-transfer" class="btn btn-success" data-id="${req.id}" style="font-weight: 800; font-size: 13px; padding: 8px 18px; background: linear-gradient(135deg, #10b981, #059669); border-color: #10b981; box-shadow: 0 2px 10px rgba(16, 185, 129, 0.4); cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                  <span>⚡ 1-Click Approve ${req.currentLevel === req.totalLevels ? '(Final Gate Pass)' : `Level ${req.currentLevel}`}</span>
                 </button>
                 <button id="btn-action-return-revision" class="btn btn-warning btn-sm" data-id="${req.id}" style="font-weight: 700; padding: 8px 14px;">
                   ✏️ Return for Revision
@@ -414,7 +414,7 @@ export function initTransferDetailsModalEvents() {
       const originalText = btnApprove.innerHTML;
       try {
         btnApprove.disabled = true;
-        btnApprove.innerHTML = '⏳ Approving & Syncing...';
+        btnApprove.innerHTML = '⚡ Approved!';
         await transferService.approveStep(req.id, remarks || 'Approved');
         notificationService.success(`Transfer Request ${req.requestNumber} Level ${req.currentLevel} approved successfully!`);
         closeModal();
