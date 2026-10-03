@@ -17,7 +17,11 @@ export class MysqlAdapter extends BaseAdapter {
     this.password = config.password || '';
     this.apiKey = config.apiKey || '';
     this.ssl = config.ssl !== false;
-    this.endpoint = (config.endpoint || '/api/db/mysql').trim().replace(/\/$/, '');
+    let rawEndpoint = (config.endpoint || '/api/db/mysql').trim().replace(/\/$/, '');
+    if (rawEndpoint && !rawEndpoint.startsWith('/') && !/^https?:\/\//i.test(rawEndpoint)) {
+      rawEndpoint = 'https://' + rawEndpoint;
+    }
+    this.endpoint = rawEndpoint;
   }
 
   _headers() {

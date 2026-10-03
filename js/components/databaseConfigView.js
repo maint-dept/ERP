@@ -1789,7 +1789,11 @@ function extractFormValues(spec) {
     if (f.type === 'checkbox') {
       values[f.id] = el.checked;
     } else {
-      values[f.id] = el.value.trim();
+      let val = el.value.trim();
+      if (f.id === 'endpoint' && val && !val.startsWith('/') && !/^https?:\/\//i.test(val)) {
+        val = 'https://' + val;
+      }
+      values[f.id] = val;
     }
   });
   return values;
