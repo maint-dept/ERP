@@ -1002,9 +1002,10 @@ class TransferService {
     });
 
     // 4. Send high-priority notifications & audit trail
+    const mName = req.machineInfo?.machineName || req.machineName || 'Machine';
     notificationService.notify(
       '🎉 Machine Transfer Completed!',
-      `Machine ${machine.serialNumber} (${req.machineInfo.machineName}) officially relocated to ${req.destPath} under ${req.requestNumber}.`,
+      `Machine ${machine.serialNumber} (${mName}) officially relocated to ${req.destPath} under ${req.requestNumber}.`,
       'TRANSFER_COMPLETED',
       '#inventory'
     );
