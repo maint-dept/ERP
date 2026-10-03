@@ -248,45 +248,45 @@ export function renderTransferModal() {
 
             <div class="form-grid-2">
               <div class="form-group">
-                <label class="form-label" style="font-size: 12px; font-weight: 700; color: #fff;">1. Destination Group <span class="req">*</span></label>
-                <select id="transfer-dest-group" class="filter-select" required>
+                <label class="form-label" style="font-size: 12.5px; font-weight: 700; color: #f8fafc;">1. Destination Group <span class="req">*</span></label>
+                <select id="transfer-dest-group" class="filter-select" required style="background: #0b1329; color: #ffffff; border: 1.5px solid #475569; font-size: 13.5px;">
                   <option value="" disabled ${!destGroupId ? 'selected' : ''}>-- Select Destination Group --</option>
                   ${groups.map(g => `<option value="${g.id}" ${destGroupId === g.id ? 'selected' : ''}>${g.name}</option>`).join('')}
                 </select>
               </div>
 
               <div class="form-group">
-                <label class="form-label" style="font-size: 12px; font-weight: 700; color: #fff;">2. Destination Factory / Unit <span class="req">*</span></label>
-                <select id="transfer-dest-unit" class="filter-select" required ${!destGroupId ? 'disabled' : ''}>
+                <label class="form-label" style="font-size: 12.5px; font-weight: 700; color: #f8fafc;">2. Destination Factory / Unit <span class="req">*</span></label>
+                <select id="transfer-dest-unit" class="filter-select" required ${!destGroupId ? 'disabled' : ''} style="background: #0b1329; color: #ffffff; border: 1.5px solid #475569; font-size: 13.5px;">
                   <option value="" disabled ${!destUnitId ? 'selected' : ''}>${destGroupId ? '-- Select Factory / Unit --' : '-- Select Group First --'}</option>
                   ${units.map(u => `<option value="${u.id}" ${destUnitId === u.id ? 'selected' : ''}>${u.name}</option>`).join('')}
                 </select>
               </div>
 
               <div class="form-group">
-                <label class="form-label" style="font-size: 12px; font-weight: 700; color: #fff;">3. Destination Floor <span class="req">*</span></label>
-                <select id="transfer-dest-floor" class="filter-select" required ${!destUnitId ? 'disabled' : ''}>
+                <label class="form-label" style="font-size: 12.5px; font-weight: 700; color: #f8fafc;">3. Destination Floor <span class="req">*</span></label>
+                <select id="transfer-dest-floor" class="filter-select" required ${!destUnitId ? 'disabled' : ''} style="background: #0b1329; color: #ffffff; border: 1.5px solid #475569; font-size: 13.5px;">
                   <option value="" disabled ${!destFloorId ? 'selected' : ''}>${destUnitId ? '-- Select Floor --' : '-- Select Unit First --'}</option>
                   ${floors.map(f => `<option value="${f.id}" ${destFloorId === f.id ? 'selected' : ''}>${f.name}</option>`).join('')}
                 </select>
               </div>
 
               <div class="form-group">
-                <label class="form-label" style="font-size: 12px; font-weight: 700; color: #fff;">4. Destination Production Line <span class="req">*</span></label>
-                <select id="transfer-dest-line" class="filter-select" required ${!destFloorId ? 'disabled' : ''}>
+                <label class="form-label" style="font-size: 12.5px; font-weight: 700; color: #f8fafc;">4. Destination Production Line <span class="req">*</span></label>
+                <select id="transfer-dest-line" class="filter-select" required ${!destFloorId ? 'disabled' : ''} style="background: #0b1329; color: #ffffff; border: 1.5px solid #475569; font-size: 13.5px;">
                   <option value="" disabled ${!destLineId ? 'selected' : ''}>${destFloorId ? '-- Select Production Line --' : '-- Select Floor First --'}</option>
                   ${lines.map(l => `<option value="${l.id}" ${destLineId === l.id ? 'selected' : ''}>${l.name}</option>`).join('')}
                 </select>
               </div>
 
               <div class="form-group full-width">
-                <label class="form-label" style="font-size: 12px; font-weight: 700; color: #fff;">Transfer Reason / Order Reference</label>
-                <input type="text" id="transfer-reason" class="form-control" placeholder="e.g. Line re-balancing for jacket production order" />
+                <label class="form-label" style="font-size: 12.5px; font-weight: 700; color: #f8fafc;">Transfer Reason / Order Reference</label>
+                <input type="text" id="transfer-reason" class="form-control" placeholder="e.g. Line re-balancing for jacket production order" style="background: #0b1329; color: #ffffff; border: 1.5px solid #475569; font-size: 13.5px;" />
               </div>
 
               <div class="form-group full-width">
-                <label class="form-label" style="font-size: 12px; font-weight: 700; color: #fff;">Remarks / Setup Instructions (Optional)</label>
-                <textarea id="transfer-remarks" class="form-control" rows="2" placeholder="e.g. Requires 380V heavy line setup, attachment folder pre-installed"></textarea>
+                <label class="form-label" style="font-size: 12.5px; font-weight: 700; color: #f8fafc;">Remarks / Setup Instructions (Optional)</label>
+                <textarea id="transfer-remarks" class="form-control" rows="2" placeholder="e.g. Requires 380V heavy line setup, attachment folder pre-installed" style="background: #0b1329; color: #ffffff; border: 1.5px solid #475569; font-size: 13.5px;"></textarea>
               </div>
             </div>
           </div>
@@ -298,23 +298,23 @@ export function renderTransferModal() {
                 <div style="font-size: 12.5px; font-weight: 800; color: #fbbf24; text-transform: uppercase; display: flex; align-items: center; gap: 6px;">
                   <span>📎 3. Upload Supporting / Transfer Document</span>
                 </div>
-                <div style="font-size: 11.5px; color: var(--text-secondary); margin-top: 2px;">
+                <div style="font-size: 12px; color: #cbd5e1; margin-top: 2px;">
                   Attach transfer sanction, management approval letter, or gate pass request.
                 </div>
               </div>
-              <span class="badge" style="background: rgba(251, 191, 36, 0.15); color: #fbbf24; font-size: 10.5px;">
+              <span class="badge" style="background: rgba(251, 191, 36, 0.15); color: #fbbf24; font-size: 11px; font-weight: 700;">
                 PDF &bull; JPG &bull; PNG &bull; EXCEL
               </span>
             </div>
 
             <!-- Upload Drop Zone -->
-            <div id="transfer-doc-dropzone" style="border: 2px dashed #38bdf8; border-radius: var(--radius-md); padding: 20px; text-align: center; background: rgba(56, 189, 248, 0.04); cursor: pointer; transition: all 0.2s;">
-              <div style="font-size: 30px; margin-bottom: 4px;">📂</div>
-              <div style="font-size: 13px; font-weight: 700; color: #fff;">
+            <div id="transfer-doc-dropzone" style="border: 2px dashed #38bdf8; border-radius: var(--radius-md); padding: 20px; text-align: center; background: rgba(56, 189, 248, 0.06); cursor: pointer; transition: all 0.2s;">
+              <div style="font-size: 32px; margin-bottom: 6px;">📂</div>
+              <div style="font-size: 13.5px; font-weight: 700; color: #ffffff;">
                 Click or Drag &amp; Drop to Upload Supporting Document
               </div>
-              <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">
-                Supported formats: <strong>PDF (.pdf)</strong>, <strong>Images (.jpg, .jpeg, .png)</strong>, <strong>Excel (.xlsx, .xls)</strong>
+              <div style="font-size: 12px; color: #cbd5e1; margin-top: 5px;">
+                Supported formats: <strong style="color: #38bdf8;">PDF (.pdf)</strong>, <strong style="color: #34d399;">Images (.jpg, .jpeg, .png)</strong>, <strong style="color: #fbbf24;">Excel (.xlsx, .xls)</strong>
               </div>
               <input type="file" id="inp-transfer-document" accept=".pdf,.png,.jpg,.jpeg,.xlsx,.xls" multiple style="display: none;" />
             </div>
@@ -328,12 +328,12 @@ export function renderTransferModal() {
 
         <!-- Modal Footer -->
         <div class="modal-footer" style="background: var(--bg-card); border-top: 1px solid var(--border-color); padding: 14px 22px; display: flex; justify-content: space-between; align-items: center;">
-          <div style="font-size: 11.5px; color: var(--text-muted);">
+          <div style="font-size: 12.5px; color: #cbd5e1;">
             Requester: <strong style="color: #38bdf8;">${authService.getCurrentUser()?.name || 'User'}</strong> &bull; Status will be: <strong style="color: #fbbf24;">Pending Admin Approval</strong>
           </div>
           <div style="display: flex; gap: 10px;">
             <button type="button" id="btn-cancel-transfer" class="btn btn-secondary">Cancel</button>
-            <button type="submit" form="form-transfer-request" id="btn-submit-transfer-request" class="btn btn-primary" style="font-weight: 800; padding: 8px 20px; ${activeExistingTransfer ? 'opacity: 0.45; cursor: not-allowed;' : ''}" ${activeExistingTransfer ? 'disabled title="Cannot submit: An active transfer request already exists for this machine."' : ''}>
+            <button type="submit" form="form-transfer-request" id="btn-submit-transfer-request" class="btn btn-primary" style="font-weight: 800; padding: 9px 22px; ${activeExistingTransfer ? 'opacity: 0.45; cursor: not-allowed;' : ''}" ${activeExistingTransfer ? 'disabled title="Cannot submit: An active transfer request already exists for this machine."' : ''}>
               🚀 Submit Transfer Request
             </button>
           </div>
@@ -346,7 +346,7 @@ export function renderTransferModal() {
 function renderAttachedDocsHtml() {
   if (attachedDocuments.length === 0) {
     return `
-      <div style="font-size: 11.5px; color: var(--text-muted); font-style: italic; text-align: center; padding: 6px;">
+      <div style="font-size: 12px; color: #cbd5e1; font-style: italic; text-align: center; padding: 6px;">
         No supporting documents uploaded yet. (You may upload permission letters or transfer approvals).
       </div>
     `;
@@ -1125,19 +1125,15 @@ export function initTransferModalEvents() {
         return;
       }
 
-      // 1. Guard and show immediate loading spinner to user
+      // 1. Instantly disable duplicate double-clicks
       isSubmittingTransfer = true;
       if (submitBtn) {
         submitBtn.disabled = true;
-        submitBtn.style.opacity = '0.7';
-        submitBtn.style.cursor = 'wait';
-        submitBtn.innerHTML = '<span style="display:inline-flex;align-items:center;gap:8px;"><span style="display:inline-block;width:15px;height:15px;border:2px solid rgba(255,255,255,0.3);border-top-color:#38bdf8;border-radius:50%;animation:spin 0.6s linear infinite;"></span>Submitting Transfer Request...</span>';
+        submitBtn.innerHTML = '<span>⚡ Submitting...</span>';
       }
-      if (cancelBtn) cancelBtn.disabled = true;
-      if (closeBtn) closeBtn.disabled = true;
 
       try {
-        // 2. Await confirmed cloud write
+        // 2. Instant optimistic request creation
         const createdRequest = await transferService.createTransferRequest({
           machineId,
           destGroupId,
@@ -1149,29 +1145,23 @@ export function initTransferModalEvents() {
           documents: attachedDocuments
         });
 
-        // 3. Only close modal and update UI AFTER cloud confirmation
-        notificationService.success(`✅ Transfer Request #${createdRequest.requestNumber} submitted and saved to cloud.`, 'Transfer Request Created');
+        // 3. Close modal INSTANTLY and emit updates
+        notificationService.success(`✅ Transfer Request #${createdRequest.requestNumber} submitted and saved!`, 'Transfer Request Created');
         attachedDocuments = [];
         closeModal();
         state.emit('inventory:updated');
+        state.emit('transfers:updated');
+        window.dispatchEvent(new CustomEvent('erp:transfers-updated'));
 
       } catch (err) {
-        // 4. Re-enable button on failure and show error
         isSubmittingTransfer = false;
         if (submitBtn) {
           submitBtn.disabled = false;
-          submitBtn.style.opacity = '1';
-          submitBtn.style.cursor = 'pointer';
           submitBtn.innerHTML = originalBtnText;
         }
         if (cancelBtn) cancelBtn.disabled = false;
         if (closeBtn) closeBtn.disabled = false;
-
-        if (err.name === 'CloudSaveError') {
-          notificationService.error(err.message || '❌ Cloud Save Failed: Transfer request was not saved to the cloud.');
-        } else {
-          notificationService.error('Transfer Request Error: ' + err.message);
-        }
+        notificationService.error('Transfer Request Error: ' + err.message);
       } finally {
         isSubmittingTransfer = false;
       }

@@ -106,9 +106,9 @@ export function renderNavbar() {
       <!-- Right: Status, Theme, Notifications & User Dropdown Capsule -->
       <div class="header-right">
         <!-- Persistent Database Store Status -->
-        <div id="nav-db-status" class="nav-db-status-pill" title="Persistent Database Active &amp; Cloud Synchronized">
-          <span class="nav-db-pulse-dot"></span>
-          <span class="db-status-text">Cloud Synced</span>
+        <div id="nav-db-status" class="nav-db-status-pill" title="Persistent MySQL Database Active &amp; Synchronized">
+          <span style="font-size: 13px; line-height: 1;">🐬</span>
+          <span class="db-status-text">MySQL Synced</span>
         </div>
 
         <!-- Light / Dark Theme Switcher -->

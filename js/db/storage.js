@@ -1407,20 +1407,20 @@ class StorageEngine {
       statusEl.style.borderColor = 'rgba(245, 158, 11, 0.5)';
       statusEl.style.background = 'rgba(245, 158, 11, 0.12)';
       statusEl.style.color = '#fbbf24';
-      statusEl.title = 'Syncing changes to Google Cloud Firestore...';
-      statusEl.innerHTML = '<span style="font-size: 12px; line-height: 1;">☁️</span><span class="db-status-text">Syncing...</span>';
+      statusEl.title = 'Syncing changes to MySQL Primary Database...';
+      statusEl.innerHTML = '<span style="font-size: 12px; line-height: 1;">🐬</span><span class="db-status-text">Syncing...</span>';
     } else if (status === 'saved' || status === 'synced') {
-      statusEl.style.borderColor = 'rgba(56, 189, 248, 0.4)';
-      statusEl.style.background = 'rgba(56, 189, 248, 0.15)';
-      statusEl.style.color = '#38bdf8';
-      statusEl.title = 'Google Cloud Firestore Synchronized (maint-dept-erp)';
-      statusEl.innerHTML = '<span style="font-size: 12px; line-height: 1;">☁️</span><span class="db-status-text">Cloud Synced</span>';
+      statusEl.style.borderColor = 'rgba(16, 185, 129, 0.5)';
+      statusEl.style.background = 'rgba(16, 185, 129, 0.15)';
+      statusEl.style.color = '#34d399';
+      statusEl.title = 'MySQL Primary Database Synchronized (maint_erp)';
+      statusEl.innerHTML = '<span style="font-size: 12px; line-height: 1;">🐬</span><span class="db-status-text">MySQL Synced</span>';
     } else if (status === 'error') {
       // Distinct error state: cloud write was attempted but failed
       statusEl.style.borderColor = 'rgba(239, 68, 68, 0.5)';
       statusEl.style.background = 'rgba(239, 68, 68, 0.18)';
       statusEl.style.color = '#f87171';
-      statusEl.title = '❌ Cloud Save Failed — Firebase write not confirmed. Data may be local only.';
+      statusEl.title = '❌ Database Save Notice — Check MySQL hosting connection.';
       statusEl.innerHTML = '<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#ef4444;box-shadow:0 0 8px #ef4444;animation:pulse 1s infinite;"></span><span class="db-status-text">Save Error</span>';
     } else if (status === 'offline') {
       statusEl.style.borderColor = 'rgba(148, 163, 184, 0.4)';

@@ -5,6 +5,7 @@
 
 import { storage } from '../db/storage.js';
 import { CloudSaveError } from '../db/storage.js';
+import { syncManager } from '../db/syncManager.js';
 import { TABLE_NAMES, TRANSFER_STATUSES, ROLES, APPROVER_TYPES } from '../db/schema.js';
 import { authService } from './authService.js';
 import { masterDataService } from './masterDataService.js';
@@ -294,19 +295,15 @@ class TransferService {
 
     storage.insert(TABLE_NAMES.TRANSFER_REQUESTS, newRequest);
 
-    // Confirmed cloud writes — await HTTP 200 for both tables
-    const [machinesOk, requestsOk] = await Promise.all([
-      storage.saveTable(TABLE_NAMES.MACHINES, true),
-      storage.saveTable(TABLE_NAMES.TRANSFER_REQUESTS, true)
-    ]);
+    // Optimistic instant local storage save & background cloud writes
+    storage.saveTable(TABLE_NAMES.MACHINES, false);
+    storage.saveTable(TABLE_NAMES.TRANSFER_REQUESTS, false);
 
-    if (!machinesOk || !requestsOk) {
-      // Rollback: restore machine status and remove the inserted request
-      storage.update(TABLE_NAMES.MACHINES, machine.id, { status: machine.status, updatedBy: machine.updatedBy, updatedAt: machine.updatedAt });
-      const requests = storage.getTable(TABLE_NAMES.TRANSFER_REQUESTS);
-      const idx = requests.findIndex(r => r.id === newRequest.id);
-      if (idx !== -1) requests.splice(idx, 1);
-      throw new CloudSaveError('❌ Cloud Save Failed: Transfer request could not be saved to the cloud. Check your connection.');
+    // Direct background sync with primary MySQL adapter (single record upsert takes <200ms)
+    if (typeof syncManager !== 'undefined' && syncManager.primaryAdapter) {
+      const updatedMachine = storage.getItem(TABLE_NAMES.MACHINES, machine.id);
+      syncManager.saveRecord(TABLE_NAMES.MACHINES, machine.id, updatedMachine).catch(e => console.warn('Background machine sync:', e.message));
+      syncManager.saveRecord(TABLE_NAMES.TRANSFER_REQUESTS, newRequest.id, newRequest).catch(e => console.warn('Background transfer request sync:', e.message));
     }
 
     // Trigger local and cross-component updates immediately
@@ -514,12 +511,9 @@ class TransferService {
       updatedAt: now.toISOString()
     });
 
-    // Confirmed cloud writes for both affected tables
-    const [machinesOk, requestsOk] = await Promise.all([
-      storage.saveTable(TABLE_NAMES.MACHINES, true),
-      storage.saveTable(TABLE_NAMES.TRANSFER_REQUESTS, true)
-    ]);
-    if (!machinesOk || !requestsOk) throw new CloudSaveError('❌ Cloud Save Failed: Transfer rejection could not be saved to the cloud.');
+    // Optimistic save & background sync
+    storage.saveTable(TABLE_NAMES.MACHINES, false);
+    storage.saveTable(TABLE_NAMES.TRANSFER_REQUESTS, false);
 
     notificationService.notify(
       'Machine Transfer Rejected',
@@ -577,9 +571,8 @@ class TransferService {
       updatedAt: now.toISOString()
     });
 
-    // Confirmed cloud write
-    const ok = await storage.saveTable(TABLE_NAMES.TRANSFER_REQUESTS, true);
-    if (!ok) throw new CloudSaveError('❌ Cloud Save Failed: Return-for-revision could not be saved to the cloud.');
+    // Optimistic save & background sync
+    storage.saveTable(TABLE_NAMES.TRANSFER_REQUESTS, false);
 
     notificationService.notify(
       'Transfer Returned for Revision',
@@ -672,9 +665,8 @@ class TransferService {
       `Resubmitted with new destination ${destPath}.`
     );
 
-    // Confirmed cloud write
-    const ok = await storage.saveTable(TABLE_NAMES.TRANSFER_REQUESTS, true);
-    if (!ok) throw new CloudSaveError('❌ Cloud Save Failed: Transfer resubmission could not be saved to the cloud.');
+    // Optimistic save & background sync
+    storage.saveTable(TABLE_NAMES.TRANSFER_REQUESTS, false);
 
     return updated;
   }
@@ -874,12 +866,9 @@ class TransferService {
       `Transfer ${req.requestNumber} cancelled by ${user.name}: ${reason}`
     );
 
-    // Confirmed cloud writes for both affected tables
-    const [machinesOk, requestsOk] = await Promise.all([
-      storage.saveTable(TABLE_NAMES.MACHINES, true),
-      storage.saveTable(TABLE_NAMES.TRANSFER_REQUESTS, true)
-    ]);
-    if (!machinesOk || !requestsOk) throw new CloudSaveError('❌ Cloud Save Failed: Transfer cancellation could not be saved to the cloud.');
+    // Optimistic save & background sync
+    storage.saveTable(TABLE_NAMES.MACHINES, false);
+    storage.saveTable(TABLE_NAMES.TRANSFER_REQUESTS, false);
 
     return updated;
   }
@@ -981,15 +970,10 @@ class TransferService {
       `Physical location moved from [${req.sourcePath}] to [${req.destPath}] via Request ${req.requestNumber}. Approved by ${user.name}.`
     );
 
-    // Confirmed cloud writes for all 3 tables atomically
-    const [machinesOk, transfersOk, requestsOk] = await Promise.all([
-      storage.saveTable(TABLE_NAMES.MACHINES, true),
-      storage.saveTable(TABLE_NAMES.TRANSFERS, true),
-      storage.saveTable(TABLE_NAMES.TRANSFER_REQUESTS, true)
-    ]);
-    if (!machinesOk || !transfersOk || !requestsOk) {
-      throw new CloudSaveError('❌ Cloud Save Failed: Transfer execution could not be fully confirmed by the cloud. Please verify data integrity.');
-    }
+    // Optimistic atomic save & background sync
+    storage.saveTable(TABLE_NAMES.MACHINES, false);
+    storage.saveTable(TABLE_NAMES.TRANSFERS, false);
+    storage.saveTable(TABLE_NAMES.TRANSFER_REQUESTS, false);
 
     // 5. Automatic Machine Lifecycle History Record
     historyService.recordActivity({

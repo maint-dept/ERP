@@ -26,9 +26,9 @@
   --info: #8b5cf6;
   --info-light: rgba(139, 92, 246, 0.15);
   
-  --text-primary: #f8fafc;
-  --text-secondary: #94a3b8;
-  --text-muted: #64748b;
+  --text-primary: #ffffff;
+  --text-secondary: #cbd5e1;
+  --text-muted: #94a3b8;
   --text-inverse: #0f172a;
 
   --radius-sm: 4px;
@@ -55,12 +55,12 @@ body.theme-light {
   --bg-surface: #ffffff;
   --bg-card: #f8fafc;
   --bg-hover: #e2e8f0;
-  --border-color: #cbd5e1;
-  --border-light: #e2e8f0;
+  --border-color: #94a3b8;
+  --border-light: #cbd5e1;
   
-  --text-primary: #0f172a;
-  --text-secondary: #475569;
-  --text-muted: #64748b;
+  --text-primary: #090e1a;
+  --text-secondary: #1e293b;
+  --text-muted: #475569;
   --text-inverse: #ffffff;
 
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);

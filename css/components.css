@@ -3649,3 +3649,234 @@ td.td-actions-active {
     margin-top: 4px !important;
   }
 }
+
+/* ==========================================================================
+   GLOBAL HIGH-CONTRAST READABILITY & VISIBILITY ENHANCEMENTS (FULL WEB APP)
+   Fixes: Low text contrast, dark placeholder text on dark backgrounds,
+   unreadable dropdowns, invisible form labels, and light/dark theme contrast.
+   ========================================================================== */
+
+/* 1. Universal Form Inputs, Textareas, and Dropdowns */
+.form-control,
+.filter-select,
+.filter-input,
+input[type="text"],
+input[type="number"],
+input[type="password"],
+input[type="email"],
+input[type="search"],
+input[type="date"],
+textarea,
+select {
+  background-color: #0b1329 !important;
+  border: 1.5px solid #475569 !important;
+  color: #ffffff !important;
+  padding: 8px 12px !important;
+  border-radius: var(--radius-md) !important;
+  font-size: 13.5px !important;
+  line-height: 1.5 !important;
+  outline: none !important;
+  transition: all 0.2s ease !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.form-control:focus,
+.filter-select:focus,
+.filter-input:focus,
+input[type="text"]:focus,
+input[type="number"]:focus,
+input[type="password"]:focus,
+input[type="email"]:focus,
+input[type="search"]:focus,
+input[type="date"]:focus,
+textarea:focus,
+select:focus {
+  border-color: #38bdf8 !important;
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.3) !important;
+  background-color: #070d1e !important;
+  color: #ffffff !important;
+}
+
+.form-control[disabled], 
+.form-control:disabled,
+select:disabled,
+.filter-select:disabled,
+input:disabled,
+textarea:disabled {
+  opacity: 0.75 !important;
+  background-color: rgba(15, 23, 42, 0.65) !important;
+  color: #94a3b8 !important;
+  border-color: #334155 !important;
+  cursor: not-allowed !important;
+}
+
+/* 2. Universal High-Contrast Placeholders (100% Visible & Crisp) */
+::placeholder,
+input::placeholder,
+textarea::placeholder,
+.form-control::placeholder {
+  color: #94a3b8 !important;
+  opacity: 1 !important;
+  font-weight: 500 !important;
+}
+
+/* 3. Dropdown Options High-Contrast */
+select option,
+.filter-select option {
+  background-color: #0b1329 !important;
+  color: #ffffff !important;
+  padding: 10px 14px !important;
+}
+
+select option:checked,
+.filter-select option:checked {
+  background-color: #0284c7 !important;
+  color: #ffffff !important;
+}
+
+/* 4. Form Labels High-Contrast */
+.form-label {
+  display: block;
+  font-size: 12.5px !important;
+  font-weight: 700 !important;
+  color: #f8fafc !important;
+  margin-bottom: 6px !important;
+  letter-spacing: 0.3px !important;
+}
+
+/* 5. Light Theme Overrides (Full App Readability) */
+body.theme-light .form-control,
+body.theme-light .filter-select,
+body.theme-light .filter-input,
+body.theme-light input[type="text"],
+body.theme-light input[type="number"],
+body.theme-light input[type="password"],
+body.theme-light input[type="email"],
+body.theme-light input[type="search"],
+body.theme-light input[type="date"],
+body.theme-light textarea,
+body.theme-light select {
+  background-color: #ffffff !important;
+  border: 1.5px solid #94a3b8 !important;
+  color: #090e1a !important;
+}
+
+body.theme-light .form-control:focus,
+body.theme-light .filter-select:focus,
+body.theme-light .filter-input:focus,
+body.theme-light input[type="text"]:focus,
+body.theme-light input[type="number"]:focus,
+body.theme-light input[type="password"]:focus,
+body.theme-light input[type="email"]:focus,
+body.theme-light input[type="search"]:focus,
+body.theme-light input[type="date"]:focus,
+body.theme-light textarea:focus,
+body.theme-light select:focus {
+  border-color: #0284c7 !important;
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.25) !important;
+  background-color: #ffffff !important;
+  color: #090e1a !important;
+}
+
+body.theme-light ::placeholder,
+body.theme-light input::placeholder,
+body.theme-light textarea::placeholder,
+body.theme-light .form-control::placeholder {
+  color: #64748b !important;
+  opacity: 1 !important;
+  font-weight: 500 !important;
+}
+
+body.theme-light select option,
+body.theme-light .filter-select option {
+  background-color: #ffffff !important;
+  color: #090e1a !important;
+}
+
+body.theme-light .form-label {
+  color: #0f172a !important;
+}
+
+/* 6. Modal Headers, Bodies, and Footers High-Contrast */
+.modal-dialog,
+.modal-card,
+.modal-overlay > div {
+  background-color: #0f172a;
+  border: 1.5px solid #3b4d66;
+  color: #ffffff;
+}
+
+body.theme-light .modal-dialog,
+body.theme-light .modal-card,
+body.theme-light .modal-overlay > div {
+  background-color: #ffffff;
+  border: 1.5px solid #cbd5e1;
+  color: #090e1a;
+}
+
+.modal-header {
+  background-color: #111a2e;
+  border-bottom: 1.5px solid #3b4d66;
+}
+
+body.theme-light .modal-header {
+  background-color: #f8fafc;
+  border-bottom: 1.5px solid #cbd5e1;
+}
+
+.modal-footer {
+  background-color: #111a2e;
+  border-top: 1.5px solid #3b4d66;
+}
+
+body.theme-light .modal-footer {
+  background-color: #f8fafc;
+  border-top: 1.5px solid #cbd5e1;
+}
+
+/* 7. Tables, Badges, and Secondary Texts */
+th {
+  color: #f8fafc !important;
+  font-weight: 700 !important;
+}
+
+body.theme-light th {
+  color: #0f172a !important;
+}
+
+td {
+  color: #ffffff;
+}
+
+body.theme-light td {
+  color: #0f172a;
+}
+
+/* 8. Top Navbar Status Pill & Theme Button Enhancement */
+.nav-db-status-pill {
+  background: rgba(16, 185, 129, 0.15) !important;
+  border: 1.5px solid #10b981 !important;
+  color: #34d399 !important;
+  font-weight: 800 !important;
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.25) !important;
+}
+
+.nav-icon-btn#btn-theme-toggle {
+  background: #1e293b !important;
+  border: 1.5px solid #475569 !important;
+  color: #fbbf24 !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+}
+
+.nav-icon-btn#btn-theme-toggle:hover {
+  border-color: #38bdf8 !important;
+  transform: scale(1.05);
+}
+
+body.theme-light .nav-icon-btn#btn-theme-toggle {
+  background: #e2e8f0 !important;
+  border: 1.5px solid #94a3b8 !important;
+  color: #0284c7 !important;
+}
