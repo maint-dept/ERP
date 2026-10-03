@@ -975,6 +975,23 @@ class StorageEngine {
     let cloudLoadedSuccessfully = false;
     const fetchStartTime = Date.now();
 
+    // 0. Primary Adapter (MySQL) Startup Sync
+    try {
+      await syncManager._ensureConfig();
+      if (syncManager.primaryAdapter && syncManager.primaryAdapter.type === 'MYSQL') {
+        const mysqlRes = await syncManager.primaryAdapter.getAllTables();
+        if (mysqlRes && mysqlRes.success && mysqlRes.tables && Object.keys(mysqlRes.tables).length > 0) {
+          console.log(`[Storage] 🐬 Loaded ${Object.keys(mysqlRes.tables).length} tables from MySQL Primary (${syncManager.primaryAdapter.endpoint})`);
+          this.applyIncomingDatabaseRecords(mysqlRes.tables, 'MySQL Primary');
+          this._isCloudConnected = true;
+          this.updateStatusBadge('saved');
+          return;
+        }
+      }
+    } catch (e) {
+      console.warn('[Storage] MySQL Primary startup sync notice:', e.message);
+    }
+
     // 1. Google Cloud Firestore sync (Critical Path First, Secondary Deferred)
     try {
       // Step A: Fetch lightweight manifest to know what's present in cloud
