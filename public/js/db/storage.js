@@ -1511,9 +1511,11 @@ class StorageEngine {
     }
 
     const now = new Date().toISOString();
+    const baseTime = Date.now();
+    let counter = 0;
     items.forEach(item => {
       if (!item.id) {
-        item.id = `${tableName.substring(0, 3)}-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
+        item.id = `${tableName.substring(0, 3)}-${baseTime}-${++counter}-${Math.floor(Math.random() * 100000)}`;
       }
       item.createdAt = item.createdAt || now;
       item.updatedAt = now;

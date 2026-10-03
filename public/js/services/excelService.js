@@ -1301,6 +1301,7 @@ class ExcelService {
       let sheetUpdated = 0;
       let sheetFailed = 0;
       let sheetSkipped = 0;
+      const sheetNewMachines = [];
 
       sheet.records.forEach((item, recIdx) => {
         const rowNumber = item.rowNumber || (recIdx + 2);
@@ -1367,7 +1368,7 @@ class ExcelService {
             const unitObj = storage.getItem(TABLE_NAMES.UNITS, d.unitId || 'unt-1');
             const resolvedGroupId = unitObj?.groupId || d.groupId || 'grp-1';
 
-            storage.insert(TABLE_NAMES.MACHINES, {
+            sheetNewMachines.push({
               machineNameId: d.machineNameId || 'mn-1',
               brandId: d.brandId || 'brd-1',
               modelId: modelId || 'mdl-1',
@@ -1400,6 +1401,11 @@ class ExcelService {
           });
         }
       });
+
+      // Batch insert all new machines for this sheet in a single high-speed pass
+      if (sheetNewMachines.length > 0) {
+        storage.insertMany(TABLE_NAMES.MACHINES, sheetNewMachines);
+      }
 
       sheetStats.push({
         sheetName: sheet.name,
