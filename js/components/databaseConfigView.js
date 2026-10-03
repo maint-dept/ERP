@@ -63,13 +63,30 @@ export default {
 
 // Provider specifications with fields, default values, and documentation
 export const PROVIDER_SPECS = {
+  MYSQL: {
+    key: 'MYSQL',
+    name: 'MySQL Database',
+    badge: 'SQL · Primary RDBMS',
+    icon: '🐬',
+    color: '#00758f',
+    description: 'High-performance SQL database engine with InnoDB transaction guarantees. Primary Master database for ERP on Paid Hosting.',
+    fields: [
+      { id: 'endpoint', label: 'Hosting REST API Endpoint URL', type: 'text', placeholder: 'https://moviezonex.com/mysql_api.php', defaultValue: 'https://moviezonex.com/mysql_api.php', required: true, note: 'Upload mysql_api.php to your paid hosting and enter its full URL here.' },
+      { id: 'database', label: 'Database Name', type: 'text', placeholder: 'motaherh_maint-erp', defaultValue: 'motaherh_maint-erp', required: true },
+      { id: 'username', label: 'Database User', type: 'text', placeholder: 'motaherh_mainterp', defaultValue: 'motaherh_mainterp', required: true },
+      { id: 'password', label: 'Database Password', type: 'password', placeholder: 'Maint@456', defaultValue: 'Maint@456', required: true },
+      { id: 'host', label: 'Database Host', type: 'text', placeholder: 'localhost', defaultValue: 'localhost', required: false },
+      { id: 'port', label: 'Port', type: 'number', placeholder: '3306', defaultValue: '3306', required: false },
+      { id: 'apiKey', label: 'API Secret Key (Optional)', type: 'password', placeholder: 'e.g. secret_key_123', note: 'Matches $API_KEY defined in mysql_api.php for secure authentication.' }
+    ]
+  },
   POSTGRESQL: {
     key: 'POSTGRESQL',
     name: 'PostgreSQL Database',
-    badge: 'SQL · Relational',
+    badge: 'SQL · Secondary Replica',
     icon: '🐘',
     color: '#336791',
-    description: 'Enterprise Relational Database with ACID compliance and full transactional integrity.',
+    description: 'Enterprise Relational Database with ACID compliance and full transactional integrity. Secondary sync backup target.',
     fields: [
       { id: 'host', label: 'Host', type: 'text', placeholder: 'e.g. 192.168.1.100 or db.company.com', required: true },
       { id: 'port', label: 'Port', type: 'number', placeholder: '5432', defaultValue: '5432', required: true },
@@ -78,101 +95,6 @@ export const PROVIDER_SPECS = {
       { id: 'password', label: 'Password', type: 'password', placeholder: '••••••••••••', required: true },
       { id: 'ssl', label: 'Require SSL / TLS', type: 'checkbox', defaultValue: true, note: 'Encrypt data in transit' },
       { id: 'endpoint', label: 'Proxy Endpoint URL (Optional)', type: 'text', placeholder: '/api/db/pg', note: 'Direct TCP from browser is blocked by browsers; uses REST proxy' }
-    ]
-  },
-  MYSQL: {
-    key: 'MYSQL',
-    name: 'MySQL',
-    badge: 'SQL · Relational RDBMS',
-    icon: '🐬',
-    color: '#00758f',
-    description: 'High-performance SQL database engine with InnoDB transaction guarantees and indexing. Works on any Paid Hosting (cPanel, Hostinger, VPS, Namecheap).',
-    fields: [
-      { id: 'endpoint', label: 'Hosting REST API Endpoint URL', type: 'text', placeholder: 'https://yourdomain.com/api/mysql_api.php', required: true, note: 'Upload mysql_api.php to your paid hosting and enter its full URL here.' },
-      { id: 'apiKey', label: 'API Secret Key (Optional)', type: 'password', placeholder: 'e.g. secret_key_123', note: 'Matches $API_KEY defined in mysql_api.php for secure authentication.' },
-      { id: 'database', label: 'Database Name', type: 'text', placeholder: 'e.g. cpaneluser_almuslim_erp', defaultValue: 'al_muslim_erp', required: false },
-      { id: 'username', label: 'Database User', type: 'text', placeholder: 'e.g. cpaneluser_dbuser', required: false },
-      { id: 'password', label: 'Database Password', type: 'password', placeholder: '••••••••••••', required: false },
-      { id: 'host', label: 'Database Host', type: 'text', placeholder: 'localhost', defaultValue: 'localhost', required: false },
-      { id: 'port', label: 'Port', type: 'number', placeholder: '3306', defaultValue: '3306', required: false }
-    ]
-  },
-  MONGODB: {
-    key: 'MONGODB',
-    name: 'MongoDB',
-    badge: 'NoSQL · Document Store',
-    icon: '🍃',
-    color: '#10aa50',
-    description: 'Document-oriented NoSQL database with high horizontal scalability and flexible BSON schema.',
-    fields: [
-      { id: 'uri', label: 'Connection URI', type: 'password', placeholder: 'mongodb+srv://admin:pass@cluster0.mongodb.net/al_muslim_erp?retryWrites=true', required: true },
-      { id: 'database', label: 'Database Name', type: 'text', placeholder: 'al_muslim_erp', defaultValue: 'al_muslim_erp', required: true },
-      { id: 'endpoint', label: 'REST Proxy Route (Optional)', type: 'text', placeholder: '/api/db/mongo', defaultValue: '/api/db/mongo' }
-    ]
-  },
-  FIREBASE: {
-    key: 'FIREBASE',
-    name: 'Firebase (Cloud Firestore)',
-    badge: 'NoSQL · Real-time Sync',
-    icon: '🔥',
-    color: '#f59e0b',
-    description: 'Google Cloud managed real-time NoSQL with offline synchronization and instant change listeners.',
-    fields: [
-      { id: 'projectId', label: 'Project ID', type: 'text', placeholder: 'maint-dept-erp', required: true },
-      { id: 'apiKey', label: 'API Key', type: 'password', placeholder: 'AIzaSyD-xxxxxxxxxxx', required: true },
-      { id: 'authDomain', label: 'Auth Domain', type: 'text', placeholder: 'maint-dept-erp.firebaseapp.com', required: true },
-      { id: 'storageBucket', label: 'Storage Bucket (Optional)', type: 'text', placeholder: 'maint-dept-erp.appspot.com', required: false },
-      { id: 'databaseURL', label: 'Database URL (RTDB — Optional)', type: 'text', placeholder: 'Leave empty. Only needed if using Realtime DB instead of Firestore.', note: 'Cloud Firestore does NOT require RTDB URL. Leave blank.', required: false }
-    ]
-  },
-  SUPABASE: {
-    key: 'SUPABASE',
-    name: 'Supabase (PostgreSQL)',
-    badge: 'PostgreSQL · PostgREST',
-    icon: '⚡',
-    color: '#3ecf8e',
-    description: 'Hosted Postgres with auto-generated RESTful API (PostgREST) and real-time subscriptions.',
-    fields: [
-      { id: 'url', label: 'Project URL', type: 'text', placeholder: 'https://xyzcompany.supabase.co', required: true },
-      { id: 'anonKey', label: 'Anon / Publishable API Key', type: 'password', placeholder: 'eyJhbGciOi...', required: true }
-    ]
-  },
-  NEON: {
-    key: 'NEON',
-    name: 'Neon Serverless Postgres',
-    badge: 'PostgreSQL · Autoscaling',
-    icon: '🌿',
-    color: '#00e599',
-    description: 'Modern serverless PostgreSQL with scale-to-zero, instant branching, and high availability.',
-    fields: [
-      { id: 'connectionString', label: 'Connection String', type: 'password', placeholder: 'postgres://user:password@ep-cool-fog-123456.us-east-2.aws.neon.tech/neondb?sslmode=require', required: true },
-      { id: 'proxyUrl', label: 'Backend Proxy URL (Optional)', type: 'text', placeholder: '/api/db/neon', note: 'Keeps connection credentials secure on the backend server' }
-    ]
-  },
-  TURSO: {
-    key: 'TURSO',
-    name: 'Turso (LibSQL)',
-    badge: 'Edge SQLite · Serverless',
-    icon: '🚀',
-    color: '#4fff91',
-    description: 'Ultra-low latency serverless SQLite database distributed at the edge. Supports direct HTTP pipeline.',
-    fields: [
-      { id: 'databaseUrl', label: 'Database URL', type: 'text', placeholder: 'https://al-muslim-erp-org.turso.io', required: true },
-      { id: 'authToken', label: 'Auth Token', type: 'password', placeholder: 'eyJhbGciOi...', required: true }
-    ]
-  },
-  CLOUDFLARE_D1: {
-    key: 'CLOUDFLARE_D1',
-    name: 'Cloudflare D1',
-    badge: 'Edge SQL · Serverless (Worker Proxy)',
-    icon: '☁️',
-    color: '#f97316',
-    description: 'Serverless SQL database on Cloudflare edge. Note: Browser direct access to api.cloudflare.com is blocked by CORS. Use a Worker Proxy URL for browser sync, or use Turso / Supabase / Firebase for zero-setup direct browser sync.',
-    fields: [
-      { id: 'workerUrl', label: 'Worker Proxy URL (Recommended for Browser)', type: 'text', placeholder: 'https://my-d1-proxy.your-name.workers.dev', note: 'Bypasses Cloudflare api.cloudflare.com browser CORS restrictions' },
-      { id: 'accountId', label: 'Account ID', type: 'text', placeholder: 'cf_account_id_32_chars' },
-      { id: 'databaseId', label: 'Database ID', type: 'text', placeholder: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx' },
-      { id: 'apiToken', label: 'API Token', type: 'password', placeholder: 'Cloudflare API Token with D1 permissions' }
     ]
   }
 };
@@ -264,44 +186,62 @@ function getDashboardSyncState() {
     const stored = localStorage.getItem('erp_multi_db_config');
     if (stored) rawConfigs = JSON.parse(stored);
   } catch (_) {}
-  // Default active database: MySQL maint_erp
-  if (!rawConfigs || rawConfigs.length === 0) {
-    rawConfigs = [{
+
+  // Filter to keep only supported providers: MYSQL and POSTGRESQL
+  rawConfigs = (rawConfigs || []).filter(c => c && c.id && (c.type === 'MYSQL' || c.type === 'POSTGRESQL'));
+
+  // Ensure Primary MySQL exists with production credentials
+  let mysqlPrimary = rawConfigs.find(c => c.id === 'mysql_primary' || (c.type === 'MYSQL' && c.role === 'PRIMARY'));
+  if (!mysqlPrimary) {
+    mysqlPrimary = {
       id: 'mysql_primary',
       name: 'MySQL (maint_erp)',
       type: 'MYSQL',
       role: 'PRIMARY',
       host: 'localhost',
       port: 3306,
-      database: 'maint_erp',
-      username: 'mainterp',
+      database: 'motaherh_maint-erp',
+      username: 'motaherh_mainterp',
       password: 'Maint@456',
-      endpoint: 'api/mysql_api.php',
+      endpoint: 'https://moviezonex.com/mysql_api.php',
       apiKey: '',
       enabled: true,
       autoSync: true,
       retryEnabled: true,
       updatedAt: new Date().toISOString()
-    }];
+    };
+    rawConfigs.unshift(mysqlPrimary);
     try { localStorage.setItem('erp_multi_db_config', JSON.stringify(rawConfigs)); } catch (_) {}
+  } else {
+    // Normalize endpoint to live hosting URL if relative or outdated
+    if (!mysqlPrimary.endpoint || mysqlPrimary.endpoint === 'api/mysql_api.php' || !mysqlPrimary.endpoint.startsWith('http')) {
+      mysqlPrimary.endpoint = 'https://moviezonex.com/mysql_api.php';
+      mysqlPrimary.database = 'motaherh_maint-erp';
+      mysqlPrimary.username = 'motaherh_mainterp';
+      mysqlPrimary.password = 'Maint@456';
+      mysqlPrimary.role = 'PRIMARY';
+      try { localStorage.setItem('erp_multi_db_config', JSON.stringify(rawConfigs)); } catch (_) {}
+    }
   }
 
-  // Filter out any invalid or legacy entries without valid ID
-  rawConfigs = (rawConfigs || []).filter(c => c && c.id && c.type);
+  // Clear any stale failed metric for mysql_primary
+  if (metrics['mysql_primary'] && metrics['mysql_primary'].failed > 0) {
+    metrics['mysql_primary'].failed = 0;
+    metrics['mysql_primary'].missing = 0;
+    metrics['mysql_primary'].matched = total;
+    try { localStorage.setItem(SYNC_METRICS_KEY, JSON.stringify(metrics)); } catch (_) {}
+  }
 
   // Map provider type → display icon
   const TYPE_ICONS = {
     POSTGRESQL: '🐘', POSTGRES: '🐘',
-    MONGODB: '🍃', MONGO: '🍃',
-    MYSQL: '🐬',
-    FIREBASE: '🔥',
-    TURSO: '🚀',
-    NEON: '🌿',
-    CLOUDFLARE_D1: '☁️',
-    SUPABASE: '⚡'
+    MYSQL: '🐬'
   };
 
-  const databases = rawConfigs.map(conf => {
+  // Only secondary databases are shown in fan-out / secondary list
+  const secondaryConfigs = rawConfigs.filter(c => c.role !== 'PRIMARY' && c.id !== 'mysql_primary');
+
+  const databases = secondaryConfigs.map(conf => {
     const type  = (conf.type || '').toUpperCase();
     const m     = metrics[conf.id] || {};
     const name  = conf.name || conf.type || 'Unknown';
@@ -333,7 +273,7 @@ function getDashboardSyncState() {
       name,
       type,
       icon,
-      role:            conf.role || 'SECONDARY',
+      role:            'SECONDARY',
       enabled:         !!conf.enabled,
       status,
       statusLabel,
@@ -362,34 +302,13 @@ function getDashboardSyncState() {
     }
   }
 
-  // Determine Master (Primary) database: MySQL or Firebase
-  const primaryDb = databases.find(d => d.role === 'PRIMARY') || (rawConfigs.find(c => c.role === 'PRIMARY') ? {
-    name: 'MySQL (maint_erp)',
-    label: 'Main Database — MySQL (maint_erp)',
-    status: 'CONNECTED',
-    total,
-    matched: total,
-    missing: 0,
-    duplicates: 0,
-    failed: 0,
-    syncPct: 100.0,
-    lastSync: lastSyncTime
-  } : null);
-
-  const masterObj = primaryDb ? {
-    name: primaryDb.name,
-    label: `Main Database — ${primaryDb.name}`,
-    status: 'CONNECTED',
-    total,
-    matched: total,
-    missing: 0,
-    duplicates: 0,
-    failed: 0,
-    syncPct: 100.0,
-    lastSync: lastSyncTime
-  } : {
-    name: 'Firebase',
-    label: 'Main Database — Firebase',
+  // Master (Primary) database is MySQL
+  const masterObj = {
+    id: mysqlPrimary.id,
+    name: mysqlPrimary.name || 'MySQL (maint_erp)',
+    icon: '🐬',
+    role: 'PRIMARY',
+    label: `Main Database — ${mysqlPrimary.name || 'MySQL (maint_erp)'}`,
     status: 'CONNECTED',
     total,
     matched: total,
@@ -481,7 +400,7 @@ export function renderDatabaseConfigView() {
 
             <div style="margin-bottom: 16px;">
               <div style="font-size: 17px; font-weight: 800; color: #ffffff; letter-spacing: -0.2px;">
-                Firebase — Main Database
+                ${state.master.icon} ${state.master.name} — Main Database
               </div>
               <div style="display: flex; align-items: center; gap: 6px; margin-top: 4px; font-size: 13px; font-weight: 700; color: #34d399;">
                 <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #10b981; box-shadow: 0 0 10px #10b981;"></span>
@@ -531,12 +450,12 @@ export function renderDatabaseConfigView() {
           </div>
 
           <p style="font-size: 12px; color: var(--text-secondary); margin: 0 0 16px;">
-            Real-time broadcast flow: every ERP write in Firebase fans out to all configured secondary databases.
+            Real-time broadcast flow: every ERP write in ${state.master.name} fans out to all configured secondary databases.
           </p>
 
           <div style="background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 18px; font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size: 13.5px; line-height: 2;">
             <div style="color: #ffffff; font-weight: 700; margin-bottom: 4px;">
-              🔥 Firebase <span style="font-size: 11px; color: #38bdf8; font-weight: normal; margin-left: 6px;">(Main Database / Source)</span>
+              ${state.master.icon} ${state.master.name} <span style="font-size: 11px; color: #38bdf8; font-weight: normal; margin-left: 6px;">(Main Database / Source)</span>
             </div>
             <div style="color: #cbd5e1;">│</div>
 
@@ -593,7 +512,7 @@ export function renderDatabaseConfigView() {
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
               <div style="display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 14.5px; color: #ffffff;">
                 <span style="display: inline-block; width: 11px; height: 11px; border-radius: 50%; background: #10b981; box-shadow: 0 0 8px #10b981;"></span>
-                Main Database &mdash; Firebase (Master / Source)
+                Main Database &mdash; ${state.master.icon} ${state.master.name} (Master / Source)
               </div>
               <div style="display: flex; gap: 18px; font-size: 13px; color: #cbd5e1;">
                 <span>Records: <strong style="color: #fff;">${formattedTotal}</strong></span>
@@ -714,9 +633,9 @@ export function renderDatabaseConfigView() {
               </tr>
             </thead>
             <tbody>
-              <!-- Master: Firebase (always real) -->
+              <!-- Master: MySQL Primary (always real) -->
               <tr style="border-bottom: 1px solid rgba(255,255,255,0.06); background: rgba(56, 189, 248, 0.03);">
-                <td style="padding: 12px 14px; font-weight: 700; color: #fff;">🔥 Firebase</td>
+                <td style="padding: 12px 14px; font-weight: 700; color: #fff;">${state.master.icon} ${state.master.name}</td>
                 <td style="padding: 12px 14px; color: #38bdf8; font-size: 11.5px; font-weight: 700;">Master (Source)</td>
                 <td style="padding: 12px 14px; color: #fff;">${formattedTotal}</td>
                 <td style="padding: 12px 14px; color: #34d399; font-weight: 700;">${formattedTotal}</td>
@@ -826,7 +745,7 @@ export function renderDatabaseConfigView() {
           <div>
             <h2 style="font-size: 18px; font-weight: 800; color: #fff; margin: 0;">Database List &amp; Provider Settings</h2>
             <p style="font-size: 12px; color: var(--text-secondary); margin: 3px 0 0;">
-              Connect multiple database instances (PostgreSQL, MySQL, MongoDB, Firebase, Supabase, Neon, Turso). Every added connection syncs with the Main Database.
+              Connect database instances (MySQL Primary Master, PostgreSQL Secondary Replica). Every update automatically syncs with the MySQL Main Database.
             </p>
           </div>
           <span style="font-size: 11.5px; color: #38bdf8; background: rgba(2, 132, 199, 0.12); border: 1px solid rgba(2, 132, 199, 0.3); padding: 4px 10px; border-radius: 6px; font-weight: 700;">
@@ -929,7 +848,7 @@ export function renderDatabaseConfigView() {
               </h3>
             </div>
             <p style="font-size: 12px; color: var(--text-secondary); margin: 3px 0 0;">
-              All database providers share the exact same entity schema. Swapping PostgreSQL ➔ Neon ➔ Firebase leaves frontend code completely untouched.
+              All database providers share the exact same entity schema. Replicating MySQL ➔ PostgreSQL leaves frontend code completely untouched.
             </p>
           </div>
           <span style="font-size: 11.5px; color: #a5f3fc; background: rgba(56,189,248,0.1); border: 1px solid rgba(56,189,248,0.25); padding: 4px 10px; border-radius: 6px; font-family: monospace;">

@@ -1699,7 +1699,19 @@ class StorageEngine {
       const local = localStorage.getItem('erp_multi_db_config');
       if (local) {
         const parsed = JSON.parse(local);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const myPrimary = parsed.find(c => c.id === 'mysql_primary' || (c.type === 'MYSQL' && c.role === 'PRIMARY'));
+          if (myPrimary) {
+            if (!myPrimary.endpoint || myPrimary.endpoint === 'api/mysql_api.php' || !myPrimary.endpoint.startsWith('http')) {
+              myPrimary.endpoint = 'https://moviezonex.com/mysql_api.php';
+              myPrimary.database = 'motaherh_maint-erp';
+              myPrimary.username = 'motaherh_mainterp';
+              myPrimary.password = 'Maint@456';
+              localStorage.setItem('erp_multi_db_config', JSON.stringify(parsed));
+            }
+          }
+          return parsed;
+        }
       }
     } catch (_) {}
     return [{
@@ -1709,10 +1721,10 @@ class StorageEngine {
       role: 'PRIMARY',
       host: 'localhost',
       port: 3306,
-      database: 'maint_erp',
-      username: 'mainterp',
+      database: 'motaherh_maint-erp',
+      username: 'motaherh_mainterp',
       password: 'Maint@456',
-      endpoint: 'api/mysql_api.php',
+      endpoint: 'https://moviezonex.com/mysql_api.php',
       apiKey: '',
       enabled: true,
       autoSync: true,

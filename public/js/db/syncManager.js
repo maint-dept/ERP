@@ -12,10 +12,34 @@ import { storage }             from './storage.js';
 
 class SyncManager {
   constructor() {
-    this.primaryAdapter = new FirebaseAdapter();
-    this.primaryAdapter.id = 'default_fb';
-    this.primaryAdapter.name = 'Firebase Primary';
-    this.primaryAdapter.config = { retryEnabled: true, enabled: true, autoSync: true };
+    this.primaryAdapter = new MysqlAdapter({
+      id: 'mysql_primary',
+      name: 'MySQL (maint_erp)',
+      type: 'MYSQL',
+      role: 'PRIMARY',
+      endpoint: 'https://moviezonex.com/mysql_api.php',
+      database: 'motaherh_maint-erp',
+      username: 'motaherh_mainterp',
+      password: 'Maint@456',
+      retryEnabled: true,
+      enabled: true,
+      autoSync: true
+    });
+    this.primaryAdapter.id = 'mysql_primary';
+    this.primaryAdapter.name = 'MySQL (maint_erp)';
+    this.primaryAdapter.config = {
+      id: 'mysql_primary',
+      name: 'MySQL (maint_erp)',
+      type: 'MYSQL',
+      role: 'PRIMARY',
+      endpoint: 'https://moviezonex.com/mysql_api.php',
+      database: 'motaherh_maint-erp',
+      username: 'motaherh_mainterp',
+      password: 'Maint@456',
+      retryEnabled: true,
+      enabled: true,
+      autoSync: true
+    };
     this.secondaryAdapters = new Map(); // dbId -> adapter
     this.configLoaded = false;
   }
@@ -255,7 +279,10 @@ class SyncManager {
    */
   async runFullSync(dbId) {
     await this._ensureConfig();
-    const adapter = this.secondaryAdapters.get(dbId);
+    let adapter = this.secondaryAdapters.get(dbId);
+    if (!adapter && this.primaryAdapter && (this.primaryAdapter.id === dbId || dbId === 'mysql_primary')) {
+      adapter = this.primaryAdapter;
+    }
     if (!adapter) throw new Error('Database not found or disabled. Make sure the database is enabled and config is saved.');
 
     const { storage } = await import('./storage.js');
@@ -308,14 +335,22 @@ class SyncManager {
     }
 
     // Persist updated lastSync timestamp back into config
-    adapter.config.lastSync = new Date().toLocaleString();
+    if (adapter.config) {
+      adapter.config.lastSync = new Date().toLocaleString();
+    }
     this._saveConfigs();
 
     return true;
   }
 
   _saveConfigs() {
-    const configs = Array.from(this.secondaryAdapters.values()).map(a => a.config);
+    const configs = [];
+    if (this.primaryAdapter && this.primaryAdapter.config && this.primaryAdapter.config.role === 'PRIMARY') {
+      configs.push(this.primaryAdapter.config);
+    }
+    for (const a of this.secondaryAdapters.values()) {
+      if (a.config) configs.push(a.config);
+    }
     if (storage && typeof storage.saveMultiDbConfigs === 'function') {
       storage.saveMultiDbConfigs(configs).catch(() => {});
     } else {
