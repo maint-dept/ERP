@@ -188,14 +188,14 @@ export function renderTransfersView() {
                     <!-- Equipment Details -->
                     <td>
                       <div style="font-weight: 700; color: #fff; font-size: 12px; line-height: 1.3; margin-bottom: 2px;">
-                        ${req.machineInfo.machineName || 'Machine'}
+                        ${req.machineInfo?.machineName || req.machineName || 'Machine'}
                       </div>
                       <div style="font-size: 10.5px; color: var(--text-secondary); margin-bottom: 3px;">
-                        ${req.machineInfo.brand || '—'} &bull; ${req.machineInfo.model || '—'}
+                        ${req.machineInfo?.brand || '—'} &bull; ${req.machineInfo?.model || '—'}
                       </div>
                       <div>
                         <span style="font-family: var(--font-mono); font-size: 10px; color: #38bdf8; font-weight: 700; background: rgba(56,189,248,0.1); border: 1px solid rgba(56,189,248,0.25); padding: 1px 5px; border-radius: 3px; display: inline-block;">
-                          SN: ${req.machineInfo.serialNumber}
+                          SN: ${req.machineInfo?.serialNumber || req.serialNumber || req.machineSerial || '—'}
                         </span>
                       </div>
                     </td>

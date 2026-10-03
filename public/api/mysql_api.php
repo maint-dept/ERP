@@ -131,6 +131,10 @@ if (empty($action)) {
 try {
     ensureTableExists($pdo);
 
+    if (in_array($action, ['save_table', 'save-table', 'save_multiple_tables', 'upsert', 'save_record', 'delete', 'delete_record'])) {
+        $pdo->beginTransaction();
+    }
+
     switch ($action) {
         // --- TEST CONNECTION ---
         case 'ping':
@@ -152,6 +156,37 @@ try {
                 'tablesCount' => intval($summary['total_tables'] ?? 0),
                 'totalItems' => intval($summary['total_items'] ?? 0),
                 'timestamp' => date('c')
+            ]);
+            break;
+
+        // --- SAVE MULTIPLE TABLES (Atomic Transaction) ---
+        case 'save_multiple_tables':
+            $tablesData = $body['tables'] ?? [];
+            if (empty($tablesData)) {
+                throw new Exception('Missing "tables" data.');
+            }
+            foreach ($tablesData as $collection => $data) {
+                $jsonStr = is_string($data) ? $data : json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                $itemCount = is_array($data) ? count($data) : 1;
+                $stmt = $pdo->prepare("
+                    INSERT INTO `erp_tables` (`table_name`, `raw_json`, `item_count`, `updated_at`)
+                    VALUES (:table_name, :raw_json, :item_count, NOW())
+                    ON DUPLICATE KEY UPDATE
+                        `raw_json` = VALUES(`raw_json`),
+                        `item_count` = VALUES(`item_count`),
+                        `updated_at` = NOW()
+                ");
+                $stmt->execute([
+                    ':table_name' => $collection,
+                    ':raw_json'   => $jsonStr,
+                    ':item_count' => $itemCount
+                ]);
+            }
+            $pdo->commit();
+
+            echo json_encode([
+                'success' => true,
+                'updatedAt' => date('c')
             ]);
             break;
 
@@ -184,6 +219,7 @@ try {
                 ':raw_json'   => $jsonStr,
                 ':item_count' => $itemCount
             ]);
+            $pdo->commit();
 
             echo json_encode([
                 'success' => true,
@@ -301,6 +337,7 @@ try {
                 ':raw_json'   => $newJson,
                 ':item_count' => $newCount
             ]);
+            $pdo->commit();
 
             echo json_encode([
                 'success' => true,
@@ -345,6 +382,7 @@ try {
                     ]);
                 }
             }
+            $pdo->commit();
 
             echo json_encode([
                 'success' => true,
@@ -384,6 +422,9 @@ try {
             break;
     }
 } catch (Exception $e) {
+    if ($pdo && $pdo->inTransaction()) {
+        $pdo->rollBack();
+    }
     http_response_code(500);
     echo json_encode([
         'success' => false,

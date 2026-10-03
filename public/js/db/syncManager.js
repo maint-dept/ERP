@@ -121,6 +121,30 @@ class SyncManager {
     await this.loadConfig();
   }
 
+  async saveMultipleTables(tablesObj) {
+    await this._ensureConfig();
+    
+    // 1. Try Primary
+    if (this.primaryAdapter.saveMultipleTables) {
+      const primaryResult = await this.primaryAdapter.saveMultipleTables(tablesObj);
+      if (primaryResult.success) {
+        for (const [collection, dataObj] of Object.entries(tablesObj)) {
+           this._fanoutTableSave(collection, dataObj);
+        }
+        return primaryResult;
+      }
+      return primaryResult;
+    } else {
+      // Fallback
+      let result = { success: true };
+      for (const [collection, dataObj] of Object.entries(tablesObj)) {
+         const res = await this.saveTable(collection, dataObj);
+         if (!res.success) result = res;
+      }
+      return result;
+    }
+  }
+
   /**
    * Save an entire table to Primary (MySQL), then Fan-out to Secondaries
    */

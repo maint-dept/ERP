@@ -285,27 +285,37 @@ class TransferService {
       completedBy: null
     };
 
-    // NOTE: CRITICAL SECURITY RULE: The physical machine's live location is NOT changed here!
-    // We update machine status to 'IN_TRANSFER' to indicate pending relocation in live inventory table
+    // PREPARE UPDATES FOR MYSQL
+    const updatedMachine = {
+      ...machine,
+      status: 'IN_TRANSFER',
+      updatedBy: user.id,
+      updatedAt: new Date().toISOString()
+    };
+
+    const tablesObj = {
+      [TABLE_NAMES.MACHINES]: storage.getTable(TABLE_NAMES.MACHINES).map(m => m.id === machine.id ? updatedMachine : m),
+      [TABLE_NAMES.TRANSFER_REQUESTS]: [...storage.getTable(TABLE_NAMES.TRANSFER_REQUESTS), newRequest]
+    };
+
+    // CONFIRMED CLOUD WRITE FIRST (Atomic Transaction)
+    const dbResult = await syncManager.saveMultipleTables(tablesObj);
+    if (!dbResult.success) {
+      throw new CloudSaveError('❌ Database Transaction Failed: ' + dbResult.error);
+    }
+
+    // Now safely update local memory and cache
     storage.update(TABLE_NAMES.MACHINES, machine.id, {
       status: 'IN_TRANSFER',
       updatedBy: user.id,
       updatedAt: new Date().toISOString()
     });
-
     storage.insert(TABLE_NAMES.TRANSFER_REQUESTS, newRequest);
-
-    // Guaranteed instant storage save & immediate cloud commit to MySQL
-    storage.saveTable(TABLE_NAMES.MACHINES, true);
-    storage.saveTable(TABLE_NAMES.TRANSFER_REQUESTS, true);
-
-    // Direct background sync with primary MySQL adapter (single record upsert takes <200ms)
-    if (typeof syncManager !== 'undefined' && syncManager.primaryAdapter) {
-      const updatedMachine = storage.getItem(TABLE_NAMES.MACHINES, machine.id);
-      syncManager.saveRecord(TABLE_NAMES.MACHINES, machine.id, updatedMachine).catch(e => console.warn('Background machine sync:', e.message));
-      syncManager.saveRecord(TABLE_NAMES.TRANSFER_REQUESTS, newRequest.id, newRequest).catch(e => console.warn('Background transfer request sync:', e.message));
-    }
-
+    
+    try {
+      localStorage.setItem('al_muslim_erp_' + TABLE_NAMES.MACHINES, JSON.stringify(storage.data[TABLE_NAMES.MACHINES]));
+      localStorage.setItem('al_muslim_erp_' + TABLE_NAMES.TRANSFER_REQUESTS, JSON.stringify(storage.data[TABLE_NAMES.TRANSFER_REQUESTS]));
+    } catch (_) {}
     // Trigger local and cross-component updates immediately
     window.dispatchEvent(new CustomEvent('erp:transfers-updated'));
     if (window.state && typeof window.state.emit === 'function') {
@@ -416,6 +426,23 @@ class TransferService {
     } else {
       // Advance to next approval level
       const nextLevel = req.currentLevel + 1;
+      const updatedReqObj = {
+        ...req,
+        currentLevel: nextLevel,
+        status: TRANSFER_STATUSES.PARTIALLY_APPROVED,
+        levels: req.levels,
+        documents: updatedDocs,
+        approvalHistory: updatedHistory,
+        updatedAt: now.toISOString()
+      };
+
+      // CONFIRMED CLOUD WRITE FIRST
+      const dbResult = await syncManager.saveRecord(TABLE_NAMES.TRANSFER_REQUESTS, req.id, updatedReqObj);
+      if (!dbResult.success) {
+        throw new CloudSaveError('❌ Database Transaction Failed: ' + dbResult.error);
+      }
+
+      // NOW safely apply to local memory
       const updated = storage.update(TABLE_NAMES.TRANSFER_REQUESTS, req.id, {
         currentLevel: nextLevel,
         status: TRANSFER_STATUSES.PARTIALLY_APPROVED,
@@ -424,12 +451,10 @@ class TransferService {
         approvalHistory: updatedHistory,
         updatedAt: now.toISOString()
       });
+      try {
+        localStorage.setItem('al_muslim_erp_' + TABLE_NAMES.TRANSFER_REQUESTS, JSON.stringify(storage.data[TABLE_NAMES.TRANSFER_REQUESTS]));
+      } catch (_) {}
 
-      // Instant local persistence & immediate cloud sync
-      storage.saveTable(TABLE_NAMES.TRANSFER_REQUESTS, true);
-      if (typeof syncManager !== 'undefined' && syncManager.primaryAdapter) {
-        syncManager.saveRecord(TABLE_NAMES.TRANSFER_REQUESTS, req.id, updated).catch(e => console.warn('Sync transfer request notice:', e.message));
-      }
 
       notificationService.notify(
         'Transfer Advanced to Next Level',
