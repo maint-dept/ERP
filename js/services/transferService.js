@@ -20,7 +20,13 @@ class TransferService {
    */
   getTransferRequests(params = {}) {
     let list = storage.getTable(TABLE_NAMES.TRANSFER_REQUESTS) || [];
-    list = [...list].sort((a, b) => new Date(b.requestedAt) - new Date(a.requestedAt));
+    list = (Array.isArray(list) ? list : []).filter(Boolean).map(t => {
+      if (!t.status) {
+        t.status = TRANSFER_STATUSES.PENDING_APPROVAL;
+      }
+      return t;
+    });
+    list = [...list].sort((a, b) => new Date(b.requestedAt || 0) - new Date(a.requestedAt || 0));
 
     // Scoped location filtering for technician accounts
     const scoped = authService.getScopedFilter();
@@ -39,7 +45,7 @@ class TransferService {
     }
 
     if (params.status && params.status !== 'ALL') {
-      list = list.filter(t => t.status === params.status);
+      list = list.filter(t => (t.status || TRANSFER_STATUSES.PENDING_APPROVAL) === params.status);
     }
 
     if (params.search) {
@@ -61,14 +67,19 @@ class TransferService {
 
   getTransferRequestById(id) {
     const list = storage.getTable(TABLE_NAMES.TRANSFER_REQUESTS) || [];
-    return list.find(t => t.id === id || t.requestNumber === id) || null;
+    const item = list.find(t => t && (t.id === id || t.requestNumber === id)) || null;
+    if (item && !item.status) {
+      item.status = TRANSFER_STATUSES.PENDING_APPROVAL;
+    }
+    return item;
   }
 
   getPendingCount() {
     const list = this.getTransferRequests({ status: 'ALL' });
     const user = authService.getCurrentUser();
     return list.filter(t => {
-      const isPendingStatus = t.status === TRANSFER_STATUSES.PENDING_APPROVAL || t.status === TRANSFER_STATUSES.PARTIALLY_APPROVED;
+      const st = t.status || TRANSFER_STATUSES.PENDING_APPROVAL;
+      const isPendingStatus = st === TRANSFER_STATUSES.PENDING_APPROVAL || st === TRANSFER_STATUSES.PARTIALLY_APPROVED;
       if (!isPendingStatus) return false;
       return workflowService.canUserApproveStep(t, user);
     }).length;
@@ -132,7 +143,8 @@ class TransferService {
     // 0.1 Duplicate Request Prevention: One machine cannot have multiple active/pending transfer requests
     const activeExisting = this.getActiveTransferForMachine(machine.id);
     if (activeExisting) {
-      throw new Error(`Machine [${machine.serialNumber}] already has an active Transfer Request (#${activeExisting.requestNumber}) in status "${activeExisting.status.replace(/_/g, ' ')}" requested by ${activeExisting.requestedByName || 'User'}. Multiple transfer requests cannot be submitted for the same machine until the active request is completed, rejected, or cancelled.`);
+      const activeStatus = (activeExisting.status || 'PENDING_APPROVAL').replace(/_/g, ' ');
+      throw new Error(`Machine [${machine.serialNumber}] already has an active Transfer Request (#${activeExisting.requestNumber}) in status "${activeStatus}" requested by ${activeExisting.requestedByName || 'User'}. Multiple transfer requests cannot be submitted for the same machine until the active request is completed, rejected, or cancelled.`);
     }
 
     // 1. Validate destination is not identical to source

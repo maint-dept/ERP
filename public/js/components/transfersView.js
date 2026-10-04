@@ -24,9 +24,9 @@ export function renderTransfersView() {
   });
 
   const allRequests = storage.getTable(TABLE_NAMES.TRANSFER_REQUESTS) || [];
-  const pendingCount = allRequests.filter(r => r.status === TRANSFER_STATUSES.PENDING_APPROVAL || r.status === TRANSFER_STATUSES.PARTIALLY_APPROVED).length;
-  const completedCount = allRequests.filter(r => r.status === TRANSFER_STATUSES.COMPLETED).length;
-  const rejectedCount = allRequests.filter(r => r.status === TRANSFER_STATUSES.REJECTED).length;
+  const pendingCount = allRequests.filter(r => (r?.status || TRANSFER_STATUSES.PENDING_APPROVAL) === TRANSFER_STATUSES.PENDING_APPROVAL || (r?.status || '') === TRANSFER_STATUSES.PARTIALLY_APPROVED).length;
+  const completedCount = allRequests.filter(r => (r?.status || '') === TRANSFER_STATUSES.COMPLETED).length;
+  const rejectedCount = allRequests.filter(r => (r?.status || '') === TRANSFER_STATUSES.REJECTED).length;
 
   return `
     <div class="page-view">
@@ -154,10 +154,12 @@ export function renderTransfersView() {
             </thead>
             <tbody>
               ${requests.map(req => {
-                const isCompleted = req.status === TRANSFER_STATUSES.COMPLETED;
-                const isRejected = req.status === TRANSFER_STATUSES.REJECTED;
-                const isRevision = req.status === TRANSFER_STATUSES.REVISION_REQUESTED;
-                const isPending = req.status === TRANSFER_STATUSES.PENDING_APPROVAL || req.status === TRANSFER_STATUSES.PARTIALLY_APPROVED;
+                if (!req) return '';
+                const safeStatus = (req.status || TRANSFER_STATUSES.PENDING_APPROVAL).toString();
+                const isCompleted = safeStatus === TRANSFER_STATUSES.COMPLETED;
+                const isRejected = safeStatus === TRANSFER_STATUSES.REJECTED;
+                const isRevision = safeStatus === TRANSFER_STATUSES.REVISION_REQUESTED;
+                const isPending = safeStatus === TRANSFER_STATUSES.PENDING_APPROVAL || safeStatus === TRANSFER_STATUSES.PARTIALLY_APPROVED;
                 const currentUser = authService.getCurrentUser();
                 const canApprove = isPending && workflowService.canUserApproveStep(req, currentUser);
 
@@ -168,17 +170,19 @@ export function renderTransfersView() {
                 const nameMatch = rawRequester.match(/^(.*?)(?:\s*\((.*?)\))?$/);
                 const personName = nameMatch ? nameMatch[1].trim() : rawRequester;
                 const personRole = nameMatch && nameMatch[2] ? nameMatch[2].trim() : null;
-                const formattedDate = new Date(req.requestedAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+                const formattedDate = req.requestedAt ? new Date(req.requestedAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
 
                 // Current Stage Title
-                const stageTitle = isCompleted ? 'Final Gate Pass Approved' : (req.levels?.[req.currentLevel - 1]?.title || 'In Review');
+                const currentLvl = Number(req.currentLevel) || 1;
+                const stageTitle = isCompleted ? 'Final Gate Pass Approved' : (req.levels?.[currentLvl - 1]?.title || 'In Review');
+                const displayStatus = safeStatus === 'PENDING_APPROVAL' ? 'Pending' : (safeStatus === 'PARTIALLY_APPROVED' ? 'In Progress' : safeStatus.replace(/_/g, ' '));
 
                 return `
                   <tr class="transfer-row-item" data-id="${req.id}" title="Click row to view complete transfer details and audit trail">
                     <!-- Request ID -->
                     <td>
                       <div class="transfer-id-badge">
-                        <span>${req.requestNumber}</span>
+                        <span>${req.requestNumber || req.id || 'TR-REQ'}</span>
                       </div>
                       <div style="font-size: 10px; color: var(--text-muted); margin-top: 3px;" title="Full Internal ID: ${req.id}">
                         Ref #${(req.id || '').replace(/^trq-/, '').slice(-7)}
@@ -251,7 +255,7 @@ export function renderTransfersView() {
                     <td>
                       <div style="margin-bottom: 3px;">
                         <span class="stage-pill ${isCompleted ? 'stage-pill-completed' : 'stage-pill-pending'}" style="font-size: 10px; padding: 2px 6px;">
-                          ${isCompleted ? '✓ Completed' : `⏳ Stage ${req.currentLevel}/${req.totalLevels}`}
+                          ${isCompleted ? '✓ Completed' : `⏳ Stage ${req.currentLevel || 1}/${req.totalLevels || 1}`}
                         </span>
                       </div>
                       <div style="font-size: 10px; color: var(--text-secondary); line-height: 1.3;" title="${stageTitle}">
@@ -269,7 +273,7 @@ export function renderTransfersView() {
                     <!-- Status -->
                     <td style="text-align: center;">
                       <span class="badge ${statusBadge}" style="font-size: 9.5px; padding: 3px 6px; font-weight: 700; letter-spacing: 0.2px;">
-                        ${req.status === 'PENDING_APPROVAL' ? 'Pending' : (req.status === 'PARTIALLY_APPROVED' ? 'In Progress' : req.status.replace(/_/g, ' '))}
+                        ${displayStatus}
                       </span>
                       ${isRejected && req.rejectionReason ? `
                         <div style="font-size: 9px; color: #f87171; margin-top: 2px; line-height: 1.2;" title="${req.rejectionReason}">

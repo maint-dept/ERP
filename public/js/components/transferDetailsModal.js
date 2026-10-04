@@ -19,13 +19,14 @@ export function renderTransferDetailsModal() {
   const req = transferService.getTransferRequestById(requestId);
   if (!req) return '';
 
+  const safeStatus = (req.status || TRANSFER_STATUSES.PENDING_APPROVAL).toString();
   const user = authService.getCurrentUser();
-  const canApprove = (req.status === TRANSFER_STATUSES.PENDING_APPROVAL || req.status === TRANSFER_STATUSES.PARTIALLY_APPROVED) &&
+  const canApprove = (safeStatus === TRANSFER_STATUSES.PENDING_APPROVAL || safeStatus === TRANSFER_STATUSES.PARTIALLY_APPROVED) &&
                      workflowService.canUserApproveStep(req, user);
 
-  const isCompleted = req.status === TRANSFER_STATUSES.COMPLETED;
-  const isRejected = req.status === TRANSFER_STATUSES.REJECTED;
-  const isRevision = req.status === TRANSFER_STATUSES.REVISION_REQUESTED;
+  const isCompleted = safeStatus === TRANSFER_STATUSES.COMPLETED;
+  const isRejected = safeStatus === TRANSFER_STATUSES.REJECTED;
+  const isRevision = safeStatus === TRANSFER_STATUSES.REVISION_REQUESTED;
 
   const statusBadge = isCompleted ? 'badge-active' : (isRejected ? 'badge-breakdown' : (isRevision ? 'badge-maint' : 'badge-idle'));
 
@@ -37,10 +38,10 @@ export function renderTransferDetailsModal() {
           <div class="modal-title" style="display: flex; align-items: center; gap: 12px;">
             <span>🔄 Machine Relocation Transfer Request</span>
             <span style="font-family: var(--font-mono); font-size: 13px; font-weight: 800; color: #38bdf8; background: var(--primary-light); padding: 3px 10px; border-radius: var(--radius-sm);">
-              ${req.requestNumber}
+              ${req.requestNumber || req.id || 'TR-REQ'}
             </span>
             <span class="badge ${statusBadge}" style="font-size: 11px;">
-              ${req.status.replace(/_/g, ' ')}
+              ${safeStatus.replace(/_/g, ' ')}
             </span>
           </div>
           <div style="display: flex; gap: 8px; align-items: center;">

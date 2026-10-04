@@ -143,7 +143,7 @@ export function renderTransferWorkflowBuilder() {
                 <span class="wf-preset-item-tag ${p.tagType || 'badge-fast'}">${p.tag || 'Template'}</span>
               </div>
               <div>
-                <div class="wf-preset-item-name">${p.name.replace('Option ', '').replace(': ', ' — ')}</div>
+                <div class="wf-preset-item-name">${(p.name || '').replace('Option ', '').replace(': ', ' — ')}</div>
                 <div class="wf-preset-item-desc">${p.description}</div>
               </div>
             </div>
@@ -443,7 +443,7 @@ export function initTransferWorkflowBuilderEvents() {
         saveFormValuesToState();
         editingWorkflow = {
           id: editingWorkflow?.id,
-          name: preset.name.replace('Option ', '').replace(': ', ' — '),
+          name: (preset.name || '').replace('Option ', '').replace(': ', ' — '),
           description: preset.description,
           requireDocument: Boolean(preset.requireDocument),
           sequential: true,

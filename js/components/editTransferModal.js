@@ -51,8 +51,9 @@ export function renderEditTransferModal() {
   }
 
   const user = authService.getCurrentUser();
-  const isCompleted = req.status === TRANSFER_STATUSES.COMPLETED;
-  const isRejected = req.status === TRANSFER_STATUSES.REJECTED;
+  const safeStatus = (req.status || TRANSFER_STATUSES.PENDING_APPROVAL).toString();
+  const isCompleted = safeStatus === TRANSFER_STATUSES.COMPLETED;
+  const isRejected = safeStatus === TRANSFER_STATUSES.REJECTED;
 
   if (isCompleted || isRejected) {
     return `
@@ -61,7 +62,7 @@ export function renderEditTransferModal() {
           <div style="font-size: 36px; margin-bottom: 8px;">🔒</div>
           <div style="font-size: 16px; font-weight: 800; color: #f87171;">Transfer Request Already Finalized</div>
           <div style="font-size: 12.5px; color: #cbd5e1; margin-top: 8px; line-height: 1.5;">
-            Transfer Request <strong>#${req.requestNumber}</strong> is in <strong>${req.status.replace(/_/g, ' ')}</strong> state. 
+            Transfer Request <strong>#${req.requestNumber || req.id || 'TR-REQ'}</strong> is in <strong>${safeStatus.replace(/_/g, ' ')}</strong> state. 
             Destination location can only be edited before official approval is completed.
           </div>
           <button type="button" id="btn-close-edit-transfer-fallback" class="btn btn-secondary" style="margin-top: 16px;">
@@ -122,7 +123,7 @@ export function renderEditTransferModal() {
                     SN: ${req.machineInfo?.serialNumber}
                   </span>
                   <span class="badge badge-idle" style="font-size: 10px;">
-                    ${req.status.replace(/_/g, ' ')}
+                    ${safeStatus.replace(/_/g, ' ')}
                   </span>
                 </div>
                 <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">

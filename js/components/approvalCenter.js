@@ -103,12 +103,14 @@ export function renderApprovalCenter() {
           ` : `
             <div style="display: flex; flex-direction: column; gap: 16px;">
               ${displayTransfers.map(req => {
-                const canUserApproveThis = (req.status === TRANSFER_STATUSES.PENDING_APPROVAL || req.status === TRANSFER_STATUSES.PARTIALLY_APPROVED) &&
+                if (!req) return '';
+                const safeStatus = (req.status || TRANSFER_STATUSES.PENDING_APPROVAL).toString();
+                const canUserApproveThis = (safeStatus === TRANSFER_STATUSES.PENDING_APPROVAL || safeStatus === TRANSFER_STATUSES.PARTIALLY_APPROVED) &&
                                            workflowService.canUserApproveStep(req, user);
 
-                const isCompleted = req.status === TRANSFER_STATUSES.COMPLETED;
-                const isRejected = req.status === TRANSFER_STATUSES.REJECTED;
-                const isRevision = req.status === TRANSFER_STATUSES.REVISION_REQUESTED;
+                const isCompleted = safeStatus === TRANSFER_STATUSES.COMPLETED;
+                const isRejected = safeStatus === TRANSFER_STATUSES.REJECTED;
+                const isRevision = safeStatus === TRANSFER_STATUSES.REVISION_REQUESTED;
 
                 const statusBadge = isCompleted ? 'badge-active' : (isRejected ? 'badge-breakdown' : (isRevision ? 'badge-maint' : 'badge-idle'));
 
@@ -118,9 +120,9 @@ export function renderApprovalCenter() {
                     <!-- Card Header -->
                     <div style="background: var(--bg-card); padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); flex-wrap: wrap; gap: 10px;">
                       <div style="display: flex; align-items: center; gap: 12px;">
-                        <span class="badge ${statusBadge}">${req.status.replace(/_/g, ' ')}</span>
+                        <span class="badge ${statusBadge}">${safeStatus.replace(/_/g, ' ')}</span>
                         <span style="font-family: var(--font-mono); font-size: 14px; font-weight: 800; color: #38bdf8;">
-                          ${req.requestNumber}
+                          ${req.requestNumber || req.id || 'TR-REQ'}
                         </span>
                         <span style="font-weight: 700; color: #fff; font-size: 13.5px;">
                           ${req.machineInfo?.machineName || req.machineName || 'Machine'} (${req.machineInfo?.brand || '—'} ${req.machineInfo?.model || '—'})

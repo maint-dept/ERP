@@ -310,7 +310,7 @@ class PDFService {
         <td style="font-weight: 600;">${h.approverName} <span style="font-size: 10px; color: #64748b;">(${h.approverRole})</span></td>
         <td style="text-align: center;">
           <span style="font-weight: 700; color: ${h.action === 'APPROVED' ? '#16a34a' : (h.action === 'REJECTED' ? '#dc2626' : '#0284c7')};">
-            ${h.action.replace(/_/g, ' ')}
+            ${(h.action || 'APPROVED').replace(/_/g, ' ')}
           </span>
         </td>
         <td style="text-align: center; font-family: monospace;">${h.date} ${h.time || ''}</td>
@@ -497,7 +497,7 @@ class PDFService {
           </div>
           <div style="text-align: right;">
             <span style="display: inline-block; background: ${statusColor}; color: #fff; font-size: 11px; font-weight: 800; padding: 4px 10px; border-radius: 4px; text-transform: uppercase;">
-              ${req.status.replace(/_/g, ' ')}
+              ${(req.status || 'PENDING_APPROVAL').replace(/_/g, ' ')}
             </span>
             <div style="font-size: 10.5px; color: #64748b; margin-top: 3px;">Date: ${dateStr}</div>
           </div>
