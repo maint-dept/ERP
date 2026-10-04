@@ -350,6 +350,105 @@ class ToolService {
     return results.slice(0, 10);
   }
 
+  _extractCell(row, aliases) {
+    if (!row || typeof row !== 'object') return '';
+    // 1. Direct key match
+    for (const key of aliases) {
+      if (row[key] !== undefined && row[key] !== null) {
+        const val = String(row[key]).trim();
+        if (val !== '') return val;
+      }
+    }
+    // 2. Normalized key match (alphanumeric only, lowercase)
+    const entries = Object.entries(row);
+    for (const key of aliases) {
+      const cleanTarget = key.toLowerCase().replace(/[^a-z0-9]/g, '');
+      if (!cleanTarget) continue;
+      for (const [rKey, rVal] of entries) {
+        if (rVal === undefined || rVal === null) continue;
+        const cleanRKey = rKey.toLowerCase().replace(/[^a-z0-9]/g, '');
+        if (cleanRKey === cleanTarget) {
+          const val = String(rVal).trim();
+          if (val !== '') return val;
+        }
+      }
+    }
+    return '';
+  }
+
+  /**
+   * Match Manpower Employee STRICTLY by Card Number or Employee ID ONLY.
+   * Never matches by Name.
+   */
+  getStaffByCardOnly(card) {
+    if (!card) return null;
+    const raw = String(card).trim();
+    if (!raw) return null;
+
+    // 1. Try flexible card matching in employeeService
+    if (typeof employeeService !== 'undefined' && employeeService.findEmployeeByFlexibleCard) {
+      const found = employeeService.findEmployeeByFlexibleCard(raw);
+      if (found) return found;
+    }
+
+    // 2. Direct check on all employees in database
+    const all = (typeof employeeService !== 'undefined' && employeeService.getAllEmployees)
+      ? employeeService.getAllEmployees()
+      : (storage.getTable(TABLE_NAMES.EMPLOYEES) || []);
+
+    const cleanLower = raw.toLowerCase();
+    const cleanAlpha = cleanLower.replace(/[^a-z0-9]/g, '');
+    const cleanDigits = cleanLower.replace(/[^\d]/g, '');
+
+    // Exact card or ID match
+    let match = all.find(e => {
+      const eCard = String(e.cardNumber || '').trim().toLowerCase();
+      const eId = String(e.id || '').trim().toLowerCase();
+      return eCard === cleanLower || eId === cleanLower;
+    });
+    if (match) {
+      return (typeof employeeService !== 'undefined' && employeeService.enrichEmployee)
+        ? employeeService.enrichEmployee(match)
+        : match;
+    }
+
+    // Alphanumeric match ignoring punctuation/spaces (e.g. AMG0144906 vs AMG-0144906)
+    if (cleanAlpha.length >= 3) {
+      match = all.find(e => {
+        const eCardAlpha = String(e.cardNumber || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+        const eIdAlpha = String(e.id || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+        return eCardAlpha === cleanAlpha || eIdAlpha === cleanAlpha;
+      });
+      if (match) {
+        return (typeof employeeService !== 'undefined' && employeeService.enrichEmployee)
+          ? employeeService.enrichEmployee(match)
+          : match;
+      }
+    }
+
+    // Numeric digits match (e.g. '144906' or '0144906')
+    if (cleanDigits.length >= 3) {
+      const digitsNoZero = cleanDigits.replace(/^0+/, '');
+      match = all.find(e => {
+        const eCardDigits = String(e.cardNumber || '').replace(/[^\d]/g, '');
+        const eIdDigits = String(e.id || '').replace(/[^\d]/g, '');
+        const eCardNoZero = eCardDigits.replace(/^0+/, '');
+        const eIdNoZero = eIdDigits.replace(/^0+/, '');
+        return eCardDigits === cleanDigits ||
+          eIdDigits === cleanDigits ||
+          (digitsNoZero && (eCardNoZero === digitsNoZero || eIdNoZero === digitsNoZero)) ||
+          (cleanDigits.length >= 4 && (eCardDigits.endsWith(cleanDigits) || eIdDigits.endsWith(cleanDigits)));
+      });
+      if (match) {
+        return (typeof employeeService !== 'undefined' && employeeService.enrichEmployee)
+          ? employeeService.enrichEmployee(match)
+          : match;
+      }
+    }
+
+    return null;
+  }
+
   getStaffByIdOrCard(idOrCard) {
     if (!idOrCard) return null;
     const raw = String(idOrCard).trim();
@@ -532,10 +631,11 @@ class ToolService {
 
   /**
    * Automatically synchronizes stored Tool Allocations with the latest Manpower data.
-   * Handles promotions (designation/jobTitle changes), floor/line transfers (workingArea changes),
-   * and worker-to-staff card upgrades (AMG0000000 -> AMG-0000000, hyphen rule).
+   * STRICT CARD NUMBER MATCHING ONLY: Never matches by employee name.
+   * Updates: userName (Name), jobTitle (Designation/deg), floor, and workingArea.
+   * Leaves non-matching records completely untouched.
    */
-  syncAllocationsWithManpower() {
+  async syncAllocationsWithManpower() {
     let allocations = storage.getTable(TABLE_NAMES.TOOL_ALLOCATIONS) || [];
     if (allocations.length === 0) return { updatedCount: 0 };
 
@@ -543,14 +643,19 @@ class ToolService {
     let modified = false;
 
     allocations.forEach(alloc => {
-      const emp = this.getStaffByIdOrCard(alloc.userId || alloc.userName);
-      if (!emp) return;
+      const cardToMatch = String(alloc.userId || '').trim();
+      if (!cardToMatch || cardToMatch === 'UNASSIGNED' || cardToMatch === 'AMG-UNKNOWN') return;
+
+      // STRICT CARD NUMBER ONLY MATCHING
+      const emp = this.getStaffByCardOnly(cardToMatch);
+      if (!emp) return; // Keep as is if no match found in Manpower
 
       let changed = false;
       const latestCard = emp.cardNumber || emp.id;
       const latestName = emp.name;
       const latestTitle = emp.designation;
-      const latestArea = emp.workingArea || emp.department;
+      const latestFloor = emp.floorName || emp.floor;
+      const latestArea = emp.workingArea || (latestFloor ? `${latestFloor} - ${emp.department || ''}` : emp.department);
 
       if (latestCard && alloc.userId !== latestCard) {
         alloc.userId = latestCard;
@@ -564,6 +669,10 @@ class ToolService {
         alloc.jobTitle = latestTitle;
         changed = true;
       }
+      if (latestFloor && alloc.floor !== latestFloor) {
+        alloc.floor = latestFloor;
+        changed = true;
+      }
       if (latestArea && alloc.workingArea !== latestArea) {
         alloc.workingArea = latestArea;
         changed = true;
@@ -571,13 +680,14 @@ class ToolService {
 
       if (changed) {
         alloc.syncedWithManpowerAt = new Date().toISOString();
+        alloc.manpowerMatched = true;
         updatedCount++;
         modified = true;
       }
     });
 
     if (modified) {
-      storage.saveTable(TABLE_NAMES.TOOL_ALLOCATIONS, allocations);
+      await storage.saveTable(TABLE_NAMES.TOOL_ALLOCATIONS, allocations);
       console.log(`[ToolService] Auto-synced ${updatedCount} tool allocation records with latest Manpower data.`);
     }
 
@@ -714,15 +824,15 @@ class ToolService {
     const spareParts = items.filter(i => i.itemType === 'SPARE_PART' || i.itemType === 'SPARE_PARTS');
 
     // LIVE DYNAMIC AUTO-SYNC WITH LATEST MANPOWER PROFILE
-    // If employee got promoted, transferred floors, or upgraded to staff (with hyphen),
-    // always return their live Manpower data on print documents!
-    const latestEmp = emp || this.getStaffByIdOrCard(first.userId || first.userName || raw);
+    // Match STRICTLY by card number only so imported mechanic records are preserved!
+    const latestEmp = (first && first.userId) ? this.getStaffByCardOnly(first.userId) : (emp || null);
 
     const resolvedUserId = (latestEmp && latestEmp.cardNumber) ? latestEmp.cardNumber : (first.userId || raw);
     const resolvedUserName = (latestEmp && latestEmp.name) ? latestEmp.name : (first.userName || '');
     const resolvedJobTitle = (latestEmp && latestEmp.designation) ? latestEmp.designation : (first.jobTitle || '');
-    const resolvedWorkingArea = (latestEmp && (latestEmp.workingArea || latestEmp.department)) ? (latestEmp.workingArea || latestEmp.department) : (first.workingArea || '');
-    const isStaff = resolvedUserId.includes('-');
+    const resolvedFloor = (latestEmp && (latestEmp.floorName || latestEmp.floor)) ? (latestEmp.floorName || latestEmp.floor) : (first.floor || '');
+    const resolvedWorkingArea = (latestEmp && (latestEmp.workingArea || latestEmp.department)) ? (latestEmp.workingArea || (resolvedFloor ? `${resolvedFloor} - ${latestEmp.department || ''}` : latestEmp.department)) : (first.workingArea || '');
+    const isStaff = String(resolvedUserId).includes('-');
 
     return {
       regNo: String(first.regNo || raw).replace(/^[#\s]+/, '').trim(),
@@ -730,6 +840,7 @@ class ToolService {
       userId: resolvedUserId,
       userName: resolvedUserName,
       jobTitle: resolvedJobTitle,
+      floor: resolvedFloor,
       workingArea: resolvedWorkingArea,
       items,
       tools,
@@ -1352,9 +1463,10 @@ class ToolService {
       'ID Number',
       'User Name',
       'Job Title',
+      'Floor',
       'Working Area',
       'Item Type (TOOL/ACCESSORY)',
-      'Equipment / Item Name',
+      'Tool / Item Name',
       'Quantity',
       'Change Status (NEW_ISSUE/REPLACED/RETURNED)',
       'Change Date (Optional)',
@@ -1362,16 +1474,16 @@ class ToolService {
     ];
 
     const sampleRows = [
-      ['1196', '2025-10-25', 'AMG-0147075', 'Ashraful Alam Shahed', 'Senior Mechanic', 'Sewing - Jamuna', 'TOOL', '001.Flat Screw Driver (Large)', '1', 'NEW_ISSUE', '', ''],
-      ['1196', '2025-10-25', 'AMG-0147075', 'Ashraful Alam Shahed', 'Senior Mechanic', 'Sewing - Jamuna', 'TOOL', '014.Pliers (Long Nose)', '1', 'NEW_ISSUE', '', ''],
-      ['1196', '2025-10-25', 'AMG-0147075', 'Ashraful Alam Shahed', 'Senior Mechanic', 'Sewing - Jamuna', 'ACCESSORY', 'Super Glue', '01 Pcs', 'NEW_ISSUE', '', '#01'],
-      ['1195', '2025-10-23', 'AMG0072256', 'Md. Jabad', 'Junior Mechanic (W)', 'Embroidery Section', 'TOOL', '021.Hex Allen Key (01.50mm)', '1', 'NEW_ISSUE', '', '']
+      ['1196', '2025-10-25', 'AMG-0147075', 'Ashraful Alam Shahed', 'Senior Mechanic', '4th Floor', 'Sewing - Jamuna', 'TOOL', '001.Flat Screw Driver (Large)', '1', 'NEW_ISSUE', '', ''],
+      ['1196', '2025-10-25', 'AMG-0147075', 'Ashraful Alam Shahed', 'Senior Mechanic', '4th Floor', 'Sewing - Jamuna', 'TOOL', '014.Pliers (Long Nose)', '1', 'NEW_ISSUE', '', ''],
+      ['1196', '2025-10-25', 'AMG-0147075', 'Ashraful Alam Shahed', 'Senior Mechanic', '4th Floor', 'Sewing - Jamuna', 'ACCESSORY', 'Super Glue', '01 Pcs', 'NEW_ISSUE', '', '#01'],
+      ['1195', '2025-10-23', 'AMG0072256', 'Md. Jabad', 'Junior Mechanic (W)', '1st Floor', 'Embroidery Section', 'TOOL', '021.Hex Allen Key (01.50mm)', '1', 'NEW_ISSUE', '', '']
     ];
 
     const ws = XLSX.utils.aoa_to_sheet([headers, ...sampleRows]);
     ws['!cols'] = [
       { wch: 16 }, { wch: 22 }, { wch: 18 }, { wch: 25 }, { wch: 22 },
-      { wch: 22 }, { wch: 26 }, { wch: 32 }, { wch: 12 }, { wch: 28 },
+      { wch: 16 }, { wch: 22 }, { wch: 26 }, { wch: 32 }, { wch: 12 }, { wch: 28 },
       { wch: 22 }, { wch: 20 }
     ];
 
@@ -1381,7 +1493,7 @@ class ToolService {
     return true;
   }
 
-  importAllocationsFromExcel(dataRows) {
+  async importAllocationsFromExcel(dataRows) {
     if (!Array.isArray(dataRows) || dataRows.length === 0) {
       throw new Error('No data rows found in uploaded file.');
     }
@@ -1392,41 +1504,125 @@ class ToolService {
     const currentUser = authService.getCurrentUser()?.username || 'admin';
     const now = new Date().toISOString();
 
-    dataRows.forEach((row, idx) => {
-      try {
-        const regNo = String(row['Registration No'] || row['Reg. No'] || row['Reg No'] || row['regNo'] || '').trim();
-        const userId = String(row['ID Number'] || row['User ID'] || row['Card Number'] || row['userId'] || '').trim();
-        const userName = String(row['User Name'] || row['Employee Name'] || row['userName'] || '').trim();
-        const rawItemName = String(row['Equipment / Item Name'] || row['Equipment Name'] || row['Item Name'] || row['Tool Name'] || '').trim();
+    let currentBatchRegNo = null;
+    let lastBatchUserId = null;
 
+    for (let idx = 0; idx < dataRows.length; idx++) {
+      const row = dataRows[idx];
+      try {
+        const getVal = (aliases) => this._extractCell(row, aliases);
+
+        // Extract raw values using rich alias dictionary
+        const regNo = getVal(['Registration No', 'Reg. No', 'Reg No', 'regNo', 'Registration', 'Reg', 'Sl No', 'Sl. No', 'Sl', 'Record No']);
+        const userId = getVal(['Card Number', 'Card No', 'Card No.', 'Card', 'ID Number', 'ID No', 'ID No.', 'User ID', 'Emp ID', 'Employee ID', 'Staff ID', 'userId', 'Punch ID', 'AC No', 'Token No', 'Token']);
+        const userName = getVal(['User Name', 'Employee Name', 'Mechanic Name', 'Staff Name', 'Worker Name', 'Name', 'userName', 'Technician']);
+        const jobTitleRaw = getVal(['Job Title', 'Designation', 'Desig', 'Deg', 'Title', 'Role', 'Position', 'Post']);
+        const floorRaw = getVal(['Floor', 'Floor Name', 'Working Floor', 'Level']);
+        const workingAreaRaw = getVal(['Working Area', 'Area', 'Line', 'Section', 'Department', 'Dept', 'Location', 'Line / Section', 'Work Area']);
+
+        // Extract tool / item name
+        let rawItemName = getVal([
+          'Tool / Item Name', 'Equipment / Item Name', 'Tool/Item Name', 'Equipment Name',
+          'Item Name', 'Tool Name', 'Tools Name', 'Item', 'Tool', 'Equipment',
+          'Item Description', 'Description', 'Tools Description', 'Particulars',
+          'Name of Tool', 'Name of Tools', 'Name of Equipment'
+        ]);
+
+        // Fallback: search row keys for any item/tool indicator
         if (!rawItemName) {
-          return; // Skip blank lines
+          for (const [k, v] of Object.entries(row)) {
+            const cleanK = k.toLowerCase().replace(/[^a-z0-9]/g, '');
+            if (v && String(v).trim() && (cleanK.includes('item') || cleanK.includes('tool') || cleanK.includes('equip') || cleanK.includes('desc') || cleanK.includes('partic'))) {
+              rawItemName = String(v).trim();
+              break;
+            }
+          }
         }
 
-        // Try to resolve code and clean item name (e.g. "001.Flat Screw Driver (Large)" -> code "001", name "Flat Screw Driver (Large)")
-        let code = '';
+        // If still no item name found, check code or skip truly blank lines
+        let code = getVal(['Item Code', 'Code', 'Tool Code', 'Item No']);
+        if (!rawItemName) {
+          if (code) {
+            rawItemName = `Tool / Item ${code}`;
+          } else {
+            continue; // Skip blank line
+          }
+        }
+
+        // Resolve code and clean item name (e.g. "001.Flat Screw Driver (Large)")
         let cleanName = rawItemName;
         const dotMatch = rawItemName.match(/^(\d{1,3})\s*[\.\-]\s*(.*)$/);
         if (dotMatch) {
-          code = dotMatch[1].padStart(3, '0');
+          if (!code) code = dotMatch[1].padStart(3, '0');
           cleanName = dotMatch[2].trim();
         }
 
-        const itemType = String(row['Item Type'] || (code || rawItemName.toLowerCase().includes('screw') || rawItemName.toLowerCase().includes('allen') || rawItemName.toLowerCase().includes('spanner') || rawItemName.toLowerCase().includes('plier') || rawItemName.toLowerCase().includes('file') ? 'TOOL' : 'ACCESSORY')).toUpperCase();
+        const rawType = getVal(['Item Type', 'Type', 'Category']);
+        const itemType = String(
+          rawType ||
+          (code ||
+           cleanName.toLowerCase().includes('screw') ||
+           cleanName.toLowerCase().includes('allen') ||
+           cleanName.toLowerCase().includes('spanner') ||
+           cleanName.toLowerCase().includes('plier') ||
+           cleanName.toLowerCase().includes('file') ||
+           cleanName.toLowerCase().includes('wrench') ||
+           cleanName.toLowerCase().includes('hammer') ||
+           cleanName.toLowerCase().includes('cutter') ||
+           cleanName.toLowerCase().includes('tester')
+           ? 'TOOL' : 'ACCESSORY')
+        ).toUpperCase();
 
-        const finalRegNo = regNo || this.getNextRegistrationNumber();
+        // Registration number determination:
+        // If provided in row, use it. Otherwise, keep consecutive items for same user under same reg number.
+        let finalRegNo = regNo;
+        if (!finalRegNo) {
+          if (userId && userId === lastBatchUserId && currentBatchRegNo) {
+            finalRegNo = currentBatchRegNo;
+          } else {
+            finalRegNo = this.getNextRegistrationNumber();
+            currentBatchRegNo = finalRegNo;
+            lastBatchUserId = userId;
+          }
+        }
 
-        // Check if employee exists in Manpower or resolve
-        const emp = this.getStaffByIdOrCard(userId) || this.getStaffByIdOrCard(userName);
-        const resolvedUserId = userId || emp?.cardNumber || emp?.id || 'AMG-UNKNOWN';
-        const resolvedUserName = userName || emp?.name || 'Unknown Mechanic';
-        const jobTitle = String(row['Job Title'] || emp?.designation || 'Mechanic').trim();
-        const workingArea = String(row['Working Area'] || row['Area'] || row['Line'] || emp?.workingArea || emp?.department || 'General').trim();
-        const issueDate = this.formatDateDMY(String(row['Issue Date'] || row['Issue Date (YYYY-MM-DD)'] || '25-10-2025').trim());
-        const qty = String(row['Quantity'] || row['Qty'] || '1').trim();
-        const changeStatus = String(row['Change Status'] || 'NEW_ISSUE').toUpperCase();
-        const changeDate = row['Change Date'] ? String(row['Change Date']).trim() : null;
-        const remarks = String(row['Remarks'] || '').trim();
+        // STRICT CARD NUMBER ONLY MATCHING WITH MANPOWER
+        // 1. If card number matches an employee in Manpower:
+        //    Update name, designation (jobTitle), floor, and workingArea from Manpower!
+        // 2. If card number does NOT match:
+        //    KEEP the imported values from Excel (userId, userName, jobTitle, workingArea, floor) untouched!
+        let resolvedUserId = userId;
+        let resolvedUserName = userName;
+        let resolvedJobTitle = jobTitleRaw;
+        let resolvedFloor = floorRaw;
+        let resolvedWorkingArea = workingAreaRaw;
+        let isManpowerMatched = false;
+
+        if (userId) {
+          const emp = this.getStaffByCardOnly(userId);
+          if (emp) {
+            isManpowerMatched = true;
+            resolvedUserId = emp.cardNumber || emp.id || userId;
+            resolvedUserName = emp.name || userName;
+            resolvedJobTitle = emp.designation || jobTitleRaw || 'Mechanic';
+            resolvedFloor = emp.floorName || emp.floor || floorRaw || '';
+            resolvedWorkingArea = emp.workingArea || (resolvedFloor ? `${resolvedFloor} - ${emp.department || ''}` : emp.department) || workingAreaRaw || 'General';
+          }
+        }
+
+        // If not matched, preserve Excel data
+        if (!resolvedUserId) resolvedUserId = 'UNASSIGNED';
+        if (!resolvedUserName) resolvedUserName = (resolvedUserId !== 'UNASSIGNED' ? `Mechanic #${resolvedUserId}` : 'Unassigned Mechanic');
+        if (!resolvedJobTitle) resolvedJobTitle = 'Mechanic';
+        if (!resolvedWorkingArea) resolvedWorkingArea = resolvedFloor || 'General';
+
+        const rawDate = getVal(['Issue Date', 'Issue Date (YYYY-MM-DD)', 'Date', 'Date of Issue', 'Allocation Date']);
+        const issueDate = this.formatDateDMY(rawDate || new Date().toISOString().split('T')[0]);
+        const qty = getVal(['Quantity', 'Qty', 'Qty.', 'Pcs', 'Count']) || '1';
+        const rawStatus = getVal(['Change Status', 'Status', 'Condition']);
+        const changeStatus = (rawStatus || 'NEW_ISSUE').toUpperCase().replace(/\s+/g, '_');
+        const changeDate = getVal(['Change Date', 'Return Date', 'Change Date (Optional)']) || null;
+        const remarks = getVal(['Remarks', 'Remark', 'Note', 'Comments', 'Comment']) || '';
 
         const newEntry = {
           id: `alloc-imp-${Date.now()}-${idx + 1}`,
@@ -1434,9 +1630,10 @@ class ToolService {
           issueDate,
           userId: resolvedUserId,
           userName: resolvedUserName,
-          jobTitle,
-          workingArea,
-          itemType,
+          jobTitle: resolvedJobTitle,
+          floor: resolvedFloor,
+          workingArea: resolvedWorkingArea,
+          itemType: ['TOOL', 'ACCESSORY', 'SPARE_PART'].includes(itemType) ? itemType : 'TOOL',
           itemCode: code || (itemType === 'TOOL' ? '001' : 'ACC-01'),
           itemName: cleanName,
           quantity: qty,
@@ -1444,6 +1641,7 @@ class ToolService {
           changeDate,
           remarks,
           status: 'ACTIVE',
+          manpowerMatched: isManpowerMatched,
           createdAt: now,
           createdBy: currentUser
         };
@@ -1451,17 +1649,18 @@ class ToolService {
         list.push(newEntry);
         insertedCount++;
       } catch (err) {
-        errors.push(`Row ${idx + 2}: ${err.message}`);
+        errors.push(`Row ${idx + 1}: ${err.message}`);
       }
-    });
+    }
 
-    storage.saveTable(TABLE_NAMES.TOOL_ALLOCATIONS, list);
-
-    auditService.log({
-      action: 'IMPORT_TOOL_ALLOCATIONS_EXCEL',
-      details: `Imported ${insertedCount} tool allocations via Excel import`,
-      targetId: 'EXCEL_IMPORT'
-    });
+    if (insertedCount > 0) {
+      await storage.saveTable(TABLE_NAMES.TOOL_ALLOCATIONS, list);
+      auditService.log({
+        action: 'IMPORT_TOOL_ALLOCATIONS_EXCEL',
+        details: `Imported ${insertedCount} tool allocations via Excel import`,
+        targetId: 'EXCEL_IMPORT'
+      });
+    }
 
     return {
       total: dataRows.length,
@@ -1484,12 +1683,14 @@ class ToolService {
       'Sl No': i + 1,
       'Reg No': a.regNo,
       'Issue Date': a.issueDate,
-      'User ID': a.userId,
-      'User Name': a.userName,
-      'Job Title': a.jobTitle,
+      'Card Number / ID': a.userId,
+      'Mechanic Name': a.userName,
+      'Job Title / Designation': a.jobTitle,
+      'Floor': a.floor || '',
       'Working Area': a.workingArea,
       'Item Type': a.itemType,
       'Item Code': a.itemCode,
+      'Tool / Item Name': a.itemName,
       'Equipment / Item Name': a.itemName,
       'Quantity': a.quantity,
       'Change Status': a.changeStatus,
@@ -1565,7 +1766,7 @@ class ToolService {
     return true;
   }
 
-  importMasterToolsFromExcel(dataRows) {
+  async importMasterToolsFromExcel(dataRows) {
     if (!Array.isArray(dataRows) || dataRows.length === 0) {
       throw new Error('No data rows found in uploaded file.');
     }
@@ -1574,11 +1775,12 @@ class ToolService {
     let updatedCount = 0;
 
     dataRows.forEach((row, idx) => {
-      const rawCode = String(row['Tool Code (e.g. 001)'] || row['Tool Code'] || row['Item Code'] || row['Code'] || row['code'] || '').trim();
-      const rawName = String(row['Tool Name'] || row['Equipment Name'] || row['Item Name'] || row['name'] || '').trim();
-      const stock = parseInt(row['Total Stock'] || row['Stock'] || row['Quantity'] || row['totalStock'] || '50', 10);
-      const unit = String(row['Unit'] || row['unit'] || 'Pcs').trim();
-      const remarks = String(row['Remarks'] || row['remarks'] || '').trim();
+      const getVal = (aliases) => this._extractCell(row, aliases);
+      const rawCode = getVal(['Tool Code (e.g. 001)', 'Tool Code', 'Item Code', 'Code', 'code']);
+      const rawName = getVal(['Tool Name', 'Equipment Name', 'Item Name', 'Name', 'name']);
+      const stock = parseInt(getVal(['Total Stock', 'Stock', 'Quantity', 'totalStock']) || '50', 10);
+      const unit = getVal(['Unit', 'unit']) || 'Pcs';
+      const remarks = getVal(['Remarks', 'remarks', 'Note']);
 
       if (!rawName) return;
 
@@ -1607,7 +1809,7 @@ class ToolService {
       }
     });
 
-    storage.saveTable(TABLE_NAMES.TOOLS_MASTER, list);
+    await storage.saveTable(TABLE_NAMES.TOOLS_MASTER, list);
     auditService.log({
       action: 'IMPORT_MASTER_TOOLS_EXCEL',
       details: `Imported/Updated ${insertedCount + updatedCount} master tools from Excel (${insertedCount} new, ${updatedCount} updated)`,
@@ -1637,7 +1839,7 @@ class ToolService {
     return true;
   }
 
-  importMasterAccessoriesFromExcel(dataRows) {
+  async importMasterAccessoriesFromExcel(dataRows) {
     if (!Array.isArray(dataRows) || dataRows.length === 0) {
       throw new Error('No data rows found in uploaded file.');
     }
@@ -1646,12 +1848,13 @@ class ToolService {
     let updatedCount = 0;
 
     dataRows.forEach((row, idx) => {
-      const rawCode = String(row['Accessory Code'] || row['Item Code'] || row['Code'] || row['code'] || '').trim();
-      const rawName = String(row['Accessory Name'] || row['Item Name'] || row['Name'] || row['name'] || '').trim();
-      const defaultQty = String(row['Default Qty'] || row['Default Quantity'] || row['Qty'] || '01 Pcs').trim();
-      const defaultRemarks = String(row['Default Remarks'] || row['Remarks'] || row['remarks'] || '').trim();
-      const stock = parseInt(row['Total Stock'] || row['Stock'] || row['Quantity'] || '100', 10);
-      const unit = String(row['Unit'] || row['unit'] || 'Pcs').trim();
+      const getVal = (aliases) => this._extractCell(row, aliases);
+      const rawCode = getVal(['Accessory Code', 'Item Code', 'Code', 'code']);
+      const rawName = getVal(['Accessory Name', 'Item Name', 'Name', 'name']);
+      const defaultQty = getVal(['Default Qty', 'Default Quantity', 'Qty']) || '01 Pcs';
+      const defaultRemarks = getVal(['Default Remarks', 'Remarks', 'remarks']) || '';
+      const stock = parseInt(getVal(['Total Stock', 'Stock', 'Quantity']) || '100', 10);
+      const unit = getVal(['Unit', 'unit']) || 'Pcs';
 
       if (!rawName) return;
 
@@ -1680,7 +1883,7 @@ class ToolService {
       }
     });
 
-    storage.saveTable(TABLE_NAMES.ACCESSORIES_MASTER, list);
+    await storage.saveTable(TABLE_NAMES.ACCESSORIES_MASTER, list);
     auditService.log({
       action: 'IMPORT_MASTER_ACCESSORIES_EXCEL',
       details: `Imported/Updated ${insertedCount + updatedCount} master accessories from Excel (${insertedCount} new, ${updatedCount} updated)`,

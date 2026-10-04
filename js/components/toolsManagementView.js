@@ -2584,7 +2584,7 @@ export function initToolsManagementEvents() {
   });
 
   // Shared Manual Manpower Sync Button Handler (Available on top navbar & print toolbar)
-  const triggerManualSync = (btn) => {
+  const triggerManualSync = async (btn) => {
     if (!btn) return;
     btn.disabled = true;
     btn.style.opacity = '0.75';
@@ -2596,7 +2596,7 @@ export function initToolsManagementEvents() {
     }
 
     try {
-      const res = toolService.syncAllocationsWithManpower();
+      const res = await toolService.syncAllocationsWithManpower();
 
       // Refresh current tab content to reflect newly synced data immediately
       const container = document.getElementById('tools-tab-content-container');
@@ -2605,7 +2605,7 @@ export function initToolsManagementEvents() {
         initToolsManagementEvents();
       }
 
-      window.app?.showToast('Manpower Synced', `Successfully synced all tool records with live Manpower (${res.updatedCount} record(s) updated).`, 'success');
+      window.app?.showToast('Manpower Synced', `Successfully synced tool records with live Manpower (${res.updatedCount} record(s) updated).`, 'success');
     } catch (err) {
       alert('Sync Error: ' + err.message);
     } finally {
@@ -4517,17 +4517,25 @@ export function initToolsManagementEvents() {
   const btnDbSaveParsed = document.getElementById('btn-db-save-parsed-rows');
   if (btnDbSaveParsed && databaseDirectParsedRows.length > 0) {
     btnDbSaveParsed.onclick = () => {
-      ensureAdminAccess('Import Excel Records into Database', () => {
+      ensureAdminAccess('Import Excel Records into Database', async () => {
         try {
+          btnDbSaveParsed.disabled = true;
+          const origHtml = btnDbSaveParsed.innerHTML;
+          btnDbSaveParsed.innerHTML = '<span>⏳</span> Saving to Database...';
+
           let res = {};
           if (databaseDirectImportType === 'ALLOCATIONS') {
-            res = toolService.importAllocationsFromExcel(databaseDirectParsedRows);
-            window.app?.showToast('Allocations Saved', `Imported ${res.inserted} allocations into database!`, 'success');
+            res = await toolService.importAllocationsFromExcel(databaseDirectParsedRows);
+            if (res.inserted > 0) {
+              window.app?.showToast('Allocations Saved', `Imported ${res.inserted} allocations into database!`, 'success');
+            } else {
+              window.app?.showToast('Import Notice', `0 allocations imported. Please ensure rows contain Tool/Item names.`, 'warning');
+            }
           } else if (databaseDirectImportType === 'TOOLS') {
-            res = toolService.importMasterToolsFromExcel(databaseDirectParsedRows);
+            res = await toolService.importMasterToolsFromExcel(databaseDirectParsedRows);
             window.app?.showToast('Master Tools Saved', `Imported ${res.inserted} new tools, updated ${res.updated} tools.`, 'success');
           } else if (databaseDirectImportType === 'ACCESSORIES') {
-            res = toolService.importMasterAccessoriesFromExcel(databaseDirectParsedRows);
+            res = await toolService.importMasterAccessoriesFromExcel(databaseDirectParsedRows);
             window.app?.showToast('Accessories Saved', `Imported ${res.inserted} new accessories, updated ${res.updated} accessories.`, 'success');
           }
 
@@ -4541,6 +4549,10 @@ export function initToolsManagementEvents() {
           }
         } catch (err) {
           alert('Import Error: ' + err.message);
+          if (btnDbSaveParsed) {
+            btnDbSaveParsed.disabled = false;
+            btnDbSaveParsed.innerHTML = '<span>💾</span> Import into Database';
+          }
         }
       });
     };
@@ -5893,17 +5905,24 @@ function renderExcelImportCenterModal(initialTarget = 'ALLOCATIONS') {
     // Execute Import Button
     const btnExecute = document.getElementById('btn-execute-import');
     if (btnExecute && parsedDataRows.length > 0) {
-      btnExecute.onclick = () => {
+      btnExecute.onclick = async () => {
         try {
+          btnExecute.disabled = true;
+          btnExecute.innerHTML = '<span>⏳</span> Importing Data...';
+
           let result = {};
           if (activeImportTab === 'ALLOCATIONS') {
-            result = toolService.importAllocationsFromExcel(parsedDataRows);
-            window.app?.showToast('Allocations Imported', `Successfully imported ${result.inserted} tool allocations!`, 'success');
+            result = await toolService.importAllocationsFromExcel(parsedDataRows);
+            if (result.inserted > 0) {
+              window.app?.showToast('Allocations Imported', `Successfully imported ${result.inserted} tool allocations!`, 'success');
+            } else {
+              window.app?.showToast('Import Notice', `0 allocations imported. Please ensure rows contain Tool/Item names.`, 'warning');
+            }
           } else if (activeImportTab === 'TOOLS') {
-            result = toolService.importMasterToolsFromExcel(parsedDataRows);
+            result = await toolService.importMasterToolsFromExcel(parsedDataRows);
             window.app?.showToast('Master Tools Imported', `Imported ${result.inserted} new tools, updated ${result.updated} tools.`, 'success');
           } else if (activeImportTab === 'ACCESSORIES') {
-            result = toolService.importMasterAccessoriesFromExcel(parsedDataRows);
+            result = await toolService.importMasterAccessoriesFromExcel(parsedDataRows);
             window.app?.showToast('Accessories Imported', `Imported ${result.inserted} new accessories, updated ${result.updated} accessories.`, 'success');
           }
 
@@ -5917,6 +5936,10 @@ function renderExcelImportCenterModal(initialTarget = 'ALLOCATIONS') {
           }
         } catch (err) {
           alert('Import failed: ' + err.message);
+          if (btnExecute) {
+            btnExecute.disabled = false;
+            btnExecute.innerHTML = '<span>📥</span> Retry Import';
+          }
         }
       };
     }
