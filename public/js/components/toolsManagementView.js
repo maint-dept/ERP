@@ -11,13 +11,15 @@
  */
 
 import { state } from '../state.js';
-import { toolService } from '../services/toolService.js?v=4.9.1';
+import { toolService } from '../services/toolService.js?v=4.9.2';
 import { employeeService } from '../services/employeeService.js';
 import { authService } from '../services/authService.js';
 import { historyService } from '../services/historyService.js';
+import { storage } from '../db/storage.js';
+import { TABLE_NAMES } from '../db/schema.js';
 
 // Local component state to preserve active working session
-let currentActiveTab = 'user-id'; // 'user-id' | 'tools-add' | 'print-page' | 'find-select' | 'accessories-page'
+let currentActiveTab = 'tools-add'; // 'tools-add' | 'print-page' | 'find-select' | 'accessories-page' | 'database-page'
 let screen2CategoryFilter = 'ALL'; // 'ALL' | 'TOOL' | 'ACCESSORY' | 'SPARE_PART'
 let screen2SelectedCatalogItem = null; // Currently selected item for single tool form
 
@@ -214,14 +216,6 @@ export function openAdminSecurityModal({ title, description, onAuthorized }) {
 }
 
 export const TOOLS_TAB_CONFIG = {
-  'user-id': {
-    name: 'User ID Page',
-    icon: '👤',
-    bgColor: '#f59e0b',
-    textColor: '#0f172a',
-    borderColor: '#fbbf24',
-    glowColor: 'rgba(245, 158, 11, 0.45)'
-  },
   'tools-add': {
     name: 'Tools Add Form',
     icon: '🛠️',
@@ -265,9 +259,10 @@ export const TOOLS_TAB_CONFIG = {
 };
 
 export function renderToolsManagementView() {
-  const activeTab = state.get('toolsActiveTab') || currentActiveTab || 'user-id';
+  let activeTab = state.get('toolsActiveTab') || currentActiveTab || 'tools-add';
+  if (activeTab === 'user-id') activeTab = 'tools-add';
   currentActiveTab = activeTab;
-  const currentTabTheme = TOOLS_TAB_CONFIG[activeTab] || TOOLS_TAB_CONFIG['user-id'];
+  const currentTabTheme = TOOLS_TAB_CONFIG[activeTab] || TOOLS_TAB_CONFIG['tools-add'];
 
   return `
     <div class="page-view tools-management-view" id="tools-mgmt-root" style="padding: 0 20px 20px 20px; display: flex; flex-direction: column; gap: 16px; min-height: 100%;">
@@ -349,9 +344,8 @@ export function renderToolsManagementView() {
 
 function renderActiveTab(tab) {
   switch (tab) {
-    case 'user-id':
-      return renderScreen1UserIdPage();
     case 'tools-add':
+    case 'user-id':
       return renderScreen2ToolsAddForm();
     case 'print-page':
       return renderScreen3PrintPage();
@@ -362,7 +356,7 @@ function renderActiveTab(tab) {
     case 'database-page':
       return renderScreen6DatabasePage();
     default:
-      return renderScreen1UserIdPage();
+      return renderScreen2ToolsAddForm();
   }
 }
 
@@ -945,18 +939,19 @@ function renderScreen2ToolsAddForm() {
 // SCREEN 3: PRINT PAGE (A4 FULL PAGE SOP SHEET & POCKET BAG SLIP)
 // =========================================================================
 function renderScreen3PrintPage() {
-  // If no registration is currently selected, auto-select the latest recorded allocation
-  if (!currentPrintRegNo) {
-    const allAllocs = storage.getTable(TABLE_NAMES.TOOL_ALLOCATIONS) || [];
-    if (allAllocs.length > 0) {
-      const last = allAllocs[allAllocs.length - 1];
-      if (last && (last.regNo || last.userId)) {
-        currentPrintRegNo = String(last.regNo || last.userId).replace(/^[#\s]+/, '').trim();
+  try {
+    // If no registration is currently selected, auto-select the latest recorded allocation
+    if (!currentPrintRegNo) {
+      const allAllocs = toolService.getAllocations() || [];
+      if (allAllocs.length > 0) {
+        const last = allAllocs[allAllocs.length - 1];
+        if (last && (last.regNo || last.userId)) {
+          currentPrintRegNo = String(last.regNo || last.userId).replace(/^[#\s]+/, '').trim();
+        }
       }
     }
-  }
 
-  const regDetails = currentPrintRegNo ? toolService.getRegistrationDetails(currentPrintRegNo) : null;
+    const regDetails = currentPrintRegNo ? toolService.getRegistrationDetails(currentPrintRegNo) : null;
 
   const tools = regDetails ? (regDetails.tools || []) : [];
   const accessories = regDetails ? (regDetails.accessories || []) : [];
@@ -1104,6 +1099,16 @@ function renderScreen3PrintPage() {
 
     </div>
   `;
+  } catch (err) {
+    console.error('[ToolsManagementView] Error in renderScreen3PrintPage:', err);
+    return `
+      <div style="background: #1e293b; border: 2px dashed #ef4444; border-radius: 8px; padding: 24px; color: #f8fafc; margin: 20px 0; text-align: center;">
+        <h3 style="color: #ef4444; margin-top: 0;">⚠️ Error Loading Print Document</h3>
+        <p style="color: #cbd5e1; font-size: 13px;">${err.message || 'An unexpected error occurred while generating the printable sheet.'}</p>
+        <button onclick="window.location.reload()" style="background: #2563eb; color: #fff; border: none; padding: 6px 16px; border-radius: 4px; cursor: pointer; font-weight: 700; font-size: 13px;">Refresh Page</button>
+      </div>
+    `;
+  }
 }
 
 // FORMAT A: OFFICIAL STANDARD FORM (PDF PAGE 1 - FULL 28 TOOLS ON RIGHT, ACCESSORIES & SOP ON LEFT, 3 SIGNATURES AT BOTTOM)
@@ -2490,7 +2495,8 @@ export function updateToolsNavbarVisuals(activeTab) {
   const root = document.getElementById('tools-mgmt-root');
   if (!root) return;
 
-  const resolvedTab = activeTab || currentActiveTab || 'user-id';
+  let resolvedTab = activeTab || currentActiveTab || 'tools-add';
+  if (resolvedTab === 'user-id') resolvedTab = 'tools-add';
   currentActiveTab = resolvedTab;
   state.set('toolsActiveTab', resolvedTab);
 
@@ -2498,7 +2504,7 @@ export function updateToolsNavbarVisuals(activeTab) {
   buttons.forEach(btn => {
     const tabKey = btn.getAttribute('data-tab');
     const isCurrent = tabKey === resolvedTab;
-    const cfg = TOOLS_TAB_CONFIG[tabKey] || TOOLS_TAB_CONFIG['user-id'];
+    const cfg = TOOLS_TAB_CONFIG[tabKey] || TOOLS_TAB_CONFIG['tools-add'];
 
     if (isCurrent) {
       btn.classList.add('active');
