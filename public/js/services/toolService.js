@@ -853,8 +853,43 @@ class ToolService {
     };
   }
 
+  cleanAllocationRequisitions() {
+    const list = storage.getTable(TABLE_NAMES.TOOL_ALLOCATIONS) || [];
+    let changed = false;
+
+    list.forEach(a => {
+      // 1. If requisitionNo is missing, extract clean IR number from remarks if available
+      if (!a.requisitionNo) {
+        const reqMatch = String(a.remarks || '').match(/IR\d+/i) || String(a.remarks || '').match(/ERP\s*Req\s*#?([A-Za-z0-9_-]+)/i);
+        if (reqMatch) {
+          const cleanReq = (reqMatch[1] || reqMatch[0]).replace(/^[#\s]+/, '').trim();
+          if (cleanReq) {
+            a.requisitionNo = cleanReq;
+            changed = true;
+          }
+        }
+      }
+
+      // 2. If remarks has auto-generated ERP Req text, clean it up!
+      if (a.remarks && (/ERP\s*Req/i.test(a.remarks) || /Auto-imported from ERP/i.test(a.remarks))) {
+        let cleanedRemarks = String(a.remarks).replace(/ERP\s*Req\s*#?[A-Za-z0-9_-]+[:\s]*[^\n,]*/gi, '').trim();
+        cleanedRemarks = cleanedRemarks.replace(/^Auto-imported from ERP PDF[:\s]*[^\n,]*/gi, '').trim();
+        cleanedRemarks = cleanedRemarks.replace(/^[:\-\s,]+|[:\-\s,]+$/g, '').trim();
+        if (a.remarks !== cleanedRemarks) {
+          a.remarks = cleanedRemarks;
+          changed = true;
+        }
+      }
+    });
+
+    if (changed) {
+      storage.saveTable(TABLE_NAMES.TOOL_ALLOCATIONS, list);
+    }
+  }
+
   getAllocations(filters = {}) {
     this.syncAllocationsWithManpower();
+    this.cleanAllocationRequisitions();
     let list = storage.getTable(TABLE_NAMES.TOOL_ALLOCATIONS) || [];
 
     if (filters.search && filters.search.trim()) {
@@ -863,6 +898,7 @@ class ToolService {
         (a.userName && a.userName.toLowerCase().includes(q)) ||
         (a.userId && String(a.userId).toLowerCase().includes(q)) ||
         (a.regNo && String(a.regNo).toLowerCase().includes(q)) ||
+        (a.requisitionNo && String(a.requisitionNo).toLowerCase().includes(q)) ||
         (a.itemName && a.itemName.toLowerCase().includes(q)) ||
         (a.itemCode && String(a.itemCode).toLowerCase().includes(q)) ||
         (a.workingArea && a.workingArea.toLowerCase().includes(q)) ||
@@ -1618,6 +1654,8 @@ class ToolService {
 
         const rawDate = getVal(['Issue Date', 'Issue Date (YYYY-MM-DD)', 'Date', 'Date of Issue', 'Allocation Date']);
         const issueDate = this.formatDateDMY(rawDate || new Date().toISOString().split('T')[0]);
+        const reqNoRaw = getVal(['ERP Req #', 'ERP Req No', 'ERP Requisition', 'Requisition No', 'Requisition', 'Req No', 'Req. No', 'Req', 'requisitionNo']);
+        const requisitionNo = reqNoRaw ? reqNoRaw.replace(/^[#\s]+/, '').trim() : '';
         const qty = getVal(['Quantity', 'Qty', 'Qty.', 'Pcs', 'Count']) || '1';
         const rawStatus = getVal(['Change Status', 'Status', 'Condition']);
         const changeStatus = (rawStatus || 'NEW_ISSUE').toUpperCase().replace(/\s+/g, '_');
@@ -1627,6 +1665,7 @@ class ToolService {
         const newEntry = {
           id: `alloc-imp-${Date.now()}-${idx + 1}`,
           regNo: finalRegNo,
+          requisitionNo: requisitionNo || '',
           issueDate,
           userId: resolvedUserId,
           userName: resolvedUserName,
@@ -1682,6 +1721,7 @@ class ToolService {
     const data = items.map((a, i) => ({
       'Sl No': i + 1,
       'Reg No': a.regNo,
+      'ERP Req #': a.requisitionNo || '-',
       'Issue Date': a.issueDate,
       'Card Number / ID': a.userId,
       'Mechanic Name': a.userName,

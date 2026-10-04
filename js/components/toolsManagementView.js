@@ -1309,7 +1309,7 @@ function renderFormatA4(reg, leftTools, rightTools, accessories) {
                   <td style="border-right: 1px solid #000; padding: 2px 4px; text-align: center; font-family: monospace; font-weight: 700; color: #000000;">${String(idx + 1).padStart(2, '0')}</td>
                   <td style="border-right: 1px solid #000; padding: 2px 6px; font-weight: 600; color: #000000;">${t.itemName || t.name}</td>
                   <td style="border-right: 1px solid #000; padding: 2px 4px; text-align: center; font-weight: 700; color: #000000;">${t.quantity || t.qty || 1}</td>
-                  <td style="padding: 2px 4px; text-align: center; font-family: monospace; color: #000000;">${t.remarks || ''}</td>
+                  <td style="padding: 2px 4px; text-align: center; font-family: monospace; color: #000000;">&nbsp;</td>
                 </tr>
               `).join('')}
               ${Array.from({ length: Math.max(0, 20 - displayTools.length) }).map((_, i) => `
@@ -1513,9 +1513,10 @@ function renderFormatPocket(reg, leftTools, rightTools, accessories) {
                   <td style="border-right: 1px solid #000; padding: 1px 2px; text-align: center; font-family: monospace; font-weight: 700; color: #000000;">${String(idx + 1).padStart(2, '0')}</td>
                   <td style="border-right: 1px solid #000; padding: 1px 4px; font-weight: 600; color: #000000;">${t.itemName || t.name}</td>
                   <td style="border-right: 1px solid #000; padding: 1px 2px; text-align: center; font-weight: 700; color: #000000;">${t.quantity || t.qty || 1}</td>
-                  <td style="padding: 1px 2px; text-align: center; font-size: 7.5px; color: #000000;">${t.remarks || ''}</td>
+                  <td style="padding: 1px 2px; text-align: center; font-size: 7.5px; color: #000000;">&nbsp;</td>
                 </tr>
               `).join('')}
+              ${col1Tools.length === 0 ? '' : ''}
               ${card1BlankRows}
             </tbody>
           </table>
@@ -1542,7 +1543,7 @@ function renderFormatPocket(reg, leftTools, rightTools, accessories) {
                   <td style="border-right: 1px solid #000; padding: 1px 2px; text-align: center; font-family: monospace; font-weight: 700; color: #000000;">${String(splitCount + idx + 1).padStart(2, '0')}</td>
                   <td style="border-right: 1px solid #000; padding: 1px 4px; font-weight: 600; color: #000000;">${t.itemName || t.name}</td>
                   <td style="border-right: 1px solid #000; padding: 1px 2px; text-align: center; font-weight: 700; color: #000000;">${t.quantity || t.qty || 1}</td>
-                  <td style="padding: 1px 2px; text-align: center; font-size: 7.5px; color: #000000;">${t.remarks || ''}</td>
+                  <td style="padding: 1px 2px; text-align: center; font-size: 7.5px; color: #000000;">&nbsp;</td>
                 </tr>
               `).join('')}
               ${card2BlankRows}
@@ -2099,11 +2100,13 @@ function renderScreen6DatabasePage() {
       if (!q) return true;
       return (
         String(a.regNo || '').toLowerCase().includes(q) ||
+        String(a.requisitionNo || '').toLowerCase().includes(q) ||
         String(a.userId || '').toLowerCase().includes(q) ||
         String(a.userName || '').toLowerCase().includes(q) ||
         String(a.itemName || '').toLowerCase().includes(q) ||
         String(a.workingArea || '').toLowerCase().includes(q) ||
-        String(a.changeStatus || '').toLowerCase().includes(q)
+        String(a.changeStatus || '').toLowerCase().includes(q) ||
+        String(a.remarks || '').toLowerCase().includes(q)
       );
     });
   } else if (databaseActiveTable === 'TOOL_CHANGE_HISTORY') {
@@ -2329,6 +2332,7 @@ function renderScreen6DatabasePage() {
                   </th>
                   <th style="position: sticky; top: 0; z-index: 25; background: #0f172a; padding: 8px 10px; text-align: center; width: 45px; border-bottom: 2px solid #334155; box-shadow: 0 2px 4px rgba(0,0,0,0.4);">#</th>
                   <th style="position: sticky; top: 0; z-index: 25; background: #0f172a; padding: 8px 10px; text-align: center; width: 75px; border-bottom: 2px solid #334155; box-shadow: 0 2px 4px rgba(0,0,0,0.4);">Reg No</th>
+                  <th style="position: sticky; top: 0; z-index: 25; background: #0f172a; padding: 8px 10px; text-align: center; width: 115px; border-bottom: 2px solid #334155; box-shadow: 0 2px 4px rgba(0,0,0,0.4);">ERP Req #</th>
                   <th style="position: sticky; top: 0; z-index: 25; background: #0f172a; padding: 8px 10px; text-align: center; width: 90px; border-bottom: 2px solid #334155; box-shadow: 0 2px 4px rgba(0,0,0,0.4);">Date</th>
                   <th style="position: sticky; top: 0; z-index: 25; background: #0f172a; padding: 8px 10px; text-align: left; width: 120px; border-bottom: 2px solid #334155; box-shadow: 0 2px 4px rgba(0,0,0,0.4);">ID Number</th>
                   <th style="position: sticky; top: 0; z-index: 25; background: #0f172a; padding: 8px 10px; text-align: left; border-bottom: 2px solid #334155; box-shadow: 0 2px 4px rgba(0,0,0,0.4);">Mechanic Name</th>
@@ -2342,8 +2346,14 @@ function renderScreen6DatabasePage() {
               </thead>
               <tbody>
                 ${filteredRecords.length === 0 ? `
-                  <tr><td colspan="12" style="padding: 30px; text-align: center; color: #94a3b8;">No records match your search filter.</td></tr>
-                ` : filteredRecords.map((a, idx) => `
+                  <tr><td colspan="13" style="padding: 30px; text-align: center; color: #94a3b8;">No records match your search filter.</td></tr>
+                ` : filteredRecords.map((a, idx) => {
+                  const reqMatch = (a.requisitionNo || '').trim() || ((a.remarks || '').match(/IR\d+/i) ? (a.remarks.match(/IR\d+/i)[0]) : '');
+                  const cleanReq = reqMatch ? (reqMatch.toUpperCase().startsWith('#') ? reqMatch.toUpperCase() : `#${reqMatch.toUpperCase()}`) : '-';
+                  let displayRemarks = (a.remarks || '').replace(/ERP\s*Req\s*#?[A-Za-z0-9_-]+[:\s]*[^\n,]*/gi, '').trim();
+                  displayRemarks = displayRemarks.replace(/^[:\-\s,]+|[:\-\s,]+$/g, '').trim();
+
+                  return `
                   <tr style="border-bottom: 1px solid #334155; background: ${dbSelectedIds.has(a.id) ? 'rgba(239, 68, 68, 0.12)' : idx % 2 === 0 ? 'rgba(30, 41, 59, 0.4)' : 'transparent'};">
                     <td style="padding: 7px 10px; text-align: center;">
                       <input type="checkbox" class="check-db-item" data-id="${a.id}" ${dbSelectedIds.has(a.id) ? 'checked' : ''} style="cursor: pointer;" />
@@ -2351,6 +2361,9 @@ function renderScreen6DatabasePage() {
                     <td style="padding: 7px 10px; text-align: center; color: #64748b;">${idx + 1}</td>
                     <td style="padding: 7px 10px; text-align: center; font-family: monospace; font-weight: 800; color: #f59e0b;">
                       <span class="btn-print-reg-slip" data-reg="${a.regNo}" style="cursor: pointer; text-decoration: underline;" title="Click to view & print registration #${a.regNo}">#${a.regNo}</span>
+                    </td>
+                    <td style="padding: 7px 10px; text-align: center; font-family: monospace; font-weight: 700; color: #a78bfa; white-space: nowrap;">
+                      ${cleanReq !== '-' ? `<span style="background: rgba(167, 139, 250, 0.15); border: 1px solid rgba(167, 139, 250, 0.35); padding: 2px 6px; border-radius: 4px; font-size: 11px;">${cleanReq}</span>` : '<span style="color: #64748b;">-</span>'}
                     </td>
                     <td style="padding: 7px 10px; text-align: center; font-family: monospace; color: #cbd5e1; font-weight: 700;">${toolService.formatDateDMY(a.issueDate)}</td>
                     <td style="padding: 7px 10px; font-family: monospace; font-weight: 700; color: #38bdf8;">${a.userId}</td>
@@ -2364,7 +2377,7 @@ function renderScreen6DatabasePage() {
                         ${a.changeStatus === 'NEW_ISSUE' ? 'New Issue' : a.changeStatus === 'REPLACED' ? 'Replaced' : a.changeStatus === 'LOST' ? 'Lost' : a.changeStatus === 'RETURNED' ? 'Returned' : a.changeStatus}
                       </span>
                     </td>
-                    <td style="padding: 7px 10px; color: #94a3b8;">${a.remarks || '-'}</td>
+                    <td style="padding: 7px 10px; color: #94a3b8;">${displayRemarks || '-'}</td>
                     <td style="padding: 7px 10px; text-align: center; white-space: nowrap;">
                       <button class="btn-db-edit-alloc" data-id="${a.id}" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid #38bdf8; padding: 3px 8px; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 700; margin-right: 4px; display: inline-flex; align-items: center; gap: 3px;" title="Edit / Correct Item Entry">
                         <span>✏️</span> Edit
@@ -2377,7 +2390,8 @@ function renderScreen6DatabasePage() {
                       </button>
                     </td>
                   </tr>
-                `).join('')}
+                  `;
+                }).join('')}
               </tbody>
             </table>
           ` : databaseActiveTable === 'TOOLS_MASTER' ? `
@@ -7747,7 +7761,6 @@ Tools User - Shojib - 132694 [New]`;
       }
     }
 
-    const reqTag = detectedRequisitionNo ? `ERP Req #${detectedRequisitionNo}` : 'ERP PDF';
     parsedToolList = res.items.map((it, idx) => {
       const match = matchItemToCatalog(it.rawItemName, catalogAll);
       return {
@@ -7757,7 +7770,7 @@ Tools User - Shojib - 132694 [New]`;
         confidence: match.confidence,
         quantity: it.quantity || 1,
         changeStatus: it.changeStatus || 'NEW_ISSUE',
-        remarks: `${reqTag}: ${detectedMechanic.name || ''} (${detectedMechanic.idNumber || ''})`
+        remarks: ''
       };
     });
 
@@ -8250,10 +8263,9 @@ Tools User - Shojib - 132694 [New]`;
           if (t) t.textContent = detectedMechanic.jobTitle;
           if (a) a.textContent = detectedMechanic.workingArea;
 
-          // Update remarks on parsed items
-          const reqTag = detectedRequisitionNo ? `ERP Req #${detectedRequisitionNo}` : 'ERP PDF';
+          // Remarks remain clean and blank
           parsedToolList.forEach(pi => {
-            pi.remarks = `${reqTag}: ${detectedMechanic.name} (${detectedMechanic.idNumber})`;
+            pi.remarks = pi.remarks || '';
           });
 
           const foot = document.getElementById('lbl-modal-footer-summary');
@@ -8271,9 +8283,8 @@ Tools User - Shojib - 132694 [New]`;
         detectedRequisitionNo = inpReqNo.value.trim().toUpperCase();
         const lblPreviewReq = document.getElementById('lbl-modal-preview-req');
         if (lblPreviewReq) lblPreviewReq.textContent = detectedRequisitionNo || 'None';
-        const reqTag = detectedRequisitionNo ? `ERP Req #${detectedRequisitionNo}` : 'ERP PDF';
         parsedToolList.forEach(pi => {
-          pi.remarks = `${reqTag}: ${detectedMechanic.name || 'Mechanic'} (${detectedMechanic.idNumber || '-'})`;
+          pi.remarks = pi.remarks || '';
         });
 
         // Update footer summary
@@ -8332,7 +8343,6 @@ Tools User - Shojib - 132694 [New]`;
     const btnAddManual = document.getElementById('btn-manual-add-row');
     if (btnAddManual) {
       btnAddManual.onclick = () => {
-        const reqTag = detectedRequisitionNo ? `ERP Req #${detectedRequisitionNo}` : 'ERP PDF';
         parsedToolList.push({
           id: 'manual-item-' + Date.now(),
           rawName: 'Manual Entry Item',
@@ -8340,7 +8350,7 @@ Tools User - Shojib - 132694 [New]`;
           confidence: 1,
           quantity: 1,
           changeStatus: 'NEW_ISSUE',
-          remarks: `${reqTag}: ${detectedMechanic.name || 'Mechanic'}`
+          remarks: ''
         });
         renderModalUI();
       };
@@ -8518,7 +8528,7 @@ Tools User - Shojib - 132694 [New]`;
             quantity: String(pi.quantity || '1'),
             changeStatus: pi.changeStatus || 'NEW_ISSUE',
             changeDate: pi.changeStatus !== 'NEW_ISSUE' ? new Date().toISOString().split('T')[0] : null,
-            remarks: pi.remarks || (reqNoToSave ? `ERP Req #${reqNoToSave}: ${uName} - ${uId}` : `Auto-imported from ERP PDF: ${uName} - ${uId}`)
+            remarks: pi.remarks || ''
           });
         });
 
