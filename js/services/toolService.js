@@ -890,24 +890,104 @@ class ToolService {
     };
   }
 
+  _restoreItemStock(item, masterTools, masterAccs) {
+    if (!item) return false;
+    const qty = parseInt(item.quantity, 10) || 1;
+    let changed = false;
+    if (item.itemType === 'TOOL') {
+      const idx = masterTools.findIndex(t =>
+        (item.itemCode && String(t.code).trim() === String(item.itemCode).trim()) ||
+        (item.itemName && String(t.name).trim().toLowerCase() === String(item.itemName).trim().toLowerCase())
+      );
+      if (idx !== -1 && typeof masterTools[idx].totalStock === 'number') {
+        masterTools[idx].totalStock += qty;
+        changed = true;
+      }
+    } else if (item.itemType === 'ACCESSORY') {
+      const idx = masterAccs.findIndex(a =>
+        (item.itemCode && String(a.code).trim() === String(item.itemCode).trim()) ||
+        (item.itemName && String(a.name).trim().toLowerCase() === String(item.itemName).trim().toLowerCase())
+      );
+      if (idx !== -1 && typeof masterAccs[idx].totalStock === 'number') {
+        masterAccs[idx].totalStock += qty;
+        changed = true;
+      }
+    }
+    return changed;
+  }
+
   async updateAllocationItem(id, updates) {
     const list = storage.getTable(TABLE_NAMES.TOOL_ALLOCATIONS) || [];
     const idx = list.findIndex(a => a.id === id);
     if (idx === -1) throw new Error('Allocation record not found.');
 
-    list[idx] = {
-      ...list[idx],
+    const oldItem = { ...list[idx] };
+    const newItem = {
+      ...oldItem,
       ...updates,
       updatedAt: new Date().toISOString()
     };
+    list[idx] = newItem;
+
+    // Adjust master inventory if quantity or item identity changed
+    const masterTools = storage.getTable(TABLE_NAMES.TOOLS_MASTER) || [];
+    const masterAccs = storage.getTable(TABLE_NAMES.ACCESSORIES_MASTER) || [];
+    let toolsChanged = false;
+    let accsChanged = false;
+
+    const oldQty = parseInt(oldItem.quantity, 10) || 1;
+    const newQty = parseInt(newItem.quantity, 10) || 1;
+    const sameItem = (oldItem.itemType === newItem.itemType) &&
+      (String(oldItem.itemCode || '').trim() === String(newItem.itemCode || '').trim());
+
+    if (sameItem) {
+      const diff = newQty - oldQty; // e.g. was 2, now 1 -> diff = -1 (return 1 to stock)
+      if (diff !== 0) {
+        if (newItem.itemType === 'TOOL') {
+          const tIdx = masterTools.findIndex(t => String(t.code).trim() === String(newItem.itemCode).trim());
+          if (tIdx !== -1 && typeof masterTools[tIdx].totalStock === 'number') {
+            masterTools[tIdx].totalStock = Math.max(0, masterTools[tIdx].totalStock - diff);
+            toolsChanged = true;
+          }
+        } else if (newItem.itemType === 'ACCESSORY') {
+          const aIdx = masterAccs.findIndex(a => String(a.name).trim().toLowerCase() === String(newItem.itemName).trim().toLowerCase());
+          if (aIdx !== -1 && typeof masterAccs[aIdx].totalStock === 'number') {
+            masterAccs[aIdx].totalStock = Math.max(0, masterAccs[aIdx].totalStock - diff);
+            accsChanged = true;
+          }
+        }
+      }
+    } else {
+      // Swapped items: restore old item stock, deduct new item stock
+      if (this._restoreItemStock(oldItem, masterTools, masterAccs)) {
+        if (oldItem.itemType === 'TOOL') toolsChanged = true;
+        if (oldItem.itemType === 'ACCESSORY') accsChanged = true;
+      }
+      if (newItem.itemType === 'TOOL') {
+        const tIdx = masterTools.findIndex(t => String(t.code).trim() === String(newItem.itemCode).trim());
+        if (tIdx !== -1 && typeof masterTools[tIdx].totalStock === 'number') {
+          masterTools[tIdx].totalStock = Math.max(0, masterTools[tIdx].totalStock - newQty);
+          toolsChanged = true;
+        }
+      } else if (newItem.itemType === 'ACCESSORY') {
+        const aIdx = masterAccs.findIndex(a => String(a.name).trim().toLowerCase() === String(newItem.itemName).trim().toLowerCase());
+        if (aIdx !== -1 && typeof masterAccs[aIdx].totalStock === 'number') {
+          masterAccs[aIdx].totalStock = Math.max(0, masterAccs[aIdx].totalStock - newQty);
+          accsChanged = true;
+        }
+      }
+    }
 
     // CONFIRMED WRITE: await Database write
     const ok = await storage.saveTable(TABLE_NAMES.TOOL_ALLOCATIONS, list);
     if (!ok) throw new CloudSaveError('❌ Cloud Save Failed: Tool allocation update was not confirmed by the cloud.');
 
+    if (toolsChanged) await storage.saveTable(TABLE_NAMES.TOOLS_MASTER, masterTools);
+    if (accsChanged) await storage.saveTable(TABLE_NAMES.ACCESSORIES_MASTER, masterAccs);
+
     auditService.log({
       action: 'UPDATE_TOOL_ALLOCATION',
-      details: `Updated allocation item #${id} (Status: ${updates.changeStatus || list[idx].changeStatus})`,
+      details: `Updated allocation item #${id} (${newItem.itemName}, Qty: ${newItem.quantity}, Status: ${newItem.changeStatus})`,
       targetId: id
     });
 
@@ -920,9 +1000,20 @@ class ToolService {
     if (!target) throw new Error('Allocation record not found.');
 
     list = list.filter(a => a.id !== id);
+
+    // Restore stock in master catalog
+    const masterTools = storage.getTable(TABLE_NAMES.TOOLS_MASTER) || [];
+    const masterAccs = storage.getTable(TABLE_NAMES.ACCESSORIES_MASTER) || [];
+    const changed = this._restoreItemStock(target, masterTools, masterAccs);
+
     // CONFIRMED WRITE: await Database write
     const ok = await storage.saveTable(TABLE_NAMES.TOOL_ALLOCATIONS, list);
     if (!ok) throw new CloudSaveError('❌ Cloud Save Failed: Tool allocation deletion was not confirmed by the cloud.');
+
+    if (changed) {
+      if (target.itemType === 'TOOL') await storage.saveTable(TABLE_NAMES.TOOLS_MASTER, masterTools);
+      if (target.itemType === 'ACCESSORY') await storage.saveTable(TABLE_NAMES.ACCESSORIES_MASTER, masterAccs);
+    }
 
     auditService.log({
       action: 'DELETE_TOOL_ALLOCATION_ITEM',
@@ -935,11 +1026,30 @@ class ToolService {
 
   async deleteRegistrationBatch(regNo) {
     let list = storage.getTable(TABLE_NAMES.TOOL_ALLOCATIONS) || [];
-    const count = list.filter(a => String(a.regNo).trim() === String(regNo).trim()).length;
-    list = list.filter(a => String(a.regNo).trim() !== String(regNo).trim());
+    const cleanReg = String(regNo).trim();
+    const toDelete = list.filter(a => String(a.regNo).trim() === cleanReg);
+    const count = toDelete.length;
+    list = list.filter(a => String(a.regNo).trim() !== cleanReg);
+
+    // Restore stock in master catalog
+    const masterTools = storage.getTable(TABLE_NAMES.TOOLS_MASTER) || [];
+    const masterAccs = storage.getTable(TABLE_NAMES.ACCESSORIES_MASTER) || [];
+    let toolsChanged = false;
+    let accsChanged = false;
+
+    toDelete.forEach(item => {
+      if (this._restoreItemStock(item, masterTools, masterAccs)) {
+        if (item.itemType === 'TOOL') toolsChanged = true;
+        if (item.itemType === 'ACCESSORY') accsChanged = true;
+      }
+    });
+
     // CONFIRMED WRITE: await Database write
     const ok = await storage.saveTable(TABLE_NAMES.TOOL_ALLOCATIONS, list);
     if (!ok) throw new CloudSaveError('❌ Cloud Save Failed: Registration batch deletion was not confirmed by the cloud.');
+
+    if (toolsChanged) await storage.saveTable(TABLE_NAMES.TOOLS_MASTER, masterTools);
+    if (accsChanged) await storage.saveTable(TABLE_NAMES.ACCESSORIES_MASTER, masterAccs);
 
     auditService.log({
       action: 'DELETE_TOOL_REGISTRATION_BATCH',
@@ -955,11 +1065,29 @@ class ToolService {
     let list = storage.getTable(TABLE_NAMES.TOOL_ALLOCATIONS) || [];
     const idSet = new Set(ids);
     const initialCount = list.length;
+    const toDelete = list.filter(a => idSet.has(a.id));
     list = list.filter(a => !idSet.has(a.id));
     const deletedCount = initialCount - list.length;
+
+    // Restore stock in master catalog for all deleted items
+    const masterTools = storage.getTable(TABLE_NAMES.TOOLS_MASTER) || [];
+    const masterAccs = storage.getTable(TABLE_NAMES.ACCESSORIES_MASTER) || [];
+    let toolsChanged = false;
+    let accsChanged = false;
+
+    toDelete.forEach(item => {
+      if (this._restoreItemStock(item, masterTools, masterAccs)) {
+        if (item.itemType === 'TOOL') toolsChanged = true;
+        if (item.itemType === 'ACCESSORY') accsChanged = true;
+      }
+    });
+
     // CONFIRMED WRITE: await Database write
     const ok = await storage.saveTable(TABLE_NAMES.TOOL_ALLOCATIONS, list);
     if (!ok) throw new CloudSaveError('❌ Cloud Save Failed: Bulk tool allocation deletion was not confirmed by the cloud.');
+
+    if (toolsChanged) await storage.saveTable(TABLE_NAMES.TOOLS_MASTER, masterTools);
+    if (accsChanged) await storage.saveTable(TABLE_NAMES.ACCESSORIES_MASTER, masterAccs);
 
     auditService.log({
       action: 'BULK_DELETE_TOOL_ALLOCATIONS',
