@@ -187,6 +187,8 @@ class SmartStorageService {
       'botton hole machine': 'Button Hole Machine',
       'safety stitch': 'Safety Stitch M/C',
       'safety stitch machine': 'Safety Stitch M/C',
+      'safety stitch m/c': 'Safety Stitch M/C',
+      'safety stitch mc': 'Safety Stitch M/C',
       'pocket facing machine': 'Pocket Facing',
       'ham blind stitch': 'Ham  Blind Stitch Machine',
       'ham blind stitch machine': 'Ham  Blind Stitch Machine',
@@ -355,13 +357,14 @@ class SmartStorageService {
         });
       }
       if (!seenModelNorms.has(lower)) seenModelNorms.set(lower, new Set());
-      const norm = this.normalizePureAlphanumeric(it.model);
+      const brandUpper = (it.brand || 'JUKI').toUpperCase();
+      const norm = `${brandUpper}:::${this.normalizePureAlphanumeric(it.model)}`;
       if (!seenModelNorms.get(lower).has(norm)) {
         seenModelNorms.get(lower).add(norm);
         map.get(lower).models.push({
           id: it.id,
           model: it.model,
-          brand: (it.brand || 'JUKI').toUpperCase(),
+          brand: brandUpper,
           sortOrder: (it.sortOrder !== undefined && it.sortOrder !== null) ? Number(it.sortOrder) : 9999,
           createdAt: it.createdAt || ''
         });
@@ -396,14 +399,14 @@ class SmartStorageService {
         });
       }
       if (!seenModelNorms.has(lower)) seenModelNorms.set(lower, new Set());
-      const norm = this.normalizePureAlphanumeric(mdl.name);
+      const brandName = (mdl.brandName || brdMap.get(mdl.brandId) || 'JUKI').toUpperCase();
+      const norm = `${brandName}:::${this.normalizePureAlphanumeric(mdl.name)}`;
       if (!seenModelNorms.get(lower).has(norm)) {
         seenModelNorms.get(lower).add(norm);
-        const brandName = mdl.brandName || brdMap.get(mdl.brandId) || 'JUKI';
         map.get(lower).models.push({
           id: mdl.id,
           model: mdl.name,
-          brand: String(brandName).toUpperCase(),
+          brand: brandName,
           sortOrder: (mdl.sortOrder !== undefined && mdl.sortOrder !== null) ? Number(mdl.sortOrder) : 9999,
           createdAt: mdl.createdAt || ''
         });
@@ -696,19 +699,35 @@ class SmartStorageService {
     // 4. Wipe all BRANDS
     storage.setTable(TABLE_NAMES.BRANDS, []);
 
-    // 5. Save tables to LocalStorage
-    storage.saveTable(TABLE_NAMES.MACHINE_NAMES);
-    storage.saveTable(TABLE_NAMES.STORAGE_MASTER);
-    storage.saveTable(TABLE_NAMES.MODELS);
-    storage.saveTable(TABLE_NAMES.BRANDS);
+    // 5. High-capacity IndexedDB write & Instant Parallel MySQL Confirmed Save
+    try {
+      const { idbCache } = await import('../db/idbCache.js');
+      await Promise.all([
+        idbCache.setTable(TABLE_NAMES.MACHINE_NAMES, []),
+        idbCache.setTable(TABLE_NAMES.STORAGE_MASTER, nonMachineSm),
+        idbCache.setTable(TABLE_NAMES.MODELS, []),
+        idbCache.setTable(TABLE_NAMES.BRANDS, [])
+      ]);
+    } catch (_) {}
 
-    // 5. Guaranteed disk write to data/erp_database.json
+    await Promise.all([
+      storage.saveTable(TABLE_NAMES.MACHINE_NAMES, true),
+      storage.saveTable(TABLE_NAMES.STORAGE_MASTER, true),
+      storage.saveTable(TABLE_NAMES.MODELS, true),
+      storage.saveTable(TABLE_NAMES.BRANDS, true)
+    ]);
+
+    // 6. Guaranteed disk write to data/erp_database.json
     if (typeof storage.persistToServerDatabase === 'function') {
       try {
         await storage.persistToServerDatabase();
       } catch (e) {
         console.warn('Clear catalog persist error:', e);
       }
+    }
+
+    if (typeof storage.updateStatusBadge === 'function') {
+      storage.updateStatusBadge('saved');
     }
 
     this._broadcastStorageChange();
@@ -1292,11 +1311,23 @@ class SmartStorageService {
       }
     });
 
-    // Save all synchronized database tables
-    storage.saveTable(TABLE_NAMES.STORAGE_MASTER);
-    storage.saveTable(TABLE_NAMES.MACHINE_NAMES);
-    storage.saveTable(TABLE_NAMES.BRANDS);
-    storage.saveTable(TABLE_NAMES.MODELS);
+    // High-capacity IndexedDB write & Instant Parallel MySQL Confirmed Save
+    try {
+      const { idbCache } = await import('../db/idbCache.js');
+      await Promise.all([
+        idbCache.setTable(TABLE_NAMES.STORAGE_MASTER, storage.getTable(TABLE_NAMES.STORAGE_MASTER)),
+        idbCache.setTable(TABLE_NAMES.MACHINE_NAMES, storage.getTable(TABLE_NAMES.MACHINE_NAMES)),
+        idbCache.setTable(TABLE_NAMES.BRANDS, storage.getTable(TABLE_NAMES.BRANDS)),
+        idbCache.setTable(TABLE_NAMES.MODELS, storage.getTable(TABLE_NAMES.MODELS))
+      ]);
+    } catch (_) {}
+
+    await Promise.all([
+      storage.saveTable(TABLE_NAMES.STORAGE_MASTER, true),
+      storage.saveTable(TABLE_NAMES.MACHINE_NAMES, true),
+      storage.saveTable(TABLE_NAMES.BRANDS, true),
+      storage.saveTable(TABLE_NAMES.MODELS, true)
+    ]);
 
     // Guaranteed immediate disk write to data/erp_database.json
     if (typeof storage.persistToServerDatabase === 'function') {
@@ -1305,6 +1336,10 @@ class SmartStorageService {
       } catch (e) {
         console.warn('Persistence error:', e);
       }
+    }
+
+    if (typeof storage.updateStatusBadge === 'function') {
+      storage.updateStatusBadge('saved');
     }
 
     this._broadcastStorageChange();
@@ -2513,6 +2548,7 @@ class SmartStorageService {
     // 1. Expand rows & carry forward machine names across merged/blank rows
     const expandedRows = [];
     let lastCarriedMachineName = '';
+    const lastBrandByMachine = new Map();
 
     for (let idx = 0; idx < dataRows.length; idx++) {
       const row = dataRows[idx];
@@ -2522,12 +2558,20 @@ class SmartStorageService {
       let remarks = getCell(row, ['Remarks', 'Remark', 'Note', 'Description']);
 
       // Fallbacks if columns lack standard headers
-      if (!machineName && !rawModel) {
+      if (!machineName && !rawModel && !brand) {
         const vals = Object.values(row).map(v => String(v || '').trim()).filter(Boolean);
         if (vals.length >= 3) {
-          machineName = vals[0];
-          brand = vals[1];
-          rawModel = vals[2];
+          if (/^\d+$/.test(vals[0])) {
+            machineName = vals[1];
+            brand = vals[2];
+            rawModel = vals[3] || '';
+            remarks = vals[4] || '';
+          } else {
+            machineName = vals[0];
+            brand = vals[1];
+            rawModel = vals[2];
+            remarks = vals[3] || '';
+          }
         } else if (vals.length === 2) {
           machineName = vals[0];
           rawModel = vals[1];
@@ -2535,12 +2579,15 @@ class SmartStorageService {
       }
 
       machineName = String(machineName || '').trim();
-      brand = String(brand || 'JUKI').trim().toUpperCase();
+      brand = String(brand || '').trim();
       rawModel = String(rawModel || '').trim();
+
+      const mLower = machineName.toLowerCase();
+      if (mLower === 'machinename' || mLower === 'machine name' || mLower === 'machine' || mLower === 'slno' || mLower === 'sl') continue;
 
       if (machineName) {
         lastCarriedMachineName = machineName;
-      } else if (lastCarriedMachineName && rawModel) {
+      } else if (lastCarriedMachineName && (rawModel || brand)) {
         machineName = lastCarriedMachineName;
       }
 
@@ -2550,7 +2597,14 @@ class SmartStorageService {
         if (inferred) machineName = inferred;
       }
 
-      if (!machineName && !rawModel) continue; // Skip truly blank rows
+      if (!machineName && !rawModel && !brand) continue; // Skip truly blank rows
+
+      // Split brand if multiple comma-separated brands exist (e.g. "JUKI, TYPICAL, ZUSAN", "VI. BE. MAC, ZUSAN")
+      let brandList = [brand];
+      if (brand.includes(',')) {
+        brandList = brand.split(',').map(b => b.trim()).filter(Boolean);
+      }
+      if (brandList.length === 0) brandList = [''];
 
       // Split if multiple models exist in one cell (e.g. comma, newline, semicolon)
       let modelList = [rawModel];
@@ -2562,17 +2616,42 @@ class SmartStorageService {
           modelList = parts;
         }
       }
-
       if (modelList.length === 0) modelList = [''];
 
-      for (const singleModel of modelList) {
-        expandedRows.push({
-          machineName,
-          brand,
-          model: singleModel,
-          remarks,
-          origIdx: idx + 1
-        });
+      // Multi-brand expansion with empty-model fallback:
+      if (brandList.length > 1 && (!rawModel || rawModel.trim() === '')) {
+        for (const singleBrand of brandList) {
+          const bUpper = singleBrand.toUpperCase();
+          expandedRows.push({
+            machineName,
+            brand: bUpper,
+            model: singleBrand,
+            remarks,
+            origIdx: idx + 1
+          });
+          if (machineName) lastBrandByMachine.set(machineName.toLowerCase(), bUpper);
+        }
+      } else {
+        for (const singleBrand of brandList) {
+          let finalBrand = singleBrand ? singleBrand.toUpperCase() : (lastBrandByMachine.get(machineName.toLowerCase()) || 'JUKI');
+          for (const singleModel of modelList) {
+            let finalModel = singleModel;
+            // If model is empty but brand is given (e.g. JACK, KANSAI SPECIAL), use brand as model specification!
+            if (!finalModel && finalBrand) {
+              finalModel = finalBrand;
+            }
+            if (finalModel) {
+              expandedRows.push({
+                machineName,
+                brand: finalBrand,
+                model: finalModel,
+                remarks,
+                origIdx: idx + 1
+              });
+              if (finalBrand) lastBrandByMachine.set(machineName.toLowerCase(), finalBrand);
+            }
+          }
+        }
       }
     }
 
@@ -2606,7 +2685,7 @@ class SmartStorageService {
     // Build fresh model norm map per machine
     const existingModelPerMachineMap = new Map();
     smList.filter(m => m && m.category === 'MACHINE').forEach(m => {
-      const key = `${(m.machineName || '').trim().toLowerCase()}:::${this.normalizePureAlphanumeric(m.model)}`;
+      const key = `${(m.machineName || '').trim().toLowerCase()}:::${(m.brand || '').trim().toLowerCase()}:::${this.normalizePureAlphanumeric(m.model)}`;
       existingModelPerMachineMap.set(key, m);
     });
 
@@ -2646,7 +2725,7 @@ class SmartStorageService {
           brand = brandCheck.suggested;
         }
         const modelCheck = this.checkCorrection('MODEL', model);
-        if (modelCheck && modelCheck.hasIssue) {
+        if (modelCheck && modelCheck.hasIssue && modelCheck.issueType !== 'spelling') {
           model = modelCheck.suggested;
         }
 
@@ -2683,10 +2762,13 @@ class SmartStorageService {
           addedBrandsCount++;
         }
 
+        if (!model && brand) {
+          model = brand;
+        }
         if (!model) continue;
 
         // Process Model in STORAGE_MASTER and MODELS
-        const normKey = `${cleanMachine.toLowerCase()}:::${this.normalizePureAlphanumeric(model)}`;
+        const normKey = `${cleanMachine.toLowerCase()}:::${(brand || '').toLowerCase()}:::${this.normalizePureAlphanumeric(model)}`;
         const existingSmItem = existingModelPerMachineMap.get(normKey);
 
         if (existingSmItem) {
@@ -2757,24 +2839,32 @@ class SmartStorageService {
       }
     }
 
-    // High-capacity IndexedDB write & MySQL Confirmed Save
+    // High-capacity IndexedDB write & Instant Parallel MySQL Confirmed Save
     try {
       const { idbCache } = await import('../db/idbCache.js');
-      await idbCache.setTable(TABLE_NAMES.STORAGE_MASTER, storage.getTable(TABLE_NAMES.STORAGE_MASTER));
-      await idbCache.setTable(TABLE_NAMES.MACHINE_NAMES, storage.getTable(TABLE_NAMES.MACHINE_NAMES));
-      await idbCache.setTable(TABLE_NAMES.BRANDS, storage.getTable(TABLE_NAMES.BRANDS));
-      await idbCache.setTable(TABLE_NAMES.MODELS, storage.getTable(TABLE_NAMES.MODELS));
+      await Promise.all([
+        idbCache.setTable(TABLE_NAMES.STORAGE_MASTER, storage.getTable(TABLE_NAMES.STORAGE_MASTER)),
+        idbCache.setTable(TABLE_NAMES.MACHINE_NAMES, storage.getTable(TABLE_NAMES.MACHINE_NAMES)),
+        idbCache.setTable(TABLE_NAMES.BRANDS, storage.getTable(TABLE_NAMES.BRANDS)),
+        idbCache.setTable(TABLE_NAMES.MODELS, storage.getTable(TABLE_NAMES.MODELS))
+      ]);
     } catch (_) {}
 
-    await storage.saveTable(TABLE_NAMES.STORAGE_MASTER, true);
-    await storage.saveTable(TABLE_NAMES.MACHINE_NAMES, true);
-    await storage.saveTable(TABLE_NAMES.BRANDS, true);
-    await storage.saveTable(TABLE_NAMES.MODELS, true);
+    await Promise.all([
+      storage.saveTable(TABLE_NAMES.STORAGE_MASTER, true),
+      storage.saveTable(TABLE_NAMES.MACHINE_NAMES, true),
+      storage.saveTable(TABLE_NAMES.BRANDS, true),
+      storage.saveTable(TABLE_NAMES.MODELS, true)
+    ]);
 
     if (typeof storage.persistToServerDatabase === 'function') {
       try {
         await storage.persistToServerDatabase();
       } catch (_) {}
+    }
+
+    if (typeof storage.updateStatusBadge === 'function') {
+      storage.updateStatusBadge('saved');
     }
 
     this._broadcastStorageChange();
@@ -2936,9 +3026,13 @@ class SmartStorageService {
   _broadcastStorageChange() {
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('erp:storage-updated'));
+      window.dispatchEvent(new CustomEvent('erp:master-data-updated'));
+      window.dispatchEvent(new CustomEvent('storage:updated'));
     }
     try {
-      state.emit('storage:updated');
+      if (typeof state !== 'undefined' && state && typeof state.emit === 'function') {
+        state.emit('storage:updated');
+      }
     } catch (_) {}
   }
 }

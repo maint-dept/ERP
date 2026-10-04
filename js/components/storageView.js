@@ -2892,6 +2892,7 @@ function initModalInteractions() {
 
       const parsed = [];
       let currentMachineName = '';
+      const lastBrandByMachine = new Map();
 
       rawRows.forEach((row) => {
         if (!row || typeof row !== 'object') return;
@@ -2909,7 +2910,7 @@ function initModalInteractions() {
             machineName = cleanV;
           } else if (cleanK === 'brand' || cleanK === 'machinerybrand' || cleanK === 'make') {
             brand = cleanV;
-          } else if (cleanK === 'model' || cleanK === 'modelno' || cleanK === 'modelnumber' || cleanK === 'specification') {
+          } else if (cleanK === 'model' || cleanK === 'modelno' || cleanK === 'modelnumber' || cleanK === 'specification' || cleanK === 'spec') {
             model = cleanV;
           } else if (cleanK === 'remarks' || cleanK === 'remark' || cleanK === 'description' || cleanK === 'note') {
             remarks = cleanV;
@@ -2917,14 +2918,22 @@ function initModalInteractions() {
         }
 
         if (Array.isArray(row)) {
-          machineName = String(row[1] || row[0] || '').trim();
-          brand = String(row[2] || '').trim();
-          model = String(row[3] || '').trim();
-          remarks = String(row[4] || '').trim();
+          const isFirstNum = /^\d+$/.test(String(row[0] || '').trim());
+          if (isFirstNum) {
+            machineName = String(row[1] || '').trim();
+            brand = String(row[2] || '').trim();
+            model = String(row[3] || '').trim();
+            remarks = String(row[4] || '').trim();
+          } else {
+            machineName = String(row[0] || '').trim();
+            brand = String(row[1] || '').trim();
+            model = String(row[2] || '').trim();
+            remarks = String(row[3] || '').trim();
+          }
         }
 
         const mLower = machineName.toLowerCase();
-        if (mLower === 'machinename' || mLower === 'machine name' || mLower === 'machine') return;
+        if (mLower === 'machinename' || mLower === 'machine name' || mLower === 'machine' || mLower === 'slno' || mLower === 'sl') return;
 
         // Carry forward machine name across rows with merged/blank machine cells
         if (machineName) {
@@ -2935,20 +2944,57 @@ function initModalInteractions() {
 
         if (!machineName && !brand && !model) return;
 
-        // Support multiple models in one cell (separated by commas or newlines)
-        let subModels = [model];
+        // Split brand if multiple comma-separated brands exist (e.g. "JUKI, TYPICAL, ZUSAN")
+        let brandList = [brand];
+        if (brand.includes(',')) {
+          brandList = brand.split(',').map(b => b.trim()).filter(Boolean);
+        }
+        if (brandList.length === 0) brandList = [''];
+
+        // Split model if multiple models exist (e.g. comma, newline, semicolon)
+        let modelList = [model];
         if (/[\r\n;]/.test(model)) {
-          subModels = model.split(/[\r\n;]+/).map(s => s.trim()).filter(Boolean);
+          modelList = model.split(/[\r\n;]+/).map(s => s.trim()).filter(Boolean);
         } else if (model.includes(',') && !/\(.*\)/.test(model)) {
           const parts = model.split(',').map(s => s.trim()).filter(Boolean);
           if (parts.length > 1 && parts.every(p => p.length >= 2)) {
-            subModels = parts;
+            modelList = parts;
           }
         }
+        if (modelList.length === 0) modelList = [''];
 
-        if (subModels.length === 0) subModels = [''];
-        for (const sMod of subModels) {
-          parsed.push({ machineName, brand, model: sMod, remarks });
+        // If brand has multiple brands and model is empty, each brand is registered as a specification!
+        if (brandList.length > 1 && (!model || model.trim() === '')) {
+          for (const singleBrand of brandList) {
+            const bUpper = singleBrand.toUpperCase();
+            parsed.push({
+              machineName,
+              brand: bUpper,
+              model: singleBrand,
+              remarks
+            });
+            lastBrandByMachine.set(machineName.toLowerCase(), bUpper);
+          }
+        } else {
+          for (const singleBrand of brandList) {
+            let finalBrand = singleBrand ? singleBrand.toUpperCase() : (lastBrandByMachine.get(machineName.toLowerCase()) || 'JUKI');
+            for (const singleModel of modelList) {
+              let finalModel = singleModel;
+              // If model is empty but brand is given (e.g. JACK, KANSAI SPECIAL), use brand as model spec!
+              if (!finalModel && finalBrand) {
+                finalModel = finalBrand;
+              }
+              if (finalModel) {
+                parsed.push({
+                  machineName,
+                  brand: finalBrand,
+                  model: finalModel,
+                  remarks
+                });
+                if (finalBrand) lastBrandByMachine.set(machineName.toLowerCase(), finalBrand);
+              }
+            }
+          }
         }
       });
 
@@ -3060,12 +3106,28 @@ function initModalInteractions() {
         const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
         if (lines.length === 0) return;
 
+        // Check if clipboard contains multiple distinct machine names in column 1 or column 2
+        const tabLines = lines.filter(l => l.includes('\t'));
+        if (tabLines.length > 0 && activeModalState.type === 'BULK_ADD_MODELS') {
+          activeModalState = { type: 'EXCEL_IMPORT_EXPORT', data: {} };
+          excelImportActiveTab = 'PASTE';
+          updateModalLayer();
+          setTimeout(() => {
+            const pasteBox = document.querySelector('#txt-excel-paste-input');
+            if (pasteBox) {
+              pasteBox.value = text;
+              const parseBtn = document.querySelector('#btn-parse-pasted-excel');
+              if (parseBtn) parseBtn.click();
+            }
+          }, 50);
+          return;
+        }
+
         const rows = [];
         let headerMachineIdx = -1;
         let headerBrandIdx = -1;
         let headerModelIdx = -1;
         let headerRemarksIdx = -1;
-        let currentMachineName = '';
 
         lines.forEach((line, lineIdx) => {
           const delimiter = line.includes('\t') ? '\t' : (line.includes(',') ? ',' : '\t');
@@ -3076,7 +3138,7 @@ function initModalInteractions() {
               const cNorm = col.toLowerCase().replace(/[^a-z0-9]/g, '');
               if (cNorm === 'machinename' || cNorm === 'machine' || cNorm === 'name') headerMachineIdx = cIdx;
               else if (cNorm === 'brand' || cNorm === 'make') headerBrandIdx = cIdx;
-              else if (cNorm === 'model' || cNorm === 'modelno' || cNorm === 'modelnumber') headerModelIdx = cIdx;
+              else if (cNorm === 'model' || cNorm === 'modelno' || cNorm === 'modelnumber' || cNorm === 'spec' || cNorm === 'specification') headerModelIdx = cIdx;
               else if (cNorm === 'remarks' || cNorm === 'remark' || cNorm === 'description') headerRemarksIdx = cIdx;
             });
 
@@ -3096,8 +3158,9 @@ function initModalInteractions() {
             model = headerModelIdx !== -1 ? (cols[headerModelIdx] || '') : (cols[2] || '');
             remarks = headerRemarksIdx !== -1 ? (cols[headerRemarksIdx] || '') : (cols[3] || '');
           } else {
+            // First column is numeric Sl No (e.g. 1, 2, 8, 14, 18, 20)
             const isFirstColNumber = /^\d+$/.test(cols[0]);
-            if (isFirstColNumber && cols.length >= 4) {
+            if (isFirstColNumber) {
               machineName = cols[1] || '';
               brand = cols[2] || '';
               model = cols[3] || '';
@@ -3110,28 +3173,8 @@ function initModalInteractions() {
             }
           }
 
-          if (machineName) {
-            currentMachineName = machineName;
-          } else if (currentMachineName && (model || brand)) {
-            machineName = currentMachineName;
-          }
-
           if (machineName || brand || model) {
-            // Support comma / newline split inside pasted model cell
-            let subModels = [model];
-            if (/[\r\n;]/.test(model)) {
-              subModels = model.split(/[\r\n;]+/).map(s => s.trim()).filter(Boolean);
-            } else if (model.includes(',') && !/\(.*\)/.test(model)) {
-              const parts = model.split(',').map(s => s.trim()).filter(Boolean);
-              if (parts.length > 1 && parts.every(p => p.length >= 2)) {
-                subModels = parts;
-              }
-            }
-
-            if (subModels.length === 0) subModels = [''];
-            for (const sMod of subModels) {
-              rows.push({ machineName, brand, model: sMod, remarks });
-            }
+            rows.push({ machineName, brand, model, remarks });
           }
         });
 
