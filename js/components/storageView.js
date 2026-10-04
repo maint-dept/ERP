@@ -64,7 +64,7 @@ export function renderStorageView() {
               Machine &amp; Model Master Setup
             </h1>
             <div style="font-size: 11.5px; color: #38bdf8; font-weight: 600; margin-top: 2px;">
-              Step 1: Input Machine Names &bull; Step 2: Select Machine &amp; Add Brands &amp; Models (Exact Serial Order)
+              Step 1: Input Machine Names &bull; Step 2: Add Models &bull; <strong style="color: #34d399; font-weight: 800;">OR: 1-Click Excel Sheet Input/Export (Machine, Brand, Model)</strong>
             </div>
           </div>
         </div>
@@ -72,8 +72,8 @@ export function renderStorageView() {
         <!-- Two Clear Actions -->
         <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
           ${isAdmin ? `
-            <button type="button" id="btn-open-excel-master-modal-top" class="btn btn-secondary btn-sm" style="font-weight: 800; border: 1.5px solid #22c55e; color: #22c55e; padding: 7px 16px; font-size: 12.5px; background: rgba(34, 197, 94, 0.08); box-shadow: 0 2px 8px rgba(34, 197, 94, 0.2);" title="Bulk Import Machine Name, Brand & Model via Excel Sheet">
-              📊 Excel Sheet Input/Export (Machine, Brand, Model)
+            <button type="button" id="btn-open-excel-master-modal-top" class="btn btn-sm btn-open-excel-master-modal" style="font-weight: 800; background: linear-gradient(135deg, #059669 0%, #047857 100%); border: 1.5px solid #34d399; color: #fff; padding: 7px 18px; font-size: 12.5px; box-shadow: 0 2px 10px rgba(5, 150, 105, 0.45); cursor: pointer;" title="Bulk Import Machine Name, Brand & Model via Excel Sheet">
+              📊 Excel Sheet: Machine + Brand + Model (Input / Export)
             </button>
             <button type="button" id="btn-open-bulk-import-machine-names-top" class="btn btn-secondary btn-sm" style="font-weight: 800; border: 1.5px solid rgba(56, 189, 248, 0.5); color: #38bdf8; padding: 7px 16px; font-size: 12.5px;">
               🧵 Step 1: Input Machine Names
@@ -200,8 +200,8 @@ function renderGroupedMachinesView() {
       <!-- Machine Management Actions: Step 1 and Step 2 -->
       <div style="display: flex; align-items: center; gap: 8px;">
         ${isAdmin ? `
-          <button type="button" id="btn-open-excel-master-modal-mid" class="btn btn-secondary btn-sm" style="font-weight: 800; font-size: 11.5px; border: 1.5px solid #22c55e; color: #22c55e; background: rgba(34, 197, 94, 0.08);" title="Bulk Import Machine Name, Brand & Model via Excel Sheet">
-            📊 Excel Sheet Input/Export
+          <button type="button" id="btn-open-excel-master-modal-mid" class="btn btn-sm btn-open-excel-master-modal" style="font-weight: 800; font-size: 11.5px; background: linear-gradient(135deg, #059669 0%, #047857 100%); border: 1.5px solid #34d399; color: #fff; padding: 6px 14px; box-shadow: 0 2px 8px rgba(5, 150, 105, 0.35); cursor: pointer;" title="Bulk Import Machine Name, Brand & Model via Excel Sheet">
+            📊 Excel Sheet Input/Export (Machine, Brand, Model)
           </button>
           <button type="button" id="btn-open-bulk-import-machine-names" class="btn btn-secondary btn-sm" style="font-weight: 700; font-size: 11.5px; border: 1.5px solid rgba(56, 189, 248, 0.4); color: #38bdf8;">
             🧵 Step 1: Input Machine Names
@@ -404,6 +404,9 @@ function renderStorageItemsTab() {
 
       <div style="display: flex; align-items: center; gap: 8px;">
         ${isAdmin ? `
+          <button type="button" class="btn btn-sm btn-open-excel-master-modal" style="font-weight: 800; font-size: 11.5px; background: linear-gradient(135deg, #059669 0%, #047857 100%); border: 1.5px solid #34d399; color: #fff; padding: 6px 14px; box-shadow: 0 2px 8px rgba(5, 150, 105, 0.35); cursor: pointer;" title="Bulk Import Machine Name, Brand & Model via Excel Sheet">
+            📊 Excel Sheet Input/Export (Machine, Brand, Model)
+          </button>
           <button type="button" id="btn-open-bulk-import-machine-names" class="btn btn-secondary btn-sm" style="font-weight: 700; font-size: 11.5px; border: 1.5px solid rgba(56, 189, 248, 0.4); color: #38bdf8;">
             🧵 Step 1: Input Machine Names
           </button>
@@ -2237,14 +2240,13 @@ export function initStorageEvents() {
   if (!container) return;
 
   // 0. Top Header Excel Sheet Input/Export Studio
-  const btnTopExcel = container.querySelector('#btn-open-excel-master-modal-top');
-  if (btnTopExcel) {
-    btnTopExcel.addEventListener('click', (e) => {
+  container.querySelectorAll('.btn-open-excel-master-modal, #btn-open-excel-master-modal-top, #btn-open-excel-master-modal-mid').forEach(btn => {
+    btn.addEventListener('click', (e) => {
       e.preventDefault();
       activeModalState = { type: 'EXCEL_IMPORT_EXPORT', data: {} };
       updateModalLayer();
     });
-  }
+  });
 
   // 0B. Top Header Export Catalog to Excel
   const btnTopExport = container.querySelector('#btn-storage-export-excel-top');
@@ -2587,14 +2589,13 @@ function rebindContentEvents() {
   }
 
   // Mid Toolbar Excel Sheet Input/Export Button
-  const btnOpenExcelMid = container.querySelector('#btn-open-excel-master-modal-mid');
-  if (btnOpenExcelMid) {
-    btnOpenExcelMid.addEventListener('click', (e) => {
+  container.querySelectorAll('.btn-open-excel-master-modal, #btn-open-excel-master-modal-mid').forEach(btn => {
+    btn.addEventListener('click', (e) => {
       e.preventDefault();
       activeModalState = { type: 'EXCEL_IMPORT_EXPORT', data: {} };
       updateModalLayer();
     });
-  }
+  });
 
   // Bulk Import Machine Names Button
   const btnOpenBulkMn = container.querySelector('#btn-open-bulk-import-machine-names');
