@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Al-Muslim Group Garments Factory Maintenance Machine ERP
  * Smart Storage Library & Intelligent Auto-Correction Service
  * 
@@ -2373,7 +2373,394 @@ class SmartStorageService {
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+  /**
+   * Bulk Import Machine Names, Brands, and Models from Excel / CSV Data Rows
+   * @param {Array<Object>} dataRows - Array of row objects parsed by SheetJS
+   * @param {Object} options - { overwriteExisting: boolean }
+   * @returns {Promise<Object>} - Summary with created counts: { totalRows, addedMachines, addedBrands, addedModels, updatedModels, errors }
+   */
+  async bulkImportMachinesFromExcel(dataRows, options = {}) {
+    if (!Array.isArray(dataRows) || dataRows.length === 0) {
+      throw new Error('No data rows found to import.');
+    }
+
+    const overwriteExisting = options.overwriteExisting !== false;
+    let mnList = storage.getTable(TABLE_NAMES.MACHINE_NAMES) || [];
+    let brdList = storage.getTable(TABLE_NAMES.BRANDS) || [];
+    let mdlList = storage.getTable(TABLE_NAMES.MODELS) || [];
+    let smList = storage.getTable(TABLE_NAMES.STORAGE_MASTER) || [];
+
+    const existingMachines = this.getStorageItems('MACHINE');
+    const existingModelNormMap = new Map();
+    existingMachines.forEach(m => {
+      const norm = this.normalizePureAlphanumeric(m.model);
+      if (norm) existingModelNormMap.set(norm, m);
+    });
+
+    const knownBrands = [
+      'JUKI', 'BROTHER', 'PEGASUS', 'SIRUBA', 'YAMATO', 'KANSAI', 'KANSAI SPECIAL', 
+      'JACK', 'SUNSTAR', 'HASHIMA', 'KM', 'EASTMAN', 'SINGER', 'PFAFF', 'DURKOPP ADLER',
+      'TYPICAL', 'ZUSAN', 'BEDOLY', 'MAUSER', 'GOLDEN WHEEL', 'BRUCE', 'HIKARI', 'ZOJE'
+    ];
+
+    let addedMachinesCount = 0;
+    let addedBrandsCount = 0;
+    let addedModelsCount = 0;
+    let updatedModelsCount = 0;
+    const errors = [];
+
+    const getCell = (row, aliases) => {
+      for (const alias of aliases) {
+        if (row[alias] !== undefined && row[alias] !== null && String(row[alias]).trim() !== '') {
+          return String(row[alias]).trim();
+        }
+        const lowerAlias = alias.toLowerCase().replace(/[^a-z0-9]/g, '');
+        for (const [k, v] of Object.entries(row)) {
+          const lowerK = k.toLowerCase().replace(/[^a-z0-9]/g, '');
+          if (lowerK === lowerAlias && v !== undefined && v !== null && String(v).trim() !== '') {
+            return String(v).trim();
+          }
+        }
+      }
+      return '';
+    };
+
+    for (let idx = 0; idx < dataRows.length; idx++) {
+      const row = dataRows[idx];
+      try {
+        let machineName = getCell(row, ['Machine Name', 'Machine', 'Machine Type', 'Machinery Name', 'Type', 'Category']);
+        let brand = getCell(row, ['Brand', 'Brand Name', 'Make', 'Manufacturer', 'Company']);
+        let model = getCell(row, ['Model', 'Model Number', 'Model No', 'Model #', 'Spec', 'Specification']);
+        let remarks = getCell(row, ['Remarks', 'Remark', 'Note', 'Description']);
+
+        // Fallbacks: if only 2 or 3 columns exist without standard headers
+        if (!machineName && !model) {
+          const vals = Object.values(row).map(v => String(v || '').trim()).filter(Boolean);
+          if (vals.length >= 3) {
+            machineName = vals[0];
+            brand = vals[1];
+            model = vals[2];
+          } else if (vals.length === 2) {
+            machineName = vals[0];
+            model = vals[1];
+          }
+        }
+
+        machineName = String(machineName || '').trim();
+        brand = String(brand || 'JUKI').trim().toUpperCase();
+        model = String(model || '').trim();
+
+        if (!machineName && !model) continue; // Skip completely blank line
+
+        if (!machineName && model) {
+          machineName = 'Plane Machine'; // Safe fallback
+        }
+
+        // Auto-extract brand from parentheses if model has e.g. "TYPICAL (GC-6720)"
+        if (/\(([^)]+)\)/.test(model)) {
+          const m = model.match(/^(.*?)\s*\(([^)]+)\)$/);
+          if (m) {
+            const p1Upper = m[1].trim().toUpperCase();
+            const p2Upper = m[2].trim().toUpperCase();
+            const matchP1 = knownBrands.find(b => p1Upper === b || p1Upper.startsWith(b + ' '));
+            const matchP2 = knownBrands.find(b => p2Upper === b);
+            if (matchP1) {
+              brand = matchP1;
+              model = p1Upper === matchP1 ? m[2].trim() : `${m[1].trim().substring(matchP1.length).trim()} (${m[2].trim()})`;
+            } else if (matchP2) {
+              brand = matchP2;
+              model = m[1].trim();
+            }
+          }
+        }
+
+        // Apply intelligent corrections
+        const cleanMachine = this.resolveCanonicalMachineName(machineName) || machineName;
+        const brandCheck = this.checkCorrection('BRAND', brand);
+        if (brandCheck && brandCheck.hasIssue) {
+          brand = brandCheck.suggested;
+        }
+        const modelCheck = this.checkCorrection('MODEL', model);
+        if (modelCheck && modelCheck.hasIssue) {
+          model = modelCheck.suggested;
+        }
+
+        // 1. Ensure Machine Name is in MACHINE_NAMES table
+        let mnItem = mnList.find(m => m && m.name && m.name.toLowerCase() === cleanMachine.toLowerCase());
+        if (!mnItem) {
+          const maxOrder = mnList.reduce((max, m) => Math.max(max, Number(m.sortOrder || 0)), 0);
+          mnItem = storage.insert(TABLE_NAMES.MACHINE_NAMES, {
+            id: 'mn-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4),
+            name: cleanMachine,
+            code: cleanMachine.substring(0, 4).toUpperCase().replace(/[^A-Z0-9]/g, ''),
+            sortOrder: maxOrder + 1,
+            status: 'ACTIVE',
+            createdAt: new Date().toISOString()
+          });
+          mnList = storage.getTable(TABLE_NAMES.MACHINE_NAMES) || [];
+          addedMachinesCount++;
+        }
+
+        // 2. Ensure Brand is in BRANDS table
+        let brdItem = brdList.find(b => b && b.name && b.name.toLowerCase() === brand.toLowerCase());
+        if (!brdItem) {
+          brdItem = storage.insert(TABLE_NAMES.BRANDS, {
+            id: 'brd-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4),
+            name: brand,
+            country: ['JUKI', 'BROTHER', 'PEGASUS', 'YAMATO', 'HASHIMA', 'KM', 'EASTMAN'].includes(brand) ? 'Japan' : 'International',
+            status: 'ACTIVE',
+            createdAt: new Date().toISOString()
+          });
+          brdList = storage.getTable(TABLE_NAMES.BRANDS) || [];
+          addedBrandsCount++;
+        }
+
+        // If row has no model (e.g. user just imported machine names list), we're done with this row
+        if (!model) continue;
+
+        // 3. Process Model in STORAGE_MASTER and MODELS
+        const norm = this.normalizePureAlphanumeric(model);
+        const existingSmItem = existingModelNormMap.get(norm);
+
+        if (existingSmItem) {
+          if (overwriteExisting) {
+            storage.update(TABLE_NAMES.STORAGE_MASTER, existingSmItem.id, {
+              machineName: cleanMachine,
+              brand,
+              model,
+              remarks: remarks || existingSmItem.remarks || '',
+              status: 'ACTIVE',
+              updatedAt: new Date().toISOString()
+            });
+            updatedModelsCount++;
+          }
+        } else {
+          const maxSmOrder = smList.reduce((max, m) => Math.max(max, Number(m.sortOrder || 0)), 0);
+          const newSmItem = storage.insert(TABLE_NAMES.STORAGE_MASTER, {
+            id: 'sm-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4),
+            category: 'MACHINE',
+            machineName: cleanMachine,
+            brand,
+            model,
+            sortOrder: maxSmOrder + 1,
+            remarks: remarks || '',
+            status: 'ACTIVE',
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          });
+          smList = storage.getTable(TABLE_NAMES.STORAGE_MASTER) || [];
+          existingModelNormMap.set(norm, newSmItem);
+          addedModelsCount++;
+        }
+
+        // 4. Also synchronize into MODELS table for Inventory/Reports
+        let mdlItem = mdlList.find(m => 
+          m && m.name && m.name.toLowerCase() === model.toLowerCase() &&
+          (m.machineNameId === mnItem?.id || (m.machineName && m.machineName.toLowerCase() === cleanMachine.toLowerCase()))
+        );
+        if (mdlItem) {
+          if (overwriteExisting) {
+            storage.update(TABLE_NAMES.MODELS, mdlItem.id, {
+              brandId: brdItem?.id || mdlItem.brandId,
+              brandName: brand,
+              machineNameId: mnItem?.id || mdlItem.machineNameId,
+              machineName: cleanMachine,
+              description: remarks || `${brand} ${model} under ${cleanMachine}`,
+              status: 'ACTIVE'
+            });
+          }
+        } else {
+          const maxMdlOrder = mdlList.reduce((max, m) => Math.max(max, Number(m.sortOrder || 0)), 0);
+          storage.insert(TABLE_NAMES.MODELS, {
+            id: 'mdl-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4),
+            name: model,
+            brandId: brdItem?.id || '',
+            brandName: brand,
+            machineNameId: mnItem?.id || '',
+            machineName: cleanMachine,
+            sortOrder: maxMdlOrder + 1,
+            description: remarks || `${brand} ${model} under ${cleanMachine}`,
+            status: 'ACTIVE',
+            createdAt: new Date().toISOString()
+          });
+          mdlList = storage.getTable(TABLE_NAMES.MODELS) || [];
+        }
+      } catch (rowErr) {
+        errors.push(`Row ${idx + 1}: ${rowErr.message}`);
+      }
+    }
+
+    // High-capacity IndexedDB write & MySQL Confirmed Save
+    try {
+      const { idbCache } = await import('../db/idbCache.js');
+      await idbCache.setTable(TABLE_NAMES.STORAGE_MASTER, storage.getTable(TABLE_NAMES.STORAGE_MASTER));
+      await idbCache.setTable(TABLE_NAMES.MACHINE_NAMES, storage.getTable(TABLE_NAMES.MACHINE_NAMES));
+      await idbCache.setTable(TABLE_NAMES.BRANDS, storage.getTable(TABLE_NAMES.BRANDS));
+      await idbCache.setTable(TABLE_NAMES.MODELS, storage.getTable(TABLE_NAMES.MODELS));
+    } catch (_) {}
+
+    await storage.saveTable(TABLE_NAMES.STORAGE_MASTER, true);
+    await storage.saveTable(TABLE_NAMES.MACHINE_NAMES, true);
+    await storage.saveTable(TABLE_NAMES.BRANDS, true);
+    await storage.saveTable(TABLE_NAMES.MODELS, true);
+
+    if (typeof storage.persistToServerDatabase === 'function') {
+      try {
+        await storage.persistToServerDatabase();
+      } catch (_) {}
+    }
+
+    this._broadcastStorageChange();
+
+    try {
+      auditService.log({
+        action: 'EXCEL_IMPORT_MACHINES_BRANDS_MODELS',
+        details: `Imported ${addedModelsCount} new models, ${addedMachinesCount} new machines, ${addedBrandsCount} new brands via Excel`,
+        targetId: 'EXCEL_MASTER_IMPORT'
+      });
+    } catch (_) {}
+
+    return {
+      totalRows: dataRows.length,
+      addedMachines: addedMachinesCount,
+      addedBrands: addedBrandsCount,
+      addedModels: addedModelsCount,
+      updatedModels: updatedModelsCount,
+      errors
+    };
+  }
+
+  /**
+   * Export all Machine Names, Brands, and Models to an Excel (.xlsx) file
+   */
+  exportMachinesToExcel() {
+    if (typeof XLSX === 'undefined') {
+      throw new Error('SheetJS (XLSX) library is not loaded. Please check your internet connection.');
+    }
+
+    const allMachines = this.getStorageItems('MACHINE');
+    const mnList = storage.getTable(TABLE_NAMES.MACHINE_NAMES) || [];
+    
+    // Sort machine names in order
+    const sortedMnList = [...mnList].sort((a, b) => (Number(a.sortOrder) || 9999) - (Number(b.sortOrder) || 9999));
+    
+    const exportRows = [];
+    let sl = 1;
+
+    // First, export registered models grouped by machine name
+    const grouped = new Map();
+    allMachines.forEach(item => {
+      const mn = item.machineName || 'Unassigned Machine';
+      if (!grouped.has(mn)) grouped.set(mn, []);
+      grouped.get(mn).push(item);
+    });
+
+    // Output according to machine name sort order
+    sortedMnList.forEach(mn => {
+      const mName = mn.name;
+      const models = grouped.get(mName) || [];
+      if (models.length > 0) {
+        models.forEach(mod => {
+          exportRows.push({
+            'Sl No': sl++,
+            'Machine Name': mName,
+            'Brand': mod.brand || 'JUKI',
+            'Model': mod.model || '',
+            'Remarks': mod.remarks || ''
+          });
+        });
+      } else {
+        // Machine name with no models yet
+        exportRows.push({
+          'Sl No': sl++,
+          'Machine Name': mName,
+          'Brand': '',
+          'Model': '',
+          'Remarks': 'Registered Machine Type'
+        });
+      }
+      grouped.delete(mName);
+    });
+
+    // Any remaining machines
+    for (const [mName, models] of grouped.entries()) {
+      models.forEach(mod => {
+        exportRows.push({
+          'Sl No': sl++,
+          'Machine Name': mName,
+          'Brand': mod.brand || 'JUKI',
+          'Model': mod.model || '',
+          'Remarks': mod.remarks || ''
+        });
+      });
+    }
+
+    if (exportRows.length === 0) {
+      exportRows.push({
+        'Sl No': 1,
+        'Machine Name': 'Plane Machine',
+        'Brand': 'JUKI',
+        'Model': 'DDL-8700',
+        'Remarks': 'Sample'
+      });
+    }
+
+    const ws = XLSX.utils.json_to_sheet(exportRows);
+    ws['!cols'] = [
+      { wch: 8 },  // Sl No
+      { wch: 30 }, // Machine Name
+      { wch: 18 }, // Brand
+      { wch: 25 }, // Model
+      { wch: 35 }  // Remarks
+    ];
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Machines_Brands_Models');
+
+    const dateStr = new Date().toISOString().split('T')[0];
+    const fileName = `Al_Muslim_ERP_Machine_Brand_Model_Master_${dateStr}.xlsx`;
+    XLSX.writeFile(wb, fileName);
+    return { success: true, totalExported: exportRows.length, fileName };
+  }
+
+  /**
+   * Download a clean Excel template with sample Machine Name, Brand, and Model rows
+   */
+  downloadMachineImportTemplate() {
+    if (typeof XLSX === 'undefined') {
+      throw new Error('SheetJS (XLSX) library is not loaded.');
+    }
+
+    const templateData = [
+      { 'Sl No': 1, 'Machine Name': 'Plane Machine', 'Brand': 'JUKI', 'Model': 'DDL-8700', 'Remarks': 'Single Needle High Speed Lockstitch' },
+      { 'Sl No': 2, 'Machine Name': 'Plane Machine', 'Brand': 'JUKI', 'Model': 'DDL-9000C', 'Remarks': 'Direct-Drive Computerized Lockstitch' },
+      { 'Sl No': 3, 'Machine Name': 'Plane Machine', 'Brand': 'BROTHER', 'Model': 'S-7200C', 'Remarks': 'Direct Drive Electronic Lockstitch' },
+      { 'Sl No': 4, 'Machine Name': 'Plane Machine', 'Brand': 'JACK', 'Model': 'A4', 'Remarks': 'Computerized Lockstitch Machine' },
+      { 'Sl No': 5, 'Machine Name': 'Overlock Machine', 'Brand': 'PEGASUS', 'Model': 'M952-52', 'Remarks': '4-Thread High Speed Overlock' },
+      { 'Sl No': 6, 'Machine Name': 'Overlock Machine', 'Brand': 'JUKI', 'Model': 'MO-6814S', 'Remarks': '4-Thread Super High Speed Overlock' },
+      { 'Sl No': 7, 'Machine Name': 'Overlock Machine', 'Brand': 'SIRUBA', 'Model': '747K-514M2-24', 'Remarks': 'High Speed Overlock Machine' },
+      { 'Sl No': 8, 'Machine Name': 'Vertical Machine', 'Brand': 'BEDOLY', 'Model': 'BD-801', 'Remarks': 'Vertical Machine Heavy Duty' },
+      { 'Sl No': 9, 'Machine Name': 'Button Hole Machine', 'Brand': 'JUKI', 'Model': 'LBH-1790', 'Remarks': 'Computer Controlled Buttonhole' },
+      { 'Sl No': 10, 'Machine Name': 'Button Attach Machine', 'Brand': 'JUKI', 'Model': 'MB-1377', 'Remarks': 'Single Thread Chainstitch Button Sew' },
+      { 'Sl No': 11, 'Machine Name': 'Bar Tack Machine', 'Brand': 'JUKI', 'Model': 'LK-1900', 'Remarks': 'Computer Controlled Bartacking' },
+      { 'Sl No': 12, 'Machine Name': 'Feed of The Arm Machine', 'Brand': 'BROTHER', 'Model': 'DA-9270', 'Remarks': '3-Needle Feed of the Arm Machine' },
+      { 'Sl No': 13, 'Machine Name': 'Double Needle Machine', 'Brand': 'JUKI', 'Model': 'LH-3568', 'Remarks': '2-Needle Semi-Dry Head Lockstitch' }
+    ];
+
+    const ws = XLSX.utils.json_to_sheet(templateData);
+    ws['!cols'] = [
+      { wch: 8 },  // Sl No
+      { wch: 28 }, // Machine Name
+      { wch: 16 }, // Brand
+      { wch: 22 }, // Model
+      { wch: 42 }  // Remarks
+    ];
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Import_Template');
+
+    XLSX.writeFile(wb, 'Machine_Brand_Model_Excel_Import_Template.xlsx');
+    return true;
   }
 
   _broadcastStorageChange() {

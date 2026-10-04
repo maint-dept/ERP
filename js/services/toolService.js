@@ -12,6 +12,7 @@
  */
 
 import { storage, CloudSaveError } from '../db/storage.js';
+import { idbCache } from '../db/idbCache.js';
 import { TABLE_NAMES } from '../db/schema.js';
 import { auditService } from './auditService.js';
 import { employeeService } from './employeeService.js';
@@ -1243,13 +1244,18 @@ class ToolService {
     const masterAccs = storage.getTable(TABLE_NAMES.ACCESSORIES_MASTER) || [];
     const changed = this._restoreItemStock(target, masterTools, masterAccs);
 
-    // CONFIRMED WRITE: await Database write
-    const ok = await storage.saveTable(TABLE_NAMES.TOOL_ALLOCATIONS, list);
+    // Explicitly update IndexedDB cache
+    try {
+      await idbCache.setTable(TABLE_NAMES.TOOL_ALLOCATIONS, list);
+    } catch (_) {}
+
+    // CONFIRMED WRITE: await Database write (immediate = true)
+    const ok = await storage.saveTable(TABLE_NAMES.TOOL_ALLOCATIONS, list, true);
     if (!ok) throw new CloudSaveError('❌ Cloud Save Failed: Tool allocation deletion was not confirmed by the cloud.');
 
     if (changed) {
-      if (target.itemType === 'TOOL') await storage.saveTable(TABLE_NAMES.TOOLS_MASTER, masterTools);
-      if (target.itemType === 'ACCESSORY') await storage.saveTable(TABLE_NAMES.ACCESSORIES_MASTER, masterAccs);
+      if (target.itemType === 'TOOL') await storage.saveTable(TABLE_NAMES.TOOLS_MASTER, masterTools, true);
+      if (target.itemType === 'ACCESSORY') await storage.saveTable(TABLE_NAMES.ACCESSORIES_MASTER, masterAccs, true);
     }
 
     auditService.log({
@@ -1281,12 +1287,17 @@ class ToolService {
       }
     });
 
-    // CONFIRMED WRITE: await Database write
-    const ok = await storage.saveTable(TABLE_NAMES.TOOL_ALLOCATIONS, list);
+    // Explicitly update IndexedDB cache
+    try {
+      await idbCache.setTable(TABLE_NAMES.TOOL_ALLOCATIONS, list);
+    } catch (_) {}
+
+    // CONFIRMED WRITE: await Database write (immediate = true)
+    const ok = await storage.saveTable(TABLE_NAMES.TOOL_ALLOCATIONS, list, true);
     if (!ok) throw new CloudSaveError('❌ Cloud Save Failed: Registration batch deletion was not confirmed by the cloud.');
 
-    if (toolsChanged) await storage.saveTable(TABLE_NAMES.TOOLS_MASTER, masterTools);
-    if (accsChanged) await storage.saveTable(TABLE_NAMES.ACCESSORIES_MASTER, masterAccs);
+    if (toolsChanged) await storage.saveTable(TABLE_NAMES.TOOLS_MASTER, masterTools, true);
+    if (accsChanged) await storage.saveTable(TABLE_NAMES.ACCESSORIES_MASTER, masterAccs, true);
 
     auditService.log({
       action: 'DELETE_TOOL_REGISTRATION_BATCH',
@@ -1319,12 +1330,17 @@ class ToolService {
       }
     });
 
-    // CONFIRMED WRITE: await Database write
-    const ok = await storage.saveTable(TABLE_NAMES.TOOL_ALLOCATIONS, list);
+    // Explicitly update IndexedDB cache
+    try {
+      await idbCache.setTable(TABLE_NAMES.TOOL_ALLOCATIONS, list);
+    } catch (_) {}
+
+    // CONFIRMED WRITE: await Database write (immediate = true)
+    const ok = await storage.saveTable(TABLE_NAMES.TOOL_ALLOCATIONS, list, true);
     if (!ok) throw new CloudSaveError('❌ Cloud Save Failed: Bulk tool allocation deletion was not confirmed by the cloud.');
 
-    if (toolsChanged) await storage.saveTable(TABLE_NAMES.TOOLS_MASTER, masterTools);
-    if (accsChanged) await storage.saveTable(TABLE_NAMES.ACCESSORIES_MASTER, masterAccs);
+    if (toolsChanged) await storage.saveTable(TABLE_NAMES.TOOLS_MASTER, masterTools, true);
+    if (accsChanged) await storage.saveTable(TABLE_NAMES.ACCESSORIES_MASTER, masterAccs, true);
 
     auditService.log({
       action: 'BULK_DELETE_TOOL_ALLOCATIONS',

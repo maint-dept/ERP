@@ -335,7 +335,10 @@ class StorageEngine {
         if (idbTables && typeof idbTables === 'object') {
           let idbUpdated = false;
           for (const [tbl, records] of Object.entries(idbTables)) {
-            if (Array.isArray(records) && records.length > (this.data[tbl]?.length || 0)) {
+            // ONLY recover from IDB if localStorage was completely missing this table (null) due to quota limit failure.
+            // If localStorage has a valid stored entry (even empty []), that is intentional and must NEVER be overwritten with stale IDB data.
+            const localRaw = localStorage.getItem(STORAGE_KEY_PREFIX + tbl);
+            if (localRaw === null && Array.isArray(records) && records.length > 0) {
               this.data[tbl] = records;
               idbUpdated = true;
             }
@@ -503,7 +506,7 @@ class StorageEngine {
 
     // 1. High-capacity persistent write to IndexedDB (no 5MB quota crashes)
     try {
-      idbCache.setTable(table, records ?? []);
+      await idbCache.setTable(table, records ?? []);
     } catch (_) {}
 
     // 2. Write to localStorage immediately (local cache)

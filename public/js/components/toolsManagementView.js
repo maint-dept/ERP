@@ -3960,13 +3960,21 @@ export function initToolsManagementEvents() {
     btnBulkDelFind.onclick = () => {
       ensureAdminAccess(`Bulk Delete ${findSelectedIds.size} Tool Allocations`, async () => {
         if (confirm(`Are you sure you want to permanently delete ${findSelectedIds.size} selected tool allocation records?\n\nMaster inventory stock will be restored.`)) {
+          const origHtml = btnBulkDelFind.innerHTML;
           try {
+            btnBulkDelFind.disabled = true;
+            btnBulkDelFind.innerHTML = '<span>⏳</span> Deleting from Cloud Database...';
             const count = await toolService.deleteAllocationsBatch(Array.from(findSelectedIds));
             findSelectedIds.clear();
             window.app?.showToast('Deleted', `Successfully deleted ${count} allocation records and restored stock.`, 'info');
           } catch (err) {
             console.error('Bulk delete error:', err);
             window.app?.showToast('Error', err.message || 'Failed to delete records.', 'error');
+          } finally {
+            if (btnBulkDelFind) {
+              btnBulkDelFind.disabled = false;
+              btnBulkDelFind.innerHTML = origHtml;
+            }
           }
           const container = document.getElementById('tools-tab-content-container');
           if (container) {
@@ -4674,13 +4682,21 @@ export function initToolsManagementEvents() {
     btnBulkDelDb.onclick = () => {
       ensureAdminAccess(`Bulk Delete ${dbSelectedIds.size} Database Records`, async () => {
         if (confirm(`Permanently delete ${dbSelectedIds.size} selected records from database?\n\nMaster inventory stock will be restored automatically.`)) {
+          const origHtml = btnBulkDelDb.innerHTML;
           try {
+            btnBulkDelDb.disabled = true;
+            btnBulkDelDb.innerHTML = '<span>⏳</span> Deleting from Cloud Database...';
             const count = await toolService.deleteAllocationsBatch(Array.from(dbSelectedIds));
             dbSelectedIds.clear();
             window.app?.showToast('Deleted', `Permanently removed ${count} records from database and restored stock.`, 'info');
           } catch (err) {
             console.error('Bulk delete error:', err);
             window.app?.showToast('Error', err.message || 'Failed to delete records.', 'error');
+          } finally {
+            if (btnBulkDelDb) {
+              btnBulkDelDb.disabled = false;
+              btnBulkDelDb.innerHTML = origHtml;
+            }
           }
           const container = document.getElementById('tools-tab-content-container');
           if (container) {

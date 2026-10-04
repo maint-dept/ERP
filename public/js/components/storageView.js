@@ -29,6 +29,9 @@ let isScanning = false;
 let activeModalState = null;
 let activeBuilderCategory = 'MACHINE';
 let qualityGateData = null;
+let excelImportParsedRows = [];
+let excelImportFileName = '';
+let excelImportActiveTab = 'UPLOAD'; // 'UPLOAD' | 'PASTE'
 
 export function renderStorageView() {
   const isAdmin = authService.isAdmin();
@@ -69,11 +72,17 @@ export function renderStorageView() {
         <!-- Two Clear Actions -->
         <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
           ${isAdmin ? `
+            <button type="button" id="btn-open-excel-master-modal-top" class="btn btn-secondary btn-sm" style="font-weight: 800; border: 1.5px solid #22c55e; color: #22c55e; padding: 7px 16px; font-size: 12.5px; background: rgba(34, 197, 94, 0.08); box-shadow: 0 2px 8px rgba(34, 197, 94, 0.2);" title="Bulk Import Machine Name, Brand & Model via Excel Sheet">
+              📊 Excel Sheet Input/Export (Machine, Brand, Model)
+            </button>
             <button type="button" id="btn-open-bulk-import-machine-names-top" class="btn btn-secondary btn-sm" style="font-weight: 800; border: 1.5px solid rgba(56, 189, 248, 0.5); color: #38bdf8; padding: 7px 16px; font-size: 12.5px;">
               🧵 Step 1: Input Machine Names
             </button>
             <button type="button" id="btn-open-fast-brand-model-importer-top" class="btn btn-primary btn-sm" style="font-weight: 800; background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); border-color: #38bdf8; padding: 7px 18px; font-size: 12.5px; box-shadow: 0 2px 8px rgba(2, 132, 199, 0.35);">
               📥 Step 2: Add Models (Dropdown + 2 Boxes)
+            </button>
+            <button type="button" id="btn-storage-export-excel-top" class="btn btn-ghost btn-sm" style="font-weight: 700; color: #38bdf8; border: 1.5px solid rgba(56, 189, 248, 0.4); padding: 7px 14px; font-size: 12px;" title="Export all registered Machines, Brands & Models to Excel file">
+              📥 Export Excel (.xlsx)
             </button>
             <button type="button" id="btn-storage-add-new-machine" class="btn btn-ghost btn-sm" style="font-size: 12px; color: #94a3b8;">
               ➕ Add Machine Name
@@ -191,6 +200,9 @@ function renderGroupedMachinesView() {
       <!-- Machine Management Actions: Step 1 and Step 2 -->
       <div style="display: flex; align-items: center; gap: 8px;">
         ${isAdmin ? `
+          <button type="button" id="btn-open-excel-master-modal-mid" class="btn btn-secondary btn-sm" style="font-weight: 800; font-size: 11.5px; border: 1.5px solid #22c55e; color: #22c55e; background: rgba(34, 197, 94, 0.08);" title="Bulk Import Machine Name, Brand & Model via Excel Sheet">
+            📊 Excel Sheet Input/Export
+          </button>
           <button type="button" id="btn-open-bulk-import-machine-names" class="btn btn-secondary btn-sm" style="font-weight: 700; font-size: 11.5px; border: 1.5px solid rgba(56, 189, 248, 0.4); color: #38bdf8;">
             🧵 Step 1: Input Machine Names
           </button>
@@ -855,11 +867,238 @@ function renderHealthScannerTab() {
   `;
 }
 
+function renderExcelImportExportModal() {
+  const rows = excelImportParsedRows || [];
+  const validRows = rows.filter(r => r.machineName && r.machineName.trim());
+  const uniqueMachines = new Set(validRows.map(r => r.machineName.trim().toUpperCase())).size;
+  const uniqueBrands = new Set(validRows.filter(r => r.brand).map(r => r.brand.trim().toUpperCase())).size;
+  const uniqueModels = new Set(validRows.filter(r => r.model).map(r => (r.machineName + ':::' + r.model).trim().toUpperCase())).size;
+
+  return `
+    <div class="modal-overlay" id="modal-excel-master-overlay" style="z-index: 10000;">
+      <div class="modal-dialog" style="max-width: 820px; width: 95%; max-height: 90vh; display: flex; flex-direction: column;">
+        
+        <!-- Header -->
+        <div class="modal-header" style="background: linear-gradient(135deg, #064e3b 0%, #022c22 100%); border-bottom: 2px solid #10b981; padding: 14px 20px;">
+          <div class="modal-title" style="display: flex; align-items: center; gap: 10px;">
+            <div style="font-size: 24px; background: rgba(16, 185, 129, 0.2); width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; border: 1px solid #10b981;">
+              📊
+            </div>
+            <div>
+              <div style="font-weight: 800; font-size: 16px; color: #fff; line-height: 1.2;">
+                Machine Name, Brand &amp; Model — Excel Sheet Studio
+              </div>
+              <div style="font-size: 11px; color: #6ee7b7; margin-top: 2px;">
+                Input all Machine Names, Brands, and Models in 1 click via Excel file or Copy-Paste table
+              </div>
+            </div>
+          </div>
+          <button type="button" id="btn-close-storage-modal" class="btn btn-ghost btn-sm" style="color: #fff; font-size: 16px;">✕</button>
+        </div>
+
+        <!-- Body (Scrollable) -->
+        <div class="modal-body" style="padding: 18px 20px; display: flex; flex-direction: column; gap: 14px; overflow-y: auto; flex: 1;">
+          
+          <!-- Quick Action Bar: Download Template & Export Master Data -->
+          <div style="background: rgba(16, 185, 129, 0.08); border: 1px dashed rgba(16, 185, 129, 0.35); border-radius: var(--radius-md); padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <div>
+              <div style="font-size: 12.5px; font-weight: 700; color: #a7f3d0;">
+                📥 Need an Excel Template?
+              </div>
+              <div style="font-size: 11px; color: #94a3b8; margin-top: 1px;">
+                Download pre-formatted spreadsheet with columns: <strong>Machine Name, Brand, Model, Remarks</strong>
+              </div>
+            </div>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+              <button type="button" id="btn-excel-modal-download-template" class="btn btn-sm" style="background: #059669; color: #fff; font-weight: 700; font-size: 11.5px; border: 1px solid #10b981; padding: 6px 14px; display: flex; align-items: center; gap: 6px;">
+                <span>📥</span> Download Excel Template (.xlsx)
+              </button>
+              <button type="button" id="btn-excel-modal-export" class="btn btn-sm" style="background: #0284c7; color: #fff; font-weight: 700; font-size: 11.5px; border: 1px solid #38bdf8; padding: 6px 14px; display: flex; align-items: center; gap: 6px;">
+                <span>📤</span> Export Current Catalog (.xlsx)
+              </button>
+            </div>
+          </div>
+
+          <!-- Input Method Tabs -->
+          <div style="display: flex; gap: 6px; border-bottom: 1px solid var(--border-color); padding-bottom: 2px;">
+            <button type="button" class="btn btn-sm btn-excel-mode-tab ${excelImportActiveTab === 'UPLOAD' ? 'btn-primary' : 'btn-ghost'}" data-tab="UPLOAD" style="font-size: 12px; font-weight: 700; padding: 6px 14px;">
+              📁 Option A: Upload Excel File (.xlsx, .xls, .csv)
+            </button>
+            <button type="button" class="btn btn-sm btn-excel-mode-tab ${excelImportActiveTab === 'PASTE' ? 'btn-primary' : 'btn-ghost'}" data-tab="PASTE" style="font-size: 12px; font-weight: 700; padding: 6px 14px;">
+              📋 Option B: Copy &amp; Paste from Excel Table
+            </button>
+          </div>
+
+          <!-- Mode A: Upload Excel File -->
+          <div id="excel-tab-upload-container" style="${excelImportActiveTab === 'UPLOAD' ? '' : 'display: none;'}">
+            <div id="excel-dropzone" style="border: 2px dashed ${rows.length > 0 ? '#10b981' : 'rgba(56, 189, 248, 0.4)'}; border-radius: var(--radius-md); background: ${rows.length > 0 ? 'rgba(16, 185, 129, 0.05)' : 'rgba(15, 23, 42, 0.6)'}; padding: 26px 20px; text-align: center; cursor: pointer; transition: all 0.2s ease;">
+              <input type="file" id="inp-excel-master-file" accept=".xlsx, .xls, .csv" style="display: none;" />
+              <div style="font-size: 32px; margin-bottom: 8px;">
+                ${rows.length > 0 ? '✅' : '📊'}
+              </div>
+              <div style="font-size: 13.5px; font-weight: 700; color: #fff;">
+                ${excelImportFileName ? `Loaded: <span style="color: #34d399;">${excelImportFileName}</span>` : 'Click to select or Drag &amp; Drop Excel spreadsheet here'}
+              </div>
+              <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">
+                Supports Microsoft Excel (.xlsx, .xls) and CSV (.csv). Headers: Machine Name, Brand, Model, Remarks
+              </div>
+              <button type="button" id="btn-browse-excel-file" class="btn btn-secondary btn-sm" style="margin-top: 12px; font-size: 11.5px; font-weight: 700;">
+                📂 Browse Spreadsheet File...
+              </button>
+            </div>
+          </div>
+
+          <!-- Mode B: Paste from Excel -->
+          <div id="excel-tab-paste-container" style="${excelImportActiveTab === 'PASTE' ? '' : 'display: none;'}">
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              <div style="font-size: 11.5px; color: #cbd5e1; font-weight: 600;">
+                Select and copy rows from your Excel sheet (including or excluding headers), then paste below:
+              </div>
+              <textarea 
+                id="txt-excel-paste-input" 
+                class="form-control" 
+                rows="6" 
+                placeholder="Machine Name	Brand	Model	Remarks&#10;Plane Machine	JUKI	DDL-8700	Lockstitch 1-Needle&#10;Plane Machine	BROTHER	S-7200C	Direct Drive&#10;Overlock Machine	PEGASUS	M952-52	4-Thread"
+                style="font-family: monospace; font-size: 11.5px; line-height: 1.4; padding: 10px;"
+              ></textarea>
+              <div style="display: flex; justify-content: flex-end;">
+                <button type="button" id="btn-parse-pasted-excel" class="btn btn-primary btn-sm" style="font-weight: 700; font-size: 12px; padding: 6px 16px;">
+                  🔍 Parse &amp; Preview Pasted Data
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Preview & Validation Area (Shows when data is loaded) -->
+          ${rows.length > 0 ? `
+            <div style="border: 1px solid var(--border-color); border-radius: var(--radius-md); background: rgba(0,0,0,0.25); padding: 12px; display: flex; flex-direction: column; gap: 10px;">
+              
+              <!-- Metrics Cards -->
+              <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                  <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid #10b981; font-weight: 700; font-size: 11px; padding: 4px 10px;">
+                    ✅ ${validRows.length} Valid Rows
+                  </span>
+                  <span class="badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid #38bdf8; font-weight: 700; font-size: 11px; padding: 4px 10px;">
+                    🧵 ${uniqueMachines} Unique Machine Types
+                  </span>
+                  <span class="badge" style="background: rgba(251, 191, 36, 0.15); color: #fbbf24; border: 1px solid #fbbf24; font-weight: 700; font-size: 11px; padding: 4px 10px;">
+                    🏷️ ${uniqueBrands} Unique Brands
+                  </span>
+                  <span class="badge" style="background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid #a855f7; font-weight: 700; font-size: 11px; padding: 4px 10px;">
+                    🔢 ${uniqueModels} Unique Models
+                  </span>
+                </div>
+                <button type="button" id="btn-clear-excel-preview" class="btn btn-ghost btn-sm" style="color: #f87171; font-size: 11px; font-weight: 700;">
+                  ✕ Clear Table
+                </button>
+              </div>
+
+              <!-- Preview Table -->
+              <div style="max-height: 220px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: var(--radius-sm);">
+                <table class="table" style="width: 100%; font-size: 11.5px; border-collapse: collapse; margin: 0;">
+                  <thead style="background: var(--bg-surface); position: sticky; top: 0; z-index: 2;">
+                    <tr>
+                      <th style="padding: 6px 10px; width: 45px; text-align: center;">#</th>
+                      <th style="padding: 6px 10px;">Machine Name</th>
+                      <th style="padding: 6px 10px;">Brand</th>
+                      <th style="padding: 6px 10px;">Model</th>
+                      <th style="padding: 6px 10px;">Remarks</th>
+                      <th style="padding: 6px 10px; text-align: center; width: 75px;">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${rows.slice(0, 60).map((r, i) => {
+                      const isValid = Boolean(r.machineName && r.machineName.trim());
+                      return `
+                        <tr style="background: ${i % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'transparent'};">
+                          <td style="padding: 5px 10px; text-align: center; color: var(--text-muted);">${i + 1}</td>
+                          <td style="padding: 5px 10px; font-weight: 700; color: #fff;">${r.machineName || '<span style="color:#f87171;">(Missing)</span>'}</td>
+                          <td style="padding: 5px 10px; color: #34d399; font-weight: 600;">${r.brand || '-'}</td>
+                          <td style="padding: 5px 10px; color: #fbbf24; font-weight: 600;">${r.model || '-'}</td>
+                          <td style="padding: 5px 10px; color: var(--text-muted); font-size: 10.5px;">${r.remarks || '-'}</td>
+                          <td style="padding: 5px 10px; text-align: center;">
+                            ${isValid ? `<span style="color: #34d399; font-weight: 700; font-size: 10px; background: rgba(52,211,153,0.1); padding: 2px 6px; border-radius: 3px;">VALID</span>` : `<span style="color: #f87171; font-weight: 700; font-size: 10px; background: rgba(239,68,68,0.1); padding: 2px 6px; border-radius: 3px;">ERROR</span>`}
+                          </td>
+                        </tr>
+                      `;
+                    }).join('')}
+                    ${rows.length > 60 ? `
+                      <tr>
+                        <td colspan="6" style="text-align: center; padding: 8px; color: var(--text-muted); font-size: 11px;">
+                          ... and ${rows.length - 60} more rows ready for import
+                        </td>
+                      </tr>
+                    ` : ''}
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Auto-Creation & Formatting Options -->
+              <div style="display: flex; gap: 16px; flex-wrap: wrap; background: rgba(255,255,255,0.02); padding: 8px 12px; border-radius: var(--radius-sm); font-size: 11.5px;">
+                <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; color: #e2e8f0; margin: 0;">
+                  <input type="checkbox" id="chk-excel-auto-brands" checked style="cursor: pointer;" />
+                  <span>Auto-create missing Brands</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; color: #e2e8f0; margin: 0;">
+                  <input type="checkbox" id="chk-excel-auto-machines" checked style="cursor: pointer;" />
+                  <span>Auto-create missing Machine Names</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; color: #e2e8f0; margin: 0;">
+                  <input type="checkbox" id="chk-excel-clean-names" checked style="cursor: pointer;" />
+                  <span>Format &amp; Standardize Names</span>
+                </label>
+              </div>
+
+            </div>
+          ` : `
+            <div style="background: rgba(0,0,0,0.15); border: 1px dashed var(--border-color); border-radius: var(--radius-md); padding: 24px; text-align: center; color: var(--text-muted);">
+              <div style="font-size: 22px; margin-bottom: 6px;">📋</div>
+              <div style="font-size: 12.5px; font-weight: 700; color: #cbd5e1;">No Spreadsheet Data Loaded Yet</div>
+              <div style="font-size: 11px; margin-top: 3px;">
+                Upload an Excel file or paste rows above to preview Machine Names, Brands, and Models before importing.
+              </div>
+            </div>
+          `}
+
+        </div>
+
+        <!-- Footer -->
+        <div class="modal-footer" style="padding: 12px 20px; border-top: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; background: var(--bg-surface);">
+          <div style="font-size: 11px; color: var(--text-muted);">
+            ${validRows.length > 0 ? `Ready to import <strong>${validRows.length}</strong> items into Cloud &amp; Local Database.` : 'Upload or paste rows to begin.'}
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <button type="button" id="btn-cancel-storage-modal" class="btn btn-secondary btn-sm" style="font-weight: 700;">
+              Close
+            </button>
+            <button 
+              type="button" 
+              id="btn-excel-modal-execute-import" 
+              class="btn btn-primary btn-sm" 
+              style="font-weight: 800; background: linear-gradient(135deg, #059669 0%, #047857 100%); border-color: #10b981; color: #fff; padding: 7px 20px; font-size: 12.5px; box-shadow: 0 2px 10px rgba(5, 150, 105, 0.4);"
+              ${validRows.length === 0 ? 'disabled' : ''}
+            >
+              📥 Import to Database (${validRows.length} Records)
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  `;
+}
+
 /**
  * Modals Renderer (Rendered into isolated #storage-modal-layer)
  */
 function renderStorageModal() {
   if (!activeModalState) return '';
+
+  // 00. EXCEL SHEET INPUT / EXPORT STUDIO MODAL
+  if (activeModalState.type === 'EXCEL_IMPORT_EXPORT') {
+    return renderExcelImportExportModal();
+  }
 
   // 0. MANAGE BRANDS MODAL
   if (activeModalState.type === 'MANAGE_BRANDS') {
@@ -1997,6 +2236,32 @@ export function initStorageEvents() {
   const container = document.getElementById('main-view-container');
   if (!container) return;
 
+  // 0. Top Header Excel Sheet Input/Export Studio
+  const btnTopExcel = container.querySelector('#btn-open-excel-master-modal-top');
+  if (btnTopExcel) {
+    btnTopExcel.addEventListener('click', (e) => {
+      e.preventDefault();
+      activeModalState = { type: 'EXCEL_IMPORT_EXPORT', data: {} };
+      updateModalLayer();
+    });
+  }
+
+  // 0B. Top Header Export Catalog to Excel
+  const btnTopExport = container.querySelector('#btn-storage-export-excel-top');
+  if (btnTopExport) {
+    btnTopExport.addEventListener('click', (e) => {
+      e.preventDefault();
+      try {
+        const res = smartStorageService.exportMachinesToExcel();
+        if (typeof notificationService !== 'undefined' && notificationService.success) {
+          notificationService.success('Export Complete', `Exported ${res.totalExported} rows to ${res.fileName}.`);
+        }
+      } catch (err) {
+        alert('Export error: ' + err.message);
+      }
+    });
+  }
+
   // 1. Top Header Step 1: Input Machine Names
   const btnTopBulkMn = container.querySelector('#btn-open-bulk-import-machine-names-top');
   if (btnTopBulkMn) {
@@ -2321,6 +2586,16 @@ function rebindContentEvents() {
     });
   }
 
+  // Mid Toolbar Excel Sheet Input/Export Button
+  const btnOpenExcelMid = container.querySelector('#btn-open-excel-master-modal-mid');
+  if (btnOpenExcelMid) {
+    btnOpenExcelMid.addEventListener('click', (e) => {
+      e.preventDefault();
+      activeModalState = { type: 'EXCEL_IMPORT_EXPORT', data: {} };
+      updateModalLayer();
+    });
+  }
+
   // Bulk Import Machine Names Button
   const btnOpenBulkMn = container.querySelector('#btn-open-bulk-import-machine-names');
   if (btnOpenBulkMn) {
@@ -2536,6 +2811,9 @@ function initModalInteractions() {
   const closeModal = () => {
     activeModalState = null;
     qualityGateData = null;
+    excelImportParsedRows = [];
+    excelImportFileName = '';
+    excelImportActiveTab = 'UPLOAD';
     updateModalLayer();
   };
 
@@ -2552,6 +2830,299 @@ function initModalInteractions() {
     modalOverlay.addEventListener('click', (e) => {
       if (e.target === modalOverlay) closeModal();
     });
+  }
+
+  // 00. Excel Sheet Input / Export Studio Handlers
+  if (activeModalState.type === 'EXCEL_IMPORT_EXPORT') {
+    // 1. Download Template
+    const btnDlTemplate = modalLayer.querySelector('#btn-excel-modal-download-template');
+    if (btnDlTemplate) {
+      btnDlTemplate.addEventListener('click', (e) => {
+        e.preventDefault();
+        try {
+          smartStorageService.downloadMachineImportTemplate();
+          if (typeof notificationService !== 'undefined' && notificationService.success) {
+            notificationService.success('Template Ready', 'Downloaded Machine_Brand_Model_Excel_Import_Template.xlsx');
+          }
+        } catch (err) {
+          alert('Template download failed: ' + err.message);
+        }
+      });
+    }
+
+    // 2. Export Master Data
+    const btnExpMaster = modalLayer.querySelector('#btn-excel-modal-export');
+    if (btnExpMaster) {
+      btnExpMaster.addEventListener('click', (e) => {
+        e.preventDefault();
+        try {
+          const res = smartStorageService.exportMachinesToExcel();
+          if (typeof notificationService !== 'undefined' && notificationService.success) {
+            notificationService.success('Export Complete', `Exported ${res.totalExported} rows to ${res.fileName}.`);
+          }
+        } catch (err) {
+          alert('Export failed: ' + err.message);
+        }
+      });
+    }
+
+    // 3. Tab switching between UPLOAD and PASTE
+    modalLayer.querySelectorAll('.btn-excel-mode-tab').forEach(tabBtn => {
+      tabBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const tab = tabBtn.dataset.tab;
+        if (tab && tab !== excelImportActiveTab) {
+          excelImportActiveTab = tab;
+          updateModalLayer();
+        }
+      });
+    });
+
+    // Helper: Parse rows from raw objects or 2D array
+    const processRawRows = (rawRows, sourceName) => {
+      if (!Array.isArray(rawRows) || rawRows.length === 0) {
+        alert('No data rows found in spreadsheet.');
+        return;
+      }
+
+      const parsed = [];
+      rawRows.forEach((row) => {
+        if (!row || typeof row !== 'object') return;
+
+        let machineName = '';
+        let brand = '';
+        let model = '';
+        let remarks = '';
+
+        for (const [k, v] of Object.entries(row)) {
+          const cleanK = String(k).trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+          const cleanV = String(v ?? '').trim();
+
+          if (cleanK === 'machinename' || cleanK === 'machine' || cleanK === 'machinetype' || cleanK === 'name') {
+            machineName = cleanV;
+          } else if (cleanK === 'brand' || cleanK === 'machinerybrand' || cleanK === 'make') {
+            brand = cleanV;
+          } else if (cleanK === 'model' || cleanK === 'modelno' || cleanK === 'modelnumber' || cleanK === 'specification') {
+            model = cleanV;
+          } else if (cleanK === 'remarks' || cleanK === 'remark' || cleanK === 'description' || cleanK === 'note') {
+            remarks = cleanV;
+          }
+        }
+
+        if (Array.isArray(row)) {
+          machineName = String(row[1] || row[0] || '').trim();
+          brand = String(row[2] || '').trim();
+          model = String(row[3] || '').trim();
+          remarks = String(row[4] || '').trim();
+        }
+
+        if (!machineName && !brand && !model) return;
+
+        const mLower = machineName.toLowerCase();
+        if (mLower === 'machinename' || mLower === 'machine name' || mLower === 'machine') return;
+
+        parsed.push({ machineName, brand, model, remarks });
+      });
+
+      if (parsed.length === 0) {
+        alert('Could not find valid Machine rows. Please ensure your Excel file has headers: "Machine Name", "Brand", "Model".');
+        return;
+      }
+
+      excelImportParsedRows = parsed;
+      excelImportFileName = sourceName || 'Spreadsheet Data';
+      updateModalLayer();
+    };
+
+    // 4. File input & Dropzone
+    const fileInp = modalLayer.querySelector('#inp-excel-master-file');
+    const dropzone = modalLayer.querySelector('#excel-dropzone');
+    const btnBrowse = modalLayer.querySelector('#btn-browse-excel-file');
+
+    if (btnBrowse && fileInp) {
+      btnBrowse.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        fileInp.click();
+      });
+    }
+
+    if (dropzone && fileInp) {
+      dropzone.addEventListener('click', () => fileInp.click());
+
+      dropzone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropzone.style.borderColor = '#10b981';
+        dropzone.style.background = 'rgba(16, 185, 129, 0.15)';
+      });
+
+      dropzone.addEventListener('dragleave', () => {
+        dropzone.style.borderColor = excelImportParsedRows.length > 0 ? '#10b981' : 'rgba(56, 189, 248, 0.4)';
+        dropzone.style.background = excelImportParsedRows.length > 0 ? 'rgba(16, 185, 129, 0.05)' : 'rgba(15, 23, 42, 0.6)';
+      });
+
+      dropzone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        const files = e.dataTransfer?.files;
+        if (files && files.length > 0) {
+          handleFile(files[0]);
+        }
+      });
+
+      fileInp.addEventListener('change', (e) => {
+        const file = e.target.files?.[0];
+        if (file) handleFile(file);
+      });
+
+      const handleFile = (file) => {
+        if (typeof XLSX === 'undefined') {
+          alert('Excel reader library (SheetJS) is loading. Please try again in a moment.');
+          return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+          try {
+            const data = new Uint8Array(evt.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+            const firstSheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[firstSheetName];
+            const jsonRows = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
+            processRawRows(jsonRows, file.name);
+          } catch (err) {
+            console.error('Excel parse error:', err);
+            alert('Failed to read Excel file: ' + err.message);
+          }
+        };
+        reader.readAsArrayBuffer(file);
+      };
+    }
+
+    // 5. Parse Pasted Data
+    const btnParsePaste = modalLayer.querySelector('#btn-parse-pasted-excel');
+    if (btnParsePaste) {
+      btnParsePaste.addEventListener('click', (e) => {
+        e.preventDefault();
+        const txtArea = modalLayer.querySelector('#txt-excel-paste-input');
+        const text = (txtArea?.value || '').trim();
+        if (!text) {
+          alert('Please paste some Excel rows into the text area first.');
+          return;
+        }
+
+        const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+        if (lines.length === 0) return;
+
+        const rows = [];
+        let headerMachineIdx = -1;
+        let headerBrandIdx = -1;
+        let headerModelIdx = -1;
+        let headerRemarksIdx = -1;
+
+        lines.forEach((line, lineIdx) => {
+          const delimiter = line.includes('\t') ? '\t' : (line.includes(',') ? ',' : '\t');
+          const cols = line.split(delimiter).map(c => c.trim().replace(/^["']|["']$/g, ''));
+
+          if (lineIdx === 0) {
+            cols.forEach((col, cIdx) => {
+              const cNorm = col.toLowerCase().replace(/[^a-z0-9]/g, '');
+              if (cNorm === 'machinename' || cNorm === 'machine' || cNorm === 'name') headerMachineIdx = cIdx;
+              else if (cNorm === 'brand' || cNorm === 'make') headerBrandIdx = cIdx;
+              else if (cNorm === 'model' || cNorm === 'modelno' || cNorm === 'modelnumber') headerModelIdx = cIdx;
+              else if (cNorm === 'remarks' || cNorm === 'remark' || cNorm === 'description') headerRemarksIdx = cIdx;
+            });
+
+            if (headerMachineIdx !== -1 || headerBrandIdx !== -1 || headerModelIdx !== -1) {
+              return;
+            }
+          }
+
+          let machineName = '';
+          let brand = '';
+          let model = '';
+          let remarks = '';
+
+          if (headerMachineIdx !== -1) {
+            machineName = cols[headerMachineIdx] || '';
+            brand = headerBrandIdx !== -1 ? (cols[headerBrandIdx] || '') : (cols[1] || '');
+            model = headerModelIdx !== -1 ? (cols[headerModelIdx] || '') : (cols[2] || '');
+            remarks = headerRemarksIdx !== -1 ? (cols[headerRemarksIdx] || '') : (cols[3] || '');
+          } else {
+            const isFirstColNumber = /^\d+$/.test(cols[0]);
+            if (isFirstColNumber && cols.length >= 4) {
+              machineName = cols[1] || '';
+              brand = cols[2] || '';
+              model = cols[3] || '';
+              remarks = cols[4] || '';
+            } else {
+              machineName = cols[0] || '';
+              brand = cols[1] || '';
+              model = cols[2] || '';
+              remarks = cols[3] || '';
+            }
+          }
+
+          if (machineName || brand || model) {
+            rows.push({ machineName, brand, model, remarks });
+          }
+        });
+
+        processRawRows(rows, `Pasted Clipboard (${rows.length} rows)`);
+      });
+    }
+
+    // 6. Clear Table Preview
+    const btnClearPreview = modalLayer.querySelector('#btn-clear-excel-preview');
+    if (btnClearPreview) {
+      btnClearPreview.addEventListener('click', (e) => {
+        e.preventDefault();
+        excelImportParsedRows = [];
+        excelImportFileName = '';
+        updateModalLayer();
+      });
+    }
+
+    // 7. Execute Bulk Import
+    const btnExecuteImport = modalLayer.querySelector('#btn-excel-modal-execute-import');
+    if (btnExecuteImport) {
+      btnExecuteImport.addEventListener('click', async (e) => {
+        e.preventDefault();
+        if (excelImportParsedRows.length === 0) return;
+
+        const autoBrands = modalLayer.querySelector('#chk-excel-auto-brands')?.checked !== false;
+        const autoMachines = modalLayer.querySelector('#chk-excel-auto-machines')?.checked !== false;
+        const cleanNames = modalLayer.querySelector('#chk-excel-clean-names')?.checked !== false;
+
+        const origHtml = btnExecuteImport.innerHTML;
+        btnExecuteImport.disabled = true;
+        btnExecuteImport.innerHTML = '<span>⏳</span> Saving to Database...';
+
+        try {
+          const result = await smartStorageService.bulkImportMachinesFromExcel(excelImportParsedRows, {
+            autoCreateBrands: autoBrands,
+            autoCreateMachines: autoMachines,
+            cleanNames
+          });
+
+          if (typeof notificationService !== 'undefined' && notificationService.success) {
+            notificationService.success(
+              'Import Successful!',
+              `Imported ${result.inserted} model records across ${result.uniqueMachines} machines and ${result.uniqueBrands} brands.`
+            );
+          } else {
+            alert(`✅ Import Successful!\n\nImported: ${result.inserted} model specifications\nMachines: ${result.uniqueMachines}\nBrands: ${result.uniqueBrands}`);
+          }
+
+          closeModal();
+          refreshStorageTabContent();
+        } catch (err) {
+          console.error('Excel bulk import error:', err);
+          alert('Import failed: ' + err.message);
+          btnExecuteImport.disabled = false;
+          btnExecuteImport.innerHTML = origHtml;
+        }
+      });
+    }
   }
 
   // Manage Brands Modal Handlers
