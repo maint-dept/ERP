@@ -224,7 +224,90 @@ class SmartStorageService {
     return clean;
   }
 
+  /**
+   * Infer canonical machine type from model number prefix
+   * @param {string} modelName
+   * @returns {string|null}
+   */
+  inferMachineTypeFromModel(modelName) {
+    if (!modelName) return null;
+    const u = String(modelName).trim().toUpperCase();
+    if (/^(MO|M952|M852|M752|PEGASUS\s*M)/i.test(u)) return 'Over Lock Machine';
+    if (/^(LK|LK-1900|LK1900|BARTACK)/i.test(u)) return 'Bar tak Machine';
+    if (/^(LBH|LBH-1790|LBH1790|HEM-?HOLE)/i.test(u)) return 'Button Hole Machine';
+    if (/^(LH|LH-35|LH35|TWIN\s*NEEDLE|2-?NEEDLE)/i.test(u)) return 'Double Needle Machine';
+    if (/^(DA|MS|DA-928|MS-1190|MS-1261|FEED\s*OF\s*THE\s*ARM)/i.test(u)) return 'Feed of The Arm Machine';
+    if (/^(MF|VAX|FLAT\s*LOCK|W500|W600|MF-79)/i.test(u)) return 'Flat Lock Machine';
+    if (/^(DFB|WFB|KANSAI|MULTI\s*NEEDLE)/i.test(u)) return 'Multi Needle Chain Stitch Machine';
+    if (/^(ZJ|JK-8558|CHAIN\s*STITCH)/i.test(u)) return 'Chain Stitch Machine';
+    if (/^(CM|NS|BLIND\s*STITCH)/i.test(u)) return 'Ham  Blind Stitch Machine';
+    if (/^(DLM|VERTICAL)/i.test(u)) return 'Vertical Machine';
+    if (/^(JT|PATTERN)/i.test(u)) return 'Pattern Machine';
+    if (/^(SG|TOP\s*STITCH)/i.test(u)) return 'Top Stitch Machine';
+    if (/^(KZ|BOTTOM\s*HAM)/i.test(u)) return 'Bottom Hamming Lock Stitch Machine';
+    if (/^(WX|IH|BUTTON\s*STITCH)/i.test(u)) return 'Button Stitch';
+    if (/^(DDL|1-?NEEDLE\s*PLAIN|PLAIN\s*MACHINE|LOCK\s*STITCH)/i.test(u)) return 'Plane Machine';
+    return null;
+  }
+
+  /**
+   * Automatically reassign models that were mistakenly allocated to Plane Machine
+   * to their correct canonical machine categories based on model taxonomy.
+   */
+  fixMisallocatedModels() {
+    let smTable = storage.getTable(TABLE_NAMES.STORAGE_MASTER) || [];
+    let mdlTable = storage.getTable(TABLE_NAMES.MODELS) || [];
+    const mnTable = storage.getTable(TABLE_NAMES.MACHINE_NAMES) || [];
+    let modified = false;
+
+    const getMnId = (targetName) => {
+      const mn = mnTable.find(m => m.name && m.name.toLowerCase() === targetName.toLowerCase());
+      return mn ? mn.id : '';
+    };
+
+    // 1. Correct STORAGE_MASTER models
+    smTable.forEach(item => {
+      if (item && item.category === 'MACHINE') {
+        const curMName = (item.machineName || '').trim().toLowerCase();
+        if (curMName === 'plane machine' || curMName === 'plain machine' || !curMName) {
+          const properMachine = this.inferMachineTypeFromModel(item.model);
+          if (properMachine && properMachine.toLowerCase() !== 'plane machine') {
+            item.machineName = properMachine;
+            item.updatedAt = new Date().toISOString();
+            modified = true;
+          }
+        }
+      }
+    });
+
+    // 2. Correct MODELS table models
+    const planeMnId = getMnId('Plane Machine');
+    mdlTable.forEach(mdl => {
+      if (mdl && mdl.name) {
+        const curMName = (mdl.machineName || '').trim();
+        const curMId = mdl.machineNameId || '';
+        const isPlane = (curMName && curMName.toLowerCase().includes('plane')) || (planeMnId && curMId === planeMnId);
+        if (isPlane || !curMName) {
+          const properMachine = this.inferMachineTypeFromModel(mdl.name);
+          if (properMachine && properMachine.toLowerCase() !== 'plane machine') {
+            mdl.machineName = properMachine;
+            const targetId = getMnId(properMachine);
+            if (targetId) mdl.machineNameId = targetId;
+            mdl.updatedAt = new Date().toISOString();
+            modified = true;
+          }
+        }
+      }
+    });
+
+    if (modified) {
+      storage.setTable(TABLE_NAMES.STORAGE_MASTER, smTable);
+      storage.setTable(TABLE_NAMES.MODELS, mdlTable);
+    }
+  }
+
   getMachineModelsHierarchy() {
+    this.fixMisallocatedModels();
     const mnTable = storage.getTable(TABLE_NAMES.MACHINE_NAMES) || [];
     const smTable = storage.getTable(TABLE_NAMES.STORAGE_MASTER) || [];
     const mdlTable = storage.getTable(TABLE_NAMES.MODELS) || [];
@@ -285,7 +368,7 @@ class SmartStorageService {
       }
     });
 
-    // 3. ALSO gather models from core MODELS table (linked to machineName or machineNameId)
+    // 3. Fallback: gather models from core MODELS table ONLY if a machine has no models in STORAGE_MASTER
     mdlTable.forEach(mdl => {
       if (!mdl || !mdl.name) return;
       let rawMName = (mdl.machineName || '').trim();
@@ -296,6 +379,12 @@ class SmartStorageService {
       if (!rawMName) return;
       const mName = this.resolveCanonicalMachineName(rawMName);
       const lower = mName.toLowerCase();
+
+      // If this machine already has models configured in STORAGE_MASTER, STORAGE_MASTER is authoritative!
+      if (map.has(lower) && map.get(lower).models.length > 0) {
+        return;
+      }
+
       if (!map.has(lower)) {
         const order = mnOrderMap.has(lower) ? mnOrderMap.get(lower) : (1000 + map.size);
         map.set(lower, {
@@ -2387,17 +2476,11 @@ class SmartStorageService {
     }
 
     const overwriteExisting = options.overwriteExisting !== false;
+    const replaceExistingForImportedMachines = options.replaceExistingForImportedMachines !== false;
     let mnList = storage.getTable(TABLE_NAMES.MACHINE_NAMES) || [];
     let brdList = storage.getTable(TABLE_NAMES.BRANDS) || [];
     let mdlList = storage.getTable(TABLE_NAMES.MODELS) || [];
     let smList = storage.getTable(TABLE_NAMES.STORAGE_MASTER) || [];
-
-    const existingMachines = this.getStorageItems('MACHINE');
-    const existingModelNormMap = new Map();
-    existingMachines.forEach(m => {
-      const norm = this.normalizePureAlphanumeric(m.model);
-      if (norm) existingModelNormMap.set(norm, m);
-    });
 
     const knownBrands = [
       'JUKI', 'BROTHER', 'PEGASUS', 'SIRUBA', 'YAMATO', 'KANSAI', 'KANSAI SPECIAL', 
@@ -2427,36 +2510,116 @@ class SmartStorageService {
       return '';
     };
 
+    // 1. Expand rows & carry forward machine names across merged/blank rows
+    const expandedRows = [];
+    let lastCarriedMachineName = '';
+
     for (let idx = 0; idx < dataRows.length; idx++) {
       const row = dataRows[idx];
+      let machineName = getCell(row, ['Machine Name', 'Machine', 'Machine Type', 'Machinery Name', 'Type', 'Category']);
+      let brand = getCell(row, ['Brand', 'Brand Name', 'Make', 'Manufacturer', 'Company']);
+      let rawModel = getCell(row, ['Model', 'Model Number', 'Model No', 'Model #', 'Spec', 'Specification']);
+      let remarks = getCell(row, ['Remarks', 'Remark', 'Note', 'Description']);
+
+      // Fallbacks if columns lack standard headers
+      if (!machineName && !rawModel) {
+        const vals = Object.values(row).map(v => String(v || '').trim()).filter(Boolean);
+        if (vals.length >= 3) {
+          machineName = vals[0];
+          brand = vals[1];
+          rawModel = vals[2];
+        } else if (vals.length === 2) {
+          machineName = vals[0];
+          rawModel = vals[1];
+        }
+      }
+
+      machineName = String(machineName || '').trim();
+      brand = String(brand || 'JUKI').trim().toUpperCase();
+      rawModel = String(rawModel || '').trim();
+
+      if (machineName) {
+        lastCarriedMachineName = machineName;
+      } else if (lastCarriedMachineName && rawModel) {
+        machineName = lastCarriedMachineName;
+      }
+
+      // If still missing machineName, infer from model prefix
+      if (!machineName && rawModel) {
+        const inferred = this.inferMachineTypeFromModel(rawModel);
+        if (inferred) machineName = inferred;
+      }
+
+      if (!machineName && !rawModel) continue; // Skip truly blank rows
+
+      // Split if multiple models exist in one cell (e.g. comma, newline, semicolon)
+      let modelList = [rawModel];
+      if (/[\r\n;]/.test(rawModel)) {
+        modelList = rawModel.split(/[\r\n;]+/).map(s => s.trim()).filter(Boolean);
+      } else if (rawModel.includes(',') && !/\(.*\)/.test(rawModel)) {
+        const parts = rawModel.split(',').map(s => s.trim()).filter(Boolean);
+        if (parts.length > 1 && parts.every(p => p.length >= 2)) {
+          modelList = parts;
+        }
+      }
+
+      if (modelList.length === 0) modelList = [''];
+
+      for (const singleModel of modelList) {
+        expandedRows.push({
+          machineName,
+          brand,
+          model: singleModel,
+          remarks,
+          origIdx: idx + 1
+        });
+      }
+    }
+
+    // 2. Identify all canonical machine names in this import batch
+    const importedCanonicalMachines = new Set();
+    expandedRows.forEach(r => {
+      if (r.machineName) {
+        const cleanM = this.resolveCanonicalMachineName(r.machineName) || r.machineName;
+        importedCanonicalMachines.add(cleanM.toLowerCase());
+      }
+    });
+
+    // 3. If replaceExistingForImportedMachines is enabled, purge existing models for these machines
+    if (replaceExistingForImportedMachines && importedCanonicalMachines.size > 0) {
+      smList = smList.filter(item => {
+        if (!item || item.category !== 'MACHINE') return true;
+        const curMName = (item.machineName || '').trim().toLowerCase();
+        return !importedCanonicalMachines.has(curMName);
+      });
+      storage.setTable(TABLE_NAMES.STORAGE_MASTER, smList);
+
+      // Also clean matching models from MODELS table
+      mdlList = mdlList.filter(item => {
+        if (!item) return false;
+        const curMName = (item.machineName || '').trim().toLowerCase();
+        return !importedCanonicalMachines.has(curMName);
+      });
+      storage.setTable(TABLE_NAMES.MODELS, mdlList);
+    }
+
+    // Build fresh model norm map per machine
+    const existingModelPerMachineMap = new Map();
+    smList.filter(m => m && m.category === 'MACHINE').forEach(m => {
+      const key = `${(m.machineName || '').trim().toLowerCase()}:::${this.normalizePureAlphanumeric(m.model)}`;
+      existingModelPerMachineMap.set(key, m);
+    });
+
+    const affectedMachineNames = new Set();
+    const affectedBrands = new Set();
+
+    // 4. Process each expanded row
+    for (const item of expandedRows) {
       try {
-        let machineName = getCell(row, ['Machine Name', 'Machine', 'Machine Type', 'Machinery Name', 'Type', 'Category']);
-        let brand = getCell(row, ['Brand', 'Brand Name', 'Make', 'Manufacturer', 'Company']);
-        let model = getCell(row, ['Model', 'Model Number', 'Model No', 'Model #', 'Spec', 'Specification']);
-        let remarks = getCell(row, ['Remarks', 'Remark', 'Note', 'Description']);
-
-        // Fallbacks: if only 2 or 3 columns exist without standard headers
-        if (!machineName && !model) {
-          const vals = Object.values(row).map(v => String(v || '').trim()).filter(Boolean);
-          if (vals.length >= 3) {
-            machineName = vals[0];
-            brand = vals[1];
-            model = vals[2];
-          } else if (vals.length === 2) {
-            machineName = vals[0];
-            model = vals[1];
-          }
-        }
-
-        machineName = String(machineName || '').trim();
-        brand = String(brand || 'JUKI').trim().toUpperCase();
-        model = String(model || '').trim();
-
-        if (!machineName && !model) continue; // Skip completely blank line
-
-        if (!machineName && model) {
-          machineName = 'Plane Machine'; // Safe fallback
-        }
+        let machineName = item.machineName;
+        let brand = item.brand;
+        let model = item.model;
+        let remarks = item.remarks;
 
         // Auto-extract brand from parentheses if model has e.g. "TYPICAL (GC-6720)"
         if (/\(([^)]+)\)/.test(model)) {
@@ -2487,9 +2650,12 @@ class SmartStorageService {
           model = modelCheck.suggested;
         }
 
-        // 1. Ensure Machine Name is in MACHINE_NAMES table
+        if (cleanMachine) affectedMachineNames.add(cleanMachine);
+        if (brand) affectedBrands.add(brand);
+
+        // Ensure Machine Name is in MACHINE_NAMES table
         let mnItem = mnList.find(m => m && m.name && m.name.toLowerCase() === cleanMachine.toLowerCase());
-        if (!mnItem) {
+        if (!mnItem && cleanMachine) {
           const maxOrder = mnList.reduce((max, m) => Math.max(max, Number(m.sortOrder || 0)), 0);
           mnItem = storage.insert(TABLE_NAMES.MACHINE_NAMES, {
             id: 'mn-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4),
@@ -2503,9 +2669,9 @@ class SmartStorageService {
           addedMachinesCount++;
         }
 
-        // 2. Ensure Brand is in BRANDS table
+        // Ensure Brand is in BRANDS table
         let brdItem = brdList.find(b => b && b.name && b.name.toLowerCase() === brand.toLowerCase());
-        if (!brdItem) {
+        if (!brdItem && brand) {
           brdItem = storage.insert(TABLE_NAMES.BRANDS, {
             id: 'brd-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4),
             name: brand,
@@ -2517,12 +2683,11 @@ class SmartStorageService {
           addedBrandsCount++;
         }
 
-        // If row has no model (e.g. user just imported machine names list), we're done with this row
         if (!model) continue;
 
-        // 3. Process Model in STORAGE_MASTER and MODELS
-        const norm = this.normalizePureAlphanumeric(model);
-        const existingSmItem = existingModelNormMap.get(norm);
+        // Process Model in STORAGE_MASTER and MODELS
+        const normKey = `${cleanMachine.toLowerCase()}:::${this.normalizePureAlphanumeric(model)}`;
+        const existingSmItem = existingModelPerMachineMap.get(normKey);
 
         if (existingSmItem) {
           if (overwriteExisting) {
@@ -2551,11 +2716,11 @@ class SmartStorageService {
             updatedAt: new Date().toISOString()
           });
           smList = storage.getTable(TABLE_NAMES.STORAGE_MASTER) || [];
-          existingModelNormMap.set(norm, newSmItem);
+          existingModelPerMachineMap.set(normKey, newSmItem);
           addedModelsCount++;
         }
 
-        // 4. Also synchronize into MODELS table for Inventory/Reports
+        // Synchronize into MODELS table
         let mdlItem = mdlList.find(m => 
           m && m.name && m.name.toLowerCase() === model.toLowerCase() &&
           (m.machineNameId === mnItem?.id || (m.machineName && m.machineName.toLowerCase() === cleanMachine.toLowerCase()))
@@ -2588,7 +2753,7 @@ class SmartStorageService {
           mdlList = storage.getTable(TABLE_NAMES.MODELS) || [];
         }
       } catch (rowErr) {
-        errors.push(`Row ${idx + 1}: ${rowErr.message}`);
+        errors.push(`Row ${item.origIdx}: ${rowErr.message}`);
       }
     }
 
@@ -2624,6 +2789,9 @@ class SmartStorageService {
 
     return {
       totalRows: dataRows.length,
+      inserted: addedModelsCount + updatedModelsCount,
+      uniqueMachines: affectedMachineNames.size,
+      uniqueBrands: affectedBrands.size,
       addedMachines: addedMachinesCount,
       addedBrands: addedBrandsCount,
       addedModels: addedModelsCount,
@@ -2766,7 +2934,9 @@ class SmartStorageService {
   }
 
   _broadcastStorageChange() {
-    window.dispatchEvent(new CustomEvent('erp:storage-updated'));
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('erp:storage-updated'));
+    }
     try {
       state.emit('storage:updated');
     } catch (_) {}

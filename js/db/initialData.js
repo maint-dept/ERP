@@ -1778,7 +1778,7 @@ export const INITIAL_DATA = {
   },
   {
     "name": "LH-3588A",
-    "machineNameId": "mn-1788869247046-drnu",
+    "machineNameId": "mn-1788869247076-glop",
     "brandId": "bra-1788870296743-965",
     "description": "Auto-created from Excel import",
     "status": "ACTIVE",
@@ -1818,7 +1818,7 @@ export const INITIAL_DATA = {
   },
   {
     "name": "MO-6716S",
-    "machineNameId": "mn-1788869247046-drnu",
+    "machineNameId": "mn-1788869247118-qyw5",
     "brandId": "bra-1788870296743-965",
     "description": "Auto-created from Excel import",
     "status": "ACTIVE",
@@ -1848,7 +1848,7 @@ export const INITIAL_DATA = {
   },
   {
     "name": "WFB-8202",
-    "machineNameId": "mn-1788869247046-drnu",
+    "machineNameId": "mn-1788869247176-2gzf",
     "brandId": "bra-1788870296743-965",
     "description": "Auto-created from Excel import",
     "status": "ACTIVE",
@@ -1858,7 +1858,7 @@ export const INITIAL_DATA = {
   },
   {
     "name": "LK-1900B",
-    "machineNameId": "mn-1788869247046-drnu",
+    "machineNameId": "mn-1788869247205-his3",
     "brandId": "bra-1788870296743-965",
     "description": "Auto-created from Excel import",
     "status": "ACTIVE",
@@ -1878,7 +1878,7 @@ export const INITIAL_DATA = {
   },
   {
     "name": "ZJ-3800",
-    "machineNameId": "mn-1788869247046-drnu",
+    "machineNameId": "mn-1788869247141-kx1a",
     "brandId": "bra-1788870296743-965",
     "description": "Auto-created from Excel import",
     "status": "ACTIVE",
@@ -1888,7 +1888,7 @@ export const INITIAL_DATA = {
   },
   {
     "name": "DLM-5200N",
-    "machineNameId": "mn-1788869247046-drnu",
+    "machineNameId": "mn-1788869247061-9dsy",
     "brandId": "bra-1788870296743-965",
     "description": "Auto-created from Excel import",
     "status": "ACTIVE",
@@ -1898,7 +1898,7 @@ export const INITIAL_DATA = {
   },
   {
     "name": "CM-5300",
-    "machineNameId": "mn-1788869247046-drnu",
+    "machineNameId": "mn-1788869247600-l5sl",
     "brandId": "bra-1788870296743-965",
     "description": "Auto-created from Excel import",
     "status": "ACTIVE",
@@ -1918,7 +1918,7 @@ export const INITIAL_DATA = {
   },
   {
     "name": "MO-6714DA",
-    "machineNameId": "mn-1788869247046-drnu",
+    "machineNameId": "mn-1788869247118-qyw5",
     "brandId": "bra-1788870296743-965",
     "description": "Auto-created from Excel import",
     "status": "ACTIVE",
@@ -1938,7 +1938,7 @@ export const INITIAL_DATA = {
   },
   {
     "name": "DFB-1415",
-    "machineNameId": "mn-1788869247046-drnu",
+    "machineNameId": "mn-1788869247176-2gzf",
     "brandId": "bra-1788870296743-965",
     "description": "Auto-created from Excel import",
     "status": "ACTIVE",
@@ -1948,7 +1948,7 @@ export const INITIAL_DATA = {
   },
   {
     "name": "LK-1900BN",
-    "machineNameId": "mn-1788869247046-drnu",
+    "machineNameId": "mn-1788869247205-his3",
     "brandId": "bra-1788870296743-965",
     "description": "Auto-created from Excel import",
     "status": "ACTIVE",
@@ -1958,7 +1958,7 @@ export const INITIAL_DATA = {
   },
   {
     "name": "NS-47",
-    "machineNameId": "mn-1788869247046-drnu",
+    "machineNameId": "mn-1788869247600-l5sl",
     "brandId": "bra-1788870296743-965",
     "description": "Auto-created from Excel import",
     "status": "ACTIVE",
@@ -1968,7 +1968,7 @@ export const INITIAL_DATA = {
   },
   {
     "name": "LH-3578A",
-    "machineNameId": "mn-1788869247046-drnu",
+    "machineNameId": "mn-1788869247076-glop",
     "brandId": "bra-1788870296743-965",
     "description": "Auto-created from Excel import",
     "status": "ACTIVE",
@@ -1978,7 +1978,7 @@ export const INITIAL_DATA = {
   },
   {
     "name": "CM-380",
-    "machineNameId": "mn-1788869247046-drnu",
+    "machineNameId": "mn-1788869247600-l5sl",
     "brandId": "bra-1788870296743-965",
     "description": "Auto-created from Excel import",
     "status": "ACTIVE",
@@ -1988,7 +1988,7 @@ export const INITIAL_DATA = {
   },
   {
     "name": "JK-8558",
-    "machineNameId": "mn-1788869247046-drnu",
+    "machineNameId": "mn-1788869247141-kx1a",
     "brandId": "bra-1788870296743-965",
     "description": "Auto-created from Excel import",
     "status": "ACTIVE",
@@ -1998,7 +1998,7 @@ export const INITIAL_DATA = {
   },
   {
     "name": "WFB-5509",
-    "machineNameId": "mn-1788869247046-drnu",
+    "machineNameId": "mn-1788869247176-2gzf",
     "brandId": "bra-1788870296743-965",
     "description": "Auto-created from Excel import",
     "status": "ACTIVE",
@@ -2008,7 +2008,7 @@ export const INITIAL_DATA = {
   },
   {
     "name": "DA-928-A-9",
-    "machineNameId": "mn-1788869247046-drnu",
+    "machineNameId": "mn-1788869247100-2uyc",
     "brandId": "bra-1788870296743-965",
     "description": "Auto-created from Excel import",
     "status": "ACTIVE",
@@ -2018,7 +2018,7 @@ export const INITIAL_DATA = {
   },
   {
     "name": "MS-1190",
-    "machineNameId": "mn-1788869247046-drnu",
+    "machineNameId": "mn-1788869247100-2uyc",
     "brandId": "bra-1788870296743-965",
     "description": "Auto-created from Excel import",
     "status": "ACTIVE",
@@ -2028,7 +2028,7 @@ export const INITIAL_DATA = {
   },
   {
     "name": "JT-801N",
-    "machineNameId": "mn-1788869247046-drnu",
+    "machineNameId": "mn-1788869249407-drig",
     "brandId": "bra-1788870296743-965",
     "description": "Auto-created from Excel import",
     "status": "ACTIVE",
@@ -2038,7 +2038,7 @@ export const INITIAL_DATA = {
   },
   {
     "name": "SG-8200",
-    "machineNameId": "mn-1788869247046-drnu",
+    "machineNameId": "mn-1788869247519-r7b9",
     "brandId": "bra-1788870296743-965",
     "description": "Auto-created from Excel import",
     "status": "ACTIVE",
@@ -2048,7 +2048,7 @@ export const INITIAL_DATA = {
   },
   {
     "name": "KZ-1060",
-    "machineNameId": "mn-1788869247046-drnu",
+    "machineNameId": "mn-1788869247321-6kq1",
     "brandId": "bra-1788870296743-965",
     "description": "Auto-created from Excel import",
     "status": "ACTIVE",
@@ -2058,7 +2058,7 @@ export const INITIAL_DATA = {
   },
   {
     "name": "MS-1261",
-    "machineNameId": "mn-1788869247046-drnu",
+    "machineNameId": "mn-1788869247100-2uyc",
     "brandId": "bra-1788870296743-965",
     "description": "Auto-created from Excel import",
     "status": "ACTIVE",
@@ -2078,7 +2078,7 @@ export const INITIAL_DATA = {
   },
   {
     "name": "LBH-1790",
-    "machineNameId": "mn-1788869247046-drnu",
+    "machineNameId": "mn-1788869247243-7wlt",
     "brandId": "bra-1788870296743-965",
     "description": "Auto-created from Excel import",
     "status": "ACTIVE",
@@ -2088,7 +2088,7 @@ export const INITIAL_DATA = {
   },
   {
     "name": "WX-8842",
-    "machineNameId": "mn-1788869247046-drnu",
+    "machineNameId": "mn-1788869247224-rmvf",
     "brandId": "bra-1788870296743-965",
     "description": "Auto-created from Excel import",
     "status": "ACTIVE",
@@ -2098,7 +2098,7 @@ export const INITIAL_DATA = {
   },
   {
     "name": "VAX-W500",
-    "machineNameId": "mn-1788869247046-drnu",
+    "machineNameId": "mn-1788869247389-og7v",
     "brandId": "bra-1788870296743-965",
     "description": "Auto-created from Excel import",
     "status": "ACTIVE",
@@ -2108,7 +2108,7 @@ export const INITIAL_DATA = {
   },
   {
     "name": "IH-500-7",
-    "machineNameId": "mn-1788869247046-drnu",
+    "machineNameId": "mn-1788869247224-rmvf",
     "brandId": "bra-1788870296743-965",
     "description": "Auto-created from Excel import",
     "status": "ACTIVE",
@@ -2118,7 +2118,7 @@ export const INITIAL_DATA = {
   },
   {
     "name": "CM-5003",
-    "machineNameId": "mn-1788869247046-drnu",
+    "machineNameId": "mn-1788869247600-l5sl",
     "brandId": "bra-1788870296743-965",
     "description": "Auto-created from Excel import",
     "status": "ACTIVE",
@@ -2128,7 +2128,7 @@ export const INITIAL_DATA = {
   },
   {
     "name": "MF-7923",
-    "machineNameId": "mn-1788869247046-drnu",
+    "machineNameId": "mn-1788869247389-og7v",
     "brandId": "bra-1788870296743-965",
     "description": "Auto-created from Excel import",
     "status": "ACTIVE",
@@ -2138,7 +2138,7 @@ export const INITIAL_DATA = {
   },
   {
     "name": "DFB-1411",
-    "machineNameId": "mn-1788869247046-drnu",
+    "machineNameId": "mn-1788869247176-2gzf",
     "brandId": "bra-1788870296743-965",
     "description": "Auto-created from Excel import",
     "status": "ACTIVE",
@@ -2158,7 +2158,7 @@ export const INITIAL_DATA = {
   },
   {
     "name": "ZJ-3820",
-    "machineNameId": "mn-1788869247046-drnu",
+    "machineNameId": "mn-1788869247141-kx1a",
     "brandId": "bra-1788870296743-965",
     "description": "Auto-created from Excel import",
     "status": "ACTIVE",

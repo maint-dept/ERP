@@ -1039,6 +1039,10 @@ function renderExcelImportExportModal() {
 
               <!-- Auto-Creation & Formatting Options -->
               <div style="display: flex; gap: 16px; flex-wrap: wrap; background: rgba(255,255,255,0.02); padding: 8px 12px; border-radius: var(--radius-sm); font-size: 11.5px;">
+                <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; color: #34d399; font-weight: 700; margin: 0;">
+                  <input type="checkbox" id="chk-excel-replace-existing" checked style="cursor: pointer; accent-color: #10b981;" />
+                  <span>🧹 Clean &amp; Replace models for imported machines (Prevents mixing with old wrong models)</span>
+                </label>
                 <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; color: #e2e8f0; margin: 0;">
                   <input type="checkbox" id="chk-excel-auto-brands" checked style="cursor: pointer;" />
                   <span>Auto-create missing Brands</span>
@@ -2887,6 +2891,8 @@ function initModalInteractions() {
       }
 
       const parsed = [];
+      let currentMachineName = '';
+
       rawRows.forEach((row) => {
         if (!row || typeof row !== 'object') return;
 
@@ -2917,12 +2923,33 @@ function initModalInteractions() {
           remarks = String(row[4] || '').trim();
         }
 
-        if (!machineName && !brand && !model) return;
-
         const mLower = machineName.toLowerCase();
         if (mLower === 'machinename' || mLower === 'machine name' || mLower === 'machine') return;
 
-        parsed.push({ machineName, brand, model, remarks });
+        // Carry forward machine name across rows with merged/blank machine cells
+        if (machineName) {
+          currentMachineName = machineName;
+        } else if (currentMachineName && (model || brand)) {
+          machineName = currentMachineName;
+        }
+
+        if (!machineName && !brand && !model) return;
+
+        // Support multiple models in one cell (separated by commas or newlines)
+        let subModels = [model];
+        if (/[\r\n;]/.test(model)) {
+          subModels = model.split(/[\r\n;]+/).map(s => s.trim()).filter(Boolean);
+        } else if (model.includes(',') && !/\(.*\)/.test(model)) {
+          const parts = model.split(',').map(s => s.trim()).filter(Boolean);
+          if (parts.length > 1 && parts.every(p => p.length >= 2)) {
+            subModels = parts;
+          }
+        }
+
+        if (subModels.length === 0) subModels = [''];
+        for (const sMod of subModels) {
+          parsed.push({ machineName, brand, model: sMod, remarks });
+        }
       });
 
       if (parsed.length === 0) {
@@ -2988,6 +3015,25 @@ function initModalInteractions() {
             const workbook = XLSX.read(data, { type: 'array' });
             const firstSheetName = workbook.SheetNames[0];
             const worksheet = workbook.Sheets[firstSheetName];
+
+            // Propagate merged cells so merged machine names are available on all rows
+            if (worksheet && worksheet['!merges']) {
+              worksheet['!merges'].forEach(range => {
+                const firstCellRef = XLSX.utils.encode_cell(range.s);
+                const firstCell = worksheet[firstCellRef];
+                if (firstCell && firstCell.v !== undefined) {
+                  for (let R = range.s.r; R <= range.e.r; ++R) {
+                    for (let C = range.s.c; C <= range.e.c; ++C) {
+                      const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
+                      if (!worksheet[cellRef] || worksheet[cellRef].v === undefined || worksheet[cellRef].v === '') {
+                        worksheet[cellRef] = { ...firstCell };
+                      }
+                    }
+                  }
+                }
+              });
+            }
+
             const jsonRows = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
             processRawRows(jsonRows, file.name);
           } catch (err) {
@@ -3019,6 +3065,7 @@ function initModalInteractions() {
         let headerBrandIdx = -1;
         let headerModelIdx = -1;
         let headerRemarksIdx = -1;
+        let currentMachineName = '';
 
         lines.forEach((line, lineIdx) => {
           const delimiter = line.includes('\t') ? '\t' : (line.includes(',') ? ',' : '\t');
@@ -3063,8 +3110,28 @@ function initModalInteractions() {
             }
           }
 
+          if (machineName) {
+            currentMachineName = machineName;
+          } else if (currentMachineName && (model || brand)) {
+            machineName = currentMachineName;
+          }
+
           if (machineName || brand || model) {
-            rows.push({ machineName, brand, model, remarks });
+            // Support comma / newline split inside pasted model cell
+            let subModels = [model];
+            if (/[\r\n;]/.test(model)) {
+              subModels = model.split(/[\r\n;]+/).map(s => s.trim()).filter(Boolean);
+            } else if (model.includes(',') && !/\(.*\)/.test(model)) {
+              const parts = model.split(',').map(s => s.trim()).filter(Boolean);
+              if (parts.length > 1 && parts.every(p => p.length >= 2)) {
+                subModels = parts;
+              }
+            }
+
+            if (subModels.length === 0) subModels = [''];
+            for (const sMod of subModels) {
+              rows.push({ machineName, brand, model: sMod, remarks });
+            }
           }
         });
 
@@ -3090,6 +3157,7 @@ function initModalInteractions() {
         e.preventDefault();
         if (excelImportParsedRows.length === 0) return;
 
+        const replaceExisting = modalLayer.querySelector('#chk-excel-replace-existing')?.checked !== false;
         const autoBrands = modalLayer.querySelector('#chk-excel-auto-brands')?.checked !== false;
         const autoMachines = modalLayer.querySelector('#chk-excel-auto-machines')?.checked !== false;
         const cleanNames = modalLayer.querySelector('#chk-excel-clean-names')?.checked !== false;
@@ -3100,6 +3168,7 @@ function initModalInteractions() {
 
         try {
           const result = await smartStorageService.bulkImportMachinesFromExcel(excelImportParsedRows, {
+            replaceExistingForImportedMachines: replaceExisting,
             autoCreateBrands: autoBrands,
             autoCreateMachines: autoMachines,
             cleanNames
@@ -3348,6 +3417,27 @@ function initModalInteractions() {
       const tabLines = lines.filter(l => l.includes('\t'));
       if (tabLines.length > 0 && tabLines.length >= lines.length * 0.4) {
         e.preventDefault();
+
+        // Check if clipboard contains multiple distinct machine names in column 1
+        const machinesInClipboard = new Set(
+          lines.map(l => l.split('\t')[0].trim()).filter(m => m && !/^(machine|machinename|name|sl|no)$/i.test(m))
+        );
+        if (machinesInClipboard.size > 1) {
+          // Auto-switch to Excel Sheet Studio where each machine gets its own models cleanly
+          activeModalState = { type: 'EXCEL_IMPORT_EXPORT', data: {} };
+          excelImportActiveTab = 'PASTE';
+          updateModalLayer();
+          setTimeout(() => {
+            const pasteBox = document.querySelector('#txt-excel-paste-input');
+            if (pasteBox) {
+              pasteBox.value = text;
+              const parseBtn = document.querySelector('#btn-parse-pasted-excel');
+              if (parseBtn) parseBtn.click();
+            }
+          }, 50);
+          return;
+        }
+
         const colBrand = [];
         const colModel = [];
         lines.forEach(l => {
