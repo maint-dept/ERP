@@ -1,7 +1,6 @@
 import { MysqlAdapter }    from './adapters/mysqlAdapter.js';
 import { PostgresAdapter } from './adapters/postgresAdapter.js';
 import { retryQueue }      from './retryQueue.js';
-import { storage }         from './storage.js';
 
 
 class SyncManager {
@@ -45,10 +44,9 @@ class SyncManager {
   async loadConfig() {
     try {
       let configs = [];
-      if (storage && typeof storage.getMultiDbConfigs === 'function') {
-        configs = storage.getMultiDbConfigs();
-      }
-      if ((!configs || configs.length === 0) && typeof localStorage !== 'undefined') {
+      if (typeof window !== 'undefined' && window.storage && typeof window.storage.getMultiDbConfigs === 'function') {
+        configs = window.storage.getMultiDbConfigs();
+      } else if (typeof localStorage !== 'undefined') {
         const stored = localStorage.getItem('erp_multi_db_config');
         if (stored) {
           try { configs = JSON.parse(stored); } catch (_) {}
@@ -377,8 +375,8 @@ class SyncManager {
     for (const a of this.secondaryAdapters.values()) {
       if (a.config) configs.push(a.config);
     }
-    if (storage && typeof storage.saveMultiDbConfigs === 'function') {
-      storage.saveMultiDbConfigs(configs).catch(() => {});
+    if (typeof window !== 'undefined' && window.storage && typeof window.storage.saveMultiDbConfigs === 'function') {
+      window.storage.saveMultiDbConfigs(configs).catch(() => {});
     } else {
       try { localStorage.setItem('erp_multi_db_config', JSON.stringify(configs)); } catch (_) {}
     }

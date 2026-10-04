@@ -1121,6 +1121,15 @@ class StorageEngine {
 
   async persistToServerDatabase() {
     if (this._suppressServerPersist) return { status: 'suppressed' };
+
+    // On GitHub Pages or static host, remote persistence is handled via MySQL Primary (syncManager)
+    if (typeof window !== 'undefined' && window.location && (window.location.hostname.includes('github.io') || window.location.protocol === 'file:')) {
+      if (this._isCloudConnected) {
+        this.updateStatusBadge('saved');
+      }
+      return { status: 'ok', staticHost: true };
+    }
+
     if (!this.data || !Array.isArray(this.data[TABLE_NAMES.MACHINES]) || this.data[TABLE_NAMES.MACHINES].length === 0) {
       return { status: 'skipped' };
     }
@@ -1160,8 +1169,8 @@ class StorageEngine {
           console.log(`[Database Store] ✅ Saved to persistent server database: data/erp_database.json (${result.machinesCount || this.data[TABLE_NAMES.MACHINES]?.length || 0} machines, ${result.linesCount || this.data[TABLE_NAMES.LINES]?.length || 0} lines)`);
           return result;
         } else {
-          // If local server returned 404/error (e.g. GitHub Pages), check if cloud connected
-          if (this._isCloudConnected) {
+          // If local server returned 404/error (e.g. GitHub Pages), keep saved badge if cloud connected
+          if (this._isCloudConnected || (syncManager && syncManager.primaryAdapter)) {
             this.updateStatusBadge('saved');
             return { status: 'ok', cloud: true };
           }
@@ -1170,7 +1179,7 @@ class StorageEngine {
           return { status: 'error', code: res.status };
         }
       } catch (err) {
-        if (this._isCloudConnected) {
+        if (this._isCloudConnected || (syncManager && syncManager.primaryAdapter)) {
           this.updateStatusBadge('saved');
           return { status: 'ok', cloud: true };
         }
