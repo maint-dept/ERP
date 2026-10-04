@@ -11,24 +11,16 @@ on:
         default: 'Manual deployment trigger'
 
 # ─────────────────────────────────────────────────────────────
-# REQUIRED GitHub Repository Secrets (Settings → Secrets → Actions):
+# REQUIRED GitHub Repository Secrets (Settings → Secrets and variables → Actions):
 #
-#   FTP_SERVER        → Your cPanel FTP host, e.g. ftp.moviezonex.com
-#   FTP_USERNAME      → cPanel FTP username, e.g. motaherh_erpadmin
-#   FTP_PASSWORD      → cPanel FTP password
-#   FTP_SERVER_DIR    → Remote path to your Node.js app root
-#                       e.g. /home/motaherh/nodejs_apps/erp/
-#                       (find this in cPanel → Setup Node.js App)
+#   1. FTP_SERVER      → moviezonex.com
+#   2. FTP_USERNAME    → motaherh
+#   3. FTP_PASSWORD    → (Your cPanel login password)
+#   4. FTP_SERVER_DIR  → moviezonex.com/
 #
-#   SSH_HOST          → Same as FTP_SERVER or your server IP
-#   SSH_USERNAME      → SSH username (usually same as cPanel username)
-#   SSH_PASSWORD      → SSH password (or use SSH_PRIVATE_KEY below)
-#   SSH_PRIVATE_KEY   → (Recommended) Your SSH private key content
-#
-#   NODE_APP_NAME     → The Node.js App name as shown in cPanel's
-#                       "Setup Node.js App" panel, e.g. "erp_app"
-#   NODE_APP_DIR      → Full server path to app, same as FTP_SERVER_DIR
-#                       e.g. /home/motaherh/nodejs_apps/erp
+#   5. SSH_HOST        → moviezonex.com
+#   6. SSH_USERNAME    → motaherh
+#   7. SSH_PASSWORD    → (Your cPanel login password)
 # ─────────────────────────────────────────────────────────────
 
 jobs:
