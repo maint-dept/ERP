@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Al-Muslim Group Garments Factory Maintenance Machine ERP
  * Tools, Equipment & Accessories Management Service
  * 
@@ -276,14 +276,20 @@ class ToolService {
     const seenRegs = new Set();
 
     // 1. Search saved allocations
+    const cleanDigits = query.replace(/[^\d]/g, '');
+    const queryNormReg = query.replace(/^[#\s]+/, '');
     for (const item of regMap.values()) {
       const uCard = String(item.userId || '').toLowerCase();
       const uReg = String(item.regNo || '').toLowerCase();
       const uName = String(item.userName || '').toLowerCase();
       const uAlpha = uCard.replace(/[^a-z0-9]/g, '');
+      const uDigits = uCard.replace(/[^\d]/g, '');
+      const normReg = uReg.replace(/^[#\s]+/, '');
 
-      const matchReg = uReg && uReg.includes(query);
-      const matchCard = (uCard && uCard.includes(query)) || (cleanAlphaNum.length >= 2 && uAlpha.includes(cleanAlphaNum));
+      const matchReg = (uReg && uReg.includes(query)) || (normReg && normReg.includes(queryNormReg));
+      const matchCard = (uCard && uCard.includes(query)) ||
+        (cleanAlphaNum.length >= 2 && uAlpha.includes(cleanAlphaNum)) ||
+        (cleanDigits.length >= 3 && (uDigits.includes(cleanDigits) || cleanDigits.includes(uDigits)));
       const matchName = uName && uName.includes(query);
 
       if (matchReg || matchCard || matchName) {
@@ -583,21 +589,32 @@ class ToolService {
     const raw = String(regNoOrCard).trim();
     if (!raw) return null;
 
+    // Ensure allocations are synchronized with latest Manpower employee updates
+    try {
+      this.syncAllocationsWithManpower();
+    } catch (e) {
+      console.warn('[ToolService] Auto-sync in getRegistrationDetails non-critical warning:', e);
+    }
+
     const cleanLower = raw.toLowerCase();
+    const normReg = cleanLower.replace(/^[#\s]+/, '').trim();
     const cleanAlphaNum = cleanLower.replace(/[^a-z0-9]/g, '');
     const cleanDigits = cleanLower.replace(/[^\d]/g, '');
 
     const list = storage.getTable(TABLE_NAMES.TOOL_ALLOCATIONS) || [];
 
-    // 1. Match by registration number
-    let items = list.filter(a => String(a.regNo || '').trim().toLowerCase() === cleanLower);
+    // 1. Match by registration number (ignoring leading #, whitespace, case)
+    let items = list.filter(a => {
+      const aReg = String(a.regNo || '').replace(/^[#\s]+/, '').trim().toLowerCase();
+      return aReg && aReg === normReg;
+    });
 
-    // 2. Match by exact userId / Employee Card Number (e.g. AMG-0144768 or AMG0144768)
+    // 2. Match by exact userId / Employee Card Number (e.g. AMG-0051370 or AMG0051370)
     if (items.length === 0) {
       items = list.filter(a => String(a.userId || '').trim().toLowerCase() === cleanLower);
     }
 
-    // 3. Match by normalized alphanumeric Card Number (ignoring hyphens: Worker AMG0000000 vs Staff AMG-0000000)
+    // 3. Match by normalized alphanumeric Card Number (ignoring hyphens: AMG-0051370 vs AMG0051370)
     if (items.length === 0 && cleanAlphaNum.length >= 3) {
       items = list.filter(a => {
         const uAlphaNum = String(a.userId || '').toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -605,11 +622,17 @@ class ToolService {
       });
     }
 
-    // 4. Match by pure digits (e.g. 0144768 or 72256)
-    if (items.length === 0 && cleanDigits.length >= 4) {
+    // 4. Match by pure digits (e.g. 0051370 vs 51370, endsWith, integer match)
+    if (items.length === 0 && cleanDigits.length >= 3) {
       items = list.filter(a => {
         const uDigits = String(a.userId || '').replace(/[^\d]/g, '');
-        return uDigits === cleanDigits || (uDigits.length >= 5 && uDigits.endsWith(cleanDigits));
+        if (!uDigits) return false;
+        return (
+          uDigits === cleanDigits ||
+          uDigits.endsWith(cleanDigits) ||
+          cleanDigits.endsWith(uDigits) ||
+          (parseInt(uDigits, 10) === parseInt(cleanDigits, 10))
+        );
       });
     }
 
@@ -618,8 +641,38 @@ class ToolService {
       items = list.filter(a => String(a.userName || '').toLowerCase().includes(cleanLower));
     }
 
+    // 6. Cross-reference with Manpower master employee profile if not directly found in raw allocations
+    let emp = null;
     if (items.length === 0) {
-      const emp = this.getStaffByIdOrCard(raw);
+      emp = this.getStaffByIdOrCard(raw);
+      if (emp) {
+        const empCard = String(emp.cardNumber || '').trim().toLowerCase();
+        const empId = String(emp.id || '').trim().toLowerCase();
+        const empName = String(emp.name || '').trim().toLowerCase();
+        const empDigits = empCard.replace(/[^\d]/g, '') || empId.replace(/[^\d]/g, '');
+
+        items = list.filter(a => {
+          const aUser = String(a.userId || '').trim().toLowerCase();
+          const aName = String(a.userName || '').trim().toLowerCase();
+          const aDigits = aUser.replace(/[^\d]/g, '');
+
+          if (empCard && (aUser === empCard || aUser.replace(/[^a-z0-9]/g, '') === empCard.replace(/[^a-z0-9]/g, ''))) return true;
+          if (empId && aUser === empId) return true;
+          if (empName && (aName === empName || (empName.length >= 4 && aName.includes(empName)))) return true;
+          if (empDigits && aDigits && (
+            empDigits === aDigits ||
+            empDigits.endsWith(aDigits) ||
+            aDigits.endsWith(empDigits) ||
+            parseInt(empDigits, 10) === parseInt(aDigits, 10)
+          )) return true;
+          return false;
+        });
+      }
+    }
+
+    // If still 0 allocations, and employee was found in Manpower, return active template for this employee
+    if (items.length === 0) {
+      if (!emp) emp = this.getStaffByIdOrCard(raw);
       if (emp) {
         return {
           regNo: '',
@@ -639,19 +692,31 @@ class ToolService {
       return null;
     }
 
+    // If matching by employee resulted in multiple historical registration batches, pick the latest one
+    const uniqueRegs = [...new Set(items.map(i => String(i.regNo || '').trim()).filter(Boolean))];
+    if (uniqueRegs.length > 1 && !raw.startsWith('#') && isNaN(parseInt(raw, 10))) {
+      uniqueRegs.sort((rA, rB) => {
+        const numA = parseInt(String(rA).replace(/[^\d]/g, ''), 10) || 0;
+        const numB = parseInt(String(rB).replace(/[^\d]/g, ''), 10) || 0;
+        return numB - numA;
+      });
+      const latestReg = uniqueRegs[0];
+      items = items.filter(i => String(i.regNo || '').trim() === latestReg);
+    }
+
     const first = items[0];
-    const tools = items.filter(i => i.itemType === 'TOOL').sort((a, b) => {
+    const tools = items.filter(i => (i.itemType === 'TOOL' || !i.itemType || i.itemType === 'TOOLS')).sort((a, b) => {
       const codeA = parseInt(a.itemCode, 10) || 0;
       const codeB = parseInt(b.itemCode, 10) || 0;
       return codeA - codeB;
     });
-    const accessories = items.filter(i => i.itemType === 'ACCESSORY');
-    const spareParts = items.filter(i => i.itemType === 'SPARE_PART');
+    const accessories = items.filter(i => i.itemType === 'ACCESSORY' || i.itemType === 'ACCESSORIES');
+    const spareParts = items.filter(i => i.itemType === 'SPARE_PART' || i.itemType === 'SPARE_PARTS');
 
     // LIVE DYNAMIC AUTO-SYNC WITH LATEST MANPOWER PROFILE
     // If employee got promoted, transferred floors, or upgraded to staff (with hyphen),
     // always return their live Manpower data on print documents!
-    const latestEmp = this.getStaffByIdOrCard(first.userId || first.userName || raw);
+    const latestEmp = emp || this.getStaffByIdOrCard(first.userId || first.userName || raw);
 
     const resolvedUserId = (latestEmp && latestEmp.cardNumber) ? latestEmp.cardNumber : (first.userId || raw);
     const resolvedUserName = (latestEmp && latestEmp.name) ? latestEmp.name : (first.userName || '');
@@ -660,7 +725,7 @@ class ToolService {
     const isStaff = resolvedUserId.includes('-');
 
     return {
-      regNo: first.regNo || raw,
+      regNo: String(first.regNo || raw).replace(/^[#\s]+/, '').trim(),
       issueDate: first.issueDate || new Date().toISOString().split('T')[0],
       userId: resolvedUserId,
       userName: resolvedUserName,
@@ -1228,6 +1293,7 @@ class ToolService {
         const resolvedUserId = userId || emp?.cardNumber || emp?.id || 'AMG-UNKNOWN';
         const resolvedUserName = userName || emp?.name || 'Unknown Mechanic';
         const jobTitle = String(row['Job Title'] || emp?.designation || 'Mechanic').trim();
+        const workingArea = String(row['Working Area'] || row['Area'] || row['Line'] || emp?.workingArea || emp?.department || 'General').trim();
         const issueDate = this.formatDateDMY(String(row['Issue Date'] || row['Issue Date (YYYY-MM-DD)'] || '25-10-2025').trim());
         const qty = String(row['Quantity'] || row['Qty'] || '1').trim();
         const changeStatus = String(row['Change Status'] || 'NEW_ISSUE').toUpperCase();

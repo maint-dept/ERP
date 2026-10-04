@@ -69,6 +69,19 @@
   }
 
   .printable-doc,
+  .printable-doc *,
+  #printable-a4-document,
+  #printable-a4-document *,
+  #printable-pocket-document,
+  #printable-pocket-document *,
+  .pocket-card,
+  .pocket-card * {
+    color: #000000 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .printable-doc,
   #printable-a4-document {
     box-shadow: none !important;
     border-radius: 0 !important;
@@ -77,6 +90,17 @@
     color: #000000 !important;
     display: block !important;
     visibility: visible !important;
+  }
+
+  .printable-doc th,
+  .printable-doc td,
+  #printable-a4-document th,
+  #printable-a4-document td,
+  #printable-pocket-document th,
+  #printable-pocket-document td,
+  .pocket-card th,
+  .pocket-card td {
+    color: #000000 !important;
   }
 
   #printable-a4-document {

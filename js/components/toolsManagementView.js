@@ -11,7 +11,7 @@
  */
 
 import { state } from '../state.js';
-import { toolService } from '../services/toolService.js';
+import { toolService } from '../services/toolService.js?v=4.9.1';
 import { employeeService } from '../services/employeeService.js';
 import { authService } from '../services/authService.js';
 import { historyService } from '../services/historyService.js';
@@ -945,6 +945,17 @@ function renderScreen2ToolsAddForm() {
 // SCREEN 3: PRINT PAGE (A4 FULL PAGE SOP SHEET & POCKET BAG SLIP)
 // =========================================================================
 function renderScreen3PrintPage() {
+  // If no registration is currently selected, auto-select the latest recorded allocation
+  if (!currentPrintRegNo) {
+    const allAllocs = storage.getTable(TABLE_NAMES.TOOL_ALLOCATIONS) || [];
+    if (allAllocs.length > 0) {
+      const last = allAllocs[allAllocs.length - 1];
+      if (last && (last.regNo || last.userId)) {
+        currentPrintRegNo = String(last.regNo || last.userId).replace(/^[#\s]+/, '').trim();
+      }
+    }
+  }
+
   const regDetails = currentPrintRegNo ? toolService.getRegistrationDetails(currentPrintRegNo) : null;
 
   const tools = regDetails ? (regDetails.tools || []) : [];
@@ -1221,55 +1232,55 @@ function renderFormatA4(reg, leftTools, rightTools, accessories) {
           </div>
 
           <!-- Extra Accessories (if any) Table (Admin Customizable Template) -->
-          <div style="font-weight: 800; font-size: 11px; margin-bottom: 2px;">Extra Accessories (if any) :</div>
-          <table style="width: 100%; border-collapse: collapse; font-size: ${scale.table}; border: 1.5px solid #000; margin-bottom: 8px;">
+          <div style="font-weight: 800; font-size: 11px; margin-bottom: 2px; color: #000000;">Extra Accessories (if any) :</div>
+          <table style="width: 100%; border-collapse: collapse; font-size: ${scale.table}; border: 1.5px solid #000; margin-bottom: 8px; color: #000000;">
             <thead>
-              <tr style="background: #ffffff; border-bottom: 1.5px solid #000;">
-                <th style="border-right: 1px solid #000; padding: 3px 6px; text-align: center; font-weight: 800;">Accessories</th>
-                <th style="border-right: 1px solid #000; padding: 3px 4px; text-align: center; width: 62px; font-weight: 800;">Qty.</th>
-                <th style="padding: 3px 4px; text-align: center; width: 55px; font-weight: 800;">Remarks</th>
+              <tr style="background: #ffffff; border-bottom: 1.5px solid #000; color: #000000;">
+                <th style="border-right: 1px solid #000; padding: 3px 6px; text-align: center; font-weight: 800; color: #000000;">Accessories</th>
+                <th style="border-right: 1px solid #000; padding: 3px 4px; text-align: center; width: 62px; font-weight: 800; color: #000000;">Qty.</th>
+                <th style="padding: 3px 4px; text-align: center; width: 55px; font-weight: 800; color: #000000;">Remarks</th>
               </tr>
             </thead>
             <tbody>
               ${displayAccs.map((a) => `
-                <tr style="border-bottom: 1px dotted #000;">
-                  <td style="border-right: 1px solid #000; padding: 2px 6px; font-weight: 600;">${a.itemName || a.name}</td>
-                  <td style="border-right: 1px solid #000; padding: 2px 4px; text-align: center; font-weight: 600;">${a.quantity || a.qty || '01 Pcs'}</td>
-                  <td style="padding: 2px 4px; text-align: center; font-family: monospace; font-weight: 600;">${a.remarks || ''}</td>
+                <tr style="border-bottom: 1px dotted #000; color: #000000;">
+                  <td style="border-right: 1px solid #000; padding: 2px 6px; font-weight: 600; color: #000000;">${a.itemName || a.name}</td>
+                  <td style="border-right: 1px solid #000; padding: 2px 4px; text-align: center; font-weight: 600; color: #000000;">${a.quantity || a.qty || '01 Pcs'}</td>
+                  <td style="padding: 2px 4px; text-align: center; font-family: monospace; font-weight: 600; color: #000000;">${a.remarks || ''}</td>
                 </tr>
               `).join('')}
               ${Array.from({ length: extraBlankRows }).map(() => `
-                <tr style="border-bottom: 1px dotted #000; height: 16px;">
-                  <td style="border-right: 1px solid #000;">&nbsp;</td>
-                  <td style="border-right: 1px solid #000;">&nbsp;</td>
-                  <td>&nbsp;</td>
+                <tr style="border-bottom: 1px dotted #000; height: 16px; color: #000000;">
+                  <td style="border-right: 1px solid #000; color: #000000;">&nbsp;</td>
+                  <td style="border-right: 1px solid #000; color: #000000;">&nbsp;</td>
+                  <td style="color: #000000;">&nbsp;</td>
                 </tr>
               `).join('')}
             </tbody>
           </table>
 
           <!-- SOP Declaration Box (Admin Customizable) -->
-          <div style="border: 1.5px solid #000; padding: 7px 10px; text-align: center; margin-bottom: 10px; background: #ffffff;">
-            <div style="font-size: 10px; font-weight: 800; color: #000; line-height: 1.4;">
+          <div style="border: 1.5px solid #000; padding: 7px 10px; text-align: center; margin-bottom: 10px; background: #ffffff; color: #000000;">
+            <div style="font-size: 10px; font-weight: 800; color: #000000; line-height: 1.4;">
               ${sopEng || 'Follow the SOP and use tools and equipment, maintaining a good working environment.'}
             </div>
             ${sopBen ? `
-              <div style="font-size: 9.5px; font-weight: 700; color: #000; margin-top: 3px; line-height: 1.35;">
+              <div style="font-size: 9.5px; font-weight: 700; color: #000000; margin-top: 3px; line-height: 1.35;">
                 ${sopBen}
               </div>
             ` : ''}
           </div>
 
           <!-- Register Note & User Signature (Clean, Stamp Removed) -->
-          <div style="margin-bottom: 12px; display: flex; flex-direction: column; gap: 8px;">
-            <div style="font-size: 10.5px; font-weight: 800; display: flex; align-items: center; gap: 8px;">
-              <span style="white-space: nowrap;">Register Note (if any):</span>
+          <div style="margin-bottom: 12px; display: flex; flex-direction: column; gap: 8px; color: #000000;">
+            <div style="font-size: 10.5px; font-weight: 800; display: flex; align-items: center; gap: 8px; color: #000000;">
+              <span style="white-space: nowrap; color: #000000;">Register Note (if any):</span>
               <span style="border-bottom: 1px dotted #000; flex: 1; height: 16px;"></span>
             </div>
-            <div style="font-size: 10.5px; font-weight: 800; display: flex; align-items: center; gap: 8px;">
-              <span style="white-space: nowrap;">User Signature:</span>
+            <div style="font-size: 10.5px; font-weight: 800; display: flex; align-items: center; gap: 8px; color: #000000;">
+              <span style="white-space: nowrap; color: #000000;">User Signature:</span>
               <span style="border-bottom: 1.5px solid #000; width: 150px; height: 16px;"></span>
-              <span style="font-size: 9.5px; color: #475569; font-weight: 600; margin-left: auto;">Date: ____/____/20____</span>
+              <span style="font-size: 9.5px; color: #000000; font-weight: 600; margin-left: auto;">Date: ____/____/20____</span>
             </div>
           </div>
 
@@ -1277,23 +1288,31 @@ function renderFormatA4(reg, leftTools, rightTools, accessories) {
 
         <!-- RIGHT COLUMN: Dynamic Tools Descriptions (1 to 28+) -->
         <div>
-          <div style="font-weight: 800; font-size: 11px; margin-bottom: 2px;">Tools Descriptions:</div>
-          <table style="width: 100%; border-collapse: collapse; font-size: ${scale.table}; border: 1.5px solid #000;">
+          <div style="font-weight: 800; font-size: 11px; margin-bottom: 2px; color: #000000;">Tools Descriptions:</div>
+          <table style="width: 100%; border-collapse: collapse; font-size: ${scale.table}; border: 1.5px solid #000; color: #000000;">
             <thead>
-              <tr style="background: #ffffff; border-bottom: 1.5px solid #000;">
-                <th style="border-right: 1px solid #000; padding: 3px 4px; text-align: center; width: 44px; font-weight: 800;">Sl. No.</th>
-                <th style="border-right: 1px solid #000; padding: 3px 6px; text-align: center; font-weight: 800;">Equipment Name</th>
-                <th style="border-right: 1px solid #000; padding: 3px 4px; text-align: center; width: 38px; font-weight: 800;">Qty.</th>
-                <th style="padding: 3px 4px; text-align: center; width: 55px; font-weight: 800;">Remarks</th>
+              <tr style="background: #ffffff; border-bottom: 1.5px solid #000; color: #000000;">
+                <th style="border-right: 1px solid #000; padding: 3px 4px; text-align: center; width: 44px; font-weight: 800; color: #000000;">Sl. No.</th>
+                <th style="border-right: 1px solid #000; padding: 3px 6px; text-align: center; font-weight: 800; color: #000000;">Equipment Name</th>
+                <th style="border-right: 1px solid #000; padding: 3px 4px; text-align: center; width: 38px; font-weight: 800; color: #000000;">Qty.</th>
+                <th style="padding: 3px 4px; text-align: center; width: 55px; font-weight: 800; color: #000000;">Remarks</th>
               </tr>
             </thead>
             <tbody>
               ${displayTools.map((t, idx) => `
-                <tr style="border-bottom: 1px dotted #000;">
-                  <td style="border-right: 1px solid #000; padding: 2px 4px; text-align: center; font-family: monospace; font-weight: 700;">${String(idx + 1).padStart(2, '0')}</td>
-                  <td style="border-right: 1px solid #000; padding: 2px 6px; font-weight: 600;">${t.itemName || t.name}</td>
-                  <td style="border-right: 1px solid #000; padding: 2px 4px; text-align: center; font-weight: 700;">${t.quantity || t.qty || 1}</td>
-                  <td style="padding: 2px 4px; text-align: center; font-family: monospace;">${t.remarks || ''}</td>
+                <tr style="border-bottom: 1px dotted #000; color: #000000;">
+                  <td style="border-right: 1px solid #000; padding: 2px 4px; text-align: center; font-family: monospace; font-weight: 700; color: #000000;">${String(idx + 1).padStart(2, '0')}</td>
+                  <td style="border-right: 1px solid #000; padding: 2px 6px; font-weight: 600; color: #000000;">${t.itemName || t.name}</td>
+                  <td style="border-right: 1px solid #000; padding: 2px 4px; text-align: center; font-weight: 700; color: #000000;">${t.quantity || t.qty || 1}</td>
+                  <td style="padding: 2px 4px; text-align: center; font-family: monospace; color: #000000;">${t.remarks || ''}</td>
+                </tr>
+              `).join('')}
+              ${Array.from({ length: Math.max(0, 20 - displayTools.length) }).map((_, i) => `
+                <tr style="border-bottom: 1px dotted #000; height: 18px; color: #000000;">
+                  <td style="border-right: 1px solid #000; padding: 2px 4px; text-align: center; font-family: monospace; color: #94a3b8; font-size: 8.5px;">${String(displayTools.length + i + 1).padStart(2, '0')}</td>
+                  <td style="border-right: 1px solid #000; color: #000000;">&nbsp;</td>
+                  <td style="border-right: 1px solid #000; color: #000000;">&nbsp;</td>
+                  <td style="color: #000000;">&nbsp;</td>
                 </tr>
               `).join('')}
             </tbody>
@@ -1303,7 +1322,7 @@ function renderFormatA4(reg, leftTools, rightTools, accessories) {
       </div>
 
       <!-- Bottom Official Signatories Section (User friendly lowered positioning: niche sin ar gor namao) -->
-      <div style="margin-top: ${sigMarginTop || '35px'}; padding-top: 14px; display: grid; grid-template-columns: repeat(${signatories.length}, 1fr); text-align: center; font-size: 11px; font-weight: 800; page-break-inside: avoid;">
+      <div style="margin-top: ${sigMarginTop || '35px'}; padding-top: 14px; display: grid; grid-template-columns: repeat(${signatories.length}, 1fr); text-align: center; font-size: 11px; font-weight: 800; page-break-inside: avoid; color: #000000;">
         ${signatories.map(s => `
           <div style="padding: 0 10px;">
             <div style="width: 140px; max-width: 90%; border-top: 1.5px solid #000; margin: 0 auto 6px auto;"></div>
@@ -1378,13 +1397,24 @@ function renderFormatPocket(reg, leftTools, rightTools, accessories) {
   if (allTools.length > 0) {
     col1Tools = allTools.slice(0, splitCount);
     col2Tools = allTools.slice(splitCount);
-    if (col1Tools.length < splitCount) {
-      col1Tools = [...col1Tools, ...standard30.slice(col1Tools.length, splitCount)];
-    }
   } else {
     col1Tools = standard30.slice(0, splitCount);
     col2Tools = standard30.slice(splitCount, 30);
   }
+
+  // Generate blank dotted rows for Card 1 if fewer than splitCount tools
+  const card1BlankNeeded = Math.max(0, splitCount - col1Tools.length);
+  const card1BlankRows = Array.from({ length: card1BlankNeeded }).map((_, i) => {
+    const sl = String(col1Tools.length + i + 1).padStart(2, '0');
+    return `
+      <tr style="border-bottom: 1px dashed #000; height: 13px; color: #000000;">
+        <td style="border-right: 1px solid #000; padding: 1px 2px; text-align: center; font-family: monospace; color: #94a3b8; font-size: 7.5px;">${sl}</td>
+        <td style="border-right: 1px solid #000; color: #000000;">&nbsp;</td>
+        <td style="border-right: 1px solid #000; color: #000000;">&nbsp;</td>
+        <td style="color: #000000;">&nbsp;</td>
+      </tr>
+    `;
+  }).join('');
 
   const defaultPocketAccessories = [
     { name: 'Super Glue', qty: '01 Pcs', remarks: '±01' },
@@ -1407,11 +1437,11 @@ function renderFormatPocket(reg, leftTools, rightTools, accessories) {
   const card2BlankRows = Array.from({ length: blankRowsNeeded }).map((_, i) => {
     const sl = String(splitCount + col2Tools.length + i + 1).padStart(2, '0');
     return `
-      <tr style="border-bottom: 1px dashed #000; height: 13px;">
+      <tr style="border-bottom: 1px dashed #000; height: 13px; color: #000000;">
         <td style="border-right: 1px solid #000; padding: 1px 2px; text-align: center; font-family: monospace; color: #94a3b8; font-size: 7.5px;">${sl}</td>
-        <td style="border-right: 1px solid #000;"></td>
-        <td style="border-right: 1px solid #000;"></td>
-        <td></td>
+        <td style="border-right: 1px solid #000; color: #000000;">&nbsp;</td>
+        <td style="border-right: 1px solid #000; color: #000000;">&nbsp;</td>
+        <td style="color: #000000;">&nbsp;</td>
       </tr>
     `;
   }).join('');
@@ -1462,25 +1492,26 @@ function renderFormatPocket(reg, leftTools, rightTools, accessories) {
           </div>
 
           <!-- Tools Descriptions (01 to 20) -->
-          <div style="font-weight: 800; font-size: 9.5px; margin-bottom: 2px; color: #000;">Tools Descriptions:</div>
-          <table style="width: 100%; border-collapse: collapse; font-size: ${pScale.table}; border: 1.5px solid #000;">
+          <div style="font-weight: 800; font-size: 9.5px; margin-bottom: 2px; color: #000000;">Tools Descriptions:</div>
+          <table style="width: 100%; border-collapse: collapse; font-size: ${pScale.table}; border: 1.5px solid #000; color: #000000;">
             <thead>
-              <tr style="background: #ffffff; border-bottom: 1.5px solid #000;">
-                <th style="border-right: 1px solid #000; padding: 1.5px 2px; text-align: center; width: 34px; font-weight: 800;">Sl. No.</th>
-                <th style="border-right: 1px solid #000; padding: 1.5px 4px; text-align: center; font-weight: 800;">Equipment Name</th>
-                <th style="border-right: 1px solid #000; padding: 1.5px 2px; text-align: center; width: 30px; font-weight: 800;">Qty.</th>
-                <th style="padding: 1.5px 2px; text-align: center; width: 44px; font-weight: 800;">Remarks</th>
+              <tr style="background: #ffffff; border-bottom: 1.5px solid #000; color: #000000;">
+                <th style="border-right: 1px solid #000; padding: 1.5px 2px; text-align: center; width: 34px; font-weight: 800; color: #000000;">Sl. No.</th>
+                <th style="border-right: 1px solid #000; padding: 1.5px 4px; text-align: center; font-weight: 800; color: #000000;">Equipment Name</th>
+                <th style="border-right: 1px solid #000; padding: 1.5px 2px; text-align: center; width: 30px; font-weight: 800; color: #000000;">Qty.</th>
+                <th style="padding: 1.5px 2px; text-align: center; width: 44px; font-weight: 800; color: #000000;">Remarks</th>
               </tr>
             </thead>
             <tbody>
               ${col1Tools.map((t, idx) => `
-                <tr style="border-bottom: 1px dashed #000; height: 13px;">
-                  <td style="border-right: 1px solid #000; padding: 1px 2px; text-align: center; font-family: monospace; font-weight: 700;">${String(idx + 1).padStart(2, '0')}</td>
-                  <td style="border-right: 1px solid #000; padding: 1px 4px; font-weight: 600;">${t.itemName || t.name}</td>
-                  <td style="border-right: 1px solid #000; padding: 1px 2px; text-align: center; font-weight: 700;">${t.quantity || t.qty || 1}</td>
-                  <td style="padding: 1px 2px; text-align: center; font-size: 7.5px;">${t.remarks || ''}</td>
+                <tr style="border-bottom: 1px dashed #000; height: 13px; color: #000000;">
+                  <td style="border-right: 1px solid #000; padding: 1px 2px; text-align: center; font-family: monospace; font-weight: 700; color: #000000;">${String(idx + 1).padStart(2, '0')}</td>
+                  <td style="border-right: 1px solid #000; padding: 1px 4px; font-weight: 600; color: #000000;">${t.itemName || t.name}</td>
+                  <td style="border-right: 1px solid #000; padding: 1px 2px; text-align: center; font-weight: 700; color: #000000;">${t.quantity || t.qty || 1}</td>
+                  <td style="padding: 1px 2px; text-align: center; font-size: 7.5px; color: #000000;">${t.remarks || ''}</td>
                 </tr>
               `).join('')}
+              ${card1BlankRows}
             </tbody>
           </table>
         </div>
@@ -1490,23 +1521,23 @@ function renderFormatPocket(reg, leftTools, rightTools, accessories) {
       <div class="pocket-card pocket-card-back" style="width: ${cardWidth}; min-height: ${cardHeight}; background: #ffffff; border: 2px solid #000000; border-radius: ${borderRadius}; padding: ${pScale.pad}; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; position: relative;">
         <div>
           <!-- Header of Card 2 -->
-          <div style="font-weight: 800; font-size: 9.5px; margin-bottom: 2px; color: #000;">Tools Descriptions:</div>
-          <table style="width: 100%; border-collapse: collapse; font-size: ${pScale.table}; border: 1.5px solid #000; margin-bottom: 5px;">
+          <div style="font-weight: 800; font-size: 9.5px; margin-bottom: 2px; color: #000000;">Tools Descriptions:</div>
+          <table style="width: 100%; border-collapse: collapse; font-size: ${pScale.table}; border: 1.5px solid #000; margin-bottom: 5px; color: #000000;">
             <thead>
-              <tr style="background: #ffffff; border-bottom: 1.5px solid #000;">
-                <th style="border-right: 1px solid #000; padding: 1.5px 2px; text-align: center; width: 34px; font-weight: 800;">Sl. No.</th>
-                <th style="border-right: 1px solid #000; padding: 1.5px 4px; text-align: center; font-weight: 800;">Equipment Name</th>
-                <th style="border-right: 1px solid #000; padding: 1.5px 2px; text-align: center; width: 30px; font-weight: 800;">Qty.</th>
-                <th style="padding: 1.5px 2px; text-align: center; width: 44px; font-weight: 800;">Remarks</th>
+              <tr style="background: #ffffff; border-bottom: 1.5px solid #000; color: #000000;">
+                <th style="border-right: 1px solid #000; padding: 1.5px 2px; text-align: center; width: 34px; font-weight: 800; color: #000000;">Sl. No.</th>
+                <th style="border-right: 1px solid #000; padding: 1.5px 4px; text-align: center; font-weight: 800; color: #000000;">Equipment Name</th>
+                <th style="border-right: 1px solid #000; padding: 1.5px 2px; text-align: center; width: 30px; font-weight: 800; color: #000000;">Qty.</th>
+                <th style="padding: 1.5px 2px; text-align: center; width: 44px; font-weight: 800; color: #000000;">Remarks</th>
               </tr>
             </thead>
             <tbody>
               ${col2Tools.map((t, idx) => `
-                <tr style="border-bottom: 1px dashed #000; height: 13px;">
-                  <td style="border-right: 1px solid #000; padding: 1px 2px; text-align: center; font-family: monospace; font-weight: 700;">${String(splitCount + idx + 1).padStart(2, '0')}</td>
-                  <td style="border-right: 1px solid #000; padding: 1px 4px; font-weight: 600;">${t.itemName || t.name}</td>
-                  <td style="border-right: 1px solid #000; padding: 1px 2px; text-align: center; font-weight: 700;">${t.quantity || t.qty || 1}</td>
-                  <td style="padding: 1px 2px; text-align: center; font-size: 7.5px;">${t.remarks || ''}</td>
+                <tr style="border-bottom: 1px dashed #000; height: 13px; color: #000000;">
+                  <td style="border-right: 1px solid #000; padding: 1px 2px; text-align: center; font-family: monospace; font-weight: 700; color: #000000;">${String(splitCount + idx + 1).padStart(2, '0')}</td>
+                  <td style="border-right: 1px solid #000; padding: 1px 4px; font-weight: 600; color: #000000;">${t.itemName || t.name}</td>
+                  <td style="border-right: 1px solid #000; padding: 1px 2px; text-align: center; font-weight: 700; color: #000000;">${t.quantity || t.qty || 1}</td>
+                  <td style="padding: 1px 2px; text-align: center; font-size: 7.5px; color: #000000;">${t.remarks || ''}</td>
                 </tr>
               `).join('')}
               ${card2BlankRows}
@@ -1517,27 +1548,27 @@ function renderFormatPocket(reg, leftTools, rightTools, accessories) {
           <div style="display: flex; flex-direction: row; gap: 8px; align-items: stretch; margin-top: 5px;">
             <!-- Left Column: Extra Accessories (if any) : -->
             <div style="flex: 1.35;">
-              <div style="font-weight: 800; font-size: 8.5px; margin-bottom: 2px; color: #000;">Extra Accessories (if any) :</div>
-              <table style="width: 100%; border-collapse: collapse; font-size: ${pScale.accTable}; border: 1.5px solid #000;">
+              <div style="font-weight: 800; font-size: 8.5px; margin-bottom: 2px; color: #000000;">Extra Accessories (if any) :</div>
+              <table style="width: 100%; border-collapse: collapse; font-size: ${pScale.accTable}; border: 1.5px solid #000; color: #000000;">
                 <thead>
-                  <tr style="background: #ffffff; border-bottom: 1.5px solid #000;">
-                    <th style="border-right: 1px solid #000; padding: 1.5px 3px; text-align: center; font-weight: 800;">Accessories</th>
-                    <th style="border-right: 1px solid #000; padding: 1.5px 2px; text-align: center; width: 38px; font-weight: 800;">Qty.</th>
-                    <th style="padding: 1.5px 2px; text-align: center; width: 34px; font-weight: 800;">Remarks</th>
+                  <tr style="background: #ffffff; border-bottom: 1.5px solid #000; color: #000000;">
+                    <th style="border-right: 1px solid #000; padding: 1.5px 3px; text-align: center; font-weight: 800; color: #000000;">Accessories</th>
+                    <th style="border-right: 1px solid #000; padding: 1.5px 2px; text-align: center; width: 38px; font-weight: 800; color: #000000;">Qty.</th>
+                    <th style="padding: 1.5px 2px; text-align: center; width: 34px; font-weight: 800; color: #000000;">Remarks</th>
                   </tr>
                 </thead>
                 <tbody>
                   ${displayAccs.map((a) => `
-                    <tr style="border-bottom: 1px dashed #000; height: 11.5px;">
-                      <td style="border-right: 1px solid #000; padding: 1px 3px; font-weight: 600;">${a.itemName || a.name}</td>
-                      <td style="border-right: 1px solid #000; padding: 1px 2px; text-align: center; font-weight: 600;">${a.quantity || a.qty || '01 Pcs'}</td>
-                      <td style="padding: 1px 2px; text-align: center; font-family: monospace; font-size: 7px;">${a.remarks || ''}</td>
+                    <tr style="border-bottom: 1px dashed #000; height: 11.5px; color: #000000;">
+                      <td style="border-right: 1px solid #000; padding: 1px 3px; font-weight: 600; color: #000000;">${a.itemName || a.name}</td>
+                      <td style="border-right: 1px solid #000; padding: 1px 2px; text-align: center; font-weight: 600; color: #000000;">${a.quantity || a.qty || '01 Pcs'}</td>
+                      <td style="padding: 1px 2px; text-align: center; font-family: monospace; font-size: 7px; color: #000000;">${a.remarks || ''}</td>
                     </tr>
                   `).join('')}
-                  <tr style="border-bottom: 1px dashed #000; height: 11px;">
-                    <td style="border-right: 1px solid #000;"></td>
-                    <td style="border-right: 1px solid #000;"></td>
-                    <td></td>
+                  <tr style="border-bottom: 1px dashed #000; height: 11px; color: #000000;">
+                    <td style="border-right: 1px solid #000; color: #000000;">&nbsp;</td>
+                    <td style="border-right: 1px solid #000; color: #000000;">&nbsp;</td>
+                    <td style="color: #000000;">&nbsp;</td>
                   </tr>
                 </tbody>
               </table>
@@ -2310,7 +2341,9 @@ function renderScreen6DatabasePage() {
                       <input type="checkbox" class="check-db-item" data-id="${a.id}" ${dbSelectedIds.has(a.id) ? 'checked' : ''} style="cursor: pointer;" />
                     </td>
                     <td style="padding: 7px 10px; text-align: center; color: #64748b;">${idx + 1}</td>
-                    <td style="padding: 7px 10px; text-align: center; font-family: monospace; font-weight: 800; color: #f59e0b;">#${a.regNo}</td>
+                    <td style="padding: 7px 10px; text-align: center; font-family: monospace; font-weight: 800; color: #f59e0b;">
+                      <span class="btn-print-reg-slip" data-reg="${a.regNo}" style="cursor: pointer; text-decoration: underline;" title="Click to view & print registration #${a.regNo}">#${a.regNo}</span>
+                    </td>
                     <td style="padding: 7px 10px; text-align: center; font-family: monospace; color: #cbd5e1; font-weight: 700;">${toolService.formatDateDMY(a.issueDate)}</td>
                     <td style="padding: 7px 10px; font-family: monospace; font-weight: 700; color: #38bdf8;">${a.userId}</td>
                     <td style="padding: 7px 10px; font-weight: 700; color: #f1f5f9;">${a.userName}</td>
@@ -2324,7 +2357,10 @@ function renderScreen6DatabasePage() {
                       </span>
                     </td>
                     <td style="padding: 7px 10px; color: #94a3b8;">${a.remarks || '-'}</td>
-                    <td style="padding: 7px 10px; text-align: center;">
+                    <td style="padding: 7px 10px; text-align: center; white-space: nowrap;">
+                      <button class="btn-print-reg-slip" data-reg="${a.regNo}" style="background: #10b981; color: #fff; border: none; padding: 3px 8px; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 700; margin-right: 4px; display: inline-flex; align-items: center; gap: 3px;" title="Print Registration Slip #${a.regNo}">
+                        <span>🖨️</span> Print
+                      </button>
                       <button class="btn-db-del-alloc" data-id="${a.id}" style="background: transparent; color: #ef4444; border: 1px solid #ef4444; padding: 2px 6px; border-radius: 4px; cursor: pointer; font-size: 11px;" title="Admin Delete Record">
                         🗑️
                       </button>
@@ -3359,16 +3395,18 @@ export function initToolsManagementEvents() {
           if (!item.requisitionNo && reqNo) item.requisitionNo = reqNo;
         });
 
+        const cleanRegNo = String(regNo).replace(/^[#\s]+/, '').trim();
         const result = await toolService.saveAllocationBatch({
-          regNo,
+          regNo: cleanRegNo,
           issueDate,
           user: { userId, userName, jobTitle, workingArea, requisitionNo: reqNo },
           items: liveAllocationQueue
         });
 
-        window.app?.showToast('Saved Successfully', `Saved ${result.count} items for Reg No #${regNo} (${userName})`, 'success');
+        window.app?.showToast('Saved Successfully', `Saved ${result.count} items for Reg No #${cleanRegNo} (${userName})`, 'success');
 
-        currentPrintRegNo = regNo;
+        currentPrintRegNo = cleanRegNo;
+        liveAllocationQueue = []; // Clean the queue after saving
 
         // Auto advance currentRegNo to next dynamic unique sequential number
         const nextSequentialReg = toolService.getNextRegistrationNumber();
@@ -3694,15 +3732,24 @@ export function initToolsManagementEvents() {
                 body {
                   margin: 0;
                   padding: 8px;
-                  background: #ffffff;
-                  color: #000000;
+                  background: #ffffff !important;
+                  color: #000000 !important;
                   font-family: 'Inter', Arial, sans-serif;
-                  -webkit-print-color-adjust: exact;
-                  print-color-adjust: exact;
+                  -webkit-print-color-adjust: exact !important;
+                  print-color-adjust: exact !important;
+                }
+                table, tr, th, td, span, div, p {
+                  color: #000000 !important;
+                }
+                th, td {
+                  color: #000000 !important;
+                  background-color: transparent !important;
                 }
                 .printable-doc {
                   box-shadow: none !important;
                   margin: 0 auto !important;
+                  color: #000000 !important;
+                  background: #ffffff !important;
                 }
                 #printable-pocket-document {
                   display: flex !important;
