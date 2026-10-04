@@ -34,6 +34,11 @@ jobs:
       - name: ⬇️ Checkout repository
         uses: actions/checkout@v4
 
+      - name: 🔄 Prepare Passenger restart file
+        run: |
+          mkdir -p tmp
+          date +%s > tmp/restart.txt
+
       - name: 📤 Deploy all files to cPanel via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
@@ -57,13 +62,14 @@ jobs:
           log-level: verbose
 
   # ═══════════════════════════════════════════════════════════
-  # JOB 2 — RESTART NODE.JS APP ON cPANEL VIA SSH
+  # JOB 2 — RESTART NODE.JS APP ON cPANEL VIA SSH (OPTIONAL)
   #          (runs after file upload completes)
   # ═══════════════════════════════════════════════════════════
   restart-nodejs:
     name: 🔄 Restart Node.js App on cPanel
     runs-on: ubuntu-latest
-    needs: deploy-files   # Only runs if file upload succeeded
+    needs: deploy-files
+    continue-on-error: true   # If shared host disables SSH, FTP Passenger restart.txt handles it
     steps:
       - name: 🔑 SSH into server & restart Node.js app
         uses: appleboy/ssh-action@v1.0.3
@@ -93,7 +99,7 @@ jobs:
   health-check:
     name: 🏥 Verify Site is Live
     runs-on: ubuntu-latest
-    needs: restart-nodejs
+    needs: [deploy-files]
     steps:
       - name: ⏳ Wait 15s for Node.js app to restart
         run: sleep 15
