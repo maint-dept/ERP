@@ -40,9 +40,9 @@ import { renderToolsManagementView, initToolsManagementEvents } from './componen
 import { renderManpowerView, initManpowerEvents } from './components/manpowerView.js?v=4.9.0';
 import { renderEtLabManagementView, initEtLabEvents, setEntActiveTab } from './components/etLabManagementView.js';
 import { renderChangePasswordModal, initChangePasswordModalEvents } from './components/changePasswordModal.js?v=3.8.0';
-import { renderStorageView, initStorageEvents } from './components/storageView.js';
+import { renderStorageView, initStorageEvents } from './components/storageView.js?v=4.22.19';
 import { renderPreventiveMaintenanceView, initPreventiveMaintenanceEvents } from './components/preventiveMaintenanceView.js?v=2.6.5';
-import { smartStorageService } from './services/smartStorageService.js';
+import { smartStorageService } from './services/smartStorageService.js?v=4.22.19';
 import { renderRelocateView, initRelocateViewEvents } from './components/relocateView.js?v=4.7.0';
 import { renderQrCodeView, initQrCodeEvents } from './components/qrCodeView.js?v=4.6.6';
 import { chatService } from './services/chatService.js';

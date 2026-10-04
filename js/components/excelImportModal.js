@@ -8,7 +8,7 @@ import { excelService } from '../services/excelService.js';
 import { customFieldService } from '../services/customFieldService.js';
 import { DUPLICATE_POLICIES } from '../db/schema.js';
 import { authService } from '../services/authService.js';
-import { smartStorageService } from '../services/smartStorageService.js';
+import { smartStorageService } from '../services/smartStorageService.js?v=4.22.19';
 import { state } from '../state.js';
 
 let importState = {

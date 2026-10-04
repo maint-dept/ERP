@@ -11,7 +11,7 @@ import { customFieldService } from '../services/customFieldService.js';
 import { machineService } from '../services/machineService.js';
 import { authService } from '../services/authService.js';
 import { notificationService } from '../services/notificationService.js';
-import { smartStorageService } from '../services/smartStorageService.js';
+import { smartStorageService } from '../services/smartStorageService.js?v=4.22.19';
 import { formatDisplayLine } from '../services/excelService.js';
 import { CloudSaveError } from '../db/storage.js';
 import { qrCodeService } from '../services/qrCodeService.js';
