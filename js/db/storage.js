@@ -174,13 +174,15 @@ class StorageEngine {
       this._suppressServerPersist = true;
       this.loadFromStorage();
 
-      // Only seed initial factory data if local cache has no records at all (brand new browser storage)
+      // Only seed initial factory data if local cache has no records at all AND never previously initialized
+      const hasSeededBefore = typeof localStorage !== 'undefined' ? !!localStorage.getItem('al_muslim_initial_seeded') : true;
       const isCompletelyEmpty = (!this.data[TABLE_NAMES.MACHINES] || this.data[TABLE_NAMES.MACHINES].length === 0) &&
                                 (!this.data[TABLE_NAMES.USERS] || this.data[TABLE_NAMES.USERS].length === 0);
 
-      if (isCompletelyEmpty) {
+      if (isCompletelyEmpty && !hasSeededBefore) {
         console.log('[Database Store] 🔄 Local cache empty. Seeding initial factory dataset...');
         this.resetToInitialData(false);
+        try { if (typeof localStorage !== 'undefined') localStorage.setItem('al_muslim_initial_seeded', '1'); } catch (_) {}
       }
 
       this.rebuildAllIndexes();
@@ -593,6 +595,61 @@ class StorageEngine {
   }
 
   /**
+   * Atomically save multiple tables in a single transaction (IndexedDB, localStorage, and MySQL Primary)
+   * Prevents rate-limiting and race conditions from multiple sequential saveTable calls.
+   *
+   * @param {Object} tablesObj - Map of { tableName: dataArray }
+   * @returns {Promise<boolean>} - true if remote write confirmed
+   */
+  async saveMultipleTables(tablesObj) {
+    if (!tablesObj || typeof tablesObj !== 'object') return false;
+
+    // 1. High-capacity persistent write to IndexedDB & localStorage for all tables
+    for (const [table, records] of Object.entries(tablesObj)) {
+      this.data[table] = records ?? [];
+      try {
+        await idbCache.setTable(table, this.data[table]);
+      } catch (_) {}
+      try {
+        localStorage.setItem(STORAGE_KEY_PREFIX + table, JSON.stringify(this.data[table]));
+      } catch (_) {}
+      if (!this.lastTableUpdates) this.lastTableUpdates = {};
+      this.lastTableUpdates[table] = Date.now();
+    }
+    try {
+      localStorage.setItem(STORAGE_KEY_PREFIX + 'version', SCHEMA_VERSION);
+      localStorage.setItem(STORAGE_KEY_PREFIX + 'last_saved', new Date().toISOString());
+    } catch (_) {}
+
+    // Rebuild indexes if machines updated
+    if (TABLE_NAMES.MACHINES in tablesObj) {
+      this.rebuildAllIndexes();
+    }
+
+    this.updateStatusBadge('saving');
+
+    try {
+      const result = await syncManager.saveMultipleTables(tablesObj);
+      if (result && result.success) {
+        this._isCloudConnected = true;
+        const confirmedTs = result.updatedAt || result.updateTime || new Date().toISOString();
+        for (const table of Object.keys(tablesObj)) {
+          this.syncedDocVersions.set('mysql_' + table, confirmedTs);
+          this.syncedDocVersions.set(table, confirmedTs);
+        }
+        this.updateStatusBadge('saved');
+        return true;
+      }
+      this.updateStatusBadge('error');
+      return false;
+    } catch (e) {
+      console.warn('[Storage] Remote saveMultipleTables warning:', e.message);
+      this.updateStatusBadge('error');
+      return false;
+    }
+  }
+
+  /**
    * Atomic write-and-confirm transaction helper.
    *
    * Snapshots the current table state, applies mutation in memory, then persists to Firestore.
@@ -683,6 +740,8 @@ class StorageEngine {
               if (!remoteTs) continue;
               if (tbl === TABLE_NAMES.SETTINGS && isViewingSettings) continue;
               if (this._tableSavePromises && this._tableSavePromises.has(tbl)) continue;
+              // Guard: If table was updated locally within last 8 seconds, do not let background poll overwrite it
+              if (this.lastTableUpdates && (Date.now() - (this.lastTableUpdates[tbl] || 0) < 8000)) continue;
 
               const knownTs = this.syncedDocVersions.get('mysql_' + tbl) || '';
               if (parseTs(remoteTs) > parseTs(knownTs)) {

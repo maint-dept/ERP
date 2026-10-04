@@ -38,6 +38,9 @@ export class MysqlAdapter extends BaseAdapter {
   _headers() {
     const headers = {
       'Content-Type': 'application/json',
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0',
       'X-DB-Host': this.host,
       'X-DB-Port': String(this.port),
       'X-DB-Name': this.database,
@@ -53,12 +56,13 @@ export class MysqlAdapter extends BaseAdapter {
   }
 
   _getUrl(action) {
+    const tParam = `_t=${Date.now()}`;
     if (this.endpoint.includes('.php')) {
       const sep = this.endpoint.includes('?') ? '&' : '?';
-      return `${this.endpoint}${sep}action=${action}`;
+      return `${this.endpoint}${sep}action=${action}&${tParam}`;
     }
     // Standard REST or Node proxy route
-    return `${this.endpoint}/${action}`;
+    return `${this.endpoint}/${action}?${tParam}`;
   }
 
   async testConnection() {
@@ -67,6 +71,7 @@ export class MysqlAdapter extends BaseAdapter {
       const url = this._getUrl('ping');
       const res = await fetch(url, {
         method: 'POST',
+        cache: 'no-store',
         headers: this._headers(),
         body: JSON.stringify({ action: 'ping', apiKey: this.apiKey })
       });
@@ -111,6 +116,7 @@ export class MysqlAdapter extends BaseAdapter {
       const url = this._getUrl('upsert');
       const res = await fetch(url, {
         method: 'POST',
+        cache: 'no-store',
         headers: this._headers(),
         body: JSON.stringify({ action: 'upsert', collection, docId, data, apiKey: this.apiKey })
       });
@@ -127,6 +133,7 @@ export class MysqlAdapter extends BaseAdapter {
       const url = this._getUrl('save_table');
       const res = await fetch(url, {
         method: 'POST',
+        cache: 'no-store',
         headers: this._headers(),
         body: JSON.stringify({ action: 'save_table', collection, data: dataObj, apiKey: this.apiKey })
       });
@@ -146,6 +153,7 @@ export class MysqlAdapter extends BaseAdapter {
       const url = this._getUrl('save_multiple_tables');
       const res = await fetch(url, {
         method: 'POST',
+        cache: 'no-store',
         headers: this._headers(),
         body: JSON.stringify({ action: 'save_multiple_tables', tables: tablesObj, apiKey: this.apiKey })
       });
@@ -170,6 +178,7 @@ export class MysqlAdapter extends BaseAdapter {
       }
       const res = await fetch(url, {
         method: 'GET',
+        cache: 'no-store',
         headers: this._headers()
       });
       if (res && res.ok) {
@@ -188,6 +197,7 @@ export class MysqlAdapter extends BaseAdapter {
       const url = this._getUrl('get_all');
       const res = await fetch(url, {
         method: 'GET',
+        cache: 'no-store',
         headers: this._headers()
       });
       if (res && res.ok) {
@@ -206,6 +216,7 @@ export class MysqlAdapter extends BaseAdapter {
       const url = this._getUrl('stats');
       const res = await fetch(url, {
         method: 'GET',
+        cache: 'no-store',
         headers: this._headers()
       });
       if (res && res.ok) {
@@ -231,6 +242,7 @@ export class MysqlAdapter extends BaseAdapter {
       const url = this._getUrl('delete');
       const res = await fetch(url, {
         method: 'POST',
+        cache: 'no-store',
         headers: this._headers(),
         body: JSON.stringify({ action: 'delete', collection, docId, apiKey: this.apiKey })
       });

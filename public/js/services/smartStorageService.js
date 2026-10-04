@@ -69,42 +69,33 @@ class SmartStorageService {
   }
 
   async deleteStorageItem(id) {
-    // CONFIRMED WRITE: await Database write
-    await storage.writeAndConfirm(TABLE_NAMES.STORAGE_MASTER, (tbl) => {
-      const idx = tbl.findIndex(it => it.id === id);
-      if (idx !== -1) tbl.splice(idx, 1);
+    const sm = storage.getTable(TABLE_NAMES.STORAGE_MASTER) || [];
+    const models = storage.getTable(TABLE_NAMES.MODELS) || [];
+    const newSm = sm.filter(it => it.id !== id);
+    const newModels = models.filter(it => it.id !== id);
+    await storage.saveMultipleTables({
+      [TABLE_NAMES.STORAGE_MASTER]: newSm,
+      [TABLE_NAMES.MODELS]: newModels
     });
-    // Also remove from MODELS if duplicated there
-    try { await storage.writeAndConfirm(TABLE_NAMES.MODELS, (tbl) => {
-      const idx = tbl.findIndex(it => it.id === id);
-      if (idx !== -1) tbl.splice(idx, 1);
-    }); } catch (_) {}
     this._broadcastStorageChange();
     return true;
   }
 
   async deleteStorageItemsBatch(ids) {
     if (!Array.isArray(ids) || ids.length === 0) return 0;
-    let count = 0;
-    // CONFIRMED WRITE: remove from STORAGE_MASTER
-    await storage.writeAndConfirm(TABLE_NAMES.STORAGE_MASTER, (tbl) => {
-      ids.forEach(id => {
-        const idx = tbl.findIndex(it => it.id === id);
-        if (idx !== -1) { tbl.splice(idx, 1); count++; }
-      });
+    const idSet = new Set(ids);
+    const sm = storage.getTable(TABLE_NAMES.STORAGE_MASTER) || [];
+    const models = storage.getTable(TABLE_NAMES.MODELS) || [];
+    const newSm = sm.filter(it => !idSet.has(it.id));
+    const newModels = models.filter(it => !idSet.has(it.id));
+    const deletedCount = sm.length - newSm.length;
+    await storage.saveMultipleTables({
+      [TABLE_NAMES.STORAGE_MASTER]: newSm,
+      [TABLE_NAMES.MODELS]: newModels
     });
-    // Also remove from MODELS
-    try {
-      await storage.writeAndConfirm(TABLE_NAMES.MODELS, (tbl) => {
-        ids.forEach(id => {
-          const idx = tbl.findIndex(it => it.id === id);
-          if (idx !== -1) tbl.splice(idx, 1);
-        });
-      });
-    } catch (_) {}
     this._broadcastStorageChange();
-    auditService.log('STORAGE_BATCH_DELETE', `Bulk deleted ${count} storage records`, { deletedCount: count });
-    return count;
+    auditService.log('STORAGE_BATCH_DELETE', `Bulk deleted ${deletedCount} storage records`, { deletedCount });
+    return deletedCount;
   }
 
   // ==========================================
@@ -634,40 +625,34 @@ class SmartStorageService {
   async deleteMachineNameAndModels(machineName) {
     const cleanName = String(machineName || '').trim();
     if (!cleanName) return 0;
+    const lower = cleanName.toLowerCase();
 
-    // 1. Delete all models under this machineName in storage_master
-    const all = this.getStorageItems('MACHINE');
-    const toDelete = all.filter(it => (it.machineName || '').trim().toLowerCase() === cleanName.toLowerCase());
-    let deletedCount = 0;
-    toDelete.forEach(it => {
-      try {
-        storage.delete(TABLE_NAMES.STORAGE_MASTER, it.id);
-        deletedCount++;
-      } catch (_) {}
+    // 1. Remove all models under this machineName in STORAGE_MASTER
+    const allSm = storage.getTable(TABLE_NAMES.STORAGE_MASTER) || [];
+    const newSm = allSm.filter(it => it.category !== 'MACHINE' || (it.machineName || '').trim().toLowerCase() !== lower);
+    const deletedCount = allSm.length - newSm.length;
+
+    // 2. Remove from MODELS table
+    const allMdl = storage.getTable(TABLE_NAMES.MODELS) || [];
+    const allMn = storage.getTable(TABLE_NAMES.MACHINE_NAMES) || [];
+    const targetMn = allMn.find(m => m.name && m.name.trim().toLowerCase() === lower);
+    const newMdl = allMdl.filter(m => 
+      (m.machineName && m.machineName.trim().toLowerCase() !== lower) &&
+      (!targetMn || m.machineNameId !== targetMn.id)
+    );
+
+    // 3. Remove from MACHINE_NAMES table
+    const newMn = allMn.filter(m => !m.name || m.name.trim().toLowerCase() !== lower);
+
+    // 4. Save atomically in single request
+    await storage.saveMultipleTables({
+      [TABLE_NAMES.STORAGE_MASTER]: newSm,
+      [TABLE_NAMES.MODELS]: newMdl,
+      [TABLE_NAMES.MACHINE_NAMES]: newMn
     });
 
-    // 2. Also delete from MODELS table
-    try {
-      const mdlList = storage.getTable(TABLE_NAMES.MODELS) || [];
-      const mnList = storage.getTable(TABLE_NAMES.MACHINE_NAMES) || [];
-      const mn = mnList.find(m => m.name && m.name.trim().toLowerCase() === cleanName.toLowerCase());
-      const toDeleteMdl = mdlList.filter(m => 
-        (m.machineName && m.machineName.trim().toLowerCase() === cleanName.toLowerCase()) ||
-        (mn && m.machineNameId === mn.id)
-      );
-      toDeleteMdl.forEach(m => {
-        storage.delete(TABLE_NAMES.MODELS, m.id);
-      });
-      if (mn) {
-        storage.delete(TABLE_NAMES.MACHINE_NAMES, mn.id);
-      }
-    } catch (_) {}
-
-    // 3. Guaranteed persistence to disk
     if (typeof storage.persistToServerDatabase === 'function') {
-      try {
-        await storage.persistToServerDatabase();
-      } catch (_) {}
+      try { await storage.persistToServerDatabase(); } catch (_) {}
     }
 
     this._broadcastStorageChange();
@@ -677,47 +662,59 @@ class SmartStorageService {
 
   async deleteMachineGroupsBatch(machineNames) {
     if (!Array.isArray(machineNames) || machineNames.length === 0) return 0;
-    let totalDeleted = 0;
-    for (const name of machineNames) {
-      totalDeleted += await this.deleteMachineNameAndModels(name);
+    const nameSet = new Set(machineNames.map(n => String(n || '').trim().toLowerCase()).filter(Boolean));
+    if (nameSet.size === 0) return 0;
+
+    // 1. Remove from STORAGE_MASTER
+    const allSm = storage.getTable(TABLE_NAMES.STORAGE_MASTER) || [];
+    const newSm = allSm.filter(it => it.category !== 'MACHINE' || !nameSet.has((it.machineName || '').trim().toLowerCase()));
+    const deletedCount = allSm.length - newSm.length;
+
+    // 2. Remove from MACHINE_NAMES
+    const allMn = storage.getTable(TABLE_NAMES.MACHINE_NAMES) || [];
+    const targetMnIds = new Set(allMn.filter(m => m.name && nameSet.has(m.name.trim().toLowerCase())).map(m => m.id));
+    const newMn = allMn.filter(m => !m.name || !nameSet.has(m.name.trim().toLowerCase()));
+
+    // 3. Remove from MODELS
+    const allMdl = storage.getTable(TABLE_NAMES.MODELS) || [];
+    const newMdl = allMdl.filter(m => 
+      (!m.machineName || !nameSet.has(m.machineName.trim().toLowerCase())) &&
+      (!m.machineNameId || !targetMnIds.has(m.machineNameId))
+    );
+
+    // 4. Save atomically in single request
+    await storage.saveMultipleTables({
+      [TABLE_NAMES.STORAGE_MASTER]: newSm,
+      [TABLE_NAMES.MODELS]: newMdl,
+      [TABLE_NAMES.MACHINE_NAMES]: newMn
+    });
+
+    if (typeof storage.persistToServerDatabase === 'function') {
+      try { await storage.persistToServerDatabase(); } catch (_) {}
     }
-    return totalDeleted;
+
+    this._broadcastStorageChange();
+    auditService.log('STORAGE_DELETE_MACHINE_BATCH', `Bulk deleted ${nameSet.size} machines and ${deletedCount} models`);
+    return deletedCount;
   }
 
   async clearAllMachineCatalogData() {
-    // 1. Wipe all MACHINE_NAMES
-    storage.setTable(TABLE_NAMES.MACHINE_NAMES, []);
-
-    // 2. Wipe all MACHINE category items in STORAGE_MASTER (preserves non-machine records if any)
+    // 1. Filter out all MACHINE category items in STORAGE_MASTER (preserves non-machine records if any)
     const allSm = storage.getTable(TABLE_NAMES.STORAGE_MASTER) || [];
     const nonMachineSm = allSm.filter(it => it.category !== 'MACHINE');
-    storage.setTable(TABLE_NAMES.STORAGE_MASTER, nonMachineSm);
 
-    // 3. Wipe all MODELS
-    storage.setTable(TABLE_NAMES.MODELS, []);
+    // 2. High-capacity IndexedDB write & Instant Atomic Single-Request Save across all catalog tables
+    await storage.saveMultipleTables({
+      [TABLE_NAMES.MACHINE_NAMES]: [],
+      [TABLE_NAMES.STORAGE_MASTER]: nonMachineSm,
+      [TABLE_NAMES.MODELS]: [],
+      [TABLE_NAMES.BRANDS]: []
+    });
 
-    // 4. Wipe all BRANDS
-    storage.setTable(TABLE_NAMES.BRANDS, []);
+    // 3. Mark browser as initialized so empty catalog is never accidentally reseeded with initial factory data
+    try { localStorage.setItem('al_muslim_initial_seeded', '1'); } catch (_) {}
 
-    // 5. High-capacity IndexedDB write & Instant Parallel MySQL Confirmed Save
-    try {
-      const { idbCache } = await import('../db/idbCache.js');
-      await Promise.all([
-        idbCache.setTable(TABLE_NAMES.MACHINE_NAMES, []),
-        idbCache.setTable(TABLE_NAMES.STORAGE_MASTER, nonMachineSm),
-        idbCache.setTable(TABLE_NAMES.MODELS, []),
-        idbCache.setTable(TABLE_NAMES.BRANDS, [])
-      ]);
-    } catch (_) {}
-
-    await Promise.all([
-      storage.saveTable(TABLE_NAMES.MACHINE_NAMES, true),
-      storage.saveTable(TABLE_NAMES.STORAGE_MASTER, true),
-      storage.saveTable(TABLE_NAMES.MODELS, true),
-      storage.saveTable(TABLE_NAMES.BRANDS, true)
-    ]);
-
-    // 6. Guaranteed disk write to data/erp_database.json
+    // 4. Guaranteed disk write to data/erp_database.json
     if (typeof storage.persistToServerDatabase === 'function') {
       try {
         await storage.persistToServerDatabase();

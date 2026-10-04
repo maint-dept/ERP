@@ -21,11 +21,16 @@ $DB_USER = 'motaherh_mainterp';  // In cPanel, user is usually motaherh_mainterp
 $DB_PASS = 'Maint@456';          // User Database Password
 $API_KEY = '';                   // Optional: Set a secret key if desired
 
-// --- 2. CORS HEADERS (Allows GitHub Pages & any frontend domain to connect) ---
+// --- 2. CORS & ANTI-CACHE HEADERS (Allows GitHub Pages & frontend to connect without stale proxy caching) ---
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization, X-API-Key, X-DB-Host, X-DB-Port, X-DB-Name, X-DB-User, X-DB-Pass, X-DB-SSL');
 header('Content-Type: application/json; charset=utf-8');
+header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0, post-check=0, pre-check=0');
+header('Pragma: no-cache');
+header('Expires: 0');
+header('X-LiteSpeed-Cache-Control: no-cache');
+header('X-Accel-Buffering: no');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(204);
