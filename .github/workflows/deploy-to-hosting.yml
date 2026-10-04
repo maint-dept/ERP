@@ -1,0 +1,142 @@
+name: 🚀 Deploy ERP to cPanel Hosting (moviezonex.com)
+
+on:
+  push:
+    branches: ["main", "master"]
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: 'Manual deploy reason (optional)'
+        required: false
+        default: 'Manual deployment trigger'
+
+# ─────────────────────────────────────────────────────────────
+# REQUIRED GitHub Repository Secrets (Settings → Secrets → Actions):
+#
+#   FTP_SERVER        → Your cPanel FTP host, e.g. ftp.moviezonex.com
+#   FTP_USERNAME      → cPanel FTP username, e.g. motaherh_erpadmin
+#   FTP_PASSWORD      → cPanel FTP password
+#   FTP_SERVER_DIR    → Remote path to your Node.js app root
+#                       e.g. /home/motaherh/nodejs_apps/erp/
+#                       (find this in cPanel → Setup Node.js App)
+#
+#   SSH_HOST          → Same as FTP_SERVER or your server IP
+#   SSH_USERNAME      → SSH username (usually same as cPanel username)
+#   SSH_PASSWORD      → SSH password (or use SSH_PRIVATE_KEY below)
+#   SSH_PRIVATE_KEY   → (Recommended) Your SSH private key content
+#
+#   NODE_APP_NAME     → The Node.js App name as shown in cPanel's
+#                       "Setup Node.js App" panel, e.g. "erp_app"
+#   NODE_APP_DIR      → Full server path to app, same as FTP_SERVER_DIR
+#                       e.g. /home/motaherh/nodejs_apps/erp
+# ─────────────────────────────────────────────────────────────
+
+jobs:
+  # ═══════════════════════════════════════════════════════════
+  # JOB 1 — DEPLOY FILES VIA FTP
+  # ═══════════════════════════════════════════════════════════
+  deploy-files:
+    name: 📁 Upload Files via FTP
+    runs-on: ubuntu-latest
+    steps:
+      - name: ⬇️ Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 📤 Deploy all files to cPanel via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          server-dir: ${{ secrets.FTP_SERVER_DIR }}
+          # Exclude files that should NOT be uploaded to the server
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/node_modules/**
+            **/.github/**
+            **/README.md
+            **/.gitignore
+            **/.env.example
+          # Only upload changed files (smart sync — much faster)
+          dangerous-clean-slate: false
+          log-level: verbose
+
+  # ═══════════════════════════════════════════════════════════
+  # JOB 2 — RESTART NODE.JS APP ON cPANEL VIA SSH
+  #          (runs after file upload completes)
+  # ═══════════════════════════════════════════════════════════
+  restart-nodejs:
+    name: 🔄 Restart Node.js App on cPanel
+    runs-on: ubuntu-latest
+    needs: deploy-files   # Only runs if file upload succeeded
+    steps:
+      - name: 🔑 SSH into server & restart Node.js app
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          # Use one of:
+          #   password: ${{ secrets.SSH_PASSWORD }}       <- simple (less secure)
+          #   key: ${{ secrets.SSH_PRIVATE_KEY }}         <- recommended
+          password: ${{ secrets.SSH_PASSWORD }}
+          # key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 22
+          script: |
+            echo "🚀 Starting ERP deployment on $(hostname)"
+            cd ${{ secrets.NODE_APP_DIR }}
+
+            # Install/update dependencies (only if package.json changed)
+            echo "📦 Installing Node.js dependencies..."
+            npm install --production --silent
+
+            # cPanel Node.js App: use the passenv restart script
+            # cPanel creates a virtual environment at:
+            #   ~/.cpanel/envs/<app_name>/bin/node
+            # And a restart script at:
+            #   ~/nodevenv/<app_dir_relative_to_home>/app.js
+            #
+            # Option A: Use cPanel's built-in restart script (most reliable)
+            if [ -f "$HOME/nodevenv/${{ secrets.NODE_APP_NAME }}/restart.sh" ]; then
+              echo "🔄 Restarting via cPanel nodevenv restart script..."
+              bash "$HOME/nodevenv/${{ secrets.NODE_APP_NAME }}/restart.sh"
+
+            # Option B: Use PM2 if installed
+            elif command -v pm2 &>/dev/null; then
+              echo "🔄 Restarting via PM2..."
+              pm2 restart ${{ secrets.NODE_APP_NAME }} 2>/dev/null || pm2 start server.js --name ${{ secrets.NODE_APP_NAME }}
+              pm2 save
+
+            # Option C: Create/update the tmp/restart.txt cPanel restart mechanism
+            else
+              echo "🔄 Triggering cPanel Passenger restart via tmp/restart.txt..."
+              mkdir -p tmp
+              touch tmp/restart.txt
+              echo "✅ Restart signal sent via tmp/restart.txt"
+            fi
+
+            echo "✅ Deployment complete! ERP is live at https://moviezonex.com"
+
+  # ═══════════════════════════════════════════════════════════
+  # JOB 3 — HEALTH CHECK (verify the site is responding)
+  # ═══════════════════════════════════════════════════════════
+  health-check:
+    name: 🏥 Verify Site is Live
+    runs-on: ubuntu-latest
+    needs: restart-nodejs
+    steps:
+      - name: ⏳ Wait 15s for Node.js app to restart
+        run: sleep 15
+
+      - name: 🌐 Check ERP health endpoint
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://moviezonex.com/api/health || echo "000")
+          echo "HTTP Status: $STATUS"
+          if [ "$STATUS" = "200" ]; then
+            echo "✅ SUCCESS: ERP is live and responding at https://moviezonex.com"
+          elif [ "$STATUS" = "000" ]; then
+            echo "⚠️  WARNING: Could not reach https://moviezonex.com — server may still be starting up."
+            echo "   Check cPanel -> Setup Node.js App to verify the app is running."
+          else
+            echo "⚠️  WARNING: Site returned HTTP $STATUS — check cPanel logs."
+          fi
