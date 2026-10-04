@@ -26,7 +26,7 @@ export class MysqlAdapter extends BaseAdapter {
         (rawEndpoint.includes('api/mysql_api.php') && !rawEndpoint.startsWith('http'))) {
       rawEndpoint = 'https://moviezonex.com/mysql_api.php';
     } else if (!/^https?:\/\//i.test(rawEndpoint)) {
-      if (typeof window !== 'undefined' && window.location && window.location.hostname.includes('github.io')) {
+      if (typeof window !== 'undefined' && window.location && (window.location.hostname.includes('github.io') || window.location.hostname.includes('moviezonex.com'))) {
         rawEndpoint = 'https://moviezonex.com/mysql_api.php';
       } else {
         rawEndpoint = 'https://' + rawEndpoint;

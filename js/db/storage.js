@@ -1122,8 +1122,8 @@ class StorageEngine {
   async persistToServerDatabase() {
     if (this._suppressServerPersist) return { status: 'suppressed' };
 
-    // On GitHub Pages or static host, remote persistence is handled via MySQL Primary (syncManager)
-    if (typeof window !== 'undefined' && window.location && (window.location.hostname.includes('github.io') || window.location.protocol === 'file:')) {
+    // On GitHub Pages, moviezonex.com, or static host, remote persistence is handled via MySQL Primary (syncManager)
+    if (typeof window !== 'undefined' && window.location && (window.location.hostname.includes('github.io') || window.location.hostname.includes('moviezonex.com') || window.location.protocol === 'file:')) {
       if (this._isCloudConnected) {
         this.updateStatusBadge('saved');
       }
@@ -1533,7 +1533,7 @@ class StorageEngine {
         if (!ep || ep === 'api/mysql_api.php' || ep === '/api/mysql_api.php' || ep.includes('://api/mysql_api.php') || ep === '/api/db/mysql' || (ep.includes('api/mysql_api.php') && !ep.startsWith('http'))) {
           ep = 'https://moviezonex.com/mysql_api.php';
         } else if (!/^https?:\/\//i.test(ep)) {
-          if (typeof window !== 'undefined' && window.location && window.location.hostname.includes('github.io')) {
+          if (typeof window !== 'undefined' && window.location && (window.location.hostname.includes('github.io') || window.location.hostname.includes('moviezonex.com'))) {
             ep = 'https://moviezonex.com/mysql_api.php';
           } else {
             ep = 'https://' + ep;

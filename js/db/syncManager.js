@@ -65,7 +65,7 @@ class SyncManager {
               let ep = (conf.endpoint || '').trim().replace(/\/$/, '');
               if (!ep || ep === 'api/mysql_api.php' || ep === '/api/mysql_api.php' || ep.includes('://api/mysql_api.php') || ep === '/api/db/mysql' || (ep.includes('api/mysql_api.php') && !ep.startsWith('http'))) {
                 ep = 'https://moviezonex.com/mysql_api.php';
-              } else if (!/^https?:\/\//i.test(ep) && typeof window !== 'undefined' && window.location && window.location.hostname.includes('github.io')) {
+              } else if (!/^https?:\/\//i.test(ep) && typeof window !== 'undefined' && window.location && (window.location.hostname.includes('github.io') || window.location.hostname.includes('moviezonex.com'))) {
                 ep = 'https://moviezonex.com/mysql_api.php';
               }
               conf.endpoint = ep;
