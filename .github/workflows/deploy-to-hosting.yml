@@ -78,46 +78,22 @@ jobs:
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
-          # Use one of:
-          #   password: ${{ secrets.SSH_PASSWORD }}       <- simple (less secure)
-          #   key: ${{ secrets.SSH_PRIVATE_KEY }}         <- recommended
           password: ${{ secrets.SSH_PASSWORD }}
-          # key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 22
           script: |
             echo "🚀 Starting ERP deployment on $(hostname)"
-            cd ${{ secrets.NODE_APP_DIR }}
+            cd /home/motaherh/moviezonex.com
 
-            # Install/update dependencies (only if package.json changed)
+            # Activate cPanel virtual environment & install dependencies
             echo "📦 Installing Node.js dependencies..."
+            source /home/motaherh/nodevenv/moviezonex.com/20/bin/activate
             npm install --production --silent
 
-            # cPanel Node.js App: use the passenv restart script
-            # cPanel creates a virtual environment at:
-            #   ~/.cpanel/envs/<app_name>/bin/node
-            # And a restart script at:
-            #   ~/nodevenv/<app_dir_relative_to_home>/app.js
-            #
-            # Option A: Use cPanel's built-in restart script (most reliable)
-            if [ -f "$HOME/nodevenv/${{ secrets.NODE_APP_NAME }}/restart.sh" ]; then
-              echo "🔄 Restarting via cPanel nodevenv restart script..."
-              bash "$HOME/nodevenv/${{ secrets.NODE_APP_NAME }}/restart.sh"
-
-            # Option B: Use PM2 if installed
-            elif command -v pm2 &>/dev/null; then
-              echo "🔄 Restarting via PM2..."
-              pm2 restart ${{ secrets.NODE_APP_NAME }} 2>/dev/null || pm2 start server.js --name ${{ secrets.NODE_APP_NAME }}
-              pm2 save
-
-            # Option C: Create/update the tmp/restart.txt cPanel restart mechanism
-            else
-              echo "🔄 Triggering cPanel Passenger restart via tmp/restart.txt..."
-              mkdir -p tmp
-              touch tmp/restart.txt
-              echo "✅ Restart signal sent via tmp/restart.txt"
-            fi
-
-            echo "✅ Deployment complete! ERP is live at https://moviezonex.com"
+            # Restart cPanel Node.js app via Passenger restart mechanism
+            echo "🔄 Restarting Node.js app via cPanel Passenger..."
+            mkdir -p tmp
+            touch tmp/restart.txt
+            echo "✅ Restart signal sent — ERP is live at https://moviezonex.com/erp_app"
 
   # ═══════════════════════════════════════════════════════════
   # JOB 3 — HEALTH CHECK (verify the site is responding)
