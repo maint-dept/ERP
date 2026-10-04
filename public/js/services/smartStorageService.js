@@ -2373,6 +2373,8 @@ class SmartStorageService {
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
+  }
+
   /**
    * Bulk Import Machine Names, Brands, and Models from Excel / CSV Data Rows
    * @param {Array<Object>} dataRows - Array of row objects parsed by SheetJS
