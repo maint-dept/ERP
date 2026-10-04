@@ -11,7 +11,7 @@
  */
 
 import { state } from '../state.js';
-import { toolService } from '../services/toolService.js?v=4.9.4';
+import { toolService } from '../services/toolService.js?v=4.9.5';
 import { employeeService } from '../services/employeeService.js';
 import { authService } from '../services/authService.js';
 import { historyService } from '../services/historyService.js';
@@ -2586,6 +2586,26 @@ export function initToolsManagementEvents() {
   const root = document.getElementById('tools-mgmt-root');
   if (!root) return;
 
+  // Multi-device and remote MySQL automatic live re-render listener
+  if (typeof window !== 'undefined' && !window._toolsMgmtSyncListenerAttached) {
+    window._toolsMgmtSyncListenerAttached = true;
+    const onDataRefreshed = (e) => {
+      const activeRoot = document.getElementById('tools-mgmt-root');
+      if (!activeRoot) return;
+      if (storage && typeof storage.isUserTyping === 'function' && storage.isUserTyping()) return;
+      const container = document.getElementById('tools-tab-content-container');
+      if (container) {
+        console.log('[ToolsManagementView] 🐬 Remote MySQL storage sync update received:', e.type);
+        container.innerHTML = renderActiveTab(currentActiveTab);
+        initToolsManagementEvents();
+      }
+    };
+    window.addEventListener('erp:storage-updated', onDataRefreshed);
+    window.addEventListener('erp:tools-updated', onDataRefreshed);
+    window.addEventListener('erp:critical-data-ready', onDataRefreshed);
+    window.addEventListener('erp:secondary-data-ready', onDataRefreshed);
+  }
+
   // Always synchronize top navbar active visuals with currentActiveTab
   updateToolsNavbarVisuals(currentActiveTab);
 
@@ -4535,7 +4555,7 @@ export function initToolsManagementEvents() {
         try {
           btnDbSaveParsed.disabled = true;
           const origHtml = btnDbSaveParsed.innerHTML;
-          btnDbSaveParsed.innerHTML = '<span>⏳</span> Saving to Database...';
+          btnDbSaveParsed.innerHTML = '<span>⏳</span> Saving to MySQL Cloud Database...';
 
           let res = {};
           if (databaseDirectImportType === 'ALLOCATIONS') {
@@ -5922,7 +5942,7 @@ function renderExcelImportCenterModal(initialTarget = 'ALLOCATIONS') {
       btnExecute.onclick = async () => {
         try {
           btnExecute.disabled = true;
-          btnExecute.innerHTML = '<span>⏳</span> Importing Data...';
+          btnExecute.innerHTML = '<span>⏳</span> Saving to MySQL Cloud Database...';
 
           let result = {};
           if (activeImportTab === 'ALLOCATIONS') {

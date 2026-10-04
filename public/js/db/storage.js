@@ -6,6 +6,7 @@
 import { INITIAL_DATA } from './initialData.js';
 import { TABLE_NAMES, DEFAULT_SETTINGS, SCHEMA_VERSION, DEFAULT_PERMISSION_PRESETS } from './schema.js';
 import { syncManager } from './syncManager.js';
+import { idbCache } from './idbCache.js';
 
 const STORAGE_KEY_PREFIX = 'al_muslim_erp_';
 
@@ -184,7 +185,7 @@ class StorageEngine {
 
       this.rebuildAllIndexes();
       this.isInitialized = true;
-      this._suppressServerPersist = false;
+      // Keep this._suppressServerPersist = true until syncWithServerDatabase completes to avoid premature auto-sync writes
 
       // Register unload flush handler and multi-device cloud synchronizers
       if (!this._unloadRegistered && typeof window !== 'undefined') {
@@ -328,6 +329,25 @@ class StorageEngine {
       }
     });
 
+    // High-capacity IndexedDB recovery (bypasses 5MB localStorage quota limit for large enterprise tables)
+    try {
+      idbCache.getAllTables().then(idbTables => {
+        if (idbTables && typeof idbTables === 'object') {
+          let idbUpdated = false;
+          for (const [tbl, records] of Object.entries(idbTables)) {
+            if (Array.isArray(records) && records.length > (this.data[tbl]?.length || 0)) {
+              this.data[tbl] = records;
+              idbUpdated = true;
+            }
+          }
+          if (idbUpdated && typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('erp:storage-updated'));
+            window.dispatchEvent(new CustomEvent('erp:tools-updated'));
+          }
+        }
+      }).catch(() => {});
+    } catch (_) {}
+
     if (!this.data[TABLE_NAMES.SETTINGS] || Object.keys(this.data[TABLE_NAMES.SETTINGS]).length === 0) {
       this.data[TABLE_NAMES.SETTINGS] = JSON.parse(JSON.stringify(DEFAULT_SETTINGS));
     }
@@ -470,29 +490,36 @@ class StorageEngine {
    */
   async saveTable(table, dataOrImmediate = null, maybeImmediate = true) {
     let immediate = true; // Default to immediate (confirmed write)
+    let isExplicitUserWrite = false;
     if (typeof dataOrImmediate === 'boolean') {
       immediate = dataOrImmediate;
     } else if (dataOrImmediate !== null && dataOrImmediate !== undefined) {
       this.data[table] = dataOrImmediate;
       immediate = maybeImmediate !== false; // default true
+      isExplicitUserWrite = true;
     }
 
     const records = this.data[table];
 
-    // 1. Write to localStorage immediately (local cache always updated first)
+    // 1. High-capacity persistent write to IndexedDB (no 5MB quota crashes)
+    try {
+      idbCache.setTable(table, records ?? []);
+    } catch (_) {}
+
+    // 2. Write to localStorage immediately (local cache)
     try {
       localStorage.setItem(STORAGE_KEY_PREFIX + table, JSON.stringify(records ?? []));
       localStorage.setItem(STORAGE_KEY_PREFIX + 'version', SCHEMA_VERSION);
       localStorage.setItem(STORAGE_KEY_PREFIX + 'last_saved', new Date().toISOString());
     } catch (err) {
-      console.error('Failed to save table to localStorage:', table, err);
+      console.warn('LocalStorage quota notice for table:', table, err.message);
     }
 
     if (!this.lastTableUpdates) this.lastTableUpdates = {};
     this.lastTableUpdates[table] = Date.now();
 
-    // If server persist is suppressed (during boot/initialization), do not fire cloud writes
-    if (this._suppressServerPersist) {
+    // If server persist is suppressed (during boot/initialization), do not fire cloud writes UNLESS it is an explicit user write
+    if (this._suppressServerPersist && !isExplicitUserWrite) {
       return true;
     }
 
@@ -642,13 +669,20 @@ class StorageEngine {
           const mysqlTsRes = await syncManager.primaryAdapter.getTableTimestamps();
           if (mysqlTsRes && mysqlTsRes.success && mysqlTsRes.timestamps) {
             const mysqlUpdates = [];
+            const parseTs = (ts) => {
+              if (!ts) return 0;
+              const s = String(ts).trim().replace(' ', 'T');
+              const ms = Date.parse(s.endsWith('Z') || s.includes('+') ? s : s + 'Z');
+              return isNaN(ms) ? 0 : ms;
+            };
+
             for (const [tbl, remoteTs] of Object.entries(mysqlTsRes.timestamps)) {
               if (!remoteTs) continue;
               if (tbl === TABLE_NAMES.SETTINGS && isViewingSettings) continue;
               if (this._tableSavePromises && this._tableSavePromises.has(tbl)) continue;
 
               const knownTs = this.syncedDocVersions.get('mysql_' + tbl) || '';
-              if (remoteTs > knownTs) {
+              if (parseTs(remoteTs) > parseTs(knownTs)) {
                 mysqlUpdates.push({ tbl, remoteTs });
               }
             }
@@ -760,6 +794,9 @@ class StorageEngine {
           this.data[tbl] = serverRecs[tbl];
         }
 
+        try {
+          idbCache.setTable(tbl, this.data[tbl]);
+        } catch (_) {}
         try {
           localStorage.setItem(STORAGE_KEY_PREFIX + tbl, JSON.stringify(this.data[tbl]));
         } catch (_) {}
@@ -879,6 +916,7 @@ class StorageEngine {
           this._hasCriticalSyncCompleted = true;
           this._hasInitialSyncCompleted = true;
           this._hasFullSecondarySyncCompleted = true;
+          this._suppressServerPersist = false;
           Object.keys(mysqlRes.tables).forEach(t => this._loadedSecondaryTables.add(t));
           this.updateStatusBadge('saved');
 
@@ -896,6 +934,7 @@ class StorageEngine {
             window.dispatchEvent(new CustomEvent('erp:critical-data-ready'));
             window.dispatchEvent(new CustomEvent('erp:storage-updated'));
             window.dispatchEvent(new CustomEvent('erp:secondary-data-ready'));
+            window.dispatchEvent(new CustomEvent('erp:tools-updated'));
           }
 
           return;
@@ -903,6 +942,8 @@ class StorageEngine {
       }
     } catch (e) {
       console.warn('[Storage] MySQL Primary startup sync notice:', e.message);
+      this._hasInitialSyncCompleted = true;
+      this._suppressServerPersist = false;
     }
 
     // 2. Local Node.js server sync (Secondary / Offline Backup only)

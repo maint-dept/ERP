@@ -629,7 +629,6 @@ class ToolService {
   }
 
   getRecentRegistrations(limit = 10) {
-    this.syncAllocationsWithManpower();
     const list = storage.getTable(TABLE_NAMES.TOOL_ALLOCATIONS) || [];
     const regMap = new Map();
 
@@ -673,11 +672,14 @@ class ToolService {
    * Leaves non-matching records completely untouched.
    */
   async syncAllocationsWithManpower() {
+    if (this._isSyncingManpower) return { updatedCount: 0 };
     let allocations = storage.getTable(TABLE_NAMES.TOOL_ALLOCATIONS) || [];
-    if (allocations.length === 0) return { updatedCount: 0 };
+    if (!allocations || allocations.length === 0) return { updatedCount: 0 };
 
-    let updatedCount = 0;
-    let modified = false;
+    this._isSyncingManpower = true;
+    try {
+      let updatedCount = 0;
+      let modified = false;
 
     allocations.forEach(alloc => {
       const cardToMatch = String(alloc.userId || '').trim();
@@ -723,25 +725,21 @@ class ToolService {
       }
     });
 
-    if (modified) {
-      await storage.saveTable(TABLE_NAMES.TOOL_ALLOCATIONS, allocations);
-      console.log(`[ToolService] Auto-synced ${updatedCount} tool allocation records with latest Manpower data.`);
-    }
+      if (modified) {
+        await storage.saveTable(TABLE_NAMES.TOOL_ALLOCATIONS, allocations, true);
+        console.log(`[ToolService] Auto-synced ${updatedCount} tool allocation records with latest Manpower data.`);
+      }
 
-    return { updatedCount };
+      return { updatedCount };
+    } finally {
+      this._isSyncingManpower = false;
+    }
   }
 
   getRegistrationDetails(regNoOrCard) {
     if (!regNoOrCard) return null;
     const raw = String(regNoOrCard).trim();
     if (!raw) return null;
-
-    // Ensure allocations are synchronized with latest Manpower employee updates
-    try {
-      this.syncAllocationsWithManpower();
-    } catch (e) {
-      console.warn('[ToolService] Auto-sync in getRegistrationDetails non-critical warning:', e);
-    }
 
     const cleanLower = raw.toLowerCase();
     const normReg = cleanLower.replace(/^[#\s]+/, '').trim();
@@ -891,8 +889,13 @@ class ToolService {
   }
 
   cleanAllocationRequisitions() {
+    if (this._isSanitizingAllocations) return;
     const list = storage.getTable(TABLE_NAMES.TOOL_ALLOCATIONS) || [];
-    let changed = false;
+    if (!list || list.length === 0) return;
+
+    this._isSanitizingAllocations = true;
+    try {
+      let changed = false;
 
     list.forEach(a => {
       // 1. If requisitionNo is missing, extract clean IR number from remarks if available
@@ -960,14 +963,23 @@ class ToolService {
         }
       }
     });
-    if (historyChanged) {
-      storage.saveTable(TABLE_NAMES.TOOL_CHANGE_HISTORY, historyList);
+      if (historyChanged) {
+        storage.saveTable(TABLE_NAMES.TOOL_CHANGE_HISTORY, historyList, false);
+      }
+    } finally {
+      this._isSanitizingAllocations = false;
     }
   }
 
-  getAllocations(filters = {}) {
-    this.syncAllocationsWithManpower();
+  ensureSanitizedAllocations() {
+    if (this._hasSanitizedOnce || this._isSanitizingAllocations) return;
+    const list = storage.getTable(TABLE_NAMES.TOOL_ALLOCATIONS) || [];
+    if (!list || list.length === 0) return;
+    this._hasSanitizedOnce = true;
     this.cleanAllocationRequisitions();
+  }
+
+  getAllocations(filters = {}) {
     let list = storage.getTable(TABLE_NAMES.TOOL_ALLOCATIONS) || [];
 
     if (filters.search && filters.search.trim()) {
@@ -1771,12 +1783,23 @@ class ToolService {
     }
 
     if (insertedCount > 0) {
-      await storage.saveTable(TABLE_NAMES.TOOL_ALLOCATIONS, list);
-      auditService.log({
-        action: 'IMPORT_TOOL_ALLOCATIONS_EXCEL',
-        details: `Imported ${insertedCount} tool allocations via Excel import`,
-        targetId: 'EXCEL_IMPORT'
-      });
+      // 1. High-capacity write to IndexedDB
+      try {
+        const { idbCache } = await import('../db/idbCache.js');
+        await idbCache.setTable(TABLE_NAMES.TOOL_ALLOCATIONS, list);
+      } catch (_) {}
+
+      // 2. Confirmed immediate cloud save (MySQL Primary)
+      const saveRes = await storage.saveTable(TABLE_NAMES.TOOL_ALLOCATIONS, list, true);
+      console.log(`[ToolService] Bulk imported ${insertedCount} allocations. Cloud save confirmed:`, saveRes);
+
+      try {
+        auditService.log({
+          action: 'IMPORT_TOOL_ALLOCATIONS_EXCEL',
+          details: `Imported ${insertedCount} tool allocations via Excel import`,
+          targetId: 'EXCEL_IMPORT'
+        });
+      } catch (_) {}
     }
 
     return {
