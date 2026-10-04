@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Al-Muslim Group Garments Factory Maintenance Machine ERP
  * Comprehensive Manpower & Workforce Management Service
  * Handles Employee Profiles, Dynamic Custom Fields, Hierarchical Placement,
@@ -1469,11 +1469,11 @@ class EmployeeService {
     rows.forEach((row, idx) => {
       const cardNumber = this._extractCell(row, [
         'Employee / Card ID', 'Card ID', 'Card Number', 'Card No', 'Card', 'ID',
-        'ID Number', 'ID Card', 'Employee ID', 'Emp ID', 'কার্ড নং', 'আইডি'
+        'ID Number', 'ID Card', 'Employee ID', 'Emp ID'
       ]);
       const name = this._extractCell(row, [
         'Full Name', 'Name', 'Employee Name', 'Worker Name', 'Staff Name',
-        'Mechanic Name', 'নাম', 'কর্মীর নাম'
+        'Mechanic Name', 'Technician Name'
       ]);
 
       if (!cardNumber && !name) {
@@ -1485,14 +1485,14 @@ class EmployeeService {
         return;
       }
 
-      const designation = this._extractCell(row, ['Designation', 'Designation Name', 'Position', 'Rank', 'পদবী', 'পদবি']);
+      const designation = this._extractCell(row, ['Designation', 'Designation Name', 'Position', 'Rank', 'Job Title']);
       const unit = this._extractCell(row, [
         'Factory / Unit', 'Factory/Unit', 'Unit / Factory', 'Unit/Factory',
         'Unit', 'Factory', 'Plant', 'Company', 'Unit Name', 'Factory Name',
-        'Company Name', 'Plant Unit', 'ইউনিট', 'কারখানা', 'প্রতিষ্ঠান'
+        'Company Name', 'Plant Unit'
       ]);
-      const workingArea = this._extractCell(row, ['Line / Working Area', 'Working Area', 'Area', 'Line', 'Line Name', 'Section', 'কর্মক্ষেত্র', 'লাইন', 'সেকশন']);
-      const floor = this._extractCell(row, ['Plant Floor', 'Floor', 'Floor Name', 'ফ্লোর']);
+      const workingArea = this._extractCell(row, ['Line / Working Area', 'Working Area', 'Area', 'Line', 'Line Name', 'Section']);
+      const floor = this._extractCell(row, ['Plant Floor', 'Floor', 'Floor Name']);
 
       const matchedUnit = this.resolveUnitFromMasterData(unit);
       const existing = this.findEmployeeByFlexibleCard(cardNumber);
@@ -1576,12 +1576,12 @@ class EmployeeService {
       try {
         const cardNumber = this._extractCell(row, [
           'Employee / Card ID', 'Card ID', 'Card Number', 'Card No', 'Card', 'ID',
-          'ID Number', 'ID Card', 'Employee ID', 'Emp ID', 'Staff ID', 'কার্ড নং', 'আইডি'
+          'ID Number', 'ID Card', 'Employee ID', 'Emp ID', 'Staff ID'
         ]);
 
         const name = this._extractCell(row, [
           'Full Name', 'Name', 'Employee Name', 'Worker Name', 'Staff Name',
-          'Technician Name', 'Mechanic Name', 'নাম', 'কর্মীর নাম'
+          'Technician Name', 'Mechanic Name'
         ]);
 
         if (!cardNumber && !name) {
@@ -1593,18 +1593,18 @@ class EmployeeService {
           return;
         }
 
-        const designation = this._extractCell(row, ['Designation', 'Designation Name', 'Position', 'Rank', 'Job Title', 'পদবী', 'পদবি']);
-        const department = this._extractCell(row, ['Department', 'Dept', 'Department Name', 'Section', 'বিভাগ']);
+        const designation = this._extractCell(row, ['Designation', 'Designation Name', 'Position', 'Rank', 'Job Title']);
+        const department = this._extractCell(row, ['Department', 'Dept', 'Department Name', 'Section']);
         const unit = this._extractCell(row, [
           'Factory / Unit', 'Factory/Unit', 'Unit / Factory', 'Unit/Factory',
           'Unit', 'Factory', 'Plant', 'Company', 'Unit Name', 'Factory Name',
-          'Company Name', 'Plant Unit', 'ইউনিট', 'কারখানা', 'প্রতিষ্ঠান'
+          'Company Name', 'Plant Unit'
         ]);
-        const workingArea = this._extractCell(row, ['Line / Working Area', 'Working Area', 'Area', 'Line', 'Line Name', 'Production Bay', 'Section', 'কর্মক্ষেত্র', 'লাইন', 'সেকশন']);
-        const floor = this._extractCell(row, ['Plant Floor', 'Floor', 'Floor Name', 'ফ্লোর']);
-        const phone = this._extractCell(row, ['Phone Number', 'Phone', 'Mobile', 'Mobile No', 'Contact Number', 'Contact', 'মোবাইল', 'ফোন']);
-        const joinDate = this._extractCell(row, ['Joining Date', 'Join Date', 'DOJ', 'Date of Joining', 'যোগদানের তারিখ']);
-        const rawStatus = this._extractCell(row, ['Status', 'Employment Status', 'Active', 'স্ট্যাটাস']).toUpperCase();
+        const workingArea = this._extractCell(row, ['Line / Working Area', 'Working Area', 'Area', 'Line', 'Line Name', 'Production Bay', 'Section']);
+        const floor = this._extractCell(row, ['Plant Floor', 'Floor', 'Floor Name']);
+        const phone = this._extractCell(row, ['Phone Number', 'Phone', 'Mobile', 'Mobile No', 'Contact Number', 'Contact']);
+        const joinDate = this._extractCell(row, ['Joining Date', 'Join Date', 'DOJ', 'Date of Joining']);
+        const rawStatus = this._extractCell(row, ['Status', 'Employment Status', 'Active']).toUpperCase();
         const status = (rawStatus === 'INACTIVE' || rawStatus === 'TERMINATED' || rawStatus === 'ON_LEAVE') ? rawStatus : 'ACTIVE';
 
         // Master Data Plant Hierarchy Resolution (Unit -> Floor -> Line)

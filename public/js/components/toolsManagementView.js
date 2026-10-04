@@ -11,7 +11,7 @@
  */
 
 import { state } from '../state.js';
-import { toolService } from '../services/toolService.js?v=4.9.3';
+import { toolService } from '../services/toolService.js?v=4.9.4';
 import { employeeService } from '../services/employeeService.js';
 import { authService } from '../services/authService.js';
 import { historyService } from '../services/historyService.js';
@@ -1822,7 +1822,7 @@ function renderScreen4FindAndSelect() {
                     </td>
                     <td style="padding: 8px 8px; text-align: center; white-space: nowrap;">
                       <div style="display: inline-flex; gap: 4px; justify-content: center; align-items: center; white-space: nowrap;">
-                        <button class="btn-edit-alloc-find" data-id="${a.id}" title="Edit / Correct Item Entry (ভুল এন্ট্রি সংশোধন)" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.4); padding: 4px 7px; border-radius: 4px; font-size: 11px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 3px;">
+                        <button class="btn-edit-alloc-find" data-id="${a.id}" title="Edit / Correct Item Entry" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.4); padding: 4px 7px; border-radius: 4px; font-size: 11px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 3px;">
                           <span>✏️</span> Edit
                         </button>
                         <button class="btn-log-replacement" data-id="${a.id}" title="Log Tool Replacement & Record History" style="background: #eab308; color: #000; border: none; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; gap: 3px; white-space: nowrap; box-shadow: 0 1px 3px rgba(0,0,0,0.3);">
@@ -2366,13 +2366,13 @@ function renderScreen6DatabasePage() {
                     </td>
                     <td style="padding: 7px 10px; color: #94a3b8;">${a.remarks || '-'}</td>
                     <td style="padding: 7px 10px; text-align: center; white-space: nowrap;">
-                      <button class="btn-db-edit-alloc" data-id="${a.id}" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid #38bdf8; padding: 3px 8px; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 700; margin-right: 4px; display: inline-flex; align-items: center; gap: 3px;" title="Edit / Correct Item Entry (ভুল এন্ট্রি সংশোধন)">
+                      <button class="btn-db-edit-alloc" data-id="${a.id}" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid #38bdf8; padding: 3px 8px; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 700; margin-right: 4px; display: inline-flex; align-items: center; gap: 3px;" title="Edit / Correct Item Entry">
                         <span>✏️</span> Edit
                       </button>
                       <button class="btn-print-reg-slip" data-reg="${a.regNo}" style="background: #10b981; color: #fff; border: none; padding: 3px 8px; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 700; margin-right: 4px; display: inline-flex; align-items: center; gap: 3px;" title="Print Registration Slip #${a.regNo}">
                         <span>🖨️</span> Print
                       </button>
-                      <button class="btn-db-del-alloc" data-id="${a.id}" style="background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid #ef4444; padding: 3px 6px; border-radius: 4px; cursor: pointer; font-size: 11px;" title="Admin Delete Record (স্টক রিস্টোর সহ মুছুন)">
+                      <button class="btn-db-del-alloc" data-id="${a.id}" style="background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid #ef4444; padding: 3px 6px; border-radius: 4px; cursor: pointer; font-size: 11px;" title="Admin Delete Record (Restore Inventory Stock)">
                         🗑️
                       </button>
                     </td>
@@ -6123,7 +6123,7 @@ function renderToolReplacementModal(item) {
 }
 
 // =========================================================================
-// 8B. EDIT ALLOCATION RECORD MODAL (ভুল এন্ট্রি ও অতিরিক্ত আইটেম সংশোধন/মুছে ফেলা)
+// 8B. EDIT ALLOCATION RECORD MODAL (Correct Mistake / Extra Item Entries)
 // =========================================================================
 export function openEditAllocationModal(id) {
   if (!id) return;
@@ -6162,7 +6162,7 @@ export function openEditAllocationModal(id) {
           <div style="display: flex; align-items: center; gap: 8px;">
             <span style="font-size: 20px;">✏️</span>
             <div>
-              <h3 style="font-size: 15px; font-weight: 900; margin: 0; letter-spacing: 0.3px;">Edit Allocation Item / ভুল এন্ট্রি সংশোধন</h3>
+              <h3 style="font-size: 15px; font-weight: 900; margin: 0; letter-spacing: 0.3px;">Edit Allocation Item</h3>
               <div style="font-size: 11px; opacity: 0.95; margin-top: 1px;">Update item details, adjust quantity, or permanently delete mistaken entries</div>
             </div>
           </div>
@@ -6189,7 +6189,7 @@ export function openEditAllocationModal(id) {
           <!-- Item Type & Catalog Selector -->
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
             <div>
-              <label style="display: block; font-size: 11px; font-weight: 700; color: #94a3b8; margin-bottom: 4px;">Item Type (ধরন) :</label>
+              <label style="display: block; font-size: 11px; font-weight: 700; color: #94a3b8; margin-bottom: 4px;">Item Type :</label>
               <select id="edit-alloc-type" style="width: 100%; background: #1e293b; color: #fff; border: 1px solid #475569; border-radius: 6px; padding: 7px 10px; font-size: 12px;">
                 <option value="TOOL" ${currentType === 'TOOL' ? 'selected' : ''}>🔧 Mechanic Tool</option>
                 <option value="ACCESSORY" ${currentType === 'ACCESSORY' ? 'selected' : ''}>📦 Extra Accessory</option>
@@ -6197,7 +6197,7 @@ export function openEditAllocationModal(id) {
               </select>
             </div>
             <div>
-              <label style="display: block; font-size: 11px; font-weight: 700; color: #94a3b8; margin-bottom: 4px;">Catalog Quick Select (ক্যাটালগ থেকে পছন্দ) :</label>
+              <label style="display: block; font-size: 11px; font-weight: 700; color: #94a3b8; margin-bottom: 4px;">Catalog Quick Select :</label>
               <select id="edit-alloc-picker" style="width: 100%; background: #1e293b; color: #fff; border: 1px solid #475569; border-radius: 6px; padding: 7px 10px; font-size: 12px;">
                 <option value="">-- Choose from Master Catalog --</option>
               </select>
@@ -6207,11 +6207,11 @@ export function openEditAllocationModal(id) {
           <!-- Item Code & Item Name -->
           <div style="display: grid; grid-template-columns: 100px 1fr; gap: 12px;">
             <div>
-              <label style="display: block; font-size: 11px; font-weight: 700; color: #94a3b8; margin-bottom: 4px;">Code (কোড) :</label>
+              <label style="display: block; font-size: 11px; font-weight: 700; color: #94a3b8; margin-bottom: 4px;">Item Code :</label>
               <input type="text" id="edit-alloc-code" value="${currentCode}" placeholder="e.g. 001" style="width: 100%; background: #1e293b; color: #38bdf8; font-family: monospace; font-weight: 700; border: 1px solid #475569; border-radius: 6px; padding: 7px 10px; font-size: 12px;" />
             </div>
             <div>
-              <label style="display: block; font-size: 11px; font-weight: 700; color: #94a3b8; margin-bottom: 4px;">Tool / Item Name (টুল বা আইটেমের নাম) :</label>
+              <label style="display: block; font-size: 11px; font-weight: 700; color: #94a3b8; margin-bottom: 4px;">Tool / Item Name :</label>
               <input type="text" id="edit-alloc-name" value="${currentName}" placeholder="e.g. Cutting Plier 8 inch" style="width: 100%; background: #1e293b; color: #fff; font-weight: 700; border: 1px solid #475569; border-radius: 6px; padding: 7px 10px; font-size: 12px;" />
             </div>
           </div>
@@ -6219,17 +6219,17 @@ export function openEditAllocationModal(id) {
           <!-- Quantity & Status -->
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
             <div>
-              <label style="display: block; font-size: 11px; font-weight: 700; color: #94a3b8; margin-bottom: 4px;">Quantity (পরিমাণ) :</label>
+              <label style="display: block; font-size: 11px; font-weight: 700; color: #94a3b8; margin-bottom: 4px;">Quantity :</label>
               <input type="number" id="edit-alloc-qty" value="${currentQty}" min="1" max="999" style="width: 100%; background: #1e293b; color: #22c55e; font-weight: 800; border: 1px solid #475569; border-radius: 6px; padding: 7px 10px; font-size: 13px;" />
             </div>
             <div>
-              <label style="display: block; font-size: 11px; font-weight: 700; color: #94a3b8; margin-bottom: 4px;">Status (স্ট্যাটাস) :</label>
+              <label style="display: block; font-size: 11px; font-weight: 700; color: #94a3b8; margin-bottom: 4px;">Status :</label>
               <select id="edit-alloc-status" style="width: 100%; background: #1e293b; color: #fff; border: 1px solid #475569; border-radius: 6px; padding: 7px 10px; font-size: 12px; font-weight: 700;">
-                <option value="NEW_ISSUE" ${currentStatus === 'NEW_ISSUE' ? 'selected' : ''}>🟢 New Issue (নতুন ইস্যু)</option>
-                <option value="REPLACED" ${currentStatus === 'REPLACED' ? 'selected' : ''}>🟡 Replaced (পরিবর্তিত)</option>
-                <option value="RETURNED" ${currentStatus === 'RETURNED' ? 'selected' : ''}>🔵 Returned (ফেরত গৃহীত)</option>
-                <option value="LOST" ${currentStatus === 'LOST' ? 'selected' : ''}>🔴 Lost (হারিয়ে গেছে)</option>
-                <option value="ACTIVE" ${currentStatus === 'ACTIVE' ? 'selected' : ''}>⚪ Active (সক্রিয়)</option>
+                <option value="NEW_ISSUE" ${currentStatus === 'NEW_ISSUE' ? 'selected' : ''}>🟢 New Issue</option>
+                <option value="REPLACED" ${currentStatus === 'REPLACED' ? 'selected' : ''}>🟡 Replaced</option>
+                <option value="RETURNED" ${currentStatus === 'RETURNED' ? 'selected' : ''}>🔵 Returned</option>
+                <option value="LOST" ${currentStatus === 'LOST' ? 'selected' : ''}>🔴 Lost</option>
+                <option value="ACTIVE" ${currentStatus === 'ACTIVE' ? 'selected' : ''}>⚪ Active</option>
               </select>
             </div>
           </div>
@@ -6237,11 +6237,11 @@ export function openEditAllocationModal(id) {
           <!-- Working Area & Issue Date -->
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
             <div>
-              <label style="display: block; font-size: 11px; font-weight: 700; color: #94a3b8; margin-bottom: 4px;">Working Area (কাজের স্থান / ফ্লোর) :</label>
+              <label style="display: block; font-size: 11px; font-weight: 700; color: #94a3b8; margin-bottom: 4px;">Working Area :</label>
               <input type="text" id="edit-alloc-area" value="${currentWorkingArea}" placeholder="e.g. Sewing Floor 3" style="width: 100%; background: #1e293b; color: #fff; border: 1px solid #475569; border-radius: 6px; padding: 7px 10px; font-size: 12px;" />
             </div>
             <div>
-              <label style="display: block; font-size: 11px; font-weight: 700; color: #94a3b8; margin-bottom: 4px;">Issue Date (ইস্যু তারিখ DD-MM-YYYY) :</label>
+              <label style="display: block; font-size: 11px; font-weight: 700; color: #94a3b8; margin-bottom: 4px;">Issue Date (DD-MM-YYYY) :</label>
               <div style="display: flex; gap: 6px;">
                 <input type="text" id="edit-alloc-date" value="${formattedDate}" style="flex: 1; background: #1e293b; color: #fff; border: 1px solid #475569; border-radius: 6px; padding: 7px 10px; font-size: 12px; font-family: monospace;" />
                 <input type="date" id="edit-alloc-date-picker" style="width: 38px; background: #1e293b; color: #fff; border: 1px solid #475569; border-radius: 6px; padding: 4px; cursor: pointer;" title="Open Date Picker" />
@@ -6252,12 +6252,12 @@ export function openEditAllocationModal(id) {
           <!-- Requisition No & Remarks -->
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
             <div>
-              <label style="display: block; font-size: 11px; font-weight: 700; color: #94a3b8; margin-bottom: 4px;">Requisition # (রিকুইজিশন নম্বর) :</label>
+              <label style="display: block; font-size: 11px; font-weight: 700; color: #94a3b8; margin-bottom: 4px;">Requisition # :</label>
               <input type="text" id="edit-alloc-req-no" value="${currentReqNo}" placeholder="e.g. REQ-2025-089" style="width: 100%; background: #1e293b; color: #fff; border: 1px solid #475569; border-radius: 6px; padding: 7px 10px; font-size: 12px;" />
             </div>
             <div>
-              <label style="display: block; font-size: 11px; font-weight: 700; color: #94a3b8; margin-bottom: 4px;">Remarks (মন্তব্য / সংশোধনের কারণ) :</label>
-              <input type="text" id="edit-alloc-remarks" value="${currentRemarks}" placeholder="e.g. Corrected quantity / wrong item" style="width: 100%; background: #1e293b; color: #fff; border: 1px solid #475569; border-radius: 6px; padding: 7px 10px; font-size: 12px;" />
+              <label style="display: block; font-size: 11px; font-weight: 700; color: #94a3b8; margin-bottom: 4px;">Remarks :</label>
+              <input type="text" id="edit-alloc-remarks" value="${currentRemarks}" placeholder="e.g. Corrected quantity / item" style="width: 100%; background: #1e293b; color: #fff; border: 1px solid #475569; border-radius: 6px; padding: 7px 10px; font-size: 12px;" />
             </div>
           </div>
 
@@ -6266,14 +6266,14 @@ export function openEditAllocationModal(id) {
         <!-- Modal Footer -->
         <div style="background: #1e293b; border-top: 1px solid #334155; padding: 12px 18px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; flex-wrap: wrap; gap: 10px;">
           <button id="btn-modal-del-alloc" style="background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1.5px solid #ef4444; padding: 7px 14px; border-radius: 6px; font-size: 12px; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 5px;" title="Permanently delete this mistake / extra item from database">
-            <span>🗑️</span> Delete Item (ভুল এন্ট্রি মুছুন)
+            <span>🗑️</span> Delete Item
           </button>
           <div style="display: flex; gap: 8px;">
             <button id="btn-modal-cancel-edit-alloc" style="background: #334155; color: #cbd5e1; border: none; padding: 7px 16px; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer;">
               Cancel
             </button>
             <button id="btn-modal-save-edit-alloc" style="background: #0284c7; color: #fff; border: none; padding: 7px 22px; border-radius: 6px; font-weight: 900; font-size: 12.5px; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 8px rgba(2,132,199,0.4);">
-              <span>💾</span> Save Changes (সংরক্ষণ করুন)
+              <span>💾</span> Save Changes
             </button>
           </div>
         </div>
@@ -6383,7 +6383,7 @@ export function openEditAllocationModal(id) {
       const saveBtn = document.getElementById('btn-modal-save-edit-alloc');
       if (saveBtn) {
         saveBtn.disabled = false;
-        saveBtn.innerHTML = '<span>💾</span> Save Changes (সংরক্ষণ করুন)';
+        saveBtn.innerHTML = '<span>💾</span> Save Changes';
       }
     }
   });
@@ -7367,9 +7367,9 @@ export function parseRealErpPdfData(rawInput) {
     if (/\(\s*(?:new|ncw|now|rew|fresh)\s*\)/i.test(s)) return 'NEW_ISSUE';
 
     // 3. Keyword word boundaries (Change, Lost, Return, New)
-    if (/\b(?:change|changed|replaced|replacement|exchange|exchanged|চেঞ্জ|পরিবর্তন)\b/i.test(s)) return 'REPLACED';
-    if (/\b(?:lost|missing|harao|harano|damaged?|হারানো|হারাই)\b/i.test(s)) return 'LOST';
-    if (/\b(?:new|fresh|new\s*issue|নতুন)\b/i.test(s)) return 'NEW_ISSUE';
+    if (/\b(?:change|changed|replaced|replacement|exchange|exchanged)\b/i.test(s)) return 'REPLACED';
+    if (/\b(?:lost|missing|damaged?)\b/i.test(s)) return 'LOST';
+    if (/\b(?:new|fresh|new\s*issue)\b/i.test(s)) return 'NEW_ISSUE';
 
     return null;
   }
