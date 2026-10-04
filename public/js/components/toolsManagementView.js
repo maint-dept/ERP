@@ -2333,7 +2333,7 @@ function renderScreen6DatabasePage() {
                   <th style="position: sticky; top: 0; z-index: 25; background: #0f172a; padding: 8px 10px; text-align: center; width: 45px; border-bottom: 2px solid #334155; box-shadow: 0 2px 4px rgba(0,0,0,0.4);">#</th>
                   <th style="position: sticky; top: 0; z-index: 25; background: #0f172a; padding: 8px 10px; text-align: center; width: 75px; border-bottom: 2px solid #334155; box-shadow: 0 2px 4px rgba(0,0,0,0.4);">Reg No</th>
                   <th style="position: sticky; top: 0; z-index: 25; background: #0f172a; padding: 8px 10px; text-align: center; width: 115px; border-bottom: 2px solid #334155; box-shadow: 0 2px 4px rgba(0,0,0,0.4);">ERP Req #</th>
-                  <th style="position: sticky; top: 0; z-index: 25; background: #0f172a; padding: 8px 10px; text-align: center; width: 90px; border-bottom: 2px solid #334155; box-shadow: 0 2px 4px rgba(0,0,0,0.4);">Date</th>
+                  <th style="position: sticky; top: 0; z-index: 25; background: #0f172a; padding: 8px 10px; text-align: center; width: 95px; white-space: nowrap; border-bottom: 2px solid #334155; box-shadow: 0 2px 4px rgba(0,0,0,0.4);">Date</th>
                   <th style="position: sticky; top: 0; z-index: 25; background: #0f172a; padding: 8px 10px; text-align: left; width: 120px; border-bottom: 2px solid #334155; box-shadow: 0 2px 4px rgba(0,0,0,0.4);">ID Number</th>
                   <th style="position: sticky; top: 0; z-index: 25; background: #0f172a; padding: 8px 10px; text-align: left; border-bottom: 2px solid #334155; box-shadow: 0 2px 4px rgba(0,0,0,0.4);">Mechanic Name</th>
                   <th style="position: sticky; top: 0; z-index: 25; background: #0f172a; padding: 8px 10px; text-align: left; border-bottom: 2px solid #334155; box-shadow: 0 2px 4px rgba(0,0,0,0.4);">Working Area</th>
@@ -2365,7 +2365,7 @@ function renderScreen6DatabasePage() {
                     <td style="padding: 7px 10px; text-align: center; font-family: monospace; font-weight: 700; color: #a78bfa; white-space: nowrap;">
                       ${cleanReq !== '-' ? `<span style="background: rgba(167, 139, 250, 0.15); border: 1px solid rgba(167, 139, 250, 0.35); padding: 2px 6px; border-radius: 4px; font-size: 11px;">${cleanReq}</span>` : '<span style="color: #64748b;">-</span>'}
                     </td>
-                    <td style="padding: 7px 10px; text-align: center; font-family: monospace; color: #cbd5e1; font-weight: 700;">${toolService.formatDateDMY(a.issueDate)}</td>
+                    <td style="padding: 7px 10px; text-align: center; font-family: monospace; color: #cbd5e1; font-weight: 700; white-space: nowrap;">${toolService.formatDateDMY(a.issueDate)}</td>
                     <td style="padding: 7px 10px; font-family: monospace; font-weight: 700; color: #38bdf8;">${a.userId}</td>
                     <td style="padding: 7px 10px; font-weight: 700; color: #f1f5f9;">${a.userName}</td>
                     <td style="padding: 7px 10px; color: #cbd5e1;">${a.workingArea}</td>

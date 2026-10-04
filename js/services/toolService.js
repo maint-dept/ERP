@@ -506,13 +506,46 @@ class ToolService {
     const str = String(d).trim();
     if (!str) return '25-10-2025';
 
-    // If YYYY-MM-DD (e.g. 2025-10-25)
+    function fromExcelSerial(num) {
+      const val = parseFloat(num);
+      if (!isNaN(val) && val >= 10000 && val <= 90000) {
+        const utcDays = Math.floor(val - 25569);
+        const dt = new Date(utcDays * 86400 * 1000);
+        if (!isNaN(dt.getTime())) {
+          const dd = String(dt.getUTCDate()).padStart(2, '0');
+          const mm = String(dt.getUTCMonth() + 1).padStart(2, '0');
+          const yyyy = dt.getUTCFullYear();
+          return `${dd}-${mm}-${yyyy}`;
+        }
+      }
+      return null;
+    }
+
+    // 1. Check if raw input is pure Excel serial number (e.g. 45859 or 45859.5)
+    if (/^\d{5}(\.\d+)?$/.test(str)) {
+      const res = fromExcelSerial(str);
+      if (res) return res;
+    }
+
+    // 2. Check if corrupted format where Excel serial ended up as a 5-digit year (e.g. 01-01-45859 or 45859-01-01)
+    const fiveDigitEnd = str.match(/[-/](\d{5})$/);
+    if (fiveDigitEnd) {
+      const res = fromExcelSerial(fiveDigitEnd[1]);
+      if (res) return res;
+    }
+    const fiveDigitStart = str.match(/^(\d{5})[-/]/);
+    if (fiveDigitStart) {
+      const res = fromExcelSerial(fiveDigitStart[1]);
+      if (res) return res;
+    }
+
+    // 3. If YYYY-MM-DD (e.g. 2025-10-25)
     if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
       const [yyyy, mm, dd] = str.split('-');
       return `${dd}-${mm}-${yyyy}`;
     }
 
-    // If DD-MM-YYYY or DD/MM/YYYY
+    // 4. If DD-MM-YYYY or DD/MM/YYYY with 4-digit year
     if (/^\d{1,2}[-/]\d{1,2}[-/]\d{4}$/.test(str)) {
       const parts = str.split(/[-/]/);
       const dd = parts[0].padStart(2, '0');
@@ -521,7 +554,7 @@ class ToolService {
       return `${dd}-${mm}-${yyyy}`;
     }
 
-    // If DD-MMM-YYYY (e.g. 25-Oct-2025)
+    // 5. If DD-MMM-YYYY (e.g. 25-Oct-2025)
     const monthNames = {
       jan: '01', feb: '02', mar: '03', apr: '04', may: '05', jun: '06',
       jul: '07', aug: '08', sep: '09', oct: '10', nov: '11', dec: '12'
@@ -537,9 +570,13 @@ class ToolService {
 
     const dt = new Date(str);
     if (!isNaN(dt.getTime())) {
+      const yyyy = dt.getFullYear();
+      if (yyyy >= 10000 && yyyy <= 90000) {
+        const res = fromExcelSerial(yyyy);
+        if (res) return res;
+      }
       const dd = String(dt.getDate()).padStart(2, '0');
       const mm = String(dt.getMonth() + 1).padStart(2, '0');
-      const yyyy = dt.getFullYear();
       return `${dd}-${mm}-${yyyy}`;
     }
     return str;
@@ -880,10 +917,51 @@ class ToolService {
           changed = true;
         }
       }
+
+      // 3. Fix corrupted Excel serial dates in issueDate (e.g. 45859 or 01-01-45859)
+      if (a.issueDate) {
+        const fixedDate = this.formatDateDMY(a.issueDate);
+        if (fixedDate && fixedDate !== a.issueDate && !fixedDate.includes('45859')) {
+          a.issueDate = fixedDate;
+          changed = true;
+        }
+      }
+
+      // 4. Fix corrupted Excel serial dates in changeDate if present
+      if (a.changeDate) {
+        const fixedChangeDate = this.formatDateDMY(a.changeDate);
+        if (fixedChangeDate && fixedChangeDate !== a.changeDate && !fixedChangeDate.includes('45859')) {
+          a.changeDate = fixedChangeDate;
+          changed = true;
+        }
+      }
     });
 
     if (changed) {
       storage.saveTable(TABLE_NAMES.TOOL_ALLOCATIONS, list);
+    }
+
+    // Also sanitize tool change history table
+    const historyList = storage.getTable(TABLE_NAMES.TOOL_CHANGE_HISTORY) || [];
+    let historyChanged = false;
+    historyList.forEach(h => {
+      if (h.issueDate) {
+        const fixedDate = this.formatDateDMY(h.issueDate);
+        if (fixedDate && fixedDate !== h.issueDate && !fixedDate.includes('45859')) {
+          h.issueDate = fixedDate;
+          historyChanged = true;
+        }
+      }
+      if (h.changeDate) {
+        const fixedChangeDate = this.formatDateDMY(h.changeDate);
+        if (fixedChangeDate && fixedChangeDate !== h.changeDate && !fixedChangeDate.includes('45859')) {
+          h.changeDate = fixedChangeDate;
+          historyChanged = true;
+        }
+      }
+    });
+    if (historyChanged) {
+      storage.saveTable(TABLE_NAMES.TOOL_CHANGE_HISTORY, historyList);
     }
   }
 
