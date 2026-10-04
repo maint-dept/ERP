@@ -49,7 +49,7 @@ jobs:
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           server-dir: ${{ secrets.FTP_SERVER_DIR }}
-          # Exclude files that should NOT be uploaded to the server
+          # Exclude files that should NOT be uploaded / touched on the server
           exclude: |
             **/.git*
             **/.git*/**
@@ -58,6 +58,8 @@ jobs:
             **/README.md
             **/.gitignore
             **/.env.example
+            # CRITICAL: Never overwrite the live MySQL API on the server
+            **/mysql_api.php
           # Only upload changed files (smart sync — much faster)
           dangerous-clean-slate: false
           log-level: verbose
