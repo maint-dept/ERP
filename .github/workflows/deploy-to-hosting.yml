@@ -34,6 +34,26 @@ jobs:
       - name: ⬇️ Checkout repository
         uses: actions/checkout@v4
 
+      - name: 🔍 Diagnose host connectivity
+        run: |
+          python3 -c "
+          import socket
+          targets = [
+              ('${{ secrets.FTP_SERVER }}', 21),
+              ('galaxy.hostursite.us', 21),
+              ('46.224.111.36', 21),
+              ('${{ secrets.FTP_SERVER }}', 22),
+              ('46.224.111.36', 22)
+          ]
+          for host, port in targets:
+              try:
+                  s = socket.create_connection((host, port), timeout=3)
+                  print(f'✅ Reached {host}:{port}')
+                  s.close()
+              except Exception as err:
+                  print(f'❌ Failed {host}:{port} -> {err}')
+          "
+
       - name: 🔄 Prepare Passenger restart file
         run: |
           mkdir -p tmp
