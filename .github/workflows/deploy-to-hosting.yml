@@ -62,10 +62,10 @@ jobs:
       - name: 📤 Deploy all files to cPanel via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
-          server: ${{ secrets.FTP_SERVER }}
+          server: ftp.moviezonex.com
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          server-dir: ${{ secrets.FTP_SERVER_DIR }}
+          server-dir: ${{ secrets.FTP_SERVER_DIR || 'moviezonex.com/' }}
           # Exclude files that should NOT be uploaded / touched on the server
           exclude: |
             **/.git*
