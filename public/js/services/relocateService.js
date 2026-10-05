@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Al-Muslim Group Garments Factory Maintenance Machine ERP
  * Machine Relocation, Physical Verification, Idle Identification & Reconciliation Service
  */
@@ -413,9 +413,24 @@ class RelocateService {
     // C. Inter-Floor Pending Relocations (From another floor/unit)
     const pendingRelocations = scanned.filter(s => s.matchType === 'FLOOR_MISMATCH');
 
-    // D. Same-Floor Idle Machines:
-    // Machines from the initial snapshot that were NOT scanned in any line
-    const idleMachines = snapshot.filter(snap => !scannedMachineIds.has(snap.id));
+    // D. Audited Lines: Lines where scanning was performed OR explicitly targeted
+    const auditedLineIds = new Set();
+    if (Array.isArray(session.lineIds) && session.lineIds !== 'ALL' && session.lineIds.length > 0) {
+      session.lineIds.forEach(id => auditedLineIds.add(id));
+    } else {
+      // Full floor session: audited lines are lines where scans were actually conducted
+      scanned.forEach(s => {
+        if (s.scannedLineId) auditedLineIds.add(s.scannedLineId);
+        if (s.previousLineId && s.previousFloorId === session.floorId) auditedLineIds.add(s.previousLineId);
+      });
+    }
+
+    // E. Same-Floor Idle Machines:
+    // ONLY machines whose previous registered line was audited, but was NOT found/scanned anywhere in this session.
+    // Machines in lines that were NOT scanned/audited remain active and untouched on their respective lines.
+    const idleMachines = snapshot.filter(snap => 
+      auditedLineIds.has(snap.lineId) && !scannedMachineIds.has(snap.id)
+    );
 
     // Per-line breakdown
     const lineMap = new Map();
@@ -429,7 +444,8 @@ class RelocateService {
           lineName: l.name,
           expected: 0,
           scanned: 0,
-          idle: 0
+          idle: 0,
+          isAudited: auditedLineIds.has(l.id)
         });
       }
     });
@@ -463,6 +479,7 @@ class RelocateService {
       verifiedScans: verifiedScans,
       lineRelocations: lineRelocations,
       pendingRelocations: pendingRelocations,
+      auditedLineIds: Array.from(auditedLineIds),
       lineBreakdown: Array.from(lineMap.values())
     };
   }
