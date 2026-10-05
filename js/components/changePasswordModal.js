@@ -97,7 +97,7 @@ export function renderChangePasswordModal() {
                     minlength="3"
                     maxlength="30"
                     placeholder="Enter unique username"
-                    style="font-size: 13.5px; font-family: var(--font-mono); font-weight: 700; color: #38bdf8; background: rgba(14, 165, 233, 0.08); border-color: rgba(56, 189, 248, 0.5); padding-left: 32px;"
+                    style="font-size: 13.5px; font-family: var(--font-mono); font-weight: 700; color: #38bdf8; background: rgba(14, 165, 233, 0.08); border-color: rgba(56, 189, 248, 0.5); padding-left: 36px !important;"
                   />
                   <span style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-size: 14px; color: #38bdf8; font-weight: 800;">@</span>
                 </div>

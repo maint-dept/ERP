@@ -86,7 +86,7 @@ export function renderLoginView() {
                     autocomplete="username"
                     style="padding-left: 36px; background: rgba(30, 41, 59, 0.8); border-color: rgba(255,255,255,0.15); color: #fff; font-size: 13.5px;"
                   />
-                  <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 14px; opacity: 0.6;">👤</span>
+                  <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 14px; opacity: 0.7; pointer-events: none; z-index: 2;">👤</span>
                 </div>
               </div>
 
@@ -107,7 +107,7 @@ export function renderLoginView() {
                     autocomplete="current-password"
                     style="padding-left: 36px; padding-right: 36px; background: rgba(30, 41, 59, 0.8); border-color: rgba(255,255,255,0.15); color: #fff; font-size: 13.5px;"
                   />
-                  <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 14px; opacity: 0.6;">🔒</span>
+                  <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 14px; opacity: 0.7; pointer-events: none; z-index: 2;">🔒</span>
                   <span id="btn-toggle-pwd-visibility" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-size: 14px; cursor: pointer; opacity: 0.6;" title="Toggle visibility">👁️</span>
                 </div>
               </div>

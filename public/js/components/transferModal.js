@@ -91,18 +91,18 @@ export function renderTransferModal() {
             <div style="position: relative;">
               <div style="display: flex; gap: 10px; flex-wrap: wrap;">
                 <div style="position: relative; flex: 1; min-width: 220px;">
+                  <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 16px; pointer-events: none; z-index: 2; line-height: 1;">🧵</span>
                   <input 
                     type="text" 
                     id="inp-transfer-search-serial" 
                     class="form-control" 
                     placeholder="Enter or search Machine Serial Number (e.g. 5369, 76, JK-01)..." 
                     value="${machine?.serialNumber || ''}" 
-                    style="font-size: 14px; font-weight: 700; color: #fff; background: rgba(0,0,0,0.4); border: 1px solid rgba(56, 189, 248, 0.5); padding-left: 36px; padding-right: ${machine ? '75px' : '12px'};"
+                    style="font-size: 14px; font-weight: 700; color: var(--text-primary); background: rgba(0,0,0,0.4); border: 1px solid rgba(56, 189, 248, 0.5); padding-left: 38px !important; padding-right: ${machine ? '80px' : '12px'} !important;"
                     autocomplete="off"
                   />
-                  <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 16px; opacity: 0.6;">🧵</span>
                   ${machine ? `
-                    <button type="button" id="btn-clear-transfer-machine" title="Clear and search another machine" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.35); color: #f87171; font-size: 11px; cursor: pointer; padding: 3px 8px; border-radius: 4px; font-weight: 700;">✕ Clear</button>
+                    <button type="button" id="btn-clear-transfer-machine" title="Clear and search another machine" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.35); color: #f87171; font-size: 11px; cursor: pointer; padding: 3px 8px; border-radius: 4px; font-weight: 700; z-index: 2;">✕ Clear</button>
                   ` : ''}
                 </div>
                 <button type="button" id="btn-search-serial-trigger" class="btn btn-primary" style="font-weight: 700; white-space: nowrap;">
@@ -229,6 +229,7 @@ export function renderTransferModal() {
                 <span style="font-size: 10.5px; color: #34d399; font-weight: 600;">✨ Auto fills 4 dropdowns below</span>
               </div>
               <div style="position: relative;">
+                <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 14px; pointer-events: none; z-index: 2; line-height: 1;">📍</span>
                 <input 
                   type="text" 
                   id="inp-transfer-location-search" 
@@ -236,10 +237,9 @@ export function renderTransferModal() {
                   placeholder="Type to search Floor or Line name (e.g. Jamuna, Size Set, BG-A, Eyelet, Cutting)..." 
                   value="${selectedDest.searchQuery || ''}"
                   autocomplete="off"
-                  style="font-size: 13px; font-weight: 600; color: #fff; background: rgba(0,0,0,0.4); border: 1px solid rgba(56, 189, 248, 0.4); padding-left: 36px; padding-right: 32px;"
+                  style="font-size: 13px; font-weight: 600; color: var(--text-primary); background: rgba(0,0,0,0.4); border: 1px solid rgba(56, 189, 248, 0.4); padding-left: 36px !important; padding-right: 32px !important;"
                 />
-                <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 14px; opacity: 0.7;">📍</span>
-                <button type="button" id="btn-clear-location-search" title="Clear search" style="${selectedDest.searchQuery ? 'display: block;' : 'display: none;'} position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); color: #f87171; border-radius: 4px; font-size: 11px; cursor: pointer; padding: 2px 6px;">✕</button>
+                <button type="button" id="btn-clear-location-search" title="Clear search" style="${selectedDest.searchQuery ? 'display: block;' : 'display: none;'} position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); color: #f87171; border-radius: 4px; font-size: 11px; cursor: pointer; padding: 2px 6px; z-index: 2;">✕</button>
               </div>
 
               <!-- Floating Suggestions Dropdown -->

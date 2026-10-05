@@ -355,7 +355,7 @@ function renderEmployeeListTable({ title, subtitle, employees, isInactiveView })
         <!-- Table Header Bar -->
         <div style="padding: 10px 16px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; flex-shrink: 0; background: rgba(15, 23, 42, 0.5);">
           <div>
-            <h3 style="margin: 0; font-size: 14.5px; font-weight: 800; color: #fff;">${title}</h3>
+            <h3 style="margin: 0; font-size: 14.5px; font-weight: 800; color: var(--text-primary);">${title}</h3>
             <p style="margin: 2px 0 0 0; font-size: 11.5px; color: var(--text-muted);">${subtitle}</p>
           </div>
           <div style="display: flex; align-items: center; gap: 10px;">
@@ -445,7 +445,7 @@ function renderEmployeeListTable({ title, subtitle, employees, isInactiveView })
 
                     <!-- Name: bold white with phone underneath -->
                     <td style="vertical-align: middle;">
-                      <div style="font-weight: 700; color: ${isActive ? '#fff' : 'var(--text-muted)'}; font-size: 13.5px; line-height: 1.3;">
+                      <div style="font-weight: 700; color: ${isActive ? 'var(--text-primary)' : 'var(--text-muted)'}; font-size: 13.5px; line-height: 1.3;">
                         ${emp.name}
                       </div>
                       ${emp.phone ? `<div style="font-size: 11px; color: var(--text-muted); font-family: var(--font-mono); margin-top: 2px;">📞 ${emp.phone}</div>` : ''}
@@ -453,7 +453,7 @@ function renderEmployeeListTable({ title, subtitle, employees, isInactiveView })
 
                     <!-- Department: clear pill badge -->
                     <td style="vertical-align: middle;">
-                      <span style="display: inline-flex; align-items: center; gap: 4px; background: rgba(255, 255, 255, 0.06); color: #e2e8f0; border: 1px solid rgba(255, 255, 255, 0.1); padding: 3px 8px; border-radius: 4px; font-size: 11.5px; font-weight: 600;">
+                      <span style="display: inline-flex; align-items: center; gap: 4px; background: rgba(56, 189, 248, 0.1); color: #0284c7; font-weight: 700; border: 1px solid rgba(255, 255, 255, 0.1); padding: 3px 8px; border-radius: 4px; font-size: 11.5px; font-weight: 600;">
                         🏢 ${emp.department || 'General'}
                       </span>
                     </td>

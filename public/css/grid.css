@@ -753,3 +753,81 @@ tbody tr.selected td.col-frozen-cell {
 }
 
 
+
+
+/* ==========================================================================
+   EXCEL GRID & TABLE LIGHT THEME FULL COMPATIBILITY
+   ========================================================================== */
+body.theme-light .excel-grid-table thead th {
+  background-color: #f1f5f9 !important;
+  color: #0f172a !important;
+  border-bottom: 2px solid #0284c7 !important;
+  border-right: 1px solid #cbd5e1 !important;
+}
+
+body.theme-light .excel-grid-table thead th:hover {
+  background-color: #e2e8f0 !important;
+}
+
+body.theme-light .col-freeze-sl,
+body.theme-light .col-freeze-check,
+body.theme-light .col-freeze-name,
+body.theme-light .col-frozen-cell {
+  background-color: #f8fafc !important;
+  border-right-color: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+
+body.theme-light thead th.col-freeze-sl,
+body.theme-light thead th.col-freeze-check,
+body.theme-light thead th.col-freeze-name,
+body.theme-light thead th.col-frozen-cell {
+  background-color: #e2e8f0 !important;
+  color: #0f172a !important;
+}
+
+body.theme-light tbody tr td.col-freeze-sl,
+body.theme-light tbody tr td.col-freeze-check,
+body.theme-light tbody tr td.col-freeze-name,
+body.theme-light tbody tr td.col-frozen-cell {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+
+body.theme-light tbody tr:hover td.col-freeze-sl,
+body.theme-light tbody tr:hover td.col-freeze-check,
+body.theme-light tbody tr:hover td.col-freeze-name,
+body.theme-light tbody tr:hover td.col-frozen-cell {
+  background-color: #f1f5f9 !important;
+}
+
+body.theme-light .excel-grid-table tbody td {
+  border-bottom: 1px solid #e2e8f0 !important;
+  border-right: 1px solid #e2e8f0 !important;
+  color: #0f172a !important;
+  background-color: #ffffff;
+}
+
+body.theme-light .excel-grid-table tbody tr:hover {
+  background-color: rgba(2, 132, 199, 0.06) !important;
+}
+
+body.theme-light .excel-grid-table tbody tr.selected {
+  background-color: rgba(2, 132, 199, 0.12) !important;
+}
+
+body.theme-light .quick-pill {
+  background: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  color: #1e293b !important;
+}
+
+body.theme-light .quick-pill:hover {
+  background: #f1f5f9 !important;
+  color: #0284c7 !important;
+}
+
+body.theme-light .quick-pill.active {
+  background: #0284c7 !important;
+  color: #ffffff !important;
+}
