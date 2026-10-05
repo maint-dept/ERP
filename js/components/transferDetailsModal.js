@@ -416,7 +416,8 @@ export function initTransferDetailsModalEvents() {
       try {
         closeModal();
         await transferService.approveStep(req.id, remarks || 'Approved');
-        notificationService.success(`Transfer #${req.requestNumber} Level ${req.currentLevel} approved`);
+        const isFinal = (req.currentLevel >= req.totalLevels);
+        notificationService.success(isFinal ? `Transfer #${req.requestNumber} completed & relocated` : `Transfer #${req.requestNumber} Level ${req.currentLevel} approved`);
         state.emit('inventory:updated');
         window.dispatchEvent(new CustomEvent('erp:transfers-updated'));
       } catch (err) {

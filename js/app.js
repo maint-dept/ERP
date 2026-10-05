@@ -10,24 +10,24 @@ import { authService } from './services/authService.js';
 import { renderNavbar, initNavbarEvents } from './components/navbar.js';
 import { renderSidebar, initSidebarEvents, updateSidebarActiveState } from './components/sidebar.js';
 import { renderHomepageView, initHomepageEvents } from './components/homepageView.js';
-import { renderLoginView, initLoginViewEvents } from './components/loginView.js?v=4.22.31';
+import { renderLoginView, initLoginViewEvents } from './components/loginView.js?v=4.22.32';
 import { renderDashboard, initDashboardEvents } from './components/dashboard.js';
-import { renderInventoryTable, initInventoryTableEvents, syncInventorySelectionDOM } from './components/inventoryTable.js?v=4.22.31';
+import { renderInventoryTable, initInventoryTableEvents, syncInventorySelectionDOM } from './components/inventoryTable.js?v=4.22.32';
 import { renderMachineModal, initMachineModalEvents } from './components/machineModal.js';
 import { renderMachineDetails, initMachineDetailsEvents } from './components/machineDetails.js';
-import { renderTransferModal, initTransferModalEvents } from './components/transferModal.js?v=4.22.31';
-import { renderTransferDetailsModal, initTransferDetailsModalEvents } from './components/transferDetailsModal.js?v=4.22.31';
-import { renderEditTransferModal, initEditTransferModalEvents } from './components/editTransferModal.js?v=4.22.31';
-import { renderTransfersView, initTransfersViewEvents } from './components/transfersView.js?v=4.22.31';
-import { renderTransferWorkflowBuilder, initTransferWorkflowBuilderEvents } from './components/transferWorkflowBuilder.js?v=4.22.31';
+import { renderTransferModal, initTransferModalEvents } from './components/transferModal.js?v=4.22.32';
+import { renderTransferDetailsModal, initTransferDetailsModalEvents } from './components/transferDetailsModal.js?v=4.22.32';
+import { renderEditTransferModal, initEditTransferModalEvents } from './components/editTransferModal.js?v=4.22.32';
+import { renderTransfersView, initTransfersViewEvents } from './components/transfersView.js?v=4.22.32';
+import { renderTransferWorkflowBuilder, initTransferWorkflowBuilderEvents } from './components/transferWorkflowBuilder.js?v=4.22.32';
 import { renderMasterDataView, initMasterDataEvents } from './components/masterDataView.js';
 import { renderCustomFieldsMgr, initCustomFieldsEvents } from './components/customFieldsMgr.js';
 import { renderExcelManagerView, initExcelManagerEvents } from './components/excelManagerView.js';
-import { renderUserManagement, initUserManagementEvents } from './components/userManagement.js?v=4.22.31';
-import { renderHomepageManagerView, initHomepageManagerEvents } from './components/homepageManagerView.js?v=4.22.31';
+import { renderUserManagement, initUserManagementEvents } from './components/userManagement.js?v=4.22.32';
+import { renderHomepageManagerView, initHomepageManagerEvents } from './components/homepageManagerView.js?v=4.22.32';
 import { renderEmailConfigView, initEmailConfigEvents } from './components/emailConfigView.js';
 import { renderExcelImportModal, initExcelImportEvents } from './components/excelImportModal.js';
-import { renderReportsView, initReportsEvents } from './components/reportsView.js?v=4.22.31';
+import { renderReportsView, initReportsEvents } from './components/reportsView.js?v=4.22.32';
 import { renderAuditLogsView, initAuditLogsEvents } from './components/auditLogsView.js';
 import { renderNotificationsDrawer, initNotificationsDrawerEvents } from './components/notificationsDrawer.js?v=3.2.0';
 import { renderSettingsView, initSettingsEvents } from './components/settingsView.js';
@@ -36,18 +36,19 @@ import { renderResourceLibraryView, initResourceLibraryEvents } from './componen
 import { renderColumnVisibilityModal, initColumnVisibilityEvents } from './components/columnVisibilityModal.js';
 import { renderMachineHistoryView, initMachineHistoryEvents } from './components/machineHistoryView.js';
 import { renderSparePartsManagementView, initSparePartsManagementEvents } from './components/sparePartsManagementView.js';
-import { renderToolsManagementView, initToolsManagementEvents } from './components/toolsManagementView.js?v=4.22.31';
-import { renderManpowerView, initManpowerEvents } from './components/manpowerView.js?v=4.22.31';
+import { renderToolsManagementView, initToolsManagementEvents } from './components/toolsManagementView.js?v=4.22.32';
+import { renderManpowerView, initManpowerEvents } from './components/manpowerView.js?v=4.22.32';
 import { renderEtLabManagementView, initEtLabEvents, setEntActiveTab } from './components/etLabManagementView.js';
 import { renderChangePasswordModal, initChangePasswordModalEvents } from './components/changePasswordModal.js?v=3.8.0';
-import { renderStorageView, initStorageEvents } from './components/storageView.js?v=4.22.31';
-import { renderPreventiveMaintenanceView, initPreventiveMaintenanceEvents } from './components/preventiveMaintenanceView.js?v=4.22.31';
-import { smartStorageService } from './services/smartStorageService.js?v=4.22.31';
-import { renderRelocateView, initRelocateViewEvents } from './components/relocateView.js?v=4.22.31';
-import { renderQrCodeView, initQrCodeEvents } from './components/qrCodeView.js?v=4.22.31';
+import { renderStorageView, initStorageEvents } from './components/storageView.js?v=4.22.32';
+import { renderPreventiveMaintenanceView, initPreventiveMaintenanceEvents } from './components/preventiveMaintenanceView.js?v=4.22.32';
+import { smartStorageService } from './services/smartStorageService.js?v=4.22.32';
+import { renderRelocateView, initRelocateViewEvents } from './components/relocateView.js?v=4.22.32';
+import { renderQrCodeView, initQrCodeEvents } from './components/qrCodeView.js?v=4.22.32';
 import { chatService } from './services/chatService.js';
 import { historyService } from './services/historyService.js';
 import { auditService } from './services/auditService.js';
+import { notificationService } from './services/notificationService.js?v=4.22.32';
 
 /**
  * Captures all active scroll, viewport, and focused input states.
@@ -240,8 +241,7 @@ class ERPApplication {
       }
     });
 
-    window.addEventListener('erp:notification', (e) => {
-      this.showToast('🔔 ' + e.detail.title, e.detail.message, 'info');
+    window.addEventListener('erp:notification', () => {
       this.queueBackgroundRender();
     });
 
@@ -1000,21 +1000,8 @@ class ERPApplication {
   }
 
   showToast(title, message, type = 'info') {
-    const root = document.getElementById('toast-root');
-    if (!root) return;
-
-    const toast = document.createElement('div');
-    toast.className = `toast ${type}`;
-    toast.innerHTML = `
-      <div class="toast-title">${title}</div>
-      <div class="toast-message">${message}</div>
-    `;
-
-    root.appendChild(toast);
-    setTimeout(() => {
-      toast.style.opacity = '0';
-      setTimeout(() => toast.remove(), 300);
-    }, 4000);
+    const toastType = type === 'danger' ? 'error' : type;
+    notificationService.toast(message || title, toastType, message ? title : '');
   }
 }
 
