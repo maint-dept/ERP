@@ -260,8 +260,9 @@ export function renderPartsTraceView() {
         background: rgba(255, 255, 255, 0.03);
       }
 
-      .smart-picker-btn {
-        background: rgba(15, 23, 42, 0.6);
+      /* Smart Dropdown & Combobox Controls */
+      .smart-dropdown-trigger {
+        background: rgba(15, 23, 42, 0.75);
         border: 1px solid rgba(255, 255, 255, 0.12);
         border-radius: 6px;
         padding: 4px 8px;
@@ -272,23 +273,30 @@ export function renderPartsTraceView() {
         gap: 6px;
         width: 100%;
         text-align: left;
-        transition: all 0.15s ease;
+        transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+        color: #cbd5e1;
       }
 
-      .smart-picker-btn:hover {
+      .smart-dropdown-trigger:hover {
         border-color: #38bdf8;
-        background: rgba(56, 189, 248, 0.08);
+        background: rgba(56, 189, 248, 0.1);
+        box-shadow: 0 0 10px rgba(56, 189, 248, 0.2);
+      }
+
+      .smart-dropdown-trigger.has-val {
+        border-color: rgba(56, 189, 248, 0.35);
+        background: rgba(15, 23, 42, 0.9);
       }
 
       .smart-chip {
         display: inline-flex;
         align-items: center;
         gap: 4px;
-        padding: 2px 8px;
+        padding: 3px 9px;
         font-size: 10.5px;
         font-weight: 700;
         border-radius: 12px;
-        background: rgba(56, 189, 248, 0.15);
+        background: rgba(56, 189, 248, 0.12);
         color: #38bdf8;
         border: 1px solid rgba(56, 189, 248, 0.3);
         cursor: pointer;
@@ -299,10 +307,11 @@ export function renderPartsTraceView() {
         background: #0284c7;
         color: #fff;
         border-color: #38bdf8;
+        transform: translateY(-1px);
       }
 
       .smart-item-row {
-        padding: 6px 10px;
+        padding: 7px 10px;
         border-radius: 6px;
         border: 1px solid rgba(255, 255, 255, 0.06);
         background: rgba(255, 255, 255, 0.02);
@@ -314,8 +323,25 @@ export function renderPartsTraceView() {
       }
 
       .smart-item-row:hover {
-        background: rgba(56, 189, 248, 0.12);
+        background: rgba(56, 189, 248, 0.15);
         border-color: #38bdf8;
+        transform: translateX(2px);
+      }
+
+      .smart-dropdown-popover {
+        position: fixed;
+        background: #090d16;
+        border: 1.5px solid #38bdf8;
+        border-radius: 10px;
+        box-shadow: 0 20px 45px rgba(0, 0, 0, 0.85), 0 0 15px rgba(56, 189, 248, 0.25);
+        z-index: 10080;
+        overflow: hidden;
+        animation: dropFadeIn 0.15s ease-out;
+      }
+
+      @keyframes dropFadeIn {
+        from { opacity: 0; transform: translateY(-6px) scale(0.98); }
+        to { opacity: 1; transform: translateY(0) scale(1); }
       }
 
       @media (max-width: 768px) {
@@ -691,20 +717,21 @@ function renderReviewTab() {
                     <div style="font-size: 10px; color: var(--text-muted);">${r.lineName}</div>
                   </td>
                   <td>
-                    <div style="display: flex; flex-direction: column; gap: 2px;">
-                      <div style="font-weight: 700; color: #fff;">${r.partName}</div>
-                      <div style="display: flex; gap: 6px; align-items: center;">
-                        <span style="font-family: var(--font-mono); font-size: 10px; color: #38bdf8; background: rgba(56,189,248,0.1); padding: 1px 5px; border-radius: 3px; border: 1px solid rgba(56,189,248,0.25);">
-                          ${r.partCode || 'NO CODE'}
-                        </span>
-                        <button type="button" class="btn btn-ghost btn-xs btn-open-smart-part-modal" data-draft-id="${r.draftId}" style="font-size: 9.5px; padding: 1px 4px; color: #38bdf8; text-decoration: underline;">
-                          Change
-                        </button>
+                    <!-- Smart Matched Part Dropdown Trigger -->
+                    <button type="button" class="smart-dropdown-trigger btn-open-smart-part-modal ${r.partId ? 'has-val' : ''}" data-draft-id="${r.draftId}" title="Click to search and change spare part">
+                      <div style="display: flex; flex-direction: column; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;">
+                        <div style="font-weight: 700; color: #fff; font-size: 11.5px; overflow: hidden; text-overflow: ellipsis;">${r.partName}</div>
+                        <div style="display: flex; gap: 4px; align-items: center; margin-top: 1px;">
+                          <span style="font-family: var(--font-mono); font-size: 9.5px; color: #38bdf8; background: rgba(56,189,248,0.12); padding: 0 4px; border-radius: 3px; border: 1px solid rgba(56,189,248,0.3);">
+                            ${r.partCode || 'NO CODE'}
+                          </span>
+                          <span style="font-size: 9px; color: var(--text-muted); font-style: italic; overflow: hidden; text-overflow: ellipsis; max-width: 140px;">
+                            "${r.rawItemName}"
+                          </span>
+                        </div>
                       </div>
-                      <div style="font-size: 9.5px; color: var(--text-muted); font-style: italic;">
-                        PDF: "${r.rawItemName}"
-                      </div>
-                    </div>
+                      <span style="color: #38bdf8; font-size: 10px; margin-left: 4px; flex-shrink: 0;">▼</span>
+                    </button>
                   </td>
                   <td>
                     <div style="display: flex; align-items: center; gap: 4px;">
@@ -716,36 +743,42 @@ function renderReviewTab() {
                         min="1" 
                         style="width: 44px; height: 24px; font-size: 11.5px; padding: 2px 4px; text-align: center; background: #090d16; border: 1px solid rgba(255,255,255,0.15); border-radius: 4px; color: #34d399; font-weight: 800;"
                       />
-                      <span style="font-size: 10px; color: var(--text-muted);">${r.uom}</span>
+                      <span style="font-size: 10px; color: var(--text-muted); font-weight: 700;">${r.uom}</span>
                     </div>
                   </td>
                   <td>
-                    <!-- Smart Machine Pill -->
-                    <button type="button" class="smart-picker-btn btn-open-smart-machine-modal" data-draft-id="${r.draftId}">
-                      <div style="display: flex; flex-direction: column; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                    <!-- Smart Machine Dropdown Trigger -->
+                    <button type="button" class="smart-dropdown-trigger btn-open-smart-machine-modal ${r.machineSerial ? 'has-val' : ''}" data-draft-id="${r.draftId}" title="Click to search and change machine">
+                      <div style="display: flex; flex-direction: column; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;">
                         ${r.machineSerial ? `
-                          <span style="font-family: var(--font-mono); font-weight: 800; color: #fbbf24; font-size: 11.5px;">${r.machineSerial}</span>
+                          <div style="display: flex; align-items: center; gap: 4px;">
+                            <span style="font-family: var(--font-mono); font-weight: 800; color: #fbbf24; font-size: 11.5px;">🛠️ ${r.machineSerial}</span>
+                            <span class="badge" style="background: rgba(251,191,36,0.18); color: #fbbf24; font-size: 8px; padding: 0 4px; border: 1px solid rgba(251,191,36,0.35);">Auto</span>
+                          </div>
                           <span style="font-size: 9.5px; color: #cbd5e1; overflow: hidden; text-overflow: ellipsis;">${r.machineName || 'Machine'}</span>
                         ` : `
                           <span style="font-size: 11px; color: #94a3b8;">🔍 Select Machine</span>
                         `}
                       </div>
-                      <span style="color: #38bdf8; font-size: 11px;">✏️</span>
+                      <span style="color: #38bdf8; font-size: 10px; margin-left: 4px; flex-shrink: 0;">▼</span>
                     </button>
                     ${r.comments ? `<div style="font-size: 9.5px; color: #94a3b8; margin-top: 2px; padding-left: 2px;"><em>"${r.comments}"</em></div>` : ''}
                   </td>
                   <td>
-                    <!-- Smart Technician Pill -->
-                    <button type="button" class="smart-picker-btn btn-open-smart-tech-modal" data-draft-id="${r.draftId}">
-                      <div style="display: flex; flex-direction: column; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                    <!-- Smart Technician Dropdown Trigger -->
+                    <button type="button" class="smart-dropdown-trigger btn-open-smart-tech-modal ${r.technicianName ? 'has-val' : ''}" data-draft-id="${r.draftId}" title="Click to search and change technician">
+                      <div style="display: flex; flex-direction: column; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;">
                         ${r.technicianName ? `
-                          <strong style="color: #38bdf8; font-size: 11.5px;">${r.technicianName}</strong>
+                          <div style="display: flex; align-items: center; gap: 4px;">
+                            <strong style="color: #38bdf8; font-size: 11.5px;">👷 ${r.technicianName}</strong>
+                            <span class="badge" style="background: rgba(56,189,248,0.18); color: #38bdf8; font-size: 8px; padding: 0 4px; border: 1px solid rgba(56,189,248,0.35);">Auto</span>
+                          </div>
                           <span style="font-size: 9px; color: var(--text-muted); font-family: var(--font-mono);">${r.technicianCard && r.technicianCard !== '—' ? `Card: ${r.technicianCard}` : 'Mechanic'}</span>
                         ` : `
                           <span style="font-size: 11px; color: #94a3b8;">+ Assign Tech</span>
                         `}
                       </div>
-                      <span style="color: #38bdf8; font-size: 11px;">✏️</span>
+                      <span style="color: #38bdf8; font-size: 10px; margin-left: 4px; flex-shrink: 0;">▼</span>
                     </button>
                   </td>
                   <td>
@@ -2218,6 +2251,28 @@ export function initPartsTraceEvents() {
           });
         });
       });
+    });
+  }
+
+  // Auto-focus search input and backdrop click close
+  setTimeout(() => {
+    const activeSearch = root.querySelector('#inp-search-smart-machine') || 
+                         root.querySelector('#inp-search-smart-tech') || 
+                         root.querySelector('#inp-search-smart-part');
+    if (activeSearch) activeSearch.focus();
+  }, 50);
+
+  const activeOverlay = root.querySelector('#modal-smart-machine-overlay') || 
+                        root.querySelector('#modal-smart-tech-overlay') || 
+                        root.querySelector('#modal-smart-part-overlay');
+  if (activeOverlay) {
+    activeOverlay.addEventListener('click', (e) => {
+      if (e.target === activeOverlay) {
+        selectedMachineDraftId = null;
+        selectedTechDraftId = null;
+        selectedPartDraftId = null;
+        refresh();
+      }
     });
   }
 

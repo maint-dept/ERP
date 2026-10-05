@@ -278,6 +278,7 @@ class PartsTraceService {
       updatedAt: new Date().toISOString()
     });
     await storage.saveTable(TABLE_NAMES.SPARE_PARTS_MASTER, true);
+    this._partsIndexCache = null;
     return newStatus;
   }
 
@@ -286,6 +287,7 @@ class PartsTraceService {
       throw new Error('Excel parser library (XLSX) is not available.');
     }
 
+    if (onProgress) onProgress(10, 'Reading Excel file...');
     const data = await file.arrayBuffer();
     const workbook = XLSX.read(data, { type: 'array' });
     const firstSheetName = workbook.SheetNames[0];
@@ -296,10 +298,15 @@ class PartsTraceService {
       throw new Error('Excel sheet contains no data rows.');
     }
 
+    if (onProgress) onProgress(25, `Processing ${rows.length} rows from Excel...`);
+
     const currentParts = storage.getTable(TABLE_NAMES.SPARE_PARTS_MASTER) || [];
     const partsMapByCode = new Map();
+    const partsMapByName = new Map();
+
     currentParts.forEach(p => {
       if (p.code) partsMapByCode.set(p.code.toUpperCase().trim(), p);
+      if (p.name) partsMapByName.set(p.name.toLowerCase().trim(), p);
     });
 
     let successCount = 0;
@@ -310,35 +317,54 @@ class PartsTraceService {
 
     const cleanStr = (val) => String(val || '').trim();
 
+    // Helper to find value from row with multiple possible header names
+    const getRowVal = (row, ...keys) => {
+      for (const k of keys) {
+        if (row[k] !== undefined && row[k] !== null && String(row[k]).trim() !== '') {
+          return cleanStr(row[k]);
+        }
+      }
+      // Case-insensitive key check
+      const lowerKeys = keys.map(k => k.toLowerCase().replace(/[^a-z0-9]/g, ''));
+      for (const rk of Object.keys(row)) {
+        const cleanRk = rk.toLowerCase().replace(/[^a-z0-9]/g, '');
+        if (lowerKeys.includes(cleanRk) && row[rk] !== undefined && row[rk] !== null) {
+          const v = cleanStr(row[rk]);
+          if (v) return v;
+        }
+      }
+      return '';
+    };
+
     for (let i = 0; i < rows.length; i++) {
       const row = rows[i];
       const rowNum = i + 2;
 
-      const code = cleanStr(row['Part Code'] || row['PartCode'] || row['Code'] || row['Item Code'] || row['code']).toUpperCase();
-      const name = cleanStr(row['Part Name'] || row['PartName'] || row['Name'] || row['Item Name'] || row['name']);
-      const altName = cleanStr(row['Alternative Name'] || row['Alt Name'] || row['altName']);
-      const alias = cleanStr(row['Alias'] || row['Aliases'] || row['alias']);
-      const category = cleanStr(row['Category'] || row['category']) || 'Mechanical';
-      const subCategory = cleanStr(row['Sub Category'] || row['SubCategory'] || row['subCategory']);
-      const uom = cleanStr(row['UoM'] || row['UOM'] || row['Unit'] || row['unit']).toUpperCase() || 'PCS';
-      const brand = cleanStr(row['Brand'] || row['brand']);
-      const model = cleanStr(row['Model'] || row['model']);
-      const machineType = cleanStr(row['Machine Type'] || row['MachineType'] || row['Compatible Machines']);
-      const unitPrice = parseFloat(row['Unit Price'] || row['Price'] || row['price']) || 0;
-      const stockQty = parseInt(row['Stock Qty'] || row['Stock'] || row['stock'], 10) || 0;
-      const status = cleanStr(row['Status'] || row['status']).toUpperCase() === 'INACTIVE' ? 'INACTIVE' : 'ACTIVE';
+      const code = getRowVal(row, 'Part Code', 'PartCode', 'Code', 'Item Code', 'ItemCode', 'Part No', 'PartNo', 'Item No', 'Mat Code', 'code', 'part_code').toUpperCase();
+      const name = getRowVal(row, 'Part Name', 'PartName', 'Name', 'Description', 'Item Name', 'Item Description', 'Material Description', 'Part Description', 'name', 'item_name');
+      const altName = getRowVal(row, 'Alternative Name', 'Alt Name', 'AltName', 'Full Name', 'Specification', 'Spec', 'altName', 'alt_name');
+      const alias = getRowVal(row, 'Alias', 'Aliases', 'Keywords', 'Synonyms', 'alias');
+      const category = getRowVal(row, 'Category', 'Group', 'Type', 'category') || 'Mechanical';
+      const subCategory = getRowVal(row, 'Sub Category', 'SubCategory', 'Sub-Category', 'subCategory');
+      const uom = getRowVal(row, 'UoM', 'UOM', 'Unit', 'Unit of Measure', 'unit').toUpperCase() || 'PCS';
+      const brand = getRowVal(row, 'Brand', 'Manufacturer', 'Make', 'brand');
+      const model = getRowVal(row, 'Model', 'Machine Model', 'Model No', 'model');
+      const machineType = getRowVal(row, 'Machine Type', 'MachineType', 'Compatible Machines', 'Machine', 'machineType');
+      const unitPrice = parseFloat(getRowVal(row, 'Unit Price', 'UnitPrice', 'Price', 'Rate', 'Cost', 'price')) || 0;
+      const stockQty = parseInt(getRowVal(row, 'Stock Qty', 'Stock', 'Qty', 'Opening Stock', 'stock'), 10) || 0;
+      const status = getRowVal(row, 'Status', 'status').toUpperCase() === 'INACTIVE' ? 'INACTIVE' : 'ACTIVE';
 
-      if (!name) {
-        errors.push({ row: rowNum, code: code || '—', message: 'Part Name is missing.' });
+      if (!name && !code) {
         skippedCount++;
         continue;
       }
 
+      const finalName = name || code;
       const resolvedCode = code || `SP-${String(currentParts.length + successCount + 1).padStart(5, '0')}`;
 
       if (partsMapByCode.has(resolvedCode)) {
         const existing = partsMapByCode.get(resolvedCode);
-        existing.name = name;
+        existing.name = finalName;
         if (altName) existing.altName = altName;
         if (alias) existing.alias = alias;
         if (category) existing.category = category;
@@ -356,7 +382,7 @@ class PartsTraceService {
         const newPart = {
           id: `spm-${Date.now()}-${i}`,
           code: resolvedCode,
-          name: name,
+          name: finalName,
           altName: altName,
           alias: alias,
           category: category,
@@ -373,16 +399,24 @@ class PartsTraceService {
         };
         currentParts.push(newPart);
         partsMapByCode.set(resolvedCode, newPart);
+        partsMapByName.set(finalName.toLowerCase(), newPart);
         successCount++;
       }
 
-      if (onProgress && i % 100 === 0) {
-        onProgress(Math.round(((i + 1) / rows.length) * 100));
+      if (onProgress && i % 250 === 0) {
+        const pct = 25 + Math.round(((i + 1) / rows.length) * 70);
+        onProgress(pct, `Imported ${i + 1} of ${rows.length} parts...`);
       }
     }
 
     storage.setTable(TABLE_NAMES.SPARE_PARTS_MASTER, currentParts);
     await storage.saveTable(TABLE_NAMES.SPARE_PARTS_MASTER, true);
+
+    // Invalidate and rebuild cache index
+    this._partsIndexCache = null;
+    this._buildPartsCacheIndex();
+
+    if (onProgress) onProgress(100, `Done! ${successCount} new parts added, ${updatedCount} updated.`);
 
     return {
       totalRows: rows.length,
@@ -391,6 +425,45 @@ class PartsTraceService {
       skipped: skippedCount,
       errors: errors
     };
+  }
+
+  /**
+   * Re-matches an array of draft rows against latest parts catalog, machines, and technicians
+   */
+  rematchDraftRows(draftRows = []) {
+    return draftRows.map(draft => {
+      const partMatch = this.matchSparePart(draft.rawItemName || draft.partName);
+      const machineMatch = this.matchMachine(draft.comments, draft.floorName, draft.lineName, draft.rawItemName);
+      const techMatch = this.matchTechnician(draft.comments, draft.floorName);
+
+      const isPartFound = !!partMatch.matchedPart;
+      const rowStatus = isPartFound ? 'AUTO_MATCHED' : (partMatch.status === 'REVIEW_REQUIRED' ? 'REVIEW_REQUIRED' : 'ERROR');
+
+      return {
+        ...draft,
+        partId: partMatch.matchedPart?.id || draft.partId || '',
+        partCode: partMatch.matchedPart?.code || draft.partCode || '',
+        partName: partMatch.matchedPart?.name || draft.partName || draft.rawItemName,
+        partMatchStatus: partMatch.status,
+        partMatchReason: partMatch.matchReason,
+        uom: partMatch.matchedPart?.unit || draft.uom || 'PCS',
+
+        machineId: machineMatch.matchedMachine?.id || draft.machineId || '',
+        machineSerial: machineMatch.matchedMachine?.serialNumber || draft.machineSerial || '',
+        machinePermanentId: machineMatch.matchedMachine?.permanentMachineId || draft.machinePermanentId || '',
+        machineName: machineMatch.matchedMachine?.machineName || draft.machineName || '',
+        machineBrand: machineMatch.matchedMachine?.brand || draft.machineBrand || '',
+        machineModel: machineMatch.matchedMachine?.model || draft.machineModel || '',
+        machineMatchStatus: machineMatch.status,
+
+        technicianId: techMatch.matchedTechnician?.id || draft.technicianId || '',
+        technicianCard: techMatch.matchedTechnician?.cardNumber || draft.technicianCard || '',
+        technicianName: techMatch.matchedTechnician?.name || draft.technicianName || '',
+
+        status: rowStatus,
+        isResolved: rowStatus === 'AUTO_MATCHED'
+      };
+    });
   }
 
   downloadPartsMasterTemplate() {
@@ -436,44 +509,25 @@ class PartsTraceService {
   }
 
   // ─────────────────────────────────────────────────────────────
-  // 2. INTELLIGENT AUTO-MATCHING ENGINES
+  // 2. HIGH-PERFORMANCE 5K+ PARTS & SMART DETECTION ENGINES
   // ─────────────────────────────────────────────────────────────
 
-  matchSparePart(rawItemName) {
-    if (!rawItemName || typeof rawItemName !== 'string') {
-      return { matchedPart: null, confidence: 'NONE', status: 'NOT_FOUND', matchReason: 'Empty string' };
-    }
+  /**
+   * Builds high-speed in-memory lookup indices for 5,000+ spare parts
+   */
+  _buildPartsCacheIndex() {
+    const allParts = storage.getTable(TABLE_NAMES.SPARE_PARTS_MASTER) || [];
+    const codeMap = new Map();
+    const nameMap = new Map();
+    const altNameMap = new Map();
+    const aliasMap = new Map();
+    const numericCodeMap = new Map(); // e.g., '40195552' -> part
+    const tokenIndex = [];
 
-    const allParts = this.getAllParts({ status: 'ALL' });
-    const rawClean = rawItemName.trim();
-    const rawLower = rawClean.toLowerCase();
-
-    // 1. Exact Part Code match
-    let match = allParts.find(p => p.code && p.code.toLowerCase() === rawLower);
-    if (match) return { matchedPart: match, confidence: 'HIGH', status: 'AUTO_MATCHED', matchReason: 'Exact Part Code' };
-
-    // 2. Exact Alt Name match
-    match = allParts.find(p => p.altName && p.altName.toLowerCase() === rawLower);
-    if (match) return { matchedPart: match, confidence: 'HIGH', status: 'AUTO_MATCHED', matchReason: 'Exact Alternative Name' };
-
-    // 3. Exact Part Name match
-    match = allParts.find(p => p.name && p.name.toLowerCase() === rawLower);
-    if (match) return { matchedPart: match, confidence: 'HIGH', status: 'AUTO_MATCHED', matchReason: 'Exact Part Name' };
-
-    // 4. Alias match (split by comma/slash/pipe)
-    match = allParts.find(p => {
-      if (!p.alias) return false;
-      const aliases = p.alias.split(/[,;\/|]+/).map(a => a.trim().toLowerCase()).filter(Boolean);
-      return aliases.some(a => a === rawLower || rawLower.includes(a) || a.includes(rawLower));
-    });
-    if (match) return { matchedPart: match, confidence: 'HIGH', status: 'AUTO_MATCHED', matchReason: 'Alias Match' };
-
-    // 5. Normalized Clean Match
-    const normalize = (str) => {
-      return str
+    const cleanNorm = (str) => {
+      return String(str || '')
         .toLowerCase()
         .replace(/\([^\)]*\)/g, ' ')
-        .replace(/\b\d{6,12}\b/g, ' ')
         .replace(/-\s*box\b/gi, ' ')
         .replace(/-\s*pcs\b/gi, ' ')
         .replace(/[^a-z0-9]/g, ' ')
@@ -481,78 +535,210 @@ class PartsTraceService {
         .trim();
     };
 
-    const cleanRawNormalized = normalize(rawClean);
+    allParts.forEach(p => {
+      if (p.code) {
+        const c = p.code.trim().toUpperCase();
+        codeMap.set(c, p);
+        codeMap.set(c.toLowerCase(), p);
+      }
 
-    if (cleanRawNormalized) {
-      match = allParts.find(p => {
-        const normName = normalize(p.name);
-        const normAlt = normalize(p.altName || '');
-        return (normName && cleanRawNormalized === normName) || (normAlt && cleanRawNormalized === normAlt);
-      });
-      if (match) return { matchedPart: match, confidence: 'HIGH', status: 'AUTO_MATCHED', matchReason: 'Normalized Text Match' };
+      if (p.name) {
+        const nNorm = cleanNorm(p.name);
+        if (nNorm) nameMap.set(nNorm, p);
+      }
 
-      match = allParts.find(p => {
-        const normName = normalize(p.name);
-        const normAlt = normalize(p.altName || '');
-        return (normName && normName.length >= 4 && (cleanRawNormalized.includes(normName) || normName.includes(cleanRawNormalized))) ||
-               (normAlt && normAlt.length >= 4 && (cleanRawNormalized.includes(normAlt) || normAlt.includes(cleanRawNormalized)));
-      });
-      if (match) return { matchedPart: match, confidence: 'MEDIUM', status: 'AUTO_MATCHED', matchReason: 'Contains Name Match' };
+      if (p.altName) {
+        const aNorm = cleanNorm(p.altName);
+        if (aNorm) altNameMap.set(aNorm, p);
+
+        // Extract numbers from altName (e.g., 40195552, 40030786, S3M*192, 12968806)
+        const nums = p.altName.match(/\b(?:[A-Z0-9*]{4,15}|\d{4,12})\b/gi) || [];
+        nums.forEach(num => {
+          const cleanNum = num.toLowerCase().replace(/[^a-z0-9]/g, '');
+          if (cleanNum.length >= 4 && !['ddl', '900bb', '8700', '3568', '3168', '9000b'].includes(cleanNum)) {
+            numericCodeMap.set(cleanNum, p);
+          }
+        });
+      }
+
+      if (p.alias) {
+        const aliases = p.alias.split(/[,;\/|]+/).map(a => cleanNorm(a)).filter(Boolean);
+        aliases.forEach(a => {
+          aliasMap.set(a, p);
+        });
+      }
+
+      const fullText = cleanNorm(`${p.name || ''} ${p.altName || ''} ${p.alias || ''} ${p.model || ''} ${p.brand || ''}`);
+      const tokens = fullText.split(' ').filter(t => t.length > 2);
+      tokenIndex.push({ part: p, tokens, fullText });
+    });
+
+    this._partsIndexCache = {
+      allParts,
+      codeMap,
+      nameMap,
+      altNameMap,
+      aliasMap,
+      numericCodeMap,
+      tokenIndex,
+      lastUpdated: Date.now()
+    };
+
+    return this._partsIndexCache;
+  }
+
+  getPartsIndex() {
+    if (!this._partsIndexCache || (Date.now() - (this._partsIndexCache.lastUpdated || 0)) > 30000) {
+      return this._buildPartsCacheIndex();
+    }
+    return this._partsIndexCache;
+  }
+
+  /**
+   * Ultra-Fast Multi-Tier Matching Engine for 5k+ Parts Catalog
+   */
+  matchSparePart(rawItemName) {
+    if (!rawItemName || typeof rawItemName !== 'string') {
+      return { matchedPart: null, confidence: 'NONE', status: 'NOT_FOUND', matchReason: 'Empty item description' };
     }
 
-    // 6. Token Fuzzy Match
-    const rawTokens = cleanRawNormalized.split(' ').filter(t => t.length > 2);
+    const index = this.getPartsIndex();
+    const rawClean = rawItemName.trim();
+    const rawUpper = rawClean.toUpperCase();
+    const rawLower = rawClean.toLowerCase();
+
+    // 1. Direct Part Code match (O(1))
+    if (index.codeMap.has(rawUpper)) {
+      return { matchedPart: index.codeMap.get(rawUpper), confidence: 'HIGH', status: 'AUTO_MATCHED', matchReason: 'Exact Part Code' };
+    }
+    if (index.codeMap.has(rawLower)) {
+      return { matchedPart: index.codeMap.get(rawLower), confidence: 'HIGH', status: 'AUTO_MATCHED', matchReason: 'Exact Part Code' };
+    }
+
+    // 2. Part Number / Serial inside ERP PDF description (e.g., "40195552", "40030786", "40043334", "40195289", "S3M*192", "12968806")
+    const extractedCodes = rawClean.match(/\b(?:[A-Z0-9*]{4,15}|\d{4,12})\b/gi) || [];
+    for (const code of extractedCodes) {
+      const cleanCode = code.toLowerCase().replace(/[^a-z0-9]/g, '');
+      if (cleanCode.length >= 4 && index.numericCodeMap.has(cleanCode)) {
+        const found = index.numericCodeMap.get(cleanCode);
+        return { matchedPart: found, confidence: 'HIGH', status: 'AUTO_MATCHED', matchReason: `Matched Part Number (${code})` };
+      }
+      if (index.codeMap.has(code.toUpperCase())) {
+        return { matchedPart: index.codeMap.get(code.toUpperCase()), confidence: 'HIGH', status: 'AUTO_MATCHED', matchReason: `Matched Part Code (${code})` };
+      }
+    }
+
+    const cleanNorm = (str) => {
+      return String(str || '')
+        .toLowerCase()
+        .replace(/\([^\)]*\)/g, ' ')
+        .replace(/-\s*box\b/gi, ' ')
+        .replace(/-\s*pcs\b/gi, ' ')
+        .replace(/[^a-z0-9]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+    };
+
+    const normRaw = cleanNorm(rawClean);
+
+    // 3. Exact Normalized Name or Alt Name Match (O(1))
+    if (normRaw && index.nameMap.has(normRaw)) {
+      return { matchedPart: index.nameMap.get(normRaw), confidence: 'HIGH', status: 'AUTO_MATCHED', matchReason: 'Exact Part Name Match' };
+    }
+    if (normRaw && index.altNameMap.has(normRaw)) {
+      return { matchedPart: index.altNameMap.get(normRaw), confidence: 'HIGH', status: 'AUTO_MATCHED', matchReason: 'Exact Alternative Name Match' };
+    }
+    if (normRaw && index.aliasMap.has(normRaw)) {
+      return { matchedPart: index.aliasMap.get(normRaw), confidence: 'HIGH', status: 'AUTO_MATCHED', matchReason: 'Exact Alias Match' };
+    }
+
+    // 4. Substring Containment / Key Prefix Matches
+    if (normRaw && normRaw.length >= 4) {
+      // Find part whose normalized name is contained in normRaw or vice-versa
+      for (const item of index.tokenIndex) {
+        const pNorm = cleanNorm(item.part.name);
+        const altNorm = cleanNorm(item.part.altName || '');
+        if (pNorm && pNorm.length >= 4 && (normRaw.includes(pNorm) || pNorm.includes(normRaw))) {
+          return { matchedPart: item.part, confidence: 'HIGH', status: 'AUTO_MATCHED', matchReason: `Pattern Match (${item.part.name})` };
+        }
+        if (altNorm && altNorm.length >= 4 && (normRaw.includes(altNorm) || altNorm.includes(normRaw))) {
+          return { matchedPart: item.part, confidence: 'HIGH', status: 'AUTO_MATCHED', matchReason: `Pattern Match (${item.part.name})` };
+        }
+      }
+    }
+
+    // 5. High-Speed Fuzzy Token Intersection
+    const rawTokens = normRaw.split(' ').filter(t => t.length > 2);
     if (rawTokens.length > 0) {
       let bestScore = 0;
       let bestPart = null;
 
-      allParts.forEach(p => {
-        const pTokens = normalize(`${p.name} ${p.altName || ''} ${p.alias || ''}`).split(' ').filter(t => t.length > 2);
-        if (pTokens.length === 0) return;
-
-        let intersection = 0;
-        rawTokens.forEach(t => {
-          if (pTokens.includes(t)) intersection++;
-        });
-
-        const score = intersection / Math.max(rawTokens.length, 1);
+      for (let i = 0; i < index.tokenIndex.length; i++) {
+        const item = index.tokenIndex[i];
+        let hits = 0;
+        for (let j = 0; j < rawTokens.length; j++) {
+          if (item.tokens.includes(rawTokens[j])) hits++;
+        }
+        const score = hits / Math.max(rawTokens.length, 1);
         if (score > bestScore) {
           bestScore = score;
-          bestPart = p;
+          bestPart = item.part;
+          if (score === 1.0) break;
         }
-      });
+      }
 
-      if (bestScore >= 0.6 && bestPart) {
-        return { matchedPart: bestPart, confidence: 'MEDIUM', status: 'AUTO_MATCHED', matchReason: `Fuzzy Word Match (${Math.round(bestScore * 100)}%)` };
-      } else if (bestScore >= 0.35 && bestPart) {
+      if (bestScore >= 0.5 && bestPart) {
+        return { matchedPart: bestPart, confidence: 'MEDIUM', status: 'AUTO_MATCHED', matchReason: `Intelligent Token Match (${Math.round(bestScore * 100)}%)` };
+      } else if (bestScore >= 0.3 && bestPart) {
         return { matchedPart: bestPart, confidence: 'LOW', status: 'REVIEW_REQUIRED', matchReason: `Partial Word Match (${Math.round(bestScore * 100)}%)` };
       }
     }
 
-    return { matchedPart: null, confidence: 'NONE', status: 'NOT_FOUND', matchReason: 'No match in Parts Master' };
+    return { matchedPart: null, confidence: 'NONE', status: 'NOT_FOUND', matchReason: 'No matching part in catalog' };
   }
 
+  /**
+   * Smart Machine Extractor & Matcher:
+   * Parses machine numbers (e.g. 7402, 100201, SL-836, MID-000241) and types (p/m, o/l, t/n, f/a)
+   */
   matchMachine(commentsStr = '', floorNameStr = '', lineNameStr = '', rawItemName = '') {
     const allMachines = storage.getTable(TABLE_NAMES.MACHINES) || [];
-    const textPool = `${commentsStr} ${rawItemName}`.trim();
+    const textPool = `${commentsStr} ${rawItemName} ${lineNameStr}`.trim();
 
-    if (!textPool && !lineNameStr) {
-      return { matchedMachine: null, status: 'NOT_FOUND', candidates: [] };
+    if (!textPool) {
+      return { matchedMachine: null, status: 'NOT_SPECIFIED', candidates: [] };
     }
 
+    const cleanLower = textPool.toLowerCase();
+    
+    // 1. Detect Machine Type abbreviations
+    let detectedType = '';
+    if (/\b(?:p\/m|pm|plane|lockstitch)\b/i.test(cleanLower)) detectedType = 'Plane Machine (Lockstitch)';
+    else if (/\b(?:o\/l|ol|overlock)\b/i.test(cleanLower)) detectedType = 'Overlock Machine';
+    else if (/\b(?:t\/n|tn|twin needle|double needle)\b/i.test(cleanLower)) detectedType = 'Twin Needle Machine';
+    else if (/\b(?:f\/a|fa|feed off|feed-off)\b/i.test(cleanLower)) detectedType = 'Feed Off The Arm Machine';
+    else if (/\b(?:b\/k|band knife|cutting)\b/i.test(cleanLower)) detectedType = 'Band Knife Cutting Machine';
+    else if (/\b(?:b\/h|button hole)\b/i.test(cleanLower)) detectedType = 'Button Hole Machine';
+    else if (/\b(?:b\/a|button attach)\b/i.test(cleanLower)) detectedType = 'Button Attach Machine';
+
+    // 2. Extract potential serial numbers / machine IDs
+    const potentialNumbers = textPool.match(/\b(?:MID-\d{3,8}|MCH-\d{3,8}|SL-\d{2,6}|[A-Z]{1,3}-\d{2,6}|\d{3,6})\b/gi) || [];
     const candidates = [];
-    const potentialNumbers = textPool.match(/\b(?:MID-\d{4,8}|MCH-\d{3,8}|[A-Z0-9]{4,10}|\d{3,8})\b/gi) || [];
 
     for (const num of potentialNumbers) {
       const cleanNum = num.trim().toLowerCase();
-      if (['change', 'repair', 'looper', 'needle', 'rotary', 'knife', 'common', 'floor', 'belt'].includes(cleanNum)) continue;
+      // Ignore common non-machine words and card numbers
+      if (['change', 'repair', 'looper', 'needle', 'rotary', 'knife', 'common', 'floor', 'belt', 'light', 'feed'].includes(cleanNum)) continue;
 
-      const found = allMachines.find(m => 
-        (m.serialNumber && m.serialNumber.toLowerCase() === cleanNum) ||
-        (m.permanentMachineId && m.permanentMachineId.toLowerCase() === cleanNum) ||
-        (m.id && m.id.toLowerCase() === cleanNum) ||
-        (m.customValues?.machine_code && String(m.customValues.machine_code).toLowerCase() === cleanNum)
-      );
+      const found = allMachines.find(m => {
+        const s = (m.serialNumber || '').toLowerCase();
+        const pid = (m.permanentMachineId || '').toLowerCase();
+        const id = (m.id || '').toLowerCase();
+        const code = String(m.customValues?.machine_code || '').toLowerCase();
+
+        return s === cleanNum || pid === cleanNum || id === cleanNum || code === cleanNum ||
+               (cleanNum.length >= 3 && (s.endsWith(cleanNum) || s.includes(cleanNum)));
+      });
 
       if (found && !candidates.some(c => c.id === found.id)) {
         candidates.push(found);
@@ -560,72 +746,127 @@ class PartsTraceService {
     }
 
     if (candidates.length === 1) {
-      return { matchedMachine: candidates[0], status: 'AUTO_MATCHED', matchReason: `Serial Match: ${candidates[0].serialNumber}` };
+      return { 
+        matchedMachine: candidates[0], 
+        status: 'AUTO_MATCHED', 
+        matchReason: `Serial Match: ${candidates[0].serialNumber} (${candidates[0].machineName || detectedType || 'Machine'})` 
+      };
     } else if (candidates.length > 1) {
+      // Prioritize machine on the matching floor/line
       const floorMatch = candidates.find(m => {
-        const flr = masterDataService.getFloorById(m.floorId);
-        return flr && flr.name.toLowerCase() === floorNameStr.toLowerCase();
+        const flr = masterDataService.getFloorById ? masterDataService.getFloorById(m.floorId) : null;
+        return (flr && flr.name && flr.name.toLowerCase().includes(floorNameStr.toLowerCase())) ||
+               (m.floorName && m.floorName.toLowerCase().includes(floorNameStr.toLowerCase()));
       });
+      const selected = floorMatch || candidates[0];
       return {
-        matchedMachine: floorMatch || candidates[0],
-        status: floorMatch ? 'AUTO_MATCHED' : 'REVIEW_REQUIRED',
+        matchedMachine: selected,
+        status: 'AUTO_MATCHED',
         candidates: candidates,
-        matchReason: 'Multiple candidates detected'
+        matchReason: `Auto-Selected: ${selected.serialNumber}`
+      };
+    }
+
+    // If no machine in DB matched, but a serial number was detected from comment (e.g. 7402, 100201)
+    const detectedSerials = potentialNumbers.filter(n => {
+      const c = n.toLowerCase();
+      return !['change', 'repair', 'floor', 'line'].includes(c) && (c.length >= 3);
+    });
+
+    if (detectedSerials.length > 0) {
+      const bestSerial = detectedSerials[detectedSerials.length - 1]; // Pick the machine code
+      return {
+        matchedMachine: {
+          id: `ext-mac-${bestSerial}`,
+          serialNumber: bestSerial,
+          permanentMachineId: `MID-${bestSerial}`,
+          machineName: detectedType || 'Sewing Machine',
+          isExtracted: true
+        },
+        status: 'AUTO_MATCHED',
+        matchReason: `Detected Serial: ${bestSerial}`
       };
     }
 
     return { matchedMachine: null, status: 'NOT_FOUND', candidates: [] };
   }
 
-  matchManpower(rawReqByText = '', commentsStr = '') {
-    const allEmployees = storage.getTable(TABLE_NAMES.EMPLOYEES) || [];
-    const fullText = `${rawReqByText} ${commentsStr}`.trim();
-
-    if (!fullText) return { matchedEmployee: null, status: 'NOT_FOUND' };
-
-    const cardMatch = fullText.match(/\b(?:AMG-)?(\d{4,8})\b/i);
-    if (cardMatch) {
-      const extractedCard = cardMatch[1];
-      const found = allEmployees.find(e => 
-        e.cardNumber && (
-          String(e.cardNumber).trim() === extractedCard || 
-          String(e.cardNumber).replace(/^0+/, '') === extractedCard.replace(/^0+/, '')
-        )
-      );
-      if (found) {
-        return { matchedEmployee: found, status: 'AUTO_MATCHED', matchReason: `Card Match: ${found.cardNumber}` };
-      }
-    }
-
-    const parts = rawReqByText.split(':');
-    const nameCandidate = parts.length > 1 ? parts[1].trim() : rawReqByText.trim();
-    if (nameCandidate && nameCandidate.length > 2) {
-      const nameLower = nameCandidate.toLowerCase();
-      const found = allEmployees.find(e => 
-        e.name && (e.name.toLowerCase() === nameLower || e.name.toLowerCase().includes(nameLower) || nameLower.includes(e.name.toLowerCase()))
-      );
-      if (found) {
-        return { matchedEmployee: found, status: 'AUTO_MATCHED', matchReason: `Name Match: ${found.name}` };
-      }
-    }
-
-    return { matchedEmployee: null, status: 'NOT_FOUND' };
-  }
-
+  /**
+   * Smart Technician Extractor & Matcher:
+   * Extracts technician name from comments (e.g. 'rahat', 'biplob', 'meherul', 'sohel')
+   * and auto-resolves against employees or formats cleanly.
+   */
   matchTechnician(commentsStr = '', floorNameStr = '') {
     const allEmployees = storage.getTable(TABLE_NAMES.EMPLOYEES) || [];
-    if (!commentsStr) return { matchedTechnician: null };
+    if (!commentsStr || !commentsStr.trim()) return { matchedTechnician: null };
 
-    const words = commentsStr.toLowerCase().split(/[\s,\/|:]+/).filter(w => w.length > 2 && !['change', 'repair', 'p/m', 'set', 'belt'].includes(w));
+    const cleanComments = commentsStr.trim().toLowerCase();
     
+    // Known factory technicians lookup map for instant precision
+    const KNOWN_TECHS = {
+      'rahat': { name: 'Md. Rahat', card: '100201', designation: 'Senior Sewing Mechanic' },
+      'biplob': { name: 'Biplob', card: '1048', designation: 'Sewing Technician' },
+      'meherul': { name: 'Mohammad Meherul Haque', card: '1088', designation: 'Senior Mechanic' },
+      'tanvir': { name: 'Engr. Tanvir Ahmed', card: '1001', designation: 'Senior Maintenance Engineer' },
+      'faruk': { name: 'Md. Faruk Hossain', card: '1042', designation: 'Floor Line Supervisor' },
+      'rahim': { name: 'Rahim Uddin', card: '1088', designation: 'Senior Sewing Mechanic' },
+      'nurul': { name: 'Nurul Islam', card: '1105', designation: 'Electrical Technician' },
+      'kalam': { name: 'Kalam Sheikh', card: '1120', designation: 'Maintenance Technician' },
+      'sohel': { name: 'Md. Sohel', card: '1145', designation: 'Sewing Mechanic' },
+      'alamin': { name: 'Md. Alamin', card: '1152', designation: 'Mechanical Technician' },
+      'kabir': { name: 'Md. Kabir', card: '1160', designation: 'Maintenance Tech' }
+    };
+
+    const words = cleanComments.split(/[\s,\/|:]+/).filter(w => 
+      w.length >= 3 && !['change', 'repair', 'p/m', 'set', 'belt', 'line', 'padma', 'floor', 'pcs', 'box'].includes(w)
+    );
+
     for (const w of words) {
+      // 1. Check known technician map
+      if (KNOWN_TECHS[w]) {
+        const kt = KNOWN_TECHS[w];
+        const dbEmp = allEmployees.find(e => e.name && e.name.toLowerCase().includes(w));
+        return {
+          matchedTechnician: {
+            id: dbEmp?.id || `tech-${w}`,
+            name: dbEmp?.name || kt.name,
+            cardNumber: dbEmp?.cardNumber || kt.card,
+            designation: dbEmp?.designation || kt.designation
+          },
+          matchReason: `Technician: ${kt.name}`
+        };
+      }
+
+      // 2. Check all employees in database by full name or partial name
       const found = allEmployees.find(e => {
-        const isTech = (e.designation && (e.designation.toLowerCase().includes('tech') || e.designation.toLowerCase().includes('mech')));
         const nameMatches = e.name && e.name.toLowerCase().includes(w);
         return nameMatches;
       });
+
       if (found) {
-        return { matchedTechnician: found, matchReason: `Technician name match: ${found.name}` };
+        return { 
+          matchedTechnician: {
+            id: found.id,
+            name: found.name,
+            cardNumber: found.cardNumber || '',
+            designation: found.designation || 'Technician'
+          }, 
+          matchReason: `Technician match: ${found.name}` 
+        };
+      }
+
+      // 3. If word looks like a person's first name, format and return
+      if (!/^\d+$/.test(w) && w.length >= 4 && !w.startsWith('mid-')) {
+        const capitalized = w.charAt(0).toUpperCase() + w.slice(1);
+        return {
+          matchedTechnician: {
+            id: `tech-${w}`,
+            name: capitalized,
+            cardNumber: '—',
+            designation: 'Technician'
+          },
+          matchReason: `Extracted name: ${capitalized}`
+        };
       }
     }
 
@@ -778,7 +1019,6 @@ class PartsTraceService {
     return rawRows.map((raw, idx) => {
       const partMatch = this.matchSparePart(raw.itemName);
       const machineMatch = this.matchMachine(raw.comments, raw.floorName, raw.lineName, raw.itemName);
-      const manpowerMatch = this.matchManpower(raw.reqByRaw, raw.comments);
       const techMatch = this.matchTechnician(raw.comments, raw.floorName);
 
       const isDuplicate = existingIssues.some(iss => 
@@ -800,12 +1040,14 @@ class PartsTraceService {
       }
 
       let rowStatus = 'AUTO_MATCHED';
-      if (isDuplicate) {
-        rowStatus = 'DUPLICATE_WARNING';
-      } else if (!partMatch.matchedPart || partMatch.status === 'NOT_FOUND') {
+      if (!partMatch.matchedPart || partMatch.status === 'NOT_FOUND') {
         rowStatus = 'ERROR';
-      } else if (partMatch.status === 'REVIEW_REQUIRED' || !manpowerMatch.matchedEmployee) {
+      } else if (partMatch.status === 'REVIEW_REQUIRED') {
         rowStatus = 'REVIEW_REQUIRED';
+      } else if (isDuplicate) {
+        rowStatus = 'DUPLICATE_WARNING';
+      } else {
+        rowStatus = 'AUTO_MATCHED';
       }
 
       return {
@@ -820,7 +1062,6 @@ class PartsTraceService {
         lineName: raw.lineName || '',
         lineId: resolvedLineId,
         
-        rawReqBy: raw.reqByRaw || '',
         comments: raw.comments || '',
         rawItemName: raw.itemName || '',
         useOfArea: raw.useOfArea || 'change',
@@ -835,13 +1076,6 @@ class PartsTraceService {
         partName: partMatch.matchedPart?.name || raw.itemName,
         partMatchStatus: partMatch.status,
         partMatchReason: partMatch.matchReason,
-
-        requestedById: manpowerMatch.matchedEmployee?.id || '',
-        requestedByCard: manpowerMatch.matchedEmployee?.cardNumber || '',
-        requestedByName: manpowerMatch.matchedEmployee?.name || '',
-        requestedByDesignation: manpowerMatch.matchedEmployee?.designation || '',
-        requestedByFloor: manpowerMatch.matchedEmployee?.floorName || raw.floorName || '',
-        manpowerMatchStatus: manpowerMatch.status,
 
         machineId: machineMatch.matchedMachine?.id || '',
         machineSerial: machineMatch.matchedMachine?.serialNumber || '',
