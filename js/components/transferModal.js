@@ -62,171 +62,175 @@ export function renderTransferModal() {
 
   return `
     <div class="modal-overlay" id="modal-transfer-overlay">
-      <div class="modal-dialog modal-dialog-lg" style="max-width: 880px; max-height: 90vh; display: flex; flex-direction: column; min-height: 0;">
+      <div class="modal-dialog modal-dialog-lg" style="max-width: 900px; max-height: 90vh; display: flex; flex-direction: column; min-height: 0; background: #0b1120; border: 1.5px solid #334155; box-shadow: 0 25px 60px rgba(0,0,0,0.85);">
         
-        <!-- Modal Header -->
-        <div class="modal-header" style="background: var(--bg-card); border-bottom: 1px solid var(--border-color); padding: 16px 22px;">
-          <div class="modal-title" style="display: flex; align-items: center; gap: 10px;">
-            <span style="font-size: 20px;">🔄</span>
+        <!-- Modal Header (High Contrast, Bold, Ultra Clear) -->
+        <div class="modal-header" style="background: #0f172a; border-bottom: 1.5px solid #334155; padding: 18px 24px;">
+          <div class="modal-title" style="display: flex; align-items: center; gap: 12px;">
+            <span style="font-size: 22px;">🔄</span>
             <div>
-              <div style="font-size: 16px; font-weight: 800; color: #fff;">Initiate Machine Transfer Request</div>
-              <div style="font-size: 11px; color: #38bdf8; font-weight: 600;">Zero-Manual-Entry &bull; Auto-Filled Machine Passport &bull; Management Approval Routing</div>
+              <div style="font-size: 17px; font-weight: 800; color: #ffffff; letter-spacing: 0.3px;">Initiate Machine Transfer Request</div>
+              <div style="font-size: 12px; color: #7dd3fc; font-weight: 700; margin-top: 2px;">Zero-Manual-Entry &bull; Auto-Filled Machine Passport &bull; Management Approval Routing</div>
             </div>
           </div>
-          <button id="btn-close-transfer-modal" class="btn btn-ghost btn-sm" style="font-size: 18px;">✕</button>
+          <button id="btn-close-transfer-modal" class="btn btn-ghost btn-sm" style="font-size: 18px; color: #ffffff; font-weight: 800; padding: 4px 10px;">✕</button>
         </div>
 
-        <form id="form-transfer-request" class="modal-body" style="padding: 20px 24px; display: flex; flex-direction: column; gap: 18px; overflow-y: auto; flex: 1; min-height: 0;">
+        <form id="form-transfer-request" class="modal-body" style="padding: 22px 26px; display: flex; flex-direction: column; gap: 20px; overflow-y: auto; flex: 1; min-height: 0;">
           
           <!-- STEP 1: SEARCH MACHINE SERIAL NUMBER -->
-          <div style="background: var(--bg-surface); border: 1.5px solid var(--primary); border-radius: var(--radius-lg); padding: 16px 18px; box-shadow: 0 4px 20px rgba(0,0,0,0.25);">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-              <div style="font-size: 12.5px; font-weight: 800; color: #38bdf8; text-transform: uppercase; display: flex; align-items: center; gap: 6px;">
+          <div style="background: #111c30; border: 1.5px solid #0284c7; border-radius: 12px; padding: 18px 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.4);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <div style="font-size: 13px; font-weight: 800; color: #38bdf8; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;">
                 <span>🔍 1. Search Machine by Serial Number Only</span>
               </div>
-              ${machine ? '<span class="badge badge-active" style="font-size: 10.5px;">Machine Loaded</span>' : '<span class="badge" style="background: rgba(148, 163, 184, 0.2); color: #94a3b8; font-size: 10.5px;">Awaiting Input</span>'}
+              ${machine ? '<span class="badge badge-active" style="font-size: 11px; padding: 3px 10px; font-weight: 800;">✓ Machine Loaded</span>' : '<span class="badge" style="background: rgba(148, 163, 184, 0.25); color: #ffffff; font-size: 11px; font-weight: 700; border: 1px solid #64748b;">Awaiting Input</span>'}
             </div>
 
-            <!-- Serial Search Input & Dropdown -->
+            <!-- Serial Search Input & Buttons -->
             <div style="position: relative;">
               <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                <div style="position: relative; flex: 1; min-width: 220px;">
+                <div style="position: relative; flex: 1; min-width: 240px;">
                   <span style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 16px; pointer-events: none; z-index: 5; line-height: 1;">🧵</span>
                   <input 
                     type="text" 
                     id="inp-transfer-search-serial" 
                     class="form-control has-icon-left" 
-                    placeholder="Enter or search Machine Serial Number (e.g. 5369, 76, JK-01)..." 
+                    placeholder="Enter or search Machine Serial Number (e.g. 5369, 76, 4474)..." 
                     value="${machine?.serialNumber || ''}" 
-                    style="font-size: 14px; font-weight: 700; color: #ffffff !important; background: rgba(15, 23, 42, 0.9); border: 1.5px solid rgba(56, 189, 248, 0.6); padding-left: 44px !important; padding-right: ${machine ? '84px' : '14px'} !important; height: 42px;"
+                    style="font-size: 14.5px; font-weight: 700; color: #ffffff !important; background: #090e1a; border: 1.5px solid #38bdf8; padding-left: 44px !important; padding-right: ${machine ? '84px' : '14px'} !important; height: 42px; border-radius: 8px;"
                     autocomplete="off"
                   />
                   ${machine ? `
-                    <button type="button" id="btn-clear-transfer-machine" title="Clear and search another machine" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: rgba(239, 68, 68, 0.2); border: 1px solid rgba(239, 68, 68, 0.45); color: #f87171; font-size: 11.5px; cursor: pointer; padding: 4px 10px; border-radius: 4px; font-weight: 700; z-index: 5;">✕ Clear</button>
+                    <button type="button" id="btn-clear-transfer-machine" title="Clear and search another machine" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: rgba(239, 68, 68, 0.25); border: 1.5px solid #ef4444; color: #fca5a5; font-size: 12px; cursor: pointer; padding: 4px 10px; border-radius: 6px; font-weight: 800; z-index: 5;">✕ Clear</button>
                   ` : ''}
                 </div>
-                <button type="button" id="btn-search-serial-trigger" class="btn btn-primary" style="font-weight: 700; white-space: nowrap;">
-                  Find Machine
+                <button type="button" id="btn-search-serial-trigger" class="btn btn-primary" style="font-weight: 800; height: 42px; padding: 0 18px; font-size: 13.5px; background: linear-gradient(135deg, #0284c7, #0369a1); border-radius: 8px; white-space: nowrap;">
+                  🔍 Find Machine
                 </button>
-                <button type="button" id="btn-transfer-scan-qr" class="btn" style="background: linear-gradient(135deg, #0284c7, #0369a1); border: 1.5px solid #38bdf8; color: #fff; font-weight: 800; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 10px rgba(2, 132, 199, 0.4); white-space: nowrap;" title="Scan Machine QR Code or Barcode with Camera">
+                <button type="button" id="btn-transfer-scan-qr" class="btn" style="background: linear-gradient(135deg, #0284c7, #0369a1); border: 1.5px solid #38bdf8; color: #ffffff; font-weight: 800; height: 42px; padding: 0 16px; font-size: 13.5px; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 10px rgba(2, 132, 199, 0.5); border-radius: 8px; white-space: nowrap;" title="Scan Machine QR Code or Barcode with Camera">
                   <span style="font-size: 16px;">📷</span> Scan QR
                 </button>
               </div>
 
               <!-- Floating Serial Suggestions Dropdown -->
-              <div id="transfer-serial-suggestions" style="display: none; position: absolute; left: 0; right: 0; top: 100%; z-index: 1000; background: #0f172a; border: 1px solid #38bdf8; border-radius: var(--radius-md); max-height: 220px; overflow-y: auto; box-shadow: 0 10px 30px rgba(0,0,0,0.7); margin-top: 4px;"></div>
+              <div id="transfer-serial-suggestions" style="display: none; position: absolute; left: 0; right: 0; top: 100%; z-index: 1000; background: #0f172a; border: 1.5px solid #38bdf8; border-radius: 8px; max-height: 240px; overflow-y: auto; box-shadow: 0 12px 36px rgba(0,0,0,0.85); margin-top: 6px;"></div>
             </div>
 
-            <!-- AUTO-LOADED MACHINE DETAILS CARD (User verifies, does not manually type) -->
+            <!-- AUTO-LOADED MACHINE DETAILS CARD (Crisp, High-Contrast Passport) -->
             ${machine ? `
-              <div style="margin-top: 14px; background: rgba(2, 132, 199, 0.08); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: var(--radius-md); padding: 14px 16px;">
-                <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 10px;">
+              <div style="margin-top: 16px; background: #090e1a; border: 1.5px solid #0284c7; border-radius: 10px; padding: 16px 18px;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px;">
                   <div>
-                    <div style="display: flex; align-items: center; gap: 8px;">
-                      <span style="font-size: 15px; font-weight: 800; color: #fff;">${machine.machineName?.name || (typeof machine.machineName === 'string' ? machine.machineName : 'Sewing Machine')}</span>
-                      <span class="badge" style="background: rgba(2, 132, 199, 0.3); color: #38bdf8; font-family: var(--font-mono); font-weight: 800; font-size: 12px; border: 1px solid rgba(56, 189, 248, 0.4);">
+                    <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                      <span style="font-size: 16px; font-weight: 800; color: #ffffff;">${machine.machineName?.name || (typeof machine.machineName === 'string' ? machine.machineName : 'Sewing Machine')}</span>
+                      <span class="badge" style="background: rgba(2, 132, 199, 0.4); color: #7dd3fc; font-family: var(--font-mono); font-weight: 800; font-size: 13px; border: 1.5px solid #38bdf8; padding: 2px 8px;">
                         ${machine.serialNumber}
                       </span>
-                      <span class="badge ${machine.status === 'ACTIVE' ? 'badge-active' : 'badge-idle'}" style="font-size: 10px;">
+                      <span class="badge ${machine.status === 'ACTIVE' ? 'badge-active' : 'badge-idle'}" style="font-size: 11px; font-weight: 800; padding: 3px 8px;">
                         ${machine.status}
                       </span>
                     </div>
-                    <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">
-                      <strong>Brand &amp; Model:</strong> ${machine.brand?.name || machine.brand || '—'} &bull; ${machine.model?.name || machine.model || '—'} | 
-                      <strong>Type:</strong> ${machine.machineName?.categoryName || machine.category || 'Standard Machine'}
+                    <div style="font-size: 13px; color: #f1f5f9; margin-top: 6px;">
+                      <strong style="color: #cbd5e1;">Brand &amp; Model:</strong> <span style="color: #ffffff; font-weight: 700;">${machine.brand?.name || machine.brand || '—'} &bull; ${machine.model?.name || machine.model || '—'}</span> | 
+                      <strong style="color: #cbd5e1;">Type:</strong> <span style="color: #ffffff; font-weight: 700;">${machine.machineName?.categoryName || machine.category || 'Standard Machine'}</span>
                     </div>
                   </div>
 
                   <!-- Lock Current Location Tag -->
-                  <div style="text-align: right;">
-                    <div style="font-size: 10px; font-weight: 700; color: #fbbf24; text-transform: uppercase;">
-                      🔒 Current Location (Locked &bull; Read Only)
+                  <div style="text-align: right; background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.35); border-radius: 6px; padding: 6px 12px;">
+                    <div style="font-size: 11px; font-weight: 800; color: #fde047; text-transform: uppercase; letter-spacing: 0.5px;">
+                      🔒 CURRENT LOCATION (LOCKED &bull; READ ONLY)
                     </div>
-                    <div style="font-size: 13.5px; font-weight: 800; color: #fff; margin-top: 2px;">
+                    <div style="font-size: 14px; font-weight: 800; color: #ffffff; margin-top: 2px;">
                       ${currentPath}
                     </div>
                   </div>
                 </div>
 
-                <!-- Specs & History Verification Strip -->
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-top: 12px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.12); font-size: 11.5px;">
+                <!-- Specs & History Verification Strip (Clear Responsive Grid) -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.12); font-size: 12px;">
                   <div>
-                    <span style="color: #94a3b8; font-weight: 600;">Asset Tag:</span> <strong style="color: #ffffff; font-family: var(--font-mono); font-size: 12px;">${machine.customFields?.assetTag || machine.id}</strong>
+                    <span style="color: #cbd5e1; font-weight: 700;">Asset Tag:</span>
+                    <strong style="color: #ffffff; font-family: var(--font-mono); font-size: 12.5px; display: block; margin-top: 2px;">${machine.customFields?.assetTag || machine.id}</strong>
                   </div>
                   <div>
-                    <span style="color: #94a3b8; font-weight: 600;">Motor / Voltage:</span> <strong style="color: #ffffff; font-weight: 700;">${machine.customFields?.motorType || 'Servo 220V'}</strong>
+                    <span style="color: #cbd5e1; font-weight: 700;">Motor / Voltage:</span>
+                    <strong style="color: #ffffff; font-weight: 700; display: block; margin-top: 2px;">${machine.customFields?.motorType || 'Servo 220V'}</strong>
                   </div>
                   <div>
-                    <span style="color: #94a3b8; font-weight: 600;">Past Transfers:</span> <strong style="color: #38bdf8; font-weight: 700;">${locationChangesCount} recorded</strong>
+                    <span style="color: #cbd5e1; font-weight: 700;">Past Transfers:</span>
+                    <strong style="color: #38bdf8; font-weight: 800; display: block; margin-top: 2px;">${locationChangesCount} recorded</strong>
                   </div>
                   <div>
-                    <span style="color: #94a3b8; font-weight: 600;">Service / Repairs:</span> <strong style="color: #34d399; font-weight: 700;">${servicesCount + sparePartsCount} events</strong>
+                    <span style="color: #cbd5e1; font-weight: 700;">Service / Repairs:</span>
+                    <strong style="color: #4ade80; font-weight: 800; display: block; margin-top: 2px;">${servicesCount + sparePartsCount} events</strong>
                   </div>
                 </div>
 
                 ${activeExistingTransfer ? `
-                  <div style="margin-top: 12px; background: rgba(239, 68, 68, 0.12); border: 1.5px solid #ef4444; border-radius: var(--radius-md); padding: 12px 14px; display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+                  <div style="margin-top: 14px; background: rgba(239, 68, 68, 0.15); border: 1.5px solid #ef4444; border-radius: 8px; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px;">
                     <div style="display: flex; align-items: flex-start; gap: 10px;">
-                      <span style="font-size: 20px;">⚠️</span>
+                      <span style="font-size: 22px;">⚠️</span>
                       <div>
-                        <div style="font-size: 13px; font-weight: 800; color: #f87171;">
+                        <div style="font-size: 13.5px; font-weight: 800; color: #fca5a5;">
                           Active Transfer Request Already in Progress (#${activeExistingTransfer.requestNumber})
                         </div>
-                        <div style="font-size: 11.5px; color: #cbd5e1; margin-top: 2px; line-height: 1.4;">
-                          Machine <strong>${machine.serialNumber}</strong> is currently awaiting transfer: 
-                          <span class="badge badge-maint" style="font-size: 10px; padding: 1px 6px;">${activeExistingTransfer.status.replace(/_/g, ' ')}</span>
-                          &bull; Requested by <strong>${activeExistingTransfer.requestedByName || 'User'}</strong> on ${new Date(activeExistingTransfer.requestedAt).toLocaleDateString()}.
-                          <br/><span style="color: #fca5a5; font-weight: 600;">A machine cannot have multiple transfer requests at the same time.</span>
+                        <div style="font-size: 12px; color: #f1f5f9; margin-top: 2px; line-height: 1.4;">
+                          Machine <strong style="color: #fff;">${machine.serialNumber}</strong> is currently awaiting transfer: 
+                          <span class="badge badge-maint" style="font-size: 10.5px; padding: 2px 6px;">${activeExistingTransfer.status.replace(/_/g, ' ')}</span>
+                          &bull; Requested by <strong style="color: #fff;">${activeExistingTransfer.requestedByName || 'User'}</strong> on ${new Date(activeExistingTransfer.requestedAt).toLocaleDateString()}.
+                          <br/><span style="color: #fca5a5; font-weight: 700;">A machine cannot have multiple transfer requests at the same time.</span>
                         </div>
                       </div>
                     </div>
-                    <button type="button" class="btn btn-sm btn-secondary btn-view-existing-active-transfer" data-id="${activeExistingTransfer.id}" style="font-size: 11px; font-weight: 700; white-space: nowrap; border-color: #38bdf8; color: #38bdf8;">
+                    <button type="button" class="btn btn-sm btn-secondary btn-view-existing-active-transfer" data-id="${activeExistingTransfer.id}" style="font-size: 12px; font-weight: 800; white-space: nowrap; border-color: #38bdf8; color: #38bdf8; height: 34px;">
                       👁️ View Active Request
                     </button>
                   </div>
                 ` : ''}
               </div>
             ` : `
-              <div style="margin-top: 14px; background: rgba(15, 23, 42, 0.45); border: 1.5px dashed rgba(56, 189, 248, 0.25); border-radius: var(--radius-md); padding: 18px 20px; text-align: center;">
-                <div style="font-size: 26px; margin-bottom: 4px; opacity: 0.85;">🔍</div>
-                <div style="font-size: 13.5px; font-weight: 700; color: #f8fafc;">Awaiting Machine Serial Input</div>
-                <div style="font-size: 11.5px; color: var(--text-secondary); margin-top: 4px; max-width: 480px; margin-left: auto; margin-right: auto; line-height: 1.5;">
-                  Please enter or search a Machine Serial Number above (e.g. <strong>5369</strong>, <strong>76</strong>) or click <strong>Find Machine</strong> to load passport and current location.
+              <div style="margin-top: 14px; background: #090e1a; border: 1.5px dashed rgba(56, 189, 248, 0.35); border-radius: 8px; padding: 20px; text-align: center;">
+                <div style="font-size: 28px; margin-bottom: 6px;">🔍</div>
+                <div style="font-size: 14px; font-weight: 800; color: #ffffff;">Awaiting Machine Serial Input</div>
+                <div style="font-size: 12.5px; color: #cbd5e1; margin-top: 4px; max-width: 500px; margin-left: auto; margin-right: auto; line-height: 1.5;">
+                  Please enter a Machine Serial Number above (e.g. <strong style="color:#38bdf8;">5369</strong>, <strong style="color:#38bdf8;">76</strong>, <strong style="color:#38bdf8;">4474</strong>) or click <strong style="color:#38bdf8;">Find Machine</strong> to load passport and current location.
                 </div>
               </div>
             `}
           </div>
 
           <!-- STEP 2: SELECT NEW LOCATION / FLOOR (GROUP -> UNIT -> FLOOR -> LINE) -->
-          <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 16px 18px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-              <div style="font-size: 12.5px; font-weight: 800; color: #34d399; text-transform: uppercase; display: flex; align-items: center; gap: 6px;">
+          <div style="background: #111c30; border: 1.5px solid #334155; border-radius: 12px; padding: 18px 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+              <div style="font-size: 13px; font-weight: 800; color: #4ade80; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;">
                 <span>📍 2. Select Requested New Location (Group &rarr; Unit &rarr; Floor &rarr; Line)</span>
               </div>
-              <span class="badge badge-active" style="font-size: 10px;">4-Tier Plant Hierarchy</span>
+              <span class="badge badge-active" style="font-size: 11px; font-weight: 800;">4-Tier Plant Hierarchy</span>
             </div>
 
-            <!-- Route Visualizer Banner -->
-            <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 10px 14px; margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+            <!-- Route Visualizer Banner (High Contrast, Bold Labels) -->
+            <div style="background: #090e1a; border: 1.5px solid rgba(56, 189, 248, 0.3); border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; gap: 14px;">
               <div style="flex: 1;">
-                <div style="font-size: 10px; color: #f87171; font-weight: 700; text-transform: uppercase;">Current Location</div>
-                <div style="font-size: 12.5px; font-weight: 800; color: #fff; line-height: 1.4;">${machine ? currentPath : '<span style="color: #94a3b8; font-style: italic; font-weight: 500;">(Awaiting Machine Serial Input)</span>'}</div>
+                <div style="font-size: 11px; color: #f87171; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">Current Source Location</div>
+                <div style="font-size: 13.5px; font-weight: 800; color: #ffffff; line-height: 1.4; margin-top: 2px;">${machine ? currentPath : '<span style="color: #cbd5e1; font-style: italic; font-weight: 500;">(Awaiting Machine Serial Input)</span>'}</div>
               </div>
-              <div style="font-size: 20px; color: #38bdf8; font-weight: 800;">➔</div>
+              <div style="font-size: 22px; color: #38bdf8; font-weight: 800;">➔</div>
               <div style="flex: 1; text-align: right;">
-                <div style="font-size: 10px; color: #34d399; font-weight: 700; text-transform: uppercase;">Transfer To (Destination Path)</div>
-                <div id="transfer-target-path-preview" style="font-size: 12.5px; font-weight: 800; color: #94a3b8; line-height: 1.4;"><span style="font-style: italic; font-weight: 500;">(Select Destination Below)</span></div>
+                <div style="font-size: 11px; color: #4ade80; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">Transfer To (Destination Path)</div>
+                <div id="transfer-target-path-preview" style="font-size: 13.5px; font-weight: 800; color: #f1f5f9; line-height: 1.4; margin-top: 2px;"><span style="font-style: italic; font-weight: 600; color: #94a3b8;">(Select Destination Below)</span></div>
               </div>
             </div>
 
-            <!-- Location Search Bar -->
-            <div style="background: rgba(15, 23, 42, 0.65); border: 1px solid rgba(56, 189, 248, 0.35); border-radius: var(--radius-md); padding: 12px 14px; margin-bottom: 14px; position: relative;">
+            <!-- Location Quick Search Bar -->
+            <div style="background: #090e1a; border: 1.5px solid #0284c7; border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; position: relative;">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                <label for="inp-transfer-location-search" style="font-size: 12px; font-weight: 700; color: #38bdf8; display: flex; align-items: center; gap: 6px; margin: 0;">
+                <label for="inp-transfer-location-search" style="font-size: 12.5px; font-weight: 700; color: #38bdf8; display: flex; align-items: center; gap: 6px; margin: 0;">
                   <span>🔍 Quick Location Search</span>
-                  <span style="font-size: 11px; font-weight: 400; color: #94a3b8;">(Search any Floor or Line across all Units)</span>
+                  <span style="font-size: 11.5px; font-weight: 500; color: #cbd5e1;">(Search any Floor or Line across all Units)</span>
                 </label>
-                <span style="font-size: 10.5px; color: #34d399; font-weight: 600;">✨ Auto fills 4 dropdowns below</span>
+                <span style="font-size: 11px; color: #4ade80; font-weight: 700;">✨ Auto fills 4 dropdowns below</span>
               </div>
               <div style="position: relative;">
                 <span style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 15px; pointer-events: none; z-index: 5; line-height: 1;">📍</span>
@@ -237,103 +241,104 @@ export function renderTransferModal() {
                   placeholder="Type to search Floor or Line name (e.g. Jamuna, Size Set, BG-A, Eyelet, Cutting)..." 
                   value="${selectedDest.searchQuery || ''}"
                   autocomplete="off"
-                  style="font-size: 13.5px; font-weight: 600; color: #ffffff !important; background: rgba(15, 23, 42, 0.9); border: 1.5px solid rgba(56, 189, 248, 0.5); padding-left: 44px !important; padding-right: 36px !important; height: 40px;"
+                  style="font-size: 13.5px; font-weight: 600; color: #ffffff !important; background: #0f172a; border: 1.5px solid #38bdf8; padding-left: 44px !important; padding-right: 36px !important; height: 40px; border-radius: 6px;"
                 />
-                <button type="button" id="btn-clear-location-search" title="Clear search" style="${selectedDest.searchQuery ? 'display: block;' : 'display: none;'} position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: rgba(239, 68, 68, 0.2); border: 1px solid rgba(239, 68, 68, 0.4); color: #f87171; border-radius: 4px; font-size: 11px; cursor: pointer; padding: 3px 8px; z-index: 5; font-weight: 700;">✕</button>
+                <button type="button" id="btn-clear-location-search" title="Clear search" style="${selectedDest.searchQuery ? 'display: block;' : 'display: none;'} position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: rgba(239, 68, 68, 0.25); border: 1px solid #ef4444; color: #fca5a5; border-radius: 4px; font-size: 11.5px; cursor: pointer; padding: 3px 8px; z-index: 5; font-weight: 800;">✕</button>
               </div>
 
               <!-- Floating Suggestions Dropdown -->
-              <div id="transfer-location-suggestions" style="display: none; position: absolute; left: 14px; right: 14px; top: 100%; z-index: 1000; background: #0b1329; border: 1.5px solid #38bdf8; border-radius: var(--radius-md); max-height: 240px; overflow-y: auto; box-shadow: 0 12px 36px rgba(0,0,0,0.85); margin-top: 4px;"></div>
+              <div id="transfer-location-suggestions" style="display: none; position: absolute; left: 16px; right: 16px; top: 100%; z-index: 1000; background: #0f172a; border: 1.5px solid #38bdf8; border-radius: 8px; max-height: 240px; overflow-y: auto; box-shadow: 0 12px 36px rgba(0,0,0,0.85); margin-top: 6px;"></div>
             </div>
 
+            <!-- 4 Cascading Dropdowns (Group -> Unit -> Floor -> Line) -->
             <div class="form-grid-2">
               <div class="form-group">
-                <label class="form-label" style="font-size: 12.5px; font-weight: 700; color: #f8fafc;">1. Destination Group <span class="req">*</span></label>
-                <select id="transfer-dest-group" class="filter-select" required style="background: #0b1329; color: #ffffff; border: 1.5px solid #475569; font-size: 13.5px;">
+                <label class="form-label" style="font-size: 13px; font-weight: 700; color: #ffffff; margin-bottom: 6px;">1. Destination Group <span class="req" style="color:#ef4444;">*</span></label>
+                <select id="transfer-dest-group" class="filter-select" required style="background: #0f172a; color: #ffffff; border: 1.5px solid #475569; font-size: 13.5px; font-weight: 600; height: 40px; border-radius: 6px;">
                   <option value="" disabled ${!destGroupId ? 'selected' : ''}>-- Select Destination Group --</option>
                   ${groups.map(g => `<option value="${g.id}" ${destGroupId === g.id ? 'selected' : ''}>${g.name}</option>`).join('')}
                 </select>
               </div>
 
               <div class="form-group">
-                <label class="form-label" style="font-size: 12.5px; font-weight: 700; color: #f8fafc;">2. Destination Factory / Unit <span class="req">*</span></label>
-                <select id="transfer-dest-unit" class="filter-select" required ${!destGroupId ? 'disabled' : ''} style="background: #0b1329; color: #ffffff; border: 1.5px solid #475569; font-size: 13.5px;">
+                <label class="form-label" style="font-size: 13px; font-weight: 700; color: #ffffff; margin-bottom: 6px;">2. Destination Factory / Unit <span class="req" style="color:#ef4444;">*</span></label>
+                <select id="transfer-dest-unit" class="filter-select" required ${!destGroupId ? 'disabled' : ''} style="background: #0f172a; color: #ffffff; border: 1.5px solid #475569; font-size: 13.5px; font-weight: 600; height: 40px; border-radius: 6px;">
                   <option value="" disabled ${!destUnitId ? 'selected' : ''}>${destGroupId ? '-- Select Factory / Unit --' : '-- Select Group First --'}</option>
                   ${units.map(u => `<option value="${u.id}" ${destUnitId === u.id ? 'selected' : ''}>${u.name}</option>`).join('')}
                 </select>
               </div>
 
               <div class="form-group">
-                <label class="form-label" style="font-size: 12.5px; font-weight: 700; color: #f8fafc;">3. Destination Floor <span class="req">*</span></label>
-                <select id="transfer-dest-floor" class="filter-select" required ${!destUnitId ? 'disabled' : ''} style="background: #0b1329; color: #ffffff; border: 1.5px solid #475569; font-size: 13.5px;">
+                <label class="form-label" style="font-size: 13px; font-weight: 700; color: #ffffff; margin-bottom: 6px;">3. Destination Floor <span class="req" style="color:#ef4444;">*</span></label>
+                <select id="transfer-dest-floor" class="filter-select" required ${!destUnitId ? 'disabled' : ''} style="background: #0f172a; color: #ffffff; border: 1.5px solid #475569; font-size: 13.5px; font-weight: 600; height: 40px; border-radius: 6px;">
                   <option value="" disabled ${!destFloorId ? 'selected' : ''}>${destUnitId ? '-- Select Floor --' : '-- Select Unit First --'}</option>
                   ${floors.map(f => `<option value="${f.id}" ${destFloorId === f.id ? 'selected' : ''}>${f.name}</option>`).join('')}
                 </select>
               </div>
 
               <div class="form-group">
-                <label class="form-label" style="font-size: 12.5px; font-weight: 700; color: #f8fafc;">4. Destination Production Line <span class="req">*</span></label>
-                <select id="transfer-dest-line" class="filter-select" required ${!destFloorId ? 'disabled' : ''} style="background: #0b1329; color: #ffffff; border: 1.5px solid #475569; font-size: 13.5px;">
+                <label class="form-label" style="font-size: 13px; font-weight: 700; color: #ffffff; margin-bottom: 6px;">4. Destination Production Line <span class="req" style="color:#ef4444;">*</span></label>
+                <select id="transfer-dest-line" class="filter-select" required ${!destFloorId ? 'disabled' : ''} style="background: #0f172a; color: #ffffff; border: 1.5px solid #475569; font-size: 13.5px; font-weight: 600; height: 40px; border-radius: 6px;">
                   <option value="" disabled ${!destLineId ? 'selected' : ''}>${destFloorId ? '-- Select Production Line --' : '-- Select Floor First --'}</option>
                   ${lines.map(l => `<option value="${l.id}" ${destLineId === l.id ? 'selected' : ''}>${l.name}</option>`).join('')}
                 </select>
               </div>
 
               <div class="form-group full-width">
-                <label class="form-label" style="font-size: 12.5px; font-weight: 700; color: #f8fafc;">Transfer Reason / Order Reference</label>
-                <input type="text" id="transfer-reason" class="form-control" placeholder="e.g. Line re-balancing for jacket production order" style="background: #0b1329; color: #ffffff; border: 1.5px solid #475569; font-size: 13.5px;" />
+                <label class="form-label" style="font-size: 13px; font-weight: 700; color: #ffffff; margin-bottom: 6px;">Transfer Reason / Order Reference</label>
+                <input type="text" id="transfer-reason" class="form-control" placeholder="e.g. Line re-balancing for jacket production order" style="background: #0f172a; color: #ffffff; border: 1.5px solid #475569; font-size: 13.5px; font-weight: 600; height: 40px; border-radius: 6px;" />
               </div>
 
               <div class="form-group full-width">
-                <label class="form-label" style="font-size: 12.5px; font-weight: 700; color: #f8fafc;">Remarks / Setup Instructions (Optional)</label>
-                <textarea id="transfer-remarks" class="form-control" rows="2" placeholder="e.g. Requires 380V heavy line setup, attachment folder pre-installed" style="background: #0b1329; color: #ffffff; border: 1.5px solid #475569; font-size: 13.5px;"></textarea>
+                <label class="form-label" style="font-size: 13px; font-weight: 700; color: #ffffff; margin-bottom: 6px;">Remarks / Setup Instructions (Optional)</label>
+                <textarea id="transfer-remarks" class="form-control" rows="2" placeholder="e.g. Requires 380V heavy line setup, attachment folder pre-installed" style="background: #0f172a; color: #ffffff; border: 1.5px solid #475569; font-size: 13.5px; font-weight: 600; border-radius: 6px;"></textarea>
               </div>
             </div>
           </div>
 
           <!-- STEP 3: UPLOAD SUPPORTING DOCUMENT (PDF, JPG, PNG, EXCEL) -->
-          <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 16px 18px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+          <div style="background: #111c30; border: 1.5px solid #334155; border-radius: 12px; padding: 18px 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
               <div>
-                <div style="font-size: 12.5px; font-weight: 800; color: #fbbf24; text-transform: uppercase; display: flex; align-items: center; gap: 6px;">
+                <div style="font-size: 13px; font-weight: 800; color: #fde047; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;">
                   <span>📎 3. Upload Supporting / Transfer Document</span>
                 </div>
-                <div style="font-size: 12px; color: #cbd5e1; margin-top: 2px;">
+                <div style="font-size: 12px; color: #cbd5e1; margin-top: 3px;">
                   Attach transfer sanction, management approval letter, or gate pass request.
                 </div>
               </div>
-              <span class="badge" style="background: rgba(251, 191, 36, 0.15); color: #fbbf24; font-size: 11px; font-weight: 700;">
+              <span class="badge" style="background: rgba(251, 191, 36, 0.2); color: #fde047; font-size: 11px; font-weight: 800; border: 1.5px solid #fbbf24;">
                 PDF &bull; JPG &bull; PNG &bull; EXCEL
               </span>
             </div>
 
             <!-- Upload Drop Zone -->
-            <div id="transfer-doc-dropzone" style="border: 2px dashed #38bdf8; border-radius: var(--radius-md); padding: 20px; text-align: center; background: rgba(56, 189, 248, 0.06); cursor: pointer; transition: all 0.2s;">
-              <div style="font-size: 32px; margin-bottom: 6px;">📂</div>
-              <div style="font-size: 13.5px; font-weight: 700; color: #ffffff;">
+            <div id="transfer-doc-dropzone" style="border: 2px dashed #38bdf8; border-radius: 8px; padding: 22px; text-align: center; background: rgba(56, 189, 248, 0.08); cursor: pointer; transition: all 0.2s;">
+              <div style="font-size: 34px; margin-bottom: 6px;">📂</div>
+              <div style="font-size: 14px; font-weight: 800; color: #ffffff;">
                 Click or Drag &amp; Drop to Upload Supporting Document
               </div>
-              <div style="font-size: 12px; color: #cbd5e1; margin-top: 5px;">
-                Supported formats: <strong style="color: #38bdf8;">PDF (.pdf)</strong>, <strong style="color: #34d399;">Images (.jpg, .jpeg, .png)</strong>, <strong style="color: #fbbf24;">Excel (.xlsx, .xls)</strong>
+              <div style="font-size: 12.5px; color: #cbd5e1; margin-top: 6px;">
+                Supported formats: <strong style="color: #38bdf8;">PDF (.pdf)</strong>, <strong style="color: #4ade80;">Images (.jpg, .jpeg, .png)</strong>, <strong style="color: #fde047;">Excel (.xlsx, .xls)</strong>
               </div>
               <input type="file" id="inp-transfer-document" accept=".pdf,.png,.jpg,.jpeg,.xlsx,.xls" multiple style="display: none;" />
             </div>
 
             <!-- Uploaded Files Preview & Replace Card -->
-            <div id="transfer-attached-docs-list" style="margin-top: 12px; display: flex; flex-direction: column; gap: 8px;">
+            <div id="transfer-attached-docs-list" style="margin-top: 14px; display: flex; flex-direction: column; gap: 8px;">
               ${renderAttachedDocsHtml()}
             </div>
           </div>
         </form>
 
         <!-- Modal Footer -->
-        <div class="modal-footer" style="background: var(--bg-card); border-top: 1px solid var(--border-color); padding: 14px 22px; display: flex; justify-content: space-between; align-items: center;">
-          <div style="font-size: 12.5px; color: #cbd5e1;">
-            Requester: <strong style="color: #38bdf8;">${authService.getCurrentUser()?.name || 'User'}</strong> &bull; Status will be: <strong style="color: #fbbf24;">Pending Admin Approval</strong>
+        <div class="modal-footer" style="background: #0f172a; border-top: 1.5px solid #334155; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+          <div style="font-size: 13px; color: #f1f5f9;">
+            Requester: <strong style="color: #38bdf8; font-weight: 800;">${authService.getCurrentUser()?.name || 'User'}</strong> &bull; Status will be: <strong style="color: #fde047; font-weight: 800;">Pending Admin Approval</strong>
           </div>
-          <div style="display: flex; gap: 10px;">
-            <button type="button" id="btn-cancel-transfer" class="btn btn-secondary">Cancel</button>
-            <button type="submit" form="form-transfer-request" id="btn-submit-transfer-request" class="btn btn-primary" style="font-weight: 800; padding: 9px 22px; ${activeExistingTransfer ? 'opacity: 0.45; cursor: not-allowed;' : ''}" ${activeExistingTransfer ? 'disabled title="Cannot submit: An active transfer request already exists for this machine."' : ''}>
+          <div style="display: flex; gap: 12px;">
+            <button type="button" id="btn-cancel-transfer" class="btn btn-secondary" style="font-weight: 700; height: 40px; padding: 0 18px; border-radius: 6px;">Cancel</button>
+            <button type="submit" form="form-transfer-request" id="btn-submit-transfer-request" class="btn btn-primary" style="font-weight: 800; height: 40px; padding: 0 24px; font-size: 13.5px; border-radius: 6px; background: linear-gradient(135deg, #0284c7, #0369a1); box-shadow: 0 4px 15px rgba(2, 132, 199, 0.4); ${activeExistingTransfer ? 'opacity: 0.45; cursor: not-allowed;' : ''}" ${activeExistingTransfer ? 'disabled title="Cannot submit: An active transfer request already exists for this machine."' : ''}>
               🚀 Submit Transfer Request
             </button>
           </div>

@@ -198,7 +198,7 @@ export function renderEditTransferModal() {
             <div class="form-grid-2">
               <div class="form-group">
                 <label class="form-label" style="font-size: 12px; font-weight: 700; color: #fff;">1. Destination Group <span class="req">*</span></label>
-                <select id="edit-dest-group" class="filter-select" required>
+                <select id="edit-dest-group" class="filter-select" required style="background: #0f172a; color: #ffffff; border: 1.5px solid #475569; font-size: 13.5px; font-weight: 600; height: 40px; border-radius: 6px;">
                   <option value="" disabled ${!destGroupId ? 'selected' : ''}>-- Select Destination Group --</option>
                   ${groups.map(g => `<option value="${g.id}" ${destGroupId === g.id ? 'selected' : ''}>${g.name}</option>`).join('')}
                 </select>
@@ -206,7 +206,7 @@ export function renderEditTransferModal() {
 
               <div class="form-group">
                 <label class="form-label" style="font-size: 12px; font-weight: 700; color: #fff;">2. Destination Factory / Unit <span class="req">*</span></label>
-                <select id="edit-dest-unit" class="filter-select" required ${!destGroupId ? 'disabled' : ''}>
+                <select id="edit-dest-unit" class="filter-select" required ${!destGroupId ? "disabled" : ""} style="background: #0f172a; color: #ffffff; border: 1.5px solid #475569; font-size: 13.5px; font-weight: 600; height: 40px; border-radius: 6px;">
                   <option value="" disabled ${!destUnitId ? 'selected' : ''}>${destGroupId ? '-- Select Factory / Unit --' : '-- Select Group First --'}</option>
                   ${units.map(u => `<option value="${u.id}" ${destUnitId === u.id ? 'selected' : ''}>${u.name}</option>`).join('')}
                 </select>
@@ -214,7 +214,7 @@ export function renderEditTransferModal() {
 
               <div class="form-group">
                 <label class="form-label" style="font-size: 12px; font-weight: 700; color: #fff;">3. Destination Floor <span class="req">*</span></label>
-                <select id="edit-dest-floor" class="filter-select" required ${!destUnitId ? 'disabled' : ''}>
+                <select id="edit-dest-floor" class="filter-select" required ${!destUnitId ? "disabled" : ""} style="background: #0f172a; color: #ffffff; border: 1.5px solid #475569; font-size: 13.5px; font-weight: 600; height: 40px; border-radius: 6px;">
                   <option value="" disabled ${!destFloorId ? 'selected' : ''}>${destUnitId ? '-- Select Floor --' : '-- Select Unit First --'}</option>
                   ${floors.map(f => `<option value="${f.id}" ${destFloorId === f.id ? 'selected' : ''}>${f.name}</option>`).join('')}
                 </select>
@@ -222,7 +222,7 @@ export function renderEditTransferModal() {
 
               <div class="form-group">
                 <label class="form-label" style="font-size: 12px; font-weight: 700; color: #fff;">4. Destination Production Line <span class="req">*</span></label>
-                <select id="edit-dest-line" class="filter-select" required ${!destFloorId ? 'disabled' : ''}>
+                <select id="edit-dest-line" class="filter-select" required ${!destFloorId ? "disabled" : ""} style="background: #0f172a; color: #ffffff; border: 1.5px solid #475569; font-size: 13.5px; font-weight: 600; height: 40px; border-radius: 6px;">
                   <option value="" disabled ${!destLineId ? 'selected' : ''}>${destFloorId ? '-- Select Production Line --' : '-- Select Floor First --'}</option>
                   ${lines.map(l => `<option value="${l.id}" ${destLineId === l.id ? 'selected' : ''}>${l.name}</option>`).join('')}
                 </select>
@@ -230,12 +230,12 @@ export function renderEditTransferModal() {
 
               <div class="form-group full-width">
                 <label class="form-label" style="font-size: 12px; font-weight: 700; color: #fff;">Transfer Reason / Order Reference</label>
-                <input type="text" id="edit-transfer-reason" class="form-control" value="${req.reason || ''}" placeholder="e.g. Line re-balancing for jacket production order" />
+                <input type="text" id="edit-transfer-reason" class="form-control" value="${req.reason || ''}" placeholder="e.g. Line re-balancing for jacket production order" style="background: #0f172a; color: #ffffff; border: 1.5px solid #475569; font-size: 13.5px; font-weight: 600; height: 40px; border-radius: 6px;" />
               </div>
 
               <div class="form-group full-width">
                 <label class="form-label" style="font-size: 12px; font-weight: 700; color: #fff;">Remarks / Setup Instructions (Optional)</label>
-                <textarea id="edit-transfer-remarks" class="form-control" rows="2" placeholder="e.g. Requires 380V heavy line setup, attachment folder pre-installed">${req.remarks || ''}</textarea>
+                <textarea id="edit-transfer-remarks" class="form-control" rows="2" placeholder="e.g. Requires 380V heavy line setup, attachment folder pre-installed" style="background: #0f172a; color: #ffffff; border: 1.5px solid #475569; font-size: 13.5px; font-weight: 600; border-radius: 6px;">${req.remarks || ''}</textarea>
               </div>
             </div>
           </div>

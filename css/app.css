@@ -1363,13 +1363,13 @@ body.modal-open {
   letter-spacing: 0.3px;
 }
 
-.badge-active { background: var(--success-light); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); }
-.badge-maint { background: var(--warning-light); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); }
-.badge-breakdown { background: var(--danger-light); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); }
-.badge-idle { background: rgba(99, 102, 241, 0.15); color: #818cf8; border: 1px solid rgba(99, 102, 241, 0.3); }
-.badge-pending { background: var(--info-light); color: #a855f7; border: 1px solid rgba(139, 92, 246, 0.3); }
-.badge-inactive { background: rgba(100, 116, 139, 0.15); color: #94a3b8; border: 1px solid rgba(100, 116, 139, 0.3); }
-.badge-archived { background: rgba(71, 85, 105, 0.2); color: #cbd5e1; border: 1px solid #475569; }
+.badge-active { background: rgba(16, 185, 129, 0.25); color: #4ade80; border: 1.5px solid #22c55e; font-weight: 800; }
+.badge-maint { background: rgba(245, 158, 11, 0.25); color: #fde047; border: 1.5px solid #eab308; font-weight: 800; }
+.badge-breakdown { background: rgba(239, 68, 68, 0.25); color: #fca5a5; border: 1.5px solid #ef4444; font-weight: 800; }
+.badge-idle { background: rgba(56, 189, 248, 0.25); color: #7dd3fc; border: 1.5px solid #38bdf8; font-weight: 800; }
+.badge-pending { background: rgba(168, 85, 247, 0.25); color: #d8b4fe; border: 1.5px solid #a855f7; font-weight: 800; }
+.badge-inactive { background: rgba(148, 163, 184, 0.25); color: #f1f5f9; border: 1.5px solid #64748b; font-weight: 800; }
+.badge-archived { background: rgba(71, 85, 105, 0.35); color: #ffffff; border: 1.5px solid #64748b; font-weight: 800; }
 
 /* Toast Notifications */
 .toast-container {
