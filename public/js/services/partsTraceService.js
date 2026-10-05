@@ -6,6 +6,7 @@
 
 import { storage } from '../db/storage.js';
 import { TABLE_NAMES } from '../db/schema.js';
+import { INITIAL_DATA } from '../db/initialData.js';
 import { authService } from './authService.js';
 import { masterDataService } from './masterDataService.js';
 import { historyService } from './historyService.js';
@@ -744,7 +745,10 @@ class PartsTraceService {
    * Parses machine numbers (e.g. 7402, 100201, SL-836, MID-000241) and types (p/m, o/l, t/n, f/a)
    */
   matchMachine(commentsStr = '', floorNameStr = '', lineNameStr = '', rawItemName = '') {
-    const allMachines = storage.getTable(TABLE_NAMES.MACHINES) || [];
+    let allMachines = storage.getTable(TABLE_NAMES.MACHINES) || [];
+    if (allMachines.length === 0 && typeof INITIAL_DATA !== 'undefined' && Array.isArray(INITIAL_DATA.machines)) {
+      allMachines = INITIAL_DATA.machines;
+    }
     const textPool = `${commentsStr} ${rawItemName} ${lineNameStr}`.trim();
 
     if (!textPool) {
@@ -757,11 +761,31 @@ class PartsTraceService {
     const flrTable = storage.getTable(TABLE_NAMES.FLOORS) || [];
     const linTable = storage.getTable(TABLE_NAMES.LINES) || [];
 
-    const mnMap = new Map(mnTable.map(x => [x.id, x.name]));
-    const brdMap = new Map(brdTable.map(x => [x.id, x.name]));
-    const mdlMap = new Map(mdlTable.map(x => [x.id, x.name]));
-    const flrMap = new Map(flrTable.map(x => [x.id, x.name]));
-    const linMap = new Map(linTable.map(x => [x.id, x.name]));
+    const initialMn = (typeof INITIAL_DATA !== 'undefined' && (INITIAL_DATA.machine_names || INITIAL_DATA.machineNames)) || [];
+    const initialBrd = (typeof INITIAL_DATA !== 'undefined' && INITIAL_DATA.brands) || [];
+    const initialMdl = (typeof INITIAL_DATA !== 'undefined' && INITIAL_DATA.models) || [];
+    const initialFlr = (typeof INITIAL_DATA !== 'undefined' && INITIAL_DATA.floors) || [];
+    const initialLin = (typeof INITIAL_DATA !== 'undefined' && INITIAL_DATA.lines) || [];
+
+    const mnMap = new Map();
+    initialMn.forEach(x => mnMap.set(x.id, x.name));
+    mnTable.forEach(x => mnMap.set(x.id, x.name));
+
+    const brdMap = new Map();
+    initialBrd.forEach(x => brdMap.set(x.id, x.name));
+    brdTable.forEach(x => brdMap.set(x.id, x.name));
+
+    const mdlMap = new Map();
+    initialMdl.forEach(x => mdlMap.set(x.id, x.name));
+    mdlTable.forEach(x => mdlMap.set(x.id, x.name));
+
+    const flrMap = new Map();
+    initialFlr.forEach(x => flrMap.set(x.id, x.name));
+    flrTable.forEach(x => flrMap.set(x.id, x.name));
+
+    const linMap = new Map();
+    initialLin.forEach(x => linMap.set(x.id, x.name));
+    linTable.forEach(x => linMap.set(x.id, x.name));
 
     const cleanLower = textPool.toLowerCase();
     
@@ -891,7 +915,10 @@ class PartsTraceService {
    * and auto-resolves against employees or formats cleanly.
    */
   matchTechnician(commentsStr = '', floorNameStr = '') {
-    const allEmployees = storage.getTable(TABLE_NAMES.EMPLOYEES) || [];
+    let allEmployees = storage.getTable(TABLE_NAMES.EMPLOYEES) || [];
+    if (allEmployees.length === 0 && typeof INITIAL_DATA !== 'undefined' && Array.isArray(INITIAL_DATA.employees)) {
+      allEmployees = INITIAL_DATA.employees;
+    }
     if (!commentsStr || !commentsStr.trim()) return { matchedTechnician: null };
 
     const cleanComments = commentsStr.trim().toLowerCase();

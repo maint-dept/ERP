@@ -6,6 +6,7 @@
 
 import { storage } from '../db/storage.js';
 import { TABLE_NAMES } from '../db/schema.js';
+import { INITIAL_DATA } from '../db/initialData.js';
 import { authService } from '../services/authService.js';
 import { masterDataService } from '../services/masterDataService.js';
 import { employeeService } from '../services/employeeService.js';
@@ -1212,18 +1213,42 @@ function renderReportsTab() {
 // Helper: Resolve & Enrich All Machines with Master Data
 // ─────────────────────────────────────────────────────────────
 function getEnrichedMachinesList() {
-  const allMachines = storage.getTable(TABLE_NAMES.MACHINES) || [];
+  let allMachines = storage.getTable(TABLE_NAMES.MACHINES) || [];
+  if (allMachines.length === 0 && typeof INITIAL_DATA !== 'undefined' && Array.isArray(INITIAL_DATA.machines)) {
+    allMachines = INITIAL_DATA.machines;
+  }
+  
   const mnTable = storage.getTable(TABLE_NAMES.MACHINE_NAMES) || [];
   const brdTable = storage.getTable(TABLE_NAMES.BRANDS) || [];
   const mdlTable = storage.getTable(TABLE_NAMES.MODELS) || [];
   const flrTable = storage.getTable(TABLE_NAMES.FLOORS) || [];
   const linTable = storage.getTable(TABLE_NAMES.LINES) || [];
 
-  const mnMap = new Map(mnTable.map(x => [x.id, x.name]));
-  const brdMap = new Map(brdTable.map(x => [x.id, x.name]));
-  const mdlMap = new Map(mdlTable.map(x => [x.id, x.name]));
-  const flrMap = new Map(flrTable.map(x => [x.id, x.name]));
-  const linMap = new Map(linTable.map(x => [x.id, x.name]));
+  const initialMn = (typeof INITIAL_DATA !== 'undefined' && (INITIAL_DATA.machine_names || INITIAL_DATA.machineNames)) || [];
+  const initialBrd = (typeof INITIAL_DATA !== 'undefined' && INITIAL_DATA.brands) || [];
+  const initialMdl = (typeof INITIAL_DATA !== 'undefined' && INITIAL_DATA.models) || [];
+  const initialFlr = (typeof INITIAL_DATA !== 'undefined' && INITIAL_DATA.floors) || [];
+  const initialLin = (typeof INITIAL_DATA !== 'undefined' && INITIAL_DATA.lines) || [];
+
+  const mnMap = new Map();
+  initialMn.forEach(x => mnMap.set(x.id, x.name));
+  mnTable.forEach(x => mnMap.set(x.id, x.name));
+
+  const brdMap = new Map();
+  initialBrd.forEach(x => brdMap.set(x.id, x.name));
+  brdTable.forEach(x => brdMap.set(x.id, x.name));
+
+  const mdlMap = new Map();
+  initialMdl.forEach(x => mdlMap.set(x.id, x.name));
+  mdlTable.forEach(x => mdlMap.set(x.id, x.name));
+
+  const flrMap = new Map();
+  initialFlr.forEach(x => flrMap.set(x.id, x.name));
+  flrTable.forEach(x => flrMap.set(x.id, x.name));
+
+  const linMap = new Map();
+  initialLin.forEach(x => linMap.set(x.id, x.name));
+  linTable.forEach(x => linMap.set(x.id, x.name));
 
   return allMachines.map(m => {
     const resolvedName = mnMap.get(m.machineNameId) || m.machineName || m.name || (m.brand ? m.brand + ' Machine' : 'Sewing Machine');
@@ -1243,6 +1268,48 @@ function getEnrichedMachinesList() {
   });
 }
 
+function getEnrichedEmployeesList() {
+  let allEmployees = storage.getTable(TABLE_NAMES.EMPLOYEES) || [];
+  if (allEmployees.length === 0 && typeof INITIAL_DATA !== 'undefined' && Array.isArray(INITIAL_DATA.employees)) {
+    allEmployees = INITIAL_DATA.employees;
+  }
+  
+  const flrTable = storage.getTable(TABLE_NAMES.FLOORS) || [];
+  const linTable = storage.getTable(TABLE_NAMES.LINES) || [];
+  const untTable = storage.getTable(TABLE_NAMES.UNITS) || [];
+
+  const initialFlr = (typeof INITIAL_DATA !== 'undefined' && INITIAL_DATA.floors) || [];
+  const initialLin = (typeof INITIAL_DATA !== 'undefined' && INITIAL_DATA.lines) || [];
+  const initialUnt = (typeof INITIAL_DATA !== 'undefined' && INITIAL_DATA.units) || [];
+
+  const flrMap = new Map();
+  initialFlr.forEach(x => flrMap.set(x.id, x.name));
+  flrTable.forEach(x => flrMap.set(x.id, x.name));
+
+  const linMap = new Map();
+  initialLin.forEach(x => linMap.set(x.id, x.name));
+  linTable.forEach(x => linMap.set(x.id, x.name));
+
+  const untMap = new Map();
+  initialUnt.forEach(x => untMap.set(x.id, x.name));
+  untTable.forEach(x => untMap.set(x.id, x.name));
+
+  return allEmployees.map(e => {
+    const resolvedFloor = flrMap.get(e.floorId) || e.floorName || e.floor || '';
+    const resolvedLine = linMap.get(e.lineId) || e.lineName || e.line || '';
+    const resolvedUnit = untMap.get(e.unitId) || e.unitName || e.unit || '';
+    const workingArea = e.workingArea || resolvedFloor || '';
+
+    return {
+      ...e,
+      resolvedFloor,
+      resolvedLine,
+      resolvedUnit,
+      workingArea
+    };
+  });
+}
+
 // ─────────────────────────────────────────────────────────────
 // 7. SMART MODALS: MACHINE, TECHNICIAN, PART, MANUAL ISSUE
 // ─────────────────────────────────────────────────────────────
@@ -1255,7 +1322,7 @@ function renderSmartMachineModal() {
   const enrichedMachines = getEnrichedMachinesList();
   
   // Floor & Line machines priority matching
-  const draftFloor = (draft.floorName || '').toLowerCase().trim();
+  const draftFloor = (draft.floorName || '').toLowerCase().replace(/floor/gi, '').trim();
   const draftLine = (draft.lineName || '').toLowerCase().trim();
 
   let floorMachines = enrichedMachines.filter(m => {
@@ -1282,7 +1349,7 @@ function renderSmartMachineModal() {
   if (floorMachines.length === 0) {
     floorMachines = enrichedMachines.slice(0, 30);
   } else {
-    floorMachines = floorMachines.slice(0, 35);
+    floorMachines = floorMachines.slice(0, 40);
   }
 
   // Extract detected number from comment if any
@@ -1298,7 +1365,7 @@ function renderSmartMachineModal() {
 
   return `
     <div class="modal-overlay" id="modal-smart-machine-overlay" style="z-index: 10080;">
-      <div class="modal-dialog" style="max-width: 560px; width: 95%;">
+      <div class="modal-dialog" style="max-width: 620px; width: 95%;">
         
         <div class="modal-header" style="background: linear-gradient(90deg, rgba(2, 132, 199, 0.25) 0%, rgba(15, 23, 42, 0.95) 100%); border-bottom: 1.5px solid rgba(56,189,248,0.35); padding: 12px 18px;">
           <div class="modal-title" style="display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 14px; color: #ffffff;">
@@ -1318,11 +1385,15 @@ function renderSmartMachineModal() {
                   <span class="badge" style="background: rgba(251,191,36,0.25); color: #fbbf24; font-weight: 800; font-size: 9.5px; padding: 1px 6px; border: 1px solid rgba(251,191,36,0.5);">Auto Match</span>
                 </div>
                 <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px; flex-wrap: wrap;">
-                  <span style="font-family: var(--font-mono); font-weight: 900; font-size: 14px; color: #38bdf8;">${detectedMachine ? detectedMachine.serialNumber : detectedNumber}</span>
-                  <span style="color: #ffffff; font-weight: 700; font-size: 12.5px;">${detectedMachine ? detectedMachine.resolvedName : (draft.machineName || 'Plane Machine')}</span>
-                  <span style="font-size: 11px; color: #cbd5e1; background: rgba(255,255,255,0.08); padding: 1px 6px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.12);">
-                    ${detectedMachine ? `${detectedMachine.resolvedBrand} • ${detectedMachine.resolvedModel}` : 'Juki • Standard'}
+                  <span class="badge" style="font-family: var(--font-mono); font-weight: 900; font-size: 13px; background: rgba(56, 189, 248, 0.2); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.4); padding: 2px 8px;">
+                    SL: ${detectedMachine ? detectedMachine.serialNumber : detectedNumber}
                   </span>
+                  <strong style="color: #ffffff; font-weight: 700; font-size: 12.5px;">${detectedMachine ? detectedMachine.resolvedName : (draft.machineName || 'Plane Machine')}</strong>
+                  <span style="font-size: 11px; color: #cbd5e1; background: rgba(255,255,255,0.08); padding: 1px 6px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.12);">
+                    🏷️ ${detectedMachine ? `${detectedMachine.resolvedBrand} • ${detectedMachine.resolvedModel}` : 'Juki • Standard'}
+                  </span>
+                  ${detectedMachine?.resolvedFloor ? `<span style="font-size: 10px; color: #94a3b8;">🏢 ${detectedMachine.resolvedFloor}</span>` : ''}
+                  ${detectedMachine?.resolvedLine ? `<span style="font-size: 10px; color: #34d399;">📍 ${detectedMachine.resolvedLine}</span>` : ''}
                   ${draft.comments ? `<span style="font-size: 10.5px; color: #94a3b8; font-style: italic;">"${draft.comments}"</span>` : ''}
                 </div>
               </div>
@@ -1340,12 +1411,12 @@ function renderSmartMachineModal() {
 
           <!-- Search Input -->
           <div>
-            <label class="form-label" style="font-size: 12px; color: #38bdf8; font-weight: 800; margin-bottom: 4px;">🔍 Search Machine Catalog (2,000+ Floor Inventory):</label>
+            <label class="form-label" style="font-size: 12px; color: #38bdf8; font-weight: 800; margin-bottom: 4px;">🔍 Search Machine Catalog (2,002 Floor Inventory):</label>
             <input 
               type="text" 
               id="inp-search-smart-machine" 
               class="form-control" 
-              placeholder="Type serial number (e.g. 7402, 5369, SL-836), name, brand, line..." 
+              placeholder="Search serial (124, 7402), machine name (Over Lock), brand (Juki), floor, line..." 
               autofocus 
               style="font-size: 13px; font-weight: 700; background: #060a14; border: 1.5px solid rgba(56,189,248,0.35); color: #ffffff;"
             />
@@ -1357,26 +1428,30 @@ function renderSmartMachineModal() {
               <span>Floor Machines (${draft.floorName}):</span>
               <span style="color: #94a3b8; font-weight: 600; text-transform: none;">Showing ${floorMachines.length} suggestions</span>
             </div>
-            <div id="smart-machine-results-list" style="display: flex; flex-direction: column; gap: 4px; max-height: 240px; overflow-y: auto; padding-right: 2px;">
+            <div id="smart-machine-results-list" style="display: flex; flex-direction: column; gap: 5px; max-height: 270px; overflow-y: auto; padding-right: 2px;">
               ${floorMachines.map(m => `
                 <div class="smart-item-row btn-pick-smart-machine-row" data-id="${m.id}" data-serial="${m.serialNumber}" data-name="${m.resolvedName}" data-brand="${m.resolvedBrand}" data-model="${m.resolvedModel}">
-                  <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0;">
+                  <div style="display: flex; flex-direction: column; gap: 3px; min-width: 0;">
                     <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                      <strong style="font-family: var(--font-mono); color: #38bdf8; font-size: 13px; font-weight: 800; letter-spacing: 0.3px;">${m.serialNumber}</strong>
-                      <span style="color: #ffffff; font-size: 12px; font-weight: 700;">${m.resolvedName}</span>
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 6px; margin-top: 1px;">
-                      <span style="font-size: 10.5px; color: #cbd5e1; background: rgba(255,255,255,0.06); padding: 1px 6px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1);">
-                        ${m.resolvedBrand} • ${m.resolvedModel}
+                      <span class="badge" style="font-family: var(--font-mono); background: rgba(56, 189, 248, 0.15); color: #38bdf8; font-size: 12px; font-weight: 900; border: 1px solid rgba(56, 189, 248, 0.35); padding: 2px 7px;">
+                        SL: ${m.serialNumber}
                       </span>
+                      <strong style="color: #ffffff; font-size: 12.5px; font-weight: 700;">${m.resolvedName}</strong>
                       ${m.customValues?.machine_code ? `<span style="font-size: 10px; color: #a78bfa; font-family: var(--font-mono); font-weight: 700;">[${m.customValues.machine_code}]</span>` : ''}
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 6px; margin-top: 1px; flex-wrap: wrap;">
+                      <span style="font-size: 10.5px; color: #e2e8f0; background: rgba(255,255,255,0.06); padding: 2px 7px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.12);">
+                        🏷️ <strong>${m.resolvedBrand}</strong> • ${m.resolvedModel}
+                      </span>
                     </div>
                   </div>
                   <div style="text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 2px; flex-shrink: 0; margin-left: 8px;">
-                    <span class="badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; font-family: var(--font-mono); font-size: 10.5px; font-weight: 800; border: 1px solid rgba(56, 189, 248, 0.35); padding: 2px 8px; border-radius: 4px;">
-                      ${m.resolvedLine || m.resolvedFloor || 'Floor'}
+                    <span class="badge" style="background: rgba(52, 211, 153, 0.15); color: #34d399; font-family: var(--font-mono); font-size: 11px; font-weight: 800; border: 1px solid rgba(52, 211, 153, 0.35); padding: 2px 8px; border-radius: 4px;">
+                      📍 ${m.resolvedLine || 'Line —'}
                     </span>
-                    ${m.resolvedFloor ? `<span style="font-size: 9.5px; color: #94a3b8;">${m.resolvedFloor}</span>` : ''}
+                    <span style="font-size: 10px; color: #94a3b8; font-weight: 600;">
+                      🏢 ${m.resolvedFloor || 'Floor'}
+                    </span>
                   </div>
                 </div>
               `).join('')}
@@ -1413,44 +1488,88 @@ function renderSmartTechnicianModal() {
   const draft = activeDraftRows.find(d => d.draftId === selectedTechDraftId);
   if (!draft) return '';
 
-  const allEmployees = storage.getTable(TABLE_NAMES.EMPLOYEES) || [];
+  const enrichedEmployees = getEnrichedEmployeesList();
   
-  // Top / Known factory mechanics & technicians
-  const quickTechList = [
-    { name: 'Md. Rahat', card: '100201' },
-    { name: 'Biplob', card: '1048' },
-    { name: 'Mohammad Meherul Haque', card: '1088' },
-    { name: 'Engr. Tanvir Ahmed', card: '1001' },
-    { name: 'Rahim Uddin', card: '1088' },
-    { name: 'Kalam Sheikh', card: '1120' },
-    { name: 'Md. Faruk Hossain', card: '1042' },
-    { name: 'Nurul Islam', card: '1105' },
-    { name: 'Md. Sohel', card: '1145' },
-    { name: 'Md. Alamin', card: '1152' }
-  ];
+  // Floor matching
+  const draftFloor = (draft.floorName || '').toLowerCase().replace(/floor/gi, '').trim();
+
+  const floorEmployees = enrichedEmployees.filter(emp => {
+    if (!draftFloor) return true;
+    const empFloor = (emp.resolvedFloor || emp.floorName || '').toLowerCase();
+    const empArea = (emp.workingArea || '').toLowerCase();
+    return empFloor.includes(draftFloor) || empArea.includes(draftFloor) || (draftFloor.includes('padma') && (empFloor.includes('padma') || empArea.includes('padma')));
+  });
+
+  // Extract detected technician name from comments if any
+  let detectedEmp = null;
+  if (draft.comments) {
+    const cleanComm = draft.comments.toLowerCase();
+    const words = cleanComm.split(/[\s,\/|:]+/).filter(w => w.length >= 3 && !['change', 'repair', 'p/m', 'set', 'belt', 'line', 'padma', 'floor', 'pcs', 'box'].includes(w));
+    for (const w of words) {
+      const match = enrichedEmployees.find(e => e.name && e.name.toLowerCase().includes(w));
+      if (match) {
+        detectedEmp = match;
+        break;
+      }
+    }
+  }
+
+  // Quick Chips: prioritize floor employees, fallback to top maintenance mechanics
+  const chipsList = floorEmployees.length > 0 
+    ? floorEmployees.slice(0, 14)
+    : enrichedEmployees.filter(e => (e.department || '').toUpperCase().includes('MAINTENANCE') || (e.designation || '').toUpperCase().includes('MECHANIC')).slice(0, 12);
+
+  // List display items
+  const displayList = floorEmployees.length > 0 ? floorEmployees : enrichedEmployees.slice(0, 25);
 
   return `
     <div class="modal-overlay" id="modal-smart-tech-overlay" style="z-index: 10080;">
-      <div class="modal-dialog" style="max-width: 480px; width: 95%;">
+      <div class="modal-dialog" style="max-width: 540px; width: 95%;">
         
-        <div class="modal-header" style="border-bottom: 1px solid rgba(255,255,255,0.1); padding: 10px 16px;">
-          <div class="modal-title" style="display: flex; align-items: center; gap: 8px;">
-            <span>👷</span> Assign Technician / Mechanic
+        <div class="modal-header" style="background: linear-gradient(90deg, rgba(16, 185, 129, 0.25) 0%, rgba(15, 23, 42, 0.95) 100%); border-bottom: 1.5px solid rgba(52, 211, 153, 0.35); padding: 12px 18px;">
+          <div class="modal-title" style="display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 14px; color: #ffffff;">
+            <span style="font-size: 16px;">👷</span> Assign Technician / Manpower for <span style="color: #38bdf8;">${draft.floorName}</span>
           </div>
-          <button type="button" id="btn-close-smart-tech-modal" class="btn btn-ghost btn-sm" style="font-size: 16px; border-radius: 50%;">✕</button>
+          <button type="button" id="btn-close-smart-tech-modal" class="btn btn-ghost btn-sm" style="font-size: 16px; border-radius: 50%; color: #94a3b8;">✕</button>
         </div>
 
-        <div style="padding: 14px 16px; display: flex; flex-direction: column; gap: 12px; max-height: 80vh; overflow-y: auto;">
+        <div style="padding: 14px 18px; display: flex; flex-direction: column; gap: 12px; max-height: 80vh; overflow-y: auto;">
           
-          <!-- Fast Pick Quick Chips -->
+          <!-- Auto Detected Suggestion Banner -->
+          ${detectedEmp ? `
+            <div style="background: rgba(251,191,36,0.12); border: 1.5px solid rgba(251,191,36,0.45); border-radius: 8px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+              <div style="min-width: 0;">
+                <div style="display: flex; align-items: center; gap: 6px;">
+                  <span style="font-size: 10.5px; color: #fbbf24; font-weight: 800; text-transform: uppercase;">⚡ Detected from Note:</span>
+                  <span class="badge" style="background: rgba(251,191,36,0.25); color: #fbbf24; font-weight: 800; font-size: 9.5px; padding: 1px 6px;">Auto Match</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px; flex-wrap: wrap;">
+                  <strong style="color: #ffffff; font-size: 13px;">${detectedEmp.name}</strong>
+                  <span style="font-family: var(--font-mono); color: #38bdf8; font-size: 11px;">Card: ${detectedEmp.cardNumber || '—'}</span>
+                  <span style="font-size: 10.5px; color: #cbd5e1; background: rgba(255,255,255,0.08); padding: 1px 6px; border-radius: 4px;">${detectedEmp.designation || 'Technician'}</span>
+                  <span style="font-size: 10px; color: #34d399;">📍 ${detectedEmp.workingArea || detectedEmp.resolvedFloor || 'Floor'}</span>
+                </div>
+              </div>
+              <button type="button" class="btn btn-warning btn-sm btn-pick-quick-tech" 
+                data-id="${detectedEmp.id}" 
+                data-name="${detectedEmp.name}" 
+                data-card="${detectedEmp.cardNumber || '—'}"
+                style="font-weight: 800; padding: 6px 14px; white-space: nowrap; box-shadow: 0 2px 8px rgba(251,191,36,0.3);">
+                Use ${detectedEmp.name}
+              </button>
+            </div>
+          ` : ''}
+
+          <!-- Fast Pick Quick Chips from Floor -->
           <div>
-            <div style="font-size: 10.5px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; margin-bottom: 6px;">
-              ⚡ Quick Select Top Technicians:
+            <div style="font-size: 11px; color: #34d399; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">
+              ⚡ Quick Select — ${draft.floorName} Maintenance Staff (${floorEmployees.length > 0 ? floorEmployees.length : chipsList.length}):
             </div>
             <div style="display: flex; gap: 6px; flex-wrap: wrap;">
-              ${quickTechList.map(t => `
-                <button type="button" class="smart-chip btn-pick-quick-tech" data-name="${t.name}" data-card="${t.card}">
+              ${chipsList.map(t => `
+                <button type="button" class="smart-chip btn-pick-quick-tech" data-id="${t.id}" data-name="${t.name}" data-card="${t.cardNumber || '—'}" title="${t.designation} (${t.workingArea || t.resolvedFloor})">
                   <span>👷 ${t.name}</span>
+                  ${t.cardNumber ? `<small style="opacity: 0.85; font-family: var(--font-mono); font-size: 9.5px; margin-left: 2px;">(${t.cardNumber.replace(/^AMG-?0*/i, '#')})</small>` : ''}
                 </button>
               `).join('')}
             </div>
@@ -1458,35 +1577,58 @@ function renderSmartTechnicianModal() {
 
           <!-- Search All Employees -->
           <div>
-            <label class="form-label" style="font-size: 11.5px; color: #38bdf8; font-weight: 700;">🔍 Search Employee / Mechanic Database:</label>
+            <label class="form-label" style="font-size: 11.5px; color: #38bdf8; font-weight: 700; margin-bottom: 4px;">🔍 Search Employee / Mechanic Database (226 Staff):</label>
             <input 
               type="text" 
               id="inp-search-smart-tech" 
               class="form-control" 
-              placeholder="Search by name, card number..." 
+              placeholder="Search by technician name, card (AMG0100201), designation, floor..." 
               autofocus 
-              style="font-size: 13px; font-weight: 700; background: #090d16;"
+              style="font-size: 13px; font-weight: 700; background: #060a14; border: 1.5px solid rgba(56,189,248,0.35); color: #ffffff;"
             />
           </div>
 
-          <!-- Search Results List -->
-          <div id="smart-tech-results-list" style="display: flex; flex-direction: column; gap: 4px; max-height: 180px; overflow-y: auto;">
-            ${allEmployees.slice(0, 15).map(e => `
-              <div class="smart-item-row btn-pick-smart-tech-row" data-id="${e.id}" data-name="${e.name}" data-card="${e.cardNumber || '—'}" data-desig="${e.designation || 'Staff'}">
-                <div>
-                  <strong style="color: #fff; font-size: 12px;">${e.name}</strong>
-                  <span style="font-size: 10px; color: #38bdf8; font-family: var(--font-mono); margin-left: 6px;">Card: ${e.cardNumber || '—'}</span>
+          <!-- Manpower Results List -->
+          <div style="display: flex; flex-direction: column; gap: 4px;">
+            <div style="font-size: 10.5px; color: #94a3b8; font-weight: 700; text-transform: uppercase; display: flex; justify-content: space-between;">
+              <span>${floorEmployees.length > 0 ? `🏢 ${draft.floorName} Manpower (${floorEmployees.length} Staff):` : '👥 All Available Maintenance Staff:'}</span>
+              <span style="text-transform: none;">Click to assign</span>
+            </div>
+            <div id="smart-tech-results-list" style="display: flex; flex-direction: column; gap: 4px; max-height: 220px; overflow-y: auto; padding-right: 2px;">
+              ${displayList.map(e => `
+                <div class="smart-item-row btn-pick-smart-tech-row" data-id="${e.id}" data-name="${e.name}" data-card="${e.cardNumber || '—'}" data-desig="${e.designation || 'Staff'}">
+                  <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0;">
+                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                      <strong style="color: #ffffff; font-size: 12.5px; font-weight: 700;">${e.name}</strong>
+                      <span style="font-size: 10.5px; color: #38bdf8; font-family: var(--font-mono); font-weight: 800; background: rgba(56,189,248,0.1); padding: 1px 6px; border-radius: 3px; border: 1px solid rgba(56,189,248,0.25);">
+                        Card: ${e.cardNumber || '—'}
+                      </span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 6px; margin-top: 2px; flex-wrap: wrap;">
+                      <span style="font-size: 10px; color: #cbd5e1; background: rgba(255,255,255,0.06); padding: 1px 6px; border-radius: 4px;">
+                        🔧 ${e.designation || 'Technician'}
+                      </span>
+                      <span style="font-size: 10px; color: #34d399;">
+                        📍 ${e.workingArea || e.resolvedFloor || 'Factory Floor'}
+                      </span>
+                    </div>
+                  </div>
+                  <div style="text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 2px; flex-shrink: 0; margin-left: 8px;">
+                    <span class="badge" style="background: rgba(52, 211, 153, 0.12); color: #34d399; font-size: 10px; font-weight: 700; border: 1px solid rgba(52, 211, 153, 0.3); padding: 2px 6px; border-radius: 4px;">
+                      ${e.resolvedFloor || e.workingArea || 'Padma'}
+                    </span>
+                    ${e.resolvedUnit ? `<span style="font-size: 9px; color: #94a3b8;">${e.resolvedUnit}</span>` : ''}
+                  </div>
                 </div>
-                <span style="font-size: 10px; color: var(--text-muted);">${e.designation || 'Technician'}</span>
-              </div>
-            `).join('')}
+              `).join('')}
+            </div>
           </div>
 
           <!-- Custom Name Manual Field -->
           <div style="border-top: 1px solid rgba(255,255,255,0.08); padding-top: 10px;">
             <label class="form-label" style="font-size: 11px; color: var(--text-muted);">Or Enter Technician Name Manually:</label>
             <div style="display: flex; gap: 6px;">
-              <input type="text" id="inp-custom-tech-name" class="form-control" placeholder="e.g. Md. Rahat, Biplob" value="${draft.technicianName || ''}" style="font-weight: 700; font-size: 12px;" />
+              <input type="text" id="inp-custom-tech-name" class="form-control" placeholder="e.g. Md. Rahat, Biplob" value="${draft.technicianName || ''}" style="font-weight: 700; font-size: 12px; background: #060a14; color: #ffffff;" />
               <button type="button" id="btn-apply-custom-tech-name" class="btn btn-primary btn-sm" style="font-weight: 800; padding: 0 14px; white-space: nowrap;">
                 Set Tech
               </button>
@@ -1496,7 +1638,7 @@ function renderSmartTechnicianModal() {
           <!-- Batch Apply Options -->
           <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 6px; padding: 8px 10px; display: flex; flex-direction: column; gap: 6px; font-size: 11px;">
             <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; color: #cbd5e1;">
-              <input type="checkbox" id="chk-tech-apply-all-drafts" /> Apply this technician to all unassigned rows in drafts
+              <input type="checkbox" id="chk-tech-apply-all-drafts" style="accent-color: #34d399;" /> Apply this technician to all unassigned rows in drafts
             </label>
           </div>
 
@@ -2191,7 +2333,7 @@ export function initPartsTraceEvents() {
       if (!listContainer) return;
 
       const enrichedMachines = getEnrichedMachinesList();
-      const matches = enrichedMachines.filter(m =>
+      const matches = (!q ? enrichedMachines.slice(0, 35) : enrichedMachines.filter(m =>
         (m.serialNumber && m.serialNumber.toLowerCase().includes(q)) ||
         (m.permanentMachineId && m.permanentMachineId.toLowerCase().includes(q)) ||
         (m.resolvedName && m.resolvedName.toLowerCase().includes(q)) ||
@@ -2200,7 +2342,7 @@ export function initPartsTraceEvents() {
         (m.resolvedFloor && m.resolvedFloor.toLowerCase().includes(q)) ||
         (m.resolvedLine && m.resolvedLine.toLowerCase().includes(q)) ||
         (m.customValues?.machine_code && String(m.customValues.machine_code).toLowerCase().includes(q))
-      ).slice(0, 35);
+      )).slice(0, 40);
 
       listContainer.innerHTML = matches.length === 0 ? `
         <div style="color: #94a3b8; font-size: 11.5px; padding: 14px; text-align: center; background: rgba(255,255,255,0.02); border-radius: 6px;">
@@ -2208,23 +2350,27 @@ export function initPartsTraceEvents() {
         </div>
       ` : matches.map(m => `
         <div class="smart-item-row btn-pick-smart-machine-row" data-id="${m.id}" data-serial="${m.serialNumber}" data-name="${m.resolvedName}" data-brand="${m.resolvedBrand}" data-model="${m.resolvedModel}">
-          <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0;">
+          <div style="display: flex; flex-direction: column; gap: 3px; min-width: 0;">
             <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-              <strong style="font-family: var(--font-mono); color: #38bdf8; font-size: 13px; font-weight: 800; letter-spacing: 0.3px;">${m.serialNumber}</strong>
-              <span style="color: #ffffff; font-size: 12px; font-weight: 700;">${m.resolvedName}</span>
-            </div>
-            <div style="display: flex; align-items: center; gap: 6px; margin-top: 1px;">
-              <span style="font-size: 10.5px; color: #cbd5e1; background: rgba(255,255,255,0.06); padding: 1px 6px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1);">
-                ${m.resolvedBrand} • ${m.resolvedModel}
+              <span class="badge" style="font-family: var(--font-mono); background: rgba(56, 189, 248, 0.15); color: #38bdf8; font-size: 12px; font-weight: 900; border: 1px solid rgba(56, 189, 248, 0.35); padding: 2px 7px;">
+                SL: ${m.serialNumber}
               </span>
+              <strong style="color: #ffffff; font-size: 12.5px; font-weight: 700;">${m.resolvedName}</strong>
               ${m.customValues?.machine_code ? `<span style="font-size: 10px; color: #a78bfa; font-family: var(--font-mono); font-weight: 700;">[${m.customValues.machine_code}]</span>` : ''}
+            </div>
+            <div style="display: flex; align-items: center; gap: 6px; margin-top: 1px; flex-wrap: wrap;">
+              <span style="font-size: 10.5px; color: #e2e8f0; background: rgba(255,255,255,0.06); padding: 2px 7px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.12);">
+                🏷️ <strong>${m.resolvedBrand}</strong> • ${m.resolvedModel}
+              </span>
             </div>
           </div>
           <div style="text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 2px; flex-shrink: 0; margin-left: 8px;">
-            <span class="badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; font-family: var(--font-mono); font-size: 10.5px; font-weight: 800; border: 1px solid rgba(56, 189, 248, 0.35); padding: 2px 8px; border-radius: 4px;">
-              ${m.resolvedLine || m.resolvedFloor || 'Floor'}
+            <span class="badge" style="background: rgba(52, 211, 153, 0.15); color: #34d399; font-family: var(--font-mono); font-size: 11px; font-weight: 800; border: 1px solid rgba(52, 211, 153, 0.35); padding: 2px 8px; border-radius: 4px;">
+              📍 ${m.resolvedLine || 'Line —'}
             </span>
-            ${m.resolvedFloor ? `<span style="font-size: 9.5px; color: #94a3b8;">${m.resolvedFloor}</span>` : ''}
+            <span style="font-size: 10px; color: #94a3b8; font-weight: 600;">
+              🏢 ${m.resolvedFloor || 'Floor'}
+            </span>
           </div>
         </div>
       `).join('');
@@ -2285,10 +2431,11 @@ export function initPartsTraceEvents() {
 
   root.querySelectorAll('.btn-pick-quick-tech').forEach(btn => {
     btn.addEventListener('click', () => {
+      const id = btn.getAttribute('data-id') || '';
       const name = btn.getAttribute('data-name');
       const card = btn.getAttribute('data-card');
       const applyAll = root.querySelector('#chk-tech-apply-all-drafts')?.checked;
-      applyTechSelection({ name, card }, applyAll);
+      applyTechSelection({ id, name, cardNumber: card }, applyAll);
     });
   });
 
@@ -2321,24 +2468,45 @@ export function initPartsTraceEvents() {
       const listContainer = root.querySelector('#smart-tech-results-list');
       if (!listContainer) return;
 
-      const allEmployees = storage.getTable(TABLE_NAMES.EMPLOYEES) || [];
-      const matches = allEmployees.filter(emp =>
+      const enrichedEmployees = getEnrichedEmployeesList();
+      const matches = (!q ? enrichedEmployees.slice(0, 25) : enrichedEmployees.filter(emp =>
         (emp.name && emp.name.toLowerCase().includes(q)) ||
         (emp.cardNumber && String(emp.cardNumber).toLowerCase().includes(q)) ||
-        (emp.designation && emp.designation.toLowerCase().includes(q))
-      ).slice(0, 20);
+        (emp.designation && emp.designation.toLowerCase().includes(q)) ||
+        (emp.workingArea && emp.workingArea.toLowerCase().includes(q)) ||
+        (emp.resolvedFloor && emp.resolvedFloor.toLowerCase().includes(q)) ||
+        (emp.resolvedUnit && emp.resolvedUnit.toLowerCase().includes(q)) ||
+        (emp.department && emp.department.toLowerCase().includes(q))
+      )).slice(0, 30);
 
       listContainer.innerHTML = matches.length === 0 ? `
-        <div style="color: var(--text-muted); font-size: 11px; padding: 10px; text-align: center;">
-          No matching employees found. Enter custom technician name below.
+        <div style="color: #94a3b8; font-size: 11.5px; padding: 14px; text-align: center; background: rgba(255,255,255,0.02); border-radius: 6px;">
+          No matching employees found for "<strong>${q}</strong>". Enter custom name below.
         </div>
       ` : matches.map(emp => `
         <div class="smart-item-row btn-pick-smart-tech-row" data-id="${emp.id}" data-name="${emp.name}" data-card="${emp.cardNumber || '—'}" data-desig="${emp.designation || 'Staff'}">
-          <div>
-            <strong style="color: #fff; font-size: 12px;">${emp.name}</strong>
-            <span style="font-size: 10px; color: #38bdf8; font-family: var(--font-mono); margin-left: 6px;">Card: ${emp.cardNumber || '—'}</span>
+          <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0;">
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+              <strong style="color: #ffffff; font-size: 12.5px; font-weight: 700;">${emp.name}</strong>
+              <span style="font-size: 10.5px; color: #38bdf8; font-family: var(--font-mono); font-weight: 800; background: rgba(56,189,248,0.1); padding: 1px 6px; border-radius: 3px; border: 1px solid rgba(56,189,248,0.25);">
+                Card: ${emp.cardNumber || '—'}
+              </span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 6px; margin-top: 2px; flex-wrap: wrap;">
+              <span style="font-size: 10px; color: #cbd5e1; background: rgba(255,255,255,0.06); padding: 1px 6px; border-radius: 4px;">
+                🔧 ${emp.designation || 'Technician'}
+              </span>
+              <span style="font-size: 10px; color: #34d399;">
+                📍 ${emp.workingArea || emp.resolvedFloor || 'Factory Floor'}
+              </span>
+            </div>
           </div>
-          <span style="font-size: 10px; color: var(--text-muted);">${emp.designation || 'Technician'}</span>
+          <div style="text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 2px; flex-shrink: 0; margin-left: 8px;">
+            <span class="badge" style="background: rgba(52, 211, 153, 0.12); color: #34d399; font-size: 10px; font-weight: 700; border: 1px solid rgba(52, 211, 153, 0.3); padding: 2px 6px; border-radius: 4px;">
+              ${emp.resolvedFloor || emp.workingArea || 'Padma'}
+            </span>
+            ${emp.resolvedUnit ? `<span style="font-size: 9px; color: #94a3b8;">${emp.resolvedUnit}</span>` : ''}
+          </div>
         </div>
       `).join('');
 
