@@ -1,7 +1,7 @@
 /**
  * Al-Muslim Group Garments Factory Maintenance Machine ERP
  * Parts Trace & Spare Parts Issue Intelligence View Component
- * Complete Traceability: ERP No -> Spare Part -> Machine -> Manpower -> Technician -> Date & Location
+ * Smart Traceability: ERP No -> Spare Part -> Machine -> Technician -> Date & Location
  */
 
 import { storage } from '../db/storage.js';
@@ -22,6 +22,8 @@ let historySearch = '';
 let historyFilters = { dateFrom: '', dateTo: '', floorId: '', partCode: '' };
 let masterSearch = '';
 let masterCategory = 'ALL';
+let masterCurrentPage = 1;
+const MASTER_PAGE_SIZE = 50;
 
 // Modal states
 let manualIssueModalOpen = false;
@@ -29,6 +31,9 @@ let addPartModalOpen = false;
 let editingPartData = null;
 let importExcelModalOpen = false;
 let selectedTraceIssue = null;
+let selectedMachineDraftId = null;
+let selectedTechDraftId = null;
+let selectedPartDraftId = null;
 let activeReportType = 'issue-summary';
 
 export function renderPartsTraceView() {
@@ -90,6 +95,9 @@ export function renderPartsTraceView() {
         ${renderAddPartModal()}
         ${renderImportExcelModal()}
         ${renderTraceabilityDetailsModal()}
+        ${renderSmartMachineModal()}
+        ${renderSmartTechnicianModal()}
+        ${renderSmartPartModal()}
       </div>
 
     </div>
@@ -252,30 +260,62 @@ export function renderPartsTraceView() {
         background: rgba(255, 255, 255, 0.03);
       }
 
-      /* Dropdown Autocomplete Styles */
-      .search-select-dropdown {
-        position: absolute;
-        top: 100%;
-        left: 0;
-        right: 0;
-        background: #0b1120;
-        border: 1.5px solid #38bdf8;
+      .smart-picker-btn {
+        background: rgba(15, 23, 42, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.12);
         border-radius: 6px;
-        max-height: 200px;
-        overflow-y: auto;
-        z-index: 9999;
-        box-shadow: 0 8px 24px rgba(0,0,0,0.8);
-      }
-
-      .search-select-item {
-        padding: 6px 10px;
-        border-bottom: 1px solid rgba(255,255,255,0.06);
+        padding: 4px 8px;
         cursor: pointer;
-        font-size: 11.5px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 6px;
+        width: 100%;
+        text-align: left;
+        transition: all 0.15s ease;
       }
 
-      .search-select-item:hover {
+      .smart-picker-btn:hover {
+        border-color: #38bdf8;
+        background: rgba(56, 189, 248, 0.08);
+      }
+
+      .smart-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 2px 8px;
+        font-size: 10.5px;
+        font-weight: 700;
+        border-radius: 12px;
         background: rgba(56, 189, 248, 0.15);
+        color: #38bdf8;
+        border: 1px solid rgba(56, 189, 248, 0.3);
+        cursor: pointer;
+        transition: all 0.15s ease;
+      }
+
+      .smart-chip:hover {
+        background: #0284c7;
+        color: #fff;
+        border-color: #38bdf8;
+      }
+
+      .smart-item-row {
+        padding: 6px 10px;
+        border-radius: 6px;
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        background: rgba(255, 255, 255, 0.02);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        cursor: pointer;
+        transition: all 0.15s ease;
+      }
+
+      .smart-item-row:hover {
+        background: rgba(56, 189, 248, 0.12);
+        border-color: #38bdf8;
       }
 
       @media (max-width: 768px) {
@@ -304,7 +344,7 @@ function renderActiveTab(stats, canUpload, canManageMaster) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// 1. DASHBOARD & RECENT ISSUES TAB
+// 1. DASHBOARD TAB
 // ─────────────────────────────────────────────────────────────
 function renderDashboardTab(stats) {
   const recentIssues = partsTraceService.getAllIssues().slice(0, 15);
@@ -312,7 +352,7 @@ function renderDashboardTab(stats) {
   return `
     <div style="display: flex; flex-direction: column; gap: 8px; flex: 1; min-height: 0;">
       
-      <!-- Top Summary KPI Cards -->
+      <!-- Summary KPI Cards -->
       <div class="parts-trace-kpi-grid">
         <div class="parts-trace-kpi-box" style="border-left-color: #38bdf8;">
           <div class="parts-trace-kpi-label">Today's Issues</div>
@@ -347,9 +387,9 @@ function renderDashboardTab(stats) {
             📄 Upload ERP PDF
           </button>
           <button type="button" class="btn btn-secondary btn-sm btn-nav-to-tab" data-target="parts-master" style="font-weight: 700; font-size: 11.5px; height: 28px; padding: 4px 10px; border: 1px solid rgba(255,255,255,0.2);">
-            🗄️ Import Parts Master
+            🗄️ Manage Parts Master (5k+)
           </button>
-          <button type="button" id="btn-quick-sample-load" class="btn btn-ghost btn-sm" style="font-weight: 800; font-size: 11px; height: 28px; padding: 4px 10px; color: #34d399; border: 1px solid rgba(52, 211, 153, 0.3); background: rgba(52, 211, 153, 0.08);" title="Load reference report from screenshot (8 items)">
+          <button type="button" id="btn-quick-sample-load" class="btn btn-ghost btn-sm" style="font-weight: 800; font-size: 11px; height: 28px; padding: 4px 10px; color: #34d399; border: 1px solid rgba(52, 211, 153, 0.3); background: rgba(52, 211, 153, 0.08);" title="Load reference report (8 items)">
             ⚡ Load Sample ERP Report
           </button>
         </div>
@@ -361,15 +401,14 @@ function renderDashboardTab(stats) {
         </div>
       </div>
 
-      <!-- Recent Parts Issues Table Container -->
+      <!-- Recent Issues Table -->
       <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 8px; display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: hidden;">
-        
         <div style="padding: 6px 10px; background: rgba(15, 23, 42, 0.95); border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
           <span style="font-size: 12px; font-weight: 800; color: #fff;">
             Recent Spare Parts Issues (${recentIssues.length})
           </span>
           <span style="font-size: 11px; color: var(--text-muted);">
-            ERP &bull; Part &bull; Machine &bull; Manpower &bull; Tech
+            ERP &bull; Part &bull; Machine &bull; Technician
           </span>
         </div>
 
@@ -382,7 +421,6 @@ function renderDashboardTab(stats) {
                 <th>Part Name &amp; Code</th>
                 <th>Qty</th>
                 <th>Machine</th>
-                <th>Requested By</th>
                 <th>Technician</th>
                 <th>Floor &amp; Line</th>
                 <th>Status</th>
@@ -392,7 +430,7 @@ function renderDashboardTab(stats) {
             <tbody>
               ${recentIssues.length === 0 ? `
                 <tr>
-                  <td colspan="10" style="text-align: center; padding: 30px; color: var(--text-muted);">
+                  <td colspan="9" style="text-align: center; padding: 30px; color: var(--text-muted);">
                     <div style="font-size: 28px; margin-bottom: 6px;">📦</div>
                     <div style="font-weight: 700; color: #fff;">No Spare Parts Issues Recorded Yet</div>
                     <div style="font-size: 11.5px; margin-top: 4px;">Click <strong>Upload ERP PDF</strong> or <strong>Load Sample ERP Report</strong> to start.</div>
@@ -417,12 +455,6 @@ function renderDashboardTab(stats) {
                         ${iss.machineSerial}
                       </span>
                       <div style="font-size: 9.5px; color: var(--text-muted);">${iss.machineName || ''}</div>
-                    ` : '<span style="color: #64748b;">—</span>'}
-                  </td>
-                  <td>
-                    ${iss.requestedByName ? `
-                      <div style="font-weight: 700; color: #e2e8f0;">${iss.requestedByName}</div>
-                      <div style="font-size: 9.5px; color: #38bdf8; font-family: var(--font-mono);">Card: ${iss.requestedByCard || '—'}</div>
                     ` : '<span style="color: #64748b;">—</span>'}
                   </td>
                   <td>
@@ -470,7 +502,7 @@ function renderUploadTab() {
             <span>📄</span> Upload Daily Main ERP Spare Parts Issue PDF
           </h2>
           <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 3px;">
-            Auto-extracts Cost Center, Store, Issue Date, ERP numbers, parts, manpower &amp; machine data.
+            Auto-extracts Cost Center, Store, Issue Date, ERP numbers, parts, and machine data.
           </div>
         </div>
         <button type="button" id="btn-upload-load-sample" class="btn btn-secondary btn-sm" style="font-size: 11px; font-weight: 700; color: #34d399; border-color: rgba(52,211,153,0.3);">
@@ -545,12 +577,12 @@ function renderReviewTab() {
 
   const autoCount = activeDraftRows.filter(r => r.status === 'AUTO_MATCHED').length;
   const reviewCount = activeDraftRows.filter(r => r.status === 'REVIEW_REQUIRED').length;
-  const errCount = activeDraftRows.filter(r => r.status === 'ERROR' || r.status === 'DUPLICATE_WARNING').length;
+  const errCount = activeDraftRows.filter(r => r.status === 'ERROR').length;
 
   let filtered = activeDraftRows;
   if (reviewFilter === 'AUTO_MATCHED') filtered = filtered.filter(r => r.status === 'AUTO_MATCHED');
   if (reviewFilter === 'REVIEW_REQUIRED') filtered = filtered.filter(r => r.status === 'REVIEW_REQUIRED');
-  if (reviewFilter === 'ERROR') filtered = filtered.filter(r => r.status === 'ERROR' || r.status === 'DUPLICATE_WARNING');
+  if (reviewFilter === 'ERROR') filtered = filtered.filter(r => r.status === 'ERROR');
 
   if (reviewSearch && reviewSearch.trim()) {
     const q = reviewSearch.trim().toLowerCase();
@@ -558,10 +590,10 @@ function renderReviewTab() {
       (r.erpNo && r.erpNo.toLowerCase().includes(q)) ||
       (r.rawItemName && r.rawItemName.toLowerCase().includes(q)) ||
       (r.partName && r.partName.toLowerCase().includes(q)) ||
+      (r.partCode && r.partCode.toLowerCase().includes(q)) ||
       (r.comments && r.comments.toLowerCase().includes(q)) ||
-      (r.requestedByName && r.requestedByName.toLowerCase().includes(q)) ||
-      (r.requestedByCard && String(r.requestedByCard).toLowerCase().includes(q)) ||
-      (r.machineSerial && r.machineSerial.toLowerCase().includes(q))
+      (r.machineSerial && r.machineSerial.toLowerCase().includes(q)) ||
+      (r.technicianName && r.technicianName.toLowerCase().includes(q))
     );
   }
 
@@ -571,7 +603,7 @@ function renderReviewTab() {
       <!-- Review Summary & Actions Strip -->
       <div style="background: var(--bg-card); border: 1.5px solid rgba(56, 189, 248, 0.35); border-radius: 8px; padding: 6px 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
         <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-          <span style="font-size: 12px; font-weight: 800; color: #fff;">
+          <span style="font-size: 12.5px; font-weight: 800; color: #fff;">
             ERP Transaction Review
           </span>
           <span style="background: #0284c7; color: #fff; font-size: 10.5px; font-weight: 800; padding: 1px 6px; border-radius: 10px; font-family: var(--font-mono);">
@@ -584,6 +616,9 @@ function renderReviewTab() {
         </div>
 
         <div style="display: flex; gap: 6px; align-items: center;">
+          <button type="button" id="btn-rematch-all-drafts" class="btn btn-ghost btn-sm" style="color: #38bdf8; font-size: 11px; padding: 4px 8px; height: 28px; border: 1px solid rgba(56,189,248,0.4);" title="Re-match against latest parts catalog">
+            ⚡ Re-Match Parts
+          </button>
           <button type="button" id="btn-clear-all-drafts" class="btn btn-ghost btn-sm" style="color: #f87171; font-size: 11px; padding: 4px 8px; height: 28px; border: 1px solid rgba(239,68,68,0.3);">
             ✕ Clear Drafts
           </button>
@@ -593,7 +628,7 @@ function renderReviewTab() {
         </div>
       </div>
 
-      <!-- Search & Filter Filter Toolbar -->
+      <!-- Search & Filter Toolbar -->
       <div style="padding: 6px 10px; background: rgba(15, 23, 42, 0.95); border: 1px solid var(--border-color); border-radius: 8px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
         
         <div style="flex: 1; min-width: 180px; position: relative;">
@@ -601,7 +636,7 @@ function renderReviewTab() {
             type="text" 
             id="inp-draft-filter-query" 
             class="form-control" 
-            placeholder="🔍 Search draft items by part, ERP#, serial, card, comments..." 
+            placeholder="🔍 Search draft items by part, ERP#, serial, technician, comments..." 
             value="${reviewSearch}"
             style="padding: 4px 28px 4px 10px; font-size: 11.5px; height: 28px; min-height: 28px; border-radius: 6px; background: #090d16; border-color: rgba(56,189,248,0.3); color: #fff;"
           />
@@ -624,27 +659,26 @@ function renderReviewTab() {
 
       </div>
 
-      <!-- Review Draft Table Container -->
+      <!-- Review Draft Table Container (Clean columns without Manpower) -->
       <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 8px; flex: 1; min-height: 0; overflow: auto;">
         <table class="parts-trace-table">
           <thead>
             <tr>
-              <th style="width: 30px;">SL</th>
-              <th>ERP No</th>
-              <th>Floor &amp; Line</th>
-              <th style="min-width: 180px;">Matched Part &amp; Code</th>
-              <th>Qty</th>
-              <th style="min-width: 180px;">Requested By (Manpower)</th>
-              <th style="min-width: 160px;">Machine</th>
-              <th style="min-width: 130px;">Technician</th>
-              <th>Status</th>
-              <th style="text-align: right;">Action</th>
+              <th style="width: 32px;">SL</th>
+              <th style="width: 110px;">ERP No</th>
+              <th style="width: 120px;">Floor &amp; Line</th>
+              <th style="min-width: 220px;">Matched Part &amp; Code</th>
+              <th style="width: 75px;">Qty</th>
+              <th style="min-width: 170px;">Machine</th>
+              <th style="min-width: 150px;">Technician</th>
+              <th style="width: 90px;">Status</th>
+              <th style="width: 40px; text-align: right;">Action</th>
             </tr>
           </thead>
           <tbody>
             ${filtered.map((r, idx) => {
               const statusColor = r.status === 'AUTO_MATCHED' ? '#34d399' : (r.status === 'REVIEW_REQUIRED' ? '#fbbf24' : '#f87171');
-              const statusBadge = r.status === 'AUTO_MATCHED' ? '🟢 Matched' : (r.status === 'REVIEW_REQUIRED' ? '🟡 Review' : (r.status === 'DUPLICATE_WARNING' ? '⚠️ Duplicate' : '🔴 Error'));
+              const statusBadge = r.status === 'AUTO_MATCHED' ? '🟢 Matched' : (r.status === 'REVIEW_REQUIRED' ? '🟡 Review' : '🔴 Error');
 
               return `
                 <tr data-draft-id="${r.draftId}">
@@ -660,10 +694,10 @@ function renderReviewTab() {
                     <div style="display: flex; flex-direction: column; gap: 2px;">
                       <div style="font-weight: 700; color: #fff;">${r.partName}</div>
                       <div style="display: flex; gap: 6px; align-items: center;">
-                        <span style="font-family: var(--font-mono); font-size: 10px; color: #38bdf8; background: rgba(56,189,248,0.1); padding: 1px 4px; border-radius: 3px;">
+                        <span style="font-family: var(--font-mono); font-size: 10px; color: #38bdf8; background: rgba(56,189,248,0.1); padding: 1px 5px; border-radius: 3px; border: 1px solid rgba(56,189,248,0.25);">
                           ${r.partCode || 'NO CODE'}
                         </span>
-                        <button type="button" class="btn btn-ghost btn-xs btn-change-draft-part" data-draft-id="${r.draftId}" style="font-size: 9.5px; padding: 1px 4px; color: #38bdf8; text-decoration: underline;">
+                        <button type="button" class="btn btn-ghost btn-xs btn-open-smart-part-modal" data-draft-id="${r.draftId}" style="font-size: 9.5px; padding: 1px 4px; color: #38bdf8; text-decoration: underline;">
                           Change
                         </button>
                       </div>
@@ -673,64 +707,46 @@ function renderReviewTab() {
                     </div>
                   </td>
                   <td>
-                    <input 
-                      type="number" 
-                      class="inp-draft-qty" 
-                      data-draft-id="${r.draftId}" 
-                      value="${r.issueQty}" 
-                      min="1" 
-                      style="width: 45px; height: 24px; font-size: 11px; padding: 2px 4px; text-align: center; background: #090d16; border: 1px solid rgba(255,255,255,0.15); border-radius: 4px; color: #34d399; font-weight: 800;"
-                    />
-                    <span style="font-size: 10px; color: var(--text-muted);">${r.uom}</span>
+                    <div style="display: flex; align-items: center; gap: 4px;">
+                      <input 
+                        type="number" 
+                        class="inp-draft-qty" 
+                        data-draft-id="${r.draftId}" 
+                        value="${r.issueQty}" 
+                        min="1" 
+                        style="width: 44px; height: 24px; font-size: 11.5px; padding: 2px 4px; text-align: center; background: #090d16; border: 1px solid rgba(255,255,255,0.15); border-radius: 4px; color: #34d399; font-weight: 800;"
+                      />
+                      <span style="font-size: 10px; color: var(--text-muted);">${r.uom}</span>
+                    </div>
                   </td>
                   <td>
-                    <!-- Manpower Auto-Matched Card -->
-                    ${r.requestedById || r.requestedByName ? `
-                      <div style="background: rgba(0,0,0,0.25); border: 1px solid rgba(56,189,248,0.2); border-radius: 4px; padding: 3px 6px;">
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                          <strong style="color: #fff; font-size: 11px;">${r.requestedByName}</strong>
-                          <button type="button" class="btn-edit-draft-manpower" data-draft-id="${r.draftId}" style="background: none; border: none; color: #38bdf8; font-size: 9.5px; cursor: pointer;">✏️</button>
-                        </div>
-                        <div style="font-size: 9.5px; color: #94a3b8; display: flex; gap: 6px;">
-                          <span>Card: <strong style="color: #38bdf8;">${r.requestedByCard || '—'}</strong></span>
-                          <span>&bull; ${r.requestedByDesignation || 'Staff'}</span>
-                        </div>
+                    <!-- Smart Machine Pill -->
+                    <button type="button" class="smart-picker-btn btn-open-smart-machine-modal" data-draft-id="${r.draftId}">
+                      <div style="display: flex; flex-direction: column; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                        ${r.machineSerial ? `
+                          <span style="font-family: var(--font-mono); font-weight: 800; color: #fbbf24; font-size: 11.5px;">${r.machineSerial}</span>
+                          <span style="font-size: 9.5px; color: #cbd5e1; overflow: hidden; text-overflow: ellipsis;">${r.machineName || 'Machine'}</span>
+                        ` : `
+                          <span style="font-size: 11px; color: #94a3b8;">🔍 Select Machine</span>
+                        `}
                       </div>
-                    ` : `
-                      <button type="button" class="btn btn-secondary btn-xs btn-edit-draft-manpower" data-draft-id="${r.draftId}" style="font-size: 10.5px; padding: 3px 8px; width: 100%; text-align: left; border-color: rgba(251,191,36,0.4); color: #fbbf24;">
-                        🔍 Select Manpower
-                      </button>
-                    `}
+                      <span style="color: #38bdf8; font-size: 11px;">✏️</span>
+                    </button>
+                    ${r.comments ? `<div style="font-size: 9.5px; color: #94a3b8; margin-top: 2px; padding-left: 2px;"><em>"${r.comments}"</em></div>` : ''}
                   </td>
                   <td>
-                    <!-- Machine Auto-Matched Card -->
-                    ${r.machineSerial || r.machineId ? `
-                      <div style="background: rgba(0,0,0,0.25); border: 1px solid rgba(251,191,36,0.2); border-radius: 4px; padding: 3px 6px;">
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                          <span style="font-family: var(--font-mono); font-weight: 800; color: #fbbf24; font-size: 11px;">${r.machineSerial}</span>
-                          <button type="button" class="btn-edit-draft-machine" data-draft-id="${r.draftId}" style="background: none; border: none; color: #38bdf8; font-size: 9.5px; cursor: pointer;">✏️</button>
-                        </div>
-                        <div style="font-size: 9.5px; color: #cbd5e1;">${r.machineName || 'Machine'}</div>
+                    <!-- Smart Technician Pill -->
+                    <button type="button" class="smart-picker-btn btn-open-smart-tech-modal" data-draft-id="${r.draftId}">
+                      <div style="display: flex; flex-direction: column; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                        ${r.technicianName ? `
+                          <strong style="color: #38bdf8; font-size: 11.5px;">${r.technicianName}</strong>
+                          <span style="font-size: 9px; color: var(--text-muted); font-family: var(--font-mono);">${r.technicianCard && r.technicianCard !== '—' ? `Card: ${r.technicianCard}` : 'Mechanic'}</span>
+                        ` : `
+                          <span style="font-size: 11px; color: #94a3b8;">+ Assign Tech</span>
+                        `}
                       </div>
-                    ` : `
-                      <button type="button" class="btn btn-secondary btn-xs btn-edit-draft-machine" data-draft-id="${r.draftId}" style="font-size: 10.5px; padding: 3px 8px; width: 100%; text-align: left; border-color: rgba(255,255,255,0.15); color: #94a3b8;">
-                        🔍 Select Machine
-                      </button>
-                    `}
-                    ${r.comments ? `<div style="font-size: 9px; color: #94a3b8; margin-top: 1px;"><em>"${r.comments}"</em></div>` : ''}
-                  </td>
-                  <td>
-                    <!-- Technician Card -->
-                    ${r.technicianName ? `
-                      <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <span style="color: #cbd5e1; font-weight: 600; font-size: 11px;">${r.technicianName}</span>
-                        <button type="button" class="btn-edit-draft-tech" data-draft-id="${r.draftId}" style="background: none; border: none; color: #38bdf8; font-size: 9.5px; cursor: pointer;">✏️</button>
-                      </div>
-                    ` : `
-                      <button type="button" class="btn btn-ghost btn-xs btn-edit-draft-tech" data-draft-id="${r.draftId}" style="font-size: 10px; color: #38bdf8; border: 1px dashed rgba(56,189,248,0.3); width: 100%;">
-                        + Assign Tech
-                      </button>
-                    `}
+                      <span style="color: #38bdf8; font-size: 11px;">✏️</span>
+                    </button>
                   </td>
                   <td>
                     <span class="badge" style="font-size: 9.5px; padding: 2px 6px; border: 1px solid ${statusColor}; color: ${statusColor}; background: rgba(0,0,0,0.3);">
@@ -754,10 +770,18 @@ function renderReviewTab() {
 }
 
 // ─────────────────────────────────────────────────────────────
-// 4. SPARE PARTS MASTER TAB (CRUD, SEARCH, EXCEL IMPORT)
+// 4. SPARE PARTS MASTER TAB (PAGINATED & 5K+ SUPPORT)
 // ─────────────────────────────────────────────────────────────
 function renderPartsMasterTab() {
-  const parts = partsTraceService.getAllParts({ search: masterSearch, category: masterCategory });
+  const allFiltered = partsTraceService.getAllParts({ search: masterSearch, category: masterCategory });
+  const totalCount = allFiltered.length;
+  const totalPages = Math.max(1, Math.ceil(totalCount / MASTER_PAGE_SIZE));
+
+  if (masterCurrentPage > totalPages) masterCurrentPage = totalPages;
+  if (masterCurrentPage < 1) masterCurrentPage = 1;
+
+  const startIndex = (masterCurrentPage - 1) * MASTER_PAGE_SIZE;
+  const pageParts = allFiltered.slice(startIndex, startIndex + MASTER_PAGE_SIZE);
 
   return `
     <div style="display: flex; flex-direction: column; gap: 8px; flex: 1; min-height: 0;">
@@ -770,9 +794,9 @@ function renderPartsMasterTab() {
             type="text" 
             id="inp-master-parts-search" 
             class="form-control" 
-            placeholder="🔍 Search parts by code, name, alias, model, brand..." 
+            placeholder="🔍 Search 5,000+ parts by code, name, alias, brand, model..." 
             value="${masterSearch}"
-            style="max-width: 280px; height: 28px; font-size: 11.5px; padding: 3px 8px; border-radius: 6px; background: #090d16;"
+            style="max-width: 300px; height: 28px; font-size: 11.5px; padding: 3px 8px; border-radius: 6px; background: #090d16;"
           />
           <select id="sel-master-parts-cat" class="form-control" style="width: 140px; height: 28px; font-size: 11.5px; padding: 2px 6px; border-radius: 6px; background: #090d16;">
             <option value="ALL">All Categories</option>
@@ -781,8 +805,8 @@ function renderPartsMasterTab() {
             <option value="Consumable" ${masterCategory === 'Consumable' ? 'selected' : ''}>Consumable</option>
             <option value="Pneumatic" ${masterCategory === 'Pneumatic' ? 'selected' : ''}>Pneumatic</option>
           </select>
-          <span style="font-size: 11px; color: var(--text-muted); font-family: var(--font-mono);">
-            ${parts.length} Parts Registered
+          <span style="font-size: 11px; color: #38bdf8; font-family: var(--font-mono); font-weight: 700;">
+            ${totalCount.toLocaleString()} Parts Registered
           </span>
         </div>
 
@@ -790,7 +814,7 @@ function renderPartsMasterTab() {
           <button type="button" id="btn-open-add-part-modal" class="btn btn-primary btn-sm" style="font-weight: 800; font-size: 11.5px; height: 28px; padding: 4px 10px; background: #0284c7; border: 1px solid #38bdf8;">
             ➕ Add Part
           </button>
-          <button type="button" id="btn-open-import-excel-modal" class="btn btn-secondary btn-sm" style="font-weight: 700; font-size: 11.5px; height: 28px; padding: 4px 10px; border: 1px solid rgba(255,255,255,0.2);">
+          <button type="button" id="btn-open-import-excel-modal" class="btn btn-secondary btn-sm" style="font-weight: 700; font-size: 11.5px; height: 28px; padding: 4px 10px; border: 1px solid rgba(56,189,248,0.4); background: rgba(56,189,248,0.1); color: #38bdf8;">
             📥 Import Excel (5k+)
           </button>
           <button type="button" id="btn-download-parts-template" class="btn btn-outline btn-sm" style="font-size: 11px; height: 28px; padding: 2px 8px; color: #34d399; border-color: rgba(52,211,153,0.4);">
@@ -805,9 +829,9 @@ function renderPartsMasterTab() {
         <table class="parts-trace-table">
           <thead>
             <tr>
-              <th>Part Code</th>
-              <th>Part Name</th>
-              <th>Alternative Name / Alias</th>
+              <th style="width: 100px;">Part Code</th>
+              <th style="min-width: 180px;">Part Name</th>
+              <th style="min-width: 180px;">Alternative Name / Alias</th>
               <th>Category</th>
               <th>UoM</th>
               <th>Brand &amp; Model</th>
@@ -818,13 +842,13 @@ function renderPartsMasterTab() {
             </tr>
           </thead>
           <tbody>
-            ${parts.length === 0 ? `
+            ${pageParts.length === 0 ? `
               <tr>
                 <td colspan="10" style="text-align: center; padding: 30px; color: var(--text-muted);">
                   No spare parts found matching your criteria.
                 </td>
               </tr>
-            ` : parts.map(p => `
+            ` : pageParts.map(p => `
               <tr>
                 <td>
                   <span style="font-family: var(--font-mono); font-weight: 900; color: #38bdf8; background: rgba(56,189,248,0.1); padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(56,189,248,0.2);">
@@ -871,6 +895,24 @@ function renderPartsMasterTab() {
         </table>
       </div>
 
+      <!-- High-Speed Pagination Footer -->
+      <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 6px; padding: 4px 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; font-size: 11px;">
+        <span style="color: var(--text-muted);">
+          Showing <strong>${startIndex + 1}</strong> - <strong>${Math.min(startIndex + MASTER_PAGE_SIZE, totalCount)}</strong> of <strong>${totalCount.toLocaleString()}</strong> parts
+        </span>
+        <div style="display: flex; gap: 4px; align-items: center;">
+          <button type="button" id="btn-master-prev-page" class="btn btn-ghost btn-xs" ${masterCurrentPage <= 1 ? 'disabled' : ''} style="font-size: 11px; padding: 2px 8px;">
+            &laquo; Prev
+          </button>
+          <span style="font-family: var(--font-mono); font-weight: 700; color: #fff; padding: 0 4px;">
+            Page ${masterCurrentPage} of ${totalPages}
+          </span>
+          <button type="button" id="btn-master-next-page" class="btn btn-ghost btn-xs" ${masterCurrentPage >= totalPages ? 'disabled' : ''} style="font-size: 11px; padding: 2px 8px;">
+            Next &raquo;
+          </button>
+        </div>
+      </div>
+
     </div>
   `;
 }
@@ -892,7 +934,7 @@ function renderHistoryTab() {
             type="text" 
             id="inp-history-search" 
             class="form-control" 
-            placeholder="🔍 Search ERP#, part, machine, card, technician..." 
+            placeholder="🔍 Search ERP#, part, machine, technician..." 
             value="${historySearch}"
             style="max-width: 260px; height: 28px; font-size: 11.5px; padding: 3px 8px; border-radius: 6px; background: #090d16;"
           />
@@ -935,7 +977,6 @@ function renderHistoryTab() {
               <th>Part Name &amp; Code</th>
               <th>Qty</th>
               <th>Machine No</th>
-              <th>Requested By</th>
               <th>Technician</th>
               <th>Floor &amp; Line</th>
               <th>PDF Source</th>
@@ -945,7 +986,7 @@ function renderHistoryTab() {
           <tbody>
             ${issues.length === 0 ? `
               <tr>
-                <td colspan="10" style="text-align: center; padding: 30px; color: var(--text-muted);">
+                <td colspan="9" style="text-align: center; padding: 30px; color: var(--text-muted);">
                   No spare parts transaction records found.
                 </td>
               </tr>
@@ -970,13 +1011,7 @@ function renderHistoryTab() {
                   ` : '<span style="color: #64748b;">—</span>'}
                 </td>
                 <td>
-                  ${iss.requestedByName ? `
-                    <div style="color: #fff; font-weight: 600;">${iss.requestedByName}</div>
-                    <div style="font-size: 9.5px; color: #38bdf8; font-family: var(--font-mono);">Card: ${iss.requestedByCard || '—'}</div>
-                  ` : '<span style="color: #64748b;">—</span>'}
-                </td>
-                <td>
-                  <span style="color: #cbd5e1;">${iss.technicianName || '—'}</span>
+                  <span style="color: #cbd5e1; font-weight: 600;">${iss.technicianName || '—'}</span>
                 </td>
                 <td>
                   <span style="color: #fff;">${iss.floorName}</span>
@@ -1004,26 +1039,22 @@ function renderHistoryTab() {
 }
 
 // ─────────────────────────────────────────────────────────────
-// 6. REPORTS & ANALYTICS TAB
+// 6. REPORTS TAB
 // ─────────────────────────────────────────────────────────────
 function renderReportsTab() {
   const all = partsTraceService.getAllIssues();
   
-  // Compute breakdowns
   const floorMap = {};
   const partMap = {};
   const machineMap = {};
 
   all.forEach(iss => {
-    // Floor
     const flr = iss.floorName || 'Unknown';
     floorMap[flr] = (floorMap[flr] || 0) + (parseFloat(iss.issueQty) || 1);
 
-    // Part
     const prt = iss.partName || 'Unknown';
     partMap[prt] = (partMap[prt] || 0) + (parseFloat(iss.issueQty) || 1);
 
-    // Machine
     if (iss.machineSerial) {
       machineMap[iss.machineSerial] = (machineMap[iss.machineSerial] || 0) + (parseFloat(iss.issueQty) || 1);
     }
@@ -1036,7 +1067,6 @@ function renderReportsTab() {
   return `
     <div style="display: flex; flex-direction: column; gap: 8px; flex: 1; min-height: 0; overflow-y: auto;">
       
-      <!-- Top Action Bar -->
       <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 6px 12px; display: flex; justify-content: space-between; align-items: center;">
         <span style="font-size: 12.5px; font-weight: 800; color: #fff;">
           📈 Spare Parts Traceability Analytics &amp; Diagnostics
@@ -1046,10 +1076,8 @@ function renderReportsTab() {
         </button>
       </div>
 
-      <!-- 3-Column Analytics Cards -->
       <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">
         
-        <!-- Top Consumed Parts -->
         <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 6px;">
           <div style="font-size: 11.5px; font-weight: 800; color: #38bdf8; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 4px;">
             🔩 Top Consumed Parts
@@ -1064,7 +1092,6 @@ function renderReportsTab() {
           </div>
         </div>
 
-        <!-- Floor-wise Consumption -->
         <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 6px;">
           <div style="font-size: 11.5px; font-weight: 800; color: #fbbf24; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 4px;">
             🏢 Floor-wise Distribution
@@ -1079,7 +1106,6 @@ function renderReportsTab() {
           </div>
         </div>
 
-        <!-- Machines with Highest Parts Replaced -->
         <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 6px;">
           <div style="font-size: 11.5px; font-weight: 800; color: #a78bfa; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 4px;">
             🏭 Top Machines Replaced
@@ -1101,21 +1127,269 @@ function renderReportsTab() {
 }
 
 // ─────────────────────────────────────────────────────────────
-// 7. MODALS: MANUAL ISSUE, ADD PART, IMPORT EXCEL, TRACEABILITY
+// 7. SMART MODALS: MACHINE, TECHNICIAN, PART, MANUAL ISSUE
 // ─────────────────────────────────────────────────────────────
+
+function renderSmartMachineModal() {
+  if (!selectedMachineDraftId) return '';
+  const draft = activeDraftRows.find(d => d.draftId === selectedMachineDraftId);
+  if (!draft) return '';
+
+  const allMachines = storage.getTable(TABLE_NAMES.MACHINES) || [];
+  
+  // Floor machines priority
+  const floorMachines = allMachines.filter(m => 
+    draft.floorName && m.floorName && m.floorName.toLowerCase().includes(draft.floorName.toLowerCase())
+  ).slice(0, 20);
+
+  // Extract detected number from comment if any
+  const detectedNumber = draft.comments ? draft.comments.match(/\b\d{3,6}\b/)?.[0] : null;
+
+  return `
+    <div class="modal-overlay" id="modal-smart-machine-overlay" style="z-index: 10080;">
+      <div class="modal-dialog" style="max-width: 520px; width: 95%;">
+        
+        <div class="modal-header" style="border-bottom: 1px solid rgba(255,255,255,0.1); padding: 10px 16px;">
+          <div class="modal-title" style="display: flex; align-items: center; gap: 8px;">
+            <span>🛠️</span> Assign Machine for ${draft.floorName} / ${draft.lineName}
+          </div>
+          <button type="button" id="btn-close-smart-machine-modal" class="btn btn-ghost btn-sm" style="font-size: 16px; border-radius: 50%;">✕</button>
+        </div>
+
+        <div style="padding: 14px 16px; display: flex; flex-direction: column; gap: 12px; max-height: 80vh; overflow-y: auto;">
+          
+          <!-- Auto Detected Suggestion Pill -->
+          ${detectedNumber ? `
+            <div style="background: rgba(251,191,36,0.1); border: 1px solid rgba(251,191,36,0.3); border-radius: 6px; padding: 8px 10px; display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <span style="font-size: 10px; color: #fbbf24; font-weight: 700; text-transform: uppercase;">Detected from Note:</span>
+                <div style="font-family: var(--font-mono); font-weight: 800; font-size: 14px; color: #fff;">${detectedNumber} (${draft.comments})</div>
+              </div>
+              <button type="button" class="btn btn-warning btn-xs btn-pick-quick-machine" data-serial="${detectedNumber}" data-name="Machine ${detectedNumber}" style="font-weight: 800; padding: 4px 10px;">
+                Use ${detectedNumber}
+              </button>
+            </div>
+          ` : ''}
+
+          <!-- Search Input -->
+          <div>
+            <label class="form-label" style="font-size: 11.5px; color: #38bdf8; font-weight: 700;">🔍 Search Machine Catalog:</label>
+            <input 
+              type="text" 
+              id="inp-search-smart-machine" 
+              class="form-control" 
+              placeholder="Type serial number (e.g. 7402, 5369, SL-836)..." 
+              autofocus 
+              style="font-size: 13px; font-weight: 700; background: #090d16;"
+            />
+          </div>
+
+          <!-- Quick Actions / Floor Machines -->
+          <div style="display: flex; flex-direction: column; gap: 6px;">
+            <div style="font-size: 10.5px; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">
+              Floor Machines (${draft.floorName}):
+            </div>
+            <div id="smart-machine-results-list" style="display: flex; flex-direction: column; gap: 4px; max-height: 200px; overflow-y: auto;">
+              ${floorMachines.map(m => `
+                <div class="smart-item-row btn-pick-smart-machine-row" data-id="${m.id}" data-serial="${m.serialNumber}" data-name="${m.machineName || 'Sewing Machine'}" data-brand="${m.brand || ''}" data-model="${m.model || ''}">
+                  <div>
+                    <strong style="font-family: var(--font-mono); color: #fbbf24; font-size: 12.5px;">${m.serialNumber}</strong>
+                    <span style="color: #fff; font-size: 11px; margin-left: 6px;">${m.machineName || 'Machine'}</span>
+                    <span style="font-size: 10px; color: var(--text-muted); margin-left: 4px;">(${m.brand || ''} ${m.model || ''})</span>
+                  </div>
+                  <span style="font-size: 10px; color: #38bdf8; font-family: var(--font-mono);">${m.lineStr || m.lineName || draft.lineName}</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+
+          <!-- Custom Machine Serial Manual Field -->
+          <div style="border-top: 1px solid rgba(255,255,255,0.08); padding-top: 10px;">
+            <label class="form-label" style="font-size: 11px; color: var(--text-muted);">Or Enter Custom Machine Serial / ID:</label>
+            <div style="display: flex; gap: 6px;">
+              <input type="text" id="inp-custom-machine-serial" class="form-control" placeholder="e.g. 7402, M-101" value="${draft.machineSerial || ''}" style="font-family: var(--font-mono); font-weight: 700; font-size: 12px;" />
+              <button type="button" id="btn-apply-custom-machine-serial" class="btn btn-primary btn-sm" style="font-weight: 800; padding: 0 14px; white-space: nowrap;">
+                Set Machine
+              </button>
+            </div>
+          </div>
+
+          <!-- Batch Apply Options -->
+          <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 6px; padding: 8px 10px; display: flex; flex-direction: column; gap: 6px; font-size: 11px;">
+            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; color: #cbd5e1;">
+              <input type="checkbox" id="chk-machine-apply-line" /> Apply this machine to all unassigned rows on <strong>${draft.lineName}</strong>
+            </label>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+  `;
+}
+
+function renderSmartTechnicianModal() {
+  if (!selectedTechDraftId) return '';
+  const draft = activeDraftRows.find(d => d.draftId === selectedTechDraftId);
+  if (!draft) return '';
+
+  const allEmployees = storage.getTable(TABLE_NAMES.EMPLOYEES) || [];
+  
+  // Top / Known factory mechanics & technicians
+  const quickTechList = [
+    { name: 'Md. Rahat', card: '100201' },
+    { name: 'Biplob', card: '1048' },
+    { name: 'Mohammad Meherul Haque', card: '1088' },
+    { name: 'Engr. Tanvir Ahmed', card: '1001' },
+    { name: 'Rahim Uddin', card: '1088' },
+    { name: 'Kalam Sheikh', card: '1120' },
+    { name: 'Md. Faruk Hossain', card: '1042' },
+    { name: 'Nurul Islam', card: '1105' },
+    { name: 'Md. Sohel', card: '1145' },
+    { name: 'Md. Alamin', card: '1152' }
+  ];
+
+  return `
+    <div class="modal-overlay" id="modal-smart-tech-overlay" style="z-index: 10080;">
+      <div class="modal-dialog" style="max-width: 480px; width: 95%;">
+        
+        <div class="modal-header" style="border-bottom: 1px solid rgba(255,255,255,0.1); padding: 10px 16px;">
+          <div class="modal-title" style="display: flex; align-items: center; gap: 8px;">
+            <span>👷</span> Assign Technician / Mechanic
+          </div>
+          <button type="button" id="btn-close-smart-tech-modal" class="btn btn-ghost btn-sm" style="font-size: 16px; border-radius: 50%;">✕</button>
+        </div>
+
+        <div style="padding: 14px 16px; display: flex; flex-direction: column; gap: 12px; max-height: 80vh; overflow-y: auto;">
+          
+          <!-- Fast Pick Quick Chips -->
+          <div>
+            <div style="font-size: 10.5px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; margin-bottom: 6px;">
+              ⚡ Quick Select Top Technicians:
+            </div>
+            <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+              ${quickTechList.map(t => `
+                <button type="button" class="smart-chip btn-pick-quick-tech" data-name="${t.name}" data-card="${t.card}">
+                  <span>👷 ${t.name}</span>
+                </button>
+              `).join('')}
+            </div>
+          </div>
+
+          <!-- Search All Employees -->
+          <div>
+            <label class="form-label" style="font-size: 11.5px; color: #38bdf8; font-weight: 700;">🔍 Search Employee / Mechanic Database:</label>
+            <input 
+              type="text" 
+              id="inp-search-smart-tech" 
+              class="form-control" 
+              placeholder="Search by name, card number..." 
+              autofocus 
+              style="font-size: 13px; font-weight: 700; background: #090d16;"
+            />
+          </div>
+
+          <!-- Search Results List -->
+          <div id="smart-tech-results-list" style="display: flex; flex-direction: column; gap: 4px; max-height: 180px; overflow-y: auto;">
+            ${allEmployees.slice(0, 15).map(e => `
+              <div class="smart-item-row btn-pick-smart-tech-row" data-id="${e.id}" data-name="${e.name}" data-card="${e.cardNumber || '—'}" data-desig="${e.designation || 'Staff'}">
+                <div>
+                  <strong style="color: #fff; font-size: 12px;">${e.name}</strong>
+                  <span style="font-size: 10px; color: #38bdf8; font-family: var(--font-mono); margin-left: 6px;">Card: ${e.cardNumber || '—'}</span>
+                </div>
+                <span style="font-size: 10px; color: var(--text-muted);">${e.designation || 'Technician'}</span>
+              </div>
+            `).join('')}
+          </div>
+
+          <!-- Custom Name Manual Field -->
+          <div style="border-top: 1px solid rgba(255,255,255,0.08); padding-top: 10px;">
+            <label class="form-label" style="font-size: 11px; color: var(--text-muted);">Or Enter Technician Name Manually:</label>
+            <div style="display: flex; gap: 6px;">
+              <input type="text" id="inp-custom-tech-name" class="form-control" placeholder="e.g. Md. Rahat, Biplob" value="${draft.technicianName || ''}" style="font-weight: 700; font-size: 12px;" />
+              <button type="button" id="btn-apply-custom-tech-name" class="btn btn-primary btn-sm" style="font-weight: 800; padding: 0 14px; white-space: nowrap;">
+                Set Tech
+              </button>
+            </div>
+          </div>
+
+          <!-- Batch Apply Options -->
+          <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 6px; padding: 8px 10px; display: flex; flex-direction: column; gap: 6px; font-size: 11px;">
+            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; color: #cbd5e1;">
+              <input type="checkbox" id="chk-tech-apply-all-drafts" /> Apply this technician to all unassigned rows in drafts
+            </label>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+  `;
+}
+
+function renderSmartPartModal() {
+  if (!selectedPartDraftId) return '';
+  const draft = activeDraftRows.find(d => d.draftId === selectedPartDraftId);
+  if (!draft) return '';
+
+  const allParts = partsTraceService.getAllParts();
+
+  return `
+    <div class="modal-overlay" id="modal-smart-part-overlay" style="z-index: 10080;">
+      <div class="modal-dialog" style="max-width: 580px; width: 95%;">
+        
+        <div class="modal-header" style="border-bottom: 1px solid rgba(255,255,255,0.1); padding: 10px 16px;">
+          <div class="modal-title" style="display: flex; align-items: center; gap: 8px;">
+            <span>🔩</span> Select Matched Spare Part for "${draft.rawItemName}"
+          </div>
+          <button type="button" id="btn-close-smart-part-modal" class="btn btn-ghost btn-sm" style="font-size: 16px; border-radius: 50%;">✕</button>
+        </div>
+
+        <div style="padding: 14px 16px; display: flex; flex-direction: column; gap: 12px; max-height: 80vh; overflow-y: auto;">
+          
+          <div>
+            <label class="form-label" style="font-size: 11.5px; color: #38bdf8; font-weight: 700;">🔍 Search 5k+ Parts Catalog:</label>
+            <input 
+              type="text" 
+              id="inp-search-smart-part" 
+              class="form-control" 
+              placeholder="Search by part code, part name, alt name..." 
+              value="${draft.partName || ''}"
+              autofocus 
+              style="font-size: 13px; font-weight: 700; background: #090d16;"
+            />
+          </div>
+
+          <div id="smart-part-results-list" style="display: flex; flex-direction: column; gap: 4px; max-height: 300px; overflow-y: auto;">
+            ${allParts.slice(0, 30).map(p => `
+              <div class="smart-item-row btn-pick-smart-part-row" data-id="${p.id}" data-code="${p.code}" data-name="${p.name}" data-unit="${p.unit || 'PCS'}">
+                <div>
+                  <span style="font-family: var(--font-mono); font-weight: 800; color: #38bdf8; margin-right: 6px;">${p.code}</span>
+                  <strong style="color: #fff; font-size: 12px;">${p.name}</strong>
+                  ${p.altName ? `<div style="font-size: 10px; color: var(--text-muted);">${p.altName}</div>` : ''}
+                </div>
+                <span style="font-size: 11px; font-weight: 700; color: #34d399;">${p.unit || 'PCS'}</span>
+              </div>
+            `).join('')}
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+  `;
+}
 
 function renderManualIssueModal() {
   if (!manualIssueModalOpen) return '';
 
-  const units = masterDataService.getUnits();
-  const floors = masterDataService.getFloors();
   const parts = partsTraceService.getAllParts();
   const employees = storage.getTable(TABLE_NAMES.EMPLOYEES) || [];
   const machines = storage.getTable(TABLE_NAMES.MACHINES) || [];
 
   return `
     <div class="modal-overlay" id="modal-manual-issue-overlay" style="z-index: 10050;">
-      <div class="modal-dialog" style="max-width: 580px; width: 95%;">
+      <div class="modal-dialog" style="max-width: 540px; width: 95%;">
         
         <div class="modal-header" style="border-bottom: 1px solid rgba(255,255,255,0.1); padding: 10px 16px;">
           <div class="modal-title" style="display: flex; align-items: center; gap: 8px;">
@@ -1161,14 +1435,6 @@ function renderManualIssueModal() {
             <select id="man-sel-machine" class="form-control" style="font-size: 12px;">
               <option value="">-- No Machine / General Floor Stock --</option>
               ${machines.map(m => `<option value="${m.id}" data-serial="${m.serialNumber}" data-name="${m.machineName || ''}">${m.serialNumber} — ${m.machineName || 'Machine'} (${m.floorStr || ''} / ${m.lineStr || ''})</option>`).join('')}
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label class="form-label" style="font-size: 11.5px; color: #38bdf8; font-weight: 700;">Requested By (Manpower):</label>
-            <select id="man-sel-employee" class="form-control" style="font-size: 12px;">
-              <option value="">-- Select Employee --</option>
-              ${employees.map(e => `<option value="${e.id}" data-card="${e.cardNumber}" data-name="${e.name}" data-desig="${e.designation || ''}">${e.cardNumber || '—'} | ${e.name} (${e.designation || 'Staff'})</option>`).join('')}
             </select>
           </div>
 
@@ -1289,25 +1555,25 @@ function renderImportExcelModal() {
 
   return `
     <div class="modal-overlay" id="modal-import-excel-overlay" style="z-index: 10050;">
-      <div class="modal-dialog" style="max-width: 500px; width: 95%;">
+      <div class="modal-dialog" style="max-width: 520px; width: 95%;">
         
         <div class="modal-header" style="border-bottom: 1px solid rgba(255,255,255,0.1); padding: 10px 16px;">
           <div class="modal-title" style="display: flex; align-items: center; gap: 8px;">
-            <span>📥</span> Bulk Import Spare Parts Master (Excel)
+            <span>📥</span> Bulk Import Spare Parts Master (Excel 5k+)
           </div>
           <button type="button" id="btn-close-import-modal" class="btn btn-ghost btn-sm" style="font-size: 16px; border-radius: 50%;">✕</button>
         </div>
 
         <div style="padding: 16px; display: flex; flex-direction: column; gap: 12px;">
           <div style="font-size: 12px; color: var(--text-secondary); line-height: 1.4;">
-            Upload your master parts catalog (supports <strong>5,000 to 20,000+ rows</strong>). Valid rows will be imported or updated without failing on minor errors.
+            Upload your master parts catalog (supports <strong>5,000 to 20,000+ rows</strong>). All valid rows will be imported and indexed for instant auto-detection!
           </div>
 
-          <div style="border: 2px dashed rgba(56,189,248,0.4); border-radius: 8px; padding: 20px; text-align: center; background: rgba(56,189,248,0.05); cursor: pointer;" id="dropzone-parts-excel">
+          <div style="border: 2px dashed rgba(56,189,248,0.4); border-radius: 8px; padding: 22px; text-align: center; background: rgba(56,189,248,0.05); cursor: pointer;" id="dropzone-parts-excel">
             <input type="file" id="inp-parts-excel-file" accept=".xlsx,.xls,.csv" style="display: none;" />
-            <div style="font-size: 32px; margin-bottom: 6px;">📊</div>
-            <div style="font-weight: 700; color: #fff; font-size: 13px;">Click to Select Excel Catalog File (.xlsx)</div>
-            <div style="font-size: 10.5px; color: var(--text-muted); margin-top: 3px;">Columns: Part Code, Part Name, Alternative Name, Alias, Category, UoM...</div>
+            <div style="font-size: 34px; margin-bottom: 6px;">📊</div>
+            <div style="font-weight: 700; color: #fff; font-size: 13.5px;">Click or Drag Excel Catalog File (.xlsx)</div>
+            <div style="font-size: 10.5px; color: var(--text-muted); margin-top: 4px;">Columns: Part Code, Part Name, Alternative Name, Alias, Category, UoM...</div>
           </div>
 
           <div id="excel-import-results-box" style="display: none; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; padding: 10px; font-size: 11.5px;">
@@ -1357,7 +1623,7 @@ function renderTraceabilityDetailsModal() {
               <span>➔</span>
               <span style="color: #fbbf24;">${iss.machineSerial || 'General'}</span>
               <span>➔</span>
-              <span style="color: #e2e8f0;">${iss.requestedByName || 'Staff'}</span>
+              <span style="color: #e2e8f0;">${iss.technicianName || 'Staff'}</span>
             </div>
           </div>
 
@@ -1386,15 +1652,10 @@ function renderTraceabilityDetailsModal() {
               <div style="font-size: 10px; color: var(--text-muted);">${iss.machineName || ''}</div>
             </div>
             <div style="background: rgba(255,255,255,0.03); padding: 8px; border-radius: 6px;">
-              <div style="font-size: 10px; color: var(--text-muted);">Requested By</div>
-              <div style="font-weight: 700; color: #fff;">${iss.requestedByName || '—'}</div>
-              <div style="font-size: 10px; color: #38bdf8;">Card: ${iss.requestedByCard || '—'}</div>
-            </div>
-            <div style="background: rgba(255,255,255,0.03); padding: 8px; border-radius: 6px;">
               <div style="font-size: 10px; color: var(--text-muted);">Assigned Technician</div>
               <div style="font-weight: 700; color: #cbd5e1;">${iss.technicianName || '—'}</div>
             </div>
-            <div style="background: rgba(255,255,255,0.03); padding: 8px; border-radius: 6px;">
+            <div style="background: rgba(255,255,255,0.03); padding: 8px; border-radius: 6px; grid-column: span 2;">
               <div style="font-size: 10px; color: var(--text-muted);">Location (Floor / Line)</div>
               <div style="color: #fff;">${iss.floorName} / ${iss.lineName}</div>
             </div>
@@ -1453,7 +1714,7 @@ export function initPartsTraceEvents() {
     btnSample.addEventListener('click', () => {
       activeDraftRows = partsTraceService.getSampleErpReportDrafts();
       activeTab = 'review';
-      notificationService.notifySuccess('Sample Report Loaded', 'Loaded 8 sample ERP spare parts issues from reference report for review.');
+      notificationService.notifySuccess('Sample Report Loaded', 'Loaded 8 ERP spare parts issue rows from reference report.');
       refresh();
     });
   }
@@ -1566,8 +1827,6 @@ export function initPartsTraceEvents() {
   if (inpDraftSearch) {
     inpDraftSearch.addEventListener('input', (e) => {
       reviewSearch = e.target.value;
-      const tbody = root.querySelector('.parts-trace-table tbody');
-      // Live quick search re-render
       refresh();
     });
   }
@@ -1592,7 +1851,18 @@ export function initPartsTraceEvents() {
     });
   });
 
-  // 7. Clear All Drafts
+  // 7. Re-Match All Drafts Button
+  const btnRematch = root.querySelector('#btn-rematch-all-drafts');
+  if (btnRematch) {
+    btnRematch.addEventListener('click', () => {
+      activeDraftRows = partsTraceService.rematchDraftRows(activeDraftRows);
+      const autoCount = activeDraftRows.filter(r => r.status === 'AUTO_MATCHED').length;
+      notificationService.notifySuccess('Re-Match Completed', `Re-matched ${activeDraftRows.length} rows (${autoCount} Auto-Matched).`);
+      refresh();
+    });
+  }
+
+  // 8. Clear All Drafts
   const btnClearDrafts = root.querySelector('#btn-clear-all-drafts');
   if (btnClearDrafts) {
     btnClearDrafts.addEventListener('click', () => {
@@ -1604,7 +1874,7 @@ export function initPartsTraceEvents() {
     });
   }
 
-  // 8. Confirm & Save All Drafts
+  // 9. Confirm & Save All Drafts
   const btnConfirmSave = root.querySelector('#btn-confirm-save-all-drafts');
   if (btnConfirmSave) {
     btnConfirmSave.addEventListener('click', async () => {
@@ -1628,118 +1898,328 @@ export function initPartsTraceEvents() {
     });
   }
 
-  // 9. Interactive Manpower Selector for Drafts
-  root.querySelectorAll('.btn-edit-draft-manpower').forEach(btn => {
+  // 10. Smart Machine Selector Modal Events
+  root.querySelectorAll('.btn-open-smart-machine-modal').forEach(btn => {
     btn.addEventListener('click', () => {
-      const draftId = btn.getAttribute('data-draft-id');
-      const draft = activeDraftRows.find(d => d.draftId === draftId);
-      if (!draft) return;
+      selectedMachineDraftId = btn.getAttribute('data-draft-id');
+      refresh();
+    });
+  });
 
-      const employees = storage.getTable(TABLE_NAMES.EMPLOYEES) || [];
-      const choice = prompt('Select Manpower: Enter Card Number or Employee Name:', draft.requestedByCard || draft.requestedByName || '');
-      if (choice && choice.trim()) {
-        const q = choice.trim().toLowerCase();
-        const found = employees.find(e => 
-          (e.cardNumber && String(e.cardNumber).toLowerCase() === q) ||
-          (e.name && e.name.toLowerCase().includes(q))
-        );
-        if (found) {
-          draft.requestedById = found.id;
-          draft.requestedByCard = found.cardNumber;
-          draft.requestedByName = found.name;
-          draft.requestedByDesignation = found.designation || 'Staff';
-          draft.requestedByFloor = found.floorName || draft.floorName;
-          draft.manpowerMatchStatus = 'MANUAL';
-          if (draft.status === 'REVIEW_REQUIRED' && draft.partId) {
-            draft.status = 'AUTO_MATCHED';
-          }
-          refresh();
-        } else {
-          // Store custom name
-          draft.requestedByName = choice.trim();
-          refresh();
+  const btnCloseSmartMachine = root.querySelector('#btn-close-smart-machine-modal');
+  if (btnCloseSmartMachine) {
+    btnCloseSmartMachine.addEventListener('click', () => {
+      selectedMachineDraftId = null;
+      refresh();
+    });
+  }
+
+  const applyMachineSelection = (machineData, applyToLine = false) => {
+    const targetDraft = activeDraftRows.find(d => d.draftId === selectedMachineDraftId);
+    if (!targetDraft) return;
+
+    const assign = (d) => {
+      d.machineId = machineData.id || '';
+      d.machineSerial = machineData.serialNumber || '';
+      d.machinePermanentId = machineData.permanentMachineId || '';
+      d.machineName = machineData.machineName || 'Sewing Machine';
+      d.machineBrand = machineData.brand || '';
+      d.machineModel = machineData.model || '';
+      d.machineMatchStatus = 'MANUAL';
+    };
+
+    assign(targetDraft);
+
+    if (applyToLine && targetDraft.lineName) {
+      activeDraftRows.forEach(d => {
+        if (d.lineName === targetDraft.lineName && !d.machineSerial) {
+          assign(d);
         }
-      }
-    });
-  });
+      });
+    }
 
-  // 10. Interactive Machine Selector for Drafts
-  root.querySelectorAll('.btn-edit-draft-machine').forEach(btn => {
+    selectedMachineDraftId = null;
+    refresh();
+  };
+
+  root.querySelectorAll('.btn-pick-quick-machine').forEach(btn => {
     btn.addEventListener('click', () => {
-      const draftId = btn.getAttribute('data-draft-id');
-      const draft = activeDraftRows.find(d => d.draftId === draftId);
-      if (!draft) return;
-
-      const machines = storage.getTable(TABLE_NAMES.MACHINES) || [];
-      const choice = prompt('Select Machine: Enter Machine Serial Number or Permanent ID:', draft.machineSerial || '');
-      if (choice && choice.trim()) {
-        const q = choice.trim().toLowerCase();
-        const found = machines.find(m => 
-          (m.serialNumber && m.serialNumber.toLowerCase() === q) ||
-          (m.permanentMachineId && m.permanentMachineId.toLowerCase() === q)
-        );
-        if (found) {
-          draft.machineId = found.id;
-          draft.machineSerial = found.serialNumber;
-          draft.machinePermanentId = found.permanentMachineId || '';
-          draft.machineName = found.machineName || '';
-          draft.machineBrand = found.brand || '';
-          draft.machineModel = found.model || '';
-          draft.machineMatchStatus = 'MANUAL';
-          refresh();
-        } else {
-          draft.machineSerial = choice.trim();
-          refresh();
-        }
-      }
+      const serial = btn.getAttribute('data-serial');
+      const name = btn.getAttribute('data-name');
+      const applyLine = root.querySelector('#chk-machine-apply-line')?.checked;
+      applyMachineSelection({ serialNumber: serial, machineName: name }, applyLine);
     });
   });
 
-  // 11. Interactive Technician Selector for Drafts
-  root.querySelectorAll('.btn-edit-draft-tech').forEach(btn => {
+  root.querySelectorAll('.btn-pick-smart-machine-row').forEach(row => {
+    row.addEventListener('click', () => {
+      const mData = {
+        id: row.getAttribute('data-id'),
+        serialNumber: row.getAttribute('data-serial'),
+        machineName: row.getAttribute('data-name'),
+        brand: row.getAttribute('data-brand'),
+        model: row.getAttribute('data-model')
+      };
+      const applyLine = root.querySelector('#chk-machine-apply-line')?.checked;
+      applyMachineSelection(mData, applyLine);
+    });
+  });
+
+  const btnApplyCustomMachine = root.querySelector('#btn-apply-custom-machine-serial');
+  if (btnApplyCustomMachine) {
+    btnApplyCustomMachine.addEventListener('click', () => {
+      const serial = root.querySelector('#inp-custom-machine-serial')?.value.trim();
+      if (!serial) return;
+      const applyLine = root.querySelector('#chk-machine-apply-line')?.checked;
+      applyMachineSelection({ serialNumber: serial, machineName: 'Sewing Machine' }, applyLine);
+    });
+  }
+
+  const inpSearchMachine = root.querySelector('#inp-search-smart-machine');
+  if (inpSearchMachine) {
+    inpSearchMachine.addEventListener('input', (e) => {
+      const q = e.target.value.toLowerCase().trim();
+      const listContainer = root.querySelector('#smart-machine-results-list');
+      if (!listContainer) return;
+
+      const allMachines = storage.getTable(TABLE_NAMES.MACHINES) || [];
+      const matches = allMachines.filter(m =>
+        (m.serialNumber && m.serialNumber.toLowerCase().includes(q)) ||
+        (m.permanentMachineId && m.permanentMachineId.toLowerCase().includes(q)) ||
+        (m.machineName && m.machineName.toLowerCase().includes(q)) ||
+        (m.brand && m.brand.toLowerCase().includes(q)) ||
+        (m.floorStr && m.floorStr.toLowerCase().includes(q)) ||
+        (m.lineStr && m.lineStr.toLowerCase().includes(q))
+      ).slice(0, 30);
+
+      listContainer.innerHTML = matches.length === 0 ? `
+        <div style="color: var(--text-muted); font-size: 11px; padding: 10px; text-align: center;">
+          No matching machines found. Enter custom serial below.
+        </div>
+      ` : matches.map(m => `
+        <div class="smart-item-row btn-pick-smart-machine-row" data-id="${m.id}" data-serial="${m.serialNumber}" data-name="${m.machineName || 'Sewing Machine'}" data-brand="${m.brand || ''}" data-model="${m.model || ''}">
+          <div>
+            <strong style="font-family: var(--font-mono); color: #fbbf24; font-size: 12.5px;">${m.serialNumber}</strong>
+            <span style="color: #fff; font-size: 11px; margin-left: 6px;">${m.machineName || 'Machine'}</span>
+            <span style="font-size: 10px; color: var(--text-muted); margin-left: 4px;">(${m.brand || ''} ${m.model || ''})</span>
+          </div>
+          <span style="font-size: 10px; color: #38bdf8; font-family: var(--font-mono);">${m.lineStr || m.floorStr || ''}</span>
+        </div>
+      `).join('');
+
+      listContainer.querySelectorAll('.btn-pick-smart-machine-row').forEach(row => {
+        row.addEventListener('click', () => {
+          const mData = {
+            id: row.getAttribute('data-id'),
+            serialNumber: row.getAttribute('data-serial'),
+            machineName: row.getAttribute('data-name'),
+            brand: row.getAttribute('data-brand'),
+            model: row.getAttribute('data-model')
+          };
+          const applyLine = root.querySelector('#chk-machine-apply-line')?.checked;
+          applyMachineSelection(mData, applyLine);
+        });
+      });
+    });
+  }
+
+  // 11. Smart Technician Selector Modal Events
+  root.querySelectorAll('.btn-open-smart-tech-modal').forEach(btn => {
     btn.addEventListener('click', () => {
-      const draftId = btn.getAttribute('data-draft-id');
-      const draft = activeDraftRows.find(d => d.draftId === draftId);
-      if (!draft) return;
-
-      const choice = prompt('Enter Technician Name / Card Number:', draft.technicianName || '');
-      if (choice && choice.trim()) {
-        draft.technicianName = choice.trim();
-        refresh();
-      }
+      selectedTechDraftId = btn.getAttribute('data-draft-id');
+      refresh();
     });
   });
 
-  // 12. Interactive Part Selector for Drafts
-  root.querySelectorAll('.btn-change-draft-part').forEach(btn => {
+  const btnCloseSmartTech = root.querySelector('#btn-close-smart-tech-modal');
+  if (btnCloseSmartTech) {
+    btnCloseSmartTech.addEventListener('click', () => {
+      selectedTechDraftId = null;
+      refresh();
+    });
+  }
+
+  const applyTechSelection = (techData, applyToAll = false) => {
+    const targetDraft = activeDraftRows.find(d => d.draftId === selectedTechDraftId);
+    if (!targetDraft) return;
+
+    const assign = (d) => {
+      d.technicianId = techData.id || '';
+      d.technicianName = techData.name || '';
+      d.technicianCard = techData.cardNumber || techData.card || '—';
+    };
+
+    assign(targetDraft);
+
+    if (applyToAll) {
+      activeDraftRows.forEach(d => {
+        if (!d.technicianName) assign(d);
+      });
+    }
+
+    selectedTechDraftId = null;
+    refresh();
+  };
+
+  root.querySelectorAll('.btn-pick-quick-tech').forEach(btn => {
     btn.addEventListener('click', () => {
-      const draftId = btn.getAttribute('data-draft-id');
-      const draft = activeDraftRows.find(d => d.draftId === draftId);
-      if (!draft) return;
-
-      const parts = partsTraceService.getAllParts();
-      const choice = prompt('Search Parts Master by Code or Name:', draft.partCode || draft.partName || '');
-      if (choice && choice.trim()) {
-        const q = choice.trim().toLowerCase();
-        const found = parts.find(p =>
-          (p.code && p.code.toLowerCase() === q) ||
-          (p.name && p.name.toLowerCase().includes(q)) ||
-          (p.altName && p.altName.toLowerCase().includes(q))
-        );
-        if (found) {
-          draft.partId = found.id;
-          draft.partCode = found.code;
-          draft.partName = found.name;
-          draft.uom = found.unit || draft.uom;
-          draft.partMatchStatus = 'AUTO_MATCHED';
-          if (draft.status === 'ERROR') draft.status = 'AUTO_MATCHED';
-          refresh();
-        } else {
-          alert('No part found with that query in Parts Master.');
-        }
-      }
+      const name = btn.getAttribute('data-name');
+      const card = btn.getAttribute('data-card');
+      const applyAll = root.querySelector('#chk-tech-apply-all-drafts')?.checked;
+      applyTechSelection({ name, card }, applyAll);
     });
   });
+
+  root.querySelectorAll('.btn-pick-smart-tech-row').forEach(row => {
+    row.addEventListener('click', () => {
+      const tData = {
+        id: row.getAttribute('data-id'),
+        name: row.getAttribute('data-name'),
+        cardNumber: row.getAttribute('data-card')
+      };
+      const applyAll = root.querySelector('#chk-tech-apply-all-drafts')?.checked;
+      applyTechSelection(tData, applyAll);
+    });
+  });
+
+  const btnApplyCustomTech = root.querySelector('#btn-apply-custom-tech-name');
+  if (btnApplyCustomTech) {
+    btnApplyCustomTech.addEventListener('click', () => {
+      const name = root.querySelector('#inp-custom-tech-name')?.value.trim();
+      if (!name) return;
+      const applyAll = root.querySelector('#chk-tech-apply-all-drafts')?.checked;
+      applyTechSelection({ name: name, cardNumber: '—' }, applyAll);
+    });
+  }
+
+  const inpSearchTech = root.querySelector('#inp-search-smart-tech');
+  if (inpSearchTech) {
+    inpSearchTech.addEventListener('input', (e) => {
+      const q = e.target.value.toLowerCase().trim();
+      const listContainer = root.querySelector('#smart-tech-results-list');
+      if (!listContainer) return;
+
+      const allEmployees = storage.getTable(TABLE_NAMES.EMPLOYEES) || [];
+      const matches = allEmployees.filter(emp =>
+        (emp.name && emp.name.toLowerCase().includes(q)) ||
+        (emp.cardNumber && String(emp.cardNumber).toLowerCase().includes(q)) ||
+        (emp.designation && emp.designation.toLowerCase().includes(q))
+      ).slice(0, 20);
+
+      listContainer.innerHTML = matches.length === 0 ? `
+        <div style="color: var(--text-muted); font-size: 11px; padding: 10px; text-align: center;">
+          No matching employees found. Enter custom technician name below.
+        </div>
+      ` : matches.map(emp => `
+        <div class="smart-item-row btn-pick-smart-tech-row" data-id="${emp.id}" data-name="${emp.name}" data-card="${emp.cardNumber || '—'}" data-desig="${emp.designation || 'Staff'}">
+          <div>
+            <strong style="color: #fff; font-size: 12px;">${emp.name}</strong>
+            <span style="font-size: 10px; color: #38bdf8; font-family: var(--font-mono); margin-left: 6px;">Card: ${emp.cardNumber || '—'}</span>
+          </div>
+          <span style="font-size: 10px; color: var(--text-muted);">${emp.designation || 'Technician'}</span>
+        </div>
+      `).join('');
+
+      listContainer.querySelectorAll('.btn-pick-smart-tech-row').forEach(row => {
+        row.addEventListener('click', () => {
+          const tData = {
+            id: row.getAttribute('data-id'),
+            name: row.getAttribute('data-name'),
+            cardNumber: row.getAttribute('data-card')
+          };
+          const applyAll = root.querySelector('#chk-tech-apply-all-drafts')?.checked;
+          applyTechSelection(tData, applyAll);
+        });
+      });
+    });
+  }
+
+  // 12. Smart Part Selector Modal Events
+  root.querySelectorAll('.btn-open-smart-part-modal').forEach(btn => {
+    btn.addEventListener('click', () => {
+      selectedPartDraftId = btn.getAttribute('data-draft-id');
+      refresh();
+    });
+  });
+
+  const btnCloseSmartPart = root.querySelector('#btn-close-smart-part-modal');
+  if (btnCloseSmartPart) {
+    btnCloseSmartPart.addEventListener('click', () => {
+      selectedPartDraftId = null;
+      refresh();
+    });
+  }
+
+  const applyPartSelection = (partData) => {
+    const targetDraft = activeDraftRows.find(d => d.draftId === selectedPartDraftId);
+    if (!targetDraft) return;
+
+    targetDraft.partId = partData.id;
+    targetDraft.partCode = partData.code;
+    targetDraft.partName = partData.name;
+    targetDraft.uom = partData.unit || targetDraft.uom;
+    targetDraft.partMatchStatus = 'AUTO_MATCHED';
+    targetDraft.status = 'AUTO_MATCHED';
+
+    selectedPartDraftId = null;
+    refresh();
+  };
+
+  root.querySelectorAll('.btn-pick-smart-part-row').forEach(row => {
+    row.addEventListener('click', () => {
+      applyPartSelection({
+        id: row.getAttribute('data-id'),
+        code: row.getAttribute('data-code'),
+        name: row.getAttribute('data-name'),
+        unit: row.getAttribute('data-unit')
+      });
+    });
+  });
+
+  const inpSearchSmartPart = root.querySelector('#inp-search-smart-part');
+  if (inpSearchSmartPart) {
+    inpSearchSmartPart.addEventListener('input', (e) => {
+      const q = e.target.value.toLowerCase().trim();
+      const listContainer = root.querySelector('#smart-part-results-list');
+      if (!listContainer) return;
+
+      const allParts = partsTraceService.getAllParts();
+      const matches = allParts.filter(p =>
+        (p.code && p.code.toLowerCase().includes(q)) ||
+        (p.name && p.name.toLowerCase().includes(q)) ||
+        (p.altName && p.altName.toLowerCase().includes(q)) ||
+        (p.alias && p.alias.toLowerCase().includes(q)) ||
+        (p.brand && p.brand.toLowerCase().includes(q)) ||
+        (p.model && p.model.toLowerCase().includes(q))
+      ).slice(0, 40);
+
+      listContainer.innerHTML = matches.length === 0 ? `
+        <div style="color: var(--text-muted); font-size: 11px; padding: 10px; text-align: center;">
+          No matching parts found in 5k+ catalog.
+        </div>
+      ` : matches.map(p => `
+        <div class="smart-item-row btn-pick-smart-part-row" data-id="${p.id}" data-code="${p.code}" data-name="${p.name}" data-unit="${p.unit || 'PCS'}">
+          <div>
+            <span style="font-family: var(--font-mono); font-weight: 800; color: #38bdf8; margin-right: 6px;">${p.code}</span>
+            <strong style="color: #fff; font-size: 12px;">${p.name}</strong>
+            ${p.altName ? `<div style="font-size: 10px; color: var(--text-muted);">${p.altName}</div>` : ''}
+          </div>
+          <span style="font-size: 11px; font-weight: 700; color: #34d399;">${p.unit || 'PCS'}</span>
+        </div>
+      `).join('');
+
+      listContainer.querySelectorAll('.btn-pick-smart-part-row').forEach(row => {
+        row.addEventListener('click', () => {
+          applyPartSelection({
+            id: row.getAttribute('data-id'),
+            code: row.getAttribute('data-code'),
+            name: row.getAttribute('data-name'),
+            unit: row.getAttribute('data-unit')
+          });
+        });
+      });
+    });
+  }
 
   // 13. Traceability Details Modal
   root.querySelectorAll('.btn-view-trace-details').forEach(btn => {
@@ -1796,8 +2276,6 @@ export function initPartsTraceEvents() {
       const selPartOpt = selPart?.options[selPart.selectedIndex];
       const selMachine = root.querySelector('#man-sel-machine');
       const selMachineOpt = selMachine?.options[selMachine.selectedIndex];
-      const selEmp = root.querySelector('#man-sel-employee');
-      const selEmpOpt = selEmp?.options[selEmp.selectedIndex];
       const selTech = root.querySelector('#man-sel-technician');
       const selTechOpt = selTech?.options[selTech.selectedIndex];
 
@@ -1814,10 +2292,6 @@ export function initPartsTraceEvents() {
         machineId: selMachine?.value || '',
         machineSerial: selMachineOpt?.getAttribute('data-serial') || '',
         machineName: selMachineOpt?.getAttribute('data-name') || '',
-        requestedById: selEmp?.value || '',
-        requestedByCard: selEmpOpt?.getAttribute('data-card') || '',
-        requestedByName: selEmpOpt?.getAttribute('data-name') || '',
-        requestedByDesignation: selEmpOpt?.getAttribute('data-desig') || '',
         technicianId: selTech?.value || '',
         technicianName: selTechOpt?.getAttribute('data-name') || '',
         remarks: root.querySelector('#man-inp-remarks')?.value || ''
@@ -1899,7 +2373,7 @@ export function initPartsTraceEvents() {
     });
   });
 
-  // 17. Excel Bulk Import Modal & Actions
+  // 17. Excel Bulk Import Modal & Actions (5k+ Support)
   const btnOpenImport = root.querySelector('#btn-open-import-excel-modal');
   if (btnOpenImport) {
     btnOpenImport.addEventListener('click', () => {
@@ -1926,20 +2400,36 @@ export function initPartsTraceEvents() {
         const resBox = root.querySelector('#excel-import-results-box');
         if (resBox) {
           resBox.style.display = 'block';
-          resBox.innerHTML = '<span style="color: #38bdf8;">Reading and importing Excel rows...</span>';
+          resBox.innerHTML = '<span style="color: #38bdf8;">Reading Excel and indexing 5,000+ parts...</span>';
         }
 
         try {
-          const res = await partsTraceService.importPartsFromExcel(file);
+          const res = await partsTraceService.importPartsFromExcel(file, (pct, msg) => {
+            if (resBox) {
+              resBox.innerHTML = `
+                <div style="color: #38bdf8; font-weight: 700; margin-bottom: 4px;">${msg} (${pct}%)</div>
+                <div style="height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden;">
+                  <div style="height: 100%; width: ${pct}%; background: linear-gradient(90deg, #38bdf8, #34d399); transition: width 0.2s ease;"></div>
+                </div>
+              `;
+            }
+          });
+
+          // Auto-rematch active drafts with newly imported parts
+          if (activeDraftRows.length > 0) {
+            activeDraftRows = partsTraceService.rematchDraftRows(activeDraftRows);
+          }
+
           if (resBox) {
             resBox.innerHTML = `
-              <strong style="color: #34d399; display: block; margin-bottom: 4px;">✓ Import Completed!</strong>
-              <div>Total Rows: <strong>${res.totalRows}</strong></div>
-              <div>Imported: <strong style="color: #34d399;">${res.imported}</strong> &bull; Updated: <strong style="color: #38bdf8;">${res.updated}</strong></div>
-              ${res.skipped > 0 ? `<div style="color: #f87171;">Skipped / Errors: <strong>${res.skipped}</strong></div>` : ''}
+              <strong style="color: #34d399; display: block; margin-bottom: 4px; font-size: 12.5px;">✓ Import Completed!</strong>
+              <div>Total Rows: <strong>${res.totalRows.toLocaleString()}</strong></div>
+              <div>New Parts Added: <strong style="color: #34d399;">${res.imported.toLocaleString()}</strong> &bull; Updated: <strong style="color: #38bdf8;">${res.updated.toLocaleString()}</strong></div>
+              ${res.skipped > 0 ? `<div style="color: #f87171;">Skipped / Empty: <strong>${res.skipped}</strong></div>` : ''}
+              <div style="color: #38bdf8; font-size: 11px; margin-top: 4px;">⚡ All review drafts automatically re-matched!</div>
             `;
           }
-          notificationService.notifySuccess('Excel Imported', `Successfully processed ${res.totalRows} parts from Excel.`);
+          notificationService.notifySuccess('Excel Imported', `Successfully processed ${res.totalRows.toLocaleString()} parts from Excel.`);
         } catch (err) {
           if (resBox) resBox.innerHTML = `<span style="color: #f87171;">Error: ${err.message}</span>`;
         }
@@ -1962,11 +2452,31 @@ export function initPartsTraceEvents() {
     });
   }
 
-  // 19. Search & Filter Inputs
+  // 19. Parts Master Pagination Controls
+  const btnPrevPage = root.querySelector('#btn-master-prev-page');
+  if (btnPrevPage) {
+    btnPrevPage.addEventListener('click', () => {
+      if (masterCurrentPage > 1) {
+        masterCurrentPage--;
+        refresh();
+      }
+    });
+  }
+
+  const btnNextPage = root.querySelector('#btn-master-next-page');
+  if (btnNextPage) {
+    btnNextPage.addEventListener('click', () => {
+      masterCurrentPage++;
+      refresh();
+    });
+  }
+
+  // 20. Search & Filter Inputs
   const inpMasterSearch = root.querySelector('#inp-master-parts-search');
   if (inpMasterSearch) {
     inpMasterSearch.addEventListener('input', (e) => {
       masterSearch = e.target.value;
+      masterCurrentPage = 1;
       refresh();
     });
   }
@@ -1975,6 +2485,7 @@ export function initPartsTraceEvents() {
   if (selMasterCat) {
     selMasterCat.addEventListener('change', (e) => {
       masterCategory = e.target.value;
+      masterCurrentPage = 1;
       refresh();
     });
   }
