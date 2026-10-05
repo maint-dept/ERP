@@ -882,46 +882,46 @@ function renderMachineReportsTab(allMachines) {
   return `
     <div style="display: flex; flex-direction: column; gap: 14px;">
       
-      <!-- 1. Sleek Filter Toolbar (Structured, High-Readability Bar) -->
-      <div class="reports-filter-toolbar" style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; box-shadow: var(--shadow-sm);">
+      <!-- 1. Sleek Filter Toolbar (Structured, High-Readability 2-Tier Bar) -->
+      <div class="reports-filter-toolbar" style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 12px 16px; display: flex; flex-direction: column; gap: 10px; box-shadow: var(--shadow-sm);">
         
-        <!-- Left: Filters Grouped with Clear Mini-Labels -->
-        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; flex: 1 1 600px;">
-          <span style="font-size: 12px; font-weight: 800; color: #38bdf8; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 5px; white-space: nowrap; margin-right: 2px;">
+        <!-- Top Row: Location & Status Dropdowns -->
+        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; width: 100%;">
+          <span style="font-size: 12px; font-weight: 800; color: #38bdf8; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 5px; white-space: nowrap;">
             <span>📍</span> Filters:
           </span>
 
           <!-- Group Filter -->
-          <div style="display: inline-flex; align-items: center; gap: 6px; background: rgba(15, 23, 42, 0.85); border: 1px solid var(--border-color); border-radius: 6px; padding: 3px 8px; flex: 1 1 120px;">
-            <span style="font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase;">Group</span>
-            <select id="mr-filter-group" style="height: 28px; font-size: 12px; font-weight: 600; color: #fff; background: transparent; border: none; outline: none; cursor: pointer; width: 100%;">
+          <div style="flex: 1 1 160px; min-width: 150px; background: rgba(15, 23, 42, 0.85); border: 1px solid var(--border-color); border-radius: 6px; padding: 2px 8px; display: flex; align-items: center; gap: 6px;">
+            <span style="font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase; white-space: nowrap;">Group</span>
+            <select id="mr-filter-group" style="height: 32px; font-size: 12.5px; font-weight: 600; color: #fff; background: transparent; border: none; outline: none; cursor: pointer; width: 100%; min-width: 90px;">
               <option value="" style="background: #0f172a; color: #fff;">All Groups (${groups.length})</option>
               ${groups.map(g => `<option value="${g.id}" ${machineReportFilterState.groupId === g.id ? 'selected' : ''} style="background: #0f172a; color: #fff;">${g.name}</option>`).join('')}
             </select>
           </div>
 
           <!-- Unit / Factory Filter -->
-          <div style="display: inline-flex; align-items: center; gap: 6px; background: rgba(15, 23, 42, 0.85); border: 1px solid var(--border-color); border-radius: 6px; padding: 3px 8px; flex: 1 1 130px;">
-            <span style="font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase;">Unit</span>
-            <select id="mr-filter-unit" style="height: 28px; font-size: 12px; font-weight: 600; color: #fff; background: transparent; border: none; outline: none; cursor: pointer; width: 100%;">
+          <div style="flex: 1 1 170px; min-width: 155px; background: rgba(15, 23, 42, 0.85); border: 1px solid var(--border-color); border-radius: 6px; padding: 2px 8px; display: flex; align-items: center; gap: 6px;">
+            <span style="font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase; white-space: nowrap;">Unit</span>
+            <select id="mr-filter-unit" style="height: 32px; font-size: 12.5px; font-weight: 600; color: #fff; background: transparent; border: none; outline: none; cursor: pointer; width: 100%; min-width: 100px;">
               <option value="" style="background: #0f172a; color: #fff;">All Units (${availUnits.length})</option>
               ${availUnits.map(u => `<option value="${u.id}" ${machineReportFilterState.unitId === u.id ? 'selected' : ''} style="background: #0f172a; color: #fff;">${u.name}</option>`).join('')}
             </select>
           </div>
 
           <!-- Floor Filter -->
-          <div style="display: inline-flex; align-items: center; gap: 6px; background: rgba(15, 23, 42, 0.85); border: 1px solid var(--border-color); border-radius: 6px; padding: 3px 8px; flex: 1 1 125px;">
-            <span style="font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase;">Floor</span>
-            <select id="mr-filter-floor" style="height: 28px; font-size: 12px; font-weight: 600; color: #fff; background: transparent; border: none; outline: none; cursor: pointer; width: 100%;">
+          <div style="flex: 1 1 170px; min-width: 155px; background: rgba(15, 23, 42, 0.85); border: 1px solid var(--border-color); border-radius: 6px; padding: 2px 8px; display: flex; align-items: center; gap: 6px;">
+            <span style="font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase; white-space: nowrap;">Floor</span>
+            <select id="mr-filter-floor" style="height: 32px; font-size: 12.5px; font-weight: 600; color: #fff; background: transparent; border: none; outline: none; cursor: pointer; width: 100%; min-width: 100px;">
               <option value="" style="background: #0f172a; color: #fff;">All Floors (${availFloors.length})</option>
               ${availFloors.map(f => `<option value="${f.id}" ${machineReportFilterState.floorId === f.id ? 'selected' : ''} style="background: #0f172a; color: #fff;">${f.name}</option>`).join('')}
             </select>
           </div>
 
           <!-- Line Filter -->
-          <div style="display: inline-flex; align-items: center; gap: 6px; background: rgba(15, 23, 42, 0.85); border: 1px solid var(--border-color); border-radius: 6px; padding: 3px 8px; flex: 1 1 125px;">
-            <span style="font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase;">Line</span>
-            <select id="mr-filter-line" style="height: 28px; font-size: 12px; font-weight: 600; color: #fff; background: transparent; border: none; outline: none; cursor: pointer; width: 100%;">
+          <div style="flex: 1 1 170px; min-width: 155px; background: rgba(15, 23, 42, 0.85); border: 1px solid var(--border-color); border-radius: 6px; padding: 2px 8px; display: flex; align-items: center; gap: 6px;">
+            <span style="font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase; white-space: nowrap;">Line</span>
+            <select id="mr-filter-line" style="height: 32px; font-size: 12.5px; font-weight: 600; color: #fff; background: transparent; border: none; outline: none; cursor: pointer; width: 100%; min-width: 100px;">
               <option value="" style="background: #0f172a; color: #fff;">All Lines (${availLines.length})</option>
               ${availLines.map(l => {
                 const clean = formatDisplayLine(l.name);
@@ -932,9 +932,9 @@ function renderMachineReportsTab(allMachines) {
           </div>
 
           <!-- Status Filter -->
-          <div style="display: inline-flex; align-items: center; gap: 6px; background: rgba(15, 23, 42, 0.85); border: 1px solid var(--border-color); border-radius: 6px; padding: 3px 8px; flex: 1 1 120px;">
-            <span style="font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase;">Status</span>
-            <select id="mr-filter-status" style="height: 28px; font-size: 12px; font-weight: 600; color: #fff; background: transparent; border: none; outline: none; cursor: pointer; width: 100%;">
+          <div style="flex: 1 1 150px; min-width: 140px; background: rgba(15, 23, 42, 0.85); border: 1px solid var(--border-color); border-radius: 6px; padding: 2px 8px; display: flex; align-items: center; gap: 6px;">
+            <span style="font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase; white-space: nowrap;">Status</span>
+            <select id="mr-filter-status" style="height: 32px; font-size: 12.5px; font-weight: 600; color: #fff; background: transparent; border: none; outline: none; cursor: pointer; width: 100%; min-width: 90px;">
               <option value="ALL" ${machineReportFilterState.status === 'ALL' ? 'selected' : ''} style="background: #0f172a; color: #fff;">All Status</option>
               <option value="ACTIVE" ${machineReportFilterState.status === 'ACTIVE' ? 'selected' : ''} style="background: #0f172a; color: #fff;">🟢 Active</option>
               <option value="IDLE" ${machineReportFilterState.status === 'IDLE' ? 'selected' : ''} style="background: #0f172a; color: #fff;">🔵 Idle</option>
@@ -943,20 +943,31 @@ function renderMachineReportsTab(allMachines) {
             </select>
           </div>
 
-          <!-- Reset Filter Button -->
-          <button id="mr-btn-reset-filters" class="btn btn-ghost btn-sm" style="height: 34px; padding: 0 12px; font-size: 11.5px; font-weight: 700; color: #94a3b8; border: 1px solid var(--border-color); border-radius: 6px; white-space: nowrap;" title="Reset all location and status filters">
-            ↺ Reset
-          </button>
         </div>
 
-        <!-- Right: Export & Print Actions -->
-        <div class="reports-filter-actions" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-          <button id="btn-export-machine-report-excel" class="btn btn-primary btn-sm" style="font-weight: 700; background: linear-gradient(135deg, #0284c7, #0369a1); box-shadow: 0 2px 8px rgba(2, 132, 199, 0.35); height: 34px; padding: 0 14px; white-space: nowrap; border-radius: 6px;">
-            📊 Export Excel (.xlsx)
-          </button>
-          <button id="btn-print-machine-report-pdf" class="btn btn-secondary btn-sm" style="font-weight: 700; height: 34px; padding: 0 12px; white-space: nowrap; border-radius: 6px;">
-            🖨️ Print / PDF
-          </button>
+        <!-- Bottom Row: Filter Reset & Export Action Tools -->
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; padding-top: 6px; border-top: 1px solid rgba(255,255,255,0.06);">
+          
+          <!-- Left: Active Filter Summary & Reset -->
+          <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+            <button id="mr-btn-reset-filters" class="btn btn-ghost btn-sm" style="height: 32px; padding: 0 14px; font-size: 12px; font-weight: 700; color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); background: rgba(2, 132, 199, 0.1); border-radius: 6px; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px;" title="Reset all location and status filters">
+              <span>↺</span> Reset Filters
+            </button>
+            <span style="font-size: 11.5px; color: #94a3b8;">
+              Showing breakdown for: <strong style="color: #fff;">${locationBadgeTitle}</strong>
+            </span>
+          </div>
+
+          <!-- Right: Export & Print Actions -->
+          <div class="reports-filter-actions" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+            <button id="btn-export-machine-report-excel" class="btn btn-primary btn-sm" style="font-weight: 800; background: linear-gradient(135deg, #0284c7, #0369a1); box-shadow: 0 2px 10px rgba(2, 132, 199, 0.4); height: 34px; padding: 0 16px; white-space: nowrap; border-radius: 6px; font-size: 12.5px; display: inline-flex; align-items: center; gap: 6px;">
+              <span>📊</span> Export Excel (.xlsx)
+            </button>
+            <button id="btn-print-machine-report-pdf" class="btn btn-secondary btn-sm" style="font-weight: 700; height: 34px; padding: 0 14px; white-space: nowrap; border-radius: 6px; font-size: 12.5px; display: inline-flex; align-items: center; gap: 6px;">
+              <span>🖨️</span> Print / PDF
+            </button>
+          </div>
+
         </div>
 
       </div>

@@ -549,10 +549,10 @@ export function renderInventoryTable() {
             <input 
               type="text" 
               id="filter-search-input" 
-              class="filter-search-input" 
+              class="filter-search-input has-icon-left" 
               placeholder="Search machine, serial, brand..." 
               value="${filters.search || ''}"
-              style="height: 34px; font-size: 12.5px; padding-left: 36px !important; padding-right: ${filters.search ? '64px' : '36px'} !important;"
+              style="height: 34px; font-size: 12.5px; padding-left: 44px !important; padding-right: ${filters.search ? '64px' : '36px'} !important;"
             />
             <div class="filter-search-actions" style="right: 6px;">
               <button id="btn-inventory-scan-qr" type="button" class="filter-search-btn qr-btn" style="height: 24px; width: 26px; font-size: 13px;" title="Scan Machine QR Code / Barcode with Camera">📷</button>

@@ -267,10 +267,10 @@ export function renderPreventiveMaintenanceView() {
             <input 
               type="text" 
               id="pm-universal-search-input" 
-              class="filter-search-input" 
+              class="filter-search-input has-icon-left" 
               placeholder="Search machine, serial, sticker, floor, line..." 
               value="${escapeHtml(searchQuery)}"
-              style="height: 34px; font-size: 12.5px; padding-left: 36px !important; padding-right: ${searchQuery ? '36px' : '12px'} !important;"
+              style="height: 34px; font-size: 12.5px; padding-left: 44px !important; padding-right: ${searchQuery ? '36px' : '12px'} !important;"
             />
             <div class="filter-search-actions" style="right: 6px;">
               ${searchQuery ? `
