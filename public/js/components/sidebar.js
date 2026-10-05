@@ -42,7 +42,7 @@ export function renderSidebar() {
   const activeManpowerTab = state.get('manpowerActiveTab') || 'active';
 
   // Auto expand parent group of current view
-  if (['inventory', 'machine-history', 'transfers', 'preventive-maintenance', 'relocate', 'qr-codes'].includes(currentView)) {
+  if (['inventory', 'machine-history', 'transfers', 'preventive-maintenance', 'relocate', 'qr-codes', 'parts-trace'].includes(currentView)) {
     expandedGroups.add('group-machines');
   } else if (currentView === 'reports') {
     expandedGroups.add('group-reports');
@@ -136,6 +136,7 @@ export function renderSidebar() {
     { id: 'sub-mach-relocate', targetView: 'relocate', label: 'Relocate & Verify', icon: '📍', moduleKey: 'relocate' },
     { id: 'sub-mach-qr-codes', targetView: 'qr-codes', label: 'QR Codes & Labels', icon: '🏷️', moduleKey: 'qr_codes' },
     { id: 'sub-mach-transfers', targetView: 'transfers', label: 'Machine Transfers', icon: '🔄', moduleKey: 'transfers' },
+    { id: 'sub-mach-parts-trace', targetView: 'parts-trace', label: 'Parts Trace', icon: '🔩', moduleKey: 'parts_trace' },
     { id: 'sub-mach-history', targetView: 'machine-history', label: 'Machine Lifetime (Passport)', icon: '📜', moduleKey: 'machine_history' },
     { id: 'sub-mach-preventive', targetView: 'preventive-maintenance', label: 'Preventive Maintenance', icon: '🛡️', moduleKey: 'preventive_maintenance' }
   ].filter(it => authService.isModuleAllowed(it.moduleKey));

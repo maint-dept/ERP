@@ -45,6 +45,7 @@ import { renderPreventiveMaintenanceView, initPreventiveMaintenanceEvents } from
 import { smartStorageService } from './services/smartStorageService.js?v=4.22.35';
 import { renderRelocateView, initRelocateViewEvents } from './components/relocateView.js?v=4.22.35';
 import { renderQrCodeView, initQrCodeEvents } from './components/qrCodeView.js?v=4.22.35';
+import { renderPartsTraceView, initPartsTraceEvents } from './components/partsTraceView.js?v=4.22.35';
 import { chatService } from './services/chatService.js';
 import { historyService } from './services/historyService.js';
 import { auditService } from './services/auditService.js';
@@ -290,6 +291,10 @@ class ERPApplication {
     });
 
     window.addEventListener('erp:spare-parts-updated', () => {
+      this.queueBackgroundRender();
+    });
+
+    window.addEventListener('erp:parts-trace-updated', () => {
       this.queueBackgroundRender();
     });
 
@@ -637,6 +642,7 @@ class ERPApplication {
         'relocate': 'relocate',
         'qr-codes': 'machines',
         'transfers': 'transfers',
+        'parts-trace': 'parts_trace',
         'machine-history': 'machine_history',
         'preventive-maintenance': 'preventive_maintenance',
         'reports': 'reports',
@@ -693,6 +699,8 @@ class ERPApplication {
           return renderQrCodeView();
         case 'transfers':
           return renderTransfersView();
+        case 'parts-trace':
+          return renderPartsTraceView();
         case 'machine-history':
           return renderMachineHistoryView();
         case 'preventive-maintenance':
@@ -803,6 +811,9 @@ class ERPApplication {
         break;
       case 'transfers':
         initTransfersViewEvents();
+        break;
+      case 'parts-trace':
+        initPartsTraceEvents();
         break;
       case 'machine-history':
         initMachineHistoryEvents();

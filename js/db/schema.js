@@ -52,6 +52,8 @@ export const TABLE_NAMES = {
   RELOCATE_SESSIONS: 'relocate_sessions',
   RELOCATION_HISTORY: 'relocation_history',
   RELOCATION_APPROVALS: 'relocation_approvals',
+  PARTS_TRACE_ISSUES: 'parts_trace_issues',
+  PARTS_TRACE_PDFS: 'parts_trace_pdfs',
   PERMISSION_PRESETS: 'permission_presets'
 };
 
@@ -137,6 +139,21 @@ export const PERMISSION_MODULES = [
       { code: 'EDIT_REPLACEMENT', label: 'Edit Replacement Entry', desc: 'Modify fitted parts records' },
       { code: 'DELETE_REPLACEMENT', label: 'Delete Replacement Entry', desc: 'Remove replacement records' },
       { code: 'VIEW_HISTORY', label: 'View Spare Parts History', desc: 'Review parts usage history' }
+    ]
+  },
+  {
+    id: 'parts_trace',
+    name: 'Parts Trace & ERP Issue Processing',
+    icon: '🔩',
+    description: 'Spare parts daily ERP PDF extraction, auto-matching, machine linking, manpower assignment, and traceability history',
+    actions: [
+      { code: 'VIEW', label: 'View Parts Trace', desc: 'Browse parts issues and traceability dashboard' },
+      { code: 'UPLOAD_PDF', label: 'Upload ERP PDF', desc: 'Upload and process daily spare parts issue PDFs' },
+      { code: 'EDIT_DRAFT', label: 'Edit Drafts', desc: 'Review, modify, and auto-match extracted draft rows' },
+      { code: 'CONFIRM', label: 'Confirm Transactions', desc: 'Save and commit spare parts issues to inventory' },
+      { code: 'MANAGE_MASTER', label: 'Manage Parts Master', desc: 'Add/edit parts catalog and aliases' },
+      { code: 'IMPORT_EXCEL', label: 'Import Excel', desc: 'Bulk import spare parts catalog from Excel' },
+      { code: 'EXPORT', label: 'Export Reports', desc: 'Download Excel and PDF traceability reports' }
     ]
   },
   {
