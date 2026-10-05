@@ -6,6 +6,7 @@
 import { storage } from '../db/storage.js';
 import { CloudSaveError } from '../db/storage.js';
 import { TABLE_NAMES } from '../db/schema.js';
+import { INITIAL_DATA } from '../db/initialData.js';
 import { authService } from './authService.js';
 import { masterDataService } from './masterDataService.js';
 import { approvalService } from './approvalService.js';
@@ -285,15 +286,35 @@ class MachineService {
     const m = this.getMachineById(id);
     if (!m) return null;
 
+    const grp = storage.getItem(TABLE_NAMES.GROUPS, m.groupId) || (INITIAL_DATA.groups || []).find(x => x.id === m.groupId) || { id: m.groupId, name: m.group || m.groupName || '' };
+    const unt = storage.getItem(TABLE_NAMES.UNITS, m.unitId) || (INITIAL_DATA.units || []).find(x => x.id === m.unitId) || { id: m.unitId, name: m.unit || m.unitName || '' };
+    const flr = storage.getItem(TABLE_NAMES.FLOORS, m.floorId) || (INITIAL_DATA.floors || []).find(x => x.id === m.floorId) || { id: m.floorId, name: m.floor || m.floorName || '' };
+    const lin = storage.getItem(TABLE_NAMES.LINES, m.lineId) || (INITIAL_DATA.lines || []).find(x => x.id === m.lineId) || { id: m.lineId, name: m.line || m.lineName || '' };
+
+    const mnObj = storage.getItem(TABLE_NAMES.MACHINE_NAMES, m.machineNameId) || 
+                  (INITIAL_DATA.machine_names || []).find(x => x.id === m.machineNameId) || 
+                  { id: m.machineNameId, name: m.machineName || m.name || (m.brand ? m.brand + ' Machine' : 'Plane Machine') };
+
+    const brdObj = storage.getItem(TABLE_NAMES.BRANDS, m.brandId) || 
+                   (INITIAL_DATA.brands || []).find(x => x.id === m.brandId) || 
+                   { id: m.brandId, name: m.brand || 'Juki' };
+
+    const mdlObj = storage.getItem(TABLE_NAMES.MODELS, m.modelId) || 
+                   (INITIAL_DATA.models || []).find(x => x.id === m.modelId) || 
+                   { id: m.modelId, name: m.model || m.modelName || 'Standard' };
+
     return {
       ...m,
-      group: storage.getItem(TABLE_NAMES.GROUPS, m.groupId),
-      unit: storage.getItem(TABLE_NAMES.UNITS, m.unitId),
-      floor: storage.getItem(TABLE_NAMES.FLOORS, m.floorId),
-      line: storage.getItem(TABLE_NAMES.LINES, m.lineId),
-      machineName: storage.getItem(TABLE_NAMES.MACHINE_NAMES, m.machineNameId),
-      brand: storage.getItem(TABLE_NAMES.BRANDS, m.brandId),
-      model: storage.getItem(TABLE_NAMES.MODELS, m.modelId)
+      group: grp,
+      unit: unt,
+      floor: flr,
+      line: lin,
+      machineName: mnObj,
+      brand: brdObj,
+      model: mdlObj,
+      machineNameStr: mnObj.name || (typeof m.machineName === 'string' ? m.machineName : 'Plane Machine'),
+      brandStr: brdObj.name || m.brand || 'Juki',
+      modelStr: mdlObj.name || m.model || m.modelName || 'Standard'
     };
   }
 

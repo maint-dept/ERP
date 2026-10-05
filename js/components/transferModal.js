@@ -123,7 +123,7 @@ export function renderTransferModal() {
                 <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px;">
                   <div>
                     <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-                      <span style="font-size: 16px; font-weight: 800; color: #ffffff;">${machine.machineName?.name || (typeof machine.machineName === 'string' ? machine.machineName : 'Sewing Machine')}</span>
+                      <span style="font-size: 16px; font-weight: 800; color: #ffffff;">${machine.machineName?.name || machine.machineNameStr || (typeof machine.machineName === 'string' ? machine.machineName : 'Plane Machine')}</span>
                       <span class="badge" style="background: rgba(2, 132, 199, 0.4); color: #7dd3fc; font-family: var(--font-mono); font-weight: 800; font-size: 13px; border: 1.5px solid #38bdf8; padding: 2px 8px;">
                         ${machine.serialNumber}
                       </span>
@@ -131,9 +131,10 @@ export function renderTransferModal() {
                         ${machine.status}
                       </span>
                     </div>
-                    <div style="font-size: 13px; color: #f1f5f9; margin-top: 6px;">
-                      <strong style="color: #cbd5e1;">Brand &amp; Model:</strong> <span style="color: #ffffff; font-weight: 700;">${machine.brand?.name || machine.brand || '—'} &bull; ${machine.model?.name || machine.model || '—'}</span> | 
-                      <strong style="color: #cbd5e1;">Type:</strong> <span style="color: #ffffff; font-weight: 700;">${machine.machineName?.categoryName || machine.category || 'Standard Machine'}</span>
+                    <div style="font-size: 13px; color: #f1f5f9; margin-top: 6px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                      <span><strong style="color: #cbd5e1;">Brand:</strong> <span style="color: #38bdf8; font-weight: 800;">${machine.brand?.name || machine.brandStr || machine.brand || 'Juki'}</span></span>
+                      <span style="color: #64748b;">&bull;</span>
+                      <span><strong style="color: #cbd5e1;">Model:</strong> <span style="color: #ffffff; font-weight: 800; font-family: var(--font-mono);">${machine.model?.name || machine.modelStr || machine.model || 'Standard'}</span></span>
                     </div>
                   </div>
 
