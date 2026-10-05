@@ -111,6 +111,7 @@ let databaseSearch = '';
 let databaseDirectImportType = 'ALLOCATIONS'; // 'ALLOCATIONS' | 'TOOLS' | 'ACCESSORIES'
 let databaseDirectParsedRows = [];
 let databaseDirectFileName = '';
+let dbShowImportDrawer = false;
 let findSelectedIds = new Set();
 let dbSelectedIds = new Set();
 let masterSelectedIds = new Set();
@@ -265,7 +266,7 @@ export function renderToolsManagementView() {
   const currentTabTheme = TOOLS_TAB_CONFIG[activeTab] || TOOLS_TAB_CONFIG['tools-add'];
 
   return `
-    <div class="page-view tools-management-view" id="tools-mgmt-root" style="padding: 0 20px 20px 20px; display: flex; flex-direction: column; gap: 16px; min-height: 100%;">
+    <div class="page-view tools-management-view" id="tools-mgmt-root" style="padding: 0 14px 14px 14px; display: flex; flex-direction: column; gap: 8px; min-height: 100%;">
       
       <style>
         .tools-tab-btn {
@@ -284,7 +285,7 @@ export function renderToolsManagementView() {
         }
         .tools-tab-btn.active {
           font-weight: 800 !important;
-          transform: translateY(-1px) scale(1.03) !important;
+          transform: translateY(-1px) scale(1.02) !important;
           z-index: 2 !important;
         }
         .tools-tab-btn.active::after {
@@ -301,30 +302,30 @@ export function renderToolsManagementView() {
       </style>
 
       <!-- TOP NAVIGATION BAR (STICKY HEADER - PERMANENTLY PINNED AT TOP) -->
-      <div class="tools-tab-navbar-wrapper" style="position: sticky; top: 0; z-index: 1000; background: #090d16; padding-top: 14px; padding-bottom: 12px; margin-left: -20px; margin-right: -20px; padding-left: 20px; padding-right: 20px; border-bottom: 1.5px solid rgba(56, 189, 248, 0.25); box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.75);">
-        <div class="tools-tab-navbar" style="display: flex; gap: 8px; flex-wrap: wrap; background: #1e293b; padding: 8px 12px; border-radius: 8px; border: 1px solid #334155; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.3); align-items: center;">
+      <div class="tools-tab-navbar-wrapper" style="position: sticky; top: 0; z-index: 1000; background: #090d16; padding-top: 6px; padding-bottom: 6px; margin-left: -14px; margin-right: -14px; padding-left: 14px; padding-right: 14px; border-bottom: 1.5px solid rgba(56, 189, 248, 0.25); box-shadow: 0 6px 18px -4px rgba(0, 0, 0, 0.75);">
+        <div class="tools-tab-navbar" style="display: flex; gap: 6px; flex-wrap: wrap; background: #1e293b; padding: 5px 10px; border-radius: 6px; border: 1px solid #334155; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.3); align-items: center;">
           ${Object.entries(TOOLS_TAB_CONFIG).map(([tabKey, cfg]) => {
     const isAct = activeTab === tabKey;
     return `
-              <button class="tools-tab-btn ${isAct ? 'active' : ''}" data-tab="${tabKey}" style="padding: 8px 18px; border-radius: 6px; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 6px; ${isAct ? `background: ${cfg.bgColor}; color: ${cfg.textColor}; font-weight: 800; border: 1.5px solid ${cfg.borderColor}; box-shadow: 0 0 16px ${cfg.glowColor}, 0 4px 8px rgba(0,0,0,0.5); transform: translateY(-1px) scale(1.03); opacity: 1;` : `background: #334155; color: #cbd5e1; font-weight: 600; border: 1px solid #475569; box-shadow: none; transform: translateY(0) scale(1); opacity: 0.9;`}">
+              <button class="tools-tab-btn ${isAct ? 'active' : ''}" data-tab="${tabKey}" style="padding: 5px 14px; border-radius: 5px; font-size: 12.5px; cursor: pointer; display: flex; align-items: center; gap: 5px; ${isAct ? `background: ${cfg.bgColor}; color: ${cfg.textColor}; font-weight: 800; border: 1.5px solid ${cfg.borderColor}; box-shadow: 0 0 14px ${cfg.glowColor}, 0 3px 6px rgba(0,0,0,0.4); transform: translateY(-1px) scale(1.02); opacity: 1;` : `background: #334155; color: #cbd5e1; font-weight: 600; border: 1px solid #475569; box-shadow: none; transform: translateY(0) scale(1); opacity: 0.9;`}">
                 <span>${cfg.icon}</span> ${cfg.name}
               </button>
             `;
   }).join('')}
 
           <!-- MANUAL MANPOWER SYNC BUTTON -->
-          <button id="btn-sync-manpower-top" style="padding: 7px 14px; border-radius: 6px; font-weight: 800; font-size: 12.5px; cursor: pointer; border: 1.5px solid #0284c7; display: flex; align-items: center; gap: 6px; background: linear-gradient(135deg, #0284c7, #0369a1); color: #ffffff; box-shadow: 0 2px 4px rgba(2,132,199,0.3); margin-left: 4px;" title="Manually sync all tool registrations with latest Manpower data (promotions, floor changes, card numbers)">
+          <button id="btn-sync-manpower-top" style="padding: 5px 11px; border-radius: 5px; font-weight: 800; font-size: 12px; cursor: pointer; border: 1.5px solid #0284c7; display: flex; align-items: center; gap: 5px; background: linear-gradient(135deg, #0284c7, #0369a1); color: #ffffff; box-shadow: 0 2px 4px rgba(2,132,199,0.3); margin-left: 2px;" title="Manually sync all tool registrations with latest Manpower data">
             <span class="sync-icon">🔄</span> Sync Manpower
           </button>
 
-          <div style="margin-left: auto; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-            <div id="tools-current-screen-badge" style="display: flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 6px; font-size: 12px; font-weight: 800; background: ${currentTabTheme.bgColor}22; border: 1.5px solid ${currentTabTheme.borderColor}; color: ${currentTabTheme.bgColor}; box-shadow: 0 0 12px ${currentTabTheme.glowColor}; transition: all 0.25s ease;">
+          <div style="margin-left: auto; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <div id="tools-current-screen-badge" style="display: flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 5px; font-size: 11.5px; font-weight: 800; background: ${currentTabTheme.bgColor}22; border: 1.5px solid ${currentTabTheme.borderColor}; color: ${currentTabTheme.bgColor}; box-shadow: 0 0 10px ${currentTabTheme.glowColor}; transition: all 0.25s ease;">
               <span style="color: #94a3b8; font-weight: 600;">Current:</span>
               <span id="tools-current-tab-label">${currentTabTheme.icon} ${currentTabTheme.name}</span>
             </div>
-            <div style="display: flex; align-items: center; gap: 6px;">
-              <span style="font-size: 12px; color: #94a3b8;">Active Reg:</span>
-              <span id="tools-current-reg-badge" style="font-family: monospace; font-weight: 800; color: #f59e0b; background: #0f172a; padding: 4px 10px; border-radius: 4px; border: 1px solid #475569;">#${currentRegNo}</span>
+            <div style="display: flex; align-items: center; gap: 5px;">
+              <span style="font-size: 11.5px; color: #94a3b8;">Active Reg:</span>
+              <span id="tools-current-reg-badge" style="font-family: monospace; font-weight: 800; color: #f59e0b; background: #0f172a; padding: 3px 8px; border-radius: 4px; border: 1px solid #475569; font-size: 12px;">#${currentRegNo}</span>
             </div>
           </div>
         </div>
@@ -1611,132 +1612,118 @@ function renderScreen4FindAndSelect() {
   const returnedCount = allocations.filter(a => a.changeStatus === 'RETURNED' || a.changeStatus === 'LOST').length;
 
   return `
-    <div class="screen-find-select" style="display: flex; flex-direction: column; gap: 14px;">
+    <div class="screen-find-select" style="display: flex; flex-direction: column; gap: 8px;">
       
-      <!-- Top Title -->
-      <div style="background: linear-gradient(90deg, #7c3aed, #a855f7); color: #fff; padding: 8px 14px; border-radius: 6px; font-weight: 800; font-size: 15px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
-        <span>Find &amp; Select — Historical Tracking &amp; Replacement Audit</span>
-        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-          <button id="btn-open-user-history-find" style="background: #0284c7; color: #fff; border: 1px solid #0369a1; padding: 4px 14px; border-radius: 4px; font-size: 12px; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);" title="View Mechanic Tool Change Frequencies and Audit History">
-            <span>📜</span> Tool Change History &amp; Frequency Logs
+      <!-- Top Action Bar -->
+      <div style="background: linear-gradient(90deg, #7c3aed, #a855f7); color: #fff; padding: 5px 12px; border-radius: 6px; font-weight: 800; font-size: 13.5px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span>🔍 Find &amp; Select — Historical Tracking &amp; Replacement Audit</span>
+        </div>
+        <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+          <button id="btn-open-user-history-find" style="background: #0284c7; color: #fff; border: 1px solid #0369a1; padding: 3px 10px; border-radius: 4px; font-size: 11.5px; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 5px;" title="View Mechanic Tool Change Frequencies and Audit History">
+            <span>📜</span> Tool Change History
           </button>
-          <button id="btn-open-excel-import-find" style="background: #16a34a; color: #fff; border: 1px solid #15803d; padding: 4px 14px; border-radius: 4px; font-size: 12px; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);" title="Import previous tool allocations or master catalog from Excel">
-            <span>📥</span> Import Previous Excel Data
+          <button id="btn-open-excel-import-find" style="background: #16a34a; color: #fff; border: 1px solid #15803d; padding: 3px 10px; border-radius: 4px; font-size: 11.5px; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 5px;" title="Import previous tool allocations or master catalog from Excel">
+            <span>📥</span> Import Excel
           </button>
-          <button id="btn-export-find-excel" style="background: #0f172a; color: #fff; border: 1px solid #334155; padding: 4px 12px; border-radius: 4px; font-size: 12px; font-weight: 700; cursor: pointer;">
-            📤 Export Filtered Excel (.xlsx)
+          <button id="btn-export-find-excel" style="background: #0f172a; color: #fff; border: 1px solid #334155; padding: 3px 10px; border-radius: 4px; font-size: 11.5px; font-weight: 700; cursor: pointer;">
+            📤 Export (.xlsx)
           </button>
         </div>
       </div>
 
-      <!-- KPI Summary Cards -->
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px;">
-        <div style="background: #1e293b; border-left: 4px solid #38bdf8; border-radius: 6px; padding: 12px 14px;">
-          <div style="font-size: 11px; color: #94a3b8; font-weight: 700; text-transform: uppercase;">Total Items Assigned</div>
-          <div style="font-size: 24px; font-weight: 900; color: #f1f5f9; margin-top: 2px;">${totalAllocations}</div>
+      <!-- Compact Stat Pill Strip -->
+      <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
+        <div style="display: flex; align-items: center; gap: 6px; background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.25); padding: 4px 10px; border-radius: 5px; font-size: 11.5px;">
+          <span style="color: #94a3b8; font-weight: 600;">Total Assigned:</span>
+          <span style="font-weight: 900; color: #38bdf8; font-size: 13px; font-family: monospace;">${totalAllocations}</span>
         </div>
-
-        <div style="background: #1e293b; border-left: 4px solid #22c55e; border-radius: 6px; padding: 12px 14px;">
-          <div style="font-size: 11px; color: #94a3b8; font-weight: 700; text-transform: uppercase;">Mechanics Holding Tools</div>
-          <div style="font-size: 24px; font-weight: 900; color: #f1f5f9; margin-top: 2px;">${uniqueMechanics}</div>
+        <div style="display: flex; align-items: center; gap: 6px; background: rgba(74, 222, 128, 0.08); border: 1px solid rgba(74, 222, 128, 0.25); padding: 4px 10px; border-radius: 5px; font-size: 11.5px;">
+          <span style="color: #94a3b8; font-weight: 600;">Mechanics Holding:</span>
+          <span style="font-weight: 900; color: #4ade80; font-size: 13px; font-family: monospace;">${uniqueMechanics}</span>
         </div>
-
-        <div style="background: #1e293b; border-left: 4px solid #eab308; border-radius: 6px; padding: 12px 14px; cursor: pointer;" id="card-click-hist-replaced" title="Click to view tool change history">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <div style="font-size: 11px; color: #94a3b8; font-weight: 700; text-transform: uppercase;">Replaced / Changed Tools</div>
-            <span style="font-size: 10px; background: #ca8a04; color: #000; padding: 1px 5px; border-radius: 3px; font-weight: 800;">View 📜</span>
-          </div>
-          <div style="font-size: 24px; font-weight: 900; color: #fde047; margin-top: 2px;">${replacedCount}</div>
+        <div id="card-click-hist-replaced" style="display: flex; align-items: center; gap: 5px; background: rgba(253, 224, 71, 0.08); border: 1px solid rgba(253, 224, 71, 0.25); padding: 4px 10px; border-radius: 5px; font-size: 11.5px; cursor: pointer;" title="Click to view tool change history">
+          <span style="color: #94a3b8; font-weight: 600;">Replaced:</span>
+          <span style="font-weight: 900; color: #fde047; font-size: 13px; font-family: monospace;">${replacedCount}</span>
+          <span style="font-size: 9.5px; background: #ca8a04; color: #000; padding: 1px 4px; border-radius: 3px; font-weight: 800; margin-left: 2px;">View 📜</span>
         </div>
-
-        <div style="background: #1e293b; border-left: 4px solid #ef4444; border-radius: 6px; padding: 12px 14px;">
-          <div style="font-size: 11px; color: #94a3b8; font-weight: 700; text-transform: uppercase;">Lost / Missing Tools</div>
-          <div style="font-size: 24px; font-weight: 900; color: #fca5a5; margin-top: 2px;">${returnedCount}</div>
+        <div style="display: flex; align-items: center; gap: 6px; background: rgba(248, 113, 113, 0.08); border: 1px solid rgba(248, 113, 113, 0.25); padding: 4px 10px; border-radius: 5px; font-size: 11.5px;">
+          <span style="color: #94a3b8; font-weight: 600;">Lost / Missing:</span>
+          <span style="font-weight: 900; color: #f87171; font-size: 13px; font-family: monospace;">${returnedCount}</span>
         </div>
       </div>
 
-      <!-- Search & Filter Controls -->
-      <div style="background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 14px;">
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; align-items: end;">
-          
-          <div>
-            <label style="display: block; font-size: 11px; font-weight: 700; color: #94a3b8; margin-bottom: 4px;">Global Search:</label>
-            <input type="text" id="find-search-input" value="${findFilters.search || ''}" placeholder="Name, ID, Reg No, Tool..." 
-              style="width: 100%; background: #1e293b; color: #fff; border: 1px solid #475569; border-radius: 4px; padding: 6px 10px; font-size: 12.5px;" />
-          </div>
-
-          <div>
-            <label style="display: block; font-size: 11px; font-weight: 700; color: #94a3b8; margin-bottom: 4px;">Filter by Reg No:</label>
-            <select id="find-select-reg" style="width: 100%; background: #1e293b; color: #fff; border: 1px solid #475569; border-radius: 4px; padding: 6px 8px; font-size: 12.5px;">
-              <option value="ALL">All Registrations</option>
-              ${recentRegistrations.map(r => `<option value="${r.regNo}" ${findFilters.regNo === r.regNo ? 'selected' : ''}>#${r.regNo} - ${r.userName}</option>`).join('')}
-            </select>
-          </div>
-
-          <div>
-            <label style="display: block; font-size: 11px; font-weight: 700; color: #94a3b8; margin-bottom: 4px;">Filter by Employee:</label>
-            <select id="find-select-emp" style="width: 100%; background: #1e293b; color: #fff; border: 1px solid #475569; border-radius: 4px; padding: 6px 8px; font-size: 12.5px;">
-              <option value="ALL">All Mechanics (Active & Inactive)</option>
-              ${allStaff.map(s => `<option value="${s.cardNumber || s.id}" ${findFilters.userId === (s.cardNumber || s.id) ? 'selected' : ''}>${s.cardNumber} - ${s.name} (${s.status})</option>`).join('')}
-            </select>
-          </div>
-
-          <div>
-            <label style="display: block; font-size: 11px; font-weight: 700; color: #94a3b8; margin-bottom: 4px;">Item Type:</label>
-            <select id="find-select-type" style="width: 100%; background: #1e293b; color: #fff; border: 1px solid #475569; border-radius: 4px; padding: 6px 8px; font-size: 12.5px;">
-              <option value="ALL" ${findFilters.itemType === 'ALL' ? 'selected' : ''}>All Item Types</option>
-              <option value="TOOL" ${findFilters.itemType === 'TOOL' ? 'selected' : ''}>Tools Only</option>
-              <option value="ACCESSORY" ${findFilters.itemType === 'ACCESSORY' ? 'selected' : ''}>Accessories Only</option>
-            </select>
-          </div>
-
-          <div>
-            <label style="display: block; font-size: 11px; font-weight: 700; color: #94a3b8; margin-bottom: 4px;">Change Status:</label>
-            <select id="find-select-status" style="width: 100%; background: #1e293b; color: #fff; border: 1px solid #475569; border-radius: 4px; padding: 6px 8px; font-size: 12.5px;">
-              <option value="ALL" ${findFilters.changeStatus === 'ALL' ? 'selected' : ''}>All Statuses</option>
-              <option value="NEW_ISSUE" ${findFilters.changeStatus === 'NEW_ISSUE' ? 'selected' : ''}>New Issue</option>
-              <option value="REPLACED" ${findFilters.changeStatus === 'REPLACED' ? 'selected' : ''}>Replaced (Changed)</option>
-              <option value="LOST" ${findFilters.changeStatus === 'LOST' ? 'selected' : ''}>Lost (Harao)</option>
-            </select>
-          </div>
-
-          <div>
-            <button id="btn-reset-find-filters" style="width: 100%; background: #334155; color: #e2e8f0; border: 1px solid #475569; padding: 6px 12px; border-radius: 4px; font-size: 12.5px; font-weight: 600; cursor: pointer;">
-              Reset Filters
-            </button>
-          </div>
-
+      <!-- Streamlined Single-Row Filter Toolbar -->
+      <div style="background: #0f172a; border: 1px solid #334155; border-radius: 6px; padding: 5px 8px; display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+        <div style="flex: 1.4; min-width: 150px;">
+          <input type="text" id="find-search-input" value="${findFilters.search || ''}" placeholder="🔍 Search Name, ID, Reg, Tool..." 
+            style="width: 100%; background: #1e293b; color: #fff; border: 1px solid #475569; border-radius: 4px; padding: 4px 8px; font-size: 11.5px;" />
         </div>
+
+        <div style="flex: 1; min-width: 120px;">
+          <select id="find-select-reg" style="width: 100%; background: #1e293b; color: #fff; border: 1px solid #475569; border-radius: 4px; padding: 4px 6px; font-size: 11.5px;">
+            <option value="ALL">All Registrations</option>
+            ${recentRegistrations.map(r => `<option value="${r.regNo}" ${findFilters.regNo === r.regNo ? 'selected' : ''}>#${r.regNo} - ${r.userName}</option>`).join('')}
+          </select>
+        </div>
+
+        <div style="flex: 1.3; min-width: 140px;">
+          <select id="find-select-emp" style="width: 100%; background: #1e293b; color: #fff; border: 1px solid #475569; border-radius: 4px; padding: 4px 6px; font-size: 11.5px;">
+            <option value="ALL">All Mechanics (Active &amp; Inactive)</option>
+            ${allStaff.map(s => `<option value="${s.cardNumber || s.id}" ${findFilters.userId === (s.cardNumber || s.id) ? 'selected' : ''}>${s.cardNumber} - ${s.name} (${s.status})</option>`).join('')}
+          </select>
+        </div>
+
+        <div style="flex: 0.9; min-width: 105px;">
+          <select id="find-select-type" style="width: 100%; background: #1e293b; color: #fff; border: 1px solid #475569; border-radius: 4px; padding: 4px 6px; font-size: 11.5px;">
+            <option value="ALL" ${findFilters.itemType === 'ALL' ? 'selected' : ''}>All Item Types</option>
+            <option value="TOOL" ${findFilters.itemType === 'TOOL' ? 'selected' : ''}>Tools Only</option>
+            <option value="ACCESSORY" ${findFilters.itemType === 'ACCESSORY' ? 'selected' : ''}>Accessories Only</option>
+          </select>
+        </div>
+
+        <div style="flex: 0.9; min-width: 105px;">
+          <select id="find-select-status" style="width: 100%; background: #1e293b; color: #fff; border: 1px solid #475569; border-radius: 4px; padding: 4px 6px; font-size: 11.5px;">
+            <option value="ALL" ${findFilters.changeStatus === 'ALL' ? 'selected' : ''}>All Statuses</option>
+            <option value="NEW_ISSUE" ${findFilters.changeStatus === 'NEW_ISSUE' ? 'selected' : ''}>New Issue</option>
+            <option value="REPLACED" ${findFilters.changeStatus === 'REPLACED' ? 'selected' : ''}>Replaced (Changed)</option>
+            <option value="LOST" ${findFilters.changeStatus === 'LOST' ? 'selected' : ''}>Lost (Harao)</option>
+          </select>
+        </div>
+
+        <button id="btn-reset-find-filters" style="background: #334155; color: #e2e8f0; border: 1px solid #475569; padding: 4px 10px; border-radius: 4px; font-size: 11.5px; font-weight: 700; cursor: pointer; white-space: nowrap;" title="Reset all search &amp; filter controls">
+          🧹 Reset
+        </button>
       </div>
 
       <!-- Historical Records Table -->
-      <div style="background: #1e293b; border-radius: 8px; border: 1px solid #334155; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.2); display: flex; flex-direction: column; gap: 0;">
+      <div style="background: #1e293b; border-radius: 6px; border: 1px solid #334155; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.2); display: flex; flex-direction: column; gap: 0;">
         
         <!-- Admin Bulk Selection Action Bar -->
         ${findSelectedIds.size > 0 ? `
-          <div style="background: #0f172a; border-bottom: 2px solid #ef4444; padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.4);">
-            <div style="display: flex; align-items: center; gap: 10px;">
-              <span style="background: #dc2626; color: #fff; padding: 3px 8px; border-radius: 4px; font-weight: 900; font-size: 11px; letter-spacing: 0.5px;">🔒 ADMIN CONTROL</span>
-              <span style="font-size: 13.5px; font-weight: 800; color: #f1f5f9;">${findSelectedIds.size} allocation record${findSelectedIds.size > 1 ? 's' : ''} selected</span>
+          <div style="background: #0f172a; border-bottom: 2px solid #ef4444; padding: 6px 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.4);">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="background: #dc2626; color: #fff; padding: 2px 6px; border-radius: 3px; font-weight: 900; font-size: 10.5px; letter-spacing: 0.5px;">🔒 ADMIN CONTROL</span>
+              <span style="font-size: 12.5px; font-weight: 800; color: #f1f5f9;">${findSelectedIds.size} record${findSelectedIds.size > 1 ? 's' : ''} selected</span>
             </div>
-            <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-              <button id="btn-admin-bulk-delete-find" style="background: #dc2626; color: #fff; border: 1px solid #b91c1c; padding: 6px 16px; border-radius: 5px; font-size: 12px; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.3);">
+            <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+              <button id="btn-admin-bulk-delete-find" style="background: #dc2626; color: #fff; border: 1px solid #b91c1c; padding: 4px 12px; border-radius: 4px; font-size: 11.5px; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.3);">
                 <span>🗑️</span> Delete Selected (${findSelectedIds.size})
               </button>
-              <button id="btn-admin-bulk-replace-find" style="background: #d97706; color: #fff; border: 1px solid #b45309; padding: 6px 12px; border-radius: 5px; font-size: 12px; font-weight: 700; cursor: pointer;">
+              <button id="btn-admin-bulk-replace-find" style="background: #d97706; color: #fff; border: 1px solid #b45309; padding: 4px 10px; border-radius: 4px; font-size: 11.5px; font-weight: 700; cursor: pointer;">
                 🔄 Mark Replaced
               </button>
-              <button id="btn-admin-bulk-return-find" style="background: #475569; color: #fff; border: 1px solid #334155; padding: 6px 12px; border-radius: 5px; font-size: 12px; font-weight: 700; cursor: pointer;">
+              <button id="btn-admin-bulk-return-find" style="background: #475569; color: #fff; border: 1px solid #334155; padding: 4px 10px; border-radius: 4px; font-size: 11.5px; font-weight: 700; cursor: pointer;">
                 ↩️ Mark Returned
               </button>
-              <button id="btn-clear-selection-find" style="background: #1e293b; color: #cbd5e1; border: 1px solid #475569; padding: 6px 10px; border-radius: 5px; font-size: 12px; cursor: pointer;">
+              <button id="btn-clear-selection-find" style="background: #1e293b; color: #cbd5e1; border: 1px solid #475569; padding: 4px 8px; border-radius: 4px; font-size: 11px; cursor: pointer;">
                 ✕ Deselect All
               </button>
             </div>
           </div>
         ` : ''}
 
-        <div id="find-table-scroll-container" style="overflow-x: auto; max-height: calc(100vh - 310px); min-height: 280px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #0ea5e9 #1e293b;">
+        <div id="find-table-scroll-container" style="overflow-x: auto; max-height: calc(100vh - 195px); min-height: 350px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #0ea5e9 #1e293b;">
           <table style="width: 100%; border-collapse: separate; border-spacing: 0; font-size: 12.5px;">
             <thead style="position: sticky; top: 0; z-index: 25;">
               <tr style="background: #0f172a; color: #cbd5e1;">
@@ -1903,96 +1890,82 @@ function renderScreen5AccessoriesPage() {
   const lowStockCount = masterTools.filter(t => t.totalStock <= (t.minStock || 10)).length;
 
   return `
-    <div class="screen-accessories-page" style="display: flex; flex-direction: column; gap: 14px;">
+    <div class="screen-accessories-page" style="display: flex; flex-direction: column; gap: 8px;">
       
       <!-- Top Title & Action Bar -->
-      <div style="background: linear-gradient(90deg, #db2777, #f43f5e); color: #fff; padding: 8px 14px; border-radius: 6px; font-weight: 800; font-size: 15px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+      <div style="background: linear-gradient(90deg, #db2777, #f43f5e); color: #fff; padding: 5px 12px; border-radius: 6px; font-weight: 800; font-size: 13.5px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
         <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-          <span>Accessories &amp; Spare Parts Master Management:</span>
+          <span>📦 Accessories &amp; Spare Parts Master Management</span>
           ${masterSelectedIds.size > 0 ? `
-            <span style="font-size: 11.5px; background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.4); padding: 2px 9px; border-radius: 12px; color: #fde047; font-weight: 800;">
+            <span style="font-size: 11px; background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.4); padding: 1px 8px; border-radius: 12px; color: #fde047; font-weight: 800;">
               ✓ ${masterSelectedIds.size} Selected
             </span>
           ` : ''}
         </div>
-        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+        <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
           ${masterSelectedIds.size > 0 ? `
-            <button id="btn-bulk-delete-master" style="background: #991b1b; color: #fff; border: 1.5px solid #f87171; padding: 4px 12px; border-radius: 4px; font-size: 12px; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 5px; box-shadow: 0 2px 6px rgba(0,0,0,0.4);" title="Delete selected items from master catalog (Admin Controlled)">
-              <span>🗑️</span> Bulk Delete (${masterSelectedIds.size})
+            <button id="btn-bulk-delete-master" style="background: #991b1b; color: #fff; border: 1.5px solid #f87171; padding: 3px 10px; border-radius: 4px; font-size: 11.5px; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 4px;" title="Delete selected items from master catalog (Admin Controlled)">
+              <span>🗑️</span> Delete (${masterSelectedIds.size})
             </button>
-            <button id="btn-clear-master-selection" style="background: rgba(0,0,0,0.3); color: #cbd5e1; border: 1px solid #64748b; padding: 4px 10px; border-radius: 4px; font-size: 11.5px; cursor: pointer;" title="Clear selected checkboxes">
-              Deselect All
+            <button id="btn-clear-master-selection" style="background: rgba(0,0,0,0.3); color: #cbd5e1; border: 1px solid #64748b; padding: 3px 8px; border-radius: 4px; font-size: 11px; cursor: pointer;" title="Clear selected checkboxes">
+              Deselect
             </button>
           ` : ''}
-          <button id="btn-open-excel-import-acc" style="background: #16a34a; color: #fff; border: 1px solid #15803d; padding: 4px 12px; border-radius: 4px; font-size: 12px; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 4px;" title="Import tools & accessories catalog from Excel">
+          <button id="btn-open-excel-import-acc" style="background: #16a34a; color: #fff; border: 1px solid #15803d; padding: 3px 10px; border-radius: 4px; font-size: 11.5px; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 4px;" title="Import tools & accessories catalog from Excel">
             <span>📥</span> Import Catalog Excel
           </button>
-          <button id="btn-add-master-item-modal" style="background: #0f172a; color: #fff; border: 1px solid #334155; padding: 4px 12px; border-radius: 4px; font-size: 12px; font-weight: 700; cursor: pointer;">
-            ➕ Add New Master Item
+          <button id="btn-add-master-item-modal" style="background: #0f172a; color: #fff; border: 1px solid #334155; padding: 3px 10px; border-radius: 4px; font-size: 11.5px; font-weight: 700; cursor: pointer;">
+            ➕ Add Master Item
           </button>
-          <button id="btn-export-master-excel" style="background: #1e293b; color: #e2e8f0; border: 1px solid #334155; padding: 4px 12px; border-radius: 4px; font-size: 12px; font-weight: 700; cursor: pointer;">
-            📤 Export Master Catalog (.xlsx)
+          <button id="btn-export-master-excel" style="background: #1e293b; color: #e2e8f0; border: 1px solid #334155; padding: 3px 10px; border-radius: 4px; font-size: 11.5px; font-weight: 700; cursor: pointer;">
+            📤 Export Catalog (.xlsx)
           </button>
         </div>
       </div>
 
-      <!-- Info Header Banner explaining fixed printout behavior -->
-      <div style="background: rgba(236, 72, 153, 0.12); border: 1.5px solid #ec4899; border-radius: 8px; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between;">
-        <div style="display: flex; align-items: center; gap: 10px;">
-          <span style="font-size: 22px;">📌</span>
-          <div>
-            <div style="font-weight: 800; font-size: 13px; color: #f472b6;">Fixed Accessories Master Data &amp; Spare Parts Catalog</div>
-            <div style="font-size: 11.5px; color: #cbd5e1;">These master accessories (Super Glue, Tweezer, Oil Pot, etc.) remain fixed on the left column of all mechanic printouts. Tool allocation per mechanic is managed separately in the Tools Add Form.</div>
-          </div>
+      <!-- Compact Inventory Stat Pills -->
+      <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
+        <div style="display: flex; align-items: center; gap: 6px; background: rgba(236, 72, 153, 0.08); border: 1px solid rgba(236, 72, 153, 0.25); padding: 4px 10px; border-radius: 5px; font-size: 11.5px;">
+          <span style="color: #94a3b8; font-weight: 600;">Catalog Varieties:</span>
+          <span style="font-weight: 900; color: #f472b6; font-size: 13px; font-family: monospace;">${masterTools.length + masterAccs.length}</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 6px; background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.25); padding: 4px 10px; border-radius: 5px; font-size: 11.5px;">
+          <span style="color: #94a3b8; font-weight: 600;">Total Tools Stock:</span>
+          <span style="font-weight: 900; color: #38bdf8; font-size: 13px; font-family: monospace;">${totalToolsStock}</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 6px; background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); padding: 4px 10px; border-radius: 5px; font-size: 11.5px;">
+          <span style="color: #94a3b8; font-weight: 600;">Accessories Stock:</span>
+          <span style="font-weight: 900; color: #34d399; font-size: 13px; font-family: monospace;">${totalAccsStock}</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 6px; background: ${lowStockCount > 0 ? 'rgba(239, 68, 68, 0.12)' : 'rgba(34, 197, 94, 0.08)'}; border: 1px solid ${lowStockCount > 0 ? 'rgba(239, 68, 68, 0.35)' : 'rgba(34, 197, 94, 0.25)'}; padding: 4px 10px; border-radius: 5px; font-size: 11.5px;">
+          <span style="color: #94a3b8; font-weight: 600;">Low Stock:</span>
+          <span style="font-weight: 900; color: ${lowStockCount > 0 ? '#fca5a5' : '#86efac'}; font-size: 13px; font-family: monospace;">${lowStockCount} Items</span>
         </div>
       </div>
 
-      <!-- Inventory KPI Cards -->
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px;">
-        <div style="background: #1e293b; border-left: 4px solid #ec4899; border-radius: 6px; padding: 12px 14px;">
-          <div style="font-size: 11px; color: #94a3b8; font-weight: 700; text-transform: uppercase;">Tools Catalog Items</div>
-          <div style="font-size: 24px; font-weight: 900; color: #f1f5f9; margin-top: 2px;">${masterTools.length} Varieties</div>
-        </div>
-
-        <div style="background: #1e293b; border-left: 4px solid #38bdf8; border-radius: 6px; padding: 12px 14px;">
-          <div style="font-size: 11px; color: #94a3b8; font-weight: 700; text-transform: uppercase;">Total Tools Stock (Pcs)</div>
-          <div style="font-size: 24px; font-weight: 900; color: #f1f5f9; margin-top: 2px;">${totalToolsStock}</div>
-        </div>
-
-        <div style="background: #1e293b; border-left: 4px solid #10b981; border-radius: 6px; padding: 12px 14px;">
-          <div style="font-size: 11px; color: #94a3b8; font-weight: 700; text-transform: uppercase;">Accessories Stock Units</div>
-          <div style="font-size: 24px; font-weight: 900; color: #f1f5f9; margin-top: 2px;">${totalAccsStock}</div>
-        </div>
-
-        <div style="background: #1e293b; border-left: 4px solid ${lowStockCount > 0 ? '#ef4444' : '#22c55e'}; border-radius: 6px; padding: 12px 14px;">
-          <div style="font-size: 11px; color: #94a3b8; font-weight: 700; text-transform: uppercase;">Low Stock Warning</div>
-          <div style="font-size: 24px; font-weight: 900; color: ${lowStockCount > 0 ? '#fca5a5' : '#86efac'}; margin-top: 2px;">${lowStockCount} Items</div>
-        </div>
-      </div>
-
-      <!-- Filter Tabs & Search -->
-      <div style="display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap;">
-        <div style="display: flex; gap: 6px;">
-          <button class="btn-acc-cat-filter ${accessoriesTabCategory === 'ALL' ? 'active' : ''}" data-cat="ALL" style="padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer; border: 1px solid #475569; background: ${accessoriesTabCategory === 'ALL' ? '#ec4899; color: #fff;' : '#1e293b; color: #cbd5e1;'}">
+      <!-- Filter Tabs & Search Toolbar -->
+      <div style="background: #0f172a; border: 1px solid #334155; border-radius: 6px; padding: 5px 8px; display: flex; gap: 6px; align-items: center; justify-content: space-between; flex-wrap: wrap;">
+        <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+          <button class="btn-acc-cat-filter ${accessoriesTabCategory === 'ALL' ? 'active' : ''}" data-cat="ALL" style="padding: 4px 10px; border-radius: 4px; font-size: 11.5px; font-weight: 700; cursor: pointer; border: 1px solid #475569; background: ${accessoriesTabCategory === 'ALL' ? '#ec4899; color: #fff;' : '#1e293b; color: #cbd5e1;'}">
             All Inventory
           </button>
-          <button class="btn-acc-cat-filter ${accessoriesTabCategory === 'TOOLS' ? 'active' : ''}" data-cat="TOOLS" style="padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer; border: 1px solid #475569; background: ${accessoriesTabCategory === 'TOOLS' ? '#0ea5e9; color: #fff;' : '#1e293b; color: #cbd5e1;'}">
-            🔧 Tools Master
+          <button class="btn-acc-cat-filter ${accessoriesTabCategory === 'TOOLS' ? 'active' : ''}" data-cat="TOOLS" style="padding: 4px 10px; border-radius: 4px; font-size: 11.5px; font-weight: 700; cursor: pointer; border: 1px solid #475569; background: ${accessoriesTabCategory === 'TOOLS' ? '#0ea5e9; color: #fff;' : '#1e293b; color: #cbd5e1;'}">
+            🔧 Tools Master (${masterTools.length})
           </button>
-          <button class="btn-acc-cat-filter ${accessoriesTabCategory === 'ACCESSORIES' ? 'active' : ''}" data-cat="ACCESSORIES" style="padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer; border: 1px solid #475569; background: ${accessoriesTabCategory === 'ACCESSORIES' ? '#8b5cf6; color: #fff;' : '#1e293b; color: #cbd5e1;'}">
-            📦 Extra Accessories
+          <button class="btn-acc-cat-filter ${accessoriesTabCategory === 'ACCESSORIES' ? 'active' : ''}" data-cat="ACCESSORIES" style="padding: 4px 10px; border-radius: 4px; font-size: 11.5px; font-weight: 700; cursor: pointer; border: 1px solid #475569; background: ${accessoriesTabCategory === 'ACCESSORIES' ? '#8b5cf6; color: #fff;' : '#1e293b; color: #cbd5e1;'}">
+            📦 Extra Accessories (${masterAccs.length})
           </button>
         </div>
 
-        <div style="width: 280px;">
-          <input type="text" id="acc-search-input" value="${accessorySearch || ''}" placeholder="Search tools or accessories..." 
-            style="width: 100%; background: #1e293b; color: #fff; border: 1px solid #475569; border-radius: 6px; padding: 6px 12px; font-size: 12.5px;" />
+        <div style="width: 220px;">
+          <input type="text" id="acc-search-input" value="${accessorySearch || ''}" placeholder="🔍 Search tools or accessories..." 
+            style="width: 100%; background: #1e293b; color: #fff; border: 1px solid #475569; border-radius: 4px; padding: 4px 8px; font-size: 11.5px;" />
         </div>
       </div>
 
       <!-- Master Inventory Table -->
-      <div style="background: #1e293b; border-radius: 8px; border: 1px solid #334155; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.2);">
-        <div style="overflow-x: auto; max-height: 480px;">
+      <div style="background: #1e293b; border-radius: 6px; border: 1px solid #334155; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.2);">
+        <div style="overflow-x: auto; max-height: calc(100vh - 195px); min-height: 350px;">
           <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
             <thead>
               <tr style="background: #0f172a; color: #cbd5e1; border-bottom: 1.5px solid #334155;">
@@ -2144,166 +2117,158 @@ function renderScreen6DatabasePage() {
   }
 
   return `
-    <div class="screen-database-page" style="display: flex; flex-direction: column; gap: 16px;">
+    <div class="screen-database-page" style="display: flex; flex-direction: column; gap: 8px;">
       
-      <!-- Top Title Bar -->
-      <div style="background: linear-gradient(90deg, #059669, #10b981); color: #fff; padding: 10px 16px; border-radius: 8px; font-weight: 800; font-size: 15px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.2);">
+      <!-- Top Title & Action Bar -->
+      <div style="background: linear-gradient(90deg, #059669, #10b981); color: #fff; padding: 5px 12px; border-radius: 6px; font-weight: 800; font-size: 13.5px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; box-shadow: 0 4px 6px rgba(0,0,0,0.2);">
         <div style="display: flex; align-items: center; gap: 8px;">
-          <span style="font-size: 20px;">🗄️</span>
-          <div>
-            <div>Database Management &amp; Excel Import Center</div>
-            <div style="font-size: 11px; font-weight: 500; opacity: 0.9; margin-top: 1px;">Manage raw database tables, bulk import historical Excel files, search registrations, and backup system records.</div>
-          </div>
+          <span>🗄️ Database Management &amp; Raw Tables</span>
+          <span style="font-size: 10.5px; background: rgba(0,0,0,0.25); padding: 1px 7px; border-radius: 4px; font-weight: 600; color: #e2e8f0;">MySQL Synced</span>
         </div>
-        <div style="display: flex; gap: 8px;">
-          <button id="btn-db-open-modal-center" style="background: #0f172a; color: #38bdf8; border: 1px solid #334155; padding: 5px 14px; border-radius: 5px; font-size: 12px; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 5px;">
-            <span>📥</span> Open Full Import Modal
+        <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+          <button id="btn-toggle-db-import" style="background: ${dbShowImportDrawer || databaseDirectFileName ? '#15803d' : '#0f172a'}; color: ${dbShowImportDrawer || databaseDirectFileName ? '#fff' : '#86efac'}; border: 1.5px solid ${dbShowImportDrawer || databaseDirectFileName ? '#4ade80' : '#16a34a'}; padding: 3px 10px; border-radius: 4px; font-size: 11.5px; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 4px; box-shadow: ${dbShowImportDrawer ? '0 0 8px rgba(74,222,128,0.4)' : 'none'};">
+            <span>📥</span> Direct Excel Import ${dbShowImportDrawer || databaseDirectFileName ? '▲' : '▼'}
           </button>
-          <button id="btn-db-export-active-table" style="background: #0f172a; color: #fff; border: 1px solid #334155; padding: 5px 14px; border-radius: 5px; font-size: 12px; font-weight: 700; cursor: pointer;">
-            📤 Export Table to Excel (.xlsx)
+          <button id="btn-db-open-modal-center" style="background: #0f172a; color: #38bdf8; border: 1px solid #334155; padding: 3px 10px; border-radius: 4px; font-size: 11.5px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+            <span>📋</span> Full Import Modal
+          </button>
+          <button id="btn-db-export-active-table" style="background: #0f172a; color: #fff; border: 1px solid #334155; padding: 3px 10px; border-radius: 4px; font-size: 11.5px; font-weight: 700; cursor: pointer;">
+            📤 Export Excel (.xlsx)
           </button>
         </div>
       </div>
 
-      <!-- KPI Summary Cards -->
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px;">
-        <div style="background: #1e293b; border-left: 4px solid #38bdf8; border-radius: 6px; padding: 12px 14px;">
-          <div style="font-size: 11px; color: #94a3b8; font-weight: 700; text-transform: uppercase;">Total Stored Allocations</div>
-          <div style="font-size: 24px; font-weight: 900; color: #f1f5f9; margin-top: 2px;">${totalAllocations}</div>
+      <!-- Compact Database Stat Pills -->
+      <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
+        <div style="display: flex; align-items: center; gap: 6px; background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.25); padding: 4px 10px; border-radius: 5px; font-size: 11.5px;">
+          <span style="color: #94a3b8; font-weight: 600;">Total Allocations:</span>
+          <span style="font-weight: 900; color: #38bdf8; font-size: 13px; font-family: monospace;">${totalAllocations}</span>
         </div>
-
-        <div style="background: #1e293b; border-left: 4px solid #22c55e; border-radius: 6px; padding: 12px 14px;">
-          <div style="font-size: 11px; color: #94a3b8; font-weight: 700; text-transform: uppercase;">Registered Mechanics</div>
-          <div style="font-size: 24px; font-weight: 900; color: #f1f5f9; margin-top: 2px;">${uniqueMechanics}</div>
+        <div style="display: flex; align-items: center; gap: 6px; background: rgba(74, 222, 128, 0.08); border: 1px solid rgba(74, 222, 128, 0.25); padding: 4px 10px; border-radius: 5px; font-size: 11.5px;">
+          <span style="color: #94a3b8; font-weight: 600;">Registered Mechanics:</span>
+          <span style="font-weight: 900; color: #4ade80; font-size: 13px; font-family: monospace;">${uniqueMechanics}</span>
         </div>
-
-        <div style="background: #1e293b; border-left: 4px solid #eab308; border-radius: 6px; padding: 12px 14px;">
-          <div style="font-size: 11px; color: #94a3b8; font-weight: 700; text-transform: uppercase;">Master Tools in DB</div>
-          <div style="font-size: 24px; font-weight: 900; color: #fde047; margin-top: 2px;">${totalMasterTools}</div>
+        <div style="display: flex; align-items: center; gap: 6px; background: rgba(253, 224, 71, 0.08); border: 1px solid rgba(253, 224, 71, 0.25); padding: 4px 10px; border-radius: 5px; font-size: 11.5px;">
+          <span style="color: #94a3b8; font-weight: 600;">Master Tools:</span>
+          <span style="font-weight: 900; color: #fde047; font-size: 13px; font-family: monospace;">${totalMasterTools}</span>
         </div>
-
-        <div style="background: #1e293b; border-left: 4px solid #ec4899; border-radius: 6px; padding: 12px 14px;">
-          <div style="font-size: 11px; color: #94a3b8; font-weight: 700; text-transform: uppercase;">Master Accessories in DB</div>
-          <div style="font-size: 24px; font-weight: 900; color: #f472b6; margin-top: 2px;">${totalMasterAccs}</div>
+        <div style="display: flex; align-items: center; gap: 6px; background: rgba(244, 114, 182, 0.08); border: 1px solid rgba(244, 114, 182, 0.25); padding: 4px 10px; border-radius: 5px; font-size: 11.5px;">
+          <span style="color: #94a3b8; font-weight: 600;">Master Accessories:</span>
+          <span style="font-weight: 900; color: #f472b6; font-size: 13px; font-family: monospace;">${totalMasterAccs}</span>
         </div>
       </div>
 
-      <!-- SECTION A: DIRECT IN-PAGE EXCEL IMPORT CARD -->
-      <div style="background: #1e293b; border: 2px solid #16a34a; border-radius: 8px; padding: 16px; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
-          <div style="display: flex; align-items: center; gap: 6px;">
-            <span style="font-size: 18px;">📥</span>
-            <span style="font-size: 14px; font-weight: 800; color: #86efac;">Direct Excel File Data Input &amp; Bulk Import</span>
-          </div>
-          <div style="display: flex; gap: 6px;">
-            <button id="btn-db-download-template" style="background: #0284c7; color: #fff; border: 1px solid #0369a1; padding: 4px 12px; border-radius: 4px; font-size: 11.5px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 4px;">
-              <span>📥</span> Download Sample Excel Template (.xlsx)
-            </button>
-          </div>
-        </div>
-
-        <!-- Target Data Type Tabs -->
-        <div style="display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap;">
-          <button class="btn-db-imp-target ${databaseDirectImportType === 'ALLOCATIONS' ? 'active' : ''}" data-target="ALLOCATIONS"
-            style="background: ${databaseDirectImportType === 'ALLOCATIONS' ? '#2563eb' : '#0f172a'}; color: #fff; border: 1px solid ${databaseDirectImportType === 'ALLOCATIONS' ? '#3b82f6' : '#334155'}; padding: 5px 12px; border-radius: 5px; font-size: 12px; font-weight: 700; cursor: pointer;">
-            🔧 1. Previous Tool Allocations (Mechanic Registrations)
-          </button>
-          <button class="btn-db-imp-target ${databaseDirectImportType === 'TOOLS' ? 'active' : ''}" data-target="TOOLS"
-            style="background: ${databaseDirectImportType === 'TOOLS' ? '#2563eb' : '#0f172a'}; color: #fff; border: 1px solid ${databaseDirectImportType === 'TOOLS' ? '#3b82f6' : '#334155'}; padding: 5px 12px; border-radius: 5px; font-size: 12px; font-weight: 700; cursor: pointer;">
-            🛠️ 2. Master Tools Catalog (Inventory &amp; Stock)
-          </button>
-          <button class="btn-db-imp-target ${databaseDirectImportType === 'ACCESSORIES' ? 'active' : ''}" data-target="ACCESSORIES"
-            style="background: ${databaseDirectImportType === 'ACCESSORIES' ? '#2563eb' : '#0f172a'}; color: #fff; border: 1px solid ${databaseDirectImportType === 'ACCESSORIES' ? '#3b82f6' : '#334155'}; padding: 5px 12px; border-radius: 5px; font-size: 12px; font-weight: 700; cursor: pointer;">
-            📦 3. Master Accessories Catalog (Catalog &amp; Stock)
-          </button>
-        </div>
-
-        <!-- In-Page Dropzone -->
-        <div id="db-drop-zone" style="border: 2px dashed ${databaseDirectFileName ? '#22c55e' : '#475569'}; border-radius: 6px; padding: 18px; text-align: center; background: ${databaseDirectFileName ? 'rgba(34, 197, 94, 0.05)' : '#0f172a'}; cursor: pointer; transition: all 0.2s;">
-          <input type="file" id="db-file-input" accept=".xlsx, .xls, .csv" style="display: none;" />
-          <div style="font-size: 28px; margin-bottom: 4px;">${databaseDirectFileName ? '📊' : '📁'}</div>
-          <div style="font-size: 13.5px; font-weight: 800; color: #f1f5f9;">
-            ${databaseDirectFileName ? `Selected File: <span style="color: #22c55e;">${databaseDirectFileName}</span> (${databaseDirectParsedRows.length} Rows Detected)` : 'Click here or Drag &amp; Drop your Excel (.xlsx, .xls, .csv) file to import'}
-          </div>
-          <div style="font-size: 11px; color: #94a3b8; margin-top: 3px;">
-            Target Table: <strong>${databaseDirectImportType === 'ALLOCATIONS' ? 'TOOL_ALLOCATIONS' : databaseDirectImportType === 'TOOLS' ? 'TOOLS_MASTER' : 'ACCESSORIES_MASTER'}</strong>
-          </div>
-        </div>
-
-        <!-- Live Preview If File Parsed -->
-        ${databaseDirectParsedRows.length > 0 ? `
-          <div style="margin-top: 12px; background: #0f172a; border: 1px solid #334155; border-radius: 6px; padding: 10px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-              <span style="font-size: 12px; font-weight: 800; color: #38bdf8;">Data Preview (First ${Math.min(databaseDirectParsedRows.length, 8)} of ${databaseDirectParsedRows.length} rows):</span>
-              <button id="btn-db-save-parsed-rows" style="background: #16a34a; color: #fff; border: none; padding: 6px 18px; border-radius: 5px; font-weight: 900; font-size: 12.5px; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(0,0,0,0.3);">
-                <span>💾</span> Import ${databaseDirectParsedRows.length} Rows into Database Now
+      <!-- SECTION A: COLLAPSIBLE DIRECT IN-PAGE EXCEL IMPORT DRAWER -->
+      ${(dbShowImportDrawer || databaseDirectFileName || databaseDirectParsedRows.length > 0) ? `
+        <div id="db-direct-import-drawer" style="background: #1e293b; border: 1.5px solid #16a34a; border-radius: 6px; padding: 8px 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); display: flex; flex-direction: column; gap: 6px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
+            <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+              <button class="btn-db-imp-target ${databaseDirectImportType === 'ALLOCATIONS' ? 'active' : ''}" data-target="ALLOCATIONS"
+                style="background: ${databaseDirectImportType === 'ALLOCATIONS' ? '#2563eb' : '#0f172a'}; color: #fff; border: 1px solid ${databaseDirectImportType === 'ALLOCATIONS' ? '#3b82f6' : '#334155'}; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; cursor: pointer;">
+                🔧 1. Allocations
+              </button>
+              <button class="btn-db-imp-target ${databaseDirectImportType === 'TOOLS' ? 'active' : ''}" data-target="TOOLS"
+                style="background: ${databaseDirectImportType === 'TOOLS' ? '#2563eb' : '#0f172a'}; color: #fff; border: 1px solid ${databaseDirectImportType === 'TOOLS' ? '#3b82f6' : '#334155'}; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; cursor: pointer;">
+                🛠️ 2. Master Tools
+              </button>
+              <button class="btn-db-imp-target ${databaseDirectImportType === 'ACCESSORIES' ? 'active' : ''}" data-target="ACCESSORIES"
+                style="background: ${databaseDirectImportType === 'ACCESSORIES' ? '#2563eb' : '#0f172a'}; color: #fff; border: 1px solid ${databaseDirectImportType === 'ACCESSORIES' ? '#3b82f6' : '#334155'}; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; cursor: pointer;">
+                📦 3. Master Accessories
               </button>
             </div>
-            <div style="max-height: 160px; overflow: auto; border: 1px solid #1e293b; border-radius: 4px;">
-              <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
-                <thead>
-                  <tr style="background: #1e293b; color: #94a3b8; text-align: left; border-bottom: 1px solid #334155;">
-                    <th style="padding: 5px 6px; width: 30px; text-align: center;">#</th>
-                    ${Object.keys(databaseDirectParsedRows[0] || {}).slice(0, 6).map(k => `
-                      <th style="padding: 5px 6px;">${k}</th>
-                    `).join('')}
-                  </tr>
-                </thead>
-                <tbody>
-                  ${databaseDirectParsedRows.slice(0, 8).map((row, idx) => `
-                    <tr style="border-bottom: 1px solid #1e293b;">
-                      <td style="padding: 4px 6px; text-align: center; color: #64748b; font-family: monospace;">${idx + 1}</td>
-                      ${Object.values(row).slice(0, 6).map(val => `
-                        <td style="padding: 4px 6px; color: #e2e8f0;">${val !== undefined && val !== null ? String(val) : '-'}</td>
-                      `).join('')}
-                    </tr>
-                  `).join('')}
-                </tbody>
-              </table>
+            <button id="btn-db-download-template" style="background: #0284c7; color: #fff; border: 1px solid #0369a1; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 3px;">
+              <span>📥</span> Template (.xlsx)
+            </button>
+          </div>
+
+          <!-- Compact Dropzone -->
+          <div id="db-drop-zone" style="border: 1.5px dashed ${databaseDirectFileName ? '#22c55e' : '#475569'}; border-radius: 5px; padding: 8px; text-align: center; background: ${databaseDirectFileName ? 'rgba(34, 197, 94, 0.05)' : '#0f172a'}; cursor: pointer; transition: all 0.2s;">
+            <input type="file" id="db-file-input" accept=".xlsx, .xls, .csv" style="display: none;" />
+            <div style="font-size: 12px; font-weight: 700; color: #f1f5f9;">
+              ${databaseDirectFileName ? `📁 <span style="color: #22c55e; font-weight: 800;">${databaseDirectFileName}</span> (${databaseDirectParsedRows.length} Rows Detected)` : '📁 Click or Drag &amp; Drop Excel file (.xlsx, .xls, .csv) here to import'}
+            </div>
+            <div style="font-size: 10px; color: #94a3b8; margin-top: 1px;">
+              Target Table: <strong>${databaseDirectImportType === 'ALLOCATIONS' ? 'TOOL_ALLOCATIONS' : databaseDirectImportType === 'TOOLS' ? 'TOOLS_MASTER' : 'ACCESSORIES_MASTER'}</strong>
             </div>
           </div>
-        ` : ''}
-      </div>
+
+          <!-- Live Preview If File Parsed -->
+          ${databaseDirectParsedRows.length > 0 ? `
+            <div style="background: #0f172a; border: 1px solid #334155; border-radius: 5px; padding: 6px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                <span style="font-size: 11px; font-weight: 800; color: #38bdf8;">Data Preview (First ${Math.min(databaseDirectParsedRows.length, 6)} of ${databaseDirectParsedRows.length} rows):</span>
+                <button id="btn-db-save-parsed-rows" style="background: #16a34a; color: #fff; border: none; padding: 4px 12px; border-radius: 4px; font-weight: 900; font-size: 11.5px; cursor: pointer; display: flex; align-items: center; gap: 4px; box-shadow: 0 2px 6px rgba(0,0,0,0.3);">
+                  <span>💾</span> Import ${databaseDirectParsedRows.length} Rows into DB
+                </button>
+              </div>
+              <div style="max-height: 100px; overflow: auto; border: 1px solid #1e293b; border-radius: 4px;">
+                <table style="width: 100%; border-collapse: collapse; font-size: 10.5px;">
+                  <thead>
+                    <tr style="background: #1e293b; color: #94a3b8; text-align: left; border-bottom: 1px solid #334155;">
+                      <th style="padding: 3px 5px; width: 26px; text-align: center;">#</th>
+                      ${Object.keys(databaseDirectParsedRows[0] || {}).slice(0, 6).map(k => `
+                        <th style="padding: 3px 5px;">${k}</th>
+                      `).join('')}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${databaseDirectParsedRows.slice(0, 6).map((row, idx) => `
+                      <tr style="border-bottom: 1px solid #1e293b;">
+                        <td style="padding: 2px 5px; text-align: center; color: #64748b; font-family: monospace;">${idx + 1}</td>
+                        ${Object.values(row).slice(0, 6).map(val => `
+                          <td style="padding: 2px 5px; color: #e2e8f0;">${val !== undefined && val !== null ? String(val) : '-'}</td>
+                        `).join('')}
+                      </tr>
+                    `).join('')}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ` : ''}
+        </div>
+      ` : ''}
 
       <!-- SECTION B: RAW DATABASE TABLES INSPECTOR & EXPLORER -->
-      <div style="background: #1e293b; border-radius: 8px; border: 1px solid #334155; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.2);">
+      <div style="background: #1e293b; border-radius: 6px; border: 1px solid #334155; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.2);">
         
-        <!-- Table Explorer Header & Controls -->
-        <div style="background: #0f172a; padding: 12px 16px; border-bottom: 1.5px solid #334155; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+        <!-- Streamlined Table Explorer Header & Controls -->
+        <div style="background: #0f172a; padding: 6px 10px; border-bottom: 1.5px solid #334155; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
           
           <!-- Table Switcher Buttons -->
-          <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+          <div style="display: flex; gap: 5px; flex-wrap: wrap;">
             <button class="btn-db-table-switch ${databaseActiveTable === 'TOOL_ALLOCATIONS' ? 'active' : ''}" data-table="TOOL_ALLOCATIONS"
-              style="background: ${databaseActiveTable === 'TOOL_ALLOCATIONS' ? '#2563eb' : '#1e293b'}; color: #fff; border: 1px solid #475569; padding: 5px 12px; border-radius: 5px; font-size: 12px; font-weight: 700; cursor: pointer;">
-              📋 Tool Allocations (${allAllocations.length})
+              style="background: ${databaseActiveTable === 'TOOL_ALLOCATIONS' ? '#2563eb' : '#1e293b'}; color: #fff; border: 1px solid #475569; padding: 4px 10px; border-radius: 4px; font-size: 11.5px; font-weight: 700; cursor: pointer;">
+              📋 Allocations (${allAllocations.length})
             </button>
             <button class="btn-db-table-switch ${databaseActiveTable === 'TOOL_CHANGE_HISTORY' ? 'active' : ''}" data-table="TOOL_CHANGE_HISTORY"
-              style="background: ${databaseActiveTable === 'TOOL_CHANGE_HISTORY' ? '#7c3aed' : '#1e293b'}; color: #fff; border: 1px solid #475569; padding: 5px 12px; border-radius: 5px; font-size: 12px; font-weight: 700; cursor: pointer;">
-              📜 Tool Change History (${allToolChangeHistory.length})
+              style="background: ${databaseActiveTable === 'TOOL_CHANGE_HISTORY' ? '#7c3aed' : '#1e293b'}; color: #fff; border: 1px solid #475569; padding: 4px 10px; border-radius: 4px; font-size: 11.5px; font-weight: 700; cursor: pointer;">
+              📜 History (${allToolChangeHistory.length})
             </button>
             <button class="btn-db-table-switch ${databaseActiveTable === 'TOOLS_MASTER' ? 'active' : ''}" data-table="TOOLS_MASTER"
-              style="background: ${databaseActiveTable === 'TOOLS_MASTER' ? '#2563eb' : '#1e293b'}; color: #fff; border: 1px solid #475569; padding: 5px 12px; border-radius: 5px; font-size: 12px; font-weight: 700; cursor: pointer;">
+              style="background: ${databaseActiveTable === 'TOOLS_MASTER' ? '#2563eb' : '#1e293b'}; color: #fff; border: 1px solid #475569; padding: 4px 10px; border-radius: 4px; font-size: 11.5px; font-weight: 700; cursor: pointer;">
               🛠️ Master Tools (${masterTools.length})
             </button>
             <button class="btn-db-table-switch ${databaseActiveTable === 'ACCESSORIES_MASTER' ? 'active' : ''}" data-table="ACCESSORIES_MASTER"
-              style="background: ${databaseActiveTable === 'ACCESSORIES_MASTER' ? '#2563eb' : '#1e293b'}; color: #fff; border: 1px solid #475569; padding: 5px 12px; border-radius: 5px; font-size: 12px; font-weight: 700; cursor: pointer;">
+              style="background: ${databaseActiveTable === 'ACCESSORIES_MASTER' ? '#2563eb' : '#1e293b'}; color: #fff; border: 1px solid #475569; padding: 4px 10px; border-radius: 4px; font-size: 11.5px; font-weight: 700; cursor: pointer;">
               📦 Master Accessories (${masterAccs.length})
             </button>
           </div>
 
           <!-- Table Search Input -->
-          <div style="display: flex; gap: 8px; align-items: center;">
-            <input type="text" id="db-search-input" value="${databaseSearch}" placeholder="Search in this table..."
-              style="background: #1e293b; color: #fff; border: 1px solid #475569; border-radius: 4px; padding: 5px 10px; font-size: 12px; width: 220px;" />
-            <button id="btn-db-clear-search" style="background: #334155; color: #e2e8f0; border: none; padding: 5px 8px; border-radius: 4px; font-size: 11px; cursor: pointer;">
-              Clear
-            </button>
+          <div style="display: flex; gap: 6px; align-items: center;">
+            <input type="text" id="db-search-input" value="${databaseSearch}" placeholder="🔍 Search in table..."
+              style="background: #1e293b; color: #fff; border: 1px solid #475569; border-radius: 4px; padding: 4px 8px; font-size: 11.5px; width: 180px;" />
+            ${databaseSearch ? `
+              <button id="btn-db-clear-search" style="background: #334155; color: #e2e8f0; border: none; padding: 4px 8px; border-radius: 4px; font-size: 11px; cursor: pointer;">
+                Clear
+              </button>
+            ` : ''}
           </div>
 
         </div>
 
         <!-- Table Content -->
-        <div id="db-table-scroll-container" style="overflow-x: auto; max-height: calc(100vh - 310px); min-height: 280px; display: flex; flex-direction: column; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #0ea5e9 #1e293b;">
+        <div id="db-table-scroll-container" style="overflow-x: auto; max-height: calc(100vh - 195px); min-height: 350px; display: flex; flex-direction: column; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #0ea5e9 #1e293b;">
           
           <!-- Admin Bulk Action Bar in Database Screen -->
           ${dbSelectedIds.size > 0 && databaseActiveTable === 'TOOL_ALLOCATIONS' ? `
@@ -4478,12 +4443,26 @@ export function initToolsManagementEvents() {
     };
   }
 
+  // Toggle Collapsible Direct Import Drawer in Database screen
+  const btnToggleDbImp = document.getElementById('btn-toggle-db-import');
+  if (btnToggleDbImp) {
+    btnToggleDbImp.onclick = () => {
+      dbShowImportDrawer = !dbShowImportDrawer;
+      const container = document.getElementById('tools-tab-content-container');
+      if (container) {
+        container.innerHTML = renderActiveTab('database-page');
+        initToolsManagementEvents();
+      }
+    };
+  }
+
   // Switch Import Category in Database screen
   root.querySelectorAll('.btn-db-imp-target').forEach(btn => {
     btn.onclick = () => {
       databaseDirectImportType = btn.getAttribute('data-target');
       databaseDirectParsedRows = [];
       databaseDirectFileName = '';
+      dbShowImportDrawer = true;
       const container = document.getElementById('tools-tab-content-container');
       if (container) {
         container.innerHTML = renderActiveTab('database-page');
