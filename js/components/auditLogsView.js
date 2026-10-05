@@ -202,31 +202,29 @@ export function renderAuditLogsView() {
   const paginatedLogs = filteredLogs.slice(startIndex, endIndex);
 
   return `
-    <div class="page-view audit-page-root" style="gap: 16px; padding: 18px 22px; display: flex; flex-direction: column;">
+    <div class="page-view audit-page-root" style="gap: 8px; padding: 10px 14px; display: flex; flex-direction: column; flex: 1; min-height: 0;">
       
-      <!-- 1. Top Action & Navigation Header -->
-      <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 16px 22px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; box-shadow: var(--shadow-sm);">
-        <div>
-          <div style="font-weight: 800; font-size: 20px; color: #fff; display: flex; align-items: center; gap: 10px;">
-            <span style="font-size: 24px;">📜</span>
-            <span>System Audit Trail &amp; Activity Ledger</span>
-          </div>
-          <p style="font-size: 13px; color: var(--text-secondary); margin-top: 4px; margin-bottom: 0;">
-            Central tamper-evident operational logs tracking all machine relocations, approvals, master data changes, and user activities.
-          </p>
+      <!-- 1. Compact Header & Action Bar -->
+      <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 8px; padding: 6px 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; box-shadow: var(--shadow-sm);">
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+          <span style="font-size: 18px;">📜</span>
+          <span style="font-weight: 800; font-size: 14.5px; color: #fff; letter-spacing: 0.3px;">System Audit Trail &amp; Activity Ledger</span>
+          <span style="font-size: 11px; color: var(--text-muted); border-left: 1px solid rgba(255,255,255,0.15); padding-left: 8px;">
+            Tamper-evident operational logs tracking relocations, approvals &amp; user activities
+          </span>
         </div>
 
-        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-          <button id="btn-export-audit-excel" class="btn btn-secondary btn-sm" style="font-weight: 700; height: 36px; display: inline-flex; align-items: center; gap: 6px;" title="Export filtered logs to Excel (.xlsx)">
+        <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+          <button id="btn-export-audit-excel" class="btn btn-secondary btn-sm" style="font-weight: 700; height: 28px; font-size: 11px; padding: 2px 10px; display: inline-flex; align-items: center; gap: 5px;" title="Export filtered logs to Excel (.xlsx)">
             <span>📊</span>
-            <span>Export Excel (.xlsx)</span>
+            <span>Export Excel</span>
           </button>
-          <button id="btn-refresh-audit-logs" class="btn btn-ghost btn-sm" style="height: 36px; border: 1px solid var(--border-color);" title="Reload activity logs">
+          <button id="btn-refresh-audit-logs" class="btn btn-ghost btn-sm" style="height: 28px; font-size: 11px; padding: 2px 8px; border: 1px solid var(--border-color);" title="Reload activity logs">
             <span>↺</span>
             <span>Refresh</span>
           </button>
           ${authService.isAdmin() ? `
-            <button id="btn-clear-all-audit-logs" class="btn btn-ghost btn-sm" style="height: 36px; color: #f87171; border: 1px solid rgba(239, 68, 68, 0.35);" title="Wipe system audit logs (Admin Only)">
+            <button id="btn-clear-all-audit-logs" class="btn btn-ghost btn-sm" style="height: 28px; font-size: 11px; padding: 2px 8px; color: #f87171; border: 1px solid rgba(239, 68, 68, 0.35);" title="Wipe system audit logs (Admin Only)">
               <span>🗑️</span>
               <span>Purge Logs</span>
             </button>
@@ -234,236 +232,178 @@ export function renderAuditLogsView() {
         </div>
       </div>
 
-      <!-- 2. KPI Category Summary Cards (Clickable Quick Filters) -->
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px;">
+      <!-- 2. Compact Category KPI Quick-Filter Strip -->
+      <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 6px; padding: 4px 8px; display: flex; align-items: center; gap: 6px; overflow-x: auto; white-space: nowrap;">
         
-        <!-- Total Logs -->
-        <div class="audit-kpi-card ${auditFilters.category === 'ALL' ? 'active' : ''}" data-category="ALL" style="background: var(--bg-surface); border: 1.5px solid ${auditFilters.category === 'ALL' ? '#38bdf8' : 'var(--border-color)'}; border-radius: var(--radius-lg); padding: 14px 16px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 12px; box-shadow: var(--shadow-sm);">
-          <div style="width: 44px; height: 44px; border-radius: 10px; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.3); display: flex; align-items: center; justify-content: center; font-size: 22px;">
-            📜
-          </div>
-          <div>
-            <div style="font-size: 20px; font-weight: 800; color: #fff;">${counts.TOTAL}</div>
-            <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">All Activities</div>
-          </div>
+        <!-- All -->
+        <div class="audit-kpi-card ${auditFilters.category === 'ALL' ? 'active' : ''}" data-category="ALL" style="display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px; border-radius: 5px; font-size: 11.5px; font-weight: 700; cursor: pointer; transition: all 0.15s; border: 1px solid ${auditFilters.category === 'ALL' ? '#38bdf8' : 'rgba(255,255,255,0.08)'}; background: ${auditFilters.category === 'ALL' ? 'rgba(56,189,248,0.2)' : 'rgba(255,255,255,0.03)'}; color: ${auditFilters.category === 'ALL' ? '#fff' : '#cbd5e1'};">
+          <span>📜</span>
+          <span>All Activities</span>
+          <span style="font-family: var(--font-mono); font-size: 10.5px; padding: 1px 5px; border-radius: 4px; background: rgba(0,0,0,0.4); color: #38bdf8; font-weight: 800;">${counts.TOTAL}</span>
         </div>
 
         <!-- Master Data -->
-        <div class="audit-kpi-card ${auditFilters.category === 'MASTER_DATA' ? 'active' : ''}" data-category="MASTER_DATA" style="background: var(--bg-surface); border: 1.5px solid ${auditFilters.category === 'MASTER_DATA' ? '#c084fc' : 'var(--border-color)'}; border-radius: var(--radius-lg); padding: 14px 16px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 12px; box-shadow: var(--shadow-sm);">
-          <div style="width: 44px; height: 44px; border-radius: 10px; background: rgba(168, 85, 247, 0.15); border: 1px solid rgba(168, 85, 247, 0.3); display: flex; align-items: center; justify-content: center; font-size: 22px;">
-            🏢
-          </div>
-          <div>
-            <div style="font-size: 20px; font-weight: 800; color: #c084fc;">${counts.MASTER_DATA}</div>
-            <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Master Data</div>
-          </div>
+        <div class="audit-kpi-card ${auditFilters.category === 'MASTER_DATA' ? 'active' : ''}" data-category="MASTER_DATA" style="display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px; border-radius: 5px; font-size: 11.5px; font-weight: 700; cursor: pointer; transition: all 0.15s; border: 1px solid ${auditFilters.category === 'MASTER_DATA' ? '#c084fc' : 'rgba(255,255,255,0.08)'}; background: ${auditFilters.category === 'MASTER_DATA' ? 'rgba(168,85,247,0.2)' : 'rgba(255,255,255,0.03)'}; color: ${auditFilters.category === 'MASTER_DATA' ? '#fff' : '#cbd5e1'};">
+          <span>🏢</span>
+          <span>Master Data</span>
+          <span style="font-family: var(--font-mono); font-size: 10.5px; padding: 1px 5px; border-radius: 4px; background: rgba(0,0,0,0.4); color: #c084fc; font-weight: 800;">${counts.MASTER_DATA}</span>
         </div>
 
         <!-- Transfers -->
-        <div class="audit-kpi-card ${auditFilters.category === 'TRANSFERS' ? 'active' : ''}" data-category="TRANSFERS" style="background: var(--bg-surface); border: 1.5px solid ${auditFilters.category === 'TRANSFERS' ? '#38bdf8' : 'var(--border-color)'}; border-radius: var(--radius-lg); padding: 14px 16px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 12px; box-shadow: var(--shadow-sm);">
-          <div style="width: 44px; height: 44px; border-radius: 10px; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.3); display: flex; align-items: center; justify-content: center; font-size: 22px;">
-            🔄
-          </div>
-          <div>
-            <div style="font-size: 20px; font-weight: 800; color: #38bdf8;">${counts.TRANSFERS}</div>
-            <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Transfers</div>
-          </div>
+        <div class="audit-kpi-card ${auditFilters.category === 'TRANSFERS' ? 'active' : ''}" data-category="TRANSFERS" style="display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px; border-radius: 5px; font-size: 11.5px; font-weight: 700; cursor: pointer; transition: all 0.15s; border: 1px solid ${auditFilters.category === 'TRANSFERS' ? '#38bdf8' : 'rgba(255,255,255,0.08)'}; background: ${auditFilters.category === 'TRANSFERS' ? 'rgba(56,189,248,0.2)' : 'rgba(255,255,255,0.03)'}; color: ${auditFilters.category === 'TRANSFERS' ? '#fff' : '#cbd5e1'};">
+          <span>🔄</span>
+          <span>Transfers</span>
+          <span style="font-family: var(--font-mono); font-size: 10.5px; padding: 1px 5px; border-radius: 4px; background: rgba(0,0,0,0.4); color: #38bdf8; font-weight: 800;">${counts.TRANSFERS}</span>
         </div>
 
-        <!-- Machines & Inventory -->
-        <div class="audit-kpi-card ${auditFilters.category === 'MACHINES' ? 'active' : ''}" data-category="MACHINES" style="background: var(--bg-surface); border: 1.5px solid ${auditFilters.category === 'MACHINES' ? '#34d399' : 'var(--border-color)'}; border-radius: var(--radius-lg); padding: 14px 16px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 12px; box-shadow: var(--shadow-sm);">
-          <div style="width: 44px; height: 44px; border-radius: 10px; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); display: flex; align-items: center; justify-content: center; font-size: 22px;">
-            🧵
-          </div>
-          <div>
-            <div style="font-size: 20px; font-weight: 800; color: #34d399;">${counts.MACHINES}</div>
-            <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Equipment</div>
-          </div>
+        <!-- Equipment -->
+        <div class="audit-kpi-card ${auditFilters.category === 'MACHINES' ? 'active' : ''}" data-category="MACHINES" style="display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px; border-radius: 5px; font-size: 11.5px; font-weight: 700; cursor: pointer; transition: all 0.15s; border: 1px solid ${auditFilters.category === 'MACHINES' ? '#34d399' : 'rgba(255,255,255,0.08)'}; background: ${auditFilters.category === 'MACHINES' ? 'rgba(16,185,129,0.2)' : 'rgba(255,255,255,0.03)'}; color: ${auditFilters.category === 'MACHINES' ? '#fff' : '#cbd5e1'};">
+          <span>🧵</span>
+          <span>Equipment</span>
+          <span style="font-family: var(--font-mono); font-size: 10.5px; padding: 1px 5px; border-radius: 4px; background: rgba(0,0,0,0.4); color: #34d399; font-weight: 800;">${counts.MACHINES}</span>
         </div>
 
-        <!-- Maintenance & Service -->
-        <div class="audit-kpi-card ${auditFilters.category === 'MAINTENANCE' ? 'active' : ''}" data-category="MAINTENANCE" style="background: var(--bg-surface); border: 1.5px solid ${auditFilters.category === 'MAINTENANCE' ? '#fbbf24' : 'var(--border-color)'}; border-radius: var(--radius-lg); padding: 14px 16px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 12px; box-shadow: var(--shadow-sm);">
-          <div style="width: 44px; height: 44px; border-radius: 10px; background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.3); display: flex; align-items: center; justify-content: center; font-size: 22px;">
-            🛠️
-          </div>
-          <div>
-            <div style="font-size: 20px; font-weight: 800; color: #fbbf24;">${counts.MAINTENANCE}</div>
-            <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Maintenance</div>
-          </div>
+        <!-- Maintenance -->
+        <div class="audit-kpi-card ${auditFilters.category === 'MAINTENANCE' ? 'active' : ''}" data-category="MAINTENANCE" style="display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px; border-radius: 5px; font-size: 11.5px; font-weight: 700; cursor: pointer; transition: all 0.15s; border: 1px solid ${auditFilters.category === 'MAINTENANCE' ? '#fbbf24' : 'rgba(255,255,255,0.08)'}; background: ${auditFilters.category === 'MAINTENANCE' ? 'rgba(245,158,11,0.2)' : 'rgba(255,255,255,0.03)'}; color: ${auditFilters.category === 'MAINTENANCE' ? '#fff' : '#cbd5e1'};">
+          <span>🛠️</span>
+          <span>Maintenance</span>
+          <span style="font-family: var(--font-mono); font-size: 10.5px; padding: 1px 5px; border-radius: 4px; background: rgba(0,0,0,0.4); color: #fbbf24; font-weight: 800;">${counts.MAINTENANCE}</span>
         </div>
 
-        <!-- Users & Security -->
-        <div class="audit-kpi-card ${auditFilters.category === 'USERS' ? 'active' : ''}" data-category="USERS" style="background: var(--bg-surface); border: 1.5px solid ${auditFilters.category === 'USERS' ? '#f472b6' : 'var(--border-color)'}; border-radius: var(--radius-lg); padding: 14px 16px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 12px; box-shadow: var(--shadow-sm);">
-          <div style="width: 44px; height: 44px; border-radius: 10px; background: rgba(236, 72, 153, 0.15); border: 1px solid rgba(236, 72, 153, 0.3); display: flex; align-items: center; justify-content: center; font-size: 22px;">
-            👥
-          </div>
-          <div>
-            <div style="font-size: 20px; font-weight: 800; color: #f472b6;">${counts.USERS}</div>
-            <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Users / Auth</div>
-          </div>
+        <!-- Users -->
+        <div class="audit-kpi-card ${auditFilters.category === 'USERS' ? 'active' : ''}" data-category="USERS" style="display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px; border-radius: 5px; font-size: 11.5px; font-weight: 700; cursor: pointer; transition: all 0.15s; border: 1px solid ${auditFilters.category === 'USERS' ? '#f472b6' : 'rgba(255,255,255,0.08)'}; background: ${auditFilters.category === 'USERS' ? 'rgba(236,72,153,0.2)' : 'rgba(255,255,255,0.03)'}; color: ${auditFilters.category === 'USERS' ? '#fff' : '#cbd5e1'};">
+          <span>👥</span>
+          <span>Users / Auth</span>
+          <span style="font-family: var(--font-mono); font-size: 10.5px; padding: 1px 5px; border-radius: 4px; background: rgba(0,0,0,0.4); color: #f472b6; font-weight: 800;">${counts.USERS}</span>
         </div>
 
       </div>
 
-      <!-- 3. Dynamic Filter Hub (Search, Category, Action Type, User, Date Range) -->
-      <div style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.95)); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: var(--radius-lg); padding: 16px 20px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);">
+      <!-- 3. Ultra-Compact Filter Bar -->
+      <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 6px; padding: 5px 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
         
-        <!-- Filter Row 1: Search + Category + Action Type + User -->
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; align-items: flex-end;">
-          
-          <!-- Live Keyword Search -->
-          <div style="display: flex; flex-direction: column; gap: 5px; grid-column: span 1;">
-            <label for="audit-search-input" style="font-size: 11px; font-weight: 800; color: #38bdf8; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 5px;">
-              <span>🔍 Search Activity Logs:</span>
-            </label>
-            <div style="position: relative; display: flex; align-items: center;">
-              <span style="position: absolute; left: 12px; font-size: 13px; color: #38bdf8;">🔍</span>
-              <input 
-                type="text" 
-                id="audit-search-input" 
-                class="form-control" 
-                placeholder="Search action, details, user, ID..." 
-                value="${auditFilters.search || ''}"
-                style="padding-left: 34px; padding-right: 28px; height: 38px; font-size: 12.5px; background: #080d1a; border: 1.5px solid rgba(56, 189, 248, 0.4); color: #fff; border-radius: 6px;"
-              />
-              ${auditFilters.search ? `
-                <button id="btn-clear-audit-search" type="button" class="btn btn-ghost btn-sm" style="position: absolute; right: 6px; padding: 2px 6px; font-size: 11px; color: var(--text-muted);" title="Clear search">✕</button>
-              ` : ''}
-            </div>
+        <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap; flex: 1;">
+          <!-- Keyword Search -->
+          <div style="position: relative; display: flex; align-items: center; min-width: 180px; max-width: 240px; flex: 1;">
+            <span style="position: absolute; left: 8px; font-size: 11.5px; color: #38bdf8;">🔍</span>
+            <input 
+              type="text" 
+              id="audit-search-input" 
+              class="form-control" 
+              placeholder="Search action, details, user, ID..." 
+              value="${auditFilters.search || ''}"
+              style="padding-left: 26px; padding-right: 22px; height: 28px; font-size: 11.5px; background: #080d1a; border: 1px solid rgba(56, 189, 248, 0.35); color: #fff; border-radius: 5px;"
+            />
+            ${auditFilters.search ? `
+              <button id="btn-clear-audit-search" type="button" class="btn btn-ghost btn-xs" style="position: absolute; right: 4px; padding: 1px 4px; font-size: 10px; color: var(--text-muted);" title="Clear search">✕</button>
+            ` : ''}
           </div>
 
-          <!-- Module / Category Dropdown -->
-          <div style="display: flex; flex-direction: column; gap: 5px;">
-            <label for="filter-audit-category" style="font-size: 11px; font-weight: 800; color: #c084fc; text-transform: uppercase; letter-spacing: 0.5px;">
-              <span>🏢 Activity Category:</span>
-            </label>
-            <select id="filter-audit-category" class="filter-select" style="height: 38px; font-size: 12.5px; background: #080d1a; color: #e2e8f0; border: 1.5px solid rgba(168, 85, 247, 0.4); border-radius: 6px;">
-              <option value="ALL" ${auditFilters.category === 'ALL' ? 'selected' : ''}>All Categories (${counts.TOTAL})</option>
-              <option value="MASTER_DATA" ${auditFilters.category === 'MASTER_DATA' ? 'selected' : ''}>🏢 Plant &amp; Master Data (${counts.MASTER_DATA})</option>
-              <option value="TRANSFERS" ${auditFilters.category === 'TRANSFERS' ? 'selected' : ''}>🔄 Transfers &amp; Relocations (${counts.TRANSFERS})</option>
-              <option value="MACHINES" ${auditFilters.category === 'MACHINES' ? 'selected' : ''}>🧵 Machine &amp; Equipment (${counts.MACHINES})</option>
-              <option value="MAINTENANCE" ${auditFilters.category === 'MAINTENANCE' ? 'selected' : ''}>🛠️ Maintenance &amp; Service (${counts.MAINTENANCE})</option>
-              <option value="USERS" ${auditFilters.category === 'USERS' ? 'selected' : ''}>👥 Users &amp; Security (${counts.USERS})</option>
-              <option value="SYSTEM" ${auditFilters.category === 'SYSTEM' ? 'selected' : ''}>⚙️ System Operations (${counts.SYSTEM})</option>
-            </select>
+          <!-- Category Select -->
+          <select id="filter-audit-category" class="filter-select" style="height: 28px; font-size: 11px; padding: 2px 6px; background: #080d1a; color: #e2e8f0; border: 1px solid rgba(168, 85, 247, 0.35); border-radius: 5px; width: 145px;">
+            <option value="ALL" ${auditFilters.category === 'ALL' ? 'selected' : ''}>All Categories (${counts.TOTAL})</option>
+            <option value="MASTER_DATA" ${auditFilters.category === 'MASTER_DATA' ? 'selected' : ''}>🏢 Plant &amp; Master (${counts.MASTER_DATA})</option>
+            <option value="TRANSFERS" ${auditFilters.category === 'TRANSFERS' ? 'selected' : ''}>🔄 Transfers (${counts.TRANSFERS})</option>
+            <option value="MACHINES" ${auditFilters.category === 'MACHINES' ? 'selected' : ''}>🧵 Machines (${counts.MACHINES})</option>
+            <option value="MAINTENANCE" ${auditFilters.category === 'MAINTENANCE' ? 'selected' : ''}>🛠️ Maintenance (${counts.MAINTENANCE})</option>
+            <option value="USERS" ${auditFilters.category === 'USERS' ? 'selected' : ''}>👥 Users &amp; Auth (${counts.USERS})</option>
+            <option value="SYSTEM" ${auditFilters.category === 'SYSTEM' ? 'selected' : ''}>⚙️ System (${counts.SYSTEM || 0})</option>
+          </select>
+
+          <!-- Action Type Select -->
+          <select id="filter-audit-action-type" class="filter-select" style="height: 28px; font-size: 11px; padding: 2px 6px; background: #080d1a; color: #e2e8f0; border: 1px solid rgba(16, 185, 129, 0.35); border-radius: 5px; width: 130px;">
+            <option value="ALL" ${auditFilters.actionType === 'ALL' ? 'selected' : ''}>All Actions</option>
+            <option value="APPROVE" ${auditFilters.actionType === 'APPROVE' ? 'selected' : ''}>✅ Approvals</option>
+            <option value="TRANSFER" ${auditFilters.actionType === 'TRANSFER' ? 'selected' : ''}>🔄 Transfers</option>
+            <option value="TOGGLE" ${auditFilters.actionType === 'TOGGLE' ? 'selected' : ''}>🔀 Status Toggles</option>
+            <option value="CREATE" ${auditFilters.actionType === 'CREATE' ? 'selected' : ''}>➕ Additions</option>
+            <option value="UPDATE" ${auditFilters.actionType === 'UPDATE' ? 'selected' : ''}>✏️ Updates</option>
+            <option value="DELETE" ${auditFilters.actionType === 'DELETE' ? 'selected' : ''}>❌ Deletions</option>
+          </select>
+
+          <!-- User Select -->
+          <select id="filter-audit-user" class="filter-select" style="height: 28px; font-size: 11px; padding: 2px 6px; background: #080d1a; color: #e2e8f0; border: 1px solid rgba(245, 158, 11, 0.35); border-radius: 5px; width: 120px;">
+            <option value="ALL" ${auditFilters.username === 'ALL' ? 'selected' : ''}>All Users (${distinctUsers.length})</option>
+            ${distinctUsers.map(u => {
+              const isSelected = String(auditFilters.username || '').toLowerCase() === String(u || '').toLowerCase();
+              return `<option value="${u}" ${isSelected ? 'selected' : ''}>${u}</option>`;
+            }).join('')}
+          </select>
+
+          <!-- Date Presets -->
+          <div style="display: flex; gap: 2px; background: rgba(8, 13, 26, 0.8); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 5px; padding: 1px;">
+            ${[
+              { id: 'ALL', label: 'All' },
+              { id: 'TODAY', label: 'Today' },
+              { id: 'WEEK', label: '7 Days' },
+              { id: 'MONTH', label: 'Month' }
+            ].map(p => `
+              <button type="button" class="btn btn-xs btn-date-preset ${auditFilters.datePreset === p.id ? 'active' : ''}" data-preset="${p.id}" style="padding: 2px 7px; font-size: 10.5px; font-weight: 700; border-radius: 4px; border: none; cursor: pointer; ${auditFilters.datePreset === p.id ? 'background: #0284c7; color: #fff;' : 'background: transparent; color: #94a3b8;'}">
+                ${p.label}
+              </button>
+            `).join('')}
           </div>
 
-          <!-- Action Type Dropdown -->
-          <div style="display: flex; flex-direction: column; gap: 5px;">
-            <label for="filter-audit-action-type" style="font-size: 11px; font-weight: 800; color: #34d399; text-transform: uppercase; letter-spacing: 0.5px;">
-              <span>⚡ Action Type:</span>
-            </label>
-            <select id="filter-audit-action-type" class="filter-select" style="height: 38px; font-size: 12.5px; background: #080d1a; color: #e2e8f0; border: 1.5px solid rgba(16, 185, 129, 0.4); border-radius: 6px;">
-              <option value="ALL" ${auditFilters.actionType === 'ALL' ? 'selected' : ''}>All Action Types</option>
-              <option value="APPROVE" ${auditFilters.actionType === 'APPROVE' ? 'selected' : ''}>✅ Approvals &amp; Acceptances</option>
-              <option value="TRANSFER" ${auditFilters.actionType === 'TRANSFER' ? 'selected' : ''}>🔄 Transfers &amp; Physical Moves</option>
-              <option value="TOGGLE" ${auditFilters.actionType === 'TOGGLE' ? 'selected' : ''}>🔀 Status Toggles (Active / Inactive)</option>
-              <option value="CREATE" ${auditFilters.actionType === 'CREATE' ? 'selected' : ''}>➕ Additions &amp; Creations</option>
-              <option value="UPDATE" ${auditFilters.actionType === 'UPDATE' ? 'selected' : ''}>✏️ Edits, Updates &amp; Configs</option>
-              <option value="DELETE" ${auditFilters.actionType === 'DELETE' ? 'selected' : ''}>❌ Deletions, Rejections &amp; Cancels</option>
-            </select>
+          <!-- Date Picker -->
+          <div style="display: flex; align-items: center; gap: 4px;">
+            <input 
+              type="date" 
+              id="audit-start-date" 
+              value="${auditFilters.startDate || ''}" 
+              style="height: 26px; font-size: 10.5px; padding: 1px 4px; background: #080d1a; color: #fff; border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 4px; width: 108px;"
+              title="Start Date"
+            />
+            <span style="font-size: 10px; color: var(--text-muted);">&rarr;</span>
+            <input 
+              type="date" 
+              id="audit-end-date" 
+              value="${auditFilters.endDate || ''}" 
+              style="height: 26px; font-size: 10.5px; padding: 1px 4px; background: #080d1a; color: #fff; border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 4px; width: 108px;"
+              title="End Date"
+            />
           </div>
-
-          <!-- User / Actor Dropdown -->
-          <div style="display: flex; flex-direction: column; gap: 5px;">
-            <label for="filter-audit-user" style="font-size: 11px; font-weight: 800; color: #fbbf24; text-transform: uppercase; letter-spacing: 0.5px;">
-              <span>👤 Initiating User:</span>
-            </label>
-            <select id="filter-audit-user" class="filter-select" style="height: 38px; font-size: 12.5px; background: #080d1a; color: #e2e8f0; border: 1.5px solid rgba(245, 158, 11, 0.4); border-radius: 6px;">
-              <option value="ALL" ${auditFilters.username === 'ALL' ? 'selected' : ''}>All Users (${distinctUsers.length})</option>
-              ${distinctUsers.map(u => {
-                const isSelected = String(auditFilters.username || '').toLowerCase() === String(u || '').toLowerCase();
-                return `<option value="${u}" ${isSelected ? 'selected' : ''}>${u}</option>`;
-              }).join('')}
-            </select>
-          </div>
-
         </div>
 
-        <!-- Filter Row 2: Date Range Presets + Custom Range + Reset -->
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 10px;">
-          
-          <!-- Date Presets & Inputs -->
-          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-            <span style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">📅 Time Period:</span>
-            
-            <div style="display: flex; gap: 4px; background: rgba(8, 13, 26, 0.7); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 6px; padding: 2px;">
-              ${[
-                { id: 'ALL', label: 'All Time' },
-                { id: 'TODAY', label: 'Today' },
-                { id: 'WEEK', label: 'Last 7 Days' },
-                { id: 'MONTH', label: 'This Month' }
-              ].map(p => `
-                <button type="button" class="btn btn-xs btn-date-preset ${auditFilters.datePreset === p.id ? 'active' : ''}" data-preset="${p.id}" style="padding: 4px 10px; font-size: 11px; font-weight: 700; border-radius: 4px; border: none; ${auditFilters.datePreset === p.id ? 'background: #0284c7; color: #fff;' : 'background: transparent; color: #94a3b8;'}">
-                  ${p.label}
-                </button>
-              `).join('')}
-            </div>
-
-            <!-- Custom Date Inputs -->
-            <div style="display: flex; align-items: center; gap: 6px;">
-              <input 
-                type="date" 
-                id="audit-start-date" 
-                class="filter-input" 
-                value="${auditFilters.startDate || ''}" 
-                style="height: 32px; font-size: 11.5px; background: #080d1a; color: #fff; border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 5px;"
-                title="Start Date"
-              />
-              <span style="font-size: 11px; color: var(--text-muted);">&rarr;</span>
-              <input 
-                type="date" 
-                id="audit-end-date" 
-                class="filter-input" 
-                value="${auditFilters.endDate || ''}" 
-                style="height: 32px; font-size: 11.5px; background: #080d1a; color: #fff; border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 5px;"
-                title="End Date"
-              />
-            </div>
-          </div>
-
-          <!-- Matching Count & Reset Filters Button -->
-          <div style="display: flex; align-items: center; gap: 12px;">
-            <span style="font-size: 12px; color: #38bdf8; font-weight: 700;">
-              Showing ${filteredLogs.length} matching event${filteredLogs.length === 1 ? '' : 's'}
-            </span>
-            <button id="btn-reset-audit-filters" type="button" class="btn btn-ghost btn-sm" style="font-size: 11px; color: #fca5a5; padding: 4px 10px; border: 1px solid rgba(239, 68, 68, 0.35); border-radius: 4px; font-weight: 600;">
-              ↺ Reset Filters
-            </button>
-          </div>
-
+        <!-- Right Side of Filter Bar -->
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 11px; color: #38bdf8; font-family: var(--font-mono); font-weight: 700; white-space: nowrap;">
+            ${filteredLogs.length} Events
+          </span>
+          <button id="btn-reset-audit-filters" type="button" class="btn btn-ghost btn-xs" style="font-size: 10.5px; height: 24px; padding: 2px 7px; color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.35); border-radius: 4px; font-weight: 700; cursor: pointer;">
+            ↺ Reset
+          </button>
         </div>
 
       </div>
 
-      <!-- 4. Clean, Responsive Audit Trail Table -->
-      <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); overflow: hidden; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35); display: flex; flex-direction: column;">
+      <!-- 4. Clean, Responsive Audit Trail Table (Maximized Height) -->
+      <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 6px; overflow: hidden; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35); display: flex; flex-direction: column; flex: 1; min-height: 0;">
         
-        <div style="overflow-x: auto; width: 100%;">
+        <div style="overflow: auto; flex: 1; min-height: 0; width: 100%;">
           <table class="table" style="width: 100%; border-collapse: separate; border-spacing: 0; min-width: 980px; margin-bottom: 0;">
-            <thead>
+            <thead style="position: sticky; top: 0; z-index: 10;">
               <tr style="background: #090e1d; border-bottom: 2px solid #0284c7;">
-                <th style="width: 50px; text-align: center; padding: 12px 8px; font-size: 11px; font-weight: 800; color: #94a3b8; text-transform: uppercase;">#</th>
-                <th style="width: 165px; padding: 12px 14px; font-size: 11px; font-weight: 800; color: #cbd5e1; text-transform: uppercase; letter-spacing: 0.5px;">Timestamp</th>
-                <th style="width: 175px; padding: 12px 14px; font-size: 11px; font-weight: 800; color: #cbd5e1; text-transform: uppercase; letter-spacing: 0.5px;">Category / Module</th>
-                <th style="width: 130px; padding: 12px 14px; font-size: 11px; font-weight: 800; color: #cbd5e1; text-transform: uppercase; letter-spacing: 0.5px;">User</th>
-                <th style="width: 200px; padding: 12px 14px; font-size: 11px; font-weight: 800; color: #cbd5e1; text-transform: uppercase; letter-spacing: 0.5px;">Action Performed</th>
-                <th style="width: 190px; padding: 12px 14px; font-size: 11px; font-weight: 800; color: #cbd5e1; text-transform: uppercase; letter-spacing: 0.5px;">Target Entity &amp; ID</th>
-                <th style="padding: 12px 16px; font-size: 11px; font-weight: 800; color: #cbd5e1; text-transform: uppercase; letter-spacing: 0.5px;">Action Details</th>
-                <th style="width: 80px; text-align: center; padding: 12px 8px; font-size: 11px; font-weight: 800; color: #94a3b8; text-transform: uppercase;">Inspect</th>
+                <th style="width: 45px; text-align: center; padding: 8px 6px; font-size: 10.5px; font-weight: 800; color: #94a3b8; text-transform: uppercase;">#</th>
+                <th style="width: 145px; padding: 8px 10px; font-size: 10.5px; font-weight: 800; color: #cbd5e1; text-transform: uppercase; letter-spacing: 0.5px;">Timestamp</th>
+                <th style="width: 160px; padding: 8px 10px; font-size: 10.5px; font-weight: 800; color: #cbd5e1; text-transform: uppercase; letter-spacing: 0.5px;">Category / Module</th>
+                <th style="width: 110px; padding: 8px 10px; font-size: 10.5px; font-weight: 800; color: #cbd5e1; text-transform: uppercase; letter-spacing: 0.5px;">User</th>
+                <th style="width: 180px; padding: 8px 10px; font-size: 10.5px; font-weight: 800; color: #cbd5e1; text-transform: uppercase; letter-spacing: 0.5px;">Action Performed</th>
+                <th style="width: 170px; padding: 8px 10px; font-size: 10.5px; font-weight: 800; color: #cbd5e1; text-transform: uppercase; letter-spacing: 0.5px;">Target Entity &amp; ID</th>
+                <th style="padding: 8px 12px; font-size: 10.5px; font-weight: 800; color: #cbd5e1; text-transform: uppercase; letter-spacing: 0.5px;">Action Details</th>
+                <th style="width: 60px; text-align: center; padding: 8px 6px; font-size: 10.5px; font-weight: 800; color: #94a3b8; text-transform: uppercase;">Inspect</th>
               </tr>
             </thead>
             <tbody>
               ${paginatedLogs.length === 0 ? `
                 <tr>
-                  <td colspan="8" style="padding: 50px 20px; text-align: center;">
-                    <div style="display: flex; flex-direction: column; align-items: center; gap: 10px;">
-                      <span style="font-size: 38px;">🔍</span>
-                      <div style="font-size: 16px; font-weight: 700; color: #fff;">No activity logs found</div>
-                      <div style="font-size: 12.5px; color: var(--text-muted); max-width: 480px;">
+                  <td colspan="8" style="padding: 40px 20px; text-align: center;">
+                    <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                      <span style="font-size: 32px;">🔍</span>
+                      <div style="font-size: 14.5px; font-weight: 700; color: #fff;">No activity logs found</div>
+                      <div style="font-size: 11.5px; color: var(--text-muted); max-width: 440px;">
                         No audit events match your active filters. Try changing or clearing your search term, category, action type, or date criteria.
                       </div>
-                      <button id="btn-empty-reset-audit" type="button" class="btn btn-secondary btn-sm" style="margin-top: 8px;">
+                      <button id="btn-empty-reset-audit" type="button" class="btn btn-secondary btn-sm" style="margin-top: 6px; font-size: 11px; padding: 3px 10px;">
                         ↺ Clear All Filters
                       </button>
                     </div>
@@ -480,60 +420,60 @@ export function renderAuditLogsView() {
                   <tr class="audit-log-row" data-log-id="${l.id}" style="border-bottom: 1px solid rgba(255, 255, 255, 0.05); transition: background 0.15s; cursor: pointer;">
                     
                     <!-- 1. SL -->
-                    <td style="text-align: center; font-size: 11.5px; font-family: var(--font-mono); color: #64748b; padding: 12px 8px;">
+                    <td style="text-align: center; font-size: 11px; font-family: var(--font-mono); color: #64748b; padding: 6px 6px;">
                       ${globalIndex}
                     </td>
 
                     <!-- 2. Timestamp -->
-                    <td style="padding: 12px 14px; white-space: nowrap;">
-                      <div style="font-size: 12px; font-weight: 700; color: #f1f5f9;">${timeInfo.date}</div>
-                      <div style="font-size: 10.5px; font-family: var(--font-mono); color: #94a3b8; margin-top: 2px;">${timeInfo.time}</div>
+                    <td style="padding: 6px 10px; white-space: nowrap;">
+                      <div style="font-size: 11.5px; font-weight: 700; color: #f1f5f9;">${timeInfo.date}</div>
+                      <div style="font-size: 10px; font-family: var(--font-mono); color: #94a3b8;">${timeInfo.time}</div>
                     </td>
 
                     <!-- 3. Module / Category -->
-                    <td style="padding: 12px 14px; white-space: nowrap;">
-                      <span style="display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px; border-radius: 6px; background: ${cat.bg}; border: 1px solid ${cat.border}; color: ${cat.color}; font-size: 11.5px; font-weight: 700;">
+                    <td style="padding: 6px 10px; white-space: nowrap;">
+                      <span style="display: inline-flex; align-items: center; gap: 4px; padding: 2px 7px; border-radius: 5px; background: ${cat.bg}; border: 1px solid ${cat.border}; color: ${cat.color}; font-size: 10.5px; font-weight: 700;">
                         <span>${cat.icon}</span>
                         <span>${cat.label}</span>
                       </span>
                     </td>
 
                     <!-- 4. User -->
-                    <td style="padding: 12px 14px; white-space: nowrap;">
-                      <div style="display: flex; align-items: center; gap: 8px;">
-                        <div style="width: 26px; height: 26px; border-radius: 50%; background: rgba(56, 189, 248, 0.2); border: 1px solid rgba(56, 189, 248, 0.4); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; color: #38bdf8; text-transform: uppercase;">
+                    <td style="padding: 6px 10px; white-space: nowrap;">
+                      <div style="display: flex; align-items: center; gap: 6px;">
+                        <div style="width: 20px; height: 20px; border-radius: 50%; background: rgba(56, 189, 248, 0.2); border: 1px solid rgba(56, 189, 248, 0.4); display: flex; align-items: center; justify-content: center; font-size: 9.5px; font-weight: 800; color: #38bdf8; text-transform: uppercase;">
                           ${(l.username || 'U').charAt(0)}
                         </div>
-                        <span style="font-weight: 700; color: #38bdf8; font-size: 12px;">${l.username || 'system'}</span>
+                        <span style="font-weight: 700; color: #38bdf8; font-size: 11.5px;">${l.username || 'system'}</span>
                       </div>
                     </td>
 
                     <!-- 5. Action -->
-                    <td style="padding: 12px 14px; white-space: nowrap;">
-                      <span style="display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px; border-radius: 6px; background: ${actBadge.bg}; border: 1px solid ${actBadge.border}; color: ${actBadge.text}; font-size: 11px; font-weight: 700; font-family: var(--font-mono); max-width: 190px; overflow: hidden; text-overflow: ellipsis;" title="${l.action}">
+                    <td style="padding: 6px 10px; white-space: nowrap;">
+                      <span style="display: inline-flex; align-items: center; gap: 4px; padding: 2px 7px; border-radius: 5px; background: ${actBadge.bg}; border: 1px solid ${actBadge.border}; color: ${actBadge.text}; font-size: 10.5px; font-weight: 700; font-family: var(--font-mono); max-width: 175px; overflow: hidden; text-overflow: ellipsis;" title="${l.action}">
                         <span>${actBadge.icon}</span>
                         <span>${actBadge.label}</span>
                       </span>
                     </td>
 
                     <!-- 6. Target Entity & ID -->
-                    <td style="padding: 12px 14px;">
-                      <div style="display: flex; flex-direction: column; gap: 2px;">
-                        <span style="font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">${l.entity || 'ENTITY'}</span>
-                        <div style="font-size: 12px; font-weight: 700; color: ${entityInfo.isSpecial ? '#38bdf8' : '#e2e8f0'}; max-width: 175px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${entityInfo.fullId}">
+                    <td style="padding: 6px 10px;">
+                      <div style="display: flex; flex-direction: column; gap: 1px;">
+                        <span style="font-size: 9.5px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">${l.entity || 'ENTITY'}</span>
+                        <div style="font-size: 11px; font-weight: 700; color: ${entityInfo.isSpecial ? '#38bdf8' : '#e2e8f0'}; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${entityInfo.fullId}">
                           ${entityInfo.name}
                         </div>
                       </div>
                     </td>
 
                     <!-- 7. Action Details -->
-                    <td style="padding: 12px 16px; font-size: 12.5px; color: #cbd5e1; line-height: 1.5; min-width: 260px;">
+                    <td style="padding: 6px 12px; font-size: 11.5px; color: #cbd5e1; line-height: 1.4; min-width: 220px;">
                       ${l.details || 'No additional details logged.'}
                     </td>
 
                     <!-- 8. Inspect Button -->
-                    <td style="text-align: center; padding: 12px 8px;">
-                      <button type="button" class="btn btn-ghost btn-sm btn-inspect-log" data-log-id="${l.id}" style="padding: 3px 8px; font-size: 12px; color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3);" title="View full event details & payload">
+                    <td style="text-align: center; padding: 6px 6px;">
+                      <button type="button" class="btn btn-ghost btn-xs btn-inspect-log" data-log-id="${l.id}" style="padding: 2px 6px; font-size: 11px; color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 4px;" title="View full event details & payload">
                         👁️
                       </button>
                     </td>
@@ -545,18 +485,18 @@ export function renderAuditLogsView() {
           </table>
         </div>
 
-        <!-- 5. Bottom Pagination Bar -->
+        <!-- 5. Bottom Pagination Bar (Compact) -->
         ${totalEntries > 0 ? `
-          <div style="background: #090e1d; border-top: 1px solid var(--border-color); padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+          <div style="background: #090e1d; border-top: 1px solid var(--border-color); padding: 5px 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; font-size: 11px;">
             
             <!-- Showing info & page size -->
-            <div style="display: flex; align-items: center; gap: 12px;">
-              <span style="font-size: 12px; color: var(--text-secondary);">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span style="color: var(--text-secondary);">
                 Showing <strong>${startIndex + 1}</strong> to <strong>${endIndex}</strong> of <strong>${totalEntries}</strong> entries
               </span>
-              <div style="display: flex; align-items: center; gap: 6px;">
-                <label for="audit-page-size" style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Per Page:</label>
-                <select id="audit-page-size" class="filter-select" style="height: 28px; font-size: 11.5px; padding: 2px 6px; background: #080d1a; color: #fff; border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 4px;">
+              <div style="display: flex; align-items: center; gap: 4px;">
+                <label for="audit-page-size" style="font-size: 10.5px; color: var(--text-muted); text-transform: uppercase;">Per Page:</label>
+                <select id="audit-page-size" class="filter-select" style="height: 24px; font-size: 10.5px; padding: 1px 4px; background: #080d1a; color: #fff; border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 4px;">
                   <option value="25" ${auditFilters.pageSize === 25 ? 'selected' : ''}>25</option>
                   <option value="50" ${auditFilters.pageSize === 50 ? 'selected' : ''}>50</option>
                   <option value="100" ${auditFilters.pageSize === 100 ? 'selected' : ''}>100</option>
@@ -566,14 +506,14 @@ export function renderAuditLogsView() {
             </div>
 
             <!-- Page Buttons -->
-            <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: center;">
-              <button id="btn-audit-page-first" class="btn btn-ghost btn-xs" ${auditFilters.page <= 1 ? 'disabled style="opacity: 0.4;"' : ''}>⏮ First</button>
-              <button id="btn-audit-page-prev" class="btn btn-ghost btn-xs" ${auditFilters.page <= 1 ? 'disabled style="opacity: 0.4;"' : ''}>◀ Prev</button>
-              <span style="font-size: 11.5px; font-weight: 700; color: #fff; padding: 0 6px;">
+            <div style="display: flex; align-items: center; gap: 4px; flex-wrap: wrap; justify-content: center;">
+              <button id="btn-audit-page-first" class="btn btn-ghost btn-xs" style="padding: 2px 6px; font-size: 10.5px;" ${auditFilters.page <= 1 ? 'disabled style="opacity: 0.4; padding: 2px 6px; font-size: 10.5px;"' : ''}>⏮ First</button>
+              <button id="btn-audit-page-prev" class="btn btn-ghost btn-xs" style="padding: 2px 6px; font-size: 10.5px;" ${auditFilters.page <= 1 ? 'disabled style="opacity: 0.4; padding: 2px 6px; font-size: 10.5px;"' : ''}>◀ Prev</button>
+              <span style="font-size: 11px; font-weight: 700; color: #fff; padding: 0 4px;">
                 Page ${auditFilters.page} of ${totalPages}
               </span>
-              <button id="btn-audit-page-next" class="btn btn-ghost btn-xs" ${auditFilters.page >= totalPages ? 'disabled style="opacity: 0.4;"' : ''}>Next ▶</button>
-              <button id="btn-audit-page-last" class="btn btn-ghost btn-xs" ${auditFilters.page >= totalPages ? 'disabled style="opacity: 0.4;"' : ''}>Last ⏭</button>
+              <button id="btn-audit-page-next" class="btn btn-ghost btn-xs" style="padding: 2px 6px; font-size: 10.5px;" ${auditFilters.page >= totalPages ? 'disabled style="opacity: 0.4; padding: 2px 6px; font-size: 10.5px;"' : ''}>Next ▶</button>
+              <button id="btn-audit-page-last" class="btn btn-ghost btn-xs" style="padding: 2px 6px; font-size: 10.5px;" ${auditFilters.page >= totalPages ? 'disabled style="opacity: 0.4; padding: 2px 6px; font-size: 10.5px;"' : ''}>Last ⏭</button>
             </div>
 
           </div>
