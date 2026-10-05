@@ -633,45 +633,46 @@ export function initEditTransferModalEvents() {
       const closeBtn = document.getElementById('btn-close-edit-transfer-modal');
       const originalText = submitBtn ? submitBtn.innerHTML : '💾 Save & Update Transfer Request';
 
-      const destGroupId = groupSelect?.value;
-      const destUnitId = unitSelect?.value;
-      const destFloorId = floorSelect?.value;
-      const destLineId = lineSelect?.value;
-      const reason = document.getElementById('edit-transfer-reason')?.value?.trim() || '';
-      const remarks = document.getElementById('edit-transfer-remarks')?.value?.trim() || '';
+      try {
+        const destGroupId = groupSelect?.value;
+        const destUnitId = unitSelect?.value;
+        const destFloorId = floorSelect?.value;
+        const destLineId = lineSelect?.value;
+        const reason = document.getElementById('edit-transfer-reason')?.value?.trim() || '';
+        const remarks = document.getElementById('edit-transfer-remarks')?.value?.trim() || '';
 
-      if (!destGroupId || !destUnitId || !destFloorId || !destLineId) {
-        notificationService.warning('Please select Destination Group, Unit, Floor, and Production Line.');
-        return;
-      }
+        if (!destGroupId || !destUnitId || !destFloorId || !destLineId) {
+          notificationService.warning('Please select Destination Group, Unit, Floor, and Production Line.');
+          return;
+        }
 
-      // Check if target is identical to machine's current location
-      const machine = storage.getItem(TABLE_NAMES.MACHINES, req.machineId);
-      if (machine && machine.unitId === destUnitId && machine.floorId === destFloorId && machine.lineId === destLineId) {
-        notificationService.error('Invalid Destination: Target Line is identical to the machine\'s current physical location.');
-        return;
-      }
+        // Check if target is identical to machine's current location
+        const machine = storage.getItem(TABLE_NAMES.MACHINES, req.machineId);
+        if (machine && machine.unitId === destUnitId && machine.floorId === destFloorId && machine.lineId === destLineId) {
+          notificationService.error('Invalid Destination: Target Line is identical to the machine\'s current physical location.');
+          return;
+        }
 
-      const docsToSubmit = [...editAttachedDocs];
-      editSelectedDest = { groupId: '', unitId: '', floorId: '', lineId: '', searchQuery: '' };
-      editAttachedDocs = [];
+        const docsToSubmit = [...editAttachedDocs];
+        editSelectedDest = { groupId: '', unitId: '', floorId: '', lineId: '', searchQuery: '' };
+        editAttachedDocs = [];
 
-      // 1. Close modal instantly
-      closeModal();
+        // 1. Close modal instantly
+        closeModal();
 
-      // 2. Execute update (<1ms)
-      const updated = await transferService.updateTransferRequest(req.id, {
-        destGroupId,
-        destUnitId,
-        destFloorId,
-        destLineId,
-        reason,
-        remarks,
-        documents: docsToSubmit
-      });
+        // 2. Execute update (<1ms)
+        const updated = await transferService.updateTransferRequest(req.id, {
+          destGroupId,
+          destUnitId,
+          destFloorId,
+          destLineId,
+          reason,
+          remarks,
+          documents: docsToSubmit
+        });
 
-      notificationService.success(`✅ Transfer Request #${updated.requestNumber} destination updated to ${updated.destPath}`, 'Destination Updated');
-      state.set('activeModal', 'transfer-details');
+        notificationService.success(`✅ Transfer Request #${updated.requestNumber} destination updated to ${updated.destPath}`, 'Destination Updated');
+        state.set('activeModal', 'transfer-details');
         state.emit('inventory:updated');
       } catch (err) {
         isSubmittingEdit = false;

@@ -407,23 +407,19 @@ export function initTransferDetailsModalEvents() {
   }
 
   // Approve Level Action
+  // Approve Level Action
   const btnApprove = document.getElementById('btn-action-approve-transfer');
   if (btnApprove && req) {
     btnApprove.addEventListener('click', async () => {
       const inpRemarks = document.getElementById('inp-approval-remarks');
       const remarks = inpRemarks ? inpRemarks.value.trim() : 'Approved for relocation.';
-      const originalText = btnApprove.innerHTML;
       try {
-        btnApprove.disabled = true;
-        btnApprove.innerHTML = '⚡ Approved!';
+        closeModal();
         await transferService.approveStep(req.id, remarks || 'Approved');
         notificationService.success(`Transfer Request ${req.requestNumber} Level ${req.currentLevel} approved successfully!`);
-        closeModal();
         state.emit('inventory:updated');
         window.dispatchEvent(new CustomEvent('erp:transfers-updated'));
       } catch (err) {
-        btnApprove.disabled = false;
-        btnApprove.innerHTML = originalText;
         notificationService.error('Approval Error: ' + err.message);
       }
     });
@@ -436,18 +432,13 @@ export function initTransferDetailsModalEvents() {
       const inpRemarks = document.getElementById('inp-approval-remarks');
       const reason = (inpRemarks && inpRemarks.value.trim()) || prompt('Please enter the reason for rejecting this machine transfer:');
       if (reason) {
-        const originalText = btnReject.innerHTML;
         try {
-          btnReject.disabled = true;
-          btnReject.innerHTML = '⏳ Rejecting & Syncing...';
+          closeModal();
           await transferService.rejectTransfer(req.id, reason);
           notificationService.warning(`Transfer request ${req.requestNumber} has been rejected.`);
-          closeModal();
           state.emit('inventory:updated');
           window.dispatchEvent(new CustomEvent('erp:transfers-updated'));
         } catch (err) {
-          btnReject.disabled = false;
-          btnReject.innerHTML = originalText;
           notificationService.error('Error: ' + err.message);
         }
       }
@@ -461,18 +452,13 @@ export function initTransferDetailsModalEvents() {
       const inpRemarks = document.getElementById('inp-approval-remarks');
       const comments = (inpRemarks && inpRemarks.value.trim()) || prompt('Specify required adjustments or missing documentation:');
       if (comments) {
-        const originalText = btnRevise.innerHTML;
         try {
-          btnRevise.disabled = true;
-          btnRevise.innerHTML = '⏳ Saving...';
+          closeModal();
           await transferService.returnForRevision(req.id, comments);
           notificationService.info(`Transfer request returned for revision.`);
-          closeModal();
           state.emit('inventory:updated');
           window.dispatchEvent(new CustomEvent('erp:transfers-updated'));
         } catch (err) {
-          btnRevise.disabled = false;
-          btnRevise.innerHTML = originalText;
           notificationService.error('Error: ' + err.message);
         }
       }
@@ -484,18 +470,13 @@ export function initTransferDetailsModalEvents() {
   if (btnCancel && req) {
     btnCancel.addEventListener('click', async () => {
       if (confirm(`Are you sure you want to cancel Transfer Request ${req.requestNumber}?`)) {
-        const originalText = btnCancel.innerHTML;
         try {
-          btnCancel.disabled = true;
-          btnCancel.innerHTML = '⏳ Cancelling...';
+          closeModal();
           await transferService.cancelTransfer(req.id, 'Cancelled by user');
           notificationService.info('Transfer request cancelled.');
-          closeModal();
           state.emit('inventory:updated');
           window.dispatchEvent(new CustomEvent('erp:transfers-updated'));
         } catch (err) {
-          btnCancel.disabled = false;
-          btnCancel.innerHTML = originalText;
           notificationService.error('Error: ' + err.message);
         }
       }

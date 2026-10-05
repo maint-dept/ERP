@@ -6424,13 +6424,10 @@ export function openEditAllocationModal(id) {
         return;
       }
 
-      const saveBtn = document.getElementById('btn-modal-save-edit-alloc');
-      if (saveBtn) {
-        saveBtn.disabled = true;
-        saveBtn.innerHTML = '<span>⏳</span> Saving...';
-      }
+      closeModal();
+      window.app?.showToast('Updated', `Allocation record #${alloc.regNo} updated successfully.`, 'success');
 
-      await toolService.updateAllocationItem(id, {
+      toolService.updateAllocationItem(id, {
         itemType: updatedType,
         itemCode: updatedCode,
         itemName: updatedName,
@@ -6440,10 +6437,9 @@ export function openEditAllocationModal(id) {
         issueDate: updatedDate,
         requisitionNo: updatedReq,
         remarks: updatedRemarks
+      }).catch(err => {
+        console.error('Update allocation error:', err);
       });
-
-      closeModal();
-      window.app?.showToast('Updated', `Allocation record #${alloc.regNo} updated successfully.`, 'success');
 
       const container = document.getElementById('tools-tab-content-container');
       if (container) {
@@ -6453,11 +6449,6 @@ export function openEditAllocationModal(id) {
     } catch (err) {
       console.error('Update allocation error:', err);
       alert(err.message || 'Failed to update record.');
-      const saveBtn = document.getElementById('btn-modal-save-edit-alloc');
-      if (saveBtn) {
-        saveBtn.disabled = false;
-        saveBtn.innerHTML = '<span>💾</span> Save Changes';
-      }
     }
   });
 

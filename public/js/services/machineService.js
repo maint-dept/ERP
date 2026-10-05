@@ -570,10 +570,6 @@ class MachineService {
     syncManager.saveRecord(TABLE_NAMES.MACHINES, id, targetUpdateObj).catch(e => {
       console.warn('[SyncManager] Update machine cloud sync queued in background:', e.message);
     });
-    const updated = storage.update(TABLE_NAMES.MACHINES, id, enrichedUpdates);
-    try {
-      localStorage.setItem('al_muslim_erp_' + TABLE_NAMES.MACHINES, JSON.stringify(storage.data[TABLE_NAMES.MACHINES]));
-    } catch (_) {}
 
     auditService.log('MACHINE_UPDATED', 'MACHINE', updated.serialNumber, `Updated machine ${updated.serialNumber}`, existing, updated);
 

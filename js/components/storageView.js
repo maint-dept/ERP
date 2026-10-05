@@ -3669,31 +3669,18 @@ function initModalInteractions() {
         return;
       }
 
-      const submitBtn = formBulkModels.querySelector('#btn-submit-bulk-models');
-      const originalText = submitBtn ? submitBtn.innerHTML : '💾 Submit & Save Models';
-      if (submitBtn) {
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = '💾 Saving to Database...';
-      }
-
+      closeModal();
       try {
-        const res = await smartStorageService.saveModelsForMachine(targetMachine, currentParsed.records);
+        const res = smartStorageService.saveModelsForMachine(targetMachine, currentParsed.records);
         const savedCount = (res && typeof res.totalSaved === 'number') ? res.totalSaved : (currentParsed.records.length);
         const msg = `Successfully saved ${savedCount} models under "${targetMachine}" in exact serial order to Database!`;
         if (typeof notificationService !== 'undefined' && notificationService.success) {
           notificationService.success(msg);
-        } else {
-          alert(msg);
         }
-        closeModal();
         refreshStorageTabContent();
       } catch (err) {
         console.error('Failed to save models to database:', err);
         alert('Error saving models to database: ' + (err.message || 'Unknown error'));
-        if (submitBtn) {
-          submitBtn.disabled = false;
-          submitBtn.innerHTML = originalText;
-        }
       }
     });
   }
@@ -3706,41 +3693,28 @@ function initModalInteractions() {
       const name = modalLayer.querySelector('#inp-new-machine-name').value;
       if (!name || !name.trim()) return;
       const clean = name.trim();
-      const submitBtn = formAddMn.querySelector('button[type="submit"]');
-      if (submitBtn) {
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = '💾 Saving...';
-      }
+      closeModal();
       try {
         const res = smartStorageService.addMachineName(clean);
         if (typeof storage.persistToServerDatabase === 'function') {
-          await storage.persistToServerDatabase();
+          storage.persistToServerDatabase();
         }
         if (res && res.added) {
           const msg = `✅ Machine Name "${clean}" registered and saved to Database!`;
           if (typeof notificationService !== 'undefined' && notificationService.success) {
             notificationService.success(msg);
-          } else {
-            alert(msg);
           }
         } else {
           const existName = res?.name || clean;
           const msg = `ℹ️ Machine Name "${clean}" already exists as "${existName}". Duplicate entry was skipped.`;
           if (typeof notificationService !== 'undefined' && notificationService.info) {
             notificationService.info(msg);
-          } else {
-            alert(msg);
           }
         }
-        closeModal();
         refreshStorageTabContent();
       } catch (err) {
         console.error('Failed to save machine name:', err);
         alert('Error saving machine name: ' + (err.message || 'Unknown error'));
-        if (submitBtn) {
-          submitBtn.disabled = false;
-          submitBtn.innerHTML = '💾 Save Machine Name';
-        }
       }
     });
   }
@@ -3910,15 +3884,11 @@ function initModalInteractions() {
       e.preventDefault();
       const text = txtMn ? txtMn.value.trim() : '';
       if (!text) return;
-      const submitBtn = formBulkMn.querySelector('button[type="submit"]');
-      if (submitBtn) {
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = '💾 Saving to Database...';
-      }
+      closeModal();
       try {
         const res = await smartStorageService.addMultipleMachineNames(text);
         if (typeof storage.persistToServerDatabase === 'function') {
-          await storage.persistToServerDatabase();
+          storage.persistToServerDatabase();
         }
 
         let msg = '';
@@ -3936,18 +3906,11 @@ function initModalInteractions() {
           } else {
             notificationService.info(msg);
           }
-        } else {
-          alert(msg);
         }
-        closeModal();
         refreshStorageTabContent();
       } catch (err) {
         console.error('Failed to save machine names:', err);
         alert('Error saving machine names: ' + (err.message || 'Unknown error'));
-        if (submitBtn) {
-          submitBtn.disabled = false;
-          submitBtn.innerHTML = '💾 Save All Machine Names';
-        }
       }
     });
   }

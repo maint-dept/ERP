@@ -321,12 +321,7 @@ class TransferService {
     try {
       localStorage.setItem('al_muslim_erp_' + TABLE_NAMES.MACHINES, JSON.stringify(storage.data[TABLE_NAMES.MACHINES]));
       localStorage.setItem('al_muslim_erp_' + TABLE_NAMES.TRANSFER_REQUESTS, JSON.stringify(storage.data[TABLE_NAMES.TRANSFER_REQUESTS]));
-      } catch (_) {}
-
-      // Background cloud sync
-      syncManager.saveRecord(TABLE_NAMES.TRANSFER_REQUESTS, req.id, updatedReqObj).catch(e => {
-        console.warn('[SyncManager] Approve step cloud sync queued in background:', e.message);
-      });
+    } catch (_) {}
 
     // Trigger local and cross-component updates immediately
     window.dispatchEvent(new CustomEvent('erp:transfers-updated'));

@@ -1079,79 +1079,80 @@ export function initTransferModalEvents() {
       const closeBtn = document.getElementById('btn-close-transfer-modal');
       const originalBtnText = submitBtn ? submitBtn.innerHTML : '🚀 Submit Transfer Request';
 
-      let machineId = state.get('activeMachineId');
-      const allM = storage.getTable(TABLE_NAMES.MACHINES) || [];
+      try {
+        let machineId = state.get('activeMachineId');
+        const allM = storage.getTable(TABLE_NAMES.MACHINES) || [];
 
-      if (!machineId) {
-        const inpS = document.getElementById('inp-transfer-search-serial')?.value.trim().toLowerCase();
-        if (inpS) {
-          const matched = allM.find(m =>
-            (m.serialNumber && m.serialNumber.toString().toLowerCase() === inpS) ||
-            (m.permanentMachineId && m.permanentMachineId.toLowerCase() === inpS) ||
-            (m.id && m.id.toLowerCase() === inpS)
-          );
-          if (matched) machineId = matched.id;
+        if (!machineId) {
+          const inpS = document.getElementById('inp-transfer-search-serial')?.value.trim().toLowerCase();
+          if (inpS) {
+            const matched = allM.find(m =>
+              (m.serialNumber && m.serialNumber.toString().toLowerCase() === inpS) ||
+              (m.permanentMachineId && m.permanentMachineId.toLowerCase() === inpS) ||
+              (m.id && m.id.toLowerCase() === inpS)
+            );
+            if (matched) machineId = matched.id;
+          }
         }
-      }
 
-      if (!machineId) {
-        notificationService.warning('Please enter or select a valid Machine Serial Number first.');
-        const inpS = document.getElementById('inp-transfer-search-serial');
-        if (inpS) inpS.focus({ preventScroll: true });
-        return;
-      }
-
-      // Check if machine already has an active transfer request before proceeding
-      const activeExisting = transferService.getActiveTransferForMachine(machineId);
-      if (activeExisting) {
-        notificationService.error(`Machine already has an active Transfer Request (#${activeExisting.requestNumber}) in status "${activeExisting.status.replace(/_/g, ' ')}". Multiple requests for the same machine are not allowed.`);
-        if (submitBtn) {
-          submitBtn.disabled = true;
-          submitBtn.style.opacity = '0.5';
-          submitBtn.style.cursor = 'not-allowed';
+        if (!machineId) {
+          notificationService.warning('Please enter or select a valid Machine Serial Number first.');
+          const inpS = document.getElementById('inp-transfer-search-serial');
+          if (inpS) inpS.focus({ preventScroll: true });
+          return;
         }
-        return;
-      }
 
-      if (!authService.canRequestTransfer()) {
-        notificationService.error('Access Denied: You do not have permission to create a Machine Transfer Request.');
-        return;
-      }
+        // Check if machine already has an active transfer request before proceeding
+        const activeExisting = transferService.getActiveTransferForMachine(machineId);
+        if (activeExisting) {
+          notificationService.error(`Machine already has an active Transfer Request (#${activeExisting.requestNumber}) in status "${activeExisting.status.replace(/_/g, ' ')}". Multiple requests for the same machine are not allowed.`);
+          if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.style.opacity = '0.5';
+            submitBtn.style.cursor = 'not-allowed';
+          }
+          return;
+        }
 
-      const destGroupId = groupSelect?.value;
-      const destUnitId = unitSelect?.value;
-      const destFloorId = floorSelect?.value;
-      const destLineId = lineSelect?.value;
-      const reason = document.getElementById('transfer-reason')?.value?.trim() || '';
-      const remarks = document.getElementById('transfer-remarks')?.value?.trim() || '';
+        if (!authService.canRequestTransfer()) {
+          notificationService.error('Access Denied: You do not have permission to create a Machine Transfer Request.');
+          return;
+        }
 
-      if (!destGroupId || !destUnitId || !destFloorId || !destLineId) {
-        notificationService.warning('Please select the Target Destination Group, Factory/Unit, Floor, and Production Line.');
-        return;
-      }
+        const destGroupId = groupSelect?.value;
+        const destUnitId = unitSelect?.value;
+        const destFloorId = floorSelect?.value;
+        const destLineId = lineSelect?.value;
+        const reason = document.getElementById('transfer-reason')?.value?.trim() || '';
+        const remarks = document.getElementById('transfer-remarks')?.value?.trim() || '';
 
-      // 1. Instantly close modal and reset state on single click (0ms delay)
-      const docsToSubmit = [...attachedDocuments];
-      attachedDocuments = [];
-      closeModal();
+        if (!destGroupId || !destUnitId || !destFloorId || !destLineId) {
+          notificationService.warning('Please select the Target Destination Group, Factory/Unit, Floor, and Production Line.');
+          return;
+        }
 
-      // 2. Instant request creation (<1ms)
-      const createdRequest = await transferService.createTransferRequest({
-        machineId,
-        destGroupId,
-        destUnitId,
-        destFloorId,
-        destLineId,
-        reason,
-        remarks,
-        documents: docsToSubmit
-      });
+        // 1. Instantly close modal and reset state on single click (0ms delay)
+        const docsToSubmit = [...attachedDocuments];
+        attachedDocuments = [];
+        closeModal();
 
-      // 3. Emit updates & success feedback instantly
-      notificationService.success(`✅ Transfer Request #${createdRequest.requestNumber} submitted successfully!`, 'Transfer Request Created');
-      state.emit('inventory:updated');
-      state.emit('transfers:updated');
-      window.dispatchEvent(new CustomEvent('erp:transfers-updated'));
+        // 2. Instant request creation (<1ms)
+        const createdRequest = await transferService.createTransferRequest({
+          machineId,
+          destGroupId,
+          destUnitId,
+          destFloorId,
+          destLineId,
+          reason,
+          remarks,
+          documents: docsToSubmit
+        });
+
+        // 3. Emit updates & success feedback instantly
+        notificationService.success(`✅ Transfer Request #${createdRequest.requestNumber} submitted successfully!`, 'Transfer Request Created');
+        state.emit('inventory:updated');
+        state.emit('transfers:updated');
+        window.dispatchEvent(new CustomEvent('erp:transfers-updated'));
 
       } catch (err) {
         isSubmittingTransfer = false;
