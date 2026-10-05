@@ -27,29 +27,50 @@ class NotificationService {
   }
 
   // ---------------------------------------------------------------------------
-  // 1. NON-BLOCKING TOAST NOTIFICATIONS
+  // 1. COMPACT, NON-BLOCKING MODERN TOAST NOTIFICATIONS
   // ---------------------------------------------------------------------------
-  toast(message, type = 'success', title = '', duration = 3500) {
+  toast(message, type = 'success', title = '', duration = 2800) {
     this.initToastContainer();
     if (!this.toastContainer) return;
 
-    const icons = {
-      success: '✅',
-      error: '❌',
-      warning: '⚠️',
-      info: 'ℹ️',
-      loading: '⏳'
+    // Clean leading duplicate emojis
+    const stripEmoji = (str) => {
+      if (!str) return '';
+      return String(str).replace(/^[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F1E6}-\u{1F1FF}✅❌⚠️ℹ️⏳💾⚡]+\s*/u, '').trim();
     };
 
-    const icon = icons[type] || '🔔';
+    let cleanMsg = stripEmoji(message);
+    let cleanTitle = stripEmoji(title);
+
+    // If title is generic or matches message, omit title for ultra-clean single-line toast
+    if (cleanTitle && (cleanTitle.toLowerCase() === 'success' || cleanTitle.toLowerCase() === 'notice' || cleanTitle.toLowerCase() === 'info' || cleanTitle.toLowerCase() === cleanMsg.toLowerCase())) {
+      cleanTitle = '';
+    }
+
+    const icons = {
+      success: '✓',
+      error: '✕',
+      warning: '!',
+      info: 'i',
+      loading: '⋯'
+    };
+
+    const icon = icons[type] || 'i';
+
+    // Remove oldest toast if 2 or more exist to prevent screen clutter
+    while (this.toastContainer.children.length >= 2) {
+      const oldest = this.toastContainer.children[0];
+      if (oldest.parentNode) oldest.parentNode.removeChild(oldest);
+    }
+
     const toastEl = document.createElement('div');
     toastEl.className = `erp-toast erp-toast-${type}`;
     
     toastEl.innerHTML = `
-      <div class="toast-icon">${icon}</div>
+      <div class="toast-icon-badge">${icon}</div>
       <div class="toast-content">
-        ${title ? `<div class="toast-title">${title}</div>` : ''}
-        <div class="toast-message">${message}</div>
+        ${cleanTitle ? `<div class="toast-title">${cleanTitle}</div>` : ''}
+        <div class="toast-message">${cleanMsg || message}</div>
       </div>
       <button class="toast-close" title="Dismiss">✕</button>
       <div class="toast-progress" style="animation-duration: ${duration}ms;"></div>
@@ -60,7 +81,7 @@ class NotificationService {
       toastEl.classList.add('toast-hiding');
       setTimeout(() => {
         if (toastEl.parentNode) toastEl.parentNode.removeChild(toastEl);
-      }, 250);
+      }, 200);
     };
 
     if (closeBtn) closeBtn.addEventListener('click', dismiss);
@@ -70,45 +91,45 @@ class NotificationService {
     // Auto dismiss
     const timer = setTimeout(dismiss, duration);
     toastEl.addEventListener('mouseenter', () => clearTimeout(timer));
-    toastEl.addEventListener('mouseleave', () => setTimeout(dismiss, 1500));
+    toastEl.addEventListener('mouseleave', () => setTimeout(dismiss, 1200));
   }
 
-  success(message, title = 'Success') {
-    this.toast(message, 'success', title);
+  success(message, title = '') {
+    this.toast(message, 'success', title, 2600);
   }
 
-  error(message, title = 'Error') {
-    this.toast(message, 'error', title, 5000);
+  error(message, title = '') {
+    this.toast(message, 'error', title, 4500);
   }
 
-  info(message, title = 'Notice') {
-    this.toast(message, 'info', title);
+  info(message, title = '') {
+    this.toast(message, 'info', title, 2800);
   }
 
-  warning(message, title = 'Warning') {
-    this.toast(message, 'warning', title, 4000);
+  warning(message, title = '') {
+    this.toast(message, 'warning', title, 3500);
   }
 
   notifySuccess(titleOrMsg, msgOrTitle) {
-    const title = msgOrTitle ? titleOrMsg : 'Success';
+    const title = msgOrTitle ? titleOrMsg : '';
     const message = msgOrTitle ? msgOrTitle : titleOrMsg;
     this.toast(message, 'success', title);
   }
 
   notifyError(titleOrMsg, msgOrTitle) {
-    const title = msgOrTitle ? titleOrMsg : 'Error';
+    const title = msgOrTitle ? titleOrMsg : '';
     const message = msgOrTitle ? msgOrTitle : titleOrMsg;
-    this.toast(message, 'error', title, 5000);
+    this.toast(message, 'error', title, 4500);
   }
 
   notifyWarning(titleOrMsg, msgOrTitle) {
-    const title = msgOrTitle ? titleOrMsg : 'Warning';
+    const title = msgOrTitle ? titleOrMsg : '';
     const message = msgOrTitle ? msgOrTitle : titleOrMsg;
-    this.toast(message, 'warning', title, 4000);
+    this.toast(message, 'warning', title, 3500);
   }
 
   notifyInfo(titleOrMsg, msgOrTitle) {
-    const title = msgOrTitle ? titleOrMsg : 'Notice';
+    const title = msgOrTitle ? titleOrMsg : '';
     const message = msgOrTitle ? msgOrTitle : titleOrMsg;
     this.toast(message, 'info', title);
   }
@@ -455,10 +476,13 @@ class NotificationService {
     window.dispatchEvent(new CustomEvent('erp:notification', { detail: item }));
     window.dispatchEvent(new CustomEvent('erp:notification-updated', { detail: item }));
 
-    const toastType = item.type.toLowerCase() === 'warning' ? 'warning' : 
-                     (item.type.toLowerCase() === 'alert' || item.type.toLowerCase() === 'error' ? 'error' : 
-                     (item.type.toLowerCase() === 'success' ? 'success' : 'info'));
-    this.toast(item.message, toastType, item.title);
+    // Only display popup toast if explicitly requested via showToast: true
+    if (typeof optionsOrTitle === 'object' && optionsOrTitle !== null && optionsOrTitle.showToast === true) {
+      const toastType = item.type.toLowerCase() === 'warning' ? 'warning' : 
+                       (item.type.toLowerCase() === 'alert' || item.type.toLowerCase() === 'error' ? 'error' : 
+                       (item.type.toLowerCase() === 'success' ? 'success' : 'info'));
+      this.toast(item.message, toastType, item.title);
+    }
     return item;
   }
 

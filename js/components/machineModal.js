@@ -493,13 +493,13 @@ export function initMachineModalEvents() {
         if (isEdit) {
           const res = await machineService.updateMachine(machineId, machineData);
           if (res.pendingApproval) {
-            notificationService.info(`Edit submitted for Admin Approval (Approval ID: ${res.requestId})`, 'Pending Approval');
+            notificationService.info(`Submitted for Admin Approval (#${res.requestId})`);
           } else {
-            notificationService.success(`✅ Machine record #${serialNumber} updated successfully!`);
+            notificationService.success(`Machine #${serialNumber} updated`);
           }
         } else {
           await machineService.addMachine(machineData);
-          notificationService.success(`✅ Machine #${serialNumber} registered successfully!`);
+          notificationService.success(`Machine #${serialNumber} registered`);
           state.updateFilters({
             search: '',
             page: 1,

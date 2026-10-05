@@ -416,7 +416,7 @@ export function initTransferDetailsModalEvents() {
       try {
         closeModal();
         await transferService.approveStep(req.id, remarks || 'Approved');
-        notificationService.success(`Transfer Request ${req.requestNumber} Level ${req.currentLevel} approved successfully!`);
+        notificationService.success(`Transfer #${req.requestNumber} Level ${req.currentLevel} approved`);
         state.emit('inventory:updated');
         window.dispatchEvent(new CustomEvent('erp:transfers-updated'));
       } catch (err) {
@@ -435,7 +435,7 @@ export function initTransferDetailsModalEvents() {
         try {
           closeModal();
           await transferService.rejectTransfer(req.id, reason);
-          notificationService.warning(`Transfer request ${req.requestNumber} has been rejected.`);
+          notificationService.warning(`Transfer #${req.requestNumber} rejected`);
           state.emit('inventory:updated');
           window.dispatchEvent(new CustomEvent('erp:transfers-updated'));
         } catch (err) {
@@ -455,7 +455,7 @@ export function initTransferDetailsModalEvents() {
         try {
           closeModal();
           await transferService.returnForRevision(req.id, comments);
-          notificationService.info(`Transfer request returned for revision.`);
+          notificationService.info(`Transfer #${req.requestNumber} returned for revision`);
           state.emit('inventory:updated');
           window.dispatchEvent(new CustomEvent('erp:transfers-updated'));
         } catch (err) {
@@ -473,7 +473,7 @@ export function initTransferDetailsModalEvents() {
         try {
           closeModal();
           await transferService.cancelTransfer(req.id, 'Cancelled by user');
-          notificationService.info('Transfer request cancelled.');
+          notificationService.info(`Transfer #${req.requestNumber} cancelled`);
           state.emit('inventory:updated');
           window.dispatchEvent(new CustomEvent('erp:transfers-updated'));
         } catch (err) {

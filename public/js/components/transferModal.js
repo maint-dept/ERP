@@ -1149,7 +1149,7 @@ export function initTransferModalEvents() {
         });
 
         // 3. Emit updates & success feedback instantly
-        notificationService.success(`✅ Transfer Request #${createdRequest.requestNumber} submitted successfully!`, 'Transfer Request Created');
+        notificationService.success(`Transfer Request #${createdRequest.requestNumber} submitted`);
         state.emit('inventory:updated');
         state.emit('transfers:updated');
         window.dispatchEvent(new CustomEvent('erp:transfers-updated'));

@@ -671,7 +671,7 @@ export function initEditTransferModalEvents() {
           documents: docsToSubmit
         });
 
-        notificationService.success(`✅ Transfer Request #${updated.requestNumber} destination updated to ${updated.destPath}`, 'Destination Updated');
+        notificationService.success(`Destination updated to ${updated.destPath}`);
         state.set('activeModal', 'transfer-details');
         state.emit('inventory:updated');
       } catch (err) {
