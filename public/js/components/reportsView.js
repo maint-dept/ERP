@@ -62,88 +62,78 @@ export function renderReportsView() {
   const replacementLogs = allHistory.filter(h => h.actionType === 'SPARE_PART_REPLACEMENT' || h.sparePart);
 
   return `
-    <div class="page-view" style="display: flex; flex-direction: column; gap: 12px; height: 100%; overflow: hidden; box-sizing: border-box; padding: 12px 20px;">
+    <div class="page-view" style="display: flex; flex-direction: column; gap: 8px; height: 100%; overflow: hidden; box-sizing: border-box; padding: 8px 14px;">
       
-      <!-- Top Title Bar (Fixed Height) -->
-      <div class="reports-top-bar" style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 12px 18px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; flex-shrink: 0;">
-        <div style="min-width: 0;">
-          <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-            <span style="font-size: 20px;">📊</span>
-            <h1 style="font-size: 18px; font-weight: 800; color: #fff; margin: 0; white-space: nowrap;">
-              Reports &amp; Excel Export Center
-            </h1>
-            <span class="badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); font-size: 11px; padding: 2px 8px; white-space: nowrap;">
-              Enterprise Analytics
-            </span>
-          </div>
-          <p style="font-size: 11.5px; color: var(--text-secondary); margin-top: 2px; margin-bottom: 0; overflow: hidden; text-overflow: ellipsis;">
-            Comprehensive reporting across Machine Inventory, Inter-Floor Transfers, Spare Parts Replacements, and ENT Lab Diagnostics.
-          </p>
+      <!-- Top Title Bar (Ultra Compact Header) -->
+      <div class="reports-top-bar" style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 5px 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; flex-shrink: 0;">
+        <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
+          <span style="font-size: 16px;">📊</span>
+          <h1 style="font-size: 15px; font-weight: 800; color: #fff; margin: 0; white-space: nowrap;">
+            Reports &amp; Analytics
+          </h1>
+          <span class="badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); font-size: 10px; padding: 1px 6px; white-space: nowrap;">
+            Summary Reports &amp; Excel Export Hub
+          </span>
         </div>
 
-        <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
-          <button id="btn-toggle-reports-guide" class="btn btn-secondary btn-sm" style="font-weight: 700; white-space: nowrap;" title="View section purpose and module functions">
+        <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
+          <button id="btn-toggle-reports-guide" class="btn btn-secondary btn-xs" style="font-weight: 700; height: 26px; font-size: 11px; padding: 0 8px; white-space: nowrap;" title="View section purpose and module functions">
             ℹ️ Purpose &amp; Guide
           </button>
-          <button id="btn-quick-export-all-excel" class="btn btn-primary btn-sm" style="font-weight: 700; background: linear-gradient(135deg, #0284c7, #0369a1); box-shadow: 0 2px 10px rgba(2, 132, 199, 0.35); white-space: nowrap;">
+          <button id="btn-quick-export-all-excel" class="btn btn-primary btn-xs" style="font-weight: 700; height: 26px; font-size: 11px; padding: 0 10px; background: linear-gradient(135deg, #0284c7, #0369a1); box-shadow: 0 2px 8px rgba(2, 132, 199, 0.35); white-space: nowrap;">
             📥 Download Complete Excel Workbook
           </button>
         </div>
       </div>
 
       <!-- Collapsible Section Guide Drawer -->
-      <div id="reports-guide-drawer" style="display: none; background: rgba(15, 23, 42, 0.95); border: 1.5px solid #0284c7; border-radius: var(--radius-lg); padding: 14px 18px; box-shadow: 0 6px 20px rgba(0,0,0,0.4);">
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 8px; margin-bottom: 10px;">
-          <div style="font-weight: 800; color: #38bdf8; font-size: 13.5px; display: flex; align-items: center; gap: 6px;">
+      <div id="reports-guide-drawer" style="display: none; background: rgba(15, 23, 42, 0.95); border: 1.5px solid #0284c7; border-radius: var(--radius-md); padding: 8px 12px; box-shadow: 0 6px 20px rgba(0,0,0,0.4); flex-shrink: 0;">
+        <div style="display: justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 4px; margin-bottom: 6px;">
+          <div style="font-weight: 800; color: #38bdf8; font-size: 12px; display: flex; align-items: center; gap: 6px;">
             <span>💡</span> Purpose &amp; Overview of Reports &amp; Analytics Modules
           </div>
-          <button id="btn-close-reports-guide" class="btn btn-ghost btn-xs" style="color: #94a3b8; font-size: 14px;">✕</button>
+          <button id="btn-close-reports-guide" class="btn btn-ghost btn-xs" style="color: #94a3b8; font-size: 12px;">✕</button>
         </div>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; font-size: 11.5px; color: #cbd5e1; line-height: 1.45;">
-          <div style="background: rgba(56, 189, 248, 0.08); border-left: 3px solid #38bdf8; padding: 8px 10px; border-radius: 4px;">
-            <strong style="color: #38bdf8;">🧵 1. Machine Summary:</strong><br/>
-            Inspect total machinery fleet across Groups, Units, Floors, and Lines. View breakdowns by brand and model with live Running vs. Idle rates.
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 6px; font-size: 10.5px; color: #cbd5e1; line-height: 1.35;">
+          <div style="background: rgba(56, 189, 248, 0.08); border-left: 3px solid #38bdf8; padding: 4px 6px; border-radius: 4px;">
+            <strong style="color: #38bdf8;">🧵 1. Machine Summary:</strong> Fleet breakdown across Groups, Units, Floors &amp; Lines by model.
           </div>
-          <div style="background: rgba(168, 85, 247, 0.08); border-left: 3px solid #c084fc; padding: 8px 10px; border-radius: 4px;">
-            <strong style="color: #c084fc;">🔄 2. Transfer Reports:</strong><br/>
-            Track machine movements and floor reassignments. View requisition statuses, pending approvals, dispatch dates, and receiving acknowledgments.
+          <div style="background: rgba(168, 85, 247, 0.08); border-left: 3px solid #c084fc; padding: 4px 6px; border-radius: 4px;">
+            <strong style="color: #c084fc;">🔄 2. Transfer Reports:</strong> Relocation logs, pending approvals, dispatch &amp; receiving status.
           </div>
-          <div style="background: rgba(251, 191, 36, 0.08); border-left: 3px solid #fbbf24; padding: 8px 10px; border-radius: 4px;">
-            <strong style="color: #fbbf24;">⚙️ 3. Spare Parts Reports:</strong><br/>
-            Monitor parts replacement logs by machine serial. Analyze consumption volume, unreturned store parts, technician slips, and financial cost valuations.
+          <div style="background: rgba(251, 191, 36, 0.08); border-left: 3px solid #fbbf24; padding: 4px 6px; border-radius: 4px;">
+            <strong style="color: #fbbf24;">⚙️ 3. Spare Parts Reports:</strong> Replacement logs, consumption volume, unreturned parts &amp; valuations.
           </div>
-          <div style="background: rgba(52, 211, 153, 0.08); border-left: 3px solid #34d399; padding: 8px 10px; border-radius: 4px;">
-            <strong style="color: #34d399;">🔬 4. ENT Lab Management:</strong><br/>
-            Diagnostic history of control boxes, circuit boards, and motor drives. Tracks in-house electronics repairs vs. external vendor service timelines.
+          <div style="background: rgba(52, 211, 153, 0.08); border-left: 3px solid #34d399; padding: 4px 6px; border-radius: 4px;">
+            <strong style="color: #34d399;">🔬 4. ENT Lab Management:</strong> Circuit board diagnostics, in-house &amp; external vendor repairs.
           </div>
-          <div style="background: rgba(244, 63, 94, 0.08); border-left: 3px solid #fb7185; padding: 8px 10px; border-radius: 4px;">
-            <strong style="color: #fb7185;">📤 5. 1-Click Excel Export:</strong><br/>
-            Download enterprise-grade multi-sheet spreadsheets with live formulas, audited metadata, and print-ready formatting for executive management.
+          <div style="background: rgba(244, 63, 94, 0.08); border-left: 3px solid #fb7185; padding: 4px 6px; border-radius: 4px;">
+            <strong style="color: #fb7185;">📤 5. 1-Click Excel Export:</strong> Download comprehensive multi-sheet spreadsheets with live formulas.
           </div>
         </div>
       </div>
 
-      <!-- Navigation Tabs (Clean, Modern Buttons, Fixed Height) -->
-      <div id="reports-nav-tabs-bar" style="display: flex; gap: 8px; border-bottom: 2px solid var(--border-color); padding-bottom: 6px; flex-wrap: nowrap; flex-shrink: 0; overflow-x: auto; scrollbar-width: none; height: 38px; align-items: center;">
-        <button class="btn btn-sm ${currentReportTab === 'machines' ? 'btn-primary' : 'btn-ghost'}" data-report-tab-btn="machines" style="font-weight: 700; font-size: 12.5px; white-space: nowrap;">
+      <!-- Navigation Tabs (Compact Buttons Bar, Fixed Height 30px) -->
+      <div id="reports-nav-tabs-bar" style="display: flex; gap: 6px; border-bottom: 2px solid var(--border-color); padding-bottom: 3px; flex-wrap: nowrap; flex-shrink: 0; overflow-x: auto; scrollbar-width: none; height: 30px; align-items: center;">
+        <button class="btn btn-xs ${currentReportTab === 'machines' ? 'btn-primary' : 'btn-ghost'}" data-report-tab-btn="machines" style="font-weight: 700; font-size: 11px; padding: 3px 8px; height: 26px; white-space: nowrap;">
           🧵 Machine Summary (${allMachines.length})
         </button>
-        <button class="btn btn-sm ${currentReportTab === 'transfers' ? 'btn-primary' : 'btn-ghost'}" data-report-tab-btn="transfers" style="font-weight: 700; font-size: 12.5px; white-space: nowrap;">
+        <button class="btn btn-xs ${currentReportTab === 'transfers' ? 'btn-primary' : 'btn-ghost'}" data-report-tab-btn="transfers" style="font-weight: 700; font-size: 11px; padding: 3px 8px; height: 26px; white-space: nowrap;">
           🔄 Transfer Reports (${allTransfers.length})
         </button>
-        <button class="btn btn-sm ${currentReportTab === 'spareparts' ? 'btn-primary' : 'btn-ghost'}" data-report-tab-btn="spareparts" style="font-weight: 700; font-size: 12.5px; white-space: nowrap;">
+        <button class="btn btn-xs ${currentReportTab === 'spareparts' ? 'btn-primary' : 'btn-ghost'}" data-report-tab-btn="spareparts" style="font-weight: 700; font-size: 11px; padding: 3px 8px; height: 26px; white-space: nowrap;">
           ⚙️ Spare Parts Reports (${replacementLogs.length})
         </button>
-        <button class="btn btn-sm ${currentReportTab === 'etlab' ? 'btn-primary' : 'btn-ghost'}" data-report-tab-btn="etlab" style="font-weight: 700; font-size: 12.5px; white-space: nowrap;">
+        <button class="btn btn-xs ${currentReportTab === 'etlab' ? 'btn-primary' : 'btn-ghost'}" data-report-tab-btn="etlab" style="font-weight: 700; font-size: 11px; padding: 3px 8px; height: 26px; white-space: nowrap;">
           🔬 ENT Lab Management Report (${etLabBoards.length})
         </button>
-        <button class="btn btn-sm ${currentReportTab === 'export' ? 'btn-primary' : 'btn-ghost'}" data-report-tab-btn="export" style="font-weight: 700; font-size: 12.5px; white-space: nowrap; color: ${currentReportTab === 'export' ? '#fff' : '#38bdf8'};">
+        <button class="btn btn-xs ${currentReportTab === 'export' ? 'btn-primary' : 'btn-ghost'}" data-report-tab-btn="export" style="font-weight: 700; font-size: 11px; padding: 3px 8px; height: 26px; white-space: nowrap; color: ${currentReportTab === 'export' ? '#fff' : '#38bdf8'};">
           📤 1-Click Excel Export Center
         </button>
       </div>
 
-      <!-- Tab Content Area (Scrollable flex 1) -->
-      <div id="reports-tab-content" style="display: flex; flex-direction: column; gap: 14px; flex: 1; min-height: 0; overflow-y: auto;">
+      <!-- Tab Content Area (Flex 1, scrollable within tabs) -->
+      <div id="reports-tab-content" style="display: flex; flex-direction: column; gap: 6px; flex: 1; min-height: 0; overflow-y: auto;">
         ${renderActiveTabHtml({ allMachines, allTransfers, completedTransfers, replacementLogs, sparePartsMaster, etLabBoards, floors })}
       </div>
     </div>
@@ -304,290 +294,259 @@ function renderEtLabReportsTab(boards) {
   const companies = etLabService.getCompanies() || [];
 
   return `
-    <div style="display: flex; flex-direction: column; gap: 14px;">
+    <div style="display: flex; flex-direction: column; gap: 6px; height: 100%; flex: 1; min-height: 0;">
       
-      <!-- Top Metrics KPIs -->
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px;">
-        <div style="background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 8px; padding: 8px 12px;">
-          <div style="font-size: 11px; font-weight: 700; color: #38bdf8; text-transform: uppercase;">Total Matching Boards</div>
-          <div style="font-size: 20px; font-weight: 800; color: #fff; margin-top: 4px;">${filteredRows.length} Units</div>
+      <!-- 1. Sleek Inline KPI Ribbon (Height 28px) -->
+      <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px; background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: var(--radius-md); padding: 4px 10px; flex-shrink: 0;">
+        <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+          <div style="display: inline-flex; align-items: center; gap: 4px; background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 4px; padding: 2px 8px; font-size: 11px;">
+            <span style="font-weight: 700; color: #38bdf8;">MATCHING:</span>
+            <span style="font-weight: 900; color: #fff; font-family: var(--font-mono); font-size: 12px;">${filteredRows.length} Units</span>
+          </div>
+
+          <div style="display: inline-flex; align-items: center; gap: 4px; background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 4px; padding: 2px 8px; font-size: 11px;">
+            <span style="font-weight: 700; color: #34d399;">INSTALLED:</span>
+            <span style="font-weight: 900; color: #34d399; font-family: var(--font-mono); font-size: 12px;">${filteredRows.filter(r => r.status === 'INSTALLED').length}</span>
+          </div>
+
+          <div style="display: inline-flex; align-items: center; gap: 4px; background: rgba(2, 132, 199, 0.12); border: 1px solid rgba(2, 132, 199, 0.3); border-radius: 4px; padding: 2px 8px; font-size: 11px;">
+            <span style="font-weight: 700; color: #38bdf8;">SPARES:</span>
+            <span style="font-weight: 900; color: #38bdf8; font-family: var(--font-mono); font-size: 12px;">${filteredRows.filter(r => r.status === 'AVAILABLE_SPARE' || r.status === 'REPAIR_ACCEPTED').length}</span>
+          </div>
+
+          <div style="display: inline-flex; align-items: center; gap: 4px; background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 4px; padding: 2px 8px; font-size: 11px;">
+            <span style="font-weight: 700; color: #fbbf24;">IN-HOUSE REPAIR:</span>
+            <span style="font-weight: 900; color: #fbbf24; font-family: var(--font-mono); font-size: 12px;">${filteredRows.filter(r => r.status === 'UNDER_INHOUSE_REPAIR' || r.status === 'REPAIR_REJECTED').length}</span>
+          </div>
+
+          <div style="display: inline-flex; align-items: center; gap: 4px; background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 4px; padding: 2px 8px; font-size: 11px;">
+            <span style="font-weight: 700; color: #f87171;">EXTERNAL:</span>
+            <span style="font-weight: 900; color: #f87171; font-family: var(--font-mono); font-size: 12px;">${filteredRows.filter(r => r.status === 'SENT_EXTERNAL').length}</span>
+          </div>
         </div>
 
-        <div style="background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 8px; padding: 8px 12px;">
-          <div style="font-size: 11px; font-weight: 700; color: #34d399; text-transform: uppercase;">Installed on Machine</div>
-          <div style="font-size: 20px; font-weight: 800; color: #34d399; margin-top: 4px;">${filteredRows.filter(r => r.status === 'INSTALLED').length} Units</div>
-        </div>
-
-        <div style="background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(2, 132, 199, 0.3); border-radius: 8px; padding: 8px 12px;">
-          <div style="font-size: 11px; font-weight: 700; color: #38bdf8; text-transform: uppercase;">Available Spares</div>
-          <div style="font-size: 20px; font-weight: 800; color: #38bdf8; margin-top: 4px;">${filteredRows.filter(r => r.status === 'AVAILABLE_SPARE' || r.status === 'REPAIR_ACCEPTED').length} Units</div>
-        </div>
-
-        <div style="background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 8px; padding: 8px 12px;">
-          <div style="font-size: 11px; font-weight: 700; color: #fbbf24; text-transform: uppercase;">Under In-House Repair</div>
-          <div style="font-size: 20px; font-weight: 800; color: #fbbf24; margin-top: 4px;">${filteredRows.filter(r => r.status === 'UNDER_INHOUSE_REPAIR' || r.status === 'REPAIR_REJECTED').length} Units</div>
-        </div>
-
-        <div style="background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px; padding: 8px 12px;">
-          <div style="font-size: 11px; font-weight: 700; color: #f87171; text-transform: uppercase;">Sent to External Co.</div>
-          <div style="font-size: 20px; font-weight: 800; color: #f87171; margin-top: 4px;">${filteredRows.filter(r => r.status === 'SENT_EXTERNAL').length} Units</div>
+        <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+          <button id="btn-ent-rep-export-excel" class="btn btn-secondary btn-xs" style="font-weight: 700; border-color: #38bdf8; color: #38bdf8; height: 26px; font-size: 11px; padding: 0 8px;" title="Export filtered records to Excel">
+            📊 Excel
+          </button>
+          <button id="btn-ent-rep-export-pdf" class="btn btn-secondary btn-xs" style="font-weight: 700; border-color: #ec4899; color: #f472b6; height: 26px; font-size: 11px; padding: 0 8px;" title="Export PDF document">
+            📄 PDF
+          </button>
+          <button id="btn-ent-rep-print" class="btn btn-secondary btn-xs" style="font-weight: 700; border-color: #34d399; color: #34d399; height: 26px; font-size: 11px; padding: 0 8px;" title="Print Report">
+            🖨️ Print
+          </button>
+          <button id="btn-ent-rep-apply-filters" class="btn btn-primary btn-xs" style="font-weight: 800; height: 26px; padding: 0 10px; font-size: 11px; background: linear-gradient(135deg, #0284c7, #0369a1);">
+            🔍 Apply
+          </button>
+          <button id="btn-ent-rep-reset-filters" class="btn btn-ghost btn-xs" style="height: 26px; font-weight: 600; font-size: 11px; padding: 0 8px; color: #cbd5e1; border: 1px solid rgba(255,255,255,0.15);">
+            🔄 Reset
+          </button>
         </div>
       </div>
 
-      <!-- ============================================================ -->
-      <!-- FILTERS BAR & REPORT ACTIONS                                -->
-      <!-- ============================================================ -->
-      <div style="background: rgba(15, 23, 42, 0.9); border: 1.5px solid rgba(56, 189, 248, 0.4); border-radius: var(--radius-lg); padding: 16px 20px; display: flex; flex-direction: column; gap: 14px; box-shadow: var(--shadow-sm);">
+      <!-- 2. Compact High-Density Filters Grid -->
+      <div style="background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: var(--radius-md); padding: 6px 10px; display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 6px; box-shadow: var(--shadow-sm); flex-shrink: 0;">
         
-        <!-- Header & Action Buttons -->
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 12px;">
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <span style="font-size: 20px;">📊</span>
-            <div>
-              <div style="font-size: 15px; font-weight: 800; color: #fff;">ENT Lab Management Report Filter</div>
-              <div style="font-size: 11.5px; color: var(--text-secondary);">Filter boards by dates, machine, hierarchy, status &amp; external repair result</div>
-            </div>
-          </div>
-
-          <!-- Report Action Buttons: Export Excel, PDF, Print, Apply, Reset -->
-          <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
-            <button id="btn-ent-rep-export-excel" class="btn btn-secondary btn-sm" style="font-weight: 700; border-color: #38bdf8; color: #38bdf8; height: 36px;" title="Export filtered records to Excel">
-              📊 Export Excel
-            </button>
-            <button id="btn-ent-rep-export-pdf" class="btn btn-secondary btn-sm" style="font-weight: 700; border-color: #ec4899; color: #f472b6; height: 36px;" title="Export PDF document">
-              📄 PDF
-            </button>
-            <button id="btn-ent-rep-print" class="btn btn-secondary btn-sm" style="font-weight: 700; border-color: #34d399; color: #34d399; height: 36px;" title="Print Report">
-              🖨️ Print
-            </button>
-            <button id="btn-ent-rep-apply-filters" class="btn btn-primary btn-sm" style="font-weight: 800; height: 36px; padding: 0 16px; background: linear-gradient(135deg, #0284c7, #0369a1);">
-              🔍 Apply Filters
-            </button>
-            <button id="btn-ent-rep-reset-filters" class="btn btn-ghost btn-sm" style="height: 36px; font-weight: 600; color: #cbd5e1; border: 1px solid rgba(255,255,255,0.15);">
-              🔄 Reset Filters
-            </button>
-          </div>
+        <!-- Date From -->
+        <div style="display: flex; flex-direction: column; gap: 2px;">
+          <label style="font-size: 10px; font-weight: 700; color: #38bdf8;">📅 From:</label>
+          <input type="date" id="ent-filter-date-from" class="form-control" style="height: 26px; font-size: 11px; padding: 2px 4px;" value="${entReportFilterState.dateFrom}" />
         </div>
 
-        <!-- Filter Grid (Responsive) -->
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px;">
-          
-          <!-- Date From -->
-          <div class="form-group" style="margin: 0;">
-            <label class="form-label" style="font-size: 11px; font-weight: 800; color: #38bdf8;">📅 Date From:</label>
-            <input type="date" id="ent-filter-date-from" class="form-control" style="height: 36px; font-size: 12px;" value="${entReportFilterState.dateFrom}" />
-          </div>
+        <!-- Date To -->
+        <div style="display: flex; flex-direction: column; gap: 2px;">
+          <label style="font-size: 10px; font-weight: 700; color: #38bdf8;">📅 To:</label>
+          <input type="date" id="ent-filter-date-to" class="form-control" style="height: 26px; font-size: 11px; padding: 2px 4px;" value="${entReportFilterState.dateTo}" />
+        </div>
 
-          <!-- Date To -->
-          <div class="form-group" style="margin: 0;">
-            <label class="form-label" style="font-size: 11px; font-weight: 800; color: #38bdf8;">📅 Date To:</label>
-            <input type="date" id="ent-filter-date-to" class="form-control" style="height: 36px; font-size: 12px;" value="${entReportFilterState.dateTo}" />
-          </div>
+        <!-- Board ID / SL No. -->
+        <div style="display: flex; flex-direction: column; gap: 2px;">
+          <label style="font-size: 10px; font-weight: 700; color: #cbd5e1;">Board ID / SL:</label>
+          <input type="text" id="ent-filter-board-serial" class="form-control" placeholder="BRD-..., JUK-..." value="${entReportFilterState.boardSerial}" style="height: 26px; font-size: 11px; padding: 2px 6px;" />
+        </div>
 
-          <!-- Board ID / SL No. -->
-          <div class="form-group" style="margin: 0;">
-            <label class="form-label" style="font-size: 11px; font-weight: 700; color: #cbd5e1;">Board ID / SL No.:</label>
-            <input type="text" id="ent-filter-board-serial" class="form-control" placeholder="BRD-00025, JUK-..." value="${entReportFilterState.boardSerial}" style="height: 36px; font-size: 12px;" />
-          </div>
+        <!-- Board Name -->
+        <div style="display: flex; flex-direction: column; gap: 2px;">
+          <label style="font-size: 10px; font-weight: 700; color: #cbd5e1;">Board Name:</label>
+          <input type="text" id="ent-filter-part-name" class="form-control" placeholder="CPU, Power..." value="${entReportFilterState.partName}" style="height: 26px; font-size: 11px; padding: 2px 6px;" />
+        </div>
 
-          <!-- Board Name -->
-          <div class="form-group" style="margin: 0;">
-            <label class="form-label" style="font-size: 11px; font-weight: 700; color: #cbd5e1;">Board Name:</label>
-            <input type="text" id="ent-filter-part-name" class="form-control" placeholder="Main CPU, Power..." value="${entReportFilterState.partName}" style="height: 36px; font-size: 12px;" />
-          </div>
+        <!-- Model -->
+        <div style="display: flex; flex-direction: column; gap: 2px;">
+          <label style="font-size: 10px; font-weight: 700; color: #cbd5e1;">Model:</label>
+          <input type="text" id="ent-filter-model" class="form-control" placeholder="CP-180A..." value="${entReportFilterState.modelNo}" style="height: 26px; font-size: 11px; padding: 2px 6px;" />
+        </div>
 
-          <!-- Model -->
-          <div class="form-group" style="margin: 0;">
-            <label class="form-label" style="font-size: 11px; font-weight: 700; color: #cbd5e1;">Model:</label>
-            <input type="text" id="ent-filter-model" class="form-control" placeholder="CP-180A, DDL-..." value="${entReportFilterState.modelNo}" style="height: 36px; font-size: 12px;" />
-          </div>
+        <!-- Machine -->
+        <div style="display: flex; flex-direction: column; gap: 2px;">
+          <label style="font-size: 10px; font-weight: 700; color: #cbd5e1;">Machine / Serial:</label>
+          <input type="text" id="ent-filter-machine" class="form-control" placeholder="TS-01, JA-01..." value="${entReportFilterState.machineSerial}" style="height: 26px; font-size: 11px; padding: 2px 6px;" />
+        </div>
 
-          <!-- Machine -->
-          <div class="form-group" style="margin: 0;">
-            <label class="form-label" style="font-size: 11px; font-weight: 700; color: #cbd5e1;">Machine / Serial:</label>
-            <input type="text" id="ent-filter-machine" class="form-control" placeholder="TS-01, JA-01..." value="${entReportFilterState.machineSerial}" style="height: 36px; font-size: 12px;" />
-          </div>
+        <!-- Unit / Factory -->
+        <div style="display: flex; flex-direction: column; gap: 2px;">
+          <label style="font-size: 10px; font-weight: 700; color: #cbd5e1;">Unit / Factory:</label>
+          <select id="ent-filter-unit" class="form-control" style="height: 26px; font-size: 11px; padding: 2px 4px;">
+            <option value="">All Units</option>
+            ${units.map(u => `<option value="${u.id}" ${entReportFilterState.unitId === u.id ? 'selected' : ''}>${u.name}</option>`).join('')}
+          </select>
+        </div>
 
-          <!-- Unit / Factory -->
-          <div class="form-group" style="margin: 0;">
-            <label class="form-label" style="font-size: 11px; font-weight: 700; color: #cbd5e1;">Unit / Factory:</label>
-            <select id="ent-filter-unit" class="form-control" style="height: 36px; font-size: 12px;">
-              <option value="">All Units</option>
-              ${units.map(u => `<option value="${u.id}" ${entReportFilterState.unitId === u.id ? 'selected' : ''}>${u.name}</option>`).join('')}
-            </select>
-          </div>
+        <!-- Floor -->
+        <div style="display: flex; flex-direction: column; gap: 2px;">
+          <label style="font-size: 10px; font-weight: 700; color: #cbd5e1;">Floor:</label>
+          <select id="ent-filter-floor" class="form-control" style="height: 26px; font-size: 11px; padding: 2px 4px;">
+            <option value="">All Floors</option>
+            ${floors.map(f => `<option value="${f.id}" ${entReportFilterState.floorId === f.id ? 'selected' : ''}>${f.name}</option>`).join('')}
+          </select>
+        </div>
 
-          <!-- Floor -->
-          <div class="form-group" style="margin: 0;">
-            <label class="form-label" style="font-size: 11px; font-weight: 700; color: #cbd5e1;">Floor:</label>
-            <select id="ent-filter-floor" class="form-control" style="height: 36px; font-size: 12px;">
-              <option value="">All Floors</option>
-              ${floors.map(f => `<option value="${f.id}" ${entReportFilterState.floorId === f.id ? 'selected' : ''}>${f.name}</option>`).join('')}
-            </select>
-          </div>
+        <!-- Line -->
+        <div style="display: flex; flex-direction: column; gap: 2px;">
+          <label style="font-size: 10px; font-weight: 700; color: #cbd5e1;">Line:</label>
+          <select id="ent-filter-line" class="form-control" style="height: 26px; font-size: 11px; padding: 2px 4px;">
+            <option value="">All Lines</option>
+            ${lines.map(l => `<option value="${l.id}" ${entReportFilterState.lineId === l.id ? 'selected' : ''}>${l.name}</option>`).join('')}
+          </select>
+        </div>
 
-          <!-- Line -->
-          <div class="form-group" style="margin: 0;">
-            <label class="form-label" style="font-size: 11px; font-weight: 700; color: #cbd5e1;">Line:</label>
-            <select id="ent-filter-line" class="form-control" style="height: 36px; font-size: 12px;">
-              <option value="">All Lines</option>
-              ${lines.map(l => `<option value="${l.id}" ${entReportFilterState.lineId === l.id ? 'selected' : ''}>${l.name}</option>`).join('')}
-            </select>
-          </div>
+        <!-- Status -->
+        <div style="display: flex; flex-direction: column; gap: 2px;">
+          <label style="font-size: 10px; font-weight: 700; color: #cbd5e1;">Current Status:</label>
+          <select id="ent-filter-status" class="form-control" style="height: 26px; font-size: 11px; padding: 2px 4px;">
+            <option value="ALL" ${entReportFilterState.status === 'ALL' ? 'selected' : ''}>All Statuses</option>
+            <option value="INSTALLED" ${entReportFilterState.status === 'INSTALLED' ? 'selected' : ''}>🟢 Installed</option>
+            <option value="AVAILABLE_SPARE" ${entReportFilterState.status === 'AVAILABLE_SPARE' ? 'selected' : ''}>🔵 Available / Spare</option>
+            <option value="UNDER_INHOUSE_REPAIR" ${entReportFilterState.status === 'UNDER_INHOUSE_REPAIR' ? 'selected' : ''}>🟠 Under Repair</option>
+            <option value="SENT_EXTERNAL" ${entReportFilterState.status === 'SENT_EXTERNAL' ? 'selected' : ''}>🔴 Sent Outside</option>
+            <option value="RETURNED" ${entReportFilterState.status === 'RETURNED' ? 'selected' : ''}>🟣 Returned</option>
+            <option value="DAMAGED_SCRAP" ${entReportFilterState.status === 'DAMAGED_SCRAP' ? 'selected' : ''}>❌ Damaged / Scrap</option>
+          </select>
+        </div>
 
-          <!-- Status -->
-          <div class="form-group" style="margin: 0;">
-            <label class="form-label" style="font-size: 11px; font-weight: 700; color: #cbd5e1;">Current Status:</label>
-            <select id="ent-filter-status" class="form-control" style="height: 36px; font-size: 12px;">
-              <option value="ALL" ${entReportFilterState.status === 'ALL' ? 'selected' : ''}>All Statuses</option>
-              <option value="INSTALLED" ${entReportFilterState.status === 'INSTALLED' ? 'selected' : ''}>🟢 Installed</option>
-              <option value="AVAILABLE_SPARE" ${entReportFilterState.status === 'AVAILABLE_SPARE' ? 'selected' : ''}>🔵 Available / Spare</option>
-              <option value="UNDER_INHOUSE_REPAIR" ${entReportFilterState.status === 'UNDER_INHOUSE_REPAIR' ? 'selected' : ''}>🟠 Under Repair</option>
-              <option value="SENT_EXTERNAL" ${entReportFilterState.status === 'SENT_EXTERNAL' ? 'selected' : ''}>🔴 Sent Outside</option>
-              <option value="RETURNED" ${entReportFilterState.status === 'RETURNED' ? 'selected' : ''}>🟣 Returned</option>
-              <option value="DAMAGED_SCRAP" ${entReportFilterState.status === 'DAMAGED_SCRAP' ? 'selected' : ''}>❌ Damaged / Scrap</option>
-            </select>
-          </div>
+        <!-- Repair Type -->
+        <div style="display: flex; flex-direction: column; gap: 2px;">
+          <label style="font-size: 10px; font-weight: 700; color: #cbd5e1;">Repair Type:</label>
+          <select id="ent-filter-repair-type" class="form-control" style="height: 26px; font-size: 11px; padding: 2px 4px;">
+            <option value="ALL" ${entReportFilterState.repairType === 'ALL' ? 'selected' : ''}>All Types</option>
+            <option value="In-House" ${entReportFilterState.repairType === 'In-House' ? 'selected' : ''}>🛠️ In-House</option>
+            <option value="External" ${entReportFilterState.repairType === 'External' ? 'selected' : ''}>🚚 External</option>
+          </select>
+        </div>
 
-          <!-- Repair Type -->
-          <div class="form-group" style="margin: 0;">
-            <label class="form-label" style="font-size: 11px; font-weight: 700; color: #cbd5e1;">Repair Type:</label>
-            <select id="ent-filter-repair-type" class="form-control" style="height: 36px; font-size: 12px;">
-              <option value="ALL" ${entReportFilterState.repairType === 'ALL' ? 'selected' : ''}>All Repair Types</option>
-              <option value="In-House" ${entReportFilterState.repairType === 'In-House' ? 'selected' : ''}>🛠️ In-House Repair</option>
-              <option value="External" ${entReportFilterState.repairType === 'External' ? 'selected' : ''}>🚚 External Outside Repair</option>
-            </select>
-          </div>
+        <!-- External Company -->
+        <div style="display: flex; flex-direction: column; gap: 2px;">
+          <label style="font-size: 10px; font-weight: 700; color: #cbd5e1;">Company:</label>
+          <select id="ent-filter-company" class="form-control" style="height: 26px; font-size: 11px; padding: 2px 4px;">
+            <option value="ALL" ${entReportFilterState.companyName === 'ALL' ? 'selected' : ''}>All Companies</option>
+            ${companies.map(c => `<option value="${c.name}" ${entReportFilterState.companyName === c.name ? 'selected' : ''}>${c.name}</option>`).join('')}
+          </select>
+        </div>
 
-          <!-- External Company -->
-          <div class="form-group" style="margin: 0;">
-            <label class="form-label" style="font-size: 11px; font-weight: 700; color: #cbd5e1;">External Company:</label>
-            <select id="ent-filter-company" class="form-control" style="height: 36px; font-size: 12px;">
-              <option value="ALL" ${entReportFilterState.companyName === 'ALL' ? 'selected' : ''}>All Companies</option>
-              ${companies.map(c => `<option value="${c.name}" ${entReportFilterState.companyName === c.name ? 'selected' : ''}>${c.name}</option>`).join('')}
-            </select>
-          </div>
-
-          <!-- Repair Result -->
-          <div class="form-group" style="margin: 0;">
-            <label class="form-label" style="font-size: 11px; font-weight: 700; color: #cbd5e1;">Repair Result:</label>
-            <select id="ent-filter-repair-result" class="form-control" style="height: 36px; font-size: 12px;">
-              <option value="ALL" ${entReportFilterState.repairResult === 'ALL' ? 'selected' : ''}>All Repair Results</option>
-              <option value="Accepted" ${entReportFilterState.repairResult === 'Accepted' ? 'selected' : ''}>✅ Accepted / Repair Successful</option>
-              <option value="Rejected" ${entReportFilterState.repairResult === 'Rejected' ? 'selected' : ''}>❌ Rejected / Not Solved</option>
-              <option value="Partially" ${entReportFilterState.repairResult === 'Partially' ? 'selected' : ''}>⚠️ Partially Repaired</option>
-              <option value="Send Again" ${entReportFilterState.repairResult === 'Send Again' ? 'selected' : ''}>🔄 Send Again</option>
-            </select>
-          </div>
-
-          <!-- Quick Global Search -->
-          <div class="form-group" style="margin: 0; grid-column: span 2;">
-            <label class="form-label" style="font-size: 11px; font-weight: 700; color: #cbd5e1;">🔍 Live Keyword Search:</label>
-            <input type="text" id="ent-filter-search" class="form-control" placeholder="Search any board ID, name, machine, company, remarks..." value="${entReportFilterState.search}" style="height: 36px; font-size: 12px;" />
-          </div>
-
+        <!-- Search -->
+        <div style="display: flex; flex-direction: column; gap: 2px; grid-column: span 2;">
+          <label style="font-size: 10px; font-weight: 700; color: #38bdf8;">🔍 Live Keyword Search:</label>
+          <input type="text" id="ent-filter-search" class="form-control" placeholder="Search any board ID, name, machine, company, remarks..." value="${entReportFilterState.search}" style="height: 26px; font-size: 11px; padding: 2px 6px;" />
         </div>
 
       </div>
 
-      <!-- ============================================================ -->
-      <!-- DATA REPORT TABLE (20 SPECIFIED COLUMNS)                     -->
-      <!-- ============================================================ -->
-      <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); overflow: hidden;">
-        <div style="padding: 12px 18px; background: rgba(15, 23, 42, 0.9); border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
-          <div style="font-weight: 800; font-size: 13.5px; color: #38bdf8; display: flex; align-items: center; gap: 8px;">
-            <span>📊 ENT Lab Management Master &amp; Movement Report</span>
-            <span class="badge badge-info" style="font-size: 11px;">${filteredRows.length} Boards</span>
+      <!-- 3. DATA REPORT TABLE (Flex 1, Maximize Viewport) -->
+      <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); overflow: hidden; display: flex; flex-direction: column; flex: 1; min-height: 0;">
+        <div style="padding: 5px 12px; background: rgba(15, 23, 42, 0.9); border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; flex-shrink: 0;">
+          <div style="font-weight: 800; font-size: 12px; color: #38bdf8; display: flex; align-items: center; gap: 6px;">
+            <span>📊 ENT Lab Master &amp; Movement Report</span>
+            <span class="badge badge-info" style="font-size: 10px; padding: 1px 5px;">${filteredRows.length} Boards</span>
           </div>
-          <div style="font-size: 11.5px; color: var(--text-muted);">
-            Complete tracking: Machine connection, installation, external repairs, verification &amp; turnaround
+          <div style="font-size: 10.5px; color: var(--text-muted);">
+            Machine connection, installation, external repairs, verification &amp; turnaround
           </div>
         </div>
 
-        <div class="table-responsive" style="max-height: 540px; overflow-y: auto;">
-          <table class="data-table" style="width: 100%; border-collapse: collapse; font-size: 11.5px;">
+        <div class="table-responsive" style="flex: 1; min-height: 0; overflow-y: auto;">
+          <table class="data-table" style="width: 100%; border-collapse: collapse; font-size: 11px;">
             <thead>
-              <tr style="background: rgba(15, 23, 42, 0.95); border-bottom: 1px solid var(--border-color); font-size: 10.5px; text-transform: uppercase; color: #94a3b8; position: sticky; top: 0; z-index: 2; white-space: nowrap;">
-                <th style="padding: 8px 10px; text-align: center; width: 35px;">Sl</th>
-                <th style="padding: 8px 10px; text-align: left;">Board / Item ID</th>
-                <th style="padding: 8px 10px; text-align: left;">Board Name</th>
-                <th style="padding: 8px 10px; text-align: left;">Model</th>
-                <th style="padding: 8px 10px; text-align: left;">Serial No.</th>
-                <th style="padding: 8px 10px; text-align: center;">Current Status</th>
-                <th style="padding: 8px 10px; text-align: left;">Current Machine</th>
-                <th style="padding: 8px 10px; text-align: left;">Machine Serial</th>
-                <th style="padding: 8px 10px; text-align: left;">Unit / Factory</th>
-                <th style="padding: 8px 10px; text-align: left;">Floor</th>
-                <th style="padding: 8px 10px; text-align: left;">Line</th>
-                <th style="padding: 8px 10px; text-align: left;">Install Date</th>
-                <th style="padding: 8px 10px; text-align: left;">Remove Date</th>
-                <th style="padding: 8px 10px; text-align: left;">Repair Type</th>
-                <th style="padding: 8px 10px; text-align: left;">External Company</th>
-                <th style="padding: 8px 10px; text-align: left;">Send Date</th>
-                <th style="padding: 8px 10px; text-align: left;">Return Date</th>
-                <th style="padding: 8px 10px; text-align: left;">Repair Result</th>
-                <th style="padding: 8px 10px; text-align: center;">Repair Count</th>
-                <th style="padding: 8px 10px; text-align: center;">Previous Bill</th>
-                <th style="padding: 8px 10px; text-align: left;">Remarks</th>
+              <tr style="background: rgba(15, 23, 42, 0.95); border-bottom: 1px solid var(--border-color); font-size: 10px; text-transform: uppercase; color: #94a3b8; position: sticky; top: 0; z-index: 2; white-space: nowrap;">
+                <th style="padding: 6px 8px; text-align: center; width: 30px;">Sl</th>
+                <th style="padding: 6px 8px; text-align: left;">Board / Item ID</th>
+                <th style="padding: 6px 8px; text-align: left;">Board Name</th>
+                <th style="padding: 6px 8px; text-align: left;">Model</th>
+                <th style="padding: 6px 8px; text-align: left;">Serial No.</th>
+                <th style="padding: 6px 8px; text-align: center;">Status</th>
+                <th style="padding: 6px 8px; text-align: left;">Current Machine</th>
+                <th style="padding: 6px 8px; text-align: left;">Machine Serial</th>
+                <th style="padding: 6px 8px; text-align: left;">Unit / Factory</th>
+                <th style="padding: 6px 8px; text-align: left;">Floor</th>
+                <th style="padding: 6px 8px; text-align: left;">Line</th>
+                <th style="padding: 6px 8px; text-align: left;">Install Date</th>
+                <th style="padding: 6px 8px; text-align: left;">Remove Date</th>
+                <th style="padding: 6px 8px; text-align: left;">Repair Type</th>
+                <th style="padding: 6px 8px; text-align: left;">External Company</th>
+                <th style="padding: 6px 8px; text-align: left;">Send Date</th>
+                <th style="padding: 6px 8px; text-align: left;">Return Date</th>
+                <th style="padding: 6px 8px; text-align: left;">Repair Result</th>
+                <th style="padding: 6px 8px; text-align: center;">Repairs</th>
+                <th style="padding: 6px 8px; text-align: center;">Bill</th>
+                <th style="padding: 6px 8px; text-align: left;">Remarks</th>
               </tr>
             </thead>
             <tbody>
               ${filteredRows.length === 0 ? `
-                <tr><td colspan="21" style="text-align: center; padding: 30px; color: var(--text-muted);">No records found matching the specified report filters.</td></tr>
+                <tr><td colspan="21" style="text-align: center; padding: 24px; color: var(--text-muted);">No records found matching the specified report filters.</td></tr>
               ` : filteredRows.map((r, idx) => {
-    let resultBadge = '—';
-    if (r.repairResult && r.repairResult !== '—') {
-      if (r.repairResult.includes('Accepted')) {
-        resultBadge = `<span style="background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid #10b981; font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 4px;">✅ Accepted</span>`;
-      } else if (r.repairResult.includes('Rejected') || r.repairResult.includes('Not Successful')) {
-        resultBadge = `<span style="background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid #ef4444; font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 4px;">❌ Rejected</span>`;
-      } else if (r.repairResult.includes('Partially')) {
-        resultBadge = `<span style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid #f59e0b; font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 4px;">⚠️ Partial</span>`;
-      } else if (r.repairResult.includes('Send Again')) {
-        resultBadge = `<span style="background: rgba(168, 85, 247, 0.2); color: #c084fc; border: 1px solid #a855f7; font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 4px;">🔄 Send Again</span>`;
-      } else {
-        resultBadge = `<span style="font-size: 10.5px; color: #cbd5e1;">${r.repairResult}</span>`;
-      }
-    }
+                let resultBadge = '—';
+                if (r.repairResult && r.repairResult !== '—') {
+                  if (r.repairResult.includes('Accepted')) {
+                    resultBadge = `<span style="background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid #10b981; font-size: 9.5px; font-weight: 800; padding: 1px 5px; border-radius: 3px;">✅ Accepted</span>`;
+                  } else if (r.repairResult.includes('Rejected') || r.repairResult.includes('Not Successful')) {
+                    resultBadge = `<span style="background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid #ef4444; font-size: 9.5px; font-weight: 800; padding: 1px 5px; border-radius: 3px;">❌ Rejected</span>`;
+                  } else if (r.repairResult.includes('Partially')) {
+                    resultBadge = `<span style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid #f59e0b; font-size: 9.5px; font-weight: 800; padding: 1px 5px; border-radius: 3px;">⚠️ Partial</span>`;
+                  } else if (r.repairResult.includes('Send Again')) {
+                    resultBadge = `<span style="background: rgba(168, 85, 247, 0.2); color: #c084fc; border: 1px solid #a855f7; font-size: 9.5px; font-weight: 800; padding: 1px 5px; border-radius: 3px;">🔄 Send Again</span>`;
+                  } else {
+                    resultBadge = `<span style="font-size: 10px; color: #cbd5e1;">${r.repairResult}</span>`;
+                  }
+                }
 
-    return `
+                return `
                   <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);" class="hover-row">
-                    <td style="padding: 7px 10px; text-align: center; color: var(--text-muted);">${idx + 1}</td>
-                    <td style="padding: 7px 10px; font-family: var(--font-mono); font-weight: 800; color: #38bdf8; white-space: nowrap;">${r.boardSerial}</td>
-                    <td style="padding: 7px 10px; font-weight: 700; color: #fff; white-space: nowrap;">${r.partName}</td>
-                    <td style="padding: 7px 10px; font-family: var(--font-mono); color: #cbd5e1; white-space: nowrap;">${r.modelNo}</td>
-                    <td style="padding: 7px 10px; font-family: var(--font-mono); color: #cbd5e1; white-space: nowrap;">${r.serialNo}</td>
-                    <td style="padding: 7px 10px; text-align: center; white-space: nowrap;">
-                      <span class="badge ${r.status === 'INSTALLED' ? 'badge-info' : r.status === 'AVAILABLE_SPARE' ? 'badge-active' : 'badge-warning'}" style="font-size: 10px; padding: 2px 6px;">
+                    <td style="padding: 5px 8px; text-align: center; color: var(--text-muted); font-size: 10.5px;">${idx + 1}</td>
+                    <td style="padding: 5px 8px; font-family: var(--font-mono); font-weight: 800; color: #38bdf8; white-space: nowrap; font-size: 10.5px;">${r.boardSerial}</td>
+                    <td style="padding: 5px 8px; font-weight: 700; color: #fff; white-space: nowrap; font-size: 10.5px;">${r.partName}</td>
+                    <td style="padding: 5px 8px; font-family: var(--font-mono); color: #cbd5e1; white-space: nowrap; font-size: 10.5px;">${r.modelNo}</td>
+                    <td style="padding: 5px 8px; font-family: var(--font-mono); color: #cbd5e1; white-space: nowrap; font-size: 10.5px;">${r.serialNo}</td>
+                    <td style="padding: 5px 8px; text-align: center; white-space: nowrap;">
+                      <span class="badge ${r.status === 'INSTALLED' ? 'badge-info' : r.status === 'AVAILABLE_SPARE' ? 'badge-active' : 'badge-warning'}" style="font-size: 9.5px; padding: 1px 5px;">
                         ${r.status}
                       </span>
                     </td>
-                    <td style="padding: 7px 10px; font-family: var(--font-mono); font-weight: 700; color: #38bdf8; white-space: nowrap;">${r.currentMachine}</td>
-                    <td style="padding: 7px 10px; font-family: var(--font-mono); color: #cbd5e1; white-space: nowrap;">${r.machineSerial}</td>
-                    <td style="padding: 7px 10px; color: #cbd5e1; white-space: nowrap;">${r.unitName}</td>
-                    <td style="padding: 7px 10px; color: #cbd5e1; white-space: nowrap;">${r.floorName}</td>
-                    <td style="padding: 7px 10px; color: #86efac; font-weight: 600; white-space: nowrap;">${r.lineName}</td>
-                    <td style="padding: 7px 10px; font-family: var(--font-mono); color: #86efac; white-space: nowrap;">${r.installDate}</td>
-                    <td style="padding: 7px 10px; font-family: var(--font-mono); color: #f87171; white-space: nowrap;">${r.removeDate}</td>
-                    <td style="padding: 7px 10px; color: #cbd5e1; white-space: nowrap;">${r.repairType}</td>
-                    <td style="padding: 7px 10px; color: #c084fc; font-weight: 600; white-space: nowrap;">${r.externalCompany}</td>
-                    <td style="padding: 7px 10px; font-family: var(--font-mono); color: #fbbf24; white-space: nowrap;">${r.sendDate}</td>
-                    <td style="padding: 7px 10px; font-family: var(--font-mono); color: #34d399; white-space: nowrap;">${r.returnDate}</td>
-                    <td style="padding: 7px 10px; white-space: nowrap;">${resultBadge}</td>
-                    <td style="padding: 7px 10px; text-align: center; font-family: var(--font-mono); font-weight: 800; color: #fbbf24;">${r.repairCount}</td>
-                    <td style="padding: 7px 10px; text-align: center; white-space: nowrap;">
+                    <td style="padding: 5px 8px; font-family: var(--font-mono); font-weight: 700; color: #38bdf8; white-space: nowrap; font-size: 10.5px;">${r.currentMachine}</td>
+                    <td style="padding: 5px 8px; font-family: var(--font-mono); color: #cbd5e1; white-space: nowrap; font-size: 10.5px;">${r.machineSerial}</td>
+                    <td style="padding: 5px 8px; color: #cbd5e1; white-space: nowrap; font-size: 10.5px;">${r.unitName}</td>
+                    <td style="padding: 5px 8px; color: #cbd5e1; white-space: nowrap; font-size: 10.5px;">${r.floorName}</td>
+                    <td style="padding: 5px 8px; color: #86efac; font-weight: 600; white-space: nowrap; font-size: 10.5px;">${r.lineName}</td>
+                    <td style="padding: 5px 8px; font-family: var(--font-mono); color: #86efac; white-space: nowrap; font-size: 10.5px;">${r.installDate}</td>
+                    <td style="padding: 5px 8px; font-family: var(--font-mono); color: #f87171; white-space: nowrap; font-size: 10.5px;">${r.removeDate}</td>
+                    <td style="padding: 5px 8px; color: #cbd5e1; white-space: nowrap; font-size: 10.5px;">${r.repairType}</td>
+                    <td style="padding: 5px 8px; color: #c084fc; font-weight: 600; white-space: nowrap; font-size: 10.5px;">${r.externalCompany}</td>
+                    <td style="padding: 5px 8px; font-family: var(--font-mono); color: #fbbf24; white-space: nowrap; font-size: 10.5px;">${r.sendDate}</td>
+                    <td style="padding: 5px 8px; font-family: var(--font-mono); color: #34d399; white-space: nowrap; font-size: 10.5px;">${r.returnDate}</td>
+                    <td style="padding: 5px 8px; white-space: nowrap;">${resultBadge}</td>
+                    <td style="padding: 5px 8px; text-align: center; font-family: var(--font-mono); font-weight: 800; color: #fbbf24; font-size: 10.5px;">${r.repairCount}</td>
+                    <td style="padding: 5px 8px; text-align: center; white-space: nowrap;">
                       ${r.previousBill === 'YES' ? `
-                        <span style="background: rgba(239,68,68,0.2); color: #fca5a5; font-family: var(--font-mono); padding: 2px 6px; border-radius: 4px; font-weight: 700; font-size: 10px;" title="Bill: ${r.billNo}">
+                        <span style="background: rgba(239,68,68,0.2); color: #fca5a5; font-family: var(--font-mono); padding: 1px 4px; border-radius: 3px; font-weight: 700; font-size: 9.5px;" title="Bill: ${r.billNo}">
                           ⚠️ YES
                         </span>
                       ` : `
-                        <span style="color: #34d399; font-size: 10.5px; font-weight: 600;">NO</span>
+                        <span style="color: #34d399; font-size: 10px; font-weight: 600;">NO</span>
                       `}
                     </td>
-                    <td style="padding: 7px 10px; color: #94a3b8; font-size: 11px; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${r.remarks}</td>
+                    <td style="padding: 5px 8px; color: #94a3b8; font-size: 10.5px; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${r.remarks}</td>
                   </tr>
                 `;
-  }).join('')}
+              }).join('')}
             </tbody>
           </table>
         </div>
@@ -838,7 +797,7 @@ function renderMachineReportsTab(allMachines) {
   if (groupedList.length === 0) {
     tableBodyHtml = `
       <tr>
-        <td colspan="8" style="text-align: center; padding: 36px; color: var(--text-muted);">
+        <td colspan="8" style="text-align: center; padding: 24px; color: var(--text-muted);">
           No machines found matching the selected location or filters.
         </td>
       </tr>
@@ -852,7 +811,7 @@ function renderMachineReportsTab(allMachines) {
         return `
           <tr class="${isFirstRow ? 'mach-group-first-row' : ''}">
             ${isFirstRow ? `
-              <td rowspan="${modelCount}" class="mach-group-cell" style="text-align: center; font-family: var(--font-mono); font-weight: 800; color: #94a3b8; font-size: 13px; border-right: 1px solid var(--border-color); vertical-align: middle;">
+              <td rowspan="${modelCount}" class="mach-group-cell" style="text-align: center; font-family: var(--font-mono); font-weight: 800; color: #94a3b8; font-size: 12px; border-right: 1px solid var(--border-color); vertical-align: middle;">
                 ${serialNum}
               </td>
               <td rowspan="${modelCount}" class="mach-group-cell">
@@ -864,12 +823,12 @@ function renderMachineReportsTab(allMachines) {
             <td class="mach-model-name" style="border-right: 1px solid var(--border-color); vertical-align: middle;">
               ${mod.model}
             </td>
-            <td class="mach-num-cell mach-num-running" style="text-align: center; border-right: 1px solid var(--border-color);">${mod.running}</td>
-            <td class="mach-num-cell mach-num-usable" style="text-align: center; border-right: 1px solid var(--border-color);">${mod.usableIdle}</td>
-            <td class="mach-num-cell mach-num-repair" style="text-align: center; border-right: 1px solid var(--border-color);">${mod.repairableIdle}</td>
-            <td class="mach-num-cell mach-num-total" style="text-align: center; border-right: 1.5px solid var(--border-color);">${mod.total}</td>
+            <td class="mach-num-cell mach-num-running" style="text-align: center; border-right: 1px solid var(--border-color); font-size: 12px;">${mod.running}</td>
+            <td class="mach-num-cell mach-num-usable" style="text-align: center; border-right: 1px solid var(--border-color); font-size: 12px;">${mod.usableIdle}</td>
+            <td class="mach-num-cell mach-num-repair" style="text-align: center; border-right: 1px solid var(--border-color); font-size: 12px;">${mod.repairableIdle}</td>
+            <td class="mach-num-cell mach-num-total" style="text-align: center; border-right: 1.5px solid var(--border-color); font-size: 12px;">${mod.total}</td>
             ${isFirstRow ? `
-              <td rowspan="${modelCount}" class="mach-group-cell mach-num-cell" style="text-align: center; vertical-align: middle; font-weight: 800; font-size: 14px; color: #38bdf8; border-left: 1.5px solid var(--border-color);">
+              <td rowspan="${modelCount}" class="mach-group-cell mach-num-cell" style="text-align: center; vertical-align: middle; font-weight: 800; font-size: 13px; color: #38bdf8; border-left: 1.5px solid var(--border-color);">
                 ${group.total}
               </td>
             ` : ''}
@@ -880,186 +839,144 @@ function renderMachineReportsTab(allMachines) {
   }
 
   return `
-    <div style="display: flex; flex-direction: column; gap: 14px;">
+    <div style="display: flex; flex-direction: column; gap: 6px; height: 100%; flex: 1; min-height: 0;">
       
-      <!-- 1. Sleek Filter Toolbar (Structured, High-Readability 2-Tier Bar) -->
-      <div class="reports-filter-toolbar" style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 12px 16px; display: flex; flex-direction: column; gap: 10px; box-shadow: var(--shadow-sm);">
+      <!-- 1. Ultra Compact Filter Toolbar -->
+      <div class="reports-filter-toolbar" style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 6px 10px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px; box-shadow: var(--shadow-sm); flex-shrink: 0;">
         
-        <!-- Top Row: Location & Status Dropdowns -->
-        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; width: 100%;">
-          <span style="font-size: 12px; font-weight: 800; color: #38bdf8; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 5px; white-space: nowrap;">
-            <span>📍</span> Filters:
+        <!-- Filter Controls -->
+        <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap; flex: 1; min-width: 0;">
+          <span style="font-size: 11px; font-weight: 800; color: #38bdf8; text-transform: uppercase; white-space: nowrap;">
+            📍 Filters:
           </span>
 
           <!-- Group Filter -->
-          <div style="flex: 1 1 160px; min-width: 150px; background: rgba(15, 23, 42, 0.85); border: 1px solid var(--border-color); border-radius: 6px; padding: 2px 8px; display: flex; align-items: center; gap: 6px;">
-            <span style="font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase; white-space: nowrap;">Group</span>
-            <select id="mr-filter-group" style="height: 32px; font-size: 12.5px; font-weight: 600; color: #fff; background: transparent; border: none; outline: none; cursor: pointer; width: 100%; min-width: 90px;">
-              <option value="" style="background: #0f172a; color: #fff;">All Groups (${groups.length})</option>
-              ${groups.map(g => `<option value="${g.id}" ${machineReportFilterState.groupId === g.id ? 'selected' : ''} style="background: #0f172a; color: #fff;">${g.name}</option>`).join('')}
-            </select>
-          </div>
+          <select id="mr-filter-group" class="form-control" style="height: 28px; font-size: 11.5px; font-weight: 600; color: #fff; background: rgba(15, 23, 42, 0.85); border: 1px solid var(--border-color); border-radius: 4px; padding: 2px 6px; min-width: 110px; max-width: 140px;">
+            <option value="" style="background: #0f172a; color: #fff;">All Groups (${groups.length})</option>
+            ${groups.map(g => `<option value="${g.id}" ${machineReportFilterState.groupId === g.id ? 'selected' : ''} style="background: #0f172a; color: #fff;">${g.name}</option>`).join('')}
+          </select>
 
-          <!-- Unit / Factory Filter -->
-          <div style="flex: 1 1 170px; min-width: 155px; background: rgba(15, 23, 42, 0.85); border: 1px solid var(--border-color); border-radius: 6px; padding: 2px 8px; display: flex; align-items: center; gap: 6px;">
-            <span style="font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase; white-space: nowrap;">Unit</span>
-            <select id="mr-filter-unit" style="height: 32px; font-size: 12.5px; font-weight: 600; color: #fff; background: transparent; border: none; outline: none; cursor: pointer; width: 100%; min-width: 100px;">
-              <option value="" style="background: #0f172a; color: #fff;">All Units (${availUnits.length})</option>
-              ${availUnits.map(u => `<option value="${u.id}" ${machineReportFilterState.unitId === u.id ? 'selected' : ''} style="background: #0f172a; color: #fff;">${u.name}</option>`).join('')}
-            </select>
-          </div>
+          <!-- Unit Filter -->
+          <select id="mr-filter-unit" class="form-control" style="height: 28px; font-size: 11.5px; font-weight: 600; color: #fff; background: rgba(15, 23, 42, 0.85); border: 1px solid var(--border-color); border-radius: 4px; padding: 2px 6px; min-width: 110px; max-width: 140px;">
+            <option value="" style="background: #0f172a; color: #fff;">All Units (${availUnits.length})</option>
+            ${availUnits.map(u => `<option value="${u.id}" ${machineReportFilterState.unitId === u.id ? 'selected' : ''} style="background: #0f172a; color: #fff;">${u.name}</option>`).join('')}
+          </select>
 
           <!-- Floor Filter -->
-          <div style="flex: 1 1 170px; min-width: 155px; background: rgba(15, 23, 42, 0.85); border: 1px solid var(--border-color); border-radius: 6px; padding: 2px 8px; display: flex; align-items: center; gap: 6px;">
-            <span style="font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase; white-space: nowrap;">Floor</span>
-            <select id="mr-filter-floor" style="height: 32px; font-size: 12.5px; font-weight: 600; color: #fff; background: transparent; border: none; outline: none; cursor: pointer; width: 100%; min-width: 100px;">
-              <option value="" style="background: #0f172a; color: #fff;">All Floors (${availFloors.length})</option>
-              ${availFloors.map(f => `<option value="${f.id}" ${machineReportFilterState.floorId === f.id ? 'selected' : ''} style="background: #0f172a; color: #fff;">${f.name}</option>`).join('')}
-            </select>
-          </div>
+          <select id="mr-filter-floor" class="form-control" style="height: 28px; font-size: 11.5px; font-weight: 600; color: #fff; background: rgba(15, 23, 42, 0.85); border: 1px solid var(--border-color); border-radius: 4px; padding: 2px 6px; min-width: 110px; max-width: 140px;">
+            <option value="" style="background: #0f172a; color: #fff;">All Floors (${availFloors.length})</option>
+            ${availFloors.map(f => `<option value="${f.id}" ${machineReportFilterState.floorId === f.id ? 'selected' : ''} style="background: #0f172a; color: #fff;">${f.name}</option>`).join('')}
+          </select>
 
           <!-- Line Filter -->
-          <div style="flex: 1 1 170px; min-width: 155px; background: rgba(15, 23, 42, 0.85); border: 1px solid var(--border-color); border-radius: 6px; padding: 2px 8px; display: flex; align-items: center; gap: 6px;">
-            <span style="font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase; white-space: nowrap;">Line</span>
-            <select id="mr-filter-line" style="height: 32px; font-size: 12.5px; font-weight: 600; color: #fff; background: transparent; border: none; outline: none; cursor: pointer; width: 100%; min-width: 100px;">
-              <option value="" style="background: #0f172a; color: #fff;">All Lines (${availLines.length})</option>
-              ${availLines.map(l => {
-                const clean = formatDisplayLine(l.name);
-                const label = clean !== l.name ? `Line ${clean} (${l.name})` : l.name;
-                return `<option value="${l.id}" ${machineReportFilterState.lineId === l.id ? 'selected' : ''} style="background: #0f172a; color: #fff;">${label}</option>`;
-              }).join('')}
-            </select>
-          </div>
+          <select id="mr-filter-line" class="form-control" style="height: 28px; font-size: 11.5px; font-weight: 600; color: #fff; background: rgba(15, 23, 42, 0.85); border: 1px solid var(--border-color); border-radius: 4px; padding: 2px 6px; min-width: 110px; max-width: 140px;">
+            <option value="" style="background: #0f172a; color: #fff;">All Lines (${availLines.length})</option>
+            ${availLines.map(l => {
+              const clean = formatDisplayLine(l.name);
+              const label = clean !== l.name ? `Line ${clean} (${l.name})` : l.name;
+              return `<option value="${l.id}" ${machineReportFilterState.lineId === l.id ? 'selected' : ''} style="background: #0f172a; color: #fff;">${label}</option>`;
+            }).join('')}
+          </select>
 
           <!-- Status Filter -->
-          <div style="flex: 1 1 150px; min-width: 140px; background: rgba(15, 23, 42, 0.85); border: 1px solid var(--border-color); border-radius: 6px; padding: 2px 8px; display: flex; align-items: center; gap: 6px;">
-            <span style="font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase; white-space: nowrap;">Status</span>
-            <select id="mr-filter-status" style="height: 32px; font-size: 12.5px; font-weight: 600; color: #fff; background: transparent; border: none; outline: none; cursor: pointer; width: 100%; min-width: 90px;">
-              <option value="ALL" ${machineReportFilterState.status === 'ALL' ? 'selected' : ''} style="background: #0f172a; color: #fff;">All Status</option>
-              <option value="ACTIVE" ${machineReportFilterState.status === 'ACTIVE' ? 'selected' : ''} style="background: #0f172a; color: #fff;">🟢 Active</option>
-              <option value="IDLE" ${machineReportFilterState.status === 'IDLE' ? 'selected' : ''} style="background: #0f172a; color: #fff;">🔵 Idle</option>
-              <option value="MAINTENANCE" ${machineReportFilterState.status === 'MAINTENANCE' ? 'selected' : ''} style="background: #0f172a; color: #fff;">🟡 Maintenance</option>
-              <option value="BREAKDOWN" ${machineReportFilterState.status === 'BREAKDOWN' ? 'selected' : ''} style="background: #0f172a; color: #fff;">🔴 Breakdown</option>
-            </select>
-          </div>
+          <select id="mr-filter-status" class="form-control" style="height: 28px; font-size: 11.5px; font-weight: 600; color: #fff; background: rgba(15, 23, 42, 0.85); border: 1px solid var(--border-color); border-radius: 4px; padding: 2px 6px; min-width: 100px; max-width: 120px;">
+            <option value="ALL" ${machineReportFilterState.status === 'ALL' ? 'selected' : ''} style="background: #0f172a; color: #fff;">All Status</option>
+            <option value="ACTIVE" ${machineReportFilterState.status === 'ACTIVE' ? 'selected' : ''} style="background: #0f172a; color: #fff;">🟢 Active</option>
+            <option value="IDLE" ${machineReportFilterState.status === 'IDLE' ? 'selected' : ''} style="background: #0f172a; color: #fff;">🔵 Idle</option>
+            <option value="MAINTENANCE" ${machineReportFilterState.status === 'MAINTENANCE' ? 'selected' : ''} style="background: #0f172a; color: #fff;">🟡 Maintenance</option>
+            <option value="BREAKDOWN" ${machineReportFilterState.status === 'BREAKDOWN' ? 'selected' : ''} style="background: #0f172a; color: #fff;">🔴 Breakdown</option>
+          </select>
 
+          <!-- Reset Filters -->
+          <button id="mr-btn-reset-filters" class="btn btn-ghost btn-xs" style="height: 28px; padding: 0 8px; font-size: 11px; font-weight: 700; color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); background: rgba(2, 132, 199, 0.1); border-radius: 4px; white-space: nowrap;" title="Reset all location and status filters">
+            ↺ Reset
+          </button>
         </div>
 
-        <!-- Bottom Row: Filter Reset & Export Action Tools -->
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; padding-top: 6px; border-top: 1px solid rgba(255,255,255,0.06);">
-          
-          <!-- Left: Active Filter Summary & Reset -->
-          <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-            <button id="mr-btn-reset-filters" class="btn btn-ghost btn-sm" style="height: 32px; padding: 0 14px; font-size: 12px; font-weight: 700; color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); background: rgba(2, 132, 199, 0.1); border-radius: 6px; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px;" title="Reset all location and status filters">
-              <span>↺</span> Reset Filters
-            </button>
-            <span style="font-size: 11.5px; color: #94a3b8;">
-              Showing breakdown for: <strong style="color: #fff;">${locationBadgeTitle}</strong>
-            </span>
-          </div>
-
-          <!-- Right: Export & Print Actions -->
-          <div class="reports-filter-actions" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-            <button id="btn-export-machine-report-excel" class="btn btn-primary btn-sm" style="font-weight: 800; background: linear-gradient(135deg, #0284c7, #0369a1); box-shadow: 0 2px 10px rgba(2, 132, 199, 0.4); height: 34px; padding: 0 16px; white-space: nowrap; border-radius: 6px; font-size: 12.5px; display: inline-flex; align-items: center; gap: 6px;">
-              <span>📊</span> Export Excel (.xlsx)
-            </button>
-            <button id="btn-print-machine-report-pdf" class="btn btn-secondary btn-sm" style="font-weight: 700; height: 34px; padding: 0 14px; white-space: nowrap; border-radius: 6px; font-size: 12.5px; display: inline-flex; align-items: center; gap: 6px;">
-              <span>🖨️</span> Print / PDF
-            </button>
-          </div>
-
+        <!-- Action Tools (Excel & Print) -->
+        <div style="display: flex; gap: 6px; align-items: center; flex-shrink: 0;">
+          <button id="btn-export-machine-report-excel" class="btn btn-primary btn-xs" style="font-weight: 800; background: linear-gradient(135deg, #0284c7, #0369a1); height: 28px; padding: 0 10px; white-space: nowrap; border-radius: 4px; font-size: 11.5px; display: inline-flex; align-items: center; gap: 4px;">
+            <span>📊</span> Export Excel
+          </button>
+          <button id="btn-print-machine-report-pdf" class="btn btn-secondary btn-xs" style="font-weight: 700; height: 28px; padding: 0 10px; white-space: nowrap; border-radius: 4px; font-size: 11.5px; display: inline-flex; align-items: center; gap: 4px;">
+            <span>🖨️</span> Print / PDF
+          </button>
         </div>
 
       </div>
 
-      <!-- 2. Location Breadcrumbs -->
-      <div style="font-size: 12px; color: var(--text-secondary); display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
-        <a href="javascript:void(0)" class="mr-crumb-link" data-level="all" style="color: #38bdf8; font-weight: 700; text-decoration: none;">🏠 All Groups</a>
-        ${currentGroup ? `
-          <span>❯</span>
-          <a href="javascript:void(0)" class="mr-crumb-link" data-level="group" data-id="${currentGroup.id}" style="color: #38bdf8; font-weight: 700; text-decoration: none;">🏢 ${currentGroup.name}</a>
-        ` : ''}
-        ${currentUnit ? `
-          <span>❯</span>
-          <a href="javascript:void(0)" class="mr-crumb-link" data-level="unit" data-id="${currentUnit.id}" style="color: #38bdf8; font-weight: 700; text-decoration: none;">🏭 ${currentUnit.name}</a>
-        ` : ''}
-        ${currentFloor ? `
-          <span>❯</span>
-          <a href="javascript:void(0)" class="mr-crumb-link" data-level="floor" data-id="${currentFloor.id}" style="color: #38bdf8; font-weight: 700; text-decoration: none;">🏬 ${currentFloor.name}</a>
-        ` : ''}
-        ${currentLine ? `
-          <span>❯</span>
-          <span style="color: #fff; font-weight: 800;">🧵 ${currentLine.name}</span>
-        ` : ''}
-      </div>
-
-      <!-- 3. Top Overall Summary Cards (Running | Usable Idle | Repairable Idle | Total) -->
-      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;">
+      <!-- 2. Consolidated Breadcrumb & High-Density KPI Ribbon (Takes only 28px height) -->
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: var(--radius-md); padding: 4px 10px; flex-shrink: 0;">
         
-        <div style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.85)); border: 1px solid rgba(52, 211, 153, 0.3); border-top: 3px solid #10b981; border-radius: var(--radius-md); padding: 8px 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.25);">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 11px; color: #34d399; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">🟢 Running Machines</span>
-            <span class="badge badge-active" style="font-size: 10px; padding: 1px 6px;">Operational</span>
-          </div>
-          <div style="font-size: 26px; font-weight: 900; color: #34d399; margin-top: 4px; font-family: var(--font-mono);">${grandTotals.running}</div>
-          <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">${activeRate}% of total machinery deployed</div>
+        <!-- Breadcrumbs & Scope -->
+        <div style="font-size: 11px; color: var(--text-secondary); display: flex; align-items: center; gap: 4px; flex-wrap: wrap;">
+          <a href="javascript:void(0)" class="mr-crumb-link" data-level="all" style="color: #38bdf8; font-weight: 700; text-decoration: none;">🏠 All Groups</a>
+          ${currentGroup ? `
+            <span style="color: #64748b;">❯</span>
+            <a href="javascript:void(0)" class="mr-crumb-link" data-level="group" data-id="${currentGroup.id}" style="color: #38bdf8; font-weight: 700; text-decoration: none;">🏢 ${currentGroup.name}</a>
+          ` : ''}
+          ${currentUnit ? `
+            <span style="color: #64748b;">❯</span>
+            <a href="javascript:void(0)" class="mr-crumb-link" data-level="unit" data-id="${currentUnit.id}" style="color: #38bdf8; font-weight: 700; text-decoration: none;">🏭 ${currentUnit.name}</a>
+          ` : ''}
+          ${currentFloor ? `
+            <span style="color: #64748b;">❯</span>
+            <a href="javascript:void(0)" class="mr-crumb-link" data-level="floor" data-id="${currentFloor.id}" style="color: #38bdf8; font-weight: 700; text-decoration: none;">🏬 ${currentFloor.name}</a>
+          ` : ''}
+          ${currentLine ? `
+            <span style="color: #64748b;">❯</span>
+            <span style="color: #fff; font-weight: 800;">🧵 ${currentLine.name}</span>
+          ` : ''}
         </div>
 
-        <div style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.85)); border: 1px solid rgba(56, 189, 248, 0.3); border-top: 3px solid #0284c7; border-radius: var(--radius-md); padding: 8px 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.25);">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 11px; color: #38bdf8; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">🔵 Usable Idle</span>
-            <span class="badge badge-idle" style="font-size: 10px; padding: 1px 6px;">Standby</span>
+        <!-- Metric Pills Strip -->
+        <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+          <div style="display: inline-flex; align-items: center; gap: 4px; background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(52, 211, 153, 0.35); border-radius: 4px; padding: 2px 8px; font-size: 11px;" title="Operational running machines">
+            <span style="font-weight: 800; color: #34d399;">RUNNING:</span>
+            <span style="font-weight: 900; color: #34d399; font-family: var(--font-mono); font-size: 12.5px;">${grandTotals.running}</span>
+            <span style="font-size: 10px; color: #a7f3d0;">(${activeRate}%)</span>
           </div>
-          <div style="font-size: 26px; font-weight: 900; color: #38bdf8; margin-top: 4px; font-family: var(--font-mono);">${grandTotals.usableIdle}</div>
-          <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">Standby machines ready for lines</div>
-        </div>
 
-        <div style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.85)); border: 1px solid rgba(251, 191, 36, 0.3); border-top: 3px solid #f59e0b; border-radius: var(--radius-md); padding: 8px 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.25);">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 11px; color: #fbbf24; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">🟡 Repairable Idle</span>
-            <span class="badge badge-maint" style="font-size: 10px; padding: 1px 6px;">Servicing</span>
+          <div style="display: inline-flex; align-items: center; gap: 4px; background: rgba(2, 132, 199, 0.12); border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 4px; padding: 2px 8px; font-size: 11px;" title="Standby idle machines ready for lines">
+            <span style="font-weight: 800; color: #38bdf8;">USABLE IDLE:</span>
+            <span style="font-weight: 900; color: #38bdf8; font-family: var(--font-mono); font-size: 12.5px;">${grandTotals.usableIdle}</span>
           </div>
-          <div style="font-size: 26px; font-weight: 900; color: #fbbf24; margin-top: 4px; font-family: var(--font-mono);">${grandTotals.repairableIdle}</div>
-          <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">Under scheduled servicing or repair</div>
-        </div>
 
-        <div style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.85)); border: 1px solid rgba(148, 163, 184, 0.3); border-top: 3px solid #38bdf8; border-radius: var(--radius-md); padding: 8px 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.25);">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 11px; color: #e2e8f0; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">🏭 Total Machinery</span>
-            <span class="badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; font-size: 10px; padding: 1px 6px; border: 1px solid rgba(56, 189, 248, 0.3);">Enterprise</span>
+          <div style="display: inline-flex; align-items: center; gap: 4px; background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(251, 191, 36, 0.35); border-radius: 4px; padding: 2px 8px; font-size: 11px;" title="Under scheduled servicing or repair">
+            <span style="font-weight: 800; color: #fbbf24;">REPAIRABLE:</span>
+            <span style="font-weight: 900; color: #fbbf24; font-family: var(--font-mono); font-size: 12.5px;">${grandTotals.repairableIdle}</span>
           </div>
-          <div style="font-size: 26px; font-weight: 900; color: #fff; margin-top: 4px; font-family: var(--font-mono);">${grandTotals.total}</div>
-          <div style="font-size: 11px; color: #38bdf8; margin-top: 2px;">Running + Usable + Repairable fleet</div>
+
+          <div style="display: inline-flex; align-items: center; gap: 4px; background: rgba(56, 189, 248, 0.18); border: 1.5px solid #38bdf8; border-radius: 4px; padding: 2px 8px; font-size: 11px;" title="Total machine asset fleet">
+            <span style="font-weight: 800; color: #e2e8f0;">TOTAL:</span>
+            <span style="font-weight: 900; color: #fff; font-family: var(--font-mono); font-size: 13px;">${grandTotals.total}</span>
+          </div>
         </div>
 
       </div>
 
-      <!-- 4. Dynamic Grouped Machine Summary Data Grid (Exact Screenshot-Style Layout) -->
-      <div id="mr-table-container" style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-sm);">
-        <div style="padding: 14px 18px; border-bottom: 1px solid var(--border-color); background: #0b1329; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
-          <div>
-            <div style="font-weight: 800; color: #fff; font-size: 14px; display: flex; align-items: center; gap: 8px;">
-              <span>📊</span> Machine Summary Report
-            </div>
-            <div style="font-size: 11.5px; color: #38bdf8; margin-top: 2px;">
-              Location: <strong>${locationBadgeTitle}</strong> (${groupedList.length} Machine Types)
-            </div>
+      <!-- 3. Dynamic Grouped Machine Summary Data Grid (Flex 1, Maximize Viewport) -->
+      <div id="mr-table-container" style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); overflow: hidden; box-shadow: var(--shadow-sm); display: flex; flex-direction: column; flex: 1; min-height: 0;">
+        <div style="padding: 6px 12px; border-bottom: 1px solid var(--border-color); background: #0b1329; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; flex-shrink: 0;">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span style="font-weight: 800; color: #fff; font-size: 12.5px;">📊 Machine Summary Report</span>
+            <span style="font-size: 11px; color: #38bdf8;">(${groupedList.length} Machine Types)</span>
           </div>
-          <span style="font-size: 12px; color: #cbd5e1; font-weight: 600;">Auto-calculated dynamically from Machine Inventory</span>
+          <span style="font-size: 11px; color: #94a3b8;">${locationBadgeTitle}</span>
         </div>
 
-        <div class="responsive-table-wrapper">
+        <div class="responsive-table-wrapper" style="flex: 1; min-height: 0; overflow-y: auto;">
           <table class="mach-summary-table">
             <thead>
               <tr>
                 <th style="width: 5%; text-align: center;">Sl.</th>
-                <th style="width: 22%; text-align: left;">Machine Name</th>
-                <th style="width: 21%; text-align: left;">Model</th>
-                <th style="width: 10.5%; text-align: center; color: #34d399;">Running</th>
-                <th style="width: 10.5%; text-align: center; color: #38bdf8;">Usable Idle</th>
-                <th style="width: 10.5%; text-align: center; color: #fbbf24;">Repairable Idle</th>
-                <th style="width: 10.5%; text-align: center; color: #ffffff;">Total</th>
-                <th style="width: 10%; text-align: center; color: #38bdf8;">Grand Total</th>
+                <th style="width: 24%; text-align: left;">Machine Name</th>
+                <th style="width: 23%; text-align: left;">Model</th>
+                <th style="width: 10%; text-align: center; color: #34d399;">Running</th>
+                <th style="width: 10%; text-align: center; color: #38bdf8;">Usable Idle</th>
+                <th style="width: 10%; text-align: center; color: #fbbf24;">Repairable Idle</th>
+                <th style="width: 9%; text-align: center; color: #ffffff;">Total</th>
+                <th style="width: 9%; text-align: center; color: #38bdf8;">Grand Total</th>
               </tr>
             </thead>
             <tbody>
@@ -1070,11 +987,11 @@ function renderMachineReportsTab(allMachines) {
                 <td style="color: var(--text-muted); font-weight: 700; text-align: center;">—</td>
                 <td style="color: #ffffff; font-weight: 800; text-align: left;">GRAND TOTAL</td>
                 <td style="color: var(--text-muted); font-weight: 700; text-align: center;">—</td>
-                <td class="mach-num-cell mach-num-running" style="font-size: 14px; font-weight: 800; text-align: center;">${grandTotals.running}</td>
-                <td class="mach-num-cell mach-num-usable" style="font-size: 14px; font-weight: 800; text-align: center;">${grandTotals.usableIdle}</td>
-                <td class="mach-num-cell mach-num-repair" style="font-size: 14px; font-weight: 800; text-align: center;">${grandTotals.repairableIdle}</td>
-                <td class="mach-num-cell mach-num-total" style="font-size: 14px; font-weight: 800; text-align: center;">${grandTotals.total}</td>
-                <td class="mach-num-cell mach-num-total" style="font-size: 15px; color: #38bdf8; font-weight: 800; text-align: center;">${grandTotals.total}</td>
+                <td class="mach-num-cell mach-num-running" style="font-size: 13px; font-weight: 800; text-align: center;">${grandTotals.running}</td>
+                <td class="mach-num-cell mach-num-usable" style="font-size: 13px; font-weight: 800; text-align: center;">${grandTotals.usableIdle}</td>
+                <td class="mach-num-cell mach-num-repair" style="font-size: 13px; font-weight: 800; text-align: center;">${grandTotals.repairableIdle}</td>
+                <td class="mach-num-cell mach-num-total" style="font-size: 13px; font-weight: 800; text-align: center;">${grandTotals.total}</td>
+                <td class="mach-num-cell mach-num-total" style="font-size: 13.5px; color: #38bdf8; font-weight: 800; text-align: center;">${grandTotals.total}</td>
               </tr>
             </tfoot>
           </table>
@@ -1727,368 +1644,289 @@ function renderSparePartsReportsTab() {
   const { kpi, aggregatedList, transactions } = analytics;
 
   return `
-    <div style="display: flex; flex-direction: column; gap: 16px;">
+    <div style="display: flex; flex-direction: column; gap: 6px; height: 100%; flex: 1; min-height: 0;">
       
-      <!-- 1. COMPREHENSIVE FILTER TOOLBAR CONTAINER -->
-      <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 18px 20px; display: flex; flex-direction: column; gap: 14px; box-shadow: var(--shadow-sm);">
+      <!-- 1. Compact Filter Toolbar -->
+      <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 6px 10px; display: flex; flex-direction: column; gap: 6px; box-shadow: var(--shadow-sm); flex-shrink: 0;">
         
-        <!-- Filter Header -->
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 10px; flex-wrap: wrap; gap: 10px;">
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <span style="font-size: 16px;">🔍</span>
-            <span style="font-size: 13.5px; font-weight: 800; color: #38bdf8; text-transform: uppercase; letter-spacing: 0.5px;">
-              Spare Parts History &amp; Consumption Filters
-            </span>
-          </div>
-          <div style="display: flex; gap: 8px; align-items: center;">
-            <button id="sp-btn-export-excel" class="btn btn-primary btn-sm" style="font-weight: 700; background: linear-gradient(135deg, #0284c7, #0369a1); height: 32px;">
-              📥 Export Excel (.xlsx)
-            </button>
-            <button id="sp-btn-clear-filters" class="btn btn-secondary btn-sm" style="height: 32px; font-weight: 700;">
-              ↺ Clear Filters
-            </button>
-          </div>
+        <!-- Row 1: Location & Parts Filter Selects -->
+        <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+          <span style="font-size: 11px; font-weight: 800; color: #38bdf8; text-transform: uppercase; white-space: nowrap;">
+            🔍 Filters:
+          </span>
+
+          <!-- Group -->
+          <select id="sp-filter-group" class="filter-select" style="height: 28px; font-size: 11.5px; padding: 2px 6px; min-width: 105px; max-width: 130px;">
+            <option value="">All Groups (${groups.length})</option>
+            ${groups.map(g => `<option value="${g.id}" ${spareFilterState.groupId === g.id ? 'selected' : ''}>${g.name}</option>`).join('')}
+          </select>
+
+          <!-- Unit -->
+          <select id="sp-filter-unit" class="filter-select" style="height: 28px; font-size: 11.5px; padding: 2px 6px; min-width: 105px; max-width: 130px;">
+            <option value="">All Units (${units.length})</option>
+            ${units.map(u => `<option value="${u.id}" ${spareFilterState.unitId === u.id ? 'selected' : ''}>${u.name}</option>`).join('')}
+          </select>
+
+          <!-- Floor -->
+          <select id="sp-filter-floor" class="filter-select" style="height: 28px; font-size: 11.5px; padding: 2px 6px; min-width: 105px; max-width: 130px;">
+            <option value="">All Floors (${floors.length})</option>
+            ${floors.map(f => `<option value="${f.id}" ${spareFilterState.floorId === f.id ? 'selected' : ''}>${f.name}</option>`).join('')}
+          </select>
+
+          <!-- Line -->
+          <select id="sp-filter-line" class="filter-select" style="height: 28px; font-size: 11.5px; padding: 2px 6px; min-width: 105px; max-width: 130px;">
+            <option value="">All Lines (${lines.length})</option>
+            ${lines.map(l => `<option value="${l.id}" ${spareFilterState.lineId === l.id ? 'selected' : ''}>${l.name}</option>`).join('')}
+          </select>
+
+          <!-- Machine -->
+          <select id="sp-filter-machine" class="filter-select" style="height: 28px; font-size: 11.5px; padding: 2px 6px; min-width: 120px; max-width: 160px;">
+            <option value="">All Machines (${availableMachines.length})</option>
+            ${availableMachines.slice(0, 100).map(m => `
+              <option value="${m.id}" ${spareFilterState.machineId === m.id ? 'selected' : ''}>
+                ${m.serialNumber} (${m.name || 'Machine'})
+              </option>
+            `).join('')}
+          </select>
+
+          <!-- Spare Part -->
+          <select id="sp-filter-part" class="filter-select" style="height: 28px; font-size: 11.5px; padding: 2px 6px; min-width: 120px; max-width: 160px;">
+            <option value="">All Spare Parts (${sparePartsCatalog.length})</option>
+            ${sparePartsCatalog.map(p => `
+              <option value="${p.name}" ${spareFilterState.sparePart === p.name ? 'selected' : ''}>
+                ${p.name}
+              </option>
+            `).join('')}
+          </select>
+
+          <!-- Status -->
+          <select id="sp-filter-status" class="filter-select" style="height: 28px; font-size: 11.5px; padding: 2px 6px; min-width: 100px; max-width: 125px;">
+            <option value="ALL" ${spareFilterState.status === 'ALL' ? 'selected' : ''}>All Statuses</option>
+            <option value="USED" ${spareFilterState.status === 'USED' ? 'selected' : ''}>🟢 Used / Installed</option>
+            <option value="RETURNED" ${spareFilterState.status === 'RETURNED' ? 'selected' : ''}>🔄 Returned</option>
+            <option value="CANCELLED" ${spareFilterState.status === 'CANCELLED' ? 'selected' : ''}>❌ Cancelled</option>
+            <option value="ISSUED" ${spareFilterState.status === 'ISSUED' ? 'selected' : ''}>📦 Issued</option>
+          </select>
         </div>
 
-        <!-- Row 1: Plant Hierarchy Cascading Filters (Group -> Unit -> Floor -> Line) -->
-        <div>
-          <div style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">
-            🏢 1. Plant Location Hierarchy:
+        <!-- Row 2: Date Range, Search & Action Buttons -->
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 6px; flex-wrap: wrap;">
+          <div style="display: flex; align-items: center; gap: 6px; flex: 1; min-width: 0; flex-wrap: wrap;">
+            <input type="date" id="sp-filter-date-from" class="form-control" title="From Date" value="${spareFilterState.dateFrom || ''}" style="height: 28px; font-size: 11px; padding: 2px 6px; width: 120px;" />
+            <span style="color: #64748b; font-size: 11px;">to</span>
+            <input type="date" id="sp-filter-date-to" class="form-control" title="To Date" value="${spareFilterState.dateTo || ''}" style="height: 28px; font-size: 11px; padding: 2px 6px; width: 120px;" />
+            <input 
+              type="text" 
+              id="sp-filter-search" 
+              class="form-control" 
+              placeholder="🔍 Search part, code, slip #, tech..." 
+              value="${spareFilterState.search || ''}"
+              style="height: 28px; font-size: 11.5px; padding: 2px 8px; min-width: 180px; flex: 1;"
+            />
+            <button id="sp-btn-clear-filters" class="btn btn-ghost btn-xs" style="height: 28px; padding: 0 8px; font-size: 11px; font-weight: 700; color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 4px; white-space: nowrap;">
+              ↺ Clear
+            </button>
           </div>
-          <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;">
-            
-            <!-- Group -->
-            <div class="filter-group">
-              <label class="filter-label" style="font-size: 10.5px; font-weight: 700; color: #cbd5e1; margin-bottom: 3px;">Group</label>
-              <select id="sp-filter-group" class="filter-select" style="height: 36px; font-size: 12px;">
-                <option value="">All Groups (${groups.length})</option>
-                ${groups.map(g => `<option value="${g.id}" ${spareFilterState.groupId === g.id ? 'selected' : ''}>${g.name}</option>`).join('')}
-              </select>
+
+          <div style="display: flex; gap: 6px; align-items: center; flex-shrink: 0;">
+            <div style="display: flex; border: 1px solid var(--border-color); border-radius: 4px; overflow: hidden; height: 28px;">
+              <button class="btn btn-xs ${spareFilterState.viewMode === 'SUMMARY' ? 'btn-primary' : 'btn-ghost'}" data-sp-mode="SUMMARY" style="padding: 0 8px; font-size: 11px; height: 100%;">
+                📊 Summary (${aggregatedList.length})
+              </button>
+              <button class="btn btn-xs ${spareFilterState.viewMode === 'LEDGER' ? 'btn-primary' : 'btn-ghost'}" data-sp-mode="LEDGER" style="padding: 0 8px; font-size: 11px; height: 100%;">
+                📜 Ledger (${transactions.length})
+              </button>
             </div>
-
-            <!-- Unit / Factory -->
-            <div class="filter-group">
-              <label class="filter-label" style="font-size: 10.5px; font-weight: 700; color: #cbd5e1; margin-bottom: 3px;">Unit / Factory</label>
-              <select id="sp-filter-unit" class="filter-select" style="height: 36px; font-size: 12px;">
-                <option value="">All Units (${units.length})</option>
-                ${units.map(u => `<option value="${u.id}" ${spareFilterState.unitId === u.id ? 'selected' : ''}>${u.name}</option>`).join('')}
-              </select>
-            </div>
-
-            <!-- Floor -->
-            <div class="filter-group">
-              <label class="filter-label" style="font-size: 10.5px; font-weight: 700; color: #cbd5e1; margin-bottom: 3px;">Floor</label>
-              <select id="sp-filter-floor" class="filter-select" style="height: 36px; font-size: 12px;">
-                <option value="">All Floors (${floors.length})</option>
-                ${floors.map(f => `<option value="${f.id}" ${spareFilterState.floorId === f.id ? 'selected' : ''}>${f.name}</option>`).join('')}
-              </select>
-            </div>
-
-            <!-- Line / Section -->
-            <div class="filter-group">
-              <label class="filter-label" style="font-size: 10.5px; font-weight: 700; color: #cbd5e1; margin-bottom: 3px;">Line / Section</label>
-              <select id="sp-filter-line" class="filter-select" style="height: 36px; font-size: 12px;">
-                <option value="">All Lines (${lines.length})</option>
-                ${lines.map(l => `<option value="${l.id}" ${spareFilterState.lineId === l.id ? 'selected' : ''}>${l.name}</option>`).join('')}
-              </select>
-            </div>
-
-          </div>
-        </div>
-
-        <!-- Row 2: Machine, Spare Part, Status, Date Range & Search -->
-        <div>
-          <div style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">
-            ⚙️ 2. Technical, Spare Part, Date &amp; Status Criteria:
-          </div>
-          <div style="display: grid; grid-template-columns: 1.5fr 1.5fr 1.2fr 1.2fr 1.2fr 1.8fr; gap: 10px; align-items: flex-end;">
-            
-            <!-- Machine Selector -->
-            <div class="filter-group">
-              <label class="filter-label" style="font-size: 10.5px; font-weight: 700; color: #cbd5e1; margin-bottom: 3px;">Machine (Serial / Type)</label>
-              <select id="sp-filter-machine" class="filter-select" style="height: 36px; font-size: 12px;">
-                <option value="">All Machines in Scope (${availableMachines.length})</option>
-                ${availableMachines.slice(0, 100).map(m => `
-                  <option value="${m.id}" ${spareFilterState.machineId === m.id ? 'selected' : ''}>
-                    ${m.serialNumber} (${m.name || 'Machine'})
-                  </option>
-                `).join('')}
-              </select>
-            </div>
-
-            <!-- Spare Part Selector -->
-            <div class="filter-group">
-              <label class="filter-label" style="font-size: 10.5px; font-weight: 700; color: #cbd5e1; margin-bottom: 3px;">Spare Part Item</label>
-              <select id="sp-filter-part" class="filter-select" style="height: 36px; font-size: 12px;">
-                <option value="">All Spare Parts (${sparePartsCatalog.length})</option>
-                ${sparePartsCatalog.map(p => `
-                  <option value="${p.name}" ${spareFilterState.sparePart === p.name ? 'selected' : ''}>
-                    ${p.name} [${p.code || 'SP'}]
-                  </option>
-                `).join('')}
-              </select>
-            </div>
-
-            <!-- Status Filter -->
-            <div class="filter-group">
-              <label class="filter-label" style="font-size: 10.5px; font-weight: 700; color: #cbd5e1; margin-bottom: 3px;">Status</label>
-              <select id="sp-filter-status" class="filter-select" style="height: 36px; font-size: 12px;">
-                <option value="ALL" ${spareFilterState.status === 'ALL' ? 'selected' : ''}>All Statuses</option>
-                <option value="USED" ${spareFilterState.status === 'USED' ? 'selected' : ''}>🟢 Used / Installed</option>
-                <option value="RETURNED" ${spareFilterState.status === 'RETURNED' ? 'selected' : ''}>🔄 Returned to Store</option>
-                <option value="CANCELLED" ${spareFilterState.status === 'CANCELLED' ? 'selected' : ''}>❌ Cancelled / Scrapped</option>
-                <option value="ISSUED" ${spareFilterState.status === 'ISSUED' ? 'selected' : ''}>📦 Issued / Pending</option>
-              </select>
-            </div>
-
-            <!-- Date From -->
-            <div class="filter-group">
-              <label class="filter-label" style="font-size: 10.5px; font-weight: 700; color: #cbd5e1; margin-bottom: 3px;">Date From</label>
-              <input type="date" id="sp-filter-date-from" class="form-control" value="${spareFilterState.dateFrom || ''}" style="height: 36px; font-size: 12px; padding: 4px 8px;" />
-            </div>
-
-            <!-- Date To -->
-            <div class="filter-group">
-              <label class="filter-label" style="font-size: 10.5px; font-weight: 700; color: #cbd5e1; margin-bottom: 3px;">Date To</label>
-              <input type="date" id="sp-filter-date-to" class="form-control" value="${spareFilterState.dateTo || ''}" style="height: 36px; font-size: 12px; padding: 4px 8px;" />
-            </div>
-
-            <!-- Unified Search Box -->
-            <div class="filter-group">
-              <label class="filter-label" style="font-size: 10.5px; font-weight: 700; color: #cbd5e1; margin-bottom: 3px;">Search</label>
-              <div style="position: relative;">
-                <input 
-                  type="text" 
-                  id="sp-filter-search" 
-                  class="form-control" 
-                  placeholder="🔍 Search part, code, slip #, tech..." 
-                  value="${spareFilterState.search || ''}"
-                  style="height: 36px; font-size: 12px; padding-left: 10px;"
-                />
-              </div>
-            </div>
-
+            <button id="sp-btn-export-excel" class="btn btn-primary btn-xs" style="font-weight: 700; background: linear-gradient(135deg, #0284c7, #0369a1); height: 28px; padding: 0 10px; font-size: 11.5px; border-radius: 4px; white-space: nowrap;">
+              📥 Export Excel
+            </button>
           </div>
         </div>
 
       </div>
 
-      <!-- 2. SUMMARY KPI & SCOPE BANNER -->
-      <div style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9)); border: 1.5px solid rgba(56, 189, 248, 0.35); border-radius: var(--radius-lg); padding: 18px 22px; display: flex; flex-direction: column; gap: 14px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
+      <!-- 2. Sleek KPI Metrics Ribbon Strip (Takes only 28px height) -->
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: var(--radius-md); padding: 4px 10px; flex-shrink: 0;">
         
-        <!-- Top Scope Breadcrumb -->
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 10px;">
-          <div style="display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; color: #fff;">
-            <span>🏢 Active Scope Summary:</span>
-            <code style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; padding: 3px 10px; border-radius: 6px; font-size: 12.5px; font-weight: 800; border: 1px solid rgba(56, 189, 248, 0.3);">
-              ${kpi.locationSummaryText}
-            </code>
-          </div>
-          <div style="font-size: 12px; color: var(--text-secondary);">
-            Showing <strong>${kpi.distinctPartsCount}</strong> distinct spare parts across <strong>${kpi.recordsCount}</strong> transactions
-          </div>
+        <!-- Active Scope -->
+        <div style="display: flex; align-items: center; gap: 6px; font-size: 11px;">
+          <span style="font-weight: 700; color: #94a3b8;">🏢 Scope:</span>
+          <span style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 700; border: 1px solid rgba(56, 189, 248, 0.3);">
+            ${kpi.locationSummaryText}
+          </span>
+          <span style="color: #64748b; font-size: 10.5px;">(${kpi.distinctPartsCount} parts / ${kpi.recordsCount} txns)</span>
         </div>
 
-        <!-- KPI Metrics Grid -->
-        <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px;">
-          
-          <!-- Card 1: Total Issued -->
-          <div style="background: rgba(2, 132, 199, 0.12); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: var(--radius-md); padding: 8px 12px;">
-            <div style="font-size: 11px; font-weight: 700; color: #38bdf8; text-transform: uppercase;">Total Issued</div>
-            <div style="font-size: 24px; font-weight: 900; color: #fff; margin-top: 4px;">
-              ${kpi.totalIssued} <span style="font-size: 12px; color: #94a3b8; font-weight: 600;">pcs</span>
-            </div>
-            <div style="font-size: 10.5px; color: var(--text-muted); margin-top: 2px;">Gross Store Issues</div>
+        <!-- 5 KPI Pills -->
+        <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+          <div style="display: inline-flex; align-items: center; gap: 4px; background: rgba(2, 132, 199, 0.12); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 4px; padding: 2px 6px; font-size: 11px;" title="Gross store issues">
+            <span style="font-weight: 700; color: #38bdf8;">ISSUED:</span>
+            <span style="font-weight: 900; color: #fff; font-family: var(--font-mono); font-size: 12px;">${kpi.totalIssued} pcs</span>
           </div>
 
-          <!-- Card 2: Total Used (Highlight) -->
-          <div style="background: rgba(16, 185, 129, 0.15); border: 1.5px solid #10b981; border-radius: var(--radius-md); padding: 8px 12px; box-shadow: 0 0 15px rgba(16, 185, 129, 0.15);">
-            <div style="font-size: 11px; font-weight: 800; color: #34d399; text-transform: uppercase;">Total Spare Parts Used</div>
-            <div style="font-size: 26px; font-weight: 900; color: #34d399; margin-top: 4px;">
-              ${kpi.totalUsed} <span style="font-size: 13px; color: #a7f3d0; font-weight: 700;">pcs</span>
-            </div>
-            <div style="font-size: 10.5px; color: #a7f3d0; margin-top: 2px;">🟢 Successfully Installed</div>
+          <div style="display: inline-flex; align-items: center; gap: 4px; background: rgba(16, 185, 129, 0.15); border: 1.5px solid #10b981; border-radius: 4px; padding: 2px 6px; font-size: 11px;" title="Successfully installed on machines">
+            <span style="font-weight: 800; color: #34d399;">USED:</span>
+            <span style="font-weight: 900; color: #34d399; font-family: var(--font-mono); font-size: 12.5px;">${kpi.totalUsed} pcs</span>
           </div>
 
-          <!-- Card 3: Total Returned -->
-          <div style="background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(251, 191, 36, 0.3); border-radius: var(--radius-md); padding: 8px 12px;">
-            <div style="font-size: 11px; font-weight: 700; color: #fbbf24; text-transform: uppercase;">Total Returned</div>
-            <div style="font-size: 24px; font-weight: 900; color: #fbbf24; margin-top: 4px;">
-              ${kpi.totalReturned} <span style="font-size: 12px; color: #94a3b8; font-weight: 600;">pcs</span>
-            </div>
-            <div style="font-size: 10.5px; color: var(--text-muted); margin-top: 2px;">Returned to Store</div>
+          <div style="display: inline-flex; align-items: center; gap: 4px; background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(251, 191, 36, 0.3); border-radius: 4px; padding: 2px 6px; font-size: 11px;" title="Returned to store">
+            <span style="font-weight: 700; color: #fbbf24;">RETURNED:</span>
+            <span style="font-weight: 900; color: #fbbf24; font-family: var(--font-mono); font-size: 12px;">${kpi.totalReturned} pcs</span>
           </div>
 
-          <!-- Card 4: Current / Unreturned -->
-          <div style="background: rgba(139, 92, 246, 0.12); border: 1px solid rgba(167, 139, 250, 0.3); border-radius: var(--radius-md); padding: 8px 12px;">
-            <div style="font-size: 11px; font-weight: 700; color: #c084fc; text-transform: uppercase;">Current / Unreturned</div>
-            <div style="font-size: 24px; font-weight: 900; color: #c084fc; margin-top: 4px;">
-              ${kpi.currentUnreturned} <span style="font-size: 12px; color: #94a3b8; font-weight: 600;">pcs</span>
-            </div>
-            <div style="font-size: 10.5px; color: var(--text-muted); margin-top: 2px;">In Floor Inventory</div>
+          <div style="display: inline-flex; align-items: center; gap: 4px; background: rgba(139, 92, 246, 0.12); border: 1px solid rgba(167, 139, 250, 0.3); border-radius: 4px; padding: 2px 6px; font-size: 11px;" title="In floor inventory">
+            <span style="font-weight: 700; color: #c084fc;">UNRETURNED:</span>
+            <span style="font-weight: 900; color: #c084fc; font-family: var(--font-mono); font-size: 12px;">${kpi.currentUnreturned} pcs</span>
           </div>
 
-          <!-- Card 5: Estimated Cost / Value -->
-          <div style="background: rgba(244, 63, 94, 0.12); border: 1px solid rgba(251, 113, 133, 0.3); border-radius: var(--radius-md); padding: 8px 12px;">
-            <div style="font-size: 11px; font-weight: 700; color: #fb7185; text-transform: uppercase;">Total Consumption Value</div>
-            <div style="font-size: 20px; font-weight: 900; color: #fff; margin-top: 4px;">
-              BDT ${kpi.totalValue.toLocaleString()}
-            </div>
-            <div style="font-size: 10.5px; color: var(--text-muted); margin-top: 2px;">Replacement Valuation</div>
+          <div style="display: inline-flex; align-items: center; gap: 4px; background: rgba(244, 63, 94, 0.12); border: 1px solid rgba(251, 113, 133, 0.3); border-radius: 4px; padding: 2px 6px; font-size: 11px;" title="Total consumption replacement value">
+            <span style="font-weight: 700; color: #fb7185;">VALUE:</span>
+            <span style="font-weight: 900; color: #fff; font-family: var(--font-mono); font-size: 12px;">BDT ${kpi.totalValue.toLocaleString()}</span>
           </div>
-
         </div>
 
       </div>
 
-      <!-- 3. VIEW MODE SWITCHER TABS -->
-      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border-color); padding-bottom: 6px; flex-wrap: wrap; gap: 10px;">
-        <div style="display: flex; gap: 8px;">
-          <button class="btn ${spareFilterState.viewMode === 'SUMMARY' ? 'btn-primary' : 'btn-ghost'}" data-sp-mode="SUMMARY" style="font-size: 12.5px; font-weight: 700; padding: 6px 16px;">
-            📊 Location &amp; Spare Part Aggregated Summary (${aggregatedList.length})
-          </button>
-          <button class="btn ${spareFilterState.viewMode === 'LEDGER' ? 'btn-primary' : 'btn-ghost'}" data-sp-mode="LEDGER" style="font-size: 12.5px; font-weight: 700; padding: 6px 16px;">
-            📜 Detailed Transaction Ledger (${transactions.length})
-          </button>
-        </div>
-      </div>
-
-      <!-- 4. DATA TABLES -->
+      <!-- 3. DATA TABLES (Flex 1, Maximize Viewport) -->
       ${spareFilterState.viewMode === 'SUMMARY' ? `
         <!-- Aggregated Summary Table Grouped by Location & Part -->
-        <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); overflow-x: auto; box-shadow: var(--shadow-sm);">
-          <table class="data-table" style="width: 100%; min-width: 1150px; border-collapse: collapse; margin: 0;">
-            <thead>
-              <tr>
-                <th style="width: 48px; text-align: center;">SL</th>
-                <th style="min-width: 260px; text-align: left;">Location Hierarchy</th>
-                <th style="min-width: 180px; text-align: left;">Spare Part Name</th>
-                <th style="min-width: 130px; text-align: left;">Part Number</th>
-                <th style="min-width: 130px; text-align: left;">Category</th>
-                <th style="text-align: center; width: 90px; color: #38bdf8;">Issued</th>
-                <th style="text-align: center; width: 105px; color: #34d399; font-weight: 800;">Total Used</th>
-                <th style="text-align: center; width: 95px; color: #fbbf24;">Returned</th>
-                <th style="text-align: center; width: 100px; color: #c084fc;">Unreturned</th>
-                <th style="text-align: right; width: 115px;">Unit Price</th>
-                <th style="text-align: right; width: 130px; color: #38bdf8;">Total Value</th>
-                <th style="text-align: center; width: 100px;">Machines</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${aggregatedList.length === 0 ? `
-                <tr><td colspan="12" style="text-align: center; padding: 36px; color: var(--text-muted);">No spare parts consumption records found for the selected filter criteria.</td></tr>
-              ` : aggregatedList.map((agg, idx) => `
-                <tr style="border-bottom: 1px solid rgba(255,255,255,0.06);" class="hover-row">
-                  <td style="text-align: center; color: var(--text-muted); font-weight: 700;">${idx + 1}</td>
-                  <td>
-                    <div style="display: flex; flex-direction: column; gap: 2px;">
-                      <div style="font-size: 12px; font-weight: 700; color: #38bdf8; display: flex; align-items: center; gap: 4px; white-space: nowrap;">
-                        <span>🏢 ${agg.unitName || 'Unit'}</span>
-                        <span style="color: #64748b;">›</span>
-                        <span style="color: #f1f5f9;">${agg.floorName || 'Floor'}</span>
-                      </div>
-                      <div style="font-size: 11px; color: #94a3b8; display: flex; align-items: center; gap: 4px; white-space: nowrap;">
-                        <span style="color: #34d399; font-weight: 600;">⚡ ${agg.lineName || 'Line'}</span>
-                        <span style="color: #475569;">|</span>
-                        <span>${agg.groupName || 'Group'}</span>
-                      </div>
-                    </div>
-                  </td>
-                  <td style="font-weight: 800; color: #fff; font-size: 13px;">
-                    ${agg.partName}
-                  </td>
-                  <td>
-                    <code style="background: rgba(56, 189, 248, 0.12); color: #38bdf8; padding: 2px 7px; border-radius: 4px; font-size: 11.5px; font-weight: 700; border: 1px solid rgba(56, 189, 248, 0.25); white-space: nowrap;">
-                      ${agg.partNumber}
-                    </code>
-                  </td>
-                  <td>
-                    <span class="badge badge-idle" style="font-size: 11px; padding: 3px 8px; white-space: nowrap;">
-                      ${agg.category}
-                    </span>
-                  </td>
-                  <td style="text-align: center; font-weight: 700; color: #fff;">${agg.totalIssued}</td>
-                  <td style="text-align: center; font-weight: 900; color: #34d399; font-size: 13.5px; background: rgba(16, 185, 129, 0.08);">${agg.totalUsed}</td>
-                  <td style="text-align: center; font-weight: 700; color: #fbbf24;">${agg.totalReturned}</td>
-                  <td style="text-align: center; font-weight: 700; color: #c084fc;">${agg.currentUnreturned}</td>
-                  <td style="text-align: right; font-family: var(--font-mono); font-size: 12px; color: #cbd5e1; white-space: nowrap;">BDT ${agg.unitPrice.toLocaleString()}</td>
-                  <td style="text-align: right; font-family: var(--font-mono); font-weight: 800; color: #38bdf8; font-size: 12.5px; white-space: nowrap;">BDT ${agg.totalValue.toLocaleString()}</td>
-                  <td style="text-align: center; white-space: nowrap;">
-                    <span class="badge badge-active" style="font-size: 10.5px; padding: 2px 7px;">${agg.machinesUsedCount} Unit(s)</span>
-                  </td>
+        <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); overflow: hidden; box-shadow: var(--shadow-sm); display: flex; flex-direction: column; flex: 1; min-height: 0;">
+          <div class="table-responsive" style="flex: 1; min-height: 0; overflow-y: auto;">
+            <table class="data-table" style="width: 100%; min-width: 1100px; border-collapse: collapse; margin: 0; font-size: 11.5px;">
+              <thead>
+                <tr style="position: sticky; top: 0; z-index: 2; background: #0b1329;">
+                  <th style="width: 40px; text-align: center; padding: 6px 8px;">SL</th>
+                  <th style="min-width: 220px; text-align: left; padding: 6px 8px;">Location Hierarchy</th>
+                  <th style="min-width: 160px; text-align: left; padding: 6px 8px;">Spare Part Name</th>
+                  <th style="min-width: 110px; text-align: left; padding: 6px 8px;">Part Number</th>
+                  <th style="min-width: 100px; text-align: left; padding: 6px 8px;">Category</th>
+                  <th style="text-align: center; width: 75px; color: #38bdf8; padding: 6px 8px;">Issued</th>
+                  <th style="text-align: center; width: 85px; color: #34d399; font-weight: 800; padding: 6px 8px;">Used</th>
+                  <th style="text-align: center; width: 80px; color: #fbbf24; padding: 6px 8px;">Returned</th>
+                  <th style="text-align: center; width: 85px; color: #c084fc; padding: 6px 8px;">Unreturned</th>
+                  <th style="text-align: right; width: 100px; padding: 6px 8px;">Unit Price</th>
+                  <th style="text-align: right; width: 110px; color: #38bdf8; padding: 6px 8px;">Total Value</th>
+                  <th style="text-align: center; width: 90px; padding: 6px 8px;">Machines</th>
                 </tr>
-              `).join('')}
-            </tbody>
-            ${aggregatedList.length > 0 ? `
-              <tfoot>
-                <tr style="background: #0b1329; font-weight: 800; border-top: 2px solid #38bdf8;">
-                  <td colspan="5" style="text-align: right; color: #fff; font-size: 12.5px; letter-spacing: 0.5px; padding-right: 16px;">TOTAL CONSUMPTION:</td>
-                  <td style="text-align: center; color: #38bdf8; font-size: 13px; font-weight: 800;">${kpi.totalIssued} pcs</td>
-                  <td style="text-align: center; color: #34d399; font-size: 14px; font-weight: 900; background: rgba(16, 185, 129, 0.15);">${kpi.totalUsed} pcs</td>
-                  <td style="text-align: center; color: #fbbf24; font-size: 13px; font-weight: 800;">${kpi.totalReturned} pcs</td>
-                  <td style="text-align: center; color: #c084fc; font-size: 13px; font-weight: 800;">${kpi.currentUnreturned} pcs</td>
-                  <td></td>
-                  <td style="text-align: right; color: #38bdf8; font-size: 13.5px; font-family: var(--font-mono); font-weight: 800; white-space: nowrap;">BDT ${kpi.totalValue.toLocaleString()}</td>
-                  <td></td>
-                </tr>
-              </tfoot>
-            ` : ''}
-          </table>
+              </thead>
+              <tbody>
+                ${aggregatedList.length === 0 ? `
+                  <tr><td colspan="12" style="text-align: center; padding: 24px; color: var(--text-muted);">No spare parts consumption records found for the selected filter criteria.</td></tr>
+                ` : aggregatedList.map((agg, idx) => `
+                  <tr style="border-bottom: 1px solid rgba(255,255,255,0.06);" class="hover-row">
+                    <td style="text-align: center; color: var(--text-muted); font-weight: 700; padding: 5px 8px;">${idx + 1}</td>
+                    <td style="padding: 5px 8px;">
+                      <div style="display: flex; flex-direction: column; gap: 1px;">
+                        <div style="font-size: 11.5px; font-weight: 700; color: #38bdf8; display: flex; align-items: center; gap: 3px; white-space: nowrap;">
+                          <span>🏢 ${agg.unitName || 'Unit'}</span>
+                          <span style="color: #64748b;">›</span>
+                          <span style="color: #f1f5f9;">${agg.floorName || 'Floor'}</span>
+                        </div>
+                        <div style="font-size: 10px; color: #94a3b8; display: flex; align-items: center; gap: 3px; white-space: nowrap;">
+                          <span style="color: #34d399; font-weight: 600;">⚡ ${agg.lineName || 'Line'}</span>
+                          <span style="color: #475569;">|</span>
+                          <span>${agg.groupName || 'Group'}</span>
+                        </div>
+                      </div>
+                    </td>
+                    <td style="font-weight: 800; color: #fff; font-size: 12px; padding: 5px 8px;">
+                      ${agg.partName}
+                    </td>
+                    <td style="padding: 5px 8px;">
+                      <code style="background: rgba(56, 189, 248, 0.12); color: #38bdf8; padding: 1px 5px; border-radius: 3px; font-size: 11px; font-weight: 700; border: 1px solid rgba(56, 189, 248, 0.25); white-space: nowrap;">
+                        ${agg.partNumber}
+                      </code>
+                    </td>
+                    <td style="padding: 5px 8px;">
+                      <span class="badge badge-idle" style="font-size: 10px; padding: 2px 6px; white-space: nowrap;">
+                        ${agg.category}
+                      </span>
+                    </td>
+                    <td style="text-align: center; font-weight: 700; color: #fff; padding: 5px 8px;">${agg.totalIssued}</td>
+                    <td style="text-align: center; font-weight: 900; color: #34d399; font-size: 12.5px; background: rgba(16, 185, 129, 0.08); padding: 5px 8px;">${agg.totalUsed}</td>
+                    <td style="text-align: center; font-weight: 700; color: #fbbf24; padding: 5px 8px;">${agg.totalReturned}</td>
+                    <td style="text-align: center; font-weight: 700; color: #c084fc; padding: 5px 8px;">${agg.currentUnreturned}</td>
+                    <td style="text-align: right; font-family: var(--font-mono); font-size: 11.5px; color: #cbd5e1; white-space: nowrap; padding: 5px 8px;">BDT ${agg.unitPrice.toLocaleString()}</td>
+                    <td style="text-align: right; font-family: var(--font-mono); font-weight: 800; color: #38bdf8; font-size: 12px; white-space: nowrap; padding: 5px 8px;">BDT ${agg.totalValue.toLocaleString()}</td>
+                    <td style="text-align: center; white-space: nowrap; padding: 5px 8px;">
+                      <span class="badge badge-active" style="font-size: 10px; padding: 2px 6px;">${agg.machinesUsedCount} Unit(s)</span>
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+              ${aggregatedList.length > 0 ? `
+                <tfoot style="position: sticky; bottom: 0; z-index: 2;">
+                  <tr style="background: #0b1329; font-weight: 800; border-top: 2px solid #38bdf8;">
+                    <td colspan="5" style="text-align: right; color: #fff; font-size: 11.5px; letter-spacing: 0.5px; padding: 6px 12px;">TOTAL:</td>
+                    <td style="text-align: center; color: #38bdf8; font-size: 12px; font-weight: 800; padding: 6px 8px;">${kpi.totalIssued} pcs</td>
+                    <td style="text-align: center; color: #34d399; font-size: 13px; font-weight: 900; background: rgba(16, 185, 129, 0.15); padding: 6px 8px;">${kpi.totalUsed} pcs</td>
+                    <td style="text-align: center; color: #fbbf24; font-size: 12px; font-weight: 800; padding: 6px 8px;">${kpi.totalReturned} pcs</td>
+                    <td style="text-align: center; color: #c084fc; font-size: 12px; font-weight: 800; padding: 6px 8px;">${kpi.currentUnreturned} pcs</td>
+                    <td></td>
+                    <td style="text-align: right; color: #38bdf8; font-size: 12.5px; font-family: var(--font-mono); font-weight: 800; white-space: nowrap; padding: 6px 8px;">BDT ${kpi.totalValue.toLocaleString()}</td>
+                    <td></td>
+                  </tr>
+                </tfoot>
+              ` : ''}
+            </table>
+          </div>
         </div>
       ` : `
         <!-- Detailed Transaction Ledger Table -->
-        <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); overflow-x: auto; box-shadow: var(--shadow-sm);">
-          <table class="data-table" style="width: 100%; min-width: 1280px; border-collapse: collapse; margin: 0;">
-            <thead>
-              <tr>
-                <th style="width: 48px; text-align: center;">SL</th>
-                <th style="width: 100px; text-align: left;">Date</th>
-                <th style="width: 120px; text-align: left;">Requisition #</th>
-                <th style="min-width: 240px; text-align: left;">Location Hierarchy</th>
-                <th style="width: 130px; text-align: left;">Machine Serial</th>
-                <th style="min-width: 170px; text-align: left;">Spare Part Name</th>
-                <th style="text-align: center; width: 95px;">Status</th>
-                <th style="text-align: center; width: 80px;">Issued</th>
-                <th style="text-align: center; width: 80px; color: #34d399;">Used</th>
-                <th style="text-align: center; width: 80px; color: #fbbf24;">Returned</th>
-                <th style="min-width: 140px; text-align: left;">Mechanic / Technician</th>
-                <th style="min-width: 120px; text-align: left;">Issued By</th>
-                <th style="min-width: 160px; text-align: left;">Reason / Remarks</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${transactions.length === 0 ? `
-                <tr><td colspan="13" style="text-align: center; padding: 36px; color: var(--text-muted);">No transaction logs match the active filter criteria.</td></tr>
-              ` : transactions.map((t, idx) => `
-                <tr style="border-bottom: 1px solid rgba(255,255,255,0.06);" class="hover-row">
-                  <td style="text-align: center; color: var(--text-muted); font-weight: 700;">${idx + 1}</td>
-                  <td style="font-family: var(--font-mono); font-size: 11.5px; color: #38bdf8; white-space: nowrap;">${t.date}</td>
-                  <td style="font-family: var(--font-mono); font-weight: 700; color: #fff; font-size: 11.5px; white-space: nowrap;">${t.reqNumber}</td>
-                  <td style="font-size: 11.5px; color: var(--text-secondary);">
-                    <div style="display: flex; flex-direction: column; gap: 2px;">
-                      <span style="font-weight: 700; color: #38bdf8; font-size: 11.5px; white-space: nowrap;">${t.unitName || 'Unit'} › ${t.floorName || 'Floor'}</span>
-                      <span style="color: #94a3b8; font-size: 10.5px; white-space: nowrap;">${t.lineName || 'Line'} (${t.groupName || 'Group'})</span>
-                    </div>
-                  </td>
-                  <td style="font-family: var(--font-mono); font-weight: 700; color: #38bdf8; white-space: nowrap;">${t.machineSerial}</td>
-                  <td style="font-weight: 700; color: #fff;">
-                    ${t.partName} <span style="font-size: 11px; color: var(--text-muted); font-family: var(--font-mono);">(${t.partNumber})</span>
-                  </td>
-                  <td style="text-align: center; white-space: nowrap;">
-                    <span class="badge ${t.status === 'USED' ? 'badge-active' : (t.status === 'RETURNED' ? 'badge-maint' : (t.status === 'CANCELLED' ? 'badge-breakdown' : 'badge-idle'))}">
-                      ${t.status}
-                    </span>
-                  </td>
-                  <td style="text-align: center; font-weight: 700;">${t.issuedQty}</td>
-                  <td style="text-align: center; font-weight: 800; color: #34d399;">${t.usedQty}</td>
-                  <td style="text-align: center; font-weight: 700; color: #fbbf24;">${t.returnedQty}</td>
-                  <td style="font-size: 12px; color: #fff;">${t.technician}</td>
-                  <td style="font-size: 12px; color: var(--text-secondary);">${t.issuedBy}</td>
-                  <td style="font-size: 11.5px; color: var(--text-secondary);">${t.reason || t.remarks || '—'}</td>
+        <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); overflow: hidden; box-shadow: var(--shadow-sm); display: flex; flex-direction: column; flex: 1; min-height: 0;">
+          <div class="table-responsive" style="flex: 1; min-height: 0; overflow-y: auto;">
+            <table class="data-table" style="width: 100%; min-width: 1200px; border-collapse: collapse; margin: 0; font-size: 11px;">
+              <thead>
+                <tr style="position: sticky; top: 0; z-index: 2; background: #0b1329;">
+                  <th style="width: 35px; text-align: center; padding: 6px 8px;">SL</th>
+                  <th style="width: 85px; text-align: left; padding: 6px 8px;">Date</th>
+                  <th style="width: 100px; text-align: left; padding: 6px 8px;">Requisition #</th>
+                  <th style="min-width: 200px; text-align: left; padding: 6px 8px;">Location Hierarchy</th>
+                  <th style="width: 110px; text-align: left; padding: 6px 8px;">Machine Serial</th>
+                  <th style="min-width: 150px; text-align: left; padding: 6px 8px;">Spare Part Name</th>
+                  <th style="text-align: center; width: 80px; padding: 6px 8px;">Status</th>
+                  <th style="text-align: center; width: 60px; padding: 6px 8px;">Issued</th>
+                  <th style="text-align: center; width: 60px; color: #34d399; padding: 6px 8px;">Used</th>
+                  <th style="text-align: center; width: 65px; color: #fbbf24; padding: 6px 8px;">Returned</th>
+                  <th style="min-width: 120px; text-align: left; padding: 6px 8px;">Technician</th>
+                  <th style="min-width: 100px; text-align: left; padding: 6px 8px;">Issued By</th>
+                  <th style="min-width: 140px; text-align: left; padding: 6px 8px;">Reason / Remarks</th>
                 </tr>
-              `).join('')}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                ${transactions.length === 0 ? `
+                  <tr><td colspan="13" style="text-align: center; padding: 24px; color: var(--text-muted);">No transaction logs match the active filter criteria.</td></tr>
+                ` : transactions.map((t, idx) => `
+                  <tr style="border-bottom: 1px solid rgba(255,255,255,0.06);" class="hover-row">
+                    <td style="text-align: center; color: var(--text-muted); font-weight: 700; padding: 5px 8px;">${idx + 1}</td>
+                    <td style="font-family: var(--font-mono); font-size: 11px; color: #38bdf8; white-space: nowrap; padding: 5px 8px;">${t.date}</td>
+                    <td style="font-family: var(--font-mono); font-weight: 700; color: #fff; font-size: 11px; white-space: nowrap; padding: 5px 8px;">${t.reqNumber}</td>
+                    <td style="font-size: 11px; color: var(--text-secondary); padding: 5px 8px;">
+                      <div style="display: flex; flex-direction: column; gap: 1px;">
+                        <span style="font-weight: 700; color: #38bdf8; font-size: 11px; white-space: nowrap;">${t.unitName || 'Unit'} › ${t.floorName || 'Floor'}</span>
+                        <span style="color: #94a3b8; font-size: 10px; white-space: nowrap;">${t.lineName || 'Line'} (${t.groupName || 'Group'})</span>
+                      </div>
+                    </td>
+                    <td style="font-family: var(--font-mono); font-weight: 700; color: #38bdf8; white-space: nowrap; padding: 5px 8px;">${t.machineSerial}</td>
+                    <td style="font-weight: 700; color: #fff; padding: 5px 8px;">
+                      ${t.partName} <span style="font-size: 10px; color: var(--text-muted); font-family: var(--font-mono);">(${t.partNumber})</span>
+                    </td>
+                    <td style="text-align: center; white-space: nowrap; padding: 5px 8px;">
+                      <span class="badge ${t.status === 'USED' ? 'badge-active' : (t.status === 'RETURNED' ? 'badge-maint' : (t.status === 'CANCELLED' ? 'badge-breakdown' : 'badge-idle'))}" style="font-size: 10px; padding: 1px 5px;">
+                        ${t.status}
+                      </span>
+                    </td>
+                    <td style="text-align: center; font-weight: 700; padding: 5px 8px;">${t.issuedQty}</td>
+                    <td style="text-align: center; font-weight: 800; color: #34d399; padding: 5px 8px;">${t.usedQty}</td>
+                    <td style="text-align: center; font-weight: 700; color: #fbbf24; padding: 5px 8px;">${t.returnedQty}</td>
+                    <td style="font-size: 11px; color: #fff; padding: 5px 8px;">${t.technician}</td>
+                    <td style="font-size: 11px; color: var(--text-secondary); padding: 5px 8px;">${t.issuedBy}</td>
+                    <td style="font-size: 10.5px; color: var(--text-secondary); padding: 5px 8px;">${t.reason || t.remarks || '—'}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
         </div>
       `}
 
@@ -2099,98 +1937,98 @@ function renderSparePartsReportsTab() {
 // 4. 1-CLICK EXPORT CENTER TAB
 function renderExportCenterTab(machines, transfers, logs, catalog) {
   return `
-    <div style="display: flex; flex-direction: column; gap: 16px;">
+    <div style="display: flex; flex-direction: column; gap: 8px; height: 100%; flex: 1; min-height: 0; overflow-y: auto;">
       
-      <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 22px;">
-        <h3 style="margin: 0 0 6px 0; font-size: 16px; font-weight: 800; color: #fff;">
-          📦 1-Click Excel Export &amp; Analytics Hub
+      <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 10px 14px; flex-shrink: 0;">
+        <h3 style="margin: 0 0 2px 0; font-size: 14px; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 6px;">
+          <span>📦</span> 1-Click Excel Export &amp; Analytics Hub
         </h3>
-        <p style="margin: 0; font-size: 12.5px; color: var(--text-secondary);">
+        <p style="margin: 0; font-size: 11.5px; color: var(--text-secondary);">
           Download production-ready, perfectly formatted <strong>.xlsx</strong> workbooks containing complete datasets, calculated metrics, and full audit trails.
         </p>
       </div>
 
-      <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px;">
+      <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
         
         <!-- Card 1: Complete Machine Inventory -->
-        <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 20px; display: flex; flex-direction: column; justify-content: space-between; gap: 14px;">
+        <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 12px 14px; display: flex; flex-direction: column; justify-content: space-between; gap: 8px;">
           <div>
-            <div style="font-size: 20px; margin-bottom: 6px;">🧵</div>
-            <div style="font-size: 15px; font-weight: 800; color: #fff;">Complete Machinery Inventory</div>
-            <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px; line-height: 1.4;">
-              Full corporate machine asset database (${machines.length} machines) including brand, model, factory, floor, line, and technical custom fields.
+            <div style="font-size: 14px; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 6px;">
+              <span>🧵</span> Complete Machinery Inventory
+            </div>
+            <div style="font-size: 11px; color: var(--text-secondary); margin-top: 3px; line-height: 1.35;">
+              Full corporate machine asset database (${machines.length} machines) including brand, model, factory, floor, line, and custom fields.
             </div>
           </div>
-          <button id="btn-center-export-machines" class="btn btn-primary" style="font-weight: 700; background: linear-gradient(135deg, #0284c7, #0369a1);">
+          <button id="btn-center-export-machines" class="btn btn-primary btn-sm" style="font-weight: 700; height: 30px; font-size: 11.5px; background: linear-gradient(135deg, #0284c7, #0369a1);">
             📊 Download Machine Inventory Excel
           </button>
         </div>
 
         <!-- Card 2: Transfers & Movement Logs -->
-        <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 20px; display: flex; flex-direction: column; justify-content: space-between; gap: 14px;">
+        <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 12px 14px; display: flex; flex-direction: column; justify-content: space-between; gap: 8px;">
           <div>
-            <div style="font-size: 20px; margin-bottom: 6px;">🔄</div>
-            <div style="font-size: 15px; font-weight: 800; color: #fff;">Machine Transfers Ledger</div>
-            <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px; line-height: 1.4;">
+            <div style="font-size: 14px; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 6px;">
+              <span>🔄</span> Machine Transfers Ledger
+            </div>
+            <div style="font-size: 11px; color: var(--text-secondary); margin-top: 3px; line-height: 1.35;">
               Comprehensive relocation history (${transfers.length} records) with source/destination units, tracking numbers, gate passes, and approvals.
             </div>
           </div>
-          <button id="btn-center-export-transfers" class="btn btn-secondary" style="font-weight: 700; border-color: #38bdf8; color: #38bdf8;">
+          <button id="btn-center-export-transfers" class="btn btn-secondary btn-sm" style="font-weight: 700; height: 30px; font-size: 11.5px; border-color: #38bdf8; color: #38bdf8;">
             📊 Download Transfers Ledger Excel
           </button>
         </div>
 
         <!-- Card 3: Spare Parts Replacements -->
-        <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 20px; display: flex; flex-direction: column; justify-content: space-between; gap: 14px;">
+        <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 12px 14px; display: flex; flex-direction: column; justify-content: space-between; gap: 8px;">
           <div>
-            <div style="font-size: 20px; margin-bottom: 6px;">⚙️</div>
-          <!-- Card 4: Spare Parts Replacements -->
-          <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 20px; display: flex; flex-direction: column; justify-content: space-between; gap: 14px;">
-            <div>
-              <div style="font-size: 20px; margin-bottom: 6px;">⚙️</div>
-              <div style="font-size: 15px; font-weight: 800; color: #fff;">Spare Parts History Export</div>
-              <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px; line-height: 1.4;">
-                Spare parts replacement logs, machine wear-and-tear histories, and maintenance service records (${logs.length} records).
-              </div>
+            <div style="font-size: 14px; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 6px;">
+              <span>⚙️</span> Spare Parts History Export
             </div>
-            <button id="btn-center-export-spareparts" class="btn btn-secondary" style="font-weight: 700; border-color: #34d399; color: #34d399;">
-              📊 Download Spare Parts Excel
-            </button>
-          </div>
-
-          <!-- Card 4: ENT Lab Boards -->
-          <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 20px; display: flex; flex-direction: column; justify-content: space-between; gap: 14px;">
-            <div>
-              <div style="font-size: 20px; margin-bottom: 6px;">⚡</div>
-              <div style="font-size: 15px; font-weight: 800; color: #fff;">ENT Lab Boards &amp; Movement Ledger</div>
-              <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px; line-height: 1.4;">
-                Full Board/PCB master inventory, machine installation trails, in-house &amp; external repair turnarounds, and duplicate-bill audit history.
-              </div>
+            <div style="font-size: 11px; color: var(--text-secondary); margin-top: 3px; line-height: 1.35;">
+              Spare parts replacement logs, machine wear-and-tear histories, and maintenance service records (${logs.length} records).
             </div>
-            <button id="btn-center-export-etlab" class="btn btn-secondary" style="font-weight: 700; border-color: #38bdf8; color: #38bdf8;">
-              📊 Download ENT Lab Excel
-            </button>
           </div>
-
-          <!-- Card 5: Complete Master ERP Workbook -->
-          <div style="grid-column: span 2; background: linear-gradient(135deg, rgba(2, 132, 199, 0.12), rgba(15, 23, 42, 0.8)); border: 1.5px solid rgba(56, 189, 248, 0.4); border-radius: var(--radius-lg); padding: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
-            <div>
-              <div style="display: flex; align-items: center; gap: 8px;">
-                <span style="font-size: 20px;">📜</span>
-                <div style="font-size: 16px; font-weight: 800; color: #fff;">Complete Corporate Master ERP Workbook</div>
-              </div>
-              <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px; line-height: 1.4;">
-                Comprehensive multi-sheet workbook containing Machine Inventory, Transfers, Spare Parts, ENT Lab Boards &amp; History, Manpower, and Master Catalog.
-              </div>
-            </div>
-            <button id="btn-center-export-lifetime" class="btn btn-primary" style="font-weight: 800; background: linear-gradient(135deg, #0284c7, #0369a1); box-shadow: 0 2px 10px rgba(2, 132, 199, 0.35);">
-              📥 Download Master 7-Sheet ERP Excel
-            </button>
-          </div>
-
+          <button id="btn-center-export-spareparts" class="btn btn-secondary btn-sm" style="font-weight: 700; height: 30px; font-size: 11.5px; border-color: #34d399; color: #34d399;">
+            📊 Download Spare Parts Excel
+          </button>
         </div>
+
+        <!-- Card 4: ENT Lab Boards -->
+        <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 12px 14px; display: flex; flex-direction: column; justify-content: space-between; gap: 8px;">
+          <div>
+            <div style="font-size: 14px; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 6px;">
+              <span>⚡</span> ENT Lab Boards &amp; Movement Ledger
+            </div>
+            <div style="font-size: 11px; color: var(--text-secondary); margin-top: 3px; line-height: 1.35;">
+              Full Board/PCB master inventory, machine installation trails, in-house &amp; external repair turnarounds, and audit history.
+            </div>
+          </div>
+          <button id="btn-center-export-etlab" class="btn btn-secondary btn-sm" style="font-weight: 700; height: 30px; font-size: 11.5px; border-color: #38bdf8; color: #38bdf8;">
+            📊 Download ENT Lab Excel
+          </button>
+        </div>
+
+        <!-- Card 5: Complete Master ERP Workbook -->
+        <div style="grid-column: span 2; background: linear-gradient(135deg, rgba(2, 132, 199, 0.12), rgba(15, 23, 42, 0.8)); border: 1.5px solid rgba(56, 189, 248, 0.4); border-radius: var(--radius-md); padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+          <div>
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <span style="font-size: 18px;">📜</span>
+              <div style="font-size: 14px; font-weight: 800; color: #fff;">Complete Corporate Master ERP Workbook</div>
+            </div>
+            <div style="font-size: 11px; color: var(--text-secondary); margin-top: 2px; line-height: 1.35;">
+              Multi-sheet workbook containing Machinery Inventory, Transfers, Spare Parts, ENT Lab Boards, and Catalog.
+            </div>
+          </div>
+          <button id="btn-center-export-lifetime" class="btn btn-primary btn-sm" style="font-weight: 800; height: 30px; font-size: 11.5px; background: linear-gradient(135deg, #0284c7, #0369a1); box-shadow: 0 2px 8px rgba(2, 132, 199, 0.35);">
+            📥 Download Master 7-Sheet ERP Excel
+          </button>
+        </div>
+
       </div>
-    `;
+    </div>
+  `;
 }
 
 export function initReportsEvents() {
