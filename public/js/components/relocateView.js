@@ -35,40 +35,33 @@ export function renderRelocateView() {
   return `
     <div class="page-view relocate-view-root" id="relocate-page-root">
       
-      <!-- Top Title & Navigation Bar -->
+      <!-- Top Title & Navigation Bar (Compact & Space Efficient) -->
       <div class="relocate-top-nav-card">
         <div class="relocate-title-area">
-          <div class="relocate-title-icon">
-            📍
+          <div class="relocate-title-icon">📍</div>
+          <div>
+            <h1 class="relocate-main-title">Relocate &amp; Verification</h1>
+            <div class="relocate-sub-title">Physical Audit &bull; Auto-Idle &bull; Reconciliation</div>
           </div>
-          <div class="relocate-title-text-group">
-            <h1 class="relocate-main-title">
-              Machine Relocate &amp; Verification
-            </h1>
-            <div class="relocate-sub-title">
-              QR Scan &bull; Auto-Idle Detection &bull; Location Reconciliation
-            </div>
+          <div class="relocate-tabs-bar" style="margin-left: 8px;">
+            <button type="button" class="btn-relocate-tab ${activeTab === 'scan' ? 'active' : ''}" data-tab="scan">
+              📷 ${activeSession ? 'Active Scan' : 'New Session'}
+            </button>
+            <button type="button" class="btn-relocate-tab ${activeTab === 'idle' ? 'active' : ''}" data-tab="idle">
+              💤 Idle <span class="relocate-tab-badge badge-idle">${idleMachines.length}</span>
+            </button>
+            <button type="button" class="btn-relocate-tab ${activeTab === 'approvals' ? 'active' : ''}" data-tab="approvals">
+              ⏳ Approvals <span class="relocate-tab-badge ${pendingApprovals.length > 0 ? 'badge-alert' : 'badge-idle'}">${pendingApprovals.length}</span>
+            </button>
+            <button type="button" class="btn-relocate-tab ${activeTab === 'history' ? 'active' : ''}" data-tab="history">
+              📜 History
+            </button>
           </div>
         </div>
 
-        <!-- Horizontal Swipeable Pill Tabs -->
-        <div class="relocate-tabs-bar">
-          <button type="button" class="btn-relocate-tab ${activeTab === 'scan' ? 'active' : ''}" data-tab="scan">
-            📷 ${activeSession ? 'Active Scan' : 'New Session'}
-          </button>
-          <button type="button" class="btn-relocate-tab ${activeTab === 'idle' ? 'active' : ''}" data-tab="idle">
-            💤 Idle <span class="relocate-tab-badge badge-idle">${idleMachines.length}</span>
-          </button>
-          <button type="button" class="btn-relocate-tab ${activeTab === 'approvals' ? 'active' : ''}" data-tab="approvals">
-            ⏳ Approvals <span class="relocate-tab-badge ${pendingApprovals.length > 0 ? 'badge-alert' : 'badge-idle'}">${pendingApprovals.length}</span>
-          </button>
-          <button type="button" class="btn-relocate-tab ${activeTab === 'history' ? 'active' : ''}" data-tab="history">
-            📜 History
-          </button>
-          <button type="button" id="btn-relocate-goto-qr-codes" class="btn-relocate-tab" style="margin-left: auto; border: 1.5px solid #38bdf8; color: #38bdf8; background: rgba(56, 189, 248, 0.12); font-weight: 800;" title="Open QR Code & Label Studio">
-            🏁 QR Code &amp; Label Studio
-          </button>
-        </div>
+        <button type="button" id="btn-relocate-goto-qr-codes" class="btn-relocate-tab" style="border: 1px solid #38bdf8; color: #38bdf8; background: rgba(56, 189, 248, 0.12); font-weight: 800;" title="Open QR Code & Label Studio">
+          🏁 QR Studio
+        </button>
       </div>
 
       <!-- Tab Content Area -->
@@ -111,10 +104,10 @@ export function renderRelocateView() {
     <!-- Scoped Mobile Responsive Styles -->
     <style>
       .relocate-view-root {
-        padding: 12px 14px;
+        padding: 8px 12px 24px 12px;
         display: flex;
         flex-direction: column;
-        gap: 12px;
+        gap: 8px;
         height: 100%;
         overflow-y: auto;
         box-sizing: border-box;
@@ -125,27 +118,29 @@ export function renderRelocateView() {
         background: var(--bg-surface);
         border: 1px solid var(--border-color);
         border-radius: var(--radius-md);
-        padding: 12px 16px;
+        padding: 6px 12px;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        gap: 12px;
+        gap: 8px;
         flex-wrap: wrap;
+        min-height: 40px;
       }
 
       .relocate-title-area {
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 8px;
+        flex-wrap: wrap;
       }
 
       .relocate-title-icon {
-        font-size: 22px;
+        font-size: 16px;
         background: rgba(56, 189, 248, 0.12);
-        border: 1.5px solid #38bdf8;
-        border-radius: 10px;
-        width: 38px;
-        height: 38px;
+        border: 1px solid #38bdf8;
+        border-radius: 6px;
+        width: 30px;
+        height: 30px;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -153,17 +148,17 @@ export function renderRelocateView() {
       }
 
       .relocate-main-title {
-        font-size: 16px;
+        font-size: 14px;
         font-weight: 800;
         color: #fff;
         margin: 0;
-        line-height: 1.2;
+        line-height: 1.1;
       }
 
       .relocate-sub-title {
-        font-size: 11px;
+        font-size: 10.5px;
         color: #38bdf8;
-        margin-top: 2px;
+        margin-top: 1px;
       }
 
       .relocate-tabs-bar {
@@ -177,9 +172,9 @@ export function renderRelocateView() {
         border: 1px solid rgba(255, 255, 255, 0.1);
         color: var(--text-secondary);
         font-weight: 700;
-        font-size: 12px;
-        padding: 7px 14px;
-        border-radius: 20px;
+        font-size: 11px;
+        padding: 4px 10px;
+        border-radius: 14px;
         cursor: pointer;
         display: inline-flex;
         align-items: center;
@@ -938,7 +933,7 @@ function renderScannedItemsList(session) {
     const timeStr = s.scannedAt ? new Date(s.scannedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
 
     return `
-      <div class="scanned-machine-card" data-scan-id="${s.scanId}" style="background: var(--bg-card); border: 1.5px solid ${borderColor}; border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.25);">
+      <div class="scanned-machine-card" data-scan-id="${s.scanId}" style="background: var(--bg-card); border: 1.5px solid ${borderColor}; border-radius: 8px; padding: 8px 12px; display: flex; flex-direction: column; gap: 5px; box-shadow: 0 4px 12px rgba(0,0,0,0.25);">
         
         <!-- Header: Serial, Badge, Time -->
         <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
@@ -1011,164 +1006,98 @@ function renderLiveScanView(session) {
   const floorMoveCount = session.scanned.filter(s => s.matchType === 'FLOOR_MISMATCH').length;
 
   return `
-    <div style="display: flex; flex-direction: column; gap: 10px; flex: 1; min-height: 0;">
+    <div style="display: flex; flex-direction: column; gap: 8px; flex: 1; min-height: 0;">
       
-      <!-- Session Header & Quick Info -->
-      <div style="background: var(--bg-card); border: 1.5px solid rgba(56, 189, 248, 0.35); border-radius: var(--radius-md); padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
-        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-          <span class="badge badge-active" style="font-size: 11px; padding: 4px 8px; font-weight: 800; display: inline-flex; align-items: center; gap: 4px;">
-            <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #34d399; box-shadow: 0 0 6px #34d399;"></span>
+      <!-- Session Header & Command Bar (Single Compact Row) -->
+      <div style="background: var(--bg-card); border: 1.5px solid rgba(56, 189, 248, 0.35); border-radius: 8px; padding: 6px 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+        <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+          <span class="badge badge-active" style="font-size: 10px; padding: 2px 6px; font-weight: 800; display: inline-flex; align-items: center; gap: 3px;">
+            <span style="display: inline-block; width: 5px; height: 5px; border-radius: 50%; background: #34d399; box-shadow: 0 0 4px #34d399;"></span>
             LIVE
           </span>
-          <span style="font-family: var(--font-mono); font-size: 13px; font-weight: 800; color: #38bdf8;">${session.id}</span>
-          <span style="color: var(--text-muted); font-size: 12px;">&bull;</span>
-          <span style="font-size: 12.5px; font-weight: 700; color: #fff;">${flr?.name || session.floorId} (${unt?.name || session.unitId})</span>
-          <span style="font-size: 11px; color: #94a3b8;">(${session.isFullFloor ? 'Full Floor' : `${session.lineIds.length} Lines`})</span>
+          <span style="font-family: var(--font-mono); font-size: 12px; font-weight: 800; color: #38bdf8;">${session.id}</span>
+          <span style="color: var(--text-muted); font-size: 11px;">&bull;</span>
+          <span style="font-size: 12px; font-weight: 700; color: #fff;">${flr?.name || session.floorId} (${unt?.name || session.unitId})</span>
+          <span style="font-size: 10.5px; color: #94a3b8;">&bull; ${session.isFullFloor ? 'Full Floor' : `${session.lineIds.length} Lines`}</span>
         </div>
 
-        <div style="display: flex; gap: 8px; align-items: center;">
-          <button type="button" id="btn-cancel-relocate-session" class="btn btn-ghost btn-sm" style="color: #f87171; font-size: 11.5px; border: 1px solid rgba(239, 68, 68, 0.3); padding: 6px 10px;">
+        <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+          <button type="button" id="btn-open-camera-scanner" class="btn btn-primary btn-sm" style="font-size: 11.5px; font-weight: 800; padding: 4px 10px; height: 28px; display: flex; align-items: center; gap: 4px; background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); border: 1px solid #38bdf8; box-shadow: 0 2px 6px rgba(2, 132, 199, 0.4);">
+            📷 Scan QR
+          </button>
+          <button type="button" id="btn-open-manual-search" class="btn btn-secondary btn-sm" style="font-size: 11.5px; font-weight: 700; padding: 4px 10px; height: 28px; display: flex; align-items: center; gap: 4px; border: 1px solid rgba(255,255,255,0.2);">
+            🔎 Search
+          </button>
+          <button type="button" id="btn-open-complete-modal" class="btn btn-primary btn-sm" style="font-weight: 800; font-size: 11.5px; padding: 4px 12px; height: 28px; background: #059669; border: 1px solid #34d399; box-shadow: 0 2px 6px rgba(5, 150, 105, 0.3);">
+            🏁 Finish
+          </button>
+          <button type="button" id="btn-cancel-relocate-session" class="btn btn-ghost btn-sm" style="color: #f87171; font-size: 11px; padding: 4px 8px; height: 28px; border: 1px solid rgba(239, 68, 68, 0.3);">
             ✕ Cancel
           </button>
-          <button type="button" id="btn-open-complete-modal" class="btn btn-primary btn-sm" style="font-weight: 800; font-size: 12px; background: #059669; border-color: #34d399; box-shadow: 0 2px 8px rgba(5, 150, 105, 0.3); padding: 6px 12px;">
-            🏁 Reconcile &amp; Finish
-          </button>
         </div>
       </div>
 
-      <!-- Mobile Quick Stats Accordion Header -->
-      <div style="display: flex; justify-content: space-between; align-items: center; padding: 2px 4px;">
-        <span style="font-size: 12px; font-weight: 800; color: #cbd5e1; display: flex; align-items: center; gap: 6px;">
-          📊 Session Statistics (${metrics.scannedTotal}/${metrics.expectedTotal})
-        </span>
-        <button type="button" id="btn-toggle-kpi-mobile" class="btn btn-ghost btn-sm" style="font-size: 11px; padding: 2px 8px; color: #38bdf8; font-weight: 700;">
-          ${kpisCollapsedOnMobile ? '▼ Expand Counters' : '▲ Collapse Counters'}
-        </button>
-      </div>
-
-      <!-- Live Counters Header (Compact 1-line strip when collapsed on mobile, full grid when expanded) -->
-      ${kpisCollapsedOnMobile ? `
-        <div class="relocate-kpi-compact-strip" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 8px 10px; text-align: center;">
-          <div style="border-right: 1px solid rgba(255,255,255,0.08);">
-            <div style="font-size: 9.5px; color: #94a3b8; text-transform: uppercase; font-weight: 700;">Target</div>
-            <div style="font-size: 15px; font-weight: 900; color: #fff;">${metrics.expectedTotal}</div>
-          </div>
-          <div style="border-right: 1px solid rgba(255,255,255,0.08);">
-            <div style="font-size: 9.5px; color: #34d399; text-transform: uppercase; font-weight: 700;">Verified</div>
-            <div style="font-size: 15px; font-weight: 900; color: #34d399;">${metrics.scannedTotal}</div>
-          </div>
-          <div style="border-right: 1px solid rgba(255,255,255,0.08);">
-            <div style="font-size: 9.5px; color: #38bdf8; text-transform: uppercase; font-weight: 700;">Idle</div>
-            <div style="font-size: 15px; font-weight: 900; color: #38bdf8;">${metrics.idleCount}</div>
-          </div>
-          <div>
-            <div style="font-size: 9.5px; color: #fbbf24; text-transform: uppercase; font-weight: 700;">Pending</div>
-            <div style="font-size: 15px; font-weight: 900; color: #fbbf24;">${metrics.pendingRelocationCount}</div>
-          </div>
+      <!-- Compact Statistics & Progress Strip (Single Line ~28px) -->
+      <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 6px; padding: 4px 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; font-size: 11px;">
+        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+          <span>Target: <strong style="color: #fff;">${metrics.expectedTotal}</strong></span>
+          <span style="color: rgba(255,255,255,0.15);">|</span>
+          <span>Verified: <strong style="color: #34d399;">${metrics.scannedTotal}</strong></span>
+          <span style="color: rgba(255,255,255,0.15);">|</span>
+          <span>Idle: <strong style="color: #38bdf8;">${metrics.idleCount}</strong></span>
+          <span style="color: rgba(255,255,255,0.15);">|</span>
+          <span>Pending Move: <strong style="color: #fbbf24;">${metrics.pendingRelocationCount}</strong></span>
         </div>
-      ` : `
-        <div id="relocate-kpi-container" style="display: flex; flex-direction: column; gap: 10px;">
-          <div class="relocate-kpi-grid">
-            <div class="relocate-kpi-box" style="border-left: 3px solid #94a3b8;">
-              <div style="font-size: 10.5px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Expected Snapshot</div>
-              <div class="relocate-kpi-val" style="color: #fff;">${metrics.expectedTotal}</div>
-            </div>
-            <div class="relocate-kpi-box" style="border-left: 3px solid #34d399; border-color: rgba(52, 211, 153, 0.3);">
-              <div style="font-size: 10.5px; font-weight: 700; color: #34d399; text-transform: uppercase;">Scanned &amp; Verified</div>
-              <div class="relocate-kpi-val" style="color: #34d399;">${metrics.scannedTotal}</div>
-            </div>
-            <div class="relocate-kpi-box" style="border-left: 3px solid #38bdf8; border-color: rgba(56, 189, 248, 0.3);">
-              <div style="font-size: 10.5px; font-weight: 700; color: #38bdf8; text-transform: uppercase;">Idle (Unscanned)</div>
-              <div class="relocate-kpi-val" style="color: #38bdf8;">${metrics.idleCount}</div>
-            </div>
-            <div class="relocate-kpi-box" style="border-left: 3px solid #fbbf24; border-color: rgba(251, 191, 36, 0.3);">
-              <div style="font-size: 10.5px; font-weight: 700; color: #fbbf24; text-transform: uppercase;">Pending Relocate</div>
-              <div class="relocate-kpi-val" style="color: #fbbf24;">${metrics.pendingRelocationCount}</div>
-            </div>
-          </div>
 
-          <!-- Line Breakdown Progress Bars -->
-          <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 8px 12px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-              <span style="font-size: 11px; font-weight: 700; color: #fff;">Line Scan Progress:</span>
-              <span style="font-size: 10.5px; color: var(--text-muted);">${metrics.lineBreakdown.length} Lines Targeted</span>
-            </div>
-            <div style="display: flex; gap: 8px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; padding-bottom: 2px;">
-              ${metrics.lineBreakdown.map(lb => {
-                const isFinished = lb.scanned >= lb.expected && lb.expected > 0;
-                return `
-                  <div style="flex-shrink: 0; min-width: 105px; background: rgba(0,0,0,0.25); border: 1px solid ${isFinished ? '#34d399' : 'rgba(255,255,255,0.08)'}; border-radius: 6px; padding: 4px 8px; font-size: 11px;">
-                    <div style="display: flex; justify-content: space-between; font-weight: 700;">
-                      <span style="color: ${isFinished ? '#34d399' : '#fff'};">${lb.lineName}</span>
-                      <span style="color: ${isFinished ? '#34d399' : '#38bdf8'}; font-family: var(--font-mono); margin-left: 6px;">${lb.scanned} / ${lb.expected}</span>
-                    </div>
-                  </div>
-                `;
-              }).join('')}
-            </div>
-          </div>
+        <div style="display: flex; gap: 5px; align-items: center; overflow-x: auto; -webkit-overflow-scrolling: touch;">
+          <span style="color: var(--text-muted); font-size: 10.5px;">Lines:</span>
+          ${metrics.lineBreakdown.map(lb => {
+            const isDone = lb.scanned >= lb.expected && lb.expected > 0;
+            return `<span style="background: rgba(0,0,0,0.3); border: 1px solid ${isDone ? '#34d399' : 'rgba(255,255,255,0.1)'}; padding: 1px 6px; border-radius: 4px; font-size: 10px; white-space: nowrap;">
+              ${lb.lineName}: <strong style="color: ${isDone ? '#34d399' : '#38bdf8'}; font-family: var(--font-mono);">${lb.scanned}/${lb.expected}</strong>
+            </span>`;
+          }).join('')}
         </div>
-      `}
-
-      <!-- Primary Action Buttons (Desktop inline controls, hidden on mobile in favor of bottom dock) -->
-      <div class="relocate-desktop-actions" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-        <button type="button" id="btn-open-camera-scanner" class="btn btn-primary" style="font-size: 14px; font-weight: 800; padding: 12px 18px; display: flex; align-items: center; justify-content: center; gap: 8px; background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); border: 1.5px solid #38bdf8; box-shadow: 0 4px 12px rgba(2, 132, 199, 0.4);">
-          <span style="font-size: 20px;">📷</span> Scan QR Code
-        </button>
-        <button type="button" id="btn-open-manual-search" class="btn btn-secondary" style="font-size: 14px; font-weight: 800; padding: 12px 18px; display: flex; align-items: center; justify-content: center; gap: 8px; border: 1.5px solid rgba(255,255,255,0.2);">
-          <span style="font-size: 18px;">🔎</span> Manual Search
-        </button>
       </div>
 
       <!-- Feed of Scanned Machines in Current Session -->
-      <div class="relocate-scanned-feed-wrap" style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); display: flex; flex-direction: column; flex: 1;">
+      <div class="relocate-scanned-feed-wrap" style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 8px; display: flex; flex-direction: column; flex: 1;">
         
-        <!-- Filter & Search Toolbar (Sticky, Mobile Optimized) -->
-        <div style="padding: 10px 12px; background: rgba(15, 23, 42, 0.95); border-bottom: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 8px;">
+        <!-- Filter & Search Toolbar (Single Clean Line ~32px) -->
+        <div style="padding: 6px 10px; background: rgba(15, 23, 42, 0.95); border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
           
-          <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px;">
-            <div style="display: flex; align-items: center; gap: 6px;">
-              <span style="font-size: 13px; font-weight: 800; color: #fff;">
-                Scanned Machines
-              </span>
-              <span style="background: #0284c7; color: #fff; font-size: 11px; font-weight: 800; padding: 2px 7px; border-radius: 12px; font-family: var(--font-mono);">
-                ${totalCount}
-              </span>
-            </div>
-
-            <button type="button" id="btn-feed-quick-scan" class="btn btn-primary btn-sm" style="font-size: 11.5px; font-weight: 800; padding: 5px 10px; display: inline-flex; align-items: center; gap: 4px; background: #0284c7; border: 1px solid #38bdf8;">
-              📷 Scan Next
-            </button>
+          <div style="display: flex; align-items: center; gap: 6px; min-width: 90px;">
+            <strong style="font-size: 12px; color: #fff;">Scanned:</strong>
+            <span style="background: #0284c7; color: #fff; font-size: 10.5px; font-weight: 800; padding: 1px 6px; border-radius: 10px; font-family: var(--font-mono);">${totalCount}</span>
           </div>
 
-          <!-- Realtime Search Input -->
-          <div style="position: relative;">
+          <div style="flex: 1; min-width: 180px; position: relative;">
             <input 
               type="text" 
               id="inp-scanned-filter-query" 
               class="form-control" 
-              placeholder="🔍 Search scanned by serial, name, or line..." 
+              placeholder="🔍 Search serial, name, or line..." 
               value="${scannedListSearch}"
-              style="padding: 8px 32px 8px 12px; font-size: 13px; min-height: 38px; border-radius: 8px; background: #090d16; border-color: rgba(56,189,248,0.3); color: #fff;"
+              style="padding: 4px 28px 4px 10px; font-size: 11.5px; height: 28px; min-height: 28px; border-radius: 6px; background: #090d16; border-color: rgba(56,189,248,0.3); color: #fff;"
             />
             ${scannedListSearch ? `
-              <button type="button" id="btn-clear-scanned-filter" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #94a3b8; font-size: 14px; cursor: pointer; padding: 4px;">✕</button>
+              <button type="button" id="btn-clear-scanned-filter" style="position: absolute; right: 6px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #94a3b8; font-size: 12px; cursor: pointer; padding: 2px;">✕</button>
             ` : ''}
           </div>
 
           <!-- Filter Pills -->
-          <div style="display: flex; gap: 6px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; padding-bottom: 2px;">
-            <button type="button" class="btn-scan-filter-pill ${scannedListFilter === 'ALL' ? 'active' : ''}" data-filter="ALL" style="flex-shrink: 0; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 14px; border: 1px solid ${scannedListFilter === 'ALL' ? '#38bdf8' : 'rgba(255,255,255,0.15)'}; background: ${scannedListFilter === 'ALL' ? 'rgba(56,189,248,0.2)' : 'rgba(255,255,255,0.04)'}; color: ${scannedListFilter === 'ALL' ? '#38bdf8' : '#cbd5e1'}; cursor: pointer;">
+          <div style="display: flex; gap: 4px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none;">
+            <button type="button" class="btn-scan-filter-pill ${scannedListFilter === 'ALL' ? 'active' : ''}" data-filter="ALL" style="flex-shrink: 0; font-size: 10.5px; font-weight: 700; padding: 3px 8px; border-radius: 12px; border: 1px solid ${scannedListFilter === 'ALL' ? '#38bdf8' : 'rgba(255,255,255,0.15)'}; background: ${scannedListFilter === 'ALL' ? 'rgba(56,189,248,0.2)' : 'rgba(255,255,255,0.04)'}; color: ${scannedListFilter === 'ALL' ? '#38bdf8' : '#cbd5e1'}; cursor: pointer;">
               All (${totalCount})
             </button>
-            <button type="button" class="btn-scan-filter-pill ${scannedListFilter === 'CORRECT' ? 'active' : ''}" data-filter="CORRECT" style="flex-shrink: 0; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 14px; border: 1px solid ${scannedListFilter === 'CORRECT' ? '#34d399' : 'rgba(255,255,255,0.15)'}; background: ${scannedListFilter === 'CORRECT' ? 'rgba(52,211,153,0.2)' : 'rgba(255,255,255,0.04)'}; color: ${scannedListFilter === 'CORRECT' ? '#34d399' : '#cbd5e1'}; cursor: pointer;">
+            <button type="button" class="btn-scan-filter-pill ${scannedListFilter === 'CORRECT' ? 'active' : ''}" data-filter="CORRECT" style="flex-shrink: 0; font-size: 10.5px; font-weight: 700; padding: 3px 8px; border-radius: 12px; border: 1px solid ${scannedListFilter === 'CORRECT' ? '#34d399' : 'rgba(255,255,255,0.15)'}; background: ${scannedListFilter === 'CORRECT' ? 'rgba(52,211,153,0.2)' : 'rgba(255,255,255,0.04)'}; color: ${scannedListFilter === 'CORRECT' ? '#34d399' : '#cbd5e1'}; cursor: pointer;">
               ✓ Verified (${verifiedCount})
             </button>
-            <button type="button" class="btn-scan-filter-pill ${scannedListFilter === 'LINE_MISMATCH' ? 'active' : ''}" data-filter="LINE_MISMATCH" style="flex-shrink: 0; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 14px; border: 1px solid ${scannedListFilter === 'LINE_MISMATCH' ? '#38bdf8' : 'rgba(255,255,255,0.15)'}; background: ${scannedListFilter === 'LINE_MISMATCH' ? 'rgba(56,189,248,0.2)' : 'rgba(255,255,255,0.04)'}; color: ${scannedListFilter === 'LINE_MISMATCH' ? '#38bdf8' : '#cbd5e1'}; cursor: pointer;">
+            <button type="button" class="btn-scan-filter-pill ${scannedListFilter === 'LINE_MISMATCH' ? 'active' : ''}" data-filter="LINE_MISMATCH" style="flex-shrink: 0; font-size: 10.5px; font-weight: 700; padding: 3px 8px; border-radius: 12px; border: 1px solid ${scannedListFilter === 'LINE_MISMATCH' ? '#38bdf8' : 'rgba(255,255,255,0.15)'}; background: ${scannedListFilter === 'LINE_MISMATCH' ? 'rgba(56,189,248,0.2)' : 'rgba(255,255,255,0.04)'}; color: ${scannedListFilter === 'LINE_MISMATCH' ? '#38bdf8' : '#cbd5e1'}; cursor: pointer;">
               ⚠️ Line Move (${lineMoveCount})
             </button>
             ${floorMoveCount > 0 ? `
-              <button type="button" class="btn-scan-filter-pill ${scannedListFilter === 'FLOOR_MISMATCH' ? 'active' : ''}" data-filter="FLOOR_MISMATCH" style="flex-shrink: 0; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 14px; border: 1px solid ${scannedListFilter === 'FLOOR_MISMATCH' ? '#fbbf24' : 'rgba(255,255,255,0.15)'}; background: ${scannedListFilter === 'FLOOR_MISMATCH' ? 'rgba(251,191,36,0.2)' : 'rgba(255,255,255,0.04)'}; color: ${scannedListFilter === 'FLOOR_MISMATCH' ? '#fbbf24' : '#cbd5e1'}; cursor: pointer;">
+              <button type="button" class="btn-scan-filter-pill ${scannedListFilter === 'FLOOR_MISMATCH' ? 'active' : ''}" data-filter="FLOOR_MISMATCH" style="flex-shrink: 0; font-size: 10.5px; font-weight: 700; padding: 3px 8px; border-radius: 12px; border: 1px solid ${scannedListFilter === 'FLOOR_MISMATCH' ? '#fbbf24' : 'rgba(255,255,255,0.15)'}; background: ${scannedListFilter === 'FLOOR_MISMATCH' ? 'rgba(251,191,36,0.2)' : 'rgba(255,255,255,0.04)'}; color: ${scannedListFilter === 'FLOOR_MISMATCH' ? '#fbbf24' : '#cbd5e1'}; cursor: pointer;">
                 ⏳ Inter-Floor (${floorMoveCount})
               </button>
             ` : ''}
