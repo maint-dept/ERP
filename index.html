@@ -14,11 +14,31 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
 
-  <!-- Core ERP Stylesheets (Cache-Busted v4.22.6) -->
-  <link rel="stylesheet" href="css/app.css?v=4.22.6">
-  <link rel="stylesheet" href="css/grid.css?v=4.22.6">
-  <link rel="stylesheet" href="css/components.css?v=4.22.6">
-  <link rel="stylesheet" href="css/print.css?v=4.22.6">
+  <!-- Global Safe Startup Pre-Initializers -->
+  <script>
+    // Bulletproof JSON.parse defense against 'undefined', empty strings, or null values
+    (function() {
+      var _nativeJSONParse = JSON.parse;
+      JSON.parse = function(text, reviver) {
+        if (text === undefined || text === null || text === '' || text === 'undefined' || text === 'null') {
+          return null;
+        }
+        if (typeof text === 'string') {
+          var t = text.trim();
+          if (t === '' || t === 'undefined' || t === 'null') {
+            return null;
+          }
+        }
+        return _nativeJSONParse.call(JSON, text, reviver);
+      };
+    })();
+  </script>
+
+  <!-- Core ERP Stylesheets (Cache-Busted v4.22.24) -->
+  <link rel="stylesheet" href="css/app.css?v=4.22.24">
+  <link rel="stylesheet" href="css/grid.css?v=4.22.24">
+  <link rel="stylesheet" href="css/components.css?v=4.22.24">
+  <link rel="stylesheet" href="css/print.css?v=4.22.24">
 
   <!-- Deferred Heavy Third-Party Libraries (Non-Render Blocking) -->
   <!-- SheetJS (XLSX) Library for Excel Import & Export -->
@@ -55,11 +75,11 @@
       if (!root) return;
       root.innerHTML = 
         '<div style="height: 100vh; display: flex; align-items: center; justify-content: center; background: #090d16; color: #fff; font-family: sans-serif; padding: 20px;">' +
-          '<div style="max-width: 520px; width: 100%; background: #111827; border: 1px solid #ef4444; border-radius: 12px; padding: 28px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.6); text-align: center;">' +
+          '<div style="max-width: 540px; width: 100%; background: #111827; border: 1px solid #ef4444; border-radius: 12px; padding: 28px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.6); text-align: center;">' +
             '<div style="font-size: 42px; margin-bottom: 12px;">⚠️</div>' +
             '<h2 style="font-size: 18px; font-weight: 800; color: #f87171; margin-bottom: 8px;">Startup Diagnostic Alert</h2>' +
             '<p style="font-size: 13px; color: #cbd5e1; margin-bottom: 16px;">' + (errorMsg || 'The application encountered an issue while initializing components.') + '</p>' +
-            (detail ? '<div style="background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.25); border-radius: 6px; padding: 10px; font-family: monospace; font-size: 11.5px; color: #fca5a5; text-align: left; margin-bottom: 20px; word-break: break-word;">' + detail + '</div>' : '') +
+            (detail ? '<div style="background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.25); border-radius: 6px; padding: 10px; font-family: monospace; font-size: 11px; color: #fca5a5; text-align: left; margin-bottom: 20px; word-break: break-word; max-height: 180px; overflow-y: auto; white-space: pre-wrap;">' + detail + '</div>' : '') +
             '<div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">' +
               '<button onclick="window.__forceFreshReload ? window.__forceFreshReload() : window.location.reload()" style="background: #2563eb; color: #fff; border: none; padding: 10px 20px; border-radius: 6px; font-weight: 700; font-size: 13px; cursor: pointer;">🔄 Fresh Reload &amp; Clear Cache</button>' +
               '<button onclick="localStorage.clear(); sessionStorage.clear(); window.location.href = window.location.origin + window.location.pathname + \'?reset=\' + Date.now();" style="background: #374151; color: #e2e8f0; border: 1px solid #4b5563; padding: 10px 18px; border-radius: 6px; font-size: 13px; cursor: pointer;">🧹 Reset Storage &amp; Restart</button>' +
@@ -78,7 +98,11 @@
         }).catch(function(){});
       } catch(_) {}
       if (!window.__appLoaded) {
-        window.__showStartupError('JavaScript Initialization Error', (e.message || 'Unknown script error') + ' at ' + (e.filename || '') + ':' + (e.lineno || ''));
+        var detailMsg = (e.message || 'Unknown script error') + ' at ' + (e.filename || '') + ':' + (e.lineno || '');
+        if (e.error && e.error.stack) {
+          detailMsg += '\n' + e.error.stack;
+        }
+        window.__showStartupError('JavaScript Initialization Error', detailMsg);
       }
     });
 
@@ -91,7 +115,11 @@
         }).catch(function(){});
       } catch(_) {}
       if (!window.__appLoaded) {
-        window.__showStartupError('Asynchronous Startup Rejection', e.reason ? (e.reason.message || String(e.reason)) : 'Unhandled Promise rejection');
+        var detailMsg = e.reason ? (e.reason.message || String(e.reason)) : 'Unhandled Promise rejection';
+        if (e.reason && e.reason.stack) {
+          detailMsg += '\n' + e.reason.stack;
+        }
+        window.__showStartupError('Asynchronous Startup Rejection', detailMsg);
       }
     });
 
@@ -151,40 +179,32 @@
       window.location.replace(base + '?t=' + Date.now() + window.location.hash);
     };
 
-    // Build version v4.22.23 — silent cache clear, NO URL redirect
-    var CURRENT_BUILD = '4.22.23';
+    // Build version v4.22.24 — silent cache clear, NO URL redirect
+    var CURRENT_BUILD = '4.22.24';
 
     // Silently unregister any old Service Workers and clear all caches
-    // NO window.location.replace — URL stays clean
     (function() {
       try {
-        // Nuke all caches immediately
         if (window.caches) {
           caches.keys().then(function(keys) {
             keys.forEach(function(k) { caches.delete(k); });
           });
         }
-        // Unregister ALL service workers silently
         if ('serviceWorker' in navigator) {
           navigator.serviceWorker.getRegistrations().then(function(regs) {
             regs.forEach(function(r) {
-              console.log('[ERP v4.22.23] Unregistering old SW:', r.scope);
+              console.log('[ERP v4.22.24] Unregistering SW:', r.scope);
               r.unregister();
             });
           });
-          // Register new pass-through SW (no caching)
-          navigator.serviceWorker.register('./sw.js?v=4.22.23').catch(function(e) {
-            console.warn('[ERP] SW register failed (non-critical):', e);
-          });
         }
-        // Update build version in localStorage
         localStorage.setItem('al_muslim_build_ver', CURRENT_BUILD);
       } catch(e) { /* non-critical */ }
     })();
   </script>
 
-  <!-- Main ES Module Application Entrypoint (Cache-Busted v4.22.23) -->
-  <script type="module" src="js/app.js?v=4.22.23"></script>
+  <!-- Main ES Module Application Entrypoint (Cache-Busted v4.22.24) -->
+  <script type="module" src="js/app.js?v=4.22.24"></script>
 
   <style>
     @keyframes spin {

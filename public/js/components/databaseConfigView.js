@@ -92,13 +92,24 @@ function getTotalRecordCount() {
   return 0;
 }
 
+function safeGetJson(key, fallback = null) {
+  try {
+    if (typeof localStorage === 'undefined') return fallback;
+    const val = localStorage.getItem(key);
+    if (!val || val === 'undefined' || val === 'null' || val === '') return fallback;
+    const parsed = JSON.parse(val);
+    return parsed !== null && parsed !== undefined ? parsed : fallback;
+  } catch (_) {
+    return fallback;
+  }
+}
+
 /**
  * Persist a per-db sync metric update.
  * Called by the Sync All / Re-sync handlers after a real operation.
  */
 export function recordSyncMetric(dbId, patch) {
-  let metrics = {};
-  try { metrics = JSON.parse(localStorage.getItem(SYNC_METRICS_KEY) || '{}'); } catch (_) {}
+  let metrics = safeGetJson(SYNC_METRICS_KEY, {});
   metrics[dbId] = { ...(metrics[dbId] || {}), ...patch, lastUpdated: new Date().toISOString() };
   try { localStorage.setItem(SYNC_METRICS_KEY, JSON.stringify(metrics)); } catch (_) {}
 }
@@ -115,7 +126,7 @@ function getDashboardSyncState() {
 
   // ── One-time migration: wipe legacy mock databases array from sync_state if present ──
   try {
-    const old = JSON.parse(localStorage.getItem(SYNC_STATE_KEY) || '{}');
+    const old = safeGetJson(SYNC_STATE_KEY, {});
     if (Array.isArray(old.databases)) {
       localStorage.setItem(SYNC_STATE_KEY, JSON.stringify({
         autoSync: old.autoSync !== false,
@@ -129,21 +140,16 @@ function getDashboardSyncState() {
   let autoSync = true;
   let lastSyncTime = '—';
   try {
-    const pref = JSON.parse(localStorage.getItem(SYNC_STATE_KEY) || '{}');
+    const pref = safeGetJson(SYNC_STATE_KEY, {});
     if (typeof pref.autoSync === 'boolean') autoSync = pref.autoSync;
     if (pref.lastSyncTime) lastSyncTime = pref.lastSyncTime;
   } catch (_) {}
 
   // Real per-db metrics written by sync operations
-  let metrics = {};
-  try { metrics = JSON.parse(localStorage.getItem(SYNC_METRICS_KEY) || '{}'); } catch (_) {}
+  let metrics = safeGetJson(SYNC_METRICS_KEY, {});
 
   // Real configured secondary databases saved by the user
-  let rawConfigs = [];
-  try {
-    const stored = localStorage.getItem('erp_multi_db_config');
-    if (stored) rawConfigs = JSON.parse(stored);
-  } catch (_) {}
+  let rawConfigs = safeGetJson('erp_multi_db_config', []);
 
   // Filter to keep only supported providers: MYSQL and POSTGRESQL
   rawConfigs = (rawConfigs || []).filter(c => c && c.id && (c.type === 'MYSQL' || c.type === 'POSTGRESQL'));
@@ -291,19 +297,14 @@ function getDashboardSyncState() {
 
 function saveDashboardSyncState(patch) {
   // Only persist user preferences (autoSync toggle, lastSyncTime) — NOT the entire state
-  let stored = {};
-  try { stored = JSON.parse(localStorage.getItem(SYNC_STATE_KEY) || '{}'); } catch (_) {}
+  const stored = safeGetJson(SYNC_STATE_KEY, {});
   const merged = { ...stored, ...patch };
   try { localStorage.setItem(SYNC_STATE_KEY, JSON.stringify(merged)); } catch (_) {}
 }
 
 export function renderDatabaseConfigView() {
   // Read real saved secondary-DB configs from localStorage
-  let configs = [];
-  try {
-    const raw = localStorage.getItem('erp_multi_db_config');
-    if (raw) configs = JSON.parse(raw);
-  } catch (_) {}
+  const configs = safeGetJson('erp_multi_db_config', []);
 
   const state = getDashboardSyncState();
   const totalRecords = state.master.total;
@@ -965,7 +966,7 @@ function closeConfigForm() {
 export function initDatabaseConfigEvents() {
   // ── One-time migration: wipe old sync_state that contained fake databases array ──
   try {
-    const old = JSON.parse(localStorage.getItem('erp_data_engine_sync_state') || '{}');
+    const old = safeGetJson('erp_data_engine_sync_state', {});
     if (Array.isArray(old.databases)) {
       localStorage.setItem('erp_data_engine_sync_state', JSON.stringify({
         autoSync: old.autoSync !== false,
@@ -997,8 +998,7 @@ export function initDatabaseConfigEvents() {
         closeConfigForm();
         return;
       }
-      let configs = [];
-      try { configs = JSON.parse(localStorage.getItem('erp_multi_db_config') || '[]'); } catch (_) {}
+      const configs = safeGetJson('erp_multi_db_config', []);
       const found = configs.find(c => c.id === dbId);
       if (found) {
         const pKey = (found.type || 'POSTGRESQL').toUpperCase();
@@ -1012,8 +1012,7 @@ export function initDatabaseConfigEvents() {
     delBtn.addEventListener('click', async (e) => {
       e.stopPropagation();
       const dbId = delBtn.getAttribute('data-delete-id');
-      let configs = [];
-      try { configs = JSON.parse(localStorage.getItem('erp_multi_db_config') || '[]'); } catch (_) {}
+      const configs = safeGetJson('erp_multi_db_config', []);
       const target = configs.find(c => c.id === dbId);
       const name = target ? (target.name || target.type) : 'this connection';
 
@@ -1025,7 +1024,7 @@ export function initDatabaseConfigEvents() {
         await storage.saveMultiDbConfigs(updated).catch(() => {});
       }
       try {
-        const metrics = JSON.parse(localStorage.getItem(SYNC_METRICS_KEY) || '{}');
+        const metrics = safeGetJson(SYNC_METRICS_KEY, {});
         delete metrics[dbId];
         localStorage.setItem(SYNC_METRICS_KEY, JSON.stringify(metrics));
       } catch (_) {}
@@ -1139,11 +1138,9 @@ export function initDatabaseConfigEvents() {
       const dbId = b.getAttribute('data-db-id');
       if (!dbId) return;
       let dbName = dbId;
-      try {
-        const cfgs = JSON.parse(localStorage.getItem('erp_multi_db_config') || '[]');
-        const found = cfgs.find(c => c.id === dbId);
-        if (found) dbName = found.name || found.type || dbId;
-      } catch (_) {}
+      const cfgs = safeGetJson('erp_multi_db_config', []);
+      const found = cfgs.find(c => c.id === dbId);
+      if (found) dbName = found.name || found.type || dbId;
       await runRealSync(dbId, dbName, b, b.textContent);
     });
   });
@@ -1154,8 +1151,7 @@ export function initDatabaseConfigEvents() {
     if (btn) { btn.disabled = true; btn.innerHTML = '⏳ Syncing all databases...'; }
     notificationService.toast('Running full sync across all configured databases...');
     try {
-      let cfgs = [];
-      try { cfgs = JSON.parse(localStorage.getItem('erp_multi_db_config') || '[]'); } catch (_) {}
+      const cfgs = safeGetJson('erp_multi_db_config', []);
       await syncManager.reloadConfig();
       let successCount = 0, failCount = 0;
       const total = getTotalRecordCount();
@@ -1175,22 +1171,72 @@ export function initDatabaseConfigEvents() {
         }
       }
       saveDashboardSyncState({ lastSyncTime: new Date().toLocaleString() });
-      if (failCount > 0) {
-        notificationService.toast(`⚠️ Sync complete: ${successCount} succeeded, ${failCount} failed. Check status.`);
-      } else if (successCount > 0) {
-        notificationService.toast(`✅ All ${successCount} database(s) synced successfully!`);
-      } else {
-        notificationService.toast('ℹ️ No enabled secondary databases to sync. Add a database below.');
-      }
+      notificationService.toast(`⚡ Sync finished: ${successCount} successful, ${failCount} failed.`);
       reRenderView();
     } catch (err) {
-      notificationService.toast(`Sync error: ${err.message}`);
-      if (btn) { btn.disabled = false; btn.innerHTML = '⚡ Fix & Re-sync Missing'; }
+      notificationService.toast('Reconciliation failed: ' + err.message);
+      if (btn) { btn.disabled = false; btn.innerHTML = '⚡ Sync All Real Databases'; }
+      reRenderView();
     }
   };
   document.getElementById('btn-fix-all-missing')?.addEventListener('click', handleReconcileAll);
   document.getElementById('btn-reconcile-all-records')?.addEventListener('click', handleReconcileAll);
   document.getElementById('btn-reconcile-missing-now')?.addEventListener('click', handleReconcileAll);
+
+  // 10. Direct "Sync Now" button on topology MySQL card
+  document.getElementById('btn-sync-mysql-direct')?.addEventListener('click', async () => {
+    const btn = document.getElementById('btn-sync-mysql-direct');
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ Syncing...'; }
+    notificationService.toast('Running full push to MySQL primary database...');
+    try {
+      await syncManager.reloadConfig();
+      await syncManager.runFullSync('mysql_primary');
+      const total = getTotalRecordCount();
+      recordSyncMetric('mysql_primary', {
+        matched: total, missing: 0, failed: 0, duplicates: 0,
+        lastSyncTime: new Date().toLocaleString(), lastError: null
+      });
+      saveDashboardSyncState({ lastSyncTime: new Date().toLocaleString() });
+      notificationService.toast(`✅ MySQL Primary sync complete: ${total.toLocaleString()} records updated.`);
+      reRenderView();
+    } catch (err) {
+      recordSyncMetric('mysql_primary', { failed: 1, matched: 0, lastSyncTime: new Date().toLocaleString(), lastError: err.message });
+      notificationService.toast('❌ MySQL sync failed: ' + err.message);
+      if (btn) { btn.disabled = false; btn.textContent = '🔄 Sync Now'; }
+      reRenderView();
+    }
+  });
+
+  // 11. Topology card config button shortcuts
+  document.getElementById('btn-topo-config-mysql')?.addEventListener('click', () => {
+    openConfigForm('MYSQL', 'mysql_primary');
+  });
+  document.getElementById('btn-topo-config-postgres')?.addEventListener('click', () => {
+    const cfgs = safeGetJson('erp_multi_db_config', []);
+    const pg = cfgs.find(c => (c.type || '').toUpperCase() === 'POSTGRESQL' && c.role !== 'PRIMARY');
+    if (pg) {
+      openConfigForm('POSTGRESQL', pg.id);
+    } else {
+      openConfigForm('POSTGRESQL', null);
+    }
+  });
+
+  // 12. Placeholder card action handlers
+  document.getElementById('btn-placeholder-create-db')?.addEventListener('click', () => {
+    openConfigForm('POSTGRESQL', null);
+  });
+  document.getElementById('btn-placeholder-edit-mysql')?.addEventListener('click', () => {
+    openConfigForm('MYSQL', 'mysql_primary');
+  });
+  document.getElementById('btn-placeholder-edit-postgres')?.addEventListener('click', () => {
+    const cfgs = safeGetJson('erp_multi_db_config', []);
+    const pg = cfgs.find(c => (c.type || '').toUpperCase() === 'POSTGRESQL' && c.role !== 'PRIMARY');
+    if (pg) {
+      openConfigForm('POSTGRESQL', pg.id);
+    } else {
+      openConfigForm('POSTGRESQL', null);
+    }
+  });
 
   // 10. Single Record Re-sync
   document.querySelectorAll('.btn-sync-single-record').forEach(b => {
@@ -1258,8 +1304,7 @@ function renderProviderPlaceholder() {
   if (!container) return;
 
   // Retrieve current configs
-  let configs = [];
-  try { configs = JSON.parse(localStorage.getItem('erp_multi_db_config') || '[]'); } catch (_) {}
+  let configs = safeGetJson('erp_multi_db_config', []);
   const mysqlDb = configs.find(c => c.role === 'PRIMARY' || c.id === 'mysql_primary' || (c.type || '').toUpperCase() === 'MYSQL');
   const pgDb = configs.find(c => ((c.type || '').toUpperCase() === 'POSTGRESQL' || (c.type || '').toUpperCase() === 'POSTGRES') && c.role !== 'PRIMARY');
 
@@ -1391,8 +1436,7 @@ function renderProviderForm(providerKey, dbId = null) {
   isConfigFormOpen = true;
 
   // Load real saved configs from localStorage
-  let allConfigs = [];
-  try { allConfigs = JSON.parse(localStorage.getItem('erp_multi_db_config') || '[]'); } catch (_) {}
+  let allConfigs = safeGetJson('erp_multi_db_config', []);
   
   let existing = {};
   if (dbId) {
@@ -1638,8 +1682,7 @@ function renderProviderForm(providerKey, dbId = null) {
         const role = document.querySelector('input[name="cfg-db-role"]:checked')?.value || 'BACKUP';
         const autoSync = document.getElementById('cfg-auto-sync')?.checked !== false;
 
-        let currentConfigs = [];
-        try { currentConfigs = JSON.parse(localStorage.getItem('erp_multi_db_config') || '[]'); } catch (_) {}
+        let currentConfigs = safeGetJson('erp_multi_db_config', []);
 
         // Use currentEditingDbId if editing, or create a unique instance ID
         const targetId = currentEditingDbId || `db_${spec.key.toLowerCase()}_${Date.now()}`;
@@ -1693,8 +1736,7 @@ function renderProviderForm(providerKey, dbId = null) {
   const btnDel = document.getElementById('btn-delete-provider-db');
   if (btnDel && currentEditingDbId) {
     btnDel.addEventListener('click', async () => {
-      let currentConfigs = [];
-      try { currentConfigs = JSON.parse(localStorage.getItem('erp_multi_db_config') || '[]'); } catch (_) {}
+      let currentConfigs = safeGetJson('erp_multi_db_config', []);
       const existingRec = currentConfigs.find(c => c.id === currentEditingDbId);
       const name = existingRec ? (existingRec.name || existingRec.type) : 'this database';
 
@@ -1708,7 +1750,7 @@ function renderProviderForm(providerKey, dbId = null) {
 
       // Clear metrics for this db
       try {
-        const metrics = JSON.parse(localStorage.getItem(SYNC_METRICS_KEY) || '{}');
+        const metrics = safeGetJson(SYNC_METRICS_KEY, {});
         delete metrics[currentEditingDbId];
         localStorage.setItem(SYNC_METRICS_KEY, JSON.stringify(metrics));
       } catch (_) {}
