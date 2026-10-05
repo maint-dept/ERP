@@ -91,18 +91,18 @@ export function renderTransferModal() {
             <div style="position: relative;">
               <div style="display: flex; gap: 10px; flex-wrap: wrap;">
                 <div style="position: relative; flex: 1; min-width: 220px;">
-                  <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 16px; pointer-events: none; z-index: 2; line-height: 1;">🧵</span>
+                  <span style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 16px; pointer-events: none; z-index: 5; line-height: 1;">🧵</span>
                   <input 
                     type="text" 
                     id="inp-transfer-search-serial" 
-                    class="form-control" 
+                    class="form-control has-icon-left" 
                     placeholder="Enter or search Machine Serial Number (e.g. 5369, 76, JK-01)..." 
                     value="${machine?.serialNumber || ''}" 
-                    style="font-size: 14px; font-weight: 700; color: var(--text-primary); background: rgba(0,0,0,0.4); border: 1px solid rgba(56, 189, 248, 0.5); padding-left: 38px !important; padding-right: ${machine ? '80px' : '12px'} !important;"
+                    style="font-size: 14px; font-weight: 700; color: #ffffff !important; background: rgba(15, 23, 42, 0.9); border: 1.5px solid rgba(56, 189, 248, 0.6); padding-left: 44px !important; padding-right: ${machine ? '84px' : '14px'} !important; height: 42px;"
                     autocomplete="off"
                   />
                   ${machine ? `
-                    <button type="button" id="btn-clear-transfer-machine" title="Clear and search another machine" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.35); color: #f87171; font-size: 11px; cursor: pointer; padding: 3px 8px; border-radius: 4px; font-weight: 700; z-index: 2;">✕ Clear</button>
+                    <button type="button" id="btn-clear-transfer-machine" title="Clear and search another machine" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: rgba(239, 68, 68, 0.2); border: 1px solid rgba(239, 68, 68, 0.45); color: #f87171; font-size: 11.5px; cursor: pointer; padding: 4px 10px; border-radius: 4px; font-weight: 700; z-index: 5;">✕ Clear</button>
                   ` : ''}
                 </div>
                 <button type="button" id="btn-search-serial-trigger" class="btn btn-primary" style="font-weight: 700; white-space: nowrap;">
@@ -149,18 +149,18 @@ export function renderTransferModal() {
                 </div>
 
                 <!-- Specs & History Verification Strip -->
-                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 12px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.08); font-size: 11px;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-top: 12px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.12); font-size: 11.5px;">
                   <div>
-                    <span style="color: var(--text-muted);">Asset Tag:</span> <strong style="color: #fff;">${machine.customFields?.assetTag || machine.id}</strong>
+                    <span style="color: #94a3b8; font-weight: 600;">Asset Tag:</span> <strong style="color: #ffffff; font-family: var(--font-mono); font-size: 12px;">${machine.customFields?.assetTag || machine.id}</strong>
                   </div>
                   <div>
-                    <span style="color: var(--text-muted);">Motor / Voltage:</span> <strong style="color: #fff;">${machine.customFields?.motorType || 'Servo 220V'}</strong>
+                    <span style="color: #94a3b8; font-weight: 600;">Motor / Voltage:</span> <strong style="color: #ffffff; font-weight: 700;">${machine.customFields?.motorType || 'Servo 220V'}</strong>
                   </div>
                   <div>
-                    <span style="color: var(--text-muted);">Past Transfers:</span> <strong style="color: #38bdf8;">${locationChangesCount} recorded</strong>
+                    <span style="color: #94a3b8; font-weight: 600;">Past Transfers:</span> <strong style="color: #38bdf8; font-weight: 700;">${locationChangesCount} recorded</strong>
                   </div>
                   <div>
-                    <span style="color: var(--text-muted);">Service / Repairs:</span> <strong style="color: #34d399;">${servicesCount + sparePartsCount} events</strong>
+                    <span style="color: #94a3b8; font-weight: 600;">Service / Repairs:</span> <strong style="color: #34d399; font-weight: 700;">${servicesCount + sparePartsCount} events</strong>
                   </div>
                 </div>
 
@@ -229,17 +229,17 @@ export function renderTransferModal() {
                 <span style="font-size: 10.5px; color: #34d399; font-weight: 600;">✨ Auto fills 4 dropdowns below</span>
               </div>
               <div style="position: relative;">
-                <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 14px; pointer-events: none; z-index: 2; line-height: 1;">📍</span>
+                <span style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 15px; pointer-events: none; z-index: 5; line-height: 1;">📍</span>
                 <input 
                   type="text" 
                   id="inp-transfer-location-search" 
-                  class="form-control" 
+                  class="form-control has-icon-left" 
                   placeholder="Type to search Floor or Line name (e.g. Jamuna, Size Set, BG-A, Eyelet, Cutting)..." 
                   value="${selectedDest.searchQuery || ''}"
                   autocomplete="off"
-                  style="font-size: 13px; font-weight: 600; color: var(--text-primary); background: rgba(0,0,0,0.4); border: 1px solid rgba(56, 189, 248, 0.4); padding-left: 36px !important; padding-right: 32px !important;"
+                  style="font-size: 13.5px; font-weight: 600; color: #ffffff !important; background: rgba(15, 23, 42, 0.9); border: 1.5px solid rgba(56, 189, 248, 0.5); padding-left: 44px !important; padding-right: 36px !important; height: 40px;"
                 />
-                <button type="button" id="btn-clear-location-search" title="Clear search" style="${selectedDest.searchQuery ? 'display: block;' : 'display: none;'} position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); color: #f87171; border-radius: 4px; font-size: 11px; cursor: pointer; padding: 2px 6px; z-index: 2;">✕</button>
+                <button type="button" id="btn-clear-location-search" title="Clear search" style="${selectedDest.searchQuery ? 'display: block;' : 'display: none;'} position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: rgba(239, 68, 68, 0.2); border: 1px solid rgba(239, 68, 68, 0.4); color: #f87171; border-radius: 4px; font-size: 11px; cursor: pointer; padding: 3px 8px; z-index: 5; font-weight: 700;">✕</button>
               </div>
 
               <!-- Floating Suggestions Dropdown -->

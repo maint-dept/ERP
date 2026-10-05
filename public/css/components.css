@@ -70,10 +70,7 @@
   min-height: 0 !important;
   overflow: hidden;
   margin: auto;
-  /* Use translateY-only animation — scale causes layout-thrash & scroll-jitter */
   animation: modalSlideIn 0.22s cubic-bezier(0.16, 1, 0.3, 1);
-  will-change: transform, opacity;
-  transform: translateZ(0);
   box-sizing: border-box;
 }
 
@@ -517,7 +514,9 @@
 
 /* Anti-jitter modal entrance: translateY only, NO scale (scale triggers layout recalc) */
 @keyframes modalSlideIn {
-  from { transform: translateZ(0) translateY(12px); opacity: 0; }
+  from { transform: translateY(12px); opacity: 0; }
+  to   { transform: none; opacity: 1; }
+}
   to   { transform: translateZ(0) translateY(0);    opacity: 1; }
 }
 

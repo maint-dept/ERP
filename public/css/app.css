@@ -1929,3 +1929,43 @@ body.modal-open {
     overflow-x: auto;
   }
 }
+
+
+/* Razor-Sharp Text Legibility & Contrast Guarantee */
+*, *::before, *::after {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Crisp Input and Placeholder Colors */
+input::placeholder,
+textarea::placeholder,
+select::placeholder {
+  color: #94a3b8 !important;
+  opacity: 1 !important;
+}
+
+body.theme-light input::placeholder,
+body.theme-light textarea::placeholder,
+body.theme-light select::placeholder {
+  color: #64748b !important;
+  opacity: 1 !important;
+}
+
+/* Modal text and contrast enhancements */
+.modal-overlay {
+  background-color: rgba(5, 8, 16, 0.88) !important;
+}
+
+.modal-dialog label.form-label,
+.modal-card label.form-label {
+  color: #f8fafc;
+  font-weight: 700;
+}
+
+body.theme-light .modal-dialog label.form-label,
+body.theme-light .modal-card label.form-label {
+  color: #0f172a;
+  font-weight: 700;
+}
