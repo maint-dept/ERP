@@ -75,7 +75,8 @@ export function renderLoginView() {
               <!-- Username or Email -->
               <div class="form-group" style="margin-bottom: 16px;">
                 <label class="form-label" style="font-size: 12px; color: #cbd5e1; font-weight: 600;">Email Address or Username</label>
-                <div style="position: relative;">
+                <div style="position: relative; display: flex; align-items: center;">
+                  <span style="position: absolute; left: 14px; font-size: 15px; opacity: 0.8; pointer-events: none; z-index: 5; line-height: 1;">👤</span>
                   <input 
                     type="text" 
                     id="inp-full-username" 
@@ -84,9 +85,8 @@ export function renderLoginView() {
                     value="${savedUsername || ''}"
                     required 
                     autocomplete="username"
-                    style="padding-left: 36px; background: rgba(30, 41, 59, 0.8); border-color: rgba(255,255,255,0.15); color: #fff; font-size: 13.5px;"
+                    style="padding-left: 44px !important; background: rgba(30, 41, 59, 0.8); border-color: rgba(255,255,255,0.15); color: #fff; font-size: 13.5px; height: 42px;"
                   />
-                  <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 14px; opacity: 0.7; pointer-events: none; z-index: 2;">👤</span>
                 </div>
               </div>
 
@@ -96,7 +96,8 @@ export function renderLoginView() {
                   <label class="form-label" style="font-size: 12px; color: #cbd5e1; font-weight: 600; margin: 0;">Password</label>
                   <a href="#" id="link-forgot-password" style="font-size: 11.5px; color: #38bdf8; text-decoration: none; font-weight: 600;">Forgot Password?</a>
                 </div>
-                <div style="position: relative;">
+                <div style="position: relative; display: flex; align-items: center;">
+                  <span style="position: absolute; left: 14px; font-size: 15px; opacity: 0.8; pointer-events: none; z-index: 5; line-height: 1;">🔒</span>
                   <input 
                     type="password" 
                     id="inp-full-password" 
@@ -105,10 +106,9 @@ export function renderLoginView() {
                     value=""
                     required 
                     autocomplete="current-password"
-                    style="padding-left: 36px; padding-right: 36px; background: rgba(30, 41, 59, 0.8); border-color: rgba(255,255,255,0.15); color: #fff; font-size: 13.5px;"
+                    style="padding-left: 44px !important; padding-right: 44px !important; background: rgba(30, 41, 59, 0.8); border-color: rgba(255,255,255,0.15); color: #fff; font-size: 13.5px; height: 42px;"
                   />
-                  <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 14px; opacity: 0.7; pointer-events: none; z-index: 2;">🔒</span>
-                  <span id="btn-toggle-pwd-visibility" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-size: 14px; cursor: pointer; opacity: 0.6;" title="Toggle visibility">👁️</span>
+                  <span id="btn-toggle-pwd-visibility" style="position: absolute; right: 14px; font-size: 15px; cursor: pointer; opacity: 0.7; z-index: 5;" title="Toggle visibility">👁️</span>
                 </div>
               </div>
 

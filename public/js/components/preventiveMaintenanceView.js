@@ -255,56 +255,63 @@ export function renderPreventiveMaintenanceView() {
         </div>
       </div>
 
-      <!-- 2. SINGLE-ROW ULTRA-COMPACT FILTER BAR -->
-      <div class="compact-filter-bar" style="padding: 6px 12px; gap: 6px;">
-        <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap; width: 100%;">
+      <!-- 2. ROBUST 2-TIER STRUCTURED FILTER BAR -->
+      <div class="compact-filter-bar" style="padding: 10px 14px; display: flex; flex-direction: column; gap: 8px; background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm);">
+        
+        <!-- Row 1: Universal Search & Location Hierarchy -->
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; width: 100%;">
           
           <!-- Unified Search Input -->
-          <div class="filter-search-wrap" style="flex: 2; min-width: 220px; position: relative;">
-            <span class="filter-search-icon">🔍</span>
+          <div class="filter-search-wrap" style="flex: 2 1 260px; min-width: 240px; position: relative;">
+            <span class="filter-search-icon" style="left: 12px; font-size: 13px;">🔍</span>
             <input 
               type="text" 
               id="pm-universal-search-input" 
               class="filter-search-input" 
               placeholder="Search machine, serial, sticker, floor, line..." 
               value="${escapeHtml(searchQuery)}"
-              style="height: 30px; font-size: 12px; padding-left: 32px; padding-right: ${searchQuery ? '32px' : '10px'};"
+              style="height: 34px; font-size: 12.5px; padding-left: 36px !important; padding-right: ${searchQuery ? '36px' : '12px'} !important;"
             />
-            <div class="filter-search-actions">
+            <div class="filter-search-actions" style="right: 6px;">
               ${searchQuery ? `
-                <button id="btn-pm-clear-search" type="button" class="filter-search-btn" style="height: 22px; width: 22px; font-size: 11px;" title="Clear Search">✕</button>
+                <button id="btn-pm-clear-search" type="button" class="filter-search-btn" style="height: 24px; width: 24px; font-size: 12px;" title="Clear Search">✕</button>
               ` : ''}
             </div>
             <div id="pm-search-suggestions-box" class="pm-suggestions-dropdown" style="display: none;"></div>
           </div>
 
           <!-- Floor Dropdown -->
-          <div class="filter-select-item" style="min-width: 105px;">
-            <select id="pm-filter-floor" class="filter-select-compact" style="height: 30px; font-size: 11.5px;">
+          <div class="filter-select-item" style="flex: 1 1 130px; min-width: 125px;">
+            <select id="pm-filter-floor" class="filter-select-compact" style="height: 34px; font-size: 12px; width: 100%;">
               <option value="ALL">All Floors (${floors.length})</option>
               ${floors.map(f => `<option value="${f.id}" ${filterFloorId === f.id ? 'selected' : ''}>${escapeHtml(f.name)}</option>`).join('')}
             </select>
           </div>
 
-          <!-- Line Dropdown (cascading) -->
-          <div class="filter-select-item" style="min-width: 105px;">
-            <select id="pm-filter-line" class="filter-select-compact" style="height: 30px; font-size: 11.5px;">
+          <!-- Line Dropdown -->
+          <div class="filter-select-item" style="flex: 1 1 130px; min-width: 125px;">
+            <select id="pm-filter-line" class="filter-select-compact" style="height: 34px; font-size: 12px; width: 100%;">
               <option value="ALL">All Lines (${lines.length})</option>
               ${lines.map(l => `<option value="${l.id}" ${filterLineId === l.id ? 'selected' : ''}>${escapeHtml(l.name)}</option>`).join('')}
             </select>
           </div>
 
+        </div>
+
+        <!-- Row 2: Machine Type, Urgency Status & Action Controls -->
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; width: 100%;">
+          
           <!-- Machine Type Dropdown -->
-          <div class="filter-select-item" style="min-width: 120px;">
-            <select id="pm-filter-type" class="filter-select-compact" style="height: 30px; font-size: 11.5px;">
+          <div class="filter-select-item" style="flex: 1.5 1 160px; min-width: 145px;">
+            <select id="pm-filter-type" class="filter-select-compact" style="height: 32px; font-size: 12px; width: 100%;">
               <option value="ALL">All Machine Types (${configs.length})</option>
               ${configs.map(c => `<option value="${escapeHtml(c.machineType)}" ${filterMachineType === c.machineType ? 'selected' : ''}>${escapeHtml(c.machineType)} ${c.machineCount ? `(${c.machineCount})` : ''}</option>`).join('')}
             </select>
           </div>
 
           <!-- Urgency Dropdown -->
-          <div class="filter-select-item" style="min-width: 115px;">
-            <select id="pm-filter-urgency" class="filter-select-compact" style="height: 30px; font-size: 11.5px;">
+          <div class="filter-select-item" style="flex: 1 1 130px; min-width: 120px;">
+            <select id="pm-filter-urgency" class="filter-select-compact" style="height: 32px; font-size: 12px; width: 100%;">
               <option value="ALL" ${filterUrgency === 'ALL' ? 'selected' : ''}>All Urgencies</option>
               <option value="OVERDUE" ${filterUrgency === 'OVERDUE' ? 'selected' : ''}>🔴 Overdue</option>
               <option value="DUE_TODAY" ${filterUrgency === 'DUE_TODAY' ? 'selected' : ''}>🔴 Due Today</option>
@@ -315,7 +322,7 @@ export function renderPreventiveMaintenanceView() {
           </div>
 
           <!-- Reset Button -->
-          <button id="btn-pm-reset-filters" class="btn btn-secondary btn-sm" style="font-weight: 700; font-size: 11.5px; padding: 4px 10px; height: 30px;" title="Reset all filters">
+          <button id="btn-pm-reset-filters" class="btn btn-secondary btn-sm" style="font-weight: 700; font-size: 11.5px; padding: 4px 12px; height: 32px; border-radius: 6px; margin-left: auto;" title="Reset all filters">
             ↺ Reset
           </button>
         </div>

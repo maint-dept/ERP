@@ -882,59 +882,59 @@ function renderMachineReportsTab(allMachines) {
   return `
     <div style="display: flex; flex-direction: column; gap: 14px;">
       
-      <!-- 1. Sleek Filter Toolbar (Compact Horizontal Bar) -->
-      <div class="reports-filter-toolbar" style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.2);">
+      <!-- 1. Sleek Filter Toolbar (Structured, High-Readability Bar) -->
+      <div class="reports-filter-toolbar" style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; box-shadow: var(--shadow-sm);">
         
         <!-- Left: Filters Grouped with Clear Mini-Labels -->
-        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; flex: 1; min-width: 0;">
-          <span style="font-size: 11.5px; font-weight: 800; color: #38bdf8; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 4px; white-space: nowrap; margin-right: 2px;">
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; flex: 1 1 600px;">
+          <span style="font-size: 12px; font-weight: 800; color: #38bdf8; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 5px; white-space: nowrap; margin-right: 2px;">
             <span>📍</span> Filters:
           </span>
 
           <!-- Group Filter -->
-          <div style="display: inline-flex; align-items: center; gap: 6px; background: rgba(15, 23, 42, 0.85); border: 1px solid var(--border-color); border-radius: 6px; padding: 2px 8px;">
+          <div style="display: inline-flex; align-items: center; gap: 6px; background: rgba(15, 23, 42, 0.85); border: 1px solid var(--border-color); border-radius: 6px; padding: 3px 8px; flex: 1 1 120px;">
             <span style="font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase;">Group</span>
-            <select id="mr-filter-group" style="height: 28px; font-size: 12px; font-weight: 600; color: #fff; background: transparent; border: none; outline: none; cursor: pointer; width: auto; min-width: 105px; max-width: 150px;">
+            <select id="mr-filter-group" style="height: 28px; font-size: 12px; font-weight: 600; color: #fff; background: transparent; border: none; outline: none; cursor: pointer; width: 100%;">
               <option value="" style="background: #0f172a; color: #fff;">All Groups (${groups.length})</option>
               ${groups.map(g => `<option value="${g.id}" ${machineReportFilterState.groupId === g.id ? 'selected' : ''} style="background: #0f172a; color: #fff;">${g.name}</option>`).join('')}
             </select>
           </div>
 
           <!-- Unit / Factory Filter -->
-          <div style="display: inline-flex; align-items: center; gap: 6px; background: rgba(15, 23, 42, 0.85); border: 1px solid var(--border-color); border-radius: 6px; padding: 2px 8px;">
+          <div style="display: inline-flex; align-items: center; gap: 6px; background: rgba(15, 23, 42, 0.85); border: 1px solid var(--border-color); border-radius: 6px; padding: 3px 8px; flex: 1 1 130px;">
             <span style="font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase;">Unit</span>
-            <select id="mr-filter-unit" style="height: 28px; font-size: 12px; font-weight: 600; color: #fff; background: transparent; border: none; outline: none; cursor: pointer; width: auto; min-width: 120px; max-width: 170px;">
+            <select id="mr-filter-unit" style="height: 28px; font-size: 12px; font-weight: 600; color: #fff; background: transparent; border: none; outline: none; cursor: pointer; width: 100%;">
               <option value="" style="background: #0f172a; color: #fff;">All Units (${availUnits.length})</option>
               ${availUnits.map(u => `<option value="${u.id}" ${machineReportFilterState.unitId === u.id ? 'selected' : ''} style="background: #0f172a; color: #fff;">${u.name}</option>`).join('')}
             </select>
           </div>
 
           <!-- Floor Filter -->
-          <div style="display: inline-flex; align-items: center; gap: 6px; background: rgba(15, 23, 42, 0.85); border: 1px solid var(--border-color); border-radius: 6px; padding: 2px 8px;">
+          <div style="display: inline-flex; align-items: center; gap: 6px; background: rgba(15, 23, 42, 0.85); border: 1px solid var(--border-color); border-radius: 6px; padding: 3px 8px; flex: 1 1 125px;">
             <span style="font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase;">Floor</span>
-            <select id="mr-filter-floor" style="height: 28px; font-size: 12px; font-weight: 600; color: #fff; background: transparent; border: none; outline: none; cursor: pointer; width: auto; min-width: 110px; max-width: 150px;">
+            <select id="mr-filter-floor" style="height: 28px; font-size: 12px; font-weight: 600; color: #fff; background: transparent; border: none; outline: none; cursor: pointer; width: 100%;">
               <option value="" style="background: #0f172a; color: #fff;">All Floors (${availFloors.length})</option>
               ${availFloors.map(f => `<option value="${f.id}" ${machineReportFilterState.floorId === f.id ? 'selected' : ''} style="background: #0f172a; color: #fff;">${f.name}</option>`).join('')}
             </select>
           </div>
 
           <!-- Line Filter -->
-          <div style="display: inline-flex; align-items: center; gap: 6px; background: rgba(15, 23, 42, 0.85); border: 1px solid var(--border-color); border-radius: 6px; padding: 2px 8px;">
+          <div style="display: inline-flex; align-items: center; gap: 6px; background: rgba(15, 23, 42, 0.85); border: 1px solid var(--border-color); border-radius: 6px; padding: 3px 8px; flex: 1 1 125px;">
             <span style="font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase;">Line</span>
-            <select id="mr-filter-line" style="height: 28px; font-size: 12px; font-weight: 600; color: #fff; background: transparent; border: none; outline: none; cursor: pointer; width: auto; min-width: 100px; max-width: 140px;">
+            <select id="mr-filter-line" style="height: 28px; font-size: 12px; font-weight: 600; color: #fff; background: transparent; border: none; outline: none; cursor: pointer; width: 100%;">
               <option value="" style="background: #0f172a; color: #fff;">All Lines (${availLines.length})</option>
               ${availLines.map(l => {
-    const clean = formatDisplayLine(l.name);
-    const label = clean !== l.name ? `Line ${clean} (${l.name})` : l.name;
-    return `<option value="${l.id}" ${machineReportFilterState.lineId === l.id ? 'selected' : ''} style="background: #0f172a; color: #fff;">${label}</option>`;
-  }).join('')}
+                const clean = formatDisplayLine(l.name);
+                const label = clean !== l.name ? `Line ${clean} (${l.name})` : l.name;
+                return `<option value="${l.id}" ${machineReportFilterState.lineId === l.id ? 'selected' : ''} style="background: #0f172a; color: #fff;">${label}</option>`;
+              }).join('')}
             </select>
           </div>
 
           <!-- Status Filter -->
-          <div style="display: inline-flex; align-items: center; gap: 6px; background: rgba(15, 23, 42, 0.85); border: 1px solid var(--border-color); border-radius: 6px; padding: 2px 8px;">
+          <div style="display: inline-flex; align-items: center; gap: 6px; background: rgba(15, 23, 42, 0.85); border: 1px solid var(--border-color); border-radius: 6px; padding: 3px 8px; flex: 1 1 120px;">
             <span style="font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase;">Status</span>
-            <select id="mr-filter-status" style="height: 28px; font-size: 12px; font-weight: 600; color: #fff; background: transparent; border: none; outline: none; cursor: pointer; width: auto; min-width: 90px; max-width: 125px;">
+            <select id="mr-filter-status" style="height: 28px; font-size: 12px; font-weight: 600; color: #fff; background: transparent; border: none; outline: none; cursor: pointer; width: 100%;">
               <option value="ALL" ${machineReportFilterState.status === 'ALL' ? 'selected' : ''} style="background: #0f172a; color: #fff;">All Status</option>
               <option value="ACTIVE" ${machineReportFilterState.status === 'ACTIVE' ? 'selected' : ''} style="background: #0f172a; color: #fff;">🟢 Active</option>
               <option value="IDLE" ${machineReportFilterState.status === 'IDLE' ? 'selected' : ''} style="background: #0f172a; color: #fff;">🔵 Idle</option>
@@ -944,17 +944,17 @@ function renderMachineReportsTab(allMachines) {
           </div>
 
           <!-- Reset Filter Button -->
-          <button id="mr-btn-reset-filters" class="btn btn-ghost btn-sm" style="height: 32px; padding: 0 10px; font-size: 11.5px; font-weight: 700; color: #94a3b8; border: 1px solid var(--border-color); border-radius: 6px; white-space: nowrap;" title="Reset all location and status filters">
+          <button id="mr-btn-reset-filters" class="btn btn-ghost btn-sm" style="height: 34px; padding: 0 12px; font-size: 11.5px; font-weight: 700; color: #94a3b8; border: 1px solid var(--border-color); border-radius: 6px; white-space: nowrap;" title="Reset all location and status filters">
             ↺ Reset
           </button>
         </div>
 
         <!-- Right: Export & Print Actions -->
         <div class="reports-filter-actions" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-          <button id="btn-export-machine-report-excel" class="btn btn-primary btn-sm" style="font-weight: 700; background: linear-gradient(135deg, #0284c7, #0369a1); box-shadow: 0 2px 8px rgba(2, 132, 199, 0.35); height: 32px; white-space: nowrap;">
+          <button id="btn-export-machine-report-excel" class="btn btn-primary btn-sm" style="font-weight: 700; background: linear-gradient(135deg, #0284c7, #0369a1); box-shadow: 0 2px 8px rgba(2, 132, 199, 0.35); height: 34px; padding: 0 14px; white-space: nowrap; border-radius: 6px;">
             📊 Export Excel (.xlsx)
           </button>
-          <button id="btn-print-machine-report-pdf" class="btn btn-secondary btn-sm" style="font-weight: 700; height: 32px; white-space: nowrap;">
+          <button id="btn-print-machine-report-pdf" class="btn btn-secondary btn-sm" style="font-weight: 700; height: 34px; padding: 0 12px; white-space: nowrap; border-radius: 6px;">
             🖨️ Print / PDF
           </button>
         </div>

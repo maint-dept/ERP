@@ -537,57 +537,58 @@ export function renderInventoryTable() {
         </div>
       </div>
 
-      <!-- 2. Single-Row Ultra-Compact Filter Bar -->
-      <div class="compact-filter-bar" style="padding: 6px 12px; gap: 6px;">
+      <!-- 2. Robust 2-Tier Structured Filter Bar (Zero Squishing, Perfect Readability) -->
+      <div class="compact-filter-bar" style="padding: 10px 14px; display: flex; flex-direction: column; gap: 8px; background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm);">
         
-        <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap; width: 100%;">
+        <!-- Row 1: Search Bar & Primary Hierarchy Dropdowns -->
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; width: 100%;">
           
           <!-- Unified Search Input -->
-          <div class="filter-search-wrap" style="flex: 2; min-width: 220px; position: relative;">
-            <span class="filter-search-icon">🔍</span>
+          <div class="filter-search-wrap" style="flex: 2 1 260px; min-width: 240px; position: relative;">
+            <span class="filter-search-icon" style="left: 12px; font-size: 13px;">🔍</span>
             <input 
               type="text" 
               id="filter-search-input" 
               class="filter-search-input" 
               placeholder="Search machine, serial, brand..." 
               value="${filters.search || ''}"
-              style="height: 30px; font-size: 12px; padding-left: 32px; padding-right: ${filters.search ? '58px' : '32px'};"
+              style="height: 34px; font-size: 12.5px; padding-left: 36px !important; padding-right: ${filters.search ? '64px' : '36px'} !important;"
             />
-            <div class="filter-search-actions">
-              <button id="btn-inventory-scan-qr" type="button" class="filter-search-btn qr-btn" style="height: 22px; width: 24px; font-size: 13px;" title="Scan Machine QR Code / Barcode with Camera">📷</button>
+            <div class="filter-search-actions" style="right: 6px;">
+              <button id="btn-inventory-scan-qr" type="button" class="filter-search-btn qr-btn" style="height: 24px; width: 26px; font-size: 13px;" title="Scan Machine QR Code / Barcode with Camera">📷</button>
               ${filters.search ? `
-                <button id="btn-clear-search" type="button" class="filter-search-btn" style="height: 22px; width: 22px; font-size: 11px;" title="Clear Search">✕</button>
+                <button id="btn-clear-search" type="button" class="filter-search-btn" style="height: 24px; width: 24px; font-size: 12px;" title="Clear Search">✕</button>
               ` : ''}
             </div>
           </div>
 
           <!-- Group -->
-          <div class="filter-select-item" style="min-width: 100px;">
-            <select id="filter-group" class="filter-select-compact" style="height: 30px; font-size: 11.5px;">
+          <div class="filter-select-item" style="flex: 1 1 130px; min-width: 125px;">
+            <select id="filter-group" class="filter-select-compact" style="height: 34px; font-size: 12px; width: 100%;">
               <option value="">All Groups (${groups.length})</option>
               ${groups.map(g => `<option value="${g.id}" ${filters.groupId === g.id ? 'selected' : ''}>${g.name}</option>`).join('')}
             </select>
           </div>
 
           <!-- Unit / Factory -->
-          <div class="filter-select-item" style="min-width: 110px;">
-            <select id="filter-unit" class="filter-select-compact" style="height: 30px; font-size: 11.5px;">
+          <div class="filter-select-item" style="flex: 1 1 140px; min-width: 135px;">
+            <select id="filter-unit" class="filter-select-compact" style="height: 34px; font-size: 12px; width: 100%;">
               <option value="">All Units (${units.length})</option>
               ${units.map(u => `<option value="${u.id}" ${filters.unitId === u.id ? 'selected' : ''}>${u.name}</option>`).join('')}
             </select>
           </div>
 
           <!-- Floor -->
-          <div class="filter-select-item" style="min-width: 95px;">
-            <select id="filter-floor" class="filter-select-compact" style="height: 30px; font-size: 11.5px;">
+          <div class="filter-select-item" style="flex: 1 1 130px; min-width: 125px;">
+            <select id="filter-floor" class="filter-select-compact" style="height: 34px; font-size: 12px; width: 100%;">
               <option value="">All Floors (${floors.length})</option>
               ${floors.map(f => `<option value="${f.id}" ${filters.floorId === f.id ? 'selected' : ''}>${f.name}</option>`).join('')}
             </select>
           </div>
 
           <!-- Line -->
-          <div class="filter-select-item" style="min-width: 95px;">
-            <select id="filter-line" class="filter-select-compact" style="height: 30px; font-size: 11.5px;">
+          <div class="filter-select-item" style="flex: 1 1 130px; min-width: 125px;">
+            <select id="filter-line" class="filter-select-compact" style="height: 34px; font-size: 12px; width: 100%;">
               <option value="">All Lines (${lines.length})</option>
               ${lines.map(l => {
                 const clean = formatDisplayLine(l.name, 'NORMAL');
@@ -597,17 +598,22 @@ export function renderInventoryTable() {
             </select>
           </div>
 
+        </div>
+
+        <!-- Row 2: Machine Details, Status Filter & Table Action Tools -->
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; width: 100%;">
+          
           <!-- Machine Name -->
-          <div class="filter-select-item" style="min-width: 110px;">
-            <select id="filter-machine-name" class="filter-select-compact" style="height: 30px; font-size: 11.5px;">
+          <div class="filter-select-item" style="flex: 1.5 1 160px; min-width: 145px;">
+            <select id="filter-machine-name" class="filter-select-compact" style="height: 32px; font-size: 12px; width: 100%;">
               <option value="">All Machines (${machineNames.length})</option>
               ${machineNames.map(mn => `<option value="${mn.id}" ${filters.machineNameId === mn.id ? 'selected' : ''}>${mn.name}</option>`).join('')}
             </select>
           </div>
 
           <!-- Status -->
-          <div class="filter-select-item" style="min-width: 95px;">
-            <select id="filter-status-select" class="filter-select-compact" style="height: 30px; font-size: 11.5px;">
+          <div class="filter-select-item" style="flex: 1 1 130px; min-width: 120px;">
+            <select id="filter-status-select" class="filter-select-compact" style="height: 32px; font-size: 12px; width: 100%;">
               <option value="ALL" ${!filters.status || filters.status === 'ALL' ? 'selected' : ''}>All Status</option>
               <option value="ACTIVE" ${filters.status === 'ACTIVE' ? 'selected' : ''}>🟢 Active</option>
               <option value="IDLE" ${filters.status === 'IDLE' ? 'selected' : ''}>💤 Idle</option>
@@ -616,19 +622,21 @@ export function renderInventoryTable() {
             </select>
           </div>
 
-          <!-- Action Buttons -->
-          <button id="btn-toggle-advanced-filters" class="btn btn-ghost btn-sm" style="font-size: 11.5px; padding: 4px 8px; color: #38bdf8; height: 30px;" title="Toggle Brand and Model filters">
-            ${showAdvancedFilters ? '▲ Less' : 'More ▾'}
-          </button>
-          
-          <button id="btn-reset-filters" class="btn btn-secondary btn-sm" style="font-weight: 700; font-size: 11.5px; padding: 4px 10px; height: 30px;" title="Reset filters">
-            ↺ Reset
-          </button>
+          <!-- Action Buttons Group -->
+          <div style="display: flex; align-items: center; gap: 6px; margin-left: auto; flex-wrap: wrap;">
+            <button id="btn-toggle-advanced-filters" class="btn btn-ghost btn-sm" style="font-size: 11.5px; padding: 4px 10px; color: #38bdf8; height: 32px; border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 6px;" title="Toggle Brand and Model filters">
+              ${showAdvancedFilters ? '▲ Less' : 'More Filters ▾'}
+            </button>
+            
+            <button id="btn-reset-filters" class="btn btn-secondary btn-sm" style="font-weight: 700; font-size: 11.5px; padding: 4px 12px; height: 32px; border-radius: 6px;" title="Reset filters">
+              ↺ Reset
+            </button>
 
-          <button id="btn-column-picker-inline" class="btn btn-ghost btn-sm" style="font-size: 11.5px; padding: 4px 10px; color: #38bdf8; height: 30px; display: inline-flex; align-items: center; gap: 6px; border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 6px; background: rgba(56, 189, 248, 0.08);" title="Configure visible and frozen columns">
-            <span>Columns &amp; Freeze ▾</span>
-            ${frozenColKeys.length > 0 ? `<span class="badge" style="background: rgba(56, 189, 248, 0.25); color: #38bdf8; font-size: 10px; padding: 1px 5px; font-weight: 800; border: 1px solid rgba(56, 189, 248, 0.4);">❄️ ${frozenColKeys.length}</span>` : ''}
-          </button>
+            <button id="btn-column-picker-inline" class="btn btn-ghost btn-sm" style="font-size: 11.5px; padding: 4px 12px; color: #38bdf8; height: 32px; display: inline-flex; align-items: center; gap: 6px; border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 6px; background: rgba(56, 189, 248, 0.1);" title="Configure visible and frozen columns">
+              <span>❄️ Columns &amp; Freeze ▾</span>
+              ${frozenColKeys.length > 0 ? `<span class="badge" style="background: rgba(56, 189, 248, 0.3); color: #fff; font-size: 10px; padding: 1px 6px; font-weight: 800; border-radius: 10px;">${frozenColKeys.length}</span>` : ''}
+            </button>
+          </div>
 
         </div>
 
