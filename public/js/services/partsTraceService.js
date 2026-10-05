@@ -751,6 +751,18 @@ class PartsTraceService {
       return { matchedMachine: null, status: 'NOT_SPECIFIED', candidates: [] };
     }
 
+    const mnTable = storage.getTable(TABLE_NAMES.MACHINE_NAMES) || [];
+    const brdTable = storage.getTable(TABLE_NAMES.BRANDS) || [];
+    const mdlTable = storage.getTable(TABLE_NAMES.MODELS) || [];
+    const flrTable = storage.getTable(TABLE_NAMES.FLOORS) || [];
+    const linTable = storage.getTable(TABLE_NAMES.LINES) || [];
+
+    const mnMap = new Map(mnTable.map(x => [x.id, x.name]));
+    const brdMap = new Map(brdTable.map(x => [x.id, x.name]));
+    const mdlMap = new Map(mdlTable.map(x => [x.id, x.name]));
+    const flrMap = new Map(flrTable.map(x => [x.id, x.name]));
+    const linMap = new Map(linTable.map(x => [x.id, x.name]));
+
     const cleanLower = textPool.toLowerCase();
     
     // 1. Detect Machine Type abbreviations
@@ -762,6 +774,24 @@ class PartsTraceService {
     else if (/\b(?:b\/k|band knife|cutting)\b/i.test(cleanLower)) detectedType = 'Band Knife Cutting Machine';
     else if (/\b(?:b\/h|button hole)\b/i.test(cleanLower)) detectedType = 'Button Hole Machine';
     else if (/\b(?:b\/a|button attach)\b/i.test(cleanLower)) detectedType = 'Button Attach Machine';
+
+    const enrichMachine = (m) => {
+      if (!m) return null;
+      const mName = mnMap.get(m.machineNameId) || m.machineName || detectedType || 'Plane Machine';
+      const mBrand = brdMap.get(m.brandId) || m.brand || 'Juki';
+      const mModel = mdlMap.get(m.modelId) || m.model || m.modelName || 'Standard';
+      const mFloor = flrMap.get(m.floorId) || m.floorName || floorNameStr || '';
+      const mLine = linMap.get(m.lineId) || m.lineName || lineNameStr || '';
+
+      return {
+        ...m,
+        machineName: mName,
+        brand: mBrand,
+        model: mModel,
+        floorName: mFloor,
+        lineName: mLine
+      };
+    };
 
     // 2. Extract potential serial numbers / machine IDs
     const potentialNumbers = textPool.match(/\b(?:MID-\d{3,8}|MCH-\d{3,8}|SL-\d{2,6}|[A-Z]{1,3}-\d{2,6}|\d{3,6})\b/gi) || [];
@@ -788,24 +818,26 @@ class PartsTraceService {
     }
 
     if (candidates.length === 1) {
+      const enriched = enrichMachine(candidates[0]);
       return { 
-        matchedMachine: candidates[0], 
+        matchedMachine: enriched, 
         status: 'AUTO_MATCHED', 
-        matchReason: `Serial Match: ${candidates[0].serialNumber} (${candidates[0].machineName || detectedType || 'Machine'})` 
+        matchReason: `Serial Match: ${enriched.serialNumber} (${enriched.machineName})` 
       };
     } else if (candidates.length > 1) {
       // Prioritize machine on the matching floor/line
       const floorMatch = candidates.find(m => {
-        const flr = masterDataService.getFloorById ? masterDataService.getFloorById(m.floorId) : null;
-        return (flr && flr.name && flr.name.toLowerCase().includes(floorNameStr.toLowerCase())) ||
+        const flr = flrMap.get(m.floorId) || m.floorName || '';
+        return (flr && flr.toLowerCase().includes(floorNameStr.toLowerCase())) ||
                (m.floorName && m.floorName.toLowerCase().includes(floorNameStr.toLowerCase()));
       });
       const selected = floorMatch || candidates[0];
+      const enriched = enrichMachine(selected);
       return {
-        matchedMachine: selected,
+        matchedMachine: enriched,
         status: 'AUTO_MATCHED',
-        candidates: candidates,
-        matchReason: `Auto-Selected: ${selected.serialNumber}`
+        candidates: candidates.map(enrichMachine),
+        matchReason: `Auto-Selected: ${enriched.serialNumber}`
       };
     }
 
@@ -817,12 +849,32 @@ class PartsTraceService {
 
     if (detectedSerials.length > 0) {
       const bestSerial = detectedSerials[detectedSerials.length - 1]; // Pick the machine code
+      // Check if any machine matches this serial
+      const dbMatch = allMachines.find(m => 
+        (m.serialNumber && m.serialNumber.toLowerCase() === bestSerial.toLowerCase()) ||
+        (m.permanentMachineId && m.permanentMachineId.toLowerCase() === bestSerial.toLowerCase()) ||
+        (m.serialNumber && m.serialNumber.toLowerCase().endsWith(bestSerial.toLowerCase()))
+      );
+
+      if (dbMatch) {
+        const enriched = enrichMachine(dbMatch);
+        return {
+          matchedMachine: enriched,
+          status: 'AUTO_MATCHED',
+          matchReason: `Matched Serial: ${enriched.serialNumber}`
+        };
+      }
+
       return {
         matchedMachine: {
           id: `ext-mac-${bestSerial}`,
           serialNumber: bestSerial,
           permanentMachineId: `MID-${bestSerial}`,
-          machineName: detectedType || 'Sewing Machine',
+          machineName: detectedType || 'Plane Machine (Lockstitch)',
+          brand: 'Juki',
+          model: 'Standard',
+          floorName: floorNameStr || 'Padma Floor',
+          lineName: lineNameStr || 'Padma Floor',
           isExtracted: true
         },
         status: 'AUTO_MATCHED',

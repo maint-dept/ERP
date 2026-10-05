@@ -228,21 +228,25 @@ export function renderPartsTraceView() {
         font-family: var(--font-mono);
       }
 
-      /* Table Styling */
+      /* High-Density Crisp Table Styling */
       .parts-trace-table {
         width: 100%;
         border-collapse: collapse;
-        font-size: 11.5px;
+        font-size: 12px;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        text-rendering: optimizeLegibility;
       }
 
       .parts-trace-table th {
-        background: rgba(15, 23, 42, 0.95);
-        color: #94a3b8;
-        font-size: 10.5px;
+        background: #080e1a;
+        color: #38bdf8;
+        font-size: 11px;
         font-weight: 800;
         text-transform: uppercase;
-        padding: 6px 8px;
-        border-bottom: 1.5px solid rgba(255, 255, 255, 0.1);
+        letter-spacing: 0.5px;
+        padding: 8px 10px;
+        border-bottom: 2px solid rgba(56, 189, 248, 0.3);
         text-align: left;
         white-space: nowrap;
         position: sticky;
@@ -251,22 +255,22 @@ export function renderPartsTraceView() {
       }
 
       .parts-trace-table td {
-        padding: 6px 8px;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-        color: #cbd5e1;
+        padding: 8px 10px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        color: #f1f5f9;
         vertical-align: middle;
       }
 
       .parts-trace-table tr:hover td {
-        background: rgba(255, 255, 255, 0.03);
+        background: rgba(56, 189, 248, 0.06);
       }
 
       /* Smart Dropdown & Combobox Controls */
       .smart-dropdown-trigger {
-        background: rgba(15, 23, 42, 0.75);
-        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: #090e1a;
+        border: 1.5px solid rgba(56, 189, 248, 0.25);
         border-radius: 6px;
-        padding: 4px 8px;
+        padding: 6px 10px;
         cursor: pointer;
         display: flex;
         align-items: center;
@@ -275,31 +279,31 @@ export function renderPartsTraceView() {
         width: 100%;
         text-align: left;
         transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
-        color: #cbd5e1;
+        color: #ffffff;
       }
 
       .smart-dropdown-trigger:hover {
         border-color: #38bdf8;
-        background: rgba(56, 189, 248, 0.1);
-        box-shadow: 0 0 10px rgba(56, 189, 248, 0.2);
+        background: rgba(56, 189, 248, 0.12);
+        box-shadow: 0 0 12px rgba(56, 189, 248, 0.25);
       }
 
       .smart-dropdown-trigger.has-val {
-        border-color: rgba(56, 189, 248, 0.35);
-        background: rgba(15, 23, 42, 0.9);
+        border-color: rgba(56, 189, 248, 0.45);
+        background: #0d1527;
       }
 
       .smart-chip {
         display: inline-flex;
         align-items: center;
         gap: 4px;
-        padding: 3px 9px;
-        font-size: 10.5px;
+        padding: 4px 10px;
+        font-size: 11px;
         font-weight: 700;
         border-radius: 12px;
-        background: rgba(56, 189, 248, 0.12);
+        background: rgba(56, 189, 248, 0.15);
         color: #38bdf8;
-        border: 1px solid rgba(56, 189, 248, 0.3);
+        border: 1px solid rgba(56, 189, 248, 0.35);
         cursor: pointer;
         transition: all 0.15s ease;
       }
@@ -309,13 +313,14 @@ export function renderPartsTraceView() {
         color: #fff;
         border-color: #38bdf8;
         transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(2, 132, 199, 0.4);
       }
 
       .smart-item-row {
-        padding: 7px 10px;
+        padding: 8px 12px;
         border-radius: 6px;
-        border: 1px solid rgba(255, 255, 255, 0.06);
-        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.03);
         display: flex;
         justify-content: space-between;
         align-items: center;
@@ -324,17 +329,18 @@ export function renderPartsTraceView() {
       }
 
       .smart-item-row:hover {
-        background: rgba(56, 189, 248, 0.15);
+        background: rgba(56, 189, 248, 0.18);
         border-color: #38bdf8;
         transform: translateX(2px);
+        box-shadow: 0 2px 10px rgba(56, 189, 248, 0.2);
       }
 
       .smart-dropdown-popover {
         position: fixed;
-        background: #090d16;
+        background: #080d18;
         border: 1.5px solid #38bdf8;
         border-radius: 10px;
-        box-shadow: 0 20px 45px rgba(0, 0, 0, 0.85), 0 0 15px rgba(56, 189, 248, 0.25);
+        box-shadow: 0 25px 60px rgba(0, 0, 0, 0.95), 0 0 25px rgba(56, 189, 248, 0.25);
         z-index: 10080;
         overflow: hidden;
         animation: dropFadeIn 0.15s ease-out;
@@ -708,30 +714,30 @@ function renderReviewTab() {
               const statusBadge = r.status === 'AUTO_MATCHED' ? '🟢 Matched' : (r.status === 'REVIEW_REQUIRED' ? '🟡 Review' : '🔴 Error');
 
               return `
-                <tr data-draft-id="${r.draftId}">
-                  <td style="color: var(--text-muted); font-weight: 700;">${r.sl}</td>
+                <tr data-draft-id="${r.draftId}" style="transition: background 0.15s ease;">
+                  <td style="color: #94a3b8; font-weight: 800; font-family: var(--font-mono); text-align: center;">${r.sl}</td>
                   <td>
-                    <span style="font-family: var(--font-mono); font-weight: 800; color: #38bdf8;">${r.erpNo}</span>
+                    <span style="font-family: var(--font-mono); font-weight: 800; color: #38bdf8; font-size: 12px; letter-spacing: 0.3px;">${r.erpNo}</span>
                   </td>
                   <td>
-                    <div style="color: #fff; font-weight: 600;">${r.floorName}</div>
-                    <div style="font-size: 10px; color: var(--text-muted);">${r.lineName}</div>
+                    <div style="color: #ffffff; font-weight: 700; font-size: 12px;">${r.floorName}</div>
+                    <div style="font-size: 10.5px; color: #94a3b8; font-weight: 600; font-family: var(--font-mono);">${r.lineName}</div>
                   </td>
                   <td>
                     <!-- Smart Matched Part Dropdown Trigger -->
                     <button type="button" class="smart-dropdown-trigger btn-open-smart-part-modal ${r.partId ? 'has-val' : ''}" data-draft-id="${r.draftId}" title="Click to search and change spare part">
                       <div style="display: flex; flex-direction: column; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;">
-                        <div style="font-weight: 700; color: #fff; font-size: 11.5px; overflow: hidden; text-overflow: ellipsis;">${r.partName}</div>
-                        <div style="display: flex; gap: 4px; align-items: center; margin-top: 1px;">
-                          <span style="font-family: var(--font-mono); font-size: 9.5px; color: #38bdf8; background: rgba(56,189,248,0.12); padding: 0 4px; border-radius: 3px; border: 1px solid rgba(56,189,248,0.3);">
+                        <div style="font-weight: 800; color: #ffffff; font-size: 12px; overflow: hidden; text-overflow: ellipsis;">${r.partName}</div>
+                        <div style="display: flex; gap: 5px; align-items: center; margin-top: 2px;">
+                          <span style="font-family: var(--font-mono); font-size: 10px; font-weight: 800; color: #38bdf8; background: rgba(56,189,248,0.15); padding: 1px 5px; border-radius: 4px; border: 1px solid rgba(56,189,248,0.35);">
                             ${r.partCode || 'NO CODE'}
                           </span>
-                          <span style="font-size: 9px; color: var(--text-muted); font-style: italic; overflow: hidden; text-overflow: ellipsis; max-width: 140px;">
+                          <span style="font-size: 10px; color: #94a3b8; font-style: italic; overflow: hidden; text-overflow: ellipsis; max-width: 150px;">
                             "${r.rawItemName}"
                           </span>
                         </div>
                       </div>
-                      <span style="color: #38bdf8; font-size: 10px; margin-left: 4px; flex-shrink: 0;">▼</span>
+                      <span style="color: #38bdf8; font-size: 11px; margin-left: 4px; flex-shrink: 0;">▼</span>
                     </button>
                   </td>
                   <td>
@@ -742,9 +748,9 @@ function renderReviewTab() {
                         data-draft-id="${r.draftId}" 
                         value="${r.issueQty}" 
                         min="1" 
-                        style="width: 44px; height: 24px; font-size: 11.5px; padding: 2px 4px; text-align: center; background: #090d16; border: 1px solid rgba(255,255,255,0.15); border-radius: 4px; color: #34d399; font-weight: 800;"
+                        style="width: 48px; height: 26px; font-size: 12px; padding: 2px 4px; text-align: center; background: #060a14; border: 1.5px solid rgba(52,211,153,0.4); border-radius: 4px; color: #34d399; font-weight: 800; font-family: var(--font-mono);"
                       />
-                      <span style="font-size: 10px; color: var(--text-muted); font-weight: 700;">${r.uom}</span>
+                      <span style="font-size: 11px; color: #e2e8f0; font-weight: 800;">${r.uom}</span>
                     </div>
                   </td>
                   <td>
@@ -752,16 +758,23 @@ function renderReviewTab() {
                     <button type="button" class="smart-dropdown-trigger btn-open-smart-machine-modal ${r.machineSerial ? 'has-val' : ''}" data-draft-id="${r.draftId}" title="Click to search and change machine">
                       <div style="display: flex; flex-direction: column; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;">
                         ${r.machineSerial ? `
-                          <div style="display: flex; align-items: center; gap: 4px;">
-                            <span style="font-family: var(--font-mono); font-weight: 800; color: #fbbf24; font-size: 11.5px;">🛠️ ${r.machineSerial}</span>
-                            <span class="badge" style="background: rgba(251,191,36,0.18); color: #fbbf24; font-size: 8px; padding: 0 4px; border: 1px solid rgba(251,191,36,0.35);">Auto</span>
+                          <div style="display: flex; align-items: center; gap: 5px;">
+                            <span style="font-family: var(--font-mono); font-weight: 900; color: #fbbf24; font-size: 12.5px;">🛠️ ${r.machineSerial}</span>
+                            <span class="badge" style="background: rgba(251,191,36,0.2); color: #fbbf24; font-size: 8.5px; font-weight: 800; padding: 1px 5px; border: 1px solid rgba(251,191,36,0.4);">AUTO</span>
                           </div>
-                          <span style="font-size: 9.5px; color: #cbd5e1; overflow: hidden; text-overflow: ellipsis;">${r.machineName || 'Machine'}</span>
+                          <div style="font-size: 11px; color: #ffffff; font-weight: 700; overflow: hidden; text-overflow: ellipsis; margin-top: 1px;">
+                            ${r.machineName || 'Plane Machine'}
+                          </div>
+                          ${r.machineBrand || r.machineModel ? `
+                            <div style="font-size: 9.5px; color: #94a3b8; overflow: hidden; text-overflow: ellipsis;">
+                              ${r.machineBrand || ''}${r.machineModel ? ' • ' + r.machineModel : ''}
+                            </div>
+                          ` : ''}
                         ` : `
-                          <span style="font-size: 11px; color: #94a3b8;">🔍 Select Machine</span>
+                          <span style="font-size: 11.5px; color: #38bdf8; font-weight: 700;">🔍 Select Machine</span>
                         `}
                       </div>
-                      <span style="color: #38bdf8; font-size: 10px; margin-left: 4px; flex-shrink: 0;">▼</span>
+                      <span style="color: #38bdf8; font-size: 11px; margin-left: 4px; flex-shrink: 0;">▼</span>
                     </button>
                     ${r.comments ? `<div style="font-size: 9.5px; color: #94a3b8; margin-top: 2px; padding-left: 2px;"><em>"${r.comments}"</em></div>` : ''}
                   </td>
@@ -770,25 +783,25 @@ function renderReviewTab() {
                     <button type="button" class="smart-dropdown-trigger btn-open-smart-tech-modal ${r.technicianName ? 'has-val' : ''}" data-draft-id="${r.draftId}" title="Click to search and change technician">
                       <div style="display: flex; flex-direction: column; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;">
                         ${r.technicianName ? `
-                          <div style="display: flex; align-items: center; gap: 4px;">
-                            <strong style="color: #38bdf8; font-size: 11.5px;">👷 ${r.technicianName}</strong>
-                            <span class="badge" style="background: rgba(56,189,248,0.18); color: #38bdf8; font-size: 8px; padding: 0 4px; border: 1px solid rgba(56,189,248,0.35);">Auto</span>
+                          <div style="display: flex; align-items: center; gap: 5px;">
+                            <strong style="color: #38bdf8; font-size: 12px; font-weight: 800;">👷 ${r.technicianName}</strong>
+                            <span class="badge" style="background: rgba(56,189,248,0.2); color: #38bdf8; font-size: 8.5px; font-weight: 800; padding: 1px 5px; border: 1px solid rgba(56,189,248,0.4);">AUTO</span>
                           </div>
-                          <span style="font-size: 9px; color: var(--text-muted); font-family: var(--font-mono);">${r.technicianCard && r.technicianCard !== '—' ? `Card: ${r.technicianCard}` : 'Mechanic'}</span>
+                          <span style="font-size: 9.5px; color: #94a3b8; font-family: var(--font-mono);">${r.technicianCard && r.technicianCard !== '—' ? `Card: ${r.technicianCard}` : 'Mechanic'}</span>
                         ` : `
-                          <span style="font-size: 11px; color: #94a3b8;">+ Assign Tech</span>
+                          <span style="font-size: 11.5px; color: #38bdf8; font-weight: 700;">+ Assign Tech</span>
                         `}
                       </div>
-                      <span style="color: #38bdf8; font-size: 10px; margin-left: 4px; flex-shrink: 0;">▼</span>
+                      <span style="color: #38bdf8; font-size: 11px; margin-left: 4px; flex-shrink: 0;">▼</span>
                     </button>
                   </td>
                   <td>
-                    <span class="badge" style="font-size: 9.5px; padding: 2px 6px; border: 1px solid ${statusColor}; color: ${statusColor}; background: rgba(0,0,0,0.3);">
+                    <span class="badge" style="font-size: 10px; font-weight: 800; padding: 3px 8px; border: 1.5px solid ${statusColor}; color: ${statusColor}; background: rgba(0,0,0,0.5); border-radius: 4px;">
                       ${statusBadge}
                     </span>
                   </td>
                   <td style="text-align: right;">
-                    <button type="button" class="btn btn-ghost btn-xs btn-delete-draft-row" data-draft-id="${r.draftId}" style="color: #f87171; font-size: 12px; padding: 2px 6px;" title="Remove Row">
+                    <button type="button" class="btn btn-ghost btn-xs btn-delete-draft-row" data-draft-id="${r.draftId}" style="color: #f87171; font-size: 13px; padding: 2px 6px;" title="Remove Row">
                       🗑️
                     </button>
                   </td>
@@ -1196,6 +1209,41 @@ function renderReportsTab() {
 }
 
 // ─────────────────────────────────────────────────────────────
+// Helper: Resolve & Enrich All Machines with Master Data
+// ─────────────────────────────────────────────────────────────
+function getEnrichedMachinesList() {
+  const allMachines = storage.getTable(TABLE_NAMES.MACHINES) || [];
+  const mnTable = storage.getTable(TABLE_NAMES.MACHINE_NAMES) || [];
+  const brdTable = storage.getTable(TABLE_NAMES.BRANDS) || [];
+  const mdlTable = storage.getTable(TABLE_NAMES.MODELS) || [];
+  const flrTable = storage.getTable(TABLE_NAMES.FLOORS) || [];
+  const linTable = storage.getTable(TABLE_NAMES.LINES) || [];
+
+  const mnMap = new Map(mnTable.map(x => [x.id, x.name]));
+  const brdMap = new Map(brdTable.map(x => [x.id, x.name]));
+  const mdlMap = new Map(mdlTable.map(x => [x.id, x.name]));
+  const flrMap = new Map(flrTable.map(x => [x.id, x.name]));
+  const linMap = new Map(linTable.map(x => [x.id, x.name]));
+
+  return allMachines.map(m => {
+    const resolvedName = mnMap.get(m.machineNameId) || m.machineName || m.name || (m.brand ? m.brand + ' Machine' : 'Sewing Machine');
+    const resolvedBrand = brdMap.get(m.brandId) || m.brand || 'Juki';
+    const resolvedModel = mdlMap.get(m.modelId) || m.model || m.modelName || 'Standard';
+    const resolvedFloor = flrMap.get(m.floorId) || m.floorName || m.floor || '';
+    const resolvedLine = linMap.get(m.lineId) || m.lineName || m.line || '';
+
+    return {
+      ...m,
+      resolvedName,
+      resolvedBrand,
+      resolvedModel,
+      resolvedFloor,
+      resolvedLine
+    };
+  });
+}
+
+// ─────────────────────────────────────────────────────────────
 // 7. SMART MODALS: MACHINE, TECHNICIAN, PART, MANUAL ISSUE
 // ─────────────────────────────────────────────────────────────
 
@@ -1204,89 +1252,152 @@ function renderSmartMachineModal() {
   const draft = activeDraftRows.find(d => d.draftId === selectedMachineDraftId);
   if (!draft) return '';
 
-  const allMachines = storage.getTable(TABLE_NAMES.MACHINES) || [];
+  const enrichedMachines = getEnrichedMachinesList();
   
-  // Floor machines priority
-  const floorMachines = allMachines.filter(m => 
-    draft.floorName && m.floorName && m.floorName.toLowerCase().includes(draft.floorName.toLowerCase())
-  ).slice(0, 20);
+  // Floor & Line machines priority matching
+  const draftFloor = (draft.floorName || '').toLowerCase().trim();
+  const draftLine = (draft.lineName || '').toLowerCase().trim();
+
+  let floorMachines = enrichedMachines.filter(m => {
+    const mFlr = (m.resolvedFloor || '').toLowerCase();
+    const mLin = (m.resolvedLine || '').toLowerCase();
+    if (draftLine && (mLin === draftLine || mLin.includes(draftLine) || (draftLine.includes('padma-b') && (mLin === 'pd-b' || mLin === 'padma-b')))) {
+      return true;
+    }
+    if (draftFloor && (mFlr.includes(draftFloor) || mFlr === draftFloor || (draftFloor.includes('padma') && mFlr.includes('padma')))) {
+      return true;
+    }
+    return false;
+  });
+
+  // Sort so exact line matches come first, then floor matches, then numeric serial order
+  floorMachines.sort((a, b) => {
+    const aLineMatch = draftLine && (a.resolvedLine.toLowerCase() === draftLine || a.resolvedLine.toLowerCase().includes(draftLine));
+    const bLineMatch = draftLine && (b.resolvedLine.toLowerCase() === draftLine || b.resolvedLine.toLowerCase().includes(draftLine));
+    if (aLineMatch && !bLineMatch) return -1;
+    if (!aLineMatch && bLineMatch) return 1;
+    return (a.serialNumber || '').localeCompare(b.serialNumber || '', undefined, { numeric: true });
+  });
+
+  if (floorMachines.length === 0) {
+    floorMachines = enrichedMachines.slice(0, 30);
+  } else {
+    floorMachines = floorMachines.slice(0, 35);
+  }
 
   // Extract detected number from comment if any
-  const detectedNumber = draft.comments ? draft.comments.match(/\b\d{3,6}\b/)?.[0] : null;
+  const detectedNumber = draft.comments ? draft.comments.match(/\b(?:MID-\d{3,8}|MCH-\d{3,8}|SL-\d{2,6}|[A-Z]{1,3}-\d{2,6}|\d{3,6})\b/gi)?.[0] : null;
+  let detectedMachine = null;
+  if (detectedNumber) {
+    detectedMachine = enrichedMachines.find(m => 
+      (m.serialNumber && m.serialNumber.toLowerCase() === detectedNumber.toLowerCase()) ||
+      (m.permanentMachineId && m.permanentMachineId.toLowerCase() === detectedNumber.toLowerCase()) ||
+      (m.serialNumber && m.serialNumber.toLowerCase().endsWith(detectedNumber.toLowerCase()))
+    );
+  }
 
   return `
     <div class="modal-overlay" id="modal-smart-machine-overlay" style="z-index: 10080;">
-      <div class="modal-dialog" style="max-width: 520px; width: 95%;">
+      <div class="modal-dialog" style="max-width: 560px; width: 95%;">
         
-        <div class="modal-header" style="border-bottom: 1px solid rgba(255,255,255,0.1); padding: 10px 16px;">
-          <div class="modal-title" style="display: flex; align-items: center; gap: 8px;">
-            <span>🛠️</span> Assign Machine for ${draft.floorName} / ${draft.lineName}
+        <div class="modal-header" style="background: linear-gradient(90deg, rgba(2, 132, 199, 0.25) 0%, rgba(15, 23, 42, 0.95) 100%); border-bottom: 1.5px solid rgba(56,189,248,0.35); padding: 12px 18px;">
+          <div class="modal-title" style="display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 14px; color: #ffffff;">
+            <span style="font-size: 16px;">🛠️</span> Assign Machine for <span style="color: #38bdf8;">${draft.floorName}</span> / <span style="color: #34d399;">${draft.lineName}</span>
           </div>
-          <button type="button" id="btn-close-smart-machine-modal" class="btn btn-ghost btn-sm" style="font-size: 16px; border-radius: 50%;">✕</button>
+          <button type="button" id="btn-close-smart-machine-modal" class="btn btn-ghost btn-sm" style="font-size: 16px; border-radius: 50%; color: #94a3b8;">✕</button>
         </div>
 
-        <div style="padding: 14px 16px; display: flex; flex-direction: column; gap: 12px; max-height: 80vh; overflow-y: auto;">
+        <div style="padding: 16px 18px; display: flex; flex-direction: column; gap: 14px; max-height: 80vh; overflow-y: auto;">
           
           <!-- Auto Detected Suggestion Pill -->
           ${detectedNumber ? `
-            <div style="background: rgba(251,191,36,0.1); border: 1px solid rgba(251,191,36,0.3); border-radius: 6px; padding: 8px 10px; display: flex; justify-content: space-between; align-items: center;">
-              <div>
-                <span style="font-size: 10px; color: #fbbf24; font-weight: 700; text-transform: uppercase;">Detected from Note:</span>
-                <div style="font-family: var(--font-mono); font-weight: 800; font-size: 14px; color: #fff;">${detectedNumber} (${draft.comments})</div>
+            <div style="background: rgba(251,191,36,0.12); border: 1.5px solid rgba(251,191,36,0.45); border-radius: 8px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+              <div style="min-width: 0;">
+                <div style="display: flex; align-items: center; gap: 6px;">
+                  <span style="font-size: 10.5px; color: #fbbf24; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">⚡ Detected from Note:</span>
+                  <span class="badge" style="background: rgba(251,191,36,0.25); color: #fbbf24; font-weight: 800; font-size: 9.5px; padding: 1px 6px; border: 1px solid rgba(251,191,36,0.5);">Auto Match</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px; flex-wrap: wrap;">
+                  <span style="font-family: var(--font-mono); font-weight: 900; font-size: 14px; color: #38bdf8;">${detectedMachine ? detectedMachine.serialNumber : detectedNumber}</span>
+                  <span style="color: #ffffff; font-weight: 700; font-size: 12.5px;">${detectedMachine ? detectedMachine.resolvedName : (draft.machineName || 'Plane Machine')}</span>
+                  <span style="font-size: 11px; color: #cbd5e1; background: rgba(255,255,255,0.08); padding: 1px 6px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.12);">
+                    ${detectedMachine ? `${detectedMachine.resolvedBrand} • ${detectedMachine.resolvedModel}` : 'Juki • Standard'}
+                  </span>
+                  ${draft.comments ? `<span style="font-size: 10.5px; color: #94a3b8; font-style: italic;">"${draft.comments}"</span>` : ''}
+                </div>
               </div>
-              <button type="button" class="btn btn-warning btn-xs btn-pick-quick-machine" data-serial="${detectedNumber}" data-name="Machine ${detectedNumber}" style="font-weight: 800; padding: 4px 10px;">
-                Use ${detectedNumber}
+              <button type="button" class="btn btn-warning btn-sm btn-pick-quick-machine" 
+                data-id="${detectedMachine ? detectedMachine.id : ''}"
+                data-serial="${detectedMachine ? detectedMachine.serialNumber : detectedNumber}" 
+                data-name="${detectedMachine ? detectedMachine.resolvedName : (draft.machineName || 'Plane Machine')}" 
+                data-brand="${detectedMachine ? detectedMachine.resolvedBrand : 'Juki'}" 
+                data-model="${detectedMachine ? detectedMachine.resolvedModel : 'Standard'}" 
+                style="font-weight: 800; padding: 6px 14px; white-space: nowrap; box-shadow: 0 2px 8px rgba(251,191,36,0.3);">
+                Use ${detectedMachine ? detectedMachine.serialNumber : detectedNumber}
               </button>
             </div>
           ` : ''}
 
           <!-- Search Input -->
           <div>
-            <label class="form-label" style="font-size: 11.5px; color: #38bdf8; font-weight: 700;">🔍 Search Machine Catalog:</label>
+            <label class="form-label" style="font-size: 12px; color: #38bdf8; font-weight: 800; margin-bottom: 4px;">🔍 Search Machine Catalog (2,000+ Floor Inventory):</label>
             <input 
               type="text" 
               id="inp-search-smart-machine" 
               class="form-control" 
-              placeholder="Type serial number (e.g. 7402, 5369, SL-836)..." 
+              placeholder="Type serial number (e.g. 7402, 5369, SL-836), name, brand, line..." 
               autofocus 
-              style="font-size: 13px; font-weight: 700; background: #090d16;"
+              style="font-size: 13px; font-weight: 700; background: #060a14; border: 1.5px solid rgba(56,189,248,0.35); color: #ffffff;"
             />
           </div>
 
           <!-- Quick Actions / Floor Machines -->
           <div style="display: flex; flex-direction: column; gap: 6px;">
-            <div style="font-size: 10.5px; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">
-              Floor Machines (${draft.floorName}):
+            <div style="font-size: 11px; color: #38bdf8; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; display: flex; justify-content: space-between;">
+              <span>Floor Machines (${draft.floorName}):</span>
+              <span style="color: #94a3b8; font-weight: 600; text-transform: none;">Showing ${floorMachines.length} suggestions</span>
             </div>
-            <div id="smart-machine-results-list" style="display: flex; flex-direction: column; gap: 4px; max-height: 200px; overflow-y: auto;">
+            <div id="smart-machine-results-list" style="display: flex; flex-direction: column; gap: 4px; max-height: 240px; overflow-y: auto; padding-right: 2px;">
               ${floorMachines.map(m => `
-                <div class="smart-item-row btn-pick-smart-machine-row" data-id="${m.id}" data-serial="${m.serialNumber}" data-name="${m.machineName || 'Sewing Machine'}" data-brand="${m.brand || ''}" data-model="${m.model || ''}">
-                  <div>
-                    <strong style="font-family: var(--font-mono); color: #fbbf24; font-size: 12.5px;">${m.serialNumber}</strong>
-                    <span style="color: #fff; font-size: 11px; margin-left: 6px;">${m.machineName || 'Machine'}</span>
-                    <span style="font-size: 10px; color: var(--text-muted); margin-left: 4px;">(${m.brand || ''} ${m.model || ''})</span>
+                <div class="smart-item-row btn-pick-smart-machine-row" data-id="${m.id}" data-serial="${m.serialNumber}" data-name="${m.resolvedName}" data-brand="${m.resolvedBrand}" data-model="${m.resolvedModel}">
+                  <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0;">
+                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                      <strong style="font-family: var(--font-mono); color: #38bdf8; font-size: 13px; font-weight: 800; letter-spacing: 0.3px;">${m.serialNumber}</strong>
+                      <span style="color: #ffffff; font-size: 12px; font-weight: 700;">${m.resolvedName}</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 6px; margin-top: 1px;">
+                      <span style="font-size: 10.5px; color: #cbd5e1; background: rgba(255,255,255,0.06); padding: 1px 6px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1);">
+                        ${m.resolvedBrand} • ${m.resolvedModel}
+                      </span>
+                      ${m.customValues?.machine_code ? `<span style="font-size: 10px; color: #a78bfa; font-family: var(--font-mono); font-weight: 700;">[${m.customValues.machine_code}]</span>` : ''}
+                    </div>
                   </div>
-                  <span style="font-size: 10px; color: #38bdf8; font-family: var(--font-mono);">${m.lineStr || m.lineName || draft.lineName}</span>
+                  <div style="text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 2px; flex-shrink: 0; margin-left: 8px;">
+                    <span class="badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; font-family: var(--font-mono); font-size: 10.5px; font-weight: 800; border: 1px solid rgba(56, 189, 248, 0.35); padding: 2px 8px; border-radius: 4px;">
+                      ${m.resolvedLine || m.resolvedFloor || 'Floor'}
+                    </span>
+                    ${m.resolvedFloor ? `<span style="font-size: 9.5px; color: #94a3b8;">${m.resolvedFloor}</span>` : ''}
+                  </div>
                 </div>
               `).join('')}
             </div>
           </div>
 
           <!-- Custom Machine Serial Manual Field -->
-          <div style="border-top: 1px solid rgba(255,255,255,0.08); padding-top: 10px;">
-            <label class="form-label" style="font-size: 11px; color: var(--text-muted);">Or Enter Custom Machine Serial / ID:</label>
-            <div style="display: flex; gap: 6px;">
-              <input type="text" id="inp-custom-machine-serial" class="form-control" placeholder="e.g. 7402, M-101" value="${draft.machineSerial || ''}" style="font-family: var(--font-mono); font-weight: 700; font-size: 12px;" />
-              <button type="button" id="btn-apply-custom-machine-serial" class="btn btn-primary btn-sm" style="font-weight: 800; padding: 0 14px; white-space: nowrap;">
+          <div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 12px;">
+            <label class="form-label" style="font-size: 11.5px; color: #94a3b8; font-weight: 700;">Or Enter Custom Machine Serial / ID Manually:</label>
+            <div style="display: flex; gap: 8px;">
+              <input type="text" id="inp-custom-machine-serial" class="form-control" placeholder="e.g. 7402, M-101" value="${draft.machineSerial || ''}" style="font-family: var(--font-mono); font-weight: 800; font-size: 12.5px; background: #060a14; color: #ffffff;" />
+              <button type="button" id="btn-apply-custom-machine-serial" class="btn btn-primary btn-sm" style="font-weight: 800; padding: 0 16px; white-space: nowrap; background: #0284c7; border-color: #38bdf8;">
                 Set Machine
               </button>
             </div>
           </div>
 
           <!-- Batch Apply Options -->
-          <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 6px; padding: 8px 10px; display: flex; flex-direction: column; gap: 6px; font-size: 11px;">
-            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; color: #cbd5e1;">
-              <input type="checkbox" id="chk-machine-apply-line" /> Apply this machine to all unassigned rows on <strong>${draft.lineName}</strong>
+          <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; font-size: 11.5px;">
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #e2e8f0; font-weight: 600;">
+              <input type="checkbox" id="chk-machine-apply-line" style="width: 15px; height: 15px; accent-color: #38bdf8;" /> Apply this machine to all unassigned rows on <strong style="color: #38bdf8;">${draft.lineName}</strong>
             </label>
           </div>
 
@@ -1454,7 +1565,7 @@ function renderManualIssueModal() {
 
   const parts = partsTraceService.getAllParts();
   const employees = storage.getTable(TABLE_NAMES.EMPLOYEES) || [];
-  const machines = storage.getTable(TABLE_NAMES.MACHINES) || [];
+  const enrichedMachines = getEnrichedMachinesList();
 
   return `
     <div class="modal-overlay" id="modal-manual-issue-overlay" style="z-index: 10050;">
@@ -1503,7 +1614,7 @@ function renderManualIssueModal() {
             <label class="form-label" style="font-size: 11.5px; color: #38bdf8; font-weight: 700;">Machine (Optional):</label>
             <select id="man-sel-machine" class="form-control" style="font-size: 12px;">
               <option value="">-- No Machine / General Floor Stock --</option>
-              ${machines.map(m => `<option value="${m.id}" data-serial="${m.serialNumber}" data-name="${m.machineName || ''}">${m.serialNumber} — ${m.machineName || 'Machine'} (${m.floorStr || ''} / ${m.lineStr || ''})</option>`).join('')}
+              ${enrichedMachines.slice(0, 150).map(m => `<option value="${m.id}" data-serial="${m.serialNumber}" data-name="${m.resolvedName}" data-brand="${m.resolvedBrand}" data-model="${m.resolvedModel}">${m.serialNumber} — ${m.resolvedName} (${m.resolvedBrand} ${m.resolvedModel}) [${m.resolvedFloor} / ${m.resolvedLine}]</option>`).join('')}
             </select>
           </div>
 
@@ -2020,8 +2131,11 @@ export function initPartsTraceEvents() {
     btn.addEventListener('click', () => {
       const serial = btn.getAttribute('data-serial');
       const name = btn.getAttribute('data-name');
+      const brand = btn.getAttribute('data-brand') || 'Juki';
+      const model = btn.getAttribute('data-model') || 'Standard';
+      const id = btn.getAttribute('data-id') || '';
       const applyLine = root.querySelector('#chk-machine-apply-line')?.checked;
-      applyMachineSelection({ serialNumber: serial, machineName: name }, applyLine);
+      applyMachineSelection({ id, serialNumber: serial, machineName: name, brand, model }, applyLine);
     });
   });
 
@@ -2044,8 +2158,28 @@ export function initPartsTraceEvents() {
     btnApplyCustomMachine.addEventListener('click', () => {
       const serial = root.querySelector('#inp-custom-machine-serial')?.value.trim();
       if (!serial) return;
+      
+      const enrichedMachines = getEnrichedMachinesList();
+      const match = enrichedMachines.find(m => 
+        (m.serialNumber && m.serialNumber.toLowerCase() === serial.toLowerCase()) ||
+        (m.permanentMachineId && m.permanentMachineId.toLowerCase() === serial.toLowerCase())
+      );
+
+      const mData = match ? {
+        id: match.id,
+        serialNumber: match.serialNumber,
+        machineName: match.resolvedName,
+        brand: match.resolvedBrand,
+        model: match.resolvedModel
+      } : {
+        serialNumber: serial,
+        machineName: 'Plane Machine',
+        brand: 'Juki',
+        model: 'Standard'
+      };
+
       const applyLine = root.querySelector('#chk-machine-apply-line')?.checked;
-      applyMachineSelection({ serialNumber: serial, machineName: 'Sewing Machine' }, applyLine);
+      applyMachineSelection(mData, applyLine);
     });
   }
 
@@ -2056,28 +2190,42 @@ export function initPartsTraceEvents() {
       const listContainer = root.querySelector('#smart-machine-results-list');
       if (!listContainer) return;
 
-      const allMachines = storage.getTable(TABLE_NAMES.MACHINES) || [];
-      const matches = allMachines.filter(m =>
+      const enrichedMachines = getEnrichedMachinesList();
+      const matches = enrichedMachines.filter(m =>
         (m.serialNumber && m.serialNumber.toLowerCase().includes(q)) ||
         (m.permanentMachineId && m.permanentMachineId.toLowerCase().includes(q)) ||
-        (m.machineName && m.machineName.toLowerCase().includes(q)) ||
-        (m.brand && m.brand.toLowerCase().includes(q)) ||
-        (m.floorStr && m.floorStr.toLowerCase().includes(q)) ||
-        (m.lineStr && m.lineStr.toLowerCase().includes(q))
-      ).slice(0, 30);
+        (m.resolvedName && m.resolvedName.toLowerCase().includes(q)) ||
+        (m.resolvedBrand && m.resolvedBrand.toLowerCase().includes(q)) ||
+        (m.resolvedModel && m.resolvedModel.toLowerCase().includes(q)) ||
+        (m.resolvedFloor && m.resolvedFloor.toLowerCase().includes(q)) ||
+        (m.resolvedLine && m.resolvedLine.toLowerCase().includes(q)) ||
+        (m.customValues?.machine_code && String(m.customValues.machine_code).toLowerCase().includes(q))
+      ).slice(0, 35);
 
       listContainer.innerHTML = matches.length === 0 ? `
-        <div style="color: var(--text-muted); font-size: 11px; padding: 10px; text-align: center;">
-          No matching machines found. Enter custom serial below.
+        <div style="color: #94a3b8; font-size: 11.5px; padding: 14px; text-align: center; background: rgba(255,255,255,0.02); border-radius: 6px;">
+          No matching machines found for "<strong>${q}</strong>". Enter custom serial below.
         </div>
       ` : matches.map(m => `
-        <div class="smart-item-row btn-pick-smart-machine-row" data-id="${m.id}" data-serial="${m.serialNumber}" data-name="${m.machineName || 'Sewing Machine'}" data-brand="${m.brand || ''}" data-model="${m.model || ''}">
-          <div>
-            <strong style="font-family: var(--font-mono); color: #fbbf24; font-size: 12.5px;">${m.serialNumber}</strong>
-            <span style="color: #fff; font-size: 11px; margin-left: 6px;">${m.machineName || 'Machine'}</span>
-            <span style="font-size: 10px; color: var(--text-muted); margin-left: 4px;">(${m.brand || ''} ${m.model || ''})</span>
+        <div class="smart-item-row btn-pick-smart-machine-row" data-id="${m.id}" data-serial="${m.serialNumber}" data-name="${m.resolvedName}" data-brand="${m.resolvedBrand}" data-model="${m.resolvedModel}">
+          <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0;">
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+              <strong style="font-family: var(--font-mono); color: #38bdf8; font-size: 13px; font-weight: 800; letter-spacing: 0.3px;">${m.serialNumber}</strong>
+              <span style="color: #ffffff; font-size: 12px; font-weight: 700;">${m.resolvedName}</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 6px; margin-top: 1px;">
+              <span style="font-size: 10.5px; color: #cbd5e1; background: rgba(255,255,255,0.06); padding: 1px 6px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1);">
+                ${m.resolvedBrand} • ${m.resolvedModel}
+              </span>
+              ${m.customValues?.machine_code ? `<span style="font-size: 10px; color: #a78bfa; font-family: var(--font-mono); font-weight: 700;">[${m.customValues.machine_code}]</span>` : ''}
+            </div>
           </div>
-          <span style="font-size: 10px; color: #38bdf8; font-family: var(--font-mono);">${m.lineStr || m.floorStr || ''}</span>
+          <div style="text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 2px; flex-shrink: 0; margin-left: 8px;">
+            <span class="badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; font-family: var(--font-mono); font-size: 10.5px; font-weight: 800; border: 1px solid rgba(56, 189, 248, 0.35); padding: 2px 8px; border-radius: 4px;">
+              ${m.resolvedLine || m.resolvedFloor || 'Floor'}
+            </span>
+            ${m.resolvedFloor ? `<span style="font-size: 9.5px; color: #94a3b8;">${m.resolvedFloor}</span>` : ''}
+          </div>
         </div>
       `).join('');
 
