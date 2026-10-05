@@ -543,20 +543,22 @@ export function renderInventoryTable() {
         <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap; width: 100%;">
           
           <!-- Unified Search Input -->
-          <div class="filter-search-wrap" style="flex: 1.5; min-width: 180px; position: relative;">
-            <span class="filter-search-icon" style="font-size: 12px; left: 8px;">🔍</span>
+          <div class="filter-search-wrap" style="flex: 2; min-width: 220px; position: relative;">
+            <span class="filter-search-icon">🔍</span>
             <input 
               type="text" 
               id="filter-search-input" 
               class="filter-search-input" 
-              placeholder="Search Machine, Serial, Brand, Model..." 
+              placeholder="Search machine, serial, brand..." 
               value="${filters.search || ''}"
-              style="height: 30px; font-size: 12px; padding: 4px ${filters.search ? '54px' : '32px'} 4px 28px;"
+              style="height: 30px; font-size: 12px; padding-left: 32px; padding-right: ${filters.search ? '58px' : '32px'};"
             />
-            <button id="btn-inventory-scan-qr" type="button" class="btn btn-ghost btn-sm" style="position: absolute; right: ${filters.search ? '26px' : '4px'}; top: 50%; transform: translateY(-50%); padding: 0 4px; font-size: 13px; color: #38bdf8; height: 22px; display: flex; align-items: center; justify-content: center; line-height: 1;" title="Scan Machine QR Code / Barcode with Camera">📷</button>
-            ${filters.search ? `
-              <button id="btn-clear-search" type="button" class="btn btn-ghost btn-sm" style="position: absolute; right: 4px; top: 50%; transform: translateY(-50%); padding: 0 4px; font-size: 11px; color: var(--text-muted);" title="Clear Search">✕</button>
-            ` : ''}
+            <div class="filter-search-actions">
+              <button id="btn-inventory-scan-qr" type="button" class="filter-search-btn qr-btn" style="height: 22px; width: 24px; font-size: 13px;" title="Scan Machine QR Code / Barcode with Camera">📷</button>
+              ${filters.search ? `
+                <button id="btn-clear-search" type="button" class="filter-search-btn" style="height: 22px; width: 22px; font-size: 11px;" title="Clear Search">✕</button>
+              ` : ''}
+            </div>
           </div>
 
           <!-- Group -->

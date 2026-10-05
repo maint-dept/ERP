@@ -260,19 +260,21 @@ export function renderPreventiveMaintenanceView() {
         <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap; width: 100%;">
           
           <!-- Unified Search Input -->
-          <div class="filter-search-wrap" style="flex: 1.6; min-width: 190px; position: relative;">
-            <span class="filter-search-icon" style="font-size: 12px; left: 8px;">🔍</span>
+          <div class="filter-search-wrap" style="flex: 2; min-width: 220px; position: relative;">
+            <span class="filter-search-icon">🔍</span>
             <input 
               type="text" 
               id="pm-universal-search-input" 
               class="filter-search-input" 
-              placeholder="Search Machine, Serial, Sticker #, Floor, Line..." 
+              placeholder="Search machine, serial, sticker, floor, line..." 
               value="${escapeHtml(searchQuery)}"
-              style="height: 30px; font-size: 12px; padding: 4px 26px 4px 28px;"
+              style="height: 30px; font-size: 12px; padding-left: 32px; padding-right: ${searchQuery ? '32px' : '10px'};"
             />
-            ${searchQuery ? `
-              <button id="btn-pm-clear-search" type="button" class="btn btn-ghost btn-sm" style="position: absolute; right: 4px; top: 50%; transform: translateY(-50%); padding: 0 4px; font-size: 11px; color: var(--text-muted);" title="Clear Search">✕</button>
-            ` : ''}
+            <div class="filter-search-actions">
+              ${searchQuery ? `
+                <button id="btn-pm-clear-search" type="button" class="filter-search-btn" style="height: 22px; width: 22px; font-size: 11px;" title="Clear Search">✕</button>
+              ` : ''}
+            </div>
             <div id="pm-search-suggestions-box" class="pm-suggestions-dropdown" style="display: none;"></div>
           </div>
 

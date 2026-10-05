@@ -116,9 +116,9 @@ export function renderSparePartsManagementView() {
           <!-- Filters (Search, Category, Status, Usage) -->
           <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; flex: 1; min-width: 0; width: 100%;">
             <!-- Live Search -->
-            <div style="position: relative; flex: 1 1 180px; min-width: 0; max-width: 100%;">
-              <input type="text" id="inp-spare-search" class="form-control" placeholder="Search Item Name, Brand, Code..." value="${searchFilter}" style="padding-left: 28px; font-size: 12px; height: 32px;" />
-              <span style="position: absolute; left: 8px; top: 50%; transform: translateY(-50%); font-size: 11px; opacity: 0.5;">🔍</span>
+            <div class="filter-search-wrap" style="position: relative; flex: 1 1 200px; min-width: 180px; max-width: 100%;">
+              <span class="filter-search-icon">🔍</span>
+              <input type="text" id="inp-spare-search" class="filter-search-input" placeholder="Search item name, brand, code..." value="${searchFilter}" style="padding-left: 32px; font-size: 12px; height: 32px;" />
             </div>
 
             <!-- Category Filter -->

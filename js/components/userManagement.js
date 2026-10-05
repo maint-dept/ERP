@@ -265,22 +265,28 @@ export function renderUserManagement() {
         </div>
 
         <!-- Search & Filter Controls -->
-        <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-          <div style="flex: 1 1 200px; min-width: 0; max-width: 100%; position: relative;">
+        <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; box-shadow: var(--shadow-sm);">
+          <div class="filter-search-wrap" style="flex: 1 1 260px; min-width: 220px; position: relative;">
+            <span class="filter-search-icon">🔍</span>
             <input 
               type="text" 
               id="user-search-input" 
-              class="form-control" 
-              placeholder="🔍 Search name, email, username..." 
+              class="filter-search-input" 
+              placeholder="Search user by name, email, username, dept..." 
               value="${searchQuery}"
-              style="font-size: 12.5px; height: 34px; padding-left: 12px;"
+              style="font-size: 12.5px; height: 34px; padding-left: 34px; padding-right: ${searchQuery ? '34px' : '12px'};"
             />
+            <div class="filter-search-actions">
+              ${searchQuery ? `
+                <button id="btn-clear-user-search" type="button" class="filter-search-btn" style="height: 24px; width: 24px; font-size: 12px; color: var(--text-muted);" title="Clear Search">✕</button>
+              ` : ''}
+            </div>
           </div>
 
           <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
             <div style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-secondary);">
-              <span>Preset Profile:</span>
-              <select id="user-preset-filter" class="filter-select" style="height: 32px; font-size: 12px; padding: 2px 8px;">
+              <span>Profile:</span>
+              <select id="user-preset-filter" class="filter-select" style="height: 34px; font-size: 12px; padding: 2px 10px; border-radius: 6px; background: var(--bg-card); color: #fff; border: 1px solid var(--border-color);">
                 <option value="ALL" ${presetFilter === 'ALL' ? 'selected' : ''}>All Profiles</option>
                 ${presets.map(p => `
                   <option value="${p.id}" ${presetFilter === p.id ? 'selected' : ''}>${p.icon || '🛡️'} ${p.name}</option>
@@ -291,7 +297,7 @@ export function renderUserManagement() {
 
             <div style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-secondary);">
               <span>Role:</span>
-              <select id="user-role-filter" class="filter-select" style="height: 32px; font-size: 12px; padding: 2px 8px;">
+              <select id="user-role-filter" class="filter-select" style="height: 34px; font-size: 12px; padding: 2px 10px; border-radius: 6px; background: var(--bg-card); color: #fff; border: 1px solid var(--border-color);">
                 <option value="ALL" ${roleFilter === 'ALL' ? 'selected' : ''}>All Roles</option>
                 <option value="SUPER_ADMIN" ${roleFilter === 'SUPER_ADMIN' ? 'selected' : ''}>Super Admin</option>
                 <option value="ADMIN" ${roleFilter === 'ADMIN' ? 'selected' : ''}>Admin</option>
@@ -301,16 +307,16 @@ export function renderUserManagement() {
 
             <div style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-secondary);">
               <span>Status:</span>
-              <select id="user-status-filter" class="filter-select" style="height: 32px; font-size: 12px; padding: 2px 8px;">
+              <select id="user-status-filter" class="filter-select" style="height: 34px; font-size: 12px; padding: 2px 10px; border-radius: 6px; background: var(--bg-card); color: #fff; border: 1px solid var(--border-color);">
                 <option value="ALL" ${statusFilter === 'ALL' ? 'selected' : ''}>All Status</option>
-                <option value="ACTIVE" ${statusFilter === 'ACTIVE' ? 'selected' : ''}>Active</option>
-                <option value="INACTIVE" ${statusFilter === 'INACTIVE' ? 'selected' : ''}>Inactive</option>
+                <option value="ACTIVE" ${statusFilter === 'ACTIVE' ? 'selected' : ''}>🟢 Active</option>
+                <option value="INACTIVE" ${statusFilter === 'INACTIVE' ? 'selected' : ''}>🔴 Inactive</option>
               </select>
             </div>
 
             ${(roleFilter !== 'ALL' || statusFilter !== 'ALL' || presetFilter !== 'ALL' || searchQuery) ? `
-              <button type="button" id="btn-clear-user-filters" class="btn btn-ghost btn-xs" style="color: #f87171; font-weight: 700; font-size: 11.5px; padding: 4px 8px;">
-                ✕ Reset Filters
+              <button type="button" id="btn-clear-user-filters" class="btn btn-ghost btn-xs" style="color: #f87171; font-weight: 700; font-size: 11.5px; padding: 6px 10px; border: 1px solid rgba(248, 113, 113, 0.25); border-radius: 6px;">
+                ✕ Reset
               </button>
             ` : ''}
           </div>
@@ -439,82 +445,88 @@ export function renderUserManagement() {
                     </td>
 
                     <!-- Quick Actions -->
-                    <td style="text-align: center; padding: 10px;">
-                      <div style="display: flex; gap: 5px; justify-content: center; align-items: center; flex-wrap: wrap;">
+                    <td style="text-align: center; padding: 10px 8px;">
+                      <div style="display: flex; flex-direction: column; gap: 6px; align-items: center;">
                         
-                        <!-- 1. Permissions Button -->
-                        <button 
-                          class="btn btn-primary btn-xs btn-action-user-perms" 
-                          data-id="${u.id}" 
-                          title="Configure 7 Actions (Read, Add, Edit, Delete, Import, Export, Approve)"
-                          style="padding: 5px 10px; font-size: 12px; background: linear-gradient(135deg, #0284c7, #0369a1); font-weight: 700; border-radius: 6px; box-shadow: 0 2px 5px rgba(2, 132, 199, 0.3);"
-                        >
-                          🔐 Permissions
-                        </button>
-
-                        <!-- 2. Location Scope Button -->
-                        <button 
-                          class="btn btn-secondary btn-xs btn-action-user-scope" 
-                          data-id="${u.id}" 
-                          title="Configure Location Scope (Unit, Floor, Line)"
-                          style="padding: 5px 10px; font-size: 12px; color: #facc15; border-color: rgba(250, 204, 21, 0.4); background: rgba(234, 179, 8, 0.12); font-weight: 700; border-radius: 6px;"
-                        >
-                          📍 Scope
-                        </button>
-
-                        <!-- 2b. Assign Preset Button -->
-                        <button 
-                          class="btn btn-secondary btn-xs btn-action-user-preset" 
-                          data-id="${u.id}" 
-                          title="Assign Permission Preset / Access Profile"
-                          style="padding: 5px 9px; font-size: 12px; color: #38bdf8; border-color: rgba(56, 189, 248, 0.4); background: rgba(14, 165, 233, 0.12); font-weight: 700; border-radius: 6px;"
-                        >
-                          🛡️ Preset
-                        </button>
-
-                        <!-- 3. Edit User Details -->
-                        <button 
-                          class="btn btn-secondary btn-xs btn-action-edit-user" 
-                          data-id="${u.id}" 
-                          title="Edit User Profile"
-                          style="padding: 5px 8px; font-size: 11.5px; border-radius: 6px;"
-                        >
-                          ✏️ Edit
-                        </button>
-
-                        <!-- 4. Reset Password -->
-                        <button 
-                          class="btn btn-secondary btn-xs btn-action-reset-pwd" 
-                          data-id="${u.id}" 
-                          title="Reset User Password"
-                          style="padding: 5px 8px; font-size: 11.5px; color: #fbbf24; border-color: rgba(251, 191, 36, 0.3); border-radius: 6px;"
-                        >
-                          🔑
-                        </button>
-
-                        <!-- 5. Activate / Deactivate Toggle -->
-                        ${!isSuper ? `
+                        <!-- Primary Rights Group -->
+                        <div style="display: flex; gap: 4px; justify-content: center; align-items: center; flex-wrap: wrap;">
+                          <!-- 1. Permissions Button -->
                           <button 
-                            class="btn btn-secondary btn-xs btn-action-toggle-status" 
+                            class="btn btn-primary btn-xs btn-action-user-perms" 
                             data-id="${u.id}" 
-                            title="${u.status === 'ACTIVE' ? 'Deactivate User Account' : 'Activate User Account'}"
-                            style="padding: 5px 8px; font-size: 11.5px; color: ${u.status === 'ACTIVE' ? '#f87171' : '#34d399'}; border-radius: 6px;"
+                            title="Configure 7 Actions (Read, Add, Edit, Delete, Import, Export, Approve)"
+                            style="padding: 4px 9px; font-size: 11.5px; background: linear-gradient(135deg, #0284c7, #0369a1); font-weight: 700; border-radius: 5px; box-shadow: 0 2px 4px rgba(2, 132, 199, 0.3); display: inline-flex; align-items: center; gap: 4px;"
                           >
-                            ${u.status === 'ACTIVE' ? '🚫' : '🟢'}
+                            <span>🔐</span> Permissions
                           </button>
-                        ` : ''}
 
-                        <!-- 6. Delete User -->
-                        ${!isSuper && !isSelf ? `
+                          <!-- 2. Location Scope Button -->
                           <button 
-                            class="btn btn-ghost btn-xs btn-action-delete-user" 
+                            class="btn btn-secondary btn-xs btn-action-user-scope" 
                             data-id="${u.id}" 
-                            title="Delete User"
-                            style="padding: 5px 8px; font-size: 11.5px; color: #f87171; border-radius: 6px;"
+                            title="Configure Location Scope (Unit, Floor, Line)"
+                            style="padding: 4px 8px; font-size: 11.5px; color: #facc15; border-color: rgba(250, 204, 21, 0.4); background: rgba(234, 179, 8, 0.12); font-weight: 700; border-radius: 5px; display: inline-flex; align-items: center; gap: 3px;"
                           >
-                            🗑️
+                            <span>📍</span> Scope
                           </button>
-                        ` : ''}
+
+                          <!-- 2b. Assign Preset Button -->
+                          <button 
+                            class="btn btn-secondary btn-xs btn-action-user-preset" 
+                            data-id="${u.id}" 
+                            title="Assign Permission Preset / Access Profile"
+                            style="padding: 4px 8px; font-size: 11.5px; color: #38bdf8; border-color: rgba(56, 189, 248, 0.4); background: rgba(14, 165, 233, 0.12); font-weight: 700; border-radius: 5px; display: inline-flex; align-items: center; gap: 3px;"
+                          >
+                            <span>🛡️</span> Preset
+                          </button>
+                        </div>
+
+                        <!-- Account Management Icon Group -->
+                        <div style="display: flex; gap: 4px; justify-content: center; align-items: center;">
+                          <!-- 3. Edit User Details -->
+                          <button 
+                            class="btn btn-secondary btn-xs btn-action-edit-user" 
+                            data-id="${u.id}" 
+                            title="Edit User Profile"
+                            style="padding: 3px 8px; font-size: 11px; border-radius: 5px; display: inline-flex; align-items: center; gap: 3px;"
+                          >
+                            ✏️ Edit
+                          </button>
+
+                          <!-- 4. Reset Password -->
+                          <button 
+                            class="btn btn-secondary btn-xs btn-action-reset-pwd" 
+                            data-id="${u.id}" 
+                            title="Reset User Password"
+                            style="padding: 3px 7px; font-size: 11px; color: #fbbf24; border-color: rgba(251, 191, 36, 0.3); border-radius: 5px;"
+                          >
+                            🔑 Pass
+                          </button>
+
+                          <!-- 5. Activate / Deactivate Toggle -->
+                          ${!isSuper ? `
+                            <button 
+                              class="btn btn-secondary btn-xs btn-action-toggle-status" 
+                              data-id="${u.id}" 
+                              title="${u.status === 'ACTIVE' ? 'Deactivate User Account' : 'Activate User Account'}"
+                              style="padding: 3px 7px; font-size: 11px; color: ${u.status === 'ACTIVE' ? '#f87171' : '#34d399'}; border-color: ${u.status === 'ACTIVE' ? 'rgba(248, 113, 113, 0.3)' : 'rgba(52, 211, 153, 0.3)'}; border-radius: 5px;"
+                            >
+                              ${u.status === 'ACTIVE' ? '🚫 Deactivate' : '🟢 Activate'}
+                            </button>
+                          ` : ''}
+
+                          <!-- 6. Delete User -->
+                          ${!isSuper && !isSelf ? `
+                            <button 
+                              class="btn btn-ghost btn-xs btn-action-delete-user" 
+                              data-id="${u.id}" 
+                              title="Delete User Account"
+                              style="padding: 3px 6px; font-size: 11px; color: #f87171; border-radius: 5px;"
+                            >
+                              🗑️
+                            </button>
+                          ` : ''}
+                        </div>
 
                       </div>
                     </td>
@@ -2586,12 +2598,19 @@ export function initUserManagementEvents() {
       updateUserModalLayer();
     }
   };
-
   // 1. Search filter
   const searchInp = document.getElementById('user-search-input');
   if (searchInp) {
     searchInp.addEventListener('input', (e) => {
       searchQuery = e.target.value;
+      refreshView();
+    });
+  }
+
+  const btnClearUserSearch = document.getElementById('btn-clear-user-search');
+  if (btnClearUserSearch) {
+    btnClearUserSearch.addEventListener('click', () => {
+      searchQuery = '';
       refreshView();
     });
   }
