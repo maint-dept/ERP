@@ -1523,36 +1523,80 @@ class PartsTraceService {
     const list = storage.getTable(TABLE_NAMES.PARTS_TRACE_ISSUES) || [];
     let filtered = [...list].sort((a, b) => new Date(b.createdAt || b.issueDate || 0) - new Date(a.createdAt || a.issueDate || 0));
 
+    // 1. Live Multi-Attribute Search
     if (filters.search && filters.search.trim()) {
       const q = filters.search.toLowerCase().trim();
       filtered = filtered.filter(i =>
         (i.erpNo && i.erpNo.toLowerCase().includes(q)) ||
         (i.partCode && i.partCode.toLowerCase().includes(q)) ||
         (i.partName && i.partName.toLowerCase().includes(q)) ||
+        (i.rawItemName && i.rawItemName.toLowerCase().includes(q)) ||
         (i.machineSerial && i.machineSerial.toLowerCase().includes(q)) ||
         (i.machinePermanentId && i.machinePermanentId.toLowerCase().includes(q)) ||
+        (i.machineName && i.machineName.toLowerCase().includes(q)) ||
+        (i.machineBrand && i.machineBrand.toLowerCase().includes(q)) ||
+        (i.machineModel && i.machineModel.toLowerCase().includes(q)) ||
         (i.requestedByCard && String(i.requestedByCard).toLowerCase().includes(q)) ||
         (i.requestedByName && i.requestedByName.toLowerCase().includes(q)) ||
         (i.technicianName && i.technicianName.toLowerCase().includes(q)) ||
+        (i.technicianCard && String(i.technicianCard).toLowerCase().includes(q)) ||
+        (i.unitName && i.unitName.toLowerCase().includes(q)) ||
         (i.floorName && i.floorName.toLowerCase().includes(q)) ||
-        (i.lineName && i.lineName.toLowerCase().includes(q))
+        (i.lineName && i.lineName.toLowerCase().includes(q)) ||
+        (i.comments && i.comments.toLowerCase().includes(q)) ||
+        (i.remarks && i.remarks.toLowerCase().includes(q))
       );
     }
 
+    // 2. Date Range
     if (filters.dateFrom) {
-      filtered = filtered.filter(i => (i.issueDate || i.createdAt) >= filters.dateFrom);
+      filtered = filtered.filter(i => {
+        const d = (i.issueDate || i.createdAt || '').slice(0, 10);
+        return d >= filters.dateFrom;
+      });
     }
     if (filters.dateTo) {
-      filtered = filtered.filter(i => (i.issueDate || i.createdAt) <= filters.dateTo);
+      filtered = filtered.filter(i => {
+        const d = (i.issueDate || i.createdAt || '').slice(0, 10);
+        return d <= filters.dateTo;
+      });
     }
+
+    // 3. Unit Filter
+    if (filters.unitId) {
+      const uClean = String(filters.unitId).toLowerCase().trim();
+      filtered = filtered.filter(i => {
+        if (i.unitId === filters.unitId) return true;
+        const iUnit = String(i.unitName || '').toLowerCase().trim();
+        return iUnit === uClean || (uClean && iUnit.includes(uClean));
+      });
+    }
+
+    // 4. Floor Filter
+    if (filters.floorId) {
+      const fClean = String(filters.floorId).toLowerCase().replace(/floor/gi, '').trim();
+      filtered = filtered.filter(i => {
+        if (i.floorId === filters.floorId) return true;
+        const iFloor = String(i.floorName || '').toLowerCase().replace(/floor/gi, '').trim();
+        return iFloor === fClean || (fClean && iFloor.includes(fClean));
+      });
+    }
+
+    // 5. Line Filter
+    if (filters.lineId) {
+      const lClean = String(filters.lineId).toLowerCase().trim();
+      filtered = filtered.filter(i => {
+        if (i.lineId === filters.lineId) return true;
+        const iLine = String(i.lineName || '').toLowerCase().trim();
+        return iLine === lClean || (lClean && iLine.includes(lClean));
+      });
+    }
+
     if (filters.erpNo) {
       filtered = filtered.filter(i => i.erpNo && i.erpNo.toLowerCase().includes(filters.erpNo.toLowerCase().trim()));
     }
     if (filters.partCode) {
       filtered = filtered.filter(i => i.partCode && i.partCode.toLowerCase().includes(filters.partCode.toLowerCase().trim()));
-    }
-    if (filters.floorId) {
-      filtered = filtered.filter(i => i.floorId === filters.floorId || i.floorName === filters.floorId);
     }
     if (filters.machineId) {
       filtered = filtered.filter(i => i.machineId === filters.machineId || i.machineSerial === filters.machineId);
@@ -1643,30 +1687,216 @@ class PartsTraceService {
       'SL': idx + 1,
       'ERP No': iss.erpNo || '—',
       'Issue Date': iss.issueDate || '—',
-      'Cost Center': iss.costCenter || '—',
-      'Store': iss.store || '—',
+      'Unit / Factory': iss.unitName || 'AKM Knit Wear Ltd.',
       'Floor': iss.floorName || '—',
       'Line': iss.lineName || '—',
       'Part Code': iss.partCode || '—',
       'Part Name': iss.partName || iss.rawItemName || '—',
-      'UoM': iss.uom || 'PCS',
+      'Category': iss.category || 'Spare Parts',
       'Qty Issued': iss.issueQty || 1,
-      'Use of Area': iss.useOfArea || 'change',
-      'Requested By (Card)': iss.requestedByCard || '—',
-      'Requested By (Name)': iss.requestedByName || '—',
-      'Designation': iss.requestedByDesignation || '—',
+      'UoM': iss.uom || 'PCS',
       'Machine Serial': iss.machineSerial || '—',
       'Machine Name': iss.machineName || '—',
-      'Brand / Model': `${iss.machineBrand || ''} ${iss.machineModel || ''}`.trim() || '—',
-      'Technician': iss.technicianName || '—',
-      'Comments': iss.comments || '—',
-      'PDF Ref': iss.pdfFileName || '—'
+      'Brand': iss.machineBrand || '—',
+      'Model': iss.machineModel || '—',
+      'Technician Name': iss.technicianName || '—',
+      'Technician Card': iss.technicianCard || '—',
+      'Requested By (Name)': iss.requestedByName || '—',
+      'Requested By (Card)': iss.requestedByCard || '—',
+      'Designation': iss.requestedByDesignation || '—',
+      'Use of Area': iss.useOfArea || 'change',
+      'Comments': iss.comments || iss.remarks || '—',
+      'PDF Source': iss.pdfFileName || 'Manual'
     }));
 
     const ws = XLSX.utils.json_to_sheet(exportRows);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Parts_Trace_History');
+    XLSX.utils.book_append_sheet(wb, ws, 'Traceability_History');
     XLSX.writeFile(wb, `Al_Muslim_Parts_Trace_Report_${new Date().toISOString().split('T')[0]}.xlsx`);
+  }
+
+  exportToPdf(filters = {}) {
+    const issues = this.getAllIssues(filters);
+    if (issues.length === 0) {
+      throw new Error('No issues match current filters to export.');
+    }
+
+    const settings = storage.getTable(TABLE_NAMES.SETTINGS) || {};
+    const companyName = settings.companyName || 'AL-MUSLIM GROUP';
+    const deptName = settings.departmentName || 'Central Maintenance & Mechanical Engineering Department';
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    // Active Filters Summary
+    const filterParts = [];
+    if (filters.search) filterParts.push(`Search: "${filters.search}"`);
+    if (filters.unitId) {
+      const u = (storage.getTable(TABLE_NAMES.UNITS) || []).find(x => x.id === filters.unitId);
+      filterParts.push(`Unit: ${u ? u.name : filters.unitId}`);
+    }
+    if (filters.floorId) {
+      const f = (storage.getTable(TABLE_NAMES.FLOORS) || []).find(x => x.id === filters.floorId);
+      filterParts.push(`Floor: ${f ? f.name : filters.floorId}`);
+    }
+    if (filters.lineId) {
+      const l = (storage.getTable(TABLE_NAMES.LINES) || []).find(x => x.id === filters.lineId);
+      filterParts.push(`Line: ${l ? l.name : filters.lineId}`);
+    }
+    if (filters.dateFrom && filters.dateTo) {
+      filterParts.push(`Period: ${filters.dateFrom} to ${filters.dateTo}`);
+    } else if (filters.dateFrom) {
+      filterParts.push(`From: ${filters.dateFrom}`);
+    } else if (filters.dateTo) {
+      filterParts.push(`To: ${filters.dateTo}`);
+    }
+    const filterSummaryStr = filterParts.length > 0 ? filterParts.join(' | ') : 'All Recorded Transactions';
+
+    const totalQty = issues.reduce((sum, i) => sum + (parseFloat(i.issueQty) || 1), 0);
+    const distinctMachines = new Set(issues.map(i => i.machineSerial || i.machineId).filter(Boolean));
+    const distinctTechs = new Set(issues.map(i => i.technicianName || i.technicianId).filter(Boolean));
+    const distinctErpNos = new Set(issues.map(i => i.erpNo).filter(Boolean));
+
+    const rowsHtml = issues.map((iss, idx) => `
+      <tr>
+        <td style="text-align: center;">${idx + 1}</td>
+        <td style="font-family: monospace; font-weight: 700; color: #0284c7; text-align: center;">${iss.erpNo || '—'}</td>
+        <td style="text-align: center; white-space: nowrap;">${iss.issueDate || '—'}</td>
+        <td>
+          <div style="font-weight: 700; color: #0f172a;">${iss.partName || iss.rawItemName || '—'}</div>
+          ${iss.partCode ? `<div style="font-size: 9px; color: #64748b; font-family: monospace;">${iss.partCode}</div>` : ''}
+        </td>
+        <td style="text-align: center; font-weight: 700; color: #16a34a;">${iss.issueQty} ${iss.uom || 'PCS'}</td>
+        <td style="font-family: monospace; font-weight: 700; text-align: center; color: #b45309;">${iss.machineSerial || '—'}</td>
+        <td>
+          <div>${iss.machineName || '—'}</div>
+          ${(iss.machineBrand || iss.machineModel) ? `<div style="font-size: 9px; color: #64748b;">${iss.machineBrand || ''} ${iss.machineModel || ''}</div>` : ''}
+        </td>
+        <td style="text-align: center;">
+          <div style="font-weight: 600;">${iss.floorName || '—'}</div>
+          ${iss.lineName ? `<div style="font-size: 9px; color: #64748b;">${iss.lineName}</div>` : ''}
+        </td>
+        <td>
+          <div style="font-weight: 600;">${iss.technicianName || '—'}</div>
+          ${iss.technicianCard ? `<div style="font-size: 9px; color: #64748b; font-family: monospace;">Card: ${iss.technicianCard}</div>` : ''}
+        </td>
+        <td style="font-size: 9.5px; color: #475569;">${iss.comments || iss.remarks || '—'}</td>
+      </tr>
+    `).join('');
+
+    const reportHtml = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Spare Parts Traceability Report - ${companyName}</title>
+        <meta charset="utf-8" />
+        <style>
+          @page { size: A4 landscape; margin: 8mm 10mm; }
+          body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 12px; color: #0f172a; background: #fff; font-size: 11px; }
+          .header-box { border-bottom: 2px solid #0284c7; padding-bottom: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: flex-end; }
+          .title-area h1 { margin: 0; font-size: 18px; color: #0f172a; font-weight: 800; letter-spacing: 0.5px; }
+          .title-area h2 { margin: 2px 0 0 0; font-size: 11px; color: #64748b; font-weight: 600; }
+          .title-area h3 { margin: 4px 0 0 0; font-size: 13px; color: #0284c7; font-weight: 800; text-transform: uppercase; }
+          .meta-area { text-align: right; font-size: 10px; color: #64748b; line-height: 1.4; }
+          .filter-banner { background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 4px; padding: 6px 10px; margin-bottom: 10px; font-size: 10.5px; font-weight: 600; color: #334155; }
+          .kpi-row { display: flex; gap: 8px; margin-bottom: 12px; }
+          .kpi-card { flex: 1; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px; padding: 6px 10px; text-align: center; }
+          .kpi-val { font-size: 16px; font-weight: 800; font-family: monospace; }
+          .kpi-lbl { font-size: 9px; text-transform: uppercase; color: #64748b; font-weight: 700; margin-top: 1px; }
+          table.report-table { width: 100%; border-collapse: collapse; font-size: 10px; margin-bottom: 20px; }
+          table.report-table th { background: #0f172a; color: #ffffff; padding: 6px 6px; text-align: left; font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.3px; border: 1px solid #0f172a; }
+          table.report-table td { padding: 5px 6px; border: 1px solid #e2e8f0; vertical-align: middle; }
+          table.report-table tr:nth-child(even) td { background: #f8fafc; }
+          .signatures-area { margin-top: 30px; display: flex; justify-content: space-between; page-break-inside: avoid; }
+          .sig-box { width: 22%; text-align: center; border-top: 1px solid #94a3b8; padding-top: 4px; font-size: 9.5px; font-weight: 700; color: #475569; }
+          @media print {
+            .no-print { display: none !important; }
+            body { padding: 0; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="no-print" style="background: #0284c7; color: white; padding: 8px 14px; border-radius: 6px; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-weight: 700;">📄 Print Preview &bull; Spare Parts Traceability Report (${issues.length} records)</span>
+          <button onclick="window.print()" style="background: white; color: #0284c7; border: none; padding: 5px 14px; border-radius: 4px; font-weight: 800; cursor: pointer; font-size: 11px;">🖨️ Print / Save as PDF</button>
+        </div>
+
+        <div class="header-box">
+          <div class="title-area">
+            <h1>${companyName}</h1>
+            <h2>${deptName}</h2>
+            <h3>Spare Parts Traceability &amp; Issue Audit Report</h3>
+          </div>
+          <div class="meta-area">
+            <div><strong>Generated:</strong> ${dateStr} ${timeStr}</div>
+            <div><strong>Total Issues:</strong> ${issues.length} Records</div>
+            <div><strong>Slips Count:</strong> ${distinctErpNos.size} ERP Slips</div>
+          </div>
+        </div>
+
+        <div class="filter-banner">
+          🎯 <strong>Active Filters:</strong> ${filterSummaryStr}
+        </div>
+
+        <div class="kpi-row">
+          <div class="kpi-card">
+            <div class="kpi-val" style="color: #0284c7;">${issues.length}</div>
+            <div class="kpi-lbl">Total Issue Transactions</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-val" style="color: #16a34a;">${totalQty} Pcs</div>
+            <div class="kpi-lbl">Total Parts Consumed</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-val" style="color: #b45309;">${distinctMachines.size}</div>
+            <div class="kpi-lbl">Machines Replaced / Serviced</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-val" style="color: #6366f1;">${distinctTechs.size}</div>
+            <div class="kpi-lbl">Assigned Technicians</div>
+          </div>
+        </div>
+
+        <table class="report-table">
+          <thead>
+            <tr>
+              <th style="width: 24px; text-align: center;">#</th>
+              <th style="width: 75px; text-align: center;">ERP Slip #</th>
+              <th style="width: 70px; text-align: center;">Date</th>
+              <th>Spare Part Description</th>
+              <th style="width: 60px; text-align: center;">Qty</th>
+              <th style="width: 75px; text-align: center;">Machine SL</th>
+              <th style="width: 120px;">Machine Type / Model</th>
+              <th style="width: 90px; text-align: center;">Floor &amp; Line</th>
+              <th style="width: 100px;">Technician</th>
+              <th>Comments / Remarks</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rowsHtml}
+          </tbody>
+        </table>
+
+        <div class="signatures-area">
+          <div class="sig-box">Prepared By / Operator</div>
+          <div class="sig-box">Maintenance In-Charge</div>
+          <div class="sig-box">Store &amp; Inventory Officer</div>
+          <div class="sig-box">Head of Engineering / GM</div>
+        </div>
+
+      </body>
+      </html>
+    `;
+
+    const printWin = window.open('', '_blank');
+    if (printWin) {
+      printWin.document.open();
+      printWin.document.write(reportHtml);
+      printWin.document.close();
+      printWin.document.title = `Parts_Trace_Report_${new Date().toISOString().split('T')[0]}`;
+    } else {
+      alert('Pop-up window was blocked. Please allow pop-ups for this site to view/print reports.');
+    }
   }
 }
 

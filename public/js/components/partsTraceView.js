@@ -20,7 +20,7 @@ let uploadedPdfMetadata = null;
 let reviewFilter = 'ALL'; // 'ALL' | 'AUTO_MATCHED' | 'REVIEW_REQUIRED' | 'ERROR'
 let reviewSearch = '';
 let historySearch = '';
-let historyFilters = { dateFrom: '', dateTo: '', floorId: '', partCode: '' };
+let historyFilters = { dateFrom: '', dateTo: '', unitId: '', floorId: '', lineId: '', partCode: '' };
 let masterSearch = '';
 let masterCategory = 'ALL';
 let masterCurrentPage = 1;
@@ -1004,48 +1004,103 @@ function renderPartsMasterTab() {
 // 5. TRACEABILITY HISTORY TAB
 // ─────────────────────────────────────────────────────────────
 function renderHistoryTab() {
+  const allUnits = masterDataService.getUnits ? masterDataService.getUnits(null, true) : (storage.getTable(TABLE_NAMES.UNITS) || INITIAL_DATA.units || []);
+  
+  // Cascading Floors based on selected unit
+  const allFloors = historyFilters.unitId 
+    ? (masterDataService.getFloors ? masterDataService.getFloors(historyFilters.unitId, null, true, true) : (storage.getTable(TABLE_NAMES.FLOORS) || []).filter(f => f.unitId === historyFilters.unitId))
+    : (masterDataService.getFloors ? masterDataService.getFloors(null, null, true, true) : (storage.getTable(TABLE_NAMES.FLOORS) || INITIAL_DATA.floors || []));
+
+  // Cascading Lines based on selected floor
+  const allLines = historyFilters.floorId
+    ? (masterDataService.getLines ? masterDataService.getLines(historyFilters.floorId, null, null, true, true) : (storage.getTable(TABLE_NAMES.LINES) || []).filter(l => l.floorId === historyFilters.floorId))
+    : (masterDataService.getLines ? masterDataService.getLines(null, null, null, true, true) : (storage.getTable(TABLE_NAMES.LINES) || INITIAL_DATA.lines || []));
+
   const issues = partsTraceService.getAllIssues({ search: historySearch, ...historyFilters });
+  const totalQty = issues.reduce((sum, i) => sum + (parseFloat(i.issueQty) || 1), 0);
+  const distinctMachines = new Set(issues.map(i => i.machineSerial || i.machineId).filter(Boolean));
 
   return `
     <div style="display: flex; flex-direction: column; gap: 8px; flex: 1; min-height: 0;">
       
-      <!-- Filter Toolbar -->
-      <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 6px 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
+      <!-- Smart Filter & Action Toolbar -->
+      <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 8px 12px; display: flex; flex-direction: column; gap: 8px;">
         
-        <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap; flex: 1;">
-          <input 
-            type="text" 
-            id="inp-history-search" 
-            class="form-control" 
-            placeholder="🔍 Search ERP#, part, machine, technician..." 
-            value="${historySearch}"
-            style="max-width: 260px; height: 28px; font-size: 11.5px; padding: 3px 8px; border-radius: 6px; background: #090d16;"
-          />
-          <input 
-            type="date" 
-            id="inp-history-from" 
-            class="form-control" 
-            value="${historyFilters.dateFrom || ''}"
-            style="width: 120px; height: 28px; font-size: 11px; padding: 2px 4px; background: #090d16;"
-            title="From Date"
-          />
-          <input 
-            type="date" 
-            id="inp-history-to" 
-            class="form-control" 
-            value="${historyFilters.dateTo || ''}"
-            style="width: 120px; height: 28px; font-size: 11px; padding: 2px 4px; background: #090d16;"
-            title="To Date"
-          />
-          <span style="font-size: 11px; color: var(--text-muted); font-family: var(--font-mono);">
-            ${issues.length} Results
-          </span>
-        </div>
+        <!-- Filter Controls Row -->
+        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: space-between;">
+          
+          <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap; flex: 1; min-width: 0;">
+            <!-- Search -->
+            <div style="position: relative; min-width: 200px; flex: 1;">
+              <input 
+                type="text" 
+                id="inp-history-search" 
+                class="form-control" 
+                placeholder="🔍 Search ERP#, part, serial, technician, floor..." 
+                value="${historySearch}"
+                style="height: 30px; font-size: 11.5px; padding: 4px 8px; border-radius: 6px; background: #060a14; border: 1.5px solid rgba(56,189,248,0.3); color: #ffffff; width: 100%;"
+              />
+            </div>
 
-        <div style="display: flex; gap: 6px; align-items: center;">
-          <button type="button" id="btn-export-history-excel" class="btn btn-outline btn-sm" style="color: #34d399; border-color: rgba(52,211,153,0.4); font-size: 11px; height: 28px; padding: 2px 8px; font-weight: 700;">
-            📊 Export Excel
-          </button>
+            <!-- Unit Filter -->
+            <select id="sel-history-unit" class="form-control" style="width: 145px; height: 30px; font-size: 11px; padding: 2px 6px; background: #060a14; color: #38bdf8; font-weight: 700; border: 1px solid rgba(56,189,248,0.35);">
+              <option value="">🏢 All Units</option>
+              ${allUnits.map(u => `<option value="${u.id}" ${historyFilters.unitId === u.id ? 'selected' : ''}>${u.name}</option>`).join('')}
+            </select>
+
+            <!-- Floor Filter -->
+            <select id="sel-history-floor" class="form-control" style="width: 140px; height: 30px; font-size: 11px; padding: 2px 6px; background: #060a14; color: #34d399; font-weight: 700; border: 1px solid rgba(52,211,153,0.35);">
+              <option value="">🏢 All Floors (${allFloors.length})</option>
+              ${allFloors.map(f => `<option value="${f.id}" ${historyFilters.floorId === f.id ? 'selected' : ''}>${f.name}</option>`).join('')}
+            </select>
+
+            <!-- Line Filter -->
+            <select id="sel-history-line" class="form-control" style="width: 120px; height: 30px; font-size: 11px; padding: 2px 6px; background: #060a14; color: #a78bfa; font-weight: 700; border: 1px solid rgba(167,139,250,0.35);">
+              <option value="">📍 All Lines (${allLines.length})</option>
+              ${allLines.map(l => `<option value="${l.id}" ${historyFilters.lineId === l.id ? 'selected' : ''}>${l.name}</option>`).join('')}
+            </select>
+
+            <!-- Date From -->
+            <input 
+              type="date" 
+              id="inp-history-from" 
+              class="form-control" 
+              value="${historyFilters.dateFrom || ''}"
+              style="width: 115px; height: 30px; font-size: 11px; padding: 2px 4px; background: #060a14; color: #ffffff; border: 1px solid rgba(255,255,255,0.15);"
+              title="From Date"
+            />
+
+            <!-- Date To -->
+            <input 
+              type="date" 
+              id="inp-history-to" 
+              class="form-control" 
+              value="${historyFilters.dateTo || ''}"
+              style="width: 115px; height: 30px; font-size: 11px; padding: 2px 4px; background: #060a14; color: #ffffff; border: 1px solid rgba(255,255,255,0.15);"
+              title="To Date"
+            />
+
+            <!-- Reset Button -->
+            ${(historySearch || historyFilters.unitId || historyFilters.floorId || historyFilters.lineId || historyFilters.dateFrom || historyFilters.dateTo) ? `
+              <button type="button" id="btn-history-reset-filters" class="btn btn-ghost btn-xs" style="color: #f87171; font-weight: 700; font-size: 11px; height: 30px; padding: 0 6px;" title="Clear All Filters">
+                ✕ Reset
+              </button>
+            ` : ''}
+          </div>
+
+          <!-- Actions: Counters + PDF & Excel Export -->
+          <div style="display: flex; gap: 6px; align-items: center; flex-shrink: 0;">
+            <span class="badge" style="background: rgba(56, 189, 248, 0.12); color: #38bdf8; font-family: var(--font-mono); font-weight: 800; font-size: 11px; padding: 4px 8px; border: 1px solid rgba(56,189,248,0.3); white-space: nowrap;">
+              📊 ${issues.length} Issues (${totalQty} pcs)
+            </span>
+            <button type="button" id="btn-export-history-pdf" class="btn btn-danger btn-sm" style="font-weight: 800; font-size: 11.5px; height: 30px; padding: 2px 10px; background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%); border: 1px solid #f87171; color: #fff; display: flex; align-items: center; gap: 4px; box-shadow: 0 2px 6px rgba(239,68,68,0.25);">
+              📄 PDF Report
+            </button>
+            <button type="button" id="btn-export-history-excel" class="btn btn-success btn-sm" style="font-weight: 800; font-size: 11.5px; height: 30px; padding: 2px 10px; background: linear-gradient(135deg, #10b981 0%, #047857 100%); border: 1px solid #34d399; color: #fff; display: flex; align-items: center; gap: 4px; box-shadow: 0 2px 6px rgba(16,185,129,0.25);">
+              📊 Excel Export
+            </button>
+          </div>
+
         </div>
 
       </div>
@@ -1055,59 +1110,78 @@ function renderHistoryTab() {
         <table class="parts-trace-table">
           <thead>
             <tr>
-              <th>ERP No</th>
+              <th style="width: 30px;">#</th>
+              <th>ERP Slip #</th>
               <th>Date</th>
-              <th>Part Name &amp; Code</th>
+              <th>Unit &amp; Location</th>
+              <th>Spare Part Description</th>
               <th>Qty</th>
-              <th>Machine No</th>
-              <th>Technician</th>
-              <th>Floor &amp; Line</th>
-              <th>PDF Source</th>
+              <th>Machine Identification</th>
+              <th>Technician / Mechanic</th>
+              <th>Comments / Reason</th>
               <th style="text-align: right;">Action</th>
             </tr>
           </thead>
           <tbody>
             ${issues.length === 0 ? `
               <tr>
-                <td colspan="9" style="text-align: center; padding: 30px; color: var(--text-muted);">
-                  No spare parts transaction records found.
+                <td colspan="10" style="text-align: center; padding: 35px; color: var(--text-muted);">
+                  <div style="font-size: 14px; font-weight: 700; color: #94a3b8; margin-bottom: 4px;">No spare parts transaction records match the filters.</div>
+                  <div style="font-size: 11px;">Try clearing filters or uploading new ERP Issue PDFs.</div>
                 </td>
               </tr>
-            ` : issues.map(iss => `
+            ` : issues.map((iss, idx) => `
               <tr>
+                <td style="color: #64748b; font-size: 10px; font-family: var(--font-mono);">${idx + 1}</td>
                 <td>
-                  <span style="font-family: var(--font-mono); font-weight: 800; color: #38bdf8;">${iss.erpNo}</span>
+                  <span style="font-family: var(--font-mono); font-weight: 800; color: #38bdf8;">${iss.erpNo || '—'}</span>
                 </td>
-                <td style="font-family: var(--font-mono); font-size: 11px;">${iss.issueDate}</td>
+                <td style="font-family: var(--font-mono); font-size: 11px; white-space: nowrap;">${iss.issueDate || '—'}</td>
                 <td>
-                  <div style="font-weight: 700; color: #fff;">${iss.partName}</div>
-                  <div style="font-size: 10px; color: #94a3b8; font-family: var(--font-mono);">${iss.partCode || '—'}</div>
-                </td>
-                <td>
-                  <strong style="color: #34d399;">${iss.issueQty} ${iss.uom}</strong>
-                </td>
-                <td>
-                  ${iss.machineSerial ? `
-                    <span style="font-family: var(--font-mono); font-weight: 800; color: #fbbf24; background: rgba(251,191,36,0.1); border: 1px solid rgba(251,191,36,0.25); padding: 1px 5px; border-radius: 4px;">
-                      ${iss.machineSerial}
-                    </span>
-                  ` : '<span style="color: #64748b;">—</span>'}
+                  <div style="display: flex; flex-direction: column; gap: 2px;">
+                    <span style="color: #fff; font-weight: 700; font-size: 11.5px;">${iss.floorName || '—'}</span>
+                    <div style="display: flex; align-items: center; gap: 4px;">
+                      ${iss.lineName ? `<span class="badge" style="background: rgba(52, 211, 153, 0.15); color: #34d399; font-size: 9.5px; padding: 1px 5px; border: 1px solid rgba(52, 211, 153, 0.3);">📍 ${iss.lineName}</span>` : ''}
+                      ${iss.unitName ? `<span style="color: #94a3b8; font-size: 9.5px;">${iss.unitName}</span>` : ''}
+                    </div>
+                  </div>
                 </td>
                 <td>
-                  <span style="color: #cbd5e1; font-weight: 600;">${iss.technicianName || '—'}</span>
+                  <div style="font-weight: 700; color: #ffffff; font-size: 12px;">${iss.partName || iss.rawItemName || '—'}</div>
+                  ${iss.partCode ? `<div style="font-size: 10px; color: #38bdf8; font-family: var(--font-mono); font-weight: 700;">${iss.partCode}</div>` : ''}
                 </td>
                 <td>
-                  <span style="color: #fff;">${iss.floorName}</span>
-                  <span style="color: var(--text-muted); font-size: 10px;">/ ${iss.lineName}</span>
+                  <strong style="color: #34d399; font-size: 12px; font-family: var(--font-mono);">${iss.issueQty} ${iss.uom || 'PCS'}</strong>
                 </td>
-                <td style="font-size: 10.5px; color: var(--text-muted); max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                  ${iss.pdfFileName || 'Manual'}
+                <td>
+                  <div style="display: flex; flex-direction: column; gap: 2px;">
+                    <div style="display: flex; align-items: center; gap: 4px;">
+                      ${iss.machineSerial ? `
+                        <span style="font-family: var(--font-mono); font-weight: 900; color: #fbbf24; background: rgba(251,191,36,0.12); border: 1px solid rgba(251,191,36,0.3); padding: 1px 6px; border-radius: 4px; font-size: 11.5px;">
+                          SL: ${iss.machineSerial}
+                        </span>
+                      ` : '<span style="color: #64748b;">—</span>'}
+                      <span style="color: #e2e8f0; font-weight: 600; font-size: 11px;">${iss.machineName || ''}</span>
+                    </div>
+                    ${(iss.machineBrand || iss.machineModel) ? `
+                      <span style="font-size: 9.5px; color: #94a3b8;">${iss.machineBrand || ''} &bull; ${iss.machineModel || ''}</span>
+                    ` : ''}
+                  </div>
                 </td>
-                <td style="text-align: right;">
-                  <button type="button" class="btn btn-ghost btn-xs btn-view-trace-details" data-id="${iss.id}" style="font-size: 11px; padding: 2px 6px; color: #38bdf8;" title="View Complete Traceability">
+                <td>
+                  <div style="display: flex; flex-direction: column; gap: 1px;">
+                    <span style="color: #ffffff; font-weight: 700; font-size: 11.5px;">${iss.technicianName || '—'}</span>
+                    ${iss.technicianCard ? `<span style="color: #38bdf8; font-family: var(--font-mono); font-size: 9.5px;">Card: ${iss.technicianCard}</span>` : ''}
+                  </div>
+                </td>
+                <td style="font-size: 10px; color: #cbd5e1; max-width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${iss.comments || iss.remarks || ''}">
+                  ${iss.comments || iss.remarks || '—'}
+                </td>
+                <td style="text-align: right; white-space: nowrap;">
+                  <button type="button" class="btn btn-ghost btn-xs btn-view-trace-details" data-id="${iss.id}" style="font-size: 11px; padding: 2px 6px; color: #38bdf8;" title="View Complete Traceability Card">
                     🔍 Trace
                   </button>
-                  <button type="button" class="btn btn-ghost btn-xs btn-delete-issue" data-id="${iss.id}" style="font-size: 11px; padding: 2px 6px; color: #f87171;" title="Delete">
+                  <button type="button" class="btn btn-ghost btn-xs btn-delete-issue" data-id="${iss.id}" style="font-size: 11px; padding: 2px 6px; color: #f87171;" title="Delete Record">
                     🗑️
                   </button>
                 </td>
@@ -1125,42 +1199,159 @@ function renderHistoryTab() {
 // 6. REPORTS TAB
 // ─────────────────────────────────────────────────────────────
 function renderReportsTab() {
-  const all = partsTraceService.getAllIssues();
+  const allUnits = masterDataService.getUnits ? masterDataService.getUnits(null, true) : (storage.getTable(TABLE_NAMES.UNITS) || INITIAL_DATA.units || []);
   
+  // Cascading Floors based on selected unit
+  const allFloors = historyFilters.unitId 
+    ? (masterDataService.getFloors ? masterDataService.getFloors(historyFilters.unitId, null, true, true) : (storage.getTable(TABLE_NAMES.FLOORS) || []).filter(f => f.unitId === historyFilters.unitId))
+    : (masterDataService.getFloors ? masterDataService.getFloors(null, null, true, true) : (storage.getTable(TABLE_NAMES.FLOORS) || INITIAL_DATA.floors || []));
+
+  // Cascading Lines based on selected floor
+  const allLines = historyFilters.floorId
+    ? (masterDataService.getLines ? masterDataService.getLines(historyFilters.floorId, null, null, true, true) : (storage.getTable(TABLE_NAMES.LINES) || []).filter(l => l.floorId === historyFilters.floorId))
+    : (masterDataService.getLines ? masterDataService.getLines(null, null, null, true, true) : (storage.getTable(TABLE_NAMES.LINES) || INITIAL_DATA.lines || []));
+
+  const issues = partsTraceService.getAllIssues({ search: historySearch, ...historyFilters });
+
   const floorMap = {};
   const partMap = {};
   const machineMap = {};
+  const techMap = {};
+  const unitMap = {};
 
-  all.forEach(iss => {
-    const flr = iss.floorName || 'Unknown';
-    floorMap[flr] = (floorMap[flr] || 0) + (parseFloat(iss.issueQty) || 1);
+  issues.forEach(iss => {
+    const qty = parseFloat(iss.issueQty) || 1;
+    
+    const flr = iss.floorName || 'Unknown Floor';
+    floorMap[flr] = (floorMap[flr] || 0) + qty;
 
-    const prt = iss.partName || 'Unknown';
-    partMap[prt] = (partMap[prt] || 0) + (parseFloat(iss.issueQty) || 1);
+    const prt = iss.partName || iss.rawItemName || 'Unknown Part';
+    partMap[prt] = (partMap[prt] || 0) + qty;
 
     if (iss.machineSerial) {
-      machineMap[iss.machineSerial] = (machineMap[iss.machineSerial] || 0) + (parseFloat(iss.issueQty) || 1);
+      machineMap[iss.machineSerial] = (machineMap[iss.machineSerial] || 0) + qty;
     }
+
+    if (iss.technicianName) {
+      techMap[iss.technicianName] = (techMap[iss.technicianName] || 0) + qty;
+    }
+
+    const unt = iss.unitName || 'AKM Knit Wear Ltd.';
+    unitMap[unt] = (unitMap[unt] || 0) + qty;
   });
 
   const topParts = Object.entries(partMap).sort((a, b) => b[1] - a[1]).slice(0, 10);
   const topFloors = Object.entries(floorMap).sort((a, b) => b[1] - a[1]);
   const topMachines = Object.entries(machineMap).sort((a, b) => b[1] - a[1]).slice(0, 10);
+  const topTechs = Object.entries(techMap).sort((a, b) => b[1] - a[1]).slice(0, 10);
+  const totalQty = issues.reduce((sum, i) => sum + (parseFloat(i.issueQty) || 1), 0);
 
   return `
     <div style="display: flex; flex-direction: column; gap: 8px; flex: 1; min-height: 0; overflow-y: auto;">
       
-      <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 6px 12px; display: flex; justify-content: space-between; align-items: center;">
-        <span style="font-size: 12.5px; font-weight: 800; color: #fff;">
-          📈 Spare Parts Traceability Analytics &amp; Diagnostics
-        </span>
-        <button type="button" id="btn-export-reports-excel" class="btn btn-outline btn-sm" style="color: #34d399; border-color: rgba(52,211,153,0.4); font-size: 11px;">
-          📊 Export Full Dataset (Excel)
-        </button>
+      <!-- Smart Filter & Action Toolbar -->
+      <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 8px 12px; display: flex; flex-direction: column; gap: 8px;">
+        
+        <!-- Filter Controls Row -->
+        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: space-between;">
+          
+          <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap; flex: 1; min-width: 0;">
+            <!-- Search -->
+            <div style="position: relative; min-width: 180px; flex: 1;">
+              <input 
+                type="text" 
+                id="inp-history-search" 
+                class="form-control" 
+                placeholder="🔍 Search ERP#, part, serial, technician..." 
+                value="${historySearch}"
+                style="height: 30px; font-size: 11.5px; padding: 4px 8px; border-radius: 6px; background: #060a14; border: 1.5px solid rgba(56,189,248,0.3); color: #ffffff; width: 100%;"
+              />
+            </div>
+
+            <!-- Unit Filter -->
+            <select id="sel-history-unit" class="form-control" style="width: 145px; height: 30px; font-size: 11px; padding: 2px 6px; background: #060a14; color: #38bdf8; font-weight: 700; border: 1px solid rgba(56,189,248,0.35);">
+              <option value="">🏢 All Units</option>
+              ${allUnits.map(u => `<option value="${u.id}" ${historyFilters.unitId === u.id ? 'selected' : ''}>${u.name}</option>`).join('')}
+            </select>
+
+            <!-- Floor Filter -->
+            <select id="sel-history-floor" class="form-control" style="width: 140px; height: 30px; font-size: 11px; padding: 2px 6px; background: #060a14; color: #34d399; font-weight: 700; border: 1px solid rgba(52,211,153,0.35);">
+              <option value="">🏢 All Floors (${allFloors.length})</option>
+              ${allFloors.map(f => `<option value="${f.id}" ${historyFilters.floorId === f.id ? 'selected' : ''}>${f.name}</option>`).join('')}
+            </select>
+
+            <!-- Line Filter -->
+            <select id="sel-history-line" class="form-control" style="width: 120px; height: 30px; font-size: 11px; padding: 2px 6px; background: #060a14; color: #a78bfa; font-weight: 700; border: 1px solid rgba(167,139,250,0.35);">
+              <option value="">📍 All Lines (${allLines.length})</option>
+              ${allLines.map(l => `<option value="${l.id}" ${historyFilters.lineId === l.id ? 'selected' : ''}>${l.name}</option>`).join('')}
+            </select>
+
+            <!-- Date From -->
+            <input 
+              type="date" 
+              id="inp-history-from" 
+              class="form-control" 
+              value="${historyFilters.dateFrom || ''}"
+              style="width: 115px; height: 30px; font-size: 11px; padding: 2px 4px; background: #060a14; color: #ffffff; border: 1px solid rgba(255,255,255,0.15);"
+              title="From Date"
+            />
+
+            <!-- Date To -->
+            <input 
+              type="date" 
+              id="inp-history-to" 
+              class="form-control" 
+              value="${historyFilters.dateTo || ''}"
+              style="width: 115px; height: 30px; font-size: 11px; padding: 2px 4px; background: #060a14; color: #ffffff; border: 1px solid rgba(255,255,255,0.15);"
+              title="To Date"
+            />
+
+            <!-- Reset Button -->
+            ${(historySearch || historyFilters.unitId || historyFilters.floorId || historyFilters.lineId || historyFilters.dateFrom || historyFilters.dateTo) ? `
+              <button type="button" id="btn-history-reset-filters" class="btn btn-ghost btn-xs" style="color: #f87171; font-weight: 700; font-size: 11px; height: 30px; padding: 0 6px;" title="Clear All Filters">
+                ✕ Reset
+              </button>
+            ` : ''}
+          </div>
+
+          <!-- Actions: Counters + PDF & Excel Export -->
+          <div style="display: flex; gap: 6px; align-items: center; flex-shrink: 0;">
+            <button type="button" id="btn-export-reports-pdf" class="btn btn-danger btn-sm" style="font-weight: 800; font-size: 11.5px; height: 30px; padding: 2px 10px; background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%); border: 1px solid #f87171; color: #fff; display: flex; align-items: center; gap: 4px; box-shadow: 0 2px 6px rgba(239,68,68,0.25);">
+              📄 PDF Report
+            </button>
+            <button type="button" id="btn-export-reports-excel" class="btn btn-success btn-sm" style="font-weight: 800; font-size: 11.5px; height: 30px; padding: 2px 10px; background: linear-gradient(135deg, #10b981 0%, #047857 100%); border: 1px solid #34d399; color: #fff; display: flex; align-items: center; gap: 4px; box-shadow: 0 2px 6px rgba(16,185,129,0.25);">
+              📊 Excel Export
+            </button>
+          </div>
+
+        </div>
+
       </div>
 
-      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">
+      <!-- KPI Summary Cards -->
+      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;">
+        <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px 12px; text-align: center;">
+          <div style="font-size: 18px; font-weight: 900; color: #38bdf8; font-family: var(--font-mono);">${issues.length}</div>
+          <div style="font-size: 10px; color: #94a3b8; font-weight: 700; text-transform: uppercase;">Total Transactions</div>
+        </div>
+        <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px 12px; text-align: center;">
+          <div style="font-size: 18px; font-weight: 900; color: #34d399; font-family: var(--font-mono);">${totalQty} pcs</div>
+          <div style="font-size: 10px; color: #94a3b8; font-weight: 700; text-transform: uppercase;">Parts Consumed</div>
+        </div>
+        <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px 12px; text-align: center;">
+          <div style="font-size: 18px; font-weight: 900; color: #fbbf24; font-family: var(--font-mono);">${Object.keys(machineMap).length}</div>
+          <div style="font-size: 10px; color: #94a3b8; font-weight: 700; text-transform: uppercase;">Machines Serviced</div>
+        </div>
+        <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px 12px; text-align: center;">
+          <div style="font-size: 18px; font-weight: 900; color: #a78bfa; font-family: var(--font-mono);">${Object.keys(techMap).length}</div>
+          <div style="font-size: 10px; color: #94a3b8; font-weight: 700; text-transform: uppercase;">Active Technicians</div>
+        </div>
+      </div>
+
+      <!-- Analytics Breakdown Grids -->
+      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;">
         
+        <!-- Top Consumed Parts -->
         <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 6px;">
           <div style="font-size: 11.5px; font-weight: 800; color: #38bdf8; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 4px;">
             🔩 Top Consumed Parts
@@ -1168,31 +1359,63 @@ function renderReportsTab() {
           <div style="display: flex; flex-direction: column; gap: 4px;">
             ${topParts.length === 0 ? '<div style="color: var(--text-muted); font-size: 11px;">No records yet.</div>' : topParts.map(([name, qty]) => `
               <div style="display: flex; justify-content: space-between; font-size: 11px; padding: 2px 4px; background: rgba(255,255,255,0.02); border-radius: 4px;">
-                <span style="color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 160px;">${name}</span>
+                <span style="color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 130px;" title="${name}">${name}</span>
                 <strong style="color: #34d399; font-family: var(--font-mono);">${qty} pcs</strong>
               </div>
             `).join('')}
           </div>
         </div>
 
+        <!-- Floor-wise Distribution -->
         <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 6px;">
           <div style="font-size: 11.5px; font-weight: 800; color: #fbbf24; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 4px;">
-            🏢 Floor-wise Distribution
+            🏢 Floor Distribution
           </div>
           <div style="display: flex; flex-direction: column; gap: 4px;">
             ${topFloors.length === 0 ? '<div style="color: var(--text-muted); font-size: 11px;">No records yet.</div>' : topFloors.map(([flr, qty]) => `
               <div style="display: flex; justify-content: space-between; font-size: 11px; padding: 2px 4px; background: rgba(255,255,255,0.02); border-radius: 4px;">
-                <span style="color: #fff;">${flr}</span>
+                <span style="color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 130px;">${flr}</span>
                 <strong style="color: #fbbf24; font-family: var(--font-mono);">${qty} parts</strong>
               </div>
             `).join('')}
           </div>
         </div>
 
+        <!-- Top Machines Replaced -->
         <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 6px;">
           <div style="font-size: 11.5px; font-weight: 800; color: #a78bfa; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 4px;">
-            🏭 Top Machines Replaced
+            🏭 Top Machines Serviced
           </div>
+          <div style="display: flex; flex-direction: column; gap: 4px;">
+            ${topMachines.length === 0 ? '<div style="color: var(--text-muted); font-size: 11px;">No machines fitted yet.</div>' : topMachines.map(([serial, qty]) => `
+              <div style="display: flex; justify-content: space-between; font-size: 11px; padding: 2px 4px; background: rgba(255,255,255,0.02); border-radius: 4px;">
+                <span style="font-family: var(--font-mono); color: #38bdf8; font-weight: 700;">${serial}</span>
+                <strong style="color: #a78bfa; font-family: var(--font-mono);">${qty} parts</strong>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+
+        <!-- Top Technicians Assigned -->
+        <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 6px;">
+          <div style="font-size: 11.5px; font-weight: 800; color: #34d399; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 4px;">
+            👨‍🔧 Top Technicians
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 4px;">
+            ${topTechs.length === 0 ? '<div style="color: var(--text-muted); font-size: 11px;">No technicians logged yet.</div>' : topTechs.map(([tech, qty]) => `
+              <div style="display: flex; justify-content: space-between; font-size: 11px; padding: 2px 4px; background: rgba(255,255,255,0.02); border-radius: 4px;">
+                <span style="color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 130px;" title="${tech}">${tech}</span>
+                <strong style="color: #34d399; font-family: var(--font-mono);">${qty} parts</strong>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  `;
+}
           <div style="display: flex; flex-direction: column; gap: 4px;">
             ${topMachines.length === 0 ? '<div style="color: var(--text-muted); font-size: 11px;">No machines fitted yet.</div>' : topMachines.map(([serial, qty]) => `
               <div style="display: flex; justify-content: space-between; font-size: 11px; padding: 2px 4px; background: rgba(255,255,255,0.02); border-radius: 4px;">
@@ -2960,11 +3183,62 @@ export function initPartsTraceEvents() {
     });
   }
 
-  // 18. Export Excel Actions
-  const btnExportIssues = root.querySelector('#btn-export-issues-excel') || root.querySelector('#btn-export-history-excel') || root.querySelector('#btn-export-reports-excel');
+  // 18. Export Excel & PDF Actions
+  const btnExportHistoryExcel = root.querySelector('#btn-export-history-excel');
+  if (btnExportHistoryExcel) {
+    btnExportHistoryExcel.addEventListener('click', () => {
+      try {
+        partsTraceService.exportToExcel({ search: historySearch, ...historyFilters });
+        notificationService.notifySuccess('Excel Exported', 'Traceability data exported successfully.');
+      } catch (err) {
+        notificationService.notifyError('Export Failed', err.message);
+      }
+    });
+  }
+
+  const btnExportReportsExcel = root.querySelector('#btn-export-reports-excel');
+  if (btnExportReportsExcel) {
+    btnExportReportsExcel.addEventListener('click', () => {
+      try {
+        partsTraceService.exportToExcel({ search: historySearch, ...historyFilters });
+        notificationService.notifySuccess('Excel Exported', 'Traceability data exported successfully.');
+      } catch (err) {
+        notificationService.notifyError('Export Failed', err.message);
+      }
+    });
+  }
+
+  const btnExportIssues = root.querySelector('#btn-export-issues-excel');
   if (btnExportIssues) {
     btnExportIssues.addEventListener('click', () => {
-      partsTraceService.exportToExcel();
+      try {
+        partsTraceService.exportToExcel({ search: historySearch, ...historyFilters });
+        notificationService.notifySuccess('Excel Exported', 'Traceability data exported successfully.');
+      } catch (err) {
+        notificationService.notifyError('Export Failed', err.message);
+      }
+    });
+  }
+
+  const btnExportHistoryPdf = root.querySelector('#btn-export-history-pdf');
+  if (btnExportHistoryPdf) {
+    btnExportHistoryPdf.addEventListener('click', () => {
+      try {
+        partsTraceService.exportToPdf({ search: historySearch, ...historyFilters });
+      } catch (err) {
+        notificationService.notifyError('PDF Failed', err.message);
+      }
+    });
+  }
+
+  const btnExportReportsPdf = root.querySelector('#btn-export-reports-pdf');
+  if (btnExportReportsPdf) {
+    btnExportReportsPdf.addEventListener('click', () => {
+      try {
+        partsTraceService.exportToPdf({ search: historySearch, ...historyFilters });
+      } catch (err) {
+        notificationService.notifyError('PDF Failed', err.message);
+      }
     });
   }
 
@@ -3014,6 +3288,33 @@ export function initPartsTraceEvents() {
     });
   }
 
+  const selHistUnit = root.querySelector('#sel-history-unit');
+  if (selHistUnit) {
+    selHistUnit.addEventListener('change', (e) => {
+      historyFilters.unitId = e.target.value;
+      historyFilters.floorId = '';
+      historyFilters.lineId = '';
+      refresh();
+    });
+  }
+
+  const selHistFloor = root.querySelector('#sel-history-floor');
+  if (selHistFloor) {
+    selHistFloor.addEventListener('change', (e) => {
+      historyFilters.floorId = e.target.value;
+      historyFilters.lineId = '';
+      refresh();
+    });
+  }
+
+  const selHistLine = root.querySelector('#sel-history-line');
+  if (selHistLine) {
+    selHistLine.addEventListener('change', (e) => {
+      historyFilters.lineId = e.target.value;
+      refresh();
+    });
+  }
+
   const inpHistFrom = root.querySelector('#inp-history-from');
   if (inpHistFrom) {
     inpHistFrom.addEventListener('change', (e) => {
@@ -3026,6 +3327,15 @@ export function initPartsTraceEvents() {
   if (inpHistTo) {
     inpHistTo.addEventListener('change', (e) => {
       historyFilters.dateTo = e.target.value;
+      refresh();
+    });
+  }
+
+  const btnResetHistFilters = root.querySelector('#btn-history-reset-filters');
+  if (btnResetHistFilters) {
+    btnResetHistFilters.addEventListener('click', () => {
+      historySearch = '';
+      historyFilters = { dateFrom: '', dateTo: '', unitId: '', floorId: '', lineId: '', partCode: '' };
       refresh();
     });
   }
