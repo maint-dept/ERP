@@ -4579,6 +4579,39 @@ export const INITIAL_DATA = {
     "remarks": "Fine tension adjustment screwdriver"
   },
   {
+    "id": "tool-004",
+    "code": "004",
+    "name": "Star Screw Driver (Large)",
+    "category": "TOOLS",
+    "totalStock": 150,
+    "unit": "Pcs",
+    "minStock": 20,
+    "status": "ACTIVE",
+    "remarks": "Heavy duty phillips/star screwdriver 10inch"
+  },
+  {
+    "id": "tool-005",
+    "code": "005",
+    "name": "Star Screw Driver (Medium)",
+    "category": "TOOLS",
+    "totalStock": 180,
+    "unit": "Pcs",
+    "minStock": 20,
+    "status": "ACTIVE",
+    "remarks": "Standard phillips/star screwdriver 8inch"
+  },
+  {
+    "id": "tool-006",
+    "code": "006",
+    "name": "Star Screw Driver (Small)",
+    "category": "TOOLS",
+    "totalStock": 200,
+    "unit": "Pcs",
+    "minStock": 25,
+    "status": "ACTIVE",
+    "remarks": "Fine tension phillips/star screwdriver"
+  },
+  {
     "id": "tool-014",
     "code": "014",
     "name": "Pliers (Long Nose)",

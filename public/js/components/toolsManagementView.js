@@ -7140,64 +7140,96 @@ export function openBatchToolsAllocationModal() {
  * Used to translate raw ERP PDF naming variations into standardized catalog items
  */
 const OCR_FACTORY_ALIASES = [
-  { regex: /tools?\s*ba[gcq68]|tools?\s*b[a-z0-9]{1,3}\b/i, targetName: 'Tools Bag (Canvas / Leather)' },
-  { regex: /needle\s*(?:ln|allen|l-?n)[\s\-]*key.*1\.58/i, targetName: 'Needle Allen Key (01.58mm)' },
-  { regex: /needle\s*(?:ln|allen|l-?n)[\s\-]*key.*1\.5/i, targetName: 'Hex Allen Key (01.50mm)' },
-  { regex: /t[\s\-]*ln[\s\-]*key.*(?:2|2\.5)\s*mm/i, targetName: 'T-Handle Allen Key (02.50mm)' },
-  { regex: /t[\s\-]*ln[\s\-]*key.*3\s*mm/i, targetName: 'T-Handle Allen Key (03mm)' },
-  { regex: /t[\s\-]*ln[\s\-]*key.*4\s*mm/i, targetName: 'T-Handle Allen Key (04mm)' },
-  { regex: /t[\s\-]*ln[\s\-]*key.*5\s*mm/i, targetName: 'T-Handle Allen Key (05mm)' },
-  { regex: /star\s*screw\s*driver.*(?:10|large|10["”'°])|star.*screw/i, targetName: 'Flat Screw Driver (Large)' },
-  { regex: /nose\s*(?:pleir|plier|pliar|ple|plir|pleer)/i, targetName: 'Pliers (Long Nose)' },
-  { regex: /long\s*nose/i, targetName: 'Pliers (Long Nose)' },
-  { regex: /(?:cutting|combination)\s*(?:pleir|plier|pliar)/i, targetName: 'Pliers (Combination / Cutting)' },
-  { regex: /flat\s*screw\s*driver.*(?:10|large|10["”'°])/i, targetName: 'Flat Screw Driver (Large)' },
-  { regex: /flat\s*screw\s*driver.*(?:8|med)/i, targetName: 'Flat Screw Driver (Medium)' },
-  { regex: /flat\s*screw\s*driver.*(?:small|4|6)/i, targetName: 'Flat Screw Driver (Small)' },
-  { regex: /combination\s*spanner.*5\s*mm/i, targetName: 'Combination Spanner (05mm)' },
-  { regex: /combination\s*spanner.*6\s*mm/i, targetName: 'Combination Spanner (06mm)' },
-  { regex: /combination\s*spanner.*7\s*mm/i, targetName: 'Combination Spanner (07mm)' },
-  { regex: /combination\s*spanner.*8\s*mm/i, targetName: 'Combination Spanner (08mm)' },
-  { regex: /combination\s*spanner.*9\s*mm/i, targetName: 'Combination Spanner (09mm)' },
-  { regex: /l[\s\-]*n[\s\-]*key.*1\.5\s*mm/i, targetName: 'Hex Allen Key (01.50mm)' },
-  { regex: /l[\s\-]*n[\s\-]*key.*2\s*mm/i, targetName: 'Hex Allen Key (02mm)' },
-  { regex: /l[\s\-]*n[\s\-]*key.*2\.5\s*mm/i, targetName: 'Hex Allen Key (02.50mm)' },
-  { regex: /l[\s\-]*n[\s\-]*key.*3\s*mm/i, targetName: 'Hex Allen Key (03mm)' },
-  { regex: /l[\s\-]*n[\s\-]*key.*3\.5\s*mm/i, targetName: 'Hex Allen Key (03.50mm)' },
-  { regex: /l[\s\-]*n[\s\-]*key.*4\s*mm/i, targetName: 'Hex Allen Key (04mm)' },
-  { regex: /l[\s\-]*n[\s\-]*key.*4\.5\s*mm/i, targetName: 'Hex Allen Key (04.50mm)' },
-  { regex: /l[\s\-]*n[\s\-]*key.*5\s*mm/i, targetName: 'Hex Allen Key (05mm)' },
-  { regex: /l[\s\-]*n[\s\-]*key.*6\s*mm/i, targetName: 'Hex Allen Key (06mm)' },
+  // Tools Bag & Carrier
+  { regex: /tools?\s*ba[gcq68]|tools?\s*b[a-z0-9]{1,3}\b|mechanic\s*bag|kit\s*bag/i, targetName: 'Tools Bag (Canvas / Leather)' },
+
+  // Star / Cross / Philips Screwdrivers (Strictly distinguished from Flat Screwdrivers)
+  { regex: /(?:star|cross|philips|\+)\s*(?:screw\s*driver|driver).*?(?:10|large|10["”'°]|10inch)/i, targetName: 'Star Screw Driver (Large)' },
+  { regex: /(?:star|cross|philips|\+)\s*(?:screw\s*driver|driver).*?(?:8|med|medium|8["”'°]|8inch)/i, targetName: 'Star Screw Driver (Medium)' },
+  { regex: /(?:star|cross|philips|\+)\s*(?:screw\s*driver|driver).*?(?:small|4|6|fine|4["”'°]|6["”'°])/i, targetName: 'Star Screw Driver (Small)' },
+  { regex: /(?:star|cross|philips)\s*(?:screw\s*driver|driver)/i, targetName: 'Star Screw Driver (Large)' },
+
+  // Flat Screwdrivers
+  { regex: /(?:flat|slotted|\-)\s*(?:screw\s*driver|driver).*?(?:10|large|10["”'°]|10inch)/i, targetName: 'Flat Screw Driver (Large)' },
+  { regex: /(?:flat|slotted|\-)\s*(?:screw\s*driver|driver).*?(?:8|med|medium|8["”'°]|8inch)/i, targetName: 'Flat Screw Driver (Medium)' },
+  { regex: /(?:flat|slotted|\-)\s*(?:screw\s*driver|driver).*?(?:small|4|6|fine|4["”'°]|6["”'°])/i, targetName: 'Flat Screw Driver (Small)' },
+  { regex: /(?:flat|slotted)\s*(?:screw\s*driver|driver)/i, targetName: 'Flat Screw Driver (Medium)' },
+
+  // Pliers
+  { regex: /(?:long\s*)?nose\s*(?:pleir|plier|pliar|ple|plir|pleer)|long\s*nose/i, targetName: 'Pliers (Long Nose)' },
+  { regex: /(?:cutting|combination|side\s*cut(?:ter)?)\s*(?:pleir|plier|pliar)/i, targetName: 'Pliers (Combination / Cutting)' },
+
+  // T-Handle Allen Keys (Explicit T-Handle identification)
+  { regex: /t[\s\-]*l?[\s\-]*n?[\s\-]*key.*?(?:2|2\.0|2\.5|2\.50)\s*mm/i, targetName: 'T-Handle Allen Key (02.50mm)' },
+  { regex: /t[\s\-]*l?[\s\-]*n?[\s\-]*key.*?3(?:\.0)?\s*mm/i, targetName: 'T-Handle Allen Key (03mm)' },
+  { regex: /t[\s\-]*l?[\s\-]*n?[\s\-]*key.*?4(?:\.0)?\s*mm/i, targetName: 'T-Handle Allen Key (04mm)' },
+  { regex: /t[\s\-]*l?[\s\-]*n?[\s\-]*key.*?5(?:\.0)?\s*mm/i, targetName: 'T-Handle Allen Key (05mm)' },
+  { regex: /t[\s\-]*l?[\s\-]*n?[\s\-]*key.*?6(?:\.0)?\s*mm/i, targetName: 'T-Handle Allen Key (06mm)' },
+
+  // Needle Allen Keys
+  { regex: /needle\s*(?:ln|allen|l-?n)[\s\-]*key.*?1\.58/i, targetName: 'Needle Allen Key (01.58mm)' },
+  { regex: /needle\s*(?:ln|allen|l-?n)[\s\-]*key.*?1\.50?\s*mm/i, targetName: 'Hex Allen Key (01.50mm)' },
+
+  // Hex L-Keys (L-N-Key)
+  { regex: /l[\s\-]*n[\s\-]*key.*?1\.50?\s*mm/i, targetName: 'Hex Allen Key (01.50mm)' },
+  { regex: /l[\s\-]*n[\s\-]*key.*?2(?:\.0)?\s*mm/i, targetName: 'Hex Allen Key (02mm)' },
+  { regex: /l[\s\-]*n[\s\-]*key.*?2\.50?\s*mm/i, targetName: 'Hex Allen Key (02.50mm)' },
+  { regex: /l[\s\-]*n[\s\-]*key.*?3(?:\.0)?\s*mm/i, targetName: 'Hex Allen Key (03mm)' },
+  { regex: /l[\s\-]*n[\s\-]*key.*?3\.50?\s*mm/i, targetName: 'Hex Allen Key (03.50mm)' },
+  { regex: /l[\s\-]*n[\s\-]*key.*?4(?:\.0)?\s*mm/i, targetName: 'Hex Allen Key (04mm)' },
+  { regex: /l[\s\-]*n[\s\-]*key.*?4\.50?\s*mm/i, targetName: 'Hex Allen Key (04.50mm)' },
+  { regex: /l[\s\-]*n[\s\-]*key.*?5(?:\.0)?\s*mm/i, targetName: 'Hex Allen Key (05mm)' },
+  { regex: /l[\s\-]*n[\s\-]*key.*?6(?:\.0)?\s*mm/i, targetName: 'Hex Allen Key (06mm)' },
   { regex: /hex\s*allen\s*key/i, targetName: 'Hex Allen Key' },
-  { regex: /adjustable\s*wrench|wrench\s*10|slide\s*wrench/i, targetName: 'Adjustable Wrench (10inch)' },
-  { regex: /dim?ond\s*file|diamond\s*file|file\s*junior/i, targetName: 'File (Diamond File)' },
-  { regex: /open\s*end\s*spanner.*14[\s\-]*17/i, targetName: 'Open End Spanner (14-17mm)' },
-  { regex: /open\s*end\s*spanner.*10[\s\-]*11/i, targetName: 'Open End Spanner (10-11mm)' },
-  { regex: /open\s*end\s*spanner.*12[\s\-]*13/i, targetName: 'Open End Spanner (12-13mm)' },
-  { regex: /super\s*glue/i, targetName: 'Super Glue' },
-  { regex: /sand\s*paper/i, targetName: 'Sand Paper' },
-  { regex: /take-?up\s*spring/i, targetName: 'Take-up Spring' },
-  { regex: /wiper\s*stick/i, targetName: 'Wiper Stick' },
-  { regex: /(?:eye|safety)\s*guard/i, targetName: 'Eye/Safety Guard' },
-  { regex: /safety\s*glass/i, targetName: 'Safety Glass' },
-  { regex: /cable\s*tie/i, targetName: 'Cable Tie' },
+
+  // Combination Spanners
+  { regex: /comb(?:ination)?\s*spanner.*?5\s*mm/i, targetName: 'Combination Spanner (05mm)' },
+  { regex: /comb(?:ination)?\s*spanner.*?6\s*mm/i, targetName: 'Combination Spanner (06mm)' },
+  { regex: /comb(?:ination)?\s*spanner.*?7\s*mm/i, targetName: 'Combination Spanner (07mm)' },
+  { regex: /comb(?:ination)?\s*spanner.*?8\s*mm/i, targetName: 'Combination Spanner (08mm)' },
+  { regex: /comb(?:ination)?\s*spanner.*?9\s*mm/i, targetName: 'Combination Spanner (09mm)' },
+  { regex: /comb(?:ination)?\s*spanner.*?10\s*mm/i, targetName: 'Combination Spanner (10mm)' },
+
+  // Open End Spanners
+  { regex: /open\s*(?:end)?\s*spanner.*?10[\s\-]*11/i, targetName: 'Open End Spanner (10-11mm)' },
+  { regex: /open\s*(?:end)?\s*spanner.*?12[\s\-]*13/i, targetName: 'Open End Spanner (12-13mm)' },
+  { regex: /open\s*(?:end)?\s*spanner.*?14[\s\-]*17/i, targetName: 'Open End Spanner (14-17mm)' },
+  { regex: /open\s*(?:end)?\s*spanner.*?8[\s\-]*9/i, targetName: 'Open End Spanner (08-09mm)' },
+  { regex: /open\s*(?:end)?\s*spanner.*?6[\s\-]*7/i, targetName: 'Open End Spanner (06-07mm)' },
+
+  // Adjustable Wrench & File
+  { regex: /adjust(?:able)?\s*wrench|wrench\s*10|slide\s*wrench|monkey\s*wrench/i, targetName: 'Adjustable Wrench (10inch)' },
+  { regex: /dim?ond\s*file|diamond\s*file|file\s*junior|file\s*\(diamond/i, targetName: 'File (Diamond File)' },
+
+  // Factory Accessories
+  { regex: /super\s*glue|eagle\s*glue/i, targetName: 'Super Glue' },
+  { regex: /sand\s*paper|emery\s*paper/i, targetName: 'Sand Paper' },
+  { regex: /take-?up\s*spring|check\s*spring/i, targetName: 'Take-up Spring' },
+  { regex: /wiper\s*stick|thread\s*wiper/i, targetName: 'Wiper Stick' },
+  { regex: /(?:eye|safety|finger)\s*guard/i, targetName: 'Eye/Safety Guard' },
+  { regex: /safety\s*glass(?:es)?|goggles/i, targetName: 'Safety Glass' },
+  { regex: /cable\s*tie|zip\s*tie/i, targetName: 'Cable Tie' },
+  { regex: /screw.*nut.*bolt|nut\s*bolt|washer/i, targetName: 'Screw, Nut-Bolt, & Washer' },
+
+  // Machine Spare Parts (20 Master Machine Spares)
   { regex: /needle\s*plate/i, targetName: 'Needle Plate' },
   { regex: /feed\s*dog/i, targetName: 'Needle Feed Dog' },
   { regex: /needle\s*bar/i, targetName: 'Needle Bar' },
   { regex: /rotary\s*hook|shuttle/i, targetName: 'Rotary Hook / Shuttle' },
-  { regex: /bobbin\s*case|bobbin/i, targetName: 'Bobbin Case & Bobbin' },
+  { regex: /bobbin\s*case|bobbin\b/i, targetName: 'Bobbin Case & Bobbin' },
   { regex: /motor\s*belt|v-?belt/i, targetName: 'Motor Belt' },
   { regex: /motor\s*pulley/i, targetName: 'Motor Pulley' },
   { regex: /motor\s*coupling/i, targetName: 'Motor Coupling' },
   { regex: /pcb\s*board|control\s*pcb/i, targetName: 'Main Control PCB Board' },
-  { regex: /knife\s*blade/i, targetName: 'Upper & Lower Knife Blades' },
+  { regex: /knife\s*blade|upper\s*knife|lower\s*knife/i, targetName: 'Upper & Lower Knife Blades' },
   { regex: /presser\s*foot/i, targetName: 'Presser Foot (Heavy Duty)' }
 ];
 
 /**
  * Matches an extracted raw item name against local inventory catalog items
+ * Uses multi-layered intelligent disambiguation for screwdrivers, T-Handle vs Hex keys, spanners, etc.
  */
-function matchItemToCatalog(rawName, catalogList) {
+export function matchItemToCatalog(rawName, catalogList) {
   const cleanRaw = (rawName || '').trim();
   if (!cleanRaw) return { item: null, confidence: 0, method: 'NONE' };
 
@@ -7206,24 +7238,126 @@ function matchItemToCatalog(rawName, catalogList) {
     if (alias.regex.test(cleanRaw)) {
       const match = catalogList.find(c => c.name.toLowerCase().includes(alias.targetName.toLowerCase()));
       if (match) {
-        return { item: match, confidence: 0.98, method: 'FACTORY_ALIAS' };
+        return { item: match, confidence: 0.99, method: 'FACTORY_ALIAS' };
       }
     }
   }
 
-  // 2. Dimension extraction (e.g. Hex Allen Key 4mm, 04mm, 10-11mm)
-  const mmMatch = cleanRaw.match(/(\d+(?:\.\d+)?)\s*mm/i);
-  if (mmMatch) {
-    const val = mmMatch[1];
-    const padded = val.includes('.') ? val.padStart(5, '0') : val.padStart(2, '0');
-    const match = catalogList.find(c => {
+  // 2. Star / Cross Screwdriver check (Strictly never mapped to Flat Screwdriver!)
+  const isStar = /(?:star|cross|philips|\+)\s*(?:screw\s*driver|driver)|star\s*10|cross\s*10/i.test(cleanRaw);
+  if (isStar) {
+    const isLarge = /(?:10|large|10["”'°]|10inch)/i.test(cleanRaw);
+    const isMed = /(?:8|med|medium|8["”'°]|8inch)/i.test(cleanRaw);
+    const isSmall = /(?:small|4|6|fine|4["”'°]|6["”'°])/i.test(cleanRaw);
+    const sizeKw = isLarge ? 'Large' : isMed ? 'Medium' : isSmall ? 'Small' : '';
+    
+    // First try finding explicit Star/Cross tool with size
+    let match = catalogList.find(c => {
       const n = c.name.toLowerCase();
-      return (n.includes('allen key') || n.includes('spanner')) && (n.includes(`(${val}mm)`) || n.includes(`(${padded}mm)`) || n.includes(val));
+      const isStarItem = n.includes('star') || n.includes('cross') || n.includes('philips');
+      return isStarItem && (!sizeKw || n.includes(sizeKw.toLowerCase()));
     });
-    if (match) return { item: match, confidence: 0.95, method: 'DIMENSION' };
+    
+    if (!match) {
+      match = catalogList.find(c => {
+        const n = c.name.toLowerCase();
+        return n.includes('star') || n.includes('cross') || n.includes('philips');
+      });
+    }
+
+    if (match) return { item: match, confidence: 0.96, method: 'STAR_SCREWDRIVER' };
   }
 
-  // 3. Exact normalized string equality
+  // 3. Flat Screwdriver check
+  const isFlat = /(?:flat|slotted|\-)\s*(?:screw\s*driver|driver)|flat\s*10/i.test(cleanRaw);
+  if (isFlat) {
+    const isLarge = /(?:10|large|10["”'°]|10inch)/i.test(cleanRaw);
+    const isMed = /(?:8|med|medium|8["”'°]|8inch)/i.test(cleanRaw);
+    const isSmall = /(?:small|4|6|fine|4["”'°]|6["”'°])/i.test(cleanRaw);
+    const sizeKw = isLarge ? 'Large' : isMed ? 'Medium' : isSmall ? 'Small' : '';
+
+    let match = catalogList.find(c => {
+      const n = c.name.toLowerCase();
+      return n.includes('flat') && (!sizeKw || n.includes(sizeKw.toLowerCase()));
+    });
+    if (!match) {
+      match = catalogList.find(c => c.name.toLowerCase().includes('flat'));
+    }
+    if (match) return { item: match, confidence: 0.96, method: 'FLAT_SCREWDRIVER' };
+  }
+
+  // 4. Category-Specific Dimension Disambiguation (T-Handle vs Hex Key vs Spanner vs Needle)
+  const isTHandle = /t[\s\-]*l?[\s\-]*n?[\s\-]*key|t[\s\-]*allen|t[\s\-]*handle|\(bat\)|bat\b/i.test(cleanRaw);
+  const isNeedle = /needle\s*(?:ln|allen|l-?n)?[\s\-]*key/i.test(cleanRaw);
+  const isHexKey = /l[\s\-]*n[\s\-]*key|hex\s*allen|allen\s*key|hex\s*key/i.test(cleanRaw);
+  const isCombSpanner = /comb(?:ination)?\s*spanner/i.test(cleanRaw);
+  const isOpenSpanner = /open\s*(?:end)?\s*spanner/i.test(cleanRaw);
+
+  const mmMatch = cleanRaw.match(/(\d+(?:\.\d+)?)\s*mm/i);
+  if (mmMatch) {
+    const val = parseFloat(mmMatch[1]);
+    const strVal = mmMatch[1];
+    const padded = strVal.includes('.') ? strVal.padStart(5, '0') : strVal.padStart(2, '0');
+
+    if (isTHandle) {
+      const match = catalogList.find(c => {
+        const n = c.name.toLowerCase();
+        if (!n.includes('t-handle')) return false;
+        return n.includes(`(${strVal}mm)`) || n.includes(`(${padded}mm)`) || n.includes(`${strVal}mm`) || n.includes(`${val}mm`);
+      });
+      if (match) return { item: match, confidence: 0.98, method: 'T_HANDLE_DIMENSION' };
+    }
+
+    if (isNeedle || Math.abs(val - 1.58) < 0.01) {
+      const match = catalogList.find(c => c.name.toLowerCase().includes('needle') && c.name.includes('1.58'));
+      if (match) return { item: match, confidence: 0.98, method: 'NEEDLE_KEY' };
+    }
+
+    if (isCombSpanner) {
+      const match = catalogList.find(c => {
+        const n = c.name.toLowerCase();
+        if (!n.includes('combination spanner')) return false;
+        return n.includes(`(${strVal}mm)`) || n.includes(`(${padded}mm)`) || n.includes(`${strVal}mm`);
+      });
+      if (match) return { item: match, confidence: 0.98, method: 'COMB_SPANNER_DIMENSION' };
+    }
+
+    if (isOpenSpanner) {
+      const match = catalogList.find(c => {
+        const n = c.name.toLowerCase();
+        if (!n.includes('open end spanner')) return false;
+        return n.includes(strVal) || n.includes(padded);
+      });
+      if (match) return { item: match, confidence: 0.98, method: 'OPEN_SPANNER_DIMENSION' };
+    }
+
+    if (isHexKey) {
+      const match = catalogList.find(c => {
+        const n = c.name.toLowerCase();
+        if (!n.includes('hex allen key') && !n.includes('allen key')) return false;
+        if (n.includes('t-handle')) return false;
+        return n.includes(`(${strVal}mm)`) || n.includes(`(${padded}mm)`) || n.includes(`${strVal}mm`) || n.includes(`${val}mm`);
+      });
+      if (match) return { item: match, confidence: 0.96, method: 'HEX_KEY_DIMENSION' };
+    }
+
+    // Dimension search within same tool family
+    const match = catalogList.find(c => {
+      const n = c.name.toLowerCase();
+      return n.includes(`(${strVal}mm)`) || n.includes(`(${padded}mm)`);
+    });
+    if (match) return { item: match, confidence: 0.90, method: 'GENERIC_DIMENSION' };
+  }
+
+  // 5. Open End Spanner dual ranges (e.g. 10-11mm, 12-13mm, 14-17mm)
+  const rangeMatch = cleanRaw.match(/(\d+)\s*[\-\/]\s*(\d+)\s*mm/i);
+  if (rangeMatch) {
+    const rStr = `${rangeMatch[1]}-${rangeMatch[2]}`;
+    const match = catalogList.find(c => c.name.toLowerCase().includes('open end spanner') && c.name.includes(rStr));
+    if (match) return { item: match, confidence: 0.98, method: 'OPEN_END_RANGE' };
+  }
+
+  // 6. Exact normalized string equality
   const normRaw = cleanRaw.toLowerCase().replace(/[^a-z0-9]/g, ' ').replace(/\s+/g, ' ').trim();
   const exact = catalogList.find(c => {
     const normName = c.name.toLowerCase().replace(/[^a-z0-9]/g, ' ').replace(/\s+/g, ' ').trim();
@@ -7231,14 +7365,14 @@ function matchItemToCatalog(rawName, catalogList) {
   });
   if (exact) return { item: exact, confidence: 1.0, method: 'EXACT' };
 
-  // 4. Substring matching
+  // 7. Substring matching
   const sub = catalogList.find(c => {
     const normName = c.name.toLowerCase().replace(/[^a-z0-9]/g, ' ').replace(/\s+/g, ' ').trim();
     return normName.includes(normRaw) || normRaw.includes(normName);
   });
   if (sub) return { item: sub, confidence: 0.85, method: 'SUBSTRING' };
 
-  // 5. Token overlap & fuzzy typo tolerance
+  // 8. Token overlap & fuzzy typo tolerance
   const rawWords = new Set(normRaw.split(' ').filter(w => w.length > 1));
   let best = null;
   let bestScore = 0;
@@ -7307,10 +7441,10 @@ export function cleanAndValidateReqNo(val) {
 
 /**
  * Universal ERP PDF Parser
- * Filters out all unwanted columns (SL No, Item Id, Requisition To, Opening Stock, etc.)
- * and extracts ONLY data from the 'Item Name' column cell containing:
- * - Tool Name (e.g. NEEDLE LN-KEY 1.58MM, T-Ln-Key 2Mm(Bat), COMBINATION SPANNER 5MM, etc.)
- * - Tools User - [Name] - [CardNumber] [[Status]]
+ * Accurately handles:
+ * 1. Tab-delimited ERP PDF tables (with multi-column headers & multi-line cell text)
+ * 2. Unstructured text / OCR scans
+ * 3. Extracts Requisition No, Assigned Mechanic from Manpower, Clean Tool Names, Approved Quantities, and Status
  */
 export function parseRealErpPdfData(rawInput) {
   if (!rawInput || typeof rawInput !== 'string') return { detectedUser: {}, detectedRequisitionNo: '', items: [] };
@@ -7329,9 +7463,9 @@ export function parseRealErpPdfData(rawInput) {
   text = text.replace(/\bPog\b/gi, 'Madhob');
   text = text.replace(/\bNa1mul\b/gi, 'Najmul');
 
-  // 2. Auto-Detect ERP Internal Requisition Number (e.g. "Requisition No : IR2512385720" or "Req No : * I R2512385720 *")
-  // Priority 1: Barcode star/quote/tilde pattern e.g. "*IR2512385720*" or "* IR2512385720 *" or "*IR25 12385720\""
-  const starMatches = text.matchAll(/[\*~`"']\s*([A-Za-z0-9\s\-]{5,25})\s*[\*~`"']/g);
+  // 2. Auto-Detect ERP Internal Requisition Number
+  // Priority 1: Barcode star/quote/tilde pattern with possible intra-word spaces e.g. "* I R 2 5 0 7 3 1 8 8 0 1 *"
+  const starMatches = text.matchAll(/[\*~`"']\s*([A-Za-z0-9\s\-]{5,35})\s*[\*~`"']/g);
   for (const sm of starMatches) {
     const candidate = cleanAndValidateReqNo(sm[1]);
     if (candidate) {
@@ -7340,7 +7474,7 @@ export function parseRealErpPdfData(rawInput) {
     }
   }
 
-  // Priority 2: Direct Requisition No label on SAME LINE (flexible punctuation : . = ; - or whitespace)
+  // Priority 2: Direct Requisition No label on SAME LINE
   if (!detectedRequisitionNo) {
     const sameLineMatch = text.match(/(?:requisition\s*(?:no\.?|num(?:ber)?|#)|req\.?\s*(?:no\.?|#))[^\S\r\n]*[:\-–—=\.\t ;]*[^\S\r\n]*\*?\s*([A-Za-z0-9\-_]{4,25})/i);
     if (sameLineMatch) {
@@ -7351,7 +7485,7 @@ export function parseRealErpPdfData(rawInput) {
     }
   }
 
-  // Priority 3: Direct Requisition No label followed by newline and number on next line
+  // Priority 3: Direct Requisition No label followed by newline
   if (!detectedRequisitionNo) {
     const nextLineMatch = text.match(/(?:requisition\s*(?:no\.?|num(?:ber)?|#)|req\.?\s*(?:no\.?|#))[^\S\r\n]*[:\-–—=\.\t ;]*\r?\n\s*\*?\s*([A-Za-z0-9\-_]{4,25})/i);
     if (nextLineMatch) {
@@ -7362,7 +7496,7 @@ export function parseRealErpPdfData(rawInput) {
     }
   }
 
-  // Priority 4: Standalone IR / PR / MR / REQ code anywhere in document e.g. IR2512385720 or IR260227649
+  // Priority 4: Standalone IR / PR / MR / REQ code anywhere in document
   if (!detectedRequisitionNo) {
     const standaloneMatch = text.match(/\b([1I|l]R[\-\s]?[0-9]{6,14}|(?:PR|MR|SR|REQ|TR|WO)[\-\s]?[0-9]{4,14})\b/i);
     if (standaloneMatch) {
@@ -7376,16 +7510,17 @@ export function parseRealErpPdfData(rawInput) {
   // 3. Resolve mechanic against Manpower (employeeService)
   const allEmps = (typeof employeeService !== 'undefined' ? employeeService.getAllEmployees() : []) || [];
 
-  const userMatch = text.match(/Tools\s*User\s*[-–—:]*\s*([^\-]+?)\s*[-–—:]\s*([0-9a-zA-Z]{4,10})/i);
+  const userMatch = text.match(/(?:Tools\s*User|Comments\s*:\s*Tools\s*User)\s*[-–—:]*\s*([^\-]+?)\s*[-–—:]\s*([0-9a-zA-Z\s]{4,14})/i);
   if (userMatch) {
     const rawUName = userMatch[1].trim();
     const rawUDigits = userMatch[2].replace(/[^\d]/g, '');
     const cleanName = rawUName.toLowerCase().replace(/[^a-z0-9]/g, '');
 
-    // Search employee in Manpower: check exact card, fuzzy 1-digit card (OCR 182472 -> 142472), or name alias
+    // Search employee in Manpower: check exact card digits, suffix digits, or name alias
     const matched = allEmps.find(e => {
       const empDigits = (e.cardNumber || '').replace(/[^\d]/g, '');
-      if (rawUDigits.length >= 5 && empDigits) {
+      if (rawUDigits.length >= 4 && empDigits) {
+        if (empDigits === rawUDigits || empDigits.endsWith(rawUDigits) || rawUDigits.endsWith(empDigits)) return true;
         let diff = 0;
         for (let i = 0; i < Math.min(rawUDigits.length, empDigits.length); i++) {
           if (rawUDigits[i] !== empDigits[i]) diff++;
@@ -7412,25 +7547,21 @@ export function parseRealErpPdfData(rawInput) {
     }
   }
 
-  // 4. Extract tool lines: Works for both Tab-delimited copied PDF text and raw OCR text lines
+  // 4. Extract Tools: Support Tab-Delimited Multi-column PDF Copy & OCR Text
   const catalogAll = getAllCatalogItems('ALL');
-  const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
 
-  // Helper: Robust Multi-Criteria Status Detector (Tolerant to OCR Typos)
+  // Helper: Status Detector
   function detectStatus(str) {
     if (!str) return null;
     const s = String(str);
-    // 1. Bracketed tags (highest priority, handles OCR typos like [Chanqe], [Charge], [l0st], etc.)
     if (/\[\s*(?:ch[a-z]{1,5}g[a-z]{0,2}|replace[a-z]*|rep|chg|charge|changc|chanqe|cnanqe|chge|chonge|clange|exchange|exchanged)\s*\]/i.test(s)) return 'REPLACED';
     if (/\[\s*(?:lost|l0st|last|losi|lose|missing|harao|harano|damage[a-z]*|return|ret|retum)\s*\]/i.test(s)) return 'LOST';
     if (/\[\s*(?:new|ncw|now|rew|1a\s*eee|fresh|nev|naw)\s*\]/i.test(s)) return 'NEW_ISSUE';
 
-    // 2. Parenthesized or curly braced tags: (Change), (Lost), (New)
     if (/\(\s*(?:change|charge|changc|chanqe|chg|replace|replaced)\s*\)/i.test(s)) return 'REPLACED';
     if (/\(\s*(?:lost|l0st|last|lose|missing|harao|harano|return)\s*\)/i.test(s)) return 'LOST';
     if (/\(\s*(?:new|ncw|now|rew|fresh)\s*\)/i.test(s)) return 'NEW_ISSUE';
 
-    // 3. Keyword word boundaries (Change, Lost, Return, New)
     if (/\b(?:change|changed|replaced|replacement|exchange|exchanged)\b/i.test(s)) return 'REPLACED';
     if (/\b(?:lost|missing|damaged?)\b/i.test(s)) return 'LOST';
     if (/\b(?:new|fresh|new\s*issue)\b/i.test(s)) return 'NEW_ISSUE';
@@ -7438,111 +7569,182 @@ export function parseRealErpPdfData(rawInput) {
     return null;
   }
 
-  // Pre-extract sequential table status tags from table rows following the header
-  const tableStatusTags = [];
-  let passedHeader = false;
-  for (const l of lines) {
-    if (/^(?:sl|item\s*id|item\s*name|opening|requisition\s*to)/i.test(l)) {
-      passedHeader = true;
-    }
-    if (passedHeader) {
-      const st = detectStatus(l);
-      if (st) tableStatusTags.push(st);
-    }
-  }
-
   const hasToolKeyword = (l) => {
     return /tools?\s*ba[gcq68]|tools?\s*b[a-z0-9]{1,3}\b|screw\s*driver|pleir|plier|allen\s*key|ln[\s\-]*key|spanner|wrench|file|scissors|shuttle|hook|bobbin|knife|blade|presser\s*foot|cable\s*tie|sand\s*paper|glue/i.test(l);
   };
 
   const isHeaderOrJunk = (l) => {
-    // NEVER discard if line contains a real tool keyword!
     if (hasToolKeyword(l)) return false;
-
     if (/^(sl\.?|item\s*id|item\s*name|requisition|opening|req\s*qty|closing|uom|gpaning|app\s*qty|issue\s*qty)\b/i.test(l)) return true;
     if (/^(internal\s*requisition|date\s*:|requisition\s*from|floor\s*:|line\s*:|cost\s*center|status\s*:|req\s*no|comments\s*:|machine\s*:|pi\s*no|sales\s*order|lot\s*no|fab\s*code|total\s*:)/i.test(l)) return true;
     if (/^[\d\-]{10,35}$/.test(l)) return true; // pure item ID
     if (/^\d+$/.test(l)) return true; // pure number
     if (/^tools\s*user/i.test(l)) return true;
-    if (/^(pcs|pc)$/i.test(l)) return true;
+    if (/^(pcs|pc|sheet|set)$/i.test(l)) return true;
     if (/^(odor\s*\d+|084\s*2\-080|adzb\d+|ones|neo|on1a|ae\s*a\s*tr|zs\s*ae|a)$/i.test(l)) return true;
     return false;
   };
 
-  for (let i = 0; i < lines.length; i++) {
-    let origLine = lines[i];
-    if (isHeaderOrJunk(origLine)) continue;
+  // Helper to extract clean tool name from a cell or line
+  function cleanToolString(str) {
+    let s = (str || '').trim();
+    // Remove "Tools User - [Name] - [Card] [Status]" subtext
+    s = s.replace(/[\s\t\n\r]*Tools\s*User.*$/is, '');
+    s = s.replace(/[\s\t\n\r]*SPARE\s*PARTS\s*STORE.*$/is, '');
+    s = s.replace(/[\s\t\n\r]*\d+[\s\t]+PCS.*$/is, '');
+    s = s.replace(/^(?:sl\.?\s*(?:no\.?)?|item\s*(?:id|name)|requisition\s*to|opening|req\s*qty|closing|uom)[\s\t:]*/gi, '');
+    s = s.replace(/^\d+[\s\t\.\)]+/, '');
+    // Strip multi-digit ERP item codes e.g. "0004-0012-0022-0042-0080 "
+    s = s.replace(/^(?:\d{4,6}[\-_]\d{3,6}[\-_][0-9A-Za-z\-_]{3,25}[\s\t]+)/i, '');
+    s = s.replace(/^[\|\!\/\\I\.\s\t\-]+/, '');
+    s = s.replace(/[\|\s\t]+$/g, '');
+    return s.trim();
+  }
 
-    let line = origLine;
+  // Check if text is structured table format with tabs
+  if (text.includes('\t')) {
+    // Process tabbed lines
+    const rawLines = text.split('\n');
+    for (let rIdx = 0; rIdx < rawLines.length; rIdx++) {
+      const line = rawLines[rIdx];
+      if (!line.includes('\t') && !hasToolKeyword(line)) continue;
+      if (isHeaderOrJunk(line)) continue;
 
-    // 1. If line has a pipe | separating Item ID column and Item Name column, strip everything before pipe
-    if (line.includes('|')) {
-      line = line.replace(/^.*?\|\s*/, '');
-    } else {
-      // Strip leading header artifacts, serial numbers, and 8-40 char item codes
-      line = line.replace(/^(?:sl\.?\s*(?:no\.?)?|item\s*(?:id|name)|requisition\s*to|opening|req\s*qty|closing|uom)[\s\t:]*/gi, '');
-      line = line.replace(/^\d+[\s\t\.\)]+/, '');
-      line = line.replace(/^[0-9a-zA-Z\.\-]{8,40}[\s\t]+/i, '');
-      line = line.replace(/^[\|\!\/\\I\.\s\t\-]+/, '');
-    }
+      const cells = line.split('\t').map(c => c.trim());
+      let rawToolName = '';
+      let detectedQty = 1;
+      let lineStatus = detectStatus(line);
 
-    // 2. Strip trailing columns/store names ("SPARE PARTS STORE (AKM)...", "39 PCS", etc.)
-    line = line.replace(/[\s\t]*SPARE\s*PARTS\s*STORE.*$/i, '');
-    line = line.replace(/[\s\t]*Tools\s*User.*$/i, '');
-    line = line.replace(/[\s\t]*\d+[\s\t]+PCS.*$/i, '');
-    line = line.replace(/^[\|\s\t]+|[\|\s\t]+$/g, '');
-    line = line.trim();
+      if (cells.length >= 3) {
+        // Find Item Name cell (usually cell index 2 or cell containing tool keywords)
+        let nameCellIdx = cells.findIndex((c, idx) => idx >= 1 && (hasToolKeyword(c) || /screw|spanner|key|file|bag|plier/i.test(c)));
+        if (nameCellIdx === -1) nameCellIdx = Math.min(2, cells.length - 1);
 
-    if (!line || line.length < 3 || isHeaderOrJunk(line)) continue;
+        rawToolName = cleanToolString(cells[nameCellIdx]);
 
-    const match = matchItemToCatalog(line, catalogAll);
-    if (match.item) {
-      // Multi-line Context Window Status Detection
-      let detectedItemStatus = null;
-
-      // Check forward lines up to 4 lines (without bleeding into next tool line)
-      for (let offset = 0; offset <= 4; offset++) {
-        const idx = i + offset;
-        if (idx >= lines.length) break;
-        if (offset > 0 && hasToolKeyword(lines[idx])) break;
-        const st = detectStatus(lines[idx]);
-        if (st) {
-          detectedItemStatus = st;
-          break;
-        }
-      }
-
-      // Check backward lines up to 2 lines
-      if (!detectedItemStatus) {
-        for (let offset = 1; offset <= 2; offset++) {
-          const idx = i - offset;
-          if (idx < 0) break;
-          if (hasToolKeyword(lines[idx])) break;
-          const st = detectStatus(lines[idx]);
-          if (st) {
-            detectedItemStatus = st;
+        // Find quantity from App Qty or Req Qty cells (typically cells 5, 6, 7 or cells with small integers)
+        for (let qIdx = nameCellIdx + 1; qIdx < cells.length; qIdx++) {
+          const qVal = parseInt(cells[qIdx], 10);
+          if (!isNaN(qVal) && qVal > 0 && qVal <= 500 && !cells[qIdx].includes('-') && cells[qIdx].length <= 3) {
+            // Check if this is likely opening stock or req qty
+            detectedQty = qVal;
             break;
           }
         }
+      } else {
+        rawToolName = cleanToolString(line);
       }
 
-      // Sequential Fallback: Map by table tag index if available
-      if (!detectedItemStatus) {
-        const itemIdx = items.length;
-        if (itemIdx < tableStatusTags.length) {
-          detectedItemStatus = tableStatusTags[itemIdx];
+      if (!rawToolName || rawToolName.length < 3) continue;
+
+      const match = matchItemToCatalog(rawToolName, catalogAll);
+      if (match.item) {
+        // If line didn't have status, look at surrounding lines
+        if (!lineStatus) {
+          for (let offset = 1; offset <= 3; offset++) {
+            if (rIdx + offset < rawLines.length) {
+              const st = detectStatus(rawLines[rIdx + offset]);
+              if (st) { lineStatus = st; break; }
+            }
+          }
         }
+
+        items.push({
+          rawItemName: rawToolName,
+          userName: detectedUser.name || 'Mechanic',
+          userId: detectedUser.idNumber || '',
+          changeStatus: lineStatus || 'NEW_ISSUE',
+          quantity: detectedQty || 1
+        });
+      }
+    }
+  }
+
+  // If no items extracted via tabbed parser or input was non-tabbed text, use universal line parser
+  if (items.length === 0) {
+    const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+
+    // Pre-extract sequential table status tags from table rows following the header
+    const tableStatusTags = [];
+    let passedHeader = false;
+    for (const l of lines) {
+      if (/^(?:sl|item\s*id|item\s*name|opening|requisition\s*to)/i.test(l)) {
+        passedHeader = true;
+      }
+      if (passedHeader) {
+        const st = detectStatus(l);
+        if (st) tableStatusTags.push(st);
+      }
+    }
+
+    for (let i = 0; i < lines.length; i++) {
+      let origLine = lines[i];
+      if (isHeaderOrJunk(origLine)) continue;
+
+      let line = origLine;
+      if (line.includes('|')) {
+        line = line.replace(/^.*?\|\s*/, '');
       }
 
-      const changeStatus = detectedItemStatus || 'NEW_ISSUE';
+      line = cleanToolString(line);
+      if (!line || line.length < 3 || isHeaderOrJunk(line)) continue;
 
-      items.push({
-        rawItemName: line,
-        userName: detectedUser.name || 'Mechanic',
-        userId: detectedUser.idNumber || '',
-        changeStatus,
-        quantity: 1
-      });
+      const match = matchItemToCatalog(line, catalogAll);
+      if (match.item) {
+        let detectedItemStatus = null;
+        let itemQty = 1;
+
+        // Check forward lines up to 4 lines
+        for (let offset = 0; offset <= 4; offset++) {
+          const idx = i + offset;
+          if (idx >= lines.length) break;
+          if (offset > 0 && hasToolKeyword(lines[idx])) break;
+          
+          if (!detectedItemStatus) {
+            const st = detectStatus(lines[idx]);
+            if (st) detectedItemStatus = st;
+          }
+
+          // Check if forward line has quantity indicator e.g. "1 PCS" or "2 PC"
+          const qtyMatch = lines[idx].match(/\b(\d{1,3})\s*(?:pcs|pc|sheet|set)\b/i);
+          if (qtyMatch) {
+            const parsed = parseInt(qtyMatch[1], 10);
+            if (!isNaN(parsed) && parsed > 0 && parsed <= 500) itemQty = parsed;
+          }
+        }
+
+        // Check backward lines up to 2 lines
+        if (!detectedItemStatus) {
+          for (let offset = 1; offset <= 2; offset++) {
+            const idx = i - offset;
+            if (idx < 0) break;
+            if (hasToolKeyword(lines[idx])) break;
+            const st = detectStatus(lines[idx]);
+            if (st) {
+              detectedItemStatus = st;
+              break;
+            }
+          }
+        }
+
+        // Sequential Fallback: Map by table tag index if available
+        if (!detectedItemStatus) {
+          const itemIdx = items.length;
+          if (itemIdx < tableStatusTags.length) {
+            detectedItemStatus = tableStatusTags[itemIdx];
+          }
+        }
+
+        const changeStatus = detectedItemStatus || 'NEW_ISSUE';
+
+        items.push({
+          rawItemName: line,
+          userName: detectedUser.name || 'Mechanic',
+          userId: detectedUser.idNumber || '',
+          changeStatus,
+          quantity: itemQty
+        });
+      }
     }
   }
 
