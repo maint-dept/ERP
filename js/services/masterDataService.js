@@ -313,6 +313,9 @@ class MasterDataService {
    */
   getMachineNames(categoryId = null, lineId = null, includeInactive = false) {
     let list = storage.getTable(TABLE_NAMES.MACHINE_NAMES) || [];
+    if (list.length === 0 && typeof INITIAL_DATA !== 'undefined' && Array.isArray(INITIAL_DATA.machine_names)) {
+      list = INITIAL_DATA.machine_names;
+    }
     if (!includeInactive) {
       list = list.filter(m => m.status === 'ACTIVE');
     }
@@ -330,31 +333,48 @@ class MasterDataService {
   }
 
   getMachineNameById(id) {
-    return storage.getItem(TABLE_NAMES.MACHINE_NAMES, id);
+    if (!id) return null;
+    let found = storage.getItem(TABLE_NAMES.MACHINE_NAMES, id);
+    if (!found && typeof INITIAL_DATA !== 'undefined' && Array.isArray(INITIAL_DATA.machine_names)) {
+      found = INITIAL_DATA.machine_names.find(m => m.id === id);
+    }
+    return found || null;
   }
 
   /**
    * Level 6: Brands (Filtered by Machine Name)
    */
   getBrands(includeInactive = false) {
-    const list = storage.getTable(TABLE_NAMES.BRANDS) || [];
+    let list = storage.getTable(TABLE_NAMES.BRANDS) || [];
+    if (list.length === 0 && typeof INITIAL_DATA !== 'undefined' && Array.isArray(INITIAL_DATA.brands)) {
+      list = INITIAL_DATA.brands;
+    }
     return includeInactive ? list : list.filter(b => b.status === 'ACTIVE');
   }
 
   getBrandById(id) {
-    return storage.getItem(TABLE_NAMES.BRANDS, id);
+    if (!id) return null;
+    let found = storage.getItem(TABLE_NAMES.BRANDS, id);
+    if (!found && typeof INITIAL_DATA !== 'undefined' && Array.isArray(INITIAL_DATA.brands)) {
+      found = INITIAL_DATA.brands.find(b => b.id === id);
+    }
+    return found || null;
   }
 
   getBrandsForMachineName(machineNameId = null, includeInactive = false) {
     const allBrands = this.getBrands(includeInactive);
     if (!machineNameId) return allBrands;
 
-    const models = (storage.getTable(TABLE_NAMES.MODELS) || []).filter(m => {
+    let models = storage.getTable(TABLE_NAMES.MODELS) || [];
+    if (models.length === 0 && typeof INITIAL_DATA !== 'undefined' && Array.isArray(INITIAL_DATA.models)) {
+      models = INITIAL_DATA.models;
+    }
+    const filteredModels = models.filter(m => {
       const matchMn = m.machineNameId === machineNameId;
       return includeInactive ? matchMn : (matchMn && m.status === 'ACTIVE');
     });
 
-    const brandIds = new Set(models.map(m => m.brandId));
+    const brandIds = new Set(filteredModels.map(m => m.brandId));
     const matched = allBrands.filter(b => brandIds.has(b.id));
     return matched.length > 0 ? matched : allBrands;
   }
@@ -364,6 +384,9 @@ class MasterDataService {
    */
   getModels(brandId = null, machineNameId = null, includeInactive = false) {
     let list = storage.getTable(TABLE_NAMES.MODELS) || [];
+    if (list.length === 0 && typeof INITIAL_DATA !== 'undefined' && Array.isArray(INITIAL_DATA.models)) {
+      list = INITIAL_DATA.models;
+    }
     if (!includeInactive) {
       list = list.filter(m => m.status === 'ACTIVE');
     }
@@ -377,7 +400,12 @@ class MasterDataService {
   }
 
   getModelById(id) {
-    return storage.getItem(TABLE_NAMES.MODELS, id);
+    if (!id) return null;
+    let found = storage.getItem(TABLE_NAMES.MODELS, id);
+    if (!found && typeof INITIAL_DATA !== 'undefined' && Array.isArray(INITIAL_DATA.models)) {
+      found = INITIAL_DATA.models.find(m => m.id === id);
+    }
+    return found || null;
   }
 
   getCategories(includeInactive = false) {

@@ -6,6 +6,7 @@
 
 import { storage } from '../db/storage.js';
 import { TABLE_NAMES } from '../db/schema.js';
+import { INITIAL_DATA } from '../db/initialData.js';
 import { machineService } from '../services/machineService.js';
 import { masterDataService } from '../services/masterDataService.js';
 import { customFieldService } from '../services/customFieldService.js';
@@ -57,14 +58,40 @@ export function renderInventoryTable() {
   const brands = masterDataService.getBrandsForMachineName(filters.machineNameId);
   const models = masterDataService.getModels(filters.brandId, filters.machineNameId);
 
-  // Helper map lookups for high performance rendering
-  const grpMap = new Map(storage.getTable(TABLE_NAMES.GROUPS).map(x => [x.id, x.name]));
-  const mnMap = new Map(storage.getTable(TABLE_NAMES.MACHINE_NAMES).map(x => [x.id, x.name]));
-  const brdMap = new Map(storage.getTable(TABLE_NAMES.BRANDS).map(x => [x.id, x.name]));
-  const mdlMap = new Map(storage.getTable(TABLE_NAMES.MODELS).map(x => [x.id, x.name]));
-  const untMap = new Map(storage.getTable(TABLE_NAMES.UNITS).map(x => [x.id, x.name]));
-  const flrMap = new Map(storage.getTable(TABLE_NAMES.FLOORS).map(x => [x.id, x.name]));
-  const linMap = new Map(storage.getTable(TABLE_NAMES.LINES).map(x => [x.id, x.name]));
+  // Helper map lookups for high performance rendering with INITIAL_DATA and STORAGE_MASTER fallbacks
+  const grpMap = new Map();
+  (INITIAL_DATA.groups || []).forEach(x => x && x.id && grpMap.set(x.id, x.name));
+  (storage.getTable(TABLE_NAMES.GROUPS) || []).forEach(x => x && x.id && grpMap.set(x.id, x.name));
+
+  const mnMap = new Map();
+  (INITIAL_DATA.machine_names || []).forEach(x => x && x.id && mnMap.set(x.id, x.name));
+  (storage.getTable(TABLE_NAMES.MACHINE_NAMES) || []).forEach(x => x && x.id && mnMap.set(x.id, x.name));
+
+  const brdMap = new Map();
+  (INITIAL_DATA.brands || []).forEach(x => x && x.id && brdMap.set(x.id, x.name));
+  (storage.getTable(TABLE_NAMES.BRANDS) || []).forEach(x => x && x.id && brdMap.set(x.id, x.name));
+
+  const mdlMap = new Map();
+  (INITIAL_DATA.models || []).forEach(x => x && x.id && mdlMap.set(x.id, x.name));
+  (storage.getTable(TABLE_NAMES.MODELS) || []).forEach(x => x && x.id && mdlMap.set(x.id, x.name));
+  const storageMaster = storage.getTable(TABLE_NAMES.STORAGE_MASTER) || [];
+  storageMaster.forEach(sm => {
+    if (sm && sm.category === 'MACHINE' && sm.id && sm.model) {
+      if (!mdlMap.has(sm.id)) mdlMap.set(sm.id, sm.model);
+    }
+  });
+
+  const untMap = new Map();
+  (INITIAL_DATA.units || []).forEach(x => x && x.id && untMap.set(x.id, x.name));
+  (storage.getTable(TABLE_NAMES.UNITS) || []).forEach(x => x && x.id && untMap.set(x.id, x.name));
+
+  const flrMap = new Map();
+  (INITIAL_DATA.floors || []).forEach(x => x && x.id && flrMap.set(x.id, x.name));
+  (storage.getTable(TABLE_NAMES.FLOORS) || []).forEach(x => x && x.id && flrMap.set(x.id, x.name));
+
+  const linMap = new Map();
+  (INITIAL_DATA.lines || []).forEach(x => x && x.id && linMap.set(x.id, x.name));
+  (storage.getTable(TABLE_NAMES.LINES) || []).forEach(x => x && x.id && linMap.set(x.id, x.name));
 
   // Active Filter Tags List
   const activeTags = [];
@@ -113,14 +140,20 @@ export function renderInventoryTable() {
       label: 'Machine Name',
       width: 180,
       renderTh: (thStyle, thClass) => `<th class="th-sortable ${thClass}" data-sort="machineName" style="width: 180px; min-width: 180px; max-width: 180px; cursor: pointer; ${thStyle}">Machine Name</th>`,
-      renderTd: (m, meta, tdStyle, tdClass) => `<td class="${tdClass}" style="font-weight: 600; color: #fff; overflow: hidden; text-overflow: ellipsis; ${tdStyle}">${mnMap.get(m.machineNameId) || m.machineName || '—'}</td>`
+      renderTd: (m, meta, tdStyle, tdClass) => {
+        const name = (mnMap.get(m.machineNameId) || m.machineName || m.name || brdMap.get(m.brandId) || (m.brand ? m.brand + ' Machine' : '') || '—').trim();
+        return `<td class="${tdClass}" style="font-weight: 600; color: #fff; overflow: hidden; text-overflow: ellipsis; ${tdStyle}">${name}</td>`;
+      }
     },
     {
       key: 'model',
       label: 'Model',
       width: 150,
       renderTh: (thStyle, thClass) => `<th class="th-sortable ${thClass}" data-sort="model" style="width: 150px; min-width: 150px; max-width: 150px; cursor: pointer; ${thStyle}">Model</th>`,
-      renderTd: (m, meta, tdStyle, tdClass) => `<td class="${tdClass}" style="overflow: hidden; text-overflow: ellipsis; font-family: var(--font-mono); font-weight: 600; ${tdStyle}">${mdlMap.get(m.modelId) || m.model || '—'}</td>`
+      renderTd: (m, meta, tdStyle, tdClass) => {
+        const mdl = (mdlMap.get(m.modelId) || m.model || m.modelName || '—').trim();
+        return `<td class="${tdClass}" style="overflow: hidden; text-overflow: ellipsis; font-family: var(--font-mono); font-weight: 600; ${tdStyle}">${mdl}</td>`;
+      }
     },
     {
       key: 'serialNumber',
@@ -134,7 +167,10 @@ export function renderInventoryTable() {
       label: 'Brand',
       width: 130,
       renderTh: (thStyle, thClass) => `<th class="th-sortable ${thClass}" data-sort="brand" style="width: 130px; min-width: 130px; max-width: 130px; cursor: pointer; ${thStyle}">Brand</th>`,
-      renderTd: (m, meta, tdStyle, tdClass) => `<td class="${tdClass}" style="overflow: hidden; text-overflow: ellipsis; ${tdStyle}">${brdMap.get(m.brandId) || m.brand || '—'}</td>`
+      renderTd: (m, meta, tdStyle, tdClass) => {
+        const brd = (brdMap.get(m.brandId) || m.brand || '—').trim();
+        return `<td class="${tdClass}" style="overflow: hidden; text-overflow: ellipsis; ${tdStyle}">${brd}</td>`;
+      }
     },
     {
       key: 'group',

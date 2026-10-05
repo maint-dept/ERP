@@ -481,6 +481,29 @@ class StorageEngine {
     if (uniqueMN.length !== currentMN.length) {
       this.data[TABLE_NAMES.MACHINE_NAMES] = uniqueMN;
     }
+
+    // Auto-heal empty or missing core master tables from INITIAL_DATA
+    if (!Array.isArray(this.data[TABLE_NAMES.MACHINE_NAMES]) || this.data[TABLE_NAMES.MACHINE_NAMES].length === 0) {
+      this.data[TABLE_NAMES.MACHINE_NAMES] = JSON.parse(JSON.stringify(INITIAL_DATA.machine_names || []));
+    }
+    if (!Array.isArray(this.data[TABLE_NAMES.MODELS]) || this.data[TABLE_NAMES.MODELS].length === 0) {
+      this.data[TABLE_NAMES.MODELS] = JSON.parse(JSON.stringify(INITIAL_DATA.models || []));
+    }
+    if (!Array.isArray(this.data[TABLE_NAMES.BRANDS]) || this.data[TABLE_NAMES.BRANDS].length === 0) {
+      this.data[TABLE_NAMES.BRANDS] = JSON.parse(JSON.stringify(INITIAL_DATA.brands || []));
+    }
+    if (!Array.isArray(this.data[TABLE_NAMES.GROUPS]) || this.data[TABLE_NAMES.GROUPS].length === 0) {
+      this.data[TABLE_NAMES.GROUPS] = JSON.parse(JSON.stringify(INITIAL_DATA.groups || []));
+    }
+    if (!Array.isArray(this.data[TABLE_NAMES.UNITS]) || this.data[TABLE_NAMES.UNITS].length === 0) {
+      this.data[TABLE_NAMES.UNITS] = JSON.parse(JSON.stringify(INITIAL_DATA.units || []));
+    }
+    if (!Array.isArray(this.data[TABLE_NAMES.FLOORS]) || this.data[TABLE_NAMES.FLOORS].length === 0) {
+      this.data[TABLE_NAMES.FLOORS] = JSON.parse(JSON.stringify(INITIAL_DATA.floors || []));
+    }
+    if (!Array.isArray(this.data[TABLE_NAMES.LINES]) || this.data[TABLE_NAMES.LINES].length === 0) {
+      this.data[TABLE_NAMES.LINES] = JSON.parse(JSON.stringify(INITIAL_DATA.lines || []));
+    }
   }
 
   /**

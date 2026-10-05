@@ -31264,6 +31264,18 @@ export const INITIAL_DATA = {
       "name": "KANSAI SPECIAL",
       "country": "Japan",
       "status": "ACTIVE"
+    },
+    {
+      "id": "br-1",
+      "name": "JUKI",
+      "country": "Japan",
+      "status": "ACTIVE"
+    },
+    {
+      "id": "bra-1790659051084-80",
+      "name": "JUKI",
+      "country": "Japan",
+      "status": "ACTIVE"
     }
   ],
   "categories": [
