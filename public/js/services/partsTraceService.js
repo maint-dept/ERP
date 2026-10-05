@@ -1592,6 +1592,15 @@ class PartsTraceService {
       });
     }
 
+    // 6. Use of Area / Item Type Filter (Change vs New)
+    if (filters.useOfArea) {
+      const aClean = String(filters.useOfArea).toLowerCase().trim();
+      filtered = filtered.filter(i => {
+        const iArea = String(i.useOfArea || 'change').toLowerCase().trim();
+        return iArea === aClean || iArea.includes(aClean);
+      });
+    }
+
     if (filters.erpNo) {
       filtered = filtered.filter(i => i.erpNo && i.erpNo.toLowerCase().includes(filters.erpNo.toLowerCase().trim()));
     }

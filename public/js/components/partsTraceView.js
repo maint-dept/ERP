@@ -20,7 +20,7 @@ let uploadedPdfMetadata = null;
 let reviewFilter = 'ALL'; // 'ALL' | 'AUTO_MATCHED' | 'REVIEW_REQUIRED' | 'ERROR'
 let reviewSearch = '';
 let historySearch = '';
-let historyFilters = { dateFrom: '', dateTo: '', unitId: '', floorId: '', lineId: '', partCode: '' };
+let historyFilters = { dateFrom: '', dateTo: '', unitId: '', floorId: '', lineId: '', partCode: '', useOfArea: '' };
 let masterSearch = '';
 let masterCategory = 'ALL';
 let masterCurrentPage = 1;
@@ -699,20 +699,23 @@ function renderReviewTab() {
           <thead>
             <tr>
               <th style="width: 32px;">SL</th>
-              <th style="width: 110px;">ERP No</th>
-              <th style="width: 120px;">Floor &amp; Line</th>
-              <th style="min-width: 220px;">Matched Part &amp; Code</th>
+              <th style="width: 105px;">ERP No</th>
+              <th style="width: 110px;">Floor &amp; Line</th>
+              <th style="min-width: 200px;">Matched Part &amp; Code</th>
               <th style="width: 75px;">Qty</th>
-              <th style="min-width: 170px;">Machine</th>
-              <th style="min-width: 150px;">Technician</th>
-              <th style="width: 90px;">Status</th>
-              <th style="width: 40px; text-align: right;">Action</th>
+              <th style="width: 110px; text-align: center;">Item Type</th>
+              <th style="min-width: 160px;">Machine</th>
+              <th style="min-width: 140px;">Technician</th>
+              <th style="width: 85px;">Status</th>
+              <th style="width: 35px; text-align: right;">Action</th>
             </tr>
           </thead>
           <tbody>
             ${filtered.map((r, idx) => {
               const statusColor = r.status === 'AUTO_MATCHED' ? '#34d399' : (r.status === 'REVIEW_REQUIRED' ? '#fbbf24' : '#f87171');
               const statusBadge = r.status === 'AUTO_MATCHED' ? '🟢 Matched' : (r.status === 'REVIEW_REQUIRED' ? '🟡 Review' : '🔴 Error');
+              const isNew = (r.useOfArea || '').toLowerCase().includes('new');
+              const isRepair = (r.useOfArea || '').toLowerCase().includes('repair');
 
               return `
                 <tr data-draft-id="${r.draftId}" style="transition: background 0.15s ease;">
@@ -754,6 +757,24 @@ function renderReviewTab() {
                       <span style="font-size: 11px; color: #e2e8f0; font-weight: 800;">${r.uom}</span>
                     </div>
                   </td>
+                  <td style="text-align: center;">
+                    <!-- Item Type: Change vs New Selector -->
+                    <select 
+                      class="form-control sel-draft-use-of-area" 
+                      data-draft-id="${r.draftId}" 
+                      style="width: 106px; height: 28px; font-size: 11px; padding: 1px 4px; font-weight: 800; border-radius: 6px; cursor: pointer; text-align: center;
+                        ${isNew 
+                          ? 'background: rgba(52, 211, 153, 0.18); color: #34d399; border: 1.5px solid rgba(52, 211, 153, 0.5);' 
+                          : (isRepair
+                            ? 'background: rgba(167, 139, 250, 0.18); color: #a78bfa; border: 1.5px solid rgba(167, 139, 250, 0.5);'
+                            : 'background: rgba(251, 191, 36, 0.18); color: #fbbf24; border: 1.5px solid rgba(251, 191, 36, 0.5);')}"
+                    >
+                      <option value="change" ${!isNew && !isRepair ? 'selected' : ''}>🔄 Change</option>
+                      <option value="new" ${isNew ? 'selected' : ''}>✨ New Item</option>
+                      <option value="repair" ${isRepair ? 'selected' : ''}>🛠️ Repair</option>
+                      <option value="alteration" ${(r.useOfArea || '').toLowerCase().includes('alter') ? 'selected' : ''}>✂️ Alteration</option>
+                    </select>
+                  </td>
                   <td>
                     <!-- Smart Machine Dropdown Trigger -->
                     <button type="button" class="smart-dropdown-trigger btn-open-smart-machine-modal ${r.machineSerial ? 'has-val' : ''}" data-draft-id="${r.draftId}" title="Click to search and change machine">
@@ -777,7 +798,7 @@ function renderReviewTab() {
                       </div>
                       <span style="color: #38bdf8; font-size: 11px; margin-left: 4px; flex-shrink: 0;">▼</span>
                     </button>
-                    ${r.comments ? `<div style="font-size: 9.5px; color: #94a3b8; margin-top: 2px; padding-left: 2px;"><em>"${r.comments}"</em></div>` : ''}
+                    ${r.comments && r.comments.toLowerCase() !== 'change' && r.comments.toLowerCase() !== 'chanhe' && r.comments.toLowerCase() !== 'new' ? `<div style="font-size: 9.5px; color: #94a3b8; margin-top: 2px; padding-left: 2px;"><em>"${r.comments}"</em></div>` : ''}
                   </td>
                   <td>
                     <!-- Smart Technician Dropdown Trigger -->
@@ -1060,6 +1081,14 @@ function renderHistoryTab() {
               ${allLines.map(l => `<option value="${l.id}" ${historyFilters.lineId === l.id ? 'selected' : ''}>${l.name}</option>`).join('')}
             </select>
 
+            <!-- Item Type Filter -->
+            <select id="sel-history-use-type" class="form-control" style="width: 110px; height: 30px; font-size: 11px; padding: 2px 4px; background: #060a14; color: #fbbf24; font-weight: 700; border: 1px solid rgba(251,191,36,0.35);">
+              <option value="">⚡ All Types</option>
+              <option value="change" ${historyFilters.useOfArea === 'change' ? 'selected' : ''}>🔄 Change</option>
+              <option value="new" ${historyFilters.useOfArea === 'new' ? 'selected' : ''}>✨ New Item</option>
+              <option value="repair" ${historyFilters.useOfArea === 'repair' ? 'selected' : ''}>🛠️ Repair</option>
+            </select>
+
             <!-- Date From -->
             <input 
               type="date" 
@@ -1081,7 +1110,7 @@ function renderHistoryTab() {
             />
 
             <!-- Reset Button -->
-            ${(historySearch || historyFilters.unitId || historyFilters.floorId || historyFilters.lineId || historyFilters.dateFrom || historyFilters.dateTo) ? `
+            ${(historySearch || historyFilters.unitId || historyFilters.floorId || historyFilters.lineId || historyFilters.useOfArea || historyFilters.dateFrom || historyFilters.dateTo) ? `
               <button type="button" id="btn-history-reset-filters" class="btn btn-ghost btn-xs" style="color: #f87171; font-weight: 700; font-size: 11px; height: 30px; padding: 0 6px;" title="Clear All Filters">
                 ✕ Reset
               </button>
@@ -1116,6 +1145,7 @@ function renderHistoryTab() {
               <th>Unit &amp; Location</th>
               <th>Spare Part Description</th>
               <th>Qty</th>
+              <th style="text-align: center;">Item Type</th>
               <th>Machine Identification</th>
               <th>Technician / Mechanic</th>
               <th>Comments / Reason</th>
@@ -1125,7 +1155,7 @@ function renderHistoryTab() {
           <tbody>
             ${issues.length === 0 ? `
               <tr>
-                <td colspan="10" style="text-align: center; padding: 35px; color: var(--text-muted);">
+                <td colspan="11" style="text-align: center; padding: 35px; color: var(--text-muted);">
                   <div style="font-size: 14px; font-weight: 700; color: #94a3b8; margin-bottom: 4px;">No spare parts transaction records match the filters.</div>
                   <div style="font-size: 11px;">Try clearing filters or uploading new ERP Issue PDFs.</div>
                 </td>
@@ -1152,6 +1182,13 @@ function renderHistoryTab() {
                 </td>
                 <td>
                   <strong style="color: #34d399; font-size: 12px; font-family: var(--font-mono);">${iss.issueQty} ${iss.uom || 'PCS'}</strong>
+                </td>
+                <td style="text-align: center;">
+                  ${(iss.useOfArea || '').toLowerCase().includes('new') 
+                    ? '<span class="badge" style="background: rgba(52, 211, 153, 0.15); color: #34d399; font-size: 10px; font-weight: 800; border: 1px solid rgba(52, 211, 153, 0.4); padding: 2px 6px;">✨ New</span>' 
+                    : ((iss.useOfArea || '').toLowerCase().includes('repair')
+                      ? '<span class="badge" style="background: rgba(167, 139, 250, 0.15); color: #a78bfa; font-size: 10px; font-weight: 800; border: 1px solid rgba(167, 139, 250, 0.4); padding: 2px 6px;">🛠️ Repair</span>'
+                      : '<span class="badge" style="background: rgba(251, 191, 36, 0.15); color: #fbbf24; font-size: 10px; font-weight: 800; border: 1px solid rgba(251, 191, 36, 0.4); padding: 2px 6px;">🔄 Change</span>')}
                 </td>
                 <td>
                   <div style="display: flex; flex-direction: column; gap: 2px;">
@@ -1286,6 +1323,14 @@ function renderReportsTab() {
               ${allLines.map(l => `<option value="${l.id}" ${historyFilters.lineId === l.id ? 'selected' : ''}>${l.name}</option>`).join('')}
             </select>
 
+            <!-- Item Type Filter -->
+            <select id="sel-history-use-type" class="form-control" style="width: 110px; height: 30px; font-size: 11px; padding: 2px 4px; background: #060a14; color: #fbbf24; font-weight: 700; border: 1px solid rgba(251,191,36,0.35);">
+              <option value="">⚡ All Types</option>
+              <option value="change" ${historyFilters.useOfArea === 'change' ? 'selected' : ''}>🔄 Change</option>
+              <option value="new" ${historyFilters.useOfArea === 'new' ? 'selected' : ''}>✨ New Item</option>
+              <option value="repair" ${historyFilters.useOfArea === 'repair' ? 'selected' : ''}>🛠️ Repair</option>
+            </select>
+
             <!-- Date From -->
             <input 
               type="date" 
@@ -1307,7 +1352,7 @@ function renderReportsTab() {
             />
 
             <!-- Reset Button -->
-            ${(historySearch || historyFilters.unitId || historyFilters.floorId || historyFilters.lineId || historyFilters.dateFrom || historyFilters.dateTo) ? `
+            ${(historySearch || historyFilters.unitId || historyFilters.floorId || historyFilters.lineId || historyFilters.useOfArea || historyFilters.dateFrom || historyFilters.dateTo) ? `
               <button type="button" id="btn-history-reset-filters" class="btn btn-ghost btn-xs" style="color: #f87171; font-weight: 700; font-size: 11px; height: 30px; padding: 0 6px;" title="Clear All Filters">
                 ✕ Reset
               </button>
@@ -1955,8 +2000,13 @@ function renderManualIssueModal() {
               <input type="number" id="man-inp-qty" class="form-control" value="1" min="1" required style="font-weight: 800; color: #34d399;" />
             </div>
             <div class="form-group">
-              <label class="form-label" style="font-size: 11.5px; color: #cbd5e1; font-weight: 700;">Use of Area:</label>
-              <input type="text" id="man-inp-area" class="form-control" value="change" />
+              <label class="form-label" style="font-size: 11.5px; color: #cbd5e1; font-weight: 700;">Issue Purpose / Type:</label>
+              <select id="man-inp-area" class="form-control" style="font-size: 12px; font-weight: 700;">
+                <option value="change" selected>🔄 Change (Old Part Replacement)</option>
+                <option value="new">✨ New Item (New Installation / Setup)</option>
+                <option value="repair">🛠️ Repair Service</option>
+                <option value="alteration">✂️ Alteration</option>
+              </select>
             </div>
           </div>
 
@@ -2239,7 +2289,26 @@ function renderTraceabilityDetailsModal() {
               </div>
             </div>
 
-            <div style="background: rgba(255,255,255,0.03); padding: 8px 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.06); grid-column: span 2;">
+            <div style="background: rgba(255,255,255,0.03); padding: 8px 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.06);">
+              <div style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Issue Purpose / Type</div>
+              <div style="margin-top: 3px;">
+                ${(iss.useOfArea || '').toLowerCase().includes('new') ? `
+                  <span class="badge" style="background: rgba(52, 211, 153, 0.18); color: #34d399; font-size: 11px; font-weight: 800; border: 1px solid rgba(52, 211, 153, 0.4); padding: 2px 7px;">
+                    ✨ New Item (New Installation / Addition)
+                  </span>
+                ` : ((iss.useOfArea || '').toLowerCase().includes('repair') ? `
+                  <span class="badge" style="background: rgba(167, 139, 250, 0.18); color: #a78bfa; font-size: 11px; font-weight: 800; border: 1px solid rgba(167, 139, 250, 0.4); padding: 2px 7px;">
+                    🛠️ Repair Service
+                  </span>
+                ` : `
+                  <span class="badge" style="background: rgba(251, 191, 36, 0.18); color: #fbbf24; font-size: 11px; font-weight: 800; border: 1px solid rgba(251, 191, 36, 0.4); padding: 2px 7px;">
+                    🔄 Change (Old Part Replacement)
+                  </span>
+                `)}
+              </div>
+            </div>
+
+            <div style="background: rgba(255,255,255,0.03); padding: 8px 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.06);">
               <div style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Location (Unit / Floor / Line)</div>
               <div style="color: #fff; font-weight: 600; margin-top: 2px;">
                 ${iss.unitName ? `${iss.unitName} &bull; ` : ''}${iss.floorName || '—'}${iss.lineName ? ` / ${iss.lineName}` : ''}
@@ -2417,13 +2486,24 @@ export function initPartsTraceEvents() {
     });
   }
 
-  // 5. Quantity edits inside draft table
+  // 5. Quantity & Use of Area edits inside draft table
   root.querySelectorAll('.inp-draft-qty').forEach(inp => {
     inp.addEventListener('change', () => {
       const draftId = inp.getAttribute('data-draft-id');
       const draft = activeDraftRows.find(d => d.draftId === draftId);
       if (draft) {
         draft.issueQty = parseFloat(inp.value) || 1;
+      }
+    });
+  });
+
+  root.querySelectorAll('.sel-draft-use-of-area').forEach(sel => {
+    sel.addEventListener('change', (e) => {
+      const draftId = sel.getAttribute('data-draft-id');
+      const draft = activeDraftRows.find(d => d.draftId === draftId);
+      if (draft) {
+        draft.useOfArea = e.target.value;
+        refresh();
       }
     });
   });
@@ -3360,6 +3440,14 @@ export function initPartsTraceEvents() {
     });
   }
 
+  const selHistUseType = root.querySelector('#sel-history-use-type');
+  if (selHistUseType) {
+    selHistUseType.addEventListener('change', (e) => {
+      historyFilters.useOfArea = e.target.value;
+      refresh();
+    });
+  }
+
   const inpHistFrom = root.querySelector('#inp-history-from');
   if (inpHistFrom) {
     inpHistFrom.addEventListener('change', (e) => {
@@ -3380,7 +3468,7 @@ export function initPartsTraceEvents() {
   if (btnResetHistFilters) {
     btnResetHistFilters.addEventListener('click', () => {
       historySearch = '';
-      historyFilters = { dateFrom: '', dateTo: '', unitId: '', floorId: '', lineId: '', partCode: '' };
+      historyFilters = { dateFrom: '', dateTo: '', unitId: '', floorId: '', lineId: '', partCode: '', useOfArea: '' };
       refresh();
     });
   }
