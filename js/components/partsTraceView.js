@@ -1416,21 +1416,6 @@ function renderReportsTab() {
     </div>
   `;
 }
-          <div style="display: flex; flex-direction: column; gap: 4px;">
-            ${topMachines.length === 0 ? '<div style="color: var(--text-muted); font-size: 11px;">No machines fitted yet.</div>' : topMachines.map(([serial, qty]) => `
-              <div style="display: flex; justify-content: space-between; font-size: 11px; padding: 2px 4px; background: rgba(255,255,255,0.02); border-radius: 4px;">
-                <span style="font-family: var(--font-mono); color: #38bdf8; font-weight: 700;">${serial}</span>
-                <strong style="color: #a78bfa; font-family: var(--font-mono);">${qty} parts</strong>
-              </div>
-            `).join('')}
-          </div>
-        </div>
-
-      </div>
-
-    </div>
-  `;
-}
 
 // ─────────────────────────────────────────────────────────────
 // Helper: Resolve & Enrich All Machines with Master Data
