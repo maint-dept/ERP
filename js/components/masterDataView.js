@@ -43,67 +43,67 @@ export function renderMasterDataView() {
   const models = masterDataService.getModels(null, null, true);
 
   return `
-    <div class="page-view" style="display: flex; flex-direction: column; gap: 16px;">
+    <div class="page-view" style="padding: 8px 14px; display: flex; flex-direction: column; gap: 8px; box-sizing: border-box;">
       
-      <!-- Title & Header Bar -->
-      <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 18px 22px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
-        <div>
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <span style="font-size: 24px;">🏢</span>
-            <h1 style="font-size: 20px; font-weight: 800; color: #fff; margin: 0;">
-              Plant Hierarchy &amp; Master Data Configuration
+      <!-- Unified Compact Top Header: Title, Main Views, Tables & Action -->
+      <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 8px 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; flex-shrink: 0;">
+        
+        <!-- Left: Title & Main Workflow Tabs -->
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <div style="font-size: 16px; background: rgba(56, 189, 248, 0.12); border: 1px solid #38bdf8; border-radius: var(--radius-sm); width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+              🏢
+            </div>
+            <h1 style="font-size: 14.5px; font-weight: 800; color: #fff; margin: 0; white-space: nowrap;">
+              Plant Hierarchy &amp; Master Data
             </h1>
-            <span class="badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); font-size: 11px; padding: 2px 8px;">
-              7-Level Cascading Hierarchy
-            </span>
           </div>
-          <p style="font-size: 12.5px; color: var(--text-secondary); margin-top: 4px; margin-bottom: 0;">
-            Configure organizational factory units, floors, lines, and machinery specification hierarchies.
-          </p>
+
+          <!-- Primary View Mode Tabs -->
+          <div style="display: flex; gap: 4px; align-items: center; background: rgba(0,0,0,0.25); padding: 2px 4px; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+            <button class="btn ${activeTab === 'fast-entry' ? 'btn-primary' : 'btn-ghost'}" data-master-tab="fast-entry" style="font-weight: 800; font-size: 11.5px; padding: 4px 10px; border-radius: 4px; ${activeTab === 'fast-entry' ? 'background: linear-gradient(135deg, #0284c7, #2563eb); color: #fff;' : 'color: #38bdf8;'}">
+              ⚡ 3-Step Guided Setup
+            </button>
+            <button class="btn ${activeTab === 'tree' ? 'btn-primary' : 'btn-ghost'}" data-master-tab="tree" style="font-weight: 700; font-size: 11.5px; padding: 4px 10px; border-radius: 4px;">
+              🌳 Tree View
+            </button>
+          </div>
+
+          <!-- Compact Tables Segment -->
+          <div style="display: flex; gap: 3px; align-items: center; flex-wrap: wrap;">
+            <span style="font-size: 10px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; margin-left: 4px;">Tables:</span>
+            <button class="btn ${activeTab === 'groups' ? 'btn-primary' : 'btn-ghost'}" data-master-tab="groups" style="font-weight: 700; font-size: 10.5px; padding: 3px 7px; border-radius: 4px;">
+              Groups (${groups.length})
+            </button>
+            <button class="btn ${activeTab === 'units' ? 'btn-primary' : 'btn-ghost'}" data-master-tab="units" style="font-weight: 700; font-size: 10.5px; padding: 3px 7px; border-radius: 4px;">
+              Units (${units.length})
+            </button>
+            <button class="btn ${activeTab === 'floors' ? 'btn-primary' : 'btn-ghost'}" data-master-tab="floors" style="font-weight: 700; font-size: 10.5px; padding: 3px 7px; border-radius: 4px;">
+              Floors (${floors.length})
+            </button>
+            <button class="btn ${activeTab === 'lines' ? 'btn-primary' : 'btn-ghost'}" data-master-tab="lines" style="font-weight: 700; font-size: 10.5px; padding: 3px 7px; border-radius: 4px;">
+              Lines (${lines.length})
+            </button>
+            <button class="btn ${activeTab === 'machinenames' ? 'btn-primary' : 'btn-ghost'}" data-master-tab="machinenames" style="font-weight: 700; font-size: 10.5px; padding: 3px 7px; border-radius: 4px;">
+              Machines (${machineNames.length})
+            </button>
+            <button class="btn ${activeTab === 'brands' ? 'btn-primary' : 'btn-ghost'}" data-master-tab="brands" style="font-weight: 700; font-size: 10.5px; padding: 3px 7px; border-radius: 4px;">
+              Brands (${brands.length})
+            </button>
+            <button class="btn ${activeTab === 'models' ? 'btn-primary' : 'btn-ghost'}" data-master-tab="models" style="font-weight: 700; font-size: 10.5px; padding: 3px 7px; border-radius: 4px;">
+              Models (${models.length})
+            </button>
+          </div>
         </div>
 
-        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+        <!-- Right: Primary Action -->
+        <div style="display: flex; gap: 6px; align-items: center;">
           ${isAdmin ? `
-            <button id="btn-master-add-new" class="btn btn-primary" style="font-weight: 700; background: linear-gradient(135deg, #0284c7, #0369a1); box-shadow: 0 2px 10px rgba(2, 132, 199, 0.35); font-size: 12.5px;">
+            <button id="btn-master-add-new" class="btn btn-primary btn-sm" style="font-weight: 800; background: linear-gradient(135deg, #0284c7, #0369a1); font-size: 11.5px; padding: 5px 12px; box-shadow: 0 2px 8px rgba(2, 132, 199, 0.3);">
               ➕ Add ${getEntityDisplayName(activeTab === 'tree' ? 'groups' : activeTab)}
             </button>
           ` : ''}
         </div>
-      </div>
-
-      <!-- Clean Organized Tab Navigation -->
-      <div style="display: flex; gap: 8px; flex-wrap: wrap; border-bottom: 2px solid var(--border-color); padding-bottom: 10px; align-items: center;">
-        <button class="btn ${activeTab === 'fast-entry' ? 'btn-primary' : 'btn-ghost'}" data-master-tab="fast-entry" style="font-weight: 800; font-size: 13.5px; padding: 8px 20px; border-radius: 8px; ${activeTab === 'fast-entry' ? 'background: linear-gradient(135deg, #0284c7, #2563eb); box-shadow: 0 4px 14px rgba(2, 132, 199, 0.4);' : 'border: 1px solid rgba(56, 189, 248, 0.4); color: #38bdf8;'}">
-          ⚡ Dropdown System (Group &gt; Unit &gt; Floor &gt; Line)
-        </button>
-        <button class="btn ${activeTab === 'tree' ? 'btn-primary' : 'btn-ghost'}" data-master-tab="tree" style="font-weight: 700; font-size: 12.5px; padding: 8px 16px; border-radius: 8px;">
-          🌳 Hierarchy Tree View
-        </button>
-
-        <span style="height: 18px; width: 1px; background: var(--border-color); margin: 0 4px;"></span>
-
-        <span style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Tables:</span>
-        <button class="btn ${activeTab === 'groups' ? 'btn-primary' : 'btn-ghost'}" data-master-tab="groups" style="font-weight: 600; font-size: 11.5px; padding: 4px 10px; border-radius: 6px;">
-          🏢 Groups (${groups.length})
-        </button>
-        <button class="btn ${activeTab === 'units' ? 'btn-primary' : 'btn-ghost'}" data-master-tab="units" style="font-weight: 600; font-size: 11.5px; padding: 4px 10px; border-radius: 6px;">
-          🏭 Units (${units.length})
-        </button>
-        <button class="btn ${activeTab === 'floors' ? 'btn-primary' : 'btn-ghost'}" data-master-tab="floors" style="font-weight: 600; font-size: 11.5px; padding: 4px 10px; border-radius: 6px;">
-          🏗️ Floors (${floors.length})
-        </button>
-        <button class="btn ${activeTab === 'lines' ? 'btn-primary' : 'btn-ghost'}" data-master-tab="lines" style="font-weight: 600; font-size: 11.5px; padding: 4px 10px; border-radius: 6px;">
-          🧵 Lines (${lines.length})
-        </button>
-        <button class="btn ${activeTab === 'machinenames' ? 'btn-primary' : 'btn-ghost'}" data-master-tab="machinenames" style="font-weight: 600; font-size: 11.5px; padding: 4px 10px; border-radius: 6px;">
-          ✂️ Machines (${machineNames.length})
-        </button>
-        <button class="btn ${activeTab === 'brands' ? 'btn-primary' : 'btn-ghost'}" data-master-tab="brands" style="font-weight: 600; font-size: 11.5px; padding: 4px 10px; border-radius: 6px;">
-          🏷️ Brands (${brands.length})
-        </button>
-        <button class="btn ${activeTab === 'models' ? 'btn-primary' : 'btn-ghost'}" data-master-tab="models" style="font-weight: 600; font-size: 11.5px; padding: 4px 10px; border-radius: 6px;">
-          ⚙️ Models (${models.length})
-        </button>
       </div>
 
       <!-- Tab Content Area -->
@@ -222,30 +222,21 @@ function renderTabContent() {
   const inactiveCount = items.filter(it => it.status === 'INACTIVE').length;
 
   return `
-    <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 18px; display: flex; flex-direction: column; gap: 14px;">
+    <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 10px 14px; display: flex; flex-direction: column; gap: 8px;">
       
-      <!-- KPI Stats Row -->
-      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">
-        <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 14px 18px; display: flex; align-items: center; justify-content: space-between;">
-          <div>
-            <div style="font-size: 11px; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Total ${getEntityDisplayName(activeTab)}s</div>
-            <div style="font-size: 22px; font-weight: 800; color: #fff; margin-top: 2px;">${items.length}</div>
-          </div>
-          <span style="font-size: 24px; opacity: 0.7;">📋</span>
+      <!-- Compact KPI Stats Bar -->
+      <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+        <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 4px 10px; display: inline-flex; align-items: center; gap: 6px;">
+          <span style="font-size: 11px; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Total ${getEntityDisplayName(activeTab)}s:</span>
+          <strong style="font-size: 13px; color: #fff;">${items.length}</strong>
         </div>
-        <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 14px 18px; display: flex; align-items: center; justify-content: space-between;">
-          <div>
-            <div style="font-size: 11px; color: #34d399; font-weight: 700; text-transform: uppercase;">Active Operational</div>
-            <div style="font-size: 22px; font-weight: 800; color: #34d399; margin-top: 2px;">${activeCount}</div>
-          </div>
-          <span style="font-size: 24px; opacity: 0.7;">🟢</span>
+        <div style="background: rgba(52, 211, 153, 0.1); border: 1px solid rgba(52, 211, 153, 0.3); border-radius: var(--radius-sm); padding: 4px 10px; display: inline-flex; align-items: center; gap: 6px;">
+          <span style="font-size: 11px; color: #34d399; font-weight: 700; text-transform: uppercase;">🟢 Active:</span>
+          <strong style="font-size: 13px; color: #34d399;">${activeCount}</strong>
         </div>
-        <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 14px 18px; display: flex; align-items: center; justify-content: space-between;">
-          <div>
-            <div style="font-size: 11px; color: ${inactiveCount > 0 ? '#f87171' : 'var(--text-muted)'}; font-weight: 700; text-transform: uppercase;">Inactive / Disabled</div>
-            <div style="font-size: 22px; font-weight: 800; color: ${inactiveCount > 0 ? '#f87171' : 'var(--text-muted)'}; margin-top: 2px;">${inactiveCount}</div>
-          </div>
-          <span style="font-size: 24px; opacity: 0.7;">🔴</span>
+        <div style="background: ${inactiveCount > 0 ? 'rgba(239, 68, 68, 0.1)' : 'var(--bg-card)'}; border: 1px solid ${inactiveCount > 0 ? 'rgba(239, 68, 68, 0.3)' : 'var(--border-color)'}; border-radius: var(--radius-sm); padding: 4px 10px; display: inline-flex; align-items: center; gap: 6px;">
+          <span style="font-size: 11px; color: ${inactiveCount > 0 ? '#f87171' : 'var(--text-muted)'}; font-weight: 700; text-transform: uppercase;">🔴 Inactive:</span>
+          <strong style="font-size: 13px; color: ${inactiveCount > 0 ? '#f87171' : 'var(--text-muted)'};">${inactiveCount}</strong>
         </div>
       </div>
 
@@ -627,479 +618,379 @@ function renderFastCascadingEntryView() {
   });
 
   return `
-    <div style="display: flex; flex-direction: column; gap: 20px;">
+    <div style="display: flex; flex-direction: column; gap: 8px;">
 
-      <!-- TOP BREADCRUMB & HEADER -->
-      <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 18px 22px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; box-shadow: 0 4px 18px rgba(0,0,0,0.2);">
-        <div>
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <span style="font-size: 22px;">⚡</span>
-            <h2 style="font-size: 18px; font-weight: 800; color: #fff; margin: 0;">
-              3-Step Guided Plant Setup: Group &rarr; Unit &rarr; Line
-            </h2>
-          </div>
-          <p style="font-size: 12px; color: var(--text-muted); margin: 3px 0 0 0;">
-            Fast 1-click batch entry system for factory units and production lines with full admin customization.
-          </p>
+      <!-- TOP BREADCRUMB & HEADER (COMPACT STRIP) -->
+      <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 6px 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <span style="font-size: 15px;">⚡</span>
+          <span style="font-size: 13px; font-weight: 800; color: #fff;">
+            3-Step Plant Setup: Group &rarr; Unit &rarr; Line
+          </span>
         </div>
         
         <!-- Active Path Breadcrumb -->
-        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-          <div style="font-size: 12.5px; font-weight: 700; background: rgba(15, 23, 42, 0.8); border: 1px solid var(--border-color); padding: 6px 18px; border-radius: 9999px; display: flex; align-items: center; gap: 8px;">
-            <span style="color: #fbbf24;">🏢 ${selectedGroup?.name || 'No Group Selected'}</span>
-            <span style="color: var(--text-muted);">&rarr;</span>
-            <span style="color: #34d399;">🏭 ${selectedUnit?.name || 'No Unit Selected'}</span>
-            <span style="color: var(--text-muted);">&rarr;</span>
-            <span style="color: #38bdf8;">🏗️ ${activeFloor ? `${activeFloor.name} [${activeFloorCode}]` : 'Ground Floor'}</span>
-            <span style="color: var(--text-muted);">&rarr;</span>
-            <span style="color: #c084fc; font-weight: 800;">${linesOfFloor.length} Lines</span>
-          </div>
+        <div style="font-size: 11px; font-weight: 700; background: rgba(15, 23, 42, 0.8); border: 1px solid var(--border-color); padding: 3px 10px; border-radius: 9999px; display: flex; align-items: center; gap: 6px;">
+          <span style="color: #fbbf24;">🏢 ${selectedGroup?.name || 'No Group'}</span>
+          <span style="color: var(--text-muted);">&rarr;</span>
+          <span style="color: #34d399;">🏭 ${selectedUnit?.name || 'No Unit'}</span>
+          <span style="color: var(--text-muted);">&rarr;</span>
+          <span style="color: #38bdf8;">🏗️ ${activeFloor ? `${activeFloor.name} [${activeFloorCode}]` : 'Ground Floor'}</span>
+          <span style="color: var(--text-muted);">&rarr;</span>
+          <span style="color: #c084fc; font-weight: 800;">${linesOfFloor.length} Lines</span>
         </div>
       </div>
 
-      <!-- STEP 1: GROUP ENTRY & SELECTION -->
-      <div style="background: var(--bg-surface); border: 1px solid ${cascadeGroupId ? 'rgba(251, 191, 36, 0.4)' : 'var(--border-color)'}; border-radius: var(--radius-lg); padding: 20px 24px; display: flex; flex-direction: column; gap: 14px; box-shadow: 0 4px 16px rgba(0,0,0,0.15);">
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px;">
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <span class="badge" style="background: #fbbf24; color: #000; font-weight: 900; font-size: 11.5px; padding: 3px 10px; border-radius: 6px;">STEP 1</span>
-            <h3 style="font-size: 15px; font-weight: 800; color: #fbbf24; margin: 0;">
-              🏢 Group Entry &amp; Selection
-            </h3>
-          </div>
-          <span style="font-size: 12px; color: var(--text-muted);">
-            Total Groups Configured: <strong style="color: #fff;">${groups.length}</strong>
-          </span>
-        </div>
-
-        <!-- Group Controls Row: Select Existing OR Type New -->
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 16px; align-items: start;">
+      <!-- STEP 1: GROUP ENTRY & SELECTION (COMPACT INLINE BAR) -->
+      <div style="background: var(--bg-surface); border: 1px solid ${cascadeGroupId ? 'rgba(251, 191, 36, 0.35)' : 'var(--border-color)'}; border-radius: var(--radius-md); padding: 6px 10px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px;">
+        <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap; flex: 1 1 auto;">
+          <span class="badge" style="background: #fbbf24; color: #000; font-weight: 900; font-size: 10.5px; padding: 2px 7px; border-radius: 4px;">STEP 1</span>
+          <span style="font-size: 12px; font-weight: 800; color: #fbbf24;">🏢 Group:</span>
           
-          <!-- Option A: Select Existing Group -->
-          <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 14px; display: flex; flex-direction: column; gap: 8px;">
-            <label style="font-size: 11.5px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase;">
-              Select Existing Group:
-            </label>
-            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-              <select id="fast-sel-group" class="filter-select" style="flex: 1 1 180px; min-width: 0; font-weight: 700; font-size: 13.5px; border-color: rgba(251, 191, 36, 0.4);">
-                ${groups.length === 0 ? `<option value="">(No groups created yet)</option>` : 
-                  groups.map(g => `<option value="${g.id}" ${g.id === cascadeGroupId ? 'selected' : ''}>🏢 ${g.name} (${g.code})</option>`).join('')}
-              </select>
-              ${selectedGroup ? `
-                <button type="button" id="btn-fast-edit-group" class="btn btn-secondary" style="font-size: 12px; padding: 6px 12px;" title="Edit Selected Group">
-                  ✏️ Edit
-                </button>
-                <button type="button" id="btn-fast-delete-group" class="btn btn-danger" style="font-size: 12px; padding: 6px 10px;" title="Delete Selected Group">
-                  🗑️
-                </button>
-              ` : ''}
-            </div>
-          </div>
-
-          <!-- Option B: Direct New Group Entry -->
-          <div style="background: var(--bg-card); border: 1px solid rgba(251, 191, 36, 0.3); border-radius: var(--radius-md); padding: 14px; display: flex; flex-direction: column; gap: 8px;">
-            <label style="font-size: 11.5px; font-weight: 700; color: #fbbf24; text-transform: uppercase;">
-              ➕ Enter &amp; Create New Group:
-            </label>
-            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-              <input 
-                type="text" 
-                id="inp-quick-group-name" 
-                class="form-control" 
-                placeholder="Type Group Name (e.g. Al-Muslim Group, ABC Group)..." 
-                style="flex: 1 1 180px; min-width: 0; font-size: 13px;" 
-              />
-              <button id="btn-quick-create-group" class="btn btn-primary" style="font-weight: 700; background: linear-gradient(135deg, #f59e0b, #d97706); color: #000; white-space: nowrap; padding: 7px 16px; font-size: 12.5px; flex: 0 1 auto;">
-                ➕ Create Group
+          <!-- Select Existing Group -->
+          <div style="display: inline-flex; align-items: center; gap: 4px;">
+            <select id="fast-sel-group" class="filter-select" style="min-width: 180px; max-width: 240px; font-weight: 700; font-size: 11.5px; padding: 3px 6px; height: 28px; border-color: rgba(251, 191, 36, 0.4);">
+              ${groups.length === 0 ? `<option value="">(No groups created yet)</option>` : 
+                groups.map(g => `<option value="${g.id}" ${g.id === cascadeGroupId ? 'selected' : ''}>🏢 ${g.name} (${g.code})</option>`).join('')}
+            </select>
+            ${selectedGroup ? `
+              <button type="button" id="btn-fast-edit-group" class="btn btn-secondary btn-sm" style="font-size: 11px; padding: 2px 7px; height: 28px;" title="Edit Selected Group">
+                ✏️
               </button>
-            </div>
+              <button type="button" id="btn-fast-delete-group" class="btn btn-danger btn-sm" style="font-size: 11px; padding: 2px 7px; height: 28px;" title="Delete Selected Group">
+                🗑️
+              </button>
+            ` : ''}
           </div>
 
+          <span style="color: var(--border-color); margin: 0 2px;">|</span>
+
+          <!-- Direct New Group Entry -->
+          <div style="display: inline-flex; align-items: center; gap: 4px; flex: 1 1 180px; max-width: 320px;">
+            <input 
+              type="text" 
+              id="inp-quick-group-name" 
+              class="form-control" 
+              placeholder="Type new Group Name..." 
+              style="font-size: 11.5px; padding: 3px 8px; height: 28px;" 
+            />
+            <button id="btn-quick-create-group" class="btn btn-primary btn-sm" style="font-weight: 800; background: linear-gradient(135deg, #f59e0b, #d97706); color: #000; white-space: nowrap; padding: 3px 8px; font-size: 11px; height: 28px;">
+              ➕ Add
+            </button>
+          </div>
         </div>
+
+        <span style="font-size: 11px; color: var(--text-muted); white-space: nowrap;">
+          Total Groups: <strong style="color: #fff;">${groups.length}</strong>
+        </span>
       </div>
 
-      <!-- STEP 2: CONNECT UNITS TO GROUP IN 1-CLICK -->
-      <div style="background: var(--bg-surface); border: 1px solid ${cascadeUnitId ? 'rgba(52, 211, 153, 0.4)' : 'var(--border-color)'}; border-radius: var(--radius-lg); padding: 20px 24px; display: flex; flex-direction: column; gap: 14px; box-shadow: 0 4px 16px rgba(0,0,0,0.15);">
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px;">
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <span class="badge" style="background: #10b981; color: #fff; font-weight: 900; font-size: 11.5px; padding: 3px 10px; border-radius: 6px;">STEP 2</span>
-            <h3 style="font-size: 15px; font-weight: 800; color: #34d399; margin: 0;">
-              🏭 Connect Units to: <span style="color: #fff;">${selectedGroup?.name || 'Selected Group'}</span>
-            </h3>
+      <!-- STEP 2: CONNECT UNITS TO GROUP (COMPACT INLINE CARD) -->
+      <div style="background: var(--bg-surface); border: 1px solid ${cascadeUnitId ? 'rgba(52, 211, 153, 0.35)' : 'var(--border-color)'}; border-radius: var(--radius-md); padding: 6px 10px; display: flex; flex-direction: column; gap: 6px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
+          <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+            <span class="badge" style="background: #10b981; color: #fff; font-weight: 900; font-size: 10.5px; padding: 2px 7px; border-radius: 4px;">STEP 2</span>
+            <span style="font-size: 12px; font-weight: 800; color: #34d399;">
+              🏭 Units in <span style="color: #fff;">${selectedGroup?.name || 'Group'}</span> (${unitsOfGroup.length}):
+            </span>
           </div>
-          <span style="font-size: 12px; color: var(--text-muted);">
-            Units in this Group: <strong style="color: #34d399;">${unitsOfGroup.length} Units</strong>
-          </span>
+
+          <button type="button" id="btn-fast-add-unit" class="btn btn-ghost btn-sm" style="color: #34d399; font-size: 11px; font-weight: 700; padding: 1px 6px; height: 24px;">
+            + Single Unit Form
+          </button>
         </div>
 
-        <!-- Blank Serial Entry Box for Units (1-Click) -->
-        <div style="background: var(--bg-card); border: 1.5px dashed rgba(52, 211, 153, 0.4); border-radius: var(--radius-md); padding: 16px; display: flex; flex-direction: column; gap: 10px;">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <label style="font-size: 12.5px; font-weight: 700; color: #34d399; display: flex; align-items: center; gap: 6px;">
-              <span>📝</span> Type Unit Names in Serial into this Blank Box (separated by commas):
-            </label>
-            <span style="font-size: 11px; color: var(--text-muted);">Press Enter or click Add</span>
-          </div>
-
-          <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <!-- Input & Presets Row -->
+        <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+          <div style="display: flex; gap: 4px; flex: 1 1 240px;">
             <input 
               type="text" 
               id="inp-batch-units-text" 
               class="form-control" 
-              placeholder="e.g. Unit-01, Unit-02, Unit-03, Washing Plant, Cutting Section, Finishing Section..." 
-              style="flex: 1 1 200px; min-width: 0; font-size: 13.5px; font-weight: 600; padding: 10px 14px; border: 1.5px solid rgba(52, 211, 153, 0.4);" 
+              placeholder="Type Unit Names (comma separated: Unit-01, Unit-02, Washing Plant)..." 
+              style="font-size: 11.5px; font-weight: 600; padding: 3px 8px; height: 28px; border-color: rgba(52, 211, 153, 0.4);" 
             />
-            <button id="btn-save-batch-units" class="btn btn-primary" style="font-weight: 800; background: linear-gradient(135deg, #10b981, #059669); white-space: nowrap; padding: 10px 22px; font-size: 13px; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35); flex: 0 1 auto;">
-              ➕ Add All Units (1-Click)
+            <button id="btn-save-batch-units" class="btn btn-primary btn-sm" style="font-weight: 800; background: linear-gradient(135deg, #10b981, #059669); white-space: nowrap; padding: 3px 10px; font-size: 11px; height: 28px;">
+              ➕ Add All
             </button>
           </div>
 
-          <!-- Preset helper chips -->
-          <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
-            <span style="font-size: 11px; color: var(--text-secondary); font-weight: 700;">QUICK PRESETS:</span>
-            <button type="button" class="btn btn-ghost btn-sm btn-unit-preset" data-preset="AKM Knit Wear Ltd., Al-Muslim Apparels Ltd., Al-Muslim Fashion &amp; Specilized Ltd., Al-Muslim Garments Accessories Ltd, Pacific Blue (Jeans Wear) Ltd." style="font-size: 11px; padding: 3px 10px; border: 1.5px solid rgba(52, 211, 153, 0.5); color: #34d399; font-weight: 800; background: rgba(52, 211, 153, 0.12);">⚡ All 5 Al-Muslim Units (1-Click)</button>
-            <button type="button" class="btn btn-ghost btn-sm btn-unit-preset" data-preset="Unit-01, Unit-02, Unit-03" style="font-size: 11px; padding: 2px 8px; border: 1px solid rgba(52, 211, 153, 0.3);">+ Unit 01-03</button>
-            <button type="button" class="btn btn-ghost btn-sm btn-unit-preset" data-preset="Unit-04, Unit-05, Unit-06" style="font-size: 11px; padding: 2px 8px; border: 1px solid rgba(52, 211, 153, 0.3);">+ Unit 04-06</button>
-            <button type="button" class="btn btn-ghost btn-sm btn-unit-preset" data-preset="Washing Plant" style="font-size: 11px; padding: 2px 8px; border: 1px solid rgba(52, 211, 153, 0.3);">+ Washing Plant</button>
-            <button type="button" class="btn btn-ghost btn-sm btn-unit-preset" data-preset="Cutting Section" style="font-size: 11px; padding: 2px 8px; border: 1px solid rgba(52, 211, 153, 0.3);">+ Cutting Section</button>
-            <button type="button" class="btn btn-ghost btn-sm btn-unit-preset" data-preset="Finishing Section" style="font-size: 11px; padding: 2px 8px; border: 1px solid rgba(52, 211, 153, 0.3);">+ Finishing Section</button>
+          <div style="display: inline-flex; align-items: center; gap: 3px; flex-wrap: wrap;">
+            <span style="font-size: 10px; color: var(--text-secondary); font-weight: 700;">PRESETS:</span>
+            <button type="button" class="btn btn-ghost btn-sm btn-unit-preset" data-preset="AKM Knit Wear Ltd., Al-Muslim Apparels Ltd., Al-Muslim Fashion &amp; Specilized Ltd., Al-Muslim Garments Accessories Ltd, Pacific Blue (Jeans Wear) Ltd." style="font-size: 10px; padding: 1px 6px; height: 24px; border: 1px solid rgba(52, 211, 153, 0.5); color: #34d399; font-weight: 800; background: rgba(52, 211, 153, 0.12);">⚡ All 5 AMG Units</button>
+            <button type="button" class="btn btn-ghost btn-sm btn-unit-preset" data-preset="Unit-01, Unit-02, Unit-03" style="font-size: 10px; padding: 1px 5px; height: 24px; border: 1px solid rgba(52, 211, 153, 0.3);">+ 01-03</button>
+            <button type="button" class="btn btn-ghost btn-sm btn-unit-preset" data-preset="Unit-04, Unit-05, Unit-06" style="font-size: 10px; padding: 1px 5px; height: 24px; border: 1px solid rgba(52, 211, 153, 0.3);">+ 04-06</button>
+            <button type="button" class="btn btn-ghost btn-sm btn-unit-preset" data-preset="Washing Plant" style="font-size: 10px; padding: 1px 5px; height: 24px; border: 1px solid rgba(52, 211, 153, 0.3);">+ Washing</button>
+            <button type="button" class="btn btn-ghost btn-sm btn-unit-preset" data-preset="Cutting Section" style="font-size: 10px; padding: 1px 5px; height: 24px; border: 1px solid rgba(52, 211, 153, 0.3);">+ Cutting</button>
+            <button type="button" class="btn btn-ghost btn-sm btn-unit-preset" data-preset="Finishing Section" style="font-size: 10px; padding: 1px 5px; height: 24px; border: 1px solid rgba(52, 211, 153, 0.3);">+ Finishing</button>
           </div>
         </div>
 
-        <!-- Unit Tiles / Chips with Inline Select, Edit & Delete -->
-        <div>
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-            <span style="font-size: 12px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase;">
-              Configured Units in ${selectedGroup?.name || 'this Group'} (Click any unit to manage its lines):
-            </span>
-            <button type="button" id="btn-fast-add-unit" class="btn btn-ghost btn-sm" style="color: #34d399; font-size: 11.5px; font-weight: 700;">
-              + Add Single Unit Form
-            </button>
-          </div>
-
-          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-            ${unitsOfGroup.length === 0 ? `
-              <div style="font-size: 12px; color: var(--text-muted); padding: 8px 12px; background: rgba(15, 23, 42, 0.4); border-radius: var(--radius-sm);">
-                No units connected yet. Type names in the blank box above and click 'Add All Units (1-Click)'.
-              </div>
-            ` : unitsOfGroup.map(u => {
-              const isCurrent = u.id === cascadeUnitId;
-              const lineCnt = unitLineCounts.get(u.id) || 0;
-              return `
-                <div 
-                  class="btn-tile-select-unit" 
-                  data-id="${u.id}" 
-                  style="display: inline-flex; align-items: center; gap: 8px; padding: 7px 12px; border-radius: 8px; cursor: pointer; transition: all 0.2s; background: ${isCurrent ? 'rgba(52, 211, 153, 0.15)' : 'var(--bg-card)'}; border: 1.5px solid ${isCurrent ? '#34d399' : 'var(--border-color)'}; box-shadow: ${isCurrent ? '0 0 10px rgba(52, 211, 153, 0.2)' : 'none'};"
-                >
-                  <span style="font-size: 13px;">${isCurrent ? '🟢' : '🏭'}</span>
-                  <span style="font-weight: 800; font-size: 12.5px; color: ${isCurrent ? '#34d399' : '#fff'};">
-                    ${u.name}
-                  </span>
-                  <span class="badge" style="font-size: 10px; background: rgba(56, 189, 248, 0.15); color: #38bdf8; padding: 1px 6px;">
-                    ${lineCnt} Lines
-                  </span>
-                  <div style="display: inline-flex; gap: 2px; margin-left: 4px;">
-                    <button type="button" class="btn btn-ghost btn-sm btn-tile-edit-unit" data-id="${u.id}" title="Edit Unit ${u.name}" style="padding: 1px 4px; font-size: 11px;">✏️</button>
-                    <button type="button" class="btn btn-ghost btn-sm btn-tile-delete-unit" data-id="${u.id}" title="Delete Unit ${u.name}" style="padding: 1px 4px; font-size: 11px; color: #ef4444;">🗑️</button>
-                  </div>
+        <!-- Unit Tiles / Chips -->
+        <div style="display: flex; gap: 4px; flex-wrap: wrap;">
+          ${unitsOfGroup.length === 0 ? `
+            <div style="font-size: 11px; color: var(--text-muted); padding: 3px 6px; background: rgba(15, 23, 42, 0.4); border-radius: var(--radius-sm);">
+              No units connected yet. Type names in the box above.
+            </div>
+          ` : unitsOfGroup.map(u => {
+            const isCurrent = u.id === cascadeUnitId;
+            const lineCnt = unitLineCounts.get(u.id) || 0;
+            return `
+              <div 
+                class="btn-tile-select-unit" 
+                data-id="${u.id}" 
+                style="display: inline-flex; align-items: center; gap: 5px; padding: 3px 7px; border-radius: 6px; cursor: pointer; transition: all 0.15s; background: ${isCurrent ? 'rgba(52, 211, 153, 0.18)' : 'var(--bg-card)'}; border: 1.5px solid ${isCurrent ? '#34d399' : 'var(--border-color)'};"
+              >
+                <span style="font-size: 11px;">${isCurrent ? '🟢' : '🏭'}</span>
+                <span style="font-weight: 800; font-size: 11px; color: ${isCurrent ? '#34d399' : '#fff'};">
+                  ${u.name}
+                </span>
+                <span class="badge" style="font-size: 9.5px; background: rgba(56, 189, 248, 0.15); color: #38bdf8; padding: 1px 4px;">
+                  ${lineCnt} Lines
+                </span>
+                <div style="display: inline-flex; gap: 1px; margin-left: 2px;">
+                  <button type="button" class="btn btn-ghost btn-sm btn-tile-edit-unit" data-id="${u.id}" title="Edit Unit ${u.name}" style="padding: 0 2px; font-size: 10px; height: 16px; line-height: 1;">✏️</button>
+                  <button type="button" class="btn btn-ghost btn-sm btn-tile-delete-unit" data-id="${u.id}" title="Delete Unit ${u.name}" style="padding: 0 2px; font-size: 10px; color: #ef4444; height: 16px; line-height: 1;">🗑️</button>
                 </div>
-              `;
-            }).join('')}
-          </div>
+              </div>
+            `;
+          }).join('')}
         </div>
-
       </div>
 
-      <!-- STEP 3: SELECT UNIT & ADD LINES IN 1-CLICK -->
-      <div style="background: var(--bg-surface); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: var(--radius-lg); padding: 20px 24px; display: flex; flex-direction: column; gap: 14px; box-shadow: 0 4px 16px rgba(0,0,0,0.15);">
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px;">
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <span class="badge" style="background: #0284c7; color: #fff; font-weight: 900; font-size: 11.5px; padding: 3px 10px; border-radius: 6px;">STEP 3</span>
-            <h3 style="font-size: 15px; font-weight: 800; color: #38bdf8; margin: 0;">
-              🧵 Add &amp; Manage Lines for Unit: <span style="color: #34d399;">${selectedUnit?.name || 'Selected Unit'}</span>
-            </h3>
-          </div>
-          
-          <!-- Unit & Floor Selectors & Admin Floor Management -->
-          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-            <!-- Unit Selector Dropdown to quickly jump between units -->
-            <select id="fast-sel-unit" class="filter-select" style="font-weight: 700; font-size: 12.5px; border-color: rgba(52, 211, 153, 0.4);">
+      <!-- STEP 3: SELECT UNIT & ADD LINES (COMPACT CARD) -->
+      <div style="background: var(--bg-surface); border: 1px solid rgba(56, 189, 248, 0.35); border-radius: var(--radius-md); padding: 6px 10px; display: flex; flex-direction: column; gap: 6px;">
+        <!-- Step 3 Header with Dropdowns and Controls -->
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; border-bottom: 1px solid var(--border-color); padding-bottom: 5px;">
+          <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+            <span class="badge" style="background: #0284c7; color: #fff; font-weight: 900; font-size: 10.5px; padding: 2px 7px; border-radius: 4px;">STEP 3</span>
+            <span style="font-size: 12px; font-weight: 800; color: #38bdf8;">
+              🧵 Lines for <span style="color: #34d399;">${selectedUnit?.name || 'Unit'}</span>:
+            </span>
+
+            <!-- Unit Selector Dropdown -->
+            <select id="fast-sel-unit" class="filter-select" style="font-weight: 700; font-size: 11px; height: 26px; padding: 2px 5px; border-color: rgba(52, 211, 153, 0.4);">
               ${unitsOfGroup.map(u => `<option value="${u.id}" ${u.id === cascadeUnitId ? 'selected' : ''}>🏭 ${u.name} (${unitLineCounts.get(u.id) || 0} Lines)</option>`).join('')}
             </select>
             
             <!-- Floor Selector Dropdown -->
-            <select id="fast-sel-floor" class="filter-select" style="font-weight: 700; font-size: 12.5px; border-color: rgba(56, 189, 248, 0.4);">
+            <select id="fast-sel-floor" class="filter-select" style="font-weight: 700; font-size: 11px; height: 26px; padding: 2px 5px; border-color: rgba(56, 189, 248, 0.4);">
               <option value="all" ${cascadeFloorId === 'all' || !cascadeFloorId ? 'selected' : ''}>🌐 All Floors (${linesOfUnit.length} Lines)</option>
-              ${floorsOfUnit.map(f => `<option value="${f.id}" ${f.id === (cascadeFloorId || activeFloor?.id) ? 'selected' : ''}>🏗️ ${f.name} [Code: ${f.code || 'FL'}] (${linesOfUnit.filter(l => l.floorId === f.id).length} Lines)</option>`).join('')}
+              ${floorsOfUnit.map(f => `<option value="${f.id}" ${f.id === (cascadeFloorId || activeFloor?.id) ? 'selected' : ''}>🏗️ ${f.name} [${f.code || 'FL'}] (${linesOfUnit.filter(l => l.floorId === f.id).length} Lines)</option>`).join('')}
             </select>
 
             <!-- Active Floor Code Badge -->
-            <span style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.4); font-weight: 800; font-size: 11.5px; padding: 4px 10px; border-radius: 6px;" title="Active Floor Short Code for Line Naming: {FLOOR_CODE}-{LINE}">
+            <span style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.4); font-weight: 800; font-size: 10.5px; padding: 2px 5px; border-radius: 4px;" title="Floor Code">
               Code: <strong style="color: #fff;">${activeFloorCode}</strong>
             </span>
 
-            <!-- Active Floor Sticker Tag Badge (Customizable on QR Stickers) -->
             ${activeFloor ? `
-              <span style="background: rgba(56, 189, 248, 0.18); color: #38bdf8; border: 1.5px solid #38bdf8; font-weight: 800; font-size: 11.5px; padding: 4px 10px; border-radius: 6px;" title="Customizable Floor Tag printed on top-right of QR stickers (e.g. AKM-TISTA)">
-                🏷️ Sticker Tag: <strong style="color: #fff;">${activeFloor.locationTag || qrCodeService.getLocationTag(cascadeUnitId, activeFloor.id)}</strong>
+              <span style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid #38bdf8; font-weight: 800; font-size: 10.5px; padding: 2px 5px; border-radius: 4px;" title="Customizable Floor Sticker Tag">
+                🏷️ ${activeFloor.locationTag || qrCodeService.getLocationTag(cascadeUnitId, activeFloor.id)}
               </span>
             ` : ''}
+          </div>
 
-            <!-- Admin Controlled Floor Edit & Add Buttons -->
+          <div style="display: flex; align-items: center; gap: 4px;">
             ${isAdmin && activeFloor ? `
-              <button type="button" id="btn-fast-edit-floor" data-id="${activeFloor.id}" class="btn btn-secondary btn-sm" style="color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.4); font-size: 11.5px; font-weight: 700; padding: 4px 10px;" title="Admin: Edit Floor Short Code &amp; Name for ${activeFloor.name}">
-                ✏️ Edit Floor [${activeFloorCode}]
+              <button type="button" id="btn-fast-edit-floor" data-id="${activeFloor.id}" class="btn btn-secondary btn-sm" style="color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.4); font-size: 10.5px; font-weight: 700; padding: 2px 6px; height: 26px;" title="Edit Floor">
+                ✏️ Edit [${activeFloorCode}]
               </button>
             ` : ''}
             ${isAdmin ? `
-              <button type="button" id="btn-fast-add-floor" class="btn btn-ghost btn-sm" style="color: #34d399; border: 1px solid rgba(52, 211, 153, 0.4); font-size: 11.5px; font-weight: 700; padding: 4px 10px;" title="Admin: Add New Custom Floor with Name &amp; Short Code">
+              <button type="button" id="btn-fast-add-floor" class="btn btn-ghost btn-sm" style="color: #34d399; border: 1px solid rgba(52, 211, 153, 0.4); font-size: 10.5px; font-weight: 700; padding: 2px 6px; height: 26px;" title="Add Floor">
                 ➕ Add Floor
               </button>
             ` : ''}
           </div>
         </div>
 
-        <!-- Admin Quick Floor Presets Bar -->
-        <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: var(--radius-md); padding: 10px 14px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-          <span style="font-size: 11px; font-weight: 800; color: #38bdf8; text-transform: uppercase;">
-            ⚡ QUICK FLOOR PRESETS:
-          </span>
-          ${[
-            { name: 'Jamuna Floor', code: 'JA' },
-            { name: 'Buriganga Floor', code: 'BG' },
-            { name: 'Chitra Floor', code: 'CH' },
-            { name: 'Padma Floor', code: 'PD' },
-            { name: 'Titas Floor', code: 'TT' },
-            { name: 'Tista Floor', code: 'TS' },
-            { name: 'Surma Floor', code: 'SU' },
-            { name: 'Meghna Floor', code: 'MG' },
-            { name: 'Pilot', code: 'PT' },
-            { name: 'Model Line', code: 'ML' },
-            { name: 'Sample', code: 'SM' }
-          ].map(fp => {
-            const isMatch = activeFloor && (activeFloor.code === fp.code || activeFloor.name.toLowerCase().includes(fp.name.toLowerCase()));
-            return `
-              <button 
-                type="button" 
-                class="btn btn-ghost btn-sm btn-quick-floor-preset" 
-                data-name="${fp.name}" 
-                data-code="${fp.code}" 
-                style="font-size: 11px; padding: 3px 9px; border-radius: 6px; border: 1.5px solid ${isMatch ? '#38bdf8' : 'rgba(56, 189, 248, 0.3)'}; background: ${isMatch ? 'rgba(56, 189, 248, 0.2)' : 'rgba(15, 23, 42, 0.5)'}; color: ${isMatch ? '#fff' : '#94a3b8'}; font-weight: ${isMatch ? '800' : '600'}; cursor: pointer;" 
-                title="Select or Add Floor ${fp.name} (Code: ${fp.code})"
-              >
-                ${isMatch ? '🟢' : '+'} ${fp.name} (<strong>${fp.code}</strong>)
-              </button>
-            `;
-          }).join('')}
-        </div>
-
-        <!-- Blank Serial Entry Box for Lines (Dual System: All Floors vs Individual Floor) -->
-        <div style="background: var(--bg-card); border: 1.5px dashed ${isAllFloorsTarget ? 'rgba(52, 211, 153, 0.5)' : 'rgba(56, 189, 248, 0.4)'}; border-radius: var(--radius-md); padding: 16px; display: flex; flex-direction: column; gap: 12px;">
-          
-          <!-- Dual System Switcher Bar -->
-          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; background: rgba(15, 23, 42, 0.65); border: 1px solid ${isAllFloorsTarget ? 'rgba(52, 211, 153, 0.3)' : 'rgba(56, 189, 248, 0.25)'}; border-radius: 8px; padding: 8px 14px;">
-            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-              <span style="font-size: 11px; font-weight: 800; color: #38bdf8; text-transform: uppercase;">
-                ⚙️ SELECT LINE ENTRY SYSTEM:
-              </span>
-              
-              <!-- System 1: Individual Floor -->
-              <button 
-                type="button" 
-                id="btn-scope-individual" 
-                class="btn btn-sm ${!isAllFloorsTarget ? 'btn-primary' : 'btn-ghost'}" 
-                style="font-size: 11.5px; font-weight: 800; padding: 4px 12px; border-radius: 6px; ${!isAllFloorsTarget ? 'background: linear-gradient(135deg, #0284c7, #0369a1); color: #fff; box-shadow: 0 2px 8px rgba(2, 132, 199, 0.4);' : 'color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.3);'}"
-                title="System 1: Add lines only to selected individual floor (${activeFloor?.name || 'Floor'} [${activeFloorCode}])"
-              >
-                🎯 System 1: Individual Floor (${activeFloor?.name || 'Current'} [${activeFloorCode}])
-              </button>
-
-              <!-- System 2: All Floors at Once -->
-              <button 
-                type="button" 
-                id="btn-scope-all-floors" 
-                class="btn btn-sm ${isAllFloorsTarget ? 'btn-success' : 'btn-ghost'}" 
-                style="font-size: 11.5px; font-weight: 800; padding: 4px 12px; border-radius: 6px; ${isAllFloorsTarget ? 'background: linear-gradient(135deg, #10b981, #059669); color: #fff; box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4);' : 'color: #34d399; border: 1px solid rgba(52, 211, 153, 0.3);'}"
-                title="System 2: 1-Click to add lines across ALL ${floorsOfUnit.length} floors in ${selectedUnit?.name || 'this unit'} simultaneously"
-              >
-                🌐 System 2: ALL Floors at Once (${floorsOfUnit.length} Floors)
-              </button>
-            </div>
-
-            <!-- Dynamic System Description -->
-            <div style="font-size: 11.5px; font-weight: 600;">
-              ${isAllFloorsTarget ? `
-                <span style="color: #34d399;">
-                  🌐 Target: <strong>ALL ${floorsOfUnit.length} Floors</strong> in ${selectedUnit?.name} 
-                  <span style="color: #94a3b8; font-size: 11px;">(Auto-prefixes each floor's code: ${floorsOfUnit.map(f => (f.code || f.name.substring(0, 2)).toUpperCase() + '-A').slice(0, 4).join(', ')}...)</span>
-                </span>
-              ` : `
-                <span style="color: #38bdf8;">
-                  🎯 Target: <strong>${activeFloor ? `${activeFloor.name} [Code: ${activeFloorCode}]` : 'Ground Floor'}</strong>
-                  <span style="color: #94a3b8; font-size: 11px;">(Auto-prefixed with <strong>${activeFloorCode}-</strong>: ${activeFloorCode}-A, ${activeFloorCode}-B ... ${activeFloorCode}-Idle)</span>
-                </span>
-              `}
-            </div>
-          </div>
-
-          <!-- VISUAL LINE STATUS & AVAILABILITY MATRIX (A to Z & SECTIONS) -->
-          <div style="background: rgba(15, 23, 42, 0.7); border: 1.5px solid ${isAllFloorsTarget ? 'rgba(52, 211, 153, 0.35)' : 'rgba(56, 189, 248, 0.3)'}; border-radius: 10px; padding: 14px 18px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.25);">
-            <!-- Header Row: Title & Summary Counters -->
-            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-              <div style="display: flex; align-items: center; gap: 8px;">
-                <span style="font-size: 17px;">📊</span>
-                <h4 style="font-size: 13.5px; font-weight: 800; color: #fff; margin: 0;">
-                  Line Status &amp; Availability Matrix: <span style="color: ${isAllFloorsTarget ? '#34d399' : '#38bdf8'};">${isAllFloorsTarget ? `All ${floorsOfUnit.length} Floors` : `${activeFloor?.name || 'Active Floor'} [${activeFloorCode}]`}</span>
-                </h4>
-              </div>
-              <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700;">
-                <span style="background: rgba(16, 185, 129, 0.15); border: 1px solid #10b981; color: #34d399; padding: 3px 10px; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px;">
-                  <span style="width: 8px; height: 8px; border-radius: 50%; background: #10b981;"></span>
-                  Configured: <strong>${addedAlphabetCount} / 26</strong>
-                </span>
-                <span style="background: rgba(56, 189, 248, 0.15); border: 1px solid #0284c7; color: #38bdf8; padding: 3px 10px; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px;">
-                  <span style="width: 8px; height: 8px; border-radius: 50%; background: #38bdf8;"></span>
-                  Missing / Available: <strong>${missingAlphabetLetters.length}</strong>
-                </span>
-              </div>
-            </div>
-
-            <!-- A to Z Alphabet Grid / Chips -->
-            <div>
-              <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 6px;">
-                <span>A &rarr; Z Lines Status (Click any available letter to queue; click green to check):</span>
-                <span style="color: #94a3b8;">🟢 Green = Already Added | ⚪ Dash = Available to Add</span>
-              </div>
-              <div style="display: flex; flex-wrap: wrap; gap: 6px;" id="matrix-alphabet-chips">
-                ${alphabetStatusList.map(item => `
-                  <button 
-                    type="button" 
-                    class="btn-matrix-letter-chip" 
-                    data-letter="${item.letter}" 
-                    data-added="${item.isAdded ? 'true' : 'false'}"
-                    title="${item.tooltip}"
-                    style="min-width: 38px; height: 32px; padding: 2px 6px; font-size: 12px; font-weight: 800; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; gap: 2px; cursor: pointer; transition: all 0.15s ease; ${
-                      item.isAdded 
-                        ? 'background: rgba(16, 185, 129, 0.18); border: 1.5px solid #10b981; color: #34d399; box-shadow: 0 1px 4px rgba(16,185,129,0.2);' 
-                        : item.isPartial 
-                          ? 'background: rgba(251, 191, 36, 0.15); border: 1.5px dashed #fbbf24; color: #fbbf24;' 
-                          : 'background: rgba(15, 23, 42, 0.6); border: 1.5px dashed rgba(56, 189, 248, 0.35); color: #cbd5e1;'
-                    }"
-                  >
-                    ${item.isAdded ? '✓' : item.isPartial ? '◐' : '+'}${item.letter}
-                  </button>
-                `).join('')}
-              </div>
-            </div>
-
-            <!-- Special Named Sections Chips -->
-            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; border-top: 1px dashed rgba(255,255,255,0.08); padding-top: 8px;">
-              <span style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Named Sections:</span>
-              ${namedSectionsStatus.map(sec => `
+        <!-- Compact Quick Floor Presets + System Selector Bar -->
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 4px; background: rgba(15, 23, 42, 0.5); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 4px; padding: 4px 6px;">
+          <!-- Quick Floor Presets -->
+          <div style="display: flex; align-items: center; gap: 3px; flex-wrap: wrap;">
+            <span style="font-size: 9.5px; font-weight: 800; color: #38bdf8; text-transform: uppercase;">FLOORS:</span>
+            ${[
+              { name: 'Jamuna Floor', code: 'JA' },
+              { name: 'Buriganga Floor', code: 'BG' },
+              { name: 'Chitra Floor', code: 'CH' },
+              { name: 'Padma Floor', code: 'PD' },
+              { name: 'Titas Floor', code: 'TT' },
+              { name: 'Tista Floor', code: 'TS' },
+              { name: 'Surma Floor', code: 'SU' },
+              { name: 'Meghna Floor', code: 'MG' },
+              { name: 'Pilot', code: 'PT' },
+              { name: 'Model Line', code: 'ML' },
+              { name: 'Sample', code: 'SM' }
+            ].map(fp => {
+              const isMatch = activeFloor && (activeFloor.code === fp.code || activeFloor.name.toLowerCase().includes(fp.name.toLowerCase()));
+              return `
                 <button 
                   type="button" 
-                  class="btn-matrix-section-chip" 
-                  data-val="${sec.name}" 
-                  data-added="${sec.isAdded ? 'true' : 'false'}"
-                  title="${sec.tooltip}"
-                  style="font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 6px; cursor: pointer; transition: all 0.15s ease; ${
-                    sec.isAdded 
-                      ? 'background: rgba(16, 185, 129, 0.18); border: 1.5px solid #10b981; color: #34d399;' 
-                      : sec.isPartial
-                        ? 'background: rgba(245, 158, 11, 0.18); border: 1.5px solid #f59e0b; color: #fbbf24;'
-                        : 'background: rgba(15, 23, 42, 0.6); border: 1.5px dashed rgba(52, 211, 153, 0.35); color: #34d399;'
+                  class="btn btn-ghost btn-sm btn-quick-floor-preset" 
+                  data-name="${fp.name}" 
+                  data-code="${fp.code}" 
+                  style="font-size: 10px; padding: 1px 5px; height: 22px; border-radius: 4px; border: 1px solid ${isMatch ? '#38bdf8' : 'rgba(56, 189, 248, 0.3)'}; background: ${isMatch ? 'rgba(56, 189, 248, 0.2)' : 'rgba(15, 23, 42, 0.5)'}; color: ${isMatch ? '#fff' : '#94a3b8'}; font-weight: ${isMatch ? '800' : '600'};" 
+                  title="Floor ${fp.name} (${fp.code})"
+                >
+                  ${isMatch ? '🟢' : ''}${fp.name.split(' ')[0]} <strong>[${fp.code}]</strong>
+                </button>
+              `;
+            }).join('')}
+          </div>
+
+          <!-- Scope Switcher Buttons -->
+          <div style="display: flex; align-items: center; gap: 4px;">
+            <button 
+              type="button" 
+              id="btn-scope-individual" 
+              class="btn btn-sm ${!isAllFloorsTarget ? 'btn-primary' : 'btn-ghost'}" 
+              style="font-size: 10.5px; font-weight: 800; padding: 2px 7px; height: 22px; border-radius: 4px; ${!isAllFloorsTarget ? 'background: #0284c7; color: #fff;' : 'color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.3);'}"
+              title="Add lines to current floor [${activeFloorCode}]"
+            >
+              🎯 Single (${activeFloorCode})
+            </button>
+            <button 
+              type="button" 
+              id="btn-scope-all-floors" 
+              class="btn btn-sm ${isAllFloorsTarget ? 'btn-success' : 'btn-ghost'}" 
+              style="font-size: 10.5px; font-weight: 800; padding: 2px 7px; height: 22px; border-radius: 4px; ${isAllFloorsTarget ? 'background: #10b981; color: #fff;' : 'color: #34d399; border: 1px solid rgba(52, 211, 153, 0.3);'}"
+              title="Add lines across all ${floorsOfUnit.length} floors"
+            >
+              🌐 All Floors (${floorsOfUnit.length})
+            </button>
+          </div>
+        </div>
+
+        <!-- COMPACT AVAILABILITY MATRIX & QUICK FILL -->
+        <div style="background: rgba(15, 23, 42, 0.4); border: 1px solid ${isAllFloorsTarget ? 'rgba(52, 211, 153, 0.3)' : 'rgba(56, 189, 248, 0.25)'}; border-radius: 4px; padding: 4px 8px; display: flex; flex-direction: column; gap: 4px;">
+          <!-- Matrix Summary & Letter Chips -->
+          <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 4px;">
+            <div style="display: flex; align-items: center; gap: 3px; flex-wrap: wrap;" id="matrix-alphabet-chips">
+              <span style="font-size: 9.5px; font-weight: 800; color: #38bdf8; text-transform: uppercase; margin-right: 2px;">MATRIX:</span>
+              ${alphabetStatusList.map(item => `
+                <button 
+                  type="button" 
+                  class="btn-matrix-letter-chip" 
+                  data-letter="${item.letter}" 
+                  data-added="${item.isAdded ? 'true' : 'false'}"
+                  title="${item.tooltip}"
+                  style="min-width: 22px; height: 20px; padding: 0 3px; font-size: 10.5px; font-weight: 800; border-radius: 3px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.15s ease; ${
+                    item.isAdded 
+                      ? 'background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981; color: #34d399;' 
+                      : item.isPartial 
+                        ? 'background: rgba(251, 191, 36, 0.15); border: 1px dashed #fbbf24; color: #fbbf24;' 
+                        : 'background: rgba(15, 23, 42, 0.6); border: 1px dashed rgba(56, 189, 248, 0.35); color: #cbd5e1;'
                   }"
                 >
-                  ${sec.isAdded ? '✓ ' : sec.isPartial ? '◐ ' : '+ '}${sec.name}
+                  ${item.isAdded ? '✓' : item.isPartial ? '◐' : ''}${item.letter}
                 </button>
               `).join('')}
             </div>
+
+            <div style="display: inline-flex; align-items: center; gap: 6px; font-size: 10.5px; font-weight: 700;">
+              <span style="color: #34d399;">✓ ${addedAlphabetCount}/26</span>
+              <span style="color: #38bdf8;">⚪ ${missingAlphabetLetters.length} Miss</span>
+            </div>
           </div>
 
-          <!-- Input Bar & Action Buttons -->
-          <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-            <input 
-              type="text" 
-              id="inp-batch-lines-text" 
-              class="form-control" 
-              placeholder="${isAllFloorsTarget ? `Type line letters or click ✨ Fill Missing to add across ALL ${floorsOfUnit.length} floors at once...` : `Type line letters or click ✨ Fill Missing for ${activeFloor?.name || 'floor'} [${activeFloorCode}]...`}" 
-              style="flex: 1; min-width: 260px; font-size: 13.5px; font-weight: 600; padding: 10px 14px; border: 1.5px solid ${isAllFloorsTarget ? 'rgba(52, 211, 153, 0.5)' : 'rgba(56, 189, 248, 0.4)'};" 
-            />
+          <!-- Section Chips + 1-Click Fast Fill Actions in a neat row -->
+          <div style="display: flex; align-items: center; gap: 3px; flex-wrap: wrap; border-top: 1px dashed rgba(255,255,255,0.06); padding-top: 4px;">
+            <span style="font-size: 9.5px; font-weight: 800; color: #38bdf8; text-transform: uppercase;">FILL:</span>
             
-            <!-- System 1 Action: Add to Current/Selected Floor -->
-            <button 
-              type="button" 
-              id="btn-save-batch-lines-single" 
-              class="btn ${!isAllFloorsTarget ? 'btn-primary' : 'btn-ghost'}" 
-              style="font-weight: 800; ${!isAllFloorsTarget ? 'background: linear-gradient(135deg, #0284c7, #0369a1); color: #fff;' : 'color: #38bdf8; border: 1.5px solid rgba(56, 189, 248, 0.5);'} white-space: nowrap; padding: 10px 18px; font-size: 12.5px; box-shadow: 0 4px 14px rgba(2, 132, 199, 0.25);"
-              title="Add lines only to ${activeFloor?.name || 'selected floor'} [Code: ${activeFloorCode}]"
-            >
-              🎯 Add to ${activeFloorCode} (${activeFloor?.name || 'Floor'})
-            </button>
-
-            <!-- System 2 Action: 1-Click Add to ALL Floors -->
-            <button 
-              type="button" 
-              id="btn-save-batch-lines-all" 
-              class="btn ${isAllFloorsTarget ? 'btn-success' : 'btn-ghost'}" 
-              style="font-weight: 800; ${isAllFloorsTarget ? 'background: linear-gradient(135deg, #10b981, #059669); color: #fff;' : 'color: #34d399; border: 1.5px solid rgba(52, 211, 153, 0.5); background: rgba(52, 211, 153, 0.08);'} white-space: nowrap; padding: 10px 18px; font-size: 12.5px; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.25);"
-              title="1-Click: Add lines to ALL ${floorsOfUnit.length} floors in ${selectedUnit?.name || 'this unit'} at once"
-            >
-              🌐 1-Click Add to ALL Floors (${floorsOfUnit.length})
-            </button>
-          </div>
-
-          <!-- Real-Time Live Duplicate Preview & Protection Indicator -->
-          <div id="batch-lines-live-preview" style="min-height: 28px; padding: 6px 12px; border-radius: 6px; background: rgba(15, 23, 42, 0.5); border: 1px dashed var(--border-color); display: flex; align-items: center; flex-wrap: wrap; gap: 6px; font-size: 11.5px;">
-            <span style="color: var(--text-muted);">
-              💡 Enter line letters or click chips above. Existing lines will automatically be detected and duplicates skipped.
-            </span>
-          </div>
-
-          <!-- 1-Click Auto-Fill helper buttons: Line A to Z and named sections -->
-          <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
-            <span style="font-size: 11px; color: #38bdf8; font-weight: 800; display: flex; align-items: center; gap: 4px;">⚡ 1-CLICK FILL:</span>
-            
-            <!-- Smart Button: Fill Missing Lines -->
             <button 
               type="button" 
               id="btn-fill-missing-lines" 
               class="btn btn-sm" 
               data-missing="${missingAlphabetLetters.join(', ')}"
-              style="font-size: 11.5px; ${
+              style="font-size: 10px; height: 22px; ${
                 missingAlphabetLetters.length > 0 
-                  ? 'background: linear-gradient(135deg, #10b981, #059669); color: #fff; box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4); border: none;' 
+                  ? 'background: linear-gradient(135deg, #10b981, #059669); color: #fff; border: none;' 
                   : 'background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid #10b981;'
-              } font-weight: 800; padding: 4px 14px; border-radius: 6px;" 
-              title="${missingAlphabetLetters.length > 0 ? `Auto-populate only the ${missingAlphabetLetters.length} unconfigured lines (${missingAlphabetLetters.join(', ')})` : 'All A through Z lines are already configured!'}"
+              } font-weight: 800; padding: 1px 6px; border-radius: 3px;" 
+              title="Auto-populate unconfigured lines"
             >
-              ${missingAlphabetLetters.length > 0 ? `✨ Fill Missing Lines (${missingAlphabetLetters.length})` : `✅ All A-Z Configured (0 Missing)`}
+              ${missingAlphabetLetters.length > 0 ? `✨ Fill Missing (${missingAlphabetLetters.length})` : `✅ All A-Z Done`}
             </button>
 
-            <button type="button" id="btn-quick-gen-atp" class="btn btn-sm" style="font-size: 11.5px; background: linear-gradient(135deg, #0284c7, #2563eb); color: #fff; padding: 4px 12px; border: none; font-weight: 800; border-radius: 6px; box-shadow: 0 2px 8px rgba(2, 132, 199, 0.35);" title="Fill Standard Garments Lines A through N, P (15 lines, skips O)">A to N, P (15)</button>
-            <button type="button" id="btn-quick-gen-atoz" class="btn btn-ghost btn-sm" style="font-size: 11px; color: #38bdf8; padding: 3px 9px; border: 1px solid rgba(56, 189, 248, 0.4); font-weight: 700;" title="Fill A through Z (all 26 lines)">A to Z (26)</button>
-            <button type="button" id="btn-quick-gen-atoj" class="btn btn-ghost btn-sm" style="font-size: 11px; color: #38bdf8; padding: 3px 9px; border: 1px solid rgba(56, 189, 248, 0.4); font-weight: 700;" title="Fill A to J (10 lines)">A to J</button>
-            <button type="button" id="btn-quick-gen-ktot" class="btn btn-ghost btn-sm" style="font-size: 11px; color: #38bdf8; padding: 3px 9px; border: 1px solid rgba(56, 189, 248, 0.4); font-weight: 700;" title="Fill K to T (10 lines)">K to T</button>
-            <button type="button" id="btn-quick-gen-utoz" class="btn btn-ghost btn-sm" style="font-size: 11px; color: #38bdf8; padding: 3px 9px; border: 1px solid rgba(56, 189, 248, 0.4); font-weight: 700;" title="Fill U to Z (6 lines)">U to Z</button>
-            <button type="button" class="btn btn-ghost btn-sm btn-quick-append-line" data-val="Size Set" style="font-size: 11px; color: #a78bfa; padding: 3px 8px; border: 1px solid rgba(167, 139, 250, 0.4); font-weight: 700; background: rgba(167, 139, 250, 0.08);" title="Add Size Set Section / Line">+ Size Set</button>
-            <button type="button" class="btn btn-ghost btn-sm btn-quick-append-line" data-val="Eyelet & APW Room" style="font-size: 11px; color: #f472b6; padding: 3px 8px; border: 1px solid rgba(244, 114, 182, 0.4); font-weight: 700; background: rgba(244, 114, 182, 0.08);" title="Add Eyelet & APW Room Section / Line">+ Eyelet & APW Room</button>
-            <button type="button" class="btn btn-ghost btn-sm btn-quick-append-line" data-val="Cutting" style="font-size: 11px; color: #34d399; padding: 3px 8px; border: 1px solid rgba(52, 211, 153, 0.4); font-weight: 700; background: rgba(52, 211, 153, 0.08);" title="Add Cutting Section">+ Cutting</button>
-            <button type="button" class="btn btn-ghost btn-sm btn-quick-append-line" data-val="Finishing" style="font-size: 11px; color: #34d399; padding: 3px 8px; border: 1px solid rgba(52, 211, 153, 0.4); font-weight: 700; background: rgba(52, 211, 153, 0.08);" title="Add Finishing Section">+ Finishing</button>
-            <button type="button" class="btn btn-ghost btn-sm btn-quick-append-line" data-val="Sample" style="font-size: 11px; color: #fbbf24; padding: 3px 8px; border: 1px solid rgba(251, 191, 36, 0.4); font-weight: 700; background: rgba(251, 191, 36, 0.08);" title="Add Sample Section">+ Sample</button>
-            <button type="button" class="btn btn-ghost btn-sm btn-quick-append-line" data-val="Idle" style="font-size: 11px; color: #f87171; padding: 3px 8px; border: 1.5px solid rgba(239, 68, 68, 0.4); font-weight: 700; background: rgba(239, 68, 68, 0.08);" title="Add Idle Section (e.g. ${activeFloorCode}-Idle)">+ Idle</button>
-            <button type="button" id="btn-clear-lines-input" class="btn btn-ghost btn-sm" style="font-size: 11px; color: #94a3b8; padding: 3px 8px; border: 1px solid rgba(148, 163, 184, 0.3); font-weight: 700;" title="Clear input text">✕ Clear</button>
-            <button type="button" id="btn-fast-add-line" class="btn btn-ghost btn-sm" style="font-size: 11px; color: #c084fc; padding: 3px 10px; border: 1px solid rgba(192, 132, 252, 0.35); font-weight: 700; margin-left: auto;">+ Single Line Form</button>
+            <button type="button" id="btn-quick-gen-atp" class="btn btn-sm" style="font-size: 10px; height: 22px; background: #0284c7; color: #fff; padding: 1px 6px; border: none; font-weight: 800; border-radius: 3px;" title="Garments Lines A to N, P (15 lines)">A-N, P (15)</button>
+            <button type="button" id="btn-quick-gen-atoz" class="btn btn-ghost btn-sm" style="font-size: 10px; height: 22px; color: #38bdf8; padding: 1px 5px; border: 1px solid rgba(56, 189, 248, 0.4); font-weight: 700;">A-Z (26)</button>
+            <button type="button" id="btn-quick-gen-atoj" class="btn btn-ghost btn-sm" style="font-size: 10px; height: 22px; color: #38bdf8; padding: 1px 5px; border: 1px solid rgba(56, 189, 248, 0.4); font-weight: 700;">A-J</button>
+            <button type="button" id="btn-quick-gen-ktot" class="btn btn-ghost btn-sm" style="font-size: 10px; height: 22px; color: #38bdf8; padding: 1px 5px; border: 1px solid rgba(56, 189, 248, 0.4); font-weight: 700;">K-T</button>
+            <button type="button" id="btn-quick-gen-utoz" class="btn btn-ghost btn-sm" style="font-size: 10px; height: 22px; color: #38bdf8; padding: 1px 5px; border: 1px solid rgba(56, 189, 248, 0.4); font-weight: 700;">U-Z</button>
+
+            ${namedSectionsStatus.map(sec => `
+              <button 
+                type="button" 
+                class="btn-matrix-section-chip" 
+                data-val="${sec.name}" 
+                data-added="${sec.isAdded ? 'true' : 'false'}"
+                title="${sec.tooltip}"
+                style="font-size: 10px; height: 22px; font-weight: 700; padding: 1px 5px; border-radius: 3px; cursor: pointer; ${
+                  sec.isAdded 
+                    ? 'background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981; color: #34d399;' 
+                    : sec.isPartial
+                      ? 'background: rgba(245, 158, 11, 0.2); border: 1px solid #f59e0b; color: #fbbf24;'
+                      : 'background: rgba(15, 23, 42, 0.6); border: 1px dashed rgba(52, 211, 153, 0.4); color: #34d399;'
+                }"
+              >
+                ${sec.isAdded ? '✓ ' : '+ '}${sec.name}
+              </button>
+            `).join('')}
+
+            <button type="button" class="btn btn-ghost btn-sm btn-quick-append-line" data-val="Idle" style="font-size: 10px; height: 22px; color: #f87171; padding: 1px 5px; border: 1px solid rgba(239, 68, 68, 0.4); font-weight: 700;" title="Add Idle Section">+ Idle</button>
+            <button type="button" id="btn-clear-lines-input" class="btn btn-ghost btn-sm" style="font-size: 10px; height: 22px; color: #94a3b8; padding: 1px 5px; border: 1px solid rgba(148, 163, 184, 0.3); font-weight: 700;" title="Clear input">✕</button>
+            <button type="button" id="btn-fast-add-line" class="btn btn-ghost btn-sm" style="font-size: 10px; height: 22px; color: #c084fc; padding: 1px 6px; border: 1px solid rgba(192, 132, 252, 0.35); font-weight: 700; margin-left: auto;">+ Single Line Form</button>
           </div>
         </div>
 
-        <!-- ACTIVE CONFIGURED LINES SUMMARY STRIP -->
+        <!-- Input Bar & Action Buttons -->
+        <div style="display: flex; gap: 4px; flex-wrap: wrap;">
+          <input 
+            type="text" 
+            id="inp-batch-lines-text" 
+            class="form-control" 
+            placeholder="${isAllFloorsTarget ? `Type lines or click Fill buttons to add across ALL ${floorsOfUnit.length} floors...` : `Type lines or click Fill buttons for ${activeFloor?.name || 'floor'} [${activeFloorCode}]...`}" 
+            style="flex: 1; min-width: 200px; font-size: 11.5px; font-weight: 600; padding: 3px 8px; height: 28px; border: 1.5px solid ${isAllFloorsTarget ? 'rgba(52, 211, 153, 0.5)' : 'rgba(56, 189, 248, 0.4)'};" 
+          />
+          
+          <button 
+            type="button" 
+            id="btn-save-batch-lines-single" 
+            class="btn ${!isAllFloorsTarget ? 'btn-primary' : 'btn-ghost'} btn-sm" 
+            style="font-weight: 800; ${!isAllFloorsTarget ? 'background: #0284c7; color: #fff;' : 'color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.5);'} white-space: nowrap; padding: 3px 10px; font-size: 11px; height: 28px;"
+            title="Add lines only to ${activeFloor?.name || 'floor'} [${activeFloorCode}]"
+          >
+            🎯 Add to ${activeFloorCode}
+          </button>
+
+          <button 
+            type="button" 
+            id="btn-save-batch-lines-all" 
+            class="btn ${isAllFloorsTarget ? 'btn-success' : 'btn-ghost'} btn-sm" 
+            style="font-weight: 800; ${isAllFloorsTarget ? 'background: #10b981; color: #fff;' : 'color: #34d399; border: 1px solid rgba(52, 211, 153, 0.5); background: rgba(52, 211, 153, 0.08);'} white-space: nowrap; padding: 3px 10px; font-size: 11px; height: 28px;"
+            title="1-Click Add to ALL floors"
+          >
+            🌐 Add to ALL (${floorsOfUnit.length} Floors)
+          </button>
+        </div>
+
+        <!-- Live Preview -->
+        <div id="batch-lines-live-preview" style="min-height: 20px; padding: 2px 6px; border-radius: 4px; background: rgba(15, 23, 42, 0.4); border: 1px dashed var(--border-color); display: flex; align-items: center; flex-wrap: wrap; gap: 4px; font-size: 10.5px;">
+          <span style="color: var(--text-muted);">
+            💡 Enter line letters or click chips above. Existing lines will automatically be detected and duplicates skipped.
+          </span>
+        </div>
+
+        <!-- ACTIVE CONFIGURED LINES SUMMARY STRIP (if any) -->
         ${activeFloorLines.length > 0 ? `
-          <div style="background: rgba(15, 23, 42, 0.45); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px 14px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-            <span style="font-size: 11px; font-weight: 800; color: #10b981; display: inline-flex; align-items: center; gap: 5px;">
-              <span style="font-size: 14px;">✓</span> ACTIVE ON ${activeFloor?.name?.toUpperCase() || 'FLOOR'} [${activeFloorCode}] (${activeFloorLines.length}):
+          <div style="background: rgba(15, 23, 42, 0.4); border: 1px solid var(--border-color); border-radius: 4px; padding: 3px 6px; display: flex; align-items: center; gap: 4px; flex-wrap: wrap;">
+            <span style="font-size: 10px; font-weight: 800; color: #10b981; display: inline-flex; align-items: center; gap: 2px;">
+              ✓ ACTIVE ON [${activeFloorCode}] (${activeFloorLines.length}):
             </span>
-            <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+            <div style="display: flex; flex-wrap: wrap; gap: 3px;">
               ${activeFloorLines.map(l => `
-                <span style="background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.35); color: #34d399; font-size: 11.5px; font-weight: 800; padding: 2px 8px; border-radius: 5px; display: inline-flex; align-items: center; gap: 4px;" title="Configured Line: ${l.name}">
+                <span style="background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.35); color: #34d399; font-size: 10.5px; font-weight: 700; padding: 1px 5px; border-radius: 3px;" title="Configured Line: ${l.name}">
                   ${l.name}
                 </span>
               `).join('')}
@@ -1107,36 +998,36 @@ function renderFastCascadingEntryView() {
           </div>
         ` : ''}
 
-        <!-- Configured Production Lines Table for this Unit with Inline Edit & Delete -->
-        <div>
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <h4 style="font-size: 14px; font-weight: 800; color: #fff; margin: 0;">
-                📋 Configured Production Lines for: <span style="color: #34d399;">${selectedUnit?.name || 'Selected Unit'}</span>
-              </h4>
-              <span class="badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; font-size: 11px; font-weight: 800; padding: 2px 8px;">
+        <!-- Configured Production Lines Table for this Unit -->
+        <div style="margin-top: 2px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; flex-wrap: wrap; gap: 4px;">
+            <div style="display: flex; align-items: center; gap: 4px;">
+              <span style="font-size: 12.5px; font-weight: 800; color: #fff;">
+                📋 Lines for: <span style="color: #34d399;">${selectedUnit?.name || 'Unit'}</span>
+              </span>
+              <span class="badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; font-size: 10px; font-weight: 800; padding: 1px 5px;">
                 Total: ${linesToShow.length}
               </span>
             </div>
 
             ${selectedStep3LineIds.size > 0 ? `
-              <div style="display: flex; align-items: center; gap: 8px; background: rgba(239, 68, 68, 0.12); border: 1.5px solid rgba(239, 68, 68, 0.4); padding: 5px 12px; border-radius: 6px;">
-                <span style="font-size: 12.5px; color: #f87171; font-weight: 800;">☑️ ${selectedStep3LineIds.size} Lines Selected</span>
-                <button type="button" id="btn-step3-bulk-delete" class="btn btn-danger btn-sm" style="font-size: 12px; font-weight: 800; padding: 4px 12px; background: linear-gradient(135deg, #ef4444, #dc2626); border: none;">
-                  🗑️ Delete Selected Lines (${selectedStep3LineIds.size})
+              <div style="display: flex; align-items: center; gap: 4px; background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.4); padding: 2px 6px; border-radius: 4px;">
+                <span style="font-size: 11px; color: #f87171; font-weight: 800;">☑️ ${selectedStep3LineIds.size} Selected</span>
+                <button type="button" id="btn-step3-bulk-delete" class="btn btn-danger btn-sm" style="font-size: 10.5px; font-weight: 800; padding: 1px 6px; height: 22px;">
+                  🗑️ Delete (${selectedStep3LineIds.size})
                 </button>
-                <button type="button" id="btn-step3-deselect" class="btn btn-ghost btn-sm" style="font-size: 11.5px; color: var(--text-muted); padding: 3px 8px;">
+                <button type="button" id="btn-step3-deselect" class="btn btn-ghost btn-sm" style="font-size: 10.5px; color: var(--text-muted); padding: 1px 4px; height: 22px;">
                   ✕ Clear
                 </button>
               </div>
             ` : `
-              <div style="display: flex; align-items: center; gap: 10px;">
-                <span style="font-size: 12px; color: var(--text-muted);">
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <span style="font-size: 10.5px; color: var(--text-muted);">
                   Floor: <strong style="color: #38bdf8;">${activeFloor ? `${activeFloor.name} [${activeFloorCode}]` : 'All Floors'}</strong>
                 </span>
                 ${linesToShow.length > 0 ? `
-                  <button type="button" id="btn-step3-select-all-btn" class="btn btn-ghost btn-sm" style="font-size: 11.5px; color: #38bdf8; border: 1px dashed rgba(56, 189, 248, 0.4); padding: 3px 10px; font-weight: 700;">
-                    ☑️ Select All Lines (${linesToShow.length})
+                  <button type="button" id="btn-step3-select-all-btn" class="btn btn-ghost btn-sm" style="font-size: 10.5px; color: #38bdf8; border: 1px dashed rgba(56, 189, 248, 0.4); padding: 1px 6px; height: 22px; font-weight: 700;">
+                    ☑️ Select All (${linesToShow.length})
                   </button>
                 ` : ''}
               </div>

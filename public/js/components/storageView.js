@@ -51,84 +51,72 @@ export function renderStorageView() {
   const totalBrands = brandSet.size;
 
   return `
-    <div class="page-view" id="storage-page-root" style="padding: 14px 20px; display: flex; flex-direction: column; gap: 12px; height: 100%; overflow: hidden; box-sizing: border-box;">
+    <div class="page-view" id="storage-page-root" style="padding: 8px 14px; display: flex; flex-direction: column; gap: 8px; height: 100%; overflow: hidden; box-sizing: border-box;">
       
-      <!-- Top Title Header & Primary Workflow Actions -->
-      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; min-height: 48px; flex-shrink: 0; background: var(--bg-surface); padding: 12px 18px; border: 1px solid var(--border-color); border-radius: var(--radius-md);">
-        <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">
-          <div style="font-size: 26px; background: rgba(56, 189, 248, 0.12); border: 1.5px solid #38bdf8; border-radius: var(--radius-md); width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-            🧵
+      <!-- Unified Compact Top Header: Title, Live KPIs & Primary Workflow Actions -->
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; min-height: 42px; flex-shrink: 0; background: var(--bg-surface); padding: 8px 14px; border: 1px solid var(--border-color); border-radius: var(--radius-md);">
+        
+        <!-- Left: Title & Live KPI Pills -->
+        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; min-width: 0;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <div style="font-size: 18px; background: rgba(56, 189, 248, 0.12); border: 1px solid #38bdf8; border-radius: var(--radius-sm); width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+              🧵
+            </div>
+            <div>
+              <h1 style="font-size: 15px; font-weight: 800; color: #fff; margin: 0; letter-spacing: -0.2px; line-height: 1.2;">
+                Machine &amp; Model Master Setup
+              </h1>
+            </div>
           </div>
-          <div style="min-width: 0;">
-            <h1 style="font-size: 18px; font-weight: 800; color: #fff; margin: 0; letter-spacing: -0.3px; line-height: 1.2;">
-              Machine &amp; Model Master Setup
-            </h1>
-            <div style="font-size: 11.5px; color: #38bdf8; font-weight: 600; margin-top: 2px;">
-              Step 1: Input Machine Names &bull; Step 2: Add Models &bull; <strong style="color: #34d399; font-weight: 800;">OR: 1-Click Excel Sheet Input/Export (Machine, Brand, Model)</strong>
+
+          <!-- Compact KPI Badges -->
+          <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+            <div style="background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: var(--radius-sm); padding: 3px 8px; display: inline-flex; align-items: center; gap: 5px;">
+              <span style="font-size: 12px;">🧵</span>
+              <span id="kpi-total-machines" style="font-size: 12px; font-weight: 800; color: #38bdf8;">${totalMachines} Types</span>
+            </div>
+
+            <div id="btn-open-manage-brands" style="background: rgba(52, 211, 153, 0.1); border: 1px solid rgba(52, 211, 153, 0.3); border-radius: var(--radius-sm); padding: 3px 8px; display: inline-flex; align-items: center; gap: 5px; cursor: pointer; transition: all 0.15s ease;" title="Click to view and delete registered brands">
+              <span style="font-size: 12px;">🏷️</span>
+              <span id="kpi-total-brands" style="font-size: 12px; font-weight: 800; color: #34d399;">${totalBrands} Brands</span>
+              <span id="kpi-total-brands-sub" style="display: none;">${totalBrands === 0 ? 'No Brands Registered' : Array.from(brandSet).slice(0, 3).join(', ')}</span>
+              <span style="font-size: 10px; color: #34d399; font-weight: 800; background: rgba(52, 211, 153, 0.2); padding: 1px 4px; border-radius: 3px;">Manage &rarr;</span>
+            </div>
+
+            <div style="background: rgba(251, 191, 36, 0.1); border: 1px solid rgba(251, 191, 36, 0.3); border-radius: var(--radius-sm); padding: 3px 8px; display: inline-flex; align-items: center; gap: 5px;">
+              <span style="font-size: 12px;">🔢</span>
+              <span id="kpi-total-models" style="font-size: 12px; font-weight: 800; color: #fbbf24;">${totalModels} Models</span>
             </div>
           </div>
         </div>
 
-        <!-- Two Clear Actions -->
-        <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+        <!-- Right: Primary Workflow Actions -->
+        <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
           ${isAdmin ? `
-            <button type="button" id="btn-open-excel-master-modal-top" class="btn btn-sm btn-open-excel-master-modal" style="font-weight: 800; background: linear-gradient(135deg, #059669 0%, #047857 100%); border: 1.5px solid #34d399; color: #fff; padding: 7px 18px; font-size: 12.5px; box-shadow: 0 2px 10px rgba(5, 150, 105, 0.45); cursor: pointer;" title="Bulk Import Machine Name, Brand & Model via Excel Sheet">
-              📊 Excel Sheet: Machine + Brand + Model (Input / Export)
+            <button type="button" id="btn-open-excel-master-modal-top" class="btn btn-sm btn-open-excel-master-modal" style="font-weight: 800; background: linear-gradient(135deg, #059669 0%, #047857 100%); border: 1px solid #34d399; color: #fff; padding: 5px 12px; font-size: 11.5px; box-shadow: 0 2px 8px rgba(5, 150, 105, 0.35); cursor: pointer;" title="Bulk Import Machine Name, Brand & Model via Excel Sheet">
+              📊 Excel Studio (Import / Export)
             </button>
-            <button type="button" id="btn-open-bulk-import-machine-names-top" class="btn btn-secondary btn-sm" style="font-weight: 800; border: 1.5px solid rgba(56, 189, 248, 0.5); color: #38bdf8; padding: 7px 16px; font-size: 12.5px;">
-              🧵 Step 1: Input Machine Names
+            <button type="button" id="btn-open-bulk-import-machine-names-top" class="btn btn-secondary btn-sm" style="font-weight: 700; border: 1px solid rgba(56, 189, 248, 0.4); color: #38bdf8; padding: 5px 10px; font-size: 11.5px;">
+              🧵 Step 1: Add Machines
             </button>
-            <button type="button" id="btn-open-fast-brand-model-importer-top" class="btn btn-primary btn-sm" style="font-weight: 800; background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); border-color: #38bdf8; padding: 7px 18px; font-size: 12.5px; box-shadow: 0 2px 8px rgba(2, 132, 199, 0.35);">
-              📥 Step 2: Add Models (Dropdown + 2 Boxes)
+            <button type="button" id="btn-open-fast-brand-model-importer-top" class="btn btn-primary btn-sm" style="font-weight: 800; background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); border-color: #38bdf8; padding: 5px 12px; font-size: 11.5px; box-shadow: 0 2px 6px rgba(2, 132, 199, 0.3);">
+              📥 Step 2: Add Models
             </button>
-            <button type="button" id="btn-storage-export-excel-top" class="btn btn-ghost btn-sm" style="font-weight: 700; color: #38bdf8; border: 1.5px solid rgba(56, 189, 248, 0.4); padding: 7px 14px; font-size: 12px;" title="Export all registered Machines, Brands & Models to Excel file">
-              📥 Export Excel (.xlsx)
+            <button type="button" id="btn-storage-export-excel-top" class="btn btn-ghost btn-sm" style="font-weight: 700; color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); padding: 5px 9px; font-size: 11px;" title="Export all registered Machines, Brands & Models to Excel file">
+              📥 Export (.xlsx)
             </button>
-            <button type="button" id="btn-storage-add-new-machine" class="btn btn-ghost btn-sm" style="font-size: 12px; color: #94a3b8;">
-              ➕ Add Machine Name
+            <button type="button" id="btn-storage-add-new-machine" class="btn btn-ghost btn-sm" style="font-size: 11px; color: #94a3b8; border: 1px solid var(--border-color); padding: 5px 9px;">
+              ➕ Add Single
             </button>
-            <button type="button" id="btn-storage-clear-all-data" class="btn btn-ghost btn-sm" style="font-weight: 800; color: #f87171; border: 1.5px solid rgba(239, 68, 68, 0.45); padding: 7px 14px; font-size: 12px; background: rgba(239, 68, 68, 0.08);" title="Wipe all old machines, models, and brands to start 100% fresh">
-              🧹 Clear All Data (Fresh Start)
+            <button type="button" id="btn-storage-clear-all-data" class="btn btn-ghost btn-sm" style="font-weight: 800; color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); padding: 5px 9px; font-size: 11px; background: rgba(239, 68, 68, 0.08);" title="Wipe all old machines, models, and brands to start 100% fresh">
+              🧹 Fresh Start
             </button>
           ` : ''}
         </div>
       </div>
 
-      <!-- 3 Core KPI Summary Cards (Only Machine Name, Brand, Model) -->
-      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; flex-shrink: 0;">
-        <div style="background: var(--bg-card); border: 1.5px solid rgba(56, 189, 248, 0.3); border-radius: var(--radius-md); padding: 12px 18px; display: flex; align-items: center; gap: 14px;">
-          <div style="font-size: 26px; background: rgba(56, 189, 248, 0.1); width: 44px; height: 44px; border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; border: 1px solid rgba(56, 189, 248, 0.25);">🧵</div>
-          <div>
-            <div style="font-size: 11px; font-weight: 700; color: #38bdf8; text-transform: uppercase; letter-spacing: 0.5px;">1. Machine Types</div>
-            <div id="kpi-total-machines" style="font-size: 22px; font-weight: 900; color: #fff; line-height: 1.2; margin-top: 1px;">${totalMachines} Types</div>
-            <div style="font-size: 10.5px; color: var(--text-muted);">Registered Category Names</div>
-          </div>
-        </div>
-
-        <div id="btn-open-manage-brands" style="background: var(--bg-card); border: 1.5px solid rgba(52, 211, 153, 0.3); border-radius: var(--radius-md); padding: 12px 18px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: all 0.2s ease;" title="Click to view and delete registered brands">
-          <div style="display: flex; align-items: center; gap: 14px;">
-            <div style="font-size: 26px; background: rgba(52, 211, 153, 0.1); width: 44px; height: 44px; border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; border: 1px solid rgba(52, 211, 153, 0.25);">🏷️</div>
-            <div>
-              <div style="font-size: 11px; font-weight: 700; color: #34d399; text-transform: uppercase; letter-spacing: 0.5px;">2. Machinery Brands</div>
-              <div id="kpi-total-brands" style="font-size: 22px; font-weight: 900; color: #34d399; line-height: 1.2; margin-top: 1px;">${totalBrands} Brands</div>
-              <div id="kpi-total-brands-sub" style="font-size: 10.5px; color: var(--text-muted);">${totalBrands === 0 ? 'No Brands Registered' : Array.from(brandSet).slice(0, 3).join(', ')}</div>
-            </div>
-          </div>
-          <span style="font-size: 11px; color: #34d399; font-weight: 700; background: rgba(52, 211, 153, 0.1); padding: 3px 8px; border-radius: var(--radius-sm); border: 1px solid rgba(52, 211, 153, 0.25);">Manage &rarr;</span>
-        </div>
-
-        <div style="background: var(--bg-card); border: 1.5px solid rgba(251, 191, 36, 0.3); border-radius: var(--radius-md); padding: 12px 18px; display: flex; align-items: center; gap: 14px;">
-          <div style="font-size: 26px; background: rgba(251, 191, 36, 0.1); width: 44px; height: 44px; border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; border: 1px solid rgba(251, 191, 36, 0.25);">🔢</div>
-          <div>
-            <div style="font-size: 11px; font-weight: 700; color: #fbbf24; text-transform: uppercase; letter-spacing: 0.5px;">3. Model Numbers</div>
-            <div id="kpi-total-models" style="font-size: 22px; font-weight: 900; color: #fbbf24; line-height: 1.2; margin-top: 1px;">${totalModels} Models</div>
-            <div style="font-size: 10.5px; color: var(--text-muted);">Total Specifications Under Machines</div>
-          </div>
-        </div>
-      </div>
-
       <!-- Main Storage Content Area (Flex 1, Isolated Scroll) -->
-      <div id="storage-tab-content-area" style="flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 10px; overflow: hidden;">
+      <div id="storage-tab-content-area" style="flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 8px; overflow: hidden;">
         ${renderActiveTabContent()}
       </div>
 
@@ -170,68 +158,49 @@ function renderGroupedMachinesView() {
   const totalModels = groups.reduce((acc, g) => acc + g.models.length, 0);
 
   return `
-    <!-- Top Filter Bar with Mode Switcher & Admin Actions -->
-    <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; flex-shrink: 0;">
+    <!-- Compact Filter Bar with Mode Switcher & Overview -->
+    <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 6px 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; flex-shrink: 0;">
       
       <!-- Search Input -->
-      <div style="display: flex; align-items: center; gap: 8px; flex: 1; max-width: 340px;">
-        <span style="font-size: 15px;">🔍</span>
+      <div style="display: flex; align-items: center; gap: 6px; flex: 1; max-width: 280px;">
+        <span style="font-size: 13px;">🔍</span>
         <input 
           type="text" 
           id="inp-storage-search" 
           class="form-control" 
           placeholder="Search machines or models..." 
           value="${searchQuery}"
-          style="font-size: 12px; padding: 6px 12px;"
+          style="font-size: 11.5px; padding: 4px 10px; height: 30px;"
         />
-        ${searchQuery ? `<button type="button" id="btn-clear-storage-search" class="btn btn-ghost btn-sm" style="font-size: 11px; padding: 2px 6px;">✕</button>` : ''}
+        ${searchQuery ? `<button type="button" id="btn-clear-storage-search" class="btn btn-ghost btn-sm" style="font-size: 10px; padding: 2px 5px;">✕</button>` : ''}
       </div>
 
       <!-- View Switcher Toggle -->
-      <div style="display: flex; align-items: center; gap: 4px; background: rgba(0,0,0,0.3); padding: 3px; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
-        <button type="button" class="btn btn-sm btn-machine-view-toggle btn-primary" data-mode="GROUPED" style="font-size: 11px; padding: 4px 10px; font-weight: 700;">
-          📁 Grouped by Machine
+      <div style="display: flex; align-items: center; gap: 3px; background: rgba(0,0,0,0.3); padding: 2px; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+        <button type="button" class="btn btn-sm btn-machine-view-toggle btn-primary" data-mode="GROUPED" style="font-size: 10.5px; padding: 3px 8px; font-weight: 700;">
+          📁 Grouped
         </button>
-        <button type="button" class="btn btn-sm btn-machine-view-toggle btn-ghost" data-mode="FLAT" style="font-size: 11px; padding: 4px 10px; font-weight: 700;">
-          📋 All Records Table
+        <button type="button" class="btn btn-sm btn-machine-view-toggle btn-ghost" data-mode="FLAT" style="font-size: 10.5px; padding: 3px 8px; font-weight: 700;">
+          📋 Table View
         </button>
       </div>
 
-      <!-- Machine Management Actions: Step 1 and Step 2 -->
-      <div style="display: flex; align-items: center; gap: 8px;">
-        ${isAdmin ? `
-          <button type="button" id="btn-open-excel-master-modal-mid" class="btn btn-sm btn-open-excel-master-modal" style="font-weight: 800; font-size: 11.5px; background: linear-gradient(135deg, #059669 0%, #047857 100%); border: 1.5px solid #34d399; color: #fff; padding: 6px 14px; box-shadow: 0 2px 8px rgba(5, 150, 105, 0.35); cursor: pointer;" title="Bulk Import Machine Name, Brand & Model via Excel Sheet">
-            📊 Excel Sheet Input/Export (Machine, Brand, Model)
-          </button>
-          <button type="button" id="btn-open-bulk-import-machine-names" class="btn btn-secondary btn-sm" style="font-weight: 700; font-size: 11.5px; border: 1.5px solid rgba(56, 189, 248, 0.4); color: #38bdf8;">
-            🧵 Step 1: Input Machine Names
-          </button>
-          <button type="button" id="btn-open-fast-brand-model-importer" class="btn btn-primary btn-sm" style="font-weight: 800; font-size: 11.5px; background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); border-color: #38bdf8; color: #fff; box-shadow: 0 2px 6px rgba(2,132,199,0.3);">
-            📥 Step 2: Add Models (Dropdown + 2 Boxes)
-          </button>
+      <!-- Catalog Overview & Select All in One Line -->
+      <div style="display: flex; align-items: center; gap: 10px; font-size: 11.5px;">
+        <span style="color: #cbd5e1; font-weight: 600;">
+          <strong style="color: #38bdf8;">${filteredGroups.length}</strong> Machine Types &bull; <strong style="color: #34d399;">${totalModels}</strong> Models
+        </span>
+        ${(isAdmin && filteredGroups.length > 0) ? `
+          <label style="display: inline-flex; align-items: center; gap: 5px; font-size: 11px; color: #94a3b8; cursor: pointer; user-select: none; background: rgba(255,255,255,0.06); padding: 2px 7px; border-radius: 4px; border: 1px solid var(--border-color); margin: 0;">
+            <input type="checkbox" id="chk-group-select-all" ${filteredGroups.length > 0 && filteredGroups.every(g => selectedMachineNames.has(g.machineName)) ? 'checked' : ''} style="cursor: pointer; width: 13px; height: 13px;" />
+            <span style="color: #e2e8f0; font-weight: 600;">Select All</span>
+          </label>
         ` : ''}
       </div>
     </div>
 
     <!-- Grouped Cards Container (Scrollable Area) -->
-    <div id="storage-grouped-container" style="flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; padding-right: 4px;">
-      
-      <div style="display: flex; justify-content: space-between; align-items: center; padding: 2px 6px; flex-shrink: 0; flex-wrap: wrap; gap: 8px;">
-        <div style="display: flex; align-items: center; gap: 12px;">
-          <div style="font-size: 12.5px; font-weight: 700; color: #fff;">
-            🧵 Machine Master Catalog &bull; <span style="color: #38bdf8;">${filteredGroups.length} Registered Machine Types</span> &bull; <span style="color: #34d399;">${totalModels} Models Total</span>
-          </div>
-          ${(isAdmin && filteredGroups.length > 0) ? `
-            <label style="display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; color: #94a3b8; cursor: pointer; user-select: none; background: rgba(255,255,255,0.06); padding: 3px 8px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); margin: 0;">
-              <input type="checkbox" id="chk-group-select-all" ${filteredGroups.length > 0 && filteredGroups.every(g => selectedMachineNames.has(g.machineName)) ? 'checked' : ''} style="cursor: pointer; width: 14px; height: 14px;" />
-              <span style="color: #e2e8f0; font-weight: 600;">Select All</span>
-            </label>
-          ` : ''}
-        </div>
-        <div style="font-size: 11px; color: var(--text-muted);">
-          All registered machines and model specifications displayed in exact serial order.
-        </div>
-      </div>
+    <div id="storage-grouped-container" style="flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding-right: 4px;">
 
       ${selectedMachineNames.size > 0 ? `
         <div id="grouped-selection-action-bar" style="background: rgba(15, 23, 42, 0.96); border: 1.5px solid #ef4444; border-radius: var(--radius-md); padding: 8px 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; box-shadow: 0 4px 16px rgba(0,0,0,0.5); flex-shrink: 0;">
@@ -379,41 +348,32 @@ function renderStorageItemsTab() {
   const isAdmin = authService.isAdmin();
 
   return `
-    <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; flex-shrink: 0;">
-      <div style="display: flex; align-items: center; gap: 8px; flex: 1; max-width: 340px;">
-        <span style="font-size: 15px;">🔍</span>
+    <!-- Compact Filter Bar with Mode Switcher & Overview -->
+    <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 6px 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; flex-shrink: 0;">
+      <div style="display: flex; align-items: center; gap: 6px; flex: 1; max-width: 280px;">
+        <span style="font-size: 13px;">🔍</span>
         <input 
           type="text" 
           id="inp-storage-search" 
           class="form-control" 
           placeholder="Search machines or models..." 
           value="${searchQuery}"
-          style="font-size: 12px; padding: 6px 12px;"
+          style="font-size: 11.5px; padding: 4px 10px; height: 30px;"
         />
-        ${searchQuery ? `<button type="button" id="btn-clear-storage-search" class="btn btn-ghost btn-sm" style="font-size: 11px; padding: 2px 6px;">✕</button>` : ''}
+        ${searchQuery ? `<button type="button" id="btn-clear-storage-search" class="btn btn-ghost btn-sm" style="font-size: 10px; padding: 2px 5px;">✕</button>` : ''}
       </div>
 
-      <div style="display: flex; align-items: center; gap: 4px; background: rgba(0,0,0,0.3); padding: 3px; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
-        <button type="button" class="btn btn-sm btn-machine-view-toggle btn-ghost" data-mode="GROUPED" style="font-size: 11px; padding: 4px 10px; font-weight: 700;">
-          📁 Grouped by Machine
+      <div style="display: flex; align-items: center; gap: 3px; background: rgba(0,0,0,0.3); padding: 2px; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+        <button type="button" class="btn btn-sm btn-machine-view-toggle btn-ghost" data-mode="GROUPED" style="font-size: 10.5px; padding: 3px 8px; font-weight: 700;">
+          📁 Grouped
         </button>
-        <button type="button" class="btn btn-sm btn-machine-view-toggle btn-primary" data-mode="FLAT" style="font-size: 11px; padding: 4px 10px; font-weight: 700;">
-          📋 All Records Table
+        <button type="button" class="btn btn-sm btn-machine-view-toggle btn-primary" data-mode="FLAT" style="font-size: 10.5px; padding: 3px 8px; font-weight: 700;">
+          📋 Table View
         </button>
       </div>
 
-      <div style="display: flex; align-items: center; gap: 8px;">
-        ${isAdmin ? `
-          <button type="button" class="btn btn-sm btn-open-excel-master-modal" style="font-weight: 800; font-size: 11.5px; background: linear-gradient(135deg, #059669 0%, #047857 100%); border: 1.5px solid #34d399; color: #fff; padding: 6px 14px; box-shadow: 0 2px 8px rgba(5, 150, 105, 0.35); cursor: pointer;" title="Bulk Import Machine Name, Brand & Model via Excel Sheet">
-            📊 Excel Sheet Input/Export (Machine, Brand, Model)
-          </button>
-          <button type="button" id="btn-open-bulk-import-machine-names" class="btn btn-secondary btn-sm" style="font-weight: 700; font-size: 11.5px; border: 1.5px solid rgba(56, 189, 248, 0.4); color: #38bdf8;">
-            🧵 Step 1: Input Machine Names
-          </button>
-          <button type="button" id="btn-open-fast-brand-model-importer" class="btn btn-primary btn-sm" style="font-weight: 800; font-size: 11.5px; background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); border-color: #38bdf8; color: #fff;">
-            📥 Step 2: Add Models
-          </button>
-        ` : ''}
+      <div style="font-size: 11.5px; color: #cbd5e1; font-weight: 600;">
+        Showing <strong style="color: #38bdf8;">${allRows.length}</strong> Total Model Records
       </div>
     </div>
 
