@@ -72,42 +72,40 @@ export function renderQrCodeView() {
   return `
     <div class="page-view qr-studio-root" id="qr-studio-root">
       
-      <!-- Studio Header Bar -->
+      <!-- Studio Header Bar (Compact & Space Efficient) -->
       <div class="qr-studio-header-card">
         <div class="qr-header-left">
-          <div class="qr-header-icon">🏁</div>
+          <div class="qr-header-icon">🏷️</div>
           <div>
             <h1 class="qr-header-title">QR Code &amp; Label Studio</h1>
             <div class="qr-header-subtitle">
-              Enterprise Machine Asset Tags &bull; Location QR Placards &bull; A4 Label Sheet Print Designer
+              Asset Tags &bull; Location Placards &bull; A4 Sheet Designer
             </div>
+          </div>
+          <div class="qr-studio-tabs">
+            <button type="button" class="btn-studio-tab ${activeStudioTab === 'machine' ? 'active' : ''}" data-tab="machine">
+              🏷️ Machine QR Tags (<span id="tab-badge-machine-count">${filteredMachines.length}</span>)
+            </button>
+            <button type="button" class="btn-studio-tab ${activeStudioTab === 'location' ? 'active' : ''}" data-tab="location">
+              📍 Location Placards (${locationQrs.length})
+            </button>
           </div>
         </div>
 
         <!-- Metric Badges -->
         <div class="qr-header-metrics">
           <div class="qr-metric-pill" title="Total machines registered in inventory">
-            <span class="qr-metric-label">Total Machines:</span>
+            <span class="qr-metric-label">Total:</span>
             <span class="qr-metric-val">${totalMachinesCount}</span>
           </div>
           <div class="qr-metric-pill active" title="Active QR codes ready for scanning">
-            <span class="qr-metric-label">Active QRs:</span>
+            <span class="qr-metric-label">Active:</span>
             <span class="qr-metric-val text-success">${activeQrCount}</span>
           </div>
           <div class="qr-metric-pill location" title="Registered location checkpoint QR codes">
-            <span class="qr-metric-label">Location QRs:</span>
+            <span class="qr-metric-label">Locations:</span>
             <span class="qr-metric-val text-cyan">${locationQrs.length}</span>
           </div>
-        </div>
-
-        <!-- Navigation Tabs -->
-        <div class="qr-studio-tabs">
-          <button type="button" class="btn-studio-tab ${activeStudioTab === 'machine' ? 'active' : ''}" data-tab="machine">
-            🏷️ Machine QR Tags (<span id="tab-badge-machine-count">${filteredMachines.length}</span>)
-          </button>
-          <button type="button" class="btn-studio-tab ${activeStudioTab === 'location' ? 'active' : ''}" data-tab="location">
-            📍 Location QR Placards (${locationQrs.length})
-          </button>
         </div>
       </div>
 
@@ -126,10 +124,10 @@ export function renderQrCodeView() {
     <!-- Scoped Styles for Studio & A4 Sticker Printing -->
     <style>
       .qr-studio-root {
-        padding: 12px 16px 40px 16px;
+        padding: 8px 12px 24px 12px;
         display: flex;
         flex-direction: column;
-        gap: 12px;
+        gap: 8px;
         height: 100%;
         overflow-y: auto;
         box-sizing: border-box;
@@ -139,49 +137,51 @@ export function renderQrCodeView() {
         background: var(--bg-surface);
         border: 1px solid var(--border-color);
         border-radius: var(--radius-md);
-        padding: 12px 18px;
+        padding: 6px 12px;
         display: flex;
         justify-content: space-between;
         align-items: center;
         flex-wrap: wrap;
-        gap: 12px;
+        gap: 8px;
+        min-height: 40px;
       }
 
       .qr-header-left {
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: 8px;
+        flex-wrap: wrap;
       }
 
       .qr-header-icon {
-        font-size: 24px;
-        width: 42px;
-        height: 42px;
-        border-radius: 10px;
+        font-size: 18px;
+        width: 30px;
+        height: 30px;
+        border-radius: 6px;
         background: rgba(56, 189, 248, 0.12);
-        border: 1.5px solid #38bdf8;
+        border: 1px solid #38bdf8;
         display: flex;
         align-items: center;
         justify-content: center;
       }
 
       .qr-header-title {
-        font-size: 17px;
+        font-size: 14px;
         font-weight: 800;
         color: #fff;
         margin: 0;
-        line-height: 1.2;
+        line-height: 1.1;
       }
 
       .qr-header-subtitle {
-        font-size: 11.5px;
+        font-size: 10.5px;
         color: #38bdf8;
-        margin-top: 2px;
+        margin-top: 1px;
       }
 
       .qr-header-metrics {
         display: flex;
-        gap: 8px;
+        gap: 6px;
         align-items: center;
         flex-wrap: wrap;
       }
@@ -189,11 +189,11 @@ export function renderQrCodeView() {
       .qr-metric-pill {
         background: rgba(255, 255, 255, 0.04);
         border: 1px solid rgba(255, 255, 255, 0.1);
-        padding: 4px 10px;
-        border-radius: 6px;
-        font-size: 11.5px;
+        padding: 2px 7px;
+        border-radius: 4px;
+        font-size: 11px;
         display: flex;
-        gap: 6px;
+        gap: 4px;
         align-items: center;
       }
 
@@ -208,24 +208,24 @@ export function renderQrCodeView() {
 
       .qr-studio-tabs {
         display: flex;
-        gap: 6px;
+        gap: 4px;
         align-items: center;
       }
 
       .btn-studio-tab {
         background: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.12);
         color: var(--text-secondary);
         font-weight: 700;
-        font-size: 12px;
-        padding: 7px 14px;
-        border-radius: 20px;
+        font-size: 11px;
+        padding: 4px 10px;
+        border-radius: 14px;
         cursor: pointer;
-        transition: all 0.2s ease;
+        transition: all 0.15s ease;
       }
 
       .btn-studio-tab:hover {
-        background: rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.12);
         color: #fff;
       }
 
@@ -233,32 +233,32 @@ export function renderQrCodeView() {
         background: #0284c7;
         border-color: #38bdf8;
         color: #fff;
-        box-shadow: 0 2px 8px rgba(2, 132, 199, 0.4);
+        box-shadow: 0 2px 6px rgba(2, 132, 199, 0.4);
       }
 
       .qr-studio-content-area {
         display: flex;
         flex-direction: column;
-        gap: 12px;
+        gap: 8px;
         flex: 1;
         min-height: 0;
       }
 
-      /* Control Toolbar */
+      /* Compact Control Toolbar */
       .qr-toolbar-card {
         background: var(--bg-card);
         border: 1px solid var(--border-color);
         border-radius: var(--radius-md);
-        padding: 12px 16px;
+        padding: 8px 12px;
         display: flex;
         flex-direction: column;
-        gap: 12px;
+        gap: 6px;
       }
 
       .qr-filters-row {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-        gap: 8px;
+        grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+        gap: 6px;
         align-items: center;
       }
 
@@ -267,31 +267,31 @@ export function renderQrCodeView() {
         justify-content: space-between;
         align-items: center;
         flex-wrap: wrap;
-        gap: 10px;
+        gap: 6px;
         border-top: 1px solid rgba(255, 255, 255, 0.06);
-        padding-top: 10px;
+        padding-top: 6px;
       }
 
       .qr-print-settings-bar {
         display: flex;
-        gap: 10px;
+        gap: 6px;
         align-items: center;
         flex-wrap: wrap;
-        font-size: 12px;
+        font-size: 11px;
         color: var(--text-secondary);
-        background: rgba(0, 0, 0, 0.2);
-        padding: 6px 12px;
-        border-radius: 6px;
-        border: 1px solid rgba(255, 255, 255, 0.05);
+        background: rgba(0, 0, 0, 0.25);
+        padding: 3px 8px;
+        border-radius: 4px;
+        border: 1px solid rgba(255, 255, 255, 0.06);
       }
 
       /* Label Grid */
       .qr-labels-grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-        gap: 12px;
+        gap: 10px;
         overflow-y: auto;
-        padding-bottom: 20px;
+        padding-bottom: 16px;
       }
 
       /* Individual Sticker Label Card */
@@ -299,10 +299,10 @@ export function renderQrCodeView() {
         background: #ffffff;
         color: #0f172a;
         border-radius: 8px;
-        padding: 10px 12px;
+        padding: 9px 11px;
         display: flex;
         flex-direction: column;
-        gap: 6px;
+        gap: 5px;
         box-shadow: 0 4px 12px rgba(0,0,0,0.35);
         border: 2px solid #e2e8f0;
         position: relative;
@@ -318,50 +318,43 @@ export function renderQrCodeView() {
 
       .qr-sticker-card.inactive {
         opacity: 0.6;
-        border-style: dashed;
-        border-color: #cbd5e1;
       }
 
       .qr-sticker-top-row {
         display: flex;
         justify-content: space-between;
         align-items: center;
+        gap: 6px;
         border-bottom: 1.5px solid #0f172a;
         padding-bottom: 4px;
       }
 
       .qr-sticker-company {
-        font-size: 11px;
+        font-size: 10.5px;
         font-weight: 900;
-        letter-spacing: 0.5px;
         color: #0f172a;
+        letter-spacing: 0.2px;
         text-transform: uppercase;
       }
 
       .qr-sticker-body {
         display: flex;
-        gap: 10px;
         align-items: center;
+        gap: 8px;
+        flex: 1;
+        min-height: 0;
       }
 
       .qr-sticker-body.layout-left {
         flex-direction: row;
       }
-
       .qr-sticker-body.layout-right {
         flex-direction: row-reverse;
       }
-
       .qr-sticker-body.layout-top {
         flex-direction: column;
         text-align: center;
       }
-
-      .qr-sticker-body.layout-top .qr-sticker-info {
-        align-items: center;
-        text-align: center;
-      }
-
       .qr-sticker-body.layout-qr-only {
         flex-direction: column;
         align-items: center;
@@ -369,61 +362,49 @@ export function renderQrCodeView() {
       }
 
       .qr-canvas-holder {
-        width: 86px;
-        height: 86px;
-        flex-shrink: 0;
-        background: #fff;
         display: flex;
         align-items: center;
         justify-content: center;
-        border: 1px solid #e2e8f0;
-        border-radius: 4px;
+        flex-shrink: 0;
+        background: #fff;
         padding: 2px;
         box-sizing: border-box;
       }
 
+      .qr-canvas-holder img,
       .qr-canvas-holder canvas {
         width: 100% !important;
         height: 100% !important;
         display: block;
       }
 
-      .qr-canvas-holder img {
-        width: 100% !important;
-        height: 100% !important;
-      }
-
       .qr-sticker-info {
-        flex: 1;
-        min-width: 0;
         display: flex;
         flex-direction: column;
-        gap: 2px;
-        font-size: 11px;
+        gap: 1.5px;
+        flex: 1;
+        min-width: 0;
         line-height: 1.25;
       }
 
       .qr-mid-badge {
         font-family: var(--font-mono);
-        font-size: 13px;
+        font-size: 11.5px;
         font-weight: 900;
         color: #0284c7;
-        background: rgba(2, 132, 199, 0.1);
-        padding: 2px 6px;
-        border-radius: 4px;
-        display: inline-block;
-        width: fit-content;
+        letter-spacing: 0.2px;
       }
 
       .qr-sn-text {
         font-weight: 800;
         color: #0f172a;
-        font-size: 12px;
+        font-size: 11px;
       }
 
       .qr-mach-name {
         font-weight: 700;
         color: #1e293b;
+        font-size: 10.5px;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -431,123 +412,58 @@ export function renderQrCodeView() {
 
       .qr-mach-spec {
         font-size: 10px;
-        color: #64748b;
+        color: #475569;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
       }
 
       .qr-mach-location {
-        font-size: 10px;
-        font-weight: 700;
-        color: #0369a1;
-        border-top: 1px solid #f1f5f9;
+        font-size: 9.5px;
+        color: #64748b;
+        border-top: 1px solid #e2e8f0;
         padding-top: 2px;
         margin-top: 2px;
+        line-height: 1.2;
       }
 
       .qr-sticker-footer-actions {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        border-top: 1px dashed #cbd5e1;
-        padding-top: 5px;
-        margin-top: 2px;
+        border-top: 1px dashed rgba(0,0,0,0.15);
+        padding-top: 4px;
+        margin-top: auto;
       }
 
-      /* Mobile responsiveness */
-      @media (max-width: 768px) {
-        .qr-studio-root {
-          padding: 8px 8px 32px 8px;
-        }
-        .qr-studio-header-card {
-          flex-direction: column;
-          align-items: stretch;
-          padding: 10px 12px;
-          gap: 10px;
-        }
-        .qr-header-metrics {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 6px;
-          width: 100%;
-        }
-        .qr-metric-pill {
-          flex: 1 1 calc(33.333% - 6px);
-          min-width: 90px;
-        }
-        .qr-studio-tabs {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 6px;
-        }
-        .btn-studio-tab {
-          flex: 1 1 calc(50% - 4px);
-          text-align: center;
-          justify-content: center;
-        }
-        .qr-filters-row {
-          grid-template-columns: repeat(2, 1fr) !important;
-          gap: 6px !important;
-        }
-        .qr-actions-row {
-          flex-direction: column !important;
-          align-items: stretch !important;
-          gap: 8px !important;
-        }
-        .qr-print-settings-bar {
-          width: 100% !important;
-          box-sizing: border-box !important;
-          justify-content: space-between !important;
-          flex-wrap: wrap !important;
-          gap: 6px !important;
-        }
-        .qr-labels-grid,
-        .location-placards-grid {
-          grid-template-columns: 1fr !important;
-        }
-      }
-
-      @media (max-width: 480px) {
-        .qr-filters-row {
-          grid-template-columns: 1fr !important;
-        }
-        .qr-metric-pill {
-          flex: 1 1 100%;
-        }
-        .btn-studio-tab {
-          flex: 1 1 100%;
-        }
-      }
-
-      /* Pagination Bar Styles */
+      /* Compact Pagination Bar Styles */
       .qr-pagination-bar {
         display: flex;
         justify-content: space-between;
         align-items: center;
         flex-wrap: wrap;
-        gap: 10px;
+        gap: 8px;
         background: var(--bg-card);
         border: 1px solid var(--border-color);
         border-radius: var(--radius-md);
-        padding: 8px 14px;
-        font-size: 12px;
+        padding: 5px 12px;
+        font-size: 11.5px;
         color: var(--text-secondary);
       }
 
       .qr-pagination-nav {
         display: flex;
         align-items: center;
-        gap: 4px;
+        gap: 3px;
       }
 
       .btn-qr-page {
         background: rgba(255, 255, 255, 0.06);
         border: 1px solid rgba(255, 255, 255, 0.12);
         color: #fff;
-        padding: 4px 10px;
+        padding: 3px 8px;
         border-radius: 4px;
-        font-size: 11.5px;
+        font-size: 11px;
         font-weight: 700;
         cursor: pointer;
         transition: all 0.15s ease;
@@ -614,38 +530,38 @@ function renderMachineQrTab(filteredMachines, units, floors, lines, machineNames
   return `
     <div class="qr-toolbar-card">
       
-      <!-- Multi-attribute Filters -->
+      <!-- Multi-attribute Filters (Compact Single Row) -->
       <div class="qr-filters-row">
         <div>
-          <select id="qr-filter-unit" class="form-control" style="font-size: 12px; padding: 5px 8px;">
+          <select id="qr-filter-unit" class="form-control" style="font-size: 11.5px; padding: 3px 6px; height: 30px;">
             <option value="">All Units</option>
             ${units.map(u => `<option value="${u.id}" ${u.id === qrFilters.unitId ? 'selected' : ''}>${u.name}</option>`).join('')}
           </select>
         </div>
 
         <div>
-          <select id="qr-filter-floor" class="form-control" style="font-size: 12px; padding: 5px 8px;">
+          <select id="qr-filter-floor" class="form-control" style="font-size: 11.5px; padding: 3px 6px; height: 30px;">
             <option value="">All Floors</option>
             ${floors.map(f => `<option value="${f.id}" ${f.id === qrFilters.floorId ? 'selected' : ''}>${f.name}</option>`).join('')}
           </select>
         </div>
 
         <div>
-          <select id="qr-filter-line" class="form-control" style="font-size: 12px; padding: 5px 8px;">
+          <select id="qr-filter-line" class="form-control" style="font-size: 11.5px; padding: 3px 6px; height: 30px;">
             <option value="">All Lines</option>
             ${lines.map(l => `<option value="${l.id}" ${l.id === qrFilters.lineId ? 'selected' : ''}>${l.name}</option>`).join('')}
           </select>
         </div>
 
         <div>
-          <select id="qr-filter-name" class="form-control" style="font-size: 12px; padding: 5px 8px;">
+          <select id="qr-filter-name" class="form-control" style="font-size: 11.5px; padding: 3px 6px; height: 30px;">
             <option value="">All Machine Names</option>
             ${machineNames.map(mn => `<option value="${mn.id}" ${mn.id === qrFilters.machineNameId ? 'selected' : ''}>${mn.name}</option>`).join('')}
           </select>
         </div>
 
         <div>
-          <select id="qr-filter-status" class="form-control" style="font-size: 12px; padding: 5px 8px;">
+          <select id="qr-filter-status" class="form-control" style="font-size: 11.5px; padding: 3px 6px; height: 30px;">
             <option value="ALL" ${qrFilters.qrStatus === 'ALL' ? 'selected' : ''}>Status: All</option>
             <option value="ACTIVE" ${qrFilters.qrStatus === 'ACTIVE' ? 'selected' : ''}>Status: Active</option>
             <option value="INACTIVE" ${qrFilters.qrStatus === 'INACTIVE' ? 'selected' : ''}>Status: Inactive</option>
@@ -659,56 +575,56 @@ function renderMachineQrTab(filteredMachines, units, floors, lines, machineNames
             class="form-control"
             placeholder="Search Serial, MID, Name..."
             value="${qrFilters.search}"
-            style="font-size: 12px; padding: 5px 8px;"
+            style="font-size: 11.5px; padding: 3px 8px; height: 30px;"
           />
         </div>
       </div>
 
-      <!-- A4 Label Print Settings Customizer & Actions -->
+      <!-- Compact Actions & Layout Settings Bar -->
       <div class="qr-actions-row">
         
         <!-- Selection counter & helpers -->
-        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-          <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: #fff; cursor: pointer;">
+        <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+          <label style="display: flex; align-items: center; gap: 5px; font-size: 11.5px; color: #fff; cursor: pointer; margin: 0;">
             <input type="checkbox" id="qr-select-page-check" style="accent-color: #38bdf8;" />
             <span>Select Page (${pageMachines.length})</span>
           </label>
-          <button type="button" id="btn-select-all-filtered" class="btn btn-ghost btn-xs" style="font-size: 11px; padding: 2px 7px; color: #38bdf8; border: 1px dashed rgba(56,189,248,0.4);" title="Select all machines matching current filters across all pages">
+          <button type="button" id="btn-select-all-filtered" class="btn btn-ghost btn-xs" style="font-size: 10.5px; padding: 2px 6px; color: #38bdf8; border: 1px dashed rgba(56,189,248,0.4);" title="Select all machines matching current filters across all pages">
             Select All (${totalFiltered})
           </button>
-          <button type="button" id="btn-clear-selection" class="btn btn-ghost btn-xs" style="font-size: 11px; padding: 2px 6px; color: #94a3b8;" title="Clear selection">
+          <button type="button" id="btn-clear-selection" class="btn btn-ghost btn-xs" style="font-size: 10.5px; padding: 2px 5px; color: #94a3b8;" title="Clear selection">
             Clear
           </button>
-          <span id="qr-selected-count-pill" class="badge badge-info" style="font-size: 11.5px; font-weight: 700; padding: 3px 8px;">
+          <span id="qr-selected-count-pill" class="badge badge-info" style="font-size: 10.5px; font-weight: 700; padding: 2px 6px;">
             ${selectedMachineIds.size} Selected
           </span>
         </div>
 
         <!-- A4 Print Layout Controls -->
         <div class="qr-print-settings-bar">
-          <span>📐 Print Layout:</span>
+          <span style="font-weight: 700; color: #cbd5e1;">📐 Layout:</span>
           
-          <label style="display: flex; align-items: center; gap: 4px;">
+          <label style="display: flex; align-items: center; gap: 3px;">
             Size:
-            <select id="qr-set-size" style="background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.15); color: #fff; font-size: 11px; padding: 2px 4px; border-radius: 4px;">
+            <select id="qr-set-size" style="background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.15); color: #fff; font-size: 11px; padding: 1px 4px; border-radius: 4px; height: 24px;">
               <option value="small" ${printSettings.qrSize === 'small' ? 'selected' : ''}>Small (32mm)</option>
               <option value="medium" ${printSettings.qrSize === 'medium' ? 'selected' : ''}>Medium (44mm)</option>
               <option value="large" ${printSettings.qrSize === 'large' ? 'selected' : ''}>Large (56mm)</option>
             </select>
           </label>
 
-          <label style="display: flex; align-items: center; gap: 4px;">
-            Per Row:
-            <select id="qr-set-per-row" style="background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.15); color: #fff; font-size: 11px; padding: 2px 4px; border-radius: 4px;">
+          <label style="display: flex; align-items: center; gap: 3px;">
+            Cols:
+            <select id="qr-set-per-row" style="background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.15); color: #fff; font-size: 11px; padding: 1px 4px; border-radius: 4px; height: 24px;">
               <option value="2" ${printSettings.colsPerRow === 2 ? 'selected' : ''}>2 cols</option>
               <option value="3" ${printSettings.colsPerRow === 3 ? 'selected' : ''}>3 cols</option>
               <option value="4" ${printSettings.colsPerRow === 4 ? 'selected' : ''}>4 cols</option>
             </select>
           </label>
 
-          <label style="display: flex; align-items: center; gap: 4px;">
-            Per Page:
-            <select id="qr-set-per-page" style="background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.15); color: #fff; font-size: 11px; padding: 2px 4px; border-radius: 4px;">
+          <label style="display: flex; align-items: center; gap: 3px;">
+            Page:
+            <select id="qr-set-per-page" style="background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.15); color: #fff; font-size: 11px; padding: 1px 4px; border-radius: 4px; height: 24px;">
               <option value="8" ${printSettings.labelsPerPage === 8 ? 'selected' : ''}>8 labels</option>
               <option value="12" ${printSettings.labelsPerPage === 12 ? 'selected' : ''}>12 labels</option>
               <option value="16" ${printSettings.labelsPerPage === 16 ? 'selected' : ''}>16 labels</option>
@@ -718,14 +634,14 @@ function renderMachineQrTab(filteredMachines, units, floors, lines, machineNames
         </div>
 
         <!-- Primary Generation & Print Actions -->
-        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-          <button type="button" id="btn-open-label-designer" class="btn btn-secondary btn-sm" style="font-weight: 800; font-size: 12px; padding: 6px 12px; border: 1.5px solid #38bdf8; color: #38bdf8; background: rgba(56, 189, 248, 0.12); display: flex; align-items: center; gap: 6px; box-shadow: 0 0 10px rgba(56, 189, 248, 0.15);">
+        <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+          <button type="button" id="btn-open-label-designer" class="btn btn-secondary btn-sm" style="font-weight: 800; font-size: 11.5px; padding: 4px 10px; height: 28px; border: 1.5px solid #38bdf8; color: #38bdf8; background: rgba(56, 189, 248, 0.12); display: flex; align-items: center; gap: 5px;">
             ⚙️ Label Designer
           </button>
-          <button type="button" id="btn-qr-bulk-generate" class="btn btn-secondary btn-sm" style="font-weight: 700; font-size: 12px; padding: 6px 12px; border-color: rgba(56, 189, 248, 0.4);">
+          <button type="button" id="btn-qr-bulk-generate" class="btn btn-secondary btn-sm" style="font-weight: 700; font-size: 11.5px; padding: 4px 10px; height: 28px; border-color: rgba(56, 189, 248, 0.4);">
             ⚡ Bulk Generate
           </button>
-          <button type="button" id="btn-qr-print-a4" class="btn btn-primary btn-sm" style="font-weight: 800; font-size: 12px; padding: 6px 14px; background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); border: 1px solid #38bdf8; box-shadow: 0 2px 8px rgba(2, 132, 199, 0.4);">
+          <button type="button" id="btn-qr-print-a4" class="btn btn-primary btn-sm" style="font-weight: 800; font-size: 11.5px; padding: 4px 12px; height: 28px; background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); border: 1px solid #38bdf8; box-shadow: 0 2px 6px rgba(2, 132, 199, 0.4);">
             🖨️ A4 Print Label Sheet
           </button>
         </div>
@@ -734,8 +650,8 @@ function renderMachineQrTab(filteredMachines, units, floors, lines, machineNames
 
     </div>
 
-    <!-- Top Pagination Bar -->
-    <div class="qr-pagination-bar" id="qr-pagination-top">
+    <!-- Slim Top Summary Bar -->
+    <div class="qr-pagination-bar" id="qr-pagination-top" style="padding: 4px 12px; min-height: 26px; font-size: 11.5px;">
       ${renderPaginationBarInnerHtml(totalFiltered, qrPagination.page, totalPages, startIndex, pageMachines.length, qrPagination.pageSize)}
     </div>
 
