@@ -471,35 +471,6 @@ export function initMachineModalEvents() {
       const saveBtn = document.getElementById('btn-save-machine');
       const originalBtnText = saveBtn ? saveBtn.innerHTML : '';
 
-      // 1. Disable button + show saving spinner (prevents double-submit)
-      if (saveBtn) {
-        saveBtn.disabled = true;
-        saveBtn.innerHTML = '<span style="display:inline-flex;align-items:center;gap:6px;"><span style="display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.7s linear infinite;"></span>Saving to Cloud...</span>';
-      }
-
-      const existingMachine = isEdit ? storage.getItem(TABLE_NAMES.MACHINES, machineId) : null;
-      const serialNumber = document.getElementById('modal-field-serial-number').value.trim();
-      const machineNameId = document.getElementById('modal-field-machine-name').value;
-      const brandId = document.getElementById('modal-field-brand').value;
-      const modelId = document.getElementById('modal-field-model').value;
-
-      const groupId = document.getElementById('modal-field-group')?.value || existingMachine?.groupId || 'grp-1';
-      const unitId = document.getElementById('modal-field-unit')?.value || existingMachine?.unitId || 'unt-1';
-      const floorId = document.getElementById('modal-field-floor')?.value || existingMachine?.floorId || 'flr-4';
-      const lineId = document.getElementById('modal-field-line')?.value || existingMachine?.lineId || 'lin-1';
-
-      const status = document.getElementById('modal-field-status').value;
-      const quantity = Number(document.getElementById('modal-field-quantity').value) || 1;
-      const remarks = document.getElementById('modal-field-remarks')?.value?.trim() || '';
-
-      const customValues = {};
-      document.querySelectorAll('.custom-field-input').forEach(inp => {
-        const code = inp.getAttribute('data-code');
-        if (code && inp.value !== '') {
-          customValues[code] = inp.value;
-        }
-      });
-
       const machineData = {
         serialNumber,
         machineNameId,
@@ -515,19 +486,20 @@ export function initMachineModalEvents() {
         customValues
       };
 
+      // 1. Instantly close modal on single click (0ms delay)
+      closeModal();
+
       try {
         if (isEdit) {
-          // 2. Await confirmed cloud write (throws CloudSaveError if Firestore write fails)
           const res = await machineService.updateMachine(machineId, machineData);
           if (res.pendingApproval) {
             notificationService.info(`Edit submitted for Admin Approval (Approval ID: ${res.requestId})`, 'Pending Approval');
           } else {
-            notificationService.success(`✅ Machine record #${serialNumber} updated and saved to cloud.`);
+            notificationService.success(`✅ Machine record #${serialNumber} updated successfully!`);
           }
         } else {
           await machineService.addMachine(machineData);
-          notificationService.success(`✅ Machine #${serialNumber} registered and saved to cloud.`);
-          // Reset pagination & restrictive search and sort by latest update
+          notificationService.success(`✅ Machine #${serialNumber} registered successfully!`);
           state.updateFilters({
             search: '',
             page: 1,
@@ -536,8 +508,6 @@ export function initMachineModalEvents() {
           });
         }
 
-        // 3. Only close modal and update UI AFTER cloud confirmation
-        closeModal();
         state.set('currentView', 'inventory');
         state.emit('inventory:updated');
 

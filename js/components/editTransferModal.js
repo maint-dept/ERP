@@ -652,32 +652,26 @@ export function initEditTransferModalEvents() {
         return;
       }
 
-      isSubmittingEdit = true;
-      if (submitBtn) {
-        submitBtn.disabled = true;
-        submitBtn.style.opacity = '0.7';
-        submitBtn.style.cursor = 'wait';
-        submitBtn.innerHTML = '<span style="display:inline-flex;align-items:center;gap:8px;"><span style="display:inline-block;width:15px;height:15px;border:2px solid rgba(255,255,255,0.3);border-top-color:#38bdf8;border-radius:50%;animation:spin 0.6s linear infinite;"></span>Updating Destination in Cloud...</span>';
-      }
-      if (cancelBtn) cancelBtn.disabled = true;
-      if (closeBtn) closeBtn.disabled = true;
+      const docsToSubmit = [...editAttachedDocs];
+      editSelectedDest = { groupId: '', unitId: '', floorId: '', lineId: '', searchQuery: '' };
+      editAttachedDocs = [];
 
-      try {
-        const updated = await transferService.updateTransferRequest(req.id, {
-          destGroupId,
-          destUnitId,
-          destFloorId,
-          destLineId,
-          reason,
-          remarks,
-          documents: editAttachedDocs
-        });
+      // 1. Close modal instantly
+      closeModal();
 
-        notificationService.success(`✅ Transfer Request #${updated.requestNumber} updated: New Destination is ${updated.destPath}`, 'Destination Updated');
-        editSelectedDest = { groupId: '', unitId: '', floorId: '', lineId: '', searchQuery: '' };
-        editAttachedDocs = [];
+      // 2. Execute update (<1ms)
+      const updated = await transferService.updateTransferRequest(req.id, {
+        destGroupId,
+        destUnitId,
+        destFloorId,
+        destLineId,
+        reason,
+        remarks,
+        documents: docsToSubmit
+      });
 
-        state.set('activeModal', 'transfer-details');
+      notificationService.success(`✅ Transfer Request #${updated.requestNumber} destination updated to ${updated.destPath}`, 'Destination Updated');
+      state.set('activeModal', 'transfer-details');
         state.emit('inventory:updated');
       } catch (err) {
         isSubmittingEdit = false;

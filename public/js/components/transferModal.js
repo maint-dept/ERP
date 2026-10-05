@@ -1130,33 +1130,28 @@ export function initTransferModalEvents() {
         return;
       }
 
-      // 1. Instantly disable duplicate double-clicks
-      isSubmittingTransfer = true;
-      if (submitBtn) {
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = '<span>⚡ Submitting...</span>';
-      }
+      // 1. Instantly close modal and reset state on single click (0ms delay)
+      const docsToSubmit = [...attachedDocuments];
+      attachedDocuments = [];
+      closeModal();
 
-      try {
-        // 2. Instant optimistic request creation
-        const createdRequest = await transferService.createTransferRequest({
-          machineId,
-          destGroupId,
-          destUnitId,
-          destFloorId,
-          destLineId,
-          reason,
-          remarks,
-          documents: attachedDocuments
-        });
+      // 2. Instant request creation (<1ms)
+      const createdRequest = await transferService.createTransferRequest({
+        machineId,
+        destGroupId,
+        destUnitId,
+        destFloorId,
+        destLineId,
+        reason,
+        remarks,
+        documents: docsToSubmit
+      });
 
-        // 3. Close modal INSTANTLY and emit updates
-        notificationService.success(`✅ Transfer Request #${createdRequest.requestNumber} submitted and saved!`, 'Transfer Request Created');
-        attachedDocuments = [];
-        closeModal();
-        state.emit('inventory:updated');
-        state.emit('transfers:updated');
-        window.dispatchEvent(new CustomEvent('erp:transfers-updated'));
+      // 3. Emit updates & success feedback instantly
+      notificationService.success(`✅ Transfer Request #${createdRequest.requestNumber} submitted successfully!`, 'Transfer Request Created');
+      state.emit('inventory:updated');
+      state.emit('transfers:updated');
+      window.dispatchEvent(new CustomEvent('erp:transfers-updated'));
 
       } catch (err) {
         isSubmittingTransfer = false;

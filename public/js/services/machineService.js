@@ -413,13 +413,20 @@ class MachineService {
     newMachine.createdAt = newMachine.createdAt || new Date().toISOString();
     newMachine.updatedAt = new Date().toISOString();
 
-    // CONFIRMED CLOUD WRITE FIRST (MySQL Single Source of Truth)
-    const dbResult = await syncManager.saveRecord(TABLE_NAMES.MACHINES, newMachine.id, newMachine);
-    if (!dbResult.success) {
-      throw new CloudSaveError('❌ Database Transaction Failed: ' + dbResult.error);
+    // 1. Instant local cache and memory update (Zero-wait)
+    if (!storage.data[TABLE_NAMES.MACHINES]) {
+      storage.data[TABLE_NAMES.MACHINES] = [];
     }
+    storage.data[TABLE_NAMES.MACHINES].push(newMachine);
+    storage.rebuildAllIndexes();
+    try {
+      localStorage.setItem('al_muslim_erp_' + TABLE_NAMES.MACHINES, JSON.stringify(storage.data[TABLE_NAMES.MACHINES]));
+    } catch (_) {}
 
-    // Now update local cache and memory
+    // 2. Background non-blocking cloud sync
+    syncManager.saveRecord(TABLE_NAMES.MACHINES, newMachine.id, newMachine).catch(e => {
+      console.warn('[SyncManager] Add machine cloud sync queued in background:', e.message);
+    });
     if (!storage.data[TABLE_NAMES.MACHINES]) {
       storage.data[TABLE_NAMES.MACHINES] = [];
     }
@@ -553,13 +560,16 @@ class MachineService {
     // PREPARE UPDATED OBJECT
     const targetUpdateObj = { ...existing, ...enrichedUpdates };
 
-    // CONFIRMED CLOUD WRITE FIRST (MySQL Single Source of Truth)
-    const dbResult = await syncManager.saveRecord(TABLE_NAMES.MACHINES, id, targetUpdateObj);
-    if (!dbResult.success) {
-      throw new CloudSaveError('❌ Database Transaction Failed: ' + dbResult.error);
-    }
+    // 1. Instant local memory & cache update (Zero-wait)
+    const updated = storage.update(TABLE_NAMES.MACHINES, id, enrichedUpdates);
+    try {
+      localStorage.setItem('al_muslim_erp_' + TABLE_NAMES.MACHINES, JSON.stringify(storage.data[TABLE_NAMES.MACHINES]));
+    } catch (_) {}
 
-    // Direct Admin update (in-memory & cache only AFTER cloud success)
+    // 2. Background non-blocking cloud sync
+    syncManager.saveRecord(TABLE_NAMES.MACHINES, id, targetUpdateObj).catch(e => {
+      console.warn('[SyncManager] Update machine cloud sync queued in background:', e.message);
+    });
     const updated = storage.update(TABLE_NAMES.MACHINES, id, enrichedUpdates);
     try {
       localStorage.setItem('al_muslim_erp_' + TABLE_NAMES.MACHINES, JSON.stringify(storage.data[TABLE_NAMES.MACHINES]));

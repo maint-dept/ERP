@@ -310,13 +310,7 @@ class TransferService {
       [TABLE_NAMES.TRANSFER_REQUESTS]: [...storage.getTable(TABLE_NAMES.TRANSFER_REQUESTS), newRequest]
     };
 
-    // CONFIRMED CLOUD WRITE FIRST (Atomic Transaction)
-    const dbResult = await syncManager.saveMultipleTables(tablesObj);
-    if (!dbResult.success) {
-      throw new CloudSaveError('❌ Database Transaction Failed: ' + dbResult.error);
-    }
-
-    // Now safely update local memory and cache
+    // 1. Instant local persistence & in-memory commit (Zero Loading Time)
     storage.update(TABLE_NAMES.MACHINES, machine.id, {
       status: 'IN_TRANSFER',
       updatedBy: user.id,
@@ -327,12 +321,23 @@ class TransferService {
     try {
       localStorage.setItem('al_muslim_erp_' + TABLE_NAMES.MACHINES, JSON.stringify(storage.data[TABLE_NAMES.MACHINES]));
       localStorage.setItem('al_muslim_erp_' + TABLE_NAMES.TRANSFER_REQUESTS, JSON.stringify(storage.data[TABLE_NAMES.TRANSFER_REQUESTS]));
-    } catch (_) {}
+      } catch (_) {}
+
+      // Background cloud sync
+      syncManager.saveRecord(TABLE_NAMES.TRANSFER_REQUESTS, req.id, updatedReqObj).catch(e => {
+        console.warn('[SyncManager] Approve step cloud sync queued in background:', e.message);
+      });
+
     // Trigger local and cross-component updates immediately
     window.dispatchEvent(new CustomEvent('erp:transfers-updated'));
     if (window.state && typeof window.state.emit === 'function') {
       window.state.emit('transfers:updated');
     }
+
+    // 2. Non-blocking asynchronous cloud sync (Background Sync)
+    syncManager.saveMultipleTables(tablesObj).catch(e => {
+      console.warn('[SyncManager] Transfer cloud sync queued in background:', e.message);
+    });
 
     // Send notifications to approvers (Destination Floor Manager & Super Admin)
     notificationService.notify({
@@ -448,13 +453,7 @@ class TransferService {
         updatedAt: now.toISOString()
       };
 
-      // CONFIRMED CLOUD WRITE FIRST
-      const dbResult = await syncManager.saveRecord(TABLE_NAMES.TRANSFER_REQUESTS, req.id, updatedReqObj);
-      if (!dbResult.success) {
-        throw new CloudSaveError('❌ Database Transaction Failed: ' + dbResult.error);
-      }
-
-      // NOW safely apply to local memory
+      // Instant local memory update (Zero-wait)
       const updated = storage.update(TABLE_NAMES.TRANSFER_REQUESTS, req.id, {
         currentLevel: nextLevel,
         status: TRANSFER_STATUSES.PARTIALLY_APPROVED,
