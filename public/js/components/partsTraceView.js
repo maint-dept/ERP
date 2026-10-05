@@ -2148,6 +2148,32 @@ function renderTraceabilityDetailsModal() {
   if (!selectedTraceIssue) return '';
   const iss = selectedTraceIssue;
 
+  // Enrich technician details (Name, Card, Designation, Floor)
+  const enrichedEmployees = getEnrichedEmployeesList();
+  const techMatch = enrichedEmployees.find(e => 
+    (iss.technicianId && e.id === iss.technicianId) ||
+    (iss.technicianCard && String(e.cardNumber).trim() === String(iss.technicianCard).trim()) ||
+    (iss.technicianName && e.name && e.name.toLowerCase().trim() === iss.technicianName.toLowerCase().trim())
+  );
+
+  const techName = iss.technicianName || techMatch?.name || '—';
+  const techCard = iss.technicianCard || techMatch?.cardNumber || '—';
+  const techDeg = iss.technicianDesignation || techMatch?.designation || (techMatch ? 'Mechanic' : '—');
+  const techFloor = iss.technicianFloor || techMatch?.resolvedFloor || techMatch?.floor || iss.floorName || '—';
+
+  // Enrich machine details (Serial, Name, Brand, Model)
+  const enrichedMachines = getEnrichedMachinesList();
+  const machineMatch = enrichedMachines.find(m => 
+    (iss.machineId && m.id === iss.machineId) ||
+    (iss.machineSerial && m.serialNumber && m.serialNumber.toLowerCase() === iss.machineSerial.toLowerCase()) ||
+    (iss.machineSerial && m.permanentMachineId && m.permanentMachineId.toLowerCase() === iss.machineSerial.toLowerCase())
+  );
+
+  const machineSerial = iss.machineSerial || machineMatch?.serialNumber || 'None / Stock';
+  const machineName = iss.machineName || machineMatch?.resolvedName || '';
+  const machineBrand = iss.machineBrand || machineMatch?.resolvedBrand || '';
+  const machineModel = iss.machineModel || machineMatch?.resolvedModel || '';
+
   return `
     <div class="modal-overlay" id="modal-trace-details-overlay" style="z-index: 10060;">
       <div class="modal-dialog" style="max-width: 580px; width: 95%;">
@@ -2156,7 +2182,7 @@ function renderTraceabilityDetailsModal() {
           <div class="modal-title" style="display: flex; align-items: center; gap: 8px;">
             <span>🔍</span> Complete Traceability Record
           </div>
-          <button type="button" id="btn-close-trace-modal" class="btn btn-ghost btn-sm" style="font-size: 16px; border-radius: 50%;">✕</button>
+          <button type="button" id="btn-close-trace-modal" class="btn btn-ghost btn-sm btn-close-trace-modal" style="font-size: 16px; border-radius: 50%;">✕</button>
         </div>
 
         <div style="padding: 16px; display: flex; flex-direction: column; gap: 10px; max-height: 80vh; overflow-y: auto; font-size: 12px;">
@@ -2169,55 +2195,80 @@ function renderTraceabilityDetailsModal() {
             <div style="font-size: 13px; font-weight: 800; color: #fff; margin-top: 4px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
               <span style="color: #38bdf8;">${iss.erpNo}</span>
               <span>➔</span>
-              <span style="color: #34d399;">${iss.partName}</span>
+              <span style="color: #34d399;">${iss.partName || iss.rawItemName || '—'}</span>
               <span>➔</span>
-              <span style="color: #fbbf24;">${iss.machineSerial || 'General'}</span>
+              <span style="color: #fbbf24;">${machineSerial}</span>
               <span>➔</span>
-              <span style="color: #e2e8f0;">${iss.technicianName || 'Staff'}</span>
+              <span style="color: #e2e8f0;">${techName}${techCard && techCard !== '—' ? ` (${techCard})` : ''}</span>
             </div>
           </div>
 
           <!-- Key Details Grid -->
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-            <div style="background: rgba(255,255,255,0.03); padding: 8px; border-radius: 6px;">
-              <div style="font-size: 10px; color: var(--text-muted);">ERP Issue Number</div>
-              <div style="font-family: var(--font-mono); font-weight: 800; color: #38bdf8; font-size: 13px;">${iss.erpNo}</div>
+            <div style="background: rgba(255,255,255,0.03); padding: 8px 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.06);">
+              <div style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">ERP Issue Number</div>
+              <div style="font-family: var(--font-mono); font-weight: 800; color: #38bdf8; font-size: 13px; margin-top: 2px;">${iss.erpNo || '—'}</div>
             </div>
-            <div style="background: rgba(255,255,255,0.03); padding: 8px; border-radius: 6px;">
-              <div style="font-size: 10px; color: var(--text-muted);">Issue Date</div>
-              <div style="font-family: var(--font-mono); font-weight: 700; color: #fff;">${iss.issueDate}</div>
+            <div style="background: rgba(255,255,255,0.03); padding: 8px 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.06);">
+              <div style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Issue Date</div>
+              <div style="font-family: var(--font-mono); font-weight: 700; color: #fff; margin-top: 2px;">${iss.issueDate || '—'}</div>
             </div>
-            <div style="background: rgba(255,255,255,0.03); padding: 8px; border-radius: 6px;">
-              <div style="font-size: 10px; color: var(--text-muted);">Spare Part</div>
-              <div style="font-weight: 700; color: #fff;">${iss.partName}</div>
-              <div style="font-size: 10px; color: #94a3b8; font-family: var(--font-mono);">${iss.partCode || '—'}</div>
+            <div style="background: rgba(255,255,255,0.03); padding: 8px 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.06);">
+              <div style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Spare Part</div>
+              <div style="font-weight: 700; color: #fff; margin-top: 2px;">${iss.partName || iss.rawItemName || '—'}</div>
+              <div style="font-size: 10px; color: #94a3b8; font-family: var(--font-mono); margin-top: 1px;">${iss.partCode || '—'}</div>
             </div>
-            <div style="background: rgba(255,255,255,0.03); padding: 8px; border-radius: 6px;">
-              <div style="font-size: 10px; color: var(--text-muted);">Quantity Issued</div>
-              <div style="font-weight: 800; color: #34d399; font-size: 14px;">${iss.issueQty} ${iss.uom}</div>
+            <div style="background: rgba(255,255,255,0.03); padding: 8px 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.06);">
+              <div style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Quantity Issued</div>
+              <div style="font-weight: 800; color: #34d399; font-size: 14px; margin-top: 2px;">${iss.issueQty || 1} ${iss.uom || 'PCS'}</div>
             </div>
-            <div style="background: rgba(255,255,255,0.03); padding: 8px; border-radius: 6px;">
-              <div style="font-size: 10px; color: var(--text-muted);">Machine Target</div>
-              <div style="font-weight: 800; color: #fbbf24; font-family: var(--font-mono);">${iss.machineSerial || 'None / Stock'}</div>
-              <div style="font-size: 10px; color: var(--text-muted);">${iss.machineName || ''}</div>
+            
+            <!-- Machine Target -->
+            <div style="background: rgba(255,255,255,0.03); padding: 8px 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.06);">
+              <div style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Machine Target</div>
+              <div style="font-weight: 800; color: #fbbf24; font-family: var(--font-mono); font-size: 13px; margin-top: 2px;">SL: ${machineSerial}</div>
+              <div style="font-size: 11px; color: #cbd5e1; margin-top: 1px;">${machineName}</div>
+              ${(machineBrand || machineModel) ? `<div style="font-size: 10px; color: #94a3b8; margin-top: 1px;">🏷️ ${machineBrand} ${machineModel}</div>` : ''}
             </div>
-            <div style="background: rgba(255,255,255,0.03); padding: 8px; border-radius: 6px;">
-              <div style="font-size: 10px; color: var(--text-muted);">Assigned Technician</div>
-              <div style="font-weight: 700; color: #cbd5e1;">${iss.technicianName || '—'}</div>
+
+            <!-- Assigned Technician (Name, Card, Deg, Floor) -->
+            <div style="background: rgba(255,255,255,0.03); padding: 8px 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.06); display: flex; flex-direction: column; justify-content: space-between;">
+              <div>
+                <div style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; display: flex; justify-content: space-between; align-items: center;">
+                  <span>Assigned Technician</span>
+                  ${techCard && techCard !== '—' ? `<span class="badge" style="font-family: var(--font-mono); font-size: 9.5px; background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); padding: 1px 5px;">Card: ${techCard}</span>` : ''}
+                </div>
+                <div style="font-weight: 800; color: #ffffff; font-size: 13px; margin-top: 2px;">${techName}</div>
+              </div>
+              <div style="display: flex; align-items: center; gap: 5px; margin-top: 4px; flex-wrap: wrap; font-size: 10px;">
+                ${techDeg && techDeg !== '—' ? `
+                  <span style="color: #cbd5e1; background: rgba(255,255,255,0.06); padding: 1px 6px; border-radius: 3px; border: 1px solid rgba(255,255,255,0.1);">
+                    💼 ${techDeg}
+                  </span>
+                ` : ''}
+                ${techFloor && techFloor !== '—' ? `
+                  <span style="color: #34d399; background: rgba(52, 211, 153, 0.12); padding: 1px 6px; border-radius: 3px; border: 1px solid rgba(52, 211, 153, 0.3); font-weight: 600;">
+                    🏢 ${techFloor}
+                  </span>
+                ` : ''}
+              </div>
             </div>
-            <div style="background: rgba(255,255,255,0.03); padding: 8px; border-radius: 6px; grid-column: span 2;">
-              <div style="font-size: 10px; color: var(--text-muted);">Location (Floor / Line)</div>
-              <div style="color: #fff;">${iss.floorName} / ${iss.lineName}</div>
+
+            <div style="background: rgba(255,255,255,0.03); padding: 8px 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.06); grid-column: span 2;">
+              <div style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Location (Unit / Floor / Line)</div>
+              <div style="color: #fff; font-weight: 600; margin-top: 2px;">
+                ${iss.unitName ? `${iss.unitName} &bull; ` : ''}${iss.floorName || '—'}${iss.lineName ? ` / ${iss.lineName}` : ''}
+              </div>
             </div>
           </div>
 
           <div style="background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.06); border-radius: 6px; padding: 8px 10px; font-size: 11px; color: var(--text-muted);">
             <div>Cost Center: <strong style="color: #cbd5e1;">${iss.costCenter || 'Maintenance'}</strong> &bull; Store: <strong style="color: #cbd5e1;">${iss.store || 'MAINTENANCE'}</strong></div>
             <div style="margin-top: 2px;">PDF Reference: <strong style="color: #38bdf8;">${iss.pdfFileName || 'Manual Entry'}</strong></div>
-            <div style="margin-top: 2px;">Created By: <strong>${iss.createdBy}</strong> on ${new Date(iss.createdAt).toLocaleString()}</div>
+            <div style="margin-top: 2px;">Created By: <strong>${iss.createdBy || 'Staff'}</strong> on ${new Date(iss.createdAt || Date.now()).toLocaleString()}</div>
           </div>
 
-          <button type="button" id="btn-close-trace-modal-btn" class="btn btn-secondary" style="width: 100%; height: 34px; font-weight: 700; margin-top: 4px;">
+          <button type="button" id="btn-close-trace-modal-btn" class="btn btn-secondary btn-close-trace-modal" style="width: 100%; height: 34px; font-weight: 700; margin-top: 4px;">
             Close
           </button>
 
@@ -2866,11 +2917,20 @@ export function initPartsTraceEvents() {
     });
   });
 
-  const btnCloseTrace = root.querySelector('#btn-close-trace-modal') || root.querySelector('#btn-close-trace-modal-btn');
-  if (btnCloseTrace) {
-    btnCloseTrace.addEventListener('click', () => {
+  root.querySelectorAll('#btn-close-trace-modal, #btn-close-trace-modal-btn, .btn-close-trace-modal').forEach(btn => {
+    btn.addEventListener('click', () => {
       selectedTraceIssue = null;
       refresh();
+    });
+  });
+
+  const modalTraceOverlay = root.querySelector('#modal-trace-details-overlay');
+  if (modalTraceOverlay) {
+    modalTraceOverlay.addEventListener('click', (e) => {
+      if (e.target === modalTraceOverlay) {
+        selectedTraceIssue = null;
+        refresh();
+      }
     });
   }
 
