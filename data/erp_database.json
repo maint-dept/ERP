@@ -31050,7 +31050,214 @@
       "updatedAt": "2026-10-04T11:11:57.001Z"
     }
   ],
-  "brands": [],
+  "brands": [
+    {
+      "id": "brd-1",
+      "name": "JUKI",
+      "country": "Japan",
+      "website": "www.juki.co.jp",
+      "status": "ACTIVE"
+    },
+    {
+      "id": "brd-2",
+      "name": "Brother",
+      "country": "Japan",
+      "website": "www.brother.com",
+      "status": "ACTIVE"
+    },
+    {
+      "id": "brd-3",
+      "name": "Pegasus",
+      "country": "Japan",
+      "website": "www.pegasus.co.jp",
+      "status": "ACTIVE"
+    },
+    {
+      "id": "brd-4",
+      "name": "Yamato",
+      "country": "Japan",
+      "website": "www.yamato-sewing.com",
+      "status": "ACTIVE"
+    },
+    {
+      "id": "brd-5",
+      "name": "Kansai Special",
+      "country": "Japan",
+      "website": "www.kansai-special.com",
+      "status": "ACTIVE"
+    },
+    {
+      "id": "brd-6",
+      "name": "Hashima",
+      "country": "Japan",
+      "website": "www.hashima.co.jp",
+      "status": "ACTIVE"
+    },
+    {
+      "id": "brd-7",
+      "name": "Eastman",
+      "country": "USA",
+      "website": "www.eastmancuts.com",
+      "status": "ACTIVE"
+    },
+    {
+      "id": "brd-8",
+      "name": "Morgan Tecnica",
+      "country": "Italy",
+      "website": "www.morgantecnica.com",
+      "status": "ACTIVE"
+    },
+    {
+      "id": "brd-9",
+      "name": "Siruba",
+      "country": "Taiwan",
+      "website": "www.siruba.com",
+      "status": "ACTIVE"
+    },
+    {
+      "id": "brd-10",
+      "name": "Kaeser",
+      "country": "Germany",
+      "website": "www.kaeser.com",
+      "status": "ACTIVE"
+    },
+    {
+      "id": "brd-11",
+      "name": "Caterpillar",
+      "country": "USA",
+      "website": "www.cat.com",
+      "status": "ACTIVE"
+    },
+    {
+      "id": "brd-12",
+      "name": "Naomoto",
+      "country": "Japan",
+      "website": "www.naomoto.com",
+      "status": "ACTIVE"
+    },
+    {
+      "id": "brd-13",
+      "name": "JACK",
+      "country": "China",
+      "website": "www.jack-sewing.com",
+      "status": "ACTIVE"
+    },
+    {
+      "id": "brd-14",
+      "name": "TYPICAL",
+      "country": "China",
+      "website": "www.typical.com",
+      "status": "ACTIVE"
+    },
+    {
+      "name": "Juki",
+      "country": "Global",
+      "status": "ACTIVE",
+      "id": "bra-1788870296743-965",
+      "createdAt": "2026-09-08T12:24:56.743Z",
+      "updatedAt": "2026-09-08T12:24:56.743Z"
+    },
+    {
+      "name": "Bedoly",
+      "country": "Global",
+      "status": "ACTIVE",
+      "id": "bra-1788870296743-235",
+      "createdAt": "2026-09-08T12:24:56.743Z",
+      "updatedAt": "2026-09-08T12:24:56.743Z"
+    },
+    {
+      "name": "Kansai Specil",
+      "country": "Global",
+      "status": "ACTIVE",
+      "id": "bra-1788870296743-357",
+      "createdAt": "2026-09-08T12:24:56.743Z",
+      "updatedAt": "2026-09-08T12:24:56.743Z"
+    },
+    {
+      "name": "ZOJE",
+      "country": "Global",
+      "status": "ACTIVE",
+      "id": "bra-1788870296743-664",
+      "createdAt": "2026-09-08T12:24:56.743Z",
+      "updatedAt": "2026-09-08T12:24:56.743Z"
+    },
+    {
+      "name": "Typical",
+      "country": "Global",
+      "status": "ACTIVE",
+      "id": "bra-1788870296743-352",
+      "createdAt": "2026-09-08T12:24:56.743Z",
+      "updatedAt": "2026-09-08T12:24:56.743Z"
+    },
+    {
+      "name": "NGAI SHING",
+      "country": "Global",
+      "status": "ACTIVE",
+      "id": "bra-1788870296743-761",
+      "createdAt": "2026-09-08T12:24:56.743Z",
+      "updatedAt": "2026-09-08T12:24:56.743Z"
+    },
+    {
+      "name": "Jack",
+      "country": "Global",
+      "status": "ACTIVE",
+      "id": "bra-1788870296743-528",
+      "createdAt": "2026-09-08T12:24:56.743Z",
+      "updatedAt": "2026-09-08T12:24:56.743Z"
+    },
+    {
+      "name": "JAM International",
+      "country": "Global",
+      "status": "ACTIVE",
+      "id": "bra-1788870296743-48",
+      "createdAt": "2026-09-08T12:24:56.743Z",
+      "updatedAt": "2026-09-08T12:24:56.743Z"
+    },
+    {
+      "name": "Sggemsy",
+      "country": "Global",
+      "status": "ACTIVE",
+      "id": "bra-1788870296743-448",
+      "createdAt": "2026-09-08T12:24:56.743Z",
+      "updatedAt": "2026-09-08T12:24:56.743Z"
+    },
+    {
+      "name": "Brother",
+      "country": "Global",
+      "status": "ACTIVE",
+      "id": "bra-1788870296743-410",
+      "createdAt": "2026-09-08T12:24:56.743Z",
+      "updatedAt": "2026-09-08T12:24:56.743Z"
+    },
+    {
+      "name": "AGM",
+      "country": "Global",
+      "status": "ACTIVE",
+      "id": "bra-1788870296743-300",
+      "createdAt": "2026-09-08T12:24:56.743Z",
+      "updatedAt": "2026-09-08T12:24:56.743Z"
+    },
+    {
+      "name": "Zuson",
+      "country": "Global",
+      "status": "ACTIVE",
+      "id": "bra-1788870296743-677",
+      "createdAt": "2026-09-08T12:24:56.743Z",
+      "updatedAt": "2026-09-08T12:24:56.743Z"
+    },
+    {
+      "id": "bra-1790659051026-121",
+      "name": "TREX",
+      "country": "Taiwan",
+      "status": "ACTIVE"
+    },
+    {
+      "id": "bra-1790659051051-509",
+      "name": "KANSAI SPECIAL",
+      "country": "Japan",
+      "status": "ACTIVE"
+    }
+  ],
   "categories": [
     {
       "id": "cat-1",
@@ -41881,7 +42088,692 @@
       "remarks": "Quality inspector verified zero puckering and even stitch density."
     }
   ],
-  "machine_names": [],
+  "machine_names": [
+    {
+      "id": "mn-1788869247046-drnu",
+      "name": "Plane Machine",
+      "code": "PLAN",
+      "sortOrder": 1,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:07:27.046Z",
+      "updatedAt": "2026-09-08T12:07:27.046Z"
+    },
+    {
+      "id": "mn-1788869247061-9dsy",
+      "name": "Vertical Machine",
+      "code": "VERT",
+      "sortOrder": 2,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:07:27.061Z",
+      "updatedAt": "2026-09-08T12:07:27.061Z"
+    },
+    {
+      "id": "mn-1788869247076-glop",
+      "name": "Double Needle Machine",
+      "code": "DOUB",
+      "sortOrder": 3,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:07:27.076Z",
+      "updatedAt": "2026-09-08T12:07:27.076Z"
+    },
+    {
+      "id": "mn-1788869247100-2uyc",
+      "name": "Feed of The Arm Machine",
+      "code": "FEED",
+      "sortOrder": 4,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:07:27.100Z",
+      "updatedAt": "2026-09-08T12:07:27.100Z"
+    },
+    {
+      "id": "mn-1788869247118-qyw5",
+      "name": "Over Lock Machine",
+      "code": "OVER",
+      "sortOrder": 5,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:07:27.118Z",
+      "updatedAt": "2026-09-08T12:07:27.118Z"
+    },
+    {
+      "id": "mn-1788869247141-kx1a",
+      "name": "Chain Stitch Machine",
+      "code": "CHAI",
+      "sortOrder": 6,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:07:27.141Z",
+      "updatedAt": "2026-09-08T12:07:27.141Z"
+    },
+    {
+      "id": "mn-1788869247159-lw1e",
+      "name": "Safety Stitch M/C",
+      "code": "SAFE",
+      "sortOrder": 7,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:07:27.159Z",
+      "updatedAt": "2026-09-08T12:07:27.159Z"
+    },
+    {
+      "id": "mn-1788869247176-2gzf",
+      "name": "Multi Needle Chain Stitch Machine",
+      "code": "MULT",
+      "sortOrder": 8,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:07:27.176Z",
+      "updatedAt": "2026-09-08T12:07:27.176Z"
+    },
+    {
+      "id": "mn-1788869247205-his3",
+      "name": "Bar tak Machine",
+      "code": "BAR ",
+      "sortOrder": 9,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:07:27.205Z",
+      "updatedAt": "2026-09-08T12:07:27.205Z"
+    },
+    {
+      "id": "mn-1788869247224-rmvf",
+      "name": "Button Stitch",
+      "code": "BUTT",
+      "sortOrder": 10,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:07:27.224Z",
+      "updatedAt": "2026-09-08T12:07:27.224Z"
+    },
+    {
+      "id": "mn-1788869247243-7wlt",
+      "name": "Button Hole Machine",
+      "code": "BUTT",
+      "sortOrder": 11,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:07:27.243Z",
+      "updatedAt": "2026-09-08T12:07:27.243Z"
+    },
+    {
+      "id": "mn-1788869247262-kbo0",
+      "name": "Eye let Hole Machine",
+      "code": "EYE ",
+      "sortOrder": 12,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:07:27.262Z",
+      "updatedAt": "2026-09-08T12:07:27.262Z"
+    },
+    {
+      "id": "mn-1788869247280-zhzh",
+      "name": "Automatic Pocket Welting",
+      "code": "AUTO",
+      "sortOrder": 13,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:07:27.280Z",
+      "updatedAt": "2026-09-08T12:07:27.280Z"
+    },
+    {
+      "id": "mn-1788869247301-5z95",
+      "name": "Laser Cut APW Machine",
+      "code": "LASE",
+      "sortOrder": 14,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:07:27.301Z",
+      "updatedAt": "2026-09-08T12:07:27.301Z"
+    },
+    {
+      "id": "mn-1788869247321-6kq1",
+      "name": "Bottom Hamming Lock Stitch Machine",
+      "code": "BOTT",
+      "sortOrder": 15,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:07:27.321Z",
+      "updatedAt": "2026-09-08T12:07:27.321Z"
+    },
+    {
+      "id": "mn-1788869247342-602c",
+      "name": "Bottom Hamming Chain Stitch Machine",
+      "code": "BOTT",
+      "sortOrder": 16,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:07:27.342Z",
+      "updatedAt": "2026-09-08T12:07:27.342Z"
+    },
+    {
+      "id": "mn-1788869247366-4mxu",
+      "name": "Velcro Attach Machine",
+      "code": "VELC",
+      "sortOrder": 17,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:07:27.366Z",
+      "updatedAt": "2026-09-08T12:07:27.366Z"
+    },
+    {
+      "id": "mn-1788869247389-og7v",
+      "name": "Flat Lock Machine",
+      "code": "FLAT",
+      "sortOrder": 18,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:07:27.389Z",
+      "updatedAt": "2026-09-08T12:07:27.389Z"
+    },
+    {
+      "id": "mn-1788869247412-uq2b",
+      "name": "Flat Lock with Raw Edge Cutting Machine",
+      "code": "FLAT",
+      "sortOrder": 19,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:07:27.412Z",
+      "updatedAt": "2026-09-08T12:07:27.412Z"
+    },
+    {
+      "id": "mn-1788869247437-eko1",
+      "name": "Pocket Facing",
+      "code": "POCK",
+      "sortOrder": 20,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:07:27.437Z",
+      "updatedAt": "2026-09-08T12:07:27.437Z"
+    },
+    {
+      "id": "mn-1788869247464-tmwu",
+      "name": "Zig Zag Machine",
+      "code": "ZIG ",
+      "sortOrder": 21,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:07:27.464Z",
+      "updatedAt": "2026-09-08T12:07:27.464Z"
+    },
+    {
+      "id": "mn-1788869247492-lklr",
+      "name": "Zipper Joint Machine",
+      "code": "ZIPP",
+      "sortOrder": 22,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:07:27.492Z",
+      "updatedAt": "2026-09-08T12:07:27.492Z"
+    },
+    {
+      "id": "mn-1788869247519-r7b9",
+      "name": "Top Stitch Machine",
+      "code": "TOP ",
+      "sortOrder": 23,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:07:27.519Z",
+      "updatedAt": "2026-09-08T12:07:27.519Z"
+    },
+    {
+      "id": "mn-1788869247545-jk2b",
+      "name": "Cuff Rolling Machine",
+      "code": "CUFF",
+      "sortOrder": 24,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:07:27.545Z",
+      "updatedAt": "2026-09-08T12:07:27.545Z"
+    },
+    {
+      "id": "mn-1788869247572-yzvd",
+      "name": "Sleeve Joint Machine",
+      "code": "SLEE",
+      "sortOrder": 25,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:07:27.572Z",
+      "updatedAt": "2026-09-08T12:07:27.572Z"
+    },
+    {
+      "id": "mn-1788869247600-l5sl",
+      "name": "Ham  Blind Stitch Machine",
+      "code": "HAM ",
+      "sortOrder": 26,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:07:27.600Z",
+      "updatedAt": "2026-09-08T12:07:27.600Z"
+    },
+    {
+      "id": "mn-1788869247648-z8k6",
+      "name": "Beltloop Blind Stitch Machine",
+      "code": "BELT",
+      "sortOrder": 27,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:07:27.648Z",
+      "updatedAt": "2026-09-08T12:07:27.648Z"
+    },
+    {
+      "id": "mn-1788869247678-ufc5",
+      "name": "Saddle Stitch",
+      "code": "SADD",
+      "sortOrder": 28,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:07:27.678Z",
+      "updatedAt": "2026-09-08T12:07:27.678Z"
+    },
+    {
+      "id": "mn-1788869247707-tfr8",
+      "name": "Leg Design Machine",
+      "code": "LEG ",
+      "sortOrder": 29,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:07:27.707Z",
+      "updatedAt": "2026-09-08T12:07:27.707Z"
+    },
+    {
+      "id": "mn-1788869247738-cne3",
+      "name": "Loop Attach Machine",
+      "code": "LOOP",
+      "sortOrder": 30,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:07:27.738Z",
+      "updatedAt": "2026-09-08T12:07:27.738Z"
+    },
+    {
+      "id": "mn-1788869247770-m8bb",
+      "name": "Pocket Rolling Machine",
+      "code": "POCK",
+      "sortOrder": 31,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:07:27.770Z",
+      "updatedAt": "2026-09-08T12:07:27.770Z"
+    },
+    {
+      "id": "mn-1788869247801-wids",
+      "name": "Pocket Attach Machine",
+      "code": "POCK",
+      "sortOrder": 32,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:07:27.801Z",
+      "updatedAt": "2026-09-08T12:07:27.801Z"
+    },
+    {
+      "id": "mn-1788869247834-vgs5",
+      "name": "Pocket Iron Machine",
+      "code": "POCK",
+      "sortOrder": 33,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:07:27.834Z",
+      "updatedAt": "2026-09-08T12:07:27.834Z"
+    },
+    {
+      "id": "mn-1788869247867-8oqf",
+      "name": "Sim Siling Machine",
+      "code": "SIM ",
+      "sortOrder": 34,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:07:27.867Z",
+      "updatedAt": "2026-09-08T12:07:27.867Z"
+    },
+    {
+      "id": "mn-1788869247903-nqk4",
+      "name": "Single Head Template",
+      "code": "SING",
+      "sortOrder": 35,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:07:27.903Z",
+      "updatedAt": "2026-09-08T12:07:27.903Z"
+    },
+    {
+      "id": "mn-1788869247938-8f2z",
+      "name": "Four Head Template",
+      "code": "FOUR",
+      "sortOrder": 36,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:07:27.938Z",
+      "updatedAt": "2026-09-08T12:07:27.938Z"
+    },
+    {
+      "id": "mn-1788869247974-l0c4",
+      "name": "Template Plastic Cutter Machine",
+      "code": "TEMP",
+      "sortOrder": 37,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:07:27.974Z",
+      "updatedAt": "2026-09-08T12:07:27.974Z"
+    },
+    {
+      "id": "mn-1788869248010-d3gm",
+      "name": "Fake Down Filling Machine",
+      "code": "FAKE",
+      "sortOrder": 38,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:07:28.010Z",
+      "updatedAt": "2026-09-08T12:07:28.010Z"
+    },
+    {
+      "id": "mn-1788869248051-qu30",
+      "name": "Manual Fake Down Filling Machine",
+      "code": "MANU",
+      "sortOrder": 39,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:07:28.051Z",
+      "updatedAt": "2026-09-08T12:07:28.051Z"
+    },
+    {
+      "id": "mn-1788869248090-qlef",
+      "name": "Rib Pipping Rolling Machine",
+      "code": "RIB ",
+      "sortOrder": 40,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:07:28.090Z",
+      "updatedAt": "2026-09-08T12:07:28.090Z"
+    },
+    {
+      "id": "mn-1788869248131-vkyn",
+      "name": "Double Head Auto Elastic Joint Sewing Machine",
+      "code": "DOUB",
+      "sortOrder": 41,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:07:28.131Z",
+      "updatedAt": "2026-09-08T12:07:28.131Z"
+    },
+    {
+      "id": "mn-1788869248171-y2r7",
+      "name": "Elastic Cutting Machine with Rotary Cutter Ultrasonic Auto",
+      "code": "ELAS",
+      "sortOrder": 42,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:07:28.171Z",
+      "updatedAt": "2026-09-08T12:07:28.171Z"
+    },
+    {
+      "id": "mn-1788869248212-t0rx",
+      "name": "Needle Detector",
+      "code": "NEED",
+      "sortOrder": 43,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:07:28.212Z",
+      "updatedAt": "2026-09-08T12:07:28.212Z"
+    },
+    {
+      "id": "mn-1788869248254-ez5p",
+      "name": "Snap Button Machine",
+      "code": "SNAP",
+      "sortOrder": 44,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:07:28.254Z",
+      "updatedAt": "2026-09-08T12:07:28.254Z"
+    },
+    {
+      "id": "mn-1788869248343-8lne",
+      "name": "Heat Transfer Machine",
+      "code": "HEAT",
+      "sortOrder": 45,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:07:28.343Z",
+      "updatedAt": "2026-09-08T12:07:28.343Z"
+    },
+    {
+      "id": "mn-1788869248391-xj87",
+      "name": "Thread Sucker",
+      "code": "THRE",
+      "sortOrder": 46,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:07:28.391Z",
+      "updatedAt": "2026-09-08T12:07:28.391Z"
+    },
+    {
+      "id": "mn-1788869248438-gnkf",
+      "name": "Pneumatic Topper Trouser Machine",
+      "code": "PNEU",
+      "sortOrder": 47,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:07:28.438Z",
+      "updatedAt": "2026-09-08T12:07:28.438Z"
+    },
+    {
+      "id": "mn-1788869248487-xbq7",
+      "name": "Toper Coating Machine",
+      "code": "TOPE",
+      "sortOrder": 48,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:07:28.487Z",
+      "updatedAt": "2026-09-08T12:07:28.487Z"
+    },
+    {
+      "id": "mn-1788869248537-2l2e",
+      "name": "Lagar Machine",
+      "code": "LAGA",
+      "sortOrder": 49,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:07:28.537Z",
+      "updatedAt": "2026-09-08T12:07:28.537Z"
+    },
+    {
+      "id": "mn-1788869248584-fpst",
+      "name": "Dosting Machine",
+      "code": "DOST",
+      "sortOrder": 50,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:07:28.584Z",
+      "updatedAt": "2026-09-08T12:07:28.584Z"
+    },
+    {
+      "id": "mn-1788869248629-r0en",
+      "name": "Plastic Staple Attache Machine",
+      "code": "PLAS",
+      "sortOrder": 51,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:07:28.629Z",
+      "updatedAt": "2026-09-08T12:07:28.630Z"
+    },
+    {
+      "id": "mn-1788869248676-h0mw",
+      "name": "Wrapping & Knotting Machine",
+      "code": "WRAP",
+      "sortOrder": 52,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:07:28.676Z",
+      "updatedAt": "2026-09-08T12:07:28.676Z"
+    },
+    {
+      "id": "mn-1788869248725-fihb",
+      "name": "Belt Cutter Machine",
+      "code": "BELT",
+      "sortOrder": 53,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:07:28.725Z",
+      "updatedAt": "2026-09-08T12:07:28.725Z"
+    },
+    {
+      "id": "mn-1788869248773-28fb",
+      "name": "Velcro Cutter Machine",
+      "code": "VELC",
+      "sortOrder": 54,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:07:28.774Z",
+      "updatedAt": "2026-09-08T12:07:28.774Z"
+    },
+    {
+      "id": "mn-1788869248826-hmjl",
+      "name": "Crease License Machine",
+      "code": "CREA",
+      "sortOrder": 55,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:07:28.826Z",
+      "updatedAt": "2026-09-08T12:07:28.826Z"
+    },
+    {
+      "id": "mn-1788869248876-fjn2",
+      "name": "Fusing Machine",
+      "code": "FUSI",
+      "sortOrder": 56,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:07:28.876Z",
+      "updatedAt": "2026-09-08T12:07:28.876Z"
+    },
+    {
+      "id": "mn-1788869248929-wl7z",
+      "name": "Auto Fabric Relax Machine",
+      "code": "AUTO",
+      "sortOrder": 57,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:07:28.929Z",
+      "updatedAt": "2026-09-08T12:07:28.929Z"
+    },
+    {
+      "id": "mn-1788869248982-y0ux",
+      "name": "Fabric Relax Machine",
+      "code": "FABR",
+      "sortOrder": 58,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:07:28.982Z",
+      "updatedAt": "2026-09-08T12:07:28.982Z"
+    },
+    {
+      "id": "mn-1788869249035-7x6c",
+      "name": "Fabric Inspection  Machine",
+      "code": "FABR",
+      "sortOrder": 59,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:07:29.035Z",
+      "updatedAt": "2026-09-08T12:07:29.035Z"
+    },
+    {
+      "id": "mn-1788869249087-y4uj",
+      "name": "Rib Cutting Machine",
+      "code": "RIB ",
+      "sortOrder": 60,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:07:29.087Z",
+      "updatedAt": "2026-09-08T12:07:29.087Z"
+    },
+    {
+      "id": "mn-1788869249143-swop",
+      "name": "Piping Cutting Machine",
+      "code": "PIPI",
+      "sortOrder": 61,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:07:29.143Z",
+      "updatedAt": "2026-09-08T12:07:29.143Z"
+    },
+    {
+      "id": "mn-1788869249197-wx5o",
+      "name": "Cloth Cutting Machine",
+      "code": "CLOT",
+      "sortOrder": 62,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:07:29.197Z",
+      "updatedAt": "2026-09-08T12:07:29.197Z"
+    },
+    {
+      "id": "mn-1788869249252-08ik",
+      "name": "Spreading Machine",
+      "code": "SPRE",
+      "sortOrder": 63,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:07:29.252Z",
+      "updatedAt": "2026-09-08T12:07:29.252Z"
+    },
+    {
+      "id": "mn-1788869249347-orfo",
+      "name": "Plotter Machine",
+      "code": "PLOT",
+      "sortOrder": 64,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:07:29.347Z",
+      "updatedAt": "2026-09-08T12:07:29.347Z"
+    },
+    {
+      "id": "mn-1788869249407-drig",
+      "name": "Pattern Machine",
+      "code": "PATT",
+      "sortOrder": 65,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:07:29.407Z",
+      "updatedAt": "2026-09-08T12:07:29.407Z"
+    },
+    {
+      "id": "mn-1788869249460-vy8d",
+      "name": "Power Cloth Drill Machine",
+      "code": "POWE",
+      "sortOrder": 66,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:07:29.460Z",
+      "updatedAt": "2026-09-08T12:07:29.460Z"
+    },
+    {
+      "id": "mn-1788869249515-g9he",
+      "name": "End Cutter Machine",
+      "code": "END ",
+      "sortOrder": 67,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:07:29.515Z",
+      "updatedAt": "2026-09-08T12:07:29.515Z"
+    },
+    {
+      "id": "mn-1788869249572-5twr",
+      "name": "P. P. Belt Machine",
+      "code": "P. P",
+      "sortOrder": 68,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:07:29.572Z",
+      "updatedAt": "2026-09-08T12:07:29.572Z"
+    },
+    {
+      "id": "mn-1788869249628-x1d3",
+      "name": "Band Knife Cutting Machine",
+      "code": "BAND",
+      "sortOrder": 69,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:07:29.628Z",
+      "updatedAt": "2026-09-08T12:07:29.628Z"
+    },
+    {
+      "id": "mn-1788869249685-iqd4",
+      "name": "Manual Embroidery Machine (Single Needle)",
+      "code": "MANU",
+      "sortOrder": 70,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:07:29.685Z",
+      "updatedAt": "2026-09-08T12:07:29.685Z"
+    },
+    {
+      "id": "mn-1788869249745-ktl5",
+      "name": "Embroidery Machine",
+      "code": "EMBR",
+      "sortOrder": 71,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:07:29.745Z",
+      "updatedAt": "2026-09-08T12:07:29.745Z"
+    },
+    {
+      "id": "mn-1788869249804-6qe8",
+      "name": "Quilting Machine",
+      "code": "QUIL",
+      "sortOrder": 72,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:07:29.804Z",
+      "updatedAt": "2026-09-08T12:07:29.804Z"
+    },
+    {
+      "id": "mn-1788869249866-brxu",
+      "name": "Quilting Bobbin Machine",
+      "code": "QUIL",
+      "sortOrder": 73,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:07:29.866Z",
+      "updatedAt": "2026-09-08T12:07:29.866Z"
+    },
+    {
+      "id": "mn-1788869249953-ia15",
+      "name": "Quilting Rolling Machine",
+      "code": "QUIL",
+      "sortOrder": 74,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:07:29.953Z",
+      "updatedAt": "2026-09-08T12:07:29.953Z"
+    },
+    {
+      "id": "mn-1788869250042-uxde",
+      "name": "Applique Laser Cutting Machine",
+      "code": "APPL",
+      "sortOrder": 75,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:07:30.042Z",
+      "updatedAt": "2026-09-08T12:07:30.042Z"
+    },
+    {
+      "id": "mn-1788869250121-2zqp",
+      "name": "Automatic Hole Punching Machine",
+      "code": "AUTO",
+      "sortOrder": 76,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:07:30.121Z",
+      "updatedAt": "2026-09-08T12:07:30.121Z"
+    }
+  ],
   "machines": [
     {
       "machineNameId": "mn-1788869247046-drnu",
@@ -97682,7 +98574,648 @@
       "id": "mac-1790660610811-553"
     }
   ],
-  "models": [],
+  "models": [
+    {
+      "name": "DDL-900BB",
+      "machineNameId": "mn-1788869247046-drnu",
+      "brandId": "bra-1788870296743-965",
+      "description": "Auto-created from Excel import",
+      "status": "ACTIVE",
+      "id": "mod-1788870296743-332",
+      "createdAt": "2026-09-08T12:24:56.743Z",
+      "updatedAt": "2026-09-08T12:24:56.743Z"
+    },
+    {
+      "name": "LH-3588A",
+      "machineNameId": "mn-1788869247046-drnu",
+      "brandId": "bra-1788870296743-965",
+      "description": "Auto-created from Excel import",
+      "status": "ACTIVE",
+      "id": "mod-1788870296743-83",
+      "createdAt": "2026-09-08T12:24:56.743Z",
+      "updatedAt": "2026-09-08T12:24:56.743Z"
+    },
+    {
+      "name": "DDL-9000B-SH",
+      "machineNameId": "mn-1788869247046-drnu",
+      "brandId": "bra-1788870296743-965",
+      "description": "Auto-created from Excel import",
+      "status": "ACTIVE",
+      "id": "mod-1788870296743-691",
+      "createdAt": "2026-09-08T12:24:56.744Z",
+      "updatedAt": "2026-09-08T12:24:56.744Z"
+    },
+    {
+      "name": "DDL-900C",
+      "machineNameId": "mn-1788869247046-drnu",
+      "brandId": "bra-1788870296743-965",
+      "description": "Auto-created from Excel import",
+      "status": "ACTIVE",
+      "id": "mod-1788870296744-957",
+      "createdAt": "2026-09-08T12:24:56.744Z",
+      "updatedAt": "2026-09-08T12:24:56.744Z"
+    },
+    {
+      "name": "DDL-8000A",
+      "machineNameId": "mn-1788869247046-drnu",
+      "brandId": "bra-1788870296743-965",
+      "description": "Auto-created from Excel import",
+      "status": "ACTIVE",
+      "id": "mod-1788870296744-43",
+      "createdAt": "2026-09-08T12:24:56.744Z",
+      "updatedAt": "2026-09-08T12:24:56.744Z"
+    },
+    {
+      "name": "MO-6716S",
+      "machineNameId": "mn-1788869247046-drnu",
+      "brandId": "bra-1788870296743-965",
+      "description": "Auto-created from Excel import",
+      "status": "ACTIVE",
+      "id": "mod-1788870296744-452",
+      "createdAt": "2026-09-08T12:24:56.744Z",
+      "updatedAt": "2026-09-08T12:24:56.744Z"
+    },
+    {
+      "name": "BDL-B5593B-7",
+      "machineNameId": "mn-1788869247046-drnu",
+      "brandId": "bra-1788870296743-965",
+      "description": "Auto-created from Excel import",
+      "status": "ACTIVE",
+      "id": "mod-1788870296744-679",
+      "createdAt": "2026-09-08T12:24:56.744Z",
+      "updatedAt": "2026-09-08T12:24:56.744Z"
+    },
+    {
+      "name": "BDL-B5090B-7",
+      "machineNameId": "mn-1788869247046-drnu",
+      "brandId": "bra-1788870296743-965",
+      "description": "Auto-created from Excel import",
+      "status": "ACTIVE",
+      "id": "mod-1788870296744-31",
+      "createdAt": "2026-09-08T12:24:56.744Z",
+      "updatedAt": "2026-09-08T12:24:56.744Z"
+    },
+    {
+      "name": "WFB-8202",
+      "machineNameId": "mn-1788869247046-drnu",
+      "brandId": "bra-1788870296743-965",
+      "description": "Auto-created from Excel import",
+      "status": "ACTIVE",
+      "id": "mod-1788870296744-17",
+      "createdAt": "2026-09-08T12:24:56.744Z",
+      "updatedAt": "2026-09-08T12:24:56.744Z"
+    },
+    {
+      "name": "LK-1900B",
+      "machineNameId": "mn-1788869247046-drnu",
+      "brandId": "bra-1788870296743-965",
+      "description": "Auto-created from Excel import",
+      "status": "ACTIVE",
+      "id": "mod-1788870296744-331",
+      "createdAt": "2026-09-08T12:24:56.744Z",
+      "updatedAt": "2026-09-08T12:24:56.744Z"
+    },
+    {
+      "name": "DDL-8700-7",
+      "machineNameId": "mn-1788869247046-drnu",
+      "brandId": "bra-1788870296743-965",
+      "description": "Auto-created from Excel import",
+      "status": "ACTIVE",
+      "id": "mod-1788870296744-767",
+      "createdAt": "2026-09-08T12:24:56.744Z",
+      "updatedAt": "2026-09-08T12:24:56.744Z"
+    },
+    {
+      "name": "ZJ-3800",
+      "machineNameId": "mn-1788869247046-drnu",
+      "brandId": "bra-1788870296743-965",
+      "description": "Auto-created from Excel import",
+      "status": "ACTIVE",
+      "id": "mod-1788870296744-927",
+      "createdAt": "2026-09-08T12:24:56.744Z",
+      "updatedAt": "2026-09-08T12:24:56.744Z"
+    },
+    {
+      "name": "DLM-5200N",
+      "machineNameId": "mn-1788869247046-drnu",
+      "brandId": "bra-1788870296743-965",
+      "description": "Auto-created from Excel import",
+      "status": "ACTIVE",
+      "id": "mod-1788870296744-544",
+      "createdAt": "2026-09-08T12:24:56.744Z",
+      "updatedAt": "2026-09-08T12:24:56.744Z"
+    },
+    {
+      "name": "CM-5300",
+      "machineNameId": "mn-1788869247046-drnu",
+      "brandId": "bra-1788870296743-965",
+      "description": "Auto-created from Excel import",
+      "status": "ACTIVE",
+      "id": "mod-1788870296744-312",
+      "createdAt": "2026-09-08T12:24:56.744Z",
+      "updatedAt": "2026-09-08T12:24:56.744Z"
+    },
+    {
+      "name": "BDL-B7491B",
+      "machineNameId": "mn-1788869247046-drnu",
+      "brandId": "bra-1788870296743-965",
+      "description": "Auto-created from Excel import",
+      "status": "ACTIVE",
+      "id": "mod-1788870296744-172",
+      "createdAt": "2026-09-08T12:24:56.744Z",
+      "updatedAt": "2026-09-08T12:24:56.744Z"
+    },
+    {
+      "name": "MO-6714DA",
+      "machineNameId": "mn-1788869247046-drnu",
+      "brandId": "bra-1788870296743-965",
+      "description": "Auto-created from Excel import",
+      "status": "ACTIVE",
+      "id": "mod-1788870296744-295",
+      "createdAt": "2026-09-08T12:24:56.744Z",
+      "updatedAt": "2026-09-08T12:24:56.744Z"
+    },
+    {
+      "name": "BDL--B6490C-7",
+      "machineNameId": "mn-1788869247046-drnu",
+      "brandId": "bra-1788870296743-965",
+      "description": "Auto-created from Excel import",
+      "status": "ACTIVE",
+      "id": "mod-1788870296745-715",
+      "createdAt": "2026-09-08T12:24:56.745Z",
+      "updatedAt": "2026-09-08T12:24:56.745Z"
+    },
+    {
+      "name": "DFB-1415",
+      "machineNameId": "mn-1788869247046-drnu",
+      "brandId": "bra-1788870296743-965",
+      "description": "Auto-created from Excel import",
+      "status": "ACTIVE",
+      "id": "mod-1788870296745-273",
+      "createdAt": "2026-09-08T12:24:56.745Z",
+      "updatedAt": "2026-09-08T12:24:56.745Z"
+    },
+    {
+      "name": "LK-1900BN",
+      "machineNameId": "mn-1788869247046-drnu",
+      "brandId": "bra-1788870296743-965",
+      "description": "Auto-created from Excel import",
+      "status": "ACTIVE",
+      "id": "mod-1788870296745-277",
+      "createdAt": "2026-09-08T12:24:56.745Z",
+      "updatedAt": "2026-09-08T12:24:56.745Z"
+    },
+    {
+      "name": "NS-47",
+      "machineNameId": "mn-1788869247046-drnu",
+      "brandId": "bra-1788870296743-965",
+      "description": "Auto-created from Excel import",
+      "status": "ACTIVE",
+      "id": "mod-1788870296745-671",
+      "createdAt": "2026-09-08T12:24:56.745Z",
+      "updatedAt": "2026-09-08T12:24:56.745Z"
+    },
+    {
+      "name": "LH-3578A",
+      "machineNameId": "mn-1788869247046-drnu",
+      "brandId": "bra-1788870296743-965",
+      "description": "Auto-created from Excel import",
+      "status": "ACTIVE",
+      "id": "mod-1788870296745-790",
+      "createdAt": "2026-09-08T12:24:56.745Z",
+      "updatedAt": "2026-09-08T12:24:56.745Z"
+    },
+    {
+      "name": "CM-380",
+      "machineNameId": "mn-1788869247046-drnu",
+      "brandId": "bra-1788870296743-965",
+      "description": "Auto-created from Excel import",
+      "status": "ACTIVE",
+      "id": "mod-1788870296745-928",
+      "createdAt": "2026-09-08T12:24:56.745Z",
+      "updatedAt": "2026-09-08T12:24:56.745Z"
+    },
+    {
+      "name": "JK-8558",
+      "machineNameId": "mn-1788869247046-drnu",
+      "brandId": "bra-1788870296743-965",
+      "description": "Auto-created from Excel import",
+      "status": "ACTIVE",
+      "id": "mod-1788870296745-343",
+      "createdAt": "2026-09-08T12:24:56.745Z",
+      "updatedAt": "2026-09-08T12:24:56.745Z"
+    },
+    {
+      "name": "WFB-5509",
+      "machineNameId": "mn-1788869247046-drnu",
+      "brandId": "bra-1788870296743-965",
+      "description": "Auto-created from Excel import",
+      "status": "ACTIVE",
+      "id": "mod-1788870296745-408",
+      "createdAt": "2026-09-08T12:24:56.745Z",
+      "updatedAt": "2026-09-08T12:24:56.745Z"
+    },
+    {
+      "name": "DA-928-A-9",
+      "machineNameId": "mn-1788869247046-drnu",
+      "brandId": "bra-1788870296743-965",
+      "description": "Auto-created from Excel import",
+      "status": "ACTIVE",
+      "id": "mod-1788870296745-517",
+      "createdAt": "2026-09-08T12:24:56.745Z",
+      "updatedAt": "2026-09-08T12:24:56.745Z"
+    },
+    {
+      "name": "MS-1190",
+      "machineNameId": "mn-1788869247046-drnu",
+      "brandId": "bra-1788870296743-965",
+      "description": "Auto-created from Excel import",
+      "status": "ACTIVE",
+      "id": "mod-1788870296745-834",
+      "createdAt": "2026-09-08T12:24:56.745Z",
+      "updatedAt": "2026-09-08T12:24:56.745Z"
+    },
+    {
+      "name": "JT-801N",
+      "machineNameId": "mn-1788869247046-drnu",
+      "brandId": "bra-1788870296743-965",
+      "description": "Auto-created from Excel import",
+      "status": "ACTIVE",
+      "id": "mod-1788870296745-463",
+      "createdAt": "2026-09-08T12:24:56.745Z",
+      "updatedAt": "2026-09-08T12:24:56.745Z"
+    },
+    {
+      "name": "SG-8200",
+      "machineNameId": "mn-1788869247046-drnu",
+      "brandId": "bra-1788870296743-965",
+      "description": "Auto-created from Excel import",
+      "status": "ACTIVE",
+      "id": "mod-1788870296745-194",
+      "createdAt": "2026-09-08T12:24:56.745Z",
+      "updatedAt": "2026-09-08T12:24:56.745Z"
+    },
+    {
+      "name": "KZ-1060",
+      "machineNameId": "mn-1788869247046-drnu",
+      "brandId": "bra-1788870296743-965",
+      "description": "Auto-created from Excel import",
+      "status": "ACTIVE",
+      "id": "mod-1788870296745-377",
+      "createdAt": "2026-09-08T12:24:56.745Z",
+      "updatedAt": "2026-09-08T12:24:56.745Z"
+    },
+    {
+      "name": "MS-1261",
+      "machineNameId": "mn-1788869247046-drnu",
+      "brandId": "bra-1788870296743-965",
+      "description": "Auto-created from Excel import",
+      "status": "ACTIVE",
+      "id": "mod-1788870296745-665",
+      "createdAt": "2026-09-08T12:24:56.745Z",
+      "updatedAt": "2026-09-08T12:24:56.745Z"
+    },
+    {
+      "name": "2000C",
+      "machineNameId": "mn-1788869247046-drnu",
+      "brandId": "bra-1788870296743-965",
+      "description": "Auto-created from Excel import",
+      "status": "ACTIVE",
+      "id": "mod-1788870296745-148",
+      "createdAt": "2026-09-08T12:24:56.745Z",
+      "updatedAt": "2026-09-08T12:24:56.745Z"
+    },
+    {
+      "name": "LBH-1790",
+      "machineNameId": "mn-1788869247046-drnu",
+      "brandId": "bra-1788870296743-965",
+      "description": "Auto-created from Excel import",
+      "status": "ACTIVE",
+      "id": "mod-1788870296745-891",
+      "createdAt": "2026-09-08T12:24:56.745Z",
+      "updatedAt": "2026-09-08T12:24:56.745Z"
+    },
+    {
+      "name": "WX-8842",
+      "machineNameId": "mn-1788869247046-drnu",
+      "brandId": "bra-1788870296743-965",
+      "description": "Auto-created from Excel import",
+      "status": "ACTIVE",
+      "id": "mod-1788870296746-465",
+      "createdAt": "2026-09-08T12:24:56.746Z",
+      "updatedAt": "2026-09-08T12:24:56.746Z"
+    },
+    {
+      "name": "VAX-W500",
+      "machineNameId": "mn-1788869247046-drnu",
+      "brandId": "bra-1788870296743-965",
+      "description": "Auto-created from Excel import",
+      "status": "ACTIVE",
+      "id": "mod-1788870296746-387",
+      "createdAt": "2026-09-08T12:24:56.746Z",
+      "updatedAt": "2026-09-08T12:24:56.746Z"
+    },
+    {
+      "name": "IH-500-7",
+      "machineNameId": "mn-1788869247046-drnu",
+      "brandId": "bra-1788870296743-965",
+      "description": "Auto-created from Excel import",
+      "status": "ACTIVE",
+      "id": "mod-1788870296746-579",
+      "createdAt": "2026-09-08T12:24:56.746Z",
+      "updatedAt": "2026-09-08T12:24:56.746Z"
+    },
+    {
+      "name": "CM-5003",
+      "machineNameId": "mn-1788869247046-drnu",
+      "brandId": "bra-1788870296743-965",
+      "description": "Auto-created from Excel import",
+      "status": "ACTIVE",
+      "id": "mod-1788870296746-910",
+      "createdAt": "2026-09-08T12:24:56.746Z",
+      "updatedAt": "2026-09-08T12:24:56.746Z"
+    },
+    {
+      "name": "MF-7923",
+      "machineNameId": "mn-1788869247046-drnu",
+      "brandId": "bra-1788870296743-965",
+      "description": "Auto-created from Excel import",
+      "status": "ACTIVE",
+      "id": "mod-1788870296746-861",
+      "createdAt": "2026-09-08T12:24:56.746Z",
+      "updatedAt": "2026-09-08T12:24:56.746Z"
+    },
+    {
+      "name": "DFB-1411",
+      "machineNameId": "mn-1788869247046-drnu",
+      "brandId": "bra-1788870296743-965",
+      "description": "Auto-created from Excel import",
+      "status": "ACTIVE",
+      "id": "mod-1788870296746-285",
+      "createdAt": "2026-09-08T12:24:56.746Z",
+      "updatedAt": "2026-09-08T12:24:56.746Z"
+    },
+    {
+      "name": "BBL-900BB",
+      "machineNameId": "mn-1788869247046-drnu",
+      "brandId": "bra-1788870296743-965",
+      "description": "Auto-created from Excel import",
+      "status": "ACTIVE",
+      "id": "mod-1788870296746-919",
+      "createdAt": "2026-09-08T12:24:56.746Z",
+      "updatedAt": "2026-09-08T12:24:56.746Z"
+    },
+    {
+      "name": "ZJ-3820",
+      "machineNameId": "mn-1788869247046-drnu",
+      "brandId": "bra-1788870296743-965",
+      "description": "Auto-created from Excel import",
+      "status": "ACTIVE",
+      "id": "mod-1788870296746-564",
+      "createdAt": "2026-09-08T12:24:56.746Z",
+      "updatedAt": "2026-09-08T12:24:56.746Z"
+    },
+    {
+      "id": "md-1",
+      "name": "LH-3588A",
+      "machineNameId": "mn-1788869247076-glop",
+      "machineName": "Double Needle Machine",
+      "brandId": "bra-1788870296743-965",
+      "brandName": "JUKI",
+      "description": "JUKI LH-3588A under Double Needle Machine",
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:24:56.743Z",
+      "updatedAt": "2026-09-08T12:24:56.743Z"
+    },
+    {
+      "id": "mod-1790659051019-763",
+      "name": "DDL-8700",
+      "machineNameId": "mn-1788869247046-drnu",
+      "machineName": "Plane Machine",
+      "brandId": "bra-1788870296743-965",
+      "brandName": "JUKI",
+      "description": "JUKI DDL-8700 under Plane Machine",
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:24:56.743Z",
+      "updatedAt": "2026-09-08T12:24:56.743Z"
+    },
+    {
+      "id": "mod-1790659051021-696",
+      "name": "ZJ-3800",
+      "machineNameId": "mn-1788869247141-kx1a",
+      "machineName": "Chain Stitch Machine",
+      "brandId": "bra-1788870296743-664",
+      "brandName": "ZOJE",
+      "description": "ZOJE ZJ-3800 under Chain Stitch Machine",
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:24:56.743Z",
+      "updatedAt": "2026-09-08T12:24:56.743Z"
+    },
+    {
+      "id": "mod-1790659051022-815",
+      "name": "MS-1261",
+      "machineNameId": "mn-1788869247100-2uyc",
+      "machineName": "Feed of The Arm Machine",
+      "brandId": "bra-1788870296743-965",
+      "brandName": "JUKI",
+      "description": "JUKI MS-1261 under Feed of The Arm Machine",
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:24:56.743Z",
+      "updatedAt": "2026-09-08T12:24:56.743Z"
+    },
+    {
+      "id": "mod-1790659051024-171",
+      "name": "MB-1377",
+      "machineNameId": "mn-1788869247224-rmvf",
+      "machineName": "Button Stitch",
+      "brandId": "bra-1788870296743-965",
+      "brandName": "JUKI",
+      "description": "JUKI MB-1377 under Button Stitch",
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:24:56.743Z",
+      "updatedAt": "2026-09-08T12:24:56.743Z"
+    },
+    {
+      "id": "mod-1790659051025-150",
+      "name": "DLM-5200N",
+      "machineNameId": "mn-1788869247061-9dsy",
+      "machineName": "Vertical Machine",
+      "brandId": "bra-1788870296743-965",
+      "brandName": "JUKI",
+      "description": "JUKI DLM-5200N under Vertical Machine",
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:24:56.743Z",
+      "updatedAt": "2026-09-08T12:24:56.743Z"
+    },
+    {
+      "id": "mod-1790659051028-217",
+      "name": "TREX-500",
+      "machineNameId": "mn-1788869247600-l5sl",
+      "machineName": "Ham  Blind Stitch Machine",
+      "brandId": "bra-1790659051026-121",
+      "brandName": "TREX",
+      "description": "TREX TREX-500 under Ham  Blind Stitch Machine",
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:24:56.743Z",
+      "updatedAt": "2026-09-08T12:24:56.743Z"
+    },
+    {
+      "id": "mod-1790659051031-455",
+      "name": "WFB-5509",
+      "machineNameId": "mn-1788869247176-2gzf",
+      "machineName": "Multi Needle Chain Stitch Machine",
+      "brandId": "bra-1790659051051-509",
+      "brandName": "KANSAI SPECIAL",
+      "description": "KANSAI SPECIAL WFB-5509 under Multi Needle Chain Stitch Machine",
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:24:56.743Z",
+      "updatedAt": "2026-09-08T12:24:56.743Z"
+    },
+    {
+      "id": "mod-1790659051031-352",
+      "name": "MEB-3200",
+      "machineNameId": "mn-1788869247262-kbo0",
+      "machineName": "Eye let Hole Machine",
+      "brandId": "bra-1788870296743-965",
+      "brandName": "JUKI",
+      "description": "JUKI MEB-3200 under Eye let Hole Machine",
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:24:56.743Z",
+      "updatedAt": "2026-09-08T12:24:56.743Z"
+    },
+    {
+      "id": "mod-1790659051038-555",
+      "name": "LBH-1790S",
+      "machineNameId": "mn-1788869247243-7wlt",
+      "machineName": "Button Hole Machine",
+      "brandId": "bra-1788870296743-965",
+      "brandName": "JUKI",
+      "description": "JUKI LBH-1790S under Button Hole Machine",
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:24:56.743Z",
+      "updatedAt": "2026-09-08T12:24:56.743Z"
+    },
+    {
+      "id": "mod-1790659051043-88",
+      "name": "DLR-1508P",
+      "machineNameId": "mn-1788869247176-2gzf",
+      "machineName": "Multi Needle Chain Stitch Machine",
+      "brandId": "bra-1790659051051-509",
+      "brandName": "KANSAI SPECIAL",
+      "description": "KANSAI SPECIAL DLR-1508P under Multi Needle Chain Stitch Machine",
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:24:56.743Z",
+      "updatedAt": "2026-09-08T12:24:56.743Z"
+    },
+    {
+      "id": "mod-1790659051043-391",
+      "name": "DLM-5200N",
+      "machineNameId": "mn-1788869247061-9dsy",
+      "machineName": "Vertical Machine",
+      "brandId": "bra-1788870296743-965",
+      "brandName": "JUKI",
+      "description": "JUKI DLM-5200N under Vertical Machine",
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:24:56.743Z",
+      "updatedAt": "2026-09-08T12:24:56.743Z"
+    },
+    {
+      "id": "mod-1790659051099-0",
+      "name": "LH-3588A",
+      "machineNameId": "mn-1788869247076-glop",
+      "machineName": "Double Needle Machine",
+      "brandId": "bra-1788870296743-965",
+      "brandName": "JUKI",
+      "description": "JUKI LH-3588A under Double Needle Machine",
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:24:56.743Z",
+      "updatedAt": "2026-09-08T12:24:56.743Z"
+    },
+    {
+      "id": "mod-1790659051048-171",
+      "name": "DA-928-A-5",
+      "machineNameId": "mn-1788869247100-2uyc",
+      "machineName": "Feed of The Arm Machine",
+      "brandId": "bra-1788870296743-410",
+      "brandName": "BROTHER",
+      "description": "BROTHER DA-928-A-5 under Feed of The Arm Machine",
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:24:56.743Z",
+      "updatedAt": "2026-09-08T12:24:56.743Z"
+    },
+    {
+      "id": "mod-1790659051054-112",
+      "name": "MS-1261",
+      "machineNameId": "mn-1788869247100-2uyc",
+      "machineName": "Feed of The Arm Machine",
+      "brandId": "bra-1788870296743-965",
+      "brandName": "JUKI",
+      "description": "JUKI MS-1261 under Feed of The Arm Machine",
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:24:56.743Z",
+      "updatedAt": "2026-09-08T12:24:56.743Z"
+    },
+    {
+      "id": "mod-1790659051060-68",
+      "name": "MB-1377",
+      "machineNameId": "mn-1788869247224-rmvf",
+      "machineName": "Button Stitch",
+      "brandId": "bra-1788870296743-965",
+      "brandName": "JUKI",
+      "description": "JUKI MB-1377 under Button Stitch",
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:24:56.743Z",
+      "updatedAt": "2026-09-08T12:24:56.743Z"
+    },
+    {
+      "id": "mod-1790659051064-665",
+      "name": "W562",
+      "machineNameId": "mn-1788869247389-og7v",
+      "machineName": "Flat Lock Machine",
+      "brandId": "bra-1788870296743-664",
+      "brandName": "ZOJE",
+      "description": "ZOJE W562 under Flat Lock Machine",
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:24:56.743Z",
+      "updatedAt": "2026-09-08T12:24:56.743Z"
+    },
+    {
+      "id": "mod-1790659051070-460",
+      "name": "ZJ-3800",
+      "machineNameId": "mn-1788869247141-kx1a",
+      "machineName": "Chain Stitch Machine",
+      "brandId": "bra-1788870296743-664",
+      "brandName": "ZOJE",
+      "description": "ZOJE ZJ-3800 under Chain Stitch Machine",
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:24:56.743Z",
+      "updatedAt": "2026-09-08T12:24:56.743Z"
+    },
+    {
+      "id": "mod-1790659051082-845",
+      "name": "DDL-8700-7",
+      "machineNameId": "mn-1788869247046-drnu",
+      "machineName": "Plane Machine",
+      "brandId": "bra-1788870296743-965",
+      "brandName": "JUKI",
+      "description": "JUKI DDL-8700-7 under Plane Machine",
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:24:56.743Z",
+      "updatedAt": "2026-09-08T12:24:56.743Z"
+    },
+    {
+      "id": "mod-1790659051091-998",
+      "name": "LBH-1790S",
+      "machineNameId": "mn-1788869247243-7wlt",
+      "machineName": "Button Hole Machine",
+      "brandId": "bra-1788870296743-965",
+      "brandName": "JUKI",
+      "description": "JUKI LBH-1790S under Button Hole Machine",
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:24:56.743Z",
+      "updatedAt": "2026-09-08T12:24:56.743Z"
+    }
+  ],
   "notifications": [
     {
       "id": "notif-showcase-user-1",
@@ -155513,6 +157046,666 @@
       ],
       "status": "ACTIVE",
       "createdAt": "2026-01-01T00:00:00Z"
+    },
+    {
+      "id": "sm-mod-1788870296743-332",
+      "category": "MACHINE",
+      "machineName": "Plane Machine",
+      "brand": "JUKI",
+      "model": "DDL-900BB",
+      "sortOrder": 1,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:24:56.743Z",
+      "updatedAt": "2026-09-08T12:24:56.743Z"
+    },
+    {
+      "id": "sm-mod-1788870296743-83",
+      "category": "MACHINE",
+      "machineName": "Plane Machine",
+      "brand": "JUKI",
+      "model": "LH-3588A",
+      "sortOrder": 2,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:24:56.743Z",
+      "updatedAt": "2026-09-08T12:24:56.743Z"
+    },
+    {
+      "id": "sm-mod-1788870296743-691",
+      "category": "MACHINE",
+      "machineName": "Plane Machine",
+      "brand": "JUKI",
+      "model": "DDL-9000B-SH",
+      "sortOrder": 3,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:24:56.744Z",
+      "updatedAt": "2026-09-08T12:24:56.744Z"
+    },
+    {
+      "id": "sm-mod-1788870296744-957",
+      "category": "MACHINE",
+      "machineName": "Plane Machine",
+      "brand": "JUKI",
+      "model": "DDL-900C",
+      "sortOrder": 4,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:24:56.744Z",
+      "updatedAt": "2026-09-08T12:24:56.744Z"
+    },
+    {
+      "id": "sm-mod-1788870296744-43",
+      "category": "MACHINE",
+      "machineName": "Plane Machine",
+      "brand": "JUKI",
+      "model": "DDL-8000A",
+      "sortOrder": 5,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:24:56.744Z",
+      "updatedAt": "2026-09-08T12:24:56.744Z"
+    },
+    {
+      "id": "sm-mod-1788870296744-452",
+      "category": "MACHINE",
+      "machineName": "Plane Machine",
+      "brand": "JUKI",
+      "model": "MO-6716S",
+      "sortOrder": 6,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:24:56.744Z",
+      "updatedAt": "2026-09-08T12:24:56.744Z"
+    },
+    {
+      "id": "sm-mod-1788870296744-679",
+      "category": "MACHINE",
+      "machineName": "Plane Machine",
+      "brand": "JUKI",
+      "model": "BDL-B5593B-7",
+      "sortOrder": 7,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:24:56.744Z",
+      "updatedAt": "2026-09-08T12:24:56.744Z"
+    },
+    {
+      "id": "sm-mod-1788870296744-31",
+      "category": "MACHINE",
+      "machineName": "Plane Machine",
+      "brand": "JUKI",
+      "model": "BDL-B5090B-7",
+      "sortOrder": 8,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:24:56.744Z",
+      "updatedAt": "2026-09-08T12:24:56.744Z"
+    },
+    {
+      "id": "sm-mod-1788870296744-17",
+      "category": "MACHINE",
+      "machineName": "Plane Machine",
+      "brand": "JUKI",
+      "model": "WFB-8202",
+      "sortOrder": 9,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:24:56.744Z",
+      "updatedAt": "2026-09-08T12:24:56.744Z"
+    },
+    {
+      "id": "sm-mod-1788870296744-331",
+      "category": "MACHINE",
+      "machineName": "Plane Machine",
+      "brand": "JUKI",
+      "model": "LK-1900B",
+      "sortOrder": 10,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:24:56.744Z",
+      "updatedAt": "2026-09-08T12:24:56.744Z"
+    },
+    {
+      "id": "sm-mod-1788870296744-767",
+      "category": "MACHINE",
+      "machineName": "Plane Machine",
+      "brand": "JUKI",
+      "model": "DDL-8700-7",
+      "sortOrder": 11,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:24:56.744Z",
+      "updatedAt": "2026-09-08T12:24:56.744Z"
+    },
+    {
+      "id": "sm-mod-1788870296744-927",
+      "category": "MACHINE",
+      "machineName": "Plane Machine",
+      "brand": "JUKI",
+      "model": "ZJ-3800",
+      "sortOrder": 12,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:24:56.744Z",
+      "updatedAt": "2026-09-08T12:24:56.744Z"
+    },
+    {
+      "id": "sm-mod-1788870296744-544",
+      "category": "MACHINE",
+      "machineName": "Plane Machine",
+      "brand": "JUKI",
+      "model": "DLM-5200N",
+      "sortOrder": 13,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:24:56.744Z",
+      "updatedAt": "2026-09-08T12:24:56.744Z"
+    },
+    {
+      "id": "sm-mod-1788870296744-312",
+      "category": "MACHINE",
+      "machineName": "Plane Machine",
+      "brand": "JUKI",
+      "model": "CM-5300",
+      "sortOrder": 14,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:24:56.744Z",
+      "updatedAt": "2026-09-08T12:24:56.744Z"
+    },
+    {
+      "id": "sm-mod-1788870296744-172",
+      "category": "MACHINE",
+      "machineName": "Plane Machine",
+      "brand": "JUKI",
+      "model": "BDL-B7491B",
+      "sortOrder": 15,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:24:56.744Z",
+      "updatedAt": "2026-09-08T12:24:56.744Z"
+    },
+    {
+      "id": "sm-mod-1788870296744-295",
+      "category": "MACHINE",
+      "machineName": "Plane Machine",
+      "brand": "JUKI",
+      "model": "MO-6714DA",
+      "sortOrder": 16,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:24:56.744Z",
+      "updatedAt": "2026-09-08T12:24:56.744Z"
+    },
+    {
+      "id": "sm-mod-1788870296745-715",
+      "category": "MACHINE",
+      "machineName": "Plane Machine",
+      "brand": "JUKI",
+      "model": "BDL--B6490C-7",
+      "sortOrder": 17,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:24:56.745Z",
+      "updatedAt": "2026-09-08T12:24:56.745Z"
+    },
+    {
+      "id": "sm-mod-1788870296745-273",
+      "category": "MACHINE",
+      "machineName": "Plane Machine",
+      "brand": "JUKI",
+      "model": "DFB-1415",
+      "sortOrder": 18,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:24:56.745Z",
+      "updatedAt": "2026-09-08T12:24:56.745Z"
+    },
+    {
+      "id": "sm-mod-1788870296745-277",
+      "category": "MACHINE",
+      "machineName": "Plane Machine",
+      "brand": "JUKI",
+      "model": "LK-1900BN",
+      "sortOrder": 19,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:24:56.745Z",
+      "updatedAt": "2026-09-08T12:24:56.745Z"
+    },
+    {
+      "id": "sm-mod-1788870296745-671",
+      "category": "MACHINE",
+      "machineName": "Plane Machine",
+      "brand": "JUKI",
+      "model": "NS-47",
+      "sortOrder": 20,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:24:56.745Z",
+      "updatedAt": "2026-09-08T12:24:56.745Z"
+    },
+    {
+      "id": "sm-mod-1788870296745-790",
+      "category": "MACHINE",
+      "machineName": "Plane Machine",
+      "brand": "JUKI",
+      "model": "LH-3578A",
+      "sortOrder": 21,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:24:56.745Z",
+      "updatedAt": "2026-09-08T12:24:56.745Z"
+    },
+    {
+      "id": "sm-mod-1788870296745-928",
+      "category": "MACHINE",
+      "machineName": "Plane Machine",
+      "brand": "JUKI",
+      "model": "CM-380",
+      "sortOrder": 22,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:24:56.745Z",
+      "updatedAt": "2026-09-08T12:24:56.745Z"
+    },
+    {
+      "id": "sm-mod-1788870296745-343",
+      "category": "MACHINE",
+      "machineName": "Plane Machine",
+      "brand": "JUKI",
+      "model": "JK-8558",
+      "sortOrder": 23,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:24:56.745Z",
+      "updatedAt": "2026-09-08T12:24:56.745Z"
+    },
+    {
+      "id": "sm-mod-1788870296745-408",
+      "category": "MACHINE",
+      "machineName": "Plane Machine",
+      "brand": "JUKI",
+      "model": "WFB-5509",
+      "sortOrder": 24,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:24:56.745Z",
+      "updatedAt": "2026-09-08T12:24:56.745Z"
+    },
+    {
+      "id": "sm-mod-1788870296745-517",
+      "category": "MACHINE",
+      "machineName": "Plane Machine",
+      "brand": "JUKI",
+      "model": "DA-928-A-9",
+      "sortOrder": 25,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:24:56.745Z",
+      "updatedAt": "2026-09-08T12:24:56.745Z"
+    },
+    {
+      "id": "sm-mod-1788870296745-834",
+      "category": "MACHINE",
+      "machineName": "Plane Machine",
+      "brand": "JUKI",
+      "model": "MS-1190",
+      "sortOrder": 26,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:24:56.745Z",
+      "updatedAt": "2026-09-08T12:24:56.745Z"
+    },
+    {
+      "id": "sm-mod-1788870296745-463",
+      "category": "MACHINE",
+      "machineName": "Plane Machine",
+      "brand": "JUKI",
+      "model": "JT-801N",
+      "sortOrder": 27,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:24:56.745Z",
+      "updatedAt": "2026-09-08T12:24:56.745Z"
+    },
+    {
+      "id": "sm-mod-1788870296745-194",
+      "category": "MACHINE",
+      "machineName": "Plane Machine",
+      "brand": "JUKI",
+      "model": "SG-8200",
+      "sortOrder": 28,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:24:56.745Z",
+      "updatedAt": "2026-09-08T12:24:56.745Z"
+    },
+    {
+      "id": "sm-mod-1788870296745-377",
+      "category": "MACHINE",
+      "machineName": "Plane Machine",
+      "brand": "JUKI",
+      "model": "KZ-1060",
+      "sortOrder": 29,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:24:56.745Z",
+      "updatedAt": "2026-09-08T12:24:56.745Z"
+    },
+    {
+      "id": "sm-mod-1788870296745-665",
+      "category": "MACHINE",
+      "machineName": "Plane Machine",
+      "brand": "JUKI",
+      "model": "MS-1261",
+      "sortOrder": 30,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:24:56.745Z",
+      "updatedAt": "2026-09-08T12:24:56.745Z"
+    },
+    {
+      "id": "sm-mod-1788870296745-148",
+      "category": "MACHINE",
+      "machineName": "Plane Machine",
+      "brand": "JUKI",
+      "model": "2000C",
+      "sortOrder": 31,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:24:56.745Z",
+      "updatedAt": "2026-09-08T12:24:56.745Z"
+    },
+    {
+      "id": "sm-mod-1788870296745-891",
+      "category": "MACHINE",
+      "machineName": "Plane Machine",
+      "brand": "JUKI",
+      "model": "LBH-1790",
+      "sortOrder": 32,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:24:56.745Z",
+      "updatedAt": "2026-09-08T12:24:56.745Z"
+    },
+    {
+      "id": "sm-mod-1788870296746-465",
+      "category": "MACHINE",
+      "machineName": "Plane Machine",
+      "brand": "JUKI",
+      "model": "WX-8842",
+      "sortOrder": 33,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:24:56.746Z",
+      "updatedAt": "2026-09-08T12:24:56.746Z"
+    },
+    {
+      "id": "sm-mod-1788870296746-387",
+      "category": "MACHINE",
+      "machineName": "Plane Machine",
+      "brand": "JUKI",
+      "model": "VAX-W500",
+      "sortOrder": 34,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:24:56.746Z",
+      "updatedAt": "2026-09-08T12:24:56.746Z"
+    },
+    {
+      "id": "sm-mod-1788870296746-579",
+      "category": "MACHINE",
+      "machineName": "Plane Machine",
+      "brand": "JUKI",
+      "model": "IH-500-7",
+      "sortOrder": 35,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:24:56.746Z",
+      "updatedAt": "2026-09-08T12:24:56.746Z"
+    },
+    {
+      "id": "sm-mod-1788870296746-910",
+      "category": "MACHINE",
+      "machineName": "Plane Machine",
+      "brand": "JUKI",
+      "model": "CM-5003",
+      "sortOrder": 36,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:24:56.746Z",
+      "updatedAt": "2026-09-08T12:24:56.746Z"
+    },
+    {
+      "id": "sm-mod-1788870296746-861",
+      "category": "MACHINE",
+      "machineName": "Plane Machine",
+      "brand": "JUKI",
+      "model": "MF-7923",
+      "sortOrder": 37,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:24:56.746Z",
+      "updatedAt": "2026-09-08T12:24:56.746Z"
+    },
+    {
+      "id": "sm-mod-1788870296746-285",
+      "category": "MACHINE",
+      "machineName": "Plane Machine",
+      "brand": "JUKI",
+      "model": "DFB-1411",
+      "sortOrder": 38,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:24:56.746Z",
+      "updatedAt": "2026-09-08T12:24:56.746Z"
+    },
+    {
+      "id": "sm-mod-1788870296746-919",
+      "category": "MACHINE",
+      "machineName": "Plane Machine",
+      "brand": "JUKI",
+      "model": "BBL-900BB",
+      "sortOrder": 39,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:24:56.746Z",
+      "updatedAt": "2026-09-08T12:24:56.746Z"
+    },
+    {
+      "id": "sm-mod-1788870296746-564",
+      "category": "MACHINE",
+      "machineName": "Plane Machine",
+      "brand": "JUKI",
+      "model": "ZJ-3820",
+      "sortOrder": 40,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:24:56.746Z",
+      "updatedAt": "2026-09-08T12:24:56.746Z"
+    },
+    {
+      "id": "sm-md-1",
+      "category": "MACHINE",
+      "machineName": "Double Needle Machine",
+      "brand": "JUKI",
+      "model": "LH-3588A",
+      "sortOrder": 41,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:24:56.743Z",
+      "updatedAt": "2026-09-08T12:24:56.743Z"
+    },
+    {
+      "id": "sm-mod-1790659051019-763",
+      "category": "MACHINE",
+      "machineName": "Plane Machine",
+      "brand": "JUKI",
+      "model": "DDL-8700",
+      "sortOrder": 42,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:24:56.743Z",
+      "updatedAt": "2026-09-08T12:24:56.743Z"
+    },
+    {
+      "id": "sm-mod-1790659051021-696",
+      "category": "MACHINE",
+      "machineName": "Chain Stitch Machine",
+      "brand": "ZOJE",
+      "model": "ZJ-3800",
+      "sortOrder": 43,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:24:56.743Z",
+      "updatedAt": "2026-09-08T12:24:56.743Z"
+    },
+    {
+      "id": "sm-mod-1790659051022-815",
+      "category": "MACHINE",
+      "machineName": "Feed of The Arm Machine",
+      "brand": "JUKI",
+      "model": "MS-1261",
+      "sortOrder": 44,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:24:56.743Z",
+      "updatedAt": "2026-09-08T12:24:56.743Z"
+    },
+    {
+      "id": "sm-mod-1790659051024-171",
+      "category": "MACHINE",
+      "machineName": "Button Stitch",
+      "brand": "JUKI",
+      "model": "MB-1377",
+      "sortOrder": 45,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:24:56.743Z",
+      "updatedAt": "2026-09-08T12:24:56.743Z"
+    },
+    {
+      "id": "sm-mod-1790659051025-150",
+      "category": "MACHINE",
+      "machineName": "Vertical Machine",
+      "brand": "JUKI",
+      "model": "DLM-5200N",
+      "sortOrder": 46,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:24:56.743Z",
+      "updatedAt": "2026-09-08T12:24:56.743Z"
+    },
+    {
+      "id": "sm-mod-1790659051028-217",
+      "category": "MACHINE",
+      "machineName": "Ham  Blind Stitch Machine",
+      "brand": "TREX",
+      "model": "TREX-500",
+      "sortOrder": 47,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:24:56.743Z",
+      "updatedAt": "2026-09-08T12:24:56.743Z"
+    },
+    {
+      "id": "sm-mod-1790659051031-455",
+      "category": "MACHINE",
+      "machineName": "Multi Needle Chain Stitch Machine",
+      "brand": "KANSAI SPECIAL",
+      "model": "WFB-5509",
+      "sortOrder": 48,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:24:56.743Z",
+      "updatedAt": "2026-09-08T12:24:56.743Z"
+    },
+    {
+      "id": "sm-mod-1790659051031-352",
+      "category": "MACHINE",
+      "machineName": "Eye let Hole Machine",
+      "brand": "JUKI",
+      "model": "MEB-3200",
+      "sortOrder": 49,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:24:56.743Z",
+      "updatedAt": "2026-09-08T12:24:56.743Z"
+    },
+    {
+      "id": "sm-mod-1790659051038-555",
+      "category": "MACHINE",
+      "machineName": "Button Hole Machine",
+      "brand": "JUKI",
+      "model": "LBH-1790S",
+      "sortOrder": 50,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:24:56.743Z",
+      "updatedAt": "2026-09-08T12:24:56.743Z"
+    },
+    {
+      "id": "sm-mod-1790659051043-88",
+      "category": "MACHINE",
+      "machineName": "Multi Needle Chain Stitch Machine",
+      "brand": "KANSAI SPECIAL",
+      "model": "DLR-1508P",
+      "sortOrder": 51,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:24:56.743Z",
+      "updatedAt": "2026-09-08T12:24:56.743Z"
+    },
+    {
+      "id": "sm-mod-1790659051043-391",
+      "category": "MACHINE",
+      "machineName": "Vertical Machine",
+      "brand": "JUKI",
+      "model": "DLM-5200N",
+      "sortOrder": 52,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:24:56.743Z",
+      "updatedAt": "2026-09-08T12:24:56.743Z"
+    },
+    {
+      "id": "sm-mod-1790659051099-0",
+      "category": "MACHINE",
+      "machineName": "Double Needle Machine",
+      "brand": "JUKI",
+      "model": "LH-3588A",
+      "sortOrder": 53,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:24:56.743Z",
+      "updatedAt": "2026-09-08T12:24:56.743Z"
+    },
+    {
+      "id": "sm-mod-1790659051048-171",
+      "category": "MACHINE",
+      "machineName": "Feed of The Arm Machine",
+      "brand": "BROTHER",
+      "model": "DA-928-A-5",
+      "sortOrder": 54,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:24:56.743Z",
+      "updatedAt": "2026-09-08T12:24:56.743Z"
+    },
+    {
+      "id": "sm-mod-1790659051054-112",
+      "category": "MACHINE",
+      "machineName": "Feed of The Arm Machine",
+      "brand": "JUKI",
+      "model": "MS-1261",
+      "sortOrder": 55,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:24:56.743Z",
+      "updatedAt": "2026-09-08T12:24:56.743Z"
+    },
+    {
+      "id": "sm-mod-1790659051060-68",
+      "category": "MACHINE",
+      "machineName": "Button Stitch",
+      "brand": "JUKI",
+      "model": "MB-1377",
+      "sortOrder": 56,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:24:56.743Z",
+      "updatedAt": "2026-09-08T12:24:56.743Z"
+    },
+    {
+      "id": "sm-mod-1790659051064-665",
+      "category": "MACHINE",
+      "machineName": "Flat Lock Machine",
+      "brand": "ZOJE",
+      "model": "W562",
+      "sortOrder": 57,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:24:56.743Z",
+      "updatedAt": "2026-09-08T12:24:56.743Z"
+    },
+    {
+      "id": "sm-mod-1790659051070-460",
+      "category": "MACHINE",
+      "machineName": "Chain Stitch Machine",
+      "brand": "ZOJE",
+      "model": "ZJ-3800",
+      "sortOrder": 58,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:24:56.743Z",
+      "updatedAt": "2026-09-08T12:24:56.743Z"
+    },
+    {
+      "id": "sm-mod-1790659051082-845",
+      "category": "MACHINE",
+      "machineName": "Plane Machine",
+      "brand": "JUKI",
+      "model": "DDL-8700-7",
+      "sortOrder": 59,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:24:56.743Z",
+      "updatedAt": "2026-09-08T12:24:56.743Z"
+    },
+    {
+      "id": "sm-mod-1790659051091-998",
+      "category": "MACHINE",
+      "machineName": "Button Hole Machine",
+      "brand": "JUKI",
+      "model": "LBH-1790S",
+      "sortOrder": 60,
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:24:56.743Z",
+      "updatedAt": "2026-09-08T12:24:56.743Z"
     }
   ],
   "test_sync": [

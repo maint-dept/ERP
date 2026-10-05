@@ -7,6 +7,7 @@
 import { storage } from '../db/storage.js';
 import { CloudSaveError } from '../db/storage.js';
 import { TABLE_NAMES } from '../db/schema.js';
+import { INITIAL_DATA } from '../db/initialData.js';
 import { authService } from './authService.js';
 import { auditService } from './auditService.js';
 import { state } from '../state.js';
@@ -1025,7 +1026,21 @@ class MasterDataService {
     if (found) {
       return found;
     }
+    let canonicalId = null;
+    if (typeof INITIAL_DATA !== 'undefined' && Array.isArray(INITIAL_DATA.machine_names)) {
+      const canonMn = INITIAL_DATA.machine_names.find(m => {
+        if (!m || !m.name) return false;
+        const mLower = m.name.trim().toLowerCase();
+        const mNorm = this.normalizePureAlphanumeric(m.name);
+        return mLower === cleanName.toLowerCase() || mLower === (canonical || '').toLowerCase() || mNorm === normClean || mNorm === normCanon;
+      });
+      if (canonMn && canonMn.id && !existingList.some(m => m.id === canonMn.id)) {
+        canonicalId = canonMn.id;
+      }
+    }
+
     const created = storage.insert(TABLE_NAMES.MACHINE_NAMES, {
+      id: canonicalId || undefined,
       categoryId: data.categoryId || 'cat-1',
       name: canonical || cleanName,
       code: data.code?.trim() || cleanName.substring(0, 3).toUpperCase(),

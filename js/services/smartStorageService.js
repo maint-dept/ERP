@@ -12,6 +12,7 @@
 
 import { storage, CloudSaveError } from '../db/storage.js';
 import { TABLE_NAMES } from '../db/schema.js';
+import { INITIAL_DATA } from '../db/initialData.js';
 import { auditService } from './auditService.js';
 import { notificationService } from './notificationService.js';
 import { storageSchemaService } from './storageSchemaService.js';
@@ -548,8 +549,24 @@ class SmartStorageService {
 
     const maxOrder = mnList.reduce((max, m) => Math.max(max, Number(m.sortOrder || 0)), 0);
     const assignedOrder = (sortOrder !== null && sortOrder !== undefined) ? Number(sortOrder) : (maxOrder + 1);
+
+    // Check if canonical machine name exists in INITIAL_DATA to preserve foreign key ID
+    let canonicalId = null;
+    if (typeof INITIAL_DATA !== 'undefined' && Array.isArray(INITIAL_DATA.machine_names)) {
+      const canonMn = INITIAL_DATA.machine_names.find(m => {
+        if (!m || !m.name) return false;
+        const mLower = m.name.trim().toLowerCase();
+        const mNorm = this.normalizePureAlphanumeric(m.name);
+        return mLower === cleanName.toLowerCase() || mLower === canonical.toLowerCase() || mNorm === normClean || mNorm === normCanon;
+      });
+      if (canonMn && canonMn.id && !mnList.some(m => m.id === canonMn.id)) {
+        canonicalId = canonMn.id;
+      }
+    }
+
+    const assignedId = canonicalId || ('mn-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4));
     const newRecord = storage.insert(TABLE_NAMES.MACHINE_NAMES, {
-      id: 'mn-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4),
+      id: assignedId,
       name: cleanName,
       code: code || cleanName.substring(0, 4).toUpperCase().replace(/[^A-Z0-9]/g, ''),
       sortOrder: assignedOrder,
@@ -1293,8 +1310,22 @@ class SmartStorageService {
           status: 'ACTIVE'
         });
       } else {
+        // Check if canonical model ID exists in INITIAL_DATA to preserve foreign key ID
+        let canonicalModelId = null;
+        if (typeof INITIAL_DATA !== 'undefined' && Array.isArray(INITIAL_DATA.models)) {
+          const canonMdl = INITIAL_DATA.models.find(m => {
+            if (!m || !m.name) return false;
+            return m.name.trim().toLowerCase() === model.toLowerCase() &&
+                   (m.machineNameId === mnItem?.id || (m.machineName && m.machineName.toLowerCase() === cleanMachine.toLowerCase()));
+          });
+          if (canonMdl && canonMdl.id && !mdlList.some(m => m.id === canonMdl.id)) {
+            canonicalModelId = canonMdl.id;
+          }
+        }
+
+        const assignedModelId = canonicalModelId || ('mdl-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4));
         storage.insert(TABLE_NAMES.MODELS, {
-          id: 'mdl-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4),
+          id: assignedModelId,
           name: model,
           brandId: brdItem?.id || '',
           brandName: brand,

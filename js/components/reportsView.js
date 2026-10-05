@@ -11,6 +11,7 @@
 
 import { storage } from '../db/storage.js';
 import { TABLE_NAMES, TRANSFER_STATUSES } from '../db/schema.js';
+import { INITIAL_DATA } from '../db/initialData.js';
 import { machineService } from '../services/machineService.js';
 import { masterDataService } from '../services/masterDataService.js';
 import { excelService, formatDisplayLine } from '../services/excelService.js';
@@ -573,14 +574,50 @@ export function getMachineSummaryGroupedData(allMachines) {
   const machineNames = storage.getTable(TABLE_NAMES.MACHINE_NAMES) || [];
   const brands = storage.getTable(TABLE_NAMES.BRANDS) || [];
   const models = storage.getTable(TABLE_NAMES.MODELS) || [];
+  const storageMaster = storage.getTable(TABLE_NAMES.STORAGE_MASTER) || [];
 
   const grpMap = new Map(groups.map(g => [g.id, g]));
   const untMap = new Map(units.map(u => [u.id, u]));
   const flrMap = new Map(floors.map(f => [f.id, f]));
   const linMap = new Map(lines.map(l => [l.id, l]));
-  const mnMap = new Map(machineNames.map(x => [x.id, x.name]));
-  const brdMap = new Map(brands.map(x => [x.id, x.name]));
-  const mdlMap = new Map(models.map(x => [x.id, x.name]));
+
+  // Build high-resilience Machine Name Map (storage table -> INITIAL_DATA fallback)
+  const mnMap = new Map();
+  if (typeof INITIAL_DATA !== 'undefined' && Array.isArray(INITIAL_DATA.machine_names)) {
+    INITIAL_DATA.machine_names.forEach(mn => {
+      if (mn && mn.id && mn.name) mnMap.set(mn.id, mn.name);
+    });
+  }
+  machineNames.forEach(mn => {
+    if (mn && mn.id && mn.name) mnMap.set(mn.id, mn.name);
+  });
+
+  // Build high-resilience Brand Map (storage table -> INITIAL_DATA fallback)
+  const brdMap = new Map();
+  if (typeof INITIAL_DATA !== 'undefined' && Array.isArray(INITIAL_DATA.brands)) {
+    INITIAL_DATA.brands.forEach(b => {
+      if (b && b.id && b.name) brdMap.set(b.id, b.name);
+    });
+  }
+  brands.forEach(b => {
+    if (b && b.id && b.name) brdMap.set(b.id, b.name);
+  });
+
+  // Build high-resilience Model Map (storage table -> INITIAL_DATA -> STORAGE_MASTER fallback)
+  const mdlMap = new Map();
+  if (typeof INITIAL_DATA !== 'undefined' && Array.isArray(INITIAL_DATA.models)) {
+    INITIAL_DATA.models.forEach(m => {
+      if (m && m.id && m.name) mdlMap.set(m.id, m.name);
+    });
+  }
+  models.forEach(m => {
+    if (m && m.id && m.name) mdlMap.set(m.id, m.name);
+  });
+  storageMaster.forEach(sm => {
+    if (sm && sm.category === 'MACHINE' && sm.id && sm.model) {
+      if (!mdlMap.has(sm.id)) mdlMap.set(sm.id, sm.model);
+    }
+  });
 
   // Resolve hierarchy for filtering
   function resolveHierarchy(m) {
@@ -617,9 +654,9 @@ export function getMachineSummaryGroupedData(allMachines) {
 
   // 2. Aggregate counts dynamically into Machine Name -> Model
   filteredMachines.forEach(m => {
-    // Resolve Machine Name & Model
-    const rawMachName = (mnMap.get(m.machineNameId) || m.machineName || m.name || brdMap.get(m.brandId) || m.brand || 'Sewing Machine').trim();
-    const rawModel = (mdlMap.get(m.modelId) || m.model || m.modelName || 'Standard').trim();
+    // Resolve Machine Name & Model with multi-tier fallback
+    let rawMachName = (mnMap.get(m.machineNameId) || m.machineName || m.name || brdMap.get(m.brandId) || (m.brand ? m.brand + ' Machine' : '') || 'Plane Machine').trim();
+    let rawModel = (mdlMap.get(m.modelId) || m.model || m.modelName || 'Standard').trim();
 
     const r = parseInt(m.running ?? m.qty_running ?? (m.status === 'ACTIVE' ? (m.quantity ?? 1) : 0), 10) || 0;
     const u = parseInt(m.usable_idle ?? m.usableIdle ?? (m.status === 'IDLE' ? (m.quantity ?? 1) : 0), 10) || 0;
