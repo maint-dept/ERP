@@ -24,6 +24,7 @@ let masterSearch = '';
 let masterCategory = 'ALL';
 let masterCurrentPage = 1;
 const MASTER_PAGE_SIZE = 50;
+let masterSelectedPartIds = new Set();
 
 // Modal states
 let manualIssueModalOpen = false;
@@ -816,6 +817,9 @@ function renderPartsMasterTab() {
   const startIndex = (masterCurrentPage - 1) * MASTER_PAGE_SIZE;
   const pageParts = allFiltered.slice(startIndex, startIndex + MASTER_PAGE_SIZE);
 
+  const isPageAllSelected = pageParts.length > 0 && pageParts.every(p => masterSelectedPartIds.has(p.id));
+  const hasSelection = masterSelectedPartIds.size > 0;
+
   return `
     <div style="display: flex; flex-direction: column; gap: 8px; flex: 1; min-height: 0;">
       
@@ -829,9 +833,9 @@ function renderPartsMasterTab() {
             class="form-control" 
             placeholder="🔍 Search 5,000+ parts by code, name, alias, brand, model..." 
             value="${masterSearch}"
-            style="max-width: 300px; height: 28px; font-size: 11.5px; padding: 3px 8px; border-radius: 6px; background: #090d16;"
+            style="max-width: 280px; height: 28px; font-size: 11.5px; padding: 3px 8px; border-radius: 6px; background: #090d16;"
           />
-          <select id="sel-master-parts-cat" class="form-control" style="width: 140px; height: 28px; font-size: 11.5px; padding: 2px 6px; border-radius: 6px; background: #090d16;">
+          <select id="sel-master-parts-cat" class="form-control" style="width: 130px; height: 28px; font-size: 11.5px; padding: 2px 6px; border-radius: 6px; background: #090d16;">
             <option value="ALL">All Categories</option>
             <option value="Mechanical" ${masterCategory === 'Mechanical' ? 'selected' : ''}>Mechanical</option>
             <option value="Electrical" ${masterCategory === 'Electrical' ? 'selected' : ''}>Electrical</option>
@@ -841,9 +845,29 @@ function renderPartsMasterTab() {
           <span style="font-size: 11px; color: #38bdf8; font-family: var(--font-mono); font-weight: 700;">
             ${totalCount.toLocaleString()} Parts Registered
           </span>
+
+          ${hasSelection ? `
+            <div style="display: flex; align-items: center; gap: 5px; margin-left: 4px; background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.35); padding: 2px 8px; border-radius: 6px;">
+              <span style="font-size: 11px; color: #fca5a5; font-weight: 700;">✓ ${masterSelectedPartIds.size} Selected</span>
+              <button type="button" id="btn-bulk-delete-parts" class="btn btn-danger btn-sm" style="font-size: 11px; height: 22px; padding: 0 8px; font-weight: 800; background: #dc2626; border: none; color: #fff; border-radius: 4px; cursor: pointer;">
+                🗑️ Delete Selected (${masterSelectedPartIds.size})
+              </button>
+              <button type="button" id="btn-clear-parts-selection" class="btn btn-ghost btn-xs" style="font-size: 10.5px; height: 22px; padding: 0 6px; color: #cbd5e1; cursor: pointer;">
+                ✕ Deselect
+              </button>
+            </div>
+          ` : ''}
         </div>
 
         <div style="display: flex; gap: 6px; align-items: center;">
+          ${totalCount > 0 ? `
+            <button type="button" id="btn-select-all-filtered-parts" class="btn btn-ghost btn-sm" style="font-size: 11px; height: 28px; padding: 2px 8px; color: #38bdf8; border: 1px solid rgba(56,189,248,0.3);" title="Select all ${totalCount} filtered parts">
+              ☑ Select All (${totalCount})
+            </button>
+            <button type="button" id="btn-clear-all-parts-master" class="btn btn-outline btn-sm" style="font-size: 11px; height: 28px; padding: 2px 8px; color: #f87171; border-color: rgba(248,113,113,0.4);" title="Delete all registered parts to import a clean catalog">
+              🗑️ Clear Catalog
+            </button>
+          ` : ''}
           <button type="button" id="btn-open-add-part-modal" class="btn btn-primary btn-sm" style="font-weight: 800; font-size: 11.5px; height: 28px; padding: 4px 10px; background: #0284c7; border: 1px solid #38bdf8;">
             ➕ Add Part
           </button>
@@ -862,6 +886,9 @@ function renderPartsMasterTab() {
         <table class="parts-trace-table">
           <thead>
             <tr>
+              <th style="width: 36px; text-align: center;">
+                <input type="checkbox" id="chk-parts-master-select-all" ${isPageAllSelected ? 'checked' : ''} style="cursor: pointer; width: 14px; height: 14px; accent-color: #0284c7;" title="Select/Deselect all on this page" />
+              </th>
               <th style="width: 100px;">Part Code</th>
               <th style="min-width: 180px;">Part Name</th>
               <th style="min-width: 180px;">Alternative Name / Alias</th>
@@ -871,59 +898,68 @@ function renderPartsMasterTab() {
               <th>Compatible Machines</th>
               <th>Unit Price</th>
               <th>Status</th>
-              <th style="text-align: right;">Action</th>
+              <th style="text-align: right; min-width: 165px;">Action</th>
             </tr>
           </thead>
           <tbody>
             ${pageParts.length === 0 ? `
               <tr>
-                <td colspan="10" style="text-align: center; padding: 30px; color: var(--text-muted);">
+                <td colspan="11" style="text-align: center; padding: 30px; color: var(--text-muted);">
                   No spare parts found matching your criteria.
                 </td>
               </tr>
-            ` : pageParts.map(p => `
-              <tr>
-                <td>
-                  <span style="font-family: var(--font-mono); font-weight: 900; color: #38bdf8; background: rgba(56,189,248,0.1); padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(56,189,248,0.2);">
-                    ${p.code}
-                  </span>
-                </td>
-                <td>
-                  <strong style="color: #fff;">${p.name}</strong>
-                </td>
-                <td>
-                  <div style="color: #cbd5e1; font-size: 11px;">${p.altName || '—'}</div>
-                  ${p.alias ? `<div style="font-size: 9.5px; color: var(--text-muted);">Alias: ${p.alias}</div>` : ''}
-                </td>
-                <td>
-                  <span class="badge badge-idle" style="font-size: 10px;">${p.category || 'Mechanical'}</span>
-                </td>
-                <td style="font-weight: 700; color: #94a3b8;">${p.unit || 'PCS'}</td>
-                <td>
-                  <span style="color: #fff;">${p.brand || '—'}</span>
-                  ${p.model ? `<span style="color: var(--text-muted); font-size: 10px;">/ ${p.model}</span>` : ''}
-                </td>
-                <td style="font-size: 10.5px; color: #e2e8f0; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                  ${p.compatibleMachineTypes || 'Universal'}
-                </td>
-                <td style="font-family: var(--font-mono); font-weight: 700; color: #34d399;">
-                  ${p.unitPrice ? `৳${p.unitPrice}` : '—'}
-                </td>
-                <td>
-                  <span class="badge ${p.status === 'ACTIVE' ? 'badge-active' : 'badge-danger'}" style="font-size: 9.5px;">
-                    ${p.status || 'ACTIVE'}
-                  </span>
-                </td>
-                <td style="text-align: right;">
-                  <button type="button" class="btn btn-ghost btn-xs btn-edit-part" data-id="${p.id}" style="font-size: 11px; padding: 2px 6px; color: #38bdf8;">
-                    ✏️ Edit
-                  </button>
-                  <button type="button" class="btn btn-ghost btn-xs btn-toggle-part-status" data-id="${p.id}" style="font-size: 11px; padding: 2px 6px; color: ${p.status === 'ACTIVE' ? '#f87171' : '#34d399'};">
-                    ${p.status === 'ACTIVE' ? 'Deactivate' : 'Activate'}
-                  </button>
-                </td>
-              </tr>
-            `).join('')}
+            ` : pageParts.map(p => {
+              const isSelected = masterSelectedPartIds.has(p.id);
+              return `
+                <tr style="${isSelected ? 'background: rgba(2, 132, 199, 0.12);' : ''}">
+                  <td style="text-align: center;">
+                    <input type="checkbox" class="chk-part-row" data-id="${p.id}" ${isSelected ? 'checked' : ''} style="cursor: pointer; width: 14px; height: 14px; accent-color: #0284c7;" />
+                  </td>
+                  <td>
+                    <span style="font-family: var(--font-mono); font-weight: 900; color: #38bdf8; background: rgba(56,189,248,0.1); padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(56,189,248,0.2);">
+                      ${p.code}
+                    </span>
+                  </td>
+                  <td>
+                    <strong style="color: #fff;">${p.name}</strong>
+                  </td>
+                  <td>
+                    <div style="color: #cbd5e1; font-size: 11px;">${p.altName || '—'}</div>
+                    ${p.alias ? `<div style="font-size: 9.5px; color: var(--text-muted);">Alias: ${p.alias}</div>` : ''}
+                  </td>
+                  <td>
+                    <span class="badge badge-idle" style="font-size: 10px;">${p.category || 'Mechanical'}</span>
+                  </td>
+                  <td style="font-weight: 700; color: #94a3b8;">${p.unit || 'PCS'}</td>
+                  <td>
+                    <span style="color: #fff;">${p.brand || '—'}</span>
+                    ${p.model ? `<span style="color: var(--text-muted); font-size: 10px;">/ ${p.model}</span>` : ''}
+                  </td>
+                  <td style="font-size: 10.5px; color: #e2e8f0; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                    ${p.compatibleMachineTypes || 'Universal'}
+                  </td>
+                  <td style="font-family: var(--font-mono); font-weight: 700; color: #34d399;">
+                    ${p.unitPrice ? `৳${p.unitPrice}` : '—'}
+                  </td>
+                  <td>
+                    <span class="badge ${p.status === 'ACTIVE' ? 'badge-active' : 'badge-danger'}" style="font-size: 9.5px;">
+                      ${p.status || 'ACTIVE'}
+                    </span>
+                  </td>
+                  <td style="text-align: right; white-space: nowrap;">
+                    <button type="button" class="btn btn-ghost btn-xs btn-edit-part" data-id="${p.id}" style="font-size: 11px; padding: 2px 5px; color: #38bdf8;" title="Edit this part">
+                      ✏️ Edit
+                    </button>
+                    <button type="button" class="btn btn-ghost btn-xs btn-toggle-part-status" data-id="${p.id}" style="font-size: 11px; padding: 2px 5px; color: ${p.status === 'ACTIVE' ? '#94a3b8' : '#34d399'};" title="${p.status === 'ACTIVE' ? 'Deactivate' : 'Activate'}">
+                      ${p.status === 'ACTIVE' ? 'Deactivate' : 'Activate'}
+                    </button>
+                    <button type="button" class="btn btn-ghost btn-xs btn-delete-single-part" data-id="${p.id}" data-name="${(p.name || '').replace(/"/g, '&quot;')}" style="font-size: 11px; padding: 2px 5px; color: #ef4444;" title="Delete this part">
+                      🗑️ Delete
+                    </button>
+                  </td>
+                </tr>
+              `;
+            }).join('')}
           </tbody>
         </table>
       </div>
@@ -1608,6 +1644,11 @@ function renderImportExcelModal() {
             <div style="font-weight: 700; color: #fff; font-size: 13.5px;">Click or Drag Excel Catalog File (.xlsx)</div>
             <div style="font-size: 10.5px; color: var(--text-muted); margin-top: 4px;">Columns: Part Code, Part Name, Alternative Name, Alias, Category, UoM...</div>
           </div>
+
+          <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #fca5a5; font-size: 11.5px; background: rgba(239, 68, 68, 0.08); padding: 8px 10px; border-radius: 6px; border: 1px dashed rgba(239, 68, 68, 0.3);">
+            <input type="checkbox" id="chk-replace-all-parts-import" style="cursor: pointer; width: 15px; height: 15px; accent-color: #ef4444;" />
+            <span><strong>Wipe existing catalog</strong> &amp; replace completely with this Excel file</span>
+          </label>
 
           <div id="excel-import-results-box" style="display: none; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; padding: 10px; font-size: 11.5px;">
           </div>
@@ -2428,6 +2469,107 @@ export function initPartsTraceEvents() {
     });
   });
 
+  root.querySelectorAll('.btn-delete-single-part').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = btn.getAttribute('data-id');
+      const name = btn.getAttribute('data-name') || 'this part';
+      if (!confirm(`Are you sure you want to delete spare part "${name}"?`)) {
+        return;
+      }
+      try {
+        await partsTraceService.deletePart(id);
+        masterSelectedPartIds.delete(id);
+        notificationService.notifySuccess('Part Deleted', `Spare part "${name}" removed from catalog.`);
+        refresh();
+      } catch (err) {
+        notificationService.notifyError('Delete Failed', err.message);
+      }
+    });
+  });
+
+  // Checkbox selection events
+  const chkMasterSelectAll = root.querySelector('#chk-parts-master-select-all');
+  if (chkMasterSelectAll) {
+    chkMasterSelectAll.addEventListener('change', (e) => {
+      const allFiltered = partsTraceService.getAllParts({ search: masterSearch, category: masterCategory });
+      const startIndex = (masterCurrentPage - 1) * MASTER_PAGE_SIZE;
+      const pageParts = allFiltered.slice(startIndex, startIndex + MASTER_PAGE_SIZE);
+      if (e.target.checked) {
+        pageParts.forEach(p => masterSelectedPartIds.add(p.id));
+      } else {
+        pageParts.forEach(p => masterSelectedPartIds.delete(p.id));
+      }
+      refresh();
+    });
+  }
+
+  root.querySelectorAll('.chk-part-row').forEach(chk => {
+    chk.addEventListener('change', (e) => {
+      const id = chk.getAttribute('data-id');
+      if (e.target.checked) {
+        masterSelectedPartIds.add(id);
+      } else {
+        masterSelectedPartIds.delete(id);
+      }
+      refresh();
+    });
+  });
+
+  const btnSelectAllFiltered = root.querySelector('#btn-select-all-filtered-parts');
+  if (btnSelectAllFiltered) {
+    btnSelectAllFiltered.addEventListener('click', () => {
+      const allFiltered = partsTraceService.getAllParts({ search: masterSearch, category: masterCategory });
+      allFiltered.forEach(p => masterSelectedPartIds.add(p.id));
+      refresh();
+    });
+  }
+
+  const btnClearSelection = root.querySelector('#btn-clear-parts-selection');
+  if (btnClearSelection) {
+    btnClearSelection.addEventListener('click', () => {
+      masterSelectedPartIds.clear();
+      refresh();
+    });
+  }
+
+  const btnBulkDelete = root.querySelector('#btn-bulk-delete-parts');
+  if (btnBulkDelete) {
+    btnBulkDelete.addEventListener('click', async () => {
+      const count = masterSelectedPartIds.size;
+      if (count === 0) return;
+      if (!confirm(`Are you sure you want to permanently delete ${count} selected spare part(s) from Parts Master?`)) {
+        return;
+      }
+      try {
+        const res = await partsTraceService.deletePartsBatch(Array.from(masterSelectedPartIds));
+        masterSelectedPartIds.clear();
+        notificationService.notifySuccess('Parts Deleted', `Successfully deleted ${res.deleted} spare part(s).`);
+        refresh();
+      } catch (err) {
+        notificationService.notifyError('Delete Failed', err.message);
+      }
+    });
+  }
+
+  const btnClearAllMaster = root.querySelector('#btn-clear-all-parts-master');
+  if (btnClearAllMaster) {
+    btnClearAllMaster.addEventListener('click', async () => {
+      const allParts = partsTraceService.getAllParts();
+      if (allParts.length === 0) return;
+      if (!confirm(`⚠️ WARNING: Are you sure you want to permanently delete ALL ${allParts.length} spare parts from the Master catalog?\n\nThis will completely wipe the catalog so you can import a fresh Excel dataset.`)) {
+        return;
+      }
+      try {
+        const res = await partsTraceService.deleteAllParts();
+        masterSelectedPartIds.clear();
+        notificationService.notifySuccess('Catalog Cleared', `Successfully deleted all ${res.deleted} spare parts.`);
+        refresh();
+      } catch (err) {
+        notificationService.notifyError('Clear Failed', err.message);
+      }
+    });
+  }
+
   // 17. Excel Bulk Import Modal & Actions (5k+ Support)
   const btnOpenImport = root.querySelector('#btn-open-import-excel-modal');
   if (btnOpenImport) {
@@ -2452,10 +2594,11 @@ export function initPartsTraceEvents() {
     inpPartsExcel.addEventListener('change', async () => {
       if (inpPartsExcel.files && inpPartsExcel.files.length > 0) {
         const file = inpPartsExcel.files[0];
+        const replaceExisting = root.querySelector('#chk-replace-all-parts-import')?.checked || false;
         const resBox = root.querySelector('#excel-import-results-box');
         if (resBox) {
           resBox.style.display = 'block';
-          resBox.innerHTML = '<span style="color: #38bdf8;">Reading Excel and indexing 5,000+ parts...</span>';
+          resBox.innerHTML = `<span style="color: #38bdf8;">${replaceExisting ? 'Wiping catalog & indexing Excel rows...' : 'Reading Excel and indexing 5,000+ parts...'}</span>`;
         }
 
         try {
@@ -2468,7 +2611,9 @@ export function initPartsTraceEvents() {
                 </div>
               `;
             }
-          });
+          }, { replaceExisting });
+
+          masterSelectedPartIds.clear();
 
           // Auto-rematch active drafts with newly imported parts
           if (activeDraftRows.length > 0) {

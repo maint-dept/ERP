@@ -142,10 +142,14 @@ class PartsTraceService {
   }
 
   /**
-   * Ensures default seed spare parts exist in SPARE_PARTS_MASTER
+   * Ensures default seed spare parts exist in SPARE_PARTS_MASTER on first initialization
    */
   _ensureSeedMasterParts() {
     try {
+      const seededFlag = typeof localStorage !== 'undefined' ? localStorage.getItem('parts_master_seed_initialized') : null;
+      if (seededFlag === 'true') {
+        return;
+      }
       const current = storage.getTable(TABLE_NAMES.SPARE_PARTS_MASTER) || [];
       let added = 0;
       INITIAL_PARTS_SEED.forEach(seed => {
@@ -155,6 +159,9 @@ class PartsTraceService {
           added++;
         }
       });
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('parts_master_seed_initialized', 'true');
+      }
       if (added > 0) {
         storage.setTable(TABLE_NAMES.SPARE_PARTS_MASTER, current);
         storage.saveTable(TABLE_NAMES.SPARE_PARTS_MASTER, false);
@@ -239,6 +246,7 @@ class PartsTraceService {
 
       storage.insert(TABLE_NAMES.SPARE_PARTS_MASTER, newPart);
       await storage.saveTable(TABLE_NAMES.SPARE_PARTS_MASTER, true);
+      this._partsIndexCache = null;
       return newPart;
     } else {
       const existing = list.find(p => p.id === recordId);
@@ -265,8 +273,42 @@ class PartsTraceService {
       });
 
       await storage.saveTable(TABLE_NAMES.SPARE_PARTS_MASTER, true);
+      this._partsIndexCache = null;
       return updated;
     }
+  }
+
+  async deletePart(id) {
+    const list = storage.getTable(TABLE_NAMES.SPARE_PARTS_MASTER) || [];
+    const index = list.findIndex(p => p.id === id || p.code === id);
+    if (index === -1) throw new Error('Spare part record not found.');
+    const removed = list.splice(index, 1)[0];
+    storage.setTable(TABLE_NAMES.SPARE_PARTS_MASTER, list);
+    await storage.saveTable(TABLE_NAMES.SPARE_PARTS_MASTER, true);
+    this._partsIndexCache = null;
+    return removed;
+  }
+
+  async deletePartsBatch(ids) {
+    if (!ids || !ids.length) return { deleted: 0 };
+    const idSet = new Set(ids);
+    const list = storage.getTable(TABLE_NAMES.SPARE_PARTS_MASTER) || [];
+    const initialLen = list.length;
+    const remaining = list.filter(p => !idSet.has(p.id) && !idSet.has(p.code));
+    const deletedCount = initialLen - remaining.length;
+    storage.setTable(TABLE_NAMES.SPARE_PARTS_MASTER, remaining);
+    await storage.saveTable(TABLE_NAMES.SPARE_PARTS_MASTER, true);
+    this._partsIndexCache = null;
+    return { deleted: deletedCount };
+  }
+
+  async deleteAllParts() {
+    const list = storage.getTable(TABLE_NAMES.SPARE_PARTS_MASTER) || [];
+    const count = list.length;
+    storage.setTable(TABLE_NAMES.SPARE_PARTS_MASTER, []);
+    await storage.saveTable(TABLE_NAMES.SPARE_PARTS_MASTER, true);
+    this._partsIndexCache = null;
+    return { deleted: count };
   }
 
   async togglePartStatus(id) {
@@ -282,7 +324,7 @@ class PartsTraceService {
     return newStatus;
   }
 
-  async importPartsFromExcel(file, onProgress = null) {
+  async importPartsFromExcel(file, onProgress = null, options = {}) {
     if (typeof XLSX === 'undefined') {
       throw new Error('Excel parser library (XLSX) is not available.');
     }
@@ -300,7 +342,7 @@ class PartsTraceService {
 
     if (onProgress) onProgress(25, `Processing ${rows.length} rows from Excel...`);
 
-    const currentParts = storage.getTable(TABLE_NAMES.SPARE_PARTS_MASTER) || [];
+    const currentParts = options.replaceExisting ? [] : (storage.getTable(TABLE_NAMES.SPARE_PARTS_MASTER) || []);
     const partsMapByCode = new Map();
     const partsMapByName = new Map();
 
