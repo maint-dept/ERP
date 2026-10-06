@@ -9,7 +9,7 @@
 import { storage } from '../db/storage.js';
 import { TABLE_NAMES, TRANSFER_STATUSES } from '../db/schema.js';
 import { masterDataService } from '../services/masterDataService.js';
-import { transferService } from '../services/transferService.js';
+import { transferService, resolveTransferMachineDetails } from '../services/transferService.js';
 import { authService } from '../services/authService.js';
 import { notificationService } from '../services/notificationService.js';
 import { state } from '../state.js';
@@ -50,6 +50,7 @@ export function renderEditTransferModal() {
     `;
   }
 
+  const eq = resolveTransferMachineDetails(req);
   const user = authService.getCurrentUser();
   const safeStatus = (req.status || TRANSFER_STATUSES.PENDING_APPROVAL).toString();
   const isCompleted = safeStatus === TRANSFER_STATUSES.COMPLETED;
@@ -118,17 +119,17 @@ export function renderEditTransferModal() {
             <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 10px;">
               <div>
                 <div style="display: flex; align-items: center; gap: 8px;">
-                  <span style="font-size: 15px; font-weight: 800; color: #fff;">${req.machineInfo?.machineName || 'Machine'}</span>
+                  <span style="font-size: 15px; font-weight: 800; color: #fff;">${eq.machineName}</span>
                   <span class="badge" style="background: rgba(2, 132, 199, 0.3); color: #38bdf8; font-family: var(--font-mono); font-weight: 800; font-size: 12px; border: 1px solid rgba(56, 189, 248, 0.4);">
-                    SN: ${req.machineInfo?.serialNumber}
+                    SN: ${eq.serialNumber}
                   </span>
                   <span class="badge badge-idle" style="font-size: 10px;">
                     ${safeStatus.replace(/_/g, ' ')}
                   </span>
                 </div>
                 <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">
-                  <strong>Brand &amp; Model:</strong> ${req.machineInfo?.brand || '—'} &bull; ${req.machineInfo?.model || '—'} | 
-                  <strong>Category:</strong> ${req.machineInfo?.category || 'Standard Equipment'}
+                  <strong>Brand &amp; Model:</strong> ${eq.brandModelText} | 
+                  <strong>Category:</strong> ${eq.category}
                 </div>
               </div>
 

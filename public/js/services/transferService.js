@@ -13,6 +13,239 @@ import { workflowService } from './workflowService.js';
 import { auditService } from './auditService.js';
 import { notificationService } from './notificationService.js';
 import { historyService } from './historyService.js';
+import { INITIAL_DATA } from '../db/initialData.js';
+
+/**
+ * Universal machine equipment details resolver for transfer requests.
+ * Uses multi-layered live DB + master data + INITIAL_DATA fallback,
+ * actively filtering out generic placeholders ('Machine', 'Brand', 'Model').
+ */
+export function resolveTransferMachineDetails(req) {
+  if (!req) {
+    return {
+      machineName: 'Sewing Machine',
+      brand: '—',
+      model: '—',
+      serialNumber: '—',
+      category: 'Garments Machinery',
+      brandModelText: 'Garments Machinery',
+      liveMachine: null
+    };
+  }
+
+  const stored = req.machineInfo || {};
+  const isGeneric = (val) => {
+    if (!val || typeof val !== 'string') return true;
+    const t = val.trim().toLowerCase();
+    return (
+      t === '' ||
+      t === 'machine' ||
+      t === 'brand' ||
+      t === 'model' ||
+      t === 'standard' ||
+      t === 'n/a' ||
+      t === 'na' ||
+      t === '—' ||
+      t === '-' ||
+      t === 'undefined' ||
+      t === 'null' ||
+      t === 'unknown'
+    );
+  };
+
+  const rawSerial =
+    stored.serialNumber ||
+    req.serialNumber ||
+    req.machineSerial ||
+    '';
+  const cleanSerial = String(rawSerial).trim().toUpperCase();
+
+  // 1. Locate machine record with multi-layered fallback
+  let liveMachine = null;
+  if (req.machineId) {
+    liveMachine = storage.getItem(TABLE_NAMES.MACHINES, req.machineId) || null;
+  }
+  if (!liveMachine && cleanSerial) {
+    const allM = storage.getTable(TABLE_NAMES.MACHINES) || [];
+    liveMachine =
+      allM.find(m => m.serialNumber && String(m.serialNumber).trim().toUpperCase() === cleanSerial) ||
+      allM.find(m => m.id && String(m.id).trim().toUpperCase() === cleanSerial) ||
+      allM.find(m => m.serialNumber && String(m.serialNumber).trim().toUpperCase().includes(cleanSerial)) ||
+      null;
+  }
+  if (!liveMachine) {
+    const initMachines = (typeof INITIAL_DATA !== 'undefined' && Array.isArray(INITIAL_DATA.machines)) ? INITIAL_DATA.machines : [];
+    if (req.machineId) {
+      liveMachine = initMachines.find(m => m.id === req.machineId) || null;
+    }
+    if (!liveMachine && cleanSerial) {
+      liveMachine =
+        initMachines.find(m => m.serialNumber && String(m.serialNumber).trim().toUpperCase() === cleanSerial) ||
+        initMachines.find(m => m.serialNumber && String(m.serialNumber).trim().toUpperCase().includes(cleanSerial)) ||
+        null;
+    }
+  }
+  if (!liveMachine && cleanSerial) {
+    const smList = storage.getTable(TABLE_NAMES.STORAGE_MASTER) || [];
+    const sm = smList.find(s => s.category === 'MACHINE' && (
+      (s.serialNumber && String(s.serialNumber).trim().toUpperCase() === cleanSerial) ||
+      (s.id && String(s.id).trim().toUpperCase() === cleanSerial)
+    ));
+    if (sm) {
+      liveMachine = {
+        machineNameStr: sm.machineName || sm.item_name || sm.name,
+        brandStr: sm.brand,
+        modelStr: sm.model,
+        serialNumber: sm.serialNumber || cleanSerial,
+        category: sm.subCategory || 'Garments Machinery'
+      };
+    }
+  }
+
+  // 2. Resolve Machine Name
+  let resolvedMachineName = null;
+  if (liveMachine) {
+    if (liveMachine.machineNameStr && !isGeneric(liveMachine.machineNameStr)) {
+      resolvedMachineName = liveMachine.machineNameStr;
+    } else if (liveMachine.machineNameId) {
+      const mnObj =
+        masterDataService.getMachineNameById(liveMachine.machineNameId) ||
+        storage.getItem(TABLE_NAMES.MACHINE_NAMES, liveMachine.machineNameId) ||
+        ((typeof INITIAL_DATA !== 'undefined' && INITIAL_DATA.machine_names) ? INITIAL_DATA.machine_names.find(x => x.id === liveMachine.machineNameId) : null);
+      if (mnObj?.name && !isGeneric(mnObj.name)) {
+        resolvedMachineName = mnObj.name;
+      }
+    }
+    if (!resolvedMachineName && liveMachine.machineName && !isGeneric(liveMachine.machineName)) {
+      resolvedMachineName = liveMachine.machineName;
+    }
+    if (!resolvedMachineName && liveMachine.name && !isGeneric(liveMachine.name)) {
+      resolvedMachineName = liveMachine.name;
+    }
+  }
+  if (!resolvedMachineName && stored.machineName && !isGeneric(stored.machineName)) {
+    resolvedMachineName = stored.machineName;
+  }
+  if (!resolvedMachineName && req.machineName && !isGeneric(req.machineName)) {
+    resolvedMachineName = req.machineName;
+  }
+
+  // 3. Resolve Brand
+  let resolvedBrand = null;
+  if (liveMachine) {
+    if (liveMachine.brandStr && !isGeneric(liveMachine.brandStr)) {
+      resolvedBrand = liveMachine.brandStr;
+    } else if (liveMachine.brandId) {
+      const brdObj =
+        masterDataService.getBrandById(liveMachine.brandId) ||
+        storage.getItem(TABLE_NAMES.BRANDS, liveMachine.brandId) ||
+        ((typeof INITIAL_DATA !== 'undefined' && INITIAL_DATA.brands) ? INITIAL_DATA.brands.find(x => x.id === liveMachine.brandId) : null);
+      if (brdObj?.name && !isGeneric(brdObj.name)) {
+        resolvedBrand = brdObj.name;
+      }
+    }
+    if (!resolvedBrand && liveMachine.brand && !isGeneric(liveMachine.brand)) {
+      resolvedBrand = liveMachine.brand;
+    }
+  }
+  if (!resolvedBrand && stored.brand && !isGeneric(stored.brand)) {
+    resolvedBrand = stored.brand;
+  }
+  if (!resolvedBrand && req.machineBrand && !isGeneric(req.machineBrand)) {
+    resolvedBrand = req.machineBrand;
+  }
+  if (!resolvedBrand && req.brandName && !isGeneric(req.brandName)) {
+    resolvedBrand = req.brandName;
+  }
+
+  // 4. Resolve Model
+  let resolvedModel = null;
+  if (liveMachine) {
+    if (liveMachine.modelStr && !isGeneric(liveMachine.modelStr)) {
+      resolvedModel = liveMachine.modelStr;
+    } else if (liveMachine.modelId) {
+      const mdlObj =
+        masterDataService.getModelById(liveMachine.modelId) ||
+        storage.getItem(TABLE_NAMES.MODELS, liveMachine.modelId) ||
+        ((typeof INITIAL_DATA !== 'undefined' && INITIAL_DATA.models) ? INITIAL_DATA.models.find(x => x.id === liveMachine.modelId) : null);
+      if (mdlObj?.name && !isGeneric(mdlObj.name)) {
+        resolvedModel = mdlObj.name;
+      }
+    }
+    if (!resolvedModel && liveMachine.model && !isGeneric(liveMachine.model)) {
+      resolvedModel = liveMachine.model;
+    }
+    if (!resolvedModel && liveMachine.modelName && !isGeneric(liveMachine.modelName)) {
+      resolvedModel = liveMachine.modelName;
+    }
+  }
+  if (!resolvedModel && stored.model && !isGeneric(stored.model)) {
+    resolvedModel = stored.model;
+  }
+  if (!resolvedModel && req.machineModel && !isGeneric(req.machineModel)) {
+    resolvedModel = req.machineModel;
+  }
+  if (!resolvedModel && req.modelName && !isGeneric(req.modelName)) {
+    resolvedModel = req.modelName;
+  }
+
+  // Fallbacks if not detected
+  if (!resolvedMachineName) {
+    if (resolvedBrand && !isGeneric(resolvedBrand)) {
+      resolvedMachineName = `${resolvedBrand} Machine`;
+    } else {
+      resolvedMachineName = 'Sewing Machine';
+    }
+  }
+  resolvedBrand = resolvedBrand || '—';
+  resolvedModel = resolvedModel || '—';
+
+  // 5. Resolve Serial
+  const resolvedSerial =
+    (liveMachine && liveMachine.serialNumber) ||
+    cleanSerial ||
+    'N/A';
+
+  // 6. Category
+  let resolvedCategory = null;
+  if (liveMachine) {
+    const catId = liveMachine.categoryId;
+    if (catId) {
+      resolvedCategory = storage.getItem(TABLE_NAMES.CATEGORIES, catId)?.name;
+    }
+    if (!resolvedCategory && liveMachine.category && !isGeneric(liveMachine.category)) {
+      resolvedCategory = liveMachine.category;
+    }
+  }
+  if (!resolvedCategory && stored.category && !isGeneric(stored.category)) {
+    resolvedCategory = stored.category;
+  }
+  resolvedCategory = resolvedCategory || 'Garments Machinery';
+
+  // Format brand & model line
+  let brandModelText = '';
+  const hasBrand = resolvedBrand && resolvedBrand !== '—';
+  const hasModel = resolvedModel && resolvedModel !== '—';
+  if (hasBrand && hasModel) {
+    brandModelText = `${resolvedBrand} • ${resolvedModel}`;
+  } else if (hasBrand) {
+    brandModelText = resolvedBrand;
+  } else if (hasModel) {
+    brandModelText = resolvedModel;
+  } else {
+    brandModelText = resolvedCategory;
+  }
+
+  return {
+    machineName: resolvedMachineName,
+    brand: resolvedBrand,
+    model: resolvedModel,
+    serialNumber: resolvedSerial,
+    category: resolvedCategory,
+    brandModelText,
+    liveMachine
+  };
+}
 
 class TransferService {
   /**
@@ -159,10 +392,15 @@ class TransferService {
     const cleanReason = (reason && reason.trim()) ? reason.trim() : 'Relocation Request';
 
     // 2. Resolve Master Data Paths & Equipment Details
-    const mn = storage.getItem(TABLE_NAMES.MACHINE_NAMES, machine.machineNameId);
-    const brd = storage.getItem(TABLE_NAMES.BRANDS, machine.brandId);
-    const mdl = storage.getItem(TABLE_NAMES.MODELS, machine.modelId);
-    const cat = mn?.categoryId;
+    const resolvedEquip = resolveTransferMachineDetails({
+      machineId: machine.id,
+      serialNumber: machine.serialNumber,
+      machineInfo: {
+        serialNumber: machine.serialNumber,
+        category: machine.category
+      },
+      ...machine
+    });
 
     const sourcePath = masterDataService.getFullLocationPath(machine.unitId, machine.floorId, machine.lineId, machine.groupId);
     const destPath = masterDataService.getFullLocationPath(destUnitId, destFloorId, destLineId, destGroupId);
@@ -245,13 +483,13 @@ class TransferService {
       machineId: machine.id,
       serialNumber: machine.serialNumber,
       machineSerial: machine.serialNumber,
-      machineName: mn?.name || 'Machine',
+      machineName: resolvedEquip.machineName,
       machineInfo: {
-        machineName: mn?.name || 'Machine',
-        brand: brd?.name || 'Brand',
-        model: mdl?.name || 'Model',
+        machineName: resolvedEquip.machineName,
+        brand: resolvedEquip.brand,
+        model: resolvedEquip.model,
         serialNumber: machine.serialNumber,
-        category: storage.getItem(TABLE_NAMES.CATEGORIES, cat)?.name || 'Sewing Equipment'
+        category: resolvedEquip.category
       },
       sourceGroupId: machine.groupId,
       sourceUnitId: machine.unitId,
@@ -966,13 +1204,14 @@ class TransferService {
     });
 
     // 2. Insert into permanent historical TRANSFERS log
+    const resolvedEquip = resolveTransferMachineDetails(req);
     const transferRecord = {
       id: `trf-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
       requestId: req.id,
       requestNumber: req.requestNumber,
       machineId: machine.id,
       serialNumber: machine.serialNumber,
-      machineName: req.machineInfo?.machineName || 'Machine',
+      machineName: resolvedEquip.machineName,
       sourceGroupId: req.sourceGroupId,
       sourceUnitId: req.sourceUnitId,
       sourceFloorId: req.sourceFloorId,
@@ -1008,7 +1247,7 @@ class TransferService {
     });
 
     // 4. Send high-priority notifications & audit trail
-    const mName = req.machineInfo?.machineName || req.machineName || 'Machine';
+    const mName = resolvedEquip.machineName;
     notificationService.notify(
       '🎉 Machine Transfer Completed!',
       `Machine ${machine.serialNumber} (${mName}) officially relocated to ${req.destPath} under ${req.requestNumber}.`,
@@ -1120,11 +1359,8 @@ class TransferService {
 
       const approvedBy = r.completedByName || (r.approvalHistory?.find(h => h.action === 'APPROVED')?.approverName) || r.approvedBy || (isCompleted ? 'Admin' : '—');
 
-      const mName = r.machineInfo?.machineName || r.machineName || 'Machine';
-      const mBrand = r.machineInfo?.brand || r.machineBrand || '';
-      const mModel = r.machineInfo?.model || r.machineModel || '';
-      const modelDetails = [mBrand, mModel].filter(Boolean).join(' ');
-      const fullMachineTitle = modelDetails ? `${mName} (${modelDetails})` : mName;
+      const eq = resolveTransferMachineDetails(r);
+      const fullMachineTitle = (eq.brandModelText && eq.brandModelText !== eq.category) ? `${eq.machineName} (${eq.brandModelText})` : eq.machineName;
 
       const sourceLoc = r.sourcePath || (typeof r.sourceLocation === 'string' ? r.sourceLocation : `${r.sourceLocation?.unit || ''} > ${r.sourceLocation?.floor || ''} > ${r.sourceLocation?.line || ''}`) || '—';
       const destLoc = r.destPath || (typeof r.destLocation === 'string' ? r.destLocation : `${r.destLocation?.unit || ''} > ${r.destLocation?.floor || ''} > ${r.destLocation?.line || ''}`) || '—';
@@ -1140,7 +1376,7 @@ class TransferService {
 
       rows.push([
         String(idx + 1).padStart(2, '0'),
-        r.machineInfo?.serialNumber || r.machineSerial || '—',
+        eq.serialNumber || r.machineInfo?.serialNumber || r.machineSerial || '—',
         fullMachineTitle,
         sourceLoc,
         destLoc,

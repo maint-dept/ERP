@@ -6,7 +6,7 @@
 
 import { storage } from '../db/storage.js';
 import { TABLE_NAMES, TRANSFER_STATUSES } from '../db/schema.js';
-import { transferService } from '../services/transferService.js';
+import { transferService, resolveTransferMachineDetails } from '../services/transferService.js';
 import { masterDataService } from '../services/masterDataService.js';
 import { pdfService } from '../services/pdfService.js';
 import { authService } from '../services/authService.js';
@@ -177,26 +177,8 @@ export function renderTransfersView() {
                 const stageTitle = isCompleted ? 'Final Gate Pass Approved' : (req.levels?.[currentLvl - 1]?.title || 'In Review');
                 const displayStatus = safeStatus === 'PENDING_APPROVAL' ? 'Pending' : (safeStatus === 'PARTIALLY_APPROVED' ? 'In Progress' : safeStatus.replace(/_/g, ' '));
 
-                // ── Robust Live Machine Lookup per row ─────────────────────
-                // Strategy 1: by machineId
-                let _lm = storage.getItem(TABLE_NAMES.MACHINES, req.machineId) || null;
-                // Strategy 2: fallback by serial number
-                if (!_lm) {
-                  const _serial = req.machineInfo?.serialNumber || req.serialNumber || req.machineSerial;
-                  if (_serial) {
-                    _lm = (storage.getTable(TABLE_NAMES.MACHINES) || [])
-                      .find(m => String(m.serialNumber) === String(_serial)) || null;
-                  }
-                }
-                const _lmn = _lm ? storage.getItem(TABLE_NAMES.MACHINE_NAMES, _lm.machineNameId) : null;
-                const _lb  = _lm ? storage.getItem(TABLE_NAMES.BRANDS,        _lm.brandId)       : null;
-                const _lmd = _lm ? storage.getItem(TABLE_NAMES.MODELS,        _lm.modelId)       : null;
-                const _si  = req.machineInfo || {};
-                const _rMN  = _lmn?.name  || _si.machineName || req.machineName || 'N/A';
-                const _rBrd = _lb?.name   || _si.brand || '—';
-                const _rMdl = _lmd?.name  || _si.model || '—';
-                const _rSN  = _lm?.serialNumber || _si.serialNumber || req.serialNumber || req.machineSerial || '—';
-                // ──────────────────────────────────────────────────────────
+                // Resolve equipment details using comprehensive engine
+                const eq = resolveTransferMachineDetails(req);
 
                 return `
                   <tr class="transfer-row-item" data-id="${req.id}" title="Click row to view complete transfer details and audit trail">
@@ -213,14 +195,14 @@ export function renderTransfersView() {
                     <!-- Equipment Details -->
                     <td>
                       <div style="font-weight: 700; color: #fff; font-size: 12px; line-height: 1.3; margin-bottom: 2px;">
-                        ${_rMN}
+                        ${eq.machineName}
                       </div>
                       <div style="font-size: 10.5px; color: var(--text-secondary); margin-bottom: 3px;">
-                        ${_rBrd} &bull; ${_rMdl}
+                        ${eq.brandModelText}
                       </div>
                       <div>
                         <span style="font-family: var(--font-mono); font-size: 10px; color: #38bdf8; font-weight: 700; background: rgba(56,189,248,0.1); border: 1px solid rgba(56,189,248,0.25); padding: 1px 5px; border-radius: 3px; display: inline-block;">
-                          SN: ${_rSN}
+                          SN: ${eq.serialNumber}
                         </span>
                       </div>
                     </td>

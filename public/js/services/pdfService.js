@@ -7,6 +7,8 @@ import { storage } from '../db/storage.js';
 import { TABLE_NAMES } from '../db/schema.js';
 import { authService } from './authService.js';
 import { auditService } from './auditService.js';
+import { masterDataService } from './masterDataService.js';
+import { resolveTransferMachineDetails } from './transferService.js';
 import { getSignaturesForReport } from '../components/settingsView.js';
 
 class PDFService {
@@ -299,31 +301,8 @@ class PDFService {
     const dateStr = now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
     const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-    // ── Robust Live Machine Lookup ─────────────────────────────────────────────
-    // Always resolve from live DB at PDF-generation time to fix stale fallbacks.
-    // Strategy 1: by machineId
-    let liveMachine = storage.getItem(TABLE_NAMES.MACHINES, req.machineId) || null;
-    // Strategy 2: fallback by serial number if ID lookup fails
-    if (!liveMachine) {
-      const serial = req.machineInfo?.serialNumber || req.serialNumber || req.machineSerial;
-      if (serial) {
-        liveMachine = (storage.getTable(TABLE_NAMES.MACHINES) || [])
-          .find(m => String(m.serialNumber) === String(serial)) || null;
-      }
-    }
-    const liveMN  = liveMachine ? storage.getItem(TABLE_NAMES.MACHINE_NAMES, liveMachine.machineNameId) : null;
-    const liveBrd = liveMachine ? storage.getItem(TABLE_NAMES.BRANDS,        liveMachine.brandId)       : null;
-    const liveMdl = liveMachine ? storage.getItem(TABLE_NAMES.MODELS,        liveMachine.modelId)       : null;
-    const liveCatId = liveMN?.categoryId;
-    const liveCat = liveCatId ? storage.getItem(TABLE_NAMES.CATEGORIES, liveCatId) : null;
-
-    // Merge: live data takes priority over stored machineInfo; fallback to stored if live unavailable
-    const storedInfo = req.machineInfo || {};
-    const resolvedMachineName = liveMN?.name  || storedInfo.machineName || req.machineName || 'N/A';
-    const resolvedBrand       = liveBrd?.name || storedInfo.brand || '—';
-    const resolvedModel       = liveMdl?.name || storedInfo.model || '—';
-    const resolvedSerial      = liveMachine?.serialNumber || storedInfo.serialNumber || req.serialNumber || req.machineSerial || 'N/A';
-    const resolvedCategory    = liveCat?.name || storedInfo.category || 'Garments Machinery';
+    // Resolve equipment details using comprehensive engine
+    const eq = resolveTransferMachineDetails(req);
     // ──────────────────────────────────────────────────────────────────────────
 
     // Status colors
@@ -535,10 +514,10 @@ class PDFService {
           <div class="section-card">
             <div class="section-title">🧵 1. Machine Asset Identity</div>
             <div style="font-size: 11.5px; display: flex; flex-direction: column; gap: 4px;">
-              <div><strong>Machine Name:</strong> ${resolvedMachineName}</div>
-              <div><strong>Brand &amp; Model:</strong> ${resolvedBrand} — ${resolvedModel}</div>
-              <div><strong>Serial Number:</strong> <span style="font-family: monospace; font-weight: 800; color: #0284c7;">${resolvedSerial}</span></div>
-              <div><strong>Category:</strong> ${resolvedCategory}</div>
+              <div><strong>Machine Name:</strong> ${eq.machineName}</div>
+              <div><strong>Brand &amp; Model:</strong> ${eq.brandModelText}</div>
+              <div><strong>Serial Number:</strong> <span style="font-family: monospace; font-weight: 800; color: #0284c7;">${eq.serialNumber}</span></div>
+              <div><strong>Category:</strong> ${eq.category}</div>
             </div>
           </div>
 
@@ -1044,7 +1023,7 @@ class PDFService {
   }
 
   /**
-   * Generates formatted corporate branded PDF & Print document for ENT Lab Management Report
+   * Generates formatted corporate branded PDF & Print document for ENT Lab Report
    */
   generateEtLabManagementReportPDF({ rows, filterSummary, generatedBy }) {
     const user = generatedBy || authService.getCurrentUser();
@@ -1277,7 +1256,7 @@ class PDFService {
       printWin.document.write(reportHtml);
       printWin.document.close();
       printWin.document.title = 'ENT Lab Report';
-      auditService.log('ET_LAB_PDF_REPORT_GENERATED', 'REPORT', 'ENT Lab Report', `Generated ENT Lab Management PDF/Print Report.`);
+      auditService.log('ET_LAB_PDF_REPORT_GENERATED', 'REPORT', 'ENT Lab Report', `Generated ENT Lab PDF/Print Report.`);
     } else {
       alert('Pop-up window was blocked. Please allow pop-ups for this site to view/print reports.');
     }

@@ -2061,9 +2061,9 @@ class ExcelService {
   }
 
   /**
-   * Export dedicated filtered ENT Lab Management Report table to Excel with all 20 specified columns
+   * Export dedicated filtered ENT Lab Report table to Excel with all 20 specified columns
    */
-  async exportEtLabManagementReportExcel(rows, fileName = `ET_Lab_Management_Report_${new Date().toISOString().split('T')[0]}.xlsx`) {
+  async exportEtLabManagementReportExcel(rows, fileName = `ENT_Lab_Report_${new Date().toISOString().split('T')[0]}.xlsx`) {
     await this.ensureXlsx();
 
     const wb = XLSX.utils.book_new();
@@ -2118,7 +2118,7 @@ class ExcelService {
 
     XLSX.utils.book_append_sheet(wb, ws, 'ENT Lab Report');
     XLSX.writeFile(wb, fileName);
-    auditService.log('ET_LAB_REPORT_EXCEL_EXPORTED', 'EXCEL_EXPORT', 'ET_LAB', `Exported filtered ENT Lab Management Report (${rows.length} records) to Excel.`);
+    auditService.log('ET_LAB_REPORT_EXCEL_EXPORTED', 'EXCEL_EXPORT', 'ET_LAB', `Exported filtered ENT Lab Report (${rows.length} records) to Excel.`);
   }
 }
 

@@ -15,8 +15,7 @@ import { INITIAL_DATA } from '../db/initialData.js';
 import { machineService } from '../services/machineService.js';
 import { masterDataService } from '../services/masterDataService.js';
 import { excelService, formatDisplayLine } from '../services/excelService.js';
-import { pdfService } from '../services/pdfService.js?v=4.7.7';
-import { transferService } from '../services/transferService.js';
+import { transferService, resolveTransferMachineDetails } from '../services/transferService.js';
 import { historyService } from '../services/historyService.js';
 import { auditService } from '../services/auditService.js';
 import { authService } from '../services/authService.js';
@@ -106,7 +105,7 @@ export function renderReportsView() {
             <strong style="color: #fbbf24;">⚙️ 3. Spare Parts Reports:</strong> Replacement logs, consumption volume, unreturned parts &amp; valuations.
           </div>
           <div style="background: rgba(52, 211, 153, 0.08); border-left: 3px solid #34d399; padding: 4px 6px; border-radius: 4px;">
-            <strong style="color: #34d399;">🔬 4. ENT Lab Management:</strong> Circuit board diagnostics, in-house &amp; external vendor repairs.
+            <strong style="color: #34d399;">🔬 4. ENT Lab Report:</strong> Circuit board diagnostics, in-house &amp; external vendor repairs.
           </div>
           <div style="background: rgba(244, 63, 94, 0.08); border-left: 3px solid #fb7185; padding: 4px 6px; border-radius: 4px;">
             <strong style="color: #fb7185;">📤 5. 1-Click Excel Export:</strong> Download comprehensive multi-sheet spreadsheets with live formulas.
@@ -1098,12 +1097,13 @@ function buildTransferAuditLog(allRequests, completedTransfers) {
   (allRequests || []).forEach(req => {
     seenRequestIds.add(req.id);
     const ct = completedMap.get(req.id);
+    const eq = resolveTransferMachineDetails(req);
     rows.push({
       id:            req.requestNumber || req.id || '\u2014',
-      machineSerial: req.machineInfo?.serialNumber || req.serialNumber || req.machineSerial || ct?.serialNumber || ct?.machineSerial || '\u2014',
-      machineName:   req.machineInfo?.machineName  || req.machineName   || ct?.machineName   || '\u2014',
-      machineBrand:  req.machineInfo?.brand        || req.brandName     || '\u2014',
-      machineModel:  req.machineInfo?.model        || req.modelName     || '\u2014',
+      machineSerial: eq.serialNumber,
+      machineName:   eq.machineName,
+      machineBrand:  eq.brand,
+      machineModel:  eq.model,
       sourceLocation: resolveLocation(req.sourceLocation, req.sourceUnitId, req.sourceFloorId, req.sourceLineId, req.sourcePath),
       destLocation:   resolveLocation(req.destLocation || req.targetLocation, req.destUnitId, req.destFloorId, req.destLineId, req.destPath),
       prevFloor:     resolveFloor(req.sourceFloorId, req.sourceLocation),
@@ -1123,11 +1123,13 @@ function buildTransferAuditLog(allRequests, completedTransfers) {
   // Add any completed TRANSFERS records that have no matching request (orphaned legacy records)
   (completedTransfers || []).forEach(ct => {
     if (!ct.requestId || !seenRequestIds.has(ct.requestId)) {
+      const eq = resolveTransferMachineDetails(ct);
       rows.push({
         id:            ct.requestNumber || ct.id || '\u2014',
-        machineSerial: ct.serialNumber || ct.machineSerial || '\u2014',
-        machineName:   ct.machineName  || '\u2014',
-        machineBrand:  '\u2014', machineModel: '\u2014',
+        machineSerial: eq.serialNumber,
+        machineName:   eq.machineName,
+        machineBrand:  eq.brand,
+        machineModel:  eq.model,
         sourceLocation: resolveLocation(ct.sourceLocation, ct.sourceUnitId, ct.sourceFloorId, ct.sourceLineId, ct.sourcePath),
         destLocation:   resolveLocation(ct.destLocation || ct.targetLocation, ct.destUnitId, ct.destFloorId, ct.destLineId, ct.destPath),
         prevFloor:     floorMap.get(ct.sourceFloorId) || '\u2014',
