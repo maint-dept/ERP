@@ -340,12 +340,35 @@ class HomepageService {
   }
 
   /**
-   * Save draft config to localStorage only (not Database yet).
-   * Draft stays local until publishConfig() is called.
+   * Save draft config to localStorage (draft key + storage-engine key) so that
+   * page refresh always restores the latest edited state without needing a
+   * separate publishConfig() call.
+   *
+   * Flow:
+   *  1. Draft key  → always saved (local preview / manager)
+   *  2. Storage-engine key → saved so loadFromStorage() picks up latest on refresh
+   *  3. storage.data in-memory → updated so _getPublishedConfig() returns latest
    */
   saveDraftConfig(config) {
     try {
-      localStorage.setItem(STORAGE_KEY_DRAFT, JSON.stringify(config));
+      const serialised = JSON.stringify(config);
+
+      // 1. Draft key (local-only, manager uses this)
+      localStorage.setItem(STORAGE_KEY_DRAFT, serialised);
+
+      // 2. Storage-engine localStorage key (read by loadFromStorage() on every page load)
+      const STORAGE_KEY_PREFIX = 'al_muslim_erp_';
+      localStorage.setItem(STORAGE_KEY_PREFIX + TABLE_NAMES.HOMEPAGE_CONFIG, serialised);
+
+      // 3. Update in-memory cache so getPublishedConfig() returns latest immediately
+      if (!storage.data) storage.data = {};
+      storage.data[TABLE_NAMES.HOMEPAGE_CONFIG] = config;
+
+      // 4. Update legacy key for backward compat
+      try {
+        localStorage.setItem('al_muslim_homepage_published_config', serialised);
+      } catch (_) {}
+
       return true;
     } catch (e) {
       console.error('Failed to save draft homepage config:', e);
