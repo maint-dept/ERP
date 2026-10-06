@@ -19,6 +19,18 @@ export function renderTransferDetailsModal() {
   const req = transferService.getTransferRequestById(requestId);
   if (!req) return '';
 
+  // ── Live Machine Lookup ──────────────────────────────────────────────────
+  const liveMachine = storage.getItem(TABLE_NAMES.MACHINES, req.machineId) || null;
+  const liveMN  = liveMachine ? storage.getItem(TABLE_NAMES.MACHINE_NAMES, liveMachine.machineNameId) : null;
+  const liveBrd = liveMachine ? storage.getItem(TABLE_NAMES.BRANDS,        liveMachine.brandId)       : null;
+  const liveMdl = liveMachine ? storage.getItem(TABLE_NAMES.MODELS,        liveMachine.modelId)       : null;
+  const storedInfo = req.machineInfo || {};
+  const resolvedMachineName = liveMN?.name  || storedInfo.machineName || req.machineName || 'N/A';
+  const resolvedBrand       = liveBrd?.name || storedInfo.brand || '—';
+  const resolvedModel       = liveMdl?.name || storedInfo.model || '—';
+  const resolvedSerial      = liveMachine?.serialNumber || storedInfo.serialNumber || req.serialNumber || req.machineSerial || 'N/A';
+  // ────────────────────────────────────────────────────────────────────────
+
   const safeStatus = (req.status || TRANSFER_STATUSES.PENDING_APPROVAL).toString();
   const user = authService.getCurrentUser();
   const canApprove = (safeStatus === TRANSFER_STATUSES.PENDING_APPROVAL || safeStatus === TRANSFER_STATUSES.PARTIALLY_APPROVED) &&
@@ -62,13 +74,13 @@ export function renderTransferDetailsModal() {
                 🧵 Equipment Details
               </div>
               <div style="font-size: 15px; font-weight: 800; color: #fff;">
-                ${req.machineInfo?.machineName || req.machineName || 'Machine'}
+                ${resolvedMachineName}
               </div>
               <div style="font-size: 12.5px; color: var(--text-secondary); margin-top: 2px;">
-                ${req.machineInfo?.brand || '—'} &bull; ${req.machineInfo?.model || '—'}
+                ${resolvedBrand} &bull; ${resolvedModel}
               </div>
               <div style="display: flex; gap: 16px; margin-top: 8px; font-size: 12px;">
-                <div><span style="color: var(--text-muted);">Serial No:</span> <strong style="color: #38bdf8; font-family: var(--font-mono);">${req.machineInfo?.serialNumber || req.serialNumber || req.machineSerial || 'N/A'}</strong></div>
+                <div><span style="color: var(--text-muted);">Serial No:</span> <strong style="color: #38bdf8; font-family: var(--font-mono);">${resolvedSerial}</strong></div>
               </div>
             </div>
 

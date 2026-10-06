@@ -299,6 +299,25 @@ class PDFService {
     const dateStr = now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
     const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
+    // ── Live Machine Lookup ────────────────────────────────────────────────────
+    // Always resolve from live DB at PDF-generation time to fix stale fallbacks
+    // ("Machine / Brand / Model") stored at request-creation time.
+    const liveMachine = storage.getItem(TABLE_NAMES.MACHINES, req.machineId) || null;
+    const liveMN  = liveMachine ? storage.getItem(TABLE_NAMES.MACHINE_NAMES, liveMachine.machineNameId) : null;
+    const liveBrd = liveMachine ? storage.getItem(TABLE_NAMES.BRANDS,        liveMachine.brandId)       : null;
+    const liveMdl = liveMachine ? storage.getItem(TABLE_NAMES.MODELS,        liveMachine.modelId)       : null;
+    const liveCatId = liveMN?.categoryId;
+    const liveCat = liveCatId ? storage.getItem(TABLE_NAMES.CATEGORIES, liveCatId) : null;
+
+    // Merge: live data takes priority over stored machineInfo; fallback to stored if live unavailable
+    const storedInfo = req.machineInfo || {};
+    const resolvedMachineName = liveMN?.name  || storedInfo.machineName || req.machineName || 'N/A';
+    const resolvedBrand       = liveBrd?.name || storedInfo.brand || '—';
+    const resolvedModel       = liveMdl?.name || storedInfo.model || '—';
+    const resolvedSerial      = liveMachine?.serialNumber || storedInfo.serialNumber || req.serialNumber || req.machineSerial || 'N/A';
+    const resolvedCategory    = liveCat?.name || storedInfo.category || 'Garments Machinery';
+    // ──────────────────────────────────────────────────────────────────────────
+
     // Status colors
     const isCompleted = req.status === 'COMPLETED' || req.status === 'APPROVED';
     const statusColor = isCompleted ? '#16a34a' : (req.status === 'REJECTED' ? '#dc2626' : '#d97706');
@@ -508,10 +527,10 @@ class PDFService {
           <div class="section-card">
             <div class="section-title">🧵 1. Machine Asset Identity</div>
             <div style="font-size: 11.5px; display: flex; flex-direction: column; gap: 4px;">
-              <div><strong>Machine Name:</strong> ${req.machineInfo?.machineName || req.machineName || 'Machine'}</div>
-              <div><strong>Brand &amp; Model:</strong> ${req.machineInfo?.brand || 'Unknown'} — ${req.machineInfo?.model || 'Unknown'}</div>
-              <div><strong>Serial Number:</strong> <span style="font-family: monospace; font-weight: 800; color: #0284c7;">${req.machineInfo?.serialNumber || req.serialNumber || req.machineSerial || 'Unknown'}</span></div>
-              <div><strong>Category:</strong> ${req.machineInfo?.category || 'Garments Machinery'}</div>
+              <div><strong>Machine Name:</strong> ${resolvedMachineName}</div>
+              <div><strong>Brand &amp; Model:</strong> ${resolvedBrand} — ${resolvedModel}</div>
+              <div><strong>Serial Number:</strong> <span style="font-family: monospace; font-weight: 800; color: #0284c7;">${resolvedSerial}</span></div>
+              <div><strong>Category:</strong> ${resolvedCategory}</div>
             </div>
           </div>
 

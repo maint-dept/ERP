@@ -177,6 +177,18 @@ export function renderTransfersView() {
                 const stageTitle = isCompleted ? 'Final Gate Pass Approved' : (req.levels?.[currentLvl - 1]?.title || 'In Review');
                 const displayStatus = safeStatus === 'PENDING_APPROVAL' ? 'Pending' : (safeStatus === 'PARTIALLY_APPROVED' ? 'In Progress' : safeStatus.replace(/_/g, ' '));
 
+                // ── Live Machine Lookup per row ─────────────────────────
+                const _lm  = storage.getItem(TABLE_NAMES.MACHINES,      req.machineId) || null;
+                const _lmn = _lm ? storage.getItem(TABLE_NAMES.MACHINE_NAMES, _lm.machineNameId) : null;
+                const _lb  = _lm ? storage.getItem(TABLE_NAMES.BRANDS,        _lm.brandId)       : null;
+                const _lmd = _lm ? storage.getItem(TABLE_NAMES.MODELS,         _lm.modelId)       : null;
+                const _si  = req.machineInfo || {};
+                const _rMN  = _lmn?.name  || _si.machineName || req.machineName || 'N/A';
+                const _rBrd = _lb?.name   || _si.brand || '—';
+                const _rMdl = _lmd?.name  || _si.model || '—';
+                const _rSN  = _lm?.serialNumber || _si.serialNumber || req.serialNumber || req.machineSerial || '—';
+                // ──────────────────────────────────────────────────────────
+
                 return `
                   <tr class="transfer-row-item" data-id="${req.id}" title="Click row to view complete transfer details and audit trail">
                     <!-- Request ID -->
@@ -192,14 +204,14 @@ export function renderTransfersView() {
                     <!-- Equipment Details -->
                     <td>
                       <div style="font-weight: 700; color: #fff; font-size: 12px; line-height: 1.3; margin-bottom: 2px;">
-                        ${req.machineInfo?.machineName || req.machineName || 'Machine'}
+                        ${_rMN}
                       </div>
                       <div style="font-size: 10.5px; color: var(--text-secondary); margin-bottom: 3px;">
-                        ${req.machineInfo?.brand || '—'} &bull; ${req.machineInfo?.model || '—'}
+                        ${_rBrd} &bull; ${_rMdl}
                       </div>
                       <div>
                         <span style="font-family: var(--font-mono); font-size: 10px; color: #38bdf8; font-weight: 700; background: rgba(56,189,248,0.1); border: 1px solid rgba(56,189,248,0.25); padding: 1px 5px; border-radius: 3px; display: inline-block;">
-                          SN: ${req.machineInfo?.serialNumber || req.serialNumber || req.machineSerial || '—'}
+                          SN: ${_rSN}
                         </span>
                       </div>
                     </td>
