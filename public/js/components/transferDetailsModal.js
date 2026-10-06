@@ -19,8 +19,17 @@ export function renderTransferDetailsModal() {
   const req = transferService.getTransferRequestById(requestId);
   if (!req) return '';
 
-  // ── Live Machine Lookup ──────────────────────────────────────────────────
-  const liveMachine = storage.getItem(TABLE_NAMES.MACHINES, req.machineId) || null;
+  // ── Robust Live Machine Lookup ─────────────────────────────────────────
+  // Strategy 1: lookup by machineId
+  let liveMachine = storage.getItem(TABLE_NAMES.MACHINES, req.machineId) || null;
+  // Strategy 2: fallback — find by serial number if ID lookup failed
+  if (!liveMachine) {
+    const serial = req.machineInfo?.serialNumber || req.serialNumber || req.machineSerial;
+    if (serial) {
+      liveMachine = (storage.getTable(TABLE_NAMES.MACHINES) || [])
+        .find(m => String(m.serialNumber) === String(serial)) || null;
+    }
+  }
   const liveMN  = liveMachine ? storage.getItem(TABLE_NAMES.MACHINE_NAMES, liveMachine.machineNameId) : null;
   const liveBrd = liveMachine ? storage.getItem(TABLE_NAMES.BRANDS,        liveMachine.brandId)       : null;
   const liveMdl = liveMachine ? storage.getItem(TABLE_NAMES.MODELS,        liveMachine.modelId)       : null;

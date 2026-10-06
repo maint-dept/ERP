@@ -182,7 +182,7 @@
     };
 
     // Build version v4.22.24 — silent cache clear, NO URL redirect
-    var CURRENT_BUILD = '4.23.2';
+    var CURRENT_BUILD = '4.23.3';
 
     // Silently unregister any old Service Workers and clear all caches
     (function() {
@@ -195,7 +195,7 @@
         if ('serviceWorker' in navigator) {
           navigator.serviceWorker.getRegistrations().then(function(regs) {
             regs.forEach(function(r) {
-              console.log('[ERP v4.23.2] Unregistering SW:', r.scope);
+              console.log('[ERP v4.23.3] Unregistering SW:', r.scope);
               r.unregister();
             });
           });
@@ -205,8 +205,8 @@
     })();
   </script>
 
-  <!-- Main ES Module Application Entrypoint (Cache-Busted v4.23.2) -->
-  <script type="module" src="js/app.js?v=4.23.2"></script>
+  <!-- Main ES Module Application Entrypoint (Cache-Busted v4.23.3) -->
+  <script type="module" src="js/app.js?v=4.23.3"></script>
 
   <style>
     @keyframes spin {

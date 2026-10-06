@@ -299,10 +299,18 @@ class PDFService {
     const dateStr = now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
     const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-    // ── Live Machine Lookup ────────────────────────────────────────────────────
-    // Always resolve from live DB at PDF-generation time to fix stale fallbacks
-    // ("Machine / Brand / Model") stored at request-creation time.
-    const liveMachine = storage.getItem(TABLE_NAMES.MACHINES, req.machineId) || null;
+    // ── Robust Live Machine Lookup ─────────────────────────────────────────────
+    // Always resolve from live DB at PDF-generation time to fix stale fallbacks.
+    // Strategy 1: by machineId
+    let liveMachine = storage.getItem(TABLE_NAMES.MACHINES, req.machineId) || null;
+    // Strategy 2: fallback by serial number if ID lookup fails
+    if (!liveMachine) {
+      const serial = req.machineInfo?.serialNumber || req.serialNumber || req.machineSerial;
+      if (serial) {
+        liveMachine = (storage.getTable(TABLE_NAMES.MACHINES) || [])
+          .find(m => String(m.serialNumber) === String(serial)) || null;
+      }
+    }
     const liveMN  = liveMachine ? storage.getItem(TABLE_NAMES.MACHINE_NAMES, liveMachine.machineNameId) : null;
     const liveBrd = liveMachine ? storage.getItem(TABLE_NAMES.BRANDS,        liveMachine.brandId)       : null;
     const liveMdl = liveMachine ? storage.getItem(TABLE_NAMES.MODELS,        liveMachine.modelId)       : null;

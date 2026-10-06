@@ -177,11 +177,20 @@ export function renderTransfersView() {
                 const stageTitle = isCompleted ? 'Final Gate Pass Approved' : (req.levels?.[currentLvl - 1]?.title || 'In Review');
                 const displayStatus = safeStatus === 'PENDING_APPROVAL' ? 'Pending' : (safeStatus === 'PARTIALLY_APPROVED' ? 'In Progress' : safeStatus.replace(/_/g, ' '));
 
-                // ── Live Machine Lookup per row ─────────────────────────
-                const _lm  = storage.getItem(TABLE_NAMES.MACHINES,      req.machineId) || null;
+                // ── Robust Live Machine Lookup per row ─────────────────────
+                // Strategy 1: by machineId
+                let _lm = storage.getItem(TABLE_NAMES.MACHINES, req.machineId) || null;
+                // Strategy 2: fallback by serial number
+                if (!_lm) {
+                  const _serial = req.machineInfo?.serialNumber || req.serialNumber || req.machineSerial;
+                  if (_serial) {
+                    _lm = (storage.getTable(TABLE_NAMES.MACHINES) || [])
+                      .find(m => String(m.serialNumber) === String(_serial)) || null;
+                  }
+                }
                 const _lmn = _lm ? storage.getItem(TABLE_NAMES.MACHINE_NAMES, _lm.machineNameId) : null;
                 const _lb  = _lm ? storage.getItem(TABLE_NAMES.BRANDS,        _lm.brandId)       : null;
-                const _lmd = _lm ? storage.getItem(TABLE_NAMES.MODELS,         _lm.modelId)       : null;
+                const _lmd = _lm ? storage.getItem(TABLE_NAMES.MODELS,        _lm.modelId)       : null;
                 const _si  = req.machineInfo || {};
                 const _rMN  = _lmn?.name  || _si.machineName || req.machineName || 'N/A';
                 const _rBrd = _lb?.name   || _si.brand || '—';
