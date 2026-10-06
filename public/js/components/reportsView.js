@@ -456,7 +456,7 @@ function renderEtLabReportsTab(boards) {
       <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); overflow: hidden; display: flex; flex-direction: column; flex: 1; min-height: 0;">
         <div style="padding: 5px 12px; background: rgba(15, 23, 42, 0.9); border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; flex-shrink: 0;">
           <div style="font-weight: 800; font-size: 12px; color: #38bdf8; display: flex; align-items: center; gap: 6px;">
-            <span>📊 ENT Lab Master &amp; Movement Report</span>
+            <span>📊 ENT Lab Report</span>
             <span class="badge badge-info" style="font-size: 10px; padding: 1px 5px;">${filteredRows.length} Boards</span>
           </div>
           <div style="font-size: 10.5px; color: var(--text-muted);">
