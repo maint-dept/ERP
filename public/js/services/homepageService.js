@@ -340,14 +340,15 @@ class HomepageService {
   }
 
   /**
-   * Save draft config to localStorage (draft key + storage-engine key) so that
-   * page refresh always restores the latest edited state without needing a
-   * separate publishConfig() call.
+   * Save draft config — writes synchronously to localStorage for instant UI
+   * feedback, then fires a debounced background MySQL auto-save (600 ms).
    *
    * Flow:
-   *  1. Draft key  → always saved (local preview / manager)
-   *  2. Storage-engine key → saved so loadFromStorage() picks up latest on refresh
-   *  3. storage.data in-memory → updated so _getPublishedConfig() returns latest
+   *  1. Draft key          → localStorage (manager preview, instant)
+   *  2. Storage-engine key → localStorage so loadFromStorage() gets latest on refresh
+   *  3. storage.data RAM   → immediate getPublishedConfig() consistency
+   *  4. Legacy key         → backward compat
+   *  5. MySQL auto-save    → debounced 600 ms background write (non-blocking)
    */
   saveDraftConfig(config) {
     try {
@@ -368,6 +369,30 @@ class HomepageService {
       try {
         localStorage.setItem('al_muslim_homepage_published_config', serialised);
       } catch (_) {}
+
+      // 5. Debounced MySQL auto-save (600 ms — coalesces rapid consecutive edits)
+      //    Non-blocking: localStorage is already updated above, so UI is always instant.
+      if (this._autoSaveTimer) clearTimeout(this._autoSaveTimer);
+      this._autoSaveTimer = setTimeout(async () => {
+        try {
+          const latest = this.getDraftConfig();
+          latest.updatedAt = new Date().toISOString();
+          const ok = await storage.saveTable(TABLE_NAMES.HOMEPAGE_CONFIG, latest, true);
+          if (ok) {
+            // Keep in-memory and localStorage in sync with the timestamped version
+            storage.data[TABLE_NAMES.HOMEPAGE_CONFIG] = latest;
+            localStorage.setItem(STORAGE_KEY_PREFIX + TABLE_NAMES.HOMEPAGE_CONFIG, JSON.stringify(latest));
+            localStorage.setItem(STORAGE_KEY_DRAFT, JSON.stringify(latest));
+            if (!storage.lastTableUpdates) storage.lastTableUpdates = {};
+            storage.lastTableUpdates[TABLE_NAMES.HOMEPAGE_CONFIG] = Date.now();
+            console.log('[HomepageService] ✅ Auto-saved to MySQL successfully.');
+          } else {
+            console.warn('[HomepageService] ⚠️ MySQL auto-save failed (will retry on next edit or Publish).');
+          }
+        } catch (err) {
+          console.warn('[HomepageService] ⚠️ MySQL auto-save error:', err.message);
+        }
+      }, 600);
 
       return true;
     } catch (e) {
