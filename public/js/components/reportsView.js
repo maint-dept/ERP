@@ -126,7 +126,7 @@ export function renderReportsView() {
           ⚙️ Spare Parts Reports (${replacementLogs.length})
         </button>
         <button class="btn btn-xs ${currentReportTab === 'etlab' ? 'btn-primary' : 'btn-ghost'}" data-report-tab-btn="etlab" style="font-weight: 700; font-size: 11px; padding: 3px 8px; height: 26px; white-space: nowrap;">
-          🔬 ENT Lab Management Report (${etLabBoards.length})
+          🔬 ENT Lab Report (${etLabBoards.length})
         </button>
         <button class="btn btn-xs ${currentReportTab === 'export' ? 'btn-primary' : 'btn-ghost'}" data-report-tab-btn="export" style="font-weight: 700; font-size: 11px; padding: 3px 8px; height: 26px; white-space: nowrap; color: ${currentReportTab === 'export' ? '#fff' : '#38bdf8'};">
           📤 1-Click Excel Export Center

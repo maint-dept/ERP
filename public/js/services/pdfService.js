@@ -1065,7 +1065,7 @@ class PDFService {
       <!DOCTYPE html>
       <html>
       <head>
-        <title>ENT Lab Management Report - ${companyName}</title>
+        <title>ENT Lab Report - ${companyName}</title>
         <meta charset="utf-8">
         <style>
           @page {
@@ -1184,7 +1184,7 @@ class PDFService {
         </div>
 
         <div class="report-title-box">
-          <div class="report-title">📊 ENT Lab Management Report</div>
+          <div class="report-title">📊 ENT Lab Report</div>
           <div class="report-filter-summary">${filterSummary || 'Scope: Complete ENT Lab Inventory & Lifetime Ledger'}</div>
         </div>
 
@@ -1249,7 +1249,7 @@ class PDFService {
       printWin.document.open();
       printWin.document.write(reportHtml);
       printWin.document.close();
-      printWin.document.title = 'ENT Lab Management Report';
+      printWin.document.title = 'ENT Lab Report';
       auditService.log('ET_LAB_PDF_REPORT_GENERATED', 'REPORT', 'ENT Lab Report', `Generated ENT Lab Management PDF/Print Report.`);
     } else {
       alert('Pop-up window was blocked. Please allow pop-ups for this site to view/print reports.');
