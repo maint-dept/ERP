@@ -432,25 +432,47 @@ export function initMachineModalEvents() {
     });
   }
 
-  // Real-Time Duplicate Serial Check
+  // Real-Time Duplicate Check (Composite: Machine Name + Brand + Model + Serial Number)
   if (serialInp && conflictAlert) {
-    serialInp.addEventListener('input', () => {
+    const runDuplicateCheck = () => {
       const sn = serialInp.value.trim();
       if (!sn) {
         conflictAlert.style.display = 'none';
         return;
       }
 
-      const dupCheck = machineService.checkDuplicateSerial(sn, machineId);
+      const mnSelect = document.getElementById('select-machine-name');
+      const bSelect = document.getElementById('select-machine-brand');
+      const mSelect = document.getElementById('select-machine-model');
+
+      const dupCheck = machineService.checkDuplicateMachine({
+        serialNumber: sn,
+        machineNameId: mnSelect?.value || '',
+        brandId: bSelect?.value || '',
+        modelId: mSelect?.value || ''
+      }, machineId);
+
       if (dupCheck.isDuplicate) {
         conflictAlert.style.display = 'block';
-        conflictAlert.innerHTML = `
-          ⚠️ <strong>Conflict Warning:</strong> Serial '${sn}' already belongs to Machine ID '${dupCheck.existingMachine.id}' at ${dupCheck.existingLocation.unit} > ${dupCheck.existingLocation.line}.
-        `;
+        const c = dupCheck.conflict || {};
+        if (dupCheck.isCompositeDuplicate) {
+          conflictAlert.innerHTML = `
+            🛡️ <strong>Duplicate Record Detected:</strong> A machine with matching Name (${c.machineName}), Brand (${c.brand}), Model (${c.model}), and Serial '${sn}' already exists in Database (ID: ${c.id}) at ${c.unit} &gt; ${c.floor} &gt; ${c.line}.
+          `;
+        } else {
+          conflictAlert.innerHTML = `
+            ⚠️ <strong>Serial Number Conflict:</strong> Serial '${sn}' is already assigned to Machine ID '${c.id}' (${c.machineName} - ${c.model}) at ${c.unit} &gt; ${c.line}.
+          `;
+        }
       } else {
         conflictAlert.style.display = 'none';
       }
-    });
+    };
+
+    serialInp.addEventListener('input', runDuplicateCheck);
+    document.getElementById('select-machine-name')?.addEventListener('change', runDuplicateCheck);
+    document.getElementById('select-machine-brand')?.addEventListener('change', runDuplicateCheck);
+    document.getElementById('select-machine-model')?.addEventListener('change', runDuplicateCheck);
   }
 
   // Quick Switch to Transfer from Edit form
