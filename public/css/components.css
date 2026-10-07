@@ -3617,6 +3617,23 @@ td.td-actions-active {
   border: 1px solid rgba(16, 185, 129, 0.3);
 }
 
+.kpi-chip {
+  cursor: pointer;
+  user-select: none;
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.kpi-chip:hover {
+  transform: translateY(-1px);
+  border-color: rgba(56, 189, 248, 0.5) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+}
+
+.kpi-chip.kpi-chip-active {
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.25);
+}
+
+
 /* Universal Clean Data Table (Auto Layout, Non-Bleeding) */
 .data-table {
   width: 100%;
