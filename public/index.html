@@ -34,11 +34,11 @@
     })();
   </script>
 
-  <!-- Core ERP Stylesheets (Cache-Busted v4.23.0) -->
-  <link rel="stylesheet" href="css/app.css?v=4.23.0">
-  <link rel="stylesheet" href="css/grid.css?v=4.23.0">
-  <link rel="stylesheet" href="css/components.css?v=4.23.0">
-  <link rel="stylesheet" href="css/print.css?v=4.23.0">
+  <!-- Core ERP Stylesheets (Cache-Busted v4.24.0) -->
+  <link rel="stylesheet" href="css/app.css?v=4.24.0">
+  <link rel="stylesheet" href="css/grid.css?v=4.24.0">
+  <link rel="stylesheet" href="css/components.css?v=4.24.0">
+  <link rel="stylesheet" href="css/print.css?v=4.24.0">
 
   <!-- Deferred Heavy Third-Party Libraries (Non-Render Blocking) -->
   <!-- SheetJS (XLSX) Library for Excel Import & Export -->
@@ -181,8 +181,8 @@
       window.location.replace(base + '?t=' + Date.now() + window.location.hash);
     };
 
-    // Build version v4.22.24 — silent cache clear, NO URL redirect
-    var CURRENT_BUILD = '4.23.3';
+    // Build version v4.24.0 — silent cache clear, NO URL redirect
+    var CURRENT_BUILD = '4.24.0';
 
     // Silently unregister any old Service Workers and clear all caches
     (function() {
@@ -195,7 +195,7 @@
         if ('serviceWorker' in navigator) {
           navigator.serviceWorker.getRegistrations().then(function(regs) {
             regs.forEach(function(r) {
-              console.log('[ERP v4.23.3] Unregistering SW:', r.scope);
+              console.log('[ERP v4.24.0] Unregistering SW:', r.scope);
               r.unregister();
             });
           });
@@ -205,8 +205,8 @@
     })();
   </script>
 
-  <!-- Main ES Module Application Entrypoint (Cache-Busted v4.23.3) -->
-  <script type="module" src="js/app.js?v=4.23.3"></script>
+  <!-- Main ES Module Application Entrypoint (Cache-Busted v4.24.0) -->
+  <script type="module" src="js/app.js?v=4.24.0"></script>
 
   <style>
     @keyframes spin {
