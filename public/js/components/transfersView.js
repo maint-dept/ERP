@@ -29,112 +29,95 @@ export function renderTransfersView() {
   const rejectedCount = allRequests.filter(r => (r?.status || '') === TRANSFER_STATUSES.REJECTED).length;
 
   return `
-    <div class="page-view" style="padding: 10px 14px;">
-      <!-- Compact Header Row -->
-      <div class="view-header-row" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
-        <div style="min-width: 0; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-          <h1 style="font-size: 16px; font-weight: 800; color: #ffffff; display: flex; align-items: center; gap: 6px; margin: 0; letter-spacing: -0.2px;">
-            <span style="font-size: 18px;">🔄</span> Machine Relocation &amp; Transfer Management
-          </h1>
-          <span style="font-size: 11px; font-weight: 700; color: #38bdf8; background: rgba(56, 189, 248, 0.12); padding: 2px 8px; border-radius: 12px; border: 1px solid rgba(56, 189, 248, 0.25);">
-            ${allRequests.length} Total
-          </span>
+    <div class="page-view" style="padding: 6px 12px;">
+
+      <!-- ── Single Tight Toolbar Row: Title + KPIs + Actions ── -->
+      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px; flex-wrap: wrap;">
+
+        <!-- Title block -->
+        <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
+          <span style="font-size: 16px; line-height: 1;">🔄</span>
+          <span style="font-size: 14px; font-weight: 800; color: #ffffff; letter-spacing: -0.2px; white-space: nowrap;">Machine Transfers</span>
         </div>
 
-        <div class="view-header-actions" style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
-          <button id="btn-export-transfers-excel" class="btn btn-secondary btn-sm" title="Export filtered transfer records to Excel" style="height: 30px; font-size: 11.5px; font-weight: 700; padding: 0 10px; display: inline-flex; align-items: center; gap: 5px; color: #f1f5f9;">
-            <span>📊</span> Export Excel
+        <!-- Separator -->
+        <div style="width: 1px; height: 22px; background: rgba(255,255,255,0.12); flex-shrink: 0;"></div>
+
+        <!-- KPI Chips (inline, very compact) -->
+        <div style="display: flex; gap: 5px; flex-wrap: wrap; align-items: center; flex: 1; min-width: 0;">
+
+          <div class="kpi-chip ${transferStatusFilter === 'ALL' ? 'kpi-chip-active' : ''}" data-status="ALL"
+            style="display: inline-flex; align-items: center; gap: 5px; background: rgba(56,189,248,0.1); border: 1px solid ${transferStatusFilter === 'ALL' ? '#38bdf8' : 'rgba(56,189,248,0.25)'}; border-radius: 6px; padding: 3px 9px; cursor: pointer; white-space: nowrap;" title="All transfers">
+            <span style="font-size: 13px; font-weight: 800; color: #fff;">${allRequests.length}</span>
+            <span style="font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase;">Total</span>
+          </div>
+
+          <div class="kpi-chip ${transferStatusFilter === TRANSFER_STATUSES.PENDING_APPROVAL ? 'kpi-chip-active' : ''}" data-status="${TRANSFER_STATUSES.PENDING_APPROVAL}"
+            style="display: inline-flex; align-items: center; gap: 5px; background: rgba(245,158,11,0.1); border: 1px solid ${transferStatusFilter === TRANSFER_STATUSES.PENDING_APPROVAL ? '#fbbf24' : 'rgba(245,158,11,0.25)'}; border-radius: 6px; padding: 3px 9px; cursor: pointer; white-space: nowrap;" title="Awaiting approval">
+            <span style="font-size: 13px; font-weight: 800; color: #fbbf24;">⏳ ${pendingCount}</span>
+            <span style="font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase;">Pending</span>
+          </div>
+
+          <div class="kpi-chip ${transferStatusFilter === TRANSFER_STATUSES.COMPLETED ? 'kpi-chip-active' : ''}" data-status="${TRANSFER_STATUSES.COMPLETED}"
+            style="display: inline-flex; align-items: center; gap: 5px; background: rgba(16,185,129,0.1); border: 1px solid ${transferStatusFilter === TRANSFER_STATUSES.COMPLETED ? '#34d399' : 'rgba(16,185,129,0.25)'}; border-radius: 6px; padding: 3px 9px; cursor: pointer; white-space: nowrap;" title="Completed transfers">
+            <span style="font-size: 13px; font-weight: 800; color: #34d399;">✅ ${completedCount}</span>
+            <span style="font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase;">Done</span>
+          </div>
+
+          <div class="kpi-chip ${transferStatusFilter === TRANSFER_STATUSES.REJECTED ? 'kpi-chip-active' : ''}" data-status="${TRANSFER_STATUSES.REJECTED}"
+            style="display: inline-flex; align-items: center; gap: 5px; background: rgba(239,68,68,0.1); border: 1px solid ${transferStatusFilter === TRANSFER_STATUSES.REJECTED ? '#f87171' : 'rgba(239,68,68,0.25)'}; border-radius: 6px; padding: 3px 9px; cursor: pointer; white-space: nowrap;" title="Rejected requests">
+            <span style="font-size: 13px; font-weight: 800; color: #f87171;">✕ ${rejectedCount}</span>
+            <span style="font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase;">Rejected</span>
+          </div>
+        </div>
+
+        <!-- Action Buttons (right side) -->
+        <div style="display: flex; gap: 5px; align-items: center; flex-shrink: 0; margin-left: auto;">
+          <button id="btn-export-transfers-excel" class="btn btn-secondary btn-sm" title="Export to Excel"
+            style="height: 28px; font-size: 11px; font-weight: 700; padding: 0 9px; display: inline-flex; align-items: center; gap: 4px; color: #f1f5f9;">
+            📊 Export
           </button>
           ${authService.isAdmin() ? `
-            <button id="btn-nav-workflow-config" class="btn btn-secondary btn-sm" style="height: 30px; font-size: 11.5px; font-weight: 700; padding: 0 10px; display: inline-flex; align-items: center; gap: 5px; color: #f1f5f9;">
-              <span>⚙️</span> Workflows
+            <button id="btn-nav-workflow-config" class="btn btn-secondary btn-sm"
+              style="height: 28px; font-size: 11px; font-weight: 700; padding: 0 9px; display: inline-flex; align-items: center; gap: 4px; color: #f1f5f9;">
+              ⚙️ Workflows
             </button>
           ` : ''}
-          <button id="btn-quick-new-transfer" class="btn btn-primary btn-sm" style="height: 30px; font-size: 11.5px; font-weight: 800; padding: 0 12px; display: inline-flex; align-items: center; gap: 5px; background: linear-gradient(135deg, #0284c7, #0369a1); box-shadow: 0 2px 8px rgba(2, 132, 199, 0.35); color: #fff;">
-            <span>🚀</span> Request Transfer
+          <button id="btn-quick-new-transfer" class="btn btn-primary btn-sm"
+            style="height: 28px; font-size: 11px; font-weight: 800; padding: 0 11px; display: inline-flex; align-items: center; gap: 4px; background: linear-gradient(135deg, #0284c7, #0369a1); box-shadow: 0 2px 6px rgba(2,132,199,0.35); color: #fff;">
+            🚀 Request Transfer
           </button>
         </div>
       </div>
 
-      <!-- Ultra-Compact KPI Summary Metric Bar (Clickable to Filter) -->
-      <div class="kpi-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 8px;">
-        <!-- Total Requests -->
-        <div class="kpi-chip ${transferStatusFilter === 'ALL' ? 'kpi-chip-active' : ''}" data-status="ALL" style="background: rgba(15, 23, 42, 0.75); border: 1px solid ${transferStatusFilter === 'ALL' ? '#38bdf8' : 'rgba(255, 255, 255, 0.1)'}; border-radius: 8px; padding: 6px 12px; display: flex; align-items: center; gap: 10px; cursor: pointer; transition: all 0.15s ease;" title="Filter: Show all transfers">
-          <div style="font-size: 16px; background: rgba(56, 189, 248, 0.16); color: #38bdf8; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border-radius: 6px; flex-shrink: 0;">
-            🔄
-          </div>
-          <div style="min-width: 0; display: flex; align-items: baseline; gap: 8px;">
-            <span style="font-size: 18px; font-weight: 800; color: #ffffff; line-height: 1;">${allRequests.length}</span>
-            <span style="font-size: 10.5px; color: #cbd5e1; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; white-space: nowrap;">Total Requests</span>
-          </div>
-        </div>
-
-        <!-- Awaiting Approval -->
-        <div class="kpi-chip ${transferStatusFilter === TRANSFER_STATUSES.PENDING_APPROVAL ? 'kpi-chip-active' : ''}" data-status="${TRANSFER_STATUSES.PENDING_APPROVAL}" style="background: rgba(15, 23, 42, 0.75); border: 1px solid ${transferStatusFilter === TRANSFER_STATUSES.PENDING_APPROVAL ? '#fbbf24' : 'rgba(255, 255, 255, 0.1)'}; border-radius: 8px; padding: 6px 12px; display: flex; align-items: center; gap: 10px; cursor: pointer; transition: all 0.15s ease;" title="Filter: Show pending approval">
-          <div style="font-size: 16px; background: rgba(245, 158, 11, 0.16); color: #fbbf24; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border-radius: 6px; flex-shrink: 0;">
-            ⏳
-          </div>
-          <div style="min-width: 0; display: flex; align-items: baseline; gap: 8px;">
-            <span style="font-size: 18px; font-weight: 800; color: #fbbf24; line-height: 1;">${pendingCount}</span>
-            <span style="font-size: 10.5px; color: #cbd5e1; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; white-space: nowrap;">Awaiting Approval</span>
-          </div>
-        </div>
-
-        <!-- Completed Transfers -->
-        <div class="kpi-chip ${transferStatusFilter === TRANSFER_STATUSES.COMPLETED ? 'kpi-chip-active' : ''}" data-status="${TRANSFER_STATUSES.COMPLETED}" style="background: rgba(15, 23, 42, 0.75); border: 1px solid ${transferStatusFilter === TRANSFER_STATUSES.COMPLETED ? '#34d399' : 'rgba(255, 255, 255, 0.1)'}; border-radius: 8px; padding: 6px 12px; display: flex; align-items: center; gap: 10px; cursor: pointer; transition: all 0.15s ease;" title="Filter: Show completed">
-          <div style="font-size: 16px; background: rgba(16, 185, 129, 0.16); color: #34d399; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border-radius: 6px; flex-shrink: 0;">
-            ✅
-          </div>
-          <div style="min-width: 0; display: flex; align-items: baseline; gap: 8px;">
-            <span style="font-size: 18px; font-weight: 800; color: #34d399; line-height: 1;">${completedCount}</span>
-            <span style="font-size: 10.5px; color: #cbd5e1; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; white-space: nowrap;">Completed</span>
-          </div>
-        </div>
-
-        <!-- Rejected Requests -->
-        <div class="kpi-chip ${transferStatusFilter === TRANSFER_STATUSES.REJECTED ? 'kpi-chip-active' : ''}" data-status="${TRANSFER_STATUSES.REJECTED}" style="background: rgba(15, 23, 42, 0.75); border: 1px solid ${transferStatusFilter === TRANSFER_STATUSES.REJECTED ? '#f87171' : 'rgba(255, 255, 255, 0.1)'}; border-radius: 8px; padding: 6px 12px; display: flex; align-items: center; gap: 10px; cursor: pointer; transition: all 0.15s ease;" title="Filter: Show rejected">
-          <div style="font-size: 16px; background: rgba(239, 68, 68, 0.16); color: #f87171; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border-radius: 6px; flex-shrink: 0;">
-            ✕
-          </div>
-          <div style="min-width: 0; display: flex; align-items: baseline; gap: 8px;">
-            <span style="font-size: 18px; font-weight: 800; color: #f87171; line-height: 1;">${rejectedCount}</span>
-            <span style="font-size: 10.5px; color: #cbd5e1; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; white-space: nowrap;">Rejected</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Compact Filter Bar & Search -->
-      <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 8px; padding: 5px 8px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap;">
-        <!-- Search Input -->
-        <div style="flex: 1 1 240px; min-width: 0; position: relative;">
-          <input 
-            type="text" 
-            id="transfers-search-input" 
-            class="form-control" 
-            placeholder="🔍 Search Request ID, Serial No, Line, Floor, Requester..." 
-            value="${transferSearchQuery}"
-            style="height: 30px; font-size: 12px; padding: 4px 10px; color: #f8fafc; font-weight: 600; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255,255,255,0.12); border-radius: 6px;"
-          />
-        </div>
-
-        <!-- Status Filter Pills -->
-        <div style="display: flex; gap: 4px; flex-wrap: wrap; align-items: center;">
+      <!-- ── Search + Filter Pills (single compact row) ── -->
+      <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 6px; flex-wrap: wrap; background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 7px; padding: 4px 8px;">
+        <input
+          type="text"
+          id="transfers-search-input"
+          class="form-control"
+          placeholder="🔍 Search Request ID, Serial No, Line, Floor, Requester..."
+          value="${transferSearchQuery}"
+          style="flex: 1 1 220px; height: 26px; font-size: 11.5px; padding: 2px 8px; color: #f8fafc; font-weight: 600; background: rgba(15,23,42,0.6); border: 1px solid rgba(255,255,255,0.1); border-radius: 5px; min-width: 0;"
+        />
+        <div style="display: flex; gap: 3px; flex-wrap: wrap; align-items: center; flex-shrink: 0;">
           ${[
-            { id: 'ALL', label: 'All Transfers' },
+            { id: 'ALL', label: 'All' },
             { id: TRANSFER_STATUSES.PENDING_APPROVAL, label: '⏳ Pending' },
             { id: TRANSFER_STATUSES.PARTIALLY_APPROVED, label: '🔄 In Progress' },
             { id: TRANSFER_STATUSES.COMPLETED, label: '✅ Completed' },
             { id: TRANSFER_STATUSES.REJECTED, label: '✕ Rejected' },
             { id: TRANSFER_STATUSES.REVISION_REQUESTED, label: '✏️ Revision' }
           ].map(f => `
-            <button class="btn btn-sm btn-filter-status ${transferStatusFilter === f.id ? 'btn-primary' : 'btn-secondary'}" data-status="${f.id}" style="height: 28px; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 5px; white-space: nowrap; ${transferStatusFilter === f.id ? 'background: #0284c7; color: #fff; border-color: #38bdf8;' : 'color: #cbd5e1;'}">
+            <button class="btn btn-sm btn-filter-status ${transferStatusFilter === f.id ? 'btn-primary' : 'btn-secondary'}" data-status="${f.id}"
+              style="height: 24px; font-size: 10.5px; font-weight: 700; padding: 1px 7px; border-radius: 4px; white-space: nowrap; ${transferStatusFilter === f.id ? 'background: #0284c7; color: #fff; border-color: #38bdf8;' : 'color: #cbd5e1;'}">
               ${f.label}
             </button>
           `).join('')}
         </div>
       </div>
 
-      <!-- Main Transfers Table Container (Full Space for Data) -->
+      <!-- ── Main Transfers Table ── -->
       <div class="transfers-table-container" style="-webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; text-rendering: optimizeLegibility;">
         ${requests.length === 0 ? `
           <div style="padding: 40px 20px; text-align: center; color: var(--text-muted);">
@@ -146,15 +129,15 @@ export function renderTransfersView() {
           <table class="transfers-table" style="width: 100% !important; margin: 0; -webkit-font-smoothing: antialiased;">
             <thead>
               <tr style="background: #0d1527;">
-                <th style="width: 11%; padding: 8px 8px; font-size: 11px; font-weight: 800; color: #ffffff; letter-spacing: 0.3px;">Request ID</th>
-                <th style="width: 17%; padding: 8px 8px; font-size: 11px; font-weight: 800; color: #ffffff; letter-spacing: 0.3px;">Equipment Details</th>
-                <th style="width: 13%; padding: 8px 8px; font-size: 11px; font-weight: 800; color: #ffffff; letter-spacing: 0.3px;">Source (From)</th>
-                <th style="width: 13%; padding: 8px 8px; font-size: 11px; font-weight: 800; color: #ffffff; letter-spacing: 0.3px;">Destination (To)</th>
-                <th style="width: 13%; padding: 8px 8px; font-size: 11px; font-weight: 800; color: #ffffff; letter-spacing: 0.3px;">Requester &amp; Date</th>
-                <th style="width: 13.5%; padding: 8px 8px; font-size: 11px; font-weight: 800; color: #ffffff; letter-spacing: 0.3px;">Approval Stage</th>
-                <th style="width: 4.5%; padding: 8px 6px; font-size: 11px; font-weight: 800; color: #ffffff; text-align: center;">Docs</th>
-                <th style="width: 7.5%; padding: 8px 6px; font-size: 11px; font-weight: 800; color: #ffffff; text-align: center;">Status</th>
-                <th style="width: 9%; padding: 8px 6px; font-size: 11px; font-weight: 800; color: #ffffff; text-align: center; background: #0b1329;">Actions</th>
+                <th style="width: 11%; padding: 7px 8px; font-size: 11px; font-weight: 800; color: #ffffff; letter-spacing: 0.3px;">Request ID</th>
+                <th style="width: 17%; padding: 7px 8px; font-size: 11px; font-weight: 800; color: #ffffff; letter-spacing: 0.3px;">Equipment Details</th>
+                <th style="width: 13%; padding: 7px 8px; font-size: 11px; font-weight: 800; color: #ffffff; letter-spacing: 0.3px;">Source (From)</th>
+                <th style="width: 13%; padding: 7px 8px; font-size: 11px; font-weight: 800; color: #ffffff; letter-spacing: 0.3px;">Destination (To)</th>
+                <th style="width: 13%; padding: 7px 8px; font-size: 11px; font-weight: 800; color: #ffffff; letter-spacing: 0.3px;">Requester &amp; Date</th>
+                <th style="width: 13.5%; padding: 7px 8px; font-size: 11px; font-weight: 800; color: #ffffff; letter-spacing: 0.3px;">Approval Stage</th>
+                <th style="width: 4.5%; padding: 7px 6px; font-size: 11px; font-weight: 800; color: #ffffff; text-align: center;">Docs</th>
+                <th style="width: 7.5%; padding: 7px 6px; font-size: 11px; font-weight: 800; color: #ffffff; text-align: center;">Status</th>
+                <th style="width: 9%; padding: 7px 6px; font-size: 11px; font-weight: 800; color: #ffffff; text-align: center; background: #0b1329;">Actions</th>
               </tr>
             </thead>
             <tbody>
