@@ -62,6 +62,10 @@ class RelocateService {
       throw new Error('Unit and Floor are required to start a relocation scan session.');
     }
 
+    if (!authService.isLocationAllowed(unitId, floorId)) {
+      throw new Error('Access Denied: You are not authorized to start a relocation session on this floor.');
+    }
+
     const user = authService.getCurrentUser() || { id: 'usr-1', name: 'Authorized Staff', role: 'ADMIN' };
     const allMachines = storage.getTable(TABLE_NAMES.MACHINES) || [];
     const allLines = masterDataService.getLines(floorId);

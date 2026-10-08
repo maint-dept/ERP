@@ -51,9 +51,9 @@ export function renderInventoryTable() {
 
   // 3. Hierarchical Cascading Dropdown Options (Group -> Unit -> Floor -> Line)
   const groups = masterDataService.getGroups();
-  const units = masterDataService.getUnits(filters.groupId);
-  const floors = masterDataService.getFloors(filters.unitId, filters.groupId);
-  const lines = masterDataService.getLines(filters.floorId, filters.unitId, filters.groupId);
+  const units = masterDataService.getUnits(filters.groupId, false, true);
+  const floors = masterDataService.getFloors(filters.unitId, filters.groupId, false, true);
+  const lines = masterDataService.getLines(filters.floorId, filters.unitId, filters.groupId, false, true);
   const machineNames = masterDataService.getMachineNames();
   const brands = masterDataService.getBrandsForMachineName(filters.machineNameId);
   const models = masterDataService.getModels(filters.brandId, filters.machineNameId);
@@ -142,7 +142,11 @@ export function renderInventoryTable() {
       renderTh: (thStyle, thClass) => `<th class="th-sortable ${thClass}" data-sort="machineName" style="width: 180px; min-width: 180px; max-width: 180px; cursor: pointer; ${thStyle}">Machine Name</th>`,
       renderTd: (m, meta, tdStyle, tdClass) => {
         const name = (mnMap.get(m.machineNameId) || m.machineName || m.name || brdMap.get(m.brandId) || (m.brand ? m.brand + ' Machine' : '') || '—').trim();
-        return `<td class="${tdClass}" style="font-weight: 600; color: #fff; overflow: hidden; text-overflow: ellipsis; ${tdStyle}">${name}</td>`;
+        const isViewOnly = authService.isMachineViewOnlyForUser(m);
+        const viewOnlyBadge = isViewOnly 
+          ? `<span class="badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); font-size: 10px; padding: 1px 6px; margin-left: 6px; vertical-align: middle; font-weight: 600;" title="View-Only: This machine belongs to another floor or Central Idle">👁️ View Only</span>` 
+          : '';
+        return `<td class="${tdClass}" style="font-weight: 600; color: #fff; overflow: hidden; text-overflow: ellipsis; ${tdStyle}">${name}${viewOnlyBadge}</td>`;
       }
     },
     {
@@ -301,42 +305,70 @@ export function renderInventoryTable() {
     label: 'Actions',
     width: 110,
     renderTh: (thStyle, thClass) => `<th class="${thClass}" style="width: 110px; min-width: 110px; max-width: 110px; text-align: center; ${thStyle}">Actions</th>`,
-    renderTd: (m, meta, tdStyle, tdClass) => `
-      <td class="${tdClass}" style="text-align: center; ${tdStyle}">
-        <div class="actions-dropdown-container">
-          <button type="button" class="btn-actions-trigger btn-trigger-row-actions" data-id="${m.id}" title="Open Action Menu">
-            ⋮ Actions ▾
-          </button>
-          <div id="actions-menu-${m.id}" class="actions-dropdown-menu table-row-actions-menu">
-            <button type="button" class="actions-menu-item btn-inspect-machine" data-id="${m.id}">
-              🔍 Machine Details &amp; Lifetime
-            </button>
-            <button type="button" class="actions-menu-item btn-history-machine" data-id="${m.id}">
-              🕒 Timeline &amp; Transfer Log
-            </button>
-            <button type="button" class="actions-menu-item btn-spare-parts-machine" data-id="${m.id}">
-              ⚙️ Spare Parts Usage
-            </button>
-            ${authService.hasAccess('transfers', 'ADD') ? `
-              <button type="button" class="actions-menu-item btn-transfer-machine" data-id="${m.id}">
-                🔄 Transfer Machine
+    renderTd: (m, meta, tdStyle, tdClass) => {
+      const isViewOnly = authService.isMachineViewOnlyForUser(m);
+      if (isViewOnly) {
+        return `
+          <td class="${tdClass}" style="text-align: center; ${tdStyle}">
+            <div class="actions-dropdown-container">
+              <button type="button" class="btn-actions-trigger btn-trigger-row-actions" data-id="${m.id}" title="View Options" style="border-color: rgba(56, 189, 248, 0.35); color: #38bdf8; background: rgba(56, 189, 248, 0.08);">
+                👁️ View ▾
               </button>
-            ` : ''}
-            ${authService.hasAccess('machines', 'EDIT') ? `
-              <div class="actions-menu-divider"></div>
-              <button type="button" class="actions-menu-item btn-edit-machine" data-id="${m.id}">
-                ✏️ Edit Machine
+              <div id="actions-menu-${m.id}" class="actions-dropdown-menu table-row-actions-menu">
+                <div style="padding: 6px 12px; font-size: 10.5px; font-weight: 700; color: #38bdf8; border-bottom: 1px solid rgba(255,255,255,0.08); background: rgba(56, 189, 248, 0.05); display: flex; align-items: center; gap: 4px;">
+                  🔒 View-Only Mode
+                </div>
+                <button type="button" class="actions-menu-item btn-inspect-machine" data-id="${m.id}">
+                  🔍 Machine Details &amp; Lifetime
+                </button>
+                <button type="button" class="actions-menu-item btn-history-machine" data-id="${m.id}">
+                  🕒 Timeline &amp; Transfer Log
+                </button>
+                <button type="button" class="actions-menu-item btn-spare-parts-machine" data-id="${m.id}">
+                  ⚙️ Spare Parts Usage
+                </button>
+              </div>
+            </div>
+          </td>
+        `;
+      }
+      return `
+        <td class="${tdClass}" style="text-align: center; ${tdStyle}">
+          <div class="actions-dropdown-container">
+            <button type="button" class="btn-actions-trigger btn-trigger-row-actions" data-id="${m.id}" title="Open Action Menu">
+              ⋮ Actions ▾
+            </button>
+            <div id="actions-menu-${m.id}" class="actions-dropdown-menu table-row-actions-menu">
+              <button type="button" class="actions-menu-item btn-inspect-machine" data-id="${m.id}">
+                🔍 Machine Details &amp; Lifetime
               </button>
-            ` : ''}
-            ${authService.hasAccess('machines', 'DELETE') ? `
-              <button type="button" class="actions-menu-item danger-item btn-delete-machine" data-id="${m.id}">
-                🗑️ Delete Machine
+              <button type="button" class="actions-menu-item btn-history-machine" data-id="${m.id}">
+                🕒 Timeline &amp; Transfer Log
               </button>
-            ` : ''}
+              <button type="button" class="actions-menu-item btn-spare-parts-machine" data-id="${m.id}">
+                ⚙️ Spare Parts Usage
+              </button>
+              ${(authService.hasAccess('transfers', 'ADD') && authService.canOperateMachine(m)) ? `
+                <button type="button" class="actions-menu-item btn-transfer-machine" data-id="${m.id}">
+                  🔄 Transfer Machine
+                </button>
+              ` : ''}
+              ${(authService.hasAccess('machines', 'EDIT') && authService.canOperateMachine(m)) ? `
+                <div class="actions-menu-divider"></div>
+                <button type="button" class="actions-menu-item btn-edit-machine" data-id="${m.id}">
+                  ✏️ Edit Machine
+                </button>
+              ` : ''}
+              ${(authService.hasAccess('machines', 'DELETE') && authService.canOperateMachine(m)) ? `
+                <button type="button" class="actions-menu-item danger-item btn-delete-machine" data-id="${m.id}">
+                  🗑️ Delete Machine
+                </button>
+              ` : ''}
+            </div>
           </div>
-        </div>
-      </td>
-    `
+        </td>
+      `;
+    }
   });
 
   // Filter only visible columns
@@ -431,7 +463,8 @@ export function renderInventoryTable() {
       row += `<td class="col-freeze-sl" style="text-align: center; color: var(--text-muted); font-weight: 700; font-family: var(--font-mono); font-size: 11.5px;">${displaySlNo}</td>`;
 
       // 2. Selection Checkbox (Sticky Left: 50px)
-      row += `<td class="col-freeze-check ${checkIsLastFrozen ? 'col-frozen-boundary' : ''}" style="text-align: center;"><input type="checkbox" class="machine-row-check" data-id="${m.id}" ${isSelected ? 'checked' : ''}/></td>`;
+      const isOperable = authService.canOperateMachine(m);
+      row += `<td class="col-freeze-check ${checkIsLastFrozen ? 'col-frozen-boundary' : ''}" style="text-align: center;"><input type="checkbox" class="machine-row-check" data-id="${m.id}" ${isSelected ? 'checked' : ''} ${!isOperable ? 'disabled title="View-Only machine (cannot be bulk modified)" style="opacity: 0.35; cursor: not-allowed;"' : ''}/></td>`;
 
       // Render columns in calculated sequence
       columnLayout.forEach(col => {
@@ -1485,7 +1518,11 @@ export function initInventoryTableEvents() {
       if (confirmed) {
         try {
           const allFiltered = machineService.getMachines({ ...filters, limit: 'ALL' });
-          const idsToDelete = allFiltered.items.map(m => m.id);
+          const idsToDelete = allFiltered.items.filter(m => authService.canOperateMachine(m)).map(m => m.id);
+          if (idsToDelete.length === 0) {
+            notificationService.warning('No operable machines available to delete.');
+            return;
+          }
           const res = await machineService.bulkPermanentDelete(idsToDelete, 'Admin mass delete filtered');
           state.clearSelection();
           state.resetFilters();
@@ -1508,12 +1545,12 @@ export function initInventoryTableEvents() {
     selectAll.addEventListener('change', (e) => {
       const curFilters = state.get('filters') || {};
       const allFiltered = machineService.getMachines({ ...curFilters, limit: 'ALL' });
-      const ids = (allFiltered.items || []).map(m => m.id);
 
       if (e.target.checked) {
-        // Select ALL machines currently matching the active filters
-        state.selectAllMachines(ids);
-        notificationService.info(`Selected all ${ids.length} machine(s) matching current filters.`);
+        // Select ALL operable machines currently matching the active filters
+        const operableIds = (allFiltered.items || []).filter(m => authService.canOperateMachine(m)).map(m => m.id);
+        state.selectAllMachines(operableIds);
+        notificationService.info(`Selected ${operableIds.length} operable machine(s). View-only machines excluded.`);
       } else {
         state.clearSelection();
       }
@@ -1525,9 +1562,9 @@ export function initInventoryTableEvents() {
     btnSelectAllFiltered.addEventListener('click', () => {
       const curFilters = state.get('filters') || {};
       const allFiltered = machineService.getMachines({ ...curFilters, limit: 'ALL' });
-      const ids = (allFiltered.items || []).map(m => m.id);
-      state.selectAllMachines(ids);
-      notificationService.info(`Selected all ${ids.length} machine(s) in current filtered view.`);
+      const operableIds = (allFiltered.items || []).filter(m => authService.canOperateMachine(m)).map(m => m.id);
+      state.selectAllMachines(operableIds);
+      notificationService.info(`Selected ${operableIds.length} operable machine(s). View-only machines excluded.`);
     });
   }
 

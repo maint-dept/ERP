@@ -12,9 +12,9 @@ import { renderSidebar, initSidebarEvents, updateSidebarActiveState } from './co
 import { renderHomepageView, initHomepageEvents } from './components/homepageView.js?v=4.24.0';
 import { renderLoginView, initLoginViewEvents } from './components/loginView.js?v=4.24.0';
 import { renderDashboard, initDashboardEvents } from './components/dashboard.js?v=4.24.0';
-import { renderInventoryTable, initInventoryTableEvents, syncInventorySelectionDOM } from './components/inventoryTable.js?v=4.24.3';
-import { renderMachineModal, initMachineModalEvents } from './components/machineModal.js?v=4.24.0';
-import { renderMachineDetails, initMachineDetailsEvents } from './components/machineDetails.js?v=4.24.0';
+import { renderInventoryTable, initInventoryTableEvents, syncInventorySelectionDOM } from './components/inventoryTable.js?v=4.24.4';
+import { renderMachineModal, initMachineModalEvents } from './components/machineModal.js?v=4.24.4';
+import { renderMachineDetails, initMachineDetailsEvents } from './components/machineDetails.js?v=4.24.4';
 import { renderTransferModal, initTransferModalEvents } from './components/transferModal.js?v=4.24.0';
 import { renderTransferDetailsModal, initTransferDetailsModalEvents } from './components/transferDetailsModal.js?v=4.24.2';
 import { renderEditTransferModal, initEditTransferModalEvents } from './components/editTransferModal.js?v=4.24.0';

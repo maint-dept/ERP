@@ -135,15 +135,10 @@ class MachineService {
   getMachines(params = {}) {
     let allMachines = storage.getTable(TABLE_NAMES.MACHINES) || [];
 
-    // 1. Strict Backend / Storage-level Organization Scoping
+    // 1. Strict Backend / Storage-level Organization Scoping with Cross-Floor Idle Visibility
     const scoped = authService.getScopedFilter();
     if (scoped) {
-      allMachines = allMachines.filter(m => {
-        if (scoped.unitIds?.length > 0 && !scoped.unitIds.includes(m.unitId)) return false;
-        if (scoped.floorIds?.length > 0 && !scoped.floorIds.includes(m.floorId)) return false;
-        if (scoped.lineIds?.length > 0 && !scoped.lineIds.includes(m.lineId)) return false;
-        return true;
-      });
+      allMachines = allMachines.filter(m => authService.canViewMachine(m));
     }
 
     // 2. Cascading Primary Organization Filters
@@ -300,8 +295,8 @@ class MachineService {
     const machine = storage.getItem(TABLE_NAMES.MACHINES, id);
     if (!machine) return null;
 
-    // Check location scoping
-    if (!authService.isLocationAllowed(machine.unitId, machine.floorId, machine.lineId)) {
+    // Check location scoping & cross-floor view permissions
+    if (!authService.canViewMachine(machine)) {
       throw new Error('Access Denied: You do not have permission to view this machine record.');
     }
 
@@ -523,8 +518,8 @@ class MachineService {
       throw new Error('Access Denied: You do not have permission to modify machine records.');
     }
 
-    if (!authService.isLocationAllowed(existing.unitId, existing.floorId, existing.lineId)) {
-      throw new Error('Access Denied: You cannot edit machines in this location.');
+    if (!authService.canOperateMachine(existing)) {
+      throw new Error('Access Denied: You cannot modify machines outside your assigned floor.');
     }
 
     // If moving location, verify target location is authorized
@@ -735,7 +730,7 @@ class MachineService {
 
     machineIds.forEach(id => {
       const m = storage.getItem(TABLE_NAMES.MACHINES, id);
-      if (m && authService.isLocationAllowed(m.unitId, m.floorId, m.lineId)) {
+      if (m && authService.canOperateMachine(m)) {
         const oldStatus = m.status;
         storage.update(TABLE_NAMES.MACHINES, id, {
           status: newStatus,
@@ -767,7 +762,7 @@ class MachineService {
 
     machineIds.forEach(id => {
       const m = storage.getItem(TABLE_NAMES.MACHINES, id);
-      if (m && authService.isLocationAllowed(m.unitId, m.floorId, m.lineId)) {
+      if (m && authService.canOperateMachine(m)) {
         const oldStatus = m.status;
         storage.update(TABLE_NAMES.MACHINES, id, {
           status: 'ARCHIVED',
@@ -815,6 +810,10 @@ class MachineService {
     const user = authService.getCurrentUser();
     const existing = this.getMachineById(id);
     if (!existing) throw new Error('Machine not found.');
+
+    if (!authService.canOperateMachine(existing)) {
+      throw new Error('Access Denied: You cannot delete machines outside your assigned floor.');
+    }
 
     if (!authService.isAdmin() && !authService.hasPermission('DELETE')) {
       throw new Error('Access Denied: You do not have permission to delete machines.');
@@ -869,7 +868,7 @@ class MachineService {
 
     machineIds.forEach(id => {
       const m = storage.getItem(TABLE_NAMES.MACHINES, id);
-      if (m && authService.isLocationAllowed(m.unitId, m.floorId, m.lineId)) {
+      if (m && authService.canOperateMachine(m)) {
         const ok = storage.delete(TABLE_NAMES.MACHINES, id);
         if (ok) {
           deletedCount++;

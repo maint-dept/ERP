@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Al-Muslim Group Garments Factory Maintenance Machine ERP
  * Super Admin Role & Granular Individual Access Control (IAC) Service
  */
@@ -1692,6 +1692,77 @@ class AuthService {
       if (!scope.lineIds.includes(lineId)) return false;
     }
     return true;
+  }
+
+  /**
+   * Helper to identify the Central Idle floor (flo-1788931702137-250 / name / code / tag)
+   */
+  isCentralIdleFloor(floorId) {
+    if (!floorId) return false;
+    if (floorId === 'flo-1788931702137-250') return true;
+    const floor = storage.getItem(TABLE_NAMES.FLOORS, floorId) || 
+      (storage.getTable(TABLE_NAMES.FLOORS) || []).find(f => f.id === floorId);
+    if (!floor) return false;
+    const name = (floor.name || '').toLowerCase();
+    const code = (floor.code || '').toLowerCase();
+    const tag = (floor.locationTag || '').toLowerCase();
+    return name.includes('central idle') || (code === 'idle' && name.includes('central')) || tag === 'akm-idle';
+  }
+
+  /**
+   * Check if a machine can be operated (Edited, Deleted, Relocated, Status Changed) by the user.
+   * Only allowed if user has global access or the machine is within their assigned location scope.
+   */
+  canOperateMachine(machine, user = null) {
+    if (!machine) return false;
+    const u = user || this.getCurrentUser();
+    if (!u) return false;
+    if (this.isSuperAdmin(u)) return true;
+    return this.isLocationAllowed(machine.unitId, machine.floorId, machine.lineId, u);
+  }
+
+  /**
+   * Check if a machine can be viewed by the user:
+   * 1. If inside assigned scope: Allowed
+   * 2. If machine is IDLE on ANY floor: Allowed (View-Only)
+   * 3. If machine is on the Central Idle [Idle] floor: Allowed (View-Only)
+   * 4. Otherwise (out of scope, non-idle): Blocked
+   */
+  canViewMachine(machine, user = null) {
+    if (!machine) return false;
+    const u = user || this.getCurrentUser();
+    if (!u) return false;
+    if (this.isSuperAdmin(u)) return true;
+
+    // 1. Within assigned location scope
+    if (this.isLocationAllowed(machine.unitId, machine.floorId, machine.lineId, u)) {
+      return true;
+    }
+
+    // 2. Cross-floor idle machine visibility
+    const status = (machine.status || '').toUpperCase();
+    if (status === 'IDLE') {
+      return true;
+    }
+
+    // 3. Central Idle floor visibility
+    if (this.isCentralIdleFloor(machine.floorId)) {
+      return true;
+    }
+
+    return false;
+  }
+
+  /**
+   * Check if a machine is strictly View-Only for the user
+   * (can view, but cannot edit or operate due to floor scoping)
+   */
+  isMachineViewOnlyForUser(machine, user = null) {
+    if (!machine) return false;
+    const u = user || this.getCurrentUser();
+    if (!u) return false;
+    if (this.isSuperAdmin(u)) return false;
+    return !this.canOperateMachine(machine, u) && this.canViewMachine(machine, u);
   }
 
   getScopedFilter() {

@@ -22,6 +22,7 @@ export function renderMachineModal() {
   const machineId = state.get('activeMachineId');
   const isEdit = Boolean(machineId);
   const machine = isEdit ? storage.getItem(TABLE_NAMES.MACHINES, machineId) : null;
+  const isViewOnly = Boolean(isEdit && machine && authService.isMachineViewOnlyForUser(machine));
 
   const categories = masterDataService.getCategories();
   const groups = masterDataService.getGroups();
@@ -71,7 +72,7 @@ export function renderMachineModal() {
       <div class="modal-dialog modal-dialog-lg">
         <div class="modal-header">
           <div class="modal-title">
-            <span>${isEdit ? '✏️ Edit Machine Record' : '➕ New Machine'}</span>
+            <span>${isViewOnly ? '👁️ Machine Details (View-Only)' : (isEdit ? '✏️ Edit Machine Record' : '➕ New Machine')}</span>
             ${isEdit ? `<span class="serial-number-badge">${machine.serialNumber}</span>` : ''}
           </div>
           <button id="btn-close-machine-modal" class="btn btn-ghost btn-sm" style="font-size: 18px;">✕</button>
@@ -79,17 +80,26 @@ export function renderMachineModal() {
 
         <form id="form-machine" class="modal-body" style="display: flex; flex-direction: column; gap: 14px; flex: 1; min-height: 0; overflow-y: auto;">
 
+          ${isViewOnly ? `
+            <div style="background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.35); border-radius: var(--radius-md); padding: 10px 14px; font-size: 12.5px; color: #38bdf8; display: flex; align-items: center; gap: 10px;">
+              <span style="font-size: 20px;">🔒</span>
+              <div>
+                <strong>View-Only Machine:</strong> This machine belongs to another floor or Central Idle. You have read-only access to view its specifications, but cannot edit, relocate, or save changes.
+              </div>
+            </div>
+          ` : ''}
+
           <!-- Row 1: Machine Name & Brand -->
           <div class="form-grid-2">
             <div class="form-group">
               <label class="form-label">Machine Name <span class="req">*</span></label>
-              <select id="modal-field-machine-name" class="form-control" required>
+              <select id="modal-field-machine-name" class="form-control" ${isViewOnly ? 'disabled style="opacity: 0.75; cursor: not-allowed;"' : 'required'}>
                 ${machineNames.map(mn => `<option value="${mn.id}" ${currentMachineNameId === mn.id ? 'selected' : ''}>${mn.name}</option>`).join('')}
               </select>
             </div>
             <div class="form-group">
               <label class="form-label">Brand <span class="req">*</span></label>
-              <select id="modal-field-brand" class="form-control" required>
+              <select id="modal-field-brand" class="form-control" ${isViewOnly ? 'disabled style="opacity: 0.75; cursor: not-allowed;"' : 'required'}>
                 ${brands.map(b => `<option value="${b.id}" ${currentBrandId === b.id ? 'selected' : ''}>${b.name}</option>`).join('')}
               </select>
             </div>
@@ -99,7 +109,7 @@ export function renderMachineModal() {
           <div class="form-grid-2">
             <div class="form-group">
               <label class="form-label">Model <span class="req">*</span></label>
-              <select id="modal-field-model" class="form-control" required>
+              <select id="modal-field-model" class="form-control" ${isViewOnly ? 'disabled style="opacity: 0.75; cursor: not-allowed;"' : 'required'}>
                 ${models.map(m => `<option value="${m.id}" ${machine?.modelId === m.id ? 'selected' : ''}>${m.name}</option>`).join('')}
               </select>
             </div>
@@ -114,12 +124,13 @@ export function renderMachineModal() {
                   class="form-control"
                   placeholder="e.g. 1234, JA-01"
                   value="${machine?.serialNumber || ''}"
-                  required
-                  style="font-family: var(--font-mono); font-size: 14px; font-weight: 700; color: #38bdf8; flex: 1;"
+                  ${isViewOnly ? 'disabled style="opacity: 0.75; cursor: not-allowed; font-family: var(--font-mono); font-size: 14px; font-weight: 700; color: #38bdf8; flex: 1;"' : 'required style="font-family: var(--font-mono); font-size: 14px; font-weight: 700; color: #38bdf8; flex: 1;"'}
                 />
-                <button type="button" id="btn-modal-scan-serial-qr" class="btn btn-secondary" style="border-color: #38bdf8; color: #38bdf8; font-weight: 700; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; padding: 0 12px;" title="Scan Machine QR Code / Barcode with Camera">
-                  <span style="font-size: 15px;">📷</span> Scan
-                </button>
+                ${!isViewOnly ? `
+                  <button type="button" id="btn-modal-scan-serial-qr" class="btn btn-secondary" style="border-color: #38bdf8; color: #38bdf8; font-weight: 700; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; padding: 0 12px;" title="Scan Machine QR Code / Barcode with Camera">
+                    <span style="font-size: 15px;">📷</span> Scan
+                  </button>
+                ` : ''}
               </div>
               <div id="serial-conflict-alert" style="display: none; margin-top: 6px; font-size: 12px; color: #f87171; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 4px; padding: 6px 10px;"></div>
             </div>
@@ -129,14 +140,14 @@ export function renderMachineModal() {
           <div class="form-grid-2">
             <div class="form-group">
               <label class="form-label">Unit / Factory <span class="req">*</span></label>
-              <select id="modal-field-unit" class="form-control" ${isEdit && !authService.isSuperAdmin() ? 'disabled style="opacity: 0.7; cursor: not-allowed;"' : 'required'}>
+              <select id="modal-field-unit" class="form-control" ${isViewOnly || (isEdit && !authService.isSuperAdmin()) ? 'disabled style="opacity: 0.7; cursor: not-allowed;"' : 'required'}>
                 ${units.map(u => `<option value="${u.id}" ${currentUnitId === u.id ? 'selected' : ''}>${u.name}</option>`).join('')}
               </select>
               ${isEdit && !authService.isSuperAdmin() ? `<input type="hidden" name="unitId" value="${currentUnitId}" />` : ''}
             </div>
             <div class="form-group">
               <label class="form-label">Floor <span class="req">*</span></label>
-              <select id="modal-field-floor" class="form-control" ${isEdit && !authService.isSuperAdmin() ? 'disabled style="opacity: 0.7; cursor: not-allowed;"' : 'required'}>
+              <select id="modal-field-floor" class="form-control" ${isViewOnly || (isEdit && !authService.isSuperAdmin()) ? 'disabled style="opacity: 0.7; cursor: not-allowed;"' : 'required'}>
                 ${floors.map(f => `<option value="${f.id}" ${currentFloorId === f.id ? 'selected' : ''}>${f.name}</option>`).join('')}
               </select>
               ${isEdit && !authService.isSuperAdmin() ? `<input type="hidden" name="floorId" value="${currentFloorId}" />` : ''}
@@ -147,7 +158,7 @@ export function renderMachineModal() {
           <div class="form-grid-2">
             <div class="form-group">
               <label class="form-label">Production Line <span class="req">*</span></label>
-              <select id="modal-field-line" class="form-control" ${isEdit && !authService.isSuperAdmin() ? 'disabled style="opacity: 0.7; cursor: not-allowed;"' : 'required'}>
+              <select id="modal-field-line" class="form-control" ${isViewOnly || (isEdit && !authService.isSuperAdmin()) ? 'disabled style="opacity: 0.7; cursor: not-allowed;"' : 'required'}>
                 ${lines.map(l => {
                   const clean = formatDisplayLine(l.name, 'NORMAL');
                   const label = clean !== l.name ? `${clean} (${l.name})` : l.name;
@@ -158,7 +169,7 @@ export function renderMachineModal() {
             </div>
             <div class="form-group">
               <label class="form-label">Status <span class="req">*</span></label>
-              <select id="modal-field-status" class="form-control" required>
+              <select id="modal-field-status" class="form-control" ${isViewOnly ? 'disabled style="opacity: 0.75; cursor: not-allowed;"' : 'required'}>
                 ${MACHINE_STATUSES.map(s => `<option value="${s.id}" ${machine?.status === s.id ? 'selected' : ''}>${s.label}</option>`).join('')}
               </select>
             </div>
@@ -168,7 +179,7 @@ export function renderMachineModal() {
           <div class="form-grid-2">
             <div class="form-group">
               <label class="form-label">Quantity</label>
-              <input type="number" id="modal-field-quantity" class="form-control" value="${machine?.quantity || 1}" min="1" />
+              <input type="number" id="modal-field-quantity" class="form-control" value="${machine?.quantity || 1}" min="1" ${isViewOnly ? 'disabled style="opacity: 0.75; cursor: not-allowed;"' : ''} />
             </div>
             <div></div>
           </div>
@@ -180,10 +191,12 @@ export function renderMachineModal() {
         </form>
 
         <div class="modal-footer">
-          <button type="button" id="btn-cancel-machine" class="btn btn-secondary">Cancel</button>
-          <button type="submit" form="form-machine" id="btn-save-machine" class="btn btn-primary">
-            💾 ${isEdit ? 'Save Changes' : 'Register Machine'}
-          </button>
+          <button type="button" id="btn-cancel-machine" class="btn btn-secondary">${isViewOnly ? 'Close' : 'Cancel'}</button>
+          ${!isViewOnly ? `
+            <button type="submit" form="form-machine" id="btn-save-machine" class="btn btn-primary">
+              💾 ${isEdit ? 'Save Changes' : 'Register Machine'}
+            </button>
+          ` : ''}
         </div>
       </div>
     </div>
@@ -489,6 +502,11 @@ export function initMachineModalEvents() {
   if (form) {
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
+
+      if (isEdit && machine && authService.isMachineViewOnlyForUser(machine)) {
+        notificationService.error('Access Denied: You cannot modify machines outside your assigned floor.');
+        return;
+      }
 
       const saveBtn = document.getElementById('btn-save-machine');
       const originalBtnText = saveBtn ? saveBtn.innerHTML : '';

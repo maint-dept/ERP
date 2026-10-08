@@ -83,6 +83,13 @@ export function renderMachineDetails() {
 
         <div class="drawer-body drawer-content" style="padding: 20px; display: flex; flex-direction: column; gap: 16px; overflow-y: auto; flex: 1; max-height: calc(100vh - 115px);">
           
+          ${authService.isMachineViewOnlyForUser(machine) ? `
+            <div style="background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.35); border-radius: var(--radius-md); padding: 10px 14px; font-size: 12px; color: #38bdf8; display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 16px;">🔒</span>
+              <div><strong>View-Only Machine:</strong> Located outside your assigned floor or Central Idle. Technical specifications are viewable, but operational modifications are restricted.</div>
+            </div>
+          ` : ''}
+
           <!-- Top Action Shortcuts -->
           <div style="display: flex; gap: 8px; flex-wrap: wrap;">
             <button id="btn-drawer-full-history" class="btn btn-secondary btn-sm" style="flex: 1; font-weight: 600;">
@@ -94,12 +101,12 @@ export function renderMachineDetails() {
             <button id="btn-print-asset-tag" class="btn btn-secondary btn-sm" style="flex: 1;">
               🏷️ Print Asset Tag
             </button>
-            ${authService.hasAccess('transfers', 'ADD') ? `
+            ${(authService.hasAccess('transfers', 'ADD') && authService.canOperateMachine(machine)) ? `
               <button id="btn-drawer-transfer" class="btn btn-secondary btn-sm" style="flex: 1;">
                 🔄 Relocate
               </button>
             ` : ''}
-            ${authService.hasAccess('machines', 'EDIT') ? `
+            ${(authService.hasAccess('machines', 'EDIT') && authService.canOperateMachine(machine)) ? `
               <button id="btn-drawer-edit" class="btn btn-primary btn-sm" style="flex: 1;">
                 ✏️ Edit Machine
               </button>
