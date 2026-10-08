@@ -462,6 +462,7 @@ export function initMachineModalEvents() {
   }
 
   // Real-Time Duplicate Check (Composite: Machine Name + Brand + Model + Serial Number)
+  // নিয়ম: Serial Number globally unique + চারটি ফিল্ড একসাথে same হলে Duplicate
   if (serialInp && conflictAlert) {
     const runDuplicateCheck = () => {
       const sn = serialInp.value.trim();
@@ -470,9 +471,9 @@ export function initMachineModalEvents() {
         return;
       }
 
-      const mnSelect = document.getElementById('select-machine-name');
-      const bSelect = document.getElementById('select-machine-brand');
-      const mSelect = document.getElementById('select-machine-model');
+      const mnSelect = document.getElementById('modal-field-machine-name');
+      const bSelect = document.getElementById('modal-field-brand');
+      const mSelect = document.getElementById('modal-field-model');
 
       const dupCheck = machineService.checkDuplicateMachine({
         serialNumber: sn,
@@ -486,11 +487,11 @@ export function initMachineModalEvents() {
         const c = dupCheck.conflict || {};
         if (dupCheck.isCompositeDuplicate) {
           conflictAlert.innerHTML = `
-            🛡️ <strong>Duplicate Record Detected:</strong> A machine with matching Name (${c.machineName}), Brand (${c.brand}), Model (${c.model}), and Serial '${sn}' already exists in Database (ID: ${c.id}) at ${c.unit} &gt; ${c.floor} &gt; ${c.line}.
+            🛡️ <strong>Duplicate Record:</strong> Machine Name (${c.machineName}), Brand (${c.brand}), Model (${c.model}), Serial '${sn}' — এই চারটি তথ্য মিলিয়ে ইতিমধ্যে Database-এ একটি রেকর্ড আছে (ID: ${c.id}) — ${c.unit} &gt; ${c.floor} &gt; ${c.line}। নতুন Entry সম্ভব নয়।
           `;
         } else {
           conflictAlert.innerHTML = `
-            ⚠️ <strong>Serial Number Conflict:</strong> Serial '${sn}' is already assigned to Machine ID '${c.id}' (${c.machineName} - ${c.model}) at ${c.unit} &gt; ${c.line}.
+            ⚠️ <strong>Serial Number Conflict:</strong> Serial '${sn}' ইতিমধ্যে অন্য একটি Machine-এ ব্যবহৃত হচ্ছে (ID: ${c.id} — ${c.machineName}, ${c.model}) — ${c.unit} &gt; ${c.line}। Serial Number অবশ্যই Unique হতে হবে।
           `;
         }
       } else {
@@ -499,10 +500,11 @@ export function initMachineModalEvents() {
     };
 
     serialInp.addEventListener('input', runDuplicateCheck);
-    document.getElementById('select-machine-name')?.addEventListener('change', runDuplicateCheck);
-    document.getElementById('select-machine-brand')?.addEventListener('change', runDuplicateCheck);
-    document.getElementById('select-machine-model')?.addEventListener('change', runDuplicateCheck);
+    document.getElementById('modal-field-machine-name')?.addEventListener('change', runDuplicateCheck);
+    document.getElementById('modal-field-brand')?.addEventListener('change', runDuplicateCheck);
+    document.getElementById('modal-field-model')?.addEventListener('change', runDuplicateCheck);
   }
+
 
   // Quick Switch to Transfer from Edit form
   const btnSwitchTransfer = document.getElementById('btn-quick-switch-to-transfer');
