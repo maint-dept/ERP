@@ -19,13 +19,13 @@ class MachineService {
   /**
    * Comprehensive Composite Duplicate Check for Machine Inventory:
    *
-   * নিয়ম (Rules):
-   * 1. Serial Number globally unique: একই Serial Number অন্য কোনো machine-এ থাকতে পারবে না।
-   * 2. Composite Duplicate: Machine Name + Brand + Model + Serial Number — চারটি একসাথে same হলে Duplicate।
+   * Rules:
+   * 1. Serial Number is globally unique — the same Serial Number cannot exist on two machines.
+   * 2. Composite Duplicate: Machine Name + Brand + Model + Serial Number — if all four match, it is a Duplicate.
    *
-   * - Serial + Name + Brand + Model সবগুলো মিললে → isDuplicate: true, isCompositeDuplicate: true
-   * - শুধু Serial মিললে (Name/Brand/Model ভিন্ন) → isDuplicate: true, isCompositeDuplicate: false (Serial Conflict)
-   * - Serial আলাদা হলে → isDuplicate: false (নতুন entry গ্রহণযোগ্য)
+   * - Serial + Name + Brand + Model all match  -> isDuplicate: true, isCompositeDuplicate: true
+   * - Only Serial matches (Name/Brand/Model differ) -> isDuplicate: true, isCompositeDuplicate: false (Serial Conflict)
+   * - Serial is different -> isDuplicate: false (new entry accepted)
    */
   checkDuplicateMachine(machineData, excludeMachineId = null) {
     if (!machineData) return { isDuplicate: false };
@@ -43,17 +43,16 @@ class MachineService {
       const brand = storage.getItem(TABLE_NAMES.BRANDS, existing.brandId);
       const model = storage.getItem(TABLE_NAMES.MODELS, existing.modelId);
 
-      // Composite check: সব চারটি ফিল্ড মেলে কিনা দেখা হচ্ছে
-      // machineNameId, brandId, modelId explicitly provide করা থাকলেই compare করবে
+      // Composite check: compare all four fields when they are explicitly provided
       const mnMatches = machineData.machineNameId
         ? machineData.machineNameId === existing.machineNameId
         : true;
       const brandMatches = machineData.brandId !== undefined && machineData.brandId !== null && machineData.brandId !== ''
         ? machineData.brandId === existing.brandId
-        : !existing.brandId; // উভয়ে brand নেই → match
+        : !existing.brandId; // both have no brand -> match
       const modelMatches = machineData.modelId !== undefined && machineData.modelId !== null && machineData.modelId !== ''
         ? machineData.modelId === existing.modelId
-        : !existing.modelId; // উভয়ে model নেই → match
+        : !existing.modelId; // both have no model -> match
 
       const isCompositeMatch = mnMatches && brandMatches && modelMatches;
 
@@ -61,8 +60,8 @@ class MachineService {
         isDuplicate: true,
         isCompositeDuplicate: isCompositeMatch,
         message: isCompositeMatch
-          ? `❌ Duplicate Record: Machine Name (${mn?.name || ''}), Brand (${brand?.name || 'N/A'}), Model (${model?.name || 'N/A'}), Serial '${cleanSerial}' — এই চারটি তথ্য মিলিয়ে ইতিমধ্যে একটি মেশিন Database-এ আছে।`
-          : `⚠️ Serial Number Conflict: Serial '${cleanSerial}' ইতিমধ্যে অন্য একটি Machine-এ ব্যবহৃত হচ্ছে (ID: ${existing.id}, ${mn?.name || ''} - ${model?.name || ''})। Serial Number অবশ্যই Unique হতে হবে।`,
+          ? `Duplicate Record: Machine Name (${mn?.name || ''}), Brand (${brand?.name || 'N/A'}), Model (${model?.name || 'N/A'}), Serial '${cleanSerial}' — all four fields match an existing machine in the database.`
+          : `Serial Number Conflict: Serial '${cleanSerial}' is already assigned to another machine (ID: ${existing.id}, ${mn?.name || ''} - ${model?.name || ''}). Serial Number must be unique.`,
         conflict: {
           id: existing.id,
           serialNumber: existing.serialNumber,
@@ -374,7 +373,7 @@ class MachineService {
     }
 
     // Composite Duplicate Check (Machine Name + Brand + Model + Serial Number)
-    // নতুন নিয়ম: Serial Number globally unique এবং চারটি ফিল্ড একসাথে same হলে Duplicate
+    // Rule: Serial Number is globally unique; all four fields matching together = Duplicate
     const dupCheck = this.checkDuplicateMachine(machineData);
     if (dupCheck.isDuplicate) {
       const err = new Error(dupCheck.message);
@@ -546,8 +545,8 @@ class MachineService {
       }
     }
 
-    // Composite Duplicate Check on Edit (Serial বা অন্য ফিল্ড পরিবর্তন হলে)
-    // নতুন নিয়ম: Serial Number globally unique এবং Name+Brand+Model+Serial চারটি same → Duplicate
+    // Composite Duplicate Check on Edit (when Serial or other spec fields change)
+    // Rule: Serial Number is globally unique; Name+Brand+Model+Serial all matching = Duplicate
     const mergedForDupCheck = { ...existing, ...updates };
     if (updates.serialNumber || updates.machineNameId || updates.brandId !== undefined || updates.modelId !== undefined) {
       const dupCheck = this.checkDuplicateMachine(mergedForDupCheck, id);

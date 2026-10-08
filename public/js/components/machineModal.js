@@ -462,7 +462,7 @@ export function initMachineModalEvents() {
   }
 
   // Real-Time Duplicate Check (Composite: Machine Name + Brand + Model + Serial Number)
-  // নিয়ম: Serial Number globally unique + চারটি ফিল্ড একসাথে same হলে Duplicate
+  // Rule: Serial Number is globally unique. All four fields matching together = Duplicate.
   if (serialInp && conflictAlert) {
     const runDuplicateCheck = () => {
       const sn = serialInp.value.trim();
@@ -487,11 +487,11 @@ export function initMachineModalEvents() {
         const c = dupCheck.conflict || {};
         if (dupCheck.isCompositeDuplicate) {
           conflictAlert.innerHTML = `
-            🛡️ <strong>Duplicate Record:</strong> Machine Name (${c.machineName}), Brand (${c.brand}), Model (${c.model}), Serial '${sn}' — এই চারটি তথ্য মিলিয়ে ইতিমধ্যে Database-এ একটি রেকর্ড আছে (ID: ${c.id}) — ${c.unit} &gt; ${c.floor} &gt; ${c.line}। নতুন Entry সম্ভব নয়।
+            🛡️ <strong>Duplicate Record:</strong> Machine Name (${c.machineName}), Brand (${c.brand}), Model (${c.model}), Serial '${sn}' — all four fields match an existing record in the database (ID: ${c.id}) at ${c.unit} &gt; ${c.floor} &gt; ${c.line}. New entry not allowed.
           `;
         } else {
           conflictAlert.innerHTML = `
-            ⚠️ <strong>Serial Number Conflict:</strong> Serial '${sn}' ইতিমধ্যে অন্য একটি Machine-এ ব্যবহৃত হচ্ছে (ID: ${c.id} — ${c.machineName}, ${c.model}) — ${c.unit} &gt; ${c.line}। Serial Number অবশ্যই Unique হতে হবে।
+            ⚠️ <strong>Serial Number Conflict:</strong> Serial '${sn}' is already assigned to another machine (ID: ${c.id} — ${c.machineName}, ${c.model}) at ${c.unit} &gt; ${c.line}. Serial Number must be unique.
           `;
         }
       } else {
@@ -504,6 +504,7 @@ export function initMachineModalEvents() {
     document.getElementById('modal-field-brand')?.addEventListener('change', runDuplicateCheck);
     document.getElementById('modal-field-model')?.addEventListener('change', runDuplicateCheck);
   }
+
 
 
   // Quick Switch to Transfer from Edit form
