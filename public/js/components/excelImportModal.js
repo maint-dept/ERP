@@ -143,8 +143,8 @@ function renderImportStageContent() {
     // Add canonical recommended fields if not already in active structure
     const canonicalDefaults = [
       { key: 'machine_name', label: 'Machine Name (machine_name)', required: true },
-      { key: 'machine_brand', label: 'Machine Brand (machine_brand)', required: true },
-      { key: 'machine_model', label: 'Machine Model (machine_model)', required: true },
+      { key: 'machine_brand', label: 'Machine Brand (machine_brand)', required: false },
+      { key: 'machine_model', label: 'Machine Model (machine_model)', required: false },
       { key: 'machine_serial', label: 'Machine Serial (machine_serial)', required: false },
       { key: 'unit_factory', label: 'Unit/Factory (unit_factory)', required: true },
       { key: 'floor', label: 'Floor (floor)', required: true },
@@ -337,10 +337,10 @@ function renderImportStageContent() {
               <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; flex-wrap: wrap;">
                 <div>
                   <div style="font-weight: 800; color: #fbbf24; font-size: 14px; display: flex; align-items: center; gap: 8px;">
-                    <span>🛡️ ডুপ্লিকেট নোটিফিকেশন: <strong>${dupSummary.count} টি ডুপ্লিকেট রেকর্ড</strong> সনাক্ত হয়েছে!</span>
+                    <span>🛡️ Duplicate Notification: <strong>${dupSummary.count} Duplicate Record(s)</strong> Detected!</span>
                   </div>
                   <div style="font-size: 11.5px; color: var(--text-secondary); margin-top: 3px;">
-                    রুল: <strong>মেশিন নাম + মেশিন ব্রান্ড + মেশিন মডেল + সিরিয়াল নাম্বার</strong> মিলিয়ে ডুপ্লিকেট চেক করা হয়েছে। নিচের cell-গুলোতে ডুপ্লিকেট পাওয়া গেছে:
+                    Rule: Verified by matching <strong>Machine Name + Brand + Model + Serial Number</strong>. Duplicates found in the following cells:
                   </div>
                 </div>
                 <span class="badge" style="background: rgba(245, 158, 11, 0.25); color: #fbbf24; border: 1px solid #f59e0b; font-size: 11.5px; font-weight: 800; padding: 4px 10px;">
@@ -362,7 +362,7 @@ function renderImportStageContent() {
             <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.3); border-left: 4px solid #10b981; border-radius: var(--radius-md); padding: 10px 16px; display: flex; align-items: center; gap: 8px;">
               <span style="font-size: 16px;">✅</span>
               <span style="font-size: 12px; color: #34d399; font-weight: 700;">
-                ডুপ্লিকেট চেক সফল: কোনো ডুপ্লিকেট রেকর্ড নেই (0 Duplicates)। সবগুলো রেকর্ড ইউনিক।
+                Duplicate Check Passed: No duplicate records found (0 Duplicates). All records are unique.
               </span>
             </div>
           `}
@@ -373,10 +373,10 @@ function renderImportStageContent() {
               <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; flex-wrap: wrap;">
                 <div>
                   <div style="font-weight: 800; color: #f87171; font-size: 14px; display: flex; align-items: center; gap: 8px;">
-                    <span>⚠️ এরর নোটিফিকেশন: <strong>${errSummary.count} টি সমস্যা / এরর</strong> সনাক্ত হয়েছে!</span>
+                    <span>⚠️ Error Notification: <strong>${errSummary.count} Issue(s) / Error(s)</strong> Detected!</span>
                   </div>
                   <div style="font-size: 11.5px; color: var(--text-secondary); margin-top: 3px;">
-                    নিচের cell-গুলোতে আবশ্যিক ফিল্ড খালি বা ভুল তথ্য রয়েছে (এক্সেলে সরাসরি এই cell-গুলো সংশোধন করতে পারেন):
+                    Required fields missing or invalid data found in the following cells (you may correct these directly in Excel):
                   </div>
                 </div>
                 <span class="badge" style="background: rgba(239, 68, 68, 0.25); color: #f87171; border: 1px solid #ef4444; font-size: 11.5px; font-weight: 800; padding: 4px 10px;">
@@ -402,10 +402,10 @@ function renderImportStageContent() {
               <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; flex-wrap: wrap;">
                 <div>
                   <div style="font-weight: 800; color: #38bdf8; font-size: 13.5px; display: flex; align-items: center; gap: 8px;">
-                    <span>✨ মাস্টার ডাটা অটো-ফিক্স: <strong>${autoFixSummary.count} টি সেলে</strong> স্পেস ও ক্যাপিটাল/স্মল লেটার অটোমেটিক ঠিক করা হয়েছে!</span>
+                    <span>✨ Master Data Auto-Fix: <strong>${autoFixSummary.count} Cell(s)</strong> normalized automatically!</span>
                   </div>
                   <div style="font-size: 11.5px; color: var(--text-secondary); margin-top: 3px;">
-                    অতিরিক্ত স্পেস ও ছোট/বড় হাতের লেখার অসঙ্গতি মাস্টার ডাটার সাথে মিলিয়ে স্বয়ংক্রিয়ভাবে স্ট্যান্ডার্ড ফরম্যাটে রূপান্তর করা হয়েছে।
+                    Excess spaces and casing differences were automatically matched and standardized against master data records.
                   </div>
                 </div>
                 <span class="badge" style="background: rgba(56, 189, 248, 0.2); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.4); font-size: 11px; font-weight: 800; padding: 3px 8px;">

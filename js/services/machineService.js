@@ -316,13 +316,13 @@ class MachineService {
                   (INITIAL_DATA.machine_names || []).find(x => x.id === m.machineNameId) || 
                   { id: m.machineNameId, name: m.machineName || m.name || (m.brand ? m.brand + ' Machine' : 'Plane Machine') };
 
-    const brdObj = storage.getItem(TABLE_NAMES.BRANDS, m.brandId) || 
-                   (INITIAL_DATA.brands || []).find(x => x.id === m.brandId) || 
-                   { id: m.brandId, name: m.brand || 'Juki' };
+    const brdObj = m.brandId 
+      ? (storage.getItem(TABLE_NAMES.BRANDS, m.brandId) || (INITIAL_DATA.brands || []).find(x => x.id === m.brandId) || { id: m.brandId, name: m.brand || '' })
+      : { id: '', name: m.brand || '' };
 
-    const mdlObj = storage.getItem(TABLE_NAMES.MODELS, m.modelId) || 
-                   (INITIAL_DATA.models || []).find(x => x.id === m.modelId) || 
-                   { id: m.modelId, name: m.model || m.modelName || 'Standard' };
+    const mdlObj = m.modelId 
+      ? (storage.getItem(TABLE_NAMES.MODELS, m.modelId) || (INITIAL_DATA.models || []).find(x => x.id === m.modelId) || { id: m.modelId, name: m.model || m.modelName || '' })
+      : { id: '', name: m.model || m.modelName || '' };
 
     return {
       ...m,
@@ -333,9 +333,9 @@ class MachineService {
       machineName: mnObj,
       brand: brdObj,
       model: mdlObj,
-      machineNameStr: mnObj.name || (typeof m.machineName === 'string' ? m.machineName : 'Plane Machine'),
-      brandStr: brdObj.name || m.brand || 'Juki',
-      modelStr: mdlObj.name || m.model || m.modelName || 'Standard'
+      machineNameStr: mnObj.name || (typeof m.machineName === 'string' ? m.machineName : ''),
+      brandStr: brdObj.name || m.brand || '',
+      modelStr: mdlObj.name || m.model || m.modelName || ''
     };
   }
 
@@ -356,9 +356,9 @@ class MachineService {
       throw new Error('Access Denied: You are not authorized to add machines to this location.');
     }
 
-    // Required fields check
-    if (!machineData.machineNameId || !machineData.brandId || !machineData.modelId || !machineData.serialNumber) {
-      throw new Error('Machine Name, Brand, Model, and Serial Number are required.');
+    // Required fields check: Machine Name and Serial Number are mandatory; Brand & Model are optional
+    if (!machineData.machineNameId || !machineData.serialNumber) {
+      throw new Error('Machine Name and Serial Number are required.');
     }
 
     // Duplicate Serial Check
@@ -377,8 +377,8 @@ class MachineService {
     const flrObj = storage.getItem(TABLE_NAMES.FLOORS, machineData.floorId);
     const linObj = storage.getItem(TABLE_NAMES.LINES, machineData.lineId);
     const mnObj = storage.getItem(TABLE_NAMES.MACHINE_NAMES, machineData.machineNameId);
-    const brdObj = storage.getItem(TABLE_NAMES.BRANDS, machineData.brandId);
-    const mdlObj = storage.getItem(TABLE_NAMES.MODELS, machineData.modelId);
+    const brdObj = machineData.brandId ? storage.getItem(TABLE_NAMES.BRANDS, machineData.brandId) : null;
+    const mdlObj = machineData.modelId ? storage.getItem(TABLE_NAMES.MODELS, machineData.modelId) : null;
 
     const qty = machineData.quantity !== undefined ? Number(machineData.quantity) : 1;
     const status = machineData.status || 'ACTIVE';
@@ -571,8 +571,12 @@ class MachineService {
     const flrObj = updates.floorId ? storage.getItem(TABLE_NAMES.FLOORS, updates.floorId) : storage.getItem(TABLE_NAMES.FLOORS, existing.floorId);
     const linObj = updates.lineId ? storage.getItem(TABLE_NAMES.LINES, updates.lineId) : storage.getItem(TABLE_NAMES.LINES, existing.lineId);
     const mnObj = updates.machineNameId ? storage.getItem(TABLE_NAMES.MACHINE_NAMES, updates.machineNameId) : storage.getItem(TABLE_NAMES.MACHINE_NAMES, existing.machineNameId);
-    const brdObj = updates.brandId ? storage.getItem(TABLE_NAMES.BRANDS, updates.brandId) : storage.getItem(TABLE_NAMES.BRANDS, existing.brandId);
-    const mdlObj = updates.modelId ? storage.getItem(TABLE_NAMES.MODELS, updates.modelId) : storage.getItem(TABLE_NAMES.MODELS, existing.modelId);
+    const brdObj = updates.brandId !== undefined
+      ? (updates.brandId ? storage.getItem(TABLE_NAMES.BRANDS, updates.brandId) : null)
+      : (existing.brandId ? storage.getItem(TABLE_NAMES.BRANDS, existing.brandId) : null);
+    const mdlObj = updates.modelId !== undefined
+      ? (updates.modelId ? storage.getItem(TABLE_NAMES.MODELS, updates.modelId) : null)
+      : (existing.modelId ? storage.getItem(TABLE_NAMES.MODELS, existing.modelId) : null);
 
     const qty = updates.quantity !== undefined ? Number(updates.quantity) : (existing.quantity || 1);
     const status = updates.status || existing.status || 'ACTIVE';
@@ -593,8 +597,8 @@ class MachineService {
       line: linObj?.name || existing.line || '',
       lineName: linObj?.name || existing.lineName || '',
       machineName: mnObj?.name || existing.machineName || '',
-      brand: brdObj?.name || existing.brand || '',
-      model: mdlObj?.name || existing.model || '',
+      brand: brdObj ? brdObj.name : (updates.brandId === '' ? '' : (existing.brand || '')),
+      model: mdlObj ? mdlObj.name : (updates.modelId === '' ? '' : (existing.model || '')),
       updatedBy: user?.id || 'usr-super-admin',
       updatedAt: new Date().toISOString()
     };

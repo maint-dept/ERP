@@ -52,9 +52,9 @@ export function renderMachineModal() {
   const currentMachineNameId = machine?.machineNameId || machineNames[0]?.id || '';
   const brands = masterDataService.getBrandsForMachineName(currentMachineNameId);
 
-  const currentBrandId = machine?.brandId || brands[0]?.id || '';
+  const currentBrandId = machine?.brandId || '';
   // Load models: first try brand+machineName, fallback to machineName only
-  let models = masterDataService.getModels(currentBrandId, currentMachineNameId);
+  let models = currentBrandId ? masterDataService.getModels(currentBrandId, currentMachineNameId) : [];
   if (!models.length && currentMachineNameId) {
     models = masterDataService.getModels(null, currentMachineNameId);
   }
@@ -98,8 +98,9 @@ export function renderMachineModal() {
               </select>
             </div>
             <div class="form-group">
-              <label class="form-label">Brand <span class="req">*</span></label>
-              <select id="modal-field-brand" class="form-control" ${isViewOnly ? 'disabled style="opacity: 0.75; cursor: not-allowed;"' : 'required'}>
+              <label class="form-label">Brand <span style="font-size: 11px; color: var(--text-muted); font-weight: normal;">(Optional)</span></label>
+              <select id="modal-field-brand" class="form-control" ${isViewOnly ? 'disabled style="opacity: 0.75; cursor: not-allowed;"' : ''}>
+                <option value="">-- No Brand (Blank) --</option>
                 ${brands.map(b => `<option value="${b.id}" ${currentBrandId === b.id ? 'selected' : ''}>${b.name}</option>`).join('')}
               </select>
             </div>
@@ -108,8 +109,9 @@ export function renderMachineModal() {
           <!-- Row 2: Model & Serial Number -->
           <div class="form-grid-2">
             <div class="form-group">
-              <label class="form-label">Model <span class="req">*</span></label>
-              <select id="modal-field-model" class="form-control" ${isViewOnly ? 'disabled style="opacity: 0.75; cursor: not-allowed;"' : 'required'}>
+              <label class="form-label">Model <span style="font-size: 11px; color: var(--text-muted); font-weight: normal;">(Optional)</span></label>
+              <select id="modal-field-model" class="form-control" ${isViewOnly ? 'disabled style="opacity: 0.75; cursor: not-allowed;"' : ''}>
+                <option value="">-- No Model (Blank) --</option>
                 ${models.map(m => `<option value="${m.id}" ${machine?.modelId === m.id ? 'selected' : ''}>${m.name}</option>`).join('')}
               </select>
             </div>
@@ -206,6 +208,7 @@ export function renderMachineModal() {
 export function initMachineModalEvents() {
   const machineId = state.get('activeMachineId');
   const isEdit = Boolean(machineId);
+  const machine = machineId ? storage.getItem(TABLE_NAMES.MACHINES, machineId) : null;
   const overlay = document.getElementById('modal-machine-overlay');
   const closeBtn = document.getElementById('btn-close-machine-modal');
   const cancelBtn = document.getElementById('btn-cancel-machine');
@@ -232,34 +235,47 @@ export function initMachineModalEvents() {
 
   // Reload models based on current brand & machine name
   // If brand+machineName gives no results, fallback to machineName only
-  const reloadModels = () => {
-    if (!brandSelect || !mnSelect || !modelSelect) return;
-    const bId = brandSelect.value;
-    const mnId = mnSelect.value;
-    let models = masterDataService.getModels(bId, mnId);
-    if (!models.length) models = masterDataService.getModels(null, mnId);
-    if (!models.length) models = masterDataService.getModels(bId, null);
-    const curModelId = modelSelect.value;
-    modelSelect.innerHTML = models.length
-      ? models.map(m => `<option value="${m.id}" ${m.id === curModelId ? 'selected' : ''}>${m.name}</option>`).join('')
-      : '<option value="">-- No Model found --</option>';
+  const reloadModels = (preserveSelected = false) => {
+    if (!modelSelect) return;
+    const bId = brandSelect ? brandSelect.value : '';
+    const mnId = mnSelect ? mnSelect.value : '';
+    const curModelId = preserveSelected ? modelSelect.value : '';
+    let models = [];
+    if (bId && mnId) {
+      models = masterDataService.getModels(bId, mnId);
+    }
+    if (!models.length && mnId) {
+      models = masterDataService.getModels(null, mnId);
+    }
+    if (!models.length && bId) {
+      models = masterDataService.getModels(bId, null);
+    }
+    const options = ['<option value="">-- No Model (Blank) --</option>'];
+    models.forEach(m => {
+      options.push(`<option value="${m.id}" ${m.id === curModelId ? 'selected' : ''}>${m.name}</option>`);
+    });
+    modelSelect.innerHTML = options.join('');
   };
 
   // Reload brands for selected machine name, then reload models
-  const reloadBrands = () => {
-    if (!mnSelect || !brandSelect) return;
-    const brands = masterDataService.getBrandsForMachineName(mnSelect.value);
-    brandSelect.innerHTML = brands.length
-      ? brands.map(b => `<option value="${b.id}">${b.name}</option>`).join('')
-      : '<option value="">-- No Brand found --</option>';
-    reloadModels();
+  const reloadBrands = (preserveSelected = false) => {
+    if (!brandSelect) return;
+    const mnId = mnSelect ? mnSelect.value : '';
+    const brands = mnId ? masterDataService.getBrandsForMachineName(mnId) : masterDataService.getBrands();
+    const curBrandId = preserveSelected ? brandSelect.value : '';
+    const options = ['<option value="">-- No Brand (Blank) --</option>'];
+    brands.forEach(b => {
+      options.push(`<option value="${b.id}" ${b.id === curBrandId ? 'selected' : ''}>${b.name}</option>`);
+    });
+    brandSelect.innerHTML = options.join('');
+    reloadModels(preserveSelected);
   };
 
-  if (mnSelect) mnSelect.addEventListener('change', reloadBrands);
-  if (brandSelect) brandSelect.addEventListener('change', reloadModels);
+  if (mnSelect) mnSelect.addEventListener('change', () => reloadBrands(false));
+  if (brandSelect) brandSelect.addEventListener('change', () => reloadModels(false));
 
-  // On form open: ensure models are populated immediately
-  reloadModels();
+  // On form open: ensure models are populated while preserving selected model
+  reloadModels(true);
 
   // Quick Add Model in Modal with Smart Auto-Correction
   const btnQuickModel = document.getElementById('btn-quick-add-model');
@@ -510,6 +526,29 @@ export function initMachineModalEvents() {
 
       const saveBtn = document.getElementById('btn-save-machine');
       const originalBtnText = saveBtn ? saveBtn.innerHTML : '';
+
+      const existingMachine = isEdit ? (machine || storage.getItem(TABLE_NAMES.MACHINES, machineId)) : null;
+      const serialNumber = (document.getElementById('modal-field-serial-number')?.value || '').trim();
+      const machineNameId = document.getElementById('modal-field-machine-name')?.value || '';
+      const brandId = document.getElementById('modal-field-brand')?.value || '';
+      const modelId = document.getElementById('modal-field-model')?.value || '';
+
+      const groupId = document.getElementById('modal-field-group')?.value || existingMachine?.groupId || 'grp-1';
+      const unitId = document.getElementById('modal-field-unit')?.value || existingMachine?.unitId || 'unt-1';
+      const floorId = document.getElementById('modal-field-floor')?.value || existingMachine?.floorId || 'flr-4';
+      const lineId = document.getElementById('modal-field-line')?.value || existingMachine?.lineId || 'lin-1';
+
+      const status = document.getElementById('modal-field-status')?.value || 'ACTIVE';
+      const quantity = Number(document.getElementById('modal-field-quantity')?.value) || 1;
+      const remarks = document.getElementById('modal-field-remarks')?.value?.trim() || '';
+
+      const customValues = {};
+      document.querySelectorAll('.custom-field-input').forEach(inp => {
+        const code = inp.getAttribute('data-code');
+        if (code && inp.value !== '') {
+          customValues[code] = inp.value;
+        }
+      });
 
       const machineData = {
         serialNumber,

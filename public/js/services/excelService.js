@@ -495,8 +495,8 @@ class ExcelService {
       isDefault: true,
       columns: [
         { id: 'col-1', header: 'Machine Name', fieldKey: 'machine_name', required: true, defaultValue: '', order: 1, visible: true },
-        { id: 'col-2', header: 'Machine Brand', fieldKey: 'machine_brand', required: true, defaultValue: '', order: 2, visible: true },
-        { id: 'col-3', header: 'Machine Model', fieldKey: 'machine_model', required: true, defaultValue: '', order: 3, visible: true },
+        { id: 'col-2', header: 'Machine Brand', fieldKey: 'machine_brand', required: false, defaultValue: '', order: 2, visible: true },
+        { id: 'col-3', header: 'Machine Model', fieldKey: 'machine_model', required: false, defaultValue: '', order: 3, visible: true },
         { id: 'col-4', header: 'Machine Serial', fieldKey: 'machine_serial', required: false, defaultValue: '', order: 4, visible: true },
         { id: 'col-5', header: 'Unit/Factory', fieldKey: 'unit_factory', required: true, defaultValue: 'AKM Knitwear Ltd.', order: 5, visible: true },
         { id: 'col-6', header: 'Floor', fieldKey: 'floor', required: true, defaultValue: '3rd Floor', order: 6, visible: true },
@@ -1096,55 +1096,7 @@ class ExcelService {
           });
         }
 
-        if (!brandStr) {
-          const err = 'Machine Brand is required and cannot be empty.';
-          const cell = getCellAddress(mapping.machine_brand, rowNumber);
-          rowErrors.push(err);
-          allValidationErrors.push({
-            sheetName: sheet.name,
-            rowNumber: rowNumber,
-            cell: cell,
-            column: mapping.machine_brand || 'Machine Brand',
-            enteredValue: '— (Empty)',
-            error: err,
-            suggestedCorrection: 'Enter a valid Brand (e.g. Juki, Brother, Jack, Pegasus, Siruba, Kansai).',
-            severity: 'ERROR'
-          });
-          grandErrorsList.push({
-            sheetName: sheet.name,
-            cell: cell,
-            rowNumber: rowNumber,
-            column: mapping.machine_brand || 'Machine Brand',
-            enteredValue: '—',
-            error: err,
-            severity: 'ERROR'
-          });
-        }
-
-        if (!modelStr) {
-          const err = 'Machine Model is required and cannot be empty.';
-          const cell = getCellAddress(mapping.machine_model, rowNumber);
-          rowErrors.push(err);
-          allValidationErrors.push({
-            sheetName: sheet.name,
-            rowNumber: rowNumber,
-            cell: cell,
-            column: mapping.machine_model || 'Machine Model',
-            enteredValue: '— (Empty)',
-            error: err,
-            suggestedCorrection: 'Enter the model designation (e.g. DDL-8700, DDL-9000C, M-700, HE-800B).',
-            severity: 'ERROR'
-          });
-          grandErrorsList.push({
-            sheetName: sheet.name,
-            cell: cell,
-            rowNumber: rowNumber,
-            column: mapping.machine_model || 'Machine Model',
-            enteredValue: '—',
-            error: err,
-            severity: 'ERROR'
-          });
-        }
+        // Machine Brand and Machine Model are optional. If blank in Excel, they remain blank for future editing.
 
         // Auto-generate serial number if blank (system-generated rule)
         if (!serialNumber) {
@@ -1248,7 +1200,7 @@ class ExcelService {
             }
           } else {
             // Serial exists in DB but Name, Brand, or Model differ:
-            // Under user rule ("যদি তিনটি জিনিস সেভ না থাকে, তাহলে ভ্যালুট ডুপ্লিকেট হবে না"),
+            // Under user rule ("If Name, Brand, or Model differ, it is not considered duplicate"),
             // this is NOT a duplicate of the same machine.
             if (duplicatePolicy === DUPLICATE_POLICIES.UPDATE_EXISTING) {
               isUpdate = true;
@@ -1304,10 +1256,10 @@ class ExcelService {
             serialNumber: serialNumber,
             machineNameId: foundMN?.id || (machineNames[0]?.id || 'mn-1'),
             machineNameStr: foundMN?.name || machineNameStr,
-            brandId: foundBrand?.id || (brands[0]?.id || 'brd-1'),
-            brandStr: foundBrand?.name || brandStr,
-            modelId: foundModel?.id || (models[0]?.id || 'mdl-1'),
-            modelStr: foundModel?.name || modelStr,
+            brandId: foundBrand?.id || '',
+            brandStr: foundBrand?.name || brandStr || '',
+            modelId: foundModel?.id || '',
+            modelStr: foundModel?.name || modelStr || '',
             groupId: foundUnit?.groupId || (groups[0]?.id || 'grp-1'),
             unitId: foundUnit?.id || (units[0]?.id || 'unt-1'),
             unitStr: foundUnit?.name || unitStr || 'AKM Knitwear Ltd.',
@@ -1604,12 +1556,12 @@ class ExcelService {
             }
           } else {
             // New Machine Insert
-            let modelId = d.modelId;
-            if (!modelId && d.brandId && d.machineNameId) {
+            let modelId = d.modelId || '';
+            if (!modelId && d.brandId && d.machineNameId && d.modelStr) {
               const newModel = storage.insert(TABLE_NAMES.MODELS, {
                 brandId: d.brandId,
                 machineNameId: d.machineNameId,
-                name: d.modelStr || 'Standard Model',
+                name: d.modelStr,
                 status: 'ACTIVE'
               });
               modelId = newModel.id;
@@ -1620,8 +1572,8 @@ class ExcelService {
 
             sheetNewMachines.push({
               machineNameId: d.machineNameId || 'mn-1',
-              brandId: d.brandId || 'brd-1',
-              modelId: modelId || 'mdl-1',
+              brandId: d.brandId || '',
+              modelId: modelId || '',
               serialNumber: d.serialNumber,
               groupId: resolvedGroupId,
               unitId: d.unitId || 'unt-1',
@@ -1854,8 +1806,8 @@ class ExcelService {
       ['1. COLUMN STRUCTURE & AUTO-CALCULATION RULES:'],
       ['Field #', 'Header Label', 'Field Key', 'Type / Logic', 'Mandatory?'],
       ['1', 'Machine Name', 'machine_name', 'Text / Master Machine Type', 'YES'],
-      ['2', 'Machine Brand', 'machine_brand', 'Text / Brand Name', 'YES'],
-      ['3', 'Machine Model', 'machine_model', 'Text / Model Number', 'YES'],
+      ['2', 'Machine Brand', 'machine_brand', 'Text / Brand Name', 'NO (Optional - blank allowed)'],
+      ['3', 'Machine Model', 'machine_model', 'Text / Model Number', 'NO (Optional - blank allowed)'],
       ['4', 'Machine Serial', 'machine_serial', 'Unique Identifier (Auto-generated if empty)', 'NO (Optional)'],
       ['5', 'Unit/Factory', 'unit_factory', 'Plant / Factory Name', 'YES'],
       ['6', 'Floor', 'floor', 'Building Floor (Must belong to Unit/Factory)', 'YES'],
