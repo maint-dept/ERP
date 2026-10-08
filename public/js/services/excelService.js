@@ -1518,7 +1518,9 @@ class ExcelService {
             serialNumber: item.data?.serialNumber || item.rawRow?.serial || item.rawRow?.serialNumber || '—',
             status: '❌ Failed',
             error: item.errors?.join('; ') || item.error || 'Validation error in row fields',
-            rawRow: item.rawRow || {}
+            errors: item.errors || (item.error ? [item.error] : []),
+            rawRow: item.rawRow || {},
+            data: item.data || {}
           });
           return;
         }
@@ -1599,7 +1601,9 @@ class ExcelService {
             serialNumber: d?.serialNumber || '—',
             status: '❌ Failed',
             error: rowErr.message || 'Error occurred while saving machine record',
-            rawRow: item.rawRow || {}
+            errors: [rowErr.message || 'Error occurred while saving machine record'],
+            rawRow: item.rawRow || {},
+            data: item.data || {}
           });
         }
       });
@@ -1656,40 +1660,261 @@ class ExcelService {
   }
 
   /**
-   * Export Error Report spreadsheet (.xlsx) with exact row numbers, columns, and suggested corrections
+   * Export Error Report spreadsheet (.xlsx) formatted with the EXACT standard raw import template columns
+   * (Machine Name, Machine Brand, Machine Model, Machine Serial, Unit/Factory, Floor, Line, Running, Usable Idle,
+   * Repairable Idle, Total Quantity, Machine Status, Remarks) PLUS Error Reason and Suggested Correction columns.
+   * This allows users to review, fix errors right inside Excel, and directly re-upload the file to complete the import!
    */
-  async exportErrorReport(failedRows, originalFileName = 'Machine_Import.xlsx') {
+  async exportErrorReport(failedRowsOrContext, originalFileName = 'Machine_Import.xlsx') {
     await this.ensureXlsx();
 
     const wb = XLSX.utils.book_new();
 
-    const errorReportHeaders = ['Excel Row', 'Column', 'Entered Value', 'Error Reason', 'Suggested Correction'];
-    const errorReportData = [errorReportHeaders];
+    // 1. Resolve failed records and errors
+    let rawFailedList = [];
+    let allValidationErrors = [];
+    let fileName = originalFileName;
 
-    (failedRows || []).forEach(err => {
-      errorReportData.push([
-        err.rowNumber || err.excelRow || '—',
-        err.column || 'General',
-        err.enteredValue || err.rawValue || (err.rawRow ? JSON.stringify(err.rawRow) : '—'),
-        err.error || err.errorReason || 'Validation Error',
-        err.suggestedCorrection || 'Check the master data reference sheet and enter valid parameters.'
+    if (failedRowsOrContext && typeof failedRowsOrContext === 'object' && !Array.isArray(failedRowsOrContext)) {
+      fileName = failedRowsOrContext.fileName || originalFileName;
+      allValidationErrors = failedRowsOrContext.validationResult?.allErrors || [];
+
+      // Extract all invalid records from validation sheets
+      if (failedRowsOrContext.validationResult?.sheets) {
+        failedRowsOrContext.validationResult.sheets.forEach(sheet => {
+          (sheet.records || []).forEach(rec => {
+            if (!rec.isValid) {
+              rawFailedList.push({
+                ...rec,
+                sheetName: sheet.name
+              });
+            }
+          });
+        });
+      }
+
+      // If already committed, also incorporate failedRows from importResult
+      if (rawFailedList.length === 0 && failedRowsOrContext.importResult?.failedRows) {
+        rawFailedList = failedRowsOrContext.importResult.failedRows;
+      }
+      if (rawFailedList.length === 0 && Array.isArray(failedRowsOrContext.failedRows)) {
+        rawFailedList = failedRowsOrContext.failedRows;
+      }
+    } else if (Array.isArray(failedRowsOrContext)) {
+      rawFailedList = failedRowsOrContext;
+    }
+
+    // 2. Group & Deduplicate records by sheetName + rowNumber so each failed machine appears EXACTLY ONCE
+    const uniqueRecordsMap = new Map();
+
+    rawFailedList.forEach((item, idx) => {
+      const sheetName = item.sheetName || 'Sheet1';
+      const rowNum = item.rowNumber || item.excelRow || idx + 2;
+      const key = `${sheetName}___${rowNum}`;
+
+      if (!uniqueRecordsMap.has(key)) {
+        uniqueRecordsMap.set(key, {
+          sheetName,
+          rowNumber: rowNum,
+          cell: item.cell || `Row ${rowNum}`,
+          data: item.data || {},
+          rawRow: item.rawRow || {},
+          errors: Array.isArray(item.errors) ? [...item.errors] : (item.error ? [item.error] : []),
+          suggestions: Array.isArray(item.suggestions) ? [...item.suggestions] : (item.suggestedCorrection ? [item.suggestedCorrection] : [])
+        });
+      } else {
+        const existing = uniqueRecordsMap.get(key);
+        if (item.error && !existing.errors.includes(item.error)) existing.errors.push(item.error);
+        if (Array.isArray(item.errors)) {
+          item.errors.forEach(e => { if (!existing.errors.includes(e)) existing.errors.push(e); });
+        }
+        if (item.suggestedCorrection && !existing.suggestions.includes(item.suggestedCorrection)) {
+          existing.suggestions.push(item.suggestedCorrection);
+        }
+        if (Array.isArray(item.suggestions)) {
+          item.suggestions.forEach(s => { if (!existing.suggestions.includes(s)) existing.suggestions.push(s); });
+        }
+        if (!Object.keys(existing.data).length && item.data) existing.data = item.data;
+        if (!Object.keys(existing.rawRow).length && item.rawRow) existing.rawRow = item.rawRow;
+      }
+    });
+
+    // Also attach matching diagnostics from allValidationErrors if available
+    if (allValidationErrors.length > 0) {
+      allValidationErrors.forEach(err => {
+        const key = `${err.sheetName || 'Sheet1'}___${err.rowNumber}`;
+        const record = uniqueRecordsMap.get(key);
+        if (record) {
+          if (err.error && !record.errors.includes(err.error)) {
+            record.errors.push(err.error);
+          }
+          if (err.suggestedCorrection && !record.suggestions.includes(err.suggestedCorrection)) {
+            record.suggestions.push(err.suggestedCorrection);
+          }
+        }
+      });
+    }
+
+    // 3. Define Standard Raw File Headers + Diagnostic Fix Columns
+    // Columns A-M are EXACTLY identical to the official Import Template!
+    const headers = [
+      'Machine Name',         // Col A
+      'Machine Brand',        // Col B
+      'Machine Model',        // Col C
+      'Machine Serial',       // Col D
+      'Unit/Factory',         // Col E
+      'Floor',                // Col F
+      'Line',                 // Col G
+      'Running',              // Col H
+      'Usable Idle',          // Col I
+      'Repairable Idle',      // Col J
+      'Total Quantity',       // Col K
+      'Machine Status',       // Col L
+      'Remarks',              // Col M
+      'Error Reason',         // Col N - Detailed error description
+      'Suggested Correction', // Col O - Step-by-step fix suggestion
+      'Original Sheet',       // Col P - Reference sheet name in original file
+      'Original Row'          // Col Q - Row number in original file
+    ];
+
+    const reportRows = [headers];
+
+    uniqueRecordsMap.forEach(rec => {
+      const d = rec.data || {};
+      const r = rec.rawRow || {};
+
+      // Robust field extraction falling back from parsed data to raw row properties
+      const getVal = (parsedVal, rawKeys, defaultVal = '') => {
+        if (parsedVal !== undefined && parsedVal !== null && String(parsedVal).trim() !== '' && !String(parsedVal).startsWith('—')) {
+          return parsedVal;
+        }
+        for (const k of rawKeys) {
+          if (r[k] !== undefined && r[k] !== null && String(r[k]).trim() !== '') {
+            return r[k];
+          }
+        }
+        return defaultVal;
+      };
+
+      const machineName = getVal(d.machineNameStr, ['Machine Name', 'machine_name', 'MachineName', 'Machine', 'Item Name', 'mc_name', 'itemname']);
+      const machineBrand = getVal(d.brandStr, ['Machine Brand', 'machine_brand', 'Brand', 'brand', 'mcbrand', 'make']);
+      const machineModel = getVal(d.modelStr, ['Machine Model', 'machine_model', 'Model', 'model', 'mcmodel', 'modelno']);
+      const machineSerial = getVal(d.serialNumber, ['Machine Serial', 'machine_serial', 'Serial Number', 'serial_number', 'Serial', 'serial', 'SN', 'sn']);
+      const unitFactory = getVal(d.unitStr, ['Unit/Factory', 'unit_factory', 'Unit', 'Factory', 'Plant', 'Location', 'unit', 'factory'], 'AKM Knitwear Ltd.');
+      const floor = getVal(d.floorStr, ['Floor', 'floor', 'Floor Name', 'floor_name', 'Level', 'level']);
+      const line = getVal(d.lineStr, ['Line', 'line', 'Line Name', 'line_name', 'Section', 'Line No', 'lineno']);
+
+      const runningVal = d.running !== undefined ? d.running : (r['Running'] ?? r['running'] ?? 0);
+      const usableIdleVal = d.usableIdle !== undefined ? d.usableIdle : (r['Usable Idle'] ?? r['usable_idle'] ?? 0);
+      const repairableIdleVal = d.repairableIdle !== undefined ? d.repairableIdle : (r['Repairable Idle'] ?? r['repairable_idle'] ?? 0);
+      const totalQtyVal = d.totalQuantity !== undefined ? d.totalQuantity : (r['Total Quantity'] ?? r['total_quantity'] ?? (Number(runningVal) + Number(usableIdleVal) + Number(repairableIdleVal)));
+
+      const machineStatus = getVal(d.status, ['Machine Status', 'machine_status', 'Status', 'status', 'condition'], 'ACTIVE');
+      const remarks = getVal(d.remarks, ['Remarks', 'remarks', 'Comments', 'Notes', 'notes', 'description']);
+
+      // Error reason & suggestion
+      const errorReason = rec.errors.length > 0 ? rec.errors.join(' | ') : 'Validation check failed';
+
+      let suggestedCorrection = rec.suggestions.length > 0 ? rec.suggestions.join(' | ') : '';
+      if (!suggestedCorrection) {
+        const suggestions = [];
+        if (!machineName || errorReason.includes('Machine Name')) {
+          suggestions.push('Enter a valid Machine Name (e.g. Lock Stitch Machine, Overlock Machine, Flatlock Machine)');
+        }
+        if (errorReason.toLowerCase().includes('duplicate')) {
+          suggestions.push('Serial Number already exists - update to a unique Serial Number');
+        }
+        if (errorReason.toLowerCase().includes('floor') || !floor) {
+          suggestions.push('Enter valid Floor name matching Master Data (e.g. Titas Floor, Teesta Floor)');
+        }
+        if (errorReason.toLowerCase().includes('line') || !line) {
+          suggestions.push('Enter valid Line name matching Floor (e.g. Line JA-A, Line PB-01)');
+        }
+        if (errorReason.toLowerCase().includes('unit') || !unitFactory) {
+          suggestions.push('Enter valid Unit/Factory (e.g. AKM Knitwear Ltd.)');
+        }
+        suggestedCorrection = suggestions.length > 0 ? suggestions.join(' | ') : 'Check master data reference sheet, correct values in this row, and re-upload file.';
+      }
+
+      reportRows.push([
+        machineName,
+        machineBrand,
+        machineModel,
+        machineSerial,
+        unitFactory,
+        floor,
+        line,
+        runningVal,
+        usableIdleVal,
+        repairableIdleVal,
+        totalQtyVal,
+        machineStatus,
+        remarks,
+        errorReason,
+        suggestedCorrection,
+        rec.sheetName,
+        rec.rowNumber
       ]);
     });
 
-    const wsReport = XLSX.utils.aoa_to_sheet(errorReportData);
+    // Build Sheet 1: Error Machine Records
+    const wsReport = XLSX.utils.aoa_to_sheet(reportRows);
     wsReport['!cols'] = [
-      { wch: 12 }, // Excel Row
-      { wch: 18 }, // Column
-      { wch: 24 }, // Entered Value
-      { wch: 45 }, // Error Reason
-      { wch: 45 }  // Suggested Correction
+      { wch: 25 }, // Col A: Machine Name
+      { wch: 18 }, // Col B: Machine Brand
+      { wch: 20 }, // Col C: Machine Model
+      { wch: 20 }, // Col D: Machine Serial
+      { wch: 22 }, // Col E: Unit/Factory
+      { wch: 18 }, // Col F: Floor
+      { wch: 18 }, // Col G: Line
+      { wch: 10 }, // Col H: Running
+      { wch: 12 }, // Col I: Usable Idle
+      { wch: 14 }, // Col J: Repairable Idle
+      { wch: 14 }, // Col K: Total Quantity
+      { wch: 14 }, // Col L: Machine Status
+      { wch: 26 }, // Col M: Remarks
+      { wch: 45 }, // Col N: Error Reason
+      { wch: 55 }, // Col O: Suggested Correction
+      { wch: 18 }, // Col P: Original Sheet
+      { wch: 14 }  // Col Q: Original Row
     ];
-    XLSX.utils.book_append_sheet(wb, wsReport, 'Import Error Report');
 
-    const cleanBaseName = originalFileName.replace(/\.[^/.]+$/, '');
-    const outFileName = `${cleanBaseName}_Error_Report.xlsx`;
+    XLSX.utils.book_append_sheet(wb, wsReport, 'Failed Machines (Fix & Upload)');
+
+    // Build Sheet 2: Master Reference & Guidelines (so users can reference valid names when fixing)
+    const refData = [
+      ['AL-MUSLIM GROUP - MAINTENANCE DEPARTMENT ERP - MASTER DATA REFERENCE & ERROR FIX GUIDE'],
+      [''],
+      ['HOW TO FIX AND RE-IMPORT YOUR ERROR FILE:'],
+      ['1. Fix incorrect values in columns A through M on sheet "Failed Machines (Fix & Upload)".'],
+      ['2. Check the "Error Reason" and "Suggested Correction" columns (Col N & O) for exact instructions.'],
+      ['3. Save this Excel file, return to ERP -> Machine Inventory -> Import Excel, and upload this file.'],
+      ['4. All fixed machines will be imported smoothly into the system!'],
+      [''],
+      ['LOCATION HIERARCHY REFERENCE (Unit/Factory -> Floor -> Line):'],
+      ['Unit / Factory', 'Floor', 'Available Production Lines'],
+      ['AKM Knitwear Ltd.', 'Titas Floor', 'Line JA-A, Line JA-B'],
+      ['AKM Knitwear Ltd.', 'Teesta Floor', 'Line JAF-A, Line JAF-B'],
+      ['AKM Knitwear Ltd.', 'Jamuna Floor', 'Line JAF-C, Line PB-01'],
+      ['AKM Knitwear Ltd.', 'Padma Floor', 'Line PB-02, Line PB-03'],
+      ['Knitwear Unit 2', 'Meghna Floor', 'Line ML-01, Line ML-02'],
+      ['Knitwear Unit 2', 'Karnaphuli Floor', 'Line KL-01, Line KL-02'],
+      [''],
+      ['VALID MACHINE STATUS CODES:'],
+      ['Status Code', 'Description'],
+      ['ACTIVE', 'Machine is running actively on the production floor'],
+      ['IDLE', 'Machine is operational and ready for use but currently idle'],
+      ['MAINTENANCE', 'Machine is under routine service or periodic overhaul'],
+      ['BREAKDOWN', 'Machine is broken down and requires mechanical/electrical repair']
+    ];
+    const wsRef = XLSX.utils.aoa_to_sheet(refData);
+    wsRef['!cols'] = [{ wch: 28 }, { wch: 25 }, { wch: 45 }];
+    XLSX.utils.book_append_sheet(wb, wsRef, 'Master Data Reference');
+
+    const cleanBaseName = fileName.replace(/\.[^/.]+$/, '');
+    const outFileName = `${cleanBaseName}_Failed_Records_Report.xlsx`;
     XLSX.writeFile(wb, outFileName);
-    auditService.log('ERROR_REPORT_DOWNLOADED', 'IMPORT', `${(failedRows || []).length} errors`, `Downloaded error report for ${outFileName}`);
+    auditService.log('ERROR_REPORT_DOWNLOADED', 'IMPORT', `${uniqueRecordsMap.size} failed machines`, `Downloaded full template error report for ${outFileName}`);
   }
 
   /**

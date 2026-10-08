@@ -1023,10 +1023,12 @@ export function initExcelImportEvents() {
   const btnDownErr = document.getElementById('btn-download-error-report');
   const btnDownErrFinal = document.getElementById('btn-download-error-report-final');
   const triggerDownloadError = () => {
-    const failedList = importState.importResult?.failedRows || importState.validationResult?.allErrors || [];
-    if (failedList.length > 0) {
-      excelService.exportErrorReport(failedList, importState.fileName || 'Machine_Import.xlsx');
-    }
+    excelService.exportErrorReport({
+      validationResult: importState.validationResult,
+      importResult: importState.importResult,
+      failedRows: importState.importResult?.failedRows,
+      fileName: importState.fileName || 'Machine_Import.xlsx'
+    }, importState.fileName || 'Machine_Import.xlsx');
   };
   if (btnDownErr) btnDownErr.addEventListener('click', triggerDownloadError);
   if (btnDownErrFinal) btnDownErrFinal.addEventListener('click', triggerDownloadError);
