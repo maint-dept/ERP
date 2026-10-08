@@ -322,8 +322,109 @@ function renderImportStageContent() {
                              e.column.toLowerCase().includes(importState.errorSearchFilter.toLowerCase())) :
       errorsList;
 
+    const dupSummary = res.duplicatesSummary || { count: res.duplicateRows || 0, cellList: [] };
+    const errSummary = res.errorsSummary || { count: res.invalidRows || 0, cellList: [] };
+    const autoFixSummary = res.autoFixedSummary || { count: 0, cellList: [] };
+
     return `
       <div style="display: flex; flex-direction: column; gap: 14px;">
+
+        <!-- 🚨 Top Notification Center (Duplicates, Errors, and Auto-Fixes with exact Cell Addresses) -->
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <!-- 1. Duplicate Records Notification Banner -->
+          ${dupSummary.count > 0 ? `
+            <div style="background: rgba(245, 158, 11, 0.12); border: 1.5px solid #f59e0b; border-left: 5px solid #f59e0b; border-radius: var(--radius-md); padding: 14px 18px;">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; flex-wrap: wrap;">
+                <div>
+                  <div style="font-weight: 800; color: #fbbf24; font-size: 14px; display: flex; align-items: center; gap: 8px;">
+                    <span>🛡️ ডুপ্লিকেট নোটিফিকেশন: <strong>${dupSummary.count} টি ডুপ্লিকেট রেকর্ড</strong> সনাক্ত হয়েছে!</span>
+                  </div>
+                  <div style="font-size: 11.5px; color: var(--text-secondary); margin-top: 3px;">
+                    রুল: <strong>মেশিন নাম + মেশিন ব্রান্ড + মেশিন মডেল + সিরিয়াল নাম্বার</strong> মিলিয়ে ডুপ্লিকেট চেক করা হয়েছে। নিচের cell-গুলোতে ডুপ্লিকেট পাওয়া গেছে:
+                  </div>
+                </div>
+                <span class="badge" style="background: rgba(245, 158, 11, 0.25); color: #fbbf24; border: 1px solid #f59e0b; font-size: 11.5px; font-weight: 800; padding: 4px 10px;">
+                  ${dupSummary.count} Duplicates
+                </span>
+              </div>
+              <div style="margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px; max-height: 90px; overflow-y: auto;">
+                ${dupSummary.cellList.slice(0, 40).map(c => `
+                  <span class="badge" style="background: rgba(245, 158, 11, 0.18); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); font-family: var(--font-mono); font-size: 11px; padding: 3px 8px;" title="${c.reason || ''}">
+                    📍 ${c.sheetName ? `${c.sheetName} &bull; ` : ''}Cell <strong>${c.cell}</strong> (${c.serialNumber || 'SN'})
+                  </span>
+                `).join('')}
+                ${dupSummary.cellList.length > 40 ? `
+                  <span style="font-size: 11px; color: var(--text-muted); align-self: center;">+${dupSummary.cellList.length - 40} more cells</span>
+                ` : ''}
+              </div>
+            </div>
+          ` : `
+            <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.3); border-left: 4px solid #10b981; border-radius: var(--radius-md); padding: 10px 16px; display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 16px;">✅</span>
+              <span style="font-size: 12px; color: #34d399; font-weight: 700;">
+                ডুপ্লিকেট চেক সফল: কোনো ডুপ্লিকেট রেকর্ড নেই (0 Duplicates)। সবগুলো রেকর্ড ইউনিক।
+              </span>
+            </div>
+          `}
+
+          <!-- 2. Errors Notification Banner -->
+          ${errSummary.count > 0 ? `
+            <div style="background: rgba(239, 68, 68, 0.12); border: 1.5px solid #ef4444; border-left: 5px solid #ef4444; border-radius: var(--radius-md); padding: 14px 18px;">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; flex-wrap: wrap;">
+                <div>
+                  <div style="font-weight: 800; color: #f87171; font-size: 14px; display: flex; align-items: center; gap: 8px;">
+                    <span>⚠️ এরর নোটিফিকেশন: <strong>${errSummary.count} টি সমস্যা / এরর</strong> সনাক্ত হয়েছে!</span>
+                  </div>
+                  <div style="font-size: 11.5px; color: var(--text-secondary); margin-top: 3px;">
+                    নিচের cell-গুলোতে আবশ্যিক ফিল্ড খালি বা ভুল তথ্য রয়েছে (এক্সেলে সরাসরি এই cell-গুলো সংশোধন করতে পারেন):
+                  </div>
+                </div>
+                <span class="badge" style="background: rgba(239, 68, 68, 0.25); color: #f87171; border: 1px solid #ef4444; font-size: 11.5px; font-weight: 800; padding: 4px 10px;">
+                  ${errSummary.count} Errors
+                </span>
+              </div>
+              <div style="margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px; max-height: 90px; overflow-y: auto;">
+                ${errSummary.cellList.slice(0, 40).map(c => `
+                  <span class="badge" style="background: rgba(239, 68, 68, 0.18); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); font-family: var(--font-mono); font-size: 11px; padding: 3px 8px;" title="${c.error || ''}">
+                    ❌ ${c.sheetName ? `${c.sheetName} &bull; ` : ''}Cell <strong>${c.cell}</strong> (${c.column})
+                  </span>
+                `).join('')}
+                ${errSummary.cellList.length > 40 ? `
+                  <span style="font-size: 11px; color: var(--text-muted); align-self: center;">+${errSummary.cellList.length - 40} more cells</span>
+                ` : ''}
+              </div>
+            </div>
+          ` : ''}
+
+          <!-- 3. Master Data Auto-Fix Banner -->
+          ${autoFixSummary.count > 0 ? `
+            <div style="background: rgba(56, 189, 248, 0.1); border: 1.5px solid rgba(56, 189, 248, 0.45); border-left: 5px solid #38bdf8; border-radius: var(--radius-md); padding: 12px 18px;">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; flex-wrap: wrap;">
+                <div>
+                  <div style="font-weight: 800; color: #38bdf8; font-size: 13.5px; display: flex; align-items: center; gap: 8px;">
+                    <span>✨ মাস্টার ডাটা অটো-ফিক্স: <strong>${autoFixSummary.count} টি সেলে</strong> স্পেস ও ক্যাপিটাল/স্মল লেটার অটোমেটিক ঠিক করা হয়েছে!</span>
+                  </div>
+                  <div style="font-size: 11.5px; color: var(--text-secondary); margin-top: 3px;">
+                    অতিরিক্ত স্পেস ও ছোট/বড় হাতের লেখার অসঙ্গতি মাস্টার ডাটার সাথে মিলিয়ে স্বয়ংক্রিয়ভাবে স্ট্যান্ডার্ড ফরম্যাটে রূপান্তর করা হয়েছে।
+                  </div>
+                </div>
+                <span class="badge" style="background: rgba(56, 189, 248, 0.2); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.4); font-size: 11px; font-weight: 800; padding: 3px 8px;">
+                  ${autoFixSummary.count} Auto-Fixed
+                </span>
+              </div>
+              <div style="margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px; max-height: 70px; overflow-y: auto;">
+                ${autoFixSummary.cellList.slice(0, 25).map(c => `
+                  <span class="badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); font-family: var(--font-mono); font-size: 10.5px; padding: 2px 7px;">
+                    ⚡ Cell <strong>${c.cell}</strong> (${c.column}: "${c.original}" ➔ "${c.fixed}")
+                  </span>
+                `).join('')}
+                ${autoFixSummary.cellList.length > 25 ? `
+                  <span style="font-size: 11px; color: var(--text-muted); align-self: center;">+${autoFixSummary.cellList.length - 25} more cells auto-fixed</span>
+                ` : ''}
+              </div>
+            </div>
+          ` : ''}
+        </div>
         
         <!-- Summary KPI Metrics Grid -->
         <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px;">
@@ -433,7 +534,7 @@ function renderImportStageContent() {
             </div>
           </div>
 
-          <div style="max-height: 200px; overflow-y: auto;">
+          <div style="max-height: 220px; overflow-y: auto;">
             ${filteredErrors.length === 0 ? `
               <div style="color: #34d399; font-size: 12px; padding: 12px; text-align: center; font-weight: 600;">
                 ✅ Perfect! All records passed validation checks with 0 errors.
@@ -442,7 +543,8 @@ function renderImportStageContent() {
               <table class="excel-grid-table" style="font-size: 11px;">
                 <thead>
                   <tr>
-                    <th style="width: 70px; text-align: center;">Excel Row</th>
+                    <th style="width: 85px; text-align: center;">Excel Cell</th>
+                    <th style="width: 65px; text-align: center;">Row</th>
                     <th>Column</th>
                     <th>Entered Value</th>
                     <th>Error Reason</th>
@@ -454,7 +556,12 @@ function renderImportStageContent() {
                     const fixMatch = fixableErrors.find(f => f.rowNumber === err.rowNumber && f.column === err.column);
                     return `
                       <tr style="background: ${fixMatch ? 'rgba(245, 158, 11, 0.07)' : 'rgba(239, 68, 68, 0.04)'};">
-                        <td style="text-align: center; font-family: var(--font-mono); font-weight: 700; color: #38bdf8;">Row ${err.rowNumber}</td>
+                        <td style="text-align: center; font-family: var(--font-mono); font-weight: 800; color: #38bdf8;">
+                          <span class="badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); font-size: 10.5px; padding: 2px 6px;">
+                            ${err.cell || ('Row ' + err.rowNumber)}
+                          </span>
+                        </td>
+                        <td style="text-align: center; font-family: var(--font-mono); font-weight: 700; color: var(--text-muted);">Row ${err.rowNumber}</td>
                         <td style="font-weight: 700; color: #fbbf24;">${err.column}</td>
                         <td style="font-family: var(--font-mono); color: #fff;">${err.enteredValue || err.rawValue || '—'}</td>
                         <td style="color: #f87171; font-weight: 600;">${err.error}</td>
@@ -550,7 +657,8 @@ function renderImportStageContent() {
               <table class="excel-grid-table" style="font-size: 11.5px; width: 100%;">
                 <thead>
                   <tr>
-                    <th style="width: 75px; text-align: center;">Excel Row</th>
+                    <th style="width: 85px; text-align: center;">Excel Cell</th>
+                    <th style="width: 65px; text-align: center;">Row</th>
                     <th>Column</th>
                     <th>Entered Value</th>
                     <th>Error</th>
@@ -560,7 +668,12 @@ function renderImportStageContent() {
                 <tbody>
                   ${failedRows.map(f => `
                     <tr style="background: rgba(239, 68, 68, 0.04);">
-                      <td style="text-align: center; font-family: var(--font-mono); font-weight: 700; color: #38bdf8;">Row ${f.rowNumber}</td>
+                      <td style="text-align: center; font-family: var(--font-mono); font-weight: 800; color: #38bdf8;">
+                        <span class="badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); font-size: 10.5px; padding: 2px 6px;">
+                          ${f.cell || ('Row ' + f.rowNumber)}
+                        </span>
+                      </td>
+                      <td style="text-align: center; font-family: var(--font-mono); font-weight: 700; color: var(--text-muted);">Row ${f.rowNumber}</td>
                       <td style="font-weight: 700; color: #fbbf24;">${f.column || 'General'}</td>
                       <td style="font-family: var(--font-mono); color: #fff;">${f.enteredValue || f.serialNumber || '—'}</td>
                       <td style="color: #f87171; font-weight: 600;">${f.error}</td>

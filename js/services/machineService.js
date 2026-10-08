@@ -17,12 +17,17 @@ import { syncManager } from '../db/syncManager.js';
 
 class MachineService {
   /**
-   * Check for duplicate serial number with comprehensive conflict report
+   * Comprehensive Composite Duplicate Check for Machine Inventory:
+   * Rule: Checks (Machine Name + Brand + Model + Serial Number).
+   * - If all matching fields are identical -> isDuplicate: true, isCompositeDuplicate: true
+   * - If serial exists on another machine -> conflict report with location & specs
    */
-  checkDuplicateSerial(serialNumber, excludeMachineId = null) {
-    if (!serialNumber) return { isDuplicate: false };
+  checkDuplicateMachine(machineData, excludeMachineId = null) {
+    if (!machineData) return { isDuplicate: false };
+    const serial = machineData.serialNumber ? String(machineData.serialNumber).trim().toUpperCase() : '';
+    if (!serial) return { isDuplicate: false };
 
-    const cleanSerial = serialNumber.trim().toUpperCase();
+    const cleanSerial = serial;
     const existing = storage.findMachineBySerial(cleanSerial);
 
     if (existing && existing.id !== excludeMachineId) {
@@ -33,9 +38,19 @@ class MachineService {
       const brand = storage.getItem(TABLE_NAMES.BRANDS, existing.brandId);
       const model = storage.getItem(TABLE_NAMES.MODELS, existing.modelId);
 
+      // Check if machineName, brand, model match the existing machine
+      const mnMatches = !machineData.machineNameId || machineData.machineNameId === existing.machineNameId;
+      const brandMatches = !machineData.brandId || machineData.brandId === existing.brandId;
+      const modelMatches = !machineData.modelId || machineData.modelId === existing.modelId;
+
+      const isCompositeMatch = mnMatches && brandMatches && modelMatches;
+
       return {
         isDuplicate: true,
-        message: 'This Machine Serial Number already exists in the ERP database.',
+        isCompositeDuplicate: isCompositeMatch,
+        message: isCompositeMatch 
+          ? `Duplicate Record: Machine with matching Name (${mn?.name || ''}), Brand (${brand?.name || ''}), Model (${model?.name || ''}), and Serial '${cleanSerial}' already exists in Database.`
+          : `Serial Number Conflict: Serial '${cleanSerial}' is already assigned to Machine ID '${existing.id}' (${mn?.name || ''} - ${model?.name || ''}).`,
         conflict: {
           id: existing.id,
           serialNumber: existing.serialNumber,
@@ -45,12 +60,23 @@ class MachineService {
           unit: unit?.name || 'N/A',
           floor: floor?.name || 'N/A',
           line: line?.name || 'N/A',
-          status: existing.status
+          status: existing.status,
+          isCompositeMatch
         }
       };
     }
 
     return { isDuplicate: false };
+  }
+
+  /**
+   * Check for duplicate serial number or machine object with comprehensive conflict report
+   */
+  checkDuplicateSerial(serialNumberOrData, excludeMachineId = null) {
+    if (typeof serialNumberOrData === 'object' && serialNumberOrData !== null) {
+      return this.checkDuplicateMachine(serialNumberOrData, excludeMachineId);
+    }
+    return this.checkDuplicateMachine({ serialNumber: serialNumberOrData }, excludeMachineId);
   }
 
   /**

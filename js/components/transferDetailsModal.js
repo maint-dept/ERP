@@ -5,11 +5,12 @@
 
 import { storage } from '../db/storage.js';
 import { TABLE_NAMES, TRANSFER_STATUSES } from '../db/schema.js';
-import { transferService } from '../services/transferService.js';
+import { transferService, resolveTransferMachineDetails } from '../services/transferService.js';
 import { workflowService } from '../services/workflowService.js';
 import { authService } from '../services/authService.js';
 import { pdfService } from '../services/pdfService.js';
 import { notificationService } from '../services/notificationService.js';
+import { masterDataService } from '../services/masterDataService.js';
 import { state } from '../state.js';
 
 export function renderTransferDetailsModal() {
@@ -18,6 +19,9 @@ export function renderTransferDetailsModal() {
 
   const req = transferService.getTransferRequestById(requestId);
   if (!req) return '';
+
+  // Resolve equipment details using comprehensive multi-layered engine
+  const eq = resolveTransferMachineDetails(req);
 
   const safeStatus = (req.status || TRANSFER_STATUSES.PENDING_APPROVAL).toString();
   const user = authService.getCurrentUser();
@@ -62,13 +66,13 @@ export function renderTransferDetailsModal() {
                 🧵 Equipment Details
               </div>
               <div style="font-size: 15px; font-weight: 800; color: #fff;">
-                ${req.machineInfo?.machineName || req.machineName || 'Machine'}
+                ${eq.machineName}
               </div>
               <div style="font-size: 12.5px; color: var(--text-secondary); margin-top: 2px;">
-                ${req.machineInfo?.brand || '—'} &bull; ${req.machineInfo?.model || '—'}
+                ${eq.brandModelText}
               </div>
               <div style="display: flex; gap: 16px; margin-top: 8px; font-size: 12px;">
-                <div><span style="color: var(--text-muted);">Serial No:</span> <strong style="color: #38bdf8; font-family: var(--font-mono);">${req.machineInfo?.serialNumber || req.serialNumber || req.machineSerial || 'N/A'}</strong></div>
+                <div><span style="color: var(--text-muted);">Serial No:</span> <strong style="color: #38bdf8; font-family: var(--font-mono);">${eq.serialNumber}</strong></div>
               </div>
             </div>
 

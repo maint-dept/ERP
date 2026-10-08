@@ -801,23 +801,64 @@ class ExcelService {
   }
 
   /**
-   * Validate all sheets in a multi-worksheet workbook with cross-sheet duplicate detection
+   * Validate all sheets in a multi-worksheet workbook with cross-sheet duplicate detection,
+   * cell-level coordinates, Master Data auto-fix (spaces & casing), and composite duplicate rules:
+   * (Machine Name + Brand + Model + Serial Number).
    */
   validateMultiSheetWorkbook(parsedSheets, sheetMappings = {}, duplicatePolicy = DUPLICATE_POLICIES.UPDATE_EXISTING, unknownResolutions = {}) {
     const customFields = customFieldService.getActiveFields();
-    const existingMachines = storage.getTable(TABLE_NAMES.MACHINES);
+    const existingMachines = storage.getTable(TABLE_NAMES.MACHINES) || [];
     const existingSerialsMap = new Map(existingMachines.map(m => [m.serialNumber.trim().toUpperCase(), m]));
 
-    const units = storage.getTable(TABLE_NAMES.UNITS);
-    const floors = storage.getTable(TABLE_NAMES.FLOORS);
-    const lines = storage.getTable(TABLE_NAMES.LINES);
-    const machineNames = storage.getTable(TABLE_NAMES.MACHINE_NAMES);
-    const brands = storage.getTable(TABLE_NAMES.BRANDS);
-    const models = storage.getTable(TABLE_NAMES.MODELS);
+    const units = storage.getTable(TABLE_NAMES.UNITS) || [];
+    const floors = storage.getTable(TABLE_NAMES.FLOORS) || [];
+    const lines = storage.getTable(TABLE_NAMES.LINES) || [];
+    const groups = storage.getTable(TABLE_NAMES.GROUPS) || [];
+    const machineNames = storage.getTable(TABLE_NAMES.MACHINE_NAMES) || [];
+    const brands = storage.getTable(TABLE_NAMES.BRANDS) || [];
+    const models = storage.getTable(TABLE_NAMES.MODELS) || [];
 
-    const globalSeenSerialsInFile = new Map(); // SN -> { sheetName, rowNumber }
+    // Pre-build Master Data Name Maps for fast ID lookup
+    const mnMap = new Map(machineNames.map(x => [x.id, x.name]));
+    const brdMap = new Map(brands.map(x => [x.id, x.name]));
+    const mdlMap = new Map(models.map(x => [x.id, x.name]));
+
+    const normKey = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+
+    // Existing Database Composite Key Map: Machine Name + Brand + Model + Serial Number
+    const existingCompositeMap = new Map();
+    existingMachines.forEach(m => {
+      const mMN = mnMap.get(m.machineNameId) || m.machineNameStr || '';
+      const mBrd = brdMap.get(m.brandId) || m.brandStr || '';
+      const mMdl = mdlMap.get(m.modelId) || m.modelStr || '';
+      const mSN = m.serialNumber || '';
+      const comp = `${normKey(mMN)}|${normKey(mBrd)}|${normKey(mMdl)}|${normKey(mSN)}`;
+      if (!existingCompositeMap.has(comp)) {
+        existingCompositeMap.set(comp, m);
+      }
+    });
+
+    // Helper: Excel Column Index (0 -> A, 1 -> B, 25 -> Z, 26 -> AA)
+    const getExcelColLetter = (colIdx) => {
+      let letter = '';
+      let temp = colIdx;
+      while (temp >= 0) {
+        letter = String.fromCharCode((temp % 26) + 65) + letter;
+        temp = Math.floor(temp / 26) - 1;
+      }
+      return letter;
+    };
+
+    // Global in-file composite duplicate tracker: compKey -> { sheetName, rowNumber, cell, serialNumber, machineName, brand, model }
+    const globalSeenCompositeInFile = new Map();
+    const globalSeenSerialsInFile = new Map(); // SN -> { sheetName, rowNumber, cell }
+
     const validatedSheets = [];
-    const allValidationErrors = []; // Diagnostic errors list: { sheetName, rowNumber, column, rawValue, error, severity }
+    const allValidationErrors = []; // Diagnostic errors list: { sheetName, rowNumber, cell, column, enteredValue, error, severity, suggestedCorrection }
+    const grandDuplicatesList = []; // [{ sheetName, cell, rowNumber, column, serialNumber, machineName, brand, model, reason }]
+    const grandErrorsList = []; // [{ sheetName, cell, rowNumber, column, enteredValue, error, severity }]
+    const grandAutoFixedList = []; // [{ sheetName, cell, rowNumber, column, original, fixed, type, reason }]
+
     const unknownEntities = {
       machineNames: new Set(),
       brands: new Set(),
@@ -834,6 +875,12 @@ class ExcelService {
     let grandUpdateRows = 0;
     let grandNewRows = 0;
 
+    // Helper to sanitize and normalize multiple whitespace/tabs
+    const cleanSpaces = (val) => {
+      if (val === undefined || val === null) return '';
+      return String(val).trim().replace(/\s+/g, ' ');
+    };
+
     parsedSheets.forEach(sheet => {
       if (!sheet.selected) return;
 
@@ -845,28 +892,170 @@ class ExcelService {
       let sheetDuplicateCount = 0;
       let sheetNewCount = 0;
 
+      // Map column headers to Excel letters
+      const headerColIndexMap = new Map();
+      (sheet.headers || []).forEach((h, idx) => {
+        headerColIndexMap.set(h, idx);
+      });
+
+      const getCellAddress = (colName, rowNum) => {
+        if (!colName) return `Row ${rowNum}`;
+        const idx = headerColIndexMap.get(colName);
+        if (idx !== undefined && idx >= 0) {
+          return `${getExcelColLetter(idx)}${rowNum}`;
+        }
+        return `Row ${rowNum}`;
+      };
+
       sheet.rows.forEach((row, rowIndex) => {
         const rowNumber = rowIndex + 2; // Row 1 is header
         const rowErrors = [];
         const rowWarnings = [];
 
-        // Extract field values using mapped fieldKey
+        // Extract and clean field values using mapped fieldKey
         const mapped = {};
         for (const [fieldKey, fileCol] of Object.entries(mapping)) {
           if (fileCol && row[fileCol] !== undefined) {
-            mapped[fieldKey] = String(row[fileCol]).trim();
+            mapped[fieldKey] = cleanSpaces(row[fileCol]);
           }
         }
 
-        // Canonical Fields
-        const machineNameStr = mapped.machine_name || mapped.machineName || '';
-        const brandStr = mapped.machine_brand || mapped.brand || '';
-        const modelStr = mapped.machine_model || mapped.model || '';
+        // Canonical Raw Fields
+        let machineNameStr = mapped.machine_name || mapped.machineName || '';
+        let brandStr = mapped.machine_brand || mapped.brand || '';
+        let modelStr = mapped.machine_model || mapped.model || '';
         let serialNumber = mapped.machine_serial || mapped.serialNumber || mapped.serial || '';
-        const unitStr = mapped.unit_factory || mapped.unit || '';
-        const floorStr = mapped.floor || '';
-        const lineStr = mapped.line || '';
+        let unitStr = mapped.unit_factory || mapped.unit || '';
+        let floorStr = mapped.floor || '';
+        let lineStr = mapped.line || '';
 
+        // -------------------------------------------------------------------------
+        // 1. Master Data Auto-Fix & Normalization (Spaces, Casing & Canonical Match)
+        // -------------------------------------------------------------------------
+        // Machine Name
+        let foundMN = machineNameStr ? resolveMachineNameSmart(machineNameStr, machineNames) : null;
+        if (foundMN && foundMN.name) {
+          if (foundMN.name !== machineNameStr) {
+            const cell = getCellAddress(mapping.machine_name, rowNumber);
+            grandAutoFixedList.push({
+              sheetName: sheet.name,
+              cell,
+              rowNumber,
+              column: mapping.machine_name || 'Machine Name',
+              original: machineNameStr,
+              fixed: foundMN.name,
+              type: 'MACHINE_NAME',
+              reason: 'Normalized space/casing to canonical Master Machine Name'
+            });
+            if (mapping.machine_name && row[mapping.machine_name] !== undefined) {
+              row[mapping.machine_name] = foundMN.name;
+            }
+            machineNameStr = foundMN.name;
+            mapped.machine_name = foundMN.name;
+          }
+        } else if (machineNameStr && !foundMN) {
+          unknownEntities.machineNames.add(machineNameStr);
+        }
+
+        // Brand
+        let foundBrand = brandStr ? resolveBrandSmart(brandStr, brands) : null;
+        if (foundBrand && foundBrand.name) {
+          if (foundBrand.name !== brandStr) {
+            const cell = getCellAddress(mapping.machine_brand, rowNumber);
+            grandAutoFixedList.push({
+              sheetName: sheet.name,
+              cell,
+              rowNumber,
+              column: mapping.machine_brand || 'Machine Brand',
+              original: brandStr,
+              fixed: foundBrand.name,
+              type: 'BRAND',
+              reason: 'Normalized space/casing to canonical Master Brand'
+            });
+            if (mapping.machine_brand && row[mapping.machine_brand] !== undefined) {
+              row[mapping.machine_brand] = foundBrand.name;
+            }
+            brandStr = foundBrand.name;
+            mapped.machine_brand = foundBrand.name;
+          }
+        } else if (brandStr && !foundBrand) {
+          unknownEntities.brands.add(brandStr);
+        }
+
+        // Model
+        let foundModel = modelStr ? resolveModelSmart(modelStr, foundBrand, foundMN, models) : null;
+        if (foundModel && foundModel.name) {
+          if (foundModel.name !== modelStr) {
+            const cell = getCellAddress(mapping.machine_model, rowNumber);
+            grandAutoFixedList.push({
+              sheetName: sheet.name,
+              cell,
+              rowNumber,
+              column: mapping.machine_model || 'Machine Model',
+              original: modelStr,
+              fixed: foundModel.name,
+              type: 'MODEL',
+              reason: 'Normalized space/casing to canonical Master Model'
+            });
+            if (mapping.machine_model && row[mapping.machine_model] !== undefined) {
+              row[mapping.machine_model] = foundModel.name;
+            }
+            modelStr = foundModel.name;
+            mapped.machine_model = foundModel.name;
+          }
+        } else if (modelStr && !foundModel) {
+          unknownEntities.models.add(modelStr);
+        }
+
+        // Location Hierarchy Resolution & Auto-Fix
+        let foundUnit = unitStr ? (units.find(u => u.name.toLowerCase() === unitStr.toLowerCase() || u.code.toLowerCase() === unitStr.toLowerCase()) || null) : null;
+        const foundFloor = floorStr ? resolveFloorSmart(floorStr, floors, foundUnit) : (floors[0] || null);
+
+        if (!foundUnit && foundFloor && foundFloor.unitId) {
+          foundUnit = units.find(u => u.id === foundFloor.unitId) || null;
+        }
+        if (!foundUnit) {
+          foundUnit = units[0] || null;
+        }
+
+        const foundLine = lineStr ? resolveLineSmart(lineStr, foundFloor, lines) : null;
+        if (lineStr && !foundLine) {
+          unknownEntities.lines.add(lineStr);
+        }
+
+        // Auto-fix Location fields in row
+        if (foundFloor && floorStr && foundFloor.name !== floorStr) {
+          const cell = getCellAddress(mapping.floor, rowNumber);
+          grandAutoFixedList.push({
+            sheetName: sheet.name,
+            cell,
+            rowNumber,
+            column: mapping.floor || 'Floor',
+            original: floorStr,
+            fixed: foundFloor.name,
+            type: 'FLOOR',
+            reason: 'Normalized Floor to canonical Master Data'
+          });
+          if (mapping.floor && row[mapping.floor] !== undefined) row[mapping.floor] = foundFloor.name;
+          floorStr = foundFloor.name;
+        }
+        if (foundLine && lineStr && foundLine.name !== lineStr) {
+          const cell = getCellAddress(mapping.line, rowNumber);
+          grandAutoFixedList.push({
+            sheetName: sheet.name,
+            cell,
+            rowNumber,
+            column: mapping.line || 'Line',
+            original: lineStr,
+            fixed: foundLine.name,
+            type: 'LINE',
+            reason: 'Normalized Line to canonical Master Data'
+          });
+          if (mapping.line && row[mapping.line] !== undefined) row[mapping.line] = foundLine.name;
+          lineStr = foundLine.name;
+        }
+
+        // Quantities
         const runningVal = parseInt(mapped.running, 10) || 0;
         const usableIdleVal = parseInt(mapped.usable_idle, 10) || 0;
         const repairableIdleVal = parseInt(mapped.repairable_idle, 10) || 0;
@@ -875,157 +1064,204 @@ class ExcelService {
           if (mapped.total_quantity) totalQtyVal = parseInt(mapped.total_quantity, 10) || 0;
           else if (mapped.quantity) totalQtyVal = parseInt(mapped.quantity, 10) || 0;
         }
-        if (totalQtyVal === 0) {
-          totalQtyVal = 1;
-        }
+        if (totalQtyVal === 0) totalQtyVal = 1;
 
         const statusStr = (mapped.machine_status || mapped.status || (runningVal > 0 ? 'ACTIVE' : (usableIdleVal > 0 ? 'IDLE' : (repairableIdleVal > 0 ? 'MAINTENANCE' : 'ACTIVE')))).trim().toUpperCase();
 
-        // 1. Mandatory Field Validations with Column-Level Diagnostics
+        // -------------------------------------------------------------------------
+        // 2. Mandatory Field Validations with Exact Cell Coordinates
+        // -------------------------------------------------------------------------
         if (!machineNameStr) {
           const err = 'Machine Name is required and cannot be empty.';
+          const cell = getCellAddress(mapping.machine_name, rowNumber);
           rowErrors.push(err);
           allValidationErrors.push({
             sheetName: sheet.name,
             rowNumber: rowNumber,
+            cell: cell,
             column: mapping.machine_name || 'Machine Name',
             enteredValue: '— (Empty)',
             error: err,
             suggestedCorrection: 'Enter a valid Machine Name (e.g. Lock Stitch Machine, Overlock Machine, Flatlock Machine).',
             severity: 'ERROR'
           });
+          grandErrorsList.push({
+            sheetName: sheet.name,
+            cell: cell,
+            rowNumber: rowNumber,
+            column: mapping.machine_name || 'Machine Name',
+            enteredValue: '—',
+            error: err,
+            severity: 'ERROR'
+          });
         }
 
         if (!brandStr) {
           const err = 'Machine Brand is required and cannot be empty.';
+          const cell = getCellAddress(mapping.machine_brand, rowNumber);
           rowErrors.push(err);
           allValidationErrors.push({
             sheetName: sheet.name,
             rowNumber: rowNumber,
+            cell: cell,
             column: mapping.machine_brand || 'Machine Brand',
             enteredValue: '— (Empty)',
             error: err,
             suggestedCorrection: 'Enter a valid Brand (e.g. Juki, Brother, Jack, Pegasus, Siruba, Kansai).',
             severity: 'ERROR'
           });
+          grandErrorsList.push({
+            sheetName: sheet.name,
+            cell: cell,
+            rowNumber: rowNumber,
+            column: mapping.machine_brand || 'Machine Brand',
+            enteredValue: '—',
+            error: err,
+            severity: 'ERROR'
+          });
         }
 
         if (!modelStr) {
           const err = 'Machine Model is required and cannot be empty.';
+          const cell = getCellAddress(mapping.machine_model, rowNumber);
           rowErrors.push(err);
           allValidationErrors.push({
             sheetName: sheet.name,
             rowNumber: rowNumber,
+            cell: cell,
             column: mapping.machine_model || 'Machine Model',
             enteredValue: '— (Empty)',
             error: err,
             suggestedCorrection: 'Enter the model designation (e.g. DDL-8700, DDL-9000C, M-700, HE-800B).',
             severity: 'ERROR'
           });
+          grandErrorsList.push({
+            sheetName: sheet.name,
+            cell: cell,
+            rowNumber: rowNumber,
+            column: mapping.machine_model || 'Machine Model',
+            enteredValue: '—',
+            error: err,
+            severity: 'ERROR'
+          });
         }
 
         // Auto-generate serial number if blank (system-generated rule)
         if (!serialNumber) {
-          const foundFloorTmp = floorStr ? floors.find(f => f.name.toLowerCase() === floorStr.toLowerCase() || f.code.toLowerCase() === floorStr.toLowerCase()) : null;
-          const flCode = foundFloorTmp?.code || (foundFloorTmp?.name ? foundFloorTmp.name.substring(0, 2).toUpperCase() : 'MC');
+          const flCode = foundFloor?.code || (foundFloor?.name ? foundFloor.name.substring(0, 2).toUpperCase() : 'MC');
           serialNumber = `${flCode}-AUTOGEN-${String(rowIndex + 1).padStart(3, '0')}`;
           rowWarnings.push(`Machine Serial was blank; auto-generating temporary identifier '${serialNumber}'.`);
         }
 
-        // 2. Intra-file & Cross-Sheet Duplicate Checking
-        if (serialNumber) {
-          const snUpper = serialNumber.toUpperCase();
-          if (globalSeenSerialsInFile.has(snUpper)) {
-            const prev = globalSeenSerialsInFile.get(snUpper);
-            const err = `Duplicate Machine Serial '${serialNumber}' in file (First seen in sheet '${prev.sheetName}', row ${prev.rowNumber}).`;
-            rowErrors.push(err);
-            allValidationErrors.push({
-              sheetName: sheet.name,
-              rowNumber: rowNumber,
-              column: mapping.machine_serial || 'Machine Serial',
-              enteredValue: serialNumber,
-              error: err,
-              suggestedCorrection: `Ensure each machine has a unique serial number or check row ${prev.rowNumber}.`,
-              severity: 'ERROR'
-            });
-            sheetDuplicateCount++;
-            grandDuplicateRows++;
-          } else {
-            globalSeenSerialsInFile.set(snUpper, { sheetName: sheet.name, rowNumber: rowNumber });
-          }
+        // -------------------------------------------------------------------------
+        // 3. Composite Duplicate Check: Machine Name + Brand + Model + Serial
+        // -------------------------------------------------------------------------
+        // Rules:
+        // - Record is duplicate IF AND ONLY IF (Machine Name + Brand + Model + Serial) match!
+        // - If any of the composite items differ, it is NOT considered duplicate.
+        const compKey = `${normKey(machineNameStr)}|${normKey(brandStr)}|${normKey(modelStr)}|${normKey(serialNumber)}`;
+        const serialCell = getCellAddress(mapping.machine_serial || mapping.machine_model, rowNumber);
+
+        // A. Intra-file & Cross-Sheet Composite Duplicate Check
+        if (globalSeenCompositeInFile.has(compKey)) {
+          const prev = globalSeenCompositeInFile.get(compKey);
+          const err = `Duplicate Machine Record: Name ('${machineNameStr}'), Brand ('${brandStr}'), Model ('${modelStr}'), and Serial ('${serialNumber}') match another row in file (First seen in sheet '${prev.sheetName}', Cell ${prev.cell}).`;
+          rowErrors.push(err);
+          allValidationErrors.push({
+            sheetName: sheet.name,
+            rowNumber: rowNumber,
+            cell: serialCell,
+            column: mapping.machine_serial || 'Machine Serial',
+            enteredValue: serialNumber,
+            error: err,
+            suggestedCorrection: `Ensure each machine has unique specs or serial. Check row ${prev.rowNumber} (${prev.sheetName}: Cell ${prev.cell}).`,
+            severity: 'ERROR'
+          });
+          grandDuplicatesList.push({
+            sheetName: sheet.name,
+            cell: serialCell,
+            rowNumber: rowNumber,
+            column: mapping.machine_serial || 'Machine Serial',
+            serialNumber: serialNumber,
+            machineName: machineNameStr,
+            brand: brandStr,
+            model: modelStr,
+            reason: err
+          });
+          sheetDuplicateCount++;
+          grandDuplicateRows++;
+        } else {
+          globalSeenCompositeInFile.set(compKey, {
+            sheetName: sheet.name,
+            rowNumber: rowNumber,
+            cell: serialCell,
+            serialNumber: serialNumber,
+            machineName: machineNameStr,
+            brand: brandStr,
+            model: modelStr
+          });
         }
 
-        // 3. Database Existence & Duplicate Check (Do not create duplicates)
-        const existingMachine = serialNumber ? existingSerialsMap.get(serialNumber.toUpperCase()) : null;
+        // B. Database Existence & Composite Duplicate Check
+        const existingMachineByComposite = existingCompositeMap.get(compKey);
+        const existingMachineBySerial = serialNumber ? existingSerialsMap.get(serialNumber.toUpperCase()) : null;
+        const existingMachine = existingMachineByComposite || existingMachineBySerial;
         let isUpdate = false;
 
         if (existingMachine) {
-          if (duplicatePolicy === DUPLICATE_POLICIES.REJECT || duplicatePolicy === 'REJECT') {
-            const err = `Machine Serial '${serialNumber}' already exists in database (ID: ${existingMachine.id}). Duplicate record blocked.`;
-            rowErrors.push(err);
-            allValidationErrors.push({
-              sheetName: sheet.name,
-              rowNumber: rowNumber,
-              column: mapping.machine_serial || 'Machine Serial',
-              enteredValue: serialNumber,
-              error: err,
-              suggestedCorrection: 'Use a new unique Serial Number or switch import mode to "Update Existing Machines".',
-              severity: 'ERROR'
-            });
-          } else if (duplicatePolicy === DUPLICATE_POLICIES.UPDATE_EXISTING) {
-            isUpdate = true;
-            sheetUpdateCount++;
-            grandUpdateRows++;
-          } else if (duplicatePolicy === DUPLICATE_POLICIES.SKIP) {
-            rowWarnings.push(`Machine Serial '${serialNumber}' already exists in database and will be skipped.`);
-            sheetDuplicateCount++;
+          if (existingMachineByComposite) {
+            // Full composite duplicate (Name, Brand, Model, Serial all match)
+            if (duplicatePolicy === DUPLICATE_POLICIES.REJECT || duplicatePolicy === 'REJECT') {
+              const err = `Machine already exists in database with matching Name ('${machineNameStr}'), Brand ('${brandStr}'), Model ('${modelStr}'), and Serial ('${serialNumber}') (ID: ${existingMachine.id}). Duplicate record blocked.`;
+              rowErrors.push(err);
+              allValidationErrors.push({
+                sheetName: sheet.name,
+                rowNumber: rowNumber,
+                cell: serialCell,
+                column: mapping.machine_serial || 'Machine Serial',
+                enteredValue: serialNumber,
+                error: err,
+                suggestedCorrection: 'Use a new unique Serial Number or switch import mode to "Update Existing Machines".',
+                severity: 'ERROR'
+              });
+              grandDuplicatesList.push({
+                sheetName: sheet.name,
+                cell: serialCell,
+                rowNumber: rowNumber,
+                column: mapping.machine_serial || 'Machine Serial',
+                serialNumber: serialNumber,
+                machineName: machineNameStr,
+                brand: brandStr,
+                model: modelStr,
+                reason: err
+              });
+              sheetDuplicateCount++;
+              grandDuplicateRows++;
+            } else if (duplicatePolicy === DUPLICATE_POLICIES.UPDATE_EXISTING) {
+              isUpdate = true;
+              sheetUpdateCount++;
+              grandUpdateRows++;
+            } else if (duplicatePolicy === DUPLICATE_POLICIES.SKIP) {
+              rowWarnings.push(`Machine '${machineNameStr} - ${modelStr} (${serialNumber})' already exists in database and will be skipped.`);
+              sheetDuplicateCount++;
+              grandDuplicateRows++;
+            }
+          } else {
+            // Serial exists in DB but Name, Brand, or Model differ:
+            // Under user rule ("যদি তিনটি জিনিস সেভ না থাকে, তাহলে ভ্যালুট ডুপ্লিকেট হবে না"),
+            // this is NOT a duplicate of the same machine.
+            if (duplicatePolicy === DUPLICATE_POLICIES.UPDATE_EXISTING) {
+              isUpdate = true;
+              sheetUpdateCount++;
+              grandUpdateRows++;
+            } else {
+              sheetNewCount++;
+              grandNewRows++;
+            }
           }
         } else {
           sheetNewCount++;
           grandNewRows++;
-        }
-
-        // 4. Master Data Hierarchy Resolutions with Smart Fuzzy & Alias Matching
-        const foundMN = machineNameStr ? resolveMachineNameSmart(machineNameStr, machineNames) : null;
-        if (machineNameStr && !foundMN) {
-          unknownEntities.machineNames.add(machineNameStr);
-        }
-
-        const foundBrand = brandStr ? resolveBrandSmart(brandStr, brands) : null;
-        if (brandStr && !foundBrand) {
-          unknownEntities.brands.add(brandStr);
-        }
-
-        const foundModel = modelStr ? resolveModelSmart(modelStr, foundBrand, foundMN, models) : null;
-        if (modelStr && !foundModel) {
-          unknownEntities.models.add(modelStr);
-        }
-
-        let foundUnit = unitStr ? (units.find(u => u.name.toLowerCase() === unitStr.toLowerCase() || u.code.toLowerCase() === unitStr.toLowerCase()) || null) : null;
-
-        // Smart Floor resolution: matches short code (TS, JA, BG), name without "Floor" (TISTA), case-insensitive & fuzzy
-        const foundFloor = floorStr ? resolveFloorSmart(floorStr, floors, foundUnit) : (floors[0] || null);
-
-        // If Unit was not specified or not matched, infer from Floor
-        if (!foundUnit && foundFloor && foundFloor.unitId) {
-          foundUnit = units.find(u => u.id === foundFloor.unitId) || null;
-        }
-        if (!foundUnit) {
-          foundUnit = units[0] || null;
-        }
-
-        // Line Name Auto-Detection: auto-detects short floor code + line name (e.g. 'a', 'B', 'G' -> 'TS-G', 'JA-A')
-        const foundLine = lineStr ? resolveLineSmart(lineStr, foundFloor, lines) : null;
-        if (lineStr && !foundLine) {
-          unknownEntities.lines.add(lineStr);
-        }
-
-        // Auto-align Unit if floor belongs to a registered unit
-        if (foundUnit && foundFloor && foundFloor.unitId && foundFloor.unitId !== foundUnit.id) {
-          const actualUnit = units.find(u => u.id === foundFloor.unitId);
-          if (actualUnit) {
-            foundUnit = actualUnit;
-          }
         }
 
         // 5. Custom Fields Validation
@@ -1033,7 +1269,7 @@ class ExcelService {
         customFields.forEach(cf => {
           const cfCol = mapping[`cf_${cf.code}`];
           if (cfCol && row[cfCol] !== undefined) {
-            const rawVal = String(row[cfCol]).trim();
+            const rawVal = cleanSpaces(row[cfCol]);
             if (rawVal) customValues[cf.code] = rawVal;
           }
         });
@@ -1056,6 +1292,7 @@ class ExcelService {
         sheetRecords.push({
           sheetName: sheet.name,
           rowNumber: rowNumber,
+          cell: serialCell,
           rawRow: row,
           isValid: isValid,
           isUpdate: isUpdate,
@@ -1115,6 +1352,18 @@ class ExcelService {
       duplicatePolicy: duplicatePolicy,
       sheets: validatedSheets,
       allErrors: allValidationErrors,
+      duplicatesSummary: {
+        count: grandDuplicateRows,
+        cellList: grandDuplicatesList
+      },
+      errorsSummary: {
+        count: grandInvalidRows,
+        cellList: grandErrorsList
+      },
+      autoFixedSummary: {
+        count: grandAutoFixedList.length,
+        cellList: grandAutoFixedList
+      },
       unknownEntities: {
         machineNames: Array.from(unknownEntities.machineNames),
         brands: Array.from(unknownEntities.brands),
@@ -1312,6 +1561,7 @@ class ExcelService {
           failedCount++;
           failedRows.push({
             rowNumber: rowNumber,
+            cell: item.cell || `Row ${rowNumber}`,
             sheetName: sheet.name,
             serialNumber: item.data?.serialNumber || item.rawRow?.serial || item.rawRow?.serialNumber || '—',
             status: '❌ Failed',
@@ -2061,9 +2311,9 @@ class ExcelService {
   }
 
   /**
-   * Export dedicated filtered ENT Lab Management Report table to Excel with all 20 specified columns
+   * Export dedicated filtered ENT Lab Report table to Excel with all 20 specified columns
    */
-  async exportEtLabManagementReportExcel(rows, fileName = `ET_Lab_Management_Report_${new Date().toISOString().split('T')[0]}.xlsx`) {
+  async exportEtLabManagementReportExcel(rows, fileName = `ENT_Lab_Report_${new Date().toISOString().split('T')[0]}.xlsx`) {
     await this.ensureXlsx();
 
     const wb = XLSX.utils.book_new();
@@ -2118,7 +2368,7 @@ class ExcelService {
 
     XLSX.utils.book_append_sheet(wb, ws, 'ENT Lab Report');
     XLSX.writeFile(wb, fileName);
-    auditService.log('ET_LAB_REPORT_EXCEL_EXPORTED', 'EXCEL_EXPORT', 'ET_LAB', `Exported filtered ENT Lab Management Report (${rows.length} records) to Excel.`);
+    auditService.log('ET_LAB_REPORT_EXCEL_EXPORTED', 'EXCEL_EXPORT', 'ET_LAB', `Exported filtered ENT Lab Report (${rows.length} records) to Excel.`);
   }
 }
 

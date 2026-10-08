@@ -7,6 +7,8 @@ import { storage } from '../db/storage.js';
 import { TABLE_NAMES } from '../db/schema.js';
 import { authService } from './authService.js';
 import { auditService } from './auditService.js';
+import { masterDataService } from './masterDataService.js';
+import { resolveTransferMachineDetails } from './transferService.js';
 import { getSignaturesForReport } from '../components/settingsView.js';
 
 class PDFService {
@@ -299,6 +301,10 @@ class PDFService {
     const dateStr = now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
     const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
+    // Resolve equipment details using comprehensive engine
+    const eq = resolveTransferMachineDetails(req);
+    // ──────────────────────────────────────────────────────────────────────────
+
     // Status colors
     const isCompleted = req.status === 'COMPLETED' || req.status === 'APPROVED';
     const statusColor = isCompleted ? '#16a34a' : (req.status === 'REJECTED' ? '#dc2626' : '#d97706');
@@ -508,10 +514,10 @@ class PDFService {
           <div class="section-card">
             <div class="section-title">🧵 1. Machine Asset Identity</div>
             <div style="font-size: 11.5px; display: flex; flex-direction: column; gap: 4px;">
-              <div><strong>Machine Name:</strong> ${req.machineInfo?.machineName || req.machineName || 'Machine'}</div>
-              <div><strong>Brand &amp; Model:</strong> ${req.machineInfo?.brand || 'Unknown'} — ${req.machineInfo?.model || 'Unknown'}</div>
-              <div><strong>Serial Number:</strong> <span style="font-family: monospace; font-weight: 800; color: #0284c7;">${req.machineInfo?.serialNumber || req.serialNumber || req.machineSerial || 'Unknown'}</span></div>
-              <div><strong>Category:</strong> ${req.machineInfo?.category || 'Garments Machinery'}</div>
+              <div><strong>Machine Name:</strong> ${eq.machineName}</div>
+              <div><strong>Brand &amp; Model:</strong> ${eq.brandModelText}</div>
+              <div><strong>Serial Number:</strong> <span style="font-family: monospace; font-weight: 800; color: #0284c7;">${eq.serialNumber}</span></div>
+              <div><strong>Category:</strong> ${eq.category}</div>
             </div>
           </div>
 
@@ -1017,7 +1023,7 @@ class PDFService {
   }
 
   /**
-   * Generates formatted corporate branded PDF & Print document for ENT Lab Management Report
+   * Generates formatted corporate branded PDF & Print document for ENT Lab Report
    */
   generateEtLabManagementReportPDF({ rows, filterSummary, generatedBy }) {
     const user = generatedBy || authService.getCurrentUser();
@@ -1065,7 +1071,7 @@ class PDFService {
       <!DOCTYPE html>
       <html>
       <head>
-        <title>ENT Lab Management Report - ${companyName}</title>
+        <title>ENT Lab Report - ${companyName}</title>
         <meta charset="utf-8">
         <style>
           @page {
@@ -1184,7 +1190,7 @@ class PDFService {
         </div>
 
         <div class="report-title-box">
-          <div class="report-title">📊 ENT Lab Management Report</div>
+          <div class="report-title">📊 ENT Lab Report</div>
           <div class="report-filter-summary">${filterSummary || 'Scope: Complete ENT Lab Inventory & Lifetime Ledger'}</div>
         </div>
 
@@ -1249,8 +1255,8 @@ class PDFService {
       printWin.document.open();
       printWin.document.write(reportHtml);
       printWin.document.close();
-      printWin.document.title = 'ENT Lab Management Report';
-      auditService.log('ET_LAB_PDF_REPORT_GENERATED', 'REPORT', 'ENT Lab Report', `Generated ENT Lab Management PDF/Print Report.`);
+      printWin.document.title = 'ENT Lab Report';
+      auditService.log('ET_LAB_PDF_REPORT_GENERATED', 'REPORT', 'ENT Lab Report', `Generated ENT Lab PDF/Print Report.`);
     } else {
       alert('Pop-up window was blocked. Please allow pop-ups for this site to view/print reports.');
     }

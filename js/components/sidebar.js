@@ -183,7 +183,7 @@ export function renderSidebar() {
     { id: 'sub-report-machine', targetView: 'reports', reportTab: 'machines', label: 'Machine Reports', icon: '🧵', moduleKey: 'machines' },
     { id: 'sub-report-transfer', targetView: 'reports', reportTab: 'transfers', label: 'Transfer Reports', icon: '🔄', moduleKey: 'transfers' },
     { id: 'sub-report-spare', targetView: 'reports', reportTab: 'spareparts', label: 'Spare Parts Reports', icon: '⚙️', moduleKey: 'spare_parts' },
-    { id: 'sub-report-etlab', targetView: 'reports', reportTab: 'etlab', label: 'ENT Lab Management Report', icon: '🔬', moduleKey: 'et_lab' },
+    { id: 'sub-report-etlab', targetView: 'reports', reportTab: 'etlab', label: 'ENT Lab Report', icon: '🔬', moduleKey: 'et_lab' },
     { id: 'sub-report-export', targetView: 'reports', reportTab: 'export', label: 'Excel Export Center', icon: '📥', moduleKey: 'reports' }
   ].filter(it => authService.isAdmin() || authService.isModuleAllowed(it.moduleKey) || authService.isModuleAllowed('reports'));
 
