@@ -472,267 +472,272 @@ export function renderInventoryTable() {
 
   // 7. Assemble Complete Redesigned Component Layout
   return `
-    <div class="page-view inventory-page-wrapper" style="display: flex; flex-direction: column; gap: 8px;">
+    <div class="page-view inventory-page-wrapper" style="display: flex; flex-direction: column; gap: 6px; height: 100%; min-height: 0; padding: 6px 12px; overflow: hidden;">
       
-      <!-- 1. Ultra-Compact Top Bar (Title + KPI Status Badges + Action Buttons) -->
-      <div class="inventory-top-unified-bar">
+      <!-- ── Pinned Top Control Deck (Never scrolls away) ── -->
+      <div class="inventory-sticky-header-panel" style="display: flex; flex-direction: column; gap: 6px; flex-shrink: 0; position: sticky; top: 0; z-index: 35; background: var(--bg-surface, #0f172a);">
         
-        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-          <h1 style="font-size: 16px; font-weight: 800; color: #fff; margin: 0; display: flex; align-items: center; gap: 6px;">
-            <span>📦</span> Machine Inventory
-          </h1>
+        <!-- 1. Ultra-Compact Top Bar (Title + KPI Status Badges + Action Buttons) -->
+        <div class="inventory-top-unified-bar" style="padding: 6px 12px; gap: 8px;">
           
-          <!-- Inline KPI Pills -->
-          <div class="inventory-inline-kpis">
-            <div class="kpi-pill kpi-total" title="Total machines registered">
-              <span class="kpi-dot">🏭</span>
-              <strong class="kpi-val">${countTotalMachines}</strong>
-              <span class="kpi-lbl">Total</span>
-            </div>
-            <div class="kpi-pill kpi-running" title="Operational active machines">
-              <span class="kpi-dot">🟢</span>
-              <strong class="kpi-val" style="color: #34d399;">${totalRunning}</strong>
-              <span class="kpi-lbl">Running</span>
-            </div>
-            <div class="kpi-pill kpi-usable" title="Ready-to-use standby machines">
-              <span class="kpi-dot">🔵</span>
-              <strong class="kpi-val" style="color: #38bdf8;">${totalUsableIdle}</strong>
-              <span class="kpi-lbl">Usable</span>
-            </div>
-            <div class="kpi-pill kpi-repair" title="Machines under maintenance or repair">
-              <span class="kpi-dot">🟡</span>
-              <strong class="kpi-val" style="color: #fbbf24;">${totalRepairableIdle}</strong>
-              <span class="kpi-lbl">Repairable</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Action Buttons (+ Add Machine | Delete Selected | Import | Export | Template | More) -->
-        <div class="inventory-top-actions-group" style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
-          
-          ${authService.hasAccess('machines', 'ADD') ? `
-            <button id="btn-add-machine-modal" class="btn btn-primary btn-sm" style="font-weight: 700; padding: 5px 12px; font-size: 12px;">
-              ➕ Add Machine
-            </button>
-          ` : ''}
-
-          <button id="btn-inventory-relocate" class="btn btn-secondary btn-sm" style="font-weight: 800; padding: 5px 12px; font-size: 12px; border: 1.5px solid #38bdf8; color: #38bdf8; background: rgba(56, 189, 248, 0.12);" title="Physical Machine Verification &amp; Relocation">
-            📍 Relocate &amp; Verify
-          </button>
-
-          <button id="btn-inventory-qr-codes" class="btn btn-secondary btn-sm" style="font-weight: 800; padding: 5px 12px; font-size: 12px; border: 1.5px solid #a855f7; color: #c084fc; background: rgba(168, 85, 247, 0.12);" title="QR Code &amp; Label Studio: Generate, Preview, A4 Print">
-            🏁 QR Codes
-          </button>
-
-          ${authService.hasAccess('machines', 'DELETE') ? `
-            <button id="btn-top-bulk-delete" class="btn btn-danger btn-sm" style="font-weight: 700; padding: 5px 12px; font-size: 12px; background: ${selectedIds.size > 0 ? '#dc2626' : 'rgba(220, 38, 38, 0.18)'}; border: 1px solid ${selectedIds.size > 0 ? '#ef4444' : 'rgba(239, 68, 68, 0.35)'}; color: ${selectedIds.size > 0 ? '#fff' : '#fca5a5'}; cursor: ${selectedIds.size > 0 ? 'pointer' : 'not-allowed'}; opacity: ${selectedIds.size > 0 ? '1' : '0.6'};" ${selectedIds.size === 0 ? 'disabled' : ''} title="${selectedIds.size > 0 ? `Delete ${selectedIds.size} selected machine(s)` : 'Select machines to delete'}">
-              🗑️ Delete Selected ${selectedIds.size > 0 ? `(${selectedIds.size})` : ''}
-            </button>
-          ` : ''}
-
-          ${(authService.hasAccess('excel_import', 'IMPORT') || authService.hasAccess('machines', 'IMPORT')) ? `
-            <button id="btn-import-excel-modal" class="btn btn-secondary btn-sm" style="font-weight: 600; padding: 5px 10px; font-size: 12px;" title="Upload Excel file">
-              📥 Import
-            </button>
-          ` : ''}
-
-          ${(authService.hasAccess('excel_export', 'EXPORT') || authService.hasAccess('machines', 'EXPORT')) ? `
-            <button id="btn-export-excel" class="btn btn-secondary btn-sm" style="font-weight: 600; padding: 5px 10px; font-size: 12px;" title="Export filtered machines to Excel">
-              📤 Export
-            </button>
-          ` : ''}
-
-          <button id="btn-download-template" class="btn btn-secondary btn-sm" style="font-weight: 600; padding: 5px 10px; font-size: 12px;" title="Download Excel template">
-            📋 Template
-          </button>
-
-          <!-- More Dropdown -->
-          <div class="actions-dropdown-container">
-            <button id="btn-more-actions-trigger" class="btn btn-secondary btn-sm" style="font-weight: 600; padding: 5px 10px; font-size: 12px;">
-              ⋯ More ▾
-            </button>
-            <div id="more-actions-dropdown-menu" class="actions-dropdown-menu" style="min-width: 170px;">
-              <button type="button" class="actions-menu-item" id="btn-export-csv">
-                📄 Export CSV
-              </button>
-              <button type="button" class="actions-menu-item" id="btn-generate-pdf">
-                🖨️ Print Inventory
-              </button>
-              <button type="button" class="actions-menu-item" id="btn-column-visibility-toggle">
-                👁️ Columns (${visibleCols.size})
-              </button>
-              ${(authService.hasAccess('machines', 'DELETE') && queryResult.total > 0 && hasActiveFilters) ? `
-                <div class="actions-menu-divider"></div>
-                <button type="button" class="actions-menu-item danger-item" id="btn-delete-all-filtered">
-                  🗑️ Delete Filtered (${queryResult.total})
-                </button>
-              ` : ''}
-            </div>
-          </div>
-
-        </div>
-      </div>
-
-      <!-- 2. Robust 2-Tier Structured Filter Bar (Zero Squishing, Perfect Readability) -->
-      <div class="compact-filter-bar" style="padding: 10px 14px; display: flex; flex-direction: column; gap: 8px; background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm);">
-        
-        <!-- Row 1: Search Bar & Primary Hierarchy Dropdowns -->
-        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; width: 100%;">
-          
-          <!-- Unified Search Input -->
-          <div class="filter-search-wrap" style="flex: 2 1 260px; min-width: 240px; position: relative;">
-            <span class="filter-search-icon" style="left: 12px; font-size: 13px;">🔍</span>
-            <input 
-              type="text" 
-              id="filter-search-input" 
-              class="filter-search-input has-icon-left" 
-              placeholder="Search machine, serial, brand..." 
-              value="${filters.search || ''}"
-              style="height: 34px; font-size: 12.5px; padding-left: 44px !important; padding-right: ${filters.search ? '64px' : '36px'} !important;"
-            />
-            <div class="filter-search-actions" style="right: 6px;">
-              <button id="btn-inventory-scan-qr" type="button" class="filter-search-btn qr-btn" style="height: 24px; width: 26px; font-size: 13px;" title="Scan Machine QR Code / Barcode with Camera">📷</button>
-              ${filters.search ? `
-                <button id="btn-clear-search" type="button" class="filter-search-btn" style="height: 24px; width: 24px; font-size: 12px;" title="Clear Search">✕</button>
-              ` : ''}
-            </div>
-          </div>
-
-          <!-- Group -->
-          <div class="filter-select-item" style="flex: 1 1 130px; min-width: 125px;">
-            <select id="filter-group" class="filter-select-compact" style="height: 34px; font-size: 12px; width: 100%;">
-              <option value="">All Groups (${groups.length})</option>
-              ${groups.map(g => `<option value="${g.id}" ${filters.groupId === g.id ? 'selected' : ''}>${g.name}</option>`).join('')}
-            </select>
-          </div>
-
-          <!-- Unit / Factory -->
-          <div class="filter-select-item" style="flex: 1 1 140px; min-width: 135px;">
-            <select id="filter-unit" class="filter-select-compact" style="height: 34px; font-size: 12px; width: 100%;">
-              <option value="">All Units (${units.length})</option>
-              ${units.map(u => `<option value="${u.id}" ${filters.unitId === u.id ? 'selected' : ''}>${u.name}</option>`).join('')}
-            </select>
-          </div>
-
-          <!-- Floor -->
-          <div class="filter-select-item" style="flex: 1 1 130px; min-width: 125px;">
-            <select id="filter-floor" class="filter-select-compact" style="height: 34px; font-size: 12px; width: 100%;">
-              <option value="">All Floors (${floors.length})</option>
-              ${floors.map(f => `<option value="${f.id}" ${filters.floorId === f.id ? 'selected' : ''}>${f.name}</option>`).join('')}
-            </select>
-          </div>
-
-          <!-- Line -->
-          <div class="filter-select-item" style="flex: 1 1 130px; min-width: 125px;">
-            <select id="filter-line" class="filter-select-compact" style="height: 34px; font-size: 12px; width: 100%;">
-              <option value="">All Lines (${lines.length})</option>
-              ${lines.map(l => {
-                const clean = formatDisplayLine(l.name, 'NORMAL');
-                const label = clean !== l.name ? `${clean} (${l.name})` : l.name;
-                return `<option value="${l.id}" ${filters.lineId === l.id ? 'selected' : ''}>${label}</option>`;
-              }).join('')}
-            </select>
-          </div>
-
-        </div>
-
-        <!-- Row 2: Machine Details, Status Filter & Table Action Tools -->
-        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; width: 100%;">
-          
-          <!-- Machine Name -->
-          <div class="filter-select-item" style="flex: 1.5 1 160px; min-width: 145px;">
-            <select id="filter-machine-name" class="filter-select-compact" style="height: 32px; font-size: 12px; width: 100%;">
-              <option value="">All Machines (${machineNames.length})</option>
-              ${machineNames.map(mn => `<option value="${mn.id}" ${filters.machineNameId === mn.id ? 'selected' : ''}>${mn.name}</option>`).join('')}
-            </select>
-          </div>
-
-          <!-- Status -->
-          <div class="filter-select-item" style="flex: 1 1 130px; min-width: 120px;">
-            <select id="filter-status-select" class="filter-select-compact" style="height: 32px; font-size: 12px; width: 100%;">
-              <option value="ALL" ${!filters.status || filters.status === 'ALL' ? 'selected' : ''}>All Status</option>
-              <option value="ACTIVE" ${filters.status === 'ACTIVE' ? 'selected' : ''}>🟢 Active</option>
-              <option value="IDLE" ${filters.status === 'IDLE' ? 'selected' : ''}>💤 Idle</option>
-              <option value="MAINTENANCE" ${filters.status === 'MAINTENANCE' ? 'selected' : ''}>🟡 Maint</option>
-              <option value="BREAKDOWN" ${filters.status === 'BREAKDOWN' ? 'selected' : ''}>🔴 Breakdown</option>
-            </select>
-          </div>
-
-          <!-- Action Buttons Group -->
-          <div style="display: flex; align-items: center; gap: 6px; margin-left: auto; flex-wrap: wrap;">
-            <button id="btn-toggle-advanced-filters" class="btn btn-ghost btn-sm" style="font-size: 11.5px; padding: 4px 10px; color: #38bdf8; height: 32px; border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 6px;" title="Toggle Brand and Model filters">
-              ${showAdvancedFilters ? '▲ Less' : 'More Filters ▾'}
-            </button>
+          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <h1 style="font-size: 15px; font-weight: 800; color: #fff; margin: 0; display: flex; align-items: center; gap: 6px; white-space: nowrap;">
+              <span>📦</span> Machine Inventory
+            </h1>
             
-            <button id="btn-reset-filters" class="btn btn-secondary btn-sm" style="font-weight: 700; font-size: 11.5px; padding: 4px 12px; height: 32px; border-radius: 6px;" title="Reset filters">
-              ↺ Reset
-            </button>
-
-            <button id="btn-column-picker-inline" class="btn btn-ghost btn-sm" style="font-size: 11.5px; padding: 4px 12px; color: #38bdf8; height: 32px; display: inline-flex; align-items: center; gap: 6px; border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 6px; background: rgba(56, 189, 248, 0.1);" title="Configure visible and frozen columns">
-              <span>❄️ Columns &amp; Freeze ▾</span>
-              ${frozenColKeys.length > 0 ? `<span class="badge" style="background: rgba(56, 189, 248, 0.3); color: #fff; font-size: 10px; padding: 1px 6px; font-weight: 800; border-radius: 10px;">${frozenColKeys.length}</span>` : ''}
-            </button>
+            <!-- Inline KPI Pills -->
+            <div class="inventory-inline-kpis">
+              <div class="kpi-pill kpi-total" title="Total machines registered">
+                <span class="kpi-dot">🏭</span>
+                <strong class="kpi-val">${countTotalMachines}</strong>
+                <span class="kpi-lbl">Total</span>
+              </div>
+              <div class="kpi-pill kpi-running" title="Operational active machines">
+                <span class="kpi-dot">🟢</span>
+                <strong class="kpi-val" style="color: #34d399;">${totalRunning}</strong>
+                <span class="kpi-lbl">Running</span>
+              </div>
+              <div class="kpi-pill kpi-usable" title="Ready-to-use standby machines">
+                <span class="kpi-dot">🔵</span>
+                <strong class="kpi-val" style="color: #38bdf8;">${totalUsableIdle}</strong>
+                <span class="kpi-lbl">Usable</span>
+              </div>
+              <div class="kpi-pill kpi-repair" title="Machines under maintenance or repair">
+                <span class="kpi-dot">🟡</span>
+                <strong class="kpi-val" style="color: #fbbf24;">${totalRepairableIdle}</strong>
+                <span class="kpi-lbl">Repairable</span>
+              </div>
+            </div>
           </div>
 
+          <!-- Action Buttons (+ Add Machine | Relocate | QR | Delete | Import | Export | Template | More) -->
+          <div class="inventory-top-actions-group" style="display: flex; align-items: center; gap: 5px; flex-wrap: wrap; margin-left: auto;">
+            
+            ${authService.hasAccess('machines', 'ADD') ? `
+              <button id="btn-add-machine-modal" class="btn btn-primary btn-sm" style="font-weight: 700; height: 28px; padding: 0 10px; font-size: 11.5px;">
+                ➕ Add Machine
+              </button>
+            ` : ''}
+
+            <button id="btn-inventory-relocate" class="btn btn-secondary btn-sm" style="font-weight: 800; height: 28px; padding: 0 10px; font-size: 11.5px; border: 1.5px solid #38bdf8; color: #38bdf8; background: rgba(56, 189, 248, 0.12);" title="Physical Machine Verification &amp; Relocation">
+              📍 Relocate &amp; Verify
+            </button>
+
+            <button id="btn-inventory-qr-codes" class="btn btn-secondary btn-sm" style="font-weight: 800; height: 28px; padding: 0 10px; font-size: 11.5px; border: 1.5px solid #a855f7; color: #c084fc; background: rgba(168, 85, 247, 0.12);" title="QR Code &amp; Label Studio: Generate, Preview, A4 Print">
+              🏁 QR Codes
+            </button>
+
+            ${authService.hasAccess('machines', 'DELETE') ? `
+              <button id="btn-top-bulk-delete" class="btn btn-danger btn-sm" style="font-weight: 700; height: 28px; padding: 0 10px; font-size: 11.5px; background: ${selectedIds.size > 0 ? '#dc2626' : 'rgba(220, 38, 38, 0.18)'}; border: 1px solid ${selectedIds.size > 0 ? '#ef4444' : 'rgba(239, 68, 68, 0.35)'}; color: ${selectedIds.size > 0 ? '#fff' : '#fca5a5'}; cursor: ${selectedIds.size > 0 ? 'pointer' : 'not-allowed'}; opacity: ${selectedIds.size > 0 ? '1' : '0.6'};" ${selectedIds.size === 0 ? 'disabled' : ''} title="${selectedIds.size > 0 ? `Delete ${selectedIds.size} selected machine(s)` : 'Select machines to delete'}">
+                🗑️ Delete Selected ${selectedIds.size > 0 ? `(${selectedIds.size})` : ''}
+              </button>
+            ` : ''}
+
+            ${(authService.hasAccess('excel_import', 'IMPORT') || authService.hasAccess('machines', 'IMPORT')) ? `
+              <button id="btn-import-excel-modal" class="btn btn-secondary btn-sm" style="font-weight: 600; height: 28px; padding: 0 9px; font-size: 11.5px;" title="Upload Excel file">
+                📥 Import
+              </button>
+            ` : ''}
+
+            ${(authService.hasAccess('excel_export', 'EXPORT') || authService.hasAccess('machines', 'EXPORT')) ? `
+              <button id="btn-export-excel" class="btn btn-secondary btn-sm" style="font-weight: 600; height: 28px; padding: 0 9px; font-size: 11.5px;" title="Export filtered machines to Excel">
+                📤 Export
+              </button>
+            ` : ''}
+
+            <button id="btn-download-template" class="btn btn-secondary btn-sm" style="font-weight: 600; height: 28px; padding: 0 9px; font-size: 11.5px;" title="Download Excel template">
+              📋 Template
+            </button>
+
+            <!-- More Dropdown -->
+            <div class="actions-dropdown-container">
+              <button id="btn-more-actions-trigger" class="btn btn-secondary btn-sm" style="font-weight: 600; height: 28px; padding: 0 9px; font-size: 11.5px;">
+                ⋯ More ▾
+              </button>
+              <div id="more-actions-dropdown-menu" class="actions-dropdown-menu" style="min-width: 170px;">
+                <button type="button" class="actions-menu-item" id="btn-export-csv">
+                  📄 Export CSV
+                </button>
+                <button type="button" class="actions-menu-item" id="btn-generate-pdf">
+                  🖨️ Print Inventory
+                </button>
+                <button type="button" class="actions-menu-item" id="btn-column-visibility-toggle">
+                  👁️ Columns (${visibleCols.size})
+                </button>
+                ${(authService.hasAccess('machines', 'DELETE') && queryResult.total > 0 && hasActiveFilters) ? `
+                  <div class="actions-menu-divider"></div>
+                  <button type="button" class="actions-menu-item danger-item" id="btn-delete-all-filtered">
+                    🗑️ Delete Filtered (${queryResult.total})
+                  </button>
+                ` : ''}
+              </div>
+            </div>
+
+          </div>
         </div>
 
-        <!-- Active filter tags badge strip if active -->
-        ${hasActiveFilters ? `
-          <div style="display: flex; align-items: center; gap: 5px; flex-wrap: wrap; margin-top: 4px; padding-top: 4px; border-top: 1px solid rgba(255, 255, 255, 0.06);">
-            <span style="font-size: 10.5px; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Active Filters:</span>
-            ${activeTags.map(tag => `
-              <span class="active-filter-tag" data-key="${tag.key}" style="display: inline-flex; align-items: center; gap: 4px; background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 4px; padding: 1px 6px; font-size: 11px; color: #38bdf8; cursor: pointer;" title="Click to remove">
-                ${tag.label} <span style="color: #f87171; font-weight: bold; margin-left: 2px;">✕</span>
-              </span>
-            `).join('')}
-          </div>
-        ` : ''}
+        <!-- 2. Robust 2-Tier Structured Filter Bar (Zero Squishing, Perfect Readability) -->
+        <div class="compact-filter-bar" style="padding: 6px 10px; display: flex; flex-direction: column; gap: 6px; background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); box-shadow: var(--shadow-sm);">
+          
+          <!-- Row 1: Search Bar & Primary Hierarchy Dropdowns -->
+          <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap; width: 100%;">
+            
+            <!-- Unified Search Input -->
+            <div class="filter-search-wrap" style="flex: 2 1 240px; min-width: 220px; position: relative;">
+              <span class="filter-search-icon" style="left: 10px; font-size: 12px;">🔍</span>
+              <input 
+                type="text" 
+                id="filter-search-input" 
+                class="filter-search-input has-icon-left" 
+                placeholder="Search machine, serial, brand..." 
+                value="${filters.search || ''}"
+                style="height: 30px; font-size: 12px; padding-left: 36px !important; padding-right: ${filters.search ? '58px' : '32px'} !important;"
+              />
+              <div class="filter-search-actions" style="right: 5px;">
+                <button id="btn-inventory-scan-qr" type="button" class="filter-search-btn qr-btn" style="height: 22px; width: 24px; font-size: 12px;" title="Scan Machine QR Code / Barcode with Camera">📷</button>
+                ${filters.search ? `
+                  <button id="btn-clear-search" type="button" class="filter-search-btn" style="height: 22px; width: 22px; font-size: 11px;" title="Clear Search">✕</button>
+                ` : ''}
+              </div>
+            </div>
 
-        <!-- Collapsible Advanced Filters Panel (Brand, Model) -->
-        ${showAdvancedFilters ? `
-          <div class="advanced-filters-panel" style="padding: 6px 8px; margin-top: 4px; display: flex; gap: 10px;">
-            <div style="flex: 1;">
-              <label style="font-size: 10px; font-weight: 700; color: var(--text-secondary); margin-bottom: 2px; display: block;">Brand</label>
-              <select id="filter-brand" class="filter-select-compact" style="height: 28px; font-size: 11px;">
-                <option value="">All Brands (${brands.length})</option>
-                ${brands.map(b => `<option value="${b.id}" ${filters.brandId === b.id ? 'selected' : ''}>${b.name}</option>`).join('')}
+            <!-- Group -->
+            <div class="filter-select-item" style="flex: 1 1 120px; min-width: 115px;">
+              <select id="filter-group" class="filter-select-compact" style="height: 30px; font-size: 11.5px; width: 100%;">
+                <option value="">All Groups (${groups.length})</option>
+                ${groups.map(g => `<option value="${g.id}" ${filters.groupId === g.id ? 'selected' : ''}>${g.name}</option>`).join('')}
               </select>
             </div>
 
-            <div style="flex: 1;">
-              <label style="font-size: 10px; font-weight: 700; color: var(--text-secondary); margin-bottom: 2px; display: block;">Model</label>
-              <select id="filter-model" class="filter-select-compact" style="height: 28px; font-size: 11px;">
-                <option value="">All Models (${models.length})</option>
-                ${models.map(m => `<option value="${m.id}" ${filters.modelId === m.id ? 'selected' : ''}>${m.name}</option>`).join('')}
+            <!-- Unit / Factory -->
+            <div class="filter-select-item" style="flex: 1 1 130px; min-width: 125px;">
+              <select id="filter-unit" class="filter-select-compact" style="height: 30px; font-size: 11.5px; width: 100%;">
+                <option value="">All Units (${units.length})</option>
+                ${units.map(u => `<option value="${u.id}" ${filters.unitId === u.id ? 'selected' : ''}>${u.name}</option>`).join('')}
               </select>
             </div>
+
+            <!-- Floor -->
+            <div class="filter-select-item" style="flex: 1 1 120px; min-width: 115px;">
+              <select id="filter-floor" class="filter-select-compact" style="height: 30px; font-size: 11.5px; width: 100%;">
+                <option value="">All Floors (${floors.length})</option>
+                ${floors.map(f => `<option value="${f.id}" ${filters.floorId === f.id ? 'selected' : ''}>${f.name}</option>`).join('')}
+              </select>
+            </div>
+
+            <!-- Line -->
+            <div class="filter-select-item" style="flex: 1 1 120px; min-width: 115px;">
+              <select id="filter-line" class="filter-select-compact" style="height: 30px; font-size: 11.5px; width: 100%;">
+                <option value="">All Lines (${lines.length})</option>
+                ${lines.map(l => {
+                  const clean = formatDisplayLine(l.name, 'NORMAL');
+                  const label = clean !== l.name ? `${clean} (${l.name})` : l.name;
+                  return `<option value="${l.id}" ${filters.lineId === l.id ? 'selected' : ''}>${label}</option>`;
+                }).join('')}
+              </select>
+            </div>
+
           </div>
-        ` : ''}
 
-      </div>
+          <!-- Row 2: Machine Details, Status Filter & Table Action Tools -->
+          <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap; width: 100%;">
+            
+            <!-- Machine Name -->
+            <div class="filter-select-item" style="flex: 1.5 1 150px; min-width: 135px;">
+              <select id="filter-machine-name" class="filter-select-compact" style="height: 30px; font-size: 11.5px; width: 100%;">
+                <option value="">All Machines (${machineNames.length})</option>
+                ${machineNames.map(mn => `<option value="${mn.id}" ${filters.machineNameId === mn.id ? 'selected' : ''}>${mn.name}</option>`).join('')}
+              </select>
+            </div>
 
-      <!-- 4. Bulk Selection Action Bar (when rows are selected) -->
-      <div id="inventory-bulk-actions-bar" style="display: ${selectedIds.size > 0 ? 'flex' : 'none'}; background: rgba(15, 23, 42, 0.98); border: 1.5px solid #ef4444; border-radius: var(--radius-md); padding: 8px 14px; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; box-shadow: 0 4px 14px rgba(220, 38, 38, 0.25);">
-        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-          <span style="font-weight: 800; color: #fff; font-size: 13px; display: flex; align-items: center; gap: 6px;">
-            <span>☑️</span> <strong id="bulk-selected-count" style="color: #38bdf8;">${selectedIds.size}</strong> machine(s) selected
-          </span>
-          <button id="btn-select-all-filtered" class="btn btn-ghost btn-sm" style="display: ${selectedIds.size < queryResult.total ? 'inline-block' : 'none'}; color: #38bdf8; font-size: 11.5px; font-weight: 700; text-decoration: underline; padding: 2px 6px;">
-            Select all ${queryResult.total} machines in current filter
-          </button>
-        </div>
-        <div style="display: flex; gap: 8px; align-items: center;">
-          ${authService.hasAccess('machines', 'DELETE') ? `
-            <button id="btn-bulk-delete" class="btn btn-danger btn-sm" style="font-weight: 800; background: #dc2626; border-color: #ef4444; color: #fff; padding: 5px 14px; box-shadow: 0 2px 8px rgba(220, 38, 38, 0.4);">
-              🗑️ Delete Selected (${selectedIds.size})
-            </button>
+            <!-- Status -->
+            <div class="filter-select-item" style="flex: 1 1 120px; min-width: 115px;">
+              <select id="filter-status-select" class="filter-select-compact" style="height: 30px; font-size: 11.5px; width: 100%;">
+                <option value="ALL" ${!filters.status || filters.status === 'ALL' ? 'selected' : ''}>All Status</option>
+                <option value="ACTIVE" ${filters.status === 'ACTIVE' ? 'selected' : ''}>🟢 Active</option>
+                <option value="IDLE" ${filters.status === 'IDLE' ? 'selected' : ''}>💤 Idle</option>
+                <option value="MAINTENANCE" ${filters.status === 'MAINTENANCE' ? 'selected' : ''}>🟡 Maint</option>
+                <option value="BREAKDOWN" ${filters.status === 'BREAKDOWN' ? 'selected' : ''}>🔴 Breakdown</option>
+              </select>
+            </div>
+
+            <!-- Action Buttons Group -->
+            <div style="display: flex; align-items: center; gap: 5px; margin-left: auto; flex-wrap: wrap;">
+              <button id="btn-toggle-advanced-filters" class="btn btn-ghost btn-sm" style="font-size: 11px; padding: 2px 8px; color: #38bdf8; height: 30px; border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 6px;" title="Toggle Brand and Model filters">
+                ${showAdvancedFilters ? '▲ Less' : 'More Filters ▾'}
+              </button>
+              
+              <button id="btn-reset-filters" class="btn btn-secondary btn-sm" style="font-weight: 700; font-size: 11px; padding: 2px 10px; height: 30px; border-radius: 6px;" title="Reset filters">
+                ↺ Reset
+              </button>
+
+              <button id="btn-column-picker-inline" class="btn btn-ghost btn-sm" style="font-size: 11px; padding: 2px 10px; color: #38bdf8; height: 30px; display: inline-flex; align-items: center; gap: 5px; border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 6px; background: rgba(56, 189, 248, 0.1);" title="Configure visible and frozen columns">
+                <span>❄️ Columns &amp; Freeze ▾</span>
+                ${frozenColKeys.length > 0 ? `<span class="badge" style="background: rgba(56, 189, 248, 0.3); color: #fff; font-size: 10px; padding: 1px 5px; font-weight: 800; border-radius: 10px;">${frozenColKeys.length}</span>` : ''}
+              </button>
+            </div>
+
+          </div>
+
+          <!-- Active filter tags badge strip if active -->
+          ${hasActiveFilters ? `
+            <div style="display: flex; align-items: center; gap: 4px; flex-wrap: wrap; margin-top: 2px; padding-top: 3px; border-top: 1px solid rgba(255, 255, 255, 0.06);">
+              <span style="font-size: 10px; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Active Filters:</span>
+              ${activeTags.map(tag => `
+                <span class="active-filter-tag" data-key="${tag.key}" style="display: inline-flex; align-items: center; gap: 3px; background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 4px; padding: 1px 5px; font-size: 10.5px; color: #38bdf8; cursor: pointer;" title="Click to remove">
+                  ${tag.label} <span style="color: #f87171; font-weight: bold; margin-left: 2px;">✕</span>
+                </span>
+              `).join('')}
+            </div>
           ` : ''}
-          <button id="btn-bulk-clear" class="btn btn-secondary btn-sm" style="padding: 5px 10px; font-size: 12px;">✕ Clear Selection</button>
+
+          <!-- Collapsible Advanced Filters Panel (Brand, Model) -->
+          ${showAdvancedFilters ? `
+            <div class="advanced-filters-panel" style="padding: 4px 6px; margin-top: 2px; display: flex; gap: 8px;">
+              <div style="flex: 1;">
+                <label style="font-size: 10px; font-weight: 700; color: var(--text-secondary); margin-bottom: 2px; display: block;">Brand</label>
+                <select id="filter-brand" class="filter-select-compact" style="height: 28px; font-size: 11px;">
+                  <option value="">All Brands (${brands.length})</option>
+                  ${brands.map(b => `<option value="${b.id}" ${filters.brandId === b.id ? 'selected' : ''}>${b.name}</option>`).join('')}
+                </select>
+              </div>
+
+              <div style="flex: 1;">
+                <label style="font-size: 10px; font-weight: 700; color: var(--text-secondary); margin-bottom: 2px; display: block;">Model</label>
+                <select id="filter-model" class="filter-select-compact" style="height: 28px; font-size: 11px;">
+                  <option value="">All Models (${models.length})</option>
+                  ${models.map(m => `<option value="${m.id}" ${filters.modelId === m.id ? 'selected' : ''}>${m.name}</option>`).join('')}
+                </select>
+              </div>
+            </div>
+          ` : ''}
+
         </div>
-      </div>
+
+        <!-- 4. Bulk Selection Action Bar (when rows are selected) -->
+        <div id="inventory-bulk-actions-bar" style="display: ${selectedIds.size > 0 ? 'flex' : 'none'}; background: rgba(15, 23, 42, 0.98); border: 1.5px solid #ef4444; border-radius: var(--radius-md); padding: 6px 12px; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; box-shadow: 0 4px 14px rgba(220, 38, 38, 0.25);">
+          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <span style="font-weight: 800; color: #fff; font-size: 12.5px; display: flex; align-items: center; gap: 5px;">
+              <span>☑️</span> <strong id="bulk-selected-count" style="color: #38bdf8;">${selectedIds.size}</strong> machine(s) selected
+            </span>
+            <button id="btn-select-all-filtered" class="btn btn-ghost btn-sm" style="display: ${selectedIds.size < queryResult.total ? 'inline-block' : 'none'}; color: #38bdf8; font-size: 11px; font-weight: 700; text-decoration: underline; padding: 2px 5px;">
+              Select all ${queryResult.total} machines in current filter
+            </button>
+          </div>
+          <div style="display: flex; gap: 6px; align-items: center;">
+            ${authService.hasAccess('machines', 'DELETE') ? `
+              <button id="btn-bulk-delete" class="btn btn-danger btn-sm" style="font-weight: 800; background: #dc2626; border-color: #ef4444; color: #fff; padding: 4px 12px; font-size: 11.5px; box-shadow: 0 2px 8px rgba(220, 38, 38, 0.4);">
+                🗑️ Delete Selected (${selectedIds.size})
+              </button>
+            ` : ''}
+            <button id="btn-bulk-clear" class="btn btn-secondary btn-sm" style="padding: 4px 8px; font-size: 11.5px;">✕ Clear Selection</button>
+          </div>
+        </div>
+
+      </div> <!-- ── End of Pinned Top Control Deck ── -->
 
       <!-- 5. Real Excel-Style Machine Data Grid with Native Horizontal & Vertical Scroll -->
-      <div class="inventory-table-scroll-container" id="inventory-table-scroll-viewport">
+      <div class="inventory-table-scroll-container" id="inventory-table-scroll-viewport" style="flex: 1 1 0%; min-height: 250px; overflow: auto;">
         <table class="excel-grid-table">
           <thead>
             ${headerHtml}
@@ -744,7 +749,7 @@ export function renderInventoryTable() {
       </div>
 
       <!-- 6. Simplified Clean Pagination Bar -->
-      <div class="inventory-pagination-bar">
+      <div class="inventory-pagination-bar" style="flex-shrink: 0; margin-top: 2px;">
         
         <!-- Left: Showing 1–50 of 178 machines -->
         <div class="pagination-counter">
