@@ -18,7 +18,7 @@ import { renderMachineDetails, initMachineDetailsEvents } from './components/mac
 import { renderTransferModal, initTransferModalEvents } from './components/transferModal.js?v=4.24.0';
 import { renderTransferDetailsModal, initTransferDetailsModalEvents } from './components/transferDetailsModal.js?v=4.24.0';
 import { renderEditTransferModal, initEditTransferModalEvents } from './components/editTransferModal.js?v=4.24.0';
-import { renderTransfersView, initTransfersViewEvents } from './components/transfersView.js?v=4.24.0';
+import { renderTransfersView, initTransfersViewEvents } from './components/transfersView.js?v=4.24.1';
 import { renderTransferWorkflowBuilder, initTransferWorkflowBuilderEvents } from './components/transferWorkflowBuilder.js?v=4.24.0';
 import { renderMasterDataView, initMasterDataEvents } from './components/masterDataView.js?v=4.24.0';
 import { renderCustomFieldsMgr, initCustomFieldsEvents } from './components/customFieldsMgr.js?v=4.24.0';
