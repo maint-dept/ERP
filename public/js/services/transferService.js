@@ -1407,6 +1407,46 @@ class TransferService {
     XLSX.utils.book_append_sheet(wb, ws, 'Machine Transfers');
     XLSX.writeFile(wb, `Machine_Transfers_Report_${new Date().toISOString().split('T')[0]}.xlsx`);
   }
+
+  /**
+   * Delete a transfer request record permanently (Admin & Super Admin only)
+   * Also cleans up any related approval records and records an audit log.
+   */
+  async deleteTransferRequest(id) {
+    if (!authService.isAdmin() && !authService.isSuperAdmin()) {
+      throw new Error('Access Denied: Only Admin or Super Admin can delete transfer requests.');
+    }
+    const req = this.getTransferRequestById(id);
+    if (!req) {
+      throw new Error('Transfer request record not found.');
+    }
+
+    // Delete from TRANSFER_REQUESTS table with guaranteed DB persistence
+    await storage.deleteConfirmed(TABLE_NAMES.TRANSFER_REQUESTS, id);
+
+    // Also remove associated approval request if present
+    try {
+      const allApprovals = storage.getTable(TABLE_NAMES.APPROVAL_REQUESTS) || [];
+      const matchApproval = allApprovals.find(a => a.transferRequestId === id || a.entityId === id);
+      if (matchApproval) {
+        await storage.deleteConfirmed(TABLE_NAMES.APPROVAL_REQUESTS, matchApproval.id);
+      }
+    } catch (_) {}
+
+    // Record audit trail
+    try {
+      auditService.log(
+        'TRANSFER_DELETED',
+        'TRANSFER',
+        id,
+        `Transfer request #${req.requestNumber || id} for ${req.machineInfo?.machineName || 'Machine'} was permanently deleted by ${authService.getCurrentUser()?.username || 'Admin'}.`,
+        req,
+        null
+      );
+    } catch (_) {}
+
+    return true;
+  }
 }
 
 export const transferService = new TransferService();

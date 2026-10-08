@@ -2,6 +2,7 @@
  * Al-Muslim Group Garments Factory Maintenance Machine ERP
  * Machine Transfers Hub View Component
  * Complete overview of relocation requests, approval workflows, gate passes & history
+ * Enhanced with High-Performance Pagination & Admin/Super Admin Delete Management
  */
 
 import { storage } from '../db/storage.js';
@@ -16,9 +17,11 @@ import { state } from '../state.js';
 
 let transferSearchQuery = '';
 let transferStatusFilter = 'ALL';
+let transferCurrentPage = 1;
+let transferRowsPerPage = 25;
 
 export function renderTransfersView() {
-  const requests = transferService.getTransferRequests({
+  const allFiltered = transferService.getTransferRequests({
     search: transferSearchQuery,
     status: transferStatusFilter
   });
@@ -28,11 +31,41 @@ export function renderTransfersView() {
   const completedCount = allRequests.filter(r => (r?.status || '') === TRANSFER_STATUSES.COMPLETED).length;
   const rejectedCount = allRequests.filter(r => (r?.status || '') === TRANSFER_STATUSES.REJECTED).length;
 
+  const isAdmin = authService.isAdmin();
+  const isSuperAdmin = authService.getCurrentUser()?.role === 'super_admin';
+  const canDelete = isAdmin || isSuperAdmin;
+
+  // Pagination calculation matching machine inventory standard
+  const totalRecords = allFiltered.length;
+  const curLimit = transferRowsPerPage === 'ALL' ? totalRecords : Number(transferRowsPerPage);
+  const totalPages = transferRowsPerPage === 'ALL' ? 1 : Math.max(1, Math.ceil(totalRecords / curLimit));
+  if (transferCurrentPage > totalPages) transferCurrentPage = 1;
+  const startItem = totalRecords === 0 ? 0 : (transferCurrentPage - 1) * curLimit + 1;
+  const endItem = transferRowsPerPage === 'ALL' ? totalRecords : Math.min(transferCurrentPage * curLimit, totalRecords);
+  const requests = transferRowsPerPage === 'ALL' ? allFiltered : allFiltered.slice(startItem - 1, endItem);
+
+  // Generate numbered page buttons (identical to Inventory Table)
+  let pageButtonsHtml = '';
+  const maxButtons = 5;
+  let startP = Math.max(1, transferCurrentPage - 2);
+  let endP = Math.min(totalPages, startP + maxButtons - 1);
+  if (endP - startP < maxButtons - 1) {
+    startP = Math.max(1, endP - maxButtons + 1);
+  }
+
+  for (let p = startP; p <= endP; p++) {
+    pageButtonsHtml += `
+      <button class="page-btn btn-transfer-page-number ${p === transferCurrentPage ? 'active' : ''}" data-page="${p}">
+        ${p}
+      </button>
+    `;
+  }
+
   return `
-    <div class="page-view" style="padding: 6px 12px;">
+    <div class="page-view" style="padding: 6px 12px; display: flex; flex-direction: column; gap: 6px;">
 
       <!-- ── Single Tight Toolbar Row: Title + KPIs + Actions ── -->
-      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px; flex-wrap: wrap;">
+      <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
 
         <!-- Title block -->
         <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
@@ -91,7 +124,7 @@ export function renderTransfersView() {
       </div>
 
       <!-- ── Search + Filter Pills (single compact row) ── -->
-      <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 6px; flex-wrap: wrap; background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 7px; padding: 4px 8px;">
+      <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap; background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 7px; padding: 4px 8px;">
         <input
           type="text"
           id="transfers-search-input"
@@ -117,7 +150,7 @@ export function renderTransfersView() {
         </div>
       </div>
 
-      <!-- ── Main Transfers Table ── -->
+      <!-- ── Main Transfers Table Container ── -->
       <div class="transfers-table-container" style="-webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; text-rendering: optimizeLegibility;">
         ${requests.length === 0 ? `
           <div style="padding: 40px 20px; text-align: center; color: var(--text-muted);">
@@ -129,15 +162,15 @@ export function renderTransfersView() {
           <table class="transfers-table" style="width: 100% !important; margin: 0; -webkit-font-smoothing: antialiased;">
             <thead>
               <tr style="background: #0d1527;">
-                <th style="width: 11%; padding: 7px 8px; font-size: 11px; font-weight: 800; color: #ffffff; letter-spacing: 0.3px;">Request ID</th>
-                <th style="width: 17%; padding: 7px 8px; font-size: 11px; font-weight: 800; color: #ffffff; letter-spacing: 0.3px;">Equipment Details</th>
-                <th style="width: 13%; padding: 7px 8px; font-size: 11px; font-weight: 800; color: #ffffff; letter-spacing: 0.3px;">Source (From)</th>
-                <th style="width: 13%; padding: 7px 8px; font-size: 11px; font-weight: 800; color: #ffffff; letter-spacing: 0.3px;">Destination (To)</th>
-                <th style="width: 13%; padding: 7px 8px; font-size: 11px; font-weight: 800; color: #ffffff; letter-spacing: 0.3px;">Requester &amp; Date</th>
-                <th style="width: 13.5%; padding: 7px 8px; font-size: 11px; font-weight: 800; color: #ffffff; letter-spacing: 0.3px;">Approval Stage</th>
-                <th style="width: 4.5%; padding: 7px 6px; font-size: 11px; font-weight: 800; color: #ffffff; text-align: center;">Docs</th>
-                <th style="width: 7.5%; padding: 7px 6px; font-size: 11px; font-weight: 800; color: #ffffff; text-align: center;">Status</th>
-                <th style="width: 9%; padding: 7px 6px; font-size: 11px; font-weight: 800; color: #ffffff; text-align: center; background: #0b1329;">Actions</th>
+                <th style="width: 10%; padding: 7px 8px; font-size: 11px; font-weight: 800; color: #ffffff; letter-spacing: 0.3px;">Request ID</th>
+                <th style="width: 16%; padding: 7px 8px; font-size: 11px; font-weight: 800; color: #ffffff; letter-spacing: 0.3px;">Equipment Details</th>
+                <th style="width: 12%; padding: 7px 8px; font-size: 11px; font-weight: 800; color: #ffffff; letter-spacing: 0.3px;">Source (From)</th>
+                <th style="width: 12%; padding: 7px 8px; font-size: 11px; font-weight: 800; color: #ffffff; letter-spacing: 0.3px;">Destination (To)</th>
+                <th style="width: 12%; padding: 7px 8px; font-size: 11px; font-weight: 800; color: #ffffff; letter-spacing: 0.3px;">Requester &amp; Date</th>
+                <th style="width: 13%; padding: 7px 8px; font-size: 11px; font-weight: 800; color: #ffffff; letter-spacing: 0.3px;">Approval Stage</th>
+                <th style="width: 4%; padding: 7px 6px; font-size: 11px; font-weight: 800; color: #ffffff; text-align: center;">Docs</th>
+                <th style="width: 7%; padding: 7px 6px; font-size: 11px; font-weight: 800; color: #ffffff; text-align: center;">Status</th>
+                <th style="width: ${canDelete ? '16%' : '11%'}; padding: 7px 6px; font-size: 11px; font-weight: 800; color: #ffffff; text-align: center; background: #0b1329;">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -153,24 +186,20 @@ export function renderTransfersView() {
 
                 const statusBadge = isCompleted ? 'badge-active' : (isRejected ? 'badge-breakdown' : (isRevision ? 'badge-maint' : 'badge-idle'));
 
-                // Parse requester name & role cleanly
                 const rawRequester = req.requestedByName || 'Requester';
                 const nameMatch = rawRequester.match(/^(.*?)(?:\s*\((.*?)\))?$/);
                 const personName = nameMatch ? nameMatch[1].trim() : rawRequester;
                 const personRole = nameMatch && nameMatch[2] ? nameMatch[2].trim() : null;
                 const formattedDate = req.requestedAt ? new Date(req.requestedAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
 
-                // Current Stage Title
                 const currentLvl = Number(req.currentLevel) || 1;
                 const stageTitle = isCompleted ? 'Final Gate Pass Approved' : (req.levels?.[currentLvl - 1]?.title || 'In Review');
                 const displayStatus = safeStatus === 'PENDING_APPROVAL' ? 'Pending' : (safeStatus === 'PARTIALLY_APPROVED' ? 'In Progress' : safeStatus.replace(/_/g, ' '));
 
-                // Resolve equipment details using comprehensive engine
                 const eq = resolveTransferMachineDetails(req);
 
                 return `
                   <tr class="transfer-row-item" data-id="${req.id}" title="Click row to view complete transfer details and audit trail" style="border-bottom: 1px solid rgba(255, 255, 255, 0.07);">
-                    <!-- Request ID -->
                     <td>
                       <div class="transfer-id-badge">
                         <span style="font-weight: 800; font-size: 12px; color: #38bdf8; font-family: var(--font-mono); letter-spacing: 0.3px;">${req.requestNumber || req.id || 'TR-REQ'}</span>
@@ -180,14 +209,9 @@ export function renderTransfersView() {
                       </div>
                     </td>
 
-                    <!-- Equipment Details (Sharp, High Contrast) -->
                     <td>
-                      <div style="font-weight: 800; color: #ffffff; font-size: 12.5px; line-height: 1.25; margin-bottom: 2px;">
-                        ${eq.machineName}
-                      </div>
-                      <div style="font-size: 11px; color: #cbd5e1; font-weight: 600; margin-bottom: 3px;">
-                        ${eq.brandModelText}
-                      </div>
+                      <div style="font-weight: 800; color: #ffffff; font-size: 12.5px; line-height: 1.25; margin-bottom: 2px;">${eq.machineName}</div>
+                      <div style="font-size: 11px; color: #cbd5e1; font-weight: 600; margin-bottom: 3px;">${eq.brandModelText}</div>
                       <div>
                         <span style="font-family: var(--font-mono); font-size: 10px; color: #38bdf8; font-weight: 800; background: rgba(56,189,248,0.14); border: 1px solid rgba(56,189,248,0.35); padding: 1px 6px; border-radius: 3px; display: inline-block;">
                           SN: ${eq.serialNumber}
@@ -195,103 +219,70 @@ export function renderTransfersView() {
                       </div>
                     </td>
 
-                    <!-- Source Location (From) -->
                     <td>
                       <div style="display: flex; align-items: center; gap: 5px; margin-bottom: 2px;">
-                        <span style="font-size: 9px; font-weight: 800; background: rgba(239, 68, 68, 0.22); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.45); padding: 1px 4px; border-radius: 3px;">FROM</span>
+                        <span style="font-size: 9px; font-weight: 800; background: rgba(239,68,68,0.22); color: #f87171; border: 1px solid rgba(239,68,68,0.45); padding: 1px 4px; border-radius: 3px;">FROM</span>
                         <span style="font-size: 12px; font-weight: 800; color: #f8fafc;">${req.sourceLocation?.line || 'Line —'}</span>
                       </div>
-                      <div style="font-size: 11px; color: #cbd5e1; font-weight: 600; line-height: 1.25;" title="${req.sourceLocation?.unit || ''}">
-                        ${req.sourceLocation?.floor || '—'}
-                      </div>
-                      ${req.sourceLocation?.unit ? `
-                        <div style="font-size: 9.5px; color: #94a3b8; margin-top: 1px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${req.sourceLocation.unit}">
-                          ${req.sourceLocation.unit}
-                        </div>
-                      ` : ''}
+                      <div style="font-size: 11px; color: #cbd5e1; font-weight: 600; line-height: 1.25;">${req.sourceLocation?.floor || '—'}</div>
+                      ${req.sourceLocation?.unit ? `<div style="font-size: 9.5px; color: #94a3b8; margin-top: 1px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${req.sourceLocation.unit}">${req.sourceLocation.unit}</div>` : ''}
                     </td>
 
-                    <!-- Destination Location (To) -->
                     <td>
                       <div style="display: flex; align-items: center; gap: 5px; margin-bottom: 2px;">
-                        <span style="font-size: 9px; font-weight: 800; background: rgba(16, 185, 129, 0.22); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.45); padding: 1px 4px; border-radius: 3px;">TO</span>
+                        <span style="font-size: 9px; font-weight: 800; background: rgba(16,185,129,0.22); color: #34d399; border: 1px solid rgba(16,185,129,0.45); padding: 1px 4px; border-radius: 3px;">TO</span>
                         <span style="font-size: 12px; font-weight: 800; color: #34d399;">${req.destLocation?.line || 'Line —'}</span>
                       </div>
-                      <div style="font-size: 11px; color: #cbd5e1; font-weight: 600; line-height: 1.25;" title="${req.destLocation?.unit || ''}">
-                        ${req.destLocation?.floor || '—'}
-                      </div>
-                      ${req.destLocation?.unit ? `
-                        <div style="font-size: 9.5px; color: #94a3b8; margin-top: 1px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${req.destLocation.unit}">
-                          ${req.destLocation.unit}
-                        </div>
-                      ` : ''}
+                      <div style="font-size: 11px; color: #cbd5e1; font-weight: 600; line-height: 1.25;">${req.destLocation?.floor || '—'}</div>
+                      ${req.destLocation?.unit ? `<div style="font-size: 9.5px; color: #94a3b8; margin-top: 1px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${req.destLocation.unit}">${req.destLocation.unit}</div>` : ''}
                     </td>
 
-                    <!-- Requester & Date -->
                     <td>
-                      <div style="font-weight: 800; color: #ffffff; font-size: 12px; line-height: 1.25;">
-                        ${personName}
-                      </div>
-                      ${personRole ? `
-                        <div style="font-size: 10px; color: #cbd5e1; font-weight: 600; margin-top: 1px;">
-                          ${personRole}
-                        </div>
-                      ` : ''}
-                      <div style="font-size: 10.5px; color: #38bdf8; font-weight: 700; margin-top: 2px; display: flex; align-items: center; gap: 3px;">
-                        📅 ${formattedDate}
-                      </div>
+                      <div style="font-weight: 800; color: #ffffff; font-size: 12px; line-height: 1.25;">${personName}</div>
+                      ${personRole ? `<div style="font-size: 10px; color: #cbd5e1; font-weight: 600; margin-top: 1px;">${personRole}</div>` : ''}
+                      <div style="font-size: 10.5px; color: #38bdf8; font-weight: 700; margin-top: 2px; display: flex; align-items: center; gap: 3px;">📅 ${formattedDate}</div>
                     </td>
 
-                    <!-- Approval Stage -->
                     <td>
                       <div style="margin-bottom: 2px;">
                         <span class="stage-pill ${isCompleted ? 'stage-pill-completed' : 'stage-pill-pending'}" style="font-size: 10px; font-weight: 800; padding: 2px 7px; border-radius: 4px;">
                           ${isCompleted ? '✓ Completed' : `⏳ Stage ${req.currentLevel || 1}/${req.totalLevels || 1}`}
                         </span>
                       </div>
-                      <div style="font-size: 10.5px; color: #cbd5e1; font-weight: 600; line-height: 1.25;" title="${stageTitle}">
-                        ${stageTitle}
-                      </div>
+                      <div style="font-size: 10.5px; color: #cbd5e1; font-weight: 600; line-height: 1.25;" title="${stageTitle}">${stageTitle}</div>
                     </td>
 
-                    <!-- Attached Documents -->
                     <td style="text-align: center;">
-                      <span class="badge badge-idle" style="font-size: 10px; padding: 2px 6px; font-weight: 700; color: #f1f5f9;">
-                        📄 ${(req.documents || []).length}
-                      </span>
+                      <span class="badge badge-idle" style="font-size: 10px; padding: 2px 6px; font-weight: 700; color: #f1f5f9;">📄 ${(req.documents || []).length}</span>
                     </td>
 
-                    <!-- Status -->
                     <td style="text-align: center;">
-                      <span class="badge ${statusBadge}" style="font-size: 10px; padding: 3px 8px; font-weight: 800; letter-spacing: 0.2px;">
-                        ${displayStatus}
-                      </span>
-                      ${isRejected && req.rejectionReason ? `
-                        <div style="font-size: 9px; color: #f87171; margin-top: 2px; line-height: 1.2; font-weight: 600;" title="${req.rejectionReason}">
-                          ⚠️ ${req.rejectionReason}
-                        </div>
-                      ` : ''}
+                      <span class="badge ${statusBadge}" style="font-size: 10px; padding: 3px 8px; font-weight: 800; letter-spacing: 0.2px;">${displayStatus}</span>
+                      ${isRejected && req.rejectionReason ? `<div style="font-size: 9px; color: #f87171; margin-top: 2px; line-height: 1.2; font-weight: 600;" title="${req.rejectionReason}">⚠️ ${req.rejectionReason}</div>` : ''}
                     </td>
 
-                    <!-- Actions -->
                     <td style="text-align: center;" onclick="event.stopPropagation();">
-                      <div style="display: flex; justify-content: center; gap: 4px; align-items: center;">
+                      <div style="display: flex; justify-content: center; gap: 3px; align-items: center; flex-wrap: wrap;">
                         ${isPending && canApprove ? `
-                          <button class="btn btn-success btn-sm btn-quick-approve-transfer" data-id="${req.id}" title="One-Click Instant Approval" style="font-size: 10px; padding: 4px 7px; font-weight: 800; background: linear-gradient(135deg, #10b981, #059669); border-color: #10b981; box-shadow: 0 2px 6px rgba(16, 185, 129, 0.4); white-space: nowrap; cursor: pointer;">
+                          <button class="btn btn-success btn-sm btn-quick-approve-transfer" data-id="${req.id}" title="One-Click Approve" style="font-size: 10px; padding: 3px 6px; font-weight: 800; background: linear-gradient(135deg, #10b981, #059669); border-color: #10b981; white-space: nowrap; cursor: pointer;">
                             ⚡ Approve
                           </button>
                         ` : ''}
-                        <button class="btn ${isPending && !canApprove ? 'btn-primary' : 'btn-secondary'} btn-sm btn-view-transfer-details" data-id="${req.id}" style="font-size: 10px; padding: 4px 7px; font-weight: 700; white-space: nowrap;">
+                        <button class="btn ${isPending && !canApprove ? 'btn-primary' : 'btn-secondary'} btn-sm btn-view-transfer-details" data-id="${req.id}" style="font-size: 10px; padding: 3px 6px; font-weight: 700; white-space: nowrap;">
                           ${isPending ? 'Details' : 'View'}
                         </button>
                         ${!isCompleted && !isRejected && (req.requestedBy === authService.getCurrentUser()?.id || authService.isAdmin()) ? `
-                          <button class="btn btn-warning btn-sm btn-edit-transfer-row" data-id="${req.id}" title="Edit destination location before approval" style="font-size: 10px; padding: 4px 7px; font-weight: 700; white-space: nowrap; background: rgba(245, 158, 11, 0.2); border: 1px solid #f59e0b; color: #fbbf24;">
-                            ✏️ Edit
+                          <button class="btn btn-warning btn-sm btn-edit-transfer-row" data-id="${req.id}" title="Edit" style="font-size: 10px; padding: 3px 6px; font-weight: 700; white-space: nowrap; background: rgba(245,158,11,0.2); border: 1px solid #f59e0b; color: #fbbf24;">
+                            ✏️
                           </button>
                         ` : ''}
-                        <button class="btn btn-ghost btn-sm btn-print-transfer-row" data-id="${req.id}" title="Print Official PDF Gate Pass" style="font-size: 11px; padding: 4px 6px; color: #38bdf8;">
-                          🖨️
-                        </button>
+                        <button class="btn btn-ghost btn-sm btn-print-transfer-row" data-id="${req.id}" title="Print Gate Pass" style="font-size: 11px; padding: 3px 5px; color: #38bdf8;">🖨️</button>
+                        ${canDelete ? `
+                          <button class="btn btn-danger btn-sm btn-delete-transfer-row" data-id="${req.id}" data-num="${req.requestNumber || req.id}" title="Delete Transfer Request (Admin Only)"
+                            style="font-size: 10px; padding: 3px 6px; font-weight: 700; white-space: nowrap; background: rgba(239,68,68,0.2); border: 1px solid #ef4444; color: #f87171; cursor: pointer; transition: all 0.15s ease;">
+                            🗑️ Delete
+                          </button>
+                        ` : ''}
                       </div>
                     </td>
                   </tr>
@@ -301,6 +292,44 @@ export function renderTransfersView() {
           </table>
         `}
       </div>
+
+      <!-- ── Simplified Clean Pagination Bar (Matches Image 2 Style) ── -->
+      ${totalRecords > 0 ? `
+        <div class="inventory-pagination-bar" style="margin-top: 4px;">
+          
+          <!-- Left: Showing 1–25 of 30 transfers -->
+          <div class="pagination-counter">
+            Showing <strong style="color: #fff;">${startItem}–${endItem}</strong> of <strong style="color: #38bdf8;">${totalRecords}</strong> transfers
+          </div>
+
+          <!-- Middle: Rows per page: [ 10 | 25 | 50 | 100 | All ] -->
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--text-secondary);">
+            <span>Rows per page:</span>
+            <select id="transfers-rows-per-page" class="filter-select-compact" style="width: 80px; height: 32px; font-size: 12px;">
+              <option value="10" ${transferRowsPerPage === 10 ? 'selected' : ''}>10</option>
+              <option value="25" ${transferRowsPerPage === 25 ? 'selected' : ''}>25</option>
+              <option value="50" ${transferRowsPerPage === 50 ? 'selected' : ''}>50</option>
+              <option value="100" ${transferRowsPerPage === 100 ? 'selected' : ''}>100</option>
+              <option value="ALL" ${transferRowsPerPage === 'ALL' ? 'selected' : ''}>All</option>
+            </select>
+          </div>
+
+          <!-- Right: Previous | 1 | 2 | 3 | Next -->
+          <div class="pagination-controls">
+            <button id="btn-transfers-prev-page" class="page-btn" ${transferCurrentPage <= 1 ? 'disabled' : ''} title="Previous page">
+              ◀ Previous
+            </button>
+            
+            ${pageButtonsHtml}
+
+            <button id="btn-transfers-next-page" class="page-btn" ${transferCurrentPage >= totalPages ? 'disabled' : ''} title="Next page">
+              Next ▶
+            </button>
+          </div>
+
+        </div>
+      ` : ''}
+
     </div>
   `;
 }
@@ -311,30 +340,80 @@ export function initTransfersViewEvents() {
   if (searchInput) {
     searchInput.addEventListener('input', (e) => {
       transferSearchQuery = e.target.value;
+      transferCurrentPage = 1;
       state.emit('inventory:updated');
     });
   }
 
-  // Status pills
+  // Status filter pills
   document.querySelectorAll('.btn-filter-status').forEach(btn => {
     btn.addEventListener('click', () => {
       transferStatusFilter = btn.getAttribute('data-status');
+      transferCurrentPage = 1;
       state.emit('inventory:updated');
     });
   });
 
-  // Clickable KPI chips filter status
+  // Clickable KPI chips
   document.querySelectorAll('.kpi-chip').forEach(chip => {
     chip.addEventListener('click', () => {
       const status = chip.getAttribute('data-status');
       if (status) {
         transferStatusFilter = status;
+        transferCurrentPage = 1;
         state.emit('inventory:updated');
       }
     });
   });
 
-  // 1-Click Quick Approve from Table Row
+  // Rows per page selector
+  const rowsSelect = document.getElementById('transfers-rows-per-page');
+  if (rowsSelect) {
+    rowsSelect.addEventListener('change', (e) => {
+      const val = e.target.value;
+      transferRowsPerPage = val === 'ALL' ? 'ALL' : parseInt(val, 10);
+      transferCurrentPage = 1;
+      state.emit('inventory:updated');
+    });
+  }
+
+  // Prev / Next Page Buttons
+  const btnPrev = document.getElementById('btn-transfers-prev-page');
+  if (btnPrev) {
+    btnPrev.addEventListener('click', () => {
+      if (transferCurrentPage > 1) {
+        transferCurrentPage--;
+        state.emit('inventory:updated');
+        const container = document.querySelector('.transfers-table-container');
+        if (container) container.scrollTop = 0;
+      }
+    });
+  }
+
+  const btnNext = document.getElementById('btn-transfers-next-page');
+  if (btnNext) {
+    btnNext.addEventListener('click', () => {
+      transferCurrentPage++;
+      state.emit('inventory:updated');
+      const container = document.querySelector('.transfers-table-container');
+      if (container) container.scrollTop = 0;
+    });
+  }
+
+  // Numbered Page Buttons
+  document.querySelectorAll('.btn-transfer-page-number').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const page = parseInt(btn.getAttribute('data-page'), 10);
+      if (!isNaN(page) && page >= 1) {
+        transferCurrentPage = page;
+        state.emit('inventory:updated');
+        const container = document.querySelector('.transfers-table-container');
+        if (container) container.scrollTop = 0;
+      }
+    });
+  });
+
+  // 1-Click Quick Approve
   document.querySelectorAll('.btn-quick-approve-transfer').forEach(btn => {
     btn.addEventListener('click', async (e) => {
       e.stopPropagation();
@@ -382,11 +461,38 @@ export function initTransfersViewEvents() {
 
   // Print PDF row button
   document.querySelectorAll('.btn-print-transfer-row').forEach(btn => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
       const id = btn.getAttribute('data-id');
       const req = transferService.getTransferRequestById(id);
       if (req) {
         pdfService.generateTransferGatePassPDF(req);
+      }
+    });
+  });
+
+  // 🗑️ Delete transfer (Admin / Super Admin only)
+  document.querySelectorAll('.btn-delete-transfer-row').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const id = btn.getAttribute('data-id');
+      const num = btn.getAttribute('data-num');
+      if (!id) return;
+
+      const confirmed = window.confirm(
+        `⚠️ DELETE Transfer Record\n\nRequest Number: ${num}\n\nAre you sure you want to permanently delete this transfer record and all its approval history? This cannot be undone.`
+      );
+      if (!confirmed) return;
+
+      try {
+        await transferService.deleteTransferRequest(id);
+        notificationService.success(`Transfer #${num} deleted successfully.`);
+        // Reset to page 1 if current page becomes empty
+        transferCurrentPage = 1;
+        state.emit('inventory:updated');
+        window.dispatchEvent(new CustomEvent('erp:transfers-updated'));
+      } catch (err) {
+        notificationService.error('Delete failed: ' + err.message);
       }
     });
   });

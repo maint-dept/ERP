@@ -16,9 +16,9 @@ import { renderInventoryTable, initInventoryTableEvents, syncInventorySelectionD
 import { renderMachineModal, initMachineModalEvents } from './components/machineModal.js?v=4.24.0';
 import { renderMachineDetails, initMachineDetailsEvents } from './components/machineDetails.js?v=4.24.0';
 import { renderTransferModal, initTransferModalEvents } from './components/transferModal.js?v=4.24.0';
-import { renderTransferDetailsModal, initTransferDetailsModalEvents } from './components/transferDetailsModal.js?v=4.24.0';
+import { renderTransferDetailsModal, initTransferDetailsModalEvents } from './components/transferDetailsModal.js?v=4.24.2';
 import { renderEditTransferModal, initEditTransferModalEvents } from './components/editTransferModal.js?v=4.24.0';
-import { renderTransfersView, initTransfersViewEvents } from './components/transfersView.js?v=4.24.1';
+import { renderTransfersView, initTransfersViewEvents } from './components/transfersView.js?v=4.24.2';
 import { renderTransferWorkflowBuilder, initTransferWorkflowBuilderEvents } from './components/transferWorkflowBuilder.js?v=4.24.0';
 import { renderMasterDataView, initMasterDataEvents } from './components/masterDataView.js?v=4.24.0';
 import { renderCustomFieldsMgr, initCustomFieldsEvents } from './components/customFieldsMgr.js?v=4.24.0';

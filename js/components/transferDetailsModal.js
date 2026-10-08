@@ -376,6 +376,12 @@ export function renderTransferDetailsModal() {
               </button>
             ` : ''}
 
+            ${authService.isAdmin() ? `
+              <button id="btn-action-delete-transfer-modal" class="btn btn-danger btn-sm" data-id="${req.id}" data-num="${req.requestNumber || req.id}" style="font-weight: 700; font-size: 12px; padding: 6px 14px; background: #dc2626; border-color: #ef4444; color: #fff;">
+                🗑️ Delete Record
+              </button>
+            ` : ''}
+
             <button id="btn-close-transfer-modal-footer" class="btn btn-secondary">Close</button>
           </div>
         </div>
@@ -483,6 +489,25 @@ export function initTransferDetailsModalEvents() {
           window.dispatchEvent(new CustomEvent('erp:transfers-updated'));
         } catch (err) {
           notificationService.error('Error: ' + err.message);
+        }
+      }
+    });
+  }
+
+  // Delete Transfer Request Action (Admin & Super Admin)
+  const btnDeleteModal = document.getElementById('btn-action-delete-transfer-modal');
+  if (btnDeleteModal && req) {
+    btnDeleteModal.addEventListener('click', async () => {
+      const confirmMsg = `⚠️ PERMANENTLY DELETE TRANSFER RECORD\n\nRequest Number: ${req.requestNumber || req.id}\nEquipment: ${req.machineInfo?.machineName || 'Machine'}\n\nAre you sure you want to permanently delete this transfer record and all its approval history? This action cannot be undone.`;
+      if (confirm(confirmMsg)) {
+        try {
+          closeModal();
+          await transferService.deleteTransferRequest(req.id);
+          notificationService.success(`Transfer record #${req.requestNumber || req.id} was permanently deleted.`);
+          state.emit('inventory:updated');
+          window.dispatchEvent(new CustomEvent('erp:transfers-updated'));
+        } catch (err) {
+          notificationService.error('Delete failed: ' + err.message);
         }
       }
     });
