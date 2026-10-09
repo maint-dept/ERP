@@ -262,6 +262,15 @@ function renderGroupedMachinesView() {
               ${isAdmin ? `
                 <button 
                   type="button" 
+                  class="btn btn-ghost btn-sm btn-edit-machine-group" 
+                  data-machine="${grp.machineName}" 
+                  style="font-size: 11px; font-weight: 700; padding: 4px 10px; color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); background: rgba(56, 189, 248, 0.08); border-radius: 4px;" 
+                  title="Rename Machine Type"
+                >
+                  ✏️ Rename
+                </button>
+                <button 
+                  type="button" 
                   class="btn btn-primary btn-sm btn-open-bulk-add-models" 
                   data-machine="${grp.machineName}" 
                   style="font-size: 11.5px; font-weight: 800; padding: 4px 12px; background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);"
@@ -291,7 +300,10 @@ function renderGroupedMachinesView() {
                   <strong style="font-family: var(--font-mono); font-size: 12.5px; color: #fff;">${m.model}</strong>
                   
                   ${isAdmin ? `
-                    <div style="display: inline-flex; gap: 2px; margin-left: 4px; border-left: 1px solid rgba(255,255,255,0.12); padding-left: 6px;">
+                    <div style="display: inline-flex; align-items: center; gap: 3px; margin-left: 4px; border-left: 1px solid rgba(255,255,255,0.12); padding-left: 6px;">
+                      <button type="button" class="btn btn-ghost btn-sm btn-edit-model-item" data-id="${m.id}" data-model="${m.model}" data-machine="${grp.machineName}" data-brand="${m.brand}" data-status="${m.status || 'ACTIVE'}" style="padding: 1px 4px; font-size: 10px; color: #38bdf8; line-height: 1;" title="Edit Model Specification">
+                        ✏️
+                      </button>
                       <button type="button" class="btn btn-ghost btn-sm btn-delete-storage-item" data-id="${m.id}" data-model="${m.model}" data-machine="${grp.machineName}" style="padding: 1px 4px; font-size: 10px; color: #f87171; line-height: 1;" title="Delete Model">
                         ✕
                       </button>
@@ -332,7 +344,8 @@ function renderStorageItemsTab() {
         brand: m.brand,
         model: m.model,
         serialNo: m.serialNo,
-        id: m.id
+        id: m.id,
+        status: m.status || 'ACTIVE'
       });
     });
   });
@@ -407,7 +420,7 @@ function renderStorageItemsTab() {
             <th style="padding: 10px 14px; width: 140px; color: #34d399;">Brand</th>
             <th style="padding: 10px 14px; color: #fbbf24;">Model Number</th>
             <th style="padding: 10px 14px; width: 100px; text-align: center; color: #94a3b8;">Status</th>
-            ${isAdmin ? `<th style="padding: 10px 14px; width: 80px; text-align: right; color: #94a3b8;">Actions</th>` : ''}
+            ${isAdmin ? `<th style="padding: 10px 14px; width: 120px; text-align: right; color: #94a3b8;">Actions</th>` : ''}
           </tr>
         </thead>
         <tbody>
@@ -431,13 +444,18 @@ function renderStorageItemsTab() {
               </td>
               <td style="padding: 8px 14px; font-family: var(--font-mono); font-weight: 700; color: #fff;">${row.model}</td>
               <td style="padding: 8px 14px; text-align: center;">
-                <span class="badge badge-active" style="font-size: 10px;">ACTIVE</span>
+                <span class="badge ${row.status === 'INACTIVE' ? 'badge-inactive' : 'badge-active'}" style="font-size: 10px;">${row.status || 'ACTIVE'}</span>
               </td>
               ${isAdmin ? `
                 <td style="padding: 8px 14px; text-align: right;">
-                  <button type="button" class="btn btn-ghost btn-sm btn-delete-storage-item" data-id="${row.id}" data-model="${row.model}" data-machine="${row.machineName}" style="color: #f87171; font-size: 11px; padding: 2px 6px;" title="Delete Model">
-                    ✕
-                  </button>
+                  <div style="display: inline-flex; align-items: center; gap: 4px; justify-content: flex-end;">
+                    <button type="button" class="btn btn-ghost btn-sm btn-edit-model-item" data-id="${row.id}" data-model="${row.model}" data-machine="${row.machineName}" data-brand="${row.brand}" data-status="${row.status || 'ACTIVE'}" style="color: #38bdf8; font-size: 11px; padding: 2px 7px; border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 4px; font-weight: 700; background: rgba(56, 189, 248, 0.08);" title="Edit Model Specification">
+                      ✏️ Edit
+                    </button>
+                    <button type="button" class="btn btn-ghost btn-sm btn-delete-storage-item" data-id="${row.id}" data-model="${row.model}" data-machine="${row.machineName}" style="color: #f87171; font-size: 11px; padding: 2px 6px;" title="Delete Model">
+                      ✕
+                    </button>
+                  </div>
                 </td>
               ` : ''}
             </tr>
@@ -1121,9 +1139,14 @@ function renderStorageModal() {
                     <span style="font-size: 14px;">🏷️</span>
                     <strong style="font-size: 13px; color: #34d399; letter-spacing: 0.5px;">${b.name}</strong>
                   </div>
-                  <button type="button" class="btn btn-ghost btn-sm btn-delete-brand-record" data-id="${b.id}" data-name="${b.name}" style="color: #f87171; font-size: 11.5px; padding: 2px 8px;" title="Delete Brand">
-                    🗑️ Delete
-                  </button>
+                  <div style="display: flex; align-items: center; gap: 6px;">
+                    <button type="button" class="btn btn-ghost btn-sm btn-edit-brand-record" data-id="${b.id}" data-name="${b.name}" style="color: #38bdf8; font-size: 11.5px; padding: 2px 8px; border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 4px;" title="Edit / Rename Brand">
+                      ✏️ Edit
+                    </button>
+                    <button type="button" class="btn btn-ghost btn-sm btn-delete-brand-record" data-id="${b.id}" data-name="${b.name}" style="color: #f87171; font-size: 11.5px; padding: 2px 8px;" title="Delete Brand">
+                      🗑️ Delete
+                    </button>
+                  </div>
                 </div>
               `).join('')}
             </div>
@@ -1386,6 +1409,220 @@ function renderStorageModal() {
     `;
   }
 
+  // 1B-EDIT. EDIT MODEL SPECIFICATION MODAL
+  if (activeModalState.type === 'EDIT_MODEL_SPEC') {
+    const data = activeModalState.data || {};
+    const allMachineNames = smartStorageService.getAllMachineNames();
+    const registeredBrands = storage.getTable(TABLE_NAMES.BRANDS) || [];
+    const brandSet = new Set();
+    registeredBrands.forEach(b => {
+      if (b && b.name && b.name.trim()) brandSet.add(b.name.trim().toUpperCase());
+    });
+    const allHierarchyGroups = smartStorageService.getMachineModelsHierarchy();
+    allHierarchyGroups.forEach(g => {
+      (g.models || []).forEach(m => {
+        if (m.brand && m.brand.trim()) brandSet.add(m.brand.trim().toUpperCase());
+      });
+    });
+    const allBrands = Array.from(brandSet).sort();
+
+    return `
+      <div class="modal-overlay" id="modal-edit-model-spec-overlay">
+        <div class="modal-dialog" style="max-width: 500px; width: 95%;">
+          <div class="modal-header" style="border-bottom: 1px solid var(--border-color); padding: 14px 18px;">
+            <div class="modal-title" style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 18px;">✏️</span>
+              <span style="font-weight: 800; font-size: 15px; color: #fff;">Edit Model Specification</span>
+              <span class="badge badge-active" style="font-size: 11px;">${data.model || ''}</span>
+            </div>
+            <button type="button" id="btn-close-storage-modal" class="btn btn-ghost btn-sm">✕</button>
+          </div>
+
+          <form id="form-edit-model-spec" class="modal-body" style="padding: 18px; display: flex; flex-direction: column; gap: 14px;">
+            <input type="hidden" id="inp-edit-model-id" value="${data.id || ''}" />
+            <input type="hidden" id="inp-orig-machine" value="${data.machineName || ''}" />
+            <input type="hidden" id="inp-orig-brand" value="${data.brand || ''}" />
+            <input type="hidden" id="inp-orig-model" value="${data.model || ''}" />
+
+            <!-- Machine Name -->
+            <div class="form-group" style="display: flex; flex-direction: column; gap: 5px;">
+              <label class="form-label" style="font-weight: 700; color: #38bdf8; font-size: 12px; margin: 0;">
+                Machine Name / Type *
+              </label>
+              <input 
+                type="text" 
+                id="inp-edit-machine-name" 
+                class="form-control" 
+                list="list-edit-machines" 
+                value="${data.machineName || ''}" 
+                placeholder="Select or enter machine type..." 
+                required 
+                style="font-size: 12.5px; font-weight: 700;"
+              />
+              <datalist id="list-edit-machines">
+                ${allMachineNames.map(mn => `<option value="${mn}"></option>`).join('')}
+              </datalist>
+              <span style="font-size: 11px; color: var(--text-muted);">Assign to an existing machine type or type a new one.</span>
+            </div>
+
+            <!-- Brand -->
+            <div class="form-group" style="display: flex; flex-direction: column; gap: 5px;">
+              <label class="form-label" style="font-weight: 700; color: #34d399; font-size: 12px; margin: 0;">
+                Brand *
+              </label>
+              <input 
+                type="text" 
+                id="inp-edit-brand-name" 
+                class="form-control" 
+                list="list-edit-brands" 
+                value="${data.brand || 'JUKI'}" 
+                placeholder="e.g. JUKI, BROTHER, PEGASUS, SIRUBA..." 
+                required 
+                style="font-size: 12.5px; font-weight: 700; text-transform: uppercase;"
+              />
+              <datalist id="list-edit-brands">
+                ${allBrands.map(b => `<option value="${b}"></option>`).join('')}
+              </datalist>
+              <span style="font-size: 11px; color: var(--text-muted);">Brand will be saved in uppercase.</span>
+            </div>
+
+            <!-- Model Number -->
+            <div class="form-group" style="display: flex; flex-direction: column; gap: 5px;">
+              <label class="form-label" style="font-weight: 700; color: #fbbf24; font-size: 12px; margin: 0;">
+                Model Number / Spec *
+              </label>
+              <input 
+                type="text" 
+                id="inp-edit-model-number" 
+                class="form-control" 
+                value="${data.model || ''}" 
+                placeholder="e.g. DDL-9000A-SH, MO-6814S..." 
+                required 
+                style="font-family: var(--font-mono); font-size: 13px; font-weight: 700;"
+              />
+            </div>
+
+            <!-- Status -->
+            <div class="form-group" style="display: flex; flex-direction: column; gap: 5px;">
+              <label class="form-label" style="font-weight: 700; color: #94a3b8; font-size: 12px; margin: 0;">
+                Status
+              </label>
+              <select id="sel-edit-model-status" class="form-control" style="font-size: 12px; font-weight: 700;">
+                <option value="ACTIVE" ${(data.status || 'ACTIVE') === 'ACTIVE' ? 'selected' : ''}>ACTIVE (Available in inventory &amp; operations)</option>
+                <option value="INACTIVE" ${(data.status || '') === 'INACTIVE' ? 'selected' : ''}>INACTIVE</option>
+              </select>
+            </div>
+
+            <div class="modal-footer" style="padding: 12px 0 0; display: flex; justify-content: flex-end; gap: 8px; border-top: 1px solid var(--border-color);">
+              <button type="button" id="btn-cancel-storage-modal" class="btn btn-secondary btn-sm" style="font-weight: 700;">Cancel</button>
+              <button type="submit" id="btn-submit-edit-model-spec" class="btn btn-primary btn-sm" style="font-weight: 800; background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);">
+                💾 Save Changes
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    `;
+  }
+
+  // 1B-RENAME-MACHINE. RENAME MACHINE TYPE MODAL
+  if (activeModalState.type === 'EDIT_MACHINE_NAME') {
+    const curName = activeModalState.machineName || '';
+    const returnTo = activeModalState.returnTo || null;
+    return `
+      <div class="modal-overlay" id="modal-edit-machine-name-overlay">
+        <div class="modal-dialog" style="max-width: 480px; width: 95%;">
+          <div class="modal-header" style="border-bottom: 1px solid var(--border-color); padding: 14px 18px;">
+            <div class="modal-title" style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 18px;">✏️</span>
+              <span style="font-weight: 800; font-size: 15px; color: #fff;">Rename Machine Type</span>
+            </div>
+            <button type="button" id="btn-close-storage-modal" class="btn btn-ghost btn-sm">✕</button>
+          </div>
+
+          <form id="form-edit-machine-name" class="modal-body" style="padding: 18px; display: flex; flex-direction: column; gap: 14px;">
+            <input type="hidden" id="inp-orig-machine-name" value="${curName}" />
+            <input type="hidden" id="inp-return-to" value="${returnTo || ''}" />
+
+            <div class="form-group" style="display: flex; flex-direction: column; gap: 6px;">
+              <label class="form-label" style="font-weight: 700; color: #38bdf8; font-size: 12.5px; margin: 0;">
+                Machine Name / Type *
+              </label>
+              <input 
+                type="text" 
+                id="inp-new-renamed-machine-name" 
+                class="form-control" 
+                value="${curName}" 
+                required 
+                autofocus 
+                style="font-size: 13px; font-weight: 700;"
+              />
+              <div style="background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 4px; padding: 8px 10px; font-size: 11px; color: #cbd5e1; line-height: 1.4;">
+                ℹ️ Renaming will automatically update this machine type name across all of its registered models, database tables, and inventory entries.
+              </div>
+            </div>
+
+            <div class="modal-footer" style="padding: 10px 0 0; display: flex; justify-content: flex-end; gap: 8px; border-top: 1px solid var(--border-color);">
+              <button type="button" id="btn-cancel-storage-modal" class="btn btn-secondary btn-sm" style="font-weight: 700;">Cancel</button>
+              <button type="submit" id="btn-submit-rename-machine" class="btn btn-primary btn-sm" style="font-weight: 800; background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);">
+                💾 Save Machine Name
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    `;
+  }
+
+  // 1B-RENAME-BRAND. RENAME BRAND MODAL
+  if (activeModalState.type === 'EDIT_BRAND_NAME') {
+    const curBrand = activeModalState.brandName || '';
+    const bId = activeModalState.brandId || '';
+    return `
+      <div class="modal-overlay" id="modal-edit-brand-name-overlay">
+        <div class="modal-dialog" style="max-width: 480px; width: 95%;">
+          <div class="modal-header" style="border-bottom: 1px solid var(--border-color); padding: 14px 18px;">
+            <div class="modal-title" style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 18px;">🏷️</span>
+              <span style="font-weight: 800; font-size: 15px; color: #fff;">Rename Machinery Brand</span>
+            </div>
+            <button type="button" id="btn-close-storage-modal" class="btn btn-ghost btn-sm">✕</button>
+          </div>
+
+          <form id="form-edit-brand-name" class="modal-body" style="padding: 18px; display: flex; flex-direction: column; gap: 14px;">
+            <input type="hidden" id="inp-orig-brand-id" value="${bId}" />
+            <input type="hidden" id="inp-orig-brand-name" value="${curBrand}" />
+
+            <div class="form-group" style="display: flex; flex-direction: column; gap: 6px;">
+              <label class="form-label" style="font-weight: 700; color: #34d399; font-size: 12.5px; margin: 0;">
+                Brand Name *
+              </label>
+              <input 
+                type="text" 
+                id="inp-new-renamed-brand-name" 
+                class="form-control" 
+                value="${curBrand}" 
+                required 
+                autofocus 
+                style="font-size: 13px; font-weight: 700; text-transform: uppercase;"
+              />
+              <div style="background: rgba(52, 211, 153, 0.08); border: 1px solid rgba(52, 211, 153, 0.25); border-radius: 4px; padding: 8px 10px; font-size: 11px; color: #cbd5e1; line-height: 1.4;">
+                ℹ️ Renaming will automatically update this brand across all registered models, machines, and master tables.
+              </div>
+            </div>
+
+            <div class="modal-footer" style="padding: 10px 0 0; display: flex; justify-content: flex-end; gap: 8px; border-top: 1px solid var(--border-color);">
+              <button type="button" id="btn-cancel-edit-brand" class="btn btn-secondary btn-sm" style="font-weight: 700;">Back to Brands</button>
+              <button type="submit" id="btn-submit-rename-brand" class="btn btn-primary btn-sm" style="font-weight: 800; background: linear-gradient(135deg, #059669 0%, #047857 100%);">
+                💾 Save Brand Name
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    `;
+  }
+
   // 1C. ADD NEW MACHINE NAME (ALL ENGLISH)
   if (activeModalState.type === 'ADD_MACHINE_NAME') {
     return `
@@ -1482,7 +1719,8 @@ function renderStorageModal() {
                   <span class="badge" style="background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.25); color: #e2e8f0; font-size: 11px; padding: 4px 8px; display: inline-flex; align-items: center; gap: 6px;">
                     <strong style="color: #38bdf8; font-family: var(--font-mono); font-weight: 800;">SL #${idx + 1}</strong>
                     <span>${name}</span>
-                    <button type="button" class="btn-delete-single-mn" data-name="${name}" style="background: none; border: none; color: #f87171; cursor: pointer; padding: 0; font-size: 11px; line-height: 1;" title="Delete this machine name">✕</button>
+                    <button type="button" class="btn-edit-single-mn" data-name="${name}" style="background: none; border: none; color: #38bdf8; cursor: pointer; padding: 0 2px; font-size: 11px; line-height: 1;" title="Rename this machine name">✏️</button>
+                    <button type="button" class="btn-delete-single-mn" data-name="${name}" style="background: none; border: none; color: #f87171; cursor: pointer; padding: 0 2px; font-size: 11px; line-height: 1;" title="Delete this machine name">✕</button>
                   </span>
                 `).join('')}
               </div>
@@ -2509,6 +2747,38 @@ function rebindContentEvents() {
     });
   });
 
+  // Single Model Edit Button
+  container.querySelectorAll('.btn-edit-model-item').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      activeModalState = {
+        type: 'EDIT_MODEL_SPEC',
+        data: {
+          id: btn.dataset.id || '',
+          model: btn.dataset.model || '',
+          machineName: btn.dataset.machine || '',
+          brand: btn.dataset.brand || 'JUKI',
+          status: btn.dataset.status || 'ACTIVE'
+        }
+      };
+      updateModalLayer();
+    });
+  });
+
+  // Single Machine Group Rename Button
+  container.querySelectorAll('.btn-edit-machine-group').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      activeModalState = {
+        type: 'EDIT_MACHINE_NAME',
+        machineName: btn.dataset.machine || ''
+      };
+      updateModalLayer();
+    });
+  });
+
   // Single Machine Group Delete Button
   container.querySelectorAll('.btn-delete-machine-group').forEach(btn => {
     btn.addEventListener('click', async (e) => {
@@ -3231,6 +3501,20 @@ function initModalInteractions() {
       });
     }
 
+    // Edit single brand record
+    modalLayer.querySelectorAll('.btn-edit-brand-record').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        activeModalState = {
+          type: 'EDIT_BRAND_NAME',
+          brandId: btn.dataset.id || '',
+          brandName: btn.dataset.name || ''
+        };
+        updateModalLayer();
+      });
+    });
+
     modalLayer.querySelectorAll('.btn-delete-brand-record').forEach(btn => {
       btn.addEventListener('click', async (e) => {
         e.preventDefault();
@@ -3766,6 +4050,21 @@ function initModalInteractions() {
       });
     }
 
+    // Edit single registered machine name
+    modalLayer.querySelectorAll('.btn-edit-single-mn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const name = btn.dataset.name;
+        activeModalState = {
+          type: 'EDIT_MACHINE_NAME',
+          machineName: name,
+          returnTo: 'BULK_IMPORT_MACHINE_NAMES'
+        };
+        updateModalLayer();
+      });
+    });
+
     // Delete single registered machine name
     modalLayer.querySelectorAll('.btn-delete-single-mn').forEach(btn => {
       btn.addEventListener('click', async (e) => {
@@ -4041,6 +4340,162 @@ function initModalInteractions() {
         refreshStorageTabContent();
       }
     });
+  }
+
+  // --- EDIT MODEL SPECIFICATION FORM HANDLER ---
+  if (activeModalState.type === 'EDIT_MODEL_SPEC') {
+    const formEditModel = modalLayer.querySelector('#form-edit-model-spec');
+    if (formEditModel) {
+      formEditModel.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const id = modalLayer.querySelector('#inp-edit-model-id')?.value;
+        const machineName = modalLayer.querySelector('#inp-edit-machine-name')?.value?.trim();
+        const brand = modalLayer.querySelector('#inp-edit-brand-name')?.value?.trim()?.toUpperCase();
+        const model = modalLayer.querySelector('#inp-edit-model-number')?.value?.trim();
+        const status = modalLayer.querySelector('#sel-edit-model-status')?.value || 'ACTIVE';
+        const oldMachine = modalLayer.querySelector('#inp-orig-machine')?.value;
+        const oldBrand = modalLayer.querySelector('#inp-orig-brand')?.value;
+        const oldModel = modalLayer.querySelector('#inp-orig-model')?.value;
+
+        if (!machineName || !brand || !model) {
+          alert('Please fill in Machine Name, Brand, and Model Number.');
+          return;
+        }
+
+        const submitBtn = modalLayer.querySelector('#btn-submit-edit-model-spec');
+        const origHtml = submitBtn ? submitBtn.innerHTML : '';
+        if (submitBtn) {
+          submitBtn.disabled = true;
+          submitBtn.innerHTML = '⏳ Saving...';
+        }
+
+        try {
+          await smartStorageService.updateModelSpecification(id, {
+            machineName,
+            brand,
+            model,
+            status,
+            oldMachineName: oldMachine,
+            oldBrand,
+            oldModel
+          });
+
+          if (typeof notificationService !== 'undefined' && notificationService.success) {
+            notificationService.success('Model Specification Saved', `"${model}" under "${machineName}" (${brand}) updated.`);
+          }
+
+          closeModal();
+          refreshStorageTabContent();
+        } catch (err) {
+          console.error('Failed to update model spec:', err);
+          alert('Error saving changes: ' + err.message);
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = origHtml;
+          }
+        }
+      });
+    }
+  }
+
+  // --- EDIT / RENAME MACHINE TYPE FORM HANDLER ---
+  if (activeModalState.type === 'EDIT_MACHINE_NAME') {
+    const formEditMachine = modalLayer.querySelector('#form-edit-machine-name');
+    if (formEditMachine) {
+      formEditMachine.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const oldName = modalLayer.querySelector('#inp-orig-machine-name')?.value?.trim();
+        const newName = modalLayer.querySelector('#inp-new-renamed-machine-name')?.value?.trim();
+        const returnTo = modalLayer.querySelector('#inp-return-to')?.value?.trim();
+
+        if (!newName) {
+          alert('Machine name cannot be empty.');
+          return;
+        }
+
+        const submitBtn = modalLayer.querySelector('#btn-submit-rename-machine');
+        const origHtml = submitBtn ? submitBtn.innerHTML : '';
+        if (submitBtn) {
+          submitBtn.disabled = true;
+          submitBtn.innerHTML = '⏳ Saving...';
+        }
+
+        try {
+          await smartStorageService.renameMachineName(oldName, newName);
+
+          if (typeof notificationService !== 'undefined' && notificationService.success) {
+            notificationService.success('Machine Type Renamed', `"${oldName}" renamed to "${newName}".`);
+          }
+
+          if (returnTo === 'BULK_IMPORT_MACHINE_NAMES') {
+            activeModalState = { type: 'BULK_IMPORT_MACHINE_NAMES', data: {} };
+            updateModalLayer();
+          } else {
+            closeModal();
+          }
+          refreshStorageTabContent();
+        } catch (err) {
+          console.error('Failed to rename machine:', err);
+          alert('Error renaming machine: ' + err.message);
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = origHtml;
+          }
+        }
+      });
+    }
+  }
+
+  // --- EDIT / RENAME BRAND FORM HANDLER ---
+  if (activeModalState.type === 'EDIT_BRAND_NAME') {
+    const formEditBrand = modalLayer.querySelector('#form-edit-brand-name');
+    if (formEditBrand) {
+      const btnCancelBrand = modalLayer.querySelector('#btn-cancel-edit-brand');
+      if (btnCancelBrand) {
+        btnCancelBrand.addEventListener('click', (e) => {
+          e.preventDefault();
+          activeModalState = { type: 'MANAGE_BRANDS', data: {} };
+          updateModalLayer();
+        });
+      }
+
+      formEditBrand.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const oldBrand = modalLayer.querySelector('#inp-orig-brand-name')?.value?.trim();
+        const newBrand = modalLayer.querySelector('#inp-new-renamed-brand-name')?.value?.trim()?.toUpperCase();
+
+        if (!newBrand) {
+          alert('Brand name cannot be empty.');
+          return;
+        }
+
+        const submitBtn = modalLayer.querySelector('#btn-submit-rename-brand');
+        const origHtml = submitBtn ? submitBtn.innerHTML : '';
+        if (submitBtn) {
+          submitBtn.disabled = true;
+          submitBtn.innerHTML = '⏳ Saving...';
+        }
+
+        try {
+          await smartStorageService.renameBrand(oldBrand, newBrand);
+
+          if (typeof notificationService !== 'undefined' && notificationService.success) {
+            notificationService.success('Brand Renamed', `"${oldBrand}" renamed to "${newBrand}".`);
+          }
+
+          activeModalState = { type: 'MANAGE_BRANDS', data: {} };
+          updateModalLayer();
+          refreshStorageTabContent();
+        } catch (err) {
+          console.error('Failed to rename brand:', err);
+          alert('Error renaming brand: ' + err.message);
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = origHtml;
+          }
+        }
+      });
+    }
   }
 
   // Add Custom Field Submit

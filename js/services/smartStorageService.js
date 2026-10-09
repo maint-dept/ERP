@@ -357,6 +357,7 @@ class SmartStorageService {
           id: it.id,
           model: it.model,
           brand: brandUpper,
+          status: it.status || 'ACTIVE',
           sortOrder: (it.sortOrder !== undefined && it.sortOrder !== null) ? Number(it.sortOrder) : 9999,
           createdAt: it.createdAt || ''
         });
@@ -399,6 +400,7 @@ class SmartStorageService {
           id: mdl.id,
           model: mdl.name,
           brand: brandName,
+          status: mdl.status || 'ACTIVE',
           sortOrder: (mdl.sortOrder !== undefined && mdl.sortOrder !== null) ? Number(mdl.sortOrder) : 9999,
           createdAt: mdl.createdAt || ''
         });
@@ -713,6 +715,296 @@ class SmartStorageService {
     this._broadcastStorageChange();
     auditService.log('STORAGE_DELETE_MACHINE_BATCH', `Bulk deleted ${nameSet.size} machines and ${deletedCount} models`);
     return deletedCount;
+  }
+
+  async renameMachineName(oldName, newName) {
+    const cleanOld = String(oldName || '').trim();
+    const cleanNew = String(newName || '').trim();
+    if (!cleanOld) throw new Error('Existing machine name is required');
+    if (!cleanNew) throw new Error('New machine name is required');
+    if (cleanOld.toLowerCase() === cleanNew.toLowerCase() && cleanOld === cleanNew) {
+      return { success: true, renamed: false, message: 'Names are identical' };
+    }
+
+    const lowerOld = cleanOld.toLowerCase();
+    const lowerNew = cleanNew.toLowerCase();
+
+    // 1. Update in MACHINE_NAMES
+    const allMn = storage.getTable(TABLE_NAMES.MACHINE_NAMES) || [];
+    let matchedMn = allMn.find(m => m.name && m.name.trim().toLowerCase() === lowerOld);
+    if (matchedMn) {
+      matchedMn.name = cleanNew;
+      matchedMn.code = cleanNew.substring(0, 4).toUpperCase().replace(/[^A-Z0-9]/g, '');
+      matchedMn.updatedAt = new Date().toISOString();
+    } else {
+      const maxOrder = allMn.reduce((max, m) => Math.max(max, Number(m.sortOrder || 0)), 0);
+      matchedMn = {
+        id: 'mn-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4),
+        name: cleanNew,
+        code: cleanNew.substring(0, 4).toUpperCase().replace(/[^A-Z0-9]/g, ''),
+        sortOrder: maxOrder + 1,
+        status: 'ACTIVE',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+      allMn.push(matchedMn);
+    }
+
+    // 2. Update in STORAGE_MASTER (Category: MACHINE)
+    const allSm = storage.getTable(TABLE_NAMES.STORAGE_MASTER) || [];
+    let smUpdatedCount = 0;
+    allSm.forEach(it => {
+      if (it.category === 'MACHINE' && (it.machineName || '').trim().toLowerCase() === lowerOld) {
+        it.machineName = cleanNew;
+        it.updatedAt = new Date().toISOString();
+        smUpdatedCount++;
+      }
+    });
+
+    // 3. Update in MODELS table
+    const allMdl = storage.getTable(TABLE_NAMES.MODELS) || [];
+    let mdlUpdatedCount = 0;
+    allMdl.forEach(m => {
+      if ((m.machineName && m.machineName.trim().toLowerCase() === lowerOld) || (matchedMn && m.machineNameId === matchedMn.id)) {
+        m.machineName = cleanNew;
+        if (matchedMn) m.machineNameId = matchedMn.id;
+        m.updatedAt = new Date().toISOString();
+        mdlUpdatedCount++;
+      }
+    });
+
+    // 4. Update in MACHINES inventory table
+    const allMachines = storage.getTable(TABLE_NAMES.MACHINES) || [];
+    allMachines.forEach(m => {
+      if ((m.machineName && m.machineName.trim().toLowerCase() === lowerOld) || (m.name && m.name.trim().toLowerCase() === lowerOld)) {
+        if (m.machineName) m.machineName = cleanNew;
+        if (m.name && m.name.trim().toLowerCase() === lowerOld) m.name = cleanNew;
+        m.updatedAt = new Date().toISOString();
+      }
+    });
+
+    // 5. Save all tables atomically
+    await storage.saveMultipleTables({
+      [TABLE_NAMES.MACHINE_NAMES]: allMn,
+      [TABLE_NAMES.STORAGE_MASTER]: allSm,
+      [TABLE_NAMES.MODELS]: allMdl,
+      [TABLE_NAMES.MACHINES]: allMachines
+    });
+
+    if (typeof storage.persistToServerDatabase === 'function') {
+      try { await storage.persistToServerDatabase(); } catch (_) {}
+    }
+
+    this._broadcastStorageChange();
+    auditService.log('STORAGE_RENAME_MACHINE', `Renamed machine "${cleanOld}" to "${cleanNew}" (${smUpdatedCount} models updated)`);
+    return { success: true, oldName: cleanOld, newName: cleanNew, smUpdatedCount, mdlUpdatedCount };
+  }
+
+  async renameBrand(oldBrand, newBrand) {
+    const cleanOld = String(oldBrand || '').trim().toUpperCase();
+    const cleanNew = String(newBrand || '').trim().toUpperCase();
+    if (!cleanOld) throw new Error('Existing brand name is required');
+    if (!cleanNew) throw new Error('New brand name is required');
+    if (cleanOld === cleanNew) {
+      return { success: true, renamed: false, message: 'Brand names are identical' };
+    }
+
+    // 1. Update in BRANDS table
+    const allBrands = storage.getTable(TABLE_NAMES.BRANDS) || [];
+    let matchedBrand = allBrands.find(b => b.name && b.name.trim().toUpperCase() === cleanOld);
+    if (matchedBrand) {
+      matchedBrand.name = cleanNew;
+      matchedBrand.code = cleanNew.replace(/\s+/g, '_');
+      matchedBrand.updatedAt = new Date().toISOString();
+    } else {
+      matchedBrand = {
+        id: 'brd-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4),
+        name: cleanNew,
+        code: cleanNew.replace(/\s+/g, '_'),
+        country: cleanNew === 'JUKI' ? 'Japan' : (cleanNew === 'BROTHER' ? 'Japan' : 'International'),
+        status: 'ACTIVE',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+      allBrands.push(matchedBrand);
+    }
+
+    // 2. Update in STORAGE_MASTER
+    const allSm = storage.getTable(TABLE_NAMES.STORAGE_MASTER) || [];
+    let smUpdatedCount = 0;
+    allSm.forEach(it => {
+      if ((it.brand || '').trim().toUpperCase() === cleanOld) {
+        it.brand = cleanNew;
+        it.updatedAt = new Date().toISOString();
+        smUpdatedCount++;
+      }
+    });
+
+    // 3. Update in MODELS
+    const allMdl = storage.getTable(TABLE_NAMES.MODELS) || [];
+    let mdlUpdatedCount = 0;
+    allMdl.forEach(m => {
+      if ((m.brand && m.brand.trim().toUpperCase() === cleanOld) || (m.brandName && m.brandName.trim().toUpperCase() === cleanOld) || (matchedBrand && m.brandId === matchedBrand.id)) {
+        m.brand = cleanNew;
+        m.brandName = cleanNew;
+        if (matchedBrand) m.brandId = matchedBrand.id;
+        m.updatedAt = new Date().toISOString();
+        mdlUpdatedCount++;
+      }
+    });
+
+    // 4. Update in MACHINES inventory table
+    const allMachines = storage.getTable(TABLE_NAMES.MACHINES) || [];
+    allMachines.forEach(m => {
+      if ((m.brand && m.brand.trim().toUpperCase() === cleanOld) || (m.brandStr && m.brandStr.trim().toUpperCase() === cleanOld)) {
+        if (m.brand) m.brand = cleanNew;
+        if (m.brandStr) m.brandStr = cleanNew;
+        m.updatedAt = new Date().toISOString();
+      }
+    });
+
+    // 5. Save all tables atomically
+    await storage.saveMultipleTables({
+      [TABLE_NAMES.BRANDS]: allBrands,
+      [TABLE_NAMES.STORAGE_MASTER]: allSm,
+      [TABLE_NAMES.MODELS]: allMdl,
+      [TABLE_NAMES.MACHINES]: allMachines
+    });
+
+    if (typeof storage.persistToServerDatabase === 'function') {
+      try { await storage.persistToServerDatabase(); } catch (_) {}
+    }
+
+    this._broadcastStorageChange();
+    auditService.log('STORAGE_RENAME_BRAND', `Renamed brand "${cleanOld}" to "${cleanNew}"`);
+    return { success: true, oldBrand: cleanOld, newBrand: cleanNew, smUpdatedCount, mdlUpdatedCount };
+  }
+
+  async updateModelSpecification(id, { machineName, brand, model, status, oldMachineName, oldBrand, oldModel }) {
+    const cleanMachine = String(machineName || '').trim();
+    const cleanBrand = String(brand || 'JUKI').trim().toUpperCase();
+    const cleanModel = String(model || '').trim();
+    const cleanStatus = status || 'ACTIVE';
+
+    if (!cleanMachine) throw new Error('Machine Name is required');
+    if (!cleanModel) throw new Error('Model Number is required');
+
+    // 1. Ensure Machine Name exists in MACHINE_NAMES
+    this.addMachineName(cleanMachine);
+    const allMn = storage.getTable(TABLE_NAMES.MACHINE_NAMES) || [];
+    const mnItem = allMn.find(m => m.name && m.name.trim().toLowerCase() === cleanMachine.toLowerCase());
+
+    // 2. Ensure Brand exists in BRANDS
+    const allBrands = storage.getTable(TABLE_NAMES.BRANDS) || [];
+    let brdItem = allBrands.find(b => b.name && b.name.trim().toUpperCase() === cleanBrand);
+    if (!brdItem) {
+      brdItem = {
+        id: 'brd-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4),
+        name: cleanBrand,
+        code: cleanBrand.replace(/\s+/g, '_'),
+        country: cleanBrand === 'JUKI' ? 'Japan' : (cleanBrand === 'BROTHER' ? 'Japan' : 'International'),
+        status: 'ACTIVE',
+        createdAt: new Date().toISOString()
+      };
+      allBrands.push(brdItem);
+    }
+
+    // 3. Update or Insert in STORAGE_MASTER
+    const allSm = storage.getTable(TABLE_NAMES.STORAGE_MASTER) || [];
+    let smItem = allSm.find(it => it.id === id);
+    if (!smItem && oldMachineName && oldModel) {
+      smItem = allSm.find(it => 
+        it.category === 'MACHINE' &&
+        (it.machineName || '').trim().toLowerCase() === String(oldMachineName).trim().toLowerCase() &&
+        (it.model || '').trim().toLowerCase() === String(oldModel).trim().toLowerCase()
+      );
+    }
+
+    if (smItem) {
+      smItem.machineName = cleanMachine;
+      smItem.brand = cleanBrand;
+      smItem.model = cleanModel;
+      smItem.status = cleanStatus;
+      smItem.updatedAt = new Date().toISOString();
+    } else {
+      smItem = {
+        id: id || ('sm-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4)),
+        category: 'MACHINE',
+        machineName: cleanMachine,
+        brand: cleanBrand,
+        model: cleanModel,
+        status: cleanStatus,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+      allSm.push(smItem);
+    }
+
+    // 4. Update or Insert in MODELS table
+    const allMdl = storage.getTable(TABLE_NAMES.MODELS) || [];
+    let mdlItem = allMdl.find(m => m.id === id);
+    if (!mdlItem && oldMachineName && oldModel) {
+      mdlItem = allMdl.find(m => 
+        (m.name || '').trim().toLowerCase() === String(oldModel).trim().toLowerCase() &&
+        ((m.machineName || '').trim().toLowerCase() === String(oldMachineName).trim().toLowerCase() || (mnItem && m.machineNameId === mnItem.id))
+      );
+    }
+
+    if (mdlItem) {
+      mdlItem.name = cleanModel;
+      mdlItem.brandName = cleanBrand;
+      mdlItem.brand = cleanBrand;
+      mdlItem.brandId = brdItem ? brdItem.id : mdlItem.brandId;
+      mdlItem.machineName = cleanMachine;
+      mdlItem.machineNameId = mnItem ? mnItem.id : mdlItem.machineNameId;
+      mdlItem.status = cleanStatus;
+      mdlItem.updatedAt = new Date().toISOString();
+    } else {
+      mdlItem = {
+        id: ('mdl-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4)),
+        name: cleanModel,
+        brandId: brdItem ? brdItem.id : '',
+        brandName: cleanBrand,
+        brand: cleanBrand,
+        machineNameId: mnItem ? mnItem.id : '',
+        machineName: cleanMachine,
+        status: cleanStatus,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+      allMdl.push(mdlItem);
+    }
+
+    // 5. Update MACHINES table if oldModel was linked
+    if (oldModel && (oldModel !== cleanModel || (oldBrand && oldBrand !== cleanBrand))) {
+      const allMachines = storage.getTable(TABLE_NAMES.MACHINES) || [];
+      allMachines.forEach(m => {
+        if ((m.model && m.model.trim().toLowerCase() === String(oldModel).trim().toLowerCase()) &&
+            (!oldMachineName || (m.machineName && m.machineName.trim().toLowerCase() === String(oldMachineName).trim().toLowerCase()))) {
+          m.model = cleanModel;
+          m.brand = cleanBrand;
+          m.brandStr = cleanBrand;
+          m.machineName = cleanMachine;
+          m.updatedAt = new Date().toISOString();
+        }
+      });
+    }
+
+    // 6. Save atomically
+    await storage.saveMultipleTables({
+      [TABLE_NAMES.STORAGE_MASTER]: allSm,
+      [TABLE_NAMES.MODELS]: allMdl,
+      [TABLE_NAMES.MACHINE_NAMES]: allMn,
+      [TABLE_NAMES.BRANDS]: allBrands
+    });
+
+    if (typeof storage.persistToServerDatabase === 'function') {
+      try { await storage.persistToServerDatabase(); } catch (_) {}
+    }
+
+    this._broadcastStorageChange();
+    auditService.log('STORAGE_UPDATE_MODEL', `Updated model "${cleanModel}" under "${cleanMachine}" (${cleanBrand})`);
+    return { success: true, item: smItem };
   }
 
   async clearAllMachineCatalogData() {
