@@ -4370,7 +4370,7 @@ function initModalInteractions() {
         }
 
         try {
-          await smartStorageService.updateModelSpecification(id, {
+          const res = await smartStorageService.updateModelSpecification(id, {
             machineName,
             brand,
             model,
@@ -4380,8 +4380,9 @@ function initModalInteractions() {
             oldModel
           });
 
+          const invMsg = (res && res.invUpdatedCount > 0) ? ` & auto-updated ${res.invUpdatedCount} machine(s) in Inventory!` : '';
           if (typeof notificationService !== 'undefined' && notificationService.success) {
-            notificationService.success('Model Specification Saved', `"${model}" under "${machineName}" (${brand}) updated.`);
+            notificationService.success('Model Specification Saved', `"${model}" under "${machineName}" (${brand}) updated.${invMsg}`);
           }
 
           closeModal();
@@ -4421,10 +4422,11 @@ function initModalInteractions() {
         }
 
         try {
-          await smartStorageService.renameMachineName(oldName, newName);
+          const res = await smartStorageService.renameMachineName(oldName, newName);
 
+          const invMsg = (res && res.invUpdatedCount > 0) ? ` & auto-renamed ${res.invUpdatedCount} machine(s) in Inventory!` : '';
           if (typeof notificationService !== 'undefined' && notificationService.success) {
-            notificationService.success('Machine Type Renamed', `"${oldName}" renamed to "${newName}".`);
+            notificationService.success('Machine Type Renamed', `"${oldName}" renamed to "${newName}".${invMsg}`);
           }
 
           if (returnTo === 'BULK_IMPORT_MACHINE_NAMES') {
@@ -4477,10 +4479,11 @@ function initModalInteractions() {
         }
 
         try {
-          await smartStorageService.renameBrand(oldBrand, newBrand);
+          const res = await smartStorageService.renameBrand(oldBrand, newBrand);
 
+          const invMsg = (res && res.invUpdatedCount > 0) ? ` & auto-updated ${res.invUpdatedCount} machine(s) in Inventory!` : '';
           if (typeof notificationService !== 'undefined' && notificationService.success) {
-            notificationService.success('Brand Renamed', `"${oldBrand}" renamed to "${newBrand}".`);
+            notificationService.success('Brand Renamed', `"${oldBrand}" renamed to "${newBrand}".${invMsg}`);
           }
 
           activeModalState = { type: 'MANAGE_BRANDS', data: {} };

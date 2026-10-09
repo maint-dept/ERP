@@ -773,13 +773,21 @@ class SmartStorageService {
       }
     });
 
-    // 4. Update in MACHINES inventory table
+    // 4. Update in MACHINES inventory table (auto-transform all linked inventory records)
     const allMachines = storage.getTable(TABLE_NAMES.MACHINES) || [];
+    let invUpdatedCount = 0;
     allMachines.forEach(m => {
-      if ((m.machineName && m.machineName.trim().toLowerCase() === lowerOld) || (m.name && m.name.trim().toLowerCase() === lowerOld)) {
-        if (m.machineName) m.machineName = cleanNew;
+      const matchByName = (m.machineName && m.machineName.trim().toLowerCase() === lowerOld) ||
+                          (m.machineNameStr && m.machineNameStr.trim().toLowerCase() === lowerOld) ||
+                          (m.name && m.name.trim().toLowerCase() === lowerOld);
+      const matchById = matchedMn && m.machineNameId === matchedMn.id;
+      if (matchByName || matchById) {
+        m.machineName = cleanNew;
+        m.machineNameStr = cleanNew;
         if (m.name && m.name.trim().toLowerCase() === lowerOld) m.name = cleanNew;
+        if (matchedMn) m.machineNameId = matchedMn.id;
         m.updatedAt = new Date().toISOString();
+        invUpdatedCount++;
       }
     });
 
@@ -796,8 +804,8 @@ class SmartStorageService {
     }
 
     this._broadcastStorageChange();
-    auditService.log('STORAGE_RENAME_MACHINE', `Renamed machine "${cleanOld}" to "${cleanNew}" (${smUpdatedCount} models updated)`);
-    return { success: true, oldName: cleanOld, newName: cleanNew, smUpdatedCount, mdlUpdatedCount };
+    auditService.log('STORAGE_RENAME_MACHINE', `Renamed machine "${cleanOld}" to "${cleanNew}" (${smUpdatedCount} models, ${invUpdatedCount} inventory records updated)`);
+    return { success: true, oldName: cleanOld, newName: cleanNew, smUpdatedCount, mdlUpdatedCount, invUpdatedCount };
   }
 
   async renameBrand(oldBrand, newBrand) {
@@ -853,13 +861,19 @@ class SmartStorageService {
       }
     });
 
-    // 4. Update in MACHINES inventory table
+    // 4. Update in MACHINES inventory table (auto-transform all linked inventory records)
     const allMachines = storage.getTable(TABLE_NAMES.MACHINES) || [];
+    let invUpdatedCount = 0;
     allMachines.forEach(m => {
-      if ((m.brand && m.brand.trim().toUpperCase() === cleanOld) || (m.brandStr && m.brandStr.trim().toUpperCase() === cleanOld)) {
-        if (m.brand) m.brand = cleanNew;
-        if (m.brandStr) m.brandStr = cleanNew;
+      const matchByName = (m.brand && m.brand.trim().toUpperCase() === cleanOld) ||
+                          (m.brandStr && m.brandStr.trim().toUpperCase() === cleanOld);
+      const matchById = matchedBrand && m.brandId === matchedBrand.id;
+      if (matchByName || matchById) {
+        m.brand = cleanNew;
+        m.brandStr = cleanNew;
+        if (matchedBrand) m.brandId = matchedBrand.id;
         m.updatedAt = new Date().toISOString();
+        invUpdatedCount++;
       }
     });
 
@@ -876,8 +890,8 @@ class SmartStorageService {
     }
 
     this._broadcastStorageChange();
-    auditService.log('STORAGE_RENAME_BRAND', `Renamed brand "${cleanOld}" to "${cleanNew}"`);
-    return { success: true, oldBrand: cleanOld, newBrand: cleanNew, smUpdatedCount, mdlUpdatedCount };
+    auditService.log('STORAGE_RENAME_BRAND', `Renamed brand "${cleanOld}" to "${cleanNew}" (${invUpdatedCount} inventory records updated)`);
+    return { success: true, oldBrand: cleanOld, newBrand: cleanNew, smUpdatedCount, mdlUpdatedCount, invUpdatedCount };
   }
 
   async updateModelSpecification(id, { machineName, brand, model, status, oldMachineName, oldBrand, oldModel }) {
@@ -975,27 +989,49 @@ class SmartStorageService {
       allMdl.push(mdlItem);
     }
 
-    // 5. Update MACHINES table if oldModel was linked
-    if (oldModel && (oldModel !== cleanModel || (oldBrand && oldBrand !== cleanBrand))) {
-      const allMachines = storage.getTable(TABLE_NAMES.MACHINES) || [];
-      allMachines.forEach(m => {
-        if ((m.model && m.model.trim().toLowerCase() === String(oldModel).trim().toLowerCase()) &&
-            (!oldMachineName || (m.machineName && m.machineName.trim().toLowerCase() === String(oldMachineName).trim().toLowerCase()))) {
-          m.model = cleanModel;
-          m.brand = cleanBrand;
-          m.brandStr = cleanBrand;
-          m.machineName = cleanMachine;
-          m.updatedAt = new Date().toISOString();
-        }
-      });
-    }
+    // 5. Update MACHINES inventory table (always auto-transform all linked inventory records)
+    const allMachines = storage.getTable(TABLE_NAMES.MACHINES) || [];
+    let invUpdatedCount = 0;
+    allMachines.forEach(m => {
+      // Match by model ID or by old model string (with optional machine name filter)
+      const matchByModelId = mdlItem && m.modelId === mdlItem.id;
+      const matchByModelStr = (
+        (m.model && m.model.trim().toLowerCase() === String(oldModel || '').trim().toLowerCase()) ||
+        (m.modelStr && m.modelStr.trim().toLowerCase() === String(oldModel || '').trim().toLowerCase()) ||
+        (m.modelName && m.modelName.trim().toLowerCase() === String(oldModel || '').trim().toLowerCase())
+      ) && (
+        !oldMachineName || (
+          (m.machineName && m.machineName.trim().toLowerCase() === String(oldMachineName).trim().toLowerCase()) ||
+          (m.machineNameStr && m.machineNameStr.trim().toLowerCase() === String(oldMachineName).trim().toLowerCase()) ||
+          (mnItem && m.machineNameId === mnItem.id)
+        )
+      );
+      if (matchByModelId || (oldModel && matchByModelStr)) {
+        // Update model fields
+        m.model = cleanModel;
+        m.modelStr = cleanModel;
+        m.modelName = cleanModel;
+        if (mdlItem) m.modelId = mdlItem.id;
+        // Update brand fields
+        m.brand = cleanBrand;
+        m.brandStr = cleanBrand;
+        if (brdItem) m.brandId = brdItem.id;
+        // Update machine name fields
+        m.machineName = cleanMachine;
+        m.machineNameStr = cleanMachine;
+        if (mnItem) m.machineNameId = mnItem.id;
+        m.updatedAt = new Date().toISOString();
+        invUpdatedCount++;
+      }
+    });
 
     // 6. Save atomically
     await storage.saveMultipleTables({
       [TABLE_NAMES.STORAGE_MASTER]: allSm,
       [TABLE_NAMES.MODELS]: allMdl,
       [TABLE_NAMES.MACHINE_NAMES]: allMn,
-      [TABLE_NAMES.BRANDS]: allBrands
+      [TABLE_NAMES.BRANDS]: allBrands,
+      [TABLE_NAMES.MACHINES]: allMachines
     });
 
     if (typeof storage.persistToServerDatabase === 'function') {
@@ -1003,8 +1039,8 @@ class SmartStorageService {
     }
 
     this._broadcastStorageChange();
-    auditService.log('STORAGE_UPDATE_MODEL', `Updated model "${cleanModel}" under "${cleanMachine}" (${cleanBrand})`);
-    return { success: true, item: smItem };
+    auditService.log('STORAGE_UPDATE_MODEL', `Updated model "${cleanModel}" under "${cleanMachine}" (${cleanBrand}) — ${invUpdatedCount} inventory records auto-transformed`);
+    return { success: true, item: smItem, invUpdatedCount };
   }
 
   async clearAllMachineCatalogData() {
@@ -3347,11 +3383,13 @@ class SmartStorageService {
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('erp:storage-updated'));
       window.dispatchEvent(new CustomEvent('erp:master-data-updated'));
+      window.dispatchEvent(new CustomEvent('erp:inventory-updated'));
       window.dispatchEvent(new CustomEvent('storage:updated'));
     }
     try {
       if (typeof state !== 'undefined' && state && typeof state.emit === 'function') {
         state.emit('storage:updated');
+        state.emit('inventory:updated');
       }
     } catch (_) {}
   }
