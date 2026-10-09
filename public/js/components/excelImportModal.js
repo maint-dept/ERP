@@ -193,6 +193,9 @@ function renderImportStageContent() {
               <option value="${DUPLICATE_POLICIES.UPDATE_EXISTING}" ${importState.duplicatePolicy === DUPLICATE_POLICIES.UPDATE_EXISTING ? 'selected' : ''}>
                 🔄 Update Existing Machines &amp; Create New (Recommended)
               </option>
+              <option value="${DUPLICATE_POLICIES.REPLACE_ALL}" ${importState.duplicatePolicy === DUPLICATE_POLICIES.REPLACE_ALL ? 'selected' : ''}>
+                🧹 Replace All Existing Machines (Clean Re-Import from this Excel)
+              </option>
               <option value="${DUPLICATE_POLICIES.REJECT}" ${importState.duplicatePolicy === DUPLICATE_POLICIES.REJECT ? 'selected' : ''}>
                 🚫 Strict Mode: Block &amp; Reject Duplicate Serials
               </option>
@@ -426,7 +429,8 @@ function renderImportStageContent() {
             </div>
           ` : ''}\n\n          <!-- 4. AUTOGEN Serial Warning Banner (shown if any records will get auto-generated serial) -->
           ${(() => {
-            const autoGenRows = (res.validatedSheets || []).flatMap(s => s.records || []).filter(r => {
+            const allSheets = res.sheets || res.validatedSheets || [];
+            const autoGenRows = allSheets.flatMap(s => s.records || []).filter(r => {
               const sn = r.data?.serialNumber || '';
               return sn.includes('AUTOGEN') || sn === '';
             });
@@ -451,7 +455,8 @@ function renderImportStageContent() {
 
           <!-- 5. Running / Usable Idle / Repairable Breakdown Summary -->
           ${(() => {
-            const allRecords = (res.validatedSheets || []).flatMap(s => s.records || []).filter(r => r.isValid !== false);
+            const allSheets = res.sheets || res.validatedSheets || [];
+            const allRecords = allSheets.flatMap(s => s.records || []).filter(r => r.isValid !== false);
             if (allRecords.length === 0) return '';
             const totalRunning = allRecords.reduce((s, r) => s + (Number(r.data?.running) || 0), 0);
             const totalUsable = allRecords.reduce((s, r) => s + (Number(r.data?.usableIdle) || 0), 0);
@@ -1085,7 +1090,11 @@ export function initExcelImportEvents() {
   if (btnCommit) {
     btnCommit.addEventListener('click', () => {
       try {
-        const res = excelService.commitMultiSheetImport(importState.validationResult.sheets, { fileName: importState.fileName });
+        const res = excelService.commitMultiSheetImport(importState.validationResult.sheets, {
+          fileName: importState.fileName,
+          duplicatePolicy: importState.duplicatePolicy,
+          replaceExisting: importState.duplicatePolicy === DUPLICATE_POLICIES.REPLACE_ALL
+        });
         importState.importResult = res;
         importState.stage = 5;
         updateModalDOM();

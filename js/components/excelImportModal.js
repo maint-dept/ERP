@@ -145,7 +145,8 @@ function renderImportStageContent() {
       { key: 'machine_name', label: 'Machine Name (machine_name)', required: true },
       { key: 'machine_brand', label: 'Machine Brand (machine_brand)', required: false },
       { key: 'machine_model', label: 'Machine Model (machine_model)', required: false },
-      { key: 'machine_serial', label: 'Machine Serial (machine_serial)', required: false },
+      { key: 'machine_serial', label: 'Machine Serial / Machine Number (machine_serial)', required: false },
+      { key: 'machine_short_code', label: 'Machine Short Code / Sort Form (machine_short_code)', required: false },
       { key: 'unit_factory', label: 'Unit/Factory (unit_factory)', required: true },
       { key: 'floor', label: 'Floor (floor)', required: true },
       { key: 'line', label: 'Line (line)', required: true },
@@ -191,6 +192,9 @@ function renderImportStageContent() {
             <select id="select-duplicate-policy" class="form-control" style="font-weight: 700; font-size: 12px; width: auto;">
               <option value="${DUPLICATE_POLICIES.UPDATE_EXISTING}" ${importState.duplicatePolicy === DUPLICATE_POLICIES.UPDATE_EXISTING ? 'selected' : ''}>
                 🔄 Update Existing Machines &amp; Create New (Recommended)
+              </option>
+              <option value="${DUPLICATE_POLICIES.REPLACE_ALL}" ${importState.duplicatePolicy === DUPLICATE_POLICIES.REPLACE_ALL ? 'selected' : ''}>
+                🧹 Replace All Existing Machines (Clean Re-Import from this Excel)
               </option>
               <option value="${DUPLICATE_POLICIES.REJECT}" ${importState.duplicatePolicy === DUPLICATE_POLICIES.REJECT ? 'selected' : ''}>
                 🚫 Strict Mode: Block &amp; Reject Duplicate Serials
@@ -423,7 +427,55 @@ function renderImportStageContent() {
                 ` : ''}
               </div>
             </div>
-          ` : ''}
+          ` : ''}\n\n          <!-- 4. AUTOGEN Serial Warning Banner (shown if any records will get auto-generated serial) -->
+          ${(() => {
+            const allSheets = res.sheets || res.validatedSheets || [];
+            const autoGenRows = allSheets.flatMap(s => s.records || []).filter(r => {
+              const sn = r.data?.serialNumber || '';
+              return sn.includes('AUTOGEN') || sn === '';
+            });
+            if (autoGenRows.length === 0) return '';
+            return `
+              <div style="background: rgba(239, 68, 68, 0.15); border: 2px solid #ef4444; border-left: 6px solid #dc2626; border-radius: var(--radius-md); padding: 14px 18px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                  <div>
+                    <div style="font-weight: 900; color: #f87171; font-size: 14px;">
+                      🚨 WARNING: ${autoGenRows.length} machine(s) have NO serial number in Excel!
+                    </div>
+                    <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">
+                      These rows will receive auto-generated serial numbers (e.g. <code style="background:rgba(239,68,68,0.2);padding:1px 5px;border-radius:3px;">JA-001</code>).
+                      <strong style="color:#fca5a5;">Go back to Excel → fill the "Machine Serial" column → re-import.</strong>
+                    </div>
+                  </div>
+                  <span class="badge" style="background:rgba(239,68,68,0.3);color:#f87171;border:1px solid #ef4444;font-weight:800;padding:5px 12px;font-size:12px;">${autoGenRows.length} Missing Serials</span>
+                </div>
+              </div>
+            `;
+          })()}
+
+          <!-- 5. Running / Usable Idle / Repairable Breakdown Summary -->
+          ${(() => {
+            const allSheets = res.sheets || res.validatedSheets || [];
+            const allRecords = allSheets.flatMap(s => s.records || []).filter(r => r.isValid !== false);
+            if (allRecords.length === 0) return '';
+            const totalRunning = allRecords.reduce((s, r) => s + (Number(r.data?.running) || 0), 0);
+            const totalUsable = allRecords.reduce((s, r) => s + (Number(r.data?.usableIdle) || 0), 0);
+            const totalRepairable = allRecords.reduce((s, r) => s + (Number(r.data?.repairableIdle) || 0), 0);
+            const totalQty = allRecords.reduce((s, r) => s + (Number(r.data?.totalQuantity) || 0), 0);
+            const zeroQtyRows = allRecords.filter(r => (Number(r.data?.running) || 0) === 0 && (Number(r.data?.usableIdle) || 0) === 0 && (Number(r.data?.repairableIdle) || 0) === 0);
+            return `
+              <div style="background: rgba(56, 189, 248, 0.07); border: 1px solid rgba(56,189,248,0.3); border-left: 5px solid #38bdf8; border-radius: var(--radius-md); padding: 12px 18px;">
+                <div style="font-weight: 800; color: #38bdf8; font-size: 13px; margin-bottom: 8px;">📊 Quantity Summary (all valid records)</div>
+                <div style="display: flex; flex-wrap: wrap; gap: 12px; font-size: 12.5px;">
+                  <span style="color:#34d399;font-weight:700;">🟢 Running: <strong>${totalRunning}</strong></span>
+                  <span style="color:#fbbf24;font-weight:700;">🟡 Usable Idle: <strong>${totalUsable}</strong></span>
+                  <span style="color:#f87171;font-weight:700;">🔴 Repairable Idle: <strong>${totalRepairable}</strong></span>
+                  <span style="color:#c084fc;font-weight:700;">📦 Total Qty: <strong>${totalQty}</strong></span>
+                  ${zeroQtyRows.length > 0 ? `<span style="color:#fb923c;font-weight:700;">⚠️ ${zeroQtyRows.length} rows with all-zero quantities (Running/Idle columns may be blank in Excel)</span>` : ''}
+                </div>
+              </div>
+            `;
+          })()}
         </div>
         
         <!-- Summary KPI Metrics Grid -->
@@ -1038,7 +1090,11 @@ export function initExcelImportEvents() {
   if (btnCommit) {
     btnCommit.addEventListener('click', () => {
       try {
-        const res = excelService.commitMultiSheetImport(importState.validationResult.sheets, { fileName: importState.fileName });
+        const res = excelService.commitMultiSheetImport(importState.validationResult.sheets, {
+          fileName: importState.fileName,
+          duplicatePolicy: importState.duplicatePolicy,
+          replaceExisting: importState.duplicatePolicy === DUPLICATE_POLICIES.REPLACE_ALL
+        });
         importState.importResult = res;
         importState.stage = 5;
         updateModalDOM();

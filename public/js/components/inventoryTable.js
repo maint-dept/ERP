@@ -597,6 +597,12 @@ export function renderInventoryTable() {
                 <button type="button" class="actions-menu-item" id="btn-column-visibility-toggle">
                   👁️ Columns (${visibleCols.size})
                 </button>
+                ${authService.hasAccess('machines', 'DELETE') && allMachines.length > 0 ? `
+                  <div class="actions-menu-divider"></div>
+                  <button type="button" class="actions-menu-item danger-item" id="btn-clear-all-inventory" style="color: #ef4444; font-weight: 700;">
+                    🗑️ Delete All Machines (${allMachines.length})
+                  </button>
+                ` : ''}
                 ${(authService.hasAccess('machines', 'DELETE') && queryResult.total > 0 && hasActiveFilters) ? `
                   <div class="actions-menu-divider"></div>
                   <button type="button" class="actions-menu-item danger-item" id="btn-delete-all-filtered">
@@ -1534,6 +1540,39 @@ export function initInventoryTableEvents() {
           } else {
             notificationService.error(err.message);
           }
+        }
+      }
+    });
+  }
+
+  // Clear All Inventory (Delete all machines for clean re-import)
+  const btnClearAllInventory = document.getElementById('btn-clear-all-inventory');
+  if (btnClearAllInventory) {
+    btnClearAllInventory.addEventListener('click', async () => {
+      const allM = storage.getTable(TABLE_NAMES.MACHINES) || [];
+      if (allM.length === 0) {
+        notificationService.info('Machine Inventory is already empty.');
+        return;
+      }
+
+      const confirmed = await notificationService.confirm({
+        title: 'Delete All Machines in Inventory',
+        message: `Permanently delete all <strong>${allM.length}</strong> machines currently in inventory (e.g. to perform a clean re-import from Excel)?<br><br><span style="color:#f87171;font-weight:700;">⚠️ This action cannot be undone.</span>`,
+        icon: '🗑️',
+        confirmText: `Delete All ${allM.length} Machines`,
+        isDestructive: true
+      });
+
+      if (confirmed) {
+        try {
+          const idsToDelete = allM.map(m => m.id);
+          const res = await machineService.bulkPermanentDelete(idsToDelete, 'Admin clear all inventory');
+          state.clearSelection();
+          state.resetFilters();
+          state.emit('inventory:updated');
+          notificationService.success(`✅ Successfully deleted all ${res.deletedCount} machine(s). Ready for clean Excel import!`);
+        } catch (err) {
+          notificationService.error(err.message || 'Failed to clear machines.');
         }
       }
     });

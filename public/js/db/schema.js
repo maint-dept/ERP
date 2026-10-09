@@ -972,7 +972,8 @@ export const FIELD_TYPES = [
 export const DUPLICATE_POLICIES = {
   REJECT: 'REJECT',           // Block duplicate serials with error report
   SKIP: 'SKIP',               // Skip existing serials, import only new physical machines
-  UPDATE_EXISTING: 'UPDATE_EXISTING' // Match by Serial Number/Asset ID and update fields (Bulk Update mode)
+  UPDATE_EXISTING: 'UPDATE_EXISTING', // Match by Serial Number/Asset ID and update fields (Bulk Update mode)
+  REPLACE_ALL: 'REPLACE_ALL'  // Replace entire machine inventory with fresh Excel records
 };
 
 export const DEFAULT_SETTINGS = {

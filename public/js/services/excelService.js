@@ -1356,12 +1356,16 @@ class ExcelService {
         }
 
         // B. Database Existence & Composite Duplicate Check
+        const isReplaceAll = (duplicatePolicy === DUPLICATE_POLICIES.REPLACE_ALL || duplicatePolicy === 'REPLACE_ALL');
         const existingMachineByComposite = existingCompositeMap.get(compKey);
         const existingMachineBySerial = serialNumber ? existingSerialsMap.get(serialNumber.toUpperCase()) : null;
-        const existingMachine = existingMachineByComposite || existingMachineBySerial;
+        let existingMachine = existingMachineByComposite || existingMachineBySerial;
         let isUpdate = false;
 
-        if (existingMachine) {
+        if (isReplaceAll) {
+          sheetNewCount++;
+          grandNewRows++;
+        } else if (existingMachine) {
           if (existingMachineByComposite) {
             // Full composite duplicate (Name, Brand, Model, Serial all match)
             if (duplicatePolicy === DUPLICATE_POLICIES.REJECT || duplicatePolicy === 'REJECT') {
@@ -1401,8 +1405,6 @@ class ExcelService {
             }
           } else {
             // Serial exists in DB but Name, Brand, or Model differ:
-            // Under user rule ("If Name, Brand, or Model differ, it is not considered duplicate"),
-            // this is NOT a duplicate of the same machine.
             if (duplicatePolicy === DUPLICATE_POLICIES.UPDATE_EXISTING) {
               isUpdate = true;
               sheetUpdateCount++;
@@ -1411,6 +1413,23 @@ class ExcelService {
               sheetNewCount++;
               grandNewRows++;
             }
+          }
+        } else if (duplicatePolicy === DUPLICATE_POLICIES.UPDATE_EXISTING || duplicatePolicy === 'UPDATE_EXISTING') {
+          // Smart match existing AUTOGEN machines to overwrite them with the real Excel data
+          const autogenCand = existingMachines.find(m => {
+            const mSn = String(m.serialNumber || '');
+            if (!mSn.includes('AUTOGEN')) return false;
+            return mSn.endsWith(`-${String(rowIndex + 1).padStart(3, '0')}`) ||
+                   (m.sl !== undefined && Number(m.sl) === (rowIndex + 1));
+          });
+          if (autogenCand) {
+            existingMachine = autogenCand;
+            isUpdate = true;
+            sheetUpdateCount++;
+            grandUpdateRows++;
+          } else {
+            sheetNewCount++;
+            grandNewRows++;
           }
         } else {
           sheetNewCount++;
@@ -1691,6 +1710,11 @@ class ExcelService {
   commitMultiSheetImport(validatedSheets, metadata = {}) {
     const user = authService.getCurrentUser() || { id: 'admin-1', fullName: 'Administrator' };
 
+    if (metadata.replaceExisting || metadata.duplicatePolicy === DUPLICATE_POLICIES.REPLACE_ALL || metadata.duplicatePolicy === 'REPLACE_ALL') {
+      storage.saveTable(TABLE_NAMES.MACHINES, []);
+      storage.rebuildAllIndexes();
+    }
+
     let newInsertedCount = 0;
     let updatedCount = 0;
     let failedCount = 0;
@@ -1737,6 +1761,7 @@ class ExcelService {
                 updatedAt: new Date().toISOString()
               };
 
+              if (d.serialNumber) updates.serialNumber = d.serialNumber;
               if (d.unitId) updates.unitId = d.unitId;
               if (d.groupId) updates.groupId = d.groupId;
               if (d.floorId) updates.floorId = d.floorId;
