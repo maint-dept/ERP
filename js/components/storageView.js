@@ -251,6 +251,11 @@ function renderGroupedMachinesView() {
                 <span style="font-size: 15px; font-weight: 800; color: #fff; letter-spacing: -0.2px;">
                   ${grp.machineName}
                 </span>
+                ${grp.code ? `
+                  <span class="badge" style="margin-left: 6px; font-size: 11px; font-weight: 800; background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); font-family: monospace;" title="Machine Short Code: ${grp.code}">
+                    ${grp.code}
+                  </span>
+                ` : ''}
                 <span class="badge ${grp.models.length > 0 ? 'badge-active' : ''}" style="margin-left: 8px; font-size: 10.5px; font-weight: 800; ${grp.models.length === 0 ? 'background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3);' : ''}">
                   ${grp.models.length} ${grp.models.length === 1 ? 'Model' : 'Models'}
                 </span>
@@ -265,9 +270,9 @@ function renderGroupedMachinesView() {
                   class="btn btn-ghost btn-sm btn-edit-machine-group" 
                   data-machine="${grp.machineName}" 
                   style="font-size: 11px; font-weight: 700; padding: 4px 10px; color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); background: rgba(56, 189, 248, 0.08); border-radius: 4px;" 
-                  title="Rename Machine Type"
+                  title="Rename Machine Type & Edit Short Code"
                 >
-                  ✏️ Rename
+                  ✏️ Edit / Short Code
                 </button>
                 <button 
                   type="button" 
@@ -1525,9 +1530,10 @@ function renderStorageModal() {
     `;
   }
 
-  // 1B-RENAME-MACHINE. RENAME MACHINE TYPE MODAL
+  // 1B-RENAME-MACHINE. RENAME MACHINE TYPE & SHORT CODE MODAL
   if (activeModalState.type === 'EDIT_MACHINE_NAME') {
     const curName = activeModalState.machineName || '';
+    const curCode = activeModalState.code || smartStorageService.getMachineShortCode(curName) || '';
     const returnTo = activeModalState.returnTo || null;
     return `
       <div class="modal-overlay" id="modal-edit-machine-name-overlay">
@@ -1535,7 +1541,7 @@ function renderStorageModal() {
           <div class="modal-header" style="border-bottom: 1px solid var(--border-color); padding: 14px 18px;">
             <div class="modal-title" style="display: flex; align-items: center; gap: 8px;">
               <span style="font-size: 18px;">✏️</span>
-              <span style="font-weight: 800; font-size: 15px; color: #fff;">Rename Machine Type</span>
+              <span style="font-weight: 800; font-size: 15px; color: #fff;">Edit Machine Type &amp; Short Code</span>
             </div>
             <button type="button" id="btn-close-storage-modal" class="btn btn-ghost btn-sm">✕</button>
           </div>
@@ -1557,15 +1563,29 @@ function renderStorageModal() {
                 autofocus 
                 style="font-size: 13px; font-weight: 700;"
               />
+            </div>
+
+            <div class="form-group" style="display: flex; flex-direction: column; gap: 6px;">
+              <label class="form-label" style="font-weight: 700; color: #38bdf8; font-size: 12.5px; margin: 0;">
+                Machine Short Code (e.g. P/M, D/N-A, O/L, B/T, C/S)
+              </label>
+              <input 
+                type="text" 
+                id="inp-machine-short-code" 
+                class="form-control" 
+                value="${curCode}" 
+                placeholder="e.g. P/M"
+                style="font-size: 13px; font-weight: 700; font-family: monospace; max-width: 200px;"
+              />
               <div style="background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 4px; padding: 8px 10px; font-size: 11px; color: #cbd5e1; line-height: 1.4;">
-                ℹ️ Renaming will automatically update this machine type name across all of its registered models, database tables, and inventory entries.
+                ℹ️ This short code will automatically prefix Excel serial numbers during import (e.g. <code>P/M-400035</code>).
               </div>
             </div>
 
             <div class="modal-footer" style="padding: 10px 0 0; display: flex; justify-content: flex-end; gap: 8px; border-top: 1px solid var(--border-color);">
               <button type="button" id="btn-cancel-storage-modal" class="btn btn-secondary btn-sm" style="font-weight: 700;">Cancel</button>
               <button type="submit" id="btn-submit-rename-machine" class="btn btn-primary btn-sm" style="font-weight: 800; background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);">
-                💾 Save Machine Name
+                💾 Save Changes
               </button>
             </div>
           </form>
@@ -4407,6 +4427,7 @@ function initModalInteractions() {
         e.preventDefault();
         const oldName = modalLayer.querySelector('#inp-orig-machine-name')?.value?.trim();
         const newName = modalLayer.querySelector('#inp-new-renamed-machine-name')?.value?.trim();
+        const newCode = modalLayer.querySelector('#inp-machine-short-code')?.value?.trim() || null;
         const returnTo = modalLayer.querySelector('#inp-return-to')?.value?.trim();
 
         if (!newName) {
@@ -4422,7 +4443,7 @@ function initModalInteractions() {
         }
 
         try {
-          const res = await smartStorageService.renameMachineName(oldName, newName);
+          const res = await smartStorageService.renameMachineName(oldName, newName, newCode);
 
           const invMsg = (res && res.invUpdatedCount > 0) ? ` & auto-renamed ${res.invUpdatedCount} machine(s) in Inventory!` : '';
           if (typeof notificationService !== 'undefined' && notificationService.success) {

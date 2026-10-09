@@ -11,7 +11,7 @@
  */
 
 import { storage, CloudSaveError } from '../db/storage.js';
-import { TABLE_NAMES } from '../db/schema.js';
+import { TABLE_NAMES, GARMENT_MACHINE_SHORT_CODES } from '../db/schema.js';
 import { INITIAL_DATA } from '../db/initialData.js';
 import { auditService } from './auditService.js';
 import { notificationService } from './notificationService.js';
@@ -21,6 +21,31 @@ import { state } from '../state.js';
 class SmartStorageService {
   constructor() {
     this._activePromptModal = null;
+  }
+
+  /**
+   * Get configured or industry standard short code for machine type
+   */
+  getMachineShortCode(machineName) {
+    if (!machineName) return '';
+    const clean = String(machineName).trim();
+    const lower = clean.toLowerCase();
+    const allMn = storage.getTable(TABLE_NAMES.MACHINE_NAMES) || [];
+    const matched = allMn.find(m => m.name && m.name.trim().toLowerCase() === lower);
+    if (matched && matched.code && !/^[A-Z]{4}$/.test(matched.code)) {
+      return matched.code;
+    }
+    if (GARMENT_MACHINE_SHORT_CODES && GARMENT_MACHINE_SHORT_CODES[lower]) {
+      return GARMENT_MACHINE_SHORT_CODES[lower];
+    }
+    if (GARMENT_MACHINE_SHORT_CODES) {
+      for (const [key, code] of Object.entries(GARMENT_MACHINE_SHORT_CODES)) {
+        if (lower.includes(key) || key.includes(lower)) {
+          return code;
+        }
+      }
+    }
+    return matched?.code || '';
   }
 
   // ==========================================
@@ -320,12 +345,13 @@ class SmartStorageService {
       const lower = cleanName.toLowerCase();
       const order = (mn.sortOrder !== undefined && mn.sortOrder !== null) ? Number(mn.sortOrder) : (idx + 1);
       mnOrderMap.set(lower, order);
+      const shortCode = this.getMachineShortCode(cleanName) || mn.code || '';
       if (!map.has(lower)) {
         map.set(lower, {
           id: mn.id,
           machineName: cleanName,
           sortOrder: order,
-          code: mn.code || '',
+          code: shortCode,
           models: []
         });
       }
@@ -344,7 +370,7 @@ class SmartStorageService {
           id: 'mn-' + lower,
           machineName: mName,
           sortOrder: order,
-          code: '',
+          code: this.getMachineShortCode(mName),
           models: []
         });
       }
@@ -717,14 +743,12 @@ class SmartStorageService {
     return deletedCount;
   }
 
-  async renameMachineName(oldName, newName) {
+  async renameMachineName(oldName, newName, newCode = null) {
     const cleanOld = String(oldName || '').trim();
     const cleanNew = String(newName || '').trim();
+    const cleanCode = newCode !== null && newCode !== undefined ? String(newCode).trim() : null;
     if (!cleanOld) throw new Error('Existing machine name is required');
     if (!cleanNew) throw new Error('New machine name is required');
-    if (cleanOld.toLowerCase() === cleanNew.toLowerCase() && cleanOld === cleanNew) {
-      return { success: true, renamed: false, message: 'Names are identical' };
-    }
 
     const lowerOld = cleanOld.toLowerCase();
     const lowerNew = cleanNew.toLowerCase();
@@ -732,16 +756,28 @@ class SmartStorageService {
     // 1. Update in MACHINE_NAMES
     const allMn = storage.getTable(TABLE_NAMES.MACHINE_NAMES) || [];
     let matchedMn = allMn.find(m => m.name && m.name.trim().toLowerCase() === lowerOld);
+
+    const nameUnchanged = (cleanOld.toLowerCase() === cleanNew.toLowerCase() && cleanOld === cleanNew);
+    const codeUnchanged = (cleanCode === null || (matchedMn && (matchedMn.code || '') === cleanCode));
+    if (nameUnchanged && codeUnchanged) {
+      return { success: true, renamed: false, message: 'Names and codes are identical' };
+    }
+
     if (matchedMn) {
       matchedMn.name = cleanNew;
-      matchedMn.code = cleanNew.substring(0, 4).toUpperCase().replace(/[^A-Z0-9]/g, '');
+      if (cleanCode !== null && cleanCode !== '') {
+        matchedMn.code = cleanCode;
+      } else if (!matchedMn.code || /^[A-Z]{4}$/.test(matchedMn.code)) {
+        matchedMn.code = this.getMachineShortCode(cleanNew) || matchedMn.code;
+      }
       matchedMn.updatedAt = new Date().toISOString();
     } else {
       const maxOrder = allMn.reduce((max, m) => Math.max(max, Number(m.sortOrder || 0)), 0);
+      const codeVal = (cleanCode !== null && cleanCode !== '') ? cleanCode : (this.getMachineShortCode(cleanNew) || cleanNew.substring(0, 4).toUpperCase().replace(/[^A-Z0-9]/g, ''));
       matchedMn = {
         id: 'mn-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4),
         name: cleanNew,
-        code: cleanNew.substring(0, 4).toUpperCase().replace(/[^A-Z0-9]/g, ''),
+        code: codeVal,
         sortOrder: maxOrder + 1,
         status: 'ACTIVE',
         createdAt: new Date().toISOString(),
@@ -2912,6 +2948,14 @@ class SmartStorageService {
       let brand = getCell(row, ['Brand', 'Brand Name', 'Make', 'Manufacturer', 'Company']);
       let rawModel = getCell(row, ['Model', 'Model Number', 'Model No', 'Model #', 'Spec', 'Specification']);
       let remarks = getCell(row, ['Remarks', 'Remark', 'Note', 'Description']);
+      let shortCode = getCell(row, ['Short Code', 'Machine Short Code', 'Machine Name (Sort Form)', 'Sort Form', 'Code']);
+      if (!shortCode) {
+        const mcNum = getCell(row, ['Machine Number', 'Machine No.', 'Machine No']);
+        if (mcNum && mcNum.includes('-')) {
+          const prefix = mcNum.split('-')[0].trim();
+          if (prefix && prefix.length <= 6) shortCode = prefix;
+        }
+      }
 
       // Fallbacks if columns lack standard headers
       if (!machineName && !rawModel && !brand) {
@@ -2983,6 +3027,7 @@ class SmartStorageService {
             brand: bUpper,
             model: singleBrand,
             remarks,
+            shortCode,
             origIdx: idx + 1
           });
           if (machineName) lastBrandByMachine.set(machineName.toLowerCase(), bUpper);
@@ -3002,6 +3047,7 @@ class SmartStorageService {
                 brand: finalBrand,
                 model: finalModel,
                 remarks,
+                shortCode,
                 origIdx: idx + 1
               });
               if (finalBrand) lastBrandByMachine.set(machineName.toLowerCase(), finalBrand);
@@ -3090,18 +3136,22 @@ class SmartStorageService {
 
         // Ensure Machine Name is in MACHINE_NAMES table
         let mnItem = mnList.find(m => m && m.name && m.name.toLowerCase() === cleanMachine.toLowerCase());
+        const codeVal = item.shortCode || this.getMachineShortCode(cleanMachine) || cleanMachine.substring(0, 4).toUpperCase().replace(/[^A-Z0-9]/g, '');
         if (!mnItem && cleanMachine) {
           const maxOrder = mnList.reduce((max, m) => Math.max(max, Number(m.sortOrder || 0)), 0);
           mnItem = storage.insert(TABLE_NAMES.MACHINE_NAMES, {
             id: 'mn-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4),
             name: cleanMachine,
-            code: cleanMachine.substring(0, 4).toUpperCase().replace(/[^A-Z0-9]/g, ''),
+            code: codeVal,
             sortOrder: maxOrder + 1,
             status: 'ACTIVE',
             createdAt: new Date().toISOString()
           });
           mnList = storage.getTable(TABLE_NAMES.MACHINE_NAMES) || [];
           addedMachinesCount++;
+        } else if (mnItem && item.shortCode && (!mnItem.code || /^[A-Z]{4}$/.test(mnItem.code))) {
+          storage.update(TABLE_NAMES.MACHINE_NAMES, mnItem.id, { code: item.shortCode });
+          mnItem.code = item.shortCode;
         }
 
         // Ensure Brand is in BRANDS table

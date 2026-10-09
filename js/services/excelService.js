@@ -4,7 +4,7 @@
  */
 
 import { storage } from '../db/storage.js';
-import { TABLE_NAMES, DUPLICATE_POLICIES } from '../db/schema.js';
+import { TABLE_NAMES, DUPLICATE_POLICIES, GARMENT_MACHINE_SHORT_CODES } from '../db/schema.js';
 import { authService } from './authService.js';
 import { customFieldService } from './customFieldService.js';
 import { auditService } from './auditService.js';
@@ -751,6 +751,83 @@ class ExcelService {
   }
 
   /**
+   * Resolve garment machine short code
+   */
+  getGarmentMachineShortCode(rawMachineName) {
+    if (!rawMachineName) return '';
+    const clean = String(rawMachineName).trim().toLowerCase();
+    if (GARMENT_MACHINE_SHORT_CODES[clean]) return GARMENT_MACHINE_SHORT_CODES[clean];
+    for (const [key, code] of Object.entries(GARMENT_MACHINE_SHORT_CODES)) {
+      if (clean.includes(key) || key.includes(clean)) {
+        return code;
+      }
+    }
+    return '';
+  }
+
+  /**
+   * Normalize machine serial with short code prefix according to user rules:
+   * 1. If pure numbers (e.g. 400035, 01) -> P/M-400035
+   * 2. If already starts with exact short code (e.g. P/M-400035) -> preserve
+   * 3. If typo in short code (e.g. PM-400035, p/m-400035) -> fix to P/M-400035
+   * 4. If already custom format (e.g. SN-10001, C/S-19) -> preserve
+   */
+  normalizeMachineSerialWithShortCode(rawSerial, shortCode) {
+    if (!rawSerial) return '';
+    const serial = String(rawSerial).trim();
+    if (!serial) return '';
+    if (!shortCode) return serial;
+
+    const scClean = String(shortCode).trim();
+    if (!scClean) return serial;
+
+    // Exact prefix match: already starts with `${scClean}-`
+    if (serial.toUpperCase().startsWith(`${scClean.toUpperCase()}-`)) {
+      const rest = serial.substring(scClean.length + 1).trim();
+      return `${scClean}-${rest}`;
+    }
+
+    // Already starts with `${scClean}` followed by separator or space
+    if (serial.toUpperCase().startsWith(scClean.toUpperCase())) {
+      const after = serial.substring(scClean.length).trim();
+      const cleanRest = after.replace(/^[-_\s/:.]+/, '');
+      if (cleanRest) {
+        return `${scClean}-${cleanRest}`;
+      }
+    }
+
+    // Check typo/variation in short code: e.g. short code is "P/M", but user wrote "PM-400035" or "p-m-400035"
+    const scAlpha = scClean.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    if (scAlpha.length >= 2) {
+      const match = serial.match(/^([A-Za-z0-9\/\-_.]+?)[\s\-_:/]+(\d.*)$/);
+      if (match) {
+        const prefixAlpha = match[1].toUpperCase().replace(/[^A-Z0-9]/g, '');
+        if (prefixAlpha === scAlpha) {
+          return `${scClean}-${match[2].trim()}`;
+        }
+      }
+    }
+
+    // Pure digits or simple serial number (e.g. 400035, 01, 192, 12, 1237):
+    if (/^\d+$/.test(serial)) {
+      return `${scClean}-${serial}`;
+    }
+
+    // If serial already starts with a letter followed by a dash or letters (distinct custom prefix like SN-10001, MO-755, JUKI-01)
+    if (/^[A-Za-z]{2,}[-_]/.test(serial)) {
+      return serial;
+    }
+
+    // If serial already starts with another short code format (e.g. D/N-A-01, C/S-19, O/L-1237)
+    if (/^[A-Za-z][/][A-Za-z]/.test(serial)) {
+      return serial;
+    }
+
+    // Otherwise attach short code prefix
+    return `${scClean}-${serial}`;
+  }
+
+  /**
    * Suggest smart column mapping matching common garments inventory naming conventions
    */
   suggestColumnMapping(fileHeaders, sheetName = '') {
@@ -759,9 +836,22 @@ class ExcelService {
 
     const patterns = {
       machine_name: ['machinename', 'machinetype', 'mcname', 'itemname', 'machinedescription', 'type', 'machine'],
-      machine_brand: ['machinebrand', 'brand', 'mcbrand', 'make', 'manufacturer'],
-      machine_model: ['machinemodel', 'model', 'mcmodel', 'modelno', 'modelnumber'],
-      machine_serial: ['machineserial', 'machineserialnumber', 'machineserialno', 'serialnumber', 'serialno', 'serial', 'sn', 'machinecode'],
+      machine_brand: ['machinebrand', 'brand', 'mcbrand', 'make', 'manufacturer', 'company'],
+      machine_model: ['machinemodel', 'model', 'mcmodel', 'modelno', 'modelnumber', 'specification', 'spec'],
+      machine_serial: [
+        'machinenumber', 'machineno', 'machinenoonlynumber', 'machinenum',
+        'machineserial', 'machineserialnumber', 'machineserialno',
+        'serialnumber', 'serialno', 'serialnum', 'serial',
+        'mcserial', 'mcserialnumber', 'mcserialno', 'mcnumber', 'mcno',
+        'm/cno', 'm/cnumber', 'm/cserial', 'm/cserialno',
+        'manufacturingserialnumber', 'manufacturingserial', 'manufacturingno',
+        'sn', 'msn', 'machinecode', 'machinesl', 'mcsl',
+        'assetno', 'assetid', 'assettag', 'barcode'
+      ],
+      machine_short_code: [
+        'machinenamesortform', 'machinesortform', 'sortform', 'shortcode',
+        'machineshortcode', 'mcshortcode'
+      ],
       unit_factory: ['currentlocation', 'unitfactory', 'factoryunit', 'unit', 'factory', 'location', 'plant', 'factoryname'],
       floor: ['floor', 'floorno', 'buildingfloor', 'floorname', 'level'],
       line: ['section', 'line', 'lineno', 'productionline', 'sewingline', 'linename', 'department', 'dept'],
@@ -788,12 +878,29 @@ class ExcelService {
 
     for (const [sysField, matchWords] of Object.entries(patterns)) {
       for (const h of lowerHeaders) {
-        // Skip sl/slno from matching machine_serial
-        if (h.clean === 'sl' || h.clean === 'slno') continue;
+        // Skip sl/slno from matching machine_serial IF another candidate header exists in file
+        if ((h.clean === 'sl' || h.clean === 'slno') && sysField === 'machine_serial') {
+          const hasOtherSerial = lowerHeaders.some(other =>
+            other.clean !== 'sl' && other.clean !== 'slno' &&
+            matchWords.some(w => other.clean === w || other.clean.includes(w) || w.includes(other.clean))
+          );
+          if (hasOtherSerial) continue;
+        } else if (h.clean === 'sl' || h.clean === 'slno') {
+          continue;
+        }
+
         if (matchWords.some(w => h.clean === w || h.clean.includes(w) || w.includes(h.clean))) {
           mapping[sysField] = h.raw;
           break;
         }
+      }
+    }
+
+    // Fallback: If machine_serial is still unmapped and the file contains SL / SL NO, map it!
+    if (!mapping.machine_serial) {
+      const slCol = lowerHeaders.find(h => h.clean === 'sl' || h.clean === 'slno' || h.clean === 'sno' || h.clean === 'sino');
+      if (slCol) {
+        mapping.machine_serial = slCol.raw;
       }
     }
 
@@ -929,6 +1036,42 @@ class ExcelService {
         let floorStr = mapped.floor || '';
         let lineStr = mapped.line || '';
 
+        // Fallback search across all possible columns in raw row if serialNumber is still empty
+        if (!serialNumber) {
+          const serialCandidateKeys = [
+            'machineserial', 'machineserialnumber', 'machineserialno',
+            'machinenumber', 'machineno', 'machinenoonlynumber', 'machinenum',
+            'serialnumber', 'serialno', 'serialnum', 'serial',
+            'mcserial', 'mcserialnumber', 'mcserialno', 'mcnumber', 'mcno',
+            'manufacturingserialnumber', 'manufacturingserial',
+            'sn', 'msn', 'machinecode', 'machinesl', 'mcsl',
+            'slno', 'sino', 'sl', 'sno'
+          ];
+          for (const candKey of serialCandidateKeys) {
+            for (const [k, v] of Object.entries(row)) {
+              if (v !== undefined && v !== null && String(v).trim() !== '') {
+                const cleanK = k.toLowerCase().replace(/[^a-z0-9]/g, '');
+                if (cleanK === candKey) {
+                  serialNumber = cleanSpaces(v);
+                  break;
+                }
+              }
+            }
+            if (serialNumber) break;
+          }
+          if (!serialNumber) {
+            for (const [k, v] of Object.entries(row)) {
+              if (v !== undefined && v !== null && String(v).trim() !== '') {
+                const cleanK = k.toLowerCase().replace(/[^a-z0-9]/g, '');
+                if (cleanK.includes('serial') || cleanK.includes('machinenumber') || cleanK.includes('machineno') || cleanK.includes('mcno')) {
+                  serialNumber = cleanSpaces(v);
+                  break;
+                }
+              }
+            }
+          }
+        }
+
         // -------------------------------------------------------------------------
         // 1. Master Data Auto-Fix & Normalization (Spaces, Casing & Canonical Match)
         // -------------------------------------------------------------------------
@@ -1055,16 +1198,56 @@ class ExcelService {
           lineStr = foundLine.name;
         }
 
-        // Quantities
-        const runningVal = parseInt(mapped.running, 10) || 0;
-        const usableIdleVal = parseInt(mapped.usable_idle, 10) || 0;
-        const repairableIdleVal = parseInt(mapped.repairable_idle, 10) || 0;
+        // Quantities (Running, Usable Idle, Repairable Idle)
+        let runningVal = mapped.running !== undefined && mapped.running !== '' ? parseInt(mapped.running, 10) : NaN;
+        let usableIdleVal = mapped.usable_idle !== undefined && mapped.usable_idle !== '' ? parseInt(mapped.usable_idle, 10) : NaN;
+        let repairableIdleVal = mapped.repairable_idle !== undefined && mapped.repairable_idle !== '' ? parseInt(mapped.repairable_idle, 10) : NaN;
+
+        // Fallback: check raw row directly if any breakdown field was unmapped
+        const findQtyInRow = (patterns) => {
+          for (const [k, v] of Object.entries(row)) {
+            if (v !== undefined && v !== null && String(v).trim() !== '') {
+              const cleanK = k.toLowerCase().replace(/[^a-z0-9]/g, '');
+              if (patterns.some(p => cleanK === p || cleanK.includes(p))) {
+                const n = parseInt(String(v).trim(), 10);
+                if (!isNaN(n)) return n;
+              }
+            }
+          }
+          return null;
+        };
+
+        if (isNaN(runningVal)) {
+          const fromRow = findQtyInRow(['running', 'runningqty', 'qtyrunning', 'runningquantity', 'activeqty', 'inuse', 'runqty']);
+          runningVal = fromRow !== null ? fromRow : 0;
+        }
+        if (isNaN(usableIdleVal)) {
+          const fromRow = findQtyInRow(['usableidle', 'usableidleqty', 'idleusable', 'usable', 'usableqty', 'idle', 'standby']);
+          usableIdleVal = fromRow !== null ? fromRow : 0;
+        }
+        if (isNaN(repairableIdleVal)) {
+          const fromRow = findQtyInRow(['repairableidle', 'repairableidleqty', 'idlerepairable', 'repairable', 'repairidle', 'repairqty', 'breakdown', 'damage', 'underrepair']);
+          repairableIdleVal = fromRow !== null ? fromRow : 0;
+        }
+
         let totalQtyVal = runningVal + usableIdleVal + repairableIdleVal;
         if (totalQtyVal === 0) {
           if (mapped.total_quantity) totalQtyVal = parseInt(mapped.total_quantity, 10) || 0;
           else if (mapped.quantity) totalQtyVal = parseInt(mapped.quantity, 10) || 0;
         }
         if (totalQtyVal === 0) totalQtyVal = 1;
+
+        // If breakdown was not provided in Excel (all 3 are 0), attribute according to status
+        if (runningVal === 0 && usableIdleVal === 0 && repairableIdleVal === 0) {
+          const statusLower = (mapped.machine_status || mapped.status || '').toLowerCase();
+          if (statusLower.includes('idle') || statusLower.includes('usable')) {
+            usableIdleVal = totalQtyVal;
+          } else if (statusLower.includes('repair') || statusLower.includes('maintenance') || statusLower.includes('breakdown')) {
+            repairableIdleVal = totalQtyVal;
+          } else {
+            runningVal = totalQtyVal;
+          }
+        }
 
         const statusStr = (mapped.machine_status || mapped.status || (runningVal > 0 ? 'ACTIVE' : (usableIdleVal > 0 ? 'IDLE' : (repairableIdleVal > 0 ? 'MAINTENANCE' : 'ACTIVE')))).trim().toUpperCase();
 
@@ -1098,11 +1281,29 @@ class ExcelService {
 
         // Machine Brand and Machine Model are optional. If blank in Excel, they remain blank for future editing.
 
-        // Auto-generate serial number if blank (system-generated rule)
-        if (!serialNumber) {
-          const flCode = foundFloor?.code || (foundFloor?.name ? foundFloor.name.substring(0, 2).toUpperCase() : 'MC');
-          serialNumber = `${flCode}-AUTOGEN-${String(rowIndex + 1).padStart(3, '0')}`;
-          rowWarnings.push(`Machine Serial was blank; auto-generating temporary identifier '${serialNumber}'.`);
+        // -------------------------------------------------------------------------
+        // 2B. Machine Short Code & Serial Normalization / Preservation
+        // -------------------------------------------------------------------------
+        const explicitShortCode = mapped.machine_short_code || 
+          cleanSpaces(row['Machine Name (Sort Form)'] || row['Sort Form'] || row['Short Code'] || row['Machine Short Code'] || '');
+        
+        let resolvedShortCode = explicitShortCode || '';
+        if (!resolvedShortCode && foundMN && foundMN.code && !/^[A-Z]{4}$/.test(foundMN.code)) {
+          resolvedShortCode = foundMN.code;
+        }
+        if (!resolvedShortCode && machineNameStr) {
+          resolvedShortCode = this.getGarmentMachineShortCode(machineNameStr) || (foundMN?.code && !/^[A-Z]{4}$/.test(foundMN.code) ? foundMN.code : '');
+        }
+
+        if (serialNumber) {
+          // PRESERVE user-provided serial number EXACTLY as entered in Excel.
+          // Never prepend short codes, change casing, or alter the user's serial number!
+          serialNumber = serialNumber.trim();
+        } else {
+          // Auto-generate serial number only if truly blank across all columns in Excel
+          const prefix = resolvedShortCode || (foundFloor?.code || (foundFloor?.name ? foundFloor.name.substring(0, 2).toUpperCase() : 'MC'));
+          serialNumber = `${prefix}-${String(rowIndex + 1).padStart(3, '0')}`;
+          rowWarnings.push(`Machine Serial was blank in Excel; assigned '${serialNumber}'.`);
         }
 
         // -------------------------------------------------------------------------
@@ -1545,7 +1746,18 @@ class ExcelService {
               if (d.modelId) updates.modelId = d.modelId;
               if (d.status) updates.status = d.status;
               if (d.remarks) updates.remarks = d.remarks;
-              if (d.quantity) updates.quantity = d.quantity;
+              // Update Running / Usable Idle / Repairable Idle from Excel if provided
+              if (d.running !== undefined) updates.running = Number(d.running);
+              if (d.usableIdle !== undefined) updates.usable_idle = Number(d.usableIdle);
+              if (d.repairableIdle !== undefined) updates.repairable_idle = Number(d.repairableIdle);
+              if (d.running !== undefined || d.usableIdle !== undefined || d.repairableIdle !== undefined) {
+                const curR = updates.running !== undefined ? updates.running : Number(existing.running ?? 0);
+                const curU = updates.usable_idle !== undefined ? updates.usable_idle : Number(existing.usable_idle ?? 0);
+                const curRP = updates.repairable_idle !== undefined ? updates.repairable_idle : Number(existing.repairable_idle ?? 0);
+                updates.quantity = (curR + curU + curRP) || existing.quantity;
+              } else if (d.quantity) {
+                updates.quantity = Number(d.quantity);
+              }
               if (Object.keys(d.customValues || {}).length > 0) {
                 updates.customValues = { ...(existing.customValues || {}), ...d.customValues };
               }
@@ -1572,6 +1784,11 @@ class ExcelService {
             const unitObj = storage.getItem(TABLE_NAMES.UNITS, d.unitId || 'unt-1');
             const resolvedGroupId = unitObj?.groupId || d.groupId || 'grp-1';
 
+            const runQty = d.running !== undefined ? Number(d.running) : (d.status === 'ACTIVE' ? (Number(d.quantity) || 1) : 0);
+            const usableQty = d.usableIdle !== undefined ? Number(d.usableIdle) : (d.status === 'IDLE' ? (Number(d.quantity) || 1) : 0);
+            const repQty = d.repairableIdle !== undefined ? Number(d.repairableIdle) : ((d.status === 'MAINTENANCE' || d.status === 'BREAKDOWN') ? (Number(d.quantity) || 1) : 0);
+            const finalQty = (runQty + usableQty + repQty) || Number(d.quantity) || 1;
+
             sheetNewMachines.push({
               machineNameId: d.machineNameId || 'mn-1',
               brandId: d.brandId || '',
@@ -1581,7 +1798,10 @@ class ExcelService {
               unitId: d.unitId || 'unt-1',
               floorId: d.floorId || 'flr-4',
               lineId: d.lineId || 'lin-1',
-              quantity: d.quantity || 1,
+              quantity: finalQty,
+              running: runQty,
+              usable_idle: usableQty,
+              repairable_idle: repQty,
               status: d.status || 'ACTIVE',
               remarks: d.remarks || `Imported from sheet '${sheet.name}'`,
               customValues: d.customValues || {},

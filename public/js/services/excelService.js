@@ -1038,18 +1038,26 @@ class ExcelService {
 
         // Fallback search across all possible columns in raw row if serialNumber is still empty
         if (!serialNumber) {
-          const serialCandidates = [
-            'Machine Number', 'Machine No.', 'Machine No', 'Machine No. (Only Number)',
-            'Machine Serial', 'Machine Serial Number', 'Serial Number', 'Serial No', 'Serial No.',
-            'Serial', 'M/C No.', 'M/C No', 'MC No.', 'MC No', 'MC Number', 'M/C Serial', 'MC Serial',
-            'Manufacturing Serial Number', 'Manufacturing Serial', 'S/N', 'SN', 'MSN',
-            'Machine SL', 'MC SL', 'Sl No', 'SL No', 'SL. NO.', 'SL NO', 'SL', 'Sl'
+          const serialCandidateKeys = [
+            'machineserial', 'machineserialnumber', 'machineserialno',
+            'machinenumber', 'machineno', 'machinenoonlynumber', 'machinenum',
+            'serialnumber', 'serialno', 'serialnum', 'serial',
+            'mcserial', 'mcserialnumber', 'mcserialno', 'mcnumber', 'mcno',
+            'manufacturingserialnumber', 'manufacturingserial',
+            'sn', 'msn', 'machinecode', 'machinesl', 'mcsl',
+            'slno', 'sino', 'sl', 'sno'
           ];
-          for (const cand of serialCandidates) {
-            if (row[cand] !== undefined && row[cand] !== null && String(row[cand]).trim() !== '') {
-              serialNumber = cleanSpaces(row[cand]);
-              break;
+          for (const candKey of serialCandidateKeys) {
+            for (const [k, v] of Object.entries(row)) {
+              if (v !== undefined && v !== null && String(v).trim() !== '') {
+                const cleanK = k.toLowerCase().replace(/[^a-z0-9]/g, '');
+                if (cleanK === candKey) {
+                  serialNumber = cleanSpaces(v);
+                  break;
+                }
+              }
             }
+            if (serialNumber) break;
           }
           if (!serialNumber) {
             for (const [k, v] of Object.entries(row)) {
@@ -1190,16 +1198,56 @@ class ExcelService {
           lineStr = foundLine.name;
         }
 
-        // Quantities
-        const runningVal = parseInt(mapped.running, 10) || 0;
-        const usableIdleVal = parseInt(mapped.usable_idle, 10) || 0;
-        const repairableIdleVal = parseInt(mapped.repairable_idle, 10) || 0;
+        // Quantities (Running, Usable Idle, Repairable Idle)
+        let runningVal = mapped.running !== undefined && mapped.running !== '' ? parseInt(mapped.running, 10) : NaN;
+        let usableIdleVal = mapped.usable_idle !== undefined && mapped.usable_idle !== '' ? parseInt(mapped.usable_idle, 10) : NaN;
+        let repairableIdleVal = mapped.repairable_idle !== undefined && mapped.repairable_idle !== '' ? parseInt(mapped.repairable_idle, 10) : NaN;
+
+        // Fallback: check raw row directly if any breakdown field was unmapped
+        const findQtyInRow = (patterns) => {
+          for (const [k, v] of Object.entries(row)) {
+            if (v !== undefined && v !== null && String(v).trim() !== '') {
+              const cleanK = k.toLowerCase().replace(/[^a-z0-9]/g, '');
+              if (patterns.some(p => cleanK === p || cleanK.includes(p))) {
+                const n = parseInt(String(v).trim(), 10);
+                if (!isNaN(n)) return n;
+              }
+            }
+          }
+          return null;
+        };
+
+        if (isNaN(runningVal)) {
+          const fromRow = findQtyInRow(['running', 'runningqty', 'qtyrunning', 'runningquantity', 'activeqty', 'inuse', 'runqty']);
+          runningVal = fromRow !== null ? fromRow : 0;
+        }
+        if (isNaN(usableIdleVal)) {
+          const fromRow = findQtyInRow(['usableidle', 'usableidleqty', 'idleusable', 'usable', 'usableqty', 'idle', 'standby']);
+          usableIdleVal = fromRow !== null ? fromRow : 0;
+        }
+        if (isNaN(repairableIdleVal)) {
+          const fromRow = findQtyInRow(['repairableidle', 'repairableidleqty', 'idlerepairable', 'repairable', 'repairidle', 'repairqty', 'breakdown', 'damage', 'underrepair']);
+          repairableIdleVal = fromRow !== null ? fromRow : 0;
+        }
+
         let totalQtyVal = runningVal + usableIdleVal + repairableIdleVal;
         if (totalQtyVal === 0) {
           if (mapped.total_quantity) totalQtyVal = parseInt(mapped.total_quantity, 10) || 0;
           else if (mapped.quantity) totalQtyVal = parseInt(mapped.quantity, 10) || 0;
         }
         if (totalQtyVal === 0) totalQtyVal = 1;
+
+        // If breakdown was not provided in Excel (all 3 are 0), attribute according to status
+        if (runningVal === 0 && usableIdleVal === 0 && repairableIdleVal === 0) {
+          const statusLower = (mapped.machine_status || mapped.status || '').toLowerCase();
+          if (statusLower.includes('idle') || statusLower.includes('usable')) {
+            usableIdleVal = totalQtyVal;
+          } else if (statusLower.includes('repair') || statusLower.includes('maintenance') || statusLower.includes('breakdown')) {
+            repairableIdleVal = totalQtyVal;
+          } else {
+            runningVal = totalQtyVal;
+          }
+        }
 
         const statusStr = (mapped.machine_status || mapped.status || (runningVal > 0 ? 'ACTIVE' : (usableIdleVal > 0 ? 'IDLE' : (repairableIdleVal > 0 ? 'MAINTENANCE' : 'ACTIVE')))).trim().toUpperCase();
 
@@ -1248,25 +1296,9 @@ class ExcelService {
         }
 
         if (serialNumber) {
-          // PRESERVE user-provided serial number exactly as entered.
-          // Only apply normalization if the serial is purely numeric (e.g. 001, 400035)
-          // and a short code exists — in all other cases, keep the user's value as-is.
-          const origSerial = serialNumber;
-          if (/^\d+$/.test(serialNumber.trim()) && resolvedShortCode) {
-            // Pure digits: prepend short code prefix (e.g. 001 -> DDL-001)
-            serialNumber = `${resolvedShortCode}-${serialNumber.trim()}`;
-            grandAutoFixedList.push({
-              sheetName: sheet.name,
-              cell: getCellAddress(mapping.machine_serial || 'Machine Serial', rowNumber),
-              rowNumber,
-              column: mapping.machine_serial || 'Machine Serial',
-              original: origSerial,
-              fixed: serialNumber,
-              type: 'SERIAL_PREFIX',
-              reason: `Applied machine short code '${resolvedShortCode}' prefix to numeric serial`
-            });
-          }
-          // Otherwise: preserve the user's serial number exactly as entered (no modification)
+          // PRESERVE user-provided serial number EXACTLY as entered in Excel.
+          // Never prepend short codes, change casing, or alter the user's serial number!
+          serialNumber = serialNumber.trim();
         } else {
           // Auto-generate serial number only if truly blank across all columns in Excel
           const prefix = resolvedShortCode || (foundFloor?.code || (foundFloor?.name ? foundFloor.name.substring(0, 2).toUpperCase() : 'MC'));
@@ -1715,12 +1747,16 @@ class ExcelService {
               if (d.status) updates.status = d.status;
               if (d.remarks) updates.remarks = d.remarks;
               // Update Running / Usable Idle / Repairable Idle from Excel if provided
-              if (d.running !== undefined) updates.running = d.running;
-              if (d.usableIdle !== undefined) updates.usable_idle = d.usableIdle;
-              if (d.repairableIdle !== undefined) updates.repairable_idle = d.repairableIdle;
-              if (d.quantity) updates.quantity = d.quantity;
-              else if (d.running !== undefined || d.usableIdle !== undefined || d.repairableIdle !== undefined) {
-                updates.quantity = (Number(d.running ?? 0) + Number(d.usableIdle ?? 0) + Number(d.repairableIdle ?? 0)) || existing.quantity;
+              if (d.running !== undefined) updates.running = Number(d.running);
+              if (d.usableIdle !== undefined) updates.usable_idle = Number(d.usableIdle);
+              if (d.repairableIdle !== undefined) updates.repairable_idle = Number(d.repairableIdle);
+              if (d.running !== undefined || d.usableIdle !== undefined || d.repairableIdle !== undefined) {
+                const curR = updates.running !== undefined ? updates.running : Number(existing.running ?? 0);
+                const curU = updates.usable_idle !== undefined ? updates.usable_idle : Number(existing.usable_idle ?? 0);
+                const curRP = updates.repairable_idle !== undefined ? updates.repairable_idle : Number(existing.repairable_idle ?? 0);
+                updates.quantity = (curR + curU + curRP) || existing.quantity;
+              } else if (d.quantity) {
+                updates.quantity = Number(d.quantity);
               }
               if (Object.keys(d.customValues || {}).length > 0) {
                 updates.customValues = { ...(existing.customValues || {}), ...d.customValues };
@@ -1748,6 +1784,11 @@ class ExcelService {
             const unitObj = storage.getItem(TABLE_NAMES.UNITS, d.unitId || 'unt-1');
             const resolvedGroupId = unitObj?.groupId || d.groupId || 'grp-1';
 
+            const runQty = d.running !== undefined ? Number(d.running) : (d.status === 'ACTIVE' ? (Number(d.quantity) || 1) : 0);
+            const usableQty = d.usableIdle !== undefined ? Number(d.usableIdle) : (d.status === 'IDLE' ? (Number(d.quantity) || 1) : 0);
+            const repQty = d.repairableIdle !== undefined ? Number(d.repairableIdle) : ((d.status === 'MAINTENANCE' || d.status === 'BREAKDOWN') ? (Number(d.quantity) || 1) : 0);
+            const finalQty = (runQty + usableQty + repQty) || Number(d.quantity) || 1;
+
             sheetNewMachines.push({
               machineNameId: d.machineNameId || 'mn-1',
               brandId: d.brandId || '',
@@ -1757,10 +1798,10 @@ class ExcelService {
               unitId: d.unitId || 'unt-1',
               floorId: d.floorId || 'flr-4',
               lineId: d.lineId || 'lin-1',
-              quantity: d.quantity || 1,
-              running: d.running !== undefined ? d.running : undefined,
-              usable_idle: d.usableIdle !== undefined ? d.usableIdle : undefined,
-              repairable_idle: d.repairableIdle !== undefined ? d.repairableIdle : undefined,
+              quantity: finalQty,
+              running: runQty,
+              usable_idle: usableQty,
+              repairable_idle: repQty,
               status: d.status || 'ACTIVE',
               remarks: d.remarks || `Imported from sheet '${sheet.name}'`,
               customValues: d.customValues || {},
