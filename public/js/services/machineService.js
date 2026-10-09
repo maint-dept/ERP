@@ -396,14 +396,26 @@ class MachineService {
     const qty = machineData.quantity !== undefined ? Number(machineData.quantity) : 1;
     const status = machineData.status || 'ACTIVE';
 
-    const running = (status === 'ACTIVE') ? qty : 0;
-    const usable_idle = (status === 'IDLE') ? qty : 0;
-    const repairable_idle = (status === 'MAINTENANCE' || status === 'BREAKDOWN') ? qty : 0;
+    // Use explicitly provided running/idle values (e.g. from Excel import), else derive from status
+    let running, usable_idle, repairable_idle;
+    if (machineData.running !== undefined || machineData.usable_idle !== undefined || machineData.repairable_idle !== undefined) {
+      running = Number(machineData.running ?? 0);
+      usable_idle = Number(machineData.usable_idle ?? 0);
+      repairable_idle = Number(machineData.repairable_idle ?? 0);
+    } else {
+      running = (status === 'ACTIVE') ? qty : 0;
+      usable_idle = (status === 'IDLE') ? qty : 0;
+      repairable_idle = (status === 'MAINTENANCE' || status === 'BREAKDOWN') ? qty : 0;
+    }
+    // Ensure total quantity matches sum of the three fields when provided explicitly
+    const finalQty = (machineData.running !== undefined || machineData.usable_idle !== undefined || machineData.repairable_idle !== undefined)
+      ? (running + usable_idle + repairable_idle) || qty
+      : qty;
 
     const newMachine = {
       ...machineData,
       sl: sl,
-      quantity: qty,
+      quantity: finalQty,
       status: status,
       running,
       usable_idle,

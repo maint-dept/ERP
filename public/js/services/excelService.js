@@ -1714,7 +1714,14 @@ class ExcelService {
               if (d.modelId) updates.modelId = d.modelId;
               if (d.status) updates.status = d.status;
               if (d.remarks) updates.remarks = d.remarks;
+              // Update Running / Usable Idle / Repairable Idle from Excel if provided
+              if (d.running !== undefined) updates.running = d.running;
+              if (d.usableIdle !== undefined) updates.usable_idle = d.usableIdle;
+              if (d.repairableIdle !== undefined) updates.repairable_idle = d.repairableIdle;
               if (d.quantity) updates.quantity = d.quantity;
+              else if (d.running !== undefined || d.usableIdle !== undefined || d.repairableIdle !== undefined) {
+                updates.quantity = (Number(d.running ?? 0) + Number(d.usableIdle ?? 0) + Number(d.repairableIdle ?? 0)) || existing.quantity;
+              }
               if (Object.keys(d.customValues || {}).length > 0) {
                 updates.customValues = { ...(existing.customValues || {}), ...d.customValues };
               }
@@ -1751,6 +1758,9 @@ class ExcelService {
               floorId: d.floorId || 'flr-4',
               lineId: d.lineId || 'lin-1',
               quantity: d.quantity || 1,
+              running: d.running !== undefined ? d.running : undefined,
+              usable_idle: d.usableIdle !== undefined ? d.usableIdle : undefined,
+              repairable_idle: d.repairableIdle !== undefined ? d.repairableIdle : undefined,
               status: d.status || 'ACTIVE',
               remarks: d.remarks || `Imported from sheet '${sheet.name}'`,
               customValues: d.customValues || {},
