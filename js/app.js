@@ -34,7 +34,7 @@ import { renderSettingsView, initSettingsEvents } from './components/settingsVie
 import { renderDatabaseConfigView, initDatabaseConfigEvents } from './components/databaseConfigView.js?v=4.24.0';
 import { renderResourceLibraryView, initResourceLibraryEvents } from './components/resourceLibraryView.js?v=4.24.0';
 import { renderColumnVisibilityModal, initColumnVisibilityEvents } from './components/columnVisibilityModal.js?v=4.24.0';
-import { renderMachineHistoryView, initMachineHistoryEvents } from './components/machineHistoryView.js?v=4.24.0';
+import { renderMachineHistoryView, initMachineHistoryEvents } from './components/machineHistoryView.js?v=4.25.2';
 import { renderSparePartsManagementView, initSparePartsManagementEvents } from './components/sparePartsManagementView.js?v=4.24.0';
 import { renderToolsManagementView, initToolsManagementEvents } from './components/toolsManagementView.js?v=4.24.0';
 import { renderManpowerView, initManpowerEvents } from './components/manpowerView.js?v=4.24.0';

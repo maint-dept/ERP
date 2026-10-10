@@ -185,261 +185,201 @@ export function renderMachineHistoryView() {
     etLabService.getBoardHistoryForMachine(enrichedMachine.serialNumber) : [];
 
   return `
-    <div class="page-view history-page-wrapper" style="gap: 12px; padding: 16px;">
+    <div class="page-view history-page-wrapper" style="gap: 10px; padding: 12px 16px;">
       
-      <!-- Top Action Command Bar -->
-      <div class="view-header-row" style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; box-shadow: var(--shadow-sm);">
-        <div style="min-width: 0; flex: 1;">
-          <div style="font-weight: 800; font-size: 16px; color: var(--text-primary); display: flex; align-items: center; gap: 8px; word-break: break-word;">
-            <span style="font-size: 20px;">📜</span>
-            <span>Machine History &amp; Maintenance Ledger</span>
-          </div>
-          <div style="font-size: 12px; color: var(--text-secondary); margin-top: 2px;">
-            Search by <strong>Machine Serial Number</strong> (Format: <code>[Floor Short Code]-[Machine Number]</code>, e.g. <code>JA-01</code>, <code>BG-01</code>, <code>TT-01</code>, <code>5369</code>).
-          </div>
-        </div>
-
-        <!-- Machine History Actions -->
-        <div class="view-header-actions" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-          ${authService.hasAccess('service_repair', 'ADD') ? `
-            <button id="btn-open-service-modal" class="btn btn-primary btn-sm" style="font-weight: 700; height: 36px; background: linear-gradient(135deg, #0284c7, #0369a1); box-shadow: 0 2px 10px rgba(2, 132, 199, 0.35);">
-              🛠️ Log Service &amp; Repair
-            </button>
-          ` : ''}
-          ${(authService.hasAccess('spare_parts', 'ADD') || authService.hasAccess('service_repair', 'ADD')) ? `
-            <button id="btn-add-spare-part-manual" class="btn btn-secondary btn-sm" style="height: 36px; font-weight: 600;">
-              ⚙️ Log Spare Part Replacement
-            </button>
-          ` : ''}
-          <button id="btn-print-machine-passport" class="btn btn-secondary btn-sm" style="height: 36px; border-color: #38bdf8; color: #38bdf8; font-weight: 700;" title="Generate & Print Official Machine History Passport">
-            🖨️ Print Machine Passport
-          </button>
-          ${authService.hasAccess('excel_export', 'EXPORT') ? `
-            <button id="btn-export-history-excel" class="btn btn-secondary btn-sm" style="height: 36px;" title="Export complete multi-sheet Excel history report">
-              📊 Export (.xlsx)
-            </button>
-          ` : ''}
-        </div>
-      </div>
-
-      <!-- Ultra-Clean, Organized Cascading Dropdowns Command Hub (Group, Unit, Floor, Line, Machine) -->
-      <div class="hist-command-hub" style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.95)); border: 1px solid rgba(56, 189, 248, 0.35); border-radius: var(--radius-lg); padding: 18px 22px; display: flex; flex-direction: column; gap: 14px; box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);">
+      <!-- Unified Compact Command Hub -->
+      <div class="hist-command-hub" style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.95)); border: 1px solid rgba(56, 189, 248, 0.28); border-radius: var(--radius-lg); padding: 10px 14px; display: flex; flex-direction: column; gap: 8px; box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35);">
         
-        <!-- Header Bar: Title, Auto-Sync Status, Master Data Config Bridge -->
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding-bottom: 12px;">
-          <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-            <div style="font-size: 14.5px; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 8px;">
-              <span style="font-size: 19px;">🏢</span>
-              <span>Plant Hierarchy &amp; Machine Selector</span>
-            </div>
-            <span style="display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 20px; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); font-size: 11px; color: #34d399; font-weight: 700;">
-              <span style="width: 7px; height: 7px; border-radius: 50%; background: #10b981; box-shadow: 0 0 6px #10b981; display: inline-block;"></span>
-              Auto-Synced from Master Data
+        <!-- Row 1: Header Title & Action Buttons -->
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <span style="font-size: 16px;">📜</span>
+            <span style="font-weight: 800; font-size: 14.5px; color: #ffffff; letter-spacing: -0.2px;">Machine History &amp; Passport Ledger</span>
+            <span style="display: inline-flex; align-items: center; gap: 4px; padding: 2px 7px; border-radius: 12px; background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.35); font-size: 10px; color: #34d399; font-weight: 700;">
+              <span style="width: 5px; height: 5px; border-radius: 50%; background: #10b981; display: inline-block;"></span>
+              Auto-Synced
             </span>
           </div>
 
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <button id="btn-goto-master-data" class="btn btn-secondary btn-sm" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700; height: 32px; border-color: rgba(56, 189, 248, 0.5); color: #38bdf8; background: rgba(15, 23, 42, 0.85); box-shadow: 0 2px 8px rgba(0,0,0,0.2);" title="Open Plant Hierarchy & Master Data Configuration view">
-              <span>🏢 Plant Hierarchy &amp; Master Data Configuration</span>
-              <span style="font-size: 12px;">&rarr;</span>
+          <!-- Machine History Actions -->
+          <div class="view-header-actions" style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+            ${authService.hasAccess('service_repair', 'ADD') ? `
+              <button id="btn-open-service-modal" class="btn btn-primary btn-sm" style="font-weight: 700; height: 30px; font-size: 11.5px; padding: 0 10px; background: linear-gradient(135deg, #0284c7, #0369a1); box-shadow: 0 2px 8px rgba(2, 132, 199, 0.3);">
+                🛠️ Log Service
+              </button>
+            ` : ''}
+            ${(authService.hasAccess('spare_parts', 'ADD') || authService.hasAccess('service_repair', 'ADD')) ? `
+              <button id="btn-add-spare-part-manual" class="btn btn-secondary btn-sm" style="height: 30px; font-size: 11.5px; padding: 0 10px; font-weight: 600;">
+                ⚙️ Log Spare Part
+              </button>
+            ` : ''}
+            <button id="btn-print-machine-passport" class="btn btn-secondary btn-sm" style="height: 30px; font-size: 11.5px; padding: 0 10px; border-color: rgba(56, 189, 248, 0.5); color: #38bdf8; font-weight: 700;" title="Generate & Print Official Machine History Passport">
+              🖨️ Print Passport
+            </button>
+            ${authService.hasAccess('excel_export', 'EXPORT') ? `
+              <button id="btn-export-history-excel" class="btn btn-secondary btn-sm" style="height: 30px; font-size: 11.5px; padding: 0 10px;" title="Export complete multi-sheet Excel history report">
+                📊 Export (.xlsx)
+              </button>
+            ` : ''}
+            <button id="btn-goto-master-data" class="btn btn-ghost btn-sm" style="height: 30px; font-size: 11px; padding: 0 8px; color: #94a3b8; border: 1px solid rgba(255, 255, 255, 0.12);" title="Plant Hierarchy & Master Data Configuration">
+              🏢 Master Data &rarr;
             </button>
           </div>
         </div>
 
-        <!-- Row 1: Cascading Dropdowns (Group -> Unit -> Floor -> Line) in One Aligned Grid -->
-        <div class="history-filters-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr)); gap: 10px; align-items: flex-end;">
-          
-          <!-- 1. Group Dropdown -->
-          <div style="display: flex; flex-direction: column; gap: 5px;">
-            <label for="filter-hist-group" style="font-size: 11px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 5px;">
-              <span>🏢 Group:</span>
-            </label>
-            <select id="filter-hist-group" class="filter-select" style="height: 38px; font-size: 12px; background: #080d1a; color: #e2e8f0; border: 1.5px solid rgba(255, 255, 255, 0.15); border-radius: 6px;">
-              ${groupOptions}
-            </select>
-          </div>
-
-          <!-- 2. Unit Dropdown -->
-          <div style="display: flex; flex-direction: column; gap: 5px;">
-            <label for="filter-hist-unit" style="font-size: 11px; font-weight: 800; color: #38bdf8; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 5px;">
-              <span>🏭 Unit / Factory:</span>
-            </label>
-            <select id="filter-hist-unit" class="filter-select" style="height: 38px; font-size: 12px; background: #080d1a; color: #38bdf8; font-weight: 700; border: 1.5px solid rgba(56, 189, 248, 0.5); border-radius: 6px;">
-              ${unitOptions}
-            </select>
-          </div>
-
-          <!-- 3. Floor Dropdown -->
-          <div style="display: flex; flex-direction: column; gap: 5px;">
-            <label for="filter-hist-floor" style="font-size: 11px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 5px;">
-              <span>📍 Production Floor:</span>
-            </label>
-            <select id="filter-hist-floor" class="filter-select" style="height: 38px; font-size: 12px; background: #080d1a; color: #e2e8f0; border: 1.5px solid rgba(255, 255, 255, 0.15); border-radius: 6px;">
-              ${floorOptions}
-            </select>
-          </div>
-
-          <!-- 4. Line Dropdown -->
-          <div style="display: flex; flex-direction: column; gap: 5px;">
-            <label for="filter-hist-line" style="font-size: 11px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 5px;">
-              <span>🧵 Line / Section:</span>
-            </label>
-            <select id="filter-hist-line" class="filter-select" style="height: 38px; font-size: 12px; background: #080d1a; color: #e2e8f0; border: 1.5px solid rgba(255, 255, 255, 0.15); border-radius: 6px;">
-              ${lineOptions}
-            </select>
-          </div>
-
-        </div>
-
-        <!-- Row 2: Direct Search on Left + Filtered Matching Machine Dropdown on Right -->
-        <div class="history-search-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 12px; align-items: flex-end; padding-top: 8px; border-top: 1px solid rgba(255, 255, 255, 0.07);">
-          
+        <!-- Row 2: Direct Machine Serial Search & Matching Machine Selector -->
+        <div style="display: grid; grid-template-columns: minmax(260px, 1.1fr) minmax(260px, 1.9fr); gap: 8px; align-items: center;">
           <!-- Direct Machine Serial Search Input -->
-          <div style="display: flex; flex-direction: column; gap: 5px;">
-            <label for="history-serial-search-input" style="font-size: 11px; font-weight: 800; color: #38bdf8; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;">
-              <span>🎯 Search Machine Serial:</span>
-              <span style="font-size: 10.5px; font-weight: 500; color: var(--text-muted); text-transform: none;">(Type serial or scan barcode)</span>
-            </label>
-            <div style="display: flex; gap: 8px; position: relative; flex-wrap: wrap;">
-              <div style="position: relative; flex: 1; min-width: 180px;">
-                <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 14px; color: #38bdf8;">🔍</span>
-                <input 
-                  type="text" 
-                  id="history-serial-search-input" 
-                  list="machine-serials-datalist"
-                  class="form-control" 
-                  placeholder="Enter Serial (e.g. 5369, 4712, 76, JA-01)..." 
-                  value="${searchedSerial || ''}"
-                  style="padding-left: 36px; padding-right: 32px; font-family: var(--font-mono); font-size: 13.5px; font-weight: 700; height: 38px; background: #080d1a; border: 1.5px solid rgba(56, 189, 248, 0.5); color: #38bdf8; border-radius: 6px; width: 100%; box-sizing: border-box;"
-                />
-                <datalist id="machine-serials-datalist">
-                  ${allMachines.slice(0, 300).map(m => `<option value="${m.serialNumber}">${m.serialNumber} — ${(storage.getItem(TABLE_NAMES.MACHINE_NAMES, m.machineNameId)?.name) || m.machineName || 'Machine'} • ${(storage.getItem(TABLE_NAMES.FLOORS, m.floorId)?.name) || 'Floor'}</option>`).join('')}
-                </datalist>
-                ${searchedSerial ? `
-                  <button id="btn-clear-serial-search" type="button" class="btn btn-ghost btn-sm" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); padding: 2px 6px; font-size: 12px; color: var(--text-muted);" title="Clear Search">✕</button>
-                ` : ''}
-              </div>
-              <button id="btn-execute-serial-search" class="btn btn-primary" style="font-weight: 700; height: 38px; padding: 0 16px; white-space: nowrap; box-shadow: 0 2px 10px rgba(2, 132, 199, 0.4); font-size: 12.5px;">
-                Search Machine
-              </button>
+          <div style="display: flex; gap: 6px; position: relative;">
+            <div style="position: relative; flex: 1;">
+              <span style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-size: 12px; color: #38bdf8;">🔍</span>
+              <input 
+                type="text" 
+                id="history-serial-search-input" 
+                list="machine-serials-datalist"
+                class="form-control" 
+                placeholder="Search Machine Serial (e.g. 5369, 4712, JA-01)..." 
+                value="${searchedSerial || ''}"
+                style="padding-left: 30px; padding-right: 28px; font-family: var(--font-mono); font-size: 12.5px; font-weight: 700; height: 34px; background: #080d1a; border: 1.5px solid rgba(56, 189, 248, 0.45); color: #38bdf8; border-radius: 6px; width: 100%; box-sizing: border-box;"
+              />
+              <datalist id="machine-serials-datalist">
+                ${allMachines.slice(0, 300).map(m => `<option value="${m.serialNumber}">${m.serialNumber} — ${(storage.getItem(TABLE_NAMES.MACHINE_NAMES, m.machineNameId)?.name) || m.machineName || 'Machine'} • ${(storage.getItem(TABLE_NAMES.FLOORS, m.floorId)?.name) || 'Floor'}</option>`).join('')}
+              </datalist>
+              ${searchedSerial ? `
+                <button id="btn-clear-serial-search" type="button" class="btn btn-ghost btn-sm" style="position: absolute; right: 6px; top: 50%; transform: translateY(-50%); padding: 1px 5px; font-size: 11px; color: var(--text-muted);" title="Clear Search">✕</button>
+              ` : ''}
             </div>
+            <button id="btn-execute-serial-search" class="btn btn-primary" style="font-weight: 700; height: 34px; padding: 0 14px; white-space: nowrap; font-size: 12px; box-shadow: 0 2px 8px rgba(2, 132, 199, 0.35);">
+              Search
+            </button>
           </div>
 
           <!-- Matching Machine Dropdown in Selected Hierarchy -->
-          <div style="display: flex; flex-direction: column; gap: 5px;">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-              <label for="select-history-machine-dropdown" style="font-size: 11px; font-weight: 800; color: #cbd5e1; text-transform: uppercase; letter-spacing: 0.5px;">
-                <span>⚡ Matching Machines in Filter:</span>
-              </label>
-              <span style="font-size: 11px; font-weight: 700; color: #38bdf8;">${filteredMachines.length} Found</span>
-            </div>
-            <select id="select-history-machine-dropdown" class="filter-select" style="height: 38px; font-size: 12px; width: 100%; background: #080d1a; color: ${searchedSerial ? '#38bdf8' : '#94a3b8'}; font-weight: 600; border: 1.5px solid rgba(56, 189, 248, 0.4); border-radius: 6px;">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <select id="select-history-machine-dropdown" class="filter-select" style="height: 34px; font-size: 12px; width: 100%; background: #080d1a; color: ${searchedSerial ? '#38bdf8' : '#94a3b8'}; font-weight: 600; border: 1.5px solid rgba(56, 189, 248, 0.35); border-radius: 6px;">
               <option value="" ${!searchedSerial ? 'selected' : ''}>⚡ Select a Machine (${filteredMachines.length} in this filter)...</option>
               ${machineOptions}
             </select>
           </div>
-
         </div>
 
-        <!-- Row 3: Quick Picks + Reset Filter Buttons -->
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; padding-top: 4px;">
-          <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
-            <span style="font-size: 11px; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">⭐ Quick Sample Machines:</span>
-            ${sampleMachineButtons}
+        <!-- Row 3: Compact Hierarchy Filters & Quick Picks -->
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; border-top: 1px solid rgba(255, 255, 255, 0.06); padding-top: 6px;">
+          <!-- Cascading Dropdowns: Group -> Unit -> Floor -> Line -->
+          <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap; flex: 1;">
+            <span style="font-size: 10.5px; font-weight: 700; color: #94a3b8; text-transform: uppercase;">Filter:</span>
+            <select id="filter-hist-group" class="filter-select" style="height: 28px; font-size: 11px; padding: 0 6px; background: #080d1a; color: #cbd5e1; border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 4px; max-width: 130px;">
+              ${groupOptions}
+            </select>
+            <select id="filter-hist-unit" class="filter-select" style="height: 28px; font-size: 11px; padding: 0 6px; background: #080d1a; color: #38bdf8; font-weight: 600; border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 4px; max-width: 175px;">
+              ${unitOptions}
+            </select>
+            <select id="filter-hist-floor" class="filter-select" style="height: 28px; font-size: 11px; padding: 0 6px; background: #080d1a; color: #cbd5e1; border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 4px; max-width: 145px;">
+              ${floorOptions}
+            </select>
+            <select id="filter-hist-line" class="filter-select" style="height: 28px; font-size: 11px; padding: 0 6px; background: #080d1a; color: #cbd5e1; border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 4px; max-width: 145px;">
+              ${lineOptions}
+            </select>
+
+            ${(historySelectedGroupId !== 'ALL' || historySelectedUnitId !== 'ALL' || historySelectedFloorId !== 'ALL' || historySelectedLineId !== 'ALL') ? `
+              <button id="btn-reset-plant-filters" type="button" class="btn btn-ghost btn-sm" style="font-size: 10px; color: #fca5a5; height: 26px; padding: 0 6px; border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 4px; font-weight: 600;">
+                ↺ Reset
+              </button>
+            ` : ''}
           </div>
 
-          ${(historySelectedGroupId !== 'ALL' || historySelectedUnitId !== 'ALL' || historySelectedFloorId !== 'ALL' || historySelectedLineId !== 'ALL') ? `
-            <button id="btn-reset-plant-filters" type="button" class="btn btn-ghost btn-sm" style="font-size: 11px; color: #fca5a5; padding: 3px 10px; border: 1px solid rgba(239, 68, 68, 0.35); border-radius: 4px; font-weight: 600;">
-              ↺ Reset Location Filters (Show All)
-            </button>
-          ` : ''}
+          <!-- Quick Sample Serials -->
+          <div style="display: flex; align-items: center; gap: 4px; flex-wrap: wrap;">
+            <span style="font-size: 10px; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Quick:</span>
+            ${sampleMachineButtons}
+          </div>
         </div>
 
       </div>
 
       <!-- Machine Profile Card (Displayed after searching by Serial Number) -->
       ${enrichedMachine ? `
-        <div class="machine-profile-card" style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.95)); border: 1px solid rgba(56, 189, 248, 0.35); border-left: 5px solid #0284c7; border-radius: var(--radius-lg); padding: 18px 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 18px; box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);">
+        <div class="machine-profile-card" style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.95)); border: 1px solid rgba(56, 189, 248, 0.35); border-left: 5px solid #0284c7; border-radius: var(--radius-lg); padding: 12px 18px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35);">
           
           <!-- Machine Identity & Current Location -->
-          <div style="display: flex; align-items: center; gap: 18px;">
-            <div style="width: 58px; height: 58px; border-radius: 14px; background: rgba(2, 132, 199, 0.2); border: 1.5px solid rgba(56, 189, 248, 0.45); display: flex; align-items: center; justify-content: center; font-size: 30px; flex-shrink: 0; box-shadow: 0 0 18px rgba(2, 132, 199, 0.25);">
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <div style="width: 46px; height: 46px; border-radius: 10px; background: rgba(2, 132, 199, 0.2); border: 1.5px solid rgba(56, 189, 248, 0.45); display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0; box-shadow: 0 0 12px rgba(2, 132, 199, 0.25);">
               🧵
             </div>
-            <div style="display: flex; flex-direction: column; gap: 4px;">
-              <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+            <div style="display: flex; flex-direction: column; gap: 3px;">
+              <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                 <span style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Machine Serial:</span>
-                <span style="font-family: var(--font-mono); font-size: 20px; font-weight: 800; color: #38bdf8; letter-spacing: 0.5px; text-shadow: 0 0 10px rgba(56, 189, 248, 0.4);">${enrichedMachine.serialNumber}</span>
-                <span class="badge badge-${(enrichedMachine.status || 'ACTIVE').toLowerCase().replace('_', '')}" style="font-size: 11.5px; padding: 3px 10px; font-weight: 800;">${(enrichedMachine.status || 'ACTIVE').replace('_', ' ')}</span>
+                <span style="font-family: var(--font-mono); font-size: 18px; font-weight: 800; color: #38bdf8; letter-spacing: 0.5px; text-shadow: 0 0 10px rgba(56, 189, 248, 0.4);">${enrichedMachine.serialNumber}</span>
+                <span class="badge badge-${(enrichedMachine.status || 'ACTIVE').toLowerCase().replace('_', '')}" style="font-size: 11px; padding: 2px 8px; font-weight: 800;">${(enrichedMachine.status || 'ACTIVE').replace('_', ' ')}</span>
               </div>
-              <div style="font-size: 14px; color: #f1f5f9; display: flex; align-items: center; gap: 8px;">
-                <span style="font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase;">Type &amp; Brand:</span>
+              <div style="font-size: 13px; color: #f1f5f9; display: flex; align-items: center; gap: 6px;">
+                <span style="font-size: 11.5px; font-weight: 600; color: var(--text-muted); text-transform: uppercase;">Type &amp; Brand:</span>
                 <strong style="color: #ffffff; font-weight: 700;">${enrichedMachine.machineName?.name || 'Sewing Machine'}</strong>
                 <span style="color: var(--text-muted);">&bull;</span>
                 <span style="color: #38bdf8; font-weight: 600;">${enrichedMachine.brand?.name || 'JUKI'} (${enrichedMachine.model?.name || 'DDL-8700-7'})</span>
               </div>
               
               <!-- CURRENT LOCATION HIGHLIGHT BADGE -->
-              <div style="margin-top: 4px; display: inline-flex; align-items: center; gap: 8px; background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.35); padding: 4px 12px; border-radius: 6px; font-size: 13px;">
-                <span style="color: #34d399; font-weight: 800; font-size: 12px; text-transform: uppercase;">📍 Current Location:</span>
+              <div style="margin-top: 2px; display: inline-flex; align-items: center; gap: 6px; background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.35); padding: 3px 10px; border-radius: 5px; font-size: 12px;">
+                <span style="color: #34d399; font-weight: 800; font-size: 11px; text-transform: uppercase;">📍 Location:</span>
                 <strong style="color: #86efac; font-weight: 700;">${enrichedMachine.unit?.name || 'Unit'} &rarr; ${enrichedMachine.floor?.name || 'Floor'} &rarr; ${enrichedMachine.line?.name || 'Line'}</strong>
               </div>
             </div>
           </div>
 
           <!-- Machine Quick Lifetime Counters -->
-          <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
-            <div class="hist-stat-counter-card" data-target-tab="locations" style="background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 10px; padding: 10px 18px; text-align: center; min-width: 105px; cursor: pointer; transition: all 0.2s;" title="Click to view Locations History">
-              <div style="font-size: 20px; font-weight: 800; color: #38bdf8;">${locationTrail.length}</div>
-              <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-top: 2px;">📍 Locations</div>
+          <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+            <div class="hist-stat-counter-card" data-target-tab="locations" style="background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 8px; padding: 6px 12px; text-align: center; min-width: 80px; cursor: pointer; transition: all 0.2s;" title="Click to view Locations History">
+              <div style="font-size: 17px; font-weight: 800; color: #38bdf8;">${locationTrail.length}</div>
+              <div style="font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">📍 Locations</div>
             </div>
 
-            <div class="hist-stat-counter-card" data-target-tab="service-repairs" style="background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(245, 158, 11, 0.25); border-radius: 10px; padding: 10px 18px; text-align: center; min-width: 105px; cursor: pointer; transition: all 0.2s;" title="Click to view Service & Repair History">
-              <div style="font-size: 20px; font-weight: 800; color: #f59e0b;">${serviceRepairsList.length}</div>
-              <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-top: 2px;">🛠️ Services</div>
+            <div class="hist-stat-counter-card" data-target-tab="service-repairs" style="background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(245, 158, 11, 0.25); border-radius: 8px; padding: 6px 12px; text-align: center; min-width: 80px; cursor: pointer; transition: all 0.2s;" title="Click to view Service & Repair History">
+              <div style="font-size: 17px; font-weight: 800; color: #f59e0b;">${serviceRepairsList.length}</div>
+              <div style="font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">🛠️ Services</div>
             </div>
 
-            <div class="hist-stat-counter-card" data-target-tab="spare-parts" style="background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 10px; padding: 10px 18px; text-align: center; min-width: 105px; cursor: pointer; transition: all 0.2s;" title="Click to view Spare Parts History">
-              <div style="font-size: 20px; font-weight: 800; color: #10b981;">${sparePartsList.length}</div>
-              <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-top: 2px;">⚙️ Parts Replaced</div>
+            <div class="hist-stat-counter-card" data-target-tab="spare-parts" style="background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 8px; padding: 6px 12px; text-align: center; min-width: 80px; cursor: pointer; transition: all 0.2s;" title="Click to view Spare Parts History">
+              <div style="font-size: 17px; font-weight: 800; color: #10b981;">${sparePartsList.length}</div>
+              <div style="font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">⚙️ Parts</div>
             </div>
 
-            <div class="hist-stat-counter-card" data-target-tab="et-boards" style="background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 10px; padding: 10px 18px; text-align: center; min-width: 105px; cursor: pointer; transition: all 0.2s;" title="Click to view Connected ENT Lab Boards">
-              <div style="font-size: 20px; font-weight: 800; color: #38bdf8;">${boardHistory.length}</div>
-              <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-top: 2px;">⚡ ENT Boards</div>
+            <div class="hist-stat-counter-card" data-target-tab="et-boards" style="background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 8px; padding: 6px 12px; text-align: center; min-width: 80px; cursor: pointer; transition: all 0.2s;" title="Click to view Connected ENT Lab Boards">
+              <div style="font-size: 17px; font-weight: 800; color: #38bdf8;">${boardHistory.length}</div>
+              <div style="font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">⚡ ENT Boards</div>
             </div>
 
-            <div class="hist-stat-counter-card" data-target-tab="timeline" style="background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(168, 85, 247, 0.25); border-radius: 10px; padding: 10px 18px; text-align: center; min-width: 105px; cursor: pointer; transition: all 0.2s;" title="Click to view Complete Lifetime Timeline">
-              <div style="font-size: 20px; font-weight: 800; color: #c084fc;">${historyList.length}</div>
-              <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-top: 2px;">📜 Total Events</div>
+            <div class="hist-stat-counter-card" data-target-tab="timeline" style="background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(168, 85, 247, 0.25); border-radius: 8px; padding: 6px 12px; text-align: center; min-width: 80px; cursor: pointer; transition: all 0.2s;" title="Click to view Complete Lifetime Timeline">
+              <div style="font-size: 17px; font-weight: 800; color: #c084fc;">${historyList.length}</div>
+              <div style="font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">📜 Events</div>
             </div>
           </div>
 
         </div>
       ` : (searchedSerial ? `
-        <div style="padding: 36px 20px; text-align: center; background: var(--bg-surface); border: 1px dashed rgba(239, 68, 68, 0.4); border-radius: var(--radius-lg); display: flex; flex-direction: column; align-items: center; gap: 10px;">
-          <div style="font-size: 38px;">🔍</div>
-          <div style="font-size: 16px; font-weight: 700; color: #fca5a5;">No machine found for Serial Number: "${searchedSerial}"</div>
-          <div style="font-size: 13px; color: var(--text-secondary); max-width: 500px;">
-            Please check the serial number, or select a machine from the dropdown filter above:
+        <div style="padding: 24px 16px; text-align: center; background: var(--bg-surface); border: 1px dashed rgba(239, 68, 68, 0.4); border-radius: var(--radius-lg); display: flex; flex-direction: column; align-items: center; gap: 8px;">
+          <div style="font-size: 30px;">🔍</div>
+          <div style="font-size: 15px; font-weight: 700; color: #fca5a5;">No machine found for Serial Number: "${searchedSerial}"</div>
+          <div style="font-size: 12px; color: var(--text-secondary); max-width: 500px;">
+            Please verify the serial number or select from the dropdown filter above:
           </div>
-          <div style="display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-top: 6px;">
-            <button type="button" class="btn btn-secondary btn-sm btn-quick-serial" data-serial="5369" style="font-family: var(--font-mono); font-weight: 700;">⚡ 5369 (Tista)</button>
-            <button type="button" class="btn btn-secondary btn-sm btn-quick-serial" data-serial="4712" style="font-family: var(--font-mono); font-weight: 700;">⚡ 4712 (Jamuna)</button>
-            <button type="button" class="btn btn-secondary btn-sm btn-quick-serial" data-serial="76" style="font-family: var(--font-mono); font-weight: 700;">⚡ 76 (Buriganga)</button>
-            <button type="button" class="btn btn-secondary btn-sm btn-quick-serial" data-serial="4288" style="font-family: var(--font-mono); font-weight: 700;">⚡ 4288 (Surma)</button>
+          <div style="display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; margin-top: 4px;">
+            <button type="button" class="btn btn-secondary btn-sm btn-quick-serial" data-serial="5369" style="font-family: var(--font-mono); font-weight: 700; font-size: 11px;">⚡ 5369 (Tista)</button>
+            <button type="button" class="btn btn-secondary btn-sm btn-quick-serial" data-serial="4712" style="font-family: var(--font-mono); font-weight: 700; font-size: 11px;">⚡ 4712 (Jamuna)</button>
+            <button type="button" class="btn btn-secondary btn-sm btn-quick-serial" data-serial="76" style="font-family: var(--font-mono); font-weight: 700; font-size: 11px;">⚡ 76 (Buriganga)</button>
+            <button type="button" class="btn btn-secondary btn-sm btn-quick-serial" data-serial="4288" style="font-family: var(--font-mono); font-weight: 700; font-size: 11px;">⚡ 4288 (Surma)</button>
           </div>
         </div>
       ` : `
-        <div style="padding: 38px 24px; text-align: center; background: linear-gradient(135deg, rgba(15, 23, 42, 0.85), rgba(30, 41, 59, 0.85)); border: 1.5px dashed rgba(56, 189, 248, 0.35); border-radius: var(--radius-lg); display: flex; flex-direction: column; align-items: center; gap: 12px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);">
-          <div style="width: 56px; height: 56px; border-radius: 50%; background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.35); display: flex; align-items: center; justify-content: center; font-size: 26px;">
+        <div style="padding: 24px 18px; text-align: center; background: linear-gradient(135deg, rgba(15, 23, 42, 0.85), rgba(30, 41, 59, 0.85)); border: 1.5px dashed rgba(56, 189, 248, 0.35); border-radius: var(--radius-lg); display: flex; flex-direction: column; align-items: center; gap: 8px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);">
+          <div style="width: 44px; height: 44px; border-radius: 50%; background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.35); display: flex; align-items: center; justify-content: center; font-size: 22px;">
             🔍
           </div>
-          <div style="font-size: 17px; font-weight: 800; color: #f8fafc; letter-spacing: 0.3px;">
+          <div style="font-size: 15px; font-weight: 800; color: #f8fafc; letter-spacing: 0.2px;">
             Select or Search a Machine to View Lifetime History &amp; Passport
           </div>
-          <div style="font-size: 13.5px; color: #94a3b8; max-width: 560px; line-height: 1.6;">
-            No machine is currently selected. Pick any machine from the <strong>Matching Machines</strong> dropdown above, or type a <strong>Machine Serial Number</strong> to view its complete lifetime timeline, locations, and maintenance ledger.
+          <div style="font-size: 12.5px; color: #94a3b8; max-width: 540px; line-height: 1.5;">
+            Pick any machine from the dropdown above or enter a serial number to view its full movement trail, service logs, and passport.
           </div>
         </div>
       `)}
