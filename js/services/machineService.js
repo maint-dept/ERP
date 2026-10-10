@@ -18,9 +18,14 @@ import { syncManager } from '../db/syncManager.js';
 class MachineService {
   /**
    * Comprehensive Composite Duplicate Check for Machine Inventory:
-   * Rule: Checks (Machine Name + Brand + Model + Serial Number).
-   * - If all matching fields are identical -> isDuplicate: true, isCompositeDuplicate: true
-   * - If serial exists on another machine -> conflict report with location & specs
+   *
+   * Rules:
+   * 1. Serial Number is globally unique — the same Serial Number cannot exist on two machines.
+   * 2. Composite Duplicate: Machine Name + Brand + Model + Serial Number — if all four match, it is a Duplicate.
+   *
+   * - Serial + Name + Brand + Model all match  -> isDuplicate: true, isCompositeDuplicate: true
+   * - Only Serial matches (Name/Brand/Model differ) -> isDuplicate: true, isCompositeDuplicate: false (Serial Conflict)
+   * - Serial is different -> isDuplicate: false (new entry accepted)
    */
   checkDuplicateMachine(machineData, excludeMachineId = null) {
     if (!machineData) return { isDuplicate: false };
@@ -38,19 +43,25 @@ class MachineService {
       const brand = storage.getItem(TABLE_NAMES.BRANDS, existing.brandId);
       const model = storage.getItem(TABLE_NAMES.MODELS, existing.modelId);
 
-      // Check if machineName, brand, model match the existing machine
-      const mnMatches = !machineData.machineNameId || machineData.machineNameId === existing.machineNameId;
-      const brandMatches = !machineData.brandId || machineData.brandId === existing.brandId;
-      const modelMatches = !machineData.modelId || machineData.modelId === existing.modelId;
+      // Composite check: compare all four fields when they are explicitly provided
+      const mnMatches = machineData.machineNameId
+        ? machineData.machineNameId === existing.machineNameId
+        : true;
+      const brandMatches = machineData.brandId !== undefined && machineData.brandId !== null && machineData.brandId !== ''
+        ? machineData.brandId === existing.brandId
+        : !existing.brandId; // both have no brand -> match
+      const modelMatches = machineData.modelId !== undefined && machineData.modelId !== null && machineData.modelId !== ''
+        ? machineData.modelId === existing.modelId
+        : !existing.modelId; // both have no model -> match
 
       const isCompositeMatch = mnMatches && brandMatches && modelMatches;
 
       return {
         isDuplicate: true,
         isCompositeDuplicate: isCompositeMatch,
-        message: isCompositeMatch 
-          ? `Duplicate Record: Machine with matching Name (${mn?.name || ''}), Brand (${brand?.name || ''}), Model (${model?.name || ''}), and Serial '${cleanSerial}' already exists in Database.`
-          : `Serial Number Conflict: Serial '${cleanSerial}' is already assigned to Machine ID '${existing.id}' (${mn?.name || ''} - ${model?.name || ''}).`,
+        message: isCompositeMatch
+          ? `Duplicate Record: Machine Name (${mn?.name || ''}), Brand (${brand?.name || 'N/A'}), Model (${model?.name || 'N/A'}), Serial '${cleanSerial}' — all four fields match an existing machine in the database.`
+          : `Serial Number Conflict: Serial '${cleanSerial}' is already assigned to another machine (ID: ${existing.id}, ${mn?.name || ''} - ${model?.name || ''}). Serial Number must be unique.`,
         conflict: {
           id: existing.id,
           serialNumber: existing.serialNumber,
@@ -216,6 +227,27 @@ class MachineService {
 
     const totalRecords = allMachines.length;
 
+    // Calculate accurate dynamic KPI summary metrics for this filtered & scoped dataset
+    let runningQty = 0;
+    let usableIdleQty = 0;
+    let repairableIdleQty = 0;
+
+    allMachines.forEach(m => {
+      const r = parseInt(m.running ?? m.qty_running ?? (m.status === 'ACTIVE' ? (m.quantity ?? 1) : 0), 10) || 0;
+      const u = parseInt(m.usable_idle ?? m.usableIdle ?? (m.status === 'IDLE' ? (m.quantity ?? 1) : 0), 10) || 0;
+      const rp = parseInt(m.repairable_idle ?? m.repairableIdle ?? ((m.status === 'MAINTENANCE' || m.status === 'BREAKDOWN') ? (m.quantity ?? 1) : 0), 10) || 0;
+      runningQty += r;
+      usableIdleQty += u;
+      repairableIdleQty += rp;
+    });
+
+    const metrics = {
+      total: totalRecords,
+      running: runningQty,
+      usable: usableIdleQty,
+      repairable: repairableIdleQty
+    };
+
     // 6. Multi-Column Sorting
     const sortField = params.sortField || 'sl';
     const sortOrder = params.sortOrder === 'desc' ? -1 : 1;
@@ -287,7 +319,8 @@ class MachineService {
       total: totalRecords,
       page: page,
       limit: limit,
-      totalPages: totalPages
+      totalPages: totalPages,
+      metrics
     };
   }
 
@@ -361,11 +394,13 @@ class MachineService {
       throw new Error('Machine Name and Serial Number are required.');
     }
 
-    // Duplicate Serial Check
-    const dupCheck = this.checkDuplicateSerial(machineData.serialNumber);
+    // Composite Duplicate Check (Machine Name + Brand + Model + Serial Number)
+    // Rule: Serial Number is globally unique; all four fields matching together = Duplicate
+    const dupCheck = this.checkDuplicateMachine(machineData);
     if (dupCheck.isDuplicate) {
       const err = new Error(dupCheck.message);
       err.conflict = dupCheck.conflict;
+      err.isCompositeDuplicate = dupCheck.isCompositeDuplicate;
       throw err;
     }
 
@@ -383,14 +418,26 @@ class MachineService {
     const qty = machineData.quantity !== undefined ? Number(machineData.quantity) : 1;
     const status = machineData.status || 'ACTIVE';
 
-    const running = (status === 'ACTIVE') ? qty : 0;
-    const usable_idle = (status === 'IDLE') ? qty : 0;
-    const repairable_idle = (status === 'MAINTENANCE' || status === 'BREAKDOWN') ? qty : 0;
+    // Use explicitly provided running/idle values (e.g. from Excel import), else derive from status
+    let running, usable_idle, repairable_idle;
+    if (machineData.running !== undefined || machineData.usable_idle !== undefined || machineData.repairable_idle !== undefined) {
+      running = Number(machineData.running ?? 0);
+      usable_idle = Number(machineData.usable_idle ?? 0);
+      repairable_idle = Number(machineData.repairable_idle ?? 0);
+    } else {
+      running = (status === 'ACTIVE') ? qty : 0;
+      usable_idle = (status === 'IDLE') ? qty : 0;
+      repairable_idle = (status === 'MAINTENANCE' || status === 'BREAKDOWN') ? qty : 0;
+    }
+    // Ensure total quantity matches sum of the three fields when provided explicitly
+    const finalQty = (machineData.running !== undefined || machineData.usable_idle !== undefined || machineData.repairable_idle !== undefined)
+      ? (running + usable_idle + repairable_idle) || qty
+      : qty;
 
     const newMachine = {
       ...machineData,
       sl: sl,
-      quantity: qty,
+      quantity: finalQty,
       status: status,
       running,
       usable_idle,
@@ -532,12 +579,15 @@ class MachineService {
       }
     }
 
-    // Check duplicate serial if changed
-    if (updates.serialNumber && updates.serialNumber !== existing.serialNumber) {
-      const dupCheck = this.checkDuplicateSerial(updates.serialNumber, id);
+    // Composite Duplicate Check on Edit (when Serial or other spec fields change)
+    // Rule: Serial Number is globally unique; Name+Brand+Model+Serial all matching = Duplicate
+    const mergedForDupCheck = { ...existing, ...updates };
+    if (updates.serialNumber || updates.machineNameId || updates.brandId !== undefined || updates.modelId !== undefined) {
+      const dupCheck = this.checkDuplicateMachine(mergedForDupCheck, id);
       if (dupCheck.isDuplicate) {
         const err = new Error(dupCheck.message);
         err.conflict = dupCheck.conflict;
+        err.isCompositeDuplicate = dupCheck.isCompositeDuplicate;
         throw err;
       }
     }

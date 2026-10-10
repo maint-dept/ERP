@@ -227,6 +227,27 @@ class MachineService {
 
     const totalRecords = allMachines.length;
 
+    // Calculate accurate dynamic KPI summary metrics for this filtered & scoped dataset
+    let runningQty = 0;
+    let usableIdleQty = 0;
+    let repairableIdleQty = 0;
+
+    allMachines.forEach(m => {
+      const r = parseInt(m.running ?? m.qty_running ?? (m.status === 'ACTIVE' ? (m.quantity ?? 1) : 0), 10) || 0;
+      const u = parseInt(m.usable_idle ?? m.usableIdle ?? (m.status === 'IDLE' ? (m.quantity ?? 1) : 0), 10) || 0;
+      const rp = parseInt(m.repairable_idle ?? m.repairableIdle ?? ((m.status === 'MAINTENANCE' || m.status === 'BREAKDOWN') ? (m.quantity ?? 1) : 0), 10) || 0;
+      runningQty += r;
+      usableIdleQty += u;
+      repairableIdleQty += rp;
+    });
+
+    const metrics = {
+      total: totalRecords,
+      running: runningQty,
+      usable: usableIdleQty,
+      repairable: repairableIdleQty
+    };
+
     // 6. Multi-Column Sorting
     const sortField = params.sortField || 'sl';
     const sortOrder = params.sortOrder === 'desc' ? -1 : 1;
@@ -298,7 +319,8 @@ class MachineService {
       total: totalRecords,
       page: page,
       limit: limit,
-      totalPages: totalPages
+      totalPages: totalPages,
+      metrics
     };
   }
 

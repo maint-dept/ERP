@@ -1682,14 +1682,14 @@ class AuthService {
     const scope = u.assignedScope;
     if (!scope || scope.allGroups) return true;
 
-    if (unitId && Array.isArray(scope.unitIds) && scope.unitIds.length > 0) {
-      if (!scope.unitIds.includes(unitId)) return false;
+    if (Array.isArray(scope.unitIds) && scope.unitIds.length > 0) {
+      if (!unitId || !scope.unitIds.includes(unitId)) return false;
     }
-    if (floorId && Array.isArray(scope.floorIds) && scope.floorIds.length > 0) {
-      if (!scope.floorIds.includes(floorId)) return false;
+    if (Array.isArray(scope.floorIds) && scope.floorIds.length > 0) {
+      if (!floorId || !scope.floorIds.includes(floorId)) return false;
     }
-    if (lineId && Array.isArray(scope.lineIds) && scope.lineIds.length > 0) {
-      if (!scope.lineIds.includes(lineId)) return false;
+    if (Array.isArray(scope.lineIds) && scope.lineIds.length > 0) {
+      if (!lineId || !scope.lineIds.includes(lineId)) return false;
     }
     return true;
   }
@@ -1706,12 +1706,27 @@ class AuthService {
     const name = (floor.name || '').toLowerCase();
     const code = (floor.code || '').toLowerCase();
     const tag = (floor.locationTag || '').toLowerCase();
-    return name.includes('central idle') || (code === 'idle' && name.includes('central')) || tag === 'akm-idle';
+    return name.includes('central idle') || (code === 'idle' && name.includes('central')) || tag === 'akm-idle' || name.includes('idle');
+  }
+
+  /**
+   * Check if a machine is an Idle machine (Usable Idle, Idle, Repairable Idle, or on Central Idle floor)
+   */
+  isIdleMachine(machine) {
+    if (!machine) return false;
+    const status = (machine.status || '').toUpperCase();
+    if (status === 'IDLE' || status === 'USABLE_IDLE' || status === 'REPAIRABLE_IDLE') return true;
+    const uQty = parseInt(machine.usable_idle ?? machine.usableIdle ?? 0, 10) || 0;
+    if (uQty > 0) return true;
+    const rpQty = parseInt(machine.repairable_idle ?? machine.repairableIdle ?? 0, 10) || 0;
+    if (rpQty > 0) return true;
+    if (this.isCentralIdleFloor(machine.floorId)) return true;
+    return false;
   }
 
   /**
    * Check if a machine can be operated (Edited, Deleted, Relocated, Status Changed) by the user.
-   * Only allowed if user has global access or the machine is within their assigned location scope.
+   * Only allowed if user has global access or the machine is within their strictly assigned location scope.
    */
   canOperateMachine(machine, user = null) {
     if (!machine) return false;
@@ -1723,10 +1738,10 @@ class AuthService {
 
   /**
    * Check if a machine can be viewed by the user:
-   * 1. If inside assigned scope: Allowed
-   * 2. If machine is IDLE on ANY floor: Allowed (View-Only)
-   * 3. If machine is on the Central Idle [Idle] floor: Allowed (View-Only)
-   * 4. Otherwise (out of scope, non-idle): Blocked
+   * 1. If inside assigned scope: Allowed (All machines on assigned floor/line: running + idle + repairable)
+   * 2. If machine is outside assigned scope:
+   *    Allowed ONLY if it is an Idle machine (Usable Idle, Idle, Repairable Idle, or on Central Idle floor).
+   * 3. Any running/active non-idle machine on other floors is strictly hidden from view.
    */
   canViewMachine(machine, user = null) {
     if (!machine) return false;
@@ -1739,17 +1754,12 @@ class AuthService {
       return true;
     }
 
-    // 2. Cross-floor idle machine visibility
-    const status = (machine.status || '').toUpperCase();
-    if (status === 'IDLE') {
+    // 2. Cross-floor idle machine visibility (Usable Idle, Idle, Repairable Idle, or Central Idle)
+    if (this.isIdleMachine(machine)) {
       return true;
     }
 
-    // 3. Central Idle floor visibility
-    if (this.isCentralIdleFloor(machine.floorId)) {
-      return true;
-    }
-
+    // 3. Running machines on other floors are strictly hidden
     return false;
   }
 

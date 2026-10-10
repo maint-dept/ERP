@@ -33,21 +33,12 @@ export function renderInventoryTable() {
   const machines = queryResult.items;
 
   // 2. Summary Metric Indicators (Total Machines, Running, Usable Idle, Repairable Idle)
+  // Dynamically calculated according to User Access Scope & Active Filter View
   const allMachines = storage.getTable(TABLE_NAMES.MACHINES) || [];
-  const countTotalMachines = allMachines.length;
-
-  let totalRunning = 0;
-  let totalUsableIdle = 0;
-  let totalRepairableIdle = 0;
-
-  allMachines.forEach(m => {
-    const r = parseInt(m.running ?? m.qty_running ?? (m.status === 'ACTIVE' ? (m.quantity ?? 1) : 0), 10) || 0;
-    const u = parseInt(m.usable_idle ?? m.usableIdle ?? (m.status === 'IDLE' ? (m.quantity ?? 1) : 0), 10) || 0;
-    const rp = parseInt(m.repairable_idle ?? m.repairableIdle ?? ((m.status === 'MAINTENANCE' || m.status === 'BREAKDOWN') ? (m.quantity ?? 1) : 0), 10) || 0;
-    totalRunning += r;
-    totalUsableIdle += u;
-    totalRepairableIdle += rp;
-  });
+  const countTotalMachines = queryResult.metrics?.total ?? queryResult.total ?? 0;
+  const totalRunning = queryResult.metrics?.running ?? 0;
+  const totalUsableIdle = queryResult.metrics?.usable ?? 0;
+  const totalRepairableIdle = queryResult.metrics?.repairable ?? 0;
 
   // 3. Hierarchical Cascading Dropdown Options (Group -> Unit -> Floor -> Line)
   const groups = masterDataService.getGroups();
@@ -130,6 +121,19 @@ export function renderInventoryTable() {
 
   const hasActiveFilters = activeTags.length > 0;
 
+  const userScope = user?.assignedScope;
+  const isScopedUser = userScope && !userScope.allGroups && ((userScope.floorIds?.length > 0) || (userScope.unitIds?.length > 0));
+  let scopeBadgeHtml = '';
+  if (isScopedUser) {
+    const scopeFloorNames = (userScope.floorIds || []).map(fid => flrMap.get(fid) || fid).filter(Boolean);
+    const scopeLabel = scopeFloorNames.length > 0 ? scopeFloorNames.join(', ') : 'Assigned Location';
+    scopeBadgeHtml = `
+      <span class="badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); padding: 2px 7px; font-size: 11px; border-radius: 4px; display: inline-flex; align-items: center; gap: 4px; font-weight: 600;" title="Operational permissions apply to your assigned floor. Other floors are accessible in View-Only mode for Usable Idle, Idle, and Central Idle machines.">
+        📍 Assigned: <strong>${scopeLabel}</strong> &bull; 👁️ Cross-Floor Idle View
+      </span>
+    `;
+  }
+
   // 4. Dynamic Frozen Columns Layout Calculation
   const frozenColKeys = state.get('frozenColumns') || ['machineName', 'model', 'serialNumber'];
 
@@ -203,7 +207,8 @@ export function renderInventoryTable() {
       renderTh: (thStyle, thClass) => `<th class="th-sortable ${thClass}" data-sort="floor" style="width: 130px; min-width: 130px; max-width: 130px; cursor: pointer; ${thStyle}">Floor</th>`,
       renderTd: (m, meta, tdStyle, tdClass) => {
         const flr = flrMap.get(m.floorId) || m.floor || '—';
-        return `<td class="${tdClass}" style="overflow: hidden; text-overflow: ellipsis; ${tdStyle}" title="${flr}">${flr}</td>`;
+        const isViewOnly = authService.isMachineViewOnlyForUser(m);
+        return `<td class="${tdClass}" style="overflow: hidden; text-overflow: ellipsis; ${tdStyle}" title="${flr}">${flr}${isViewOnly ? ` <span class="badge" style="font-size: 9.5px; padding: 1px 5px; background: rgba(56, 189, 248, 0.12); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 4px; white-space: nowrap;" title="Cross-Floor Idle Machine (View-Only)">👁️ Idle</span>` : ''}</td>`;
       }
     },
     {
@@ -534,27 +539,27 @@ export function renderInventoryTable() {
           
           <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
             <h1 style="font-size: 15px; font-weight: 800; color: #fff; margin: 0; display: flex; align-items: center; gap: 6px; white-space: nowrap;">
-              <span>📦</span> Machine Inventory
+              <span>📦</span> Machine Inventory ${scopeBadgeHtml}
             </h1>
             
-            <!-- Inline KPI Pills -->
+            <!-- Inline KPI Pills (Dynamically calculated based on User Access & Filter View) -->
             <div class="inventory-inline-kpis">
-              <div class="kpi-pill kpi-total" title="Total machines registered">
+              <div class="kpi-pill kpi-total" title="Total machines matching current scope and view">
                 <span class="kpi-dot">🏭</span>
                 <strong class="kpi-val">${countTotalMachines}</strong>
                 <span class="kpi-lbl">Total</span>
               </div>
-              <div class="kpi-pill kpi-running" title="Operational active machines">
+              <div class="kpi-pill kpi-running" title="Operational running machines in current scope and view">
                 <span class="kpi-dot">🟢</span>
                 <strong class="kpi-val" style="color: #34d399;">${totalRunning}</strong>
                 <span class="kpi-lbl">Running</span>
               </div>
-              <div class="kpi-pill kpi-usable" title="Ready-to-use standby machines">
+              <div class="kpi-pill kpi-usable" title="Ready-to-use standby usable idle machines in current scope and view">
                 <span class="kpi-dot">🔵</span>
                 <strong class="kpi-val" style="color: #38bdf8;">${totalUsableIdle}</strong>
                 <span class="kpi-lbl">Usable</span>
               </div>
-              <div class="kpi-pill kpi-repair" title="Machines under maintenance or repair">
+              <div class="kpi-pill kpi-repair" title="Repairable / maintenance idle machines in current scope and view">
                 <span class="kpi-dot">🟡</span>
                 <strong class="kpi-val" style="color: #fbbf24;">${totalRepairableIdle}</strong>
                 <span class="kpi-lbl">Repairable</span>

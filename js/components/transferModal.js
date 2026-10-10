@@ -419,6 +419,11 @@ export function initTransferModalEvents() {
 
   const updateSelectedMachine = (foundMachine) => {
     if (foundMachine) {
+      if (!authService.canOperateMachine(foundMachine)) {
+        notificationService.error(`Access Denied: Machine #${foundMachine.serialNumber} is located outside your assigned floor and is View-Only.`);
+        state.set('activeMachineId', null);
+        return;
+      }
       state.set('activeMachineId', foundMachine.id);
     } else {
       state.set('activeMachineId', null);
@@ -1117,6 +1122,12 @@ export function initTransferModalEvents() {
 
         if (!authService.canRequestTransfer()) {
           notificationService.error('Access Denied: You do not have permission to create a Machine Transfer Request.');
+          return;
+        }
+
+        const targetMachine = storage.getItem(TABLE_NAMES.MACHINES, machineId);
+        if (targetMachine && !authService.canOperateMachine(targetMachine)) {
+          notificationService.error('Access Denied: You cannot create a transfer request for a machine outside your assigned floor.');
           return;
         }
 
