@@ -41,7 +41,7 @@ import { renderManpowerView, initManpowerEvents } from './components/manpowerVie
 import { renderEtLabManagementView, initEtLabEvents, setEntActiveTab } from './components/etLabManagementView.js?v=4.24.0';
 import { renderChangePasswordModal, initChangePasswordModalEvents } from './components/changePasswordModal.js?v=4.24.0';
 import { renderStorageView, initStorageEvents } from './components/storageView.js?v=4.24.0';
-import { renderPreventiveMaintenanceView, initPreventiveMaintenanceEvents } from './components/preventiveMaintenanceView.js?v=4.25.4';
+import { renderPreventiveMaintenanceView, initPreventiveMaintenanceEvents } from './components/preventiveMaintenanceView.js?v=4.25.5';
 import { smartStorageService } from './services/smartStorageService.js?v=4.24.0';
 import { renderRelocateView, initRelocateViewEvents } from './components/relocateView.js?v=4.24.0';
 import { renderQrCodeView, initQrCodeEvents } from './components/qrCodeView.js?v=4.24.0';

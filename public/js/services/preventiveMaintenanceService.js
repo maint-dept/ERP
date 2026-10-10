@@ -105,6 +105,274 @@ class PreventiveMaintenanceService {
   }
 
   /**
+   * Identifies legacy generic 5-item placeholder checklists
+   */
+  isGenericLegacyChecklist(list) {
+    if (!Array.isArray(list) || list.length === 0) return true;
+    if (list.length === 5 && list.some(x => x.includes('Motor & Drive Belt') || x.includes('Drive Belt Tension')) && list.some(y => y.includes('Dust, Lint Cleaning') || y.includes('Waste Suction'))) {
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * Tailored Standard Inspection Checklists per machine type/name.
+   * Accurately reflects garment factory equipment engineering & mechanisms.
+   * @param {string} rawName - Machine type, canonical name, or model name
+   * @returns {Array<string>} Standard inspection checklist items
+   */
+  getDefaultChecklistForMachineType(rawName) {
+    if (!rawName) {
+      return [
+        'Motor & Drive Belt Inspection & Tension Adjustment',
+        'Oil Level & High Speed Lubrication System',
+        'Needle Bar Height & Timing Mark Alignment',
+        'Safety Guard & Eye Shield Intactness Check',
+        'Dust, Lint Cleaning & Waste Suction'
+      ];
+    }
+
+    const s = String(rawName).trim();
+    const lower = s.toLowerCase();
+
+    // 1. Button Hole Machine (e.g. JUKI LBH-1790S, Brother HE-800)
+    if (lower.includes('button hole') || lower.includes('botton hole') || lower.includes('b/h')) {
+      return [
+        'Knife Drop Mechanism & Cutting Block Blade Sharpness',
+        'Work Clamp Foot Pressure & Cloth Gripping Teeth',
+        'Hook Timing, Needle Bar Stop Position Sensor',
+        'X-Y Stepper Motor Linear Bearing Lubrication',
+        'Air Pressure Regulator & Moisture Trap Filter Drain',
+        'Upper & Lower Thread Trimmer Solenoid & Cutters',
+        'Safety Cover Interlock Switch & Eye Shield Intactness'
+      ];
+    }
+
+    // 2. Eyelet Hole Machine / Eye let Hole / Hole Punching
+    if (lower.includes('eyelet') || lower.includes('eye let') || lower.includes('hole punch')) {
+      return [
+        'Eyelet Cutting Knife & Die Anvil Sharpness Check',
+        'Gimp / Core Thread Guiding Eyelet & Tension Disc Inspection',
+        'Upper & Lower Looper Clearance & Synchronization',
+        'Pneumatic Air Pressure & Waste Cloth Suction Tube Clearing',
+        'Work Clamp Grip & Fabric Spreader Mechanism Calibration',
+        'Rotary Hook / Spreader Timing & Needle Deflection Check',
+        'Flywheel Brake Band & Emergency Stop Button Inspection'
+      ];
+    }
+
+    // 3. Button Stitch / Button Attach Machine
+    if (lower.includes('button stitch') || lower.includes('button attach') || lower.includes('b/a')) {
+      return [
+        'Button Clamp Jaw Alignment & Grip Tension',
+        'Needle Alignment with Button 2-Hole / 4-Hole Centering',
+        'Automatic Thread Trimmer & Thread Nipper Spring Action',
+        'Blind Stitch Looper Timing & Needle Clearance',
+        'Safety Eye Guard & Emergency Stop Switch',
+        'Lubrication Wick & Cam Driving Mechanism Greasing'
+      ];
+    }
+
+    // 4. Snap Button / Rivet / Plastic Staple Machine
+    if (lower.includes('snap button') || lower.includes('plastic staple') || lower.includes('rivet')) {
+      return [
+        'Upper Punch & Lower Die Alignment & Pressure Check',
+        'Safety Finger Guard & Micro-Switch Interlock Test',
+        'Laser Positioning Light Alignment & Focus',
+        'Mechanical Clutch, Flywheel & Foot Pedal Spring Inspection',
+        'Fastener Feeding Track & Hopper Alignment'
+      ];
+    }
+
+    // 5. Bar Tack Machine
+    if (lower.includes('bar tack') || lower.includes('bar tak') || lower.includes('bartack') || lower.includes('b/t')) {
+      return [
+        'Work Clamp Lift Height & Foot Solenoid Function',
+        'Needle Bar Height & Rotary Hook Timing Alignment',
+        'Thread Trimmer Moving & Fixed Knife Blade Sharpness',
+        'X-Y Feed Mechanism Linear Bushings Lubrication',
+        'Needle Thread Wiper & Thread Nipper Spring Tension',
+        'Direct Drive Motor Encoder & Safety Sensor Intactness'
+      ];
+    }
+
+    // 6. Overlock Machine / Safety Stitch (Serger)
+    if (lower.includes('overlock') || lower.includes('over lock') || lower.includes('safety stitch') || lower.includes('o/l')) {
+      return [
+        'Upper & Lower Looper Timing & Clearance Alignment',
+        'Upper & Lower Knife Blade Sharpness & Engagement Pressure',
+        'Differential Feed Mechanism & Stitch Length Cam Inspection',
+        'Needle Guard Clearance Check & Front/Rear Deflection',
+        'Silicon Oil Cooling Reservoir & Needle Thread Lubricator',
+        'Oil Pump Flow, Sight Glass & High-Speed Circulation',
+        'Lint & Fabric Waste Suction Funnel Cleaning'
+      ];
+    }
+
+    // 7. Flatlock / Interlock / Raw Edge Cutting Machine
+    if (lower.includes('flatlock') || lower.includes('flat lock') || lower.includes('interlock') || lower.includes('f/l')) {
+      return [
+        'Top Cover Thread Spreader Timing & Clearance Check',
+        'Cylinder Bed Looper Motion & Retardation Alignment',
+        'Differential Feed Dogs Height & Parallelism Adjustment',
+        'Needle Bar Height & Multi-Needle Clamp Alignment',
+        'Needle Cooler Silicone Tank & Thread Oiler Refill',
+        'Suction Device & Waste Fabric Tube Clearing',
+        'Raw Edge Trimming Knife Sharpness & Position Check'
+      ];
+    }
+
+    // 8. Double Needle Machine / Double Needle Auto / Vertical Machine
+    if (lower.includes('double needle') || lower.includes('vertical') || lower.includes('d/n')) {
+      return [
+        'Twin Needle Bar Alignment & Needle Spacing Pitch Check',
+        'Left & Right Rotary Hook Timing Synchronization',
+        'Center Needle Guard Clearance & Bobbin Case Holders',
+        'Corner Stitching Needle Disengagement Mechanism Test',
+        'Double Tension Disc Assemblies & Take-up Springs Inspection',
+        'Oil Circulation Pump Flow & Lubrication Return Filter'
+      ];
+    }
+
+    // 9. Chain Stitch Machine / Multi Needle Chain Stitch
+    if (lower.includes('chain stitch') || lower.includes('chainstitch')) {
+      return [
+        'Looper Driving Cam & Front-to-Back Looper Movement',
+        'Needle Guard Timing & Needle Avoidance Stroke Check',
+        'Multiple Needle Clamp Centering & Thread Guides Check',
+        'Puller Roller Pressure & Drive Synchronization',
+        'Oil Distribution Wick & High-Speed Needle Bearing Greasing',
+        'Looper Thread Take-up Cam & Thread Eyelets Intactness'
+      ];
+    }
+
+    // 10. Feed of The Arm Machine (FOTA)
+    if (lower.includes('feed of the arm') || lower.includes('feed off the arm') || lower.includes('fota')) {
+      return [
+        'Cylinder Bed Looper Timing & Needle Clearance Alignment',
+        'Puller Roller Feed Pressure & Gear Synchronization',
+        'Lap Seam Folder Alignment & Fabric Feed Clearance',
+        'Oil Pump Gasket & Bed Drainage Inspection',
+        'Needle Guard Clearance & Deflection Check'
+      ];
+    }
+
+    // 11. Loop Attach Machine / Belt Loop Blind Stitch
+    if (lower.includes('loop attach') || lower.includes('belt loop') || lower.includes('beltloop')) {
+      return [
+        'Belt Loop Cutting Knife & Feeding Fork Alignment',
+        'Loop Clamp Pressure & Twin Bar Tack Needle Timing',
+        'Hook Timing & Needle Guard Clearance Inspection',
+        'Pneumatic Air Cylinder Stroke & Solenoid Valve Action',
+        'Loop Length Setting Dial & Micro-switch Sensor Calibration'
+      ];
+    }
+
+    // 12. Automatic Pocket Welting (APW) / Laser Cut APW / Pocket Attach / Pocket Facing
+    if (lower.includes('pocket') || lower.includes('welting') || lower.includes('apw')) {
+      return [
+        'Center & Corner Knife Cutting Sharpness & Depth Calibration',
+        'Laser Pointer Alignment & Vacuum Suction Table Pressure',
+        'Clamp Carriage X-Y Linear Guide Rail Lubrication',
+        'Upper & Lower Thread Sensors & Auto Bobbin Changer',
+        'Pneumatic Pressure Regulator & Cylinder Speed Valves',
+        'Safety Light Curtain Sensor & Emergency Stop Function'
+      ];
+    }
+
+    // 13. Template Machine (Single Head, Four Head, Pattern Machine)
+    if (lower.includes('template') || lower.includes('pattern') || lower.includes('plotter')) {
+      return [
+        'Template Clamping Frame Pneumatic Grippers Inspection',
+        '360-Degree Rotating Needle Head Timing Alignment',
+        'X-Y Axis Ball Screw & Linear Guide Rail Lubrication',
+        'CNC Servo Motor Drives & Encoder Zero Point Return',
+        'Laser Template Recognition Sensor & Barcode Reader Cleaning',
+        'Automatic Thread Trimmer & Broken Thread Sensor Test'
+      ];
+    }
+
+    // 14. Spreading Machine / Fabric Relax Machine
+    if (lower.includes('spreading') || lower.includes('fabric relax')) {
+      return [
+        'Fabric Edge Sensor & Automatic Aligning Guider Check',
+        'Fabric Roll Cradle Drive Rollers & Tensionless Feed Inspection',
+        'Traveling Drive Motor Wheels & Track Rail Cleaning',
+        'Cutter Box Blade Sharpness & Sharpening Stone Adjustment',
+        'Safety Collision Bumper Sensors & Emergency Stop Bar Test'
+      ];
+    }
+
+    // 15. Cutting Machine / Band Knife / Cloth Cutting / Rib / Piping / End Cutter
+    if (lower.includes('cutting') || lower.includes('cutter') || lower.includes('band knife')) {
+      return [
+        'Cutting Knife Blade Sharpness & Tension Adjustment',
+        'Knife Guide Bearings & Emery Grinding Wheels Calibration',
+        'Air Flotation Table Blower & Air Valve Nozzles Clearing',
+        'Blade Safety Guard & Electronic Hand Shield Sensor Test',
+        'Motor Brake Stopping Time & Emergency Cut-off Switch'
+      ];
+    }
+
+    // 16. Fusing Machine / Heat Transfer / Crease Machine
+    if (lower.includes('fusing') || lower.includes('heat transfer') || lower.includes('crease')) {
+      return [
+        'Heating Zone Temperature Sensor Calibration (RTD / Thermocouple)',
+        'Upper & Lower Teflon Seamless Belts Tracking & Tension',
+        'Pressure Roller Pneumatic Cylinders & Pressure Gauges Check',
+        'Belt Cleaning Scrapers & Static Eliminator Wire Intactness',
+        'Emergency Belt Reverse Switch & Over-Temperature Cutoff Safety'
+      ];
+    }
+
+    // 17. Needle Detector / Metal Detector
+    if (lower.includes('needle detector') || lower.includes('metal detector')) {
+      return [
+        'Multi-Sensor Head Calibration (9-Point 1.0mm/1.2mm Test Card)',
+        'Conveyor Belt Cleanliness & Demagnetization Inspection',
+        'Optical Reject Alarm & Belt Stop / Reverse Mechanism Test',
+        'Signal-to-Noise Ratio (SNR) Level Adjustment',
+        'Environmental Electromagnetic Interference Check'
+      ];
+    }
+
+    // 18. Thread Sucker / Dosting / Pneumatic Topper / Toper / Lagar / Iron / Steam
+    if (lower.includes('thread sucker') || lower.includes('dosting') || lower.includes('topper') || lower.includes('toper') || lower.includes('lagar') || lower.includes('iron') || lower.includes('steam')) {
+      return [
+        'Vacuum Suction Motor Impeller Cleaning & Filter Bag Inspection',
+        'Pneumatic Cylinder Pressure & Air Valve Seals Intactness',
+        'Steam Valve Solenoid & Drainage Water Trap Cleaning',
+        'Electrical Heating Element & Temperature Thermostat Test',
+        'Safety Pressure Relief Valve & Ground Earth Bonding Inspection'
+      ];
+    }
+
+    // 19. Embroidery Machine / Quilting Machine
+    if (lower.includes('embroidery') || lower.includes('quilting')) {
+      return [
+        'Multi-Needle Head Drive Cam & Jumping Solenoid Action',
+        'Rotary Hook Timing & Needle Deflection Clearance',
+        'Thread Tension Base & Automatic Thread Break Sensors',
+        'Pantograph Frame X-Y Linear Rail Greasing',
+        'Trimmer Knife Blade Engagement & Picker Function',
+        'Emergency Stop Bar & Needle Safety Guard Intactness'
+      ];
+    }
+
+    // 20. Plane Machine / Single Needle Lockstitch (Standard Lockstitch)
+    return [
+      'Rotary Hook Timing & Needle-to-Hook Point Clearance',
+      'Needle Bar Height & Timing Mark Alignment',
+      'Thread Take-up Lever & Tension Assembly Springs Check',
+      'Bobbin Case Lubrication, Latch & Backing Spring Inspection',
+      'Automatic Under-bed Thread Trimmer (UTT) & Wiper Action',
+      'Oil Pump Flow, Oil Level & Oil Pan Filter Screen Cleaning',
+      'Feed Dog Height & Pitch Alignment',
+      'Safety Finger Guard & Belt Cover Intactness Check'
+    ];
+  }
+
+  /**
    * Automatically synchronizes all Machine Types from Master Data Storage (MACHINE_NAMES and MACHINES)
    * with ZERO duplicate configs. Preserves any existing customized intervals and checklists.
    */
@@ -173,6 +441,11 @@ class PreventiveMaintenanceService {
         const mergedAliases = new Set([...(existing.aliases || []), ...aliasSet]);
         existing.aliases = [...mergedAliases];
         existing.machineCount = count;
+        // Upgrade legacy generic checklists to specialized checklist for this machine type
+        if (!existing.checklist || existing.checklist.length === 0 || (this.isGenericLegacyChecklist(existing.checklist) && !canonical.toLowerCase().includes('plane') && !canonical.toLowerCase().includes('lock stitch'))) {
+          existing.checklist = this.getDefaultChecklistForMachineType(canonical);
+          modified = true;
+        }
       } else {
         // Create new schedule config for this machine type with sensible defaults
         let defaultDays = 91;
@@ -201,13 +474,7 @@ class PreventiveMaintenanceService {
           defaultManpowerId: null,
           defaultManpowerName: null,
           machineCount: count,
-          checklist: [
-            'Motor & Drive Belt Inspection & Tension Adjustment',
-            'Oil Level & High Speed Lubrication System',
-            'Needle Bar Height & Timing Alignment',
-            'Safety Guard & Eye Shield Intactness Check',
-            'Dust, Lint Cleaning & Waste Suction'
-          ],
+          checklist: this.getDefaultChecklistForMachineType(canonical),
           status: 'ACTIVE',
           syncedFromMasterData: true,
           createdAt: new Date().toISOString(),
@@ -254,6 +521,11 @@ class PreventiveMaintenanceService {
         c.frequencyLabel = 'Every 91 Days';
         modified = true;
       }
+      // Auto-enrich any specialized machines that still have empty or legacy generic checklists
+      if (!c.checklist || c.checklist.length === 0 || (this.isGenericLegacyChecklist(c.checklist) && !c.machineType.toLowerCase().includes('plane') && !c.machineType.toLowerCase().includes('lock stitch'))) {
+        c.checklist = this.getDefaultChecklistForMachineType(c.machineType);
+        modified = true;
+      }
     }
     if (modified) {
       storage.setTable(TABLE_NAMES.PREVENTIVE_CONFIG, configs);
@@ -271,13 +543,20 @@ class PreventiveMaintenanceService {
     const query = String(machineTypeOrName).toLowerCase().trim();
     const queryNorm = query.replace(/[\s\-_/]+/g, '');
 
+    const ensureSpecializedChecklist = (cfg) => {
+      if (cfg && (!cfg.checklist || cfg.checklist.length === 0 || (this.isGenericLegacyChecklist(cfg.checklist) && !cfg.machineType.toLowerCase().includes('plane') && !cfg.machineType.toLowerCase().includes('lock stitch')))) {
+        cfg.checklist = this.getDefaultChecklistForMachineType(cfg.machineType || machineTypeOrName);
+      }
+      return cfg;
+    };
+
     // 1. Exact or canonical match on machineType
     let match = configs.find(c => c.machineType && c.machineType.toLowerCase() === query);
-    if (match) return match;
+    if (match) return ensureSpecializedChecklist(match);
 
     const canonicalTarget = this.getCanonicalMachineType(machineTypeOrName).toLowerCase();
     match = configs.find(c => c.machineType && c.machineType.toLowerCase() === canonicalTarget);
-    if (match) return match;
+    if (match) return ensureSpecializedChecklist(match);
 
     // 2. Alias match
     match = configs.find(c => {
@@ -286,29 +565,33 @@ class PreventiveMaintenanceService {
       }
       return false;
     });
-    if (match) return match;
+    if (match) return ensureSpecializedChecklist(match);
 
     // 3. Keyword/substring match
     match = configs.find(c => {
       const t = (c.machineType || '').toLowerCase().replace(/[\s\-_/]+/g, '');
       return queryNorm.includes(t) || t.includes(queryNorm);
     });
-    if (match) return match;
+    if (match) return ensureSpecializedChecklist(match);
 
-    // Fallback: Return Plane / Lock Stitch config
-    return configs.find(c => c.machineType.includes('Lock Stitch') || c.machineType.includes('Plane')) || configs[0] || {
+    // Fallback: Return Plane / Lock Stitch config with tailored checklist
+    const fallback = configs.find(c => c.machineType.includes('Lock Stitch') || c.machineType.includes('Plane')) || configs[0];
+    if (fallback) {
+      return {
+        ...fallback,
+        checklist: (fallback.checklist && fallback.checklist.length > 0 && !this.isGenericLegacyChecklist(fallback.checklist))
+          ? fallback.checklist
+          : this.getDefaultChecklistForMachineType(machineTypeOrName)
+      };
+    }
+
+    return {
       machineType: machineTypeOrName,
       frequencyDays: 91,
       frequencyLabel: 'Every 91 Days',
       reminderDays: [7, 3, 0],
       responsibleDepartment: 'Mechanical Maintenance',
-      checklist: [
-        'Motor & Drive Belt Inspection',
-        'Oil Level & High Speed Lubrication System',
-        'Needle Bar Height & Timing Alignment',
-        'Safety Guard & Eye Shield Intactness',
-        'Dust, Lint & Waste Suction Cleaning'
-      ]
+      checklist: this.getDefaultChecklistForMachineType(machineTypeOrName)
     };
   }
 
@@ -418,12 +701,21 @@ class PreventiveMaintenanceService {
       configs.push(config);
     }
 
-    // CONFIRMED WRITE: await Database write
+    // CONFIRMED WRITE: set memory table & await Database write
+    storage.setTable(TABLE_NAMES.PREVENTIVE_CONFIG, configs);
     const ok = await storage.saveTable(TABLE_NAMES.PREVENTIVE_CONFIG, configs);
     if (!ok) throw new CloudSaveError('❌ Cloud Save Failed: Checklist update was not confirmed by the cloud.');
     auditService.log('CONFIG', 'PREVENTIVE_MAINTENANCE', config.id, `Admin updated inspection checklist (${cleanItems.length} items) for ${config.machineType}`);
     window.dispatchEvent(new CustomEvent('erp:preventive-maintenance-updated'));
     return config;
+  }
+
+  /**
+   * Resets a machine type's inspection checklist back to industry standard preset
+   */
+  async resetChecklistToDefault(machineTypeOrName) {
+    const defaultItems = this.getDefaultChecklistForMachineType(machineTypeOrName);
+    return await this.updateChecklistForMachineType(machineTypeOrName, defaultItems);
   }
 
   // =========================================================================
@@ -1297,7 +1589,9 @@ class PreventiveMaintenanceService {
       urgency,
       historyCount: machineRecords.length,
       history: machineRecords,
-      configChecklist: config?.checklist || []
+      configChecklist: (config?.checklist && config.checklist.length > 0 && !this.isGenericLegacyChecklist(config.checklist))
+        ? config.checklist
+        : this.getDefaultChecklistForMachineType(machineTypeName)
     };
   }
 

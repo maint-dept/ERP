@@ -1192,9 +1192,11 @@ function renderAdminConfigTab() {
                   ${escapeHtml(c.responsibleDepartment || 'Mechanical Maintenance')}
                 </td>
                 <td style="padding: 8px 10px;">
-                  <span style="font-size: 11px; background: #1e293b; color: #cbd5e1; padding: 2px 6px; border-radius: 4px;">
-                    📋 ${(c.checklist || []).length} Items
-                  </span>
+                  <button type="button" class="btn btn-outline-primary btn-sm btn-pm-manage-checklist" data-config-id="${c.id}" style="padding: 3px 9px; font-size: 11px; font-weight: 700; border: 1.5px solid #38bdf8; color: #38bdf8; background: rgba(56, 189, 248, 0.12); display: inline-flex; align-items: center; gap: 5px; cursor: pointer; border-radius: 5px; transition: all 0.2s; white-space: nowrap;" title="Admin: Configure standard inspection checklist for ${escapeHtml(c.machineType)}">
+                    <span>📋</span>
+                    <span>Checklist (${(c.checklist || []).length} Items)</span>
+                    <span style="font-size: 9.5px; opacity: 0.85;">⚙️</span>
+                  </button>
                 </td>
                 <td style="padding: 8px 10px;">
                   <span class="badge ${c.status === 'ACTIVE' ? 'badge-active' : 'badge-danger'}">
@@ -1229,6 +1231,8 @@ function renderActivePmModal() {
   switch (activePmModal) {
     case 'service-entry':
       return renderServiceEntryModal();
+    case 'checklist-modal':
+      return renderChecklistManagerModal();
     case 'qr-scanner':
       return renderQrScannerModal();
     case 'print-sticker':
@@ -1266,13 +1270,7 @@ function renderServiceEntryModal() {
   const checklistItems = profile
     ? ((profile.configChecklist && profile.configChecklist.length > 0)
       ? profile.configChecklist
-      : [
-        'Motor & Drive Belt Tension & Inspection',
-        'Oil Level & High Speed Lubrication Circulation',
-        'Needle Bar Height & Hook / Looper Timing Alignment',
-        'Safety Guard & Eye Shield Intactness Check',
-        'Dust, Lint Cleaning & Thread Waste Suction'
-      ])
+      : preventiveMaintenanceService.getDefaultChecklistForMachineType(profile.machineName || profile.machineType))
     : [];
 
   return `
@@ -1468,6 +1466,9 @@ function renderServiceEntryModal() {
                 ${isAdmin && profile ? `
                   <button type="button" id="btn-pm-add-checklist-toggle" class="btn btn-outline-primary btn-sm" style="padding: 2px 8px; font-size: 11px; border-color: #38bdf8; color: #38bdf8; font-weight: 700;" title="Admin: Add new inspection item for this machine type">
                     ➕ Add Item
+                  </button>
+                  <button type="button" id="btn-pm-open-admin-checklist-mgr" class="btn btn-secondary btn-sm" style="padding: 2px 8px; font-size: 11px; border: 1px solid #38bdf8; color: #38bdf8; font-weight: 700;" title="Admin: Open full Checklist Config Manager for ${escapeHtml(profile.machineType || profile.machineName)}">
+                    ⚙️ Admin Config
                   </button>
                 ` : ''}
                 ${profile ? `
@@ -1856,6 +1857,136 @@ function renderReplaceStickerModal() {
 }
 
 /**
+ * Admin Inspection Checklist Manager Modal
+ * Allows Administrators to configure, add, edit, reorder, and remove inspection checklist items
+ * tailored specifically for each machine type.
+ */
+function renderChecklistManagerModal() {
+  const cfg = modalServiceContext;
+  if (!cfg) return '';
+
+  const rawList = Array.isArray(cfg.checklist) && cfg.checklist.length > 0
+    ? cfg.checklist
+    : preventiveMaintenanceService.getDefaultChecklistForMachineType(cfg.machineType);
+
+  return `
+    <div class="modal-backdrop" id="pm-checklist-modal-backdrop" style="position: fixed; inset: 0; background: rgba(0,0,0,0.82); z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 20px;">
+      <div class="modal-dialog" style="max-width: 680px; width: 100%; background: var(--bg-surface); border: 1.5px solid #38bdf8; border-radius: var(--radius-xl); box-shadow: 0 20px 45px rgba(0,0,0,0.85); display: flex; flex-direction: column; max-height: 90vh; overflow: hidden;">
+        
+        <!-- Modal Header -->
+        <div style="padding: 16px 22px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; background: #0f172a;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 22px;">📋</span>
+            <div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <h3 style="font-size: 15.5px; font-weight: 800; color: #fff; margin: 0;">
+                  Inspection Checklist Configuration
+                </h3>
+                <span class="badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; font-size: 10.5px; font-weight: 700;">
+                  Admin Controlled
+                </span>
+              </div>
+              <div style="font-size: 12px; color: #38bdf8; font-weight: 700; margin-top: 2px;">
+                ${escapeHtml(cfg.machineType)} &bull; <span style="color: #94a3b8; font-weight: normal;">${cfg.machineCount || 0} Factory Machines</span>
+              </div>
+            </div>
+          </div>
+          <button id="btn-pm-close-checklist-modal" style="background: none; border: none; color: #94a3b8; font-size: 20px; cursor: pointer;">✕</button>
+        </div>
+
+        <!-- Modal Body -->
+        <div style="padding: 18px 22px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 14px;">
+          
+          <!-- Info Banner -->
+          <div style="background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 8px; padding: 10px 14px; font-size: 11.5px; color: #cbd5e1; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+            <div style="flex: 1; min-width: 260px;">
+              🛡️ <strong>System Administrator Rule:</strong> The checklist configured below will automatically load whenever a technician opens <strong>Preventive Service Entry</strong> for any machine of type <strong>${escapeHtml(cfg.machineType)}</strong>.
+            </div>
+            <button type="button" id="btn-pm-chk-mgr-reset-preset" class="btn btn-secondary btn-sm" style="font-size: 11px; padding: 3px 10px; border: 1.5px solid #f59e0b; color: #fbbf24; font-weight: 700; background: rgba(245, 158, 11, 0.1);" title="Reset to standard recommended checklist for this machine type">
+              🔄 Reset to Preset
+            </button>
+          </div>
+
+          <!-- Add Item Box -->
+          <div style="background: #0f172a; border: 1.5px solid #38bdf8; border-radius: 8px; padding: 12px;">
+            <label style="font-size: 11.5px; font-weight: 700; color: #38bdf8; display: block; margin-bottom: 6px;">
+              ➕ Add New Inspection Checklist Item:
+            </label>
+            <div style="display: flex; gap: 8px;">
+              <input 
+                type="text" 
+                id="pm-chk-mgr-new-input" 
+                placeholder="Type inspection step (e.g. Check Bobbin Thread Tension, Lubricate Stepper Motor)..." 
+                style="flex: 1; padding: 8px 12px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 6px; color: #fff; font-size: 12.5px;" 
+              />
+              <button type="button" id="btn-pm-chk-mgr-add" class="btn btn-primary btn-sm" style="padding: 6px 16px; font-weight: 700; font-size: 12px; white-space: nowrap;">
+                ➕ Add Item
+              </button>
+            </div>
+          </div>
+
+          <!-- Checklist Items Section -->
+          <div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <label style="font-size: 12px; font-weight: 800; color: #fff; margin: 0;">
+                Configured Inspection Steps (<span id="pm-chk-mgr-count">${rawList.length}</span> Items)
+              </label>
+              <span style="font-size: 11px; color: #94a3b8;">
+                Use ⬆️ ⬇️ to reorder &bull; ✏️ to edit &bull; 🗑️ to delete
+              </span>
+            </div>
+
+            <div id="pm-chk-mgr-list" style="background: #0f172a; border: 1px solid var(--border-color); border-radius: 8px; padding: 8px; max-height: 280px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px;">
+              ${rawList.map((item, idx) => `
+                <div class="pm-chk-mgr-row" data-index="${idx}" style="display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 10px; border-radius: 5px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); transition: all 0.15s ease;">
+                  <div style="display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0;">
+                    <span style="font-family: monospace; font-size: 11px; font-weight: 800; color: #38bdf8; background: rgba(56, 189, 248, 0.1); padding: 2px 6px; border-radius: 4px; min-width: 26px; text-align: center;">
+                      #${idx + 1}
+                    </span>
+                    <span class="pm-chk-mgr-text" style="font-size: 12px; color: #e2e8f0; word-break: break-word;">${escapeHtml(item)}</span>
+                  </div>
+                  <div style="display: flex; gap: 4px; align-items: center; flex-shrink: 0;">
+                    <button type="button" class="btn-pm-chk-mgr-up" data-index="${idx}" title="Move Up" style="background: #1e293b; border: 1px solid rgba(255,255,255,0.15); color: #cbd5e1; cursor: pointer; font-size: 11px; padding: 3px 6px; border-radius: 4px; line-height: 1;" ${idx === 0 ? 'disabled style="opacity: 0.3; cursor: not-allowed;"' : ''}>
+                      ⬆️
+                    </button>
+                    <button type="button" class="btn-pm-chk-mgr-down" data-index="${idx}" title="Move Down" style="background: #1e293b; border: 1px solid rgba(255,255,255,0.15); color: #cbd5e1; cursor: pointer; font-size: 11px; padding: 3px 6px; border-radius: 4px; line-height: 1;" ${idx === rawList.length - 1 ? 'disabled style="opacity: 0.3; cursor: not-allowed;"' : ''}>
+                      ⬇️
+                    </button>
+                    <button type="button" class="btn-pm-chk-mgr-edit" data-index="${idx}" title="Edit Item" style="background: #1e293b; border: 1px solid #38bdf8; color: #38bdf8; cursor: pointer; font-size: 11px; padding: 3px 6px; border-radius: 4px; line-height: 1;">
+                      ✏️
+                    </button>
+                    <button type="button" class="btn-pm-chk-mgr-del" data-index="${idx}" title="Delete Item" style="background: #1e293b; border: 1px solid #ef4444; color: #ef4444; cursor: pointer; font-size: 11px; padding: 3px 6px; border-radius: 4px; line-height: 1;">
+                      🗑️
+                    </button>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Modal Footer -->
+        <div style="padding: 14px 22px; border-top: 1px solid var(--border-color); background: #0f172a; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+          <div style="font-size: 11.5px; color: #94a3b8;">
+            Changes persist permanently to cloud database storage.
+          </div>
+          <div style="display: flex; gap: 10px;">
+            <button type="button" id="btn-pm-chk-mgr-cancel" class="btn btn-secondary btn-sm" style="padding: 8px 16px;">
+              Cancel
+            </button>
+            <button type="button" id="btn-pm-chk-mgr-save" class="btn btn-primary btn-sm" style="padding: 8px 22px; font-weight: 700;">
+              💾 Save Checklist Configuration
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  `;
+}
+
+/**
  * Add / Edit Admin Schedule Config Modal
  */
 function renderConfigModal() {
@@ -1864,14 +1995,12 @@ function renderConfigModal() {
     machineType: '',
     frequencyDays: 91,
     responsibleDepartment: 'Mechanical Maintenance',
-    checklist: [
-      'Motor & Drive Belt Inspection & Tension Adjustment',
-      'Oil Level & High Speed Lubrication System',
-      'Needle Bar Height & Timing Alignment',
-      'Safety Guard & Eye Shield Intactness',
-      'Dust, Lint & Waste Suction Cleaning'
-    ]
+    checklist: preventiveMaintenanceService.getDefaultChecklistForMachineType('General Sewing Machine')
   };
+
+  const checklistList = Array.isArray(cfg.checklist) && cfg.checklist.length > 0
+    ? cfg.checklist
+    : preventiveMaintenanceService.getDefaultChecklistForMachineType(cfg.machineType || 'General Sewing Machine');
 
   return `
     <div class="modal-backdrop" id="pm-config-modal-backdrop" style="position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 20px;">
@@ -1906,11 +2035,13 @@ function renderConfigModal() {
           <div>
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
               <label style="font-size: 11.5px; font-weight: 700; color: #cbd5e1; margin: 0;">📋 Standard Inspection Checklist (Admin Controlled)</label>
-              <span style="font-size: 11px; color: #38bdf8;">One item per line</span>
+              <button type="button" id="btn-pm-open-interactive-chk-builder" class="btn btn-outline-primary btn-sm" style="font-size: 11px; padding: 2px 8px; border-color: #38bdf8; color: #38bdf8; font-weight: 700;" title="Open interactive checklist manager">
+                ⚙️ Open Checklist Manager
+              </button>
             </div>
-            <textarea id="pm-cfg-checklist" rows="6" placeholder="Enter inspection checklist items, one per line..." style="width: 100%; padding: 8px 12px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 6px; color: #fff; font-size: 12.5px; line-height: 1.5;">${(cfg.checklist || []).join('\n')}</textarea>
+            <textarea id="pm-cfg-checklist" rows="6" placeholder="Enter inspection checklist items, one per line..." style="width: 100%; padding: 8px 12px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 6px; color: #fff; font-size: 12.5px; line-height: 1.5;">${checklistList.join('\n')}</textarea>
             <div style="font-size: 11px; color: #94a3b8; margin-top: 4px;">
-              💡 Admins can add, edit, or delete items by editing the lines above. These items will appear in the service entry checklist for this machine type.
+              💡 Admins can customize inspection items per machine type. Enter one item per line or use the Checklist Manager.
             </div>
           </div>
 
@@ -2704,6 +2835,20 @@ export function initPreventiveMaintenanceEvents() {
     });
   });
 
+  // Admin Config Table: Click "Checklist (X Items)" opens dedicated checklist manager
+  container.querySelectorAll('.btn-pm-manage-checklist').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const cfgId = btn.getAttribute('data-config-id');
+      const cfg = preventiveMaintenanceService.getConfigById(cfgId);
+      if (cfg) {
+        modalServiceContext = cfg;
+        activePmModal = 'checklist-modal';
+        rerenderView();
+      }
+    });
+  });
+
   container.querySelectorAll('.btn-pm-delete-config').forEach(btn => {
     btn.addEventListener('click', () => {
       const cfgId = btn.getAttribute('data-config-id');
@@ -2734,7 +2879,19 @@ function bindModalEvents() {
   const isAdmin = authService.isAdmin();
 
   const activeProf = modalMachineContext ? preventiveMaintenanceService.getMachinePreventiveProfile(modalMachineContext) : null;
-  const targetMachineType = activeProf?.machineType || 'Plane / Lock Stitch Machine';
+  const targetMachineType = activeProf?.machineType || activeProf?.machineName || 'Plane / Lock Stitch Machine';
+
+  // Admin button in Service Entry to jump directly to dedicated Checklist Manager
+  document.getElementById('btn-pm-open-admin-checklist-mgr')?.addEventListener('click', () => {
+    if (activeProf) {
+      const cfg = preventiveMaintenanceService.getConfigByMachineType(activeProf.machineName || activeProf.machineType);
+      if (cfg) {
+        modalServiceContext = cfg;
+        activePmModal = 'checklist-modal';
+        rerenderView();
+      }
+    }
+  });
 
   const getCurrentChecklistItems = () => {
     const items = [];
@@ -2779,7 +2936,7 @@ function bindModalEvents() {
 
     // Delete item
     checklistContainer.querySelectorAll('.btn-pm-del-checklist').forEach(btn => {
-      btn.addEventListener('click', (e) => {
+      btn.addEventListener('click', async (e) => {
         e.stopPropagation();
         const idx = parseInt(btn.getAttribute('data-index'), 10);
         const currentItems = getCurrentChecklistItems();
@@ -2789,7 +2946,7 @@ function bindModalEvents() {
         }
         currentItems.splice(idx, 1);
         try {
-          preventiveMaintenanceService.updateChecklistForMachineType(targetMachineType, currentItems);
+          await preventiveMaintenanceService.updateChecklistForMachineType(targetMachineType, currentItems);
           renderChecklistRows(currentItems);
           notificationService.success(`Checklist item removed for ${targetMachineType}`);
         } catch (err) {
@@ -2820,7 +2977,7 @@ function bindModalEvents() {
         const editInput = row.querySelector('.pm-edit-item-input');
         editInput?.focus({ preventScroll: true });
 
-        row.querySelector('.btn-pm-save-edit-item')?.addEventListener('click', () => {
+        row.querySelector('.btn-pm-save-edit-item')?.addEventListener('click', async () => {
           const newText = editInput?.value?.trim();
           if (!newText) {
             alert('Checklist item text cannot be empty.');
@@ -2828,7 +2985,7 @@ function bindModalEvents() {
           }
           currentItems[idx] = newText;
           try {
-            preventiveMaintenanceService.updateChecklistForMachineType(targetMachineType, currentItems);
+            await preventiveMaintenanceService.updateChecklistForMachineType(targetMachineType, currentItems);
             renderChecklistRows(currentItems);
             notificationService.success(`Checklist item updated for ${targetMachineType}`);
           } catch (err) {
@@ -2871,7 +3028,7 @@ function bindModalEvents() {
     if (newChecklistInput) newChecklistInput.value = '';
   });
 
-  document.getElementById('btn-pm-confirm-add-checklist')?.addEventListener('click', () => {
+  document.getElementById('btn-pm-confirm-add-checklist')?.addEventListener('click', async () => {
     const newText = newChecklistInput?.value?.trim();
     if (!newText) {
       alert('Please enter text for the new checklist item.');
@@ -2881,7 +3038,7 @@ function bindModalEvents() {
     const currentItems = getCurrentChecklistItems();
     currentItems.push(newText);
     try {
-      preventiveMaintenanceService.updateChecklistForMachineType(targetMachineType, currentItems);
+      await preventiveMaintenanceService.updateChecklistForMachineType(targetMachineType, currentItems);
       renderChecklistRows(currentItems);
       if (addInlineBox) addInlineBox.style.display = 'none';
       if (newChecklistInput) newChecklistInput.value = '';
@@ -3344,7 +3501,21 @@ function bindModalEvents() {
   // 5. Config Modal Events
   document.getElementById('btn-pm-close-config-modal')?.addEventListener('click', () => closeModal());
   document.getElementById('btn-pm-cancel-config')?.addEventListener('click', () => closeModal());
-  document.getElementById('btn-pm-save-config')?.addEventListener('click', () => {
+  document.getElementById('btn-pm-open-interactive-chk-builder')?.addEventListener('click', () => {
+    const cId = document.getElementById('pm-cfg-id')?.value;
+    const mType = document.getElementById('pm-cfg-type')?.value?.trim();
+    let cfg = cId ? preventiveMaintenanceService.getConfigById(cId) : null;
+    if (!cfg && mType) {
+      cfg = preventiveMaintenanceService.getConfigByMachineType(mType);
+    }
+    if (cfg) {
+      modalServiceContext = cfg;
+      activePmModal = 'checklist-modal';
+      rerenderView();
+    }
+  });
+
+  document.getElementById('btn-pm-save-config')?.addEventListener('click', async () => {
     const cId = document.getElementById('pm-cfg-id')?.value;
     const mType = document.getElementById('pm-cfg-type')?.value.trim();
     const days = parseInt(document.getElementById('pm-cfg-days')?.value, 10) || 91;
@@ -3357,19 +3528,217 @@ function bindModalEvents() {
       return;
     }
 
-    preventiveMaintenanceService.saveConfig({
-      id: cId,
-      machineType: mType,
-      frequencyDays: days,
-      frequencyLabel: `Every ${days} Days`,
-      responsibleDepartment: dept,
-      checklist
+    try {
+      await preventiveMaintenanceService.saveConfig({
+        id: cId,
+        machineType: mType,
+        frequencyDays: days,
+        frequencyLabel: `Every ${days} Days`,
+        responsibleDepartment: dept,
+        checklist
+      });
+
+      notificationService.success(`Schedule configuration for ${mType} saved.`);
+      closeModal();
+      rerenderView();
+    } catch (err) {
+      alert('Error saving configuration: ' + err.message);
+    }
+  });
+
+  // -------------------------------------------------------------
+  // 5.1 Checklist Manager Modal Events
+  // -------------------------------------------------------------
+  const chkMgrClose = document.getElementById('btn-pm-close-checklist-modal');
+  const chkMgrCancel = document.getElementById('btn-pm-chk-mgr-cancel');
+  const chkMgrSave = document.getElementById('btn-pm-chk-mgr-save');
+  const chkMgrAddBtn = document.getElementById('btn-pm-chk-mgr-add');
+  const chkMgrNewInput = document.getElementById('pm-chk-mgr-new-input');
+  const chkMgrResetBtn = document.getElementById('btn-pm-chk-mgr-reset-preset');
+  const chkMgrList = document.getElementById('pm-chk-mgr-list');
+  const chkMgrCount = document.getElementById('pm-chk-mgr-count');
+
+  if (activePmModal === 'checklist-modal' && modalServiceContext) {
+    const targetType = modalServiceContext.machineType;
+    let localItems = Array.isArray(modalServiceContext.checklist) && modalServiceContext.checklist.length > 0
+      ? [...modalServiceContext.checklist]
+      : preventiveMaintenanceService.getDefaultChecklistForMachineType(targetType);
+
+    const renderChkMgrRows = () => {
+      if (!chkMgrList) return;
+      if (chkMgrCount) chkMgrCount.textContent = localItems.length;
+
+      if (localItems.length === 0) {
+        chkMgrList.innerHTML = `
+          <div style="padding: 20px; text-align: center; color: #94a3b8; font-size: 12px; font-style: italic;">
+            No inspection checklist items configured. Click "Reset to Preset" or add an item above.
+          </div>
+        `;
+        return;
+      }
+
+      chkMgrList.innerHTML = localItems.map((item, idx) => `
+        <div class="pm-chk-mgr-row" data-index="${idx}" style="display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 10px; border-radius: 5px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); transition: all 0.15s ease;">
+          <div style="display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0;">
+            <span style="font-family: monospace; font-size: 11px; font-weight: 800; color: #38bdf8; background: rgba(56, 189, 248, 0.1); padding: 2px 6px; border-radius: 4px; min-width: 26px; text-align: center;">
+              #${idx + 1}
+            </span>
+            <span class="pm-chk-mgr-text" style="font-size: 12px; color: #e2e8f0; word-break: break-word;">${escapeHtml(item)}</span>
+          </div>
+          <div style="display: flex; gap: 4px; align-items: center; flex-shrink: 0;">
+            <button type="button" class="btn-pm-chk-mgr-up" data-index="${idx}" title="Move Up" style="background: #1e293b; border: 1px solid rgba(255,255,255,0.15); color: #cbd5e1; cursor: pointer; font-size: 11px; padding: 3px 6px; border-radius: 4px; line-height: 1;" ${idx === 0 ? 'disabled style="opacity: 0.3; cursor: not-allowed;"' : ''}>
+              ⬆️
+            </button>
+            <button type="button" class="btn-pm-chk-mgr-down" data-index="${idx}" title="Move Down" style="background: #1e293b; border: 1px solid rgba(255,255,255,0.15); color: #cbd5e1; cursor: pointer; font-size: 11px; padding: 3px 6px; border-radius: 4px; line-height: 1;" ${idx === localItems.length - 1 ? 'disabled style="opacity: 0.3; cursor: not-allowed;"' : ''}>
+              ⬇️
+            </button>
+            <button type="button" class="btn-pm-chk-mgr-edit" data-index="${idx}" title="Edit Item" style="background: #1e293b; border: 1px solid #38bdf8; color: #38bdf8; cursor: pointer; font-size: 11px; padding: 3px 6px; border-radius: 4px; line-height: 1;">
+              ✏️
+            </button>
+            <button type="button" class="btn-pm-chk-mgr-del" data-index="${idx}" title="Delete Item" style="background: #1e293b; border: 1px solid #ef4444; color: #ef4444; cursor: pointer; font-size: 11px; padding: 3px 6px; border-radius: 4px; line-height: 1;">
+              🗑️
+            </button>
+          </div>
+        </div>
+      `).join('');
+
+      bindChkMgrRowEvents();
+    };
+
+    const bindChkMgrRowEvents = () => {
+      // Reorder Up
+      chkMgrList?.querySelectorAll('.btn-pm-chk-mgr-up').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const idx = parseInt(btn.getAttribute('data-index'), 10);
+          if (idx > 0) {
+            const temp = localItems[idx];
+            localItems[idx] = localItems[idx - 1];
+            localItems[idx - 1] = temp;
+            renderChkMgrRows();
+          }
+        });
+      });
+
+      // Reorder Down
+      chkMgrList?.querySelectorAll('.btn-pm-chk-mgr-down').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const idx = parseInt(btn.getAttribute('data-index'), 10);
+          if (idx < localItems.length - 1) {
+            const temp = localItems[idx];
+            localItems[idx] = localItems[idx + 1];
+            localItems[idx + 1] = temp;
+            renderChkMgrRows();
+          }
+        });
+      });
+
+      // Delete
+      chkMgrList?.querySelectorAll('.btn-pm-chk-mgr-del').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const idx = parseInt(btn.getAttribute('data-index'), 10);
+          localItems.splice(idx, 1);
+          renderChkMgrRows();
+        });
+      });
+
+      // Edit
+      chkMgrList?.querySelectorAll('.btn-pm-chk-mgr-edit').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const idx = parseInt(btn.getAttribute('data-index'), 10);
+          const row = chkMgrList.querySelector(`.pm-chk-mgr-row[data-index="${idx}"]`);
+          if (!row) return;
+
+          const oldText = localItems[idx] || '';
+          row.innerHTML = `
+            <div style="display: flex; gap: 6px; align-items: center; width: 100%; padding: 2px 0;">
+              <input type="text" class="pm-edit-mgr-input" value="${escapeHtml(oldText)}" style="flex: 1; padding: 4px 8px; background: #0f172a; border: 1.5px solid #38bdf8; border-radius: 4px; color: #fff; font-size: 12px;" />
+              <button type="button" class="btn-save-inline-edit btn btn-primary btn-sm" style="padding: 2px 8px; font-size: 11px; font-weight: 700;">Save</button>
+              <button type="button" class="btn-cancel-inline-edit btn btn-secondary btn-sm" style="padding: 2px 6px; font-size: 11px;">Cancel</button>
+            </div>
+          `;
+
+          const inp = row.querySelector('.pm-edit-mgr-input');
+          inp?.focus({ preventScroll: true });
+
+          row.querySelector('.btn-save-inline-edit')?.addEventListener('click', () => {
+            const v = inp?.value?.trim();
+            if (v) {
+              localItems[idx] = v;
+              renderChkMgrRows();
+            }
+          });
+
+          row.querySelector('.btn-cancel-inline-edit')?.addEventListener('click', () => {
+            renderChkMgrRows();
+          });
+
+          inp?.addEventListener('keydown', (ke) => {
+            if (ke.key === 'Enter') {
+              ke.preventDefault();
+              row.querySelector('.btn-save-inline-edit')?.click();
+            } else if (ke.key === 'Escape') {
+              row.querySelector('.btn-cancel-inline-edit')?.click();
+            }
+          });
+        });
+      });
+    };
+
+    // Add item
+    const handleAdd = () => {
+      const v = chkMgrNewInput?.value?.trim();
+      if (!v) {
+        chkMgrNewInput?.focus({ preventScroll: true });
+        return;
+      }
+      localItems.push(v);
+      if (chkMgrNewInput) chkMgrNewInput.value = '';
+      renderChkMgrRows();
+    };
+
+    chkMgrAddBtn?.addEventListener('click', handleAdd);
+    chkMgrNewInput?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        handleAdd();
+      }
     });
 
-    notificationService.success(`Schedule configuration for ${mType} saved.`);
-    closeModal();
-    rerenderView();
-  });
+    // Reset preset
+    chkMgrResetBtn?.addEventListener('click', () => {
+      if (confirm(`Reset checklist for "${targetType}" to recommended industry standard preset?`)) {
+        localItems = preventiveMaintenanceService.getDefaultChecklistForMachineType(targetType);
+        renderChkMgrRows();
+        notificationService.info(`Reset to recommended preset for ${targetType}`);
+      }
+    });
+
+    // Close / Cancel
+    chkMgrClose?.addEventListener('click', () => closeModal());
+    chkMgrCancel?.addEventListener('click', () => closeModal());
+
+    // Save
+    chkMgrSave?.addEventListener('click', async () => {
+      chkMgrSave.disabled = true;
+      chkMgrSave.textContent = 'Saving...';
+      try {
+        await preventiveMaintenanceService.updateChecklistForMachineType(targetType, localItems);
+        notificationService.success(`Checklist configuration successfully updated for ${targetType} (${localItems.length} items).`);
+        closeModal();
+        rerenderView();
+      } catch (err) {
+        alert('Error saving checklist configuration: ' + err.message);
+        chkMgrSave.disabled = false;
+        chkMgrSave.textContent = '💾 Save Checklist Configuration';
+      }
+    });
+
+    bindChkMgrRowEvents();
+  }
 
   // 6. Replace Physical Sticker Modal Events (Purely Manual Entry)
   document.getElementById('btn-pm-close-replace-modal')?.addEventListener('click', () => closeModal());
