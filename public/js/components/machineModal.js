@@ -436,15 +436,8 @@ export function initMachineModalEvents() {
       } else {
         lineSelect.innerHTML = '<option value="">No lines under this floor</option>';
       }
-
-      // If new machine registration, auto-suggest serial number based on selected floor short code
-      if (!isEdit && serialInp && floorSelect.value) {
-        const generated = machineService.generateNextSerialNumber(floorSelect.value);
-        if (generated && (!serialInp.value || serialInp.value.includes('-'))) {
-          serialInp.value = generated;
-          serialInp.dispatchEvent(new Event('input'));
-        }
-      }
+      // Note: Auto serial-number generation on floor change has been intentionally removed.
+      // Serial Number must always be entered manually by the user.
     });
   }
 
@@ -553,6 +546,33 @@ export function initMachineModalEvents() {
         }
       });
 
+      // ── Client-side validation BEFORE closing modal ──────────────────────────
+      // Serial Number is mandatory. Show error inline so the modal stays open.
+      if (!serialNumber) {
+        if (conflictAlert) {
+          conflictAlert.style.display = 'block';
+          conflictAlert.innerHTML = '❌ <strong>Serial Number is required.</strong> Please enter a Serial Number before saving.';
+        }
+        const inp = document.getElementById('modal-field-serial-number');
+        if (inp) { inp.focus(); inp.classList.add('input-error'); }
+        return; // stop — modal stays open
+      }
+      if (!machineNameId) {
+        if (conflictAlert) {
+          conflictAlert.style.display = 'block';
+          conflictAlert.innerHTML = '❌ <strong>Machine Name is required.</strong> Please select a Machine Name before saving.';
+        }
+        const inp = document.getElementById('modal-field-machine-name');
+        if (inp) inp.focus();
+        return; // stop — modal stays open
+      }
+
+      // Clear any inline error once validation passes
+      if (conflictAlert) conflictAlert.style.display = 'none';
+      const snInp = document.getElementById('modal-field-serial-number');
+      if (snInp) snInp.classList.remove('input-error');
+      // ─────────────────────────────────────────────────────────────────────────
+
       const machineData = {
         serialNumber,
         machineNameId,
@@ -568,7 +588,7 @@ export function initMachineModalEvents() {
         customValues
       };
 
-      // 1. Instantly close modal on single click (0ms delay)
+      // Close modal only after passing client-side validation
       closeModal();
 
       try {
