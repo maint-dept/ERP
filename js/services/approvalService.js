@@ -185,7 +185,6 @@ class ApprovalService {
     ]);
     if (!approvalOk || !machinesOk) throw new CloudSaveError('❌ Cloud Save Failed: Approval could not be confirmed by the cloud.');
 
-    const machine = storage.getItem(TABLE_NAMES.MACHINES, req.machineId);
     notificationService.notify({
       title: 'Approval Request Approved',
       message: `Changes for Machine ${req.machineInfo?.serialNumber || machine?.serialNumber || ''} have been officially approved by ${user.name}.`,
