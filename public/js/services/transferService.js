@@ -583,6 +583,10 @@ class TransferService {
       entityId: newRequest.id,
       targetUrl: '#approvals',
       locationScope: {
+        sourceFloorId: sourceFloorId || null,
+        destFloorId: destFloorId || null,
+        sourceUnitId: sourceUnitId || null,
+        destUnitId: destUnitId || null,
         unitId: destUnitId,
         floorId: destFloorId
       }
@@ -700,12 +704,24 @@ class TransferService {
       } catch (_) {}
 
 
-      notificationService.notify(
-        'Transfer Advanced to Next Level',
-        `Transfer ${req.requestNumber} (Machine ${req.machineInfo.serialNumber}) approved by ${user.name}. Now awaiting Level ${nextLevel} approval.`,
-        'TRANSFER_PROGRESS',
-        '#approvals'
-      );
+      notificationService.notify({
+        title: 'Transfer Advanced to Next Level',
+        message: `Transfer ${req.requestNumber} (Machine ${req.machineInfo?.serialNumber || ''}) approved by ${user.name}. Now awaiting Level ${nextLevel} approval.`,
+        type: 'TRANSFER_PROGRESS',
+        module: 'transfers',
+        action: 'APPROVE',
+        entityType: 'TRANSFER',
+        entityId: req.id,
+        targetUrl: '#approvals',
+        locationScope: {
+          sourceFloorId: req.sourceFloorId || null,
+          destFloorId: req.destFloorId || null,
+          sourceUnitId: req.sourceUnitId || null,
+          destUnitId: req.destUnitId || null,
+          unitId: req.destUnitId || null,
+          floorId: req.destFloorId || null
+        }
+      });
 
       auditService.log(
         'TRANSFER_STEP_APPROVED',
@@ -786,12 +802,25 @@ class TransferService {
     storage.saveTable(TABLE_NAMES.MACHINES, true);
     storage.saveTable(TABLE_NAMES.TRANSFER_REQUESTS, true);
 
-    notificationService.notify(
-      'Machine Transfer Rejected',
-      `Transfer request ${req.requestNumber} for Machine ${req.machineInfo.serialNumber} was rejected by ${user.name}. Reason: ${rejectionReason}`,
-      'TRANSFER_REJECTED',
-      '#approvals'
-    );
+    notificationService.notify({
+      title: 'Machine Transfer Rejected',
+      message: `Transfer request ${req.requestNumber} for Machine ${req.machineInfo?.serialNumber || ''} was rejected by ${user.name}. Reason: ${rejectionReason}`,
+      type: 'TRANSFER_REJECTED',
+      module: 'transfers',
+      action: 'VIEW',
+      entityType: 'TRANSFER',
+      entityId: req.id,
+      targetUserId: req.requestedBy || null,
+      targetUrl: '#approvals',
+      locationScope: {
+        sourceFloorId: req.sourceFloorId || null,
+        destFloorId: req.destFloorId || null,
+        sourceUnitId: req.sourceUnitId || null,
+        destUnitId: req.destUnitId || null,
+        unitId: req.sourceUnitId || null,
+        floorId: req.sourceFloorId || null
+      }
+    });
 
     auditService.log(
       'TRANSFER_REJECTED',
@@ -845,12 +874,25 @@ class TransferService {
     // Immediate save & cloud sync
     storage.saveTable(TABLE_NAMES.TRANSFER_REQUESTS, true);
 
-    notificationService.notify(
-      'Transfer Returned for Revision',
-      `Transfer ${req.requestNumber} for Machine ${req.machineInfo.serialNumber} was returned by ${user.name} for revision. Note: ${revisionComments}`,
-      'TRANSFER_REVISION',
-      '#approvals'
-    );
+    notificationService.notify({
+      title: 'Transfer Returned for Revision',
+      message: `Transfer ${req.requestNumber} for Machine ${req.machineInfo?.serialNumber || ''} was returned by ${user.name} for revision. Note: ${revisionComments}`,
+      type: 'TRANSFER_REVISION',
+      module: 'transfers',
+      action: 'VIEW',
+      entityType: 'TRANSFER',
+      entityId: req.id,
+      targetUserId: req.requestedBy || null,
+      targetUrl: '#approvals',
+      locationScope: {
+        sourceFloorId: req.sourceFloorId || null,
+        destFloorId: req.destFloorId || null,
+        sourceUnitId: req.sourceUnitId || null,
+        destUnitId: req.destUnitId || null,
+        unitId: req.sourceUnitId || null,
+        floorId: req.sourceFloorId || null
+      }
+    });
 
     auditService.log(
       'TRANSFER_REVISION_REQUESTED',
@@ -922,12 +964,24 @@ class TransferService {
       updatedAt: now.toISOString()
     });
 
-    notificationService.notify(
-      'Transfer Request Resubmitted',
-      `${user.name} resubmitted revised transfer request ${req.requestNumber} for Machine ${req.machineInfo.serialNumber}.`,
-      'TRANSFER_REQUEST',
-      '#approvals'
-    );
+    notificationService.notify({
+      title: 'Transfer Request Resubmitted',
+      message: `${user.name} resubmitted revised transfer request ${req.requestNumber} for Machine ${req.machineInfo?.serialNumber || ''}.`,
+      type: 'TRANSFER_REQUEST',
+      module: 'transfers',
+      action: 'APPROVE',
+      entityType: 'TRANSFER',
+      entityId: req.id,
+      targetUrl: '#approvals',
+      locationScope: {
+        sourceFloorId: req.sourceFloorId || null,
+        destFloorId: req.destFloorId || null,
+        sourceUnitId: req.sourceUnitId || null,
+        destUnitId: req.destUnitId || null,
+        unitId: req.destUnitId || null,
+        floorId: req.destFloorId || null
+      }
+    });
 
     auditService.log(
       'TRANSFER_RESUBMITTED',
@@ -1079,6 +1133,10 @@ class TransferService {
       entityId: req.id,
       targetUrl: '#approvals',
       locationScope: {
+        sourceFloorId: req.sourceFloorId || null,
+        destFloorId: destFloorId || null,
+        sourceUnitId: req.sourceUnitId || null,
+        destUnitId: destUnitId || null,
         unitId: destUnitId,
         floorId: destFloorId
       }
@@ -1248,12 +1306,25 @@ class TransferService {
 
     // 4. Send high-priority notifications & audit trail
     const mName = resolvedEquip.machineName;
-    notificationService.notify(
-      '🎉 Machine Transfer Completed!',
-      `Machine ${machine.serialNumber} (${mName}) officially relocated to ${req.destPath} under ${req.requestNumber}.`,
-      'TRANSFER_COMPLETED',
-      '#inventory'
-    );
+    notificationService.notify({
+      title: '🎉 Machine Transfer Completed!',
+      message: `Machine ${machine.serialNumber} (${mName}) officially relocated to ${req.destPath} under ${req.requestNumber}.`,
+      type: 'TRANSFER_COMPLETED',
+      module: 'transfers',
+      action: 'VIEW',
+      entityType: 'TRANSFER',
+      entityId: req.id,
+      targetUrl: '#inventory',
+      locationScope: {
+        sourceFloorId: req.sourceFloorId || null,
+        destFloorId: req.destFloorId || null,
+        sourceUnitId: req.sourceUnitId || null,
+        destUnitId: req.destUnitId || null,
+        unitId: req.destUnitId || null,
+        floorId: req.destFloorId || null,
+        lineId: req.destLineId || null
+      }
+    });
 
     auditService.log(
       'MACHINE_LOCATION_COMMITTED',

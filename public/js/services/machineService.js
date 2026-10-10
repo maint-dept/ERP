@@ -484,12 +484,21 @@ class MachineService {
         ]
       });
 
-      notificationService.notify(
-        'New Machine Pending Approval',
-        `${user.name} registered Machine ${created.serialNumber} which requires admin approval.`,
-        'APPROVAL_REQUEST',
-        '#approval-center'
-      );
+      notificationService.notify({
+        title: 'New Machine Pending Approval',
+        message: `${user.name} registered Machine ${created.serialNumber} which requires admin approval.`,
+        type: 'APPROVAL_REQUEST',
+        module: 'machines',
+        action: 'APPROVE',
+        entityType: 'MACHINE',
+        entityId: created.id,
+        targetUrl: '#approval-center',
+        locationScope: {
+          unitId: created.unitId || null,
+          floorId: created.floorId || null,
+          lineId: created.lineId || null
+        }
+      });
 
       auditService.log('MACHINE_SUBMITTED_FOR_APPROVAL', 'MACHINE', created.serialNumber, `New machine ${created.serialNumber} created pending approval.`);
       return { machine: created, pendingApproval: true };
@@ -605,12 +614,21 @@ class MachineService {
         diffs: diffs
       });
 
-      notificationService.notify(
-        'Machine Edit Request Submitted',
-        `${user.name} submitted edits for Machine ${existing.serialNumber}.`,
-        'APPROVAL_REQUEST',
-        '#approval-center'
-      );
+      notificationService.notify({
+        title: 'Machine Edit Request Submitted',
+        message: `${user.name} submitted edits for Machine ${existing.serialNumber}.`,
+        type: 'APPROVAL_REQUEST',
+        module: 'machines',
+        action: 'APPROVE',
+        entityType: 'MACHINE',
+        entityId: existing.id,
+        targetUrl: '#approval-center',
+        locationScope: {
+          unitId: existing.unitId || null,
+          floorId: existing.floorId || null,
+          lineId: existing.lineId || null
+        }
+      });
 
       auditService.log('MACHINE_EDIT_REQUESTED', 'MACHINE', existing.serialNumber, `Edit request submitted for ${existing.serialNumber}.`, existing, updates);
       return { machine: existing, pendingApproval: true, requestId: req.id };
@@ -750,7 +768,21 @@ class MachineService {
         ]
       });
 
-      notificationService.notify('Machine Deletion Request', `${user.name} requested to archive Machine ${existing.serialNumber}.`, 'APPROVAL_REQUEST', '#approval-center');
+      notificationService.notify({
+        title: 'Machine Deletion Request',
+        message: `${user.name} requested to archive Machine ${existing.serialNumber}.`,
+        type: 'APPROVAL_REQUEST',
+        module: 'machines',
+        action: 'APPROVE',
+        entityType: 'MACHINE',
+        entityId: existing.id,
+        targetUrl: '#approval-center',
+        locationScope: {
+          unitId: existing.unitId || null,
+          floorId: existing.floorId || null,
+          lineId: existing.lineId || null
+        }
+      });
       return { action: 'PENDING_APPROVAL', message: 'Archive request sent to Super Admin for approval.' };
     }
 

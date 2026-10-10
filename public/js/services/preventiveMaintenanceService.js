@@ -1620,6 +1620,11 @@ class PreventiveMaintenanceService {
       action: 'VIEW',
       entityType: 'MACHINE',
       entityId: machineProfile.serialNumber,
+      locationScope: {
+        unitId: machineProfile.unitId || null,
+        floorId: machineProfile.floorId || null,
+        lineId: machineProfile.lineId || null
+      },
       targetUrl: '#preventive-maintenance'
     });
 

@@ -29,7 +29,7 @@ import { renderEmailConfigView, initEmailConfigEvents } from './components/email
 import { renderExcelImportModal, initExcelImportEvents } from './components/excelImportModal.js?v=4.24.0';
 import { renderReportsView, initReportsEvents } from './components/reportsView.js?v=4.25.0';
 import { renderAuditLogsView, initAuditLogsEvents } from './components/auditLogsView.js?v=4.24.0';
-import { renderNotificationsDrawer, initNotificationsDrawerEvents } from './components/notificationsDrawer.js?v=4.24.0';
+import { renderNotificationsDrawer, initNotificationsDrawerEvents } from './components/notificationsDrawer.js?v=4.25.1';
 import { renderSettingsView, initSettingsEvents } from './components/settingsView.js?v=4.24.0';
 import { renderDatabaseConfigView, initDatabaseConfigEvents } from './components/databaseConfigView.js?v=4.24.0';
 import { renderResourceLibraryView, initResourceLibraryEvents } from './components/resourceLibraryView.js?v=4.24.0';
@@ -49,7 +49,7 @@ import { renderPartsTraceView, initPartsTraceEvents } from './components/partsTr
 import { chatService } from './services/chatService.js?v=4.24.0';
 import { historyService } from './services/historyService.js?v=4.24.0';
 import { auditService } from './services/auditService.js?v=4.24.0';
-import { notificationService } from './services/notificationService.js?v=4.24.0';
+import { notificationService } from './services/notificationService.js?v=4.25.1';
 
 /**
  * Captures all active scroll, viewport, and focused input states.

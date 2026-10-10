@@ -271,8 +271,133 @@ class NotificationService {
   }
 
   /**
+   * Resolve notification's physical factory location (Unit, Floor, Line, or Transfer source/dest)
+   * dynamically from explicit locationScope, entity records, or content analysis.
+   */
+  resolveNotificationLocation(notif) {
+    if (!notif) return null;
+
+    // 1. Explicit locationScope on notification
+    if (notif.locationScope) {
+      const ls = notif.locationScope;
+      if (ls.sourceFloorId || ls.destFloorId) {
+        return {
+          isTransfer: true,
+          unitId: ls.destUnitId || ls.unitId || null,
+          sourceFloorId: ls.sourceFloorId || null,
+          destFloorId: ls.destFloorId || ls.floorId || null,
+          sourceUnitId: ls.sourceUnitId || null,
+          destUnitId: ls.destUnitId || ls.unitId || null,
+          lineId: ls.lineId || ls.destLineId || null
+        };
+      }
+
+      const isTransferType = notif.entityType === 'TRANSFER' || String(notif.type || '').toUpperCase().includes('TRANSFER');
+      if (!isTransferType) {
+        return {
+          isTransfer: false,
+          unitId: ls.unitId || null,
+          floorId: ls.floorId || null,
+          lineId: ls.lineId || null
+        };
+      }
+      // If transfer type without sourceFloorId, continue below to resolve full source & dest from database
+    }
+
+    // 2. Resolve via Entity Type & ID
+    const entityType = String(notif.entityType || '').toUpperCase();
+    const entityId = notif.entityId;
+
+    if (entityType === 'MACHINE' && entityId) {
+      const machines = storage.getTable(TABLE_NAMES.MACHINES) || [];
+      const machine = machines.find(m => m.id === entityId || m.serialNumber === entityId);
+      if (machine) {
+        return {
+          isTransfer: false,
+          unitId: machine.unitId || null,
+          floorId: machine.floorId || null,
+          lineId: machine.lineId || null
+        };
+      }
+    }
+
+    if (entityType === 'TRANSFER' && entityId) {
+      const transfers = storage.getTable(TABLE_NAMES.TRANSFER_REQUESTS) || [];
+      const req = transfers.find(r => r.id === entityId || r.requestNumber === entityId);
+      if (req) {
+        return {
+          isTransfer: true,
+          sourceFloorId: req.sourceFloorId || null,
+          destFloorId: req.destFloorId || null,
+          sourceUnitId: req.sourceUnitId || null,
+          destUnitId: req.destUnitId || null,
+          unitId: req.destUnitId || req.sourceUnitId || null,
+          lineId: req.destLineId || null
+        };
+      }
+    }
+
+    // 3. Extract Transfer Request Number from message/title: TR-2026-XXXXXX or TR-XXXX
+    const text = `${notif.title || ''} ${notif.message || ''}`;
+    const trMatch = text.match(/TR-(?:20\d\d-)?\d+/i);
+    if (trMatch) {
+      const trNum = trMatch[0].toUpperCase();
+      const transfers = storage.getTable(TABLE_NAMES.TRANSFER_REQUESTS) || [];
+      const req = transfers.find(r => 
+        (r.requestNumber && r.requestNumber.toUpperCase().includes(trNum)) || r.id === trNum
+      );
+      if (req) {
+        return {
+          isTransfer: true,
+          sourceFloorId: req.sourceFloorId || null,
+          destFloorId: req.destFloorId || null,
+          sourceUnitId: req.sourceUnitId || null,
+          destUnitId: req.destUnitId || null,
+          unitId: req.destUnitId || req.sourceUnitId || null,
+          lineId: req.destLineId || null
+        };
+      }
+    }
+
+    // 4. Extract Machine Serial Number: e.g. "Machine P/M-5368" or "Machine 5369" or "Machine #JA-015"
+    const mMatch = text.match(/Machine\s+#?([A-Za-z0-9\/\-_]+)/i);
+    if (mMatch) {
+      const serial = mMatch[1].trim();
+      const machines = storage.getTable(TABLE_NAMES.MACHINES) || [];
+      const machine = machines.find(m => 
+        m.serialNumber && m.serialNumber.toLowerCase() === serial.toLowerCase()
+      );
+      if (machine) {
+        return {
+          isTransfer: false,
+          unitId: machine.unitId || null,
+          floorId: machine.floorId || null,
+          lineId: machine.lineId || null
+        };
+      }
+    }
+
+    // 5. Floor name pattern lookup from master floors table
+    const allFloors = storage.getTable(TABLE_NAMES.FLOORS) || [];
+    const lowerText = text.toLowerCase();
+    for (const f of allFloors) {
+      const fName = (f.name || '').toLowerCase();
+      if (fName && fName.length > 2 && lowerText.includes(fName)) {
+        return {
+          isTransfer: false,
+          unitId: f.unitId || null,
+          floorId: f.id,
+          lineId: null
+        };
+      }
+    }
+
+    return null;
+  }
+
+  /**
    * Check if a specific notification is allowed to be viewed by a given user
-   * Rule: User -> Role -> Permission -> Module -> Notification
+   * Rule: User -> Role -> Permission -> Module -> Location Scope -> Notification
    */
   isNotificationAllowedForUser(notif, user = null) {
     const activeUser = user || (typeof authService !== 'undefined' ? authService.getCurrentUser() : null);
@@ -315,11 +440,86 @@ class NotificationService {
       }
     }
 
-    // 5. Factory Location Scope Check
-    if (notif.locationScope && typeof authService !== 'undefined') {
-      const { unitId, floorId, lineId } = notif.locationScope;
-      if (!authService.isLocationAllowed(unitId, floorId, lineId, activeUser)) {
-        return false;
+    // 5. System/Admin administrative notices are strictly for Admin/SuperAdmin
+    if (module === 'user_management' || module === 'audit_logs' || module === 'database_config') {
+      if (!authService.isAdmin(activeUser) && !authService.isSuperAdmin(activeUser)) {
+        if (!notif.targetUserId || notif.targetUserId !== activeUser.id) {
+          return false;
+        }
+      }
+    }
+
+    // 6. Factory Location Scope Check
+    const userScope = activeUser.assignedScope;
+    const isScopedUser = userScope && !userScope.allGroups && 
+      ((Array.isArray(userScope.floorIds) && userScope.floorIds.length > 0) || 
+       (Array.isArray(userScope.unitIds) && userScope.unitIds.length > 0) || 
+       (Array.isArray(userScope.lineIds) && userScope.lineIds.length > 0));
+
+    if (isScopedUser && typeof authService !== 'undefined') {
+      const loc = this.resolveNotificationLocation(notif);
+
+      if (loc) {
+        // Transfer notifications (Source Floor <-> Destination Floor)
+        if (loc.isTransfer) {
+          // Check if active user is requester
+          if (notif.targetUserId === activeUser.id || notif.targetUserId === activeUser.username) {
+            return true;
+          }
+
+          // If user is scoped to specific floor(s), they only receive transfers involving their floor!
+          if (Array.isArray(userScope.floorIds) && userScope.floorIds.length > 0) {
+            const matchSource = loc.sourceFloorId ? userScope.floorIds.includes(loc.sourceFloorId) : false;
+            const matchDest = loc.destFloorId ? userScope.floorIds.includes(loc.destFloorId) : false;
+            if (!matchSource && !matchDest) {
+              return false;
+            }
+          } else if (Array.isArray(userScope.unitIds) && userScope.unitIds.length > 0) {
+            const matchSourceUnit = loc.sourceUnitId ? userScope.unitIds.includes(loc.sourceUnitId) : false;
+            const matchDestUnit = loc.destUnitId ? userScope.unitIds.includes(loc.destUnitId) : (loc.unitId ? userScope.unitIds.includes(loc.unitId) : false);
+            if (!matchSourceUnit && !matchDestUnit) {
+              return false;
+            }
+          }
+        } else {
+          // Standard single machine / location notification
+          if (!authService.isLocationAllowed(loc.unitId, loc.floorId, loc.lineId, activeUser)) {
+            return false;
+          }
+        }
+      } else {
+        // If location could not be determined directly, but notification belongs to an operational machinery module
+        if (['machines', 'transfers', 'preventive_maintenance', 'tools_management', 'spare_parts', 'relocate'].includes(module)) {
+          const content = `${notif.title || ''} ${notif.message || ''}`.toLowerCase();
+          const allFloors = storage.getTable(TABLE_NAMES.FLOORS) || [];
+          const userFloorIds = new Set(userScope.floorIds || []);
+
+          let mentionedOtherFloor = false;
+          let mentionedUserFloor = false;
+
+          for (const f of allFloors) {
+            const fName = (f.name || '').toLowerCase();
+            if (fName && fName.length > 2 && content.includes(fName)) {
+              if (userFloorIds.has(f.id)) {
+                mentionedUserFloor = true;
+              } else {
+                mentionedOtherFloor = true;
+              }
+            }
+          }
+
+          // If notification explicitly mentions another floor and not the user's floor, filter it out!
+          if (mentionedOtherFloor && !mentionedUserFloor) {
+            return false;
+          }
+
+          // If user is restricted to a floor and notification contains machine details without matching their floor, filter out
+          if (userScope.floorIds && userScope.floorIds.length > 0 && (content.includes('machine') || content.includes('transfer'))) {
+            if (!mentionedUserFloor && !notif.targetUserId) {
+              return false;
+            }
+          }
+        }
       }
     }
 

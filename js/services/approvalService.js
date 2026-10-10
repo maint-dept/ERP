@@ -185,12 +185,23 @@ class ApprovalService {
     ]);
     if (!approvalOk || !machinesOk) throw new CloudSaveError('❌ Cloud Save Failed: Approval could not be confirmed by the cloud.');
 
-    notificationService.notify(
-      'Approval Request Approved',
-      `Changes for Machine ${req.machineInfo.serialNumber} have been officially approved by ${user.name}.`,
-      'APPROVAL_RESULT',
-      '#inventory'
-    );
+    const machine = storage.getItem(TABLE_NAMES.MACHINES, req.machineId);
+    notificationService.notify({
+      title: 'Approval Request Approved',
+      message: `Changes for Machine ${req.machineInfo?.serialNumber || machine?.serialNumber || ''} have been officially approved by ${user.name}.`,
+      type: 'APPROVAL_RESULT',
+      module: 'machines',
+      action: 'VIEW',
+      entityType: 'MACHINE',
+      entityId: req.machineId,
+      targetUserId: req.requestedBy || null,
+      targetUrl: '#inventory',
+      locationScope: machine ? {
+        unitId: machine.unitId || null,
+        floorId: machine.floorId || null,
+        lineId: machine.lineId || null
+      } : null
+    });
 
     auditService.log('APPROVAL_APPROVED', 'APPROVAL_REQUEST', requestId, `Approved edit request for Machine ${req.machineInfo.serialNumber}`);
     return updated;
@@ -230,12 +241,22 @@ class ApprovalService {
     ]);
     if (!approvalOk || !machinesOk) throw new CloudSaveError('❌ Cloud Save Failed: Rejection could not be confirmed by the cloud.');
 
-    notificationService.notify(
-      'Approval Request Rejected',
-      `Request for Machine ${req.machineInfo.serialNumber} was rejected by ${user.name}. Reason: ${adminRemarks || 'None given'}`,
-      'APPROVAL_RESULT',
-      '#inventory'
-    );
+    notificationService.notify({
+      title: 'Approval Request Rejected',
+      message: `Request for Machine ${req.machineInfo?.serialNumber || machine?.serialNumber || ''} was rejected by ${user.name}. Reason: ${adminRemarks || 'None given'}`,
+      type: 'APPROVAL_RESULT',
+      module: 'machines',
+      action: 'VIEW',
+      entityType: 'MACHINE',
+      entityId: req.machineId,
+      targetUserId: req.requestedBy || null,
+      targetUrl: '#inventory',
+      locationScope: machine ? {
+        unitId: machine.unitId || null,
+        floorId: machine.floorId || null,
+        lineId: machine.lineId || null
+      } : null
+    });
 
     auditService.log('APPROVAL_REJECTED', 'APPROVAL_REQUEST', requestId, `Rejected edit request for Machine ${req.machineInfo.serialNumber}: ${adminRemarks}`);
     return updated;
@@ -262,12 +283,23 @@ class ApprovalService {
     const ok = await storage.saveTable(TABLE_NAMES.APPROVAL_REQUESTS, true);
     if (!ok) throw new CloudSaveError('❌ Cloud Save Failed: Revision request could not be confirmed by the cloud.');
 
-    notificationService.notify(
-      'Revision Requested',
-      `Admin requested revision for Machine ${req.machineInfo.serialNumber}. Note: ${adminRemarks}`,
-      'APPROVAL_RESULT',
-      '#approval-center'
-    );
+    const machine = storage.getItem(TABLE_NAMES.MACHINES, req.machineId);
+    notificationService.notify({
+      title: 'Revision Requested',
+      message: `Admin requested revision for Machine ${req.machineInfo?.serialNumber || machine?.serialNumber || ''}. Note: ${adminRemarks}`,
+      type: 'APPROVAL_RESULT',
+      module: 'machines',
+      action: 'VIEW',
+      entityType: 'MACHINE',
+      entityId: req.machineId,
+      targetUserId: req.requestedBy || null,
+      targetUrl: '#approval-center',
+      locationScope: machine ? {
+        unitId: machine.unitId || null,
+        floorId: machine.floorId || null,
+        lineId: machine.lineId || null
+      } : null
+    });
 
     auditService.log('APPROVAL_REVISION_REQUESTED', 'APPROVAL_REQUEST', requestId, `Requested revision for ${req.machineInfo.serialNumber}: ${adminRemarks}`);
     return updated;

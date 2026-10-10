@@ -103,9 +103,16 @@ export function renderNotificationsDrawer() {
   }
 
   const roleName = user ? (user.presetName || user.role) : 'Guest';
-  const scopeDesc = user?.assignedScope?.allGroups 
-    ? 'All Factory Locations' 
-    : `${user?.assignedScope?.unitIds?.length || 0} Unit(s) Scope`;
+  let scopeDesc = 'All Factory Locations';
+  if (user?.assignedScope && !user.assignedScope.allGroups) {
+    if (Array.isArray(user.assignedScope.floorIds) && user.assignedScope.floorIds.length > 0) {
+      const flrs = storage.getTable(TABLE_NAMES.FLOORS) || [];
+      const fNames = user.assignedScope.floorIds.map(fid => flrs.find(f => f.id === fid)?.name || fid);
+      scopeDesc = `📍 ${fNames.join(', ')} Scope`;
+    } else if (Array.isArray(user.assignedScope.unitIds) && user.assignedScope.unitIds.length > 0) {
+      scopeDesc = `🌐 ${user.assignedScope.unitIds.length} Unit(s) Scope`;
+    }
+  }
 
   return `
     <div class="drawer-backdrop" id="drawer-notifs-backdrop"></div>
