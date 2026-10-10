@@ -1311,7 +1311,7 @@ class ExcelService {
           (row['Machine Name'] && String(row['Machine Name']).trim().toUpperCase() === 'GRAND TOTAL') ||
           (row['machine_name'] && String(row['machine_name']).trim().toUpperCase() === 'GRAND TOTAL')
         ) {
-          continue;
+          return;
         }
 
         // -------------------------------------------------------------------------
