@@ -916,7 +916,7 @@ function renderActiveModalHtml() {
                 <div style="display: flex; align-items: center; gap: 7px;">
                   <span style="font-size: 16px; filter: drop-shadow(0 2px 4px rgba(56, 189, 248, 0.5));">⚡</span>
                   <span style="font-size: 12.5px; font-weight: 800; color: #38bdf8; letter-spacing: 0.3px;">
-                    Assign from Manpower (কার্ড নাম্বার দিয়ে এসাইন)
+                    Assign from Manpower (Link by Card Number)
                   </span>
                 </div>
                 <span class="badge" style="background: rgba(56, 189, 248, 0.2); color: #7dd3fc; border: 1px solid rgba(56, 189, 248, 0.35); font-size: 10px; font-weight: 700;">
@@ -925,7 +925,7 @@ function renderActiveModalHtml() {
               </div>
 
               <div style="font-size: 11.5px; color: #94a3b8; margin-bottom: 9px; line-height: 1.35;">
-                কার্ড নাম্বার লিখুন বা তালিকা থেকে সিলেক্ট করুন — নাম, ইমেইল, ইউজারনেম, পদবী ও লোকেশন স্বয়ংক্রিয়ভাবে পূরণ হয়ে যাবে।
+                Enter card number or select from list — Full Name, Email, Username, Designation, and Plant auto-fill instantly.
               </div>
 
               <div style="display: flex; flex-direction: column; gap: 8px;">
@@ -936,7 +936,7 @@ function renderActiveModalHtml() {
                     id="add-user-emp-card-input" 
                     list="manpower-employees-datalist" 
                     class="form-control" 
-                    placeholder="🔍 কার্ড নাম্বার বা নাম লিখুন (e.g. 1001 বা AMG...)" 
+                    placeholder="🔍 Type Card No or Name (e.g. 1001 or AMG...)" 
                     autocomplete="off"
                     style="font-size: 13px; padding-left: 36px; padding-right: 32px; background: rgba(15, 23, 42, 0.9); border-color: rgba(56, 189, 248, 0.45); font-weight: 600; color: #fff;"
                   />
@@ -955,7 +955,7 @@ function renderActiveModalHtml() {
                   class="form-control" 
                   style="font-size: 12px; background: rgba(15, 23, 42, 0.85); border-color: rgba(148, 163, 184, 0.25); color: #cbd5e1;"
                 >
-                  <option value="">-- অথবা ড্রপডাউন তালিকা থেকে বেছে নিন (${activeEmployees.length} জন কর্মী) --</option>
+                  <option value="">-- Or choose from workforce dropdown (${activeEmployees.length} employees) --</option>
                   ${activeEmployees.map(emp => {
                     const cardClean = String(emp.cardNumber || '').trim().toLowerCase();
                     const isRegistered = cardClean && registeredCardSet.has(cardClean);
