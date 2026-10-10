@@ -179,13 +179,14 @@ export function renderSidebar() {
   ].filter(it => authService.isModuleAllowed(it.moduleKey));
 
   // 4. REPORTS & ANALYTICS SECTION (Discrete reports filtered by allowed module domains)
-  const reportItems = [
+  const isReportsAllowed = authService.isAdmin() || authService.isModuleAllowed('reports');
+  const reportItems = !isReportsAllowed ? [] : [
     { id: 'sub-report-machine', targetView: 'reports', reportTab: 'machines', label: 'Machine Reports', icon: '🧵', moduleKey: 'machines' },
     { id: 'sub-report-transfer', targetView: 'reports', reportTab: 'transfers', label: 'Transfer Reports', icon: '🔄', moduleKey: 'transfers' },
     { id: 'sub-report-spare', targetView: 'reports', reportTab: 'spareparts', label: 'Spare Parts Reports', icon: '⚙️', moduleKey: 'spare_parts' },
     { id: 'sub-report-etlab', targetView: 'reports', reportTab: 'etlab', label: 'ENT Lab Report', icon: '🔬', moduleKey: 'et_lab' },
     { id: 'sub-report-export', targetView: 'reports', reportTab: 'export', label: 'Excel Export Center', icon: '📥', moduleKey: 'reports' }
-  ].filter(it => authService.isAdmin() || authService.isModuleAllowed(it.moduleKey) || authService.isModuleAllowed('reports'));
+  ].filter(it => authService.isAdmin() || (authService.isModuleAllowed('reports') && (it.moduleKey === 'reports' || authService.isModuleAllowed(it.moduleKey))));
 
   // 5. SYSTEM & ADMINISTRATION SECTION
   const adminMenuItems = [
@@ -202,7 +203,6 @@ export function renderSidebar() {
   ];
 
   const allowedAdminItems = adminMenuItems.filter(it =>
-    it.id === 'adm-database' || it.id === 'adm-settings' ||
     authService.isAdmin() || authService.isModuleAllowed(it.moduleKey || it.targetView)
   );
 
@@ -247,19 +247,21 @@ export function renderSidebar() {
       <nav class="sidebar-menu" id="sidebar-menu-scrollable">
         
         <!-- SECTION 1: OPERATIONS & MACHINERY -->
-        <div class="menu-category-section" id="sec-operations">
-          <div class="menu-category-header">
-            <span class="menu-category-title">OPERATIONS & MACHINERY</span>
-            <div class="menu-category-line"></div>
+        ${(authService.isModuleAllowed('dashboard') || machineItems.length > 0) ? `
+          <div class="menu-category-section" id="sec-operations">
+            <div class="menu-category-header">
+              <span class="menu-category-title">OPERATIONS & MACHINERY</span>
+              <div class="menu-category-line"></div>
+            </div>
+            ${authService.isModuleAllowed('dashboard') ? renderDirectItem(dashboardItem) : ''}
+            ${machineItems.length > 0 ? renderNavGroup({
+              id: 'group-machines',
+              label: 'Machine Operations',
+              icon: '🏭',
+              items: machineItems
+            }) : ''}
           </div>
-          ${authService.isModuleAllowed('dashboard') ? renderDirectItem(dashboardItem) : ''}
-          ${machineItems.length > 0 ? renderNavGroup({
-            id: 'group-machines',
-            label: 'Machine Operations',
-            icon: '🏭',
-            items: machineItems
-          }) : ''}
-        </div>
+        ` : ''}
 
         <!-- SECTION 2: SPECIALIZED UNITS (Individual Feature Access) -->
         ${specializedFeatures.length > 0 ? `
@@ -273,7 +275,7 @@ export function renderSidebar() {
         ` : ''}
 
         <!-- SECTION 3: WORKFORCE & HR -->
-        ${authService.isModuleAllowed('manpower') ? `
+        ${(authService.isAdmin() || authService.isModuleAllowed('manpower')) && workforceItems.length > 0 ? `
           <div class="menu-category-section" id="sec-workforce">
             <div class="menu-category-header">
               <span class="menu-category-title">WORKFORCE & HR</span>
@@ -289,7 +291,7 @@ export function renderSidebar() {
         ` : ''}
 
         <!-- SECTION 4: REPORTS & ANALYTICS -->
-        ${authService.isModuleAllowed('reports') ? `
+        ${isReportsAllowed && reportItems.length > 0 ? `
           <div class="menu-category-section" id="sec-reports">
             <div class="menu-category-header">
               <span class="menu-category-title">REPORTS & ANALYTICS</span>
@@ -304,7 +306,7 @@ export function renderSidebar() {
           </div>
         ` : ''}
 
-        <!-- SECTION 4: SYSTEM & ADMINISTRATION -->
+        <!-- SECTION 5: SYSTEM & ADMINISTRATION -->
         ${allowedAdminItems.length > 0 ? `
           <div class="menu-category-section" id="sec-admin">
             <div class="menu-category-header">

@@ -44,9 +44,25 @@ let spareFilterState = {
 };
 
 export function renderReportsView() {
+  const canMachReport = authService.isAdmin() || authService.hasAccess('reports', 'VIEW_MACHINE_REPORT') || authService.isModuleAllowed('machines');
+  const canTransReport = authService.isAdmin() || authService.hasAccess('reports', 'VIEW_TRANSFER_REPORT') || authService.isModuleAllowed('transfers');
+  const canSpareReport = authService.isAdmin() || authService.hasAccess('reports', 'VIEW_PARTS_REPORT') || authService.isModuleAllowed('spare_parts');
+  const canEtLabReport = authService.isAdmin() || authService.hasAccess('reports', 'VIEW_ETLAB_REPORT') || authService.isModuleAllowed('et_lab');
+  const canExportCenter = authService.isAdmin() || authService.hasAccess('reports', 'EXPORT_MACHINE_REPORT') || authService.hasAccess('reports', 'EXPORT') || authService.isModuleAllowed('reports');
+
+  const allowedTabs = [];
+  if (canMachReport) allowedTabs.push('machines');
+  if (canTransReport) allowedTabs.push('transfers');
+  if (canSpareReport) allowedTabs.push('spareparts');
+  if (canEtLabReport) allowedTabs.push('etlab');
+  if (canExportCenter) allowedTabs.push('export');
+
   const requestedTab = state.get('reportActiveTab');
-  if (requestedTab) {
+  if (requestedTab && allowedTabs.includes(requestedTab)) {
     currentReportTab = requestedTab;
+  } else if (!allowedTabs.includes(currentReportTab)) {
+    currentReportTab = allowedTabs[0] || 'machines';
+    state.set('reportActiveTab', currentReportTab);
   } else {
     state.set('reportActiveTab', currentReportTab);
   }
@@ -81,9 +97,10 @@ export function renderReportsView() {
           <button id="btn-toggle-reports-guide" class="btn btn-secondary btn-xs" style="font-weight: 700; height: 26px; font-size: 11px; padding: 0 8px; white-space: nowrap;" title="View section purpose and module functions">
             ℹ️ Purpose &amp; Guide
           </button>
+          ${canExportCenter ? `
           <button id="btn-quick-export-all-excel" class="btn btn-primary btn-xs" style="font-weight: 700; height: 26px; font-size: 11px; padding: 0 10px; background: linear-gradient(135deg, #0284c7, #0369a1); box-shadow: 0 2px 8px rgba(2, 132, 199, 0.35); white-space: nowrap;">
             📥 Download Complete Excel Workbook
-          </button>
+          </button>` : ''}
         </div>
       </div>
 
@@ -116,21 +133,26 @@ export function renderReportsView() {
 
       <!-- Navigation Tabs (Compact Buttons Bar, Fixed Height 30px) -->
       <div id="reports-nav-tabs-bar" style="display: flex; gap: 6px; border-bottom: 2px solid var(--border-color); padding-bottom: 3px; flex-wrap: nowrap; flex-shrink: 0; overflow-x: auto; scrollbar-width: none; height: 30px; align-items: center;">
+        ${canMachReport ? `
         <button class="btn btn-xs ${currentReportTab === 'machines' ? 'btn-primary' : 'btn-ghost'}" data-report-tab-btn="machines" style="font-weight: 700; font-size: 11px; padding: 3px 8px; height: 26px; white-space: nowrap;">
           🧵 Machine Summary (${allMachines.length})
-        </button>
+        </button>` : ''}
+        ${canTransReport ? `
         <button class="btn btn-xs ${currentReportTab === 'transfers' ? 'btn-primary' : 'btn-ghost'}" data-report-tab-btn="transfers" style="font-weight: 700; font-size: 11px; padding: 3px 8px; height: 26px; white-space: nowrap;">
           🔄 Transfer Reports (${allTransfers.length})
-        </button>
+        </button>` : ''}
+        ${canSpareReport ? `
         <button class="btn btn-xs ${currentReportTab === 'spareparts' ? 'btn-primary' : 'btn-ghost'}" data-report-tab-btn="spareparts" style="font-weight: 700; font-size: 11px; padding: 3px 8px; height: 26px; white-space: nowrap;">
           ⚙️ Spare Parts Reports (${replacementLogs.length})
-        </button>
+        </button>` : ''}
+        ${canEtLabReport ? `
         <button class="btn btn-xs ${currentReportTab === 'etlab' ? 'btn-primary' : 'btn-ghost'}" data-report-tab-btn="etlab" style="font-weight: 700; font-size: 11px; padding: 3px 8px; height: 26px; white-space: nowrap;">
           🔬 ENT Lab Report (${etLabBoards.length})
-        </button>
+        </button>` : ''}
+        ${canExportCenter ? `
         <button class="btn btn-xs ${currentReportTab === 'export' ? 'btn-primary' : 'btn-ghost'}" data-report-tab-btn="export" style="font-weight: 700; font-size: 11px; padding: 3px 8px; height: 26px; white-space: nowrap; color: ${currentReportTab === 'export' ? '#fff' : '#38bdf8'};">
           📤 1-Click Excel Export Center
-        </button>
+        </button>` : ''}
       </div>
 
       <!-- Tab Content Area (Flex 1, scrollable within tabs) -->

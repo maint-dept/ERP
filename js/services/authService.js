@@ -539,12 +539,115 @@ class AuthService {
     if (normKey === 'qr_codes') {
       const hasExplicit = perms && (perms['qr_codes'] || perms['qr-codes']);
       if (hasExplicit) {
-        return this.hasAccess('qr_codes', 'VIEW');
+        return this.hasAccess('qr_codes', 'VIEW', activeUser);
       }
-      return this.hasAccess('machines', 'VIEW');
+      return this.hasAccess('machines', 'VIEW', activeUser);
     }
 
-    return this.hasAccess(normKey, 'VIEW');
+    if (normKey === 'parts_trace') {
+      const hasExplicit = perms && (perms['parts_trace'] || perms['parts-trace']);
+      if (hasExplicit) {
+        return this.hasAccess('parts_trace', 'VIEW', activeUser);
+      }
+      return this.hasAccess('spare_parts', 'VIEW', activeUser) || this.hasAccess('machines', 'VIEW', activeUser);
+    }
+
+    if (normKey === 'dashboard') {
+      const hasExplicit = perms && perms['dashboard'];
+      if (hasExplicit) {
+        return this.hasAccess('dashboard', 'VIEW', activeUser);
+      }
+      return this.hasAccess('machines', 'VIEW', activeUser) || this.hasAccess('transfers', 'VIEW', activeUser);
+    }
+
+    return this.hasAccess(normKey, 'VIEW', activeUser);
+  }
+
+  /**
+   * Check if user is allowed to access a specific app view/route
+   */
+  isViewAllowed(rawViewName, user = null) {
+    const activeUser = user || this.getCurrentUser();
+    if (!activeUser || activeUser.status !== 'ACTIVE') return false;
+    if (this.isSuperAdmin(activeUser) || this.isAdmin(activeUser)) return true;
+    if (rawViewName === 'home' || rawViewName === 'login') return true;
+
+    const viewToModuleMap = {
+      'dashboard': 'dashboard',
+      'inventory': 'machines',
+      'relocate': 'relocate',
+      'qr-codes': 'qr_codes',
+      'transfers': 'transfers',
+      'parts-trace': 'parts_trace',
+      'machine-history': 'machine_history',
+      'preventive-maintenance': 'preventive_maintenance',
+      'reports': 'reports',
+      'transfer-workflows': 'transfer_workflows',
+      'excel-manager': 'excel_manager',
+      'custom-fields': 'custom_fields',
+      'et-lab': 'et_lab',
+      'spare-parts': 'spare_parts',
+      'tools-management': 'tools_management',
+      'storage': 'storage',
+      'manpower': 'manpower',
+      'master-data': 'master_data',
+      'users': 'user_management',
+      'homepage-manager': 'homepage_management',
+      'email-config': 'email_config',
+      'audit-logs': 'audit_logs',
+      'settings': 'settings',
+      'database-config': 'settings',
+      'resource-library': 'document_library'
+    };
+
+    const targetModule = viewToModuleMap[rawViewName];
+    if (!targetModule) return true;
+    return this.isModuleAllowed(targetModule, activeUser);
+  }
+
+  /**
+   * Returns the primary or first view accessible to the given user based on their active permissions.
+   * Ensures users never land on restricted pages or access-denied screens.
+   */
+  getFirstAllowedView(user = null) {
+    const activeUser = user || this.getCurrentUser();
+    if (!activeUser || activeUser.status !== 'ACTIVE') return 'login';
+    if (this.isSuperAdmin(activeUser) || this.isAdmin(activeUser)) return 'dashboard';
+
+    // Prioritized list of operational user views
+    const viewPriority = [
+      { view: 'dashboard', module: 'dashboard' },
+      { view: 'inventory', module: 'machines' },
+      { view: 'transfers', module: 'transfers' },
+      { view: 'preventive-maintenance', module: 'preventive_maintenance' },
+      { view: 'relocate', module: 'relocate' },
+      { view: 'qr-codes', module: 'qr_codes' },
+      { view: 'parts-trace', module: 'parts_trace' },
+      { view: 'machine-history', module: 'machine_history' },
+      { view: 'spare-parts', module: 'spare_parts' },
+      { view: 'et-lab', module: 'et_lab' },
+      { view: 'tools-management', module: 'tools_management' },
+      { view: 'resource-library', module: 'document_library' },
+      { view: 'manpower', module: 'manpower' },
+      { view: 'reports', module: 'reports' },
+      { view: 'master-data', module: 'master_data' },
+      { view: 'storage', module: 'storage' },
+      { view: 'users', module: 'user_management' },
+      { view: 'transfer-workflows', module: 'transfer_workflows' },
+      { view: 'excel-manager', module: 'excel_manager' },
+      { view: 'homepage-manager', module: 'homepage_management' },
+      { view: 'email-config', module: 'email_config' },
+      { view: 'audit-logs', module: 'audit_logs' },
+      { view: 'settings', module: 'settings' },
+      { view: 'database-config', module: 'settings' }
+    ];
+
+    for (const item of viewPriority) {
+      if (this.isModuleAllowed(item.module, activeUser)) {
+        return item.view;
+      }
+    }
+    return 'inventory';
   }
 
   /**

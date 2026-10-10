@@ -357,6 +357,20 @@ class ERPApplication {
         return;
       }
 
+      // Authorization Gate: Redirect unauthorized view requests straight to user's first allowed view
+      if (currentUser && currentView !== 'home' && currentView !== 'login') {
+        if (!authService.isViewAllowed(currentView, currentUser)) {
+          const allowedView = authService.getFirstAllowedView(currentUser);
+          currentView = allowedView;
+          state.set('currentView', allowedView);
+          try {
+            if (window.history && window.history.replaceState) {
+              window.history.replaceState({ view: allowedView }, '', `#${allowedView}`);
+            }
+          } catch (_) { }
+        }
+      }
+
       // 1. Standalone View: Public Homepage
       if (currentView === 'home') {
         root.innerHTML = `
@@ -444,10 +458,19 @@ class ERPApplication {
    */
   switchView(newView) {
     try {
+      const currentUser = authService.getCurrentUser();
       // Security Gate: Redirect unauthenticated requests to login
-      if (!authService.getCurrentUser() && newView !== 'home' && newView !== 'login') {
+      if (!currentUser && newView !== 'home' && newView !== 'login') {
         newView = 'login';
         state.set('currentView', 'login');
+      }
+
+      // Authorization Gate: Redirect unauthorized view requests straight to user's first allowed view
+      if (currentUser && newView !== 'home' && newView !== 'login') {
+        if (!authService.isViewAllowed(newView, currentUser)) {
+          newView = authService.getFirstAllowedView(currentUser);
+          state.set('currentView', newView);
+        }
       }
 
       // Trigger non-blocking on-demand table loading for this view
@@ -664,24 +687,22 @@ class ERPApplication {
         'resource-library': 'document_library'
       };
 
+      const currentUser = authService.getCurrentUser();
       const requiredModule = viewToModuleMap[currentView];
       if (requiredModule && !authService.isAdmin() && !authService.isModuleAllowed(requiredModule)) {
-        return `
-          <div class="page-view" style="display: flex; align-items: center; justify-content: center; min-height: 60vh;">
-            <div style="background: var(--bg-surface); border: 1.5px solid rgba(239, 68, 68, 0.4); border-radius: var(--radius-xl); padding: 40px; text-align: center; max-width: 500px; box-shadow: 0 10px 40px rgba(0,0,0,0.5);">
-              <div style="font-size: 48px; margin-bottom: 14px;">🚫</div>
-              <h2 style="font-size: 18px; font-weight: 800; color: #f87171; margin-bottom: 8px;">
-                Access Denied: Module Restricted
-              </h2>
-              <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 20px;">
-                Your account (<strong>${authService.getCurrentUser()?.username}</strong>) does not have permission to access the <strong>${currentView.toUpperCase()}</strong> module. Contact the system administrator to configure individual access permissions.
-              </p>
-              <button onclick="state.set('currentView', 'dashboard')" class="btn btn-primary btn-sm">
-                Return to Dashboard
-              </button>
-            </div>
-          </div>
-        `;
+        const allowedView = authService.getFirstAllowedView(currentUser);
+        if (allowedView && allowedView !== currentView) {
+          setTimeout(() => {
+            state.set('currentView', allowedView);
+            try {
+              if (window.history && window.history.replaceState) {
+                window.history.replaceState({ view: allowedView }, '', `#${allowedView}`);
+              }
+            } catch (_) {}
+            this.render();
+          }, 0);
+        }
+        currentView = allowedView;
       }
 
       switch (currentView) {
@@ -988,13 +1009,27 @@ class ERPApplication {
       if (!targetView || targetView === 'home') {
         targetView = 'home';
       }
+      const cu = authService.getCurrentUser();
+      if (cu && targetView !== 'home' && targetView !== 'login' && !authService.isViewAllowed(targetView, cu)) {
+        targetView = authService.getFirstAllowedView(cu);
+        try {
+          window.history.replaceState({ view: targetView }, '', `#${targetView}`);
+        } catch (_) {}
+      }
       state.set('currentView', targetView);
       this.switchView(targetView);
     });
 
     window.addEventListener('hashchange', () => {
       const h = window.location.hash ? window.location.hash.replace(/^#/, '').trim() : '';
-      const viewToLoad = (!h || h === 'home') ? 'home' : h;
+      let viewToLoad = (!h || h === 'home') ? 'home' : h;
+      const cu = authService.getCurrentUser();
+      if (cu && viewToLoad !== 'home' && viewToLoad !== 'login' && !authService.isViewAllowed(viewToLoad, cu)) {
+        viewToLoad = authService.getFirstAllowedView(cu);
+        try {
+          window.history.replaceState({ view: viewToLoad }, '', `#${viewToLoad}`);
+        } catch (_) {}
+      }
       state.set('currentView', viewToLoad);
       this.switchView(viewToLoad);
     });

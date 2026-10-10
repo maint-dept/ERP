@@ -318,8 +318,10 @@ export function initNavbarEvents() {
   if (roleSelect) {
     roleSelect.addEventListener('change', (e) => {
       try {
-        authService.switchUser(e.target.value);
+        const switched = authService.switchUser(e.target.value);
         state.resetFilters();
+        const landingView = authService.getFirstAllowedView(switched);
+        window.location.hash = '#' + landingView;
         window.location.reload();
       } catch (err) {
         alert(err.message);
