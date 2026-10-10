@@ -1846,7 +1846,7 @@ function renderConfigModal() {
   const cfg = modalServiceContext || {
     id: '',
     machineType: '',
-    frequencyDays: 90,
+    frequencyDays: 91,
     responsibleDepartment: 'Mechanical Maintenance',
     checklist: [
       'Motor & Drive Belt Inspection & Tension Adjustment',
@@ -1876,10 +1876,10 @@ function renderConfigModal() {
             <input type="text" id="pm-cfg-type" value="${escapeHtml(cfg.machineType || '')}" placeholder="e.g. Lock Stitch, Overlock, Flatlock, Button Hole" style="width: 100%; padding: 8px 12px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 6px; color: #fff; font-size: 13px;" />
           </div>
 
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+          <div style="grid-template-columns: 1fr 1fr; display: grid; gap: 10px;">
             <div>
               <label style="font-size: 11.5px; font-weight: 700; color: #cbd5e1; display: block; margin-bottom: 4px;">Interval (Days) *</label>
-              <input type="number" id="pm-cfg-days" value="${cfg.frequencyDays || 90}" style="width: 100%; padding: 8px 12px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 6px; color: #fff; font-size: 13px;" />
+              <input type="number" id="pm-cfg-days" value="${cfg.frequencyDays || 91}" style="width: 100%; padding: 8px 12px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 6px; color: #fff; font-size: 13px;" />
             </div>
             <div>
               <label style="font-size: 11.5px; font-weight: 700; color: #cbd5e1; display: block; margin-bottom: 4px;">Department</label>
@@ -2902,7 +2902,7 @@ function bindModalEvents() {
     if (nextDateInput && modalMachineContext) {
       const prof = preventiveMaintenanceService.getMachinePreventiveProfile(modalMachineContext);
       if (prof) {
-        const freq = prof.frequencyDays || 90;
+        const freq = prof.frequencyDays || 91;
         nextDateInput.value = preventiveMaintenanceService.calculateNextServiceDate(e.target.value, freq);
       }
     }
@@ -3237,7 +3237,7 @@ function bindModalEvents() {
   document.getElementById('btn-pm-save-config')?.addEventListener('click', () => {
     const cId = document.getElementById('pm-cfg-id')?.value;
     const mType = document.getElementById('pm-cfg-type')?.value.trim();
-    const days = parseInt(document.getElementById('pm-cfg-days')?.value, 10) || 90;
+    const days = parseInt(document.getElementById('pm-cfg-days')?.value, 10) || 91;
     const dept = document.getElementById('pm-cfg-dept')?.value.trim();
     const checklistRaw = document.getElementById('pm-cfg-checklist')?.value || '';
     const checklist = checklistRaw.split('\n').map(x => x.trim()).filter(Boolean);

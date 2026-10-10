@@ -2140,10 +2140,10 @@ class ExcelService {
       const stickerSerial = (d.serviceStickerSerial || machine.serviceStickerSerial || '').trim();
       const serviceRemarks = (d.serviceRemarks || d.remarks || 'Imported with Machine Inventory').trim();
 
-      // Resolve frequency days based on machine type
+      // Resolve frequency days based on machine type (Default 91 days from servicing date)
       const configs = storage.getTable(TABLE_NAMES.PREVENTIVE_CONFIG) || [];
       const mTypeName = machine.machineNameStr || machine.machineName || '';
-      let frequencyDays = 90;
+      let frequencyDays = 91;
       if (configs.length > 0 && mTypeName) {
         const queryNorm = mTypeName.toLowerCase().replace(/[\s\-_/]+/g, '');
         const match = configs.find(c => {
@@ -2154,7 +2154,7 @@ class ExcelService {
           return false;
         });
         if (match && match.frequencyDays) {
-          frequencyDays = match.frequencyDays;
+          frequencyDays = match.frequencyDays === 90 ? 91 : match.frequencyDays;
         }
       }
 

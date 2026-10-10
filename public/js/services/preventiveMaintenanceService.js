@@ -175,7 +175,7 @@ class PreventiveMaintenanceService {
         existing.machineCount = count;
       } else {
         // Create new schedule config for this machine type with sensible defaults
-        let defaultDays = 90;
+        let defaultDays = 91;
         const low = canonical.toLowerCase();
         if (low.includes('flatlock') || low.includes('feed of the arm') || low.includes('bar tack')) {
           defaultDays = 60;
@@ -240,12 +240,18 @@ class PreventiveMaintenanceService {
     if (!configs || configs.length < 20 || !configs[0]?.aliases) {
       configs = this.syncConfigsFromMasterData();
     }
-    // Clean any legacy default manpower pre-assignments
+    // Clean any legacy default manpower pre-assignments and migrate 90 days to 91 days
     let modified = false;
     for (const c of configs) {
       if (c.defaultManpowerName || c.defaultManpowerId) {
         c.defaultManpowerName = null;
         c.defaultManpowerId = null;
+        modified = true;
+      }
+      if (c.frequencyDays === 90 || c.serviceIntervalDays === 90) {
+        c.frequencyDays = 91;
+        c.serviceIntervalDays = 91;
+        c.frequencyLabel = 'Every 91 Days';
         modified = true;
       }
     }
@@ -292,8 +298,8 @@ class PreventiveMaintenanceService {
     // Fallback: Return Plane / Lock Stitch config
     return configs.find(c => c.machineType.includes('Lock Stitch') || c.machineType.includes('Plane')) || configs[0] || {
       machineType: machineTypeOrName,
-      frequencyDays: 90,
-      frequencyLabel: 'Every 90 Days',
+      frequencyDays: 91,
+      frequencyLabel: 'Every 91 Days',
       reminderDays: [7, 3, 0],
       responsibleDepartment: 'Mechanical Maintenance',
       checklist: [
@@ -310,7 +316,7 @@ class PreventiveMaintenanceService {
     const user = authService.getCurrentUser();
     const canonicalName = this.getCanonicalMachineType(configData.machineType);
     const id = configData.id || `pm-cfg-${canonicalName.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
-    const cleanFrequency = parseInt(configData.frequencyDays, 10) || 90;
+    const cleanFrequency = parseInt(configData.frequencyDays, 10) || 91;
 
     const existingConfigs = storage.getTable(TABLE_NAMES.PREVENTIVE_CONFIG) || [];
     const existingIndex = existingConfigs.findIndex(c => c.id === id || c.machineType.toLowerCase() === canonicalName.toLowerCase());
@@ -399,9 +405,9 @@ class PreventiveMaintenanceService {
         aliases: [machineTypeOrName],
         modelId: 'ALL',
         modelName: 'All Models',
-        frequencyDays: 90,
-        frequencyLabel: 'Every 90 Days',
-        serviceIntervalDays: 90,
+        frequencyDays: 91,
+        frequencyLabel: 'Every 91 Days',
+        serviceIntervalDays: 91,
         reminderDays: [7, 3, 0],
         responsibleDepartment: 'Mechanical Maintenance',
         checklist: cleanItems,
@@ -433,8 +439,8 @@ class PreventiveMaintenanceService {
     const rows = configs.map((c, idx) => ({
       'SL': idx + 1,
       'Machine Type Name': c.machineType,
-      'Service Interval (Days)': c.frequencyDays || 90,
-      'Frequency Label': c.frequencyLabel || `Every ${c.frequencyDays || 90} Days`,
+      'Service Interval (Days)': c.frequencyDays || 91,
+      'Frequency Label': c.frequencyLabel || `Every ${c.frequencyDays || 91} Days`,
       'Responsible Department': c.responsibleDepartment || 'Mechanical Maintenance',
       'Factory Active Machines': c.machineCount || 0,
       'Status': c.status || 'ACTIVE',
@@ -461,7 +467,7 @@ class PreventiveMaintenanceService {
     const str = String(val).trim().toLowerCase();
     if (!str) return null;
 
-    if (str.includes('quarter') || str.includes('3 month')) return 90;
+    if (str.includes('quarter') || str.includes('3 month')) return 91;
     if (str.includes('half year') || str.includes('6 month')) return 180;
     if (str.includes('yearly') || (str.includes('1 year') && !str.includes('half'))) return 365;
     if (str.includes('bi-month') || str.includes('2 month')) return 60;
@@ -546,7 +552,7 @@ class PreventiveMaintenanceService {
         ? rawChecklist.split(/[,|;]+/).map(s => s.trim()).filter(Boolean)
         : null;
 
-      const currentDays = matchedConfig ? (matchedConfig.frequencyDays || 90) : null;
+      const currentDays = matchedConfig ? (matchedConfig.frequencyDays || 91) : null;
       const isChanged = (extractedDays !== null) && (matchedConfig ? (currentDays !== extractedDays) : true);
       const isNew = !matchedConfig && !!canonicalType;
       const isValid = (extractedDays !== null && extractedDays > 0 && extractedDays <= 3650) && (!!canonicalType || !!rawSerial);
@@ -835,7 +841,7 @@ class PreventiveMaintenanceService {
       const mProfile = matchedMachine ? (machineService.getEnrichedMachine(matchedMachine.id) || matchedMachine) : null;
       const mTypeName = mProfile?.machineName?.name || matchedMachine?.machineName || 'Sewing Machine';
       const config = this.getConfigByMachineType(mTypeName);
-      const frequencyDays = config?.frequencyDays || 90;
+      const frequencyDays = config?.frequencyDays || 91;
       const nextDate = isValid ? this.calculateNextServiceDate(cleanDate, frequencyDays) : '';
 
       processedRows.push({
@@ -892,7 +898,7 @@ class PreventiveMaintenanceService {
       if (!machine) return;
 
       const serviceDate = item.serviceDate;
-      const nextDate = item.nextServiceDate || this.calculateNextServiceDate(serviceDate, item.frequencyDays || 90);
+      const nextDate = item.nextServiceDate || this.calculateNextServiceDate(serviceDate, item.frequencyDays || 91);
       const servicedBy = item.servicedBy || user.fullName || 'Routine Mechanic';
       const stickerSerial = item.serviceStickerSerial || machine.serviceStickerSerial || '';
 
@@ -934,7 +940,7 @@ class PreventiveMaintenanceService {
         servicedByDesignation: 'Maintenance Mechanic',
         servicedByDepartment: 'Mechanical Maintenance',
         assignedManpower: servicedBy,
-        frequencyDays: item.frequencyDays || 90,
+        frequencyDays: item.frequencyDays || 91,
         lastServiceDate: serviceDate,
         nextServiceDate: nextDate,
         serviceChecklist: [],
@@ -1039,9 +1045,13 @@ class PreventiveMaintenanceService {
     return str;
   }
 
-  calculateNextServiceDate(serviceDateStr, frequencyDays = 90) {
+  calculateNextServiceDate(serviceDateStr, frequencyDays = 91) {
     if (!serviceDateStr) return '';
     try {
+      let days = parseInt(frequencyDays, 10);
+      if (isNaN(days) || days <= 0 || days === 90) {
+        days = 91;
+      }
       let year, month, day;
       const str = String(serviceDateStr).trim();
       if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
@@ -1072,12 +1082,16 @@ class PreventiveMaintenanceService {
         }
       }
       const d = new Date(year, month, day);
-      d.setDate(d.getDate() + parseInt(frequencyDays, 10));
+      d.setDate(d.getDate() + days);
       const yyyy = d.getFullYear();
       const mm = String(d.getMonth() + 1).padStart(2, '0');
       const dd = String(d.getDate()).padStart(2, '0');
       return `${yyyy}-${mm}-${dd}`;
     } catch (e) {
+      console.warn('Date calculation error:', e);
+    }
+    return '';
+  }
       console.warn('Date calculation error:', e);
     }
     return '';
@@ -1204,15 +1218,20 @@ class PreventiveMaintenanceService {
 
     const latestRecord = machineRecords[0] || null;
 
-    let frequencyDays = config?.frequencyDays || 90;
-    let lastServiceDate = latestRecord?.serviceDate || null;
-    let nextServiceDate = latestRecord?.nextServiceDate || null;
-    let serviceStickerSerial = latestRecord?.serviceStickerSerial || 'STK-PENDING';
-    let lastServicedBy = latestRecord?.servicedBy || 'Not Yet Serviced';
+    let frequencyDays = config?.frequencyDays || 91;
+    let lastServiceDate = latestRecord?.serviceDate || rawMachine.lastServiceDate || null;
+    let nextServiceDate = latestRecord?.nextServiceDate || rawMachine.nextServiceDate || null;
+    let serviceStickerSerial = latestRecord?.serviceStickerSerial || rawMachine.serviceStickerSerial || 'STK-PENDING';
+    let lastServicedBy = latestRecord?.servicedBy || rawMachine.lastServicedBy || 'Not Yet Serviced';
     let lastServicedByCardNumber = latestRecord?.servicedByCardNumber || '';
     let lastServicedByDesignation = latestRecord?.servicedByDesignation || '';
-    let assignedManpower = latestRecord?.assignedManpower || latestRecord?.servicedBy || null;
+    let assignedManpower = latestRecord?.assignedManpower || rawMachine.assignedManpower || latestRecord?.servicedBy || null;
     let serviceRemarks = latestRecord?.serviceRemarks || '';
+
+    // If a service date exists, ensure nextServiceDate is calculated as serviceDate + 91 days
+    if (lastServiceDate && (!nextServiceDate || latestRecord?.frequencyDays === 90 || config?.frequencyDays === 90)) {
+      nextServiceDate = this.calculateNextServiceDate(lastServiceDate, frequencyDays);
+    }
 
     // If no past service record exists, auto-calculate target from machine join/creation
     if (!nextServiceDate) {
@@ -1472,7 +1491,7 @@ class PreventiveMaintenanceService {
     }
 
     const serviceDate = payload.serviceDate || new Date().toISOString().split('T')[0];
-    const frequencyDays = parseInt(payload.frequencyDays, 10) || machineProfile.frequencyDays || 90;
+    const frequencyDays = parseInt(payload.frequencyDays, 10) || machineProfile.frequencyDays || 91;
 
     // Strict system auto-generation: Next service date is strictly calculated from Service Date + Admin configured frequencyDays
     const nextServiceDate = this.calculateNextServiceDate(serviceDate, frequencyDays);
