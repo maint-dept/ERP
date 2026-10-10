@@ -21,6 +21,7 @@ import { auditService } from '../services/auditService.js';
 import { authService } from '../services/authService.js';
 import { notificationService } from '../services/notificationService.js';
 import { etLabService } from '../services/etLabService.js';
+import { pdfService } from '../services/pdfService.js';
 import { updateSidebarActiveState } from './sidebar.js';
 import { state } from '../state.js';
 
@@ -2466,28 +2467,34 @@ export function initReportsEvents() {
   const btnPrintMach = document.getElementById('btn-print-machine-report-pdf');
   if (btnPrintMach) {
     btnPrintMach.addEventListener('click', () => {
-      const allMachines = machineService.getMachines({ limit: 'ALL' }).items || [];
-      const { groupedList, grandTotals, lookups } = getMachineSummaryGroupedData(allMachines);
-      const { grpMap, untMap, flrMap, linMap } = lookups;
+      try {
+        const allMachines = machineService.getMachines({ limit: 'ALL' }).items || [];
+        const { groupedList, grandTotals, lookups } = getMachineSummaryGroupedData(allMachines);
+        const { grpMap, untMap, flrMap, linMap } = lookups;
 
-      const currentGroup = grpMap.get(machineReportFilterState.groupId);
-      const currentUnit = untMap.get(machineReportFilterState.unitId);
-      const currentFloor = flrMap.get(machineReportFilterState.floorId);
-      const currentLine = linMap.get(machineReportFilterState.lineId);
+        const currentGroup = grpMap.get(machineReportFilterState.groupId);
+        const currentUnit = untMap.get(machineReportFilterState.unitId);
+        const currentFloor = flrMap.get(machineReportFilterState.floorId);
+        const currentLine = linMap.get(machineReportFilterState.lineId);
 
-      let locSummary = 'All Enterprise';
-      if (currentLine) locSummary = `Line: ${currentLine.name} (${currentFloor?.name || ''}, ${currentUnit?.name || ''})`;
-      else if (currentFloor) locSummary = `Floor: ${currentFloor.name} (${currentUnit?.name || ''})`;
-      else if (currentUnit) locSummary = `Unit: ${currentUnit.name} (${currentGroup?.name || ''})`;
-      else if (currentGroup) locSummary = `Group: ${currentGroup.name}`;
+        let locSummary = 'All Enterprise';
+        if (currentLine) locSummary = `Line: ${currentLine.name} (${currentFloor?.name || ''}, ${currentUnit?.name || ''})`;
+        else if (currentFloor) locSummary = `Floor: ${currentFloor.name} (${currentUnit?.name || ''})`;
+        else if (currentUnit) locSummary = `Unit: ${currentUnit.name} (${currentGroup?.name || ''})`;
+        else if (currentGroup) locSummary = `Group: ${currentGroup.name}`;
 
-      pdfService.generateMachineSummaryPDF({
-        title: 'Machine Summary Report',
-        subtitle: 'Al-Muslim Group Central Engineering & Maintenance Department',
-        filterSummary: `Location: ${locSummary} | Status: ${machineReportFilterState.status}`,
-        groupedData: groupedList,
-        grandTotals
-      });
+        notificationService.info('Preparing Machine Summary Print / PDF Preview...');
+        pdfService.generateMachineSummaryPDF({
+          title: 'Machine Summary Report',
+          subtitle: 'Al-Muslim Group Central Engineering & Maintenance Department',
+          filterSummary: `Location: ${locSummary} | Status: ${machineReportFilterState.status}`,
+          groupedData: groupedList,
+          grandTotals
+        });
+      } catch (err) {
+        console.error('Error generating Machine Summary Print/PDF report:', err);
+        notificationService.error('Failed to generate Print / PDF: ' + (err.message || 'Unknown error'));
+      }
     });
   }
 
@@ -2885,24 +2892,30 @@ export function initReportsEvents() {
   const btnExpTransPdf = document.getElementById('btn-export-transfer-report-pdf');
   if (btnExpTransPdf) {
     btnExpTransPdf.addEventListener('click', () => {
-      const allTransfers = transferService.getTransferRequests({ status: 'ALL' }) || [];
-      const completedTransfers = storage.getTable(TABLE_NAMES.TRANSFERS) || [];
-      const allRows = buildTransferAuditLog(allTransfers, completedTransfers);
-      const filteredRows = filterTransferAuditRows(allRows);
-      const sortedRows = sortTransferAuditRows(filteredRows);
+      try {
+        const allTransfers = transferService.getTransferRequests({ status: 'ALL' }) || [];
+        const completedTransfers = storage.getTable(TABLE_NAMES.TRANSFERS) || [];
+        const allRows = buildTransferAuditLog(allTransfers, completedTransfers);
+        const filteredRows = filterTransferAuditRows(allRows);
+        const sortedRows = sortTransferAuditRows(filteredRows);
 
-      let filterSummary = `Status: ${transferReportFilterState.status}`;
-      if (transferReportFilterState.transferredBy !== 'ALL') filterSummary += ` | Requester: ${transferReportFilterState.transferredBy}`;
-      if (transferReportFilterState.prevFloor) filterSummary += ` | From: ${transferReportFilterState.prevFloor}`;
-      if (transferReportFilterState.newFloor) filterSummary += ` | To: ${transferReportFilterState.newFloor}`;
-      if (transferReportFilterState.dateFrom) filterSummary += ` | From Date: ${transferReportFilterState.dateFrom}`;
-      if (transferReportFilterState.dateTo) filterSummary += ` | To Date: ${transferReportFilterState.dateTo}`;
-      if (transferReportFilterState.search) filterSummary += ` | Search: "${transferReportFilterState.search}"`;
+        let filterSummary = `Status: ${transferReportFilterState.status}`;
+        if (transferReportFilterState.transferredBy !== 'ALL') filterSummary += ` | Requester: ${transferReportFilterState.transferredBy}`;
+        if (transferReportFilterState.prevFloor) filterSummary += ` | From: ${transferReportFilterState.prevFloor}`;
+        if (transferReportFilterState.newFloor) filterSummary += ` | To: ${transferReportFilterState.newFloor}`;
+        if (transferReportFilterState.dateFrom) filterSummary += ` | From Date: ${transferReportFilterState.dateFrom}`;
+        if (transferReportFilterState.dateTo) filterSummary += ` | To Date: ${transferReportFilterState.dateTo}`;
+        if (transferReportFilterState.search) filterSummary += ` | Search: "${transferReportFilterState.search}"`;
 
-      pdfService.generateTransferReportPDF({
-        rows: sortedRows,
-        filterSummary: `${filterSummary} | Total: ${sortedRows.length} records`
-      });
+        notificationService.info('Preparing Transfer Report Print / PDF Preview...');
+        pdfService.generateTransferReportPDF({
+          rows: sortedRows,
+          filterSummary: `${filterSummary} | Total: ${sortedRows.length} records`
+        });
+      } catch (err) {
+        console.error('Error generating Transfer PDF/Print report:', err);
+        notificationService.error('Failed to generate Print / PDF: ' + (err.message || 'Unknown error'));
+      }
     });
   }
 
@@ -3029,14 +3042,20 @@ export function initReportsEvents() {
   const btnEntExpPdf = document.getElementById('btn-ent-rep-export-pdf');
   if (btnEntExpPdf) {
     btnEntExpPdf.addEventListener('click', () => {
-      syncEntFilterStateFromDOM();
-      const etBoards = etLabService.getBoards() || [];
-      const allRows = getEtLabReportRows(etBoards);
-      const filteredRows = filterEtLabReportRows(allRows);
-      pdfService.generateEtLabManagementReportPDF({
-        rows: filteredRows,
-        filterSummary: `Status: ${entReportFilterState.status} | Repair Type: ${entReportFilterState.repairType} | Records: ${filteredRows.length}`
-      });
+      try {
+        syncEntFilterStateFromDOM();
+        const etBoards = etLabService.getBoards() || [];
+        const allRows = getEtLabReportRows(etBoards);
+        const filteredRows = filterEtLabReportRows(allRows);
+        notificationService.info('Preparing ENT Lab Print / PDF Preview...');
+        pdfService.generateEtLabManagementReportPDF({
+          rows: filteredRows,
+          filterSummary: `Status: ${entReportFilterState.status} | Repair Type: ${entReportFilterState.repairType} | Records: ${filteredRows.length}`
+        });
+      } catch (err) {
+        console.error('Error generating ENT Lab PDF report:', err);
+        notificationService.error('Failed to generate Print / PDF: ' + (err.message || 'Unknown error'));
+      }
     });
   }
 
@@ -3044,14 +3063,20 @@ export function initReportsEvents() {
   const btnEntPrint = document.getElementById('btn-ent-rep-print');
   if (btnEntPrint) {
     btnEntPrint.addEventListener('click', () => {
-      syncEntFilterStateFromDOM();
-      const etBoards = etLabService.getBoards() || [];
-      const allRows = getEtLabReportRows(etBoards);
-      const filteredRows = filterEtLabReportRows(allRows);
-      pdfService.generateEtLabManagementReportPDF({
-        rows: filteredRows,
-        filterSummary: `Status: ${entReportFilterState.status} | Repair Type: ${entReportFilterState.repairType} | Records: ${filteredRows.length}`
-      });
+      try {
+        syncEntFilterStateFromDOM();
+        const etBoards = etLabService.getBoards() || [];
+        const allRows = getEtLabReportRows(etBoards);
+        const filteredRows = filterEtLabReportRows(allRows);
+        notificationService.info('Preparing ENT Lab Print / PDF Preview...');
+        pdfService.generateEtLabManagementReportPDF({
+          rows: filteredRows,
+          filterSummary: `Status: ${entReportFilterState.status} | Repair Type: ${entReportFilterState.repairType} | Records: ${filteredRows.length}`
+        });
+      } catch (err) {
+        console.error('Error generating ENT Lab Print report:', err);
+        notificationService.error('Failed to generate Print / PDF: ' + (err.message || 'Unknown error'));
+      }
     });
   }
 

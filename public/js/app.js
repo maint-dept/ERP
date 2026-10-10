@@ -27,7 +27,7 @@ import { renderUserManagement, initUserManagementEvents } from './components/use
 import { renderHomepageManagerView, initHomepageManagerEvents } from './components/homepageManagerView.js?v=4.24.0';
 import { renderEmailConfigView, initEmailConfigEvents } from './components/emailConfigView.js?v=4.24.0';
 import { renderExcelImportModal, initExcelImportEvents } from './components/excelImportModal.js?v=4.24.0';
-import { renderReportsView, initReportsEvents } from './components/reportsView.js?v=4.24.0';
+import { renderReportsView, initReportsEvents } from './components/reportsView.js?v=4.25.0';
 import { renderAuditLogsView, initAuditLogsEvents } from './components/auditLogsView.js?v=4.24.0';
 import { renderNotificationsDrawer, initNotificationsDrawerEvents } from './components/notificationsDrawer.js?v=4.24.0';
 import { renderSettingsView, initSettingsEvents } from './components/settingsView.js?v=4.24.0';

@@ -279,13 +279,20 @@ class PDFService {
 
     const printWin = window.open('', '_blank');
     if (printWin) {
-      printWin.document.open();
-      printWin.document.write(reportHtml);
-      printWin.document.close();
-      printWin.document.title = title || 'Machine Inventory Report';
-      auditService.log('PDF_REPORT_GENERATED', 'REPORT', title, `Generated PDF report: ${title} (${machines.length} records).`);
+      try {
+        printWin.document.open();
+        printWin.document.write(reportHtml);
+        printWin.document.close();
+        printWin.document.title = title || 'Machine Inventory Report';
+        printWin.focus();
+        auditService.log('PDF_REPORT_GENERATED', 'REPORT', title, `Generated PDF report: ${title} (${machines.length} records).`);
+      } catch (err) {
+        console.warn('Direct print window write failed, falling back to iframe print:', err);
+        this._fallbackIframePrint(reportHtml);
+      }
     } else {
-      alert('Pop-up window was blocked. Please allow pop-ups for this site to view/print reports.');
+      this._fallbackIframePrint(reportHtml);
+      auditService.log('PDF_REPORT_GENERATED', 'REPORT', title, `Generated PDF report via iframe: ${title} (${machines.length} records).`);
     }
   }
 
@@ -610,11 +617,18 @@ class PDFService {
 
     const printWin = window.open('', '_blank');
     if (printWin) {
-      printWin.document.write(reportHtml);
-      printWin.document.close();
-      auditService.log('TRANSFER_PDF_GENERATED', 'TRANSFER', req.requestNumber, `Generated Official Transfer PDF Pass for ${req.requestNumber}`);
+      try {
+        printWin.document.write(reportHtml);
+        printWin.document.close();
+        printWin.focus();
+        auditService.log('TRANSFER_PDF_GENERATED', 'TRANSFER', req.requestNumber, `Generated Official Transfer PDF Pass for ${req.requestNumber}`);
+      } catch (err) {
+        console.warn('Direct transfer window write failed, falling back to iframe print:', err);
+        this._fallbackIframePrint(reportHtml);
+      }
     } else {
-      alert('Pop-up window was blocked. Please allow pop-ups for this site to view/print the transfer pass.');
+      this._fallbackIframePrint(reportHtml);
+      auditService.log('TRANSFER_PDF_GENERATED', 'TRANSFER', req.requestNumber, `Generated Official Transfer PDF Pass via iframe for ${req.requestNumber}`);
     }
   }
 
@@ -631,8 +645,9 @@ class PDFService {
     const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
     // Build Active Dynamic Signatures List
-    const signatures = getSignaturesForReport('MACHINE_SUMMARY');
-    const activeSignatures = signatures.filter(s => s.enabled !== false && ((s.name && s.name.trim()) || (s.title && s.title.trim())));
+    const signatures = getSignaturesForReport('MACHINE_SUMMARY') || [];
+    const activeSignatures = signatures.filter(s => s && s.enabled !== false && ((s.name && s.name.trim()) || (s.title && s.title.trim())));
+    const totals = grandTotals || { running: 0, usableIdle: 0, repairableIdle: 0, total: 0 };
 
     // Build Table Body Rows with merged Sl. and Machine Name and Grand Total cells per machine category
     let rowsHtml = '';
@@ -949,19 +964,19 @@ class PDFService {
           <div class="kpi-bar">
             <div class="kpi-item" style="border-left: 3px solid #16a34a;">
               <div class="kpi-label" style="color: #16a34a;">Running</div>
-              <div class="kpi-val" style="color: #16a34a;">${grandTotals.running}</div>
+              <div class="kpi-val" style="color: #16a34a;">${totals.running ?? 0}</div>
             </div>
             <div class="kpi-item" style="border-left: 3px solid #0284c7;">
               <div class="kpi-label" style="color: #0284c7;">Usable Idle</div>
-              <div class="kpi-val" style="color: #0284c7;">${grandTotals.usableIdle}</div>
+              <div class="kpi-val" style="color: #0284c7;">${totals.usableIdle ?? 0}</div>
             </div>
             <div class="kpi-item" style="border-left: 3px solid #d97706;">
               <div class="kpi-label" style="color: #d97706;">Repairable Idle</div>
-              <div class="kpi-val" style="color: #d97706;">${grandTotals.repairableIdle}</div>
+              <div class="kpi-val" style="color: #d97706;">${totals.repairableIdle ?? 0}</div>
             </div>
             <div class="kpi-item" style="border-left: 3px solid #0f172a;">
               <div class="kpi-label" style="color: #0f172a;">Total Machines</div>
-              <div class="kpi-val" style="color: #0f172a;">${grandTotals.total}</div>
+              <div class="kpi-val" style="color: #0f172a;">${totals.total ?? 0}</div>
             </div>
           </div>
 
@@ -986,11 +1001,11 @@ class PDFService {
                 <td style="text-align: center; color: #64748b; font-weight: 700; padding: 7px;">—</td>
                 <td style="padding: 7px 10px; font-weight: 800; color: #0f172a; text-align: left;">GRAND TOTAL</td>
                 <td style="text-align: center; color: #64748b; font-weight: 700; padding: 7px;">—</td>
-                <td style="text-align: center; color: #15803d; font-weight: 800; padding: 7px; font-family: 'Consolas', 'Segoe UI', monospace;">${grandTotals.running}</td>
-                <td style="text-align: center; color: #0284c7; font-weight: 800; padding: 7px; font-family: 'Consolas', 'Segoe UI', monospace;">${grandTotals.usableIdle}</td>
-                <td style="text-align: center; color: #b45309; font-weight: 800; padding: 7px; font-family: 'Consolas', 'Segoe UI', monospace;">${grandTotals.repairableIdle}</td>
-                <td style="text-align: center; color: #0f172a; font-weight: 800; padding: 7px; font-family: 'Consolas', 'Segoe UI', monospace;">${grandTotals.total}</td>
-                <td style="text-align: center; color: #0284c7; font-weight: 900; padding: 7px; font-size: 13px; font-family: 'Consolas', 'Segoe UI', monospace;">${grandTotals.total}</td>
+                <td style="text-align: center; color: #15803d; font-weight: 800; padding: 7px; font-family: 'Consolas', 'Segoe UI', monospace;">${totals.running ?? 0}</td>
+                <td style="text-align: center; color: #0284c7; font-weight: 800; padding: 7px; font-family: 'Consolas', 'Segoe UI', monospace;">${totals.usableIdle ?? 0}</td>
+                <td style="text-align: center; color: #b45309; font-weight: 800; padding: 7px; font-family: 'Consolas', 'Segoe UI', monospace;">${totals.repairableIdle ?? 0}</td>
+                <td style="text-align: center; color: #0f172a; font-weight: 800; padding: 7px; font-family: 'Consolas', 'Segoe UI', monospace;">${totals.total ?? 0}</td>
+                <td style="text-align: center; color: #0284c7; font-weight: 900; padding: 7px; font-size: 13px; font-family: 'Consolas', 'Segoe UI', monospace;">${totals.total ?? 0}</td>
               </tr>
             </tfoot>
           </table>
@@ -1005,6 +1020,19 @@ class PDFService {
             `).join('')}
           </div>
           ` : ''}
+          <script>
+            // Automatic print preview trigger after page load
+            window.addEventListener('DOMContentLoaded', () => {
+              setTimeout(() => {
+                try { window.focus(); window.print(); } catch (e) {}
+              }, 400);
+            });
+            if (document.readyState === 'complete' || document.readyState === 'interactive') {
+              setTimeout(() => {
+                try { window.focus(); window.print(); } catch (e) {}
+              }, 400);
+            }
+          </script>
         </div>
       </body>
       </html>
@@ -1012,13 +1040,20 @@ class PDFService {
 
     const printWin = window.open('', '_blank');
     if (printWin) {
-      printWin.document.open();
-      printWin.document.write(reportHtml);
-      printWin.document.close();
-      printWin.document.title = title || 'Machine Summary Report';
-      auditService.log('MACHINE_SUMMARY_PDF_GENERATED', 'REPORT', title || 'Machine Summary', `Generated Machine Summary PDF Report.`);
+      try {
+        printWin.document.open();
+        printWin.document.write(reportHtml);
+        printWin.document.close();
+        printWin.document.title = title || 'Machine Summary Report';
+        printWin.focus();
+        auditService.log('MACHINE_SUMMARY_PDF_GENERATED', 'REPORT', title || 'Machine Summary', `Generated Machine Summary PDF Report.`);
+      } catch (err) {
+        console.warn('Direct summary window write failed, falling back to iframe print:', err);
+        this._fallbackIframePrint(reportHtml);
+      }
     } else {
-      alert('Pop-up window was blocked. Please allow pop-ups for this site to view/print reports.');
+      this._fallbackIframePrint(reportHtml);
+      auditService.log('MACHINE_SUMMARY_PDF_GENERATED', 'REPORT', title || 'Machine Summary', `Generated Machine Summary PDF Report (Iframe fallback).`);
     }
   }
 
@@ -1252,13 +1287,20 @@ class PDFService {
 
     const printWin = window.open('', '_blank');
     if (printWin) {
-      printWin.document.open();
-      printWin.document.write(reportHtml);
-      printWin.document.close();
-      printWin.document.title = 'ENT Lab Report';
-      auditService.log('ET_LAB_PDF_REPORT_GENERATED', 'REPORT', 'ENT Lab Report', `Generated ENT Lab PDF/Print Report.`);
+      try {
+        printWin.document.open();
+        printWin.document.write(reportHtml);
+        printWin.document.close();
+        printWin.document.title = 'ENT Lab Report';
+        printWin.focus();
+        auditService.log('ET_LAB_PDF_REPORT_GENERATED', 'REPORT', 'ENT Lab Report', `Generated ENT Lab PDF/Print Report.`);
+      } catch (err) {
+        console.warn('Direct ENT lab window write failed, falling back to iframe print:', err);
+        this._fallbackIframePrint(reportHtml);
+      }
     } else {
-      alert('Pop-up window was blocked. Please allow pop-ups for this site to view/print reports.');
+      this._fallbackIframePrint(reportHtml);
+      auditService.log('ET_LAB_PDF_REPORT_GENERATED', 'REPORT', 'ENT Lab Report', `Generated ENT Lab PDF/Print Report (Iframe fallback).`);
     }
   }
 
@@ -1395,13 +1437,61 @@ class PDFService {
 
     const printWin = window.open('', '_blank');
     if (printWin) {
-      printWin.document.open();
-      printWin.document.write(reportHtml);
-      printWin.document.close();
-      printWin.document.title = 'Machine Transfer & Relocation Report';
-      auditService.log('TRANSFER_PDF_REPORT_GENERATED', 'REPORT', 'Transfer Report', `Generated Transfer Audit Log PDF/Print Report (${rows.length} rows).`);
+      try {
+        printWin.document.open();
+        printWin.document.write(reportHtml);
+        printWin.document.close();
+        printWin.document.title = 'Machine Transfer & Relocation Report';
+        printWin.focus();
+        auditService.log('TRANSFER_PDF_REPORT_GENERATED', 'REPORT', 'Transfer Report', `Generated Transfer Audit Log PDF/Print Report (${rows.length} rows).`);
+      } catch (err) {
+        console.warn('Direct transfer report window write failed, falling back to iframe print:', err);
+        this._fallbackIframePrint(reportHtml);
+      }
     } else {
-      alert('Pop-up window was blocked. Please allow pop-ups for this site to view/print reports.');
+      this._fallbackIframePrint(reportHtml);
+      auditService.log('TRANSFER_PDF_REPORT_GENERATED', 'REPORT', 'Transfer Report', `Generated Transfer Audit Log PDF/Print Report via iframe (${rows.length} rows).`);
+    }
+  }
+
+  /**
+   * Seamless Iframe Print Fallback
+   * Automatically prints via hidden iframe when window.open is blocked by browser popup blockers.
+   */
+  _fallbackIframePrint(htmlContent) {
+    try {
+      let printIframe = document.getElementById('erp-report-print-fallback-iframe');
+      if (printIframe) {
+        printIframe.remove();
+      }
+      printIframe = document.createElement('iframe');
+      printIframe.id = 'erp-report-print-fallback-iframe';
+      printIframe.style.position = 'fixed';
+      printIframe.style.right = '0';
+      printIframe.style.bottom = '0';
+      printIframe.style.width = '0';
+      printIframe.style.height = '0';
+      printIframe.style.border = '0';
+      printIframe.style.visibility = 'hidden';
+      document.body.appendChild(printIframe);
+
+      const frameDoc = printIframe.contentWindow.document;
+      frameDoc.open();
+      frameDoc.write(htmlContent);
+      frameDoc.close();
+
+      setTimeout(() => {
+        try {
+          printIframe.contentWindow.focus();
+          printIframe.contentWindow.print();
+        } catch (e) {
+          console.error('Iframe print error:', e);
+          alert('Please allow pop-ups for this site to view and print reports.');
+        }
+      }, 400);
+    } catch (err) {
+      console.error('Print fallback error:', err);
+      alert('Please allow pop-ups for this site to view and print reports.');
     }
   }
 }
