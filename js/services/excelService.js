@@ -5,6 +5,7 @@
 
 import { storage } from '../db/storage.js';
 import { TABLE_NAMES, DUPLICATE_POLICIES, GARMENT_MACHINE_SHORT_CODES } from '../db/schema.js';
+import { INITIAL_DATA } from '../db/initialData.js';
 import { authService } from './authService.js';
 import { customFieldService } from './customFieldService.js';
 import { auditService } from './auditService.js';
@@ -512,12 +513,59 @@ class ExcelService {
   }
 
   /**
+   * Comprehensive master data lookup maps across INITIAL_DATA, storage tables, and STORAGE_MASTER
+   */
+  getMasterLookupMaps() {
+    const grpMap = new Map();
+    (INITIAL_DATA?.groups || []).forEach(x => x && x.id && grpMap.set(x.id, x.name));
+    (storage.getTable(TABLE_NAMES.GROUPS) || []).forEach(x => x && x.id && grpMap.set(x.id, x.name));
+
+    const mnMap = new Map();
+    (INITIAL_DATA?.machine_names || []).forEach(x => x && x.id && mnMap.set(x.id, x.name));
+    (storage.getTable(TABLE_NAMES.MACHINE_NAMES) || []).forEach(x => x && x.id && mnMap.set(x.id, x.name));
+
+    const brdMap = new Map();
+    (INITIAL_DATA?.brands || []).forEach(x => x && x.id && brdMap.set(x.id, x.name));
+    (storage.getTable(TABLE_NAMES.BRANDS) || []).forEach(x => x && x.id && brdMap.set(x.id, x.name));
+
+    const mdlMap = new Map();
+    (INITIAL_DATA?.models || []).forEach(x => x && x.id && mdlMap.set(x.id, x.name));
+    (storage.getTable(TABLE_NAMES.MODELS) || []).forEach(x => x && x.id && mdlMap.set(x.id, x.name));
+    const storageMaster = storage.getTable(TABLE_NAMES.STORAGE_MASTER) || [];
+    storageMaster.forEach(sm => {
+      if (sm && sm.category === 'MACHINE' && sm.id && sm.model) {
+        if (!mdlMap.has(sm.id)) mdlMap.set(sm.id, sm.model);
+      }
+    });
+
+    const untMap = new Map();
+    (INITIAL_DATA?.units || []).forEach(x => x && x.id && untMap.set(x.id, x.name));
+    (storage.getTable(TABLE_NAMES.UNITS) || []).forEach(x => x && x.id && untMap.set(x.id, x.name));
+
+    const flrMap = new Map();
+    (INITIAL_DATA?.floors || []).forEach(x => x && x.id && flrMap.set(x.id, x.name));
+    (storage.getTable(TABLE_NAMES.FLOORS) || []).forEach(x => x && x.id && flrMap.set(x.id, x.name));
+
+    const linMap = new Map();
+    (INITIAL_DATA?.lines || []).forEach(x => x && x.id && linMap.set(x.id, x.name));
+    (storage.getTable(TABLE_NAMES.LINES) || []).forEach(x => x && x.id && linMap.set(x.id, x.name));
+
+    return { grpMap, mnMap, brdMap, mdlMap, untMap, flrMap, linMap };
+  }
+
+  /**
    * UNIVERSAL VALUE RESOLVER:
    * Maps any data object (live machine record or sample template record) to a specific fieldKey.
    * Guaranteed to be order-independent!
    */
   getFieldValue(record, fieldKey, rowIndex = 0, lookups = null) {
     if (!record || !fieldKey) return '';
+    if (!lookups) {
+      if (!this._cachedLookups) {
+        this._cachedLookups = this.getMasterLookupMaps();
+      }
+      lookups = this._cachedLookups;
+    }
 
     const key = fieldKey.trim().toLowerCase();
 
@@ -527,31 +575,51 @@ class ExcelService {
     }
 
     // 2. Machine Name / Category
-    if (key === 'machine_name' || key === 'machinename') {
-      if (record.machine_name) return record.machine_name;
-      if (record.machineName) return record.machineName;
-      if (lookups?.mnMap && record.machineNameId) return lookups.mnMap.get(record.machineNameId) || 'Plane Machine';
-      return record.machineNameStr || 'Plane Machine';
+    if (key === 'machine_name' || key === 'machinename' || key === 'machine') {
+      if (record.machine_name) return String(record.machine_name).trim();
+      if (typeof record.machineName === 'string' && record.machineName.trim()) return record.machineName.trim();
+      if (record.machineName?.name) return String(record.machineName.name).trim();
+      if (typeof record.name === 'string' && record.name.trim()) return record.name.trim();
+      if (record.name?.name) return String(record.name.name).trim();
+      if (record.machineNameId && lookups?.mnMap?.has(record.machineNameId)) {
+        return lookups.mnMap.get(record.machineNameId);
+      }
+      if (record.machineNameStr) return String(record.machineNameStr).trim();
+      if (record.brandId && lookups?.brdMap?.has(record.brandId)) {
+        return `${lookups.brdMap.get(record.brandId)} Machine`;
+      }
+      if (record.brand) return `${record.brand} Machine`;
+      return '';
     }
 
     // 3. Brand
     if (key === 'machine_brand' || key === 'brand') {
-      if (record.machine_brand) return record.machine_brand;
-      if (record.brand) return record.brand;
-      if (lookups?.brdMap && record.brandId) return lookups.brdMap.get(record.brandId) || 'JUKI';
-      return record.brandStr || 'JUKI';
+      if (record.machine_brand) return String(record.machine_brand).trim();
+      if (typeof record.brand === 'string' && record.brand.trim()) return record.brand.trim();
+      if (record.brand?.name) return String(record.brand.name).trim();
+      if (record.brandName) return String(record.brandName).trim();
+      if (record.brandId && lookups?.brdMap?.has(record.brandId)) {
+        return lookups.brdMap.get(record.brandId);
+      }
+      if (record.brandStr) return String(record.brandStr).trim();
+      return '';
     }
 
     // 4. Model
     if (key === 'machine_model' || key === 'model') {
-      if (record.machine_model) return record.machine_model;
-      if (record.model) return record.model;
-      if (lookups?.mdlMap && record.modelId) return lookups.mdlMap.get(record.modelId) || 'DDL-9000';
-      return record.modelStr || 'DDL-9000';
+      if (record.machine_model) return String(record.machine_model).trim();
+      if (typeof record.model === 'string' && record.model.trim()) return record.model.trim();
+      if (record.model?.name) return String(record.model.name).trim();
+      if (record.modelName) return String(record.modelName).trim();
+      if (record.modelId && lookups?.mdlMap?.has(record.modelId)) {
+        return lookups.mdlMap.get(record.modelId);
+      }
+      if (record.modelStr) return String(record.modelStr).trim();
+      return '';
     }
 
     // 5. Serial Number
-    if (key === 'machine_serial' || key === 'serialnumber' || key === 'serial') {
+    if (key === 'machine_serial' || key === 'serialnumber' || key === 'serial' || key === 'serial_no') {
       return record.machine_serial || record.serialNumber || record.serial || '';
     }
 
@@ -562,107 +630,136 @@ class ExcelService {
 
     // 7. Current Location / Unit / Factory
     if (key === 'unit_factory' || key === 'unit' || key === 'factory' || key === 'current_location' || key === 'location') {
-      if (record.current_location) return record.current_location;
-      if (record.unit_factory) return record.unit_factory;
-      if (record.unit) return record.unit;
-      if (lookups?.untMap && record.unitId) return lookups.untMap.get(record.unitId) || '';
-      return record.unitStr || 'AKM Knitwear Ltd.';
+      if (record.unit_factory) return String(record.unit_factory).trim();
+      if (typeof record.unit === 'string' && record.unit.trim()) return record.unit.trim();
+      if (record.unit?.name) return String(record.unit.name).trim();
+      if (record.unitName) return String(record.unitName).trim();
+      if (record.current_location) return String(record.current_location).trim();
+      if (record.unitId && lookups?.untMap?.has(record.unitId)) {
+        return lookups.untMap.get(record.unitId);
+      }
+      if (record.unitStr) return String(record.unitStr).trim();
+      return '';
     }
 
     // 8. Floor
-    if (key === 'floor') {
-      if (record.floor) return record.floor;
-      if (lookups?.flrMap && record.floorId) return lookups.flrMap.get(record.floorId) || '';
-      return record.floorStr || '3rd Floor';
+    if (key === 'floor' || key === 'floor_name') {
+      if (record.floor && typeof record.floor === 'string' && record.floor.trim()) return record.floor.trim();
+      if (record.floor?.name) return String(record.floor.name).trim();
+      if (record.floorName) return String(record.floorName).trim();
+      if (record.floorId && lookups?.flrMap?.has(record.floorId)) {
+        return lookups.flrMap.get(record.floorId);
+      }
+      if (record.floorStr) return String(record.floorStr).trim();
+      return '';
     }
 
     // 9. Section / Line / Department
-    if (key === 'section' || key === 'line' || key === 'dept' || key === 'department') {
+    if (key === 'section' || key === 'line' || key === 'dept' || key === 'department' || key === 'line_name') {
       let rawLine = '';
-      if (record.section) rawLine = record.section;
-      else if (record.line) rawLine = record.line;
-      else if (lookups?.linMap && record.lineId) rawLine = lookups.linMap.get(record.lineId) || '';
-      else rawLine = record.lineStr || '';
+      if (record.line && typeof record.line === 'string') rawLine = record.line;
+      else if (record.line?.name) rawLine = record.line.name;
+      else if (record.lineName) rawLine = record.lineName;
+      else if (record.section) rawLine = record.section;
+      else if (record.lineId && lookups?.linMap?.has(record.lineId)) rawLine = lookups.linMap.get(record.lineId);
+      else if (record.lineStr) rawLine = record.lineStr;
       const clean = formatDisplayLine(rawLine, 'NORMAL');
-      return clean || rawLine || 'A';
+      return clean || rawLine || '';
     }
 
     if (key === 'line_code' || key === 'full_line' || key === 'linecode') {
-      if (record.line) return record.line;
-      if (lookups?.linMap && record.lineId) return lookups.linMap.get(record.lineId) || '';
-      return record.lineStr || 'TS-A';
+      if (record.line && typeof record.line === 'string') return record.line;
+      if (record.line?.name) return record.line.name;
+      if (record.lineName) return record.lineName;
+      if (record.lineId && lookups?.linMap?.has(record.lineId)) return lookups.linMap.get(record.lineId);
+      return record.lineStr || '';
     }
 
-    // 8. Running Quantity
+    // Group
+    if (key === 'group' || key === 'group_name') {
+      if (record.group && typeof record.group === 'string' && record.group.trim()) return record.group.trim();
+      if (record.group?.name) return String(record.group.name).trim();
+      if (record.groupName) return String(record.groupName).trim();
+      if (record.groupId && lookups?.grpMap?.has(record.groupId)) {
+        return lookups.grpMap.get(record.groupId);
+      }
+      if (record.groupStr) return String(record.groupStr).trim();
+      return 'Al-Muslim Group';
+    }
+
+    // Running Quantity
     if (key === 'running' || key === 'qty_running' || key === 'running_qty') {
-      if (record.running !== undefined && record.running !== null) return record.running;
-      if (record.qty_running !== undefined && record.qty_running !== null) return record.qty_running;
-      return record.status === 'ACTIVE' ? (record.quantity ?? 1) : 0;
+      if (record.running !== undefined && record.running !== null && record.running !== '') return parseInt(record.running, 10) || 0;
+      if (record.qty_running !== undefined && record.qty_running !== null && record.qty_running !== '') return parseInt(record.qty_running, 10) || 0;
+      const qty = parseInt(record.quantity, 10) || 1;
+      return (record.status === 'ACTIVE' || !record.status) ? qty : 0;
     }
 
-    // 9. Usable Idle Quantity
+    // Usable Idle Quantity
     if (key === 'usable_idle' || key === 'usableidle' || key === 'qty_usable_idle') {
-      if (record.usable_idle !== undefined && record.usable_idle !== null) return record.usable_idle;
-      if (record.usableIdle !== undefined && record.usableIdle !== null) return record.usableIdle;
-      if (record.qty_usable_idle !== undefined && record.qty_usable_idle !== null) return record.qty_usable_idle;
-      return record.status === 'IDLE' ? (record.quantity ?? 1) : 0;
+      if (record.usable_idle !== undefined && record.usable_idle !== null && record.usable_idle !== '') return parseInt(record.usable_idle, 10) || 0;
+      if (record.usableIdle !== undefined && record.usableIdle !== null && record.usableIdle !== '') return parseInt(record.usableIdle, 10) || 0;
+      if (record.qty_usable_idle !== undefined && record.qty_usable_idle !== null && record.qty_usable_idle !== '') return parseInt(record.qty_usable_idle, 10) || 0;
+      const qty = parseInt(record.quantity, 10) || 1;
+      return (record.status === 'IDLE' || record.status === 'USABLE_IDLE') ? qty : 0;
     }
 
-    // 10. Repairable Idle Quantity
+    // Repairable Idle Quantity
     if (key === 'repairable_idle' || key === 'repairableidle' || key === 'qty_repairable_idle') {
-      if (record.repairable_idle !== undefined && record.repairable_idle !== null) return record.repairable_idle;
-      if (record.repairableIdle !== undefined && record.repairableIdle !== null) return record.repairableIdle;
-      if (record.qty_repairable_idle !== undefined && record.qty_repairable_idle !== null) return record.qty_repairable_idle;
-      return (record.status === 'MAINTENANCE' || record.status === 'BREAKDOWN') ? (record.quantity ?? 1) : 0;
+      if (record.repairable_idle !== undefined && record.repairable_idle !== null && record.repairable_idle !== '') return parseInt(record.repairable_idle, 10) || 0;
+      if (record.repairableIdle !== undefined && record.repairableIdle !== null && record.repairableIdle !== '') return parseInt(record.repairableIdle, 10) || 0;
+      if (record.qty_repairable_idle !== undefined && record.qty_repairable_idle !== null && record.qty_repairable_idle !== '') return parseInt(record.qty_repairable_idle, 10) || 0;
+      const qty = parseInt(record.quantity, 10) || 1;
+      return (record.status === 'MAINTENANCE' || record.status === 'BREAKDOWN' || record.status === 'REPAIRABLE_IDLE') ? qty : 0;
     }
 
-    // 11. Total Quantity (Auto-Calculated = Running + Usable Idle + Repairable Idle)
+    // Total Quantity (Auto-Calculated = Running + Usable Idle + Repairable Idle)
     if (key === 'total_quantity' || key === 'totalquantity' || key === 'total_qty' || key === 'quantity' || key === 'qty') {
-      if (record.total_quantity !== undefined && record.total_quantity !== null) return record.total_quantity;
-      if (record.totalQuantity !== undefined && record.totalQuantity !== null) return record.totalQuantity;
-      const r = parseInt(record.running ?? record.qty_running ?? 0, 10) || 0;
-      const u = parseInt(record.usable_idle ?? record.usableIdle ?? record.qty_usable_idle ?? 0, 10) || 0;
-      const rp = parseInt(record.repairable_idle ?? record.repairableIdle ?? record.qty_repairable_idle ?? 0, 10) || 0;
+      if (record.total_quantity !== undefined && record.total_quantity !== null && record.total_quantity !== '') return parseInt(record.total_quantity, 10) || 0;
+      if (record.totalQuantity !== undefined && record.totalQuantity !== null && record.totalQuantity !== '') return parseInt(record.totalQuantity, 10) || 0;
+      const r = parseInt(this.getFieldValue(record, 'running', rowIndex, lookups), 10) || 0;
+      const u = parseInt(this.getFieldValue(record, 'usable_idle', rowIndex, lookups), 10) || 0;
+      const rp = parseInt(this.getFieldValue(record, 'repairable_idle', rowIndex, lookups), 10) || 0;
       const sum = r + u + rp;
-      return sum > 0 ? sum : (record.quantity ?? 1);
+      return sum > 0 ? sum : (parseInt(record.quantity, 10) || 1);
     }
 
-    // 12. Status
+    // Status
     if (key === 'machine_status' || key === 'status') {
-      return record.machine_status || record.status || 'ACTIVE';
+      return (record.machine_status || record.status || 'ACTIVE').replace(/_/g, ' ');
     }
 
-    // 13. Purchase Date
+    // Purchase Date
     if (key === 'purchase_date' || key === 'purchasedate') {
-      return record.purchase_date || record.purchaseDate || record.customValues?.purchase_date || '2023-01-15';
+      return record.purchase_date || record.purchaseDate || record.customValues?.purchase_date || '';
     }
 
-    // 14. Installation Date
+    // Installation Date
     if (key === 'installation_date' || key === 'installationdate') {
-      return record.installation_date || record.installationDate || record.customValues?.installation_date || '2023-01-20';
+      return record.installation_date || record.installationDate || record.customValues?.installation_date || '';
     }
 
-    // 15. Supplier Name
+    // Supplier Name
     if (key === 'supplier_name' || key === 'supplier') {
-      return record.supplier_name || record.supplier || record.customValues?.supplier || 'Pacific Associates Ltd.';
+      return record.supplier_name || record.supplier || record.customValues?.supplier || '';
     }
 
-    // 16. Country of Origin
+    // Country of Origin
     if (key === 'country_of_origin' || key === 'origin') {
-      return record.country_of_origin || record.origin || record.customValues?.country_of_origin || 'Japan';
+      return record.country_of_origin || record.origin || record.customValues?.country_of_origin || '';
     }
 
-    // 17. Machine Capacity
+    // Machine Capacity
     if (key === 'machine_capacity' || key === 'capacity') {
-      return record.machine_capacity || record.capacity || record.customValues?.capacity || record.customValues?.max_rpm || '5000 RPM';
+      return record.machine_capacity || record.capacity || record.customValues?.capacity || record.customValues?.max_rpm || '';
     }
 
-    // 18. Remarks
+    // Remarks
     if (key === 'remarks' || key === 'description' || key === 'notes') {
       return record.remarks || record.description || record.notes || '';
     }
 
-    // 19. Dynamic Custom Fields (e.g. cf_voltage, cf_max_rpm)
+    // Dynamic Custom Fields (e.g. cf_voltage, cf_max_rpm)
     if (key.startsWith('cf_')) {
       const code = key.replace('cf_', '');
       return record.customValues?.[code] ?? record[code] ?? record[key] ?? '';
@@ -1830,6 +1927,18 @@ class ExcelService {
               status: d.status || 'ACTIVE',
               remarks: d.remarks || `Imported from sheet '${sheet.name}'`,
               customValues: d.customValues || {},
+              machineName: d.machineNameStr || '',
+              machineNameStr: d.machineNameStr || '',
+              brand: d.brandStr || '',
+              brandStr: d.brandStr || '',
+              model: d.modelStr || '',
+              modelStr: d.modelStr || '',
+              unit: d.unitStr || unitObj?.name || '',
+              unitName: d.unitStr || unitObj?.name || '',
+              floor: d.floorStr || '',
+              floorName: d.floorStr || '',
+              line: d.lineStr || '',
+              lineName: d.lineStr || '',
               createdBy: user.id,
               updatedBy: user.id
             });
@@ -2165,7 +2274,12 @@ class ExcelService {
   /**
    * Helper to build a styled worksheet with dynamic Excel formulas for Total Quantity & Summary Total Row
    */
-  buildTemplateWorksheet(records, visibleCols) {
+  buildTemplateWorksheet(records, visibleCols, lookups = null) {
+    if (!lookups) {
+      lookups = this.getMasterLookupMaps();
+    }
+    this._cachedLookups = lookups;
+
     const headers = visibleCols.map(c => c.header);
     const ws = XLSX.utils.aoa_to_sheet([headers]);
 
@@ -2186,21 +2300,27 @@ class ExcelService {
 
     records.forEach((rec, rIdx) => {
       const rowNum = rIdx + 2;
+      const r = Number(this.getFieldValue(rec, 'running', rIdx, lookups)) || 0;
+      const u = Number(this.getFieldValue(rec, 'usable_idle', rIdx, lookups)) || 0;
+      const rp = Number(this.getFieldValue(rec, 'repairable_idle', rIdx, lookups)) || 0;
+      const totalVal = (r + u + rp) > 0 ? (r + u + rp) : (Number(rec.quantity) || 1);
+
       visibleCols.forEach((col, cIdx) => {
         const cellAddress = XLSX.utils.encode_cell({ r: rowNum - 1, c: cIdx });
-        const val = this.getFieldValue(rec, col.fieldKey, rIdx);
+        const val = this.getFieldValue(rec, col.fieldKey, rIdx, lookups);
 
         if (cIdx === totalQtyColIdx && runningColIdx !== -1 && repairableIdleColIdx !== -1) {
           const startCol = getColLetter(runningColIdx);
           const endCol = getColLetter(repairableIdleColIdx);
-          const r = parseInt(rec.running ?? rec.qty_running ?? (rec.status === 'ACTIVE' ? 1 : 0), 10) || 0;
-          const u = parseInt(rec.usable_idle ?? rec.usableIdle ?? (rec.status === 'IDLE' ? 1 : 0), 10) || 0;
-          const rp = parseInt(rec.repairable_idle ?? rec.repairableIdle ?? (rec.status === 'MAINTENANCE' || rec.status === 'BREAKDOWN' ? 1 : 0), 10) || 0;
-          const totalVal = r + u + rp > 0 ? (r + u + rp) : 1;
           ws[cellAddress] = { t: 'n', v: totalVal, f: `SUM(${startCol}${rowNum}:${endCol}${rowNum})` };
-        } else if (cIdx === runningColIdx || cIdx === usableIdleColIdx || cIdx === repairableIdleColIdx) {
-          const numVal = parseInt(val, 10);
-          ws[cellAddress] = { t: 'n', v: isNaN(numVal) ? 0 : numVal };
+        } else if (cIdx === runningColIdx) {
+          ws[cellAddress] = { t: 'n', v: r };
+        } else if (cIdx === usableIdleColIdx) {
+          ws[cellAddress] = { t: 'n', v: u };
+        } else if (cIdx === repairableIdleColIdx) {
+          ws[cellAddress] = { t: 'n', v: rp };
+        } else if (cIdx === totalQtyColIdx) {
+          ws[cellAddress] = { t: 'n', v: totalVal };
         } else {
           ws[cellAddress] = { t: 's', v: String(val ?? '') };
         }
@@ -2375,7 +2495,8 @@ class ExcelService {
     await this.ensureXlsx();
 
     const visibleCols = this.getVisibleColumns();
-    const ws = this.buildTemplateWorksheet(machines, visibleCols);
+    const lookups = this.getMasterLookupMaps();
+    const ws = this.buildTemplateWorksheet(machines, visibleCols, lookups);
 
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Machine Inventory');
@@ -2388,16 +2509,11 @@ class ExcelService {
    * Dedicated Filtered Machine Export to CSV (.csv)
    */
   exportFilteredMachinesToCsv(machines, fileName = 'Filtered_Machine_Inventory.csv') {
-    const grpMap = new Map(storage.getTable(TABLE_NAMES.GROUPS).map(x => [x.id, x.name]));
-    const untMap = new Map(storage.getTable(TABLE_NAMES.UNITS).map(x => [x.id, x.name]));
-    const flrMap = new Map(storage.getTable(TABLE_NAMES.FLOORS).map(x => [x.id, x.name]));
-    const linMap = new Map(storage.getTable(TABLE_NAMES.LINES).map(x => [x.id, x.name]));
-    const mnMap = new Map(storage.getTable(TABLE_NAMES.MACHINE_NAMES).map(x => [x.id, x.name]));
-    const brdMap = new Map(storage.getTable(TABLE_NAMES.BRANDS).map(x => [x.id, x.name]));
-    const mdlMap = new Map(storage.getTable(TABLE_NAMES.MODELS).map(x => [x.id, x.name]));
+    const lookups = this.getMasterLookupMaps();
+    const { grpMap, untMap, flrMap, linMap, mnMap, brdMap, mdlMap } = lookups;
 
     const headers = [
-      'SL', 'Machine ID', 'Machine Name', 'Machine Number', 'Group',
+      'SL', 'Machine ID', 'Machine Name', 'Machine Serial', 'Group',
       'Unit / Factory', 'Floor', 'Line', 'Line Code', 'Brand', 'Model',
       'Machine Status', 'Installation Date', 'Remarks'
     ];
@@ -2413,20 +2529,24 @@ class ExcelService {
     const csvRows = [headers.map(escapeCsv).join(',')];
 
     machines.forEach((m, i) => {
-      const fullLine = linMap.get(m.lineId) || m.lineStr || '—';
+      const fullLine = linMap.get(m.lineId) || m.line || m.lineStr || '—';
       const cleanLine = formatDisplayLine(fullLine, 'NORMAL');
+      const machineName = mnMap.get(m.machineNameId) || m.machineName || m.machineNameStr || m.name || (brdMap.get(m.brandId) ? `${brdMap.get(m.brandId)} Machine` : '') || '—';
+      const brand = brdMap.get(m.brandId) || m.brand || m.brandStr || '—';
+      const model = mdlMap.get(m.modelId) || m.model || m.modelStr || m.modelName || '—';
+
       const row = [
         i + 1,
         m.id || `MCH-${String(i + 1).padStart(3, '0')}`,
-        mnMap.get(m.machineNameId) || m.machineNameStr || '—',
+        machineName,
         m.serialNumber || '—',
-        grpMap.get(m.groupId) || 'Al-Muslim Group',
-        untMap.get(m.unitId) || m.unitStr || '—',
-        flrMap.get(m.floorId) || m.floorStr || '—',
+        grpMap.get(m.groupId) || m.group || 'Al-Muslim Group',
+        untMap.get(m.unitId) || m.unit || m.unitStr || '—',
+        flrMap.get(m.floorId) || m.floor || m.floorStr || '—',
         cleanLine,
         fullLine,
-        brdMap.get(m.brandId) || m.brandStr || '—',
-        mdlMap.get(m.modelId) || m.modelStr || '—',
+        brand,
+        model,
         (m.status || 'ACTIVE').replace(/_/g, ' '),
         m.installationDate || m.customValues?.installation_date || '—',
         m.remarks || ''
@@ -2557,7 +2677,8 @@ class ExcelService {
     // 1. Sheet 1: Machine Inventory with Auto-Calculation Formulas
     const machines = storage.getTable(TABLE_NAMES.MACHINES) || [];
     const visibleCols = this.getVisibleColumns();
-    const wsMachines = this.buildTemplateWorksheet(machines, visibleCols);
+    const lookups = this.getMasterLookupMaps();
+    const wsMachines = this.buildTemplateWorksheet(machines, visibleCols, lookups);
     XLSX.utils.book_append_sheet(wb, wsMachines, 'Machine Inventory');
 
     // 2. Sheet 2: Machine Transfers Ledger
