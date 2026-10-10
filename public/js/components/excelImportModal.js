@@ -155,7 +155,8 @@ function renderImportStageContent() {
       { key: 'repairable_idle', label: 'Repairable Idle (repairable_idle)', required: false },
       { key: 'total_quantity', label: 'Total Quantity [Auto-Calculated] (total_quantity)', required: false },
       { key: 'machine_status', label: 'Machine Status (machine_status)', required: false },
-      { key: 'remarks', label: 'Remarks (remarks)', required: false }
+      { key: 'remarks', label: 'Remarks (remarks)', required: false },
+      { key: 'service_date', label: 'Last Service Date (service_date)', required: false }
     ];
 
     canonicalDefaults.forEach(def => {

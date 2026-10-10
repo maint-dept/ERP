@@ -74,9 +74,10 @@ function renderTabContent(tab, struct, columns, customFields, importHistory) {
         <div style="background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: var(--radius-md); padding: 12px 16px; display: flex; align-items: flex-start; gap: 12px;">
           <span style="font-size: 20px; line-height: 1;">💡</span>
           <div style="font-size: 12px; color: var(--text-secondary); line-height: 1.5;">
-            <strong style="color: #38bdf8;">Standard 13-Column Structure &amp; Business Rules:</strong><br />
-            &bull; <strong>Header Sequence:</strong> <code>Machine Name | Machine Brand | Machine Model | Machine Serial | Unit/Factory | Floor | Line | Running | Usable Idle | Repairable Idle | Total Quantity | Machine Status | Remarks</code><br />
+            <strong style="color: #38bdf8;">Standard 14-Column Structure &amp; Business Rules:</strong><br />
+            &bull; <strong>Header Sequence:</strong> <code>Machine Name | Machine Brand | Machine Model | Machine Serial | Unit/Factory | Floor | Line | Running | Usable Idle | Repairable Idle | Total Quantity | Machine Status | Remarks | Last Service Date</code><br />
             &bull; <strong>Auto-Calculated Total Quantity:</strong> <code>Total Quantity = Running + Usable Idle + Repairable Idle</code> (System-generated / Read-only in Excel).<br />
+            &bull; <strong>Preventive Maintenance Auto-Sync:</strong> Entering <code>Last Service Date</code> automatically synchronizes records to Preventive Maintenance and schedules the next service (+91 Days).<br />
             &bull; <strong>Location Hierarchy:</strong> <code>Unit/Factory &rarr; Floor &rarr; Line</code> cascading dependency is strictly maintained.<br />
             &bull; <strong>Machine Serial:</strong> Unique machine identifier. (If auto-generated in software, manual Excel entry is optional).
           </div>

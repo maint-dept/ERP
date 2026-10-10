@@ -405,24 +405,20 @@ class ExcelService {
     const list = this.getStructures();
     let active = list.find(s => s.isDefault) || list[0] || this._getDefaultStructure();
     
-    // Check if active structure needs migration to standard 13-column format
+    // Check if active structure needs migration to standard 14-column format with Last Service Date
     const requiredKeys = [
       'machine_name', 'machine_brand', 'machine_model', 'machine_serial',
       'unit_factory', 'floor', 'line', 'running', 'usable_idle',
-      'repairable_idle', 'total_quantity', 'machine_status', 'remarks'
+      'repairable_idle', 'total_quantity', 'machine_status', 'remarks', 'service_date'
     ];
 
     const currentKeys = (active.columns || []).map(c => c.fieldKey);
     const hasAllKeys = requiredKeys.every(k => currentKeys.includes(k));
 
-    if (!hasAllKeys || (active.columns || []).length !== 13) {
+    if (!hasAllKeys || !currentKeys.includes('service_date') || (active.columns || []).length !== 14) {
       active = this._getDefaultStructure();
-      const existing = storage.getItem(TABLE_NAMES.EXCEL_STRUCTURES, active.id);
-      if (existing) {
-        storage.update(TABLE_NAMES.EXCEL_STRUCTURES, active.id, active);
-      } else {
-        storage.insert(TABLE_NAMES.EXCEL_STRUCTURES, active);
-      }
+      storage.setTable(TABLE_NAMES.EXCEL_STRUCTURES, [active]);
+      storage.saveTable(TABLE_NAMES.EXCEL_STRUCTURES);
     }
 
     return active;
@@ -509,10 +505,7 @@ class ExcelService {
         { id: 'col-11', header: 'Total Quantity', fieldKey: 'total_quantity', required: false, defaultValue: '— (Auto-Calculated)', order: 11, visible: true, isCalculated: true, readOnly: true },
         { id: 'col-12', header: 'Machine Status', fieldKey: 'machine_status', required: false, defaultValue: 'ACTIVE', order: 12, visible: true },
         { id: 'col-13', header: 'Remarks', fieldKey: 'remarks', required: false, defaultValue: '', order: 13, visible: true },
-        { id: 'col-14', header: 'Last Service Date', fieldKey: 'service_date', required: false, defaultValue: '', order: 14, visible: true },
-        { id: 'col-15', header: 'Serviced By (Card #)', fieldKey: 'serviced_by', required: false, defaultValue: '', order: 15, visible: true },
-        { id: 'col-16', header: 'Sticker Serial No', fieldKey: 'service_sticker_serial', required: false, defaultValue: '', order: 16, visible: true },
-        { id: 'col-17', header: 'Service Remarks', fieldKey: 'service_remarks', required: false, defaultValue: '', order: 17, visible: true }
+        { id: 'col-14', header: 'Last Service Date', fieldKey: 'service_date', required: false, defaultValue: '', order: 14, visible: true }
       ]
     };
   }
@@ -766,7 +759,17 @@ class ExcelService {
 
     // Preventive Maintenance Servicing Fields (Directly in Machine Inventory)
     if (key === 'service_date' || key === 'last_service_date' || key === 'servicedate' || key === 'lastservicedate' || key === 'maintenancedate') {
-      return record.lastServiceDate || record.service_date || record.serviceDate || record.customValues?.service_date || '';
+      if (record.lastServiceDate) return record.lastServiceDate;
+      if (record.service_date) return record.service_date;
+      if (record.serviceDate) return record.serviceDate;
+      if (record.customValues?.service_date) return record.customValues.service_date;
+      if (record.id || record.serialNumber) {
+        const pmTable = storage.getTable(TABLE_NAMES.PREVENTIVE_MAINTENANCE) || [];
+        const pm = pmTable.filter(r => (r.machineId === record.id || (r.serialNumber && record.serialNumber && String(r.serialNumber).trim().toUpperCase() === String(record.serialNumber).trim().toUpperCase())))
+                          .sort((a, b) => (b.serviceDate || '').localeCompare(a.serviceDate || ''))[0];
+        if (pm?.serviceDate) return pm.serviceDate;
+      }
+      return '';
     }
     if (key === 'serviced_by' || key === 'servicedby' || key === 'technician' || key === 'mechanic' || key === 'last_serviced_by') {
       return record.lastServicedBy || record.serviced_by || record.servicedBy || record.assignedManpower || record.customValues?.serviced_by || '';
@@ -1242,6 +1245,16 @@ class ExcelService {
               }
             }
           }
+        }
+
+        // Skip Grand Total / Formula Summary rows
+        if (
+          (machineNameStr && machineNameStr.toUpperCase().includes('GRAND TOTAL')) ||
+          (serialNumber && serialNumber.toUpperCase().includes('GRAND TOTAL')) ||
+          (row['Machine Name'] && String(row['Machine Name']).trim().toUpperCase() === 'GRAND TOTAL') ||
+          (row['machine_name'] && String(row['machine_name']).trim().toUpperCase() === 'GRAND TOTAL')
+        ) {
+          continue;
         }
 
         // -------------------------------------------------------------------------
@@ -2348,7 +2361,7 @@ class ExcelService {
     }
 
     // 3. Define Standard Raw File Headers + Diagnostic Fix Columns
-    // Columns A-M are EXACTLY identical to the official Import Template!
+    // Columns A-N are EXACTLY identical to the official Import Template!
     const headers = [
       'Machine Name',         // Col A
       'Machine Brand',        // Col B
@@ -2363,10 +2376,11 @@ class ExcelService {
       'Total Quantity',       // Col K
       'Machine Status',       // Col L
       'Remarks',              // Col M
-      'Error Reason',         // Col N - Detailed error description
-      'Suggested Correction', // Col O - Step-by-step fix suggestion
-      'Original Sheet',       // Col P - Reference sheet name in original file
-      'Original Row'          // Col Q - Row number in original file
+      'Last Service Date',    // Col N
+      'Error Reason',         // Col O - Detailed error description
+      'Suggested Correction', // Col P - Step-by-step fix suggestion
+      'Original Sheet',       // Col Q - Reference sheet name in original file
+      'Original Row'          // Col R - Row number in original file
     ];
 
     const reportRows = [headers];
@@ -2403,6 +2417,7 @@ class ExcelService {
 
       const machineStatus = getVal(d.status, ['Machine Status', 'machine_status', 'Status', 'status', 'condition'], 'ACTIVE');
       const remarks = getVal(d.remarks, ['Remarks', 'remarks', 'Comments', 'Notes', 'notes', 'description']);
+      const serviceDate = getVal(d.serviceDate, ['Last Service Date', 'service_date', 'last_service_date', 'Service Date', 'servicedate']);
 
       // Error reason & suggestion
       const errorReason = rec.errors.length > 0 ? rec.errors.join(' | ') : 'Validation check failed';
@@ -2442,6 +2457,7 @@ class ExcelService {
         totalQtyVal,
         machineStatus,
         remarks,
+        serviceDate,
         errorReason,
         suggestedCorrection,
         rec.sheetName,
@@ -2465,10 +2481,11 @@ class ExcelService {
       { wch: 14 }, // Col K: Total Quantity
       { wch: 14 }, // Col L: Machine Status
       { wch: 26 }, // Col M: Remarks
-      { wch: 45 }, // Col N: Error Reason
-      { wch: 55 }, // Col O: Suggested Correction
-      { wch: 18 }, // Col P: Original Sheet
-      { wch: 14 }  // Col Q: Original Row
+      { wch: 18 }, // Col N: Last Service Date
+      { wch: 45 }, // Col O: Error Reason
+      { wch: 55 }, // Col P: Suggested Correction
+      { wch: 18 }, // Col Q: Original Sheet
+      { wch: 14 }  // Col R: Original Row
     ];
 
     XLSX.utils.book_append_sheet(wb, wsReport, 'Failed Machines (Fix & Upload)');
@@ -2610,21 +2627,30 @@ class ExcelService {
 
     const wb = XLSX.utils.book_new();
     const visibleCols = this.getVisibleColumns();
+    const lookups = this.getMasterLookupMaps();
 
-    // SINGLE Main Data Sheet for All Machine Types (Unlimited rows)
-    const machineInventoryRecords = [
-      { machine_name: 'Lock Stitch Machine', machine_brand: 'Juki', machine_model: 'DDL-8700', machine_serial: 'SN-10001', unit_factory: 'AKM Knitwear Ltd.', floor: 'Titas Floor', line: 'Line JA-A', running: 20, usable_idle: 3, repairable_idle: 1, total_quantity: 24, machine_status: 'ACTIVE', remarks: 'Lock Stitch with direct drive servo motor' },
-      { machine_name: 'Lock Stitch Machine', machine_brand: 'Juki', machine_model: 'DDL-9000C', machine_serial: 'SN-10002', unit_factory: 'AKM Knitwear Ltd.', floor: 'Titas Floor', line: 'Line JA-A', running: 15, usable_idle: 2, repairable_idle: 0, total_quantity: 17, machine_status: 'ACTIVE', remarks: 'Auto thread trimming & digital tension' },
-      { machine_name: 'Lock Stitch Machine', machine_brand: 'Jack', machine_model: 'A4 Direct Drive', machine_serial: 'SN-10003', unit_factory: 'AKM Knitwear Ltd.', floor: 'Titas Floor', line: 'Line JA-B', running: 10, usable_idle: 1, repairable_idle: 2, total_quantity: 13, machine_status: 'ACTIVE', remarks: 'Smart computer control voice guide' },
-      { machine_name: 'Overlock Machine', machine_brand: 'Pegasus', machine_model: 'M-700 Series', machine_serial: 'SN-10004', unit_factory: 'AKM Knitwear Ltd.', floor: 'Teesta Floor', line: 'Line JAF-A', running: 12, usable_idle: 0, repairable_idle: 1, total_quantity: 13, machine_status: 'ACTIVE', remarks: '4-thread overedge differential feed' },
-      { machine_name: 'Overlock Machine', machine_brand: 'Siruba', machine_model: '747K (5-Thread)', machine_serial: 'SN-10005', unit_factory: 'AKM Knitwear Ltd.', floor: 'Teesta Floor', line: 'Line JAF-B', running: 7, usable_idle: 2, repairable_idle: 1, total_quantity: 10, machine_status: 'ACTIVE', remarks: 'Safety stitch for heavy fabric' },
-      { machine_name: 'Flatlock Machine', machine_brand: 'Kansai', machine_model: 'WX-8803', machine_serial: 'SN-10006', unit_factory: 'AKM Knitwear Ltd.', floor: 'Jamuna Floor', line: 'Line JAF-C', running: 5, usable_idle: 1, repairable_idle: 0, total_quantity: 6, machine_status: 'ACTIVE', remarks: 'Cylinder bed bottom hemming & coverstitch' },
-      { machine_name: 'Button Hole Machine', machine_brand: 'Brother', machine_model: 'HE-800B Electronic', machine_serial: 'SN-10007', unit_factory: 'AKM Knitwear Ltd.', floor: 'Jamuna Floor', line: 'Line JA-B', running: 4, usable_idle: 1, repairable_idle: 1, total_quantity: 6, machine_status: 'ACTIVE', remarks: 'Electronic lockstitch buttonhole' },
-      { machine_name: 'Bar Tack Machine', machine_brand: 'Juki', machine_model: 'LK-1900BN Electronic', machine_serial: 'SN-10008', unit_factory: 'AKM Knitwear Ltd.', floor: 'Padma Floor', line: 'Line PB-03', running: 6, usable_idle: 0, repairable_idle: 0, total_quantity: 6, machine_status: 'ACTIVE', remarks: 'Computer controlled bartacking' },
-      { machine_name: 'Feed Off The Arm', machine_brand: 'Kansai Special', machine_model: 'DLR-1508PR', machine_serial: 'SN-10009', unit_factory: 'AKM Knitwear Ltd.', floor: 'Jamuna Floor', line: 'Line PB-01', running: 3, usable_idle: 1, repairable_idle: 0, total_quantity: 4, machine_status: 'ACTIVE', remarks: 'Multi-needle waistband attaching' }
-    ];
+    // Check if live machine inventory exists in storage to pre-populate existing machines
+    const liveMachines = storage.getTable(TABLE_NAMES.MACHINES) || [];
+    let recordsToUse = [];
 
-    const wsMain = this.buildTemplateWorksheet(machineInventoryRecords, visibleCols);
+    if (liveMachines.length > 0) {
+      recordsToUse = liveMachines;
+    } else {
+      // Fallback realistic garments machinery records if DB is empty
+      recordsToUse = [
+        { machine_name: 'Lock Stitch Machine', machine_brand: 'Juki', machine_model: 'DDL-8700', machine_serial: 'SN-10001', unit_factory: 'AKM Knitwear Ltd.', floor: 'Titas Floor', line: 'Line JA-A', running: 20, usable_idle: 3, repairable_idle: 1, total_quantity: 24, machine_status: 'ACTIVE', remarks: 'Lock Stitch with direct drive servo motor', service_date: '2026-06-15' },
+        { machine_name: 'Lock Stitch Machine', machine_brand: 'Juki', machine_model: 'DDL-9000C', machine_serial: 'SN-10002', unit_factory: 'AKM Knitwear Ltd.', floor: 'Titas Floor', line: 'Line JA-A', running: 15, usable_idle: 2, repairable_idle: 0, total_quantity: 17, machine_status: 'ACTIVE', remarks: 'Auto thread trimming & digital tension', service_date: '2026-06-15' },
+        { machine_name: 'Lock Stitch Machine', machine_brand: 'Jack', machine_model: 'A4 Direct Drive', machine_serial: 'SN-10003', unit_factory: 'AKM Knitwear Ltd.', floor: 'Titas Floor', line: 'Line JA-B', running: 10, usable_idle: 1, repairable_idle: 2, total_quantity: 13, machine_status: 'ACTIVE', remarks: 'Smart computer control voice guide', service_date: '2026-06-15' },
+        { machine_name: 'Overlock Machine', machine_brand: 'Pegasus', machine_model: 'M-700 Series', machine_serial: 'SN-10004', unit_factory: 'AKM Knitwear Ltd.', floor: 'Teesta Floor', line: 'Line JAF-A', running: 12, usable_idle: 0, repairable_idle: 1, total_quantity: 13, machine_status: 'ACTIVE', remarks: '4-thread overedge differential feed', service_date: '2026-06-15' },
+        { machine_name: 'Overlock Machine', machine_brand: 'Siruba', machine_model: '747K (5-Thread)', machine_serial: 'SN-10005', unit_factory: 'AKM Knitwear Ltd.', floor: 'Teesta Floor', line: 'Line JAF-B', running: 7, usable_idle: 2, repairable_idle: 1, total_quantity: 10, machine_status: 'ACTIVE', remarks: 'Safety stitch for heavy fabric', service_date: '2026-06-15' },
+        { machine_name: 'Flatlock Machine', machine_brand: 'Kansai', machine_model: 'WX-8803', machine_serial: 'SN-10006', unit_factory: 'AKM Knitwear Ltd.', floor: 'Jamuna Floor', line: 'Line JAF-C', running: 5, usable_idle: 1, repairable_idle: 0, total_quantity: 6, machine_status: 'ACTIVE', remarks: 'Cylinder bed bottom hemming & coverstitch', service_date: '2026-06-15' },
+        { machine_name: 'Button Hole Machine', machine_brand: 'Brother', machine_model: 'HE-800B Electronic', machine_serial: 'SN-10007', unit_factory: 'AKM Knitwear Ltd.', floor: 'Jamuna Floor', line: 'Line JA-B', running: 4, usable_idle: 1, repairable_idle: 1, total_quantity: 6, machine_status: 'ACTIVE', remarks: 'Electronic lockstitch buttonhole', service_date: '2026-06-15' },
+        { machine_name: 'Bar Tack Machine', machine_brand: 'Juki', machine_model: 'LK-1900BN Electronic', machine_serial: 'SN-10008', unit_factory: 'AKM Knitwear Ltd.', floor: 'Padma Floor', line: 'Line PB-03', running: 6, usable_idle: 0, repairable_idle: 0, total_quantity: 6, machine_status: 'ACTIVE', remarks: 'Computer controlled bartacking', service_date: '2026-06-15' },
+        { machine_name: 'Feed Off The Arm', machine_brand: 'Kansai Special', machine_model: 'DLR-1508PR', machine_serial: 'SN-10009', unit_factory: 'AKM Knitwear Ltd.', floor: 'Jamuna Floor', line: 'Line PB-01', running: 3, usable_idle: 1, repairable_idle: 0, total_quantity: 4, machine_status: 'ACTIVE', remarks: 'Multi-needle waistband attaching', service_date: '2026-06-15' }
+      ];
+    }
+
+    const wsMain = this.buildTemplateWorksheet(recordsToUse, visibleCols, lookups);
     XLSX.utils.book_append_sheet(wb, wsMain, 'Machine Inventory');
 
     // Sheet 2: Master Reference & Guidelines (Lookup sheet only)
@@ -2646,6 +2672,7 @@ class ExcelService {
       ['11', 'Total Quantity', 'total_quantity', 'FORMULA: =SUM(Running..Repairable Idle) - AUTO LINKED', 'SYSTEM-GENERATED'],
       ['12', 'Machine Status', 'machine_status', 'ACTIVE / IDLE / MAINTENANCE / BREAKDOWN', 'NO (Default ACTIVE)'],
       ['13', 'Remarks', 'remarks', 'Technical notes, attachments or remarks', 'NO (Optional)'],
+      ['14', 'Last Service Date', 'service_date', 'Servicing Date (YYYY-MM-DD) -> Auto-syncs to Preventive Maintenance (+91 Days)', 'NO (Optional)'],
       [''],
       ['2. LOCATION HIERARCHY REFERENCE (Unit/Factory -> Floor -> Line):'],
       ['Unit / Factory', 'Floor', 'Available Production Lines'],
@@ -2661,14 +2688,20 @@ class ExcelService {
       ['ACTIVE', 'Machine is running actively on the production floor'],
       ['IDLE', 'Machine is operational and ready for use but currently idle'],
       ['MAINTENANCE', 'Machine is under routine service or periodic overhaul'],
-      ['BREAKDOWN', 'Machine is broken down and requires mechanical/electrical repair']
+      ['BREAKDOWN', 'Machine is broken down and requires mechanical/electrical repair'],
+      [''],
+      ['4. PREVENTIVE MAINTENANCE AUTO-SYNC INSTRUCTIONS:'],
+      ['Feature', 'Behavior Details'],
+      ['Auto-Sync to PM', 'Filling the "Last Service Date" column automatically schedules the next service (+91 Days).'],
+      ['Date Formats', 'Supports YYYY-MM-DD, DD/MM/YYYY, MM/DD/YYYY, or native Excel dates.'],
+      ['Update Mode', 'When re-importing via Machine Inventory, existing machines are updated with their servicing dates without duplicating records.']
     ];
     const wsRef = XLSX.utils.aoa_to_sheet(refData);
-    wsRef['!cols'] = [{ wch: 30 }, { wch: 30 }, { wch: 45 }, { wch: 30 }, { wch: 20 }];
+    wsRef['!cols'] = [{ wch: 30 }, { wch: 30 }, { wch: 45 }, { wch: 40 }, { wch: 20 }];
     XLSX.utils.book_append_sheet(wb, wsRef, 'Master Data Reference');
 
     XLSX.writeFile(wb, 'Machine_Inventory_Import_Template.xlsx');
-    auditService.log('TEMPLATE_DOWNLOADED', 'TEMPLATE', 'SINGLE_SHEET', 'Generated official Machine Inventory Excel template with single data sheet.');
+    auditService.log('TEMPLATE_DOWNLOADED', 'TEMPLATE', 'SINGLE_SHEET', `Generated official Machine Inventory Excel template with ${recordsToUse.length} machines.`);
   }
 
   /**
