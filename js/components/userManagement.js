@@ -2941,16 +2941,17 @@ export function initUserManagementEvents() {
   const btnResetPresetsTop = document.getElementById('btn-reset-default-presets-top');
   if (btnResetPresetsTop) btnResetPresetsTop.addEventListener('click', handleResetDefaultPresets);
 
-  // Card filter chip click to filter user table and switch to User Accounts
-  document.querySelectorAll('.btn-card-filter-preset').forEach(chip => {
-    chip.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const id = chip.getAttribute('data-id');
-      presetFilter = id;
-      activeUserSection = 'USERS';
-      if (typeof localStorage !== 'undefined') localStorage.setItem('al_muslim_user_mgmt_section', 'USERS');
-      refreshView();
+    document.querySelectorAll('.btn-card-filter-preset').forEach(chip => {
+      chip.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const id = chip.getAttribute('data-id');
+        presetFilter = id;
+        activeUserSection = 'USERS';
+        if (typeof localStorage !== 'undefined') localStorage.setItem('al_muslim_user_mgmt_section', 'USERS');
+        refreshView();
+      });
     });
+
   // 4b. Login As User (Super Admin & Admin Impersonation)
   document.querySelectorAll('.btn-action-login-as').forEach(btn => {
     btn.addEventListener('click', (e) => {

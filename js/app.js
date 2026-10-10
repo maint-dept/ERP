@@ -23,7 +23,7 @@ import { renderTransferWorkflowBuilder, initTransferWorkflowBuilderEvents } from
 import { renderMasterDataView, initMasterDataEvents } from './components/masterDataView.js?v=4.24.0';
 import { renderCustomFieldsMgr, initCustomFieldsEvents } from './components/customFieldsMgr.js?v=4.24.0';
 import { renderExcelManagerView, initExcelManagerEvents } from './components/excelManagerView.js?v=4.24.0';
-import { renderUserManagement, initUserManagementEvents } from './components/userManagement.js?v=4.24.0';
+import { renderUserManagement, initUserManagementEvents } from './components/userManagement.js?v=4.24.1';
 import { renderHomepageManagerView, initHomepageManagerEvents } from './components/homepageManagerView.js?v=4.24.0';
 import { renderEmailConfigView, initEmailConfigEvents } from './components/emailConfigView.js?v=4.24.0';
 import { renderExcelImportModal, initExcelImportEvents } from './components/excelImportModal.js?v=4.24.0';
