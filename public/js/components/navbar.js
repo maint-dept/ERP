@@ -44,7 +44,23 @@ export function renderNavbar() {
   const userInitial = getUserInitial(user);
   const displayName = user?.name || user?.username || 'User';
 
-  const userOptions = allUsers.map(u => {
+  const isSuperAdmin = authService.isSuperAdmin(user);
+  const isAdmin = authService.isAdmin(user);
+  const impersonator = authService.getImpersonatorAdmin();
+  const canSwitchAccounts = isSuperAdmin || isAdmin;
+
+  // Filter allowed accounts for switching:
+  // - Super Admin can switch to any user account (Super Admin, Admin, Users)
+  // - Admin can login/switch to standard user accounts, but CANNOT switch to Super Admin
+  // - Regular users cannot switch to any account
+  let allowedSwitchUsers = [];
+  if (isSuperAdmin) {
+    allowedSwitchUsers = allUsers;
+  } else if (isAdmin) {
+    allowedSwitchUsers = allUsers.filter(u => u.id === user?.id || (!authService.isSuperAdmin(u) && !authService.isAdmin(u)));
+  }
+
+  const userOptions = allowedSwitchUsers.map(u => {
     const isSelected = u.id === user?.id ? 'selected' : '';
     const rObj = authService.getRoleById(u.roleId) || authService.getRoleByCode(u.role);
     const rName = rObj?.name || u.role;
@@ -124,6 +140,14 @@ export function renderNavbar() {
           </span>
         </button>
 
+        ${impersonator ? `
+          <!-- Impersonation Quick Return Pill in Top Header -->
+          <button id="btn-nav-exit-impersonation" class="btn btn-xs" style="background: rgba(2, 132, 199, 0.2); border: 1.5px solid #38bdf8; color: #38bdf8; font-weight: 700; font-size: 11.5px; padding: 3px 9px; display: inline-flex; align-items: center; gap: 5px; border-radius: 6px; cursor: pointer; white-space: nowrap; box-shadow: 0 0 10px rgba(56, 189, 248, 0.25);" title="Exit impersonation and return to your Admin account">
+            <span>🎭</span>
+            <span>Return to ${impersonator.role === 'SUPER_ADMIN' ? 'Super Admin' : 'Admin'}</span>
+          </button>
+        ` : ''}
+
         <!-- Vertical Divider -->
         <div class="header-v-divider"></div>
 
@@ -165,20 +189,35 @@ export function renderNavbar() {
               </div>
             </div>
 
-            <!-- Role Switcher Section -->
-            <div class="nav-user-dropdown-section">
-              <div class="nav-user-dropdown-section-title">
-                <span>🎭</span> Switch Role / Account
+            ${impersonator ? `
+              <!-- Active Impersonation Session Banner -->
+              <div class="nav-user-dropdown-section" style="background: rgba(2, 132, 199, 0.15); border: 1.5px dashed #38bdf8; border-radius: 8px; padding: 10px; margin-bottom: 8px;">
+                <div style="font-size: 11px; font-weight: 800; color: #38bdf8; display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+                  <span>🎭</span> Viewing as User
+                </div>
+                <div style="font-size: 11px; color: #cbd5e1; margin-bottom: 8px; line-height: 1.35;">
+                  Currently logged in as <strong>${displayName}</strong> from <strong>${impersonator.name}</strong> (${impersonator.role === 'SUPER_ADMIN' ? 'Super Admin' : 'Admin'}).
+                </div>
+                <button type="button" id="btn-return-to-admin" class="btn btn-primary btn-xs btn-block" style="font-weight: 800; background: linear-gradient(135deg, #0284c7, #0369a1); font-size: 11.5px; height: 30px;">
+                  🔙 Return to ${impersonator.role === 'SUPER_ADMIN' ? 'Super Admin' : 'Admin'} (${impersonator.name})
+                </button>
               </div>
-              <div class="nav-user-dropdown-select-box">
-                <select id="role-switcher-select" class="dropdown-role-select" title="Switch active account to test permissions">
-                  ${userOptions}
-                </select>
+              <div class="nav-user-dropdown-divider"></div>
+            ` : (canSwitchAccounts && userOptions) ? `
+              <!-- Role Switcher Section (Admin & Super Admin Only) -->
+              <div class="nav-user-dropdown-section">
+                <div class="nav-user-dropdown-section-title">
+                  <span>🎭</span> ${isSuperAdmin ? 'Switch Role / Account' : 'Login to User Account'}
+                </div>
+                <div class="nav-user-dropdown-select-box">
+                  <select id="role-switcher-select" class="dropdown-role-select" title="${isSuperAdmin ? 'Switch active account' : 'Login to user account'}">
+                    ${userOptions}
+                  </select>
+                </div>
+                <div class="nav-user-dropdown-hint">${isSuperAdmin ? 'Full Super Admin access to all factory accounts' : 'Admin access to standard user accounts'}</div>
               </div>
-              <div class="nav-user-dropdown-hint">Instantly test access across all factory roles</div>
-            </div>
-
-            <div class="nav-user-dropdown-divider"></div>
+              <div class="nav-user-dropdown-divider"></div>
+            ` : ''}
 
             <!-- Quick Account Actions -->
             <div class="nav-user-dropdown-items">
@@ -312,6 +351,31 @@ export function initNavbarEvents() {
       closeDropdown();
     }
   });
+
+  // Handle Returning from Impersonated User Account back to Admin
+  const handleExitImpersonation = () => {
+    try {
+      const switched = authService.exitImpersonation();
+      if (switched) {
+        state.resetFilters();
+        const landingView = authService.getFirstAllowedView(switched);
+        window.location.hash = '#' + landingView;
+        window.location.reload();
+      }
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const btnReturn = document.getElementById('btn-return-to-admin');
+  if (btnReturn) {
+    btnReturn.addEventListener('click', handleExitImpersonation);
+  }
+
+  const btnNavExit = document.getElementById('btn-nav-exit-impersonation');
+  if (btnNavExit) {
+    btnNavExit.addEventListener('click', handleExitImpersonation);
+  }
 
   // Role Switcher Select
   const roleSelect = document.getElementById('role-switcher-select');

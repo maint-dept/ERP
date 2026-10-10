@@ -486,7 +486,20 @@ export function renderUserManagement() {
                         </div>
 
                         <!-- Account Management Icon Group -->
-                        <div style="display: flex; gap: 4px; justify-content: center; align-items: center;">
+                        <div style="display: flex; gap: 4px; justify-content: center; align-items: center; flex-wrap: wrap;">
+                          <!-- 2c. Login As User (Super Admin & Admin Only) -->
+                          ${!isSelf && (isSuperAdmin || (isAdmin && !isSuper)) && u.status === 'ACTIVE' ? `
+                            <button 
+                              class="btn btn-secondary btn-xs btn-action-login-as" 
+                              data-id="${u.id}" 
+                              data-name="${u.name || u.username}"
+                              title="Log in to '${u.name}' account to inspect their authorized dashboard and features"
+                              style="padding: 3px 8px; font-size: 11px; color: #38bdf8; border-color: rgba(56, 189, 248, 0.4); background: rgba(14, 165, 233, 0.12); border-radius: 5px; font-weight: 700; display: inline-flex; align-items: center; gap: 3px;"
+                            >
+                              <span>🎭</span> Login As
+                            </button>
+                          ` : ''}
+
                           <!-- 3. Edit User Details -->
                           <button 
                             class="btn btn-secondary btn-xs btn-action-edit-user" 
@@ -2937,6 +2950,26 @@ export function initUserManagementEvents() {
       activeUserSection = 'USERS';
       if (typeof localStorage !== 'undefined') localStorage.setItem('al_muslim_user_mgmt_section', 'USERS');
       refreshView();
+    });
+  // 4b. Login As User (Super Admin & Admin Impersonation)
+  document.querySelectorAll('.btn-action-login-as').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const id = btn.getAttribute('data-id');
+      const name = btn.getAttribute('data-name') || 'this user';
+      if (confirm(`Do you want to log in as '${name}' to inspect their authorized dashboard and features?`)) {
+        try {
+          const switched = authService.switchUser(id);
+          if (switched) {
+            state.resetFilters();
+            const landingView = authService.getFirstAllowedView(switched);
+            window.location.hash = '#' + landingView;
+            window.location.reload();
+          }
+        } catch (err) {
+          alert(err.message);
+        }
+      }
     });
   });
 

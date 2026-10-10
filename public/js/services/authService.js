@@ -327,37 +327,113 @@ class AuthService {
       );
     }
 
+    try {
+      sessionStorage.removeItem('al_muslim_impersonator_admin_id');
+      sessionStorage.removeItem('al_muslim_impersonator_admin_name');
+      sessionStorage.removeItem('al_muslim_impersonator_admin_role');
+    } catch (_) {}
     localStorage.removeItem('al_muslim_active_user_id');
     this.currentUser = null;
   }
 
   /**
-   * Switch active user session for fast role testing
+   * Switch active user session (Admin & Super Admin can login into user accounts; standard users cannot)
    */
   switchUser(userId) {
+    const activeUser = this.getCurrentUser();
+    if (!activeUser) {
+      throw new Error('You must be logged in to switch accounts.');
+    }
+
     const users = storage.getTable(TABLE_NAMES.USERS) || [];
     const target = users.find(u => u.id === userId);
     
-    if (target) {
-      if (target.status !== 'ACTIVE') {
-        throw new Error(`Cannot switch to account '${target.username}' because it is DEACTIVATED.`);
-      }
-
-      this.currentUser = target;
-      localStorage.setItem('al_muslim_active_user_id', target.id);
-      
-      auditService.log(
-        'SWITCH_USER',
-        'USER',
-        target.id,
-        `Active session switched to '${target.name}' (${target.role}).`,
-        null,
-        { username: target.username, role: target.role }
-      );
-
-      return target;
+    if (!target) {
+      throw new Error('Target user account not found.');
     }
-    return null;
+
+    if (target.status !== 'ACTIVE') {
+      throw new Error(`Cannot switch to account '${target.username}' because it is DEACTIVATED.`);
+    }
+
+    // Check if there is an active impersonation session by an Admin/Super Admin
+    let impersonatorId = null;
+    try {
+      impersonatorId = sessionStorage.getItem('al_muslim_impersonator_admin_id');
+    } catch (_) {}
+
+    const isCurrentSuper = this.isSuperAdmin(activeUser);
+    const isCurrentAdmin = this.isAdmin(activeUser);
+    const isTargetSuper = this.isSuperAdmin(target);
+
+    // Case A: The active user is returning back to their original admin account
+    const isReturningToAdmin = impersonatorId && target.id === impersonatorId;
+
+    if (!isCurrentSuper && !isCurrentAdmin && !isReturningToAdmin) {
+      // Standard USER attempting to switch to other accounts
+      throw new Error('Access Denied: Standard users cannot switch or login to admin, super admin, or other user accounts.');
+    }
+
+    // Case B: Admin attempting to switch to Super Admin
+    if (isCurrentAdmin && !isCurrentSuper && !isReturningToAdmin) {
+      if (isTargetSuper) {
+        throw new Error('Access Denied: Administrators cannot switch to Super Administrator accounts.');
+      }
+    }
+
+    // If an Admin/Super Admin is switching into a different user account, save impersonator session
+    if ((isCurrentSuper || isCurrentAdmin) && target.id !== activeUser.id && !impersonatorId) {
+      try {
+        sessionStorage.setItem('al_muslim_impersonator_admin_id', activeUser.id);
+        sessionStorage.setItem('al_muslim_impersonator_admin_name', activeUser.name || activeUser.username);
+        sessionStorage.setItem('al_muslim_impersonator_admin_role', activeUser.role);
+      } catch (_) {}
+    }
+
+    // If returning back to original admin account, clear the impersonator session
+    if (isReturningToAdmin || (impersonatorId && target.id === impersonatorId)) {
+      try {
+        sessionStorage.removeItem('al_muslim_impersonator_admin_id');
+        sessionStorage.removeItem('al_muslim_impersonator_admin_name');
+        sessionStorage.removeItem('al_muslim_impersonator_admin_role');
+      } catch (_) {}
+    }
+
+    this.currentUser = target;
+    localStorage.setItem('al_muslim_active_user_id', target.id);
+    
+    auditService.log(
+      'SWITCH_USER',
+      'USER',
+      target.id,
+      `Active session switched to '${target.name}' (${target.role}).`,
+      null,
+      { username: target.username, role: target.role }
+    );
+
+    return target;
+  }
+
+  getImpersonatorAdmin() {
+    try {
+      const id = sessionStorage.getItem('al_muslim_impersonator_admin_id');
+      if (!id) return null;
+      const name = sessionStorage.getItem('al_muslim_impersonator_admin_name');
+      const role = sessionStorage.getItem('al_muslim_impersonator_admin_role');
+      return { id, name, role };
+    } catch (_) {
+      return null;
+    }
+  }
+
+  isImpersonating() {
+    return !!this.getImpersonatorAdmin();
+  }
+
+  exitImpersonation() {
+    const imp = this.getImpersonatorAdmin();
+    if (!imp) return null;
+    return this.switchUser(imp.id);
   }
 
   /**
