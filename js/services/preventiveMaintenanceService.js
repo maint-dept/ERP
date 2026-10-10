@@ -743,7 +743,7 @@ class PreventiveMaintenanceService {
       'Floor': m.floor,
       'Line': m.line,
       'Machine Status': m.machineStatus,
-      'Last Service Date': m.lastServiceDate || '',
+      'Last Service Date': m.lastServiceDate ? this.formatDateDMY(m.lastServiceDate) : '',
       'Serviced By (Card # / Name)': m.assignedManpower || m.lastServicedBy || '',
       'Physical Sticker Sl No.': m.serviceStickerSerial && m.serviceStickerSerial !== 'STK-PENDING' ? m.serviceStickerSerial : '',
       'Service Remarks': m.serviceRemarks || 'Routine maintenance servicing'
@@ -1003,46 +1003,107 @@ class PreventiveMaintenanceService {
   // 2. DYNAMIC DATE CALCULATION & URGENCY ENGINE
   // =========================================================================
 
-  formatDateDMY(d, separator = '-') {
-    if (!d || d === 'N/A' || d === 'None' || d === 'Never' || d === '—') return d;
-    const str = String(d).trim();
-    if (!str) return '';
-
-    // If YYYY-MM-DD
-    if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
-      const [yyyy, mm, dd] = str.split('-');
-      return `${dd}${separator}${mm}${separator}${yyyy}`;
+  parseDateParts(rawDate) {
+    if (rawDate === undefined || rawDate === null || rawDate === '') return null;
+    if (rawDate instanceof Date && !isNaN(rawDate.getTime())) {
+      return {
+        year: rawDate.getFullYear(),
+        month: rawDate.getMonth() + 1,
+        day: rawDate.getDate()
+      };
     }
 
-    // If ISO with time
-    if (/^\d{4}-\d{2}-\d{2}T/.test(str)) {
-      const dt = new Date(str);
-      if (!isNaN(dt.getTime())) {
-        const dd = String(dt.getDate()).padStart(2, '0');
-        const mm = String(dt.getMonth() + 1).padStart(2, '0');
-        const yyyy = dt.getFullYear();
-        return `${dd}${separator}${mm}${separator}${yyyy}`;
+    // Excel numeric serial (1900 date system)
+    if (typeof rawDate === 'number' || (!isNaN(rawDate) && !isNaN(parseFloat(rawDate)) && isFinite(rawDate) && !String(rawDate).includes('-') && !String(rawDate).includes('/'))) {
+      const serial = parseFloat(rawDate);
+      if (serial > 1000 && serial < 100000) {
+        const utcDays = Math.floor(serial - 25569);
+        const utcValue = utcDays * 86400;
+        const dateInfo = new Date(utcValue * 1000);
+        return {
+          year: dateInfo.getUTCFullYear(),
+          month: dateInfo.getUTCMonth() + 1,
+          day: dateInfo.getUTCDate()
+        };
       }
     }
 
-    // If already DD-MM-YYYY or DD/MM/YYYY
-    if (/^\d{1,2}[-/]\d{1,2}[-/]\d{4}$/.test(str)) {
-      const parts = str.split(/[-/]/);
-      const dd = parts[0].padStart(2, '0');
-      const mm = parts[1].padStart(2, '0');
-      const yyyy = parts[2];
-      return `${dd}${separator}${mm}${separator}${yyyy}`;
+    const s = String(rawDate).trim();
+    if (!s || s === '—' || s === 'N/A' || s === 'None' || s === 'Never' || s === '-') return null;
+
+    // 1. Matches YYYY-MM-DD or YYYY/MM/DD
+    let m = s.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})(?:T.*)?$/);
+    if (m) {
+      return {
+        year: parseInt(m[1], 10),
+        month: parseInt(m[2], 10),
+        day: parseInt(m[3], 10)
+      };
     }
 
-    const dt = new Date(str);
+    // 2. Matches DD-MM-YYYY or DD/MM/YYYY or DD.MM.YYYY
+    m = s.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})$/);
+    if (m) {
+      const part1 = parseInt(m[1], 10);
+      const part2 = parseInt(m[2], 10);
+      const yr = parseInt(m[3], 10);
+      if (part2 > 12 && part1 <= 12) {
+        return {
+          year: yr,
+          month: part1,
+          day: part2
+        };
+      }
+      return {
+        year: yr,
+        month: part2,
+        day: part1
+      };
+    }
+
+    // 3. Matches DD-MM-YY or DD/MM/YY (2-digit year)
+    m = s.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{2})$/);
+    if (m) {
+      let yr = parseInt(m[3], 10);
+      yr = yr < 50 ? 2000 + yr : 1900 + yr;
+      const part1 = parseInt(m[1], 10);
+      const part2 = parseInt(m[2], 10);
+      if (part2 > 12 && part1 <= 12) {
+        return {
+          year: yr,
+          month: part1,
+          day: part2
+        };
+      }
+      return {
+        year: yr,
+        month: part2,
+        day: part1
+      };
+    }
+
+    // Fallback: Date object
+    const dt = new Date(s);
     if (!isNaN(dt.getTime())) {
-      const dd = String(dt.getDate()).padStart(2, '0');
-      const mm = String(dt.getMonth() + 1).padStart(2, '0');
-      const yyyy = dt.getFullYear();
-      return `${dd}${separator}${mm}${separator}${yyyy}`;
+      return {
+        year: dt.getFullYear(),
+        month: dt.getMonth() + 1,
+        day: dt.getDate()
+      };
     }
 
-    return str;
+    return null;
+  }
+
+  formatDateDMY(d, separator = '-') {
+    if (!d || d === 'N/A' || d === 'None' || d === 'Never' || d === '—') return d;
+    const p = this.parseDateParts(d);
+    if (p) {
+      const dd = String(p.day).padStart(2, '0');
+      const mm = String(p.month).padStart(2, '0');
+      return `${dd}${separator}${mm}${separator}${p.year}`;
+    }
+    return String(d || '');
   }
 
   calculateNextServiceDate(serviceDateStr, frequencyDays = 91) {
@@ -1052,36 +1113,9 @@ class PreventiveMaintenanceService {
       if (isNaN(days) || days <= 0 || days === 90) {
         days = 91;
       }
-      let year, month, day;
-      const str = String(serviceDateStr).trim();
-      if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
-        const parts = str.split('-');
-        year = parseInt(parts[0], 10);
-        month = parseInt(parts[1], 10) - 1;
-        day = parseInt(parts[2], 10);
-      } else if (/^\d{1,2}[-/]\d{1,2}[-/]\d{4}$/.test(str)) {
-        const parts = str.split(/[-/]/);
-        day = parseInt(parts[0], 10);
-        month = parseInt(parts[1], 10) - 1;
-        year = parseInt(parts[2], 10);
-      } else {
-        const parts = str.split('-');
-        if (parts.length === 3) {
-          year = parseInt(parts[0], 10);
-          month = parseInt(parts[1], 10) - 1;
-          day = parseInt(parts[2], 10);
-        } else {
-          const d0 = new Date(str);
-          if (!isNaN(d0.getTime())) {
-            year = d0.getFullYear();
-            month = d0.getMonth();
-            day = d0.getDate();
-          } else {
-            return '';
-          }
-        }
-      }
-      const d = new Date(year, month, day);
+      const p = this.parseDateParts(serviceDateStr);
+      if (!p) return '';
+      const d = new Date(p.year, p.month - 1, p.day);
       d.setDate(d.getDate() + days);
       const yyyy = d.getFullYear();
       const mm = String(d.getMonth() + 1).padStart(2, '0');
@@ -1108,16 +1142,12 @@ class PreventiveMaintenanceService {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    let nextDate = new Date();
-    const str = String(nextServiceDateStr).trim();
-    if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
-      const parts = str.split('-');
-      nextDate = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
-    } else if (/^\d{1,2}[-/]\d{1,2}[-/]\d{4}$/.test(str)) {
-      const parts = str.split(/[-/]/);
-      nextDate = new Date(parseInt(parts[2], 10), parseInt(parts[1], 10) - 1, parseInt(parts[0], 10));
+    let nextDate = null;
+    const p = this.parseDateParts(nextServiceDateStr);
+    if (p) {
+      nextDate = new Date(p.year, p.month - 1, p.day);
     } else {
-      nextDate = new Date(str);
+      nextDate = new Date(nextServiceDateStr);
     }
     nextDate.setHours(0, 0, 0, 0);
 

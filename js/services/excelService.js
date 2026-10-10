@@ -729,12 +729,14 @@ class ExcelService {
 
     // Purchase Date
     if (key === 'purchase_date' || key === 'purchasedate') {
-      return record.purchase_date || record.purchaseDate || record.customValues?.purchase_date || '';
+      const pVal = record.purchase_date || record.purchaseDate || record.customValues?.purchase_date || '';
+      return pVal ? this.formatDateDMY(pVal) : '';
     }
 
     // Installation Date
     if (key === 'installation_date' || key === 'installationdate') {
-      return record.installation_date || record.installationDate || record.customValues?.installation_date || '';
+      const iVal = record.installation_date || record.installationDate || record.customValues?.installation_date || '';
+      return iVal ? this.formatDateDMY(iVal) : '';
     }
 
     // Supplier Name
@@ -759,17 +761,14 @@ class ExcelService {
 
     // Preventive Maintenance Servicing Fields (Directly in Machine Inventory)
     if (key === 'service_date' || key === 'last_service_date' || key === 'servicedate' || key === 'lastservicedate' || key === 'maintenancedate') {
-      if (record.lastServiceDate) return record.lastServiceDate;
-      if (record.service_date) return record.service_date;
-      if (record.serviceDate) return record.serviceDate;
-      if (record.customValues?.service_date) return record.customValues.service_date;
-      if (record.id || record.serialNumber) {
+      let rawVal = record.lastServiceDate || record.service_date || record.serviceDate || record.customValues?.service_date || '';
+      if (!rawVal && (record.id || record.serialNumber)) {
         const pmTable = storage.getTable(TABLE_NAMES.PREVENTIVE_MAINTENANCE) || [];
         const pm = pmTable.filter(r => (r.machineId === record.id || (r.serialNumber && record.serialNumber && String(r.serialNumber).trim().toUpperCase() === String(record.serialNumber).trim().toUpperCase())))
                           .sort((a, b) => (b.serviceDate || '').localeCompare(a.serviceDate || ''))[0];
-        if (pm?.serviceDate) return pm.serviceDate;
+        if (pm?.serviceDate) rawVal = pm.serviceDate;
       }
-      return '';
+      return rawVal ? this.formatDateDMY(rawVal) : '';
     }
     if (key === 'serviced_by' || key === 'servicedby' || key === 'technician' || key === 'mechanic' || key === 'last_serviced_by') {
       return record.lastServicedBy || record.serviced_by || record.servicedBy || record.assignedManpower || record.customValues?.serviced_by || '';
@@ -947,15 +946,16 @@ class ExcelService {
   }
 
   /**
-   * Universal Date Normalizer (Handles Excel numeric serials, YYYY-MM-DD, DD-MM-YYYY, DD/MM/YYYY, etc.)
+   * Universal Date Normalizer & Parser (Handles Excel numeric serials, DD-MM-YYYY, DD/MM/YYYY, DD-MM-YY, YYYY-MM-DD, etc.)
    */
-  parseCleanDate(rawDate) {
-    if (rawDate === undefined || rawDate === null || rawDate === '') return '';
+  parseDateParts(rawDate) {
+    if (rawDate === undefined || rawDate === null || rawDate === '') return null;
     if (rawDate instanceof Date && !isNaN(rawDate.getTime())) {
-      const yyyy = rawDate.getFullYear();
-      const mm = String(rawDate.getMonth() + 1).padStart(2, '0');
-      const dd = String(rawDate.getDate()).padStart(2, '0');
-      return `${yyyy}-${mm}-${dd}`;
+      return {
+        year: rawDate.getFullYear(),
+        month: rawDate.getMonth() + 1,
+        day: rawDate.getDate()
+      };
     }
     if (typeof rawDate === 'number' || (!isNaN(rawDate) && !isNaN(parseFloat(rawDate)) && isFinite(rawDate) && !String(rawDate).includes('-') && !String(rawDate).includes('/'))) {
       const serial = parseFloat(rawDate);
@@ -964,38 +964,95 @@ class ExcelService {
         const utcDays = Math.floor(serial - 25569);
         const utcValue = utcDays * 86400;
         const dateInfo = new Date(utcValue * 1000);
-        const yyyy = dateInfo.getUTCFullYear();
-        const mm = String(dateInfo.getUTCMonth() + 1).padStart(2, '0');
-        const dd = String(dateInfo.getUTCDate()).padStart(2, '0');
-        return `${yyyy}-${mm}-${dd}`;
+        return {
+          year: dateInfo.getUTCFullYear(),
+          month: dateInfo.getUTCMonth() + 1,
+          day: dateInfo.getUTCDate()
+        };
       }
     }
 
     const s = String(rawDate).trim();
-    if (!s || s === 'N/A' || s === 'None' || s === 'Never' || s === '—' || s === '-') return '';
+    if (!s || s === 'N/A' || s === 'None' || s === 'Never' || s === '—' || s === '-') return null;
 
-    if (/^\d{4}-\d{1,2}-\d{1,2}$/.test(s)) {
-      const [yyyy, mm, dd] = s.split('-');
-      return `${yyyy}-${mm.padStart(2, '0')}-${dd.padStart(2, '0')}`;
+    // 1. Matches YYYY-MM-DD or YYYY/MM/DD
+    let m = s.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})(?:T.*)?$/);
+    if (m) {
+      return {
+        year: parseInt(m[1], 10),
+        month: parseInt(m[2], 10),
+        day: parseInt(m[3], 10)
+      };
     }
 
-    if (/^\d{1,2}[-/]\d{1,2}[-/]\d{4}$/.test(s)) {
-      const parts = s.split(/[-/]/);
-      const dd = parts[0].padStart(2, '0');
-      const mm = parts[1].padStart(2, '0');
-      const yyyy = parts[2];
-      return `${yyyy}-${mm}-${dd}`;
+    // 2. Matches DD-MM-YYYY or DD/MM/YYYY or DD.MM.YYYY
+    m = s.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})$/);
+    if (m) {
+      const part1 = parseInt(m[1], 10);
+      const part2 = parseInt(m[2], 10);
+      const yr = parseInt(m[3], 10);
+      if (part2 > 12 && part1 <= 12) {
+        return {
+          year: yr,
+          month: part1,
+          day: part2
+        };
+      }
+      return {
+        year: yr,
+        month: part2,
+        day: part1
+      };
+    }
+
+    // 3. Matches DD-MM-YY or DD/MM/YY (2-digit year)
+    m = s.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{2})$/);
+    if (m) {
+      let yr = parseInt(m[3], 10);
+      yr = yr < 50 ? 2000 + yr : 1900 + yr;
+      const part1 = parseInt(m[1], 10);
+      const part2 = parseInt(m[2], 10);
+      if (part2 > 12 && part1 <= 12) {
+        return {
+          year: yr,
+          month: part1,
+          day: part2
+        };
+      }
+      return {
+        year: yr,
+        month: part2,
+        day: part1
+      };
     }
 
     const dt = new Date(s);
     if (!isNaN(dt.getTime())) {
-      const yyyy = dt.getFullYear();
-      const mm = String(dt.getMonth() + 1).padStart(2, '0');
-      const dd = String(dt.getDate()).padStart(2, '0');
-      return `${yyyy}-${mm}-${dd}`;
+      return {
+        year: dt.getFullYear(),
+        month: dt.getMonth() + 1,
+        day: dt.getDate()
+      };
     }
 
-    return '';
+    return null;
+  }
+
+  parseCleanDate(rawDate) {
+    const p = this.parseDateParts(rawDate);
+    if (!p) return '';
+    return `${p.year}-${String(p.month).padStart(2, '0')}-${String(p.day).padStart(2, '0')}`;
+  }
+
+  formatDateDMY(d, separator = '-') {
+    if (!d || d === 'N/A' || d === 'None' || d === 'Never' || d === '—') return d;
+    const p = this.parseDateParts(d);
+    if (p) {
+      const dd = String(p.day).padStart(2, '0');
+      const mm = String(p.month).padStart(2, '0');
+      return `${dd}${separator}${mm}${separator}${p.year}`;
+    }
+    return String(d || '');
   }
 
   /**
@@ -2171,23 +2228,27 @@ class ExcelService {
         }
       }
 
-      // Calculate nextServiceDate
+      // Calculate nextServiceDate using robust universal date parser
       let nextServiceDate = '';
+      let canonicalServiceDate = serviceDate;
       try {
-        const parts = serviceDate.split('-');
-        const dt = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
-        dt.setDate(dt.getDate() + frequencyDays);
-        const yyyy = dt.getFullYear();
-        const mm = String(dt.getMonth() + 1).padStart(2, '0');
-        const dd = String(dt.getDate()).padStart(2, '0');
-        nextServiceDate = `${yyyy}-${mm}-${dd}`;
+        const p = this.parseDateParts(serviceDate);
+        if (p) {
+          canonicalServiceDate = `${p.year}-${String(p.month).padStart(2, '0')}-${String(p.day).padStart(2, '0')}`;
+          const dt = new Date(p.year, p.month - 1, p.day);
+          dt.setDate(dt.getDate() + frequencyDays);
+          const yyyy = dt.getFullYear();
+          const mm = String(dt.getMonth() + 1).padStart(2, '0');
+          const dd = String(dt.getDate()).padStart(2, '0');
+          nextServiceDate = `${yyyy}-${mm}-${dd}`;
+        }
       } catch (e) {
         console.warn('Failed to calculate next service date:', e);
       }
 
       // 1. Update machine object in storage
       const machineUpdates = {
-        lastServiceDate: serviceDate,
+        lastServiceDate: canonicalServiceDate,
         nextServiceDate: nextServiceDate,
         assignedManpower: servicedBy,
         lastServicedBy: servicedBy,
@@ -2200,7 +2261,7 @@ class ExcelService {
       const pmTable = storage.getTable(TABLE_NAMES.PREVENTIVE_MAINTENANCE) || [];
       const existingPmIndex = pmTable.findIndex(r => 
         (r.machineId === machine.id || (r.serialNumber && r.serialNumber.trim().toUpperCase() === machine.serialNumber?.trim().toUpperCase())) &&
-        r.serviceDate === serviceDate
+        (r.serviceDate === canonicalServiceDate || r.serviceDate === serviceDate)
       );
 
       const pmRecord = {
@@ -2218,7 +2279,7 @@ class ExcelService {
         line: machine.lineStr || machine.line || '',
         lineId: machine.lineId || null,
         workingArea: `${machine.floorStr || machine.floor || ''} - ${machine.lineStr || machine.line || ''}`,
-        serviceDate: serviceDate,
+        serviceDate: canonicalServiceDate,
         serviceType: 'PREVENTIVE_SERVICE',
         serviceStatus: 'COMPLETED',
         serviceStickerSerial: stickerSerial || (existingPmIndex >= 0 ? pmTable[existingPmIndex].serviceStickerSerial : 'STK-PENDING'),
@@ -2228,7 +2289,7 @@ class ExcelService {
         servicedByDepartment: 'Mechanical Maintenance',
         assignedManpower: servicedBy,
         frequencyDays: frequencyDays,
-        lastServiceDate: serviceDate,
+        lastServiceDate: canonicalServiceDate,
         nextServiceDate: nextServiceDate,
         serviceChecklist: [],
         serviceRemarks: serviceRemarks,
@@ -2638,15 +2699,15 @@ class ExcelService {
     } else {
       // Fallback realistic garments machinery records if DB is empty
       recordsToUse = [
-        { machine_name: 'Lock Stitch Machine', machine_brand: 'Juki', machine_model: 'DDL-8700', machine_serial: 'SN-10001', unit_factory: 'AKM Knitwear Ltd.', floor: 'Titas Floor', line: 'Line JA-A', running: 20, usable_idle: 3, repairable_idle: 1, total_quantity: 24, machine_status: 'ACTIVE', remarks: 'Lock Stitch with direct drive servo motor', service_date: '2026-06-15' },
-        { machine_name: 'Lock Stitch Machine', machine_brand: 'Juki', machine_model: 'DDL-9000C', machine_serial: 'SN-10002', unit_factory: 'AKM Knitwear Ltd.', floor: 'Titas Floor', line: 'Line JA-A', running: 15, usable_idle: 2, repairable_idle: 0, total_quantity: 17, machine_status: 'ACTIVE', remarks: 'Auto thread trimming & digital tension', service_date: '2026-06-15' },
-        { machine_name: 'Lock Stitch Machine', machine_brand: 'Jack', machine_model: 'A4 Direct Drive', machine_serial: 'SN-10003', unit_factory: 'AKM Knitwear Ltd.', floor: 'Titas Floor', line: 'Line JA-B', running: 10, usable_idle: 1, repairable_idle: 2, total_quantity: 13, machine_status: 'ACTIVE', remarks: 'Smart computer control voice guide', service_date: '2026-06-15' },
-        { machine_name: 'Overlock Machine', machine_brand: 'Pegasus', machine_model: 'M-700 Series', machine_serial: 'SN-10004', unit_factory: 'AKM Knitwear Ltd.', floor: 'Teesta Floor', line: 'Line JAF-A', running: 12, usable_idle: 0, repairable_idle: 1, total_quantity: 13, machine_status: 'ACTIVE', remarks: '4-thread overedge differential feed', service_date: '2026-06-15' },
-        { machine_name: 'Overlock Machine', machine_brand: 'Siruba', machine_model: '747K (5-Thread)', machine_serial: 'SN-10005', unit_factory: 'AKM Knitwear Ltd.', floor: 'Teesta Floor', line: 'Line JAF-B', running: 7, usable_idle: 2, repairable_idle: 1, total_quantity: 10, machine_status: 'ACTIVE', remarks: 'Safety stitch for heavy fabric', service_date: '2026-06-15' },
-        { machine_name: 'Flatlock Machine', machine_brand: 'Kansai', machine_model: 'WX-8803', machine_serial: 'SN-10006', unit_factory: 'AKM Knitwear Ltd.', floor: 'Jamuna Floor', line: 'Line JAF-C', running: 5, usable_idle: 1, repairable_idle: 0, total_quantity: 6, machine_status: 'ACTIVE', remarks: 'Cylinder bed bottom hemming & coverstitch', service_date: '2026-06-15' },
-        { machine_name: 'Button Hole Machine', machine_brand: 'Brother', machine_model: 'HE-800B Electronic', machine_serial: 'SN-10007', unit_factory: 'AKM Knitwear Ltd.', floor: 'Jamuna Floor', line: 'Line JA-B', running: 4, usable_idle: 1, repairable_idle: 1, total_quantity: 6, machine_status: 'ACTIVE', remarks: 'Electronic lockstitch buttonhole', service_date: '2026-06-15' },
-        { machine_name: 'Bar Tack Machine', machine_brand: 'Juki', machine_model: 'LK-1900BN Electronic', machine_serial: 'SN-10008', unit_factory: 'AKM Knitwear Ltd.', floor: 'Padma Floor', line: 'Line PB-03', running: 6, usable_idle: 0, repairable_idle: 0, total_quantity: 6, machine_status: 'ACTIVE', remarks: 'Computer controlled bartacking', service_date: '2026-06-15' },
-        { machine_name: 'Feed Off The Arm', machine_brand: 'Kansai Special', machine_model: 'DLR-1508PR', machine_serial: 'SN-10009', unit_factory: 'AKM Knitwear Ltd.', floor: 'Jamuna Floor', line: 'Line PB-01', running: 3, usable_idle: 1, repairable_idle: 0, total_quantity: 4, machine_status: 'ACTIVE', remarks: 'Multi-needle waistband attaching', service_date: '2026-06-15' }
+        { machine_name: 'Lock Stitch Machine', machine_brand: 'Juki', machine_model: 'DDL-8700', machine_serial: 'SN-10001', unit_factory: 'AKM Knitwear Ltd.', floor: 'Titas Floor', line: 'Line JA-A', running: 20, usable_idle: 3, repairable_idle: 1, total_quantity: 24, machine_status: 'ACTIVE', remarks: 'Lock Stitch with direct drive servo motor', service_date: '15-06-2026' },
+        { machine_name: 'Lock Stitch Machine', machine_brand: 'Juki', machine_model: 'DDL-9000C', machine_serial: 'SN-10002', unit_factory: 'AKM Knitwear Ltd.', floor: 'Titas Floor', line: 'Line JA-A', running: 15, usable_idle: 2, repairable_idle: 0, total_quantity: 17, machine_status: 'ACTIVE', remarks: 'Auto thread trimming & digital tension', service_date: '15-06-2026' },
+        { machine_name: 'Lock Stitch Machine', machine_brand: 'Jack', machine_model: 'A4 Direct Drive', machine_serial: 'SN-10003', unit_factory: 'AKM Knitwear Ltd.', floor: 'Titas Floor', line: 'Line JA-B', running: 10, usable_idle: 1, repairable_idle: 2, total_quantity: 13, machine_status: 'ACTIVE', remarks: 'Smart computer control voice guide', service_date: '15-06-2026' },
+        { machine_name: 'Overlock Machine', machine_brand: 'Pegasus', machine_model: 'M-700 Series', machine_serial: 'SN-10004', unit_factory: 'AKM Knitwear Ltd.', floor: 'Teesta Floor', line: 'Line JAF-A', running: 12, usable_idle: 0, repairable_idle: 1, total_quantity: 13, machine_status: 'ACTIVE', remarks: '4-thread overedge differential feed', service_date: '15-06-2026' },
+        { machine_name: 'Overlock Machine', machine_brand: 'Siruba', machine_model: '747K (5-Thread)', machine_serial: 'SN-10005', unit_factory: 'AKM Knitwear Ltd.', floor: 'Teesta Floor', line: 'Line JAF-B', running: 7, usable_idle: 2, repairable_idle: 1, total_quantity: 10, machine_status: 'ACTIVE', remarks: 'Safety stitch for heavy fabric', service_date: '15-06-2026' },
+        { machine_name: 'Flatlock Machine', machine_brand: 'Kansai', machine_model: 'WX-8803', machine_serial: 'SN-10006', unit_factory: 'AKM Knitwear Ltd.', floor: 'Jamuna Floor', line: 'Line JAF-C', running: 5, usable_idle: 1, repairable_idle: 0, total_quantity: 6, machine_status: 'ACTIVE', remarks: 'Cylinder bed bottom hemming & coverstitch', service_date: '15-06-2026' },
+        { machine_name: 'Button Hole Machine', machine_brand: 'Brother', machine_model: 'HE-800B Electronic', machine_serial: 'SN-10007', unit_factory: 'AKM Knitwear Ltd.', floor: 'Jamuna Floor', line: 'Line JA-B', running: 4, usable_idle: 1, repairable_idle: 1, total_quantity: 6, machine_status: 'ACTIVE', remarks: 'Electronic lockstitch buttonhole', service_date: '15-06-2026' },
+        { machine_name: 'Bar Tack Machine', machine_brand: 'Juki', machine_model: 'LK-1900BN Electronic', machine_serial: 'SN-10008', unit_factory: 'AKM Knitwear Ltd.', floor: 'Padma Floor', line: 'Line PB-03', running: 6, usable_idle: 0, repairable_idle: 0, total_quantity: 6, machine_status: 'ACTIVE', remarks: 'Computer controlled bartacking', service_date: '15-06-2026' },
+        { machine_name: 'Feed Off The Arm', machine_brand: 'Kansai Special', machine_model: 'DLR-1508PR', machine_serial: 'SN-10009', unit_factory: 'AKM Knitwear Ltd.', floor: 'Jamuna Floor', line: 'Line PB-01', running: 3, usable_idle: 1, repairable_idle: 0, total_quantity: 4, machine_status: 'ACTIVE', remarks: 'Multi-needle waistband attaching', service_date: '15-06-2026' }
       ];
     }
 
@@ -2672,7 +2733,7 @@ class ExcelService {
       ['11', 'Total Quantity', 'total_quantity', 'FORMULA: =SUM(Running..Repairable Idle) - AUTO LINKED', 'SYSTEM-GENERATED'],
       ['12', 'Machine Status', 'machine_status', 'ACTIVE / IDLE / MAINTENANCE / BREAKDOWN', 'NO (Default ACTIVE)'],
       ['13', 'Remarks', 'remarks', 'Technical notes, attachments or remarks', 'NO (Optional)'],
-      ['14', 'Last Service Date', 'service_date', 'Servicing Date (YYYY-MM-DD) -> Auto-syncs to Preventive Maintenance (+91 Days)', 'NO (Optional)'],
+      ['14', 'Last Service Date', 'service_date', 'Servicing Date (DD-MM-YYYY) -> Auto-syncs to Preventive Maintenance (+91 Days)', 'NO (Optional)'],
       [''],
       ['2. LOCATION HIERARCHY REFERENCE (Unit/Factory -> Floor -> Line):'],
       ['Unit / Factory', 'Floor', 'Available Production Lines'],
@@ -2693,7 +2754,7 @@ class ExcelService {
       ['4. PREVENTIVE MAINTENANCE AUTO-SYNC INSTRUCTIONS:'],
       ['Feature', 'Behavior Details'],
       ['Auto-Sync to PM', 'Filling the "Last Service Date" column automatically schedules the next service (+91 Days).'],
-      ['Date Formats', 'Supports YYYY-MM-DD, DD/MM/YYYY, MM/DD/YYYY, or native Excel dates.'],
+      ['Date Formats', 'Standard format: DD-MM-YYYY (e.g. 15-06-2026). Also accepts DD/MM/YYYY, DD-MM-YY, or native Excel dates.'],
       ['Update Mode', 'When re-importing via Machine Inventory, existing machines are updated with their servicing dates without duplicating records.']
     ];
     const wsRef = XLSX.utils.aoa_to_sheet(refData);

@@ -254,18 +254,28 @@ export function renderInventoryTable() {
       renderTd: (m, meta, tdStyle, tdClass) => `<td class="${tdClass}" style="text-align: center; ${tdStyle}"><span class="badge ${meta.statusBadgeClass}">${(m.status || 'ACTIVE').replace('_', ' ')}</span></td>`
     },
     {
+      key: 'service_date',
+      label: 'Last Service Date',
+      width: 140,
+      renderTh: (thStyle, thClass) => `<th class="${thClass}" style="width: 140px; min-width: 140px; max-width: 140px; text-align: center; ${thStyle}">Last Service Date</th>`,
+      renderTd: (m, meta, tdStyle, tdClass) => {
+        const sDate = m.lastServiceDate || m.service_date || m.serviceDate || '';
+        return `<td class="${tdClass}" style="text-align: center; ${tdStyle}">${excelService.formatDateDMY(sDate) || '—'}</td>`;
+      }
+    },
+    {
       key: 'purchase_date',
       label: 'Purchase Date',
       width: 120,
       renderTh: (thStyle, thClass) => `<th class="${thClass}" style="width: 120px; min-width: 120px; max-width: 120px; ${thStyle}">Purchase Date</th>`,
-      renderTd: (m, meta, tdStyle, tdClass) => `<td class="${tdClass}" style="${tdStyle}">${m.purchase_date || m.purchaseDate || '—'}</td>`
+      renderTd: (m, meta, tdStyle, tdClass) => `<td class="${tdClass}" style="${tdStyle}">${excelService.formatDateDMY(m.purchase_date || m.purchaseDate) || '—'}</td>`
     },
     {
       key: 'installation_date',
       label: 'Install Date',
       width: 120,
       renderTh: (thStyle, thClass) => `<th class="${thClass}" style="width: 120px; min-width: 120px; max-width: 120px; ${thStyle}">Install Date</th>`,
-      renderTd: (m, meta, tdStyle, tdClass) => `<td class="${tdClass}" style="${tdStyle}">${m.installation_date || m.installationDate || '—'}</td>`
+      renderTd: (m, meta, tdStyle, tdClass) => `<td class="${tdClass}" style="${tdStyle}">${excelService.formatDateDMY(m.installation_date || m.installationDate) || '—'}</td>`
     },
     {
       key: 'supplier_name',

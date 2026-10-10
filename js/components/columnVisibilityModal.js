@@ -58,6 +58,7 @@ export function renderColumnVisibilityModal() {
   ];
 
   const optionalCols = [
+    { key: 'service_date', label: 'Last Service Date (DD-MM-YYYY)' },
     { key: 'purchase_date', label: 'Purchase Date' },
     { key: 'installation_date', label: 'Installation Date' },
     { key: 'supplier_name', label: 'Supplier / Vendor' },
