@@ -146,10 +146,10 @@ class MachineService {
   getMachines(params = {}) {
     let allMachines = storage.getTable(TABLE_NAMES.MACHINES) || [];
 
-    // 1. Strict Backend / Storage-level Organization Scoping with Cross-Floor Idle Visibility
+    // 1. Strict Backend / Storage-level Organization Scoping (Cross-Floor Idle view is optional via includeCrossFloorIdle)
     const scoped = authService.getScopedFilter();
     if (scoped) {
-      allMachines = allMachines.filter(m => authService.canViewMachine(m));
+      allMachines = allMachines.filter(m => authService.canViewMachine(m, null, Boolean(params.includeCrossFloorIdle)));
     }
 
     // 2. Cascading Primary Organization Filters

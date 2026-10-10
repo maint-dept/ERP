@@ -1919,22 +1919,22 @@ class AuthService {
    * Check if a machine can be viewed by the user:
    * 1. If inside assigned scope: Allowed (All machines on assigned floor/line: running + idle + repairable)
    * 2. If machine is outside assigned scope:
-   *    Allowed ONLY if it is an Idle machine (Usable Idle, Idle, Repairable Idle, or on Central Idle floor).
+   *    Allowed ONLY if includeCrossFloorIdle is true AND it is an Idle machine (Usable Idle, Idle, Repairable Idle, or Central Idle).
    * 3. Any running/active non-idle machine on other floors is strictly hidden from view.
    */
-  canViewMachine(machine, user = null) {
+  canViewMachine(machine, user = null, includeCrossFloorIdle = false) {
     if (!machine) return false;
     const u = user || this.getCurrentUser();
     if (!u) return false;
     if (this.isSuperAdmin(u)) return true;
 
-    // 1. Within assigned location scope
+    // 1. Within assigned location scope (default allowed for their assigned floor/line)
     if (this.isLocationAllowed(machine.unitId, machine.floorId, machine.lineId, u)) {
       return true;
     }
 
-    // 2. Cross-floor idle machine visibility (Usable Idle, Idle, Repairable Idle, or Central Idle)
-    if (this.isIdleMachine(machine)) {
+    // 2. Cross-floor idle machine visibility (ONLY allowed when explicitly enabled via button)
+    if (includeCrossFloorIdle && this.isIdleMachine(machine)) {
       return true;
     }
 
@@ -1946,12 +1946,12 @@ class AuthService {
    * Check if a machine is strictly View-Only for the user
    * (can view, but cannot edit or operate due to floor scoping)
    */
-  isMachineViewOnlyForUser(machine, user = null) {
+  isMachineViewOnlyForUser(machine, user = null, includeCrossFloorIdle = false) {
     if (!machine) return false;
     const u = user || this.getCurrentUser();
     if (!u) return false;
     if (this.isSuperAdmin(u)) return false;
-    return !this.canOperateMachine(machine, u) && this.canViewMachine(machine, u);
+    return !this.canOperateMachine(machine, u) && this.canViewMachine(machine, u, includeCrossFloorIdle);
   }
 
   getScopedFilter() {

@@ -27,9 +27,25 @@ export function renderInventoryTable() {
   const visibleCols = state.get('visibleColumns') || new Set();
   const customFields = customFieldService.getTableFields();
   const user = authService.getCurrentUser();
+  const userScope = user?.assignedScope;
+  const isScopedUser = userScope && !userScope.allGroups && ((userScope.floorIds?.length > 0) || (userScope.unitIds?.length > 0));
+  const showCrossFloorIdle = Boolean(state.get('showCrossFloorIdle'));
 
-  // 1. Fetch filtered machine dataset
-  const queryResult = machineService.getMachines(filters);
+  // Default assigned location auto-application for scoped user when cross-floor idle view is off
+  if (isScopedUser && !showCrossFloorIdle) {
+    if (!filters.floorId && userScope.floorIds?.length === 1) {
+      filters.floorId = userScope.floorIds[0];
+    }
+    if (!filters.unitId && userScope.unitIds?.length === 1) {
+      filters.unitId = userScope.unitIds[0];
+    }
+  }
+
+  // 1. Fetch filtered machine dataset (cross-floor idle machines included only when explicitly toggled on)
+  const queryResult = machineService.getMachines({
+    ...filters,
+    includeCrossFloorIdle: showCrossFloorIdle
+  });
   const machines = queryResult.items;
 
   // 2. Summary Metric Indicators (Total Machines, Running, Usable Idle, Repairable Idle)
@@ -41,10 +57,13 @@ export function renderInventoryTable() {
   const totalRepairableIdle = queryResult.metrics?.repairable ?? 0;
 
   // 3. Hierarchical Cascading Dropdown Options (Group -> Unit -> Floor -> Line)
+  // When cross-floor idle is off, respect assigned location scope (shows only user's assigned floor)
+  // When cross-floor idle is on, allow viewing other floors with idle machines
+  const ignoreScopeForDropdowns = !isScopedUser || showCrossFloorIdle;
   const groups = masterDataService.getGroups();
-  const units = masterDataService.getUnits(filters.groupId, false, true);
-  const floors = masterDataService.getFloors(filters.unitId, filters.groupId, false, true);
-  const lines = masterDataService.getLines(filters.floorId, filters.unitId, filters.groupId, false, true);
+  const units = masterDataService.getUnits(filters.groupId, false, ignoreScopeForDropdowns);
+  const floors = masterDataService.getFloors(filters.unitId, filters.groupId, false, ignoreScopeForDropdowns);
+  const lines = masterDataService.getLines(filters.floorId, filters.unitId, filters.groupId, false, ignoreScopeForDropdowns);
   const machineNames = masterDataService.getMachineNames();
   const brands = masterDataService.getBrandsForMachineName(filters.machineNameId);
   const models = masterDataService.getModels(filters.brandId, filters.machineNameId);
@@ -121,16 +140,31 @@ export function renderInventoryTable() {
 
   const hasActiveFilters = activeTags.length > 0;
 
-  const userScope = user?.assignedScope;
-  const isScopedUser = userScope && !userScope.allGroups && ((userScope.floorIds?.length > 0) || (userScope.unitIds?.length > 0));
   let scopeBadgeHtml = '';
+  let scopeLabel = '';
   if (isScopedUser) {
     const scopeFloorNames = (userScope.floorIds || []).map(fid => flrMap.get(fid) || fid).filter(Boolean);
-    const scopeLabel = scopeFloorNames.length > 0 ? scopeFloorNames.join(', ') : 'Assigned Location';
+    scopeLabel = scopeFloorNames.length > 0 ? scopeFloorNames.join(', ') : 'Assigned Location';
     scopeBadgeHtml = `
-      <span class="badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); padding: 2px 7px; font-size: 11px; border-radius: 4px; display: inline-flex; align-items: center; gap: 4px; font-weight: 600;" title="Operational permissions apply to your assigned floor. Other floors are accessible in View-Only mode for Usable Idle, Idle, and Central Idle machines.">
-        📍 Assigned: <strong>${scopeLabel}</strong> &bull; 👁️ Cross-Floor Idle View
+      <span class="badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); padding: 2px 8px; font-size: 11px; border-radius: 5px; display: inline-flex; align-items: center; gap: 4px; font-weight: 700;" title="Default View: Operational machines on your assigned floor">
+        📍 ASSIGNED: <strong>${scopeLabel.toUpperCase()}</strong>
       </span>
+      <button 
+        id="btn-toggle-cross-floor-idle" 
+        type="button" 
+        class="btn btn-xs" 
+        style="padding: 2px 9px; font-size: 11px; font-weight: 700; border-radius: 5px; display: inline-flex; align-items: center; gap: 5px; cursor: pointer; transition: all 0.2s ease; ${
+          showCrossFloorIdle 
+            ? 'background: #0284c7; color: #fff; border: 1px solid #38bdf8; box-shadow: 0 0 10px rgba(56, 189, 248, 0.45);' 
+            : 'background: rgba(15, 23, 42, 0.65); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.3);'
+        }"
+        title="${showCrossFloorIdle ? 'Click to exit Cross-Floor Idle View and return strictly to your assigned floor machines' : 'Click to view standby & idle machines across all other factory floors'}"
+      >
+        <span>👁️</span> CROSS-FLOOR IDLE VIEW
+        <span class="badge" style="font-size: 9px; padding: 1px 5px; border-radius: 3px; font-weight: 800; ${showCrossFloorIdle ? 'background: #22c55e; color: #fff;' : 'background: rgba(148, 163, 184, 0.25); color: #94a3b8;'}">
+          ${showCrossFloorIdle ? 'ON' : 'OFF'}
+        </span>
+      </button>
     `;
   }
 
@@ -146,7 +180,7 @@ export function renderInventoryTable() {
       renderTh: (thStyle, thClass) => `<th class="th-sortable ${thClass}" data-sort="machineName" style="width: 220px; min-width: 220px; max-width: 220px; cursor: pointer; ${thStyle}">Machine Name</th>`,
       renderTd: (m, meta, tdStyle, tdClass) => {
         const name = (mnMap.get(m.machineNameId) || m.machineName || m.name || brdMap.get(m.brandId) || (m.brand ? m.brand + ' Machine' : '') || '—').trim();
-        const isViewOnly = authService.isMachineViewOnlyForUser(m);
+        const isViewOnly = authService.isMachineViewOnlyForUser(m, null, showCrossFloorIdle);
         const viewOnlyBadge = isViewOnly 
           ? `<span class="badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); font-size: 10px; padding: 1px 6px; margin-left: 6px; vertical-align: middle; font-weight: 600; white-space: nowrap;" title="View-Only: This machine belongs to another floor or Central Idle">👁️ View Only</span>` 
           : '';
@@ -207,7 +241,7 @@ export function renderInventoryTable() {
       renderTh: (thStyle, thClass) => `<th class="th-sortable ${thClass}" data-sort="floor" style="width: 130px; min-width: 130px; max-width: 130px; cursor: pointer; ${thStyle}">Floor</th>`,
       renderTd: (m, meta, tdStyle, tdClass) => {
         const flr = flrMap.get(m.floorId) || m.floor || '—';
-        const isViewOnly = authService.isMachineViewOnlyForUser(m);
+        const isViewOnly = authService.isMachineViewOnlyForUser(m, null, showCrossFloorIdle);
         return `<td class="${tdClass}" style="overflow: hidden; text-overflow: ellipsis; ${tdStyle}" title="${flr}">${flr}${isViewOnly ? ` <span class="badge" style="font-size: 9.5px; padding: 1px 5px; background: rgba(56, 189, 248, 0.12); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 4px; white-space: nowrap;" title="Cross-Floor Idle Machine (View-Only)">👁️ Idle</span>` : ''}</td>`;
       }
     },
@@ -330,7 +364,7 @@ export function renderInventoryTable() {
     width: 110,
     renderTh: (thStyle, thClass) => `<th class="${thClass}" style="width: 110px; min-width: 110px; max-width: 110px; text-align: center; ${thStyle}">Actions</th>`,
     renderTd: (m, meta, tdStyle, tdClass) => {
-      const isViewOnly = authService.isMachineViewOnlyForUser(m);
+      const isViewOnly = authService.isMachineViewOnlyForUser(m, null, showCrossFloorIdle);
       if (isViewOnly) {
         return `
           <td class="${tdClass}" style="text-align: center; ${tdStyle}">
@@ -683,7 +717,7 @@ export function renderInventoryTable() {
             <!-- Floor -->
             <div class="filter-select-item" style="flex: 1 1 120px; min-width: 115px;">
               <select id="filter-floor" class="filter-select-compact" style="height: 30px; font-size: 11.5px; width: 100%;">
-                <option value="">All Floors (${floors.length})</option>
+                <option value="">${isScopedUser && !showCrossFloorIdle ? 'Assigned Floor' : 'All Floors'} (${floors.length})</option>
                 ${floors.map(f => `<option value="${f.id}" ${filters.floorId === f.id ? 'selected' : ''}>${f.name}</option>`).join('')}
               </select>
             </div>
@@ -772,6 +806,18 @@ export function renderInventoryTable() {
                   ${models.map(m => `<option value="${m.id}" ${filters.modelId === m.id ? 'selected' : ''}>${m.name}</option>`).join('')}
                 </select>
               </div>
+            </div>
+          ` : ''}
+
+          ${showCrossFloorIdle ? `
+            <div style="background: rgba(2, 132, 199, 0.12); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 6px; padding: 5px 12px; margin-top: 5px; display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 11.5px; color: #e0f2fe;">
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <span>👁️</span>
+                <span><strong>Cross-Floor Idle View Active:</strong> Displaying standby &amp; idle machines across other factory floors (View-Only). Your operational privileges are strictly for <strong>${scopeLabel || 'your assigned floor'}</strong>.</span>
+              </div>
+              <button id="btn-banner-exit-cross-idle" type="button" class="btn btn-secondary btn-xs" style="padding: 2px 8px; font-size: 11px; font-weight: 700; color: #38bdf8; border-color: rgba(56, 189, 248, 0.4); cursor: pointer; white-space: nowrap;">
+                ↩️ Return to My Floor
+              </button>
             </div>
           ` : ''}
 
@@ -1048,6 +1094,33 @@ export function initInventoryTableEvents() {
     btnToggleAdv.addEventListener('click', () => {
       showAdvancedFilters = !showAdvancedFilters;
       state.emit('filters:changed', state.get('filters'));
+    });
+  }
+
+  // Toggle Cross-Floor Idle View Button
+  const btnToggleCrossIdle = document.getElementById('btn-toggle-cross-floor-idle');
+  if (btnToggleCrossIdle) {
+    btnToggleCrossIdle.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const currentMode = Boolean(state.get('showCrossFloorIdle'));
+      const nextMode = !currentMode;
+      state.set('showCrossFloorIdle', nextMode);
+      if (nextMode) {
+        state.updateFilters({ floorId: '', page: 1 });
+        notificationService.info('👁️ Cross-Floor Idle View activated — Showing idle machines across other floors.');
+      } else {
+        const u = authService.getCurrentUser();
+        const defFloor = (u?.assignedScope?.floorIds?.length === 1) ? u.assignedScope.floorIds[0] : '';
+        state.updateFilters({ floorId: defFloor, page: 1 });
+        notificationService.success('📍 Returned to your default assigned floor machines.');
+      }
+    });
+  }
+
+  const btnBannerExit = document.getElementById('btn-banner-exit-cross-idle');
+  if (btnBannerExit) {
+    btnBannerExit.addEventListener('click', () => {
+      if (btnToggleCrossIdle) btnToggleCrossIdle.click();
     });
   }
 

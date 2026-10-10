@@ -45,6 +45,7 @@ class GlobalState {
 
     this.state = {
       currentView: initialView, // 'dashboard', 'inventory', 'master-data', 'custom-fields', 'approvals', 'users', 'reports', 'audit-logs', 'settings'
+      showCrossFloorIdle: false, // Explicit toggle for viewing cross-floor idle machines
       filters: {
         groupId: '',
         unitId: '',
@@ -72,6 +73,25 @@ class GlobalState {
     this.listeners = new Map();
   }
 
+  getDefaultScopeFilters() {
+    let defFloor = '';
+    let defUnit = '';
+    try {
+      if (typeof authService !== 'undefined') {
+        const u = authService.getCurrentUser();
+        if (u && !authService.isSuperAdmin(u) && u.assignedScope && !u.assignedScope.allGroups) {
+          if (Array.isArray(u.assignedScope.floorIds) && u.assignedScope.floorIds.length === 1) {
+            defFloor = u.assignedScope.floorIds[0];
+          }
+          if (Array.isArray(u.assignedScope.unitIds) && u.assignedScope.unitIds.length === 1) {
+            defUnit = u.assignedScope.unitIds[0];
+          }
+        }
+      }
+    } catch (_) {}
+    return { floorId: defFloor, unitId: defUnit };
+  }
+
   get(key) {
     return this.state[key];
   }
@@ -91,10 +111,12 @@ class GlobalState {
   }
 
   resetFilters() {
+    const scopeDefaults = this.getDefaultScopeFilters();
+    this.state.showCrossFloorIdle = false;
     this.state.filters = {
       groupId: '',
-      unitId: '',
-      floorId: '',
+      unitId: scopeDefaults.unitId || '',
+      floorId: scopeDefaults.floorId || '',
       lineId: '',
       machineNameId: '',
       brandId: '',
@@ -107,6 +129,7 @@ class GlobalState {
       sortField: 'sl',
       sortOrder: 'asc'
     };
+    this.emit('change:showCrossFloorIdle', false);
     this.emit('filters:changed', this.state.filters);
   }
 
