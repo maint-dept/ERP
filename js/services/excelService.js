@@ -9,6 +9,7 @@ import { INITIAL_DATA } from '../db/initialData.js';
 import { authService } from './authService.js';
 import { customFieldService } from './customFieldService.js';
 import { auditService } from './auditService.js';
+import { historyService } from './historyService.js';
 import { smartStorageService } from './smartStorageService.js?v=4.22.19';
 
 export function calculateLevenshtein(a, b) {
@@ -507,7 +508,11 @@ class ExcelService {
         { id: 'col-10', header: 'Repairable Idle', fieldKey: 'repairable_idle', required: false, defaultValue: '0', order: 10, visible: true },
         { id: 'col-11', header: 'Total Quantity', fieldKey: 'total_quantity', required: false, defaultValue: '— (Auto-Calculated)', order: 11, visible: true, isCalculated: true, readOnly: true },
         { id: 'col-12', header: 'Machine Status', fieldKey: 'machine_status', required: false, defaultValue: 'ACTIVE', order: 12, visible: true },
-        { id: 'col-13', header: 'Remarks', fieldKey: 'remarks', required: false, defaultValue: '', order: 13, visible: true }
+        { id: 'col-13', header: 'Remarks', fieldKey: 'remarks', required: false, defaultValue: '', order: 13, visible: true },
+        { id: 'col-14', header: 'Last Service Date', fieldKey: 'service_date', required: false, defaultValue: '', order: 14, visible: true },
+        { id: 'col-15', header: 'Serviced By (Card #)', fieldKey: 'serviced_by', required: false, defaultValue: '', order: 15, visible: true },
+        { id: 'col-16', header: 'Sticker Serial No', fieldKey: 'service_sticker_serial', required: false, defaultValue: '', order: 16, visible: true },
+        { id: 'col-17', header: 'Service Remarks', fieldKey: 'service_remarks', required: false, defaultValue: '', order: 17, visible: true }
       ]
     };
   }
@@ -759,6 +764,20 @@ class ExcelService {
       return record.remarks || record.description || record.notes || '';
     }
 
+    // Preventive Maintenance Servicing Fields (Directly in Machine Inventory)
+    if (key === 'service_date' || key === 'last_service_date' || key === 'servicedate' || key === 'lastservicedate' || key === 'maintenancedate') {
+      return record.lastServiceDate || record.service_date || record.serviceDate || record.customValues?.service_date || '';
+    }
+    if (key === 'serviced_by' || key === 'servicedby' || key === 'technician' || key === 'mechanic' || key === 'last_serviced_by') {
+      return record.lastServicedBy || record.serviced_by || record.servicedBy || record.assignedManpower || record.customValues?.serviced_by || '';
+    }
+    if (key === 'service_sticker_serial' || key === 'servicestickerserial' || key === 'stickerserial' || key === 'stickerno' || key === 'sticker_serial') {
+      return record.serviceStickerSerial || record.sticker_serial || record.stickerSerial || record.customValues?.service_sticker_serial || '';
+    }
+    if (key === 'service_remarks' || key === 'serviceremarks' || key === 'maintenanceremarks' || key === 'pmremarks') {
+      return record.serviceRemarks || record.service_remarks || record.customValues?.service_remarks || '';
+    }
+
     // Dynamic Custom Fields (e.g. cf_voltage, cf_max_rpm)
     if (key.startsWith('cf_')) {
       const code = key.replace('cf_', '');
@@ -925,6 +944,58 @@ class ExcelService {
   }
 
   /**
+   * Universal Date Normalizer (Handles Excel numeric serials, YYYY-MM-DD, DD-MM-YYYY, DD/MM/YYYY, etc.)
+   */
+  parseCleanDate(rawDate) {
+    if (rawDate === undefined || rawDate === null || rawDate === '') return '';
+    if (rawDate instanceof Date && !isNaN(rawDate.getTime())) {
+      const yyyy = rawDate.getFullYear();
+      const mm = String(rawDate.getMonth() + 1).padStart(2, '0');
+      const dd = String(rawDate.getDate()).padStart(2, '0');
+      return `${yyyy}-${mm}-${dd}`;
+    }
+    if (typeof rawDate === 'number' || (!isNaN(rawDate) && !isNaN(parseFloat(rawDate)) && isFinite(rawDate) && !String(rawDate).includes('-') && !String(rawDate).includes('/'))) {
+      const serial = parseFloat(rawDate);
+      if (serial > 1000 && serial < 100000) {
+        // Excel 1900 date system (leap year bug: 25569 days between 1899-12-30 and 1970-01-01)
+        const utcDays = Math.floor(serial - 25569);
+        const utcValue = utcDays * 86400;
+        const dateInfo = new Date(utcValue * 1000);
+        const yyyy = dateInfo.getUTCFullYear();
+        const mm = String(dateInfo.getUTCMonth() + 1).padStart(2, '0');
+        const dd = String(dateInfo.getUTCDate()).padStart(2, '0');
+        return `${yyyy}-${mm}-${dd}`;
+      }
+    }
+
+    const s = String(rawDate).trim();
+    if (!s || s === 'N/A' || s === 'None' || s === 'Never' || s === '—' || s === '-') return '';
+
+    if (/^\d{4}-\d{1,2}-\d{1,2}$/.test(s)) {
+      const [yyyy, mm, dd] = s.split('-');
+      return `${yyyy}-${mm.padStart(2, '0')}-${dd.padStart(2, '0')}`;
+    }
+
+    if (/^\d{1,2}[-/]\d{1,2}[-/]\d{4}$/.test(s)) {
+      const parts = s.split(/[-/]/);
+      const dd = parts[0].padStart(2, '0');
+      const mm = parts[1].padStart(2, '0');
+      const yyyy = parts[2];
+      return `${yyyy}-${mm}-${dd}`;
+    }
+
+    const dt = new Date(s);
+    if (!isNaN(dt.getTime())) {
+      const yyyy = dt.getFullYear();
+      const mm = String(dt.getMonth() + 1).padStart(2, '0');
+      const dd = String(dt.getDate()).padStart(2, '0');
+      return `${yyyy}-${mm}-${dd}`;
+    }
+
+    return '';
+  }
+
+  /**
    * Suggest smart column mapping matching common garments inventory naming conventions
    */
   suggestColumnMapping(fileHeaders, sheetName = '') {
@@ -962,7 +1033,11 @@ class ExcelService {
       supplier_name: ['suppliername', 'supplier', 'vendor', 'vendorname'],
       country_of_origin: ['countryoforigin', 'origin', 'country', 'madein'],
       machine_capacity: ['machinecapacity', 'capacity', 'maxrpm', 'speed', 'rpm'],
-      remarks: ['remarks', 'notes', 'comments', 'description', 'remark', 'specs']
+      remarks: ['remarks', 'notes', 'comments', 'description', 'remark', 'specs'],
+      service_date: ['lastservicedate', 'servicedate', 'servicingdate', 'lastservicingdate', 'maintenancedate', 'pmdate', 'lastserviced', 'lastservice', 'servicedon', 'dateofservicing'],
+      serviced_by: ['servicedby', 'technician', 'mechanic', 'servicedbycard', 'mechaniccard', 'techniciancard', 'serviceman', 'assignedmechanic', 'servicedbyname'],
+      service_sticker_serial: ['servicestickerserial', 'stickerserial', 'stickerno', 'stickersl', 'physicalstickerno', 'stickerserialno', 'pmstickerno', 'stickerslno'],
+      service_remarks: ['serviceremarks', 'servicingremarks', 'maintenanceremarks', 'pmremarks', 'servicecondition', 'servicedetails']
     };
 
     const customFields = customFieldService.getAllFields();
@@ -1543,6 +1618,24 @@ class ExcelService {
           }
         });
 
+        // 5B. Preventive Maintenance Servicing Columns
+        let rawServiceDate = mapped.service_date || mapped.servicedate || mapped.last_service_date || mapped.lastservicedate || '';
+        if (!rawServiceDate) {
+          for (const [k, v] of Object.entries(row)) {
+            const cleanK = k.toLowerCase().replace(/[^a-z0-9]/g, '');
+            if (cleanK.includes('servicedate') || cleanK.includes('servicingdate') || cleanK.includes('maintenancedate') || cleanK.includes('pmdate') || cleanK === 'lastservice') {
+              if (v !== undefined && v !== null && String(v).trim() !== '') {
+                rawServiceDate = v;
+                break;
+              }
+            }
+          }
+        }
+        const cleanServiceDate = this.parseCleanDate(rawServiceDate);
+        const servicedByStr = mapped.serviced_by || mapped.servicedby || mapped.technician || '';
+        const stickerSerialStr = mapped.service_sticker_serial || mapped.servicestickerserial || mapped.stickerserial || mapped.stickerno || '';
+        const serviceRemarksStr = mapped.service_remarks || mapped.serviceremarks || '';
+
         // Calculate Diff for Updates
         let diffs = [];
         if (isUpdate && existingMachine) {
@@ -1591,7 +1684,11 @@ class ExcelService {
             quantity: totalQtyVal,
             status: statusStr,
             remarks: mapped.remarks || '',
-            customValues: customValues
+            customValues: customValues,
+            serviceDate: cleanServiceDate,
+            servicedBy: servicedByStr,
+            serviceStickerSerial: stickerSerialStr,
+            serviceRemarks: serviceRemarksStr
           }
         });
       });
@@ -1693,6 +1790,9 @@ class ExcelService {
     }
     if (mapped.remarks && mapped.remarks !== existing.remarks) {
       checkField('remarks', 'Remarks', existing.remarks, mapped.remarks);
+    }
+    if (mapped.service_date && mapped.service_date !== existing.lastServiceDate) {
+      checkField('serviceDate', 'Last Service Date', existing.lastServiceDate, mapped.service_date);
     }
 
     return diffs;
@@ -1885,6 +1985,9 @@ class ExcelService {
               }
 
               storage.update(TABLE_NAMES.MACHINES, existing.id, updates);
+              if (d.serviceDate) {
+                this._syncPreventiveMaintenanceRecord(existing, d, user);
+              }
               sheetUpdated++;
               updatedCount++;
             } else {
@@ -1965,6 +2068,12 @@ class ExcelService {
       // Batch insert all new machines for this sheet in a single high-speed pass
       if (sheetNewMachines.length > 0) {
         storage.insertMany(TABLE_NAMES.MACHINES, sheetNewMachines);
+        sheetNewMachines.forEach(nm => {
+          const origItem = sheet.records.find(r => r.data?.serialNumber === nm.serialNumber);
+          if (origItem?.data?.serviceDate) {
+            this._syncPreventiveMaintenanceRecord(nm, origItem.data, user);
+          }
+        });
       }
 
       sheetStats.push({
@@ -2011,6 +2120,135 @@ class ExcelService {
       sheetStats: sheetStats,
       failedRows: failedRows
     };
+  }
+
+  /**
+   * Automatic 1-Click Preventive Maintenance Synchronizer for Machine Inventory Imports
+   * When an Excel row includes a Service Date, this method automatically:
+   * 1. Resolves service interval days based on machine type
+   * 2. Auto-calculates next due service date
+   * 3. Updates machine live profile with last & next service dates and sticker serial
+   * 4. Adds/Updates completed record in PREVENTIVE_MAINTENANCE table
+   * 5. Enriches Machine Lifetime History Passport
+   */
+  _syncPreventiveMaintenanceRecord(machine, d, user) {
+    if (!machine || !d || !d.serviceDate) return;
+
+    try {
+      const serviceDate = d.serviceDate;
+      const servicedBy = (d.servicedBy || machine.assignedManpower || user?.fullName || 'Assigned Mechanic').trim();
+      const stickerSerial = (d.serviceStickerSerial || machine.serviceStickerSerial || '').trim();
+      const serviceRemarks = (d.serviceRemarks || d.remarks || 'Imported with Machine Inventory').trim();
+
+      // Resolve frequency days based on machine type
+      const configs = storage.getTable(TABLE_NAMES.PREVENTIVE_CONFIG) || [];
+      const mTypeName = machine.machineNameStr || machine.machineName || '';
+      let frequencyDays = 90;
+      if (configs.length > 0 && mTypeName) {
+        const queryNorm = mTypeName.toLowerCase().replace(/[\s\-_/]+/g, '');
+        const match = configs.find(c => {
+          if (c.machineType && c.machineType.toLowerCase().replace(/[\s\-_/]+/g, '') === queryNorm) return true;
+          if (Array.isArray(c.aliases)) {
+            return c.aliases.some(a => a.toLowerCase().replace(/[\s\-_/]+/g, '') === queryNorm);
+          }
+          return false;
+        });
+        if (match && match.frequencyDays) {
+          frequencyDays = match.frequencyDays;
+        }
+      }
+
+      // Calculate nextServiceDate
+      let nextServiceDate = '';
+      try {
+        const parts = serviceDate.split('-');
+        const dt = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+        dt.setDate(dt.getDate() + frequencyDays);
+        const yyyy = dt.getFullYear();
+        const mm = String(dt.getMonth() + 1).padStart(2, '0');
+        const dd = String(dt.getDate()).padStart(2, '0');
+        nextServiceDate = `${yyyy}-${mm}-${dd}`;
+      } catch (e) {
+        console.warn('Failed to calculate next service date:', e);
+      }
+
+      // 1. Update machine object in storage
+      const machineUpdates = {
+        lastServiceDate: serviceDate,
+        nextServiceDate: nextServiceDate,
+        assignedManpower: servicedBy,
+        lastServicedBy: servicedBy,
+        updatedAt: new Date().toISOString()
+      };
+      if (stickerSerial) machineUpdates.serviceStickerSerial = stickerSerial;
+      storage.update(TABLE_NAMES.MACHINES, machine.id, machineUpdates);
+
+      // 2. Add or update record in PREVENTIVE_MAINTENANCE table
+      const pmTable = storage.getTable(TABLE_NAMES.PREVENTIVE_MAINTENANCE) || [];
+      const existingPmIndex = pmTable.findIndex(r => 
+        (r.machineId === machine.id || (r.serialNumber && r.serialNumber.trim().toUpperCase() === machine.serialNumber?.trim().toUpperCase())) &&
+        r.serviceDate === serviceDate
+      );
+
+      const pmRecord = {
+        id: existingPmIndex >= 0 ? pmTable[existingPmIndex].id : `pm-rec-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
+        machineId: machine.id,
+        serialNumber: machine.serialNumber,
+        machineName: machine.machineNameStr || machine.machineName || 'Machine',
+        machineType: mTypeName || 'Sewing Machine',
+        model: machine.modelStr || machine.model || '',
+        brand: machine.brandStr || machine.brand || '',
+        unit: machine.unitStr || machine.unit || '',
+        unitId: machine.unitId || null,
+        floor: machine.floorStr || machine.floor || '',
+        floorId: machine.floorId || null,
+        line: machine.lineStr || machine.line || '',
+        lineId: machine.lineId || null,
+        workingArea: `${machine.floorStr || machine.floor || ''} - ${machine.lineStr || machine.line || ''}`,
+        serviceDate: serviceDate,
+        serviceType: 'PREVENTIVE_SERVICE',
+        serviceStatus: 'COMPLETED',
+        serviceStickerSerial: stickerSerial || (existingPmIndex >= 0 ? pmTable[existingPmIndex].serviceStickerSerial : 'STK-PENDING'),
+        servicedBy: servicedBy,
+        servicedByCardNumber: '',
+        servicedByDesignation: 'Maintenance Mechanic',
+        servicedByDepartment: 'Mechanical Maintenance',
+        assignedManpower: servicedBy,
+        frequencyDays: frequencyDays,
+        lastServiceDate: serviceDate,
+        nextServiceDate: nextServiceDate,
+        serviceChecklist: [],
+        serviceRemarks: serviceRemarks,
+        createdAt: existingPmIndex >= 0 ? pmTable[existingPmIndex].createdAt : new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        loggedBy: user.username || user.fullName || 'admin'
+      };
+
+      if (existingPmIndex >= 0) {
+        pmTable[existingPmIndex] = pmRecord;
+      } else {
+        pmTable.push(pmRecord);
+      }
+      storage.saveTable(TABLE_NAMES.PREVENTIVE_MAINTENANCE, pmTable);
+
+      // 3. Record in machine passport history
+      if (typeof historyService !== 'undefined' && historyService.recordActivity) {
+        historyService.recordActivity({
+          machineId: machine.id,
+          serialNumber: machine.serialNumber,
+          actionType: 'MAINTENANCE_SERVICE',
+          title: `Preventive Maintenance Synced [Sticker: ${stickerSerial || 'N/A'}]`,
+          details: `Service record automatically synced during Machine Inventory Excel import. Service Date: ${serviceDate}. Next Due Date: ${nextServiceDate}. Performed by: ${servicedBy}.`,
+          performedBy: user?.id,
+          performedByName: servicedBy,
+          remarks: serviceRemarks
+        });
+      }
+
+      window.dispatchEvent(new CustomEvent('erp:preventive-maintenance-updated'));
+    } catch (err) {
+      console.warn('Preventive Maintenance automatic sync failed for machine', machine?.serialNumber, err);
+    }
   }
 
   /**

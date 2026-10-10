@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Al-Muslim Group Garments Factory Maintenance Machine ERP
  * Preventive Machine Maintenance Core Service
  * 
@@ -715,6 +715,281 @@ class PreventiveMaintenanceService {
       newConfigsCount,
       affectedMachinesCount,
       totalProcessed: items.length
+    };
+  }
+
+  // =========================================================================
+  // 1.2 BULK EXCEL MACHINE SERVICING IMPORT & TEMPLATE EXPORTER
+  // =========================================================================
+
+  /**
+   * Generates and downloads a pre-populated Excel template containing all machines in factory.
+   * Users can enter or update Last Service Date, Serviced By, and Physical Sticker Sl No. in bulk.
+   */
+  async exportServicingExcelTemplate() {
+    const allMachines = this.getAllMachinesWithMaintenance();
+    const rows = allMachines.map((m, idx) => ({
+      'SL': idx + 1,
+      'Machine Serial': m.serialNumber,
+      'Machine Name': m.machineName,
+      'Brand': m.brand,
+      'Model': m.model,
+      'Floor': m.floor,
+      'Line': m.line,
+      'Machine Status': m.machineStatus,
+      'Last Service Date': m.lastServiceDate || '',
+      'Serviced By (Card # / Name)': m.assignedManpower || m.lastServicedBy || '',
+      'Physical Sticker Sl No.': m.serviceStickerSerial && m.serviceStickerSerial !== 'STK-PENDING' ? m.serviceStickerSerial : '',
+      'Service Remarks': m.serviceRemarks || 'Routine maintenance servicing'
+    }));
+
+    const fileName = `AlMuslim_Preventive_Maintenance_Servicing_Template_${new Date().toISOString().split('T')[0]}.xlsx`;
+    await excelService.exportToExcel(rows, fileName);
+    if (typeof notificationService !== 'undefined' && notificationService.success) {
+      notificationService.success(`Downloaded Servicing Excel template with ${rows.length} machines.`);
+    }
+  }
+
+  /**
+   * Previews and validates rows parsed from an uploaded Servicing Excel file.
+   * Matches machines by serial number, validates service dates, and computes next due dates.
+   */
+  previewBulkServicingExcel(rawRows) {
+    if (!Array.isArray(rawRows) || rawRows.length === 0) {
+      return {
+        totalRows: 0,
+        validRows: [],
+        invalidRows: [],
+        notFoundCount: 0,
+        invalidDateCount: 0,
+        items: []
+      };
+    }
+
+    const allMachines = storage.getTable(TABLE_NAMES.MACHINES) || [];
+    const machineMap = new Map();
+    allMachines.forEach(m => {
+      if (m.serialNumber) {
+        machineMap.set(m.serialNumber.trim().toUpperCase(), m);
+      }
+    });
+
+    const processedRows = [];
+
+    rawRows.forEach((row, idx) => {
+      let rawSerial = '';
+      let rawServiceDate = '';
+      let rawServicedBy = '';
+      let rawSticker = '';
+      let rawRemarks = '';
+
+      for (const [key, val] of Object.entries(row)) {
+        const k = key.toLowerCase().trim().replace(/[^a-z0-9]/g, '');
+        if (k.includes('serial') || k.includes('machineno') || k === 'sn' || k === 'mcserial' || k === 'assetno') {
+          if (!rawSerial && val !== undefined && val !== null && String(val).trim() !== '') {
+            rawSerial = String(val).trim();
+          }
+        } else if (k.includes('servicedate') || k.includes('servicingdate') || k.includes('maintenancedate') || k.includes('pmdate') || k === 'lastservice' || k === 'date') {
+          if (!rawServiceDate && val !== undefined && val !== null && String(val).trim() !== '') {
+            rawServiceDate = val;
+          }
+        } else if (k.includes('servicedby') || k.includes('technician') || k.includes('mechanic') || k.includes('serviceman') || k.includes('manpower')) {
+          if (!rawServicedBy && val !== undefined && val !== null && String(val).trim() !== '') {
+            rawServicedBy = String(val).trim();
+          }
+        } else if (k.includes('sticker') || k.includes('stickerno') || k.includes('stickerserial')) {
+          if (!rawSticker && val !== undefined && val !== null && String(val).trim() !== '') {
+            rawSticker = String(val).trim();
+          }
+        } else if (k.includes('remark') || k.includes('note') || k.includes('comment')) {
+          if (!rawRemarks && val !== undefined && val !== null && String(val).trim() !== '') {
+            rawRemarks = String(val).trim();
+          }
+        }
+      }
+
+      // Explicit fallbacks
+      if (!rawSerial) rawSerial = String(row['Machine Serial'] || row['Serial Number'] || row['Serial'] || '').trim();
+      if (!rawServiceDate) rawServiceDate = row['Last Service Date'] || row['Service Date'] || row['Servicing Date'] || '';
+      if (!rawServicedBy) rawServicedBy = String(row['Serviced By (Card # / Name)'] || row['Serviced By'] || row['Technician'] || '').trim();
+      if (!rawSticker) rawSticker = String(row['Physical Sticker Sl No.'] || row['Sticker Serial'] || row['Sticker No'] || '').trim();
+      if (!rawRemarks) rawRemarks = String(row['Service Remarks'] || row['Remarks'] || '').trim();
+
+      if (!rawSerial && !rawServiceDate) return; // skip blank row
+
+      const cleanDate = excelService.parseCleanDate(rawServiceDate);
+      const matchedMachine = rawSerial ? machineMap.get(rawSerial.toUpperCase()) : null;
+
+      let status = 'VALID';
+      let statusLabel = 'Ready to Update';
+
+      if (!matchedMachine) {
+        status = 'NOT_FOUND';
+        statusLabel = 'Machine Serial Not Found';
+      } else if (!cleanDate) {
+        status = 'INVALID_DATE';
+        statusLabel = 'Missing / Invalid Date';
+      }
+
+      const isValid = status === 'VALID';
+      const mProfile = matchedMachine ? (machineService.getEnrichedMachine(matchedMachine.id) || matchedMachine) : null;
+      const mTypeName = mProfile?.machineName?.name || matchedMachine?.machineName || 'Sewing Machine';
+      const config = this.getConfigByMachineType(mTypeName);
+      const frequencyDays = config?.frequencyDays || 90;
+      const nextDate = isValid ? this.calculateNextServiceDate(cleanDate, frequencyDays) : '';
+
+      processedRows.push({
+        sl: idx + 1,
+        machineId: matchedMachine?.id || null,
+        serialNumber: rawSerial,
+        machineName: mTypeName,
+        brand: mProfile?.brand?.name || matchedMachine?.brand || '—',
+        model: mProfile?.model?.name || matchedMachine?.model || '—',
+        floor: mProfile?.floor?.name || matchedMachine?.floor || '—',
+        line: mProfile?.line?.name || matchedMachine?.line || '—',
+        serviceDate: cleanDate,
+        rawServiceDate: String(rawServiceDate),
+        nextServiceDate: nextDate,
+        frequencyDays,
+        servicedBy: rawServicedBy || 'Assigned Mechanic',
+        serviceStickerSerial: rawSticker,
+        serviceRemarks: rawRemarks || 'Bulk Excel Servicing Import',
+        status,
+        statusLabel,
+        isValid
+      });
+    });
+
+    return {
+      totalRows: processedRows.length,
+      validRows: processedRows.filter(r => r.isValid),
+      invalidRows: processedRows.filter(r => !r.isValid),
+      notFoundCount: processedRows.filter(r => r.status === 'NOT_FOUND').length,
+      invalidDateCount: processedRows.filter(r => r.status === 'INVALID_DATE').length,
+      items: processedRows
+    };
+  }
+
+  /**
+   * Applies validated servicing records from bulk Excel import.
+   * Updates machine records, writes completed PM records, logs machine history, and dispatches events.
+   */
+  async applyBulkServicingImport(validItems) {
+    if (!Array.isArray(validItems) || validItems.length === 0) {
+      throw new Error('No valid servicing rows provided to import.');
+    }
+
+    const user = authService.getCurrentUser() || { id: 'admin-1', fullName: 'Administrator' };
+    const allMachines = storage.getTable(TABLE_NAMES.MACHINES) || [];
+    const pmTable = storage.getTable(TABLE_NAMES.PREVENTIVE_MAINTENANCE) || [];
+
+    let updatedCount = 0;
+
+    validItems.forEach(item => {
+      if (!item.isValid || !item.serviceDate || !item.machineId) return;
+
+      const machine = allMachines.find(m => m.id === item.machineId);
+      if (!machine) return;
+
+      const serviceDate = item.serviceDate;
+      const nextDate = item.nextServiceDate || this.calculateNextServiceDate(serviceDate, item.frequencyDays || 90);
+      const servicedBy = item.servicedBy || user.fullName || 'Routine Mechanic';
+      const stickerSerial = item.serviceStickerSerial || machine.serviceStickerSerial || '';
+
+      // 1. Update machine entity
+      machine.lastServiceDate = serviceDate;
+      machine.nextServiceDate = nextDate;
+      machine.assignedManpower = servicedBy;
+      machine.lastServicedBy = servicedBy;
+      if (stickerSerial) machine.serviceStickerSerial = stickerSerial;
+      machine.updatedAt = new Date().toISOString();
+
+      // 2. Add or update record in PREVENTIVE_MAINTENANCE
+      const existingPmIndex = pmTable.findIndex(r => 
+        (r.machineId === machine.id || (r.serialNumber && r.serialNumber.trim().toUpperCase() === machine.serialNumber?.trim().toUpperCase())) &&
+        r.serviceDate === serviceDate
+      );
+
+      const pmRecord = {
+        id: existingPmIndex >= 0 ? pmTable[existingPmIndex].id : `pm-rec-${Date.now()}-${Math.floor(Math.random() * 100000)}`,
+        machineId: machine.id,
+        serialNumber: machine.serialNumber,
+        machineName: item.machineName || machine.machineName || 'Machine',
+        machineType: item.machineName || 'Sewing Machine',
+        model: item.model || machine.model || '',
+        brand: item.brand || machine.brand || '',
+        unit: machine.unit || 'AKM Knitwear Ltd.',
+        unitId: machine.unitId || null,
+        floor: item.floor || machine.floor || '',
+        floorId: machine.floorId || null,
+        line: item.line || machine.line || '',
+        lineId: machine.lineId || null,
+        workingArea: `${item.floor || machine.floor || ''} - ${item.line || machine.line || ''}`,
+        serviceDate: serviceDate,
+        serviceType: 'PREVENTIVE_SERVICE',
+        serviceStatus: 'COMPLETED',
+        serviceStickerSerial: stickerSerial || (existingPmIndex >= 0 ? pmTable[existingPmIndex].serviceStickerSerial : 'STK-PENDING'),
+        servicedBy: servicedBy,
+        servicedByCardNumber: '',
+        servicedByDesignation: 'Maintenance Mechanic',
+        servicedByDepartment: 'Mechanical Maintenance',
+        assignedManpower: servicedBy,
+        frequencyDays: item.frequencyDays || 90,
+        lastServiceDate: serviceDate,
+        nextServiceDate: nextDate,
+        serviceChecklist: [],
+        serviceRemarks: item.serviceRemarks || 'Bulk Excel Servicing Import',
+        createdAt: existingPmIndex >= 0 ? pmTable[existingPmIndex].createdAt : new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        loggedBy: user.username || user.fullName || 'admin'
+      };
+
+      if (existingPmIndex >= 0) {
+        pmTable[existingPmIndex] = pmRecord;
+      } else {
+        pmTable.push(pmRecord);
+      }
+
+      // 3. Record in machine passport history
+      try {
+        if (typeof historyService !== 'undefined' && historyService.recordActivity) {
+          historyService.recordActivity({
+            machineId: machine.id,
+            serialNumber: machine.serialNumber,
+            actionType: 'MAINTENANCE_SERVICE',
+            title: `Preventive Maintenance Serviced [Sticker: ${stickerSerial || 'N/A'}]`,
+            details: `Bulk servicing imported on ${serviceDate} by ${servicedBy}. Next scheduled service: ${nextDate}.`,
+            performedBy: user.id,
+            performedByName: servicedBy,
+            remarks: item.serviceRemarks
+          });
+        }
+      } catch (e) {
+        console.warn('History activity log failed:', e);
+      }
+
+      updatedCount++;
+    });
+
+    storage.setTable(TABLE_NAMES.MACHINES, allMachines);
+    storage.saveTable(TABLE_NAMES.MACHINES);
+
+    storage.setTable(TABLE_NAMES.PREVENTIVE_MAINTENANCE, pmTable);
+    storage.saveTable(TABLE_NAMES.PREVENTIVE_MAINTENANCE);
+
+    auditService.log(
+      'UPDATE',
+      'PREVENTIVE_MAINTENANCE',
+      'BULK_SERVICING_IMPORT',
+      `Bulk imported servicing dates for ${updatedCount} machines via Excel.`
+    );
+
+    window.dispatchEvent(new CustomEvent('erp:machine-updated'));
+    window.dispatchEvent(new CustomEvent('erp:preventive-maintenance-updated'));
+
+    return {
+      totalImported: updatedCount,
+      affectedMachinesCount: updatedCount
     };
   }
 

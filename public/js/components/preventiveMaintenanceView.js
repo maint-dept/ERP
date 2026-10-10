@@ -127,11 +127,13 @@ function getValidActiveMachineId() {
 }
 
 // Active modal states
-let activePmModal = null; // null | 'service-entry' | 'qr-scanner' | 'print-sticker' | 'edit-sticker' | 'config-modal' | 'bulk-excel-modal'
+let activePmModal = null; // null | 'service-entry' | 'qr-scanner' | 'print-sticker' | 'edit-sticker' | 'config-modal' | 'bulk-excel-modal' | 'bulk-servicing-modal'
 let modalMachineContext = null;
 let modalServiceContext = null;
 let bulkExcelParsedRows = null;
 let bulkExcelPreviewResult = null;
+let bulkServicingParsedRows = null;
+let bulkServicingPreviewResult = null;
 
 let configSearchQuery = '';
 
@@ -244,6 +246,14 @@ export function renderPreventiveMaintenanceView() {
           <button id="btn-pm-export-excel" class="btn btn-secondary btn-sm" style="font-weight: 600; padding: 4px 10px; font-size: 12px;" title="Export filtered maintenance list to Excel">
             📤 Export
           </button>
+          <button id="btn-pm-download-servicing-template" class="btn btn-secondary btn-sm" style="font-weight: 600; padding: 4px 10px; font-size: 12px;" title="Download Pre-filled Machine Servicing Excel Template">
+            📥 Servicing Template
+          </button>
+          ${canCreate ? `
+            <button id="btn-pm-bulk-servicing-import" class="btn btn-secondary btn-sm" style="font-weight: 700; padding: 4px 10px; font-size: 12px; color: #10b981; border-color: rgba(16, 185, 129, 0.4); background: rgba(16, 185, 129, 0.1);" title="Bulk Import Machine Servicing Dates & Records from Excel">
+              ⚡ Bulk Import Servicing
+            </button>
+          ` : ''}
           ${canConfig ? `
             <button id="btn-pm-top-bulk-excel" class="btn btn-secondary btn-sm" style="font-weight: 700; padding: 4px 10px; font-size: 12px; color: #38bdf8; border-color: rgba(56, 189, 248, 0.4); background: rgba(56, 189, 248, 0.1);" title="Bulk configure maintenance intervals (days) via Excel">
               📊 Bulk Excel Days
@@ -1230,6 +1240,8 @@ function renderActivePmModal() {
       return renderConfigModal();
     case 'bulk-excel-modal':
       return renderBulkExcelConfigModal();
+    case 'bulk-servicing-modal':
+      return renderBulkServicingModal();
     default:
       return '';
   }
@@ -2086,6 +2098,192 @@ function renderBulkExcelConfigModal() {
   `;
 }
 
+/**
+ * Bulk Machine Servicing Excel Import Modal
+ */
+function renderBulkServicingModal() {
+  const preview = bulkServicingPreviewResult;
+  const fileName = bulkServicingParsedRows?._fileName || 'Servicing_Import.xlsx';
+
+  return `
+    <div id="pm-bulk-servicing-backdrop" class="modal-backdrop" style="position: fixed; inset: 0; background: rgba(0,0,0,0.75); backdrop-filter: blur(4px); z-index: 1050; display: flex; align-items: center; justify-content: center; padding: 16px;">
+      <div class="modal-content" style="background: #0f172a; border: 1px solid rgba(16, 185, 129, 0.35); border-radius: var(--radius-xl); width: 100%; max-width: 960px; max-height: 90vh; display: flex; flex-direction: column; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.7), 0 0 35px rgba(16, 185, 129, 0.15); overflow: hidden;">
+        
+        <!-- Header -->
+        <div style="padding: 16px 22px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; background: linear-gradient(90deg, rgba(16, 185, 129, 0.1), transparent);">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.4); display: flex; align-items: center; justify-content: center; font-size: 18px;">
+              ⚡
+            </div>
+            <div>
+              <h3 style="font-size: 15px; font-weight: 800; color: #fff; margin: 0; display: flex; align-items: center; gap: 8px;">
+                Bulk Import Machine Servicing Records (Excel)
+                <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #34d399; font-size: 11px; font-weight: 700;">1-Click Auto Sync</span>
+              </h3>
+              <p style="font-size: 12px; color: var(--text-secondary); margin: 3px 0 0 0;">
+                Log servicing dates, technicians, and physical sticker serials for factory machines in one Excel import.
+              </p>
+            </div>
+          </div>
+          <button id="btn-pm-close-bulk-servicing-modal" style="background: none; border: none; color: #94a3b8; font-size: 20px; cursor: pointer; padding: 4px;" title="Close Modal">✕</button>
+        </div>
+
+        <!-- Body -->
+        <div style="padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px;">
+          
+          <!-- Step 1: Instruction & Template Download Card -->
+          <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: var(--radius-lg); padding: 14px 18px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+            <div style="display: flex; flex-direction: column; gap: 4px;">
+              <div style="font-size: 13px; font-weight: 800; color: #34d399; display: flex; align-items: center; gap: 6px;">
+                <span>📥</span> Step 1: Download Pre-Filled Servicing Excel Template
+              </div>
+              <div style="font-size: 11.5px; color: var(--text-secondary);">
+                Contains all factory machines with pre-populated Serial Numbers, Locations, and blanks for Service Dates.
+              </div>
+            </div>
+            <button id="btn-pm-modal-download-servicing-template" class="btn btn-secondary btn-sm" style="display: flex; align-items: center; gap: 6px; font-weight: 700; border-color: #10b981; color: #34d399; background: #1e293b; height: 32px; padding: 0 14px;">
+              <span>📥</span> Download Template (.xlsx)
+            </button>
+          </div>
+
+          <!-- Step 2: Upload Zone -->
+          <div 
+            id="pm-bulk-servicing-dropzone" 
+            style="border: 2px dashed ${preview ? '#10b981' : '#059669'}; border-radius: var(--radius-lg); background: ${preview ? 'rgba(16, 185, 129, 0.05)' : 'rgba(5, 150, 105, 0.04)'}; padding: 22px; text-align: center; cursor: pointer; transition: all 0.2s ease;"
+          >
+            <input type="file" id="pm-bulk-servicing-file-input" accept=".xlsx, .xls, .csv" style="display: none;" />
+            <div style="font-size: 32px; margin-bottom: 6px;">${preview ? '✅' : '📁'}</div>
+            <div style="font-size: 14px; font-weight: 700; color: #fff; margin-bottom: 4px;">
+              ${preview ? `File Loaded: <span style="color: #34d399;">${escapeHtml(fileName)}</span>` : 'Drop your completed Servicing Excel file here or click to browse'}
+            </div>
+            <div style="font-size: 11.5px; color: var(--text-muted);">
+              Supports .xlsx, .xls, and .csv files. Columns: "Machine Serial", "Last Service Date", "Serviced By", "Physical Sticker Sl No."
+            </div>
+          </div>
+
+          <!-- Step 3: Live Preview Area (if preview generated) -->
+          ${preview ? `
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+              
+              <!-- Metric Summary Grid -->
+              <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;">
+                <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; text-align: center;">
+                  <div style="font-size: 18px; font-weight: 900; color: #fff;">${preview.totalRows}</div>
+                  <div style="font-size: 11px; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">Total Rows</div>
+                </div>
+                <div style="background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 8px; padding: 10px; text-align: center;">
+                  <div style="font-size: 18px; font-weight: 900; color: #34d399;">${preview.validRows.length}</div>
+                  <div style="font-size: 11px; color: #34d399; font-weight: 700; text-transform: uppercase;">✅ Ready to Record</div>
+                </div>
+                <div style="background: ${preview.notFoundCount > 0 ? 'rgba(239, 68, 68, 0.12)' : 'rgba(148, 163, 184, 0.08)'}; border: 1px solid ${preview.notFoundCount > 0 ? 'rgba(239, 68, 68, 0.3)' : 'rgba(148, 163, 184, 0.2)'}; border-radius: 8px; padding: 10px; text-align: center;">
+                  <div style="font-size: 18px; font-weight: 900; color: ${preview.notFoundCount > 0 ? '#f87171' : '#94a3b8'};">${preview.notFoundCount}</div>
+                  <div style="font-size: 11px; color: ${preview.notFoundCount > 0 ? '#f87171' : '#94a3b8'}; font-weight: 600; text-transform: uppercase;">⚠️ Serial Not Found</div>
+                </div>
+                <div style="background: ${preview.invalidDateCount > 0 ? 'rgba(245, 158, 11, 0.12)' : 'rgba(148, 163, 184, 0.08)'}; border: 1px solid ${preview.invalidDateCount > 0 ? 'rgba(245, 158, 11, 0.3)' : 'rgba(148, 163, 184, 0.2)'}; border-radius: 8px; padding: 10px; text-align: center;">
+                  <div style="font-size: 18px; font-weight: 900; color: ${preview.invalidDateCount > 0 ? '#fbbf24' : '#94a3b8'};">${preview.invalidDateCount}</div>
+                  <div style="font-size: 11px; color: ${preview.invalidDateCount > 0 ? '#fbbf24' : '#94a3b8'}; font-weight: 600; text-transform: uppercase;">⚠️ Invalid Date</div>
+                </div>
+              </div>
+
+              <!-- Preview Table -->
+              <div style="border: 1px solid var(--border-color); border-radius: var(--radius-lg); overflow: hidden;">
+                <div style="padding: 8px 12px; background: #0b1329; border-bottom: 1px solid var(--border-color); font-size: 11.5px; font-weight: 700; color: #cbd5e1; display: flex; justify-content: space-between; align-items: center;">
+                  <span>📋 Validated Servicing Records (${preview.validRows.length} Valid Items)</span>
+                  <span style="font-size: 11px; color: #34d399;">Ready to update machine schedules & passports</span>
+                </div>
+                <div style="max-height: 280px; overflow-y: auto; overflow-x: auto;">
+                  <table class="data-table" style="width: 100%; min-width: 860px; border-collapse: collapse; font-size: 12px;">
+                    <thead>
+                      <tr>
+                        <th style="width: 45px; text-align: center;">SL</th>
+                        <th style="min-width: 130px; text-align: left;">Machine Serial</th>
+                        <th style="min-width: 170px; text-align: left;">Machine Name</th>
+                        <th style="width: 120px; text-align: left;">Location</th>
+                        <th style="width: 110px; text-align: center;">Service Date</th>
+                        <th style="width: 110px; text-align: center;">Next Due Date</th>
+                        <th style="width: 130px; text-align: left;">Serviced By</th>
+                        <th style="width: 100px; text-align: center;">Sticker Sl</th>
+                        <th style="min-width: 120px; text-align: center;">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      ${preview.items.map((item) => {
+                        return `
+                          <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); background: ${item.isValid ? 'rgba(16, 185, 129, 0.05)' : 'transparent'};">
+                            <td style="text-align: center; color: var(--text-muted); font-size: 11px;">${item.sl}</td>
+                            <td style="font-weight: 800; font-family: monospace; color: #38bdf8;">
+                              ${escapeHtml(item.serialNumber || '—')}
+                            </td>
+                            <td style="font-weight: 600; color: #fff;">
+                              ${escapeHtml(item.machineName)}
+                              ${item.model && item.model !== '—' ? `<div style="font-size: 10.5px; color: var(--text-muted);">${escapeHtml(item.brand)} ${escapeHtml(item.model)}</div>` : ''}
+                            </td>
+                            <td style="font-size: 11.5px; color: var(--text-secondary);">
+                              ${escapeHtml(item.floor)} &bull; ${escapeHtml(item.line)}
+                            </td>
+                            <td style="text-align: center; font-weight: 700; font-family: monospace; color: ${item.serviceDate ? '#34d399' : '#f87171'};">
+                              ${item.serviceDate ? item.serviceDate : '<span style="color: #f87171;">Missing</span>'}
+                            </td>
+                            <td style="text-align: center; font-family: monospace; color: #38bdf8; font-weight: 600;">
+                              ${item.nextServiceDate || '—'}
+                            </td>
+                            <td style="font-size: 11.5px; color: #cbd5e1;">
+                              ${escapeHtml(item.servicedBy || '—')}
+                            </td>
+                            <td style="text-align: center; font-family: monospace; color: #f59e0b; font-size: 11.5px;">
+                              ${escapeHtml(item.serviceStickerSerial || '—')}
+                            </td>
+                            <td style="text-align: center;">
+                              ${item.status === 'VALID' ? `
+                                <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #34d399; font-weight: 700; font-size: 10.5px;">
+                                  ✅ Ready to Update
+                                </span>
+                              ` : item.status === 'NOT_FOUND' ? `
+                                <span class="badge badge-danger" style="font-size: 10.5px;">
+                                  ⚠️ Serial Not Found
+                                </span>
+                              ` : `
+                                <span class="badge" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24; font-size: 10.5px;">
+                                  ⚠️ Invalid Date
+                                </span>
+                              `}
+                            </td>
+                          </tr>
+                        `;
+                      }).join('')}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+            </div>
+          ` : ''}
+
+        </div>
+
+        <!-- Footer -->
+        <div style="padding: 14px 22px; border-top: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; background: #0f172a;">
+          <button id="btn-pm-cancel-bulk-servicing" class="btn btn-secondary btn-sm" style="font-weight: 600; padding: 6px 14px;">
+            Cancel
+          </button>
+          
+          <div style="display: flex; gap: 10px; align-items: center;">
+            <button 
+              id="btn-pm-apply-bulk-servicing" 
+              class="btn btn-primary btn-sm" 
+              style="font-weight: 800; font-size: 12.5px; padding: 6px 20px; background: linear-gradient(135deg, #059669, #047857); box-shadow: 0 0 15px rgba(16, 185, 129, 0.35);"
+              ${!preview || preview.validRows.length === 0 ? 'disabled' : ''}
+            >
+              ✅ Apply Bulk Servicing Records (${preview ? preview.validRows.length : 0} Machines)
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  `;
+}
+
 // =========================================================================
 // EVENT HANDLERS & BINDINGS
 // =========================================================================
@@ -2143,6 +2341,19 @@ export function initPreventiveMaintenanceEvents() {
     bulkExcelParsedRows = null;
     bulkExcelPreviewResult = null;
     activePmModal = 'bulk-excel-modal';
+    rerenderView();
+  });
+
+  // Top action: Servicing Template Download
+  document.getElementById('btn-pm-download-servicing-template')?.addEventListener('click', async () => {
+    await preventiveMaintenanceService.exportServicingExcelTemplate();
+  });
+
+  // Top action: Bulk Import Servicing
+  document.getElementById('btn-pm-bulk-servicing-import')?.addEventListener('click', () => {
+    bulkServicingParsedRows = null;
+    bulkServicingPreviewResult = null;
+    activePmModal = 'bulk-servicing-modal';
     rerenderView();
   });
 
@@ -3168,6 +3379,111 @@ function bindModalEvents() {
       closeModal();
     } catch (err) {
       alert('Error applying bulk updates: ' + err.message);
+    }
+  });
+
+  // 8. Bulk Servicing Modal Events
+  document.getElementById('btn-pm-close-bulk-servicing-modal')?.addEventListener('click', () => {
+    bulkServicingParsedRows = null;
+    bulkServicingPreviewResult = null;
+    closeModal();
+  });
+  document.getElementById('btn-pm-cancel-bulk-servicing')?.addEventListener('click', () => {
+    bulkServicingParsedRows = null;
+    bulkServicingPreviewResult = null;
+    closeModal();
+  });
+  document.getElementById('pm-bulk-servicing-backdrop')?.addEventListener('click', (e) => {
+    if (e.target.id === 'pm-bulk-servicing-backdrop') {
+      bulkServicingParsedRows = null;
+      bulkServicingPreviewResult = null;
+      closeModal();
+    }
+  });
+
+  document.getElementById('btn-pm-modal-download-servicing-template')?.addEventListener('click', async () => {
+    await preventiveMaintenanceService.exportServicingExcelTemplate();
+  });
+
+  const servicingDropzone = document.getElementById('pm-bulk-servicing-dropzone');
+  const servicingFileInp = document.getElementById('pm-bulk-servicing-file-input');
+
+  const handleBulkServicingFile = async (file) => {
+    if (!file) return;
+    try {
+      const rows = await excelService.parseExcelFile(file);
+      if (!rows || rows.length === 0) {
+        alert('The uploaded Excel file has no data rows. Please use the pre-filled Servicing template.');
+        return;
+      }
+      rows._fileName = file.name;
+      bulkServicingParsedRows = rows;
+      bulkServicingPreviewResult = preventiveMaintenanceService.previewBulkServicingExcel(rows);
+      rerenderView();
+    } catch (err) {
+      console.error('Servicing Excel parse error:', err);
+      alert('Failed to parse Excel file: ' + err.message);
+    }
+  };
+
+  if (servicingDropzone && servicingFileInp) {
+    servicingDropzone.addEventListener('click', () => {
+      servicingFileInp.click();
+    });
+
+    servicingDropzone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      servicingDropzone.style.borderColor = '#10b981';
+      servicingDropzone.style.background = 'rgba(16, 185, 129, 0.12)';
+    });
+
+    servicingDropzone.addEventListener('dragleave', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      servicingDropzone.style.borderColor = '#059669';
+      servicingDropzone.style.background = 'rgba(5, 150, 105, 0.04)';
+    });
+
+    servicingDropzone.addEventListener('drop', async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const files = e.dataTransfer.files;
+      if (files && files.length > 0) {
+        await handleBulkServicingFile(files[0]);
+      }
+    });
+
+    servicingFileInp.addEventListener('change', async (e) => {
+      const files = e.target.files;
+      if (files && files.length > 0) {
+        await handleBulkServicingFile(files[0]);
+      }
+    });
+  }
+
+  document.getElementById('btn-pm-apply-bulk-servicing')?.addEventListener('click', async () => {
+    if (!bulkServicingPreviewResult || !bulkServicingPreviewResult.validRows || bulkServicingPreviewResult.validRows.length === 0) {
+      alert('No valid servicing rows found to apply.');
+      return;
+    }
+
+    try {
+      const res = await preventiveMaintenanceService.applyBulkServicingImport(bulkServicingPreviewResult.validRows);
+      if (typeof notificationService !== 'undefined' && notificationService.success) {
+        notificationService.success(
+          `Bulk servicing recorded for ${res.totalImported} machines! Next service schedules and machine passports updated.`
+        );
+      } else {
+        alert(`Bulk servicing recorded for ${res.totalImported} machines!`);
+      }
+      bulkServicingParsedRows = null;
+      bulkServicingPreviewResult = null;
+      closeModal();
+      activeTab = 'recently-serviced';
+      rerenderView();
+    } catch (err) {
+      alert('Error applying bulk servicing: ' + err.message);
     }
   });
 }
