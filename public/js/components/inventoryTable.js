@@ -138,15 +138,15 @@ export function renderInventoryTable() {
     {
       key: 'machineName',
       label: 'Machine Name',
-      width: 180,
-      renderTh: (thStyle, thClass) => `<th class="th-sortable ${thClass}" data-sort="machineName" style="width: 180px; min-width: 180px; max-width: 180px; cursor: pointer; ${thStyle}">Machine Name</th>`,
+      width: 220,
+      renderTh: (thStyle, thClass) => `<th class="th-sortable ${thClass}" data-sort="machineName" style="width: 220px; min-width: 220px; max-width: 220px; cursor: pointer; ${thStyle}">Machine Name</th>`,
       renderTd: (m, meta, tdStyle, tdClass) => {
         const name = (mnMap.get(m.machineNameId) || m.machineName || m.name || brdMap.get(m.brandId) || (m.brand ? m.brand + ' Machine' : '') || '—').trim();
         const isViewOnly = authService.isMachineViewOnlyForUser(m);
         const viewOnlyBadge = isViewOnly 
-          ? `<span class="badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); font-size: 10px; padding: 1px 6px; margin-left: 6px; vertical-align: middle; font-weight: 600;" title="View-Only: This machine belongs to another floor or Central Idle">👁️ View Only</span>` 
+          ? `<span class="badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); font-size: 10px; padding: 1px 6px; margin-left: 6px; vertical-align: middle; font-weight: 600; white-space: nowrap;" title="View-Only: This machine belongs to another floor or Central Idle">👁️ View Only</span>` 
           : '';
-        return `<td class="${tdClass}" style="font-weight: 600; color: #fff; overflow: hidden; text-overflow: ellipsis; ${tdStyle}">${name}${viewOnlyBadge}</td>`;
+        return `<td class="${tdClass} col-wrap-text" style="width: 220px; min-width: 220px; max-width: 220px; font-weight: 600; color: #fff; white-space: normal !important; word-break: break-word; overflow-wrap: break-word; text-overflow: clip !important; overflow: visible !important; line-height: 1.35; padding: 8px 12px; ${tdStyle}" title="${name}"><span style="display: inline; line-height: 1.35;">${name}</span>${viewOnlyBadge}</td>`;
       }
     },
     {
@@ -156,7 +156,7 @@ export function renderInventoryTable() {
       renderTh: (thStyle, thClass) => `<th class="th-sortable ${thClass}" data-sort="model" style="width: 150px; min-width: 150px; max-width: 150px; cursor: pointer; ${thStyle}">Model</th>`,
       renderTd: (m, meta, tdStyle, tdClass) => {
         const mdl = (mdlMap.get(m.modelId) || m.model || m.modelName || '—').trim();
-        return `<td class="${tdClass}" style="overflow: hidden; text-overflow: ellipsis; font-family: var(--font-mono); font-weight: 600; ${tdStyle}">${mdl}</td>`;
+        return `<td class="${tdClass}" style="overflow: hidden; text-overflow: ellipsis; font-family: var(--font-mono); font-weight: 600; ${tdStyle}" title="${mdl}">${mdl}</td>`;
       }
     },
     {
@@ -173,7 +173,7 @@ export function renderInventoryTable() {
       renderTh: (thStyle, thClass) => `<th class="th-sortable ${thClass}" data-sort="brand" style="width: 130px; min-width: 130px; max-width: 130px; cursor: pointer; ${thStyle}">Brand</th>`,
       renderTd: (m, meta, tdStyle, tdClass) => {
         const brd = (brdMap.get(m.brandId) || m.brand || '—').trim();
-        return `<td class="${tdClass}" style="overflow: hidden; text-overflow: ellipsis; ${tdStyle}">${brd}</td>`;
+        return `<td class="${tdClass}" style="overflow: hidden; text-overflow: ellipsis; ${tdStyle}" title="${brd}">${brd}</td>`;
       }
     },
     {
@@ -181,21 +181,30 @@ export function renderInventoryTable() {
       label: 'Group',
       width: 150,
       renderTh: (thStyle, thClass) => `<th class="th-sortable ${thClass}" data-sort="group" style="width: 150px; min-width: 150px; max-width: 150px; cursor: pointer; ${thStyle}">Group</th>`,
-      renderTd: (m, meta, tdStyle, tdClass) => `<td class="${tdClass}" style="overflow: hidden; text-overflow: ellipsis; ${tdStyle}">${grpMap.get(m.groupId) || m.group || '—'}</td>`
+      renderTd: (m, meta, tdStyle, tdClass) => {
+        const grp = grpMap.get(m.groupId) || m.group || '—';
+        return `<td class="${tdClass}" style="overflow: hidden; text-overflow: ellipsis; ${tdStyle}" title="${grp}">${grp}</td>`;
+      }
     },
     {
       key: 'unit',
       label: 'Unit / Factory',
       width: 190,
       renderTh: (thStyle, thClass) => `<th class="th-sortable ${thClass}" data-sort="unit" style="width: 190px; min-width: 190px; max-width: 190px; cursor: pointer; ${thStyle}">Unit / Factory</th>`,
-      renderTd: (m, meta, tdStyle, tdClass) => `<td class="${tdClass}" style="overflow: hidden; text-overflow: ellipsis; ${tdStyle}">${untMap.get(m.unitId) || m.unit || '—'}</td>`
+      renderTd: (m, meta, tdStyle, tdClass) => {
+        const unt = untMap.get(m.unitId) || m.unit || '—';
+        return `<td class="${tdClass}" style="overflow: hidden; text-overflow: ellipsis; ${tdStyle}" title="${unt}">${unt}</td>`;
+      }
     },
     {
       key: 'floor',
       label: 'Floor',
       width: 130,
       renderTh: (thStyle, thClass) => `<th class="th-sortable ${thClass}" data-sort="floor" style="width: 130px; min-width: 130px; max-width: 130px; cursor: pointer; ${thStyle}">Floor</th>`,
-      renderTd: (m, meta, tdStyle, tdClass) => `<td class="${tdClass}" style="overflow: hidden; text-overflow: ellipsis; ${tdStyle}">${flrMap.get(m.floorId) || m.floor || '—'}</td>`
+      renderTd: (m, meta, tdStyle, tdClass) => {
+        const flr = flrMap.get(m.floorId) || m.floor || '—';
+        return `<td class="${tdClass}" style="overflow: hidden; text-overflow: ellipsis; ${tdStyle}" title="${flr}">${flr}</td>`;
+      }
     },
     {
       key: 'line',

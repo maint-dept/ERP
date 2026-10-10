@@ -23,7 +23,7 @@ export function renderColumnVisibilityModal() {
   const customFields = customFieldService.getActiveFields();
 
   const freezableCols = [
-    { key: 'machineName', label: 'Machine Name', width: '180px', desc: 'Identifies machine type' },
+    { key: 'machineName', label: 'Machine Name', width: '220px', desc: 'Identifies machine type' },
     { key: 'model', label: 'Machine Model', width: '150px', desc: 'Model specification number' },
     { key: 'serialNumber', label: 'Machine Serial Number', width: '160px', desc: 'Unique asset identifier tag' },
     { key: 'brand', label: 'Machine Brand', width: '130px', desc: 'Manufacturer / Brand' },
