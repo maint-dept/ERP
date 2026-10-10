@@ -1092,10 +1092,6 @@ class PreventiveMaintenanceService {
     }
     return '';
   }
-      console.warn('Date calculation error:', e);
-    }
-    return '';
-  }
 
   computeUrgencyStatus(nextServiceDateStr, lastServiceRecord = null) {
     if (!nextServiceDateStr) {
