@@ -14,6 +14,7 @@ import { notificationService } from '../services/notificationService.js';
 import { state } from '../state.js';
 
 import { masterDataService } from '../services/masterDataService.js';
+import { employeeService } from '../services/employeeService.js';
 
 let searchQuery = '';
 let roleFilter = 'ALL'; // 'ALL' | 'SUPER_ADMIN' | 'ADMIN' | 'USER'
@@ -111,7 +112,8 @@ export function renderUserManagement() {
       const matchUsername = u.username?.toLowerCase().includes(q);
       const matchDept = u.department?.toLowerCase().includes(q);
       const matchPreset = u.presetName?.toLowerCase().includes(q);
-      if (!matchName && !matchEmail && !matchUsername && !matchDept && !matchPreset) return false;
+      const matchEmpId = u.employeeId?.toLowerCase().includes(q);
+      if (!matchName && !matchEmail && !matchUsername && !matchDept && !matchPreset && !matchEmpId) return false;
     }
     return true;
   });
@@ -377,10 +379,12 @@ export function renderUserManagement() {
                         <div style="min-width: 0;">
                           <div style="font-weight: 800; color: #fff; font-size: 13.5px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
                             <span>${u.name}</span>
+                            ${u.employeeId ? `<span class="badge" style="font-size: 9.5px; padding: 1px 6px; background: rgba(14, 165, 233, 0.2); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.4); font-weight: 700;" title="Linked Manpower Card Number">🪪 ${u.employeeId}</span>` : ''}
                             ${isSelf ? '<span class="badge" style="font-size: 9.5px; padding: 1px 6px; background: rgba(56, 189, 248, 0.2); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.4); font-weight: 700;">YOU</span>' : ''}
                           </div>
                           <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 1px; display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
                             ${u.designation ? `<span style="color: #cbd5e1;">${u.designation}</span>` : ''}
+                            ${u.department ? `<span style="color: var(--text-muted); font-size: 11px;">• ${u.department}</span>` : ''}
                             <span style="font-family: var(--font-mono); color: #38bdf8; font-weight: 600;">@${u.username}</span>
                             ${u.email ? `<span style="color: var(--text-muted);">(${u.email})</span>` : ''}
                           </div>
@@ -869,25 +873,130 @@ function renderActiveModalHtml() {
 
   // 1. ADD NEW USER MODAL
   if (activeModalType === 'ADD_USER') {
+    const activeEmployees = (typeof employeeService !== 'undefined' ? employeeService.getAllEmployees({ status: 'ACTIVE' }) : (storage.getTable(TABLE_NAMES.EMPLOYEES) || []))
+      .filter(e => e && e.status !== 'INACTIVE' && e.status !== 'TERMINATED');
+    activeEmployees.sort((a, b) => String(a.cardNumber || '').localeCompare(String(b.cardNumber || ''), undefined, { numeric: true }));
+
+    const allExistingUsers = authService.getAllUsers() || [];
+    const registeredCardSet = new Set(
+      allExistingUsers.map(u => String(u.employeeId || '').trim().toLowerCase()).filter(Boolean)
+    );
+
     return `
       <div class="modal-overlay" style="display: flex; align-items: center; justify-content: center; background: rgba(8, 13, 26, 0.85); backdrop-filter: blur(8px); z-index: 9999;">
-        <div class="modal-card" style="width: 520px; max-width: 95vw; max-height: 90vh; display: flex; flex-direction: column; min-height: 0; background: linear-gradient(145deg, #0f172a, #1e293b); border: 1.5px solid rgba(56, 189, 248, 0.4); border-radius: var(--radius-xl); box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7); overflow: hidden;">
+        <div class="modal-card" style="width: 550px; max-width: 95vw; max-height: 92vh; display: flex; flex-direction: column; min-height: 0; background: linear-gradient(145deg, #0f172a, #1e293b); border: 1.5px solid rgba(56, 189, 248, 0.4); border-radius: var(--radius-xl); box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7); overflow: hidden;">
           
           <!-- Header -->
-          <div style="background: linear-gradient(135deg, #0284c7, #0369a1); padding: 18px 24px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255, 255, 255, 0.15); flex-shrink: 0;">
+          <div style="background: linear-gradient(135deg, #0284c7, #0369a1); padding: 16px 22px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255, 255, 255, 0.15); flex-shrink: 0;">
             <div style="display: flex; align-items: center; gap: 10px;">
               <span style="font-size: 22px;">➕</span>
               <div>
                 <h2 style="font-size: 16px; font-weight: 800; color: #fff; margin: 0;">Add New User</h2>
-                <div style="font-size: 11.5px; color: #e0f2fe;">Create account with credentials and role</div>
+                <div style="font-size: 11.5px; color: #e0f2fe;">Assign from Manpower or create custom login account</div>
               </div>
             </div>
             <button type="button" id="btn-close-modal" class="btn btn-ghost btn-sm" style="color: #fff; font-size: 18px; padding: 2px 6px;">✕</button>
           </div>
 
           <!-- Add User Form -->
-          <form id="form-add-new-user" style="padding: 24px; display: flex; flex-direction: column; gap: 15px; overflow-y: auto; flex: 1; min-height: 0;">
+          <form id="form-add-new-user" style="padding: 22px; display: flex; flex-direction: column; gap: 14px; overflow-y: auto; flex: 1; min-height: 0;">
             
+            <!-- Hidden Fields for Linked Employee Metadata -->
+            <input type="hidden" id="add-user-emp-id" value="" />
+            <input type="hidden" id="add-user-emp-dept" value="" />
+            <input type="hidden" id="add-user-emp-desig" value="" />
+            <input type="hidden" id="add-user-emp-phone" value="" />
+            <input type="hidden" id="add-user-emp-unit" value="" />
+
+            <!-- ========================================== -->
+            <!-- ⚡ 1-CLICK ASSIGN FROM MANPOWER DATA       -->
+            <!-- ========================================== -->
+            <div style="background: linear-gradient(145deg, rgba(14, 165, 233, 0.12), rgba(2, 132, 199, 0.04)); border: 1.5px solid rgba(56, 189, 248, 0.4); border-radius: 10px; padding: 13px 15px; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+                <div style="display: flex; align-items: center; gap: 7px;">
+                  <span style="font-size: 16px; filter: drop-shadow(0 2px 4px rgba(56, 189, 248, 0.5));">⚡</span>
+                  <span style="font-size: 12.5px; font-weight: 800; color: #38bdf8; letter-spacing: 0.3px;">
+                    Assign from Manpower (কার্ড নাম্বার দিয়ে এসাইন)
+                  </span>
+                </div>
+                <span class="badge" style="background: rgba(56, 189, 248, 0.2); color: #7dd3fc; border: 1px solid rgba(56, 189, 248, 0.35); font-size: 10px; font-weight: 700;">
+                  1-Click Auto Fill
+                </span>
+              </div>
+
+              <div style="font-size: 11.5px; color: #94a3b8; margin-bottom: 9px; line-height: 1.35;">
+                কার্ড নাম্বার লিখুন বা তালিকা থেকে সিলেক্ট করুন — নাম, ইমেইল, ইউজারনেম, পদবী ও লোকেশন স্বয়ংক্রিয়ভাবে পূরণ হয়ে যাবে।
+              </div>
+
+              <div style="display: flex; flex-direction: column; gap: 8px;">
+                <!-- Datalist Autocomplete Search -->
+                <div style="position: relative;">
+                  <input 
+                    type="text" 
+                    id="add-user-emp-card-input" 
+                    list="manpower-employees-datalist" 
+                    class="form-control" 
+                    placeholder="🔍 কার্ড নাম্বার বা নাম লিখুন (e.g. 1001 বা AMG...)" 
+                    autocomplete="off"
+                    style="font-size: 13px; padding-left: 36px; padding-right: 32px; background: rgba(15, 23, 42, 0.9); border-color: rgba(56, 189, 248, 0.45); font-weight: 600; color: #fff;"
+                  />
+                  <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 14px; opacity: 0.7; pointer-events: none;">🪪</span>
+                  <button 
+                    type="button" 
+                    id="btn-clear-emp-card" 
+                    title="Clear Selection"
+                    style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #94a3b8; font-size: 14px; cursor: pointer; padding: 2px 6px; display: none;"
+                  >✕</button>
+                </div>
+
+                <!-- Select Dropdown List -->
+                <select 
+                  id="add-user-emp-card-select" 
+                  class="form-control" 
+                  style="font-size: 12px; background: rgba(15, 23, 42, 0.85); border-color: rgba(148, 163, 184, 0.25); color: #cbd5e1;"
+                >
+                  <option value="">-- অথবা ড্রপডাউন তালিকা থেকে বেছে নিন (${activeEmployees.length} জন কর্মী) --</option>
+                  ${activeEmployees.map(emp => {
+                    const cardClean = String(emp.cardNumber || '').trim().toLowerCase();
+                    const isRegistered = cardClean && registeredCardSet.has(cardClean);
+                    return `<option value="${emp.cardNumber}">
+                      [${emp.cardNumber}] ${emp.name} — ${emp.designation || 'Staff'} (${emp.unitName || 'Plant'})${isRegistered ? ' ⚠️ (User Exists)' : ''}
+                    </option>`;
+                  }).join('')}
+                </select>
+              </div>
+
+              <!-- Datalist Entries -->
+              <datalist id="manpower-employees-datalist">
+                ${activeEmployees.map(emp => `
+                  <option value="${emp.cardNumber}">${emp.name} — ${emp.designation || 'Staff'} (${emp.unitName || 'Plant'})</option>
+                `).join('')}
+              </datalist>
+
+              <!-- Live Selected Employee Preview Card -->
+              <div id="manpower-assigned-preview" style="display: none; margin-top: 10px; background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.35); border-radius: 8px; padding: 10px 12px;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
+                  <div style="display: flex; gap: 10px; align-items: center;">
+                    <div style="width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #10b981, #059669); color: #fff; font-weight: 800; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0;" id="preview-emp-avatar">
+                      M
+                    </div>
+                    <div>
+                      <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                        <span id="preview-emp-name" style="font-weight: 800; font-size: 13.5px; color: #fff;"></span>
+                        <span id="preview-emp-card" class="badge" style="background: rgba(56, 189, 248, 0.2); color: #38bdf8; font-size: 11px; font-weight: 700; padding: 1px 6px;"></span>
+                        <span id="preview-emp-reg-warn" class="badge" style="display: none; background: rgba(239, 68, 68, 0.2); color: #f87171; font-size: 10px; font-weight: 700; padding: 1px 6px;">⚠️ Already Has Account</span>
+                      </div>
+                      <div id="preview-emp-meta" style="font-size: 11.5px; color: #cbd5e1; margin-top: 2px;"></div>
+                    </div>
+                  </div>
+                  <span class="badge" style="background: rgba(16, 185, 129, 0.25); color: #34d399; font-size: 10px; font-weight: 700; flex-shrink: 0;">
+                    ✓ Linked
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Full Name -->
             <div class="form-group">
               <label class="form-label" style="font-size: 12px; font-weight: 700; color: #fff;">
                 Full Name <span class="req">*</span>
@@ -902,6 +1011,7 @@ function renderActiveModalHtml() {
               />
             </div>
 
+            <!-- Email & Username -->
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
               <div class="form-group">
                 <label class="form-label" style="font-size: 12px; font-weight: 700; color: #fff;">
@@ -926,21 +1036,33 @@ function renderActiveModalHtml() {
                   id="add-user-username" 
                   class="form-control" 
                   placeholder="e.g. rafiq (auto-generated if empty)" 
-                  style="font-size: 13px;"
+                  style="font-size: 13px; font-family: var(--font-mono);"
                 />
               </div>
             </div>
 
+            <!-- Password with 1-Click Generator -->
             <div class="form-group">
-              <label class="form-label" style="font-size: 12px; font-weight: 700; color: #fff;">
-                Password <span class="req">*</span>
-              </label>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                <label class="form-label" style="font-size: 12px; font-weight: 700; color: #fff; margin: 0;">
+                  Password <span class="req">*</span>
+                </label>
+                <button 
+                  type="button" 
+                  id="btn-generate-add-password" 
+                  class="btn btn-ghost btn-xs" 
+                  style="font-size: 11px; padding: 2px 8px; color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); background: rgba(14, 165, 233, 0.12); border-radius: 5px; font-weight: 700;"
+                  title="Generate easy secure password"
+                >
+                  🎲 Auto-Generate Password
+                </button>
+              </div>
               <div style="position: relative;">
                 <input 
                   type="password" 
                   id="add-user-password" 
                   class="form-control" 
-                  placeholder="Minimum 4 characters" 
+                  placeholder="Minimum 4 characters (e.g. Pass@1234)" 
                   required 
                   minlength="4"
                   style="font-size: 13px; padding-right: 36px;"
@@ -950,6 +1072,7 @@ function renderActiveModalHtml() {
               <div style="font-size: 11px; color: #34d399; margin-top: 3px;">🔒 Passwords are cryptographically salted and hashed.</div>
             </div>
 
+            <!-- Permission Preset / Access Profile -->
             <div class="form-group">
               <label class="form-label" style="font-size: 12px; font-weight: 700; color: #fff;">
                 Permission Preset / Access Profile <span class="req">*</span>
@@ -966,6 +1089,7 @@ function renderActiveModalHtml() {
               </div>
             </div>
 
+            <!-- Role & Status -->
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
               <div class="form-group">
                 <label class="form-label" style="font-size: 12px; font-weight: 700; color: #fff;">
@@ -1027,6 +1151,21 @@ function renderActiveModalHtml() {
           <!-- Edit User Form -->
           <form id="form-edit-user" style="padding: 24px; display: flex; flex-direction: column; gap: 15px; overflow-y: auto; flex: 1; min-height: 0;">
             
+            ${targetUser.employeeId ? `
+              <div style="background: rgba(14, 165, 233, 0.1); border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 8px; padding: 10px 14px; font-size: 12px; display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+                <div style="display: flex; align-items: center; gap: 9px;">
+                  <span style="font-size: 16px;">🪪</span>
+                  <div>
+                    <span style="color: #38bdf8; font-weight: 700;">Linked Manpower Card:</span> 
+                    <strong style="color: #fff; margin-left: 4px;">${targetUser.employeeId}</strong>
+                    ${targetUser.designation ? `<span style="color: #cbd5e1; margin-left: 6px;">(${targetUser.designation})</span>` : ''}
+                    ${targetUser.department ? `<span style="color: var(--text-muted); margin-left: 4px;">• ${targetUser.department}</span>` : ''}
+                  </div>
+                </div>
+                <span class="badge" style="background: rgba(16, 185, 129, 0.2); color: #34d399; font-size: 10px; font-weight: 700;">✓ Synced</span>
+              </div>
+            ` : ''}
+
             <div class="form-group">
               <label class="form-label" style="font-size: 12px; font-weight: 700; color: #fff;">
                 Full Name <span class="req">*</span>
@@ -3087,6 +3226,214 @@ export function initUserManagementEvents() {
       });
     }
 
+    // 11b. Manpower Employee Card Selection & Auto-Fill for Add User
+    const cardInput = modalLayer.querySelector('#add-user-emp-card-input');
+    const cardSelect = modalLayer.querySelector('#add-user-emp-card-select');
+    const btnClearCard = modalLayer.querySelector('#btn-clear-emp-card');
+    const previewBox = modalLayer.querySelector('#manpower-assigned-preview');
+    const btnGenPass = modalLayer.querySelector('#btn-generate-add-password');
+
+    const activeEmployees = (typeof employeeService !== 'undefined' ? employeeService.getAllEmployees({ status: 'ACTIVE' }) : (storage.getTable(TABLE_NAMES.EMPLOYEES) || []))
+      .filter(e => e && e.status !== 'INACTIVE' && e.status !== 'TERMINATED');
+
+    const handleSelectEmployee = (emp) => {
+      if (!emp) return;
+      const cleanCard = String(emp.cardNumber || '').trim();
+      const cleanName = (emp.name || '').trim();
+
+      // 1. Autofill Full Name
+      const nameInput = modalLayer.querySelector('#add-user-fullname');
+      if (nameInput) nameInput.value = cleanName;
+
+      // 2. Autofill Email: corporate email or card@al-muslim.com
+      const emailInput = modalLayer.querySelector('#add-user-email');
+      if (emailInput) {
+        if (emp.email && emp.email.includes('@')) {
+          emailInput.value = emp.email.trim();
+        } else {
+          const cardSlug = cleanCard.toLowerCase().replace(/[^a-z0-9]/g, '');
+          emailInput.value = `${cardSlug || 'user'}@al-muslim.com`;
+        }
+      }
+
+      // 3. Autofill Username: clean card number or slug
+      const userInput = modalLayer.querySelector('#add-user-username');
+      if (userInput) {
+        const userSlug = cleanCard.toLowerCase().replace(/[^a-z0-9_]/g, '');
+        userInput.value = userSlug || cleanName.toLowerCase().replace(/[^a-z0-9]/g, '');
+      }
+
+      // 4. Hidden metadata fields
+      const hidId = modalLayer.querySelector('#add-user-emp-id');
+      if (hidId) hidId.value = cleanCard;
+      const hidDept = modalLayer.querySelector('#add-user-emp-dept');
+      if (hidDept) hidDept.value = emp.department || '';
+      const hidDesig = modalLayer.querySelector('#add-user-emp-desig');
+      if (hidDesig) hidDesig.value = emp.designation || '';
+      const hidPhone = modalLayer.querySelector('#add-user-emp-phone');
+      if (hidPhone) hidPhone.value = emp.phone || '';
+      const hidUnit = modalLayer.querySelector('#add-user-emp-unit');
+      if (hidUnit) hidUnit.value = emp.unitId || '';
+
+      // 5. Intelligent Preset & Role Auto-Selection
+      const desigLower = (emp.designation || '').toLowerCase();
+      const deptLower = (emp.department || '').toLowerCase();
+      const presetSelect = modalLayer.querySelector('#add-user-preset');
+      const roleSelect = modalLayer.querySelector('#add-user-role');
+
+      if (presetSelect) {
+        const options = Array.from(presetSelect.options);
+        let targetPresetOpt = null;
+
+        if (desigLower.includes('manager') || desigLower.includes('incharge') || desigLower.includes('admin') || deptLower.includes('admin') || desigLower.includes('head')) {
+          targetPresetOpt = options.find(o => o.text.includes('Admin') && !o.text.includes('Super'));
+          if (roleSelect) roleSelect.value = 'ADMIN';
+        } else if (desigLower.includes('lab') || desigLower.includes('ent') || deptLower.includes('lab') || desigLower.includes('electronic')) {
+          targetPresetOpt = options.find(o => o.text.includes('ET Lab') || o.text.includes('ENT') || o.value.includes('et_lab'));
+          if (roleSelect) roleSelect.value = 'USER';
+        } else if (desigLower.includes('store') || deptLower.includes('store')) {
+          targetPresetOpt = options.find(o => o.text.includes('Store') || o.value.includes('store'));
+          if (roleSelect) roleSelect.value = 'USER';
+        } else if (desigLower.includes('qa') || desigLower.includes('quality') || deptLower.includes('quality')) {
+          targetPresetOpt = options.find(o => o.text.includes('Quality') || o.text.includes('QA') || o.value.includes('qa'));
+          if (roleSelect) roleSelect.value = 'USER';
+        } else {
+          // Default: Maintenance User profile
+          targetPresetOpt = options.find(o => o.text.includes('Maintenance User') || o.value === 'preset_maintenance_user');
+          if (roleSelect) roleSelect.value = 'USER';
+        }
+
+        if (targetPresetOpt) {
+          presetSelect.value = targetPresetOpt.value;
+        }
+      }
+
+      // 6. Update Live Preview Box
+      if (previewBox) {
+        previewBox.style.display = 'block';
+        const av = previewBox.querySelector('#preview-emp-avatar');
+        if (av) av.textContent = (cleanName.charAt(0) || 'M').toUpperCase();
+        const nm = previewBox.querySelector('#preview-emp-name');
+        if (nm) nm.textContent = cleanName;
+        const cd = previewBox.querySelector('#preview-emp-card');
+        if (cd) cd.textContent = `Card: ${cleanCard}`;
+        const meta = previewBox.querySelector('#preview-emp-meta');
+        if (meta) {
+          meta.innerHTML = `
+            <strong>${emp.designation || 'Staff'}</strong> • ${emp.department || 'Garments Maintenance'}
+            ${emp.unitName ? ` • 🏢 <em>${emp.unitName}</em>` : ''}
+            ${emp.workingArea ? ` • 📍 ${emp.workingArea}` : ''}
+            ${emp.phone ? ` • 📞 ${emp.phone}` : ''}
+          `;
+        }
+
+        // Check if employee already has an account
+        const allUsers = authService.getAllUsers() || [];
+        const isRegistered = allUsers.some(u => 
+          (u.employeeId && String(u.employeeId).trim().toLowerCase() === cleanCard.toLowerCase()) ||
+          (u.username && String(u.username).trim().toLowerCase() === cleanCard.toLowerCase())
+        );
+        const warnBadge = previewBox.querySelector('#preview-emp-reg-warn');
+        if (warnBadge) {
+          warnBadge.style.display = isRegistered ? 'inline-block' : 'none';
+        }
+      }
+
+      // Sync input & select
+      if (cardInput && cardInput.value !== cleanCard) cardInput.value = cleanCard;
+      if (cardSelect && cardSelect.value !== cleanCard) cardSelect.value = cleanCard;
+      if (btnClearCard) btnClearCard.style.display = 'inline-block';
+
+      // Auto-focus on password field
+      const pwdInput = modalLayer.querySelector('#add-user-password');
+      if (pwdInput && !pwdInput.value) {
+        pwdInput.focus();
+      }
+
+      notificationService.success(`✅ Loaded Manpower Profile: ${cleanName} (${cleanCard})`);
+    };
+
+    if (cardInput) {
+      cardInput.addEventListener('input', (e) => {
+        const val = e.target.value.trim().toLowerCase();
+        if (!val) {
+          if (btnClearCard) btnClearCard.style.display = 'none';
+          if (previewBox) previewBox.style.display = 'none';
+          return;
+        }
+        if (btnClearCard) btnClearCard.style.display = 'inline-block';
+
+        const match = activeEmployees.find(emp => 
+          String(emp.cardNumber || '').trim().toLowerCase() === val ||
+          `${String(emp.cardNumber || '').trim().toLowerCase()} - ${emp.name?.toLowerCase()}`.includes(val)
+        );
+        if (match) {
+          handleSelectEmployee(match);
+        }
+      });
+
+      cardInput.addEventListener('change', (e) => {
+        const val = e.target.value.trim().toLowerCase();
+        if (!val) return;
+        const match = activeEmployees.find(emp => 
+          String(emp.cardNumber || '').trim().toLowerCase() === val ||
+          (emp.name && emp.name.toLowerCase() === val) ||
+          String(emp.cardNumber || '').trim().toLowerCase().startsWith(val)
+        );
+        if (match) {
+          handleSelectEmployee(match);
+        }
+      });
+    }
+
+    if (cardSelect) {
+      cardSelect.addEventListener('change', (e) => {
+        const cardVal = e.target.value;
+        if (!cardVal) {
+          if (btnClearCard) btnClearCard.click();
+          return;
+        }
+        const match = activeEmployees.find(emp => String(emp.cardNumber || '').trim() === cardVal);
+        if (match) {
+          handleSelectEmployee(match);
+        }
+      });
+    }
+
+    if (btnClearCard) {
+      btnClearCard.addEventListener('click', () => {
+        if (cardInput) cardInput.value = '';
+        if (cardSelect) cardSelect.value = '';
+        if (previewBox) previewBox.style.display = 'none';
+        btnClearCard.style.display = 'none';
+        const hidId = modalLayer.querySelector('#add-user-emp-id');
+        if (hidId) hidId.value = '';
+        const hidDept = modalLayer.querySelector('#add-user-emp-dept');
+        if (hidDept) hidDept.value = '';
+        const hidDesig = modalLayer.querySelector('#add-user-emp-desig');
+        if (hidDesig) hidDesig.value = '';
+        const hidPhone = modalLayer.querySelector('#add-user-emp-phone');
+        if (hidPhone) hidPhone.value = '';
+        const hidUnit = modalLayer.querySelector('#add-user-emp-unit');
+        if (hidUnit) hidUnit.value = '';
+      });
+    }
+
+    // Auto-Generate Password Button Handler
+    if (btnGenPass) {
+      btnGenPass.addEventListener('click', () => {
+        const hidId = modalLayer.querySelector('#add-user-emp-id')?.value?.trim();
+        const cleanCard = (hidId || 'AMG').replace(/[^a-zA-Z0-9]/g, '');
+        const autoPass = `${cleanCard}@${Math.floor(1000 + Math.random() * 9000)}`;
+        const pwdInput = modalLayer.querySelector('#add-user-password');
+        if (pwdInput) {
+          pwdInput.value = autoPass;
+          pwdInput.type = 'text';
+          notificationService.info(`🎲 Password generated: ${autoPass}`);
+        }
+      });
+    }
+
     // 12. Submit Add User Form
     const formAdd = modalLayer.querySelector('#form-add-new-user');
     if (formAdd) {
@@ -3099,6 +3446,10 @@ export function initUserManagementEvents() {
         const role = modalLayer.querySelector('#add-user-role')?.value || 'USER';
         const status = modalLayer.querySelector('#add-user-status')?.value || 'ACTIVE';
         const presetId = modalLayer.querySelector('#add-user-preset')?.value;
+        const employeeId = modalLayer.querySelector('#add-user-emp-id')?.value?.trim() || '';
+        const department = modalLayer.querySelector('#add-user-emp-dept')?.value?.trim() || '';
+        const designation = modalLayer.querySelector('#add-user-emp-desig')?.value?.trim() || '';
+        const phone = modalLayer.querySelector('#add-user-emp-phone')?.value?.trim() || '';
 
         try {
           const newUser = await authService.createUser({
@@ -3108,7 +3459,11 @@ export function initUserManagementEvents() {
             password,
             role,
             status,
-            presetId
+            presetId,
+            employeeId,
+            department,
+            designation,
+            phone
           });
           notificationService.success(`User '${newUser.name}' created successfully with profile [${newUser.presetName}]!`);
           closeModal(true);
