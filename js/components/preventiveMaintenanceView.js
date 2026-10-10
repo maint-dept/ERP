@@ -1408,21 +1408,36 @@ function renderServiceEntryModal() {
 
           <!-- USER/TECHNICIAN PART: TECHNICIAN WHO ACTUALLY PERFORMS SERVICE ENTERS NAME / CARD -->
           <div style="background: var(--bg-card); border: 1.5px solid #38bdf8; border-radius: 8px; padding: 14px; position: relative;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; flex-wrap: wrap; gap: 4px;">
-              <label style="font-size: 12px; font-weight: 800; color: #38bdf8; margin: 0;">
-                👨‍🔧 Serviced By / Assigned Technician (Name / Card No.) *
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 6px;">
+              <label style="font-size: 12px; font-weight: 800; color: #38bdf8; margin: 0; display: flex; align-items: center; gap: 6px;">
+                <span>👨‍🔧 Serviced By / Assigned Technician (Name / Card No.) *</span>
               </label>
               <span style="font-size: 11px; color: #94a3b8;">(Technician Part - Entered upon service completion)</span>
             </div>
+
+            <!-- Quick Action Assignment Toolbar: Self Assign vs Others Search -->
+            <div style="display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap;">
+              <button type="button" id="btn-pm-assign-self" class="btn btn-sm" style="background: linear-gradient(135deg, #0284c7, #0369a1); color: #fff; font-weight: 700; font-size: 12px; padding: 6px 14px; border-radius: 6px; border: 1.5px solid #38bdf8; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 8px rgba(2, 132, 199, 0.35);" title="1-Click Assign to Logged-in User">
+                <span>⚡</span>
+                <span>Assign to Myself (${escapeHtml(user?.name || 'Self')})</span>
+              </button>
+              
+              <button type="button" id="btn-pm-assign-others" class="btn btn-secondary btn-sm" style="background: #1e293b; color: #cbd5e1; font-weight: 700; font-size: 12px; padding: 6px 14px; border-radius: 6px; border: 1.5px solid rgba(255, 255, 255, 0.15); display: inline-flex; align-items: center; gap: 6px; cursor: pointer; transition: all 0.2s;" title="Search and select other team technician">
+                <span>🔍</span>
+                <span>Search / Assign Other Technician</span>
+              </button>
+            </div>
+
             <div style="position: relative;">
               <input 
                 type="text" 
                 id="pm-input-manpower-search" 
                 value="" 
-                placeholder="Type technician name or card number (e.g. 1088 or Rahim)..." 
+                placeholder="Search technician by Name, Card No (e.g. 1088 or Rahim)..." 
                 autocomplete="off"
-                style="width: 100%; padding: 10px 12px; background: #0f172a; border: 1.5px solid #38bdf8; border-radius: 6px; color: #fff; font-size: 13.5px;" 
+                style="width: 100%; padding: 10px 36px 10px 12px; background: #0f172a; border: 1.5px solid #38bdf8; border-radius: 6px; color: #fff; font-size: 13.5px;" 
               />
+              <button type="button" id="btn-pm-clear-manpower" title="Clear technician" style="display: none; position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: #1e293b; border: 1px solid rgba(255,255,255,0.2); border-radius: 50%; width: 22px; height: 22px; align-items: center; justify-content: center; color: #94a3b8; font-size: 12px; cursor: pointer; line-height: 1;">✕</button>
               <div id="pm-manpower-suggestions" class="pm-suggestions-dropdown" style="display: none; position: absolute; left: 0; right: 0; top: 100%; max-height: 220px; overflow-y: auto; background: #0f172a; border: 1.5px solid #38bdf8; border-radius: 6px; z-index: 1200; box-shadow: 0 10px 30px rgba(0,0,0,0.8); margin-top: 4px;"></div>
             </div>
             <!-- Hidden inputs for auto-filled details -->
@@ -1432,12 +1447,13 @@ function renderServiceEntryModal() {
             <input type="hidden" id="pm-manpower-dept" value="Mechanical Maintenance" />
             
             <div id="pm-manpower-auto-badge" style="margin-top: 8px; font-size: 11.5px; color: #cbd5e1; display: none; gap: 8px; flex-wrap: wrap; align-items: center;">
+              <span id="pm-badge-self-tag" class="badge" style="display: none; background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981; color: #34d399; font-weight: 800;">👤 Self-Assigned</span>
               <span class="badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8;">Card: <span id="pm-badge-card">-</span></span>
               <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981;"><span id="pm-badge-desig">-</span></span>
               <span class="badge" style="background: #1e293b; color: #94a3b8;"><span id="pm-badge-dept">Mechanical Maintenance</span></span>
             </div>
             <div style="font-size: 11px; color: #94a3b8; margin-top: 6px;">
-              💡 Technicians enter their own details when completing service. Mechanics are not pre-assigned by Admin.
+              💡 Click <strong>"Assign to Myself"</strong> for 1-click self-assignment, or <strong>"Search / Assign Other Technician"</strong> to select a colleague.
             </div>
           </div>
 
@@ -2975,10 +2991,17 @@ function bindModalEvents() {
   const manpowerInput = document.getElementById('pm-input-manpower-search');
   const manpowerBox = document.getElementById('pm-manpower-suggestions');
   const badgeBox = document.getElementById('pm-manpower-auto-badge');
+  const btnAssignSelf = document.getElementById('btn-pm-assign-self');
+  const btnAssignOthers = document.getElementById('btn-pm-assign-others');
+  const btnClearManpower = document.getElementById('btn-pm-clear-manpower');
+  const selfTag = document.getElementById('pm-badge-self-tag');
 
   const populateManpowerFields = (emp) => {
     if (!emp) return;
-    if (manpowerInput) manpowerInput.value = `${emp.name} (${emp.cardNumber ? 'Card: ' + emp.cardNumber : emp.designation || 'Technician'})`;
+    if (manpowerInput) {
+      manpowerInput.value = `${emp.name} (${emp.cardNumber ? 'Card: ' + emp.cardNumber : emp.designation || 'Technician'})`;
+      manpowerInput.style.borderColor = emp.isSelf ? '#10b981' : '#38bdf8';
+    }
     const nameHidden = document.getElementById('pm-manpower-name');
     if (nameHidden) nameHidden.value = emp.name;
     const cardHidden = document.getElementById('pm-manpower-card');
@@ -2995,9 +3018,96 @@ function bindModalEvents() {
     const bDept = document.getElementById('pm-badge-dept');
     if (bDept) bDept.textContent = emp.department || '';
 
+    if (selfTag) {
+      selfTag.style.display = emp.isSelf ? 'inline-block' : 'none';
+    }
     if (badgeBox) badgeBox.style.display = 'flex';
     if (manpowerBox) manpowerBox.style.display = 'none';
+    if (btnClearManpower) btnClearManpower.style.display = 'flex';
   };
+
+  const handleAssignSelf = () => {
+    const activeUser = authService.getCurrentUser();
+    if (!activeUser) return;
+
+    const allEmps = storage.getTable(TABLE_NAMES.EMPLOYEES) || [];
+    const matched = allEmps.find(e => 
+      (e.id && e.id === activeUser.employeeId) ||
+      (e.cardNumber && activeUser.cardNumber && String(e.cardNumber) === String(activeUser.cardNumber)) ||
+      (e.name && activeUser.name && e.name.trim().toLowerCase() === activeUser.name.trim().toLowerCase())
+    );
+
+    const selfEmp = {
+      id: matched?.id || activeUser.id,
+      name: activeUser.name || 'Current User',
+      cardNumber: matched?.cardNumber || activeUser.cardNumber || activeUser.username || '',
+      designation: matched?.designation || activeUser.presetName || activeUser.role || 'Maintenance Personnel',
+      department: matched?.department || 'Mechanical Maintenance',
+      workingArea: matched?.workingArea || matched?.floorName || '',
+      isSelf: true
+    };
+
+    populateManpowerFields(selfEmp);
+
+    if (btnAssignSelf) {
+      btnAssignSelf.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+      btnAssignSelf.style.borderColor = '#34d399';
+    }
+    if (btnAssignOthers) {
+      btnAssignOthers.style.background = '#1e293b';
+      btnAssignOthers.style.borderColor = 'rgba(255,255,255,0.15)';
+      btnAssignOthers.style.color = '#cbd5e1';
+    }
+  };
+
+  const handleAssignOthers = () => {
+    if (btnAssignSelf) {
+      btnAssignSelf.style.background = '#1e293b';
+      btnAssignSelf.style.borderColor = 'rgba(255,255,255,0.15)';
+      btnAssignSelf.style.color = '#cbd5e1';
+    }
+    if (btnAssignOthers) {
+      btnAssignOthers.style.background = 'linear-gradient(135deg, #0284c7, #0369a1)';
+      btnAssignOthers.style.borderColor = '#38bdf8';
+      btnAssignOthers.style.color = '#fff';
+    }
+    if (manpowerInput) {
+      manpowerInput.focus({ preventScroll: true });
+      updateManpowerDropdown(manpowerInput.value.trim());
+    }
+  };
+
+  const handleClearManpower = () => {
+    if (manpowerInput) {
+      manpowerInput.value = '';
+      manpowerInput.style.borderColor = '#38bdf8';
+      manpowerInput.focus({ preventScroll: true });
+    }
+    const nameHidden = document.getElementById('pm-manpower-name');
+    if (nameHidden) nameHidden.value = '';
+    const cardHidden = document.getElementById('pm-manpower-card');
+    if (cardHidden) cardHidden.value = '';
+    const desigHidden = document.getElementById('pm-manpower-designation');
+    if (desigHidden) desigHidden.value = '';
+    if (badgeBox) badgeBox.style.display = 'none';
+    if (selfTag) selfTag.style.display = 'none';
+    if (btnClearManpower) btnClearManpower.style.display = 'none';
+    if (btnAssignSelf) {
+      btnAssignSelf.style.background = 'linear-gradient(135deg, #0284c7, #0369a1)';
+      btnAssignSelf.style.borderColor = '#38bdf8';
+      btnAssignSelf.style.color = '#fff';
+    }
+    if (btnAssignOthers) {
+      btnAssignOthers.style.background = '#1e293b';
+      btnAssignOthers.style.borderColor = 'rgba(255,255,255,0.15)';
+      btnAssignOthers.style.color = '#cbd5e1';
+    }
+    updateManpowerDropdown('');
+  };
+
+  btnAssignSelf?.addEventListener('click', handleAssignSelf);
+  btnAssignOthers?.addEventListener('click', handleAssignOthers);
+  btnClearManpower?.addEventListener('click', handleClearManpower);
 
   const updateManpowerDropdown = (q = '') => {
     if (!manpowerBox) return;
