@@ -2505,7 +2505,7 @@ function renderNeedleTrackerTab(activeSession) {
             <span>📊</span> Export Excel Report
           </button>
           <button type="button" id="btn-goto-needle-ops-from-relocate" class="btn btn-primary" style="background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); border-color: #38bdf8; font-size: 12px; font-weight: 800; padding: 7px 16px; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px;">
-            <span>⚡</span> Record Needle Usage (Ops)
+            <span>⚡</span> Needle Flow (Ops)
           </button>
         </div>
       </div>

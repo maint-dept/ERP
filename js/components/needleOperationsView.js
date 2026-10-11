@@ -1,6 +1,6 @@
 /**
  * Al-Muslim Group Garments Factory Maintenance Machine ERP
- * Machine Operation -> Needle Usage & Adjustment Component
+ * Machine Operation -> Needle Flow (Usage & Adjustment) Component
  * 
  * Features:
  * - Machine Selection from Inventory with auto-fill of Machine Name, Brand, Model, Group, Unit, Floor, Line, and Specs
@@ -78,7 +78,7 @@ export function renderNeedleOperationsView() {
           <div>
             <div style="display: flex; align-items: center; gap: 8px;">
               <h1 style="font-size: 16px; font-weight: 800; color: #fff; margin: 0; letter-spacing: -0.2px;">
-                Needle Usage &amp; Adjustment Studio
+                Needle Flow Studio
               </h1>
               <span class="badge badge-active" style="font-size: 10px; font-weight: 800;">Real-Time Sync</span>
             </div>
@@ -421,7 +421,7 @@ function renderTransactionModal() {
             </div>
             <div>
               <div style="font-weight: 800; font-size: 15px; color: #fff; line-height: 1.2;">
-                Record Needle Usage &amp; Adjustment
+                Record Needle Flow &amp; Adjustment
               </div>
               <div style="font-size: 11px; color: #bae6fd; margin-top: 2px;">
                 Plus/Minus Balance updates instantly &amp; syncs with Relocate &amp; Verify
