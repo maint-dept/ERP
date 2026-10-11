@@ -180,148 +180,142 @@ export function renderPreventiveMaintenanceView() {
   const hasActiveFilters = activeTags.length > 0;
 
   return `
-    <div class="page-view preventive-maintenance-page inventory-page-wrapper" style="display: flex; flex-direction: column; gap: 8px; height: 100%; min-height: 0; background: var(--bg-main); color: var(--text-primary); overflow-y: auto; padding: 10px 16px;">
+    <div class="page-view preventive-maintenance-page inventory-page-wrapper" style="display: flex; flex-direction: column; gap: 5px; height: 100%; min-height: 0; background: var(--bg-main); color: var(--text-primary); overflow-y: auto; padding: 6px 12px;">
       
-      <!-- 1. ULTRA-COMPACT TOP UNIFIED BAR (Title + KPI Status Pills + Quick Action Buttons) -->
-      <div class="inventory-top-unified-bar">
+      <!-- 1. ULTRA-COMPACT TOP BAR (Title + KPI Status Pills + Quick Action Buttons) -->
+      <div class="inventory-top-unified-bar" style="padding: 4px 8px; display: flex; justify-content: space-between; align-items: center; gap: 6px; flex-wrap: wrap;">
         
-        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-          <h1 style="font-size: 15.5px; font-weight: 800; color: #fff; margin: 0; display: flex; align-items: center; gap: 6px;">
+        <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+          <h1 style="font-size: 14px; font-weight: 800; color: #fff; margin: 0; display: flex; align-items: center; gap: 5px; white-space: nowrap;">
             <span>🛡️</span> Preventive Maintenance
           </h1>
 
-          <span class="pm-sync-badge" title="Live Auto-Sync with Machine Inventory & Master Data Storage Active" style="background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); font-size: 10.5px; font-weight: 700; padding: 2px 7px; border-radius: 12px; display: inline-flex; align-items: center; gap: 4px;">
-            <span style="width: 6px; height: 6px; border-radius: 50%; background: #10b981; display: inline-block;"></span>
-            Auto-Sync Active
+          <span class="pm-sync-badge" title="Live Auto-Sync Active" style="background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 10px; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;">
+            <span style="width: 5px; height: 5px; border-radius: 50%; background: #10b981; display: inline-block;"></span>
+            Auto-Sync
           </span>
 
           <!-- Inline KPI Status Pills (Direct Click to Filter) -->
-          <div class="inventory-inline-kpis">
-            <div class="kpi-pill kpi-total pm-kpi-pill" data-kpi-action="reset" title="Total registered machines (Click to show all)" style="cursor: pointer;">
+          <div class="inventory-inline-kpis" style="gap: 4px;">
+            <div class="kpi-pill kpi-total pm-kpi-pill" data-kpi-action="reset" title="Total registered machines (Click to show all)" style="cursor: pointer; padding: 1px 6px; font-size: 10.5px;">
               <span class="kpi-dot">🏭</span>
-              <strong class="kpi-val">${metrics.totalMachines}</strong>
-              <span class="kpi-lbl">Total</span>
+              <strong class="kpi-val" style="font-size: 11px;">${metrics.totalMachines}</strong>
+              <span class="kpi-lbl" style="font-size: 9.5px;">Total</span>
             </div>
-            <div class="kpi-pill kpi-repair pm-kpi-pill" data-kpi-urgency="OVERDUE" title="Overdue maintenance (Click to filter)" style="border-left: 3px solid #ef4444; cursor: pointer; ${filterUrgency === 'OVERDUE' ? 'background: rgba(239, 68, 68, 0.25); border-color: #ef4444;' : ''}">
+            <div class="kpi-pill kpi-repair pm-kpi-pill" data-kpi-urgency="OVERDUE" title="Overdue maintenance (Click to filter)" style="border-left: 3px solid #ef4444; cursor: pointer; padding: 1px 6px; font-size: 10.5px; ${filterUrgency === 'OVERDUE' ? 'background: rgba(239, 68, 68, 0.25); border-color: #ef4444;' : ''}">
               <span class="kpi-dot">🔴</span>
-              <strong class="kpi-val" style="color: #f87171;">${metrics.overdue}</strong>
-              <span class="kpi-lbl">Overdue</span>
+              <strong class="kpi-val" style="color: #f87171; font-size: 11px;">${metrics.overdue}</strong>
+              <span class="kpi-lbl" style="font-size: 9.5px;">Overdue</span>
             </div>
-            <div class="kpi-pill kpi-repair pm-kpi-pill" data-kpi-urgency="DUE_TODAY" title="Due today (Click to filter)" style="border-left: 3px solid #f97316; cursor: pointer; ${filterUrgency === 'DUE_TODAY' ? 'background: rgba(249, 115, 22, 0.25); border-color: #f97316;' : ''}">
+            <div class="kpi-pill kpi-repair pm-kpi-pill" data-kpi-urgency="DUE_TODAY" title="Due today (Click to filter)" style="border-left: 3px solid #f97316; cursor: pointer; padding: 1px 6px; font-size: 10.5px; ${filterUrgency === 'DUE_TODAY' ? 'background: rgba(249, 115, 22, 0.25); border-color: #f97316;' : ''}">
               <span class="kpi-dot">🚨</span>
-              <strong class="kpi-val" style="color: #fb923c;">${metrics.dueToday}</strong>
-              <span class="kpi-lbl">Due Today</span>
+              <strong class="kpi-val" style="color: #fb923c; font-size: 11px;">${metrics.dueToday}</strong>
+              <span class="kpi-lbl" style="font-size: 9.5px;">Due Today</span>
             </div>
-            <div class="kpi-pill kpi-usable pm-kpi-pill" data-kpi-urgency="DUE_SOON" title="Due in 7 days (Click to filter)" style="border-left: 3px solid #f59e0b; cursor: pointer; ${filterUrgency === 'DUE_SOON' ? 'background: rgba(245, 158, 11, 0.25); border-color: #f59e0b;' : ''}">
+            <div class="kpi-pill kpi-usable pm-kpi-pill" data-kpi-urgency="DUE_SOON" title="Due in 7 days (Click to filter)" style="border-left: 3px solid #f59e0b; cursor: pointer; padding: 1px 6px; font-size: 10.5px; ${filterUrgency === 'DUE_SOON' ? 'background: rgba(245, 158, 11, 0.25); border-color: #f59e0b;' : ''}">
               <span class="kpi-dot">🟡</span>
-              <strong class="kpi-val" style="color: #fbbf24;">${metrics.dueWithin7Days}</strong>
-              <span class="kpi-lbl">Due 7d</span>
+              <strong class="kpi-val" style="color: #fbbf24; font-size: 11px;">${metrics.dueWithin7Days}</strong>
+              <span class="kpi-lbl" style="font-size: 9.5px;">Due 7d</span>
             </div>
-            <div class="kpi-pill kpi-running pm-kpi-pill" data-kpi-urgency="SCHEDULED" title="Upcoming scheduled (Click to filter)" style="cursor: pointer; ${filterUrgency === 'SCHEDULED' ? 'background: rgba(16, 185, 129, 0.25); border-color: #10b981;' : ''}">
+            <div class="kpi-pill kpi-running pm-kpi-pill" data-kpi-urgency="SCHEDULED" title="Upcoming scheduled (Click to filter)" style="cursor: pointer; padding: 1px 6px; font-size: 10.5px; ${filterUrgency === 'SCHEDULED' ? 'background: rgba(16, 185, 129, 0.25); border-color: #10b981;' : ''}">
               <span class="kpi-dot">🟢</span>
-              <strong class="kpi-val" style="color: #34d399;">${metrics.upcoming}</strong>
-              <span class="kpi-lbl">Upcoming</span>
+              <strong class="kpi-val" style="color: #34d399; font-size: 11px;">${metrics.upcoming}</strong>
+              <span class="kpi-lbl" style="font-size: 9.5px;">Upcoming</span>
             </div>
-            <div class="kpi-pill kpi-total pm-kpi-pill" data-kpi-tab="recently-serviced" title="Serviced today (Click to view records)" style="border-left: 3px solid #06b6d4; cursor: pointer;">
+            <div class="kpi-pill kpi-total pm-kpi-pill" data-kpi-tab="recently-serviced" title="Serviced today (Click to view records)" style="border-left: 3px solid #06b6d4; cursor: pointer; padding: 1px 6px; font-size: 10.5px;">
               <span class="kpi-dot">⚡</span>
-              <strong class="kpi-val" style="color: #22d3ee;">${metrics.servicedToday}</strong>
-              <span class="kpi-lbl">Today</span>
+              <strong class="kpi-val" style="color: #22d3ee; font-size: 11px;">${metrics.servicedToday}</strong>
+              <span class="kpi-lbl" style="font-size: 9.5px;">Today</span>
             </div>
           </div>
         </div>
 
         <!-- Right Side Quick Action Buttons -->
-        <div class="inventory-top-actions-group" style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
-          <button id="btn-pm-open-scanner" class="btn btn-secondary btn-sm" style="font-weight: 600; padding: 4px 10px; font-size: 12px;" title="Scan QR Code or Barcode">
-            📷 Scan Barcode
-          </button>
+        <div class="inventory-top-actions-group" style="display: flex; align-items: center; gap: 4px; flex-wrap: wrap;">
           ${canCreate ? `
-            <button id="btn-pm-new-service-top" class="btn btn-primary btn-sm" style="font-weight: 700; padding: 4px 12px; font-size: 12px;">
-              ➕ New Service Entry
+            <button id="btn-pm-new-service-top" class="btn btn-primary btn-sm" style="font-weight: 700; padding: 2px 8px; font-size: 11.5px; height: 26px;">
+              ➕ New Entry
             </button>
           ` : ''}
-          <button id="btn-pm-print-active-sticker" class="btn btn-secondary btn-sm" style="font-weight: 600; padding: 4px 10px; font-size: 12px;" title="Print physical service sticker">
-            🏷️ Print Sticker
+          <button id="btn-pm-open-scanner" class="btn btn-secondary btn-sm" style="font-weight: 600; padding: 2px 7px; font-size: 11.5px; height: 26px;" title="Scan QR Code or Barcode">
+            📷 Scan
           </button>
-          <button id="btn-pm-export-excel" class="btn btn-secondary btn-sm" style="font-weight: 600; padding: 4px 10px; font-size: 12px;" title="Export filtered maintenance list to Excel">
+          <button id="btn-pm-print-active-sticker" class="btn btn-secondary btn-sm" style="font-weight: 600; padding: 2px 7px; font-size: 11.5px; height: 26px;" title="Print physical service sticker">
+            🏷️ Sticker
+          </button>
+          <button id="btn-pm-export-excel" class="btn btn-secondary btn-sm" style="font-weight: 600; padding: 2px 7px; font-size: 11.5px; height: 26px;" title="Export filtered maintenance list to Excel">
             📤 Export
           </button>
-          <button id="btn-pm-download-servicing-template" class="btn btn-secondary btn-sm" style="font-weight: 600; padding: 4px 10px; font-size: 12px;" title="Download Pre-filled Machine Servicing Excel Template">
-            📥 Servicing Template
+          <button id="btn-pm-download-servicing-template" class="btn btn-secondary btn-sm" style="font-weight: 600; padding: 2px 7px; font-size: 11.5px; height: 26px;" title="Download Pre-filled Machine Servicing Excel Template">
+            📥 Template
           </button>
           ${canCreate ? `
-            <button id="btn-pm-bulk-servicing-import" class="btn btn-secondary btn-sm" style="font-weight: 700; padding: 4px 10px; font-size: 12px; color: #10b981; border-color: rgba(16, 185, 129, 0.4); background: rgba(16, 185, 129, 0.1);" title="Bulk Import Machine Servicing Dates & Records from Excel">
-              ⚡ Bulk Import Servicing
+            <button id="btn-pm-bulk-servicing-import" class="btn btn-secondary btn-sm" style="font-weight: 700; padding: 2px 7px; font-size: 11.5px; height: 26px; color: #10b981; border-color: rgba(16, 185, 129, 0.4); background: rgba(16, 185, 129, 0.1);" title="Bulk Import Machine Servicing Dates & Records from Excel">
+              ⚡ Bulk Import
             </button>
           ` : ''}
           ${canConfig ? `
-            <button id="btn-pm-top-bulk-excel" class="btn btn-secondary btn-sm" style="font-weight: 700; padding: 4px 10px; font-size: 12px; color: #38bdf8; border-color: rgba(56, 189, 248, 0.4); background: rgba(56, 189, 248, 0.1);" title="Bulk configure maintenance intervals (days) via Excel">
-              📊 Bulk Excel Days
+            <button id="btn-pm-top-bulk-excel" class="btn btn-secondary btn-sm" style="font-weight: 700; padding: 2px 7px; font-size: 11.5px; height: 26px; color: #38bdf8; border-color: rgba(56, 189, 248, 0.4); background: rgba(56, 189, 248, 0.1);" title="Bulk configure maintenance intervals (days) via Excel">
+              📊 Excel Days
             </button>
-            <button id="btn-pm-tab-config" class="btn btn-secondary btn-sm" style="font-weight: 600; padding: 4px 10px; font-size: 12px;" title="Admin Schedule Configuration">
+            <button id="btn-pm-tab-config" class="btn btn-secondary btn-sm" style="font-weight: 600; padding: 2px 7px; font-size: 11.5px; height: 26px;" title="Admin Schedule Configuration">
               ⚙️ Config
             </button>
           ` : ''}
         </div>
       </div>
 
-      <!-- 2. ROBUST 2-TIER STRUCTURED FILTER BAR -->
-      <div class="compact-filter-bar" style="padding: 10px 14px; display: flex; flex-direction: column; gap: 8px; background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm);">
+      <!-- 2. STREAMLINED 1-ROW FILTER BAR -->
+      <div class="compact-filter-bar" style="padding: 4px 8px; display: flex; flex-direction: column; gap: 4px; background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); box-shadow: var(--shadow-sm);">
         
-        <!-- Row 1: Universal Search & Location Hierarchy -->
-        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; width: 100%;">
+        <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap; width: 100%;">
           
           <!-- Unified Search Input -->
-          <div class="filter-search-wrap" style="flex: 2 1 260px; min-width: 240px; position: relative;">
-            <span class="filter-search-icon" style="left: 12px; font-size: 13px;">🔍</span>
+          <div class="filter-search-wrap" style="flex: 2 1 180px; min-width: 160px; max-width: 270px; position: relative;">
+            <span class="filter-search-icon" style="left: 8px; font-size: 11px;">🔍</span>
             <input 
               type="text" 
               id="pm-universal-search-input" 
               class="filter-search-input has-icon-left" 
-              placeholder="Search machine, serial, sticker, floor, line..." 
+              placeholder="Search serial, machine, floor, line..." 
               value="${escapeHtml(searchQuery)}"
-              style="height: 34px; font-size: 12.5px; padding-left: 44px !important; padding-right: ${searchQuery ? '36px' : '12px'} !important;"
+              style="height: 28px; font-size: 11.5px; padding-left: 28px !important; padding-right: ${searchQuery ? '26px' : '8px'} !important;"
             />
-            <div class="filter-search-actions" style="right: 6px;">
+            <div class="filter-search-actions" style="right: 4px;">
               ${searchQuery ? `
-                <button id="btn-pm-clear-search" type="button" class="filter-search-btn" style="height: 24px; width: 24px; font-size: 12px;" title="Clear Search">✕</button>
+                <button id="btn-pm-clear-search" type="button" class="filter-search-btn" style="height: 18px; width: 18px; font-size: 10px;" title="Clear Search">✕</button>
               ` : ''}
             </div>
             <div id="pm-search-suggestions-box" class="pm-suggestions-dropdown" style="display: none;"></div>
           </div>
 
           <!-- Floor Dropdown -->
-          <div class="filter-select-item" style="flex: 1 1 130px; min-width: 125px;">
-            <select id="pm-filter-floor" class="filter-select-compact" style="height: 34px; font-size: 12px; width: 100%;">
+          <div class="filter-select-item" style="flex: 1 1 100px; min-width: 95px; max-width: 135px;">
+            <select id="pm-filter-floor" class="filter-select-compact" style="height: 28px; font-size: 11.5px; width: 100%;">
               <option value="ALL">All Floors (${floors.length})</option>
               ${floors.map(f => `<option value="${f.id}" ${filterFloorId === f.id ? 'selected' : ''}>${escapeHtml(f.name)}</option>`).join('')}
             </select>
           </div>
 
           <!-- Line Dropdown -->
-          <div class="filter-select-item" style="flex: 1 1 130px; min-width: 125px;">
-            <select id="pm-filter-line" class="filter-select-compact" style="height: 34px; font-size: 12px; width: 100%;">
+          <div class="filter-select-item" style="flex: 1 1 100px; min-width: 95px; max-width: 135px;">
+            <select id="pm-filter-line" class="filter-select-compact" style="height: 28px; font-size: 11.5px; width: 100%;">
               <option value="ALL">All Lines (${lines.length})</option>
               ${lines.map(l => `<option value="${l.id}" ${filterLineId === l.id ? 'selected' : ''}>${escapeHtml(l.name)}</option>`).join('')}
             </select>
           </div>
 
-        </div>
-
-        <!-- Row 2: Machine Type, Urgency Status & Action Controls -->
-        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; width: 100%;">
-          
           <!-- Machine Type Dropdown -->
-          <div class="filter-select-item" style="flex: 1.5 1 160px; min-width: 145px;">
-            <select id="pm-filter-type" class="filter-select-compact" style="height: 32px; font-size: 12px; width: 100%;">
-              <option value="ALL">All Machine Types (${configs.length})</option>
+          <div class="filter-select-item" style="flex: 1.2 1 120px; min-width: 115px; max-width: 165px;">
+            <select id="pm-filter-type" class="filter-select-compact" style="height: 28px; font-size: 11.5px; width: 100%;">
+              <option value="ALL">All Types (${configs.length})</option>
               ${configs.map(c => `<option value="${escapeHtml(c.machineType)}" ${filterMachineType === c.machineType ? 'selected' : ''}>${escapeHtml(c.machineType)} ${c.machineCount ? `(${c.machineCount})` : ''}</option>`).join('')}
             </select>
           </div>
 
           <!-- Urgency Dropdown -->
-          <div class="filter-select-item" style="flex: 1 1 130px; min-width: 120px;">
-            <select id="pm-filter-urgency" class="filter-select-compact" style="height: 32px; font-size: 12px; width: 100%;">
+          <div class="filter-select-item" style="flex: 1 1 105px; min-width: 100px; max-width: 135px;">
+            <select id="pm-filter-urgency" class="filter-select-compact" style="height: 28px; font-size: 11.5px; width: 100%;">
               <option value="ALL" ${filterUrgency === 'ALL' ? 'selected' : ''}>All Urgencies</option>
               <option value="OVERDUE" ${filterUrgency === 'OVERDUE' ? 'selected' : ''}>🔴 Overdue</option>
               <option value="DUE_TODAY" ${filterUrgency === 'DUE_TODAY' ? 'selected' : ''}>🔴 Due Today</option>
@@ -332,27 +326,27 @@ export function renderPreventiveMaintenanceView() {
           </div>
 
           <!-- Reset Button -->
-          <button id="btn-pm-reset-filters" class="btn btn-secondary btn-sm" style="font-weight: 700; font-size: 11.5px; padding: 4px 12px; height: 32px; border-radius: 6px; margin-left: auto;" title="Reset all filters">
+          <button id="btn-pm-reset-filters" class="btn btn-secondary btn-sm" style="font-weight: 700; font-size: 11px; padding: 2px 8px; height: 28px; border-radius: 4px; margin-left: auto;" title="Reset all filters">
             ↺ Reset
           </button>
         </div>
 
-        <!-- Active Filter Tags Strip (identical to Machine Inventory) -->
+        <!-- Active Filter Tags Strip -->
         ${hasActiveFilters ? `
-          <div style="display: flex; align-items: center; gap: 5px; flex-wrap: wrap; margin-top: 4px; padding-top: 4px; border-top: 1px solid rgba(255, 255, 255, 0.06);">
-            <span style="font-size: 10.5px; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Active Filters:</span>
+          <div style="display: flex; align-items: center; gap: 4px; flex-wrap: wrap; margin-top: 2px; padding-top: 2px; border-top: 1px solid rgba(255, 255, 255, 0.05);">
+            <span style="font-size: 10px; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Active:</span>
             ${activeTags.map(tag => `
-              <span class="active-filter-tag pm-active-filter-tag" data-filter-key="${tag.key}" style="display: inline-flex; align-items: center; gap: 4px; background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 4px; padding: 1px 6px; font-size: 11px; color: #38bdf8; cursor: pointer;" title="Click to remove">
+              <span class="active-filter-tag pm-active-filter-tag" data-filter-key="${tag.key}" style="display: inline-flex; align-items: center; gap: 3px; background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 4px; padding: 1px 5px; font-size: 10.5px; color: #38bdf8; cursor: pointer;" title="Click to remove">
                 ${tag.label} <span style="color: #f87171; font-weight: bold; margin-left: 2px;">✕</span>
               </span>
             `).join('')}
-            <button id="btn-pm-clear-all-tags" class="btn btn-ghost btn-sm" style="padding: 1px 5px; font-size: 10.5px; color: #f87171; text-decoration: underline; cursor: pointer;">Clear All</button>
+            <button id="btn-pm-clear-all-tags" class="btn btn-ghost btn-sm" style="padding: 1px 4px; font-size: 10px; color: #f87171; text-decoration: underline; cursor: pointer;">Clear All</button>
           </div>
         ` : ''}
       </div>
 
       <!-- 3. COMPACT NAVIGATION TABS BAR WITH RECORD COUNTS -->
-      <div class="pm-tabs-bar" style="display: flex; gap: 4px; border-bottom: 1.5px solid var(--border-color); margin-top: 2px; margin-bottom: 4px;">
+      <div class="pm-tabs-bar" style="display: flex; gap: 2px; border-bottom: 1.5px solid var(--border-color); margin-top: 1px; margin-bottom: 2px;">
         <button class="pm-tab-btn ${activeTab === 'dashboard' ? 'active' : ''}" data-pm-tab="dashboard">
           📊 Priority Reminders (${metrics.totalMachines})
         </button>
@@ -439,57 +433,57 @@ function renderDashboardAndRemindersTab() {
   const pagedMachines = isAll ? upcomingMachines : upcomingMachines.slice(startIndex, startIndex + limit);
 
   return `
-    <div style="display: flex; flex-direction: column; gap: 8px;">
+    <div style="display: flex; flex-direction: column; gap: 5px;">
       
       <!-- URGENT ALERTS BANNER IF ANY OVERDUE OR DUE TODAY -->
       ${(overdueList.length > 0 || dueTodayList.length > 0) ? `
-        <div style="background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.35); border-radius: var(--radius-md); padding: 7px 14px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
-          <div style="display: flex; align-items: center; gap: 8px; font-size: 12px;">
-            <span style="font-size: 16px;">🚨</span>
+        <div style="background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.35); border-radius: var(--radius-md); padding: 5px 12px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px;">
+          <div style="display: flex; align-items: center; gap: 6px; font-size: 11.5px;">
+            <span style="font-size: 14px;">🚨</span>
             <span style="font-weight: 700; color: #f87171;">Action Required:</span>
             <span style="color: #cbd5e1;">
               <strong style="color: #fff;">${overdueList.length}</strong> overdue &bull; <strong style="color: #fff;">${dueTodayList.length}</strong> due today
             </span>
           </div>
-          <button id="btn-pm-filter-urgent-only" class="btn btn-sm" style="background: #ef4444; color: #fff; font-weight: 700; font-size: 11px; padding: 2px 8px; border: none; border-radius: 4px; cursor: pointer;">
+          <button id="btn-pm-filter-urgent-only" class="btn btn-sm" style="background: #ef4444; color: #fff; font-weight: 700; font-size: 10.5px; padding: 2px 7px; border: none; border-radius: 4px; cursor: pointer;">
             Show Urgent Only
           </button>
         </div>
       ` : ''}
 
       <!-- REMINDER FOR NEXT SERVICING TABLE CARD -->
-      <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-sm);">
-        <div style="padding: 10px 14px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; background: rgba(255,255,255,0.015);">
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <span style="font-size: 14px;">⏰</span>
-            <strong style="font-size: 13px; color: #fff;">Reminder for Next Servicing (Priority Ranked)</strong>
-            <span style="font-size: 11px; color: var(--text-muted);">&bull; Overdue &rarr; Due Today &rarr; Due 7d &rarr; Upcoming</span>
+      <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); overflow: hidden; box-shadow: var(--shadow-sm);">
+        <div style="padding: 5px 10px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; background: rgba(255,255,255,0.015);">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span style="font-size: 13px;">⏰</span>
+            <strong style="font-size: 12.5px; color: #fff;">Reminder for Next Servicing (Priority Ranked)</strong>
+            <span style="font-size: 10.5px; color: var(--text-muted);">&bull; Overdue &rarr; Due Today &rarr; Due 7d &rarr; Upcoming</span>
           </div>
-          <span style="font-size: 12px; color: var(--text-muted); font-weight: 600;">
+          <span style="font-size: 11.5px; color: var(--text-muted); font-weight: 600;">
             Total: <strong style="color: #38bdf8;">${total}</strong> Schedules
           </span>
         </div>
 
-        <div class="table-responsive" style="max-height: calc(100vh - 280px); overflow-y: auto; overflow-x: auto; width: 100%;">
-          <table class="pm-table" style="width: 100%; min-width: 1000px; border-collapse: collapse; font-size: 12px; text-align: left;">
+        <div class="table-responsive" style="max-height: calc(100vh - 195px); overflow-y: auto; overflow-x: auto; width: 100%;">
+          <table class="pm-table" style="width: 100%; min-width: 1000px; border-collapse: collapse; font-size: 11.5px; text-align: left;">
             <thead>
-              <tr style="background: #0f172a; border-bottom: 1.5px solid var(--border-color); color: var(--text-secondary); text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px; position: sticky; top: 0; z-index: 5;">
-                <th style="padding: 8px 10px; width: 45px; text-align: center;">SL</th>
-                <th style="padding: 8px 10px; width: 125px;">Urgency Status</th>
-                <th style="padding: 8px 10px; width: 125px;">Machine Serial</th>
-                <th style="padding: 8px 10px;">Machine Name / Model</th>
-                <th style="padding: 8px 10px;">Location</th>
-                <th style="padding: 8px 10px;">Last Service</th>
-                <th style="padding: 8px 10px;">Next Target</th>
-                <th style="padding: 8px 10px;">Frequency</th>
-                <th style="padding: 8px 10px;">Assigned Manpower</th>
-                <th style="padding: 8px 10px; text-align: center; width: 155px;">Actions</th>
+              <tr style="background: #0f172a; border-bottom: 1.5px solid var(--border-color); color: var(--text-secondary); text-transform: uppercase; font-size: 10.5px; letter-spacing: 0.5px; position: sticky; top: 0; z-index: 5;">
+                <th style="padding: 6px 8px; width: 40px; text-align: center;">SL</th>
+                <th style="padding: 6px 8px; width: 120px;">Urgency Status</th>
+                <th style="padding: 6px 8px; width: 120px;">Machine Serial</th>
+                <th style="padding: 6px 8px;">Machine Name / Model</th>
+                <th style="padding: 6px 8px;">Location</th>
+                <th style="padding: 6px 8px;">Last Service</th>
+                <th style="padding: 6px 8px;">Next Target</th>
+                <th style="padding: 6px 8px;">Frequency</th>
+                <th style="padding: 6px 8px;">Assigned Manpower</th>
+                <th style="padding: 6px 8px; text-align: center; width: 145px;">Actions</th>
               </tr>
             </thead>
             <tbody>
               ${upcomingMachines.length === 0 ? `
                 <tr>
-                  <td colspan="10" style="text-align: center; padding: 40px; color: var(--text-muted);">
+                  <td colspan="10" style="text-align: center; padding: 30px; color: var(--text-muted);">
                     No machines match the selected maintenance filter criteria.
                   </td>
                 </tr>
@@ -497,53 +491,53 @@ function renderDashboardAndRemindersTab() {
     const sl = String(startIndex + idx + 1).padStart(2, '0');
     return `
                 <tr class="pm-table-row ${m.urgency.status === 'OVERDUE' ? 'row-overdue' : (m.urgency.status === 'DUE_TODAY' ? 'row-due-today' : '')}" style="border-bottom: 1px solid rgba(255,255,255,0.06); transition: background 0.15s;">
-                  <td style="padding: 8px 10px; text-align: center; font-family: monospace; font-size: 11px; color: var(--text-muted);">${sl}</td>
-                  <td style="padding: 8px 10px; white-space: nowrap;">
+                  <td style="padding: 5px 8px; text-align: center; font-family: monospace; font-size: 10.5px; color: var(--text-muted);">${sl}</td>
+                  <td style="padding: 5px 8px; white-space: nowrap;">
                     ${m.urgency.displayBadge}
                   </td>
-                  <td style="padding: 8px 10px; font-weight: 700;">
+                  <td style="padding: 5px 8px; font-weight: 700;">
                     <a href="javascript:void(0)" class="pm-link-machine machine-serial-link" data-serial="${escapeHtml(m.serialNumber)}" title="View Machine Profile">
                       ${escapeHtml(m.serialNumber)}
                     </a>
                   </td>
-                  <td style="padding: 8px 10px;">
-                    <div style="font-weight: 700; color: #fff;">${escapeHtml(m.machineName)}</div>
-                    <div style="font-size: 11px; color: var(--text-secondary);">${escapeHtml(m.brand)} ${escapeHtml(m.model)}</div>
+                  <td style="padding: 5px 8px;">
+                    <div style="font-weight: 700; color: #fff; line-height: 1.2;">${escapeHtml(m.machineName)}</div>
+                    <div style="font-size: 10.5px; color: var(--text-secondary); line-height: 1.2;">${escapeHtml(m.brand)} ${escapeHtml(m.model)}</div>
                   </td>
-                  <td style="padding: 8px 10px;">
-                    <span class="badge" style="background: rgba(56, 189, 248, 0.1); color: #38bdf8; font-size: 10.5px; margin-right: 4px;">${escapeHtml(m.floor)}</span>
-                    <span style="font-size: 11px; color: #cbd5e1;">${escapeHtml(m.line)}</span>
+                  <td style="padding: 5px 8px;">
+                    <span class="badge" style="background: rgba(56, 189, 248, 0.1); color: #38bdf8; font-size: 10px; margin-right: 3px; padding: 1px 4px;">${escapeHtml(m.floor)}</span>
+                    <span style="font-size: 10.5px; color: #cbd5e1;">${escapeHtml(m.line)}</span>
                   </td>
-                  <td style="padding: 8px 10px; font-family: monospace; color: var(--text-secondary);">
+                  <td style="padding: 5px 8px; font-family: monospace; font-size: 11px; color: var(--text-secondary);">
                     ${m.lastServiceDate ? formatDisplayDate(m.lastServiceDate) : '<span style="color: #64748b;">Not Recorded</span>'}
                   </td>
-                  <td style="padding: 8px 10px; font-family: monospace; font-weight: 700; color: ${m.urgency.status === 'OVERDUE' || m.urgency.status === 'DUE_TODAY' ? '#f87171' : '#38bdf8'};">
+                  <td style="padding: 5px 8px; font-family: monospace; font-size: 11px; font-weight: 700; color: ${m.urgency.status === 'OVERDUE' || m.urgency.status === 'DUE_TODAY' ? '#f87171' : '#38bdf8'};">
                     ${formatDisplayDate(m.nextServiceDate)}
                   </td>
-                  <td style="padding: 8px 10px;">
-                    <span style="font-size: 11px; background: #1e293b; color: #94a3b8; padding: 2px 6px; border-radius: 4px;">
+                  <td style="padding: 5px 8px;">
+                    <span style="font-size: 10.5px; background: #1e293b; color: #94a3b8; padding: 1px 5px; border-radius: 4px;">
                       ${escapeHtml(m.frequencyLabel)}
                     </span>
                   </td>
-                  <td style="padding: 8px 10px;">
+                  <td style="padding: 5px 8px;">
                     ${m.lastServiceDate && m.assignedManpower ? `
-                      <div style="font-weight: 600; color: #fff;">${escapeHtml(m.assignedManpower)}</div>
-                      <div style="font-size: 10.5px; color: var(--text-muted);">${escapeHtml(m.lastServicedBy ? 'Last: ' + m.lastServicedBy : '')}</div>
+                      <div style="font-weight: 600; color: #fff; line-height: 1.2;">${escapeHtml(m.assignedManpower)}</div>
+                      <div style="font-size: 10px; color: var(--text-muted); line-height: 1.2;">${escapeHtml(m.lastServicedBy ? 'Last: ' + m.lastServicedBy : '')}</div>
                     ` : `
-                      <span style="color: #64748b; font-size: 11px; font-style: italic;">Not Assigned Yet</span>
+                      <span style="color: #64748b; font-size: 10.5px; font-style: italic;">Not Assigned Yet</span>
                     `}
                   </td>
-                  <td style="padding: 8px 10px; text-align: center; white-space: nowrap;">
-                    <button class="btn btn-primary btn-sm btn-pm-service-now" data-machine-id="${m.machineId}" style="padding: 3px 8px; font-size: 11px; font-weight: 700; margin-right: 3px;">
+                  <td style="padding: 5px 8px; text-align: center; white-space: nowrap;">
+                    <button class="btn btn-primary btn-sm btn-pm-service-now" data-machine-id="${m.machineId}" style="padding: 2px 7px; font-size: 10.5px; font-weight: 700; margin-right: 2px;">
                       ⚡ Service
                     </button>
-                    <button class="btn btn-secondary btn-sm btn-pm-print-single-sticker" data-serial="${escapeHtml(m.serialNumber)}" title="Print Sticker" style="padding: 3px 6px; font-size: 11px; margin-right: 3px;">
+                    <button class="btn btn-secondary btn-sm btn-pm-print-single-sticker" data-serial="${escapeHtml(m.serialNumber)}" title="Print Sticker" style="padding: 2px 5px; font-size: 10.5px; margin-right: 2px;">
                       🏷️
                     </button>
-                    <button class="btn btn-secondary btn-sm btn-pm-view-profile" data-serial="${escapeHtml(m.serialNumber)}" title="View Profile" style="padding: 3px 6px; font-size: 11px; margin-right: 3px;">
+                    <button class="btn btn-secondary btn-sm btn-pm-view-profile" data-serial="${escapeHtml(m.serialNumber)}" title="View Profile" style="padding: 2px 5px; font-size: 10.5px; margin-right: 2px;">
                       👁️
                     </button>
-                    <button class="btn btn-secondary btn-sm btn-pm-replace-sticker" data-serial="${escapeHtml(m.serialNumber)}" title="Replace Physical Sticker (Sl No.)" style="padding: 3px 6px; font-size: 11px; color: #38bdf8;">
+                    <button class="btn btn-secondary btn-sm btn-pm-replace-sticker" data-serial="${escapeHtml(m.serialNumber)}" title="Replace Physical Sticker (Sl No.)" style="padding: 2px 5px; font-size: 10.5px; color: #38bdf8;">
                       🔄
                     </button>
                   </td>
@@ -584,38 +578,38 @@ function renderRecentlyServicedTab() {
   const pagedRecords = isAll ? records : records.slice(startIndex, startIndex + limit);
 
   return `
-    <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-sm);">
-      <div style="padding: 10px 14px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; background: rgba(255,255,255,0.015);">
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <span style="font-size: 14px;">🕒</span>
-          <strong style="font-size: 13px; color: #fff;">Recently Serviced Machines</strong>
-          <span style="font-size: 11px; color: var(--text-muted);">&bull; Chronological audit log (Latest Service &rarr; First)</span>
+    <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); overflow: hidden; box-shadow: var(--shadow-sm);">
+      <div style="padding: 5px 10px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; background: rgba(255,255,255,0.015);">
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <span style="font-size: 13px;">🕒</span>
+          <strong style="font-size: 12.5px; color: #fff;">Recently Serviced Machines</strong>
+          <span style="font-size: 10.5px; color: var(--text-muted);">&bull; Chronological audit log (Latest Service &rarr; First)</span>
         </div>
-        <span style="font-size: 12px; color: var(--text-muted); font-weight: 600;">
+        <span style="font-size: 11.5px; color: var(--text-muted); font-weight: 600;">
           Total: <strong style="color: #34d399;">${total}</strong> Completed Records
         </span>
       </div>
 
-      <div class="table-responsive" style="max-height: calc(100vh - 280px); overflow-y: auto; overflow-x: auto; width: 100%;">
-        <table class="pm-table" style="width: 100%; min-width: 950px; border-collapse: collapse; font-size: 12px; text-align: left;">
+      <div class="table-responsive" style="max-height: calc(100vh - 195px); overflow-y: auto; overflow-x: auto; width: 100%;">
+        <table class="pm-table" style="width: 100%; min-width: 950px; border-collapse: collapse; font-size: 11.5px; text-align: left;">
           <thead>
-            <tr style="background: #0f172a; border-bottom: 1.5px solid var(--border-color); color: var(--text-secondary); text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px; position: sticky; top: 0; z-index: 5;">
-              <th style="padding: 8px 10px; width: 45px; text-align: center;">SL</th>
-              <th style="padding: 8px 10px; width: 110px;">Service Date</th>
-              <th style="padding: 8px 10px; width: 125px;">Machine Serial</th>
-              <th style="padding: 8px 10px;">Machine Details</th>
-              <th style="padding: 8px 10px;">Location</th>
-              <th style="padding: 8px 10px;">Serviced By (Card #)</th>
-              <th style="padding: 8px 10px;">Sticker Serial</th>
-              <th style="padding: 8px 10px;">Next Target</th>
-              <th style="padding: 8px 10px;">Remarks &amp; Parts</th>
-              <th style="padding: 8px 10px; text-align: center; width: 130px;">Actions</th>
+            <tr style="background: #0f172a; border-bottom: 1.5px solid var(--border-color); color: var(--text-secondary); text-transform: uppercase; font-size: 10.5px; letter-spacing: 0.5px; position: sticky; top: 0; z-index: 5;">
+              <th style="padding: 6px 8px; width: 40px; text-align: center;">SL</th>
+              <th style="padding: 6px 8px; width: 105px;">Service Date</th>
+              <th style="padding: 6px 8px; width: 120px;">Machine Serial</th>
+              <th style="padding: 6px 8px;">Machine Details</th>
+              <th style="padding: 6px 8px;">Location</th>
+              <th style="padding: 6px 8px;">Serviced By (Card #)</th>
+              <th style="padding: 6px 8px;">Sticker Serial</th>
+              <th style="padding: 6px 8px;">Next Target</th>
+              <th style="padding: 6px 8px;">Remarks &amp; Parts</th>
+              <th style="padding: 6px 8px; text-align: center; width: 125px;">Actions</th>
             </tr>
           </thead>
           <tbody>
             ${records.length === 0 ? `
               <tr>
-                <td colspan="10" style="text-align: center; padding: 40px; color: var(--text-muted);">
+                <td colspan="10" style="text-align: center; padding: 30px; color: var(--text-muted);">
                   No recent servicing records found matching the criteria.
                 </td>
               </tr>
@@ -623,53 +617,53 @@ function renderRecentlyServicedTab() {
     const sl = String(startIndex + idx + 1).padStart(2, '0');
     return `
               <tr class="pm-table-row" style="border-bottom: 1px solid rgba(255,255,255,0.06);">
-                <td style="padding: 8px 10px; text-align: center; font-family: monospace; font-size: 11px; color: var(--text-muted);">${sl}</td>
-                <td style="padding: 8px 10px; font-family: monospace; font-weight: 700; color: #10b981; white-space: nowrap;">
+                <td style="padding: 5px 8px; text-align: center; font-family: monospace; font-size: 10.5px; color: var(--text-muted);">${sl}</td>
+                <td style="padding: 5px 8px; font-family: monospace; font-size: 11px; font-weight: 700; color: #10b981; white-space: nowrap;">
                   📅 ${formatDisplayDate(r.serviceDate)}
                 </td>
-                <td style="padding: 8px 10px; font-weight: 700;">
+                <td style="padding: 5px 8px; font-weight: 700;">
                   <a href="javascript:void(0)" class="pm-link-machine machine-serial-link" data-serial="${escapeHtml(r.serialNumber)}" title="View Machine Profile">
                     ${escapeHtml(r.serialNumber)}
                   </a>
                 </td>
-                <td style="padding: 8px 10px;">
-                  <div style="font-weight: 700; color: #fff;">${escapeHtml(r.machineName)}</div>
-                  <div style="font-size: 11px; color: var(--text-secondary);">${escapeHtml(r.brand)} ${escapeHtml(r.model)}</div>
+                <td style="padding: 5px 8px;">
+                  <div style="font-weight: 700; color: #fff; line-height: 1.2;">${escapeHtml(r.machineName)}</div>
+                  <div style="font-size: 10.5px; color: var(--text-secondary); line-height: 1.2;">${escapeHtml(r.brand)} ${escapeHtml(r.model)}</div>
                 </td>
-                <td style="padding: 8px 10px;">
-                  <span class="badge" style="background: rgba(56, 189, 248, 0.1); color: #38bdf8; font-size: 10.5px; margin-right: 4px;">${escapeHtml(r.floor)}</span>
-                  <span style="font-size: 11px; color: #cbd5e1;">${escapeHtml(r.line)}</span>
+                <td style="padding: 5px 8px;">
+                  <span class="badge" style="background: rgba(56, 189, 248, 0.1); color: #38bdf8; font-size: 10px; margin-right: 3px; padding: 1px 4px;">${escapeHtml(r.floor)}</span>
+                  <span style="font-size: 10.5px; color: #cbd5e1;">${escapeHtml(r.line)}</span>
                 </td>
-                <td style="padding: 8px 10px;">
-                  <div style="font-weight: 700; color: #fff;">${escapeHtml(r.servicedBy)}</div>
-                  <div style="font-size: 10.5px; color: #38bdf8; font-family: monospace;">Card: ${escapeHtml(r.servicedByCardNumber || 'N/A')} &bull; ${escapeHtml(r.servicedByDesignation || '')}</div>
+                <td style="padding: 5px 8px;">
+                  <div style="font-weight: 700; color: #fff; line-height: 1.2;">${escapeHtml(r.servicedBy)}</div>
+                  <div style="font-size: 10px; color: #38bdf8; font-family: monospace; line-height: 1.2;">Card: ${escapeHtml(r.servicedByCardNumber || 'N/A')} &bull; ${escapeHtml(r.servicedByDesignation || '')}</div>
                 </td>
-                <td style="padding: 8px 10px; white-space: nowrap;">
-                  <span class="badge" style="background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3); font-family: monospace; font-weight: 700; font-size: 11px; padding: 2px 7px;">
+                <td style="padding: 5px 8px; white-space: nowrap;">
+                  <span class="badge" style="background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3); font-family: monospace; font-weight: 700; font-size: 10.5px; padding: 1px 6px;">
                     🏷️ ${escapeHtml(r.serviceStickerSerial || 'N/A')}
                   </span>
                 </td>
-                <td style="padding: 8px 10px; font-family: monospace; font-weight: 700; color: #38bdf8; white-space: nowrap;">
+                <td style="padding: 5px 8px; font-family: monospace; font-size: 11px; font-weight: 700; color: #38bdf8; white-space: nowrap;">
                   ${r.nextServiceDate ? formatDisplayDate(r.nextServiceDate) : 'N/A'}
                 </td>
-                <td style="padding: 8px 10px; max-width: 190px;">
-                  <div style="font-size: 11.5px; color: #cbd5e1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${escapeHtml(r.serviceRemarks)}">
+                <td style="padding: 5px 8px; max-width: 190px;">
+                  <div style="font-size: 11px; color: #cbd5e1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${escapeHtml(r.serviceRemarks)}">
                     ${escapeHtml(r.serviceRemarks || 'Routine maintenance completed')}
                   </div>
                   ${r.partsReplaced ? `
-                    <div style="font-size: 10.5px; color: #f59e0b; margin-top: 2px;">
+                    <div style="font-size: 10px; color: #f59e0b; margin-top: 1px;">
                       ⚙️ ${escapeHtml(r.partsReplaced)}
                     </div>
                   ` : ''}
                 </td>
-                <td style="padding: 8px 10px; text-align: center; white-space: nowrap;">
-                  <button class="btn btn-secondary btn-sm btn-pm-edit-sticker" data-record-id="${r.id}" data-current-sticker="${escapeHtml(r.serviceStickerSerial || '')}" title="Edit Sticker Serial" style="padding: 3px 6px; font-size: 11px; margin-right: 3px;">
+                <td style="padding: 5px 8px; text-align: center; white-space: nowrap;">
+                  <button class="btn btn-secondary btn-sm btn-pm-edit-sticker" data-record-id="${r.id}" data-current-sticker="${escapeHtml(r.serviceStickerSerial || '')}" title="Edit Sticker Serial" style="padding: 2px 5px; font-size: 10.5px; margin-right: 2px;">
                     ✏️ Sticker
                   </button>
-                  <button class="btn btn-secondary btn-sm btn-pm-print-single-sticker" data-serial="${escapeHtml(r.serialNumber)}" title="Print Sticker" style="padding: 3px 6px; font-size: 11px; margin-right: 3px;">
+                  <button class="btn btn-secondary btn-sm btn-pm-print-single-sticker" data-serial="${escapeHtml(r.serialNumber)}" title="Print Sticker" style="padding: 2px 5px; font-size: 10.5px; margin-right: 2px;">
                     🏷️
                   </button>
-                  <button class="btn btn-secondary btn-sm btn-pm-view-profile" data-serial="${escapeHtml(r.serialNumber)}" title="View Profile" style="padding: 3px 6px; font-size: 11px;">
+                  <button class="btn btn-secondary btn-sm btn-pm-view-profile" data-serial="${escapeHtml(r.serialNumber)}" title="View Profile" style="padding: 2px 5px; font-size: 10.5px;">
                     👁️
                   </button>
                 </td>
@@ -991,33 +985,33 @@ function renderMasterScheduleTab() {
   const pagedMachines = isAll ? machines : machines.slice(startIndex, startIndex + limit);
 
   return `
-    <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-sm);">
-      <div style="padding: 10px 14px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; background: rgba(255,255,255,0.015);">
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <span style="font-size: 14px;">📅</span>
-          <strong style="font-size: 13px; color: #fff;">Plant-Wide Master Maintenance Schedules</strong>
-          <span style="font-size: 11px; color: var(--text-muted);">&bull; Comprehensive schedule registry across all machines</span>
+    <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); overflow: hidden; box-shadow: var(--shadow-sm);">
+      <div style="padding: 5px 10px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; background: rgba(255,255,255,0.015);">
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <span style="font-size: 13px;">📅</span>
+          <strong style="font-size: 12.5px; color: #fff;">Plant-Wide Master Maintenance Schedules</strong>
+          <span style="font-size: 10.5px; color: var(--text-muted);">&bull; Comprehensive schedule registry across all machines</span>
         </div>
-        <span style="font-size: 12px; color: var(--text-muted); font-weight: 600;">
+        <span style="font-size: 11.5px; color: var(--text-muted); font-weight: 600;">
           Total: <strong style="color: #38bdf8;">${total}</strong> Machines Active
         </span>
       </div>
 
-      <div class="table-responsive" style="max-height: calc(100vh - 280px); overflow-y: auto; overflow-x: auto; width: 100%;">
-        <table class="pm-table" style="width: 100%; min-width: 960px; border-collapse: collapse; font-size: 12px; text-align: left;">
+      <div class="table-responsive" style="max-height: calc(100vh - 195px); overflow-y: auto; overflow-x: auto; width: 100%;">
+        <table class="pm-table" style="width: 100%; min-width: 960px; border-collapse: collapse; font-size: 11.5px; text-align: left;">
           <thead>
-            <tr style="background: #0f172a; border-bottom: 1.5px solid var(--border-color); color: var(--text-secondary); text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px; position: sticky; top: 0; z-index: 5;">
-              <th style="padding: 8px 10px; width: 45px; text-align: center;">SL</th>
-              <th style="padding: 8px 10px; width: 125px;">Status</th>
-              <th style="padding: 8px 10px; width: 125px;">Serial</th>
-              <th style="padding: 8px 10px;">Machine Type / Name</th>
-              <th style="padding: 8px 10px;">Brand &amp; Model</th>
-              <th style="padding: 8px 10px;">Location</th>
-              <th style="padding: 8px 10px;">Last Serviced</th>
-              <th style="padding: 8px 10px;">Next Target</th>
-              <th style="padding: 8px 10px;">Sticker Serial</th>
-              <th style="padding: 8px 10px;">Assigned Manpower</th>
-              <th style="padding: 8px 10px; text-align: center; width: 130px;">Action</th>
+            <tr style="background: #0f172a; border-bottom: 1.5px solid var(--border-color); color: var(--text-secondary); text-transform: uppercase; font-size: 10.5px; letter-spacing: 0.5px; position: sticky; top: 0; z-index: 5;">
+              <th style="padding: 6px 8px; width: 40px; text-align: center;">SL</th>
+              <th style="padding: 6px 8px; width: 120px;">Status</th>
+              <th style="padding: 6px 8px; width: 120px;">Serial</th>
+              <th style="padding: 6px 8px;">Machine Type / Name</th>
+              <th style="padding: 6px 8px;">Brand &amp; Model</th>
+              <th style="padding: 6px 8px;">Location</th>
+              <th style="padding: 6px 8px;">Last Serviced</th>
+              <th style="padding: 6px 8px;">Next Target</th>
+              <th style="padding: 6px 8px;">Sticker Serial</th>
+              <th style="padding: 6px 8px;">Assigned Manpower</th>
+              <th style="padding: 6px 8px; text-align: center; width: 125px;">Action</th>
             </tr>
           </thead>
           <tbody>
@@ -1025,51 +1019,51 @@ function renderMasterScheduleTab() {
     const sl = String(startIndex + idx + 1).padStart(2, '0');
     return `
               <tr class="pm-table-row" style="border-bottom: 1px solid rgba(255,255,255,0.06);">
-                <td style="padding: 8px 10px; text-align: center; font-family: monospace; font-size: 11px; color: var(--text-muted);">${sl}</td>
-                <td style="padding: 8px 10px; white-space: nowrap;">
+                <td style="padding: 5px 8px; text-align: center; font-family: monospace; font-size: 10.5px; color: var(--text-muted);">${sl}</td>
+                <td style="padding: 5px 8px; white-space: nowrap;">
                   ${m.urgency.displayBadge}
                 </td>
-                <td style="padding: 8px 10px; font-weight: 700;">
+                <td style="padding: 5px 8px; font-weight: 700;">
                   <a href="javascript:void(0)" class="pm-link-machine machine-serial-link" data-serial="${escapeHtml(m.serialNumber)}" title="View Machine Profile">
                     ${escapeHtml(m.serialNumber)}
                   </a>
                 </td>
-                <td style="padding: 8px 10px;">
-                  <div style="font-weight: 700; color: #fff;">${escapeHtml(m.machineType)}</div>
-                  <div style="font-size: 11px; color: var(--text-secondary);">${escapeHtml(m.machineName)}</div>
+                <td style="padding: 5px 8px;">
+                  <div style="font-weight: 700; color: #fff; line-height: 1.2;">${escapeHtml(m.machineType)}</div>
+                  <div style="font-size: 10.5px; color: var(--text-secondary); line-height: 1.2;">${escapeHtml(m.machineName)}</div>
                 </td>
-                <td style="padding: 8px 10px;">
-                  <div style="font-weight: 600; color: #fff;">${escapeHtml(m.brand)}</div>
-                  <div style="font-size: 11px; color: var(--text-muted);">${escapeHtml(m.model)}</div>
+                <td style="padding: 5px 8px;">
+                  <div style="font-weight: 600; color: #fff; line-height: 1.2;">${escapeHtml(m.brand)}</div>
+                  <div style="font-size: 10.5px; color: var(--text-muted); line-height: 1.2;">${escapeHtml(m.model)}</div>
                 </td>
-                <td style="padding: 8px 10px;">
-                  <span class="badge" style="background: rgba(56, 189, 248, 0.1); color: #38bdf8; font-size: 10.5px;">${escapeHtml(m.floor)}</span>
-                  <span style="font-size: 11px; color: #cbd5e1;">${escapeHtml(m.line)}</span>
+                <td style="padding: 5px 8px;">
+                  <span class="badge" style="background: rgba(56, 189, 248, 0.1); color: #38bdf8; font-size: 10px; padding: 1px 4px;">${escapeHtml(m.floor)}</span>
+                  <span style="font-size: 10.5px; color: #cbd5e1;">${escapeHtml(m.line)}</span>
                 </td>
-                <td style="padding: 8px 10px; font-family: monospace; color: var(--text-secondary);">
+                <td style="padding: 5px 8px; font-family: monospace; font-size: 11px; color: var(--text-secondary);">
                   ${m.lastServiceDate ? formatDisplayDate(m.lastServiceDate) : 'None'}
                 </td>
-                <td style="padding: 8px 10px; font-family: monospace; font-weight: 700; color: ${m.urgency.status === 'OVERDUE' || m.urgency.status === 'DUE_TODAY' ? '#f87171' : '#38bdf8'};">
+                <td style="padding: 5px 8px; font-family: monospace; font-size: 11px; font-weight: 700; color: ${m.urgency.status === 'OVERDUE' || m.urgency.status === 'DUE_TODAY' ? '#f87171' : '#38bdf8'};">
                   ${formatDisplayDate(m.nextServiceDate)}
                 </td>
-                <td style="padding: 8px 10px; font-family: monospace; color: #c084fc;">
+                <td style="padding: 5px 8px; font-family: monospace; font-size: 10.5px; color: #c084fc;">
                   ${escapeHtml(m.serviceStickerSerial || 'N/A')}
                 </td>
-                <td style="padding: 8px 10px;">
+                <td style="padding: 5px 8px;">
                   ${m.lastServiceDate && m.assignedManpower ? `
-                    <div style="font-weight: 700; color: #fff;">${escapeHtml(m.assignedManpower)}</div>
+                    <div style="font-weight: 700; color: #fff; line-height: 1.2;">${escapeHtml(m.assignedManpower)}</div>
                   ` : `
-                    <span style="color: #64748b; font-size: 11px; font-style: italic;">Not Assigned Yet</span>
+                    <span style="color: #64748b; font-size: 10.5px; font-style: italic;">Not Assigned Yet</span>
                   `}
                 </td>
-                <td style="padding: 8px 10px; text-align: center; white-space: nowrap;">
-                  <button class="btn btn-primary btn-sm btn-pm-service-now" data-machine-id="${m.machineId}" style="padding: 3px 8px; font-size: 11px; font-weight: 700; margin-right: 3px;">
+                <td style="padding: 5px 8px; text-align: center; white-space: nowrap;">
+                  <button class="btn btn-primary btn-sm btn-pm-service-now" data-machine-id="${m.machineId}" style="padding: 2px 7px; font-size: 10.5px; font-weight: 700; margin-right: 2px;">
                     ⚡ Service
                   </button>
-                  <button class="btn btn-secondary btn-sm btn-pm-view-profile" data-serial="${escapeHtml(m.serialNumber)}" title="Profile" style="padding: 3px 6px; font-size: 11px; margin-right: 3px;">
+                  <button class="btn btn-secondary btn-sm btn-pm-view-profile" data-serial="${escapeHtml(m.serialNumber)}" title="Profile" style="padding: 2px 5px; font-size: 10.5px; margin-right: 2px;">
                     👁️
                   </button>
-                  <button class="btn btn-secondary btn-sm btn-pm-replace-sticker" data-serial="${escapeHtml(m.serialNumber)}" title="Replace Physical Sticker (Sl No.)" style="padding: 3px 6px; font-size: 11px; color: #38bdf8;">
+                  <button class="btn btn-secondary btn-sm btn-pm-replace-sticker" data-serial="${escapeHtml(m.serialNumber)}" title="Replace Physical Sticker (Sl No.)" style="padding: 2px 5px; font-size: 10.5px; color: #38bdf8;">
                     🔄
                   </button>
                 </td>
@@ -1140,25 +1134,25 @@ function renderAdminConfigTab() {
         </div>
       </div>
 
-      <div class="table-responsive" style="max-height: calc(100vh - 280px); overflow-y: auto; overflow-x: auto; width: 100%;">
-        <table class="pm-table" style="width: 100%; min-width: 850px; border-collapse: collapse; font-size: 12px; text-align: left;">
+      <div class="table-responsive" style="max-height: calc(100vh - 195px); overflow-y: auto; overflow-x: auto; width: 100%;">
+        <table class="pm-table" style="width: 100%; min-width: 850px; border-collapse: collapse; font-size: 11.5px; text-align: left;">
           <thead>
-            <tr style="background: #0f172a; border-bottom: 1.5px solid var(--border-color); color: var(--text-secondary); text-transform: uppercase; font-size: 11px; position: sticky; top: 0; z-index: 5;">
-              <th style="padding: 8px 10px; width: 45px; text-align: center;">SL</th>
-              <th style="padding: 8px 10px;">Machine Type Name</th>
-              <th style="padding: 8px 10px; text-align: center;">Factory Machines</th>
-              <th style="padding: 8px 10px;">Maintenance Frequency</th>
-              <th style="padding: 8px 10px;">Service Interval</th>
-              <th style="padding: 8px 10px;">Responsible Department</th>
-              <th style="padding: 8px 10px;">Checklist Items</th>
-              <th style="padding: 8px 10px;">Status</th>
-              <th style="padding: 8px 10px; text-align: center; width: 120px;">Actions</th>
+            <tr style="background: #0f172a; border-bottom: 1.5px solid var(--border-color); color: var(--text-secondary); text-transform: uppercase; font-size: 10.5px; position: sticky; top: 0; z-index: 5;">
+              <th style="padding: 6px 8px; width: 40px; text-align: center;">SL</th>
+              <th style="padding: 6px 8px;">Machine Type Name</th>
+              <th style="padding: 6px 8px; text-align: center;">Factory Machines</th>
+              <th style="padding: 6px 8px;">Maintenance Frequency</th>
+              <th style="padding: 6px 8px;">Service Interval</th>
+              <th style="padding: 6px 8px;">Responsible Department</th>
+              <th style="padding: 6px 8px;">Checklist Items</th>
+              <th style="padding: 6px 8px;">Status</th>
+              <th style="padding: 6px 8px; text-align: center; width: 110px;">Actions</th>
             </tr>
           </thead>
           <tbody>
             ${configs.length === 0 ? `
               <tr>
-                <td colspan="9" style="text-align: center; padding: 40px; color: var(--text-muted);">
+                <td colspan="9" style="text-align: center; padding: 30px; color: var(--text-muted);">
                   No schedule configuration matches the search filter.
                 </td>
               </tr>
@@ -1166,11 +1160,11 @@ function renderAdminConfigTab() {
     const sl = String(idx + 1).padStart(2, '0');
     return `
               <tr class="pm-table-row" style="border-bottom: 1px solid rgba(255,255,255,0.06);">
-                <td style="padding: 8px 10px; text-align: center; font-family: monospace; font-size: 11px; color: var(--text-muted);">${sl}</td>
-                <td style="padding: 8px 10px;">
-                  <div style="font-weight: 800; color: #fff;">${escapeHtml(c.machineType)}</div>
+                <td style="padding: 5px 8px; text-align: center; font-family: monospace; font-size: 10.5px; color: var(--text-muted);">${sl}</td>
+                <td style="padding: 5px 8px;">
+                  <div style="font-weight: 800; color: #fff; line-height: 1.2;">${escapeHtml(c.machineType)}</div>
                   ${c.aliases && c.aliases.length > 0 ? `
-                    <div style="font-size: 10.5px; color: var(--text-muted); margin-top: 1px;">
+                    <div style="font-size: 10px; color: var(--text-muted); margin-top: 1px; line-height: 1.2;">
                       Aliases: ${escapeHtml(c.aliases.slice(0, 3).join(', '))}${c.aliases.length > 3 ? '...' : ''}
                     </div>
                   ` : ''}
