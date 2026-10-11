@@ -146,7 +146,9 @@ function renderImportStageContent() {
       { key: 'machine_brand', label: 'Machine Brand (machine_brand)', required: false },
       { key: 'machine_model', label: 'Machine Model (machine_model)', required: false },
       { key: 'machine_serial', label: 'Machine Serial / Machine Number (machine_serial)', required: false },
+      { key: 'manufacturing_serial', label: 'Manufacturing Serial Number (manufacturing_serial)', required: false },
       { key: 'machine_short_code', label: 'Machine Short Code / Sort Form (machine_short_code)', required: false },
+      { key: 'group', label: 'Group / Department (group)', required: false },
       { key: 'unit_factory', label: 'Unit/Factory (unit_factory)', required: true },
       { key: 'floor', label: 'Floor (floor)', required: true },
       { key: 'line', label: 'Line (line)', required: true },
@@ -156,7 +158,9 @@ function renderImportStageContent() {
       { key: 'total_quantity', label: 'Total Quantity [Auto-Calculated] (total_quantity)', required: false },
       { key: 'machine_status', label: 'Machine Status (machine_status)', required: false },
       { key: 'remarks', label: 'Remarks (remarks)', required: false },
-      { key: 'service_date', label: 'Last Service Date (service_date)', required: false }
+      { key: 'service_date', label: 'Last Service Date (service_date)', required: false },
+      { key: 'installation_date', label: 'Installation Date (installation_date)', required: false },
+      { key: 'machine_capacity', label: 'Machine Capacity (machine_capacity)', required: false }
     ];
 
     canonicalDefaults.forEach(def => {
