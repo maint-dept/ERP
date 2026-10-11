@@ -28,6 +28,8 @@ import { machineService } from '../services/machineService.js';
 import { employeeService } from '../services/employeeService.js';
 import { notificationService } from '../services/notificationService.js';
 import { excelService } from '../services/excelService.js';
+import { storage } from '../db/storage.js';
+import { TABLE_NAMES } from '../db/schema.js';
 
 // Local view state to preserve working session across tab switches
 let activeTab = 'dashboard'; // 'dashboard' | 'recently-serviced' | 'machine-profile' | 'master-schedule' | 'admin-config'
@@ -1409,7 +1411,7 @@ function renderServiceEntryModal() {
 
             <!-- Quick Action Assignment Toolbar: Self Assign vs Others Search -->
             <div style="display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap;">
-              <button type="button" id="btn-pm-assign-self" class="btn btn-sm" style="background: linear-gradient(135deg, #0284c7, #0369a1); color: #fff; font-weight: 700; font-size: 12px; padding: 6px 14px; border-radius: 6px; border: 1.5px solid #38bdf8; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 8px rgba(2, 132, 199, 0.35);" title="1-Click Assign to Logged-in User">
+              <button type="button" id="btn-pm-assign-self" class="btn btn-sm" style="background: linear-gradient(135deg, #10b981, #059669); color: #fff; font-weight: 700; font-size: 12px; padding: 6px 14px; border-radius: 6px; border: 1.5px solid #34d399; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 8px rgba(16, 185, 129, 0.35);" title="1-Click Assign to Logged-in User">
                 <span>⚡</span>
                 <span>Assign to Myself (${escapeHtml(user?.name || 'Self')})</span>
               </button>
@@ -3175,21 +3177,60 @@ function bindModalEvents() {
     if (badgeBox) badgeBox.style.display = 'flex';
     if (manpowerBox) manpowerBox.style.display = 'none';
     if (btnClearManpower) btnClearManpower.style.display = 'flex';
+
+    if (emp.isSelf) {
+      if (btnAssignSelf) {
+        btnAssignSelf.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+        btnAssignSelf.style.borderColor = '#34d399';
+        btnAssignSelf.style.color = '#fff';
+        btnAssignSelf.style.boxShadow = '0 2px 10px rgba(16, 185, 129, 0.4)';
+      }
+      if (btnAssignOthers) {
+        btnAssignOthers.style.background = '#1e293b';
+        btnAssignOthers.style.borderColor = 'rgba(255,255,255,0.15)';
+        btnAssignOthers.style.color = '#cbd5e1';
+        btnAssignOthers.style.boxShadow = 'none';
+      }
+    } else {
+      if (btnAssignSelf) {
+        btnAssignSelf.style.background = '#1e293b';
+        btnAssignSelf.style.borderColor = 'rgba(255,255,255,0.15)';
+        btnAssignSelf.style.color = '#cbd5e1';
+        btnAssignSelf.style.boxShadow = 'none';
+      }
+      if (btnAssignOthers) {
+        btnAssignOthers.style.background = 'linear-gradient(135deg, #0284c7, #0369a1)';
+        btnAssignOthers.style.borderColor = '#38bdf8';
+        btnAssignOthers.style.color = '#fff';
+        btnAssignOthers.style.boxShadow = '0 2px 10px rgba(2, 132, 199, 0.4)';
+      }
+    }
   };
 
-  const handleAssignSelf = () => {
+  const handleAssignSelf = (e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     const activeUser = authService.getCurrentUser();
     if (!activeUser) return;
 
-    const allEmps = storage.getTable(TABLE_NAMES.EMPLOYEES) || [];
-    const matched = allEmps.find(e => 
-      (e.id && e.id === activeUser.employeeId) ||
-      (e.cardNumber && activeUser.cardNumber && String(e.cardNumber) === String(activeUser.cardNumber)) ||
-      (e.name && activeUser.name && e.name.trim().toLowerCase() === activeUser.name.trim().toLowerCase())
-    );
+    let matched = null;
+    try {
+      const allEmps = (employeeService && typeof employeeService.getAllEmployees === 'function')
+        ? employeeService.getAllEmployees()
+        : (storage.getTable(TABLE_NAMES.EMPLOYEES) || []);
+      matched = allEmps.find(emp => 
+        (activeUser.employeeId && emp.id === activeUser.employeeId) ||
+        (emp.cardNumber && activeUser.cardNumber && String(emp.cardNumber).trim() === String(activeUser.cardNumber).trim()) ||
+        (emp.name && activeUser.name && emp.name.trim().toLowerCase() === activeUser.name.trim().toLowerCase())
+      );
+    } catch (err) {
+      console.warn('Could not query employee table for self:', err);
+    }
 
     const selfEmp = {
-      id: matched?.id || activeUser.id,
+      id: matched?.id || activeUser.employeeId || activeUser.id || 'current-user',
       name: activeUser.name || 'Current User',
       cardNumber: matched?.cardNumber || activeUser.cardNumber || activeUser.username || '',
       designation: matched?.designation || activeUser.presetName || activeUser.role || 'Maintenance Personnel',
@@ -3199,36 +3240,51 @@ function bindModalEvents() {
     };
 
     populateManpowerFields(selfEmp);
-
-    if (btnAssignSelf) {
-      btnAssignSelf.style.background = 'linear-gradient(135deg, #10b981, #059669)';
-      btnAssignSelf.style.borderColor = '#34d399';
-    }
-    if (btnAssignOthers) {
-      btnAssignOthers.style.background = '#1e293b';
-      btnAssignOthers.style.borderColor = 'rgba(255,255,255,0.15)';
-      btnAssignOthers.style.color = '#cbd5e1';
-    }
   };
 
-  const handleAssignOthers = () => {
+  const handleAssignOthers = (e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     if (btnAssignSelf) {
       btnAssignSelf.style.background = '#1e293b';
       btnAssignSelf.style.borderColor = 'rgba(255,255,255,0.15)';
       btnAssignSelf.style.color = '#cbd5e1';
+      btnAssignSelf.style.boxShadow = 'none';
     }
     if (btnAssignOthers) {
       btnAssignOthers.style.background = 'linear-gradient(135deg, #0284c7, #0369a1)';
       btnAssignOthers.style.borderColor = '#38bdf8';
       btnAssignOthers.style.color = '#fff';
+      btnAssignOthers.style.boxShadow = '0 2px 10px rgba(2, 132, 199, 0.4)';
     }
+
+    // Reset current values to allow fresh selection
+    const nameHidden = document.getElementById('pm-manpower-name');
+    const cardHidden = document.getElementById('pm-manpower-card');
+    const desigHidden = document.getElementById('pm-manpower-designation');
+    if (nameHidden) nameHidden.value = '';
+    if (cardHidden) cardHidden.value = '';
+    if (desigHidden) desigHidden.value = '';
+    if (badgeBox) badgeBox.style.display = 'none';
+    if (selfTag) selfTag.style.display = 'none';
+    if (btnClearManpower) btnClearManpower.style.display = 'none';
+
     if (manpowerInput) {
+      manpowerInput.value = '';
+      manpowerInput.style.borderColor = '#38bdf8';
       manpowerInput.focus({ preventScroll: true });
-      updateManpowerDropdown(manpowerInput.value.trim());
     }
+    // Show full list of active technicians immediately below the input
+    updateManpowerDropdown('');
   };
 
-  const handleClearManpower = () => {
+  const handleClearManpower = (e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     if (manpowerInput) {
       manpowerInput.value = '';
       manpowerInput.style.borderColor = '#38bdf8';
@@ -3243,15 +3299,18 @@ function bindModalEvents() {
     if (badgeBox) badgeBox.style.display = 'none';
     if (selfTag) selfTag.style.display = 'none';
     if (btnClearManpower) btnClearManpower.style.display = 'none';
+
     if (btnAssignSelf) {
-      btnAssignSelf.style.background = 'linear-gradient(135deg, #0284c7, #0369a1)';
-      btnAssignSelf.style.borderColor = '#38bdf8';
-      btnAssignSelf.style.color = '#fff';
+      btnAssignSelf.style.background = '#1e293b';
+      btnAssignSelf.style.borderColor = 'rgba(255,255,255,0.15)';
+      btnAssignSelf.style.color = '#cbd5e1';
+      btnAssignSelf.style.boxShadow = 'none';
     }
     if (btnAssignOthers) {
-      btnAssignOthers.style.background = '#1e293b';
-      btnAssignOthers.style.borderColor = 'rgba(255,255,255,0.15)';
-      btnAssignOthers.style.color = '#cbd5e1';
+      btnAssignOthers.style.background = 'linear-gradient(135deg, #0284c7, #0369a1)';
+      btnAssignOthers.style.borderColor = '#38bdf8';
+      btnAssignOthers.style.color = '#fff';
+      btnAssignOthers.style.boxShadow = '0 2px 10px rgba(2, 132, 199, 0.4)';
     }
     updateManpowerDropdown('');
   };
@@ -3291,18 +3350,42 @@ function bindModalEvents() {
       `;
     }).join('');
 
+    const selectItem = (item) => {
+      const activeUser = authService.getCurrentUser();
+      const empName = item.getAttribute('data-name');
+      const empCard = item.getAttribute('data-card');
+      const isSelf = !!(
+        (activeUser?.name && empName && activeUser.name.trim().toLowerCase() === empName.trim().toLowerCase()) ||
+        (activeUser?.cardNumber && empCard && String(activeUser.cardNumber).trim() === String(empCard).trim())
+      );
+      const emp = {
+        id: item.getAttribute('data-id'),
+        name: empName,
+        cardNumber: empCard,
+        designation: item.getAttribute('data-desig'),
+        department: item.getAttribute('data-dept'),
+        workingArea: item.getAttribute('data-area'),
+        isSelf
+      };
+      populateManpowerFields(emp);
+    };
+
     manpowerBox.querySelectorAll('.pm-manpower-suggest-item').forEach(item => {
+      item.addEventListener('mouseenter', () => {
+        item.style.background = 'rgba(56, 189, 248, 0.12)';
+      });
+      item.addEventListener('mouseleave', () => {
+        item.style.background = 'transparent';
+      });
+      // Use mousedown with preventDefault so input blur doesn't fire before selection
+      item.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        selectItem(item);
+      });
       item.addEventListener('click', (e) => {
         e.stopPropagation();
-        const emp = {
-          id: item.getAttribute('data-id'),
-          name: item.getAttribute('data-name'),
-          cardNumber: item.getAttribute('data-card'),
-          designation: item.getAttribute('data-desig'),
-          department: item.getAttribute('data-dept'),
-          workingArea: item.getAttribute('data-area')
-        };
-        populateManpowerFields(emp);
+        selectItem(item);
       });
     });
   };
@@ -3354,12 +3437,24 @@ function bindModalEvents() {
     });
   }
 
+  // Auto-assign to myself by default if technician field is currently unassigned
+  if (manpowerInput && !document.getElementById('pm-manpower-name')?.value?.trim()) {
+    handleAssignSelf();
+  }
+
   // Dismiss dropdowns when clicking outside
   document.addEventListener('click', (e) => {
     if (machineDropdown && !machineDropdown.contains(e.target) && e.target !== machineSearchInput) {
       machineDropdown.style.display = 'none';
     }
-    if (manpowerBox && !manpowerBox.contains(e.target) && e.target !== manpowerInput) {
+    if (
+      manpowerBox && 
+      !manpowerBox.contains(e.target) && 
+      e.target !== manpowerInput && 
+      !btnAssignOthers?.contains(e.target) && 
+      !btnAssignSelf?.contains(e.target) && 
+      !btnClearManpower?.contains(e.target)
+    ) {
       manpowerBox.style.display = 'none';
     }
   });
