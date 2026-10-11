@@ -37826,53 +37826,53 @@ export const INITIAL_DATA = {
         },
         {
           "id": "col-5",
-          "header": "Unit/Factory",
-          "fieldKey": "unit_factory",
-          "required": true,
-          "defaultValue": "AKM Knitwear Ltd.",
+          "header": "Manufacturing Serial Number",
+          "fieldKey": "manufacturing_serial",
+          "required": false,
+          "defaultValue": "",
           "order": 5,
           "visible": true
         },
         {
           "id": "col-6",
-          "header": "Floor",
-          "fieldKey": "floor",
+          "header": "Unit/Factory",
+          "fieldKey": "unit_factory",
           "required": true,
-          "defaultValue": "3rd Floor",
+          "defaultValue": "AKM Knitwear Ltd.",
           "order": 6,
           "visible": true
         },
         {
           "id": "col-7",
-          "header": "Line",
-          "fieldKey": "line",
+          "header": "Floor",
+          "fieldKey": "floor",
           "required": true,
-          "defaultValue": "Line JA-A",
+          "defaultValue": "3rd Floor",
           "order": 7,
           "visible": true
         },
         {
           "id": "col-8",
-          "header": "Running",
-          "fieldKey": "running",
-          "required": false,
-          "defaultValue": "1",
+          "header": "Line",
+          "fieldKey": "line",
+          "required": true,
+          "defaultValue": "Line JA-A",
           "order": 8,
           "visible": true
         },
         {
           "id": "col-9",
-          "header": "Usable Idle",
-          "fieldKey": "usable_idle",
+          "header": "Running",
+          "fieldKey": "running",
           "required": false,
-          "defaultValue": "0",
+          "defaultValue": "1",
           "order": 9,
           "visible": true
         },
         {
           "id": "col-10",
-          "header": "Repairable Idle",
-          "fieldKey": "repairable_idle",
+          "header": "Usable Idle",
+          "fieldKey": "usable_idle",
           "required": false,
           "defaultValue": "0",
           "order": 10,
@@ -37880,31 +37880,49 @@ export const INITIAL_DATA = {
         },
         {
           "id": "col-11",
+          "header": "Repairable Idle",
+          "fieldKey": "repairable_idle",
+          "required": false,
+          "defaultValue": "0",
+          "order": 11,
+          "visible": true
+        },
+        {
+          "id": "col-12",
           "header": "Total Quantity",
           "fieldKey": "total_quantity",
           "required": false,
           "defaultValue": "— (Auto-Calculated)",
-          "order": 11,
+          "order": 12,
           "visible": true,
           "isCalculated": true,
           "readOnly": true
         },
         {
-          "id": "col-12",
+          "id": "col-13",
           "header": "Machine Status",
           "fieldKey": "machine_status",
           "required": false,
           "defaultValue": "ACTIVE",
-          "order": 12,
+          "order": 13,
           "visible": true
         },
         {
-          "id": "col-13",
+          "id": "col-14",
+          "header": "Last Service Date",
+          "fieldKey": "service_date",
+          "required": false,
+          "defaultValue": "",
+          "order": 14,
+          "visible": true
+        },
+        {
+          "id": "col-15",
           "header": "Remarks",
           "fieldKey": "remarks",
           "required": false,
           "defaultValue": "",
-          "order": 13,
+          "order": 15,
           "visible": true
         }
       ]

@@ -11,7 +11,7 @@ import { machineService } from '../services/machineService.js';
 import { masterDataService } from '../services/masterDataService.js';
 import { customFieldService } from '../services/customFieldService.js';
 import { authService } from '../services/authService.js';
-import { excelService, formatDisplayLine } from '../services/excelService.js';
+import { excelService, formatDisplayLine, mapFieldKeyToTableKey, isColumnKeyVisible } from '../services/excelService.js';
 import { pdfService } from '../services/pdfService.js';
 import { notificationService } from '../services/notificationService.js';
 import { qrCodeService } from '../services/qrCodeService.js';
@@ -205,6 +205,36 @@ export function renderInventoryTable() {
       renderTd: (m, meta, tdStyle, tdClass) => `<td class="${tdClass}" style="${tdStyle}"><a href="javascript:void(0)" class="machine-serial-link btn-inspect-machine" data-id="${m.id}" title="Click to view full machine lifetime & specifications">${m.serialNumber || '—'}</a></td>`
     },
     {
+      key: 'manufacturing_serial',
+      label: 'Manufacturing Serial Number',
+      width: 170,
+      renderTh: (thStyle, thClass) => `<th class="th-sortable ${thClass}" data-sort="manufacturing_serial" style="width: 170px; min-width: 170px; max-width: 170px; cursor: pointer; ${thStyle}">Mfg Serial No</th>`,
+      renderTd: (m, meta, tdStyle, tdClass) => {
+        const mfg = m.manufacturing_serial || m.manufacturingSerial || m.customValues?.manufacturing_serial || m.customValues?.manufacturingSerial || m.manufacturingNo || m.mfgSerial || m.manufacturing || '—';
+        return `<td class="${tdClass}" style="overflow: hidden; text-overflow: ellipsis; font-family: var(--font-mono); font-size: 11.5px; ${tdStyle}" title="${mfg}"><span style="color: #38bdf8; font-weight: 600;">${mfg}</span></td>`;
+      }
+    },
+    {
+      key: 'manufacturing',
+      label: 'Manufacturing Info',
+      width: 150,
+      renderTh: (thStyle, thClass) => `<th class="${thClass}" style="width: 150px; min-width: 150px; max-width: 150px; ${thStyle}">Manufacturing</th>`,
+      renderTd: (m, meta, tdStyle, tdClass) => {
+        const val = m.manufacturing || m.customValues?.manufacturing || '—';
+        return `<td class="${tdClass}" style="overflow: hidden; text-overflow: ellipsis; ${tdStyle}" title="${val}">${val}</td>`;
+      }
+    },
+    {
+      key: 'manufacturing_year',
+      label: 'Manufacturing Year',
+      width: 130,
+      renderTh: (thStyle, thClass) => `<th class="${thClass}" style="width: 130px; min-width: 130px; max-width: 130px; text-align: center; ${thStyle}">Mfg Year</th>`,
+      renderTd: (m, meta, tdStyle, tdClass) => {
+        const val = m.manufacturing_year || m.manufacturingYear || m.mfgYear || m.customValues?.manufacturing_year || '—';
+        return `<td class="${tdClass}" style="text-align: center; ${tdStyle}">${val}</td>`;
+      }
+    },
+    {
       key: 'brand',
       label: 'Brand',
       width: 130,
@@ -296,10 +326,16 @@ export function renderInventoryTable() {
       key: 'service_date',
       label: 'Last Service Date',
       width: 140,
-      renderTh: (thStyle, thClass) => `<th class="${thClass}" style="width: 140px; min-width: 140px; max-width: 140px; text-align: center; ${thStyle}">Last Service Date</th>`,
+      renderTh: (thStyle, thClass) => `<th class="th-sortable ${thClass}" data-sort="service_date" style="width: 140px; min-width: 140px; max-width: 140px; text-align: center; cursor: pointer; ${thStyle}">Last Service Date</th>`,
       renderTd: (m, meta, tdStyle, tdClass) => {
-        const sDate = m.lastServiceDate || m.service_date || m.serviceDate || '';
-        return `<td class="${tdClass}" style="text-align: center; ${tdStyle}">${excelService.formatDateDMY(sDate) || '—'}</td>`;
+        let sDate = m.lastServiceDate || m.service_date || m.serviceDate || m.customValues?.service_date || '';
+        if (!sDate && (m.id || m.serialNumber)) {
+          const pmTable = storage.getTable(TABLE_NAMES.PREVENTIVE_MAINTENANCE) || [];
+          const pm = pmTable.filter(r => (r.machineId === m.id || (r.serialNumber && m.serialNumber && String(r.serialNumber).trim().toUpperCase() === String(m.serialNumber).trim().toUpperCase())))
+                            .sort((a, b) => (b.serviceDate || '').localeCompare(a.serviceDate || ''))[0];
+          if (pm?.serviceDate) sDate = pm.serviceDate;
+        }
+        return `<td class="${tdClass}" style="text-align: center; font-size: 11.5px; ${tdStyle}">${excelService.formatDateDMY(sDate) || '—'}</td>`;
       }
     },
     {
@@ -429,17 +465,45 @@ export function renderInventoryTable() {
     }
   });
 
-  // Filter only visible columns
-  const visibleColDefs = allColDefs.filter(c => visibleCols.has(c.key));
+  // Active Excel Structure Layout Integration
+  const activeStructure = (typeof excelService !== 'undefined' && excelService.getActiveStructure) 
+    ? excelService.getActiveStructure() 
+    : null;
+  const layoutCols = (activeStructure && Array.isArray(activeStructure.columns))
+    ? [...activeStructure.columns].sort((a, b) => (a.order || 0) - (b.order || 0))
+    : [];
 
-  // Partition: Frozen columns pinned to left in configured order, followed by unfrozen columns
+  const layoutOrderMap = new Map();
+  layoutCols.forEach((col, idx) => {
+    const tableKey = mapFieldKeyToTableKey(col.fieldKey);
+    const orderVal = col.order || (idx + 1);
+    layoutOrderMap.set(tableKey, orderVal);
+    layoutOrderMap.set(col.fieldKey, orderVal);
+  });
+
+  // Filter only visible columns using alias-tolerant checker
+  const visibleColDefs = allColDefs.filter(c => isColumnKeyVisible(c.key, visibleCols));
+
+  // Partition: Frozen columns pinned to left in configured order, followed by unfrozen columns in Layout order
   const frozenList = [];
   const frozenSet = new Set(frozenColKeys);
   frozenColKeys.forEach(k => {
-    const found = visibleColDefs.find(c => c.key === k);
-    if (found) frozenList.push(found);
+    const found = visibleColDefs.find(c => c.key === k || mapFieldKeyToTableKey(c.key) === mapFieldKeyToTableKey(k));
+    if (found && !frozenList.includes(found)) frozenList.push(found);
   });
-  const unfrozenList = visibleColDefs.filter(c => !frozenSet.has(c.key));
+
+  const getColOrder = (key) => {
+    if (key === 'actions') return 99999;
+    if (layoutOrderMap.has(key)) return layoutOrderMap.get(key);
+    const mapped = mapFieldKeyToTableKey(key);
+    if (layoutOrderMap.has(mapped)) return layoutOrderMap.get(mapped);
+    return 1000 + (allColDefs.findIndex(c => c.key === key) || 0);
+  };
+
+  const unfrozenList = visibleColDefs
+    .filter(c => !frozenList.includes(c))
+    .sort((a, b) => getColOrder(a.key) - getColOrder(b.key));
+
   const orderedCols = [...frozenList, ...unfrozenList];
 
   // Dynamic sticky left offset calculation
@@ -847,7 +911,7 @@ export function renderInventoryTable() {
 
       <!-- 5. Real Excel-Style Machine Data Grid with Native Horizontal & Vertical Scroll -->
       <div class="inventory-table-scroll-container" id="inventory-table-scroll-viewport" style="flex: 1 1 0%; min-height: 250px; overflow: auto;">
-        <table class="excel-grid-table">
+        <table class="excel-grid-table" style="min-width: 100%; width: ${columnLayout.reduce((sum, c) => sum + (c.width || 120), 94)}px; table-layout: fixed;">
           <thead>
             ${headerHtml}
           </thead>

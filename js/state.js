@@ -11,14 +11,22 @@ class GlobalState {
   constructor() {
     const defaultCols = [
       'sl', 'select', 'machineName', 'brand', 'model', 'serialNumber',
-      'unit', 'floor', 'line', 'running', 'usable_idle', 'repairable_idle',
-      'total_quantity', 'status', 'actions'
+      'manufacturing_serial', 'unit', 'floor', 'line', 'running',
+      'usable_idle', 'repairable_idle', 'total_quantity', 'status',
+      'service_date', 'remarks', 'actions'
     ];
 
     let savedCols = null;
     try {
       const stored = localStorage.getItem('erp_visible_columns_v3');
-      if (stored) savedCols = JSON.parse(stored);
+      if (stored) {
+        savedCols = JSON.parse(stored);
+        if (Array.isArray(savedCols) && !savedCols.includes('manufacturing_serial') && !savedCols.includes('manufacturingSerial')) {
+          const serialIdx = savedCols.indexOf('serialNumber');
+          if (serialIdx >= 0) savedCols.splice(serialIdx + 1, 0, 'manufacturing_serial');
+          else savedCols.push('manufacturing_serial');
+        }
+      }
     } catch (e) {}
 
     const defaultFrozenCols = ['machineName', 'model', 'serialNumber'];
@@ -152,11 +160,36 @@ class GlobalState {
     this.emit('selection:changed', []);
   }
 
+  setVisibleColumns(colsArray) {
+    if (!Array.isArray(colsArray)) return;
+    this.state.visibleColumns = new Set(colsArray);
+    try {
+      localStorage.setItem('erp_visible_columns_v3', JSON.stringify(colsArray));
+    } catch (e) {}
+    this.emit('columns:changed', colsArray);
+  }
+
   toggleColumnVisibility(colId) {
-    if (this.state.visibleColumns.has(colId)) {
+    const aliases = {
+      machineName: 'machine_name',
+      brand: 'machine_brand',
+      model: 'machine_model',
+      serialNumber: 'machine_serial',
+      unit: 'unit_factory',
+      status: 'machine_status',
+      service_date: 'last_service_date',
+      manufacturing_serial: 'manufacturingSerial'
+    };
+    const reverseAliases = Object.fromEntries(Object.entries(aliases).map(([k, v]) => [v, k]));
+    const partner = aliases[colId] || reverseAliases[colId] || null;
+
+    const isVisible = this.state.visibleColumns.has(colId) || (partner && this.state.visibleColumns.has(partner));
+    if (isVisible) {
       this.state.visibleColumns.delete(colId);
+      if (partner) this.state.visibleColumns.delete(partner);
     } else {
       this.state.visibleColumns.add(colId);
+      if (partner) this.state.visibleColumns.add(partner);
     }
     try {
       localStorage.setItem('erp_visible_columns_v3', JSON.stringify(Array.from(this.state.visibleColumns)));

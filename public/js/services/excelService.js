@@ -98,6 +98,47 @@ export function formatDisplayLine(fullLineName, mode = 'NORMAL') {
   return str;
 }
 
+export function mapFieldKeyToTableKey(fieldKey) {
+  if (!fieldKey) return '';
+  const k = String(fieldKey).trim().toLowerCase();
+  if (k === 'machine_name' || k === 'machinename' || k === 'machine') return 'machineName';
+  if (k === 'machine_brand' || k === 'brand') return 'brand';
+  if (k === 'machine_model' || k === 'model') return 'model';
+  if (k === 'machine_serial' || k === 'serialnumber' || k === 'serial_number' || k === 'serial' || k === 'serial_no') return 'serialNumber';
+  if (k === 'manufacturing_serial' || k === 'manufacturingserial' || k === 'mfg_serial' || k === 'manufacturing_no') return 'manufacturing_serial';
+  if (k === 'manufacturing_year' || k === 'manufacturingyear' || k === 'mfg_year') return 'manufacturing_year';
+  if (k === 'manufacturing') return 'manufacturing';
+  if (k === 'unit_factory' || k === 'unit' || k === 'factory' || k === 'location' || k === 'current_location') return 'unit';
+  if (k === 'floor' || k === 'floor_name') return 'floor';
+  if (k === 'line' || k === 'line_name' || k === 'section') return 'line';
+  if (k === 'machine_status' || k === 'status') return 'status';
+  if (k === 'group_name' || k === 'group') return 'group';
+  if (k === 'last_service_date' || k === 'service_date' || k === 'servicedate') return 'service_date';
+  if (k === 'remarks' || k === 'notes' || k === 'description') return 'remarks';
+  if (k === 'purchase_date' || k === 'purchasedate') return 'purchase_date';
+  if (k === 'installation_date' || k === 'installationdate') return 'installation_date';
+  if (k === 'supplier_name' || k === 'supplier') return 'supplier_name';
+  if (k === 'country_of_origin' || k === 'origin') return 'country_of_origin';
+  if (k === 'machine_capacity' || k === 'capacity') return 'machine_capacity';
+  if (k === 'running' || k === 'qty_running' || k === 'running_qty') return 'running';
+  if (k === 'usable_idle' || k === 'usableidle' || k === 'qty_usable_idle') return 'usable_idle';
+  if (k === 'repairable_idle' || k === 'repairableidle' || k === 'qty_repairable_idle') return 'repairable_idle';
+  if (k === 'total_quantity' || k === 'totalquantity' || k === 'quantity' || k === 'total_qty') return 'total_quantity';
+  if (k === 'actions') return 'actions';
+  return fieldKey;
+}
+
+export function isColumnKeyVisible(key, visibleCols) {
+  if (!visibleCols) return false;
+  if (visibleCols.has(key)) return true;
+  const tableKey = mapFieldKeyToTableKey(key);
+  if (visibleCols.has(tableKey)) return true;
+  for (const v of visibleCols) {
+    if (mapFieldKeyToTableKey(v) === tableKey) return true;
+  }
+  return false;
+}
+
 export function resolveFloorSmart(rawFloor, floorsList, unitObj = null) {
   if (!rawFloor) return null;
   const raw = String(rawFloor).trim();
@@ -409,6 +450,24 @@ class ExcelService {
       active = this._getDefaultStructure();
       storage.setTable(TABLE_NAMES.EXCEL_STRUCTURES, [active]);
       storage.saveTable(TABLE_NAMES.EXCEL_STRUCTURES);
+    } else {
+      // Auto-migrate: ensure manufacturing_serial exists in Standard Garments Machinery Layout if missing
+      const hasMfg = active.columns.some(c => c.fieldKey === 'manufacturing_serial');
+      if (!hasMfg) {
+        const serialIdx = active.columns.findIndex(c => c.fieldKey === 'machine_serial');
+        const insertIdx = serialIdx >= 0 ? serialIdx + 1 : 4;
+        active.columns.splice(insertIdx, 0, {
+          id: 'col-mfg-serial',
+          header: 'Manufacturing Serial Number',
+          fieldKey: 'manufacturing_serial',
+          required: false,
+          defaultValue: '',
+          order: insertIdx + 1,
+          visible: true
+        });
+        active.columns.forEach((c, i) => c.order = i + 1);
+        storage.update(TABLE_NAMES.EXCEL_STRUCTURES, active.id, active);
+      }
     }
 
     return active;
@@ -496,17 +555,18 @@ class ExcelService {
         { id: 'col-1', header: 'Machine Name', fieldKey: 'machine_name', required: true, defaultValue: '', order: 1, visible: true },
         { id: 'col-2', header: 'Machine Brand', fieldKey: 'machine_brand', required: false, defaultValue: '', order: 2, visible: true },
         { id: 'col-3', header: 'Machine Model', fieldKey: 'machine_model', required: false, defaultValue: '', order: 3, visible: true },
-        { id: 'col-4', header: 'Serial Number', fieldKey: 'machine_serial', required: false, defaultValue: '', order: 4, visible: true },
-        { id: 'col-5', header: 'Unit/Factory', fieldKey: 'unit_factory', required: true, defaultValue: 'AKM Knitwear Ltd.', order: 5, visible: true },
-        { id: 'col-6', header: 'Floor', fieldKey: 'floor', required: true, defaultValue: '3rd Floor', order: 6, visible: true },
-        { id: 'col-7', header: 'Line', fieldKey: 'line', required: true, defaultValue: 'Line JA-A', order: 7, visible: true },
-        { id: 'col-8', header: 'Running', fieldKey: 'running', required: false, defaultValue: '1', order: 8, visible: true },
-        { id: 'col-9', header: 'Usable Idle', fieldKey: 'usable_idle', required: false, defaultValue: '0', order: 9, visible: true },
-        { id: 'col-10', header: 'Repairable Idle', fieldKey: 'repairable_idle', required: false, defaultValue: '0', order: 10, visible: true },
-        { id: 'col-11', header: 'Total Quantity', fieldKey: 'total_quantity', required: false, defaultValue: '— (Auto-Calculated)', order: 11, visible: true, isCalculated: true, readOnly: true },
-        { id: 'col-12', header: 'Machine Status', fieldKey: 'machine_status', required: false, defaultValue: 'ACTIVE', order: 12, visible: true },
-        { id: 'col-13', header: 'Remarks', fieldKey: 'remarks', required: false, defaultValue: '', order: 13, visible: true },
-        { id: 'col-14', header: 'Last Service Date', fieldKey: 'service_date', required: false, defaultValue: '', order: 14, visible: true }
+        { id: 'col-4', header: 'Machine Serial', fieldKey: 'machine_serial', required: false, defaultValue: '', order: 4, visible: true },
+        { id: 'col-5', header: 'Manufacturing Serial Number', fieldKey: 'manufacturing_serial', required: false, defaultValue: '', order: 5, visible: true },
+        { id: 'col-6', header: 'Unit/Factory', fieldKey: 'unit_factory', required: true, defaultValue: 'AKM Knitwear Ltd.', order: 6, visible: true },
+        { id: 'col-7', header: 'Floor', fieldKey: 'floor', required: true, defaultValue: '3rd Floor', order: 7, visible: true },
+        { id: 'col-8', header: 'Line', fieldKey: 'line', required: true, defaultValue: 'Line JA-A', order: 8, visible: true },
+        { id: 'col-9', header: 'Running', fieldKey: 'running', required: false, defaultValue: '1', order: 9, visible: true },
+        { id: 'col-10', header: 'Usable Idle', fieldKey: 'usable_idle', required: false, defaultValue: '0', order: 10, visible: true },
+        { id: 'col-11', header: 'Repairable Idle', fieldKey: 'repairable_idle', required: false, defaultValue: '0', order: 11, visible: true },
+        { id: 'col-12', header: 'Total Quantity', fieldKey: 'total_quantity', required: false, defaultValue: '— (Auto-Calculated)', order: 12, visible: true, isCalculated: true, readOnly: true },
+        { id: 'col-13', header: 'Machine Status', fieldKey: 'machine_status', required: false, defaultValue: 'ACTIVE', order: 13, visible: true },
+        { id: 'col-14', header: 'Last Service Date', fieldKey: 'service_date', required: false, defaultValue: '', order: 14, visible: true },
+        { id: 'col-15', header: 'Remarks', fieldKey: 'remarks', required: false, defaultValue: '', order: 15, visible: true }
       ]
     };
   }

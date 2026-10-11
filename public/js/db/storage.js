@@ -374,8 +374,10 @@ class StorageEngine {
               else if (c.systemField === 'brand' || c.fieldKey === 'brand') c.fieldKey = 'machine_brand';
               else if (c.systemField === 'model' || c.fieldKey === 'model') c.fieldKey = 'machine_model';
               else if (c.systemField === 'serialNumber' || c.fieldKey === 'serialNumber') c.fieldKey = 'machine_serial';
+              else if (c.systemField === 'manufacturing_serial' || c.fieldKey === 'manufacturing_serial' || c.systemField === 'manufacturingSerial') c.fieldKey = 'manufacturing_serial';
               else if (c.systemField === 'unit' || c.fieldKey === 'unit') c.fieldKey = 'unit_factory';
               else if (c.systemField === 'status' || c.fieldKey === 'status') c.fieldKey = 'machine_status';
+              else if (c.systemField === 'service_date' || c.fieldKey === 'service_date' || c.systemField === 'lastServiceDate') c.fieldKey = 'service_date';
               else if (c.systemField === 'remarks' || c.fieldKey === 'remarks') c.fieldKey = 'remarks';
               else if (!c.fieldKey) c.fieldKey = c.systemField || `col_${idx + 1}`;
             }
