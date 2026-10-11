@@ -96,7 +96,9 @@ class RelocateService {
       running: m.running ?? 1,
       usableIdle: m.usable_idle ?? 0,
       repairableIdle: m.repairable_idle ?? 0,
-      needleQuantity: m.needleQuantity || m.customValues?.needle_quantity || ''
+      needleQuantity: m.presentNeedle || m.needleQuantity || m.customValues?.needle_quantity || '',
+      presentNeedle: m.presentNeedle || m.needleQuantity || m.customValues?.needle_quantity || '',
+      requiredNeedle: m.requiredNeedle || m.needleQuantity || m.customValues?.needle_quantity || ''
     }));
 
     const newSession = {
@@ -280,7 +282,7 @@ class RelocateService {
   /**
    * Records a confirmed machine scan in the active session
    */
-  recordScan(sessionId, machineId, { scannedLineId, needleQuantity = '', remarks = '' }) {
+  recordScan(sessionId, machineId, { scannedLineId, needleQuantity = '', presentNeedle = '', remarks = '' }) {
     const session = this.getSessionById(sessionId);
     if (!session) throw new Error('Relocation session not found.');
     if (session.status !== 'IN_PROGRESS') throw new Error('Cannot scan in a completed or cancelled session.');
@@ -302,6 +304,11 @@ class RelocateService {
     // 2. Evaluate location
     const evalResult = this.evaluateLocation(session, machine, scannedLineId);
 
+    const inputNeedle = (presentNeedle !== '' && presentNeedle !== undefined)
+      ? String(presentNeedle).trim()
+      : (needleQuantity !== '' && needleQuantity !== undefined ? String(needleQuantity).trim() : '');
+    const resolvedPresentNeedle = inputNeedle || machine.presentNeedle || machine.needleQuantity || '';
+
     const scanRecord = {
       scanId: `SCN-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
       machineId: machine.id,
@@ -318,7 +325,9 @@ class RelocateService {
       scannedUnitId: session.unitId,
       scannedFloorId: session.floorId,
       scannedLineId: scannedLineId || machine.lineId,
-      needleQuantity: needleQuantity ? String(needleQuantity).trim() : (machine.needleQuantity || ''),
+      presentNeedle: resolvedPresentNeedle,
+      needleQuantity: resolvedPresentNeedle, // backward compatibility
+      requiredNeedle: machine.requiredNeedle || machine.needleQuantity || '',
       remarks: remarks || '',
       matchType: evalResult.matchType,
       evalResult: evalResult,
@@ -341,7 +350,7 @@ class RelocateService {
   /**
    * Updates an existing scan record in the active session (e.g. line, needle quantity, remarks)
    */
-  updateScan(sessionId, scanIdOrMachineId, { scannedLineId, needleQuantity, remarks }) {
+  updateScan(sessionId, scanIdOrMachineId, { scannedLineId, needleQuantity, presentNeedle, remarks }) {
     const session = this.getSessionById(sessionId);
     if (!session) throw new Error('Relocation session not found.');
     if (session.status !== 'IN_PROGRESS') throw new Error('Cannot edit scan in a completed or cancelled session.');
@@ -356,10 +365,16 @@ class RelocateService {
     const targetLineId = scannedLineId !== undefined ? scannedLineId : oldScan.scannedLineId;
     const evalResult = this.evaluateLocation(session, machine, targetLineId);
 
+    const val = (presentNeedle !== undefined && presentNeedle !== '')
+      ? String(presentNeedle).trim()
+      : ((needleQuantity !== undefined && needleQuantity !== '') ? String(needleQuantity).trim() : (oldScan.presentNeedle || oldScan.needleQuantity || ''));
+
     const updatedScan = {
       ...oldScan,
       scannedLineId: targetLineId,
-      needleQuantity: needleQuantity !== undefined ? String(needleQuantity).trim() : oldScan.needleQuantity,
+      presentNeedle: val,
+      needleQuantity: val,
+      requiredNeedle: oldScan.requiredNeedle || machine.requiredNeedle || machine.needleQuantity || '',
       remarks: remarks !== undefined ? String(remarks).trim() : oldScan.remarks,
       matchType: evalResult.matchType,
       evalResult: evalResult,
@@ -554,8 +569,13 @@ class RelocateService {
         machine.running = 1;
         machine.usable_idle = 0;
         machine.lastVerifiedDate = nowIso;
-        if (move.needleQuantity) {
-          machine.needleQuantity = move.needleQuantity;
+        if (move.presentNeedle || move.needleQuantity) {
+          const nVal = move.presentNeedle || move.needleQuantity;
+          machine.presentNeedle = nVal;
+          machine.needleQuantity = nVal;
+          if (!machine.requiredNeedle && machine.needleQuantity) {
+            machine.requiredNeedle = machine.needleQuantity;
+          }
         }
 
         // Record in Relocation History
@@ -610,7 +630,9 @@ class RelocateService {
         destUnitId: pending.scannedUnitId,
         destFloorId: pending.scannedFloorId,
         destLineId: pending.scannedLineId,
-        needleQuantity: pending.needleQuantity,
+        presentNeedle: pending.presentNeedle || pending.needleQuantity || '',
+        needleQuantity: pending.presentNeedle || pending.needleQuantity || '',
+        requiredNeedle: pending.requiredNeedle || '',
         remarks: pending.remarks || 'Scanned on different floor during physical audit',
         status: 'PENDING',
         requestedBy: user.name,
@@ -635,8 +657,13 @@ class RelocateService {
       const machine = allMachines.find(m => m.id === ver.machineId);
       if (machine) {
         machine.lastVerifiedDate = nowIso;
-        if (ver.needleQuantity) {
-          machine.needleQuantity = ver.needleQuantity;
+        if (ver.presentNeedle || ver.needleQuantity) {
+          const nVal = ver.presentNeedle || ver.needleQuantity;
+          machine.presentNeedle = nVal;
+          machine.needleQuantity = nVal;
+          if (!machine.requiredNeedle && machine.needleQuantity) {
+            machine.requiredNeedle = machine.needleQuantity;
+          }
         }
         machinesUpdated++;
       }
@@ -746,8 +773,13 @@ class RelocateService {
     machine.floorId = app.destFloorId;
     machine.lineId = app.destLineId;
     machine.lastVerifiedDate = nowIso;
-    if (app.needleQuantity) {
-      machine.needleQuantity = app.needleQuantity;
+    if (app.presentNeedle || app.needleQuantity) {
+      const nVal = app.presentNeedle || app.needleQuantity;
+      machine.presentNeedle = nVal;
+      machine.needleQuantity = nVal;
+      if (!machine.requiredNeedle && machine.needleQuantity) {
+        machine.requiredNeedle = machine.needleQuantity;
+      }
     }
     // CONFIRMED WRITE: Update machine location
     await storage.writeAndConfirm(TABLE_NAMES.MACHINES, (tbl) => {

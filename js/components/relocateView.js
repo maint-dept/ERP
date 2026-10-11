@@ -963,9 +963,14 @@ function renderScannedItemsList(session) {
             <span style="color: #94a3b8; font-size: 11px;">Scanned at:</span>
             <strong style="color: #34d399; font-weight: 800;">${targetLine?.name || s.scannedLineId}</strong>
           </div>
-          ${s.needleQuantity ? `
-            <div style="font-size: 11.5px; color: #e2e8f0; display: flex; align-items: center; gap: 6px;">
-              <span>🪡 Needles: <strong style="color: #38bdf8;">${s.needleQuantity}</strong></span>
+          ${(s.presentNeedle || s.needleQuantity) ? `
+            <div style="font-size: 11.5px; color: #e2e8f0; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+              <span style="background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 4px; padding: 1px 8px; font-weight: 700;">
+                🪡 Present Needle: <strong style="color: #38bdf8;">${s.presentNeedle || s.needleQuantity}</strong>
+              </span>
+              ${s.requiredNeedle && s.requiredNeedle !== (s.presentNeedle || s.needleQuantity) ? `
+                <span style="font-size: 10.5px; color: var(--text-muted);">(Req: ${s.requiredNeedle})</span>
+              ` : ''}
             </div>
           ` : ''}
           ${s.remarks ? `
@@ -1175,10 +1180,28 @@ function renderConfirmationModal() {
             </select>
           </div>
 
-          <!-- Needle Quantity Field (Mandatory per spec) -->
+          <!-- Present Needle Field (Replaces Requirement Needle Option) -->
           <div class="form-group">
-            <label class="form-label" style="font-weight: 700; font-size: 12px; color: #38bdf8;">Needle Quantity: <span style="font-weight: normal; color: var(--text-muted);">(if applicable)</span></label>
-            <input type="number" id="confirm-needle-quantity" class="form-control" placeholder="e.g. 1, 2, 4" min="0" value="${pendingScanMachine.needleQuantity || ''}" style="font-size: 16px; min-height: 44px;" />
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+              <label class="form-label" style="font-weight: 700; font-size: 12px; color: #38bdf8; margin-bottom: 0;">
+                🪡 Present Needle: <span style="font-weight: normal; color: var(--text-muted);">(Currently Installed / Verified)</span>
+              </label>
+              ${(pendingScanMachine.needleQuantity || pendingScanMachine.requiredNeedle) ? `
+                <span style="font-size: 10.5px; color: #94a3b8; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); padding: 1px 6px; border-radius: 4px;" title="Original Registered Spec / Requirement">
+                  Req / Spec: <strong style="color: #cbd5e1;">${pendingScanMachine.requiredNeedle || pendingScanMachine.needleQuantity}</strong>
+                </span>
+              ` : ''}
+            </div>
+            <input
+              type="number"
+              id="confirm-present-needle"
+              class="form-control"
+              placeholder="e.g. 1, 2, 4 (Present Needle count)"
+              min="0"
+              value="${pendingScanMachine.presentNeedle || pendingScanMachine.needleQuantity || ''}"
+              style="font-size: 16px; min-height: 44px; font-weight: 700; color: #38bdf8;"
+            />
+            <input type="hidden" id="confirm-needle-quantity" value="${pendingScanMachine.presentNeedle || pendingScanMachine.needleQuantity || ''}" />
           </div>
 
           <!-- Remarks -->
@@ -1253,10 +1276,28 @@ function renderEditScanModal(session) {
             </select>
           </div>
 
-          <!-- Needle Quantity -->
+          <!-- Present Needle Field -->
           <div class="form-group">
-            <label class="form-label" style="font-weight: 700; font-size: 12px; color: #38bdf8;">Needle Quantity:</label>
-            <input type="number" id="edit-needle-quantity" class="form-control" min="0" value="${editingScanItem.needleQuantity || ''}" placeholder="e.g. 1, 2, 4" style="font-size: 16px; min-height: 44px;" />
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+              <label class="form-label" style="font-weight: 700; font-size: 12px; color: #38bdf8; margin-bottom: 0;">
+                🪡 Present Needle: <span style="font-weight: normal; color: var(--text-muted);">(Currently Installed)</span>
+              </label>
+              ${(editingScanItem.requiredNeedle) ? `
+                <span style="font-size: 10.5px; color: #94a3b8; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); padding: 1px 6px; border-radius: 4px;">
+                  Req / Spec: <strong style="color: #cbd5e1;">${editingScanItem.requiredNeedle}</strong>
+                </span>
+              ` : ''}
+            </div>
+            <input
+              type="number"
+              id="edit-present-needle"
+              class="form-control"
+              min="0"
+              value="${editingScanItem.presentNeedle || editingScanItem.needleQuantity || ''}"
+              placeholder="e.g. 1, 2, 4 (Present Needle count)"
+              style="font-size: 16px; min-height: 44px; font-weight: 700; color: #38bdf8;"
+            />
+            <input type="hidden" id="edit-needle-quantity" value="${editingScanItem.presentNeedle || editingScanItem.needleQuantity || ''}" />
           </div>
 
           <!-- Remarks -->
@@ -1496,6 +1537,9 @@ function renderApprovalsTab(pendingApprovals) {
                   <span style="color: #f87171;">Previous: <strong>${prevFlr?.name || a.previousFloorId} / ${prevLin?.name || a.previousLineId}</strong></span>
                   <span>&rarr;</span>
                   <span style="color: #34d399;">Destination: <strong>${destFlr?.name || a.destFloorId} / ${destLin?.name || a.destLineId}</strong></span>
+                  ${(a.presentNeedle || a.needleQuantity) ? `
+                    <span style="background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 4px; padding: 1px 6px; color: #38bdf8; font-weight: 700;">🪡 Present Needle: ${a.presentNeedle || a.needleQuantity}</span>
+                  ` : ''}
                 </div>
                 <div style="font-size: 10.5px; color: var(--text-muted); margin-top: 4px;">
                   Session: <strong>${a.sessionId}</strong> &bull; Requested by: <strong>${a.requestedBy}</strong> on ${new Date(a.requestedAt).toLocaleDateString()}
@@ -1634,7 +1678,7 @@ function exportSessionsToExcel(sessions) {
   ];
 
   const scannedRows = [
-    ['Session ID', 'Floor', 'Scan Time', 'Serial Number', 'Machine Name', 'Brand', 'Model', 'Original Floor', 'Original Line', 'Scanned Line', 'Result Status', 'Remarks']
+    ['Session ID', 'Floor', 'Scan Time', 'Serial Number', 'Machine Name', 'Brand', 'Model', 'Original Floor', 'Original Line', 'Scanned Line', 'Present Needle', 'Result Status', 'Remarks']
   ];
 
   sessions.forEach(s => {
@@ -1667,6 +1711,7 @@ function exportSessionsToExcel(sessions) {
         item.previousFloorStr || '',
         item.previousLineStr || '',
         masterDataService.getLineById(item.scannedLineId)?.name || item.scannedLineId || '',
+        item.presentNeedle || item.needleQuantity || '',
         item.matchType || '',
         item.remarks || ''
       ]);
@@ -1701,7 +1746,7 @@ function exportSingleSessionToExcel(session) {
   }
   const flr = masterDataService.getFloorById(session.floorId);
   const rows = [
-    ['#', 'Serial Number', 'Machine Name', 'Brand', 'Model', 'Original Floor', 'Original Line', 'Scanned Floor', 'Scanned Line', 'Verification Status', 'Needle Qty', 'Remarks', 'Scan Timestamp']
+    ['#', 'Serial Number', 'Machine Name', 'Brand', 'Model', 'Original Floor', 'Original Line', 'Scanned Floor', 'Scanned Line', 'Verification Status', 'Present Needle', 'Required Needle', 'Remarks', 'Scan Timestamp']
   ];
 
   (session.scanned || []).forEach((item, idx) => {
@@ -1716,7 +1761,8 @@ function exportSingleSessionToExcel(session) {
       flr?.name || session.floorId || '',
       masterDataService.getLineById(item.scannedLineId)?.name || item.scannedLineId || '',
       item.matchType || '',
-      item.needleQuantity || '',
+      item.presentNeedle || item.needleQuantity || '',
+      item.requiredNeedle || '',
       item.remarks || '',
       item.scannedAt ? new Date(item.scannedAt).toLocaleString() : ''
     ]);
@@ -2344,6 +2390,9 @@ function renderSessionDetailsModal() {
                         <td style="padding: 8px 10px;">
                           <div style="font-weight: 700; color: #fff;">${item.machineNameStr || 'Sewing Machine'}</div>
                           <div style="font-size: 10px; color: var(--text-secondary);">${item.brandStr || ''} ${item.modelStr || ''}</div>
+                          ${(item.presentNeedle || item.needleQuantity) ? `
+                            <div style="font-size: 10px; color: #38bdf8; font-weight: 700; margin-top: 2px;">🪡 Present Needle: ${item.presentNeedle || item.needleQuantity}</div>
+                          ` : ''}
                         </td>
                         <td style="padding: 8px 10px;">
                           <div style="color: #cbd5e1;">${item.previousFloorStr || item.previousFloorId || '—'}</div>
@@ -2717,12 +2766,14 @@ export function initRelocateViewEvents() {
 
       const currentMachine = pendingScanMachine;
       const scannedLineId = root.querySelector('#confirm-scanned-line')?.value;
-      const needleQuantity = root.querySelector('#confirm-needle-quantity')?.value;
+      const presentNeedle = root.querySelector('#confirm-present-needle')?.value ?? root.querySelector('#confirm-needle-quantity')?.value ?? '';
+      const needleQuantity = presentNeedle;
       const remarks = root.querySelector('#confirm-scan-remarks')?.value;
 
       try {
         const result = relocateService.recordScan(session.id, currentMachine.id, {
           scannedLineId,
+          presentNeedle,
           needleQuantity,
           remarks
         });
@@ -2784,12 +2835,14 @@ export function initRelocateViewEvents() {
       if (!session || !editingScanItem) return;
 
       const scannedLineId = root.querySelector('#edit-scanned-line')?.value;
-      const needleQuantity = root.querySelector('#edit-needle-quantity')?.value;
+      const presentNeedle = root.querySelector('#edit-present-needle')?.value ?? root.querySelector('#edit-needle-quantity')?.value ?? '';
+      const needleQuantity = presentNeedle;
       const remarks = root.querySelector('#edit-scan-remarks')?.value;
 
       try {
         const result = relocateService.updateScan(session.id, editingScanItem.scanId, {
           scannedLineId,
+          presentNeedle,
           needleQuantity,
           remarks
         });
