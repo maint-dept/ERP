@@ -1967,7 +1967,12 @@ export function initEtLabEvents() {
     btn.addEventListener('click', (e) => {
       const actionType = btn.getAttribute('data-action');
       const board = selectedBoardSerial ? etLabService.getBoardBySerial(selectedBoardSerial) : null;
-      if (board) openActionModal(board, actionType);
+      if (board) {
+        openActionModal(board, actionType);
+      } else {
+        notificationService.info('Please search and select a board first to execute a quick action.');
+        document.getElementById('ent-live-search-input')?.focus({ preventScroll: true });
+      }
     });
   });
 
@@ -2044,21 +2049,21 @@ function openActionModal(board, initialActionType = null) {
   const curUserName = user?.name || user?.username || 'Engr. Tanvir Ahmed';
 
   // Helper to render searchable employee selector with Card Number, Name, Working Area
-  const renderPersonnelSelector = (id, label, defaultName = '', color = '#38bdf8') => {
+  const renderPersonnelSelector = (id, label, defaultName = curUserName, color = '#38bdf8') => {
     let initialPerson = {
       name: '',
       cardNumber: '',
       workingArea: ''
     };
     if (defaultName) {
-      const match = allPersonnel.find(p => p.name === defaultName);
+      const match = allPersonnel.find(p => p.name === defaultName || (p.cardNumber && defaultName.includes(p.cardNumber)));
       if (match) {
         initialPerson = match;
       } else {
         initialPerson = {
           name: defaultName,
-          cardNumber: '',
-          workingArea: ''
+          cardNumber: user?.cardNumber || '',
+          workingArea: 'Central ENT Lab'
         };
       }
     }
@@ -2089,7 +2094,6 @@ function openActionModal(board, initialActionType = null) {
             value="${hasInitial ? (initialPerson.cardNumber ? `Card: ${initialPerson.cardNumber} | ${initialPerson.name} | ${initialPerson.workingArea}` : initialPerson.name) : ''}"
             style="font-weight: 800; height: 38px; font-size: 12px; background: #0f172a; border: 1.5px solid #334155; color: #fff; padding-right: 28px;" 
             autocomplete="off" 
-            required
           />
           <button type="button" class="btn-clear-person" data-target="${id}" style="position: absolute; right: 8px; top: 8px; background: none; border: none; color: #94a3b8; font-size: 14px; cursor: pointer;" title="Clear Search">✕</button>
 
@@ -2118,7 +2122,7 @@ function openActionModal(board, initialActionType = null) {
     `;
   };
 
-  const renderMachineSearchAndDetails = (inputId, prefix, labelText, themeColor) => `
+  const renderMachineSearchAndDetails = (inputId, prefix, labelText, themeColor, defaultVal = '') => `
     <div class="form-group">
       <label class="form-label" style="font-weight: 800; color: ${themeColor};">
         ${labelText}
@@ -2130,7 +2134,7 @@ function openActionModal(board, initialActionType = null) {
           list="shared-machines-datalist" 
           class="form-control" 
           placeholder="Type or scan machine serial (e.g. JA-01, TS-01, GB-05)..." 
-          value=""
+          value="${escapeHtml(defaultVal)}"
           style="font-family: var(--font-mono); font-weight: 800; font-size: 13.5px; height: 38px; flex: 1;"
           autocomplete="off"
         />
@@ -2178,7 +2182,7 @@ function openActionModal(board, initialActionType = null) {
     </div>
   `;
 
-  const renderPartsSerialField = (inputId, themeColor) => `
+  const renderPartsSerialField = (inputId, themeColor, defaultVal = '') => `
     <div class="form-group">
       <label class="form-label" style="font-weight: 800; color: ${themeColor}; display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
         <span>Parts Serial Number / Board S/N:</span>
@@ -2189,7 +2193,7 @@ function openActionModal(board, initialActionType = null) {
         id="${inputId}" 
         class="form-control" 
         placeholder="Enter parts serial number (e.g. JK-CPU-99026, SN-88321)..." 
-        value=""
+        value="${escapeHtml(defaultVal || board.jukiSlNo || board.slNo || board.partsSerial || '')}"
         style="font-family: var(--font-mono); font-weight: 800; font-size: 13px; height: 38px; background: #0f172a; border: 1.5px solid #334155; color: #fff;"
         autocomplete="off"
       />
@@ -2223,7 +2227,7 @@ function openActionModal(board, initialActionType = null) {
           <button type="button" class="btn btn-ghost btn-sm btn-close-modal" style="color: #fff; font-size: 18px;">✕</button>
         </div>
 
-        <form id="form-action-execution" style="display: flex; flex-direction: column; flex: 1; min-height: 0; margin: 0;">
+        <form id="form-action-execution" novalidate style="display: flex; flex-direction: column; flex: 1; min-height: 0; margin: 0;">
           <div class="modal-body" style="padding: 20px; display: flex; flex-direction: column; gap: 14px; overflow-y: auto; flex: 1; min-height: 0;">
             
             <!-- 1. ACTION TYPE SELECTION (STEP 1) -->
@@ -2253,13 +2257,13 @@ function openActionModal(board, initialActionType = null) {
 
             <!-- ACTION 1: INSTALL / ASSIGN -->
             <div id="fields-install" class="action-field-group" style="display: none; flex-direction: column; gap: 10px;">
-              ${renderMachineSearchAndDetails('install-machine-serial', 'ins-auto', 'Search Target Machine Number / Serial Number:', '#38bdf8')}
+              ${renderMachineSearchAndDetails('install-machine-serial', 'ins-auto', 'Search Target Machine Number / Serial Number:', '#38bdf8', '')}
               ${renderPartsSerialField('install-parts-serial', '#38bdf8')}
 
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                 <div class="form-group">
                   <label class="form-label required">Install Date</label>
-                  <input type="date" id="install-date" class="form-control" value="${todayStr}" style="height: 38px;" required />
+                  <input type="date" id="install-date" class="form-control" value="${todayStr}" style="height: 38px;" />
                 </div>
                 <div class="form-group">
                   <label class="form-label">Remarks</label>
@@ -2268,23 +2272,23 @@ function openActionModal(board, initialActionType = null) {
               </div>
 
               <!-- Employee Name at the very last -->
-              ${renderPersonnelSelector('install-assigned-to', 'Assigned To / Installed By', '', '#38bdf8')}
+              ${renderPersonnelSelector('install-assigned-to', 'Assigned To / Installed By', curUserName, '#38bdf8')}
             </div>
 
             <!-- ACTION 2: REMOVE -->
             <div id="fields-remove" class="action-field-group" style="display: none; flex-direction: column; gap: 10px;">
-              ${renderMachineSearchAndDetails('remove-machine-serial', 'remove-auto', 'Search Machine Number / Serial Number:', '#f59e0b')}
+              ${renderMachineSearchAndDetails('remove-machine-serial', 'remove-auto', 'Search Machine Number / Serial Number:', '#f59e0b', board.currentMachineSerial || '')}
               ${renderPartsSerialField('remove-parts-serial', '#f59e0b')}
 
               <div class="form-group">
                 <label class="form-label required" style="font-weight: 800; color: #f59e0b;">Removal Reason / Problem Symptom</label>
-                <input type="text" id="remove-reason" class="form-control" placeholder="e.g. Error Code E-02, Trimmer pulse failed, Scheduled maintenance..." required />
+                <input type="text" id="remove-reason" class="form-control" placeholder="e.g. Error Code E-02, Trimmer pulse failed, Scheduled maintenance..." />
               </div>
 
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                 <div class="form-group">
                   <label class="form-label required">Removal Date</label>
-                  <input type="date" id="remove-date" class="form-control" value="${todayStr}" style="height: 38px;" required />
+                  <input type="date" id="remove-date" class="form-control" value="${todayStr}" style="height: 38px;" />
                 </div>
                 <div class="form-group">
                   <label class="form-label required" style="font-weight: 700; color: #fff;">Next Board Status</label>
@@ -2303,12 +2307,12 @@ function openActionModal(board, initialActionType = null) {
               </div>
 
               <!-- Employee Name at the very last -->
-              ${renderPersonnelSelector('remove-by', 'Removed By', '', '#f59e0b')}
+              ${renderPersonnelSelector('remove-by', 'Removed By', curUserName, '#f59e0b')}
             </div>
 
             <!-- ACTION 3: IN-HOUSE REPAIR -->
             <div id="fields-inhouse" class="action-field-group" style="display: none; flex-direction: column; gap: 10px;">
-              ${renderMachineSearchAndDetails('inhouse-machine-serial', 'inhouse-auto', 'Search Machine Number / Serial Number:', '#f97316')}
+              ${renderMachineSearchAndDetails('inhouse-machine-serial', 'inhouse-auto', 'Search Machine Number / Serial Number:', '#f97316', board.currentMachineSerial || '')}
               ${renderPartsSerialField('inhouse-parts-serial', '#f97316')}
 
               <div class="form-group">
@@ -2322,11 +2326,11 @@ function openActionModal(board, initialActionType = null) {
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                 <div class="form-group">
                   <label class="form-label required" style="font-weight: 700; color: #fff;">Problem / Symptom</label>
-                  <input type="text" id="inhouse-problem" class="form-control" placeholder="e.g. Power MOSFET blown, solder joint cracked..." value="${board.inhouseRepair?.problem || ''}" required />
+                  <input type="text" id="inhouse-problem" class="form-control" placeholder="e.g. Power MOSFET blown, solder joint cracked..." value="${board.inhouseRepair?.problem || ''}" />
                 </div>
                 <div class="form-group">
                   <label class="form-label required">Repair Date</label>
-                  <input type="date" id="inhouse-date" class="form-control" value="${todayStr}" style="height: 38px;" required />
+                  <input type="date" id="inhouse-date" class="form-control" value="${todayStr}" style="height: 38px;" />
                 </div>
               </div>
 
@@ -2341,17 +2345,17 @@ function openActionModal(board, initialActionType = null) {
               </div>
 
               <!-- Employee Name at the very last -->
-              ${renderPersonnelSelector('inhouse-repaired-by', 'Repaired By', '', '#f97316')}
+              ${renderPersonnelSelector('inhouse-repaired-by', 'Repaired By', curUserName, '#f97316')}
             </div>
 
             <!-- ACTION 4: SEND TO EXTERNAL COMPANY -->
             <div id="fields-send-outside" class="action-field-group" style="display: none; flex-direction: column; gap: 10px;">
-              ${renderMachineSearchAndDetails('send-machine-serial', 'send-auto', 'Search Machine Number / Serial Number:', '#a855f7')}
+              ${renderMachineSearchAndDetails('send-machine-serial', 'send-auto', 'Search Machine Number / Serial Number:', '#a855f7', board.currentMachineSerial || '')}
               ${renderPartsSerialField('send-parts-serial', '#a855f7')}
 
               <div class="form-group">
                 <label class="form-label required" style="font-weight: 800; color: #a855f7;">External Repair Company</label>
-                <select id="send-company-name" class="form-control" style="font-weight: 700; height: 38px;" required>
+                <select id="send-company-name" class="form-control" style="font-weight: 700; height: 38px;">
                   ${companies.map(c => `<option value="${c.name}">${c.name} (${c.contactPerson || 'Service Partner'})</option>`).join('')}
                 </select>
               </div>
@@ -2359,7 +2363,7 @@ function openActionModal(board, initialActionType = null) {
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                 <div class="form-group">
                   <label class="form-label required">Send Date</label>
-                  <input type="date" id="send-date" class="form-control" value="${todayStr}" style="height: 38px;" required />
+                  <input type="date" id="send-date" class="form-control" value="${todayStr}" style="height: 38px;" />
                 </div>
                 <div class="form-group">
                   <label class="form-label">Expected Return Date</label>
@@ -2369,7 +2373,7 @@ function openActionModal(board, initialActionType = null) {
 
               <div class="form-group">
                 <label class="form-label required" style="font-weight: 700; color: #fff;">Fault Details / Repair Work Requested</label>
-                <textarea id="send-problem" class="form-control" rows="2" placeholder="Describe fault sent to outside lab..." required></textarea>
+                <textarea id="send-problem" class="form-control" rows="2" placeholder="Describe fault sent to outside lab..."></textarea>
               </div>
 
               <div class="form-group">
@@ -2378,12 +2382,12 @@ function openActionModal(board, initialActionType = null) {
               </div>
 
               <!-- Employee Name at the very last -->
-              ${renderPersonnelSelector('send-by', 'Sent By', '', '#a855f7')}
+              ${renderPersonnelSelector('send-by', 'Sent By', curUserName, '#a855f7')}
             </div>
 
             <!-- ACTION 5: RECEIVE WITH REPAIR VERIFICATION -->
             <div id="fields-receive" class="action-field-group" style="display: none; flex-direction: column; gap: 10px;">
-              ${renderMachineSearchAndDetails('receive-machine-serial', 'receive-auto', 'Search Machine Number / Serial Number:', '#34d399')}
+              ${renderMachineSearchAndDetails('receive-machine-serial', 'receive-auto', 'Search Machine Number / Serial Number:', '#34d399', board.currentMachineSerial || '')}
               ${renderPartsSerialField('receive-parts-serial', '#34d399')}
 
               <div style="background: rgba(16, 185, 129, 0.1); border: 1.5px solid #10b981; border-radius: 8px; padding: 12px 14px; display: flex; flex-direction: column; gap: 10px;">
@@ -2397,11 +2401,11 @@ function openActionModal(board, initialActionType = null) {
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                   <div class="form-group">
                     <label class="form-label required">Receive Date</label>
-                    <input type="date" id="receive-return-date" class="form-control" value="${todayStr}" style="height: 38px;" required />
+                    <input type="date" id="receive-return-date" class="form-control" value="${todayStr}" style="height: 38px;" />
                   </div>
                   <div class="form-group">
                     <label class="form-label required" style="font-weight: 800; color: #fff;">Repair Result:</label>
-                    <select id="receive-repair-result" class="form-control" style="font-weight: 800; font-size: 13px; height: 38px;" required>
+                    <select id="receive-repair-result" class="form-control" style="font-weight: 800; font-size: 13px; height: 38px;">
                       <option value="SUCCESSFUL" selected>✅ Successfully Repaired</option>
                       <option value="NOT_REPAIRED">❌ Not Repaired / Problem Not Solved</option>
                       <option value="PARTIALLY_REPAIRED">⚠️ Partially Repaired</option>
@@ -2434,7 +2438,7 @@ function openActionModal(board, initialActionType = null) {
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                   <div class="form-group">
                     <label class="form-label required" style="font-weight: 700; color: #cbd5e1;">Verification Date</label>
-                    <input type="date" id="receive-verification-date" class="form-control" value="${todayStr}" style="height: 38px;" required />
+                    <input type="date" id="receive-verification-date" class="form-control" value="${todayStr}" style="height: 38px;" />
                   </div>
                   <div class="form-group">
                     <label class="form-label" style="font-weight: 700; color: #cbd5e1;">Repair Details / Remarks</label>
@@ -2448,20 +2452,20 @@ function openActionModal(board, initialActionType = null) {
                 <input type="text" id="receive-remarks" class="form-control" placeholder="Optional notes for receiving record..." />
               </div>
 
-              ${renderPersonnelSelector('receive-by', 'Received By', '', '#34d399')}
+              ${renderPersonnelSelector('receive-by', 'Received By', curUserName, '#34d399')}
               <!-- Employee Name at the very last -->
-              ${renderPersonnelSelector('receive-verified-by', 'Verified By', '', '#34d399')}
+              ${renderPersonnelSelector('receive-verified-by', 'Verified By', curUserName, '#34d399')}
             </div>
 
             <!-- ACTION 6: ASSIGN TO ANOTHER MACHINE -->
             <div id="fields-assign-another" class="action-field-group" style="display: none; flex-direction: column; gap: 10px;">
-              ${renderMachineSearchAndDetails('reassign-machine-serial', 're-auto', 'Search New Target Machine Number / Serial Number:', '#6366f1')}
+              ${renderMachineSearchAndDetails('reassign-machine-serial', 're-auto', 'Search New Target Machine Number / Serial Number:', '#6366f1', '')}
               ${renderPartsSerialField('reassign-parts-serial', '#6366f1')}
 
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                 <div class="form-group">
                   <label class="form-label required">Reassignment Date</label>
-                  <input type="date" id="reassign-date" class="form-control" value="${todayStr}" style="height: 38px;" required />
+                  <input type="date" id="reassign-date" class="form-control" value="${todayStr}" style="height: 38px;" />
                 </div>
                 <div class="form-group">
                   <label class="form-label">Remarks</label>
@@ -2470,7 +2474,7 @@ function openActionModal(board, initialActionType = null) {
               </div>
 
               <!-- Employee Name at the very last -->
-              ${renderPersonnelSelector('reassign-by', 'Assigned By', '', '#818cf8')}
+              ${renderPersonnelSelector('reassign-by', 'Assigned By', curUserName, '#818cf8')}
             </div>
 
           </div>
@@ -2488,7 +2492,11 @@ function openActionModal(board, initialActionType = null) {
     </div>
   `;
 
+  document.getElementById('ent-action-modal-overlay')?.remove();
   document.body.insertAdjacentHTML('beforeend', modalHtml);
+  const overlay = document.getElementById('ent-action-modal-overlay');
+  if (!overlay) return;
+
   const close = () => {
     document.getElementById('ent-qr-scanner-slot')?.remove();
     document.getElementById('modal-qr-scanner-overlay')?.remove();
@@ -2496,6 +2504,9 @@ function openActionModal(board, initialActionType = null) {
   };
 
   overlay.querySelectorAll('.btn-close-modal').forEach(b => b.addEventListener('click', close));
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) close();
+  });
 
   // ============================================================
   // INTERACTIVE SEARCHABLE EMPLOYEE SELECTOR (Card No, Name, Area)
