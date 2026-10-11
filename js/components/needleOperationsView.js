@@ -95,6 +95,12 @@ export function renderNeedleOperationsView() {
           <button type="button" id="btn-open-needle-tx-modal" class="btn btn-primary btn-sm" style="font-weight: 800; font-size: 11.5px; padding: 4px 12px; height: 30px; background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); border-color: #38bdf8; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 2px 8px rgba(2, 132, 199, 0.35);">
             <span>➕</span> New Needle Entry
           </button>
+          <button type="button" id="btn-sync-needle-master-now" class="btn btn-secondary btn-sm" style="font-weight: 700; font-size: 11px; padding: 4px 10px; height: 30px; border: 1px solid #38bdf8; color: #38bdf8; background: rgba(56, 189, 248, 0.08); display: inline-flex; align-items: center; gap: 4px;" title="Synchronize Needle Master specifications with all inventory machines">
+            <span>🔄</span> Sync Needle Master
+          </button>
+          <button type="button" id="btn-nav-goto-storage-needle" class="btn btn-secondary btn-sm" style="font-weight: 700; font-size: 11px; padding: 4px 10px; height: 30px; border: 1px solid #a855f7; color: #c084fc; background: rgba(168, 85, 247, 0.08); display: inline-flex; align-items: center; gap: 4px;" title="Open Master Storage & Rules to manage Machine Models and Needle Requirements">
+            <span>📦</span> Needle Master Setup
+          </button>
           <button type="button" id="btn-export-needle-ops-excel" class="btn btn-secondary btn-sm" style="font-weight: 700; font-size: 11px; padding: 4px 10px; height: 30px; border: 1px solid #10b981; color: #34d399; background: rgba(16, 185, 129, 0.08); display: inline-flex; align-items: center; gap: 4px;">
             <span>📊</span> Export Excel
           </button>
@@ -817,5 +823,24 @@ export function initNeedleOperationsEvents() {
   // 9. Quick Link to Relocate & Verify
   root.querySelector('#btn-nav-goto-relocate-needle')?.addEventListener('click', () => {
     state.set('currentView', 'relocate');
+  });
+
+  // 10. Sync Needle Master to Inventory Machines
+  root.querySelector('#btn-sync-needle-master-now')?.addEventListener('click', async () => {
+    try {
+      const res = await needleService.syncNeedleMasterToInventory({ syncPresentNeedlesIfDefault: false });
+      notificationService.success(
+        'Needle Master Synchronized',
+        `Successfully updated ${res.updatedCount} machine(s) across inventory with Master specifications.`
+      );
+      refreshView();
+    } catch (err) {
+      notificationService.error('Sync Failed', err.message || err);
+    }
+  });
+
+  // 11. Navigate to Master Storage & Rules (Needle Master Setup)
+  root.querySelector('#btn-nav-goto-storage-needle')?.addEventListener('click', () => {
+    state.set('currentView', 'storage');
   });
 }

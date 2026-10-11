@@ -609,6 +609,64 @@ class NeedleService {
     notificationService.success('Excel Report Exported', `Downloaded ${fileName}`);
   }
 
+  /**
+   * Synchronizes Needle specifications from Master Storage & Models to all matching machines in Inventory.
+   * Updates machine requiredNeedles, needleType, needleBrand based on model setup.
+   */
+  async syncNeedleMasterToInventory({ syncPresentNeedlesIfDefault = false } = {}) {
+    const allMachines = storage.getTable(TABLE_NAMES.MACHINES) || [];
+
+    let updatedCount = 0;
+    allMachines.forEach(machine => {
+      if (!machine) return;
+      const spec = this.getModelNeedleSpec(machine.modelId, machine.brandId, machine.machineNameId);
+      if (!spec) return;
+
+      let changed = false;
+      const targetReq = Number(spec.requiredNeedles) || 1;
+      const targetType = spec.needleType || 'DBx1 #14';
+      const targetBrand = spec.needleBrand || 'ORGAN';
+
+      if (Number(machine.requiredNeedles) !== targetReq) {
+        machine.requiredNeedles = targetReq;
+        changed = true;
+      }
+      if (Number(machine.requiredNeedle) !== targetReq) {
+        machine.requiredNeedle = targetReq;
+        changed = true;
+      }
+      if (machine.needleType !== targetType) {
+        machine.needleType = targetType;
+        changed = true;
+      }
+      if (machine.needleBrand !== targetBrand) {
+        machine.needleBrand = targetBrand;
+        machine.requiredNeedleBrand = targetBrand;
+        changed = true;
+      }
+
+      if (syncPresentNeedlesIfDefault && (machine.presentNeedle === undefined || machine.presentNeedle === null || machine.presentNeedle === '')) {
+        machine.presentNeedle = targetReq;
+        changed = true;
+      }
+
+      if (changed) {
+        machine.updatedAt = new Date().toISOString();
+        updatedCount++;
+      }
+    });
+
+    if (updatedCount > 0) {
+      await storage.saveTable(TABLE_NAMES.MACHINES, true);
+      if (typeof storage.persistToServerDatabase === 'function') {
+        try { await storage.persistToServerDatabase(); } catch (_) {}
+      }
+    }
+
+    this._broadcastNeedleChange();
+    return { success: true, updatedCount };
+  }
+
   _broadcastNeedleChange() {
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('erp:needle-updated'));

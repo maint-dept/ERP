@@ -303,10 +303,11 @@ function renderGroupedMachinesView() {
                   <span style="background: rgba(255, 255, 255, 0.12); color: #38bdf8; font-family: var(--font-mono); font-size: 11px; font-weight: 800; padding: 2px 6px; border-radius: 4px;">#${m.serialNo}</span>
                   <span class="badge badge-active" style="font-size: 9.5px; font-weight: 800;">${m.brand || 'JUKI'}</span>
                   <strong style="font-family: var(--font-mono); font-size: 12.5px; color: #fff;">${m.model}</strong>
+                  <span class="badge" style="background: rgba(56, 189, 248, 0.12); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.25); font-size: 9.5px; font-weight: 700; padding: 2px 6px;" title="Needle: ${m.requiredNeedleBrand || 'ORGAN'} ${m.needleType || 'DBx1 #14'} • Required: ${m.requiredNeedles || 1} Pcs">🧵 ${m.needleType || 'DBx1 #14'} (${m.requiredNeedles || 1} Pcs)</span>
                   
                   ${isAdmin ? `
                     <div style="display: inline-flex; align-items: center; gap: 3px; margin-left: 4px; border-left: 1px solid rgba(255,255,255,0.12); padding-left: 6px;">
-                      <button type="button" class="btn btn-ghost btn-sm btn-edit-model-item" data-id="${m.id}" data-model="${m.model}" data-machine="${grp.machineName}" data-brand="${m.brand}" data-status="${m.status || 'ACTIVE'}" style="padding: 1px 4px; font-size: 10px; color: #38bdf8; line-height: 1;" title="Edit Model Specification">
+                      <button type="button" class="btn btn-ghost btn-sm btn-edit-model-item" data-id="${m.id}" data-model="${m.model}" data-machine="${grp.machineName}" data-brand="${m.brand}" data-status="${m.status || 'ACTIVE'}" data-needle-brand="${m.requiredNeedleBrand || 'ORGAN'}" data-needle-type="${m.needleType || ''}" data-required-needles="${m.requiredNeedles || 1}" style="padding: 1px 4px; font-size: 10px; color: #38bdf8; line-height: 1;" title="Edit Model Specification">
                         ✏️
                       </button>
                       <button type="button" class="btn btn-ghost btn-sm btn-delete-storage-item" data-id="${m.id}" data-model="${m.model}" data-machine="${grp.machineName}" style="padding: 1px 4px; font-size: 10px; color: #f87171; line-height: 1;" title="Delete Model">
@@ -350,6 +351,9 @@ function renderStorageItemsTab() {
         model: m.model,
         serialNo: m.serialNo,
         id: m.id,
+        requiredNeedleBrand: m.requiredNeedleBrand || 'ORGAN',
+        needleType: m.needleType || 'DBx1 #14',
+        requiredNeedles: (m.requiredNeedles !== undefined && m.requiredNeedles !== '') ? Number(m.requiredNeedles) : 1,
         status: m.status || 'ACTIVE'
       });
     });
@@ -359,7 +363,9 @@ function renderStorageItemsTab() {
     allRows = allRows.filter(r => 
       r.machineName.toLowerCase().includes(q) ||
       r.brand.toLowerCase().includes(q) ||
-      r.model.toLowerCase().includes(q)
+      r.model.toLowerCase().includes(q) ||
+      (r.needleType && r.needleType.toLowerCase().includes(q)) ||
+      (r.requiredNeedleBrand && r.requiredNeedleBrand.toLowerCase().includes(q))
     );
   }
 
@@ -420,18 +426,21 @@ function renderStorageItemsTab() {
                 <input type="checkbox" id="chk-table-select-all" ${allRows.length > 0 && allRows.every(r => selectedItemIds.has(r.id)) ? 'checked' : ''} style="cursor: pointer; width: 15px; height: 15px;" title="Select All Records" />
               </th>
             ` : ''}
-            <th style="padding: 10px 14px; width: 65px; text-align: center; color: #38bdf8;">SL #</th>
+            <th style="padding: 10px 14px; width: 60px; text-align: center; color: #38bdf8;">SL #</th>
             <th style="padding: 10px 14px; color: #38bdf8;">Machine Name</th>
-            <th style="padding: 10px 14px; width: 140px; color: #34d399;">Brand</th>
+            <th style="padding: 10px 14px; width: 120px; color: #34d399;">Brand</th>
             <th style="padding: 10px 14px; color: #fbbf24;">Model Number</th>
-            <th style="padding: 10px 14px; width: 100px; text-align: center; color: #94a3b8;">Status</th>
-            ${isAdmin ? `<th style="padding: 10px 14px; width: 120px; text-align: right; color: #94a3b8;">Actions</th>` : ''}
+            <th style="padding: 10px 14px; width: 110px; color: #38bdf8;">Needle Brand</th>
+            <th style="padding: 10px 14px; width: 130px; color: #a7f3d0;">Needle Type / Size</th>
+            <th style="padding: 10px 14px; width: 65px; text-align: center; color: #38bdf8;">Req</th>
+            <th style="padding: 10px 14px; width: 85px; text-align: center; color: #94a3b8;">Status</th>
+            ${isAdmin ? `<th style="padding: 10px 14px; width: 110px; text-align: right; color: #94a3b8;">Actions</th>` : ''}
           </tr>
         </thead>
         <tbody>
           ${allRows.length === 0 ? `
             <tr>
-              <td colspan="${isAdmin ? 7 : 5}" style="text-align: center; padding: 40px 20px; color: var(--text-muted);">
+              <td colspan="${isAdmin ? 10 : 8}" style="text-align: center; padding: 40px 20px; color: var(--text-muted);">
                 No model specifications found. Click <strong>"Step 2: Add Models"</strong> above to register models.
               </td>
             </tr>
@@ -448,13 +457,16 @@ function renderStorageItemsTab() {
                 <span class="badge" style="background: rgba(52, 211, 153, 0.15); color: #34d399; font-weight: 800; font-size: 10.5px;">${row.brand}</span>
               </td>
               <td style="padding: 8px 14px; font-family: var(--font-mono); font-weight: 700; color: #fff;">${row.model}</td>
+              <td style="padding: 8px 14px; color: #38bdf8; font-weight: 600; font-size: 11.5px;">${row.requiredNeedleBrand}</td>
+              <td style="padding: 8px 14px; color: #a7f3d0; font-family: monospace; font-size: 11.5px;">${row.needleType}</td>
+              <td style="padding: 8px 14px; text-align: center; color: #38bdf8; font-weight: 800;">${row.requiredNeedles}</td>
               <td style="padding: 8px 14px; text-align: center;">
                 <span class="badge ${row.status === 'INACTIVE' ? 'badge-inactive' : 'badge-active'}" style="font-size: 10px;">${row.status || 'ACTIVE'}</span>
               </td>
               ${isAdmin ? `
                 <td style="padding: 8px 14px; text-align: right;">
                   <div style="display: inline-flex; align-items: center; gap: 4px; justify-content: flex-end;">
-                    <button type="button" class="btn btn-ghost btn-sm btn-edit-model-item" data-id="${row.id}" data-model="${row.model}" data-machine="${row.machineName}" data-brand="${row.brand}" data-status="${row.status || 'ACTIVE'}" style="color: #38bdf8; font-size: 11px; padding: 2px 7px; border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 4px; font-weight: 700; background: rgba(56, 189, 248, 0.08);" title="Edit Model Specification">
+                    <button type="button" class="btn btn-ghost btn-sm btn-edit-model-item" data-id="${row.id}" data-model="${row.model}" data-machine="${row.machineName}" data-brand="${row.brand}" data-status="${row.status || 'ACTIVE'}" data-needle-brand="${row.requiredNeedleBrand}" data-needle-type="${row.needleType}" data-required-needles="${row.requiredNeedles}" style="color: #38bdf8; font-size: 11px; padding: 2px 7px; border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 4px; font-weight: 700; background: rgba(56, 189, 248, 0.08);" title="Edit Model Specification">
                       ✏️ Edit
                     </button>
                     <button type="button" class="btn btn-ghost btn-sm btn-delete-storage-item" data-id="${row.id}" data-model="${row.model}" data-machine="${row.machineName}" style="color: #f87171; font-size: 11px; padding: 2px 6px;" title="Delete Model">
@@ -872,10 +884,10 @@ function renderExcelImportExportModal() {
             </div>
             <div>
               <div style="font-weight: 800; font-size: 16px; color: #fff; line-height: 1.2;">
-                Machine Name, Brand &amp; Model — Excel Sheet Studio
+                Machine Name, Brand, Model &amp; Needle Master Setup — Excel Studio
               </div>
               <div style="font-size: 11px; color: #6ee7b7; margin-top: 2px;">
-                Input all Machine Names, Brands, and Models in 1 click via Excel file or Copy-Paste table
+                Import &amp; Synchronize Machine Models and Needle Requirements (Needle Brand, Type / Size, Required Needles) in 1 click
               </div>
             </div>
           </div>
@@ -1039,6 +1051,10 @@ function renderExcelImportExportModal() {
                 <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; color: #e2e8f0; margin: 0;">
                   <input type="checkbox" id="chk-excel-auto-machines" checked style="cursor: pointer;" />
                   <span>Auto-create missing Machine Names</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; color: #38bdf8; font-weight: 700; margin: 0;">
+                  <input type="checkbox" id="chk-excel-sync-needle-flow" checked style="cursor: pointer; accent-color: #38bdf8;" />
+                  <span>🔄 Synchronize Needle Flow &amp; Machine Inventory</span>
                 </label>
                 <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; color: #e2e8f0; margin: 0;">
                   <input type="checkbox" id="chk-excel-clean-names" checked style="cursor: pointer;" />
@@ -1511,6 +1527,50 @@ function renderStorageModal() {
                 required 
                 style="font-family: var(--font-mono); font-size: 13px; font-weight: 700;"
               />
+            </div>
+
+            <!-- Needle Master Setup: Brand, Type/Size, Required Count -->
+            <div style="background: rgba(56, 189, 248, 0.05); border: 1.5px solid rgba(56, 189, 248, 0.25); border-radius: var(--radius-sm); padding: 10px 14px; display: flex; flex-direction: column; gap: 10px;">
+              <div style="font-size: 12px; font-weight: 800; color: #38bdf8; display: flex; align-items: center; gap: 6px;">
+                <span>🧵</span> Needle Requirement Setup (Needle Flow Sync)
+              </div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div class="form-group" style="display: flex; flex-direction: column; gap: 4px; margin: 0;">
+                  <label class="form-label" style="font-weight: 700; color: #cbd5e1; font-size: 11px; margin: 0;">Needle Brand</label>
+                  <input 
+                    type="text" 
+                    id="inp-edit-needle-brand" 
+                    class="form-control" 
+                    value="${data.requiredNeedleBrand || data.needleBrand || 'ORGAN'}" 
+                    placeholder="e.g. ORGAN, GROZ-BECKERT" 
+                    style="font-size: 12px; font-weight: 700;"
+                  />
+                </div>
+                <div class="form-group" style="display: flex; flex-direction: column; gap: 4px; margin: 0;">
+                  <label class="form-label" style="font-weight: 700; color: #cbd5e1; font-size: 11px; margin: 0;">Needle Type / Size</label>
+                  <input 
+                    type="text" 
+                    id="inp-edit-needle-type" 
+                    class="form-control" 
+                    value="${data.needleType || ''}" 
+                    placeholder="e.g. DBx1 #14, DCx27 #11, DPx5 #14" 
+                    style="font-size: 12px; font-family: var(--font-mono);"
+                  />
+                </div>
+              </div>
+              <div class="form-group" style="display: flex; flex-direction: column; gap: 4px; margin: 0;">
+                <label class="form-label" style="font-weight: 700; color: #38bdf8; font-size: 11px; margin: 0;">Required Needles (Per Machine) *</label>
+                <input 
+                  type="number" 
+                  id="inp-edit-required-needles" 
+                  class="form-control" 
+                  value="${(data.requiredNeedles !== undefined && data.requiredNeedles !== '') ? data.requiredNeedles : 1}" 
+                  min="1" 
+                  max="50" 
+                  style="font-size: 12px; font-weight: 800; color: #38bdf8;"
+                />
+                <span style="font-size: 10.5px; color: var(--text-muted);">Standard required needles for this model across all lines/floors in factory.</span>
+              </div>
             </div>
 
             <!-- Status -->
@@ -2785,6 +2845,9 @@ function rebindContentEvents() {
           model: btn.dataset.model || '',
           machineName: btn.dataset.machine || '',
           brand: btn.dataset.brand || 'JUKI',
+          requiredNeedleBrand: btn.dataset.needleBrand || 'ORGAN',
+          needleType: btn.dataset.needleType || '',
+          requiredNeedles: btn.dataset.requiredNeedles || 1,
           status: btn.dataset.status || 'ACTIVE'
         }
       };
@@ -3157,6 +3220,9 @@ function initModalInteractions() {
         let brand = '';
         let model = '';
         let remarks = '';
+        let requiredNeedleBrand = '';
+        let needleType = '';
+        let requiredNeedles = '';
 
         for (const [k, v] of Object.entries(row)) {
           const cleanK = String(k).trim().toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -3168,6 +3234,12 @@ function initModalInteractions() {
             brand = cleanV;
           } else if (cleanK === 'model' || cleanK === 'modelno' || cleanK === 'modelnumber' || cleanK === 'specification' || cleanK === 'spec') {
             model = cleanV;
+          } else if (cleanK === 'needlebrand' || cleanK === 'requiredneedlebrand' || cleanK === 'needlemake' || cleanK === 'brandneedle') {
+            requiredNeedleBrand = cleanV;
+          } else if (cleanK === 'needletype' || cleanK === 'needlesystem' || cleanK === 'needlesize' || cleanK === 'needletypesize' || cleanK === 'typesize') {
+            needleType = cleanV;
+          } else if (cleanK === 'requiredneedles' || cleanK === 'requiredneedle' || cleanK === 'requiredneedl' || cleanK === 'needlesrequired' || cleanK === 'needleqty' || cleanK === 'needlerequirement' || cleanK === 'reqneedle' || cleanK === 'reqneedles') {
+            requiredNeedles = cleanV;
           } else if (cleanK === 'remarks' || cleanK === 'remark' || cleanK === 'description' || cleanK === 'note') {
             remarks = cleanV;
           }
@@ -3175,16 +3247,17 @@ function initModalInteractions() {
 
         if (Array.isArray(row)) {
           const isFirstNum = /^\d+$/.test(String(row[0] || '').trim());
-          if (isFirstNum) {
-            machineName = String(row[1] || '').trim();
-            brand = String(row[2] || '').trim();
-            model = String(row[3] || '').trim();
-            remarks = String(row[4] || '').trim();
+          const offset = isFirstNum ? 1 : 0;
+          machineName = String(row[offset] || '').trim();
+          brand = String(row[offset + 1] || '').trim();
+          model = String(row[offset + 2] || '').trim();
+          if (row.length >= offset + 6) {
+            requiredNeedleBrand = String(row[offset + 3] || '').trim();
+            needleType = String(row[offset + 4] || '').trim();
+            requiredNeedles = String(row[offset + 5] || '').trim();
+            remarks = String(row[offset + 6] || '').trim();
           } else {
-            machineName = String(row[0] || '').trim();
-            brand = String(row[1] || '').trim();
-            model = String(row[2] || '').trim();
-            remarks = String(row[3] || '').trim();
+            remarks = String(row[offset + 3] || '').trim();
           }
         }
 
@@ -3219,14 +3292,62 @@ function initModalInteractions() {
         }
         if (modelList.length === 0) modelList = [''];
 
+        // Helper to resolve needle defaults
+        const resolveNeedle = (mName, mdl) => {
+          let nReq = requiredNeedles;
+          let nType = needleType;
+          let nBrand = requiredNeedleBrand || 'ORGAN';
+
+          const comb = `${mName || ''} ${mdl || ''}`.toLowerCase();
+          if (!nReq || isNaN(Number(nReq)) || Number(nReq) <= 0) {
+            if (comb.includes('double needle') || comb.includes('twin needle') || comb.includes('2 needle') || comb.includes('2-needle') || /^(lh|twin)/i.test(mdl)) {
+              nReq = 2;
+            } else if (comb.includes('feed of the arm') || comb.includes('feed of arm') || comb.includes('3-needle') || comb.includes('flatlock') || comb.includes('flat lock') || /^(da|ms|mf|w500)/i.test(mdl)) {
+              nReq = 3;
+            } else if (comb.includes('multi needle') || comb.includes('kansai') || comb.includes('4-needle') || /^(dfb|wfb)/i.test(mdl)) {
+              nReq = 4;
+            } else if (comb.includes('overlock') || comb.includes('over lock') || /^(mo|m952|m852|747)/i.test(mdl)) {
+              nReq = 2;
+            } else {
+              nReq = 1;
+            }
+          } else {
+            nReq = Number(nReq);
+          }
+
+          if (!nType) {
+            if (comb.includes('overlock') || comb.includes('over lock') || /^(mo|m952|747)/i.test(mdl)) {
+              nType = 'DCx27 #11/75';
+            } else if (comb.includes('double needle') || /^(lh)/i.test(mdl)) {
+              nType = 'DPx5 #14/90';
+            } else if (comb.includes('button hole') || comb.includes('buttonhole') || /^(lbh)/i.test(mdl)) {
+              nType = 'DPx5 #14/90';
+            } else if (comb.includes('button attach') || /^(mb)/i.test(mdl)) {
+              nType = 'TQx1 #16/100';
+            } else if (comb.includes('bar tack') || comb.includes('bartack') || /^(lk)/i.test(mdl)) {
+              nType = 'DPx17 #16/100';
+            } else if (comb.includes('feed of the arm') || comb.includes('flat lock') || /^(da|ms|mf)/i.test(mdl)) {
+              nType = 'UY128GAS #11/75';
+            } else {
+              nType = 'DBx1 #14/90';
+            }
+          }
+
+          return { nReq, nType, nBrand };
+        };
+
         // If brand has multiple brands and model is empty, each brand is registered as a specification!
         if (brandList.length > 1 && (!model || model.trim() === '')) {
           for (const singleBrand of brandList) {
             const bUpper = singleBrand.toUpperCase();
+            const { nReq, nType, nBrand } = resolveNeedle(machineName, singleBrand);
             parsed.push({
               machineName,
               brand: bUpper,
               model: singleBrand,
+              requiredNeedleBrand: nBrand,
+              needleType: nType,
+              requiredNeedles: nReq,
               remarks
             });
             lastBrandByMachine.set(machineName.toLowerCase(), bUpper);
@@ -3236,15 +3357,18 @@ function initModalInteractions() {
             let finalBrand = singleBrand ? singleBrand.toUpperCase() : (lastBrandByMachine.get(machineName.toLowerCase()) || 'JUKI');
             for (const singleModel of modelList) {
               let finalModel = singleModel;
-              // If model is empty but brand is given (e.g. JACK, KANSAI SPECIAL), use brand as model spec!
               if (!finalModel && finalBrand) {
                 finalModel = finalBrand;
               }
               if (finalModel) {
+                const { nReq, nType, nBrand } = resolveNeedle(machineName, finalModel);
                 parsed.push({
                   machineName,
                   brand: finalBrand,
                   model: finalModel,
+                  requiredNeedleBrand: nBrand,
+                  needleType: nType,
+                  requiredNeedles: nReq,
                   remarks
                 });
                 if (finalBrand) lastBrandByMachine.set(machineName.toLowerCase(), finalBrand);
@@ -3383,6 +3507,9 @@ function initModalInteractions() {
         let headerMachineIdx = -1;
         let headerBrandIdx = -1;
         let headerModelIdx = -1;
+        let headerNeedleBrandIdx = -1;
+        let headerNeedleTypeIdx = -1;
+        let headerRequiredNeedlesIdx = -1;
         let headerRemarksIdx = -1;
 
         lines.forEach((line, lineIdx) => {
@@ -3395,6 +3522,9 @@ function initModalInteractions() {
               if (cNorm === 'machinename' || cNorm === 'machine' || cNorm === 'name') headerMachineIdx = cIdx;
               else if (cNorm === 'brand' || cNorm === 'make') headerBrandIdx = cIdx;
               else if (cNorm === 'model' || cNorm === 'modelno' || cNorm === 'modelnumber' || cNorm === 'spec' || cNorm === 'specification') headerModelIdx = cIdx;
+              else if (cNorm.includes('needlebrand') || cNorm === 'brandneedle') headerNeedleBrandIdx = cIdx;
+              else if (cNorm.includes('needletype') || cNorm.includes('needlesystem') || cNorm.includes('needlesize') || cNorm.includes('typesize')) headerNeedleTypeIdx = cIdx;
+              else if (cNorm.includes('requiredneedle') || cNorm.includes('needleqty') || cNorm.includes('needlereq') || cNorm === 'req') headerRequiredNeedlesIdx = cIdx;
               else if (cNorm === 'remarks' || cNorm === 'remark' || cNorm === 'description') headerRemarksIdx = cIdx;
             });
 
@@ -3407,30 +3537,37 @@ function initModalInteractions() {
           let brand = '';
           let model = '';
           let remarks = '';
+          let requiredNeedleBrand = '';
+          let needleType = '';
+          let requiredNeedles = '';
 
           if (headerMachineIdx !== -1) {
             machineName = cols[headerMachineIdx] || '';
             brand = headerBrandIdx !== -1 ? (cols[headerBrandIdx] || '') : (cols[1] || '');
             model = headerModelIdx !== -1 ? (cols[headerModelIdx] || '') : (cols[2] || '');
-            remarks = headerRemarksIdx !== -1 ? (cols[headerRemarksIdx] || '') : (cols[3] || '');
+            requiredNeedleBrand = headerNeedleBrandIdx !== -1 ? (cols[headerNeedleBrandIdx] || '') : '';
+            needleType = headerNeedleTypeIdx !== -1 ? (cols[headerNeedleTypeIdx] || '') : '';
+            requiredNeedles = headerRequiredNeedlesIdx !== -1 ? (cols[headerRequiredNeedlesIdx] || '') : '';
+            remarks = headerRemarksIdx !== -1 ? (cols[headerRemarksIdx] || '') : '';
           } else {
             // First column is numeric Sl No (e.g. 1, 2, 8, 14, 18, 20)
             const isFirstColNumber = /^\d+$/.test(cols[0]);
-            if (isFirstColNumber) {
-              machineName = cols[1] || '';
-              brand = cols[2] || '';
-              model = cols[3] || '';
-              remarks = cols[4] || '';
+            const offset = isFirstColNumber ? 1 : 0;
+            machineName = cols[offset] || '';
+            brand = cols[offset + 1] || '';
+            model = cols[offset + 2] || '';
+            if (cols.length >= offset + 6) {
+              requiredNeedleBrand = cols[offset + 3] || '';
+              needleType = cols[offset + 4] || '';
+              requiredNeedles = cols[offset + 5] || '';
+              remarks = cols[offset + 6] || '';
             } else {
-              machineName = cols[0] || '';
-              brand = cols[1] || '';
-              model = cols[2] || '';
-              remarks = cols[3] || '';
+              remarks = cols[offset + 3] || '';
             }
           }
 
           if (machineName || brand || model) {
-            rows.push({ machineName, brand, model, remarks });
+            rows.push({ machineName, brand, model, requiredNeedleBrand, needleType, requiredNeedles, remarks });
           }
         });
 
@@ -3460,26 +3597,29 @@ function initModalInteractions() {
         const autoBrands = modalLayer.querySelector('#chk-excel-auto-brands')?.checked !== false;
         const autoMachines = modalLayer.querySelector('#chk-excel-auto-machines')?.checked !== false;
         const cleanNames = modalLayer.querySelector('#chk-excel-clean-names')?.checked !== false;
+        const syncNeedleFlow = modalLayer.querySelector('#chk-excel-sync-needle-flow')?.checked !== false;
 
         const origHtml = btnExecuteImport.innerHTML;
         btnExecuteImport.disabled = true;
-        btnExecuteImport.innerHTML = '<span>⏳</span> Saving to Database...';
+        btnExecuteImport.innerHTML = '<span>⏳</span> Saving & Synchronizing...';
 
         try {
           const result = await smartStorageService.bulkImportMachinesFromExcel(excelImportParsedRows, {
             replaceExistingForImportedMachines: replaceExisting,
             autoCreateBrands: autoBrands,
             autoCreateMachines: autoMachines,
-            cleanNames
+            cleanNames,
+            syncNeedleFlow
           });
 
+          const syncMsg = (result.syncedMachines && result.syncedMachines > 0) ? ` and synchronized ${result.syncedMachines} machines with Needle Flow!` : ' & synchronized with Needle Flow!';
           if (typeof notificationService !== 'undefined' && notificationService.success) {
             notificationService.success(
-              'Import Successful!',
-              `Imported ${result.inserted} model records across ${result.uniqueMachines} machines and ${result.uniqueBrands} brands.`
+              'Import & Synchronization Successful!',
+              `Imported ${result.inserted} model records with Needle Setup across ${result.uniqueMachines} machines${syncMsg}`
             );
           } else {
-            alert(`✅ Import Successful!\n\nImported: ${result.inserted} model specifications\nMachines: ${result.uniqueMachines}\nBrands: ${result.uniqueBrands}`);
+            alert(`✅ Import & Synchronization Successful!\n\nImported: ${result.inserted} model specifications\nMachines: ${result.uniqueMachines}\nBrands: ${result.uniqueBrands}\nNeedle Flow: Synchronized!`);
           }
 
           closeModal();
@@ -4379,6 +4519,9 @@ function initModalInteractions() {
         const brand = modalLayer.querySelector('#inp-edit-brand-name')?.value?.trim()?.toUpperCase();
         const model = modalLayer.querySelector('#inp-edit-model-number')?.value?.trim();
         const status = modalLayer.querySelector('#sel-edit-model-status')?.value || 'ACTIVE';
+        const requiredNeedleBrand = modalLayer.querySelector('#inp-edit-needle-brand')?.value?.trim() || 'ORGAN';
+        const needleType = modalLayer.querySelector('#inp-edit-needle-type')?.value?.trim() || '';
+        const requiredNeedles = modalLayer.querySelector('#inp-edit-required-needles')?.value || '1';
         const oldMachine = modalLayer.querySelector('#inp-orig-machine')?.value;
         const oldBrand = modalLayer.querySelector('#inp-orig-brand')?.value;
         const oldModel = modalLayer.querySelector('#inp-orig-model')?.value;
@@ -4392,7 +4535,7 @@ function initModalInteractions() {
         const origHtml = submitBtn ? submitBtn.innerHTML : '';
         if (submitBtn) {
           submitBtn.disabled = true;
-          submitBtn.innerHTML = '⏳ Saving...';
+          submitBtn.innerHTML = '⏳ Saving & Syncing...';
         }
 
         try {
@@ -4401,14 +4544,17 @@ function initModalInteractions() {
             brand,
             model,
             status,
+            requiredNeedleBrand,
+            needleType,
+            requiredNeedles,
             oldMachineName: oldMachine,
             oldBrand,
             oldModel
           });
 
-          const invMsg = (res && res.invUpdatedCount > 0) ? ` & auto-updated ${res.invUpdatedCount} machine(s) in Inventory!` : '';
+          const invMsg = (res && res.invUpdatedCount > 0) ? ` & synchronized ${res.invUpdatedCount} machine(s) with Needle Flow!` : ' & synchronized with Needle Flow!';
           if (typeof notificationService !== 'undefined' && notificationService.success) {
-            notificationService.success('Model Specification Saved', `"${model}" under "${machineName}" (${brand}) updated.${invMsg}`);
+            notificationService.success('Model & Needle Setup Saved', `"${model}" under "${machineName}" (${brand}) updated${invMsg}`);
           }
 
           closeModal();

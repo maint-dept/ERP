@@ -385,6 +385,10 @@ class SmartStorageService {
           brand: brandUpper,
           status: it.status || 'ACTIVE',
           sortOrder: (it.sortOrder !== undefined && it.sortOrder !== null) ? Number(it.sortOrder) : 9999,
+          requiredNeedleBrand: it.requiredNeedleBrand || 'ORGAN',
+          needleType: it.needleType || '',
+          requiredNeedles: (it.requiredNeedles !== undefined && it.requiredNeedles !== '') ? Number(it.requiredNeedles) : 1,
+          remarks: it.remarks || '',
           createdAt: it.createdAt || ''
         });
       }
@@ -428,6 +432,10 @@ class SmartStorageService {
           brand: brandName,
           status: mdl.status || 'ACTIVE',
           sortOrder: (mdl.sortOrder !== undefined && mdl.sortOrder !== null) ? Number(mdl.sortOrder) : 9999,
+          requiredNeedleBrand: mdl.requiredNeedleBrand || 'ORGAN',
+          needleType: mdl.needleType || '',
+          requiredNeedles: (mdl.requiredNeedles !== undefined && mdl.requiredNeedles !== '') ? Number(mdl.requiredNeedles) : 1,
+          remarks: mdl.description || '',
           createdAt: mdl.createdAt || ''
         });
       }
@@ -930,11 +938,14 @@ class SmartStorageService {
     return { success: true, oldBrand: cleanOld, newBrand: cleanNew, smUpdatedCount, mdlUpdatedCount, invUpdatedCount };
   }
 
-  async updateModelSpecification(id, { machineName, brand, model, status, oldMachineName, oldBrand, oldModel }) {
+  async updateModelSpecification(id, { machineName, brand, model, status, requiredNeedleBrand, needleType, requiredNeedles, remarks, oldMachineName, oldBrand, oldModel }) {
     const cleanMachine = String(machineName || '').trim();
     const cleanBrand = String(brand || 'JUKI').trim().toUpperCase();
     const cleanModel = String(model || '').trim();
     const cleanStatus = status || 'ACTIVE';
+    const cleanNeedleBrand = requiredNeedleBrand ? String(requiredNeedleBrand).trim() : 'ORGAN';
+    const cleanNeedleType = needleType ? String(needleType).trim() : '';
+    const cleanRequiredNeedles = (requiredNeedles !== undefined && requiredNeedles !== '' && !isNaN(Number(requiredNeedles))) ? Number(requiredNeedles) : 1;
 
     if (!cleanMachine) throw new Error('Machine Name is required');
     if (!cleanModel) throw new Error('Model Number is required');
@@ -975,6 +986,10 @@ class SmartStorageService {
       smItem.brand = cleanBrand;
       smItem.model = cleanModel;
       smItem.status = cleanStatus;
+      smItem.requiredNeedleBrand = cleanNeedleBrand;
+      smItem.needleType = cleanNeedleType || smItem.needleType || '';
+      smItem.requiredNeedles = cleanRequiredNeedles;
+      if (remarks !== undefined) smItem.remarks = remarks;
       smItem.updatedAt = new Date().toISOString();
     } else {
       smItem = {
@@ -984,6 +999,10 @@ class SmartStorageService {
         brand: cleanBrand,
         model: cleanModel,
         status: cleanStatus,
+        requiredNeedleBrand: cleanNeedleBrand,
+        needleType: cleanNeedleType,
+        requiredNeedles: cleanRequiredNeedles,
+        remarks: remarks || '',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       };
@@ -1008,6 +1027,10 @@ class SmartStorageService {
       mdlItem.machineName = cleanMachine;
       mdlItem.machineNameId = mnItem ? mnItem.id : mdlItem.machineNameId;
       mdlItem.status = cleanStatus;
+      mdlItem.requiredNeedleBrand = cleanNeedleBrand;
+      mdlItem.needleType = cleanNeedleType || mdlItem.needleType || '';
+      mdlItem.requiredNeedles = cleanRequiredNeedles;
+      if (remarks !== undefined) mdlItem.description = remarks;
       mdlItem.updatedAt = new Date().toISOString();
     } else {
       mdlItem = {
@@ -1019,13 +1042,17 @@ class SmartStorageService {
         machineNameId: mnItem ? mnItem.id : '',
         machineName: cleanMachine,
         status: cleanStatus,
+        requiredNeedleBrand: cleanNeedleBrand,
+        needleType: cleanNeedleType,
+        requiredNeedles: cleanRequiredNeedles,
+        description: remarks || '',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       };
       allMdl.push(mdlItem);
     }
 
-    // 5. Update MACHINES inventory table (always auto-transform all linked inventory records)
+    // 5. Update MACHINES inventory table (always auto-transform linked inventory records + Needle Setup)
     const allMachines = storage.getTable(TABLE_NAMES.MACHINES) || [];
     let invUpdatedCount = 0;
     allMachines.forEach(m => {
@@ -1034,15 +1061,17 @@ class SmartStorageService {
       const matchByModelStr = (
         (m.model && m.model.trim().toLowerCase() === String(oldModel || '').trim().toLowerCase()) ||
         (m.modelStr && m.modelStr.trim().toLowerCase() === String(oldModel || '').trim().toLowerCase()) ||
-        (m.modelName && m.modelName.trim().toLowerCase() === String(oldModel || '').trim().toLowerCase())
+        (m.modelName && m.modelName.trim().toLowerCase() === String(oldModel || '').trim().toLowerCase()) ||
+        (m.model && m.model.trim().toLowerCase() === cleanModel.toLowerCase())
       ) && (
         !oldMachineName || (
           (m.machineName && m.machineName.trim().toLowerCase() === String(oldMachineName).trim().toLowerCase()) ||
           (m.machineNameStr && m.machineNameStr.trim().toLowerCase() === String(oldMachineName).trim().toLowerCase()) ||
+          (m.machineName && m.machineName.trim().toLowerCase() === cleanMachine.toLowerCase()) ||
           (mnItem && m.machineNameId === mnItem.id)
         )
       );
-      if (matchByModelId || (oldModel && matchByModelStr)) {
+      if (matchByModelId || matchByModelStr) {
         // Update model fields
         m.model = cleanModel;
         m.modelStr = cleanModel;
@@ -1056,6 +1085,14 @@ class SmartStorageService {
         m.machineName = cleanMachine;
         m.machineNameStr = cleanMachine;
         if (mnItem) m.machineNameId = mnItem.id;
+        // Update needle setup
+        m.requiredNeedles = cleanRequiredNeedles;
+        m.requiredNeedle = cleanRequiredNeedles;
+        if (cleanNeedleType) m.needleType = cleanNeedleType;
+        if (cleanNeedleBrand) {
+          m.needleBrand = cleanNeedleBrand;
+          m.requiredNeedleBrand = cleanNeedleBrand;
+        }
         m.updatedAt = new Date().toISOString();
         invUpdatedCount++;
       }
@@ -2948,9 +2985,9 @@ class SmartStorageService {
       let brand = getCell(row, ['Brand', 'Brand Name', 'Make', 'Manufacturer', 'Company']);
       let rawModel = getCell(row, ['Model', 'Model Number', 'Model No', 'Model #', 'Spec', 'Specification']);
       let remarks = getCell(row, ['Remarks', 'Remark', 'Note', 'Description']);
-      let requiredNeedleBrand = getCell(row, ['Needle Brand', 'Required Needle Brand', 'Needle Make', 'Needle Company', 'Needle Manufacturer']);
-      let needleType = getCell(row, ['Needle Type', 'Needle System', 'Needle Size', 'Needle Type / Size', 'Needle Type/Size', 'Type/Size']);
-      let requiredNeedles = getCell(row, ['Required Needle', 'Required Needles', 'Needles Required', 'Needle Qty', 'Needle Quantity', 'Needle Count']);
+      let requiredNeedleBrand = getCell(row, ['Needle Brand', 'Required Needle Brand', 'Needle Make', 'Needle Company', 'Needle Manufacturer', 'Needle Brand / System', 'Needle Brand/System', 'Brand Needle', 'Needle Master Brand']);
+      let needleType = getCell(row, ['Needle Type', 'Needle System', 'Needle Size', 'Needle Type / Size', 'Needle Type/Size', 'Type/Size', 'Needle System / Code', 'Needle System/Code', 'Needle Spec', 'Needle Code', 'Needle System / Size']);
+      let requiredNeedles = getCell(row, ['Required Needles', 'Required Needle', 'Required Needl', 'Needles Required', 'Needle Qty', 'Needle Quantity', 'Needle Count', 'Needle Requirement', 'Needles Per Machine', 'Per Machine Needles', 'Req Needle', 'Req Needles', 'Req', 'Needle Req']);
       let shortCode = getCell(row, ['Short Code', 'Machine Short Code', 'Machine Name (Sort Form)', 'Sort Form', 'Code']);
       if (!shortCode) {
         const mcNum = getCell(row, ['Machine Number', 'Machine No.', 'Machine No']);
@@ -2960,20 +2997,48 @@ class SmartStorageService {
         }
       }
 
-      // Fallbacks if columns lack standard headers
-      if (!machineName && !rawModel && !brand) {
+      // Fallbacks if columns lack standard headers or if array format
+      if (Array.isArray(row)) {
+        const isFirstNum = /^\d+$/.test(String(row[0] || '').trim());
+        const offset = isFirstNum ? 1 : 0;
+        machineName = String(row[offset] || '').trim();
+        brand = String(row[offset + 1] || '').trim();
+        rawModel = String(row[offset + 2] || '').trim();
+        if (row.length >= offset + 6) {
+          requiredNeedleBrand = String(row[offset + 3] || '').trim();
+          needleType = String(row[offset + 4] || '').trim();
+          requiredNeedles = String(row[offset + 5] || '').trim();
+          remarks = String(row[offset + 6] || '').trim();
+        } else {
+          remarks = String(row[offset + 3] || '').trim();
+        }
+      } else if (!machineName && !rawModel && !brand) {
         const vals = Object.values(row).map(v => String(v || '').trim()).filter(Boolean);
         if (vals.length >= 3) {
           if (/^\d+$/.test(vals[0])) {
             machineName = vals[1];
             brand = vals[2];
             rawModel = vals[3] || '';
-            remarks = vals[4] || '';
+            if (vals.length >= 7) {
+              requiredNeedleBrand = vals[4] || '';
+              needleType = vals[5] || '';
+              requiredNeedles = vals[6] || '';
+              remarks = vals[7] || '';
+            } else {
+              remarks = vals[4] || '';
+            }
           } else {
             machineName = vals[0];
             brand = vals[1];
             rawModel = vals[2];
-            remarks = vals[3] || '';
+            if (vals.length >= 6) {
+              requiredNeedleBrand = vals[3] || '';
+              needleType = vals[4] || '';
+              requiredNeedles = vals[5] || '';
+              remarks = vals[6] || '';
+            } else {
+              remarks = vals[3] || '';
+            }
           }
         } else if (vals.length === 2) {
           machineName = vals[0];
@@ -3021,18 +3086,63 @@ class SmartStorageService {
       }
       if (modelList.length === 0) modelList = [''];
 
+      // Helper: Resolve Needle specs with intelligent garments defaults if missing
+      const resolveNeedleSpec = (mName, mdl) => {
+        let nReq = requiredNeedles;
+        let nType = needleType;
+        let nBrand = requiredNeedleBrand || 'ORGAN';
+
+        const combined = `${mName || ''} ${mdl || ''}`.toLowerCase();
+        if (!nReq || isNaN(Number(nReq)) || Number(nReq) <= 0) {
+          if (combined.includes('double needle') || combined.includes('twin needle') || combined.includes('2 needle') || combined.includes('2-needle') || /^(lh|twin)/i.test(mdl)) {
+            nReq = 2;
+          } else if (combined.includes('feed of the arm') || combined.includes('feed of arm') || combined.includes('3-needle') || combined.includes('flatlock') || combined.includes('flat lock') || /^(da|ms|mf|w500)/i.test(mdl)) {
+            nReq = 3;
+          } else if (combined.includes('multi needle') || combined.includes('kansai') || combined.includes('4-needle') || /^(dfb|wfb)/i.test(mdl)) {
+            nReq = 4;
+          } else if (combined.includes('overlock') || combined.includes('over lock') || /^(mo|m952|m852|747)/i.test(mdl)) {
+            nReq = 2;
+          } else {
+            nReq = 1;
+          }
+        } else {
+          nReq = Number(nReq);
+        }
+
+        if (!nType) {
+          if (combined.includes('overlock') || combined.includes('over lock') || /^(mo|m952|747)/i.test(mdl)) {
+            nType = 'DCx27 #11/75';
+          } else if (combined.includes('double needle') || /^(lh)/i.test(mdl)) {
+            nType = 'DPx5 #14/90';
+          } else if (combined.includes('button hole') || combined.includes('buttonhole') || /^(lbh)/i.test(mdl)) {
+            nType = 'DPx5 #14/90';
+          } else if (combined.includes('button attach') || /^(mb)/i.test(mdl)) {
+            nType = 'TQx1 #16/100';
+          } else if (combined.includes('bar tack') || combined.includes('bartack') || /^(lk)/i.test(mdl)) {
+            nType = 'DPx17 #16/100';
+          } else if (combined.includes('feed of the arm') || combined.includes('flat lock') || /^(da|ms|mf)/i.test(mdl)) {
+            nType = 'UY128GAS #11/75';
+          } else {
+            nType = 'DBx1 #14/90';
+          }
+        }
+
+        return { nReq, nType, nBrand };
+      };
+
       // Multi-brand expansion with empty-model fallback:
       if (brandList.length > 1 && (!rawModel || rawModel.trim() === '')) {
         for (const singleBrand of brandList) {
           const bUpper = singleBrand.toUpperCase();
+          const { nReq, nType, nBrand } = resolveNeedleSpec(machineName, singleBrand);
           expandedRows.push({
             machineName,
             brand: bUpper,
             model: singleBrand,
             remarks,
-            requiredNeedleBrand,
-            needleType,
-            requiredNeedles,
+            requiredNeedleBrand: nBrand,
+            needleType: nType,
+            requiredNeedles: nReq,
             shortCode,
             origIdx: idx + 1
           });
@@ -3043,19 +3153,19 @@ class SmartStorageService {
           let finalBrand = singleBrand ? singleBrand.toUpperCase() : (lastBrandByMachine.get(machineName.toLowerCase()) || 'JUKI');
           for (const singleModel of modelList) {
             let finalModel = singleModel;
-            // If model is empty but brand is given (e.g. JACK, KANSAI SPECIAL), use brand as model specification!
             if (!finalModel && finalBrand) {
               finalModel = finalBrand;
             }
             if (finalModel) {
+              const { nReq, nType, nBrand } = resolveNeedleSpec(machineName, finalModel);
               expandedRows.push({
                 machineName,
                 brand: finalBrand,
                 model: finalModel,
                 remarks,
-                requiredNeedleBrand,
-                needleType,
-                requiredNeedles,
+                requiredNeedleBrand: nBrand,
+                needleType: nType,
+                requiredNeedles: nReq,
                 shortCode,
                 origIdx: idx + 1
               });
@@ -3266,7 +3376,7 @@ class SmartStorageService {
       }
     }
 
-    // High-capacity IndexedDB write & Instant Parallel MySQL Confirmed Save
+    // 5. High-capacity IndexedDB write & Instant Parallel MySQL Confirmed Save
     try {
       const { idbCache } = await import('../db/idbCache.js');
       await Promise.all([
@@ -3284,6 +3394,45 @@ class SmartStorageService {
       storage.saveTable(TABLE_NAMES.MODELS, true)
     ]);
 
+    // 6. Synchronize Needle Flow and Inventory Machines
+    const syncNeedleFlow = options.syncNeedleFlow !== false;
+    let syncedMachinesCount = 0;
+    let allMachines = storage.getTable(TABLE_NAMES.MACHINES) || [];
+    if (syncNeedleFlow && allMachines.length > 0) {
+      const modelSpecMap = new Map();
+      smList.filter(it => it && it.category === 'MACHINE').forEach(it => {
+        const k1 = it.model ? this.normalizePureAlphanumeric(it.model) : '';
+        if (k1) {
+          modelSpecMap.set(k1, {
+            requiredNeedles: (it.requiredNeedles !== undefined && it.requiredNeedles !== '' && !isNaN(Number(it.requiredNeedles))) ? Number(it.requiredNeedles) : 1,
+            needleType: it.needleType || 'DBx1 #14',
+            requiredNeedleBrand: it.requiredNeedleBrand || 'ORGAN'
+          });
+        }
+      });
+
+      allMachines.forEach(m => {
+        if (!m) return;
+        const mNorm = this.normalizePureAlphanumeric(m.model || m.modelStr || m.modelName);
+        const spec = modelSpecMap.get(mNorm);
+        if (spec) {
+          m.requiredNeedles = spec.requiredNeedles;
+          m.requiredNeedle = spec.requiredNeedles;
+          if (spec.needleType) m.needleType = spec.needleType;
+          if (spec.requiredNeedleBrand) {
+            m.needleBrand = spec.requiredNeedleBrand;
+            m.requiredNeedleBrand = spec.requiredNeedleBrand;
+          }
+          m.updatedAt = new Date().toISOString();
+          syncedMachinesCount++;
+        }
+      });
+
+      if (syncedMachinesCount > 0) {
+        await storage.saveTable(TABLE_NAMES.MACHINES, true);
+      }
+    }
+
     if (typeof storage.persistToServerDatabase === 'function') {
       try {
         await storage.persistToServerDatabase();
@@ -3299,7 +3448,7 @@ class SmartStorageService {
     try {
       auditService.log({
         action: 'EXCEL_IMPORT_MACHINES_BRANDS_MODELS',
-        details: `Imported ${addedModelsCount} new models, ${addedMachinesCount} new machines, ${addedBrandsCount} new brands via Excel`,
+        details: `Imported ${addedModelsCount} new models, ${addedMachinesCount} new machines, ${addedBrandsCount} new brands with Needle Master Setup (${syncedMachinesCount} inventory machines synchronized)`,
         targetId: 'EXCEL_MASTER_IMPORT'
       });
     } catch (_) {}
@@ -3313,6 +3462,7 @@ class SmartStorageService {
       addedBrands: addedBrandsCount,
       addedModels: addedModelsCount,
       updatedModels: updatedModelsCount,
+      syncedMachines: syncedMachinesCount,
       errors
     };
   }
@@ -3464,7 +3614,7 @@ class SmartStorageService {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Import_Template');
 
-    XLSX.writeFile(wb, 'Machine_Brand_Model_Excel_Import_Template.xlsx');
+    XLSX.writeFile(wb, 'Machine_Brand_Model_Needle_Import_Template.xlsx');
     return true;
   }
 
@@ -3473,6 +3623,7 @@ class SmartStorageService {
       window.dispatchEvent(new CustomEvent('erp:storage-updated'));
       window.dispatchEvent(new CustomEvent('erp:master-data-updated'));
       window.dispatchEvent(new CustomEvent('erp:inventory-updated'));
+      window.dispatchEvent(new CustomEvent('erp:needle-updated'));
       window.dispatchEvent(new CustomEvent('storage:updated'));
     }
     try {

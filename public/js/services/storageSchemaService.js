@@ -22,7 +22,10 @@ const DEFAULT_SCHEMAS = {
     standardFields: [
       { key: 'machineName', label: 'Machine Name', type: 'text', required: true, showInTable: true, placeholder: 'e.g. Plain Machine 1-Needle' },
       { key: 'brand', label: 'Brand', type: 'text', required: true, showInTable: true, placeholder: 'e.g. JUKI, BROTHER' },
-      { key: 'model', label: 'Model Number', type: 'text', required: true, showInTable: true, placeholder: 'e.g. DDL-8700, S-7200C' }
+      { key: 'model', label: 'Model Number', type: 'text', required: true, showInTable: true, placeholder: 'e.g. DDL-8700, S-7200C' },
+      { key: 'requiredNeedleBrand', label: 'Needle Brand', type: 'text', required: false, showInTable: true, placeholder: 'e.g. ORGAN, GROZ-BECKERT' },
+      { key: 'needleType', label: 'Needle Type / Size', type: 'text', required: false, showInTable: true, placeholder: 'e.g. DBx1 #14, DCx27 #11, DPx5 #14' },
+      { key: 'requiredNeedles', label: 'Required Needles', type: 'number', required: false, showInTable: true, placeholder: 'e.g. 1, 2, 3' }
     ],
     customFields: []
   },
@@ -100,7 +103,8 @@ class StorageSchemaService {
             // For MACHINE, clean out legacy default custom fields so only user-created fields exist
             if (k === 'MACHINE' && Array.isArray(parsed[k].customFields)) {
               parsed[k].customFields = parsed[k].customFields.filter(f => 
-                f.key !== 'powerRating' && f.key !== 'needleSystem' && f.key !== 'motorType' && f.key !== 'serialFormat'
+                f.key !== 'powerRating' && f.key !== 'needleSystem' && f.key !== 'motorType' && f.key !== 'serialFormat' &&
+                f.key !== 'requiredNeedleBrand' && f.key !== 'needleBrand' && f.key !== 'needleType' && f.key !== 'requiredNeedles'
               );
             }
             parsed[k].customFields = parsed[k].customFields || [];
