@@ -403,25 +403,23 @@ class ExcelService {
 
   getActiveStructure() {
     const list = this.getStructures();
-    let active = list.find(s => s.isDefault) || list[0] || this._getDefaultStructure();
+    let active = list.find(s => s.isDefault) || list[0];
     
-    // Check if active structure needs migration to standard 14-column format with Last Service Date
-    const requiredKeys = [
-      'machine_name', 'machine_brand', 'machine_model', 'machine_serial',
-      'unit_factory', 'floor', 'line', 'running', 'usable_idle',
-      'repairable_idle', 'total_quantity', 'machine_status', 'remarks', 'service_date'
-    ];
-
-    const currentKeys = (active.columns || []).map(c => c.fieldKey);
-    const hasAllKeys = requiredKeys.every(k => currentKeys.includes(k));
-
-    if (!hasAllKeys || !currentKeys.includes('service_date') || (active.columns || []).length !== 14) {
+    if (!active || !Array.isArray(active.columns) || active.columns.length === 0) {
       active = this._getDefaultStructure();
       storage.setTable(TABLE_NAMES.EXCEL_STRUCTURES, [active]);
       storage.saveTable(TABLE_NAMES.EXCEL_STRUCTURES);
     }
 
     return active;
+  }
+
+  resetToDefaultStructure() {
+    const def = this._getDefaultStructure();
+    storage.setTable(TABLE_NAMES.EXCEL_STRUCTURES, [def]);
+    storage.saveTable(TABLE_NAMES.EXCEL_STRUCTURES);
+    window.dispatchEvent(new CustomEvent('erp:excel-structure-updated'));
+    return def;
   }
 
   getVisibleColumns(structureId = null) {
@@ -495,7 +493,7 @@ class ExcelService {
         { id: 'col-1', header: 'Machine Name', fieldKey: 'machine_name', required: true, defaultValue: '', order: 1, visible: true },
         { id: 'col-2', header: 'Machine Brand', fieldKey: 'machine_brand', required: false, defaultValue: '', order: 2, visible: true },
         { id: 'col-3', header: 'Machine Model', fieldKey: 'machine_model', required: false, defaultValue: '', order: 3, visible: true },
-        { id: 'col-4', header: 'Machine Serial', fieldKey: 'machine_serial', required: false, defaultValue: '', order: 4, visible: true },
+        { id: 'col-4', header: 'Serial Number', fieldKey: 'machine_serial', required: false, defaultValue: '', order: 4, visible: true },
         { id: 'col-5', header: 'Unit/Factory', fieldKey: 'unit_factory', required: true, defaultValue: 'AKM Knitwear Ltd.', order: 5, visible: true },
         { id: 'col-6', header: 'Floor', fieldKey: 'floor', required: true, defaultValue: '3rd Floor', order: 6, visible: true },
         { id: 'col-7', header: 'Line', fieldKey: 'line', required: true, defaultValue: 'Line JA-A', order: 7, visible: true },
@@ -616,9 +614,17 @@ class ExcelService {
       return '';
     }
 
-    // 5. Serial Number
-    if (key === 'machine_serial' || key === 'serialnumber' || key === 'serial' || key === 'serial_no') {
+    // 5. Serial Number (Admin Customizable)
+    if (key === 'machine_serial' || key === 'serial_number' || key === 'serialnumber' || key === 'serial' || key === 'serial_no') {
       return record.machine_serial || record.serialNumber || record.serial || '';
+    }
+
+    // 5B. Manufacturing (Serial / Year / Details)
+    if (key === 'manufacturing' || key === 'manufacturing_serial' || key === 'manufacturingserial' || key === 'mfg_serial' || key === 'manufacturing_no') {
+      return record.manufacturing || record.manufacturing_serial || record.manufacturingSerial || record.manufacturingNo || record.mfgSerial || record.customValues?.manufacturing || record.customValues?.manufacturing_serial || '';
+    }
+    if (key === 'manufacturing_year' || key === 'manufacturing_date' || key === 'mfgyear' || key === 'mfg_year') {
+      return record.manufacturing_year || record.manufacturingYear || record.mfgYear || record.manufacturingDate || record.customValues?.manufacturing_year || '';
     }
 
     // 6. Machine Category
@@ -1072,9 +1078,19 @@ class ExcelService {
         'serialnumber', 'serialno', 'serialnum', 'serial',
         'mcserial', 'mcserialnumber', 'mcserialno', 'mcnumber', 'mcno',
         'm/cno', 'm/cnumber', 'm/cserial', 'm/cserialno',
-        'manufacturingserialnumber', 'manufacturingserial', 'manufacturingno',
         'sn', 'msn', 'machinecode', 'machinesl', 'mcsl',
         'assetno', 'assetid', 'assettag', 'barcode'
+      ],
+      manufacturing: [
+        'manufacturing', 'manufacturingserial', 'manufacturingserialnumber',
+        'manufacturingno', 'mfgserial', 'mfgno', 'manufacture', 'mfg'
+      ],
+      manufacturing_serial: [
+        'manufacturingserialnumber', 'manufacturingserial', 'manufacturingno',
+        'mfgserial', 'mfgno', 'manufacturerserial', 'originalserial'
+      ],
+      manufacturing_year: [
+        'manufacturingyear', 'mfgyear', 'manufacturingdate', 'mfgdate', 'yearofmanufacture'
       ],
       machine_short_code: [
         'machinenamesortform', 'machinesortform', 'sortform', 'shortcode',
@@ -1687,6 +1703,9 @@ class ExcelService {
             if (rawVal) customValues[cf.code] = rawVal;
           }
         });
+        if (mapped.manufacturing) customValues.manufacturing = mapped.manufacturing;
+        if (mapped.manufacturing_serial) customValues.manufacturing_serial = mapped.manufacturing_serial;
+        if (mapped.manufacturing_year) customValues.manufacturing_year = mapped.manufacturing_year;
 
         // 5B. Preventive Maintenance Servicing Columns
         let rawServiceDate = mapped.service_date || mapped.servicedate || mapped.last_service_date || mapped.lastservicedate || '';
@@ -1754,6 +1773,9 @@ class ExcelService {
             quantity: totalQtyVal,
             status: statusStr,
             remarks: mapped.remarks || '',
+            manufacturing: mapped.manufacturing || '',
+            manufacturingSerial: mapped.manufacturing_serial || mapped.manufacturing || '',
+            manufacturingYear: mapped.manufacturing_year || '',
             customValues: customValues,
             serviceDate: cleanServiceDate,
             servicedBy: servicedByStr,
@@ -2099,6 +2121,9 @@ class ExcelService {
               repairable_idle: repQty,
               status: d.status || 'ACTIVE',
               remarks: d.remarks || `Imported from sheet '${sheet.name}'`,
+              manufacturing: d.manufacturing || '',
+              manufacturingSerial: d.manufacturingSerial || d.manufacturing || '',
+              manufacturingYear: d.manufacturingYear || '',
               customValues: d.customValues || {},
               machineName: d.machineNameStr || '',
               machineNameStr: d.machineNameStr || '',

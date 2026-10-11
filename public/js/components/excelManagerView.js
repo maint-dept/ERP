@@ -68,18 +68,20 @@ function renderTabContent(tab, struct, columns, customFields, importHistory) {
           <div style="display: flex; gap: 8px;">
             <button id="btn-add-excel-column" class="btn btn-secondary btn-sm">➕ Add Column</button>
             <button id="btn-save-excel-structure" class="btn btn-primary btn-sm">💾 Save Layout</button>
+            <button id="btn-reset-excel-structure" class="btn btn-ghost btn-sm" style="color: #cbd5e1; border: 1px solid rgba(255,255,255,0.15); font-size: 11.5px;" title="Reset back to standard factory default">🔄 Reset to Default</button>
           </div>
         </div>
 
         <div style="background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: var(--radius-md); padding: 12px 16px; display: flex; align-items: flex-start; gap: 12px;">
           <span style="font-size: 20px; line-height: 1;">💡</span>
           <div style="font-size: 12px; color: var(--text-secondary); line-height: 1.5;">
-            <strong style="color: #38bdf8;">Standard 14-Column Structure &amp; Business Rules:</strong><br />
-            &bull; <strong>Header Sequence:</strong> <code>Machine Name | Machine Brand | Machine Model | Machine Serial | Unit/Factory | Floor | Line | Running | Usable Idle | Repairable Idle | Total Quantity | Machine Status | Remarks | Last Service Date</code><br />
+            <strong style="color: #38bdf8;">Standard Structure &amp; Business Rules:</strong><br />
+            &bull; <strong>Header Sequence:</strong> <code>Machine Name | Machine Brand | Machine Model | Serial Number | Unit/Factory | Floor | Line | Running | Usable Idle | Repairable Idle | Total Quantity | Machine Status | Remarks | Last Service Date</code><br />
+            &bull; <strong>Serial Number (Admin Customizable):</strong> Unique machine identifier. The display name, mandatory (required) status, default value, order, and visibility are fully customizable by Admin.<br />
+            &bull; <strong>Manufacturing:</strong> Optional manufacturing specifications (Manufacturing Details, Manufacturing Serial, Manufacturing Year) can be added to your Excel structure via <code>+ Add Column</code>.<br />
             &bull; <strong>Auto-Calculated Total Quantity:</strong> <code>Total Quantity = Running + Usable Idle + Repairable Idle</code> (System-generated / Read-only in Excel).<br />
             &bull; <strong>Preventive Maintenance Auto-Sync:</strong> Entering <code>Last Service Date</code> automatically synchronizes records to Preventive Maintenance and schedules the next service (+91 Days).<br />
-            &bull; <strong>Location Hierarchy:</strong> <code>Unit/Factory &rarr; Floor &rarr; Line</code> cascading dependency is strictly maintained.<br />
-            &bull; <strong>Machine Serial:</strong> Unique machine identifier. (If auto-generated in software, manual Excel entry is optional).
+            &bull; <strong>Location Hierarchy:</strong> <code>Unit/Factory &rarr; Floor &rarr; Line</code> cascading dependency is strictly maintained.
           </div>
         </div>
 
@@ -116,6 +118,8 @@ function renderTabContent(tab, struct, columns, customFields, importHistory) {
                       ${col.fieldKey || col.systemField}
                     </code>
                     ${isCalculated ? `<span class="badge badge-idle" style="font-size: 10px; margin-left: 4px; color: #38bdf8;">⚙️ Auto-Calculated</span>` : ''}
+                    ${col.fieldKey === 'machine_serial' || col.fieldKey === 'serial_number' ? `<span class="badge" style="font-size: 9.5px; margin-left: 4px; background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid #38bdf8;" title="Admin can customize header label, mandatory requirement, default value, order, or visibility">✏️ Admin Customizable</span>` : ''}
+                    ${col.fieldKey === 'manufacturing' || col.fieldKey === 'manufacturing_serial' || col.fieldKey === 'manufacturing_year' ? `<span class="badge" style="font-size: 9.5px; margin-left: 4px; background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid #a855f7;">🏭 Manufacturing</span>` : ''}
                   </td>
                   <td style="text-align: center;">
                     ${isCalculated ? `
@@ -577,6 +581,17 @@ export function initExcelManagerEvents() {
     });
   }
 
+  // Reset Structure back to standard default
+  const btnReset = document.getElementById('btn-reset-excel-structure');
+  if (btnReset) {
+    btnReset.addEventListener('click', () => {
+      if (confirm('Reset Excel layout back to standard factory default? Any custom columns will be restored to default.')) {
+        excelService.resetToDefaultStructure();
+        refreshStructureView();
+      }
+    });
+  }
+
   // Add Column with Preset or Custom Field Key
   const btnAddCol = document.getElementById('btn-add-excel-column');
   if (btnAddCol) {
@@ -605,7 +620,10 @@ function openAddExcelColumnModal() {
     { key: 'machine_name', header: 'Machine Name', required: true, def: '', desc: 'Machine Classification / Type' },
     { key: 'machine_brand', header: 'Machine Brand', required: true, def: '', desc: 'Brand / Manufacturer' },
     { key: 'machine_model', header: 'Machine Model', required: true, def: '', desc: 'Machine Model' },
-    { key: 'machine_serial', header: 'Machine Serial', required: false, def: '', desc: 'Unique Machine Identifier' },
+    { key: 'machine_serial', header: 'Serial Number', required: false, def: '', desc: 'Machine Serial Number (Admin Customizable)' },
+    { key: 'manufacturing', header: 'Manufacturing', required: false, def: '', desc: 'Machine Manufacturing Specification' },
+    { key: 'manufacturing_serial', header: 'Manufacturing Serial Number', required: false, def: '', desc: 'Manufacturer / Engraved Serial No' },
+    { key: 'manufacturing_year', header: 'Manufacturing Year', required: false, def: '', desc: 'Year / Date of Manufacture (e.g. 2023)' },
     { key: 'unit_factory', header: 'Unit/Factory', required: true, def: 'AKM Knitwear Ltd.', desc: 'Unit / Factory Location' },
     { key: 'floor', header: 'Floor', required: true, def: '3rd Floor', desc: 'Floor Location' },
     { key: 'line', header: 'Line', required: true, def: 'Line JA-A', desc: 'Section / Sewing Line' },
@@ -614,6 +632,10 @@ function openAddExcelColumnModal() {
     { key: 'repairable_idle', header: 'Repairable Idle', required: false, def: '0', desc: 'Under Maintenance/Repair Count' },
     { key: 'total_quantity', header: 'Total Quantity', required: false, def: '— (Auto-Calculated)', desc: 'Auto-Calculated Total (Running + Usable Idle + Repairable Idle)' },
     { key: 'machine_status', header: 'Machine Status', required: false, def: 'ACTIVE', desc: 'Machine Status' },
+    { key: 'service_date', header: 'Last Service Date', required: false, def: '', desc: 'Preventive Maintenance Service Date' },
+    { key: 'country_of_origin', header: 'Country of Origin (Made in)', required: false, def: '', desc: 'Country / Place of Manufacture' },
+    { key: 'supplier_name', header: 'Supplier Name', required: false, def: '', desc: 'Machine Supplier / Vendor' },
+    { key: 'purchase_date', header: 'Purchase Date', required: false, def: '', desc: 'Equipment Purchase Date' },
     { key: 'remarks', header: 'Remarks', required: false, def: '', desc: 'Remarks & Notes' },
     ...customFields.map(cf => ({
       key: `cf_${cf.code}`,
@@ -728,7 +750,7 @@ function openAddExcelColumnModal() {
     try {
       const struct = excelService.getActiveStructure();
       if ((struct.columns || []).some(c => c.fieldKey === fieldKey)) {
-        alert(`A column with field key '${fieldKey}' already exists.`);
+        alert(`A column with field key '${fieldKey}' already exists in your layout. You can customize its display label, mandatory rule, or position directly in the table.`);
         return;
       }
 
@@ -744,6 +766,11 @@ function openAddExcelColumnModal() {
 
       excelService.saveStructure(struct);
       closeModal();
+      const view = document.getElementById('main-view-container');
+      if (view) {
+        view.innerHTML = renderExcelManagerView();
+        initExcelManagerEvents();
+      }
       state.emit('inventory:updated');
     } catch (err) {
       alert('Error: ' + err.message);
