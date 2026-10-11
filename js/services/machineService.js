@@ -941,6 +941,18 @@ class MachineService {
         previousValue: existing,
         remarks: reason
       });
+
+      // Clean up orphaned pending requests for this deleted machine
+      const pendingApprovals = (storage.getTable(TABLE_NAMES.APPROVAL_REQUESTS) || []).filter(r => r && r.machineId === existing.id);
+      if (pendingApprovals.length > 0) {
+        const cleanApprovals = (storage.getTable(TABLE_NAMES.APPROVAL_REQUESTS) || []).filter(r => r && r.machineId !== existing.id);
+        storage.saveTable(TABLE_NAMES.APPROVAL_REQUESTS, cleanApprovals, true).catch(() => {});
+      }
+      const pendingTransfers = (storage.getTable(TABLE_NAMES.TRANSFER_REQUESTS) || []).filter(t => t && t.machineId === existing.id && t.status !== 'COMPLETED');
+      if (pendingTransfers.length > 0) {
+        const cleanTransfers = (storage.getTable(TABLE_NAMES.TRANSFER_REQUESTS) || []).filter(t => !(t && t.machineId === existing.id && t.status !== 'COMPLETED'));
+        storage.saveTable(TABLE_NAMES.TRANSFER_REQUESTS, cleanTransfers, true).catch(() => {});
+      }
     }
     return { success: !!removed, machine: existing };
   }
@@ -986,6 +998,20 @@ class MachineService {
       try {
         localStorage.setItem('al_muslim_erp_' + TABLE_NAMES.MACHINES, JSON.stringify(newTable));
       } catch (_) {}
+
+      // Clean up orphaned pending requests for deleted machines
+      const delSet = new Set(machineIds);
+      const curApprovals = storage.getTable(TABLE_NAMES.APPROVAL_REQUESTS) || [];
+      const filteredApprovals = curApprovals.filter(r => r && !delSet.has(r.machineId));
+      if (filteredApprovals.length !== curApprovals.length) {
+        storage.saveTable(TABLE_NAMES.APPROVAL_REQUESTS, filteredApprovals, true).catch(() => {});
+      }
+
+      const curTransfers = storage.getTable(TABLE_NAMES.TRANSFER_REQUESTS) || [];
+      const filteredTransfers = curTransfers.filter(t => !(t && delSet.has(t.machineId) && t.status !== 'COMPLETED'));
+      if (filteredTransfers.length !== curTransfers.length) {
+        storage.saveTable(TABLE_NAMES.TRANSFER_REQUESTS, filteredTransfers, true).catch(() => {});
+      }
 
       auditService.log(
         'BULK_MACHINE_PERMANENT_DELETED',

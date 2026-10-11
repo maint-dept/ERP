@@ -26,7 +26,7 @@ export function renderDashboard() {
   const maintCount = machines.filter(m => m.status === 'MAINTENANCE' || m.status === 'UNDER_MAINTENANCE').length;
   const breakdownCount = machines.filter(m => m.status === 'BREAKDOWN').length;
   const idleCount = machines.filter(m => m.status === 'IDLE').length;
-  const pendingApprovals = (approvalService.getPendingCount() || 0) + (transferService.getPendingCount() || 0);
+  const pendingApprovals = totalMachines === 0 ? 0 : ((approvalService.getPendingCount() || 0) + (transferService.getPendingCount() || 0));
 
   const mnMap = new Map(storage.getTable(TABLE_NAMES.MACHINE_NAMES).map(x => [x.id, x.name]));
   const brdMap = new Map(storage.getTable(TABLE_NAMES.BRANDS).map(x => [x.id, x.name]));
@@ -78,7 +78,7 @@ export function renderDashboard() {
 
       <!-- Top Primary Metric Cards -->
       <div class="kpi-grid">
-        <div class="kpi-card">
+        <div class="kpi-card" id="kpi-card-total-machines" style="cursor: pointer;" title="Click to view all machines in Inventory">
           <div>
             <div class="kpi-value">${totalMachines}</div>
             <div class="kpi-label">Total Physical Machines</div>
@@ -86,7 +86,7 @@ export function renderDashboard() {
           <div class="kpi-icon-badge">🏭</div>
         </div>
 
-        <div class="kpi-card" style="border-left: 3px solid var(--success);">
+        <div class="kpi-card" id="kpi-card-active-machines" style="border-left: 3px solid var(--success); cursor: pointer;" title="Click to view active operational machines">
           <div>
             <div class="kpi-value" style="color: #34d399;">${activeCount}</div>
             <div class="kpi-label">Active Operational</div>
@@ -94,7 +94,7 @@ export function renderDashboard() {
           <div class="kpi-icon-badge" style="color: #34d399;">🟢</div>
         </div>
 
-        <div class="kpi-card" style="border-left: 3px solid var(--warning);">
+        <div class="kpi-card" id="kpi-card-maint-machines" style="border-left: 3px solid var(--warning); cursor: pointer;" title="Click to view machines under maintenance">
           <div>
             <div class="kpi-value" style="color: #fbbf24;">${maintCount}</div>
             <div class="kpi-label">Under Maintenance</div>
@@ -102,7 +102,7 @@ export function renderDashboard() {
           <div class="kpi-icon-badge" style="color: #fbbf24;">🟡</div>
         </div>
 
-        <div class="kpi-card" style="border-left: 3px solid var(--danger);">
+        <div class="kpi-card" id="kpi-card-breakdown-machines" style="border-left: 3px solid var(--danger); cursor: pointer;" title="Click to view breakdown machines">
           <div>
             <div class="kpi-value" style="color: #f87171;">${breakdownCount}</div>
             <div class="kpi-label">Machine Breakdowns</div>
@@ -110,7 +110,7 @@ export function renderDashboard() {
           <div class="kpi-icon-badge" style="color: #f87171;">🔴</div>
         </div>
 
-        <div class="kpi-card" style="border-left: 3px solid var(--info);">
+        <div class="kpi-card" id="kpi-card-pending-approvals" style="border-left: 3px solid var(--info); cursor: pointer;" title="Click to open Machine Transfers & Approvals Hub">
           <div>
             <div class="kpi-value" style="color: #c084fc;">${pendingApprovals}</div>
             <div class="kpi-label">Pending Approvals</div>
@@ -226,6 +226,23 @@ export function initDashboardEvents() {
   if (btnInv) {
     btnInv.addEventListener('click', () => {
       state.set('currentView', 'inventory');
+    });
+  }
+
+  // Allow clicking on metric cards to quickly jump to the relevant views
+  ['kpi-card-total-machines', 'kpi-card-active-machines', 'kpi-card-maint-machines', 'kpi-card-breakdown-machines'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.addEventListener('click', () => {
+        state.set('currentView', 'inventory');
+      });
+    }
+  });
+
+  const kpiPending = document.getElementById('kpi-card-pending-approvals');
+  if (kpiPending) {
+    kpiPending.addEventListener('click', () => {
+      state.set('currentView', 'transfers');
     });
   }
 }

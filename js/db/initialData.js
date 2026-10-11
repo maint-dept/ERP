@@ -130,50 +130,7 @@ export const INITIAL_DATA = {
       "status": "ACTIVE"
     }
   ],
-  "approval_requests": [
-    {
-      "id": "appr-1",
-      "machineId": "mc-45",
-      "type": "EDIT_MACHINE",
-      "requestedBy": "usr-4",
-      "requestedByName": "Rahim Uddin",
-      "requestedByRole": "MAINTENANCE_USER",
-      "requestedAt": "2026-08-21T10:30:00Z",
-      "status": "PENDING",
-      "remarks": "Replaced feed dog and adjusted RPM to 4800 for high density twill fabric.",
-      "targetLocation": {
-        "unit": "AKM Knitwear Ltd.",
-        "floor": "5th Floor",
-        "line": "Line JA-A"
-      },
-      "machineInfo": {
-        "machineName": "Plane Machine",
-        "brand": "TYPICAL",
-        "model": "GC-6720",
-        "serialNumber": "TYP-PM-00045"
-      },
-      "diffs": [
-        {
-          "field": "remarks",
-          "label": "Remarks",
-          "oldValue": "Plane Machine with direct drive",
-          "newValue": "Serviced feed dog, replaced presser foot, tested on twill"
-        },
-        {
-          "field": "status",
-          "label": "Machine Status",
-          "oldValue": "ACTIVE",
-          "newValue": "MAINTENANCE"
-        },
-        {
-          "field": "customValues.max_rpm",
-          "label": "Max RPM",
-          "oldValue": "5000",
-          "newValue": "4800"
-        }
-      ]
-    }
-  ],
+  "approval_requests": [],
   "audit_logs": [
     {
       "id": "aud-1",

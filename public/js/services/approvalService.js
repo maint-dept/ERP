@@ -13,7 +13,18 @@ import { notificationService } from './notificationService.js';
 class ApprovalService {
   getRequests(status = null) {
     let list = storage.getTable(TABLE_NAMES.APPROVAL_REQUESTS) || [];
-    list = [...list].sort((a, b) => new Date(b.requestedAt) - new Date(a.requestedAt));
+    const machines = storage.getTable(TABLE_NAMES.MACHINES) || [];
+    const machineIdSet = new Set(machines.map(m => m.id));
+
+    // Real-time verification: Only consider requests for active machines, filtering out legacy mock data
+    list = list.filter(r => {
+      if (!r || !r.id) return false;
+      if (r.id === 'appr-1' && r.machineId === 'mc-45') return false;
+      if (r.type === 'NEW_MACHINE' || r.type === 'CREATE_MACHINE') return true;
+      return machineIdSet.has(r.machineId);
+    });
+
+    list = [...list].sort((a, b) => new Date(b.requestedAt || 0) - new Date(a.requestedAt || 0));
 
     if (status && status !== 'ALL') {
       list = list.filter(r => r.status === status);

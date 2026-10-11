@@ -249,7 +249,8 @@ export function resolveTransferMachineDetails(req) {
 
 class TransferService {
   /**
-   * Returns all transfer requests with multi-field filtering
+   * Returns all transfer requests with multi-field filtering,
+   * seamlessly unifying active transfer requests and completed transfer ledger records.
    */
   getTransferRequests(params = {}) {
     let list = storage.getTable(TABLE_NAMES.TRANSFER_REQUESTS) || [];
@@ -259,6 +260,80 @@ class TransferService {
       }
       return t;
     });
+
+    // Unify completed transfer records from TRANSFERS table (preserves real factory movement history)
+    const completedLedger = storage.getTable(TABLE_NAMES.TRANSFERS) || [];
+    if (Array.isArray(completedLedger) && completedLedger.length > 0) {
+      const existingKeys = new Set(list.flatMap(t => [t.id, t.requestNumber, t.requestId].filter(Boolean)));
+      
+      const parseLoc = (locPath) => {
+        if (!locPath || typeof locPath !== 'string') return {};
+        const parts = locPath.split('>').map(s => s.trim());
+        return {
+          group: parts[0] || '',
+          unit: parts[1] || '',
+          floor: parts[2] || '',
+          line: parts[3] || ''
+        };
+      };
+
+      completedLedger.forEach(trf => {
+        if (!trf) return;
+        const key = trf.requestId || trf.requestNumber || trf.id;
+        if (existingKeys.has(key) || existingKeys.has(trf.id) || existingKeys.has(trf.requestNumber)) return;
+
+        const srcLoc = trf.sourceLocation || parseLoc(trf.sourcePath);
+        const dstLoc = trf.destLocation || parseLoc(trf.destPath);
+
+        const normalized = {
+          id: trf.requestId || trf.id,
+          requestNumber: trf.requestNumber || trf.id,
+          machineId: trf.machineId,
+          serialNumber: trf.serialNumber,
+          machineSerial: trf.serialNumber,
+          machineName: trf.machineName || 'Sewing Machine',
+          machineInfo: trf.machineInfo || {
+            machineName: trf.machineName || 'Sewing Machine',
+            serialNumber: trf.serialNumber || 'N/A',
+            brand: trf.brand || trf.brandStr || '—',
+            model: trf.model || trf.modelStr || '—',
+            category: 'Garments Machinery'
+          },
+          sourceGroupId: trf.sourceGroupId,
+          sourceUnitId: trf.sourceUnitId,
+          sourceFloorId: trf.sourceFloorId,
+          sourceLineId: trf.sourceLineId,
+          sourceLocation: srcLoc,
+          sourcePath: trf.sourcePath || '',
+          destGroupId: trf.destGroupId,
+          destUnitId: trf.destUnitId,
+          destFloorId: trf.destFloorId,
+          destLineId: trf.destLineId,
+          destLocation: dstLoc,
+          destPath: trf.destPath || '',
+          reason: trf.reason || 'Machine Relocation',
+          remarks: trf.remarks || '',
+          workflowId: 'wf-default',
+          workflowName: 'Standard Factory Transfer',
+          status: trf.status || TRANSFER_STATUSES.COMPLETED,
+          currentLevel: trf.currentLevel || 3,
+          totalLevels: trf.totalLevels || 3,
+          requestedBy: trf.transferredBy || trf.requestedBy || 'usr-super-admin',
+          requestedByName: trf.transferredByName || trf.requestedByName || 'Authorized User',
+          requestedByRole: trf.requestedByRole || 'SUPER_ADMIN',
+          requestedAt: trf.transferredAt || trf.requestedAt || trf.completedAt || trf.createdAt || new Date().toISOString(),
+          completedAt: trf.completedAt || trf.transferredAt,
+          completedBy: trf.completedBy || trf.transferredBy,
+          completedByName: trf.completedByName || trf.transferredByName,
+          approvedBy: trf.approvedBy || trf.completedByName
+        };
+
+        list.push(normalized);
+        existingKeys.add(normalized.id);
+        if (normalized.requestNumber) existingKeys.add(normalized.requestNumber);
+      });
+    }
+
     list = [...list].sort((a, b) => new Date(b.requestedAt || 0) - new Date(a.requestedAt || 0));
 
     // Scoped location filtering for technician accounts
@@ -299,18 +374,20 @@ class TransferService {
   }
 
   getTransferRequestById(id) {
-    const list = storage.getTable(TABLE_NAMES.TRANSFER_REQUESTS) || [];
-    const item = list.find(t => t && (t.id === id || t.requestNumber === id)) || null;
-    if (item && !item.status) {
-      item.status = TRANSFER_STATUSES.PENDING_APPROVAL;
-    }
+    const list = this.getTransferRequests({ status: 'ALL' });
+    const item = list.find(t => t && (t.id === id || t.requestNumber === id || t.requestId === id)) || null;
     return item;
   }
 
   getPendingCount() {
     const list = this.getTransferRequests({ status: 'ALL' });
     const user = authService.getCurrentUser();
+    const machines = storage.getTable(TABLE_NAMES.MACHINES) || [];
+    const machineIdSet = new Set(machines.map(m => m.id));
+
     return list.filter(t => {
+      // Pending requests are only active if their machine exists in the active inventory
+      if (!t || !t.machineId || !machineIdSet.has(t.machineId)) return false;
       const st = t.status || TRANSFER_STATUSES.PENDING_APPROVAL;
       const isPendingStatus = st === TRANSFER_STATUSES.PENDING_APPROVAL || st === TRANSFER_STATUSES.PARTIALLY_APPROVED;
       if (!isPendingStatus) return false;

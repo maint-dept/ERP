@@ -26,7 +26,7 @@ export function renderTransfersView() {
     status: transferStatusFilter
   });
 
-  const allRequests = storage.getTable(TABLE_NAMES.TRANSFER_REQUESTS) || [];
+  const allRequests = transferService.getTransferRequests({ status: 'ALL' });
   const pendingCount = allRequests.filter(r => (r?.status || TRANSFER_STATUSES.PENDING_APPROVAL) === TRANSFER_STATUSES.PENDING_APPROVAL || (r?.status || '') === TRANSFER_STATUSES.PARTIALLY_APPROVED).length;
   const completedCount = allRequests.filter(r => (r?.status || '') === TRANSFER_STATUSES.COMPLETED).length;
   const rejectedCount = allRequests.filter(r => (r?.status || '') === TRANSFER_STATUSES.REJECTED).length;
