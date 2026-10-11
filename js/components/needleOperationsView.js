@@ -19,9 +19,11 @@ import { needleService } from '../services/needleService.js';
 import { notificationService } from '../services/notificationService.js';
 import { authService } from '../services/authService.js';
 import { state } from '../state.js';
+import { renderQrScannerModal, initQrScannerModalEvents } from './qrScannerModal.js';
 
 let activeTransactionModalOpen = false;
 let selectedMachineId = '';
+let smartMachineSearchQuery = '';
 let filterFloorId = 'ALL';
 let filterLineId = 'ALL';
 let filterActionType = 'ALL';
@@ -464,52 +466,129 @@ function renderTransactionModal() {
         <!-- Modal Body Form -->
         <form id="form-needle-tx-submit" class="modal-body" style="padding: 16px 18px; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; flex: 1;">
           
-          <!-- Machine Selection (Live Search & Select) -->
-          <div class="form-group">
-            <label class="form-label" style="font-weight: 800; font-size: 12px; color: #38bdf8;">
-              Select Machine from Inventory: <span class="req">*</span>
-            </label>
-            <select id="modal-sel-tx-machine" class="form-control" required style="font-size: 14px; font-weight: 700; min-height: 42px;">
-              <option value="">-- Choose Machine (Serial # / Model) --</option>
+          <!-- Smart Machine Search & Instant Auto-Fill -->
+          <div class="form-group" style="position: relative;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+              <label class="form-label" style="font-weight: 800; font-size: 12px; color: #38bdf8; margin: 0; display: flex; align-items: center; gap: 6px;">
+                <span>⚡ Smart Machine Search &amp; Auto-Fill</span>
+                <span class="badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid #38bdf8; font-size: 9.5px; padding: 1px 6px;">Live Lookup</span>
+              </label>
+              ${selectedMachine ? `
+                <button type="button" id="btn-clear-tx-machine" style="background: rgba(239, 68, 68, 0.18); border: 1px solid #ef4444; color: #fca5a5; font-size: 11px; cursor: pointer; padding: 2px 8px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;" title="Clear selection to search another machine">
+                  <span>✕</span> Clear &amp; Re-search
+                </button>
+              ` : ''}
+            </div>
+
+            <div style="display: flex; gap: 6px; align-items: center;">
+              <div style="position: relative; flex: 1;">
+                <input 
+                  type="text" 
+                  id="modal-inp-tx-machine-search" 
+                  class="form-control" 
+                  placeholder="🔍 Type Serial #, Barcode, Model, Brand, Line, Floor..." 
+                  value="${selectedMachine ? `${selectedMachine.serialNumber} — ${spec.machineNameStr} (${spec.brandStr} ${spec.modelStr})` : (smartMachineSearchQuery || '')}" 
+                  autocomplete="off"
+                  style="font-size: 13.5px; font-weight: 700; color: #ffffff !important; background: #0b1329; border: 1.5px solid ${selectedMachine ? '#10b981' : '#38bdf8'}; padding-right: 32px; height: 42px; border-radius: 6px;"
+                />
+                <span style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-size: 14px; pointer-events: none;">
+                  ${selectedMachine ? '✅' : '🔍'}
+                </span>
+              </div>
+              <button type="button" id="btn-tx-machine-scan-qr" class="btn btn-primary" style="font-weight: 800; height: 42px; padding: 0 14px; font-size: 12.5px; display: inline-flex; align-items: center; gap: 5px; border-radius: 6px; white-space: nowrap; background: linear-gradient(135deg, #0284c7, #0369a1); border: 1.5px solid #38bdf8;" title="Scan Machine Barcode / QR Code">
+                <span>📷</span> Scan QR
+              </button>
+            </div>
+
+            <!-- Floating Smart Search Autocomplete Results Panel -->
+            <div id="modal-tx-machine-suggestions" style="display: none; position: absolute; left: 0; right: 0; top: 100%; z-index: 1050; background: #090e1a; border: 1.5px solid #38bdf8; border-radius: 8px; max-height: 260px; overflow-y: auto; box-shadow: 0 14px 40px rgba(0,0,0,0.95); margin-top: 4px;"></div>
+          </div>
+
+          <!-- Secondary/Fallback Fast Dropdown Selector (Synced) -->
+          <div class="form-group" style="margin-top: -4px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+              <span style="font-size: 10px; color: var(--text-muted); font-weight: 600;">
+                Or select directly from list (${allMachines.length} machines):
+              </span>
+            </div>
+            <select id="modal-sel-tx-machine" class="form-control" style="font-size: 11.5px; height: 32px; padding: 2px 8px; background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255,255,255,0.15); color: #cbd5e1; border-radius: 6px;">
+              <option value="">-- Choose Machine from List --</option>
               ${allMachines.map(m => {
                 const en = needleService.getEnrichedMachine(m);
                 return `
                   <option value="${m.id}" ${m.id === selectedMachineId ? 'selected' : ''}>
-                    ${m.serialNumber} — ${en.modelStr} (${en.floorStr} / ${en.lineStr})
+                    ${m.serialNumber} — ${en.machineNameStr || 'Machine'} | ${en.brandStr} ${en.modelStr} (${en.floorStr} / ${en.lineStr})
                   </option>
                 `;
               }).join('')}
             </select>
           </div>
 
-          <!-- Machine Auto-Filled Information Card -->
+          <!-- AUTO ALL FILLUP MACHINE PASSPORT CARD -->
           ${selectedMachine ? `
-            <div style="background: rgba(0,0,0,0.35); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 8px; padding: 10px 14px; display: flex; flex-direction: column; gap: 6px;">
-              <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
+            <div style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(11, 19, 41, 0.98) 100%); border: 1.5px solid #0284c7; border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.5);">
+              
+              <!-- Header Bar: Serial Number & Machine Type & Balance Badges -->
+              <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 8px;">
                 <div style="display: flex; align-items: center; gap: 8px;">
-                  <span style="font-family: var(--font-mono); font-weight: 900; font-size: 15px; color: #fff;">${spec.serialNumber}</span>
-                  <span style="font-size: 11px; color: #38bdf8; background: rgba(56,189,248,0.15); border: 1px solid #38bdf8; padding: 1px 6px; border-radius: 4px; font-weight: 700;">
-                    ${spec.permanentMachineId || spec.id}
+                  <span style="font-size: 18px;">🧵</span>
+                  <div>
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                      <span style="font-family: var(--font-mono); font-weight: 900; font-size: 16px; color: #fff;">${spec.serialNumber}</span>
+                      <span style="font-size: 10px; color: #38bdf8; background: rgba(56,189,248,0.15); border: 1px solid #38bdf8; padding: 1px 6px; border-radius: 4px; font-weight: 800;">
+                        ${spec.permanentMachineId || spec.id}
+                      </span>
+                      <span class="badge ${spec.status === 'ACTIVE' ? 'badge-active' : 'badge-idle'}" style="font-size: 9.5px; padding: 1px 6px;">
+                        ${spec.status || 'ACTIVE'}
+                      </span>
+                    </div>
+                    <div style="font-size: 11.5px; font-weight: 700; color: #f1f5f9; margin-top: 1px;">
+                      ${spec.machineNameStr} &bull; <span style="color: #38bdf8;">${spec.brandStr} ${spec.modelStr}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Needle Balance Badges -->
+                <div style="display: flex; gap: 6px; align-items: center;">
+                  <span class="badge" style="background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid #10b981; font-size: 11px; font-weight: 800; padding: 3px 8px;">
+                    Present: ${prevBal} Pcs
+                  </span>
+                  <span class="badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid #38bdf8; font-size: 11px; font-weight: 800; padding: 3px 8px;">
+                    Req: ${spec.requiredNeedleCount} Pcs
                   </span>
                 </div>
-                <div style="display: flex; gap: 6px;">
-                  <span class="badge badge-active" style="font-size: 10.5px;">Present: ${prevBal} Needles</span>
-                  <span class="badge badge-idle" style="font-size: 10.5px;">Req: ${spec.requiredNeedleCount}</span>
-                </div>
-              </div>
-              
-              <div style="font-size: 13px; font-weight: 700; color: #fff;">
-                ${spec.machineNameStr} &bull; <span style="color: #38bdf8;">${spec.brandStr} ${spec.modelStr}</span>
               </div>
 
-              <div style="font-size: 11px; color: var(--text-secondary); border-top: 1px solid rgba(255,255,255,0.06); padding-top: 4px; display: flex; justify-content: space-between;">
-                <span>Location: <strong style="color: #cbd5e1;">${spec.unitStr} &gt; ${spec.floorStr} &gt; ${spec.lineStr}</strong></span>
-                <span>Spec: <strong style="color: #38bdf8;">${spec.specNeedleBrand} ${spec.specNeedleType}</strong></span>
+              <!-- 4-Grid Information Strip (Auto-Filled Specifications) -->
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 6px; font-size: 11px;">
+                <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.06); border-radius: 6px; padding: 5px 8px;">
+                  <div style="color: var(--text-muted); font-size: 9.5px; text-transform: uppercase; font-weight: 700;">Machine Brand</div>
+                  <div style="color: #fff; font-weight: 800; font-size: 12px; margin-top: 1px;">${spec.brandStr || '—'}</div>
+                </div>
+                <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.06); border-radius: 6px; padding: 5px 8px;">
+                  <div style="color: var(--text-muted); font-size: 9.5px; text-transform: uppercase; font-weight: 700;">Model Number</div>
+                  <div style="color: #38bdf8; font-family: var(--font-mono); font-weight: 800; font-size: 12px; margin-top: 1px;">${spec.modelStr || '—'}</div>
+                </div>
+                <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.06); border-radius: 6px; padding: 5px 8px;">
+                  <div style="color: var(--text-muted); font-size: 9.5px; text-transform: uppercase; font-weight: 700;">Floor &amp; Line</div>
+                  <div style="color: #fbbf24; font-weight: 800; font-size: 11.5px; margin-top: 1px;">${spec.floorStr} &bull; ${spec.lineStr}</div>
+                </div>
+                <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.06); border-radius: 6px; padding: 5px 8px;">
+                  <div style="color: var(--text-muted); font-size: 9.5px; text-transform: uppercase; font-weight: 700;">Master Needle Spec</div>
+                  <div style="color: #a7f3d0; font-weight: 800; font-size: 11.5px; margin-top: 1px;">${spec.specNeedleBrand} (${spec.specNeedleType})</div>
+                </div>
               </div>
+
             </div>
           ` : `
-            <div style="background: rgba(255,255,255,0.02); border: 1px dashed rgba(255,255,255,0.15); border-radius: 8px; padding: 10px; font-size: 11.5px; color: var(--text-muted); text-align: center;">
-              Select a machine above to auto-populate specifications, required needles, and present balance.
+            <div style="background: rgba(56, 189, 248, 0.04); border: 1px dashed rgba(56, 189, 248, 0.3); border-radius: 8px; padding: 12px 14px; font-size: 12px; color: #94a3b8; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 3px;">
+              <span style="font-size: 20px;">🔍</span>
+              <div>
+                <strong style="color: #fff;">Search Machine Above to Auto-Fill All Details</strong>
+              </div>
+              <div style="font-size: 11px; color: var(--text-muted);">
+                Type Serial #, Model, Brand, Line or Scan QR to auto-populate specifications, required needles, and current present balance.
+              </div>
             </div>
           `}
 
@@ -574,7 +653,7 @@ function renderTransactionModal() {
             <div style="background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 6px; padding: 8px 12px; display: flex; flex-direction: column; justify-content: center;">
               <span style="font-size: 10px; color: #94a3b8; text-transform: uppercase; font-weight: 700;">Live Balance Impact</span>
               <div style="font-size: 13px; font-weight: 900; color: #fff; margin-top: 2px;">
-                Prev: <span style="color: #cbd5e1;">${prevBal}</span> ➔ New: <span style="color: #38bdf8; font-size: 15px;">${calcNewBal}</span>
+                Prev: <span style="color: #cbd5e1;">${prevBal}</span> ➔ New: <span id="live-tx-balance-impact-new" style="color: #38bdf8; font-size: 15px;">${calcNewBal}</span>
               </div>
             </div>
           </div>
@@ -707,6 +786,7 @@ export function initNeedleOperationsEvents() {
   // 2. Close Modal
   const closeModal = () => {
     activeTransactionModalOpen = false;
+    smartMachineSearchQuery = '';
     refreshView();
   };
   root.querySelector('#btn-close-needle-tx-modal')?.addEventListener('click', closeModal);
@@ -719,10 +799,209 @@ export function initNeedleOperationsEvents() {
     });
   }
 
-  // 3. Machine Selection Change
-  root.querySelector('#modal-sel-tx-machine')?.addEventListener('change', (e) => {
-    selectedMachineId = e.target.value;
+  // Helper: Select machine and trigger auto-fill
+  const selectMachine = (machine) => {
+    if (!machine) {
+      selectedMachineId = '';
+      smartMachineSearchQuery = '';
+    } else {
+      selectedMachineId = machine.id;
+      smartMachineSearchQuery = '';
+    }
     refreshView();
+  };
+
+  // 3a. Clear Selected Machine
+  root.querySelector('#btn-clear-tx-machine')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    selectMachine(null);
+    setTimeout(() => {
+      const inp = document.getElementById('modal-inp-tx-machine-search');
+      if (inp) inp.focus();
+    }, 50);
+  });
+
+  // 3b. Smart Machine Search Input & Live Autocomplete
+  const inpMachineSearch = root.querySelector('#modal-inp-tx-machine-search');
+  const suggestionsBox = root.querySelector('#modal-tx-machine-suggestions');
+  const allMachines = storage.getTable(TABLE_NAMES.MACHINES) || [];
+
+  if (inpMachineSearch && suggestionsBox) {
+    // Auto-focus search input when modal opens and machine is not pre-selected
+    if (!selectedMachineId && activeTransactionModalOpen && window.innerWidth > 768) {
+      setTimeout(() => inpMachineSearch.focus({ preventScroll: true }), 60);
+    }
+
+    inpMachineSearch.addEventListener('input', (e) => {
+      const q = (e.target.value || '').trim().toLowerCase();
+      smartMachineSearchQuery = e.target.value;
+
+      if (!q) {
+        suggestionsBox.style.display = 'none';
+        return;
+      }
+
+      // Filter machines by Serial, ID, Asset Tag, Name, Brand, Model, Floor, Line
+      const matches = allMachines.filter(m => {
+        if (!m) return false;
+        const en = needleService.getEnrichedMachine(m);
+        const sn = String(m.serialNumber || '').toLowerCase();
+        const tag = String(m.permanentMachineId || m.id || '').toLowerCase();
+        const mName = String(en.machineNameStr || '').toLowerCase();
+        const brd = String(en.brandStr || '').toLowerCase();
+        const mdl = String(en.modelStr || '').toLowerCase();
+        const flr = String(en.floorStr || '').toLowerCase();
+        const lin = String(en.lineStr || '').toLowerCase();
+        return sn.includes(q) || tag.includes(q) || mName.includes(q) || brd.includes(q) || mdl.includes(q) || flr.includes(q) || lin.includes(q);
+      }).slice(0, 10);
+
+      if (matches.length === 0) {
+        suggestionsBox.innerHTML = `
+          <div style="padding: 12px 14px; font-size: 12px; color: var(--text-muted); text-align: center;">
+            No machines found matching "<strong style="color: #cbd5e1;">${e.target.value}</strong>".
+          </div>
+        `;
+        suggestionsBox.style.display = 'block';
+        return;
+      }
+
+      suggestionsBox.innerHTML = matches.map((m, idx) => {
+        const en = needleService.getEnrichedMachine(m);
+        return `
+          <div class="machine-suggest-item" data-id="${m.id}" style="padding: 9px 12px; border-bottom: 1px solid rgba(255,255,255,0.06); cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: background 0.15s; ${idx % 2 === 0 ? 'background: rgba(255,255,255,0.02);' : ''}">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-family: var(--font-mono); font-weight: 900; color: #38bdf8; font-size: 13px; background: rgba(56,189,248,0.12); border: 1px solid rgba(56,189,248,0.3); border-radius: 4px; padding: 2px 7px;">
+                ${m.serialNumber}
+              </span>
+              <div>
+                <div style="font-weight: 800; color: #ffffff; font-size: 12px;">
+                  ${en.machineNameStr || 'Machine'} &bull; <span style="color: #38bdf8;">${en.brandStr} ${en.modelStr}</span>
+                </div>
+                <div style="font-size: 10px; color: var(--text-muted); margin-top: 1px;">
+                  📍 ${en.floorStr} &bull; ${en.lineStr} | Needle: <span style="color: #a7f3d0;">${en.specNeedleType || 'DBx1 #14'}</span>
+                </div>
+              </div>
+            </div>
+            <div style="text-align: right; flex-shrink: 0;">
+              <span class="badge" style="background: rgba(16, 185, 129, 0.2); color: #34d399; font-size: 10px; font-weight: 800; border: 1px solid #10b981;">
+                Present: ${en.presentNeedleCount}
+              </span>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      suggestionsBox.style.display = 'block';
+
+      // Item click selection
+      suggestionsBox.querySelectorAll('.machine-suggest-item').forEach(el => {
+        el.addEventListener('click', (ev) => {
+          ev.preventDefault();
+          ev.stopPropagation();
+          const id = el.getAttribute('data-id');
+          const m = allMachines.find(x => x && x.id === id);
+          if (m) {
+            suggestionsBox.style.display = 'none';
+            selectMachine(m);
+            notificationService.success('Machine Loaded', `Loaded [${m.serialNumber}] ${m.model || ''}. All specs auto-filled.`);
+          }
+        });
+        el.addEventListener('mouseenter', () => {
+          el.style.background = 'rgba(2, 132, 199, 0.3)';
+        });
+        el.addEventListener('mouseleave', () => {
+          el.style.background = '';
+        });
+      });
+    });
+
+    // Enter Key Search / Instant Pick
+    inpMachineSearch.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        const q = (inpMachineSearch.value || '').trim().toLowerCase();
+        if (!q) return;
+
+        // Try exact serial / ID match first
+        const exact = allMachines.find(m => 
+          m && (String(m.serialNumber || '').toLowerCase() === q ||
+          String(m.permanentMachineId || '').toLowerCase() === q ||
+          String(m.id || '').toLowerCase() === q)
+        );
+
+        if (exact) {
+          suggestionsBox.style.display = 'none';
+          selectMachine(exact);
+          notificationService.success('Machine Loaded', `Loaded [${exact.serialNumber}]. All specs auto-filled.`);
+          return;
+        }
+
+        // Partial match top candidate
+        const partial = allMachines.find(m => {
+          if (!m) return false;
+          const en = needleService.getEnrichedMachine(m);
+          return String(m.serialNumber || '').toLowerCase().includes(q) ||
+            String(en.modelStr || '').toLowerCase().includes(q) ||
+            String(en.brandStr || '').toLowerCase().includes(q) ||
+            String(en.machineNameStr || '').toLowerCase().includes(q);
+        });
+
+        if (partial) {
+          suggestionsBox.style.display = 'none';
+          selectMachine(partial);
+          notificationService.success('Machine Loaded', `Loaded [${partial.serialNumber}]. All specs auto-filled.`);
+        } else {
+          notificationService.warning('Machine Not Found', `No machine matching "${inpMachineSearch.value}".`);
+        }
+      }
+    });
+
+    // Close suggestions dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+      if (suggestionsBox && !suggestionsBox.contains(e.target) && e.target !== inpMachineSearch) {
+        suggestionsBox.style.display = 'none';
+      }
+    });
+  }
+
+  // 3c. Camera QR / Barcode Scanner Trigger
+  root.querySelector('#btn-tx-machine-scan-qr')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    let scannerSlot = document.getElementById('needle-ops-qr-scanner-slot');
+    if (!scannerSlot) {
+      scannerSlot = document.createElement('div');
+      scannerSlot.id = 'needle-ops-qr-scanner-slot';
+      document.body.appendChild(scannerSlot);
+    }
+    scannerSlot.innerHTML = renderQrScannerModal();
+    initQrScannerModalEvents({
+      onScanSuccess: (decodedText) => {
+        scannerSlot.innerHTML = '';
+        const cleanText = String(decodedText || '').trim().toLowerCase();
+        const matched = allMachines.find(m => 
+          m && (String(m.serialNumber || '').toLowerCase() === cleanText ||
+          String(m.permanentMachineId || '').toLowerCase() === cleanText ||
+          String(m.id || '').toLowerCase() === cleanText)
+        );
+        if (matched) {
+          selectMachine(matched);
+          notificationService.success('QR Scanned', `Machine [${matched.serialNumber}] auto-loaded.`);
+        } else {
+          notificationService.warning('QR Not Found', `Machine with code "${decodedText}" not found in inventory.`);
+        }
+      },
+      onClose: () => {
+        scannerSlot.innerHTML = '';
+      }
+    });
+  });
+
+  // 3d. Fallback Dropdown Selection Change (Synced)
+  root.querySelector('#modal-sel-tx-machine')?.addEventListener('change', (e) => {
+    const id = e.target.value;
+    const m = allMachines.find(x => x && x.id === id);
+    selectMachine(m || null);
   });
 
   // 4. Action Type Radio Change
@@ -733,11 +1012,27 @@ export function initNeedleOperationsEvents() {
     });
   });
 
-  // 5. Quantity Change
+  // 5. Quantity Change (Reactive Calculation)
   root.querySelector('#modal-inp-tx-quantity')?.addEventListener('input', (e) => {
     const val = Number(e.target.value);
     if (!isNaN(val) && val > 0) {
       txQuantity = val;
+      const impactEl = root.querySelector('#live-tx-balance-impact-new');
+      if (impactEl) {
+        const selectedMachine = selectedMachineId ? needleService.getEnrichedMachine(selectedMachineId) : null;
+        const prev = selectedMachine ? selectedMachine.presentNeedleCount : 1;
+        let nw = prev;
+        if (txActionType === 'USAGE_CONSUMED' || txActionType === 'RETURN_STORE') {
+          nw = Math.max(0, prev - val);
+        } else if (txActionType === 'ADD_INSTALLED') {
+          nw = prev + val;
+        } else if (txActionType === 'BALANCE_ADJUST') {
+          nw = val;
+        } else {
+          nw = prev;
+        }
+        impactEl.textContent = nw;
+      }
     }
   });
 
@@ -778,6 +1073,8 @@ export function initNeedleOperationsEvents() {
       );
 
       activeTransactionModalOpen = false;
+      selectedMachineId = '';
+      smartMachineSearchQuery = '';
       refreshView();
     } catch (err) {
       notificationService.error('Save Failed', err.message || err);
