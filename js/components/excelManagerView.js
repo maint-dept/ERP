@@ -19,32 +19,30 @@ export function renderExcelManagerView() {
   const importHistory = storage.getTable(TABLE_NAMES.IMPORT_HISTORY) || [];
 
   return `
-    <div class="page-view">
+    <div class="page-view" style="padding: 10px 14px; gap: 10px;">
       <!-- Title Bar -->
-      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
-        <div>
-          <h1 style="font-size: 22px; font-weight: 800; color: #fff;">📊 Admin Excel Structure &amp; Data Management</h1>
-          <p style="font-size: 12.5px; color: var(--text-secondary);">
-            Design custom Excel layouts, configure field mappings, download dynamic multi-sheet templates, and inspect bulk import history.
-          </p>
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+        <div style="display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;">
+          <h1 style="font-size: 17px; font-weight: 800; color: #fff; margin: 0;">📊 Excel Structure &amp; Template Designer</h1>
+          <span style="font-size: 11.5px; color: var(--text-muted);">Configure layout headers, database field mappings, and custom specifications.</span>
         </div>
 
-        <div style="display: flex; gap: 10px;">
-          <button id="btn-mgr-download-template" class="btn btn-success">📋 Download Live Template (.xlsx)</button>
-          <button id="btn-mgr-launch-import" class="btn btn-primary">📥 Launch Import Wizard</button>
+        <div style="display: flex; gap: 6px;">
+          <button id="btn-mgr-download-template" class="btn btn-success btn-sm" style="font-size: 11.5px; padding: 4px 10px;">📋 Download Template (.xlsx)</button>
+          <button id="btn-mgr-launch-import" class="btn btn-primary btn-sm" style="font-size: 11.5px; padding: 4px 10px;">📥 Import Wizard</button>
         </div>
       </div>
 
       <!-- Navigation Tabs -->
-      <div style="display: flex; gap: 8px; border-bottom: 2px solid var(--border-color); padding-bottom: 8px; flex-wrap: wrap;">
-        <button class="btn ${activeTab === 'structure' ? 'btn-primary' : 'btn-ghost'}" data-tab="structure" style="font-size: 13px; font-weight: 700; padding: 7px 16px;">
-          📐 1. Excel Structure Builder
+      <div style="display: flex; gap: 6px; border-bottom: 2px solid var(--border-color); padding-bottom: 4px; flex-wrap: wrap;">
+        <button class="btn ${activeTab === 'structure' ? 'btn-primary' : 'btn-ghost'}" data-tab="structure" style="font-size: 12px; font-weight: 700; padding: 4px 14px; border-radius: 4px;">
+          📐 1. Structure Builder
         </button>
-        <button class="btn ${activeTab === 'template' ? 'btn-primary' : 'btn-ghost'}" data-tab="template" style="font-size: 13px; font-weight: 700; padding: 7px 16px;">
+        <button class="btn ${activeTab === 'template' ? 'btn-primary' : 'btn-ghost'}" data-tab="template" style="font-size: 12px; font-weight: 700; padding: 4px 14px; border-radius: 4px;">
           👁️ 2. Template Preview
         </button>
-        <button class="btn ${activeTab === 'history' ? 'btn-primary' : 'btn-ghost'}" data-tab="history" style="font-size: 13px; font-weight: 700; padding: 7px 16px;">
-          📜 3. Import &amp; Bulk Update History (${importHistory.length})
+        <button class="btn ${activeTab === 'history' ? 'btn-primary' : 'btn-ghost'}" data-tab="history" style="font-size: 12px; font-weight: 700; padding: 4px 14px; border-radius: 4px;">
+          📜 3. Import History (${importHistory.length})
         </button>
       </div>
 
@@ -57,95 +55,112 @@ export function renderExcelManagerView() {
 function renderTabContent(tab, struct, columns, customFields, importHistory) {
   if (tab === 'structure') {
     return `
-      <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 20px; display: flex; flex-direction: column; gap: 16px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; flex-wrap: wrap; gap: 10px;">
-          <div>
-            <h3 style="font-size: 16px; font-weight: 700; color: #38bdf8;">Current Layout: ${struct.name}</h3>
-            <p style="font-size: 11.5px; color: var(--text-muted);">
-              Move columns up or down to reorder them in generated templates, preview, and export files. Data mapping is tied to permanent field keys.
-            </p>
+      <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 12px 14px; display: flex; flex-direction: column; gap: 10px;">
+        <!-- Compact Layout Toolbar -->
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; flex-wrap: wrap; gap: 8px;">
+          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <h3 style="font-size: 14px; font-weight: 700; color: #38bdf8; margin: 0; display: flex; align-items: center; gap: 6px;">
+              📐 Current Layout: <span style="color: #fff; font-weight: 800;">${struct.name}</span>
+            </h3>
+            <span class="badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; font-size: 11px; padding: 2px 7px;">${columns.length} Columns</span>
+            <span style="color: var(--text-muted); font-size: 11px;">(Drag rows to reorder &bull; Live database mapping)</span>
           </div>
-          <div style="display: flex; gap: 8px;">
-            <button id="btn-add-excel-column" class="btn btn-secondary btn-sm">➕ Add Column</button>
-            <button id="btn-save-excel-structure" class="btn btn-primary btn-sm">💾 Save Layout</button>
-            <button id="btn-reset-excel-structure" class="btn btn-ghost btn-sm" style="color: #cbd5e1; border: 1px solid rgba(255,255,255,0.15); font-size: 11.5px;" title="Reset back to standard factory default">🔄 Reset to Default</button>
-          </div>
-        </div>
-
-        <div style="background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: var(--radius-md); padding: 12px 16px; display: flex; align-items: flex-start; gap: 12px;">
-          <span style="font-size: 20px; line-height: 1;">💡</span>
-          <div style="font-size: 12px; color: var(--text-secondary); line-height: 1.5;">
-            <strong style="color: #38bdf8;">Standard Structure &amp; Business Rules:</strong><br />
-            &bull; <strong>Header Sequence:</strong> <code>Machine Name | Machine Brand | Machine Model | Serial Number | Unit/Factory | Floor | Line | Running | Usable Idle | Repairable Idle | Total Quantity | Machine Status | Remarks | Last Service Date</code><br />
-            &bull; <strong>Serial Number (Admin Customizable):</strong> Unique machine identifier. The display name, mandatory (required) status, default value, order, and visibility are fully customizable by Admin.<br />
-            &bull; <strong>Manufacturing:</strong> Optional manufacturing specifications (Manufacturing Details, Manufacturing Serial, Manufacturing Year) can be added to your Excel structure via <code>+ Add Column</code>.<br />
-            &bull; <strong>Auto-Calculated Total Quantity:</strong> <code>Total Quantity = Running + Usable Idle + Repairable Idle</code> (System-generated / Read-only in Excel).<br />
-            &bull; <strong>Preventive Maintenance Auto-Sync:</strong> Entering <code>Last Service Date</code> automatically synchronizes records to Preventive Maintenance and schedules the next service (+91 Days).<br />
-            &bull; <strong>Location Hierarchy:</strong> <code>Unit/Factory &rarr; Floor &rarr; Line</code> cascading dependency is strictly maintained.
+          <div style="display: flex; gap: 6px;">
+            <button id="btn-add-excel-column" class="btn btn-secondary btn-sm" style="font-size: 11.5px; padding: 4px 10px;">➕ Add Column</button>
+            <button id="btn-save-excel-structure" class="btn btn-primary btn-sm" style="font-size: 11.5px; padding: 4px 12px;">💾 Save Layout</button>
+            <button id="btn-reset-excel-structure" class="btn btn-ghost btn-sm" style="color: #94a3b8; border: 1px solid rgba(255,255,255,0.12); font-size: 11px; padding: 4px 8px;" title="Reset back to standard factory default">🔄 Reset</button>
           </div>
         </div>
 
-        <!-- Excel Columns List Table with Drag & Drop Reordering -->
-        <div style="overflow-x: auto;">
-          <table class="excel-grid-table" id="excel-structure-table">
+        <!-- Compact Collapsible Layout Guide -->
+        <div style="background: rgba(56, 189, 248, 0.05); border: 1px solid rgba(56, 189, 248, 0.18); border-radius: var(--radius-sm); padding: 6px 12px; display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+          <div style="display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+            <span style="font-size: 13px;">💡</span>
+            <strong style="color: #38bdf8;">Rules Guide:</strong>
+            <span style="color: var(--text-muted);">Serial Number customizable &bull; Total Qty auto-calculated (Running+Idle) &bull; Location: Unit &rarr; Floor &rarr; Line</span>
+          </div>
+          <button id="btn-toggle-layout-rules" class="btn btn-ghost btn-sm" style="font-size: 11px; padding: 2px 8px; color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.25); white-space: nowrap;">
+            ℹ️ View Details &darr;
+          </button>
+        </div>
+
+        <!-- Collapsible Rules Details -->
+        <div id="layout-rules-details" style="display: none; background: rgba(15, 23, 42, 0.65); border: 1px solid rgba(56, 189, 248, 0.15); border-radius: var(--radius-sm); padding: 8px 12px; font-size: 11px; color: var(--text-secondary); line-height: 1.5;">
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 8px;">
+            <div>
+              &bull; <strong>Header Sequence:</strong> <code>Machine Name | Brand | Model | Serial | Unit | Floor | Line | Running | Usable Idle | Repairable Idle | Total Qty | Status | Remarks | Service Date</code><br />
+              &bull; <strong>Serial Number:</strong> Unique identifier. Display name, mandatory status, default value, order, and visibility are fully customizable by Admin.<br />
+              &bull; <strong>Manufacturing Specs:</strong> Optional manufacturing details, serial number, and year can be added via <code>+ Add Column</code>.
+            </div>
+            <div>
+              &bull; <strong>Auto-Calculated Total:</strong> <code>Total Quantity = Running + Usable Idle + Repairable Idle</code> (Read-only in Excel).<br />
+              &bull; <strong>Preventive Maintenance:</strong> <code>Last Service Date</code> automatically synchronizes and schedules next service (+91 Days).<br />
+              &bull; <strong>Location Hierarchy:</strong> <code>Unit/Factory &rarr; Floor &rarr; Line</code> cascading dependency is strictly maintained.
+            </div>
+          </div>
+        </div>
+
+        <!-- Compact Excel Columns Table with Screen-Fit Width -->
+        <div style="overflow-x: auto; border: 1px solid var(--border-color); border-radius: var(--radius-sm);">
+          <table class="excel-grid-table table-screen-fit" id="excel-structure-table" style="width: 100% !important; min-width: 900px !important; margin: 0;">
             <thead>
-              <tr>
-                <th style="width: 44px; text-align: center;" title="Drag &amp; drop rows to reorder">⠿</th>
-                <th style="width: 50px; text-align: center;">Order</th>
-                <th>Excel Column Header (Display Label)</th>
-                <th>Permanent Field Key (Database Mapping)</th>
-                <th style="text-align: center; width: 90px;">Mandatory</th>
-                <th style="text-align: center; width: 140px;">Default Value</th>
-                <th style="text-align: center; width: 80px;">Included</th>
-                <th style="width: 110px; text-align: center;">Reorder</th>
-                <th style="width: 70px; text-align: center;">Actions</th>
+              <tr style="height: 32px; background: rgba(15, 23, 42, 0.9);">
+                <th style="width: 36px; text-align: center; padding: 4px;" title="Drag &amp; drop rows to reorder">⠿</th>
+                <th style="width: 44px; text-align: center; padding: 4px;">Order</th>
+                <th style="min-width: 180px; padding: 4px 8px;">Excel Column Header (Display Label)</th>
+                <th style="width: 220px; padding: 4px 8px;">Permanent Field Key (Database Mapping)</th>
+                <th style="width: 75px; text-align: center; padding: 4px;">Mandatory</th>
+                <th style="width: 140px; text-align: center; padding: 4px 8px;">Default Value</th>
+                <th style="width: 65px; text-align: center; padding: 4px;">Included</th>
+                <th style="width: 75px; text-align: center; padding: 4px;">Reorder</th>
+                <th style="width: 55px; text-align: center; padding: 4px;">Action</th>
               </tr>
             </thead>
             <tbody id="excel-structure-tbody">
               ${columns.map((col, idx) => {
                 const isCalculated = col.fieldKey === 'total_quantity';
                 return `
-                <tr class="draggable-row" draggable="true" data-id="${col.id}" data-idx="${idx}">
-                  <td style="text-align: center;" class="drag-handle-cell">
-                    <span class="drag-handle" title="Drag &amp; drop to reorder column position">⠿</span>
+                <tr class="draggable-row" draggable="true" data-id="${col.id}" data-idx="${idx}" style="height: 34px;">
+                  <td style="text-align: center; padding: 2px 4px;" class="drag-handle-cell">
+                    <span class="drag-handle" title="Drag &amp; drop to reorder column position" style="cursor: grab; font-size: 13px; color: var(--text-muted);">⠿</span>
                   </td>
-                  <td style="text-align: center; color: var(--text-muted); font-weight: 700;">${col.order || idx + 1}</td>
-                  <td>
-                    <input type="text" class="form-control col-header-input" data-id="${col.id}" value="${col.header}" style="padding: 4px 8px; font-weight: 600; font-size: 12.5px;" />
+                  <td style="text-align: center; color: var(--text-muted); font-weight: 700; font-size: 11.5px; padding: 2px 4px;">${col.order || idx + 1}</td>
+                  <td style="padding: 2px 6px;">
+                    <input type="text" class="form-control col-header-input" data-id="${col.id}" value="${col.header}" style="height: 27px; padding: 2px 8px; font-weight: 600; font-size: 12px; border-radius: 4px; background: rgba(15, 23, 42, 0.5);" />
                   </td>
-                  <td>
-                    <code style="background: rgba(56, 189, 248, 0.1); color: #38bdf8; padding: 2px 6px; border-radius: 4px; font-size: 11.5px; font-weight: 700;">
+                  <td style="padding: 2px 6px;">
+                    <code style="background: rgba(56, 189, 248, 0.1); color: #38bdf8; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 700;">
                       ${col.fieldKey || col.systemField}
                     </code>
-                    ${isCalculated ? `<span class="badge badge-idle" style="font-size: 10px; margin-left: 4px; color: #38bdf8;">⚙️ Auto-Calculated</span>` : ''}
-                    ${col.fieldKey === 'machine_serial' || col.fieldKey === 'serial_number' ? `<span class="badge" style="font-size: 9.5px; margin-left: 4px; background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid #38bdf8;" title="Admin can customize header label, mandatory requirement, default value, order, or visibility">✏️ Admin Customizable</span>` : ''}
-                    ${col.fieldKey === 'manufacturing' || col.fieldKey === 'manufacturing_serial' || col.fieldKey === 'manufacturing_year' ? `<span class="badge" style="font-size: 9.5px; margin-left: 4px; background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid #a855f7;">🏭 Manufacturing</span>` : ''}
+                    ${isCalculated ? `<span class="badge badge-idle" style="font-size: 9px; margin-left: 3px; color: #38bdf8; padding: 1px 4px;">⚙️ Auto</span>` : ''}
+                    ${col.fieldKey === 'machine_serial' || col.fieldKey === 'serial_number' ? `<span class="badge" style="font-size: 9px; margin-left: 3px; background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid #38bdf8; padding: 1px 4px;" title="Admin can customize header label, mandatory requirement, default value, order, or visibility">✏️ Custom</span>` : ''}
+                    ${col.fieldKey === 'manufacturing' || col.fieldKey === 'manufacturing_serial' || col.fieldKey === 'manufacturing_year' ? `<span class="badge" style="font-size: 9px; margin-left: 3px; background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid #a855f7; padding: 1px 4px;">🏭 Mfg</span>` : ''}
                   </td>
-                  <td style="text-align: center;">
+                  <td style="text-align: center; padding: 2px 4px;">
                     ${isCalculated ? `
-                      <input type="checkbox" disabled title="Total Quantity is system-generated / read-only" />
+                      <input type="checkbox" disabled title="Total Quantity is system-generated / read-only" style="width: 14px; height: 14px; opacity: 0.5;" />
                     ` : `
-                      <input type="checkbox" class="col-req-check" data-id="${col.id}" ${col.required ? 'checked' : ''} />
+                      <input type="checkbox" class="col-req-check" data-id="${col.id}" ${col.required ? 'checked' : ''} style="width: 14px; height: 14px; cursor: pointer; accent-color: #38bdf8;" />
                     `}
                   </td>
-                  <td>
+                  <td style="padding: 2px 6px;">
                     ${isCalculated ? `
-                      <input type="text" class="form-control col-def-input" data-id="${col.id}" value="— (= Running + Usable Idle + Repairable Idle)" disabled readonly title="Total Quantity = Running + Usable Idle + Repairable Idle" style="padding: 3px 6px; font-size: 11px; text-align: center; background: rgba(56, 189, 248, 0.08); color: #38bdf8; border-color: rgba(56, 189, 248, 0.3); font-weight: 600;" />
+                      <input type="text" class="form-control col-def-input" data-id="${col.id}" value="— (Auto: Running+Usable+Repairable)" disabled readonly title="Total Quantity = Running + Usable Idle + Repairable Idle" style="height: 27px; padding: 2px 6px; font-size: 10.5px; text-align: center; background: rgba(56, 189, 248, 0.08); color: #38bdf8; border-color: rgba(56, 189, 248, 0.25); font-weight: 600; border-radius: 4px;" />
                     ` : `
-                      <input type="text" class="form-control col-def-input" data-id="${col.id}" value="${col.defaultValue || ''}" placeholder="—" style="padding: 3px 6px; font-size: 11.5px; text-align: center;" />
+                      <input type="text" class="form-control col-def-input" data-id="${col.id}" value="${col.defaultValue || ''}" placeholder="—" style="height: 27px; padding: 2px 6px; font-size: 11px; text-align: center; border-radius: 4px; background: rgba(15, 23, 42, 0.5);" />
                     `}
                   </td>
-                  <td style="text-align: center;">
-                    <input type="checkbox" class="col-vis-check" data-id="${col.id}" ${col.visible ? 'checked' : ''} />
+                  <td style="text-align: center; padding: 2px 4px;">
+                    <input type="checkbox" class="col-vis-check" data-id="${col.id}" ${col.visible ? 'checked' : ''} style="width: 14px; height: 14px; cursor: pointer; accent-color: #38bdf8;" />
                   </td>
-                  <td style="text-align: center;">
-                    <div style="display: flex; gap: 4px; justify-content: center;">
-                      <button class="btn btn-secondary btn-sm btn-col-up" data-id="${col.id}" ${idx === 0 ? 'disabled' : ''} title="Move Up">▲</button>
-                      <button class="btn btn-secondary btn-sm btn-col-down" data-id="${col.id}" ${idx === columns.length - 1 ? 'disabled' : ''} title="Move Down">▼</button>
+                  <td style="text-align: center; padding: 2px 4px;">
+                    <div style="display: flex; gap: 3px; justify-content: center;">
+                      <button class="btn btn-secondary btn-sm btn-col-up" data-id="${col.id}" ${idx === 0 ? 'disabled' : ''} title="Move Up" style="padding: 1px 5px; font-size: 9px; line-height: 1.2;">▲</button>
+                      <button class="btn btn-secondary btn-sm btn-col-down" data-id="${col.id}" ${idx === columns.length - 1 ? 'disabled' : ''} title="Move Down" style="padding: 1px 5px; font-size: 9px; line-height: 1.2;">▼</button>
                     </div>
                   </td>
-                  <td style="text-align: center;">
-                    <button class="btn btn-ghost btn-sm btn-del-col" data-id="${col.id}" title="Remove Column">🗑️</button>
+                  <td style="text-align: center; padding: 2px 4px;">
+                    <button class="btn btn-ghost btn-sm btn-del-col" data-id="${col.id}" title="Remove Column" style="padding: 1px 5px; font-size: 11px; color: #f87171;">🗑️</button>
                   </td>
                 </tr>
               `;
@@ -240,60 +255,60 @@ function renderTabContent(tab, struct, columns, customFields, importHistory) {
     ];
 
     return `
-      <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 20px; display: flex; flex-direction: column; gap: 16px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+      <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 12px 14px; display: flex; flex-direction: column; gap: 10px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
           <div>
-            <h3 style="font-size: 16px; font-weight: 700; color: #34d399;">Single-Sheet Machine Inventory Template Structure &amp; Live Preview</h3>
-            <p style="font-size: 12px; color: var(--text-secondary);">
-              All machines across all categories are entered into the single <strong>Machine Inventory</strong> sheet with unlimited rows. <strong>Total Quantity = Running + Usable Idle + Repairable Idle</strong> is automatically calculated.
+            <h3 style="font-size: 14px; font-weight: 700; color: #34d399; margin: 0;">👁️ Single-Sheet Machine Inventory Template Structure &amp; Live Preview</h3>
+            <p style="font-size: 11.5px; color: var(--text-secondary); margin: 2px 0 0 0;">
+              All machines across all categories are entered into the single <strong>Machine Inventory</strong> sheet. <strong>Total Quantity</strong> is automatically calculated.
             </p>
           </div>
-          <button id="btn-preview-download-template" class="btn btn-success">
-            📥 Download Official Template (.xlsx)
+          <button id="btn-preview-download-template" class="btn btn-success btn-sm" style="font-size: 11.5px; padding: 4px 10px;">
+            📥 Download Template (.xlsx)
           </button>
         </div>
 
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; margin-bottom: 6px;">
-          <div style="background: var(--bg-card); border: 1.5px solid rgba(56, 189, 248, 0.4); border-radius: var(--radius-md); padding: 14px;">
-            <div style="font-size: 14px; font-weight: 800; color: #38bdf8;">📄 Sheet 1: Machine Inventory (Main Data Sheet)</div>
-            <div style="font-size: 11.5px; color: var(--text-secondary); margin-top: 4px;">
-              Enter all machine records (Plain Sewing, Overlock, Flatlock, Heavy &amp; Special, etc.) in this single sheet. Supports unlimited rows with row-by-row validation &amp; partial import.
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 8px;">
+          <div style="background: var(--bg-card); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: var(--radius-sm); padding: 8px 12px;">
+            <div style="font-size: 12.5px; font-weight: 800; color: #38bdf8;">📄 Sheet 1: Machine Inventory (Main Data)</div>
+            <div style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">
+              Enter all machine records in this single sheet. Row-by-row validation &amp; partial bulk import supported.
             </div>
           </div>
-          <div style="background: var(--bg-card); border: 1.5px solid rgba(192, 132, 252, 0.4); border-radius: var(--radius-md); padding: 14px;">
-            <div style="font-size: 14px; font-weight: 800; color: #c084fc;">📋 Sheet 2: Master Data Reference (Lookup Sheet)</div>
-            <div style="font-size: 11.5px; color: var(--text-secondary); margin-top: 4px;">
-              Admin reference guidelines for Location Hierarchy (Unit/Factory &rarr; Floor &rarr; Line), Machine Brands, Models, and Valid Status Codes.
+          <div style="background: var(--bg-card); border: 1px solid rgba(192, 132, 252, 0.3); border-radius: var(--radius-sm); padding: 8px 12px;">
+            <div style="font-size: 12.5px; font-weight: 800; color: #c084fc;">📋 Sheet 2: Master Reference (Lookups)</div>
+            <div style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">
+              Admin reference guidelines for Location Hierarchy (Unit &rarr; Floor &rarr; Line), Brands, Models, and Status Codes.
             </div>
           </div>
         </div>
 
         <!-- Dynamic Live Preview Grid -->
-        <div style="overflow-x: auto; border: 1px solid var(--border-color); border-radius: var(--radius-md);">
-          <table class="excel-grid-table" style="margin: 0;">
+        <div style="overflow-x: auto; border: 1px solid var(--border-color); border-radius: var(--radius-sm);">
+          <table class="excel-grid-table table-screen-fit" style="width: 100% !important; margin: 0;">
             <thead>
-              <tr>
-                ${visibleCols.map(c => `<th>${c.header}</th>`).join('')}
+              <tr style="height: 30px;">
+                ${visibleCols.map(c => `<th style="padding: 4px 8px; font-size: 12px;">${c.header}</th>`).join('')}
               </tr>
             </thead>
             <tbody>
               ${sampleRecords.map((rec, idx) => `
-                <tr>
+                <tr style="height: 32px;">
                   ${visibleCols.map(col => {
                     const val = excelService.getFieldValue(rec, col.fieldKey || col.systemField, idx);
                     if (col.fieldKey === 'machine_serial') {
-                      return `<td style="font-family: var(--font-mono); color: #38bdf8; font-weight: 700;">${val}</td>`;
+                      return `<td style="font-family: var(--font-mono); color: #38bdf8; font-weight: 700; padding: 3px 8px; font-size: 11.5px;">${val}</td>`;
                     }
                     if (col.fieldKey === 'machine_status') {
-                      return `<td style="text-align: center;"><span class="badge badge-active">${val}</span></td>`;
+                      return `<td style="text-align: center; padding: 3px 6px;"><span class="badge badge-active" style="font-size: 10px; padding: 2px 6px;">${val}</span></td>`;
                     }
                     if (col.fieldKey === 'running' || col.fieldKey === 'usable_idle' || col.fieldKey === 'repairable_idle') {
-                      return `<td style="text-align: center; font-weight: 600;">${val}</td>`;
+                      return `<td style="text-align: center; font-weight: 600; padding: 3px 6px; font-size: 11.5px;">${val}</td>`;
                     }
                     if (col.fieldKey === 'total_quantity' || col.fieldKey === 'quantity') {
-                      return `<td style="text-align: center; font-weight: 800; color: #34d399; background: rgba(52, 211, 153, 0.1);">${val}</td>`;
+                      return `<td style="text-align: center; font-weight: 800; color: #34d399; background: rgba(52, 211, 153, 0.1); padding: 3px 6px; font-size: 11.5px;">${val}</td>`;
                     }
-                    return `<td>${val}</td>`;
+                    return `<td style="padding: 3px 8px; font-size: 12px;">${val}</td>`;
                   }).join('')}
                 </tr>
               `).join('')}
@@ -306,39 +321,39 @@ function renderTabContent(tab, struct, columns, customFields, importHistory) {
 
   if (tab === 'history') {
     return `
-      <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-sm);">
-        <table class="excel-grid-table">
+      <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); overflow: hidden; box-shadow: var(--shadow-sm);">
+        <table class="excel-grid-table table-screen-fit" style="width: 100% !important; margin: 0;">
           <thead>
-            <tr>
-              <th style="width: 160px;">Import Date &amp; Time</th>
-              <th>Spreadsheet File</th>
-              <th>Imported By</th>
-              <th>Mode</th>
-              <th style="text-align: center;">Total Rows</th>
-              <th style="text-align: center; color: #34d399;">Created</th>
-              <th style="text-align: center; color: #c084fc;">Updated</th>
-              <th style="text-align: center; color: #f87171;">Failed</th>
-              <th style="text-align: center;">Status</th>
+            <tr style="height: 32px;">
+              <th style="width: 160px; padding: 4px 8px;">Import Date &amp; Time</th>
+              <th style="padding: 4px 8px;">Spreadsheet File</th>
+              <th style="padding: 4px 8px;">Imported By</th>
+              <th style="padding: 4px 8px;">Mode</th>
+              <th style="text-align: center; padding: 4px 8px;">Total Rows</th>
+              <th style="text-align: center; color: #34d399; padding: 4px 8px;">Created</th>
+              <th style="text-align: center; color: #c084fc; padding: 4px 8px;">Updated</th>
+              <th style="text-align: center; color: #f87171; padding: 4px 8px;">Failed</th>
+              <th style="text-align: center; padding: 4px 8px;">Status</th>
             </tr>
           </thead>
           <tbody>
             ${importHistory.length === 0 ? `
-              <tr><td colspan="9" style="text-align: center; color: var(--text-muted); padding: 30px;">No bulk import logs recorded yet.</td></tr>
+              <tr><td colspan="9" style="text-align: center; color: var(--text-muted); padding: 24px;">No bulk import logs recorded yet.</td></tr>
             ` : importHistory.map(h => `
-              <tr>
-                <td style="font-family: var(--font-mono); font-size: 11.5px; color: var(--text-muted);">${new Date(h.importedAt).toLocaleString()}</td>
-                <td>
-                  <div style="font-weight: 700; color: #fff;">📊 ${h.fileName}</div>
-                  ${h.sheetStats ? `<div style="font-size: 10.5px; color: var(--text-secondary);">${h.sheetStats.length} Sheet(s) processed</div>` : ''}
+              <tr style="height: 34px;">
+                <td style="font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); padding: 4px 8px;">${new Date(h.importedAt).toLocaleString()}</td>
+                <td style="padding: 4px 8px;">
+                  <div style="font-weight: 700; color: #fff; font-size: 12px;">📊 ${h.fileName}</div>
+                  ${h.sheetStats ? `<div style="font-size: 10px; color: var(--text-secondary);">${h.sheetStats.length} Sheet(s) processed</div>` : ''}
                 </td>
-                <td style="color: #38bdf8; font-weight: 600;">${h.importedBy}</td>
-                <td><span class="badge badge-idle">${(h.mode || 'INSERT').replace(/_/g, ' ')}</span></td>
-                <td style="text-align: center; font-weight: 700;">${h.totalRows || h.validRows || 0}</td>
-                <td style="text-align: center; color: #34d399; font-weight: 700;">${h.insertedRows || 0}</td>
-                <td style="text-align: center; color: #c084fc; font-weight: 700;">${h.updatedRows || 0}</td>
-                <td style="text-align: center; color: ${h.failedRows > 0 ? '#f87171' : 'var(--text-muted)'}; font-weight: 700;">${h.failedRows || 0}</td>
-                <td style="text-align: center;">
-                  <span class="badge ${h.status === 'SUCCESS' ? 'badge-active' : (h.status === 'PARTIAL_SUCCESS' ? 'badge-maint' : 'badge-breakdown')}">
+                <td style="color: #38bdf8; font-weight: 600; font-size: 12px; padding: 4px 8px;">${h.importedBy}</td>
+                <td style="padding: 4px 8px;"><span class="badge badge-idle" style="font-size: 10px;">${(h.mode || 'INSERT').replace(/_/g, ' ')}</span></td>
+                <td style="text-align: center; font-weight: 700; font-size: 12px; padding: 4px 8px;">${h.totalRows || h.validRows || 0}</td>
+                <td style="text-align: center; color: #34d399; font-weight: 700; font-size: 12px; padding: 4px 8px;">${h.insertedRows || 0}</td>
+                <td style="text-align: center; color: #c084fc; font-weight: 700; font-size: 12px; padding: 4px 8px;">${h.updatedRows || 0}</td>
+                <td style="text-align: center; color: ${h.failedRows > 0 ? '#f87171' : 'var(--text-muted)'}; font-weight: 700; font-size: 12px; padding: 4px 8px;">${h.failedRows || 0}</td>
+                <td style="text-align: center; padding: 4px 8px;">
+                  <span class="badge ${h.status === 'SUCCESS' ? 'badge-active' : (h.status === 'PARTIAL_SUCCESS' ? 'badge-maint' : 'badge-breakdown')}" style="font-size: 10.5px;">
                     ${h.status || 'COMPLETED'}
                   </span>
                 </td>
@@ -364,6 +379,16 @@ export function initExcelManagerEvents() {
       }
     });
   });
+
+  const btnToggleRules = document.getElementById('btn-toggle-layout-rules');
+  const rulesDetails = document.getElementById('layout-rules-details');
+  if (btnToggleRules && rulesDetails) {
+    btnToggleRules.addEventListener('click', () => {
+      const isHidden = rulesDetails.style.display === 'none';
+      rulesDetails.style.display = isHidden ? 'block' : 'none';
+      btnToggleRules.innerHTML = isHidden ? 'ℹ️ Hide Details &uarr;' : 'ℹ️ View Details &darr;';
+    });
+  }
 
   const btnDownload = document.getElementById('btn-mgr-download-template');
   if (btnDownload) {
