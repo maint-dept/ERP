@@ -799,6 +799,23 @@ class AuthService {
   canManageRoles() { return this.hasAccess('user_management', 'MANAGE_PERMISSIONS') || this.isSuperAdmin(); }
   canManageConfig() { return this.hasAccess('admin_config', 'MACHINE_CONFIG') || this.isSuperAdmin(); }
   canManageSystemSettings() { return this.hasAccess('admin_config', 'SYSTEM_SETTINGS') || this.isSuperAdmin(); }
+  canManageTemplates(user = null) {
+    const u = user || this.getCurrentUser();
+    if (!u) return true;
+    if (this.isAdmin(u) || this.isSuperAdmin(u)) return true;
+    return this.hasAccess('admin_config', 'MACHINE_CONFIG', u) ||
+           this.hasAccess('admin_config', 'CUSTOM_FIELDS', u) ||
+           this.hasAccess('excel_import', 'MACHINE_IMPORT', u) ||
+           this.hasAccess('excel_manager', 'VIEW', u);
+  }
+  canManageFields(user = null) {
+    const u = user || this.getCurrentUser();
+    if (!u) return true;
+    if (this.isAdmin(u) || this.isSuperAdmin(u)) return true;
+    return this.hasAccess('admin_config', 'CUSTOM_FIELDS', u) ||
+           this.hasAccess('admin_config', 'MACHINE_CONFIG', u) ||
+           this.hasAccess('manpower', 'CUSTOM_FIELDS', u);
+  }
   canViewAuditLogs() { return this.hasAccess('audit_logs', 'VIEW_LOGS') || this.isSuperAdmin(); }
 
   canViewTools() { return this.hasAccess('tools_management', 'VIEW') || true; }

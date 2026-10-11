@@ -609,6 +609,7 @@ export function initExcelManagerEvents() {
         struct.columns = (struct.columns || []).filter(c => c.id !== id);
         excelService.saveStructure(struct);
         state.emit('inventory:updated');
+        refreshStructureView();
       }
     });
   });

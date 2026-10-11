@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Al-Muslim Group Garments Factory Maintenance Machine ERP
  * Dynamic Custom Fields Engine - Admin Full Control & Global Synchronization
  */
@@ -30,8 +30,15 @@ class CustomFieldService {
     return FIELD_TYPES;
   }
 
+  canManageFields() {
+    if (typeof authService.canManageFields === 'function') {
+      return authService.canManageFields();
+    }
+    return typeof authService.isAdmin === 'function' ? (authService.isAdmin() || authService.isSuperAdmin()) : true;
+  }
+
   async createField(fieldData) {
-    if (!authService.canManageFields()) {
+    if (!this.canManageFields()) {
       throw new Error('Only authorized administrators can create custom fields.');
     }
 
@@ -71,7 +78,7 @@ class CustomFieldService {
   }
 
   async updateField(id, updates) {
-    if (!authService.canManageFields()) {
+    if (!this.canManageFields()) {
       throw new Error('Only authorized administrators can modify custom fields.');
     }
 
@@ -100,7 +107,7 @@ class CustomFieldService {
   }
 
   toggleFieldStatus(id) {
-    if (!authService.canManageFields()) throw new Error('Unauthorized.');
+    if (!this.canManageFields()) throw new Error('Unauthorized.');
     const field = storage.getItem(TABLE_NAMES.CUSTOM_FIELDS, id);
     if (!field) return null;
 
@@ -112,7 +119,7 @@ class CustomFieldService {
   }
 
   toggleTableVisibility(id) {
-    if (!authService.canManageFields()) throw new Error('Unauthorized.');
+    if (!this.canManageFields()) throw new Error('Unauthorized.');
     const field = storage.getItem(TABLE_NAMES.CUSTOM_FIELDS, id);
     if (!field) return null;
 
@@ -122,7 +129,7 @@ class CustomFieldService {
   }
 
   toggleFilterVisibility(id) {
-    if (!authService.canManageFields()) throw new Error('Unauthorized.');
+    if (!this.canManageFields()) throw new Error('Unauthorized.');
     const field = storage.getItem(TABLE_NAMES.CUSTOM_FIELDS, id);
     if (!field) return null;
 
@@ -132,7 +139,7 @@ class CustomFieldService {
   }
 
   async deleteField(id) {
-    if (!authService.canManageFields()) {
+    if (!this.canManageFields()) {
       throw new Error('Only administrators can delete custom fields.');
     }
 
@@ -153,7 +160,7 @@ class CustomFieldService {
   }
 
   moveFieldOrder(id, direction = 'up') {
-    if (!authService.canManageFields()) return;
+    if (!this.canManageFields()) return;
     const fields = this.getAllFields();
     const idx = fields.findIndex(f => f.id === id);
     if (idx === -1) return;

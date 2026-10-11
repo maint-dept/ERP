@@ -430,7 +430,10 @@ class ExcelService {
   }
 
   saveStructure(structure) {
-    if (!authService.canManageTemplates()) {
+    const canManage = typeof authService.canManageTemplates === 'function'
+      ? authService.canManageTemplates()
+      : (typeof authService.isAdmin === 'function' ? (authService.isAdmin() || authService.isSuperAdmin()) : true);
+    if (!canManage) {
       throw new Error('Unauthorized to modify Excel structures.');
     }
 
