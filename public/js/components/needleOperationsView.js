@@ -28,6 +28,7 @@ let filterActionType = 'ALL';
 let searchQuery = '';
 let txActionType = 'USAGE_REPLACE'; // 'USAGE_REPLACE' | 'USAGE_CONSUMED' | 'ADD_INSTALLED' | 'RETURN_STORE' | 'BALANCE_ADJUST'
 let txQuantity = 1;
+let floorOverviewCollapsed = true; // Default collapsed to maximize workspace table area
 
 export function renderNeedleOperationsView() {
   const allMachines = storage.getTable(TABLE_NAMES.MACHINES) || [];
@@ -45,9 +46,10 @@ export function renderNeedleOperationsView() {
       const matchSerial = (tx.serialNumber || '').toLowerCase().includes(q);
       const matchModel = (tx.modelStr || '').toLowerCase().includes(q);
       const matchTech = (tx.technician || '').toLowerCase().includes(q);
+      const matchIssuer = (tx.needleIssuer || '').toLowerCase().includes(q);
       const matchTx = (tx.txId || '').toLowerCase().includes(q);
       const matchMName = (tx.machineNameStr || '').toLowerCase().includes(q);
-      if (!matchSerial && !matchModel && !matchTech && !matchTx && !matchMName) return false;
+      if (!matchSerial && !matchModel && !matchTech && !matchIssuer && !matchTx && !matchMName) return false;
     }
     return true;
   });
@@ -67,134 +69,155 @@ export function renderNeedleOperationsView() {
   const filterLines = filterFloorId !== 'ALL' ? masterDataService.getLines(filterFloorId) : [];
 
   return `
-    <div class="page-view needle-ops-root" id="needle-ops-page-root" style="padding: 10px 14px 24px 14px; display: flex; flex-direction: column; gap: 10px; height: 100%; overflow-y: auto; box-sizing: border-box; font-family: var(--font-main);">
+    <div class="page-view needle-ops-root" id="needle-ops-page-root" style="padding: 8px 12px 20px 12px; display: flex; flex-direction: column; gap: 8px; height: 100%; overflow-y: auto; box-sizing: border-box; font-family: var(--font-main);">
       
-      <!-- Top Header & Primary Navigation Card -->
-      <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap;">
-        <div style="display: flex; align-items: center; gap: 10px;">
-          <div style="font-size: 22px; background: rgba(56, 189, 248, 0.12); border: 1px solid #38bdf8; border-radius: 8px; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+      <!-- Top Header & Primary Navigation Bar (Ultra-Compact & Space Efficient) -->
+      <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 6px 12px; display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; min-height: 38px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <div style="font-size: 16px; background: rgba(56, 189, 248, 0.12); border: 1px solid #38bdf8; border-radius: 6px; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
             🪡
           </div>
           <div>
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <h1 style="font-size: 16px; font-weight: 800; color: #fff; margin: 0; letter-spacing: -0.2px;">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <h1 style="font-size: 14px; font-weight: 800; color: #fff; margin: 0; line-height: 1.1;">
                 Needle Flow Studio
               </h1>
-              <span class="badge badge-active" style="font-size: 10px; font-weight: 800;">Real-Time Sync</span>
+              <span class="badge badge-active" style="font-size: 9px; padding: 1px 6px; font-weight: 800;">Real-Time Sync</span>
             </div>
-            <div style="font-size: 11px; color: #38bdf8; margin-top: 2px;">
+            <div style="font-size: 10px; color: #38bdf8; margin-top: 1px; line-height: 1.1;">
               Machine Operation &bull; Plus/Minus Balance Tracking &bull; Relocate &amp; Verify Integration
             </div>
           </div>
         </div>
 
         <!-- Quick Top Action Buttons -->
-        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-          <button type="button" id="btn-open-needle-tx-modal" class="btn btn-primary btn-sm" style="font-weight: 800; font-size: 12px; padding: 6px 14px; background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); border-color: #38bdf8; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 10px rgba(2, 132, 199, 0.4);">
-            <span>➕</span> New Needle Entry / Adjustment
+        <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+          <button type="button" id="btn-open-needle-tx-modal" class="btn btn-primary btn-sm" style="font-weight: 800; font-size: 11.5px; padding: 4px 12px; height: 30px; background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); border-color: #38bdf8; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 2px 8px rgba(2, 132, 199, 0.35);">
+            <span>➕</span> New Needle Entry
           </button>
-          <button type="button" id="btn-export-needle-ops-excel" class="btn btn-secondary btn-sm" style="font-weight: 700; font-size: 12px; padding: 6px 12px; border: 1px solid #10b981; color: #34d399; background: rgba(16, 185, 129, 0.08); display: inline-flex; align-items: center; gap: 5px;">
-            <span>📊</span> Export Excel Report
+          <button type="button" id="btn-export-needle-ops-excel" class="btn btn-secondary btn-sm" style="font-weight: 700; font-size: 11px; padding: 4px 10px; height: 30px; border: 1px solid #10b981; color: #34d399; background: rgba(16, 185, 129, 0.08); display: inline-flex; align-items: center; gap: 4px;">
+            <span>📊</span> Export Excel
           </button>
-          <button type="button" id="btn-nav-goto-relocate-needle" class="btn btn-ghost btn-sm" style="font-weight: 700; font-size: 11.5px; border: 1px solid rgba(255,255,255,0.15); color: #cbd5e1; display: inline-flex; align-items: center; gap: 5px;" title="Open Relocate & Verify Needle Tracker">
+          <button type="button" id="btn-nav-goto-relocate-needle" class="btn btn-ghost btn-sm" style="font-weight: 700; font-size: 11px; padding: 4px 10px; height: 30px; border: 1px solid rgba(255,255,255,0.15); color: #cbd5e1; display: inline-flex; align-items: center; gap: 4px;" title="Open Relocate & Verify Needle Tracker">
             <span>📍</span> Relocate &amp; Verify
           </button>
         </div>
       </div>
 
-      <!-- Live Metric Summary KPI Cards -->
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px;">
-        <div style="background: var(--bg-surface); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: var(--radius-md); padding: 10px 14px;">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase; font-weight: 700;">Machines Tracked</span>
-            <span style="font-size: 16px;">🧵</span>
+      <!-- Live Metric Summary KPI Cards (Compact & High-Density) -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 6px;">
+        <div style="background: var(--bg-surface); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 6px; padding: 6px 10px; display: flex; align-items: center; justify-content: space-between; gap: 6px;">
+          <div>
+            <div style="font-size: 9.5px; color: var(--text-secondary); text-transform: uppercase; font-weight: 800;">Machines Tracked</div>
+            <div style="font-size: 17px; font-weight: 900; color: #fff; font-family: var(--font-mono); line-height: 1.1; margin-top: 1px;">
+              ${allMachines.length}
+            </div>
+            <div style="font-size: 9.5px; color: #38bdf8;">In Production Inventory</div>
           </div>
-          <div style="font-size: 22px; font-weight: 900; color: #fff; font-family: var(--font-mono); margin-top: 4px;">
-            ${allMachines.length}
-          </div>
-          <div style="font-size: 10.5px; color: #38bdf8; margin-top: 2px;">In Production Inventory</div>
+          <span style="font-size: 18px; opacity: 0.85;">🧵</span>
         </div>
 
-        <div style="background: var(--bg-surface); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: var(--radius-md); padding: 10px 14px;">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase; font-weight: 700;">Needles Used / Broken</span>
-            <span style="font-size: 16px;">⚠️</span>
+        <div style="background: var(--bg-surface); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 6px; padding: 6px 10px; display: flex; align-items: center; justify-content: space-between; gap: 6px;">
+          <div>
+            <div style="font-size: 9.5px; color: var(--text-secondary); text-transform: uppercase; font-weight: 800;">Needles Used / Broken</div>
+            <div style="font-size: 17px; font-weight: 900; color: #f87171; font-family: var(--font-mono); line-height: 1.1; margin-top: 1px;">
+              ${totalUsed} <span style="font-size: 10px; font-weight: 600; color: #cbd5e1;">Pcs</span>
+            </div>
+            <div style="font-size: 9.5px; color: #f87171;">Deducted / Consumed</div>
           </div>
-          <div style="font-size: 22px; font-weight: 900; color: #f87171; font-family: var(--font-mono); margin-top: 4px;">
-            ${totalUsed} <span style="font-size: 12px; font-weight: 600; color: #cbd5e1;">Pcs</span>
-          </div>
-          <div style="font-size: 10.5px; color: #f87171; margin-top: 2px;">Deducted / Consumed</div>
+          <span style="font-size: 18px; opacity: 0.85;">⚠️</span>
         </div>
 
-        <div style="background: var(--bg-surface); border: 1px solid rgba(52, 211, 153, 0.25); border-radius: var(--radius-md); padding: 10px 14px;">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase; font-weight: 700;">Added / Installed</span>
-            <span style="font-size: 16px;">📥</span>
+        <div style="background: var(--bg-surface); border: 1px solid rgba(52, 211, 153, 0.25); border-radius: 6px; padding: 6px 10px; display: flex; align-items: center; justify-content: space-between; gap: 6px;">
+          <div>
+            <div style="font-size: 9.5px; color: var(--text-secondary); text-transform: uppercase; font-weight: 800;">Added / Installed</div>
+            <div style="font-size: 17px; font-weight: 900; color: #34d399; font-family: var(--font-mono); line-height: 1.1; margin-top: 1px;">
+              ${totalAdded} <span style="font-size: 10px; font-weight: 600; color: #cbd5e1;">Pcs</span>
+            </div>
+            <div style="font-size: 9.5px; color: #34d399;">Added from Store</div>
           </div>
-          <div style="font-size: 22px; font-weight: 900; color: #34d399; font-family: var(--font-mono); margin-top: 4px;">
-            ${totalAdded} <span style="font-size: 12px; font-weight: 600; color: #cbd5e1;">Pcs</span>
-          </div>
-          <div style="font-size: 10.5px; color: #34d399; margin-top: 2px;">Added from Store</div>
+          <span style="font-size: 18px; opacity: 0.85;">📥</span>
         </div>
 
-        <div style="background: var(--bg-surface); border: 1px solid rgba(251, 191, 36, 0.25); border-radius: var(--radius-md); padding: 10px 14px;">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase; font-weight: 700;">Returned to Store</span>
-            <span style="font-size: 16px;">🔄</span>
+        <div style="background: var(--bg-surface); border: 1.5px solid rgba(251, 191, 36, 0.4); border-radius: 6px; padding: 6px 10px; display: flex; align-items: center; justify-content: space-between; gap: 6px; box-shadow: 0 0 10px rgba(251, 191, 36, 0.08);">
+          <div>
+            <div style="font-size: 9.5px; color: #fbbf24; text-transform: uppercase; font-weight: 800;">Returned to Store (Needle Issuer)</div>
+            <div style="font-size: 17px; font-weight: 900; color: #fbbf24; font-family: var(--font-mono); line-height: 1.1; margin-top: 1px;">
+              ${totalReturned} <span style="font-size: 10px; font-weight: 600; color: #cbd5e1;">Pcs</span>
+            </div>
+            <div style="font-size: 9.5px; color: #fbbf24;">Unused / Store Inflow</div>
           </div>
-          <div style="font-size: 22px; font-weight: 900; color: #fbbf24; font-family: var(--font-mono); margin-top: 4px;">
-            ${totalReturned} <span style="font-size: 12px; font-weight: 600; color: #cbd5e1;">Pcs</span>
-          </div>
-          <div style="font-size: 10.5px; color: #fbbf24; margin-top: 2px;">Unused / Recovered</div>
+          <span style="font-size: 18px; opacity: 0.85;">🔄</span>
         </div>
 
-        <div style="background: var(--bg-surface); border: 1px solid rgba(168, 85, 247, 0.25); border-radius: var(--radius-md); padding: 10px 14px;">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase; font-weight: 700;">Total Transactions</span>
-            <span style="font-size: 16px;">📜</span>
+        <div style="background: var(--bg-surface); border: 1px solid rgba(168, 85, 247, 0.25); border-radius: 6px; padding: 6px 10px; display: flex; align-items: center; justify-content: space-between; gap: 6px;">
+          <div>
+            <div style="font-size: 9.5px; color: var(--text-secondary); text-transform: uppercase; font-weight: 800;">Total Transactions</div>
+            <div style="font-size: 17px; font-weight: 900; color: #c084fc; font-family: var(--font-mono); line-height: 1.1; margin-top: 1px;">
+              ${transactions.length}
+            </div>
+            <div style="font-size: 9.5px; color: #c084fc;">Logged Audit Entries</div>
           </div>
-          <div style="font-size: 22px; font-weight: 900; color: #c084fc; font-family: var(--font-mono); margin-top: 4px;">
-            ${transactions.length}
-          </div>
-          <div style="font-size: 10.5px; color: #c084fc; margin-top: 2px;">Logged Audit Entries</div>
+          <span style="font-size: 18px; opacity: 0.85;">📜</span>
         </div>
       </div>
 
-      <!-- Floor Balance Overview Quick Strip -->
-      <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 10px 14px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
-          <div style="font-size: 13px; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 6px;">
-            <span>🏢 Floor-wise Needle PRESENT &amp; Balance Overview</span>
+      <!-- Floor Balance Overview (Space-Saving Collapsible) -->
+      <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 6px 12px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span style="font-size: 13px;">🏢</span>
+            <span style="font-size: 12px; font-weight: 800; color: #fff;">Floor-wise Needle Balance Overview</span>
+            <span class="badge" style="background: rgba(56, 189, 248, 0.1); color: #38bdf8; font-size: 10px; padding: 1px 6px;">${floors.length} Floors</span>
           </div>
-          <div style="font-size: 11px; color: var(--text-muted);">
-            Auto-calculated from Machine Specifications &bull; Synchronized with Relocate &amp; Verify
-          </div>
+          <button type="button" id="btn-toggle-floor-overview" class="btn btn-ghost btn-sm" style="font-size: 10.5px; font-weight: 700; padding: 2px 8px; color: #38bdf8; border: 1px solid rgba(56,189,248,0.25); display: inline-flex; align-items: center; gap: 4px;">
+            ${floorOverviewCollapsed ? '👁️ Show Floor Details ▾' : '▴ Hide Floor Details'}
+          </button>
         </div>
 
-        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 8px;">
-          ${floors.slice(0, 8).map(flr => {
-            const metrics = needleService.getFloorNeedleMetrics(flr.id);
-            const isShort = metrics.shortageExcess < 0;
-            return `
-              <div style="background: rgba(0,0,0,0.25); border: 1px solid ${isShort ? 'rgba(239,68,68,0.3)' : 'rgba(56,189,248,0.2)'}; border-radius: 8px; padding: 8px 12px; display: flex; justify-content: space-between; align-items: center;">
-                <div>
-                  <div style="font-weight: 800; font-size: 12.5px; color: #fff;">${flr.name}</div>
-                  <div style="font-size: 10.5px; color: var(--text-muted); margin-top: 2px;">
-                    Req: <strong style="color: #cbd5e1;">${metrics.requiredQuantity}</strong> &bull; Present: <strong style="color: #38bdf8;">${metrics.presentQuantity}</strong>
+        ${!floorOverviewCollapsed ? `
+          <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 6px; margin-top: 6px;">
+            ${floors.slice(0, 8).map(flr => {
+              const metrics = needleService.getFloorNeedleMetrics(flr.id);
+              const isShort = metrics.shortageExcess < 0;
+              return `
+                <div style="background: rgba(0,0,0,0.25); border: 1px solid ${isShort ? 'rgba(239,68,68,0.3)' : 'rgba(56,189,248,0.2)'}; border-radius: 6px; padding: 6px 10px; display: flex; justify-content: space-between; align-items: center;">
+                  <div>
+                    <div style="font-weight: 800; font-size: 11.5px; color: #fff;">${flr.name}</div>
+                    <div style="font-size: 9.5px; color: var(--text-muted); margin-top: 1px;">
+                      Req: <strong style="color: #cbd5e1;">${metrics.requiredQuantity}</strong> &bull; Present: <strong style="color: #38bdf8;">${metrics.presentQuantity}</strong>
+                    </div>
+                  </div>
+                  <div style="text-align: right;">
+                    <span class="badge ${isShort ? 'badge-danger' : 'badge-active'}" style="font-size: 9.5px; font-weight: 800;">
+                      ${isShort ? `${metrics.shortageExcess} Short` : `+${metrics.shortageExcess} Balanced`}
+                    </span>
+                    <div style="font-size: 9.5px; color: var(--text-secondary); margin-top: 1px;">
+                      Stock: <strong>${metrics.balanceQuantity}</strong>
+                    </div>
                   </div>
                 </div>
-                <div style="text-align: right;">
-                  <span class="badge ${isShort ? 'badge-danger' : 'badge-active'}" style="font-size: 10px; font-weight: 800;">
-                    ${isShort ? `${metrics.shortageExcess} Short` : `+${metrics.shortageExcess} Balanced`}
+              `;
+            }).join('')}
+          </div>
+        ` : `
+          <!-- Compact Single-Row Horizontal Preview Strip When Collapsed (Zero Space Waste) -->
+          <div style="display: flex; gap: 6px; overflow-x: auto; padding-top: 4px; padding-bottom: 2px;">
+            ${floors.slice(0, 8).map(flr => {
+              const metrics = needleService.getFloorNeedleMetrics(flr.id);
+              const isShort = metrics.shortageExcess < 0;
+              return `
+                <div style="background: rgba(0,0,0,0.25); border: 1px solid ${isShort ? 'rgba(239,68,68,0.3)' : 'rgba(255,255,255,0.08)'}; border-radius: 6px; padding: 2px 7px; font-size: 10.5px; white-space: nowrap; display: inline-flex; align-items: center; gap: 5px;">
+                  <strong style="color: #fff;">${flr.name}:</strong>
+                  <span style="color: #38bdf8; font-weight: 700;">${metrics.presentQuantity} Prs</span>
+                  <span class="badge ${isShort ? 'badge-danger' : 'badge-active'}" style="font-size: 9px; padding: 0 4px;">
+                    ${isShort ? `${metrics.shortageExcess}` : `+${metrics.shortageExcess}`}
                   </span>
-                  <div style="font-size: 10px; color: var(--text-secondary); margin-top: 2px;">
-                    Stock: <strong>${metrics.balanceQuantity}</strong>
-                  </div>
                 </div>
-              </div>
-            `;
-          }).join('')}
-        </div>
+              `;
+            }).join('')}
+          </div>
+        `}
       </div>
 
       <!-- Filters & Transaction History Section -->
@@ -236,7 +259,7 @@ export function renderNeedleOperationsView() {
               <option value="USAGE_REPLACE" ${filterActionType === 'USAGE_REPLACE' ? 'selected' : ''}>Breakage &amp; Replace</option>
               <option value="USAGE_CONSUMED" ${filterActionType === 'USAGE_CONSUMED' ? 'selected' : ''}>Used / Broken (-)</option>
               <option value="ADD_INSTALLED" ${filterActionType === 'ADD_INSTALLED' ? 'selected' : ''}>Added / Installed (+)</option>
-              <option value="RETURN_STORE" ${filterActionType === 'RETURN_STORE' ? 'selected' : ''}>Returned to Store</option>
+              <option value="RETURN_STORE" ${filterActionType === 'RETURN_STORE' ? 'selected' : ''}>Returned to Store (Needle Issuer)</option>
               <option value="BALANCE_ADJUST" ${filterActionType === 'BALANCE_ADJUST' ? 'selected' : ''}>Calibration / Audit</option>
             </select>
 
@@ -263,7 +286,7 @@ export function renderNeedleOperationsView() {
                 <th style="padding: 8px 10px; text-align: center; width: 75px;">Prev Bal</th>
                 <th style="padding: 8px 10px; text-align: center; width: 85px;">Change</th>
                 <th style="padding: 8px 10px; text-align: center; width: 80px;">Present Bal</th>
-                <th style="padding: 8px 10px; width: 130px;">Technician / User</th>
+                <th style="padding: 8px 10px; width: 140px;">Technician / Issuer</th>
                 <th style="padding: 8px 10px; width: 130px;">Date &amp; Time</th>
                 <th style="padding: 8px 10px;">Remarks</th>
               </tr>
@@ -300,7 +323,7 @@ export function renderNeedleOperationsView() {
                   deltaColor = '#34d399';
                 } else if (tx.actionType === 'RETURN_STORE') {
                   badgeClass = 'badge-warning';
-                  actionLabel = '🔄 Store Return';
+                  actionLabel = '🔄 Store Return (Issuer)';
                   deltaStr = `-${tx.quantity}`;
                   deltaColor = '#fbbf24';
                 } else if (tx.actionType === 'BALANCE_ADJUST') {
@@ -353,7 +376,8 @@ export function renderNeedleOperationsView() {
                       </strong>
                     </td>
                     <td style="padding: 7px 10px;">
-                      <div style="color: #fff; font-weight: 600;">${tx.technician || 'Technician'}</div>
+                      <div style="color: #fff; font-weight: 700;">${tx.technician || 'Technician'}</div>
+                      ${tx.needleIssuer ? `<div style="font-size: 10px; color: #fbbf24; font-weight: 700;">Issuer: ${tx.needleIssuer}</div>` : ''}
                       <div style="font-size: 9.5px; color: var(--text-muted);">${tx.updatedBy}</div>
                     </td>
                     <td style="padding: 7px 10px; color: var(--text-secondary); font-size: 10.5px; font-family: var(--font-mono);">
@@ -516,8 +540,8 @@ function renderTransactionModal() {
               <label style="background: ${txActionType === 'RETURN_STORE' ? 'rgba(251, 191, 36, 0.2)' : 'rgba(255,255,255,0.03)'}; border: 1px solid ${txActionType === 'RETURN_STORE' ? '#fbbf24' : 'rgba(255,255,255,0.1)'}; border-radius: 6px; padding: 8px 10px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: #fff; margin: 0;">
                 <input type="radio" name="tx-action-type-radio" value="RETURN_STORE" ${txActionType === 'RETURN_STORE' ? 'checked' : ''} style="accent-color: #fbbf24;" />
                 <div>
-                  <strong>🔄 Return to Store</strong>
-                  <div style="font-size: 10px; color: var(--text-muted);">Unused needle returned</div>
+                  <strong>🔄 Return to Store (Needle Issuer)</strong>
+                  <div style="font-size: 10px; color: var(--text-muted);">Unused needle returned to store</div>
                 </div>
               </label>
             </div>
@@ -577,6 +601,7 @@ function renderTransactionModal() {
           </div>
 
           <!-- Technician & Reason/Remarks -->
+          <!-- Technician & Needle Issuer & Date -->
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
             <div class="form-group">
               <label class="form-label" style="font-size: 11.5px; color: var(--text-secondary);">Technician / Operator:</label>
@@ -591,6 +616,20 @@ function renderTransactionModal() {
             </div>
 
             <div class="form-group">
+              <label class="form-label" style="font-size: 11.5px; color: #fbbf24; font-weight: 700;">Needle Issuer / Receiver (Store Staff):</label>
+              <input 
+                type="text" 
+                id="modal-inp-tx-issuer" 
+                class="form-control" 
+                placeholder="e.g. Needle Store Keeper / Issuer Name" 
+                value="" 
+                style="font-size: 13px;"
+              />
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <div class="form-group">
               <label class="form-label" style="font-size: 11.5px; color: var(--text-secondary);">Transaction Date:</label>
               <input 
                 type="date" 
@@ -600,17 +639,17 @@ function renderTransactionModal() {
                 style="font-size: 13px;"
               />
             </div>
-          </div>
 
-          <div class="form-group">
-            <label class="form-label" style="font-size: 11.5px; color: var(--text-secondary);">Reason / Remarks:</label>
-            <input 
-              type="text" 
-              id="modal-inp-tx-remarks" 
-              class="form-control" 
-              placeholder="e.g. Needle tip snapped on waist seam, Replaced with OEM Organ needle" 
-              style="font-size: 13px;"
-            />
+            <div class="form-group">
+              <label class="form-label" style="font-size: 11.5px; color: var(--text-secondary);">Reason / Remarks:</label>
+              <input 
+                type="text" 
+                id="modal-inp-tx-remarks" 
+                class="form-control" 
+                placeholder="e.g. Returned unused needle to store issuer" 
+                style="font-size: 13px;"
+              />
+            </div>
           </div>
 
           <!-- Negative Balance Warning Override (if applicable) -->
@@ -708,6 +747,7 @@ export function initNeedleOperationsEvents() {
     const needleBrand = root.querySelector('#modal-inp-tx-needle-brand')?.value || '';
     const needleType = root.querySelector('#modal-inp-tx-needle-type')?.value || '';
     const technician = root.querySelector('#modal-inp-tx-technician')?.value || '';
+    const needleIssuer = root.querySelector('#modal-inp-tx-issuer')?.value || '';
     const remarks = root.querySelector('#modal-inp-tx-remarks')?.value || '';
     const dateVal = root.querySelector('#modal-inp-tx-date')?.value || null;
     const allowNegative = root.querySelector('#chk-allow-negative-balance')?.checked || false;
@@ -721,6 +761,7 @@ export function initNeedleOperationsEvents() {
         needleType,
         remarks,
         technician,
+        needleIssuer,
         customDate: dateVal,
         allowNegative
       });
@@ -756,6 +797,12 @@ export function initNeedleOperationsEvents() {
 
   root.querySelector('#inp-needle-ops-search')?.addEventListener('input', (e) => {
     searchQuery = e.target.value;
+    refreshView();
+  });
+
+  // Toggle Floor Overview collapse/expand
+  root.querySelector('#btn-toggle-floor-overview')?.addEventListener('click', () => {
+    floorOverviewCollapsed = !floorOverviewCollapsed;
     refreshView();
   });
 

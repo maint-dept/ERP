@@ -153,6 +153,7 @@ class NeedleService {
     needleType = '',
     remarks = '',
     technician = '',
+    needleIssuer = '',
     customDate = null,
     allowNegative = false
   }) {
@@ -250,6 +251,7 @@ class NeedleService {
       floorStockDelta: floorStockDelta,
       remarks: remarks.trim(),
       technician: technician.trim() || currentUser.name || 'Technician',
+      needleIssuer: needleIssuer ? needleIssuer.trim() : '',
       updatedBy: currentUser.name || currentUser.username || 'Authorized User',
       date: nowIso,
       timestamp: nowIso
@@ -563,7 +565,7 @@ class NeedleService {
     // Sheet 2: Transaction History
     const txRows = [
       ['NEEDLE TRANSACTION & USAGE AUDIT HISTORY'],
-      ['Tx ID', 'Date & Time', 'Serial #', 'Machine Model', 'Floor', 'Line', 'Action Type', 'Needle Brand / Type', 'Req Spec', 'Prev Balance', 'Quantity', 'New Balance', 'Technician', 'Remarks']
+      ['Tx ID', 'Date & Time', 'Serial #', 'Machine Model', 'Floor', 'Line', 'Action Type', 'Needle Brand / Type', 'Req Spec', 'Prev Balance', 'Quantity', 'New Balance', 'Technician', 'Needle Issuer', 'Remarks']
     ];
 
     transactions.forEach(tx => {
@@ -581,6 +583,7 @@ class NeedleService {
         (tx.delta < 0 ? `-${tx.quantity}` : (tx.delta > 0 ? `+${tx.quantity}` : tx.quantity)),
         tx.presentBalance,
         tx.technician,
+        tx.needleIssuer || '',
         tx.remarks
       ]);
     });
