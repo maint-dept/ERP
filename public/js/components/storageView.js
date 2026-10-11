@@ -892,7 +892,7 @@ function renderExcelImportExportModal() {
                 📥 Need an Excel Template?
               </div>
               <div style="font-size: 11px; color: #94a3b8; margin-top: 1px;">
-                Download pre-formatted spreadsheet with columns: <strong>Machine Name, Brand, Model, Remarks</strong>
+                Download pre-formatted spreadsheet with columns: <strong>Machine Name, Brand, Model, Needle Brand, Needle Type / Size, Required Needles, Remarks</strong>
               </div>
             </div>
             <div style="display: flex; gap: 8px; flex-wrap: wrap;">
@@ -926,7 +926,7 @@ function renderExcelImportExportModal() {
                 ${excelImportFileName ? `Loaded: <span style="color: #34d399;">${excelImportFileName}</span>` : 'Click to select or Drag &amp; Drop Excel spreadsheet here'}
               </div>
               <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">
-                Supports Microsoft Excel (.xlsx, .xls) and CSV (.csv). Headers: Machine Name, Brand, Model, Remarks
+                Supports Microsoft Excel (.xlsx, .xls) and CSV (.csv). Headers: Machine Name, Brand, Model, Needle Brand, Needle Type / Size, Required Needles, Remarks
               </div>
               <button type="button" id="btn-browse-excel-file" class="btn btn-secondary btn-sm" style="margin-top: 12px; font-size: 11.5px; font-weight: 700;">
                 📂 Browse Spreadsheet File...
@@ -944,7 +944,7 @@ function renderExcelImportExportModal() {
                 id="txt-excel-paste-input" 
                 class="form-control" 
                 rows="6" 
-                placeholder="Machine Name	Brand	Model	Remarks&#10;Plane Machine	JUKI	DDL-8700	Lockstitch 1-Needle&#10;Plane Machine	BROTHER	S-7200C	Direct Drive&#10;Overlock Machine	PEGASUS	M952-52	4-Thread"
+                placeholder="Machine Name	Brand	Model	Needle Brand	Needle Type / Size	Required Needles	Remarks&#10;Plane Machine	JUKI	DDL-8700	ORGAN	DBx1 #14	1	Lockstitch 1-Needle&#10;Double Needle Machine	JUKI	LH-3568	ORGAN	DPx5 #14	2	2-Needle Lockstitch&#10;Overlock Machine	PEGASUS	M952-52	ORGAN	DCx27 #11	2	4-Thread Overlock"
                 style="font-family: monospace; font-size: 11.5px; line-height: 1.4; padding: 10px;"
               ></textarea>
               <div style="display: flex; justify-content: flex-end;">
@@ -989,6 +989,9 @@ function renderExcelImportExportModal() {
                       <th style="padding: 6px 10px;">Machine Name</th>
                       <th style="padding: 6px 10px;">Brand</th>
                       <th style="padding: 6px 10px;">Model</th>
+                      <th style="padding: 6px 10px;">Needle Brand</th>
+                      <th style="padding: 6px 10px;">Needle Type / Size</th>
+                      <th style="padding: 6px 10px; text-align: center;">Req</th>
                       <th style="padding: 6px 10px;">Remarks</th>
                       <th style="padding: 6px 10px; text-align: center; width: 75px;">Status</th>
                     </tr>
@@ -1002,6 +1005,9 @@ function renderExcelImportExportModal() {
                           <td style="padding: 5px 10px; font-weight: 700; color: #fff;">${r.machineName || '<span style="color:#f87171;">(Missing)</span>'}</td>
                           <td style="padding: 5px 10px; color: #34d399; font-weight: 600;">${r.brand || '-'}</td>
                           <td style="padding: 5px 10px; color: #fbbf24; font-weight: 600;">${r.model || '-'}</td>
+                          <td style="padding: 5px 10px; color: #38bdf8; font-weight: 600;">${r.requiredNeedleBrand || r.needleBrand || 'ORGAN'}</td>
+                          <td style="padding: 5px 10px; color: #cbd5e1; font-family: monospace;">${r.needleType || 'DBx1 #14'}</td>
+                          <td style="padding: 5px 10px; text-align: center; color: #38bdf8; font-weight: 800;">${r.requiredNeedles || 1}</td>
                           <td style="padding: 5px 10px; color: var(--text-muted); font-size: 10.5px;">${r.remarks || '-'}</td>
                           <td style="padding: 5px 10px; text-align: center;">
                             ${isValid ? `<span style="color: #34d399; font-weight: 700; font-size: 10px; background: rgba(52,211,153,0.1); padding: 2px 6px; border-radius: 3px;">VALID</span>` : `<span style="color: #f87171; font-weight: 700; font-size: 10px; background: rgba(239,68,68,0.1); padding: 2px 6px; border-radius: 3px;">ERROR</span>`}
@@ -1011,7 +1017,7 @@ function renderExcelImportExportModal() {
                     }).join('')}
                     ${rows.length > 60 ? `
                       <tr>
-                        <td colspan="6" style="text-align: center; padding: 8px; color: var(--text-muted); font-size: 11px;">
+                        <td colspan="9" style="text-align: center; padding: 8px; color: var(--text-muted); font-size: 11px;">
                           ... and ${rows.length - 60} more rows ready for import
                         </td>
                       </tr>

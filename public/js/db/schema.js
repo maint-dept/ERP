@@ -54,7 +54,9 @@ export const TABLE_NAMES = {
   RELOCATION_APPROVALS: 'relocation_approvals',
   PARTS_TRACE_ISSUES: 'parts_trace_issues',
   PARTS_TRACE_PDFS: 'parts_trace_pdfs',
-  PERMISSION_PRESETS: 'permission_presets'
+  PERMISSION_PRESETS: 'permission_presets',
+  NEEDLE_TRANSACTIONS: 'needle_transactions',
+  NEEDLE_FLOOR_BUDGETS: 'needle_floor_budgets'
 };
 
 /**

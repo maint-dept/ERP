@@ -44,6 +44,7 @@ import { renderStorageView, initStorageEvents } from './components/storageView.j
 import { renderPreventiveMaintenanceView, initPreventiveMaintenanceEvents } from './components/preventiveMaintenanceView.js?v=4.25.5';
 import { smartStorageService } from './services/smartStorageService.js?v=4.24.0';
 import { renderRelocateView, initRelocateViewEvents } from './components/relocateView.js?v=4.24.0';
+import { renderNeedleOperationsView, initNeedleOperationsEvents } from './components/needleOperationsView.js?v=4.26.0';
 import { renderQrCodeView, initQrCodeEvents } from './components/qrCodeView.js?v=4.24.0';
 import { renderPartsTraceView, initPartsTraceEvents } from './components/partsTraceView.js?v=4.24.0';
 import { chatService } from './services/chatService.js?v=4.24.0';
@@ -663,6 +664,7 @@ class ERPApplication {
         'dashboard': 'dashboard',
         'inventory': 'machines',
         'relocate': 'relocate',
+        'needle-operations': 'machines',
         'qr-codes': 'machines',
         'transfers': 'transfers',
         'parts-trace': 'parts_trace',
@@ -716,6 +718,8 @@ class ERPApplication {
           return renderInventoryTable();
         case 'relocate':
           return renderRelocateView();
+        case 'needle-operations':
+          return renderNeedleOperationsView();
         case 'qr-codes':
           return renderQrCodeView();
         case 'transfers':
@@ -826,6 +830,9 @@ class ERPApplication {
         break;
       case 'relocate':
         initRelocateViewEvents();
+        break;
+      case 'needle-operations':
+        initNeedleOperationsEvents();
         break;
       case 'qr-codes':
         initQrCodeEvents();
@@ -1043,6 +1050,14 @@ class ERPApplication {
         }
       });
     }
+
+    // 4. Live Cross-Module Synchronizers
+    window.addEventListener('erp:needle-updated', () => {
+      const cv = state.get('currentView');
+      if (cv === 'needle-operations' || cv === 'relocate') {
+        this.render();
+      }
+    });
   }
 
   showToast(title, message, type = 'info') {

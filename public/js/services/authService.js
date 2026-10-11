@@ -652,6 +652,7 @@ class AuthService {
       'dashboard': 'dashboard',
       'inventory': 'machines',
       'relocate': 'relocate',
+      'needle-operations': 'machines',
       'qr-codes': 'qr_codes',
       'transfers': 'transfers',
       'parts-trace': 'parts_trace',

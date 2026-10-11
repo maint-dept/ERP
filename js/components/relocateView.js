@@ -12,8 +12,16 @@ import { relocateService } from '../services/relocateService.js';
 import { notificationService } from '../services/notificationService.js';
 import { renderQrScannerModal, initQrScannerModalEvents } from './qrScannerModal.js?v=4.6.7';
 import { state } from '../state.js';
+import { needleService } from '../services/needleService.js?v=4.26.0';
 
-let activeTab = 'scan'; // 'scan' | 'idle' | 'approvals' | 'history'
+let activeTab = 'scan'; // 'scan' | 'idle' | 'approvals' | 'history' | 'needle'
+let needleFilterUnitId = '';
+let needleFilterFloorId = '';
+let needleFilterLineId = '';
+let needleFilterBrand = '';
+let needleFilterType = '';
+let needleSearchQuery = '';
+let needleBudgetModalFloorId = null;
 let pendingScanMachine = null; // Machine object pending confirmation in modal
 let manualSearchModalOpen = false;
 let completeModalOpen = false;
@@ -56,6 +64,9 @@ export function renderRelocateView() {
             <button type="button" class="btn-relocate-tab ${activeTab === 'history' ? 'active' : ''}" data-tab="history">
               📜 History
             </button>
+            <button type="button" class="btn-relocate-tab ${activeTab === 'needle' ? 'active' : ''}" data-tab="needle">
+              🪡 Needle Tracker
+            </button>
           </div>
         </div>
 
@@ -94,6 +105,7 @@ export function renderRelocateView() {
         ${renderReconciliationModal(activeSession)}
         ${renderEditScanModal(activeSession)}
         ${renderSessionDetailsModal()}
+        ${renderNeedleBudgetModal()}
       </div>
 
       <!-- Dedicated Scanner Modal Container (Prevents overwriting session modals) -->
@@ -784,6 +796,8 @@ function renderActiveTabContent(activeSession, pendingApprovals, idleMachines, a
       return renderApprovalsTab(pendingApprovals);
     case 'history':
       return renderHistoryTab(allSessions);
+    case 'needle':
+      return renderNeedleTrackerTab(activeSession);
     default:
       return renderSessionSetupView();
   }
@@ -2428,6 +2442,461 @@ function renderSessionDetailsModal() {
 }
 
 // ─────────────────────────────────────────────────────────────
+// 9. NEEDLE PRESENT & FLOOR-WISE BALANCE TRACKING TAB
+// ─────────────────────────────────────────────────────────────
+function renderNeedleTrackerTab(activeSession) {
+  const units = masterDataService.getUnits() || [];
+  const floors = needleFilterUnitId ? masterDataService.getFloors(needleFilterUnitId) : masterDataService.getAllFloors();
+  const lines = needleFilterFloorId ? masterDataService.getLines(needleFilterFloorId) : [];
+
+  const metrics = needleService.getFloorNeedleMetrics(
+    needleFilterFloorId || null,
+    needleFilterLineId || null,
+    needleFilterUnitId || null
+  );
+
+  let breakdownRows = needleService.getFloorModelBreakdown(
+    needleFilterFloorId || null,
+    needleFilterLineId || null,
+    needleFilterUnitId || null,
+    needleFilterBrand || '',
+    needleFilterType || ''
+  );
+
+  if (needleSearchQuery && needleSearchQuery.trim()) {
+    const q = needleSearchQuery.trim().toLowerCase();
+    breakdownRows = breakdownRows.filter(r =>
+      (r.machineModel && r.machineModel.toLowerCase().includes(q)) ||
+      (r.machineName && r.machineName.toLowerCase().includes(q)) ||
+      (r.needleBrand && r.needleBrand.toLowerCase().includes(q)) ||
+      (r.needleType && r.needleType.toLowerCase().includes(q))
+    );
+  }
+
+  const selectedUnitName = needleFilterUnitId ? (masterDataService.getUnitById(needleFilterUnitId)?.name || 'Selected Unit') : 'All Units';
+  const selectedFloorName = needleFilterFloorId ? (masterDataService.getFloorById(needleFilterFloorId)?.name || 'Selected Floor') : 'All Floors';
+
+  const commonBrands = ['Groz-Beckert', 'Organ', 'Schmetz', 'Orange', 'Dotec', 'Flying Tiger', 'Beka'];
+  const commonTypes = ['DPx5 (134)', 'DBx1 (16x231)', 'DCx27 (B27)', 'TVx7', 'UY 128 GAS', 'DVx43', '135x17 (DPx17)'];
+
+  return `
+    <div style="display: flex; flex-direction: column; gap: 12px; width: 100%;">
+      
+      <!-- Top Header & Action Controls Bar -->
+      <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 14px 18px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+        <div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 20px;">🪡</span>
+            <h2 style="font-size: 16px; font-weight: 800; color: #fff; margin: 0;">Floor Needle &amp; Cutter Requirement, Usage &amp; Balance</h2>
+            <span class="badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); font-size: 11px; font-weight: 700;">
+              ${selectedUnitName} &bull; ${selectedFloorName}
+            </span>
+          </div>
+          <p style="font-size: 11.5px; color: var(--text-muted); margin: 3px 0 0 0;">
+            Real-time Floor-wise tracking synchronized directly with Relocate &amp; Verify present audits and Machine Operation transactions.
+          </p>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+          <button type="button" id="btn-open-needle-budget-modal" class="btn btn-outline" style="border-color: #38bdf8; color: #38bdf8; background: rgba(56,189,248,0.1); font-size: 12px; font-weight: 700; padding: 7px 14px; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px;">
+            <span>🎯</span> Set Floor Budget &amp; Issue
+          </button>
+          <button type="button" id="btn-export-needle-tracker-excel" class="btn btn-outline" style="border-color: #10b981; color: #34d399; background: rgba(16,185,129,0.1); font-size: 12px; font-weight: 700; padding: 7px 14px; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px;">
+            <span>📊</span> Export Excel Report
+          </button>
+          <button type="button" id="btn-goto-needle-ops-from-relocate" class="btn btn-primary" style="background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); border-color: #38bdf8; font-size: 12px; font-weight: 800; padding: 7px 16px; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px;">
+            <span>⚡</span> Record Needle Usage (Ops)
+          </button>
+        </div>
+      </div>
+
+      <!-- Filter Bar -->
+      <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 10px; padding: 12px 16px; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; align-items: flex-end;">
+        
+        <!-- Factory Unit -->
+        <div>
+          <label style="font-size: 11px; font-weight: 700; color: #94a3b8; display: block; margin-bottom: 4px;">Factory Unit</label>
+          <select id="relocate-needle-unit-sel" class="form-control" style="font-size: 12.5px; height: 34px; padding: 4px 8px;">
+            <option value="">All Units</option>
+            ${units.map(u => `<option value="${u.id}" ${u.id === needleFilterUnitId ? 'selected' : ''}>${u.name}</option>`).join('')}
+          </select>
+        </div>
+
+        <!-- Production Floor -->
+        <div>
+          <label style="font-size: 11px; font-weight: 700; color: #94a3b8; display: block; margin-bottom: 4px;">Production Floor</label>
+          <select id="relocate-needle-floor-sel" class="form-control" style="font-size: 12.5px; height: 34px; padding: 4px 8px;">
+            <option value="">All Floors</option>
+            ${floors.map(f => `<option value="${f.id}" ${f.id === needleFilterFloorId ? 'selected' : ''}>${f.name}</option>`).join('')}
+          </select>
+        </div>
+
+        <!-- Production Line -->
+        <div>
+          <label style="font-size: 11px; font-weight: 700; color: #94a3b8; display: block; margin-bottom: 4px;">Production Line</label>
+          <select id="relocate-needle-line-sel" class="form-control" style="font-size: 12.5px; height: 34px; padding: 4px 8px;">
+            <option value="">All Lines</option>
+            ${lines.map(l => `<option value="${l.id}" ${l.id === needleFilterLineId ? 'selected' : ''}>${l.name}</option>`).join('')}
+          </select>
+        </div>
+
+        <!-- Needle Brand -->
+        <div>
+          <label style="font-size: 11px; font-weight: 700; color: #94a3b8; display: block; margin-bottom: 4px;">Needle Brand</label>
+          <select id="relocate-needle-brand-sel" class="form-control" style="font-size: 12.5px; height: 34px; padding: 4px 8px;">
+            <option value="">All Brands</option>
+            ${commonBrands.map(b => `<option value="${b}" ${needleFilterBrand === b ? 'selected' : ''}>${b}</option>`).join('')}
+          </select>
+        </div>
+
+        <!-- Needle Type / Size -->
+        <div>
+          <label style="font-size: 11px; font-weight: 700; color: #94a3b8; display: block; margin-bottom: 4px;">Needle Type / Size</label>
+          <select id="relocate-needle-type-sel" class="form-control" style="font-size: 12.5px; height: 34px; padding: 4px 8px;">
+            <option value="">All Types</option>
+            ${commonTypes.map(t => `<option value="${t}" ${needleFilterType === t ? 'selected' : ''}>${t}</option>`).join('')}
+          </select>
+        </div>
+
+        <!-- Model / Search -->
+        <div>
+          <label style="font-size: 11px; font-weight: 700; color: #94a3b8; display: block; margin-bottom: 4px;">Search Model</label>
+          <div style="position: relative;">
+            <input type="text" id="relocate-needle-search-input" class="form-control" placeholder="Search model..." value="${escapeHtml(needleSearchQuery)}" style="font-size: 12.5px; height: 34px; padding: 4px 28px 4px 8px;" />
+            ${needleSearchQuery ? `
+              <button type="button" id="btn-relocate-needle-clear-search" style="position: absolute; right: 6px; top: 6px; background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 13px;">✕</button>
+            ` : ''}
+          </div>
+        </div>
+
+        <!-- Reset Button -->
+        <div>
+          <button type="button" id="btn-relocate-needle-reset-filters" class="btn btn-secondary" style="font-size: 12px; height: 34px; padding: 4px 12px; border-radius: 6px; width: 100%;" title="Reset all filters">
+            ↺ Reset
+          </button>
+        </div>
+
+      </div>
+
+      <!-- 8 Live Metrics Grid (As Explicitly Required by User) -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px;">
+        
+        <!-- 1. Required Quantity -->
+        <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 10px; padding: 10px 14px; display: flex; flex-direction: column; gap: 2px;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 10px; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">1. Required Qty</span>
+            <span style="font-size: 13px;">🪡</span>
+          </div>
+          <div style="font-size: 24px; font-weight: 900; color: #38bdf8; font-family: var(--font-mono); line-height: 1.1;">
+            ${metrics.requiredQuantity}
+          </div>
+          <div style="font-size: 10px; color: #7dd3fc;">${metrics.machineCount} machines &bull; Master Setup</div>
+        </div>
+
+        <!-- 2. Budget Quantity -->
+        <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(168, 85, 247, 0.25); border-radius: 10px; padding: 10px 14px; display: flex; flex-direction: column; gap: 2px;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 10px; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">2. Budget Qty</span>
+            <span style="font-size: 13px;">🎯</span>
+          </div>
+          <div style="font-size: 24px; font-weight: 900; color: #c084fc; font-family: var(--font-mono); line-height: 1.1;">
+            ${metrics.budgetQuantity}
+          </div>
+          <div style="font-size: 10px; color: #d8b4fe;">Floor Approved Quota</div>
+        </div>
+
+        <!-- 3. Present Quantity -->
+        <div style="background: rgba(15, 23, 42, 0.7); border: 1.5px solid rgba(16, 185, 129, 0.4); border-radius: 10px; padding: 10px 14px; display: flex; flex-direction: column; gap: 2px; box-shadow: 0 0 10px rgba(16, 185, 129, 0.1);">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 10px; font-weight: 800; color: #34d399; text-transform: uppercase;">3. Present Qty</span>
+            <span style="font-size: 13px;">📍</span>
+          </div>
+          <div style="font-size: 24px; font-weight: 900; color: #34d399; font-family: var(--font-mono); line-height: 1.1;">
+            ${metrics.presentQuantity}
+          </div>
+          <div style="font-size: 10px; color: #a7f3d0;">Verified on Machines</div>
+        </div>
+
+        <!-- 4. Issued Quantity -->
+        <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(59, 130, 246, 0.25); border-radius: 10px; padding: 10px 14px; display: flex; flex-direction: column; gap: 2px;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 10px; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">4. Issued Qty</span>
+            <span style="font-size: 13px;">📦</span>
+          </div>
+          <div style="font-size: 24px; font-weight: 900; color: #60a5fa; font-family: var(--font-mono); line-height: 1.1;">
+            ${metrics.issuedQuantity}
+          </div>
+          <div style="font-size: 10px; color: #93c5fd;">Store Issued to Floor</div>
+        </div>
+
+        <!-- 5. Used Quantity -->
+        <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(245, 158, 11, 0.25); border-radius: 10px; padding: 10px 14px; display: flex; flex-direction: column; gap: 2px;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 10px; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">5. Used Qty</span>
+            <span style="font-size: 13px;">💥</span>
+          </div>
+          <div style="font-size: 24px; font-weight: 900; color: #fbbf24; font-family: var(--font-mono); line-height: 1.1;">
+            ${metrics.usedQuantity}
+          </div>
+          <div style="font-size: 10px; color: #fde68a;">Broken / Consumed</div>
+        </div>
+
+        <!-- 6. Returned Quantity -->
+        <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(14, 165, 233, 0.25); border-radius: 10px; padding: 10px 14px; display: flex; flex-direction: column; gap: 2px;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 10px; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">6. Returned Qty</span>
+            <span style="font-size: 13px;">↩️</span>
+          </div>
+          <div style="font-size: 24px; font-weight: 900; color: #38bdf8; font-family: var(--font-mono); line-height: 1.1;">
+            ${metrics.returnedQuantity}
+          </div>
+          <div style="font-size: 10px; color: #bae6fd;">Returned to Store</div>
+        </div>
+
+        <!-- 7. Balance Quantity -->
+        <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(99, 102, 241, 0.25); border-radius: 10px; padding: 10px 14px; display: flex; flex-direction: column; gap: 2px;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 10px; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">7. Balance Stock</span>
+            <span style="font-size: 13px;">⚖️</span>
+          </div>
+          <div style="font-size: 24px; font-weight: 900; color: #818cf8; font-family: var(--font-mono); line-height: 1.1;">
+            ${metrics.balanceQuantity}
+          </div>
+          <div style="font-size: 10px; color: #c7d2fe;">Issued - Used + Returned</div>
+        </div>
+
+        <!-- 8. Shortage / Excess -->
+        <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid ${metrics.shortageExcess < 0 ? 'rgba(239,68,68,0.4)' : (metrics.shortageExcess > 0 ? 'rgba(52,211,153,0.4)' : 'rgba(255,255,255,0.15)')}; border-radius: 10px; padding: 10px 14px; display: flex; flex-direction: column; gap: 2px;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 10px; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">8. Shortage / Excess</span>
+            <span style="font-size: 13px;">📊</span>
+          </div>
+          <div style="font-size: 24px; font-weight: 900; color: ${metrics.shortageExcess < 0 ? '#f87171' : (metrics.shortageExcess > 0 ? '#34d399' : '#94a3b8')}; font-family: var(--font-mono); line-height: 1.1;">
+            ${metrics.shortageExcess > 0 ? `+${metrics.shortageExcess}` : metrics.shortageExcess}
+          </div>
+          <div>
+            <span class="badge ${metrics.shortageExcess < 0 ? 'badge-danger' : (metrics.shortageExcess > 0 ? 'badge-active' : 'badge-idle')}" style="font-size: 9.5px; padding: 1px 6px;">
+              ${metrics.shortageExcess < 0 ? `Deficit (${Math.abs(metrics.shortageExcess)})` : (metrics.shortageExcess > 0 ? `Surplus (+${metrics.shortageExcess})` : 'Exact Balance')}
+            </span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Floor-wise Needle & Cutter Report Table -->
+      <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; overflow: hidden; display: flex; flex-direction: column;">
+        <div style="padding: 12px 18px; border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+          <div>
+            <h3 style="margin: 0; font-size: 14px; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 6px;">
+              <span>📋</span> Floor-wise Needle &amp; Cutter Breakdown
+            </h3>
+            <span style="font-size: 11px; color: var(--text-muted);">
+              Showing ${breakdownRows.length} distinct machine models on selected location
+            </span>
+          </div>
+          <div style="font-size: 11px; color: var(--text-secondary);">
+            Formula: <span style="font-family: var(--font-mono); color: #38bdf8;">Balance = Issued - Used + Returned</span> &bull; <span style="font-family: var(--font-mono); color: #34d399;">Diff = Present - Required</span>
+          </div>
+        </div>
+
+        <div style="overflow-x: auto;">
+          <table class="table" style="width: 100%; margin: 0; font-size: 12px; border-collapse: collapse;">
+            <thead>
+              <tr style="background: rgba(255,255,255,0.03); border-bottom: 1.5px solid rgba(255,255,255,0.1);">
+                <th style="padding: 10px 12px; width: 4%;">#</th>
+                <th style="padding: 10px 12px; text-align: left; width: 18%;">Machine Model</th>
+                <th style="padding: 10px 12px; text-align: center; width: 8%;">Machine Qty</th>
+                <th style="padding: 10px 12px; text-align: left; width: 16%;">Needle Brand / Type</th>
+                <th style="padding: 10px 12px; text-align: center; width: 7%;">Required</th>
+                <th style="padding: 10px 12px; text-align: center; width: 7%;">Budget</th>
+                <th style="padding: 10px 12px; text-align: center; width: 7%;">Issued</th>
+                <th style="padding: 10px 12px; text-align: center; width: 7%;">Used</th>
+                <th style="padding: 10px 12px; text-align: center; width: 7%;">Returned</th>
+                <th style="padding: 10px 12px; text-align: center; width: 8%;">Balance</th>
+                <th style="padding: 10px 12px; text-align: center; width: 9%;">Shortage / Excess</th>
+                <th style="padding: 10px 12px; text-align: center; width: 7%;">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${breakdownRows.length === 0 ? `
+                <tr>
+                  <td colspan="12" style="text-align: center; padding: 36px 16px; color: var(--text-muted);">
+                    <div style="font-size: 32px; margin-bottom: 6px;">🪡</div>
+                    <div style="font-weight: 700; color: #fff; font-size: 13.5px;">No Machine Models Registered for Active Filter</div>
+                    <div style="font-size: 11.5px; margin-top: 4px;">Adjust unit/floor filters or import models with Needle setup in Master Storage &amp; Rules.</div>
+                  </td>
+                </tr>
+              ` : breakdownRows.map((row, idx) => {
+                const diff = row.shortageExcess;
+                const isShort = diff < 0;
+                const isExcess = diff > 0;
+                return `
+                  <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); transition: background 0.15s ease;">
+                    <td style="padding: 10px 12px; color: var(--text-muted); font-family: var(--font-mono); font-size: 11px;">${idx + 1}</td>
+                    
+                    <!-- Machine Model -->
+                    <td style="padding: 10px 12px;">
+                      <div style="font-weight: 700; color: #fff;">${row.machineModel}</div>
+                      <div style="font-size: 10.5px; color: var(--text-secondary);">${row.machineName}</div>
+                    </td>
+
+                    <!-- Machine Quantity -->
+                    <td style="padding: 10px 12px; text-align: center;">
+                      <span class="badge" style="background: rgba(255,255,255,0.08); font-family: var(--font-mono); font-weight: 700;">
+                        ${row.machineQuantity}
+                      </span>
+                    </td>
+
+                    <!-- Needle Brand / Type -->
+                    <td style="padding: 10px 12px;">
+                      <div style="font-weight: 700; color: #38bdf8;">${row.needleBrand}</div>
+                      <div style="font-size: 11px; color: var(--text-secondary); font-family: var(--font-mono);">${row.needleType}</div>
+                    </td>
+
+                    <!-- Required -->
+                    <td style="padding: 10px 12px; text-align: center; font-family: var(--font-mono); font-weight: 700; color: #e2e8f0;">
+                      ${row.required}
+                    </td>
+
+                    <!-- Budget -->
+                    <td style="padding: 10px 12px; text-align: center; font-family: var(--font-mono); color: #c084fc; font-weight: 700;">
+                      ${row.budget}
+                    </td>
+
+                    <!-- Issued -->
+                    <td style="padding: 10px 12px; text-align: center; font-family: var(--font-mono); color: #60a5fa; font-weight: 700;">
+                      ${row.issued}
+                    </td>
+
+                    <!-- Used -->
+                    <td style="padding: 10px 12px; text-align: center; font-family: var(--font-mono); color: #fbbf24; font-weight: 700;">
+                      ${row.used}
+                    </td>
+
+                    <!-- Returned -->
+                    <td style="padding: 10px 12px; text-align: center; font-family: var(--font-mono); color: #38bdf8; font-weight: 700;">
+                      ${row.returned}
+                    </td>
+
+                    <!-- Balance -->
+                    <td style="padding: 10px 12px; text-align: center; font-family: var(--font-mono); font-weight: 800; color: #818cf8;">
+                      ${row.balance}
+                    </td>
+
+                    <!-- Shortage / Excess -->
+                    <td style="padding: 10px 12px; text-align: center;">
+                      <span class="badge ${isShort ? 'badge-danger' : (isExcess ? 'badge-active' : 'badge-idle')}" style="font-size: 10px; font-weight: 800; font-family: var(--font-mono);">
+                        ${isShort ? `Shortage (${diff})` : (isExcess ? `Excess (+${diff})` : 'Balanced (0)')}
+                      </span>
+                    </td>
+
+                    <!-- Action -->
+                    <td style="padding: 10px 12px; text-align: center;">
+                      <button type="button" class="btn btn-ghost btn-sm btn-quick-needle-ops-row" data-model="${escapeHtml(row.modelName)}" title="Adjust or use needles for this model" style="font-size: 11px; padding: 3px 8px; border: 1px solid rgba(56,189,248,0.3); color: #38bdf8; border-radius: 6px;">
+                        ⚡ Use
+                      </button>
+                    </td>
+
+                  </tr>
+                `;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+
+    </div>
+  `;
+}
+
+// ─────────────────────────────────────────────────────────────
+// 9.1. FLOOR NEEDLE BUDGET & ISSUE SETUP MODAL
+// ─────────────────────────────────────────────────────────────
+function renderNeedleBudgetModal() {
+  if (needleBudgetModalFloorId === null) return '';
+
+  const allFloors = masterDataService.getAllFloors() || [];
+  const currentFloorId = needleBudgetModalFloorId || (allFloors[0] ? allFloors[0].id : '');
+  const budgetRec = needleService.getFloorBudgetRecord(currentFloorId);
+
+  return `
+    <div class="modal-overlay" id="modal-needle-budget-overlay" style="z-index: 10050;">
+      <div class="modal-dialog" style="max-width: 480px; width: 95%;">
+        
+        <div class="modal-header" style="padding: 14px 18px; border-bottom: 1px solid rgba(255,255,255,0.1);">
+          <div class="modal-title" style="display: flex; align-items: center; gap: 8px;">
+            <span>🎯</span> Set Production Floor Needle Budget &amp; Store Issue
+          </div>
+          <button type="button" id="btn-close-needle-budget-modal" class="btn btn-ghost btn-sm" style="font-size: 16px; width: 34px; height: 34px; border-radius: 50%;">✕</button>
+        </div>
+
+        <form id="form-needle-budget" class="modal-body" style="padding: 16px 18px; display: flex; flex-direction: column; gap: 14px;">
+          
+          <div class="form-group">
+            <label class="form-label" style="font-size: 12px; font-weight: 700; color: #38bdf8;">Production Floor: <span class="req">*</span></label>
+            <select id="needle-budget-floor-select" class="form-control" style="font-size: 14px; font-weight: 700;">
+              ${allFloors.map(f => `<option value="${f.id}" ${f.id === currentFloorId ? 'selected' : ''}>${f.name} (${f.code || f.name})</option>`).join('')}
+            </select>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div class="form-group">
+              <label class="form-label" style="font-size: 12px; font-weight: 700; color: #c084fc;">Approved Budget Qty: <span class="req">*</span></label>
+              <input
+                type="number"
+                id="needle-budget-qty-input"
+                class="form-control"
+                min="0"
+                required
+                value="${budgetRec?.budgetQuantity || 0}"
+                style="font-size: 16px; font-weight: 800; color: #c084fc; font-family: var(--font-mono);"
+              />
+              <span style="font-size: 10px; color: var(--text-muted);">Floor monthly quota</span>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" style="font-size: 12px; font-weight: 700; color: #60a5fa;">Store Issued Qty: <span class="req">*</span></label>
+              <input
+                type="number"
+                id="needle-issued-qty-input"
+                class="form-control"
+                min="0"
+                required
+                value="${budgetRec?.issuedQuantity || 0}"
+                style="font-size: 16px; font-weight: 800; color: #60a5fa; font-family: var(--font-mono);"
+              />
+              <span style="font-size: 10px; color: var(--text-muted);">Total delivered to floor</span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" style="font-size: 12px; color: var(--text-muted);">Allocation Notes / Reference:</label>
+            <input
+              type="text"
+              id="needle-budget-notes-input"
+              class="form-control"
+              placeholder="e.g. Approved by Production Manager for Season Autumn-26"
+              value="${escapeHtml(budgetRec?.notes || '')}"
+              style="font-size: 13px;"
+            />
+          </div>
+
+          <div class="modal-footer" style="padding: 10px 0 0 0; margin-top: 6px; display: flex; gap: 8px;">
+            <button type="button" id="btn-cancel-needle-budget-modal" class="btn btn-secondary" style="flex: 1; font-weight: 700;">Cancel</button>
+            <button type="submit" class="btn btn-primary" style="flex: 2; font-weight: 800; background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); border-color: #38bdf8;">
+              💾 Save Floor Budget
+            </button>
+          </div>
+
+        </form>
+
+      </div>
+    </div>
+  `;
+}
+
+// ─────────────────────────────────────────────────────────────
 // EVENT HANDLERS & CONTROLLERS
 // ─────────────────────────────────────────────────────────────
 export function initRelocateViewEvents() {
@@ -3123,6 +3592,192 @@ export function initRelocateViewEvents() {
       state.set('currentView', 'qr-codes');
       if (typeof window.app !== 'undefined' && typeof window.app.switchView === 'function') {
         window.app.switchView('qr-codes');
+      }
+    });
+  }
+
+  // ───────────────────────────────────────────────────────────
+  // NEEDLE TRACKER TAB EVENT BINDINGS
+  // ───────────────────────────────────────────────────────────
+  const selNeedleUnit = root.querySelector('#relocate-needle-unit-sel');
+  if (selNeedleUnit) {
+    selNeedleUnit.addEventListener('change', () => {
+      needleFilterUnitId = selNeedleUnit.value;
+      needleFilterFloorId = '';
+      needleFilterLineId = '';
+      refreshView();
+    });
+  }
+
+  const selNeedleFloor = root.querySelector('#relocate-needle-floor-sel');
+  if (selNeedleFloor) {
+    selNeedleFloor.addEventListener('change', () => {
+      needleFilterFloorId = selNeedleFloor.value;
+      needleFilterLineId = '';
+      refreshView();
+    });
+  }
+
+  const selNeedleLine = root.querySelector('#relocate-needle-line-sel');
+  if (selNeedleLine) {
+    selNeedleLine.addEventListener('change', () => {
+      needleFilterLineId = selNeedleLine.value;
+      refreshView();
+    });
+  }
+
+  const selNeedleBrand = root.querySelector('#relocate-needle-brand-sel');
+  if (selNeedleBrand) {
+    selNeedleBrand.addEventListener('change', () => {
+      needleFilterBrand = selNeedleBrand.value;
+      refreshView();
+    });
+  }
+
+  const selNeedleType = root.querySelector('#relocate-needle-type-sel');
+  if (selNeedleType) {
+    selNeedleType.addEventListener('change', () => {
+      needleFilterType = selNeedleType.value;
+      refreshView();
+    });
+  }
+
+  const inputNeedleSearch = root.querySelector('#relocate-needle-search-input');
+  if (inputNeedleSearch) {
+    inputNeedleSearch.addEventListener('input', (e) => {
+      needleSearchQuery = e.target.value;
+      refreshView();
+    });
+  }
+
+  const btnClearNeedleSearch = root.querySelector('#btn-relocate-needle-clear-search');
+  if (btnClearNeedleSearch) {
+    btnClearNeedleSearch.addEventListener('click', () => {
+      needleSearchQuery = '';
+      refreshView();
+    });
+  }
+
+  const btnResetNeedleFilters = root.querySelector('#btn-relocate-needle-reset-filters');
+  if (btnResetNeedleFilters) {
+    btnResetNeedleFilters.addEventListener('click', () => {
+      needleFilterUnitId = '';
+      needleFilterFloorId = '';
+      needleFilterLineId = '';
+      needleFilterBrand = '';
+      needleFilterType = '';
+      needleSearchQuery = '';
+      refreshView();
+    });
+  }
+
+  const btnExportNeedleTracker = root.querySelector('#btn-export-needle-tracker-excel');
+  if (btnExportNeedleTracker) {
+    btnExportNeedleTracker.addEventListener('click', (e) => {
+      e.preventDefault();
+      needleService.exportNeedleReportToExcel({
+        unitId: needleFilterUnitId,
+        floorId: needleFilterFloorId,
+        lineId: needleFilterLineId
+      });
+    });
+  }
+
+  const btnGotoNeedleOps = root.querySelector('#btn-goto-needle-ops-from-relocate');
+  if (btnGotoNeedleOps) {
+    btnGotoNeedleOps.addEventListener('click', (e) => {
+      e.preventDefault();
+      state.set('currentView', 'needle-operations');
+      if (typeof window.app !== 'undefined' && typeof window.app.switchView === 'function') {
+        window.app.switchView('needle-operations');
+      }
+    });
+  }
+
+  root.querySelectorAll('.btn-quick-needle-ops-row').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      state.set('currentView', 'needle-operations');
+      if (typeof window.app !== 'undefined' && typeof window.app.switchView === 'function') {
+        window.app.switchView('needle-operations');
+      }
+    });
+  });
+
+  const btnOpenBudgetModal = root.querySelector('#btn-open-needle-budget-modal');
+  if (btnOpenBudgetModal) {
+    btnOpenBudgetModal.addEventListener('click', (e) => {
+      e.preventDefault();
+      const allFloors = masterDataService.getAllFloors() || [];
+      needleBudgetModalFloorId = needleFilterFloorId || (allFloors[0] ? allFloors[0].id : '');
+      refreshView();
+    });
+  }
+
+  const btnCloseBudgetModal = root.querySelector('#btn-close-needle-budget-modal');
+  const btnCancelBudgetModal = root.querySelector('#btn-cancel-needle-budget-modal');
+  const overlayBudgetModal = root.querySelector('#modal-needle-budget-overlay');
+
+  if (btnCloseBudgetModal) {
+    btnCloseBudgetModal.addEventListener('click', () => {
+      needleBudgetModalFloorId = null;
+      refreshView();
+    });
+  }
+  if (btnCancelBudgetModal) {
+    btnCancelBudgetModal.addEventListener('click', () => {
+      needleBudgetModalFloorId = null;
+      refreshView();
+    });
+  }
+  if (overlayBudgetModal) {
+    overlayBudgetModal.addEventListener('click', (e) => {
+      if (e.target === overlayBudgetModal) {
+        needleBudgetModalFloorId = null;
+        refreshView();
+      }
+    });
+  }
+
+  const selBudgetFloor = root.querySelector('#needle-budget-floor-select');
+  if (selBudgetFloor) {
+    selBudgetFloor.addEventListener('change', () => {
+      needleBudgetModalFloorId = selBudgetFloor.value;
+      const budgetRec = needleService.getFloorBudgetRecord(needleBudgetModalFloorId);
+      const inpBudget = root.querySelector('#needle-budget-qty-input');
+      const inpIssued = root.querySelector('#needle-issued-qty-input');
+      const inpNotes = root.querySelector('#needle-budget-notes-input');
+      if (inpBudget) inpBudget.value = budgetRec?.budgetQuantity || 0;
+      if (inpIssued) inpIssued.value = budgetRec?.issuedQuantity || 0;
+      if (inpNotes) inpNotes.value = budgetRec?.notes || '';
+    });
+  }
+
+  const formNeedleBudget = root.querySelector('#form-needle-budget');
+  if (formNeedleBudget) {
+    formNeedleBudget.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const targetFloorId = root.querySelector('#needle-budget-floor-select')?.value;
+      const bQty = Number(root.querySelector('#needle-budget-qty-input')?.value) || 0;
+      const iQty = Number(root.querySelector('#needle-issued-qty-input')?.value) || 0;
+      const notes = root.querySelector('#needle-budget-notes-input')?.value || '';
+
+      if (!targetFloorId) {
+        notificationService.notifyWarning('Floor Required', 'Please select a production floor.');
+        return;
+      }
+
+      try {
+        await needleService.setFloorBudget(targetFloorId, {
+          budgetQuantity: bQty,
+          issuedQuantity: iQty,
+          notes
+        });
+        notificationService.notifySuccess('Budget Saved', `Needle Budget (${bQty}) and Store Issue (${iQty}) updated successfully!`);
+        needleBudgetModalFloorId = null;
+        refreshView();
+      } catch (err) {
+        notificationService.notifyError('Save Error', 'Error saving floor budget: ' + err.message);
       }
     });
   }

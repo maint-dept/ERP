@@ -2948,6 +2948,9 @@ class SmartStorageService {
       let brand = getCell(row, ['Brand', 'Brand Name', 'Make', 'Manufacturer', 'Company']);
       let rawModel = getCell(row, ['Model', 'Model Number', 'Model No', 'Model #', 'Spec', 'Specification']);
       let remarks = getCell(row, ['Remarks', 'Remark', 'Note', 'Description']);
+      let requiredNeedleBrand = getCell(row, ['Needle Brand', 'Required Needle Brand', 'Needle Make', 'Needle Company', 'Needle Manufacturer']);
+      let needleType = getCell(row, ['Needle Type', 'Needle System', 'Needle Size', 'Needle Type / Size', 'Needle Type/Size', 'Type/Size']);
+      let requiredNeedles = getCell(row, ['Required Needle', 'Required Needles', 'Needles Required', 'Needle Qty', 'Needle Quantity', 'Needle Count']);
       let shortCode = getCell(row, ['Short Code', 'Machine Short Code', 'Machine Name (Sort Form)', 'Sort Form', 'Code']);
       if (!shortCode) {
         const mcNum = getCell(row, ['Machine Number', 'Machine No.', 'Machine No']);
@@ -3027,6 +3030,9 @@ class SmartStorageService {
             brand: bUpper,
             model: singleBrand,
             remarks,
+            requiredNeedleBrand,
+            needleType,
+            requiredNeedles,
             shortCode,
             origIdx: idx + 1
           });
@@ -3047,6 +3053,9 @@ class SmartStorageService {
                 brand: finalBrand,
                 model: finalModel,
                 remarks,
+                requiredNeedleBrand,
+                needleType,
+                requiredNeedles,
                 shortCode,
                 origIdx: idx + 1
               });
@@ -3184,6 +3193,9 @@ class SmartStorageService {
               brand,
               model,
               remarks: remarks || existingSmItem.remarks || '',
+              requiredNeedleBrand: item.requiredNeedleBrand || existingSmItem.requiredNeedleBrand || '',
+              needleType: item.needleType || existingSmItem.needleType || '',
+              requiredNeedles: item.requiredNeedles || existingSmItem.requiredNeedles || '',
               status: 'ACTIVE',
               updatedAt: new Date().toISOString()
             });
@@ -3199,6 +3211,9 @@ class SmartStorageService {
             model,
             sortOrder: maxSmOrder + 1,
             remarks: remarks || '',
+            requiredNeedleBrand: item.requiredNeedleBrand || '',
+            needleType: item.needleType || '',
+            requiredNeedles: item.requiredNeedles || '',
             status: 'ACTIVE',
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString()
@@ -3221,6 +3236,9 @@ class SmartStorageService {
               machineNameId: mnItem?.id || mdlItem.machineNameId,
               machineName: cleanMachine,
               description: remarks || `${brand} ${model} under ${cleanMachine}`,
+              requiredNeedleBrand: item.requiredNeedleBrand || mdlItem.requiredNeedleBrand || '',
+              needleType: item.needleType || mdlItem.needleType || '',
+              requiredNeedles: item.requiredNeedles || mdlItem.requiredNeedles || '',
               status: 'ACTIVE'
             });
           }
@@ -3235,6 +3253,9 @@ class SmartStorageService {
             machineName: cleanMachine,
             sortOrder: maxMdlOrder + 1,
             description: remarks || `${brand} ${model} under ${cleanMachine}`,
+            requiredNeedleBrand: item.requiredNeedleBrand || '',
+            needleType: item.needleType || '',
+            requiredNeedles: item.requiredNeedles || '',
             status: 'ACTIVE',
             createdAt: new Date().toISOString()
           });
@@ -3332,6 +3353,9 @@ class SmartStorageService {
             'Machine Name': mName,
             'Brand': mod.brand || 'JUKI',
             'Model': mod.model || '',
+            'Needle Brand': mod.requiredNeedleBrand || 'ORGAN',
+            'Needle Type / Size': mod.needleType || 'DBx1 #14',
+            'Required Needles': mod.requiredNeedles || 1,
             'Remarks': mod.remarks || ''
           });
         });
@@ -3342,6 +3366,9 @@ class SmartStorageService {
           'Machine Name': mName,
           'Brand': '',
           'Model': '',
+          'Needle Brand': 'ORGAN',
+          'Needle Type / Size': 'DBx1 #14',
+          'Required Needles': 1,
           'Remarks': 'Registered Machine Type'
         });
       }
@@ -3356,6 +3383,9 @@ class SmartStorageService {
           'Machine Name': mName,
           'Brand': mod.brand || 'JUKI',
           'Model': mod.model || '',
+          'Needle Brand': mod.requiredNeedleBrand || 'ORGAN',
+          'Needle Type / Size': mod.needleType || 'DBx1 #14',
+          'Required Needles': mod.requiredNeedles || 1,
           'Remarks': mod.remarks || ''
         });
       });
@@ -3367,6 +3397,9 @@ class SmartStorageService {
         'Machine Name': 'Plane Machine',
         'Brand': 'JUKI',
         'Model': 'DDL-8700',
+        'Needle Brand': 'ORGAN',
+        'Needle Type / Size': 'DBx1 #14',
+        'Required Needles': 1,
         'Remarks': 'Sample'
       });
     }
@@ -3377,6 +3410,9 @@ class SmartStorageService {
       { wch: 30 }, // Machine Name
       { wch: 18 }, // Brand
       { wch: 25 }, // Model
+      { wch: 18 }, // Needle Brand
+      { wch: 22 }, // Needle Type / Size
+      { wch: 16 }, // Required Needles
       { wch: 35 }  // Remarks
     ];
 
@@ -3398,19 +3434,19 @@ class SmartStorageService {
     }
 
     const templateData = [
-      { 'Sl No': 1, 'Machine Name': 'Plane Machine', 'Brand': 'JUKI', 'Model': 'DDL-8700', 'Remarks': 'Single Needle High Speed Lockstitch' },
-      { 'Sl No': 2, 'Machine Name': 'Plane Machine', 'Brand': 'JUKI', 'Model': 'DDL-9000C', 'Remarks': 'Direct-Drive Computerized Lockstitch' },
-      { 'Sl No': 3, 'Machine Name': 'Plane Machine', 'Brand': 'BROTHER', 'Model': 'S-7200C', 'Remarks': 'Direct Drive Electronic Lockstitch' },
-      { 'Sl No': 4, 'Machine Name': 'Plane Machine', 'Brand': 'JACK', 'Model': 'A4', 'Remarks': 'Computerized Lockstitch Machine' },
-      { 'Sl No': 5, 'Machine Name': 'Overlock Machine', 'Brand': 'PEGASUS', 'Model': 'M952-52', 'Remarks': '4-Thread High Speed Overlock' },
-      { 'Sl No': 6, 'Machine Name': 'Overlock Machine', 'Brand': 'JUKI', 'Model': 'MO-6814S', 'Remarks': '4-Thread Super High Speed Overlock' },
-      { 'Sl No': 7, 'Machine Name': 'Overlock Machine', 'Brand': 'SIRUBA', 'Model': '747K-514M2-24', 'Remarks': 'High Speed Overlock Machine' },
-      { 'Sl No': 8, 'Machine Name': 'Vertical Machine', 'Brand': 'BEDOLY', 'Model': 'BD-801', 'Remarks': 'Vertical Machine Heavy Duty' },
-      { 'Sl No': 9, 'Machine Name': 'Button Hole Machine', 'Brand': 'JUKI', 'Model': 'LBH-1790', 'Remarks': 'Computer Controlled Buttonhole' },
-      { 'Sl No': 10, 'Machine Name': 'Button Attach Machine', 'Brand': 'JUKI', 'Model': 'MB-1377', 'Remarks': 'Single Thread Chainstitch Button Sew' },
-      { 'Sl No': 11, 'Machine Name': 'Bar Tack Machine', 'Brand': 'JUKI', 'Model': 'LK-1900', 'Remarks': 'Computer Controlled Bartacking' },
-      { 'Sl No': 12, 'Machine Name': 'Feed of The Arm Machine', 'Brand': 'BROTHER', 'Model': 'DA-9270', 'Remarks': '3-Needle Feed of the Arm Machine' },
-      { 'Sl No': 13, 'Machine Name': 'Double Needle Machine', 'Brand': 'JUKI', 'Model': 'LH-3568', 'Remarks': '2-Needle Semi-Dry Head Lockstitch' }
+      { 'Sl No': 1, 'Machine Name': 'Plane Machine', 'Brand': 'JUKI', 'Model': 'DDL-8700', 'Needle Brand': 'ORGAN', 'Needle Type / Size': 'DBx1 #14', 'Required Needles': 1, 'Remarks': 'Single Needle High Speed Lockstitch' },
+      { 'Sl No': 2, 'Machine Name': 'Plane Machine', 'Brand': 'JUKI', 'Model': 'DDL-9000C', 'Needle Brand': 'ORGAN', 'Needle Type / Size': 'DBx1 #14', 'Required Needles': 1, 'Remarks': 'Direct-Drive Computerized Lockstitch' },
+      { 'Sl No': 3, 'Machine Name': 'Plane Machine', 'Brand': 'BROTHER', 'Model': 'S-7200C', 'Needle Brand': 'ORGAN', 'Needle Type / Size': 'DBx1 #14', 'Required Needles': 1, 'Remarks': 'Direct Drive Electronic Lockstitch' },
+      { 'Sl No': 4, 'Machine Name': 'Plane Machine', 'Brand': 'JACK', 'Model': 'A4', 'Needle Brand': 'ORGAN', 'Needle Type / Size': 'DBx1 #14', 'Required Needles': 1, 'Remarks': 'Computerized Lockstitch Machine' },
+      { 'Sl No': 5, 'Machine Name': 'Overlock Machine', 'Brand': 'PEGASUS', 'Model': 'M952-52', 'Needle Brand': 'ORGAN', 'Needle Type / Size': 'DCx27 #11', 'Required Needles': 2, 'Remarks': '4-Thread High Speed Overlock' },
+      { 'Sl No': 6, 'Machine Name': 'Overlock Machine', 'Brand': 'JUKI', 'Model': 'MO-6814S', 'Needle Brand': 'ORGAN', 'Needle Type / Size': 'DCx27 #11', 'Required Needles': 2, 'Remarks': '4-Thread Super High Speed Overlock' },
+      { 'Sl No': 7, 'Machine Name': 'Overlock Machine', 'Brand': 'SIRUBA', 'Model': '747K-514M2-24', 'Needle Brand': 'ORGAN', 'Needle Type / Size': 'DCx27 #11', 'Required Needles': 2, 'Remarks': 'High Speed Overlock Machine' },
+      { 'Sl No': 8, 'Machine Name': 'Vertical Machine', 'Brand': 'BEDOLY', 'Model': 'BD-801', 'Needle Brand': 'ORGAN', 'Needle Type / Size': 'DPx5 #16', 'Required Needles': 1, 'Remarks': 'Vertical Machine Heavy Duty' },
+      { 'Sl No': 9, 'Machine Name': 'Button Hole Machine', 'Brand': 'JUKI', 'Model': 'LBH-1790', 'Needle Brand': 'ORGAN', 'Needle Type / Size': 'DPx5 #14', 'Required Needles': 1, 'Remarks': 'Computer Controlled Buttonhole' },
+      { 'Sl No': 10, 'Machine Name': 'Button Attach Machine', 'Brand': 'JUKI', 'Model': 'MB-1377', 'Needle Brand': 'ORGAN', 'Needle Type / Size': 'TQx1 #16', 'Required Needles': 1, 'Remarks': 'Single Thread Chainstitch Button Sew' },
+      { 'Sl No': 11, 'Machine Name': 'Bar Tack Machine', 'Brand': 'JUKI', 'Model': 'LK-1900', 'Needle Brand': 'ORGAN', 'Needle Type / Size': 'DPx17 #16', 'Required Needles': 1, 'Remarks': 'Computer Controlled Bartacking' },
+      { 'Sl No': 12, 'Machine Name': 'Feed of The Arm Machine', 'Brand': 'BROTHER', 'Model': 'DA-9270', 'Needle Brand': 'ORGAN', 'Needle Type / Size': 'TVx7 #14', 'Required Needles': 3, 'Remarks': '3-Needle Feed of the Arm Machine' },
+      { 'Sl No': 13, 'Machine Name': 'Double Needle Machine', 'Brand': 'JUKI', 'Model': 'LH-3568', 'Needle Brand': 'ORGAN', 'Needle Type / Size': 'DPx5 #14', 'Required Needles': 2, 'Remarks': '2-Needle Semi-Dry Head Lockstitch' }
     ];
 
     const ws = XLSX.utils.json_to_sheet(templateData);
@@ -3419,6 +3455,9 @@ class SmartStorageService {
       { wch: 28 }, // Machine Name
       { wch: 16 }, // Brand
       { wch: 22 }, // Model
+      { wch: 16 }, // Needle Brand
+      { wch: 20 }, // Needle Type / Size
+      { wch: 16 }, // Required Needles
       { wch: 42 }  // Remarks
     ];
 
