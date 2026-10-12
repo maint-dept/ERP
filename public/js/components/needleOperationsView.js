@@ -33,6 +33,12 @@ let txQuantity = 1;
 let floorOverviewCollapsed = true; // Default collapsed to maximize workspace table area
 
 export function renderNeedleOperationsView() {
+  const needleQ = state.get('needleSearchQuery');
+  if (needleQ !== undefined && needleQ !== null) {
+    searchQuery = needleQ;
+    state.set('needleSearchQuery', null);
+  }
+
   const allMachines = storage.getTable(TABLE_NAMES.MACHINES) || [];
   const floors = masterDataService.getFloors() || [];
   const units = masterDataService.getUnits() || [];

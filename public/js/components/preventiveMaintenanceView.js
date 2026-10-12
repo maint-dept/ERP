@@ -147,6 +147,13 @@ export function renderPreventiveMaintenanceView() {
   const canCreate = isAdmin || (typeof authService.hasAccess === 'function' ? authService.hasAccess('preventive_maintenance', 'CREATE_SERVICE') : true);
   const canConfig = isAdmin || (typeof authService.hasAccess === 'function' ? authService.hasAccess('preventive_maintenance', 'CONFIGURATION') : true);
 
+  // Consume any urgency filter passed from dashboard
+  const stateUrgency = state.get('pmFilterUrgency');
+  if (stateUrgency !== undefined && stateUrgency !== null) {
+    filterUrgency = stateUrgency;
+    state.set('pmFilterUrgency', null);
+  }
+
   // Active filter payload for dynamic metrics calculation
   const activeFilters = {
     search: searchQuery,

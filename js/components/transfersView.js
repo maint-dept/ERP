@@ -21,6 +21,12 @@ let transferCurrentPage = 1;
 let transferRowsPerPage = 25;
 
 export function renderTransfersView() {
+  const stateFilter = state.get('transferStatusFilter');
+  if (stateFilter !== undefined && stateFilter !== null) {
+    transferStatusFilter = stateFilter;
+    state.set('transferStatusFilter', null);
+  }
+
   const allFiltered = transferService.getTransferRequests({
     search: transferSearchQuery,
     status: transferStatusFilter

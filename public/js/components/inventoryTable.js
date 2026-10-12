@@ -51,6 +51,13 @@ export function renderInventoryTable() {
     }
   }
 
+  // Consume any status filter set from dashboard cards
+  const stateInvStatus = state.get('inventoryStatusFilter');
+  if (stateInvStatus !== undefined && stateInvStatus !== null) {
+    filters.status = stateInvStatus;
+    state.set('inventoryStatusFilter', null);
+  }
+
   // 1. Fetch filtered machine dataset (cross-floor idle machines included only when explicitly toggled on)
   const queryResult = machineService.getMachines({
     ...filters,
