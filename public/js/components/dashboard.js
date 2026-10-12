@@ -2,11 +2,11 @@
  * Al-Muslim Group Garments Factory Maintenance Machine ERP
  * Modern, Professional, Responsive Maintenance Management Dashboard Component
  * 
- * Implements the 4 User-Friendly Sections from Factory Specifications:
- * 1. ১. Machine Overview — মেশিনের সারসংক্ষেপ (Total Physical, Active, Repaired/Used, Under Repair, Spare/Ambiguous)
- * 2. ২. Machine Transfer — মেশিন স্থানান্তর (Transfer Request, Approved, Issued/Transferred, Declined/Rejected + Click Navigation)
- * 3. ৩. Machine Servicing — মেশিন সার্ভিসিং (Total, Serviced, Overdue, Due Today, Due Within 7 Days, Upcoming with Visual Badges)
- * 4. ৪. Needle Data — নিডল স্টক ব্যবস্থাপনা (DP×5, DP×17, DB×1, DC×1 with Required, Pending, Stock & Total Summary)
+ * Implements the 4 User-Friendly Sections in pure English:
+ * 1. 1. Machine Overview (Total Physical, Active, Repaired/Used, Under Repair, Spare/Ambiguous)
+ * 2. 2. Machine Transfer (Transfer Request, Approved, Issued/Transferred, Declined/Rejected + Click Navigation)
+ * 3. 3. Machine Servicing (Total, Serviced, Overdue, Due Today, Due Within 7 Days, Upcoming with Visual Badges)
+ * 4. 4. Needle Data (DP×5, DP×17, DB×1, DC×1 with Required, Pending, Stock & Total Summary)
  */
 
 import { storage } from '../db/storage.js';
@@ -37,7 +37,7 @@ export function renderDashboard() {
   const smList = storage.getTable(TABLE_NAMES.STORAGE_MASTER) || [];
 
   // =========================================================================
-  // 1. SECTION 1: MACHINE OVERVIEW — মেশিনের সারসংক্ষেপ
+  // 1. SECTION 1: MACHINE OVERVIEW
   // =========================================================================
   const totalMachines = machines.length;
 
@@ -62,7 +62,7 @@ export function renderDashboard() {
   const spareAmbiguousCount = Math.max(0, totalMachines - activeCount - underRepairCount);
 
   // =========================================================================
-  // 2. SECTION 2: MACHINE TRANSFER — মেশিন স্থানান্তর
+  // 2. SECTION 2: MACHINE TRANSFER MANAGEMENT
   // =========================================================================
   const allTransfers = transferService.getTransferRequests({ status: 'ALL' }) || [];
   const totalTransfers = allTransfers.length;
@@ -91,7 +91,7 @@ export function renderDashboard() {
   const pendingCount = pendingTransfers.length;
 
   // =========================================================================
-  // 3. SECTION 3: MACHINE SERVICING — মেশিন সার্ভিসিং
+  // 3. SECTION 3: MACHINE SERVICING MANAGEMENT
   // =========================================================================
   const pmMetrics = (typeof preventiveMaintenanceService.getDashboardMetrics === 'function') 
     ? preventiveMaintenanceService.getDashboardMetrics() 
@@ -117,7 +117,7 @@ export function renderDashboard() {
   }).slice(0, 5);
 
   // =========================================================================
-  // 4. SECTION 4: NEEDLE DATA — নিডল স্টক ব্যবস্থাপনা
+  // 4. SECTION 4: NEEDLE DATA MANAGEMENT
   // =========================================================================
   const targetNeedleConfigs = [
     {
@@ -253,13 +253,13 @@ export function renderDashboard() {
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(480px, 1fr)); gap: 20px; align-items: start;">
 
         <!-- ================================================================= -->
-        <!-- 1. SECTION 1: MACHINE OVERVIEW — মেশিনের সারসংক্ষেপ -->
+        <!-- 1. SECTION 1: MACHINE OVERVIEW -->
         <!-- ================================================================= -->
         <div class="dash-section-card" style="background: #0f172a; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);">
           <!-- Card Header -->
           <div style="padding: 14px 20px; background: rgba(255, 255, 255, 0.03); border-bottom: 1px solid rgba(255, 255, 255, 0.08); display: flex; justify-content: space-between; align-items: center;">
             <div style="font-size: 16px; font-weight: 800; color: #f8fafc; letter-spacing: -0.2px;">
-              ১. Machine Overview — মেশিনের সারসংক্ষেপ
+              1. Machine Overview
             </div>
             <span style="font-size: 11px; font-weight: 700; color: #38bdf8; background: rgba(56, 189, 248, 0.12); padding: 3px 8px; border-radius: 6px;">
               Total: ${totalMachines.toLocaleString()}
@@ -268,8 +268,8 @@ export function renderDashboard() {
 
           <!-- Table Header -->
           <div style="display: flex; justify-content: space-between; padding: 10px 20px; background: rgba(0, 0, 0, 0.35); font-size: 13px; font-weight: 800; color: #94a3b8; border-bottom: 1px solid rgba(255, 255, 255, 0.08);">
-            <span>বিবরণ</span>
-            <span>সংখ্যা</span>
+            <span>Description</span>
+            <span>Quantity</span>
           </div>
 
           <!-- Table Rows -->
@@ -349,13 +349,13 @@ export function renderDashboard() {
         </div>
 
         <!-- ================================================================= -->
-        <!-- 2. SECTION 2: MACHINE TRANSFER — মেশিন স্থানান্তর -->
+        <!-- 2. SECTION 2: MACHINE TRANSFER -->
         <!-- ================================================================= -->
         <div class="dash-section-card" style="background: #0f172a; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);">
           <!-- Card Header -->
           <div style="padding: 14px 20px; background: rgba(255, 255, 255, 0.03); border-bottom: 1px solid rgba(255, 255, 255, 0.08); display: flex; justify-content: space-between; align-items: center;">
             <div style="font-size: 16px; font-weight: 800; color: #f8fafc; letter-spacing: -0.2px;">
-              ২. Machine Transfer — মেশিন স্থানান্তর
+              2. Machine Transfer
             </div>
             <span style="font-size: 11px; font-weight: 700; color: #38bdf8; background: rgba(56, 189, 248, 0.12); padding: 3px 8px; border-radius: 6px;">
               Total: ${totalTransfers}
@@ -364,8 +364,8 @@ export function renderDashboard() {
 
           <!-- Table Header -->
           <div style="display: flex; justify-content: space-between; padding: 10px 20px; background: rgba(0, 0, 0, 0.35); font-size: 13px; font-weight: 800; color: #94a3b8; border-bottom: 1px solid rgba(255, 255, 255, 0.08);">
-            <span>বিবরণ</span>
-            <span>সংখ্যা</span>
+            <span>Description</span>
+            <span>Quantity</span>
           </div>
 
           <!-- Table Rows -->
@@ -429,21 +429,21 @@ export function renderDashboard() {
 
           </div>
 
-          <!-- Section 2 Footer Notice as specified in screenshot -->
+          <!-- Section 2 Footer Notice in pure English -->
           <div style="padding: 12px 20px; background: rgba(56, 189, 248, 0.06); border-top: 1px solid rgba(56, 189, 248, 0.18); font-size: 13px; font-weight: 600; color: #38bdf8; display: flex; align-items: center; gap: 8px;">
             <span style="font-size: 16px;">💡</span>
-            <span>প্রতিটি সংখ্যার ওপর ক্লিক করলে সংশ্লিষ্ট মেশিনের বিস্তারিত তালিকা দেখা যাবে।</span>
+            <span>Click on any quantity to view the detailed machine list.</span>
           </div>
         </div>
 
         <!-- ================================================================= -->
-        <!-- 3. SECTION 3: MACHINE SERVICING — মেশিন সার্ভিসিং -->
+        <!-- 3. SECTION 3: MACHINE SERVICING -->
         <!-- ================================================================= -->
         <div class="dash-section-card" style="background: #0f172a; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);">
           <!-- Card Header -->
           <div style="padding: 14px 20px; background: rgba(255, 255, 255, 0.03); border-bottom: 1px solid rgba(255, 255, 255, 0.08); display: flex; justify-content: space-between; align-items: center;">
             <div style="font-size: 16px; font-weight: 800; color: #f8fafc; letter-spacing: -0.2px;">
-              ৩. Machine Servicing — মেশিন সার্ভিসিং
+              3. Machine Servicing
             </div>
             <span style="font-size: 11px; font-weight: 700; color: #38bdf8; background: rgba(56, 189, 248, 0.12); padding: 3px 8px; border-radius: 6px;">
               Total: ${pmTotalMachines.toLocaleString()}
@@ -452,8 +452,8 @@ export function renderDashboard() {
 
           <!-- Table Header -->
           <div style="display: flex; justify-content: space-between; padding: 10px 20px; background: rgba(0, 0, 0, 0.35); font-size: 13px; font-weight: 800; color: #94a3b8; border-bottom: 1px solid rgba(255, 255, 255, 0.08);">
-            <span>বিবরণ</span>
-            <span>সংখ্যা</span>
+            <span>Description</span>
+            <span>Quantity</span>
           </div>
 
           <!-- Table Rows -->
@@ -547,13 +547,13 @@ export function renderDashboard() {
         </div>
 
         <!-- ================================================================= -->
-        <!-- 4. SECTION 4: NEEDLE DATA — নিডল স্টক ব্যবস্থাপনা -->
+        <!-- 4. SECTION 4: NEEDLE DATA -->
         <!-- ================================================================= -->
         <div class="dash-section-card" style="background: #0f172a; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);">
           <!-- Card Header -->
           <div style="padding: 14px 20px; background: rgba(255, 255, 255, 0.03); border-bottom: 1px solid rgba(255, 255, 255, 0.08); display: flex; justify-content: space-between; align-items: center;">
             <div style="font-size: 16px; font-weight: 800; color: #f8fafc; letter-spacing: -0.2px;">
-              ৪. Needle Data — নিডল স্টক ব্যবস্থাপনা
+              4. Needle Data
             </div>
             <span style="font-size: 11px; font-weight: 700; color: #38bdf8; background: rgba(56, 189, 248, 0.12); padding: 3px 8px; border-radius: 6px;">
               Total Stock: ${sumNeedleStock.toLocaleString()}
@@ -594,7 +594,7 @@ export function renderDashboard() {
               </div>
             `).join('')}
 
-            <!-- Summary Total Row as in Screenshot -->
+            <!-- Summary Total Row -->
             <div class="dash-clickable-row" data-action="needle-filter" data-needle="ALL" style="display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; align-items: center; padding: 14px 20px; background: rgba(56, 189, 248, 0.04); border-top: 2px solid rgba(56, 189, 248, 0.25); cursor: pointer; transition: background 0.15s ease;">
               <div style="text-align: left;">
                 <span style="font-size: 15px; font-weight: 900; color: #ffffff;">Total</span>
