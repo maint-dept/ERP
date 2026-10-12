@@ -12,7 +12,8 @@ import { state } from '../state.js';
 
 export function renderDashboard() {
   const scopedFilter = authService.getScopedFilter();
-  let machines = storage.getTable(TABLE_NAMES.MACHINES);
+  let machines = storage.getTable(TABLE_NAMES.MACHINES) || [];
+  if (!Array.isArray(machines)) machines = [];
 
   // Apply location scoping
   if (scopedFilter) {
@@ -28,10 +29,10 @@ export function renderDashboard() {
   const idleCount = machines.filter(m => m.status === 'IDLE').length;
   const pendingApprovals = totalMachines === 0 ? 0 : ((approvalService.getPendingCount() || 0) + (transferService.getPendingCount() || 0));
 
-  const mnMap = new Map(storage.getTable(TABLE_NAMES.MACHINE_NAMES).map(x => [x.id, x.name]));
-  const brdMap = new Map(storage.getTable(TABLE_NAMES.BRANDS).map(x => [x.id, x.name]));
-  const mdlMap = new Map(storage.getTable(TABLE_NAMES.MODELS).map(x => [x.id, x.name]));
-  const untMap = new Map(storage.getTable(TABLE_NAMES.UNITS).map(x => [x.id, x.name]));
+  const mnMap = new Map((storage.getTable(TABLE_NAMES.MACHINE_NAMES) || []).filter(Boolean).map(x => [x.id, x.name]));
+  const brdMap = new Map((storage.getTable(TABLE_NAMES.BRANDS) || []).filter(Boolean).map(x => [x.id, x.name]));
+  const mdlMap = new Map((storage.getTable(TABLE_NAMES.MODELS) || []).filter(Boolean).map(x => [x.id, x.name]));
+  const untMap = new Map((storage.getTable(TABLE_NAMES.UNITS) || []).filter(Boolean).map(x => [x.id, x.name]));
 
   // 1. Machine Name-wise counts
   const mnCounts = {};

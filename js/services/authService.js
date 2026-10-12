@@ -31,7 +31,7 @@ class AuthService {
     
     if (savedUserId) {
       this.currentUser = users.find(u => u.id === savedUserId && u.status === 'ACTIVE') || null;
-      if (!this.currentUser) {
+      if (!this.currentUser && users.length > 0) {
         localStorage.removeItem('al_muslim_active_user_id');
       }
     } else {

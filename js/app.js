@@ -216,9 +216,12 @@ class ERPApplication {
 
     console.log('Starting Al-Muslim Group Garments Maintenance ERP Application...');
 
-    // Await instant IndexedDB cache hydration before first render (<15ms)
+    // Await instant IndexedDB cache hydration before first render (max 350ms safety guard)
     try {
-      await storage.ensureHydrated();
+      await Promise.race([
+        storage.ensureHydrated(),
+        new Promise(resolve => setTimeout(resolve, 350))
+      ]);
     } catch (e) {
       console.warn('[ERP] Pre-render hydration notice:', e);
     }
@@ -366,8 +369,13 @@ class ERPApplication {
 
       // Security Gate: Protect internal ERP shell from unauthenticated access
       if (!currentUser && currentView !== 'home' && currentView !== 'login') {
+        currentView = 'login';
         state.set('currentView', 'login');
-        return;
+        try {
+          if (window.history && window.history.replaceState) {
+            window.history.replaceState({ view: 'login' }, '', '#login');
+          }
+        } catch (_) { }
       }
 
       // Authorization Gate: Redirect unauthorized view requests straight to user's first allowed view

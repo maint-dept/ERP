@@ -20,6 +20,11 @@ class IDBCache {
 
     if (!this._initPromise) {
       this._initPromise = new Promise((resolve) => {
+        const timer = setTimeout(() => {
+          console.warn('[IDBCache] Open timeout, fallback to memory');
+          resolve(null);
+        }, 350);
+
         try {
           const req = indexedDB.open(DB_NAME, DB_VERSION);
           req.onupgradeneeded = (e) => {
@@ -29,14 +34,22 @@ class IDBCache {
             }
           };
           req.onsuccess = (e) => {
+            clearTimeout(timer);
             this._db = e.target.result;
             resolve(this._db);
           };
           req.onerror = () => {
+            clearTimeout(timer);
             console.warn('[IDBCache] Open failed, fallback to memory');
             resolve(null);
           };
+          req.onblocked = () => {
+            clearTimeout(timer);
+            console.warn('[IDBCache] Open blocked, fallback to memory');
+            resolve(null);
+          };
         } catch (_) {
+          clearTimeout(timer);
           resolve(null);
         }
       });
@@ -81,20 +94,33 @@ class IDBCache {
       const db = await this._getDB();
       if (!db) return {};
       return new Promise((resolve) => {
-        const tx = db.transaction([STORE_NAME], 'readonly');
-        const store = tx.objectStore(STORE_NAME);
-        const req = store.openCursor();
-        const tables = {};
-        req.onsuccess = (e) => {
-          const cursor = e.target.result;
-          if (cursor) {
-            tables[cursor.key] = cursor.value;
-            cursor.continue();
-          } else {
-            resolve(tables);
-          }
-        };
-        req.onerror = () => resolve({});
+        const timer = setTimeout(() => {
+          resolve({});
+        }, 400);
+
+        try {
+          const tx = db.transaction([STORE_NAME], 'readonly');
+          const store = tx.objectStore(STORE_NAME);
+          const req = store.openCursor();
+          const tables = {};
+          req.onsuccess = (e) => {
+            const cursor = e.target.result;
+            if (cursor) {
+              tables[cursor.key] = cursor.value;
+              cursor.continue();
+            } else {
+              clearTimeout(timer);
+              resolve(tables);
+            }
+          };
+          req.onerror = () => {
+            clearTimeout(timer);
+            resolve({});
+          };
+        } catch (_) {
+          clearTimeout(timer);
+          resolve({});
+        }
       });
     } catch (_) {
       return {};
