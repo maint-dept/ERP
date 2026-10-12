@@ -1911,8 +1911,15 @@ class AuthService {
    */
   isIdleMachine(machine) {
     if (!machine) return false;
-    const status = (machine.status || '').toUpperCase();
-    if (status === 'IDLE' || status === 'USABLE_IDLE' || status === 'REPAIRABLE_IDLE') return true;
+    const status = (machine.status || '').toUpperCase().trim();
+    if (
+      status === 'IDLE' || 
+      status === 'USABLE_IDLE' || 
+      status === 'REPAIRABLE_IDLE' ||
+      status === 'IN ACTIVE' ||
+      status === 'INACTIVE' ||
+      status === 'SPARE'
+    ) return true;
     const uQty = parseInt(machine.usable_idle ?? machine.usableIdle ?? 0, 10) || 0;
     if (uQty > 0) return true;
     const rpQty = parseInt(machine.repairable_idle ?? machine.repairableIdle ?? 0, 10) || 0;
@@ -1935,29 +1942,47 @@ class AuthService {
 
   /**
    * Check if a machine can be viewed by the user:
-   * 1. If inside assigned scope: Allowed (All machines on assigned floor/line: running + idle + repairable)
-   * 2. If machine is outside assigned scope:
-   *    Allowed ONLY if includeCrossFloorIdle is true AND it is an Idle machine (Usable Idle, Idle, Repairable Idle, or Central Idle).
-   * 3. Any running/active non-idle machine on other floors is strictly hidden from view.
+   * 1. If includeCrossFloorIdle is true (Cross-Floor Idle View ON):
+   *    - User's own assigned floor data is strictly EXCLUDED.
+   *    - ONLY IDLE machines from OTHER floors are shown.
+   *    - Running machines on other floors are strictly hidden.
+   * 2. If includeCrossFloorIdle is false (Normal View):
+   *    - ONLY machines within the user's assigned location scope are shown (running + idle + repairable).
+   *    - Other floors are strictly hidden.
    */
   canViewMachine(machine, user = null, includeCrossFloorIdle = false) {
     if (!machine) return false;
     const u = user || this.getCurrentUser();
     if (!u) return false;
-    if (this.isSuperAdmin(u)) return true;
 
-    // 1. Within assigned location scope (default allowed for their assigned floor/line)
-    if (this.isLocationAllowed(machine.unitId, machine.floorId, machine.lineId, u)) {
+    // Super Admin global view
+    if (this.isSuperAdmin(u)) {
+      if (includeCrossFloorIdle) {
+        return this.isIdleMachine(machine);
+      }
       return true;
     }
 
-    // 2. Cross-floor idle machine visibility (ONLY allowed when explicitly enabled via button)
-    if (includeCrossFloorIdle && this.isIdleMachine(machine)) {
-      return true;
+    const scope = u.assignedScope;
+    const isOwnFloor = Boolean(
+      (scope?.floorIds?.length > 0 && scope.floorIds.includes(machine.floorId)) ||
+      (scope?.lineIds?.length > 0 && scope.lineIds.includes(machine.lineId)) ||
+      this.isLocationAllowed(machine.unitId, machine.floorId, machine.lineId, u)
+    );
+
+    // When Cross-Floor Idle View is ACTIVE:
+    // 1. Strictly EXCLUDE machines on user's own assigned floor/line!
+    // 2. ONLY include IDLE machines from OTHER floors!
+    if (includeCrossFloorIdle) {
+      if (isOwnFloor) {
+        return false; // Own floor is strictly excluded in Cross-Floor Idle view
+      }
+      return this.isIdleMachine(machine); // Only idle machines from other floors
     }
 
-    // 3. Running machines on other floors are strictly hidden
-    return false;
+    // Normal mode (Cross-Floor Idle view is OFF):
+    // Only show machines within user's assigned location scope
+    return isOwnFloor;
   }
 
   /**

@@ -51,6 +51,20 @@ export function renderInventoryTable() {
     }
   }
 
+  // When Cross-Floor Idle View is ON:
+  // Strictly clear any own floor / line filter, and clear active/running status filter
+  if (showCrossFloorIdle) {
+    if (isScopedUser && filters.floorId && userScope.floorIds?.includes(filters.floorId)) {
+      filters.floorId = '';
+    }
+    if (isScopedUser && filters.lineId && userScope.lineIds?.includes(filters.lineId)) {
+      filters.lineId = '';
+    }
+    if (filters.status === 'ACTIVE') {
+      filters.status = 'ALL';
+    }
+  }
+
   // Consume any status filter set from dashboard cards
   const stateInvStatus = state.get('inventoryStatusFilter');
   if (stateInvStatus !== undefined && stateInvStatus !== null) {
@@ -76,10 +90,12 @@ export function renderInventoryTable() {
   // 3. Hierarchical Cascading Dropdown Options (Group -> Unit -> Floor -> Line)
   // When cross-floor idle is off, respect assigned location scope (shows only user's assigned floor)
   // When cross-floor idle is on, allow viewing other floors with idle machines
-  const ignoreScopeForDropdowns = !isScopedUser || showCrossFloorIdle;
   const groups = masterDataService.getGroups();
   const units = masterDataService.getUnits(filters.groupId, false, ignoreScopeForDropdowns);
-  const floors = masterDataService.getFloors(filters.unitId, filters.groupId, false, ignoreScopeForDropdowns);
+  let floors = masterDataService.getFloors(filters.unitId, filters.groupId, false, ignoreScopeForDropdowns);
+  if (showCrossFloorIdle && isScopedUser && userScope.floorIds?.length > 0) {
+    floors = floors.filter(f => !userScope.floorIds.includes(f.id));
+  }
   const lines = masterDataService.getLines(filters.floorId, filters.unitId, filters.groupId, false, ignoreScopeForDropdowns);
   const machineNames = masterDataService.getMachineNames();
   const brands = masterDataService.getBrandsForMachineName(filters.machineNameId);
@@ -686,12 +702,12 @@ export function renderInventoryTable() {
             
             <!-- Inline KPI Pills (Dynamically calculated based on User Access & Filter View) -->
             <div class="inventory-inline-kpis">
-              <div class="kpi-pill kpi-total" title="Total machines matching current scope and view">
+              <div class="kpi-pill kpi-total" title="${showCrossFloorIdle ? 'Total standby & idle machines across other factory floors' : 'Total machines matching current scope and view'}">
                 <span class="kpi-dot">🏭</span>
                 <strong class="kpi-val">${isInitialSyncPending ? '...' : countTotalMachines}</strong>
-                <span class="kpi-lbl">Total</span>
+                <span class="kpi-lbl">${showCrossFloorIdle ? 'Idle Other Floors' : 'Total'}</span>
               </div>
-              <div class="kpi-pill kpi-running" title="Operational running machines in current scope and view">
+              <div class="kpi-pill kpi-running" title="Operational running machines in current scope and view" style="${showCrossFloorIdle ? 'display: none;' : ''}">
                 <span class="kpi-dot">🟢</span>
                 <strong class="kpi-val" style="color: #34d399;">${isInitialSyncPending ? '...' : totalRunning}</strong>
                 <span class="kpi-lbl">Running</span>
@@ -825,7 +841,7 @@ export function renderInventoryTable() {
             <!-- Floor -->
             <div class="filter-select-item" style="flex: 1 1 120px; min-width: 115px;">
               <select id="filter-floor" class="filter-select-compact" style="height: 30px; font-size: 11.5px; width: 100%;">
-                <option value="">${isScopedUser && !showCrossFloorIdle ? 'Assigned Floor' : 'All Floors'} (${floors.length})</option>
+                <option value="">${showCrossFloorIdle ? 'All Other Floors' : (isScopedUser ? 'Assigned Floor' : 'All Floors')} (${floors.length})</option>
                 ${floors.map(f => `<option value="${f.id}" ${filters.floorId === f.id ? 'selected' : ''}>${f.name}</option>`).join('')}
               </select>
             </div>
@@ -858,11 +874,19 @@ export function renderInventoryTable() {
             <!-- Status -->
             <div class="filter-select-item" style="flex: 1 1 120px; min-width: 115px;">
               <select id="filter-status-select" class="filter-select-compact" style="height: 30px; font-size: 11.5px; width: 100%;">
-                <option value="ALL" ${!filters.status || filters.status === 'ALL' ? 'selected' : ''}>All Status</option>
-                <option value="ACTIVE" ${filters.status === 'ACTIVE' ? 'selected' : ''}>🟢 Active</option>
-                <option value="IDLE" ${filters.status === 'IDLE' ? 'selected' : ''}>💤 Idle</option>
-                <option value="MAINTENANCE" ${filters.status === 'MAINTENANCE' ? 'selected' : ''}>🟡 Maint</option>
-                <option value="BREAKDOWN" ${filters.status === 'BREAKDOWN' ? 'selected' : ''}>🔴 Breakdown</option>
+                ${showCrossFloorIdle ? `
+                  <option value="ALL" ${!filters.status || filters.status === 'ALL' ? 'selected' : ''}>All Idle Machines</option>
+                  <option value="USABLE_IDLE" ${filters.status === 'USABLE_IDLE' ? 'selected' : ''}>✨ Usable Idle</option>
+                  <option value="IDLE" ${filters.status === 'IDLE' ? 'selected' : ''}>💤 Standby Idle</option>
+                  <option value="REPAIRABLE_IDLE" ${filters.status === 'REPAIRABLE_IDLE' ? 'selected' : ''}>🟡 Repairable Idle</option>
+                  <option value="MAINTENANCE" ${filters.status === 'MAINTENANCE' ? 'selected' : ''}>🔧 In Maintenance</option>
+                ` : `
+                  <option value="ALL" ${!filters.status || filters.status === 'ALL' ? 'selected' : ''}>All Status</option>
+                  <option value="ACTIVE" ${filters.status === 'ACTIVE' ? 'selected' : ''}>🟢 Active</option>
+                  <option value="IDLE" ${filters.status === 'IDLE' ? 'selected' : ''}>💤 Idle</option>
+                  <option value="MAINTENANCE" ${filters.status === 'MAINTENANCE' ? 'selected' : ''}>🟡 Maint</option>
+                  <option value="BREAKDOWN" ${filters.status === 'BREAKDOWN' ? 'selected' : ''}>🔴 Breakdown</option>
+                `}
               </select>
             </div>
 
@@ -921,7 +945,7 @@ export function renderInventoryTable() {
             <div style="background: rgba(2, 132, 199, 0.12); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 6px; padding: 5px 12px; margin-top: 5px; display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 11.5px; color: #e0f2fe;">
               <div style="display: flex; align-items: center; gap: 6px;">
                 <span>👁️</span>
-                <span><strong>Cross-Floor Idle View Active:</strong> Displaying standby &amp; idle machines across other factory floors. You can click <strong>Options ▾ &gt; Request Machine Transfer</strong> on any idle machine to request it for your floor (holding floor will be notified for release approval).</span>
+                <span><strong>Cross-Floor Idle View Active:</strong> Showing standby &amp; idle machines from <strong>other floors only</strong> (your assigned floor is excluded). Click <strong>Options ▾ &gt; Request Machine Transfer</strong> on any idle machine to request it for your floor.</span>
               </div>
               <button id="btn-banner-exit-cross-idle" type="button" class="btn btn-secondary btn-xs" style="padding: 2px 8px; font-size: 11px; font-weight: 700; color: #38bdf8; border-color: rgba(56, 189, 248, 0.4); cursor: pointer; white-space: nowrap;">
                 ↩️ Return to My Floor
@@ -1214,13 +1238,13 @@ export function initInventoryTableEvents() {
       const nextMode = !currentMode;
       state.set('showCrossFloorIdle', nextMode);
       if (nextMode) {
-        state.updateFilters({ floorId: '', page: 1 });
-        notificationService.info('👁️ Cross-Floor Idle View activated — Showing idle machines across other floors.');
+        state.updateFilters({ floorId: '', lineId: '', status: 'ALL', page: 1 });
+        notificationService.info('Cross-Floor Idle View activated — Showing idle machines across other floors.');
       } else {
         const u = authService.getCurrentUser();
         const defFloor = (u?.assignedScope?.floorIds?.length === 1) ? u.assignedScope.floorIds[0] : '';
-        state.updateFilters({ floorId: defFloor, page: 1 });
-        notificationService.success('📍 Returned to your default assigned floor machines.');
+        state.updateFilters({ floorId: defFloor, lineId: '', status: 'ALL', page: 1 });
+        notificationService.success('Returned to your default assigned floor machines.');
       }
     });
   }
