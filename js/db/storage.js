@@ -464,6 +464,9 @@ class StorageEngine {
       if (m && duplicateIdMap[m.machineNameId]) {
         m.machineNameId = duplicateIdMap[m.machineNameId];
       }
+      if (m && typeof m.remarks === 'string' && m.remarks.toLowerCase().startsWith('imported from sheet')) {
+        m.remarks = m.remarks.replace(/^Imported from sheet\s*['"][^'"]*['"]\s*/i, '').trim();
+      }
     });
 
     // Deduplicate MACHINE_NAMES table: strip duplicates and ensure canonical 76

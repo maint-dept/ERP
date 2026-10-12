@@ -1863,7 +1863,7 @@ class ExcelService {
             totalQuantity: totalQtyVal,
             quantity: totalQtyVal,
             status: statusStr,
-            remarks: mapped.remarks || '',
+            remarks: (mapped.remarks && !mapped.remarks.toLowerCase().startsWith('imported from sheet')) ? mapped.remarks : '',
             manufacturing: mapped.manufacturing || '',
             manufacturingSerial: mapped.manufacturing_serial || mapped.manufacturing || '',
             manufacturingYear: mapped.manufacturing_year || '',
@@ -2151,7 +2151,9 @@ class ExcelService {
               if (d.brandId) updates.brandId = d.brandId;
               if (d.modelId) updates.modelId = d.modelId;
               if (d.status) updates.status = d.status;
-              if (d.remarks) updates.remarks = d.remarks;
+              if (d.remarks !== undefined) {
+                updates.remarks = (d.remarks && !d.remarks.toLowerCase().startsWith('imported from sheet')) ? d.remarks : '';
+              }
               // Update Running / Usable Idle / Repairable Idle from Excel if provided
               if (d.running !== undefined) updates.running = Number(d.running);
               if (d.usableIdle !== undefined) updates.usable_idle = Number(d.usableIdle);
@@ -2218,7 +2220,7 @@ class ExcelService {
               usable_idle: usableQty,
               repairable_idle: repQty,
               status: d.status || 'ACTIVE',
-              remarks: d.remarks || `Imported from sheet '${sheet.name}'`,
+              remarks: (d.remarks && !d.remarks.toLowerCase().startsWith('imported from sheet')) ? d.remarks : '',
               manufacturing: d.manufacturing || '',
               manufacturingSerial: d.manufacturingSerial || d.manufacturing || '',
               manufacturingYear: d.manufacturingYear || '',

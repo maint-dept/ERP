@@ -378,7 +378,13 @@ export function renderInventoryTable() {
       label: 'Remarks',
       width: 230,
       renderTh: (thStyle, thClass) => `<th class="${thClass}" style="width: 230px; min-width: 230px; max-width: 230px; ${thStyle}">Remarks</th>`,
-      renderTd: (m, meta, tdStyle, tdClass) => `<td class="${tdClass}" style="font-size: 11.5px; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; ${tdStyle}" title="${m.remarks || ''}">${m.remarks || '—'}</td>`
+      renderTd: (m, meta, tdStyle, tdClass) => {
+        let rem = m.remarks || '';
+        if (typeof rem === 'string' && rem.toLowerCase().startsWith('imported from sheet')) {
+          rem = rem.replace(/^Imported from sheet\s*['"][^'"]*['"]\s*/i, '').trim();
+        }
+        return `<td class="${tdClass}" style="font-size: 11.5px; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; ${tdStyle}" title="${escapeHtml(rem)}">${escapeHtml(rem) || '—'}</td>`;
+      }
     }
   ];
 
