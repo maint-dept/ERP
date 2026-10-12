@@ -12,9 +12,20 @@ import { barcodeService } from '../services/barcodeService.js';
 import { transferService } from '../services/transferService.js';
 import { historyService } from '../services/historyService.js';
 import { authService } from '../services/authService.js';
+import { excelService } from '../services/excelService.js';
 import { state } from '../state.js';
 
 let activeDetailsTab = 'overview'; // 'overview', 'location-history', 'spare-parts', 'service-history', 'transfers'
+
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
 
 export function renderMachineDetails() {
   const machineId = state.get('activeMachineId');
@@ -41,6 +52,21 @@ export function renderMachineDetails() {
   const uQty = parseInt(machine.usable_idle ?? machine.usableIdle ?? (machine.status === 'IDLE' ? (machine.quantity ?? 1) : 0), 10) || 0;
   const rpQty = parseInt(machine.repairable_idle ?? machine.repairableIdle ?? ((machine.status === 'MAINTENANCE' || machine.status === 'BREAKDOWN') ? (machine.quantity ?? 1) : 0), 10) || 0;
   const totalQty = machine.totalQuantity || machine.total_quantity || (rQty + uQty + rpQty > 0 ? (rQty + uQty + rpQty) : (machine.quantity ?? 1));
+
+  // Extended Specifications
+  const mfgSerialNumber = machine.manufacturing_serial || machine.manufacturingSerial || machine.customValues?.manufacturing_serial || machine.customValues?.manufacturingSerial || machine.manufacturingNo || machine.mfgSerial || machine.manufacturing || '';
+  
+  let rawServiceDate = machine.lastServiceDate || machine.service_date || machine.serviceDate || machine.customValues?.service_date || '';
+  if (!rawServiceDate && (machine.id || machine.serialNumber)) {
+    const pmTable = storage.getTable(TABLE_NAMES.PREVENTIVE_MAINTENANCE) || [];
+    const pm = pmTable.filter(r => (r.machineId === machine.id || (r.serialNumber && machine.serialNumber && String(r.serialNumber).trim().toUpperCase() === String(machine.serialNumber).trim().toUpperCase())))
+                      .sort((a, b) => (b.serviceDate || '').localeCompare(a.serviceDate || ''))[0];
+    if (pm?.serviceDate) rawServiceDate = pm.serviceDate;
+  }
+  const lastServiceDateFormatted = excelService.formatDateDMY(rawServiceDate);
+  const nextServiceDateFormatted = excelService.formatDateDMY(machine.nextServiceDate);
+  const purchaseDateFormatted = excelService.formatDateDMY(machine.purchase_date || machine.purchaseDate);
+  const installDateFormatted = excelService.formatDateDMY(machine.installation_date || machine.installationDate);
 
   const barcodeSvg = barcodeService.generateBarcodeSVG(machine.serialNumber, { width: 1.8, height: 38 });
   const qrSvg = barcodeService.generateQRCodeSVG(`AL-MUSLIM-ERP://MC/${machine.serialNumber}`, { size: 90 });
@@ -133,7 +159,7 @@ export function renderMachineDetails() {
                   <div style="font-size: 12px; font-weight: 800;">${mn?.name || machine.machineName || ''} (${brd?.name || machine.brand || ''} ${mdl?.name || machine.model || ''})</div>
                   <div style="font-size: 10.5px; color: #444; margin-top: 2px;"><strong>Loc:</strong> ${flr?.name || machine.floor || ''} &rarr; ${lin?.name || machine.line || ''}</div>
                   <div style="font-family: var(--font-mono); font-size: 13px; font-weight: 900; color: #0284c7; margin-top: 4px;">
-                    SN: ${machine.serialNumber}
+                    SN: ${machine.serialNumber} ${mfgSerialNumber ? `<span style="font-size: 11px; color: #555; font-weight: 600;">(Mfg: ${escapeHtml(mfgSerialNumber)})</span>` : ''}
                   </div>
                 </div>
                 <div style="display: flex; flex-direction: column; align-items: center;">
@@ -150,17 +176,25 @@ export function renderMachineDetails() {
             <!-- Machine Information & Current Location -->
             <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 14px;">
               <h4 style="font-size: 13px; font-weight: 700; color: #38bdf8; margin-bottom: 10px;">
-                📋 Machine Information &amp; Current Location
+                📋 Machine Information &amp; Technical Specifications
               </h4>
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 12.5px;">
                 <div><span style="color: var(--text-muted);">Machine Serial Number:</span> <strong style="color: #38bdf8; font-family: var(--font-mono);">${machine.serialNumber}</strong></div>
+                <div><span style="color: var(--text-muted);">Manufacturing Serial No:</span> <strong style="color: #38bdf8; font-family: var(--font-mono);">${escapeHtml(mfgSerialNumber) || '—'}</strong></div>
                 <div><span style="color: var(--text-muted);">Machine Status:</span> <span class="badge badge-${(machine.status || 'ACTIVE').toLowerCase()}">${machine.status || 'ACTIVE'}</span></div>
                 <div><span style="color: var(--text-muted);">Machine Name:</span> <strong style="color: #fff;">${mn?.name || machine.machineName || '—'}</strong></div>
                 <div><span style="color: var(--text-muted);">Brand &amp; Model:</span> <strong style="color: #fff;">${brd?.name || machine.brand || '—'} ${mdl?.name || machine.model || ''}</strong></div>
                 <div><span style="color: var(--text-muted);">Unit / Factory:</span> <strong style="color: #fff;">${unt?.name || machine.unit || '—'}</strong></div>
                 <div><span style="color: var(--text-muted);">Floor:</span> <strong style="color: #fff;">${flr?.name || machine.floor || '—'}</strong></div>
                 <div><span style="color: var(--text-muted);">Line / Dept:</span> <strong style="color: #38bdf8;">${lin?.name || machine.line || '—'}</strong></div>
-                <div><span style="color: var(--text-muted);">Purchase Date:</span> <strong style="color: #fff;">${machine.purchase_date || machine.purchaseDate || '—'}</strong></div>
+                <div><span style="color: var(--text-muted);">Last Servicing Date:</span> <strong style="color: #f59e0b;">${lastServiceDateFormatted || '—'}</strong></div>
+                <div><span style="color: var(--text-muted);">Next Due Service Date:</span> <strong style="color: #38bdf8;">${nextServiceDateFormatted || '—'}</strong></div>
+                <div><span style="color: var(--text-muted);">Serviced By:</span> <strong style="color: #fff;">${machine.lastServicedBy || machine.assignedManpower || '—'}</strong></div>
+                <div><span style="color: var(--text-muted);">Manufacturing Year:</span> <strong style="color: #fff;">${machine.manufacturing_year || machine.manufacturingYear || '—'}</strong></div>
+                <div><span style="color: var(--text-muted);">Country of Origin:</span> <strong style="color: #fff;">${machine.country_of_origin || machine.origin || '—'}</strong></div>
+                <div><span style="color: var(--text-muted);">Capacity / Specs:</span> <strong style="color: #fff;">${machine.machine_capacity || machine.capacity || '—'}</strong></div>
+                <div><span style="color: var(--text-muted);">Supplier / Vendor:</span> <strong style="color: #fff;">${machine.supplier_name || machine.supplier || '—'}</strong></div>
+                <div><span style="color: var(--text-muted);">Purchase Date:</span> <strong style="color: #fff;">${purchaseDateFormatted || '—'}</strong></div>
               </div>
             </div>
 

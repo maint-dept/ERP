@@ -655,13 +655,18 @@ class MachineService {
     const qty = updates.quantity !== undefined ? Number(updates.quantity) : (existing.quantity || 1);
     const status = updates.status || existing.status || 'ACTIVE';
 
+    const rVal = updates.running !== undefined ? Number(updates.running) : (existing.running !== undefined ? Number(existing.running) : ((status === 'ACTIVE') ? qty : 0));
+    const uVal = updates.usable_idle !== undefined ? Number(updates.usable_idle) : (existing.usable_idle !== undefined ? Number(existing.usable_idle) : ((status === 'IDLE') ? qty : 0));
+    const rpVal = updates.repairable_idle !== undefined ? Number(updates.repairable_idle) : (existing.repairable_idle !== undefined ? Number(existing.repairable_idle) : ((status === 'MAINTENANCE' || status === 'BREAKDOWN') ? qty : 0));
+    const finalQty = updates.quantity !== undefined ? Number(updates.quantity) : ((rVal + uVal + rpVal) || existing.quantity || 1);
+
     const enrichedUpdates = {
       ...updates,
-      quantity: qty,
+      quantity: finalQty,
       status,
-      running: (status === 'ACTIVE') ? qty : 0,
-      usable_idle: (status === 'IDLE') ? qty : 0,
-      repairable_idle: (status === 'MAINTENANCE' || status === 'BREAKDOWN') ? qty : 0,
+      running: rVal,
+      usable_idle: uVal,
+      repairable_idle: rpVal,
       group: grpObj?.name || existing.group || 'Al-Muslim Group',
       groupName: grpObj?.name || existing.groupName || 'Al-Muslim Group',
       unit: untObj?.name || existing.unit || '',
@@ -685,6 +690,65 @@ class MachineService {
     try {
       localStorage.setItem('al_muslim_erp_' + TABLE_NAMES.MACHINES, JSON.stringify(storage.data[TABLE_NAMES.MACHINES]));
     } catch (_) {}
+
+    // Synchronize preventive maintenance table if service date was modified
+    if (enrichedUpdates.lastServiceDate || enrichedUpdates.service_date) {
+      try {
+        const sDate = enrichedUpdates.lastServiceDate || enrichedUpdates.service_date;
+        const pmTable = storage.getTable(TABLE_NAMES.PREVENTIVE_MAINTENANCE) || [];
+        const existingPmIndex = pmTable.findIndex(r => 
+          (r.machineId === id || (r.serialNumber && existing.serialNumber && String(r.serialNumber).trim().toUpperCase() === String(existing.serialNumber).trim().toUpperCase()))
+        );
+        if (existingPmIndex >= 0) {
+          pmTable[existingPmIndex].serviceDate = sDate;
+          pmTable[existingPmIndex].lastServiceDate = sDate;
+          if (enrichedUpdates.nextServiceDate) pmTable[existingPmIndex].nextServiceDate = enrichedUpdates.nextServiceDate;
+          if (enrichedUpdates.lastServicedBy) {
+            pmTable[existingPmIndex].servicedBy = enrichedUpdates.lastServicedBy;
+            pmTable[existingPmIndex].assignedManpower = enrichedUpdates.lastServicedBy;
+          }
+          if (enrichedUpdates.serviceStickerSerial) pmTable[existingPmIndex].serviceStickerSerial = enrichedUpdates.serviceStickerSerial;
+          pmTable[existingPmIndex].updatedAt = new Date().toISOString();
+        } else {
+          pmTable.push({
+            id: `pm-rec-${Date.now()}-${Math.floor(Math.random() * 100000)}`,
+            machineId: id,
+            serialNumber: updated.serialNumber,
+            machineName: updated.machineName || 'Machine',
+            machineType: updated.machineName || 'Sewing Machine',
+            model: updated.model || '',
+            brand: updated.brand || '',
+            unit: updated.unit || '',
+            unitId: updated.unitId || null,
+            floor: updated.floor || '',
+            floorId: updated.floorId || null,
+            line: updated.line || '',
+            lineId: updated.lineId || null,
+            workingArea: `${updated.floor || ''} - ${updated.line || ''}`,
+            serviceDate: sDate,
+            serviceType: 'PREVENTIVE_SERVICE',
+            serviceStatus: 'COMPLETED',
+            serviceStickerSerial: enrichedUpdates.serviceStickerSerial || 'STK-PENDING',
+            servicedBy: enrichedUpdates.lastServicedBy || user?.name || 'Assigned Mechanic',
+            servicedByCardNumber: '',
+            servicedByDesignation: 'Maintenance Mechanic',
+            servicedByDepartment: 'Mechanical Maintenance',
+            assignedManpower: enrichedUpdates.lastServicedBy || user?.name || 'Assigned Mechanic',
+            frequencyDays: 91,
+            lastServiceDate: sDate,
+            nextServiceDate: enrichedUpdates.nextServiceDate || '',
+            serviceChecklist: [],
+            serviceRemarks: enrichedUpdates.remarks || 'Machine Service Recorded',
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            loggedBy: user?.name || 'superadmin'
+          });
+        }
+        storage.saveTable(TABLE_NAMES.PREVENTIVE_MAINTENANCE, pmTable);
+      } catch (pmErr) {
+        console.warn('Could not sync preventive maintenance record:', pmErr);
+      }
+    }
 
     // 2. Background non-blocking cloud sync
     syncManager.saveRecord(TABLE_NAMES.MACHINES, id, targetUpdateObj).catch(e => {
