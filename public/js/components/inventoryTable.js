@@ -21,6 +21,16 @@ import { state } from '../state.js';
 // Local UI state for collapsible advanced filters
 let showAdvancedFilters = false;
 
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 export function renderInventoryTable() {
   const filters = state.get('filters') || {};
   const selectedIds = state.get('selectedMachineIds') || new Set();
