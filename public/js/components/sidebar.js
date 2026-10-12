@@ -430,9 +430,10 @@ export function initSidebarEvents() {
         }
       } else {
         // Single clean view switch
-        state.set('currentView', view);
         if (typeof window.app !== 'undefined' && typeof window.app.switchView === 'function') {
           window.app.switchView(view);
+        } else {
+          state.set('currentView', view);
         }
       }
     }

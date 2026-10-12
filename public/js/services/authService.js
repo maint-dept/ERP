@@ -2074,10 +2074,12 @@ class AuthService {
   }
 }
 
-export const authService = new AuthService();
+export const authService = (typeof window !== 'undefined' && window.__erpAuthService)
+  ? window.__erpAuthService
+  : new AuthService();
 
-// Attach to window for runtime diagnostics
 if (typeof window !== 'undefined') {
+  window.__erpAuthService = authService;
   window.authService = authService;
 }
 

@@ -122,9 +122,7 @@
       "status": "ACTIVE"
     }
   ],
-  "approval_requests": []
-    }
-  ],
+  "approval_requests": [],
   "audit_logs": [
     {
       "id": "aud-1",

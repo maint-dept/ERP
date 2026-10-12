@@ -4,53 +4,53 @@
  * Enhanced with Global Scroll & Focus State Preservation Engine (Zero Jitter, Zero Scroll Loss)
  */
 
-import { state } from './state.js?v=4.26.2';
-import { storage } from './db/storage.js?v=4.26.2';
-import { authService } from './services/authService.js?v=4.26.2';
-import { renderNavbar, initNavbarEvents } from './components/navbar.js?v=4.26.2';
-import { renderSidebar, initSidebarEvents, updateSidebarActiveState } from './components/sidebar.js?v=4.26.2';
-import { renderHomepageView, initHomepageEvents } from './components/homepageView.js?v=4.26.2';
-import { renderLoginView, initLoginViewEvents } from './components/loginView.js?v=4.26.2';
-import { renderDashboard, initDashboardEvents } from './components/dashboard.js?v=4.26.2';
-import { renderInventoryTable, initInventoryTableEvents, syncInventorySelectionDOM } from './components/inventoryTable.js?v=4.26.3';
-import { renderMachineModal, initMachineModalEvents } from './components/machineModal.js?v=4.26.2';
-import { renderMachineDetails, initMachineDetailsEvents } from './components/machineDetails.js?v=4.26.2';
-import { renderTransferModal, initTransferModalEvents } from './components/transferModal.js?v=4.26.2';
-import { renderTransferDetailsModal, initTransferDetailsModalEvents } from './components/transferDetailsModal.js?v=4.26.2';
-import { renderEditTransferModal, initEditTransferModalEvents } from './components/editTransferModal.js?v=4.26.2';
-import { renderTransfersView, initTransfersViewEvents } from './components/transfersView.js?v=4.24.2';
-import { renderTransferWorkflowBuilder, initTransferWorkflowBuilderEvents } from './components/transferWorkflowBuilder.js?v=4.24.0';
-import { renderMasterDataView, initMasterDataEvents } from './components/masterDataView.js?v=4.24.0';
-import { renderCustomFieldsMgr, initCustomFieldsEvents } from './components/customFieldsMgr.js?v=4.24.0';
-import { renderExcelManagerView, initExcelManagerEvents } from './components/excelManagerView.js?v=4.24.0';
-import { renderUserManagement, initUserManagementEvents } from './components/userManagement.js?v=4.24.1';
-import { renderHomepageManagerView, initHomepageManagerEvents } from './components/homepageManagerView.js?v=4.24.0';
-import { renderEmailConfigView, initEmailConfigEvents } from './components/emailConfigView.js?v=4.24.0';
-import { renderExcelImportModal, initExcelImportEvents } from './components/excelImportModal.js?v=4.24.0';
-import { renderReportsView, initReportsEvents } from './components/reportsView.js?v=4.25.0';
-import { renderAuditLogsView, initAuditLogsEvents } from './components/auditLogsView.js?v=4.24.0';
-import { renderNotificationsDrawer, initNotificationsDrawerEvents } from './components/notificationsDrawer.js?v=4.25.1';
-import { renderSettingsView, initSettingsEvents } from './components/settingsView.js?v=4.24.0';
-import { renderDatabaseConfigView, initDatabaseConfigEvents } from './components/databaseConfigView.js?v=4.24.0';
-import { renderResourceLibraryView, initResourceLibraryEvents } from './components/resourceLibraryView.js?v=4.24.0';
-import { renderColumnVisibilityModal, initColumnVisibilityEvents } from './components/columnVisibilityModal.js?v=4.24.0';
-import { renderMachineHistoryView, initMachineHistoryEvents } from './components/machineHistoryView.js?v=4.25.2';
-import { renderSparePartsManagementView, initSparePartsManagementEvents } from './components/sparePartsManagementView.js?v=4.24.0';
-import { renderToolsManagementView, initToolsManagementEvents } from './components/toolsManagementView.js?v=4.24.0';
-import { renderManpowerView, initManpowerEvents } from './components/manpowerView.js?v=4.24.0';
-import { renderEtLabManagementView, initEtLabEvents, setEntActiveTab } from './components/etLabManagementView.js?v=4.24.0';
-import { renderChangePasswordModal, initChangePasswordModalEvents } from './components/changePasswordModal.js?v=4.24.0';
-import { renderStorageView, initStorageEvents } from './components/storageView.js?v=4.24.0';
-import { renderPreventiveMaintenanceView, initPreventiveMaintenanceEvents } from './components/preventiveMaintenanceView.js?v=4.25.5';
-import { smartStorageService } from './services/smartStorageService.js?v=4.24.0';
-import { renderRelocateView, initRelocateViewEvents } from './components/relocateView.js?v=4.24.0';
-import { renderNeedleOperationsView, initNeedleOperationsEvents } from './components/needleOperationsView.js?v=4.26.0';
-import { renderQrCodeView, initQrCodeEvents } from './components/qrCodeView.js?v=4.24.0';
-import { renderPartsTraceView, initPartsTraceEvents } from './components/partsTraceView.js?v=4.24.0';
-import { chatService } from './services/chatService.js?v=4.24.0';
-import { historyService } from './services/historyService.js?v=4.24.0';
-import { auditService } from './services/auditService.js?v=4.24.0';
-import { notificationService } from './services/notificationService.js?v=4.25.1';
+import { state } from './state.js';
+import { storage } from './db/storage.js';
+import { authService } from './services/authService.js';
+import { renderNavbar, initNavbarEvents } from './components/navbar.js';
+import { renderSidebar, initSidebarEvents, updateSidebarActiveState } from './components/sidebar.js';
+import { renderHomepageView, initHomepageEvents } from './components/homepageView.js';
+import { renderLoginView, initLoginViewEvents } from './components/loginView.js';
+import { renderDashboard, initDashboardEvents } from './components/dashboard.js';
+import { renderInventoryTable, initInventoryTableEvents, syncInventorySelectionDOM } from './components/inventoryTable.js';
+import { renderMachineModal, initMachineModalEvents } from './components/machineModal.js';
+import { renderMachineDetails, initMachineDetailsEvents } from './components/machineDetails.js';
+import { renderTransferModal, initTransferModalEvents } from './components/transferModal.js';
+import { renderTransferDetailsModal, initTransferDetailsModalEvents } from './components/transferDetailsModal.js';
+import { renderEditTransferModal, initEditTransferModalEvents } from './components/editTransferModal.js';
+import { renderTransfersView, initTransfersViewEvents } from './components/transfersView.js';
+import { renderTransferWorkflowBuilder, initTransferWorkflowBuilderEvents } from './components/transferWorkflowBuilder.js';
+import { renderMasterDataView, initMasterDataEvents } from './components/masterDataView.js';
+import { renderCustomFieldsMgr, initCustomFieldsEvents } from './components/customFieldsMgr.js';
+import { renderExcelManagerView, initExcelManagerEvents } from './components/excelManagerView.js';
+import { renderUserManagement, initUserManagementEvents } from './components/userManagement.js';
+import { renderHomepageManagerView, initHomepageManagerEvents } from './components/homepageManagerView.js';
+import { renderEmailConfigView, initEmailConfigEvents } from './components/emailConfigView.js';
+import { renderExcelImportModal, initExcelImportEvents } from './components/excelImportModal.js';
+import { renderReportsView, initReportsEvents } from './components/reportsView.js';
+import { renderAuditLogsView, initAuditLogsEvents } from './components/auditLogsView.js';
+import { renderNotificationsDrawer, initNotificationsDrawerEvents } from './components/notificationsDrawer.js';
+import { renderSettingsView, initSettingsEvents } from './components/settingsView.js';
+import { renderDatabaseConfigView, initDatabaseConfigEvents } from './components/databaseConfigView.js';
+import { renderResourceLibraryView, initResourceLibraryEvents } from './components/resourceLibraryView.js';
+import { renderColumnVisibilityModal, initColumnVisibilityEvents } from './components/columnVisibilityModal.js';
+import { renderMachineHistoryView, initMachineHistoryEvents } from './components/machineHistoryView.js';
+import { renderSparePartsManagementView, initSparePartsManagementEvents } from './components/sparePartsManagementView.js';
+import { renderToolsManagementView, initToolsManagementEvents } from './components/toolsManagementView.js';
+import { renderManpowerView, initManpowerEvents } from './components/manpowerView.js';
+import { renderEtLabManagementView, initEtLabEvents, setEntActiveTab } from './components/etLabManagementView.js';
+import { renderChangePasswordModal, initChangePasswordModalEvents } from './components/changePasswordModal.js';
+import { renderStorageView, initStorageEvents } from './components/storageView.js';
+import { renderPreventiveMaintenanceView, initPreventiveMaintenanceEvents } from './components/preventiveMaintenanceView.js';
+import { smartStorageService } from './services/smartStorageService.js';
+import { renderRelocateView, initRelocateViewEvents } from './components/relocateView.js';
+import { renderNeedleOperationsView, initNeedleOperationsEvents } from './components/needleOperationsView.js';
+import { renderQrCodeView, initQrCodeEvents } from './components/qrCodeView.js';
+import { renderPartsTraceView, initPartsTraceEvents } from './components/partsTraceView.js';
+import { chatService } from './services/chatService.js';
+import { historyService } from './services/historyService.js';
+import { auditService } from './services/auditService.js';
+import { notificationService } from './services/notificationService.js';
 
 /**
  * Captures all active scroll, viewport, and focused input states.
@@ -518,12 +518,17 @@ class ERPApplication {
         return;
       }
 
+      // Ensure state is updated to new view
+      if (state.get('currentView') !== newView) {
+        state.set('currentView', newView);
+      }
+
       // 1. Update active sidebar item and parent accordion in-place
       updateSidebarActiveState(newView);
       // 2. Update navbar title & header
       this.renderNavbarOnly();
-      // 3. Render main page content with clean scroll reset
-      this.renderMainContent(false);
+      // 3. Render main page content with clean scroll reset and explicit target view
+      this.renderMainContent(false, false, newView);
 
       // Sync browser history state smoothly
       updateHistoryState(newView);
@@ -570,8 +575,9 @@ class ERPApplication {
     }, 100);
   }
 
-  renderMainContent(preserveScroll = true, isBackgroundSync = false) {
+  renderMainContent(preserveScroll = true, isBackgroundSync = false, targetView = null) {
     try {
+      const activeView = targetView || state.get('currentView') || 'dashboard';
       if (isBackgroundSync) {
         if (this.isUserEditing()) {
           console.log('[ERP] Background re-render skipped: user is actively editing or menu is open');
@@ -584,8 +590,7 @@ class ERPApplication {
           _invPendingReRender = true;
           return;
         }
-        const cv = state.get('currentView');
-        if (['settings', 'homepage-manager', 'email-config', 'login'].includes(cv)) {
+        if (['settings', 'homepage-manager', 'email-config', 'login'].includes(activeView)) {
           return;
         }
       }
@@ -593,8 +598,8 @@ class ERPApplication {
       const container = document.getElementById('main-view-container');
       if (container) {
         const savedState = preserveScroll ? captureAppState() : null;
-        container.innerHTML = this.getActiveViewHtml();
-        this.initViewEvents();
+        container.innerHTML = this.getActiveViewHtml(activeView);
+        this.initViewEvents(activeView);
         // Re-attach scroll guard to newly rendered inventory viewport
         _initInvScrollGuard();
         if (preserveScroll && savedState) {
@@ -667,9 +672,9 @@ class ERPApplication {
     }
   }
 
-  getActiveViewHtml() {
+  getActiveViewHtml(targetView = null) {
     try {
-      const currentView = state.get('currentView') || 'dashboard';
+      let currentView = targetView || state.get('currentView') || 'dashboard';
 
       // Check module access authorization
       const viewToModuleMap = {
@@ -677,7 +682,7 @@ class ERPApplication {
         'inventory': 'machines',
         'relocate': 'relocate',
         'needle-operations': 'machines',
-        'qr-codes': 'machines',
+        'qr-codes': 'qr_codes',
         'transfers': 'transfers',
         'parts-trace': 'parts_trace',
         'machine-history': 'machine_history',
@@ -829,8 +834,8 @@ class ERPApplication {
     this.initModalEvents();
   }
 
-  initViewEvents() {
-    const currentView = state.get('currentView') || 'dashboard';
+  initViewEvents(targetView = null) {
+    const currentView = targetView || state.get('currentView') || 'dashboard';
     switch (currentView) {
       case 'dashboard':
         initDashboardEvents();

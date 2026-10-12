@@ -254,7 +254,11 @@ class GlobalState {
   }
 }
 
-export const state = new GlobalState();
+export const state = (typeof window !== 'undefined' && window.__erpGlobalState)
+  ? window.__erpGlobalState
+  : new GlobalState();
+
 if (typeof window !== 'undefined') {
+  window.__erpGlobalState = state;
   window.state = state;
 }

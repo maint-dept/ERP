@@ -198,8 +198,15 @@ const server = http.createServer((req, res) => {
             res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
             return res.end(JSON.stringify({ status: 'error', message: 'Failed to read database file' }));
           }
-          res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-          return res.end(JSON.stringify({ status: 'ok', records: JSON.parse(content || '{}') }));
+          try {
+            const records = JSON.parse(content || '{}');
+            res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+            return res.end(JSON.stringify({ status: 'ok', records }));
+          } catch (parseErr) {
+            console.error('[Server DB Read Error]:', parseErr.message);
+            res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+            return res.end(JSON.stringify({ status: 'error', message: parseErr.message, records: null }));
+          }
         });
       } else {
         res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });

@@ -1703,5 +1703,16 @@ class StorageEngine {
   }
 }
 
-export const storage = new StorageEngine();
-storage.init();
+export const storage = (typeof window !== 'undefined' && window.__erpStorageEngine)
+  ? window.__erpStorageEngine
+  : new StorageEngine();
+
+if (typeof window !== 'undefined') {
+  if (!window.__erpStorageEngine) {
+    window.__erpStorageEngine = storage;
+    window.storage = storage;
+    storage.init();
+  }
+} else {
+  storage.init();
+}
