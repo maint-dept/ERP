@@ -1886,6 +1886,7 @@ class ExcelService {
         updateRows: sheetUpdateCount,
         duplicateRows: sheetDuplicateCount,
         newRows: sheetNewCount,
+        mapping: mapping,
         records: sheetRecords
       });
     });
@@ -2170,6 +2171,12 @@ class ExcelService {
               storage.update(TABLE_NAMES.MACHINES, existing.id, updates);
               if (d.serviceDate) {
                 this._syncPreventiveMaintenanceRecord(existing, d, user);
+              } else if (sheet.mapping && (sheet.mapping.service_date || sheet.mapping.last_service_date || sheet.mapping.servicedate)) {
+                // Explicitly clear service dates if the sheet has a service date column and this row was left blank
+                storage.update(TABLE_NAMES.MACHINES, existing.id, {
+                  lastServiceDate: null,
+                  nextServiceDate: null
+                });
               }
               sheetUpdated++;
               updatedCount++;
@@ -2258,6 +2265,9 @@ class ExcelService {
           const origItem = sheet.records.find(r => r.data?.serialNumber === nm.serialNumber);
           if (origItem?.data?.serviceDate) {
             this._syncPreventiveMaintenanceRecord(nm, origItem.data, user);
+          } else {
+            nm.lastServiceDate = null;
+            nm.nextServiceDate = null;
           }
         });
       }

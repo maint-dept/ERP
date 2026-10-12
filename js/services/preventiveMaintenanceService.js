@@ -1422,12 +1422,12 @@ class PreventiveMaintenanceService {
   computeUrgencyStatus(nextServiceDateStr, lastServiceRecord = null) {
     if (!nextServiceDateStr) {
       return {
-        status: 'SCHEDULED',
-        label: 'Scheduled',
-        badgeClass: 'badge-info',
-        urgencyOrder: 5,
-        daysDiff: 999,
-        displayBadge: '<span class="pm-badge pm-badge-info">📅 Scheduled</span>'
+        status: 'UNSCHEDULED',
+        label: 'Not Scheduled',
+        badgeClass: 'badge-secondary',
+        urgencyOrder: 99,
+        daysDiff: 99999,
+        displayBadge: '<span class="pm-badge" style="background: rgba(148, 163, 184, 0.1); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.25); font-size: 10px;">⚪ Not Scheduled</span>'
       };
     }
 
@@ -1537,25 +1537,32 @@ class PreventiveMaintenanceService {
     const latestRecord = machineRecords[0] || null;
 
     let frequencyDays = config?.frequencyDays || 91;
-    let lastServiceDate = latestRecord?.serviceDate || rawMachine.lastServiceDate || null;
-    let nextServiceDate = latestRecord?.nextServiceDate || rawMachine.nextServiceDate || null;
-    let serviceStickerSerial = latestRecord?.serviceStickerSerial || rawMachine.serviceStickerSerial || 'STK-PENDING';
-    let lastServicedBy = latestRecord?.servicedBy || rawMachine.lastServicedBy || 'Not Yet Serviced';
+
+    // Strict sync check: ONLY machines with an actual Last Service Date input have maintenance schedules.
+    let rawServiceCandidate = latestRecord?.serviceDate || rawMachine.lastServiceDate || rawMachine.service_date || rawMachine.customValues?.service_date || null;
+    let lastServiceDate = null;
+    if (rawServiceCandidate) {
+      const s = String(rawServiceCandidate).trim();
+      if (s && s !== 'N/A' && s !== 'None' && s !== 'Never' && s !== '—' && s !== '-' && s !== 'undefined' && s !== 'null') {
+        lastServiceDate = s;
+      }
+    }
+
+    // If Last Service Date is NOT provided, nextServiceDate MUST remain empty/blank ("faka thakbe").
+    let nextServiceDate = null;
+    if (lastServiceDate) {
+      nextServiceDate = latestRecord?.nextServiceDate || rawMachine.nextServiceDate || null;
+      if (!nextServiceDate || latestRecord?.frequencyDays === 90 || config?.frequencyDays === 90) {
+        nextServiceDate = this.calculateNextServiceDate(lastServiceDate, frequencyDays);
+      }
+    }
+
+    let serviceStickerSerial = latestRecord?.serviceStickerSerial || rawMachine.serviceStickerSerial || (lastServiceDate ? 'STK-PENDING' : '');
+    let lastServicedBy = latestRecord?.servicedBy || rawMachine.lastServicedBy || (lastServiceDate ? 'Routine Mechanic' : 'Not Yet Serviced');
     let lastServicedByCardNumber = latestRecord?.servicedByCardNumber || '';
     let lastServicedByDesignation = latestRecord?.servicedByDesignation || '';
     let assignedManpower = latestRecord?.assignedManpower || rawMachine.assignedManpower || latestRecord?.servicedBy || null;
     let serviceRemarks = latestRecord?.serviceRemarks || '';
-
-    // If a service date exists, ensure nextServiceDate is calculated as serviceDate + 91 days
-    if (lastServiceDate && (!nextServiceDate || latestRecord?.frequencyDays === 90 || config?.frequencyDays === 90)) {
-      nextServiceDate = this.calculateNextServiceDate(lastServiceDate, frequencyDays);
-    }
-
-    // If no past service record exists, auto-calculate target from machine join/creation
-    if (!nextServiceDate) {
-      const baseDate = rawMachine.createdAt ? rawMachine.createdAt.split('T')[0] : '2026-06-01';
-      nextServiceDate = this.calculateNextServiceDate(baseDate, frequencyDays);
-    }
 
     const urgency = this.computeUrgencyStatus(nextServiceDate, latestRecord);
 
@@ -1763,9 +1770,12 @@ class PreventiveMaintenanceService {
   getUpcomingMaintenance(filters = {}) {
     const all = this.getAllMachinesWithMaintenance(filters);
 
+    // Only machines with an actual nextServiceDate belong in the Priority Reminders queue
+    const scheduled = all.filter(m => Boolean(m.nextServiceDate));
+
     // Sort strictly by urgency priority:
     // 1. Overdue -> 2. Due Today -> 3. Due Tomorrow -> 4. Due in 7 Days -> 5. Upcoming
-    return all.sort((a, b) => {
+    return scheduled.sort((a, b) => {
       if (a.urgency.urgencyOrder !== b.urgency.urgencyOrder) {
         return a.urgency.urgencyOrder - b.urgency.urgencyOrder;
       }
@@ -2221,6 +2231,7 @@ class PreventiveMaintenanceService {
     let dueWithin7Days = 0;
     let overdue = 0;
     let upcoming = 0;
+    let unscheduled = 0;
 
     filteredMachines.forEach(m => {
       const u = m.urgency;
@@ -2228,7 +2239,10 @@ class PreventiveMaintenanceService {
       else if (u.status === 'DUE_TODAY') dueToday++;
       else if (u.status === 'DUE_TOMORROW' || u.status === 'DUE_SOON') dueWithin7Days++;
       else if (u.status === 'SCHEDULED') upcoming++;
+      else unscheduled++;
     });
+
+    const scheduledCount = overdue + dueToday + dueWithin7Days + upcoming;
 
     const isFiltered = Boolean(
       (filters.floorId && filters.floorId !== 'ALL') ||
@@ -2241,6 +2255,8 @@ class PreventiveMaintenanceService {
     return {
       totalMachines,
       globalTotalMachines,
+      scheduledCount,
+      unscheduled,
       isFiltered,
       servicedToday,
       recentlyServiced,

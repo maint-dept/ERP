@@ -51,7 +51,9 @@ let pmPageSize = 25; // 25 | 50 | 100 | 'ALL'
  * Standard date display formatter (DD-MM-YYYY)
  */
 function formatDisplayDate(d) {
-  return preventiveMaintenanceService.formatDateDMY(d, '-');
+  if (!d || d === 'N/A' || d === 'None' || d === 'Never' || d === '—' || d === '-') return '—';
+  const formatted = preventiveMaintenanceService.formatDateDMY(d, '-');
+  return formatted || '—';
 }
 
 /**
@@ -350,7 +352,7 @@ export function renderPreventiveMaintenanceView() {
       <!-- 3. COMPACT NAVIGATION TABS BAR WITH RECORD COUNTS -->
       <div class="pm-tabs-bar" style="display: flex; gap: 2px; border-bottom: 1.5px solid var(--border-color); margin-top: 1px; margin-bottom: 2px;">
         <button class="pm-tab-btn ${activeTab === 'dashboard' ? 'active' : ''}" data-pm-tab="dashboard">
-          📊 Priority Reminders (${metrics.totalMachines})
+          📊 Priority Reminders (${metrics.scheduledCount !== undefined ? metrics.scheduledCount : metrics.totalMachines})
         </button>
         <button class="pm-tab-btn ${activeTab === 'recently-serviced' ? 'active' : ''}" data-pm-tab="recently-serviced">
           🕒 Recently Serviced (${metrics.recentlyServiced || 0})
@@ -511,10 +513,10 @@ function renderDashboardAndRemindersTab() {
                     <span style="font-size: 10.5px; color: #cbd5e1;">${escapeHtml(m.line)}</span>
                   </td>
                   <td style="padding: 5px 8px; font-family: monospace; font-size: 11px; color: var(--text-secondary);">
-                    ${m.lastServiceDate ? formatDisplayDate(m.lastServiceDate) : '<span style="color: #64748b;">Not Recorded</span>'}
+                    ${m.lastServiceDate ? formatDisplayDate(m.lastServiceDate) : '<span style="color: #64748b;">—</span>'}
                   </td>
-                  <td style="padding: 5px 8px; font-family: monospace; font-size: 11px; font-weight: 700; color: ${m.urgency.status === 'OVERDUE' || m.urgency.status === 'DUE_TODAY' ? '#f87171' : '#38bdf8'};">
-                    ${formatDisplayDate(m.nextServiceDate)}
+                  <td style="padding: 5px 8px; font-family: monospace; font-size: 11px; font-weight: 700; color: ${m.nextServiceDate ? (m.urgency.status === 'OVERDUE' || m.urgency.status === 'DUE_TODAY' ? '#f87171' : '#38bdf8') : '#64748b'};">
+                    ${m.nextServiceDate ? formatDisplayDate(m.nextServiceDate) : '<span style="color: #64748b; font-weight: 400;">—</span>'}
                   </td>
                   <td style="padding: 5px 8px;">
                     <span style="font-size: 10.5px; background: #1e293b; color: #94a3b8; padding: 1px 5px; border-radius: 4px;">
@@ -1043,10 +1045,10 @@ function renderMasterScheduleTab() {
                   <span style="font-size: 10.5px; color: #cbd5e1;">${escapeHtml(m.line)}</span>
                 </td>
                 <td style="padding: 5px 8px; font-family: monospace; font-size: 11px; color: var(--text-secondary);">
-                  ${m.lastServiceDate ? formatDisplayDate(m.lastServiceDate) : 'None'}
+                  ${m.lastServiceDate ? formatDisplayDate(m.lastServiceDate) : '<span style="color: #64748b;">—</span>'}
                 </td>
-                <td style="padding: 5px 8px; font-family: monospace; font-size: 11px; font-weight: 700; color: ${m.urgency.status === 'OVERDUE' || m.urgency.status === 'DUE_TODAY' ? '#f87171' : '#38bdf8'};">
-                  ${formatDisplayDate(m.nextServiceDate)}
+                <td style="padding: 5px 8px; font-family: monospace; font-size: 11px; font-weight: 700; color: ${m.nextServiceDate ? (m.urgency.status === 'OVERDUE' || m.urgency.status === 'DUE_TODAY' ? '#f87171' : '#38bdf8') : '#64748b'};">
+                  ${m.nextServiceDate ? formatDisplayDate(m.nextServiceDate) : '<span style="color: #64748b; font-weight: 400;">—</span>'}
                 </td>
                 <td style="padding: 5px 8px; font-family: monospace; font-size: 10.5px; color: #c084fc;">
                   ${escapeHtml(m.serviceStickerSerial || 'N/A')}
