@@ -127,9 +127,9 @@ export function renderMachineDetails() {
             <button id="btn-print-asset-tag" class="btn btn-secondary btn-sm" style="flex: 1;">
               🏷️ Print Asset Tag
             </button>
-            ${(authService.hasAccess('transfers', 'ADD') && authService.canOperateMachine(machine)) ? `
-              <button id="btn-drawer-transfer" class="btn btn-secondary btn-sm" style="flex: 1;">
-                🔄 Relocate
+            ${(authService.canRequestTransfer() && (authService.canOperateMachine(machine) || authService.isIdleMachine(machine))) ? `
+              <button id="btn-drawer-transfer" class="btn btn-secondary btn-sm" style="flex: 1; font-weight: 700; color: #38bdf8; border-color: rgba(56, 189, 248, 0.4); background: rgba(56, 189, 248, 0.1);">
+                🔄 ${authService.canOperateMachine(machine) ? 'Relocate' : 'Request Transfer'}
               </button>
             ` : ''}
             ${(authService.hasAccess('machines', 'EDIT') && authService.canOperateMachine(machine)) ? `

@@ -649,10 +649,15 @@ class TransferService {
       console.warn('[SyncManager] Transfer cloud sync queued in background:', e.message);
     });
 
-    // Send notifications to approvers (Destination Floor Manager & Super Admin)
+    const sourceFloorObj = storage.getItem(TABLE_NAMES.FLOORS, machine.floorId);
+    const destFloorObj = storage.getItem(TABLE_NAMES.FLOORS, destFloorId);
+    const sourceFloorNameStr = sourceFloorObj?.name || sourceFloor;
+    const destFloorNameStr = destFloorObj?.name || destFloor;
+
+    // 1. Send dedicated notification to Source Floor (holding floor must approve release)
     notificationService.notify({
-      title: '⚠️ Machine Transfer Approval Required',
-      message: `${user.name} submitted transfer request ${reqNumber} for Machine ${machine.serialNumber} (${sourceLine} → ${destLine} on ${destFloor}).`,
+      title: '📦 Machine Transfer Request Received',
+      message: `${user.name} from Floor ${destFloorNameStr} requested Machine #${machine.serialNumber} from your floor (${sourceFloorNameStr} / ${sourceLine}). Awaiting your floor release approval.`,
       type: 'APPROVAL_REQUEST',
       module: 'transfers',
       action: 'APPROVE',
@@ -660,9 +665,30 @@ class TransferService {
       entityId: newRequest.id,
       targetUrl: '#approvals',
       locationScope: {
-        sourceFloorId: sourceFloorId || null,
+        sourceFloorId: machine.floorId || null,
         destFloorId: destFloorId || null,
-        sourceUnitId: sourceUnitId || null,
+        sourceUnitId: machine.unitId || null,
+        destUnitId: destUnitId || null,
+        floorId: machine.floorId || null,
+        unitId: machine.unitId || null
+      }
+    });
+
+    // 2. Send notification to Central Maintenance Admins & Destination
+    notificationService.notify({
+      title: '⚠️ Machine Transfer Approval Required',
+      message: `${user.name} submitted transfer request ${reqNumber} for Machine #${machine.serialNumber} (${sourceFloorNameStr} / ${sourceLine} → ${destFloorNameStr} / ${destLine}).`,
+      type: 'APPROVAL_REQUEST',
+      module: 'transfers',
+      action: 'APPROVE',
+      entityType: 'TRANSFER',
+      entityId: newRequest.id,
+      targetRoles: ['ADMIN', 'SUPER_ADMIN'],
+      targetUrl: '#approvals',
+      locationScope: {
+        sourceFloorId: machine.floorId || null,
+        destFloorId: destFloorId || null,
+        sourceUnitId: machine.unitId || null,
         destUnitId: destUnitId || null,
         unitId: destUnitId,
         floorId: destFloorId

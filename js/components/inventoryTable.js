@@ -420,15 +420,22 @@ export function renderInventoryTable() {
       const isViewOnly = authService.isMachineViewOnlyForUser(m, null, showCrossFloorIdle);
       if (isViewOnly) {
         return `
-          <td class="${tdClass}" style="width: 95px; min-width: 95px; max-width: 95px; text-align: center; ${tdStyle}">
+          <td class="${tdClass}" style="width: 105px; min-width: 105px; max-width: 105px; text-align: center; ${tdStyle}">
             <div class="actions-dropdown-container">
-              <button type="button" class="btn-actions-trigger btn-trigger-row-actions" data-id="${m.id}" title="View Options" style="border-color: rgba(56, 189, 248, 0.35); color: #38bdf8; background: rgba(56, 189, 248, 0.08);">
-                👁️ View ▾
+              <button type="button" class="btn-actions-trigger btn-trigger-row-actions" data-id="${m.id}" title="View options or request machine transfer" style="border-color: rgba(56, 189, 248, 0.45); color: #38bdf8; background: rgba(56, 189, 248, 0.12); font-weight: 700; font-size: 11.5px;">
+                👁️ Options ▾
               </button>
               <div id="actions-menu-${m.id}" class="actions-dropdown-menu table-row-actions-menu">
-                <div style="padding: 6px 12px; font-size: 10.5px; font-weight: 700; color: #38bdf8; border-bottom: 1px solid rgba(255,255,255,0.08); background: rgba(56, 189, 248, 0.05); display: flex; align-items: center; gap: 4px;">
-                  🔒 View-Only Mode
+                <div style="padding: 6px 12px; font-size: 10.5px; font-weight: 700; color: #38bdf8; border-bottom: 1px solid rgba(255,255,255,0.08); background: rgba(56, 189, 248, 0.05); display: flex; align-items: center; justify-content: space-between;">
+                  <span>🌐 Cross-Floor Idle</span>
+                  <span class="badge" style="font-size: 9px; padding: 1px 4px; background: rgba(56, 189, 248, 0.2); color: #38bdf8;">View-Only</span>
                 </div>
+                ${authService.canRequestTransfer() ? `
+                  <button type="button" class="actions-menu-item btn-transfer-machine" data-id="${m.id}" style="color: #38bdf8; font-weight: 800; background: rgba(56, 189, 248, 0.1); display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 14px;">🔄</span> Request Machine Transfer
+                  </button>
+                  <div class="actions-menu-divider"></div>
+                ` : ''}
                 <button type="button" class="actions-menu-item btn-inspect-machine" data-id="${m.id}">
                   🔍 Machine Details &amp; Lifetime
                 </button>
@@ -907,7 +914,7 @@ export function renderInventoryTable() {
             <div style="background: rgba(2, 132, 199, 0.12); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 6px; padding: 5px 12px; margin-top: 5px; display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 11.5px; color: #e0f2fe;">
               <div style="display: flex; align-items: center; gap: 6px;">
                 <span>👁️</span>
-                <span><strong>Cross-Floor Idle View Active:</strong> Displaying standby &amp; idle machines across other factory floors (View-Only). Your operational privileges are strictly for <strong>${scopeLabel || 'your assigned floor'}</strong>.</span>
+                <span><strong>Cross-Floor Idle View Active:</strong> Displaying standby &amp; idle machines across other factory floors. You can click <strong>Options ▾ &gt; Request Machine Transfer</strong> on any idle machine to request it for your floor (holding floor will be notified for release approval).</span>
               </div>
               <button id="btn-banner-exit-cross-idle" type="button" class="btn btn-secondary btn-xs" style="padding: 2px 8px; font-size: 11px; font-weight: 700; color: #38bdf8; border-color: rgba(56, 189, 248, 0.4); cursor: pointer; white-space: nowrap;">
                 ↩️ Return to My Floor

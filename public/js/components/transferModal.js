@@ -39,6 +39,23 @@ export function renderTransferModal() {
 
   const machine = activeMachineId ? machineService.getEnrichedMachine(activeMachineId) : null;
   const groups = masterDataService.getGroups();
+
+  // Auto-prefill destination with requester's assigned scope if not already selected
+  const userScope = authService.getScopedFilter();
+  if (userScope && !selectedDest.floorId && userScope.floorIds?.length > 0) {
+    selectedDest.floorId = userScope.floorIds[0];
+    if (userScope.unitIds?.length > 0) selectedDest.unitId = userScope.unitIds[0];
+    if (userScope.groupIds?.length > 0) selectedDest.groupId = userScope.groupIds[0];
+    if (!selectedDest.groupId && selectedDest.unitId) {
+      selectedDest.groupId = storage.getItem(TABLE_NAMES.UNITS, selectedDest.unitId)?.groupId || 'grp-1';
+    }
+    if (userScope.lineIds?.length > 0) selectedDest.lineId = userScope.lineIds[0];
+    if (!selectedDest.lineId && selectedDest.floorId) {
+      const availLines = masterDataService.getLines(selectedDest.floorId, null, null, false, true);
+      if (availLines.length > 0) selectedDest.lineId = availLines[0].id;
+    }
+  }
+
   const destGroupId = selectedDest.groupId || '';
   const units = destGroupId ? masterDataService.getUnits(destGroupId, false, true) : [];
   const destUnitId = selectedDest.unitId || '';
@@ -168,6 +185,21 @@ export function renderTransferModal() {
                     <strong style="color: #4ade80; font-weight: 800; display: block; margin-top: 2px;">${servicesCount + sparePartsCount} events</strong>
                   </div>
                 </div>
+
+                ${(machine && !authService.canOperateMachine(machine)) ? `
+                  <div style="margin-top: 14px; background: rgba(2, 132, 199, 0.15); border: 1.5px solid #0284c7; border-radius: 8px; padding: 12px 16px; display: flex; align-items: center; gap: 12px;">
+                    <span style="font-size: 22px;">🌐</span>
+                    <div>
+                      <div style="font-size: 13.5px; font-weight: 800; color: #38bdf8;">
+                        Cross-Floor Idle Machine Request
+                      </div>
+                      <div style="font-size: 12px; color: #f1f5f9; margin-top: 2px; line-height: 1.4;">
+                        This machine is currently stationed at <strong style="color: #fff;">${currentPath}</strong>.
+                        Submitting this transfer request will automatically notify the holding floor (<strong style="color: #fff;">${currentFloorName}</strong>) for release approval. Once approved, the machine will be transferred to your requested line.
+                      </div>
+                    </div>
+                  </div>
+                ` : ''}
 
                 ${activeExistingTransfer ? `
                   <div style="margin-top: 14px; background: rgba(239, 68, 68, 0.15); border: 1.5px solid #ef4444; border-radius: 8px; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px;">
@@ -335,7 +367,7 @@ export function renderTransferModal() {
         <!-- Modal Footer -->
         <div class="modal-footer" style="background: #0f172a; border-top: 1.5px solid #334155; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
           <div style="font-size: 13px; color: #f1f5f9;">
-            Requester: <strong style="color: #38bdf8; font-weight: 800;">${authService.getCurrentUser()?.name || 'User'}</strong> &bull; Status will be: <strong style="color: #fde047; font-weight: 800;">Pending Admin Approval</strong>
+            Requester: <strong style="color: #38bdf8; font-weight: 800;">${authService.getCurrentUser()?.name || 'User'}</strong> &bull; Status will be: <strong style="color: #fde047; font-weight: 800;">${(machine && !authService.canOperateMachine(machine)) ? `Pending ${currentFloorName} Release Approval` : 'Pending Admin Approval'}</strong>
           </div>
           <div style="display: flex; gap: 12px;">
             <button type="button" id="btn-cancel-transfer" class="btn btn-secondary" style="font-weight: 700; height: 40px; padding: 0 18px; border-radius: 6px;">Cancel</button>
@@ -420,11 +452,16 @@ export function initTransferModalEvents() {
   const updateSelectedMachine = (foundMachine) => {
     if (foundMachine) {
       if (!authService.canOperateMachine(foundMachine)) {
-        notificationService.error(`Access Denied: Machine #${foundMachine.serialNumber} is located outside your assigned floor and is View-Only.`);
-        state.set('activeMachineId', null);
-        return;
+        if (!authService.canRequestTransfer()) {
+          notificationService.error(`Access Denied: You do not have permission to request machine transfers.`);
+          state.set('activeMachineId', null);
+          return;
+        }
+        state.set('activeMachineId', foundMachine.id);
+        notificationService.info(`Cross-Floor Machine #${foundMachine.serialNumber} loaded. Transfer request will route to holding floor for approval.`);
+      } else {
+        state.set('activeMachineId', foundMachine.id);
       }
-      state.set('activeMachineId', foundMachine.id);
     } else {
       state.set('activeMachineId', null);
     }
@@ -1126,9 +1163,17 @@ export function initTransferModalEvents() {
         }
 
         const targetMachine = storage.getItem(TABLE_NAMES.MACHINES, machineId);
-        if (targetMachine && !authService.canOperateMachine(targetMachine)) {
-          notificationService.error('Access Denied: You cannot create a transfer request for a machine outside your assigned floor.');
-          return;
+        if (targetMachine) {
+          const isCrossFloor = !authService.canOperateMachine(targetMachine);
+          if (isCrossFloor && !authService.canRequestTransfer()) {
+            notificationService.error('Access Denied: You do not have permission to create a Machine Transfer Request.');
+            return;
+          }
+          const userScope = authService.getScopedFilter();
+          if (userScope && userScope.floorIds?.length > 0 && !userScope.floorIds.includes(destFloorId)) {
+            notificationService.error('Invalid Destination: You can only request machine transfers to your assigned floor.');
+            return;
+          }
         }
 
         const destGroupId = groupSelect?.value;
@@ -1161,7 +1206,11 @@ export function initTransferModalEvents() {
         });
 
         // 3. Emit updates & success feedback instantly
-        notificationService.success(`Transfer Request #${createdRequest.requestNumber} submitted`);
+        const isCrossFloorReq = targetMachine && !authService.canOperateMachine(targetMachine);
+        const sourceFlrName = storage.getItem(TABLE_NAMES.FLOORS, targetMachine?.floorId)?.name || 'Holding Floor';
+        notificationService.success(isCrossFloorReq
+          ? `Transfer Request #${createdRequest.requestNumber} submitted! Routed to ${sourceFlrName} for release approval.`
+          : `Transfer Request #${createdRequest.requestNumber} submitted successfully`);
         state.emit('inventory:updated');
         state.emit('transfers:updated');
         window.dispatchEvent(new CustomEvent('erp:transfers-updated'));

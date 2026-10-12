@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Al-Muslim Group Garments Factory Maintenance Machine ERP
  * Dynamic Transfer Approval Workflow Service
  * Configurable multi-level routing, location-based scoping rules & permission evaluator
@@ -236,8 +236,8 @@ class WorkflowService {
     if (isCrossUnit) {
       return {
         id: 'wf-smart-cross-unit',
-        name: `Inter-Unit Transfer (${destFloorName} & Admin Approval)`,
-        description: `Relocation from Unit to Unit requiring Destination Floor In-Charge or Central Admin authorization.`,
+        name: `Inter-Unit Transfer (${sourceFloorName} Release & Admin Approval)`,
+        description: `Relocation across units requiring source floor (${sourceFloorName}) release authorization or Central Admin approval.`,
         isDefault: true,
         isSmartRouting: true,
         requireDocument: false,
@@ -245,9 +245,9 @@ class WorkflowService {
         levels: [
           {
             level: 1,
-            title: `Destination Floor Manager / Admin Approval (${destFloorName})`,
-            approverType: APPROVER_TYPES.DEST_LOCATION,
-            description: `Requires authorization from ${destFloorName} Floor In-Charge or Central Admin.`
+            title: `Source Floor Release Approval (${sourceFloorName})`,
+            approverType: APPROVER_TYPES.SOURCE_LOCATION,
+            description: `Requires release authorization from ${sourceFloorName} Floor In-Charge or Central Admin before machine can be taken.`
           }
         ]
       };
@@ -256,8 +256,8 @@ class WorkflowService {
     if (isCrossFloor) {
       return {
         id: 'wf-smart-cross-floor',
-        name: `Inter-Floor Transfer (${destFloorName} Acceptance)`,
-        description: `Relocation to a different floor requiring Destination Floor In-Charge acceptance.`,
+        name: `Inter-Floor Transfer (${sourceFloorName} Release Approval)`,
+        description: `Relocation to a different floor requiring release authorization from ${sourceFloorName} Floor In-Charge.`,
         isDefault: true,
         isSmartRouting: true,
         requireDocument: false,
@@ -265,9 +265,9 @@ class WorkflowService {
         levels: [
           {
             level: 1,
-            title: `Destination Floor In-Charge Acceptance (${destFloorName})`,
-            approverType: APPROVER_TYPES.DEST_LOCATION,
-            description: `Requires receiving acceptance from ${destFloorName} Floor In-Charge or Central Admin.`
+            title: `Source Floor Release Approval (${sourceFloorName})`,
+            approverType: APPROVER_TYPES.SOURCE_LOCATION,
+            description: `Requires release authorization from ${sourceFloorName} Floor In-Charge or Central Admin before machine can be taken.`
           }
         ]
       };
