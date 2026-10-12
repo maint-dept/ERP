@@ -210,9 +210,9 @@ export function renderInventoryTable() {
     {
       key: 'serialNumber',
       label: 'Serial Number',
-      width: 160,
-      renderTh: (thStyle, thClass) => `<th class="th-sortable ${thClass}" data-sort="serialNumber" style="width: 160px; min-width: 160px; max-width: 160px; cursor: pointer; ${thStyle}">Serial Number</th>`,
-      renderTd: (m, meta, tdStyle, tdClass) => `<td class="${tdClass}" style="${tdStyle}"><a href="javascript:void(0)" class="machine-serial-link btn-inspect-machine" data-id="${m.id}" title="Click to view full machine lifetime & specifications">${m.serialNumber || '—'}</a></td>`
+      width: 150,
+      renderTh: (thStyle, thClass) => `<th class="th-sortable ${thClass}" data-sort="serialNumber" style="width: 150px; min-width: 150px; max-width: 150px; cursor: pointer; ${thStyle}">Serial Number</th>`,
+      renderTd: (m, meta, tdStyle, tdClass) => `<td class="${tdClass}" style="width: 150px; min-width: 150px; max-width: 150px; ${tdStyle}"><a href="javascript:void(0)" class="machine-serial-link btn-inspect-machine" data-id="${m.id}" title="Click to view full machine lifetime & specifications">${m.serialNumber || '—'}</a></td>`
     },
     {
       key: 'manufacturing_serial',
@@ -328,15 +328,15 @@ export function renderInventoryTable() {
     {
       key: 'status',
       label: 'Status',
-      width: 120,
-      renderTh: (thStyle, thClass) => `<th class="th-sortable ${thClass}" data-sort="status" style="width: 120px; min-width: 120px; max-width: 120px; text-align: center; cursor: pointer; ${thStyle}">Status</th>`,
-      renderTd: (m, meta, tdStyle, tdClass) => `<td class="${tdClass}" style="text-align: center; ${tdStyle}"><span class="badge ${meta.statusBadgeClass}">${(m.status || 'ACTIVE').replace('_', ' ')}</span></td>`
+      width: 110,
+      renderTh: (thStyle, thClass) => `<th class="th-sortable ${thClass}" data-sort="status" style="width: 110px; min-width: 110px; max-width: 110px; text-align: center; cursor: pointer; ${thStyle}">Status</th>`,
+      renderTd: (m, meta, tdStyle, tdClass) => `<td class="${tdClass}" style="width: 110px; min-width: 110px; max-width: 110px; text-align: center; ${tdStyle}"><span class="badge ${meta.statusBadgeClass}">${(m.status || 'ACTIVE').replace('_', ' ')}</span></td>`
     },
     {
       key: 'service_date',
       label: 'Last Service Date',
-      width: 140,
-      renderTh: (thStyle, thClass) => `<th class="th-sortable ${thClass}" data-sort="service_date" style="width: 140px; min-width: 140px; max-width: 140px; text-align: center; cursor: pointer; ${thStyle}">Last Service Date</th>`,
+      width: 150,
+      renderTh: (thStyle, thClass) => `<th class="th-sortable ${thClass}" data-sort="service_date" style="width: 150px; min-width: 150px; max-width: 150px; text-align: center; cursor: pointer; ${thStyle}">Last Service Date</th>`,
       renderTd: (m, meta, tdStyle, tdClass) => {
         let sDate = m.lastServiceDate || m.service_date || m.serviceDate || m.customValues?.service_date || '';
         if (!sDate && (m.id || m.serialNumber)) {
@@ -345,7 +345,7 @@ export function renderInventoryTable() {
                             .sort((a, b) => (b.serviceDate || '').localeCompare(a.serviceDate || ''))[0];
           if (pm?.serviceDate) sDate = pm.serviceDate;
         }
-        return `<td class="${tdClass}" style="text-align: center; font-size: 11.5px; ${tdStyle}">${excelService.formatDateDMY(sDate) || '—'}</td>`;
+        return `<td class="${tdClass}" style="width: 150px; min-width: 150px; max-width: 150px; text-align: center; font-size: 11.5px; ${tdStyle}">${excelService.formatDateDMY(sDate) || '—'}</td>`;
       }
     },
     {
@@ -386,14 +386,15 @@ export function renderInventoryTable() {
     {
       key: 'remarks',
       label: 'Remarks',
-      width: 230,
-      renderTh: (thStyle, thClass) => `<th class="${thClass}" style="width: 230px; min-width: 230px; max-width: 230px; ${thStyle}">Remarks</th>`,
+      width: 130,
+      renderTh: (thStyle, thClass) => `<th class="${thClass}" style="width: 130px; min-width: 130px; max-width: 130px; text-align: center; ${thStyle}">Remarks</th>`,
       renderTd: (m, meta, tdStyle, tdClass) => {
         let rem = typeof m.remarks === 'string' ? m.remarks.trim() : '';
         if (rem) {
           rem = rem.replace(/^Imported from sheet\s*['"]?[^'"\]\n\r]*['"]?\s*/gi, '').trim();
         }
-        return `<td class="${tdClass}" style="font-size: 11.5px; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; ${tdStyle}" title="${escapeHtml(rem)}">${escapeHtml(rem) || '—'}</td>`;
+        const hasContent = Boolean(rem);
+        return `<td class="${tdClass}" style="width: 130px; min-width: 130px; max-width: 130px; font-size: 11.5px; color: ${hasContent ? 'var(--text-secondary)' : 'var(--text-muted)'}; text-align: ${hasContent ? 'left' : 'center'}; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; ${tdStyle}" title="${escapeHtml(rem)}">${escapeHtml(rem) || '—'}</td>`;
       }
     }
   ];
@@ -413,13 +414,13 @@ export function renderInventoryTable() {
   allColDefs.push({
     key: 'actions',
     label: 'Actions',
-    width: 110,
-    renderTh: (thStyle, thClass) => `<th class="${thClass}" style="width: 110px; min-width: 110px; max-width: 110px; text-align: center; ${thStyle}">Actions</th>`,
+    width: 105,
+    renderTh: (thStyle, thClass) => `<th class="${thClass}" style="width: 105px; min-width: 105px; max-width: 105px; text-align: center; ${thStyle}">Actions</th>`,
     renderTd: (m, meta, tdStyle, tdClass) => {
       const isViewOnly = authService.isMachineViewOnlyForUser(m, null, showCrossFloorIdle);
       if (isViewOnly) {
         return `
-          <td class="${tdClass}" style="text-align: center; ${tdStyle}">
+          <td class="${tdClass}" style="width: 105px; min-width: 105px; max-width: 105px; text-align: center; ${tdStyle}">
             <div class="actions-dropdown-container">
               <button type="button" class="btn-actions-trigger btn-trigger-row-actions" data-id="${m.id}" title="View Options" style="border-color: rgba(56, 189, 248, 0.35); color: #38bdf8; background: rgba(56, 189, 248, 0.08);">
                 👁️ View ▾
@@ -443,7 +444,7 @@ export function renderInventoryTable() {
         `;
       }
       return `
-        <td class="${tdClass}" style="text-align: center; ${tdStyle}">
+        <td class="${tdClass}" style="width: 105px; min-width: 105px; max-width: 105px; text-align: center; ${tdStyle}">
           <div class="actions-dropdown-container">
             <button type="button" class="btn-actions-trigger btn-trigger-row-actions" data-id="${m.id}" title="Open Action Menu">
               ⋮ Actions ▾
