@@ -716,10 +716,84 @@ export function initHomepageManagerEvents() {
     refreshView();
   };
 
+  // Helper to extract all currently visible input/textarea/select values into config
+  const collectCurrentFormValues = (config) => {
+    if (!config) config = homepageService.getDraftConfig();
+
+    const inpHeroTitle = document.getElementById('inp-hero-title');
+    if (inpHeroTitle) {
+      if (!config.hero) config.hero = {};
+      config.hero.badgeText = document.getElementById('inp-hero-badge-text')?.value?.trim() ?? config.hero.badgeText;
+      config.hero.badgeTag = document.getElementById('inp-hero-badge-tag')?.value?.trim() ?? config.hero.badgeTag;
+      config.hero.title = inpHeroTitle.value?.trim() ?? config.hero.title;
+      config.hero.subtitle = document.getElementById('inp-hero-subtitle')?.value?.trim() ?? config.hero.subtitle;
+      config.hero.description = document.getElementById('inp-hero-desc')?.value?.trim() ?? config.hero.description;
+      config.hero.primaryBtnText = document.getElementById('inp-hero-btn1-text')?.value?.trim() ?? config.hero.primaryBtnText;
+      config.hero.primaryBtnAction = document.getElementById('inp-hero-btn1-action')?.value ?? config.hero.primaryBtnAction;
+      config.hero.secondaryBtnText = document.getElementById('inp-hero-btn2-text')?.value?.trim() ?? config.hero.secondaryBtnText;
+      config.hero.secondaryBtnAction = document.getElementById('inp-hero-btn2-action')?.value ?? config.hero.secondaryBtnAction;
+      if (document.getElementById('inp-hero-show-metrics')) {
+        config.hero.showLiveMetrics = document.getElementById('inp-hero-show-metrics').checked;
+      }
+    }
+
+    const inpAboutTitle = document.getElementById('inp-about-title');
+    if (inpAboutTitle) {
+      if (!config.about) config.about = {};
+      if (!config.benefits) config.benefits = {};
+      config.about.title = inpAboutTitle.value?.trim() ?? config.about.title;
+      config.about.subtitle = document.getElementById('inp-about-subtitle')?.value?.trim() ?? config.about.subtitle;
+      config.about.description = document.getElementById('inp-about-desc')?.value?.trim() ?? config.about.description;
+      config.benefits.title = document.getElementById('inp-benefits-title')?.value?.trim() ?? config.benefits.title;
+      config.benefits.subtitle = document.getElementById('inp-benefits-subtitle')?.value?.trim() ?? config.benefits.subtitle;
+    }
+
+    const inpContactPhone = document.getElementById('inp-contact-phone');
+    if (inpContactPhone) {
+      if (!config.contact) config.contact = {};
+      if (!config.footer) config.footer = {};
+      config.contact.phone = inpContactPhone.value?.trim() ?? config.contact.phone;
+      config.contact.email = document.getElementById('inp-contact-email')?.value?.trim() ?? config.contact.email;
+      config.contact.location = document.getElementById('inp-contact-location')?.value?.trim() ?? config.contact.location;
+      config.contact.hours = document.getElementById('inp-contact-hours')?.value?.trim() ?? config.contact.hours;
+      config.footer.copyrightText = document.getElementById('inp-footer-copyright')?.value?.trim() ?? config.footer.copyrightText;
+      config.footer.creditPrefix = document.getElementById('inp-footer-credit-prefix')?.value?.trim() || 'Developed by';
+      config.footer.creditName = document.getElementById('inp-footer-credit-name')?.value?.trim() ?? config.footer.creditName;
+      config.footer.creditUrl = document.getElementById('inp-footer-credit-url')?.value?.trim() ?? config.footer.creditUrl;
+      if (document.getElementById('inp-footer-show-credit')) {
+        config.footer.showCredit = document.getElementById('inp-footer-show-credit').checked;
+      }
+    }
+
+    return config;
+  };
+
+  // Real-time auto-sync on input/change across all editor fields
+  const editorBody = document.getElementById('home-editor-body');
+  if (editorBody) {
+    let inputDebounceTimer = null;
+    editorBody.addEventListener('input', () => {
+      clearTimeout(inputDebounceTimer);
+      inputDebounceTimer = setTimeout(() => {
+        const cfg = collectCurrentFormValues(homepageService.getDraftConfig());
+        homepageService.saveDraftConfig(cfg);
+      }, 400);
+    });
+    editorBody.addEventListener('change', () => {
+      clearTimeout(inputDebounceTimer);
+      inputDebounceTimer = setTimeout(() => {
+        const cfg = collectCurrentFormValues(homepageService.getDraftConfig());
+        homepageService.saveDraftConfig(cfg);
+      }, 200);
+    });
+  }
+
   // 1. Tab Switching
   document.querySelectorAll('[data-home-tab]').forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
+      const cfg = collectCurrentFormValues(homepageService.getDraftConfig());
+      homepageService.saveDraftConfig(cfg);
       activeEditorTab = btn.getAttribute('data-home-tab');
       refreshView();
     });
@@ -729,6 +803,8 @@ export function initHomepageManagerEvents() {
   document.querySelectorAll('.btn-goto-section-tab').forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
+      const cfg = collectCurrentFormValues(homepageService.getDraftConfig());
+      homepageService.saveDraftConfig(cfg);
       activeEditorTab = btn.getAttribute('data-target-tab');
       refreshView();
     });
@@ -989,6 +1065,8 @@ export function initHomepageManagerEvents() {
       btnPreviewPublishDirect.disabled = true;
       btnPreviewPublishDirect.innerHTML = '⏳ Publishing to Database...';
       try {
+        const collected = collectCurrentFormValues(homepageService.getDraftConfig());
+        homepageService.saveDraftConfig(collected);
         const result = await homepageService.publishConfig();
         if (result && result.success) {
           notificationService.success('✅ Draft published to Live Home Page and synced to Database!');
@@ -1015,6 +1093,8 @@ export function initHomepageManagerEvents() {
       btnPublish.disabled = true;
       btnPublish.innerHTML = '⏳ Publishing to Database...';
       try {
+        const collected = collectCurrentFormValues(homepageService.getDraftConfig());
+        homepageService.saveDraftConfig(collected);
         const result = await homepageService.publishConfig();
         if (result && result.success) {
           notificationService.success('✅ Home Page published & synced to Database! All devices will update cleanly.');

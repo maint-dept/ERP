@@ -522,6 +522,14 @@ class StorageEngine {
                 this.data[tbl] = records;
                 idbUpdated = true;
               }
+            } else if (records && typeof records === 'object' && !Array.isArray(records) && Object.keys(records).length > 0) {
+              // Hydrate object tables (homepage_config, settings)
+              const currentRecs = this.data[tbl];
+              const isCurrentEmpty = !currentRecs || (typeof currentRecs === 'object' && Object.keys(currentRecs).length === 0);
+              if (isCurrentEmpty) {
+                this.data[tbl] = records;
+                idbUpdated = true;
+              }
             }
           }
           if (idbUpdated) {
@@ -957,6 +965,10 @@ class StorageEngine {
           this.data[tbl] = serverRecs[tbl];
           try {
             localStorage.setItem(STORAGE_KEY_PREFIX + tbl, JSON.stringify(this.data[tbl]));
+            localStorage.setItem('al_muslim_homepage_published_config', JSON.stringify(this.data[tbl]));
+          } catch (_) {}
+          try {
+            idbCache.setTable(tbl, this.data[tbl]);
           } catch (_) {}
           updated = true;
         }

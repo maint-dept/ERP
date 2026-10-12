@@ -256,19 +256,34 @@ class HomepageService {
    */
   _getPublishedConfig() {
     try {
-      // Primary: storage engine
+      // 1. Primary: in-memory storage engine
       const stored = storage.data && storage.data[TABLE_NAMES.HOMEPAGE_CONFIG];
-      if (stored && typeof stored === 'object' && Object.keys(stored).length > 0) {
+      if (stored && typeof stored === 'object' && !Array.isArray(stored) && Object.keys(stored).length > 0) {
         return this.mergeWithDefaults(stored);
       }
     } catch (e) {}
 
-    // Fallback: legacy localStorage key (for backward compat)
+    // 2. Storage-engine canonical localStorage key
+    try {
+      const storedErp = localStorage.getItem('al_muslim_erp_' + TABLE_NAMES.HOMEPAGE_CONFIG);
+      if (storedErp) {
+        const parsed = JSON.parse(storedErp);
+        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed) && Object.keys(parsed).length > 0) {
+          if (!storage.data) storage.data = {};
+          storage.data[TABLE_NAMES.HOMEPAGE_CONFIG] = parsed;
+          return this.mergeWithDefaults(parsed);
+        }
+      }
+    } catch (e) {}
+
+    // 3. Fallback: legacy localStorage key (for backward compat)
     try {
       const legacy = localStorage.getItem('al_muslim_homepage_published_config');
       if (legacy) {
         const parsed = JSON.parse(legacy);
-        if (parsed && typeof parsed === 'object' && Object.keys(parsed).length > 0) {
+        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed) && Object.keys(parsed).length > 0) {
+          if (!storage.data) storage.data = {};
+          storage.data[TABLE_NAMES.HOMEPAGE_CONFIG] = parsed;
           return this.mergeWithDefaults(parsed);
         }
       }
@@ -370,29 +385,41 @@ class HomepageService {
         localStorage.setItem('al_muslim_homepage_published_config', serialised);
       } catch (_) {}
 
-      // 5. Debounced MySQL auto-save (600 ms — coalesces rapid consecutive edits)
-      //    Non-blocking: localStorage is already updated above, so UI is always instant.
+      // 5. Update IndexedDB cache
+      try { idbCache.setTable(TABLE_NAMES.HOMEPAGE_CONFIG, config); } catch (_) {}
+
+      // 6. Notify active listeners
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('erp:homepage-updated', { detail: config }));
+      }
+
+      // 7. Debounced MySQL auto-save (350 ms — fast background sync to database)
       if (this._autoSaveTimer) clearTimeout(this._autoSaveTimer);
       this._autoSaveTimer = setTimeout(async () => {
         try {
           const latest = this.getDraftConfig();
-          latest.updatedAt = new Date().toISOString();
+          const nowStr = new Date().toISOString();
+          latest.updatedAt = nowStr;
+          latest.lastPublishedAt = nowStr;
           const ok = await storage.saveTable(TABLE_NAMES.HOMEPAGE_CONFIG, latest, true);
           if (ok) {
-            // Keep in-memory and localStorage in sync with the timestamped version
             storage.data[TABLE_NAMES.HOMEPAGE_CONFIG] = latest;
-            localStorage.setItem(STORAGE_KEY_PREFIX + TABLE_NAMES.HOMEPAGE_CONFIG, JSON.stringify(latest));
-            localStorage.setItem(STORAGE_KEY_DRAFT, JSON.stringify(latest));
+            const updatedJson = JSON.stringify(latest);
+            localStorage.setItem(STORAGE_KEY_PREFIX + TABLE_NAMES.HOMEPAGE_CONFIG, updatedJson);
+            localStorage.setItem(STORAGE_KEY_DRAFT, updatedJson);
+            localStorage.setItem('al_muslim_homepage_published_config', updatedJson);
+            try { idbCache.setTable(TABLE_NAMES.HOMEPAGE_CONFIG, latest); } catch (_) {}
             if (!storage.lastTableUpdates) storage.lastTableUpdates = {};
             storage.lastTableUpdates[TABLE_NAMES.HOMEPAGE_CONFIG] = Date.now();
-            console.log('[HomepageService] ✅ Auto-saved to MySQL successfully.');
+            window.dispatchEvent(new CustomEvent('erp:homepage-updated', { detail: latest }));
+            console.log('[HomepageService] ✅ Auto-saved & synced to MySQL successfully.');
           } else {
             console.warn('[HomepageService] ⚠️ MySQL auto-save failed (will retry on next edit or Publish).');
           }
         } catch (err) {
           console.warn('[HomepageService] ⚠️ MySQL auto-save error:', err.message);
         }
-      }, 600);
+      }, 350);
 
       return true;
     } catch (e) {
@@ -413,10 +440,11 @@ class HomepageService {
   async publishConfig() {
     try {
       const draft = this.getDraftConfig();
-      draft.lastPublishedAt = new Date().toISOString();
-      draft.updatedAt = draft.lastPublishedAt;
+      const nowStr = new Date().toISOString();
+      draft.lastPublishedAt = nowStr;
+      draft.updatedAt = nowStr;
 
-      // Step 1: Write to Primary Database (MySQL)
+      // Step 1: Write directly to Primary Database (MySQL)
       const ok = await storage.saveTable(TABLE_NAMES.HOMEPAGE_CONFIG, draft, true);
 
       if (!ok) {
@@ -424,17 +452,16 @@ class HomepageService {
         return { success: false, error: 'Database write failed. Check your connection and try again.' };
       }
 
-      // Step 2: Update local storage engine in-memory data (so getPublishedConfig() returns latest)
+      // Step 2: Update local storage engine in-memory data
       if (!storage.data) storage.data = {};
       storage.data[TABLE_NAMES.HOMEPAGE_CONFIG] = draft;
 
-      // Step 3: Update local draft to match published
-      localStorage.setItem(STORAGE_KEY_DRAFT, JSON.stringify(draft));
-
-      // Step 4: Update legacy localStorage key (backward compat)
-      try {
-        localStorage.setItem('al_muslim_homepage_published_config', JSON.stringify(draft));
-      } catch (_) {}
+      // Step 3: Update local storage keys
+      const draftJson = JSON.stringify(draft);
+      localStorage.setItem('al_muslim_erp_' + TABLE_NAMES.HOMEPAGE_CONFIG, draftJson);
+      localStorage.setItem(STORAGE_KEY_DRAFT, draftJson);
+      localStorage.setItem('al_muslim_homepage_published_config', draftJson);
+      try { idbCache.setTable(TABLE_NAMES.HOMEPAGE_CONFIG, draft); } catch (_) {}
 
       // Step 5: Update lastTableUpdates so this device knows it just wrote
       if (!storage.lastTableUpdates) storage.lastTableUpdates = {};

@@ -278,7 +278,21 @@ class ERPApplication {
       this.queueBackgroundRender();
     });
 
+    const refreshHomeIfActive = () => {
+      const cv = state.get('currentView');
+      if (cv === 'home') {
+        const homeContainer = document.getElementById('home-root-container');
+        if (homeContainer) {
+          homeContainer.innerHTML = renderHomepageView();
+          initHomepageEvents();
+        } else {
+          this.render();
+        }
+      }
+    };
+
     window.addEventListener('erp:storage-updated', () => {
+      refreshHomeIfActive();
       this.queueBackgroundRender();
     });
 
@@ -286,12 +300,9 @@ class ERPApplication {
       this.queueBackgroundRender();
     });
 
-    // Re-render when homepage config changes from another device (via database sync)
+    // Re-render when homepage config changes from another device or database sync
     window.addEventListener('erp:homepage-updated', () => {
-      const cv = state.get('currentView');
-      if (cv === 'home') {
-        this.queueBackgroundRender();
-      }
+      refreshHomeIfActive();
     });
 
     window.addEventListener('erp:preventive-maintenance-updated', () => {
@@ -323,10 +334,12 @@ class ERPApplication {
     });
 
     window.addEventListener('erp:critical-data-ready', () => {
+      refreshHomeIfActive();
       this.queueBackgroundRender();
     });
 
     window.addEventListener('erp:secondary-data-ready', () => {
+      refreshHomeIfActive();
       this.queueBackgroundRender();
     });
 
