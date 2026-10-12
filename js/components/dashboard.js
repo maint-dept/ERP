@@ -717,6 +717,10 @@ export function renderDashboard() {
 /**
  * Attaches interactive click handlers to navigate to detailed views
  */
+export function initDashboardEvents() {
+  attachDashboardEvents();
+}
+
 export function attachDashboardEvents() {
   // Navigation Buttons
   const btnInv = document.getElementById('btn-dash-goto-inventory');
