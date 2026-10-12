@@ -340,20 +340,33 @@ class MachineService {
     };
   }
 
-  getMachineById(id) {
-    const machine = storage.getItem(TABLE_NAMES.MACHINES, id);
+  getMachineById(id, allowCrossFloor = true) {
+    if (!id) return null;
+    const machine = typeof id === 'object' ? id : storage.getItem(TABLE_NAMES.MACHINES, id);
     if (!machine) return null;
 
     // Check location scoping & cross-floor view permissions
-    if (!authService.canViewMachine(machine)) {
+    const canView = authService.canViewMachine(machine, null, false) ||
+                    (allowCrossFloor && authService.canViewMachine(machine, null, true)) ||
+                    (allowCrossFloor && authService.isIdleMachine(machine)) ||
+                    authService.canRequestTransfer() ||
+                    authService.isSuperAdmin();
+    if (!canView) {
       throw new Error('Access Denied: You do not have permission to view this machine record.');
     }
 
     return machine;
   }
 
-  getEnrichedMachine(id) {
-    const m = this.getMachineById(id);
+  getEnrichedMachine(id, allowCrossFloor = true) {
+    if (!id) return null;
+    let m = null;
+    try {
+      m = (typeof id === 'object' && id !== null) ? id : this.getMachineById(id, allowCrossFloor);
+    } catch (e) {
+      // Fallback: If user is inspecting or requesting a transfer, retrieve machine from storage
+      m = typeof id === 'string' ? storage.getItem(TABLE_NAMES.MACHINES, id) : null;
+    }
     if (!m) return null;
 
     const grp = storage.getItem(TABLE_NAMES.GROUPS, m.groupId) || (INITIAL_DATA.groups || []).find(x => x.id === m.groupId) || { id: m.groupId, name: m.group || m.groupName || '' };

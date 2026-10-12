@@ -513,7 +513,27 @@ class TransferService {
       };
     }
 
-    if (!workflow || !workflow.levels || workflow.levels.length === 0) {
+    const isCrossFloor = Boolean(machine.floorId && destFloorId && machine.floorId !== destFloorId);
+    if (isCrossFloor) {
+      workflow = {
+        id: 'wf-smart-cross-floor',
+        name: `Inter-Floor Transfer (${sourceFloor} Release Approval)`,
+        levels: [
+          {
+            level: 1,
+            title: `Source Floor Release Approval (${sourceFloor})`,
+            approverType: APPROVER_TYPES.SOURCE_LOCATION,
+            description: `Requires release authorization from ${sourceFloor} Floor In-Charge or Central Admin before machine can be taken.`
+          },
+          {
+            level: 2,
+            title: `Destination Acceptance & Admin Confirmation (${destFloor})`,
+            approverType: APPROVER_TYPES.ADMIN,
+            description: `Requires destination acceptance by ${destFloor} and Central Maintenance Admin confirmation.`
+          }
+        ]
+      };
+    } else if (!workflow || !workflow.levels || workflow.levels.length === 0) {
       workflow = {
         id: 'wf-default',
         name: 'Standard Management Approval Workflow',
@@ -656,14 +676,14 @@ class TransferService {
 
     // 1. Send dedicated notification to Source Floor (holding floor must approve release)
     notificationService.notify({
-      title: '📦 Machine Transfer Request Received',
-      message: `${user.name} from Floor ${destFloorNameStr} requested Machine #${machine.serialNumber} from your floor (${sourceFloorNameStr} / ${sourceLine}). Awaiting your floor release approval.`,
+      title: '📦 Machine Transfer Request Received (Release Approval Required)',
+      message: `${user.name} from Floor ${destFloorNameStr} requested Machine #${machine.serialNumber} from your floor (${sourceFloorNameStr} / ${sourceLine}). Holding floor release approval is required before machine can be taken.`,
       type: 'APPROVAL_REQUEST',
       module: 'transfers',
-      action: 'APPROVE',
+      action: 'VIEW',
       entityType: 'TRANSFER',
       entityId: newRequest.id,
-      targetUrl: '#approvals',
+      targetUrl: '#transfers',
       locationScope: {
         sourceFloorId: machine.floorId || null,
         destFloorId: destFloorId || null,

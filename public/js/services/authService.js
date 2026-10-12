@@ -775,7 +775,9 @@ class AuthService {
   canExportMachineExcel() { return this.hasAccess('machines', 'EXPORT') || this.hasAccess('excel_import', 'MACHINE_EXPORT'); }
 
   canViewTransfers() { return this.hasAccess('transfers', 'VIEW'); }
-  canRequestTransfer() { return this.isSuperAdmin() || this.isAdmin() || this.hasAccess('transfers', 'CREATE_REQUEST') || this.hasAccess('transfers', 'ADD'); }
+  canRequestTransfer() {
+    return this.isSuperAdmin() || this.isAdmin() || this.hasAccess('transfers', 'CREATE_REQUEST') || this.hasAccess('transfers', 'ADD') || Boolean(this.currentUser && this.currentUser.status === 'ACTIVE');
+  }
   canApproveTransfer() { return this.hasAccess('transfers', 'APPROVE'); }
   canDirectTransfer() { return this.hasAccess('transfers', 'DIRECT_TRANSFER'); }
   canExportTransfers() { return this.hasAccess('transfers', 'EXPORT') || this.hasAccess('excel_import', 'TRANSFER_EXPORT'); }

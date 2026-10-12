@@ -37,11 +37,20 @@ export function renderTransferModal() {
   let activeMachineId = state.get('activeMachineId');
   const allMachines = storage.getTable(TABLE_NAMES.MACHINES) || [];
 
-  const machine = activeMachineId ? machineService.getEnrichedMachine(activeMachineId) : null;
+  let machine = null;
+  if (activeMachineId) {
+    try {
+      machine = machineService.getEnrichedMachine(activeMachineId, true);
+    } catch (_) {
+      const rawM = storage.getItem(TABLE_NAMES.MACHINES, activeMachineId);
+      if (rawM) machine = machineService.getEnrichedMachine(rawM, true);
+    }
+  }
   const groups = masterDataService.getGroups();
 
   // Auto-prefill destination with requester's assigned scope if not already selected
-  const userScope = authService.getScopedFilter();
+  const currentUser = authService.getCurrentUser();
+  const userScope = authService.getScopedFilter() || currentUser?.assignedScope;
   if (userScope && !selectedDest.floorId && userScope.floorIds?.length > 0) {
     selectedDest.floorId = userScope.floorIds[0];
     if (userScope.unitIds?.length > 0) selectedDest.unitId = userScope.unitIds[0];
@@ -53,6 +62,18 @@ export function renderTransferModal() {
     if (!selectedDest.lineId && selectedDest.floorId) {
       const availLines = masterDataService.getLines(selectedDest.floorId, null, null, false, true);
       if (availLines.length > 0) selectedDest.lineId = availLines[0].id;
+    }
+  }
+
+  // Ensure full hierarchy resolves if floor is known
+  if (selectedDest.floorId && (!selectedDest.unitId || !selectedDest.groupId)) {
+    const flrObj = storage.getItem(TABLE_NAMES.FLOORS, selectedDest.floorId);
+    if (flrObj) {
+      if (!selectedDest.unitId && flrObj.unitId) selectedDest.unitId = flrObj.unitId;
+      if (!selectedDest.groupId) {
+        const untObj = storage.getItem(TABLE_NAMES.UNITS, flrObj.unitId);
+        selectedDest.groupId = untObj?.groupId || 'grp-1';
+      }
     }
   }
 
@@ -462,14 +483,27 @@ export function initTransferModalEvents() {
       } else {
         state.set('activeMachineId', foundMachine.id);
       }
+      // Ensure requester's floor is pre-selected as destination
+      const u = authService.getCurrentUser();
+      const scope = authService.getScopedFilter() || u?.assignedScope;
+      if (scope?.floorIds?.length > 0 && !selectedDest.floorId) {
+        selectedDest.floorId = scope.floorIds[0];
+        if (scope.unitIds?.length > 0) selectedDest.unitId = scope.unitIds[0];
+        if (scope.groupIds?.length > 0) selectedDest.groupId = scope.groupIds[0];
+        if (scope.lineIds?.length > 0) selectedDest.lineId = scope.lineIds[0];
+      }
     } else {
       state.set('activeMachineId', null);
     }
     // Re-render modal with auto-loaded machine details
     const modalLayer = document.getElementById('modal-layer');
     if (modalLayer) {
-      modalLayer.innerHTML = renderTransferModal();
-      initTransferModalEvents();
+      try {
+        modalLayer.innerHTML = renderTransferModal();
+        initTransferModalEvents();
+      } catch (err) {
+        console.error('Error re-rendering transfer modal:', err);
+      }
       const updatedInp = document.getElementById('inp-transfer-search-serial');
       if (updatedInp) {
         if (!foundMachine) {
@@ -1162,6 +1196,18 @@ export function initTransferModalEvents() {
           return;
         }
 
+        const destGroupId = groupSelect?.value;
+        const destUnitId = unitSelect?.value;
+        const destFloorId = floorSelect?.value;
+        const destLineId = lineSelect?.value;
+        const reason = document.getElementById('transfer-reason')?.value?.trim() || '';
+        const remarks = document.getElementById('transfer-remarks')?.value?.trim() || '';
+
+        if (!destGroupId || !destUnitId || !destFloorId || !destLineId) {
+          notificationService.warning('Please select the Target Destination Group, Factory/Unit, Floor, and Production Line.');
+          return;
+        }
+
         const targetMachine = storage.getItem(TABLE_NAMES.MACHINES, machineId);
         if (targetMachine) {
           const isCrossFloor = !authService.canOperateMachine(targetMachine);
@@ -1174,18 +1220,6 @@ export function initTransferModalEvents() {
             notificationService.error('Invalid Destination: You can only request machine transfers to your assigned floor.');
             return;
           }
-        }
-
-        const destGroupId = groupSelect?.value;
-        const destUnitId = unitSelect?.value;
-        const destFloorId = floorSelect?.value;
-        const destLineId = lineSelect?.value;
-        const reason = document.getElementById('transfer-reason')?.value?.trim() || '';
-        const remarks = document.getElementById('transfer-remarks')?.value?.trim() || '';
-
-        if (!destGroupId || !destUnitId || !destFloorId || !destLineId) {
-          notificationService.warning('Please select the Target Destination Group, Factory/Unit, Floor, and Production Line.');
-          return;
         }
 
         // 1. Instantly close modal and reset state on single click (0ms delay)
