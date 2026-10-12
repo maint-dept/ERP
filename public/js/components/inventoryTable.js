@@ -40,6 +40,7 @@ export function renderInventoryTable() {
   const userScope = user?.assignedScope;
   const isScopedUser = userScope && !userScope.allGroups && ((userScope.floorIds?.length > 0) || (userScope.unitIds?.length > 0));
   const showCrossFloorIdle = Boolean(state.get('showCrossFloorIdle'));
+  const ignoreScopeForDropdowns = Boolean(showCrossFloorIdle);
 
   // Default assigned location auto-application for scoped user when cross-floor idle view is off
   if (isScopedUser && !showCrossFloorIdle) {
