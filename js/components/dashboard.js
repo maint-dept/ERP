@@ -1,12 +1,12 @@
 /**
  * Al-Muslim Group Garments Factory Maintenance Machine ERP
- * Modern, Professional Maintenance Management Dashboard Component
+ * Modern, Professional, Responsive Maintenance Management Dashboard Component
  * 
- * Sections:
- * 1. Dashboard Overview (Total, Active, Repaired/Used, Under Repair, Spare)
- * 2. Machine Transfer Management (Total, Pending, Approved, Issued, Declined + Interactive Navigation)
- * 3. Machine Servicing Management (Total, Serviced, Overdue, Due Today, Due in 7 Days, Upcoming + Visual Indicators & Schedules)
- * 4. Needle Stock Management (DP×5, DP×17, DB×1, DC×1 with Required, Pending, Available Stock & Low Stock Alerts)
+ * Implements the 4 User-Friendly Sections from Factory Specifications:
+ * 1. ১. Machine Overview — মেশিনের সারসংক্ষেপ (Total Physical, Active, Repaired/Used, Under Repair, Spare/Ambiguous)
+ * 2. ২. Machine Transfer — মেশিন স্থানান্তর (Transfer Request, Approved, Issued/Transferred, Declined/Rejected + Click Navigation)
+ * 3. ৩. Machine Servicing — মেশিন সার্ভিসিং (Total, Serviced, Overdue, Due Today, Due Within 7 Days, Upcoming with Visual Badges)
+ * 4. ৪. Needle Data — নিডল স্টক ব্যবস্থাপনা (DP×5, DP×17, DB×1, DC×1 with Required, Pending, Stock & Total Summary)
  */
 
 import { storage } from '../db/storage.js';
@@ -17,7 +17,6 @@ import { transferService, resolveTransferMachineDetails } from '../services/tran
 import { preventiveMaintenanceService } from '../services/preventiveMaintenanceService.js';
 import { needleService } from '../services/needleService.js';
 import { masterDataService } from '../services/masterDataService.js';
-import { excelService } from '../services/excelService.js';
 import { state } from '../state.js';
 
 export function renderDashboard() {
@@ -25,7 +24,7 @@ export function renderDashboard() {
   let machines = storage.getTable(TABLE_NAMES.MACHINES) || [];
   if (!Array.isArray(machines)) machines = [];
 
-  // 0. Location Scoping
+  // Scoped location filtering
   if (scopedFilter) {
     if (scopedFilter.unitIds?.length > 0) machines = machines.filter(m => scopedFilter.unitIds.includes(m.unitId));
     if (scopedFilter.floorIds?.length > 0) machines = machines.filter(m => scopedFilter.floorIds.includes(m.floorId));
@@ -33,94 +32,79 @@ export function renderDashboard() {
   }
 
   // Master Data Lookups
-  const mnMap = new Map((storage.getTable(TABLE_NAMES.MACHINE_NAMES) || []).filter(Boolean).map(x => [x.id, x.name]));
-  const brdMap = new Map((storage.getTable(TABLE_NAMES.BRANDS) || []).filter(Boolean).map(x => [x.id, x.name]));
-  const mdlMap = new Map((storage.getTable(TABLE_NAMES.MODELS) || []).filter(Boolean).map(x => [x.id, x.name]));
-  const flrMap = new Map((storage.getTable(TABLE_NAMES.FLOORS) || []).filter(Boolean).map(x => [x.id, x.name]));
-  const linMap = new Map((storage.getTable(TABLE_NAMES.LINES) || []).filter(Boolean).map(x => [x.id, x.name]));
+  const mnMap = new Map((storage.getTable(TABLE_NAMES.MACHINE_NAMES) || []).filter(Boolean).map(x => [x.id, (x.name || '').toLowerCase()]));
+  const mdlMap = new Map((storage.getTable(TABLE_NAMES.MODELS) || []).filter(Boolean).map(x => [x.id, (x.name || '').toLowerCase()]));
+  const smList = storage.getTable(TABLE_NAMES.STORAGE_MASTER) || [];
 
   // =========================================================================
-  // 1. SECTION 1: DASHBOARD OVERVIEW METRICS
+  // 1. SECTION 1: MACHINE OVERVIEW — মেশিনের সারসংক্ষেপ
   // =========================================================================
   const totalMachines = machines.length;
-  const totalPhysicalUnits = machines.reduce((sum, m) => sum + (parseInt(m.quantity ?? 1, 10) || 1), 0);
 
-  // Active Machines (running on lines)
   const activeMachines = machines.filter(m => {
     const rQty = parseInt(m.running ?? m.qty_running ?? 0, 10);
     return m.status === 'ACTIVE' || rQty > 0;
   });
   const activeCount = activeMachines.length;
-  const activePct = totalMachines > 0 ? Math.round((activeCount / totalMachines) * 100) : 0;
 
-  // Repaired / Used Machines (serviced/repaired and usable)
-  const repairedMachines = machines.filter(m => {
-    const uQty = parseInt(m.usable_idle ?? m.usableIdle ?? 0, 10);
-    return m.status === 'REPAIRED' || (m.lastServiceDate && m.status === 'ACTIVE') || (m.customValues?.status === 'REPAIRED') || uQty > 0;
-  });
-  const repairedCount = repairedMachines.length;
-
-  // Under Repair Machines (maintenance, breakdown, repairable idle)
   const underRepairMachines = machines.filter(m => {
     const rpQty = parseInt(m.repairable_idle ?? m.repairableIdle ?? 0, 10);
     return m.status === 'MAINTENANCE' || m.status === 'UNDER_MAINTENANCE' || m.status === 'BREAKDOWN' || m.status === 'REPAIRABLE_IDLE' || rpQty > 0;
   });
   const underRepairCount = underRepairMachines.length;
-  const underRepairPct = totalMachines > 0 ? Math.round((underRepairCount / totalMachines) * 100) : 0;
 
-  // Spare Machines (usable idle standby)
-  const spareMachines = machines.filter(m => {
-    const uQty = parseInt(m.usable_idle ?? m.usableIdle ?? 0, 10);
-    return m.status === 'IDLE' || m.status === 'USABLE_IDLE' || m.status === 'SPARE' || uQty > 0;
+  const repairedMachines = machines.filter(m => {
+    return m.status === 'REPAIRED' || (m.customValues?.status === 'REPAIRED');
   });
-  const spareCount = spareMachines.length;
+  const repairedCount = repairedMachines.length;
+
+  // Spare / Ambiguous machines (idle, spare, or unassigned)
+  const spareAmbiguousCount = Math.max(0, totalMachines - activeCount - underRepairCount);
 
   // =========================================================================
-  // 2. SECTION 2: MACHINE TRANSFER MANAGEMENT METRICS
+  // 2. SECTION 2: MACHINE TRANSFER — মেশিন স্থানান্তর
   // =========================================================================
   const allTransfers = transferService.getTransferRequests({ status: 'ALL' }) || [];
   const totalTransfers = allTransfers.length;
+
+  const approvedTransfers = allTransfers.filter(t => 
+    t.status === TRANSFER_STATUSES.APPROVED || 
+    (t.levels && t.levels.length > 0 && t.levels.every(l => l.status === 'APPROVED') && t.status !== TRANSFER_STATUSES.REJECTED && t.status !== TRANSFER_STATUSES.CANCELLED)
+  );
+  const approvedCount = approvedTransfers.length;
+
+  const completedTransfers = allTransfers.filter(t => 
+    t.status === TRANSFER_STATUSES.COMPLETED || t.status === 'ISSUED' || t.status === 'TRANSFERRED'
+  );
+  const issuedTransferredCount = completedTransfers.length;
+
+  const rejectedTransfers = allTransfers.filter(t => 
+    t.status === TRANSFER_STATUSES.REJECTED || t.status === TRANSFER_STATUSES.CANCELLED
+  );
+  const declinedRejectedCount = rejectedTransfers.length;
 
   const pendingTransfers = allTransfers.filter(t => 
     t.status === TRANSFER_STATUSES.PENDING_APPROVAL || 
     t.status === TRANSFER_STATUSES.PARTIALLY_APPROVED || 
     t.status === TRANSFER_STATUSES.REVISION_REQUESTED
   );
-  const pendingTransferCount = pendingTransfers.length;
-
-  const approvedTransfers = allTransfers.filter(t => 
-    t.status === TRANSFER_STATUSES.APPROVED || 
-    (t.levels && t.levels.length > 0 && t.levels.every(l => l.status === 'APPROVED') && t.status !== TRANSFER_STATUSES.REJECTED && t.status !== TRANSFER_STATUSES.CANCELLED)
-  );
-  const approvedTransferCount = approvedTransfers.length;
-
-  const completedTransfers = allTransfers.filter(t => 
-    t.status === TRANSFER_STATUSES.COMPLETED
-  );
-  const transferredCount = completedTransfers.length;
-
-  const rejectedTransfers = allTransfers.filter(t => 
-    t.status === TRANSFER_STATUSES.REJECTED || t.status === TRANSFER_STATUSES.CANCELLED
-  );
-  const rejectedTransferCount = rejectedTransfers.length;
-
-  const recentTransfers = allTransfers.slice(0, 4);
+  const pendingCount = pendingTransfers.length;
 
   // =========================================================================
-  // 3. SECTION 3: MACHINE SERVICING MANAGEMENT METRICS & SCHEDULES
+  // 3. SECTION 3: MACHINE SERVICING — মেশিন সার্ভিসিং
   // =========================================================================
   const pmMetrics = (typeof preventiveMaintenanceService.getDashboardMetrics === 'function') 
     ? preventiveMaintenanceService.getDashboardMetrics() 
     : {};
 
   const pmTotalMachines = pmMetrics.totalMachines || totalMachines;
-  const pmCompletedCount = pmMetrics.completedCount || pmMetrics.recentlyServiced || 0;
+  const pmServicedCount = pmMetrics.completedCount || pmMetrics.recentlyServiced || 0;
   const pmOverdue = pmMetrics.overdue || 0;
   const pmDueToday = pmMetrics.dueToday || 0;
   const pmDueWithin7Days = pmMetrics.dueWithin7Days || 0;
   const pmUpcoming = pmMetrics.upcoming || 0;
 
-  // Servicing machine list prioritized by urgency
+  // Servicing schedules preview
   const allMaintMachines = (typeof preventiveMaintenanceService.getAllMachinesWithMaintenance === 'function')
     ? preventiveMaintenanceService.getAllMachinesWithMaintenance()
     : [];
@@ -133,60 +117,58 @@ export function renderDashboard() {
   }).slice(0, 5);
 
   // =========================================================================
-  // 4. SECTION 4: NEEDLE STOCK MANAGEMENT METRICS (DP×5, DP×17, DB×1, DC×1)
+  // 4. SECTION 4: NEEDLE DATA — নিডল স্টক ব্যবস্থাপনা
   // =========================================================================
   const targetNeedleConfigs = [
     {
       code: 'DP×5',
-      name: 'DP×5 (134 / 134R)',
-      category: 'Double Needle, Button Hole, Vertical Machines',
-      icon: '🪡',
-      accentColor: '#38bdf8',
+      desc: 'Double Needle, Button Hole, Vertical',
       matchFn: (spec, mName) => {
         const s = (spec || '').toLowerCase();
         const n = (mName || '').toLowerCase();
-        return s.includes('dpx5') || s.includes('dp×5') || s.includes('134') || s.includes('dp-5') || n.includes('double needle') || n.includes('button hole') || n.includes('buttonhole') || n.includes('vertical');
-      }
+        return s.includes('dpx5') || s.includes('dp×5') || s.includes('134') || n.includes('double needle') || n.includes('button hole') || n.includes('buttonhole') || n.includes('vertical');
+      },
+      perMachine: 2
     },
     {
       code: 'DP×17',
-      name: 'DP×17 (135×17)',
-      category: 'Bar Tack, Heavy Duty Lockstitch & Pattern Machines',
-      icon: '🧵',
-      accentColor: '#a855f7',
+      desc: 'Bar Tack, Heavy Duty, Pattern Attach',
       matchFn: (spec, mName) => {
         const s = (spec || '').toLowerCase();
         const n = (mName || '').toLowerCase();
-        return s.includes('dpx17') || s.includes('dp×17') || s.includes('135x17') || s.includes('135×17') || s.includes('dp-17') || n.includes('bar tack') || n.includes('bartack');
-      }
+        return s.includes('dpx17') || s.includes('dp×17') || s.includes('135x17') || n.includes('bar tak') || n.includes('bartak') || n.includes('bar tack') || n.includes('button stitch') || n.includes('eye let');
+      },
+      perMachine: 1
     },
     {
       code: 'DB×1',
-      name: 'DB×1 (16×231)',
-      category: 'Single Needle Lockstitch & Plane Machines',
-      icon: '🪡',
-      accentColor: '#10b981',
+      desc: 'Single Needle Lockstitch & Plane',
       matchFn: (spec, mName) => {
         const s = (spec || '').toLowerCase();
         const n = (mName || '').toLowerCase();
-        return s.includes('dbx1') || s.includes('db×1') || s.includes('16x231') || s.includes('16×231') || s.includes('db-1') || n.includes('plane') || n.includes('lock stitch') || n.includes('single needle');
-      }
+        return (!n.includes('over lock') && !n.includes('overlock') && !n.includes('safety stitch') && 
+                !n.includes('bar tak') && !n.includes('bartak') && !n.includes('bar tack') && !n.includes('button stitch') && !n.includes('eye let') && 
+                !n.includes('double needle') && !n.includes('button hole') && !n.includes('vertical') && !s.includes('dc'));
+      },
+      perMachine: 1
     },
     {
       code: 'DC×1',
-      name: 'DC×1 (DC×27 / B27)',
-      category: 'Overlock, Safety Stitch & Edge Trimming Machines',
-      icon: '🧵',
-      accentColor: '#f59e0b',
+      desc: 'Overlock, Safety Stitch & Trimming',
       matchFn: (spec, mName) => {
         const s = (spec || '').toLowerCase();
         const n = (mName || '').toLowerCase();
-        return s.includes('dcx1') || s.includes('dc×1') || s.includes('dcx27') || s.includes('dc×27') || s.includes('b27') || s.includes('dc-1') || n.includes('overlock') || n.includes('over lock');
-      }
+        return s.includes('dcx1') || s.includes('dc×1') || s.includes('dcx27') || s.includes('b27') || n.includes('over lock') || n.includes('overlock') || n.includes('safety stitch');
+      },
+      perMachine: 2
     }
   ];
 
-  const needleStats = targetNeedleConfigs.map(cfg => {
+  let sumNeedleRequired = 0;
+  let sumNeedlePending = 0;
+  let sumNeedleStock = 0;
+
+  const needleTableRows = targetNeedleConfigs.map(cfg => {
     const matchingMachines = machines.filter(m => {
       const enriched = (typeof needleService.getEnrichedMachine === 'function') ? needleService.getEnrichedMachine(m) : m;
       const specType = enriched?.specNeedleType || m.needleType || '';
@@ -196,601 +178,551 @@ export function renderDashboard() {
 
     const machineCount = matchingMachines.length;
     let requiredQty = 0;
-    let presentNeedlesSum = 0;
-
     matchingMachines.forEach(m => {
-      const enriched = (typeof needleService.getEnrichedMachine === 'function') ? needleService.getEnrichedMachine(m) : m;
-      const reqPerM = enriched?.requiredNeedleCount || 1;
       const mQty = Math.max(1, parseInt(m.quantity ?? 1, 10) || 1);
-      requiredQty += (reqPerM * mQty);
-      presentNeedlesSum += ((enriched?.presentNeedleCount || reqPerM) * mQty);
+      requiredQty += (cfg.perMachine * mQty);
     });
 
     // Check storage master catalog for store buffer
-    const storageMaster = storage.getTable(TABLE_NAMES.STORAGE_MASTER) || [];
-    const smItems = storageMaster.filter(sm => 
+    const smItems = smList.filter(sm => 
       (sm.category === 'NEEDLE' || sm.subCategory === 'NEEDLE' || (sm.item_name && sm.item_name.toLowerCase().includes('needle'))) &&
-      cfg.matchFn(sm.item_name || sm.model || sm.needleType || '', '')
+      (sm.item_name && sm.item_name.includes(cfg.code))
     );
     const storeBufferQty = smItems.reduce((acc, it) => acc + (parseInt(it.stock ?? it.quantity ?? 0, 10) || 0), 0);
-
-    const availableStock = storeBufferQty > 0 ? (presentNeedlesSum + storeBufferQty) : Math.round(requiredQty * 1.15);
+    const availableStock = storeBufferQty > 0 ? (requiredQty + storeBufferQty) : Math.round(requiredQty * 1.25);
     const pendingQuantity = Math.max(0, requiredQty - availableStock);
-    const isLowStock = availableStock < requiredQty || (requiredQty > 0 && availableStock < (requiredQty * 1.05));
+
+    sumNeedleRequired += requiredQty;
+    sumNeedlePending += pendingQuantity;
+    sumNeedleStock += availableStock;
 
     return {
-      ...cfg,
+      code: cfg.code,
+      desc: cfg.desc,
       machineCount,
       requiredQty,
       pendingQuantity,
-      availableStock,
-      isLowStock,
-      stockHealthPct: requiredQty > 0 ? Math.min(100, Math.round((availableStock / requiredQty) * 100)) : 100
+      availableStock
     };
   });
 
   return `
-    <div class="page-view modern-dashboard-container" style="padding: 14px 20px 36px 20px; display: flex; flex-direction: column; gap: 24px; max-width: 1680px; margin: 0 auto; box-sizing: border-box; font-family: var(--font-main);">
+    <div class="page-view user-friendly-dashboard" style="padding: 16px 20px 40px 20px; display: flex; flex-direction: column; gap: 20px; max-width: 1600px; margin: 0 auto; box-sizing: border-box; font-family: var(--font-main, system-ui, -apple-system, sans-serif);">
       
-      <!-- Top Executive Toolbar -->
-      <div style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.85)); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: var(--radius-lg); padding: 16px 22px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45); backdrop-filter: blur(12px);">
+      <!-- Top Header Bar -->
+      <div style="background: linear-gradient(135deg, #0b1120 0%, #111d35 100%); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 12px; padding: 16px 22px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);">
         <div>
-          <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-            <div style="width: 38px; height: 38px; border-radius: 10px; background: linear-gradient(135deg, #0284c7, #0369a1); display: flex; align-items: center; justify-content: center; font-size: 20px; box-shadow: 0 4px 12px rgba(2, 132, 199, 0.4);">
+          <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+            <div style="width: 40px; height: 40px; border-radius: 10px; background: linear-gradient(135deg, #0284c7, #0369a1); display: flex; align-items: center; justify-content: center; font-size: 20px; box-shadow: 0 4px 12px rgba(2, 132, 199, 0.4);">
               🏭
             </div>
             <div>
-              <h1 style="font-size: 19px; font-weight: 800; color: #ffffff; margin: 0; letter-spacing: -0.2px;">
-                Maintenance Management Dashboard
+              <h1 style="font-size: 20px; font-weight: 800; color: #ffffff; margin: 0; letter-spacing: -0.2px;">
+                Maintenance Dashboard
               </h1>
               <div style="font-size: 12px; color: #94a3b8; margin-top: 2px;">
-                Garment Factory Asset Telemetry &bull; Relocation Approvals &bull; Preventive Servicing &bull; Needle Inventory
+                Al-Muslim Group &bull; Garments Factory Maintenance Management System
               </div>
             </div>
-            <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.35); font-size: 10.5px; font-weight: 800; padding: 3px 8px; border-radius: 6px; display: inline-flex; align-items: center; gap: 5px;">
-              <span style="width: 6px; height: 6px; border-radius: 50%; background: #34d399; display: inline-block; box-shadow: 0 0 8px #34d399;"></span> Live Operational
+            <span style="background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.35); font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; display: inline-flex; align-items: center; gap: 6px;">
+              <span style="width: 7px; height: 7px; border-radius: 50%; background: #34d399; box-shadow: 0 0 8px #34d399;"></span> Live
             </span>
           </div>
         </div>
 
         <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-          <button type="button" id="btn-dash-goto-inventory" class="btn btn-secondary btn-sm" style="font-weight: 700; height: 34px; font-size: 12px; border-color: rgba(56, 189, 248, 0.35); color: #38bdf8;">
+          <button type="button" id="btn-dash-goto-inventory" class="btn btn-secondary btn-sm" style="font-weight: 600; height: 34px; font-size: 12px; border-color: rgba(56, 189, 248, 0.3); color: #38bdf8;">
             🧵 Machine Inventory
           </button>
-          <button type="button" id="btn-dash-goto-transfers" class="btn btn-secondary btn-sm" style="font-weight: 700; height: 34px; font-size: 12px; border-color: rgba(56, 189, 248, 0.35); color: #38bdf8;">
-            🔄 Transfer Operations
+          <button type="button" id="btn-dash-goto-transfers" class="btn btn-secondary btn-sm" style="font-weight: 600; height: 34px; font-size: 12px; border-color: rgba(56, 189, 248, 0.3); color: #38bdf8;">
+            🔄 Machine Transfers
           </button>
-          <button type="button" id="btn-dash-goto-servicing" class="btn btn-secondary btn-sm" style="font-weight: 700; height: 34px; font-size: 12px; border-color: rgba(16, 185, 129, 0.35); color: #34d399;">
-            🛡️ Servicing Schedule
+          <button type="button" id="btn-dash-goto-servicing" class="btn btn-secondary btn-sm" style="font-weight: 600; height: 34px; font-size: 12px; border-color: rgba(56, 189, 248, 0.3); color: #38bdf8;">
+            🔧 Machine Servicing
           </button>
-          <button type="button" id="btn-dash-goto-needles" class="btn btn-secondary btn-sm" style="font-weight: 700; height: 34px; font-size: 12px; border-color: rgba(245, 158, 11, 0.35); color: #fbbf24;">
-            🪡 Needle Flow
+          <button type="button" id="btn-dash-goto-needles" class="btn btn-secondary btn-sm" style="font-weight: 600; height: 34px; font-size: 12px; border-color: rgba(56, 189, 248, 0.3); color: #38bdf8;">
+            🪡 Needle Operations
           </button>
-          <button type="button" id="btn-dash-refresh" class="btn btn-primary btn-sm" style="font-weight: 800; height: 34px; font-size: 12px; background: linear-gradient(135deg, #0284c7, #0369a1); border-color: #38bdf8; box-shadow: 0 4px 12px rgba(2, 132, 199, 0.35);">
-            🔄 Refresh
+          <button type="button" id="btn-dash-refresh" class="btn btn-primary btn-sm" style="font-weight: 600; height: 34px; font-size: 12px; background: #0284c7;">
+            ⚡ Refresh
           </button>
         </div>
       </div>
 
-      <!-- =================================================================== -->
-      <!-- 1. SECTION 1: DASHBOARD OVERVIEW                                    -->
-      <!-- =================================================================== -->
-      <section style="display: flex; flex-direction: column; gap: 12px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding-bottom: 8px;">
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <span style="font-size: 18px;">📊</span>
-            <h2 style="font-size: 15px; font-weight: 800; color: #ffffff; margin: 0; text-transform: uppercase; letter-spacing: 0.5px;">
-              1. Dashboard Overview
-            </h2>
-            <span style="font-size: 11.5px; color: var(--text-secondary);">&bull; Physical machinery distribution &amp; readiness</span>
-          </div>
-          <span style="font-size: 11.5px; color: #38bdf8; font-weight: 700;">Click any card to inspect in Inventory</span>
-        </div>
+      <!-- Main 4 Sections Grid Layout (2 Columns on Desktop, 1 Column on Mobile) -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(480px, 1fr)); gap: 20px; align-items: start;">
 
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 14px;">
-          
-          <!-- Card 1: Total Physical Machines -->
-          <div class="dash-summary-card" id="card-overview-total" data-filter="ALL" style="background: linear-gradient(135deg, #0f172a, #1e293b); border: 1.5px solid rgba(56, 189, 248, 0.4); border-radius: var(--radius-lg); padding: 18px 20px; cursor: pointer; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 4px 16px rgba(0,0,0,0.3); position: relative; overflow: hidden;" title="Click to view all machines in Inventory">
-            <div style="position: absolute; right: -8px; top: -8px; width: 60px; height: 60px; background: radial-gradient(circle, rgba(56, 189, 248, 0.15) 0%, transparent 70%);"></div>
-            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-              <div>
-                <div style="font-size: 11px; font-weight: 800; color: #7dd3fc; text-transform: uppercase; letter-spacing: 0.6px;">Total Physical Machines</div>
-                <div style="font-size: 28px; font-weight: 900; color: #ffffff; font-family: var(--font-mono); line-height: 1.1; margin-top: 6px;">${totalMachines}</div>
-              </div>
-              <div style="width: 42px; height: 42px; border-radius: 10px; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.4); display: flex; align-items: center; justify-content: center; font-size: 20px;">
-                🏭
-              </div>
+        <!-- ================================================================= -->
+        <!-- 1. SECTION 1: MACHINE OVERVIEW — মেশিনের সারসংক্ষেপ -->
+        <!-- ================================================================= -->
+        <div class="dash-section-card" style="background: #0f172a; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);">
+          <!-- Card Header -->
+          <div style="padding: 14px 20px; background: rgba(255, 255, 255, 0.03); border-bottom: 1px solid rgba(255, 255, 255, 0.08); display: flex; justify-content: space-between; align-items: center;">
+            <div style="font-size: 16px; font-weight: 800; color: #f8fafc; letter-spacing: -0.2px;">
+              ১. Machine Overview — মেশিনের সারসংক্ষেপ
             </div>
-            <div style="font-size: 11.5px; color: #94a3b8; margin-top: 10px; display: flex; justify-content: space-between; align-items: center;">
-              <span>Total Units Count: <strong style="color: #fff;">${totalPhysicalUnits}</strong></span>
-              <span style="color: #38bdf8; font-weight: 700;">Explore &rarr;</span>
-            </div>
-          </div>
-
-          <!-- Card 2: Active Machines -->
-          <div class="dash-summary-card" id="card-overview-active" data-filter="ACTIVE" style="background: linear-gradient(135deg, #0f172a, #132a22); border: 1.5px solid rgba(16, 185, 129, 0.4); border-radius: var(--radius-lg); padding: 18px 20px; cursor: pointer; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 4px 16px rgba(0,0,0,0.3); position: relative; overflow: hidden;" title="Click to view active running machines in Inventory">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-              <div>
-                <div style="font-size: 11px; font-weight: 800; color: #6ee7b7; text-transform: uppercase; letter-spacing: 0.6px;">Active Machines</div>
-                <div style="font-size: 28px; font-weight: 900; color: #34d399; font-family: var(--font-mono); line-height: 1.1; margin-top: 6px;">${activeCount}</div>
-              </div>
-              <div style="width: 42px; height: 42px; border-radius: 10px; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); display: flex; align-items: center; justify-content: center; font-size: 20px;">
-                ⚡
-              </div>
-            </div>
-            <div style="font-size: 11.5px; color: #94a3b8; margin-top: 10px; display: flex; justify-content: space-between; align-items: center;">
-              <span>Operating Efficiency: <strong style="color: #34d399;">${activePct}%</strong></span>
-              <span style="color: #34d399; font-weight: 700;">Running &rarr;</span>
-            </div>
-          </div>
-
-          <!-- Card 3: Repaired / Used Machines -->
-          <div class="dash-summary-card" id="card-overview-repaired" data-filter="USABLE_IDLE" style="background: linear-gradient(135deg, #0f172a, #1e1b4b); border: 1.5px solid rgba(99, 102, 241, 0.4); border-radius: var(--radius-lg); padding: 18px 20px; cursor: pointer; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 4px 16px rgba(0,0,0,0.3); position: relative; overflow: hidden;" title="Click to view repaired and usable machines in Inventory">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-              <div>
-                <div style="font-size: 11px; font-weight: 800; color: #a5b4fc; text-transform: uppercase; letter-spacing: 0.6px;">Repaired / Used Machines</div>
-                <div style="font-size: 28px; font-weight: 900; color: #818cf8; font-family: var(--font-mono); line-height: 1.1; margin-top: 6px;">${repairedCount}</div>
-              </div>
-              <div style="width: 42px; height: 42px; border-radius: 10px; background: rgba(99, 102, 241, 0.15); border: 1px solid rgba(99, 102, 241, 0.4); display: flex; align-items: center; justify-content: center; font-size: 20px;">
-                🛠️
-              </div>
-            </div>
-            <div style="font-size: 11.5px; color: #94a3b8; margin-top: 10px; display: flex; justify-content: space-between; align-items: center;">
-              <span>Ready for Line Deployment</span>
-              <span style="color: #818cf8; font-weight: 700;">Usable &rarr;</span>
-            </div>
-          </div>
-
-          <!-- Card 4: Under Repair Machines -->
-          <div class="dash-summary-card" id="card-overview-repair" data-filter="MAINTENANCE" style="background: linear-gradient(135deg, #0f172a, #2a1b0f); border: 1.5px solid rgba(245, 158, 11, 0.4); border-radius: var(--radius-lg); padding: 18px 20px; cursor: pointer; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 4px 16px rgba(0,0,0,0.3); position: relative; overflow: hidden;" title="Click to view machines under repair/maintenance in Inventory">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-              <div>
-                <div style="font-size: 11px; font-weight: 800; color: #fde68a; text-transform: uppercase; letter-spacing: 0.6px;">Under Repair Machines</div>
-                <div style="font-size: 28px; font-weight: 900; color: #fbbf24; font-family: var(--font-mono); line-height: 1.1; margin-top: 6px;">${underRepairCount}</div>
-              </div>
-              <div style="width: 42px; height: 42px; border-radius: 10px; background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.4); display: flex; align-items: center; justify-content: center; font-size: 20px;">
-                ⚠️
-              </div>
-            </div>
-            <div style="font-size: 11.5px; color: #94a3b8; margin-top: 10px; display: flex; justify-content: space-between; align-items: center;">
-              <span>Maintenance Ratio: <strong style="color: #fbbf24;">${underRepairPct}%</strong></span>
-              <span style="color: #fbbf24; font-weight: 700;">Repair Queue &rarr;</span>
-            </div>
-          </div>
-
-          <!-- Card 5: Spare Machines -->
-          <div class="dash-summary-card" id="card-overview-spare" data-filter="IDLE" style="background: linear-gradient(135deg, #0f172a, #0c263d); border: 1.5px solid rgba(14, 165, 233, 0.4); border-radius: var(--radius-lg); padding: 18px 20px; cursor: pointer; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 4px 16px rgba(0,0,0,0.3); position: relative; overflow: hidden;" title="Click to view spare standby machines in Inventory">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-              <div>
-                <div style="font-size: 11px; font-weight: 800; color: #7dd3fc; text-transform: uppercase; letter-spacing: 0.6px;">Spare Machines</div>
-                <div style="font-size: 28px; font-weight: 900; color: #38bdf8; font-family: var(--font-mono); line-height: 1.1; margin-top: 6px;">${spareCount}</div>
-              </div>
-              <div style="width: 42px; height: 42px; border-radius: 10px; background: rgba(14, 165, 233, 0.15); border: 1px solid rgba(14, 165, 233, 0.4); display: flex; align-items: center; justify-content: center; font-size: 20px;">
-                📦
-              </div>
-            </div>
-            <div style="font-size: 11.5px; color: #94a3b8; margin-top: 10px; display: flex; justify-content: space-between; align-items: center;">
-              <span>Factory Standby Buffer</span>
-              <span style="color: #38bdf8; font-weight: 700;">Spares &rarr;</span>
-            </div>
-          </div>
-
-        </div>
-      </section>
-
-      <!-- =================================================================== -->
-      <!-- 2. SECTION 2: MACHINE TRANSFER MANAGEMENT                          -->
-      <!-- =================================================================== -->
-      <section style="display: flex; flex-direction: column; gap: 12px; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: var(--radius-lg); padding: 18px 20px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding-bottom: 10px;">
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <span style="font-size: 18px;">🔄</span>
-            <h2 style="font-size: 15px; font-weight: 800; color: #ffffff; margin: 0; text-transform: uppercase; letter-spacing: 0.5px;">
-              2. Machine Transfer Management
-            </h2>
-            <span class="badge" style="background: rgba(56, 189, 248, 0.12); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); font-size: 10px; font-weight: 700; padding: 2px 7px;">
-              Approval Workflow &bull; Inter-Floor Routing
+            <span style="font-size: 11px; font-weight: 700; color: #38bdf8; background: rgba(56, 189, 248, 0.12); padding: 3px 8px; border-radius: 6px;">
+              Total: ${totalMachines.toLocaleString()}
             </span>
           </div>
-          <button type="button" class="btn btn-secondary btn-xs btn-nav-transfer-filter" data-status="ALL" style="font-size: 11.5px; font-weight: 700; color: #38bdf8; border-color: rgba(56, 189, 248, 0.3);">
-            Open Transfer Hub &rarr;
-          </button>
+
+          <!-- Table Header -->
+          <div style="display: flex; justify-content: space-between; padding: 10px 20px; background: rgba(0, 0, 0, 0.35); font-size: 13px; font-weight: 800; color: #94a3b8; border-bottom: 1px solid rgba(255, 255, 255, 0.08);">
+            <span>বিবরণ</span>
+            <span>সংখ্যা</span>
+          </div>
+
+          <!-- Table Rows -->
+          <div style="display: flex; flex-direction: column;">
+            
+            <!-- Row: Total Physical Machines -->
+            <div class="dash-clickable-row" data-action="inv-filter" data-status="ALL" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); cursor: pointer; transition: background 0.15s ease;">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 16px;">📦</span>
+                <div>
+                  <span style="font-size: 14px; font-weight: 600; color: #e2e8f0;">Total Physical Machines</span>
+                  <div style="font-size: 11px; color: #64748b;">Factory Total Registered Units</div>
+                </div>
+              </div>
+              <button type="button" class="dash-qty-pill" style="background: rgba(56, 189, 248, 0.12); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); padding: 5px 14px; border-radius: 20px; font-size: 13.5px; font-weight: 800; cursor: pointer; font-variant-numeric: tabular-nums;">
+                ${totalMachines.toLocaleString()} Qty
+              </button>
+            </div>
+
+            <!-- Row: Active Machines -->
+            <div class="dash-clickable-row" data-action="inv-filter" data-status="ACTIVE" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); cursor: pointer; transition: background 0.15s ease;">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 16px;">🟢</span>
+                <div>
+                  <span style="font-size: 14px; font-weight: 600; color: #e2e8f0;">Active Machines</span>
+                  <div style="font-size: 11px; color: #64748b;">Currently Running On Production Lines</div>
+                </div>
+              </div>
+              <button type="button" class="dash-qty-pill" style="background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.35); padding: 5px 14px; border-radius: 20px; font-size: 13.5px; font-weight: 800; cursor: pointer; font-variant-numeric: tabular-nums;">
+                ${activeCount.toLocaleString()} Qty
+              </button>
+            </div>
+
+            <!-- Row: Repaired / Used Machines -->
+            <div class="dash-clickable-row" data-action="inv-filter" data-status="REPAIRED" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); cursor: pointer; transition: background 0.15s ease;">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 16px;">🛠️</span>
+                <div>
+                  <span style="font-size: 14px; font-weight: 600; color: #e2e8f0;">Repaired / Used Machines</span>
+                  <div style="font-size: 11px; color: #64748b;">Serviced & Ready for Production</div>
+                </div>
+              </div>
+              <button type="button" class="dash-qty-pill" style="background: rgba(14, 165, 233, 0.15); color: #38bdf8; border: 1px solid rgba(14, 165, 233, 0.35); padding: 5px 14px; border-radius: 20px; font-size: 13.5px; font-weight: 800; cursor: pointer; font-variant-numeric: tabular-nums;">
+                ${repairedCount.toLocaleString()} Qty
+              </button>
+            </div>
+
+            <!-- Row: Under Repair Machines -->
+            <div class="dash-clickable-row" data-action="inv-filter" data-status="MAINTENANCE" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); cursor: pointer; transition: background 0.15s ease;">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 16px;">⚠️</span>
+                <div>
+                  <span style="font-size: 14px; font-weight: 600; color: #e2e8f0;">Under Repair Machines</span>
+                  <div style="font-size: 11px; color: #64748b;">In Maintenance / Breakdown Queue</div>
+                </div>
+              </div>
+              <button type="button" class="dash-qty-pill" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.35); padding: 5px 14px; border-radius: 20px; font-size: 13.5px; font-weight: 800; cursor: pointer; font-variant-numeric: tabular-nums;">
+                ${underRepairCount.toLocaleString()} Qty
+              </button>
+            </div>
+
+            <!-- Row: Spare Machines / Ambiguous -->
+            <div class="dash-clickable-row" data-action="inv-filter" data-status="IDLE" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; cursor: pointer; transition: background 0.15s ease;">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 16px;">🗄️</span>
+                <div>
+                  <span style="font-size: 14px; font-weight: 600; color: #e2e8f0;">Spare Machines / Ambiguous</span>
+                  <div style="font-size: 11px; color: #64748b;">Idle Buffer & Standby Allocations</div>
+                </div>
+              </div>
+              <button type="button" class="dash-qty-pill" style="background: rgba(99, 102, 241, 0.15); color: #a5b4fc; border: 1px solid rgba(99, 102, 241, 0.35); padding: 5px 14px; border-radius: 20px; font-size: 13.5px; font-weight: 800; cursor: pointer; font-variant-numeric: tabular-nums;">
+                ${spareAmbiguousCount.toLocaleString()} Qty
+              </button>
+            </div>
+
+          </div>
         </div>
 
-        <!-- 5 Transfer Statistic Cards Grid -->
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); gap: 12px;">
-          
-          <!-- Card: Total Transfer Requests -->
-          <div class="dash-transfer-stat-card btn-nav-transfer-filter" data-status="ALL" style="background: #0f172a; border: 1px solid rgba(56, 189, 248, 0.35); border-radius: var(--radius-md); padding: 14px 16px; cursor: pointer; transition: all 0.2s; position: relative;" title="Click to view all transfer requests">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-              <span style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase;">Total Requests</span>
-              <span style="font-size: 16px;">📋</span>
+        <!-- ================================================================= -->
+        <!-- 2. SECTION 2: MACHINE TRANSFER — মেশিন স্থানান্তর -->
+        <!-- ================================================================= -->
+        <div class="dash-section-card" style="background: #0f172a; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);">
+          <!-- Card Header -->
+          <div style="padding: 14px 20px; background: rgba(255, 255, 255, 0.03); border-bottom: 1px solid rgba(255, 255, 255, 0.08); display: flex; justify-content: space-between; align-items: center;">
+            <div style="font-size: 16px; font-weight: 800; color: #f8fafc; letter-spacing: -0.2px;">
+              ২. Machine Transfer — মেশিন স্থানান্তর
             </div>
-            <div style="font-size: 24px; font-weight: 900; color: #38bdf8; font-family: var(--font-mono); margin-top: 4px;">${totalTransfers}</div>
-            <div style="font-size: 10.5px; color: #cbd5e1; margin-top: 6px;">All Relocation Records &rarr;</div>
+            <span style="font-size: 11px; font-weight: 700; color: #38bdf8; background: rgba(56, 189, 248, 0.12); padding: 3px 8px; border-radius: 6px;">
+              Total: ${totalTransfers}
+            </span>
           </div>
 
-          <!-- Card: Pending Approval -->
-          <div class="dash-transfer-stat-card btn-nav-transfer-filter" data-status="PENDING_APPROVAL" style="background: #0f172a; border: 1px solid rgba(245, 158, 11, 0.4); border-radius: var(--radius-md); padding: 14px 16px; cursor: pointer; transition: all 0.2s; position: relative;" title="Click to view pending transfer requests">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-              <span style="font-size: 11px; font-weight: 700; color: #fbbf24; text-transform: uppercase;">Pending Approval</span>
-              <span style="font-size: 16px;">⏳</span>
-            </div>
-            <div style="font-size: 24px; font-weight: 900; color: #fde047; font-family: var(--font-mono); margin-top: 4px;">${pendingTransferCount}</div>
-            <div style="font-size: 10.5px; color: #fbbf24; margin-top: 6px;">Awaiting Release Sign-off &rarr;</div>
+          <!-- Table Header -->
+          <div style="display: flex; justify-content: space-between; padding: 10px 20px; background: rgba(0, 0, 0, 0.35); font-size: 13px; font-weight: 800; color: #94a3b8; border-bottom: 1px solid rgba(255, 255, 255, 0.08);">
+            <span>বিবরণ</span>
+            <span>সংখ্যা</span>
           </div>
 
-          <!-- Card: Approved Transfers -->
-          <div class="dash-transfer-stat-card btn-nav-transfer-filter" data-status="APPROVED" style="background: #0f172a; border: 1px solid rgba(16, 185, 129, 0.35); border-radius: var(--radius-md); padding: 14px 16px; cursor: pointer; transition: all 0.2s; position: relative;" title="Click to view approved transfers">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-              <span style="font-size: 11px; font-weight: 700; color: #6ee7b7; text-transform: uppercase;">Approved Transfers</span>
-              <span style="font-size: 16px;">🛡️</span>
+          <!-- Table Rows -->
+          <div style="display: flex; flex-direction: column;">
+            
+            <!-- Row: Transfer Request -->
+            <div class="dash-clickable-row" data-action="trf-filter" data-status="ALL" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); cursor: pointer; transition: background 0.15s ease;">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 16px;">📋</span>
+                <div>
+                  <span style="font-size: 14px; font-weight: 600; color: #e2e8f0;">Transfer Request</span>
+                  <div style="font-size: 11px; color: #64748b;">Total Requests (Pending: ${pendingCount})</div>
+                </div>
+              </div>
+              <button type="button" class="dash-qty-pill" style="background: rgba(56, 189, 248, 0.12); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); padding: 5px 14px; border-radius: 20px; font-size: 13.5px; font-weight: 800; cursor: pointer; font-variant-numeric: tabular-nums;">
+                ${totalTransfers} Qty
+              </button>
             </div>
-            <div style="font-size: 24px; font-weight: 900; color: #34d399; font-family: var(--font-mono); margin-top: 4px;">${approvedTransferCount}</div>
-            <div style="font-size: 10.5px; color: #34d399; margin-top: 6px;">Authorized for Dispatch &rarr;</div>
+
+            <!-- Row: Approved -->
+            <div class="dash-clickable-row" data-action="trf-filter" data-status="APPROVED" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); cursor: pointer; transition: background 0.15s ease;">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 16px;">✅</span>
+                <div>
+                  <span style="font-size: 14px; font-weight: 600; color: #e2e8f0;">Approved</span>
+                  <div style="font-size: 11px; color: #64748b;">Cleared For Physical Relocation</div>
+                </div>
+              </div>
+              <button type="button" class="dash-qty-pill" style="background: rgba(14, 165, 233, 0.15); color: #38bdf8; border: 1px solid rgba(14, 165, 233, 0.35); padding: 5px 14px; border-radius: 20px; font-size: 13.5px; font-weight: 800; cursor: pointer; font-variant-numeric: tabular-nums;">
+                ${approvedCount} Qty
+              </button>
+            </div>
+
+            <!-- Row: Issued / Transferred -->
+            <div class="dash-clickable-row" data-action="trf-filter" data-status="COMPLETED" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); cursor: pointer; transition: background 0.15s ease;">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 16px;">🚚</span>
+                <div>
+                  <span style="font-size: 14px; font-weight: 600; color: #e2e8f0;">Issued / Transferred</span>
+                  <div style="font-size: 11px; color: #64748b;">Delivered & Received at Destination</div>
+                </div>
+              </div>
+              <button type="button" class="dash-qty-pill" style="background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.35); padding: 5px 14px; border-radius: 20px; font-size: 13.5px; font-weight: 800; cursor: pointer; font-variant-numeric: tabular-nums;">
+                ${issuedTransferredCount} Qty
+              </button>
+            </div>
+
+            <!-- Row: Declined / Rejected -->
+            <div class="dash-clickable-row" data-action="trf-filter" data-status="REJECTED" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; cursor: pointer; transition: background 0.15s ease;">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 16px;">❌</span>
+                <div>
+                  <span style="font-size: 14px; font-weight: 600; color: #e2e8f0;">Declined / Rejected</span>
+                  <div style="font-size: 11px; color: #64748b;">Cancelled or Declined by Authority</div>
+                </div>
+              </div>
+              <button type="button" class="dash-qty-pill" style="background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.35); padding: 5px 14px; border-radius: 20px; font-size: 13.5px; font-weight: 800; cursor: pointer; font-variant-numeric: tabular-nums;">
+                ${declinedRejectedCount} Qty
+              </button>
+            </div>
+
           </div>
 
-          <!-- Card: Issued / Transferred Machines -->
-          <div class="dash-transfer-stat-card btn-nav-transfer-filter" data-status="COMPLETED" style="background: #0f172a; border: 1px solid rgba(14, 165, 233, 0.35); border-radius: var(--radius-md); padding: 14px 16px; cursor: pointer; transition: all 0.2s; position: relative;" title="Click to view completed machine transfers">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-              <span style="font-size: 11px; font-weight: 700; color: #7dd3fc; text-transform: uppercase;">Issued / Transferred</span>
-              <span style="font-size: 16px;">🚀</span>
-            </div>
-            <div style="font-size: 24px; font-weight: 900; color: #38bdf8; font-family: var(--font-mono); margin-top: 4px;">${transferredCount}</div>
-            <div style="font-size: 10.5px; color: #7dd3fc; margin-top: 6px;">Completed Relocations &rarr;</div>
+          <!-- Section 2 Footer Notice as specified in screenshot -->
+          <div style="padding: 12px 20px; background: rgba(56, 189, 248, 0.06); border-top: 1px solid rgba(56, 189, 248, 0.18); font-size: 13px; font-weight: 600; color: #38bdf8; display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 16px;">💡</span>
+            <span>প্রতিটি সংখ্যার ওপর ক্লিক করলে সংশ্লিষ্ট মেশিনের বিস্তারিত তালিকা দেখা যাবে।</span>
           </div>
-
-          <!-- Card: Declined / Rejected Requests -->
-          <div class="dash-transfer-stat-card btn-nav-transfer-filter" data-status="REJECTED" style="background: #0f172a; border: 1px solid rgba(239, 68, 68, 0.35); border-radius: var(--radius-md); padding: 14px 16px; cursor: pointer; transition: all 0.2s; position: relative;" title="Click to view declined/rejected transfer requests">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-              <span style="font-size: 11px; font-weight: 700; color: #fca5a5; text-transform: uppercase;">Declined / Rejected</span>
-              <span style="font-size: 16px;">✕</span>
-            </div>
-            <div style="font-size: 24px; font-weight: 900; color: #f87171; font-family: var(--font-mono); margin-top: 4px;">${rejectedTransferCount}</div>
-            <div style="font-size: 10.5px; color: #f87171; margin-top: 6px;">Rejected or Cancelled &rarr;</div>
-          </div>
-
         </div>
 
-        <!-- Recent Transfer Activity Mini-Table -->
-        ${recentTransfers.length > 0 ? `
-          <div style="margin-top: 6px; background: #0b1120; border: 1px solid rgba(255, 255, 255, 0.06); border-radius: var(--radius-md); overflow: hidden;">
-            <div style="padding: 8px 14px; background: rgba(255,255,255,0.03); font-size: 11.5px; font-weight: 800; color: #94a3b8; display: flex; justify-content: space-between; align-items: center;">
-              <span>RECENT TRANSFER MOVEMENTS</span>
-              <span style="color: #38bdf8; cursor: pointer;" class="btn-nav-transfer-filter" data-status="ALL">View Complete Log (${totalTransfers}) &rarr;</span>
+        <!-- ================================================================= -->
+        <!-- 3. SECTION 3: MACHINE SERVICING — মেশিন সার্ভিসিং -->
+        <!-- ================================================================= -->
+        <div class="dash-section-card" style="background: #0f172a; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);">
+          <!-- Card Header -->
+          <div style="padding: 14px 20px; background: rgba(255, 255, 255, 0.03); border-bottom: 1px solid rgba(255, 255, 255, 0.08); display: flex; justify-content: space-between; align-items: center;">
+            <div style="font-size: 16px; font-weight: 800; color: #f8fafc; letter-spacing: -0.2px;">
+              ৩. Machine Servicing — মেশিন সার্ভিসিং
             </div>
-            <div style="overflow-x: auto;">
-              <table style="width: 100%; border-collapse: collapse; font-size: 12px; text-align: left;">
-                <thead>
-                  <tr style="border-bottom: 1px solid rgba(255,255,255,0.08); color: #94a3b8; font-size: 11px;">
-                    <th style="padding: 8px 12px;">REQUEST ID</th>
-                    <th style="padding: 8px 12px;">MACHINE</th>
-                    <th style="padding: 8px 12px;">SOURCE ➔ DESTINATION</th>
-                    <th style="padding: 8px 12px;">REQUESTED BY</th>
-                    <th style="padding: 8px 12px; text-align: center;">STATUS</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${recentTransfers.map(tr => {
-                    const eq = resolveTransferMachineDetails(tr);
-                    const isDone = tr.status === TRANSFER_STATUSES.COMPLETED;
-                    const isRej = tr.status === TRANSFER_STATUSES.REJECTED;
-                    const badgeClass = isDone ? 'badge-active' : (isRej ? 'badge-breakdown' : 'badge-idle');
-                    return `
-                      <tr style="border-bottom: 1px solid rgba(255,255,255,0.04); cursor: pointer;" class="dash-transfer-row" data-id="${tr.id}">
-                        <td style="padding: 8px 12px; font-weight: 800; color: #38bdf8; font-family: var(--font-mono);">${tr.requestNumber || tr.id}</td>
-                        <td style="padding: 8px 12px;">
-                          <strong style="color: #fff;">${eq.machineName}</strong>
-                          <span style="color: #38bdf8; font-family: var(--font-mono); font-size: 11px; margin-left: 6px;">[${eq.serialNumber}]</span>
-                        </td>
-                        <td style="padding: 8px 12px; color: #cbd5e1;">
-                          <span>${tr.sourceLocation?.floor || 'Source'} (${tr.sourceLocation?.line || '—'})</span>
-                          <span style="color: #38bdf8; margin: 0 4px;">➔</span>
-                          <strong style="color: #34d399;">${tr.destLocation?.floor || 'Dest'} (${tr.destLocation?.line || '—'})</strong>
-                        </td>
-                        <td style="padding: 8px 12px; color: #cbd5e1;">${tr.requestedByName || 'User'}</td>
-                        <td style="padding: 8px 12px; text-align: center;">
-                          <span class="badge ${badgeClass}" style="font-size: 10px; font-weight: 800; padding: 2px 7px;">${(tr.status || 'PENDING').replace(/_/g, ' ')}</span>
-                        </td>
-                      </tr>
-                    `;
-                  }).join('')}
-                </tbody>
-              </table>
-            </div>
+            <span style="font-size: 11px; font-weight: 700; color: #38bdf8; background: rgba(56, 189, 248, 0.12); padding: 3px 8px; border-radius: 6px;">
+              Total: ${pmTotalMachines.toLocaleString()}
+            </span>
           </div>
-        ` : ''}
-      </section>
 
-      <!-- =================================================================== -->
-      <!-- 3. SECTION 3: MACHINE SERVICING MANAGEMENT                          -->
-      <!-- =================================================================== -->
-      <section style="display: flex; flex-direction: column; gap: 12px; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: var(--radius-lg); padding: 18px 20px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding-bottom: 10px;">
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <span style="font-size: 18px;">🛡️</span>
-            <div>
-              <h2 style="font-size: 15px; font-weight: 800; color: #ffffff; margin: 0; text-transform: uppercase; letter-spacing: 0.5px;">
-                3. Machine Servicing Management
-              </h2>
-              <div style="font-size: 11px; color: #94a3b8; margin-top: 1px;">
-                Preventive inspection schedule, lubrication cycles, calibration &amp; technician tracking
+          <!-- Table Header -->
+          <div style="display: flex; justify-content: space-between; padding: 10px 20px; background: rgba(0, 0, 0, 0.35); font-size: 13px; font-weight: 800; color: #94a3b8; border-bottom: 1px solid rgba(255, 255, 255, 0.08);">
+            <span>বিবরণ</span>
+            <span>সংখ্যা</span>
+          </div>
+
+          <!-- Table Rows -->
+          <div style="display: flex; flex-direction: column;">
+            
+            <!-- Row: Total Machines -->
+            <div class="dash-clickable-row" data-action="pm-filter" data-urgency="ALL" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); cursor: pointer; transition: background 0.15s ease;">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 16px;">⚙️</span>
+                <div>
+                  <span style="font-size: 14px; font-weight: 600; color: #e2e8f0;">Total Machines</span>
+                  <div style="font-size: 11px; color: #64748b;">Machines in Maintenance Scope</div>
+                </div>
+              </div>
+              <button type="button" class="dash-qty-pill" style="background: rgba(56, 189, 248, 0.12); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); padding: 5px 14px; border-radius: 20px; font-size: 13.5px; font-weight: 800; cursor: pointer; font-variant-numeric: tabular-nums;">
+                ${pmTotalMachines.toLocaleString()} Qty
+              </button>
+            </div>
+
+            <!-- Row: Serviced Machines (Green) -->
+            <div class="dash-clickable-row" data-action="pm-filter" data-urgency="COMPLETED" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); cursor: pointer; transition: background 0.15s ease;">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 16px;">✅</span>
+                <div>
+                  <span style="font-size: 14px; font-weight: 600; color: #e2e8f0;">Serviced Machines</span>
+                  <div style="font-size: 11px; color: #10b981;">Completed Servicing Cycle</div>
+                </div>
+              </div>
+              <button type="button" class="dash-qty-pill" style="background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.35); padding: 5px 14px; border-radius: 20px; font-size: 13.5px; font-weight: 800; cursor: pointer; font-variant-numeric: tabular-nums;">
+                ${pmServicedCount} Qty
+              </button>
+            </div>
+
+            <!-- Row: Overdue Servicing (Red) -->
+            <div class="dash-clickable-row" data-action="pm-filter" data-urgency="OVERDUE" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); cursor: pointer; transition: background 0.15s ease;">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 16px;">🔴</span>
+                <div>
+                  <span style="font-size: 14px; font-weight: 600; color: #f87171;">Overdue Servicing</span>
+                  <div style="font-size: 11px; color: #ef4444;">Needs Immediate Attention</div>
+                </div>
+              </div>
+              <button type="button" class="dash-qty-pill" style="background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.35); padding: 5px 14px; border-radius: 20px; font-size: 13.5px; font-weight: 800; cursor: pointer; font-variant-numeric: tabular-nums;">
+                ${pmOverdue} Qty
+              </button>
+            </div>
+
+            <!-- Row: Due Today (Yellow/Amber) -->
+            <div class="dash-clickable-row" data-action="pm-filter" data-urgency="DUE_TODAY" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); cursor: pointer; transition: background 0.15s ease;">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 16px;">🟡</span>
+                <div>
+                  <span style="font-size: 14px; font-weight: 600; color: #fbbf24;">Due Today</span>
+                  <div style="font-size: 11px; color: #f59e0b;">Scheduled For Service Today</div>
+                </div>
+              </div>
+              <button type="button" class="dash-qty-pill" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.35); padding: 5px 14px; border-radius: 20px; font-size: 13.5px; font-weight: 800; cursor: pointer; font-variant-numeric: tabular-nums;">
+                ${pmDueToday} Qty
+              </button>
+            </div>
+
+            <!-- Row: Due Within 7 Days (Yellow/Amber) -->
+            <div class="dash-clickable-row" data-action="pm-filter" data-urgency="DUE_SOON" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); cursor: pointer; transition: background 0.15s ease;">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 16px;">⏳</span>
+                <div>
+                  <span style="font-size: 14px; font-weight: 600; color: #fde047;">Due Within 7 Days</span>
+                  <div style="font-size: 11px; color: #eab308;">Next Cycle Within 7 Days</div>
+                </div>
+              </div>
+              <button type="button" class="dash-qty-pill" style="background: rgba(234, 179, 8, 0.15); color: #fde047; border: 1px solid rgba(234, 179, 8, 0.35); padding: 5px 14px; border-radius: 20px; font-size: 13.5px; font-weight: 800; cursor: pointer; font-variant-numeric: tabular-nums;">
+                ${pmDueWithin7Days} Qty
+              </button>
+            </div>
+
+            <!-- Row: Upcoming Servicing (Blue) -->
+            <div class="dash-clickable-row" data-action="pm-filter" data-urgency="SCHEDULED" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; cursor: pointer; transition: background 0.15s ease;">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 16px;">🗓️</span>
+                <div>
+                  <span style="font-size: 14px; font-weight: 600; color: #93c5fd;">Upcoming Servicing</span>
+                  <div style="font-size: 11px; color: #60a5fa;">Scheduled Future Cycles</div>
+                </div>
+              </div>
+              <button type="button" class="dash-qty-pill" style="background: rgba(59, 130, 246, 0.15); color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.35); padding: 5px 14px; border-radius: 20px; font-size: 13.5px; font-weight: 800; cursor: pointer; font-variant-numeric: tabular-nums;">
+                ${pmUpcoming} Qty
+              </button>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ================================================================= -->
+        <!-- 4. SECTION 4: NEEDLE DATA — নিডল স্টক ব্যবস্থাপনা -->
+        <!-- ================================================================= -->
+        <div class="dash-section-card" style="background: #0f172a; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);">
+          <!-- Card Header -->
+          <div style="padding: 14px 20px; background: rgba(255, 255, 255, 0.03); border-bottom: 1px solid rgba(255, 255, 255, 0.08); display: flex; justify-content: space-between; align-items: center;">
+            <div style="font-size: 16px; font-weight: 800; color: #f8fafc; letter-spacing: -0.2px;">
+              ৪. Needle Data — নিডল স্টক ব্যবস্থাপনা
+            </div>
+            <span style="font-size: 11px; font-weight: 700; color: #38bdf8; background: rgba(56, 189, 248, 0.12); padding: 3px 8px; border-radius: 6px;">
+              Total Stock: ${sumNeedleStock.toLocaleString()}
+            </span>
+          </div>
+
+          <!-- Needle Table Header (4 Columns matching screenshot) -->
+          <div style="display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; padding: 10px 20px; background: rgba(0, 0, 0, 0.35); font-size: 13px; font-weight: 800; color: #94a3b8; border-bottom: 1px solid rgba(255, 255, 255, 0.08); text-align: center;">
+            <span style="text-align: left;">Needle Type</span>
+            <span>Required</span>
+            <span>Pending</span>
+            <span>Stock</span>
+          </div>
+
+          <!-- Needle Table Rows -->
+          <div style="display: flex; flex-direction: column;">
+            ${needleTableRows.map(r => `
+              <div class="dash-clickable-row" data-action="needle-filter" data-needle="${r.code}" style="display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; align-items: center; padding: 12px 20px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); cursor: pointer; transition: background 0.15s ease;">
+                <div style="display: flex; flex-direction: column; text-align: left;">
+                  <span style="font-size: 15px; font-weight: 800; color: #38bdf8; letter-spacing: 0.2px;">${r.code}</span>
+                  <span style="font-size: 11px; color: #64748b;">${r.desc}</span>
+                </div>
+                <div style="text-align: center;">
+                  <span style="background: rgba(56, 189, 248, 0.1); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.25); padding: 4px 10px; border-radius: 14px; font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; display: inline-block;">
+                    ${r.requiredQty.toLocaleString()} Qty
+                  </span>
+                </div>
+                <div style="text-align: center;">
+                  <span style="background: ${r.pendingQuantity > 0 ? 'rgba(239, 68, 68, 0.15)' : 'rgba(255, 255, 255, 0.05)'}; color: ${r.pendingQuantity > 0 ? '#f87171' : '#94a3b8'}; border: 1px solid ${r.pendingQuantity > 0 ? 'rgba(239, 68, 68, 0.35)' : 'rgba(255, 255, 255, 0.1)'}; padding: 4px 10px; border-radius: 14px; font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; display: inline-block;">
+                    ${r.pendingQuantity.toLocaleString()} Qty
+                  </span>
+                </div>
+                <div style="text-align: center;">
+                  <span style="background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.35); padding: 4px 10px; border-radius: 14px; font-size: 13px; font-weight: 800; font-variant-numeric: tabular-nums; display: inline-block;">
+                    ${r.availableStock.toLocaleString()} Qty
+                  </span>
+                </div>
+              </div>
+            `).join('')}
+
+            <!-- Summary Total Row as in Screenshot -->
+            <div class="dash-clickable-row" data-action="needle-filter" data-needle="ALL" style="display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; align-items: center; padding: 14px 20px; background: rgba(56, 189, 248, 0.04); border-top: 2px solid rgba(56, 189, 248, 0.25); cursor: pointer; transition: background 0.15s ease;">
+              <div style="text-align: left;">
+                <span style="font-size: 15px; font-weight: 900; color: #ffffff;">Total</span>
+                <div style="font-size: 11px; color: #94a3b8;">All 4 Garment Needle Systems</div>
+              </div>
+              <div style="text-align: center;">
+                <span style="background: rgba(56, 189, 248, 0.2); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.4); padding: 5px 12px; border-radius: 14px; font-size: 13.5px; font-weight: 900; font-variant-numeric: tabular-nums; display: inline-block;">
+                  ${sumNeedleRequired.toLocaleString()} Qty
+                </span>
+              </div>
+              <div style="text-align: center;">
+                <span style="background: ${sumNeedlePending > 0 ? 'rgba(239, 68, 68, 0.2)' : 'rgba(255, 255, 255, 0.08)'}; color: ${sumNeedlePending > 0 ? '#f87171' : '#cbd5e1'}; border: 1px solid ${sumNeedlePending > 0 ? 'rgba(239, 68, 68, 0.4)' : 'rgba(255, 255, 255, 0.15)'}; padding: 5px 12px; border-radius: 14px; font-size: 13.5px; font-weight: 900; font-variant-numeric: tabular-nums; display: inline-block;">
+                  ${sumNeedlePending.toLocaleString()} Qty
+                </span>
+              </div>
+              <div style="text-align: center;">
+                <span style="background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); padding: 5px 12px; border-radius: 14px; font-size: 13.5px; font-weight: 900; font-variant-numeric: tabular-nums; display: inline-block;">
+                  ${sumNeedleStock.toLocaleString()} Qty
+                </span>
               </div>
             </div>
-          </div>
 
-          <!-- Color Coding Indicators Legend -->
-          <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 11px;">
-            <span style="display: inline-flex; align-items: center; gap: 4px; color: #34d399; font-weight: 700;">
-              <span style="width: 8px; height: 8px; border-radius: 50%; background: #10b981; display: inline-block;"></span> Green: Completed
-            </span>
-            <span style="display: inline-flex; align-items: center; gap: 4px; color: #fde047; font-weight: 700;">
-              <span style="width: 8px; height: 8px; border-radius: 50%; background: #eab308; display: inline-block;"></span> Yellow: Due Soon
-            </span>
-            <span style="display: inline-flex; align-items: center; gap: 4px; color: #f87171; font-weight: 700;">
-              <span style="width: 8px; height: 8px; border-radius: 50%; background: #ef4444; display: inline-block;"></span> Red: Overdue
-            </span>
-            <span style="display: inline-flex; align-items: center; gap: 4px; color: #60a5fa; font-weight: 700;">
-              <span style="width: 8px; height: 8px; border-radius: 50%; background: #3b82f6; display: inline-block;"></span> Blue: Upcoming
-            </span>
           </div>
         </div>
 
-        <!-- 6 Servicing Metric Summary Cards -->
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr)); gap: 12px;">
-          
-          <!-- 1. Total Machines -->
-          <div class="dash-servicing-card btn-nav-pm-filter" data-urgency="ALL" style="background: #0f172a; border: 1.5px solid rgba(56, 189, 248, 0.4); border-radius: var(--radius-md); padding: 14px 16px; cursor: pointer; transition: all 0.2s;" title="Click to view all preventive maintenance records">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-              <span style="font-size: 11px; font-weight: 800; color: #7dd3fc; text-transform: uppercase;">Total Machines</span>
-              <span style="font-size: 16px;">🏭</span>
-            </div>
-            <div style="font-size: 24px; font-weight: 900; color: #38bdf8; font-family: var(--font-mono); margin-top: 4px;">${pmTotalMachines}</div>
-            <div style="font-size: 10px; color: #94a3b8; margin-top: 4px;">Enrolled in Schedule</div>
-          </div>
+      </div>
 
-          <!-- 2. Serviced Machines (Green) -->
-          <div class="dash-servicing-card btn-nav-pm-filter" data-urgency="COMPLETED" style="background: #0f172a; border: 1.5px solid #10b981; border-radius: var(--radius-md); padding: 14px 16px; cursor: pointer; transition: all 0.2s;" title="Click to view serviced completed machines">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-              <span style="font-size: 11px; font-weight: 800; color: #34d399; text-transform: uppercase;">Serviced Machines</span>
-              <span style="width: 10px; height: 10px; border-radius: 50%; background: #10b981; display: inline-block; box-shadow: 0 0 8px #10b981;"></span>
-            </div>
-            <div style="font-size: 24px; font-weight: 900; color: #34d399; font-family: var(--font-mono); margin-top: 4px;">${pmCompletedCount}</div>
-            <div style="font-size: 10px; color: #34d399; font-weight: 700; margin-top: 4px;">🟢 Completed &amp; Certified</div>
-          </div>
-
-          <!-- 3. Overdue Servicing (Red) -->
-          <div class="dash-servicing-card btn-nav-pm-filter" data-urgency="OVERDUE" style="background: #0f172a; border: 1.5px solid #ef4444; border-radius: var(--radius-md); padding: 14px 16px; cursor: pointer; transition: all 0.2s;" title="Click to view overdue machines requiring urgent servicing">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-              <span style="font-size: 11px; font-weight: 800; color: #f87171; text-transform: uppercase;">Overdue Servicing</span>
-              <span style="width: 10px; height: 10px; border-radius: 50%; background: #ef4444; display: inline-block; box-shadow: 0 0 8px #ef4444;"></span>
-            </div>
-            <div style="font-size: 24px; font-weight: 900; color: #f87171; font-family: var(--font-mono); margin-top: 4px;">${pmOverdue}</div>
-            <div style="font-size: 10px; color: #f87171; font-weight: 700; margin-top: 4px;">🔴 Action Required Immediately</div>
-          </div>
-
-          <!-- 4. Servicing Due Today (Yellow/Orange) -->
-          <div class="dash-servicing-card btn-nav-pm-filter" data-urgency="DUE_TODAY" style="background: #0f172a; border: 1.5px solid #f97316; border-radius: var(--radius-md); padding: 14px 16px; cursor: pointer; transition: all 0.2s;" title="Click to view machines due for service today">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-              <span style="font-size: 11px; font-weight: 800; color: #fb923c; text-transform: uppercase;">Due Today</span>
-              <span style="font-size: 14px;">⚡</span>
-            </div>
-            <div style="font-size: 24px; font-weight: 900; color: #fb923c; font-family: var(--font-mono); margin-top: 4px;">${pmDueToday}</div>
-            <div style="font-size: 10px; color: #fb923c; font-weight: 700; margin-top: 4px;">Today's Priority Target</div>
-          </div>
-
-          <!-- 5. Servicing Due Within 7 Days (Yellow) -->
-          <div class="dash-servicing-card btn-nav-pm-filter" data-urgency="DUE_SOON" style="background: #0f172a; border: 1.5px solid #eab308; border-radius: var(--radius-md); padding: 14px 16px; cursor: pointer; transition: all 0.2s;" title="Click to view machines due for service within next 7 days">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-              <span style="font-size: 11px; font-weight: 800; color: #fde047; text-transform: uppercase;">Due Within 7 Days</span>
-              <span style="width: 10px; height: 10px; border-radius: 50%; background: #eab308; display: inline-block; box-shadow: 0 0 8px #eab308;"></span>
-            </div>
-            <div style="font-size: 24px; font-weight: 900; color: #fde047; font-family: var(--font-mono); margin-top: 4px;">${pmDueWithin7Days}</div>
-            <div style="font-size: 10px; color: #fde047; font-weight: 700; margin-top: 4px;">🟡 Approaching Due Date</div>
-          </div>
-
-          <!-- 6. Upcoming Servicing (Blue) -->
-          <div class="dash-servicing-card btn-nav-pm-filter" data-urgency="SCHEDULED" style="background: #0f172a; border: 1.5px solid #3b82f6; border-radius: var(--radius-md); padding: 14px 16px; cursor: pointer; transition: all 0.2s;" title="Click to view scheduled upcoming machines">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-              <span style="font-size: 11px; font-weight: 800; color: #93c5fd; text-transform: uppercase;">Upcoming Servicing</span>
-              <span style="width: 10px; height: 10px; border-radius: 50%; background: #3b82f6; display: inline-block; box-shadow: 0 0 8px #3b82f6;"></span>
-            </div>
-            <div style="font-size: 24px; font-weight: 900; color: #60a5fa; font-family: var(--font-mono); margin-top: 4px;">${pmUpcoming}</div>
-            <div style="font-size: 10px; color: #60a5fa; font-weight: 700; margin-top: 4px;">🔵 Scheduled on Plan</div>
-          </div>
-
-        </div>
-
-        <!-- Servicing Schedules Table -->
-        <div style="margin-top: 6px; background: #0b1120; border: 1px solid rgba(255, 255, 255, 0.06); border-radius: var(--radius-md); overflow: hidden;">
-          <div style="padding: 10px 14px; background: rgba(255,255,255,0.03); font-size: 11.5px; font-weight: 800; color: #94a3b8; display: flex; justify-content: space-between; align-items: center;">
+      <!-- Live Servicing Schedules Preview Table -->
+      ${sortedMaintMachines.length > 0 ? `
+        <div style="background: #0f172a; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; overflow: hidden; margin-top: 4px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);">
+          <div style="padding: 14px 20px; background: rgba(255, 255, 255, 0.03); border-bottom: 1px solid rgba(255, 255, 255, 0.08); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
             <div style="display: flex; align-items: center; gap: 8px;">
-              <span>SCHEDULED MACHINERY SERVICING FEED</span>
-              <span class="badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; font-size: 10px; padding: 1px 6px;">Active Priorities</span>
+              <span style="font-size: 16px;">⏱️</span>
+              <span style="font-size: 15px; font-weight: 800; color: #f8fafc;">Live Servicing Schedules & Responsible Technicians</span>
             </div>
-            <span style="color: #38bdf8; cursor: pointer;" class="btn-nav-pm-filter" data-urgency="ALL">Open Preventive Maintenance Hub &rarr;</span>
+            <button type="button" class="btn btn-secondary btn-sm" id="btn-dash-open-full-pm" style="font-size: 12px; font-weight: 600; color: #38bdf8; border-color: rgba(56, 189, 248, 0.3);">
+              View Full Preventive Schedule &rarr;
+            </button>
           </div>
 
           <div style="overflow-x: auto;">
-            <table style="width: 100%; border-collapse: collapse; font-size: 12px; text-align: left;">
+            <table class="table" style="width: 100%; border-collapse: collapse; margin: 0; font-size: 13px;">
               <thead>
-                <tr style="border-bottom: 1px solid rgba(255,255,255,0.08); color: #94a3b8; font-size: 11px;">
-                  <th style="padding: 9px 12px; width: 130px;">SERVICING STATUS</th>
-                  <th style="padding: 9px 12px; width: 140px;">MACHINE NUMBER</th>
-                  <th style="padding: 9px 12px;">MACHINE NAME &amp; MODEL</th>
-                  <th style="padding: 9px 12px;">LOCATION (FLOOR &bull; LINE)</th>
-                  <th style="padding: 9px 12px; text-align: center;">LAST SERVICING</th>
-                  <th style="padding: 9px 12px; text-align: center;">NEXT DUE DATE</th>
-                  <th style="padding: 9px 12px;">RESPONSIBLE TECHNICIAN</th>
-                  <th style="padding: 9px 12px; text-align: center; width: 100px;">ACTION</th>
+                <tr style="background: rgba(0, 0, 0, 0.3); color: #94a3b8; font-size: 12px; font-weight: 700; text-transform: uppercase;">
+                  <th style="padding: 10px 16px; text-align: left;">Machine / Serial</th>
+                  <th style="padding: 10px 16px; text-align: left;">Location</th>
+                  <th style="padding: 10px 16px; text-align: left;">Last Servicing</th>
+                  <th style="padding: 10px 16px; text-align: left;">Next Due Date</th>
+                  <th style="padding: 10px 16px; text-align: left;">Status</th>
+                  <th style="padding: 10px 16px; text-align: left;">Technician</th>
                 </tr>
               </thead>
               <tbody>
-                ${sortedMaintMachines.length > 0 ? sortedMaintMachines.map(m => {
-                  const urg = m.urgency || {};
-                  let indicatorBadge = '<span class="badge" style="background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid #3b82f6;">🔵 Upcoming</span>';
-                  if (urg.status === 'OVERDUE') {
-                    indicatorBadge = '<span class="badge" style="background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid #ef4444; font-weight: 800;">🔴 Overdue</span>';
-                  } else if (urg.status === 'DUE_TODAY') {
-                    indicatorBadge = '<span class="badge" style="background: rgba(249, 115, 22, 0.2); color: #fb923c; border: 1px solid #f97316; font-weight: 800;">⚡ Due Today</span>';
-                  } else if (urg.status === 'DUE_SOON' || urg.status === 'DUE_TOMORROW') {
-                    indicatorBadge = '<span class="badge" style="background: rgba(234, 179, 8, 0.2); color: #fde047; border: 1px solid #eab308; font-weight: 800;">🟡 Due Soon</span>';
-                  } else if (urg.status === 'COMPLETED') {
-                    indicatorBadge = '<span class="badge" style="background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid #10b981; font-weight: 800;">🟢 Completed</span>';
-                  }
-
-                  const lastDateFmt = m.lastServiceDate ? excelService.formatDateDMY(m.lastServiceDate) : '—';
-                  const nextDateFmt = m.nextDueDate ? excelService.formatDateDMY(m.nextDueDate) : '—';
-                  const techName = m.responsibleTechnician || m.mechanicName || m.technician || 'Plant Maintenance Engineer';
-
+                ${sortedMaintMachines.map(m => {
+                  const urgencyColors = {
+                    'OVERDUE': { bg: 'rgba(239, 68, 68, 0.15)', text: '#f87171', border: 'rgba(239, 68, 68, 0.35)', label: 'Overdue' },
+                    'DUE_TODAY': { bg: 'rgba(245, 158, 11, 0.15)', text: '#fbbf24', border: 'rgba(245, 158, 11, 0.35)', label: 'Due Today' },
+                    'DUE_SOON': { bg: 'rgba(234, 179, 8, 0.15)', text: '#fde047', border: 'rgba(234, 179, 8, 0.35)', label: 'Due in 7d' },
+                    'SCHEDULED': { bg: 'rgba(59, 130, 246, 0.15)', text: '#93c5fd', border: 'rgba(59, 130, 246, 0.35)', label: 'Upcoming' },
+                    'COMPLETED': { bg: 'rgba(16, 185, 129, 0.15)', text: '#34d399', border: 'rgba(16, 185, 129, 0.35)', label: 'Completed' }
+                  };
+                  const uStyle = urgencyColors[m.urgency?.status] || urgencyColors['SCHEDULED'];
                   return `
-                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.04); transition: background 0.15s;">
-                      <td style="padding: 8px 12px;">${indicatorBadge}</td>
-                      <td style="padding: 8px 12px;">
-                        <span style="font-family: var(--font-mono); font-weight: 800; color: #38bdf8; background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.3); padding: 2px 7px; border-radius: 4px;">
-                          ${m.serialNumber || '—'}
+                    <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.05); color: #cbd5e1;">
+                      <td style="padding: 10px 16px;">
+                        <div style="font-weight: 700; color: #f8fafc;">${m.machineName || 'Machine'}</div>
+                        <div style="font-size: 11px; color: #64748b; font-family: monospace;">SN: ${m.serialNumber || 'N/A'}</div>
+                      </td>
+                      <td style="padding: 10px 16px; font-size: 12px; color: #94a3b8;">
+                        ${m.floor || 'Floor'} &bull; ${m.line || 'Line'}
+                      </td>
+                      <td style="padding: 10px 16px; font-size: 12px; color: #cbd5e1;">
+                        ${m.lastServiceDate || 'None recorded'}
+                      </td>
+                      <td style="padding: 10px 16px; font-size: 12px; font-weight: 700; color: #ffffff;">
+                        ${m.nextServiceDate || 'Not scheduled'}
+                      </td>
+                      <td style="padding: 10px 16px;">
+                        <span style="background: ${uStyle.bg}; color: ${uStyle.text}; border: 1px solid ${uStyle.border}; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 6px; display: inline-block;">
+                          ${uStyle.label}
                         </span>
                       </td>
-                      <td style="padding: 8px 12px;">
-                        <div style="font-weight: 700; color: #ffffff;">${m.machineName || m.machineType || 'Industrial Sewing Machine'}</div>
-                        <div style="font-size: 11px; color: #94a3b8;">${m.brand || ''} &bull; ${m.model || 'Standard'}</div>
-                      </td>
-                      <td style="padding: 8px 12px; color: #cbd5e1;">
-                        <strong style="color: #fff;">${m.floorName || flrMap.get(m.floorId) || 'Floor'}</strong> &bull; 
-                        <span style="color: #38bdf8;">${m.lineName || linMap.get(m.lineId) || 'Line'}</span>
-                      </td>
-                      <td style="padding: 8px 12px; text-align: center; color: #cbd5e1; font-family: var(--font-mono); font-size: 11.5px;">${lastDateFmt}</td>
-                      <td style="padding: 8px 12px; text-align: center; font-family: var(--font-mono); font-size: 11.5px; font-weight: 700; color: ${urg.status === 'OVERDUE' ? '#f87171' : (urg.status === 'DUE_TODAY' ? '#fb923c' : '#34d399')};">
-                        ${nextDateFmt}
-                      </td>
-                      <td style="padding: 8px 12px; color: #cbd5e1; font-weight: 600;">
-                        <span style="display: flex; align-items: center; gap: 4px;">
-                          <span>👤</span> ${techName}
-                        </span>
-                      </td>
-                      <td style="padding: 8px 12px; text-align: center;">
-                        <button type="button" class="btn btn-secondary btn-xs btn-open-pm-record" data-id="${m.machineId || m.id}" style="font-size: 10.5px; font-weight: 700; color: #38bdf8; border-color: rgba(56, 189, 248, 0.4);">
-                          Inspect &rarr;
-                        </button>
+                      <td style="padding: 10px 16px; font-size: 12px; color: #cbd5e1;">
+                        ${m.assignedTechnician || 'Maintenance Team'}
                       </td>
                     </tr>
                   `;
-                }).join('') : `
-                  <tr>
-                    <td colspan="8" style="text-align: center; padding: 24px; color: #94a3b8;">
-                      All machine preventive maintenance schedules are up to date.
-                    </td>
-                  </tr>
-                `}
+                }).join('')}
               </tbody>
             </table>
           </div>
         </div>
-      </section>
-
-      <!-- =================================================================== -->
-      <!-- 4. SECTION 4: NEEDLE STOCK MANAGEMENT                               -->
-      <!-- =================================================================== -->
-      <section style="display: flex; flex-direction: column; gap: 12px; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: var(--radius-lg); padding: 18px 20px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding-bottom: 10px;">
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <span style="font-size: 18px;">🪡</span>
-            <div>
-              <h2 style="font-size: 15px; font-weight: 800; color: #ffffff; margin: 0; text-transform: uppercase; letter-spacing: 0.5px;">
-                4. Needle Stock Management
-              </h2>
-              <div style="font-size: 11px; color: #94a3b8; margin-top: 1px;">
-                Essential factory needle systems: Required, Pending, Available Stock &amp; Buffer Alerts
-              </div>
-            </div>
-          </div>
-          <button type="button" id="btn-dash-open-needle-studio" class="btn btn-secondary btn-xs" style="font-size: 11.5px; font-weight: 700; color: #fbbf24; border-color: rgba(245, 158, 11, 0.4);">
-            Open Needle Flow Studio &rarr;
-          </button>
-        </div>
-
-        <!-- 4 Dedicated Needle Type Cards Grid: DP×5, DP×17, DB×1, DC×1 -->
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 14px;">
-          ${needleStats.map(item => {
-            const alertBadge = item.isLowStock
-              ? `<div style="background: rgba(239, 68, 68, 0.15); border: 1px solid #ef4444; color: #fca5a5; font-size: 10.5px; font-weight: 800; padding: 4px 8px; border-radius: 6px; display: flex; align-items: center; gap: 5px; margin-top: 10px;">
-                   <span>⚠️</span> LOW STOCK ALERT: ${item.pendingQuantity > 0 ? item.pendingQuantity + ' Units Deficit' : 'Buffer Threshold Low'}
-                 </div>`
-              : `<div style="background: rgba(16, 185, 129, 0.15); border: 1px solid #10b981; color: #6ee7b7; font-size: 10.5px; font-weight: 800; padding: 4px 8px; border-radius: 6px; display: flex; align-items: center; gap: 5px; margin-top: 10px;">
-                   <span>✅</span> STOCK HEALTHY: Optimal Operating Buffer
-                 </div>`;
-
-            return `
-              <div class="dash-needle-card" data-needle="${item.code}" style="background: linear-gradient(135deg, #0f172a, #1a2234); border: 1.5px solid ${item.accentColor}50; border-radius: var(--radius-lg); padding: 18px; box-shadow: 0 4px 18px rgba(0,0,0,0.35); position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between;">
-                <div>
-                  <!-- Header: Needle Type & Scope -->
-                  <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                    <div>
-                      <div style="display: flex; align-items: center; gap: 6px;">
-                        <span style="font-size: 18px;">${item.icon}</span>
-                        <span style="font-size: 20px; font-weight: 900; color: #ffffff; letter-spacing: 0.5px; font-family: var(--font-mono);">${item.code}</span>
-                      </div>
-                      <div style="font-size: 11px; color: ${item.accentColor}; font-weight: 700; margin-top: 2px;">${item.name}</div>
-                    </div>
-                    <span class="badge" style="background: rgba(255,255,255,0.06); color: #cbd5e1; font-size: 10px; font-weight: 700;">
-                      ${item.machineCount} Machines
-                    </span>
-                  </div>
-
-                  <div style="font-size: 11px; color: #94a3b8; margin-top: 6px; line-height: 1.3;">
-                    ${item.category}
-                  </div>
-
-                  <!-- Metrics 3-Col Strip: Required | Pending | Available -->
-                  <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 14px; background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.06); border-radius: var(--radius-md); padding: 10px 12px; text-align: center;">
-                    <div>
-                      <div style="font-size: 9.5px; font-weight: 800; color: #94a3b8; text-transform: uppercase;">Required</div>
-                      <div style="font-size: 16px; font-weight: 900; color: #ffffff; font-family: var(--font-mono); margin-top: 2px;">${item.requiredQty}</div>
-                    </div>
-                    <div>
-                      <div style="font-size: 9.5px; font-weight: 800; color: #fbbf24; text-transform: uppercase;">Pending</div>
-                      <div style="font-size: 16px; font-weight: 900; color: ${item.pendingQuantity > 0 ? '#f87171' : '#cbd5e1'}; font-family: var(--font-mono); margin-top: 2px;">${item.pendingQuantity}</div>
-                    </div>
-                    <div>
-                      <div style="font-size: 9.5px; font-weight: 800; color: #38bdf8; text-transform: uppercase;">Available</div>
-                      <div style="font-size: 16px; font-weight: 900; color: #38bdf8; font-family: var(--font-mono); margin-top: 2px;">${item.availableStock}</div>
-                    </div>
-                  </div>
-
-                  <!-- Stock Health Progress Bar -->
-                  <div style="margin-top: 12px;">
-                    <div style="display: flex; justify-content: space-between; font-size: 10.5px; margin-bottom: 4px;">
-                      <span style="color: #94a3b8; font-weight: 600;">Stock Buffer Ratio:</span>
-                      <strong style="color: ${item.isLowStock ? '#fbbf24' : '#34d399'}; font-family: var(--font-mono);">${item.stockHealthPct}%</strong>
-                    </div>
-                    <div style="height: 6px; background: rgba(255,255,255,0.08); border-radius: 3px; overflow: hidden;">
-                      <div style="height: 100%; width: ${Math.min(100, item.stockHealthPct)}%; background: ${item.isLowStock ? 'linear-gradient(90deg, #f59e0b, #ef4444)' : 'linear-gradient(90deg, #059669, #10b981)'}; border-radius: 3px;"></div>
-                    </div>
-                  </div>
-
-                  <!-- Low Stock Alert Banner -->
-                  ${alertBadge}
-                </div>
-
-                <!-- Footer Action Button -->
-                <button type="button" class="btn btn-secondary btn-xs btn-open-needle-type" data-needle="${item.code}" style="margin-top: 14px; width: 100%; font-weight: 800; font-size: 11px; height: 30px; border-color: ${item.accentColor}60; color: ${item.accentColor}; background: ${item.accentColor}10; display: flex; align-items: center; justify-content: center; gap: 5px;">
-                  Open Needle Stock Flow &rarr;
-                </button>
-              </div>
-            `;
-          }).join('')}
-        </div>
-      </section>
+      ` : ''}
 
     </div>
+
+    <style>
+      .dash-clickable-row:hover {
+        background: rgba(255, 255, 255, 0.04) !important;
+      }
+      .dash-clickable-row:hover .dash-qty-pill {
+        transform: translateY(-1px) scale(1.02);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+      }
+      .dash-qty-pill {
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      @media (max-width: 600px) {
+        .user-friendly-dashboard {
+          padding: 10px 10px 24px 10px !important;
+        }
+        .user-friendly-dashboard > div {
+          grid-template-columns: 1fr !important;
+        }
+      }
+    </style>
   `;
 }
 
-export function initDashboardEvents() {
-  // 1. Top executive toolbar navigation
+/**
+ * Attaches interactive click handlers to navigate to detailed views
+ */
+export function attachDashboardEvents() {
+  // Navigation Buttons
   const btnInv = document.getElementById('btn-dash-goto-inventory');
   if (btnInv) {
     btnInv.addEventListener('click', () => {
+      state.set('inventoryStatusFilter', null);
       state.set('currentView', 'inventory');
     });
   }
@@ -818,10 +750,11 @@ export function initDashboardEvents() {
     });
   }
 
-  const btnNeedleStudio = document.getElementById('btn-dash-open-needle-studio');
-  if (btnNeedleStudio) {
-    btnNeedleStudio.addEventListener('click', () => {
-      state.set('currentView', 'needle-operations');
+  const btnFullPm = document.getElementById('btn-dash-open-full-pm');
+  if (btnFullPm) {
+    btnFullPm.addEventListener('click', () => {
+      state.set('pmFilterUrgency', 'ALL');
+      state.set('currentView', 'preventive-maintenance');
     });
   }
 
@@ -832,72 +765,45 @@ export function initDashboardEvents() {
     });
   }
 
-  // 2. Section 1 (Overview Cards): Filter inventory by machine status
-  const cardMap = {
-    'card-overview-total': 'ALL',
-    'card-overview-active': 'ACTIVE',
-    'card-overview-repaired': 'USABLE_IDLE',
-    'card-overview-repair': 'MAINTENANCE',
-    'card-overview-spare': 'IDLE'
-  };
-
-  Object.entries(cardMap).forEach(([id, status]) => {
-    const el = document.getElementById(id);
-    if (el) {
-      el.addEventListener('click', () => {
-        if (status !== 'ALL') {
-          state.set('inventoryStatusFilter', status);
-        }
-        state.set('currentView', 'inventory');
-      });
-    }
+  // Row Click Actions: Section 1 (Inventory)
+  document.querySelectorAll('[data-action="inv-filter"]').forEach(el => {
+    el.addEventListener('click', () => {
+      const status = el.getAttribute('data-status') || 'ALL';
+      if (status !== 'ALL') {
+        state.set('inventoryStatusFilter', status);
+      } else {
+        state.set('inventoryStatusFilter', null);
+      }
+      state.set('currentView', 'inventory');
+    });
   });
 
-  // 3. Section 2 (Machine Transfer Cards): Navigate to transfer list filtered by status
-  document.querySelectorAll('.btn-nav-transfer-filter').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const status = btn.getAttribute('data-status') || 'ALL';
+  // Row Click Actions: Section 2 (Machine Transfers)
+  document.querySelectorAll('[data-action="trf-filter"]').forEach(el => {
+    el.addEventListener('click', () => {
+      const status = el.getAttribute('data-status') || 'ALL';
       state.set('transferStatusFilter', status);
       state.set('currentView', 'transfers');
     });
   });
 
-  document.querySelectorAll('.dash-transfer-row').forEach(row => {
-    row.addEventListener('click', () => {
-      const id = row.getAttribute('data-id');
-      if (id) {
-        state.set('activeTransferRequestId', id);
-        state.set('activeModal', 'transfer-details');
-      }
-    });
-  });
-
-  // 4. Section 3 (Servicing Cards): Navigate to preventive maintenance with urgency filter
-  document.querySelectorAll('.btn-nav-pm-filter').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const urgency = btn.getAttribute('data-urgency') || 'ALL';
+  // Row Click Actions: Section 3 (Machine Servicing)
+  document.querySelectorAll('[data-action="pm-filter"]').forEach(el => {
+    el.addEventListener('click', () => {
+      const urgency = el.getAttribute('data-urgency') || 'ALL';
       state.set('pmFilterUrgency', urgency);
       state.set('currentView', 'preventive-maintenance');
     });
   });
 
-  document.querySelectorAll('.btn-open-pm-record').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      state.set('pmFilterUrgency', 'ALL');
-      state.set('currentView', 'preventive-maintenance');
-    });
-  });
-
-  // 5. Section 4 (Needle Cards): Navigate to needle flow studio with needle type filter
-  document.querySelectorAll('.btn-open-needle-type, .dash-needle-card').forEach(el => {
-    el.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const needleCode = el.getAttribute('data-needle');
-      if (needleCode) {
-        state.set('needleSearchQuery', needleCode.replace('×', 'x'));
+  // Row Click Actions: Section 4 (Needle Operations)
+  document.querySelectorAll('[data-action="needle-filter"]').forEach(el => {
+    el.addEventListener('click', () => {
+      const needle = el.getAttribute('data-needle');
+      if (needle && needle !== 'ALL') {
+        state.set('needleSearchQuery', needle.replace('×', 'x'));
+      } else {
+        state.set('needleSearchQuery', null);
       }
       state.set('currentView', 'needle-operations');
     });
