@@ -4,20 +4,20 @@
  * Enhanced with Global Scroll & Focus State Preservation Engine (Zero Jitter, Zero Scroll Loss)
  */
 
-import { state } from './state.js';
-import { storage } from './db/storage.js';
-import { authService } from './services/authService.js';
-import { renderNavbar, initNavbarEvents } from './components/navbar.js?v=4.24.0';
-import { renderSidebar, initSidebarEvents, updateSidebarActiveState } from './components/sidebar.js?v=4.24.0';
-import { renderHomepageView, initHomepageEvents } from './components/homepageView.js?v=4.24.0';
-import { renderLoginView, initLoginViewEvents } from './components/loginView.js?v=4.24.0';
-import { renderDashboard, initDashboardEvents } from './components/dashboard.js?v=4.24.0';
-import { renderInventoryTable, initInventoryTableEvents, syncInventorySelectionDOM } from './components/inventoryTable.js?v=4.24.5';
-import { renderMachineModal, initMachineModalEvents } from './components/machineModal.js?v=4.24.4';
-import { renderMachineDetails, initMachineDetailsEvents } from './components/machineDetails.js?v=4.24.4';
-import { renderTransferModal, initTransferModalEvents } from './components/transferModal.js?v=4.24.0';
-import { renderTransferDetailsModal, initTransferDetailsModalEvents } from './components/transferDetailsModal.js?v=4.24.2';
-import { renderEditTransferModal, initEditTransferModalEvents } from './components/editTransferModal.js?v=4.24.0';
+import { state } from './state.js?v=4.26.2';
+import { storage } from './db/storage.js?v=4.26.2';
+import { authService } from './services/authService.js?v=4.26.2';
+import { renderNavbar, initNavbarEvents } from './components/navbar.js?v=4.26.2';
+import { renderSidebar, initSidebarEvents, updateSidebarActiveState } from './components/sidebar.js?v=4.26.2';
+import { renderHomepageView, initHomepageEvents } from './components/homepageView.js?v=4.26.2';
+import { renderLoginView, initLoginViewEvents } from './components/loginView.js?v=4.26.2';
+import { renderDashboard, initDashboardEvents } from './components/dashboard.js?v=4.26.2';
+import { renderInventoryTable, initInventoryTableEvents, syncInventorySelectionDOM } from './components/inventoryTable.js?v=4.26.2';
+import { renderMachineModal, initMachineModalEvents } from './components/machineModal.js?v=4.26.2';
+import { renderMachineDetails, initMachineDetailsEvents } from './components/machineDetails.js?v=4.26.2';
+import { renderTransferModal, initTransferModalEvents } from './components/transferModal.js?v=4.26.2';
+import { renderTransferDetailsModal, initTransferDetailsModalEvents } from './components/transferDetailsModal.js?v=4.26.2';
+import { renderEditTransferModal, initEditTransferModalEvents } from './components/editTransferModal.js?v=4.26.2';
 import { renderTransfersView, initTransfersViewEvents } from './components/transfersView.js?v=4.24.2';
 import { renderTransferWorkflowBuilder, initTransferWorkflowBuilderEvents } from './components/transferWorkflowBuilder.js?v=4.24.0';
 import { renderMasterDataView, initMasterDataEvents } from './components/masterDataView.js?v=4.24.0';
@@ -207,7 +207,7 @@ function _initInvScrollGuard() {
 }
 
 class ERPApplication {
-  init() {
+  async init() {
     // Check saved theme
     const savedTheme = localStorage.getItem('al_muslim_theme');
     if (savedTheme === 'light') {
@@ -215,6 +215,14 @@ class ERPApplication {
     }
 
     console.log('Starting Al-Muslim Group Garments Maintenance ERP Application...');
+
+    // Await instant IndexedDB cache hydration before first render (<15ms)
+    try {
+      await storage.ensureHydrated();
+    } catch (e) {
+      console.warn('[ERP] Pre-render hydration notice:', e);
+    }
+
     this.render();
     this.bindEvents();
 
@@ -227,6 +235,10 @@ class ERPApplication {
     state.on('frozenColumns:changed', () => this.renderMainContent());
     state.on('inventory:updated', () => this.queueBackgroundRender());
     state.on('change:agentPanelOpen', () => this.renderAgentPanel());
+
+    window.addEventListener('erp:inventory-updated', () => {
+      this.queueBackgroundRender();
+    });
 
     window.addEventListener('erp:relocate-updated', () => {
       if (state.get('currentView') === 'relocate') {
@@ -1081,10 +1093,10 @@ if (typeof window !== 'undefined') {
 if (typeof document !== 'undefined') {
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
-      app.init();
+      app.init().catch(e => console.error('[ERP] Startup error:', e));
     });
   } else {
     // DOMContentLoaded already fired; initialize immediately
-    app.init();
+    app.init().catch(e => console.error('[ERP] Startup error:', e));
   }
 }

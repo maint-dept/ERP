@@ -379,9 +379,9 @@ export function renderInventoryTable() {
       width: 230,
       renderTh: (thStyle, thClass) => `<th class="${thClass}" style="width: 230px; min-width: 230px; max-width: 230px; ${thStyle}">Remarks</th>`,
       renderTd: (m, meta, tdStyle, tdClass) => {
-        let rem = m.remarks || '';
-        if (typeof rem === 'string' && rem.toLowerCase().startsWith('imported from sheet')) {
-          rem = rem.replace(/^Imported from sheet\s*['"][^'"]*['"]\s*/i, '').trim();
+        let rem = typeof m.remarks === 'string' ? m.remarks.trim() : '';
+        if (rem) {
+          rem = rem.replace(/^Imported from sheet\s*['"]?[^'"\]\n\r]*['"]?\s*/gi, '').trim();
         }
         return `<td class="${tdClass}" style="font-size: 11.5px; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; ${tdStyle}" title="${escapeHtml(rem)}">${escapeHtml(rem) || '—'}</td>`;
       }
@@ -554,7 +554,20 @@ export function renderInventoryTable() {
 
   // 5. Render Table Rows
   let rowsHtml = '';
-  if (machines.length === 0) {
+  const isInitialSyncPending = (typeof storage !== 'undefined' && !storage._hasInitialSyncCompleted && allMachines.length === 0);
+  if (isInitialSyncPending) {
+    rowsHtml = `
+      <tr>
+        <td colspan="${columnLayout.length + 2}" style="text-align: center; padding: 60px 20px;">
+          <div style="font-size: 34px; margin-bottom: 12px; animation: spin 1.5s infinite linear; display: inline-block;">⚙️</div>
+          <div style="font-size: 15px; font-weight: 700; color: #fff;">Connecting & Loading Machine Inventory...</div>
+          <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">
+            Retrieving machines from primary cloud database...
+          </div>
+        </td>
+      </tr>
+    `;
+  } else if (machines.length === 0) {
     rowsHtml = `
       <tr>
         <td colspan="${columnLayout.length + 2}" style="text-align: center; padding: 48px 20px;">
@@ -650,22 +663,22 @@ export function renderInventoryTable() {
             <div class="inventory-inline-kpis">
               <div class="kpi-pill kpi-total" title="Total machines matching current scope and view">
                 <span class="kpi-dot">🏭</span>
-                <strong class="kpi-val">${countTotalMachines}</strong>
+                <strong class="kpi-val">${isInitialSyncPending ? '...' : countTotalMachines}</strong>
                 <span class="kpi-lbl">Total</span>
               </div>
               <div class="kpi-pill kpi-running" title="Operational running machines in current scope and view">
                 <span class="kpi-dot">🟢</span>
-                <strong class="kpi-val" style="color: #34d399;">${totalRunning}</strong>
+                <strong class="kpi-val" style="color: #34d399;">${isInitialSyncPending ? '...' : totalRunning}</strong>
                 <span class="kpi-lbl">Running</span>
               </div>
               <div class="kpi-pill kpi-usable" title="Ready-to-use standby usable idle machines in current scope and view">
                 <span class="kpi-dot">🔵</span>
-                <strong class="kpi-val" style="color: #38bdf8;">${totalUsableIdle}</strong>
+                <strong class="kpi-val" style="color: #38bdf8;">${isInitialSyncPending ? '...' : totalUsableIdle}</strong>
                 <span class="kpi-lbl">Usable</span>
               </div>
               <div class="kpi-pill kpi-repair" title="Repairable / maintenance idle machines in current scope and view">
                 <span class="kpi-dot">🟡</span>
-                <strong class="kpi-val" style="color: #fbbf24;">${totalRepairableIdle}</strong>
+                <strong class="kpi-val" style="color: #fbbf24;">${isInitialSyncPending ? '...' : totalRepairableIdle}</strong>
                 <span class="kpi-lbl">Repairable</span>
               </div>
             </div>
@@ -932,7 +945,7 @@ export function renderInventoryTable() {
         
         <!-- Left: Showing 1–50 of 178 machines -->
         <div class="pagination-counter">
-          Showing <strong style="color: #fff;">${startItem}–${endItem}</strong> of <strong style="color: #38bdf8;">${queryResult.total}</strong> machines
+          ${isInitialSyncPending ? 'Connecting to database...' : `Showing <strong style="color: #fff;">${startItem}–${endItem}</strong> of <strong style="color: #38bdf8;">${queryResult.total}</strong> machines`}
         </div>
 
         <!-- Middle: Rows per page: [ 25 | 50 | 100 ] -->
