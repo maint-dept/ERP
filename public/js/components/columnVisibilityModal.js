@@ -36,22 +36,22 @@ export function renderColumnVisibilityModal() {
 
   // Freezable columns list
   const freezableCols = [
-    { key: 'machineName', label: 'Machine Name', width: '220px', desc: 'Identifies machine type' },
-    { key: 'brand', label: 'Machine Brand', width: '130px', desc: 'Manufacturer / Brand' },
-    { key: 'model', label: 'Machine Model', width: '150px', desc: 'Model specification number' },
-    { key: 'serialNumber', label: 'Machine Serial Number', width: '150px', desc: 'Unique asset identifier tag' },
-    { key: 'manufacturing_serial', label: 'Manufacturing Serial Number', width: '170px', desc: 'Factory mfg serial tag' },
-    { key: 'group', label: 'Group / Conglomerate', width: '150px', desc: 'Corporate group' },
-    { key: 'unit', label: 'Unit / Factory', width: '190px', desc: 'Plant location' },
-    { key: 'floor', label: 'Floor', width: '130px', desc: 'Floor location' },
-    { key: 'line', label: 'Line', width: '130px', desc: 'Production line' },
-    { key: 'running', label: 'Running Quantity', width: '100px', desc: 'Operational machines' },
-    { key: 'usable_idle', label: 'Usable Idle Quantity', width: '110px', desc: 'Standby usable machines' },
-    { key: 'repairable_idle', label: 'Repairable Idle Quantity', width: '130px', desc: 'Under maintenance' },
-    { key: 'total_quantity', label: 'Total Quantity', width: '100px', desc: 'System total quantity' },
-    { key: 'status', label: 'Machine Status', width: '110px', desc: 'Current operational status' },
-    { key: 'service_date', label: 'Last Service Date', width: '150px', desc: 'PM maintenance servicing date' },
-    { key: 'remarks', label: 'Remarks / Notes', width: '130px', desc: 'Asset remarks' }
+    { key: 'machineName', label: 'Machine Name', width: '200px', desc: 'Identifies machine type' },
+    { key: 'brand', label: 'Machine Brand', width: '95px', desc: 'Manufacturer / Brand' },
+    { key: 'model', label: 'Machine Model', width: '120px', desc: 'Model specification number' },
+    { key: 'serialNumber', label: 'Machine Serial Number', width: '130px', desc: 'Unique asset identifier tag' },
+    { key: 'manufacturing_serial', label: 'Manufacturing Serial Number', width: '125px', desc: 'Factory mfg serial tag' },
+    { key: 'group', label: 'Group / Conglomerate', width: '110px', desc: 'Corporate group' },
+    { key: 'unit', label: 'Unit / Factory', width: '140px', desc: 'Plant location' },
+    { key: 'floor', label: 'Floor', width: '95px', desc: 'Floor location' },
+    { key: 'line', label: 'Line', width: '95px', desc: 'Production line' },
+    { key: 'running', label: 'Running Quantity', width: '75px', desc: 'Operational machines' },
+    { key: 'usable_idle', label: 'Usable Idle Quantity', width: '80px', desc: 'Standby usable machines' },
+    { key: 'repairable_idle', label: 'Repairable Idle Quantity', width: '90px', desc: 'Under maintenance' },
+    { key: 'total_quantity', label: 'Total Quantity', width: '75px', desc: 'System total quantity' },
+    { key: 'status', label: 'Machine Status', width: '95px', desc: 'Current operational status' },
+    { key: 'service_date', label: 'Last Service Date', width: '125px', desc: 'PM maintenance servicing date' },
+    { key: 'remarks', label: 'Remarks / Notes', width: '120px', desc: 'Asset remarks' }
   ];
 
   // Set of keys already present in the active layout

@@ -186,157 +186,157 @@ export function renderInventoryTable() {
     {
       key: 'machineName',
       label: 'Machine Name',
-      width: 220,
-      renderTh: (thStyle, thClass) => `<th class="th-sortable ${thClass}" data-sort="machineName" style="width: 220px; min-width: 220px; max-width: 220px; cursor: pointer; ${thStyle}">Machine Name</th>`,
+      width: 200,
+      renderTh: (thStyle, thClass) => `<th class="th-sortable ${thClass}" data-sort="machineName" style="width: 200px; min-width: 200px; max-width: 200px; cursor: pointer; ${thStyle}">Machine Name</th>`,
       renderTd: (m, meta, tdStyle, tdClass) => {
         const name = (mnMap.get(m.machineNameId) || m.machineName || m.name || brdMap.get(m.brandId) || (m.brand ? m.brand + ' Machine' : '') || '—').trim();
         const isViewOnly = authService.isMachineViewOnlyForUser(m, null, showCrossFloorIdle);
         const viewOnlyBadge = isViewOnly 
           ? `<span class="badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); font-size: 10px; padding: 1px 6px; margin-left: 6px; vertical-align: middle; font-weight: 600; white-space: nowrap;" title="View-Only: This machine belongs to another floor or Central Idle">👁️ View Only</span>` 
           : '';
-        return `<td class="${tdClass} col-wrap-text" style="width: 220px; min-width: 220px; max-width: 220px; font-weight: 600; color: #fff; white-space: normal !important; word-break: break-word; overflow-wrap: break-word; text-overflow: clip !important; overflow: visible !important; line-height: 1.35; padding: 8px 12px; ${tdStyle}" title="${name}"><span style="display: inline; line-height: 1.35;">${name}</span>${viewOnlyBadge}</td>`;
+        return `<td class="${tdClass} col-wrap-text" style="width: 200px; min-width: 200px; max-width: 200px; font-weight: 600; color: #fff; white-space: normal !important; word-break: break-word; overflow-wrap: break-word; text-overflow: clip !important; overflow: visible !important; line-height: 1.35; padding: 6px 10px; ${tdStyle}" title="${name}"><span style="display: inline; line-height: 1.35;">${name}</span>${viewOnlyBadge}</td>`;
       }
     },
     {
       key: 'model',
       label: 'Model',
-      width: 150,
-      renderTh: (thStyle, thClass) => `<th class="th-sortable ${thClass}" data-sort="model" style="width: 150px; min-width: 150px; max-width: 150px; cursor: pointer; ${thStyle}">Model</th>`,
+      width: 120,
+      renderTh: (thStyle, thClass) => `<th class="th-sortable ${thClass}" data-sort="model" style="width: 120px; min-width: 120px; max-width: 120px; text-align: center; cursor: pointer; ${thStyle}">Model</th>`,
       renderTd: (m, meta, tdStyle, tdClass) => {
         const mdl = (mdlMap.get(m.modelId) || m.model || m.modelName || '—').trim();
-        return `<td class="${tdClass}" style="overflow: hidden; text-overflow: ellipsis; font-family: var(--font-mono); font-weight: 600; ${tdStyle}" title="${mdl}">${mdl}</td>`;
+        return `<td class="${tdClass}" style="width: 120px; min-width: 120px; max-width: 120px; text-align: center; overflow: hidden; text-overflow: ellipsis; font-family: var(--font-mono); font-weight: 600; ${tdStyle}" title="${mdl}">${mdl}</td>`;
       }
     },
     {
       key: 'serialNumber',
       label: 'Serial Number',
-      width: 150,
-      renderTh: (thStyle, thClass) => `<th class="th-sortable ${thClass}" data-sort="serialNumber" style="width: 150px; min-width: 150px; max-width: 150px; cursor: pointer; ${thStyle}">Serial Number</th>`,
-      renderTd: (m, meta, tdStyle, tdClass) => `<td class="${tdClass}" style="width: 150px; min-width: 150px; max-width: 150px; ${tdStyle}"><a href="javascript:void(0)" class="machine-serial-link btn-inspect-machine" data-id="${m.id}" title="Click to view full machine lifetime & specifications">${m.serialNumber || '—'}</a></td>`
+      width: 130,
+      renderTh: (thStyle, thClass) => `<th class="th-sortable ${thClass}" data-sort="serialNumber" style="width: 130px; min-width: 130px; max-width: 130px; text-align: center; cursor: pointer; ${thStyle}">Serial Number</th>`,
+      renderTd: (m, meta, tdStyle, tdClass) => `<td class="${tdClass}" style="width: 130px; min-width: 130px; max-width: 130px; text-align: center; ${tdStyle}"><a href="javascript:void(0)" class="machine-serial-link btn-inspect-machine" data-id="${m.id}" title="Click to view full machine lifetime & specifications">${m.serialNumber || '—'}</a></td>`
     },
     {
       key: 'manufacturing_serial',
       label: 'Manufacturing Serial Number',
-      width: 170,
-      renderTh: (thStyle, thClass) => `<th class="th-sortable ${thClass}" data-sort="manufacturing_serial" style="width: 170px; min-width: 170px; max-width: 170px; cursor: pointer; ${thStyle}">Mfg Serial No</th>`,
+      width: 125,
+      renderTh: (thStyle, thClass) => `<th class="th-sortable ${thClass}" data-sort="manufacturing_serial" style="width: 125px; min-width: 125px; max-width: 125px; text-align: center; cursor: pointer; ${thStyle}">Mfg Serial No</th>`,
       renderTd: (m, meta, tdStyle, tdClass) => {
         const mfg = m.manufacturing_serial || m.manufacturingSerial || m.customValues?.manufacturing_serial || m.customValues?.manufacturingSerial || m.manufacturingNo || m.mfgSerial || m.manufacturing || '—';
-        return `<td class="${tdClass}" style="overflow: hidden; text-overflow: ellipsis; font-family: var(--font-mono); font-size: 11.5px; ${tdStyle}" title="${mfg}"><span style="color: #38bdf8; font-weight: 600;">${mfg}</span></td>`;
+        return `<td class="${tdClass}" style="width: 125px; min-width: 125px; max-width: 125px; text-align: center; overflow: hidden; text-overflow: ellipsis; font-family: var(--font-mono); font-size: 11.5px; ${tdStyle}" title="${mfg}"><span style="color: #38bdf8; font-weight: 600;">${mfg}</span></td>`;
       }
     },
     {
       key: 'manufacturing',
       label: 'Manufacturing Info',
-      width: 150,
-      renderTh: (thStyle, thClass) => `<th class="${thClass}" style="width: 150px; min-width: 150px; max-width: 150px; ${thStyle}">Manufacturing</th>`,
+      width: 120,
+      renderTh: (thStyle, thClass) => `<th class="${thClass}" style="width: 120px; min-width: 120px; max-width: 120px; text-align: center; ${thStyle}">Mfg Info</th>`,
       renderTd: (m, meta, tdStyle, tdClass) => {
         const val = m.manufacturing || m.customValues?.manufacturing || '—';
-        return `<td class="${tdClass}" style="overflow: hidden; text-overflow: ellipsis; ${tdStyle}" title="${val}">${val}</td>`;
+        return `<td class="${tdClass}" style="width: 120px; min-width: 120px; max-width: 120px; text-align: center; overflow: hidden; text-overflow: ellipsis; ${tdStyle}" title="${val}">${val}</td>`;
       }
     },
     {
       key: 'manufacturing_year',
       label: 'Manufacturing Year',
-      width: 130,
-      renderTh: (thStyle, thClass) => `<th class="${thClass}" style="width: 130px; min-width: 130px; max-width: 130px; text-align: center; ${thStyle}">Mfg Year</th>`,
+      width: 85,
+      renderTh: (thStyle, thClass) => `<th class="${thClass}" style="width: 85px; min-width: 85px; max-width: 85px; text-align: center; ${thStyle}">Mfg Year</th>`,
       renderTd: (m, meta, tdStyle, tdClass) => {
         const val = m.manufacturing_year || m.manufacturingYear || m.mfgYear || m.customValues?.manufacturing_year || '—';
-        return `<td class="${tdClass}" style="text-align: center; ${tdStyle}">${val}</td>`;
+        return `<td class="${tdClass}" style="width: 85px; min-width: 85px; max-width: 85px; text-align: center; ${tdStyle}">${val}</td>`;
       }
     },
     {
       key: 'brand',
       label: 'Brand',
-      width: 130,
-      renderTh: (thStyle, thClass) => `<th class="th-sortable ${thClass}" data-sort="brand" style="width: 130px; min-width: 130px; max-width: 130px; cursor: pointer; ${thStyle}">Brand</th>`,
+      width: 95,
+      renderTh: (thStyle, thClass) => `<th class="th-sortable ${thClass}" data-sort="brand" style="width: 95px; min-width: 95px; max-width: 95px; text-align: center; cursor: pointer; ${thStyle}">Brand</th>`,
       renderTd: (m, meta, tdStyle, tdClass) => {
         const brd = (brdMap.get(m.brandId) || m.brand || '—').trim();
-        return `<td class="${tdClass}" style="overflow: hidden; text-overflow: ellipsis; ${tdStyle}" title="${brd}">${brd}</td>`;
+        return `<td class="${tdClass}" style="width: 95px; min-width: 95px; max-width: 95px; text-align: center; font-weight: 600; overflow: hidden; text-overflow: ellipsis; ${tdStyle}" title="${brd}">${brd}</td>`;
       }
     },
     {
       key: 'group',
       label: 'Group',
-      width: 150,
-      renderTh: (thStyle, thClass) => `<th class="th-sortable ${thClass}" data-sort="group" style="width: 150px; min-width: 150px; max-width: 150px; cursor: pointer; ${thStyle}">Group</th>`,
+      width: 110,
+      renderTh: (thStyle, thClass) => `<th class="th-sortable ${thClass}" data-sort="group" style="width: 110px; min-width: 110px; max-width: 110px; text-align: center; cursor: pointer; ${thStyle}">Group</th>`,
       renderTd: (m, meta, tdStyle, tdClass) => {
         const grp = grpMap.get(m.groupId) || m.group || '—';
-        return `<td class="${tdClass}" style="overflow: hidden; text-overflow: ellipsis; ${tdStyle}" title="${grp}">${grp}</td>`;
+        return `<td class="${tdClass}" style="width: 110px; min-width: 110px; max-width: 110px; text-align: center; overflow: hidden; text-overflow: ellipsis; ${tdStyle}" title="${grp}">${grp}</td>`;
       }
     },
     {
       key: 'unit',
       label: 'Unit / Factory',
-      width: 190,
-      renderTh: (thStyle, thClass) => `<th class="th-sortable ${thClass}" data-sort="unit" style="width: 190px; min-width: 190px; max-width: 190px; cursor: pointer; ${thStyle}">Unit / Factory</th>`,
+      width: 140,
+      renderTh: (thStyle, thClass) => `<th class="th-sortable ${thClass}" data-sort="unit" style="width: 140px; min-width: 140px; max-width: 140px; text-align: center; cursor: pointer; ${thStyle}">Unit / Factory</th>`,
       renderTd: (m, meta, tdStyle, tdClass) => {
         const unt = untMap.get(m.unitId) || m.unit || '—';
-        return `<td class="${tdClass}" style="overflow: hidden; text-overflow: ellipsis; ${tdStyle}" title="${unt}">${unt}</td>`;
+        return `<td class="${tdClass}" style="width: 140px; min-width: 140px; max-width: 140px; text-align: center; overflow: hidden; text-overflow: ellipsis; ${tdStyle}" title="${unt}">${unt}</td>`;
       }
     },
     {
       key: 'floor',
       label: 'Floor',
-      width: 130,
-      renderTh: (thStyle, thClass) => `<th class="th-sortable ${thClass}" data-sort="floor" style="width: 130px; min-width: 130px; max-width: 130px; cursor: pointer; ${thStyle}">Floor</th>`,
+      width: 95,
+      renderTh: (thStyle, thClass) => `<th class="th-sortable ${thClass}" data-sort="floor" style="width: 95px; min-width: 95px; max-width: 95px; text-align: center; cursor: pointer; ${thStyle}">Floor</th>`,
       renderTd: (m, meta, tdStyle, tdClass) => {
         const flr = flrMap.get(m.floorId) || m.floor || '—';
         const isViewOnly = authService.isMachineViewOnlyForUser(m, null, showCrossFloorIdle);
-        return `<td class="${tdClass}" style="overflow: hidden; text-overflow: ellipsis; ${tdStyle}" title="${flr}">${flr}${isViewOnly ? ` <span class="badge" style="font-size: 9.5px; padding: 1px 5px; background: rgba(56, 189, 248, 0.12); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 4px; white-space: nowrap;" title="Cross-Floor Idle Machine (View-Only)">👁️ Idle</span>` : ''}</td>`;
+        return `<td class="${tdClass}" style="width: 95px; min-width: 95px; max-width: 95px; text-align: center; overflow: hidden; text-overflow: ellipsis; ${tdStyle}" title="${flr}">${flr}${isViewOnly ? ` <span class="badge" style="font-size: 9px; padding: 1px 4px; background: rgba(56, 189, 248, 0.12); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 4px; white-space: nowrap;" title="Cross-Floor Idle Machine (View-Only)">👁️</span>` : ''}</td>`;
       }
     },
     {
       key: 'line',
       label: 'Line',
-      width: 130,
-      renderTh: (thStyle, thClass) => `<th class="th-sortable ${thClass}" data-sort="line" style="width: 130px; min-width: 130px; max-width: 130px; cursor: pointer; ${thStyle}">Line</th>`,
+      width: 95,
+      renderTh: (thStyle, thClass) => `<th class="th-sortable ${thClass}" data-sort="line" style="width: 95px; min-width: 95px; max-width: 95px; text-align: center; cursor: pointer; ${thStyle}">Line</th>`,
       renderTd: (m, meta, tdStyle, tdClass) => {
         const fullLine = linMap.get(m.lineId) || m.line || '—';
         const cleanLine = formatDisplayLine(fullLine, 'NORMAL');
         const isPrefixed = fullLine.includes('-') && cleanLine !== fullLine;
-        return `<td class="${tdClass}" style="overflow: hidden; text-overflow: ellipsis; ${tdStyle}" title="Line: ${cleanLine} (Full Code: ${fullLine})"><span style="font-weight: 800; color: #38bdf8; font-size: 12px;">${cleanLine}</span>${isPrefixed ? `<span style="font-size: 10px; color: var(--text-muted); margin-left: 4px; font-weight: 500;">(${fullLine})</span>` : ''}</td>`;
+        return `<td class="${tdClass}" style="width: 95px; min-width: 95px; max-width: 95px; text-align: center; overflow: hidden; text-overflow: ellipsis; ${tdStyle}" title="Line: ${cleanLine} (Full Code: ${fullLine})"><span style="font-weight: 800; color: #38bdf8; font-size: 12px;">${cleanLine}</span>${isPrefixed ? `<span style="font-size: 9.5px; color: var(--text-muted); margin-left: 2px; font-weight: 500;">(${fullLine})</span>` : ''}</td>`;
       }
     },
     {
       key: 'running',
       label: 'Running',
-      width: 100,
-      renderTh: (thStyle, thClass) => `<th class="${thClass}" style="width: 100px; min-width: 100px; max-width: 100px; text-align: center; ${thStyle}">Running</th>`,
-      renderTd: (m, meta, tdStyle, tdClass) => `<td class="${tdClass}" style="text-align: center; ${tdStyle}"><span class="qty-badge qty-running">${meta.rQty}</span></td>`
+      width: 75,
+      renderTh: (thStyle, thClass) => `<th class="${thClass}" style="width: 75px; min-width: 75px; max-width: 75px; text-align: center; ${thStyle}">Running</th>`,
+      renderTd: (m, meta, tdStyle, tdClass) => `<td class="${tdClass}" style="width: 75px; min-width: 75px; max-width: 75px; text-align: center; ${tdStyle}"><span class="qty-badge qty-running">${meta.rQty}</span></td>`
     },
     {
       key: 'usable_idle',
       label: 'Usable Idle',
-      width: 110,
-      renderTh: (thStyle, thClass) => `<th class="${thClass}" style="width: 110px; min-width: 110px; max-width: 110px; text-align: center; ${thStyle}">Usable Idle</th>`,
-      renderTd: (m, meta, tdStyle, tdClass) => `<td class="${tdClass}" style="text-align: center; ${tdStyle}"><span class="qty-badge qty-usable">${meta.uQty}</span></td>`
+      width: 80,
+      renderTh: (thStyle, thClass) => `<th class="${thClass}" style="width: 80px; min-width: 80px; max-width: 80px; text-align: center; ${thStyle}" title="Usable Idle Quantity">Usable</th>`,
+      renderTd: (m, meta, tdStyle, tdClass) => `<td class="${tdClass}" style="width: 80px; min-width: 80px; max-width: 80px; text-align: center; ${tdStyle}"><span class="qty-badge qty-usable">${meta.uQty}</span></td>`
     },
     {
       key: 'repairable_idle',
       label: 'Repairable Idle',
-      width: 130,
-      renderTh: (thStyle, thClass) => `<th class="${thClass}" style="width: 130px; min-width: 130px; max-width: 130px; text-align: center; ${thStyle}">Repairable Idle</th>`,
-      renderTd: (m, meta, tdStyle, tdClass) => `<td class="${tdClass}" style="text-align: center; ${tdStyle}"><span class="qty-badge qty-repair">${meta.rpQty}</span></td>`
+      width: 90,
+      renderTh: (thStyle, thClass) => `<th class="${thClass}" style="width: 90px; min-width: 90px; max-width: 90px; text-align: center; ${thStyle}" title="Repairable Idle Quantity">Repairable</th>`,
+      renderTd: (m, meta, tdStyle, tdClass) => `<td class="${tdClass}" style="width: 90px; min-width: 90px; max-width: 90px; text-align: center; ${tdStyle}"><span class="qty-badge qty-repair">${meta.rpQty}</span></td>`
     },
     {
       key: 'total_quantity',
       label: 'Total',
-      width: 100,
-      renderTh: (thStyle, thClass) => `<th class="${thClass}" style="width: 100px; min-width: 100px; max-width: 100px; text-align: center; ${thStyle}">Total</th>`,
-      renderTd: (m, meta, tdStyle, tdClass) => `<td class="${tdClass}" style="text-align: center; ${tdStyle}"><span class="qty-badge qty-total">${meta.totalQty}</span></td>`
+      width: 75,
+      renderTh: (thStyle, thClass) => `<th class="${thClass}" style="width: 75px; min-width: 75px; max-width: 75px; text-align: center; ${thStyle}">Total</th>`,
+      renderTd: (m, meta, tdStyle, tdClass) => `<td class="${tdClass}" style="width: 75px; min-width: 75px; max-width: 75px; text-align: center; ${tdStyle}"><span class="qty-badge qty-total">${meta.totalQty}</span></td>`
     },
     {
       key: 'status',
       label: 'Status',
-      width: 110,
-      renderTh: (thStyle, thClass) => `<th class="th-sortable ${thClass}" data-sort="status" style="width: 110px; min-width: 110px; max-width: 110px; text-align: center; cursor: pointer; ${thStyle}">Status</th>`,
-      renderTd: (m, meta, tdStyle, tdClass) => `<td class="${tdClass}" style="width: 110px; min-width: 110px; max-width: 110px; text-align: center; ${tdStyle}"><span class="badge ${meta.statusBadgeClass}">${(m.status || 'ACTIVE').replace('_', ' ')}</span></td>`
+      width: 95,
+      renderTh: (thStyle, thClass) => `<th class="th-sortable ${thClass}" data-sort="status" style="width: 95px; min-width: 95px; max-width: 95px; text-align: center; cursor: pointer; ${thStyle}">Status</th>`,
+      renderTd: (m, meta, tdStyle, tdClass) => `<td class="${tdClass}" style="width: 95px; min-width: 95px; max-width: 95px; text-align: center; ${tdStyle}"><span class="badge ${meta.statusBadgeClass}">${(m.status || 'ACTIVE').replace('_', ' ')}</span></td>`
     },
     {
       key: 'service_date',
       label: 'Last Service Date',
-      width: 150,
-      renderTh: (thStyle, thClass) => `<th class="th-sortable ${thClass}" data-sort="service_date" style="width: 150px; min-width: 150px; max-width: 150px; text-align: center; cursor: pointer; ${thStyle}">Last Service Date</th>`,
+      width: 125,
+      renderTh: (thStyle, thClass) => `<th class="th-sortable ${thClass}" data-sort="service_date" style="width: 125px; min-width: 125px; max-width: 125px; text-align: center; cursor: pointer; ${thStyle}" title="Last Servicing Date">Last Service</th>`,
       renderTd: (m, meta, tdStyle, tdClass) => {
         let sDate = m.lastServiceDate || m.service_date || m.serviceDate || m.customValues?.service_date || '';
         if (!sDate && (m.id || m.serialNumber)) {
@@ -345,56 +345,56 @@ export function renderInventoryTable() {
                             .sort((a, b) => (b.serviceDate || '').localeCompare(a.serviceDate || ''))[0];
           if (pm?.serviceDate) sDate = pm.serviceDate;
         }
-        return `<td class="${tdClass}" style="width: 150px; min-width: 150px; max-width: 150px; text-align: center; font-size: 11.5px; ${tdStyle}">${excelService.formatDateDMY(sDate) || '—'}</td>`;
+        return `<td class="${tdClass}" style="width: 125px; min-width: 125px; max-width: 125px; text-align: center; font-size: 11.5px; ${tdStyle}">${excelService.formatDateDMY(sDate) || '—'}</td>`;
       }
     },
     {
       key: 'purchase_date',
       label: 'Purchase Date',
-      width: 120,
-      renderTh: (thStyle, thClass) => `<th class="${thClass}" style="width: 120px; min-width: 120px; max-width: 120px; ${thStyle}">Purchase Date</th>`,
-      renderTd: (m, meta, tdStyle, tdClass) => `<td class="${tdClass}" style="${tdStyle}">${excelService.formatDateDMY(m.purchase_date || m.purchaseDate) || '—'}</td>`
+      width: 105,
+      renderTh: (thStyle, thClass) => `<th class="${thClass}" style="width: 105px; min-width: 105px; max-width: 105px; text-align: center; ${thStyle}">Purchase Date</th>`,
+      renderTd: (m, meta, tdStyle, tdClass) => `<td class="${tdClass}" style="width: 105px; min-width: 105px; max-width: 105px; text-align: center; font-size: 11.5px; ${tdStyle}">${excelService.formatDateDMY(m.purchase_date || m.purchaseDate) || '—'}</td>`
     },
     {
       key: 'installation_date',
       label: 'Install Date',
-      width: 120,
-      renderTh: (thStyle, thClass) => `<th class="${thClass}" style="width: 120px; min-width: 120px; max-width: 120px; ${thStyle}">Install Date</th>`,
-      renderTd: (m, meta, tdStyle, tdClass) => `<td class="${tdClass}" style="${tdStyle}">${excelService.formatDateDMY(m.installation_date || m.installationDate) || '—'}</td>`
+      width: 105,
+      renderTh: (thStyle, thClass) => `<th class="${thClass}" style="width: 105px; min-width: 105px; max-width: 105px; text-align: center; ${thStyle}">Install Date</th>`,
+      renderTd: (m, meta, tdStyle, tdClass) => `<td class="${tdClass}" style="width: 105px; min-width: 105px; max-width: 105px; text-align: center; font-size: 11.5px; ${tdStyle}">${excelService.formatDateDMY(m.installation_date || m.installationDate) || '—'}</td>`
     },
     {
       key: 'supplier_name',
       label: 'Supplier',
-      width: 140,
-      renderTh: (thStyle, thClass) => `<th class="${thClass}" style="width: 140px; min-width: 140px; max-width: 140px; ${thStyle}">Supplier</th>`,
-      renderTd: (m, meta, tdStyle, tdClass) => `<td class="${tdClass}" style="${tdStyle}">${m.supplier_name || m.supplier || '—'}</td>`
+      width: 120,
+      renderTh: (thStyle, thClass) => `<th class="${thClass}" style="width: 120px; min-width: 120px; max-width: 120px; text-align: center; ${thStyle}">Supplier</th>`,
+      renderTd: (m, meta, tdStyle, tdClass) => `<td class="${tdClass}" style="width: 120px; min-width: 120px; max-width: 120px; text-align: center; overflow: hidden; text-overflow: ellipsis; ${tdStyle}">${m.supplier_name || m.supplier || '—'}</td>`
     },
     {
       key: 'country_of_origin',
       label: 'Origin',
-      width: 120,
-      renderTh: (thStyle, thClass) => `<th class="${thClass}" style="width: 120px; min-width: 120px; max-width: 120px; ${thStyle}">Origin</th>`,
-      renderTd: (m, meta, tdStyle, tdClass) => `<td class="${tdClass}" style="${tdStyle}">${m.country_of_origin || m.origin || '—'}</td>`
+      width: 90,
+      renderTh: (thStyle, thClass) => `<th class="${thClass}" style="width: 90px; min-width: 90px; max-width: 90px; text-align: center; ${thStyle}">Origin</th>`,
+      renderTd: (m, meta, tdStyle, tdClass) => `<td class="${tdClass}" style="width: 90px; min-width: 90px; max-width: 90px; text-align: center; ${tdStyle}">${m.country_of_origin || m.origin || '—'}</td>`
     },
     {
       key: 'machine_capacity',
       label: 'Capacity',
-      width: 130,
-      renderTh: (thStyle, thClass) => `<th class="${thClass}" style="width: 130px; min-width: 130px; max-width: 130px; ${thStyle}">Capacity</th>`,
-      renderTd: (m, meta, tdStyle, tdClass) => `<td class="${tdClass}" style="${tdStyle}">${m.machine_capacity || m.capacity || '—'}</td>`
+      width: 95,
+      renderTh: (thStyle, thClass) => `<th class="${thClass}" style="width: 95px; min-width: 95px; max-width: 95px; text-align: center; ${thStyle}">Capacity</th>`,
+      renderTd: (m, meta, tdStyle, tdClass) => `<td class="${tdClass}" style="width: 95px; min-width: 95px; max-width: 95px; text-align: center; ${tdStyle}">${m.machine_capacity || m.capacity || '—'}</td>`
     },
     {
       key: 'remarks',
       label: 'Remarks',
-      width: 130,
-      renderTh: (thStyle, thClass) => `<th class="${thClass}" style="width: 130px; min-width: 130px; max-width: 130px; text-align: center; ${thStyle}">Remarks</th>`,
+      width: 120,
+      renderTh: (thStyle, thClass) => `<th class="${thClass}" style="width: 120px; min-width: 120px; max-width: 120px; text-align: center; ${thStyle}">Remarks</th>`,
       renderTd: (m, meta, tdStyle, tdClass) => {
         let rem = typeof m.remarks === 'string' ? m.remarks.trim() : '';
         if (rem) {
           rem = rem.replace(/^Imported from sheet\s*['"]?[^'"\]\n\r]*['"]?\s*/gi, '').trim();
         }
         const hasContent = Boolean(rem);
-        return `<td class="${tdClass}" style="width: 130px; min-width: 130px; max-width: 130px; font-size: 11.5px; color: ${hasContent ? 'var(--text-secondary)' : 'var(--text-muted)'}; text-align: ${hasContent ? 'left' : 'center'}; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; ${tdStyle}" title="${escapeHtml(rem)}">${escapeHtml(rem) || '—'}</td>`;
+        return `<td class="${tdClass}" style="width: 120px; min-width: 120px; max-width: 120px; font-size: 11.5px; color: ${hasContent ? 'var(--text-secondary)' : 'var(--text-muted)'}; text-align: ${hasContent ? 'left' : 'center'}; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; ${tdStyle}" title="${escapeHtml(rem)}">${escapeHtml(rem) || '—'}</td>`;
       }
     }
   ];
@@ -404,9 +404,9 @@ export function renderInventoryTable() {
     allColDefs.push({
       key: cf.code,
       label: cf.label,
-      width: 130,
-      renderTh: (thStyle, thClass) => `<th class="${thClass}" style="width: 130px; min-width: 130px; max-width: 130px; ${thStyle}">${cf.label}</th>`,
-      renderTd: (m, meta, tdStyle, tdClass) => `<td class="${tdClass}" style="${tdStyle}">${m.customValues?.[cf.code] ?? '—'}</td>`
+      width: 110,
+      renderTh: (thStyle, thClass) => `<th class="${thClass}" style="width: 110px; min-width: 110px; max-width: 110px; text-align: center; ${thStyle}">${cf.label}</th>`,
+      renderTd: (m, meta, tdStyle, tdClass) => `<td class="${tdClass}" style="width: 110px; min-width: 110px; max-width: 110px; text-align: center; ${tdStyle}">${m.customValues?.[cf.code] ?? '—'}</td>`
     });
   });
 
@@ -414,13 +414,13 @@ export function renderInventoryTable() {
   allColDefs.push({
     key: 'actions',
     label: 'Actions',
-    width: 105,
-    renderTh: (thStyle, thClass) => `<th class="${thClass}" style="width: 105px; min-width: 105px; max-width: 105px; text-align: center; ${thStyle}">Actions</th>`,
+    width: 95,
+    renderTh: (thStyle, thClass) => `<th class="${thClass}" style="width: 95px; min-width: 95px; max-width: 95px; text-align: center; ${thStyle}">Actions</th>`,
     renderTd: (m, meta, tdStyle, tdClass) => {
       const isViewOnly = authService.isMachineViewOnlyForUser(m, null, showCrossFloorIdle);
       if (isViewOnly) {
         return `
-          <td class="${tdClass}" style="width: 105px; min-width: 105px; max-width: 105px; text-align: center; ${tdStyle}">
+          <td class="${tdClass}" style="width: 95px; min-width: 95px; max-width: 95px; text-align: center; ${tdStyle}">
             <div class="actions-dropdown-container">
               <button type="button" class="btn-actions-trigger btn-trigger-row-actions" data-id="${m.id}" title="View Options" style="border-color: rgba(56, 189, 248, 0.35); color: #38bdf8; background: rgba(56, 189, 248, 0.08);">
                 👁️ View ▾
@@ -444,7 +444,7 @@ export function renderInventoryTable() {
         `;
       }
       return `
-        <td class="${tdClass}" style="width: 105px; min-width: 105px; max-width: 105px; text-align: center; ${tdStyle}">
+        <td class="${tdClass}" style="width: 95px; min-width: 95px; max-width: 95px; text-align: center; ${tdStyle}">
           <div class="actions-dropdown-container">
             <button type="button" class="btn-actions-trigger btn-trigger-row-actions" data-id="${m.id}" title="Open Action Menu">
               ⋮ Actions ▾

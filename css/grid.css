@@ -398,7 +398,7 @@
   letter-spacing: 0.5px;
   border-bottom: 2px solid #38bdf8;
   border-right: 1px solid rgba(255, 255, 255, 0.08);
-  padding: 10px 12px;
+  padding: 8px 8px;
   text-align: left;
   z-index: 15;
   white-space: nowrap;
@@ -506,7 +506,7 @@ tbody tr.selected td.col-frozen-cell {
 .excel-grid-table tbody td {
   border-bottom: 1px solid var(--border-light);
   border-right: 1px solid var(--border-light);
-  padding: 8px 14px;
+  padding: 6px 8px;
   white-space: nowrap;
   vertical-align: middle;
   overflow: hidden;
