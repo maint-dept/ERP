@@ -237,6 +237,7 @@ class ERPApplication {
     state.on('columns:changed', () => this.renderMainContent());
     state.on('frozenColumns:changed', () => this.renderMainContent());
     state.on('inventory:updated', () => this.queueBackgroundRender());
+    state.on('change:dashboardDateFilter', () => this.renderMainContent());
     state.on('change:agentPanelOpen', () => this.renderAgentPanel());
 
     window.addEventListener('erp:inventory-updated', () => {
