@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Al-Muslim Group Garments Factory Maintenance Machine ERP
  * ENT Lab Management Service
  * 
@@ -281,7 +281,23 @@ class EtLabService {
       const nStr = (m.machineNameStr || '').toUpperCase();
       return (mStr && mStr === clean) || (nStr && nStr === clean);
     });
-    if (!matched) return null;
+    if (!matched) {
+      // Graceful fallback for custom, floor, or uncataloged machine serials (e.g. BG-01)
+      return {
+        id: `mc-floor-${clean}`,
+        serialNumber: clean,
+        machineName: 'Sewing / Floor Machine',
+        brand: '—',
+        model: '—',
+        groupName: 'Al-Muslim Group',
+        unitName: 'Pacific Blue (Jeans Wear) Ltd.',
+        floorName: 'Buriganga Floor',
+        lineName: 'Floor Line',
+        status: 'ACTIVE',
+        fullLocationText: `Pacific Blue (Jeans Wear) Ltd. -> Buriganga Floor -> ${clean}`,
+        isCustom: true
+      };
+    }
 
     const group = storage.getItem(TABLE_NAMES.GROUPS, matched.groupId);
     const unit = storage.getItem(TABLE_NAMES.UNITS, matched.unitId);
@@ -326,17 +342,44 @@ class EtLabService {
     let board = boardId ? this.getBoardById(boardId) : this.getBoardBySerial(boardSerial);
     if (!board) throw new Error('Board record not found.');
 
-    if (!machineSerial) throw new Error('Machine Serial Number is required.');
-    const machineInfo = this.getMachineDetailsForBoard(machineSerial);
-    if (!machineInfo) {
-      throw new Error(`Machine with Serial Number "${machineSerial}" does not exist in Machine Inventory. Please select a valid machine.`);
-    }
+    if (!machineSerial || !machineSerial.trim()) throw new Error('Machine Serial Number is required.');
+    const machineInfo = this.getMachineDetailsForBoard(machineSerial) || {
+      id: `mc-floor-${machineSerial.trim().toUpperCase()}`,
+      serialNumber: machineSerial.trim().toUpperCase(),
+      machineName: 'Sewing / Floor Machine',
+      brand: '—',
+      model: '—',
+      groupName: 'Al-Muslim Group',
+      unitName: 'Pacific Blue (Jeans Wear) Ltd.',
+      floorName: 'Buriganga Floor',
+      lineName: 'Floor Line',
+      status: 'ACTIVE',
+      fullLocationText: `Pacific Blue (Jeans Wear) Ltd. -> Buriganga Floor -> ${machineSerial.trim().toUpperCase()}`
+    };
 
     const previousMachine = board.currentMachineSerial;
     const finalDate = installDate || installedDate || new Date().toISOString().split('T')[0];
     const finalInstalledBy = installedBy || user?.name || 'Engr. Tanvir Ahmed';
     const finalCard = installedByCard || '1001';
     const finalArea = installedByArea || 'Central ENT Lab';
+
+    // If the board was already installed on a different machine, record removal / transfer in history
+    if (previousMachine && previousMachine.toUpperCase() !== machineInfo.serialNumber.toUpperCase()) {
+      this.addHistoryRecord({
+        boardSerial: board.boardSerial,
+        action: 'REMOVE',
+        actionLabel: 'Removed for Transfer',
+        timestamp: new Date(Date.now() - 1000).toISOString(),
+        machineSerial: previousMachine,
+        location: 'ENT Lab (Transferred to Machine ' + machineInfo.serialNumber + ')',
+        performedBy: user?.id || 'usr-super-admin',
+        performedByName: finalInstalledBy,
+        performedByCard: finalCard,
+        performedByArea: finalArea,
+        removalReason: `Transferred to Machine ${machineInfo.serialNumber}`,
+        remarks: `Auto-removed from ${previousMachine} upon installation to ${machineInfo.serialNumber}`
+      });
+    }
 
     // Update board state
     const updatedBoard = {
@@ -499,7 +542,9 @@ class EtLabService {
 
   reassignBoardToAnotherMachine({
     boardSerial,
-    targetMachineSerial,
+    targetMachineSerial = null,
+    toMachineSerial = null,
+    machineSerial = null,
     assignDate = null,
     assignedBy = null,
     assignedByCard = null,
@@ -508,12 +553,15 @@ class EtLabService {
     removalReason = '',
     remarks = ''
   }) {
+    const finalTargetMachine = (targetMachineSerial || toMachineSerial || machineSerial || '').trim();
+    if (!finalTargetMachine) throw new Error('Target Machine Serial Number is required for reassigning.');
+
     const board = this.getBoardBySerial(boardSerial);
     if (!board) throw new Error(`Board [${boardSerial}] not found.`);
     
     const prevMachine = board.currentMachineSerial;
-    if (prevMachine && prevMachine.toUpperCase() === targetMachineSerial.toUpperCase()) {
-      throw new Error(`Board [${boardSerial}] is already installed on Machine ${targetMachineSerial}.`);
+    if (prevMachine && prevMachine.toUpperCase() === finalTargetMachine.toUpperCase()) {
+      throw new Error(`Board [${boardSerial}] is already installed on Machine ${finalTargetMachine}.`);
     }
 
     // 1. If currently on a machine, log removal
@@ -524,23 +572,23 @@ class EtLabService {
         removedBy: assignedBy,
         removedByCard: assignedByCard,
         removedByArea: assignedByArea,
-        removalReason: removalReason || `Reassigned directly to Machine ${targetMachineSerial}`,
+        removalReason: removalReason || `Reassigned directly to Machine ${finalTargetMachine}`,
         nextStatus: 'AVAILABLE_SPARE',
         nextLocation: 'Transfer in progress',
-        remarks: `Auto-removed during transfer from ${prevMachine} to ${targetMachineSerial}`
+        remarks: `Auto-removed during transfer from ${prevMachine} to ${finalTargetMachine}`
       });
     }
 
     // 2. Install to new target machine
     return this.installBoardToMachine({
       boardSerial: board.boardSerial,
-      machineSerial: targetMachineSerial,
+      machineSerial: finalTargetMachine,
       installedDate: assignDate,
       installedBy: assignedBy,
       installedByCard: assignedByCard,
       installedByArea: assignedByArea,
       partsSerial: partsSerial,
-      remarks: remarks || (prevMachine ? `Transferred from Machine ${prevMachine} to ${targetMachineSerial}` : `Assigned to Machine ${targetMachineSerial}`)
+      remarks: remarks || (prevMachine ? `Transferred from Machine ${prevMachine} to ${finalTargetMachine}` : `Assigned to Machine ${finalTargetMachine}`)
     });
   }
 
@@ -570,13 +618,16 @@ class EtLabService {
     const finalCard = repairedByCard || '1005';
     const finalArea = repairedByArea || 'ENT Lab';
 
+    const prevMach = board.currentMachineSerial;
     const updatedBoard = {
       ...board,
       status: 'UNDER_INHOUSE_REPAIR',
+      currentMachineSerial: null,
+      currentMachineId: null,
       location: 'ENT Lab Workstation (In-House Repair)',
       inhouseRepair: {
         problem: problem || 'Component defect / signal fault',
-        machineSerial: machineSerial || board.currentMachineSerial || null,
+        machineSerial: machineSerial || prevMach || null,
         startDate: finalStartDate,
         repairedBy: finalTech,
         repairedByCard: finalCard,
@@ -593,6 +644,23 @@ class EtLabService {
     }
 
     storage.update(TABLE_NAMES.ET_BOARDS, board.id, updatedBoard);
+
+    if (prevMach && (!machineSerial || machineSerial === prevMach)) {
+      this.addHistoryRecord({
+        boardSerial: board.boardSerial,
+        action: 'REMOVE',
+        actionLabel: 'Removed for In-House Repair',
+        timestamp: new Date(Date.now() - 500).toISOString(),
+        machineSerial: prevMach,
+        location: 'ENT Lab Workstation',
+        performedBy: user?.id || 'usr-super-admin',
+        performedByName: finalTech,
+        performedByCard: finalCard,
+        performedByArea: finalArea,
+        removalReason: problem || 'In-House repair diagnosis',
+        remarks: `Detached from ${prevMach} for internal lab servicing`
+      });
+    }
 
     this.addHistoryRecord({
       boardSerial: board.boardSerial,
@@ -718,13 +786,16 @@ class EtLabService {
     const finalArea = sentByArea || 'Central ENT Lab';
     const billCheck = this.checkPreviousBill(board);
 
+    const prevMach = board.currentMachineSerial;
     const updatedBoard = {
       ...board,
       status: 'SENT_EXTERNAL',
+      currentMachineSerial: null,
+      currentMachineId: null,
       location: `External: ${companyName}`,
       externalRepair: {
         companyName: companyName.trim(),
-        machineSerial: machineSerial || board.currentMachineSerial || null,
+        machineSerial: machineSerial || prevMach || null,
         problem: problem || 'External specialized diagnosis',
         sendDate: finalSendDate,
         expectedReturnDate: expectedReturnDate || '',
@@ -744,6 +815,23 @@ class EtLabService {
     }
 
     storage.update(TABLE_NAMES.ET_BOARDS, board.id, updatedBoard);
+
+    if (prevMach && (!machineSerial || machineSerial === prevMach)) {
+      this.addHistoryRecord({
+        boardSerial: board.boardSerial,
+        action: 'REMOVE',
+        actionLabel: 'Removed for External Service',
+        timestamp: new Date(Date.now() - 500).toISOString(),
+        machineSerial: prevMach,
+        location: `Dispatched to ${companyName}`,
+        performedBy: user?.id || 'usr-super-admin',
+        performedByName: finalSentBy,
+        performedByCard: finalCard,
+        performedByArea: finalArea,
+        removalReason: problem || 'Dispatched for external repair',
+        remarks: `Detached from ${prevMach} before sending to ${companyName}`
+      });
+    }
 
     this.addHistoryRecord({
       boardSerial: board.boardSerial,

@@ -270,34 +270,79 @@ function renderEntBoardsContent(kpi, allBoards, filteredBoards, currentBoard, co
         <!-- 3. QUICK ACTIONS (1-Click Action Execution)                  -->
         <!-- ============================================================ -->
         <div style="background: rgba(15, 23, 42, 0.85); border: 1.5px solid rgba(56, 189, 248, 0.3); border-radius: var(--radius-lg); padding: 14px 18px; display: flex; flex-direction: column; gap: 10px;">
-          <div style="font-size: 12px; font-weight: 800; color: #38bdf8; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; justify-content: space-between;">
-            <span>⚡ Quick Actions (1-Click Action Execution)</span>
-            <span style="font-size: 11px; color: var(--text-muted); font-weight: 500;">Select an action to launch form</span>
+          <div style="font-size: 12px; font-weight: 800; color: #38bdf8; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px;">
+            <span style="display: flex; align-items: center; gap: 6px;">
+              <span>⚡</span>
+              <span>Quick Actions (1-Click Action Execution)</span>
+            </span>
+            <span style="font-size: 11px; color: #94a3b8; font-weight: 600;">
+              Click any action below to launch interactive workflow for <strong>${currentBoard.boardSerial}</strong>
+            </span>
           </div>
 
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px;">
-            <button class="btn btn-quick-action" data-action="INSTALL" style="height: 42px; font-weight: 800; font-size: 12.5px; background: rgba(56, 189, 248, 0.15); border: 1.5px solid #38bdf8; color: #38bdf8;">
-              📥 Install / Assign
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px;">
+            <button 
+              class="btn btn-quick-action" 
+              data-action="INSTALL" 
+              style="height: 44px; font-weight: 800; font-size: 12.5px; background: rgba(56, 189, 248, ${currentBoard.status === 'AVAILABLE_SPARE' ? '0.25' : '0.12'}); border: 1.5px solid #38bdf8; color: #38bdf8; display: flex; align-items: center; justify-content: center; gap: 6px; border-radius: 8px; cursor: pointer; transition: all 0.2s ease; ${currentBoard.status === 'AVAILABLE_SPARE' ? 'box-shadow: 0 0 14px rgba(56, 189, 248, 0.35);' : ''}"
+              title="Assign and install this board onto a sewing machine"
+            >
+              <span style="font-size: 15px;">📥</span>
+              <span>Install / Assign</span>
+              ${currentBoard.status === 'AVAILABLE_SPARE' ? '<span style="font-size: 9.5px; background: #38bdf8; color: #0f172a; padding: 1px 5px; border-radius: 10px; font-weight: 900; margin-left: 2px;">READY</span>' : ''}
             </button>
             
-            <button class="btn btn-quick-action" data-action="REMOVE" style="height: 42px; font-weight: 800; font-size: 12.5px; background: rgba(245, 158, 11, 0.15); border: 1.5px solid #f59e0b; color: #fbbf24;">
-              📤 Remove
+            <button 
+              class="btn btn-quick-action" 
+              data-action="REMOVE" 
+              style="height: 44px; font-weight: 800; font-size: 12.5px; background: rgba(245, 158, 11, ${currentBoard.status === 'INSTALLED' ? '0.25' : '0.12'}); border: 1.5px solid #f59e0b; color: #fbbf24; display: flex; align-items: center; justify-content: center; gap: 6px; border-radius: 8px; cursor: pointer; transition: all 0.2s ease; ${currentBoard.status === 'INSTALLED' ? 'box-shadow: 0 0 14px rgba(245, 158, 11, 0.35);' : ''}"
+              title="Remove this board from current machine"
+            >
+              <span style="font-size: 15px;">📤</span>
+              <span>Remove</span>
+              ${currentBoard.status === 'INSTALLED' ? '<span style="font-size: 9.5px; background: #f59e0b; color: #0f172a; padding: 1px 5px; border-radius: 10px; font-weight: 900; margin-left: 2px;">ACTIVE</span>' : ''}
             </button>
             
-            <button class="btn btn-quick-action" data-action="INHOUSE_REPAIR" style="height: 42px; font-weight: 800; font-size: 12.5px; background: rgba(249, 115, 22, 0.15); border: 1.5px solid #f97316; color: #fb923c;">
-              🛠️ In-House Repair
+            <button 
+              class="btn btn-quick-action" 
+              data-action="INHOUSE_REPAIR" 
+              style="height: 44px; font-weight: 800; font-size: 12.5px; background: rgba(249, 115, 22, ${currentBoard.status === 'UNDER_INHOUSE_REPAIR' ? '0.25' : '0.12'}); border: 1.5px solid #f97316; color: #fb923c; display: flex; align-items: center; justify-content: center; gap: 6px; border-radius: 8px; cursor: pointer; transition: all 0.2s ease; ${currentBoard.status === 'UNDER_INHOUSE_REPAIR' ? 'box-shadow: 0 0 14px rgba(249, 115, 22, 0.35);' : ''}"
+              title="Log or complete in-house lab repair"
+            >
+              <span style="font-size: 15px;">🛠️</span>
+              <span>In-House Repair</span>
+              ${currentBoard.status === 'UNDER_INHOUSE_REPAIR' ? '<span style="font-size: 9.5px; background: #f97316; color: #0f172a; padding: 1px 5px; border-radius: 10px; font-weight: 900; margin-left: 2px;">IN PROGRESS</span>' : ''}
             </button>
             
-            <button class="btn btn-quick-action" data-action="SEND_OUTSIDE" style="height: 42px; font-weight: 800; font-size: 12.5px; background: rgba(168, 85, 247, 0.15); border: 1.5px solid #a855f7; color: #c084fc;">
-              🚚 Send Outside
+            <button 
+              class="btn btn-quick-action" 
+              data-action="SEND_OUTSIDE" 
+              style="height: 44px; font-weight: 800; font-size: 12.5px; background: rgba(168, 85, 247, 0.12); border: 1.5px solid #a855f7; color: #c084fc; display: flex; align-items: center; justify-content: center; gap: 6px; border-radius: 8px; cursor: pointer; transition: all 0.2s ease;"
+              title="Send this board to an external repair vendor"
+            >
+              <span style="font-size: 15px;">🚚</span>
+              <span>Send Outside</span>
             </button>
             
-            <button class="btn btn-quick-action" data-action="RECEIVE" style="height: 42px; font-weight: 800; font-size: 12.5px; background: rgba(20, 184, 166, 0.15); border: 1.5px solid #14b8a6; color: #2dd4bf;">
-              🟣 Receive
+            <button 
+              class="btn btn-quick-action" 
+              data-action="RECEIVE" 
+              style="height: 44px; font-weight: 800; font-size: 12.5px; background: rgba(16, 185, 129, ${currentBoard.status === 'SENT_EXTERNAL' ? '0.25' : '0.12'}); border: 1.5px solid #10b981; color: #34d399; display: flex; align-items: center; justify-content: center; gap: 6px; border-radius: 8px; cursor: pointer; transition: all 0.2s ease; ${currentBoard.status === 'SENT_EXTERNAL' ? 'box-shadow: 0 0 14px rgba(16, 185, 129, 0.35);' : ''}"
+              title="Receive board back from external vendor with verification"
+            >
+              <span style="font-size: 15px;">🟢</span>
+              <span>Receive</span>
+              ${currentBoard.status === 'SENT_EXTERNAL' ? '<span style="font-size: 9.5px; background: #10b981; color: #0f172a; padding: 1px 5px; border-radius: 10px; font-weight: 900; margin-left: 2px;">PENDING</span>' : ''}
             </button>
 
-            <button class="btn btn-quick-action" data-action="ASSIGN_ANOTHER" style="height: 42px; font-weight: 800; font-size: 12.5px; background: rgba(99, 102, 241, 0.15); border: 1.5px solid #6366f1; color: #a5b4fc;">
-              🔄 Assign Another
+            <button 
+              class="btn btn-quick-action" 
+              data-action="ASSIGN_ANOTHER" 
+              style="height: 44px; font-weight: 800; font-size: 12.5px; background: rgba(99, 102, 241, 0.12); border: 1.5px solid #6366f1; color: #a5b4fc; display: flex; align-items: center; justify-content: center; gap: 6px; border-radius: 8px; cursor: pointer; transition: all 0.2s ease;"
+              title="Transfer / reassign directly to another machine"
+            >
+              <span style="font-size: 15px;">🔄</span>
+              <span>Assign Another</span>
             </button>
           </div>
         </div>
@@ -2048,159 +2093,74 @@ function openActionModal(board, initialActionType = null) {
   const allPersonnel = etLabService.getAllPersonnelForSelect();
   const curUserName = user?.name || user?.username || 'Engr. Tanvir Ahmed';
 
-  // Helper to render searchable employee selector with Card Number, Name, Working Area
-  const renderPersonnelSelector = (id, label, defaultName = curUserName, color = '#38bdf8') => {
-    let initialPerson = {
-      name: '',
-      cardNumber: '',
-      workingArea: ''
-    };
-    if (defaultName) {
-      const match = allPersonnel.find(p => p.name === defaultName || (p.cardNumber && defaultName.includes(p.cardNumber)));
-      if (match) {
-        initialPerson = match;
-      } else {
-        initialPerson = {
-          name: defaultName,
-          cardNumber: user?.cardNumber || '',
-          workingArea: 'Central ENT Lab'
-        };
-      }
+  const ACTION_CONFIG = {
+    INSTALL: {
+      key: 'INSTALL',
+      label: 'Install / Assign',
+      shortLabel: 'Install',
+      icon: '📥',
+      color: '#38bdf8',
+      badgeBg: 'rgba(56, 189, 248, 0.15)',
+      borderColor: '#38bdf8',
+      btnText: '💾 Save Installation & Assign Board',
+      subtitle: 'Assign this board to an active sewing machine on the factory floor.'
+    },
+    REMOVE: {
+      key: 'REMOVE',
+      label: 'Remove from Machine',
+      shortLabel: 'Remove',
+      icon: '📤',
+      color: '#f59e0b',
+      badgeBg: 'rgba(245, 158, 11, 0.15)',
+      borderColor: '#f59e0b',
+      btnText: '📤 Confirm Removal & Update Status',
+      subtitle: 'Detach this board from its connected machine and transfer to lab stock or repair.'
+    },
+    INHOUSE_REPAIR: {
+      key: 'INHOUSE_REPAIR',
+      label: 'In-House Repair',
+      shortLabel: 'In-House Repair',
+      icon: '🛠️',
+      color: '#f97316',
+      badgeBg: 'rgba(249, 115, 22, 0.15)',
+      borderColor: '#f97316',
+      btnText: '🛠️ Save In-House Repair Log',
+      subtitle: 'Log internal lab diagnostic testing, component replacement, or complete servicing.'
+    },
+    SEND_OUTSIDE: {
+      key: 'SEND_OUTSIDE',
+      label: 'Send Outside',
+      shortLabel: 'Send Outside',
+      icon: '🚚',
+      color: '#a855f7',
+      badgeBg: 'rgba(168, 85, 247, 0.15)',
+      borderColor: '#a855f7',
+      btnText: '🚚 Dispatch to External Company',
+      subtitle: 'Dispatch board to an authorized external service partner or vendor lab.'
+    },
+    RECEIVE: {
+      key: 'RECEIVE',
+      label: 'Receive & Verify',
+      shortLabel: 'Receive',
+      icon: '🟢',
+      color: '#10b981',
+      badgeBg: 'rgba(16, 185, 129, 0.15)',
+      borderColor: '#10b981',
+      btnText: '🟢 Save Verification & Receive Board',
+      subtitle: 'Receive board back from external vendor, verify quality, and record testing result.'
+    },
+    ASSIGN_ANOTHER: {
+      key: 'ASSIGN_ANOTHER',
+      label: 'Assign Another Machine',
+      shortLabel: 'Assign Another',
+      icon: '🔄',
+      color: '#6366f1',
+      badgeBg: 'rgba(99, 102, 241, 0.15)',
+      borderColor: '#6366f1',
+      btnText: '🔄 Execute Transfer to Machine',
+      subtitle: 'Transfer board directly from its current machine to a new target machine.'
     }
-
-    const hasInitial = Boolean(initialPerson.name);
-
-    return `
-      <div class="form-group ent-person-select-wrapper" style="position: relative;">
-        <label class="form-label required" style="font-weight: 800; color: ${color}; display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-          <span>${label}</span>
-          <span style="font-size: 10.5px; font-weight: 700; color: #38bdf8;">🪪 Search Card No. / Name / Area</span>
-        </label>
-        
-        <!-- Hidden payload fields to store exact identification -->
-        <input type="hidden" id="${id}-name" value="${initialPerson.name}" />
-        <input type="hidden" id="${id}-card" value="${initialPerson.cardNumber || ''}" />
-        <input type="hidden" id="${id}-area" value="${initialPerson.workingArea || ''}" />
-        <input type="hidden" id="${id}-id" value="${initialPerson.id || ''}" />
-
-        <!-- Searchable Selector Input -->
-        <div style="position: relative;">
-          <input 
-            type="text" 
-            id="${id}-search" 
-            class="form-control ent-person-search-box" 
-            data-target="${id}" 
-            placeholder="🔍 Search Card No (e.g. 10235), Name, or Working Area..." 
-            value="${hasInitial ? (initialPerson.cardNumber ? `Card: ${initialPerson.cardNumber} | ${initialPerson.name} | ${initialPerson.workingArea}` : initialPerson.name) : ''}"
-            style="font-weight: 800; height: 38px; font-size: 12px; background: #0f172a; border: 1.5px solid #334155; color: #fff; padding-right: 28px;" 
-            autocomplete="off" 
-          />
-          <button type="button" class="btn-clear-person" data-target="${id}" style="position: absolute; right: 8px; top: 8px; background: none; border: none; color: #94a3b8; font-size: 14px; cursor: pointer;" title="Clear Search">✕</button>
-
-          <!-- Dropdown Results list -->
-          <div id="${id}-dropdown" class="ent-person-dropdown" style="display: none; position: absolute; top: 40px; left: 0; right: 0; z-index: 1050; background: #0f172a; border: 1.5px solid #38bdf8; border-radius: 6px; box-shadow: 0 10px 30px rgba(0,0,0,0.9); max-height: 210px; overflow-y: auto;">
-            <!-- Rendered dynamically -->
-          </div>
-        </div>
-
-        <!-- Distinct Selected Employee Verification Card -->
-        <div id="${id}-display-card" style="background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 6px; padding: 6px 10px; margin-top: 4px; display: grid; grid-template-columns: 1.2fr 1fr 1.2fr; gap: 4px; font-size: 11px;">
-          <div>
-            <span style="color: #94a3b8; font-size: 10px;">Employee Name:</span><br/>
-            <strong id="${id}-disp-name" style="color: #fff; font-size: 12px;">${initialPerson.name || '—'}</strong>
-          </div>
-          <div>
-            <span style="color: #94a3b8; font-size: 10px;">Card Number:</span><br/>
-            <strong id="${id}-disp-card" style="font-family: var(--font-mono); color: #38bdf8; font-size: 12px;">${initialPerson.cardNumber || '—'}</strong>
-          </div>
-          <div>
-            <span style="color: #94a3b8; font-size: 10px;">Working Area:</span><br/>
-            <strong id="${id}-disp-area" style="color: #86efac; font-size: 11.5px;">${initialPerson.workingArea || '—'}</strong>
-          </div>
-        </div>
-      </div>
-    `;
   };
-
-  const renderMachineSearchAndDetails = (inputId, prefix, labelText, themeColor, defaultVal = '') => `
-    <div class="form-group">
-      <label class="form-label" style="font-weight: 800; color: ${themeColor};">
-        ${labelText}
-      </label>
-      <div style="display: flex; gap: 8px;">
-        <input 
-          type="text" 
-          id="${inputId}" 
-          list="shared-machines-datalist" 
-          class="form-control" 
-          placeholder="Type or scan machine serial (e.g. JA-01, TS-01, GB-05)..." 
-          value="${escapeHtml(defaultVal)}"
-          style="font-family: var(--font-mono); font-weight: 800; font-size: 13.5px; height: 38px; flex: 1;"
-          autocomplete="off"
-        />
-        <button type="button" class="btn btn-secondary btn-scan-machine-qr" data-input-id="${inputId}" style="border-color: ${themeColor}; color: ${themeColor}; font-weight: 700; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; padding: 0 12px; height: 38px;" title="Scan Machine QR Code with Camera">
-          <span style="font-size: 15px;">📷</span> Scan
-        </button>
-      </div>
-    </div>
-
-    <!-- Auto-Filled Live Machine Details Card -->
-    <div id="${prefix}-auto-machine-card" style="background: rgba(15, 23, 42, 0.85); border: 1.5px solid ${themeColor}66; border-radius: 8px; padding: 12px 14px; font-size: 12px;">
-      <div style="font-size: 11px; font-weight: 800; color: ${themeColor}; text-transform: uppercase; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
-        <span>📍 Auto-Filled Machine Details (Machine Inventory):</span>
-        <span id="${prefix}-status" style="font-size: 10px; font-weight: 700; color: #86efac; background: rgba(34, 197, 94, 0.15); padding: 2px 6px; border-radius: 4px; display: none;"></span>
-      </div>
-      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px 12px;">
-        <div>
-          <span style="color: #94a3b8; font-size: 10.5px;">Machine Name:</span><br/>
-          <strong id="${prefix}-name" style="color: #fff; font-size: 12.5px;">—</strong>
-        </div>
-        <div>
-          <span style="color: #94a3b8; font-size: 10.5px;">Model:</span><br/>
-          <strong id="${prefix}-model" style="color: #cbd5e1; font-size: 12.5px; font-family: var(--font-mono);">—</strong>
-        </div>
-        <div>
-          <span style="color: #94a3b8; font-size: 10.5px;">Brand:</span><br/>
-          <strong id="${prefix}-brand" style="color: #facc15; font-size: 12.5px;">—</strong>
-        </div>
-        <div>
-          <span style="color: #94a3b8; font-size: 10.5px;">Machine Serial:</span><br/>
-          <strong id="${prefix}-serial" style="color: ${themeColor}; font-family: var(--font-mono); font-size: 12.5px;">—</strong>
-        </div>
-        <div>
-          <span style="color: #94a3b8; font-size: 10.5px;">Floor:</span><br/>
-          <strong id="${prefix}-floor" style="color: #cbd5e1; font-size: 12.5px;">—</strong>
-        </div>
-        <div>
-          <span style="color: #94a3b8; font-size: 10.5px;">Line:</span><br/>
-          <strong id="${prefix}-line" style="color: #86efac; font-size: 12.5px; font-weight: 800;">—</strong>
-        </div>
-      </div>
-      <div style="margin-top: 8px; padding-top: 6px; border-top: 1px dashed rgba(255,255,255,0.08); font-size: 11px; color: #94a3b8;">
-        Unit / Factory: <strong id="${prefix}-unit" style="color: #e2e8f0;">—</strong>
-      </div>
-    </div>
-  `;
-
-  const renderPartsSerialField = (inputId, themeColor, defaultVal = '') => `
-    <div class="form-group">
-      <label class="form-label" style="font-weight: 800; color: ${themeColor}; display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-        <span>Parts Serial Number / Board S/N:</span>
-        <span style="font-size: 10.5px; font-weight: 600; color: #94a3b8;">(Part SL No / JUKI S/N)</span>
-      </label>
-      <input 
-        type="text" 
-        id="${inputId}" 
-        class="form-control" 
-        placeholder="Enter parts serial number (e.g. JK-CPU-99026, SN-88321)..." 
-        value="${escapeHtml(defaultVal || board.jukiSlNo || board.slNo || board.partsSerial || '')}"
-        style="font-family: var(--font-mono); font-weight: 800; font-size: 13px; height: 38px; background: #0f172a; border: 1.5px solid #334155; color: #fff;"
-        autocomplete="off"
-      />
-    </div>
-  `;
-
-  const todayStr = new Date().toISOString().split('T')[0];
 
   // Determine initial action selection
   let defaultAction = initialActionType;
@@ -2211,279 +2171,480 @@ function openActionModal(board, initialActionType = null) {
     else defaultAction = 'INSTALL';
   }
 
-  const modalHtml = `
-    <div class="modal-overlay" id="ent-action-modal-overlay">
-      <div class="modal-dialog" style="max-width: 660px; max-height: 88vh; display: flex; flex-direction: column; min-height: 0; box-shadow: 0 10px 40px rgba(0,0,0,0.85); border: 1.5px solid #38bdf8; border-radius: 12px; overflow: hidden; background: var(--bg-card);">
+  // Compact, modern personnel selector
+  const renderPersonnelSelector = (id, label, defaultName = curUserName, color = '#38bdf8') => {
+    let initialPerson = { name: '', cardNumber: '', workingArea: '' };
+    if (defaultName) {
+      const match = allPersonnel.find(p => p.name === defaultName || (p.cardNumber && defaultName.includes(p.cardNumber)));
+      if (match) {
+        initialPerson = match;
+      } else {
+        initialPerson = {
+          name: defaultName,
+          cardNumber: user?.cardNumber || '1001',
+          workingArea: 'Central ENT Lab'
+        };
+      }
+    }
+
+    const hasInitial = Boolean(initialPerson.name);
+
+    return `
+      <div class="form-group ent-person-select-wrapper" style="position: relative; margin-bottom: 4px;">
+        <label class="form-label required" style="font-weight: 800; color: ${color}; font-size: 11.5px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+          <span>${label}</span>
+          <span style="font-size: 10px; font-weight: 600; color: #94a3b8;">🪪 Search Card No. or Name</span>
+        </label>
         
-        <!-- Header -->
-        <div class="modal-header" style="background: linear-gradient(135deg, #0284c7, #0369a1); padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
-          <div style="display: flex; align-items: center; gap: 10px; color: #fff;">
-            <span style="font-size: 24px;">⚡</span>
-            <div>
-              <div style="font-size: 16px; font-weight: 800; color: #fff;">Add Action &bull; ${board.boardSerial}</div>
-              <div style="font-size: 11.5px; color: #e0f2fe;">${board.partName} (Current Status: ${board.status})</div>
-            </div>
+        <input type="hidden" id="${id}-name" value="${escapeHtml(initialPerson.name)}" />
+        <input type="hidden" id="${id}-card" value="${escapeHtml(initialPerson.cardNumber || '')}" />
+        <input type="hidden" id="${id}-area" value="${escapeHtml(initialPerson.workingArea || '')}" />
+        <input type="hidden" id="${id}-id" value="${escapeHtml(initialPerson.id || '')}" />
+
+        <div style="position: relative;">
+          <input 
+            type="text" 
+            id="${id}-search" 
+            class="form-control ent-person-search-box" 
+            data-target="${id}" 
+            placeholder="🔍 Type Card No (e.g. 1001), Name, or Area..." 
+            value="${hasInitial ? (initialPerson.cardNumber ? `[Card: ${initialPerson.cardNumber}] ${initialPerson.name} • ${initialPerson.workingArea || 'ENT Lab'}` : initialPerson.name) : ''}"
+            style="font-weight: 700; height: 36px; font-size: 12px; background: rgba(15, 23, 42, 0.95); border: 1.5px solid #334155; color: #fff; padding-right: 28px;" 
+            autocomplete="off" 
+          />
+          <button type="button" class="btn-clear-person" data-target="${id}" style="position: absolute; right: 8px; top: 7px; background: none; border: none; color: #94a3b8; font-size: 13px; cursor: pointer;" title="Clear Search">✕</button>
+
+          <div id="${id}-dropdown" class="ent-person-dropdown" style="display: none; position: absolute; top: 40px; left: 0; right: 0; z-index: 1100; background: #0f172a; border: 1.5px solid ${color}; border-radius: 6px; box-shadow: 0 10px 30px rgba(0,0,0,0.95); max-height: 200px; overflow-y: auto;">
           </div>
-          <button type="button" class="btn btn-ghost btn-sm btn-close-modal" style="color: #fff; font-size: 18px;">✕</button>
         </div>
 
-        <form id="form-action-execution" novalidate style="display: flex; flex-direction: column; flex: 1; min-height: 0; margin: 0;">
-          <div class="modal-body" style="padding: 20px; display: flex; flex-direction: column; gap: 14px; overflow-y: auto; flex: 1; min-height: 0;">
-            
-            <!-- 1. ACTION TYPE SELECTION (STEP 1) -->
-            <div class="form-group" style="background: rgba(15, 23, 42, 0.85); border: 2px solid #38bdf8; border-radius: 8px; padding: 12px 14px;">
-              <label class="form-label required" style="font-weight: 900; color: #38bdf8; font-size: 13px; margin-bottom: 4px; display: flex; justify-content: space-between;">
-                <span>1. Select Action Type:</span>
-                <span style="font-size: 11px; font-weight: 600; color: #86efac;">Shows only relevant fields below</span>
-              </label>
-              <select id="act-type-selector" class="form-control" style="font-size: 13.5px; font-weight: 700; height: 40px; background: #0f172a; border-color: #38bdf8; color: #fff;" required>
-                <option value="INSTALL" ${defaultAction === 'INSTALL' ? 'selected' : ''}>📥 Install / Assign</option>
-                <option value="REMOVE" ${defaultAction === 'REMOVE' ? 'selected' : ''}>📤 Remove</option>
-                <option value="INHOUSE_REPAIR" ${defaultAction === 'INHOUSE_REPAIR' ? 'selected' : ''}>🛠️ In-House Repair</option>
-                <option value="SEND_OUTSIDE" ${defaultAction === 'SEND_OUTSIDE' ? 'selected' : ''}>🚚 Send to External Company</option>
-                <option value="RECEIVE" ${defaultAction === 'RECEIVE' ? 'selected' : ''}>🟣 Receive (with Verification)</option>
-                <option value="ASSIGN_ANOTHER" ${defaultAction === 'ASSIGN_ANOTHER' ? 'selected' : ''}>🔄 Assign to Another Machine</option>
-              </select>
+        <!-- Compact quick selection chips -->
+        <div style="display: flex; gap: 6px; margin-top: 5px; flex-wrap: wrap; align-items: center;">
+          <span style="font-size: 10px; color: #94a3b8; font-weight: 700;">Quick Pick:</span>
+          <button type="button" class="btn-quick-pick-person" data-target="${id}" data-name="Engr. Tanvir Ahmed" data-card="1001" data-area="Central ENT Lab" style="background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.3); color: #38bdf8; font-size: 10.5px; font-weight: 700; padding: 1px 7px; border-radius: 12px; cursor: pointer;">
+            👤 Engr. Tanvir (1001)
+          </button>
+          <button type="button" class="btn-quick-pick-person" data-target="${id}" data-name="Engr. Delwar Hossain" data-card="1005" data-area="Central ENT Lab" style="background: rgba(249, 115, 22, 0.12); border: 1px solid rgba(249, 115, 22, 0.3); color: #fb923c; font-size: 10.5px; font-weight: 700; padding: 1px 7px; border-radius: 12px; cursor: pointer;">
+            🛠️ Engr. Delwar (1005)
+          </button>
+          ${curUserName && curUserName !== 'Engr. Tanvir Ahmed' && curUserName !== 'Engr. Delwar Hossain' ? `
+            <button type="button" class="btn-quick-pick-person" data-target="${id}" data-name="${escapeHtml(curUserName)}" data-card="${user?.cardNumber || '1020'}" data-area="Maintenance" style="background: rgba(34, 197, 94, 0.12); border: 1px solid rgba(34, 197, 94, 0.3); color: #86efac; font-size: 10.5px; font-weight: 700; padding: 1px 7px; border-radius: 12px; cursor: pointer;">
+              👤 Me (${escapeHtml(curUserName)})
+            </button>
+          ` : ''}
+        </div>
+      </div>
+    `;
+  };
+
+  // Compact, modern machine search and live preview
+  const renderMachineSearchAndDetails = (inputId, prefix, labelText, themeColor, defaultVal = '') => `
+    <div class="form-group" style="margin-bottom: 6px;">
+      <label class="form-label required" style="font-weight: 800; color: ${themeColor}; font-size: 12px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+        <span>${labelText}</span>
+        <span style="font-size: 10.5px; font-weight: 600; color: #94a3b8;">Type Serial or Scan Machine Barcode</span>
+      </label>
+      <div style="display: flex; gap: 8px;">
+        <input 
+          type="text" 
+          id="${inputId}" 
+          list="shared-machines-datalist" 
+          class="form-control" 
+          placeholder="Type or scan machine serial (e.g. JA-01, 76, BG-01)..." 
+          value="${escapeHtml(defaultVal)}"
+          style="font-family: var(--font-mono); font-weight: 800; font-size: 13px; height: 38px; flex: 1; background: rgba(15, 23, 42, 0.95); border: 1.5px solid ${themeColor}; color: #fff;"
+          autocomplete="off"
+        />
+        <button type="button" class="btn btn-secondary btn-scan-machine-qr" data-input-id="${inputId}" style="border-color: ${themeColor}; color: ${themeColor}; font-weight: 700; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; padding: 0 12px; height: 38px;" title="Scan Machine QR / Barcode with Camera">
+          <span style="font-size: 14px;">📷</span> Scan
+        </button>
+      </div>
+
+      <!-- Live Machine Preview Pill / Card -->
+      <div id="${prefix}-auto-machine-card" style="margin-top: 6px; background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 6px; padding: 8px 12px; font-size: 11.5px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-weight: 800; color: ${themeColor}; font-family: var(--font-mono);" id="${prefix}-serial">—</span>
+          <span style="color: #64748b;">&bull;</span>
+          <strong id="${prefix}-name" style="color: #fff;">—</strong>
+          <span id="${prefix}-model" style="color: #94a3b8; font-family: var(--font-mono); font-size: 11px;">—</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span id="${prefix}-location" style="color: #86efac; font-weight: 700;">📍 Location: —</span>
+          <span id="${prefix}-status" style="font-size: 10px; font-weight: 800; color: #86efac; background: rgba(34, 197, 94, 0.15); padding: 1px 6px; border-radius: 4px; display: none;"></span>
+        </div>
+      </div>
+    </div>
+  `;
+
+  const renderPartsSerialField = (inputId, themeColor, defaultVal = '') => `
+    <div class="form-group" style="margin-bottom: 4px;">
+      <label class="form-label" style="font-weight: 800; color: ${themeColor}; font-size: 11.5px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+        <span>Parts Serial Number / Board S/N:</span>
+        <span style="font-size: 10.5px; font-weight: 600; color: #94a3b8;">(Hardware JUKI S/N)</span>
+      </label>
+      <input 
+        type="text" 
+        id="${inputId}" 
+        class="form-control" 
+        placeholder="Enter parts serial number (e.g. JK-CPU-99026)..." 
+        value="${escapeHtml(defaultVal || board.jukiSlNo || board.slNo || board.partsSerial || '')}"
+        style="font-family: var(--font-mono); font-weight: 800; font-size: 12.5px; height: 36px; background: rgba(15, 23, 42, 0.95); border: 1.5px solid #334155; color: #fff;"
+        autocomplete="off"
+      />
+    </div>
+  `;
+
+  const todayStr = new Date().toISOString().split('T')[0];
+
+  const modalHtml = `
+    <div class="modal-overlay" id="ent-action-modal-overlay">
+      <div class="modal-dialog" style="max-width: 700px; max-height: 90vh; display: flex; flex-direction: column; min-height: 0; box-shadow: 0 14px 50px rgba(0,0,0,0.9); border: 1.5px solid #38bdf8; border-radius: 12px; overflow: hidden; background: #0f172a;">
+        
+        <!-- Header -->
+        <div class="modal-header" style="background: linear-gradient(135deg, #0284c7, #0369a1); padding: 12px 18px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; border-bottom: 1px solid rgba(255,255,255,0.15);">
+          <div style="display: flex; align-items: center; gap: 10px; color: #fff;">
+            <span style="font-size: 22px;">⚡</span>
+            <div>
+              <div style="font-size: 15px; font-weight: 900; color: #fff; display: flex; align-items: center; gap: 8px;">
+                <span>Action Studio</span>
+                <span style="color: rgba(255,255,255,0.6);">&bull;</span>
+                <span id="modal-act-title-label" style="color: #fef08a;">${ACTION_CONFIG[defaultAction]?.label || 'Execute Action'}</span>
+              </div>
+              <div style="font-size: 11px; color: #e0f2fe;">Quick, structured workflow execution with verified history logging</div>
             </div>
+          </div>
+          <button type="button" class="btn btn-ghost btn-sm btn-close-modal" style="color: #fff; font-size: 18px; line-height: 1; padding: 2px 8px;" title="Close Modal">✕</button>
+        </div>
 
-            <!-- ========================================================= -->
-            <!-- 2. ACTION-SPECIFIC FIELDS (ONLY SELECTED ACTION IS SHOWN) -->
-            <!-- ========================================================= -->
+        <!-- Board & Machine Context Banner -->
+        <div style="background: rgba(30, 41, 59, 0.7); border-bottom: 1px solid rgba(255,255,255,0.08); padding: 9px 18px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; flex-shrink: 0;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-family: var(--font-mono); font-weight: 900; font-size: 13px; color: #38bdf8; background: rgba(56, 189, 248, 0.15); padding: 2px 8px; border-radius: 4px; border: 1px solid rgba(56, 189, 248, 0.3);">${board.boardSerial}</span>
+            <div>
+              <div style="font-weight: 800; font-size: 12.5px; color: #fff;">${escapeHtml(board.partName)}</div>
+              <div style="font-size: 11px; color: #94a3b8;">
+                Model: <strong style="color: #cbd5e1;">${escapeHtml(board.modelNo || '—')}</strong> &bull; 
+                S/N: <strong style="color: #cbd5e1;">${escapeHtml(board.jukiSlNo || board.slNo || '—')}</strong>
+              </div>
+            </div>
+          </div>
+          <div style="text-align: right; display: flex; align-items: center; gap: 6px;">
+            <span style="font-size: 10.5px; color: #94a3b8; font-weight: 700;">Status:</span>
+            ${renderSimpleStatusBadge(board.status)}
+            ${board.currentMachineSerial ? `
+              <span style="font-size: 11px; font-weight: 800; color: #86efac; background: rgba(34, 197, 94, 0.15); border: 1px solid rgba(34, 197, 94, 0.3); padding: 2px 6px; border-radius: 4px;">
+                🧵 Machine: ${escapeHtml(board.currentMachineSerial)}
+              </span>
+            ` : ''}
+          </div>
+        </div>
 
-            <!-- Shared Machines Datalist for fast auto-complete across all actions -->
+        <!-- 6-Action Pill Segmented Navigation -->
+        <div style="padding: 10px 18px 0 18px; flex-shrink: 0;">
+          <div style="font-size: 10.5px; font-weight: 800; color: #94a3b8; text-transform: uppercase; margin-bottom: 6px; display: flex; justify-content: space-between;">
+            <span>1. Select Action Type:</span>
+            <span id="act-subtitle-hint" style="color: #38bdf8; font-weight: 600;">${ACTION_CONFIG[defaultAction]?.subtitle}</span>
+          </div>
+
+          <div class="action-pills-grid" style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px;">
+            ${Object.values(ACTION_CONFIG).map(act => {
+              const isActive = act.key === defaultAction;
+              return `
+                <button 
+                  type="button" 
+                  class="btn-action-tab ${isActive ? 'active' : ''}" 
+                  data-action="${act.key}"
+                  style="height: 38px; padding: 2px 4px; font-size: 11px; font-weight: 800; border-radius: 6px; cursor: pointer; transition: all 0.18s ease; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 1.5px solid ${isActive ? act.color : 'rgba(255,255,255,0.1)'}; background: ${isActive ? act.badgeBg : 'rgba(15, 23, 42, 0.6)'}; color: ${isActive ? '#fff' : '#94a3b8'}; ${isActive ? `box-shadow: 0 0 10px ${act.color}44;` : ''}"
+                >
+                  <span style="font-size: 13px;">${act.icon}</span>
+                  <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;">${act.shortLabel}</span>
+                </button>
+              `;
+            }).join('')}
+          </div>
+        </div>
+
+        <!-- In-Modal Alert / Error Banner -->
+        <div id="ent-action-feedback-banner" style="display: none; margin: 10px 18px 0 18px; padding: 8px 12px; border-radius: 6px; font-size: 12px; font-weight: 700; background: rgba(239, 68, 68, 0.15); border: 1.5px solid #ef4444; color: #fca5a5; display: none; align-items: center; justify-content: space-between; flex-shrink: 0;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span>⚠️</span>
+            <span id="ent-action-feedback-text">Validation Error</span>
+          </div>
+          <button type="button" id="btn-dismiss-feedback" style="background: none; border: none; color: #fca5a5; font-size: 14px; cursor: pointer;">✕</button>
+        </div>
+
+        <!-- Form Container -->
+        <form id="form-action-execution" novalidate style="display: flex; flex-direction: column; flex: 1; min-height: 0; margin: 0;">
+          <input type="hidden" id="act-type-selector" value="${defaultAction}" />
+
+          <div class="modal-body" style="padding: 14px 18px; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; flex: 1; min-height: 0;">
+
+            <!-- Shared Machines Datalist for fast autocomplete -->
             <datalist id="shared-machines-datalist">
-              ${machineOptions.map(m => `<option value="${m.serialNumber}">${m.displayText}</option>`).join('')}
+              ${machineOptions.slice(0, 300).map(m => `<option value="${m.serialNumber}">${m.displayText}</option>`).join('')}
             </datalist>
 
-            <!-- ACTION 1: INSTALL / ASSIGN -->
+            <!-- ========================================================= -->
+            <!-- ACTION 1: INSTALL / ASSIGN                                -->
+            <!-- ========================================================= -->
             <div id="fields-install" class="action-field-group" style="display: none; flex-direction: column; gap: 10px;">
-              ${renderMachineSearchAndDetails('install-machine-serial', 'ins-auto', 'Search Target Machine Number / Serial Number:', '#38bdf8', '')}
+              ${isInstalled ? `
+                <div style="background: rgba(56, 189, 248, 0.1); border: 1px dashed #38bdf8; border-radius: 6px; padding: 8px 12px; font-size: 11.5px; color: #bae6fd; display: flex; align-items: center; gap: 8px;">
+                  <span>ℹ️</span>
+                  <span>This board is currently installed on <strong>Machine ${board.currentMachineSerial}</strong>. Saving this form will automatically transfer/reassign it to the new machine!</span>
+                </div>
+              ` : ''}
+
+              ${renderMachineSearchAndDetails('install-machine-serial', 'ins-auto', 'Target Machine Number / Serial Number:', '#38bdf8', '')}
               ${renderPartsSerialField('install-parts-serial', '#38bdf8')}
 
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                 <div class="form-group">
-                  <label class="form-label required">Install Date</label>
-                  <input type="date" id="install-date" class="form-control" value="${todayStr}" style="height: 38px;" />
+                  <label class="form-label required" style="font-weight: 700; font-size: 11.5px;">Install Date</label>
+                  <input type="date" id="install-date" class="form-control" value="${todayStr}" style="height: 36px; font-size: 12px;" />
                 </div>
                 <div class="form-group">
-                  <label class="form-label">Remarks</label>
-                  <input type="text" id="install-remarks" class="form-control" placeholder="Installation remarks or work note..." style="height: 38px;" />
+                  <label class="form-label" style="font-size: 11.5px;">Work Note / Remarks</label>
+                  <input type="text" id="install-remarks" class="form-control" placeholder="Installation notes..." style="height: 36px; font-size: 12px;" />
                 </div>
               </div>
 
-              <!-- Employee Name at the very last -->
               ${renderPersonnelSelector('install-assigned-to', 'Assigned To / Installed By', curUserName, '#38bdf8')}
             </div>
 
-            <!-- ACTION 2: REMOVE -->
+            <!-- ========================================================= -->
+            <!-- ACTION 2: REMOVE                                          -->
+            <!-- ========================================================= -->
             <div id="fields-remove" class="action-field-group" style="display: none; flex-direction: column; gap: 10px;">
-              ${renderMachineSearchAndDetails('remove-machine-serial', 'remove-auto', 'Search Machine Number / Serial Number:', '#f59e0b', board.currentMachineSerial || '')}
+              ${renderMachineSearchAndDetails('remove-machine-serial', 'remove-auto', 'Connected Machine Number / Serial Number:', '#f59e0b', board.currentMachineSerial || '')}
               ${renderPartsSerialField('remove-parts-serial', '#f59e0b')}
 
               <div class="form-group">
-                <label class="form-label required" style="font-weight: 800; color: #f59e0b;">Removal Reason / Problem Symptom</label>
-                <input type="text" id="remove-reason" class="form-control" placeholder="e.g. Error Code E-02, Trimmer pulse failed, Scheduled maintenance..." />
+                <label class="form-label required" style="font-weight: 800; color: #f59e0b; font-size: 11.5px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                  <span>Removal Reason / Problem Symptom:</span>
+                  <span style="font-size: 10px; color: #94a3b8; font-weight: 600;">Click quick tag to fill</span>
+                </label>
+                <input type="text" id="remove-reason" class="form-control" placeholder="e.g. Error Code E-02, Trimmer pulse failed..." style="height: 36px; font-size: 12px;" />
+                
+                <!-- Quick Reason Chips -->
+                <div style="display: flex; gap: 5px; margin-top: 5px; flex-wrap: wrap;">
+                  <button type="button" class="btn-fill-reason" data-target="remove-reason" data-val="Error Code E-02 (Operation Error)" style="background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.3); color: #fbbf24; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 10px; cursor: pointer;">⚡ Error E-02</button>
+                  <button type="button" class="btn-fill-reason" data-target="remove-reason" data-val="Trimmer Pulse Signal Failed" style="background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.3); color: #fbbf24; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 10px; cursor: pointer;">✂️ Trimmer Fault</button>
+                  <button type="button" class="btn-fill-reason" data-target="remove-reason" data-val="Power Supply Surge / SMPS Blown" style="background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.3); color: #fbbf24; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 10px; cursor: pointer;">🔌 Power Surge</button>
+                  <button type="button" class="btn-fill-reason" data-target="remove-reason" data-val="Scheduled Preventive Maintenance" style="background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.3); color: #fbbf24; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 10px; cursor: pointer;">🔄 Routine Service</button>
+                  <button type="button" class="btn-fill-reason" data-target="remove-reason" data-val="Motor Servo Drive Error" style="background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.3); color: #fbbf24; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 10px; cursor: pointer;">⚠️ Motor Error</button>
+                </div>
               </div>
 
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                 <div class="form-group">
-                  <label class="form-label required">Removal Date</label>
-                  <input type="date" id="remove-date" class="form-control" value="${todayStr}" style="height: 38px;" />
+                  <label class="form-label required" style="font-weight: 700; font-size: 11.5px;">Removal Date</label>
+                  <input type="date" id="remove-date" class="form-control" value="${todayStr}" style="height: 36px; font-size: 12px;" />
                 </div>
                 <div class="form-group">
-                  <label class="form-label required" style="font-weight: 700; color: #fff;">Next Board Status</label>
-                  <select id="remove-next-status" class="form-control" style="font-weight: 700; height: 38px;">
+                  <label class="form-label required" style="font-weight: 700; font-size: 11.5px; color: #fff;">Next Board Status</label>
+                  <select id="remove-next-status" class="form-control" style="font-weight: 700; height: 36px; font-size: 12px;">
                     <option value="AVAILABLE_SPARE">🔵 Available / Spare (Ready in Lab Stock)</option>
-                    <option value="UNDER_INHOUSE_REPAIR">🟠 Under In-House Repair</option>
-                    <option value="SENT_EXTERNAL">🔴 Sent to External Company</option>
-                    <option value="DAMAGED_SCRAP">❌ Damaged / Scrap</option>
+                    <option value="UNDER_INHOUSE_REPAIR">🟠 Under In-House Repair (At Lab Bench)</option>
+                    <option value="SENT_EXTERNAL">🔴 Sent to External Company (Vendor)</option>
+                    <option value="DAMAGED_SCRAP">❌ Damaged / Scrap (Decommission)</option>
                   </select>
                 </div>
               </div>
 
               <div class="form-group">
-                <label class="form-label">Remarks</label>
-                <input type="text" id="remove-remarks" class="form-control" placeholder="Optional notes for removal record..." />
+                <label class="form-label" style="font-size: 11.5px;">Remarks / Notes</label>
+                <input type="text" id="remove-remarks" class="form-control" placeholder="Optional notes for removal history..." style="height: 36px; font-size: 12px;" />
               </div>
 
-              <!-- Employee Name at the very last -->
               ${renderPersonnelSelector('remove-by', 'Removed By', curUserName, '#f59e0b')}
             </div>
 
-            <!-- ACTION 3: IN-HOUSE REPAIR -->
+            <!-- ========================================================= -->
+            <!-- ACTION 3: IN-HOUSE REPAIR                                 -->
+            <!-- ========================================================= -->
             <div id="fields-inhouse" class="action-field-group" style="display: none; flex-direction: column; gap: 10px;">
-              ${renderMachineSearchAndDetails('inhouse-machine-serial', 'inhouse-auto', 'Search Machine Number / Serial Number:', '#f97316', board.currentMachineSerial || '')}
+              ${renderMachineSearchAndDetails('inhouse-machine-serial', 'inhouse-auto', 'Associated Machine Number / Serial Number:', '#f97316', board.currentMachineSerial || '')}
               ${renderPartsSerialField('inhouse-parts-serial', '#f97316')}
 
               <div class="form-group">
-                <label class="form-label required" style="font-weight: 800; color: #f97316;">Repair Stage</label>
-                <select id="inhouse-stage" class="form-control" style="font-weight: 700; height: 38px;">
-                  <option value="START">🟠 Start / Log In-House Repair</option>
+                <label class="form-label required" style="font-weight: 800; color: #f97316; font-size: 11.5px;">Repair Stage</label>
+                <select id="inhouse-stage" class="form-control" style="font-weight: 700; height: 36px; font-size: 12px;">
+                  <option value="START">🟠 Start / Log In-House Repair Workflow</option>
                   <option value="COMPLETE" ${board.status === 'UNDER_INHOUSE_REPAIR' ? 'selected' : ''}>✅ Mark In-House Repair Completed (Restore to Spares)</option>
                 </select>
               </div>
 
+              <div class="form-group">
+                <label class="form-label required" style="font-weight: 700; font-size: 11.5px; color: #fff;">Problem / Symptom</label>
+                <input type="text" id="inhouse-problem" class="form-control" placeholder="e.g. Power MOSFET blown, solder joint cracked..." value="${escapeHtml(board.inhouseRepair?.problem || '')}" style="height: 36px; font-size: 12px;" />
+                
+                <div style="display: flex; gap: 5px; margin-top: 5px; flex-wrap: wrap;">
+                  <button type="button" class="btn-fill-reason" data-target="inhouse-problem" data-val="Power MOSFET IRF740 Blown" style="background: rgba(249, 115, 22, 0.12); border: 1px solid rgba(249, 115, 22, 0.3); color: #fb923c; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 10px; cursor: pointer;">⚡ MOSFET Blown</button>
+                  <button type="button" class="btn-fill-reason" data-target="inhouse-problem" data-val="Optical Coupler / Signal Loss" style="background: rgba(249, 115, 22, 0.12); border: 1px solid rgba(249, 115, 22, 0.3); color: #fb923c; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 10px; cursor: pointer;">🔍 Signal Loss</button>
+                  <button type="button" class="btn-fill-reason" data-target="inhouse-problem" data-val="Cracked Solder Joint on Connector" style="background: rgba(249, 115, 22, 0.12); border: 1px solid rgba(249, 115, 22, 0.3); color: #fb923c; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 10px; cursor: pointer;">🔌 Solder Crack</button>
+                  <button type="button" class="btn-fill-reason" data-target="inhouse-problem" data-val="Display Pulse Cable Disconnected" style="background: rgba(249, 115, 22, 0.12); border: 1px solid rgba(249, 115, 22, 0.3); color: #fb923c; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 10px; cursor: pointer;">💡 Display Cable</button>
+                </div>
+              </div>
+
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                 <div class="form-group">
-                  <label class="form-label required" style="font-weight: 700; color: #fff;">Problem / Symptom</label>
-                  <input type="text" id="inhouse-problem" class="form-control" placeholder="e.g. Power MOSFET blown, solder joint cracked..." value="${board.inhouseRepair?.problem || ''}" />
+                  <label class="form-label required" style="font-size: 11.5px;">Repair Date</label>
+                  <input type="date" id="inhouse-date" class="form-control" value="${todayStr}" style="height: 36px; font-size: 12px;" />
                 </div>
                 <div class="form-group">
-                  <label class="form-label required">Repair Date</label>
-                  <input type="date" id="inhouse-date" class="form-control" value="${todayStr}" style="height: 38px;" />
+                  <label class="form-label" style="font-size: 11.5px;">Actions Taken / Components Replaced</label>
+                  <input type="text" id="inhouse-details" class="form-control" placeholder="Replaced IC, diode passed..." value="${escapeHtml(board.inhouseRepair?.details || '')}" style="height: 36px; font-size: 12px;" />
                 </div>
               </div>
 
               <div class="form-group">
-                <label class="form-label" style="font-weight: 700; color: #fff;">Repair Details / Actions Taken</label>
-                <textarea id="inhouse-details" class="form-control" rows="2" placeholder="Replaced IC, diode testing passed...">${board.inhouseRepair?.details || ''}</textarea>
+                <label class="form-label" style="font-size: 11.5px;">Remarks</label>
+                <input type="text" id="inhouse-remarks" class="form-control" placeholder="Optional notes..." value="${escapeHtml(board.inhouseRepair?.remarks || '')}" style="height: 36px; font-size: 12px;" />
               </div>
 
-              <div class="form-group">
-                <label class="form-label">Remarks</label>
-                <input type="text" id="inhouse-remarks" class="form-control" placeholder="Optional notes..." value="${board.inhouseRepair?.remarks || ''}" />
-              </div>
-
-              <!-- Employee Name at the very last -->
               ${renderPersonnelSelector('inhouse-repaired-by', 'Repaired By', curUserName, '#f97316')}
             </div>
 
-            <!-- ACTION 4: SEND TO EXTERNAL COMPANY -->
+            <!-- ========================================================= -->
+            <!-- ACTION 4: SEND TO EXTERNAL COMPANY                        -->
+            <!-- ========================================================= -->
             <div id="fields-send-outside" class="action-field-group" style="display: none; flex-direction: column; gap: 10px;">
-              ${renderMachineSearchAndDetails('send-machine-serial', 'send-auto', 'Search Machine Number / Serial Number:', '#a855f7', board.currentMachineSerial || '')}
+              ${renderMachineSearchAndDetails('send-machine-serial', 'send-auto', 'Associated Machine Number / Serial Number:', '#a855f7', board.currentMachineSerial || '')}
               ${renderPartsSerialField('send-parts-serial', '#a855f7')}
 
               <div class="form-group">
-                <label class="form-label required" style="font-weight: 800; color: #a855f7;">External Repair Company</label>
-                <select id="send-company-name" class="form-control" style="font-weight: 700; height: 38px;">
-                  ${companies.map(c => `<option value="${c.name}">${c.name} (${c.contactPerson || 'Service Partner'})</option>`).join('')}
+                <label class="form-label required" style="font-weight: 800; color: #a855f7; font-size: 11.5px;">External Repair Company / Service Partner</label>
+                <select id="send-company-name" class="form-control" style="font-weight: 700; height: 38px; font-size: 12px;">
+                  ${companies.map(c => `<option value="${escapeHtml(c.name)}">${escapeHtml(c.name)} ${c.contactPerson ? `(${c.contactPerson})` : ''}</option>`).join('')}
                 </select>
               </div>
 
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                 <div class="form-group">
-                  <label class="form-label required">Send Date</label>
-                  <input type="date" id="send-date" class="form-control" value="${todayStr}" style="height: 38px;" />
+                  <label class="form-label required" style="font-size: 11.5px;">Send Date</label>
+                  <input type="date" id="send-date" class="form-control" value="${todayStr}" style="height: 36px; font-size: 12px;" />
                 </div>
                 <div class="form-group">
-                  <label class="form-label">Expected Return Date</label>
-                  <input type="date" id="send-expected-date" class="form-control" style="height: 38px;" />
+                  <label class="form-label" style="font-size: 11.5px;">Expected Return Date</label>
+                  <input type="date" id="send-expected-date" class="form-control" style="height: 36px; font-size: 12px;" />
                 </div>
               </div>
 
               <div class="form-group">
-                <label class="form-label required" style="font-weight: 700; color: #fff;">Fault Details / Repair Work Requested</label>
-                <textarea id="send-problem" class="form-control" rows="2" placeholder="Describe fault sent to outside lab..."></textarea>
+                <label class="form-label required" style="font-weight: 700; font-size: 11.5px; color: #fff;">Fault Details / Repair Work Requested</label>
+                <textarea id="send-problem" class="form-control" rows="2" placeholder="Describe fault requiring external specialized servicing..." style="font-size: 12px;"></textarea>
               </div>
 
               <div class="form-group">
-                <label class="form-label">Remarks</label>
-                <input type="text" id="send-remarks" class="form-control" placeholder="Optional notes for gate pass / tracking..." />
+                <label class="form-label" style="font-size: 11.5px;">Gate Pass / Tracking Remarks</label>
+                <input type="text" id="send-remarks" class="form-control" placeholder="Optional notes for gate pass / tracking..." style="height: 36px; font-size: 12px;" />
               </div>
 
-              <!-- Employee Name at the very last -->
               ${renderPersonnelSelector('send-by', 'Sent By', curUserName, '#a855f7')}
             </div>
 
-            <!-- ACTION 5: RECEIVE WITH REPAIR VERIFICATION -->
+            <!-- ========================================================= -->
+            <!-- ACTION 5: RECEIVE WITH REPAIR VERIFICATION                -->
+            <!-- ========================================================= -->
             <div id="fields-receive" class="action-field-group" style="display: none; flex-direction: column; gap: 10px;">
-              ${renderMachineSearchAndDetails('receive-machine-serial', 'receive-auto', 'Search Machine Number / Serial Number:', '#34d399', board.currentMachineSerial || '')}
-              ${renderPartsSerialField('receive-parts-serial', '#34d399')}
+              ${renderMachineSearchAndDetails('receive-machine-serial', 'receive-auto', 'Associated Machine Number / Serial Number:', '#10b981', board.currentMachineSerial || '')}
+              ${renderPartsSerialField('receive-parts-serial', '#10b981')}
 
-              <div style="background: rgba(16, 185, 129, 0.1); border: 1.5px solid #10b981; border-radius: 8px; padding: 12px 14px; display: flex; flex-direction: column; gap: 10px;">
-                <div style="font-size: 12.5px; font-weight: 800; color: #34d399; display: flex; align-items: center; justify-content: space-between;">
-                  <span>🔬 Repair Verification &amp; Acceptance</span>
+              <div style="background: rgba(16, 185, 129, 0.08); border: 1.5px solid #10b981; border-radius: 8px; padding: 12px 14px; display: flex; flex-direction: column; gap: 10px;">
+                <div style="font-size: 12px; font-weight: 800; color: #34d399; display: flex; align-items: center; justify-content: space-between;">
+                  <span>🔬 Repair Verification &amp; Quality Acceptance</span>
                   <span style="font-size: 10.5px; font-weight: 700; background: rgba(16, 185, 129, 0.2); padding: 2px 8px; border-radius: 4px; color: #a7f3d0;">
-                    ${board.externalRepair?.companyName ? `Vendor: ${board.externalRepair.companyName}` : 'External Return'}
+                    ${board.externalRepair?.companyName ? `Vendor: ${escapeHtml(board.externalRepair.companyName)}` : 'External Vendor Return'}
                   </span>
                 </div>
 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                   <div class="form-group">
-                    <label class="form-label required">Receive Date</label>
-                    <input type="date" id="receive-return-date" class="form-control" value="${todayStr}" style="height: 38px;" />
+                    <label class="form-label required" style="font-size: 11.5px;">Receive Date</label>
+                    <input type="date" id="receive-return-date" class="form-control" value="${todayStr}" style="height: 36px; font-size: 12px;" />
                   </div>
                   <div class="form-group">
-                    <label class="form-label required" style="font-weight: 800; color: #fff;">Repair Result:</label>
-                    <select id="receive-repair-result" class="form-control" style="font-weight: 800; font-size: 13px; height: 38px;">
-                      <option value="SUCCESSFUL" selected>✅ Successfully Repaired</option>
-                      <option value="NOT_REPAIRED">❌ Not Repaired / Problem Not Solved</option>
+                    <label class="form-label required" style="font-weight: 800; color: #fff; font-size: 11.5px;">Repair Result:</label>
+                    <select id="receive-repair-result" class="form-control" style="font-weight: 800; font-size: 12px; height: 36px;">
+                      <option value="SUCCESSFUL" selected>✅ Successfully Repaired &amp; Tested</option>
+                      <option value="NOT_REPAIRED">❌ Not Repaired / Problem Unresolved</option>
                       <option value="PARTIALLY_REPAIRED">⚠️ Partially Repaired</option>
-                      <option value="SEND_AGAIN">🔄 Send Again</option>
+                      <option value="SEND_AGAIN">🔄 Resend to Company</option>
                     </select>
                   </div>
                 </div>
 
                 <!-- Dynamic Send Again Box (if Send Again selected) -->
-                <div id="resend-options-box" style="display: none; background: rgba(15, 23, 42, 0.85); border: 1.5px dashed #a855f7; border-radius: 6px; padding: 10px 12px; flex-direction: column; gap: 8px;">
+                <div id="resend-options-box" style="display: none; background: rgba(15, 23, 42, 0.95); border: 1.5px dashed #a855f7; border-radius: 6px; padding: 10px 12px; flex-direction: column; gap: 8px;">
                   <div style="font-size: 11px; font-weight: 800; color: #c084fc; text-transform: uppercase;">
                     🔄 Send Again Configuration (Creates New Repair Record):
                   </div>
                   <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
                     <div class="form-group">
                       <label class="form-label required" style="font-size: 11px;">Resend To Company</label>
-                      <select id="resend-company-select" class="form-control" style="font-size: 12px;">
+                      <select id="resend-company-select" class="form-control" style="font-size: 11.5px; height: 34px;">
                         ${companies.map(c => `
-                          <option value="${c.name}" ${board.externalRepair?.companyName === c.name ? 'selected' : ''}>${c.name}</option>
+                          <option value="${escapeHtml(c.name)}" ${board.externalRepair?.companyName === c.name ? 'selected' : ''}>${escapeHtml(c.name)}</option>
                         `).join('')}
                       </select>
                     </div>
                     <div class="form-group">
                       <label class="form-label" style="font-size: 11px;">Expected Return Date</label>
-                      <input type="date" id="resend-expected-date" class="form-control" style="font-size: 12px;" />
+                      <input type="date" id="resend-expected-date" class="form-control" style="font-size: 11.5px; height: 34px;" />
                     </div>
                   </div>
                 </div>
 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                   <div class="form-group">
-                    <label class="form-label required" style="font-weight: 700; color: #cbd5e1;">Verification Date</label>
-                    <input type="date" id="receive-verification-date" class="form-control" value="${todayStr}" style="height: 38px;" />
+                    <label class="form-label required" style="font-weight: 700; font-size: 11.5px; color: #cbd5e1;">Verification Date</label>
+                    <input type="date" id="receive-verification-date" class="form-control" value="${todayStr}" style="height: 36px; font-size: 12px;" />
                   </div>
                   <div class="form-group">
-                    <label class="form-label" style="font-weight: 700; color: #cbd5e1;">Repair Details / Remarks</label>
-                    <input type="text" id="receive-details" class="form-control" placeholder="Testing findings, replaced components..." style="height: 38px;" />
+                    <label class="form-label" style="font-weight: 700; font-size: 11.5px; color: #cbd5e1;">Repair Findings / Remarks</label>
+                    <input type="text" id="receive-details" class="form-control" placeholder="Testing findings, replaced IC..." style="height: 36px; font-size: 12px;" />
                   </div>
                 </div>
               </div>
 
-              <div class="form-group">
-                <label class="form-label">Remarks</label>
-                <input type="text" id="receive-remarks" class="form-control" placeholder="Optional notes for receiving record..." />
-              </div>
-
-              ${renderPersonnelSelector('receive-by', 'Received By', curUserName, '#34d399')}
-              <!-- Employee Name at the very last -->
-              ${renderPersonnelSelector('receive-verified-by', 'Verified By', curUserName, '#34d399')}
+              ${renderPersonnelSelector('receive-by', 'Received By', curUserName, '#10b981')}
+              ${renderPersonnelSelector('receive-verified-by', 'Verified By Engineer', curUserName, '#10b981')}
             </div>
 
-            <!-- ACTION 6: ASSIGN TO ANOTHER MACHINE -->
+            <!-- ========================================================= -->
+            <!-- ACTION 6: ASSIGN TO ANOTHER MACHINE                       -->
+            <!-- ========================================================= -->
             <div id="fields-assign-another" class="action-field-group" style="display: none; flex-direction: column; gap: 10px;">
-              ${renderMachineSearchAndDetails('reassign-machine-serial', 're-auto', 'Search New Target Machine Number / Serial Number:', '#6366f1', '')}
+              <div style="background: rgba(99, 102, 241, 0.1); border: 1px dashed #6366f1; border-radius: 6px; padding: 8px 12px; font-size: 11.5px; color: #c7d2fe; display: flex; align-items: center; justify-content: space-between;">
+                <span>Current Machine: <strong>${board.currentMachineSerial ? `Machine ${board.currentMachineSerial}` : 'In Lab Spares'}</strong></span>
+                <span style="font-weight: 800; color: #818cf8;">➔ Transfer to New Machine</span>
+              </div>
+
+              ${renderMachineSearchAndDetails('reassign-machine-serial', 're-auto', 'New Target Machine Number / Serial Number:', '#6366f1', '')}
               ${renderPartsSerialField('reassign-parts-serial', '#6366f1')}
 
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                 <div class="form-group">
-                  <label class="form-label required">Reassignment Date</label>
-                  <input type="date" id="reassign-date" class="form-control" value="${todayStr}" style="height: 38px;" />
+                  <label class="form-label required" style="font-size: 11.5px;">Reassignment Date</label>
+                  <input type="date" id="reassign-date" class="form-control" value="${todayStr}" style="height: 36px; font-size: 12px;" />
                 </div>
                 <div class="form-group">
-                  <label class="form-label">Remarks</label>
-                  <input type="text" id="reassign-remarks" class="form-control" placeholder="Reassignment reason or notes..." style="height: 38px;" />
+                  <label class="form-label" style="font-size: 11.5px;">Reassignment Reason / Notes</label>
+                  <input type="text" id="reassign-remarks" class="form-control" placeholder="e.g. Line PB-03 machine breakdown replacement..." style="height: 36px; font-size: 12px;" />
                 </div>
               </div>
 
-              <!-- Employee Name at the very last -->
               ${renderPersonnelSelector('reassign-by', 'Assigned By', curUserName, '#818cf8')}
             </div>
 
           </div>
 
           <!-- Footer -->
-          <div class="modal-footer" style="padding: 14px 20px; background: #0f172a; border-top: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: flex-end; align-items: center; gap: 10px; flex-shrink: 0;">
-            <button type="button" class="btn btn-secondary btn-close-modal">Cancel</button>
-            <button type="submit" class="btn btn-primary" style="font-weight: 800; background: linear-gradient(135deg, #0284c7, #0369a1); border-color: #38bdf8; box-shadow: 0 2px 10px rgba(2, 132, 199, 0.4);">
-              💾 Save Action &amp; Update History
+          <div class="modal-footer" style="padding: 12px 18px; background: #0b1120; border-top: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: flex-end; align-items: center; gap: 10px; flex-shrink: 0;">
+            <button type="button" class="btn btn-secondary btn-close-modal" style="height: 38px; font-size: 12.5px; font-weight: 700;">Cancel</button>
+            <button type="submit" id="btn-submit-action" class="btn btn-primary" style="height: 38px; font-size: 12.5px; font-weight: 800; background: linear-gradient(135deg, #0284c7, #0369a1); border-color: #38bdf8; box-shadow: 0 2px 10px rgba(2, 132, 199, 0.4); display: flex; align-items: center; gap: 6px;">
+              ${ACTION_CONFIG[defaultAction]?.btnText || '💾 Save Action &amp; Update History'}
             </button>
           </div>
         </form>
@@ -2508,9 +2669,39 @@ function openActionModal(board, initialActionType = null) {
     if (e.target === overlay) close();
   });
 
-  // ============================================================
-  // INTERACTIVE SEARCHABLE EMPLOYEE SELECTOR (Card No, Name, Area)
-  // ============================================================
+  // Feedback banner dismiss
+  document.getElementById('btn-dismiss-feedback')?.addEventListener('click', () => {
+    const banner = document.getElementById('ent-action-feedback-banner');
+    if (banner) banner.style.display = 'none';
+  });
+
+  const showModalError = (msg) => {
+    const banner = document.getElementById('ent-action-feedback-banner');
+    const textEl = document.getElementById('ent-action-feedback-text');
+    if (banner && textEl) {
+      textEl.textContent = msg;
+      banner.style.display = 'flex';
+      const body = overlay.querySelector('.modal-body');
+      if (body) body.scrollTop = 0;
+    }
+    notificationService.error(msg);
+  };
+
+  // Quick reason fill chips
+  overlay.querySelectorAll('.btn-fill-reason').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const targetInputId = btn.getAttribute('data-target');
+      const val = btn.getAttribute('data-val');
+      const input = document.getElementById(targetInputId);
+      if (input) {
+        input.value = val;
+        input.focus();
+      }
+    });
+  });
+
+  // Setup Searchable Employee Selector
   const setupEmployeeSearchInput = (searchBox) => {
     const targetId = searchBox.getAttribute('data-target');
     const dropdown = document.getElementById(`${targetId}-dropdown`);
@@ -2521,23 +2712,15 @@ function openActionModal(board, initialActionType = null) {
       const elName = document.getElementById(`${targetId}-name`);
       const elCard = document.getElementById(`${targetId}-card`);
       const elArea = document.getElementById(`${targetId}-area`);
-      const elDispName = document.getElementById(`${targetId}-disp-name`);
-      const elDispCard = document.getElementById(`${targetId}-disp-card`);
-      const elDispArea = document.getElementById(`${targetId}-disp-area`);
 
       if (!trimmed) {
         if (elName) elName.value = '';
         if (elCard) elCard.value = '';
         if (elArea) elArea.value = '';
-        if (elDispName) elDispName.textContent = '—';
-        if (elDispCard) elDispCard.textContent = '—';
-        if (elDispArea) elDispArea.textContent = '—';
         return;
       }
 
-      if (trimmed.startsWith('Card:')) {
-        return;
-      }
+      if (trimmed.startsWith('[Card:')) return;
 
       const match = allPersonnel.find(p => 
         (p.cardNumber && p.cardNumber.toLowerCase() === trimmed.toLowerCase()) ||
@@ -2547,20 +2730,14 @@ function openActionModal(board, initialActionType = null) {
         if (elName) elName.value = match.name;
         if (elCard) elCard.value = match.cardNumber || '';
         if (elArea) elArea.value = match.workingArea || '';
-        if (elDispName) elDispName.textContent = match.name;
-        if (elDispCard) elDispCard.textContent = match.cardNumber || '—';
-        if (elDispArea) elDispArea.textContent = match.workingArea || '—';
       } else {
         if (elName) elName.value = trimmed;
-        if (elDispName) elDispName.textContent = trimmed;
-        if (elDispCard) elDispCard.textContent = '—';
-        if (elDispArea) elDispArea.textContent = '—';
       }
     };
 
     const renderMatches = (q) => {
       const term = q.trim().toLowerCase();
-      const cleanTerm = term.startsWith('card:') ? '' : term;
+      const cleanTerm = term.startsWith('[card:') ? '' : term;
       const matches = allPersonnel.filter(p => {
         if (!cleanTerm) return true;
         return (p.cardNumber && p.cardNumber.toLowerCase().includes(cleanTerm)) ||
@@ -2568,7 +2745,7 @@ function openActionModal(board, initialActionType = null) {
                (p.workingArea && p.workingArea.toLowerCase().includes(cleanTerm)) ||
                (p.designation && p.designation.toLowerCase().includes(cleanTerm)) ||
                (p.department && p.department.toLowerCase().includes(cleanTerm));
-      });
+      }).slice(0, 10);
 
       if (matches.length === 0) {
         dropdown.innerHTML = `
@@ -2578,21 +2755,19 @@ function openActionModal(board, initialActionType = null) {
         `;
       } else {
         dropdown.innerHTML = matches.map(p => `
-          <div class="ent-person-item" data-target="${targetId}" data-name="${p.name}" data-card="${p.cardNumber || '—'}" data-area="${p.workingArea || 'ENT Lab'}" data-id="${p.id}" style="padding: 8px 12px; border-bottom: 1px solid rgba(255,255,255,0.06); cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: background 0.15s ease;">
+          <div class="ent-person-item" data-target="${targetId}" data-name="${escapeHtml(p.name)}" data-card="${escapeHtml(p.cardNumber || '—')}" data-area="${escapeHtml(p.workingArea || 'ENT Lab')}" data-id="${p.id}" style="padding: 8px 12px; border-bottom: 1px solid rgba(255,255,255,0.06); cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: background 0.15s ease;">
             <div>
-              <span style="font-family: var(--font-mono); font-weight: 900; color: #38bdf8; font-size: 11.5px; background: rgba(56, 189, 248, 0.15); padding: 2px 6px; border-radius: 4px; margin-right: 6px;">[ Card: ${p.cardNumber || '—'} ]</span>
-              <strong style="color: #fff; font-size: 12.5px;">${p.name}</strong>
+              <span style="font-family: var(--font-mono); font-weight: 900; color: #38bdf8; font-size: 11px; background: rgba(56, 189, 248, 0.15); padding: 1px 6px; border-radius: 4px; margin-right: 6px;">Card: ${p.cardNumber || '—'}</span>
+              <strong style="color: #fff; font-size: 12px;">${p.name}</strong>
             </div>
             <div style="text-align: right;">
-              <span style="color: #86efac; font-size: 11px; font-weight: 700;">📍 ${p.workingArea || 'ENT Lab'}</span>
-              <div style="color: #94a3b8; font-size: 10px;">${p.designation || 'Technician'}</div>
+              <span style="color: #86efac; font-size: 10.5px; font-weight: 700;">${p.workingArea || 'ENT Lab'}</span>
             </div>
           </div>
         `).join('');
 
-        // Bind clicks on rows
         dropdown.querySelectorAll('.ent-person-item').forEach(item => {
-          item.addEventListener('mouseenter', () => item.style.background = 'rgba(56, 189, 248, 0.15)');
+          item.addEventListener('mouseenter', () => item.style.background = 'rgba(56, 189, 248, 0.18)');
           item.addEventListener('mouseleave', () => item.style.background = 'transparent');
           item.addEventListener('click', () => {
             const pName = item.getAttribute('data-name');
@@ -2605,12 +2780,7 @@ function openActionModal(board, initialActionType = null) {
             document.getElementById(`${targetId}-area`).value = pArea;
             document.getElementById(`${targetId}-id`).value = pId;
 
-            searchBox.value = `Card: ${pCard} | ${pName} | ${pArea}`;
-            
-            document.getElementById(`${targetId}-disp-name`).textContent = pName;
-            document.getElementById(`${targetId}-disp-card`).textContent = pCard;
-            document.getElementById(`${targetId}-disp-area`).textContent = pArea;
-
+            searchBox.value = `[Card: ${pCard}] ${pName} • ${pArea}`;
             dropdown.style.display = 'none';
           });
         });
@@ -2627,7 +2797,27 @@ function openActionModal(board, initialActionType = null) {
 
   overlay.querySelectorAll('.ent-person-search-box').forEach(sb => setupEmployeeSearchInput(sb));
 
-  // Clear button handler
+  // Quick pick person buttons
+  overlay.querySelectorAll('.btn-quick-pick-person').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const targetId = btn.getAttribute('data-target');
+      const pName = btn.getAttribute('data-name');
+      const pCard = btn.getAttribute('data-card');
+      const pArea = btn.getAttribute('data-area');
+
+      const elName = document.getElementById(`${targetId}-name`);
+      const elCard = document.getElementById(`${targetId}-card`);
+      const elArea = document.getElementById(`${targetId}-area`);
+      const searchBox = document.getElementById(`${targetId}-search`);
+
+      if (elName) elName.value = pName;
+      if (elCard) elCard.value = pCard;
+      if (elArea) elArea.value = pArea;
+      if (searchBox) searchBox.value = `[Card: ${pCard}] ${pName} • ${pArea}`;
+    });
+  });
+
+  // Clear person button
   overlay.querySelectorAll('.btn-clear-person').forEach(btn => {
     btn.addEventListener('click', (e) => {
       const targetId = e.currentTarget.getAttribute('data-target');
@@ -2639,15 +2829,9 @@ function openActionModal(board, initialActionType = null) {
       const elName = document.getElementById(`${targetId}-name`);
       const elCard = document.getElementById(`${targetId}-card`);
       const elArea = document.getElementById(`${targetId}-area`);
-      const elDispName = document.getElementById(`${targetId}-disp-name`);
-      const elDispCard = document.getElementById(`${targetId}-disp-card`);
-      const elDispArea = document.getElementById(`${targetId}-disp-area`);
       if (elName) elName.value = '';
       if (elCard) elCard.value = '';
       if (elArea) elArea.value = '';
-      if (elDispName) elDispName.textContent = '—';
-      if (elDispCard) elDispCard.textContent = '—';
-      if (elDispArea) elDispArea.textContent = '—';
     });
   });
 
@@ -2658,36 +2842,40 @@ function openActionModal(board, initialActionType = null) {
     }
   });
 
-  // Dynamic Section Switcher — Show ONLY the selected action's fields!
-  const actionSelector = document.getElementById('act-type-selector');
+  // Dynamic Action Pills Navigation Switcher
+  const hiddenActionInput = document.getElementById('act-type-selector');
+  const modalActTitleLabel = document.getElementById('modal-act-title-label');
+  const actSubtitleHint = document.getElementById('act-subtitle-hint');
+  const btnSubmitAction = document.getElementById('btn-submit-action');
+
   const switchActionFields = (val) => {
+    hiddenActionInput.value = val;
+    const cfg = ACTION_CONFIG[val] || ACTION_CONFIG.INSTALL;
+
+    // Update pill styles
+    overlay.querySelectorAll('.btn-action-tab').forEach(pill => {
+      const pAct = pill.getAttribute('data-action');
+      const isCurrent = pAct === val;
+      const pCfg = ACTION_CONFIG[pAct] || ACTION_CONFIG.INSTALL;
+      pill.style.border = `1.5px solid ${isCurrent ? pCfg.color : 'rgba(255,255,255,0.1)'}`;
+      pill.style.background = isCurrent ? pCfg.badgeBg : 'rgba(15, 23, 42, 0.6)';
+      pill.style.color = isCurrent ? '#fff' : '#94a3b8';
+      pill.style.boxShadow = isCurrent ? `0 0 12px ${pCfg.color}44` : 'none';
+      if (isCurrent) pill.classList.add('active');
+      else pill.classList.remove('active');
+    });
+
+    if (modalActTitleLabel) modalActTitleLabel.textContent = cfg.label;
+    if (actSubtitleHint) actSubtitleHint.textContent = cfg.subtitle;
+    if (btnSubmitAction) {
+      btnSubmitAction.textContent = cfg.btnText;
+      btnSubmitAction.style.borderColor = cfg.color;
+    }
+
+    // Hide all action field groups
     document.querySelectorAll('.action-field-group').forEach(el => el.style.display = 'none');
-    
-    // Toggle required fields cleanly
-    const setReq = (id, req) => {
-      const el = document.getElementById(id);
-      if (el) el.required = req;
-    };
 
-    setReq('install-machine-serial', val === 'INSTALL');
-    setReq('install-assigned-to-search', val === 'INSTALL');
-    
-    setReq('remove-reason', val === 'REMOVE');
-    setReq('remove-by-search', val === 'REMOVE');
-    
-    setReq('inhouse-problem', val === 'INHOUSE_REPAIR');
-    setReq('inhouse-repaired-by-search', val === 'INHOUSE_REPAIR');
-    
-    setReq('send-company-name', val === 'SEND_OUTSIDE');
-    setReq('send-problem', val === 'SEND_OUTSIDE');
-    setReq('send-by-search', val === 'SEND_OUTSIDE');
-    
-    setReq('receive-by-search', val === 'RECEIVE');
-    setReq('receive-verified-by-search', val === 'RECEIVE');
-    
-    setReq('reassign-machine-serial', val === 'ASSIGN_ANOTHER');
-    setReq('reassign-by-search', val === 'ASSIGN_ANOTHER');
-
+    // Display selected action group
     if (val === 'INSTALL') {
       document.getElementById('fields-install').style.display = 'flex';
     } else if (val === 'REMOVE') {
@@ -2703,7 +2891,13 @@ function openActionModal(board, initialActionType = null) {
     }
   };
 
-  actionSelector.addEventListener('change', (e) => switchActionFields(e.target.value));
+  overlay.querySelectorAll('.btn-action-tab').forEach(pill => {
+    pill.addEventListener('click', () => {
+      const act = pill.getAttribute('data-action');
+      switchActionFields(act);
+    });
+  });
+
   switchActionFields(defaultAction);
 
   // Dynamic Resend Toggle in Receive
@@ -2715,7 +2909,7 @@ function openActionModal(board, initialActionType = null) {
     });
   }
 
-  // Live Auto-Fill for Machine Serials
+  // Live Auto-Fill for Machine Serials with custom fallback support
   const bindMachineLookup = (inputId, prefix) => {
     const input = document.getElementById(inputId);
     if (!input) return;
@@ -2723,11 +2917,8 @@ function openActionModal(board, initialActionType = null) {
     const lookup = (rawVal) => {
       const elName = document.getElementById(`${prefix}-name`);
       const elModel = document.getElementById(`${prefix}-model`);
-      const elBrand = document.getElementById(`${prefix}-brand`);
       const elSerial = document.getElementById(`${prefix}-serial`);
-      const elFloor = document.getElementById(`${prefix}-floor`);
-      const elLine = document.getElementById(`${prefix}-line`);
-      const elUnit = document.getElementById(`${prefix}-unit`);
+      const elLocation = document.getElementById(`${prefix}-location`);
       const elStatus = document.getElementById(`${prefix}-status`);
 
       let val = (rawVal || '').trim();
@@ -2737,37 +2928,22 @@ function openActionModal(board, initialActionType = null) {
       if (!val) {
         if (elName) elName.textContent = '—';
         if (elModel) elModel.textContent = '—';
-        if (elBrand) elBrand.textContent = '—';
         if (elSerial) elSerial.textContent = '—';
-        if (elFloor) elFloor.textContent = '—';
-        if (elLine) elLine.textContent = '—';
-        if (elUnit) elUnit.textContent = '—';
+        if (elLocation) elLocation.textContent = '📍 Location: —';
         if (elStatus) elStatus.style.display = 'none';
         return;
       }
 
       const mach = etLabService.getMachineDetailsForBoard(val);
       if (mach) {
-        if (elName) elName.textContent = mach.machineName || '—';
-        if (elModel) elModel.textContent = mach.model || '—';
-        if (elBrand) elBrand.textContent = mach.brand || '—';
+        if (elName) elName.textContent = mach.machineName || 'Machine';
+        if (elModel) elModel.textContent = mach.model && mach.model !== '—' ? `(${mach.model})` : '';
         if (elSerial) elSerial.textContent = mach.serialNumber || val;
-        if (elFloor) elFloor.textContent = mach.floorName || '—';
-        if (elLine) elLine.textContent = mach.lineName || '—';
-        if (elUnit) elUnit.textContent = mach.unitName || '—';
+        if (elLocation) elLocation.textContent = `📍 ${mach.floorName || 'Floor'} • ${mach.lineName || 'Line'}`;
         if (elStatus) {
-          elStatus.textContent = `✓ ${mach.status || 'ACTIVE'}`;
+          elStatus.textContent = mach.isCustom ? '✓ Custom Machine' : `✓ ${mach.status || 'ACTIVE'}`;
           elStatus.style.display = 'inline-block';
         }
-      } else {
-        if (elName) elName.textContent = '⚠️ Not Found in Inventory';
-        if (elModel) elModel.textContent = '—';
-        if (elBrand) elBrand.textContent = '—';
-        if (elSerial) elSerial.textContent = val;
-        if (elFloor) elFloor.textContent = '—';
-        if (elLine) elLine.textContent = '—';
-        if (elUnit) elUnit.textContent = '—';
-        if (elStatus) elStatus.style.display = 'none';
       }
     };
 
@@ -2789,7 +2965,7 @@ function openActionModal(board, initialActionType = null) {
   bindMachineLookup('receive-machine-serial', 'receive-auto');
   bindMachineLookup('reassign-machine-serial', 're-auto');
 
-  // Camera QR & Barcode Scanner for Machine Serials in Action Forms
+  // Camera QR & Barcode Scanner for Machine Serials
   overlay.querySelectorAll('.btn-scan-machine-qr').forEach(btn => {
     btn.addEventListener('click', () => {
       const targetInputId = btn.getAttribute('data-input-id');
@@ -2835,7 +3011,7 @@ function openActionModal(board, initialActionType = null) {
   // Form Submission
   document.getElementById('form-action-execution').addEventListener('submit', (e) => {
     e.preventDefault();
-    const actionType = actionSelector.value;
+    const actionType = hiddenActionInput.value;
 
     try {
       if (actionType === 'INSTALL') {
@@ -2847,8 +3023,16 @@ function openActionModal(board, initialActionType = null) {
         const installDate = document.getElementById('install-date')?.value || todayStr;
         const remarks = document.getElementById('install-remarks')?.value.trim() || '';
 
-        if (!mSerial) throw new Error('Please enter or select target Machine Serial.');
-        if (!assignedToName) throw new Error('Please select or enter the Assigned To / Installed By employee name.');
+        if (!mSerial) {
+          showModalError('Please enter or select target Machine Serial Number.');
+          document.getElementById('install-machine-serial')?.focus();
+          return;
+        }
+        if (!assignedToName) {
+          showModalError('Please select or enter the Assigned To / Installed By technician.');
+          document.getElementById('install-assigned-to-search')?.focus();
+          return;
+        }
 
         etLabService.installBoardToMachine({
           boardSerial: board.boardSerial,
@@ -2868,11 +3052,15 @@ function openActionModal(board, initialActionType = null) {
         const removedByArea = document.getElementById('remove-by-area')?.value.trim();
         const partsSerial = document.getElementById('remove-parts-serial')?.value.trim();
         const removeDate = document.getElementById('remove-date')?.value || todayStr;
-        const reason = document.getElementById('remove-reason')?.value.trim();
-        const nextStatus = document.getElementById('remove-next-status')?.value;
+        const reason = document.getElementById('remove-reason')?.value.trim() || 'Maintenance / issue detected';
+        const nextStatus = document.getElementById('remove-next-status')?.value || 'AVAILABLE_SPARE';
         const remarks = document.getElementById('remove-remarks')?.value.trim() || '';
 
-        if (!removedByName) throw new Error('Please select or enter the Removed By employee name.');
+        if (!removedByName) {
+          showModalError('Please select or enter the Removed By technician.');
+          document.getElementById('remove-by-search')?.focus();
+          return;
+        }
 
         etLabService.removeBoardFromMachine({
           boardSerial: board.boardSerial,
@@ -2894,11 +3082,15 @@ function openActionModal(board, initialActionType = null) {
         const repairedByArea = document.getElementById('inhouse-repaired-by-area')?.value.trim();
         const partsSerial = document.getElementById('inhouse-parts-serial')?.value.trim();
         const repairDate = document.getElementById('inhouse-date')?.value || todayStr;
-        const problem = document.getElementById('inhouse-problem')?.value.trim();
+        const problem = document.getElementById('inhouse-problem')?.value.trim() || 'Internal repair diagnosis';
         const details = document.getElementById('inhouse-details')?.value.trim();
         const remarks = document.getElementById('inhouse-remarks')?.value.trim() || '';
 
-        if (!repairedByName) throw new Error('Please select or enter the Repaired By employee name.');
+        if (!repairedByName) {
+          showModalError('Please select or enter the Repaired By technician.');
+          document.getElementById('inhouse-repaired-by-search')?.focus();
+          return;
+        }
 
         if (stage === 'START') {
           etLabService.startInHouseRepair({
@@ -2935,10 +3127,18 @@ function openActionModal(board, initialActionType = null) {
         const partsSerial = document.getElementById('send-parts-serial')?.value.trim();
         const sendDate = document.getElementById('send-date')?.value || todayStr;
         const expDate = document.getElementById('send-expected-date')?.value;
-        const problem = document.getElementById('send-problem')?.value.trim();
+        const problem = document.getElementById('send-problem')?.value.trim() || 'Dispatched for external specialist repair';
         const remarks = document.getElementById('send-remarks')?.value.trim() || '';
 
-        if (!sentByName) throw new Error('Please select or enter the Sent By employee name.');
+        if (!company) {
+          showModalError('Please select an External Repair Company.');
+          return;
+        }
+        if (!sentByName) {
+          showModalError('Please select or enter the Sent By technician.');
+          document.getElementById('send-by-search')?.focus();
+          return;
+        }
 
         etLabService.sendToExternalCompany({
           boardSerial: board.boardSerial,
@@ -2970,7 +3170,11 @@ function openActionModal(board, initialActionType = null) {
         const resendComp = document.getElementById('resend-company-select')?.value;
         const resendExpDate = document.getElementById('resend-expected-date')?.value;
 
-        if (!receivedByName) throw new Error('Please select or enter the Received By employee name.');
+        if (!receivedByName) {
+          showModalError('Please select or enter the Received By technician.');
+          document.getElementById('receive-by-search')?.focus();
+          return;
+        }
 
         etLabService.receiveFromExternalCompany({
           boardSerial: board.boardSerial,
@@ -2999,8 +3203,16 @@ function openActionModal(board, initialActionType = null) {
         const reassignDate = document.getElementById('reassign-date')?.value || todayStr;
         const remarks = document.getElementById('reassign-remarks')?.value.trim() || '';
 
-        if (!mSerial) throw new Error('Please enter or select target Machine Serial.');
-        if (!assignedByName) throw new Error('Please select or enter Employee Name in "Assigned By".');
+        if (!mSerial) {
+          showModalError('Please enter or select target Machine Serial Number.');
+          document.getElementById('reassign-machine-serial')?.focus();
+          return;
+        }
+        if (!assignedByName) {
+          showModalError('Please select or enter the Assigned By technician.');
+          document.getElementById('reassign-by-search')?.focus();
+          return;
+        }
 
         etLabService.reassignBoardToAnotherMachine({
           boardSerial: board.boardSerial,
@@ -3015,14 +3227,14 @@ function openActionModal(board, initialActionType = null) {
       }
 
       close();
-      notificationService.success(`Action "${actionType}" executed successfully!`);
+      notificationService.success(`Action "${ACTION_CONFIG[actionType]?.label || actionType}" executed successfully!`);
       const container = document.getElementById('main-view-container');
       if (container) {
         container.innerHTML = renderEtLabManagementView();
         initEtLabEvents();
       }
     } catch (err) {
-      alert('Action execution failed: ' + err.message);
+      showModalError('Action execution failed: ' + err.message);
     }
   });
 }
