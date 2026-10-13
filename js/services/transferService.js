@@ -436,7 +436,44 @@ class TransferService {
   }
 
   /**
+   * Checks if transfer between source line and destination line is an authorized
+   * intra-access-point line transfer. If user has access to multiple lines on the floor,
+   * and both source line and destination line fall within their authorized access points,
+   * the transfer executes automatically without requiring Floor Manager approval.
+   */
+  isAutoTransferAllowed(machine, destUnitId, destFloorId, destLineId, user = null) {
+    const u = user || authService.getCurrentUser();
+    if (!u || !machine) return false;
+
+    // Must be same floor
+    const isSameFloor = Boolean(
+      machine.floorId && 
+      destFloorId && 
+      String(machine.floorId) === String(destFloorId) &&
+      (!destUnitId || !machine.unitId || String(machine.unitId) === String(destUnitId))
+    );
+    if (!isSameFloor) return false;
+
+    // Must specify a destination line and must be a different line from source
+    if (!destLineId) return false;
+    if (machine.lineId && String(machine.lineId) === String(destLineId)) return false;
+
+    // Super Admin & Admin have direct transfer authority
+    if (authService.isSuperAdmin(u) || authService.isAdmin(u)) {
+      return true;
+    }
+
+    // Check if user has access to BOTH the source line and destination line
+    const canAccessSource = authService.isLocationAllowed(machine.unitId, machine.floorId, machine.lineId, u);
+    const canAccessDest = authService.isLocationAllowed(destUnitId || machine.unitId, destFloorId, destLineId, u);
+
+    return Boolean(canAccessSource && canAccessDest);
+  }
+
+  /**
    * Initiates a new Machine Transfer Request through the dynamic approval workflow engine.
+   * If both source and destination lines are within the user's authorized access points on the same floor,
+   * the transfer is completed automatically with NO Floor Manager approval required.
    * CONFIRMED WRITE: awaits Firestore HTTP 200. Throws CloudSaveError on failure.
    */
   async createTransferRequest({ machineId, destGroupId, destUnitId, destFloorId, destLineId, reason, remarks, documents = [] }) {
@@ -490,7 +527,254 @@ class TransferService {
     const destFloor = storage.getItem(TABLE_NAMES.FLOORS, destFloorId)?.name || 'Floor';
     const destLine = storage.getItem(TABLE_NAMES.LINES, destLineId)?.name || 'Line';
 
-    // 3. Match Configured Approval Workflow
+    // 2.1 Check if this is an authorized intra-access-point line transfer (Auto-Transfer)
+    // If user has access to multiple lines on the floor and both source and destination
+    // lines are within their authorized access points, transfer is executed directly without manager approval.
+    const isAutoTransfer = this.isAutoTransferAllowed(machine, destUnitId, destFloorId, destLineId, user);
+
+    if (isAutoTransfer) {
+      const nowIso = new Date().toISOString();
+      const dateStr = new Date().toLocaleDateString('en-GB');
+      const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const reqNumber = this.generateRequestNumber();
+      const requestId = `trq-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+
+      // Process attached documents
+      const processedDocs = (documents && documents.length > 0) ? documents.map((doc, idx) => ({
+        id: `doc-${Date.now()}-${idx}`,
+        name: doc.name || 'Transfer_Document.pdf',
+        type: doc.type || 'application/pdf',
+        size: doc.size || '120 KB',
+        dataUrl: doc.dataUrl || null,
+        uploadedBy: user.id,
+        uploadedByName: user.name,
+        uploadedAt: nowIso,
+        approvalLevel: 1
+      })) : [];
+
+      const autoLevels = [
+        {
+          level: 1,
+          title: 'Authorized Line Access Auto-Transfer',
+          approverType: 'AUTO',
+          approverRole: user.role || 'USER',
+          approverUserId: user.id || '',
+          description: `Direct transfer between authorized lines on ${sourceFloor} (${sourceLine} → ${destLine}). No floor manager approval required.`,
+          status: 'APPROVED',
+          approvedBy: user.id,
+          approvedByName: user.name,
+          approvedAt: nowIso,
+          remarks: 'Direct line transfer auto-approved within user authorized access points.'
+        }
+      ];
+
+      const completedRequest = {
+        id: requestId,
+        requestNumber: reqNumber,
+        machineId: machine.id,
+        serialNumber: machine.serialNumber,
+        machineSerial: machine.serialNumber,
+        machineName: resolvedEquip.machineName,
+        machineInfo: {
+          machineName: resolvedEquip.machineName,
+          brand: resolvedEquip.brand,
+          model: resolvedEquip.model,
+          serialNumber: machine.serialNumber,
+          category: resolvedEquip.category
+        },
+        sourceGroupId: machine.groupId,
+        sourceUnitId: machine.unitId,
+        sourceFloorId: machine.floorId,
+        sourceLineId: machine.lineId,
+        sourceLocation: { unit: sourceUnit, floor: sourceFloor, line: sourceLine },
+        sourcePath: sourcePath,
+        sourceFloorName: sourceFloor,
+        destGroupId: destGroupId || machine.groupId,
+        destUnitId: destUnitId,
+        destFloorId: destFloorId,
+        destLineId: destLineId,
+        destLocation: { unit: destUnit, floor: destFloor, line: destLine },
+        destPath: destPath,
+        targetFloorName: destFloor,
+        targetLocation: destPath,
+        reason: cleanReason,
+        remarks: remarks?.trim() || '',
+        workflowId: 'wf-auto-line-access',
+        workflowName: 'Direct Line Transfer (Authorized Access Scope)',
+        currentLevel: 1,
+        totalLevels: 1,
+        levels: autoLevels,
+        documents: processedDocs,
+        approvalHistory: [
+          {
+            level: 0,
+            action: 'REQUEST_SUBMITTED',
+            approverName: user.name,
+            approverRole: user.role,
+            date: dateStr,
+            time: timeStr,
+            timestamp: nowIso,
+            remarks: `Transfer initiated for ${machine.serialNumber} (${sourceLine} → ${destLine}).`
+          },
+          {
+            level: 1,
+            action: 'AUTO_TRANSFERRED',
+            approverName: user.name,
+            approverRole: user.role,
+            date: dateStr,
+            time: timeStr,
+            timestamp: nowIso,
+            remarks: `Direct line transfer executed automatically within user authorized line access (${sourceLine} → ${destLine}). No manager approval required.`
+          }
+        ],
+        status: TRANSFER_STATUSES.COMPLETED,
+        requestedBy: user.id,
+        requestedByName: user.name,
+        requestedByRole: user.role,
+        requestedAt: nowIso,
+        completedAt: nowIso,
+        completedBy: user.id,
+        completedByName: user.name,
+        approvedBy: 'Auto-Approved (User Line Access Scope)'
+      };
+
+      // Direct location update on machine in live inventory
+      const updatedMachine = {
+        ...machine,
+        groupId: destGroupId || machine.groupId,
+        unitId: destUnitId || machine.unitId,
+        floorId: destFloorId || machine.floorId,
+        lineId: destLineId,
+        status: 'ACTIVE',
+        remarks: `${machine.remarks || ''} [Transferred to ${destLine} on ${dateStr} by ${user.name} (Direct Auto-Transfer)]`.trim(),
+        updatedBy: user.id,
+        updatedAt: nowIso
+      };
+
+      // Permanent transfer ledger entry
+      const transferRecord = {
+        id: `trf-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        requestId: completedRequest.id,
+        requestNumber: reqNumber,
+        machineId: machine.id,
+        serialNumber: machine.serialNumber,
+        machineName: resolvedEquip.machineName,
+        sourceGroupId: machine.groupId,
+        sourceUnitId: machine.unitId,
+        sourceFloorId: machine.floorId,
+        sourceLineId: machine.lineId,
+        sourcePath: sourcePath,
+        destGroupId: destGroupId || machine.groupId,
+        destUnitId: destUnitId || machine.unitId,
+        destFloorId: destFloorId || machine.floorId,
+        destLineId: destLineId,
+        destPath: destPath,
+        reason: cleanReason,
+        transferredBy: user.id,
+        transferredByName: user.name,
+        transferredAt: nowIso,
+        completedAt: nowIso,
+        completedBy: user.id,
+        completedByName: user.name,
+        approvedBy: 'Auto-Approved (Authorized Line Access Scope)'
+      };
+
+      // Relocation history entry
+      const relHistRecord = {
+        id: `RH-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+        machineId: machine.id,
+        serialNumber: machine.serialNumber,
+        sessionId: `TRANSFER-${reqNumber}`,
+        date: nowIso,
+        previousUnitId: machine.unitId,
+        previousFloorId: machine.floorId,
+        previousLineId: machine.lineId,
+        newUnitId: destUnitId || machine.unitId,
+        newFloorId: destFloorId || machine.floorId,
+        newLineId: destLineId,
+        status: 'APPROVED',
+        approvedBy: user.name,
+        approvalType: 'SAME_FLOOR_AUTO_TRANSFER',
+        notes: `Direct line transfer executed within authorized access (${sourceLine} → ${destLine}). No manager approval required.`
+      };
+
+      // Persist in storage
+      storage.update(TABLE_NAMES.MACHINES, machine.id, updatedMachine);
+      storage.insert(TABLE_NAMES.TRANSFER_REQUESTS, completedRequest);
+      storage.insert(TABLE_NAMES.TRANSFERS, transferRecord);
+      storage.insert(TABLE_NAMES.RELOCATION_HISTORY, relHistRecord);
+
+      try {
+        localStorage.setItem('al_muslim_erp_' + TABLE_NAMES.MACHINES, JSON.stringify(storage.data[TABLE_NAMES.MACHINES]));
+        localStorage.setItem('al_muslim_erp_' + TABLE_NAMES.TRANSFER_REQUESTS, JSON.stringify(storage.data[TABLE_NAMES.TRANSFER_REQUESTS]));
+        localStorage.setItem('al_muslim_erp_' + TABLE_NAMES.TRANSFERS, JSON.stringify(storage.data[TABLE_NAMES.TRANSFERS]));
+        localStorage.setItem('al_muslim_erp_' + TABLE_NAMES.RELOCATION_HISTORY, JSON.stringify(storage.data[TABLE_NAMES.RELOCATION_HISTORY]));
+      } catch (_) {}
+
+      // Trigger cross-component updates immediately
+      window.dispatchEvent(new CustomEvent('erp:transfers-updated'));
+      window.dispatchEvent(new CustomEvent('erp:inventory-updated'));
+      if (window.state && typeof window.state.emit === 'function') {
+        window.state.emit('transfers:updated');
+        window.state.emit('inventory:updated');
+      }
+
+      // Sync tables in background
+      const tablesObj = {
+        [TABLE_NAMES.MACHINES]: storage.getTable(TABLE_NAMES.MACHINES),
+        [TABLE_NAMES.TRANSFER_REQUESTS]: storage.getTable(TABLE_NAMES.TRANSFER_REQUESTS),
+        [TABLE_NAMES.TRANSFERS]: storage.getTable(TABLE_NAMES.TRANSFERS),
+        [TABLE_NAMES.RELOCATION_HISTORY]: storage.getTable(TABLE_NAMES.RELOCATION_HISTORY)
+      };
+      syncManager.saveMultipleTables(tablesObj).catch(e => {
+        console.warn('[SyncManager] Auto-transfer cloud sync queued in background:', e.message);
+      });
+
+      // Machine history log
+      try {
+        if (typeof historyService.logAction === 'function') {
+          historyService.logAction(
+            machine.id,
+            'TRANSFER',
+            `Direct line transfer from Line ${sourceLine} to Line ${destLine} executed automatically within authorized access scope by ${user.name}. No manager approval required.`,
+            {
+              previousLine: sourceLine,
+              newLine: destLine,
+              transferredBy: user.name,
+              transferType: 'AUTO_LINE_TRANSFER'
+            }
+          );
+        }
+      } catch (_) {}
+
+      // Informative notification (NO approval required)
+      notificationService.notify({
+        title: 'ℹ️ Line Transfer Executed (Authorized Access)',
+        message: `Machine #${machine.serialNumber} was moved from Line ${sourceLine} to Line ${destLine} on ${sourceFloor} by ${user.name} under authorized line access.`,
+        type: 'INFO',
+        module: 'transfers',
+        action: 'VIEW',
+        entityType: 'TRANSFER',
+        entityId: completedRequest.id,
+        targetUrl: '#transfers',
+        locationScope: {
+          floorId: machine.floorId,
+          unitId: machine.unitId,
+          lineId: destLineId
+        }
+      });
+
+      auditService.log(
+        'MACHINE_LINE_AUTO_TRANSFERRED',
+        'TRANSFER',
+        reqNumber,
+        `Machine ${machine.serialNumber} directly transferred from Line ${sourceLine} to Line ${destLine} by ${user.name} (authorized line access). No manager approval required.`
+      );
+
+      return completedRequest;
+    }
+
+    // 3. Match Configured Approval Workflow (For non-auto transfers)
     let workflow;
     try {
       workflow = workflowService.matchWorkflow({

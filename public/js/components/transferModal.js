@@ -274,6 +274,9 @@ export function renderTransferModal() {
               </div>
             </div>
 
+            <!-- Auto-Transfer Status Badge (Visible when both lines are in authorized user access scope) -->
+            <div id="transfer-auto-badge-container" style="display: none; margin-bottom: 16px;"></div>
+
             <!-- Location Quick Search Bar -->
             <div style="background: #090e1a; border: 1.5px solid #0284c7; border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; position: relative;">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
@@ -385,7 +388,7 @@ export function renderTransferModal() {
         <!-- Modal Footer -->
         <div class="modal-footer" style="background: #0f172a; border-top: 1.5px solid #334155; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
           <div style="font-size: 13px; color: #f1f5f9;">
-            Requester: <strong style="color: #38bdf8; font-weight: 800;">${authService.getCurrentUser()?.name || 'User'}</strong> &bull; Status will be: <strong style="color: #fde047; font-weight: 800;">${(machine && !authService.canOperateMachine(machine)) ? `Pending ${currentFloorName} Release Approval` : 'Pending Admin Approval'}</strong>
+            Requester: <strong style="color: #38bdf8; font-weight: 800;">${authService.getCurrentUser()?.name || 'User'}</strong> &bull; Status will be: <strong id="transfer-status-preview" style="color: #fde047; font-weight: 800;">${(machine && !authService.canOperateMachine(machine)) ? `Pending ${currentFloorName} Release Approval` : 'Pending Admin Approval'}</strong>
           </div>
           <div style="display: flex; gap: 12px;">
             <button type="button" id="btn-cancel-transfer" class="btn btn-secondary" style="font-weight: 700; height: 40px; padding: 0 18px; border-radius: 6px;">Cancel</button>
@@ -693,12 +696,12 @@ export function initTransferModalEvents() {
   const locSuggestionsBox = document.getElementById('transfer-location-suggestions');
 
   const updateTargetPathPreview = () => {
-    if (targetPathPreview) {
-      const gVal = groupSelect?.value;
-      const uVal = unitSelect?.value;
-      const fVal = floorSelect?.value;
-      const lVal = lineSelect?.value;
+    const gVal = groupSelect?.value;
+    const uVal = unitSelect?.value;
+    const fVal = floorSelect?.value;
+    const lVal = lineSelect?.value;
 
+    if (targetPathPreview) {
       if (!gVal || !uVal || !fVal) {
         targetPathPreview.style.color = '#94a3b8';
         targetPathPreview.innerHTML = '<span style="font-style: italic; font-weight: 500;">(Select Destination Below)</span>';
@@ -715,6 +718,63 @@ export function initTransferModalEvents() {
           targetPathPreview.style.color = '#7dd3fc';
           targetPathPreview.innerHTML = `${gName} &gt; ${uName} &gt; ${fName} &gt; <span style="color: #fde047; font-weight: 700; font-style: italic;">[Select Line]</span>`;
         }
+      }
+    }
+
+    // Auto-Transfer Evaluation:
+    // If user has access to multiple lines on the floor and both source and destination lines
+    // fall within their authorized access points, machine transfer executes directly without Floor Manager approval.
+    const autoBadgeContainer = document.getElementById('transfer-auto-badge-container');
+    const statusPreview = document.getElementById('transfer-status-preview');
+    const submitBtn = document.getElementById('btn-submit-transfer-request');
+    const activeMachineId = state.get('activeMachineId');
+    const activeMachine = activeMachineId ? storage.getItem(TABLE_NAMES.MACHINES, activeMachineId) : null;
+    const activeExistingTransfer = activeMachine ? transferService.getActiveTransferForMachine(activeMachine.id) : null;
+
+    if (activeMachine && fVal && lVal && transferService.isAutoTransferAllowed(activeMachine, uVal, fVal, lVal)) {
+      if (autoBadgeContainer) {
+        autoBadgeContainer.style.display = 'block';
+        autoBadgeContainer.innerHTML = `
+          <div style="background: rgba(16, 185, 129, 0.15); border: 1.5px solid #10b981; border-radius: 8px; padding: 12px 16px; display: flex; align-items: center; gap: 12px; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.2);">
+            <span style="font-size: 22px;">⚡</span>
+            <div style="flex: 1;">
+              <div style="font-size: 13.5px; font-weight: 800; color: #34d399; letter-spacing: 0.3px;">
+                Direct Auto-Transfer (Authorized Line Access Scope)
+              </div>
+              <div style="font-size: 12px; color: #a7f3d0; margin-top: 3px; line-height: 1.4;">
+                Both source line and destination line are in your authorized access points on this floor. This transfer will execute <strong>automatically</strong> with no Floor Manager approval required.
+              </div>
+            </div>
+            <span class="badge" style="background: #059669; color: #ffffff; font-size: 11px; font-weight: 800; padding: 4px 10px; border-radius: 6px; white-space: nowrap;">
+              ✓ Auto-Approved
+            </span>
+          </div>
+        `;
+      }
+      if (statusPreview) {
+        statusPreview.innerHTML = '<span style="color: #34d399; font-weight: 800;">✓ Auto-Approved (Direct Line Transfer)</span>';
+      }
+      if (submitBtn && !activeExistingTransfer) {
+        submitBtn.innerHTML = '⚡ Execute Direct Transfer';
+        submitBtn.style.background = 'linear-gradient(135deg, #059669, #047857)';
+        submitBtn.style.boxShadow = '0 4px 15px rgba(16, 185, 129, 0.4)';
+      }
+    } else {
+      if (autoBadgeContainer) {
+        autoBadgeContainer.style.display = 'none';
+        autoBadgeContainer.innerHTML = '';
+      }
+      if (statusPreview) {
+        const currentFloorName = (activeMachine ? storage.getItem(TABLE_NAMES.FLOORS, activeMachine.floorId)?.name : null) || 'Current Floor';
+        statusPreview.innerHTML = (activeMachine && !authService.canOperateMachine(activeMachine))
+          ? `Pending ${currentFloorName} Release Approval`
+          : 'Pending Admin Approval';
+        statusPreview.style.color = '#fde047';
+      }
+      if (submitBtn && !activeExistingTransfer) {
+        submitBtn.innerHTML = '🚀 Submit Transfer Request';
+        submitBtn.style.background = 'linear-gradient(135deg, #0284c7, #0369a1)';
+        submitBtn.style.boxShadow = '0 4px 15px rgba(2, 132, 199, 0.4)';
       }
     }
   };
@@ -1249,11 +1309,17 @@ export function initTransferModalEvents() {
         });
 
         // 3. Emit updates & success feedback instantly
-        const isCrossFloorReq = targetMachine && !authService.canOperateMachine(targetMachine);
-        const sourceFlrName = storage.getItem(TABLE_NAMES.FLOORS, targetMachine?.floorId)?.name || 'Holding Floor';
-        notificationService.success(isCrossFloorReq
-          ? `Transfer Request #${createdRequest.requestNumber} submitted! Routed to ${sourceFlrName} for release approval.`
-          : `Transfer Request #${createdRequest.requestNumber} submitted successfully`);
+        if (createdRequest?.status === 'COMPLETED') {
+          const destLineObj = storage.getItem(TABLE_NAMES.LINES, destLineId);
+          const destLineName = destLineObj?.name || 'Target Line';
+          notificationService.success(`⚡ Machine [${targetMachine?.serialNumber || 'Item'}] transferred directly to Line ${destLineName}! (Authorized line access — No manager approval required)`);
+        } else {
+          const isCrossFloorReq = targetMachine && !authService.canOperateMachine(targetMachine);
+          const sourceFlrName = storage.getItem(TABLE_NAMES.FLOORS, targetMachine?.floorId)?.name || 'Holding Floor';
+          notificationService.success(isCrossFloorReq
+            ? `Transfer Request #${createdRequest.requestNumber} submitted! Routed to ${sourceFlrName} for release approval.`
+            : `Transfer Request #${createdRequest.requestNumber} submitted successfully`);
+        }
         state.emit('inventory:updated');
         state.emit('transfers:updated');
         window.dispatchEvent(new CustomEvent('erp:transfers-updated'));

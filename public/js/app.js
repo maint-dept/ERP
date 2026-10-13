@@ -15,7 +15,7 @@ import { renderDashboard, initDashboardEvents } from './components/dashboard.js'
 import { renderInventoryTable, initInventoryTableEvents, syncInventorySelectionDOM } from './components/inventoryTable.js?v=4.26.17';
 import { renderMachineModal, initMachineModalEvents } from './components/machineModal.js';
 import { renderMachineDetails, initMachineDetailsEvents } from './components/machineDetails.js';
-import { renderTransferModal, initTransferModalEvents } from './components/transferModal.js?v=4.26.17';
+import { renderTransferModal, initTransferModalEvents } from './components/transferModal.js?v=4.26.19';
 import { renderTransferDetailsModal, initTransferDetailsModalEvents } from './components/transferDetailsModal.js';
 import { renderEditTransferModal, initEditTransferModalEvents } from './components/editTransferModal.js?v=4.26.17';
 import { renderTransfersView, initTransfersViewEvents } from './components/transfersView.js';
