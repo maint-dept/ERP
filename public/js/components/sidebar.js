@@ -42,7 +42,7 @@ export function renderSidebar() {
   const activeManpowerTab = state.get('manpowerActiveTab') || 'active';
 
   // Auto expand parent group of current view
-  if (['inventory', 'transfers', 'qr-codes', 'relocate', 'preventive-maintenance', 'needle-operations', 'parts-trace', 'machine-history'].includes(currentView)) {
+  if (['inventory', 'transfers', 'relocate', 'qr-codes', 'preventive-maintenance', 'needle-operations', 'parts-trace', 'machine-history'].includes(currentView)) {
     expandedGroups.add('group-machines');
   } else if (currentView === 'reports') {
     expandedGroups.add('group-reports');
@@ -134,8 +134,8 @@ export function renderSidebar() {
   const machineItems = [
     { id: 'sub-mach-inventory', targetView: 'inventory', label: 'Machine Inventory', icon: '📦', moduleKey: 'machines' },
     { id: 'sub-mach-transfers', targetView: 'transfers', label: 'Machine Transfers', icon: '🔄', moduleKey: 'transfers' },
-    { id: 'sub-mach-qr-codes', targetView: 'qr-codes', label: 'QR Codes & Labels', icon: '🏷️', moduleKey: 'qr_codes' },
     { id: 'sub-mach-relocate', targetView: 'relocate', label: 'Relocate & Verify', icon: '📍', moduleKey: 'relocate' },
+    { id: 'sub-mach-qr-codes', targetView: 'qr-codes', label: 'QR Codes & Labels', icon: '🏷️', moduleKey: 'qr_codes' },
     { id: 'sub-mach-preventive', targetView: 'preventive-maintenance', label: 'Preventive Maintenance', icon: '🛡️', moduleKey: 'preventive_maintenance' },
     { id: 'sub-mach-needle-ops', targetView: 'needle-operations', label: 'Needle Flow', icon: '🪡', moduleKey: 'machines' },
     { id: 'sub-mach-parts-trace', targetView: 'parts-trace', label: 'Parts Trace', icon: '🔩', moduleKey: 'parts_trace' },
