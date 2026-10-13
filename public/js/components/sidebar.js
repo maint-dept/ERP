@@ -42,7 +42,7 @@ export function renderSidebar() {
   const activeManpowerTab = state.get('manpowerActiveTab') || 'active';
 
   // Auto expand parent group of current view
-  if (['inventory', 'machine-history', 'transfers', 'preventive-maintenance', 'relocate', 'qr-codes', 'parts-trace'].includes(currentView)) {
+  if (['inventory', 'transfers', 'qr-codes', 'relocate', 'preventive-maintenance', 'needle-operations', 'parts-trace', 'machine-history'].includes(currentView)) {
     expandedGroups.add('group-machines');
   } else if (currentView === 'reports') {
     expandedGroups.add('group-reports');
@@ -133,13 +133,13 @@ export function renderSidebar() {
   // Machine Operations Group (Each item individually permission-controlled)
   const machineItems = [
     { id: 'sub-mach-inventory', targetView: 'inventory', label: 'Machine Inventory', icon: '📦', moduleKey: 'machines' },
-    { id: 'sub-mach-relocate', targetView: 'relocate', label: 'Relocate & Verify', icon: '📍', moduleKey: 'relocate' },
-    { id: 'sub-mach-needle-ops', targetView: 'needle-operations', label: 'Needle Flow', icon: '🪡', moduleKey: 'machines' },
-    { id: 'sub-mach-qr-codes', targetView: 'qr-codes', label: 'QR Codes & Labels', icon: '🏷️', moduleKey: 'qr_codes' },
     { id: 'sub-mach-transfers', targetView: 'transfers', label: 'Machine Transfers', icon: '🔄', moduleKey: 'transfers' },
+    { id: 'sub-mach-qr-codes', targetView: 'qr-codes', label: 'QR Codes & Labels', icon: '🏷️', moduleKey: 'qr_codes' },
+    { id: 'sub-mach-relocate', targetView: 'relocate', label: 'Relocate & Verify', icon: '📍', moduleKey: 'relocate' },
+    { id: 'sub-mach-preventive', targetView: 'preventive-maintenance', label: 'Preventive Maintenance', icon: '🛡️', moduleKey: 'preventive_maintenance' },
+    { id: 'sub-mach-needle-ops', targetView: 'needle-operations', label: 'Needle Flow', icon: '🪡', moduleKey: 'machines' },
     { id: 'sub-mach-parts-trace', targetView: 'parts-trace', label: 'Parts Trace', icon: '🔩', moduleKey: 'parts_trace' },
-    { id: 'sub-mach-history', targetView: 'machine-history', label: 'Machine Lifetime (Passport)', icon: '📜', moduleKey: 'machine_history' },
-    { id: 'sub-mach-preventive', targetView: 'preventive-maintenance', label: 'Preventive Maintenance', icon: '🛡️', moduleKey: 'preventive_maintenance' }
+    { id: 'sub-mach-history', targetView: 'machine-history', label: 'Machine Lifetime (Passport)', icon: '📜', moduleKey: 'machine_history' }
   ].filter(it => authService.isModuleAllowed(it.moduleKey));
 
   // 2. SPECIALIZED TECHNICAL DEPARTMENTS (Separate Standalone Features with Discrete Access)
