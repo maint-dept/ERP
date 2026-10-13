@@ -58,11 +58,8 @@ export function renderTransferModal() {
     if (!selectedDest.groupId && selectedDest.unitId) {
       selectedDest.groupId = storage.getItem(TABLE_NAMES.UNITS, selectedDest.unitId)?.groupId || 'grp-1';
     }
-    if (userScope.lineIds?.length > 0) selectedDest.lineId = userScope.lineIds[0];
-    if (!selectedDest.lineId && selectedDest.floorId) {
-      const availLines = masterDataService.getLines(selectedDest.floorId, null, null, false, true);
-      if (availLines.length > 0) selectedDest.lineId = availLines[0].id;
-    }
+    // Destination Line must ALWAYS remain blank (unselected) so Maintenance Managers and users select it explicitly
+    selectedDest.lineId = '';
   }
 
   // Ensure full hierarchy resolves if floor is known
@@ -490,7 +487,7 @@ export function initTransferModalEvents() {
         selectedDest.floorId = scope.floorIds[0];
         if (scope.unitIds?.length > 0) selectedDest.unitId = scope.unitIds[0];
         if (scope.groupIds?.length > 0) selectedDest.groupId = scope.groupIds[0];
-        if (scope.lineIds?.length > 0) selectedDest.lineId = scope.lineIds[0];
+        selectedDest.lineId = ''; // Line must remain blank so user explicitly selects the line
       }
     } else {
       state.set('activeMachineId', null);
@@ -698,17 +695,22 @@ export function initTransferModalEvents() {
       const fVal = floorSelect?.value;
       const lVal = lineSelect?.value;
 
-      if (!gVal || !uVal || !fVal || !lVal) {
+      if (!gVal || !uVal || !fVal) {
         targetPathPreview.style.color = '#94a3b8';
         targetPathPreview.innerHTML = '<span style="font-style: italic; font-weight: 500;">(Select Destination Below)</span>';
       } else {
         const gName = groupSelect.options[groupSelect.selectedIndex]?.text || '';
         const uName = unitSelect.options[unitSelect.selectedIndex]?.text || '';
         const fName = floorSelect.options[floorSelect.selectedIndex]?.text || '';
-        const lName = lineSelect.options[lineSelect.selectedIndex]?.text || '';
-        const path = [gName, uName, fName, lName].filter(Boolean).join(' > ');
-        targetPathPreview.style.color = '#34d399';
-        targetPathPreview.innerText = path || 'Select Destination Below';
+        const lName = (lVal && lineSelect.selectedIndex > 0) ? (lineSelect.options[lineSelect.selectedIndex]?.text || '') : '';
+        if (lName) {
+          const path = [gName, uName, fName, lName].join(' > ');
+          targetPathPreview.style.color = '#34d399';
+          targetPathPreview.innerText = path;
+        } else {
+          targetPathPreview.style.color = '#7dd3fc';
+          targetPathPreview.innerHTML = `${gName} &gt; ${uName} &gt; ${fName} &gt; <span style="color: #fde047; font-weight: 700; font-style: italic;">[Select Line]</span>`;
+        }
       }
     }
   };
@@ -759,12 +761,9 @@ export function initTransferModalEvents() {
 
     // 4. Line
     const lines = masterDataService.getLines(floorId, null, null, false, true);
-    let targetLineId = lineId;
-    // If Floor was chosen and no specific line passed, auto-select first line so all 4 boxes are populated
-    if (!targetLineId && lines.length > 0) {
-      targetLineId = lines[0].id;
-      selectedDest.lineId = targetLineId;
-    }
+    // Never auto-select line: keep blank unless lineId was explicitly passed
+    let targetLineId = lineId || '';
+    selectedDest.lineId = targetLineId;
 
     if (lineSelect) {
       lineSelect.disabled = false;
@@ -774,6 +773,8 @@ export function initTransferModalEvents() {
       `;
       if (targetLineId) {
         lineSelect.value = targetLineId;
+      } else {
+        lineSelect.value = '';
       }
     }
 

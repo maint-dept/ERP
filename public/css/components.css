@@ -1145,7 +1145,19 @@ td.td-actions-active {
 
 .actions-dropdown-container {
   position: relative;
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  max-width: 100%;
+}
+
+.col-actions-cell,
+.excel-grid-table tbody td.col-actions-cell,
+.excel-grid-table thead th.col-actions-header {
+  overflow: visible !important;
+  text-overflow: clip !important;
+  padding: 4px 6px !important;
+  text-align: center !important;
 }
 
 .btn-actions-trigger {
@@ -1153,15 +1165,18 @@ td.td-actions-active {
   border: 1px solid var(--border-color);
   color: var(--text-primary);
   border-radius: var(--radius-sm);
-  padding: 4px 10px;
-  font-size: 12px;
+  padding: 4px 8px;
+  font-size: 11.5px;
   font-weight: 700;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 4px;
   transition: all 0.15s;
   white-space: nowrap;
+  box-sizing: border-box;
+  max-width: 100%;
 }
 
 .btn-actions-trigger:hover,

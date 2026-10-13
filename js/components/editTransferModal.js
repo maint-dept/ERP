@@ -448,8 +448,7 @@ export function initEditTransferModalEvents() {
     }
 
     const lines = masterDataService.getLines(floorId, null, null, false, true);
-    let targetLineId = lineId;
-    if (!targetLineId && lines.length > 0) targetLineId = lines[0].id;
+    let targetLineId = lineId || '';
     editSelectedDest.lineId = targetLineId;
 
     if (lineSelect) {
@@ -458,7 +457,11 @@ export function initEditTransferModalEvents() {
         <option value="" disabled ${!targetLineId ? 'selected' : ''}>-- Select Production Line --</option>
         ${lines.map(l => `<option value="${l.id}" ${l.id === targetLineId ? 'selected' : ''}>${l.name}</option>`).join('')}
       `;
-      if (targetLineId) lineSelect.value = targetLineId;
+      if (targetLineId) {
+        lineSelect.value = targetLineId;
+      } else {
+        lineSelect.value = '';
+      }
     }
 
     updatePreview();

@@ -1,2 +1,2 @@
-﻿# CDN cache purge trigger v4.22.0
-Force re-deploy: 2026-09-30T15:16:02Z
+# CDN cache purge trigger v4.22.7
+Force re-deploy: 2026-10-13T08:44:00Z

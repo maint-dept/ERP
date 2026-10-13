@@ -513,6 +513,15 @@ tbody tr.selected td.col-frozen-cell {
   text-overflow: ellipsis;
 }
 
+.excel-grid-table tbody td.col-actions-cell,
+.excel-grid-table thead th.col-actions-header,
+td.col-actions-cell {
+  overflow: visible !important;
+  text-overflow: clip !important;
+  padding: 4px 6px !important;
+  text-align: center !important;
+}
+
 .excel-grid-table tbody td.col-wrap-text,
 .excel-grid-table thead th.col-wrap-text {
   white-space: normal !important;

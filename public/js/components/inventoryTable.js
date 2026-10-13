@@ -438,13 +438,13 @@ export function renderInventoryTable() {
   allColDefs.push({
     key: 'actions',
     label: 'Actions',
-    width: 95,
-    renderTh: (thStyle, thClass) => `<th class="${thClass}" style="width: 95px; min-width: 95px; max-width: 95px; text-align: center; ${thStyle}">Actions</th>`,
+    width: 115,
+    renderTh: (thStyle, thClass) => `<th class="col-actions-header ${thClass}" style="width: 115px; min-width: 115px; max-width: 115px; text-align: center; ${thStyle}">Actions</th>`,
     renderTd: (m, meta, tdStyle, tdClass) => {
       const isViewOnly = authService.isMachineViewOnlyForUser(m, null, showCrossFloorIdle);
       if (isViewOnly) {
         return `
-          <td class="${tdClass}" style="width: 105px; min-width: 105px; max-width: 105px; text-align: center; ${tdStyle}">
+          <td class="col-actions-cell ${tdClass}" style="width: 115px; min-width: 115px; max-width: 115px; text-align: center; ${tdStyle}">
             <div class="actions-dropdown-container">
               <button type="button" class="btn-actions-trigger btn-trigger-row-actions" data-id="${m.id}" title="View options or request machine transfer" style="border-color: rgba(56, 189, 248, 0.45); color: #38bdf8; background: rgba(56, 189, 248, 0.12); font-weight: 700; font-size: 11.5px;">
                 👁️ Options ▾
@@ -475,7 +475,7 @@ export function renderInventoryTable() {
         `;
       }
       return `
-        <td class="${tdClass}" style="width: 95px; min-width: 95px; max-width: 95px; text-align: center; ${tdStyle}">
+        <td class="col-actions-cell ${tdClass}" style="width: 115px; min-width: 115px; max-width: 115px; text-align: center; ${tdStyle}">
           <div class="actions-dropdown-container">
             <button type="button" class="btn-actions-trigger btn-trigger-row-actions" data-id="${m.id}" title="Open Action Menu">
               ⋮ Actions ▾
@@ -1368,7 +1368,8 @@ export function initInventoryTableEvents() {
     });
     document.querySelectorAll('.btn-actions-trigger.active').forEach(b => {
       b.classList.remove('active');
-      b.innerHTML = '⋮ Actions ▾';
+      const isOptionsBtn = b.title && b.title.includes('options');
+      b.innerHTML = isOptionsBtn ? '👁️ Options ▾' : '⋮ Actions ▾';
     });
     document.querySelectorAll('tr.row-actions-active').forEach(r => r.classList.remove('row-actions-active'));
     document.querySelectorAll('td.td-actions-active').forEach(d => d.classList.remove('td-actions-active'));
@@ -1433,7 +1434,10 @@ export function initInventoryTableEvents() {
     menu.style.width = `${menuWidth}px`;
     menu.style.zIndex = '999999';
 
-    activeBtn.innerHTML = isDropup ? '⋮ Actions ▴' : '⋮ Actions ▾';
+    const isOptionsBtn = activeBtn.title && activeBtn.title.includes('options');
+    activeBtn.innerHTML = isOptionsBtn 
+      ? (isDropup ? '👁️ Options ▴' : '👁️ Options ▾')
+      : (isDropup ? '⋮ Actions ▴' : '⋮ Actions ▾');
   };
 
   window.__closeAllActionMenus = closeAllActionMenus;
@@ -1638,7 +1642,10 @@ export function initInventoryTableEvents() {
         menu.style.width = `${menuWidth}px`;
         menu.style.zIndex = '999999';
 
-        btn.innerHTML = isDropup ? '⋮ Actions ▴' : '⋮ Actions ▾';
+        const isOptionsBtn = btn.title && btn.title.includes('options');
+        btn.innerHTML = isOptionsBtn 
+          ? (isDropup ? '👁️ Options ▴' : '👁️ Options ▾')
+          : (isDropup ? '⋮ Actions ▴' : '⋮ Actions ▾');
       }
     });
   });
