@@ -405,17 +405,19 @@ export function renderQrCodeView() {
         font-weight: 700;
         color: #1e293b;
         font-size: 10.5px;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
+        white-space: normal;
+        word-break: break-word;
+        overflow-wrap: break-word;
+        line-height: 1.25;
       }
 
       .qr-mach-spec {
         font-size: 10px;
         color: #475569;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
+        white-space: normal;
+        word-break: break-word;
+        overflow-wrap: break-word;
+        line-height: 1.2;
       }
 
       .qr-mach-location {
@@ -776,7 +778,7 @@ function renderCardsListHtml(pageMachines) {
             <div class="qr-sticker-info" style="font-size: ${cfg.fontSize === 'large' ? '12.5px' : (cfg.fontSize === 'small' ? '10px' : '11px')};">
               ${cfg.showPermanentId ? `<span class="qr-mid-badge">${d.permanentMachineId}</span>` : ''}
               ${cfg.showSerialNumber ? `<span class="qr-sn-text">SN: ${d.serialNumber}</span>` : ''}
-              ${cfg.showMachineName ? `<span class="qr-mach-name" title="${d.machineName}">${d.machineName}</span>` : ''}
+              ${cfg.showMachineName ? `<span class="qr-mach-name" title="${d.machineName}" style="white-space: normal; word-break: break-word; overflow-wrap: break-word; line-height: 1.25;">${d.machineName}</span>` : ''}
               ${cfg.showBrandModel ? `<span class="qr-mach-spec">${d.brand} &bull; ${d.model}</span>` : ''}
               ${cfg.showNeedleQuantity && (m.needleQuantity || m.customValues?.needle_quantity) ? `
                 <span style="font-size: 10px; color: #38bdf8; font-weight: 700;">Needles: ${m.needleQuantity || m.customValues?.needle_quantity}</span>
@@ -1146,7 +1148,7 @@ function renderDesignerPreviewCard(cfg) {
           <div class="qr-sticker-info" style="color: #0f172a; font-size: ${cfg.fontSize === 'large' ? '12.5px' : (cfg.fontSize === 'small' ? '10px' : '11px')};">
             ${cfg.showPermanentId ? `<span style="font-family: monospace; font-size: 13px; font-weight: 900; color: #0284c7;">MID-000026</span>` : ''}
             ${cfg.showSerialNumber ? `<span style="font-size: 12px; font-weight: 800; color: #0f172a;">SN: 5369</span>` : ''}
-            ${cfg.showMachineName ? `<span style="font-weight: 700; color: #1e293b;">Plane Machine</span>` : ''}
+            ${cfg.showMachineName ? `<span style="font-weight: 700; color: #1e293b; white-space: normal; word-break: break-word; overflow-wrap: break-word; line-height: 1.25;">Plane Machine</span>` : ''}
             ${cfg.showBrandModel ? `<span style="color: #475569;">Juki &bull; DDL-900BB</span>` : ''}
             ${cfg.showNeedleQuantity ? `<span style="color: #0369a1; font-weight: 700; font-size: 10px;">Needles: 2</span>` : ''}
             ${cfg.showLocation ? `<div style="font-size: 10px; color: #64748b; border-top: 1px solid #e2e8f0; padding-top: 2px; margin-top: 2px;">📍 AKM Knit Wear &bull; Tista &bull; TS-G</div>` : ''}
@@ -1819,7 +1821,7 @@ function printSingleLabel(machineId) {
             <div class="info">
               ${cfg.showPermanentId ? `<div class="mid">${d.permanentMachineId}</div>` : ''}
               ${cfg.showSerialNumber ? `<div class="sn">SN: ${d.serialNumber}</div>` : ''}
-              ${cfg.showMachineName ? `<div style="font-weight: 700;">${d.machineName}</div>` : ''}
+              ${cfg.showMachineName ? `<div style="font-weight: 700; white-space: normal; word-break: break-word; overflow-wrap: break-word; line-height: 1.25;">${d.machineName}</div>` : ''}
               ${cfg.showBrandModel ? `<div style="color: #444;">${d.brand} / ${d.model}</div>` : ''}
               ${cfg.showNeedleQuantity && machine.needleQuantity ? `<div style="font-weight: 700; color: #0284c7;">Needles: ${machine.needleQuantity}</div>` : ''}
               ${cfg.showLocation ? `<div class="loc">📍 ${d.unitName} &bull; ${d.floorName} &bull; ${d.lineName}</div>` : ''}
@@ -1952,9 +1954,10 @@ function printA4LabelSheet(machines) {
         }
         .meta-name {
           font-weight: 700;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
+          white-space: normal;
+          word-break: break-word;
+          overflow-wrap: break-word;
+          line-height: 1.25;
         }
         .meta-loc {
           font-size: 6.8pt;

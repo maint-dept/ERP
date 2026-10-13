@@ -201,6 +201,14 @@
     display: none !important;
   }
 
+  .qr-sticker-sheet-print .qr-sticker-card .qr-mach-name,
+  .qr-sticker-sheet-print .qr-sticker-card .qr-mach-spec,
+  .qr-sticker-sheet-print .qr-sticker-card .qr-mach-location {
+    white-space: normal !important;
+    word-break: break-word !important;
+    overflow-wrap: break-word !important;
+  }
+
   /* Table Footer (Grand Total) Page Break Fix */
   tfoot {
     display: table-row-group !important;
