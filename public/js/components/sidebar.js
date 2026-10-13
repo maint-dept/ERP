@@ -340,7 +340,7 @@ export function renderSidebar() {
               ? `<span class="user-role-badge admin">👑 Super Admin</span>`
               : isAdmin 
                 ? `<span class="user-role-badge admin">🛡️ Admin</span>`
-                : `<span class="user-role-badge operator">👤 Operator</span>`
+                : `<span class="user-role-badge operator">👤 ${user?.presetName || (user?.role === 'USER' ? 'Maintenance User' : (user?.role || 'User'))}</span>`
             }
           </div>
         </div>

@@ -160,20 +160,10 @@ class MachineService {
       allMachines = allMachines.filter(m => m.unitId === params.unitId);
     }
     if (params.floorId) {
-      const u = authService.getCurrentUser();
-      const isOwnFloor = u?.assignedScope?.floorIds?.includes(params.floorId);
-      // In Cross-Floor Idle view, own floor is excluded
-      if (!params.includeCrossFloorIdle || !isOwnFloor) {
-        allMachines = allMachines.filter(m => m.floorId === params.floorId);
-      }
+      allMachines = allMachines.filter(m => m.floorId === params.floorId);
     }
     if (params.lineId) {
-      const u = authService.getCurrentUser();
-      const isOwnLine = u?.assignedScope?.lineIds?.includes(params.lineId);
-      // In Cross-Floor Idle view, own line is excluded
-      if (!params.includeCrossFloorIdle || !isOwnLine) {
-        allMachines = allMachines.filter(m => m.lineId === params.lineId);
-      }
+      allMachines = allMachines.filter(m => m.lineId === params.lineId);
     }
 
     // 3. Machine Technical Hierarchy Filters

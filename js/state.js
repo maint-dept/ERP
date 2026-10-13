@@ -84,6 +84,7 @@ class GlobalState {
   getDefaultScopeFilters() {
     let defFloor = '';
     let defUnit = '';
+    let defLine = '';
     try {
       if (typeof authService !== 'undefined') {
         const u = authService.getCurrentUser();
@@ -94,10 +95,13 @@ class GlobalState {
           if (Array.isArray(u.assignedScope.unitIds) && u.assignedScope.unitIds.length === 1) {
             defUnit = u.assignedScope.unitIds[0];
           }
+          if (Array.isArray(u.assignedScope.lineIds) && u.assignedScope.lineIds.length === 1) {
+            defLine = u.assignedScope.lineIds[0];
+          }
         }
       }
     } catch (_) {}
-    return { floorId: defFloor, unitId: defUnit };
+    return { floorId: defFloor, unitId: defUnit, lineId: defLine };
   }
 
   get(key) {
@@ -125,7 +129,7 @@ class GlobalState {
       groupId: '',
       unitId: scopeDefaults.unitId || '',
       floorId: scopeDefaults.floorId || '',
-      lineId: '',
+      lineId: scopeDefaults.lineId || '',
       machineNameId: '',
       brandId: '',
       modelId: '',

@@ -2198,12 +2198,12 @@ class AuthService {
   /**
    * Check if a machine can be viewed by the user:
    * 1. If includeCrossFloorIdle is true (Cross-Floor Idle View ON):
-   *    - User's own assigned floor data is strictly EXCLUDED.
-   *    - ONLY IDLE machines from OTHER floors are shown.
-   *    - Running machines on other floors are strictly hidden.
-   * 2. If includeCrossFloorIdle is false (Normal View):
-   *    - ONLY machines within the user's assigned location scope are shown (running + idle + repairable).
-   *    - Other floors are strictly hidden.
+   *    - Idle/Standby machines across ALL factory floors are viewable (user's own floor + all other floors).
+   *    - Running machines outside user's assigned scope remain hidden.
+   * 2. If includeCrossFloorIdle is false (Normal Default View):
+   *    - "je jtuk access pabe oi tuk age default asbe"
+   *    - ONLY machines strictly within the user's assigned location scope are shown (unit, floor, line).
+   *    - Other floors and other lines are strictly excluded from default view.
    */
   canViewMachine(machine, user = null, includeCrossFloorIdle = false) {
     if (!machine) return false;
@@ -2219,25 +2219,23 @@ class AuthService {
     }
 
     const scope = u.assignedScope;
-    const isOwnFloor = Boolean(
-      (scope?.floorIds?.length > 0 && scope.floorIds.includes(machine.floorId)) ||
-      (scope?.lineIds?.length > 0 && scope.lineIds.includes(machine.lineId)) ||
-      this.isLocationAllowed(machine.unitId, machine.floorId, machine.lineId, u)
-    );
+    if (!scope || scope.allGroups) {
+      if (includeCrossFloorIdle) {
+        return this.isIdleMachine(machine);
+      }
+      return true;
+    }
 
     // When Cross-Floor Idle View is ACTIVE:
-    // 1. Strictly EXCLUDE machines on user's own assigned floor/line!
-    // 2. ONLY include IDLE machines from OTHER floors!
+    // View idle and standby machines across ALL factory floors
     if (includeCrossFloorIdle) {
-      if (isOwnFloor) {
-        return false; // Own floor is strictly excluded in Cross-Floor Idle view
-      }
-      return this.isIdleMachine(machine); // Only idle machines from other floors
+      return this.isIdleMachine(machine);
     }
 
     // Normal mode (Cross-Floor Idle view is OFF):
-    // Only show machines within user's assigned location scope
-    return isOwnFloor;
+    // "je jtuk access pabe oi tuk age default asbe"
+    // Strictly show ONLY machines within the user's assigned location scope (unit, floor, line)
+    return this.isLocationAllowed(machine.unitId, machine.floorId, machine.lineId, u);
   }
 
   /**

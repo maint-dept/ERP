@@ -50,17 +50,14 @@ export function renderInventoryTable() {
     if (!filters.unitId && userScope.unitIds?.length === 1) {
       filters.unitId = userScope.unitIds[0];
     }
+    if (!filters.lineId && userScope.lineIds?.length === 1) {
+      filters.lineId = userScope.lineIds[0];
+    }
   }
 
   // When Cross-Floor Idle View is ON:
-  // Strictly clear any own floor / line filter, and clear active/running status filter
+  // Reset active/running filter so idle machines across all factory floors are visible
   if (showCrossFloorIdle) {
-    if (isScopedUser && filters.floorId && userScope.floorIds?.includes(filters.floorId)) {
-      filters.floorId = '';
-    }
-    if (isScopedUser && filters.lineId && userScope.lineIds?.includes(filters.lineId)) {
-      filters.lineId = '';
-    }
     if (filters.status === 'ACTIVE') {
       filters.status = 'ALL';
     }
@@ -93,10 +90,7 @@ export function renderInventoryTable() {
   // When cross-floor idle is on, allow viewing other floors with idle machines
   const groups = masterDataService.getGroups();
   const units = masterDataService.getUnits(filters.groupId, false, ignoreScopeForDropdowns);
-  let floors = masterDataService.getFloors(filters.unitId, filters.groupId, false, ignoreScopeForDropdowns);
-  if (showCrossFloorIdle && isScopedUser && userScope.floorIds?.length > 0) {
-    floors = floors.filter(f => !userScope.floorIds.includes(f.id));
-  }
+  const floors = masterDataService.getFloors(filters.unitId, filters.groupId, false, ignoreScopeForDropdowns);
   const lines = masterDataService.getLines(filters.floorId, filters.unitId, filters.groupId, false, ignoreScopeForDropdowns);
   const machineNames = masterDataService.getMachineNames();
   const brands = masterDataService.getBrandsForMachineName(filters.machineNameId);
@@ -946,10 +940,10 @@ export function renderInventoryTable() {
             <div style="background: rgba(2, 132, 199, 0.12); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 6px; padding: 5px 12px; margin-top: 5px; display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 11.5px; color: #e0f2fe;">
               <div style="display: flex; align-items: center; gap: 6px;">
                 <span>👁️</span>
-                <span><strong>Cross-Floor Idle View Active:</strong> Showing standby &amp; idle machines from <strong>other floors only</strong> (your assigned floor is excluded). Click <strong>Options ▾ &gt; Request Machine Transfer</strong> on any idle machine to request it for your floor.</span>
+                <span><strong>Cross-Floor Idle View Active:</strong> Showing standby &amp; idle machines across <strong>all factory floors</strong> (Usable Idle, Standby, Repairable Idle &amp; Central Idle). Click <strong>Options ▾ &gt; Request Machine Transfer</strong> on any idle machine to request it for your floor.</span>
               </div>
               <button id="btn-banner-exit-cross-idle" type="button" class="btn btn-secondary btn-xs" style="padding: 2px 8px; font-size: 11px; font-weight: 700; color: #38bdf8; border-color: rgba(56, 189, 248, 0.4); cursor: pointer; white-space: nowrap;">
-                ↩️ Return to My Floor
+                🔙 Return to Default View
               </button>
             </div>
           ` : ''}
@@ -1240,12 +1234,13 @@ export function initInventoryTableEvents() {
       state.set('showCrossFloorIdle', nextMode);
       if (nextMode) {
         state.updateFilters({ floorId: '', lineId: '', status: 'ALL', page: 1 });
-        notificationService.info('Cross-Floor Idle View activated — Showing idle machines across other floors.');
+        notificationService.info('Cross-Floor Idle View activated — Showing idle machines across all floors.');
       } else {
         const u = authService.getCurrentUser();
         const defFloor = (u?.assignedScope?.floorIds?.length === 1) ? u.assignedScope.floorIds[0] : '';
-        state.updateFilters({ floorId: defFloor, lineId: '', status: 'ALL', page: 1 });
-        notificationService.success('Returned to your default assigned floor machines.');
+        const defLine = (u?.assignedScope?.lineIds?.length === 1) ? u.assignedScope.lineIds[0] : '';
+        state.updateFilters({ floorId: defFloor, lineId: defLine, status: 'ALL', page: 1 });
+        notificationService.success('Returned to default assigned location view.');
       }
     });
   }
