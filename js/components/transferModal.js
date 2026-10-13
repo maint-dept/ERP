@@ -58,9 +58,9 @@ export function renderTransferModal() {
     if (!selectedDest.groupId && selectedDest.unitId) {
       selectedDest.groupId = storage.getItem(TABLE_NAMES.UNITS, selectedDest.unitId)?.groupId || 'grp-1';
     }
-    // Destination Line must ALWAYS remain blank (unselected) so Maintenance Managers and users select it explicitly
-    selectedDest.lineId = '';
   }
+  // Destination Line must ALWAYS remain blank (unselected) so Maintenance Managers, Users, and Admins select it explicitly
+  selectedDest.lineId = '';
 
   // Ensure full hierarchy resolves if floor is known
   if (selectedDest.floorId && (!selectedDest.unitId || !selectedDest.groupId)) {
@@ -80,7 +80,7 @@ export function renderTransferModal() {
   const floors = destUnitId ? masterDataService.getFloors(destUnitId, null, false, true) : [];
   const destFloorId = selectedDest.floorId || '';
   const lines = destFloorId ? masterDataService.getLines(destFloorId, null, null, false, true) : [];
-  const destLineId = selectedDest.lineId || '';
+  const destLineId = '';
 
   // Machine Lifetime History count for verification card
   const historyRecords = machine?.serialNumber ? historyService.getMachineHistory(machine.serialNumber) : [];
@@ -330,8 +330,8 @@ export function renderTransferModal() {
               <div class="form-group">
                 <label class="form-label" style="font-size: 13px; font-weight: 700; color: #ffffff; margin-bottom: 6px;">4. Destination Production Line <span class="req" style="color:#ef4444;">*</span></label>
                 <select id="transfer-dest-line" class="filter-select" required ${!destFloorId ? 'disabled' : ''} style="background: #0f172a; color: #ffffff; border: 1.5px solid #475569; font-size: 13.5px; font-weight: 600; height: 40px; border-radius: 6px;">
-                  <option value="" disabled ${!destLineId ? 'selected' : ''}>${destFloorId ? '-- Select Production Line --' : '-- Select Floor First --'}</option>
-                  ${lines.map(l => `<option value="${l.id}" ${destLineId === l.id ? 'selected' : ''}>${l.name}</option>`).join('')}
+                  <option value="" disabled selected>${destFloorId ? '-- Select Production Line --' : '-- Select Floor First --'}</option>
+                  ${lines.map(l => `<option value="${l.id}">${l.name}</option>`).join('')}
                 </select>
               </div>
 
@@ -683,6 +683,10 @@ export function initTransferModalEvents() {
   const unitSelect = document.getElementById('transfer-dest-unit');
   const floorSelect = document.getElementById('transfer-dest-floor');
   const lineSelect = document.getElementById('transfer-dest-line');
+  if (lineSelect && !selectedDest.lineId) {
+    lineSelect.value = '';
+    lineSelect.selectedIndex = 0;
+  }
   const targetPathPreview = document.getElementById('transfer-target-path-preview');
   const inpLocSearch = document.getElementById('inp-transfer-location-search');
   const btnClearLocSearch = document.getElementById('btn-clear-location-search');
@@ -1034,8 +1038,12 @@ export function initTransferModalEvents() {
             <option value="" disabled selected>-- Select Production Line --</option>
             ${lines.map(l => `<option value="${l.id}">${l.name}</option>`).join('')}
           `;
+          lineSelect.value = '';
+          lineSelect.selectedIndex = 0;
         } else {
           lineSelect.innerHTML = '<option value="" disabled selected>No lines under this floor</option>';
+          lineSelect.value = '';
+          lineSelect.selectedIndex = 0;
         }
       }
 
