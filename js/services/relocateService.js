@@ -520,44 +520,78 @@ class RelocateService {
 
     const allMachines = storage.getTable(TABLE_NAMES.MACHINES) || [];
     let machinesUpdated = 0;
-    let idleClassified = 0;
+    let pendingIdleCount = 0;
     let pendingCreated = 0;
     let lineMovesCount = 0;
 
-    // 1. Process Same-Floor Idle Machines (Not Found in Line)
+    // 1. Process Same-Floor Missing Machines (Require Floor Manager Idle Approval — NO auto-idle!)
     metrics.idleMachines.forEach(idleSnap => {
       const machine = allMachines.find(m => m.id === idleSnap.id);
       if (machine) {
-        machine.status = 'IDLE';
-        machine.usable_idle = 1;
-        machine.usableIdle = 1;
-        machine.running = 0;
-        machine.qty_running = 0;
-        machine.lastVerifiedDate = nowIso;
-        machine.remarks = machine.remarks 
-          ? `${machine.remarks} | Verified Idle (${session.id})`
-          : `Verified Idle during physical scan session ${session.id}`;
+        const mn = storage.getItem(TABLE_NAMES.MACHINE_NAMES, machine.machineNameId);
+        const brd = storage.getItem(TABLE_NAMES.BRANDS, machine.brandId);
+        const mdl = storage.getItem(TABLE_NAMES.MODELS, machine.modelId);
+        const flr = storage.getItem(TABLE_NAMES.FLOORS, machine.floorId);
+        const lin = storage.getItem(TABLE_NAMES.LINES, machine.lineId);
 
-        try {
-          if (typeof historyService.logAction === 'function') {
-            historyService.logAction(
-              machine.id,
-              'STATUS_CHANGE',
-              `Automated reconciliation: Machine marked as IDLE because it was not found in active running lines during session ${session.id}.`,
-              {
-                previousStatus: idleSnap.status,
-                newStatus: 'IDLE',
-                sessionId: session.id,
-                verifiedBy: user.name
-              }
-            );
-          }
-        } catch (_) {}
+        // NOTE: We do NOT automatically change machine.status to 'IDLE'.
+        // Missing machines remain in current status until authorized by Floor Manager.
+        const approvalRecord = {
+          id: `APP-IDLE-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+          approvalType: 'IDLE_CLASSIFICATION',
+          sessionId: session.id,
+          machineId: machine.id,
+          serialNumber: machine.serialNumber,
+          machineNameStr: mn?.name || machine.machineName || 'Sewing Machine',
+          brandStr: brd?.name || machine.brand || '',
+          modelStr: mdl?.name || machine.model || '',
+          unitId: machine.unitId || session.unitId,
+          floorId: machine.floorId || session.floorId,
+          lineId: machine.lineId || idleSnap.lineId,
+          floorStr: flr?.name || machine.floor || session.floorId,
+          lineStr: lin?.name || machine.line || idleSnap.lineId,
+          previousUnitId: machine.unitId || session.unitId,
+          previousFloorId: machine.floorId || session.floorId,
+          previousLineId: machine.lineId || idleSnap.lineId,
+          status: 'PENDING',
+          reason: `Missing from Line ${lin?.name || machine.lineId || ''} during audit session ${session.id}`,
+          remarks: `Audited line missing machine; awaiting Floor Manager Idle approval`,
+          requestedBy: user.name || user.username || 'Authorized Auditor',
+          requestedById: user.id || 'usr-1',
+          requestedAt: nowIso,
+          reviewedBy: null,
+          reviewedAt: null,
+          reviewNotes: ''
+        };
 
-        idleClassified++;
-        machinesUpdated++;
+        storage.insert(TABLE_NAMES.RELOCATION_APPROVALS, approvalRecord);
+        pendingIdleCount++;
       }
     });
+
+    if (pendingIdleCount > 0) {
+      const flr = storage.getItem(TABLE_NAMES.FLOORS, session.floorId);
+      const floorName = flr?.name || session.floorId;
+
+      // Dispatch persistent notification for Floor Managers and Administrators
+      notificationService.notify({
+        title: 'Floor Manager Idle Approval Required',
+        message: `${pendingIdleCount} missing machine(s) on ${floorName} require Floor Manager authorization before being marked IDLE (Session: ${session.id}).`,
+        type: 'WARNING',
+        module: 'relocate',
+        action: 'APPROVE',
+        locationScope: {
+          unitId: session.unitId,
+          floorId: session.floorId
+        },
+        targetUrl: '#relocate'
+      });
+
+      notificationService.notifyWarning(
+        'Manager Approval Required',
+        `${pendingIdleCount} missing machine(s) submitted for Floor Manager Idle Approval.`
+      );
+    }
 
     // 2. Process Same-Floor Line Moves (Immediate Update)
     metrics.lineRelocations.forEach(move => {
@@ -618,6 +652,7 @@ class RelocateService {
     metrics.pendingRelocations.forEach(pending => {
       const approvalRecord = {
         id: `APP-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+        approvalType: 'INTER_FLOOR',
         sessionId: session.id,
         machineId: pending.machineId,
         serialNumber: pending.serialNumber,
@@ -680,7 +715,8 @@ class RelocateService {
       verifiedCount: metrics.verifiedCount,
       lineRelocationCount: lineMovesCount,
       pendingRelocationCount: pendingCreated,
-      idleCount: idleClassified,
+      pendingIdleCount: pendingIdleCount,
+      idleCount: 0,
       completedAt: nowIso
     };
 
@@ -701,7 +737,7 @@ class RelocateService {
       'RELOCATE_SESSION_COMPLETED',
       'RELOCATE',
       session.id,
-      `Session ${session.id} completed. Verified: ${metrics.verifiedCount}, Line Relocated: ${lineMovesCount}, Idle Classified: ${idleClassified}, Pending Approval: ${pendingCreated}.`
+      `Session ${session.id} completed. Verified: ${metrics.verifiedCount}, Line Relocated: ${lineMovesCount}, Pending Idle Approval: ${pendingIdleCount}, Pending Move Approval: ${pendingCreated}.`
     );
 
     this._broadcastChange();
@@ -731,11 +767,19 @@ class RelocateService {
     return session;
   }
 
-  // ─── RELOCATION APPROVALS ───
+  // ─── RELOCATION & IDLE APPROVALS ───
 
   getPendingApprovals() {
     const list = storage.getTable(TABLE_NAMES.RELOCATION_APPROVALS) || [];
     return list.filter(a => a && a.status === 'PENDING').sort((a, b) => new Date(b.requestedAt || 0) - new Date(a.requestedAt || 0));
+  }
+
+  getPendingIdleApprovals() {
+    return this.getPendingApprovals().filter(a => a.approvalType === 'IDLE_CLASSIFICATION');
+  }
+
+  getPendingRelocationApprovals() {
+    return this.getPendingApprovals().filter(a => a.approvalType !== 'IDLE_CLASSIFICATION');
   }
 
   getAllApprovals() {
@@ -743,24 +787,41 @@ class RelocateService {
     return [...list].sort((a, b) => new Date(b.requestedAt || 0) - new Date(a.requestedAt || 0));
   }
 
-  async approveRelocation(approvalId, reviewerNotes = '') {
-    const canApprove = authService.isSuperAdmin() || 
-                       authService.isAdmin() || 
-                       authService.hasAccess('relocate', 'APPROVE') || 
-                       authService.hasPermission('relocate', 'APPROVE') || 
-                       authService.hasPermission('RELOCATE_APPROVE') ||
-                       authService.hasAccess('transfers', 'APPROVE');
-
-    if (!canApprove) {
-      throw new Error('Unauthorized. Only Super Admin, Admin, or authorized managers with Relocate Approval permission can approve inter-floor relocations.');
+  canUserApprove(user = null, approval = null) {
+    const u = user || authService.getCurrentUser();
+    if (!u) return false;
+    if (authService.isSuperAdmin(u) || authService.isAdmin(u)) return true;
+    if (authService.hasAccess('relocate', 'APPROVE') || 
+        authService.hasPermission('relocate', 'APPROVE') || 
+        authService.hasPermission('RELOCATE_APPROVE') ||
+        authService.hasAccess('transfers', 'APPROVE')) {
+      return true;
     }
+    const roleStr = String(u.role || '').toUpperCase();
+    if (roleStr === 'MAINTENANCE_MANAGER' || roleStr === 'FLOOR_MANAGER' || roleStr === 'MAINTENANCE_SUPERVISOR') {
+      return true;
+    }
+    // Location-scoped floor manager authorization
+    if (approval && (approval.floorId || approval.destFloorId)) {
+      const targetFloor = approval.floorId || approval.destFloorId;
+      if (authService.isLocationAllowed(approval.unitId || approval.destUnitId, targetFloor, null, u)) {
+        return true;
+      }
+    }
+    return false;
+  }
 
+  async approveRelocation(approvalId, reviewerNotes = '') {
+    const user = authService.getCurrentUser() || { name: 'Admin', role: 'ADMIN' };
     const approvals = storage.getTable(TABLE_NAMES.RELOCATION_APPROVALS) || [];
     const app = approvals.find(a => a.id === approvalId);
     if (!app) throw new Error('Relocation request not found.');
     if (app.status !== 'PENDING') throw new Error('Request has already been processed.');
 
-    const user = authService.getCurrentUser() || { name: 'Admin', role: 'ADMIN' };
+    if (!this.canUserApprove(user, app)) {
+      throw new Error('Unauthorized. Only Super Admin, Admin, Maintenance Manager, or Floor Manager can approve relocations.');
+    }
+
     const nowIso = new Date().toISOString();
 
     const machine = storage.getItem(TABLE_NAMES.MACHINES, app.machineId);
@@ -849,23 +910,16 @@ class RelocateService {
   }
 
   async rejectRelocation(approvalId, reason = '') {
-    const canReject = authService.isSuperAdmin() || 
-                      authService.isAdmin() || 
-                      authService.hasAccess('relocate', 'APPROVE') || 
-                      authService.hasPermission('relocate', 'APPROVE') || 
-                      authService.hasPermission('RELOCATE_APPROVE') ||
-                      authService.hasAccess('transfers', 'APPROVE');
-
-    if (!canReject) {
-      throw new Error('Unauthorized. Only Super Admin, Admin, or authorized managers with Relocate Approval permission can reject relocations.');
-    }
-
+    const user = authService.getCurrentUser() || { name: 'Admin', role: 'ADMIN' };
     const approvals = storage.getTable(TABLE_NAMES.RELOCATION_APPROVALS) || [];
     const app = approvals.find(a => a.id === approvalId);
     if (!app) throw new Error('Relocation request not found.');
     if (app.status !== 'PENDING') throw new Error('Request has already been processed.');
 
-    const user = authService.getCurrentUser() || { name: 'Admin', role: 'ADMIN' };
+    if (!this.canUserApprove(user, app)) {
+      throw new Error('Unauthorized. Only Super Admin, Admin, Maintenance Manager, or Floor Manager can reject relocations.');
+    }
+
     const nowIso = new Date().toISOString();
 
     app.status = 'REJECTED';
@@ -902,6 +956,170 @@ class RelocateService {
     this._broadcastChange();
 
     return app;
+  }
+
+  // ─── FLOOR MANAGER IDLE CLASSIFICATION APPROVALS ───
+
+  async approveIdleClassification(approvalId, reviewerNotes = '') {
+    const user = authService.getCurrentUser() || { name: 'Admin', role: 'ADMIN' };
+    const approvals = storage.getTable(TABLE_NAMES.RELOCATION_APPROVALS) || [];
+    const app = approvals.find(a => a.id === approvalId);
+    if (!app) throw new Error('Idle classification approval request not found.');
+    if (app.status !== 'PENDING') throw new Error('Request has already been processed.');
+
+    if (!this.canUserApprove(user, app)) {
+      throw new Error('Unauthorized. Only Floor Manager, Maintenance Manager, or Administrator can approve idle machine classification.');
+    }
+
+    const nowIso = new Date().toISOString();
+    const machine = storage.getItem(TABLE_NAMES.MACHINES, app.machineId);
+    if (!machine) throw new Error('Machine record not found in inventory.');
+
+    // Transition machine to IDLE status upon Floor Manager approval
+    machine.status = 'IDLE';
+    machine.usable_idle = 1;
+    machine.usableIdle = 1;
+    machine.running = 0;
+    machine.qty_running = 0;
+    machine.lastVerifiedDate = nowIso;
+    machine.remarks = machine.remarks 
+      ? `${machine.remarks} | Idle approved by ${user.name} (${app.sessionId || ''})`
+      : `Idle classification authorized by Floor Manager ${user.name} for session ${app.sessionId || ''}`;
+
+    // CONFIRMED WRITE: Update machine status in inventory
+    await storage.writeAndConfirm(TABLE_NAMES.MACHINES, (tbl) => {
+      const idx = tbl.findIndex(m => m.id === machine.id);
+      if (idx !== -1) tbl[idx] = machine;
+    });
+
+    // Record in Relocation History
+    const relHistRecord = {
+      id: `RH-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+      machineId: machine.id,
+      serialNumber: machine.serialNumber,
+      sessionId: app.sessionId || '',
+      date: nowIso,
+      previousUnitId: app.unitId,
+      previousFloorId: app.floorId,
+      previousLineId: app.lineId,
+      newUnitId: app.unitId,
+      newFloorId: app.floorId,
+      newLineId: app.lineId,
+      status: 'APPROVED',
+      approvedBy: user.name,
+      approvalType: 'IDLE_CLASSIFICATION_APPROVED',
+      notes: reviewerNotes || app.remarks || `Marked as IDLE authorized by Floor Manager ${user.name}`
+    };
+    await storage.writeAndConfirm(TABLE_NAMES.RELOCATION_HISTORY, (tbl) => { tbl.push(relHistRecord); });
+
+    try {
+      if (typeof historyService.logAction === 'function') {
+        historyService.logAction(
+          machine.id,
+          'STATUS_CHANGE',
+          `Floor Manager Idle Approval: Machine marked as IDLE by ${user.name} after verification session ${app.sessionId || ''}. Reason: ${reviewerNotes || app.reason || 'Missing from line'}`,
+          {
+            previousStatus: 'ACTIVE',
+            newStatus: 'IDLE',
+            sessionId: app.sessionId,
+            approvedBy: user.name,
+            notes: reviewerNotes
+          }
+        );
+      }
+    } catch (_) {}
+
+    // Update approval status to APPROVED
+    app.status = 'APPROVED';
+    app.reviewedBy = user.name;
+    app.reviewedAt = nowIso;
+    app.reviewNotes = reviewerNotes || 'Approved by Floor Manager';
+    await storage.writeAndConfirm(TABLE_NAMES.RELOCATION_APPROVALS, (tbl) => {
+      const idx = tbl.findIndex(a => a.id === app.id);
+      if (idx !== -1) tbl[idx] = app;
+    });
+
+    auditService.log('IDLE_CLASSIFICATION_APPROVED', 'RELOCATE', app.id, `Machine ${app.serialNumber} marked as IDLE by Floor Manager ${user.name}`);
+    this._broadcastChange();
+
+    return app;
+  }
+
+  async rejectIdleClassification(approvalId, reason = '') {
+    const user = authService.getCurrentUser() || { name: 'Admin', role: 'ADMIN' };
+    const approvals = storage.getTable(TABLE_NAMES.RELOCATION_APPROVALS) || [];
+    const app = approvals.find(a => a.id === approvalId);
+    if (!app) throw new Error('Idle classification approval request not found.');
+    if (app.status !== 'PENDING') throw new Error('Request has already been processed.');
+
+    if (!this.canUserApprove(user, app)) {
+      throw new Error('Unauthorized. Only Floor Manager, Maintenance Manager, or Administrator can reject idle classification.');
+    }
+
+    const nowIso = new Date().toISOString();
+
+    app.status = 'REJECTED';
+    app.reviewedBy = user.name;
+    app.reviewedAt = nowIso;
+    app.reviewNotes = reason || 'Idle classification rejected by Floor Manager; machine retained active in line';
+
+    await storage.writeAndConfirm(TABLE_NAMES.RELOCATION_APPROVALS, (tbl) => {
+      const idx = tbl.findIndex(a => a.id === app.id);
+      if (idx !== -1) tbl[idx] = app;
+    });
+
+    // Record in Relocation History
+    const relHistRecord = {
+      id: `RH-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+      machineId: app.machineId,
+      serialNumber: app.serialNumber,
+      sessionId: app.sessionId || '',
+      date: nowIso,
+      previousUnitId: app.unitId,
+      previousFloorId: app.floorId,
+      previousLineId: app.lineId,
+      newUnitId: app.unitId,
+      newFloorId: app.floorId,
+      newLineId: app.lineId,
+      status: 'REJECTED',
+      approvedBy: user.name,
+      approvalType: 'IDLE_CLASSIFICATION_REJECTED',
+      notes: reason || 'Floor Manager rejected idle classification; machine status unchanged'
+    };
+    await storage.writeAndConfirm(TABLE_NAMES.RELOCATION_HISTORY, (tbl) => { tbl.push(relHistRecord); });
+
+    try {
+      if (typeof historyService.logAction === 'function') {
+        historyService.logAction(
+          app.machineId,
+          'STATUS_CHANGE',
+          `Floor Manager rejected idle classification. Machine remains active in Line ${app.lineStr || app.lineId}. Rejected by ${user.name}. Reason: ${reason || 'Physical presence confirmed'}`,
+          { sessionId: app.sessionId, rejectedBy: user.name, reason: reason }
+        );
+      }
+    } catch (_) {}
+
+    auditService.log('IDLE_CLASSIFICATION_REJECTED', 'RELOCATE', app.id, `Idle classification rejected for Machine ${app.serialNumber} by Floor Manager ${user.name}`);
+    this._broadcastChange();
+
+    return app;
+  }
+
+  async approveAllPendingIdle(floorId = null, reviewerNotes = '') {
+    const list = this.getPendingApprovals().filter(a => a.approvalType === 'IDLE_CLASSIFICATION');
+    const targets = floorId ? list.filter(a => a.floorId === floorId) : list;
+    if (targets.length === 0) return 0;
+
+    let approvedCount = 0;
+    for (const app of targets) {
+      try {
+        await this.approveIdleClassification(app.id, reviewerNotes);
+        approvedCount++;
+      } catch (err) {
+        console.warn(`Failed to approve idle for ${app.id}:`, err);
+      }
+    }
+    return approvedCount;
   }
 
   // ─── IDLE MACHINES LIST ───

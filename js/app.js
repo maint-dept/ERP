@@ -43,7 +43,7 @@ import { renderChangePasswordModal, initChangePasswordModalEvents } from './comp
 import { renderStorageView, initStorageEvents } from './components/storageView.js';
 import { renderPreventiveMaintenanceView, initPreventiveMaintenanceEvents } from './components/preventiveMaintenanceView.js';
 import { smartStorageService } from './services/smartStorageService.js';
-import { renderRelocateView, initRelocateViewEvents } from './components/relocateView.js';
+import { renderRelocateView, initRelocateViewEvents } from './components/relocateView.js?v=4.26.18';
 import { renderNeedleOperationsView, initNeedleOperationsEvents } from './components/needleOperationsView.js';
 import { renderQrCodeView, initQrCodeEvents } from './components/qrCodeView.js';
 import { renderPartsTraceView, initPartsTraceEvents } from './components/partsTraceView.js';

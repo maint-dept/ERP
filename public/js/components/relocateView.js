@@ -33,6 +33,7 @@ let historySubTab = 'movements'; // 'movements' | 'sessions'
 let historySearch = '';
 let historyFilter = 'ALL'; // 'ALL' | 'APPROVED' | 'REJECTED' | 'INTER_FLOOR' | 'SAME_FLOOR' (movements) or 'ALL' | 'COMPLETED' | 'IN_PROGRESS' | 'CANCELLED' (sessions)
 let viewingSessionModal = null; // Session object or null
+let approvalsFilter = 'ALL'; // 'ALL' | 'IDLE' | 'RELOCATION'
 
 export function renderRelocateView() {
   const activeSession = relocateService.getActiveSession();
@@ -1063,9 +1064,9 @@ function renderLiveScanView(session) {
           <span style="color: rgba(255,255,255,0.15);">|</span>
           <span>Verified: <strong style="color: #34d399;">${metrics.scannedTotal}</strong></span>
           <span style="color: rgba(255,255,255,0.15);">|</span>
-          <span>Idle: <strong style="color: #38bdf8;">${metrics.idleCount}</strong></span>
+          <span>Unscanned (Pending Idle): <strong style="color: #fbbf24;">${metrics.idleCount}</strong></span>
           <span style="color: rgba(255,255,255,0.15);">|</span>
-          <span>Pending Move: <strong style="color: #fbbf24;">${metrics.pendingRelocationCount}</strong></span>
+          <span>Pending Move: <strong style="color: #38bdf8;">${metrics.pendingRelocationCount}</strong></span>
         </div>
 
         <div style="display: flex; gap: 5px; align-items: center; overflow-x: auto; -webkit-overflow-scrolling: touch;">
@@ -1403,7 +1404,7 @@ function renderReconciliationModal(session) {
         <div class="modal-body" style="padding: 14px 16px; display: flex; flex-direction: column; gap: 12px; overflow-y: auto;">
           
           <div style="background: rgba(14, 165, 233, 0.08); border: 1px solid rgba(14, 165, 233, 0.25); border-radius: 8px; padding: 10px 12px; font-size: 12px; color: #e2e8f0; line-height: 1.4;">
-            Completing this session updates physical locations and classifies unscanned machines on this floor as <strong>IDLE</strong>.
+            Completing this session updates verified physical locations and routes unscanned machines to the <strong>Floor Manager for Idle Approval</strong>.
           </div>
 
           <!-- Summary Metric 2x2 Grid -->
@@ -1421,32 +1422,32 @@ function renderReconciliationModal(session) {
               <div style="font-size: 18px; font-weight: 800; color: #38bdf8;">${metrics.lineRelocationCount}</div>
             </div>
             <div style="background: rgba(255,255,255,0.04); border-radius: 6px; padding: 8px 10px; border-left: 3px solid #fbbf24;">
-              <div style="font-size: 10.5px; color: #fbbf24;">Inter-Floor Approvals</div>
-              <div style="font-size: 18px; font-weight: 800; color: #fbbf24;">${metrics.pendingRelocationCount}</div>
+              <div style="font-size: 10.5px; color: #fbbf24;">Pending Idle Approvals</div>
+              <div style="font-size: 18px; font-weight: 800; color: #fbbf24;">${metrics.idleCount}</div>
             </div>
           </div>
 
-          <!-- Automated Idle Action Banner -->
-          <div style="background: rgba(239, 68, 68, 0.08); border: 1.5px solid rgba(239, 68, 68, 0.3); border-radius: 8px; padding: 10px 12px;">
+          <!-- Floor Manager Idle Approval Notice Banner (NO Auto-Idle) -->
+          <div style="background: rgba(245, 158, 11, 0.1); border: 1.5px solid rgba(245, 158, 11, 0.4); border-radius: 8px; padding: 12px 14px;">
             <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
-              <span style="font-size: 16px;">💤</span>
-              <strong style="color: #f87171; font-size: 13px;">${metrics.idleCount} Machines Auto-Classified as IDLE</strong>
+              <span style="font-size: 18px;">⏳</span>
+              <strong style="color: #fbbf24; font-size: 13.5px;">${metrics.idleCount} Missing Machines Require Floor Manager Approval</strong>
             </div>
-            <div style="font-size: 11.5px; color: #cbd5e1; line-height: 1.4;">
-              These ${metrics.idleCount} machines were registered on this floor but were not scanned in running lines. They will automatically be marked <strong>IDLE</strong>.
+            <div style="font-size: 11.5px; color: #cbd5e1; line-height: 1.45;">
+              These <strong>${metrics.idleCount}</strong> registered machines were not scanned on audited line(s). They will <strong>NOT</strong> automatically be marked idle. An Idle Approval Request will be dispatched to the <strong>Floor Manager</strong> to verify before converting to IDLE.
             </div>
           </div>
 
           <!-- Final Notes -->
           <div class="form-group">
             <label class="form-label" style="font-size: 11.5px; color: var(--text-muted);">Session Notes / Sign-off (Optional):</label>
-            <input type="text" id="final-reconciliation-notes" class="form-control" placeholder="e.g. Audit verified by supervisor" style="font-size: 15px;" />
+            <input type="text" id="final-reconciliation-notes" class="form-control" placeholder="e.g. Audit verified by line supervisor" style="font-size: 15px;" />
           </div>
 
           <div class="modal-footer" style="padding: 0; display: flex; gap: 8px; margin-top: 4px;">
             <button type="button" id="btn-cancel-reconciliation" class="btn btn-secondary" style="flex: 1; min-height: 44px; font-weight: 700;">Back</button>
             <button type="button" id="btn-confirm-complete-session" class="btn btn-primary" style="flex: 2; min-height: 44px; background: #059669; border-color: #34d399; font-weight: 800; font-size: 13.5px;">
-              ✓ Finalize &amp; Reconcile
+              ✓ Finalize &amp; Submit to Floor Manager
             </button>
           </div>
 
@@ -1509,72 +1510,157 @@ function renderIdleMachinesTab(idleMachines) {
 // 7. PENDING APPROVALS TAB
 // ─────────────────────────────────────────────────────────────
 function renderApprovalsTab(pendingApprovals) {
-  const canApprove = authService.isSuperAdmin() || 
-                     authService.isAdmin() || 
-                     authService.hasAccess('relocate', 'APPROVE') || 
-                     authService.hasPermission('relocate', 'APPROVE') || 
-                     authService.hasPermission('RELOCATE_APPROVE') ||
-                     authService.hasAccess('transfers', 'APPROVE');
+  const canApprove = relocateService.canUserApprove();
+  const idleApprovals = pendingApprovals.filter(a => a.approvalType === 'IDLE_CLASSIFICATION');
+  const relocationApprovals = pendingApprovals.filter(a => a.approvalType !== 'IDLE_CLASSIFICATION');
+
+  let displayApprovals = pendingApprovals;
+  if (approvalsFilter === 'IDLE') {
+    displayApprovals = idleApprovals;
+  } else if (approvalsFilter === 'RELOCATION') {
+    displayApprovals = relocationApprovals;
+  }
 
   return `
-    <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 12px 16px; display: flex; flex-direction: column; gap: 10px; flex: 1; min-height: 0;">
+    <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 12px 16px; display: flex; flex-direction: column; gap: 12px; flex: 1; min-height: 0;">
       
-      <div>
-        <h2 style="font-size: 15px; font-weight: 800; color: #fff; margin: 0;">
-          ⏳ Inter-Floor Relocation Approvals (${pendingApprovals.length})
-        </h2>
-        <div style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">
-          Machines scanned on a different floor requiring management authorization
+      <!-- Header & Filter Tabs -->
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+        <div>
+          <h2 style="font-size: 15px; font-weight: 800; color: #fff; margin: 0; display: flex; align-items: center; gap: 6px;">
+            <span>⏳</span> Floor Manager &amp; Relocation Approvals (${pendingApprovals.length})
+          </h2>
+          <div style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">
+            Floor Manager authorization queue for missing machine idle requests &amp; inter-floor relocations
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+          <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 2px; display: flex; gap: 2px;">
+            <button type="button" class="btn-approvals-filter btn btn-ghost btn-sm ${approvalsFilter === 'ALL' ? 'active' : ''}" data-filter="ALL" style="font-size: 11px; padding: 4px 10px; border-radius: 6px; ${approvalsFilter === 'ALL' ? 'background: #0284c7; color: #fff; font-weight: 800;' : 'color: #94a3b8;'}">
+              All (${pendingApprovals.length})
+            </button>
+            <button type="button" class="btn-approvals-filter btn btn-ghost btn-sm ${approvalsFilter === 'IDLE' ? 'active' : ''}" data-filter="IDLE" style="font-size: 11px; padding: 4px 10px; border-radius: 6px; ${approvalsFilter === 'IDLE' ? 'background: #f59e0b; color: #000; font-weight: 800;' : 'color: #94a3b8;'}">
+              💤 Idle Requests (${idleApprovals.length})
+            </button>
+            <button type="button" class="btn-approvals-filter btn btn-ghost btn-sm ${approvalsFilter === 'RELOCATION' ? 'active' : ''}" data-filter="RELOCATION" style="font-size: 11px; padding: 4px 10px; border-radius: 6px; ${approvalsFilter === 'RELOCATION' ? 'background: #38bdf8; color: #000; font-weight: 800;' : 'color: #94a3b8;'}">
+              🏢 Floor Moves (${relocationApprovals.length})
+            </button>
+          </div>
+
+          ${canApprove && idleApprovals.length > 0 && (approvalsFilter === 'ALL' || approvalsFilter === 'IDLE') ? `
+            <button type="button" class="btn btn-primary btn-sm" id="btn-approve-all-idle" style="background: #059669; border-color: #34d399; font-weight: 800; font-size: 11.5px; padding: 5px 12px; border-radius: 6px;">
+              ✓ Approve All Idle (${idleApprovals.length})
+            </button>
+          ` : ''}
         </div>
       </div>
 
+      <!-- Approvals List -->
       <div style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;">
-        ${pendingApprovals.length === 0 ? `
+        ${displayApprovals.length === 0 ? `
           <div style="text-align: center; padding: 40px; color: var(--text-muted);">
-            No pending inter-floor relocation approvals.
+            No pending approval requests in this category.
           </div>
-        ` : pendingApprovals.map(a => {
-    const prevFlr = masterDataService.getFloorById(a.previousFloorId);
-    const prevLin = masterDataService.getLineById(a.previousLineId);
-    const destFlr = masterDataService.getFloorById(a.destFloorId);
-    const destLin = masterDataService.getLineById(a.destLineId);
+        ` : displayApprovals.map(a => {
+            const isIdle = a.approvalType === 'IDLE_CLASSIFICATION';
 
-    return `
-            <div style="background: var(--bg-surface); border: 1.5px solid rgba(251, 191, 36, 0.4); border-radius: 8px; padding: 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-              <div style="flex: 1; min-width: 240px;">
-                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                  <span style="font-family: var(--font-mono); font-weight: 900; color: #38bdf8; font-size: 14px;">${a.serialNumber}</span>
-                  <span style="font-size: 13px; font-weight: 700; color: #fff;">${a.machineNameStr}</span>
-                  <span style="font-size: 11px; color: var(--text-secondary);">${a.brandStr} / ${a.modelStr}</span>
-                </div>
-                <div style="display: flex; gap: 8px; align-items: center; margin-top: 6px; font-size: 11.5px; flex-wrap: wrap;">
-                  <span style="color: #f87171;">Previous: <strong>${prevFlr?.name || a.previousFloorId} / ${prevLin?.name || a.previousLineId}</strong></span>
-                  <span>&rarr;</span>
-                  <span style="color: #34d399;">Destination: <strong>${destFlr?.name || a.destFloorId} / ${destLin?.name || a.destLineId}</strong></span>
-                  ${(a.presentNeedle || a.needleQuantity) ? `
-                    <span style="background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 4px; padding: 1px 6px; color: #38bdf8; font-weight: 700;">🪡 Present Needle: ${a.presentNeedle || a.needleQuantity}</span>
-                  ` : ''}
-                </div>
-                <div style="font-size: 10.5px; color: var(--text-muted); margin-top: 4px;">
-                  Session: <strong>${a.sessionId}</strong> &bull; Requested by: <strong>${a.requestedBy}</strong> on ${new Date(a.requestedAt).toLocaleDateString()}
-                </div>
-              </div>
+            if (isIdle) {
+              const flr = masterDataService.getFloorById(a.floorId);
+              const lin = masterDataService.getLineById(a.lineId);
+              const floorName = flr?.name || a.floorStr || a.floorId || '—';
+              const lineName = lin?.name || a.lineStr || a.lineId || '—';
 
-              ${canApprove ? `
-                <div style="display: flex; gap: 6px; width: 100%; justify-content: flex-end;">
-                  <button type="button" class="btn btn-danger btn-sm btn-reject-relocation" data-id="${a.id}" style="min-height: 38px; font-size: 11.5px; padding: 6px 14px; flex: 1;">
-                    ✕ Reject
-                  </button>
-                  <button type="button" class="btn btn-primary btn-sm btn-approve-relocation" data-id="${a.id}" style="min-height: 38px; font-size: 11.5px; padding: 6px 16px; background: #059669; border-color: #34d399; flex: 1;">
-                    ✓ Approve Move
-                  </button>
+              return `
+                <div style="background: var(--bg-surface); border: 1.5px solid rgba(245, 158, 11, 0.4); border-radius: 8px; padding: 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.2);">
+                  <div style="flex: 1; min-width: 240px;">
+                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                      <span style="font-family: var(--font-mono); font-weight: 900; color: #38bdf8; font-size: 14px;">${escapeHtml(a.serialNumber)}</span>
+                      <span style="font-size: 13px; font-weight: 700; color: #fff;">${escapeHtml(a.machineNameStr || 'Machine')}</span>
+                      <span style="font-size: 11px; color: var(--text-secondary);">${escapeHtml(a.brandStr)} / ${escapeHtml(a.modelStr)}</span>
+                      <span class="badge" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); font-size: 10.5px; font-weight: 800; padding: 2px 7px;">
+                        💤 Pending Floor Manager Idle Approval
+                      </span>
+                    </div>
+
+                    <div style="display: flex; gap: 8px; align-items: center; margin-top: 6px; font-size: 11.5px; flex-wrap: wrap;">
+                      <span style="color: #cbd5e1;">Registered Location: <strong style="color: #f87171;">${escapeHtml(floorName)} / ${escapeHtml(lineName)}</strong></span>
+                      <span style="color: rgba(255,255,255,0.2);">|</span>
+                      <span style="color: #fbbf24;">Status: <strong>Missing from active line during audit</strong></span>
+                    </div>
+
+                    <div style="font-size: 10.5px; color: var(--text-muted); margin-top: 4px;">
+                      Audit Session: <strong>${escapeHtml(a.sessionId)}</strong> &bull; Audited by: <strong>${escapeHtml(a.requestedBy)}</strong> on ${new Date(a.requestedAt).toLocaleDateString()}
+                    </div>
+
+                    <div style="background: rgba(245, 158, 11, 0.08); border-left: 2px solid #fbbf24; padding: 4px 8px; border-radius: 3px; font-size: 11px; color: #cbd5e1; margin-top: 6px;">
+                      ⚠️ Machine not scanned in registered line. Floor Manager authorization required to classify as IDLE.
+                    </div>
+                  </div>
+
+                  ${canApprove ? `
+                    <div style="display: flex; gap: 6px; width: 100%; justify-content: flex-end;">
+                      <button type="button" class="btn btn-danger btn-sm btn-reject-idle" data-id="${a.id}" style="min-height: 38px; font-size: 11.5px; padding: 6px 14px; flex: 1;">
+                        ✕ Reject (Keep Active)
+                      </button>
+                      <button type="button" class="btn btn-primary btn-sm btn-approve-idle" data-id="${a.id}" style="min-height: 38px; font-size: 11.5px; padding: 6px 16px; background: #059669; border-color: #34d399; flex: 1;">
+                        ✓ Approve Idle
+                      </button>
+                    </div>
+                  ` : `
+                    <span class="badge badge-idle">Pending Floor Manager Review</span>
+                  `}
                 </div>
-              ` : `
-                <span class="badge badge-idle">Pending Admin Review</span>
-              `}
-            </div>
-          `;
-  }).join('')}
+              `;
+            } else {
+              // Inter-Floor Relocation Approval
+              const prevFlr = masterDataService.getFloorById(a.previousFloorId);
+              const prevLin = masterDataService.getLineById(a.previousLineId);
+              const destFlr = masterDataService.getFloorById(a.destFloorId);
+              const destLin = masterDataService.getLineById(a.destLineId);
+
+              return `
+                <div style="background: var(--bg-surface); border: 1.5px solid rgba(56, 189, 248, 0.4); border-radius: 8px; padding: 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.2);">
+                  <div style="flex: 1; min-width: 240px;">
+                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                      <span style="font-family: var(--font-mono); font-weight: 900; color: #38bdf8; font-size: 14px;">${escapeHtml(a.serialNumber)}</span>
+                      <span style="font-size: 13px; font-weight: 700; color: #fff;">${escapeHtml(a.machineNameStr)}</span>
+                      <span style="font-size: 11px; color: var(--text-secondary);">${escapeHtml(a.brandStr)} / ${escapeHtml(a.modelStr)}</span>
+                      <span class="badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.4); font-size: 10.5px; font-weight: 800; padding: 2px 7px;">
+                        🏢 Inter-Floor Relocation
+                      </span>
+                    </div>
+
+                    <div style="display: flex; gap: 8px; align-items: center; margin-top: 6px; font-size: 11.5px; flex-wrap: wrap;">
+                      <span style="color: #f87171;">Previous: <strong>${escapeHtml(prevFlr?.name || a.previousFloorId)} / ${escapeHtml(prevLin?.name || a.previousLineId)}</strong></span>
+                      <span>&rarr;</span>
+                      <span style="color: #34d399;">Destination: <strong>${escapeHtml(destFlr?.name || a.destFloorId)} / ${escapeHtml(destLin?.name || a.destLineId)}</strong></span>
+                      ${(a.presentNeedle || a.needleQuantity) ? `
+                        <span style="background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 4px; padding: 1px 6px; color: #38bdf8; font-weight: 700;">🪡 Present Needle: ${escapeHtml(a.presentNeedle || a.needleQuantity)}</span>
+                      ` : ''}
+                    </div>
+
+                    <div style="font-size: 10.5px; color: var(--text-muted); margin-top: 4px;">
+                      Session: <strong>${escapeHtml(a.sessionId)}</strong> &bull; Requested by: <strong>${escapeHtml(a.requestedBy)}</strong> on ${new Date(a.requestedAt).toLocaleDateString()}
+                    </div>
+                  </div>
+
+                  ${canApprove ? `
+                    <div style="display: flex; gap: 6px; width: 100%; justify-content: flex-end;">
+                      <button type="button" class="btn btn-danger btn-sm btn-reject-relocation" data-id="${a.id}" style="min-height: 38px; font-size: 11.5px; padding: 6px 14px; flex: 1;">
+                        ✕ Reject
+                      </button>
+                      <button type="button" class="btn btn-primary btn-sm btn-approve-relocation" data-id="${a.id}" style="min-height: 38px; font-size: 11.5px; padding: 6px 16px; background: #059669; border-color: #34d399; flex: 1;">
+                        ✓ Approve Move
+                      </button>
+                    </div>
+                  ` : `
+                    <span class="badge badge-idle">Pending Admin Review</span>
+                  `}
+                </div>
+              `;
+            }
+          }).join('')}
       </div>
 
     </div>
@@ -3437,18 +3523,22 @@ export function initRelocateViewEvents() {
   }
 
   if (btnConfirmComplete) {
-    btnConfirmComplete.addEventListener('click', () => {
+    btnConfirmComplete.addEventListener('click', async () => {
       const active = relocateService.getActiveSession();
       if (!active) return;
       const notes = root.querySelector('#final-reconciliation-notes')?.value || '';
 
       try {
-        relocateService.completeSession(active.id, notes);
+        btnConfirmComplete.disabled = true;
+        btnConfirmComplete.innerHTML = '<span class="btn-spinner"></span> Submitting...';
+        await relocateService.completeSession(active.id, notes);
         completeModalOpen = false;
-        activeTab = 'history';
-        notificationService.notifySuccess('Verification Finalized', `Session ${active.id} reconciled successfully!`);
+        activeTab = 'approvals';
+        notificationService.notifySuccess('Verification Finalized', `Session ${active.id} reconciled. Missing machines submitted for Floor Manager Approval!`);
         refreshView();
       } catch (err) {
+        btnConfirmComplete.disabled = false;
+        btnConfirmComplete.innerHTML = '✓ Finalize &amp; Submit to Floor Manager';
         notificationService.notifyError('Completion Error', 'Error completing session: ' + err.message);
       }
     });
@@ -3480,6 +3570,72 @@ export function initRelocateViewEvents() {
       } catch (err) {
         notificationService.notifyError('Rejection Failed', 'Error rejecting relocation: ' + err.message);
       }
+    });
+  });
+
+  // 9b. Floor Manager Idle Approval / Reject Buttons
+  root.querySelectorAll('.btn-approve-idle').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = btn.getAttribute('data-id');
+      const notes = prompt('Enter approval note (optional):', 'Confirmed missing from line during physical audit; idle approved');
+      if (notes === null) return;
+      try {
+        btn.disabled = true;
+        await relocateService.approveIdleClassification(id, notes);
+        notificationService.notifySuccess('Idle Classification Approved', 'Machine successfully marked as IDLE in inventory!');
+        refreshView();
+      } catch (err) {
+        notificationService.notifyError('Approval Failed', 'Error approving idle classification: ' + err.message);
+        btn.disabled = false;
+      }
+    });
+  });
+
+  root.querySelectorAll('.btn-reject-idle').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = btn.getAttribute('data-id');
+      const reason = prompt('Please enter rejection reason:', 'Machine physically located or still active in line');
+      if (!reason) return;
+      try {
+        btn.disabled = true;
+        await relocateService.rejectIdleClassification(id, reason);
+        notificationService.notifyWarning('Idle Request Rejected', 'Machine retained active in line.');
+        refreshView();
+      } catch (err) {
+        notificationService.notifyError('Rejection Failed', 'Error rejecting idle classification: ' + err.message);
+        btn.disabled = false;
+      }
+    });
+  });
+
+  const btnApproveAllIdle = root.querySelector('#btn-approve-all-idle');
+  if (btnApproveAllIdle) {
+    btnApproveAllIdle.addEventListener('click', async () => {
+      const confirmed = await notificationService.confirm({
+        title: 'Approve All Idle Machines',
+        message: 'Are you sure you want to approve idle classification for all missing machines? This will transition them to IDLE in inventory.',
+        confirmText: 'Yes, Approve All',
+        cancelText: 'Cancel'
+      });
+      if (!confirmed) return;
+
+      try {
+        btnApproveAllIdle.disabled = true;
+        const count = await relocateService.approveAllPendingIdle(null, 'Batch approved by Floor Manager');
+        notificationService.notifySuccess('Batch Approved', `Approved ${count} machine(s) as IDLE.`);
+        refreshView();
+      } catch (err) {
+        notificationService.notifyError('Batch Approval Error', err.message);
+        btnApproveAllIdle.disabled = false;
+      }
+    });
+  }
+
+  root.querySelectorAll('.btn-approvals-filter').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      approvalsFilter = btn.getAttribute('data-filter') || 'ALL';
+      refreshView();
     });
   });
 
