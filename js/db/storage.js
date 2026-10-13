@@ -170,6 +170,7 @@ class StorageEngine {
     this._loadedSecondaryTables = new Set();
     this._realtimeListenerStarted = false;
     this._hydrationPromise = null;
+    this._tableIdMaps = {};
   }
 
   init() {
@@ -570,6 +571,7 @@ class StorageEngine {
     }
 
     const records = this.data[table];
+    this._invalidateTableIdMap(table);
 
     // 1. High-capacity persistent write to IndexedDB (no 5MB quota crashes)
     try {
@@ -976,6 +978,7 @@ class StorageEngine {
     });
 
     if (updated) {
+      this._invalidateTableIdMap();
       this.rebuildAllIndexes();
       this.updateStatusBadge('saved');
       console.log(`[Database Store] ✅ Synchronized with ${sourceName}. Total machines: ${this.data[TABLE_NAMES.MACHINES]?.length || 0}, Total lines: ${this.data[TABLE_NAMES.LINES]?.length || 0}`);
@@ -1398,9 +1401,33 @@ class StorageEngine {
     return this.data[tableName];
   }
 
+  _invalidateTableIdMap(tableName = null) {
+    if (!this._tableIdMaps) this._tableIdMaps = {};
+    if (tableName) {
+      delete this._tableIdMaps[tableName];
+    } else {
+      this._tableIdMaps = {};
+    }
+  }
+
   getItem(tableName, id) {
-    const table = this.data[tableName] || [];
-    return table.find(item => item.id === id) || null;
+    if (!id) return null;
+    if (!this._tableIdMaps) this._tableIdMaps = {};
+    let map = this._tableIdMaps[tableName];
+    if (!map) {
+      map = new Map();
+      const table = this.data[tableName] || [];
+      for (let i = 0; i < table.length; i++) {
+        const item = table[i];
+        if (item && item.id != null) {
+          map.set(item.id, item);
+          const strId = String(item.id);
+          if (strId !== item.id) map.set(strId, item);
+        }
+      }
+      this._tableIdMaps[tableName] = map;
+    }
+    return map.get(id) || map.get(String(id)) || null;
   }
 
   insert(tableName, item) {

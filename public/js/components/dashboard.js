@@ -104,10 +104,12 @@ export function renderDashboard() {
   const pmDueWithin7Days = pmMetrics.dueWithin7Days || 0;
   const pmUpcoming = pmMetrics.upcoming || 0;
 
-  // Servicing schedules preview
-  const allMaintMachines = (typeof preventiveMaintenanceService.getAllMachinesWithMaintenance === 'function')
-    ? preventiveMaintenanceService.getAllMachinesWithMaintenance()
-    : [];
+  // Servicing schedules preview: reuse machines already enriched by getDashboardMetrics
+  const allMaintMachines = pmMetrics.filteredMachines || (
+    (typeof preventiveMaintenanceService.getAllMachinesWithMaintenance === 'function')
+      ? preventiveMaintenanceService.getAllMachinesWithMaintenance()
+      : []
+  );
 
   const urgencyWeight = { 'OVERDUE': 4, 'DUE_TODAY': 3, 'DUE_TOMORROW': 2, 'DUE_SOON': 2, 'SCHEDULED': 1, 'COMPLETED': 0 };
   const sortedMaintMachines = [...allMaintMachines].sort((a, b) => {
@@ -168,22 +170,29 @@ export function renderDashboard() {
   let sumNeedlePending = 0;
   let sumNeedleStock = 0;
 
-  const needleTableRows = targetNeedleConfigs.map(cfg => {
-    const matchingMachines = machines.filter(m => {
-      const enriched = (typeof needleService.getEnrichedMachine === 'function') ? needleService.getEnrichedMachine(m) : m;
-      const specType = enriched?.specNeedleType || m.needleType || '';
-      const mName = enriched?.machineNameStr || mnMap.get(m.machineNameId) || m.machineName || '';
-      return cfg.matchFn(specType, mName);
-    });
+  const needleBuckets = targetNeedleConfigs.map(cfg => ({
+    cfg,
+    machineCount: 0,
+    requiredQty: 0
+  }));
 
-    const machineCount = matchingMachines.length;
-    let requiredQty = 0;
-    matchingMachines.forEach(m => {
-      const mQty = Math.max(1, parseInt(m.quantity ?? 1, 10) || 1);
-      requiredQty += (cfg.perMachine * mQty);
-    });
+  for (let i = 0; i < machines.length; i++) {
+    const m = machines[i];
+    const specType = m.specNeedleType || m.needleType || '';
+    const mName = m.machineNameStr || mnMap.get(m.machineNameId) || m.machineName || '';
+    const mQty = Math.max(1, parseInt(m.quantity ?? 1, 10) || 1);
 
-    // Check storage master catalog for store buffer
+    for (let j = 0; j < targetNeedleConfigs.length; j++) {
+      if (targetNeedleConfigs[j].matchFn(specType, mName)) {
+        needleBuckets[j].machineCount++;
+        needleBuckets[j].requiredQty += (targetNeedleConfigs[j].perMachine * mQty);
+        break;
+      }
+    }
+  }
+
+  const needleTableRows = needleBuckets.map(b => {
+    const { cfg, machineCount, requiredQty } = b;
     const smItems = smList.filter(sm => 
       (sm.category === 'NEEDLE' || sm.subCategory === 'NEEDLE' || (sm.item_name && sm.item_name.toLowerCase().includes('needle'))) &&
       (sm.item_name && sm.item_name.includes(cfg.code))

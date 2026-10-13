@@ -1505,14 +1505,45 @@ class PreventiveMaintenanceService {
   // 3. MACHINE DATA AUTO-SYNC & PROFILE RESOLVER (ZERO DUPLICATION)
   // =========================================================================
 
+  _getMaintenanceRecordsIndex() {
+    const allRecords = storage.getTable(TABLE_NAMES.PREVENTIVE_MAINTENANCE) || [];
+    const byMachineId = new Map();
+    const bySerial = new Map();
+
+    for (let i = 0; i < allRecords.length; i++) {
+      const r = allRecords[i];
+      if (!r) continue;
+      if (r.machineId) {
+        let list = byMachineId.get(r.machineId);
+        if (!list) { list = []; byMachineId.set(r.machineId, list); }
+        list.push(r);
+      }
+      if (r.serialNumber) {
+        const s = String(r.serialNumber).trim().toUpperCase();
+        let list = bySerial.get(s);
+        if (!list) { list = []; bySerial.set(s, list); }
+        list.push(r);
+      }
+    }
+
+    const sortFn = (a, b) => new Date(b.serviceDate || b.createdAt) - new Date(a.serviceDate || a.createdAt);
+    for (const list of byMachineId.values()) list.sort(sortFn);
+    for (const list of bySerial.values()) list.sort(sortFn);
+
+    return { byMachineId, bySerial };
+  }
+
   /**
    * Enriches a machine with live inventory data, maintenance profile, service sticker & history
    */
-  getMachinePreventiveProfile(machineIdOrSerial) {
+  getMachinePreventiveProfile(machineIdOrSerial, optIndex = null) {
     if (!machineIdOrSerial) return null;
 
     // Resolve machine live from inventory
-    let rawMachine = storage.getItem(TABLE_NAMES.MACHINES, machineIdOrSerial);
+    let rawMachine = (typeof machineIdOrSerial === 'object' && machineIdOrSerial !== null)
+      ? machineIdOrSerial
+      : storage.getItem(TABLE_NAMES.MACHINES, machineIdOrSerial);
+
     if (!rawMachine) {
       rawMachine = historyService.findMachineBySerialOnly(machineIdOrSerial);
     }
@@ -1528,13 +1559,20 @@ class PreventiveMaintenanceService {
     const machineTypeName = enriched.machineName?.name || rawMachine.machineName || 'Sewing Machine';
     const config = this.getConfigByMachineType(machineTypeName);
 
-    // Fetch all maintenance records for this machine
-    const allRecords = storage.getTable(TABLE_NAMES.PREVENTIVE_MAINTENANCE) || [];
-    const machineRecords = allRecords
-      .filter(r => (r.machineId === rawMachine.id) || (r.serialNumber && r.serialNumber.trim().toUpperCase() === rawMachine.serialNumber.trim().toUpperCase()))
-      .sort((a, b) => new Date(b.serviceDate || b.createdAt) - new Date(a.serviceDate || a.createdAt));
-
-    const latestRecord = machineRecords[0] || null;
+    // Fetch maintenance records using index if provided, or fallback to filter
+    let latestRecord = null;
+    let machineRecords = [];
+    if (optIndex) {
+      const cleanSerial = rawMachine.serialNumber ? String(rawMachine.serialNumber).trim().toUpperCase() : '';
+      machineRecords = optIndex.byMachineId.get(rawMachine.id) || (cleanSerial ? optIndex.bySerial.get(cleanSerial) : null) || [];
+      latestRecord = machineRecords[0] || null;
+    } else {
+      const allRecords = storage.getTable(TABLE_NAMES.PREVENTIVE_MAINTENANCE) || [];
+      machineRecords = allRecords
+        .filter(r => (r.machineId === rawMachine.id) || (r.serialNumber && r.serialNumber.trim().toUpperCase() === rawMachine.serialNumber.trim().toUpperCase()))
+        .sort((a, b) => new Date(b.serviceDate || b.createdAt) - new Date(a.serviceDate || a.createdAt));
+      latestRecord = machineRecords[0] || null;
+    }
 
     let frequencyDays = config?.frequencyDays || 91;
 
@@ -1619,8 +1657,11 @@ class PreventiveMaintenanceService {
       });
     }
 
-    // Map all machines to full preventive profile
-    const enrichedList = allMachines.map(m => this.getMachinePreventiveProfile(m.id)).filter(Boolean);
+    // Build index once for all machines
+    const recIndex = this._getMaintenanceRecordsIndex();
+
+    // Map all machines to full preventive profile with pre-indexed records
+    const enrichedList = allMachines.map(m => this.getMachinePreventiveProfile(m, recIndex)).filter(Boolean);
 
     // Filter by Search text (serial, name, model, brand, floor, line, sticker, mechanic)
     let filtered = enrichedList;
@@ -2264,7 +2305,8 @@ class PreventiveMaintenanceService {
       dueWithin7Days,
       overdue,
       upcoming,
-      completedCount
+      completedCount,
+      filteredMachines
     };
   }
 

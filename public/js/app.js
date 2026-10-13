@@ -491,6 +491,9 @@ class ERPApplication {
    * Fast, ultra-smooth view transition that preserves scroll & avoids layout shifts
    */
   switchView(newView) {
+    if (this._isSwitchingView) return;
+    this._isSwitchingView = true;
+
     try {
       const currentUser = authService.getCurrentUser();
       // Security Gate: Redirect unauthenticated requests to login
@@ -534,12 +537,19 @@ class ERPApplication {
       };
 
       if (isStandaloneTarget || isCurrentlyStandalone) {
+        this._currentRenderedView = newView;
         updateHistoryState(newView);
         this.render();
         return;
       }
 
-      // Ensure state is updated to new view
+      // If view is already rendered and active, just ensure sidebar highlights match and return instantly
+      if (this._currentRenderedView === newView && state.get('currentView') === newView) {
+        updateSidebarActiveState(newView);
+        return;
+      }
+
+      // Ensure state is updated to new view without duplicate recursive renders
       if (state.get('currentView') !== newView) {
         state.set('currentView', newView);
       }
@@ -550,6 +560,7 @@ class ERPApplication {
       this.renderNavbarOnly();
       // 3. Render main page content with clean scroll reset and explicit target view
       this.renderMainContent(false, false, newView);
+      this._currentRenderedView = newView;
 
       // Sync browser history state smoothly
       updateHistoryState(newView);
@@ -557,6 +568,8 @@ class ERPApplication {
     } catch (err) {
       console.error('Error during smooth view transition:', err);
       this.render();
+    } finally {
+      this._isSwitchingView = false;
     }
   }
 

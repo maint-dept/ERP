@@ -429,12 +429,14 @@ export function initSidebarEvents() {
           if (btn) btn.click();
         }
       } else {
-        // Single clean view switch
-        if (typeof window.app !== 'undefined' && typeof window.app.switchView === 'function') {
-          window.app.switchView(view);
-        } else {
-          state.set('currentView', view);
-        }
+        // Instant visual feedback: allow browser to immediately paint active state before rendering
+        requestAnimationFrame(() => {
+          if (typeof window.app !== 'undefined' && typeof window.app.switchView === 'function') {
+            window.app.switchView(view);
+          } else {
+            state.set('currentView', view);
+          }
+        });
       }
     }
   });
