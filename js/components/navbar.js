@@ -9,15 +9,27 @@ import { state } from '../state.js';
 import { storage } from '../db/storage.js';
 
 function getRoleName(user) {
+  if (!user) return 'User';
+  if (authService.isSuperAdmin(user)) return 'Super Administrator';
+  if (authService.isAdmin(user)) return 'Administrator';
+  if (user.presetName) return user.presetName;
+  if (user.presetId) {
+    const p = authService.getPresetById(user.presetId);
+    if (p?.name) return p.name;
+  }
   const roleObj = authService.getRoleById(user?.roleId) || authService.getRoleByCode(user?.role);
-  return roleObj?.name || user?.role || 'Super Administrator';
+  if (roleObj?.name) return roleObj.name;
+  if (user.role === 'USER') return 'Maintenance User';
+  return user.role || 'Maintenance User';
 }
 
 function getShortRole(roleName) {
   if (!roleName) return 'User';
-  if (roleName.includes('Super Administrator') || roleName.includes('SUPER_ADMIN')) return 'Super Admin';
+  if (roleName.includes('Super Administrator') || roleName.includes('SUPER_ADMIN') || roleName.includes('Super Admin')) return 'Super Admin';
   if (roleName.includes('Plant Maintenance Manager') || roleName.includes('MAINT_MANAGER')) return 'Manager';
-  if (roleName.includes('Store & Spare Parts') || roleName.includes('STORE_INCHARGE')) return 'Store Lead';
+  if (roleName.includes('Administrator') || roleName.includes('ADMIN')) return 'Admin';
+  if (roleName.includes('Maintenance User')) return 'Maint User';
+  if (roleName.includes('Store & Spare Parts') || roleName.includes('STORE_INCHARGE') || roleName.includes('Store User')) return 'Store Lead';
   if (roleName.includes('Floor Maintenance') || roleName.includes('FLOOR_MAINT')) return 'Floor Lead';
   if (roleName.includes('Line Maintenance') || roleName.includes('LINE_TECH')) return 'Technician';
   if (roleName.includes('ENT Lab') || roleName.includes('ET_LAB_TECH')) return 'ENT Lab';
@@ -62,8 +74,20 @@ export function renderNavbar() {
 
   const userOptions = allowedSwitchUsers.map(u => {
     const isSelected = u.id === user?.id ? 'selected' : '';
-    const rObj = authService.getRoleById(u.roleId) || authService.getRoleByCode(u.role);
-    const rName = rObj?.name || u.role;
+    let rName = '';
+    if (authService.isSuperAdmin(u)) {
+      rName = 'Super Administrator';
+    } else if (authService.isAdmin(u)) {
+      rName = 'Administrator';
+    } else if (u.presetName) {
+      rName = u.presetName;
+    } else if (u.presetId) {
+      const p = authService.getPresetById(u.presetId);
+      rName = p?.name || 'Maintenance User';
+    } else {
+      const rObj = authService.getRoleById(u.roleId) || authService.getRoleByCode(u.role);
+      rName = rObj?.name || (u.role === 'USER' ? 'Maintenance User' : (u.role || 'Maintenance User'));
+    }
     return `<option value="${u.id}" ${isSelected}>${rName}: ${u.name}</option>`;
   }).join('');
 
@@ -171,7 +195,7 @@ export function renderNavbar() {
               <div class="nav-user-dropdown-info">
                 <div class="nav-user-dropdown-name">${displayName}</div>
                 <div class="nav-user-dropdown-email">@${user?.username || 'user'}${user?.email ? ` • ${user.email}` : ''}</div>
-                <div class="nav-user-dropdown-role-badge">👑 ${roleName}</div>
+                <div class="nav-user-dropdown-role-badge">${isSuperAdmin ? '🛡️' : (isAdmin ? '👑' : '👤')} ${roleName}</div>
               </div>
             </div>
 

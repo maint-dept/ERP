@@ -23,15 +23,16 @@ class AuthService {
       this.seedDefaultRoles();
     }
 
-    // Clean legacy demo accounts from storage
+    // Clean legacy demo accounts from storage & heal corrupted roles
     this.cleanDemoUsers();
+    this.autoHealUserRolesAndPresets();
 
-    const savedUserId = localStorage.getItem('al_muslim_active_user_id');
+    const savedUserId = typeof localStorage !== 'undefined' ? localStorage.getItem('al_muslim_active_user_id') : null;
     const users = storage.getTable(TABLE_NAMES.USERS) || [];
     
     if (savedUserId) {
       this.currentUser = users.find(u => u.id === savedUserId && u.status === 'ACTIVE') || null;
-      if (!this.currentUser && users.length > 0) {
+      if (!this.currentUser && users.length > 0 && typeof localStorage !== 'undefined') {
         localStorage.removeItem('al_muslim_active_user_id');
       }
     } else {
@@ -163,6 +164,118 @@ class AuthService {
     }
   }
 
+  /**
+   * Auto-heals corrupted user roles: ensures users assigned to standard/maintenance
+   * access profiles are never accidentally stamped with Super Admin role/roleId.
+   */
+  autoHealUserRolesAndPresets() {
+    if (this._isAutoHealing) return;
+    this._isAutoHealing = true;
+    try {
+      let users = storage.getTable(TABLE_NAMES.USERS) || [];
+      if (!Array.isArray(users) || users.length === 0) return;
+      let changed = false;
+
+      users = users.map(u => {
+        // 1. Permanent Primary Super Admins
+        if (u.id === 'usr-super-admin' || u.username === 'motaher') {
+          if (u.role !== 'SUPER_ADMIN' || u.roleId !== 'role-super-admin' || u.presetId !== 'preset_super_admin') {
+            changed = true;
+            return { ...u, role: 'SUPER_ADMIN', roleId: 'role-super-admin', presetId: 'preset_super_admin', presetName: 'Super Admin' };
+          }
+          return u;
+        }
+        if (u.id === 'usr-fallback-superadmin' || u.username === 'superadmin') {
+          if (u.role !== 'SUPER_ADMIN' || u.roleId !== 'role-super-admin' || u.presetId !== 'preset_super_admin') {
+            changed = true;
+            return { ...u, role: 'SUPER_ADMIN', roleId: 'role-super-admin', presetId: 'preset_super_admin', presetName: 'Super Admin' };
+          }
+          return u;
+        }
+
+        // 2. Factory Maintenance Administrator
+        if (u.id === 'usr-admin' || u.username === 'admin') {
+          if (u.role !== 'ADMIN' || u.roleId !== 'role-admin' || u.presetId !== 'preset_admin') {
+            changed = true;
+            return { ...u, role: 'ADMIN', roleId: 'role-admin', presetId: 'preset_admin', presetName: 'Admin' };
+          }
+          return u;
+        }
+
+        // 3. Explicit Super Admin accounts
+        const isExplicitSuper = (u.role === 'SUPER_ADMIN' || u.presetId === 'preset_super_admin') &&
+                                (u.role !== 'USER' && u.presetId !== 'preset_maintenance_user');
+        if (isExplicitSuper) {
+          if (u.roleId !== 'role-super-admin') {
+            changed = true;
+            return { ...u, role: 'SUPER_ADMIN', roleId: 'role-super-admin', presetId: u.presetId || 'preset_super_admin', presetName: u.presetName || 'Super Admin' };
+          }
+          return u;
+        }
+
+        // 4. Explicit Admin accounts
+        const isExplicitAdmin = (u.role === 'ADMIN' || u.presetId === 'preset_admin') &&
+                                (u.role !== 'USER' && u.presetId !== 'preset_maintenance_user');
+        if (isExplicitAdmin) {
+          if (u.roleId !== 'role-admin') {
+            changed = true;
+            return { ...u, role: 'ADMIN', roleId: 'role-admin', presetId: u.presetId || 'preset_admin', presetName: u.presetName || 'Admin' };
+          }
+          return u;
+        }
+
+        // 5. Explicit Manager accounts
+        const isExplicitManager = (u.role === 'MANAGER' || u.presetId === 'preset_maintenance_manager' || u.presetId === 'preset_manager') &&
+                                  (u.role !== 'USER' && u.presetId !== 'preset_maintenance_user');
+        if (isExplicitManager) {
+          if (u.roleId !== 'role-manager' || u.role !== 'MANAGER') {
+            changed = true;
+            return { ...u, role: 'MANAGER', roleId: 'role-manager', presetId: u.presetId || 'preset_maintenance_manager', presetName: u.presetName || 'Maintenance Manager' };
+          }
+          return u;
+        }
+
+        // 6. All other accounts are Standard / Maintenance Users!
+        // If roleId was accidentally set to 'role-super-admin' or 'role-admin', heal it immediately!
+        let copy = { ...u };
+        let userUpdated = false;
+
+        if (copy.roleId === 'role-super-admin' || copy.roleId === 'role-admin' || copy.roleId === 'role-user' || !copy.roleId) {
+          copy.roleId = 'role-maintenance-user';
+          userUpdated = true;
+        }
+        if (copy.role === 'SUPER_ADMIN' || copy.role === 'ADMIN' || !copy.role) {
+          copy.role = 'USER';
+          userUpdated = true;
+        }
+        if (!copy.presetId || copy.presetId === 'preset_super_admin' || copy.presetId === 'preset_admin') {
+          copy.presetId = 'preset_maintenance_user';
+          copy.presetName = 'Maintenance User';
+          userUpdated = true;
+        } else if (!copy.presetName) {
+          const pDef = (DEFAULT_PERMISSION_PRESETS || []).find(pr => pr.id === copy.presetId || pr.code === copy.presetId);
+          copy.presetName = pDef ? pDef.name : 'Maintenance User';
+          userUpdated = true;
+        }
+
+        if (userUpdated) {
+          changed = true;
+          return copy;
+        }
+
+        return u;
+      });
+
+      if (changed) {
+        storage.setTable(TABLE_NAMES.USERS, users);
+        storage.saveTable(TABLE_NAMES.USERS, true).catch(() => {});
+        console.log('[AuthService] Auto-healed corrupted user roles and access profile bindings.');
+      }
+    } finally {
+      this._isAutoHealing = false;
+    }
+  }
+
   seedDefaultRoles() {
     const defaultRoles = [
       {
@@ -186,14 +299,54 @@ class AuthService {
         permissions: JSON.parse(JSON.stringify(DEFAULT_PERMISSION_TEMPLATES.ADMIN))
       },
       {
+        id: 'role-manager',
+        code: 'MANAGER',
+        name: 'Maintenance Manager',
+        description: 'Floor and shift management with machine edit, transfer approval, maintenance log review, and export rights.',
+        isSystem: true,
+        status: 'ACTIVE',
+        createdAt: '2026-01-01T00:00:00Z',
+        permissions: JSON.parse(JSON.stringify(DEFAULT_PERMISSION_TEMPLATES.MANAGER || DEFAULT_PERMISSION_TEMPLATES.ADMIN))
+      },
+      {
+        id: 'role-maintenance-user',
+        code: 'MAINTENANCE_USER',
+        name: 'Maintenance User',
+        description: 'Field mechanical & electrical technicians for PM execution, machine servicing, ENT circuit repairs, and tool allocations.',
+        isSystem: true,
+        status: 'ACTIVE',
+        createdAt: '2026-01-01T00:00:00Z',
+        permissions: JSON.parse(JSON.stringify(DEFAULT_PERMISSION_TEMPLATES.MAINTENANCE_USER || DEFAULT_PERMISSION_TEMPLATES.USER))
+      },
+      {
         id: 'role-user',
         code: 'USER',
-        name: 'Standard User',
+        name: 'Maintenance User',
         description: 'Standard factory operator and maintenance user with operational access to inventory, transfer requests, and reports.',
         isSystem: true,
         status: 'ACTIVE',
         createdAt: '2026-01-01T00:00:00Z',
         permissions: JSON.parse(JSON.stringify(DEFAULT_PERMISSION_TEMPLATES.USER || DEFAULT_PERMISSION_TEMPLATES.MAINTENANCE_USER))
+      },
+      {
+        id: 'role-store-user',
+        code: 'STORE_USER',
+        name: 'Store User',
+        description: 'Spare parts stockroom officer with parts catalog management, import/export, and stock receipt access.',
+        isSystem: true,
+        status: 'ACTIVE',
+        createdAt: '2026-01-01T00:00:00Z',
+        permissions: JSON.parse(JSON.stringify(DEFAULT_PERMISSION_TEMPLATES.STORE_INCHARGE || DEFAULT_PERMISSION_TEMPLATES.USER))
+      },
+      {
+        id: 'role-viewer',
+        code: 'VIEWER',
+        name: 'Viewer / Auditor',
+        description: 'Read-only access for compliance auditors, line supervisors, and factory visitors.',
+        isSystem: true,
+        status: 'ACTIVE',
+        createdAt: '2026-01-01T00:00:00Z',
+        permissions: JSON.parse(JSON.stringify(DEFAULT_PERMISSION_TEMPLATES.FACTORY_VIEWER || DEFAULT_PERMISSION_TEMPLATES.VIEWER || {}))
       }
     ];
 
@@ -221,7 +374,12 @@ class AuthService {
   }
 
   getAllUsers() {
-    return storage.getTable(TABLE_NAMES.USERS) || [];
+    const users = storage.getTable(TABLE_NAMES.USERS) || [];
+    if (!this._isAutoHealing && users.some(u => (u.role === 'USER' || u.presetId === 'preset_maintenance_user') && (u.roleId === 'role-super-admin' || u.roleId === 'role-admin'))) {
+      this.autoHealUserRolesAndPresets();
+      return storage.getTable(TABLE_NAMES.USERS) || [];
+    }
+    return users;
   }
 
   getUserById(userId) {
@@ -244,12 +402,26 @@ class AuthService {
   }
 
   getRoleById(roleId) {
-    return storage.getItem(TABLE_NAMES.ROLES, roleId);
+    if (!roleId) return null;
+    const r = storage.getItem(TABLE_NAMES.ROLES, roleId);
+    if (r) return r;
+    if (roleId === 'role-user' || roleId === 'role-maintenance-user') {
+      return { id: 'role-maintenance-user', code: 'MAINTENANCE_USER', name: 'Maintenance User' };
+    }
+    return null;
   }
 
   getRoleByCode(code) {
+    if (!code) return null;
+    const clean = String(code).trim().toUpperCase();
     const roles = this.getAllRoles();
-    return roles.find(r => r.code?.toUpperCase() === code?.toUpperCase());
+    const r = roles.find(x => x.code?.toUpperCase() === clean);
+    if (r) return r;
+    if (clean === 'USER' || clean === 'MAINTENANCE_USER') {
+      return roles.find(x => x.code?.toUpperCase() === 'MAINTENANCE_USER' || x.code?.toUpperCase() === 'USER') ||
+        { id: 'role-maintenance-user', code: 'MAINTENANCE_USER', name: 'Maintenance User' };
+    }
+    return null;
   }
 
   /**
@@ -733,24 +905,50 @@ class AuthService {
   isSuperAdmin(user = null) {
     const u = user || this.currentUser;
     if (!u) return false;
-    return u.role === 'SUPER_ADMIN' ||
-           u.roleId === 'role-super-admin' ||
-           u.username?.toLowerCase() === 'superadmin' ||
-           (u.username?.toLowerCase() === 'admin' && u.role === 'SUPER_ADMIN');
+
+    // Standard users, operators, technicians, and non-admin presets can NEVER be Super Admin
+    const uRole = (u.role || '').toUpperCase();
+    if (uRole === 'USER' || uRole === 'VIEWER' || uRole === 'OPERATOR' || uRole === 'MAINTENANCE_USER') {
+      return false;
+    }
+    if (u.presetId && u.presetId !== 'preset_super_admin') {
+      return false;
+    }
+
+    // Explicit primary system Super Admins
+    if (u.username?.toLowerCase() === 'motaher' || u.id === 'usr-super-admin') return true;
+    if (u.username?.toLowerCase() === 'superadmin' || u.id === 'usr-fallback-superadmin') return true;
+
+    // Explicit role or preset check
+    if (uRole === 'SUPER_ADMIN' || u.presetId === 'preset_super_admin') return true;
+
+    // Only if roleId matches AND role is not downgraded to normal user/admin
+    return (u.roleId === 'role-super-admin' && uRole !== 'ADMIN' && uRole !== 'USER');
   }
 
   isAdmin(user = null) {
     const u = user || this.currentUser;
+    if (!u) return false;
     if (this.isSuperAdmin(u)) return true;
-    // Only check actual role/roleId — not permission checks which could elevate non-admins
-    return u?.role === 'ADMIN' ||
-           u?.roleId === 'role-admin';
+
+    const uRole = (u.role || '').toUpperCase();
+    if (uRole === 'USER' || uRole === 'VIEWER' || uRole === 'OPERATOR' || uRole === 'MAINTENANCE_USER') {
+      return false;
+    }
+    if (u.presetId && !['preset_admin', 'preset_super_admin'].includes(u.presetId)) {
+      return false;
+    }
+
+    return uRole === 'ADMIN' || u?.roleId === 'role-admin' || u?.presetId === 'preset_admin';
   }
 
   isManager(user = null) {
     const u = user || this.currentUser;
+    if (!u) return false;
     if (this.isAdmin(u)) return true;
-    return u?.role === 'MANAGER' || u?.roleId === 'role-manager' || u?.designation?.toLowerCase().includes('manager');
+    const uRole = (u.role || '').toUpperCase();
+    if (uRole === 'USER' || uRole === 'VIEWER' || uRole === 'MAINTENANCE_USER') return false;
+    return uRole === 'MANAGER' || u?.roleId === 'role-manager' || u?.presetId === 'preset_manager' || u?.designation?.toLowerCase().includes('manager');
   }
 
   isUser(user = null) {
@@ -760,7 +958,8 @@ class AuthService {
 
   isViewer(user = null) {
     const u = user || this.currentUser;
-    return u?.role === 'VIEWER' || u?.roleId === 'role-viewer';
+    if (!u) return false;
+    return u?.role === 'VIEWER' || u?.roleId === 'role-viewer' || u?.presetId === 'preset_view_only';
   }
 
   // ==========================================
@@ -1260,10 +1459,16 @@ class AuthService {
 
     if (preset.code === 'SUPER_ADMIN') {
       updates.role = 'SUPER_ADMIN';
+      updates.roleId = 'role-super-admin';
     } else if (preset.code === 'ADMIN') {
       updates.role = 'ADMIN';
+      updates.roleId = 'role-admin';
+    } else if (preset.code === 'MANAGER') {
+      updates.role = 'MANAGER';
+      updates.roleId = 'role-manager';
     } else {
       updates.role = 'USER';
+      updates.roleId = 'role-maintenance-user';
     }
 
     if (syncScope && preset.scope) {
@@ -1303,9 +1508,19 @@ class AuthService {
         if (preset.permissions) {
           updates.permissions = JSON.parse(JSON.stringify(preset.permissions));
         }
-        if (preset.code === 'SUPER_ADMIN') updates.role = 'SUPER_ADMIN';
-        else if (preset.code === 'ADMIN') updates.role = 'ADMIN';
-        else if (preset.code) updates.role = 'USER';
+        if (preset.code === 'SUPER_ADMIN') {
+          updates.role = 'SUPER_ADMIN';
+          updates.roleId = 'role-super-admin';
+        } else if (preset.code === 'ADMIN') {
+          updates.role = 'ADMIN';
+          updates.roleId = 'role-admin';
+        } else if (preset.code === 'MANAGER') {
+          updates.role = 'MANAGER';
+          updates.roleId = 'role-manager';
+        } else {
+          updates.role = 'USER';
+          updates.roleId = 'role-maintenance-user';
+        }
 
         if (syncScope && preset.scope) {
           updates.assignedScope = JSON.parse(JSON.stringify(preset.scope));
@@ -1358,11 +1573,25 @@ class AuthService {
       cleanUser = `${cleanUser}_${Math.floor(100 + Math.random() * 900)}`;
     }
 
-    // Determine normalized role code: 'ADMIN' or 'USER'
+    // Determine normalized role code: 'SUPER_ADMIN', 'ADMIN', 'MANAGER' or 'USER'
     const roleUpper = (role || 'USER').toUpperCase();
-    const normalizedRole = roleUpper.includes('ADMIN') ? 'ADMIN' : 'USER';
-    const roleObj = storage.getItem(TABLE_NAMES.ROLES, roleId) || this.getRoleByCode(normalizedRole) || this.getAllRoles()[0];
-    const roleCode = roleObj?.code || normalizedRole;
+    let normalizedRole = 'USER';
+    if (roleUpper === 'SUPER_ADMIN' || presetId === 'preset_super_admin') {
+      normalizedRole = 'SUPER_ADMIN';
+    } else if (roleUpper.includes('ADMIN') || presetId === 'preset_admin') {
+      normalizedRole = 'ADMIN';
+    } else if (roleUpper.includes('MANAGER') || presetId === 'preset_manager') {
+      normalizedRole = 'MANAGER';
+    } else {
+      normalizedRole = 'USER';
+    }
+
+    // Role ID resolution
+    let resolvedRoleId = 'role-maintenance-user';
+    if (normalizedRole === 'SUPER_ADMIN') resolvedRoleId = 'role-super-admin';
+    else if (normalizedRole === 'ADMIN') resolvedRoleId = 'role-admin';
+    else if (normalizedRole === 'MANAGER') resolvedRoleId = 'role-manager';
+    else resolvedRoleId = 'role-maintenance-user';
 
     // Check if preset is specified
     let selectedPreset = null;
@@ -1371,7 +1600,7 @@ class AuthService {
     }
     if (!selectedPreset) {
       // Default to appropriate preset based on role
-      const defaultPresetId = roleCode === 'SUPER_ADMIN' ? 'preset_super_admin' : (roleCode === 'ADMIN' ? 'preset_admin' : 'preset_maintenance_user');
+      const defaultPresetId = normalizedRole === 'SUPER_ADMIN' ? 'preset_super_admin' : (normalizedRole === 'ADMIN' ? 'preset_admin' : 'preset_maintenance_user');
       selectedPreset = this.getPresetById(defaultPresetId);
     }
 
@@ -1382,7 +1611,7 @@ class AuthService {
     // If permissions are not explicitly passed or empty, load from preset or role template
     const effectivePermissions = permissions && Object.keys(permissions).length > 0
       ? permissions
-      : JSON.parse(JSON.stringify(selectedPreset?.permissions || roleObj?.permissions || defaultPerms));
+      : JSON.parse(JSON.stringify(selectedPreset?.permissions || defaultPerms));
 
     // Cryptographically hash password
     const hashedPassword = cryptoService.hashPassword(password);
@@ -1397,13 +1626,13 @@ class AuthService {
       employeeId: (employeeId || '').trim(),
       department: (department || '').trim(),
       designation: (designation || '').trim(),
-      role: roleCode,
-      roleId: roleObj?.id || (normalizedRole === 'ADMIN' ? 'role-admin' : 'role-user'),
-      presetId: selectedPreset ? selectedPreset.id : 'CUSTOM',
-      presetName: selectedPreset ? selectedPreset.name : 'Custom User',
+      role: normalizedRole,
+      roleId: resolvedRoleId,
+      presetId: selectedPreset ? selectedPreset.id : 'preset_maintenance_user',
+      presetName: selectedPreset ? selectedPreset.name : 'Maintenance User',
       status: status === 'INACTIVE' ? 'INACTIVE' : 'ACTIVE',
       mustChangePassword: Boolean(mustChangePassword),
-      assignedScope: assignedScope || (selectedPreset?.defaultScope ? JSON.parse(JSON.stringify(selectedPreset.defaultScope)) : { allGroups: true, groupIds: [], unitIds: [], floorIds: [], lineIds: [] }),
+      assignedScope: assignedScope || (selectedPreset?.defaultScope ? JSON.parse(JSON.stringify(selectedPreset.defaultScope)) : (selectedPreset?.scope ? JSON.parse(JSON.stringify(selectedPreset.scope)) : { allGroups: false, groupIds: [], unitIds: [], floorIds: [], lineIds: [] })),
       permissions: effectivePermissions,
       createdAt: new Date().toISOString()
     };
@@ -1484,9 +1713,20 @@ class AuthService {
 
     // If updating role, ensure roleId is updated and fallback permissions if none provided
     if (cleanUpdates.role) {
-      const normalizedRole = cleanUpdates.role.toUpperCase().includes('SUPER') ? 'SUPER_ADMIN' : (cleanUpdates.role.toUpperCase().includes('ADMIN') ? 'ADMIN' : 'USER');
+      const roleUpper = cleanUpdates.role.toUpperCase();
+      let normalizedRole = 'USER';
+      if (roleUpper === 'SUPER_ADMIN' || cleanUpdates.presetId === 'preset_super_admin') {
+        normalizedRole = 'SUPER_ADMIN';
+      } else if (roleUpper.includes('ADMIN') || cleanUpdates.presetId === 'preset_admin') {
+        normalizedRole = 'ADMIN';
+      } else if (roleUpper.includes('MANAGER') || cleanUpdates.presetId === 'preset_manager') {
+        normalizedRole = 'MANAGER';
+      } else {
+        normalizedRole = 'USER';
+      }
+
       cleanUpdates.role = normalizedRole;
-      cleanUpdates.roleId = normalizedRole === 'SUPER_ADMIN' ? 'role-super-admin' : (normalizedRole === 'ADMIN' ? 'role-admin' : 'role-user');
+      cleanUpdates.roleId = normalizedRole === 'SUPER_ADMIN' ? 'role-super-admin' : (normalizedRole === 'ADMIN' ? 'role-admin' : (normalizedRole === 'MANAGER' ? 'role-manager' : 'role-maintenance-user'));
       
       if (!cleanUpdates.permissions && !cleanUpdates.presetId) {
         cleanUpdates.permissions = JSON.parse(JSON.stringify(
@@ -1504,6 +1744,19 @@ class AuthService {
       const preset = this.getPresetById(cleanUpdates.presetId);
       if (preset) {
         cleanUpdates.presetName = preset.name;
+        if (preset.code === 'SUPER_ADMIN') {
+          cleanUpdates.role = 'SUPER_ADMIN';
+          cleanUpdates.roleId = 'role-super-admin';
+        } else if (preset.code === 'ADMIN') {
+          cleanUpdates.role = 'ADMIN';
+          cleanUpdates.roleId = 'role-admin';
+        } else if (preset.code === 'MANAGER') {
+          cleanUpdates.role = 'MANAGER';
+          cleanUpdates.roleId = 'role-manager';
+        } else {
+          cleanUpdates.role = 'USER';
+          cleanUpdates.roleId = 'role-maintenance-user';
+        }
         // if permissions not provided in updates, sync preset permissions
         if (!cleanUpdates.permissions) {
           cleanUpdates.permissions = JSON.parse(JSON.stringify(preset.permissions));
