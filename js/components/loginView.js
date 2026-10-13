@@ -26,7 +26,7 @@ export function renderLoginView() {
           <div style="width: 34px; height: 34px; background: #0284c7; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px;">
             🔧
           </div>
-          <span style="font-weight: 800; font-size: 15px; color: #fff; letter-spacing: 0.5px;">AL-MUSLIM GROUP <span style="color: #38bdf8;">• MAINTENANCE DEPARTMENT ERP</span></span>
+          <span style="font-weight: 800; font-size: 15px; color: #fff; letter-spacing: 0.5px;">AL-MUSLIM GROUP</span>
         </div>
 
         <button id="btn-back-to-home" class="btn btn-ghost btn-sm" style="color: #94a3b8; font-size: 13px; display: flex; align-items: center; gap: 6px;">

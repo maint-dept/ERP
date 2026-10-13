@@ -220,8 +220,8 @@ export function renderSidebar() {
                 <span class="brand-status-dot" style="width: 5px; height: 5px; border-radius: 50%; background: #10b981; box-shadow: 0 0 6px #10b981; display: inline-block;"></span>Live
               </span>
             </div>
-            <div class="brand-text-sub" style="font-size: 8.5px; color: #38bdf8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; margin-top: 3px; line-height: 1.2; white-space: nowrap;" title="Maintenance Department ERP">
-              MAINTENANCE DEPARTMENT ERP
+            <div class="brand-text-sub" style="font-size: 8.5px; color: #38bdf8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; margin-top: 3px; line-height: 1.2; white-space: nowrap;" title="Industrial Machine & Assets System">
+              INDUSTRIAL MACHINE &amp; ASSETS SYSTEM
             </div>
           </div>
         </div>

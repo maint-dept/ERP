@@ -13,7 +13,7 @@ export function renderQuickHelpModal() {
           <div class="modal-title">
             <span>📖 User Guide & Quick Reference Manual</span>
             <span style="font-size: 11px; background: var(--primary-light); color: #38bdf8; padding: 2px 8px; border-radius: 9999px;">
-              Al-Muslim Group • Maintenance Department ERP
+              Al-Muslim Group • Asset Management
             </span>
           </div>
           <button id="btn-close-help-modal" class="btn btn-ghost btn-sm" style="font-size: 18px;">✕</button>

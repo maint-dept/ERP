@@ -52,7 +52,7 @@ export function renderHomepageView(isDraft = false) {
           </div>
           <div>
             <div style="font-weight: 900; font-size: 15px; letter-spacing: 0.8px; color: #ffffff; line-height: 1.2;">
-              AL-MUSLIM GROUP <span style="color: #38bdf8;">• MAINTENANCE DEPARTMENT ERP</span>
+              AL-MUSLIM GROUP
             </div>
             <div style="font-size: 10.5px; color: #94a3b8; font-weight: 500;">
               Industrial Machine &amp; Assets Management System

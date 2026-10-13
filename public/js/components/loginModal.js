@@ -29,7 +29,7 @@ export function renderLoginModal() {
                 ${modalMode === 'LOGIN' ? 'User Authentication &amp; Access' : 'First-Time Password Setup'}
               </h2>
               <div style="font-size: 11.5px; color: #e0f2fe; margin-top: 2px;">
-                Al-Muslim Group &bull; Maintenance Department ERP
+                Al-Muslim Group &bull; Industrial Machine &amp; Assets System
               </div>
             </div>
           </div>
