@@ -28,8 +28,14 @@ let activeUserSection = (typeof localStorage !== 'undefined' && localStorage.get
 
 // Filtering & Search State
 let searchQuery = '';
+let cardSearchQuery = '';
 let shouldRestoreSearchFocus = false;
 let searchFocusCursorPos = 0;
+let shouldRestoreCardSearchFocus = false;
+let cardSearchFocusCursorPos = 0;
+let permCardSearchQuery = '';
+let permModuleFilterQuery = '';
+let presetModuleFilterQuery = '';
 let filterGroup = 'ALL';
 let filterUnit = 'ALL';
 let filterFloor = 'ALL';
@@ -177,6 +183,12 @@ export function renderUserManagement() {
     if (quickCardFilter === 'INACTIVE' && (acc.accountStatus !== 'INACTIVE' || !acc.hasAccount)) return false;
     if (quickCardFilter === 'MISSING_ACCOUNT' && acc.hasAccount) return false;
     if (quickCardFilter === 'TEMP_PASS' && (!acc.hasAccount || (acc.passwordStatus !== 'TEMPORARY' && acc.passwordStatus !== 'PENDING'))) return false;
+
+    // Dedicated Card Search Option
+    if (cardSearchQuery) {
+      const matchCard = userAccessService.matchesCardNumber ? userAccessService.matchesCardNumber(acc.cardNumber, cardSearchQuery) : (acc.cardNumber || '').toLowerCase().includes(cardSearchQuery.toLowerCase());
+      if (!matchCard) return false;
+    }
 
     // 1. Text Search (Card Number, Name, Username, Designation, Group, Unit, Floor, Line)
     if (searchQuery) {
@@ -414,30 +426,51 @@ export function renderUserManagement() {
         <!-- Search and Multi-Filtering Command Bar (Section 4) -->
         <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 12px 16px; display: flex; flex-direction: column; gap: 10px; box-shadow: var(--shadow-sm);">
           
-          <!-- Top Row: Text Search + Quick Reset -->
+          <!-- Top Row: Dedicated Card Search + General Search + Quick Reset -->
           <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-            <div style="flex: 1 1 280px; position: relative;">
-              <span style="position: absolute; left: 10px; top: 8px; font-size: 14px; color: var(--text-muted);">🔍</span>
-              <input 
-                type="text" 
-                id="uam-search-input" 
-                class="form-control" 
-                placeholder="Search by Card Number, Employee Name, Username, Department..." 
-                value="${searchQuery}"
-                style="height: 34px; padding-left: 32px; font-size: 12.5px; border-radius: 6px; width: 100%; box-sizing: border-box;"
-              />
-              ${searchQuery ? `
-                <button id="btn-clear-uam-search" type="button" style="position: absolute; right: 8px; top: 6px; background: transparent; border: none; color: var(--text-muted); cursor: pointer; font-size: 13px;">✕</button>
-              ` : ''}
+            <div style="display: flex; gap: 10px; flex: 1 1 540px; flex-wrap: wrap;">
+              
+              <!-- 1. Dedicated Card Number Search Option -->
+              <div style="flex: 1 1 210px; min-width: 190px; position: relative;">
+                <span style="position: absolute; left: 10px; top: 8px; font-size: 13px; color: #38bdf8;">🪪</span>
+                <input 
+                  type="text" 
+                  id="uam-card-search-input" 
+                  class="form-control font-mono" 
+                  placeholder="Card # Search (e.g. 05234)..." 
+                  value="${cardSearchQuery}"
+                  style="height: 34px; padding-left: 32px; font-size: 12px; font-weight: 700; border-radius: 6px; border: 1.5px solid rgba(56, 189, 248, 0.45); background: rgba(9, 14, 26, 0.7); width: 100%; box-sizing: border-box;"
+                />
+                ${cardSearchQuery ? `
+                  <button id="btn-clear-uam-card-search" type="button" style="position: absolute; right: 8px; top: 6px; background: transparent; border: none; color: #38bdf8; cursor: pointer; font-size: 13px;" title="Clear Card Search">✕</button>
+                ` : ''}
+              </div>
+
+              <!-- 2. General Search Input -->
+              <div style="flex: 2 1 270px; min-width: 210px; position: relative;">
+                <span style="position: absolute; left: 10px; top: 8px; font-size: 14px; color: var(--text-muted);">🔍</span>
+                <input 
+                  type="text" 
+                  id="uam-search-input" 
+                  class="form-control" 
+                  placeholder="Search by Employee Name, Username, Department..." 
+                  value="${searchQuery}"
+                  style="height: 34px; padding-left: 32px; font-size: 12.5px; border-radius: 6px; width: 100%; box-sizing: border-box;"
+                />
+                ${searchQuery ? `
+                  <button id="btn-clear-uam-search" type="button" style="position: absolute; right: 8px; top: 6px; background: transparent; border: none; color: var(--text-muted); cursor: pointer; font-size: 13px;" title="Clear Search">✕</button>
+                ` : ''}
+              </div>
+
             </div>
 
             <div style="display: flex; align-items: center; gap: 8px;">
               <span style="font-size: 12px; color: var(--text-muted);">
                 Showing <strong>${paginatedAccounts.length}</strong> of <strong>${totalMatching}</strong> matching records
               </span>
-              ${(searchQuery || quickCardFilter !== 'ALL' || filterGroup !== 'ALL' || filterUnit !== 'ALL' || filterFloor !== 'ALL' || filterLine !== 'ALL' || filterDesignation !== 'ALL' || filterStatus !== 'ALL' || filterAccountLink !== 'ALL' || filterPasswordStatus !== 'ALL') ? `
+              ${(searchQuery || cardSearchQuery || quickCardFilter !== 'ALL' || filterGroup !== 'ALL' || filterUnit !== 'ALL' || filterFloor !== 'ALL' || filterLine !== 'ALL' || filterDesignation !== 'ALL' || filterStatus !== 'ALL' || filterAccountLink !== 'ALL' || filterPasswordStatus !== 'ALL') ? `
                 <button id="btn-clear-all-filters" class="btn btn-ghost btn-xs" style="color: #f87171; font-weight: 700; border: 1px solid rgba(248, 113, 113, 0.3); border-radius: 6px; padding: 4px 8px;">
-                  ✕ Clear Filters
+                  ✕ Clear All Filters
                 </button>
               ` : ''}
             </div>
@@ -829,44 +862,118 @@ function renderIndividualPermissionsTab() {
     editingPermissions = JSON.parse(JSON.stringify(selectedUser.permissions || {}));
   }
 
+  // Filter users for switcher if permCardSearchQuery is active
+  let filteredPermUsers = users;
+  if (permCardSearchQuery) {
+    const pq = permCardSearchQuery.trim().toLowerCase();
+    filteredPermUsers = users.filter(u => {
+      const matchCard = userAccessService.matchesCardNumber ? userAccessService.matchesCardNumber(u.cardNumber || u.employeeId, permCardSearchQuery) : false;
+      const matchName = (u.name || '').toLowerCase().includes(pq);
+      const matchUser = (u.username || '').toLowerCase().includes(pq);
+      const matchDesig = (u.designation || '').toLowerCase().includes(pq);
+      return matchCard || matchName || matchUser || matchDesig;
+    });
+  }
+
+  const currentUserIndex = users.findIndex(u => u.id === selectedUser.id);
+  const prevUser = currentUserIndex > 0 ? users[currentUserIndex - 1] : null;
+  const nextUser = currentUserIndex >= 0 && currentUserIndex < users.length - 1 ? users[currentUserIndex + 1] : null;
+
   const userPerms = editingPermissions || {};
   const presets = authService.getAllPresets ? authService.getAllPresets() : [];
 
   return `
-    <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 18px 20px; display: flex; flex-direction: column; gap: 16px; box-shadow: var(--shadow-sm);">
+    <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 18px 20px; display: flex; flex-direction: column; gap: 14px; box-shadow: var(--shadow-sm);">
       
-      <!-- Top Target User Bar -->
-      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; border-bottom: 1px solid var(--border-color); padding-bottom: 14px;">
-        <div style="display: flex; align-items: center; gap: 12px;">
-          <div style="width: 42px; height: 42px; border-radius: 10px; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.3); display: flex; align-items: center; justify-content: center; font-size: 20px;">
-            🛡️
+      <!-- Top Target User Bar & Interactive Card Search Option -->
+      <div style="background: rgba(15, 23, 42, 0.75); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 14px 16px; display: flex; flex-direction: column; gap: 12px; box-shadow: inset 0 1px 3px rgba(0,0,0,0.3);">
+        
+        <!-- Row 1: Active User Details & Quick Navigation -->
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+          <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">
+            <div style="width: 44px; height: 44px; border-radius: 10px; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.35); display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;">
+              🛡️
+            </div>
+            <div style="min-width: 0;">
+              <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <span style="font-size: 16px; font-weight: 800; color: #fff;">${selectedUser.name}</span>
+                <button type="button" id="btn-perm-copy-card" class="badge" data-card="${selectedUser.cardNumber || selectedUser.employeeId || ''}" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); font-family: var(--font-mono); font-weight: 800; font-size: 12px; padding: 2px 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;" title="Click to copy Card Number to clipboard">
+                  <span>🪪</span> <span>#${selectedUser.cardNumber || selectedUser.employeeId || '—'}</span> <span>📋</span>
+                </button>
+                <span class="badge ${selectedUser.status === 'ACTIVE' ? 'badge-active' : 'badge-maint'}" style="font-size: 10.5px;">${selectedUser.status}</span>
+                <span style="background: rgba(255, 255, 255, 0.08); color: #94a3b8; font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 6px;">
+                  User ${currentUserIndex >= 0 ? currentUserIndex + 1 : 1} of ${users.length}
+                </span>
+              </div>
+              <div style="font-size: 12px; color: var(--text-secondary); margin-top: 3px;">
+                Username: <strong style="color: #cbd5e1;">@${selectedUser.username}</strong> • ${selectedUser.designation} (${selectedUser.department}) • 📍 ${selectedUser.floorName || 'General Floor'}
+              </div>
+            </div>
           </div>
-          <div>
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <span style="font-size: 16px; font-weight: 800; color: #fff;">${selectedUser.name}</span>
-              <span style="font-family: var(--font-mono); font-weight: 800; color: #38bdf8; font-size: 12.5px;">#${selectedUser.cardNumber || selectedUser.employeeId}</span>
-              <span class="badge ${selectedUser.status === 'ACTIVE' ? 'badge-active' : 'badge-maint'}" style="font-size: 10px;">${selectedUser.status}</span>
-            </div>
-            <div style="font-size: 11.5px; color: var(--text-secondary); margin-top: 2px;">
-              Username: <strong>@${selectedUser.username}</strong> • ${selectedUser.designation} (${selectedUser.department}) • 📍 ${selectedUser.floorName || 'General Floor'}
-            </div>
+
+          <!-- Quick Prev / Next Card Navigation Buttons -->
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <button type="button" id="btn-perm-prev-user" class="btn btn-secondary btn-xs" ${!prevUser ? 'disabled' : ''} style="padding: 5px 12px; font-size: 11.5px; font-weight: 700; border-radius: 6px;" title="Previous Account (Card #${prevUser ? (prevUser.cardNumber || prevUser.employeeId) : '—'})">
+              ◀ Prev Card
+            </button>
+            <button type="button" id="btn-perm-next-user" class="btn btn-secondary btn-xs" ${!nextUser ? 'disabled' : ''} style="padding: 5px 12px; font-size: 11.5px; font-weight: 700; border-radius: 6px;" title="Next Account (Card #${nextUser ? (nextUser.cardNumber || nextUser.employeeId) : '—'})">
+              Next Card ▶
+            </button>
           </div>
         </div>
 
-        <!-- User Quick Switcher Dropdown -->
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <span style="font-size: 12px; color: var(--text-muted);">Switch Account:</span>
-          <select id="uam-perm-user-switcher" class="filter-select" style="height: 32px; font-size: 12px; max-width: 240px;">
-            ${users.map(u => `
-              <option value="${u.id}" ${u.id === selectedUser.id ? 'selected' : ''}>
-                ${u.name} (#${u.cardNumber || u.employeeId || '—'})
-              </option>
-            `).join('')}
-          </select>
+        <!-- Row 2: Dedicated Card Search Option & Filtered Switcher -->
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; background: rgba(9, 14, 26, 0.9); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 8px; padding: 8px 12px;">
+          
+          <!-- Card Search Box -->
+          <div style="flex: 1 1 360px; display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 12px; font-weight: 800; color: #38bdf8; text-transform: uppercase; white-space: nowrap; display: flex; align-items: center; gap: 5px;">
+              🪪 Card Search:
+            </span>
+            <div style="position: relative; flex: 1;">
+              <input 
+                type="text" 
+                id="inp-perm-card-search" 
+                class="form-control font-mono" 
+                placeholder="Enter Card # (e.g. 05234, 128426) or Name..." 
+                value="${permCardSearchQuery}"
+                list="uam-perm-card-datalist"
+                style="height: 33px; font-size: 12px; font-weight: 700; padding-left: 28px; border-radius: 6px; border: 1.5px solid rgba(56, 189, 248, 0.45); background: rgba(15, 23, 42, 0.95); width: 100%; box-sizing: border-box;"
+              />
+              <span style="position: absolute; left: 8px; top: 7px; font-size: 12px; color: #38bdf8;">🔍</span>
+              ${permCardSearchQuery ? `
+                <button id="btn-clear-perm-card-search" type="button" style="position: absolute; right: 6px; top: 5px; background: transparent; border: none; color: #38bdf8; cursor: pointer; font-size: 12px;" title="Clear Card Search">✕</button>
+              ` : ''}
+              <datalist id="uam-perm-card-datalist">
+                ${users.map(u => `
+                  <option value="${u.cardNumber || u.employeeId || ''}">${u.name} (@${u.username}) - ${u.designation}</option>
+                `).join('')}
+              </datalist>
+            </div>
+            <button type="button" id="btn-perm-card-search-go" class="btn btn-primary btn-xs" style="padding: 6px 14px; font-weight: 800; background: linear-gradient(135deg, #0284c7, #0369a1); border-radius: 6px; font-size: 11.5px; white-space: nowrap;">
+              Jump to Card
+            </button>
+          </div>
+
+          <!-- Synchronized Switcher Dropdown (Filtered by Card Search if present) -->
+          <div style="display: flex; align-items: center; gap: 8px; flex: 1 1 280px; justify-content: flex-end;">
+            <span style="font-size: 11.5px; color: var(--text-muted); white-space: nowrap;">Or Select Account:</span>
+            <select id="uam-perm-user-switcher" class="filter-select" style="height: 33px; font-size: 12px; width: 100%; max-width: 290px;">
+              ${filteredPermUsers.length === 0 ? `
+                <option value="">No matching accounts</option>
+              ` : filteredPermUsers.map(u => `
+                <option value="${u.id}" ${u.id === selectedUser.id ? 'selected' : ''}>
+                  #${u.cardNumber || u.employeeId || '—'} - ${u.name}
+                </option>
+              `).join('')}
+            </select>
+          </div>
+
         </div>
+
       </div>
 
-      <!-- Action Toolbar (Select All, Deselect All, Load Preset, Reset Default, Save) -->
+      <!-- Action Toolbar (Select All, Deselect All, Load Preset, Reset Default, Quick Module Filter, Save) -->
       <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; background: rgba(15, 23, 42, 0.6); padding: 8px 14px; border-radius: 8px; border: 1px solid var(--border-color);">
         <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
           <button id="btn-perm-select-all" class="btn btn-secondary btn-xs" style="color: #38bdf8; font-weight: 700;">
@@ -877,7 +984,7 @@ function renderIndividualPermissionsTab() {
           </button>
 
           <!-- Load From Preset -->
-          <div style="display: flex; align-items: center; gap: 6px; margin-left: 8px;">
+          <div style="display: flex; align-items: center; gap: 6px; margin-left: 4px;">
             <span style="font-size: 11.5px; color: var(--text-muted);">Apply Preset:</span>
             <select id="uam-perm-load-preset" class="filter-select" style="height: 28px; font-size: 11.5px; padding: 2px 6px;">
               <option value="">Choose preset template...</option>
@@ -885,12 +992,28 @@ function renderIndividualPermissionsTab() {
             </select>
           </div>
 
-          <button id="btn-perm-reset-default" class="btn btn-ghost btn-xs" style="color: #f59e0b; font-weight: 700; margin-left: 4px;">
-            🔄 Reset to Default
+          <button id="btn-perm-reset-default" class="btn btn-ghost btn-xs" style="color: #f59e0b; font-weight: 700;">
+            🔄 Reset Default
           </button>
         </div>
 
-        <div style="display: flex; gap: 8px; align-items: center;">
+        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+          <!-- Quick Filter Modules -->
+          <div style="position: relative;">
+            <input 
+              type="text" 
+              id="inp-perm-module-filter" 
+              class="form-control" 
+              placeholder="🔍 Filter modules (e.g. System, Transfer)..." 
+              value="${permModuleFilterQuery}"
+              style="height: 28px; font-size: 11.5px; padding-left: 24px; width: 220px; border-radius: 6px;"
+            />
+            <span style="position: absolute; left: 7px; top: 5px; font-size: 11px; color: var(--text-muted);">🔍</span>
+            ${permModuleFilterQuery ? `
+              <button id="btn-clear-perm-module-filter" type="button" style="position: absolute; right: 5px; top: 4px; background: transparent; border: none; color: var(--text-muted); cursor: pointer; font-size: 11px;" title="Clear filter">✕</button>
+            ` : ''}
+          </div>
+
           <button id="btn-perm-cancel-changes" class="btn btn-secondary btn-sm" style="font-size: 12px;">
             Cancel
           </button>
@@ -918,7 +1041,7 @@ function renderIndividualPermissionsTab() {
           </thead>
           <tbody>
             ${PERMISSION_CONFIG_MODULES.map(group => `
-              <tr style="background: rgba(15, 23, 42, 0.95); border-top: 1px solid rgba(56, 189, 248, 0.25); border-bottom: 1px solid rgba(56, 189, 248, 0.25);">
+              <tr class="matrix-group-row" data-group="${group.group.toLowerCase()}" style="background: rgba(15, 23, 42, 0.95); border-top: 1px solid rgba(56, 189, 248, 0.25); border-bottom: 1px solid rgba(56, 189, 248, 0.25);">
                 <td colspan="9" style="padding: 8px 14px; font-weight: 800; font-size: 12px; color: #38bdf8; letter-spacing: 0.5px;">
                   ${group.group}
                 </td>
@@ -934,7 +1057,7 @@ function renderIndividualPermissionsTab() {
                 const hasApprove = modPerms.includes('APPROVE');
 
                 return `
-                  <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.05); transition: background 0.15s;" onmouseover="this.style.background='rgba(255,255,255,0.02)'" onmouseout="this.style.background='transparent'">
+                  <tr class="matrix-module-row" data-name="${mod.name.toLowerCase()}" data-group="${group.group.toLowerCase()}" style="border-bottom: 1px solid rgba(255, 255, 255, 0.05); transition: background 0.15s;" onmouseover="this.style.background='rgba(255,255,255,0.02)'" onmouseout="this.style.background='transparent'">
                     <td style="padding: 8px 14px; font-weight: 600; color: #f8fafc;">
                       ${mod.name}
                     </td>
@@ -2173,7 +2296,18 @@ function renderActiveModalHtml() {
                 </span>
               </div>
 
-              <div style="display: flex; gap: 8px;">
+              <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                <div style="position: relative;">
+                  <input 
+                    type="text" 
+                    id="inp-preset-modal-module-filter" 
+                    class="form-control" 
+                    placeholder="🔍 Filter modules..." 
+                    value="${presetModuleFilterQuery}"
+                    style="height: 28px; font-size: 11.5px; padding-left: 24px; width: 180px; border-radius: 6px;"
+                  />
+                  <span style="position: absolute; left: 7px; top: 5px; font-size: 11px; color: var(--text-muted);">🔍</span>
+                </div>
                 <button type="button" id="btn-preset-modal-select-all" class="btn btn-secondary btn-xs" style="color: #38bdf8; font-weight: 700;">
                   ✓ Select All Permissions
                 </button>
@@ -2201,7 +2335,7 @@ function renderActiveModalHtml() {
                 </thead>
                 <tbody>
                   ${PERMISSION_CONFIG_MODULES.map(group => `
-                    <tr style="background: rgba(15, 23, 42, 0.95); border-top: 1px solid rgba(56, 189, 248, 0.25); border-bottom: 1px solid rgba(56, 189, 248, 0.25);">
+                    <tr class="preset-modal-group-row" data-group="${group.group.toLowerCase()}" style="background: rgba(15, 23, 42, 0.95); border-top: 1px solid rgba(56, 189, 248, 0.25); border-bottom: 1px solid rgba(56, 189, 248, 0.25);">
                       <td colspan="9" style="padding: 7px 12px; font-weight: 800; font-size: 11.5px; color: #38bdf8; letter-spacing: 0.5px;">
                         ${group.group}
                       </td>
@@ -2217,7 +2351,7 @@ function renderActiveModalHtml() {
                       const hasP = acts.includes('APPROVE');
 
                       return `
-                        <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.05);" onmouseover="this.style.background='rgba(255,255,255,0.02)'" onmouseout="this.style.background='transparent'">
+                        <tr class="preset-modal-module-row" data-name="${mod.name.toLowerCase()}" data-group="${group.group.toLowerCase()}" style="border-bottom: 1px solid rgba(255, 255, 255, 0.05);" onmouseover="this.style.background='rgba(255,255,255,0.02)'" onmouseout="this.style.background='transparent'">
                           <td style="padding: 7px 12px; font-weight: 600; color: #f8fafc;">
                             ${mod.name}
                           </td>
@@ -2419,6 +2553,18 @@ export function initUserManagementEvents() {
     }
   }
 
+  // Restore Card Search Focus and Cursor Position
+  if (shouldRestoreCardSearchFocus) {
+    shouldRestoreCardSearchFocus = false;
+    const restoredCardSearchInp = document.getElementById('uam-card-search-input');
+    if (restoredCardSearchInp) {
+      restoredCardSearchInp.focus();
+      try {
+        restoredCardSearchInp.setSelectionRange(cardSearchFocusCursorPos, cardSearchFocusCursorPos);
+      } catch (_) {}
+    }
+  }
+
   // Automatic Manpower Sync: if any registered employees are missing user accounts, auto-sync silently
   const allAccountsSnapshot = userAccessService.getAllAccountsWithManpower();
   const unlinkedCount = allAccountsSnapshot.filter(a => !a.hasAccount).length;
@@ -2454,6 +2600,42 @@ export function initUserManagementEvents() {
   });
 
   // 2. Search & Filter Input Listeners (Tab 1: User Accounts)
+  // Dedicated Card Search Option
+  const cardSearchInp = document.getElementById('uam-card-search-input');
+  if (cardSearchInp) {
+    let debounceTimer;
+    cardSearchInp.addEventListener('input', (e) => {
+      clearTimeout(debounceTimer);
+      const val = e.target.value;
+      const curPos = e.target.selectionStart || val.length;
+      debounceTimer = setTimeout(() => {
+        cardSearchQuery = val;
+        currentPage = 1;
+        shouldRestoreCardSearchFocus = true;
+        cardSearchFocusCursorPos = curPos;
+        reRender();
+      }, 200);
+    });
+    cardSearchInp.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        cardSearchQuery = e.target.value;
+        currentPage = 1;
+        reRender();
+      }
+    });
+  }
+
+  const btnClearCardSearch = document.getElementById('btn-clear-uam-card-search');
+  if (btnClearCardSearch) {
+    btnClearCardSearch.addEventListener('click', () => {
+      cardSearchQuery = '';
+      currentPage = 1;
+      reRender();
+    });
+  }
+
+  // General Text Search
   const searchInp = document.getElementById('uam-search-input');
   if (searchInp) {
     let debounceTimer;
@@ -2504,6 +2686,7 @@ export function initUserManagementEvents() {
   if (btnClearAllFilters) {
     btnClearAllFilters.addEventListener('click', () => {
       searchQuery = '';
+      cardSearchQuery = '';
       quickCardFilter = 'ALL';
       filterGroup = 'ALL';
       filterUnit = 'ALL';
@@ -2646,6 +2829,7 @@ export function initUserManagementEvents() {
   if (btnEmptyClear) {
     btnEmptyClear.addEventListener('click', () => {
       searchQuery = '';
+      cardSearchQuery = '';
       quickCardFilter = 'ALL';
       filterGroup = 'ALL';
       filterUnit = 'ALL';
@@ -2889,6 +3073,112 @@ export function initUserManagementEvents() {
   }
 
   // 7. Individual Access Permissions Matrix Handlers (Tab 2)
+  // Copy Card Number to Clipboard
+  const btnPermCopyCard = document.getElementById('btn-perm-copy-card');
+  if (btnPermCopyCard) {
+    btnPermCopyCard.addEventListener('click', () => {
+      const card = btnPermCopyCard.getAttribute('data-card');
+      if (card && card !== '—') {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(card);
+        }
+        notificationService.info(`Copied Card #${card} to clipboard!`);
+      }
+    });
+  }
+
+  // Previous & Next Card Navigation
+  const btnPermPrevUser = document.getElementById('btn-perm-prev-user');
+  if (btnPermPrevUser) {
+    btnPermPrevUser.addEventListener('click', () => {
+      const users = storage.getTable(TABLE_NAMES.USERS) || [];
+      const cIdx = users.findIndex(u => u.id === permissionTargetUserId);
+      if (cIdx > 0) {
+        permissionTargetUserId = users[cIdx - 1].id;
+        const target = users[cIdx - 1];
+        editingPermissions = JSON.parse(JSON.stringify(target.permissions || {}));
+        reRender();
+        notificationService.info(`Switched to Card #${target.cardNumber || target.employeeId} (${target.name})`);
+      }
+    });
+  }
+
+  const btnPermNextUser = document.getElementById('btn-perm-next-user');
+  if (btnPermNextUser) {
+    btnPermNextUser.addEventListener('click', () => {
+      const users = storage.getTable(TABLE_NAMES.USERS) || [];
+      const cIdx = users.findIndex(u => u.id === permissionTargetUserId);
+      if (cIdx >= 0 && cIdx < users.length - 1) {
+        permissionTargetUserId = users[cIdx + 1].id;
+        const target = users[cIdx + 1];
+        editingPermissions = JSON.parse(JSON.stringify(target.permissions || {}));
+        reRender();
+        notificationService.info(`Switched to Card #${target.cardNumber || target.employeeId} (${target.name})`);
+      }
+    });
+  }
+
+  // Card Search and Jump to Card in Tab 2
+  const permCardSearchInp = document.getElementById('inp-perm-card-search');
+  const doJumpToCard = (rawQuery) => {
+    const q = (rawQuery || '').trim();
+    if (!q) {
+      notificationService.info('Please enter a Card Number or Employee Name to search.');
+      return;
+    }
+    const users = storage.getTable(TABLE_NAMES.USERS) || [];
+    const matched = users.find(u => userAccessService.matchesCardNumber && userAccessService.matchesCardNumber(u.cardNumber || u.employeeId, q)) ||
+      users.find(u => (u.cardNumber || '').toLowerCase().includes(q.toLowerCase())) ||
+      users.find(u => (u.name || '').toLowerCase().includes(q.toLowerCase())) ||
+      users.find(u => (u.username || '').toLowerCase().includes(q.toLowerCase()));
+
+    if (matched) {
+      permissionTargetUserId = matched.id;
+      editingPermissions = JSON.parse(JSON.stringify(matched.permissions || {}));
+      permCardSearchQuery = q;
+      reRender();
+      notificationService.success(`Switched to ${matched.name} (Card #${matched.cardNumber || matched.employeeId})`);
+    } else {
+      notificationService.warning(`No user account found matching Card #${q}`);
+    }
+  };
+
+  if (permCardSearchInp) {
+    let debounceTimer;
+    permCardSearchInp.addEventListener('input', (e) => {
+      clearTimeout(debounceTimer);
+      const val = e.target.value;
+      debounceTimer = setTimeout(() => {
+        permCardSearchQuery = val;
+        reRender();
+      }, 350);
+    });
+
+    permCardSearchInp.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        doJumpToCard(e.target.value);
+      }
+    });
+  }
+
+  const btnPermCardSearchGo = document.getElementById('btn-perm-card-search-go');
+  if (btnPermCardSearchGo) {
+    btnPermCardSearchGo.addEventListener('click', () => {
+      const inp = document.getElementById('inp-perm-card-search');
+      doJumpToCard(inp ? inp.value : permCardSearchQuery);
+    });
+  }
+
+  const btnClearPermCardSearch = document.getElementById('btn-clear-perm-card-search');
+  if (btnClearPermCardSearch) {
+    btnClearPermCardSearch.addEventListener('click', () => {
+      permCardSearchQuery = '';
+      reRender();
+    });
+  }
+
+  // Synchronized User Switcher Dropdown
   const userSwitcher = document.getElementById('uam-perm-user-switcher');
   if (userSwitcher) {
     userSwitcher.addEventListener('change', (e) => {
@@ -2896,6 +3186,53 @@ export function initUserManagementEvents() {
       const target = authService.getUserById ? authService.getUserById(permissionTargetUserId) : null;
       editingPermissions = JSON.parse(JSON.stringify(target?.permissions || {}));
       reRender();
+    });
+  }
+
+  // Tab 2 Module Search Filter
+  const inpPermModuleFilter = document.getElementById('inp-perm-module-filter');
+  if (inpPermModuleFilter) {
+    inpPermModuleFilter.addEventListener('input', (e) => {
+      const q = (e.target.value || '').toLowerCase().trim();
+      permModuleFilterQuery = q;
+      root.querySelectorAll('.matrix-module-row').forEach(row => {
+        const modName = row.getAttribute('data-name') || '';
+        const groupName = row.getAttribute('data-group') || '';
+        if (!q || modName.includes(q) || groupName.includes(q)) {
+          row.style.display = '';
+        } else {
+          row.style.display = 'none';
+        }
+      });
+    });
+  }
+
+  const btnClearPermModFilter = document.getElementById('btn-clear-perm-module-filter');
+  if (btnClearPermModFilter) {
+    btnClearPermModFilter.addEventListener('click', () => {
+      permModuleFilterQuery = '';
+      reRender();
+    });
+  }
+
+  // Preset Modal Module Filter
+  const inpPresetModFilter = document.getElementById('inp-preset-modal-module-filter');
+  if (inpPresetModFilter) {
+    inpPresetModFilter.addEventListener('input', (e) => {
+      const q = (e.target.value || '').toLowerCase().trim();
+      presetModuleFilterQuery = q;
+      const modal = document.getElementById('modal-uam-overlay');
+      if (modal) {
+        modal.querySelectorAll('.preset-modal-module-row').forEach(row => {
+          const modName = (row.getAttribute('data-name') || '').toLowerCase();
+          const groupName = (row.getAttribute('data-group') || '').toLowerCase();
+          if (!q || modName.includes(q) || groupName.includes(q)) {
+            row.style.display = '';
+          } else {
+            row.style.display = 'none';
+          }
+        });
+      }
     });
   }
 
