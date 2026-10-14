@@ -640,6 +640,7 @@ export function renderUserManagement() {
             </div>
           </div>
         ` : ''}
+      ` : ''}
       </div> <!-- end .uam-fixed-top-deck -->
 
       <!-- =================================================================== -->
