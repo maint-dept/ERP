@@ -174,11 +174,17 @@ export function renderUserManagement() {
   const usersWithPermissions = allAccounts.filter(a => a.hasAccount && a.totalModules > 0).length;
   const withCardCount = allAccounts.filter(a => a.cardNumber && a.cardNumber !== '—' && a.cardNumber.trim() !== '').length;
 
-  // Master Data Options for Filters
+  // Master Data Options for Filters with Dynamic Hierarchy Cascading
   const allGroups = masterDataService.getGroups ? masterDataService.getGroups(true) : [];
   const allUnits = masterDataService.getUnits ? masterDataService.getUnits(filterGroup !== 'ALL' ? filterGroup : null, true) : [];
-  const allFloors = masterDataService.getFloors ? masterDataService.getFloors(filterUnit !== 'ALL' ? filterUnit : null, null, true) : [];
-  const allLines = masterDataService.getLines ? masterDataService.getLines(filterFloor !== 'ALL' ? filterFloor : null, null, null, true) : [];
+  const allFloors = masterDataService.getFloors ? masterDataService.getFloors(filterUnit !== 'ALL' ? filterUnit : null, filterGroup !== 'ALL' ? filterGroup : null, true) : [];
+  const allLines = masterDataService.getLines ? masterDataService.getLines(filterFloor !== 'ALL' ? filterFloor : null, filterUnit !== 'ALL' ? filterUnit : null, filterGroup !== 'ALL' ? filterGroup : null, true) : [];
+
+  // Auto-validate and self-heal filters if child option no longer exists in parent scope
+  if (filterUnit !== 'ALL' && !allUnits.some(u => u.id === filterUnit)) filterUnit = 'ALL';
+  if (filterFloor !== 'ALL' && !allFloors.some(f => f.id === filterFloor)) filterFloor = 'ALL';
+  if (filterLine !== 'ALL' && !allLines.some(l => l.id === filterLine)) filterLine = 'ALL';
+
   const allDesignations = employeeService.getDistinctDesignations ? employeeService.getDistinctDesignations() : [];
 
   // Apply Filters to Accounts
@@ -211,11 +217,38 @@ export function renderUserManagement() {
       if (!matchCard && !matchName && !matchUser && !matchDept && !matchDesig && !matchGroup && !matchUnit && !matchFloor && !matchLine) return false;
     }
 
-    // 2. Location Filters
-    if (filterGroup !== 'ALL' && acc.groupId !== filterGroup) return false;
-    if (filterUnit !== 'ALL' && acc.unitId !== filterUnit) return false;
-    if (filterFloor !== 'ALL' && acc.floorId !== filterFloor) return false;
-    if (filterLine !== 'ALL' && acc.lineId !== filterLine) return false;
+    // 2. Location Filters (Matching ID or case-insensitive Name / Working Area)
+    if (filterGroup !== 'ALL') {
+      const selectedGroup = allGroups.find(g => g.id === filterGroup);
+      const groupName = selectedGroup ? selectedGroup.name.toLowerCase() : '';
+      const matchG = acc.groupId === filterGroup || (groupName && (acc.groupName || '').toLowerCase() === groupName);
+      if (!matchG) return false;
+    }
+
+    if (filterUnit !== 'ALL') {
+      const selectedUnit = allUnits.find(u => u.id === filterUnit);
+      const unitName = selectedUnit ? selectedUnit.name.toLowerCase() : '';
+      const matchU = acc.unitId === filterUnit || (unitName && (acc.unitName || '').toLowerCase() === unitName);
+      if (!matchU) return false;
+    }
+
+    if (filterFloor !== 'ALL') {
+      const selectedFloor = allFloors.find(f => f.id === filterFloor);
+      const floorName = selectedFloor ? selectedFloor.name.toLowerCase() : '';
+      const matchF = acc.floorId === filterFloor || (floorName && (acc.floorName || '').toLowerCase() === floorName);
+      if (!matchF) return false;
+    }
+
+    if (filterLine !== 'ALL') {
+      const selectedLine = allLines.find(l => l.id === filterLine);
+      const lineName = selectedLine ? selectedLine.name.toLowerCase() : '';
+      const accLineId = acc.lineId || '';
+      const accLineName = (acc.lineName || '').toLowerCase();
+      const accArea = (acc.workingArea || acc.linkedEmployee?.workingArea || '').toLowerCase();
+      const matchL = accLineId === filterLine || 
+                     (lineName && (accLineName === lineName || accArea === lineName || accArea.includes(lineName)));
+      if (!matchL) return false;
+    }
 
     // 3. Designation Filter
     if (filterDesignation !== 'ALL' && (acc.designation || '').toLowerCase() !== filterDesignation.toLowerCase()) return false;
@@ -253,125 +286,125 @@ export function renderUserManagement() {
     <div class="page-view" style="gap: 14px; max-width: 1440px; margin: 0 auto; width: 100%; min-height: 100%; padding-bottom: 60px; box-sizing: border-box;">
       
       <!-- =================================================================== -->
-      <!-- 1. TOP HEADER & KPI SUMMARY DASHBOARD (Section 14)                 -->
+      <!-- 1. TOP HEADER & KPI SUMMARY DASHBOARD (Compact & High-Density)       -->
       <!-- =================================================================== -->
-      <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; box-shadow: var(--shadow-sm);">
-        <div style="display: flex; align-items: center; gap: 14px;">
-          <div style="width: 44px; height: 44px; border-radius: 12px; background: linear-gradient(135deg, rgba(2, 132, 199, 0.2), rgba(14, 165, 233, 0.05)); border: 1px solid rgba(56, 189, 248, 0.35); display: flex; align-items: center; justify-content: center; font-size: 22px;">
+      <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 8px 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; box-shadow: var(--shadow-sm);">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="width: 32px; height: 32px; border-radius: 8px; background: linear-gradient(135deg, rgba(2, 132, 199, 0.2), rgba(14, 165, 233, 0.05)); border: 1px solid rgba(56, 189, 248, 0.35); display: flex; align-items: center; justify-content: center; font-size: 16px;">
             👥
           </div>
           <div>
-            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-              <h1 style="font-size: 19px; font-weight: 800; color: #fff; margin: 0; letter-spacing: -0.2px;">
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+              <h1 style="font-size: 16px; font-weight: 800; color: #fff; margin: 0; letter-spacing: -0.2px;">
                 User Access Management
               </h1>
-              <span class="badge badge-active" style="font-size: 10.5px; padding: 2px 8px; font-weight: 700;">
+              <span class="badge badge-active" style="font-size: 10px; padding: 1px 7px; font-weight: 700;">
                 Enterprise Security Matrix
               </span>
-            </div>
-            <div style="font-size: 12px; color: var(--text-secondary); margin-top: 3px;">
-              Centralized workforce accounts, automated Manpower synchronization, granular feature permissions, and secure credential exports.
+              <span style="font-size: 11px; color: var(--text-muted);">
+                • Centralized workforce accounts &amp; permissions
+              </span>
             </div>
           </div>
         </div>
 
         <!-- Top Right Action Controls -->
-        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+        <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
           ${isAdmin ? `
             ${pendingCreation > 0 ? `
-              <button id="btn-auto-create-all-missing" class="btn btn-warning" style="font-weight: 800; padding: 7px 14px; font-size: 12px; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 10px rgba(245, 158, 11, 0.25);" title="Auto-create linked accounts for all ${pendingCreation} manpower records currently without an account">
-                <span>⚡</span> <span>Auto-Create Missing Accounts (${pendingCreation})</span>
+              <button id="btn-auto-create-all-missing" class="btn btn-warning btn-xs" style="font-weight: 800; padding: 4px 10px; font-size: 11px; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px;" title="Auto-create linked accounts for all ${pendingCreation} manpower records currently without an account">
+                <span>⚡</span> <span>Auto-Create Missing (${pendingCreation})</span>
               </button>
             ` : ''}
-            <button id="btn-top-add-user" class="btn btn-primary" style="font-weight: 700; background: linear-gradient(135deg, #0284c7, #0369a1); padding: 7px 15px; font-size: 12px; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 8px rgba(2, 132, 199, 0.35);">
+            <button id="btn-top-add-user" class="btn btn-primary btn-xs" style="font-weight: 700; background: linear-gradient(135deg, #0284c7, #0369a1); padding: 5px 12px; font-size: 11.5px; border-radius: 6px; display: inline-flex; align-items: center; gap: 5px; height: 28px;">
               <span>➕</span> <span>Add New User</span>
             </button>
           ` : ''}
-          <button id="btn-refresh-uam" class="btn btn-secondary" style="padding: 7px 12px; font-size: 12px; border-radius: 8px;" title="Refresh Accounts and Database">
+          <button id="btn-refresh-uam" class="btn btn-secondary btn-xs" style="padding: 5px 10px; font-size: 11.5px; border-radius: 6px; height: 28px;" title="Refresh Accounts and Database">
             🔄 Refresh
           </button>
         </div>
       </div>
 
-      <!-- 6 Dashboard Summary Cards (Section 14 - Interactive) -->
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px;">
+      <!-- 2. High-Density Dashboard KPI Metrics Ribbon (Interactive) -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 6px;">
         <!-- 1. Total Accounts -->
-        <div class="uam-kpi-summary-card" data-action="TOTAL" style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: all 0.2s ease;" title="Click to view all accounts">
+        <div class="uam-kpi-summary-card" data-action="TOTAL" style="background: rgba(15, 23, 42, 0.65); border: 1px solid var(--border-color); border-radius: 7px; padding: 5px 10px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: all 0.2s ease;" title="Click to view all accounts">
           <div>
-            <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Total Accounts</div>
-            <div style="font-size: 22px; font-weight: 900; color: #fff; margin-top: 2px;">${totalAccounts}</div>
+            <div style="font-size: 9.5px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.3px;">Total Accounts</div>
+            <div style="font-size: 16px; font-weight: 900; color: #fff; line-height: 1.1; margin-top: 1px;">${totalAccounts}</div>
           </div>
-          <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(56, 189, 248, 0.12); color: #38bdf8; display: flex; align-items: center; justify-content: center; font-size: 18px;">👥</div>
+          <div style="width: 26px; height: 26px; border-radius: 6px; background: rgba(56, 189, 248, 0.12); color: #38bdf8; display: flex; align-items: center; justify-content: center; font-size: 13px;">👥</div>
         </div>
 
         <!-- 2. Active Accounts -->
-        <div class="uam-kpi-summary-card" data-action="ACTIVE" style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: all 0.2s ease;" title="Click to filter active accounts">
+        <div class="uam-kpi-summary-card" data-action="ACTIVE" style="background: rgba(15, 23, 42, 0.65); border: 1px solid var(--border-color); border-radius: 7px; padding: 5px 10px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: all 0.2s ease;" title="Click to filter active accounts">
           <div>
-            <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Active Accounts</div>
-            <div style="font-size: 22px; font-weight: 900; color: #34d399; margin-top: 2px;">${activeAccounts}</div>
+            <div style="font-size: 9.5px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.3px;">Active Accounts</div>
+            <div style="font-size: 16px; font-weight: 900; color: #34d399; line-height: 1.1; margin-top: 1px;">${activeAccounts}</div>
           </div>
-          <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(16, 185, 129, 0.12); color: #10b981; display: flex; align-items: center; justify-content: center; font-size: 18px;">🟢</div>
+          <div style="width: 26px; height: 26px; border-radius: 6px; background: rgba(16, 185, 129, 0.12); color: #10b981; display: flex; align-items: center; justify-content: center; font-size: 13px;">🟢</div>
         </div>
 
         <!-- 3. Inactive Accounts -->
-        <div class="uam-kpi-summary-card" data-action="INACTIVE" style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: all 0.2s ease;" title="Click to filter inactive accounts">
+        <div class="uam-kpi-summary-card" data-action="INACTIVE" style="background: rgba(15, 23, 42, 0.65); border: 1px solid var(--border-color); border-radius: 7px; padding: 5px 10px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: all 0.2s ease;" title="Click to filter inactive accounts">
           <div>
-            <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Inactive Accounts</div>
-            <div style="font-size: 22px; font-weight: 900; color: #94a3b8; margin-top: 2px;">${inactiveAccounts}</div>
+            <div style="font-size: 9.5px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.3px;">Inactive Accounts</div>
+            <div style="font-size: 16px; font-weight: 900; color: #94a3b8; line-height: 1.1; margin-top: 1px;">${inactiveAccounts}</div>
           </div>
-          <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(148, 163, 184, 0.12); color: #94a3b8; display: flex; align-items: center; justify-content: center; font-size: 18px;">🔴</div>
+          <div style="width: 26px; height: 26px; border-radius: 6px; background: rgba(148, 163, 184, 0.12); color: #94a3b8; display: flex; align-items: center; justify-content: center; font-size: 13px;">🔴</div>
         </div>
 
         <!-- 4. Accounts Pending Creation -->
-        <div class="uam-kpi-summary-card" data-action="PENDING_CREATION" style="background: var(--bg-surface); border: 1px solid ${pendingCreation > 0 ? 'rgba(245, 158, 11, 0.4)' : 'var(--border-color)'}; border-radius: var(--radius-md); padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: all 0.2s ease;" title="Click to filter manpower records missing user accounts">
+        <div class="uam-kpi-summary-card" data-action="PENDING_CREATION" style="background: rgba(15, 23, 42, 0.65); border: 1px solid ${pendingCreation > 0 ? 'rgba(245, 158, 11, 0.4)' : 'var(--border-color)'}; border-radius: 7px; padding: 5px 10px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: all 0.2s ease;" title="Click to filter manpower records missing user accounts">
           <div>
-            <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Pending Creation</div>
-            <div style="font-size: 22px; font-weight: 900; color: ${pendingCreation > 0 ? '#fbbf24' : '#fff'}; margin-top: 2px;">${pendingCreation}</div>
+            <div style="font-size: 9.5px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.3px;">Pending Creation</div>
+            <div style="font-size: 16px; font-weight: 900; color: ${pendingCreation > 0 ? '#fbbf24' : '#fff'}; line-height: 1.1; margin-top: 1px;">${pendingCreation}</div>
           </div>
-          <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(245, 158, 11, 0.12); color: #f59e0b; display: flex; align-items: center; justify-content: center; font-size: 18px;">⏳</div>
+          <div style="width: 26px; height: 26px; border-radius: 6px; background: rgba(245, 158, 11, 0.12); color: #f59e0b; display: flex; align-items: center; justify-content: center; font-size: 13px;">⏳</div>
         </div>
 
         <!-- 5. Accounts Pending Password Setup -->
-        <div class="uam-kpi-summary-card" data-action="PENDING_PASSWORD" style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: all 0.2s ease;" title="Click to filter accounts with temporary passwords">
+        <div class="uam-kpi-summary-card" data-action="PENDING_PASSWORD" style="background: rgba(15, 23, 42, 0.65); border: 1px solid var(--border-color); border-radius: 7px; padding: 5px 10px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: all 0.2s ease;" title="Click to filter accounts with temporary passwords">
           <div>
-            <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Temporary / Pending Pass</div>
-            <div style="font-size: 22px; font-weight: 900; color: #c084fc; margin-top: 2px;">${pendingPasswordSetup}</div>
+            <div style="font-size: 9.5px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.3px;">Temp / Pending Pass</div>
+            <div style="font-size: 16px; font-weight: 900; color: #c084fc; line-height: 1.1; margin-top: 1px;">${pendingPasswordSetup}</div>
           </div>
-          <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(168, 85, 247, 0.12); color: #c084fc; display: flex; align-items: center; justify-content: center; font-size: 18px;">🔑</div>
+          <div style="width: 26px; height: 26px; border-radius: 6px; background: rgba(168, 85, 247, 0.12); color: #c084fc; display: flex; align-items: center; justify-content: center; font-size: 13px;">🔑</div>
         </div>
 
         <!-- 6. Users with Permissions -->
-        <div class="uam-kpi-summary-card" data-action="CONFIGURED_ACCESS" style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: all 0.2s ease;" title="Click to view Access Permissions">
+        <div class="uam-kpi-summary-card" data-action="CONFIGURED_ACCESS" style="background: rgba(15, 23, 42, 0.65); border: 1px solid var(--border-color); border-radius: 7px; padding: 5px 10px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: all 0.2s ease;" title="Click to view Access Permissions">
           <div>
-            <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Configured Access</div>
-            <div style="font-size: 22px; font-weight: 900; color: #38bdf8; margin-top: 2px;">${usersWithPermissions}</div>
+            <div style="font-size: 9.5px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.3px;">Configured Access</div>
+            <div style="font-size: 16px; font-weight: 900; color: #38bdf8; line-height: 1.1; margin-top: 1px;">${usersWithPermissions}</div>
           </div>
-          <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(56, 189, 248, 0.12); color: #38bdf8; display: flex; align-items: center; justify-content: center; font-size: 18px;">🛡️</div>
+          <div style="width: 26px; height: 26px; border-radius: 6px; background: rgba(56, 189, 248, 0.12); color: #38bdf8; display: flex; align-items: center; justify-content: center; font-size: 13px;">🛡️</div>
         </div>
       </div>
 
       <!-- =================================================================== -->
-      <!-- 2. PRIMARY SUB-FEATURES NAVIGATION BAR (Section 1)                 -->
+      <!-- 3. PRIMARY SUB-FEATURES NAVIGATION BAR                              -->
       <!-- =================================================================== -->
-      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 6px; gap: 8px; flex-wrap: wrap;">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 4px; gap: 6px; flex-wrap: wrap;">
         <!-- Left: 6 Sub-features Switcher Tabs -->
-        <div style="display: inline-flex; background: rgba(15, 23, 42, 0.85); border: 1px solid var(--border-color); border-radius: 10px; padding: 3px; gap: 3px; flex-wrap: wrap;">
+        <div style="display: inline-flex; background: rgba(15, 23, 42, 0.85); border: 1px solid var(--border-color); border-radius: 8px; padding: 2px; gap: 2px; flex-wrap: wrap;">
           
           <button 
             type="button" 
             class="tab-btn-uam" 
             data-tab="ACCOUNTS"
-            style="padding: 7px 15px; font-size: 12.5px; font-weight: 800; border-radius: 7px; border: none; cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 6px; background: ${activeUserSection === 'ACCOUNTS' ? 'linear-gradient(135deg, #0284c7, #0369a1)' : 'transparent'}; color: ${activeUserSection === 'ACCOUNTS' ? '#fff' : 'var(--text-secondary)'};"
+            style="padding: 5px 12px; font-size: 11.5px; font-weight: 800; border-radius: 6px; border: none; cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 5px; background: ${activeUserSection === 'ACCOUNTS' ? 'linear-gradient(135deg, #0284c7, #0369a1)' : 'transparent'}; color: ${activeUserSection === 'ACCOUNTS' ? '#fff' : 'var(--text-secondary)'};"
           >
             <span>👥 1. User Accounts</span>
-            <span style="background: ${activeUserSection === 'ACCOUNTS' ? 'rgba(255, 255, 255, 0.25)' : 'rgba(148, 163, 184, 0.15)'}; color: ${activeUserSection === 'ACCOUNTS' ? '#fff' : '#94a3b8'}; padding: 1px 7px; border-radius: 10px; font-size: 10.5px;">${totalAccounts}</span>
+            <span style="background: ${activeUserSection === 'ACCOUNTS' ? 'rgba(255, 255, 255, 0.25)' : 'rgba(148, 163, 184, 0.15)'}; color: ${activeUserSection === 'ACCOUNTS' ? '#fff' : '#94a3b8'}; padding: 1px 6px; border-radius: 8px; font-size: 10px;">${totalAccounts}</span>
           </button>
 
           <button 
             type="button" 
             class="tab-btn-uam" 
             data-tab="PERMISSIONS"
-            style="padding: 7px 15px; font-size: 12.5px; font-weight: 800; border-radius: 7px; border: none; cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 6px; background: ${activeUserSection === 'PERMISSIONS' ? 'linear-gradient(135deg, #0284c7, #0369a1)' : 'transparent'}; color: ${activeUserSection === 'PERMISSIONS' ? '#fff' : 'var(--text-secondary)'};"
+            style="padding: 5px 12px; font-size: 11.5px; font-weight: 800; border-radius: 6px; border: none; cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 5px; background: ${activeUserSection === 'PERMISSIONS' ? 'linear-gradient(135deg, #0284c7, #0369a1)' : 'transparent'}; color: ${activeUserSection === 'PERMISSIONS' ? '#fff' : 'var(--text-secondary)'};"
           >
             <span>🛡️ 2. Access Permissions</span>
           </button>
@@ -380,37 +413,37 @@ export function renderUserManagement() {
             type="button" 
             class="tab-btn-uam" 
             data-tab="BULK_ASSIGN"
-            style="padding: 7px 15px; font-size: 12.5px; font-weight: 800; border-radius: 7px; border: none; cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 6px; background: ${activeUserSection === 'BULK_ASSIGN' ? 'linear-gradient(135deg, #0284c7, #0369a1)' : 'transparent'}; color: ${activeUserSection === 'BULK_ASSIGN' ? '#fff' : 'var(--text-secondary)'};"
+            style="padding: 5px 12px; font-size: 11.5px; font-weight: 800; border-radius: 6px; border: none; cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 5px; background: ${activeUserSection === 'BULK_ASSIGN' ? 'linear-gradient(135deg, #0284c7, #0369a1)' : 'transparent'}; color: ${activeUserSection === 'BULK_ASSIGN' ? '#fff' : 'var(--text-secondary)'};"
           >
-            <span>⚡ 3. Bulk Access Assignment</span>
-            ${selectedAccountIds.size > 0 ? `<span style="background: #f59e0b; color: #000; font-weight: 900; padding: 1px 7px; border-radius: 10px; font-size: 10.5px;">${selectedAccountIds.size}</span>` : ''}
+            <span>⚡ 3. Bulk Access</span>
+            ${selectedAccountIds.size > 0 ? `<span style="background: #f59e0b; color: #000; font-weight: 900; padding: 1px 6px; border-radius: 8px; font-size: 10px;">${selectedAccountIds.size}</span>` : ''}
           </button>
 
           <button 
             type="button" 
             class="tab-btn-uam" 
             data-tab="PASSWORD_MGMT"
-            style="padding: 7px 15px; font-size: 12.5px; font-weight: 800; border-radius: 7px; border: none; cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 6px; background: ${activeUserSection === 'PASSWORD_MGMT' ? 'linear-gradient(135deg, #0284c7, #0369a1)' : 'transparent'}; color: ${activeUserSection === 'PASSWORD_MGMT' ? '#fff' : 'var(--text-secondary)'};"
+            style="padding: 5px 12px; font-size: 11.5px; font-weight: 800; border-radius: 6px; border: none; cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 5px; background: ${activeUserSection === 'PASSWORD_MGMT' ? 'linear-gradient(135deg, #0284c7, #0369a1)' : 'transparent'}; color: ${activeUserSection === 'PASSWORD_MGMT' ? '#fff' : 'var(--text-secondary)'};"
           >
-            <span>🔑 4. Password Management</span>
+            <span>🔑 4. Passwords</span>
           </button>
 
           <button 
             type="button" 
             class="tab-btn-uam" 
             data-tab="EXPORT_ACCOUNTS"
-            style="padding: 7px 15px; font-size: 12.5px; font-weight: 800; border-radius: 7px; border: none; cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 6px; background: ${activeUserSection === 'EXPORT_ACCOUNTS' ? 'linear-gradient(135deg, #0284c7, #0369a1)' : 'transparent'}; color: ${activeUserSection === 'EXPORT_ACCOUNTS' ? '#fff' : 'var(--text-secondary)'};"
+            style="padding: 5px 12px; font-size: 11.5px; font-weight: 800; border-radius: 6px; border: none; cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 5px; background: ${activeUserSection === 'EXPORT_ACCOUNTS' ? 'linear-gradient(135deg, #0284c7, #0369a1)' : 'transparent'}; color: ${activeUserSection === 'EXPORT_ACCOUNTS' ? '#fff' : 'var(--text-secondary)'};"
           >
-            <span>📥 5. Export Accounts</span>
+            <span>📥 5. Export</span>
           </button>
 
           <button 
             type="button" 
             class="tab-btn-uam" 
             data-tab="ACTIVITY_LOGS"
-            style="padding: 7px 15px; font-size: 12.5px; font-weight: 800; border-radius: 7px; border: none; cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 6px; background: ${activeUserSection === 'ACTIVITY_LOGS' ? 'linear-gradient(135deg, #0284c7, #0369a1)' : 'transparent'}; color: ${activeUserSection === 'ACTIVITY_LOGS' ? '#fff' : 'var(--text-secondary)'};"
+            style="padding: 5px 12px; font-size: 11.5px; font-weight: 800; border-radius: 6px; border: none; cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 5px; background: ${activeUserSection === 'ACTIVITY_LOGS' ? 'linear-gradient(135deg, #0284c7, #0369a1)' : 'transparent'}; color: ${activeUserSection === 'ACTIVITY_LOGS' ? '#fff' : 'var(--text-secondary)'};"
           >
-            <span>📝 6. Access Activity Logs</span>
+            <span>📝 6. Logs</span>
           </button>
 
           <!-- 7. Preserved Presets Feature Tab -->
@@ -418,7 +451,7 @@ export function renderUserManagement() {
             type="button" 
             class="tab-btn-uam" 
             data-tab="PRESETS"
-            style="padding: 7px 14px; font-size: 12px; font-weight: 700; border-radius: 7px; border: none; cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 6px; background: ${activeUserSection === 'PRESETS' ? 'linear-gradient(135deg, #0284c7, #0369a1)' : 'transparent'}; color: ${activeUserSection === 'PRESETS' ? '#fff' : 'var(--text-muted)'};"
+            style="padding: 5px 12px; font-size: 11.5px; font-weight: 700; border-radius: 6px; border: none; cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 5px; background: ${activeUserSection === 'PRESETS' ? 'linear-gradient(135deg, #0284c7, #0369a1)' : 'transparent'}; color: ${activeUserSection === 'PRESETS' ? '#fff' : 'var(--text-muted)'};"
           >
             <span>⚙️ Presets (${presets.length})</span>
           </button>
@@ -426,143 +459,141 @@ export function renderUserManagement() {
       </div>
 
       <!-- =================================================================== -->
-      <!-- TAB 1: USER ACCOUNTS DASHBOARD (Section 3 & 4)                      -->
+      <!-- TAB 1: USER ACCOUNTS DASHBOARD                                      -->
       <!-- =================================================================== -->
       ${activeUserSection === 'ACCOUNTS' ? `
-        <!-- Search and Multi-Filtering Command Bar (Section 4) -->
-        <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 12px 16px; display: flex; flex-direction: column; gap: 10px; box-shadow: var(--shadow-sm);">
+        <!-- Search and Multi-Filtering Command Bar (Compact 2-Row Design) -->
+        <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 8px 12px; display: flex; flex-direction: column; gap: 6px; box-shadow: var(--shadow-sm);">
           
-          <!-- Top Row: Dedicated Card Search + General Search + Quick Reset -->
-          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-            <div style="display: flex; gap: 10px; flex: 1 1 540px; flex-wrap: wrap;">
+          <!-- Row 1: Search Inputs + Quick Filter Chips + Counter & Clear -->
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+            <div style="display: flex; gap: 6px; flex: 1 1 480px; align-items: center; flex-wrap: wrap;">
               
-              <!-- 1. Dedicated Card Number Search Option -->
-              <div style="flex: 1 1 210px; min-width: 190px; position: relative;">
-                <span style="position: absolute; left: 10px; top: 8px; font-size: 13px; color: #38bdf8;">🪪</span>
+              <!-- Card Search -->
+              <div style="width: 155px; min-width: 140px; position: relative;">
+                <span style="position: absolute; left: 8px; top: 6px; font-size: 12px; color: #38bdf8;">🪪</span>
                 <input 
                   type="text" 
                   id="uam-card-search-input" 
                   class="form-control font-mono" 
-                  placeholder="Card # Search (e.g. 05234)..." 
+                  placeholder="Card # (e.g. 05234)..." 
                   value="${cardSearchQuery}"
-                  style="height: 34px; padding-left: 32px; font-size: 12px; font-weight: 700; border-radius: 6px; border: 1.5px solid rgba(56, 189, 248, 0.45); background: rgba(9, 14, 26, 0.7); width: 100%; box-sizing: border-box;"
+                  style="height: 28px; padding-left: 28px; font-size: 11.5px; font-weight: 700; border-radius: 6px; border: 1px solid rgba(56, 189, 248, 0.4); background: rgba(9, 14, 26, 0.7); width: 100%; box-sizing: border-box;"
                 />
                 ${cardSearchQuery ? `
-                  <button id="btn-clear-uam-card-search" type="button" style="position: absolute; right: 8px; top: 6px; background: transparent; border: none; color: #38bdf8; cursor: pointer; font-size: 13px;" title="Clear Card Search">✕</button>
+                  <button id="btn-clear-uam-card-search" type="button" style="position: absolute; right: 6px; top: 5px; background: transparent; border: none; color: #38bdf8; cursor: pointer; font-size: 11px;" title="Clear Card Search">✕</button>
                 ` : ''}
               </div>
 
-              <!-- 2. General Search Input -->
-              <div style="flex: 2 1 270px; min-width: 210px; position: relative;">
-                <span style="position: absolute; left: 10px; top: 8px; font-size: 14px; color: var(--text-muted);">🔍</span>
+              <!-- General Search -->
+              <div style="flex: 1 1 200px; min-width: 170px; position: relative;">
+                <span style="position: absolute; left: 8px; top: 6px; font-size: 12px; color: var(--text-muted);">🔍</span>
                 <input 
                   type="text" 
                   id="uam-search-input" 
                   class="form-control" 
-                  placeholder="Search by Employee Name, Username, Department..." 
+                  placeholder="Search by Name, Username, Department..." 
                   value="${searchQuery}"
-                  style="height: 34px; padding-left: 32px; font-size: 12.5px; border-radius: 6px; width: 100%; box-sizing: border-box;"
+                  style="height: 28px; padding-left: 26px; font-size: 11.5px; border-radius: 6px; width: 100%; box-sizing: border-box;"
                 />
                 ${searchQuery ? `
-                  <button id="btn-clear-uam-search" type="button" style="position: absolute; right: 8px; top: 6px; background: transparent; border: none; color: var(--text-muted); cursor: pointer; font-size: 13px;" title="Clear Search">✕</button>
+                  <button id="btn-clear-uam-search" type="button" style="position: absolute; right: 6px; top: 5px; background: transparent; border: none; color: var(--text-muted); cursor: pointer; font-size: 11px;" title="Clear Search">✕</button>
                 ` : ''}
+              </div>
+
+              <!-- Inline Quick Filter Chips -->
+              <div style="display: flex; gap: 4px; align-items: center; flex-wrap: wrap;">
+                <button type="button" class="btn-uam-quick-chip" data-filter="ALL" style="padding: 2px 8px; height: 26px; font-size: 11px; font-weight: 700; border-radius: 5px; border: 1px solid ${quickCardFilter === 'ALL' ? '#0284c7' : 'var(--border-color)'}; background: ${quickCardFilter === 'ALL' ? 'rgba(2, 132, 199, 0.25)' : 'rgba(15, 23, 42, 0.6)'}; color: ${quickCardFilter === 'ALL' ? '#38bdf8' : 'var(--text-secondary)'}; cursor: pointer;">
+                  All (${allAccounts.length})
+                </button>
+                <button type="button" class="btn-uam-quick-chip" data-filter="WITH_CARD" style="padding: 2px 8px; height: 26px; font-size: 11px; font-weight: 700; border-radius: 5px; border: 1px solid ${quickCardFilter === 'WITH_CARD' ? '#0284c7' : 'var(--border-color)'}; background: ${quickCardFilter === 'WITH_CARD' ? 'rgba(2, 132, 199, 0.25)' : 'rgba(15, 23, 42, 0.6)'}; color: ${quickCardFilter === 'WITH_CARD' ? '#38bdf8' : 'var(--text-secondary)'}; cursor: pointer;">
+                  🪪 Card (${withCardCount})
+                </button>
+                <button type="button" class="btn-uam-quick-chip" data-filter="ACTIVE" style="padding: 2px 8px; height: 26px; font-size: 11px; font-weight: 700; border-radius: 5px; border: 1px solid ${quickCardFilter === 'ACTIVE' ? '#10b981' : 'var(--border-color)'}; background: ${quickCardFilter === 'ACTIVE' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(15, 23, 42, 0.6)'}; color: ${quickCardFilter === 'ACTIVE' ? '#34d399' : 'var(--text-secondary)'}; cursor: pointer;">
+                  🟢 Active (${activeAccounts})
+                </button>
+                <button type="button" class="btn-uam-quick-chip" data-filter="INACTIVE" style="padding: 2px 8px; height: 26px; font-size: 11px; font-weight: 700; border-radius: 5px; border: 1px solid ${quickCardFilter === 'INACTIVE' ? '#ef4444' : 'var(--border-color)'}; background: ${quickCardFilter === 'INACTIVE' ? 'rgba(239, 68, 68, 0.2)' : 'rgba(15, 23, 42, 0.6)'}; color: ${quickCardFilter === 'INACTIVE' ? '#f87171' : 'var(--text-secondary)'}; cursor: pointer;">
+                  🔴 Inactive (${inactiveAccounts})
+                </button>
+                <button type="button" class="btn-uam-quick-chip" data-filter="MISSING_ACCOUNT" style="padding: 2px 8px; height: 26px; font-size: 11px; font-weight: 700; border-radius: 5px; border: 1px solid ${quickCardFilter === 'MISSING_ACCOUNT' ? '#f59e0b' : 'var(--border-color)'}; background: ${quickCardFilter === 'MISSING_ACCOUNT' ? 'rgba(245, 158, 11, 0.2)' : 'rgba(15, 23, 42, 0.6)'}; color: ${quickCardFilter === 'MISSING_ACCOUNT' ? '#fbbf24' : 'var(--text-secondary)'}; cursor: pointer;">
+                  ⏳ Missing (${pendingCreation})
+                </button>
+                <button type="button" class="btn-uam-quick-chip" data-filter="TEMP_PASS" style="padding: 2px 8px; height: 26px; font-size: 11px; font-weight: 700; border-radius: 5px; border: 1px solid ${quickCardFilter === 'TEMP_PASS' ? '#a855f7' : 'var(--border-color)'}; background: ${quickCardFilter === 'TEMP_PASS' ? 'rgba(168, 85, 247, 0.2)' : 'rgba(15, 23, 42, 0.6)'}; color: ${quickCardFilter === 'TEMP_PASS' ? '#c084fc' : 'var(--text-secondary)'}; cursor: pointer;">
+                  🔑 Temp Pass (${pendingPasswordSetup})
+                </button>
               </div>
 
             </div>
 
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <span style="font-size: 12px; color: var(--text-muted);">
-                Showing <strong>${paginatedAccounts.length}</strong> of <strong>${totalMatching}</strong> matching records
+            <!-- Match counter & Reset -->
+            <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
+              <span style="font-size: 11px; color: var(--text-muted); white-space: nowrap;">
+                Showing <strong>${paginatedAccounts.length}</strong> of <strong>${totalMatching}</strong>
               </span>
               ${(searchQuery || cardSearchQuery || quickCardFilter !== 'ALL' || filterGroup !== 'ALL' || filterUnit !== 'ALL' || filterFloor !== 'ALL' || filterLine !== 'ALL' || filterDesignation !== 'ALL' || filterStatus !== 'ALL' || filterAccountLink !== 'ALL' || filterPasswordStatus !== 'ALL') ? `
-                <button id="btn-clear-all-filters" class="btn btn-ghost btn-xs" style="color: #f87171; font-weight: 700; border: 1px solid rgba(248, 113, 113, 0.3); border-radius: 6px; padding: 4px 8px;">
-                  ✕ Clear All Filters
+                <button id="btn-clear-all-filters" class="btn btn-ghost btn-xs" style="color: #f87171; font-weight: 700; border: 1px solid rgba(248, 113, 113, 0.3); border-radius: 5px; padding: 2px 6px; font-size: 10.5px;">
+                  ✕ Clear All
                 </button>
               ` : ''}
             </div>
           </div>
 
-          <!-- Middle Row: Interactive Quick Filter Chips -->
-          <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding: 2px 0;">
-            <span style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Quick Filter:</span>
-            
-            <button type="button" class="btn-uam-quick-chip" data-filter="ALL" style="padding: 4px 10px; font-size: 11.5px; font-weight: 700; border-radius: 6px; border: 1px solid ${quickCardFilter === 'ALL' ? '#0284c7' : 'var(--border-color)'}; background: ${quickCardFilter === 'ALL' ? 'rgba(2, 132, 199, 0.25)' : 'rgba(15, 23, 42, 0.6)'}; color: ${quickCardFilter === 'ALL' ? '#38bdf8' : 'var(--text-secondary)'}; cursor: pointer;">
-              🔘 All (${allAccounts.length})
-            </button>
+          <!-- Row 2: Cascading Location Dropdowns + Attribute Filters -->
+          <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+            <!-- Location Cascades (Connected Visual Hierarchy) -->
+            <div style="display: flex; align-items: center; gap: 4px; background: rgba(9, 14, 26, 0.6); padding: 2px 4px; border-radius: 6px; border: 1px solid rgba(56, 189, 248, 0.2); flex-wrap: wrap;">
+              <!-- Group -->
+              <select id="uam-filter-group" class="filter-select" style="height: 27px; font-size: 11px; padding: 1px 6px; max-width: 140px; border-radius: 5px;" title="Filter by Enterprise Group">
+                <option value="ALL" ${filterGroup === 'ALL' ? 'selected' : ''}>🏢 All Groups</option>
+                ${allGroups.map(g => `<option value="${g.id}" ${filterGroup === g.id ? 'selected' : ''}>${g.name}</option>`).join('')}
+              </select>
 
-            <button type="button" class="btn-uam-quick-chip" data-filter="WITH_CARD" style="padding: 4px 10px; font-size: 11.5px; font-weight: 700; border-radius: 6px; border: 1px solid ${quickCardFilter === 'WITH_CARD' ? '#0284c7' : 'var(--border-color)'}; background: ${quickCardFilter === 'WITH_CARD' ? 'rgba(2, 132, 199, 0.25)' : 'rgba(15, 23, 42, 0.6)'}; color: ${quickCardFilter === 'WITH_CARD' ? '#38bdf8' : 'var(--text-secondary)'}; cursor: pointer;">
-              🪪 With Card # (${withCardCount})
-            </button>
+              <!-- Unit -->
+              <select id="uam-filter-unit" class="filter-select" style="height: 27px; font-size: 11px; padding: 1px 6px; max-width: 150px; border-radius: 5px;" title="Filter by Manufacturing Unit">
+                <option value="ALL" ${filterUnit === 'ALL' ? 'selected' : ''}>🏭 All Units</option>
+                ${allUnits.map(u => `<option value="${u.id}" ${filterUnit === u.id ? 'selected' : ''}>${u.name}</option>`).join('')}
+              </select>
 
-            <button type="button" class="btn-uam-quick-chip" data-filter="ACTIVE" style="padding: 4px 10px; font-size: 11.5px; font-weight: 700; border-radius: 6px; border: 1px solid ${quickCardFilter === 'ACTIVE' ? '#10b981' : 'var(--border-color)'}; background: ${quickCardFilter === 'ACTIVE' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(15, 23, 42, 0.6)'}; color: ${quickCardFilter === 'ACTIVE' ? '#34d399' : 'var(--text-secondary)'}; cursor: pointer;">
-              🟢 Active (${activeAccounts})
-            </button>
+              <!-- Floor -->
+              <select id="uam-filter-floor" class="filter-select" style="height: 27px; font-size: 11px; padding: 1px 6px; max-width: 150px; border-radius: 5px;" title="Filter by Factory Floor">
+                <option value="ALL" ${filterFloor === 'ALL' ? 'selected' : ''}>🏢 All Floors</option>
+                ${allFloors.map(f => `<option value="${f.id}" ${filterFloor === f.id ? 'selected' : ''}>${f.name}</option>`).join('')}
+              </select>
 
-            <button type="button" class="btn-uam-quick-chip" data-filter="INACTIVE" style="padding: 4px 10px; font-size: 11.5px; font-weight: 700; border-radius: 6px; border: 1px solid ${quickCardFilter === 'INACTIVE' ? '#ef4444' : 'var(--border-color)'}; background: ${quickCardFilter === 'INACTIVE' ? 'rgba(239, 68, 68, 0.2)' : 'rgba(15, 23, 42, 0.6)'}; color: ${quickCardFilter === 'INACTIVE' ? '#f87171' : 'var(--text-secondary)'}; cursor: pointer;">
-              🔴 Inactive (${inactiveAccounts})
-            </button>
+              <!-- Line -->
+              <select id="uam-filter-line" class="filter-select" style="height: 27px; font-size: 11px; padding: 1px 6px; max-width: 140px; border-radius: 5px;" title="Filter by Production Line">
+                <option value="ALL" ${filterLine === 'ALL' ? 'selected' : ''}>🧵 All Lines</option>
+                ${allLines.map(l => `<option value="${l.id}" ${filterLine === l.id ? 'selected' : ''}>${l.name}</option>`).join('')}
+              </select>
+            </div>
 
-            <button type="button" class="btn-uam-quick-chip" data-filter="MISSING_ACCOUNT" style="padding: 4px 10px; font-size: 11.5px; font-weight: 700; border-radius: 6px; border: 1px solid ${quickCardFilter === 'MISSING_ACCOUNT' ? '#f59e0b' : 'var(--border-color)'}; background: ${quickCardFilter === 'MISSING_ACCOUNT' ? 'rgba(245, 158, 11, 0.2)' : 'rgba(15, 23, 42, 0.6)'}; color: ${quickCardFilter === 'MISSING_ACCOUNT' ? '#fbbf24' : 'var(--text-secondary)'}; cursor: pointer;">
-              ⏳ Missing Account (${pendingCreation})
-            </button>
-
-            <button type="button" class="btn-uam-quick-chip" data-filter="TEMP_PASS" style="padding: 4px 10px; font-size: 11.5px; font-weight: 700; border-radius: 6px; border: 1px solid ${quickCardFilter === 'TEMP_PASS' ? '#a855f7' : 'var(--border-color)'}; background: ${quickCardFilter === 'TEMP_PASS' ? 'rgba(168, 85, 247, 0.2)' : 'rgba(15, 23, 42, 0.6)'}; color: ${quickCardFilter === 'TEMP_PASS' ? '#c084fc' : 'var(--text-secondary)'}; cursor: pointer;">
-              🔑 Temporary Pass (${pendingPasswordSetup})
-            </button>
-          </div>
-
-          <!-- Bottom Row: Multi-Dropdown Filters (Group, Unit, Floor, Line, Desig, Status, Account Link, Pass Status) -->
-          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-            <!-- Group -->
-            <select id="uam-filter-group" class="filter-select" style="height: 32px; font-size: 11.5px; padding: 2px 8px; max-width: 150px;">
-              <option value="ALL" ${filterGroup === 'ALL' ? 'selected' : ''}>🏢 All Groups</option>
-              ${allGroups.map(g => `<option value="${g.id}" ${filterGroup === g.id ? 'selected' : ''}>${g.name}</option>`).join('')}
-            </select>
-
-            <!-- Unit -->
-            <select id="uam-filter-unit" class="filter-select" style="height: 32px; font-size: 11.5px; padding: 2px 8px; max-width: 160px;">
-              <option value="ALL" ${filterUnit === 'ALL' ? 'selected' : ''}>🏭 All Units</option>
-              ${allUnits.map(u => `<option value="${u.id}" ${filterUnit === u.id ? 'selected' : ''}>${u.name}</option>`).join('')}
-            </select>
-
-            <!-- Floor -->
-            <select id="uam-filter-floor" class="filter-select" style="height: 32px; font-size: 11.5px; padding: 2px 8px; max-width: 160px;">
-              <option value="ALL" ${filterFloor === 'ALL' ? 'selected' : ''}>🏢 All Floors</option>
-              ${allFloors.map(f => `<option value="${f.id}" ${filterFloor === f.id ? 'selected' : ''}>${f.name}</option>`).join('')}
-            </select>
-
-            <!-- Line -->
-            <select id="uam-filter-line" class="filter-select" style="height: 32px; font-size: 11.5px; padding: 2px 8px; max-width: 150px;">
-              <option value="ALL" ${filterLine === 'ALL' ? 'selected' : ''}>🧵 All Lines</option>
-              ${allLines.map(l => `<option value="${l.id}" ${filterLine === l.id ? 'selected' : ''}>${l.name}</option>`).join('')}
-            </select>
-
+            <!-- Attribute Filters -->
             <!-- Designation -->
-            <select id="uam-filter-desig" class="filter-select" style="height: 32px; font-size: 11.5px; padding: 2px 8px; max-width: 170px;">
+            <select id="uam-filter-desig" class="filter-select" style="height: 27px; font-size: 11px; padding: 1px 6px; max-width: 150px; border-radius: 5px;">
               <option value="ALL" ${filterDesignation === 'ALL' ? 'selected' : ''}>💼 All Designations</option>
               ${allDesignations.map(d => `<option value="${d}" ${filterDesignation === d ? 'selected' : ''}>${d}</option>`).join('')}
             </select>
 
-            <!-- Account Status -->
-            <select id="uam-filter-status" class="filter-select" style="height: 32px; font-size: 11.5px; padding: 2px 8px; max-width: 130px;">
+            <!-- Status -->
+            <select id="uam-filter-status" class="filter-select" style="height: 27px; font-size: 11px; padding: 1px 6px; max-width: 115px; border-radius: 5px;">
               <option value="ALL" ${filterStatus === 'ALL' ? 'selected' : ''}>⚡ All Status</option>
               <option value="ACTIVE" ${filterStatus === 'ACTIVE' ? 'selected' : ''}>🟢 Active</option>
               <option value="INACTIVE" ${filterStatus === 'INACTIVE' ? 'selected' : ''}>🔴 Inactive</option>
             </select>
 
             <!-- Account Link Status -->
-            <select id="uam-filter-account-link" class="filter-select" style="height: 32px; font-size: 11.5px; padding: 2px 8px; max-width: 150px;">
+            <select id="uam-filter-account-link" class="filter-select" style="height: 27px; font-size: 11px; padding: 1px 6px; max-width: 135px; border-radius: 5px;">
               <option value="ALL" ${filterAccountLink === 'ALL' ? 'selected' : ''}>👤 All Accounts</option>
-              <option value="LINKED" ${filterAccountLink === 'LINKED' ? 'selected' : ''}>✓ User Account Created</option>
+              <option value="LINKED" ${filterAccountLink === 'LINKED' ? 'selected' : ''}>✓ Account Created</option>
               <option value="NOT_CREATED" ${filterAccountLink === 'NOT_CREATED' ? 'selected' : ''}>⏳ Account Missing</option>
             </select>
 
             <!-- Password Status -->
-            <select id="uam-filter-pass-status" class="filter-select" style="height: 32px; font-size: 11.5px; padding: 2px 8px; max-width: 160px;">
+            <select id="uam-filter-pass-status" class="filter-select" style="height: 27px; font-size: 11px; padding: 1px 6px; max-width: 140px; border-radius: 5px;">
               <option value="ALL" ${filterPasswordStatus === 'ALL' ? 'selected' : ''}>🔑 All Passwords</option>
               <option value="SETUP" ${filterPasswordStatus === 'SETUP' ? 'selected' : ''}>✅ Setup / Active</option>
-              <option value="TEMPORARY" ${filterPasswordStatus === 'TEMPORARY' ? 'selected' : ''}>🟡 Temporary Initial</option>
-              <option value="PENDING" ${filterPasswordStatus === 'PENDING' ? 'selected' : ''}>⚪ Pending Setup</option>
+              <option value="TEMPORARY" ${filterPasswordStatus === 'TEMPORARY' ? 'selected' : ''}>🟡 Temporary</option>
+              <option value="PENDING" ${filterPasswordStatus === 'PENDING' ? 'selected' : ''}>⚪ Pending</option>
             </select>
           </div>
         </div>
@@ -2105,43 +2136,52 @@ function renderActiveModalHtml() {
     const data = lastGeneratedPasswordData;
     return `
       <div class="modal-overlay active" id="modal-uam-overlay">
-        <div class="modal-card" style="max-width: 500px;">
-          <div class="modal-header" style="border-bottom: 1px solid var(--border-color); padding-bottom: 12px;">
+        <div class="modal-card" style="max-width: 450px; width: 92%; border-radius: 12px; background: #0b1329; border: 1.5px solid rgba(56, 189, 248, 0.35); box-shadow: 0 25px 60px rgba(0, 0, 0, 0.85); overflow: hidden; padding: 0;">
+          
+          <!-- Header (Compact & Crisp) -->
+          <div style="padding: 10px 16px; background: linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(30, 41, 59, 0.95)); border-bottom: 1px solid rgba(56, 189, 248, 0.2); display: flex; justify-content: space-between; align-items: center;">
             <div style="display: flex; align-items: center; gap: 10px;">
-              <span style="font-size: 26px;">🔑</span>
+              <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); display: flex; align-items: center; justify-content: center; font-size: 16px;">🔑</div>
               <div>
-                <h3 style="margin: 0; font-size: 16px; font-weight: 800; color: #34d399;">
-                  ${data.isReset ? 'Password Successfully Reset' : 'Initial Password Generated'}
+                <h3 style="margin: 0; font-size: 14.5px; font-weight: 800; color: #34d399; letter-spacing: -0.2px;">
+                  ${data.isReset ? 'Password Reset Successful' : 'Initial Password Generated'}
                 </h3>
-                <p style="margin: 2px 0 0 0; font-size: 11.5px; color: var(--text-muted);">
-                  User Account: <strong>@${data.username}</strong>
+                <p style="margin: 2px 0 0 0; font-size: 11px; color: var(--text-muted);">
+                  User Account: <span style="color: #38bdf8; font-family: var(--font-mono); font-weight: 700;">@${data.username}</span>
                 </p>
               </div>
             </div>
-            <button class="btn btn-ghost btn-sm btn-close-uam-modal" style="font-size: 16px;">✕</button>
+            <button class="btn btn-ghost btn-sm btn-close-uam-modal" style="font-size: 16px; padding: 2px 8px; color: var(--text-muted); cursor: pointer;" title="Close">✕</button>
           </div>
 
-          <div style="padding: 20px 0; display: flex; flex-direction: column; gap: 14px;">
-            <div style="font-size: 12.5px; color: #cbd5e1;">
-              A unique, cryptographically secure 14-character password has been generated and hashed:
+          <!-- Body (Compact & High-Tech) -->
+          <div style="padding: 14px 18px; display: flex; flex-direction: column; gap: 12px;">
+            <div style="font-size: 11.5px; color: #cbd5e1; line-height: 1.4;">
+              A cryptographically secure password has been generated and hashed for this workforce account:
             </div>
 
-            <div style="background: #0f172a; border: 2px dashed #0284c7; border-radius: 8px; padding: 14px 18px; display: flex; justify-content: space-between; align-items: center;">
-              <span id="txt-generated-password" style="font-family: var(--font-mono); font-size: 18px; font-weight: 900; color: #38bdf8; letter-spacing: 1px;">
+            <!-- Password Card with Quick Copy -->
+            <div style="background: #070d1e; border: 1.5px solid rgba(56, 189, 248, 0.35); border-radius: 8px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; gap: 10px; box-shadow: inset 0 2px 6px rgba(0,0,0,0.6);">
+              <span id="txt-generated-password" style="font-family: var(--font-mono); font-size: 16px; font-weight: 900; color: #38bdf8; letter-spacing: 1.2px; user-select: all; word-break: break-all;">
                 ${data.plainPassword}
               </span>
-              <button id="btn-copy-generated-pass" class="btn btn-primary btn-xs" style="font-weight: 700; background: #0284c7;">
+              <button id="btn-copy-generated-pass" class="btn btn-primary btn-xs" style="font-weight: 800; background: linear-gradient(135deg, #0284c7, #0369a1); height: 28px; padding: 0 12px; border-radius: 6px; display: inline-flex; align-items: center; gap: 5px; cursor: pointer; white-space: nowrap; flex-shrink: 0;">
                 📋 Copy
               </button>
             </div>
 
-            <div style="font-size: 11.5px; color: #f59e0b; background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 6px; padding: 10px 12px; line-height: 1.4;">
-              ⚠️ <strong>Security Notice:</strong> Plaintext passwords are not stored in the database or logs. This password is temporarily cached in memory for authorized export and distribution.
+            <!-- Security Notice -->
+            <div style="font-size: 11px; color: #fbbf24; background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.25); border-radius: 6px; padding: 8px 12px; line-height: 1.4; display: flex; align-items: flex-start; gap: 8px;">
+              <span style="font-size: 13px;">⚠️</span>
+              <div>
+                <strong>Security Notice:</strong> Plaintext credentials are not stored in the database. Please copy and share this password with the authorized user immediately.
+              </div>
             </div>
           </div>
 
-          <div style="display: flex; justify-content: flex-end; gap: 8px; border-top: 1px solid var(--border-color); padding-top: 12px;">
-            <button class="btn btn-primary btn-sm btn-close-uam-modal" style="font-weight: 700;">Done</button>
+          <!-- Footer -->
+          <div style="display: flex; justify-content: flex-end; gap: 8px; border-top: 1px solid rgba(255, 255, 255, 0.08); background: rgba(15, 23, 42, 0.95); padding: 9px 18px;">
+            <button class="btn btn-primary btn-sm btn-close-uam-modal" style="font-weight: 700; height: 30px; padding: 0 16px; border-radius: 6px;">Done</button>
           </div>
         </div>
       </div>
@@ -3172,10 +3212,72 @@ export function initUserManagementEvents() {
     }
   };
 
-  bindFilter('uam-filter-group', val => filterGroup = val);
-  bindFilter('uam-filter-unit', val => filterUnit = val);
-  bindFilter('uam-filter-floor', val => filterFloor = val);
-  bindFilter('uam-filter-line', val => filterLine = val);
+  const elGroup = document.getElementById('uam-filter-group');
+  if (elGroup) {
+    elGroup.addEventListener('change', (e) => {
+      filterGroup = e.target.value;
+      filterUnit = 'ALL';
+      filterFloor = 'ALL';
+      filterLine = 'ALL';
+      currentPage = 1;
+      reRender();
+    });
+  }
+
+  const elUnit = document.getElementById('uam-filter-unit');
+  if (elUnit) {
+    elUnit.addEventListener('change', (e) => {
+      filterUnit = e.target.value;
+      if (filterUnit !== 'ALL' && filterGroup === 'ALL') {
+        const uObj = masterDataService.getUnitById ? masterDataService.getUnitById(filterUnit) : null;
+        if (uObj?.groupId) filterGroup = uObj.groupId;
+      }
+      filterFloor = 'ALL';
+      filterLine = 'ALL';
+      currentPage = 1;
+      reRender();
+    });
+  }
+
+  const elFloor = document.getElementById('uam-filter-floor');
+  if (elFloor) {
+    elFloor.addEventListener('change', (e) => {
+      filterFloor = e.target.value;
+      if (filterFloor !== 'ALL') {
+        const fObj = masterDataService.getFloorById ? masterDataService.getFloorById(filterFloor) : null;
+        if (fObj?.unitId && filterUnit === 'ALL') {
+          filterUnit = fObj.unitId;
+          const uObj = masterDataService.getUnitById ? masterDataService.getUnitById(fObj.unitId) : null;
+          if (uObj?.groupId && filterGroup === 'ALL') filterGroup = uObj.groupId;
+        }
+      }
+      filterLine = 'ALL';
+      currentPage = 1;
+      reRender();
+    });
+  }
+
+  const elLine = document.getElementById('uam-filter-line');
+  if (elLine) {
+    elLine.addEventListener('change', (e) => {
+      filterLine = e.target.value;
+      if (filterLine !== 'ALL') {
+        const lObj = masterDataService.getLineById ? masterDataService.getLineById(filterLine) : null;
+        if (lObj?.floorId && filterFloor === 'ALL') {
+          filterFloor = lObj.floorId;
+          const fObj = masterDataService.getFloorById ? masterDataService.getFloorById(lObj.floorId) : null;
+          if (fObj?.unitId && filterUnit === 'ALL') {
+            filterUnit = fObj.unitId;
+            const uObj = masterDataService.getUnitById ? masterDataService.getUnitById(fObj.unitId) : null;
+            if (uObj?.groupId && filterGroup === 'ALL') filterGroup = uObj.groupId;
+          }
+        }
+      }
+      currentPage = 1;
+      reRender();
+    });
+  }
+
   bindFilter('uam-filter-desig', val => filterDesignation = val);
   bindFilter('uam-filter-status', val => filterStatus = val);
   bindFilter('uam-filter-account-link', val => filterAccountLink = val);
