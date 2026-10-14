@@ -283,12 +283,15 @@ export function renderUserManagement() {
   const isPageAllSelected = paginatedAccounts.length > 0 && paginatedAccounts.every(a => selectedAccountIds.has(a.id));
 
   return `
-    <div class="page-view" style="gap: 14px; max-width: 1440px; margin: 0 auto; width: 100%; min-height: 100%; padding-bottom: 60px; box-sizing: border-box;">
+    <div class="page-view uam-dashboard-page">
       
       <!-- =================================================================== -->
-      <!-- 1. TOP HEADER & KPI SUMMARY DASHBOARD (Compact & High-Density)       -->
+      <!-- FIXED TOP DECK: Header, KPI Summary, Navigation Tabs & Filters      -->
       <!-- =================================================================== -->
-      <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 8px 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; box-shadow: var(--shadow-sm);">
+      <div class="uam-fixed-top-deck">
+        
+        <!-- 1. TOP HEADER & KPI SUMMARY DASHBOARD (Compact & High-Density) -->
+        <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 8px 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; box-shadow: var(--shadow-sm);">
         <div style="display: flex; align-items: center; gap: 10px;">
           <div style="width: 32px; height: 32px; border-radius: 8px; background: linear-gradient(135deg, rgba(2, 132, 199, 0.2), rgba(14, 165, 233, 0.05)); border: 1px solid rgba(56, 189, 248, 0.35); display: flex; align-items: center; justify-content: center; font-size: 16px;">
             👥
@@ -637,241 +640,279 @@ export function renderUserManagement() {
             </div>
           </div>
         ` : ''}
+      </div> <!-- end .uam-fixed-top-deck -->
 
-        <!-- User Accounts Table (Section 3) -->
-        <div class="uam-table-scroll-container" style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); overflow-x: auto; overflow-y: auto; width: 100%; min-height: 480px; flex: 1 1 auto; flex-shrink: 0;">
-          <table class="user-management-table" style="width: 100%; min-width: 1350px; border-collapse: collapse;">
-            <thead>
-              <tr>
-                <th style="width: 38px; text-align: center; padding: 10px 8px;">
-                  <input type="checkbox" id="chk-header-select-page" ${isPageAllSelected ? 'checked' : ''} style="cursor: pointer; width: 15px; height: 15px; accent-color: #0284c7;" title="Select all on this page" />
-                </th>
-                <th style="min-width: 110px; padding: 10px 12px;">Card Number</th>
-                <th style="min-width: 160px; padding: 10px 12px;">Employee Name</th>
-                <th style="min-width: 120px; padding: 10px 12px;">Username</th>
-                <th style="min-width: 130px; padding: 10px 12px;">Designation</th>
-                <th style="min-width: 110px; padding: 10px 10px;">Group</th>
-                <th style="min-width: 100px; padding: 10px 10px;">Unit</th>
-                <th style="min-width: 100px; padding: 10px 10px;">Floor</th>
-                <th style="min-width: 90px; padding: 10px 10px;">Line</th>
-                <th style="min-width: 90px; text-align: center; padding: 10px 8px;">Status</th>
-                <th style="min-width: 140px; padding: 10px 12px;">Permissions Summary</th>
-                <th style="min-width: 100px; text-align: center; padding: 10px 8px;">Password</th>
-                <th style="min-width: 110px; padding: 10px 10px;">Last Login</th>
-                <th style="min-width: 150px; text-align: center; padding: 10px 12px;">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${paginatedAccounts.length === 0 ? `
+      <!-- =================================================================== -->
+      <!-- TAB 1: USER ACCOUNTS DASHBOARD (Fixed Top Controls + Scroll Table)   -->
+      <!-- =================================================================== -->
+      ${activeUserSection === 'ACCOUNTS' ? `
+        <div class="uam-tab-content-wrapper">
+          <!-- User Accounts Table (Only this container scrolls vertically & horizontally) -->
+          <div class="uam-table-scroll-container">
+            <table class="user-management-table">
+              <colgroup>
+                <col style="width: 44px;">
+                <col style="width: 120px;">
+                <col style="width: 180px;">
+                <col style="width: 135px;">
+                <col style="width: 155px;">
+                <col style="width: 130px;">
+                <col style="width: 160px;">
+                <col style="width: 95px;">
+                <col style="width: 100px;">
+                <col style="width: 95px;">
+                <col style="width: 185px;">
+                <col style="width: 115px;">
+                <col style="width: 125px;">
+                <col style="width: 160px;">
+              </colgroup>
+              <thead>
                 <tr>
-                  <td colspan="14" style="text-align: center; padding: 48px 20px; color: var(--text-muted);">
-                    <div style="font-size: 36px; margin-bottom: 10px;">🔍</div>
-                    <div style="font-size: 15px; font-weight: 700; color: #fff; margin-bottom: 6px;">No Matching User Accounts Found</div>
-                    <div style="font-size: 12.5px; color: var(--text-secondary); max-width: 480px; margin: 0 auto 16px auto;">
-                      No employee records match the active search query or filter criteria. Try clearing filters or use <strong>"Auto-Create Missing Accounts"</strong>.
-                    </div>
-                    <div style="display: inline-flex; gap: 8px;">
-                      <button type="button" id="btn-empty-clear-filters" class="btn btn-secondary btn-sm" style="font-size: 12px; font-weight: 700;">
-                        ✕ Clear All Filters
-                      </button>
-                    </div>
-                  </td>
+                  <th style="width: 44px; text-align: center; padding: 8px 4px;">
+                    <input type="checkbox" id="chk-header-select-page" ${isPageAllSelected ? 'checked' : ''} style="cursor: pointer; width: 15px; height: 15px; accent-color: #0284c7; vertical-align: middle;" title="Select all on this page" />
+                  </th>
+                  <th style="width: 120px; text-align: center; padding: 8px 6px;">Card Number</th>
+                  <th style="width: 180px; text-align: left; padding: 8px 10px;">Employee Name</th>
+                  <th style="width: 135px; text-align: left; padding: 8px 10px;">Username</th>
+                  <th style="width: 155px; text-align: left; padding: 8px 10px;">Designation</th>
+                  <th style="width: 130px; text-align: left; padding: 8px 10px;">Group</th>
+                  <th style="width: 160px; text-align: left; padding: 8px 10px;">Unit</th>
+                  <th style="width: 95px; text-align: center; padding: 8px 6px;">Floor</th>
+                  <th style="width: 100px; text-align: center; padding: 8px 6px;">Line</th>
+                  <th style="width: 95px; text-align: center; padding: 8px 6px;">Status</th>
+                  <th style="width: 185px; text-align: left; padding: 8px 10px;">Permissions Summary</th>
+                  <th style="width: 115px; text-align: center; padding: 8px 6px;">Password</th>
+                  <th style="width: 125px; text-align: center; padding: 8px 6px;">Last Login</th>
+                  <th style="width: 160px; text-align: center; padding: 8px 8px;">Actions</th>
                 </tr>
-              ` : paginatedAccounts.map(acc => {
-                const isSelected = selectedAccountIds.has(acc.id);
-                const hasAccount = acc.hasAccount;
-                const isUserActive = acc.accountStatus === 'ACTIVE';
-
-                return `
-                  <tr style="background: ${isSelected ? 'rgba(2, 132, 199, 0.08)' : 'transparent'};">
-                    <td style="text-align: center; padding: 9px 8px;">
-                      ${hasAccount ? `
-                        <input type="checkbox" class="chk-account-row" data-id="${acc.id}" ${isSelected ? 'checked' : ''} style="cursor: pointer; width: 15px; height: 15px; accent-color: #0284c7;" />
-                      ` : `
-                        <span style="color: var(--text-muted); opacity: 0.3;">—</span>
-                      `}
-                    </td>
-                    
-                    <!-- Card Number (Interactive Badge) -->
-                    <td style="padding: 9px 12px;">
-                      <span class="badge uam-clickable-card-badge" data-card="${acc.cardNumber}" style="font-family: var(--font-mono); font-weight: 800; color: #38bdf8; font-size: 11.5px; background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.3); padding: 3px 8px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; transition: all 0.15s ease;" title="Click to filter by Card #${acc.cardNumber}">
-                        <span>🪪</span> <span>#${acc.cardNumber}</span>
-                      </span>
-                    </td>
-
-                    <!-- Employee Name -->
-                    <td style="padding: 9px 12px;">
-                      <div style="font-weight: 700; color: #fff; font-size: 13px;">${acc.employeeName}</div>
-                      <div style="font-size: 10.5px; color: var(--text-muted);">${acc.department}</div>
-                    </td>
-
-                    <!-- Username -->
-                    <td style="padding: 9px 12px;">
-                      ${hasAccount ? `
-                        <span style="font-family: var(--font-mono); color: #cbd5e1; font-weight: 600; font-size: 12px;">
-                          @${acc.username}
-                        </span>
-                      ` : `
-                        <span style="color: #f59e0b; font-size: 11.5px; font-weight: 700;">No Account Yet</span>
-                      `}
-                    </td>
-
-                    <!-- Designation -->
-                    <td style="padding: 9px 12px; font-size: 12px; color: #e2e8f0;">
-                      ${acc.designation}
-                    </td>
-
-                    <!-- Group -->
-                    <td style="padding: 9px 10px; font-size: 11.5px; color: #cbd5e1; font-weight: 600;">
-                      ${acc.groupName || 'Al-Muslim Group'}
-                    </td>
-
-                    <!-- Unit -->
-                    <td style="padding: 9px 10px; font-size: 11.5px; color: var(--text-secondary);">
-                      ${acc.unitName || '—'}
-                    </td>
-
-                    <!-- Floor -->
-                    <td style="padding: 9px 10px; font-size: 11.5px; color: #38bdf8; font-weight: 600;">
-                      ${acc.floorName || '—'}
-                    </td>
-
-                    <!-- Line -->
-                    <td style="padding: 9px 10px; font-size: 11.5px; color: var(--text-secondary);">
-                      ${acc.lineName || '—'}
-                    </td>
-
-                    <!-- Status -->
-                    <td style="text-align: center; padding: 9px 8px;">
-                      ${hasAccount ? `
-                        <span class="badge ${isUserActive ? 'badge-active' : 'badge-maint'}" style="font-size: 10px;">
-                          ${acc.accountStatus}
-                        </span>
-                      ` : `
-                        <span class="badge badge-warning" style="font-size: 10px;">PENDING</span>
-                      `}
-                    </td>
-
-                    <!-- Permissions Summary & Location Scope -->
-                    <td style="padding: 9px 12px;">
-                      ${hasAccount ? `
-                        <div style="display: flex; flex-direction: column; gap: 2px;">
-                          <div style="display: flex; align-items: center; gap: 6px;">
-                            <span style="font-size: 11.5px; color: #e2e8f0; font-weight: 600;">${acc.permissionsSummary}</span>
-                            ${acc.presetName ? `<span class="badge badge-info" style="font-size: 9.5px; padding: 1px 5px;">${acc.presetName}</span>` : ''}
-                          </div>
-                          <div style="font-size: 10px; color: #38bdf8; display: inline-flex; align-items: center; gap: 3px; font-weight: 600;" title="Assigned Scope: ${userAccessService.formatScopeSummary(acc.assignedScope)}">
-                            <span>📍</span> <span>${userAccessService.formatScopeSummary(acc.assignedScope)}</span>
-                          </div>
-                        </div>
-                      ` : `
-                        <span style="color: var(--text-muted); font-size: 11px;">Not Assigned</span>
-                      `}
-                    </td>
-
-                    <!-- Password Status -->
-                    <td style="text-align: center; padding: 9px 8px;">
-                      ${hasAccount ? `
-                        ${acc.passwordStatus === 'TEMPORARY' ? `
-                          <span class="badge badge-warning" title="Initial temporary password generated. Eligible for export." style="font-size: 10px; cursor: help;">🟡 Temporary</span>
-                        ` : `
-                          <span class="badge badge-active" title="Permanent password set" style="font-size: 10px;">✅ Setup</span>
-                        `}
-                      ` : `
-                        <span style="color: var(--text-muted); font-size: 11px;">—</span>
-                      `}
-                    </td>
-
-                    <!-- Last Login -->
-                    <td style="padding: 9px 10px; font-size: 11px; color: var(--text-muted); white-space: nowrap;">
-                      ${acc.lastLoginText}
-                    </td>
-
-                    <!-- Actions -->
-                    <td style="text-align: center; padding: 9px 12px; white-space: nowrap;">
-                      ${hasAccount ? `
-                        <div style="display: inline-flex; gap: 5px; align-items: center;">
-                          <button class="btn btn-ghost btn-xs btn-row-view-details" data-id="${acc.id}" title="View Complete Details" style="padding: 3px 6px; font-size: 11px;">
-                            👁️
-                          </button>
-                          <button class="btn btn-ghost btn-xs btn-row-manage-perms" data-id="${acc.id}" title="Manage Permissions" style="padding: 3px 6px; font-size: 11px; color: #38bdf8;">
-                            🛡️
-                          </button>
-                          <button class="btn btn-ghost btn-xs btn-row-reset-pass" data-id="${acc.id}" title="Reset / Generate Password" style="padding: 3px 6px; font-size: 11px; color: #f59e0b;">
-                            🔑
-                          </button>
-                          <button class="btn btn-ghost btn-xs btn-row-toggle-status" data-id="${acc.id}" data-status="${acc.accountStatus}" title="${isUserActive ? 'Deactivate Account' : 'Activate Account'}" style="padding: 3px 6px; font-size: 11px; color: ${isUserActive ? '#f87171' : '#34d399'};">
-                            ${isUserActive ? '🔴' : '🟢'}
-                          </button>
-                          <button class="btn btn-ghost btn-xs btn-row-view-logs" data-id="${acc.id}" data-card="${acc.cardNumber}" title="View Activity Logs" style="padding: 3px 6px; font-size: 11px; color: #cbd5e1;">
-                            📜
-                          </button>
-                        </div>
-                      ` : `
-                        <button class="btn btn-primary btn-xs btn-row-create-account" data-emp-id="${acc.manpowerId}" data-card="${acc.cardNumber}" style="font-weight: 700; background: linear-gradient(135deg, #0284c7, #0369a1); padding: 4px 10px; font-size: 11px; border-radius: 6px;">
-                          ➕ Create Account
+              </thead>
+              <tbody>
+                ${paginatedAccounts.length === 0 ? `
+                  <tr>
+                    <td colspan="14" style="text-align: center; padding: 48px 20px; color: var(--text-muted);">
+                      <div style="font-size: 36px; margin-bottom: 10px;">🔍</div>
+                      <div style="font-size: 15px; font-weight: 700; color: #fff; margin-bottom: 6px;">No Matching User Accounts Found</div>
+                      <div style="font-size: 12.5px; color: var(--text-secondary); max-width: 480px; margin: 0 auto 16px auto;">
+                        No employee records match the active search query or filter criteria. Try clearing filters or use <strong>"Auto-Create Missing Accounts"</strong>.
+                      </div>
+                      <div style="display: inline-flex; gap: 8px;">
+                        <button type="button" id="btn-empty-clear-filters" class="btn btn-secondary btn-sm" style="font-size: 12px; font-weight: 700;">
+                          ✕ Clear All Filters
                         </button>
-                      `}
+                      </div>
                     </td>
                   </tr>
-                `;
-              }).join('')}
-            </tbody>
-          </table>
-        </div>
+                ` : paginatedAccounts.map(acc => {
+                  const isSelected = selectedAccountIds.has(acc.id);
+                  const hasAccount = acc.hasAccount;
+                  const isUserActive = acc.accountStatus === 'ACTIVE';
 
-        <!-- Pagination Controls -->
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; padding: 8px 4px;">
-          <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-muted);">
-            <span>Rows per page:</span>
-            <select id="uam-page-size" class="filter-select" style="height: 28px; font-size: 11.5px; padding: 2px 6px; width: 65px;">
-              <option value="15" ${rowsPerPage === 15 ? 'selected' : ''}>15</option>
-              <option value="20" ${rowsPerPage === 20 ? 'selected' : ''}>20</option>
-              <option value="50" ${rowsPerPage === 50 ? 'selected' : ''}>50</option>
-              <option value="100" ${rowsPerPage === 100 ? 'selected' : ''}>100</option>
-            </select>
-            <span>Page <strong>${currentPage}</strong> of <strong>${totalPages}</strong> (${totalMatching} items)</span>
+                  return `
+                    <tr style="background: ${isSelected ? 'rgba(2, 132, 199, 0.08)' : 'transparent'};">
+                      <!-- Checkbox -->
+                      <td style="text-align: center; width: 44px; padding: 6px 4px;">
+                        ${hasAccount ? `
+                          <input type="checkbox" class="chk-account-row" data-id="${acc.id}" ${isSelected ? 'checked' : ''} style="cursor: pointer; width: 15px; height: 15px; accent-color: #0284c7; vertical-align: middle;" />
+                        ` : `
+                          <span style="color: var(--text-muted); opacity: 0.3;">—</span>
+                        `}
+                      </td>
+                      
+                      <!-- Card Number (Interactive Badge) -->
+                      <td style="text-align: center; width: 120px; padding: 6px 8px;">
+                        <span class="badge uam-clickable-card-badge" data-card="${acc.cardNumber}" style="font-family: var(--font-mono); font-weight: 800; color: #38bdf8; font-size: 11px; background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.3); padding: 2px 7px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 4px; white-space: nowrap; transition: all 0.15s ease;" title="Click to filter by Card #${acc.cardNumber}">
+                          <span>🪪</span> <span>#${acc.cardNumber}</span>
+                        </span>
+                      </td>
+
+                      <!-- Employee Name -->
+                      <td style="text-align: left; width: 180px; padding: 6px 10px;">
+                        <div style="font-weight: 700; color: #fff; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${acc.employeeName}">${acc.employeeName}</div>
+                        <div style="font-size: 10px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${acc.department || ''}">${acc.department || '—'}</div>
+                      </td>
+
+                      <!-- Username -->
+                      <td style="text-align: left; width: 135px; padding: 6px 10px;">
+                        ${hasAccount ? `
+                          <span style="font-family: var(--font-mono); color: #cbd5e1; font-weight: 600; font-size: 11.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: inline-block; max-width: 125px;" title="@${acc.username}">
+                            @${acc.username}
+                          </span>
+                        ` : `
+                          <span style="color: #f59e0b; font-size: 11px; font-weight: 700; white-space: nowrap;">No Account Yet</span>
+                        `}
+                      </td>
+
+                      <!-- Designation -->
+                      <td style="text-align: left; width: 155px; padding: 6px 10px;">
+                        <div style="font-size: 11.5px; color: #e2e8f0; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${acc.designation}">
+                          ${acc.designation}
+                        </div>
+                      </td>
+
+                      <!-- Group -->
+                      <td style="text-align: left; width: 130px; padding: 6px 10px;">
+                        <div style="font-size: 11.5px; color: #cbd5e1; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${acc.groupName || 'Al-Muslim Group'}">
+                          ${acc.groupName || 'Al-Muslim Group'}
+                        </div>
+                      </td>
+
+                      <!-- Unit -->
+                      <td style="text-align: left; width: 160px; padding: 6px 10px;">
+                        <div style="font-size: 11.5px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${acc.unitName || '—'}">
+                          ${acc.unitName || '—'}
+                        </div>
+                      </td>
+
+                      <!-- Floor -->
+                      <td style="text-align: center; width: 95px; padding: 6px 6px;">
+                        <div style="font-size: 11.5px; color: #38bdf8; font-weight: 600; white-space: nowrap;">
+                          ${acc.floorName || '—'}
+                        </div>
+                      </td>
+
+                      <!-- Line -->
+                      <td style="text-align: center; width: 100px; padding: 6px 6px;">
+                        <div style="font-size: 11.5px; color: var(--text-secondary); white-space: nowrap;">
+                          ${acc.lineName || '—'}
+                        </div>
+                      </td>
+
+                      <!-- Status -->
+                      <td style="text-align: center; width: 95px; padding: 6px 6px;">
+                        ${hasAccount ? `
+                          <span class="badge ${isUserActive ? 'badge-active' : 'badge-maint'}" style="font-size: 10px; padding: 2px 7px; font-weight: 700; white-space: nowrap;">
+                            ${acc.accountStatus}
+                          </span>
+                        ` : `
+                          <span class="badge badge-warning" style="font-size: 10px; padding: 2px 7px; font-weight: 700; white-space: nowrap;">PENDING</span>
+                        `}
+                      </td>
+
+                      <!-- Permissions Summary & Location Scope -->
+                      <td style="text-align: left; width: 185px; padding: 6px 10px;">
+                        ${hasAccount ? `
+                          <div style="display: flex; flex-direction: column; gap: 2px;">
+                            <div style="display: flex; align-items: center; gap: 5px; flex-wrap: nowrap; overflow: hidden;">
+                              <span style="font-size: 11px; color: #e2e8f0; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${acc.permissionsSummary}">${acc.permissionsSummary}</span>
+                              ${acc.presetName ? `<span class="badge badge-info" style="font-size: 9px; padding: 1px 5px; flex-shrink: 0;">${acc.presetName}</span>` : ''}
+                            </div>
+                            <div style="font-size: 9.5px; color: #38bdf8; display: inline-flex; align-items: center; gap: 3px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="Assigned Scope: ${userAccessService.formatScopeSummary(acc.assignedScope)}">
+                              <span>📍</span> <span>${userAccessService.formatScopeSummary(acc.assignedScope)}</span>
+                            </div>
+                          </div>
+                        ` : `
+                          <span style="color: var(--text-muted); font-size: 11px;">Not Assigned</span>
+                        `}
+                      </td>
+
+                      <!-- Password Status -->
+                      <td style="text-align: center; width: 115px; padding: 6px 6px;">
+                        ${hasAccount ? `
+                          ${acc.passwordStatus === 'TEMPORARY' ? `
+                            <span class="badge badge-warning" title="Initial temporary password generated. Eligible for export." style="font-size: 10px; padding: 2px 7px; cursor: help; white-space: nowrap;">🟡 Temporary</span>
+                          ` : `
+                            <span class="badge badge-active" title="Permanent password set" style="font-size: 10px; padding: 2px 7px; white-space: nowrap;">✅ Setup</span>
+                          `}
+                        ` : `
+                          <span style="color: var(--text-muted); font-size: 11px;">—</span>
+                        `}
+                      </td>
+
+                      <!-- Last Login -->
+                      <td style="text-align: center; width: 125px; padding: 6px 6px; white-space: nowrap;">
+                        <div style="font-size: 10.5px; color: var(--text-muted); white-space: nowrap;">
+                          ${acc.lastLoginText}
+                        </div>
+                      </td>
+
+                      <!-- Actions -->
+                      <td style="text-align: center; width: 160px; padding: 6px 8px; white-space: nowrap;">
+                        ${hasAccount ? `
+                          <div style="display: inline-flex; gap: 4px; align-items: center; justify-content: center;">
+                            <button class="btn btn-ghost btn-xs btn-row-view-details" data-id="${acc.id}" title="View Complete Details" style="padding: 2px 5px; font-size: 11px;">
+                              👁️
+                            </button>
+                            <button class="btn btn-ghost btn-xs btn-row-manage-perms" data-id="${acc.id}" title="Manage Permissions" style="padding: 2px 5px; font-size: 11px; color: #38bdf8;">
+                              🛡️
+                            </button>
+                            <button class="btn btn-ghost btn-xs btn-row-reset-pass" data-id="${acc.id}" title="Reset / Generate Password" style="padding: 2px 5px; font-size: 11px; color: #f59e0b;">
+                              🔑
+                            </button>
+                            <button class="btn btn-ghost btn-xs btn-row-toggle-status" data-id="${acc.id}" data-status="${acc.accountStatus}" title="${isUserActive ? 'Deactivate Account' : 'Activate Account'}" style="padding: 2px 5px; font-size: 11px; color: ${isUserActive ? '#f87171' : '#34d399'};">
+                              ${isUserActive ? '🔴' : '🟢'}
+                            </button>
+                            <button class="btn btn-ghost btn-xs btn-row-view-logs" data-id="${acc.id}" data-card="${acc.cardNumber}" title="View Activity Logs" style="padding: 2px 5px; font-size: 11px; color: #cbd5e1;">
+                              📜
+                            </button>
+                          </div>
+                        ` : `
+                          <button class="btn btn-primary btn-xs btn-row-create-account" data-emp-id="${acc.manpowerId}" data-card="${acc.cardNumber}" style="font-weight: 700; background: linear-gradient(135deg, #0284c7, #0369a1); padding: 3px 8px; font-size: 10.5px; border-radius: 6px; white-space: nowrap;">
+                            ➕ Create Account
+                          </button>
+                        `}
+                      </td>
+                    </tr>
+                  `;
+                }).join('')}
+              </tbody>
+            </table>
           </div>
 
-          <div style="display: flex; gap: 6px; align-items: center;">
-            <button id="btn-page-first" class="btn btn-secondary btn-xs" ${currentPage === 1 ? 'disabled' : ''} style="padding: 4px 8px;">⏮ First</button>
-            <button id="btn-page-prev" class="btn btn-secondary btn-xs" ${currentPage === 1 ? 'disabled' : ''} style="padding: 4px 8px;">◀ Prev</button>
-            <span style="font-size: 12px; font-weight: 700; color: #fff; padding: 0 6px;">${currentPage}</span>
-            <button id="btn-page-next" class="btn btn-secondary btn-xs" ${currentPage === totalPages ? 'disabled' : ''} style="padding: 4px 8px;">Next ▶</button>
-            <button id="btn-page-last" class="btn btn-secondary btn-xs" ${currentPage === totalPages ? 'disabled' : ''} style="padding: 4px 8px;">Last ⏭</button>
+          <!-- Pinned Bottom Pagination Bar (Always visible at bottom) -->
+          <div class="uam-fixed-bottom-bar">
+            <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-muted);">
+              <span>Rows per page:</span>
+              <select id="uam-page-size" class="filter-select" style="height: 28px; font-size: 11.5px; padding: 2px 6px; width: 65px;">
+                <option value="15" ${rowsPerPage === 15 ? 'selected' : ''}>15</option>
+                <option value="20" ${rowsPerPage === 20 ? 'selected' : ''}>20</option>
+                <option value="50" ${rowsPerPage === 50 ? 'selected' : ''}>50</option>
+                <option value="100" ${rowsPerPage === 100 ? 'selected' : ''}>100</option>
+              </select>
+              <span>Page <strong>${currentPage}</strong> of <strong>${totalPages}</strong> (${totalMatching} items)</span>
+            </div>
+
+            <div style="display: flex; gap: 6px; align-items: center;">
+              <button id="btn-page-first" class="btn btn-secondary btn-xs" ${currentPage === 1 ? 'disabled' : ''} style="padding: 4px 8px;">⏮ First</button>
+              <button id="btn-page-prev" class="btn btn-secondary btn-xs" ${currentPage === 1 ? 'disabled' : ''} style="padding: 4px 8px;">◀ Prev</button>
+              <span style="font-size: 12px; font-weight: 700; color: #fff; padding: 0 6px;">${currentPage}</span>
+              <button id="btn-page-next" class="btn btn-secondary btn-xs" ${currentPage === totalPages ? 'disabled' : ''} style="padding: 4px 8px;">Next ▶</button>
+              <button id="btn-page-last" class="btn btn-secondary btn-xs" ${currentPage === totalPages ? 'disabled' : ''} style="padding: 4px 8px;">Last ⏭</button>
+            </div>
           </div>
         </div>
-      ` : ''}
+      ` : `
+        <div class="uam-subtab-scroll-panel">
+          <!-- =================================================================== -->
+          <!-- TAB 2: INDIVIDUAL ACCESS PERMISSIONS MATRIX (Section 5)             -->
+          <!-- =================================================================== -->
+          ${activeUserSection === 'PERMISSIONS' ? renderIndividualPermissionsTab() : ''}
 
-      <!-- =================================================================== -->
-      <!-- TAB 2: INDIVIDUAL ACCESS PERMISSIONS MATRIX (Section 5)             -->
-      <!-- =================================================================== -->
-      ${activeUserSection === 'PERMISSIONS' ? renderIndividualPermissionsTab() : ''}
+          <!-- =================================================================== -->
+          <!-- TAB 3: BULK ACCESS ASSIGNMENT (Section 6)                           -->
+          <!-- =================================================================== -->
+          ${activeUserSection === 'BULK_ASSIGN' ? renderBulkAssignmentTab() : ''}
 
-      <!-- =================================================================== -->
-      <!-- TAB 3: BULK ACCESS ASSIGNMENT (Section 6)                           -->
-      <!-- =================================================================== -->
-      ${activeUserSection === 'BULK_ASSIGN' ? renderBulkAssignmentTab() : ''}
+          <!-- =================================================================== -->
+          <!-- TAB 4: PASSWORD MANAGEMENT DASHBOARD (Section 7 & 8)                -->
+          <!-- =================================================================== -->
+          ${activeUserSection === 'PASSWORD_MGMT' ? renderPasswordManagementTab() : ''}
 
-      <!-- =================================================================== -->
-      <!-- TAB 4: PASSWORD MANAGEMENT DASHBOARD (Section 7 & 8)                -->
-      <!-- =================================================================== -->
-      ${activeUserSection === 'PASSWORD_MGMT' ? renderPasswordManagementTab() : ''}
+          <!-- =================================================================== -->
+          <!-- TAB 5: BULK EXCEL EXPORT FOR ALL FLOORS (Section 9 & 10)            -->
+          <!-- =================================================================== -->
+          ${activeUserSection === 'EXPORT_ACCOUNTS' ? renderExportAccountsTab() : ''}
 
-      <!-- =================================================================== -->
-      <!-- TAB 5: BULK EXCEL EXPORT FOR ALL FLOORS (Section 9 & 10)            -->
-      <!-- =================================================================== -->
-      ${activeUserSection === 'EXPORT_ACCOUNTS' ? renderExportAccountsTab() : ''}
+          <!-- =================================================================== -->
+          <!-- TAB 6: ACCESS & PASSWORD ACTIVITY LOGS (Section 13)                 -->
+          <!-- =================================================================== -->
+          ${activeUserSection === 'ACTIVITY_LOGS' ? renderActivityLogsTab() : ''}
 
-      <!-- =================================================================== -->
-      <!-- TAB 6: ACCESS & PASSWORD ACTIVITY LOGS (Section 13)                 -->
-      <!-- =================================================================== -->
-      ${activeUserSection === 'ACTIVITY_LOGS' ? renderActivityLogsTab() : ''}
-
-      <!-- =================================================================== -->
-      <!-- TAB 7: PERMISSION PRESETS & ACCESS PROFILES (Preserved)             -->
-      <!-- =================================================================== -->
-      ${activeUserSection === 'PRESETS' ? renderPresetsTab() : ''}
+          <!-- =================================================================== -->
+          <!-- TAB 7: PERMISSION PRESETS & ACCESS PROFILES (Preserved)             -->
+          <!-- =================================================================== -->
+          ${activeUserSection === 'PRESETS' ? renderPresetsTab() : ''}
+        </div>
+      `}
 
       <!-- Modals Layer for Dialogs -->
       <div id="uam-modal-layer">
@@ -3073,6 +3114,7 @@ function bindLocationScopeEvents(root, scopeObj, pfx, onChange) {
 export function initUserManagementEvents() {
   const root = document.getElementById('main-view-container');
   if (!root) return;
+  root.style.overflow = 'hidden';
 
   const reRender = () => {
     if (typeof window.app !== 'undefined' && typeof window.app.renderMainContent === 'function') {

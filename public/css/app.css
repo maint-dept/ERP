@@ -1825,32 +1825,76 @@ body.modal-open {
 }
 
 /* =========================================================
-   Dedicated User Management Table & Scroll Container
+   Dedicated User Access Management (UAM) Full-Screen Layout
    ========================================================= */
+#main-view-container:has(.uam-dashboard-page) {
+  overflow: hidden !important;
+}
+
+.uam-dashboard-page {
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  min-height: 0 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  padding: 8px 14px 10px 14px !important;
+  gap: 6px !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+}
+
+/* Fixed Top Deck: Header, Summary Cards, Navigation Tabs, and Filters */
+.uam-fixed-top-deck {
+  flex-shrink: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 6px !important;
+  width: 100% !important;
+  z-index: 15 !important;
+}
+
+/* Tab 1 Dedicated Content Wrapper */
+.uam-tab-content-wrapper {
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 6px !important;
+  overflow: hidden !important;
+  width: 100% !important;
+}
+
+/* Dedicated Scroll Container: ONLY Data Table scrolls vertically & horizontally */
 .uam-table-scroll-container {
   width: 100% !important;
-  min-height: 480px !important;
-  max-height: calc(100vh - 290px) !important;
-  flex: 1 1 auto !important;
-  flex-shrink: 0 !important;
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+  max-height: 100% !important;
   overflow-x: auto !important;
   overflow-y: auto !important;
   position: relative !important;
   background: var(--bg-surface) !important;
   border: 1px solid var(--border-color) !important;
-  border-radius: var(--radius-lg) !important;
+  border-radius: var(--radius-md) !important;
   box-shadow: var(--shadow-sm) !important;
+  overscroll-behavior: contain !important;
+  scroll-behavior: auto !important;
+  -webkit-overflow-scrolling: touch !important;
   scrollbar-width: auto !important;
   scrollbar-color: #0284c7 #090e1a !important;
 }
 
+/* 14px High-Contrast Horizontal & Vertical Scrollbars */
 .uam-table-scroll-container::-webkit-scrollbar {
   width: 10px;
-  height: 12px;
+  height: 14px;
 }
 
 .uam-table-scroll-container::-webkit-scrollbar-track {
   background: #090e1a;
+  border-top: 1px solid rgba(56, 189, 248, 0.2);
   border-radius: 4px;
 }
 
@@ -1864,46 +1908,76 @@ body.modal-open {
   background: #38bdf8;
 }
 
+/* User Management Data Table */
 .user-management-table {
   width: 100% !important;
-  min-width: 1350px !important;
-  border-collapse: collapse !important;
-  table-layout: auto !important;
-  font-size: 12.5px;
+  min-width: 1680px !important;
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+  table-layout: fixed !important;
+  font-size: 12px;
   color: var(--text-primary);
   margin: 0 !important;
 }
 
+/* Sticky Table Header */
 .user-management-table thead th {
   position: sticky !important;
   top: 0 !important;
-  z-index: 10 !important;
+  z-index: 20 !important;
   background-color: #0b1329 !important;
   color: #cbd5e1 !important;
   font-weight: 700 !important;
-  font-size: 11.5px !important;
+  font-size: 11px !important;
   text-transform: uppercase !important;
   letter-spacing: 0.5px !important;
-  border-bottom: 2px solid #38bdf8 !important;
+  border-bottom: 2px solid #0284c7 !important;
   border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
-  padding: 10px 12px !important;
-  text-align: left !important;
+  padding: 8px 10px !important;
   white-space: nowrap !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5) !important;
 }
 
 .user-management-table tbody tr {
   border-bottom: 1px solid var(--border-color);
   transition: background 0.15s ease;
+  height: 42px;
 }
 
 .user-management-table tbody tr:hover {
-  background-color: rgba(255, 255, 255, 0.04) !important;
+  background-color: rgba(2, 132, 199, 0.08) !important;
 }
 
 .user-management-table tbody td {
-  padding: 9px 12px;
+  padding: 6px 10px;
   vertical-align: middle;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   border-right: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+/* Pinned Bottom Pagination Bar */
+.uam-fixed-bottom-bar {
+  flex-shrink: 0 !important;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  flex-wrap: wrap !important;
+  gap: 8px !important;
+  padding: 5px 12px !important;
+  background: var(--bg-surface) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: var(--radius-md) !important;
+  box-shadow: var(--shadow-sm) !important;
+  z-index: 10 !important;
+}
+
+/* Scrollable sub-tab container for tabs 2 through 7 */
+.uam-subtab-scroll-panel {
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  padding-right: 4px;
 }
 
 /* Modal Permissions Matrix Table & Scroll Container */
