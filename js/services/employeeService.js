@@ -959,6 +959,14 @@ class EmployeeService {
       `Registered employee '${newEmp.name}' [ID #${newEmp.cardNumber}] - ${newEmp.designation} (${newEmp.department}).`
     );
 
+    // Automatic User Account Creation for new Manpower record
+    try {
+      const { userAccessService } = await import('./userAccessService.js');
+      await userAccessService.createAccountForEmployee(newEmp);
+    } catch (accErr) {
+      console.warn('[Auto-Account Sync] Notice on employee creation:', accErr.message);
+    }
+
     return this.enrichEmployee(newEmp);
   }
 
@@ -1011,6 +1019,14 @@ class EmployeeService {
       id,
       `Updated profile for '${existing.name}' [ID #${existing.cardNumber}].`
     );
+
+    // Synchronize changes (location, designation, status) to linked User Account
+    try {
+      const { userAccessService } = await import('./userAccessService.js');
+      await userAccessService.syncEmployeeToAccount(updated);
+    } catch (accErr) {
+      console.warn('[Auto-Account Sync] Notice on employee update:', accErr.message);
+    }
 
     return this.enrichEmployee(updated);
   }

@@ -191,7 +191,7 @@ export function renderSidebar() {
 
   // 5. SYSTEM & ADMINISTRATION SECTION
   const adminMenuItems = [
-    { id: 'adm-users', targetView: 'users', moduleKey: 'user_management', label: 'User Management', icon: '👥' },
+    { id: 'adm-users', targetView: 'users', moduleKey: 'user_management', label: 'User Access Management', icon: '👥' },
     { id: 'adm-master-data', targetView: 'master-data', moduleKey: 'master_data', label: 'Plant Hierarchy & Master Data', icon: '🏢' },
     { id: 'adm-storage', targetView: 'storage', moduleKey: 'storage', label: 'Master Storage & Rules', icon: '📦' },
     { id: 'adm-transfer-config', targetView: 'transfer-workflows', moduleKey: 'transfer_workflows', label: 'Transfer Workflows', icon: '⛓️' },
@@ -398,6 +398,7 @@ export function initSidebarEvents() {
     const subId = el.getAttribute('data-sub-id') || el.id?.replace('nav-subitem-', '');
     const reportTab = el.getAttribute('data-report-tab');
     const mpTab = el.getAttribute('data-manpower-tab');
+    const userTab = el.getAttribute('data-user-tab');
     const curView = state.get('currentView');
 
     // Close mobile sidebar drawer if open
@@ -415,17 +416,23 @@ export function initSidebarEvents() {
     if (mpTab) {
       state.set('manpowerActiveTab', mpTab);
     }
+    if (userTab) {
+      state.set('userAccessActiveTab', userTab);
+    }
 
     if (view) {
       updateSidebarActiveState(view, subId);
 
-      if (curView === view && (reportTab || mpTab)) {
+      if (curView === view && (reportTab || mpTab || userTab)) {
         // Same view with subtab: perform fast in-place subtab transition
         if (reportTab) {
           const btn = document.querySelector(`[data-report-tab-btn="${reportTab}"]`);
           if (btn) btn.click();
         } else if (mpTab) {
           const btn = document.querySelector(`[data-manpower-tab="${mpTab}"]`);
+          if (btn) btn.click();
+        } else if (userTab) {
+          const btn = document.querySelector(`[data-user-tab="${userTab}"]`);
           if (btn) btn.click();
         }
       } else {
