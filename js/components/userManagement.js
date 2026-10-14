@@ -283,12 +283,12 @@ export function renderUserManagement() {
   const isPageAllSelected = paginatedAccounts.length > 0 && paginatedAccounts.every(a => selectedAccountIds.has(a.id));
 
   return `
-    <div class="page-view uam-dashboard-page">
+    <div class="page-view uam-dashboard-page" style="display: flex; flex-direction: column; height: 100%; max-height: 100%; min-height: 0; padding: 4px 12px; gap: 4px; overflow: hidden; box-sizing: border-box;">
       
       <!-- =================================================================== -->
       <!-- FIXED TOP DECK: Header, KPI Summary, Navigation Tabs & Filters      -->
       <!-- =================================================================== -->
-      <div class="uam-fixed-top-deck">
+      <div class="uam-fixed-top-deck" style="display: flex; flex-direction: column; gap: 4px; flex-shrink: 0; position: sticky; top: 0; z-index: 35; background: var(--bg-surface, #0f172a);">
         
         <!-- 1. TOP HEADER & KPI SUMMARY DASHBOARD (Compact & High-Density) -->
         <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 8px 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; box-shadow: var(--shadow-sm);">
@@ -647,33 +647,32 @@ export function renderUserManagement() {
       <!-- TAB 1: USER ACCOUNTS DASHBOARD (Fixed Top Controls + Scroll Table)   -->
       <!-- =================================================================== -->
       ${activeUserSection === 'ACCOUNTS' ? `
-        <div class="uam-tab-content-wrapper">
-          <!-- User Accounts Table (Only this container scrolls vertically & horizontally) -->
-          <div class="uam-table-scroll-container">
-            <table class="user-management-table">
-              <colgroup>
-                <col style="width: 44px;">
-                <col style="width: 120px;">
-                <col style="width: 180px;">
-                <col style="width: 135px;">
-                <col style="width: 155px;">
-                <col style="width: 130px;">
-                <col style="width: 160px;">
-                <col style="width: 95px;">
-                <col style="width: 100px;">
-                <col style="width: 95px;">
-                <col style="width: 185px;">
-                <col style="width: 115px;">
-                <col style="width: 125px;">
-                <col style="width: 160px;">
-              </colgroup>
-              <thead>
-                <tr>
-                  <th style="width: 44px; text-align: center; padding: 8px 4px;">
-                    <input type="checkbox" id="chk-header-select-page" ${isPageAllSelected ? 'checked' : ''} style="cursor: pointer; width: 15px; height: 15px; accent-color: #0284c7; vertical-align: middle;" title="Select all on this page" />
-                  </th>
-                  <th style="width: 120px; text-align: center; padding: 8px 6px;">Card Number</th>
-                  <th style="width: 180px; text-align: left; padding: 8px 10px;">Employee Name</th>
+        <!-- User Accounts Table (Only this container scrolls vertically & horizontally) -->
+        <div class="uam-table-scroll-container" style="position: relative; width: 100%; flex: 1 1 0%; min-height: 200px; max-height: calc(100vh - 265px); overflow-x: auto !important; overflow-y: auto !important; background-color: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); box-shadow: var(--shadow-sm); overscroll-behavior: contain; -webkit-overflow-scrolling: touch;">
+          <table class="user-management-table" style="min-width: 1720px; width: 100%; table-layout: fixed; border-collapse: separate; border-spacing: 0;">
+            <colgroup>
+              <col style="width: 44px;">
+              <col style="width: 120px;">
+              <col style="width: 180px;">
+              <col style="width: 135px;">
+              <col style="width: 155px;">
+              <col style="width: 130px;">
+              <col style="width: 160px;">
+              <col style="width: 95px;">
+              <col style="width: 100px;">
+              <col style="width: 95px;">
+              <col style="width: 185px;">
+              <col style="width: 115px;">
+              <col style="width: 125px;">
+              <col style="width: 160px;">
+            </colgroup>
+            <thead>
+              <tr>
+                <th class="uam-col-sticky-check" style="width: 44px; text-align: center; padding: 8px 4px;">
+                  <input type="checkbox" id="chk-header-select-page" ${isPageAllSelected ? 'checked' : ''} style="cursor: pointer; width: 15px; height: 15px; accent-color: #0284c7; vertical-align: middle;" title="Select all on this page" />
+                </th>
+                <th class="uam-col-sticky-card" style="width: 120px; text-align: center; padding: 8px 6px;">Card Number</th>
+                <th style="width: 180px; text-align: left; padding: 8px 10px;">Employee Name</th>
                   <th style="width: 135px; text-align: left; padding: 8px 10px;">Username</th>
                   <th style="width: 155px; text-align: left; padding: 8px 10px;">Designation</th>
                   <th style="width: 130px; text-align: left; padding: 8px 10px;">Group</th>
@@ -710,8 +709,8 @@ export function renderUserManagement() {
 
                   return `
                     <tr style="background: ${isSelected ? 'rgba(2, 132, 199, 0.08)' : 'transparent'};">
-                      <!-- Checkbox -->
-                      <td style="text-align: center; width: 44px; padding: 6px 4px;">
+                      <!-- Checkbox (Sticky Left Freeze Pane) -->
+                      <td class="uam-col-sticky-check" style="text-align: center; width: 44px; padding: 6px 4px; background-color: ${isSelected ? '#0c274c' : '#0b1329'};">
                         ${hasAccount ? `
                           <input type="checkbox" class="chk-account-row" data-id="${acc.id}" ${isSelected ? 'checked' : ''} style="cursor: pointer; width: 15px; height: 15px; accent-color: #0284c7; vertical-align: middle;" />
                         ` : `
@@ -719,8 +718,8 @@ export function renderUserManagement() {
                         `}
                       </td>
                       
-                      <!-- Card Number (Interactive Badge) -->
-                      <td style="text-align: center; width: 120px; padding: 6px 8px;">
+                      <!-- Card Number (Sticky Left Freeze Pane) -->
+                      <td class="uam-col-sticky-card" style="text-align: center; width: 120px; padding: 6px 8px; background-color: ${isSelected ? '#0c274c' : '#0b1329'};">
                         <span class="badge uam-clickable-card-badge" data-card="${acc.cardNumber}" style="font-family: var(--font-mono); font-weight: 800; color: #38bdf8; font-size: 11px; background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.3); padding: 2px 7px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 4px; white-space: nowrap; transition: all 0.15s ease;" title="Click to filter by Card #${acc.cardNumber}">
                           <span>🪪</span> <span>#${acc.cardNumber}</span>
                         </span>
@@ -880,9 +879,8 @@ export function renderUserManagement() {
               <button id="btn-page-last" class="btn btn-secondary btn-xs" ${currentPage === totalPages ? 'disabled' : ''} style="padding: 4px 8px;">Last ⏭</button>
             </div>
           </div>
-        </div>
       ` : `
-        <div class="uam-subtab-scroll-panel">
+        <div class="uam-subtab-scroll-panel" style="flex: 1 1 0%; min-height: 200px; max-height: calc(100vh - 230px); overflow-y: auto; overflow-x: hidden; padding-right: 4px;">
           <!-- =================================================================== -->
           <!-- TAB 2: INDIVIDUAL ACCESS PERMISSIONS MATRIX (Section 5)             -->
           <!-- =================================================================== -->
@@ -3114,8 +3112,12 @@ function bindLocationScopeEvents(root, scopeObj, pfx, onChange) {
 
 export function initUserManagementEvents() {
   const root = document.getElementById('main-view-container');
-  if (!root) return;
-  root.style.overflow = 'hidden';
+  if (root) {
+    root.style.overflow = 'hidden';
+    root.style.height = '100%';
+    root.style.maxHeight = '100%';
+    root.style.minHeight = '0';
+  }
 
   const reRender = () => {
     if (typeof window.app !== 'undefined' && typeof window.app.renderMainContent === 'function') {

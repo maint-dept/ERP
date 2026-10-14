@@ -1870,8 +1870,8 @@ body.modal-open {
 .uam-table-scroll-container {
   width: 100% !important;
   flex: 1 1 0% !important;
-  min-height: 0 !important;
-  max-height: 100% !important;
+  min-height: 200px !important;
+  max-height: calc(100vh - 265px) !important;
   overflow-x: auto !important;
   overflow-y: auto !important;
   position: relative !important;
@@ -1886,26 +1886,74 @@ body.modal-open {
   scrollbar-color: #0284c7 #090e1a !important;
 }
 
-/* 14px High-Contrast Horizontal & Vertical Scrollbars */
+/* 16px Thick High-Contrast Horizontal & Vertical Scrollbars */
 .uam-table-scroll-container::-webkit-scrollbar {
-  width: 10px;
-  height: 14px;
+  width: 12px !important;
+  height: 16px !important; /* Thick 16px horizontal scrollbar for easy grabbing */
 }
 
 .uam-table-scroll-container::-webkit-scrollbar-track {
-  background: #090e1a;
-  border-top: 1px solid rgba(56, 189, 248, 0.2);
-  border-radius: 4px;
+  background: #090e1a !important;
+  border-top: 1px solid #1e293b !important;
+  border-radius: 4px !important;
 }
 
 .uam-table-scroll-container::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, #38bdf8 0%, #0284c7 100%);
-  border-radius: 6px;
-  border: 2px solid #090e1a;
+  background: linear-gradient(180deg, #38bdf8 0%, #0284c7 100%) !important;
+  border-radius: 6px !important;
+  border: 2px solid #090e1a !important;
 }
 
 .uam-table-scroll-container::-webkit-scrollbar-thumb:hover {
-  background: #38bdf8;
+  background: #38bdf8 !important;
+}
+
+/* Freeze Panes for Checkbox and Card Number on Left */
+.user-management-table th.uam-col-sticky-check,
+.user-management-table td.uam-col-sticky-check {
+  position: sticky !important;
+  left: 0 !important;
+  width: 44px !important;
+  min-width: 44px !important;
+  max-width: 44px !important;
+  text-align: center !important;
+}
+
+.user-management-table th.uam-col-sticky-check {
+  z-index: 32 !important;
+  background-color: #0b1329 !important;
+}
+
+.user-management-table td.uam-col-sticky-check {
+  z-index: 12 !important;
+  background-color: #0b1329 !important;
+}
+
+.user-management-table th.uam-col-sticky-card,
+.user-management-table td.uam-col-sticky-card {
+  position: sticky !important;
+  left: 44px !important;
+  width: 120px !important;
+  min-width: 120px !important;
+  max-width: 120px !important;
+  text-align: center !important;
+  border-right: 2px solid rgba(56, 189, 248, 0.45) !important;
+  box-shadow: 3px 0 6px rgba(0, 0, 0, 0.4) !important;
+}
+
+.user-management-table th.uam-col-sticky-card {
+  z-index: 32 !important;
+  background-color: #0b1329 !important;
+}
+
+.user-management-table td.uam-col-sticky-card {
+  z-index: 12 !important;
+  background-color: #0b1329 !important;
+}
+
+.user-management-table tbody tr:hover td.uam-col-sticky-check,
+.user-management-table tbody tr:hover td.uam-col-sticky-card {
+  background-color: #132247 !important;
 }
 
 /* User Management Data Table */
