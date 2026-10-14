@@ -502,12 +502,17 @@ class UserAccessService {
       try {
         const res = await this.createAccountForEmployee(item.linkedEmployee);
         successful.push({
+          userId: res.user.id,
           employeeId: item.linkedEmployee.id,
-          cardNumber: item.linkedEmployee.cardNumber,
-          name: item.linkedEmployee.name,
+          cardNumber: item.linkedEmployee.cardNumber || '—',
+          name: item.linkedEmployee.name || 'Unnamed',
           username: res.user.username,
+          designation: item.linkedEmployee.designation || item.designation || 'Staff',
+          department: item.linkedEmployee.department || item.department || 'Maintenance',
+          floor: item.floorName || item.linkedEmployee.floorName || '—',
           initialPassword: res.initialPasswordPlain
         });
+
       } catch (err) {
         failed.push({
           employeeId: item.linkedEmployee.id,

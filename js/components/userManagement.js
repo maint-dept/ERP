@@ -52,6 +52,11 @@ let targetAccount = null;
 let targetUser = null;
 let lastGeneratedPasswordData = null; // { username, plainPassword, isReset }
 let autoCreateSummaryData = null; // { successful: [], failed: [] }
+let summaryModalSearchQuery = '';
+let addModalSelectedEmployee = null;
+let addModalCardSearchQuery = '';
+let isAddModalManualMode = false;
+let quickCardFilter = 'ALL'; // 'ALL' | 'WITH_CARD' | 'ACTIVE' | 'INACTIVE' | 'MISSING_ACCOUNT' | 'TEMP_PASS'
 
 // Permissions Matrix Editing State
 let permissionTargetUserId = null;
@@ -152,6 +157,7 @@ export function renderUserManagement() {
   const pendingCreation = allAccounts.filter(a => !a.hasAccount).length;
   const pendingPasswordSetup = allAccounts.filter(a => a.hasAccount && (a.passwordStatus === 'TEMPORARY' || a.passwordStatus === 'PENDING')).length;
   const usersWithPermissions = allAccounts.filter(a => a.hasAccount && a.totalModules > 0).length;
+  const withCardCount = allAccounts.filter(a => a.cardNumber && a.cardNumber !== '—' && a.cardNumber.trim() !== '').length;
 
   // Master Data Options for Filters
   const allGroups = masterDataService.getGroups ? masterDataService.getGroups(true) : [];
@@ -162,6 +168,13 @@ export function renderUserManagement() {
 
   // Apply Filters to Accounts
   const filteredAccounts = allAccounts.filter(acc => {
+    // Quick Card / Status Chip Filter
+    if (quickCardFilter === 'WITH_CARD' && (!acc.cardNumber || acc.cardNumber === '—')) return false;
+    if (quickCardFilter === 'ACTIVE' && (acc.accountStatus !== 'ACTIVE' || !acc.hasAccount)) return false;
+    if (quickCardFilter === 'INACTIVE' && (acc.accountStatus !== 'INACTIVE' || !acc.hasAccount)) return false;
+    if (quickCardFilter === 'MISSING_ACCOUNT' && acc.hasAccount) return false;
+    if (quickCardFilter === 'TEMP_PASS' && (!acc.hasAccount || (acc.passwordStatus !== 'TEMPORARY' && acc.passwordStatus !== 'PENDING'))) return false;
+
     // 1. Text Search (Card Number, Name, Username)
     if (searchQuery) {
       const q = searchQuery.toLowerCase().trim();
@@ -252,10 +265,10 @@ export function renderUserManagement() {
         </div>
       </div>
 
-      <!-- 6 Dashboard Summary Cards (Section 14) -->
+      <!-- 6 Dashboard Summary Cards (Section 14 - Interactive) -->
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px;">
         <!-- 1. Total Accounts -->
-        <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 12px 16px; display: flex; align-items: center; justify-content: space-between;">
+        <div class="uam-kpi-summary-card" data-action="TOTAL" style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: all 0.2s ease;" title="Click to view all accounts">
           <div>
             <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Total Accounts</div>
             <div style="font-size: 22px; font-weight: 900; color: #fff; margin-top: 2px;">${totalAccounts}</div>
@@ -264,7 +277,7 @@ export function renderUserManagement() {
         </div>
 
         <!-- 2. Active Accounts -->
-        <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 12px 16px; display: flex; align-items: center; justify-content: space-between;">
+        <div class="uam-kpi-summary-card" data-action="ACTIVE" style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: all 0.2s ease;" title="Click to filter active accounts">
           <div>
             <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Active Accounts</div>
             <div style="font-size: 22px; font-weight: 900; color: #34d399; margin-top: 2px;">${activeAccounts}</div>
@@ -273,7 +286,7 @@ export function renderUserManagement() {
         </div>
 
         <!-- 3. Inactive Accounts -->
-        <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 12px 16px; display: flex; align-items: center; justify-content: space-between;">
+        <div class="uam-kpi-summary-card" data-action="INACTIVE" style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: all 0.2s ease;" title="Click to filter inactive accounts">
           <div>
             <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Inactive Accounts</div>
             <div style="font-size: 22px; font-weight: 900; color: #94a3b8; margin-top: 2px;">${inactiveAccounts}</div>
@@ -282,7 +295,7 @@ export function renderUserManagement() {
         </div>
 
         <!-- 4. Accounts Pending Creation -->
-        <div style="background: var(--bg-surface); border: 1px solid ${pendingCreation > 0 ? 'rgba(245, 158, 11, 0.4)' : 'var(--border-color)'}; border-radius: var(--radius-md); padding: 12px 16px; display: flex; align-items: center; justify-content: space-between;">
+        <div class="uam-kpi-summary-card" data-action="PENDING_CREATION" style="background: var(--bg-surface); border: 1px solid ${pendingCreation > 0 ? 'rgba(245, 158, 11, 0.4)' : 'var(--border-color)'}; border-radius: var(--radius-md); padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: all 0.2s ease;" title="Click to filter manpower records missing user accounts">
           <div>
             <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Pending Creation</div>
             <div style="font-size: 22px; font-weight: 900; color: ${pendingCreation > 0 ? '#fbbf24' : '#fff'}; margin-top: 2px;">${pendingCreation}</div>
@@ -291,7 +304,7 @@ export function renderUserManagement() {
         </div>
 
         <!-- 5. Accounts Pending Password Setup -->
-        <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 12px 16px; display: flex; align-items: center; justify-content: space-between;">
+        <div class="uam-kpi-summary-card" data-action="PENDING_PASSWORD" style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: all 0.2s ease;" title="Click to filter accounts with temporary passwords">
           <div>
             <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Temporary / Pending Pass</div>
             <div style="font-size: 22px; font-weight: 900; color: #c084fc; margin-top: 2px;">${pendingPasswordSetup}</div>
@@ -300,7 +313,7 @@ export function renderUserManagement() {
         </div>
 
         <!-- 6. Users with Permissions -->
-        <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 12px 16px; display: flex; align-items: center; justify-content: space-between;">
+        <div class="uam-kpi-summary-card" data-action="CONFIGURED_ACCESS" style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: all 0.2s ease;" title="Click to view Access Permissions">
           <div>
             <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Configured Access</div>
             <div style="font-size: 22px; font-weight: 900; color: #38bdf8; margin-top: 2px;">${usersWithPermissions}</div>
@@ -412,12 +425,41 @@ export function renderUserManagement() {
               <span style="font-size: 12px; color: var(--text-muted);">
                 Showing <strong>${paginatedAccounts.length}</strong> of <strong>${totalMatching}</strong> matching records
               </span>
-              ${(searchQuery || filterGroup !== 'ALL' || filterUnit !== 'ALL' || filterFloor !== 'ALL' || filterLine !== 'ALL' || filterDesignation !== 'ALL' || filterStatus !== 'ALL' || filterAccountLink !== 'ALL' || filterPasswordStatus !== 'ALL') ? `
+              ${(searchQuery || quickCardFilter !== 'ALL' || filterGroup !== 'ALL' || filterUnit !== 'ALL' || filterFloor !== 'ALL' || filterLine !== 'ALL' || filterDesignation !== 'ALL' || filterStatus !== 'ALL' || filterAccountLink !== 'ALL' || filterPasswordStatus !== 'ALL') ? `
                 <button id="btn-clear-all-filters" class="btn btn-ghost btn-xs" style="color: #f87171; font-weight: 700; border: 1px solid rgba(248, 113, 113, 0.3); border-radius: 6px; padding: 4px 8px;">
                   ✕ Clear Filters
                 </button>
               ` : ''}
             </div>
+          </div>
+
+          <!-- Middle Row: Interactive Quick Filter Chips -->
+          <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding: 2px 0;">
+            <span style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Quick Filter:</span>
+            
+            <button type="button" class="btn-uam-quick-chip" data-filter="ALL" style="padding: 4px 10px; font-size: 11.5px; font-weight: 700; border-radius: 6px; border: 1px solid ${quickCardFilter === 'ALL' ? '#0284c7' : 'var(--border-color)'}; background: ${quickCardFilter === 'ALL' ? 'rgba(2, 132, 199, 0.25)' : 'rgba(15, 23, 42, 0.6)'}; color: ${quickCardFilter === 'ALL' ? '#38bdf8' : 'var(--text-secondary)'}; cursor: pointer;">
+              🔘 All (${allAccounts.length})
+            </button>
+
+            <button type="button" class="btn-uam-quick-chip" data-filter="WITH_CARD" style="padding: 4px 10px; font-size: 11.5px; font-weight: 700; border-radius: 6px; border: 1px solid ${quickCardFilter === 'WITH_CARD' ? '#0284c7' : 'var(--border-color)'}; background: ${quickCardFilter === 'WITH_CARD' ? 'rgba(2, 132, 199, 0.25)' : 'rgba(15, 23, 42, 0.6)'}; color: ${quickCardFilter === 'WITH_CARD' ? '#38bdf8' : 'var(--text-secondary)'}; cursor: pointer;">
+              🪪 With Card # (${withCardCount})
+            </button>
+
+            <button type="button" class="btn-uam-quick-chip" data-filter="ACTIVE" style="padding: 4px 10px; font-size: 11.5px; font-weight: 700; border-radius: 6px; border: 1px solid ${quickCardFilter === 'ACTIVE' ? '#10b981' : 'var(--border-color)'}; background: ${quickCardFilter === 'ACTIVE' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(15, 23, 42, 0.6)'}; color: ${quickCardFilter === 'ACTIVE' ? '#34d399' : 'var(--text-secondary)'}; cursor: pointer;">
+              🟢 Active (${activeAccounts})
+            </button>
+
+            <button type="button" class="btn-uam-quick-chip" data-filter="INACTIVE" style="padding: 4px 10px; font-size: 11.5px; font-weight: 700; border-radius: 6px; border: 1px solid ${quickCardFilter === 'INACTIVE' ? '#ef4444' : 'var(--border-color)'}; background: ${quickCardFilter === 'INACTIVE' ? 'rgba(239, 68, 68, 0.2)' : 'rgba(15, 23, 42, 0.6)'}; color: ${quickCardFilter === 'INACTIVE' ? '#f87171' : 'var(--text-secondary)'}; cursor: pointer;">
+              🔴 Inactive (${inactiveAccounts})
+            </button>
+
+            <button type="button" class="btn-uam-quick-chip" data-filter="MISSING_ACCOUNT" style="padding: 4px 10px; font-size: 11.5px; font-weight: 700; border-radius: 6px; border: 1px solid ${quickCardFilter === 'MISSING_ACCOUNT' ? '#f59e0b' : 'var(--border-color)'}; background: ${quickCardFilter === 'MISSING_ACCOUNT' ? 'rgba(245, 158, 11, 0.2)' : 'rgba(15, 23, 42, 0.6)'}; color: ${quickCardFilter === 'MISSING_ACCOUNT' ? '#fbbf24' : 'var(--text-secondary)'}; cursor: pointer;">
+              ⏳ Missing Account (${pendingCreation})
+            </button>
+
+            <button type="button" class="btn-uam-quick-chip" data-filter="TEMP_PASS" style="padding: 4px 10px; font-size: 11.5px; font-weight: 700; border-radius: 6px; border: 1px solid ${quickCardFilter === 'TEMP_PASS' ? '#a855f7' : 'var(--border-color)'}; background: ${quickCardFilter === 'TEMP_PASS' ? 'rgba(168, 85, 247, 0.2)' : 'rgba(15, 23, 42, 0.6)'}; color: ${quickCardFilter === 'TEMP_PASS' ? '#c084fc' : 'var(--text-secondary)'}; cursor: pointer;">
+              🔑 Temporary Pass (${pendingPasswordSetup})
+            </button>
           </div>
 
           <!-- Bottom Row: Multi-Dropdown Filters (Group, Unit, Floor, Line, Desig, Status, Account Link, Pass Status) -->
@@ -560,10 +602,10 @@ export function renderUserManagement() {
                       `}
                     </td>
                     
-                    <!-- Card Number -->
+                    <!-- Card Number (Interactive Badge) -->
                     <td style="padding: 9px 12px;">
-                      <span style="font-family: var(--font-mono); font-weight: 800; color: #38bdf8; font-size: 12.5px;">
-                        #${acc.cardNumber}
+                      <span class="badge uam-clickable-card-badge" data-card="${acc.cardNumber}" style="font-family: var(--font-mono); font-weight: 800; color: #38bdf8; font-size: 11.5px; background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.3); padding: 3px 8px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; transition: all 0.15s ease;" title="Click to filter by Card #${acc.cardNumber}">
+                        <span>🪪</span> <span>#${acc.cardNumber}</span>
                       </span>
                     </td>
 
@@ -1669,140 +1711,345 @@ function renderActiveModalHtml() {
     `;
   }
 
-  // 4. Auto-Create Summary Modal
+  // 4. Auto-Create Summary Modal (With Live Card Search, Direct Excel Export & Copy)
   if (activeModalType === 'AUTO_CREATE_SUMMARY' && autoCreateSummaryData) {
     const data = autoCreateSummaryData;
+    const successfulList = data.successful || [];
+    const failedList = data.failed || [];
+    
     return `
       <div class="modal-overlay active" id="modal-uam-overlay">
-        <div class="modal-card" style="max-width: 580px;">
-          <div class="modal-header" style="border-bottom: 1px solid var(--border-color); padding-bottom: 12px;">
-            <div style="display: flex; align-items: center; gap: 10px;">
-              <span style="font-size: 26px;">⚡</span>
+        <div class="modal-card" style="max-width: 760px; width: 95%; max-height: 90vh; display: flex; flex-direction: column; padding: 22px;">
+          
+          <!-- Header -->
+          <div class="modal-header" style="border-bottom: 1px solid var(--border-color); padding-bottom: 14px; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(52, 211, 153, 0.4); display: flex; align-items: center; justify-content: center; font-size: 22px; color: #34d399;">
+                ⚡
+              </div>
               <div>
-                <h3 style="margin: 0; font-size: 16px; font-weight: 800; color: #34d399;">Auto-Create Accounts Summary</h3>
-                <p style="margin: 2px 0 0 0; font-size: 11.5px; color: var(--text-muted);">${data.successful.length} created, ${data.failed.length} failed</p>
+                <h3 style="margin: 0; font-size: 17px; font-weight: 800; color: #fff; letter-spacing: -0.2px;">Auto-Create Accounts Summary</h3>
+                <p style="margin: 3px 0 0 0; font-size: 12px; color: var(--text-secondary);">
+                  <span style="color: #34d399; font-weight: 700;">${successfulList.length} accounts created</span> &bull; 
+                  <span style="color: ${failedList.length > 0 ? '#f87171' : 'var(--text-muted)'}; font-weight: 700;">${failedList.length} failed</span> &bull; 
+                  <span>Temporary passwords generated</span>
+                </p>
               </div>
             </div>
-            <button class="btn btn-ghost btn-sm btn-close-uam-modal" style="font-size: 16px;">✕</button>
+            <button type="button" class="btn btn-ghost btn-sm btn-close-uam-modal" style="font-size: 18px; border-radius: 8px; width: 34px; height: 34px; display: flex; align-items: center; justify-content: center;">✕</button>
           </div>
 
-          <div style="padding: 16px 0; display: flex; flex-direction: column; gap: 12px; max-height: 420px; overflow-y: auto;">
-            <div style="font-size: 12.5px; color: #cbd5e1;">
-              Automatically created <strong>${data.successful.length}</strong> new user accounts linked to Manpower records with secure initial passwords.
+          <!-- Body Container -->
+          <div style="overflow-y: auto; display: flex; flex-direction: column; gap: 14px; padding-right: 4px;">
+            
+            <!-- Quick Stat Banner & Actions -->
+            <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-color); border-radius: 10px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+              <div style="font-size: 12.5px; color: #cbd5e1;">
+                Generated <strong>${successfulList.length}</strong> logins synced with Manpower cards. Export credentials now for safe distribution.
+              </div>
+              <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                <button type="button" id="btn-summary-export-excel" class="btn btn-success btn-xs" style="font-weight: 800; padding: 6px 12px; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px; background: #059669;" title="Download complete credentials spreadsheet in 1 worksheet">
+                  <span>📥</span> <span>Download Accounts Excel (.xlsx)</span>
+                </button>
+                <button type="button" id="btn-summary-copy-all" class="btn btn-secondary btn-xs" style="font-weight: 700; padding: 6px 10px; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px;" title="Copy all generated usernames">
+                  <span>📋</span> <span>Copy Usernames</span>
+                </button>
+              </div>
             </div>
 
-            ${data.successful.length > 0 ? `
-              <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid #10b981; border-radius: 8px; padding: 10px 14px; font-size: 12px; max-height: 180px; overflow-y: auto;">
-                <div style="font-weight: 800; color: #34d399; margin-bottom: 6px;">Created Accounts:</div>
-                ${data.successful.map(s => `
-                  <div style="display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
-                    <span style="color: #fff;">#${s.cardNumber} - ${s.name}</span>
-                    <span style="font-family: var(--font-mono); color: #38bdf8;">@${s.username}</span>
+            <!-- Card Search & Filter Bar -->
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap;">
+              <div style="flex: 1 1 260px; position: relative;">
+                <span style="position: absolute; left: 11px; top: 9px; font-size: 14px; color: #38bdf8;">🪪</span>
+                <input 
+                  type="text" 
+                  id="inp-uam-summary-search" 
+                  class="form-control" 
+                  placeholder="Card search (e.g. AMG-0000083), Employee Name, or Username..." 
+                  style="height: 36px; padding-left: 36px; font-size: 12.5px; border-radius: 8px; border: 1px solid rgba(56, 189, 248, 0.35); background: rgba(15, 23, 42, 0.95); width: 100%; box-sizing: border-box;"
+                />
+              </div>
+              <div id="uam-summary-match-count" style="font-size: 12px; color: #94a3b8; font-weight: 600;">
+                Showing ${successfulList.length} of ${successfulList.length} accounts
+              </div>
+            </div>
+
+            <!-- List of Created Accounts with Elevated Card Rows -->
+            ${successfulList.length > 0 ? `
+              <div id="uam-summary-accounts-container" style="background: rgba(15, 23, 42, 0.5); border: 1px solid var(--border-color); border-radius: 10px; padding: 8px; max-height: 280px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px;">
+                ${successfulList.map(s => `
+                  <div class="uam-summary-account-row" data-search="${((s.cardNumber || '') + ' ' + (s.name || '') + ' ' + (s.username || '') + ' ' + (s.designation || '') + ' ' + (s.floor || '')).toLowerCase()}" style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; border-radius: 8px; background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(255, 255, 255, 0.05); gap: 10px; transition: all 0.15s ease;">
+                    
+                    <!-- Left: Card Badge & Name/Designation -->
+                    <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
+                      <span class="badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; font-weight: 800; padding: 3px 8px; border-radius: 6px; font-family: var(--font-mono); font-size: 11.5px; border: 1px solid rgba(56, 189, 248, 0.3); white-space: nowrap;">
+                        🪪 #${s.cardNumber || '—'}
+                      </span>
+                      <div style="min-width: 0;">
+                        <div style="font-weight: 700; color: #fff; font-size: 13px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">${s.name}</div>
+                        <div style="font-size: 11px; color: #94a3b8; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">
+                          ${s.designation || 'Staff'} ${s.floor && s.floor !== '—' ? `&bull; ${s.floor}` : ''}
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Right: Username & Copy Password -->
+                    <div style="display: flex; align-items: center; gap: 8px; white-space: nowrap;">
+                      <span style="font-family: var(--font-mono); color: #38bdf8; font-weight: 700; font-size: 12px; background: rgba(56, 189, 248, 0.1); padding: 3px 8px; border-radius: 5px; border: 1px solid rgba(56, 189, 248, 0.25);">
+                        @${s.username}
+                      </span>
+                      <button type="button" class="btn btn-ghost btn-xs btn-copy-summary-pass" data-pass="${s.initialPassword || userAccessService.getTemporaryCredential(s.userId) || ''}" data-user="${s.username}" style="color: #c084fc; font-size: 11px; font-weight: 700; padding: 3px 8px; border: 1px solid rgba(192, 132, 252, 0.3); border-radius: 5px; display: inline-flex; align-items: center; gap: 4px;" title="Copy initial password for @${s.username}">
+                        <span>📋</span> <span>Copy Pass</span>
+                      </button>
+                    </div>
+
                   </div>
                 `).join('')}
               </div>
-            ` : ''}
+            ` : `
+              <div style="text-align: center; padding: 20px; color: var(--text-muted); font-size: 12.5px;">
+                No accounts were created in this operation.
+              </div>
+            `}
 
-            ${data.failed.length > 0 ? `
-              <div style="background: rgba(239, 68, 68, 0.08); border: 1px solid #ef4444; border-radius: 8px; padding: 10px 14px; font-size: 12px;">
-                <div style="font-weight: 800; color: #f87171; margin-bottom: 6px;">Failed Records:</div>
-                ${data.failed.map(f => `
-                  <div style="color: #fca5a5; padding: 2px 0;">#${f.cardNumber} (${f.name}): ${f.error}</div>
-                `).join('')}
+            <!-- Failed Records (if any) -->
+            ${failedList.length > 0 ? `
+              <div style="background: rgba(239, 68, 68, 0.08); border: 1px solid #ef4444; border-radius: 8px; padding: 12px 14px; font-size: 12px;">
+                <div style="font-weight: 800; color: #f87171; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+                  <span>⚠️</span> <span>Failed Records (${failedList.length}):</span>
+                </div>
+                <div style="max-height: 120px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px;">
+                  ${failedList.map(f => `
+                    <div style="color: #fca5a5; padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,0.04); display: flex; justify-content: space-between;">
+                      <span>#${f.cardNumber} - ${f.name}</span>
+                      <span style="font-size: 11px; color: #ef4444;">${f.error}</span>
+                    </div>
+                  `).join('')}
+                </div>
               </div>
             ` : ''}
+
           </div>
 
-          <div style="display: flex; justify-content: flex-end; gap: 8px; border-top: 1px solid var(--border-color); padding-top: 12px;">
-            <button class="btn btn-primary btn-sm btn-close-uam-modal" style="font-weight: 700;">OK</button>
+          <!-- Footer -->
+          <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); padding-top: 14px; margin-top: 14px; flex-wrap: wrap; gap: 10px;">
+            <div style="font-size: 11.5px; color: var(--text-muted);">
+              All generated accounts are marked as <strong>Active</strong> with temporary passwords.
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <button type="button" class="btn btn-primary btn-sm btn-close-uam-modal" style="font-weight: 800; padding: 7px 20px; border-radius: 8px; background: linear-gradient(135deg, #0284c7, #0369a1);">
+                ✓ Done (View Accounts)
+              </button>
+            </div>
           </div>
+
         </div>
       </div>
     `;
   }
 
-  // 5. Add New User Modal (Standard)
+  // 5. Add New User Modal (Smart Card Search & Autocomplete)
   if (activeModalType === 'ADD_USER') {
     const activeEmployees = employeeService.getActiveEmployees ? employeeService.getActiveEmployees() : [];
     const presets = authService.getAllPresets ? authService.getAllPresets() : [];
+    const allUsers = storage.getTable(TABLE_NAMES.USERS) || [];
+
+    // Map existing users by card/employeeId
+    const usersByCard = new Map();
+    allUsers.forEach(u => {
+      if (u.cardNumber) usersByCard.set(String(u.cardNumber).trim().toLowerCase(), u);
+      if (u.employeeId) usersByCard.set(String(u.employeeId).trim().toLowerCase(), u);
+      if (u.manpowerId) usersByCard.set(u.manpowerId, u);
+    });
+
+    const isEmpSelected = Boolean(addModalSelectedEmployee);
+    const selEmp = addModalSelectedEmployee;
+    const hasExistingUser = selEmp ? usersByCard.get(String(selEmp.cardNumber || '').trim().toLowerCase()) : null;
+
+    // Default form values
+    const valName = selEmp ? selEmp.name : '';
+    const valCard = selEmp ? (selEmp.cardNumber || '') : '';
+    const valUsername = selEmp ? userAccessService.generateUsernameForEmployee(selEmp) : '';
+    const valEmail = selEmp ? (selEmp.email || `${valUsername || 'user'}@al-muslim.com`) : '';
+    const valPreset = selEmp ? userAccessService.resolveDefaultPresetForEmployee(selEmp) : null;
+    const valPresetId = valPreset ? valPreset.id : (presets[0] ? presets[0].id : '');
+    const valPass = userAccessService.generateSecurePassword(14);
 
     return `
       <div class="modal-overlay active" id="modal-uam-overlay">
-        <div class="modal-card" style="max-width: 600px;">
-          <div class="modal-header" style="border-bottom: 1px solid var(--border-color); padding-bottom: 12px;">
-            <div style="display: flex; align-items: center; gap: 10px;">
-              <span style="font-size: 24px;">➕</span>
+        <div class="modal-card" style="max-width: 650px; width: 95%; max-height: 92vh; display: flex; flex-direction: column; padding: 22px;">
+          
+          <!-- Modal Header -->
+          <div class="modal-header" style="border-bottom: 1px solid var(--border-color); padding-bottom: 14px; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <div style="width: 44px; height: 44px; border-radius: 12px; background: linear-gradient(135deg, rgba(2, 132, 199, 0.25), rgba(14, 165, 233, 0.1)); border: 1px solid rgba(56, 189, 248, 0.4); display: flex; align-items: center; justify-content: center; font-size: 22px; color: #38bdf8;">
+                ➕
+              </div>
               <div>
-                <h3 style="margin: 0; font-size: 16px; font-weight: 800; color: #fff;">Add New User Account</h3>
-                <p style="margin: 2px 0 0 0; font-size: 11.5px; color: var(--text-muted);">Create user login or link to Manpower employee</p>
+                <h3 style="margin: 0; font-size: 17px; font-weight: 800; color: #fff; letter-spacing: -0.2px;">Add New User Account</h3>
+                <p style="margin: 3px 0 0 0; font-size: 12px; color: var(--text-secondary);">
+                  Quick-search employee card to auto-populate login credentials or create custom login
+                </p>
               </div>
             </div>
-            <button class="btn btn-ghost btn-sm btn-close-uam-modal" style="font-size: 16px;">✕</button>
+            <button type="button" class="btn btn-ghost btn-sm btn-close-uam-modal" style="font-size: 18px; border-radius: 8px; width: 34px; height: 34px; display: flex; align-items: center; justify-content: center;">✕</button>
           </div>
 
-          <form id="form-uam-add-user" style="padding: 16px 0; display: flex; flex-direction: column; gap: 12px;">
+          <!-- Scrollable Form Container -->
+          <div style="overflow-y: auto; padding-right: 4px; display: flex; flex-direction: column; gap: 14px;">
             
-            <!-- Quick Manpower Autocomplete Link -->
-            <div class="form-group">
-              <label class="form-label" style="font-size: 12px; font-weight: 700; color: #38bdf8;">
-                Link to Manpower Record (Optional Auto-fill)
-              </label>
-              <select id="sel-add-user-emp-pick" class="filter-select" style="height: 34px; font-size: 12px;">
-                <option value="">-- Choose employee to auto-fill particulars --</option>
-                ${activeEmployees.map(e => `<option value="${e.id}" data-card="${e.cardNumber}" data-name="${e.name}" data-desig="${e.designation}" data-dept="${e.department}" data-phone="${e.phone || ''}">${e.cardNumber} - ${e.name} (${e.designation})</option>`).join('')}
-              </select>
+            <!-- Mode Switcher: Link Card vs Manual -->
+            <div style="display: flex; background: rgba(15, 23, 42, 0.8); border: 1px solid var(--border-color); border-radius: 8px; padding: 3px; gap: 4px;">
+              <button 
+                type="button" 
+                id="btn-add-mode-card"
+                class="btn btn-xs" 
+                style="flex: 1; padding: 7px; font-size: 12px; font-weight: 800; border-radius: 6px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; background: ${!isAddModalManualMode ? 'linear-gradient(135deg, #0284c7, #0369a1)' : 'transparent'}; color: ${!isAddModalManualMode ? '#fff' : 'var(--text-muted)'};"
+              >
+                <span>🪪 Link from Manpower Card</span>
+              </button>
+              <button 
+                type="button" 
+                id="btn-add-mode-manual"
+                class="btn btn-xs" 
+                style="flex: 1; padding: 7px; font-size: 12px; font-weight: 800; border-radius: 6px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; background: ${isAddModalManualMode ? 'linear-gradient(135deg, #0284c7, #0369a1)' : 'transparent'}; color: ${isAddModalManualMode ? '#fff' : 'var(--text-muted)'};"
+              >
+                <span>✍️ Standalone Account (No Card)</span>
+              </button>
             </div>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-              <div class="form-group">
-                <label class="form-label" style="font-size: 12px; font-weight: 700; color: #fff;">Full Name *</label>
-                <input type="text" id="inp-add-user-name" class="form-control" required style="height: 34px; font-size: 12.5px;" />
-              </div>
+            <form id="form-uam-add-user" style="display: flex; flex-direction: column; gap: 14px;">
+              
+              <!-- CARD SEARCH / SELECTION SECTION -->
+              ${!isAddModalManualMode ? `
+                <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid ${isEmpSelected ? '#0284c7' : 'rgba(56, 189, 248, 0.4)'}; border-radius: 10px; padding: 12px 14px;">
+                  ${isEmpSelected ? `
+                    <!-- Selected Employee Banner -->
+                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;">
+                      <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">
+                        <div style="width: 40px; height: 40px; border-radius: 8px; background: rgba(2, 132, 199, 0.25); border: 1px solid rgba(56, 189, 248, 0.4); display: flex; align-items: center; justify-content: center; font-size: 20px;">
+                          🪪
+                        </div>
+                        <div style="min-width: 0;">
+                          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                            <span style="font-family: var(--font-mono); font-weight: 800; color: #38bdf8; font-size: 13px; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.3); padding: 2px 7px; border-radius: 5px;">
+                              #${selEmp.cardNumber}
+                            </span>
+                            <strong style="font-size: 14px; color: #fff;">${selEmp.name}</strong>
+                            ${hasExistingUser ? `
+                              <span class="badge badge-warning" style="font-size: 10px;">⚠️ Has user (@${hasExistingUser.username})</span>
+                            ` : `
+                              <span class="badge badge-active" style="font-size: 10px;">✨ Ready to Link</span>
+                            `}
+                          </div>
+                          <div style="font-size: 11.5px; color: #94a3b8; margin-top: 3px;">
+                            ${selEmp.designation || 'Staff'} &bull; ${selEmp.department || 'Maintenance'} ${selEmp.floorName ? `&bull; ${selEmp.floorName}` : ''}
+                          </div>
+                        </div>
+                      </div>
 
-              <div class="form-group">
-                <label class="form-label" style="font-size: 12px; font-weight: 700; color: #fff;">Card ID / Employee ID</label>
-                <input type="text" id="inp-add-user-card" class="form-control" style="height: 34px; font-size: 12.5px;" />
-              </div>
-            </div>
+                      <button type="button" id="btn-add-user-clear-emp" class="btn btn-ghost btn-xs" style="color: #f87171; border: 1px solid rgba(248, 113, 113, 0.3); padding: 5px 12px; border-radius: 6px; font-weight: 700;" title="Search a different employee card">
+                        ✕ Change Card
+                      </button>
+                    </div>
+                  ` : `
+                    <!-- Live Card Search Autocomplete Input -->
+                    <div style="position: relative;">
+                      <label style="display: flex; justify-content: space-between; align-items: center; font-size: 12px; font-weight: 700; color: #38bdf8; margin-bottom: 6px;">
+                        <span>🔍 Search Employee Card (Card # or Name) *</span>
+                        <span style="font-size: 11px; font-weight: normal; color: var(--text-muted);">${activeEmployees.length} employees available</span>
+                      </label>
+                      
+                      <div style="position: relative;">
+                        <span style="position: absolute; left: 12px; top: 10px; font-size: 14px; color: #38bdf8;">🪪</span>
+                        <input 
+                          type="text" 
+                          id="inp-add-user-card-search" 
+                          class="form-control" 
+                          placeholder="Type Card # (e.g. AMG-0000083 or 083) or Name to search..." 
+                          value="${addModalCardSearchQuery}"
+                          autocomplete="off" 
+                          style="height: 38px; padding-left: 36px; padding-right: 30px; font-size: 13px; border-radius: 8px; border: 1px solid rgba(56, 189, 248, 0.4); background: rgba(15, 23, 42, 0.95); width: 100%; box-sizing: border-box;"
+                          autofocus
+                        />
+                        ${addModalCardSearchQuery ? `
+                          <button type="button" id="btn-clear-add-card-search" style="position: absolute; right: 8px; top: 8px; background: transparent; border: none; color: #94a3b8; cursor: pointer; font-size: 14px;">✕</button>
+                        ` : ''}
+                      </div>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-              <div class="form-group">
-                <label class="form-label" style="font-size: 12px; font-weight: 700; color: #fff;">Username *</label>
-                <input type="text" id="inp-add-user-username" class="form-control" required placeholder="e.g. motaher, amg1042" style="height: 34px; font-size: 12.5px;" />
-              </div>
+                      <!-- Autocomplete Suggestions List -->
+                      <div id="uam-add-user-suggestions" style="display: none; max-height: 200px; overflow-y: auto; border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 8px; background: #0f172a; box-shadow: 0 10px 30px rgba(0,0,0,0.6); margin-top: 6px; padding: 4px;">
+                      </div>
+                    </div>
+                  `}
+                </div>
+              ` : ''}
 
-              <div class="form-group">
-                <label class="form-label" style="font-size: 12px; font-weight: 700; color: #fff;">Email Address</label>
-                <input type="email" id="inp-add-user-email" class="form-control" placeholder="user@al-muslim.com" style="height: 34px; font-size: 12.5px;" />
-              </div>
-            </div>
+              <!-- FORM FIELDS: 2 COLUMN GRID -->
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div class="form-group" style="margin: 0;">
+                  <label class="form-label" style="font-size: 12px; font-weight: 700; color: #fff;">Full Name *</label>
+                  <input type="text" id="inp-add-user-name" class="form-control" required value="${valName}" placeholder="e.g. Md. Liton Miah" style="height: 36px; font-size: 12.5px; border-radius: 6px;" />
+                </div>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-              <div class="form-group">
-                <label class="form-label" style="font-size: 12px; font-weight: 700; color: #fff;">Initial Password *</label>
-                <div style="display: flex; gap: 6px;">
-                  <input type="text" id="inp-add-user-password" class="form-control font-mono" required style="height: 34px; font-size: 12.5px;" />
-                  <button type="button" id="btn-add-user-generate-pass" class="btn btn-secondary btn-xs" style="font-weight: 700; color: #38bdf8;" title="Generate random secure password">
-                    🎲 Random
-                  </button>
+                <div class="form-group" style="margin: 0;">
+                  <label class="form-label" style="font-size: 12px; font-weight: 700; color: #fff;">Card ID / Employee ID</label>
+                  <input type="text" id="inp-add-user-card" class="form-control" value="${valCard}" placeholder="e.g. AMG-0000005" style="height: 36px; font-size: 12.5px; border-radius: 6px;" />
                 </div>
               </div>
 
-              <div class="form-group">
-                <label class="form-label" style="font-size: 12px; font-weight: 700; color: #fff;">Permission Preset</label>
-                <select id="sel-add-user-preset" class="filter-select" style="height: 34px; font-size: 12px;">
-                  ${presets.map(p => `<option value="${p.id}">${p.icon || '🛡️'} ${p.name}</option>`).join('')}
-                </select>
-              </div>
-            </div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div class="form-group" style="margin: 0;">
+                  <label class="form-label" style="font-size: 12px; font-weight: 700; color: #fff;">Username *</label>
+                  <input type="text" id="inp-add-user-username" class="form-control" required value="${valUsername}" placeholder="e.g. amg0000005" style="height: 36px; font-size: 12.5px; border-radius: 6px;" />
+                </div>
 
-            <div style="display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid var(--border-color); padding-top: 14px; margin-top: 6px;">
-              <button type="button" class="btn btn-secondary btn-sm btn-close-uam-modal">Cancel</button>
-              <button type="submit" class="btn btn-primary btn-sm" style="font-weight: 800; background: linear-gradient(135deg, #0284c7, #0369a1);">
-                ➕ Create User Account
-              </button>
-            </div>
-          </form>
+                <div class="form-group" style="margin: 0;">
+                  <label class="form-label" style="font-size: 12px; font-weight: 700; color: #fff;">Email Address</label>
+                  <input type="email" id="inp-add-user-email" class="form-control" value="${valEmail}" placeholder="user@al-muslim.com" style="height: 36px; font-size: 12.5px; border-radius: 6px;" />
+                </div>
+              </div>
+
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div class="form-group" style="margin: 0;">
+                  <label class="form-label" style="font-size: 12px; font-weight: 700; color: #fff;">Initial Password *</label>
+                  <div style="display: flex; gap: 6px;">
+                    <input type="text" id="inp-add-user-password" class="form-control font-mono" required value="${valPass}" style="height: 36px; font-size: 12.5px; border-radius: 6px;" />
+                    <button type="button" id="btn-add-user-toggle-pass-visibility" class="btn btn-secondary btn-xs" style="padding: 0 9px; font-size: 13px;" title="Toggle Password Masking">
+                      👁️
+                    </button>
+                    <button type="button" id="btn-add-user-copy-pass" class="btn btn-secondary btn-xs" style="padding: 0 9px; font-size: 13px; font-weight: 700; color: #c084fc;" title="Copy Password">
+                      📋
+                    </button>
+                    <button type="button" id="btn-add-user-generate-pass" class="btn btn-secondary btn-xs" style="font-weight: 700; color: #38bdf8; padding: 0 10px;" title="Generate new random secure password">
+                      🎲
+                    </button>
+                  </div>
+                </div>
+
+                <div class="form-group" style="margin: 0;">
+                  <label class="form-label" style="font-size: 12px; font-weight: 700; color: #fff;">Permission Preset</label>
+                  <select id="sel-add-user-preset" class="filter-select" style="height: 36px; font-size: 12px; border-radius: 6px;">
+                    ${presets.map(p => `
+                      <option value="${p.id}" ${p.id === valPresetId ? 'selected' : ''}>
+                        ${p.icon || '🛡️'} ${p.name}
+                      </option>
+                    `).join('')}
+                  </select>
+                </div>
+              </div>
+
+              <!-- Action Buttons -->
+              <div style="display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid var(--border-color); padding-top: 14px; margin-top: 6px;">
+                <button type="button" class="btn btn-secondary btn-sm btn-close-uam-modal">Cancel</button>
+                <button type="submit" class="btn btn-primary btn-sm" style="font-weight: 800; background: linear-gradient(135deg, #0284c7, #0369a1); padding: 7px 18px; border-radius: 8px;">
+                  ➕ Create User Account
+                </button>
+              </div>
+
+            </form>
+          </div>
+
         </div>
       </div>
     `;
@@ -1886,6 +2133,7 @@ export function initUserManagementEvents() {
   if (btnClearAllFilters) {
     btnClearAllFilters.addEventListener('click', () => {
       searchQuery = '';
+      quickCardFilter = 'ALL';
       filterGroup = 'ALL';
       filterUnit = 'ALL';
       filterFloor = 'ALL';
@@ -1900,6 +2148,56 @@ export function initUserManagementEvents() {
       reRender();
     });
   }
+
+  // Quick Filter Chips (All, With Card #, Active, Inactive, Missing, Temp Pass)
+  root.querySelectorAll('.btn-uam-quick-chip').forEach(btn => {
+    btn.addEventListener('click', () => {
+      quickCardFilter = btn.getAttribute('data-filter') || 'ALL';
+      currentPage = 1;
+      reRender();
+    });
+  });
+
+  // KPI Summary Cards Click Handlers
+  root.querySelectorAll('.uam-kpi-summary-card').forEach(card => {
+    card.addEventListener('click', () => {
+      const act = card.getAttribute('data-action');
+      if (act === 'TOTAL') {
+        quickCardFilter = 'ALL';
+        searchQuery = '';
+        filterStatus = 'ALL';
+        filterAccountLink = 'ALL';
+        filterPasswordStatus = 'ALL';
+      } else if (act === 'ACTIVE') {
+        quickCardFilter = 'ACTIVE';
+      } else if (act === 'INACTIVE') {
+        quickCardFilter = 'INACTIVE';
+      } else if (act === 'PENDING_CREATION') {
+        quickCardFilter = 'MISSING_ACCOUNT';
+      } else if (act === 'PENDING_PASSWORD') {
+        quickCardFilter = 'TEMP_PASS';
+      } else if (act === 'CONFIGURED_ACCESS') {
+        activeUserSection = 'PERMISSIONS';
+        if (typeof localStorage !== 'undefined') localStorage.setItem('al_muslim_user_access_section', 'PERMISSIONS');
+      }
+      currentPage = 1;
+      reRender();
+    });
+  });
+
+  // Clickable Card Badge in Table Rows (Filter by that specific Card #)
+  root.querySelectorAll('.uam-clickable-card-badge').forEach(badge => {
+    badge.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const cardNum = badge.getAttribute('data-card');
+      if (cardNum && cardNum !== '—') {
+        searchQuery = cardNum;
+        currentPage = 1;
+        reRender();
+        notificationService.info(`Filtered accounts by Card #${cardNum}`);
+      }
+    });
+  });
 
   // 3. Multi-Selection Checkbox Handlers
   const chkHeaderPage = document.getElementById('chk-header-select-page');
@@ -2093,6 +2391,9 @@ export function initUserManagementEvents() {
   if (btnTopAddUser) {
     btnTopAddUser.addEventListener('click', () => {
       activeModalType = 'ADD_USER';
+      addModalSelectedEmployee = null;
+      addModalCardSearchQuery = '';
+      isAddModalManualMode = false;
       reRender();
     });
   }
@@ -2518,9 +2819,252 @@ export function initUserManagementEvents() {
   root.querySelectorAll('.btn-close-uam-modal').forEach(btn => {
     btn.addEventListener('click', () => {
       activeModalType = null;
+      addModalSelectedEmployee = null;
+      addModalCardSearchQuery = '';
+      isAddModalManualMode = false;
+      summaryModalSearchQuery = '';
       reRender();
     });
   });
+
+  // Auto-Create Summary Modal: Live Card/Name/Username Search
+  const inpSummarySearch = document.getElementById('inp-uam-summary-search');
+  if (inpSummarySearch) {
+    inpSummarySearch.addEventListener('input', (e) => {
+      const q = e.target.value.toLowerCase().trim();
+      const rows = root.querySelectorAll('.uam-summary-account-row');
+      let visibleCount = 0;
+      rows.forEach(row => {
+        const text = row.getAttribute('data-search') || '';
+        if (!q || text.includes(q)) {
+          row.style.display = 'flex';
+          visibleCount++;
+        } else {
+          row.style.display = 'none';
+        }
+      });
+      const countEl = document.getElementById('uam-summary-match-count');
+      if (countEl) countEl.innerText = `Showing ${visibleCount} of ${rows.length} accounts`;
+    });
+  }
+
+  // Auto-Create Summary Modal: Direct Excel Export (1 Worksheet)
+  const btnSummaryExport = document.getElementById('btn-summary-export-excel');
+  if (btnSummaryExport && autoCreateSummaryData) {
+    btnSummaryExport.addEventListener('click', () => {
+      if (!window.XLSX) {
+        notificationService.error('Excel library is initializing. Please wait a moment.');
+        return;
+      }
+      const list = autoCreateSummaryData.successful || [];
+      if (list.length === 0) {
+        notificationService.info('No successful accounts to export.');
+        return;
+      }
+      const exportRows = list.map((acc, idx) => ({
+        'SL': idx + 1,
+        'Card Number': acc.cardNumber || '—',
+        'Employee Name': acc.name || '',
+        'Username': acc.username || '',
+        'Initial Password': acc.initialPassword || userAccessService.getTemporaryCredential(acc.userId) || '—',
+        'Designation': acc.designation || 'Staff',
+        'Department': acc.department || 'Maintenance',
+        'Floor': acc.floor || '—',
+        'Created Date': new Date().toLocaleDateString(),
+        'Account Status': 'ACTIVE',
+        'Password Status': 'TEMPORARY (Must Change)'
+      }));
+      const ws = window.XLSX.utils.json_to_sheet(exportRows);
+      const wb = window.XLSX.utils.book_new();
+      window.XLSX.utils.book_append_sheet(wb, ws, 'Auto_Created_Accounts');
+      window.XLSX.writeFile(wb, `Al_Muslim_Auto_Created_Accounts_${new Date().toISOString().slice(0, 10)}.xlsx`);
+      notificationService.success(`Exported ${exportRows.length} accounts to single-sheet Excel!`);
+    });
+  }
+
+  // Auto-Create Summary Modal: Copy All Usernames
+  const btnSummaryCopyAll = document.getElementById('btn-summary-copy-all');
+  if (btnSummaryCopyAll && autoCreateSummaryData) {
+    btnSummaryCopyAll.addEventListener('click', () => {
+      const list = (autoCreateSummaryData.successful || []).map(s => `@${s.username}`).join(', ');
+      if (list && navigator.clipboard) {
+        navigator.clipboard.writeText(list);
+        btnSummaryCopyAll.innerText = '✓ Copied All!';
+        setTimeout(() => { if (btnSummaryCopyAll) btnSummaryCopyAll.innerText = '📋 Copy Usernames'; }, 2000);
+        notificationService.success(`Copied ${autoCreateSummaryData.successful.length} usernames!`);
+      }
+    });
+  }
+
+  // Auto-Create Summary Modal: Copy Individual Password
+  root.querySelectorAll('.btn-copy-summary-pass').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const pass = btn.getAttribute('data-pass');
+      const user = btn.getAttribute('data-user');
+      if (pass && navigator.clipboard) {
+        navigator.clipboard.writeText(pass);
+        const origText = btn.innerHTML;
+        btn.innerHTML = '<span>✓</span> <span>Copied</span>';
+        setTimeout(() => { btn.innerHTML = origText; }, 1500);
+        notificationService.success(`Copied password for @${user}!`);
+      }
+    });
+  });
+
+  // Add User Modal: Mode Toggle (Card vs Manual)
+  const btnAddModeCard = document.getElementById('btn-add-mode-card');
+  if (btnAddModeCard) {
+    btnAddModeCard.addEventListener('click', () => {
+      isAddModalManualMode = false;
+      reRender();
+    });
+  }
+
+  const btnAddModeManual = document.getElementById('btn-add-mode-manual');
+  if (btnAddModeManual) {
+    btnAddModeManual.addEventListener('click', () => {
+      isAddModalManualMode = true;
+      reRender();
+    });
+  }
+
+  // Add User Modal: Clear Selected Employee
+  const btnAddUserClearEmp = document.getElementById('btn-add-user-clear-emp');
+  if (btnAddUserClearEmp) {
+    btnAddUserClearEmp.addEventListener('click', () => {
+      addModalSelectedEmployee = null;
+      addModalCardSearchQuery = '';
+      reRender();
+    });
+  }
+
+  // Add User Modal: Card Search Autocomplete
+  const inpAddCardSearch = document.getElementById('inp-add-user-card-search');
+  const suggestionsBox = document.getElementById('uam-add-user-suggestions');
+  if (inpAddCardSearch && suggestionsBox) {
+    const activeEmployees = employeeService.getActiveEmployees ? employeeService.getActiveEmployees() : [];
+    const allUsers = storage.getTable(TABLE_NAMES.USERS) || [];
+    const userCardMap = new Map();
+    allUsers.forEach(u => {
+      if (u.cardNumber) userCardMap.set(String(u.cardNumber).trim().toLowerCase(), u);
+      if (u.employeeId) userCardMap.set(String(u.employeeId).trim().toLowerCase(), u);
+      if (u.manpowerId) userCardMap.set(u.manpowerId, u);
+    });
+
+    const updateSuggestions = (query) => {
+      const q = (query || '').trim().toLowerCase();
+      const filtered = activeEmployees.filter(e => {
+        if (!q) return true;
+        const c = String(e.cardNumber || '').toLowerCase();
+        const n = String(e.name || '').toLowerCase();
+        const d = String(e.designation || '').toLowerCase();
+        const dept = String(e.department || '').toLowerCase();
+        return c.includes(q) || n.includes(q) || d.includes(q) || dept.includes(q);
+      }).slice(0, 10);
+
+      if (filtered.length === 0) {
+        suggestionsBox.innerHTML = `
+          <div style="padding: 12px; text-align: center; color: var(--text-muted); font-size: 12px;">
+            No manpower employees match "<strong>${query}</strong>".
+          </div>
+        `;
+        suggestionsBox.style.display = 'block';
+        return;
+      }
+
+      suggestionsBox.innerHTML = filtered.map(e => {
+        const cleanCard = String(e.cardNumber || '').trim().toLowerCase();
+        const hasUser = userCardMap.get(cleanCard) || userCardMap.get(e.id);
+        return `
+          <div class="uam-emp-suggestion-item" data-id="${e.id}" style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; border-radius: 6px; cursor: pointer; transition: background 0.15s; border-bottom: 1px solid rgba(255,255,255,0.04); gap: 10px;">
+            <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
+              <span style="font-family: var(--font-mono); font-weight: 800; font-size: 12px; color: #38bdf8; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.3); padding: 2px 7px; border-radius: 5px; white-space: nowrap;">
+                🪪 #${e.cardNumber}
+              </span>
+              <div style="min-width: 0;">
+                <div style="font-weight: 700; font-size: 13px; color: #fff; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">${e.name}</div>
+                <div style="font-size: 11px; color: #94a3b8; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">
+                  ${e.designation || 'Staff'} • ${e.department || 'Maintenance'} ${e.floorName ? `• ${e.floorName}` : ''}
+                </div>
+              </div>
+            </div>
+            <div style="white-space: nowrap;">
+              ${hasUser ? `<span class="badge badge-warning" style="font-size: 9.5px;">⚠️ Has Account (@${hasUser.username})</span>` : `<span class="badge badge-active" style="font-size: 9.5px;">✨ Ready to Link</span>`}
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      suggestionsBox.style.display = 'block';
+
+      // Bind selection clicks
+      suggestionsBox.querySelectorAll('.uam-emp-suggestion-item').forEach(item => {
+        item.addEventListener('mouseenter', () => { item.style.background = 'rgba(2, 132, 199, 0.25)'; });
+        item.addEventListener('mouseleave', () => { item.style.background = 'transparent'; });
+        item.addEventListener('click', () => {
+          const empId = item.getAttribute('data-id');
+          const emp = activeEmployees.find(e => e.id === empId);
+          if (emp) {
+            addModalSelectedEmployee = emp;
+            addModalCardSearchQuery = '';
+            suggestionsBox.style.display = 'none';
+            reRender();
+          }
+        });
+      });
+    };
+
+    inpAddCardSearch.addEventListener('input', (e) => {
+      addModalCardSearchQuery = e.target.value;
+      updateSuggestions(addModalCardSearchQuery);
+    });
+
+    inpAddCardSearch.addEventListener('focus', () => {
+      updateSuggestions(inpAddCardSearch.value);
+    });
+
+    const btnClearAddSearch = document.getElementById('btn-clear-add-card-search');
+    if (btnClearAddSearch) {
+      btnClearAddSearch.addEventListener('click', () => {
+        inpAddCardSearch.value = '';
+        addModalCardSearchQuery = '';
+        updateSuggestions('');
+        inpAddCardSearch.focus();
+      });
+    }
+  }
+
+  // Password visibility toggle in Add User Modal
+  const btnTogglePass = document.getElementById('btn-add-user-toggle-pass-visibility');
+  if (btnTogglePass) {
+    btnTogglePass.addEventListener('click', () => {
+      const passInp = document.getElementById('inp-add-user-password');
+      if (passInp) {
+        if (passInp.type === 'password') {
+          passInp.type = 'text';
+          btnTogglePass.innerText = '🔒';
+        } else {
+          passInp.type = 'password';
+          btnTogglePass.innerText = '👁️';
+        }
+      }
+    });
+  }
+
+  // Copy password in Add User Modal
+  const btnCopyAddPass = document.getElementById('btn-add-user-copy-pass');
+  if (btnCopyAddPass) {
+    btnCopyAddPass.addEventListener('click', () => {
+      const passInp = document.getElementById('inp-add-user-password');
+      if (passInp && passInp.value && navigator.clipboard) {
+        navigator.clipboard.writeText(passInp.value);
+        btnCopyAddPass.innerText = '✓';
+        setTimeout(() => { if (btnCopyAddPass) btnCopyAddPass.innerText = '📋'; }, 1500);
+        notificationService.success('Copied password to clipboard!');
+      }
+    });
+  }
 
   const btnCopyPass = document.getElementById('btn-copy-generated-pass');
   if (btnCopyPass) {
@@ -2562,28 +3106,9 @@ export function initUserManagementEvents() {
     });
   }
 
-  // Add User Form Submission
+  // Add User Form Submission (Handles Card Link & Manual Modes)
   const formAddUser = document.getElementById('form-uam-add-user');
   if (formAddUser) {
-    const selEmpPick = document.getElementById('sel-add-user-emp-pick');
-    if (selEmpPick) {
-      selEmpPick.addEventListener('change', (e) => {
-        const opt = selEmpPick.options[selEmpPick.selectedIndex];
-        if (opt && opt.value) {
-          const inpName = document.getElementById('inp-add-user-name');
-          const inpCard = document.getElementById('inp-add-user-card');
-          const inpUser = document.getElementById('inp-add-user-username');
-          const inpEmail = document.getElementById('inp-add-user-email');
-
-          if (inpName) inpName.value = opt.getAttribute('data-name') || '';
-          if (inpCard) inpCard.value = opt.getAttribute('data-card') || '';
-          const cleanCard = (opt.getAttribute('data-card') || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-          if (inpUser) inpUser.value = cleanCard ? `emp${cleanCard}` : '';
-          if (inpEmail) inpEmail.value = `${cleanCard || 'emp'}@al-muslim.com`;
-        }
-      });
-    }
-
     const btnGenPass = document.getElementById('btn-add-user-generate-pass');
     if (btnGenPass) {
       btnGenPass.addEventListener('click', () => {
@@ -2594,6 +3119,9 @@ export function initUserManagementEvents() {
 
     formAddUser.addEventListener('submit', async (e) => {
       e.preventDefault();
+      const submitBtn = formAddUser.querySelector('button[type="submit"]');
+      if (submitBtn) { submitBtn.disabled = true; submitBtn.innerText = 'Creating Account...'; }
+
       const name = document.getElementById('inp-add-user-name')?.value?.trim();
       const card = document.getElementById('inp-add-user-card')?.value?.trim();
       const username = document.getElementById('inp-add-user-username')?.value?.trim();
@@ -2602,23 +3130,40 @@ export function initUserManagementEvents() {
       const presetId = document.getElementById('sel-add-user-preset')?.value;
 
       try {
-        const newUser = await authService.createUser({
-          name,
-          username,
-          password,
-          email,
-          employeeId: card,
-          presetId
-        });
+        if (!username) throw new Error('Username is required.');
+        if (!password) throw new Error('Password is required.');
 
-        // Store initial password in temporary elevated cache
-        userAccessService.setTemporaryCredential(newUser.id, password);
+        let createdUser = null;
+
+        if (addModalSelectedEmployee && !isAddModalManualMode) {
+          const preset = presetId ? (authService.getPresetById ? authService.getPresetById(presetId) : null) : null;
+          const res = await userAccessService.createAccountForEmployee(addModalSelectedEmployee, {
+            username,
+            password,
+            preset
+          });
+          createdUser = res.user || res;
+        } else {
+          createdUser = await authService.createUser({
+            name,
+            username,
+            password,
+            email,
+            employeeId: card,
+            presetId
+          });
+          userAccessService.setTemporaryCredential(createdUser.id, password);
+        }
 
         activeModalType = null;
-        notificationService.success(`User account @${newUser.username} registered successfully!`);
+        addModalSelectedEmployee = null;
+        addModalCardSearchQuery = '';
+        isAddModalManualMode = false;
+        notificationService.success(`User account @${createdUser.username} registered successfully!`);
         reRender();
       } catch (err) {
         notificationService.error('Failed to create user: ' + err.message);
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.innerText = '➕ Create User Account'; }
       }
     });
   }
