@@ -41,7 +41,7 @@ const server = http.createServer((req, res) => {
   // CORS & Cache headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-User-Role, X-User-Id, X-API-Key');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-User-Role, X-User-Id, X-Location-Scope, X-API-Key');
   res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
 
   if (req.method === 'OPTIONS') {
@@ -51,8 +51,41 @@ const server = http.createServer((req, res) => {
 
   const urlPath = req.url ? req.url.split('?')[0] : '/';
 
+  // Helper for backend location-based access control evaluation
+  function isLocationAllowedBackend(scope, unitId, floorId, lineId) {
+    if (!scope) return false;
+    if (scope.allGroups && (scope.allUnits || (!scope.unitIds?.length && !scope.floorIds?.length && !scope.lineIds?.length))) {
+      return true;
+    }
+    if (!scope.allUnits) {
+      if (Array.isArray(scope.unitIds) && scope.unitIds.length > 0) {
+        if (!unitId || !scope.unitIds.includes(unitId)) return false;
+      } else if (!scope.allGroups) {
+        return false;
+      }
+    }
+    if (!scope.allFloors) {
+      if (Array.isArray(scope.floorIds) && scope.floorIds.length > 0) {
+        if (floorId && !scope.floorIds.includes(floorId)) return false;
+      } else if (!scope.allUnits && !scope.allGroups && floorId) {
+        return false;
+      }
+    }
+    if (!scope.allLines) {
+      if (Array.isArray(scope.lineIds) && scope.lineIds.length > 0) {
+        if (lineId && !scope.lineIds.includes(lineId)) return false;
+      } else if (!scope.allFloors && !scope.allUnits && !scope.allGroups && lineId) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   // Security Gate: Reject API requests from unassigned Zero-Access accounts
   const userRoleHeader = req.headers['x-user-role'] || '';
+  const userIdHeader = req.headers['x-user-id'] || '';
+  const userScopeHeader = req.headers['x-location-scope'] || '';
+
   if (urlPath.startsWith('/api/') && urlPath !== '/api/health' && urlPath !== '/api/client-log') {
     if (userRoleHeader === 'NO_ACCESS') {
       res.writeHead(403, { 'Content-Type': 'application/json; charset=utf-8' });
@@ -62,6 +95,70 @@ const server = http.createServer((req, res) => {
         message: 'Security Policy: Zero-Access accounts are prohibited from executing API operations until permissions are assigned by an Administrator.' 
       }));
     }
+  }
+
+  // Backend Location & Permissions Verification Endpoint
+  if (urlPath === '/api/access/verify-location') {
+    if (req.method !== 'POST') {
+      res.writeHead(405, { 'Content-Type': 'application/json; charset=utf-8' });
+      return res.end(JSON.stringify({ status: 'error', message: 'Method Not Allowed' }));
+    }
+    let body = '';
+    req.on('data', chunk => { body += chunk; });
+    req.on('end', () => {
+      try {
+        const payload = JSON.parse(body || '{}');
+        const role = req.headers['x-user-role'] || payload.role || '';
+        if (role === 'NO_ACCESS') {
+          res.writeHead(403, { 'Content-Type': 'application/json; charset=utf-8' });
+          return res.end(JSON.stringify({ status: 'error', code: 'ACCESS_DENIED', message: 'User has ZERO access permissions.' }));
+        }
+
+        let scope = null;
+        if (userScopeHeader) {
+          try { scope = JSON.parse(userScopeHeader); } catch (_) {}
+        }
+        if (!scope && payload.assignedScope) {
+          scope = payload.assignedScope;
+        }
+
+        // If no scope provided and not global, look up user from database
+        if (!scope && (userIdHeader || payload.userId) && fs.existsSync(DB_FILE)) {
+          try {
+            const dbContent = JSON.parse(fs.readFileSync(DB_FILE, 'utf8') || '{}');
+            const user = (dbContent.users || []).find(u => u.id === (userIdHeader || payload.userId));
+            if (user) {
+              if (user.role === 'NO_ACCESS') {
+                res.writeHead(403, { 'Content-Type': 'application/json; charset=utf-8' });
+                return res.end(JSON.stringify({ status: 'error', code: 'ACCESS_DENIED', message: 'Zero-access user account.' }));
+              }
+              scope = user.assignedScope;
+            }
+          } catch (_) {}
+        }
+
+        const unitId = payload.unitId;
+        const floorId = payload.floorId;
+        const lineId = payload.lineId;
+
+        const isAllowed = isLocationAllowedBackend(scope, unitId, floorId, lineId);
+        if (!isAllowed) {
+          res.writeHead(403, { 'Content-Type': 'application/json; charset=utf-8' });
+          return res.end(JSON.stringify({
+            status: 'error',
+            code: 'LOCATION_ACCESS_DENIED',
+            message: `Location Access Denied: User is not authorized to access or operate on Unit '${unitId || '—'}', Floor '${floorId || '—'}', Line '${lineId || '—'}'.`
+          }));
+        }
+
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        return res.end(JSON.stringify({ status: 'ok', allowed: true, unitId, floorId, lineId }));
+      } catch (err) {
+        res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+        return res.end(JSON.stringify({ status: 'error', message: err.message }));
+      }
+    });
+    return;
   }
 
   // Health check endpoint

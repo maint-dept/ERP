@@ -1250,9 +1250,15 @@ class StorageEngine {
       try {
         const payload = JSON.stringify(this.data);
         const url = getApiEndpoint('/api/db/records');
+        const cu = (typeof window !== 'undefined' && window.authService?.getCurrentUser) ? window.authService.getCurrentUser() : null;
         const res = await fetch(url, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'X-User-Role': cu?.role || '',
+            'X-User-Id': cu?.id || '',
+            'X-Location-Scope': cu?.assignedScope ? JSON.stringify(cu.assignedScope) : ''
+          },
           body: payload
         });
 

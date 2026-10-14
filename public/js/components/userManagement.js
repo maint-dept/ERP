@@ -70,13 +70,15 @@ let quickCardFilter = 'ALL'; // 'ALL' | 'WITH_CARD' | 'ACTIVE' | 'INACTIVE' | 'M
 // Permissions Matrix Editing State
 let permissionTargetUserId = null;
 let editingPermissions = {};
-let editingScope = { allGroups: true, groupIds: [], unitIds: [], floorIds: [], lineIds: [] };
+let editingScope = { allGroups: false, groupIds: [], allUnits: false, unitIds: [], allFloors: false, floorIds: [], allLines: false, lineIds: [] };
 
 // Bulk Assignment Form State
 let bulkSelectedUserIds = [];
 let bulkTargetModulePerms = {};
 let bulkAssignmentMode = 'ADD'; // 'ADD' | 'REPLACE'
 let bulkPresetTemplateId = '';
+let bulkApplyScope = false;
+let bulkTargetScope = { allGroups: false, groupIds: [], allUnits: false, unitIds: [], allFloors: false, floorIds: [], allLines: false, lineIds: [] };
 
 // Password Management Filter
 let passwordMgmtSearch = '';
@@ -715,12 +717,17 @@ export function renderUserManagement() {
                       `}
                     </td>
 
-                    <!-- Permissions Summary -->
+                    <!-- Permissions Summary & Location Scope -->
                     <td style="padding: 9px 12px;">
                       ${hasAccount ? `
-                        <div style="display: flex; align-items: center; gap: 6px;">
-                          <span style="font-size: 11.5px; color: #e2e8f0; font-weight: 600;">${acc.permissionsSummary}</span>
-                          ${acc.presetName ? `<span class="badge badge-info" style="font-size: 9.5px; padding: 1px 5px;">${acc.presetName}</span>` : ''}
+                        <div style="display: flex; flex-direction: column; gap: 2px;">
+                          <div style="display: flex; align-items: center; gap: 6px;">
+                            <span style="font-size: 11.5px; color: #e2e8f0; font-weight: 600;">${acc.permissionsSummary}</span>
+                            ${acc.presetName ? `<span class="badge badge-info" style="font-size: 9.5px; padding: 1px 5px;">${acc.presetName}</span>` : ''}
+                          </div>
+                          <div style="font-size: 10px; color: #38bdf8; display: inline-flex; align-items: center; gap: 3px; font-weight: 600;" title="Assigned Scope: ${userAccessService.formatScopeSummary(acc.assignedScope)}">
+                            <span>📍</span> <span>${userAccessService.formatScopeSummary(acc.assignedScope)}</span>
+                          </div>
                         </div>
                       ` : `
                         <span style="color: var(--text-muted); font-size: 11px;">Not Assigned</span>
@@ -841,8 +848,202 @@ export function renderUserManagement() {
 }
 
 // ---------------------------------------------------------------------------
-// SUB-TAB RENDERERS
+// SUB-TAB RENDERERS & LOCATION-BASED ACCESS CONTROL
 // ---------------------------------------------------------------------------
+
+function pruneOrphanLocations(scopeObj) {
+  // Prune floors if not allUnits and specific unitIds chosen
+  if (!scopeObj.allUnits && Array.isArray(scopeObj.unitIds) && scopeObj.unitIds.length > 0) {
+    const rawFloors = masterDataService.getFloors ? masterDataService.getFloors(null, null, true, true) : [];
+    const validFloors = new Set(rawFloors.filter(f => scopeObj.unitIds.includes(f.unitId)).map(f => f.id));
+    scopeObj.floorIds = (scopeObj.floorIds || []).filter(fid => validFloors.has(fid));
+  } else if (!scopeObj.allUnits && (!scopeObj.unitIds || scopeObj.unitIds.length === 0) && !scopeObj.allGroups) {
+    scopeObj.floorIds = [];
+  }
+
+  // Prune lines if not allFloors and specific floorIds chosen
+  if (!scopeObj.allFloors && Array.isArray(scopeObj.floorIds) && scopeObj.floorIds.length > 0) {
+    const rawLines = masterDataService.getLines ? masterDataService.getLines(null, null, null, true, true) : [];
+    const validLines = new Set(rawLines.filter(l => scopeObj.floorIds.includes(l.floorId)).map(l => l.id));
+    scopeObj.lineIds = (scopeObj.lineIds || []).filter(lid => validLines.has(lid));
+  } else if (!scopeObj.allFloors && (!scopeObj.floorIds || scopeObj.floorIds.length === 0) && !scopeObj.allUnits && !scopeObj.allGroups) {
+    scopeObj.lineIds = [];
+  }
+}
+
+function renderLocationScopeSection(scope, pfx = 'perm-scope', isBulk = false) {
+  const allGroups = masterDataService.getGroups ? masterDataService.getGroups(true) : [];
+  
+  // Dynamic Units based on selected Groups
+  const rawUnits = masterDataService.getUnits ? masterDataService.getUnits(null, true, true) : [];
+  let availableUnits = rawUnits;
+  if (!scope.allGroups && Array.isArray(scope.groupIds) && scope.groupIds.length > 0) {
+    availableUnits = rawUnits.filter(u => scope.groupIds.includes(u.groupId));
+  }
+
+  // Dynamic Floors based on selected Units
+  const rawFloors = masterDataService.getFloors ? masterDataService.getFloors(null, null, true, true) : [];
+  let availableFloors = [];
+  if (scope.allUnits || scope.allGroups) {
+    availableFloors = rawFloors;
+  } else if (Array.isArray(scope.unitIds) && scope.unitIds.length > 0) {
+    availableFloors = rawFloors.filter(f => scope.unitIds.includes(f.unitId));
+  }
+
+  // Dynamic Lines based on selected Floors
+  const rawLines = masterDataService.getLines ? masterDataService.getLines(null, null, null, true, true) : [];
+  let availableLines = [];
+  if (scope.allFloors) {
+    if (availableFloors.length > 0) {
+      const floorIdsSet = new Set(availableFloors.map(f => f.id));
+      availableLines = rawLines.filter(l => floorIdsSet.has(l.floorId));
+    } else {
+      availableLines = rawLines;
+    }
+  } else if (Array.isArray(scope.floorIds) && scope.floorIds.length > 0) {
+    availableLines = rawLines.filter(l => scope.floorIds.includes(l.floorId));
+  }
+
+  const scopeSummary = userAccessService.formatScopeSummary(scope);
+  const isGlobal = Boolean(scope.allGroups && scope.allUnits && scope.allFloors && scope.allLines);
+  const isZero = !isGlobal && (!scope.allUnits && (!scope.unitIds || scope.unitIds.length === 0));
+
+  return `
+    <div style="background: rgba(15, 23, 42, 0.75); border: 1.5px solid ${isGlobal ? '#10b981' : isZero ? '#f59e0b' : '#38bdf8'}; border-radius: var(--radius-md); padding: 14px 16px; display: flex; flex-direction: column; gap: 12px; box-shadow: inset 0 1px 3px rgba(0,0,0,0.3);">
+      
+      <!-- Section Header & Status -->
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+        <div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 16px;">📍</span>
+            <span style="font-size: 13.5px; font-weight: 800; color: #fff; text-transform: uppercase; letter-spacing: 0.5px;">
+              Location-Based Access Scope (Unit, Floor &amp; Line Restrictions)
+            </span>
+          </div>
+          <p style="font-size: 11.5px; color: var(--text-secondary); margin: 3px 0 0 0;">
+            Users are strictly restricted to assigned Units, Floors, and Lines. Super Admin and regular users follow explicitly assigned scope.
+          </p>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+          <span class="badge" style="background: ${isGlobal ? 'rgba(16, 185, 129, 0.2)' : isZero ? 'rgba(245, 158, 11, 0.2)' : 'rgba(56, 189, 248, 0.2)'}; color: ${isGlobal ? '#34d399' : isZero ? '#fbbf24' : '#38bdf8'}; border: 1px solid ${isGlobal ? 'rgba(16, 185, 129, 0.4)' : isZero ? 'rgba(245, 158, 11, 0.4)' : 'rgba(56, 189, 248, 0.4)'}; font-size: 11px; font-weight: 800; padding: 4px 10px;">
+            ${scopeSummary}
+          </span>
+          <button type="button" id="${pfx}-btn-global" class="btn btn-secondary btn-xs" style="color: #34d399; font-weight: 700; font-size: 11px;">
+            🌐 All Locations (Factory-Wide)
+          </button>
+          <button type="button" id="${pfx}-btn-clear-all" class="btn btn-ghost btn-xs" style="color: #f87171; font-weight: 700; font-size: 11px;">
+            ✕ Clear Scope (Zero Access)
+          </button>
+        </div>
+      </div>
+
+      <!-- 4 Cascading Columns: Group -> Unit -> Floor -> Line -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; background: rgba(9, 14, 26, 0.85); border: 1px solid var(--border-color); border-radius: 8px; padding: 12px;">
+        
+        <!-- Column 1: Group -->
+        <div style="display: flex; flex-direction: column; gap: 6px; border-right: 1px solid rgba(255,255,255,0.06); padding-right: 8px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(56, 189, 248, 0.2); padding-bottom: 4px;">
+            <label style="display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 800; color: #38bdf8; cursor: pointer;">
+              <input type="checkbox" id="${pfx}-chk-all-groups" ${scope.allGroups ? 'checked' : ''} style="cursor: pointer; accent-color: #0284c7; width: 14px; height: 14px;" />
+              <span>🏢 All Groups</span>
+            </label>
+            <span style="font-size: 10px; color: var(--text-muted);">${allGroups.length} total</span>
+          </div>
+
+          <div style="max-height: 160px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; padding-right: 4px;">
+            ${allGroups.map(g => {
+              const isChecked = scope.allGroups || (Array.isArray(scope.groupIds) && scope.groupIds.includes(g.id));
+              return `
+                <label style="display: flex; align-items: center; gap: 6px; font-size: 11px; color: ${isChecked ? '#fff' : 'var(--text-secondary)'}; cursor: ${scope.allGroups ? 'not-allowed' : 'pointer'}; padding: 3px 6px; border-radius: 4px; background: ${isChecked ? 'rgba(56, 189, 248, 0.1)' : 'transparent'};">
+                  <input type="checkbox" class="${pfx}-chk-group-item" data-id="${g.id}" ${isChecked ? 'checked' : ''} ${scope.allGroups ? 'disabled' : ''} style="cursor: pointer; accent-color: #0284c7; width: 13px; height: 13px;" />
+                  <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${g.name}</span>
+                </label>
+              `;
+            }).join('')}
+          </div>
+        </div>
+
+        <!-- Column 2: Unit -->
+        <div style="display: flex; flex-direction: column; gap: 6px; border-right: 1px solid rgba(255,255,255,0.06); padding-right: 8px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(56, 189, 248, 0.2); padding-bottom: 4px;">
+            <label style="display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 800; color: #38bdf8; cursor: pointer;">
+              <input type="checkbox" id="${pfx}-chk-all-units" ${scope.allUnits ? 'checked' : ''} style="cursor: pointer; accent-color: #0284c7; width: 14px; height: 14px;" />
+              <span>🏭 All Units</span>
+            </label>
+            <span style="font-size: 10px; color: var(--text-muted);">${availableUnits.length} available</span>
+          </div>
+
+          <div style="max-height: 160px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; padding-right: 4px;">
+            ${availableUnits.length === 0 ? `
+              <div style="color: var(--text-muted); font-size: 11px; padding: 12px; text-align: center;">No units in selected group</div>
+            ` : availableUnits.map(u => {
+              const isChecked = scope.allUnits || (Array.isArray(scope.unitIds) && scope.unitIds.includes(u.id));
+              return `
+                <label style="display: flex; align-items: center; gap: 6px; font-size: 11px; color: ${isChecked ? '#fff' : 'var(--text-secondary)'}; cursor: ${scope.allUnits ? 'not-allowed' : 'pointer'}; padding: 3px 6px; border-radius: 4px; background: ${isChecked ? 'rgba(56, 189, 248, 0.1)' : 'transparent'};">
+                  <input type="checkbox" class="${pfx}-chk-unit-item" data-id="${u.id}" ${isChecked ? 'checked' : ''} ${scope.allUnits ? 'disabled' : ''} style="cursor: pointer; accent-color: #0284c7; width: 13px; height: 13px;" />
+                  <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${u.name}</span>
+                </label>
+              `;
+            }).join('')}
+          </div>
+        </div>
+
+        <!-- Column 3: Floor (Dynamic based on selected Unit) -->
+        <div style="display: flex; flex-direction: column; gap: 6px; border-right: 1px solid rgba(255,255,255,0.06); padding-right: 8px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(56, 189, 248, 0.2); padding-bottom: 4px;">
+            <label style="display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 800; color: #38bdf8; cursor: pointer;">
+              <input type="checkbox" id="${pfx}-chk-all-floors" ${scope.allFloors ? 'checked' : ''} ${availableFloors.length === 0 ? 'disabled' : ''} style="cursor: pointer; accent-color: #0284c7; width: 14px; height: 14px;" />
+              <span>🏢 All Floors</span>
+            </label>
+            <span style="font-size: 10px; color: var(--text-muted);">${availableFloors.length} available</span>
+          </div>
+
+          <div style="max-height: 160px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; padding-right: 4px;">
+            ${availableFloors.length === 0 ? `
+              <div style="color: var(--text-muted); font-size: 11px; padding: 12px; text-align: center;">👈 Select Unit(s) first</div>
+            ` : availableFloors.map(f => {
+              const isChecked = scope.allFloors || (Array.isArray(scope.floorIds) && scope.floorIds.includes(f.id));
+              return `
+                <label style="display: flex; align-items: center; gap: 6px; font-size: 11px; color: ${isChecked ? '#fff' : 'var(--text-secondary)'}; cursor: ${scope.allFloors ? 'not-allowed' : 'pointer'}; padding: 3px 6px; border-radius: 4px; background: ${isChecked ? 'rgba(56, 189, 248, 0.1)' : 'transparent'};">
+                  <input type="checkbox" class="${pfx}-chk-floor-item" data-id="${f.id}" ${isChecked ? 'checked' : ''} ${scope.allFloors ? 'disabled' : ''} style="cursor: pointer; accent-color: #0284c7; width: 13px; height: 13px;" />
+                  <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${f.name}</span>
+                </label>
+              `;
+            }).join('')}
+          </div>
+        </div>
+
+        <!-- Column 4: Line (Dynamic based on selected Floor) -->
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(56, 189, 248, 0.2); padding-bottom: 4px;">
+            <label style="display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 800; color: #38bdf8; cursor: pointer;">
+              <input type="checkbox" id="${pfx}-chk-all-lines" ${scope.allLines ? 'checked' : ''} ${availableLines.length === 0 ? 'disabled' : ''} style="cursor: pointer; accent-color: #0284c7; width: 14px; height: 14px;" />
+              <span>🧵 All Lines</span>
+            </label>
+            <span style="font-size: 10px; color: var(--text-muted);">${availableLines.length} available</span>
+          </div>
+
+          <div style="max-height: 160px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; padding-right: 4px;">
+            ${availableLines.length === 0 ? `
+              <div style="color: var(--text-muted); font-size: 11px; padding: 12px; text-align: center;">👈 Select Floor(s) first</div>
+            ` : availableLines.map(l => {
+              const isChecked = scope.allLines || (Array.isArray(scope.lineIds) && scope.lineIds.includes(l.id));
+              return `
+                <label style="display: flex; align-items: center; gap: 6px; font-size: 11px; color: ${isChecked ? '#fff' : 'var(--text-secondary)'}; cursor: ${scope.allLines ? 'not-allowed' : 'pointer'}; padding: 3px 6px; border-radius: 4px; background: ${isChecked ? 'rgba(56, 189, 248, 0.1)' : 'transparent'};">
+                  <input type="checkbox" class="${pfx}-chk-line-item" data-id="${l.id}" ${isChecked ? 'checked' : ''} ${scope.allLines ? 'disabled' : ''} style="cursor: pointer; accent-color: #0284c7; width: 13px; height: 13px;" />
+                  <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${l.name}</span>
+                </label>
+              `;
+            }).join('')}
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  `;
+}
 
 function renderIndividualPermissionsTab() {
   const users = storage.getTable(TABLE_NAMES.USERS) || [];
@@ -856,10 +1057,34 @@ function renderIndividualPermissionsTab() {
     `;
   }
 
-  // Load editing permissions for selected user if not initialized
+  // Load editing permissions & location scope for selected user if not initialized
   if (!permissionTargetUserId || permissionTargetUserId !== selectedUser.id) {
     permissionTargetUserId = selectedUser.id;
     editingPermissions = JSON.parse(JSON.stringify(selectedUser.permissions || {}));
+    if (selectedUser.assignedScope) {
+      editingScope = {
+        allGroups: Boolean(selectedUser.assignedScope.allGroups),
+        groupIds: Array.isArray(selectedUser.assignedScope.groupIds) ? [...selectedUser.assignedScope.groupIds] : (selectedUser.groupId ? [selectedUser.groupId] : []),
+        allUnits: Boolean(selectedUser.assignedScope.allUnits),
+        unitIds: Array.isArray(selectedUser.assignedScope.unitIds) ? [...selectedUser.assignedScope.unitIds] : (selectedUser.unitId ? [selectedUser.unitId] : []),
+        allFloors: Boolean(selectedUser.assignedScope.allFloors),
+        floorIds: Array.isArray(selectedUser.assignedScope.floorIds) ? [...selectedUser.assignedScope.floorIds] : (selectedUser.floorId ? [selectedUser.floorId] : []),
+        allLines: Boolean(selectedUser.assignedScope.allLines),
+        lineIds: Array.isArray(selectedUser.assignedScope.lineIds) ? [...selectedUser.assignedScope.lineIds] : (selectedUser.lineId ? [selectedUser.lineId] : [])
+      };
+    } else {
+      const isSuper = selectedUser.role === 'SUPER_ADMIN';
+      editingScope = {
+        allGroups: isSuper,
+        groupIds: selectedUser.groupId ? [selectedUser.groupId] : [],
+        allUnits: isSuper,
+        unitIds: selectedUser.unitId ? [selectedUser.unitId] : [],
+        allFloors: isSuper,
+        floorIds: selectedUser.floorId ? [selectedUser.floorId] : [],
+        allLines: isSuper,
+        lineIds: selectedUser.lineId ? [selectedUser.lineId] : []
+      };
+    }
   }
 
   // Filter users for switcher if permCardSearchQuery is active
@@ -1018,10 +1243,13 @@ function renderIndividualPermissionsTab() {
             Cancel
           </button>
           <button id="btn-perm-save-changes" class="btn btn-primary btn-sm" style="font-weight: 800; background: linear-gradient(135deg, #0284c7, #0369a1); box-shadow: 0 2px 10px rgba(2, 132, 199, 0.4); font-size: 12px; padding: 6px 16px;">
-            💾 Save Permissions
+            💾 Save Permissions &amp; Location Scope
           </button>
         </div>
       </div>
+
+      <!-- Location-Based Access Scope (Unit, Floor & Line Matrix) -->
+      ${renderLocationScopeSection(editingScope, 'perm-scope', false)}
 
       <!-- Granular 7-Action Permissions Matrix Table -->
       <div style="border: 1px solid var(--border-color); border-radius: var(--radius-md); overflow-x: auto; background: #0b1329;">
@@ -1242,6 +1470,31 @@ function renderBulkAssignmentTab() {
             `;
           }).join('')}
         </div>
+      </div>
+
+      <!-- Step 4: Location Access Scope for Target Accounts -->
+      <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-color); border-radius: 8px; padding: 14px 18px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 10px;">
+          <div>
+            <div style="font-size: 12px; font-weight: 700; color: #38bdf8; text-transform: uppercase;">
+              Step 4: Location Access Scope (Unit, Floor &amp; Line Restrictions)
+            </div>
+            <div style="font-size: 11.5px; color: var(--text-secondary); margin-top: 2px;">
+              Optionally assign uniform Unit, Floor, and Line location bounds to all selected users simultaneously.
+            </div>
+          </div>
+
+          <label style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 800; color: #fff; cursor: pointer; background: rgba(56, 189, 248, 0.15); padding: 5px 12px; border-radius: 6px; border: 1px solid rgba(56, 189, 248, 0.35);">
+            <input type="checkbox" id="chk-bulk-apply-scope" ${bulkApplyScope ? 'checked' : ''} style="cursor: pointer; accent-color: #0284c7; width: 15px; height: 15px;" />
+            <span>Apply Location Scope in Bulk</span>
+          </label>
+        </div>
+
+        ${bulkApplyScope ? renderLocationScopeSection(bulkTargetScope, 'bulk-scope', true) : `
+          <div style="background: rgba(11, 19, 41, 0.6); border: 1px dashed rgba(255,255,255,0.15); border-radius: 6px; padding: 14px; text-align: center; color: var(--text-muted); font-size: 12px;">
+            Existing location access scopes will remain untouched. Check <strong>"Apply Location Scope in Bulk"</strong> above to configure uniform Unit, Floor, and Line bounds across selected accounts.
+          </div>
+        `}
       </div>
 
       <!-- Execution Button Bar -->
@@ -1760,6 +2013,13 @@ function renderActiveModalHtml() {
               <div style="font-size: 11px; font-weight: 700; color: #38bdf8; text-transform: uppercase; margin-bottom: 6px;">📍 Factory Location Placement</div>
               <div style="color: #fff; font-weight: 600;">
                 ${acc.groupName} &rarr; ${acc.unitName} &rarr; ${acc.floorName} &rarr; ${acc.lineName}
+              </div>
+            </div>
+
+            <div style="background: rgba(15, 23, 42, 0.6); padding: 14px; border-radius: 8px; border: 1px solid var(--border-color);">
+              <div style="font-size: 11px; font-weight: 700; color: #38bdf8; text-transform: uppercase; margin-bottom: 6px;">🎯 Assigned Location Access Scope</div>
+              <div style="color: #38bdf8; font-weight: 700; font-size: 13px;">
+                ${userAccessService.formatScopeSummary(acc.assignedScope)}
               </div>
             </div>
 
@@ -2525,6 +2785,157 @@ function renderActiveModalHtml() {
   }
 
   return '';
+}
+
+// ---------------------------------------------------------------------------
+// LOCATION SCOPE EVENT BINDING HELPER
+// ---------------------------------------------------------------------------
+
+function bindLocationScopeEvents(root, scopeObj, pfx, onChange) {
+  // Global preset button
+  const btnGlobal = root.querySelector(`#${pfx}-btn-global`);
+  if (btnGlobal) {
+    btnGlobal.addEventListener('click', () => {
+      scopeObj.allGroups = true;
+      scopeObj.groupIds = [];
+      scopeObj.allUnits = true;
+      scopeObj.unitIds = [];
+      scopeObj.allFloors = true;
+      scopeObj.floorIds = [];
+      scopeObj.allLines = true;
+      scopeObj.lineIds = [];
+      onChange();
+    });
+  }
+
+  // Clear all button
+  const btnClearAll = root.querySelector(`#${pfx}-btn-clear-all`);
+  if (btnClearAll) {
+    btnClearAll.addEventListener('click', () => {
+      scopeObj.allGroups = false;
+      scopeObj.groupIds = [];
+      scopeObj.allUnits = false;
+      scopeObj.unitIds = [];
+      scopeObj.allFloors = false;
+      scopeObj.floorIds = [];
+      scopeObj.allLines = false;
+      scopeObj.lineIds = [];
+      onChange();
+    });
+  }
+
+  // All Groups toggle
+  const chkAllGroups = root.querySelector(`#${pfx}-chk-all-groups`);
+  if (chkAllGroups) {
+    chkAllGroups.addEventListener('change', (e) => {
+      scopeObj.allGroups = e.target.checked;
+      if (e.target.checked) {
+        scopeObj.groupIds = [];
+      }
+      onChange();
+    });
+  }
+
+  // Group item checkboxes
+  root.querySelectorAll(`.${pfx}-chk-group-item`).forEach(cb => {
+    cb.addEventListener('change', (e) => {
+      const gid = cb.getAttribute('data-id');
+      if (!Array.isArray(scopeObj.groupIds)) scopeObj.groupIds = [];
+      if (e.target.checked) {
+        if (!scopeObj.groupIds.includes(gid)) scopeObj.groupIds.push(gid);
+      } else {
+        scopeObj.groupIds = scopeObj.groupIds.filter(g => g !== gid);
+      }
+      // Prune units that don't belong to selected groups
+      if (!scopeObj.allGroups && scopeObj.groupIds.length > 0) {
+        const validUnits = masterDataService.getUnits ? masterDataService.getUnits(null, true, true).filter(u => scopeObj.groupIds.includes(u.groupId)) : [];
+        const validUnitIds = new Set(validUnits.map(u => u.id));
+        scopeObj.unitIds = (scopeObj.unitIds || []).filter(uid => validUnitIds.has(uid));
+      }
+      pruneOrphanLocations(scopeObj);
+      onChange();
+    });
+  });
+
+  // All Units toggle
+  const chkAllUnits = root.querySelector(`#${pfx}-chk-all-units`);
+  if (chkAllUnits) {
+    chkAllUnits.addEventListener('change', (e) => {
+      scopeObj.allUnits = e.target.checked;
+      if (e.target.checked) {
+        scopeObj.unitIds = [];
+      }
+      onChange();
+    });
+  }
+
+  // Unit item checkboxes
+  root.querySelectorAll(`.${pfx}-chk-unit-item`).forEach(cb => {
+    cb.addEventListener('change', (e) => {
+      const uid = cb.getAttribute('data-id');
+      if (!Array.isArray(scopeObj.unitIds)) scopeObj.unitIds = [];
+      if (e.target.checked) {
+        if (!scopeObj.unitIds.includes(uid)) scopeObj.unitIds.push(uid);
+      } else {
+        scopeObj.unitIds = scopeObj.unitIds.filter(u => u !== uid);
+      }
+      pruneOrphanLocations(scopeObj);
+      onChange();
+    });
+  });
+
+  // All Floors toggle
+  const chkAllFloors = root.querySelector(`#${pfx}-chk-all-floors`);
+  if (chkAllFloors) {
+    chkAllFloors.addEventListener('change', (e) => {
+      scopeObj.allFloors = e.target.checked;
+      if (e.target.checked) {
+        scopeObj.floorIds = [];
+      }
+      onChange();
+    });
+  }
+
+  // Floor item checkboxes
+  root.querySelectorAll(`.${pfx}-chk-floor-item`).forEach(cb => {
+    cb.addEventListener('change', (e) => {
+      const fid = cb.getAttribute('data-id');
+      if (!Array.isArray(scopeObj.floorIds)) scopeObj.floorIds = [];
+      if (e.target.checked) {
+        if (!scopeObj.floorIds.includes(fid)) scopeObj.floorIds.push(fid);
+      } else {
+        scopeObj.floorIds = scopeObj.floorIds.filter(f => f !== fid);
+      }
+      pruneOrphanLocations(scopeObj);
+      onChange();
+    });
+  });
+
+  // All Lines toggle
+  const chkAllLines = root.querySelector(`#${pfx}-chk-all-lines`);
+  if (chkAllLines) {
+    chkAllLines.addEventListener('change', (e) => {
+      scopeObj.allLines = e.target.checked;
+      if (e.target.checked) {
+        scopeObj.lineIds = [];
+      }
+      onChange();
+    });
+  }
+
+  // Line item checkboxes
+  root.querySelectorAll(`.${pfx}-chk-line-item`).forEach(cb => {
+    cb.addEventListener('change', (e) => {
+      const lid = cb.getAttribute('data-id');
+      if (!Array.isArray(scopeObj.lineIds)) scopeObj.lineIds = [];
+      if (e.target.checked) {
+        if (!scopeObj.lineIds.includes(lid)) scopeObj.lineIds.push(lid);
+      } else {
+        scopeObj.lineIds = scopeObj.lineIds.filter(l => l !== lid);
+      }
+      onChange();
+    });
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -3318,12 +3729,27 @@ export function initUserManagementEvents() {
         const u = storage.getItem(TABLE_NAMES.USERS, permissionTargetUserId);
         if (u) {
           editingPermissions = JSON.parse(JSON.stringify(u.permissions || {}));
+          if (u.assignedScope) {
+            editingScope = {
+              allGroups: Boolean(u.assignedScope.allGroups),
+              groupIds: Array.isArray(u.assignedScope.groupIds) ? [...u.assignedScope.groupIds] : [],
+              allUnits: Boolean(u.assignedScope.allUnits),
+              unitIds: Array.isArray(u.assignedScope.unitIds) ? [...u.assignedScope.unitIds] : [],
+              allFloors: Boolean(u.assignedScope.allFloors),
+              floorIds: Array.isArray(u.assignedScope.floorIds) ? [...u.assignedScope.floorIds] : [],
+              allLines: Boolean(u.assignedScope.allLines),
+              lineIds: Array.isArray(u.assignedScope.lineIds) ? [...u.assignedScope.lineIds] : []
+            };
+          }
         }
       }
-      notificationService.info('Permissions matrix changes cancelled.');
+      notificationService.info('Permissions and location scope changes cancelled.');
       reRender();
     });
   }
+
+  // Bind location scope controls for Individual Permissions Tab
+  bindLocationScopeEvents(root, editingScope, 'perm-scope', reRender);
 
   const btnPermSave = document.getElementById('btn-perm-save-changes');
   if (btnPermSave) {
@@ -3331,13 +3757,13 @@ export function initUserManagementEvents() {
       btnPermSave.disabled = true;
       btnPermSave.innerText = 'Saving...';
       try {
-        await authService.updateUserPermissions(permissionTargetUserId, editingPermissions, 'CUSTOM', 'Custom Access');
-        notificationService.success('Individual access permissions saved successfully!');
+        await authService.updateUserPermissions(permissionTargetUserId, editingPermissions, 'CUSTOM', 'Custom Access', editingScope);
+        notificationService.success('Individual access permissions and location scope saved successfully!');
         reRender();
       } catch (err) {
         notificationService.error('Save failed: ' + err.message);
         btnPermSave.disabled = false;
-        btnPermSave.innerText = '💾 Save Permissions';
+        btnPermSave.innerText = '💾 Save Permissions & Location Scope';
       }
     });
   }
@@ -3440,6 +3866,19 @@ export function initUserManagementEvents() {
     });
   }
 
+  const chkBulkApplyScope = root.querySelector('#chk-bulk-apply-scope');
+  if (chkBulkApplyScope) {
+    chkBulkApplyScope.addEventListener('change', (e) => {
+      bulkApplyScope = e.target.checked;
+      reRender();
+    });
+  }
+
+  // Bind location scope controls for Bulk Assignment Tab if enabled
+  if (bulkApplyScope) {
+    bindLocationScopeEvents(root, bulkTargetScope, 'bulk-scope', reRender);
+  }
+
   const btnExecuteBulk = document.getElementById('btn-execute-bulk-assign');
   if (btnExecuteBulk) {
     btnExecuteBulk.addEventListener('click', async () => {
@@ -3468,9 +3907,15 @@ export function initUserManagementEvents() {
       btnExecuteBulk.innerText = 'Applying Updates...';
 
       try {
-        const res = await userAccessService.bulkAssignPermissions(targetIds, bulkTargetModulePerms, bulkAssignmentMode);
+        const res = await userAccessService.bulkAssignPermissions(
+          targetIds, 
+          bulkTargetModulePerms, 
+          bulkAssignmentMode,
+          bulkApplyScope ? bulkTargetScope : null
+        );
+        const scopeNote = bulkApplyScope ? ' and location scope' : '';
         notificationService.success(
-          `Bulk permissions applied successfully in [${res.mode}] mode to ${res.successful.length} accounts!`
+          `Bulk permissions${scopeNote} applied successfully in [${res.mode}] mode to ${res.successful.length} accounts!`
         );
         activeUserSection = 'ACCOUNTS';
         selectedAccountIds.clear();

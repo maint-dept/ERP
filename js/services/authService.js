@@ -1983,7 +1983,7 @@ class AuthService {
     return { success: true };
   }
 
-  async updateUserPermissions(userId, permissions, presetId = 'CUSTOM', presetName = 'Custom User') {
+  async updateUserPermissions(userId, permissions, presetId = 'CUSTOM', presetName = 'Custom User', assignedScope = null) {
     if (!this.canManageRoles()) {
       throw new Error('Access Denied: Only Administrator can override individual user permissions.');
     }
@@ -1996,6 +1996,19 @@ class AuthService {
       presetName,
       updatedAt: new Date().toISOString()
     };
+
+    if (assignedScope && typeof assignedScope === 'object') {
+      updates.assignedScope = {
+        allGroups: Boolean(assignedScope.allGroups),
+        groupIds: Array.isArray(assignedScope.groupIds) ? assignedScope.groupIds : [],
+        allUnits: Boolean(assignedScope.allUnits),
+        unitIds: Array.isArray(assignedScope.unitIds) ? assignedScope.unitIds : [],
+        allFloors: Boolean(assignedScope.allFloors),
+        floorIds: Array.isArray(assignedScope.floorIds) ? assignedScope.floorIds : [],
+        allLines: Boolean(assignedScope.allLines),
+        lineIds: Array.isArray(assignedScope.lineIds) ? assignedScope.lineIds : []
+      };
+    }
 
     let hasAny = false;
     if (permissions && typeof permissions === 'object') {
@@ -2201,21 +2214,51 @@ class AuthService {
   isLocationAllowed(unitId, floorId = null, lineId = null, user = null) {
     const u = user || this.getCurrentUser();
     if (!u) return false;
-    // Super Admin has global bypass
-    if (this.isSuperAdmin(u)) return true;
+    // Zero-access accounts have no access anywhere
+    if (u.role === 'NO_ACCESS') return false;
 
     const scope = u.assignedScope;
-    if (!scope || scope.allGroups) return true;
+    // If no scope is assigned at all:
+    // Legacy Super Admin accounts without scope record default to global bypass.
+    // Regular accounts without scope record have no location access.
+    if (!scope) {
+      return this.isSuperAdmin(u);
+    }
 
-    if (Array.isArray(scope.unitIds) && scope.unitIds.length > 0) {
-      if (!unitId || !scope.unitIds.includes(unitId)) return false;
+    // Explicit factory-wide unrestricted scope (All Groups / Factory-Wide)
+    const isExplicitGlobal = Boolean(scope.allGroups) && 
+      (Boolean(scope.allUnits) || (!scope.unitIds?.length && !scope.floorIds?.length && !scope.lineIds?.length));
+    if (isExplicitGlobal) {
+      return true;
     }
-    if (Array.isArray(scope.floorIds) && scope.floorIds.length > 0) {
-      if (!floorId || !scope.floorIds.includes(floorId)) return false;
+
+    // Check Unit-level access
+    if (!scope.allUnits) {
+      if (Array.isArray(scope.unitIds) && scope.unitIds.length > 0) {
+        if (!unitId || !scope.unitIds.includes(unitId)) return false;
+      } else if (!scope.allGroups) {
+        return false;
+      }
     }
-    if (Array.isArray(scope.lineIds) && scope.lineIds.length > 0) {
-      if (!lineId || !scope.lineIds.includes(lineId)) return false;
+
+    // Check Floor-level access
+    if (!scope.allFloors) {
+      if (Array.isArray(scope.floorIds) && scope.floorIds.length > 0) {
+        if (floorId && !scope.floorIds.includes(floorId)) return false;
+      } else if (!scope.allUnits && !scope.allGroups && floorId) {
+        return false;
+      }
     }
+
+    // Check Line-level access
+    if (!scope.allLines) {
+      if (Array.isArray(scope.lineIds) && scope.lineIds.length > 0) {
+        if (lineId && !scope.lineIds.includes(lineId)) return false;
+      } else if (!scope.allFloors && !scope.allUnits && !scope.allGroups && lineId) {
+        return false;
+      }
+    }
+
     return true;
   }
 
@@ -2258,82 +2301,64 @@ class AuthService {
 
   /**
    * Check if a machine can be operated (Edited, Deleted, Relocated, Status Changed) by the user.
-   * Only allowed if user has global access or the machine is within their strictly assigned location scope.
+   * Access follows the explicitly assigned location scope. Super Admin does not silently bypass.
    */
   canOperateMachine(machine, user = null) {
     if (!machine) return false;
     const u = user || this.getCurrentUser();
     if (!u) return false;
-    if (this.isSuperAdmin(u)) return true;
+    if (u.role === 'NO_ACCESS') return false;
     return this.isLocationAllowed(machine.unitId, machine.floorId, machine.lineId, u);
   }
 
   /**
    * Check if a machine can be viewed by the user:
-   * 1. If includeCrossFloorIdle is true (Cross-Floor Idle View ON):
-   *    - Idle/Standby machines across ALL factory floors are viewable (user's own floor + all other floors).
-   *    - Running machines outside user's assigned scope remain hidden.
-   * 2. If includeCrossFloorIdle is false (Normal Default View):
-   *    - "je jtuk access pabe oi tuk age default asbe"
-   *    - ONLY machines strictly within the user's assigned location scope are shown (unit, floor, line).
-   *    - Other floors and other lines are strictly excluded from default view.
+   * 1. If includeCrossFloorIdle is true: view idle machines across factory floors.
+   * 2. Otherwise: strictly respect assigned Unit, Floor, and Line location scope.
    */
   canViewMachine(machine, user = null, includeCrossFloorIdle = false) {
     if (!machine) return false;
     const u = user || this.getCurrentUser();
     if (!u) return false;
+    if (u.role === 'NO_ACCESS') return false;
 
-    // Super Admin global view
-    if (this.isSuperAdmin(u)) {
-      if (includeCrossFloorIdle) {
-        return this.isIdleMachine(machine);
-      }
+    // Cross-Floor Idle exception
+    if (includeCrossFloorIdle && this.isIdleMachine(machine)) {
       return true;
     }
 
-    const scope = u.assignedScope;
-    if (!scope || scope.allGroups) {
-      if (includeCrossFloorIdle) {
-        return this.isIdleMachine(machine);
-      }
-      return true;
-    }
-
-    // When Cross-Floor Idle View is ACTIVE:
-    // View idle and standby machines across ALL factory floors
-    if (includeCrossFloorIdle) {
-      return this.isIdleMachine(machine);
-    }
-
-    // Normal mode (Cross-Floor Idle view is OFF):
-    // "je jtuk access pabe oi tuk age default asbe"
-    // Strictly show ONLY machines within the user's assigned location scope (unit, floor, line)
     return this.isLocationAllowed(machine.unitId, machine.floorId, machine.lineId, u);
   }
 
   /**
    * Check if a machine is strictly View-Only for the user
-   * (can view, but cannot edit or operate due to floor scoping)
    */
   isMachineViewOnlyForUser(machine, user = null, includeCrossFloorIdle = false) {
     if (!machine) return false;
     const u = user || this.getCurrentUser();
     if (!u) return false;
-    if (this.isSuperAdmin(u)) return false;
     return !this.canOperateMachine(machine, u) && this.canViewMachine(machine, u, includeCrossFloorIdle);
   }
 
-  getScopedFilter() {
-    const user = this.getCurrentUser();
-    if (!user || this.isSuperAdmin() || user.assignedScope?.allGroups) {
-      return null;
+  getScopedFilter(user = null) {
+    const u = user || this.getCurrentUser();
+    if (!u) return null;
+    const scope = u.assignedScope;
+    if (!scope) {
+      return this.isSuperAdmin(u) ? null : { allGroups: false, unitIds: [], floorIds: [], lineIds: [] };
     }
-    const scope = user.assignedScope;
-    if (!scope) return null;
+    const isGlobal = Boolean(scope.allGroups) && 
+      (Boolean(scope.allUnits) || (!scope.unitIds?.length && !scope.floorIds?.length && !scope.lineIds?.length));
+    if (isGlobal) return null;
+
     return {
       allGroups: Boolean(scope.allGroups),
+      groupIds: Array.isArray(scope.groupIds) ? scope.groupIds : [],
+      allUnits: Boolean(scope.allUnits),
       unitIds: Array.isArray(scope.unitIds) ? scope.unitIds : [],
+      allFloors: Boolean(scope.allFloors),
       floorIds: Array.isArray(scope.floorIds) ? scope.floorIds : [],
+      allLines: Boolean(scope.allLines),
       lineIds: Array.isArray(scope.lineIds) ? scope.lineIds : []
     };
   }
@@ -2349,8 +2374,11 @@ class AuthService {
     const cleanScope = {
       allGroups: Boolean(assignedScope?.allGroups),
       groupIds: Array.isArray(assignedScope?.groupIds) ? assignedScope.groupIds : [],
+      allUnits: Boolean(assignedScope?.allUnits),
       unitIds: Array.isArray(assignedScope?.unitIds) ? assignedScope.unitIds : [],
+      allFloors: Boolean(assignedScope?.allFloors),
       floorIds: Array.isArray(assignedScope?.floorIds) ? assignedScope.floorIds : [],
+      allLines: Boolean(assignedScope?.allLines),
       lineIds: Array.isArray(assignedScope?.lineIds) ? assignedScope.lineIds : []
     };
 

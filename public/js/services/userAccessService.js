@@ -270,12 +270,24 @@ class UserAccessService {
     const role = options.role || (preset?.code === 'ADMIN' ? 'ADMIN' : 'NO_ACCESS');
     const roleId = options.roleId || (role === 'ADMIN' ? 'role-admin' : 'role-no-access');
 
-    // Scoped location assignment
-    const assignedScope = {
-      allGroups: !employee.floorId && !employee.unitId,
+    // Scoped location assignment: New accounts start with zero scope unless explicitly assigned
+    const assignedScope = options.assignedScope ? {
+      allGroups: Boolean(options.assignedScope.allGroups),
+      groupIds: Array.isArray(options.assignedScope.groupIds) ? options.assignedScope.groupIds : [],
+      allUnits: Boolean(options.assignedScope.allUnits),
+      unitIds: Array.isArray(options.assignedScope.unitIds) ? options.assignedScope.unitIds : [],
+      allFloors: Boolean(options.assignedScope.allFloors),
+      floorIds: Array.isArray(options.assignedScope.floorIds) ? options.assignedScope.floorIds : [],
+      allLines: Boolean(options.assignedScope.allLines),
+      lineIds: Array.isArray(options.assignedScope.lineIds) ? options.assignedScope.lineIds : []
+    } : {
+      allGroups: false,
       groupIds: employee.groupId ? [employee.groupId] : [],
+      allUnits: false,
       unitIds: employee.unitId ? [employee.unitId] : [],
+      allFloors: false,
       floorIds: employee.floorId ? [employee.floorId] : [],
+      allLines: false,
       lineIds: employee.lineId ? [employee.lineId] : []
     };
 
@@ -685,10 +697,13 @@ class UserAccessService {
             mustChangePassword: true,
             lastPasswordReset: new Date().toISOString(),
             assignedScope: {
-              allGroups: !emp.floorId && !emp.unitId,
+              allGroups: false,
               groupIds: emp.groupId ? [emp.groupId] : [],
+              allUnits: false,
               unitIds: emp.unitId ? [emp.unitId] : [],
+              allFloors: false,
               floorIds: emp.floorId ? [emp.floorId] : [],
+              allLines: false,
               lineIds: emp.lineId ? [emp.lineId] : []
             },
             permissions: {},
@@ -743,12 +758,12 @@ class UserAccessService {
 
   /**
    * 6. Bulk Access Assignment
-   * Assigns permissions to multiple selected users
+   * Assigns permissions and optional location scope to multiple selected users
    * Modes:
    *   'ADD': Adds permissions without revoking existing ones
    *   'REPLACE': Replaces existing permissions with selected ones
    */
-  async bulkAssignPermissions(userIds = [], permissions = {}, mode = 'ADD') {
+  async bulkAssignPermissions(userIds = [], permissions = {}, mode = 'ADD', assignedScope = null) {
     if (!Array.isArray(userIds) || userIds.length === 0) {
       throw new Error('Please select at least one user account for bulk permission assignment.');
     }
@@ -808,7 +823,6 @@ class UserAccessService {
           });
         }
 
-
         let hasAny = false;
         if (updatedPerms && typeof updatedPerms === 'object') {
           for (const k in updatedPerms) {
@@ -833,6 +847,48 @@ class UserAccessService {
             target.roleId = 'role-maintenance-user';
           }
         }
+
+        // Apply bulk location scope if provided
+        if (assignedScope && typeof assignedScope === 'object') {
+          const cleanScope = {
+            allGroups: Boolean(assignedScope.allGroups),
+            groupIds: Array.isArray(assignedScope.groupIds) ? [...assignedScope.groupIds] : [],
+            allUnits: Boolean(assignedScope.allUnits),
+            unitIds: Array.isArray(assignedScope.unitIds) ? [...assignedScope.unitIds] : [],
+            allFloors: Boolean(assignedScope.allFloors),
+            floorIds: Array.isArray(assignedScope.floorIds) ? [...assignedScope.floorIds] : [],
+            allLines: Boolean(assignedScope.allLines),
+            lineIds: Array.isArray(assignedScope.lineIds) ? [...assignedScope.lineIds] : []
+          };
+
+          if (mode === 'REPLACE' || !target.assignedScope) {
+            target.assignedScope = JSON.parse(JSON.stringify(cleanScope));
+          } else {
+            // Mode A (ADD): Merge location scopes
+            if (cleanScope.allGroups) target.assignedScope.allGroups = true;
+            if (cleanScope.allUnits) target.assignedScope.allUnits = true;
+            if (cleanScope.allFloors) target.assignedScope.allFloors = true;
+            if (cleanScope.allLines) target.assignedScope.allLines = true;
+
+            cleanScope.groupIds.forEach(g => {
+              if (!target.assignedScope.groupIds) target.assignedScope.groupIds = [];
+              if (!target.assignedScope.groupIds.includes(g)) target.assignedScope.groupIds.push(g);
+            });
+            cleanScope.unitIds.forEach(u => {
+              if (!target.assignedScope.unitIds) target.assignedScope.unitIds = [];
+              if (!target.assignedScope.unitIds.includes(u)) target.assignedScope.unitIds.push(u);
+            });
+            cleanScope.floorIds.forEach(f => {
+              if (!target.assignedScope.floorIds) target.assignedScope.floorIds = [];
+              if (!target.assignedScope.floorIds.includes(f)) target.assignedScope.floorIds.push(f);
+            });
+            cleanScope.lineIds.forEach(l => {
+              if (!target.assignedScope.lineIds) target.assignedScope.lineIds = [];
+              if (!target.assignedScope.lineIds.includes(l)) target.assignedScope.lineIds.push(l);
+            });
+          }
+        }
+
         target.updatedAt = new Date().toISOString();
 
         successful.push({
@@ -856,11 +912,12 @@ class UserAccessService {
     }
 
     // Record in Audit Trail
+    const scopeNote = assignedScope ? ` and updated Location Scope (${this.formatScopeSummary(assignedScope)})` : '';
     auditService.log(
       mode === 'REPLACE' ? 'BULK_PERMISSIONS_REPLACED' : 'BULK_PERMISSIONS_ADDED',
       'USER',
       'BATCH',
-      `Bulk assigned permissions in [${mode}] mode to ${successful.length} user accounts (${failed.length} failed). Modules: ${Object.keys(permissions).join(', ')}.`
+      `Bulk assigned permissions in [${mode}] mode${scopeNote} to ${successful.length} user accounts (${failed.length} failed). Modules: ${Object.keys(permissions).join(', ')}.`
     );
 
     return {
@@ -1164,6 +1221,36 @@ class UserAccessService {
     // Sort newest first
     filtered.sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0));
     return filtered;
+  }
+
+  /**
+   * Helper to format assignedScope into human readable text badge
+   */
+  formatScopeSummary(scope) {
+    if (!scope) return 'Zero Locations';
+    if (scope.allGroups && (scope.allUnits || (!scope.unitIds?.length && !scope.floorIds?.length && !scope.lineIds?.length))) {
+      return '🌐 All Locations (Factory-Wide)';
+    }
+    const parts = [];
+    if (scope.allUnits) {
+      parts.push('All Units');
+    } else if (Array.isArray(scope.unitIds) && scope.unitIds.length > 0) {
+      parts.push(`${scope.unitIds.length} Unit${scope.unitIds.length > 1 ? 's' : ''}`);
+    }
+
+    if (scope.allFloors) {
+      parts.push('All Floors');
+    } else if (Array.isArray(scope.floorIds) && scope.floorIds.length > 0) {
+      parts.push(`${scope.floorIds.length} Floor${scope.floorIds.length > 1 ? 's' : ''}`);
+    }
+
+    if (scope.allLines) {
+      parts.push('All Lines');
+    } else if (Array.isArray(scope.lineIds) && scope.lineIds.length > 0) {
+      parts.push(`${scope.lineIds.length} Line${scope.lineIds.length > 1 ? 's' : ''}`);
+    }
+
+    return parts.length > 0 ? parts.join(' • ') : 'Zero Locations';
   }
 }
 
