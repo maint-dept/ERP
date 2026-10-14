@@ -232,9 +232,15 @@ class UserAccessService {
     const plainInitialPassword = options.password || this.generateSecurePassword(14);
     const hashedPassword = cryptoService.hashPassword(plainInitialPassword);
 
-    const preset = options.preset || this.resolveDefaultPresetForEmployee(employee);
-    const role = options.role || (preset.code === 'ADMIN' ? 'ADMIN' : (preset.code === 'MAINTENANCE_MANAGER' ? 'MANAGER' : 'USER'));
-    const roleId = role === 'ADMIN' ? 'role-admin' : (role === 'MANAGER' ? 'role-manager' : 'role-maintenance-user');
+    // ZERO PERMISSIONS BY DEFAULT:
+    // Whenever a new Manpower account is created, it must have ZERO permissions by default.
+    // Do not automatically assign any role, module access, menu access, preset profile, or inherited permissions.
+    // Only Admin can manually grant permissions later.
+    const preset = options.preset || null;
+    const presetId = options.presetId || (preset ? preset.id : null);
+    const presetName = options.presetName || (preset ? preset.name : 'No Access (Pending Admin Assignment)');
+    const role = options.role || (preset?.code === 'ADMIN' ? 'ADMIN' : 'NO_ACCESS');
+    const roleId = options.roleId || (role === 'ADMIN' ? 'role-admin' : 'role-no-access');
 
     // Scoped location assignment
     const assignedScope = {
@@ -244,6 +250,11 @@ class UserAccessService {
       floorIds: employee.floorId ? [employee.floorId] : [],
       lineIds: employee.lineId ? [employee.lineId] : []
     };
+
+    // If options explicitly has permissions, use them; otherwise ZERO permissions {}
+    const permissions = options.permissions 
+      ? JSON.parse(JSON.stringify(options.permissions)) 
+      : (preset?.permissions ? JSON.parse(JSON.stringify(preset.permissions)) : {});
 
     const newUser = {
       id: `usr-mp-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
@@ -267,14 +278,14 @@ class UserAccessService {
       lineName: employee.lineName || employee.workingArea || '',
       role: role,
       roleId: roleId,
-      presetId: preset.id || 'preset_maintenance_user',
-      presetName: preset.name || 'Maintenance User',
+      presetId: presetId,
+      presetName: presetName,
       status: employee.status === 'ACTIVE' ? 'ACTIVE' : 'INACTIVE',
       passwordStatus: 'TEMPORARY',
       mustChangePassword: true,
       lastPasswordReset: new Date().toISOString(),
       assignedScope: assignedScope,
-      permissions: JSON.parse(JSON.stringify(preset.permissions || DEFAULT_PERMISSION_TEMPLATES.USER)),
+      permissions: permissions,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       autoCreatedFromManpower: true
@@ -604,6 +615,10 @@ class UserAccessService {
         target.permissions = updatedPerms;
         target.presetId = 'CUSTOM';
         target.presetName = 'Custom Access';
+        if (target.role === 'NO_ACCESS') {
+          target.role = 'USER';
+          target.roleId = 'role-maintenance-user';
+        }
         target.updatedAt = new Date().toISOString();
 
         successful.push({

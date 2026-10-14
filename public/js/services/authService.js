@@ -193,6 +193,11 @@ class AuthService {
           return u;
         }
 
+        // Preserve accounts with NO_ACCESS role (Default No Access policy)
+        if (u.role === 'NO_ACCESS' || u.roleId === 'role-no-access') {
+          return u;
+        }
+
         // 2. Factory Maintenance Administrator
         if (u.id === 'usr-admin' || u.username === 'admin') {
           if (u.role !== 'ADMIN' || u.roleId !== 'role-admin' || u.presetId !== 'preset_admin') {
@@ -677,21 +682,23 @@ class AuthService {
   }
 
   /**
-   * Universal Permission Checker (supports hasPermission(module, action) or hasPermission(action))
+   * Universal Permission Checker (supports hasPermission(module, action, user) or hasPermission(action, null, user))
    */
-  hasPermission(moduleOrAction, actionKey = 'VIEW') {
-    if (!this.currentUser || this.currentUser.status !== 'ACTIVE') return false;
-    if (this.isSuperAdmin() || this.isAdmin()) return true;
+  hasPermission(moduleOrAction, actionKey = 'VIEW', user = null) {
+    const activeUser = user || this.currentUser;
+    if (!activeUser || activeUser.status !== 'ACTIVE') return false;
+    if (this.isSuperAdmin(activeUser) || this.isAdmin(activeUser)) return true;
+    if (activeUser.role === 'NO_ACCESS' || activeUser.roleId === 'role-no-access') return false;
     
-    if (arguments.length === 1) {
+    if (arguments.length === 1 || !actionKey) {
       const act = String(moduleOrAction).toUpperCase().trim();
-      const perms = this.currentUser?.permissions || {};
+      const perms = activeUser?.permissions || {};
       for (const mod in perms) {
         if (Array.isArray(perms[mod]) && perms[mod].includes(act)) return true;
       }
-      return this.hasAccess(moduleOrAction, 'VIEW');
+      return this.hasAccess(moduleOrAction, 'VIEW', activeUser);
     }
-    return this.hasAccess(moduleOrAction, actionKey);
+    return this.hasAccess(moduleOrAction, actionKey, activeUser);
   }
 
   /**
@@ -708,6 +715,9 @@ class AuthService {
     // 1. SUPER ADMIN ALWAYS HAS 100% UNRESTRICTED SYSTEM ACCESS
     if (this.isSuperAdmin(activeUser)) return true;
 
+    // Strict No Access enforcement: ZERO permissions by default
+    if (activeUser.role === 'NO_ACCESS' || activeUser.roleId === 'role-no-access') return false;
+
     let action = (actionKey || 'VIEW').toUpperCase().trim();
     if (action === 'READ') action = 'VIEW';
     const normKey = this.normalizeModuleKey(rawModuleKey);
@@ -716,13 +726,16 @@ class AuthService {
     let perms = activeUser.permissions;
 
     if ((!perms || Object.keys(perms).length === 0) && activeUser.roleId) {
+      if (activeUser.roleId === 'role-no-access' || activeUser.role === 'NO_ACCESS') {
+        return false;
+      }
       const role = storage.getItem(TABLE_NAMES.ROLES, activeUser.roleId);
       if (role && role.permissions) {
         perms = role.permissions;
       }
     }
 
-    if (!perms) return false;
+    if (!perms || Object.keys(perms).length === 0) return false;
 
     // Check specific module array under raw key, normalized key, and underscore/hyphen variants
     const moduleActions = perms[normKey] || perms[rawModuleKey] || perms[rawModuleKey.replace(/-/g, '_')] || perms[rawModuleKey.replace(/_/g, '-')];
@@ -767,10 +780,16 @@ class AuthService {
     if (!activeUser || activeUser.status !== 'ACTIVE') return false;
     if (this.isSuperAdmin(activeUser)) return true;
 
+    // Strict No Access enforcement
+    if (activeUser.role === 'NO_ACCESS' || activeUser.roleId === 'role-no-access') return false;
+
     const normKey = this.normalizeModuleKey(rawModuleKey);
 
     let perms = activeUser.permissions;
     if ((!perms || Object.keys(perms).length === 0) && activeUser.roleId) {
+      if (activeUser.roleId === 'role-no-access' || activeUser.role === 'NO_ACCESS') {
+        return false;
+      }
       const role = storage.getItem(TABLE_NAMES.ROLES, activeUser.roleId);
       if (role && role.permissions) {
         perms = role.permissions;
@@ -818,7 +837,10 @@ class AuthService {
     const activeUser = user || this.getCurrentUser();
     if (!activeUser || activeUser.status !== 'ACTIVE') return false;
     if (this.isSuperAdmin(activeUser) || this.isAdmin(activeUser)) return true;
-    if (rawViewName === 'home' || rawViewName === 'login') return true;
+    if (rawViewName === 'home' || rawViewName === 'login' || rawViewName === 'no-access') return true;
+
+    // Strict No Access enforcement
+    if (activeUser.role === 'NO_ACCESS' || activeUser.roleId === 'role-no-access') return false;
 
     const viewToModuleMap = {
       'dashboard': 'dashboard',
@@ -862,6 +884,7 @@ class AuthService {
     const activeUser = user || this.getCurrentUser();
     if (!activeUser || activeUser.status !== 'ACTIVE') return 'login';
     if (this.isSuperAdmin(activeUser) || this.isAdmin(activeUser)) return 'dashboard';
+    if (activeUser.role === 'NO_ACCESS' || activeUser.roleId === 'role-no-access') return 'no-access';
 
     // Prioritized list of operational user views
     const viewPriority = [
@@ -896,7 +919,7 @@ class AuthService {
         return item.view;
       }
     }
-    return 'inventory';
+    return 'no-access';
   }
 
   /**
@@ -908,7 +931,7 @@ class AuthService {
 
     // Standard users, operators, technicians, and non-admin presets can NEVER be Super Admin
     const uRole = (u.role || '').toUpperCase();
-    if (uRole === 'USER' || uRole === 'VIEWER' || uRole === 'OPERATOR' || uRole === 'MAINTENANCE_USER') {
+    if (uRole === 'NO_ACCESS' || uRole === 'USER' || uRole === 'VIEWER' || uRole === 'OPERATOR' || uRole === 'MAINTENANCE_USER') {
       return false;
     }
     if (u.presetId && u.presetId !== 'preset_super_admin') {
@@ -932,7 +955,7 @@ class AuthService {
     if (this.isSuperAdmin(u)) return true;
 
     const uRole = (u.role || '').toUpperCase();
-    if (uRole === 'USER' || uRole === 'VIEWER' || uRole === 'OPERATOR' || uRole === 'MAINTENANCE_USER') {
+    if (uRole === 'NO_ACCESS' || uRole === 'USER' || uRole === 'VIEWER' || uRole === 'OPERATOR' || uRole === 'MAINTENANCE_USER') {
       return false;
     }
     if (u.presetId && !['preset_admin', 'preset_super_admin'].includes(u.presetId)) {
@@ -1351,8 +1374,8 @@ class AuthService {
       throw new Error('Access Denied: Only Administrators can delete Permission Presets.');
     }
 
-    let presets = storage.getTable(TABLE_NAMES.PERMISSION_PRESETS) || [];
-    const preset = presets.find(p => p.id === presetId || p.code === presetId);
+    let presets = this.getAllPresets();
+    const preset = this.getPresetById(presetId);
     if (!preset) throw new Error('Preset not found.');
 
     if (preset.isSystem) {
@@ -1573,7 +1596,7 @@ class AuthService {
       cleanUser = `${cleanUser}_${Math.floor(100 + Math.random() * 900)}`;
     }
 
-    // Determine normalized role code: 'SUPER_ADMIN', 'ADMIN', 'MANAGER' or 'USER'
+    // Determine normalized role code: 'SUPER_ADMIN', 'ADMIN', 'MANAGER', 'NO_ACCESS', or 'USER'
     const roleUpper = (role || 'USER').toUpperCase();
     let normalizedRole = 'USER';
     if (roleUpper === 'SUPER_ADMIN' || presetId === 'preset_super_admin') {
@@ -1582,6 +1605,8 @@ class AuthService {
       normalizedRole = 'ADMIN';
     } else if (roleUpper.includes('MANAGER') || presetId === 'preset_manager') {
       normalizedRole = 'MANAGER';
+    } else if (roleUpper === 'NO_ACCESS' || presetId === 'no_access' || (!presetId && roleUpper === 'NO_ACCESS')) {
+      normalizedRole = 'NO_ACCESS';
     } else {
       normalizedRole = 'USER';
     }
@@ -1591,14 +1616,15 @@ class AuthService {
     if (normalizedRole === 'SUPER_ADMIN') resolvedRoleId = 'role-super-admin';
     else if (normalizedRole === 'ADMIN') resolvedRoleId = 'role-admin';
     else if (normalizedRole === 'MANAGER') resolvedRoleId = 'role-manager';
+    else if (normalizedRole === 'NO_ACCESS') resolvedRoleId = 'role-no-access';
     else resolvedRoleId = 'role-maintenance-user';
 
     // Check if preset is specified
     let selectedPreset = null;
-    if (presetId) {
+    if (presetId && presetId !== 'no_access') {
       selectedPreset = this.getPresetById(presetId);
     }
-    if (!selectedPreset) {
+    if (!selectedPreset && normalizedRole !== 'NO_ACCESS') {
       // Default to appropriate preset based on role
       const defaultPresetId = normalizedRole === 'SUPER_ADMIN' ? 'preset_super_admin' : (normalizedRole === 'ADMIN' ? 'preset_admin' : 'preset_maintenance_user');
       selectedPreset = this.getPresetById(defaultPresetId);
@@ -1606,12 +1632,12 @@ class AuthService {
 
     const defaultPerms = normalizedRole === 'ADMIN'
       ? (DEFAULT_PERMISSION_TEMPLATES.ADMIN || DEFAULT_PERMISSION_TEMPLATES.SUPER_ADMIN)
-      : (DEFAULT_PERMISSION_TEMPLATES.USER || DEFAULT_PERMISSION_TEMPLATES.MAINTENANCE_USER);
+      : (normalizedRole === 'NO_ACCESS' ? {} : (DEFAULT_PERMISSION_TEMPLATES.USER || DEFAULT_PERMISSION_TEMPLATES.MAINTENANCE_USER));
 
-    // If permissions are not explicitly passed or empty, load from preset or role template
+    // If permissions are not explicitly passed or empty, load from preset or role template (or empty for NO_ACCESS)
     const effectivePermissions = permissions && Object.keys(permissions).length > 0
       ? permissions
-      : JSON.parse(JSON.stringify(selectedPreset?.permissions || defaultPerms));
+      : (normalizedRole === 'NO_ACCESS' ? {} : JSON.parse(JSON.stringify(selectedPreset?.permissions || defaultPerms)));
 
     // Cryptographically hash password
     const hashedPassword = cryptoService.hashPassword(password);
@@ -1628,8 +1654,8 @@ class AuthService {
       designation: (designation || '').trim(),
       role: normalizedRole,
       roleId: resolvedRoleId,
-      presetId: selectedPreset ? selectedPreset.id : 'preset_maintenance_user',
-      presetName: selectedPreset ? selectedPreset.name : 'Maintenance User',
+      presetId: selectedPreset ? selectedPreset.id : (normalizedRole === 'NO_ACCESS' ? null : 'preset_maintenance_user'),
+      presetName: selectedPreset ? selectedPreset.name : (normalizedRole === 'NO_ACCESS' ? 'No Access (Pending Admin Assignment)' : 'Maintenance User'),
       status: status === 'INACTIVE' ? 'INACTIVE' : 'ACTIVE',
       mustChangePassword: Boolean(mustChangePassword),
       assignedScope: assignedScope || (selectedPreset?.defaultScope ? JSON.parse(JSON.stringify(selectedPreset.defaultScope)) : (selectedPreset?.scope ? JSON.parse(JSON.stringify(selectedPreset.scope)) : { allGroups: false, groupIds: [], unitIds: [], floorIds: [], lineIds: [] })),
@@ -1943,9 +1969,31 @@ class AuthService {
     }
     const user = storage.getItem(TABLE_NAMES.USERS, userId);
     if (!user) throw new Error('User not found.');
-    const updated = storage.update(TABLE_NAMES.USERS, userId, {
-      permissions, presetId, presetName, updatedAt: new Date().toISOString()
-    });
+
+    const updates = {
+      permissions,
+      presetId,
+      presetName,
+      updatedAt: new Date().toISOString()
+    };
+
+    if (user.role === 'NO_ACCESS') {
+      let hasAny = false;
+      if (permissions && typeof permissions === 'object') {
+        for (const k in permissions) {
+          if (Array.isArray(permissions[k]) && permissions[k].length > 0) {
+            hasAny = true;
+            break;
+          }
+        }
+      }
+      if (hasAny) {
+        updates.role = 'USER';
+        updates.roleId = 'role-maintenance-user';
+      }
+    }
+
+    const updated = storage.update(TABLE_NAMES.USERS, userId, updates);
     const ok = await storage.saveTable(TABLE_NAMES.USERS, true);
     if (!ok) throw new CloudSaveError('❌ Cloud Save Failed: Permission update was not confirmed by the cloud.');
     if (this.currentUser?.id === userId) this.currentUser = updated;

@@ -760,6 +760,50 @@ class ERPApplication {
       }
 
       switch (currentView) {
+        case 'no-access': {
+          const u = authService.getCurrentUser() || {};
+          return `
+            <div style="min-height: 80vh; display: flex; align-items: center; justify-content: center; padding: 24px;">
+              <div style="max-width: 580px; width: 100%; background: var(--bg-surface, #1e293b); border: 1px solid rgba(239, 68, 68, 0.35); border-radius: 16px; padding: 36px 30px; text-align: center; box-shadow: 0 20px 45px rgba(0,0,0,0.5); position: relative; overflow: hidden;">
+                <div style="position: absolute; top: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, #ef4444, #f59e0b, #ef4444);"></div>
+                
+                <div style="width: 72px; height: 72px; margin: 0 auto 18px; border-radius: 50%; background: rgba(239, 68, 68, 0.12); display: flex; align-items: center; justify-content: center; font-size: 34px; border: 1px solid rgba(239, 68, 68, 0.3); box-shadow: 0 0 20px rgba(239, 68, 68, 0.2);">
+                  🔒
+                </div>
+
+                <div style="display: inline-block; padding: 4px 12px; border-radius: 9999px; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); color: #fca5a5; font-size: 11px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 12px;">
+                  Default Zero Permissions Policy
+                </div>
+
+                <h2 style="color: #fff; font-size: 22px; font-weight: 800; margin: 0 0 10px 0;">
+                  Access Pending Administrative Assignment
+                </h2>
+                <p style="color: var(--text-secondary, #94a3b8); font-size: 13.5px; line-height: 1.6; margin: 0 0 22px 0;">
+                  This account has been initialized with <strong>Zero Privileges</strong> by default. Under factory security policy, new workforce accounts cannot access any operational modules, menus, or features until an Administrator explicitly assigns permissions.
+                </p>
+
+                <!-- User Details Card -->
+                <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 10px; padding: 14px 18px; margin-bottom: 22px; text-align: left; font-size: 12.5px;">
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                    <div><span style="color: #64748b; font-size: 11px; text-transform: uppercase; font-weight: 700;">Account:</span> <span style="color: #fff; font-weight: 600;">@${u.username || 'user'}</span></div>
+                    <div><span style="color: #64748b; font-size: 11px; text-transform: uppercase; font-weight: 700;">Card Number:</span> <span style="font-family: var(--font-mono); color: #38bdf8; font-weight: 700;">#${u.cardNumber || u.employeeId || '—'}</span></div>
+                    <div><span style="color: #64748b; font-size: 11px; text-transform: uppercase; font-weight: 700;">Name:</span> <span style="color: #fff;">${u.name || 'Staff Member'}</span></div>
+                    <div><span style="color: #64748b; font-size: 11px; text-transform: uppercase; font-weight: 700;">Status:</span> <span style="color: #f87171; font-weight: 700;">No Access (0 Permissions)</span></div>
+                  </div>
+                </div>
+
+                <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+                  <button id="btn-no-access-logout" class="btn btn-secondary btn-sm" style="font-weight: 700; padding: 8px 18px;">
+                    🚪 Sign Out
+                  </button>
+                  <button id="btn-no-access-check" class="btn btn-primary btn-sm" style="font-weight: 800; background: linear-gradient(135deg, #0284c7, #0369a1); padding: 8px 20px;">
+                    🔄 Check Access / Refresh
+                  </button>
+                </div>
+              </div>
+            </div>
+          `;
+        }
         case 'home':
           return renderHomepageView();
         case 'login':
@@ -950,6 +994,22 @@ class ERPApplication {
       case 'database-config':
         initDatabaseConfigEvents();
         break;
+      case 'no-access': {
+        const btnLogout = document.getElementById('btn-no-access-logout');
+        if (btnLogout) {
+          btnLogout.addEventListener('click', () => {
+            authService.logout();
+            window.location.reload();
+          });
+        }
+        const btnCheck = document.getElementById('btn-no-access-check');
+        if (btnCheck) {
+          btnCheck.addEventListener('click', () => {
+            window.location.reload();
+          });
+        }
+        break;
+      }
     }
   }
 

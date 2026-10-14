@@ -207,6 +207,13 @@ export function renderSidebar() {
     authService.isAdmin() || authService.isModuleAllowed(it.moduleKey || it.targetView)
   );
 
+  const hasAnyAllowedSections = (authService.isModuleAllowed('dashboard') || machineItems.length > 0) ||
+                                (specializedFeatures.length > 0) ||
+                                ((authService.isAdmin() || authService.isModuleAllowed('manpower')) && workforceItems.length > 0) ||
+                                (isReportsAllowed && reportItems.length > 0) ||
+                                (allowedAdminItems.length > 0);
+  const isNoAccessUser = user?.role === 'NO_ACCESS' || user?.roleId === 'role-no-access' || (!hasAnyAllowedSections && !isAdmin && !isSuperAdmin);
+
   let html = `
     <aside class="app-sidebar" id="app-sidebar-root">
       <!-- Fixed Sidebar Brand Header -->
@@ -246,6 +253,14 @@ export function renderSidebar() {
 
       <!-- Scrollable Navigation Area -->
       <nav class="sidebar-menu" id="sidebar-menu-scrollable">
+        ${isNoAccessUser && !isAdmin && !isSuperAdmin ? `
+          <div style="padding: 24px 16px; text-align: center; background: rgba(239, 68, 68, 0.05); border: 1px dashed rgba(239, 68, 68, 0.3); border-radius: 12px; margin: 12px 10px;">
+            <div style="width: 44px; height: 44px; border-radius: 50%; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); display: flex; align-items: center; justify-content: center; font-size: 20px; margin: 0 auto 12px;">🔒</div>
+            <div style="font-size: 13px; font-weight: 700; color: #f87171; margin-bottom: 6px;">Zero Permissions</div>
+            <p style="font-size: 11.5px; color: #94a3b8; line-height: 1.4; margin: 0 0 14px 0;">This account is awaiting administrative privilege assignment in User Access Management.</p>
+            <span style="display: inline-block; padding: 3px 8px; border-radius: 4px; background: rgba(239, 68, 68, 0.2); color: #fca5a5; font-size: 10px; font-weight: 800; letter-spacing: 0.5px;">DEFAULT NO ACCESS</span>
+          </div>
+        ` : ''}
         
         <!-- SECTION 1: OPERATIONS & MACHINERY -->
         ${(authService.isModuleAllowed('dashboard') || machineItems.length > 0) ? `
@@ -340,7 +355,10 @@ export function renderSidebar() {
               ? `<span class="user-role-badge admin">👑 Super Admin</span>`
               : isAdmin 
                 ? `<span class="user-role-badge admin">🛡️ Admin</span>`
-                : `<span class="user-role-badge operator">👤 ${user?.presetName || (user?.role === 'USER' ? 'Maintenance User' : (user?.role || 'User'))}</span>`
+                : (isNoAccessUser 
+                  ? `<span class="user-role-badge" style="background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4);">🔒 No Access</span>`
+                  : `<span class="user-role-badge operator">👤 ${user?.presetName || (user?.role === 'USER' ? 'Maintenance User' : (user?.role || 'User'))}</span>`
+                )
             }
           </div>
         </div>

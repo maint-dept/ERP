@@ -1051,8 +1051,14 @@ function renderBulkAssignmentTab() {
             Step 3: Select Privileges to Apply
           </div>
 
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <span style="font-size: 11.5px; color: var(--text-muted);">Quick Template:</span>
+          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <button type="button" id="btn-bulk-select-all" class="btn btn-secondary btn-xs" style="color: #38bdf8; font-weight: 700;">
+              ✓ Select All
+            </button>
+            <button type="button" id="btn-bulk-deselect-all" class="btn btn-secondary btn-xs" style="color: var(--text-muted); font-weight: 700;">
+              ✕ Deselect All
+            </button>
+            <span style="font-size: 11.5px; color: var(--text-muted); margin-left: 4px;">Quick Template:</span>
             <select id="uam-bulk-template-preset" class="filter-select" style="height: 28px; font-size: 11.5px;">
               <option value="">Select preset template...</option>
               ${presets.map(p => `<option value="${p.id}">${p.icon || '🛡️'} ${p.name}</option>`).join('')}
@@ -1520,9 +1526,14 @@ function renderPresetsTab() {
           </p>
         </div>
 
-        <button id="btn-create-new-preset-action" class="btn btn-primary btn-sm" style="font-weight: 700; background: linear-gradient(135deg, #0284c7, #0369a1); font-size: 12px;">
-          ➕ Create New Preset
-        </button>
+        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+          <button id="btn-reset-factory-presets" class="btn btn-secondary btn-sm" style="font-size: 11.5px; color: #fbbf24; font-weight: 700;">
+            🔄 Reset to Factory Presets
+          </button>
+          <button id="btn-create-new-preset-action" class="btn btn-primary btn-sm" style="font-weight: 700; background: linear-gradient(135deg, #0284c7, #0369a1); font-size: 12px;">
+            ➕ Create New Preset
+          </button>
+        </div>
       </div>
 
       <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 14px;">
@@ -1540,11 +1551,16 @@ function renderPresetsTab() {
               <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 6px; line-height: 1.4;">${p.description}</div>
             </div>
 
-            <div style="border-top: 1px solid var(--border-color); padding-top: 10px; display: flex; justify-content: space-between; align-items: center;">
+            <div style="border-top: 1px solid var(--border-color); padding-top: 10px; display: flex; justify-content: space-between; align-items: center; gap: 6px; flex-wrap: wrap;">
               <span style="font-size: 11px; color: var(--text-muted);">Assigned Users: <strong style="color: #fff;">${p.assignedUsersCount || 0}</strong></span>
-              <button class="btn btn-secondary btn-xs btn-edit-preset-item" data-id="${p.id}" style="font-size: 11px; color: #38bdf8;">
-                Configure &rarr;
-              </button>
+              <div style="display: flex; gap: 6px;">
+                <button class="btn btn-secondary btn-xs btn-assign-preset-users" data-id="${p.id}" style="font-size: 11px; color: #a78bfa; font-weight: 600;">
+                  👥 Assign Users
+                </button>
+                <button class="btn btn-secondary btn-xs btn-edit-preset-item" data-id="${p.id}" style="font-size: 11px; color: #38bdf8; font-weight: 700;">
+                  Configure &rarr;
+                </button>
+              </div>
             </div>
           </div>
         `).join('')}
@@ -2030,6 +2046,7 @@ function renderActiveModalHtml() {
                 <div class="form-group" style="margin: 0;">
                   <label class="form-label" style="font-size: 12px; font-weight: 700; color: #fff;">Permission Preset</label>
                   <select id="sel-add-user-preset" class="filter-select" style="height: 36px; font-size: 12px; border-radius: 6px;">
+                    <option value="" ${!valPresetId ? 'selected' : ''}>🔒 No Access (Default Zero Permissions)</option>
                     ${presets.map(p => `
                       <option value="${p.id}" ${p.id === valPresetId ? 'selected' : ''}>
                         ${p.icon || '🛡️'} ${p.name}
@@ -2048,6 +2065,298 @@ function renderActiveModalHtml() {
               </div>
 
             </form>
+          </div>
+
+        </div>
+      </div>
+    `;
+  }
+
+  // 6. Create / Configure Permission Preset Modal
+  if (activeModalType === 'CREATE_EDIT_PRESET' && editingPreset) {
+    const isEdit = Boolean(editingPreset.id);
+    const p = editingPreset;
+    const isSystem = Boolean(p.isSystem);
+    const presetPerms = p.permissions || {};
+    const availableIcons = ['🛡️', '👑', '💼', '👷', '🔧', '👁️', '🔬', '⚡', '🗄️', '📊', '📋', '👥', '⚙️', '📦'];
+
+    return `
+      <div class="modal-overlay active" id="modal-uam-overlay">
+        <div class="modal-card" style="max-width: 900px; width: 95%; max-height: 92vh; display: flex; flex-direction: column; padding: 22px;">
+          
+          <!-- Modal Header -->
+          <div class="modal-header" style="border-bottom: 1px solid var(--border-color); padding-bottom: 12px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span style="font-size: 26px;">${p.icon || '🛡️'}</span>
+              <div>
+                <h3 style="margin: 0; font-size: 16px; font-weight: 800; color: #fff;">
+                  ${isEdit ? `Configure Permission Preset: ${p.name}` : 'Create New Permission Preset'}
+                </h3>
+                <p style="margin: 2px 0 0 0; font-size: 11.5px; color: var(--text-muted);">
+                  ${isSystem ? 'Built-in System Preset Profile' : 'Custom Enterprise Access Profile'}
+                  ${isEdit ? ` • Assigned Users: ${p.assignedUsersCount || 0}` : ''}
+                </p>
+              </div>
+            </div>
+            <button type="button" class="btn btn-ghost btn-sm btn-close-uam-modal" style="font-size: 18px; border-radius: 8px;">✕</button>
+          </div>
+
+          <!-- Scrollable Modal Body -->
+          <div style="overflow-y: auto; padding: 6px 4px 14px 0; display: flex; flex-direction: column; gap: 14px; flex: 1;">
+            
+            <!-- Metadata Grid -->
+            <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-color); border-radius: 8px; padding: 14px; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+              
+              <div class="form-group" style="margin: 0;">
+                <label class="form-label" style="font-size: 11.5px; font-weight: 700; color: #fff;">Preset Name *</label>
+                <input type="text" id="inp-preset-modal-name" class="form-control" value="${p.name || ''}" placeholder="e.g. Mechanical Supervisor" required style="height: 34px; font-size: 12.5px;" />
+              </div>
+
+              <div class="form-group" style="margin: 0;">
+                <label class="form-label" style="font-size: 11.5px; font-weight: 700; color: #fff;">Code Identifier</label>
+                <input type="text" id="inp-preset-modal-code" class="form-control font-mono" value="${p.code || ''}" placeholder="AUTO-GENERATED" ${isSystem ? 'disabled' : ''} style="height: 34px; font-size: 12px;" />
+              </div>
+
+              <div class="form-group" style="margin: 0;">
+                <label class="form-label" style="font-size: 11.5px; font-weight: 700; color: #fff;">Display Icon</label>
+                <select id="sel-preset-modal-icon" class="filter-select" style="height: 34px; font-size: 14px;">
+                  ${availableIcons.map(ic => `<option value="${ic}" ${ic === (p.icon || '🛡️') ? 'selected' : ''}>${ic} Icon</option>`).join('')}
+                </select>
+              </div>
+
+              <div class="form-group" style="margin: 0;">
+                <label class="form-label" style="font-size: 11.5px; font-weight: 700; color: #fff;">Access Level Tag</label>
+                <input type="text" id="inp-preset-modal-level" class="form-control" value="${p.accessLevel || 'Configured Access'}" placeholder="e.g. Standard Maintenance" style="height: 34px; font-size: 12px;" />
+              </div>
+
+              <div class="form-group" style="margin: 0; grid-column: 1 / -1;">
+                <label class="form-label" style="font-size: 11.5px; font-weight: 700; color: #fff;">Description &amp; Operational Scope</label>
+                <input type="text" id="inp-preset-modal-desc" class="form-control" value="${p.description || ''}" placeholder="Brief overview of permissions granted by this profile..." style="height: 34px; font-size: 12px;" />
+              </div>
+
+            </div>
+
+            <!-- Permissions Matrix Header & Toolbar -->
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">
+              <div>
+                <span style="font-size: 13px; font-weight: 800; color: #38bdf8; text-transform: uppercase; letter-spacing: 0.5px;">
+                  Granular Permissions Matrix
+                </span>
+                <span style="font-size: 11.5px; color: var(--text-muted); margin-left: 6px;">
+                  (7 granular actions across all ERP modules)
+                </span>
+              </div>
+
+              <div style="display: flex; gap: 8px;">
+                <button type="button" id="btn-preset-modal-select-all" class="btn btn-secondary btn-xs" style="color: #38bdf8; font-weight: 700;">
+                  ✓ Select All Permissions
+                </button>
+                <button type="button" id="btn-preset-modal-deselect-all" class="btn btn-secondary btn-xs" style="color: var(--text-muted); font-weight: 700;">
+                  ✕ Deselect All
+                </button>
+              </div>
+            </div>
+
+            <!-- Granular Permissions Table -->
+            <div style="border: 1px solid var(--border-color); border-radius: var(--radius-md); overflow-x: auto; background: #0b1329;">
+              <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+                <thead>
+                  <tr style="background: #0f172a; border-bottom: 2px solid #38bdf8; color: #cbd5e1; text-transform: uppercase; font-size: 11px;">
+                    <th style="padding: 9px 12px; text-align: left; width: 250px;">Module / Feature</th>
+                    <th style="padding: 9px 4px; text-align: center; width: 62px; color: #34d399;">View</th>
+                    <th style="padding: 9px 4px; text-align: center; width: 62px; color: #38bdf8;">Add</th>
+                    <th style="padding: 9px 4px; text-align: center; width: 62px; color: #fbbf24;">Edit</th>
+                    <th style="padding: 9px 4px; text-align: center; width: 62px; color: #f87171;">Delete</th>
+                    <th style="padding: 9px 4px; text-align: center; width: 62px; color: #c084fc;">Import</th>
+                    <th style="padding: 9px 4px; text-align: center; width: 62px; color: #818cf8;">Export</th>
+                    <th style="padding: 9px 4px; text-align: center; width: 62px; color: #f472b6;">Approve</th>
+                    <th style="padding: 9px 6px; text-align: center; width: 70px;">Quick</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${PERMISSION_CONFIG_MODULES.map(group => `
+                    <tr style="background: rgba(15, 23, 42, 0.95); border-top: 1px solid rgba(56, 189, 248, 0.25); border-bottom: 1px solid rgba(56, 189, 248, 0.25);">
+                      <td colspan="9" style="padding: 7px 12px; font-weight: 800; font-size: 11.5px; color: #38bdf8; letter-spacing: 0.5px;">
+                        ${group.group}
+                      </td>
+                    </tr>
+                    ${group.modules.map(mod => {
+                      const acts = presetPerms[mod.id] || [];
+                      const hasV = acts.includes('VIEW');
+                      const hasA = acts.includes('ADD');
+                      const hasE = acts.includes('EDIT');
+                      const hasD = acts.includes('DELETE');
+                      const hasI = acts.includes('IMPORT');
+                      const hasX = acts.includes('EXPORT');
+                      const hasP = acts.includes('APPROVE');
+
+                      return `
+                        <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.05);" onmouseover="this.style.background='rgba(255,255,255,0.02)'" onmouseout="this.style.background='transparent'">
+                          <td style="padding: 7px 12px; font-weight: 600; color: #f8fafc;">
+                            ${mod.name}
+                          </td>
+                          <td style="text-align: center; padding: 4px;">
+                            <input type="checkbox" class="chk-preset-modal-perm" data-mod="${mod.id}" data-act="VIEW" ${hasV ? 'checked' : ''} style="cursor: pointer; width: 14px; height: 14px; accent-color: #10b981;" />
+                          </td>
+                          <td style="text-align: center; padding: 4px;">
+                            ${mod.actions.includes('ADD') ? `
+                              <input type="checkbox" class="chk-preset-modal-perm" data-mod="${mod.id}" data-act="ADD" ${hasA ? 'checked' : ''} style="cursor: pointer; width: 14px; height: 14px; accent-color: #0284c7;" />
+                            ` : '<span style="color: rgba(255,255,255,0.15); font-size: 11px;">—</span>'}
+                          </td>
+                          <td style="text-align: center; padding: 4px;">
+                            ${mod.actions.includes('EDIT') ? `
+                              <input type="checkbox" class="chk-preset-modal-perm" data-mod="${mod.id}" data-act="EDIT" ${hasE ? 'checked' : ''} style="cursor: pointer; width: 14px; height: 14px; accent-color: #f59e0b;" />
+                            ` : '<span style="color: rgba(255,255,255,0.15); font-size: 11px;">—</span>'}
+                          </td>
+                          <td style="text-align: center; padding: 4px;">
+                            ${mod.actions.includes('DELETE') ? `
+                              <input type="checkbox" class="chk-preset-modal-perm" data-mod="${mod.id}" data-act="DELETE" ${hasD ? 'checked' : ''} style="cursor: pointer; width: 14px; height: 14px; accent-color: #ef4444;" />
+                            ` : '<span style="color: rgba(255,255,255,0.15); font-size: 11px;">—</span>'}
+                          </td>
+                          <td style="text-align: center; padding: 4px;">
+                            ${mod.actions.includes('IMPORT') ? `
+                              <input type="checkbox" class="chk-preset-modal-perm" data-mod="${mod.id}" data-act="IMPORT" ${hasI ? 'checked' : ''} style="cursor: pointer; width: 14px; height: 14px; accent-color: #c084fc;" />
+                            ` : '<span style="color: rgba(255,255,255,0.15); font-size: 11px;">—</span>'}
+                          </td>
+                          <td style="text-align: center; padding: 4px;">
+                            ${mod.actions.includes('EXPORT') ? `
+                              <input type="checkbox" class="chk-preset-modal-perm" data-mod="${mod.id}" data-act="EXPORT" ${hasX ? 'checked' : ''} style="cursor: pointer; width: 14px; height: 14px; accent-color: #818cf8;" />
+                            ` : '<span style="color: rgba(255,255,255,0.15); font-size: 11px;">—</span>'}
+                          </td>
+                          <td style="text-align: center; padding: 4px;">
+                            ${mod.actions.includes('APPROVE') ? `
+                              <input type="checkbox" class="chk-preset-modal-perm" data-mod="${mod.id}" data-act="APPROVE" ${hasP ? 'checked' : ''} style="cursor: pointer; width: 14px; height: 14px; accent-color: #f472b6;" />
+                            ` : '<span style="color: rgba(255,255,255,0.15); font-size: 11px;">—</span>'}
+                          </td>
+                          <td style="text-align: center; padding: 4px;">
+                            <button type="button" class="btn btn-ghost btn-xs btn-preset-modal-toggle-row" data-mod="${mod.id}" style="font-size: 10px; padding: 1px 6px; color: #38bdf8;">
+                              Toggle
+                            </button>
+                          </td>
+                        </tr>
+                      `;
+                    }).join('')}
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Option: Apply to Assigned Users -->
+            ${isEdit ? `
+              <label style="display: flex; align-items: center; gap: 9px; font-size: 12.5px; cursor: pointer; color: #fbbf24; background: rgba(251, 191, 36, 0.08); border: 1px solid rgba(251, 191, 36, 0.25); border-radius: 8px; padding: 10px 14px;">
+                <input type="checkbox" id="chk-preset-apply-to-assigned" ${applyToAssignedUsers ? 'checked' : ''} style="width: 16px; height: 16px; accent-color: #f59e0b; cursor: pointer;" />
+                <span><strong>Cascade Update:</strong> Apply modified permissions immediately to all currently assigned users (${p.assignedUsersCount || 0} account${(p.assignedUsersCount || 0) === 1 ? '' : 's'})</span>
+              </label>
+            ` : ''}
+
+          </div>
+
+          <!-- Modal Footer -->
+          <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); padding-top: 14px; flex-shrink: 0; gap: 10px;">
+            <div>
+              ${isEdit && !isSystem ? `
+                <button type="button" id="btn-preset-modal-delete" class="btn btn-ghost btn-sm" style="color: #ef4444; font-weight: 700; font-size: 12px;">
+                  🗑️ Delete Preset
+                </button>
+              ` : ''}
+            </div>
+
+            <div style="display: flex; gap: 8px;">
+              <button type="button" class="btn btn-secondary btn-sm btn-close-uam-modal" style="font-size: 12px;">Cancel</button>
+              <button type="button" id="btn-preset-modal-save" class="btn btn-primary btn-sm" style="font-weight: 800; background: linear-gradient(135deg, #0284c7, #0369a1); font-size: 12px; padding: 6px 18px;">
+                💾 Save Preset &amp; Permissions
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    `;
+  }
+
+  // 7. Assign Users to Preset Modal
+  if (activeModalType === 'ASSIGN_USERS_TO_PRESET' && targetPreset) {
+    const p = targetPreset;
+    const allUsers = (storage.getTable(TABLE_NAMES.USERS) || []).filter(u => u.status === 'ACTIVE');
+
+    return `
+      <div class="modal-overlay active" id="modal-uam-overlay">
+        <div class="modal-card" style="max-width: 760px; width: 95%; max-height: 90vh; display: flex; flex-direction: column; padding: 22px;">
+          
+          <!-- Header -->
+          <div class="modal-header" style="border-bottom: 1px solid var(--border-color); padding-bottom: 12px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span style="font-size: 26px;">${p.icon || '👥'}</span>
+              <div>
+                <h3 style="margin: 0; font-size: 16px; font-weight: 800; color: #fff;">
+                  Assign Users to Preset: ${p.name}
+                </h3>
+                <p style="margin: 2px 0 0 0; font-size: 11.5px; color: var(--text-muted);">
+                  Select workforce accounts to inherit this access profile and permissions
+                </p>
+              </div>
+            </div>
+            <button type="button" class="btn btn-ghost btn-sm btn-close-uam-modal" style="font-size: 18px; border-radius: 8px;">✕</button>
+          </div>
+
+          <!-- Controls Bar -->
+          <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; padding: 0 0 12px 0; border-bottom: 1px solid var(--border-color); flex-shrink: 0;">
+            <div style="flex: 1; min-width: 200px;">
+              <input type="text" id="inp-assign-preset-search" class="form-control" placeholder="Search by name, card #, or username..." style="height: 32px; font-size: 12px;" />
+            </div>
+            <div style="display: flex; gap: 6px;">
+              <button type="button" id="btn-assign-preset-select-all" class="btn btn-secondary btn-xs" style="color: #38bdf8; font-weight: 700;">
+                Select All
+              </button>
+              <button type="button" id="btn-assign-preset-deselect-all" class="btn btn-secondary btn-xs" style="color: var(--text-muted); font-weight: 700;">
+                Deselect All
+              </button>
+            </div>
+          </div>
+
+          <!-- User Checkbox List -->
+          <div id="assign-preset-user-list" style="overflow-y: auto; padding: 10px 4px 10px 0; display: flex; flex-direction: column; gap: 6px; flex: 1;">
+            ${allUsers.map(u => {
+              const isChecked = selectedUserIdsForPreset.includes(u.id);
+              const cardStr = u.cardNumber || u.employeeId || '—';
+              return `
+                <label class="assign-preset-user-item" data-search="${(u.name + ' ' + cardStr + ' ' + u.username + ' ' + (u.department || '')).toLowerCase()}" style="display: flex; align-items: center; justify-content: space-between; gap: 10px; background: rgba(15, 23, 42, 0.6); border: 1px solid ${isChecked ? '#0284c7' : 'rgba(255,255,255,0.07)'}; border-radius: 6px; padding: 8px 12px; cursor: pointer;">
+                  <div style="display: flex; align-items: center; gap: 10px;">
+                    <input type="checkbox" class="chk-assign-preset-user" data-uid="${u.id}" ${isChecked ? 'checked' : ''} style="cursor: pointer; width: 15px; height: 15px; accent-color: #0284c7;" />
+                    <div>
+                      <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="font-family: var(--font-mono); font-size: 11.5px; color: #38bdf8; font-weight: 700;">#${cardStr}</span>
+                        <strong style="font-size: 12.5px; color: #fff;">${u.name}</strong>
+                        <span style="font-size: 11px; color: #94a3b8; font-family: var(--font-mono);">@${u.username}</span>
+                      </div>
+                      <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">
+                        ${u.designation || 'Staff'} &bull; ${u.department || 'Maintenance'}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <span class="badge ${u.presetId === p.id ? 'badge-active' : 'badge-info'}" style="font-size: 9.5px;">
+                      ${u.presetName || 'No Access'}
+                    </span>
+                  </div>
+                </label>
+              `;
+            }).join('')}
+          </div>
+
+          <!-- Footer -->
+          <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); padding-top: 14px; flex-shrink: 0;">
+            <div style="font-size: 12px; color: var(--text-muted);">
+              Selected: <strong id="assign-preset-selected-count" style="color: #38bdf8;">${selectedUserIdsForPreset.length}</strong> users
+            </div>
+
+            <div style="display: flex; gap: 8px;">
+              <button type="button" class="btn btn-secondary btn-sm btn-close-uam-modal" style="font-size: 12px;">Cancel</button>
+              <button type="button" id="btn-save-preset-user-assignments" class="btn btn-primary btn-sm" style="font-weight: 800; background: linear-gradient(135deg, #0284c7, #0369a1); font-size: 12px; padding: 6px 18px;">
+                💾 Save Assignments
+              </button>
+            </div>
           </div>
 
         </div>
@@ -2559,6 +2868,20 @@ export function initUserManagementEvents() {
     });
   });
 
+  const btnPermCancel = document.getElementById('btn-perm-cancel-changes');
+  if (btnPermCancel) {
+    btnPermCancel.addEventListener('click', () => {
+      if (permissionTargetUserId) {
+        const u = storage.getItem(TABLE_NAMES.USERS, permissionTargetUserId);
+        if (u) {
+          editingPermissions = JSON.parse(JSON.stringify(u.permissions || {}));
+        }
+      }
+      notificationService.info('Permissions matrix changes cancelled.');
+      reRender();
+    });
+  }
+
   const btnPermSave = document.getElementById('btn-perm-save-changes');
   if (btnPermSave) {
     btnPermSave.addEventListener('click', async () => {
@@ -2642,6 +2965,37 @@ export function initUserManagementEvents() {
       reRender();
     });
   });
+
+  const btnBulkSelectAll = document.getElementById('btn-bulk-select-all');
+  if (btnBulkSelectAll) {
+    btnBulkSelectAll.addEventListener('click', () => {
+      PERMISSION_CONFIG_MODULES.flatMap(g => g.modules).forEach(m => {
+        bulkTargetModulePerms[m.id] = [...m.actions];
+      });
+      reRender();
+    });
+  }
+
+  const btnBulkDeselectAll = document.getElementById('btn-bulk-deselect-all');
+  if (btnBulkDeselectAll) {
+    btnBulkDeselectAll.addEventListener('click', () => {
+      bulkTargetModulePerms = {};
+      reRender();
+    });
+  }
+
+  const btnBulkCancel = document.getElementById('btn-cancel-bulk-assign');
+  if (btnBulkCancel) {
+    btnBulkCancel.addEventListener('click', () => {
+      bulkTargetModulePerms = {};
+      activeUserSection = 'ACCOUNTS';
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('al_muslim_user_access_section', 'ACCOUNTS');
+      }
+      notificationService.info('Bulk assignment cancelled.');
+      reRender();
+    });
+  }
 
   const btnExecuteBulk = document.getElementById('btn-execute-bulk-assign');
   if (btnExecuteBulk) {
@@ -3205,18 +3559,281 @@ export function initUserManagementEvents() {
     });
   }
 
-  // 13. Preset Actions
+  // 13. Preset Actions & Modals
+  root.querySelectorAll('.btn-edit-preset-item').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const pid = btn.getAttribute('data-id');
+      const preset = authService.getPresetById ? authService.getPresetById(pid) : null;
+      if (!preset) {
+        notificationService.error('Preset profile not found.');
+        return;
+      }
+      editingPreset = JSON.parse(JSON.stringify(preset));
+      if (!editingPreset.permissions) editingPreset.permissions = {};
+      applyToAssignedUsers = true;
+      activeModalType = 'CREATE_EDIT_PRESET';
+      reRender();
+    });
+  });
+
   const btnCreatePreset = document.getElementById('btn-create-new-preset-action');
   if (btnCreatePreset) {
     btnCreatePreset.addEventListener('click', () => {
-      const name = prompt('Enter a name for the new Permission Preset:');
-      if (name && name.trim()) {
-        authService.createPreset({ name: name.trim() })
-          .then(p => {
-            notificationService.success(`Created preset "${p.name}"`);
-            reRender();
-          })
-          .catch(e => notificationService.error('Preset creation failed: ' + e.message));
+      editingPreset = {
+        id: '',
+        code: '',
+        name: '',
+        description: '',
+        icon: '🛡️',
+        badgeColor: '#0ea5e9',
+        accessLevel: 'Custom Access',
+        permissions: {},
+        isSystem: false,
+        assignedUsersCount: 0
+      };
+      applyToAssignedUsers = false;
+      activeModalType = 'CREATE_EDIT_PRESET';
+      reRender();
+    });
+  }
+
+  const btnResetFactory = document.getElementById('btn-reset-factory-presets');
+  if (btnResetFactory) {
+    btnResetFactory.addEventListener('click', async () => {
+      const confirmReset = confirm('Are you sure you want to restore standard factory presets? Built-in presets will reset to factory defaults.');
+      if (!confirmReset) return;
+      try {
+        await authService.resetToDefaultPresets();
+        notificationService.success('Standard factory presets restored successfully!');
+        reRender();
+      } catch (err) {
+        notificationService.error('Reset failed: ' + err.message);
+      }
+    });
+  }
+
+  root.querySelectorAll('.btn-assign-preset-users').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const pid = btn.getAttribute('data-id');
+      const preset = authService.getPresetById ? authService.getPresetById(pid) : null;
+      if (!preset) {
+        notificationService.error('Preset not found.');
+        return;
+      }
+      targetPreset = preset;
+      const allUsers = storage.getTable(TABLE_NAMES.USERS) || [];
+      selectedUserIdsForPreset = allUsers
+        .filter(u => u.presetId === preset.id || u.presetId === preset.code)
+        .map(u => u.id);
+      activeModalType = 'ASSIGN_USERS_TO_PRESET';
+      reRender();
+    });
+  });
+
+  // Modal: CREATE_EDIT_PRESET Handlers
+  root.querySelectorAll('.chk-preset-modal-perm').forEach(cb => {
+    cb.addEventListener('change', (e) => {
+      if (!editingPreset) return;
+      if (!editingPreset.permissions) editingPreset.permissions = {};
+      const mod = cb.getAttribute('data-mod');
+      const act = cb.getAttribute('data-act');
+      if (!editingPreset.permissions[mod]) editingPreset.permissions[mod] = [];
+      if (e.target.checked) {
+        if (!editingPreset.permissions[mod].includes(act)) {
+          editingPreset.permissions[mod].push(act);
+        }
+      } else {
+        editingPreset.permissions[mod] = editingPreset.permissions[mod].filter(a => a !== act);
+      }
+    });
+  });
+
+  root.querySelectorAll('.btn-preset-modal-toggle-row').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (!editingPreset) return;
+      if (!editingPreset.permissions) editingPreset.permissions = {};
+      const mod = btn.getAttribute('data-mod');
+      const moduleDef = PERMISSION_CONFIG_MODULES.flatMap(g => g.modules).find(m => m.id === mod);
+      if (!moduleDef) return;
+
+      const current = editingPreset.permissions[mod] || [];
+      if (current.length === moduleDef.actions.length) {
+        editingPreset.permissions[mod] = [];
+      } else {
+        editingPreset.permissions[mod] = [...moduleDef.actions];
+      }
+      reRender();
+    });
+  });
+
+  const btnPresetSelectAll = document.getElementById('btn-preset-modal-select-all');
+  if (btnPresetSelectAll) {
+    btnPresetSelectAll.addEventListener('click', () => {
+      if (!editingPreset) return;
+      editingPreset.permissions = {};
+      PERMISSION_CONFIG_MODULES.flatMap(g => g.modules).forEach(m => {
+        editingPreset.permissions[m.id] = [...m.actions];
+      });
+      reRender();
+    });
+  }
+
+  const btnPresetDeselectAll = document.getElementById('btn-preset-modal-deselect-all');
+  if (btnPresetDeselectAll) {
+    btnPresetDeselectAll.addEventListener('click', () => {
+      if (!editingPreset) return;
+      editingPreset.permissions = {};
+      reRender();
+    });
+  }
+
+  const chkApplyAssigned = document.getElementById('chk-preset-apply-to-assigned');
+  if (chkApplyAssigned) {
+    chkApplyAssigned.addEventListener('change', (e) => {
+      applyToAssignedUsers = e.target.checked;
+    });
+  }
+
+  const btnPresetSave = document.getElementById('btn-preset-modal-save');
+  if (btnPresetSave) {
+    btnPresetSave.addEventListener('click', async () => {
+      if (!editingPreset) return;
+      const name = document.getElementById('inp-preset-modal-name')?.value?.trim();
+      const code = document.getElementById('inp-preset-modal-code')?.value?.trim();
+      const icon = document.getElementById('sel-preset-modal-icon')?.value;
+      const accessLevel = document.getElementById('inp-preset-modal-level')?.value?.trim() || 'Configured Access';
+      const description = document.getElementById('inp-preset-modal-desc')?.value?.trim() || '';
+
+      if (!name) {
+        notificationService.error('Preset Name is required.');
+        return;
+      }
+
+      btnPresetSave.disabled = true;
+      btnPresetSave.innerText = 'Saving...';
+
+      try {
+        if (editingPreset.id) {
+          await authService.updatePreset(editingPreset.id, {
+            name,
+            code: code || editingPreset.code,
+            icon,
+            accessLevel,
+            description,
+            permissions: editingPreset.permissions || {}
+          }, applyToAssignedUsers);
+          notificationService.success(`Permission Preset "${name}" updated successfully!`);
+        } else {
+          await authService.createPreset({
+            name,
+            code: code || name.toUpperCase().replace(/\s+/g, '_'),
+            icon,
+            accessLevel,
+            description,
+            permissions: editingPreset.permissions || {}
+          });
+          notificationService.success(`New Permission Preset "${name}" created successfully!`);
+        }
+        activeModalType = null;
+        editingPreset = null;
+        reRender();
+      } catch (err) {
+        notificationService.error('Failed to save preset: ' + err.message);
+        btnPresetSave.disabled = false;
+        btnPresetSave.innerText = '💾 Save Preset & Permissions';
+      }
+    });
+  }
+
+  const btnPresetDelete = document.getElementById('btn-preset-modal-delete');
+  if (btnPresetDelete) {
+    btnPresetDelete.addEventListener('click', async () => {
+      if (!editingPreset || !editingPreset.id) return;
+      const confirmDel = confirm(`Are you sure you want to permanently delete preset "${editingPreset.name}"?`);
+      if (!confirmDel) return;
+      try {
+        await authService.deletePreset(editingPreset.id);
+        notificationService.success(`Preset "${editingPreset.name}" deleted.`);
+        activeModalType = null;
+        editingPreset = null;
+        reRender();
+      } catch (err) {
+        notificationService.error('Failed to delete preset: ' + err.message);
+      }
+    });
+  }
+
+  // Modal: ASSIGN_USERS_TO_PRESET Handlers
+  const inpAssignSearch = document.getElementById('inp-assign-preset-search');
+  if (inpAssignSearch) {
+    inpAssignSearch.addEventListener('input', (e) => {
+      const q = e.target.value.toLowerCase().trim();
+      root.querySelectorAll('.assign-preset-user-item').forEach(item => {
+        const text = item.getAttribute('data-search') || '';
+        item.style.display = (!q || text.includes(q)) ? 'flex' : 'none';
+      });
+    });
+  }
+
+  root.querySelectorAll('.chk-assign-preset-user').forEach(cb => {
+    cb.addEventListener('change', (e) => {
+      const uid = cb.getAttribute('data-uid');
+      if (e.target.checked) {
+        if (!selectedUserIdsForPreset.includes(uid)) selectedUserIdsForPreset.push(uid);
+      } else {
+        selectedUserIdsForPreset = selectedUserIdsForPreset.filter(id => id !== uid);
+      }
+      const countEl = document.getElementById('assign-preset-selected-count');
+      if (countEl) countEl.innerText = selectedUserIdsForPreset.length;
+    });
+  });
+
+  const btnAssignSelectAll = document.getElementById('btn-assign-preset-select-all');
+  if (btnAssignSelectAll) {
+    btnAssignSelectAll.addEventListener('click', () => {
+      root.querySelectorAll('.assign-preset-user-item').forEach(item => {
+        if (item.style.display !== 'none') {
+          const cb = item.querySelector('.chk-assign-preset-user');
+          if (cb) {
+            cb.checked = true;
+            const uid = cb.getAttribute('data-uid');
+            if (!selectedUserIdsForPreset.includes(uid)) selectedUserIdsForPreset.push(uid);
+          }
+        }
+      });
+      const countEl = document.getElementById('assign-preset-selected-count');
+      if (countEl) countEl.innerText = selectedUserIdsForPreset.length;
+    });
+  }
+
+  const btnAssignDeselectAll = document.getElementById('btn-assign-preset-deselect-all');
+  if (btnAssignDeselectAll) {
+    btnAssignDeselectAll.addEventListener('click', () => {
+      root.querySelectorAll('.chk-assign-preset-user').forEach(cb => {
+        cb.checked = false;
+      });
+      selectedUserIdsForPreset = [];
+      const countEl = document.getElementById('assign-preset-selected-count');
+      if (countEl) countEl.innerText = 0;
+    });
+  }
+
+  const btnSaveAssignments = document.getElementById('btn-save-preset-user-assignments');
+  if (btnSaveAssignments) {
+    btnSaveAssignments.addEventListener('click', async () => {
+      if (!targetPreset) return;
+      btnSaveAssignments.disabled = true;
+      btnSaveAssignments.innerText = 'Applying...';
+      try {
+        await authService.assignPresetToUsers(selectedUserIdsForPreset, targetPreset.id, true);
+        notificationService.success(`Assigned preset "${targetPreset.name}" to ${selectedUserIdsForPreset.length} users!`);
+        activeModalType = null;
+        targetPreset = null;
+        reRender();
+      } catch (err) {
+        notificationService.error('Failed to assign preset: ' + err.message);
+        btnSaveAssignments.disabled = false;
+        btnSaveAssignments.innerText = '💾 Save Assignments';
       }
     });
   }
