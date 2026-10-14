@@ -26,6 +26,10 @@ import { state } from '../state.js';
 // 'ACCOUNTS' | 'PERMISSIONS' | 'BULK_ASSIGN' | 'PASSWORD_MGMT' | 'EXPORT_ACCOUNTS' | 'ACTIVITY_LOGS' | 'PRESETS'
 let activeUserSection = (typeof localStorage !== 'undefined' && localStorage.getItem('al_muslim_user_access_section')) || 'ACCOUNTS';
 
+function escapeHtml(str) {
+  return String(str || '').replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
+}
+
 // Filtering & Search State
 let searchQuery = '';
 let cardSearchQuery = '';
@@ -1045,11 +1049,56 @@ function renderLocationScopeSection(scope, pfx = 'perm-scope', isBulk = false) {
   `;
 }
 
-function renderIndividualPermissionsTab() {
-  const users = storage.getTable(TABLE_NAMES.USERS) || [];
-  const selectedUser = permissionTargetUserId ? users.find(u => u.id === permissionTargetUserId) : (users[0] || null);
+export function selectUserForPermissions(userId, clearSearch = false) {
+  if (!userId) {
+    permissionTargetUserId = null;
+    editingPermissions = {};
+    editingScope = { allGroups: false, groupIds: [], allUnits: false, unitIds: [], allFloors: false, floorIds: [], allLines: false, lineIds: [] };
+    if (clearSearch) permCardSearchQuery = '';
+    return;
+  }
 
-  if (!selectedUser) {
+  const users = (typeof storage !== 'undefined' && storage.getTable) ? (storage.getTable(TABLE_NAMES.USERS) || []) : [];
+  const target = users.find(u => u.id === userId);
+  if (!target) return;
+
+  permissionTargetUserId = target.id;
+  editingPermissions = JSON.parse(JSON.stringify(target.permissions || {}));
+
+  if (target.assignedScope) {
+    editingScope = {
+      allGroups: Boolean(target.assignedScope.allGroups),
+      groupIds: Array.isArray(target.assignedScope.groupIds) ? [...target.assignedScope.groupIds] : [],
+      allUnits: Boolean(target.assignedScope.allUnits),
+      unitIds: Array.isArray(target.assignedScope.unitIds) ? [...target.assignedScope.unitIds] : [],
+      allFloors: Boolean(target.assignedScope.allFloors),
+      floorIds: Array.isArray(target.assignedScope.floorIds) ? [...target.assignedScope.floorIds] : [],
+      allLines: Boolean(target.assignedScope.allLines),
+      lineIds: Array.isArray(target.assignedScope.lineIds) ? [...target.assignedScope.lineIds] : []
+    };
+  } else {
+    const isSuper = target.role === 'SUPER_ADMIN';
+    editingScope = {
+      allGroups: isSuper,
+      groupIds: target.groupId ? [target.groupId] : [],
+      allUnits: isSuper,
+      unitIds: target.unitId ? [target.unitId] : [],
+      allFloors: isSuper,
+      floorIds: target.floorId ? [target.floorId] : [],
+      allLines: isSuper,
+      lineIds: target.lineId ? [target.lineId] : []
+    };
+  }
+
+  if (clearSearch) {
+    permCardSearchQuery = '';
+  }
+}
+
+function renderIndividualPermissionsTab() {
+  const users = (typeof storage !== 'undefined' && storage.getTable) ? (storage.getTable(TABLE_NAMES.USERS) || []) : [];
+
+  if (users.length === 0) {
     return `
       <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 36px; text-align: center; color: var(--text-muted);">
         No user accounts available. Please add users or auto-create accounts from Manpower records.
@@ -1057,148 +1106,156 @@ function renderIndividualPermissionsTab() {
     `;
   }
 
-  // Load editing permissions & location scope for selected user if not initialized
-  if (!permissionTargetUserId || permissionTargetUserId !== selectedUser.id) {
-    permissionTargetUserId = selectedUser.id;
-    editingPermissions = JSON.parse(JSON.stringify(selectedUser.permissions || {}));
-    if (selectedUser.assignedScope) {
-      editingScope = {
-        allGroups: Boolean(selectedUser.assignedScope.allGroups),
-        groupIds: Array.isArray(selectedUser.assignedScope.groupIds) ? [...selectedUser.assignedScope.groupIds] : (selectedUser.groupId ? [selectedUser.groupId] : []),
-        allUnits: Boolean(selectedUser.assignedScope.allUnits),
-        unitIds: Array.isArray(selectedUser.assignedScope.unitIds) ? [...selectedUser.assignedScope.unitIds] : (selectedUser.unitId ? [selectedUser.unitId] : []),
-        allFloors: Boolean(selectedUser.assignedScope.allFloors),
-        floorIds: Array.isArray(selectedUser.assignedScope.floorIds) ? [...selectedUser.assignedScope.floorIds] : (selectedUser.floorId ? [selectedUser.floorId] : []),
-        allLines: Boolean(selectedUser.assignedScope.allLines),
-        lineIds: Array.isArray(selectedUser.assignedScope.lineIds) ? [...selectedUser.assignedScope.lineIds] : (selectedUser.lineId ? [selectedUser.lineId] : [])
-      };
-    } else {
-      const isSuper = selectedUser.role === 'SUPER_ADMIN';
-      editingScope = {
-        allGroups: isSuper,
-        groupIds: selectedUser.groupId ? [selectedUser.groupId] : [],
-        allUnits: isSuper,
-        unitIds: selectedUser.unitId ? [selectedUser.unitId] : [],
-        allFloors: isSuper,
-        floorIds: selectedUser.floorId ? [selectedUser.floorId] : [],
-        allLines: isSuper,
-        lineIds: selectedUser.lineId ? [selectedUser.lineId] : []
-      };
-    }
+  // Strictly follow explicitly selected user. NEVER auto-default to users[0]!
+  const selectedUser = permissionTargetUserId ? (users.find(u => u.id === permissionTargetUserId) || null) : null;
+
+  // If a user was selected, ensure permissions & scope are loaded
+  if (selectedUser && (!editingPermissions || Object.keys(editingPermissions).length === 0 && !editingScope.allGroups && !editingScope.allUnits && (!editingScope.unitIds || editingScope.unitIds.length === 0))) {
+    selectUserForPermissions(selectedUser.id);
   }
 
-  // Filter users for switcher if permCardSearchQuery is active
-  let filteredPermUsers = users;
-  if (permCardSearchQuery) {
-    const pq = permCardSearchQuery.trim().toLowerCase();
-    filteredPermUsers = users.filter(u => {
-      const matchCard = userAccessService.matchesCardNumber ? userAccessService.matchesCardNumber(u.cardNumber || u.employeeId, permCardSearchQuery) : false;
-      const matchName = (u.name || '').toLowerCase().includes(pq);
-      const matchUser = (u.username || '').toLowerCase().includes(pq);
-      const matchDesig = (u.designation || '').toLowerCase().includes(pq);
-      return matchCard || matchName || matchUser || matchDesig;
-    });
-  }
-
-  const currentUserIndex = users.findIndex(u => u.id === selectedUser.id);
-  const prevUser = currentUserIndex > 0 ? users[currentUserIndex - 1] : null;
-  const nextUser = currentUserIndex >= 0 && currentUserIndex < users.length - 1 ? users[currentUserIndex + 1] : null;
+  const currentUserIndex = selectedUser ? users.findIndex(u => u.id === selectedUser.id) : -1;
+  const prevUser = (selectedUser && currentUserIndex > 0) ? users[currentUserIndex - 1] : null;
+  const nextUser = (selectedUser && currentUserIndex >= 0 && currentUserIndex < users.length - 1) ? users[currentUserIndex + 1] : null;
 
   const userPerms = editingPermissions || {};
   const presets = authService.getAllPresets ? authService.getAllPresets() : [];
 
-  return `
-    <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 18px 20px; display: flex; flex-direction: column; gap: 14px; box-shadow: var(--shadow-sm);">
+  // Top Search & Account Switcher Bar (Rendered in both empty and active state)
+  const renderTopControls = () => `
+    <div style="background: rgba(15, 23, 42, 0.75); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 14px 16px; display: flex; flex-direction: column; gap: 12px; box-shadow: inset 0 1px 3px rgba(0,0,0,0.3);">
       
-      <!-- Top Target User Bar & Interactive Card Search Option -->
-      <div style="background: rgba(15, 23, 42, 0.75); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 14px 16px; display: flex; flex-direction: column; gap: 12px; box-shadow: inset 0 1px 3px rgba(0,0,0,0.3);">
-        
-        <!-- Row 1: Active User Details & Quick Navigation -->
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+      <!-- Row 1: Active User Details & Quick Navigation (Visible only when an account is selected) -->
+      ${selectedUser ? `
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding-bottom: 12px;">
           <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">
             <div style="width: 44px; height: 44px; border-radius: 10px; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.35); display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;">
               🛡️
             </div>
             <div style="min-width: 0;">
               <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                <span style="font-size: 16px; font-weight: 800; color: #fff;">${selectedUser.name}</span>
+                <span style="font-size: 16px; font-weight: 800; color: #fff;">${escapeHtml(selectedUser.name)}</span>
                 <button type="button" id="btn-perm-copy-card" class="badge" data-card="${selectedUser.cardNumber || selectedUser.employeeId || ''}" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); font-family: var(--font-mono); font-weight: 800; font-size: 12px; padding: 2px 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;" title="Click to copy Card Number to clipboard">
                   <span>🪪</span> <span>#${selectedUser.cardNumber || selectedUser.employeeId || '—'}</span> <span>📋</span>
                 </button>
                 <span class="badge ${selectedUser.status === 'ACTIVE' ? 'badge-active' : 'badge-maint'}" style="font-size: 10.5px;">${selectedUser.status}</span>
+                <span style="background: rgba(56, 189, 248, 0.12); color: #38bdf8; font-size: 10.5px; font-weight: 700; padding: 2px 7px; border-radius: 6px;">
+                  ${selectedUser.role}
+                </span>
                 <span style="background: rgba(255, 255, 255, 0.08); color: #94a3b8; font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 6px;">
                   User ${currentUserIndex >= 0 ? currentUserIndex + 1 : 1} of ${users.length}
                 </span>
               </div>
               <div style="font-size: 12px; color: var(--text-secondary); margin-top: 3px;">
-                Username: <strong style="color: #cbd5e1;">@${selectedUser.username}</strong> • ${selectedUser.designation} (${selectedUser.department}) • 📍 ${selectedUser.floorName || 'General Floor'}
+                Username: <strong style="color: #cbd5e1;">@${selectedUser.username}</strong> • ${escapeHtml(selectedUser.designation || 'User')} (${escapeHtml(selectedUser.department || '—')}) • 📍 ${escapeHtml(selectedUser.unitName || 'Pacific Blue')} • ${escapeHtml(selectedUser.floorName || 'General Floor')}
               </div>
             </div>
           </div>
 
-          <!-- Quick Prev / Next Card Navigation Buttons -->
-          <div style="display: flex; align-items: center; gap: 6px;">
-            <button type="button" id="btn-perm-prev-user" class="btn btn-secondary btn-xs" ${!prevUser ? 'disabled' : ''} style="padding: 5px 12px; font-size: 11.5px; font-weight: 700; border-radius: 6px;" title="Previous Account (Card #${prevUser ? (prevUser.cardNumber || prevUser.employeeId) : '—'})">
+          <!-- Quick Prev / Next Card Navigation & Deselect User Button -->
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <button type="button" id="btn-perm-prev-user" class="btn btn-secondary btn-xs" ${!prevUser ? 'disabled' : ''} style="padding: 5px 12px; font-size: 11.5px; font-weight: 700; border-radius: 6px;" title="Previous Account">
               ◀ Prev Card
             </button>
-            <button type="button" id="btn-perm-next-user" class="btn btn-secondary btn-xs" ${!nextUser ? 'disabled' : ''} style="padding: 5px 12px; font-size: 11.5px; font-weight: 700; border-radius: 6px;" title="Next Account (Card #${nextUser ? (nextUser.cardNumber || nextUser.employeeId) : '—'})">
+            <button type="button" id="btn-perm-next-user" class="btn btn-secondary btn-xs" ${!nextUser ? 'disabled' : ''} style="padding: 5px 12px; font-size: 11.5px; font-weight: 700; border-radius: 6px;" title="Next Account">
               Next Card ▶
+            </button>
+            <button type="button" class="btn btn-ghost btn-xs btn-perm-deselect-user" style="color: #f87171; border: 1px solid rgba(248, 113, 113, 0.3); font-weight: 700; padding: 5px 10px; font-size: 11.5px; border-radius: 6px;" title="Deselect user and return to account selector">
+              ✕ Deselect User
             </button>
           </div>
         </div>
+      ` : ''}
 
-        <!-- Row 2: Dedicated Card Search Option & Filtered Switcher -->
-        <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; background: rgba(9, 14, 26, 0.9); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 8px; padding: 8px 12px;">
-          
-          <!-- Card Search Box -->
-          <div style="flex: 1 1 360px; display: flex; align-items: center; gap: 8px;">
+      <!-- Row 2: Smart Interactive Live Search & Synchronized Account Selector -->
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap;">
+        
+        <!-- Smart Search Container with Live Floating Dropdown -->
+        <div style="flex: 1 1 420px; position: relative;">
+          <div style="display: flex; align-items: center; gap: 8px;">
             <span style="font-size: 12px; font-weight: 800; color: #38bdf8; text-transform: uppercase; white-space: nowrap; display: flex; align-items: center; gap: 5px;">
-              🪪 Card Search:
+              ⚡ Smart Search:
             </span>
             <div style="position: relative; flex: 1;">
               <input 
                 type="text" 
-                id="inp-perm-card-search" 
+                id="inp-perm-smart-search" 
                 class="form-control font-mono" 
-                placeholder="Enter Card # (e.g. 05234, 128426) or Name..." 
-                value="${permCardSearchQuery}"
-                list="uam-perm-card-datalist"
-                style="height: 33px; font-size: 12px; font-weight: 700; padding-left: 28px; border-radius: 6px; border: 1.5px solid rgba(56, 189, 248, 0.45); background: rgba(15, 23, 42, 0.95); width: 100%; box-sizing: border-box;"
+                placeholder="Type Card # (e.g. 128426), Name, @username..." 
+                value="${permCardSearchQuery || ''}"
+                autocomplete="off"
+                style="height: 36px; font-size: 12.5px; font-weight: 600; padding-left: 32px; padding-right: 32px; border-radius: 8px; border: 1.5px solid rgba(56, 189, 248, 0.45); background: rgba(9, 14, 26, 0.95); width: 100%; box-sizing: border-box; color: #fff;"
               />
-              <span style="position: absolute; left: 8px; top: 7px; font-size: 12px; color: #38bdf8;">🔍</span>
-              ${permCardSearchQuery ? `
-                <button id="btn-clear-perm-card-search" type="button" style="position: absolute; right: 6px; top: 5px; background: transparent; border: none; color: #38bdf8; cursor: pointer; font-size: 12px;" title="Clear Card Search">✕</button>
-              ` : ''}
-              <datalist id="uam-perm-card-datalist">
-                ${users.map(u => `
-                  <option value="${u.cardNumber || u.employeeId || ''}">${u.name} (@${u.username}) - ${u.designation}</option>
-                `).join('')}
-              </datalist>
+              <span style="position: absolute; left: 10px; top: 9px; font-size: 14px; color: #38bdf8; pointer-events: none;">🔍</span>
+              <button id="btn-clear-perm-smart-search" type="button" style="display: ${permCardSearchQuery ? 'block' : 'none'}; position: absolute; right: 10px; top: 8px; background: transparent; border: none; color: #94a3b8; cursor: pointer; font-size: 14px;" title="Clear Search">✕</button>
             </div>
-            <button type="button" id="btn-perm-card-search-go" class="btn btn-primary btn-xs" style="padding: 6px 14px; font-weight: 800; background: linear-gradient(135deg, #0284c7, #0369a1); border-radius: 6px; font-size: 11.5px; white-space: nowrap;">
-              Jump to Card
-            </button>
           </div>
 
-          <!-- Synchronized Switcher Dropdown (Filtered by Card Search if present) -->
-          <div style="display: flex; align-items: center; gap: 8px; flex: 1 1 280px; justify-content: flex-end;">
-            <span style="font-size: 11.5px; color: var(--text-muted); white-space: nowrap;">Or Select Account:</span>
-            <select id="uam-perm-user-switcher" class="filter-select" style="height: 33px; font-size: 12px; width: 100%; max-width: 290px;">
-              ${filteredPermUsers.length === 0 ? `
-                <option value="">No matching accounts</option>
-              ` : filteredPermUsers.map(u => `
-                <option value="${u.id}" ${u.id === selectedUser.id ? 'selected' : ''}>
-                  #${u.cardNumber || u.employeeId || '—'} - ${u.name}
-                </option>
-              `).join('')}
-            </select>
+          <!-- Live Floating Autocomplete Dropdown Overlay -->
+          <div id="perm-smart-search-dropdown" style="display: none; position: absolute; left: 110px; right: 0; top: 42px; max-height: 380px; overflow-y: auto; background: #0b1329; border: 1.5px solid #0284c7; border-radius: 8px; box-shadow: 0 12px 30px rgba(0,0,0,0.85); z-index: 1000; padding: 6px 0;">
           </div>
+        </div>
 
+        <!-- Synchronized Switcher Dropdown ("Or Select Account") -->
+        <div style="display: flex; align-items: center; gap: 8px; flex: 1 1 300px; justify-content: flex-end;">
+          <span style="font-size: 11.5px; color: var(--text-muted); white-space: nowrap;">Or Select Account:</span>
+          <select id="uam-perm-user-switcher" class="filter-select" style="height: 36px; font-size: 12px; width: 100%; max-width: 320px; border-radius: 8px;">
+            <option value="" ${!selectedUser ? 'selected' : ''}>-- Choose an Account (${users.length} Available) --</option>
+            ${users.map(u => `
+              <option value="${u.id}" ${selectedUser && u.id === selectedUser.id ? 'selected' : ''}>
+                #${u.cardNumber || u.employeeId || '—'} - ${escapeHtml(u.name)} (${escapeHtml(u.designation || u.department || 'User')})
+              </option>
+            `).join('')}
+          </select>
         </div>
 
       </div>
 
-      <!-- Action Toolbar (Select All, Deselect All, Load Preset, Reset Default, Quick Module Filter, Save) -->
+    </div>
+  `;
+
+  // If NO User is Selected: Show Sleek Guidance & Quick Account Picker
+  if (!selectedUser) {
+    return `
+      <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 18px 20px; display: flex; flex-direction: column; gap: 14px; box-shadow: var(--shadow-sm);">
+        ${renderTopControls()}
+
+        <div style="background: rgba(15, 23, 42, 0.65); border: 2px dashed rgba(56, 189, 248, 0.35); border-radius: var(--radius-lg); padding: 50px 24px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 16px; margin-top: 4px;">
+          <div style="width: 64px; height: 64px; border-radius: 50%; background: linear-gradient(135deg, rgba(2, 132, 199, 0.2), rgba(14, 165, 233, 0.08)); border: 1.5px solid rgba(56, 189, 248, 0.4); display: flex; align-items: center; justify-content: center; font-size: 30px;">
+            🛡️
+          </div>
+          <div style="max-width: 520px;">
+            <h3 style="font-size: 18px; font-weight: 800; color: #fff; margin: 0 0 6px 0;">
+              No User Account Selected
+            </h3>
+            <p style="font-size: 13px; color: var(--text-secondary); margin: 0; line-height: 1.5;">
+              Use the <strong>Smart Search</strong> above (type Card #, Name, or Username) or pick an account from the dropdown list to view and configure their individual permissions and location access restrictions.
+            </p>
+          </div>
+
+          <!-- Quick Account Suggestions -->
+          <div style="margin-top: 8px; display: flex; flex-direction: column; align-items: center; gap: 8px;">
+            <span style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Quick Select Accounts:</span>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; max-width: 720px;">
+              ${users.slice(0, 6).map(u => `
+                <button type="button" class="btn btn-secondary btn-xs btn-perm-quick-pick" data-id="${u.id}" style="font-size: 11px; padding: 5px 10px; border-radius: 6px; display: inline-flex; align-items: center; gap: 5px; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(56, 189, 248, 0.3); cursor: pointer;">
+                  <span style="color: #38bdf8; font-family: var(--font-mono); font-weight: 800;">#${u.cardNumber || u.employeeId || '—'}</span>
+                  <span style="color: #fff; font-weight: 600;">${escapeHtml(u.name)}</span>
+                </button>
+              `).join('')}
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  // When a user IS selected: Render full editor
+  return `
+    <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 18px 20px; display: flex; flex-direction: column; gap: 14px; box-shadow: var(--shadow-sm);">
+      ${renderTopControls()}
+
+      <!-- Action Toolbar (Select All, Deselect All, Load Preset, Reset Default, Quick Module Filter, Cancel, Save) -->
       <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; background: rgba(15, 23, 42, 0.6); padding: 8px 14px; border-radius: 8px; border: 1px solid var(--border-color);">
         <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
           <button id="btn-perm-select-all" class="btn btn-secondary btn-xs" style="color: #38bdf8; font-weight: 700;">
@@ -1239,8 +1296,11 @@ function renderIndividualPermissionsTab() {
             ` : ''}
           </div>
 
-          <button id="btn-perm-cancel-changes" class="btn btn-secondary btn-sm" style="font-size: 12px;">
+          <button id="btn-perm-cancel-changes" class="btn btn-secondary btn-sm" style="font-size: 12px;" title="Revert uncommitted changes to saved values">
             Cancel
+          </button>
+          <button type="button" class="btn btn-ghost btn-sm btn-perm-deselect-user" style="color: #f87171; border: 1px solid rgba(248, 113, 113, 0.3); font-size: 12px;" title="Deselect this user and return to account selector">
+            ✕ Deselect
           </button>
           <button id="btn-perm-save-changes" class="btn btn-primary btn-sm" style="font-weight: 800; background: linear-gradient(135deg, #0284c7, #0369a1); box-shadow: 0 2px 10px rgba(2, 132, 199, 0.4); font-size: 12px; padding: 6px 16px;">
             💾 Save Permissions &amp; Location Scope
@@ -3271,8 +3331,11 @@ export function initUserManagementEvents() {
   root.querySelectorAll('.btn-row-manage-perms').forEach(btn => {
     btn.addEventListener('click', () => {
       const id = btn.getAttribute('data-id');
-      permissionTargetUserId = id;
+      selectUserForPermissions(id, true);
       activeUserSection = 'PERMISSIONS';
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('al_muslim_user_access_section', 'PERMISSIONS');
+      }
       reRender();
     });
   });
@@ -3502,14 +3565,12 @@ export function initUserManagementEvents() {
   const btnPermPrevUser = document.getElementById('btn-perm-prev-user');
   if (btnPermPrevUser) {
     btnPermPrevUser.addEventListener('click', () => {
-      const users = storage.getTable(TABLE_NAMES.USERS) || [];
+      const users = (typeof storage !== 'undefined' && storage.getTable) ? (storage.getTable(TABLE_NAMES.USERS) || []) : [];
       const cIdx = users.findIndex(u => u.id === permissionTargetUserId);
       if (cIdx > 0) {
-        permissionTargetUserId = users[cIdx - 1].id;
-        const target = users[cIdx - 1];
-        editingPermissions = JSON.parse(JSON.stringify(target.permissions || {}));
+        selectUserForPermissions(users[cIdx - 1].id, true);
         reRender();
-        notificationService.info(`Switched to Card #${target.cardNumber || target.employeeId} (${target.name})`);
+        notificationService.info(`Switched to Card #${users[cIdx - 1].cardNumber || users[cIdx - 1].employeeId} (${users[cIdx - 1].name})`);
       }
     });
   }
@@ -3517,85 +3578,210 @@ export function initUserManagementEvents() {
   const btnPermNextUser = document.getElementById('btn-perm-next-user');
   if (btnPermNextUser) {
     btnPermNextUser.addEventListener('click', () => {
-      const users = storage.getTable(TABLE_NAMES.USERS) || [];
+      const users = (typeof storage !== 'undefined' && storage.getTable) ? (storage.getTable(TABLE_NAMES.USERS) || []) : [];
       const cIdx = users.findIndex(u => u.id === permissionTargetUserId);
       if (cIdx >= 0 && cIdx < users.length - 1) {
-        permissionTargetUserId = users[cIdx + 1].id;
-        const target = users[cIdx + 1];
-        editingPermissions = JSON.parse(JSON.stringify(target.permissions || {}));
+        selectUserForPermissions(users[cIdx + 1].id, true);
         reRender();
-        notificationService.info(`Switched to Card #${target.cardNumber || target.employeeId} (${target.name})`);
+        notificationService.info(`Switched to Card #${users[cIdx + 1].cardNumber || users[cIdx + 1].employeeId} (${users[cIdx + 1].name})`);
       }
     });
   }
 
-  // Card Search and Jump to Card in Tab 2
-  const permCardSearchInp = document.getElementById('inp-perm-card-search');
-  const doJumpToCard = (rawQuery) => {
-    const q = (rawQuery || '').trim();
-    if (!q) {
-      notificationService.info('Please enter a Card Number or Employee Name to search.');
-      return;
-    }
-    const users = storage.getTable(TABLE_NAMES.USERS) || [];
-    const matched = users.find(u => userAccessService.matchesCardNumber && userAccessService.matchesCardNumber(u.cardNumber || u.employeeId, q)) ||
-      users.find(u => (u.cardNumber || '').toLowerCase().includes(q.toLowerCase())) ||
-      users.find(u => (u.name || '').toLowerCase().includes(q.toLowerCase())) ||
-      users.find(u => (u.username || '').toLowerCase().includes(q.toLowerCase()));
-
-    if (matched) {
-      permissionTargetUserId = matched.id;
-      editingPermissions = JSON.parse(JSON.stringify(matched.permissions || {}));
-      permCardSearchQuery = q;
-      reRender();
-      notificationService.success(`Switched to ${matched.name} (Card #${matched.cardNumber || matched.employeeId})`);
-    } else {
-      notificationService.warning(`No user account found matching Card #${q}`);
-    }
-  };
-
-  if (permCardSearchInp) {
-    let debounceTimer;
-    permCardSearchInp.addEventListener('input', (e) => {
-      clearTimeout(debounceTimer);
-      const val = e.target.value;
-      debounceTimer = setTimeout(() => {
-        permCardSearchQuery = val;
+  // Quick Pick Account Chips in Tab 2 Empty State
+  root.querySelectorAll('.btn-perm-quick-pick').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.getAttribute('data-id');
+      if (id) {
+        selectUserForPermissions(id, true);
         reRender();
-      }, 350);
+        const u = storage.getItem(TABLE_NAMES.USERS, id);
+        if (u) {
+          notificationService.success(`Loaded permissions & location scope for ${u.name} (Card #${u.cardNumber || u.employeeId})`);
+        }
+      }
+    });
+  });
+
+  // Deselect User Buttons (Header Banner and Toolbar)
+  root.querySelectorAll('.btn-perm-deselect-user').forEach(btn => {
+    btn.addEventListener('click', () => {
+      selectUserForPermissions(null, true);
+      notificationService.info('Account deselected. Please search or select an account.');
+      reRender();
+    });
+  });
+
+  // Smart Autocomplete Live Search for Tab 2
+  const smartSearchInp = document.getElementById('inp-perm-smart-search');
+  const smartSearchDropdown = document.getElementById('perm-smart-search-dropdown');
+  const btnClearSmartSearch = document.getElementById('btn-clear-perm-smart-search');
+
+  if (smartSearchInp && smartSearchDropdown) {
+    let smartDebounce;
+
+    const renderSmartResults = (query) => {
+      const q = (query || '').trim().toLowerCase();
+      if (!q) {
+        smartSearchDropdown.style.display = 'none';
+        smartSearchDropdown.innerHTML = '';
+        if (btnClearSmartSearch) btnClearSmartSearch.style.display = 'none';
+        return;
+      }
+
+      if (btnClearSmartSearch) btnClearSmartSearch.style.display = 'block';
+
+      const users = (typeof storage !== 'undefined' && storage.getTable) ? (storage.getTable(TABLE_NAMES.USERS) || []) : [];
+      const matches = users.filter(u => {
+        const card = (u.cardNumber || u.employeeId || '').toLowerCase();
+        const name = (u.name || '').toLowerCase();
+        const uname = (u.username || '').toLowerCase();
+        const desig = (u.designation || '').toLowerCase();
+        const dept = (u.department || '').toLowerCase();
+        const unit = (u.unitName || '').toLowerCase();
+        const floor = (u.floorName || '').toLowerCase();
+        const line = (u.lineName || '').toLowerCase();
+        return card.includes(q) || name.includes(q) || uname.includes(q) || desig.includes(q) || dept.includes(q) || unit.includes(q) || floor.includes(q) || line.includes(q);
+      }).slice(0, 10);
+
+      if (matches.length === 0) {
+        smartSearchDropdown.innerHTML = `
+          <div style="padding: 14px 16px; text-align: center; color: var(--text-muted); font-size: 12px;">
+            No accounts found matching "<strong>${escapeHtml(q)}</strong>"
+          </div>
+        `;
+        smartSearchDropdown.style.display = 'block';
+        return;
+      }
+
+      smartSearchDropdown.innerHTML = matches.map(u => {
+        const cardNum = u.cardNumber || u.employeeId || '—';
+        const modCount = Object.values(u.permissions || {}).filter(acts => Array.isArray(acts) && acts.length > 0).length;
+        const isActive = u.status === 'ACTIVE';
+
+        return `
+          <div class="perm-smart-result-item" data-id="${u.id}" style="padding: 9px 14px; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; justify-content: space-between; align-items: center; transition: all 0.15s ease;">
+            <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
+              <span style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); font-family: var(--font-mono); font-size: 11px; font-weight: 800; padding: 2px 7px; border-radius: 4px; white-space: nowrap;">
+                🪪 #${cardNum}
+              </span>
+              <div style="min-width: 0;">
+                <div style="font-size: 12.5px; font-weight: 700; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                  ${escapeHtml(u.name)} <span style="font-size: 11px; font-weight: 400; color: #94a3b8;">(@${u.username})</span>
+                </div>
+                <div style="font-size: 11px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px;">
+                  ${escapeHtml(u.designation || 'User')} (${escapeHtml(u.department || '—')}) • 📍 ${escapeHtml(u.unitName || '—')}
+                </div>
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
+              <span class="badge ${isActive ? 'badge-active' : 'badge-maint'}" style="font-size: 9.5px; padding: 1px 5px;">${u.status}</span>
+              <span style="font-size: 10.5px; color: #38bdf8; background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.2); padding: 1px 6px; border-radius: 4px; font-weight: 600;">
+                ${modCount > 0 ? `${modCount} Modules` : 'No Perms'}
+              </span>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      smartSearchDropdown.style.display = 'block';
+
+      // Attach hover & click events to each result item
+      smartSearchDropdown.querySelectorAll('.perm-smart-result-item').forEach(item => {
+        item.addEventListener('mouseenter', () => item.style.background = 'rgba(2, 132, 199, 0.25)');
+        item.addEventListener('mouseleave', () => item.style.background = 'transparent');
+        item.addEventListener('click', () => {
+          const id = item.getAttribute('data-id');
+          if (id) {
+            selectUserForPermissions(id, true);
+            smartSearchDropdown.style.display = 'none';
+            reRender();
+            const target = storage.getItem(TABLE_NAMES.USERS, id);
+            if (target) {
+              notificationService.success(`Loaded permissions & location scope for ${target.name} (Card #${target.cardNumber || target.employeeId})`);
+            }
+          }
+        });
+      });
+    };
+
+    smartSearchInp.addEventListener('input', (e) => {
+      clearTimeout(smartDebounce);
+      const val = e.target.value;
+      permCardSearchQuery = val;
+      smartDebounce = setTimeout(() => {
+        renderSmartResults(val);
+      }, 100);
     });
 
-    permCardSearchInp.addEventListener('keydown', (e) => {
+    smartSearchInp.addEventListener('focus', () => {
+      if (smartSearchInp.value.trim()) {
+        renderSmartResults(smartSearchInp.value);
+      }
+    });
+
+    smartSearchInp.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
         e.preventDefault();
-        doJumpToCard(e.target.value);
+        const firstItem = smartSearchDropdown.querySelector('.perm-smart-result-item');
+        if (firstItem) {
+          firstItem.click();
+        } else if (smartSearchInp.value.trim()) {
+          const q = smartSearchInp.value.trim().toLowerCase();
+          const users = (typeof storage !== 'undefined' && storage.getTable) ? (storage.getTable(TABLE_NAMES.USERS) || []) : [];
+          const matched = users.find(u => {
+            const card = (u.cardNumber || u.employeeId || '').toLowerCase();
+            return card === q || card.includes(q) || (u.name || '').toLowerCase().includes(q) || (u.username || '').toLowerCase().includes(q);
+          });
+          if (matched) {
+            selectUserForPermissions(matched.id, true);
+            smartSearchDropdown.style.display = 'none';
+            reRender();
+            notificationService.success(`Loaded permissions & location scope for ${matched.name} (Card #${matched.cardNumber || matched.employeeId})`);
+          } else {
+            notificationService.warning(`No account found matching "${smartSearchInp.value}"`);
+          }
+        }
+      } else if (e.key === 'Escape') {
+        smartSearchDropdown.style.display = 'none';
+      }
+    });
+
+    if (btnClearSmartSearch) {
+      btnClearSmartSearch.addEventListener('click', () => {
+        smartSearchInp.value = '';
+        permCardSearchQuery = '';
+        smartSearchDropdown.style.display = 'none';
+        btnClearSmartSearch.style.display = 'none';
+        smartSearchInp.focus();
+      });
+    }
+
+    // Close smart search dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+      if (smartSearchInp && smartSearchDropdown) {
+        if (!smartSearchInp.contains(e.target) && !smartSearchDropdown.contains(e.target)) {
+          smartSearchDropdown.style.display = 'none';
+        }
       }
     });
   }
 
-  const btnPermCardSearchGo = document.getElementById('btn-perm-card-search-go');
-  if (btnPermCardSearchGo) {
-    btnPermCardSearchGo.addEventListener('click', () => {
-      const inp = document.getElementById('inp-perm-card-search');
-      doJumpToCard(inp ? inp.value : permCardSearchQuery);
-    });
-  }
-
-  const btnClearPermCardSearch = document.getElementById('btn-clear-perm-card-search');
-  if (btnClearPermCardSearch) {
-    btnClearPermCardSearch.addEventListener('click', () => {
-      permCardSearchQuery = '';
-      reRender();
-    });
-  }
-
-  // Synchronized User Switcher Dropdown
+  // Synchronized User Switcher Dropdown ("Or Select Account")
   const userSwitcher = document.getElementById('uam-perm-user-switcher');
   if (userSwitcher) {
     userSwitcher.addEventListener('change', (e) => {
-      permissionTargetUserId = e.target.value;
-      const target = authService.getUserById ? authService.getUserById(permissionTargetUserId) : null;
-      editingPermissions = JSON.parse(JSON.stringify(target?.permissions || {}));
+      const val = e.target.value;
+      if (val) {
+        selectUserForPermissions(val, true);
+        const u = storage.getItem(TABLE_NAMES.USERS, val);
+        if (u) {
+          notificationService.success(`Switched to ${u.name} (Card #${u.cardNumber || u.employeeId})`);
+        }
+      } else {
+        selectUserForPermissions(null, true);
+        notificationService.info('Account deselected. Please search or select an account.');
+      }
       reRender();
     });
   }
@@ -3726,25 +3912,10 @@ export function initUserManagementEvents() {
   if (btnPermCancel) {
     btnPermCancel.addEventListener('click', () => {
       if (permissionTargetUserId) {
-        const u = storage.getItem(TABLE_NAMES.USERS, permissionTargetUserId);
-        if (u) {
-          editingPermissions = JSON.parse(JSON.stringify(u.permissions || {}));
-          if (u.assignedScope) {
-            editingScope = {
-              allGroups: Boolean(u.assignedScope.allGroups),
-              groupIds: Array.isArray(u.assignedScope.groupIds) ? [...u.assignedScope.groupIds] : [],
-              allUnits: Boolean(u.assignedScope.allUnits),
-              unitIds: Array.isArray(u.assignedScope.unitIds) ? [...u.assignedScope.unitIds] : [],
-              allFloors: Boolean(u.assignedScope.allFloors),
-              floorIds: Array.isArray(u.assignedScope.floorIds) ? [...u.assignedScope.floorIds] : [],
-              allLines: Boolean(u.assignedScope.allLines),
-              lineIds: Array.isArray(u.assignedScope.lineIds) ? [...u.assignedScope.lineIds] : []
-            };
-          }
-        }
+        selectUserForPermissions(permissionTargetUserId);
+        notificationService.info('Permissions and location scope changes were reverted to saved values.');
+        reRender();
       }
-      notificationService.info('Permissions and location scope changes cancelled.');
-      reRender();
     });
   }
 
@@ -3754,11 +3925,16 @@ export function initUserManagementEvents() {
   const btnPermSave = document.getElementById('btn-perm-save-changes');
   if (btnPermSave) {
     btnPermSave.addEventListener('click', async () => {
+      if (!permissionTargetUserId) {
+        notificationService.warning('Please select a user account first.');
+        return;
+      }
       btnPermSave.disabled = true;
       btnPermSave.innerText = 'Saving...';
       try {
         await authService.updateUserPermissions(permissionTargetUserId, editingPermissions, 'CUSTOM', 'Custom Access', editingScope);
         notificationService.success('Individual access permissions and location scope saved successfully!');
+        selectUserForPermissions(permissionTargetUserId);
         reRender();
       } catch (err) {
         notificationService.error('Save failed: ' + err.message);
