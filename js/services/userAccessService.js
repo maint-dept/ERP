@@ -148,6 +148,29 @@ class UserAccessService {
   }
 
   /**
+   * Robust card number matcher supporting partial cards, prefixes (#), hyphens, spaces, and numeric IDs
+   */
+  matchesCardNumber(cardStr, query) {
+    if (!cardStr || !query) return false;
+    const rawCard = String(cardStr).toLowerCase().trim();
+    const rawQuery = String(query).toLowerCase().trim();
+    if (rawCard.includes(rawQuery)) return true;
+
+    const normCard = rawCard.replace(/[#\s\-_]/g, '');
+    const normQuery = rawQuery.replace(/[#\s\-_]/g, '');
+
+    if (normCard && normQuery) {
+      if (normCard.includes(normQuery) || normQuery.includes(normCard)) return true;
+      const digitsCard = normCard.replace(/\D/g, '').replace(/^0+/, '');
+      const digitsQuery = normQuery.replace(/\D/g, '').replace(/^0+/, '');
+      if (digitsQuery.length >= 2 && digitsCard.length >= 2 && (digitsCard.includes(digitsQuery) || digitsQuery.includes(digitsCard))) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
    * Generates a unique, deterministic, clean username from employee details
    */
   generateUsernameForEmployee(employee) {
@@ -216,12 +239,17 @@ class UserAccessService {
 
     const users = storage.getTable(TABLE_NAMES.USERS) || [];
     const cleanCard = String(employee.cardNumber || '').trim().toLowerCase();
+    const normCard = cleanCard.replace(/[\s\-_#]/g, '');
 
-    // Duplicate prevention: check by manpowerId, employeeId, or cardNumber
-    let existing = users.find(u => 
-      (employee.id && (u.manpowerId === employee.id || u.employeeId === employee.id)) ||
-      (cleanCard && String(u.cardNumber || u.employeeId || '').trim().toLowerCase() === cleanCard)
-    );
+    // Duplicate prevention: check by manpowerId, employeeId, or normalized cardNumber
+    let existing = users.find(u => {
+      if (employee.id && (u.manpowerId === employee.id || u.employeeId === employee.id)) return true;
+      const uCard = String(u.cardNumber || u.employeeId || '').trim().toLowerCase();
+      if (cleanCard && uCard === cleanCard) return true;
+      const uNorm = uCard.replace(/[\s\-_#]/g, '');
+      if (normCard && uNorm && normCard === uNorm) return true;
+      return false;
+    });
 
     if (existing) {
       // Account already exists — ensure Manpower fields are synced
@@ -292,23 +320,27 @@ class UserAccessService {
     };
 
     users.unshift(newUser);
-    const ok = await storage.saveTable(TABLE_NAMES.USERS, users, true);
-    if (!ok) {
-      const idx = users.findIndex(u => u.id === newUser.id);
-      if (idx !== -1) users.splice(idx, 1);
-      throw new CloudSaveError('Cloud save failed: Could not persist automatically created user account.');
+    if (!options.skipSave) {
+      const ok = await storage.saveTable(TABLE_NAMES.USERS, users, true);
+      if (!ok) {
+        const idx = users.findIndex(u => u.id === newUser.id);
+        if (idx !== -1) users.splice(idx, 1);
+        throw new CloudSaveError('Cloud save failed: Could not persist automatically created user account.');
+      }
     }
 
     // Cache plain initial password in temporary memory cache for authorized credential export
     this.setTemporaryCredential(newUser.id, plainInitialPassword);
 
     // Audit the auto-creation
-    auditService.log(
-      'USER_ACCOUNT_AUTO_CREATED',
-      'USER',
-      newUser.id,
-      `Automatically created user account '@${newUser.username}' for Manpower #${employee.cardNumber} (${employee.name}) - Status: ${newUser.status}.`
-    );
+    if (!options.skipAudit) {
+      auditService.log(
+        'USER_ACCOUNT_AUTO_CREATED',
+        'USER',
+        newUser.id,
+        `Automatically created user account '@${newUser.username}' for Manpower #${employee.cardNumber} (${employee.name}) - Status: ${newUser.status}.`
+      );
+    }
 
     return {
       user: newUser,
@@ -456,10 +488,15 @@ class UserAccessService {
     // 2. Identify Manpower records that do NOT have a linked User Account yet
     employees.forEach(e => {
       const cleanCard = String(e.cardNumber || '').trim().toLowerCase();
-      const hasAcc = accounts.some(a => 
-        (a.manpowerId && a.manpowerId === e.id) ||
-        (cleanCard && String(a.cardNumber || a.employeeId || '').trim().toLowerCase() === cleanCard)
-      );
+      const normCard = cleanCard.replace(/[\s\-_#]/g, '');
+      const hasAcc = accounts.some(a => {
+        if (a.manpowerId && a.manpowerId === e.id) return true;
+        const aCard = String(a.cardNumber || a.employeeId || '').trim().toLowerCase();
+        if (cleanCard && aCard === cleanCard) return true;
+        const aNorm = aCard.replace(/[\s\-_#]/g, '');
+        if (normCard && aNorm && normCard === aNorm) return true;
+        return false;
+      });
 
       if (!hasAcc) {
         const floorObj = e.floorId ? masterDataService.getFloorById?.(e.floorId) : null;
@@ -511,7 +548,7 @@ class UserAccessService {
 
     for (const item of missing) {
       try {
-        const res = await this.createAccountForEmployee(item.linkedEmployee);
+        const res = await this.createAccountForEmployee(item.linkedEmployee, { skipSave: true, skipAudit: true });
         successful.push({
           userId: res.user.id,
           employeeId: item.linkedEmployee.id,
@@ -534,6 +571,11 @@ class UserAccessService {
       }
     }
 
+    if (successful.length > 0) {
+      const users = storage.getTable(TABLE_NAMES.USERS) || [];
+      await storage.saveTable(TABLE_NAMES.USERS, users, true);
+    }
+
     auditService.log(
       'BULK_ACCOUNTS_AUTO_CREATED',
       'USER',
@@ -542,6 +584,161 @@ class UserAccessService {
     );
 
     return { successful, failed, totalProcessed: missing.length };
+  }
+
+  /**
+   * Complete Auto-Sync: Reconciles all Manpower records with User Accounts.
+   * 1. Updates location/profile for existing accounts without touching permissions.
+   * 2. Automatically creates user accounts with ZERO permissions (NO_ACCESS) for any Manpower records lacking an account.
+   * 3. Prevents duplicates by strict 3-way matching (manpowerId, employeeId, normalized cardNumber).
+   */
+  async syncAllManpowerAccounts() {
+    if (this._isSyncingManpower) return { success: true, alreadyRunning: true };
+    this._isSyncingManpower = true;
+
+    try {
+      const employees = storage.getTable(TABLE_NAMES.EMPLOYEES) || [];
+      const users = storage.getTable(TABLE_NAMES.USERS) || [];
+
+      let modifiedUsers = false;
+      let newAccountsCount = 0;
+      let syncedExistingCount = 0;
+
+      // Build lookup maps
+      const userByCard = new Map();
+      const userByNormCard = new Map();
+      const userByEmpId = new Map();
+      users.forEach(u => {
+        if (u.manpowerId) userByEmpId.set(u.manpowerId, u);
+        if (u.employeeId) userByEmpId.set(u.employeeId, u);
+        const c = String(u.cardNumber || u.employeeId || '').trim().toLowerCase();
+        if (c) {
+          userByCard.set(c, u);
+          const norm = c.replace(/[\s\-_#]/g, '');
+          if (norm) userByNormCard.set(norm, u);
+        }
+      });
+
+      const newUsersToBatch = [];
+
+      for (const emp of employees) {
+        if (!emp || !emp.cardNumber) continue;
+        const cleanCard = String(emp.cardNumber || '').trim().toLowerCase();
+        const normCard = cleanCard.replace(/[\s\-_#]/g, '');
+        const existing = (emp.id && userByEmpId.get(emp.id)) || 
+                         (cleanCard && userByCard.get(cleanCard)) || 
+                         (normCard && userByNormCard.get(normCard));
+
+        if (existing) {
+          // Reconcile organizational fields
+          let userChanged = false;
+          if (emp.name && existing.name !== emp.name.trim()) { existing.name = emp.name.trim(); userChanged = true; }
+          if (emp.designation && existing.designation !== emp.designation) { existing.designation = emp.designation; userChanged = true; }
+          if (emp.department && existing.department !== emp.department) { existing.department = emp.department; userChanged = true; }
+          if (emp.unitId !== undefined && existing.unitId !== emp.unitId) { existing.unitId = emp.unitId; userChanged = true; }
+          if (emp.floorId !== undefined && existing.floorId !== emp.floorId) { existing.floorId = emp.floorId; userChanged = true; }
+          if (emp.lineId !== undefined && existing.lineId !== emp.lineId) { existing.lineId = emp.lineId; userChanged = true; }
+          if (emp.unitName && existing.unitName !== emp.unitName) { existing.unitName = emp.unitName; userChanged = true; }
+          if (emp.floorName && existing.floorName !== emp.floorName) { existing.floorName = emp.floorName; userChanged = true; }
+          if ((emp.lineName || emp.workingArea) && existing.lineName !== (emp.lineName || emp.workingArea)) { existing.lineName = emp.lineName || emp.workingArea; userChanged = true; }
+          const targetStatus = emp.status === 'ACTIVE' ? 'ACTIVE' : 'INACTIVE';
+          if (existing.status !== targetStatus) { existing.status = targetStatus; userChanged = true; }
+          if (existing.manpowerId !== emp.id) { existing.manpowerId = emp.id; userChanged = true; }
+
+          if (userChanged) {
+            existing.updatedAt = new Date().toISOString();
+            modifiedUsers = true;
+            syncedExistingCount++;
+          }
+        } else {
+          // Missing account: auto-create with ZERO permissions
+          const username = this.generateUsernameForEmployee(emp);
+          const plainInitialPassword = this.generateSecurePassword(14);
+          const hashedPassword = cryptoService.hashPassword(plainInitialPassword);
+
+          const newUser = {
+            id: `usr-mp-${Date.now()}-${Math.floor(Math.random() * 10000)}-${newUsersToBatch.length}`,
+            manpowerId: emp.id,
+            cardNumber: emp.cardNumber || '',
+            employeeId: emp.cardNumber || emp.id,
+            name: (emp.name || 'Employee').trim(),
+            username: username.toLowerCase(),
+            email: emp.email || '',
+            phone: emp.phone || '',
+            role: 'NO_ACCESS',
+            roleId: 'role-no-access',
+            presetId: 'no_access',
+            presetName: 'No Access (Pending Admin Assignment)',
+            designation: emp.designation || 'Staff',
+            department: emp.department || 'Maintenance',
+            groupId: emp.groupId || 'grp-1',
+            groupName: emp.groupName || 'Al-Muslim Group',
+            unitId: emp.unitId || null,
+            unitName: emp.unitName || '',
+            floorId: emp.floorId || null,
+            floorName: emp.floorName || '',
+            lineId: emp.lineId || null,
+            lineName: emp.lineName || emp.workingArea || '',
+            passwordHash: hashedPassword,
+            passwordStatus: 'TEMPORARY',
+            status: emp.status === 'ACTIVE' ? 'ACTIVE' : 'INACTIVE',
+            mustChangePassword: true,
+            lastPasswordReset: new Date().toISOString(),
+            assignedScope: {
+              allGroups: !emp.floorId && !emp.unitId,
+              groupIds: emp.groupId ? [emp.groupId] : [],
+              unitIds: emp.unitId ? [emp.unitId] : [],
+              floorIds: emp.floorId ? [emp.floorId] : [],
+              lineIds: emp.lineId ? [emp.lineId] : []
+            },
+            permissions: {},
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            autoCreatedFromManpower: true
+          };
+
+          newUsersToBatch.push(newUser);
+          this.setTemporaryCredential(newUser.id, plainInitialPassword);
+          userByEmpId.set(emp.id, newUser);
+          userByCard.set(cleanCard, newUser);
+          if (normCard) userByNormCard.set(normCard, newUser);
+          newAccountsCount++;
+        }
+      }
+
+      if (newUsersToBatch.length > 0) {
+        users.unshift(...newUsersToBatch);
+        modifiedUsers = true;
+      }
+
+      if (modifiedUsers) {
+        await storage.saveTable(TABLE_NAMES.USERS, users, true);
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('erp:users-updated'));
+        }
+      }
+
+      auditService.log(
+        'MANPOWER_AUTO_SYNC',
+        'SYSTEM',
+        'MANPOWER_SYNC',
+        `Reconciled ${employees.length} Manpower employees: ${newAccountsCount} new zero-access accounts created, ${syncedExistingCount} existing accounts updated.`
+      );
+
+      return {
+        success: true,
+        totalEmployees: employees.length,
+        newAccountsCount,
+        syncedExistingCount,
+        totalUsers: users.length
+      };
+
+    } catch (err) {
+      console.error('[UserAccessService] Manpower auto-sync failed:', err);
+      return { success: false, error: err.message };
+    } finally {
+      this._isSyncingManpower = false;
+    }
   }
 
   /**

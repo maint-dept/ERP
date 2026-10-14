@@ -28,6 +28,8 @@ let activeUserSection = (typeof localStorage !== 'undefined' && localStorage.get
 
 // Filtering & Search State
 let searchQuery = '';
+let shouldRestoreSearchFocus = false;
+let searchFocusCursorPos = 0;
 let filterGroup = 'ALL';
 let filterUnit = 'ALL';
 let filterFloor = 'ALL';
@@ -175,14 +177,19 @@ export function renderUserManagement() {
     if (quickCardFilter === 'MISSING_ACCOUNT' && acc.hasAccount) return false;
     if (quickCardFilter === 'TEMP_PASS' && (!acc.hasAccount || (acc.passwordStatus !== 'TEMPORARY' && acc.passwordStatus !== 'PENDING'))) return false;
 
-    // 1. Text Search (Card Number, Name, Username)
+    // 1. Text Search (Card Number, Name, Username, Designation, Group, Unit, Floor, Line)
     if (searchQuery) {
       const q = searchQuery.toLowerCase().trim();
-      const matchCard = (acc.cardNumber || '').toLowerCase().includes(q);
+      const matchCard = userAccessService.matchesCardNumber ? userAccessService.matchesCardNumber(acc.cardNumber, searchQuery) : (acc.cardNumber || '').toLowerCase().includes(q);
       const matchName = (acc.employeeName || '').toLowerCase().includes(q);
       const matchUser = (acc.username || '').toLowerCase().includes(q);
       const matchDept = (acc.department || '').toLowerCase().includes(q);
-      if (!matchCard && !matchName && !matchUser && !matchDept) return false;
+      const matchDesig = (acc.designation || '').toLowerCase().includes(q);
+      const matchGroup = (acc.groupName || '').toLowerCase().includes(q);
+      const matchUnit = (acc.unitName || '').toLowerCase().includes(q);
+      const matchFloor = (acc.floorName || '').toLowerCase().includes(q);
+      const matchLine = (acc.lineName || '').toLowerCase().includes(q);
+      if (!matchCard && !matchName && !matchUser && !matchDept && !matchDesig && !matchGroup && !matchUnit && !matchFloor && !matchLine) return false;
     }
 
     // 2. Location Filters
@@ -569,21 +576,22 @@ export function renderUserManagement() {
                 <th style="min-width: 110px; padding: 10px 12px;">Card Number</th>
                 <th style="min-width: 160px; padding: 10px 12px;">Employee Name</th>
                 <th style="min-width: 120px; padding: 10px 12px;">Username</th>
-                <th style="min-width: 140px; padding: 10px 12px;">Designation</th>
-                <th style="min-width: 110px; padding: 10px 10px;">Unit</th>
-                <th style="min-width: 110px; padding: 10px 10px;">Floor</th>
-                <th style="min-width: 100px; padding: 10px 10px;">Line</th>
+                <th style="min-width: 130px; padding: 10px 12px;">Designation</th>
+                <th style="min-width: 110px; padding: 10px 10px;">Group</th>
+                <th style="min-width: 100px; padding: 10px 10px;">Unit</th>
+                <th style="min-width: 100px; padding: 10px 10px;">Floor</th>
+                <th style="min-width: 90px; padding: 10px 10px;">Line</th>
                 <th style="min-width: 90px; text-align: center; padding: 10px 8px;">Status</th>
-                <th style="min-width: 150px; padding: 10px 12px;">Permissions Summary</th>
-                <th style="min-width: 110px; text-align: center; padding: 10px 8px;">Password</th>
-                <th style="min-width: 120px; padding: 10px 10px;">Last Login</th>
-                <th style="min-width: 160px; text-align: center; padding: 10px 12px;">Actions</th>
+                <th style="min-width: 140px; padding: 10px 12px;">Permissions Summary</th>
+                <th style="min-width: 100px; text-align: center; padding: 10px 8px;">Password</th>
+                <th style="min-width: 110px; padding: 10px 10px;">Last Login</th>
+                <th style="min-width: 150px; text-align: center; padding: 10px 12px;">Actions</th>
               </tr>
             </thead>
             <tbody>
               ${paginatedAccounts.length === 0 ? `
                 <tr>
-                  <td colspan="13" style="text-align: center; padding: 36px; color: var(--text-muted); font-size: 13px;">
+                  <td colspan="14" style="text-align: center; padding: 36px; color: var(--text-muted); font-size: 13px;">
                     No accounts match the specified filters. Try clearing filters or use <strong>"Auto-Create Missing Accounts"</strong>.
                   </td>
                 </tr>
@@ -631,19 +639,24 @@ export function renderUserManagement() {
                       ${acc.designation}
                     </td>
 
+                    <!-- Group -->
+                    <td style="padding: 9px 10px; font-size: 11.5px; color: #cbd5e1; font-weight: 600;">
+                      ${acc.groupName || 'Al-Muslim Group'}
+                    </td>
+
                     <!-- Unit -->
                     <td style="padding: 9px 10px; font-size: 11.5px; color: var(--text-secondary);">
-                      ${acc.unitName}
+                      ${acc.unitName || '—'}
                     </td>
 
                     <!-- Floor -->
-                    <td style="padding: 9px 10px; font-size: 11.5px; color: #38bdf8;">
-                      ${acc.floorName}
+                    <td style="padding: 9px 10px; font-size: 11.5px; color: #38bdf8; font-weight: 600;">
+                      ${acc.floorName || '—'}
                     </td>
 
                     <!-- Line -->
                     <td style="padding: 9px 10px; font-size: 11.5px; color: var(--text-secondary);">
-                      ${acc.lineName}
+                      ${acc.lineName || '—'}
                     </td>
 
                     <!-- Status -->
@@ -1117,7 +1130,8 @@ function renderPasswordManagementTab() {
   const filtered = allAccounts.filter(acc => {
     if (passwordMgmtSearch) {
       const q = passwordMgmtSearch.toLowerCase().trim();
-      if (!acc.cardNumber.toLowerCase().includes(q) && !acc.employeeName.toLowerCase().includes(q) && !acc.username.toLowerCase().includes(q)) {
+      const matchCard = userAccessService.matchesCardNumber ? userAccessService.matchesCardNumber(acc.cardNumber, passwordMgmtSearch) : (acc.cardNumber || '').toLowerCase().includes(q);
+      if (!matchCard && !acc.employeeName.toLowerCase().includes(q) && !acc.username.toLowerCase().includes(q)) {
         return false;
       }
     }
@@ -2381,6 +2395,38 @@ export function initUserManagementEvents() {
     }
   };
 
+  // Restore Search Focus and Cursor Position if reRender was triggered by typing
+  if (shouldRestoreSearchFocus) {
+    shouldRestoreSearchFocus = false;
+    const restoredSearchInp = document.getElementById('uam-search-input');
+    if (restoredSearchInp) {
+      restoredSearchInp.focus();
+      try {
+        restoredSearchInp.setSelectionRange(searchFocusCursorPos, searchFocusCursorPos);
+      } catch (_) {}
+    }
+  }
+
+  // Automatic Manpower Sync: if any registered employees are missing user accounts, auto-sync silently
+  const allAccountsSnapshot = userAccessService.getAllAccountsWithManpower();
+  const unlinkedCount = allAccountsSnapshot.filter(a => !a.hasAccount).length;
+  if (unlinkedCount > 0 && !window._uamAutoSyncing) {
+    window._uamAutoSyncing = true;
+    setTimeout(async () => {
+      try {
+        const syncRes = await userAccessService.syncAllManpowerAccounts();
+        if (syncRes && syncRes.newAccountsCount > 0) {
+          notificationService.success(`Auto-Sync: Created accounts for ${syncRes.newAccountsCount} Manpower employees (Zero Default Access).`);
+          reRender();
+        }
+      } catch (err) {
+        console.error('[Auto-Sync Background Error]', err);
+      } finally {
+        window._uamAutoSyncing = false;
+      }
+    }, 150);
+  }
+
   // 1. Sub-features Navigation Switcher
   root.querySelectorAll('.tab-btn-uam').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -2401,9 +2447,13 @@ export function initUserManagementEvents() {
     let debounceTimer;
     searchInp.addEventListener('input', (e) => {
       clearTimeout(debounceTimer);
+      const val = e.target.value;
+      const curPos = e.target.selectionStart || val.length;
       debounceTimer = setTimeout(() => {
-        searchQuery = e.target.value;
+        searchQuery = val;
         currentPage = 1;
+        shouldRestoreSearchFocus = true;
+        searchFocusCursorPos = curPos;
         reRender();
       }, 250);
     });
@@ -2677,15 +2727,17 @@ export function initUserManagementEvents() {
   const btnAutoCreateAll = document.getElementById('btn-auto-create-all-missing');
   if (btnAutoCreateAll) {
     btnAutoCreateAll.addEventListener('click', async () => {
-      if (confirm('Scan all registered Manpower records and automatically generate unique User Accounts with secure initial passwords for any missing accounts?')) {
+      if (confirm('Scan all registered Manpower records and automatically generate unique User Accounts with ZERO default permissions for any missing accounts?')) {
         btnAutoCreateAll.disabled = true;
-        btnAutoCreateAll.innerText = 'Processing...';
+        btnAutoCreateAll.innerText = 'Syncing & Generating...';
         try {
-          const res = await userAccessService.autoCreateMissingAccountsForAll();
-          autoCreateSummaryData = res;
-          activeModalType = 'AUTO_CREATE_SUMMARY';
-          notificationService.success(`Auto-created ${res.successful.length} missing user accounts!`);
-          reRender();
+          const res = await userAccessService.syncAllManpowerAccounts();
+          if (res && res.success) {
+            notificationService.success(`Auto-created ${res.newAccountsCount} missing user accounts with ZERO default access! Verified ${res.totalEmployees} Manpower records.`);
+            reRender();
+          } else {
+            throw new Error(res?.error || 'Sync process failed');
+          }
         } catch (err) {
           notificationService.error('Auto-creation failed: ' + err.message);
         } finally {
@@ -2707,11 +2759,36 @@ export function initUserManagementEvents() {
     });
   }
 
+  // Top Action: Manual Refresh Sync
   const btnRefresh = document.getElementById('btn-refresh-uam');
   if (btnRefresh) {
-    btnRefresh.addEventListener('click', () => {
-      notificationService.info('Refreshing User Access Matrix...');
-      reRender();
+    btnRefresh.addEventListener('click', async () => {
+      btnRefresh.disabled = true;
+      const originalHtml = btnRefresh.innerHTML;
+      btnRefresh.innerHTML = `<span style="display:inline-block; animation:spin 1s linear infinite;">🔄</span> Syncing...`;
+      notificationService.info('Synchronizing Manpower database and user access records...');
+      try {
+        if (typeof storage.syncWithServerDatabase === 'function') {
+          await storage.syncWithServerDatabase();
+        }
+        const res = await userAccessService.syncAllManpowerAccounts();
+        if (res && res.success) {
+          if (res.newAccountsCount > 0) {
+            notificationService.success(`Sync Succeeded: Auto-created ${res.newAccountsCount} new user accounts for Manpower employees! (Zero Default Permissions)`);
+          } else {
+            notificationService.success(`Sync Complete: All ${res.totalEmployees || 'registered'} Manpower employees & user accounts are fully in sync.`);
+          }
+          reRender();
+        } else {
+          throw new Error(res?.error || 'Database synchronization returned an unsuccessful response.');
+        }
+      } catch (err) {
+        console.error('[User Access Sync Error]', err);
+        notificationService.error(`Sync Failed: ${err.message || 'Unknown network/database error'}. Please check your connection and retry.`);
+      } finally {
+        btnRefresh.disabled = false;
+        btnRefresh.innerHTML = originalHtml;
+      }
     });
   }
 
@@ -3310,11 +3387,11 @@ export function initUserManagementEvents() {
       const q = (query || '').trim().toLowerCase();
       const filtered = activeEmployees.filter(e => {
         if (!q) return true;
-        const c = String(e.cardNumber || '').toLowerCase();
+        const matchCard = userAccessService.matchesCardNumber ? userAccessService.matchesCardNumber(e.cardNumber, q) : (e.cardNumber || '').toLowerCase().includes(q);
         const n = String(e.name || '').toLowerCase();
         const d = String(e.designation || '').toLowerCase();
         const dept = String(e.department || '').toLowerCase();
-        return c.includes(q) || n.includes(q) || d.includes(q) || dept.includes(q);
+        return matchCard || n.includes(q) || d.includes(q) || dept.includes(q);
       }).slice(0, 10);
 
       if (filtered.length === 0) {

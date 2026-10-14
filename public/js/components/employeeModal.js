@@ -806,7 +806,7 @@ export function initEmployeeModalEvents(refreshParentCallback) {
   }
 
   if (formAddEdit && activeModal) {
-    formAddEdit.addEventListener('submit', (e) => {
+    formAddEdit.addEventListener('submit', async (e) => {
       e.preventDefault();
       try {
         const name = document.getElementById('emp-field-name')?.value?.trim();
@@ -849,11 +849,11 @@ export function initEmployeeModalEvents(refreshParentCallback) {
         };
 
         if (activeModal.type === 'EDIT') {
-          employeeService.updateEmployee(activeModal.employeeId, payload);
+          await employeeService.updateEmployee(activeModal.employeeId, payload);
           notificationService.success(`Updated profile for ${name}`);
         } else {
-          employeeService.createEmployee(payload);
-          notificationService.success(`Registered new employee ${name} [#${cardNumber}]`);
+          await employeeService.createEmployee(payload);
+          notificationService.success(`Registered new employee ${name} [#${cardNumber}] with synced user account`);
         }
 
         closeModal();

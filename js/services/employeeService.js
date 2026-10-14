@@ -1758,6 +1758,15 @@ class EmployeeService {
       console.warn('Auto-sync with Tools Management after Manpower import:', syncErr);
     }
 
+    // 3. Automatically synchronize Manpower with User Access Management
+    try {
+      import('./userAccessService.js').then(({ userAccessService }) => {
+        if (userAccessService && typeof userAccessService.syncAllManpowerAccounts === 'function') {
+          userAccessService.syncAllManpowerAccounts().catch(e => console.warn('[Auto-Sync After Manpower Import]', e));
+        }
+      }).catch(err => console.warn('Could not load userAccessService for auto-sync:', err));
+    } catch (_) {}
+
     auditService.log(
       'MANPOWER_EXCEL_IMPORTED',
       'MANPOWER',
