@@ -46,13 +46,13 @@ export const PROVIDER_SPECS = {
     color: '#336791',
     description: 'Enterprise Relational Database with ACID compliance and full transactional integrity. Secondary sync backup target.',
     fields: [
-      { id: 'host', label: 'Host', type: 'text', placeholder: 'localhost (cPanel) or db.cloud.com', defaultValue: 'localhost', required: true },
+      { id: 'host', label: 'Host', type: 'text', placeholder: '127.0.0.1 or localhost', defaultValue: '127.0.0.1', required: true },
       { id: 'port', label: 'Port', type: 'number', placeholder: '5432', defaultValue: '5432', required: true },
-      { id: 'database', label: 'Database', type: 'text', placeholder: 'motaherh_maint_pg', required: true },
-      { id: 'username', label: 'Username', type: 'text', placeholder: 'motaherh_pguser', required: true },
+      { id: 'database', label: 'Database', type: 'text', placeholder: 'motaherh_mainterp', defaultValue: 'motaherh_mainterp', required: true },
+      { id: 'username', label: 'Username', type: 'text', placeholder: 'motaherh_mainterp', defaultValue: 'motaherh_mainterp', required: true },
       { id: 'password', label: 'Password', type: 'password', placeholder: '••••••••••••', required: true },
-      { id: 'ssl', label: 'Require SSL / TLS', type: 'checkbox', defaultValue: false, note: 'Enable for remote cloud PostgreSQL (Supabase/Neon). Uncheck for cPanel localhost.' },
-      { id: 'endpoint', label: 'Proxy Endpoint URL (PHP REST API)', type: 'text', placeholder: 'https://moviezonex.com/pg_api.php', defaultValue: 'https://moviezonex.com/pg_api.php', note: 'Direct TCP from browser is blocked by browsers. Communicates via pg_api.php on paid hosting or /api/db/pg.' },
+      { id: 'ssl', label: 'Require SSL / TLS', type: 'checkbox', defaultValue: false, note: 'Enable for remote cloud PostgreSQL (Supabase/Neon). Uncheck for cPanel 127.0.0.1.' },
+      { id: 'endpoint', label: 'Proxy Endpoint URL (PHP REST API)', type: 'text', placeholder: 'https://moviezonex.com/api/pg_api.php', defaultValue: 'https://moviezonex.com/api/pg_api.php', note: 'Direct TCP from browser is blocked by browsers. Communicates via pg_api.php on paid hosting or /api/db/pg.' },
       { id: 'apiKey', label: 'API Secret Key (Optional)', type: 'password', placeholder: 'e.g. secret_key_123', note: 'Matches $API_KEY defined in pg_api.php (if configured).' }
     ]
   }

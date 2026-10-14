@@ -107,7 +107,12 @@ if (!extension_loaded('pdo_pgsql')) {
 $pdo = null;
 $lastError = '';
 
-$sslMode = $DB_SSL ? 'require' : ($DB_HOST === 'localhost' || $DB_HOST === '127.0.0.1' ? 'disable' : 'prefer');
+// Force IPv4 127.0.0.1 when localhost is supplied to avoid IPv6 (::1) pg_hba.conf rejection on cPanel/Linux
+if ($DB_HOST === 'localhost') {
+    $DB_HOST = '127.0.0.1';
+}
+
+$sslMode = $DB_SSL ? 'require' : ($DB_HOST === '127.0.0.1' ? 'disable' : 'prefer');
 
 $dsn = "pgsql:host={$DB_HOST};port={$DB_PORT};dbname={$DB_NAME};sslmode={$sslMode}";
 

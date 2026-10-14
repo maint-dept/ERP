@@ -77,12 +77,12 @@ class SyncManager {
               let ep = (conf.endpoint || '').trim().replace(/\/$/, '');
               if (!ep || ep === 'api/pg_api.php' || ep === '/api/pg_api.php' || ep.includes('://api/pg_api.php') || ep === '/api/db/pg' || (ep.includes('api/pg_api.php') && !ep.startsWith('http'))) {
                 if (typeof window !== 'undefined' && window.location && (window.location.hostname.includes('github.io') || window.location.hostname.includes('moviezonex.com'))) {
-                  ep = 'https://moviezonex.com/pg_api.php';
+                  ep = 'https://moviezonex.com/api/pg_api.php';
                 }
               } else if (!/^https?:\/\//i.test(ep) && !ep.startsWith('/')) {
                 ep = 'https://' + ep;
               }
-              conf.endpoint = ep || 'https://moviezonex.com/pg_api.php';
+              conf.endpoint = ep || 'https://moviezonex.com/api/pg_api.php';
               adapter = new PostgresAdapter(conf);
             }
 
