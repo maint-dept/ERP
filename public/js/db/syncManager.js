@@ -367,7 +367,12 @@ class SyncManager {
           errStr.includes('access denied') ||
           errStr.includes('pg_hba') ||
           errStr.includes('no encryption') ||
-          errStr.includes('cannot reach');
+          errStr.includes('cannot reach') ||
+          errStr.includes('http 500') ||
+          errStr.includes('failed: http') ||
+          errStr.includes('connection failed') ||
+          errStr.includes('sqlstate') ||
+          errStr.includes('fatal');
 
         if (isAuthOrFatal) {
           throw new Error(batchResult.error);
@@ -380,7 +385,12 @@ class SyncManager {
           errStr.includes('access denied') ||
           errStr.includes('pg_hba') ||
           errStr.includes('no encryption') ||
-          errStr.includes('cannot reach');
+          errStr.includes('cannot reach') ||
+          errStr.includes('http 500') ||
+          errStr.includes('failed: http') ||
+          errStr.includes('connection failed') ||
+          errStr.includes('sqlstate') ||
+          errStr.includes('fatal');
 
         if (isAuthOrFatal) {
           throw batchErr;
@@ -417,7 +427,13 @@ class SyncManager {
           errStr.includes('unauthorized')     ||
           errStr.includes('cannot reach')     ||
           errStr.includes('consumer_invalid') ||
-          errStr.includes('invalid');
+          errStr.includes('invalid')          ||
+          errStr.includes('http 500')         ||
+          errStr.includes('failed: http')     ||
+          errStr.includes('connection failed')||
+          errStr.includes('save-table failed')||
+          errStr.includes('sqlstate')         ||
+          errStr.includes('fatal');
 
         if (isFatal) {
           throw new Error(result?.error || 'Database sync failed: fatal connection or credential error.');

@@ -638,7 +638,15 @@ export function renderDatabaseConfigView() {
                       <td style="padding: 12px 14px; color: ${d.failed > 0 ? '#f87171' : '#94a3b8'}; font-weight: ${d.failed > 0 ? '700' : 'normal'}">${d.failed}</td>
                       <td style="padding: 12px 14px;">
                         <span style="display: inline-flex; align-items: center; gap: 5px; color: ${d.statusColor}; font-weight: 700; font-size: 12px;" title="${(d.lastError || '').replace(/"/g, '&quot;')}">${statusEmoji} ${d.statusLabel}</span>
-                        ${d.lastError ? `<div style="font-size: 10px; color: #f87171; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 3px;" title="${(d.lastError || '').replace(/"/g, '&quot;')}">⚠️ ${d.lastError}</div>` : ''}
+                        ${d.lastError ? `
+                          <div style="margin-top: 4px;">
+                            <span class="badge" style="font-size: 10px; background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.35); padding: 2px 6px; border-radius: 4px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; max-width: 220px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"
+                                  onclick="alert('Database Sync Error Details:\\n\\n' + this.getAttribute('data-err'))"
+                                  data-err="${(d.lastError || '').replace(/"/g, '&quot;')}"
+                                  title="Click to view full error message">
+                              ⚠️ ${d.lastError.toLowerCase().includes('password') || d.lastError.toLowerCase().includes('authentication') ? 'Auth/Password Failed' : d.lastError.toLowerCase().includes('pg_hba') ? 'pg_hba Access Error' : d.lastError.toLowerCase().includes('500') ? 'Server 500 Error' : 'Sync Error'} <span style="font-size: 9px; opacity: 0.85; text-decoration: underline;">[Details]</span>
+                            </span>
+                          </div>` : ''}
                       </td>
                       <td style="padding: 12px 14px; text-align: right;">${actionBtn}</td>
                     </tr>`;
@@ -1143,7 +1151,6 @@ export function initDatabaseConfigEvents() {
       });
       saveDashboardSyncState({ lastSyncTime: new Date().toLocaleString() });
       notificationService.toast(`✅ ${dbName || dbId}: sync complete — ${total.toLocaleString()} records written.`);
-      reRenderView();
     } catch (err) {
       // Record REAL failure metrics
       recordSyncMetric(dbId, {
@@ -1153,6 +1160,7 @@ export function initDatabaseConfigEvents() {
         lastError: err.message
       });
       notificationService.toast(`❌ Sync FAILED for ${dbName || dbId}: ${err.message}`);
+    } finally {
       if (btn) { btn.disabled = false; btn.textContent = originalLabel || '🔄 Re-sync'; }
       reRenderView();
     }
@@ -1174,6 +1182,7 @@ export function initDatabaseConfigEvents() {
   // 9. "Fix & Re-sync All Missing" button — runs real sync on every configured DB that has issues
   const handleReconcileAll = async () => {
     const btn = document.getElementById('btn-sync-all-providers') || document.getElementById('btn-fix-all-missing') || document.getElementById('btn-reconcile-all-records') || document.getElementById('btn-reconcile-missing-now');
+    const originalText = btn ? btn.innerHTML : '⚡ Sync All Real Databases';
     if (btn) { btn.disabled = true; btn.innerHTML = '⏳ Syncing all databases...'; }
     notificationService.toast('Running full sync across all configured databases...');
     try {
@@ -1198,10 +1207,10 @@ export function initDatabaseConfigEvents() {
       }
       saveDashboardSyncState({ lastSyncTime: new Date().toLocaleString() });
       notificationService.toast(`⚡ Sync finished: ${successCount} successful, ${failCount} failed.`);
-      reRenderView();
     } catch (err) {
       notificationService.toast('Reconciliation failed: ' + err.message);
-      if (btn) { btn.disabled = false; btn.innerHTML = '⚡ Sync All Real Databases'; }
+    } finally {
+      if (btn) { btn.disabled = false; btn.innerHTML = originalText; }
       reRenderView();
     }
   };
@@ -1225,10 +1234,10 @@ export function initDatabaseConfigEvents() {
       });
       saveDashboardSyncState({ lastSyncTime: new Date().toLocaleString() });
       notificationService.toast(`✅ MySQL Primary sync complete: ${total.toLocaleString()} records updated.`);
-      reRenderView();
     } catch (err) {
       recordSyncMetric('mysql_primary', { failed: 1, matched: 0, lastSyncTime: new Date().toLocaleString(), lastError: err.message });
       notificationService.toast('❌ MySQL sync failed: ' + err.message);
+    } finally {
       if (btn) { btn.disabled = false; btn.textContent = '🔄 Sync Now'; }
       reRenderView();
     }
