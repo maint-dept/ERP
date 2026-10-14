@@ -252,7 +252,8 @@ function getDashboardSyncState() {
       failed,
       syncPct,
       autoSyncEnabled: !!conf.enabled,
-      lastSync
+      lastSync,
+      lastError: m.lastError || null
     };
   });
 
@@ -636,7 +637,8 @@ export function renderDatabaseConfigView() {
                       <td style="padding: 12px 14px; color: #94a3b8;">${d.duplicates}</td>
                       <td style="padding: 12px 14px; color: ${d.failed > 0 ? '#f87171' : '#94a3b8'}; font-weight: ${d.failed > 0 ? '700' : 'normal'}">${d.failed}</td>
                       <td style="padding: 12px 14px;">
-                        <span style="display: inline-flex; align-items: center; gap: 5px; color: ${d.statusColor}; font-weight: 700; font-size: 12px;">${statusEmoji} ${d.statusLabel}</span>
+                        <span style="display: inline-flex; align-items: center; gap: 5px; color: ${d.statusColor}; font-weight: 700; font-size: 12px;" title="${(d.lastError || '').replace(/"/g, '&quot;')}">${statusEmoji} ${d.statusLabel}</span>
+                        ${d.lastError ? `<div style="font-size: 10px; color: #f87171; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 3px;" title="${(d.lastError || '').replace(/"/g, '&quot;')}">⚠️ ${d.lastError}</div>` : ''}
                       </td>
                       <td style="padding: 12px 14px; text-align: right;">${actionBtn}</td>
                     </tr>`;
@@ -1083,9 +1085,27 @@ export function initDatabaseConfigEvents() {
     const btn2 = document.getElementById('btn-toggle-auto-sync-2');
     if (btn2) btn2.textContent = `Toggle Auto Sync (${newVal ? 'ON' : 'OFF'})`;
     notificationService.toast(`Auto Sync is now ${newVal ? 'ENABLED' : 'PAUSED'}.`);
+
+    if (newVal) {
+      // Trigger background auto sync immediately for any pending replicas
+      syncManager.triggerAutoSync().then(synced => {
+        if (synced) reRenderView();
+      }).catch(() => {});
+    }
   };
   document.getElementById('btn-toggle-auto-sync')?.addEventListener('click', handleToggleAutoSync);
   document.getElementById('btn-toggle-auto-sync-2')?.addEventListener('click', handleToggleAutoSync);
+
+  // Listen for background auto-sync updates
+  if (typeof window !== 'undefined' && !window._erpSyncUpdateListenerAttached) {
+    window._erpSyncUpdateListenerAttached = true;
+    window.addEventListener('erp-database-sync-updated', () => {
+      const appContainer = document.getElementById('main-view-container') || document.getElementById('app-view-container');
+      if (appContainer && appContainer.querySelector('#badge-auto-sync')) {
+        reRenderView();
+      }
+    });
+  }
 
   // 7. View Missing Records toggle
   const missingPanel = document.getElementById('missing-records-panel');
@@ -1153,7 +1173,7 @@ export function initDatabaseConfigEvents() {
 
   // 9. "Fix & Re-sync All Missing" button — runs real sync on every configured DB that has issues
   const handleReconcileAll = async () => {
-    const btn = document.getElementById('btn-fix-all-missing') || document.getElementById('btn-reconcile-all-records') || document.getElementById('btn-reconcile-missing-now');
+    const btn = document.getElementById('btn-sync-all-providers') || document.getElementById('btn-fix-all-missing') || document.getElementById('btn-reconcile-all-records') || document.getElementById('btn-reconcile-missing-now');
     if (btn) { btn.disabled = true; btn.innerHTML = '⏳ Syncing all databases...'; }
     notificationService.toast('Running full sync across all configured databases...');
     try {
@@ -1185,6 +1205,7 @@ export function initDatabaseConfigEvents() {
       reRenderView();
     }
   };
+  document.getElementById('btn-sync-all-providers')?.addEventListener('click', handleReconcileAll);
   document.getElementById('btn-fix-all-missing')?.addEventListener('click', handleReconcileAll);
   document.getElementById('btn-reconcile-all-records')?.addEventListener('click', handleReconcileAll);
   document.getElementById('btn-reconcile-missing-now')?.addEventListener('click', handleReconcileAll);
@@ -1660,7 +1681,25 @@ function renderProviderForm(providerKey, dbId = null) {
             resultBox.style.border = '1px solid rgba(239, 68, 68, 0.4)';
             resultBox.style.color = '#f87171';
             const errMsg = (testRes && testRes.error) ? testRes.error : 'Could not reach database endpoint. Please verify credentials.';
-              resultBox.innerHTML = `❌ <strong>Connection Notice:</strong> ${errMsg}`;
+            let advice = '';
+            const errLower = errMsg.toLowerCase();
+            if (errLower.includes('password authentication failed')) {
+              advice = `<div style="margin-top: 10px; font-size: 12px; color: #fbbf24; line-height: 1.5; padding: 10px 12px; background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 6px;">
+                <strong>⚠️ PostgreSQL Password Authentication Failed:</strong><br/>
+                PostgreSQL rejected the password for user <code>${payload.username || 'user'}</code>.<br/>
+                <strong>How to fix in cPanel:</strong><br/>
+                1. Open <strong>cPanel &rarr; PostgreSQL Databases</strong>.<br/>
+                2. Under <em>Current Users</em>, find <code>${payload.username || 'user'}</code> and click <strong>Change Password</strong>.<br/>
+                3. Set a new password, click <em>Change Password</em>, then paste the exact same password in the Password field above.<br/>
+                4. Ensure the user is added to <code>${payload.database || 'database'}</code> under <em>"Add User to Database"</em> with <strong>ALL PRIVILEGES</strong>.
+              </div>`;
+            } else if (errLower.includes('no pg_hba.conf entry')) {
+              advice = `<div style="margin-top: 10px; font-size: 12px; color: #fbbf24; line-height: 1.5; padding: 10px 12px; background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 6px;">
+                <strong>⚠️ User Not Granted Access:</strong><br/>
+                In <strong>cPanel &rarr; PostgreSQL Databases</strong>, scroll down to <strong>"Add User to Database"</strong>, select User <code>${payload.username}</code> and Database <code>${payload.database}</code>, and click <strong>Submit / Add</strong> with ALL PRIVILEGES.
+              </div>`;
+            }
+            resultBox.innerHTML = `❌ <strong>Connection Notice:</strong> ${errMsg}${advice}`;
           }
         }
       } catch (err) {
@@ -1740,10 +1779,22 @@ function renderProviderForm(providerKey, dbId = null) {
 
         isConfigFormOpen = false;
         currentEditingDbId = null;
-        notificationService.toast(`✅ "${connName}" saved! Appearing in DATABASE SYNC STATUS now.`);
+        notificationService.toast(`✅ "${connName}" saved! Auto-sync replica is initializing...`);
 
         // Re-render full dashboard so the new/updated DB appears immediately in sync topology
         reRenderView();
+
+        // Trigger immediate background sync for the saved database if autoSync is ON
+        if (autoSync) {
+          syncManager.runFullSync(targetId).then(() => {
+            notificationService.toast(`✅ "${connName}" initial sync completed!`);
+            reRenderView();
+          }).catch(err => {
+            console.warn(`[SyncManager] Initial auto-sync notice for ${connName}:`, err.message);
+            recordSyncMetric(targetId, { failed: 1, matched: 0, lastSyncTime: new Date().toLocaleString(), lastError: err.message });
+            reRenderView();
+          });
+        }
       } catch (err) {
         alert('Failed to save database configuration: ' + err.message);
       } finally {

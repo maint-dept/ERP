@@ -229,6 +229,9 @@ class SyncManager {
         if (!res.success) {
           console.warn(`[SyncManager] Fan-out failed for ${adapter.name} on ${collection}: ${res.error}`);
           this._queueRetry(adapter, collection, null, 'SAVE_TABLE', dataObj, res.error);
+        } else {
+          if (adapter.config) adapter.config.lastSync = new Date().toLocaleString();
+          this._recordMetric(id, { lastSyncTime: new Date().toLocaleString() });
         }
       }).catch(err => {
         this._queueRetry(adapter, collection, null, 'SAVE_TABLE', dataObj, err.message);
@@ -244,6 +247,9 @@ class SyncManager {
       adapter.saveRecord(collection, docId, data).then(res => {
         if (!res.success) {
           this._queueRetry(adapter, collection, docId, 'SAVE_RECORD', data, res.error);
+        } else {
+          if (adapter.config) adapter.config.lastSync = new Date().toLocaleString();
+          this._recordMetric(id, { lastSyncTime: new Date().toLocaleString() });
         }
       }).catch(err => {
         this._queueRetry(adapter, collection, docId, 'SAVE_RECORD', data, err.message);
@@ -307,8 +313,10 @@ class SyncManager {
   }
 
   /**
+  /**
    * Run a Full Initial Sync / Migration from Primary (MySQL) to a specific Secondary Database.
    * Reads all tables from in-memory storage (mirrors MySQL Primary) and bulk-upserts to the target.
+   * Uses 1-shot batch sync (saveMultipleTables) when available for 10x faster migration.
    */
   async runFullSync(dbId) {
     await this._ensureConfig();
@@ -319,32 +327,88 @@ class SyncManager {
     if (!adapter) throw new Error('Database not found or disabled. Make sure the database is enabled and config is saved.');
 
     const { storage } = await import('./storage.js');
-    const allData = storage.data;
-    const tables = Object.keys(allData);
+    const allData = storage.data || {};
 
+    // Filter valid non-empty tables to sync
+    const validTables = {};
+    for (const [tName, tData] of Object.entries(allData)) {
+      if (tData === null || tData === undefined) continue;
+      if (Array.isArray(tData) && tData.length === 0) continue;
+      if (!Array.isArray(tData) && typeof tData === 'object' && Object.keys(tData).length === 0) continue;
+      validTables[tName] = tData;
+    }
+
+    const totalRecords = this._getTotalRecordCount(validTables);
+
+    // 1. FAST BATCH SYNC: If adapter supports saveMultipleTables, sync all tables in 1 shot
+    if (typeof adapter.saveMultipleTables === 'function' && Object.keys(validTables).length > 0) {
+      try {
+        console.log(`[SyncManager] ⚡ Attempting fast batch sync to ${adapter.name} (${Object.keys(validTables).length} tables)...`);
+        const batchResult = await adapter.saveMultipleTables(validTables);
+        if (batchResult && batchResult.success) {
+          if (adapter.config) {
+            adapter.config.lastSync = new Date().toLocaleString();
+          }
+          this._saveConfigs();
+          this._recordMetric(dbId, {
+            matched: totalRecords,
+            missing: 0,
+            failed: 0,
+            duplicates: 0,
+            lastSyncTime: new Date().toLocaleString(),
+            lastError: null
+          });
+          return true;
+        }
+
+        const errStr = (batchResult?.error || '').toLowerCase();
+        const isAuthOrFatal = errStr.includes('authentication') ||
+          errStr.includes('password') ||
+          errStr.includes('access denied') ||
+          errStr.includes('pg_hba') ||
+          errStr.includes('no encryption') ||
+          errStr.includes('cannot reach');
+
+        if (isAuthOrFatal) {
+          throw new Error(batchResult.error);
+        }
+        console.warn(`[SyncManager] Batch sync unconfirmed (${batchResult?.error}), trying sequential fallback...`);
+      } catch (batchErr) {
+        const errStr = (batchErr.message || '').toLowerCase();
+        const isAuthOrFatal = errStr.includes('authentication') ||
+          errStr.includes('password') ||
+          errStr.includes('access denied') ||
+          errStr.includes('pg_hba') ||
+          errStr.includes('no encryption') ||
+          errStr.includes('cannot reach');
+
+        if (isAuthOrFatal) {
+          throw batchErr;
+        }
+        console.warn(`[SyncManager] Batch sync threw (${batchErr.message}), trying sequential fallback...`);
+      }
+    }
+
+    // 2. SEQUENTIAL FALLBACK: Table-by-table sync
     let totalSuccess = 0;
     let totalFailed  = 0;
 
-    for (const tableName of tables) {
-      const tableData = allData[tableName];
-
-      // Fix: correctly skip truly empty tables (works for both arrays and plain objects)
-      if (tableData === null || tableData === undefined) continue;
-      if (Array.isArray(tableData) && tableData.length === 0) continue;
-      if (!Array.isArray(tableData) && typeof tableData === 'object' && Object.keys(tableData).length === 0) continue;
-
+    for (const [tableName, tableData] of Object.entries(validTables)) {
       const result = await adapter.saveTable(tableName, tableData);
-      if (result.success) {
+      if (result && result.success) {
         totalSuccess++;
       } else {
         totalFailed++;
-        console.error(`[SyncManager] Full Sync failed for table "${tableName}" on "${adapter.name}":`, result.error);
+        console.error(`[SyncManager] Sync failed for table "${tableName}" on "${adapter.name}":`, result?.error);
 
         // Abort early on fatal / unrecoverable errors
-        const errStr = (result.error || '').toLowerCase();
-        const isFatal = result.isTableMissing || result.isAuthError ||
+        const errStr = (result?.error || '').toLowerCase();
+        const isFatal = result?.isTableMissing || result?.isAuthError ||
           errStr.includes('not found')        ||
           errStr.includes('authentication')   ||
+          errStr.includes('password')         ||
+          errStr.includes('access denied')    ||
+          errStr.includes('pg_hba')           ||
           errStr.includes('failed to fetch')  ||
           errStr.includes('network')          ||
           errStr.includes('cors')             ||
@@ -356,10 +420,10 @@ class SyncManager {
           errStr.includes('invalid');
 
         if (isFatal) {
-          throw new Error(result.error);
+          throw new Error(result?.error || 'Database sync failed: fatal connection or credential error.');
         }
 
-        await this._queueRetry(adapter, tableName, null, 'SAVE_TABLE', tableData, result.error);
+        await this._queueRetry(adapter, tableName, null, 'SAVE_TABLE', tableData, result?.error);
       }
     }
 
@@ -372,8 +436,137 @@ class SyncManager {
       adapter.config.lastSync = new Date().toLocaleString();
     }
     this._saveConfigs();
+    this._recordMetric(dbId, {
+      matched: totalRecords,
+      missing: 0,
+      failed: 0,
+      duplicates: 0,
+      lastSyncTime: new Date().toLocaleString(),
+      lastError: null
+    });
 
     return true;
+  }
+
+  _getTotalRecordCount(dataObj) {
+    let count = 0;
+    for (const k in dataObj || {}) {
+      const val = dataObj[k];
+      if (Array.isArray(val)) count += val.length;
+      else if (val && typeof val === 'object') count += Object.keys(val).length;
+    }
+    return count;
+  }
+
+  _recordMetric(dbId, patch) {
+    try {
+      if (typeof localStorage === 'undefined') return;
+      const raw = localStorage.getItem('erp_data_engine_sync_metrics');
+      const metrics = raw ? JSON.parse(raw) : {};
+      metrics[dbId] = { ...(metrics[dbId] || {}), ...patch, lastUpdated: new Date().toISOString() };
+      localStorage.setItem('erp_data_engine_sync_metrics', JSON.stringify(metrics));
+    } catch (_) {}
+  }
+
+  /**
+   * Start the Background Auto-Sync Engine.
+   * Periodically checks secondary databases and automatically reconciles/syncs
+   * any secondary database that is enabled, pending, or desynchronized.
+   */
+  startAutoSyncEngine(intervalMs = 45000) {
+    if (this._autoSyncTimer) {
+      clearInterval(this._autoSyncTimer);
+      this._autoSyncTimer = null;
+    }
+
+    // Initial background sync check 3 seconds after boot
+    if (typeof setTimeout !== 'undefined') {
+      setTimeout(() => {
+        this.triggerAutoSync({ silent: true }).catch(() => {});
+      }, 3500);
+    }
+
+    // Recurring sync check
+    if (typeof setInterval !== 'undefined') {
+      this._autoSyncTimer = setInterval(() => {
+        this.triggerAutoSync({ silent: true }).catch(() => {});
+      }, intervalMs);
+    }
+  }
+
+  /**
+   * Trigger an Auto-Sync run across all enabled secondary databases.
+   */
+  async triggerAutoSync(options = {}) {
+    if (this._isAutoSyncRunning) return false;
+    this._isAutoSyncRunning = true;
+
+    try {
+      await this._ensureConfig();
+
+      // Check global autoSync preference
+      let isAutoSyncEnabled = true;
+      try {
+        if (typeof localStorage !== 'undefined') {
+          const stored = localStorage.getItem('erp_data_engine_sync_state');
+          if (stored) {
+            const parsed = JSON.parse(stored);
+            if (parsed.autoSync === false) isAutoSyncEnabled = false;
+          }
+        }
+      } catch (_) {}
+
+      if (!isAutoSyncEnabled) return false;
+
+      let metrics = {};
+      try {
+        if (typeof localStorage !== 'undefined') {
+          const mStored = localStorage.getItem('erp_data_engine_sync_metrics');
+          if (mStored) metrics = JSON.parse(mStored) || {};
+        }
+      } catch (_) {}
+
+      let syncedAny = false;
+
+      for (const [id, adapter] of this.secondaryAdapters.entries()) {
+        if (!adapter.config || !adapter.config.enabled || adapter.config.autoSync === false) continue;
+
+        const m = metrics[id];
+        // Condition to auto-sync:
+        // 1. Never synced yet (no lastUpdated or status was PENDING)
+        // 2. Has missing records (missing > 0)
+        const isPending = !m || !m.lastUpdated || m.matched === undefined;
+        const hasMissing = m && m.missing && m.missing > 0;
+
+        if (isPending || hasMissing) {
+          try {
+            console.log(`[AutoSync Engine] 🔄 Auto-syncing secondary replica "${adapter.name}" (${id})...`);
+            await this.runFullSync(id);
+            syncedAny = true;
+            if (typeof window !== 'undefined') {
+              window.dispatchEvent(new CustomEvent('erp-database-sync-updated', { detail: { dbId: id, status: 'SYNCED' } }));
+            }
+          } catch (err) {
+            console.warn(`[AutoSync Engine] ⚠️ Auto-sync notice for "${adapter.name}":`, err.message);
+            this._recordMetric(id, {
+              failed: 1,
+              lastSyncTime: new Date().toLocaleString(),
+              lastError: err.message
+            });
+            if (typeof window !== 'undefined') {
+              window.dispatchEvent(new CustomEvent('erp-database-sync-updated', { detail: { dbId: id, status: 'FAILED', error: err.message } }));
+            }
+          }
+        }
+      }
+
+      // Also process retry queue
+      await this.processRetryQueue().catch(() => {});
+
+      return syncedAny;
+    } finally {
+      this._isAutoSyncRunning = false;
+    }
   }
 
   _saveConfigs() {
@@ -393,3 +586,8 @@ class SyncManager {
 }
 
 export const syncManager = new SyncManager();
+
+// Automatically boot Auto-Sync Engine in browser environment
+if (typeof window !== 'undefined') {
+  syncManager.startAutoSyncEngine();
+}

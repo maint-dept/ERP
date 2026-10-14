@@ -59,6 +59,19 @@ export class PostgresAdapter extends BaseAdapter {
     return headers;
   }
 
+  _dbPayload(extra = {}) {
+    return {
+      apiKey: this.apiKey,
+      dbHost: this.host,
+      dbPort: this.port,
+      dbName: this.database,
+      dbUser: this.username,
+      dbPass: this.password,
+      dbSsl: this.ssl,
+      ...extra
+    };
+  }
+
   _getUrl(action) {
     const tParam = `_t=${Date.now()}`;
     if (this.endpoint.includes('.php')) {
@@ -77,7 +90,7 @@ export class PostgresAdapter extends BaseAdapter {
         method: 'POST',
         cache: 'no-store',
         headers: this._headers(),
-        body: JSON.stringify({ action: 'ping', apiKey: this.apiKey })
+        body: JSON.stringify(this._dbPayload({ action: 'ping' }))
       });
       const latency = Date.now() - start;
 
@@ -122,11 +135,18 @@ export class PostgresAdapter extends BaseAdapter {
         method: 'POST',
         cache: 'no-store',
         headers: this._headers(),
-        body: JSON.stringify({ action: 'upsert', collection, docId, data, apiKey: this.apiKey })
+        body: JSON.stringify(this._dbPayload({ action: 'upsert', collection, docId, data }))
       });
       if (res && res.ok) return { success: true };
       const errText = await res.text().catch(() => '');
-      return { success: false, error: errText || `PostgreSQL upsert failed: HTTP ${res.status}` };
+      let parsedErr = '';
+      try {
+        const j = JSON.parse(errText);
+        parsedErr = j.error || j.message || errText;
+      } catch (_) {
+        parsedErr = errText;
+      }
+      return { success: false, error: parsedErr || `PostgreSQL upsert failed: HTTP ${res.status}` };
     } catch (e) {
       return { success: false, error: `PostgreSQL upsert failed: ${e.message}` };
     }
@@ -139,14 +159,21 @@ export class PostgresAdapter extends BaseAdapter {
         method: 'POST',
         cache: 'no-store',
         headers: this._headers(),
-        body: JSON.stringify({ action: 'save_table', collection, data: dataObj, apiKey: this.apiKey })
+        body: JSON.stringify(this._dbPayload({ action: 'save_table', collection, data: dataObj }))
       });
       if (res && res.ok) {
         const json = await res.json().catch(() => ({}));
         return { success: true, ...json, updateTime: json.updatedAt || json.updateTime };
       }
       const errText = await res.text().catch(() => '');
-      return { success: false, error: errText || `PostgreSQL save-table failed: HTTP ${res.status}` };
+      let parsedErr = '';
+      try {
+        const j = JSON.parse(errText);
+        parsedErr = j.error || j.message || errText;
+      } catch (_) {
+        parsedErr = errText;
+      }
+      return { success: false, error: parsedErr || `PostgreSQL save-table failed: HTTP ${res.status}` };
     } catch (e) {
       return { success: false, error: `PostgreSQL save-table failed: ${e.message}` };
     }
@@ -159,14 +186,21 @@ export class PostgresAdapter extends BaseAdapter {
         method: 'POST',
         cache: 'no-store',
         headers: this._headers(),
-        body: JSON.stringify({ action: 'save_multiple_tables', tables: tablesObj, apiKey: this.apiKey })
+        body: JSON.stringify(this._dbPayload({ action: 'save_multiple_tables', tables: tablesObj }))
       });
       if (res && res.ok) {
         const json = await res.json().catch(() => ({}));
         return { success: true, ...json, updateTime: json.updatedAt || json.updateTime };
       }
       const errText = await res.text().catch(() => '');
-      return { success: false, error: errText || `PostgreSQL save-multiple-tables failed: HTTP ${res.status}` };
+      let parsedErr = '';
+      try {
+        const j = JSON.parse(errText);
+        parsedErr = j.error || j.message || errText;
+      } catch (_) {
+        parsedErr = errText;
+      }
+      return { success: false, error: parsedErr || `PostgreSQL save-multiple-tables failed: HTTP ${res.status}` };
     } catch (e) {
       return { success: false, error: `PostgreSQL save-multiple-tables failed: ${e.message}` };
     }
@@ -245,11 +279,18 @@ export class PostgresAdapter extends BaseAdapter {
         method: 'POST',
         cache: 'no-store',
         headers: this._headers(),
-        body: JSON.stringify({ action: 'delete', collection, docId, apiKey: this.apiKey })
+        body: JSON.stringify(this._dbPayload({ action: 'delete', collection, docId }))
       });
       if (res && res.ok) return { success: true };
       const errText = await res.text().catch(() => '');
-      return { success: false, error: errText || `PostgreSQL delete failed: HTTP ${res.status}` };
+      let parsedErr = '';
+      try {
+        const j = JSON.parse(errText);
+        parsedErr = j.error || j.message || errText;
+      } catch (_) {
+        parsedErr = errText;
+      }
+      return { success: false, error: parsedErr || `PostgreSQL delete failed: HTTP ${res.status}` };
     } catch (e) {
       return { success: false, error: `PostgreSQL delete failed: ${e.message}` };
     }

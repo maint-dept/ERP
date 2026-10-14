@@ -51,36 +51,53 @@ if ($userRole === 'NO_ACCESS') {
     exit;
 }
 
-// --- 4. DYNAMIC CREDENTIAL OVERRIDE (From ERP request headers or payload) ---
+// Read JSON input
+$rawInput = file_get_contents('php://input');
+$body = json_decode($rawInput, true) ?: [];
+
+// --- 4. DYNAMIC CREDENTIAL OVERRIDE (From request payload or headers) ---
 $headerKey = $headers['X-API-Key'] ?? $headers['x-api-key'] ?? '';
 $authHeader = $headers['Authorization'] ?? $headers['authorization'] ?? '';
 if (strpos($authHeader, 'Bearer ') === 0) {
     $headerKey = substr($authHeader, 7);
 }
 
-if (!empty($headers['X-DB-Host']) || !empty($headers['x-db-host'])) {
+if (!empty($body['dbHost'])) {
+    $DB_HOST = $body['dbHost'];
+} elseif (!empty($headers['X-DB-Host']) || !empty($headers['x-db-host'])) {
     $DB_HOST = $headers['X-DB-Host'] ?? $headers['x-db-host'];
 }
-if (!empty($headers['X-DB-Port']) || !empty($headers['x-db-port'])) {
+
+if (!empty($body['dbPort'])) {
+    $DB_PORT = intval($body['dbPort']);
+} elseif (!empty($headers['X-DB-Port']) || !empty($headers['x-db-port'])) {
     $DB_PORT = intval($headers['X-DB-Port'] ?? $headers['x-db-port']);
 }
-if (!empty($headers['X-DB-Name']) || !empty($headers['x-db-name'])) {
+
+if (!empty($body['dbName'])) {
+    $DB_NAME = $body['dbName'];
+} elseif (!empty($headers['X-DB-Name']) || !empty($headers['x-db-name'])) {
     $DB_NAME = $headers['X-DB-Name'] ?? $headers['x-db-name'];
 }
-if (!empty($headers['X-DB-User']) || !empty($headers['x-db-user'])) {
+
+if (!empty($body['dbUser'])) {
+    $DB_USER = $body['dbUser'];
+} elseif (!empty($headers['X-DB-User']) || !empty($headers['x-db-user'])) {
     $DB_USER = $headers['X-DB-User'] ?? $headers['x-db-user'];
 }
-if (isset($headers['X-DB-Pass']) || isset($headers['x-db-pass'])) {
+
+if (isset($body['dbPass'])) {
+    $DB_PASS = $body['dbPass'];
+} elseif (isset($headers['X-DB-Pass']) || isset($headers['x-db-pass'])) {
     $DB_PASS = $headers['X-DB-Pass'] ?? $headers['x-db-pass'];
 }
-if (isset($headers['X-DB-SSL']) || isset($headers['x-db-ssl'])) {
+
+if (isset($body['dbSsl'])) {
+    $DB_SSL = ($body['dbSsl'] === true || $body['dbSsl'] === '1' || $body['dbSsl'] === 1);
+} elseif (isset($headers['X-DB-SSL']) || isset($headers['x-db-ssl'])) {
     $sslVal = $headers['X-DB-SSL'] ?? $headers['x-db-ssl'];
     $DB_SSL = ($sslVal === '1' || $sslVal === 'true' || $sslVal === true);
 }
-
-// Read JSON input
-$rawInput = file_get_contents('php://input');
-$body = json_decode($rawInput, true) ?: [];
 
 // Check API Key if configured
 if (!empty($API_KEY)) {
@@ -198,6 +215,7 @@ try {
             if (empty($tablesData)) {
                 throw new Exception('Missing "tables" data.');
             }
+            $pdo->beginTransaction();
             foreach ($tablesData as $collection => $data) {
                 $jsonStr = is_string($data) ? $data : json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
                 $itemCount = is_array($data) ? count($data) : 1;
@@ -215,7 +233,9 @@ try {
                     ':item_count' => $itemCount
                 ]);
             }
-            $pdo->commit();
+            if ($pdo->inTransaction()) {
+                $pdo->commit();
+            }
 
             echo json_encode([
                 'success' => true,
@@ -252,7 +272,9 @@ try {
                 ':raw_json'   => $jsonStr,
                 ':item_count' => $itemCount
             ]);
-            $pdo->commit();
+            if ($pdo->inTransaction()) {
+                $pdo->commit();
+            }
 
             echo json_encode([
                 'success' => true,
@@ -370,7 +392,9 @@ try {
                 ':raw_json'   => $newJson,
                 ':item_count' => $newCount
             ]);
-            $pdo->commit();
+            if ($pdo->inTransaction()) {
+                $pdo->commit();
+            }
 
             echo json_encode([
                 'success' => true,
@@ -415,7 +439,9 @@ try {
                     ]);
                 }
             }
-            $pdo->commit();
+            if ($pdo->inTransaction()) {
+                $pdo->commit();
+            }
 
             echo json_encode([
                 'success' => true,
