@@ -1827,10 +1827,15 @@ body.modal-open {
 /* =========================================================
    Dedicated User Access Management (UAM) Full-Screen Layout
    ========================================================= */
-#main-view-container:has(.uam-dashboard-page) {
+#main-view-container:has(.uam-dashboard-page),
+.app-main:has(.uam-dashboard-page) #main-view-container {
   overflow: hidden !important;
+  height: calc(100vh - var(--header-height, 56px)) !important;
+  max-height: calc(100vh - var(--header-height, 56px)) !important;
+  padding: 0 !important;
 }
 
+.page-view.uam-dashboard-page,
 .uam-dashboard-page {
   display: flex !important;
   flex-direction: column !important;
@@ -1839,8 +1844,8 @@ body.modal-open {
   min-height: 0 !important;
   width: 100% !important;
   max-width: 100% !important;
-  padding: 8px 14px 10px 14px !important;
-  gap: 6px !important;
+  padding: 4px 10px 4px 10px !important;
+  gap: 4px !important;
   overflow: hidden !important;
   box-sizing: border-box !important;
 }
@@ -1850,18 +1855,19 @@ body.modal-open {
   flex-shrink: 0 !important;
   display: flex !important;
   flex-direction: column !important;
-  gap: 6px !important;
+  gap: 4px !important;
   width: 100% !important;
-  z-index: 15 !important;
+  z-index: 25 !important;
 }
 
 /* Tab 1 Dedicated Content Wrapper */
 .uam-tab-content-wrapper {
   flex: 1 1 0% !important;
   min-height: 0 !important;
+  height: 0 !important;
   display: flex !important;
   flex-direction: column !important;
-  gap: 6px !important;
+  gap: 4px !important;
   overflow: hidden !important;
   width: 100% !important;
 }
@@ -1870,8 +1876,9 @@ body.modal-open {
 .uam-table-scroll-container {
   width: 100% !important;
   flex: 1 1 0% !important;
-  min-height: 200px !important;
-  max-height: calc(100vh - 265px) !important;
+  min-height: 0 !important;
+  height: 0 !important;
+  max-height: none !important;
   overflow-x: auto !important;
   overflow-y: auto !important;
   position: relative !important;
@@ -2023,8 +2030,10 @@ body.modal-open {
 .uam-subtab-scroll-panel {
   flex: 1 1 0% !important;
   min-height: 0 !important;
+  height: 0 !important;
+  max-height: none !important;
   overflow-y: auto !important;
-  overflow-x: hidden !important;
+  overflow-x: auto !important;
   padding-right: 4px;
 }
 

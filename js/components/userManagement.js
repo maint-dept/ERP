@@ -283,7 +283,7 @@ export function renderUserManagement() {
   const isPageAllSelected = paginatedAccounts.length > 0 && paginatedAccounts.every(a => selectedAccountIds.has(a.id));
 
   return `
-    <div class="page-view uam-dashboard-page" style="display: flex; flex-direction: column; height: 100%; max-height: 100%; min-height: 0; padding: 4px 12px; gap: 4px; overflow: hidden; box-sizing: border-box;">
+    <div class="page-view uam-dashboard-page" style="display: flex; flex-direction: column; height: 100%; max-height: 100%; min-height: 0; padding: 4px 10px 4px 10px; gap: 4px; overflow: hidden; box-sizing: border-box;">
       
       <!-- =================================================================== -->
       <!-- FIXED TOP DECK: Header, KPI Summary, Navigation Tabs & Filters      -->
@@ -291,20 +291,20 @@ export function renderUserManagement() {
       <div class="uam-fixed-top-deck" style="display: flex; flex-direction: column; gap: 4px; flex-shrink: 0; position: sticky; top: 0; z-index: 35; background: var(--bg-surface, #0f172a);">
         
         <!-- 1. TOP HEADER & KPI SUMMARY DASHBOARD (Compact & High-Density) -->
-        <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 8px 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; box-shadow: var(--shadow-sm);">
-        <div style="display: flex; align-items: center; gap: 10px;">
-          <div style="width: 32px; height: 32px; border-radius: 8px; background: linear-gradient(135deg, rgba(2, 132, 199, 0.2), rgba(14, 165, 233, 0.05)); border: 1px solid rgba(56, 189, 248, 0.35); display: flex; align-items: center; justify-content: center; font-size: 16px;">
+        <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 5px 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; box-shadow: var(--shadow-sm);">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <div style="width: 26px; height: 26px; border-radius: 6px; background: linear-gradient(135deg, rgba(2, 132, 199, 0.2), rgba(14, 165, 233, 0.05)); border: 1px solid rgba(56, 189, 248, 0.35); display: flex; align-items: center; justify-content: center; font-size: 14px;">
             👥
           </div>
           <div>
-            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-              <h1 style="font-size: 16px; font-weight: 800; color: #fff; margin: 0; letter-spacing: -0.2px;">
+            <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+              <h1 style="font-size: 14.5px; font-weight: 800; color: #fff; margin: 0; letter-spacing: -0.2px;">
                 User Access Management
               </h1>
-              <span class="badge badge-active" style="font-size: 10px; padding: 1px 7px; font-weight: 700;">
+              <span class="badge badge-active" style="font-size: 9.5px; padding: 1px 6px; font-weight: 700;">
                 Enterprise Security Matrix
               </span>
-              <span style="font-size: 11px; color: var(--text-muted);">
+              <span style="font-size: 10.5px; color: var(--text-muted);">
                 • Centralized workforce accounts &amp; permissions
               </span>
             </div>
@@ -312,102 +312,102 @@ export function renderUserManagement() {
         </div>
 
         <!-- Top Right Action Controls -->
-        <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+        <div style="display: flex; gap: 5px; align-items: center; flex-wrap: wrap;">
           ${isAdmin ? `
             ${pendingCreation > 0 ? `
-              <button id="btn-auto-create-all-missing" class="btn btn-warning btn-xs" style="font-weight: 800; padding: 4px 10px; font-size: 11px; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px;" title="Auto-create linked accounts for all ${pendingCreation} manpower records currently without an account">
+              <button id="btn-auto-create-all-missing" class="btn btn-warning btn-xs" style="font-weight: 800; padding: 3px 8px; font-size: 10.5px; border-radius: 5px; display: inline-flex; align-items: center; gap: 3px;" title="Auto-create linked accounts for all ${pendingCreation} manpower records currently without an account">
                 <span>⚡</span> <span>Auto-Create Missing (${pendingCreation})</span>
               </button>
             ` : ''}
-            <button id="btn-top-add-user" class="btn btn-primary btn-xs" style="font-weight: 700; background: linear-gradient(135deg, #0284c7, #0369a1); padding: 5px 12px; font-size: 11.5px; border-radius: 6px; display: inline-flex; align-items: center; gap: 5px; height: 28px;">
+            <button id="btn-top-add-user" class="btn btn-primary btn-xs" style="font-weight: 700; background: linear-gradient(135deg, #0284c7, #0369a1); padding: 4px 10px; font-size: 11px; border-radius: 5px; display: inline-flex; align-items: center; gap: 4px; height: 26px;">
               <span>➕</span> <span>Add New User</span>
             </button>
           ` : ''}
-          <button id="btn-refresh-uam" class="btn btn-secondary btn-xs" style="padding: 5px 10px; font-size: 11.5px; border-radius: 6px; height: 28px;" title="Refresh Accounts and Database">
+          <button id="btn-refresh-uam" class="btn btn-secondary btn-xs" style="padding: 4px 8px; font-size: 11px; border-radius: 5px; height: 26px;" title="Refresh Accounts and Database">
             🔄 Refresh
           </button>
         </div>
       </div>
 
       <!-- 2. High-Density Dashboard KPI Metrics Ribbon (Interactive) -->
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 6px;">
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 4px;">
         <!-- 1. Total Accounts -->
-        <div class="uam-kpi-summary-card" data-action="TOTAL" style="background: rgba(15, 23, 42, 0.65); border: 1px solid var(--border-color); border-radius: 7px; padding: 5px 10px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: all 0.2s ease;" title="Click to view all accounts">
+        <div class="uam-kpi-summary-card" data-action="TOTAL" style="background: rgba(15, 23, 42, 0.65); border: 1px solid var(--border-color); border-radius: 6px; padding: 3px 8px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: all 0.2s ease;" title="Click to view all accounts">
           <div>
-            <div style="font-size: 9.5px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.3px;">Total Accounts</div>
-            <div style="font-size: 16px; font-weight: 900; color: #fff; line-height: 1.1; margin-top: 1px;">${totalAccounts}</div>
+            <div style="font-size: 8.5px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.3px;">Total Accounts</div>
+            <div style="font-size: 14.5px; font-weight: 900; color: #fff; line-height: 1.1; margin-top: 1px;">${totalAccounts}</div>
           </div>
-          <div style="width: 26px; height: 26px; border-radius: 6px; background: rgba(56, 189, 248, 0.12); color: #38bdf8; display: flex; align-items: center; justify-content: center; font-size: 13px;">👥</div>
+          <div style="width: 22px; height: 22px; border-radius: 5px; background: rgba(56, 189, 248, 0.12); color: #38bdf8; display: flex; align-items: center; justify-content: center; font-size: 11px;">👥</div>
         </div>
 
         <!-- 2. Active Accounts -->
-        <div class="uam-kpi-summary-card" data-action="ACTIVE" style="background: rgba(15, 23, 42, 0.65); border: 1px solid var(--border-color); border-radius: 7px; padding: 5px 10px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: all 0.2s ease;" title="Click to filter active accounts">
+        <div class="uam-kpi-summary-card" data-action="ACTIVE" style="background: rgba(15, 23, 42, 0.65); border: 1px solid var(--border-color); border-radius: 6px; padding: 3px 8px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: all 0.2s ease;" title="Click to filter active accounts">
           <div>
-            <div style="font-size: 9.5px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.3px;">Active Accounts</div>
-            <div style="font-size: 16px; font-weight: 900; color: #34d399; line-height: 1.1; margin-top: 1px;">${activeAccounts}</div>
+            <div style="font-size: 8.5px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.3px;">Active Accounts</div>
+            <div style="font-size: 14.5px; font-weight: 900; color: #34d399; line-height: 1.1; margin-top: 1px;">${activeAccounts}</div>
           </div>
-          <div style="width: 26px; height: 26px; border-radius: 6px; background: rgba(16, 185, 129, 0.12); color: #10b981; display: flex; align-items: center; justify-content: center; font-size: 13px;">🟢</div>
+          <div style="width: 22px; height: 22px; border-radius: 5px; background: rgba(16, 185, 129, 0.12); color: #10b981; display: flex; align-items: center; justify-content: center; font-size: 11px;">🟢</div>
         </div>
 
         <!-- 3. Inactive Accounts -->
-        <div class="uam-kpi-summary-card" data-action="INACTIVE" style="background: rgba(15, 23, 42, 0.65); border: 1px solid var(--border-color); border-radius: 7px; padding: 5px 10px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: all 0.2s ease;" title="Click to filter inactive accounts">
+        <div class="uam-kpi-summary-card" data-action="INACTIVE" style="background: rgba(15, 23, 42, 0.65); border: 1px solid var(--border-color); border-radius: 6px; padding: 3px 8px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: all 0.2s ease;" title="Click to filter inactive accounts">
           <div>
-            <div style="font-size: 9.5px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.3px;">Inactive Accounts</div>
-            <div style="font-size: 16px; font-weight: 900; color: #94a3b8; line-height: 1.1; margin-top: 1px;">${inactiveAccounts}</div>
+            <div style="font-size: 8.5px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.3px;">Inactive Accounts</div>
+            <div style="font-size: 14.5px; font-weight: 900; color: #94a3b8; line-height: 1.1; margin-top: 1px;">${inactiveAccounts}</div>
           </div>
-          <div style="width: 26px; height: 26px; border-radius: 6px; background: rgba(148, 163, 184, 0.12); color: #94a3b8; display: flex; align-items: center; justify-content: center; font-size: 13px;">🔴</div>
+          <div style="width: 22px; height: 22px; border-radius: 5px; background: rgba(148, 163, 184, 0.12); color: #94a3b8; display: flex; align-items: center; justify-content: center; font-size: 11px;">🔴</div>
         </div>
 
         <!-- 4. Accounts Pending Creation -->
-        <div class="uam-kpi-summary-card" data-action="PENDING_CREATION" style="background: rgba(15, 23, 42, 0.65); border: 1px solid ${pendingCreation > 0 ? 'rgba(245, 158, 11, 0.4)' : 'var(--border-color)'}; border-radius: 7px; padding: 5px 10px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: all 0.2s ease;" title="Click to filter manpower records missing user accounts">
+        <div class="uam-kpi-summary-card" data-action="PENDING_CREATION" style="background: rgba(15, 23, 42, 0.65); border: 1px solid ${pendingCreation > 0 ? 'rgba(245, 158, 11, 0.4)' : 'var(--border-color)'}; border-radius: 6px; padding: 3px 8px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: all 0.2s ease;" title="Click to filter manpower records missing user accounts">
           <div>
-            <div style="font-size: 9.5px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.3px;">Pending Creation</div>
-            <div style="font-size: 16px; font-weight: 900; color: ${pendingCreation > 0 ? '#fbbf24' : '#fff'}; line-height: 1.1; margin-top: 1px;">${pendingCreation}</div>
+            <div style="font-size: 8.5px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.3px;">Pending Creation</div>
+            <div style="font-size: 14.5px; font-weight: 900; color: ${pendingCreation > 0 ? '#fbbf24' : '#fff'}; line-height: 1.1; margin-top: 1px;">${pendingCreation}</div>
           </div>
-          <div style="width: 26px; height: 26px; border-radius: 6px; background: rgba(245, 158, 11, 0.12); color: #f59e0b; display: flex; align-items: center; justify-content: center; font-size: 13px;">⏳</div>
+          <div style="width: 22px; height: 22px; border-radius: 5px; background: rgba(245, 158, 11, 0.12); color: #f59e0b; display: flex; align-items: center; justify-content: center; font-size: 11px;">⏳</div>
         </div>
 
         <!-- 5. Accounts Pending Password Setup -->
-        <div class="uam-kpi-summary-card" data-action="PENDING_PASSWORD" style="background: rgba(15, 23, 42, 0.65); border: 1px solid var(--border-color); border-radius: 7px; padding: 5px 10px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: all 0.2s ease;" title="Click to filter accounts with temporary passwords">
+        <div class="uam-kpi-summary-card" data-action="PENDING_PASSWORD" style="background: rgba(15, 23, 42, 0.65); border: 1px solid var(--border-color); border-radius: 6px; padding: 3px 8px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: all 0.2s ease;" title="Click to filter accounts with temporary passwords">
           <div>
-            <div style="font-size: 9.5px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.3px;">Temp / Pending Pass</div>
-            <div style="font-size: 16px; font-weight: 900; color: #c084fc; line-height: 1.1; margin-top: 1px;">${pendingPasswordSetup}</div>
+            <div style="font-size: 8.5px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.3px;">Temp / Pending Pass</div>
+            <div style="font-size: 14.5px; font-weight: 900; color: #c084fc; line-height: 1.1; margin-top: 1px;">${pendingPasswordSetup}</div>
           </div>
-          <div style="width: 26px; height: 26px; border-radius: 6px; background: rgba(168, 85, 247, 0.12); color: #c084fc; display: flex; align-items: center; justify-content: center; font-size: 13px;">🔑</div>
+          <div style="width: 22px; height: 22px; border-radius: 5px; background: rgba(168, 85, 247, 0.12); color: #c084fc; display: flex; align-items: center; justify-content: center; font-size: 11px;">🔑</div>
         </div>
 
         <!-- 6. Users with Permissions -->
-        <div class="uam-kpi-summary-card" data-action="CONFIGURED_ACCESS" style="background: rgba(15, 23, 42, 0.65); border: 1px solid var(--border-color); border-radius: 7px; padding: 5px 10px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: all 0.2s ease;" title="Click to view Access Permissions">
+        <div class="uam-kpi-summary-card" data-action="CONFIGURED_ACCESS" style="background: rgba(15, 23, 42, 0.65); border: 1px solid var(--border-color); border-radius: 6px; padding: 3px 8px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: all 0.2s ease;" title="Click to view Access Permissions">
           <div>
-            <div style="font-size: 9.5px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.3px;">Configured Access</div>
-            <div style="font-size: 16px; font-weight: 900; color: #38bdf8; line-height: 1.1; margin-top: 1px;">${usersWithPermissions}</div>
+            <div style="font-size: 8.5px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.3px;">Configured Access</div>
+            <div style="font-size: 14.5px; font-weight: 900; color: #38bdf8; line-height: 1.1; margin-top: 1px;">${usersWithPermissions}</div>
           </div>
-          <div style="width: 26px; height: 26px; border-radius: 6px; background: rgba(56, 189, 248, 0.12); color: #38bdf8; display: flex; align-items: center; justify-content: center; font-size: 13px;">🛡️</div>
+          <div style="width: 22px; height: 22px; border-radius: 5px; background: rgba(56, 189, 248, 0.12); color: #38bdf8; display: flex; align-items: center; justify-content: center; font-size: 11px;">🛡️</div>
         </div>
       </div>
 
       <!-- =================================================================== -->
       <!-- 3. PRIMARY SUB-FEATURES NAVIGATION BAR                              -->
       <!-- =================================================================== -->
-      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 4px; gap: 6px; flex-wrap: wrap;">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 2px; gap: 4px; flex-wrap: wrap;">
         <!-- Left: 6 Sub-features Switcher Tabs -->
-        <div style="display: inline-flex; background: rgba(15, 23, 42, 0.85); border: 1px solid var(--border-color); border-radius: 8px; padding: 2px; gap: 2px; flex-wrap: wrap;">
+        <div style="display: inline-flex; background: rgba(15, 23, 42, 0.85); border: 1px solid var(--border-color); border-radius: 6px; padding: 2px; gap: 2px; flex-wrap: wrap;">
           
           <button 
             type="button" 
             class="tab-btn-uam" 
             data-tab="ACCOUNTS"
-            style="padding: 5px 12px; font-size: 11.5px; font-weight: 800; border-radius: 6px; border: none; cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 5px; background: ${activeUserSection === 'ACCOUNTS' ? 'linear-gradient(135deg, #0284c7, #0369a1)' : 'transparent'}; color: ${activeUserSection === 'ACCOUNTS' ? '#fff' : 'var(--text-secondary)'};"
+            style="padding: 3px 10px; font-size: 11px; font-weight: 800; border-radius: 5px; border: none; cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 4px; height: 25px; background: ${activeUserSection === 'ACCOUNTS' ? 'linear-gradient(135deg, #0284c7, #0369a1)' : 'transparent'}; color: ${activeUserSection === 'ACCOUNTS' ? '#fff' : 'var(--text-secondary)'};"
           >
             <span>👥 1. User Accounts</span>
-            <span style="background: ${activeUserSection === 'ACCOUNTS' ? 'rgba(255, 255, 255, 0.25)' : 'rgba(148, 163, 184, 0.15)'}; color: ${activeUserSection === 'ACCOUNTS' ? '#fff' : '#94a3b8'}; padding: 1px 6px; border-radius: 8px; font-size: 10px;">${totalAccounts}</span>
+            <span style="background: ${activeUserSection === 'ACCOUNTS' ? 'rgba(255, 255, 255, 0.25)' : 'rgba(148, 163, 184, 0.15)'}; color: ${activeUserSection === 'ACCOUNTS' ? '#fff' : '#94a3b8'}; padding: 0 5px; border-radius: 6px; font-size: 9.5px;">${totalAccounts}</span>
           </button>
 
           <button 
             type="button" 
             class="tab-btn-uam" 
             data-tab="PERMISSIONS"
-            style="padding: 5px 12px; font-size: 11.5px; font-weight: 800; border-radius: 6px; border: none; cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 5px; background: ${activeUserSection === 'PERMISSIONS' ? 'linear-gradient(135deg, #0284c7, #0369a1)' : 'transparent'}; color: ${activeUserSection === 'PERMISSIONS' ? '#fff' : 'var(--text-secondary)'};"
+            style="padding: 3px 10px; font-size: 11px; font-weight: 800; border-radius: 5px; border: none; cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 4px; height: 25px; background: ${activeUserSection === 'PERMISSIONS' ? 'linear-gradient(135deg, #0284c7, #0369a1)' : 'transparent'}; color: ${activeUserSection === 'PERMISSIONS' ? '#fff' : 'var(--text-secondary)'};"
           >
             <span>🛡️ 2. Access Permissions</span>
           </button>
@@ -416,17 +416,17 @@ export function renderUserManagement() {
             type="button" 
             class="tab-btn-uam" 
             data-tab="BULK_ASSIGN"
-            style="padding: 5px 12px; font-size: 11.5px; font-weight: 800; border-radius: 6px; border: none; cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 5px; background: ${activeUserSection === 'BULK_ASSIGN' ? 'linear-gradient(135deg, #0284c7, #0369a1)' : 'transparent'}; color: ${activeUserSection === 'BULK_ASSIGN' ? '#fff' : 'var(--text-secondary)'};"
+            style="padding: 3px 10px; font-size: 11px; font-weight: 800; border-radius: 5px; border: none; cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 4px; height: 25px; background: ${activeUserSection === 'BULK_ASSIGN' ? 'linear-gradient(135deg, #0284c7, #0369a1)' : 'transparent'}; color: ${activeUserSection === 'BULK_ASSIGN' ? '#fff' : 'var(--text-secondary)'};"
           >
             <span>⚡ 3. Bulk Access</span>
-            ${selectedAccountIds.size > 0 ? `<span style="background: #f59e0b; color: #000; font-weight: 900; padding: 1px 6px; border-radius: 8px; font-size: 10px;">${selectedAccountIds.size}</span>` : ''}
+            ${selectedAccountIds.size > 0 ? `<span style="background: #f59e0b; color: #000; font-weight: 900; padding: 0 5px; border-radius: 6px; font-size: 9.5px;">${selectedAccountIds.size}</span>` : ''}
           </button>
 
           <button 
             type="button" 
             class="tab-btn-uam" 
             data-tab="PASSWORD_MGMT"
-            style="padding: 5px 12px; font-size: 11.5px; font-weight: 800; border-radius: 6px; border: none; cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 5px; background: ${activeUserSection === 'PASSWORD_MGMT' ? 'linear-gradient(135deg, #0284c7, #0369a1)' : 'transparent'}; color: ${activeUserSection === 'PASSWORD_MGMT' ? '#fff' : 'var(--text-secondary)'};"
+            style="padding: 3px 10px; font-size: 11px; font-weight: 800; border-radius: 5px; border: none; cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 4px; height: 25px; background: ${activeUserSection === 'PASSWORD_MGMT' ? 'linear-gradient(135deg, #0284c7, #0369a1)' : 'transparent'}; color: ${activeUserSection === 'PASSWORD_MGMT' ? '#fff' : 'var(--text-secondary)'};"
           >
             <span>🔑 4. Passwords</span>
           </button>
@@ -435,7 +435,7 @@ export function renderUserManagement() {
             type="button" 
             class="tab-btn-uam" 
             data-tab="EXPORT_ACCOUNTS"
-            style="padding: 5px 12px; font-size: 11.5px; font-weight: 800; border-radius: 6px; border: none; cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 5px; background: ${activeUserSection === 'EXPORT_ACCOUNTS' ? 'linear-gradient(135deg, #0284c7, #0369a1)' : 'transparent'}; color: ${activeUserSection === 'EXPORT_ACCOUNTS' ? '#fff' : 'var(--text-secondary)'};"
+            style="padding: 3px 10px; font-size: 11px; font-weight: 800; border-radius: 5px; border: none; cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 4px; height: 25px; background: ${activeUserSection === 'EXPORT_ACCOUNTS' ? 'linear-gradient(135deg, #0284c7, #0369a1)' : 'transparent'}; color: ${activeUserSection === 'EXPORT_ACCOUNTS' ? '#fff' : 'var(--text-secondary)'};"
           >
             <span>📥 5. Export</span>
           </button>
@@ -444,7 +444,7 @@ export function renderUserManagement() {
             type="button" 
             class="tab-btn-uam" 
             data-tab="ACTIVITY_LOGS"
-            style="padding: 5px 12px; font-size: 11.5px; font-weight: 800; border-radius: 6px; border: none; cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 5px; background: ${activeUserSection === 'ACTIVITY_LOGS' ? 'linear-gradient(135deg, #0284c7, #0369a1)' : 'transparent'}; color: ${activeUserSection === 'ACTIVITY_LOGS' ? '#fff' : 'var(--text-secondary)'};"
+            style="padding: 3px 10px; font-size: 11px; font-weight: 800; border-radius: 5px; border: none; cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 4px; height: 25px; background: ${activeUserSection === 'ACTIVITY_LOGS' ? 'linear-gradient(135deg, #0284c7, #0369a1)' : 'transparent'}; color: ${activeUserSection === 'ACTIVITY_LOGS' ? '#fff' : 'var(--text-secondary)'};"
           >
             <span>📝 6. Logs</span>
           </button>
@@ -454,7 +454,7 @@ export function renderUserManagement() {
             type="button" 
             class="tab-btn-uam" 
             data-tab="PRESETS"
-            style="padding: 5px 12px; font-size: 11.5px; font-weight: 700; border-radius: 6px; border: none; cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 5px; background: ${activeUserSection === 'PRESETS' ? 'linear-gradient(135deg, #0284c7, #0369a1)' : 'transparent'}; color: ${activeUserSection === 'PRESETS' ? '#fff' : 'var(--text-muted)'};"
+            style="padding: 3px 10px; font-size: 11px; font-weight: 700; border-radius: 5px; border: none; cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 4px; height: 25px; background: ${activeUserSection === 'PRESETS' ? 'linear-gradient(135deg, #0284c7, #0369a1)' : 'transparent'}; color: ${activeUserSection === 'PRESETS' ? '#fff' : 'var(--text-muted)'};"
           >
             <span>⚙️ Presets (${presets.length})</span>
           </button>
@@ -466,62 +466,62 @@ export function renderUserManagement() {
       <!-- =================================================================== -->
       ${activeUserSection === 'ACCOUNTS' ? `
         <!-- Search and Multi-Filtering Command Bar (Compact 2-Row Design) -->
-        <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 8px 12px; display: flex; flex-direction: column; gap: 6px; box-shadow: var(--shadow-sm);">
+        <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 5px 10px; display: flex; flex-direction: column; gap: 4px; box-shadow: var(--shadow-sm);">
           
           <!-- Row 1: Search Inputs + Quick Filter Chips + Counter & Clear -->
-          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
-            <div style="display: flex; gap: 6px; flex: 1 1 480px; align-items: center; flex-wrap: wrap;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
+            <div style="display: flex; gap: 5px; flex: 1 1 480px; align-items: center; flex-wrap: wrap;">
               
               <!-- Card Search -->
-              <div style="width: 155px; min-width: 140px; position: relative;">
-                <span style="position: absolute; left: 8px; top: 6px; font-size: 12px; color: #38bdf8;">🪪</span>
+              <div style="width: 145px; min-width: 130px; position: relative;">
+                <span style="position: absolute; left: 8px; top: 5px; font-size: 11px; color: #38bdf8;">🪪</span>
                 <input 
                   type="text" 
                   id="uam-card-search-input" 
                   class="form-control font-mono" 
                   placeholder="Card # (e.g. 05234)..." 
                   value="${cardSearchQuery}"
-                  style="height: 28px; padding-left: 28px; font-size: 11.5px; font-weight: 700; border-radius: 6px; border: 1px solid rgba(56, 189, 248, 0.4); background: rgba(9, 14, 26, 0.7); width: 100%; box-sizing: border-box;"
+                  style="height: 25px; padding-left: 26px; font-size: 11px; font-weight: 700; border-radius: 5px; border: 1px solid rgba(56, 189, 248, 0.4); background: rgba(9, 14, 26, 0.7); width: 100%; box-sizing: border-box;"
                 />
                 ${cardSearchQuery ? `
-                  <button id="btn-clear-uam-card-search" type="button" style="position: absolute; right: 6px; top: 5px; background: transparent; border: none; color: #38bdf8; cursor: pointer; font-size: 11px;" title="Clear Card Search">✕</button>
+                  <button id="btn-clear-uam-card-search" type="button" style="position: absolute; right: 5px; top: 4px; background: transparent; border: none; color: #38bdf8; cursor: pointer; font-size: 10px;" title="Clear Card Search">✕</button>
                 ` : ''}
               </div>
 
               <!-- General Search -->
-              <div style="flex: 1 1 200px; min-width: 170px; position: relative;">
-                <span style="position: absolute; left: 8px; top: 6px; font-size: 12px; color: var(--text-muted);">🔍</span>
+              <div style="flex: 1 1 180px; min-width: 150px; position: relative;">
+                <span style="position: absolute; left: 8px; top: 5px; font-size: 11px; color: var(--text-muted);">🔍</span>
                 <input 
                   type="text" 
                   id="uam-search-input" 
                   class="form-control" 
                   placeholder="Search by Name, Username, Department..." 
                   value="${searchQuery}"
-                  style="height: 28px; padding-left: 26px; font-size: 11.5px; border-radius: 6px; width: 100%; box-sizing: border-box;"
+                  style="height: 25px; padding-left: 24px; font-size: 11px; border-radius: 5px; width: 100%; box-sizing: border-box;"
                 />
                 ${searchQuery ? `
-                  <button id="btn-clear-uam-search" type="button" style="position: absolute; right: 6px; top: 5px; background: transparent; border: none; color: var(--text-muted); cursor: pointer; font-size: 11px;" title="Clear Search">✕</button>
+                  <button id="btn-clear-uam-search" type="button" style="position: absolute; right: 5px; top: 4px; background: transparent; border: none; color: var(--text-muted); cursor: pointer; font-size: 10px;" title="Clear Search">✕</button>
                 ` : ''}
               </div>
 
               <!-- Inline Quick Filter Chips -->
-              <div style="display: flex; gap: 4px; align-items: center; flex-wrap: wrap;">
-                <button type="button" class="btn-uam-quick-chip" data-filter="ALL" style="padding: 2px 8px; height: 26px; font-size: 11px; font-weight: 700; border-radius: 5px; border: 1px solid ${quickCardFilter === 'ALL' ? '#0284c7' : 'var(--border-color)'}; background: ${quickCardFilter === 'ALL' ? 'rgba(2, 132, 199, 0.25)' : 'rgba(15, 23, 42, 0.6)'}; color: ${quickCardFilter === 'ALL' ? '#38bdf8' : 'var(--text-secondary)'}; cursor: pointer;">
+              <div style="display: flex; gap: 3px; align-items: center; flex-wrap: wrap;">
+                <button type="button" class="btn-uam-quick-chip" data-filter="ALL" style="padding: 1px 6px; height: 23px; font-size: 10.5px; font-weight: 700; border-radius: 4px; border: 1px solid ${quickCardFilter === 'ALL' ? '#0284c7' : 'var(--border-color)'}; background: ${quickCardFilter === 'ALL' ? 'rgba(2, 132, 199, 0.25)' : 'rgba(15, 23, 42, 0.6)'}; color: ${quickCardFilter === 'ALL' ? '#38bdf8' : 'var(--text-secondary)'}; cursor: pointer;">
                   All (${allAccounts.length})
                 </button>
-                <button type="button" class="btn-uam-quick-chip" data-filter="WITH_CARD" style="padding: 2px 8px; height: 26px; font-size: 11px; font-weight: 700; border-radius: 5px; border: 1px solid ${quickCardFilter === 'WITH_CARD' ? '#0284c7' : 'var(--border-color)'}; background: ${quickCardFilter === 'WITH_CARD' ? 'rgba(2, 132, 199, 0.25)' : 'rgba(15, 23, 42, 0.6)'}; color: ${quickCardFilter === 'WITH_CARD' ? '#38bdf8' : 'var(--text-secondary)'}; cursor: pointer;">
+                <button type="button" class="btn-uam-quick-chip" data-filter="WITH_CARD" style="padding: 1px 6px; height: 23px; font-size: 10.5px; font-weight: 700; border-radius: 4px; border: 1px solid ${quickCardFilter === 'WITH_CARD' ? '#0284c7' : 'var(--border-color)'}; background: ${quickCardFilter === 'WITH_CARD' ? 'rgba(2, 132, 199, 0.25)' : 'rgba(15, 23, 42, 0.6)'}; color: ${quickCardFilter === 'WITH_CARD' ? '#38bdf8' : 'var(--text-secondary)'}; cursor: pointer;">
                   🪪 Card (${withCardCount})
                 </button>
-                <button type="button" class="btn-uam-quick-chip" data-filter="ACTIVE" style="padding: 2px 8px; height: 26px; font-size: 11px; font-weight: 700; border-radius: 5px; border: 1px solid ${quickCardFilter === 'ACTIVE' ? '#10b981' : 'var(--border-color)'}; background: ${quickCardFilter === 'ACTIVE' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(15, 23, 42, 0.6)'}; color: ${quickCardFilter === 'ACTIVE' ? '#34d399' : 'var(--text-secondary)'}; cursor: pointer;">
+                <button type="button" class="btn-uam-quick-chip" data-filter="ACTIVE" style="padding: 1px 6px; height: 23px; font-size: 10.5px; font-weight: 700; border-radius: 4px; border: 1px solid ${quickCardFilter === 'ACTIVE' ? '#10b981' : 'var(--border-color)'}; background: ${quickCardFilter === 'ACTIVE' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(15, 23, 42, 0.6)'}; color: ${quickCardFilter === 'ACTIVE' ? '#34d399' : 'var(--text-secondary)'}; cursor: pointer;">
                   🟢 Active (${activeAccounts})
                 </button>
-                <button type="button" class="btn-uam-quick-chip" data-filter="INACTIVE" style="padding: 2px 8px; height: 26px; font-size: 11px; font-weight: 700; border-radius: 5px; border: 1px solid ${quickCardFilter === 'INACTIVE' ? '#ef4444' : 'var(--border-color)'}; background: ${quickCardFilter === 'INACTIVE' ? 'rgba(239, 68, 68, 0.2)' : 'rgba(15, 23, 42, 0.6)'}; color: ${quickCardFilter === 'INACTIVE' ? '#f87171' : 'var(--text-secondary)'}; cursor: pointer;">
+                <button type="button" class="btn-uam-quick-chip" data-filter="INACTIVE" style="padding: 1px 6px; height: 23px; font-size: 10.5px; font-weight: 700; border-radius: 4px; border: 1px solid ${quickCardFilter === 'INACTIVE' ? '#ef4444' : 'var(--border-color)'}; background: ${quickCardFilter === 'INACTIVE' ? 'rgba(239, 68, 68, 0.2)' : 'rgba(15, 23, 42, 0.6)'}; color: ${quickCardFilter === 'INACTIVE' ? '#f87171' : 'var(--text-secondary)'}; cursor: pointer;">
                   🔴 Inactive (${inactiveAccounts})
                 </button>
-                <button type="button" class="btn-uam-quick-chip" data-filter="MISSING_ACCOUNT" style="padding: 2px 8px; height: 26px; font-size: 11px; font-weight: 700; border-radius: 5px; border: 1px solid ${quickCardFilter === 'MISSING_ACCOUNT' ? '#f59e0b' : 'var(--border-color)'}; background: ${quickCardFilter === 'MISSING_ACCOUNT' ? 'rgba(245, 158, 11, 0.2)' : 'rgba(15, 23, 42, 0.6)'}; color: ${quickCardFilter === 'MISSING_ACCOUNT' ? '#fbbf24' : 'var(--text-secondary)'}; cursor: pointer;">
+                <button type="button" class="btn-uam-quick-chip" data-filter="MISSING_ACCOUNT" style="padding: 1px 6px; height: 23px; font-size: 10.5px; font-weight: 700; border-radius: 4px; border: 1px solid ${quickCardFilter === 'MISSING_ACCOUNT' ? '#f59e0b' : 'var(--border-color)'}; background: ${quickCardFilter === 'MISSING_ACCOUNT' ? 'rgba(245, 158, 11, 0.2)' : 'rgba(15, 23, 42, 0.6)'}; color: ${quickCardFilter === 'MISSING_ACCOUNT' ? '#fbbf24' : 'var(--text-secondary)'}; cursor: pointer;">
                   ⏳ Missing (${pendingCreation})
                 </button>
-                <button type="button" class="btn-uam-quick-chip" data-filter="TEMP_PASS" style="padding: 2px 8px; height: 26px; font-size: 11px; font-weight: 700; border-radius: 5px; border: 1px solid ${quickCardFilter === 'TEMP_PASS' ? '#a855f7' : 'var(--border-color)'}; background: ${quickCardFilter === 'TEMP_PASS' ? 'rgba(168, 85, 247, 0.2)' : 'rgba(15, 23, 42, 0.6)'}; color: ${quickCardFilter === 'TEMP_PASS' ? '#c084fc' : 'var(--text-secondary)'}; cursor: pointer;">
+                <button type="button" class="btn-uam-quick-chip" data-filter="TEMP_PASS" style="padding: 1px 6px; height: 23px; font-size: 10.5px; font-weight: 700; border-radius: 4px; border: 1px solid ${quickCardFilter === 'TEMP_PASS' ? '#a855f7' : 'var(--border-color)'}; background: ${quickCardFilter === 'TEMP_PASS' ? 'rgba(168, 85, 247, 0.2)' : 'rgba(15, 23, 42, 0.6)'}; color: ${quickCardFilter === 'TEMP_PASS' ? '#c084fc' : 'var(--text-secondary)'}; cursor: pointer;">
                   🔑 Temp Pass (${pendingPasswordSetup})
                 </button>
               </div>
@@ -530,11 +530,11 @@ export function renderUserManagement() {
 
             <!-- Match counter & Reset -->
             <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
-              <span style="font-size: 11px; color: var(--text-muted); white-space: nowrap;">
+              <span style="font-size: 10.5px; color: var(--text-muted); white-space: nowrap;">
                 Showing <strong>${paginatedAccounts.length}</strong> of <strong>${totalMatching}</strong>
               </span>
               ${(searchQuery || cardSearchQuery || quickCardFilter !== 'ALL' || filterGroup !== 'ALL' || filterUnit !== 'ALL' || filterFloor !== 'ALL' || filterLine !== 'ALL' || filterDesignation !== 'ALL' || filterStatus !== 'ALL' || filterAccountLink !== 'ALL' || filterPasswordStatus !== 'ALL') ? `
-                <button id="btn-clear-all-filters" class="btn btn-ghost btn-xs" style="color: #f87171; font-weight: 700; border: 1px solid rgba(248, 113, 113, 0.3); border-radius: 5px; padding: 2px 6px; font-size: 10.5px;">
+                <button id="btn-clear-all-filters" class="btn btn-ghost btn-xs" style="color: #f87171; font-weight: 700; border: 1px solid rgba(248, 113, 113, 0.3); border-radius: 4px; padding: 1px 5px; font-size: 10px;">
                   ✕ Clear All
                 </button>
               ` : ''}
@@ -542,29 +542,29 @@ export function renderUserManagement() {
           </div>
 
           <!-- Row 2: Cascading Location Dropdowns + Attribute Filters -->
-          <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+          <div style="display: flex; align-items: center; gap: 5px; flex-wrap: wrap;">
             <!-- Location Cascades (Connected Visual Hierarchy) -->
-            <div style="display: flex; align-items: center; gap: 4px; background: rgba(9, 14, 26, 0.6); padding: 2px 4px; border-radius: 6px; border: 1px solid rgba(56, 189, 248, 0.2); flex-wrap: wrap;">
+            <div style="display: flex; align-items: center; gap: 3px; background: rgba(9, 14, 26, 0.6); padding: 1px 3px; border-radius: 5px; border: 1px solid rgba(56, 189, 248, 0.2); flex-wrap: wrap;">
               <!-- Group -->
-              <select id="uam-filter-group" class="filter-select" style="height: 27px; font-size: 11px; padding: 1px 6px; max-width: 140px; border-radius: 5px;" title="Filter by Enterprise Group">
+              <select id="uam-filter-group" class="filter-select" style="height: 25px; font-size: 10.5px; padding: 1px 4px; max-width: 135px; border-radius: 4px;" title="Filter by Enterprise Group">
                 <option value="ALL" ${filterGroup === 'ALL' ? 'selected' : ''}>🏢 All Groups</option>
                 ${allGroups.map(g => `<option value="${g.id}" ${filterGroup === g.id ? 'selected' : ''}>${g.name}</option>`).join('')}
               </select>
 
               <!-- Unit -->
-              <select id="uam-filter-unit" class="filter-select" style="height: 27px; font-size: 11px; padding: 1px 6px; max-width: 150px; border-radius: 5px;" title="Filter by Manufacturing Unit">
+              <select id="uam-filter-unit" class="filter-select" style="height: 25px; font-size: 10.5px; padding: 1px 4px; max-width: 145px; border-radius: 4px;" title="Filter by Manufacturing Unit">
                 <option value="ALL" ${filterUnit === 'ALL' ? 'selected' : ''}>🏭 All Units</option>
                 ${allUnits.map(u => `<option value="${u.id}" ${filterUnit === u.id ? 'selected' : ''}>${u.name}</option>`).join('')}
               </select>
 
               <!-- Floor -->
-              <select id="uam-filter-floor" class="filter-select" style="height: 27px; font-size: 11px; padding: 1px 6px; max-width: 150px; border-radius: 5px;" title="Filter by Factory Floor">
+              <select id="uam-filter-floor" class="filter-select" style="height: 25px; font-size: 10.5px; padding: 1px 4px; max-width: 145px; border-radius: 4px;" title="Filter by Factory Floor">
                 <option value="ALL" ${filterFloor === 'ALL' ? 'selected' : ''}>🏢 All Floors</option>
                 ${allFloors.map(f => `<option value="${f.id}" ${filterFloor === f.id ? 'selected' : ''}>${f.name}</option>`).join('')}
               </select>
 
               <!-- Line -->
-              <select id="uam-filter-line" class="filter-select" style="height: 27px; font-size: 11px; padding: 1px 6px; max-width: 140px; border-radius: 5px;" title="Filter by Production Line">
+              <select id="uam-filter-line" class="filter-select" style="height: 25px; font-size: 10.5px; padding: 1px 4px; max-width: 135px; border-radius: 4px;" title="Filter by Production Line">
                 <option value="ALL" ${filterLine === 'ALL' ? 'selected' : ''}>🧵 All Lines</option>
                 ${allLines.map(l => `<option value="${l.id}" ${filterLine === l.id ? 'selected' : ''}>${l.name}</option>`).join('')}
               </select>
@@ -572,27 +572,27 @@ export function renderUserManagement() {
 
             <!-- Attribute Filters -->
             <!-- Designation -->
-            <select id="uam-filter-desig" class="filter-select" style="height: 27px; font-size: 11px; padding: 1px 6px; max-width: 150px; border-radius: 5px;">
+            <select id="uam-filter-desig" class="filter-select" style="height: 25px; font-size: 10.5px; padding: 1px 4px; max-width: 145px; border-radius: 4px;">
               <option value="ALL" ${filterDesignation === 'ALL' ? 'selected' : ''}>💼 All Designations</option>
               ${allDesignations.map(d => `<option value="${d}" ${filterDesignation === d ? 'selected' : ''}>${d}</option>`).join('')}
             </select>
 
             <!-- Status -->
-            <select id="uam-filter-status" class="filter-select" style="height: 27px; font-size: 11px; padding: 1px 6px; max-width: 115px; border-radius: 5px;">
+            <select id="uam-filter-status" class="filter-select" style="height: 25px; font-size: 10.5px; padding: 1px 4px; max-width: 110px; border-radius: 4px;">
               <option value="ALL" ${filterStatus === 'ALL' ? 'selected' : ''}>⚡ All Status</option>
               <option value="ACTIVE" ${filterStatus === 'ACTIVE' ? 'selected' : ''}>🟢 Active</option>
               <option value="INACTIVE" ${filterStatus === 'INACTIVE' ? 'selected' : ''}>🔴 Inactive</option>
             </select>
 
             <!-- Account Link Status -->
-            <select id="uam-filter-account-link" class="filter-select" style="height: 27px; font-size: 11px; padding: 1px 6px; max-width: 135px; border-radius: 5px;">
+            <select id="uam-filter-account-link" class="filter-select" style="height: 25px; font-size: 10.5px; padding: 1px 4px; max-width: 130px; border-radius: 4px;">
               <option value="ALL" ${filterAccountLink === 'ALL' ? 'selected' : ''}>👤 All Accounts</option>
               <option value="LINKED" ${filterAccountLink === 'LINKED' ? 'selected' : ''}>✓ Account Created</option>
               <option value="NOT_CREATED" ${filterAccountLink === 'NOT_CREATED' ? 'selected' : ''}>⏳ Account Missing</option>
             </select>
 
             <!-- Password Status -->
-            <select id="uam-filter-pass-status" class="filter-select" style="height: 27px; font-size: 11px; padding: 1px 6px; max-width: 140px; border-radius: 5px;">
+            <select id="uam-filter-pass-status" class="filter-select" style="height: 25px; font-size: 10.5px; padding: 1px 4px; max-width: 135px; border-radius: 4px;">
               <option value="ALL" ${filterPasswordStatus === 'ALL' ? 'selected' : ''}>🔑 All Passwords</option>
               <option value="SETUP" ${filterPasswordStatus === 'SETUP' ? 'selected' : ''}>✅ Setup / Active</option>
               <option value="TEMPORARY" ${filterPasswordStatus === 'TEMPORARY' ? 'selected' : ''}>🟡 Temporary</option>
@@ -648,7 +648,7 @@ export function renderUserManagement() {
       <!-- =================================================================== -->
       ${activeUserSection === 'ACCOUNTS' ? `
         <!-- User Accounts Table (Only this container scrolls vertically & horizontally) -->
-        <div class="uam-table-scroll-container" style="position: relative; width: 100%; flex: 1 1 0%; min-height: 200px; max-height: calc(100vh - 265px); overflow-x: auto !important; overflow-y: auto !important; background-color: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); box-shadow: var(--shadow-sm); overscroll-behavior: contain; -webkit-overflow-scrolling: touch;">
+        <div class="uam-table-scroll-container" style="position: relative; width: 100%; flex: 1 1 0%; min-height: 0; height: 0; max-height: none; overflow-x: auto !important; overflow-y: auto !important; background-color: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); box-shadow: var(--shadow-sm); overscroll-behavior: contain; -webkit-overflow-scrolling: touch;">
           <table class="user-management-table" style="min-width: 1720px; width: 100%; table-layout: fixed; border-collapse: separate; border-spacing: 0;">
             <colgroup>
               <col style="width: 44px;">
@@ -859,10 +859,10 @@ export function renderUserManagement() {
           </div>
 
           <!-- Pinned Bottom Pagination Bar (Always visible at bottom) -->
-          <div class="uam-fixed-bottom-bar">
-            <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-muted);">
+          <div class="uam-fixed-bottom-bar" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; padding: 4px 10px; background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); box-shadow: var(--shadow-sm); z-index: 10; flex-shrink: 0; min-height: 34px;">
+            <div style="display: flex; align-items: center; gap: 8px; font-size: 11.5px; color: var(--text-muted);">
               <span>Rows per page:</span>
-              <select id="uam-page-size" class="filter-select" style="height: 28px; font-size: 11.5px; padding: 2px 6px; width: 65px;">
+              <select id="uam-page-size" class="filter-select" style="height: 25px; font-size: 11px; padding: 1px 6px; width: 62px;">
                 <option value="15" ${rowsPerPage === 15 ? 'selected' : ''}>15</option>
                 <option value="20" ${rowsPerPage === 20 ? 'selected' : ''}>20</option>
                 <option value="50" ${rowsPerPage === 50 ? 'selected' : ''}>50</option>
@@ -871,16 +871,16 @@ export function renderUserManagement() {
               <span>Page <strong>${currentPage}</strong> of <strong>${totalPages}</strong> (${totalMatching} items)</span>
             </div>
 
-            <div style="display: flex; gap: 6px; align-items: center;">
-              <button id="btn-page-first" class="btn btn-secondary btn-xs" ${currentPage === 1 ? 'disabled' : ''} style="padding: 4px 8px;">⏮ First</button>
-              <button id="btn-page-prev" class="btn btn-secondary btn-xs" ${currentPage === 1 ? 'disabled' : ''} style="padding: 4px 8px;">◀ Prev</button>
-              <span style="font-size: 12px; font-weight: 700; color: #fff; padding: 0 6px;">${currentPage}</span>
-              <button id="btn-page-next" class="btn btn-secondary btn-xs" ${currentPage === totalPages ? 'disabled' : ''} style="padding: 4px 8px;">Next ▶</button>
-              <button id="btn-page-last" class="btn btn-secondary btn-xs" ${currentPage === totalPages ? 'disabled' : ''} style="padding: 4px 8px;">Last ⏭</button>
+            <div style="display: flex; gap: 5px; align-items: center;">
+              <button id="btn-page-first" class="btn btn-secondary btn-xs" ${currentPage === 1 ? 'disabled' : ''} style="padding: 3px 8px; font-size: 11px;">⏮ First</button>
+              <button id="btn-page-prev" class="btn btn-secondary btn-xs" ${currentPage === 1 ? 'disabled' : ''} style="padding: 3px 8px; font-size: 11px;">◀ Prev</button>
+              <span style="font-size: 11.5px; font-weight: 700; color: #fff; padding: 0 6px;">${currentPage}</span>
+              <button id="btn-page-next" class="btn btn-secondary btn-xs" ${currentPage === totalPages ? 'disabled' : ''} style="padding: 3px 8px; font-size: 11px;">Next ▶</button>
+              <button id="btn-page-last" class="btn btn-secondary btn-xs" ${currentPage === totalPages ? 'disabled' : ''} style="padding: 3px 8px; font-size: 11px;">Last ⏭</button>
             </div>
           </div>
       ` : `
-        <div class="uam-subtab-scroll-panel" style="flex: 1 1 0%; min-height: 200px; max-height: calc(100vh - 230px); overflow-y: auto; overflow-x: hidden; padding-right: 4px;">
+        <div class="uam-subtab-scroll-panel" style="flex: 1 1 0%; min-height: 0; height: 0; max-height: none; overflow-y: auto; overflow-x: auto; padding-right: 4px;">
           <!-- =================================================================== -->
           <!-- TAB 2: INDIVIDUAL ACCESS PERMISSIONS MATRIX (Section 5)             -->
           <!-- =================================================================== -->
@@ -3114,9 +3114,10 @@ export function initUserManagementEvents() {
   const root = document.getElementById('main-view-container');
   if (root) {
     root.style.overflow = 'hidden';
-    root.style.height = '100%';
-    root.style.maxHeight = '100%';
+    root.style.height = 'calc(100vh - 56px)';
+    root.style.maxHeight = 'calc(100vh - 56px)';
     root.style.minHeight = '0';
+    root.style.padding = '0';
   }
 
   const reRender = () => {
