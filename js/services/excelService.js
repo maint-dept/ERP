@@ -1664,8 +1664,11 @@ class ExcelService {
         const compKey = `${normKey(machineNameStr)}|${normKey(brandStr)}|${normKey(modelStr)}|${normKey(serialNumber)}`;
         const serialCell = getCellAddress(mapping.machine_serial || mapping.machine_model, rowNumber);
 
+        let isDuplicate = false;
+
         // A. Intra-file & Cross-Sheet Composite Duplicate Check
         if (globalSeenCompositeInFile.has(compKey)) {
+          isDuplicate = true;
           const prev = globalSeenCompositeInFile.get(compKey);
           const err = `Duplicate Machine Record: Name ('${machineNameStr}'), Brand ('${brandStr}'), Model ('${modelStr}'), and Serial ('${serialNumber}') match another row in file (First seen in sheet '${prev.sheetName}', Cell ${prev.cell}).`;
           rowErrors.push(err);
@@ -1718,6 +1721,7 @@ class ExcelService {
           if (existingMachineByComposite) {
             // Full composite duplicate (Name, Brand, Model, Serial all match)
             if (duplicatePolicy === DUPLICATE_POLICIES.REJECT || duplicatePolicy === 'REJECT') {
+              isDuplicate = true;
               const err = `Machine already exists in database with matching Name ('${machineNameStr}'), Brand ('${brandStr}'), Model ('${modelStr}'), and Serial ('${serialNumber}') (ID: ${existingMachine.id}). Duplicate record blocked.`;
               rowErrors.push(err);
               allValidationErrors.push({
@@ -1747,8 +1751,21 @@ class ExcelService {
               isUpdate = true;
               sheetUpdateCount++;
               grandUpdateRows++;
-            } else if (duplicatePolicy === DUPLICATE_POLICIES.SKIP) {
-              rowWarnings.push(`Machine '${machineNameStr} - ${modelStr} (${serialNumber})' already exists in database and will be skipped.`);
+            } else if (duplicatePolicy === DUPLICATE_POLICIES.SKIP || duplicatePolicy === 'SKIP') {
+              isDuplicate = true;
+              const warnReason = `Machine '${machineNameStr} - ${modelStr} (${serialNumber})' already exists in database and will be skipped.`;
+              rowWarnings.push(warnReason);
+              grandDuplicatesList.push({
+                sheetName: sheet.name,
+                cell: serialCell,
+                rowNumber: rowNumber,
+                column: mapping.machine_serial || 'Machine Serial',
+                serialNumber: serialNumber,
+                machineName: machineNameStr,
+                brand: brandStr,
+                model: modelStr,
+                reason: warnReason
+              });
               sheetDuplicateCount++;
               grandDuplicateRows++;
             }
@@ -1838,6 +1855,7 @@ class ExcelService {
           rawRow: row,
           isValid: isValid,
           isUpdate: isUpdate,
+          isDuplicate: isDuplicate,
           existingMachineId: existingMachine?.id || null,
           errors: rowErrors,
           warnings: rowWarnings,
@@ -2125,6 +2143,25 @@ class ExcelService {
             status: '❌ Failed',
             error: item.errors?.join('; ') || item.error || 'Validation error in row fields',
             errors: item.errors || (item.error ? [item.error] : []),
+            rawRow: item.rawRow || {},
+            data: item.data || {}
+          });
+          return;
+        }
+
+        // 1B. If duplicate policy is SKIP and row is a duplicate, skip it cleanly
+        if (item.isDuplicate && (metadata.duplicatePolicy === DUPLICATE_POLICIES.SKIP || metadata.duplicatePolicy === 'SKIP')) {
+          sheetSkipped++;
+          skippedCount++;
+          failedRows.push({
+            rowNumber: rowNumber,
+            cell: item.cell || `Row ${rowNumber}`,
+            sheetName: sheet.name,
+            serialNumber: item.data?.serialNumber || item.rawRow?.serial || item.rawRow?.serialNumber || '—',
+            status: '⚠️ Skipped (Duplicate)',
+            error: item.warnings?.join('; ') || item.errors?.join('; ') || 'Duplicate machine already exists in database (Skipped)',
+            errors: item.warnings || item.errors || ['Duplicate machine already exists in database (Skipped)'],
+            suggestedCorrection: 'Machine already exists in database with matching specifications. Switch policy to "Update Existing Machines" if you wish to overwrite.',
             rawRow: item.rawRow || {},
             data: item.data || {}
           });
@@ -2473,16 +2510,37 @@ class ExcelService {
       fileName = failedRowsOrContext.fileName || originalFileName;
       allValidationErrors = failedRowsOrContext.validationResult?.allErrors || [];
 
-      // Extract all invalid records from validation sheets
+      // Extract all invalid records AND duplicate records from validation sheets
       if (failedRowsOrContext.validationResult?.sheets) {
         failedRowsOrContext.validationResult.sheets.forEach(sheet => {
           (sheet.records || []).forEach(rec => {
-            if (!rec.isValid) {
+            if (!rec.isValid || rec.isDuplicate) {
               rawFailedList.push({
                 ...rec,
                 sheetName: sheet.name
               });
             }
+          });
+        });
+      }
+
+      // Also incorporate duplicates from duplicatesSummary.cellList if rawFailedList is still empty
+      if (rawFailedList.length === 0 && failedRowsOrContext.validationResult?.duplicatesSummary?.cellList?.length > 0) {
+        failedRowsOrContext.validationResult.duplicatesSummary.cellList.forEach(dup => {
+          rawFailedList.push({
+            sheetName: dup.sheetName || 'Sheet1',
+            rowNumber: dup.rowNumber,
+            cell: dup.cell,
+            data: {
+              serialNumber: dup.serialNumber,
+              machineNameStr: dup.machineName,
+              brandStr: dup.brand,
+              modelStr: dup.model
+            },
+            rawRow: {},
+            isDuplicate: true,
+            errors: [dup.reason || 'Duplicate machine record detected and skipped'],
+            suggestedCorrection: 'Machine already exists with matching specifications in database. Switch policy to "Update Existing Machines" or use unique serial number.'
           });
         });
       }
@@ -2506,6 +2564,15 @@ class ExcelService {
       const rowNum = item.rowNumber || item.excelRow || idx + 2;
       const key = `${sheetName}___${rowNum}`;
 
+      const itemErrors = Array.isArray(item.errors) && item.errors.length > 0 ? [...item.errors] :
+        (item.warnings && item.warnings.length > 0 ? [...item.warnings] :
+        (item.error ? [item.error] :
+        (item.isDuplicate ? ['Machine already exists in database with matching specs (Skipped)'] : [])));
+
+      const itemSuggestions = Array.isArray(item.suggestions) && item.suggestions.length > 0 ? [...item.suggestions] :
+        (item.suggestedCorrection ? [item.suggestedCorrection] :
+        (item.isDuplicate ? ['Switch duplicate policy to "Update Existing Machines" or use a unique Serial Number'] : []));
+
       if (!uniqueRecordsMap.has(key)) {
         uniqueRecordsMap.set(key, {
           sheetName,
@@ -2513,14 +2580,17 @@ class ExcelService {
           cell: item.cell || `Row ${rowNum}`,
           data: item.data || {},
           rawRow: item.rawRow || {},
-          errors: Array.isArray(item.errors) ? [...item.errors] : (item.error ? [item.error] : []),
-          suggestions: Array.isArray(item.suggestions) ? [...item.suggestions] : (item.suggestedCorrection ? [item.suggestedCorrection] : [])
+          errors: itemErrors,
+          suggestions: itemSuggestions
         });
       } else {
         const existing = uniqueRecordsMap.get(key);
         if (item.error && !existing.errors.includes(item.error)) existing.errors.push(item.error);
         if (Array.isArray(item.errors)) {
           item.errors.forEach(e => { if (!existing.errors.includes(e)) existing.errors.push(e); });
+        }
+        if (Array.isArray(item.warnings)) {
+          item.warnings.forEach(w => { if (!existing.errors.includes(w)) existing.errors.push(w); });
         }
         if (item.suggestedCorrection && !existing.suggestions.includes(item.suggestedCorrection)) {
           existing.suggestions.push(item.suggestedCorrection);
@@ -2713,10 +2783,15 @@ class ExcelService {
     wsRef['!cols'] = [{ wch: 28 }, { wch: 25 }, { wch: 45 }];
     XLSX.utils.book_append_sheet(wb, wsRef, 'Master Data Reference');
 
+    if (uniqueRecordsMap.size === 0) {
+      alert('No error or duplicate records to export.');
+      return;
+    }
+
     const cleanBaseName = fileName.replace(/\.[^/.]+$/, '');
-    const outFileName = `${cleanBaseName}_Failed_Records_Report.xlsx`;
+    const outFileName = `${cleanBaseName}_Error_and_Duplicate_Report.xlsx`;
     XLSX.writeFile(wb, outFileName);
-    auditService.log('ERROR_REPORT_DOWNLOADED', 'IMPORT', `${uniqueRecordsMap.size} failed machines`, `Downloaded full template error report for ${outFileName}`);
+    auditService.log('ERROR_REPORT_DOWNLOADED', 'IMPORT', `${uniqueRecordsMap.size} failed/duplicate machines`, `Downloaded full template error report for ${outFileName}`);
   }
 
   /**

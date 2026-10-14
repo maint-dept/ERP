@@ -326,12 +326,21 @@ function renderImportStageContent() {
     const errorsList = res.allErrors || [];
     const fixableErrors = detectStorageFixableErrors(res, importState.workbookData, importState.sheetMappings);
     const filteredErrors = importState.errorSearchFilter ?
-      errorsList.filter(e => e.sheetName.toLowerCase().includes(importState.errorSearchFilter.toLowerCase()) ||
-                             e.error.toLowerCase().includes(importState.errorSearchFilter.toLowerCase()) ||
-                             e.column.toLowerCase().includes(importState.errorSearchFilter.toLowerCase())) :
+      errorsList.filter(e => (e.sheetName || '').toLowerCase().includes(importState.errorSearchFilter.toLowerCase()) ||
+                             (e.error || '').toLowerCase().includes(importState.errorSearchFilter.toLowerCase()) ||
+                             (e.column || '').toLowerCase().includes(importState.errorSearchFilter.toLowerCase())) :
       errorsList;
 
     const dupSummary = res.duplicatesSummary || { count: res.duplicateRows || 0, cellList: [] };
+    const filteredDuplicates = importState.errorSearchFilter ?
+      dupSummary.cellList.filter(d => (d.cell || '').toLowerCase().includes(importState.errorSearchFilter.toLowerCase()) ||
+                                      (d.reason || '').toLowerCase().includes(importState.errorSearchFilter.toLowerCase()) ||
+                                      (d.serialNumber || '').toLowerCase().includes(importState.errorSearchFilter.toLowerCase()) ||
+                                      (d.machineName || '').toLowerCase().includes(importState.errorSearchFilter.toLowerCase()) ||
+                                      (d.model || '').toLowerCase().includes(importState.errorSearchFilter.toLowerCase()) ||
+                                      (d.column || '').toLowerCase().includes(importState.errorSearchFilter.toLowerCase())) :
+      dupSummary.cellList;
+
     const errSummary = res.errorsSummary || { count: res.invalidRows || 0, cellList: [] };
     const autoFixSummary = res.autoFixedSummary || { count: 0, cellList: [] };
 
@@ -352,14 +361,19 @@ function renderImportStageContent() {
                     Rule: Verified by matching <strong>Machine Name + Brand + Model + Serial Number</strong>. Duplicates found in the following cells:
                   </div>
                 </div>
-                <span class="badge" style="background: rgba(245, 158, 11, 0.25); color: #fbbf24; border: 1px solid #f59e0b; font-size: 11.5px; font-weight: 800; padding: 4px 10px;">
-                  ${dupSummary.count} Duplicates
-                </span>
+                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                  <button type="button" class="btn btn-warning btn-sm btn-download-error-report-action" style="font-weight: 800; font-size: 11.5px; padding: 5px 14px; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3); color: #000; background: #f59e0b; border: none; cursor: pointer;">
+                    📥 Download Duplicates Report (.xlsx)
+                  </button>
+                  <span class="badge" style="background: rgba(245, 158, 11, 0.25); color: #fbbf24; border: 1px solid #f59e0b; font-size: 11.5px; font-weight: 800; padding: 4px 10px;">
+                    ${dupSummary.count} Duplicates
+                  </span>
+                </div>
               </div>
               <div style="margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px; max-height: 90px; overflow-y: auto;">
                 ${dupSummary.cellList.slice(0, 40).map(c => `
                   <span class="badge" style="background: rgba(245, 158, 11, 0.18); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); font-family: var(--font-mono); font-size: 11px; padding: 3px 8px;" title="${c.reason || ''}">
-                    📍 ${c.sheetName ? `${c.sheetName} &bull; ` : ''}Cell <strong>${c.cell}</strong> (${c.serialNumber || 'SN'})
+                    📍 ${c.sheetName ? `${c.sheetName} &bull; ` : ''}Cell <strong>${c.cell}</strong> (${c.machineName ? `${c.machineName} - ` : ''}${c.model ? `${c.model} - ` : ''}${c.serialNumber || 'SN'})
                   </span>
                 `).join('')}
                 ${dupSummary.cellList.length > 40 ? `
@@ -388,9 +402,14 @@ function renderImportStageContent() {
                     Required fields missing or invalid data found in the following cells (you may correct these directly in Excel):
                   </div>
                 </div>
-                <span class="badge" style="background: rgba(239, 68, 68, 0.25); color: #f87171; border: 1px solid #ef4444; font-size: 11.5px; font-weight: 800; padding: 4px 10px;">
-                  ${errSummary.count} Errors
-                </span>
+                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                  <button type="button" class="btn btn-danger btn-sm btn-download-error-report-action" style="font-weight: 800; font-size: 11.5px; padding: 5px 14px; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3); color: #fff; background: #ef4444; border: none; cursor: pointer;">
+                    📥 Download Error Report (.xlsx)
+                  </button>
+                  <span class="badge" style="background: rgba(239, 68, 68, 0.25); color: #f87171; border: 1px solid #ef4444; font-size: 11.5px; font-weight: 800; padding: 4px 10px;">
+                    ${errSummary.count} Errors
+                  </span>
+                </div>
               </div>
               <div style="margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px; max-height: 90px; overflow-y: auto;">
                 ${errSummary.cellList.slice(0, 40).map(c => `
@@ -505,14 +524,24 @@ function renderImportStageContent() {
             <div style="font-size: 10.5px; color: #c084fc; font-weight: 700; text-transform: uppercase;">Updates</div>
           </div>
 
-          <div style="background: var(--bg-card); border: 1px solid rgba(245, 158, 11, 0.4); border-radius: var(--radius-md); padding: 10px 12px; text-align: center;">
+          <div class="kpi-card-duplicates" style="background: var(--bg-card); border: 1.5px solid rgba(245, 158, 11, 0.4); border-radius: var(--radius-md); padding: 10px 12px; text-align: center; ${res.duplicateRows > 0 ? 'cursor: pointer;' : ''}" title="${res.duplicateRows > 0 ? 'Click to download duplicate records report' : 'No duplicates'}">
             <div style="font-size: 18px; font-weight: 800; color: #fbbf24;">${res.duplicateRows}</div>
             <div style="font-size: 10.5px; color: #fbbf24; font-weight: 700; text-transform: uppercase;">Duplicates</div>
+            ${res.duplicateRows > 0 ? `
+              <div style="margin-top: 4px;">
+                <span class="badge" style="font-size: 9.5px; background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); padding: 2px 6px;">📥 Export</span>
+              </div>
+            ` : ''}
           </div>
 
-          <div style="background: var(--bg-card); border: 1px solid rgba(239, 68, 68, 0.4); border-radius: var(--radius-md); padding: 10px 12px; text-align: center;">
+          <div class="kpi-card-errors" style="background: var(--bg-card); border: 1.5px solid rgba(239, 68, 68, 0.4); border-radius: var(--radius-md); padding: 10px 12px; text-align: center; ${res.invalidRows > 0 ? 'cursor: pointer;' : ''}" title="${res.invalidRows > 0 ? 'Click to download error report' : 'No errors'}">
             <div style="font-size: 18px; font-weight: 800; color: #f87171;">${res.invalidRows}</div>
             <div style="font-size: 10.5px; color: #f87171; font-weight: 700; text-transform: uppercase;">Errors</div>
+            ${res.invalidRows > 0 ? `
+              <div style="margin-top: 4px;">
+                <span class="badge" style="font-size: 9.5px; background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); padding: 2px 6px;">📥 Export</span>
+              </div>
+            ` : ''}
           </div>
         </div>
 
@@ -576,25 +605,25 @@ function renderImportStageContent() {
         <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 12px 16px;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
             <div style="display: flex; align-items: center; gap: 8px;">
-              <span style="font-size: 12px; font-weight: 700; color: #f87171; text-transform: uppercase;">
-                ⚠️ Validation Errors &amp; Diagnostic Log (${errorsList.length})
+              <span style="font-size: 12px; font-weight: 700; color: ${(errorsList.length > 0 || dupSummary.count > 0) ? '#f87171' : '#34d399'}; text-transform: uppercase;">
+                ${errorsList.length > 0 && dupSummary.count > 0 ? `⚠️ Validation Errors &amp; Duplicates Log (${errorsList.length + dupSummary.count})` : (dupSummary.count > 0 ? `🛡️ Duplicate Records Log (${dupSummary.count})` : `⚠️ Validation Errors &amp; Diagnostic Log (${errorsList.length})`)}
               </span>
             </div>
 
-            <div style="display: flex; gap: 8px;">
-              <input type="text" id="inp-filter-errors" class="form-control" placeholder="Filter errors..." value="${importState.errorSearchFilter}" style="font-size: 11px; padding: 3px 8px; width: 180px;" />
-              ${errorsList.length > 0 ? `
-                <button type="button" id="btn-download-error-report" class="btn btn-danger btn-sm" style="font-size: 11px; font-weight: 700;">
-                  📥 Download Error Report (.xlsx)
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <input type="text" id="inp-filter-errors" class="form-control" placeholder="Filter issues..." value="${importState.errorSearchFilter}" style="font-size: 11px; padding: 3px 8px; width: 180px;" />
+              ${(errorsList.length > 0 || dupSummary.count > 0 || res.duplicateRows > 0 || res.invalidRows > 0) ? `
+                <button type="button" id="btn-download-error-report" class="btn btn-danger btn-sm btn-download-error-report-action" style="font-size: 11px; font-weight: 800; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 8px rgba(239, 68, 68, 0.35); background: #ef4444; color: #fff; border: none; padding: 5px 12px; cursor: pointer;">
+                  📥 Download Error / Duplicates Report (.xlsx)
                 </button>
               ` : ''}
             </div>
           </div>
 
           <div style="max-height: 220px; overflow-y: auto;">
-            ${filteredErrors.length === 0 ? `
+            ${(filteredErrors.length === 0 && filteredDuplicates.length === 0) ? `
               <div style="color: #34d399; font-size: 12px; padding: 12px; text-align: center; font-weight: 600;">
-                ✅ Perfect! All records passed validation checks with 0 errors.
+                ✅ Perfect! All records passed validation checks with 0 errors and 0 duplicates.
               </div>
             ` : `
               <table class="excel-grid-table" style="font-size: 11px;">
@@ -604,8 +633,8 @@ function renderImportStageContent() {
                     <th style="width: 65px; text-align: center;">Row</th>
                     <th>Column</th>
                     <th>Entered Value</th>
-                    <th>Error Reason</th>
-                    <th>Suggested Correction</th>
+                    <th>Error / Issue Reason</th>
+                    <th>Suggested Correction / Status</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -635,6 +664,24 @@ function renderImportStageContent() {
                       </tr>
                     `;
                   }).join('')}
+                  ${filteredDuplicates.map(dup => `
+                    <tr style="background: rgba(245, 158, 11, 0.07);">
+                      <td style="text-align: center; font-family: var(--font-mono); font-weight: 800; color: #fbbf24;">
+                        <span class="badge" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); font-size: 10.5px; padding: 2px 6px;">
+                          ${dup.cell || ('Row ' + dup.rowNumber)}
+                        </span>
+                      </td>
+                      <td style="text-align: center; font-family: var(--font-mono); font-weight: 700; color: var(--text-muted);">Row ${dup.rowNumber}</td>
+                      <td style="font-weight: 700; color: #fbbf24;">${dup.column || 'Machine Serial'}</td>
+                      <td style="font-family: var(--font-mono); color: #fff;">${dup.serialNumber || dup.model || '—'}</td>
+                      <td style="color: #fbbf24; font-weight: 600;">${dup.reason || 'Duplicate record detected and skipped'}</td>
+                      <td style="color: #38bdf8; font-size: 10.5px;">
+                        <span class="badge" style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid #f59e0b; font-size: 10px; font-weight: 700; padding: 2px 6px;">
+                          ⚠️ DUPLICATE (SKIPPED)
+                        </span>
+                      </td>
+                    </tr>
+                  `).join('')}
                 </tbody>
               </table>
             `}
@@ -702,9 +749,9 @@ function renderImportStageContent() {
               </div>
             </div>
 
-            ${failedRows.length > 0 ? `
-              <button id="btn-download-error-report-final" class="btn btn-danger btn-sm" style="font-weight: 700; font-size: 11.5px; padding: 5px 12px;">
-                📥 Download Error Report (.xlsx)
+            ${(failedRows.length > 0 || (res.failedCount || 0) > 0 || (res.skippedCount || 0) > 0) ? `
+              <button id="btn-download-error-report-final" class="btn btn-danger btn-sm btn-download-error-report-action" style="font-weight: 800; font-size: 11.5px; padding: 6px 14px; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 8px rgba(239, 68, 68, 0.35);">
+                📥 Download Error / Skipped Report (.xlsx)
               </button>
             ` : ''}
           </div>
@@ -778,19 +825,37 @@ function renderImportStageFooter() {
     `;
   }
   if (importState.stage === 4) {
-    const res = importState.validationResult;
-    const canCommit = res.validRows > 0;
+    const res = importState.validationResult || {};
+    const importableCount = (res.newRows || 0) + (res.updateRows || 0);
+    const canCommit = importableCount > 0 || (res.validRows > 0);
+    const hasIssuesToExport = (res.duplicateRows > 0) || (res.invalidRows > 0);
     return `
       <button id="btn-back-stage-2" class="btn btn-secondary">◀ Adjust Mapping</button>
-      <div style="display: flex; gap: 10px;">
-        <button id="btn-commit-import-execution" class="btn btn-success" ${canCommit ? '' : 'disabled'} style="font-weight: 800;">
-          🚀 Confirm &amp; Import (${res.validRows} Records)
+      <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+        ${hasIssuesToExport ? `
+          <button type="button" class="btn btn-download-error-report-action" style="font-size: 12px; font-weight: 800; padding: 7px 16px; border: 1.5px solid #ef4444; color: #fff; background: rgba(239, 68, 68, 0.25); border-radius: var(--radius-sm); cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+            📥 Download Error / Duplicate File
+          </button>
+        ` : ''}
+        <button id="btn-commit-import-execution" class="btn btn-success" ${canCommit ? '' : 'disabled'} style="font-weight: 800; font-size: 13px; padding: 8px 20px;">
+          🚀 Confirm &amp; Import (${importableCount > 0 ? importableCount : res.validRows} Records)
         </button>
       </div>
     `;
   }
   if (importState.stage === 5) {
-    return `<button id="btn-close-import-final" class="btn btn-secondary">Close</button>`;
+    const res = importState.importResult || {};
+    const hasIssues = (res.failedCount || 0) > 0 || (res.skippedCount || 0) > 0;
+    return `
+      <div style="display: flex; gap: 10px; align-items: center; justify-content: space-between; width: 100%;">
+        ${hasIssues ? `
+          <button type="button" class="btn btn-danger btn-download-error-report-action" style="font-size: 12px; font-weight: 800; padding: 7px 16px; border: 1.5px solid #ef4444; color: #fff; background: rgba(239, 68, 68, 0.25); border-radius: var(--radius-sm); cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+            📥 Download Error / Skipped Report (.xlsx)
+          </button>
+        ` : '<div></div>'}
+        <button id="btn-close-import-final" class="btn btn-secondary">Close</button>
+      </div>
+    `;
   }
   return '';
 }
@@ -1089,6 +1154,17 @@ export function initExcelImportEvents() {
   };
   if (btnDownErr) btnDownErr.addEventListener('click', triggerDownloadError);
   if (btnDownErrFinal) btnDownErrFinal.addEventListener('click', triggerDownloadError);
+  document.querySelectorAll('.btn-download-error-report-action').forEach(btn => {
+    btn.addEventListener('click', triggerDownloadError);
+  });
+  const kpiDups = document.querySelector('.kpi-card-duplicates');
+  if (kpiDups && (importState.validationResult?.duplicateRows > 0)) {
+    kpiDups.addEventListener('click', triggerDownloadError);
+  }
+  const kpiErrs = document.querySelector('.kpi-card-errors');
+  if (kpiErrs && (importState.validationResult?.invalidRows > 0)) {
+    kpiErrs.addEventListener('click', triggerDownloadError);
+  }
 
   // Execute Commit Import
   const btnCommit = document.getElementById('btn-commit-import-execution');
