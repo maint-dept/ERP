@@ -48,8 +48,8 @@ export const PROVIDER_SPECS = {
     fields: [
       { id: 'host', label: 'Host', type: 'text', placeholder: '127.0.0.1 or localhost', defaultValue: '127.0.0.1', required: true },
       { id: 'port', label: 'Port', type: 'number', placeholder: '5432', defaultValue: '5432', required: true },
-      { id: 'database', label: 'Database', type: 'text', placeholder: 'motaherh_mainterp', defaultValue: 'motaherh_mainterp', required: true },
-      { id: 'username', label: 'Username', type: 'text', placeholder: 'motaherh_mainterp', defaultValue: 'motaherh_mainterp', required: true },
+      { id: 'database', label: 'Database', type: 'text', placeholder: 'motaherh_Maintenance', defaultValue: 'motaherh_Maintenance', required: true },
+      { id: 'username', label: 'Username', type: 'text', placeholder: 'motaherh_AMG-maint', defaultValue: 'motaherh_AMG-maint', required: true },
       { id: 'password', label: 'Password', type: 'password', placeholder: '••••••••••••', required: true },
       { id: 'ssl', label: 'Require SSL / TLS', type: 'checkbox', defaultValue: false, note: 'Enable for remote cloud PostgreSQL (Supabase/Neon). Uncheck for cPanel 127.0.0.1.' },
       { id: 'endpoint', label: 'Proxy Endpoint URL (PHP REST API)', type: 'text', placeholder: 'https://moviezonex.com/api/pg_api.php', defaultValue: 'https://moviezonex.com/api/pg_api.php', note: 'Direct TCP from browser is blocked by browsers. Communicates via pg_api.php on paid hosting or /api/db/pg.' },
@@ -150,7 +150,9 @@ function getDashboardSyncState() {
   let metrics = safeGetJson(SYNC_METRICS_KEY, {});
 
   // Real configured secondary databases saved by the user
-  let rawConfigs = safeGetJson('erp_multi_db_config', []);
+  let rawConfigs = (storage && typeof storage.getMultiDbConfigs === 'function')
+    ? storage.getMultiDbConfigs()
+    : safeGetJson('erp_multi_db_config', []);
 
   // Filter to keep only supported providers: MYSQL and POSTGRESQL
   rawConfigs = (rawConfigs || []).filter(c => c && c.id && (c.type === 'MYSQL' || c.type === 'POSTGRESQL'));
@@ -304,8 +306,10 @@ function saveDashboardSyncState(patch) {
 }
 
 export function renderDatabaseConfigView() {
-  // Read real saved secondary-DB configs from localStorage
-  const configs = safeGetJson('erp_multi_db_config', []);
+  // Read real saved secondary-DB configs from storage engine or localStorage
+  const configs = (storage && typeof storage.getMultiDbConfigs === 'function')
+    ? storage.getMultiDbConfigs()
+    : safeGetJson('erp_multi_db_config', []);
 
   const state = getDashboardSyncState();
   const totalRecords = state.master.total;
@@ -1019,7 +1023,8 @@ export function initDatabaseConfigEvents() {
 
       if (!confirm(`Are you sure you want to remove the database "${name}"?`)) return;
 
-      const updated = configs.filter(c => c.id !== dbId);
+      const isPg = target && (target.type === 'POSTGRESQL' || target.type === 'POSTGRES');
+      const updated = configs.filter(c => c.id !== dbId && !(isPg && (c.type === 'POSTGRESQL' || c.type === 'POSTGRES')));
       localStorage.setItem('erp_multi_db_config', JSON.stringify(updated));
       if (storage && typeof storage.saveMultiDbConfigs === 'function') {
         await storage.saveMultiDbConfigs(updated).catch(() => {});
@@ -1305,7 +1310,9 @@ function renderProviderPlaceholder() {
   if (!container) return;
 
   // Retrieve current configs
-  let configs = safeGetJson('erp_multi_db_config', []);
+  let configs = (storage && typeof storage.getMultiDbConfigs === 'function')
+    ? storage.getMultiDbConfigs()
+    : safeGetJson('erp_multi_db_config', []);
   const mysqlDb = configs.find(c => c.role === 'PRIMARY' || c.id === 'mysql_primary' || (c.type || '').toUpperCase() === 'MYSQL');
   const pgDb = configs.find(c => ((c.type || '').toUpperCase() === 'POSTGRESQL' || (c.type || '').toUpperCase() === 'POSTGRES') && c.role !== 'PRIMARY');
 
@@ -1685,8 +1692,21 @@ function renderProviderForm(providerKey, dbId = null) {
 
         let currentConfigs = safeGetJson('erp_multi_db_config', []);
 
-        // Use currentEditingDbId if editing, or create a unique instance ID
-        const targetId = currentEditingDbId || `db_${spec.key.toLowerCase()}_${Date.now()}`;
+        // Use currentEditingDbId if editing, or find existing PostgreSQL if saving PostgreSQL
+        let targetId = currentEditingDbId;
+        if (!targetId && spec.key === 'POSTGRESQL') {
+          const existingPg = currentConfigs.find(c => (c.type || '').toUpperCase() === 'POSTGRESQL' || (c.type || '').toUpperCase() === 'POSTGRES');
+          if (existingPg) targetId = existingPg.id;
+        }
+        if (!targetId) {
+          targetId = `db_${spec.key.toLowerCase()}_${Date.now()}`;
+        }
+
+        // Clean out any duplicate or old ghost PostgreSQL instances to guarantee a single clean replica
+        if (spec.key === 'POSTGRESQL') {
+          currentConfigs = currentConfigs.filter(c => c.id !== targetId && (c.type || '').toUpperCase() !== 'POSTGRESQL' && (c.type || '').toUpperCase() !== 'POSTGRES');
+        }
+
         const existingIdx = currentConfigs.findIndex(c => c.id === targetId);
 
         const configRecord = {
@@ -1743,7 +1763,8 @@ function renderProviderForm(providerKey, dbId = null) {
 
       if (!confirm(`Are you sure you want to remove the database "${name}"?`)) return;
 
-      const updated = currentConfigs.filter(c => c.id !== currentEditingDbId);
+      const isPg = existingRec && ((existingRec.type || '').toUpperCase() === 'POSTGRESQL' || (existingRec.type || '').toUpperCase() === 'POSTGRES');
+      const updated = currentConfigs.filter(c => c.id !== currentEditingDbId && !(isPg && ((c.type || '').toUpperCase() === 'POSTGRESQL' || (c.type || '').toUpperCase() === 'POSTGRES')));
       localStorage.setItem('erp_multi_db_config', JSON.stringify(updated));
       if (storage && typeof storage.saveMultiDbConfigs === 'function') {
         await storage.saveMultiDbConfigs(updated).catch(() => {});

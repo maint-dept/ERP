@@ -934,6 +934,18 @@ class StorageEngine {
               this.saveTable(TABLE_NAMES.MACHINES, cleanMachines, false).catch(() => {});
             }, 1200);
           }
+        } else if (tbl === TABLE_NAMES.SETTINGS && Array.isArray(serverRecs[tbl])) {
+          const localMultiDb = localStorage.getItem('erp_multi_db_config');
+          let preservedMultiDb = null;
+          if (localMultiDb) {
+            try { preservedMultiDb = JSON.parse(localMultiDb); } catch (_) {}
+          }
+          const recs = serverRecs[tbl];
+          if (preservedMultiDb && Array.isArray(preservedMultiDb)) {
+            const r = recs.find(x => x.key === 'multi_db_config' || x.id === 'multi_db_config');
+            if (r) r.value = preservedMultiDb;
+          }
+          this.data[tbl] = recs;
         } else {
           // Firestore / persistent database is the authoritative single source of truth
           this.data[tbl] = serverRecs[tbl];
@@ -953,10 +965,21 @@ class StorageEngine {
           if (!isViewingSettings) {
             const incomingSettings = serverRecs[tbl];
             if (incomingSettings && typeof incomingSettings === 'object' && Object.keys(incomingSettings).length > 0) {
+              const localMultiDb = localStorage.getItem('erp_multi_db_config');
+              let preservedMultiDb = null;
+              if (localMultiDb) {
+                try { preservedMultiDb = JSON.parse(localMultiDb); } catch (_) {}
+              }
+
               this.data[tbl] = {
                 ...(this.data[tbl] || {}),
                 ...incomingSettings
               };
+
+              if (preservedMultiDb && Array.isArray(preservedMultiDb)) {
+                this.data[tbl].multi_db_config = preservedMultiDb;
+              }
+
               try {
                 localStorage.setItem(STORAGE_KEY_PREFIX + tbl, JSON.stringify(this.data[tbl]));
               } catch (_) {}
@@ -1674,37 +1697,53 @@ class StorageEngine {
         clone.enabled = true;
         clone.autoSync = true;
         clone.role = 'PRIMARY';
+      } else if (clone.type === 'POSTGRESQL' || clone.type === 'POSTGRES') {
+        let ep = (clone.endpoint || '').trim().replace(/\/$/, '');
+        if (!ep || ep === 'api/pg_api.php' || ep === '/api/pg_api.php' || ep.includes('://api/pg_api.php') || ep === '/api/db/pg' || (ep.includes('api/pg_api.php') && !ep.startsWith('http'))) {
+          ep = 'https://moviezonex.com/api/pg_api.php';
+        } else if (!/^https?:\/\//i.test(ep) && !ep.startsWith('/')) {
+          ep = 'https://' + ep;
+        }
+        clone.endpoint = ep;
       }
       return clone;
     });
   }
 
-  // Multi-Database Configuration Persistence (Survives cache flushes and syncs across devices)
+  // Multi-Database Configuration Persistence (Survives cache flushes, reloads, and multi-device syncs)
   getMultiDbConfigs() {
-    try {
-      const settingsTable = this.getTable(TABLE_NAMES.SETTINGS) || [];
-      if (Array.isArray(settingsTable)) {
-        const dbConfigRow = settingsTable.find(r => r.key === 'multi_db_config' || r.id === 'multi_db_config');
-        if (dbConfigRow && Array.isArray(dbConfigRow.value) && dbConfigRow.value.length > 0) {
-          return this._sanitizeDbConfigs(dbConfigRow.value);
-        }
-      }
-      const settingsObj = this.data[TABLE_NAMES.SETTINGS];
-      if (settingsObj && Array.isArray(settingsObj.multi_db_config) && settingsObj.multi_db_config.length > 0) {
-        return this._sanitizeDbConfigs(settingsObj.multi_db_config);
-      }
-    } catch (_) {}
+    // 1. First priority: Check localStorage as the user's direct, latest browser configuration
     try {
       const local = localStorage.getItem('erp_multi_db_config');
       if (local) {
         const parsed = JSON.parse(local);
         if (Array.isArray(parsed) && parsed.length > 0) {
           const sanitized = this._sanitizeDbConfigs(parsed);
-          try { localStorage.setItem('erp_multi_db_config', JSON.stringify(sanitized)); } catch (_) {}
+          this._syncMultiDbToSettings(sanitized);
           return sanitized;
         }
       }
     } catch (_) {}
+
+    // 2. Fallback to settings table only if localStorage is empty (e.g. fresh browser)
+    try {
+      const settingsTable = this.getTable(TABLE_NAMES.SETTINGS) || [];
+      if (Array.isArray(settingsTable)) {
+        const dbConfigRow = settingsTable.find(r => r.key === 'multi_db_config' || r.id === 'multi_db_config');
+        if (dbConfigRow && Array.isArray(dbConfigRow.value) && dbConfigRow.value.length > 0) {
+          const sanitized = this._sanitizeDbConfigs(dbConfigRow.value);
+          try { localStorage.setItem('erp_multi_db_config', JSON.stringify(sanitized)); } catch (_) {}
+          return sanitized;
+        }
+      }
+      const settingsObj = this.data[TABLE_NAMES.SETTINGS];
+      if (settingsObj && Array.isArray(settingsObj.multi_db_config) && settingsObj.multi_db_config.length > 0) {
+        const sanitized = this._sanitizeDbConfigs(settingsObj.multi_db_config);
+        try { localStorage.setItem('erp_multi_db_config', JSON.stringify(sanitized)); } catch (_) {}
+        return sanitized;
+      }
+    } catch (_) {}
+
     return [{
       id: 'mysql_primary',
       name: 'MySQL (maint_erp)',
@@ -1724,31 +1763,46 @@ class StorageEngine {
     }];
   }
 
-  async saveMultiDbConfigs(configs) {
-    const sanitized = this._sanitizeDbConfigs(configs) || configs;
+  _syncMultiDbToSettings(configs) {
+    if (!configs) return;
     try {
-      localStorage.setItem('erp_multi_db_config', JSON.stringify(sanitized));
-    } catch (_) {}
-    try {
-      let settingsTable = this.getTable(TABLE_NAMES.SETTINGS) || [];
+      let settingsTable = this.getTable(TABLE_NAMES.SETTINGS);
       if (Array.isArray(settingsTable)) {
         let row = settingsTable.find(r => r.key === 'multi_db_config' || r.id === 'multi_db_config');
         if (row) {
-          row.value = sanitized;
+          row.value = configs;
           row.updatedAt = new Date().toISOString();
         } else {
           settingsTable.push({
             id: 'multi_db_config',
             key: 'multi_db_config',
-            value: sanitized,
+            value: configs,
             updatedAt: new Date().toISOString()
           });
         }
       }
       if (this.data[TABLE_NAMES.SETTINGS] && typeof this.data[TABLE_NAMES.SETTINGS] === 'object' && !Array.isArray(this.data[TABLE_NAMES.SETTINGS])) {
-        this.data[TABLE_NAMES.SETTINGS].multi_db_config = sanitized;
+        this.data[TABLE_NAMES.SETTINGS].multi_db_config = configs;
       }
-      this.saveTable(TABLE_NAMES.SETTINGS, true);
+    } catch (_) {}
+  }
+
+  async saveMultiDbConfigs(configs) {
+    const sanitized = this._sanitizeDbConfigs(configs) || configs;
+    try {
+      localStorage.setItem('erp_multi_db_config', JSON.stringify(sanitized));
+      localStorage.setItem(STORAGE_KEY_PREFIX + 'multi_db_config', JSON.stringify(sanitized));
+    } catch (_) {}
+    try {
+      this._syncMultiDbToSettings(sanitized);
+      // Persist immediately to IndexedDB
+      try {
+        await idbCache.setTable(TABLE_NAMES.SETTINGS, this.data[TABLE_NAMES.SETTINGS]);
+      } catch (_) {}
+      // Sync immediately to MySQL Primary cloud so erp_tables stores the latest configuration
+      if (syncManager && syncManager.primaryAdapter) {
+        syncManager.primaryAdapter.saveTable(TABLE_NAMES.SETTINGS, this.data[TABLE_NAMES.SETTINGS]).catch(() => {});
+      }
       if (typeof this.persistToServerDatabase === 'function') {
         this.persistToServerDatabase().catch(() => {});
       }
