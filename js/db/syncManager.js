@@ -586,8 +586,3 @@ class SyncManager {
 }
 
 export const syncManager = new SyncManager();
-
-// Automatically boot Auto-Sync Engine in browser environment
-if (typeof window !== 'undefined') {
-  syncManager.startAutoSyncEngine();
-}

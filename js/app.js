@@ -51,6 +51,7 @@ import { chatService } from './services/chatService.js';
 import { historyService } from './services/historyService.js';
 import { auditService } from './services/auditService.js';
 import { notificationService } from './services/notificationService.js';
+import { syncManager } from './db/syncManager.js';
 
 /**
  * Captures all active scroll, viewport, and focused input states.
@@ -227,6 +228,7 @@ class ERPApplication {
     }
 
     this.render();
+    window.__appLoaded = true;
     this.bindEvents();
 
     // Global State & Event Subscriptions
@@ -371,6 +373,17 @@ class ERPApplication {
     }
 
     console.log('Al-Muslim Group Garments Maintenance ERP loaded successfully.');
+
+    // Boot background Auto-Sync Engine safely 6s after UI has completely loaded
+    setTimeout(() => {
+      try {
+        if (typeof syncManager !== 'undefined' && typeof syncManager.startAutoSyncEngine === 'function') {
+          syncManager.startAutoSyncEngine();
+        }
+      } catch (e) {
+        console.warn('Auto-sync engine boot notice:', e.message);
+      }
+    }, 6000);
   }
 
   render() {
@@ -417,6 +430,7 @@ class ERPApplication {
           </div>
           <div id="toast-root" class="toast-container"></div>
         `;
+        window.__appLoaded = true;
         initHomepageEvents();
         this.initModalEvents();
         return;
@@ -433,6 +447,7 @@ class ERPApplication {
           </div>
           <div id="toast-root" class="toast-container"></div>
         `;
+        window.__appLoaded = true;
         initLoginViewEvents();
         this.initModalEvents();
         return;

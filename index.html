@@ -149,23 +149,34 @@
         var statusEl = document.getElementById('loading-status-text');
         if (statusEl) statusEl.textContent = 'Connecting to Cloud Database & Loading Data...';
       }
-    }, 2000);
+    }, 3000);
 
     setTimeout(function() {
       if (!window.__appLoaded) {
         var statusEl = document.getElementById('loading-status-text');
         if (statusEl) statusEl.textContent = 'Preparing Factory ERP Modules...';
       }
-    }, 5000);
+    }, 7000);
+
+    setTimeout(function() {
+      if (!window.__appLoaded) {
+        var statusEl = document.getElementById('loading-status-text');
+        if (statusEl) statusEl.textContent = 'Synchronizing Master Schemas & Caches...';
+      }
+    }, 14000);
 
     setTimeout(function() {
       if (!window.__appLoaded) {
         if (window.app && typeof window.app.init === 'function') {
-          try { window.app.init(); return; } catch(_) {}
+          try {
+            window.app.init();
+            window.__appLoaded = true;
+            return;
+          } catch(_) {}
         }
         window.__showStartupError('Startup Timeout Notice', 'The application took longer than expected to launch. Click Retry to reload.');
       }
-    }, 8000);
+    }, 25000);
 
     window.__forceFreshReload = function() {
       try {
@@ -181,8 +192,8 @@
       window.location.replace(base + '?t=' + Date.now() + window.location.hash);
     };
 
-    // Build version v4.26.21 — silent cache clear, NO URL redirect
-    var CURRENT_BUILD = '4.26.21';
+    // Build version v4.26.22 — silent cache clear, NO URL redirect
+    var CURRENT_BUILD = '4.26.22';
 
     // Silently unregister any old Service Workers and clear all caches
     (function() {
@@ -195,7 +206,7 @@
         if ('serviceWorker' in navigator) {
           navigator.serviceWorker.getRegistrations().then(function(regs) {
             regs.forEach(function(r) {
-              console.log('[ERP v4.26.21] Unregistering SW:', r.scope);
+              console.log('[ERP v4.26.22] Unregistering SW:', r.scope);
               r.unregister();
             });
           });
@@ -205,8 +216,8 @@
     })();
   </script>
 
-  <!-- Main ES Module Application Entrypoint (Cache-Busted v4.26.21) -->
-  <script type="module" src="js/app.js?v=4.26.21"></script>
+  <!-- Main ES Module Application Entrypoint (Cache-Busted v4.26.22) -->
+  <script type="module" src="js/app.js?v=4.26.22"></script>
 
   <style>
     @keyframes spin {
