@@ -2549,70 +2549,91 @@ function renderActiveModalHtml() {
     const presetPerms = p.permissions || {};
     const availableIcons = ['🛡️', '👑', '💼', '👷', '🔧', '👁️', '🔬', '⚡', '🗄️', '📊', '📋', '👥', '⚙️', '📦'];
 
+    const totalAvailableActions = PERMISSION_CONFIG_MODULES.flatMap(g => g.modules).reduce((sum, m) => sum + m.actions.length, 0);
+    const totalActiveActions = PERMISSION_CONFIG_MODULES.flatMap(g => g.modules).reduce((sum, m) => {
+      const acts = presetPerms[m.id] || [];
+      return sum + (Array.isArray(acts) ? acts.length : 0);
+    }, 0);
+
     return `
       <div class="modal-overlay active" id="modal-uam-overlay">
-        <div class="modal-card" style="max-width: 900px; width: 95%; max-height: 92vh; display: flex; flex-direction: column; padding: 22px;">
+        <div class="modal-card" style="max-width: 1040px; width: 96%; height: 92vh; max-height: 94vh; display: flex; flex-direction: column; padding: 0; overflow: hidden; background: #0b1329; border: 1.5px solid rgba(56, 189, 248, 0.35); box-shadow: 0 25px 60px rgba(0, 0, 0, 0.85); border-radius: 12px;">
           
-          <!-- Modal Header -->
-          <div class="modal-header" style="border-bottom: 1px solid var(--border-color); padding-bottom: 12px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
+          <!-- Modal Header (Compact & User-Friendly) -->
+          <div style="padding: 10px 18px; border-bottom: 1px solid rgba(56, 189, 248, 0.2); background: linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(30, 41, 59, 0.95)); display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
             <div style="display: flex; align-items: center; gap: 10px;">
-              <span style="font-size: 26px;">${p.icon || '🛡️'}</span>
-              <div>
-                <h3 style="margin: 0; font-size: 16px; font-weight: 800; color: #fff;">
-                  ${isEdit ? `Configure Permission Preset: ${p.name}` : 'Create New Permission Preset'}
+              <span style="font-size: 22px; line-height: 1;">${p.icon || '🛡️'}</span>
+              <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <h3 style="margin: 0; font-size: 15px; font-weight: 800; color: #fff; letter-spacing: -0.2px;">
+                  ${isEdit ? `Configure Permission Preset: <span style="color: #38bdf8;">${p.name}</span>` : 'Create New Permission Preset'}
                 </h3>
-                <p style="margin: 2px 0 0 0; font-size: 11.5px; color: var(--text-muted);">
-                  ${isSystem ? 'Built-in System Preset Profile' : 'Custom Enterprise Access Profile'}
-                  ${isEdit ? ` • Assigned Users: ${p.assignedUsersCount || 0}` : ''}
-                </p>
+                <span style="font-size: 10.5px; padding: 2px 8px; border-radius: 999px; background: ${isSystem ? 'rgba(56, 189, 248, 0.15)' : 'rgba(168, 85, 247, 0.15)'}; color: ${isSystem ? '#38bdf8' : '#c084fc'}; border: 1px solid ${isSystem ? 'rgba(56, 189, 248, 0.3)' : 'rgba(168, 85, 247, 0.3)'}; font-weight: 700;">
+                  ${isSystem ? 'Built-in System Profile' : 'Custom Enterprise Profile'}
+                </span>
+                ${isEdit ? `
+                  <span style="font-size: 10.5px; padding: 2px 8px; border-radius: 999px; background: rgba(148, 163, 184, 0.12); color: #cbd5e1; border: 1px solid rgba(148, 163, 184, 0.25); font-weight: 600;">
+                    👥 ${p.assignedUsersCount || 0} Assigned User${(p.assignedUsersCount || 0) === 1 ? '' : 's'}
+                  </span>
+                ` : ''}
               </div>
             </div>
-            <button type="button" class="btn btn-ghost btn-sm btn-close-uam-modal" style="font-size: 18px; border-radius: 8px;">✕</button>
+            <button type="button" class="btn btn-ghost btn-sm btn-close-uam-modal" style="font-size: 16px; border-radius: 6px; padding: 2px 8px; color: var(--text-muted); cursor: pointer;" title="Close Modal">✕</button>
           </div>
 
-          <!-- Scrollable Modal Body -->
-          <div style="overflow-y: auto; padding: 6px 4px 14px 0; display: flex; flex-direction: column; gap: 14px; flex: 1;">
-            
-            <!-- Metadata Grid -->
-            <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-color); border-radius: 8px; padding: 14px; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
-              
-              <div class="form-group" style="margin: 0;">
-                <label class="form-label" style="font-size: 11.5px; font-weight: 700; color: #fff;">Preset Name *</label>
-                <input type="text" id="inp-preset-modal-name" class="form-control" value="${p.name || ''}" placeholder="e.g. Mechanical Supervisor" required style="height: 34px; font-size: 12.5px;" />
+          <!-- Compact Metadata Panel (Ultra-Compact 2 Rows: Saves 120px+ Vertical Space) -->
+          <div style="padding: 8px 18px; background: rgba(15, 23, 42, 0.65); border-bottom: 1px solid rgba(255, 255, 255, 0.08); flex-shrink: 0;">
+            <div style="display: grid; grid-template-columns: 2fr 1.2fr 1.2fr 1fr; gap: 10px; margin-bottom: 6px;">
+              <div>
+                <label style="display: block; font-size: 11px; font-weight: 700; color: #e2e8f0; margin-bottom: 2px;">
+                  Preset Name <span style="color: #ef4444;">*</span>
+                </label>
+                <input type="text" id="inp-preset-modal-name" class="form-control" value="${p.name || ''}" placeholder="e.g. Maintenance Supervisor" required style="height: 29px; font-size: 12px; padding: 4px 8px; border-radius: 6px;" />
               </div>
 
-              <div class="form-group" style="margin: 0;">
-                <label class="form-label" style="font-size: 11.5px; font-weight: 700; color: #fff;">Code Identifier</label>
-                <input type="text" id="inp-preset-modal-code" class="form-control font-mono" value="${p.code || ''}" placeholder="AUTO-GENERATED" ${isSystem ? 'disabled' : ''} style="height: 34px; font-size: 12px;" />
+              <div>
+                <label style="display: block; font-size: 11px; font-weight: 700; color: #94a3b8; margin-bottom: 2px;">
+                  Code Identifier
+                </label>
+                <input type="text" id="inp-preset-modal-code" class="form-control font-mono" value="${p.code || ''}" placeholder="AUTO-GENERATED" ${isSystem ? 'disabled' : ''} style="height: 29px; font-size: 11.5px; padding: 4px 8px; border-radius: 6px; ${isSystem ? 'opacity: 0.65; cursor: not-allowed; background: rgba(15, 23, 42, 0.5);' : ''}" title="${isSystem ? 'Built-in System Preset code cannot be modified' : 'Unique system code'}" />
               </div>
 
-              <div class="form-group" style="margin: 0;">
-                <label class="form-label" style="font-size: 11.5px; font-weight: 700; color: #fff;">Display Icon</label>
-                <select id="sel-preset-modal-icon" class="filter-select" style="height: 34px; font-size: 14px;">
+              <div>
+                <label style="display: block; font-size: 11px; font-weight: 700; color: #94a3b8; margin-bottom: 2px;">
+                  Access Level Tag
+                </label>
+                <input type="text" id="inp-preset-modal-level" class="form-control" value="${p.accessLevel || 'Configured Access'}" placeholder="e.g. Full Maintenance Access" style="height: 29px; font-size: 12px; padding: 4px 8px; border-radius: 6px;" />
+              </div>
+
+              <div>
+                <label style="display: block; font-size: 11px; font-weight: 700; color: #94a3b8; margin-bottom: 2px;">
+                  Display Icon
+                </label>
+                <select id="sel-preset-modal-icon" class="filter-select" style="height: 29px; font-size: 12.5px; padding: 2px 6px; border-radius: 6px; width: 100%;">
                   ${availableIcons.map(ic => `<option value="${ic}" ${ic === (p.icon || '🛡️') ? 'selected' : ''}>${ic} Icon</option>`).join('')}
                 </select>
               </div>
-
-              <div class="form-group" style="margin: 0;">
-                <label class="form-label" style="font-size: 11.5px; font-weight: 700; color: #fff;">Access Level Tag</label>
-                <input type="text" id="inp-preset-modal-level" class="form-control" value="${p.accessLevel || 'Configured Access'}" placeholder="e.g. Standard Maintenance" style="height: 34px; font-size: 12px;" />
-              </div>
-
-              <div class="form-group" style="margin: 0; grid-column: 1 / -1;">
-                <label class="form-label" style="font-size: 11.5px; font-weight: 700; color: #fff;">Description &amp; Operational Scope</label>
-                <input type="text" id="inp-preset-modal-desc" class="form-control" value="${p.description || ''}" placeholder="Brief overview of permissions granted by this profile..." style="height: 34px; font-size: 12px;" />
-              </div>
-
             </div>
 
-            <!-- Permissions Matrix Header & Toolbar -->
-            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">
-              <div>
-                <span style="font-size: 13px; font-weight: 800; color: #38bdf8; text-transform: uppercase; letter-spacing: 0.5px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <label for="inp-preset-modal-desc" style="font-size: 11px; font-weight: 700; color: #94a3b8; white-space: nowrap; margin: 0;">
+                Description &amp; Scope:
+              </label>
+              <input type="text" id="inp-preset-modal-desc" class="form-control" value="${p.description || ''}" placeholder="Brief overview of operational scope, authority, and permissions..." style="height: 27px; font-size: 11.5px; padding: 3px 8px; border-radius: 6px; flex: 1;" />
+            </div>
+          </div>
+
+          <!-- Permissions Matrix Section (Primary Focus of Modal with Dedicated Internal Scroll) -->
+          <div style="flex: 1; min-height: 0; display: flex; flex-direction: column; padding: 8px 18px 6px 18px; overflow: hidden;">
+            
+            <!-- Matrix Header & Quick Toolbar -->
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 8px; flex-shrink: 0; flex-wrap: wrap;">
+              <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <span style="font-size: 12px; font-weight: 800; color: #38bdf8; text-transform: uppercase; letter-spacing: 0.5px;">
                   Granular Permissions Matrix
                 </span>
-                <span style="font-size: 11.5px; color: var(--text-muted); margin-left: 6px;">
-                  (7 granular actions across all ERP modules)
+                <span style="font-size: 11px; color: var(--text-muted);">(7 actions across ERP modules)</span>
+                <span id="lbl-preset-modal-active-count" style="font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3);">
+                  ${totalActiveActions} / ${totalAvailableActions} Actions Granted
                 </span>
               </div>
 
@@ -2626,37 +2647,37 @@ function renderActiveModalHtml() {
                     value="${presetModuleFilterQuery}"
                     style="height: 28px; font-size: 11.5px; padding-left: 24px; width: 180px; border-radius: 6px;"
                   />
-                  <span style="position: absolute; left: 7px; top: 5px; font-size: 11px; color: var(--text-muted);">🔍</span>
+                  <span style="position: absolute; left: 7px; top: 5px; font-size: 11px; color: var(--text-muted); pointer-events: none;">🔍</span>
                 </div>
-                <button type="button" id="btn-preset-modal-select-all" class="btn btn-secondary btn-xs" style="color: #38bdf8; font-weight: 700;">
+                <button type="button" id="btn-preset-modal-select-all" class="btn btn-secondary btn-xs" style="color: #38bdf8; font-weight: 700; height: 28px; padding: 0 10px; border-radius: 6px;">
                   ✓ Select All Permissions
                 </button>
-                <button type="button" id="btn-preset-modal-deselect-all" class="btn btn-secondary btn-xs" style="color: var(--text-muted); font-weight: 700;">
+                <button type="button" id="btn-preset-modal-deselect-all" class="btn btn-secondary btn-xs" style="color: var(--text-muted); font-weight: 700; height: 28px; padding: 0 10px; border-radius: 6px;">
                   ✕ Deselect All
                 </button>
               </div>
             </div>
 
-            <!-- Granular Permissions Table -->
-            <div style="border: 1px solid var(--border-color); border-radius: var(--radius-md); overflow-x: auto; background: #0b1329;">
-              <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
-                <thead>
+            <!-- Granular Permissions Table (Internal Scroll with Sticky Header) -->
+            <div style="flex: 1; min-height: 0; overflow-y: auto; overflow-x: auto; border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 8px; background: #070d1e;">
+              <table style="width: 100%; border-collapse: collapse; font-size: 12px; table-layout: fixed;">
+                <thead style="position: sticky; top: 0; z-index: 20;">
                   <tr style="background: #0f172a; border-bottom: 2px solid #38bdf8; color: #cbd5e1; text-transform: uppercase; font-size: 11px;">
-                    <th style="padding: 9px 12px; text-align: left; width: 250px;">Module / Feature</th>
-                    <th style="padding: 9px 4px; text-align: center; width: 62px; color: #34d399;">View</th>
-                    <th style="padding: 9px 4px; text-align: center; width: 62px; color: #38bdf8;">Add</th>
-                    <th style="padding: 9px 4px; text-align: center; width: 62px; color: #fbbf24;">Edit</th>
-                    <th style="padding: 9px 4px; text-align: center; width: 62px; color: #f87171;">Delete</th>
-                    <th style="padding: 9px 4px; text-align: center; width: 62px; color: #c084fc;">Import</th>
-                    <th style="padding: 9px 4px; text-align: center; width: 62px; color: #818cf8;">Export</th>
-                    <th style="padding: 9px 4px; text-align: center; width: 62px; color: #f472b6;">Approve</th>
-                    <th style="padding: 9px 6px; text-align: center; width: 70px;">Quick</th>
+                    <th style="padding: 8px 12px; text-align: left; width: 260px; position: sticky; top: 0; background: #0f172a;">Module / Feature</th>
+                    <th style="padding: 8px 4px; text-align: center; width: 56px; color: #34d399; position: sticky; top: 0; background: #0f172a;">View</th>
+                    <th style="padding: 8px 4px; text-align: center; width: 56px; color: #38bdf8; position: sticky; top: 0; background: #0f172a;">Add</th>
+                    <th style="padding: 8px 4px; text-align: center; width: 56px; color: #fbbf24; position: sticky; top: 0; background: #0f172a;">Edit</th>
+                    <th style="padding: 8px 4px; text-align: center; width: 56px; color: #f87171; position: sticky; top: 0; background: #0f172a;">Delete</th>
+                    <th style="padding: 8px 4px; text-align: center; width: 56px; color: #c084fc; position: sticky; top: 0; background: #0f172a;">Import</th>
+                    <th style="padding: 8px 4px; text-align: center; width: 56px; color: #818cf8; position: sticky; top: 0; background: #0f172a;">Export</th>
+                    <th style="padding: 8px 4px; text-align: center; width: 56px; color: #f472b6; position: sticky; top: 0; background: #0f172a;">Approve</th>
+                    <th style="padding: 8px 6px; text-align: center; width: 72px; position: sticky; top: 0; background: #0f172a;">Quick</th>
                   </tr>
                 </thead>
                 <tbody>
                   ${PERMISSION_CONFIG_MODULES.map(group => `
                     <tr class="preset-modal-group-row" data-group="${group.group.toLowerCase()}" style="background: rgba(15, 23, 42, 0.95); border-top: 1px solid rgba(56, 189, 248, 0.25); border-bottom: 1px solid rgba(56, 189, 248, 0.25);">
-                      <td colspan="9" style="padding: 7px 12px; font-weight: 800; font-size: 11.5px; color: #38bdf8; letter-spacing: 0.5px;">
+                      <td colspan="9" style="padding: 6px 12px; font-weight: 800; font-size: 11px; color: #38bdf8; letter-spacing: 0.5px;">
                         ${group.group}
                       </td>
                     </tr>
@@ -2669,11 +2690,16 @@ function renderActiveModalHtml() {
                       const hasI = acts.includes('IMPORT');
                       const hasX = acts.includes('EXPORT');
                       const hasP = acts.includes('APPROVE');
+                      const activeCount = acts.length;
+                      const totalPossible = mod.actions.length;
 
                       return `
-                        <tr class="preset-modal-module-row" data-name="${mod.name.toLowerCase()}" data-group="${group.group.toLowerCase()}" style="border-bottom: 1px solid rgba(255, 255, 255, 0.05);" onmouseover="this.style.background='rgba(255,255,255,0.02)'" onmouseout="this.style.background='transparent'">
-                          <td style="padding: 7px 12px; font-weight: 600; color: #f8fafc;">
+                        <tr class="preset-modal-module-row" data-name="${mod.name.toLowerCase()}" data-group="${group.group.toLowerCase()}" style="border-bottom: 1px solid rgba(255, 255, 255, 0.05); transition: background 0.15s ease;" onmouseover="this.style.background='rgba(56, 189, 248, 0.06)'" onmouseout="this.style.background='transparent'">
+                          <td style="padding: 6px 12px; font-weight: 600; color: #f8fafc;">
                             ${mod.name}
+                            <span id="lbl-preset-row-count-${mod.id}" style="font-size: 10px; color: ${activeCount === totalPossible ? '#34d399' : activeCount > 0 ? '#38bdf8' : 'var(--text-muted)'}; margin-left: 6px; font-weight: 600;">
+                              (${activeCount}/${totalPossible})
+                            </span>
                           </td>
                           <td style="text-align: center; padding: 4px;">
                             <input type="checkbox" class="chk-preset-modal-perm" data-mod="${mod.id}" data-act="VIEW" ${hasV ? 'checked' : ''} style="cursor: pointer; width: 14px; height: 14px; accent-color: #10b981;" />
@@ -2709,7 +2735,7 @@ function renderActiveModalHtml() {
                             ` : '<span style="color: rgba(255,255,255,0.15); font-size: 11px;">—</span>'}
                           </td>
                           <td style="text-align: center; padding: 4px;">
-                            <button type="button" class="btn btn-ghost btn-xs btn-preset-modal-toggle-row" data-mod="${mod.id}" style="font-size: 10px; padding: 1px 6px; color: #38bdf8;">
+                            <button type="button" class="btn btn-ghost btn-xs btn-preset-modal-toggle-row" data-mod="${mod.id}" style="font-size: 10px; padding: 2px 7px; color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 4px;">
                               Toggle
                             </button>
                           </td>
@@ -2721,29 +2747,31 @@ function renderActiveModalHtml() {
               </table>
             </div>
 
-            <!-- Option: Apply to Assigned Users -->
+            <!-- Cascade Update Option (Compact) -->
             ${isEdit ? `
-              <label style="display: flex; align-items: center; gap: 9px; font-size: 12.5px; cursor: pointer; color: #fbbf24; background: rgba(251, 191, 36, 0.08); border: 1px solid rgba(251, 191, 36, 0.25); border-radius: 8px; padding: 10px 14px;">
-                <input type="checkbox" id="chk-preset-apply-to-assigned" ${applyToAssignedUsers ? 'checked' : ''} style="width: 16px; height: 16px; accent-color: #f59e0b; cursor: pointer;" />
-                <span><strong>Cascade Update:</strong> Apply modified permissions immediately to all currently assigned users (${p.assignedUsersCount || 0} account${(p.assignedUsersCount || 0) === 1 ? '' : 's'})</span>
-              </label>
+              <div style="margin-top: 6px; flex-shrink: 0;">
+                <label style="display: flex; align-items: center; gap: 8px; font-size: 11.5px; cursor: pointer; color: #fbbf24; background: rgba(251, 191, 36, 0.08); border: 1px solid rgba(251, 191, 36, 0.25); border-radius: 6px; padding: 5px 12px; margin: 0;">
+                  <input type="checkbox" id="chk-preset-apply-to-assigned" ${applyToAssignedUsers ? 'checked' : ''} style="width: 14px; height: 14px; accent-color: #f59e0b; cursor: pointer;" />
+                  <span><strong>Cascade Update:</strong> Apply modified permissions immediately to all currently assigned users (${p.assignedUsersCount || 0} account${(p.assignedUsersCount || 0) === 1 ? '' : 's'})</span>
+                </label>
+              </div>
             ` : ''}
 
           </div>
 
-          <!-- Modal Footer -->
-          <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); padding-top: 14px; flex-shrink: 0; gap: 10px;">
+          <!-- Modal Footer (Fixed at Bottom) -->
+          <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255, 255, 255, 0.08); background: rgba(15, 23, 42, 0.95); padding: 9px 18px; flex-shrink: 0; gap: 10px;">
             <div>
               ${isEdit && !isSystem ? `
-                <button type="button" id="btn-preset-modal-delete" class="btn btn-ghost btn-sm" style="color: #ef4444; font-weight: 700; font-size: 12px;">
+                <button type="button" id="btn-preset-modal-delete" class="btn btn-ghost btn-sm" style="color: #ef4444; font-weight: 700; font-size: 12px; padding: 4px 10px;">
                   🗑️ Delete Preset
                 </button>
               ` : ''}
             </div>
 
             <div style="display: flex; gap: 8px;">
-              <button type="button" class="btn btn-secondary btn-sm btn-close-uam-modal" style="font-size: 12px;">Cancel</button>
-              <button type="button" id="btn-preset-modal-save" class="btn btn-primary btn-sm" style="font-weight: 800; background: linear-gradient(135deg, #0284c7, #0369a1); font-size: 12px; padding: 6px 18px;">
+              <button type="button" class="btn btn-secondary btn-sm btn-close-uam-modal" style="font-size: 12px; height: 32px; padding: 0 14px; border-radius: 6px;">Cancel</button>
+              <button type="button" id="btn-preset-modal-save" class="btn btn-primary btn-sm" style="font-weight: 800; background: linear-gradient(135deg, #0284c7, #0369a1); font-size: 12px; height: 32px; padding: 0 18px; border-radius: 6px;">
                 💾 Save Preset &amp; Permissions
               </button>
             </div>
@@ -3820,14 +3848,17 @@ export function initUserManagementEvents() {
       presetModuleFilterQuery = q;
       const modal = document.getElementById('modal-uam-overlay');
       if (modal) {
+        const groupHasVisible = {};
         modal.querySelectorAll('.preset-modal-module-row').forEach(row => {
           const modName = (row.getAttribute('data-name') || '').toLowerCase();
           const groupName = (row.getAttribute('data-group') || '').toLowerCase();
-          if (!q || modName.includes(q) || groupName.includes(q)) {
-            row.style.display = '';
-          } else {
-            row.style.display = 'none';
-          }
+          const isMatch = !q || modName.includes(q) || groupName.includes(q);
+          row.style.display = isMatch ? '' : 'none';
+          if (isMatch) groupHasVisible[groupName] = true;
+        });
+        modal.querySelectorAll('.preset-modal-group-row').forEach(row => {
+          const groupName = (row.getAttribute('data-group') || '').toLowerCase();
+          row.style.display = (!q || groupHasVisible[groupName]) ? '' : 'none';
         });
       }
     });
@@ -4695,6 +4726,52 @@ export function initUserManagementEvents() {
   });
 
   // Modal: CREATE_EDIT_PRESET Handlers
+  const syncPresetModalInputs = () => {
+    if (!editingPreset) return;
+    const nameEl = document.getElementById('inp-preset-modal-name');
+    const codeEl = document.getElementById('inp-preset-modal-code');
+    const iconEl = document.getElementById('sel-preset-modal-icon');
+    const levelEl = document.getElementById('inp-preset-modal-level');
+    const descEl = document.getElementById('inp-preset-modal-desc');
+    if (nameEl) editingPreset.name = nameEl.value;
+    if (codeEl && !editingPreset.isSystem) editingPreset.code = codeEl.value;
+    if (iconEl) editingPreset.icon = iconEl.value;
+    if (levelEl) editingPreset.accessLevel = levelEl.value;
+    if (descEl) editingPreset.description = descEl.value;
+  };
+
+  const inpPresetName = document.getElementById('inp-preset-modal-name');
+  if (inpPresetName) inpPresetName.addEventListener('input', (e) => { if (editingPreset) editingPreset.name = e.target.value; });
+  const inpPresetCode = document.getElementById('inp-preset-modal-code');
+  if (inpPresetCode) inpPresetCode.addEventListener('input', (e) => { if (editingPreset && !editingPreset.isSystem) editingPreset.code = e.target.value; });
+  const selPresetIcon = document.getElementById('sel-preset-modal-icon');
+  if (selPresetIcon) selPresetIcon.addEventListener('change', (e) => { if (editingPreset) editingPreset.icon = e.target.value; });
+  const inpPresetLevel = document.getElementById('inp-preset-modal-level');
+  if (inpPresetLevel) inpPresetLevel.addEventListener('input', (e) => { if (editingPreset) editingPreset.accessLevel = e.target.value; });
+  const inpPresetDesc = document.getElementById('inp-preset-modal-desc');
+  if (inpPresetDesc) inpPresetDesc.addEventListener('input', (e) => { if (editingPreset) editingPreset.description = e.target.value; });
+
+  const updatePresetCounters = () => {
+    if (!editingPreset) return;
+    const perms = editingPreset.permissions || {};
+    let totalActive = 0;
+    let totalAll = 0;
+    PERMISSION_CONFIG_MODULES.flatMap(g => g.modules).forEach(m => {
+      const acts = perms[m.id] || [];
+      totalActive += acts.length;
+      totalAll += m.actions.length;
+      const countEl = document.getElementById(`lbl-preset-row-count-${m.id}`);
+      if (countEl) {
+        countEl.textContent = `(${acts.length}/${m.actions.length})`;
+        countEl.style.color = acts.length === m.actions.length ? '#34d399' : acts.length > 0 ? '#38bdf8' : 'var(--text-muted)';
+      }
+    });
+    const totalCountEl = document.getElementById('lbl-preset-modal-active-count');
+    if (totalCountEl) {
+      totalCountEl.textContent = `${totalActive} / ${totalAll} Actions Granted`;
+    }
+  };
+
   root.querySelectorAll('.chk-preset-modal-perm').forEach(cb => {
     cb.addEventListener('change', (e) => {
       if (!editingPreset) return;
@@ -4709,12 +4786,14 @@ export function initUserManagementEvents() {
       } else {
         editingPreset.permissions[mod] = editingPreset.permissions[mod].filter(a => a !== act);
       }
+      updatePresetCounters();
     });
   });
 
   root.querySelectorAll('.btn-preset-modal-toggle-row').forEach(btn => {
     btn.addEventListener('click', () => {
       if (!editingPreset) return;
+      syncPresetModalInputs();
       if (!editingPreset.permissions) editingPreset.permissions = {};
       const mod = btn.getAttribute('data-mod');
       const moduleDef = PERMISSION_CONFIG_MODULES.flatMap(g => g.modules).find(m => m.id === mod);
@@ -4734,6 +4813,7 @@ export function initUserManagementEvents() {
   if (btnPresetSelectAll) {
     btnPresetSelectAll.addEventListener('click', () => {
       if (!editingPreset) return;
+      syncPresetModalInputs();
       editingPreset.permissions = {};
       PERMISSION_CONFIG_MODULES.flatMap(g => g.modules).forEach(m => {
         editingPreset.permissions[m.id] = [...m.actions];
@@ -4746,6 +4826,7 @@ export function initUserManagementEvents() {
   if (btnPresetDeselectAll) {
     btnPresetDeselectAll.addEventListener('click', () => {
       if (!editingPreset) return;
+      syncPresetModalInputs();
       editingPreset.permissions = {};
       reRender();
     });
