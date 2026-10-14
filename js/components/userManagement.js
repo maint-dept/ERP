@@ -43,6 +43,7 @@ let filterPreset = 'ALL';
 // Pagination State
 let currentPage = 1;
 let rowsPerPage = 20;
+let currentCalculatedTotalPages = 1;
 
 // Multi-Selection State
 let selectedAccountIds = new Set();
@@ -221,7 +222,9 @@ export function renderUserManagement() {
   // Calculate Pagination
   const totalMatching = filteredAccounts.length;
   const totalPages = Math.max(1, Math.ceil(totalMatching / rowsPerPage));
+  currentCalculatedTotalPages = totalPages;
   if (currentPage > totalPages) currentPage = totalPages;
+  if (currentPage < 1) currentPage = 1;
   const startIndex = (currentPage - 1) * rowsPerPage;
   const paginatedAccounts = filteredAccounts.slice(startIndex, startIndex + rowsPerPage);
 
@@ -566,8 +569,8 @@ export function renderUserManagement() {
         ` : ''}
 
         <!-- User Accounts Table (Section 3) -->
-        <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); overflow-x: auto; width: 100%;">
-          <table class="user-management-table" style="width: 100%; border-collapse: collapse;">
+        <div class="uam-table-scroll-container" style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); overflow-x: auto; overflow-y: auto; width: 100%; min-height: 480px; flex: 1 1 auto; flex-shrink: 0;">
+          <table class="user-management-table" style="width: 100%; min-width: 1350px; border-collapse: collapse;">
             <thead>
               <tr>
                 <th style="width: 38px; text-align: center; padding: 10px 8px;">
@@ -591,8 +594,17 @@ export function renderUserManagement() {
             <tbody>
               ${paginatedAccounts.length === 0 ? `
                 <tr>
-                  <td colspan="14" style="text-align: center; padding: 36px; color: var(--text-muted); font-size: 13px;">
-                    No accounts match the specified filters. Try clearing filters or use <strong>"Auto-Create Missing Accounts"</strong>.
+                  <td colspan="14" style="text-align: center; padding: 48px 20px; color: var(--text-muted);">
+                    <div style="font-size: 36px; margin-bottom: 10px;">🔍</div>
+                    <div style="font-size: 15px; font-weight: 700; color: #fff; margin-bottom: 6px;">No Matching User Accounts Found</div>
+                    <div style="font-size: 12.5px; color: var(--text-secondary); max-width: 480px; margin: 0 auto 16px auto;">
+                      No employee records match the active search query or filter criteria. Try clearing filters or use <strong>"Auto-Create Missing Accounts"</strong>.
+                    </div>
+                    <div style="display: inline-flex; gap: 8px;">
+                      <button type="button" id="btn-empty-clear-filters" class="btn btn-secondary btn-sm" style="font-size: 12px; font-weight: 700;">
+                        ✕ Clear All Filters
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ` : paginatedAccounts.map(acc => {
@@ -2624,12 +2636,29 @@ export function initUserManagementEvents() {
 
   if (btnFirst) btnFirst.addEventListener('click', () => { currentPage = 1; reRender(); });
   if (btnPrev) btnPrev.addEventListener('click', () => { if (currentPage > 1) { currentPage--; reRender(); } });
-  if (btnNext) btnNext.addEventListener('click', () => { currentPage++; reRender(); });
+  if (btnNext) btnNext.addEventListener('click', () => { if (currentPage < currentCalculatedTotalPages) { currentPage++; reRender(); } });
   if (btnLast) btnLast.addEventListener('click', () => {
-    const totalMatching = userAccessService.getAllAccountsWithManpower().length;
-    currentPage = Math.ceil(totalMatching / rowsPerPage) || 1;
+    currentPage = currentCalculatedTotalPages;
     reRender();
   });
+
+  const btnEmptyClear = document.getElementById('btn-empty-clear-filters');
+  if (btnEmptyClear) {
+    btnEmptyClear.addEventListener('click', () => {
+      searchQuery = '';
+      quickCardFilter = 'ALL';
+      filterGroup = 'ALL';
+      filterUnit = 'ALL';
+      filterFloor = 'ALL';
+      filterLine = 'ALL';
+      filterDesignation = 'ALL';
+      filterStatus = 'ALL';
+      filterAccountLink = 'ALL';
+      filterPasswordStatus = 'ALL';
+      currentPage = 1;
+      reRender();
+    });
+  }
 
   // 5. Row Action Listeners
   root.querySelectorAll('.btn-row-view-details').forEach(btn => {
