@@ -52,6 +52,9 @@ export class MysqlAdapter extends BaseAdapter {
       headers['X-API-Key'] = this.apiKey;
       headers['Authorization'] = `Bearer ${this.apiKey}`;
     }
+    const cu = (typeof window !== 'undefined' && window.authService?.getCurrentUser) ? window.authService.getCurrentUser() : null;
+    if (cu?.role) headers['X-User-Role'] = cu.role;
+    if (cu?.id) headers['X-User-Id'] = cu.id;
     return headers;
   }
 

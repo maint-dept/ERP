@@ -612,12 +612,29 @@ class UserAccessService {
         }
 
 
+        let hasAny = false;
+        if (updatedPerms && typeof updatedPerms === 'object') {
+          for (const k in updatedPerms) {
+            if (Array.isArray(updatedPerms[k]) && updatedPerms[k].length > 0) {
+              hasAny = true;
+              break;
+            }
+          }
+        }
+
         target.permissions = updatedPerms;
-        target.presetId = 'CUSTOM';
-        target.presetName = 'Custom Access';
-        if (target.role === 'NO_ACCESS') {
-          target.role = 'USER';
-          target.roleId = 'role-maintenance-user';
+        if (!hasAny && target.role !== 'SUPER_ADMIN' && target.role !== 'ADMIN') {
+          target.role = 'NO_ACCESS';
+          target.roleId = 'role-no-access';
+          target.presetId = 'no_access';
+          target.presetName = 'No Access (Pending Admin Assignment)';
+        } else {
+          target.presetId = 'CUSTOM';
+          target.presetName = 'Custom Access';
+          if (target.role === 'NO_ACCESS') {
+            target.role = 'USER';
+            target.roleId = 'role-maintenance-user';
+          }
         }
         target.updatedAt = new Date().toISOString();
 

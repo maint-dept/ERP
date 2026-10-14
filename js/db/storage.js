@@ -1101,9 +1101,14 @@ class StorageEngine {
       const url = getApiEndpoint('/api/db/records');
       if (cloudLoadedSuccessfully) {
         // If Cloud Firestore is authoritative and updated, keep local Node server in sync with cloud data
+        const cu = (typeof window !== 'undefined' && window.authService?.getCurrentUser) ? window.authService.getCurrentUser() : null;
         fetch(url, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'X-User-Role': cu?.role || '',
+            'X-User-Id': cu?.id || ''
+          },
           body: JSON.stringify(this.data)
         }).catch(() => {});
       } else {
@@ -1311,9 +1316,14 @@ class StorageEngine {
         const blob = new Blob([payload], { type: 'application/json' });
         navigator.sendBeacon(url, blob);
       } else if (typeof fetch === 'function') {
+        const cu = (typeof window !== 'undefined' && window.authService?.getCurrentUser) ? window.authService.getCurrentUser() : null;
         fetch(url, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'X-User-Role': cu?.role || '',
+            'X-User-Id': cu?.id || ''
+          },
           body: payload,
           keepalive: true
         }).catch(() => {});

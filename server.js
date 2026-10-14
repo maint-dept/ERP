@@ -41,7 +41,7 @@ const server = http.createServer((req, res) => {
   // CORS & Cache headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-User-Role, X-User-Id, X-API-Key');
   res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
 
   if (req.method === 'OPTIONS') {
@@ -50,6 +50,19 @@ const server = http.createServer((req, res) => {
   }
 
   const urlPath = req.url ? req.url.split('?')[0] : '/';
+
+  // Security Gate: Reject API requests from unassigned Zero-Access accounts
+  const userRoleHeader = req.headers['x-user-role'] || '';
+  if (urlPath.startsWith('/api/') && urlPath !== '/api/health' && urlPath !== '/api/client-log') {
+    if (userRoleHeader === 'NO_ACCESS') {
+      res.writeHead(403, { 'Content-Type': 'application/json; charset=utf-8' });
+      return res.end(JSON.stringify({ 
+        status: 'error', 
+        code: 'ACCESS_DENIED', 
+        message: 'Security Policy: Zero-Access accounts are prohibited from executing API operations until permissions are assigned by an Administrator.' 
+      }));
+    }
+  }
 
   // Health check endpoint
   if (urlPath === '/api/health') {

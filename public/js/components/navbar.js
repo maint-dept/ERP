@@ -10,6 +10,7 @@ import { storage } from '../db/storage.js';
 
 function getRoleName(user) {
   if (!user) return 'User';
+  if (user.role === 'NO_ACCESS' || user.roleId === 'role-no-access') return 'No Access';
   if (authService.isSuperAdmin(user)) return 'Super Administrator';
   if (authService.isAdmin(user)) return 'Administrator';
   if (user.presetName) return user.presetName;
@@ -17,7 +18,7 @@ function getRoleName(user) {
     const p = authService.getPresetById(user.presetId);
     if (p?.name) return p.name;
   }
-  const roleObj = authService.getRoleById(user?.roleId) || authService.getRoleByCode(user?.role);
+  const roleObj = authService.getRoleById(user?.roleId) || (typeof authService.getRoleByCode === 'function' ? authService.getRoleByCode(user?.role) : null);
   if (roleObj?.name) return roleObj.name;
   if (user.role === 'USER') return 'Maintenance User';
   return user.role || 'Maintenance User';
@@ -25,6 +26,7 @@ function getRoleName(user) {
 
 function getShortRole(roleName) {
   if (!roleName) return 'User';
+  if (roleName.includes('No Access') || roleName.includes('NO_ACCESS')) return 'No Access';
   if (roleName.includes('Super Administrator') || roleName.includes('SUPER_ADMIN') || roleName.includes('Super Admin')) return 'Super Admin';
   if (roleName.includes('Plant Maintenance Manager') || roleName.includes('MAINT_MANAGER')) return 'Manager';
   if (roleName.includes('Administrator') || roleName.includes('ADMIN')) return 'Admin';
@@ -92,6 +94,7 @@ export function renderNavbar() {
   }).join('');
 
   const viewTitles = {
+    'no-access': { icon: '🔒', title: 'Zero Access Policy', shortTitle: 'No Access', sub: 'Access Pending Administrative Assignment' },
     'dashboard': { icon: '🏠', title: 'Dashboard', shortTitle: 'Dashboard', sub: 'Factory Health & Uptime Metrics' },
     'inventory': { icon: '📦', title: 'Machine Inventory', shortTitle: 'Inventory', sub: 'Machinery Registry & Asset Control' },
     'relocate': { icon: '📍', title: 'Relocate & Verify', shortTitle: 'Relocate', sub: 'Mobile QR Scan, Auto-Idle Detection & Location Reconciliation' },
@@ -181,7 +184,7 @@ export function renderNavbar() {
             <div class="user-avatar-circle">${userInitial}</div>
             <div class="nav-profile-meta">
               <span class="nav-profile-name" id="nav-profile-username">${displayName}</span>
-              <span class="nav-profile-role-badge">${shortRole}</span>
+              <span class="nav-profile-role-badge" style="${(user?.role === 'NO_ACCESS' || user?.roleId === 'role-no-access') ? 'background: rgba(239, 68, 68, 0.25) !important; color: #f87171 !important; border-color: rgba(239, 68, 68, 0.5) !important;' : ''}">${(user?.role === 'NO_ACCESS' || user?.roleId === 'role-no-access') ? '🔒 No Access' : shortRole}</span>
             </div>
             <svg class="nav-profile-caret" width="12" height="12" viewBox="0 0 20 20" fill="currentColor">
               <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
@@ -195,7 +198,7 @@ export function renderNavbar() {
               <div class="nav-user-dropdown-info">
                 <div class="nav-user-dropdown-name">${displayName}</div>
                 <div class="nav-user-dropdown-email">@${user?.username || 'user'}${user?.email ? ` • ${user.email}` : ''}</div>
-                <div class="nav-user-dropdown-role-badge">${isSuperAdmin ? '🛡️' : (isAdmin ? '👑' : '👤')} ${roleName}</div>
+                <div class="nav-user-dropdown-role-badge">${(user?.role === 'NO_ACCESS' || user?.roleId === 'role-no-access') ? '🔒' : (isSuperAdmin ? '🛡️' : (isAdmin ? '👑' : '👤'))} ${roleName}</div>
               </div>
             </div>
 

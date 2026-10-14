@@ -24,7 +24,7 @@ $API_KEY = '';                   // Optional: Set a secret key if desired
 // --- 2. CORS & ANTI-CACHE HEADERS (Allows GitHub Pages & frontend to connect without stale proxy caching) ---
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, Authorization, X-API-Key, X-DB-Host, X-DB-Port, X-DB-Name, X-DB-User, X-DB-Pass, X-DB-SSL');
+header('Access-Control-Allow-Headers: Content-Type, Authorization, X-API-Key, X-DB-Host, X-DB-Port, X-DB-Name, X-DB-User, X-DB-Pass, X-DB-SSL, X-User-Role, X-User-Id');
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0, post-check=0, pre-check=0');
 header('Pragma: no-cache');
@@ -37,8 +37,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
 
-// --- 3. DYNAMIC CREDENTIAL OVERRIDE (Optional from client request) ---
-$headers = getallheaders();
+// --- 3. SECURITY GATE: REJECT CALLS FROM NO_ACCESS ZERO PERMISSIONS ACCOUNTS ---
+$headers = function_exists('getallheaders') ? getallheaders() : [];
+$userRole = $headers['X-User-Role'] ?? $headers['x-user-role'] ?? '';
+if ($userRole === 'NO_ACCESS') {
+    http_response_code(403);
+    echo json_encode([
+        'status' => 'error',
+        'code' => 'ACCESS_DENIED',
+        'message' => 'Security Policy: Zero-Access accounts are prohibited from executing database operations until permissions are assigned by an Administrator.'
+    ]);
+    exit;
+}
+
+// --- 4. DYNAMIC CREDENTIAL OVERRIDE (Optional from client request) ---
 $headerKey = $headers['X-API-Key'] ?? $headers['x-api-key'] ?? '';
 $authHeader = $headers['Authorization'] ?? $headers['authorization'] ?? '';
 if (strpos($authHeader, 'Bearer ') === 0) {

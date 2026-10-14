@@ -193,8 +193,19 @@ class AuthService {
           return u;
         }
 
-        // Preserve accounts with NO_ACCESS role (Default No Access policy)
-        if (u.role === 'NO_ACCESS' || u.roleId === 'role-no-access') {
+        // Preserve accounts with NO_ACCESS role or empty permissions (Default No Access policy)
+        if (u.role === 'NO_ACCESS' || u.roleId === 'role-no-access' || (u.permissions && Object.keys(u.permissions).length === 0 && u.role !== 'SUPER_ADMIN' && u.role !== 'ADMIN')) {
+          if (u.role !== 'NO_ACCESS' || u.roleId !== 'role-no-access' || u.presetId !== 'no_access') {
+            changed = true;
+            return {
+              ...u,
+              role: 'NO_ACCESS',
+              roleId: 'role-no-access',
+              presetId: 'no_access',
+              presetName: 'No Access (Pending Admin Assignment)',
+              permissions: u.permissions || {}
+            };
+          }
           return u;
         }
 
@@ -808,6 +819,9 @@ class AuthService {
       if (hasExplicit) {
         return this.hasAccess('qr_codes', 'VIEW', activeUser);
       }
+      if (perms && typeof perms === 'object' && Object.keys(perms).length > 0) {
+        return false;
+      }
       return this.hasAccess('machines', 'VIEW', activeUser);
     }
 
@@ -816,6 +830,9 @@ class AuthService {
       if (hasExplicit) {
         return this.hasAccess('parts_trace', 'VIEW', activeUser);
       }
+      if (perms && typeof perms === 'object' && Object.keys(perms).length > 0) {
+        return false;
+      }
       return this.hasAccess('spare_parts', 'VIEW', activeUser) || this.hasAccess('machines', 'VIEW', activeUser);
     }
 
@@ -823,6 +840,9 @@ class AuthService {
       const hasExplicit = perms && perms['dashboard'];
       if (hasExplicit) {
         return this.hasAccess('dashboard', 'VIEW', activeUser);
+      }
+      if (perms && typeof perms === 'object' && Object.keys(perms).length > 0) {
+        return false;
       }
       return this.hasAccess('machines', 'VIEW', activeUser) || this.hasAccess('transfers', 'VIEW', activeUser);
     }
@@ -872,7 +892,7 @@ class AuthService {
     };
 
     const targetModule = viewToModuleMap[rawViewName];
-    if (!targetModule) return true;
+    if (!targetModule) return false;
     return this.isModuleAllowed(targetModule, activeUser);
   }
 
@@ -1977,20 +1997,25 @@ class AuthService {
       updatedAt: new Date().toISOString()
     };
 
-    if (user.role === 'NO_ACCESS') {
-      let hasAny = false;
-      if (permissions && typeof permissions === 'object') {
-        for (const k in permissions) {
-          if (Array.isArray(permissions[k]) && permissions[k].length > 0) {
-            hasAny = true;
-            break;
-          }
+    let hasAny = false;
+    if (permissions && typeof permissions === 'object') {
+      for (const k in permissions) {
+        if (Array.isArray(permissions[k]) && permissions[k].length > 0) {
+          hasAny = true;
+          break;
         }
       }
-      if (hasAny) {
-        updates.role = 'USER';
-        updates.roleId = 'role-maintenance-user';
-      }
+    }
+
+    if (!hasAny && !this.isAdmin(user) && !this.isSuperAdmin(user)) {
+      updates.role = 'NO_ACCESS';
+      updates.roleId = 'role-no-access';
+      updates.presetId = 'no_access';
+      updates.presetName = 'No Access (Pending Admin Assignment)';
+      updates.permissions = {};
+    } else if (hasAny && user.role === 'NO_ACCESS') {
+      updates.role = 'USER';
+      updates.roleId = 'role-maintenance-user';
     }
 
     const updated = storage.update(TABLE_NAMES.USERS, userId, updates);
