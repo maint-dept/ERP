@@ -1400,7 +1400,7 @@ class StorageEngine {
   }
 
   rebuildAllIndexes() {
-    this.clearTableIdMap(TABLE_NAMES.MACHINES);
+    this._invalidateTableIdMap(TABLE_NAMES.MACHINES);
     this.indexes.machineBySerial.clear();
     this.indexes.machinesByLine.clear();
     this.indexes.machinesByUnit.clear();
@@ -1503,7 +1503,7 @@ class StorageEngine {
     item.updatedAt = new Date().toISOString();
 
     this.data[tableName].push(item);
-    this.clearTableIdMap(tableName);
+    this._invalidateTableIdMap(tableName);
     this.saveTable(tableName);
 
     if (tableName === TABLE_NAMES.MACHINES) {
@@ -1530,7 +1530,7 @@ class StorageEngine {
       this.data[tableName].push(item);
     });
 
-    this.clearTableIdMap(tableName);
+    this._invalidateTableIdMap(tableName);
     this.saveTable(tableName);
 
     if (tableName === TABLE_NAMES.MACHINES) {
@@ -1558,7 +1558,7 @@ class StorageEngine {
       updatedAt: new Date().toISOString()
     };
 
-    this.clearTableIdMap(tableName);
+    this._invalidateTableIdMap(tableName);
     this.saveTable(tableName);
 
     if (tableName === TABLE_NAMES.MACHINES) {
