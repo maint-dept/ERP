@@ -489,13 +489,13 @@ class UserAccessService {
         lineName: lineObj?.name || u.lineName || linkedEmp?.lineName || linkedEmp?.workingArea || '—',
         accountStatus: u.status || 'ACTIVE',
         // Priority order for passwordStatus:
-        // 1. If DB says SETUP OR user has completed password setup (mustChangePassword === false) → always SETUP
-        // 2. If DB says TEMPORARY or mustChangePassword === true or has temporary credential in cache → TEMPORARY
-        // 3. Default fallback → SETUP
-        passwordStatus: (u.passwordStatus === 'SETUP' || u.mustChangePassword === false)
-          ? 'SETUP'
-          : ((u.passwordStatus === 'TEMPORARY' || u.mustChangePassword === true || hasTempPassword) ? 'TEMPORARY' : 'SETUP'),
-        hasTempPassword: hasTempPassword && u.passwordStatus !== 'SETUP' && u.mustChangePassword !== false,
+        // 1. If DB says ACTIVE or SETUP, OR mustChangePassword is explicitly false → ACTIVE (permanent password set)
+        // 2. If DB says TEMPORARY or mustChangePassword is true or a temp credential is cached → TEMPORARY
+        // 3. Default fallback → ACTIVE
+        passwordStatus: (u.passwordStatus === 'ACTIVE' || u.passwordStatus === 'SETUP' || u.passwordStatus === 'CHANGED' || u.mustChangePassword === false)
+          ? 'ACTIVE'
+          : ((u.passwordStatus === 'TEMPORARY' || u.mustChangePassword === true || hasTempPassword) ? 'TEMPORARY' : 'ACTIVE'),
+        hasTempPassword: hasTempPassword && u.passwordStatus !== 'ACTIVE' && u.passwordStatus !== 'SETUP' && u.mustChangePassword !== false,
         permissionsSummary: totalModules > 0 ? `${totalModules} Modules (${totalActions} Actions)` : 'No Permissions',
         totalModules,
         totalActions,
@@ -697,6 +697,7 @@ class UserAccessService {
             floorName: emp.floorName || '',
             lineId: emp.lineId || null,
             lineName: emp.lineName || emp.workingArea || '',
+            password: hashedPassword,
             passwordHash: hashedPassword,
             passwordStatus: 'TEMPORARY',
             status: emp.status === 'ACTIVE' ? 'ACTIVE' : 'INACTIVE',

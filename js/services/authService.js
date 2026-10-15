@@ -463,17 +463,22 @@ class AuthService {
       throw new Error(`Account '${user.name}' (${user.email || user.username}) is currently INACTIVE. Please contact the administrator.`);
     }
 
-    // Verify password with salted SHA-256
-    const isPasswordValid = cryptoService.verifyPassword(password, user.password);
+    // Verify password — check both 'password' and 'passwordHash' because different creation
+    // paths store the hash in different fields (individual creation → 'password',
+    // batch/manpower creation → 'passwordHash').
+    const storedHash = user.password || user.passwordHash;
+    const isPasswordValid = storedHash ? cryptoService.verifyPassword(password, storedHash) : false;
     if (!isPasswordValid) {
       throw new Error('Incorrect password. Please verify your credentials.');
     }
 
-    // Auto-upgrade password to hash if it was plaintext
-    if (user.password && !cryptoService.isHashed(user.password)) {
-      const hashed = cryptoService.hashPassword(password);
-      storage.update(TABLE_NAMES.USERS, user.id, { password: hashed });
-      user.password = hashed;
+    // Auto-upgrade: normalise so both 'password' and 'passwordHash' always hold the same hash.
+    // This prevents login failures after password changes and fixes batch-created accounts.
+    const effectiveHash = cryptoService.isHashed(storedHash) ? storedHash : cryptoService.hashPassword(password);
+    if (user.password !== effectiveHash || user.passwordHash !== effectiveHash) {
+      storage.update(TABLE_NAMES.USERS, user.id, { password: effectiveHash, passwordHash: effectiveHash });
+      user.password = effectiveHash;
+      user.passwordHash = effectiveHash;
     }
 
     // Set active user
@@ -1761,14 +1766,16 @@ class AuthService {
       }
     }
 
-    // If updating password, securely hash it and mark passwordStatus as SETUP
+    // If updating password, securely hash it and update both hash fields, mark ACTIVE
     if (cleanUpdates.password) {
       if (cleanUpdates.password.length < 4) {
         throw new Error('Password must be at least 4 characters long.');
       }
-      cleanUpdates.password = cryptoService.hashPassword(cleanUpdates.password);
+      const hashed = cryptoService.hashPassword(cleanUpdates.password);
+      cleanUpdates.password = hashed;
+      cleanUpdates.passwordHash = hashed;
       cleanUpdates.mustChangePassword = false;
-      cleanUpdates.passwordStatus = 'SETUP';
+      cleanUpdates.passwordStatus = 'ACTIVE';
       cleanUpdates.lastPasswordReset = new Date().toISOString();
     }
 
@@ -2073,11 +2080,12 @@ class AuthService {
 
     const hashedPassword = cryptoService.hashPassword(newPassword);
 
-    // Atomic confirmed write
+    // Atomic confirmed write — save both hash fields and mark ACTIVE
     const resetOk = await storage.updateConfirmed(TABLE_NAMES.USERS, userId, {
       password: hashedPassword,
+      passwordHash: hashedPassword,
       mustChangePassword: false,
-      passwordStatus: 'SETUP',
+      passwordStatus: 'ACTIVE',
       lastPasswordReset: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     });
@@ -2109,8 +2117,9 @@ class AuthService {
     const userFromDb = storage.getItem(TABLE_NAMES.USERS, this.currentUser.id);
     if (!userFromDb) throw new Error('User record not found in database.');
 
-    // Verify current password against stored hash
-    const isCurrentValid = cryptoService.verifyPassword(currentPassword, userFromDb.password);
+    // Verify current password — check both 'password' and 'passwordHash' (mirrors login logic)
+    const storedCurrentHash = userFromDb.password || userFromDb.passwordHash;
+    const isCurrentValid = storedCurrentHash ? cryptoService.verifyPassword(currentPassword, storedCurrentHash) : false;
     if (!isCurrentValid) {
       throw new Error('Current password is incorrect. Please try again.');
     }
@@ -2120,11 +2129,12 @@ class AuthService {
 
     const hashedPassword = cryptoService.hashPassword(newPassword);
 
-    // Single atomic confirmed write (avoids race between implicit + explicit saveTable calls)
+    // Single atomic confirmed write — save both hash fields and mark ACTIVE
     const updated = await storage.updateConfirmed(TABLE_NAMES.USERS, this.currentUser.id, {
       password: hashedPassword,
+      passwordHash: hashedPassword,
       mustChangePassword: false,
-      passwordStatus: 'SETUP',
+      passwordStatus: 'ACTIVE',
       lastPasswordReset: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     });
@@ -2144,7 +2154,7 @@ class AuthService {
       'PASSWORD_CHANGED',
       'SECURITY',
       this.currentUser.id,
-      `User '${this.currentUser.name}' (@${this.currentUser.username}) successfully changed their account password. Status updated to SETUP.`
+      `User '${this.currentUser.name}' (@${this.currentUser.username}) successfully changed their account password. Status updated to ACTIVE.`
     );
 
     return true;
@@ -2173,11 +2183,14 @@ class AuthService {
 
     const hashedPassword = cryptoService.hashPassword(newPassword);
 
-    // Single atomic confirmed write directly to database
+    // Single atomic confirmed write directly to database.
+    // Save BOTH 'password' and 'passwordHash' to cover all code paths that verify either field.
+    // Set passwordStatus: 'ACTIVE' so Admin Panel reflects the correct state immediately.
     const updated = await storage.updateConfirmed(TABLE_NAMES.USERS, userId, {
       password: hashedPassword,
+      passwordHash: hashedPassword,
       mustChangePassword: false,
-      passwordStatus: 'SETUP',
+      passwordStatus: 'ACTIVE',
       lastPasswordReset: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     });
@@ -2192,7 +2205,7 @@ class AuthService {
       localStorage.setItem('al_muslim_active_user_id', updated.id);
     }
 
-    // Clear temporary credential cache so admin panel immediately shows SETUP
+    // Clear temporary credential cache so admin panel immediately shows ACTIVE
     try {
       const { userAccessService } = await import('./userAccessService.js');
       userAccessService.clearTemporaryCredential(userId);
@@ -2202,7 +2215,7 @@ class AuthService {
       'FIRST_LOGIN_PASSWORD_SET',
       'SECURITY',
       userId,
-      `User '${updated.name}' (@${updated.username}) configured permanent password on first login. Password status updated to SETUP.`
+      `User '${updated.name}' (@${updated.username}) configured permanent password on first login. Password status updated to ACTIVE.`
     );
 
     return updated;

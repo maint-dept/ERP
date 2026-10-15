@@ -564,6 +564,12 @@ class StorageEngine {
     let isExplicitUserWrite = false;
     if (typeof dataOrImmediate === 'boolean') {
       immediate = dataOrImmediate;
+      // When called as saveTable(table, true) from updateConfirmed/insertConfirmed/deleteConfirmed,
+      // this is always an explicit, confirmed user-action write and must NEVER be suppressed by
+      // _suppressServerPersist (which is only meant to block background auto-sync during boot).
+      if (dataOrImmediate === true) {
+        isExplicitUserWrite = true;
+      }
     } else if (dataOrImmediate !== null && dataOrImmediate !== undefined) {
       this.data[table] = dataOrImmediate;
       immediate = maybeImmediate !== false; // default true

@@ -262,7 +262,8 @@ export function renderUserManagement() {
 
     // 6. Password Status Filter
     if (filterPasswordStatus !== 'ALL') {
-      if (filterPasswordStatus === 'SETUP' && acc.passwordStatus !== 'SETUP') return false;
+      if (filterPasswordStatus === 'ACTIVE' && acc.passwordStatus !== 'ACTIVE') return false;
+      if (filterPasswordStatus === 'SETUP' && acc.passwordStatus !== 'ACTIVE') return false;
       if (filterPasswordStatus === 'TEMPORARY' && acc.passwordStatus !== 'TEMPORARY') return false;
       if (filterPasswordStatus === 'PENDING' && acc.passwordStatus !== 'PENDING') return false;
     }
@@ -808,10 +809,10 @@ export function renderUserManagement() {
                       <!-- Password Status -->
                       <td style="text-align: center; width: 115px; padding: 6px 6px;">
                         ${hasAccount ? `
-                          ${acc.passwordStatus === 'TEMPORARY' ? `
+                                    ${acc.passwordStatus === 'TEMPORARY' ? `
                             <span class="badge badge-warning" title="Initial temporary password generated. Eligible for export." style="font-size: 10px; padding: 2px 7px; cursor: help; white-space: nowrap;">🟡 Temporary</span>
                           ` : `
-                            <span class="badge badge-active" title="Permanent password set" style="font-size: 10px; padding: 2px 7px; white-space: nowrap;">✅ Setup</span>
+                            <span class="badge badge-active" title="Permanent password set" style="font-size: 10px; padding: 2px 7px; white-space: nowrap;">✅ Active</span>
                           `}
                         ` : `
                           <span style="color: var(--text-muted); font-size: 11px;">—</span>
@@ -1657,7 +1658,8 @@ function renderPasswordManagementTab() {
     if (passwordMgmtFloor !== 'ALL' && acc.floorId !== passwordMgmtFloor) return false;
     if (passwordMgmtStatus !== 'ALL') {
       if (passwordMgmtStatus === 'TEMPORARY' && acc.passwordStatus !== 'TEMPORARY') return false;
-      if (passwordMgmtStatus === 'SETUP' && acc.passwordStatus !== 'SETUP') return false;
+      if (passwordMgmtStatus === 'SETUP' && acc.passwordStatus !== 'ACTIVE') return false;
+      if (passwordMgmtStatus === 'ACTIVE' && acc.passwordStatus !== 'ACTIVE') return false;
     }
     return true;
   });
@@ -1759,10 +1761,10 @@ function renderPasswordManagementTab() {
                   </span>
                 </td>
                 <td style="text-align: center; padding: 9px 8px;">
-                  ${acc.passwordStatus === 'TEMPORARY' ? `
+                                    ${acc.passwordStatus === 'TEMPORARY' ? `
                     <span class="badge badge-warning" style="font-size: 10px;">🟡 Temporary</span>
                   ` : `
-                    <span class="badge badge-active" style="font-size: 10px;">✅ Setup</span>
+                    <span class="badge badge-active" style="font-size: 10px;">✅ Active</span>
                   `}
                 </td>
                 <td style="padding: 9px 12px; font-size: 11px; color: var(--text-muted);">
@@ -1773,7 +1775,7 @@ function renderPasswordManagementTab() {
                 </td>
                 <td style="text-align: center; padding: 9px 12px;">
                   <div style="display: inline-flex; gap: 6px;">
-                    <button class="btn btn-secondary btn-xs btn-pass-gen-reset" data-id="${acc.id}" data-is-reset="${acc.passwordStatus === 'SETUP'}" style="font-weight: 700; font-size: 11px; color: #38bdf8;">
+                                        <button class="btn btn-secondary btn-xs btn-pass-gen-reset" data-id="${acc.id}" data-is-reset="${acc.passwordStatus !== 'TEMPORARY'}" style="font-weight: 700; font-size: 11px; color: #38bdf8;">
                       ${acc.passwordStatus === 'TEMPORARY' ? '⚡ Re-generate' : '🔄 Reset Password'}
                     </button>
                   </div>
@@ -2136,7 +2138,7 @@ function renderActiveModalHtml() {
               <div><strong style="color: var(--text-muted);">Designation:</strong> <span style="color: #fff;">${acc.designation}</span></div>
               <div><strong style="color: var(--text-muted);">Department:</strong> <span style="color: #fff;">${acc.department}</span></div>
               <div><strong style="color: var(--text-muted);">Account Status:</strong> <span class="badge ${acc.accountStatus === 'ACTIVE' ? 'badge-active' : 'badge-maint'}" style="font-size: 10px;">${acc.accountStatus}</span></div>
-              <div><strong style="color: var(--text-muted);">Password Status:</strong> <span class="badge ${acc.passwordStatus === 'TEMPORARY' ? 'badge-warning' : 'badge-active'}" style="font-size: 10px;">${acc.passwordStatus}</span></div>
+                            <div><strong style="color: var(--text-muted);">Password Status:</strong> <span class="badge ${acc.passwordStatus === 'TEMPORARY' ? 'badge-warning' : 'badge-active'}" style="font-size: 10px;">${acc.passwordStatus === 'TEMPORARY' ? '🟡 Temporary' : '✅ Active'}</span></div>
               <div><strong style="color: var(--text-muted);">Profile Preset:</strong> <span style="color: #38bdf8;">${acc.presetName || 'Standard User'}</span></div>
             </div>
 
