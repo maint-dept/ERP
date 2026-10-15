@@ -1810,14 +1810,14 @@ class AuthService {
       }
     }
 
-    const updated = storage.update(TABLE_NAMES.USERS, userId, {
+    // Single atomic confirmed write - avoids race condition between
+    // implicit non-confirmed save (inside storage.update) and explicit confirmed save
+    const updated = await storage.updateConfirmed(TABLE_NAMES.USERS, userId, {
       ...cleanUpdates,
       updatedAt: new Date().toISOString()
     });
 
-    // Confirmed cloud write
-    const ok = await storage.saveTable(TABLE_NAMES.USERS, true);
-    if (!ok) throw new CloudSaveError('❌ Cloud Save Failed: User profile update was not confirmed by the cloud.');
+    if (!updated) throw new CloudSaveError('❌ Cloud Save Failed: User profile update was not confirmed by the cloud.');
 
     if (this.currentUser?.id === userId) {
       this.currentUser = updated;
@@ -2030,9 +2030,8 @@ class AuthService {
     if (!user) throw new Error('User not found.');
     if (user.role === 'SUPER_ADMIN' || user.username === 'superadmin') throw new Error('Super Admin account cannot be deactivated.');
     const newStatus = user.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
-    storage.update(TABLE_NAMES.USERS, userId, { status: newStatus });
-    const ok = await storage.saveTable(TABLE_NAMES.USERS, true);
-    if (!ok) throw new CloudSaveError('❌ Cloud Save Failed: User status change was not confirmed by the cloud.');
+    const toggled = await storage.updateConfirmed(TABLE_NAMES.USERS, userId, { status: newStatus });
+    if (!toggled) throw new CloudSaveError('❌ Cloud Save Failed: User status change was not confirmed by the cloud.');
     auditService.log('USER_STATUS_TOGGLED', 'USER', userId, `Set user account '${user.name}' (${user.email || user.username}) status to ${newStatus}.`);
     return newStatus;
   }
@@ -2051,14 +2050,21 @@ class AuthService {
 
     const hashedPassword = cryptoService.hashPassword(newPassword);
 
-    storage.update(TABLE_NAMES.USERS, userId, {
+    // Atomic confirmed write
+    const resetOk = await storage.updateConfirmed(TABLE_NAMES.USERS, userId, {
       password: hashedPassword,
       mustChangePassword: false,
+      passwordStatus: 'SETUP',
+      lastPasswordReset: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     });
+    if (!resetOk) throw new CloudSaveError('❌ Cloud Save Failed: Password reset was not confirmed by the cloud.');
 
-    const ok = await storage.saveTable(TABLE_NAMES.USERS, true);
-    if (!ok) throw new CloudSaveError('❌ Cloud Save Failed: Password reset was not confirmed by the cloud.');
+    // Also clear temp credential cache
+    try {
+      const { userAccessService } = await import('./userAccessService.js');
+      userAccessService.clearTemporaryCredential(userId);
+    } catch (_) {}
 
     auditService.log(
       'PASSWORD_RESET_ADMIN',
@@ -2091,8 +2097,8 @@ class AuthService {
 
     const hashedPassword = cryptoService.hashPassword(newPassword);
 
-    // Update in local storage with all necessary fields
-    const updated = storage.update(TABLE_NAMES.USERS, this.currentUser.id, {
+    // Single atomic confirmed write (avoids race between implicit + explicit saveTable calls)
+    const updated = await storage.updateConfirmed(TABLE_NAMES.USERS, this.currentUser.id, {
       password: hashedPassword,
       mustChangePassword: false,
       passwordStatus: 'SETUP',
@@ -2100,18 +2106,10 @@ class AuthService {
       updatedAt: new Date().toISOString()
     });
 
-    // Confirmed cloud write
-    const ok = await storage.saveTable(TABLE_NAMES.USERS, true);
-    if (!ok) throw new CloudSaveError('❌ Cloud Save Failed: Password change was not confirmed by the cloud.');
+    if (!updated) throw new CloudSaveError('❌ Cloud Save Failed: Password change was not confirmed by the cloud.');
 
-    // Update in-memory session with new password and status
-    if (updated) {
-      this.currentUser = updated;
-    } else {
-      this.currentUser.password = hashedPassword;
-      this.currentUser.mustChangePassword = false;
-      this.currentUser.passwordStatus = 'SETUP';
-    }
+    // Update in-memory session with confirmed DB record
+    this.currentUser = updated;
 
     // Clear the temporary credential cache so admin panel shows SETUP (not TEMPORARY)
     try {
