@@ -229,27 +229,27 @@ export function renderMachineHistoryView() {
 
         <!-- Row 2: Direct Machine Serial Search & Matching Machine Selector -->
         <div style="display: grid; grid-template-columns: minmax(260px, 1.1fr) minmax(260px, 1.9fr); gap: 8px; align-items: center;">
-          <!-- Direct Machine Serial Search Input -->
+          <!-- Smart Search Input -->
           <div style="display: flex; gap: 6px; position: relative;">
-            <div style="position: relative; flex: 1;">
-              <span style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-size: 12px; color: #38bdf8;">🔍</span>
-              <input 
-                type="text" 
-                id="history-serial-search-input" 
-                list="machine-serials-datalist"
-                class="form-control" 
-                placeholder="Search Machine Serial (e.g. 5369, 4712, JA-01)..." 
+            <div style="position: relative; flex: 1;" id="smart-search-wrapper">
+              <span style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-size: 13px; color: #38bdf8; pointer-events:none; z-index:2;">🔍</span>
+              <input
+                type="text"
+                id="history-serial-search-input"
+                autocomplete="off"
+                spellcheck="false"
+                class="form-control"
+                placeholder="Search Serial, Name, Brand or Model..."
                 value="${searchedSerial || ''}"
-                style="padding-left: 30px; padding-right: 28px; font-family: var(--font-mono); font-size: 12.5px; font-weight: 700; height: 34px; background: #080d1a; border: 1.5px solid rgba(56, 189, 248, 0.45); color: #38bdf8; border-radius: 6px; width: 100%; box-sizing: border-box;"
+                style="padding-left: 32px; padding-right: 30px; font-family: var(--font-mono); font-size: 12.5px; font-weight: 700; height: 34px; background: #080d1a; border: 1.5px solid rgba(56,189,248,0.45); color: #38bdf8; border-radius: 6px; width: 100%; box-sizing: border-box; transition: border-color 0.2s;"
               />
-              <datalist id="machine-serials-datalist">
-                ${allMachines.slice(0, 300).map(m => `<option value="${m.serialNumber}">${m.serialNumber} — ${(storage.getItem(TABLE_NAMES.MACHINE_NAMES, m.machineNameId)?.name) || m.machineName || 'Machine'} • ${(storage.getItem(TABLE_NAMES.FLOORS, m.floorId)?.name) || 'Floor'}</option>`).join('')}
-              </datalist>
-              ${searchedSerial ? `
-                <button id="btn-clear-serial-search" type="button" class="btn btn-ghost btn-sm" style="position: absolute; right: 6px; top: 50%; transform: translateY(-50%); padding: 1px 5px; font-size: 11px; color: var(--text-muted);" title="Clear Search">✕</button>
-              ` : ''}
+              <button id="btn-clear-serial-search" type="button" style="display:${searchedSerial ? 'flex' : 'none'}; position:absolute; right:6px; top:50%; transform:translateY(-50%); padding:2px 6px; font-size:11px; color:#94a3b8; background:transparent; border:none; cursor:pointer; align-items:center; z-index:3;" title="Clear">✕</button>
+              <!-- Smart Suggestion Dropdown -->
+              <div id="smart-search-dropdown"
+                style="display:none; position:absolute; top:calc(100% + 4px); left:0; right:0; background:#0d1526; border:1.5px solid rgba(56,189,248,0.4); border-radius:8px; box-shadow:0 8px 32px rgba(0,0,0,0.55); z-index:9999; max-height:320px; overflow-y:auto; padding:4px 0;">
+              </div>
             </div>
-            <button id="btn-execute-serial-search" class="btn btn-primary" style="font-weight: 700; height: 34px; padding: 0 14px; white-space: nowrap; font-size: 12px; box-shadow: 0 2px 8px rgba(2, 132, 199, 0.35);">
+            <button id="btn-execute-serial-search" class="btn btn-primary" style="font-weight:700; height:34px; padding:0 14px; white-space:nowrap; font-size:12px; box-shadow:0 2px 8px rgba(2,132,199,0.35);">
               Search
             </button>
           </div>
@@ -1041,40 +1041,164 @@ export function initMachineHistoryEvents() {
     });
   });
 
-  // Serial Number Search Submit
-  const executeSearch = () => {
-    const input = document.getElementById('history-serial-search-input');
-    if (!input) return;
-    const val = input.value.trim();
-    if (!val) {
-      alert('Please enter a Machine Serial Number.');
-      input.focus({ preventScroll: true });
-      return;
-    }
-    searchedSerial = val;
-    state.set('activeMachineId', null); // Reset active machine ID to let serial lookup drive view
-    window.dispatchEvent(new CustomEvent('erp:master-data-updated'));
-  };
+  // ── Smart Search Engine ──────────────────────────────────────────────────────
+  {
+    const input    = document.getElementById('history-serial-search-input');
+    const dropdown = document.getElementById('smart-search-dropdown');
+    const clearBtn = document.getElementById('btn-clear-serial-search');
+    let highlightIdx = -1;
+    let smartResults = [];
 
-  document.getElementById('btn-execute-serial-search')?.addEventListener('click', executeSearch);
-  document.getElementById('history-serial-search-input')?.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      executeSearch();
-    }
-  });
+    // Helper: escape HTML
+    const esc = s => String(s || '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
-  // Clear Search
-  document.getElementById('btn-clear-serial-search')?.addEventListener('click', () => {
-    searchedSerial = '';
-    state.set('activeMachineId', null);
-    const input = document.getElementById('history-serial-search-input');
-    if (input) {
-      input.value = '';
-      input.focus({ preventScroll: true });
-    }
-    window.dispatchEvent(new CustomEvent('erp:master-data-updated'));
-  });
+    // Helper: bold-highlight query inside text
+    const highlight = (text, q) => {
+      if (!q || !text) return esc(text);
+      const idx = String(text).toLowerCase().indexOf(q.toLowerCase());
+      if (idx === -1) return esc(text);
+      return esc(text.slice(0, idx))
+           + `<mark style="background:rgba(56,189,248,0.28);color:#38bdf8;border-radius:2px;padding:0 1px;font-weight:800;">${esc(text.slice(idx, idx + q.length))}</mark>`
+           + esc(text.slice(idx + q.length));
+    };
+
+    // Build rich suggestion for one machine
+    const buildCard = (m, q, idx) => {
+      const machineName = (storage.getItem(TABLE_NAMES.MACHINE_NAMES, m.machineNameId)?.name) || m.machineName || '';
+      const brand  = (storage.getItem(TABLE_NAMES.BRANDS,  m.brandId)?.name)  || m.brand  || '';
+      const model  = (storage.getItem(TABLE_NAMES.MODELS,  m.modelId)?.name)  || m.model  || '';
+      const grp    = (storage.getItem(TABLE_NAMES.GROUPS,  m.groupId)?.name)  || '';
+      const unit   = (storage.getItem(TABLE_NAMES.UNITS,   m.unitId)?.name)   || '';
+      const floor  = (storage.getItem(TABLE_NAMES.FLOORS,  m.floorId)?.name)  || '';
+      const line   = (storage.getItem(TABLE_NAMES.LINES,   m.lineId)?.name)   || '';
+      const status = m.status || 'ACTIVE';
+      const isActive = status.toUpperCase() === 'ACTIVE';
+      const statusColor = isActive ? '#4ade80' : '#f87171';
+      const locationPath = [grp, unit, floor, line].filter(Boolean).join(' › ');
+      const subtitle = [machineName, brand, model].filter(Boolean).join(' · ');
+
+      return `<div class="smart-result-item" data-idx="${idx}" data-serial="${esc(m.serialNumber)}"
+        style="display:flex; align-items:center; gap:10px; padding:8px 14px; cursor:pointer; border-bottom:1px solid rgba(255,255,255,0.04); transition:background 0.12s;"
+        onmouseenter="this.style.background='rgba(56,189,248,0.09)'"
+        onmouseleave="this.style.background=''"
+      >
+        <div style="flex-shrink:0; width:7px; height:7px; border-radius:50%; background:${statusColor}; box-shadow:0 0 5px ${statusColor};"></div>
+        <div style="flex:1; min-width:0;">
+          <div style="font-family:var(--font-mono); font-size:13px; font-weight:800; color:#38bdf8; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${highlight(m.serialNumber, q)}</div>
+          <div style="font-size:11px; color:#94a3b8; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:1px;">${highlight(subtitle, q)}</div>
+          ${locationPath ? `<div style="font-size:10.5px; color:#475569; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">📍 ${esc(locationPath)}</div>` : ''}
+        </div>
+        <span style="flex-shrink:0; font-size:10px; font-weight:700; padding:2px 6px; border-radius:4px; background:${isActive ? 'rgba(74,222,128,0.12)' : 'rgba(248,113,113,0.12)'}; color:${statusColor}; border:1px solid ${statusColor}40;">${esc(status)}</span>
+      </div>`;
+    };
+
+    // Compute matching machines (serial + name + brand + model)
+    const computeResults = (q) => {
+      if (!q || q.length < 1) return [];
+      const lq = q.toLowerCase();
+      return allMachines.filter(m => {
+        const sn     = String(m.serialNumber || '').toLowerCase();
+        const nm     = String((storage.getItem(TABLE_NAMES.MACHINE_NAMES, m.machineNameId)?.name) || m.machineName || '').toLowerCase();
+        const brd    = String((storage.getItem(TABLE_NAMES.BRANDS, m.brandId)?.name) || m.brand || '').toLowerCase();
+        const mdl    = String((storage.getItem(TABLE_NAMES.MODELS, m.modelId)?.name) || m.model || '').toLowerCase();
+        return sn.includes(lq) || nm.includes(lq) || brd.includes(lq) || mdl.includes(lq);
+      }).slice(0, 50);
+    };
+
+    const showDropdown = () => { if (dropdown) dropdown.style.display = 'block'; };
+    const hideDropdown = () => { if (dropdown) dropdown.style.display = 'none'; highlightIdx = -1; };
+
+    const renderDropdown = (q) => {
+      smartResults = computeResults(q);
+      highlightIdx = -1;
+      if (!smartResults.length || !q) { hideDropdown(); return; }
+      dropdown.innerHTML = smartResults.map((m, i) => buildCard(m, q, i)).join('');
+      showDropdown();
+      // Click selection
+      dropdown.querySelectorAll('.smart-result-item').forEach(el => {
+        el.addEventListener('mousedown', (e) => {
+          e.preventDefault();
+          const sn = el.getAttribute('data-serial');
+          if (sn) { input.value = sn; hideDropdown(); }
+        });
+      });
+    };
+
+    const applyHighlight = () => {
+      dropdown.querySelectorAll('.smart-result-item').forEach((el, i) => {
+        el.style.background = i === highlightIdx ? 'rgba(56,189,248,0.14)' : '';
+      });
+    };
+
+    // Execute search (commit selection)
+    const executeSearch = (val) => {
+      val = (val || input?.value || '').trim();
+      if (!val) {
+        notificationService.warning('Please enter a Machine Serial Number, Name, Brand or Model.');
+        input?.focus({ preventScroll: true });
+        return;
+      }
+      // If typed value matches a suggestion serial exactly — use it; else try serial lookup
+      const exact = smartResults.find(m => String(m.serialNumber).toLowerCase() === val.toLowerCase());
+      searchedSerial = exact ? exact.serialNumber : val;
+      if (input) input.value = searchedSerial;
+      hideDropdown();
+      if (clearBtn) clearBtn.style.display = 'flex';
+      state.set('activeMachineId', null);
+      window.dispatchEvent(new CustomEvent('erp:master-data-updated'));
+    };
+
+    // Input handler — live suggestions
+    input?.addEventListener('input', () => {
+      const q = input.value.trim();
+      if (clearBtn) clearBtn.style.display = q ? 'flex' : 'none';
+      renderDropdown(q);
+    });
+
+    // Keyboard navigation
+    input?.addEventListener('keydown', (e) => {
+      const items = dropdown.querySelectorAll('.smart-result-item');
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        highlightIdx = Math.min(highlightIdx + 1, items.length - 1);
+        applyHighlight();
+        if (items[highlightIdx]) items[highlightIdx].scrollIntoView({ block: 'nearest' });
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        highlightIdx = Math.max(highlightIdx - 1, -1);
+        applyHighlight();
+        if (highlightIdx >= 0 && items[highlightIdx]) items[highlightIdx].scrollIntoView({ block: 'nearest' });
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        if (highlightIdx >= 0 && smartResults[highlightIdx]) {
+          const sn = smartResults[highlightIdx].serialNumber;
+          input.value = sn;
+          hideDropdown();
+          executeSearch(sn);
+        } else {
+          executeSearch();
+        }
+      } else if (e.key === 'Escape') {
+        hideDropdown();
+      }
+    });
+
+    // Buttons
+    document.getElementById('btn-execute-serial-search')?.addEventListener('click', () => executeSearch());
+    clearBtn?.addEventListener('click', () => {
+      searchedSerial = '';
+      state.set('activeMachineId', null);
+      if (input) { input.value = ''; input.focus({ preventScroll: true }); }
+      clearBtn.style.display = 'none';
+      hideDropdown();
+      window.dispatchEvent(new CustomEvent('erp:master-data-updated'));
+    });
+
+    // Close on outside click
+    document.addEventListener('mousedown', (e) => {
+      if (!document.getElementById('smart-search-wrapper')?.contains(e.target)) hideDropdown();
+    }, { capture: true });
+  }
 
   // Quick Serial Buttons
   document.querySelectorAll('.btn-quick-serial').forEach(btn => {
@@ -1084,7 +1208,8 @@ export function initMachineHistoryEvents() {
         searchedSerial = sn;
         const input = document.getElementById('history-serial-search-input');
         if (input) input.value = sn;
-        executeSearch();
+        state.set('activeMachineId', null);
+        window.dispatchEvent(new CustomEvent('erp:master-data-updated'));
       }
     });
   });
