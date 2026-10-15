@@ -488,8 +488,15 @@ class UserAccessService {
         lineId: u.lineId || linkedEmp?.lineId || null,
         lineName: lineObj?.name || u.lineName || linkedEmp?.lineName || linkedEmp?.workingArea || '—',
         accountStatus: u.status || 'ACTIVE',
-        passwordStatus: u.passwordStatus || (hasTempPassword ? 'TEMPORARY' : 'SETUP'),
-        hasTempPassword,
+        // Priority order for passwordStatus:
+        // 1. If DB says SETUP (user already changed their password) → always SETUP
+        // 2. If DB says TEMPORARY → TEMPORARY
+        // 3. If no DB value but temp credential exists in cache → TEMPORARY
+        // 4. Default → SETUP
+        passwordStatus: (u.passwordStatus === 'SETUP' || (u.mustChangePassword === false && u.passwordStatus !== 'TEMPORARY'))
+          ? 'SETUP'
+          : (u.passwordStatus || (hasTempPassword ? 'TEMPORARY' : 'SETUP')),
+        hasTempPassword: hasTempPassword && u.passwordStatus !== 'SETUP',
         permissionsSummary: totalModules > 0 ? `${totalModules} Modules (${totalActions} Actions)` : 'No Permissions',
         totalModules,
         totalActions,

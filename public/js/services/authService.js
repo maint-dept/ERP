@@ -1948,40 +1948,7 @@ class AuthService {
     return updated;
   }
 
-  /**
-   * Change Password for the current user
-   */
-  changePassword(currentPassword, newPassword) {
-    if (!this.currentUser) throw new Error('No active user session.');
-    if (!currentPassword) throw new Error('Current password is required.');
-    if (!newPassword || newPassword.length < 4) throw new Error('New password must be at least 4 characters long.');
-
-    const user = storage.getItem(TABLE_NAMES.USERS, this.currentUser.id);
-    if (!user) throw new Error('User record not found.');
-
-    const isValid = cryptoService.verifyPassword(currentPassword, user.password);
-    if (!isValid) {
-      throw new Error('Current password is incorrect.');
-    }
-
-    const hashed = cryptoService.hashPassword(newPassword);
-    const updated = storage.update(TABLE_NAMES.USERS, user.id, {
-      password: hashed,
-      mustChangePassword: false,
-      updatedAt: new Date().toISOString()
-    });
-
-    this.currentUser = updated;
-
-    auditService.log(
-      'PASSWORD_CHANGED',
-      'SECURITY',
-      user.id,
-      `User '${user.name}' (@${user.username}) successfully updated their account password.`
-    );
-
-    return { success: true };
-  }
+  // NOTE: changePassword is defined as async below (the async version is the authoritative implementation)
 
   async updateUserPermissions(userId, permissions, presetId = 'CUSTOM', presetName = 'Custom User', assignedScope = null) {
     if (!this.canManageRoles()) {
@@ -2103,13 +2070,20 @@ class AuthService {
     return true;
   }
 
+  /**
+   * Change Password for the current user (authoritative async implementation)
+   */
   async changePassword(currentPassword, newPassword) {
     if (!this.currentUser) throw new Error('User not authenticated.');
-    
-    // Verify current password with cryptoService
-    const isCurrentValid = cryptoService.verifyPassword(currentPassword, this.currentUser.password);
-    if (this.currentUser.password && !isCurrentValid) {
-      throw new Error('Current password does not match.');
+
+    // Re-fetch user from storage to ensure we have the latest hashed password
+    const userFromDb = storage.getItem(TABLE_NAMES.USERS, this.currentUser.id);
+    if (!userFromDb) throw new Error('User record not found in database.');
+
+    // Verify current password against stored hash
+    const isCurrentValid = cryptoService.verifyPassword(currentPassword, userFromDb.password);
+    if (!isCurrentValid) {
+      throw new Error('Current password is incorrect. Please try again.');
     }
     if (!newPassword || newPassword.length < 4) {
       throw new Error('New password must be at least 4 characters long.');
@@ -2117,23 +2091,39 @@ class AuthService {
 
     const hashedPassword = cryptoService.hashPassword(newPassword);
 
-    storage.update(TABLE_NAMES.USERS, this.currentUser.id, {
+    // Update in local storage with all necessary fields
+    const updated = storage.update(TABLE_NAMES.USERS, this.currentUser.id, {
       password: hashedPassword,
       mustChangePassword: false,
+      passwordStatus: 'SETUP',
+      lastPasswordReset: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     });
 
+    // Confirmed cloud write
     const ok = await storage.saveTable(TABLE_NAMES.USERS, true);
     if (!ok) throw new CloudSaveError('❌ Cloud Save Failed: Password change was not confirmed by the cloud.');
 
-    this.currentUser.password = hashedPassword;
-    this.currentUser.mustChangePassword = false;
+    // Update in-memory session with new password and status
+    if (updated) {
+      this.currentUser = updated;
+    } else {
+      this.currentUser.password = hashedPassword;
+      this.currentUser.mustChangePassword = false;
+      this.currentUser.passwordStatus = 'SETUP';
+    }
+
+    // Clear the temporary credential cache so admin panel shows SETUP (not TEMPORARY)
+    try {
+      const { userAccessService } = await import('./userAccessService.js');
+      userAccessService.clearTemporaryCredential(this.currentUser.id);
+    } catch (_) {}
 
     auditService.log(
       'PASSWORD_CHANGED',
       'SECURITY',
       this.currentUser.id,
-      `User '${this.currentUser.name}' (${this.currentUser.username}) successfully changed their account password.`
+      `User '${this.currentUser.name}' (@${this.currentUser.username}) successfully changed their account password. Status updated to SETUP.`
     );
 
     return true;

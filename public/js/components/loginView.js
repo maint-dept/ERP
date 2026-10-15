@@ -397,7 +397,7 @@ export function initLoginViewEvents() {
   // Submit First Time Login Password Change
   const firstChangeForm = document.getElementById('form-first-login-change');
   if (firstChangeForm && pendingFirstLoginUserId) {
-    firstChangeForm.addEventListener('submit', (e) => {
+    firstChangeForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       hideAlert();
 
@@ -409,11 +409,22 @@ export function initLoginViewEvents() {
         return;
       }
 
+      const targetUserId = pendingFirstLoginUserId;
       try {
-        authService.updateUser(pendingFirstLoginUserId, {
+        // Update password + clear temporary status so new password works after logout
+        await authService.updateUser(targetUserId, {
           password: newPwd,
-          mustChangePassword: false
+          mustChangePassword: false,
+          passwordStatus: 'SETUP',
+          lastPasswordReset: new Date().toISOString()
         });
+
+        // Clear temporary credential cache so admin panel shows SETUP (not TEMPORARY)
+        try {
+          const { userAccessService } = await import('../services/userAccessService.js');
+          userAccessService.clearTemporaryCredential(targetUserId);
+        } catch (_) {}
+
         alert('✅ Password configured successfully! Entering ERP dashboard...');
         loginMode = 'LOGIN';
         pendingFirstLoginUserId = null;
