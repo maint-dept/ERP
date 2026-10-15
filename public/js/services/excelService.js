@@ -422,17 +422,23 @@ export function resolveModelSmart(rawModel, brandObj, machineNameObj, modelsList
   });
   if (bestModel) return bestModel;
 
-  // Auto-create model linked to brand and machine name
-  if (brandObj && machineNameObj) {
+  // Auto-create model linked to brand and/or machine name, or standalone
+  try {
     const newMdl = storage.insert(TABLE_NAMES.MODELS, {
       name: raw,
-      brandId: brandObj.id,
-      machineNameId: machineNameObj.id,
-      status: 'ACTIVE'
+      brandId: brandObj?.id || '',
+      brandName: brandObj?.name || '',
+      machineNameId: machineNameObj?.id || '',
+      machineName: machineNameObj?.name || '',
+      status: 'ACTIVE',
+      createdAt: new Date().toISOString()
     });
+    if (Array.isArray(modelsList)) {
+      modelsList.push(newMdl);
+    }
     storage.saveTable(TABLE_NAMES.MODELS);
     return newMdl;
-  }
+  } catch (_) {}
 
   return null;
 }
@@ -2186,7 +2192,37 @@ class ExcelService {
               if (d.lineId) updates.lineId = d.lineId;
               if (d.machineNameId) updates.machineNameId = d.machineNameId;
               if (d.brandId) updates.brandId = d.brandId;
-              if (d.modelId) updates.modelId = d.modelId;
+              if (d.modelId) {
+                updates.modelId = d.modelId;
+              } else if (d.modelStr) {
+                const allModelsTable = storage.getTable(TABLE_NAMES.MODELS) || [];
+                let foundMdl = allModelsTable.find(m => m && m.name && m.name.toLowerCase() === d.modelStr.toLowerCase());
+                if (!foundMdl) {
+                  foundMdl = storage.insert(TABLE_NAMES.MODELS, {
+                    name: d.modelStr,
+                    brandId: d.brandId || '',
+                    brandName: d.brandStr || '',
+                    machineNameId: d.machineNameId || '',
+                    machineName: d.machineNameStr || '',
+                    status: 'ACTIVE',
+                    createdAt: new Date().toISOString()
+                  });
+                }
+                if (foundMdl) updates.modelId = foundMdl.id;
+              }
+              if (d.modelStr) {
+                updates.model = d.modelStr;
+                updates.modelStr = d.modelStr;
+                updates.modelName = d.modelStr;
+              }
+              if (d.brandStr) {
+                updates.brand = d.brandStr;
+                updates.brandStr = d.brandStr;
+              }
+              if (d.machineNameStr) {
+                updates.machineName = d.machineNameStr;
+                updates.machineNameStr = d.machineNameStr;
+              }
               if (d.status) updates.status = d.status;
               if (d.remarks !== undefined) {
                 updates.remarks = (d.remarks && !d.remarks.toLowerCase().startsWith('imported from sheet')) ? d.remarks : '';
@@ -2225,14 +2261,21 @@ class ExcelService {
           } else {
             // New Machine Insert
             let modelId = d.modelId || '';
-            if (!modelId && d.brandId && d.machineNameId && d.modelStr) {
-              const newModel = storage.insert(TABLE_NAMES.MODELS, {
-                brandId: d.brandId,
-                machineNameId: d.machineNameId,
-                name: d.modelStr,
-                status: 'ACTIVE'
-              });
-              modelId = newModel.id;
+            if (!modelId && d.modelStr) {
+              const allModelsTable = storage.getTable(TABLE_NAMES.MODELS) || [];
+              let foundMdl = allModelsTable.find(m => m && m.name && m.name.toLowerCase() === d.modelStr.toLowerCase());
+              if (!foundMdl) {
+                foundMdl = storage.insert(TABLE_NAMES.MODELS, {
+                  name: d.modelStr,
+                  brandId: d.brandId || '',
+                  brandName: d.brandStr || '',
+                  machineNameId: d.machineNameId || '',
+                  machineName: d.machineNameStr || '',
+                  status: 'ACTIVE',
+                  createdAt: new Date().toISOString()
+                });
+              }
+              if (foundMdl) modelId = foundMdl.id;
             }
 
             const unitObj = storage.getItem(TABLE_NAMES.UNITS, d.unitId || 'unt-1');
@@ -2268,6 +2311,7 @@ class ExcelService {
               brandStr: d.brandStr || '',
               model: d.modelStr || '',
               modelStr: d.modelStr || '',
+              modelName: d.modelStr || '',
               unit: d.unitStr || unitObj?.name || '',
               unitName: d.unitStr || unitObj?.name || '',
               floor: d.floorStr || '',

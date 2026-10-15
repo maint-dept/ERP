@@ -1041,8 +1041,8 @@ function renderExcelImportExportModal() {
               <!-- Auto-Creation & Formatting Options -->
               <div style="display: flex; gap: 16px; flex-wrap: wrap; background: rgba(255,255,255,0.02); padding: 8px 12px; border-radius: var(--radius-sm); font-size: 11.5px;">
                 <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; color: #34d399; font-weight: 700; margin: 0;">
-                  <input type="checkbox" id="chk-excel-replace-existing" checked style="cursor: pointer; accent-color: #10b981;" />
-                  <span>🧹 Clean &amp; Replace models for imported machines (Prevents mixing with old wrong models)</span>
+                  <input type="checkbox" id="chk-excel-replace-existing" style="cursor: pointer; accent-color: #10b981;" />
+                  <span>🔄 Update &amp; Synchronize models with physical Machine Inventory</span>
                 </label>
                 <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; color: #e2e8f0; margin: 0;">
                   <input type="checkbox" id="chk-excel-auto-brands" checked style="cursor: pointer;" />

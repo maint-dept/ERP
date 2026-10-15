@@ -3185,7 +3185,7 @@ class SmartStorageService {
       }
     });
 
-    // 3. If replaceExistingForImportedMachines is enabled, purge existing models for these machines
+    // 3. If replaceExistingForImportedMachines is enabled, update specs safely in STORAGE_MASTER without purging active MODELS table
     if (replaceExistingForImportedMachines && importedCanonicalMachines.size > 0) {
       smList = smList.filter(item => {
         if (!item || item.category !== 'MACHINE') return true;
@@ -3193,14 +3193,6 @@ class SmartStorageService {
         return !importedCanonicalMachines.has(curMName);
       });
       storage.setTable(TABLE_NAMES.STORAGE_MASTER, smList);
-
-      // Also clean matching models from MODELS table
-      mdlList = mdlList.filter(item => {
-        if (!item) return false;
-        const curMName = (item.machineName || '').trim().toLowerCase();
-        return !importedCanonicalMachines.has(curMName);
-      });
-      storage.setTable(TABLE_NAMES.MODELS, mdlList);
     }
 
     // Build fresh model norm map per machine
@@ -3333,14 +3325,22 @@ class SmartStorageService {
           addedModelsCount++;
         }
 
-        // Synchronize into MODELS table
+        // Synchronize into MODELS table - match by name and (machineNameId or brandId)
         let mdlItem = mdlList.find(m => 
-          m && m.name && m.name.toLowerCase() === model.toLowerCase() &&
-          (m.machineNameId === mnItem?.id || (m.machineName && m.machineName.toLowerCase() === cleanMachine.toLowerCase()))
+          m && m.name && (
+            m.name.trim().toLowerCase() === model.trim().toLowerCase() ||
+            this.normalizePureAlphanumeric(m.name) === this.normalizePureAlphanumeric(model)
+          ) && (
+            m.machineNameId === mnItem?.id || 
+            (m.machineName && m.machineName.toLowerCase() === cleanMachine.toLowerCase()) ||
+            m.brandId === brdItem?.id ||
+            (m.brandName && m.brandName.toLowerCase() === brand.toLowerCase())
+          )
         );
         if (mdlItem) {
           if (overwriteExisting) {
             storage.update(TABLE_NAMES.MODELS, mdlItem.id, {
+              name: model.trim(),
               brandId: brdItem?.id || mdlItem.brandId,
               brandName: brand,
               machineNameId: mnItem?.id || mdlItem.machineNameId,
@@ -3351,12 +3351,13 @@ class SmartStorageService {
               requiredNeedles: item.requiredNeedles || mdlItem.requiredNeedles || '',
               status: 'ACTIVE'
             });
+            updatedModelsCount++;
           }
         } else {
           const maxMdlOrder = mdlList.reduce((max, m) => Math.max(max, Number(m.sortOrder || 0)), 0);
-          storage.insert(TABLE_NAMES.MODELS, {
-            id: 'mdl-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4),
-            name: model,
+          const newModel = storage.insert(TABLE_NAMES.MODELS, {
+            id: 'mod-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4),
+            name: model.trim(),
             brandId: brdItem?.id || '',
             brandName: brand,
             machineNameId: mnItem?.id || '',
@@ -3369,7 +3370,8 @@ class SmartStorageService {
             status: 'ACTIVE',
             createdAt: new Date().toISOString()
           });
-          mdlList = storage.getTable(TABLE_NAMES.MODELS) || [];
+          mdlList.push(newModel);
+          addedModelsCount++;
         }
       } catch (rowErr) {
         errors.push(`Row ${item.origIdx}: ${rowErr.message}`);
@@ -3394,43 +3396,95 @@ class SmartStorageService {
       storage.saveTable(TABLE_NAMES.MODELS, true)
     ]);
 
-    // 6. Synchronize Needle Flow and Inventory Machines
-    const syncNeedleFlow = options.syncNeedleFlow !== false;
+    // 6. Complete Model & Needle Flow Synchronization to Inventory Machines
     let syncedMachinesCount = 0;
     let allMachines = storage.getTable(TABLE_NAMES.MACHINES) || [];
-    if (syncNeedleFlow && allMachines.length > 0) {
-      const modelSpecMap = new Map();
-      smList.filter(it => it && it.category === 'MACHINE').forEach(it => {
-        const k1 = it.model ? this.normalizePureAlphanumeric(it.model) : '';
-        if (k1) {
-          modelSpecMap.set(k1, {
-            requiredNeedles: (it.requiredNeedles !== undefined && it.requiredNeedles !== '' && !isNaN(Number(it.requiredNeedles))) ? Number(it.requiredNeedles) : 1,
-            needleType: it.needleType || 'DBx1 #14',
-            requiredNeedleBrand: it.requiredNeedleBrand || 'ORGAN'
-          });
-        }
-      });
-
-      allMachines.forEach(m => {
-        if (!m) return;
-        const mNorm = this.normalizePureAlphanumeric(m.model || m.modelStr || m.modelName);
-        const spec = modelSpecMap.get(mNorm);
-        if (spec) {
-          m.requiredNeedles = spec.requiredNeedles;
-          m.requiredNeedle = spec.requiredNeedles;
-          if (spec.needleType) m.needleType = spec.needleType;
-          if (spec.requiredNeedleBrand) {
-            m.needleBrand = spec.requiredNeedleBrand;
-            m.requiredNeedleBrand = spec.requiredNeedleBrand;
-          }
-          m.updatedAt = new Date().toISOString();
-          syncedMachinesCount++;
-        }
-      });
-
-      if (syncedMachinesCount > 0) {
-        await storage.saveTable(TABLE_NAMES.MACHINES, true);
+    const latestModels = storage.getTable(TABLE_NAMES.MODELS) || [];
+    
+    // Build comprehensive lookup caches
+    const modelById = new Map(latestModels.map(m => [m.id, m]));
+    const modelByNameNorm = new Map();
+    const modelByBrandAndMachine = new Map();
+    latestModels.forEach(m => {
+      if (!m || !m.name) return;
+      const norm = this.normalizePureAlphanumeric(m.name);
+      if (norm && !modelByNameNorm.has(norm)) modelByNameNorm.set(norm, m);
+      if (m.brandId && m.machineNameId) {
+        const bmKey = `${m.brandId}:::${m.machineNameId}`;
+        if (!modelByBrandAndMachine.has(bmKey)) modelByBrandAndMachine.set(bmKey, m);
       }
+    });
+
+    const modelSpecMap = new Map();
+    smList.filter(it => it && it.category === 'MACHINE').forEach(it => {
+      const k1 = it.model ? this.normalizePureAlphanumeric(it.model) : '';
+      if (k1) {
+        modelSpecMap.set(k1, {
+          requiredNeedles: (it.requiredNeedles !== undefined && it.requiredNeedles !== '' && !isNaN(Number(it.requiredNeedles))) ? Number(it.requiredNeedles) : 1,
+          needleType: it.needleType || 'DBx1 #14',
+          requiredNeedleBrand: it.requiredNeedleBrand || 'ORGAN'
+        });
+      }
+    });
+
+    let machinesChanged = false;
+    allMachines.forEach(m => {
+      if (!m) return;
+      let modelChanged = false;
+
+      // 1. Resolve model object
+      let resolvedM = null;
+      if (m.modelId && modelById.has(m.modelId)) {
+        resolvedM = modelById.get(m.modelId);
+      }
+      const candidateStr = m.model || m.modelStr || m.modelName || m.customValues?.model || '';
+      if (!resolvedM && candidateStr) {
+        const norm = this.normalizePureAlphanumeric(candidateStr);
+        if (norm && modelByNameNorm.has(norm)) {
+          resolvedM = modelByNameNorm.get(norm);
+        }
+      }
+      if (!resolvedM && m.brandId && m.machineNameId) {
+        const bmKey = `${m.brandId}:::${m.machineNameId}`;
+        if (modelByBrandAndMachine.has(bmKey)) {
+          resolvedM = modelByBrandAndMachine.get(bmKey);
+        }
+      }
+
+      // Link model back to machine
+      if (resolvedM) {
+        if (m.modelId !== resolvedM.id) { m.modelId = resolvedM.id; modelChanged = true; }
+        if (m.model !== resolvedM.name) { m.model = resolvedM.name; modelChanged = true; }
+        if (m.modelStr !== resolvedM.name) { m.modelStr = resolvedM.name; modelChanged = true; }
+        if (m.modelName !== resolvedM.name) { m.modelName = resolvedM.name; modelChanged = true; }
+        if (!m.brandId && resolvedM.brandId) { m.brandId = resolvedM.brandId; modelChanged = true; }
+        if (!m.brand && resolvedM.brandName) { m.brand = resolvedM.brandName; modelChanged = true; }
+        if (!m.machineNameId && resolvedM.machineNameId) { m.machineNameId = resolvedM.machineNameId; modelChanged = true; }
+        if (!m.machineName && resolvedM.machineName) { m.machineName = resolvedM.machineName; modelChanged = true; }
+      }
+
+      // 2. Synchronize Needle specs
+      const needleKey = this.normalizePureAlphanumeric(m.model || m.modelStr || m.modelName);
+      const spec = modelSpecMap.get(needleKey);
+      if (spec) {
+        if (m.requiredNeedles !== spec.requiredNeedles) { m.requiredNeedles = spec.requiredNeedles; m.requiredNeedle = spec.requiredNeedles; modelChanged = true; }
+        if (spec.needleType && m.needleType !== spec.needleType) { m.needleType = spec.needleType; modelChanged = true; }
+        if (spec.requiredNeedleBrand && m.needleBrand !== spec.requiredNeedleBrand) {
+          m.needleBrand = spec.requiredNeedleBrand;
+          m.requiredNeedleBrand = spec.requiredNeedleBrand;
+          modelChanged = true;
+        }
+      }
+
+      if (modelChanged) {
+        m.updatedAt = new Date().toISOString();
+        syncedMachinesCount++;
+        machinesChanged = true;
+      }
+    });
+
+    if (machinesChanged) {
+      await storage.saveTable(TABLE_NAMES.MACHINES, true);
     }
 
     if (typeof storage.persistToServerDatabase === 'function') {
@@ -3465,6 +3519,117 @@ class SmartStorageService {
       syncedMachines: syncedMachinesCount,
       errors
     };
+  }
+
+  /**
+   * Resilient self-healing routine: scans machine inventory and repairs any missing or orphan model links.
+   * Guarantees that no machine is displayed with a dash ("—") when model data is resolvable.
+   */
+  async autoHealMissingModels() {
+    try {
+      const allMachines = storage.getTable(TABLE_NAMES.MACHINES) || [];
+      const allModels = storage.getTable(TABLE_NAMES.MODELS) || [];
+      const allBrands = storage.getTable(TABLE_NAMES.BRANDS) || [];
+      const allMachineNames = storage.getTable(TABLE_NAMES.MACHINE_NAMES) || [];
+      const allStorageMaster = storage.getTable(TABLE_NAMES.STORAGE_MASTER) || [];
+
+      if (!Array.isArray(allMachines) || allMachines.length === 0) return { healed: 0 };
+
+      const modelById = new Map(allModels.map(m => [m.id, m]));
+      const modelByNameNorm = new Map();
+      const modelByBrandAndMachine = new Map();
+      allModels.forEach(m => {
+        if (!m || !m.name) return;
+        const norm = this.normalizePureAlphanumeric(m.name);
+        if (norm && !modelByNameNorm.has(norm)) modelByNameNorm.set(norm, m);
+        if (m.brandId && m.machineNameId) {
+          const key = `${m.brandId}:::${m.machineNameId}`;
+          if (!modelByBrandAndMachine.has(key)) modelByBrandAndMachine.set(key, m);
+        }
+      });
+
+      // Storage master fallback models
+      const smModelByBrandAndMachine = new Map();
+      allStorageMaster.filter(it => it && it.category === 'MACHINE' && it.model).forEach(it => {
+        const mNorm = this.normalizePureAlphanumeric(it.model);
+        if (mNorm && !modelByNameNorm.has(mNorm)) {
+          modelByNameNorm.set(mNorm, { id: it.id, name: it.model, brandName: it.brand, machineName: it.machineName });
+        }
+      });
+
+      let healedCount = 0;
+      let machinesChanged = false;
+      let modelsChanged = false;
+
+      for (const m of allMachines) {
+        if (!m) continue;
+        const hasValidModel = m.modelId && modelById.has(m.modelId) && m.model && m.model !== '—';
+        if (hasValidModel) continue;
+
+        let resolvedModel = null;
+        if (m.modelId && modelById.has(m.modelId)) {
+          resolvedModel = modelById.get(m.modelId);
+        }
+
+        const candidateName = m.model || m.modelStr || m.modelName || m.customValues?.model || '';
+        if (!resolvedModel && candidateName && candidateName !== '—') {
+          const norm = this.normalizePureAlphanumeric(candidateName);
+          if (norm && modelByNameNorm.has(norm)) {
+            resolvedModel = modelByNameNorm.get(norm);
+          } else if (norm) {
+            // Auto-create model in MODELS table
+            resolvedModel = storage.insert(TABLE_NAMES.MODELS, {
+              id: 'mod-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4),
+              name: candidateName.trim(),
+              brandId: m.brandId || '',
+              machineNameId: m.machineNameId || '',
+              status: 'ACTIVE',
+              createdAt: new Date().toISOString()
+            });
+            allModels.push(resolvedModel);
+            modelById.set(resolvedModel.id, resolvedModel);
+            modelByNameNorm.set(norm, resolvedModel);
+            modelsChanged = true;
+          }
+        }
+
+        if (!resolvedModel && m.brandId && m.machineNameId) {
+          const key = `${m.brandId}:::${m.machineNameId}`;
+          if (modelByBrandAndMachine.has(key)) {
+            resolvedModel = modelByBrandAndMachine.get(key);
+          }
+        }
+
+        if (resolvedModel) {
+          m.modelId = resolvedModel.id;
+          m.model = resolvedModel.name;
+          m.modelStr = resolvedModel.name;
+          m.modelName = resolvedModel.name;
+          if (!m.brandId && resolvedModel.brandId) m.brandId = resolvedModel.brandId;
+          if (!m.brand && resolvedModel.brandName) m.brand = resolvedModel.brandName;
+          if (!m.machineNameId && resolvedModel.machineNameId) m.machineNameId = resolvedModel.machineNameId;
+          if (!m.machineName && resolvedModel.machineName) m.machineName = resolvedModel.machineName;
+          m.updatedAt = new Date().toISOString();
+          healedCount++;
+          machinesChanged = true;
+        }
+      }
+
+      if (modelsChanged) {
+        await storage.saveTable(TABLE_NAMES.MODELS, true);
+      }
+      if (machinesChanged) {
+        await storage.saveTable(TABLE_NAMES.MACHINES, true);
+        if (typeof storage.persistToServerDatabase === 'function') {
+          try { await storage.persistToServerDatabase(); } catch (_) {}
+        }
+      }
+
+      return { healed: healedCount };
+    } catch (err) {
+      console.warn('[smartStorageService] autoHealMissingModels error:', err);
+      return { healed: 0, error: err.message };
+    }
   }
 
   /**

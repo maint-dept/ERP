@@ -231,6 +231,11 @@ class ERPApplication {
     window.__appLoaded = true;
     this.bindEvents();
 
+    // Self-healing check: guarantee that all machines in inventory have valid model links
+    try {
+      smartStorageService.autoHealMissingModels().catch(() => {});
+    } catch (_) {}
+
     // Global State & Event Subscriptions
     state.on('change:currentView', (view) => this.switchView(view));
     state.on('change:activeModal', () => this.renderModalsOnly());

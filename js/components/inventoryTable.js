@@ -111,11 +111,20 @@ export function renderInventoryTable() {
 
   const mdlMap = new Map();
   (INITIAL_DATA.models || []).forEach(x => x && x.id && mdlMap.set(x.id, x.name));
-  (storage.getTable(TABLE_NAMES.MODELS) || []).forEach(x => x && x.id && mdlMap.set(x.id, x.name));
+  const liveModels = storage.getTable(TABLE_NAMES.MODELS) || [];
+  liveModels.forEach(x => x && x.id && mdlMap.set(x.id, x.name));
   const storageMaster = storage.getTable(TABLE_NAMES.STORAGE_MASTER) || [];
   storageMaster.forEach(sm => {
     if (sm && sm.category === 'MACHINE' && sm.id && sm.model) {
       if (!mdlMap.has(sm.id)) mdlMap.set(sm.id, sm.model);
+    }
+  });
+
+  const modelByBrandAndMachine = new Map();
+  liveModels.forEach(m => {
+    if (m && m.name && m.brandId && m.machineNameId) {
+      const key = `${m.brandId}:::${m.machineNameId}`;
+      if (!modelByBrandAndMachine.has(key)) modelByBrandAndMachine.set(key, m.name);
     }
   });
 
@@ -221,7 +230,14 @@ export function renderInventoryTable() {
       width: 120,
       renderTh: (thStyle, thClass) => `<th class="th-sortable ${thClass}" data-sort="model" style="width: 120px; min-width: 120px; max-width: 120px; text-align: center; cursor: pointer; ${thStyle}">Model</th>`,
       renderTd: (m, meta, tdStyle, tdClass) => {
-        const mdl = (mdlMap.get(m.modelId) || m.model || m.modelName || '—').trim();
+        const candidate = mdlMap.get(m.modelId) || 
+          m.model || 
+          m.modelName || 
+          m.modelStr || 
+          m.customValues?.model || 
+          modelByBrandAndMachine.get(`${m.brandId}:::${m.machineNameId}`) || 
+          '—';
+        const mdl = String(candidate || '—').trim();
         return `<td class="${tdClass}" style="width: 120px; min-width: 120px; max-width: 120px; text-align: center; overflow: hidden; text-overflow: ellipsis; font-family: var(--font-mono); font-weight: 600; ${tdStyle}" title="${mdl}">${mdl}</td>`;
       }
     },
