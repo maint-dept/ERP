@@ -12,12 +12,12 @@ import { renderSidebar, initSidebarEvents, updateSidebarActiveState } from './co
 import { renderHomepageView, initHomepageEvents } from './components/homepageView.js?v=4.26.23';
 import { renderLoginView, initLoginViewEvents } from './components/loginView.js?v=4.26.23';
 import { renderDashboard, initDashboardEvents } from './components/dashboard.js';
-import { renderInventoryTable, initInventoryTableEvents, syncInventorySelectionDOM } from './components/inventoryTable.js?v=4.26.17';
+import { renderInventoryTable, initInventoryTableEvents, syncInventorySelectionDOM } from './components/inventoryTable.js?v=4.26.24';
 import { renderMachineModal, initMachineModalEvents } from './components/machineModal.js';
 import { renderMachineDetails, initMachineDetailsEvents } from './components/machineDetails.js';
-import { renderTransferModal, initTransferModalEvents } from './components/transferModal.js?v=4.26.19';
+import { renderTransferModal, initTransferModalEvents } from './components/transferModal.js?v=4.26.24';
 import { renderTransferDetailsModal, initTransferDetailsModalEvents } from './components/transferDetailsModal.js';
-import { renderEditTransferModal, initEditTransferModalEvents } from './components/editTransferModal.js?v=4.26.17';
+import { renderEditTransferModal, initEditTransferModalEvents } from './components/editTransferModal.js?v=4.26.24';
 import { renderTransfersView, initTransfersViewEvents } from './components/transfersView.js';
 import { renderTransferWorkflowBuilder, initTransferWorkflowBuilderEvents } from './components/transferWorkflowBuilder.js';
 import { renderMasterDataView, initMasterDataEvents } from './components/masterDataView.js';

@@ -449,7 +449,7 @@ export function renderInventoryTable() {
                   <span class="badge" style="font-size: 9px; padding: 1px 4px; background: rgba(56, 189, 248, 0.2); color: #38bdf8;">View-Only</span>
                 </div>
                 ${authService.canRequestTransfer() ? `
-                  <button type="button" class="actions-menu-item btn-transfer-machine" data-id="${m.id}" style="color: #38bdf8; font-weight: 800; background: rgba(56, 189, 248, 0.1); display: flex; align-items: center; gap: 8px;">
+                  <button type="button" class="actions-menu-item btn-transfer-machine" data-id="${m.id}" data-serial="${m.serialNumber || ''}" style="color: #38bdf8; font-weight: 800; background: rgba(56, 189, 248, 0.1); display: flex; align-items: center; gap: 8px;">
                     <span style="font-size: 14px;">🔄</span> Request Machine Transfer
                   </button>
                   <div class="actions-menu-divider"></div>
@@ -485,7 +485,7 @@ export function renderInventoryTable() {
                 ⚙️ Spare Parts Usage
               </button>
               ${(authService.hasAccess('transfers', 'ADD') && authService.canOperateMachine(m)) ? `
-                <button type="button" class="actions-menu-item btn-transfer-machine" data-id="${m.id}">
+                <button type="button" class="actions-menu-item btn-transfer-machine" data-id="${m.id}" data-serial="${m.serialNumber || ''}">
                   🔄 Transfer Machine
                 </button>
               ` : ''}
@@ -1703,8 +1703,10 @@ export function initInventoryTableEvents() {
       e.stopPropagation();
       closeAllActionMenus();
       const id = btn.getAttribute('data-id');
-      if (id) {
-        state.set('activeMachineId', id);
+      const serial = btn.getAttribute('data-serial');
+      if (id || serial) {
+        state.set('activeMachineId', id || null);
+        state.set('activeMachineSerial', serial || null);
         state.set('activeModal', 'transfer-machine');
       }
     });

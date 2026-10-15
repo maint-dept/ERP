@@ -60,18 +60,19 @@ export function resolveTransferMachineDetails(req) {
     '';
   const cleanSerial = String(rawSerial).trim().toUpperCase();
 
-  // 1. Locate machine record with multi-layered fallback
+  // 1. Locate machine record with multi-layered fallback, strictly matching cleanSerial if available
   let liveMachine = null;
-  if (req.machineId) {
-    liveMachine = storage.getItem(TABLE_NAMES.MACHINES, req.machineId) || null;
+  const allM = storage.getTable(TABLE_NAMES.MACHINES) || [];
+  if (cleanSerial) {
+    if (req.machineId) {
+      liveMachine = allM.find(m => m.id === req.machineId && String(m.serialNumber || '').trim().toUpperCase() === cleanSerial) || null;
+    }
+    if (!liveMachine) {
+      liveMachine = allM.find(m => String(m.serialNumber || '').trim().toUpperCase() === cleanSerial) || null;
+    }
   }
-  if (!liveMachine && cleanSerial) {
-    const allM = storage.getTable(TABLE_NAMES.MACHINES) || [];
-    liveMachine =
-      allM.find(m => m.serialNumber && String(m.serialNumber).trim().toUpperCase() === cleanSerial) ||
-      allM.find(m => m.id && String(m.id).trim().toUpperCase() === cleanSerial) ||
-      allM.find(m => m.serialNumber && String(m.serialNumber).trim().toUpperCase().includes(cleanSerial)) ||
-      null;
+  if (!liveMachine && req.machineId) {
+    liveMachine = allM.find(m => m.id === req.machineId) || storage.getItem(TABLE_NAMES.MACHINES, req.machineId) || null;
   }
   if (!liveMachine) {
     const initMachines = (typeof INITIAL_DATA !== 'undefined' && Array.isArray(INITIAL_DATA.machines)) ? INITIAL_DATA.machines : [];
@@ -411,18 +412,19 @@ class TransferService {
    * If found, indicates that a duplicate request cannot be submitted.
    */
   getActiveTransferForMachine(machineIdOrSerial) {
+    if (!machineIdOrSerial) return null;
     const all = storage.getTable(TABLE_NAMES.TRANSFER_REQUESTS) || [];
-    const m = storage.getItem(TABLE_NAMES.MACHINES, machineIdOrSerial) || 
-              (storage.getTable(TABLE_NAMES.MACHINES) || []).find(x => x.serialNumber === machineIdOrSerial);
-    const mId = m?.id || machineIdOrSerial;
-    const mSerial = m?.serialNumber || machineIdOrSerial;
-
-    return all.find(r => 
-      (r.machineId === mId || r.machineInfo?.serialNumber === mSerial) &&
-      r.status !== TRANSFER_STATUSES.COMPLETED &&
-      r.status !== TRANSFER_STATUSES.REJECTED &&
-      r.status !== 'CANCELLED'
-    ) || null;
+    const cleanStr = String(machineIdOrSerial).trim().toUpperCase();
+    return all.find(r => {
+      const isMatch = (r.machineId === machineIdOrSerial) ||
+                      (r.serialNumber && String(r.serialNumber).trim().toUpperCase() === cleanStr) ||
+                      (r.machineSerial && String(r.machineSerial).trim().toUpperCase() === cleanStr) ||
+                      (r.machineInfo?.serialNumber && String(r.machineInfo.serialNumber).trim().toUpperCase() === cleanStr);
+      return isMatch &&
+             r.status !== TRANSFER_STATUSES.COMPLETED &&
+             r.status !== TRANSFER_STATUSES.REJECTED &&
+             r.status !== 'CANCELLED';
+    }) || null;
   }
 
   /**
@@ -476,7 +478,7 @@ class TransferService {
    * the transfer is completed automatically with NO Floor Manager approval required.
    * CONFIRMED WRITE: awaits Firestore HTTP 200. Throws CloudSaveError on failure.
    */
-  async createTransferRequest({ machineId, destGroupId, destUnitId, destFloorId, destLineId, reason, remarks, documents = [] }) {
+  async createTransferRequest({ machineId, serialNumber, machineSerial, destGroupId, destUnitId, destFloorId, destLineId, reason, remarks, documents = [] }) {
     const user = authService.getCurrentUser() || { id: 'usr-1', name: 'Authorized User', role: 'USER' };
 
     // 0. Security check: User must have transfer request creation permission
@@ -484,7 +486,20 @@ class TransferService {
       throw new Error('Access Denied: You do not have permission to create a Machine Transfer Request.');
     }
 
-    const machine = storage.getItem(TABLE_NAMES.MACHINES, machineId);
+    const allM = storage.getTable(TABLE_NAMES.MACHINES) || [];
+    let machine = null;
+    const cleanS = String(serialNumber || machineSerial || '').trim().toUpperCase();
+    if (cleanS) {
+      if (machineId) {
+        machine = allM.find(m => m.id === machineId && String(m.serialNumber || '').trim().toUpperCase() === cleanS);
+      }
+      if (!machine) {
+        machine = allM.find(m => String(m.serialNumber || '').trim().toUpperCase() === cleanS);
+      }
+    }
+    if (!machine && machineId) {
+      machine = allM.find(m => m.id === machineId) || storage.getItem(TABLE_NAMES.MACHINES, machineId);
+    }
     if (!machine) throw new Error('Machine record not found in ERP database.');
 
     // 0.1 Duplicate Request Prevention: One machine cannot have multiple active/pending transfer requests
@@ -1620,11 +1635,19 @@ class TransferService {
     const req = this.getTransferRequestById(requestId);
     if (!req) throw new Error('Transfer request not found.');
 
-    let machine = storage.getItem(TABLE_NAMES.MACHINES, req.machineId);
-    if (!machine && (req.serialNumber || req.machineSerial)) {
-      const sn = req.serialNumber || req.machineSerial;
-      const allM = storage.getTable(TABLE_NAMES.MACHINES) || [];
-      machine = allM.find(m => m.serialNumber === sn || m.machineSerial === sn);
+    let machine = null;
+    const cleanSerial = String(req.serialNumber || req.machineSerial || '').trim().toUpperCase();
+    const allM = storage.getTable(TABLE_NAMES.MACHINES) || [];
+    if (cleanSerial) {
+      if (req.machineId) {
+        machine = allM.find(m => m.id === req.machineId && String(m.serialNumber || '').trim().toUpperCase() === cleanSerial);
+      }
+      if (!machine) {
+        machine = allM.find(m => String(m.serialNumber || '').trim().toUpperCase() === cleanSerial);
+      }
+    }
+    if (!machine && req.machineId) {
+      machine = allM.find(m => m.id === req.machineId) || storage.getItem(TABLE_NAMES.MACHINES, req.machineId) || null;
     }
     if (!machine) throw new Error(`Machine [${req.serialNumber || req.machineId}] not found in live inventory.`);
 

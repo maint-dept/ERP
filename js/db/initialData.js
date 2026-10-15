@@ -1,11 +1,3 @@
-/**
- * Al-Muslim Group Garments Factory Maintenance Machine ERP
- * Authoritative Real Factory Master Data & Plant Hierarchy
- * Fully Synchronized with data/erp_database.json
- */
-
-import { DEFAULT_PERMISSION_TEMPLATES } from './schema.js';
-
 export const INITIAL_DATA = {
   "accessories_master": [
     {
@@ -45177,7 +45169,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-09-15T04:20:58.633Z"
     },
     {
-      "id": "mac-1788870312796-689",
+      "id": "mac-1792072746194-56-9701",
       "permanentMachineId": "MID-000689",
       "serialNumber": "O/L-819",
       "machineNameId": "mn-1791524135307-f848",
@@ -46833,7 +46825,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670112496-121",
+      "id": "mac-1792072746194-102-6974",
       "permanentMachineId": "MID-000103",
       "serialNumber": "B/H-68",
       "machineNameId": "mn-1791524135322-nebp",
@@ -46941,7 +46933,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-09-15T04:20:58.470Z"
     },
     {
-      "id": "mac-1788870312576-298",
+      "id": "mac-1792072746195-105-4817",
       "permanentMachineId": "MID-000298",
       "serialNumber": "P/M-484",
       "machineNameId": "mn-1791524135296-jrsq",
@@ -49209,7 +49201,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670111108-91",
+      "id": "mac-1792072746195-168-3813",
       "permanentMachineId": "MID-000169",
       "serialNumber": "E/C/M-26",
       "machineNameId": "mn-1791524135394-tnag",
@@ -49245,7 +49237,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670115071-408",
+      "id": "mac-1792072746195-169-6629",
       "permanentMachineId": "MID-000170",
       "serialNumber": "E/C/M-27",
       "machineNameId": "mn-1791524135394-tnag",
@@ -49353,7 +49345,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312737-835",
+      "id": "mac-1792072746195-172-7132",
       "permanentMachineId": "MID-000835",
       "serialNumber": "Spd/M-13",
       "machineNameId": "mn-1791524135387-6meb",
@@ -51441,7 +51433,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670117979-99",
+      "id": "mac-1792072746195-230-3176",
       "permanentMachineId": "MID-000231",
       "serialNumber": "B/T-237",
       "machineNameId": "mn-1791524135315-2y8s",
@@ -53565,7 +53557,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670108260-986",
+      "id": "mac-1792072746195-289-7301",
       "permanentMachineId": "MID-000290",
       "serialNumber": "C/S-19",
       "machineNameId": "mn-1791524135308-cccc",
@@ -54213,7 +54205,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670112496-121",
+      "id": "mac-1792072746195-307-8472",
       "permanentMachineId": "MID-000308",
       "serialNumber": "B/T-68",
       "machineNameId": "mn-1791524135315-2y8s",
@@ -56193,7 +56185,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670112332-814",
+      "id": "mac-1792072746195-362-7368",
       "permanentMachineId": "MID-000363",
       "serialNumber": "S/B-290",
       "machineNameId": "mn-1791524135363-ka6e",
@@ -57885,7 +57877,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670121182-883",
+      "id": "mac-1792072746195-409-6793",
       "permanentMachineId": "MID-000410",
       "serialNumber": "B/T-216",
       "machineNameId": "mn-1791524135315-2y8s",
@@ -58569,7 +58561,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312933-763",
+      "id": "mac-1792072746195-428-9111",
       "permanentMachineId": "MID-000763",
       "serialNumber": "B/S-66",
       "machineNameId": "mn-1791524135321-fyhy",
@@ -58749,7 +58741,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312805-318",
+      "id": "mac-1792072746195-433-5779",
       "permanentMachineId": "MID-000318",
       "serialNumber": "B/S-14",
       "machineNameId": "mn-1791524135321-fyhy",
@@ -58857,7 +58849,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312613-209",
+      "id": "mac-1792072746195-436-1242",
       "permanentMachineId": "MID-000209",
       "serialNumber": "Pls/St-10",
       "machineNameId": "mn-1791524135372-scc7",
@@ -58893,7 +58885,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-09-15T04:20:58.633Z"
     },
     {
-      "id": "mac-1788870312737-835",
+      "id": "mac-1792072746195-437-4259",
       "permanentMachineId": "MID-000835",
       "serialNumber": "Pls/St-13",
       "machineNameId": "mn-1791524135372-scc7",
@@ -59001,7 +58993,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670106552-641",
+      "id": "mac-1792072746195-440-3007",
       "permanentMachineId": "MID-000441",
       "serialNumber": "Pls/St-1",
       "machineNameId": "mn-1791524135372-scc7",
@@ -59073,7 +59065,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670115071-408",
+      "id": "mac-1792072746195-442-1325",
       "permanentMachineId": "MID-000443",
       "serialNumber": "Pls/St-27",
       "machineNameId": "mn-1791524135372-scc7",
@@ -59217,7 +59209,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312676-856",
+      "id": "mac-1792072746195-446-7090",
       "permanentMachineId": "MID-000856",
       "serialNumber": "S/B-231",
       "machineNameId": "mn-1791524135363-ka6e",
@@ -59253,7 +59245,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-09-15T04:20:58.820Z"
     },
     {
-      "id": "mac-1790670121161-826",
+      "id": "mac-1792072746195-447-1175",
       "permanentMachineId": "MID-000448",
       "serialNumber": "B/T-173",
       "machineNameId": "mn-1791524135315-2y8s",
@@ -59469,7 +59461,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670107269-642",
+      "id": "mac-1792072746195-453-6725",
       "permanentMachineId": "MID-000454",
       "serialNumber": "Wr/Kt-41",
       "machineNameId": "mn-1791524135374-cdiy",
@@ -59613,7 +59605,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312692-249",
+      "id": "mac-1792072746195-457-6925",
       "permanentMachineId": "MID-000249",
       "serialNumber": "H/T-95",
       "machineNameId": "mn-1791524135367-vzws",
@@ -59649,7 +59641,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-09-15T04:20:58.868Z"
     },
     {
-      "id": "mac-1790670114956-629",
+      "id": "mac-1792072746195-458-7037",
       "permanentMachineId": "MID-000459",
       "serialNumber": "B/S-196",
       "machineNameId": "mn-1791524135321-fyhy",
@@ -60873,7 +60865,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312546-629",
+      "id": "mac-1792072746195-492-1336",
       "permanentMachineId": "MID-000629",
       "serialNumber": "F/A-153",
       "machineNameId": "mn-1791524135304-ysv0",
@@ -61593,7 +61585,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670112496-121",
+      "id": "mac-1792072746195-512-4445",
       "permanentMachineId": "MID-000513",
       "serialNumber": "O/L-68",
       "machineNameId": "mn-1791524135307-f848",
@@ -62565,7 +62557,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670109448-535",
+      "id": "mac-1792072746195-539-9943",
       "permanentMachineId": "MID-000540",
       "serialNumber": "O/L-106",
       "machineNameId": "mn-1791524135307-f848",
@@ -62997,7 +62989,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312635-202",
+      "id": "mac-1792072746195-551-4981",
       "permanentMachineId": "MID-000202",
       "serialNumber": "K/S-325",
       "machineNameId": "mn-1791524135313-ufae",
@@ -64077,7 +64069,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312616-59",
+      "id": "mac-1792072746195-581-7188",
       "permanentMachineId": "MID-000059",
       "serialNumber": "F/L-52",
       "machineNameId": "mn-1791524135336-xcht",
@@ -65301,7 +65293,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670111108-91",
+      "id": "mac-1792072746195-615-4520",
       "permanentMachineId": "MID-000616",
       "serialNumber": "K/S-26",
       "machineNameId": "mn-1791524135313-ufae",
@@ -65445,7 +65437,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312546-629",
+      "id": "mac-1792072746195-619-9362",
       "permanentMachineId": "MID-000629",
       "serialNumber": "K/S-153",
       "machineNameId": "mn-1791524135313-ufae",
@@ -66885,7 +66877,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312550-191",
+      "id": "mac-1792072746195-659-2654",
       "permanentMachineId": "MID-000191",
       "serialNumber": "C/S-225",
       "machineNameId": "mn-1791524135308-cccc",
@@ -66957,7 +66949,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670107269-642",
+      "id": "mac-1792072746195-661-1131",
       "permanentMachineId": "MID-000662",
       "serialNumber": "P/F-41",
       "machineNameId": "mn-1791524135339-3zug",
@@ -67857,7 +67849,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670112685-570",
+      "id": "mac-1792072746195-686-9796",
       "permanentMachineId": "MID-000687",
       "serialNumber": "B/H-20",
       "machineNameId": "mn-1791524135322-nebp",
@@ -68073,7 +68065,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670113956-688",
+      "id": "mac-1792072746195-692-9728",
       "permanentMachineId": "MID-000693",
       "serialNumber": "P/F-22",
       "machineNameId": "mn-1791524135339-3zug",
@@ -68469,7 +68461,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670115017-674",
+      "id": "mac-1792072746195-703-4387",
       "permanentMachineId": "MID-000704",
       "serialNumber": "B/H-55",
       "machineNameId": "mn-1791524135322-nebp",
@@ -69261,7 +69253,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312805-318",
+      "id": "mac-1792072746196-2061-4819",
       "permanentMachineId": "MID-000318",
       "serialNumber": "B/T-14",
       "machineNameId": "mn-1791524135315-2y8s",
@@ -69297,7 +69289,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-09-15T04:20:59.103Z"
     },
     {
-      "id": "mac-1788870312613-964",
+      "id": "mac-1792072746195-726-8763",
       "permanentMachineId": "MID-000964",
       "serialNumber": "C/S-99",
       "machineNameId": "mn-1791524135308-cccc",
@@ -69333,7 +69325,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-09-15T04:20:58.635Z"
     },
     {
-      "id": "mac-1790670119418-756",
+      "id": "mac-1792072746195-727-3597",
       "permanentMachineId": "MID-000728",
       "serialNumber": "K/S-97",
       "machineNameId": "mn-1791524135313-ufae",
@@ -70053,7 +70045,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670113301-428",
+      "id": "mac-1792072746195-747-8155",
       "permanentMachineId": "MID-000748",
       "serialNumber": "P/M-96",
       "machineNameId": "mn-1791524135296-jrsq",
@@ -70305,7 +70297,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670107269-642",
+      "id": "mac-1792072746195-754-1920",
       "permanentMachineId": "MID-000755",
       "serialNumber": "F/A-41",
       "machineNameId": "mn-1791524135304-ysv0",
@@ -70377,7 +70369,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670111424-697",
+      "id": "mac-1792072746195-756-3723",
       "permanentMachineId": "MID-000757",
       "serialNumber": "C/S-17",
       "machineNameId": "mn-1791524135308-cccc",
@@ -70413,7 +70405,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670111768-748",
+      "id": "mac-1792072746196-2212-4531",
       "permanentMachineId": "MID-000758",
       "serialNumber": "F/A-114",
       "machineNameId": "mn-1791524135304-ysv0",
@@ -72897,7 +72889,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312948-184",
+      "id": "mac-1792072746196-2655-1672",
       "permanentMachineId": "MID-000184",
       "serialNumber": "K/S-326",
       "machineNameId": "mn-1791524135313-ufae",
@@ -73293,7 +73285,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670109097-71",
+      "id": "mac-1792072746197-3245-4452",
       "permanentMachineId": "MID-000838",
       "serialNumber": "C/S-408",
       "machineNameId": "mn-1791524135308-cccc",
@@ -73617,7 +73609,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670108298-744",
+      "id": "mac-1792072746195-846-6503",
       "permanentMachineId": "MID-000847",
       "serialNumber": "O/L-252",
       "machineNameId": "mn-1791524135307-f848",
@@ -74157,7 +74149,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670111108-91",
+      "id": "mac-1792072746195-861-2491",
       "permanentMachineId": "MID-000862",
       "serialNumber": "P/F-26",
       "machineNameId": "mn-1791524135339-3zug",
@@ -74265,7 +74257,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312737-835",
+      "id": "mac-1792072746195-864-3617",
       "permanentMachineId": "MID-000835",
       "serialNumber": "B/T-13",
       "machineNameId": "mn-1791524135315-2y8s",
@@ -74841,7 +74833,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670108093-690",
+      "id": "mac-1792072746195-880-5621",
       "permanentMachineId": "MID-000881",
       "serialNumber": "B/T-51",
       "machineNameId": "mn-1791524135315-2y8s",
@@ -76101,7 +76093,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670111302-827",
+      "id": "mac-1792072746195-915-1880",
       "permanentMachineId": "MID-000916",
       "serialNumber": "B/S-49",
       "machineNameId": "mn-1791524135321-fyhy",
@@ -76569,7 +76561,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670117610-718",
+      "id": "mac-1792072746195-928-8422",
       "permanentMachineId": "MID-000929",
       "serialNumber": "P/M-3",
       "machineNameId": "mn-1791524135296-jrsq",
@@ -76641,7 +76633,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670106539-627",
+      "id": "mac-1792072746195-930-3515",
       "permanentMachineId": "MID-000931",
       "serialNumber": "P/F-36",
       "machineNameId": "mn-1791524135339-3zug",
@@ -77901,7 +77893,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670111768-748",
+      "id": "mac-1792072746195-965-2732",
       "permanentMachineId": "MID-000966",
       "serialNumber": "K/S-114",
       "machineNameId": "mn-1791524135313-ufae",
@@ -77973,7 +77965,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670112636-551",
+      "id": "mac-1792072746195-967-1385",
       "permanentMachineId": "MID-000968",
       "serialNumber": "C/S-272",
       "machineNameId": "mn-1791524135308-cccc",
@@ -78225,7 +78217,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670108093-690",
+      "id": "mac-1792072746195-974-8351",
       "permanentMachineId": "MID-000975",
       "serialNumber": "F/L-51",
       "machineNameId": "mn-1791524135336-xcht",
@@ -78621,7 +78613,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670108093-690",
+      "id": "mac-1792072746195-985-5313",
       "permanentMachineId": "MID-000986",
       "serialNumber": "P/F-51",
       "machineNameId": "mn-1791524135339-3zug",
@@ -79233,7 +79225,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312741-480",
+      "id": "mac-1792072746195-1002-1028",
       "permanentMachineId": "MID-000480",
       "serialNumber": "V/T-181",
       "machineNameId": "mn-1791524135300-mavf",
@@ -79629,7 +79621,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670112242-157",
+      "id": "mac-1792072746195-1013-7558",
       "permanentMachineId": "MID-001014",
       "serialNumber": "B/H-104",
       "machineNameId": "mn-1791524135322-nebp",
@@ -79737,7 +79729,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670114956-629",
+      "id": "mac-1792072746195-1016-2219",
       "permanentMachineId": "MID-001017",
       "serialNumber": "F/A-196",
       "machineNameId": "mn-1791524135304-ysv0",
@@ -80025,7 +80017,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670109601-958",
+      "id": "mac-1792072746195-1024-8558",
       "permanentMachineId": "MID-001025",
       "serialNumber": "F/A-179",
       "machineNameId": "mn-1791524135304-ysv0",
@@ -80097,7 +80089,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670111302-827",
+      "id": "mac-1792072746195-1026-4321",
       "permanentMachineId": "MID-001027",
       "serialNumber": "C/S-49",
       "machineNameId": "mn-1791524135308-cccc",
@@ -80169,7 +80161,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670115053-745",
+      "id": "mac-1792072746195-1028-2061",
       "permanentMachineId": "MID-001029",
       "serialNumber": "C/S-87",
       "machineNameId": "mn-1791524135308-cccc",
@@ -80277,7 +80269,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670115017-674",
+      "id": "mac-1792072746196-1691-1421",
       "permanentMachineId": "MID-001032",
       "serialNumber": "B/T-55",
       "machineNameId": "mn-1791524135315-2y8s",
@@ -80565,7 +80557,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312613-964",
+      "id": "mac-1792072746195-1039-7542",
       "permanentMachineId": "MID-000964",
       "serialNumber": "P/F-99",
       "machineNameId": "mn-1791524135339-3zug",
@@ -80637,7 +80629,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312789-281",
+      "id": "mac-1792072746195-1041-4800",
       "permanentMachineId": "MID-000281",
       "serialNumber": "K/S-79",
       "machineNameId": "mn-1791524135313-ufae",
@@ -81033,7 +81025,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670106571-675",
+      "id": "mac-1792072746195-1052-1365",
       "permanentMachineId": "MID-001053",
       "serialNumber": "B/T-44",
       "machineNameId": "mn-1791524135321-fyhy",
@@ -81069,7 +81061,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670106539-627",
+      "id": "mac-1792072746195-1053-3634",
       "permanentMachineId": "MID-001054",
       "serialNumber": "C/S-36",
       "machineNameId": "mn-1791524135308-cccc",
@@ -81249,7 +81241,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670106719-814",
+      "id": "mac-1792072746195-1058-2274",
       "permanentMachineId": "MID-001059",
       "serialNumber": "O/L-57",
       "machineNameId": "mn-1791524135307-f848",
@@ -81717,7 +81709,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312613-209",
+      "id": "mac-1792072746195-1071-1238",
       "permanentMachineId": "MID-000209",
       "serialNumber": "APW-10",
       "machineNameId": "mn-1791524135326-8svp",
@@ -81789,7 +81781,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670108217-768",
+      "id": "mac-1792072746195-1073-5814",
       "permanentMachineId": "MID-001074",
       "serialNumber": "APW-9",
       "machineNameId": "mn-1791524135326-8svp",
@@ -81825,7 +81817,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670108260-986",
+      "id": "mac-1792072746195-1074-7414",
       "permanentMachineId": "MID-001075",
       "serialNumber": "APW-19",
       "machineNameId": "mn-1791524135326-8svp",
@@ -81897,7 +81889,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670108239-446",
+      "id": "mac-1792072746195-1076-9572",
       "permanentMachineId": "MID-001077",
       "serialNumber": "APW-30",
       "machineNameId": "mn-1791524135326-8svp",
@@ -81969,7 +81961,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670121335-930",
+      "id": "mac-1792072746195-1078-9213",
       "permanentMachineId": "MID-001079",
       "serialNumber": "APW-8",
       "machineNameId": "mn-1791524135326-8svp",
@@ -82041,7 +82033,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670107394-927",
+      "id": "mac-1792072746195-1080-9385",
       "permanentMachineId": "MID-001081",
       "serialNumber": "B/H-80",
       "machineNameId": "mn-1791524135322-nebp",
@@ -82077,7 +82069,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670111393-733",
+      "id": "mac-1792072746195-1081-6901",
       "permanentMachineId": "MID-001082",
       "serialNumber": "B/S-523",
       "machineNameId": "mn-1791524135321-fyhy",
@@ -82185,7 +82177,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-09-15T04:20:58.598Z"
     },
     {
-      "id": "mac-1788870312727-499",
+      "id": "mac-1792072746195-1084-5833",
       "permanentMachineId": "MID-000499",
       "serialNumber": "V/T-127",
       "machineNameId": "mn-1791524135300-mavf",
@@ -82221,7 +82213,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-09-15T04:20:58.946Z"
     },
     {
-      "id": "mac-1790670107423-713",
+      "id": "mac-1792072746195-1085-7347",
       "permanentMachineId": "MID-001086",
       "serialNumber": "V/T-142",
       "machineNameId": "mn-1791524135300-mavf",
@@ -82365,7 +82357,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670108239-446",
+      "id": "mac-1792072746195-1089-9962",
       "permanentMachineId": "MID-001090",
       "serialNumber": "K/S-30",
       "machineNameId": "mn-1791524135313-ufae",
@@ -82761,7 +82753,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670107269-642",
+      "id": "mac-1792072746195-1100-6522",
       "permanentMachineId": "MID-001101",
       "serialNumber": "P/M-41",
       "machineNameId": "mn-1791524135296-jrsq",
@@ -82905,7 +82897,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670106765-897",
+      "id": "mac-1792072746195-1104-9204",
       "permanentMachineId": "MID-001105",
       "serialNumber": "P/M-201",
       "machineNameId": "mn-1791524135296-jrsq",
@@ -82977,7 +82969,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670106873-715",
+      "id": "mac-1792072746195-1106-9118",
       "permanentMachineId": "MID-001107",
       "serialNumber": "P/M-89",
       "machineNameId": "mn-1791524135296-jrsq",
@@ -83049,7 +83041,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670107007-647",
+      "id": "mac-1792072746195-1108-8340",
       "permanentMachineId": "MID-001109",
       "serialNumber": "P/M-316",
       "machineNameId": "mn-1791524135296-jrsq",
@@ -83337,7 +83329,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312692-249",
+      "id": "mac-1792072746195-1116-7617",
       "permanentMachineId": "MID-000249",
       "serialNumber": "P/M-95",
       "machineNameId": "mn-1791524135296-jrsq",
@@ -83625,7 +83617,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670107244-309",
+      "id": "mac-1792072746195-1124-5684",
       "permanentMachineId": "MID-001125",
       "serialNumber": "P/M-637",
       "machineNameId": "mn-1791524135296-jrsq",
@@ -83805,7 +83797,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670108260-986",
+      "id": "mac-1792072746195-1129-2245",
       "permanentMachineId": "MID-001130",
       "serialNumber": "B/T-19",
       "machineNameId": "mn-1791524135315-2y8s",
@@ -83841,7 +83833,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670106539-627",
+      "id": "mac-1792072746195-1130-1585",
       "permanentMachineId": "MID-001131",
       "serialNumber": "B/T-36",
       "machineNameId": "mn-1791524135315-2y8s",
@@ -83877,7 +83869,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670112819-654",
+      "id": "mac-1792072746195-1131-4644",
       "permanentMachineId": "MID-001132",
       "serialNumber": "B/H-25",
       "machineNameId": "mn-1791524135322-nebp",
@@ -84021,7 +84013,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670108023-132",
+      "id": "mac-1792072746195-1135-9943",
       "permanentMachineId": "MID-001136",
       "serialNumber": "V/T-140",
       "machineNameId": "mn-1791524135300-mavf",
@@ -84057,7 +84049,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670108049-899",
+      "id": "mac-1792072746195-1136-3567",
       "permanentMachineId": "MID-001137",
       "serialNumber": "V/T-146",
       "machineNameId": "mn-1791524135300-mavf",
@@ -84201,7 +84193,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670108217-768",
+      "id": "mac-1792072746195-1140-2819",
       "permanentMachineId": "MID-001141",
       "serialNumber": "K/S-9",
       "machineNameId": "mn-1791524135313-ufae",
@@ -84417,7 +84409,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670113301-428",
+      "id": "mac-1792072746195-1146-7225",
       "permanentMachineId": "MID-001147",
       "serialNumber": "O/L-96",
       "machineNameId": "mn-1791524135307-f848",
@@ -84453,7 +84445,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670108093-690",
+      "id": "mac-1792072746195-1147-3131",
       "permanentMachineId": "MID-001148",
       "serialNumber": "O/L-51",
       "machineNameId": "mn-1791524135307-f848",
@@ -84525,7 +84517,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670108177-544",
+      "id": "mac-1792072746195-1149-5614",
       "permanentMachineId": "MID-001150",
       "serialNumber": "O/L-740",
       "machineNameId": "mn-1791524135307-f848",
@@ -85641,7 +85633,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670111108-91",
+      "id": "mac-1792072746195-1180-1125",
       "permanentMachineId": "MID-001181",
       "serialNumber": "B/H-26",
       "machineNameId": "mn-1791524135322-nebp",
@@ -85677,7 +85669,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670110768-162",
+      "id": "mac-1792072746195-1181-5512",
       "permanentMachineId": "MID-001182",
       "serialNumber": "B/H-283",
       "machineNameId": "mn-1791524135322-nebp",
@@ -85857,7 +85849,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670107703-822",
+      "id": "mac-1792072746195-1186-7892",
       "permanentMachineId": "MID-001187",
       "serialNumber": "V/T-379",
       "machineNameId": "mn-1791524135300-mavf",
@@ -85929,7 +85921,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312741-591",
+      "id": "mac-1792072746195-1188-2967",
       "permanentMachineId": "MID-000591",
       "serialNumber": "V/T-335",
       "machineNameId": "mn-1791524135300-mavf",
@@ -86001,7 +85993,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670108217-768",
+      "id": "mac-1792072746195-1190-3772",
       "permanentMachineId": "MID-001191",
       "serialNumber": "O/L-9",
       "machineNameId": "mn-1791524135307-f848",
@@ -86109,7 +86101,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670109163-912",
+      "id": "mac-1792072746195-1193-8627",
       "permanentMachineId": "MID-001194",
       "serialNumber": "O/L-273",
       "machineNameId": "mn-1791524135307-f848",
@@ -86145,7 +86137,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670109198-192",
+      "id": "mac-1792072746195-1194-7997",
       "permanentMachineId": "MID-001195",
       "serialNumber": "O/L-263",
       "machineNameId": "mn-1791524135307-f848",
@@ -86217,7 +86209,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670106862-115",
+      "id": "mac-1792072746195-1196-6904",
       "permanentMachineId": "MID-001197",
       "serialNumber": "P/F-54",
       "machineNameId": "mn-1791524135339-3zug",
@@ -87297,7 +87289,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670108336-81",
+      "id": "mac-1792072746195-1226-5069",
       "permanentMachineId": "MID-001227",
       "serialNumber": "P/M-1031",
       "machineNameId": "mn-1791524135296-jrsq",
@@ -87441,7 +87433,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670108969-305",
+      "id": "mac-1792072746195-1230-6331",
       "permanentMachineId": "MID-001231",
       "serialNumber": "P/M-6",
       "machineNameId": "mn-1791524135296-jrsq",
@@ -87477,7 +87469,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670107269-642",
+      "id": "mac-1792072746195-1231-5294",
       "permanentMachineId": "MID-001232",
       "serialNumber": "B/T-41",
       "machineNameId": "mn-1791524135315-2y8s",
@@ -87765,7 +87757,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670109435-863",
+      "id": "mac-1792072746195-1239-6508",
       "permanentMachineId": "MID-001240",
       "serialNumber": "V/T-103",
       "machineNameId": "mn-1791524135300-mavf",
@@ -87801,7 +87793,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670109493-147",
+      "id": "mac-1792072746195-1240-7060",
       "permanentMachineId": "MID-001241",
       "serialNumber": "V/T-93",
       "machineNameId": "mn-1791524135300-mavf",
@@ -88053,7 +88045,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670121474-694",
+      "id": "mac-1792072746195-1247-7503",
       "permanentMachineId": "MID-001248",
       "serialNumber": "O/L-554",
       "machineNameId": "mn-1791524135307-f848",
@@ -88305,7 +88297,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670108462-190",
+      "id": "mac-1792072746195-1254-9420",
       "permanentMachineId": "MID-001255",
       "serialNumber": "P/M-854",
       "machineNameId": "mn-1791524135296-jrsq",
@@ -88629,7 +88621,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670109586-639",
+      "id": "mac-1792072746195-1263-6819",
       "permanentMachineId": "MID-001264",
       "serialNumber": "P/M-7",
       "machineNameId": "mn-1791524135296-jrsq",
@@ -89061,7 +89053,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312724-473",
+      "id": "mac-1792072746195-1275-2444",
       "permanentMachineId": "MID-000473",
       "serialNumber": "C/S-71",
       "machineNameId": "mn-1791524135308-cccc",
@@ -89097,7 +89089,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-09-15T04:20:58.941Z"
     },
     {
-      "id": "mac-1788870312737-835",
+      "id": "mac-1792072746195-1276-1801",
       "permanentMachineId": "MID-000835",
       "serialNumber": "C/S-13",
       "machineNameId": "mn-1791524135308-cccc",
@@ -89421,7 +89413,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670106739-966",
+      "id": "mac-1792072746195-1285-8888",
       "permanentMachineId": "MID-001286",
       "serialNumber": "F/A-33",
       "machineNameId": "mn-1791524135304-ysv0",
@@ -89493,7 +89485,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670110483-694",
+      "id": "mac-1792072746195-1287-9834",
       "permanentMachineId": "MID-001288",
       "serialNumber": "K/S-37",
       "machineNameId": "mn-1791524135313-ufae",
@@ -89745,7 +89737,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670114901-23",
+      "id": "mac-1792072746195-1294-2656",
       "permanentMachineId": "MID-001295",
       "serialNumber": "O/L-77",
       "machineNameId": "mn-1791524135307-f848",
@@ -90645,7 +90637,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670110445-143",
+      "id": "mac-1792072746195-1319-3128",
       "permanentMachineId": "MID-001320",
       "serialNumber": "P/M-607",
       "machineNameId": "mn-1791524135296-jrsq",
@@ -91005,7 +90997,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670111424-697",
+      "id": "mac-1792072746195-1329-5091",
       "permanentMachineId": "MID-001330",
       "serialNumber": "B/H-17",
       "machineNameId": "mn-1791524135322-nebp",
@@ -91113,7 +91105,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-09-15T04:20:58.197Z"
     },
     {
-      "id": "mac-1790670109619-912",
+      "id": "mac-1792072746195-1332-5757",
       "permanentMachineId": "MID-001333",
       "serialNumber": "B/S-16",
       "machineNameId": "mn-1791524135321-fyhy",
@@ -91149,7 +91141,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312855-272",
+      "id": "mac-1792072746195-1333-2974",
       "permanentMachineId": "MID-000272",
       "serialNumber": "C/S-961",
       "machineNameId": "mn-1791524135308-cccc",
@@ -91581,7 +91573,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670111302-827",
+      "id": "mac-1792072746195-1345-7761",
       "permanentMachineId": "MID-001346",
       "serialNumber": "K/S-49",
       "machineNameId": "mn-1791524135313-ufae",
@@ -91689,7 +91681,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670107959-930",
+      "id": "mac-1792072746195-1348-5471",
       "permanentMachineId": "MID-001349",
       "serialNumber": "K/S-377",
       "machineNameId": "mn-1791524135313-ufae",
@@ -91833,7 +91825,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670108260-986",
+      "id": "mac-1792072746195-1352-1832",
       "permanentMachineId": "MID-001353",
       "serialNumber": "O/L-19",
       "machineNameId": "mn-1791524135307-f848",
@@ -91905,7 +91897,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670111236-951",
+      "id": "mac-1792072746195-1354-2941",
       "permanentMachineId": "MID-001355",
       "serialNumber": "O/L-642",
       "machineNameId": "mn-1791524135307-f848",
@@ -91977,7 +91969,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670106552-641",
+      "id": "mac-1792072746195-1356-8921",
       "permanentMachineId": "MID-001357",
       "serialNumber": "P/M-1",
       "machineNameId": "mn-1791524135296-jrsq",
@@ -92085,7 +92077,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670111555-129",
+      "id": "mac-1792072746195-1359-3563",
       "permanentMachineId": "MID-001360",
       "serialNumber": "P/M-42",
       "machineNameId": "mn-1791524135296-jrsq",
@@ -92193,7 +92185,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670110879-244",
+      "id": "mac-1792072746195-1362-2972",
       "permanentMachineId": "MID-001363",
       "serialNumber": "P/M-155",
       "machineNameId": "mn-1791524135296-jrsq",
@@ -92229,7 +92221,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670110891-435",
+      "id": "mac-1792072746195-1363-9080",
       "permanentMachineId": "MID-001364",
       "serialNumber": "P/M-337",
       "machineNameId": "mn-1791524135296-jrsq",
@@ -92337,7 +92329,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670110944-79",
+      "id": "mac-1792072746195-1366-1065",
       "permanentMachineId": "MID-001367",
       "serialNumber": "P/M-4412",
       "machineNameId": "mn-1791524135296-jrsq",
@@ -92697,7 +92689,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670111108-91",
+      "id": "mac-1792072746195-1376-5402",
       "permanentMachineId": "MID-001377",
       "serialNumber": "P/M-26",
       "machineNameId": "mn-1791524135296-jrsq",
@@ -92769,7 +92761,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670109419-564",
+      "id": "mac-1792072746195-1378-7524",
       "permanentMachineId": "MID-001379",
       "serialNumber": "P/M-53",
       "machineNameId": "mn-1791524135296-jrsq",
@@ -92805,7 +92797,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670112332-814",
+      "id": "mac-1792072746195-1379-8019",
       "permanentMachineId": "MID-001380",
       "serialNumber": "B/T-290",
       "machineNameId": "mn-1791524135315-2y8s",
@@ -92841,7 +92833,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670112358-268",
+      "id": "mac-1792072746195-1380-1311",
       "permanentMachineId": "MID-001381",
       "serialNumber": "B/T-509",
       "machineNameId": "mn-1791524135315-2y8s",
@@ -92877,7 +92869,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670112389-278",
+      "id": "mac-1792072746195-1381-8158",
       "permanentMachineId": "MID-001382",
       "serialNumber": "B/T-1237",
       "machineNameId": "mn-1791524135315-2y8s",
@@ -92985,7 +92977,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670110462-90",
+      "id": "mac-1792072746195-1384-3344",
       "permanentMachineId": "MID-001385",
       "serialNumber": "C/S-92",
       "machineNameId": "mn-1791524135308-cccc",
@@ -93165,7 +93157,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670112636-551",
+      "id": "mac-1792072746195-1389-7698",
       "permanentMachineId": "MID-001390",
       "serialNumber": "F/A-272",
       "machineNameId": "mn-1791524135304-ysv0",
@@ -93273,7 +93265,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670112712-960",
+      "id": "mac-1792072746195-1392-8447",
       "permanentMachineId": "MID-001393",
       "serialNumber": "K/S-60",
       "machineNameId": "mn-1791524135313-ufae",
@@ -93309,7 +93301,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670106719-814",
+      "id": "mac-1792072746195-1393-3170",
       "permanentMachineId": "MID-001394",
       "serialNumber": "K/S-57",
       "machineNameId": "mn-1791524135313-ufae",
@@ -93489,7 +93481,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312910-664",
+      "id": "mac-1792072746195-1398-3477",
       "permanentMachineId": "MID-000664",
       "serialNumber": "O/L-202",
       "machineNameId": "mn-1791524135307-f848",
@@ -93561,7 +93553,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670115071-408",
+      "id": "mac-1792072746195-1400-5826",
       "permanentMachineId": "MID-001401",
       "serialNumber": "O/L-27",
       "machineNameId": "mn-1791524135307-f848",
@@ -94245,7 +94237,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670106888-347",
+      "id": "mac-1792072746195-1419-7944",
       "permanentMachineId": "MID-001420",
       "serialNumber": "P/M-903",
       "machineNameId": "mn-1791524135296-jrsq",
@@ -94641,7 +94633,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670119508-18",
+      "id": "mac-1792072746195-1430-1283",
       "permanentMachineId": "MID-001431",
       "serialNumber": "B/T-265",
       "machineNameId": "mn-1791524135315-2y8s",
@@ -94677,7 +94669,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670113402-460",
+      "id": "mac-1792072746195-1431-4886",
       "permanentMachineId": "MID-001432",
       "serialNumber": "B/T-1247",
       "machineNameId": "mn-1791524135315-2y8s",
@@ -94785,7 +94777,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670118330-445",
+      "id": "mac-1792072746195-1434-4382",
       "permanentMachineId": "MID-001435",
       "serialNumber": "C/S-306",
       "machineNameId": "mn-1791524135308-cccc",
@@ -95001,7 +94993,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670113488-572",
+      "id": "mac-1792072746195-1440-5719",
       "permanentMachineId": "MID-001441",
       "serialNumber": "V/T-126",
       "machineNameId": "mn-1791524135300-mavf",
@@ -95145,7 +95137,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670113187-107",
+      "id": "mac-1792072746195-1444-3895",
       "permanentMachineId": "MID-001445",
       "serialNumber": "K/S-184",
       "machineNameId": "mn-1791524135313-ufae",
@@ -95181,7 +95173,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670113218-66",
+      "id": "mac-1792072746195-1445-8925",
       "permanentMachineId": "MID-001446",
       "serialNumber": "O/L-61",
       "machineNameId": "mn-1791524135307-f848",
@@ -95253,7 +95245,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670110989-788",
+      "id": "mac-1792072746195-1447-3046",
       "permanentMachineId": "MID-001448",
       "serialNumber": "O/L-1245",
       "machineNameId": "mn-1791524135307-f848",
@@ -95325,7 +95317,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670109406-653",
+      "id": "mac-1792072746195-1449-1406",
       "permanentMachineId": "MID-001450",
       "serialNumber": "O/L-506",
       "machineNameId": "mn-1791524135307-f848",
@@ -95721,7 +95713,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670112924-354",
+      "id": "mac-1792072746195-1460-9887",
       "permanentMachineId": "MID-001461",
       "serialNumber": "P/M-1046",
       "machineNameId": "mn-1791524135296-jrsq",
@@ -95865,7 +95857,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670113027-643",
+      "id": "mac-1792072746195-1464-8153",
       "permanentMachineId": "MID-001465",
       "serialNumber": "P/M-1108",
       "machineNameId": "mn-1791524135296-jrsq",
@@ -95937,7 +95929,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670109463-238",
+      "id": "mac-1792072746195-1466-2535",
       "permanentMachineId": "MID-001467",
       "serialNumber": "P/M-1305",
       "machineNameId": "mn-1791524135296-jrsq",
@@ -96297,7 +96289,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312875-447",
+      "id": "mac-1792072746195-1476-9766",
       "permanentMachineId": "MID-000447",
       "serialNumber": "P/M-94",
       "machineNameId": "mn-1791524135296-jrsq",
@@ -96333,7 +96325,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-09-15T04:20:59.213Z"
     },
     {
-      "id": "mac-1790670107054-469",
+      "id": "mac-1792072746195-1477-9095",
       "permanentMachineId": "MID-001478",
       "serialNumber": "P/M-6754",
       "machineNameId": "mn-1791524135296-jrsq",
@@ -96369,7 +96361,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670114869-851",
+      "id": "mac-1792072746195-1478-2204",
       "permanentMachineId": "MID-001479",
       "serialNumber": "B/T-198",
       "machineNameId": "mn-1791524135315-2y8s",
@@ -96477,7 +96469,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-09-15T04:20:59.086Z"
     },
     {
-      "id": "mac-1788870312633-211",
+      "id": "mac-1792072746195-1481-3262",
       "permanentMachineId": "MID-000211",
       "serialNumber": "B/H-11",
       "machineNameId": "mn-1791524135322-nebp",
@@ -96513,7 +96505,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-09-15T04:20:58.690Z"
     },
     {
-      "id": "mac-1790670108239-446",
+      "id": "mac-1792072746195-1482-4086",
       "permanentMachineId": "MID-001483",
       "serialNumber": "B/H-30",
       "machineNameId": "mn-1791524135322-nebp",
@@ -96549,7 +96541,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670112712-960",
+      "id": "mac-1792072746195-1483-3934",
       "permanentMachineId": "MID-001484",
       "serialNumber": "B/H-60",
       "machineNameId": "mn-1791524135322-nebp",
@@ -96585,7 +96577,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670106539-627",
+      "id": "mac-1792072746195-1484-4763",
       "permanentMachineId": "MID-001485",
       "serialNumber": "B/S-36",
       "machineNameId": "mn-1791524135321-fyhy",
@@ -96693,7 +96685,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312736-676",
+      "id": "mac-1792072746195-1487-7700",
       "permanentMachineId": "MID-000676",
       "serialNumber": "C/S-125",
       "machineNameId": "mn-1791524135308-cccc",
@@ -96765,7 +96757,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670117018-662",
+      "id": "mac-1792072746195-1489-1133",
       "permanentMachineId": "MID-001490",
       "serialNumber": "C/S-300",
       "machineNameId": "mn-1791524135308-cccc",
@@ -97053,7 +97045,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670108161-413",
+      "id": "mac-1792072746195-1497-5683",
       "permanentMachineId": "MID-001498",
       "serialNumber": "V/T-235",
       "machineNameId": "mn-1791524135300-mavf",
@@ -97089,7 +97081,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670121202-249",
+      "id": "mac-1792072746195-1498-5122",
       "permanentMachineId": "MID-001499",
       "serialNumber": "V/T-160",
       "machineNameId": "mn-1791524135300-mavf",
@@ -97125,7 +97117,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670114901-23",
+      "id": "mac-1792072746195-1499-3750",
       "permanentMachineId": "MID-001500",
       "serialNumber": "E/H-77",
       "machineNameId": "mn-1791524135324-0cyf",
@@ -97197,7 +97189,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312950-936",
+      "id": "mac-1792072746195-1501-8471",
       "permanentMachineId": "MID-000936",
       "serialNumber": "E/H-43",
       "machineNameId": "mn-1791524135324-0cyf",
@@ -97233,7 +97225,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-09-15T04:20:59.341Z"
     },
     {
-      "id": "mac-1790670112819-654",
+      "id": "mac-1792072746195-1502-7933",
       "permanentMachineId": "MID-001503",
       "serialNumber": "E/H-25",
       "machineNameId": "mn-1791524135324-0cyf",
@@ -97305,7 +97297,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670108260-986",
+      "id": "mac-1792072746195-1504-7565",
       "permanentMachineId": "MID-001505",
       "serialNumber": "E/H-19",
       "machineNameId": "mn-1791524135324-0cyf",
@@ -97413,7 +97405,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670109179-700",
+      "id": "mac-1792072746195-1507-2929",
       "permanentMachineId": "MID-001508",
       "serialNumber": "F/A-62",
       "machineNameId": "mn-1791524135304-ysv0",
@@ -97485,7 +97477,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312724-473",
+      "id": "mac-1792072746195-1509-2950",
       "permanentMachineId": "MID-000473",
       "serialNumber": "F/A-71",
       "machineNameId": "mn-1791524135304-ysv0",
@@ -97557,7 +97549,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670117610-718",
+      "id": "mac-1792072746195-1511-8242",
       "permanentMachineId": "MID-001512",
       "serialNumber": "K/S-3",
       "machineNameId": "mn-1791524135313-ufae",
@@ -97593,7 +97585,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670121520-409",
+      "id": "mac-1792072746195-1512-7293",
       "permanentMachineId": "MID-001513",
       "serialNumber": "K/S-324",
       "machineNameId": "mn-1791524135313-ufae",
@@ -97629,7 +97621,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670121161-826",
+      "id": "mac-1792072746195-1513-3079",
       "permanentMachineId": "MID-001514",
       "serialNumber": "K/S-173",
       "machineNameId": "mn-1791524135313-ufae",
@@ -97809,7 +97801,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670110462-90",
+      "id": "mac-1792072746195-1518-2507",
       "permanentMachineId": "MID-001519",
       "serialNumber": "O/L-92",
       "machineNameId": "mn-1791524135307-f848",
@@ -97845,7 +97837,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312744-3",
+      "id": "mac-1792072746195-1519-3441",
       "permanentMachineId": "MID-000003",
       "serialNumber": "P/F-88",
       "machineNameId": "mn-1791524135339-3zug",
@@ -98097,7 +98089,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312855-272",
+      "id": "mac-1792072746195-1526-3894",
       "permanentMachineId": "MID-000272",
       "serialNumber": "P/M-961",
       "machineNameId": "mn-1791524135296-jrsq",
@@ -98313,7 +98305,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670111768-748",
+      "id": "mac-1792072746195-1532-1324",
       "permanentMachineId": "MID-001533",
       "serialNumber": "P/M-114",
       "machineNameId": "mn-1791524135296-jrsq",
@@ -98781,7 +98773,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670114458-819",
+      "id": "mac-1792072746195-1545-4890",
       "permanentMachineId": "MID-001546",
       "serialNumber": "P/M-1043",
       "machineNameId": "mn-1791524135296-jrsq",
@@ -98997,7 +98989,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670114837-820",
+      "id": "mac-1792072746195-1551-4654",
       "permanentMachineId": "MID-001552",
       "serialNumber": "B/T-1755",
       "machineNameId": "mn-1791524135315-2y8s",
@@ -99105,7 +99097,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670106571-675",
+      "id": "mac-1792072746195-1554-9470",
       "permanentMachineId": "MID-001555",
       "serialNumber": "B/H-44",
       "machineNameId": "mn-1791524135322-nebp",
@@ -99321,7 +99313,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670114901-23",
+      "id": "mac-1792072746195-1560-5644",
       "permanentMachineId": "MID-001561",
       "serialNumber": "V/T-77",
       "machineNameId": "mn-1791524135300-mavf",
@@ -99393,7 +99385,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670114869-851",
+      "id": "mac-1792072746195-1562-1713",
       "permanentMachineId": "MID-001563",
       "serialNumber": "F/A-198",
       "machineNameId": "mn-1791524135304-ysv0",
@@ -99429,7 +99421,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312575-25",
+      "id": "mac-1792072746195-1563-4145",
       "permanentMachineId": "MID-000025",
       "serialNumber": "F/A-187",
       "machineNameId": "mn-1791524135304-ysv0",
@@ -99465,7 +99457,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-09-15T04:20:58.460Z"
     },
     {
-      "id": "mac-1790670109586-639",
+      "id": "mac-1792072746195-1564-9573",
       "permanentMachineId": "MID-001565",
       "serialNumber": "F/A-7",
       "machineNameId": "mn-1791524135304-ysv0",
@@ -99501,7 +99493,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670106571-675",
+      "id": "mac-1792072746195-1565-4210",
       "permanentMachineId": "MID-001566",
       "serialNumber": "K/S-44",
       "machineNameId": "mn-1791524135313-ufae",
@@ -99537,7 +99529,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312794-463",
+      "id": "mac-1792072746195-1566-3281",
       "permanentMachineId": "MID-000463",
       "serialNumber": "K/S-38",
       "machineNameId": "mn-1791524135313-ufae",
@@ -100329,7 +100321,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670109213-703",
+      "id": "mac-1792072746195-1588-4527",
       "permanentMachineId": "MID-001589",
       "serialNumber": "P/M-1060",
       "machineNameId": "mn-1791524135296-jrsq",
@@ -100833,7 +100825,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312548-232",
+      "id": "mac-1792072746195-1602-4243",
       "permanentMachineId": "MID-000232",
       "serialNumber": "P/M-4",
       "machineNameId": "mn-1791524135296-jrsq",
@@ -100869,7 +100861,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-09-15T04:20:58.192Z"
     },
     {
-      "id": "mac-1790670113956-688",
+      "id": "mac-1792072746195-1603-6878",
       "permanentMachineId": "MID-001604",
       "serialNumber": "P/M-22",
       "machineNameId": "mn-1791524135296-jrsq",
@@ -100977,7 +100969,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670111336-960",
+      "id": "mac-1792072746195-1606-8120",
       "permanentMachineId": "MID-001607",
       "serialNumber": "P/M-739",
       "machineNameId": "mn-1791524135296-jrsq",
@@ -101013,7 +101005,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670112878-587",
+      "id": "mac-1792072746195-1607-9065",
       "permanentMachineId": "MID-001608",
       "serialNumber": "B/T-394",
       "machineNameId": "mn-1791524135315-2y8s",
@@ -101085,7 +101077,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670108239-446",
+      "id": "mac-1792072746195-1609-1874",
       "permanentMachineId": "MID-001610",
       "serialNumber": "B/T-30",
       "machineNameId": "mn-1791524135315-2y8s",
@@ -101193,7 +101185,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670114930-448",
+      "id": "mac-1792072746195-1612-3588",
       "permanentMachineId": "MID-001613",
       "serialNumber": "V/T-108",
       "machineNameId": "mn-1791524135300-mavf",
@@ -101229,7 +101221,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670114943-758",
+      "id": "mac-1792072746195-1613-7184",
       "permanentMachineId": "MID-001614",
       "serialNumber": "V/T-456",
       "machineNameId": "mn-1791524135300-mavf",
@@ -101265,7 +101257,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670114956-629",
+      "id": "mac-1792072746195-1614-2589",
       "permanentMachineId": "MID-001615",
       "serialNumber": "V/T-196",
       "machineNameId": "mn-1791524135300-mavf",
@@ -101301,7 +101293,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670113956-688",
+      "id": "mac-1792072746195-1615-8414",
       "permanentMachineId": "MID-001616",
       "serialNumber": "E/H-22",
       "machineNameId": "mn-1791524135324-0cyf",
@@ -101409,7 +101401,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670113282-555",
+      "id": "mac-1792072746195-1618-4513",
       "permanentMachineId": "MID-001619",
       "serialNumber": "K/S-70",
       "machineNameId": "mn-1791524135313-ufae",
@@ -101445,7 +101437,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670115017-674",
+      "id": "mac-1792072746195-1619-1629",
       "permanentMachineId": "MID-001620",
       "serialNumber": "O/L-55",
       "machineNameId": "mn-1791524135307-f848",
@@ -101589,7 +101581,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670115247-101",
+      "id": "mac-1792072746195-1623-3804",
       "permanentMachineId": "MID-001624",
       "serialNumber": "P/M-1240",
       "machineNameId": "mn-1791524135296-jrsq",
@@ -101769,7 +101761,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670115396-461",
+      "id": "mac-1792072746195-1628-9039",
       "permanentMachineId": "MID-001629",
       "serialNumber": "P/M-996",
       "machineNameId": "mn-1791524135296-jrsq",
@@ -101841,7 +101833,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670115452-390",
+      "id": "mac-1792072746195-1630-5749",
       "permanentMachineId": "MID-001631",
       "serialNumber": "P/M-1029",
       "machineNameId": "mn-1791524135296-jrsq",
@@ -101877,7 +101869,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670115469-505",
+      "id": "mac-1792072746195-1631-8594",
       "permanentMachineId": "MID-001632",
       "serialNumber": "P/M-1044",
       "machineNameId": "mn-1791524135296-jrsq",
@@ -102129,7 +102121,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670115617-5",
+      "id": "mac-1792072746195-1638-9829",
       "permanentMachineId": "MID-001639",
       "serialNumber": "P/M-1400",
       "machineNameId": "mn-1791524135296-jrsq",
@@ -102201,7 +102193,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670115679-802",
+      "id": "mac-1792072746195-1640-1395",
       "permanentMachineId": "MID-001641",
       "serialNumber": "P/M-180",
       "machineNameId": "mn-1791524135296-jrsq",
@@ -102597,7 +102589,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670117018-662",
+      "id": "mac-1792072746195-1651-7542",
       "permanentMachineId": "MID-001652",
       "serialNumber": "B/T-300",
       "machineNameId": "mn-1791524135315-2y8s",
@@ -102633,7 +102625,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670109435-863",
+      "id": "mac-1792072746195-1652-6280",
       "permanentMachineId": "MID-001653",
       "serialNumber": "B/T-103",
       "machineNameId": "mn-1791524135315-2y8s",
@@ -102921,7 +102913,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670116921-413",
+      "id": "mac-1792072746195-1660-5253",
       "permanentMachineId": "MID-001661",
       "serialNumber": "O/L-656",
       "machineNameId": "mn-1791524135307-f848",
@@ -102957,7 +102949,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670116954-729",
+      "id": "mac-1792072746196-1661-2035",
       "permanentMachineId": "MID-001662",
       "serialNumber": "O/L-687",
       "machineNameId": "mn-1791524135307-f848",
@@ -103137,7 +103129,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670111170-516",
+      "id": "mac-1792072746196-1666-6095",
       "permanentMachineId": "MID-001667",
       "serialNumber": "P/M-1008",
       "machineNameId": "mn-1791524135296-jrsq",
@@ -103209,7 +103201,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670115960-91",
+      "id": "mac-1792072746196-1668-3514",
       "permanentMachineId": "MID-001669",
       "serialNumber": "P/M-1036",
       "machineNameId": "mn-1791524135296-jrsq",
@@ -103641,7 +103633,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670116491-315",
+      "id": "mac-1792072746196-1680-8328",
       "permanentMachineId": "MID-001681",
       "serialNumber": "P/M-966",
       "machineNameId": "mn-1791524135296-jrsq",
@@ -103713,7 +103705,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670116574-341",
+      "id": "mac-1792072746196-1682-1738",
       "permanentMachineId": "MID-001683",
       "serialNumber": "P/M-640",
       "machineNameId": "mn-1791524135296-jrsq",
@@ -104037,7 +104029,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670115017-674",
+      "id": "mac-uniq-1792072826911-1691-1660",
       "permanentMachineId": "MID-001692",
       "serialNumber": "B/T-55",
       "machineNameId": "mn-1791524135315-2y8s",
@@ -104073,7 +104065,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670108147-257",
+      "id": "mac-1792072746196-1692-7048",
       "permanentMachineId": "MID-001693",
       "serialNumber": "B/T-39",
       "machineNameId": "mn-1791524135315-2y8s",
@@ -104145,7 +104137,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670115106-188",
+      "id": "mac-1792072746196-1694-2278",
       "permanentMachineId": "MID-001695",
       "serialNumber": "B/T-280",
       "machineNameId": "mn-1791524135315-2y8s",
@@ -104217,7 +104209,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670117682-288",
+      "id": "mac-1792072746196-1696-4352",
       "permanentMachineId": "MID-001697",
       "serialNumber": "F/A-109",
       "machineNameId": "mn-1791524135304-ysv0",
@@ -104253,7 +104245,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670106676-776",
+      "id": "mac-1792072746196-1697-7448",
       "permanentMachineId": "MID-001698",
       "serialNumber": "O/L-855",
       "machineNameId": "mn-1791524135307-f848",
@@ -104325,7 +104317,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670108359-438",
+      "id": "mac-1792072746196-1699-7814",
       "permanentMachineId": "MID-001700",
       "serialNumber": "O/L-1066",
       "machineNameId": "mn-1791524135307-f848",
@@ -104469,7 +104461,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670120123-471",
+      "id": "mac-1792072746196-1703-2212",
       "permanentMachineId": "MID-001704",
       "serialNumber": "P/M-1336",
       "machineNameId": "mn-1791524135296-jrsq",
@@ -104793,7 +104785,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670117979-99",
+      "id": "mac-1792072746196-1712-7566",
       "permanentMachineId": "MID-001713",
       "serialNumber": "P/M-237",
       "machineNameId": "mn-1791524135296-jrsq",
@@ -104937,7 +104929,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670114851-4",
+      "id": "mac-1792072746196-1716-8879",
       "permanentMachineId": "MID-001717",
       "serialNumber": "P/M-305",
       "machineNameId": "mn-1791524135296-jrsq",
@@ -105081,7 +105073,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670117122-524",
+      "id": "mac-1792072746196-1720-6464",
       "permanentMachineId": "MID-001721",
       "serialNumber": "P/M-152",
       "machineNameId": "mn-1791524135296-jrsq",
@@ -105117,7 +105109,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670118330-445",
+      "id": "mac-1792072746196-1721-7365",
       "permanentMachineId": "MID-001722",
       "serialNumber": "P/M-306",
       "machineNameId": "mn-1791524135296-jrsq",
@@ -105225,7 +105217,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670118442-496",
+      "id": "mac-1792072746196-1724-4054",
       "permanentMachineId": "MID-001725",
       "serialNumber": "P/M-302",
       "machineNameId": "mn-1791524135296-jrsq",
@@ -105261,7 +105253,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670110690-207",
+      "id": "mac-1792072746196-1725-9119",
       "permanentMachineId": "MID-001726",
       "serialNumber": "P/M-288",
       "machineNameId": "mn-1791524135296-jrsq",
@@ -105621,7 +105613,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670119676-444",
+      "id": "mac-1792072746196-1735-3530",
       "permanentMachineId": "MID-001736",
       "serialNumber": "B/T-139",
       "machineNameId": "mn-1791524135315-2y8s",
@@ -105801,7 +105793,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670106900-161",
+      "id": "mac-1792072746196-1740-1478",
       "permanentMachineId": "MID-001741",
       "serialNumber": "V/T-116",
       "machineNameId": "mn-1791524135300-mavf",
@@ -105909,7 +105901,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-09-15T04:20:58.520Z"
     },
     {
-      "id": "mac-1790670117610-718",
+      "id": "mac-1792072746196-1743-6047",
       "permanentMachineId": "MID-001744",
       "serialNumber": "V/T-3",
       "machineNameId": "mn-1791524135300-mavf",
@@ -105945,7 +105937,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670121246-393",
+      "id": "mac-1792072746196-1744-3097",
       "permanentMachineId": "MID-001745",
       "serialNumber": "V/T-101",
       "machineNameId": "mn-1791524135300-mavf",
@@ -105981,7 +105973,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670106571-675",
+      "id": "mac-1792072746196-1745-6873",
       "permanentMachineId": "MID-001746",
       "serialNumber": "V/T-44",
       "machineNameId": "mn-1791524135300-mavf",
@@ -106089,7 +106081,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-09-15T04:20:58.809Z"
     },
     {
-      "id": "mac-1790670113431-659",
+      "id": "mac-1792072746196-1748-2677",
       "permanentMachineId": "MID-001749",
       "serialNumber": "F/A-145",
       "machineNameId": "mn-1791524135304-ysv0",
@@ -106161,7 +106153,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670119604-220",
+      "id": "mac-1792072746196-1750-4117",
       "permanentMachineId": "MID-001751",
       "serialNumber": "K/S-950",
       "machineNameId": "mn-1791524135313-ufae",
@@ -106197,7 +106189,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670119571-296",
+      "id": "mac-1792072746196-1751-2481",
       "permanentMachineId": "MID-001752",
       "serialNumber": "K/S-295",
       "machineNameId": "mn-1791524135313-ufae",
@@ -106233,7 +106225,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670115679-802",
+      "id": "mac-1792072746196-1752-6516",
       "permanentMachineId": "MID-001753",
       "serialNumber": "K/S-180",
       "machineNameId": "mn-1791524135313-ufae",
@@ -106269,7 +106261,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670106676-776",
+      "id": "mac-1792072746196-1753-2877",
       "permanentMachineId": "MID-001754",
       "serialNumber": "K/S-855",
       "machineNameId": "mn-1791524135313-ufae",
@@ -106377,7 +106369,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670106873-715",
+      "id": "mac-1792072746196-1756-4683",
       "permanentMachineId": "MID-001757",
       "serialNumber": "O/L-89",
       "machineNameId": "mn-1791524135307-f848",
@@ -106413,7 +106405,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670119418-756",
+      "id": "mac-1792072746196-1757-4701",
       "permanentMachineId": "MID-001758",
       "serialNumber": "O/L-97",
       "machineNameId": "mn-1791524135307-f848",
@@ -106521,7 +106513,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670115884-63",
+      "id": "mac-1792072746196-1760-7037",
       "permanentMachineId": "MID-001761",
       "serialNumber": "O/L-1050",
       "machineNameId": "mn-1791524135307-f848",
@@ -106629,7 +106621,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670118634-253",
+      "id": "mac-1792072746196-1763-3313",
       "permanentMachineId": "MID-001764",
       "serialNumber": "P/M-492",
       "machineNameId": "mn-1791524135296-jrsq",
@@ -106809,7 +106801,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670118929-273",
+      "id": "mac-1792072746196-1768-7514",
       "permanentMachineId": "MID-001769",
       "serialNumber": "P/M-1374",
       "machineNameId": "mn-1791524135296-jrsq",
@@ -106845,7 +106837,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670118959-254",
+      "id": "mac-1792072746196-1769-8289",
       "permanentMachineId": "MID-001770",
       "serialNumber": "P/M-1030",
       "machineNameId": "mn-1791524135296-jrsq",
@@ -106917,7 +106909,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670119021-904",
+      "id": "mac-1792072746196-1771-6636",
       "permanentMachineId": "MID-001772",
       "serialNumber": "P/M-1061",
       "machineNameId": "mn-1791524135296-jrsq",
@@ -107277,7 +107269,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670115036-407",
+      "id": "mac-1792072746196-1781-2436",
       "permanentMachineId": "MID-001782",
       "serialNumber": "B/T-862",
       "machineNameId": "mn-1791524135315-2y8s",
@@ -107601,7 +107593,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670120479-97",
+      "id": "mac-1792072746196-1790-7763",
       "permanentMachineId": "MID-001791",
       "serialNumber": "V/T-516",
       "machineNameId": "mn-1791524135300-mavf",
@@ -107709,7 +107701,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670113431-659",
+      "id": "mac-1792072746196-1793-8213",
       "permanentMachineId": "MID-001794",
       "serialNumber": "K/S-145",
       "machineNameId": "mn-1791524135313-ufae",
@@ -107745,7 +107737,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670120658-504",
+      "id": "mac-1792072746196-1794-9641",
       "permanentMachineId": "MID-001795",
       "serialNumber": "K/S-35",
       "machineNameId": "mn-1791524135313-ufae",
@@ -107817,7 +107809,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670121335-930",
+      "id": "mac-1792072746196-1796-5942",
       "permanentMachineId": "MID-001797",
       "serialNumber": "O/L-8",
       "machineNameId": "mn-1791524135307-f848",
@@ -107853,7 +107845,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670120964-801",
+      "id": "mac-1792072746196-1797-7425",
       "permanentMachineId": "MID-001798",
       "serialNumber": "O/L-579",
       "machineNameId": "mn-1791524135307-f848",
@@ -107961,7 +107953,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312875-447",
+      "id": "mac-1792072746196-1800-2989",
       "permanentMachineId": "MID-000447",
       "serialNumber": "O/L-94",
       "machineNameId": "mn-1791524135307-f848",
@@ -108141,7 +108133,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670114763-477",
+      "id": "mac-1792072746196-1805-6214",
       "permanentMachineId": "MID-001806",
       "serialNumber": "P/M-691",
       "machineNameId": "mn-1791524135296-jrsq",
@@ -108537,7 +108529,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670113402-460",
+      "id": "mac-1792072746196-1816-9898",
       "permanentMachineId": "MID-001817",
       "serialNumber": "P/M-1247",
       "machineNameId": "mn-1791524135296-jrsq",
@@ -108609,7 +108601,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670114712-862",
+      "id": "mac-1792072746196-1818-3753",
       "permanentMachineId": "MID-001819",
       "serialNumber": "P/M-1067",
       "machineNameId": "mn-1791524135296-jrsq",
@@ -108825,7 +108817,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670106739-966",
+      "id": "mac-1792072746196-1824-1528",
       "permanentMachineId": "MID-001825",
       "serialNumber": "E/H-33",
       "machineNameId": "mn-1791524135324-0cyf",
@@ -108861,7 +108853,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312633-211",
+      "id": "mac-1792072746196-1825-7779",
       "permanentMachineId": "MID-000211",
       "serialNumber": "E/H-11",
       "machineNameId": "mn-1791524135324-0cyf",
@@ -108897,7 +108889,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-09-15T04:20:58.690Z"
     },
     {
-      "id": "mac-1788870312613-209",
+      "id": "mac-1792072746196-1826-4327",
       "permanentMachineId": "MID-000209",
       "serialNumber": "E/H-10",
       "machineNameId": "mn-1791524135324-0cyf",
@@ -109221,7 +109213,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670113460-354",
+      "id": "mac-1792072746196-1835-1187",
       "permanentMachineId": "MID-001836",
       "serialNumber": "C/S-132",
       "machineNameId": "mn-1791524135308-cccc",
@@ -109653,7 +109645,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670117717-118",
+      "id": "mac-1792072746196-1847-9032",
       "permanentMachineId": "MID-001848",
       "serialNumber": "K/S-5",
       "machineNameId": "mn-1791524135313-ufae",
@@ -109725,7 +109717,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670109493-147",
+      "id": "mac-1792072746196-1849-6723",
       "permanentMachineId": "MID-001850",
       "serialNumber": "O/L-93",
       "machineNameId": "mn-1791524135307-f848",
@@ -109761,7 +109753,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312737-835",
+      "id": "mac-1792072746196-1850-4416",
       "permanentMachineId": "MID-000835",
       "serialNumber": "O/L-13",
       "machineNameId": "mn-1791524135307-f848",
@@ -109905,7 +109897,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670111892-828",
+      "id": "mac-1792072746196-1854-9250",
       "permanentMachineId": "MID-001855",
       "serialNumber": "O/L-1231",
       "machineNameId": "mn-1791524135307-f848",
@@ -110049,7 +110041,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312613-964",
+      "id": "mac-1792072746196-1858-3024",
       "permanentMachineId": "MID-000964",
       "serialNumber": "P/M-99",
       "machineNameId": "mn-1791524135296-jrsq",
@@ -110517,7 +110509,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312736-676",
+      "id": "mac-1792072746196-1871-4488",
       "permanentMachineId": "MID-000676",
       "serialNumber": "P/M-125",
       "machineNameId": "mn-1791524135296-jrsq",
@@ -110949,7 +110941,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312558-327",
+      "id": "mac-1792072746196-1883-7826",
       "permanentMachineId": "MID-000327",
       "serialNumber": "P/M-443",
       "machineNameId": "mn-1791524135296-jrsq",
@@ -110985,7 +110977,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-09-15T04:20:58.312Z"
     },
     {
-      "id": "mac-1790670110783-31",
+      "id": "mac-1792072746196-1884-6390",
       "permanentMachineId": "MID-001885",
       "serialNumber": "B/T-59",
       "machineNameId": "mn-1791524135315-2y8s",
@@ -111021,7 +111013,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312639-690",
+      "id": "mac-1792072746196-1885-9526",
       "permanentMachineId": "MID-000690",
       "serialNumber": "B/T-24",
       "machineNameId": "mn-1791524135315-2y8s",
@@ -111165,7 +111157,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670109198-192",
+      "id": "mac-1792072746196-1889-3151",
       "permanentMachineId": "MID-001890",
       "serialNumber": "C/S-263",
       "machineNameId": "mn-1791524135308-cccc",
@@ -111597,7 +111589,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670108260-986",
+      "id": "mac-1792072746196-1901-8520",
       "permanentMachineId": "MID-001902",
       "serialNumber": "F/A-19",
       "machineNameId": "mn-1791524135304-ysv0",
@@ -111633,7 +111625,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312633-211",
+      "id": "mac-1792072746196-1902-8963",
       "permanentMachineId": "MID-000211",
       "serialNumber": "K/S-11",
       "machineNameId": "mn-1791524135313-ufae",
@@ -111705,7 +111697,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670111969-955",
+      "id": "mac-1792072746196-1904-8750",
       "permanentMachineId": "MID-001905",
       "serialNumber": "O/L-1246",
       "machineNameId": "mn-1791524135307-f848",
@@ -112173,7 +112165,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670120247-734",
+      "id": "mac-1792072746196-1917-1552",
       "permanentMachineId": "MID-001918",
       "serialNumber": "P/M-449",
       "machineNameId": "mn-1791524135296-jrsq",
@@ -112497,7 +112489,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312556-958",
+      "id": "mac-1792072746196-1926-5057",
       "permanentMachineId": "MID-000958",
       "serialNumber": "P/M-826",
       "machineNameId": "mn-1791524135296-jrsq",
@@ -112929,7 +112921,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670110659-820",
+      "id": "mac-1792072746196-1938-3094",
       "permanentMachineId": "MID-001939",
       "serialNumber": "V/T-141",
       "machineNameId": "mn-1791524135300-mavf",
@@ -112965,7 +112957,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670109935-611",
+      "id": "mac-1792072746196-1939-8614",
       "permanentMachineId": "MID-001940",
       "serialNumber": "V/T-493",
       "machineNameId": "mn-1791524135300-mavf",
@@ -113109,7 +113101,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670121335-930",
+      "id": "mac-1792072746196-1943-9486",
       "permanentMachineId": "MID-001944",
       "serialNumber": "F/L-8",
       "machineNameId": "mn-1791524135336-xcht",
@@ -113253,7 +113245,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670106739-966",
+      "id": "mac-1792072746196-1947-9839",
       "permanentMachineId": "MID-001948",
       "serialNumber": "O/L-33",
       "machineNameId": "mn-1791524135307-f848",
@@ -113325,7 +113317,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-09-15T04:20:59.081Z"
     },
     {
-      "id": "mac-1790670107321-915",
+      "id": "mac-1792072746196-1949-9129",
       "permanentMachineId": "MID-001950",
       "serialNumber": "O/L-714",
       "machineNameId": "mn-1791524135307-f848",
@@ -113397,7 +113389,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670115106-188",
+      "id": "mac-1792072746196-1951-4617",
       "permanentMachineId": "MID-001952",
       "serialNumber": "O/L-280",
       "machineNameId": "mn-1791524135307-f848",
@@ -113469,7 +113461,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670114943-758",
+      "id": "mac-1792072746196-1953-4011",
       "permanentMachineId": "MID-001954",
       "serialNumber": "P/M-456",
       "machineNameId": "mn-1791524135296-jrsq",
@@ -113685,7 +113677,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670116921-413",
+      "id": "mac-1792072746196-1959-9364",
       "permanentMachineId": "MID-001960",
       "serialNumber": "P/M-656",
       "machineNameId": "mn-1791524135296-jrsq",
@@ -114153,7 +114145,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312585-349",
+      "id": "mac-1792072746196-1972-1080",
       "permanentMachineId": "MID-000349",
       "serialNumber": "B/T-168",
       "machineNameId": "mn-1791524135315-2y8s",
@@ -114297,7 +114289,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670121139-994",
+      "id": "mac-1792072746196-1976-9631",
       "permanentMachineId": "MID-001977",
       "serialNumber": "C/S-204",
       "machineNameId": "mn-1791524135308-cccc",
@@ -114729,7 +114721,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670106900-161",
+      "id": "mac-1792072746196-1988-4566",
       "permanentMachineId": "MID-001989",
       "serialNumber": "F/L-116",
       "machineNameId": "mn-1791524135336-xcht",
@@ -116241,7 +116233,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-09-15T04:20:58.483Z"
     },
     {
-      "id": "mac-1790670106552-641",
+      "id": "mac-1792072746196-2030-5393",
       "permanentMachineId": "MID-002031",
       "serialNumber": "K/S-1",
       "machineNameId": "mn-1791524135313-ufae",
@@ -116277,7 +116269,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670113956-688",
+      "id": "mac-1792072746196-2031-6845",
       "permanentMachineId": "MID-002032",
       "serialNumber": "O/L-22",
       "machineNameId": "mn-1791524135307-f848",
@@ -116421,7 +116413,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312616-59",
+      "id": "mac-1792072746196-2035-8172",
       "permanentMachineId": "MID-000059",
       "serialNumber": "O/L-52",
       "machineNameId": "mn-1791524135307-f848",
@@ -116457,7 +116449,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-09-15T04:20:58.640Z"
     },
     {
-      "id": "mac-1790670110499-545",
+      "id": "mac-1792072746196-2036-6877",
       "permanentMachineId": "MID-002037",
       "serialNumber": "O/L-635",
       "machineNameId": "mn-1791524135307-f848",
@@ -116565,7 +116557,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-09-15T04:20:59.083Z"
     },
     {
-      "id": "mac-1788870312948-184",
+      "id": "mac-1792072746196-2039-6947",
       "permanentMachineId": "MID-000184",
       "serialNumber": "P/M-326",
       "machineNameId": "mn-1791524135296-jrsq",
@@ -117069,7 +117061,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312796-689",
+      "id": "mac-1792072746196-2053-1169",
       "permanentMachineId": "MID-000689",
       "serialNumber": "P/M-819",
       "machineNameId": "mn-1791524135296-jrsq",
@@ -117357,7 +117349,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312805-318",
+      "id": "mac-uniq-1792072826911-2061-3431",
       "permanentMachineId": "MID-000318",
       "serialNumber": "B/T-14",
       "machineNameId": "mn-1791524135315-2y8s",
@@ -118005,7 +117997,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670111936-772",
+      "id": "mac-1792072746196-2079-4198",
       "permanentMachineId": "MID-002080",
       "serialNumber": "O/L-1249",
       "machineNameId": "mn-1791524135307-f848",
@@ -118869,7 +118861,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670111555-129",
+      "id": "mac-1792072746196-2103-7402",
       "permanentMachineId": "MID-002104",
       "serialNumber": "B/T-42",
       "machineNameId": "mn-1791524135315-2y8s",
@@ -118905,7 +118897,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670113431-659",
+      "id": "mac-1792072746196-2104-8683",
       "permanentMachineId": "MID-002105",
       "serialNumber": "B/T-145",
       "machineNameId": "mn-1791524135315-2y8s",
@@ -119049,7 +119041,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312798-453",
+      "id": "mac-1792072746196-2108-3666",
       "permanentMachineId": "MID-000453",
       "serialNumber": "C/S-304",
       "machineNameId": "mn-1791524135308-cccc",
@@ -119157,7 +119149,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312910-664",
+      "id": "mac-1792072746196-2111-1213",
       "permanentMachineId": "MID-000664",
       "serialNumber": "C/S-202",
       "machineNameId": "mn-1791524135308-cccc",
@@ -119481,7 +119473,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670119354-624",
+      "id": "mac-1792072746196-2120-5871",
       "permanentMachineId": "MID-002121",
       "serialNumber": "K/S-174",
       "machineNameId": "mn-1791524135313-ufae",
@@ -119553,7 +119545,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670106571-675",
+      "id": "mac-1792072746196-2122-1272",
       "permanentMachineId": "MID-002123",
       "serialNumber": "O/L-44",
       "machineNameId": "mn-1791524135307-f848",
@@ -119733,7 +119725,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670110659-820",
+      "id": "mac-1792072746196-2127-5404",
       "permanentMachineId": "MID-002128",
       "serialNumber": "O/L-141",
       "machineNameId": "mn-1791524135307-f848",
@@ -119913,7 +119905,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312549-137",
+      "id": "mac-1792072746196-2132-2057",
       "permanentMachineId": "MID-000137",
       "serialNumber": "P/M-822",
       "machineNameId": "mn-1791524135296-jrsq",
@@ -120741,7 +120733,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312546-629",
+      "id": "mac-1792072746196-2155-3627",
       "permanentMachineId": "MID-000629",
       "serialNumber": "C/S-153",
       "machineNameId": "mn-1791524135308-cccc",
@@ -121389,7 +121381,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670107269-642",
+      "id": "mac-1792072746196-2173-6692",
       "permanentMachineId": "MID-002174",
       "serialNumber": "O/L-41",
       "machineNameId": "mn-1791524135307-f848",
@@ -122037,7 +122029,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670109572-415",
+      "id": "mac-1792072746196-2191-5048",
       "permanentMachineId": "MID-002192",
       "serialNumber": "P/M-639",
       "machineNameId": "mn-1791524135296-jrsq",
@@ -122325,7 +122317,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670117682-288",
+      "id": "mac-1792072746196-2199-5013",
       "permanentMachineId": "MID-002200",
       "serialNumber": "B/S-109",
       "machineNameId": "mn-1791524135321-fyhy",
@@ -122397,7 +122389,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670109179-700",
+      "id": "mac-1792072746196-2201-3521",
       "permanentMachineId": "MID-002202",
       "serialNumber": "B/S-62",
       "machineNameId": "mn-1791524135321-fyhy",
@@ -122433,7 +122425,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670117881-949",
+      "id": "mac-1792072746196-2202-3115",
       "permanentMachineId": "MID-002203",
       "serialNumber": "C/S-391",
       "machineNameId": "mn-1791524135308-cccc",
@@ -122577,7 +122569,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670112861-520",
+      "id": "mac-1792072746196-2206-1910",
       "permanentMachineId": "MID-002207",
       "serialNumber": "V/T-385",
       "machineNameId": "mn-1791524135300-mavf",
@@ -122613,7 +122605,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670117288-423",
+      "id": "mac-1792072746196-2207-3248",
       "permanentMachineId": "MID-002208",
       "serialNumber": "V/T-199",
       "machineNameId": "mn-1791524135300-mavf",
@@ -122721,7 +122713,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670113301-428",
+      "id": "mac-1792072746196-2210-8708",
       "permanentMachineId": "MID-002211",
       "serialNumber": "F/A-96",
       "machineNameId": "mn-1791524135304-ysv0",
@@ -122793,7 +122785,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-09-15T04:20:58.626Z"
     },
     {
-      "id": "mac-1790670111768-748",
+      "id": "mac-uniq-1792072826911-2212-4935",
       "permanentMachineId": "MID-002213",
       "serialNumber": "F/A-114",
       "machineNameId": "mn-1791524135304-ysv0",
@@ -122829,7 +122821,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670121381-501",
+      "id": "mac-1792072746196-2213-7448",
       "permanentMachineId": "MID-002214",
       "serialNumber": "F/A-224",
       "machineNameId": "mn-1791524135304-ysv0",
@@ -122865,7 +122857,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312579-309",
+      "id": "mac-1792072746196-2214-2068",
       "permanentMachineId": "MID-000309",
       "serialNumber": "F/A-219",
       "machineNameId": "mn-1791524135304-ysv0",
@@ -122901,7 +122893,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-09-15T04:20:58.483Z"
     },
     {
-      "id": "mac-1788870312793-244",
+      "id": "mac-1792072746196-2215-7954",
       "permanentMachineId": "MID-000244",
       "serialNumber": "F/A-100",
       "machineNameId": "mn-1791524135304-ysv0",
@@ -123009,7 +123001,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670111269-507",
+      "id": "mac-1792072746196-2218-7043",
       "permanentMachineId": "MID-002219",
       "serialNumber": "K/S-47",
       "machineNameId": "mn-1791524135313-ufae",
@@ -123045,7 +123037,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312724-473",
+      "id": "mac-1792072746196-2219-2378",
       "permanentMachineId": "MID-000473",
       "serialNumber": "K/S-71",
       "machineNameId": "mn-1791524135313-ufae",
@@ -123081,7 +123073,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-09-15T04:20:58.941Z"
     },
     {
-      "id": "mac-1790670115679-802",
+      "id": "mac-1792072746196-2220-6976",
       "permanentMachineId": "MID-002221",
       "serialNumber": "O/L-180",
       "machineNameId": "mn-1791524135307-f848",
@@ -123261,7 +123253,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670108239-446",
+      "id": "mac-1792072746196-2225-1956",
       "permanentMachineId": "MID-002226",
       "serialNumber": "P/F-30",
       "machineNameId": "mn-1791524135339-3zug",
@@ -123513,7 +123505,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312607-734",
+      "id": "mac-1792072746196-2232-9287",
       "permanentMachineId": "MID-000734",
       "serialNumber": "P/M-427",
       "machineNameId": "mn-1791524135296-jrsq",
@@ -123981,7 +123973,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312607-734",
+      "id": "mac-1792072746196-2245-1802",
       "permanentMachineId": "MID-000734",
       "serialNumber": "B/T-427",
       "machineNameId": "mn-1791524135315-2y8s",
@@ -124413,7 +124405,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670106539-627",
+      "id": "mac-1792072746196-2257-1751",
       "permanentMachineId": "MID-002258",
       "serialNumber": "V/T-36",
       "machineNameId": "mn-1791524135300-mavf",
@@ -124449,7 +124441,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670106765-897",
+      "id": "mac-1792072746196-2258-7812",
       "permanentMachineId": "MID-002259",
       "serialNumber": "V/T-201",
       "machineNameId": "mn-1791524135300-mavf",
@@ -124593,7 +124585,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670121266-807",
+      "id": "mac-1792072746196-2262-6678",
       "permanentMachineId": "MID-002263",
       "serialNumber": "K/S-31",
       "machineNameId": "mn-1791524135313-ufae",
@@ -124629,7 +124621,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670115071-408",
+      "id": "mac-1792072746196-2263-9594",
       "permanentMachineId": "MID-002264",
       "serialNumber": "K/S-27",
       "machineNameId": "mn-1791524135313-ufae",
@@ -124701,7 +124693,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670113027-643",
+      "id": "mac-1792072746196-2265-9073",
       "permanentMachineId": "MID-002266",
       "serialNumber": "O/L-1108",
       "machineNameId": "mn-1791524135307-f848",
@@ -124773,7 +124765,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670108147-257",
+      "id": "mac-1792072746196-2267-7863",
       "permanentMachineId": "MID-002268",
       "serialNumber": "O/L-39",
       "machineNameId": "mn-1791524135307-f848",
@@ -124845,7 +124837,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670106653-809",
+      "id": "mac-1792072746196-2269-7149",
       "permanentMachineId": "MID-002270",
       "serialNumber": "O/L-756",
       "machineNameId": "mn-1791524135307-f848",
@@ -124917,7 +124909,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670110407-249",
+      "id": "mac-1792072746196-2271-9494",
       "permanentMachineId": "MID-002272",
       "serialNumber": "O/L-1097",
       "machineNameId": "mn-1791524135307-f848",
@@ -125025,7 +125017,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312548-376",
+      "id": "mac-1792072746196-2274-8323",
       "permanentMachineId": "MID-000376",
       "serialNumber": "P/M-248",
       "machineNameId": "mn-1791524135296-jrsq",
@@ -125241,7 +125233,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670111393-733",
+      "id": "mac-1792072746196-2280-6547",
       "permanentMachineId": "MID-002281",
       "serialNumber": "P/M-523",
       "machineNameId": "mn-1791524135296-jrsq",
@@ -125637,7 +125629,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312613-209",
+      "id": "mac-1792072746196-2291-4251",
       "permanentMachineId": "MID-000209",
       "serialNumber": "B/T-10",
       "machineNameId": "mn-1791524135315-2y8s",
@@ -126069,7 +126061,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670106539-627",
+      "id": "mac-1792072746196-2303-7471",
       "permanentMachineId": "MID-002304",
       "serialNumber": "O/L-36",
       "machineNameId": "mn-1791524135307-f848",
@@ -126105,7 +126097,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670112861-520",
+      "id": "mac-1792072746196-2304-4900",
       "permanentMachineId": "MID-002305",
       "serialNumber": "O/L-385",
       "machineNameId": "mn-1791524135307-f848",
@@ -126213,7 +126205,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670112054-992",
+      "id": "mac-1792072746196-2307-1361",
       "permanentMachineId": "MID-002308",
       "serialNumber": "O/L-775",
       "machineNameId": "mn-1791524135307-f848",
@@ -127257,7 +127249,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670106730-185",
+      "id": "mac-1792072746196-2336-5529",
       "permanentMachineId": "MID-002337",
       "serialNumber": "B/H-40",
       "machineNameId": "mn-1791524135322-nebp",
@@ -127329,7 +127321,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-09-15T04:20:58.706Z"
     },
     {
-      "id": "mac-1790670115017-674",
+      "id": "mac-1792072746196-2338-4838",
       "permanentMachineId": "MID-002339",
       "serialNumber": "C/S-55",
       "machineNameId": "mn-1791524135308-cccc",
@@ -127365,7 +127357,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670109448-535",
+      "id": "mac-1792072746196-2339-5440",
       "permanentMachineId": "MID-002340",
       "serialNumber": "C/S-106",
       "machineNameId": "mn-1791524135308-cccc",
@@ -127545,7 +127537,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312736-676",
+      "id": "mac-1792072746196-2344-7996",
       "permanentMachineId": "MID-000676",
       "serialNumber": "V/T-125",
       "machineNameId": "mn-1791524135300-mavf",
@@ -127581,7 +127573,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-09-15T04:20:58.970Z"
     },
     {
-      "id": "mac-1790670107020-711",
+      "id": "mac-1792072746196-2345-8188",
       "permanentMachineId": "MID-002346",
       "serialNumber": "V/T-494",
       "machineNameId": "mn-1791524135300-mavf",
@@ -127833,7 +127825,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670112740-215",
+      "id": "mac-1792072746196-2352-9107",
       "permanentMachineId": "MID-002353",
       "serialNumber": "O/L-63",
       "machineNameId": "mn-1791524135307-f848",
@@ -128013,7 +128005,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670116574-341",
+      "id": "mac-1792072746196-2357-7824",
       "permanentMachineId": "MID-002358",
       "serialNumber": "O/L-640",
       "machineNameId": "mn-1791524135307-f848",
@@ -128085,7 +128077,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670106730-185",
+      "id": "mac-1792072746196-2359-8947",
       "permanentMachineId": "MID-002360",
       "serialNumber": "P/F-40",
       "machineNameId": "mn-1791524135339-3zug",
@@ -128157,7 +128149,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312584-148",
+      "id": "mac-1792072746196-2361-2877",
       "permanentMachineId": "MID-000148",
       "serialNumber": "P/M-434",
       "machineNameId": "mn-1791524135296-jrsq",
@@ -128805,7 +128797,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670113956-688",
+      "id": "mac-1792072746196-2379-6149",
       "permanentMachineId": "MID-002380",
       "serialNumber": "B/T-22",
       "machineNameId": "mn-1791524135315-2y8s",
@@ -128841,7 +128833,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670120658-504",
+      "id": "mac-1792072746196-2380-7667",
       "permanentMachineId": "MID-002381",
       "serialNumber": "B/T-35",
       "machineNameId": "mn-1791524135315-2y8s",
@@ -128877,7 +128869,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670111269-507",
+      "id": "mac-1792072746196-2381-1940",
       "permanentMachineId": "MID-002382",
       "serialNumber": "B/H-47",
       "machineNameId": "mn-1791524135322-nebp",
@@ -129201,7 +129193,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312550-191",
+      "id": "mac-1792072746196-2390-3299",
       "permanentMachineId": "MID-000191",
       "serialNumber": "F/A-225",
       "machineNameId": "mn-1791524135304-ysv0",
@@ -129345,7 +129337,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312950-936",
+      "id": "mac-1792072746196-2394-6954",
       "permanentMachineId": "MID-000936",
       "serialNumber": "O/L-43",
       "machineNameId": "mn-1791524135307-f848",
@@ -129489,7 +129481,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670120658-504",
+      "id": "mac-1792072746196-2398-8859",
       "permanentMachineId": "MID-002399",
       "serialNumber": "O/L-35",
       "machineNameId": "mn-1791524135307-f848",
@@ -129561,7 +129553,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312562-983",
+      "id": "mac-1792072746196-2400-2999",
       "permanentMachineId": "MID-000983",
       "serialNumber": "P/M-510",
       "machineNameId": "mn-1791524135296-jrsq",
@@ -130173,7 +130165,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670111108-91",
+      "id": "mac-1792072746196-2417-5844",
       "permanentMachineId": "MID-002418",
       "serialNumber": "B/T-26",
       "machineNameId": "mn-1791524135315-2y8s",
@@ -130389,7 +130381,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-09-15T04:20:58.712Z"
     },
     {
-      "id": "mac-1790670109619-912",
+      "id": "mac-1792072746196-2423-2813",
       "permanentMachineId": "MID-002424",
       "serialNumber": "C/S-16",
       "machineNameId": "mn-1791524135308-cccc",
@@ -130605,7 +130597,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670108161-413",
+      "id": "mac-1792072746196-2429-5264",
       "permanentMachineId": "MID-002430",
       "serialNumber": "F/A-235",
       "machineNameId": "mn-1791524135304-ysv0",
@@ -130641,7 +130633,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670117539-479",
+      "id": "mac-1792072746196-2430-5765",
       "permanentMachineId": "MID-002431",
       "serialNumber": "F/A-239",
       "machineNameId": "mn-1791524135304-ysv0",
@@ -130677,7 +130669,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670117979-99",
+      "id": "mac-1792072746196-2431-5841",
       "permanentMachineId": "MID-002432",
       "serialNumber": "K/S-237",
       "machineNameId": "mn-1791524135313-ufae",
@@ -131037,7 +131029,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670106523-338",
+      "id": "mac-1792072746196-2441-9024",
       "permanentMachineId": "MID-002442",
       "serialNumber": "O/L-1094",
       "machineNameId": "mn-1791524135307-f848",
@@ -131901,7 +131893,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312735-469",
+      "id": "mac-1792072746196-2465-9260",
       "permanentMachineId": "MID-000469",
       "serialNumber": "B/T-317",
       "machineNameId": "mn-1791524135315-2y8s",
@@ -132117,7 +132109,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670108147-257",
+      "id": "mac-1792072746196-2471-1662",
       "permanentMachineId": "MID-002472",
       "serialNumber": "C/S-39",
       "machineNameId": "mn-1791524135308-cccc",
@@ -132441,7 +132433,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670118330-445",
+      "id": "mac-1792072746196-2480-4997",
       "permanentMachineId": "MID-002481",
       "serialNumber": "F/A-306",
       "machineNameId": "mn-1791524135304-ysv0",
@@ -132477,7 +132469,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670113581-627",
+      "id": "mac-1792072746196-2481-9852",
       "permanentMachineId": "MID-002482",
       "serialNumber": "O/L-121",
       "machineNameId": "mn-1791524135307-f848",
@@ -133197,7 +133189,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312780-849",
+      "id": "mac-1792072746196-2501-4741",
       "permanentMachineId": "MID-000849",
       "serialNumber": "P/M-413",
       "machineNameId": "mn-1791524135296-jrsq",
@@ -133377,7 +133369,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312798-453",
+      "id": "mac-1792072746196-2506-7545",
       "permanentMachineId": "MID-000453",
       "serialNumber": "B/T-304",
       "machineNameId": "mn-1791524135315-2y8s",
@@ -133449,7 +133441,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670110462-90",
+      "id": "mac-1792072746196-2508-2208",
       "permanentMachineId": "MID-002509",
       "serialNumber": "B/H-92",
       "machineNameId": "mn-1791524135322-nebp",
@@ -133485,7 +133477,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670106589-356",
+      "id": "mac-1792072746196-2509-9117",
       "permanentMachineId": "MID-002510",
       "serialNumber": "B/S-148",
       "machineNameId": "mn-1791524135321-fyhy",
@@ -133557,7 +133549,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670117288-423",
+      "id": "mac-1792072746196-2511-5950",
       "permanentMachineId": "MID-002512",
       "serialNumber": "C/S-199",
       "machineNameId": "mn-1791524135308-cccc",
@@ -133593,7 +133585,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670112685-570",
+      "id": "mac-1792072746196-2512-9723",
       "permanentMachineId": "MID-002513",
       "serialNumber": "C/S-20",
       "machineNameId": "mn-1791524135308-cccc",
@@ -133665,7 +133657,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312613-209",
+      "id": "mac-1792072746196-2514-1088",
       "permanentMachineId": "MID-000209",
       "serialNumber": "F/A-10",
       "machineNameId": "mn-1791524135304-ysv0",
@@ -133773,7 +133765,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312554-355",
+      "id": "mac-1792072746196-2517-6387",
       "permanentMachineId": "MID-000355",
       "serialNumber": "O/L-700",
       "machineNameId": "mn-1791524135307-f848",
@@ -133881,7 +133873,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670121161-826",
+      "id": "mac-1792072746196-2520-3855",
       "permanentMachineId": "MID-002521",
       "serialNumber": "P/M-173",
       "machineNameId": "mn-1791524135296-jrsq",
@@ -134349,7 +134341,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670121520-409",
+      "id": "mac-1792072746196-2533-7225",
       "permanentMachineId": "MID-002534",
       "serialNumber": "C/S-324",
       "machineNameId": "mn-1791524135308-cccc",
@@ -134493,7 +134485,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670119710-764",
+      "id": "mac-1792072746196-2537-9325",
       "permanentMachineId": "MID-002538",
       "serialNumber": "V/T-159",
       "machineNameId": "mn-1791524135300-mavf",
@@ -134637,7 +134629,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312633-211",
+      "id": "mac-1792072746196-2541-5753",
       "permanentMachineId": "MID-000211",
       "serialNumber": "F/L-11",
       "machineNameId": "mn-1791524135336-xcht",
@@ -134673,7 +134665,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-09-15T04:20:58.690Z"
     },
     {
-      "id": "mac-1790670119508-18",
+      "id": "mac-1792072746196-2542-9504",
       "permanentMachineId": "MID-002543",
       "serialNumber": "K/S-265",
       "machineNameId": "mn-1791524135313-ufae",
@@ -135357,7 +135349,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670115053-745",
+      "id": "mac-1792072746196-2561-6143",
       "permanentMachineId": "MID-002562",
       "serialNumber": "B/S-87",
       "machineNameId": "mn-1791524135321-fyhy",
@@ -136401,7 +136393,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670113301-428",
+      "id": "mac-1792072746196-2590-4324",
       "permanentMachineId": "MID-002591",
       "serialNumber": "B/H-96",
       "machineNameId": "mn-1791524135322-nebp",
@@ -136437,7 +136429,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670117122-524",
+      "id": "mac-1792072746196-2591-5999",
       "permanentMachineId": "MID-002592",
       "serialNumber": "C/S-152",
       "machineNameId": "mn-1791524135308-cccc",
@@ -136761,7 +136753,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312738-387",
+      "id": "mac-1792072746196-2600-6185",
       "permanentMachineId": "MID-000387",
       "serialNumber": "P/F-2",
       "machineNameId": "mn-1791524135339-3zug",
@@ -136977,7 +136969,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670106719-814",
+      "id": "mac-1792072746196-2606-4547",
       "permanentMachineId": "MID-002607",
       "serialNumber": "P/M-57",
       "machineNameId": "mn-1791524135296-jrsq",
@@ -137157,7 +137149,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670107943-701",
+      "id": "mac-1792072746196-2611-3200",
       "permanentMachineId": "MID-002612",
       "serialNumber": "B/T-518",
       "machineNameId": "mn-1791524135315-2y8s",
@@ -137265,7 +137257,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670110600-43",
+      "id": "mac-1792072746196-2614-7107",
       "permanentMachineId": "MID-002615",
       "serialNumber": "B/H-78",
       "machineNameId": "mn-1791524135322-nebp",
@@ -137301,7 +137293,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670113218-66",
+      "id": "mac-1792072746196-2615-9929",
       "permanentMachineId": "MID-002616",
       "serialNumber": "B/S-61",
       "machineNameId": "mn-1791524135321-fyhy",
@@ -137481,7 +137473,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670113282-555",
+      "id": "mac-1792072746196-2620-8775",
       "permanentMachineId": "MID-002621",
       "serialNumber": "V/T-70",
       "machineNameId": "mn-1791524135300-mavf",
@@ -137661,7 +137653,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312557-519",
+      "id": "mac-1792072746196-2625-7405",
       "permanentMachineId": "MID-000519",
       "serialNumber": "O/L-1059",
       "machineNameId": "mn-1791524135307-f848",
@@ -137733,7 +137725,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670121246-393",
+      "id": "mac-1792072746196-2627-9245",
       "permanentMachineId": "MID-002628",
       "serialNumber": "O/L-101",
       "machineNameId": "mn-1791524135307-f848",
@@ -138597,7 +138589,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670109419-564",
+      "id": "mac-1792072746196-2651-2796",
       "permanentMachineId": "MID-002652",
       "serialNumber": "V/T-53",
       "machineNameId": "mn-1791524135300-mavf",
@@ -138741,7 +138733,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312948-184",
+      "id": "mac-uniq-1792072826911-2655-6338",
       "permanentMachineId": "MID-000184",
       "serialNumber": "K/S-326",
       "machineNameId": "mn-1791524135313-ufae",
@@ -138957,7 +138949,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312805-318",
+      "id": "mac-1792072746196-2661-3641",
       "permanentMachineId": "MID-000318",
       "serialNumber": "O/L-14",
       "machineNameId": "mn-1791524135307-f848",
@@ -139569,7 +139561,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670107787-739",
+      "id": "mac-1792072746196-2678-1957",
       "permanentMachineId": "MID-002679",
       "serialNumber": "C/S-158",
       "machineNameId": "mn-1791524135308-cccc",
@@ -139749,7 +139741,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312680-165",
+      "id": "mac-1792072746196-2683-8783",
       "permanentMachineId": "MID-000165",
       "serialNumber": "V/T-161",
       "machineNameId": "mn-1791524135300-mavf",
@@ -139821,7 +139813,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670106719-814",
+      "id": "mac-1792072746196-2685-5241",
       "permanentMachineId": "MID-002686",
       "serialNumber": "E/H-57",
       "machineNameId": "mn-1791524135324-0cyf",
@@ -140073,7 +140065,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670118442-496",
+      "id": "mac-1792072746196-2692-4090",
       "permanentMachineId": "MID-002693",
       "serialNumber": "O/L-302",
       "machineNameId": "mn-1791524135307-f848",
@@ -140145,7 +140137,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670119508-18",
+      "id": "mac-1792072746196-2694-1014",
       "permanentMachineId": "MID-002695",
       "serialNumber": "O/L-265",
       "machineNameId": "mn-1791524135307-f848",
@@ -140217,7 +140209,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670108161-413",
+      "id": "mac-1792072746196-2696-6818",
       "permanentMachineId": "MID-002697",
       "serialNumber": "O/L-235",
       "machineNameId": "mn-1791524135307-f848",
@@ -140721,7 +140713,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312843-250",
+      "id": "mac-1792072746196-2710-4576",
       "permanentMachineId": "MID-000250",
       "serialNumber": "B/T-267",
       "machineNameId": "mn-1791524135315-2y8s",
@@ -140757,7 +140749,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-09-15T04:20:59.160Z"
     },
     {
-      "id": "mac-1790670111439-591",
+      "id": "mac-1792072746196-2711-6820",
       "permanentMachineId": "MID-002712",
       "serialNumber": "B/T-189",
       "machineNameId": "mn-1791524135315-2y8s",
@@ -140829,7 +140821,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670108260-986",
+      "id": "mac-1792072746196-2713-6717",
       "permanentMachineId": "MID-002714",
       "serialNumber": "B/H-19",
       "machineNameId": "mn-1791524135322-nebp",
@@ -140865,7 +140857,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312611-74",
+      "id": "mac-1792072746196-2714-2870",
       "permanentMachineId": "MID-000074",
       "serialNumber": "B/S-256",
       "machineNameId": "mn-1791524135321-fyhy",
@@ -140901,7 +140893,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-09-15T04:20:58.626Z"
     },
     {
-      "id": "mac-1788870312640-757",
+      "id": "mac-1792072746196-2715-3554",
       "permanentMachineId": "MID-000757",
       "serialNumber": "B/S-82",
       "machineNameId": "mn-1791524135321-fyhy",
@@ -140937,7 +140929,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-09-15T04:20:58.712Z"
     },
     {
-      "id": "mac-1788870312950-936",
+      "id": "mac-1792072746196-2716-9105",
       "permanentMachineId": "MID-000936",
       "serialNumber": "C/S-43",
       "machineNameId": "mn-1791524135308-cccc",
@@ -141189,7 +141181,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670112332-814",
+      "id": "mac-1792072746196-2723-7525",
       "permanentMachineId": "MID-002724",
       "serialNumber": "V/T-290",
       "machineNameId": "mn-1791524135300-mavf",
@@ -141297,7 +141289,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312585-349",
+      "id": "mac-1792072746196-2726-2999",
       "permanentMachineId": "MID-000349",
       "serialNumber": "F/A-168",
       "machineNameId": "mn-1791524135304-ysv0",
@@ -141405,7 +141397,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670121266-807",
+      "id": "mac-1792072746196-2729-7950",
       "permanentMachineId": "MID-002730",
       "serialNumber": "F/L-31",
       "machineNameId": "mn-1791524135336-xcht",
@@ -141441,7 +141433,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670121246-393",
+      "id": "mac-1792072746196-2730-6673",
       "permanentMachineId": "MID-002731",
       "serialNumber": "K/S-101",
       "machineNameId": "mn-1791524135313-ufae",
@@ -141477,7 +141469,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670109601-958",
+      "id": "mac-1792072746196-2731-6875",
       "permanentMachineId": "MID-002732",
       "serialNumber": "K/S-179",
       "machineNameId": "mn-1791524135313-ufae",
@@ -141585,7 +141577,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670111302-827",
+      "id": "mac-1792072746196-2734-2234",
       "permanentMachineId": "MID-002735",
       "serialNumber": "O/L-49",
       "machineNameId": "mn-1791524135307-f848",
@@ -141657,7 +141649,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670117786-943",
+      "id": "mac-1792072746196-2736-4943",
       "permanentMachineId": "MID-002737",
       "serialNumber": "O/L-407",
       "machineNameId": "mn-1791524135307-f848",
@@ -141693,7 +141685,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312875-447",
+      "id": "mac-1792072746196-2737-2194",
       "permanentMachineId": "MID-000447",
       "serialNumber": "P/F-94",
       "machineNameId": "mn-1791524135339-3zug",
@@ -141729,7 +141721,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-09-15T04:20:59.213Z"
     },
     {
-      "id": "mac-1790670111555-129",
+      "id": "mac-1792072746196-2738-6600",
       "permanentMachineId": "MID-002739",
       "serialNumber": "P/F-42",
       "machineNameId": "mn-1791524135339-3zug",
@@ -141765,7 +141757,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670111302-827",
+      "id": "mac-1792072746196-2739-6143",
       "permanentMachineId": "MID-002740",
       "serialNumber": "P/F-49",
       "machineNameId": "mn-1791524135339-3zug",
@@ -141801,7 +141793,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670115071-408",
+      "id": "mac-1792072746196-2740-8888",
       "permanentMachineId": "MID-002741",
       "serialNumber": "P/F-27",
       "machineNameId": "mn-1791524135339-3zug",
@@ -142197,7 +142189,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670106739-966",
+      "id": "mac-1792072746196-2751-1698",
       "permanentMachineId": "MID-002752",
       "serialNumber": "B/H-33",
       "machineNameId": "mn-1791524135322-nebp",
@@ -142341,7 +142333,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312794-463",
+      "id": "mac-1792072746196-2755-8312",
       "permanentMachineId": "MID-000463",
       "serialNumber": "O/L-38",
       "machineNameId": "mn-1791524135307-f848",
@@ -142485,7 +142477,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312603-390",
+      "id": "mac-1792072746196-2759-6181",
       "permanentMachineId": "MID-000390",
       "serialNumber": "B/S-133",
       "machineNameId": "mn-1791524135321-fyhy",
@@ -142557,7 +142549,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312681-108",
+      "id": "mac-1792072746196-2761-4448",
       "permanentMachineId": "MID-000108",
       "serialNumber": "C/S-242",
       "machineNameId": "mn-1791524135308-cccc",
@@ -142629,7 +142621,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670107007-647",
+      "id": "mac-1792072746196-2763-6355",
       "permanentMachineId": "MID-002764",
       "serialNumber": "V/T-316",
       "machineNameId": "mn-1791524135300-mavf",
@@ -142701,7 +142693,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670107130-484",
+      "id": "mac-1792072746196-2765-6448",
       "permanentMachineId": "MID-002766",
       "serialNumber": "F/A-331",
       "machineNameId": "mn-1791524135304-ysv0",
@@ -142953,7 +142945,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-09-15T04:20:58.742Z"
     },
     {
-      "id": "mac-1788870312780-849",
+      "id": "mac-1792072746196-2772-5720",
       "permanentMachineId": "MID-000849",
       "serialNumber": "O/L-413",
       "machineNameId": "mn-1791524135307-f848",
@@ -144321,7 +144313,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670121065-350",
+      "id": "mac-1792072746196-2810-3200",
       "permanentMachineId": "MID-002811",
       "serialNumber": "B/T-156",
       "machineNameId": "mn-1791524135315-2y8s",
@@ -144393,7 +144385,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670111288-220",
+      "id": "mac-1792072746196-2812-1970",
       "permanentMachineId": "MID-002813",
       "serialNumber": "C/S-120",
       "machineNameId": "mn-1791524135308-cccc",
@@ -144465,7 +144457,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312722-436",
+      "id": "mac-1792072746196-2814-7744",
       "permanentMachineId": "MID-000436",
       "serialNumber": "C/S-232",
       "machineNameId": "mn-1791524135308-cccc",
@@ -144501,7 +144493,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-09-15T04:20:58.936Z"
     },
     {
-      "id": "mac-1788870312649-916",
+      "id": "mac-1792072746196-2815-1918",
       "permanentMachineId": "MID-000916",
       "serialNumber": "C/S-412",
       "machineNameId": "mn-1791524135308-cccc",
@@ -144645,7 +144637,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312692-249",
+      "id": "mac-1792072746196-2819-6333",
       "permanentMachineId": "MID-000249",
       "serialNumber": "K/S-95",
       "machineNameId": "mn-1791524135313-ufae",
@@ -144825,7 +144817,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670107231-525",
+      "id": "mac-1792072746196-2824-6223",
       "permanentMachineId": "MID-002825",
       "serialNumber": "O/L-1257",
       "machineNameId": "mn-1791524135307-f848",
@@ -144861,7 +144853,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670116033-717",
+      "id": "mac-1792072746196-2825-6747",
       "permanentMachineId": "MID-002826",
       "serialNumber": "O/L-982",
       "machineNameId": "mn-1791524135307-f848",
@@ -144897,7 +144889,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670111856-149",
+      "id": "mac-1792072746196-2826-8266",
       "permanentMachineId": "MID-002827",
       "serialNumber": "O/L-1087",
       "machineNameId": "mn-1791524135307-f848",
@@ -144933,7 +144925,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312738-387",
+      "id": "mac-1792072746196-2827-1681",
       "permanentMachineId": "MID-000387",
       "serialNumber": "C/S-2",
       "machineNameId": "mn-1788869247159-lw1e",
@@ -144969,7 +144961,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-09-15T04:20:58.974Z"
     },
     {
-      "id": "mac-1790670109448-535",
+      "id": "mac-1792072746196-2828-9057",
       "permanentMachineId": "MID-002829",
       "serialNumber": "P/M-106",
       "machineNameId": "mn-1791524135296-jrsq",
@@ -146301,7 +146293,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670108640-214",
+      "id": "mac-1792072746196-2865-3872",
       "permanentMachineId": "MID-002866",
       "serialNumber": "P/M-1037",
       "machineNameId": "mn-1791524135296-jrsq",
@@ -146481,7 +146473,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312738-387",
+      "id": "mac-1792072746196-2870-5156",
       "permanentMachineId": "MID-000387",
       "serialNumber": "B/H-2",
       "machineNameId": "mn-1791524135322-nebp",
@@ -146517,7 +146509,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-09-15T04:20:58.974Z"
     },
     {
-      "id": "mac-1788870312548-232",
+      "id": "mac-1792072746196-2871-3530",
       "permanentMachineId": "MID-000232",
       "serialNumber": "B/S-4",
       "machineNameId": "mn-1791524135321-fyhy",
@@ -146589,7 +146581,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312575-25",
+      "id": "mac-1792072746196-2873-1021",
       "permanentMachineId": "MID-000025",
       "serialNumber": "C/S-187",
       "machineNameId": "mn-1791524135308-cccc",
@@ -146661,7 +146653,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312973-795",
+      "id": "mac-1792072746196-2875-1070",
       "permanentMachineId": "MID-000795",
       "serialNumber": "C/S-129",
       "machineNameId": "mn-1791524135308-cccc",
@@ -146841,7 +146833,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670106730-185",
+      "id": "mac-1792072746196-2880-6145",
       "permanentMachineId": "MID-002881",
       "serialNumber": "V/T-40",
       "machineNameId": "mn-1791524135300-mavf",
@@ -146877,7 +146869,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670106730-185",
+      "id": "mac-1792072746196-2881-4320",
       "permanentMachineId": "MID-002882",
       "serialNumber": "E/H-40",
       "machineNameId": "mn-1791524135324-0cyf",
@@ -146913,7 +146905,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312615-279",
+      "id": "mac-1792072746196-2882-4123",
       "permanentMachineId": "MID-000279",
       "serialNumber": "F/A-72",
       "machineNameId": "mn-1791524135304-ysv0",
@@ -147057,7 +147049,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670106589-356",
+      "id": "mac-1792072746196-2886-5767",
       "permanentMachineId": "MID-002887",
       "serialNumber": "K/S-148",
       "machineNameId": "mn-1791524135313-ufae",
@@ -147093,7 +147085,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670117018-662",
+      "id": "mac-1792072746196-2887-5712",
       "permanentMachineId": "MID-002888",
       "serialNumber": "K/S-300",
       "machineNameId": "mn-1791524135313-ufae",
@@ -147129,7 +147121,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670121118-205",
+      "id": "mac-1792072746196-2888-8776",
       "permanentMachineId": "MID-002889",
       "serialNumber": "O/L-76",
       "machineNameId": "mn-1791524135307-f848",
@@ -147165,7 +147157,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670112712-960",
+      "id": "mac-1792072746196-2889-7029",
       "permanentMachineId": "MID-002890",
       "serialNumber": "O/L-60",
       "machineNameId": "mn-1791524135307-f848",
@@ -147201,7 +147193,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670108640-214",
+      "id": "mac-1792072746196-2890-5644",
       "permanentMachineId": "MID-002891",
       "serialNumber": "O/L-1037",
       "machineNameId": "mn-1791524135307-f848",
@@ -147237,7 +147229,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670121182-883",
+      "id": "mac-1792072746196-2891-8243",
       "permanentMachineId": "MID-002892",
       "serialNumber": "O/L-216",
       "machineNameId": "mn-1791524135307-f848",
@@ -147381,7 +147373,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670113301-428",
+      "id": "mac-1792072746196-2895-9376",
       "permanentMachineId": "MID-002896",
       "serialNumber": "P/F-96",
       "machineNameId": "mn-1791524135339-3zug",
@@ -148101,7 +148093,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670109619-912",
+      "id": "mac-1792072746196-2915-6207",
       "permanentMachineId": "MID-002916",
       "serialNumber": "P/M-16",
       "machineNameId": "mn-1791524135296-jrsq",
@@ -148317,7 +148309,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670113263-678",
+      "id": "mac-1792072746196-2921-2847",
       "permanentMachineId": "MID-002922",
       "serialNumber": "P/M-886",
       "machineNameId": "mn-1791524135296-jrsq",
@@ -149073,7 +149065,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312548-225",
+      "id": "mac-1792072746196-2942-4975",
       "permanentMachineId": "MID-000225",
       "serialNumber": "C/S-223",
       "machineNameId": "mn-1791524135308-cccc",
@@ -149181,7 +149173,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312607-734",
+      "id": "mac-1792072746196-2945-1511",
       "permanentMachineId": "MID-000734",
       "serialNumber": "C/S-427",
       "machineNameId": "mn-1791524135308-cccc",
@@ -149253,7 +149245,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670109419-564",
+      "id": "mac-1792072746196-2947-4157",
       "permanentMachineId": "MID-002948",
       "serialNumber": "E/H-53",
       "machineNameId": "mn-1791524135324-0cyf",
@@ -149361,7 +149353,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670118476-119",
+      "id": "mac-1792072746196-2950-6826",
       "permanentMachineId": "MID-002951",
       "serialNumber": "K/S-328",
       "machineNameId": "mn-1791524135313-ufae",
@@ -149397,7 +149389,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312744-3",
+      "id": "mac-1792072746196-2951-5859",
       "permanentMachineId": "MID-000003",
       "serialNumber": "K/S-88",
       "machineNameId": "mn-1791524135313-ufae",
@@ -149685,7 +149677,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670120794-902",
+      "id": "mac-1792072746196-2959-5258",
       "permanentMachineId": "MID-002960",
       "serialNumber": "O/L-945",
       "machineNameId": "mn-1791524135307-f848",
@@ -149721,7 +149713,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312674-237",
+      "id": "mac-1792072746196-2960-7823",
       "permanentMachineId": "MID-000237",
       "serialNumber": "P/F-84",
       "machineNameId": "mn-1791524135339-3zug",
@@ -149757,7 +149749,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-09-15T04:20:58.809Z"
     },
     {
-      "id": "mac-1790670113282-555",
+      "id": "mac-1792072746196-2961-1512",
       "permanentMachineId": "MID-002962",
       "serialNumber": "C/S-70",
       "machineNameId": "mn-1788869247159-lw1e",
@@ -151521,7 +151513,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670110530-475",
+      "id": "mac-1792072746196-3010-9342",
       "permanentMachineId": "MID-003011",
       "serialNumber": "B/T-190",
       "machineNameId": "mn-1791524135315-2y8s",
@@ -151557,7 +151549,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670117610-718",
+      "id": "mac-1792072746196-3011-9137",
       "permanentMachineId": "MID-003012",
       "serialNumber": "B/H-3",
       "machineNameId": "mn-1791524135322-nebp",
@@ -151593,7 +151585,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312556-302",
+      "id": "mac-1792072746196-3012-7105",
       "permanentMachineId": "MID-000302",
       "serialNumber": "B/S-136",
       "machineNameId": "mn-1791524135321-fyhy",
@@ -151629,7 +151621,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-09-15T04:20:58.285Z"
     },
     {
-      "id": "mac-1788870312780-849",
+      "id": "mac-1792072746196-3013-8754",
       "permanentMachineId": "MID-000849",
       "serialNumber": "C/S-413",
       "machineNameId": "mn-1791524135308-cccc",
@@ -151665,7 +151657,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-09-15T04:20:59.057Z"
     },
     {
-      "id": "mac-1790670117751-307",
+      "id": "mac-1792072746196-3014-2119",
       "permanentMachineId": "MID-003015",
       "serialNumber": "C/S-285",
       "machineNameId": "mn-1791524135308-cccc",
@@ -151809,7 +151801,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670109179-700",
+      "id": "mac-1792072746196-3018-1671",
       "permanentMachineId": "MID-003019",
       "serialNumber": "E/H-62",
       "machineNameId": "mn-1791524135324-0cyf",
@@ -151953,7 +151945,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312616-543",
+      "id": "mac-1792072746196-3022-4547",
       "permanentMachineId": "MID-000543",
       "serialNumber": "F/L-122",
       "machineNameId": "mn-1791524135336-xcht",
@@ -152025,7 +152017,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670117476-702",
+      "id": "mac-1792072746196-3024-1175",
       "permanentMachineId": "MID-003025",
       "serialNumber": "K/S-313",
       "machineNameId": "mn-1791524135313-ufae",
@@ -152061,7 +152053,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670116332-647",
+      "id": "mac-1792072746196-3025-3743",
       "permanentMachineId": "MID-003026",
       "serialNumber": "O/L-1242",
       "machineNameId": "mn-1791524135307-f848",
@@ -154509,7 +154501,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670107423-713",
+      "id": "mac-1792072746196-3093-1471",
       "permanentMachineId": "MID-003094",
       "serialNumber": "B/T-142",
       "machineNameId": "mn-1791524135315-2y8s",
@@ -154545,7 +154537,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670120450-869",
+      "id": "mac-1792072746196-3094-7411",
       "permanentMachineId": "MID-003095",
       "serialNumber": "B/T-398",
       "machineNameId": "mn-1791524135315-2y8s",
@@ -154617,7 +154609,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312933-763",
+      "id": "mac-1792072746196-3096-5091",
       "permanentMachineId": "MID-000763",
       "serialNumber": "B/H-66",
       "machineNameId": "mn-1791524135322-nebp",
@@ -154653,7 +154645,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-09-15T04:20:59.321Z"
     },
     {
-      "id": "mac-1790670108075-895",
+      "id": "mac-1792072746196-3097-4586",
       "permanentMachineId": "MID-003098",
       "serialNumber": "B/S-135",
       "machineNameId": "mn-1791524135321-fyhy",
@@ -154689,7 +154681,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670121118-205",
+      "id": "mac-1792072746196-3098-7468",
       "permanentMachineId": "MID-003099",
       "serialNumber": "C/S-76",
       "machineNameId": "mn-1791524135308-cccc",
@@ -154833,7 +154825,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312674-237",
+      "id": "mac-1792072746196-3102-6737",
       "permanentMachineId": "MID-000237",
       "serialNumber": "E/H-84",
       "machineNameId": "mn-1791524135324-0cyf",
@@ -154941,7 +154933,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312604-617",
+      "id": "mac-1792072746196-3105-7506",
       "permanentMachineId": "MID-000617",
       "serialNumber": "K/S-245",
       "machineNameId": "mn-1791524135313-ufae",
@@ -155337,7 +155329,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312667-118",
+      "id": "mac-1792072746196-3116-6694",
       "permanentMachineId": "MID-000118",
       "serialNumber": "P/M-5092",
       "machineNameId": "mn-1791524135296-jrsq",
@@ -156993,7 +156985,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670110903-677",
+      "id": "mac-1792072746196-3162-3421",
       "permanentMachineId": "MID-003163",
       "serialNumber": "B/S-134",
       "machineNameId": "mn-1791524135321-fyhy",
@@ -157029,7 +157021,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670113460-354",
+      "id": "mac-1792072746196-3163-1944",
       "permanentMachineId": "MID-003164",
       "serialNumber": "B/S-132",
       "machineNameId": "mn-1791524135321-fyhy",
@@ -157065,7 +157057,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670112469-362",
+      "id": "mac-1792072746196-3164-9669",
       "permanentMachineId": "MID-003165",
       "serialNumber": "C/S-420",
       "machineNameId": "mn-1791524135308-cccc",
@@ -157101,7 +157093,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670108161-413",
+      "id": "mac-1792072746196-3165-7833",
       "permanentMachineId": "MID-003166",
       "serialNumber": "C/S-235",
       "machineNameId": "mn-1791524135308-cccc",
@@ -157245,7 +157237,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312734-208",
+      "id": "mac-1792072746196-3169-3406",
       "permanentMachineId": "MID-000208",
       "serialNumber": "C/S-421",
       "machineNameId": "mn-1791524135308-cccc",
@@ -157317,7 +157309,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1788870312734-208",
+      "id": "mac-1792072746196-3171-1030",
       "permanentMachineId": "MID-000208",
       "serialNumber": "V/T-421",
       "machineNameId": "mn-1791524135300-mavf",
@@ -157353,7 +157345,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-09-15T04:20:58.966Z"
     },
     {
-      "id": "mac-1790670121266-807",
+      "id": "mac-1792072746196-3172-9546",
       "permanentMachineId": "MID-003173",
       "serialNumber": "E/H-31",
       "machineNameId": "mn-1791524135324-0cyf",
@@ -157497,7 +157489,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670117717-118",
+      "id": "mac-1792072746196-3176-4488",
       "permanentMachineId": "MID-003177",
       "serialNumber": "F/L-5",
       "machineNameId": "mn-1791524135336-xcht",
@@ -157641,7 +157633,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670115123-33",
+      "id": "mac-1792072746196-3180-4465",
       "permanentMachineId": "MID-003181",
       "serialNumber": "O/L-409",
       "machineNameId": "mn-1791524135307-f848",
@@ -157785,7 +157777,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670110427-906",
+      "id": "mac-1792072746196-3184-1729",
       "permanentMachineId": "MID-003185",
       "serialNumber": "O/L-986",
       "machineNameId": "mn-1791524135307-f848",
@@ -157821,7 +157813,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670106862-115",
+      "id": "mac-1792072746196-3185-2574",
       "permanentMachineId": "MID-003186",
       "serialNumber": "O/L-54",
       "machineNameId": "mn-1791524135307-f848",
@@ -157929,7 +157921,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670113218-66",
+      "id": "mac-1792072746196-3188-6761",
       "permanentMachineId": "MID-003189",
       "serialNumber": "P/F-61",
       "machineNameId": "mn-1791524135339-3zug",
@@ -158721,7 +158713,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670112023-919",
+      "id": "mac-1792072746197-3210-5259",
       "permanentMachineId": "MID-003211",
       "serialNumber": "P/M-1254",
       "machineNameId": "mn-1791524135296-jrsq",
@@ -158757,7 +158749,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670109332-141",
+      "id": "mac-1792072746197-3211-8023",
       "permanentMachineId": "MID-003212",
       "serialNumber": "P/M-1092",
       "machineNameId": "mn-1791524135296-jrsq",
@@ -159981,7 +159973,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670109097-71",
+      "id": "mac-uniq-1792072826911-3245-7592",
       "permanentMachineId": "MID-003246",
       "serialNumber": "C/S-408",
       "machineNameId": "mn-1791524135308-cccc",
@@ -160017,7 +160009,7 @@ export const INITIAL_DATA = {
       "qrGeneratedAt": "2026-10-12T11:10:28.000Z"
     },
     {
-      "id": "mac-1790670110891-435",
+      "id": "mac-1792072746197-3246-8444",
       "permanentMachineId": "MID-003247",
       "serialNumber": "O/L-337",
       "machineNameId": "mn-1791524135307-f848",

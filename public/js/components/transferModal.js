@@ -35,16 +35,32 @@ let selectedDest = {
 
 export function renderTransferModal() {
   let activeMachineId = state.get('activeMachineId');
+  let activeMachineSerial = state.get('activeMachineSerial');
   const allMachines = storage.getTable(TABLE_NAMES.MACHINES) || [];
 
   let machine = null;
-  if (activeMachineId) {
-    try {
-      machine = machineService.getEnrichedMachine(activeMachineId, true);
-    } catch (_) {
-      const rawM = storage.getItem(TABLE_NAMES.MACHINES, activeMachineId);
-      if (rawM) machine = machineService.getEnrichedMachine(rawM, true);
+  if (activeMachineSerial) {
+    const cleanS = String(activeMachineSerial).trim().toUpperCase();
+    const rawM = allMachines.find(m => m.serialNumber && String(m.serialNumber).trim().toUpperCase() === cleanS);
+    if (rawM) {
+      machine = machineService.getEnrichedMachine(rawM, true);
     }
+  }
+  if (!machine && activeMachineId) {
+    const rawM = allMachines.find(m => m.id === activeMachineId);
+    if (rawM) {
+      machine = machineService.getEnrichedMachine(rawM, true);
+    } else {
+      try {
+        machine = machineService.getEnrichedMachine(activeMachineId, true);
+      } catch (_) {
+        const rawFallback = storage.getItem(TABLE_NAMES.MACHINES, activeMachineId);
+        if (rawFallback) machine = machineService.getEnrichedMachine(rawFallback, true);
+      }
+    }
+  }
+  if (machine && !activeMachineSerial && machine.serialNumber) {
+    state.set('activeMachineSerial', machine.serialNumber);
   }
   const groups = masterDataService.getGroups();
 
@@ -452,6 +468,7 @@ export function initTransferModalEvents() {
     attachedDocuments = [];
     selectedDest = { groupId: '', unitId: '', floorId: '', lineId: '', searchQuery: '' };
     state.set('activeMachineId', null);
+    state.set('activeMachineSerial', null);
     state.set('activeModal', null);
   };
 
@@ -476,12 +493,15 @@ export function initTransferModalEvents() {
         if (!authService.canRequestTransfer()) {
           notificationService.error(`Access Denied: You do not have permission to request machine transfers.`);
           state.set('activeMachineId', null);
+          state.set('activeMachineSerial', null);
           return;
         }
         state.set('activeMachineId', foundMachine.id);
+        state.set('activeMachineSerial', foundMachine.serialNumber);
         notificationService.info(`Cross-Floor Machine #${foundMachine.serialNumber} loaded. Transfer request will route to holding floor for approval.`);
       } else {
         state.set('activeMachineId', foundMachine.id);
+        state.set('activeMachineSerial', foundMachine.serialNumber);
       }
       // Ensure requester's floor is pre-selected as destination
       const u = authService.getCurrentUser();
@@ -494,6 +514,7 @@ export function initTransferModalEvents() {
       }
     } else {
       state.set('activeMachineId', null);
+      state.set('activeMachineSerial', null);
     }
     // Re-render modal with auto-loaded machine details
     const modalLayer = document.getElementById('modal-layer');
@@ -529,7 +550,7 @@ export function initTransferModalEvents() {
     }
 
     const exactMatch = allMachines.find(m => 
-      (m.serialNumber && m.serialNumber.toString().toLowerCase() === q) ||
+      (m.serialNumber && m.serialNumber.toString().trim().toLowerCase() === q) ||
       (m.permanentMachineId && m.permanentMachineId.toLowerCase() === q) ||
       (m.id && m.id.toLowerCase() === q)
     );
@@ -542,7 +563,7 @@ export function initTransferModalEvents() {
     }
 
     const partialMatch = allMachines.find(m => 
-      (m.serialNumber && m.serialNumber.toString().toLowerCase().includes(q)) ||
+      (m.serialNumber && m.serialNumber.toString().trim().toLowerCase().includes(q)) ||
       (m.permanentMachineId && m.permanentMachineId.toLowerCase().includes(q))
     );
 
@@ -1227,31 +1248,47 @@ export function initTransferModalEvents() {
 
       try {
         let machineId = state.get('activeMachineId');
+        let machineSerial = state.get('activeMachineSerial');
         const allM = storage.getTable(TABLE_NAMES.MACHINES) || [];
 
-        if (!machineId) {
+        if (!machineId && !machineSerial) {
           const inpS = document.getElementById('inp-transfer-search-serial')?.value.trim().toLowerCase();
           if (inpS) {
             const matched = allM.find(m =>
-              (m.serialNumber && m.serialNumber.toString().toLowerCase() === inpS) ||
+              (m.serialNumber && m.serialNumber.toString().trim().toLowerCase() === inpS) ||
               (m.permanentMachineId && m.permanentMachineId.toLowerCase() === inpS) ||
               (m.id && m.id.toLowerCase() === inpS)
             );
-            if (matched) machineId = matched.id;
+            if (matched) {
+              machineId = matched.id;
+              machineSerial = matched.serialNumber;
+            }
           }
         }
 
-        if (!machineId) {
+        let targetMachine = null;
+        if (machineSerial) {
+          const cleanS = String(machineSerial).trim().toUpperCase();
+          targetMachine = allM.find(m => m.serialNumber && String(m.serialNumber).trim().toUpperCase() === cleanS);
+        }
+        if (!targetMachine && machineId) {
+          targetMachine = allM.find(m => m.id === machineId) || storage.getItem(TABLE_NAMES.MACHINES, machineId);
+        }
+
+        if (!targetMachine) {
           notificationService.warning('Please enter or select a valid Machine Serial Number first.');
           const inpS = document.getElementById('inp-transfer-search-serial');
           if (inpS) inpS.focus({ preventScroll: true });
           return;
         }
 
+        machineId = targetMachine.id;
+
         // Check if machine already has an active transfer request before proceeding
-        const activeExisting = transferService.getActiveTransferForMachine(machineId);
+        const activeExisting = transferService.getActiveTransferForMachine(machineId) ||
+                               transferService.getActiveTransferForMachine(targetMachine.serialNumber);
         if (activeExisting) {
-          notificationService.error(`Machine already has an active Transfer Request (#${activeExisting.requestNumber}) in status "${activeExisting.status.replace(/_/g, ' ')}". Multiple requests for the same machine are not allowed.`);
+          notificationService.error(`Machine [${targetMachine.serialNumber}] already has an active Transfer Request (#${activeExisting.requestNumber}) in status "${activeExisting.status.replace(/_/g, ' ')}". Multiple requests for the same machine are not allowed.`);
           if (submitBtn) {
             submitBtn.disabled = true;
             submitBtn.style.opacity = '0.5';
@@ -1298,7 +1335,9 @@ export function initTransferModalEvents() {
 
         // 2. Instant request creation (<1ms)
         const createdRequest = await transferService.createTransferRequest({
-          machineId,
+          machineId: targetMachine.id,
+          serialNumber: targetMachine.serialNumber,
+          machineSerial: targetMachine.serialNumber,
           destGroupId,
           destUnitId,
           destFloorId,

@@ -1400,6 +1400,7 @@ class StorageEngine {
   }
 
   rebuildAllIndexes() {
+    this.clearTableIdMap(TABLE_NAMES.MACHINES);
     this.indexes.machineBySerial.clear();
     this.indexes.machinesByLine.clear();
     this.indexes.machinesByUnit.clear();
@@ -1472,7 +1473,21 @@ class StorageEngine {
       }
       this._tableIdMaps[tableName] = map;
     }
-    return map.get(id) || map.get(String(id)) || null;
+    const found = map.get(id) || map.get(String(id)) || null;
+    if (!found && tableName === TABLE_NAMES.MACHINES) {
+      return this.getMachineBySerial(id);
+    }
+    return found;
+  }
+
+  getMachineBySerial(serialNumber) {
+    if (!serialNumber) return null;
+    const clean = String(serialNumber).trim().toUpperCase();
+    if (this.indexes && this.indexes.machineBySerial && this.indexes.machineBySerial.has(clean)) {
+      return this.indexes.machineBySerial.get(clean);
+    }
+    const machines = this.data[TABLE_NAMES.MACHINES] || [];
+    return machines.find(m => m.serialNumber && String(m.serialNumber).trim().toUpperCase() === clean) || null;
   }
 
   insert(tableName, item) {
@@ -1488,6 +1503,7 @@ class StorageEngine {
     item.updatedAt = new Date().toISOString();
 
     this.data[tableName].push(item);
+    this.clearTableIdMap(tableName);
     this.saveTable(tableName);
 
     if (tableName === TABLE_NAMES.MACHINES) {
@@ -1514,6 +1530,7 @@ class StorageEngine {
       this.data[tableName].push(item);
     });
 
+    this.clearTableIdMap(tableName);
     this.saveTable(tableName);
 
     if (tableName === TABLE_NAMES.MACHINES) {
@@ -1525,7 +1542,14 @@ class StorageEngine {
 
   update(tableName, id, updates) {
     const table = this.data[tableName] || [];
-    const index = table.findIndex(item => item.id === id);
+    let index = -1;
+    if (tableName === TABLE_NAMES.MACHINES && updates && updates.serialNumber) {
+      const sn = String(updates.serialNumber).trim().toUpperCase();
+      index = table.findIndex(item => item.id === id && String(item.serialNumber || '').trim().toUpperCase() === sn);
+    }
+    if (index === -1) {
+      index = table.findIndex(item => item.id === id);
+    }
     if (index === -1) return null;
 
     table[index] = {
@@ -1534,6 +1558,7 @@ class StorageEngine {
       updatedAt: new Date().toISOString()
     };
 
+    this.clearTableIdMap(tableName);
     this.saveTable(tableName);
 
     if (tableName === TABLE_NAMES.MACHINES) {
