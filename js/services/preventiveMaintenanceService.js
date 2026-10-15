@@ -2320,23 +2320,57 @@ class PreventiveMaintenanceService {
     const dueTodayList = machines.filter(m => m.urgency.status === 'DUE_TODAY');
 
     if (overdueList.length > 0) {
-      const sample = overdueList.slice(0, 2).map(m => m.serialNumber).join(', ');
-      notificationService.notify(
-        '⚠️ Preventive Maintenance Overdue',
-        `${overdueList.length} machine(s) are overdue for servicing (${sample}${overdueList.length > 2 ? '...' : ''}). Immediate action required.`,
-        'WARNING',
-        '#preventive-maintenance'
-      );
+      const byFloor = {};
+      overdueList.forEach(m => {
+        const fid = m.floorId || 'unknown';
+        if (!byFloor[fid]) byFloor[fid] = [];
+        byFloor[fid].push(m);
+      });
+
+      for (const [floorId, fMachines] of Object.entries(byFloor)) {
+        const floorObj = storage.getItem(TABLE_NAMES.FLOORS, floorId);
+        const floorName = floorObj?.name || 'Factory Floor';
+        const sample = fMachines.slice(0, 3).map(m => m.serialNumber).join(', ');
+        notificationService.notify({
+          title: `⚠️ Preventive Maintenance Overdue (${floorName})`,
+          message: `${fMachines.length} machine(s) on ${floorName} are overdue for servicing (${sample}${fMachines.length > 3 ? '...' : ''}). Immediate action required.`,
+          type: 'WARNING',
+          module: 'preventive_maintenance',
+          action: 'VIEW',
+          targetUrl: '#preventive-maintenance',
+          locationScope: {
+            unitId: floorObj?.unitId || null,
+            floorId: floorId !== 'unknown' ? floorId : null
+          }
+        });
+      }
     }
 
     if (dueTodayList.length > 0) {
-      const sample = dueTodayList.slice(0, 2).map(m => m.serialNumber).join(', ');
-      notificationService.notify(
-        '🔔 Preventive Maintenance Due Today',
-        `${dueTodayList.length} machine(s) scheduled for maintenance today (${sample}).`,
-        'INFO',
-        '#preventive-maintenance'
-      );
+      const byFloor = {};
+      dueTodayList.forEach(m => {
+        const fid = m.floorId || 'unknown';
+        if (!byFloor[fid]) byFloor[fid] = [];
+        byFloor[fid].push(m);
+      });
+
+      for (const [floorId, fMachines] of Object.entries(byFloor)) {
+        const floorObj = storage.getItem(TABLE_NAMES.FLOORS, floorId);
+        const floorName = floorObj?.name || 'Factory Floor';
+        const sample = fMachines.slice(0, 3).map(m => m.serialNumber).join(', ');
+        notificationService.notify({
+          title: `🔔 Preventive Maintenance Due Today (${floorName})`,
+          message: `${fMachines.length} machine(s) on ${floorName} scheduled for servicing today (${sample}).`,
+          type: 'INFO',
+          module: 'preventive_maintenance',
+          action: 'VIEW',
+          targetUrl: '#preventive-maintenance',
+          locationScope: {
+            unitId: floorObj?.unitId || null,
+            floorId: floorId !== 'unknown' ? floorId : null
+          }
+        });
+      }
     }
   }
 }

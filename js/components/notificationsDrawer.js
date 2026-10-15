@@ -139,7 +139,7 @@ export function renderNotificationsDrawer() {
                 `}
               </div>
               <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">
-                Role-based alerts &amp; pending approvals for your account
+                Strictly filtered to your authorized modules &amp; factory location scope
               </div>
             </div>
           </div>
@@ -165,6 +165,12 @@ export function renderNotificationsDrawer() {
             <span>🌐</span>
             <span>${scopeDesc}</span>
           </div>
+        </div>
+
+        <!-- Access Boundary Assurance Banner -->
+        <div style="display: flex; align-items: center; gap: 6px; font-size: 11px; color: #94a3b8; background: rgba(56, 189, 248, 0.06); border: 1px dashed rgba(56, 189, 248, 0.25); border-radius: 6px; padding: 4px 10px;">
+          <span style="color: #38bdf8;">🔒</span>
+          <span>Access Controlled: External module alerts &amp; outside floor notifications are blocked from this account.</span>
         </div>
 
         <!-- Quick Filter Pills -->

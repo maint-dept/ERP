@@ -241,6 +241,9 @@ class NotificationService {
   /**
    * Resolve and normalize module and required action from notification metadata or targetUrl
    */
+  /**
+   * Resolve and normalize module and required action from notification metadata, title/message content, or targetUrl
+   */
   resolveModuleAndAction(notif) {
     if (!notif) return { module: null, action: 'VIEW' };
     
@@ -248,23 +251,54 @@ class NotificationService {
     let act = notif.action || null;
     const url = String(notif.targetUrl || '').toLowerCase();
     const type = String(notif.type || '').toUpperCase();
+    const text = `${notif.title || ''} ${notif.message || ''}`.toLowerCase();
 
     if (!mod) {
-      if (url.includes('preventive')) mod = 'preventive_maintenance';
-      else if (url.includes('approval') || url.includes('transfer')) mod = 'transfers';
-      else if (url.includes('inventory') || url.includes('machine')) mod = 'machines';
-      else if (url.includes('users') || url.includes('user')) mod = 'user_management';
-      else if (url.includes('spare-part') || url.includes('spare_part')) mod = 'spare_parts';
-      else if (url.includes('tools')) mod = 'tools_management';
-      else if (url.includes('et-lab')) mod = 'et_lab';
-      else if (url.includes('report')) mod = 'reports';
-      else if (url.includes('master-data')) mod = 'master_data';
-      else if (url.includes('audit')) mod = 'audit_logs';
+      if (url.includes('preventive') || text.includes('preventive') || text.includes('servicing') || text.includes('routine maintenance') || text.includes('pm schedule') || text.includes('overdue for servicing')) {
+        mod = 'preventive_maintenance';
+      } else if (url.includes('transfer-workflow') || text.includes('transfer workflow')) {
+        mod = 'transfer_workflows';
+      } else if (url.includes('transfer') || type.includes('TRANSFER') || text.includes('transfer request') || text.includes('machine transfer') || text.includes('line transfer') || text.includes('officially relocated')) {
+        mod = 'transfers';
+      } else if (url.includes('relocate') || text.includes('relocate') || text.includes('idle approval') || text.includes('missing machine')) {
+        mod = 'relocate';
+      } else if (url.includes('qr-code') || url.includes('qr') || text.includes('qr code') || text.includes('label studio')) {
+        mod = 'qr_codes';
+      } else if (url.includes('users') || url.includes('user') || text.includes('new user') || text.includes('password reset') || text.includes('user account')) {
+        mod = 'user_management';
+      } else if (url.includes('spare-part') || url.includes('spare_part') || url.includes('parts-trace') || text.includes('spare part') || text.includes('parts trace')) {
+        mod = 'spare_parts';
+      } else if (url.includes('tools') || text.includes('tools & accessories') || text.includes('tool allocation') || text.includes('toolkit')) {
+        mod = 'tools_management';
+      } else if (url.includes('et-lab') || text.includes('ent lab') || text.includes('circuit board') || text.includes('et lab')) {
+        mod = 'et_lab';
+      } else if (url.includes('manpower') || text.includes('manpower') || text.includes('workforce')) {
+        mod = 'manpower';
+      } else if (url.includes('report') || text.includes('summary report') || text.includes('excel export')) {
+        mod = 'reports';
+      } else if (url.includes('master-data') || url.includes('custom-field') || text.includes('master data')) {
+        mod = 'master_data';
+      } else if (url.includes('audit') || text.includes('audit log')) {
+        mod = 'audit_logs';
+      } else if (url.includes('email-config') || text.includes('smtp') || text.includes('email configuration')) {
+        mod = 'email_config';
+      } else if (url.includes('database-config') || url.includes('storage') || text.includes('mysql') || text.includes('database sync')) {
+        mod = 'database_config';
+      } else if (url.includes('settings') || text.includes('system setting')) {
+        mod = 'settings';
+      } else if (url.includes('homepage-manager') || text.includes('home page')) {
+        mod = 'homepage_manager';
+      } else if (url.includes('inventory') || url.includes('machine') || url.includes('approval-center') || notif.entityType === 'MACHINE' || text.includes('machine')) {
+        mod = 'machines';
+      }
     }
 
     if (!act) {
-      if (type === 'APPROVAL_REQUEST' || url.includes('approval')) act = 'APPROVE';
-      else act = 'VIEW';
+      if (type === 'APPROVAL_REQUEST' || url.includes('approval') || text.includes('approval required') || text.includes('requires admin approval') || text.includes('authorization before being marked idle')) {
+        act = 'APPROVE';
+      } else {
+        act = 'VIEW';
+      }
     }
 
     return { module: mod, action: act };
@@ -288,7 +322,9 @@ class NotificationService {
           destFloorId: ls.destFloorId || ls.floorId || null,
           sourceUnitId: ls.sourceUnitId || null,
           destUnitId: ls.destUnitId || ls.unitId || null,
-          lineId: ls.lineId || ls.destLineId || null
+          lineId: ls.lineId || ls.destLineId || null,
+          sourceLineId: ls.sourceLineId || null,
+          destLineId: ls.destLineId || ls.lineId || null
         };
       }
 
@@ -301,7 +337,7 @@ class NotificationService {
           lineId: ls.lineId || null
         };
       }
-      // If transfer type without sourceFloorId, continue below to resolve full source & dest from database
+      // If transfer type without explicit sourceFloorId, continue below to resolve full source & dest from database
     }
 
     // 2. Resolve via Entity Type & ID
@@ -332,7 +368,9 @@ class NotificationService {
           sourceUnitId: req.sourceUnitId || null,
           destUnitId: req.destUnitId || null,
           unitId: req.destUnitId || req.sourceUnitId || null,
-          lineId: req.destLineId || null
+          lineId: req.destLineId || null,
+          sourceLineId: req.sourceLineId || null,
+          destLineId: req.destLineId || null
         };
       }
     }
@@ -354,7 +392,9 @@ class NotificationService {
           sourceUnitId: req.sourceUnitId || null,
           destUnitId: req.destUnitId || null,
           unitId: req.destUnitId || req.sourceUnitId || null,
-          lineId: req.destLineId || null
+          lineId: req.destLineId || null,
+          sourceLineId: req.sourceLineId || null,
+          destLineId: req.destLineId || null
         };
       }
     }
@@ -392,64 +432,115 @@ class NotificationService {
       }
     }
 
+    // 6. If explicit locationScope exists on transfer but wasn't in transfer_requests
+    if (notif.locationScope) {
+      return {
+        isTransfer: Boolean(notif.locationScope.sourceFloorId || notif.locationScope.destFloorId),
+        unitId: notif.locationScope.unitId || notif.locationScope.destUnitId || null,
+        floorId: notif.locationScope.floorId || notif.locationScope.destFloorId || null,
+        lineId: notif.locationScope.lineId || null,
+        sourceFloorId: notif.locationScope.sourceFloorId || null,
+        destFloorId: notif.locationScope.destFloorId || notif.locationScope.floorId || null
+      };
+    }
+
     return null;
   }
 
   /**
    * Check if a specific notification is allowed to be viewed by a given user
-   * Rule: User -> Role -> Permission -> Module -> Location Scope -> Notification
+   * Rule: User Status -> Zero Access Block -> Direct Target -> Target Roles -> Module Permission -> Action Permission -> Physical Location Scope
    */
   isNotificationAllowedForUser(notif, user = null) {
     const activeUser = user || (typeof authService !== 'undefined' ? authService.getCurrentUser() : null);
     if (!activeUser || activeUser.status !== 'ACTIVE') return false;
 
-    const role = (activeUser.role || '').toUpperCase();
-
-    // 1. Super Admin has unrestricted oversight of all system notifications
-    if (role === 'SUPER_ADMIN' || activeUser.username === 'superadmin') {
-      return true;
+    // 1. Strict Zero-Access Block: Accounts with NO_ACCESS or role-no-access receive ZERO notifications
+    if (activeUser.role === 'NO_ACCESS' || activeUser.roleId === 'role-no-access') {
+      return false;
     }
 
-    // 2. Direct User Targeting
+    const role = (activeUser.role || '').toUpperCase();
+    const isSuperAdmin = role === 'SUPER_ADMIN' || activeUser.username === 'superadmin' || (typeof authService !== 'undefined' && authService.isSuperAdmin(activeUser));
+    const isAdmin = role === 'ADMIN' || (typeof authService !== 'undefined' && authService.isAdmin(activeUser));
+
+    // 2. Direct User Targeting: If directed specifically to an individual user
     if (notif.targetUserId) {
-      if (notif.targetUserId !== activeUser.id && notif.targetUserId !== activeUser.username) {
-        return false;
+      const targetMatches = notif.targetUserId === activeUser.id || notif.targetUserId === activeUser.username;
+      if (!targetMatches) {
+        // Only Super Admin can inspect personal notices sent to others in activity logs
+        if (!isSuperAdmin) return false;
       }
     }
 
-    // 3. Target Roles constraint
+    // 3. Target Roles constraint (Matches role, roleId, presetId, or presetName)
     if (Array.isArray(notif.targetRoles) && notif.targetRoles.length > 0) {
-      const userRoleMatches = notif.targetRoles.some(r => r.toUpperCase() === role);
-      if (!userRoleMatches) return false;
+      const uRole = role;
+      const uRoleId = (activeUser.roleId || '').toUpperCase();
+      const uPreset = (activeUser.presetName || '').toUpperCase();
+      const uPresetId = (activeUser.presetId || '').toUpperCase();
+
+      const roleMatches = notif.targetRoles.some(r => {
+        const target = String(r).toUpperCase();
+        return target === 'ALL' ||
+               target === uRole ||
+               target === uRoleId ||
+               target === uPresetId ||
+               (uPreset && uPreset.includes(target));
+      });
+      if (!roleMatches && !isSuperAdmin) return false;
     }
 
-    // 4. Module & Granular Action Access Check
+    // 4. Super Admin has unrestricted oversight for non-targeted notifications
+    if (isSuperAdmin) {
+      return true;
+    }
+
+    // 5. Module & Granular Action Access Check
     const { module, action } = this.resolveModuleAndAction(notif);
+    
+    // Strict Module Isolation: If notification has a module, user MUST be permitted to access it
     if (module && typeof authService !== 'undefined') {
-      // User MUST be allowed to view the module
       if (!authService.isModuleAllowed(module, activeUser)) {
         return false;
       }
 
-      // If notification requires specific non-view action (e.g. APPROVE)
+      // If notification requires specific action (e.g. APPROVE)
       if (action && action !== 'VIEW') {
-        const canPerformAction = authService.hasAccess(module, action, activeUser) || (action === 'APPROVE' && (authService.isManager(activeUser) || authService.isAdmin(activeUser)));
-        if (!canPerformAction) {
+        const isApprover = authService.hasAccess(module, action, activeUser) || 
+                           authService.hasAccess(module, 'APPROVE', activeUser) || 
+                           isAdmin || 
+                           (module === 'transfers' && authService.canApproveTransfer(activeUser));
+        
+        // Requester exemption: if notification is about their own request, they can view status
+        const isOwnRequest = (notif.targetUserId === activeUser.id || notif.targetUserId === activeUser.username);
+        
+        if (!isApprover && !isOwnRequest) {
+          return false;
+        }
+      }
+    } else if (!module && !isAdmin) {
+      // Unmapped / general notification: If user has restricted module permissions,
+      // do not deliver unmapped notifications unless explicitly broadcasted
+      const isBroadcast = notif.isBroadcast === true || notif.type === 'BROADCAST' || 
+                          (Array.isArray(notif.targetRoles) && notif.targetRoles.some(r => String(r).toUpperCase() === 'ALL'));
+      if (!isBroadcast) {
+        return false;
+      }
+    }
+
+    // 6. System/Admin administrative notices are strictly for Admin/SuperAdmin
+    const adminOnlyModules = ['user_management', 'audit_logs', 'database_config', 'settings', 'email_config', 'homepage_manager', 'excel_manager'];
+    if (adminOnlyModules.includes(module)) {
+      if (!isAdmin && !isSuperAdmin) {
+        const hasExplicitAccess = typeof authService !== 'undefined' && authService.hasAccess(module, 'VIEW', activeUser);
+        if (!hasExplicitAccess && (!notif.targetUserId || notif.targetUserId !== activeUser.id)) {
           return false;
         }
       }
     }
 
-    // 5. System/Admin administrative notices are strictly for Admin/SuperAdmin
-    if (module === 'user_management' || module === 'audit_logs' || module === 'database_config') {
-      if (!authService.isAdmin(activeUser) && !authService.isSuperAdmin(activeUser)) {
-        if (!notif.targetUserId || notif.targetUserId !== activeUser.id) {
-          return false;
-        }
-      }
-    }
-
-    // 6. Factory Location Scope Check
+    // 7. Factory Location Scope Check (Unit, Floor, Line)
     const userScope = activeUser.assignedScope;
     const isScopedUser = userScope && !userScope.allGroups && 
       ((Array.isArray(userScope.floorIds) && userScope.floorIds.length > 0) || 
@@ -460,9 +551,9 @@ class NotificationService {
       const loc = this.resolveNotificationLocation(notif);
 
       if (loc) {
-        // Transfer notifications (Source Floor <-> Destination Floor)
+        // Transfer notifications (Source Floor/Unit/Line <-> Destination Floor/Unit/Line)
         if (loc.isTransfer) {
-          // Check if active user is requester
+          // If active user is the direct target/requester
           if (notif.targetUserId === activeUser.id || notif.targetUserId === activeUser.username) {
             return true;
           }
@@ -474,11 +565,26 @@ class NotificationService {
             if (!matchSource && !matchDest) {
               return false;
             }
-          } else if (Array.isArray(userScope.unitIds) && userScope.unitIds.length > 0) {
+          }
+
+          // If user is scoped to specific unit(s)
+          if (Array.isArray(userScope.unitIds) && userScope.unitIds.length > 0) {
             const matchSourceUnit = loc.sourceUnitId ? userScope.unitIds.includes(loc.sourceUnitId) : false;
             const matchDestUnit = loc.destUnitId ? userScope.unitIds.includes(loc.destUnitId) : (loc.unitId ? userScope.unitIds.includes(loc.unitId) : false);
             if (!matchSourceUnit && !matchDestUnit) {
               return false;
+            }
+          }
+
+          // If user is scoped to specific line(s) and transfer has line details
+          if (Array.isArray(userScope.lineIds) && userScope.lineIds.length > 0 && !userScope.allLines) {
+            if (loc.lineId || loc.destLineId || loc.sourceLineId) {
+              const matchLine = (loc.lineId && userScope.lineIds.includes(loc.lineId)) ||
+                                (loc.destLineId && userScope.lineIds.includes(loc.destLineId)) ||
+                                (loc.sourceLineId && userScope.lineIds.includes(loc.sourceLineId));
+              if (!matchLine) {
+                return false;
+              }
             }
           }
         } else {
@@ -488,7 +594,7 @@ class NotificationService {
           }
         }
       } else {
-        // If location could not be determined directly, but notification belongs to an operational machinery module
+        // Location could not be determined directly, but notification belongs to an operational machinery module
         if (['machines', 'transfers', 'preventive_maintenance', 'tools_management', 'spare_parts', 'relocate'].includes(module)) {
           const content = `${notif.title || ''} ${notif.message || ''}`.toLowerCase();
           const allFloors = storage.getTable(TABLE_NAMES.FLOORS) || [];
@@ -673,15 +779,19 @@ class NotificationService {
     }
 
     storage.insert(TABLE_NAMES.NOTIFICATIONS, item);
-    window.dispatchEvent(new CustomEvent('erp:notification', { detail: item }));
-    window.dispatchEvent(new CustomEvent('erp:notification-updated', { detail: item }));
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('erp:notification', { detail: item }));
+      window.dispatchEvent(new CustomEvent('erp:notification-updated', { detail: item }));
+    }
 
-    // Only display popup toast if explicitly requested via showToast: true
+    // Only display popup toast if explicitly requested via showToast: true AND user is permitted
     if (typeof optionsOrTitle === 'object' && optionsOrTitle !== null && optionsOrTitle.showToast === true) {
-      const toastType = item.type.toLowerCase() === 'warning' ? 'warning' : 
-                       (item.type.toLowerCase() === 'alert' || item.type.toLowerCase() === 'error' ? 'error' : 
-                       (item.type.toLowerCase() === 'success' ? 'success' : 'info'));
-      this.toast(item.message, toastType, item.title);
+      if (this.isNotificationAllowedForUser(item)) {
+        const toastType = item.type.toLowerCase() === 'warning' ? 'warning' : 
+                         (item.type.toLowerCase() === 'alert' || item.type.toLowerCase() === 'error' ? 'error' : 
+                         (item.type.toLowerCase() === 'success' ? 'success' : 'info'));
+        this.toast(item.message, toastType, item.title);
+      }
     }
     return item;
   }
@@ -708,17 +818,21 @@ class NotificationService {
         }
       });
 
-      // 1. Maintenance User Showcase Example: 🔧 Machine #JA-015 Maintenance Due
+      // 1. Maintenance User Showcase Example: 🔧 Machine #JA-015 Maintenance Due (Jamuna Floor)
       if (!notifs.some(n => n.id === 'notif-showcase-pm-1' || n.title.includes('JA-015'))) {
         notifs.unshift({
           id: 'notif-showcase-pm-1',
           title: '🔧 Machine #JA-015 Maintenance Due',
-          message: 'Preventive maintenance is scheduled for today. Routine servicing and needle bar clearance check.',
+          message: 'Preventive maintenance is scheduled for today. Routine servicing and needle bar clearance check on Jamuna Floor.',
           type: 'DUE',
           module: 'preventive_maintenance',
           action: 'VIEW',
           entityType: 'MACHINE',
           entityId: 'JA-015',
+          locationScope: {
+            unitId: 'unt-1',
+            floorId: 'flo-1788686928901-929'
+          },
           targetUrl: '#preventive-maintenance',
           read: false,
           readBy: [],
@@ -727,7 +841,7 @@ class NotificationService {
         updated = true;
       }
 
-      // 2. Approval User Showcase Example: ⚠️ Machine Transfer Approval Required #TR-1024
+      // 2. Approval User Showcase Example: ⚠️ Machine Transfer Approval Required #TR-1024 (Jamuna Floor)
       if (!notifs.some(n => n.id === 'notif-showcase-tr-1' || n.title.includes('TR-1024'))) {
         notifs.unshift({
           id: 'notif-showcase-tr-1',
@@ -738,6 +852,11 @@ class NotificationService {
           action: 'APPROVE',
           entityType: 'TRANSFER',
           entityId: 'TR-1024',
+          locationScope: {
+            sourceFloorId: 'flo-1788686928901-929',
+            destFloorId: 'flo-1788686928901-929',
+            unitId: 'unt-1'
+          },
           targetUrl: '#approvals',
           read: false,
           readBy: [],
