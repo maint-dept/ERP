@@ -404,33 +404,45 @@ export function initLoginViewEvents() {
       const newPwd = document.getElementById('inp-first-login-new-pwd')?.value;
       const confirmPwd = document.getElementById('inp-first-login-confirm-pwd')?.value;
 
+      if (!newPwd || newPwd.length < 4) {
+        showAlert('New password must be at least 4 characters long.');
+        return;
+      }
+
       if (newPwd !== confirmPwd) {
         showAlert('Passwords do not match. Please re-enter.');
         return;
       }
 
       const targetUserId = pendingFirstLoginUserId;
-      try {
-        // Update password + clear temporary status so new password works after logout
-        await authService.updateUser(targetUserId, {
-          password: newPwd,
-          mustChangePassword: false,
-          passwordStatus: 'SETUP',
-          lastPasswordReset: new Date().toISOString()
-        });
+      const submitBtn = document.getElementById('btn-submit-first-login-change');
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = '⏳ Saving Password & Syncing Database...';
+      }
 
-        // Clear temporary credential cache so admin panel shows SETUP (not TEMPORARY)
-        try {
-          const { userAccessService } = await import('../services/userAccessService.js');
-          userAccessService.clearTemporaryCredential(targetUserId);
-        } catch (_) {}
+      try {
+        // Complete first-time password setup with confirmed cloud write & clear temp credentials
+        await authService.completeFirstLoginPassword(targetUserId, newPwd);
 
         alert('✅ Password configured successfully! Entering ERP dashboard...');
         loginMode = 'LOGIN';
         pendingFirstLoginUserId = null;
-        state.set('currentRoute', 'dashboard');
+
+        const activeUser = authService.getCurrentUser();
+        const allowedView = authService.getFirstAllowedView(activeUser) || 'dashboard';
+        state.set('currentView', allowedView);
+        try {
+          if (window.history && window.history.replaceState) {
+            window.history.replaceState({ view: allowedView }, '', `#${allowedView}`);
+          }
+        } catch (_) {}
         state.emit('inventory:updated');
       } catch (err) {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = '💾 Save Password & Enter ERP';
+        }
         showAlert(err.message || 'Failed to update password.');
       }
     });
@@ -441,7 +453,7 @@ export function initLoginViewEvents() {
     e.preventDefault();
     hideAlert();
     loginMode = 'FORGOT_REQUEST';
-    state.set('currentRoute', 'login');
+    state.set('currentView', 'login');
   });
 
   // Back to login links
@@ -449,7 +461,7 @@ export function initLoginViewEvents() {
     e.preventDefault();
     hideAlert();
     loginMode = 'LOGIN';
-    state.set('currentRoute', 'login');
+    state.set('currentView', 'login');
   };
   document.getElementById('link-back-to-login')?.addEventListener('click', returnToLogin);
   document.getElementById('link-back-to-login-2')?.addEventListener('click', returnToLogin);
@@ -476,7 +488,7 @@ export function initLoginViewEvents() {
         resetTargetEmail = res.email;
         generatedDemoOtp = res.otpCode;
         loginMode = 'FORGOT_VERIFY';
-        state.set('currentRoute', 'login');
+        state.set('currentView', 'login');
       } catch (err) {
         showAlert(err.message);
       }
@@ -508,7 +520,7 @@ export function initLoginViewEvents() {
         authService.completePasswordReset(resetTargetUsername, otp, newPwd);
         alert('✅ Password reset successful! You can now sign in with your new password.');
         loginMode = 'LOGIN';
-        state.set('currentRoute', 'login');
+        state.set('currentView', 'login');
       } catch (err) {
         showAlert(err.message);
       }

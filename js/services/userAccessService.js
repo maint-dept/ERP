@@ -488,8 +488,14 @@ class UserAccessService {
         lineId: u.lineId || linkedEmp?.lineId || null,
         lineName: lineObj?.name || u.lineName || linkedEmp?.lineName || linkedEmp?.workingArea || '—',
         accountStatus: u.status || 'ACTIVE',
-        passwordStatus: u.passwordStatus || (hasTempPassword ? 'TEMPORARY' : 'SETUP'),
-        hasTempPassword,
+        // Priority order for passwordStatus:
+        // 1. If DB says SETUP OR user has completed password setup (mustChangePassword === false) → always SETUP
+        // 2. If DB says TEMPORARY or mustChangePassword === true or has temporary credential in cache → TEMPORARY
+        // 3. Default fallback → SETUP
+        passwordStatus: (u.passwordStatus === 'SETUP' || u.mustChangePassword === false)
+          ? 'SETUP'
+          : ((u.passwordStatus === 'TEMPORARY' || u.mustChangePassword === true || hasTempPassword) ? 'TEMPORARY' : 'SETUP'),
+        hasTempPassword: hasTempPassword && u.passwordStatus !== 'SETUP' && u.mustChangePassword !== false,
         permissionsSummary: totalModules > 0 ? `${totalModules} Modules (${totalActions} Actions)` : 'No Permissions',
         totalModules,
         totalActions,
@@ -942,7 +948,7 @@ class UserAccessService {
     const newPlainPassword = this.generateSecurePassword(14);
     const hashedPassword = cryptoService.hashPassword(newPlainPassword);
 
-    storage.update(TABLE_NAMES.USERS, userId, {
+    const updatedUser = await storage.updateConfirmed(TABLE_NAMES.USERS, userId, {
       password: hashedPassword,
       passwordStatus: 'TEMPORARY',
       mustChangePassword: true,
@@ -950,8 +956,7 @@ class UserAccessService {
       updatedAt: new Date().toISOString()
     });
 
-    const ok = await storage.saveTable(TABLE_NAMES.USERS, true);
-    if (!ok) throw new CloudSaveError('Cloud save failed during password update.');
+    if (!updatedUser) throw new CloudSaveError('Cloud save failed during password update.');
 
     // Save in temporary elevated cache
     this.setTemporaryCredential(userId, newPlainPassword);

@@ -161,7 +161,7 @@ export function initLoginModalEvents() {
       } catch (_) {}
       authService.logout();
       state.set('activeModal', null);
-      state.set('currentRoute', 'login');
+      state.set('currentView', 'login');
     });
   }
 
@@ -175,7 +175,6 @@ export function initLoginModalEvents() {
         window.location.hash = '#login';
       } catch (_) {}
       state.set('currentView', 'login');
-      state.set('currentRoute', 'login');
     });
   }
 
@@ -200,7 +199,9 @@ export function initLoginModalEvents() {
         }
 
         closeModal();
-        state.set('currentRoute', 'dashboard');
+        const activeUser = authService.getCurrentUser();
+        const allowedView = authService.getFirstAllowedView(activeUser) || 'dashboard';
+        state.set('currentView', allowedView);
         state.emit('inventory:updated');
       } catch (err) {
         if (errBox) {
@@ -216,10 +217,18 @@ export function initLoginModalEvents() {
   const firstErrBox = document.getElementById('first-pwd-error-message');
 
   if (firstPwdForm && pendingUserId) {
-    firstPwdForm.addEventListener('submit', (e) => {
+    firstPwdForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       const newPwd = document.getElementById('inp-first-new-password')?.value;
       const confirmPwd = document.getElementById('inp-first-confirm-password')?.value;
+
+      if (!newPwd || newPwd.length < 4) {
+        if (firstErrBox) {
+          firstErrBox.textContent = 'New password must be at least 4 characters long.';
+          firstErrBox.style.display = 'block';
+        }
+        return;
+      }
 
       if (newPwd !== confirmPwd) {
         if (firstErrBox) {
@@ -229,16 +238,25 @@ export function initLoginModalEvents() {
         return;
       }
 
+      const submitBtn = firstPwdForm.querySelector('button[type="submit"]');
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = '⏳ Saving...';
+      }
+
       try {
-        authService.updateUser(pendingUserId, {
-          password: newPwd,
-          mustChangePassword: false
-        });
+        await authService.completeFirstLoginPassword(pendingUserId, newPwd);
         alert('✅ Password set successfully! Entering ERP dashboard...');
         closeModal();
-        state.set('currentRoute', 'dashboard');
+        const activeUser = authService.getCurrentUser();
+        const allowedView = authService.getFirstAllowedView(activeUser) || 'dashboard';
+        state.set('currentView', allowedView);
         state.emit('inventory:updated');
       } catch (err) {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Save Password & Enter ERP';
+        }
         if (firstErrBox) {
           firstErrBox.textContent = err.message || 'Failed to update password.';
           firstErrBox.style.display = 'block';

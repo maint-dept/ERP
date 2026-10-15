@@ -1715,7 +1715,8 @@ class AuthService {
   }
 
   async updateUser(userId, updates) {
-    if (!this.canManageUsers()) {
+    const isSelf = Boolean(this.currentUser && this.currentUser.id === userId);
+    if (!this.canManageUsers() && !isSelf) {
       throw new Error('Access Denied: You do not have permission to update user accounts.');
     }
 
@@ -1723,6 +1724,17 @@ class AuthService {
     if (!user) throw new Error('User not found.');
 
     const cleanUpdates = { ...updates };
+
+    // Regular users updating their own profile cannot escalate privileges
+    if (!this.canManageUsers()) {
+      delete cleanUpdates.role;
+      delete cleanUpdates.roleId;
+      delete cleanUpdates.presetId;
+      delete cleanUpdates.presetName;
+      delete cleanUpdates.permissions;
+      delete cleanUpdates.status;
+      delete cleanUpdates.assignedScope;
+    }
 
     // If updating username, verify format and uniqueness
     if (cleanUpdates.username) {
@@ -1749,12 +1761,15 @@ class AuthService {
       }
     }
 
-    // If updating password, securely hash it
+    // If updating password, securely hash it and mark passwordStatus as SETUP
     if (cleanUpdates.password) {
       if (cleanUpdates.password.length < 4) {
         throw new Error('Password must be at least 4 characters long.');
       }
       cleanUpdates.password = cryptoService.hashPassword(cleanUpdates.password);
+      cleanUpdates.mustChangePassword = false;
+      cleanUpdates.passwordStatus = 'SETUP';
+      cleanUpdates.lastPasswordReset = new Date().toISOString();
     }
 
     // If updating role, ensure roleId is updated and fallback permissions if none provided
@@ -1810,14 +1825,22 @@ class AuthService {
       }
     }
 
-    const updated = storage.update(TABLE_NAMES.USERS, userId, {
+    // Single atomic confirmed write - avoids race condition between
+    // implicit non-confirmed save (inside storage.update) and explicit confirmed save
+    const updated = await storage.updateConfirmed(TABLE_NAMES.USERS, userId, {
       ...cleanUpdates,
       updatedAt: new Date().toISOString()
     });
 
-    // Confirmed cloud write
-    const ok = await storage.saveTable(TABLE_NAMES.USERS, true);
-    if (!ok) throw new CloudSaveError('❌ Cloud Save Failed: User profile update was not confirmed by the cloud.');
+    if (!updated) throw new CloudSaveError('❌ Cloud Save Failed: User profile update was not confirmed by the cloud.');
+
+    // If password was updated, clear temporary credentials cache so admin panel immediately shows SETUP
+    if (cleanUpdates.password) {
+      try {
+        const { userAccessService } = await import('./userAccessService.js');
+        userAccessService.clearTemporaryCredential(userId);
+      } catch (_) {}
+    }
 
     if (this.currentUser?.id === userId) {
       this.currentUser = updated;
@@ -1948,40 +1971,7 @@ class AuthService {
     return updated;
   }
 
-  /**
-   * Change Password for the current user
-   */
-  changePassword(currentPassword, newPassword) {
-    if (!this.currentUser) throw new Error('No active user session.');
-    if (!currentPassword) throw new Error('Current password is required.');
-    if (!newPassword || newPassword.length < 4) throw new Error('New password must be at least 4 characters long.');
-
-    const user = storage.getItem(TABLE_NAMES.USERS, this.currentUser.id);
-    if (!user) throw new Error('User record not found.');
-
-    const isValid = cryptoService.verifyPassword(currentPassword, user.password);
-    if (!isValid) {
-      throw new Error('Current password is incorrect.');
-    }
-
-    const hashed = cryptoService.hashPassword(newPassword);
-    const updated = storage.update(TABLE_NAMES.USERS, user.id, {
-      password: hashed,
-      mustChangePassword: false,
-      updatedAt: new Date().toISOString()
-    });
-
-    this.currentUser = updated;
-
-    auditService.log(
-      'PASSWORD_CHANGED',
-      'SECURITY',
-      user.id,
-      `User '${user.name}' (@${user.username}) successfully updated their account password.`
-    );
-
-    return { success: true };
-  }
+  // NOTE: changePassword is defined as async below (the async version is the authoritative implementation)
 
   async updateUserPermissions(userId, permissions, presetId = 'CUSTOM', presetName = 'Custom User', assignedScope = null) {
     if (!this.canManageRoles()) {
@@ -2063,9 +2053,8 @@ class AuthService {
     if (!user) throw new Error('User not found.');
     if (user.role === 'SUPER_ADMIN' || user.username === 'superadmin') throw new Error('Super Admin account cannot be deactivated.');
     const newStatus = user.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
-    storage.update(TABLE_NAMES.USERS, userId, { status: newStatus });
-    const ok = await storage.saveTable(TABLE_NAMES.USERS, true);
-    if (!ok) throw new CloudSaveError('❌ Cloud Save Failed: User status change was not confirmed by the cloud.');
+    const toggled = await storage.updateConfirmed(TABLE_NAMES.USERS, userId, { status: newStatus });
+    if (!toggled) throw new CloudSaveError('❌ Cloud Save Failed: User status change was not confirmed by the cloud.');
     auditService.log('USER_STATUS_TOGGLED', 'USER', userId, `Set user account '${user.name}' (${user.email || user.username}) status to ${newStatus}.`);
     return newStatus;
   }
@@ -2084,14 +2073,21 @@ class AuthService {
 
     const hashedPassword = cryptoService.hashPassword(newPassword);
 
-    storage.update(TABLE_NAMES.USERS, userId, {
+    // Atomic confirmed write
+    const resetOk = await storage.updateConfirmed(TABLE_NAMES.USERS, userId, {
       password: hashedPassword,
       mustChangePassword: false,
+      passwordStatus: 'SETUP',
+      lastPasswordReset: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     });
+    if (!resetOk) throw new CloudSaveError('❌ Cloud Save Failed: Password reset was not confirmed by the cloud.');
 
-    const ok = await storage.saveTable(TABLE_NAMES.USERS, true);
-    if (!ok) throw new CloudSaveError('❌ Cloud Save Failed: Password reset was not confirmed by the cloud.');
+    // Also clear temp credential cache
+    try {
+      const { userAccessService } = await import('./userAccessService.js');
+      userAccessService.clearTemporaryCredential(userId);
+    } catch (_) {}
 
     auditService.log(
       'PASSWORD_RESET_ADMIN',
@@ -2103,13 +2099,20 @@ class AuthService {
     return true;
   }
 
+  /**
+   * Change Password for the current user (authoritative async implementation)
+   */
   async changePassword(currentPassword, newPassword) {
     if (!this.currentUser) throw new Error('User not authenticated.');
-    
-    // Verify current password with cryptoService
-    const isCurrentValid = cryptoService.verifyPassword(currentPassword, this.currentUser.password);
-    if (this.currentUser.password && !isCurrentValid) {
-      throw new Error('Current password does not match.');
+
+    // Re-fetch user from storage to ensure we have the latest hashed password
+    const userFromDb = storage.getItem(TABLE_NAMES.USERS, this.currentUser.id);
+    if (!userFromDb) throw new Error('User record not found in database.');
+
+    // Verify current password against stored hash
+    const isCurrentValid = cryptoService.verifyPassword(currentPassword, userFromDb.password);
+    if (!isCurrentValid) {
+      throw new Error('Current password is incorrect. Please try again.');
     }
     if (!newPassword || newPassword.length < 4) {
       throw new Error('New password must be at least 4 characters long.');
@@ -2117,26 +2120,92 @@ class AuthService {
 
     const hashedPassword = cryptoService.hashPassword(newPassword);
 
-    storage.update(TABLE_NAMES.USERS, this.currentUser.id, {
+    // Single atomic confirmed write (avoids race between implicit + explicit saveTable calls)
+    const updated = await storage.updateConfirmed(TABLE_NAMES.USERS, this.currentUser.id, {
       password: hashedPassword,
       mustChangePassword: false,
+      passwordStatus: 'SETUP',
+      lastPasswordReset: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     });
 
-    const ok = await storage.saveTable(TABLE_NAMES.USERS, true);
-    if (!ok) throw new CloudSaveError('❌ Cloud Save Failed: Password change was not confirmed by the cloud.');
+    if (!updated) throw new CloudSaveError('❌ Cloud Save Failed: Password change was not confirmed by the cloud.');
 
-    this.currentUser.password = hashedPassword;
-    this.currentUser.mustChangePassword = false;
+    // Update in-memory session with confirmed DB record
+    this.currentUser = updated;
+
+    // Clear the temporary credential cache so admin panel shows SETUP (not TEMPORARY)
+    try {
+      const { userAccessService } = await import('./userAccessService.js');
+      userAccessService.clearTemporaryCredential(this.currentUser.id);
+    } catch (_) {}
 
     auditService.log(
       'PASSWORD_CHANGED',
       'SECURITY',
       this.currentUser.id,
-      `User '${this.currentUser.name}' (${this.currentUser.username}) successfully changed their account password.`
+      `User '${this.currentUser.name}' (@${this.currentUser.username}) successfully changed their account password. Status updated to SETUP.`
     );
 
     return true;
+  }
+
+  /**
+   * Complete first-time password setup for a user logging in with a temporary password.
+   * Atomically hashes the new password, updates database with confirmed write,
+   * sets passwordStatus: 'SETUP', clears mustChangePassword, updates in-memory currentUser session,
+   * and clears temporary credentials from cache.
+   */
+  async completeFirstLoginPassword(userId, newPassword) {
+    if (!userId) throw new Error('User ID is required.');
+    if (!newPassword || newPassword.length < 4) {
+      throw new Error('New password must be at least 4 characters long.');
+    }
+
+    const user = storage.getItem(TABLE_NAMES.USERS, userId);
+    if (!user) throw new Error('User record not found in database.');
+
+    const isSelf = Boolean(this.currentUser && this.currentUser.id === userId);
+    const isFirstLogin = Boolean(user.mustChangePassword);
+    if (!isSelf && !isFirstLogin && !this.canManageUsers()) {
+      throw new Error('Access Denied: You do not have permission to configure this account.');
+    }
+
+    const hashedPassword = cryptoService.hashPassword(newPassword);
+
+    // Single atomic confirmed write directly to database
+    const updated = await storage.updateConfirmed(TABLE_NAMES.USERS, userId, {
+      password: hashedPassword,
+      mustChangePassword: false,
+      passwordStatus: 'SETUP',
+      lastPasswordReset: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    });
+
+    if (!updated) {
+      throw new CloudSaveError('❌ Cloud Save Failed: Password setup was not confirmed by the database.');
+    }
+
+    // Update in-memory session and localStorage
+    this.currentUser = updated;
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('al_muslim_active_user_id', updated.id);
+    }
+
+    // Clear temporary credential cache so admin panel immediately shows SETUP
+    try {
+      const { userAccessService } = await import('./userAccessService.js');
+      userAccessService.clearTemporaryCredential(userId);
+    } catch (_) {}
+
+    auditService.log(
+      'FIRST_LOGIN_PASSWORD_SET',
+      'SECURITY',
+      userId,
+      `User '${updated.name}' (@${updated.username}) configured permanent password on first login. Password status updated to SETUP.`
+    );
+
+    return updated;
   }
 
   requestPasswordResetOTP(identifier) {

@@ -1715,7 +1715,8 @@ class AuthService {
   }
 
   async updateUser(userId, updates) {
-    if (!this.canManageUsers()) {
+    const isSelf = Boolean(this.currentUser && this.currentUser.id === userId);
+    if (!this.canManageUsers() && !isSelf) {
       throw new Error('Access Denied: You do not have permission to update user accounts.');
     }
 
@@ -1723,6 +1724,17 @@ class AuthService {
     if (!user) throw new Error('User not found.');
 
     const cleanUpdates = { ...updates };
+
+    // Regular users updating their own profile cannot escalate privileges
+    if (!this.canManageUsers()) {
+      delete cleanUpdates.role;
+      delete cleanUpdates.roleId;
+      delete cleanUpdates.presetId;
+      delete cleanUpdates.presetName;
+      delete cleanUpdates.permissions;
+      delete cleanUpdates.status;
+      delete cleanUpdates.assignedScope;
+    }
 
     // If updating username, verify format and uniqueness
     if (cleanUpdates.username) {
@@ -1749,12 +1761,15 @@ class AuthService {
       }
     }
 
-    // If updating password, securely hash it
+    // If updating password, securely hash it and mark passwordStatus as SETUP
     if (cleanUpdates.password) {
       if (cleanUpdates.password.length < 4) {
         throw new Error('Password must be at least 4 characters long.');
       }
       cleanUpdates.password = cryptoService.hashPassword(cleanUpdates.password);
+      cleanUpdates.mustChangePassword = false;
+      cleanUpdates.passwordStatus = 'SETUP';
+      cleanUpdates.lastPasswordReset = new Date().toISOString();
     }
 
     // If updating role, ensure roleId is updated and fallback permissions if none provided
@@ -1818,6 +1833,14 @@ class AuthService {
     });
 
     if (!updated) throw new CloudSaveError('❌ Cloud Save Failed: User profile update was not confirmed by the cloud.');
+
+    // If password was updated, clear temporary credentials cache so admin panel immediately shows SETUP
+    if (cleanUpdates.password) {
+      try {
+        const { userAccessService } = await import('./userAccessService.js');
+        userAccessService.clearTemporaryCredential(userId);
+      } catch (_) {}
+    }
 
     if (this.currentUser?.id === userId) {
       this.currentUser = updated;
@@ -2125,6 +2148,64 @@ class AuthService {
     );
 
     return true;
+  }
+
+  /**
+   * Complete first-time password setup for a user logging in with a temporary password.
+   * Atomically hashes the new password, updates database with confirmed write,
+   * sets passwordStatus: 'SETUP', clears mustChangePassword, updates in-memory currentUser session,
+   * and clears temporary credentials from cache.
+   */
+  async completeFirstLoginPassword(userId, newPassword) {
+    if (!userId) throw new Error('User ID is required.');
+    if (!newPassword || newPassword.length < 4) {
+      throw new Error('New password must be at least 4 characters long.');
+    }
+
+    const user = storage.getItem(TABLE_NAMES.USERS, userId);
+    if (!user) throw new Error('User record not found in database.');
+
+    const isSelf = Boolean(this.currentUser && this.currentUser.id === userId);
+    const isFirstLogin = Boolean(user.mustChangePassword);
+    if (!isSelf && !isFirstLogin && !this.canManageUsers()) {
+      throw new Error('Access Denied: You do not have permission to configure this account.');
+    }
+
+    const hashedPassword = cryptoService.hashPassword(newPassword);
+
+    // Single atomic confirmed write directly to database
+    const updated = await storage.updateConfirmed(TABLE_NAMES.USERS, userId, {
+      password: hashedPassword,
+      mustChangePassword: false,
+      passwordStatus: 'SETUP',
+      lastPasswordReset: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    });
+
+    if (!updated) {
+      throw new CloudSaveError('❌ Cloud Save Failed: Password setup was not confirmed by the database.');
+    }
+
+    // Update in-memory session and localStorage
+    this.currentUser = updated;
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('al_muslim_active_user_id', updated.id);
+    }
+
+    // Clear temporary credential cache so admin panel immediately shows SETUP
+    try {
+      const { userAccessService } = await import('./userAccessService.js');
+      userAccessService.clearTemporaryCredential(userId);
+    } catch (_) {}
+
+    auditService.log(
+      'FIRST_LOGIN_PASSWORD_SET',
+      'SECURITY',
+      userId,
+      `User '${updated.name}' (@${updated.username}) configured permanent password on first login. Password status updated to SETUP.`
+    );
+
+    return updated;
   }
 
   requestPasswordResetOTP(identifier) {
