@@ -1314,7 +1314,8 @@ export function initTransferModalEvents() {
           return;
         }
 
-        const targetMachine = storage.getItem(TABLE_NAMES.MACHINES, machineId);
+        // Re-fetch fresh from storage to ensure we have the latest persisted record
+        targetMachine = storage.getItem(TABLE_NAMES.MACHINES, machineId) || targetMachine;
         if (targetMachine) {
           const isCrossFloor = !authService.canOperateMachine(targetMachine);
           if (isCrossFloor && !authService.canRequestTransfer()) {
