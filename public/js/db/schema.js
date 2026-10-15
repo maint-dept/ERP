@@ -419,7 +419,8 @@ export const PERMISSION_MODULES = [
       { code: 'RESCHEDULE', label: 'Override Next Service Date', desc: 'Manually override or reschedule next maintenance date' },
       { code: 'DELETE', label: 'Delete Service Record', desc: 'Permanently remove maintenance history records' },
       { code: 'CONFIGURATION', label: 'Configure Schedules & Checklists', desc: 'Admin configuration for machine types and intervals' },
-      { code: 'NOTIFICATIONS', label: 'Manage Notifications', desc: 'Configure reminder intervals and notification receivers' }
+      { code: 'NOTIFICATIONS', label: 'Manage Notifications', desc: 'Configure reminder intervals and notification receivers' },
+      { code: 'APPROVE', label: 'Approve Servicing', desc: 'Floor Manager / Admin authorization to approve, reject or request revision for technician servicing entries' }
     ]
   }
 ];
@@ -493,7 +494,7 @@ export const DEFAULT_PERMISSION_TEMPLATES = {
     audit_logs: ['VIEW_LOGS', 'EXPORT_LOGS'],
     document_library: ['VIEW', 'DOWNLOAD', 'ADD', 'EDIT', 'DELETE'],
     tools_management: ['VIEW', 'ALLOCATE', 'REPLACE', 'RETURN', 'MASTER_CONFIG', 'IMPORT', 'EXPORT', 'PRINT'],
-    preventive_maintenance: ['VIEW', 'CREATE_SERVICE', 'EDIT', 'ASSIGN_MANPOWER', 'RESCHEDULE', 'DELETE', 'CONFIGURATION', 'NOTIFICATIONS']
+    preventive_maintenance: ['VIEW', 'CREATE_SERVICE', 'EDIT', 'ASSIGN_MANPOWER', 'RESCHEDULE', 'DELETE', 'CONFIGURATION', 'NOTIFICATIONS', 'APPROVE']
   },
   ADMIN: {
     machines: ['VIEW', 'SEARCH', 'DETAILS', 'ADD', 'EDIT', 'DELETE', 'IMPORT', 'EXPORT'],
@@ -509,7 +510,7 @@ export const DEFAULT_PERMISSION_TEMPLATES = {
     audit_logs: ['VIEW_LOGS', 'EXPORT_LOGS'],
     document_library: ['VIEW', 'DOWNLOAD', 'ADD', 'EDIT', 'DELETE'],
     tools_management: ['VIEW', 'ALLOCATE', 'REPLACE', 'RETURN', 'MASTER_CONFIG', 'IMPORT', 'EXPORT', 'PRINT'],
-    preventive_maintenance: ['VIEW', 'CREATE_SERVICE', 'EDIT', 'ASSIGN_MANPOWER', 'RESCHEDULE', 'CONFIGURATION', 'NOTIFICATIONS']
+    preventive_maintenance: ['VIEW', 'CREATE_SERVICE', 'EDIT', 'ASSIGN_MANPOWER', 'RESCHEDULE', 'CONFIGURATION', 'NOTIFICATIONS', 'APPROVE']
   },
   MANAGER: {
     machines: ['VIEW', 'SEARCH', 'DETAILS', 'ADD', 'EDIT', 'EXPORT'],
@@ -525,7 +526,7 @@ export const DEFAULT_PERMISSION_TEMPLATES = {
     audit_logs: ['VIEW_LOGS'],
     document_library: ['VIEW', 'DOWNLOAD', 'ADD'],
     tools_management: ['VIEW', 'ALLOCATE', 'REPLACE', 'RETURN', 'EXPORT', 'PRINT'],
-    preventive_maintenance: ['VIEW', 'CREATE_SERVICE', 'ASSIGN_MANPOWER']
+    preventive_maintenance: ['VIEW', 'CREATE_SERVICE', 'ASSIGN_MANPOWER', 'APPROVE']
   },
   MAINTENANCE_USER: {
     machines: ['VIEW', 'SEARCH', 'DETAILS'],
@@ -746,7 +747,7 @@ export const DEFAULT_PERMISSION_PRESETS = [
       transfers: ['VIEW', 'ADD', 'EDIT'],
       relocate: ['VIEW', 'ADD', 'EDIT'],
       qr_codes: ['VIEW', 'EXPORT'],
-      preventive_maintenance: ['VIEW', 'ADD', 'EDIT', 'EXPORT'],
+      preventive_maintenance: ['VIEW', 'ADD', 'EDIT', 'EXPORT', 'APPROVE'],
       machine_history: ['VIEW', 'ADD', 'EXPORT'],
       storage: ['VIEW'],
       dashboard: ['VIEW'],

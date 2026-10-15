@@ -465,7 +465,12 @@ export function initNotificationsDrawerEvents() {
         // 2. Preventive Maintenance Alert
         if (module === 'preventive_maintenance' || url.includes('preventive')) {
           state.set('currentView', 'preventive-maintenance');
-          if (entityId) {
+          // If it's an approval request, signal PM view to open pending-approvals tab
+          if (action === 'APPROVE' || url.includes('pending-approvals')) {
+            setTimeout(() => {
+              window.dispatchEvent(new CustomEvent('erp:navigate-pm-tab', { detail: { tab: 'pending-approvals' } }));
+            }, 150);
+          } else if (entityId) {
             setTimeout(() => {
               // Pre-fill filter or search in PM view
               const searchInput = document.getElementById('pm-search-input');

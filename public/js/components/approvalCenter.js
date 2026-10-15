@@ -13,9 +13,10 @@ import { workflowService } from '../services/workflowService.js';
 import { authService } from '../services/authService.js';
 import { pdfService } from '../services/pdfService.js';
 import { notificationService } from '../services/notificationService.js';
+import { preventiveMaintenanceService } from '../services/preventiveMaintenanceService.js';
 import { state } from '../state.js';
 
-let activeApprovalTab = 'transfers'; // 'transfers' | 'edits'
+let activeApprovalTab = 'transfers'; // 'transfers' | 'edits' | 'pm-servicing'
 let transferFilter = 'PENDING'; // 'ALL' | 'PENDING' | 'COMPLETED' | 'REJECTED'
 
 export function renderApprovalCenter() {
@@ -39,6 +40,16 @@ export function renderApprovalCenter() {
   // Edit Requests
   const editRequests = approvalService.getRequests();
   const pendingEditsCount = approvalService.getPendingCount();
+
+  // Preventive Maintenance Servicing
+  let pmPendingRecords = [];
+  try {
+    if (preventiveMaintenanceService && preventiveMaintenanceService.getPendingApprovals) {
+      pmPendingRecords = preventiveMaintenanceService.getPendingApprovals();
+    }
+  } catch (e) { /* service unavailable */ }
+  const pmPendingCount = pmPendingRecords.length;
+  const canApprovePm = isAdmin || authService.isSuperAdmin() || authService.hasAccess('preventive_maintenance', 'APPROVE');
 
   return `
     <div class="page-view">
@@ -69,7 +80,87 @@ export function renderApprovalCenter() {
         <button class="btn btn-ghost btn-approval-tab ${activeApprovalTab === 'edits' ? 'active-tab' : ''}" data-tab="edits" style="font-size: 13.5px; font-weight: 800; padding: 10px 18px; border-radius: var(--radius-md) var(--radius-md) 0 0; border-bottom: ${activeApprovalTab === 'edits' ? '3px solid #38bdf8' : 'none'}; color: ${activeApprovalTab === 'edits' ? '#38bdf8' : 'var(--text-secondary)'};">
           ✏️ Inventory Parameter Edits (${pendingEditsCount} Pending)
         </button>
+
+        <button class="btn btn-ghost btn-approval-tab ${activeApprovalTab === 'pm-servicing' ? 'active-tab' : ''}" data-tab="pm-servicing" style="font-size: 13.5px; font-weight: 800; padding: 10px 18px; border-radius: var(--radius-md) var(--radius-md) 0 0; border-bottom: ${activeApprovalTab === 'pm-servicing' ? '3px solid #f59e0b' : 'none'}; color: ${activeApprovalTab === 'pm-servicing' ? '#fbbf24' : 'var(--text-secondary)'};">
+          🛡️ PM Servicing${pmPendingCount > 0 ? ` <span style="background:#f59e0b;color:#000;font-size:10px;font-weight:900;border-radius:10px;padding:1px 6px;margin-left:4px;">${pmPendingCount}</span>` : ` (0 Pending)`}
+        </button>
       </div>
+
+      <!-- TAB: PM SERVICING APPROVALS -->
+      ${activeApprovalTab === 'pm-servicing' ? `
+        <div>
+          <div style="background: rgba(245, 158, 11, 0.08); border: 1.5px solid rgba(245, 158, 11, 0.3); border-radius: var(--radius-md); padding: 10px 16px; margin-bottom: 14px; display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 18px;">🛡️</span>
+            <div>
+              <div style="font-size: 13px; font-weight: 800; color: #fbbf24;">Preventive Maintenance Servicing — Floor Manager Approval Queue</div>
+              <div style="font-size: 11.5px; color: #94a3b8; margin-top: 2px;">
+                Review technician servicing submissions. Only approved records update the machine's official maintenance schedule, sticker serial, and history.
+              </div>
+            </div>
+          </div>
+
+          ${pmPendingRecords.length === 0 ? `
+            <div style="text-align: center; padding: 50px; background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md);">
+              <div style="font-size: 36px; margin-bottom: 12px;">✅</div>
+              <div style="font-size: 15px; font-weight: 700; color: #fff; margin-bottom: 6px;">No Pending PM Servicing Approvals</div>
+              <div style="font-size: 12px; color: #94a3b8;">All submitted servicing records have been reviewed.</div>
+            </div>
+          ` : `
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+              ${pmPendingRecords.map((r, idx) => {
+                const sl = String(idx + 1).padStart(2, '0');
+                const checklistItems = r.serviceChecklist || [];
+                const checkedCount = checklistItems.filter(c => c.checked).length;
+                const submittedAt = r.submittedAt ? new Date(r.submittedAt).toLocaleString('en-GB') : '—';
+                return `
+                <div style="background: var(--bg-surface); border: 1px solid rgba(245, 158, 11, 0.25); border-radius: var(--radius-md); padding: 14px 18px;">
+                  <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap;">
+                    <div style="display: flex; gap: 12px; align-items: flex-start; flex: 1; min-width: 0;">
+                      <div style="background: rgba(245,158,11,0.1); border-radius: 8px; padding: 8px 12px; font-size: 18px; font-weight: 900; color: #fbbf24; border: 1px solid rgba(245,158,11,0.25); flex-shrink: 0;">${sl}</div>
+                      <div style="flex: 1; min-width: 0;">
+                        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 4px;">
+                          <span style="font-size: 14px; font-weight: 800; color: #fff;">${escapeHtml(r.machineName || r.serialNumber)}</span>
+                          <span style="font-family: monospace; font-size: 11.5px; color: #38bdf8; background: rgba(56,189,248,0.1); padding: 1px 6px; border-radius: 4px; border: 1px solid rgba(56,189,248,0.25);">${escapeHtml(r.serialNumber)}</span>
+                          <span style="font-size: 11px; color: #c084fc; background: rgba(168,85,247,0.1); padding: 1px 6px; border-radius: 4px; border: 1px solid rgba(168,85,247,0.25); font-family: monospace;">🏷️ ${escapeHtml(r.serviceStickerSerial || 'N/A')}</span>
+                        </div>
+                        <div style="display: flex; gap: 16px; font-size: 11.5px; color: #94a3b8; flex-wrap: wrap;">
+                          <span>📍 ${escapeHtml(r.floor || r.floorId || '—')}${r.line ? ` → ${escapeHtml(r.line)}` : ''}</span>
+                          <span>👷 ${escapeHtml(r.servicedBy || '—')} (${escapeHtml(r.servicedByCardNumber || 'N/A')})</span>
+                          <span>📅 Service: <strong style="color:#10b981;">${r.serviceDate || '—'}</strong></span>
+                          <span>⏰ Submitted: ${submittedAt}</span>
+                        </div>
+                        ${checklistItems.length > 0 ? `
+                          <div style="display: flex; align-items: center; gap: 8px; margin-top: 6px;">
+                            <div style="flex: 1; background: #0f172a; border-radius: 4px; height: 5px; max-width: 120px; overflow: hidden;">
+                              <div style="background: ${checkedCount === checklistItems.length ? '#10b981' : '#f59e0b'}; height: 100%; width: ${checklistItems.length > 0 ? Math.round((checkedCount / checklistItems.length) * 100) : 0}%;"></div>
+                            </div>
+                            <span style="font-size: 10.5px; color: #94a3b8;">Checklist: ${checkedCount}/${checklistItems.length} OK</span>
+                            ${r.serviceRemarks ? `<span style="font-size: 10.5px; color: #94a3b8; font-style: italic; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 200px;" title="${escapeHtml(r.serviceRemarks)}">• ${escapeHtml(r.serviceRemarks)}</span>` : ''}
+                          </div>
+                        ` : ''}
+                      </div>
+                    </div>
+                    ${canApprovePm ? `
+                      <div style="display: flex; gap: 6px; align-items: center; flex-shrink: 0;">
+                        <button class="btn-ac-pm-approve" data-id="${r.id}" style="background: #10b981; color: #fff; font-weight: 700; font-size: 11px; padding: 5px 12px; border: none; border-radius: 6px; cursor: pointer;">
+                          ✅ Approve
+                        </button>
+                        <button class="btn-ac-pm-reject" data-id="${r.id}" style="background: rgba(239,68,68,0.15); color: #f87171; font-weight: 700; font-size: 11px; padding: 5px 10px; border: 1px solid rgba(239,68,68,0.4); border-radius: 6px; cursor: pointer;">
+                          ✕ Reject
+                        </button>
+                        <button class="btn-ac-pm-open-pm" data-id="${r.id}" style="background: rgba(56,189,248,0.12); color: #38bdf8; font-weight: 700; font-size: 11px; padding: 5px 10px; border: 1px solid rgba(56,189,248,0.3); border-radius: 6px; cursor: pointer;" title="Open in PM Module for Full Review">
+                          🔍 Full Review
+                        </button>
+                      </div>
+                    ` : '<span style="font-size: 11px; color: #64748b;">Not Authorized</span>'}
+                  </div>
+                </div>
+                `;
+              }).join('')}
+            </div>
+          `}
+        </div>
+      ` : ''}
 
       <!-- TAB 1: MACHINE RELOCATION TRANSFERS -->
       ${activeApprovalTab === 'transfers' ? `
@@ -470,6 +561,51 @@ export function initApprovalCenterEvents() {
           alert('Error: ' + e.message);
         }
       }
+    });
+  });
+
+  // PM Servicing Approval Buttons (in Approval Center PM tab)
+  document.querySelectorAll('.btn-ac-pm-approve').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = btn.getAttribute('data-id');
+      if (!id) return;
+      btn.disabled = true; btn.textContent = '⏳ Approving...';
+      try {
+        await preventiveMaintenanceService.approveServiceEntry(id, 'Approved via Approval Center by Floor Manager.');
+        notificationService.success('✅ Servicing approved. Machine schedule updated.');
+        state.emit('inventory:updated');
+      } catch (e) {
+        btn.disabled = false; btn.textContent = '✅ Approve';
+        alert('Approval error: ' + e.message);
+      }
+    });
+  });
+
+  document.querySelectorAll('.btn-ac-pm-reject').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = btn.getAttribute('data-id');
+      if (!id) return;
+      const remarks = prompt('Enter rejection reason:', '');
+      if (remarks === null) return;
+      btn.disabled = true;
+      try {
+        await preventiveMaintenanceService.rejectServiceEntry(id, remarks || 'Rejected via Approval Center.');
+        notificationService.success('❌ Servicing record rejected. Technician notified.');
+        state.emit('inventory:updated');
+      } catch (e) {
+        btn.disabled = false;
+        alert('Rejection error: ' + e.message);
+      }
+    });
+  });
+
+  document.querySelectorAll('.btn-ac-pm-open-pm').forEach(btn => {
+    btn.addEventListener('click', () => {
+      // Navigate to PM module and open pending-approvals tab
+      state.set('currentView', 'preventive-maintenance');
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('erp:navigate-pm-tab', { detail: { tab: 'pending-approvals' } }));
+      }, 200);
     });
   });
 }
