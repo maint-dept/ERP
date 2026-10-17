@@ -74,6 +74,8 @@ let quickCardFilter = 'ALL'; // 'ALL' | 'WITH_CARD' | 'ACTIVE' | 'INACTIVE' | 'M
 // Permissions Matrix Editing State
 let permissionTargetUserId = null;
 let editingPermissions = {};
+let editingPresetId = '';
+let editingPresetName = '';
 let editingScope = { allGroups: false, groupIds: [], allUnits: false, unitIds: [], allFloors: false, floorIds: [], allLines: false, lineIds: [] };
 
 // Bulk Assignment Form State
@@ -1354,8 +1356,13 @@ export function selectUserForPermissions(userId, clearSearch = false) {
   if (!userId) {
     permissionTargetUserId = null;
     editingPermissions = {};
+    editingPresetId = '';
+    editingPresetName = '';
     editingScope = { allGroups: false, groupIds: [], allUnits: false, unitIds: [], allFloors: false, floorIds: [], allLines: false, lineIds: [] };
     if (clearSearch) permCardSearchQuery = '';
+    try {
+      if (typeof localStorage !== 'undefined') localStorage.removeItem('al_muslim_perm_target_user_id');
+    } catch (_) {}
     return;
   }
 
@@ -1364,7 +1371,38 @@ export function selectUserForPermissions(userId, clearSearch = false) {
   if (!target) return;
 
   permissionTargetUserId = target.id;
+  try {
+    if (typeof localStorage !== 'undefined') localStorage.setItem('al_muslim_perm_target_user_id', target.id);
+  } catch (_) {}
+
   editingPermissions = JSON.parse(JSON.stringify(target.permissions || {}));
+
+  // Resolve preset template ID and Name
+  const presets = authService.getAllPresets ? authService.getAllPresets() : [];
+  let foundPreset = null;
+  if (target.presetId && target.presetId !== 'CUSTOM') {
+    foundPreset = presets.find(p => p.id === target.presetId);
+  }
+  if (!foundPreset && target.presetName) {
+    foundPreset = presets.find(p => p.name === target.presetName || p.id === target.presetName);
+  }
+  if (!foundPreset && (!target.presetId || target.presetId === 'CUSTOM')) {
+    // Check if permissions match a known preset template
+    for (const p of presets) {
+      if (p.permissions && JSON.stringify(p.permissions) === JSON.stringify(target.permissions)) {
+        foundPreset = p;
+        break;
+      }
+    }
+  }
+
+  if (foundPreset) {
+    editingPresetId = foundPreset.id;
+    editingPresetName = foundPreset.name;
+  } else {
+    editingPresetId = target.presetId || '';
+    editingPresetName = target.presetName || (target.presetId === 'CUSTOM' ? 'Custom Access' : '');
+  }
 
   if (target.assignedScope) {
     editingScope = {
@@ -1407,6 +1445,14 @@ function renderIndividualPermissionsTab() {
     `;
   }
 
+  // Restore selected user on page refresh if stored in localStorage
+  if (!permissionTargetUserId && typeof localStorage !== 'undefined') {
+    const savedUserId = localStorage.getItem('al_muslim_perm_target_user_id');
+    if (savedUserId && users.some(u => u.id === savedUserId)) {
+      permissionTargetUserId = savedUserId;
+    }
+  }
+
   // Strictly follow explicitly selected user. NEVER auto-default to users[0]!
   const selectedUser = permissionTargetUserId ? (users.find(u => u.id === permissionTargetUserId) || null) : null;
 
@@ -1442,6 +1488,9 @@ function renderIndividualPermissionsTab() {
                 <span class="badge" style="background: ${selectedUser.status === 'ACTIVE' ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)'}; border: 1px solid ${selectedUser.status === 'ACTIVE' ? 'rgba(16, 185, 129, 0.35)' : 'rgba(239, 68, 68, 0.35)'}; color: ${selectedUser.status === 'ACTIVE' ? '#34d399' : '#f87171'}; font-size: 10.5px; padding: 2px 7px; border-radius: 5px; font-weight: 700;">${selectedUser.status === 'ACTIVE' ? '🟢 Active' : '🔴 Inactive'}</span>
                 <span style="background: rgba(56, 189, 248, 0.12); color: #38bdf8; font-size: 10.5px; font-weight: 700; padding: 2px 7px; border-radius: 6px;">
                   ${selectedUser.role}
+                </span>
+                <span class="badge" style="background: rgba(2, 132, 199, 0.18); border: 1px solid rgba(56, 189, 248, 0.35); color: #38bdf8; font-size: 10.5px; font-weight: 800; padding: 2px 8px; border-radius: 6px;" title="Current assigned role template / preset">
+                  🛡️ Preset: ${escapeHtml(editingPresetName || selectedUser.presetName || (editingPresetId ? editingPresetId : 'No Preset'))}
                 </span>
                 <span style="background: rgba(255, 255, 255, 0.08); color: #94a3b8; font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 6px;">
                   User ${currentUserIndex >= 0 ? currentUserIndex + 1 : 1} of ${users.length}
@@ -1567,12 +1616,24 @@ function renderIndividualPermissionsTab() {
           </button>
 
           <!-- Load From Preset -->
-          <div style="display: flex; align-items: center; gap: 6px; margin-left: 4px;">
-            <span style="font-size: 11.5px; color: var(--text-muted);">Apply Preset:</span>
-            <select id="uam-perm-load-preset" class="filter-select" style="height: 28px; font-size: 11.5px; padding: 2px 6px;">
-              <option value="">Choose preset template...</option>
-              ${presets.map(p => `<option value="${p.id}">${p.icon || '🛡️'} ${p.name}</option>`).join('')}
+          <div style="display: flex; align-items: center; gap: 6px; margin-left: 4px; flex-wrap: wrap;">
+            <span style="font-size: 11.5px; color: var(--text-muted); font-weight: 700;">Apply Preset:</span>
+            <select id="uam-perm-load-preset" class="filter-select" style="height: 28px; font-size: 11.5px; padding: 2px 8px; border: 1.5px solid ${editingPresetId ? '#0284c7' : 'var(--border-color)'}; background: ${editingPresetId ? 'rgba(2, 132, 199, 0.15)' : 'var(--bg-surface)'}; color: ${editingPresetId ? '#38bdf8' : 'var(--text-primary)'}; font-weight: 700; border-radius: 6px;" title="Select a preset template to apply its permissions">
+              <option value="" ${!editingPresetId ? 'selected' : ''}>Choose preset template...</option>
+              ${presets.map(p => `
+                <option value="${p.id}" ${editingPresetId === p.id ? 'selected' : ''}>
+                  ${p.icon || '🛡️'} ${p.name}
+                </option>
+              `).join('')}
             </select>
+            <button type="button" id="btn-perm-apply-preset" class="btn btn-primary btn-xs" style="font-size: 11px; font-weight: 800; height: 28px; padding: 0 10px; background: linear-gradient(135deg, #0284c7, #0369a1); border-radius: 6px; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 2px 6px rgba(2, 132, 199, 0.3);" title="Apply selected preset template to this user">
+              <span>Apply</span>
+            </button>
+            ${editingPresetId ? `
+              <span class="badge" id="badge-perm-active-preset" style="font-size: 11px; font-weight: 800; background: rgba(16, 185, 129, 0.18); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); padding: 3px 8px; border-radius: 5px; display: inline-flex; align-items: center; gap: 4px;" title="Template currently active for this user">
+                <span>✓ Applied:</span> <strong>${escapeHtml(editingPresetName || 'Active Template')}</strong>
+              </span>
+            ` : ''}
           </div>
 
           <button id="btn-perm-reset-default" class="btn btn-ghost btn-xs" style="color: #f59e0b; font-weight: 700;">
@@ -1797,8 +1858,8 @@ function renderBulkAssignmentTab() {
             </button>
             <span style="font-size: 11.5px; color: var(--text-muted); margin-left: 4px;">Quick Template:</span>
             <select id="uam-bulk-template-preset" class="filter-select" style="height: 28px; font-size: 11.5px;">
-              <option value="">Select preset template...</option>
-              ${presets.map(p => `<option value="${p.id}">${p.icon || '🛡️'} ${p.name}</option>`).join('')}
+              <option value="" ${!bulkPresetTemplateId ? 'selected' : ''}>Select preset template...</option>
+              ${presets.map(p => `<option value="${p.id}" ${bulkPresetTemplateId === p.id ? 'selected' : ''}>${p.icon || '🛡️'} ${p.name}</option>`).join('')}
             </select>
           </div>
         </div>
@@ -4498,26 +4559,92 @@ export function initUserManagementEvents() {
     });
   }
 
+  const applySelectedPreset = async (pid) => {
+    if (!pid) {
+      notificationService.warning('Please select a preset template from the dropdown.');
+      return false;
+    }
+
+    if (!permissionTargetUserId) {
+      notificationService.warning('Please select a user account first.');
+      return false;
+    }
+
+    const preset = authService.getPresetById ? authService.getPresetById(pid) : null;
+    if (!preset || !preset.permissions || Object.keys(preset.permissions).length === 0) {
+      notificationService.error('Failed to apply preset: Selected preset template was not found or contains no permission rules.');
+      if (selLoadPreset) selLoadPreset.value = editingPresetId || '';
+      return false;
+    }
+
+    try {
+      editingPresetId = preset.id;
+      editingPresetName = preset.name;
+      editingPermissions = JSON.parse(JSON.stringify(preset.permissions));
+
+      if (preset.defaultScope && (!editingScope || (!editingScope.allGroups && !editingScope.allUnits && (!editingScope.unitIds || editingScope.unitIds.length === 0)))) {
+        editingScope = JSON.parse(JSON.stringify(preset.defaultScope));
+      }
+
+      // Persist to user account immediately so refreshing page preserves applied preset
+      await authService.updateUserPermissions(
+        permissionTargetUserId,
+        editingPermissions,
+        preset.id,
+        preset.name,
+        editingScope
+      );
+
+      // Re-read updated user into state
+      selectUserForPermissions(permissionTargetUserId);
+      reRender();
+      notificationService.success(`✓ Successfully applied preset template "${preset.name}" to user.`);
+      return true;
+    } catch (err) {
+      notificationService.error(`Failed to apply preset: ${err.message}`);
+      return false;
+    }
+  };
+
   const selLoadPreset = document.getElementById('uam-perm-load-preset');
   if (selLoadPreset) {
-    selLoadPreset.addEventListener('change', (e) => {
+    selLoadPreset.addEventListener('change', async (e) => {
       const pid = e.target.value;
       if (!pid) return;
-      const preset = authService.getPresetById ? authService.getPresetById(pid) : null;
-      if (preset && preset.permissions) {
-        editingPermissions = JSON.parse(JSON.stringify(preset.permissions));
-        reRender();
-        notificationService.info(`Applied template from preset "${preset.name}"`);
-      }
+      await applySelectedPreset(pid);
+    });
+  }
+
+  const btnApplyPreset = document.getElementById('btn-perm-apply-preset');
+  if (btnApplyPreset) {
+    btnApplyPreset.addEventListener('click', async () => {
+      const pid = selLoadPreset ? selLoadPreset.value : editingPresetId;
+      await applySelectedPreset(pid);
     });
   }
 
   const btnPermResetDefault = document.getElementById('btn-perm-reset-default');
   if (btnPermResetDefault) {
-    btnPermResetDefault.addEventListener('click', () => {
+    btnPermResetDefault.addEventListener('click', async () => {
       if (confirm('Reset permissions to standard default maintenance user template?')) {
-        editingPermissions = JSON.parse(JSON.stringify(DEFAULT_PERMISSION_TEMPLATES.USER || {}));
+        const defaultPreset = authService.getPresetById ? authService.getPresetById('preset_maintenance_user') : null;
+        editingPresetId = defaultPreset?.id || 'preset_maintenance_user';
+        editingPresetName = defaultPreset?.name || 'Maintenance User';
+        editingPermissions = JSON.parse(JSON.stringify(defaultPreset?.permissions || DEFAULT_PERMISSION_TEMPLATES.USER || {}));
+        if (permissionTargetUserId) {
+          try {
+            await authService.updateUserPermissions(
+              permissionTargetUserId,
+              editingPermissions,
+              editingPresetId,
+              editingPresetName,
+              editingScope
+            );
+            selectUserForPermissions(permissionTargetUserId);
+          } catch (_) {}
+        }
         reRender();
+        notificationService.success('Reset permissions to standard Maintenance User template.');
       }
     });
   }
@@ -4577,8 +4704,26 @@ export function initUserManagementEvents() {
       btnPermSave.disabled = true;
       btnPermSave.innerText = 'Saving...';
       try {
-        await authService.updateUserPermissions(permissionTargetUserId, editingPermissions, 'CUSTOM', 'Custom Access', editingScope);
-        notificationService.success('Individual access permissions and location scope saved successfully!');
+        const users = storage.getTable(TABLE_NAMES.USERS) || [];
+        const u = users.find(x => x.id === permissionTargetUserId);
+        
+        let savePresetId = editingPresetId || u?.presetId || 'CUSTOM';
+        let savePresetName = editingPresetName || u?.presetName || 'Custom Access';
+
+        if (savePresetId && savePresetId !== 'CUSTOM') {
+          const p = authService.getPresetById ? authService.getPresetById(savePresetId) : null;
+          if (p?.name) savePresetName = p.name;
+        }
+
+        await authService.updateUserPermissions(
+          permissionTargetUserId, 
+          editingPermissions, 
+          savePresetId, 
+          savePresetName, 
+          editingScope
+        );
+        
+        notificationService.success(`✓ Permissions and preset "${savePresetName}" saved successfully!`);
         selectUserForPermissions(permissionTargetUserId);
         reRender();
       } catch (err) {
@@ -4618,12 +4763,15 @@ export function initUserManagementEvents() {
   if (selBulkTemplatePreset) {
     selBulkTemplatePreset.addEventListener('change', (e) => {
       const pid = e.target.value;
+      bulkPresetTemplateId = pid;
       if (!pid) return;
       const preset = authService.getPresetById ? authService.getPresetById(pid) : null;
       if (preset && preset.permissions) {
         bulkTargetModulePerms = JSON.parse(JSON.stringify(preset.permissions));
         reRender();
-        notificationService.info(`Loaded bulk template from "${preset.name}"`);
+        notificationService.success(`Loaded bulk template from "${preset.name}"`);
+      } else {
+        notificationService.error('Failed to load preset template: Template not found or contains no permissions.');
       }
     });
   }
