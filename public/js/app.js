@@ -11,7 +11,7 @@ import { renderNavbar, initNavbarEvents } from './components/navbar.js';
 import { renderSidebar, initSidebarEvents, updateSidebarActiveState } from './components/sidebar.js?v=4.26.23';
 import { renderHomepageView, initHomepageEvents } from './components/homepageView.js?v=4.26.23';
 import { renderLoginView, initLoginViewEvents } from './components/loginView.js?v=4.26.23';
-import { renderDashboard, initDashboardEvents } from './components/dashboard.js';
+import { renderDashboard, initDashboardEvents } from './components/dashboard.js?v=4.26.27';
 import { renderInventoryTable, initInventoryTableEvents, syncInventorySelectionDOM } from './components/inventoryTable.js?v=4.26.25';
 import { renderMachineModal, initMachineModalEvents } from './components/machineModal.js';
 import { renderMachineDetails, initMachineDetailsEvents } from './components/machineDetails.js';

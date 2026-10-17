@@ -1,12 +1,14 @@
 /**
  * Al-Muslim Group Garments Factory Maintenance Machine ERP
- * Modern, Professional, Responsive Maintenance Management Dashboard Component
+ * Modern, Professional, Responsive Enterprise SaaS Maintenance Management Dashboard Component
  * 
- * 100% Fit-Screen Executive Command Center with Date-Wise Filtering:
- * - 3 Days, 7 Days, 30 Days, 3 Months, All Time
+ * Features:
+ * - 100% Fit-Screen Executive Command Center with Date-Wise Filtering (3D, 7D, 30D, 3 Months, All Time)
  * - 4 Balanced Modular Operational Cards (Overview, Transfers, Servicing, Needle Data)
- * - Collapsible Live Servicing Schedule Preview Drawer
- * - 100% English, Ultra User-Friendly, Zero Layout Shifts
+ * - Micro-Health Progress Indicators (Uptime Rate, Transfer Clearance, Servicing Compliance, Needle Balance)
+ * - Collapsible Live Servicing Schedule Preview Drawer with Urgency Indicators
+ * - Tabular Monospace Alignment, Interactive Chevrons, Instant Visual Status Grasp
+ * - 100% Preserved Business Logic, Scoped Filtering, Multi-DB Sync, & Click-Through Navigation
  */
 
 import { storage } from '../db/storage.js';
@@ -131,6 +133,12 @@ export function renderDashboard() {
 
   const spareAmbiguousCount = Math.max(0, totalMachines - activeCount - underRepairCount);
 
+  // Health Metrics for Card 1
+  const uptimeRate = totalMachines > 0 ? ((activeCount / totalMachines) * 100).toFixed(1) : '0.0';
+  const activePercent = totalMachines > 0 ? (activeCount / totalMachines) * 100 : 0;
+  const repairPercent = totalMachines > 0 ? (underRepairCount / totalMachines) * 100 : 0;
+  const sparePercent = Math.max(0, 100 - activePercent - repairPercent);
+
   // =========================================================================
   // 2. SECTION 2: MACHINE TRANSFER MANAGEMENT (Filtered by Date Range)
   // =========================================================================
@@ -167,6 +175,8 @@ export function renderDashboard() {
   );
   const pendingCount = pendingTransfers.length;
 
+  const transferCompletionRate = totalTransfers > 0 ? Math.round((issuedTransferredCount / totalTransfers) * 100) : 100;
+
   // =========================================================================
   // 3. SECTION 3: MACHINE SERVICING MANAGEMENT (Filtered by Date Range)
   // =========================================================================
@@ -189,6 +199,8 @@ export function renderDashboard() {
   const pmDueToday = pmMetrics.dueToday || 0;
   const pmDueWithin7Days = pmMetrics.dueWithin7Days || 0;
   const pmUpcoming = pmMetrics.upcoming || 0;
+
+  const servicingComplianceRate = pmTotalMachines > 0 ? Math.min(100, Math.round((pmServicedCount / pmTotalMachines) * 100)) : 0;
 
   // Servicing schedules preview: top urgent machines
   const allMaintMachines = pmMetrics.filteredMachines || (
@@ -304,412 +316,590 @@ export function renderDashboard() {
   });
 
   return `
-    <div class="page-view user-friendly-dashboard" style="height: 100%; max-height: 100%; display: flex; flex-direction: column; padding: 8px 12px; gap: 8px; box-sizing: border-box; overflow-y: auto; overflow-x: hidden; font-family: var(--font-main, system-ui, -apple-system, sans-serif);">
+    <div class="page-view user-friendly-dashboard">
       
-      <!-- Top Header Toolbar: Compact, Fit-Screen & Date Filter Switcher -->
-      <div style="flex-shrink: 0; background: linear-gradient(135deg, #0b1120 0%, #111d35 100%); border: 1.5px solid rgba(56, 189, 248, 0.25); border-radius: 8px; padding: 7px 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);">
+      <!-- Top Header Toolbar: Refined Enterprise Frosted Glass Bar -->
+      <header class="dash-toolbar">
         
-        <!-- Left: Logo & Title -->
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <div style="width: 32px; height: 32px; border-radius: 8px; background: linear-gradient(135deg, #0284c7, #0369a1); display: flex; align-items: center; justify-content: center; font-size: 16px; box-shadow: 0 2px 8px rgba(2, 132, 199, 0.4); flex-shrink: 0;">
-            🏭
+        <!-- Left: Brand, Live Indicator, Scope -->
+        <div class="dash-brand-block">
+          <div class="dash-brand-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M2 20h20M6 20V8l6 4V4l8 6v10H6z"/>
+              <path d="M10 16h4"/>
+            </svg>
           </div>
-          <div>
-            <div style="display: flex; align-items: center; gap: 6px;">
-              <h1 style="font-size: 15px; font-weight: 800; color: #ffffff; margin: 0; letter-spacing: -0.2px; line-height: 1.2;">
-                Maintenance Dashboard
-              </h1>
-              <span style="background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.35); font-size: 10px; font-weight: 800; padding: 1px 7px; border-radius: 12px; display: inline-flex; align-items: center; gap: 4px;">
-                <span style="width: 5px; height: 5px; border-radius: 50%; background: #34d399; box-shadow: 0 0 6px #34d399;"></span> Live
+          <div class="dash-brand-info">
+            <div class="dash-title-row">
+              <h1 class="dash-title">Maintenance Dashboard</h1>
+              <span class="dash-live-badge">
+                <span class="dash-live-dot"></span>
+                <span>Live Ops</span>
               </span>
             </div>
-            <div style="font-size: 11px; color: #94a3b8; font-weight: 600;">
-              Al-Muslim Group &bull; Industrial Machine Operations
+            <div class="dash-subtitle">
+              <span>Al-Muslim Group</span>
+              <span class="dash-sep">&bull;</span>
+              <span>Industrial Plant Uptime</span>
+              <span class="dash-sep">&bull;</span>
+              <span class="dash-highlight-stat">${uptimeRate}% Operational</span>
             </div>
           </div>
         </div>
 
-        <!-- Center: Interactive Date Range Switcher (3 Days, 7 Days, 30 Days, 3 Months, All Time) -->
-        <div style="display: flex; align-items: center; gap: 3px; background: rgba(15, 23, 42, 0.85); padding: 3px 6px; border-radius: 8px; border: 1.5px solid rgba(56, 189, 248, 0.25);">
-          <span style="font-size: 10.5px; font-weight: 800; color: #38bdf8; text-transform: uppercase; letter-spacing: 0.5px; margin-right: 4px; display: inline-flex; align-items: center; gap: 3px;">
-            <span>⏳</span> Range:
-          </span>
-          <button type="button" class="btn-dash-date-filter ${activeDateFilter === 'ALL' ? 'active' : ''}" data-filter="ALL" title="View lifetime aggregate data">
-            All Time
-          </button>
-          <button type="button" class="btn-dash-date-filter ${activeDateFilter === '3D' ? 'active' : ''}" data-filter="3D" title="Filter data for the past 3 days">
-            ⚡ 3 Days
-          </button>
-          <button type="button" class="btn-dash-date-filter ${activeDateFilter === '7D' ? 'active' : ''}" data-filter="7D" title="Filter data for the past 7 days">
-            📅 7 Days
-          </button>
-          <button type="button" class="btn-dash-date-filter ${activeDateFilter === '30D' ? 'active' : ''}" data-filter="30D" title="Filter data for the past 30 days">
-            🗓️ 30 Days
-          </button>
-          <button type="button" class="btn-dash-date-filter ${activeDateFilter === '90D' ? 'active' : ''}" data-filter="90D" title="Filter data for the past 3 months (90 days)">
-            📊 3 Months
-          </button>
+        <!-- Center: Interactive Date Range Segmented Switcher -->
+        <div class="dash-date-switcher-wrapper">
+          <div class="dash-date-switcher-label">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+            </svg>
+            <span>Time Range:</span>
+          </div>
+          <div class="dash-segmented-control" role="group" aria-label="Date range selector">
+            <button type="button" class="btn-dash-date-filter ${activeDateFilter === 'ALL' ? 'active' : ''}" data-filter="ALL" title="View lifetime aggregate factory data">
+              All Time
+            </button>
+            <button type="button" class="btn-dash-date-filter ${activeDateFilter === '3D' ? 'active' : ''}" data-filter="3D" title="Filter activities within past 3 days">
+              3 Days
+            </button>
+            <button type="button" class="btn-dash-date-filter ${activeDateFilter === '7D' ? 'active' : ''}" data-filter="7D" title="Filter activities within past 7 days">
+              7 Days
+            </button>
+            <button type="button" class="btn-dash-date-filter ${activeDateFilter === '30D' ? 'active' : ''}" data-filter="30D" title="Filter activities within past 30 days">
+              30 Days
+            </button>
+            <button type="button" class="btn-dash-date-filter ${activeDateFilter === '90D' ? 'active' : ''}" data-filter="90D" title="Filter activities within past 3 months (90 days)">
+              3 Months
+            </button>
+          </div>
         </div>
 
         <!-- Right: Quick Navigation Module Jump Buttons -->
-        <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
-          <button type="button" id="btn-dash-goto-inventory" class="btn btn-secondary btn-sm" style="font-weight: 700; height: 28px; padding: 0 9px; font-size: 11px; border-color: rgba(56, 189, 248, 0.3); color: #38bdf8;">
-            🧵 Inventory
-          </button>
-          <button type="button" id="btn-dash-goto-transfers" class="btn btn-secondary btn-sm" style="font-weight: 700; height: 28px; padding: 0 9px; font-size: 11px; border-color: rgba(56, 189, 248, 0.3); color: #38bdf8;">
-            🔄 Transfers
-          </button>
-          <button type="button" id="btn-dash-goto-servicing" class="btn btn-secondary btn-sm" style="font-weight: 700; height: 28px; padding: 0 9px; font-size: 11px; border-color: rgba(56, 189, 248, 0.3); color: #38bdf8;">
-            🔧 Servicing
-          </button>
-          <button type="button" id="btn-dash-goto-needles" class="btn btn-secondary btn-sm" style="font-weight: 700; height: 28px; padding: 0 9px; font-size: 11px; border-color: rgba(56, 189, 248, 0.3); color: #38bdf8;">
-            🪡 Needles
-          </button>
-          <button type="button" id="btn-dash-refresh" class="btn btn-primary btn-sm" style="font-weight: 700; height: 28px; padding: 0 10px; font-size: 11px; background: #0284c7;" title="Refresh dashboard data">
-            ⚡ Refresh
+        <div class="dash-actions-block">
+          <div class="dash-quick-links">
+            <button type="button" id="btn-dash-goto-inventory" class="dash-nav-btn" title="Open Machine Inventory Table">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
+              </svg>
+              <span>Inventory</span>
+            </button>
+            <button type="button" id="btn-dash-goto-transfers" class="dash-nav-btn" title="Open Machine Transfer Management">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>
+              </svg>
+              <span>Transfers</span>
+            </button>
+            <button type="button" id="btn-dash-goto-servicing" class="dash-nav-btn" title="Open Preventive Maintenance & Servicing">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
+              </svg>
+              <span>Servicing</span>
+            </button>
+            <button type="button" id="btn-dash-goto-needles" class="dash-nav-btn" title="Open Needle Operations & Stock">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><line x1="4.93" y1="4.93" x2="9.17" y2="9.17"/><line x1="14.83" y1="14.83" x2="19.07" y2="19.07"/>
+              </svg>
+              <span>Needles</span>
+            </button>
+          </div>
+          <button type="button" id="btn-dash-refresh" class="dash-refresh-btn" title="Refresh Live Dashboard Metrics">
+            <svg class="dash-refresh-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M23 4v6h-6"/><path d="M1 20v-6h6"/>
+              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+            </svg>
+            <span>Refresh</span>
           </button>
         </div>
-      </div>
+      </header>
 
-      <!-- Main 4 Sections Grid: 100% Fit Screen (2x2 Grid on Desktop/Laptop) -->
-      <div class="dash-2x2-grid" style="flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 8px;">
+      <!-- Main 4 Sections Grid: 100% Balanced Executive Grid -->
+      <main class="dash-2x2-grid">
 
         <!-- ================================================================= -->
         <!-- 1. SECTION 1: MACHINE OVERVIEW -->
         <!-- ================================================================= -->
-        <div class="dash-section-card" style="background: #0f172a; border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; overflow: hidden; display: flex; flex-direction: column; min-height: 0; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);">
+        <section class="dash-card">
           <!-- Card Header -->
-          <div style="padding: 6px 12px; background: rgba(255, 255, 255, 0.03); border-bottom: 1px solid rgba(255, 255, 255, 0.07); display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
-            <div style="font-size: 13.5px; font-weight: 800; color: #f8fafc; display: flex; align-items: center; gap: 6px;">
-              <span>1. Machine Overview</span>
+          <div class="dash-card-header">
+            <div class="dash-card-title-group">
+              <div class="dash-card-badge-icon icon-blue">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+                </svg>
+              </div>
+              <h2 class="dash-card-title">1. Machine Overview</h2>
             </div>
-            <span style="font-size: 10.5px; font-weight: 800; color: #38bdf8; background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.25); padding: 2px 7px; border-radius: 6px;">
-              Total: ${totalMachines.toLocaleString()} &bull; ${currentFilterLabel}
-            </span>
+            <div class="dash-card-meta-pill">
+              <span>Total: <strong>${totalMachines.toLocaleString()}</strong></span>
+              <span class="dash-pill-sep">&bull;</span>
+              <span>${currentFilterLabel}</span>
+            </div>
+          </div>
+
+          <!-- Micro Health Bar -->
+          <div class="dash-health-bar-container">
+            <div class="dash-health-bar-labels">
+              <span class="dash-health-label">
+                <span class="status-dot dot-emerald"></span> Active Uptime: <strong>${uptimeRate}%</strong>
+              </span>
+              <span class="dash-health-sub">
+                ${activeCount.toLocaleString()} Active / ${underRepairCount} In Repair
+              </span>
+            </div>
+            <div class="dash-progress-track">
+              <div class="dash-progress-seg seg-emerald" style="width: ${activePercent}%;" title="Active: ${activePercent.toFixed(1)}%"></div>
+              <div class="dash-progress-seg seg-amber" style="width: ${repairPercent}%;" title="Under Repair: ${repairPercent.toFixed(1)}%"></div>
+              <div class="dash-progress-seg seg-slate" style="width: ${sparePercent}%;" title="Spare/Standby: ${sparePercent.toFixed(1)}%"></div>
+            </div>
           </div>
 
           <!-- Table Header -->
-          <div style="display: flex; justify-content: space-between; padding: 4px 12px; background: rgba(0, 0, 0, 0.3); font-size: 11px; font-weight: 800; color: #94a3b8; border-bottom: 1px solid rgba(255, 255, 255, 0.06); flex-shrink: 0;">
-            <span>Description</span>
-            <span>Quantity</span>
+          <div class="dash-table-header">
+            <span>Machine Status Category</span>
+            <span style="text-align: right;">Unit Count</span>
           </div>
 
           <!-- Table Rows (Evenly Distributed) -->
-          <div style="flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: space-evenly;">
+          <div class="dash-card-rows">
             
             <!-- Row: Total Physical Machines -->
-            <div class="dash-clickable-row" data-action="inv-filter" data-status="ALL" style="display: flex; justify-content: space-between; align-items: center; padding: 4.5px 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.03); cursor: pointer; transition: background 0.12s ease;">
-              <div style="display: flex; align-items: center; gap: 8px;">
-                <span style="font-size: 13.5px;">📦</span>
-                <div>
-                  <span style="font-size: 12.5px; font-weight: 700; color: #e2e8f0;">Total Physical Machines</span>
-                  <span style="font-size: 10.5px; color: #64748b; margin-left: 6px;">Factory Total Units</span>
+            <div class="dash-clickable-row" data-action="inv-filter" data-status="ALL" role="button" tabindex="0" title="Click to view all machines in Inventory">
+              <div class="dash-row-left">
+                <div class="dash-icon-box icon-sky">📦</div>
+                <div class="dash-row-titles">
+                  <span class="dash-row-primary">Total Physical Machines</span>
+                  <span class="dash-row-secondary">Complete Factory Inventory</span>
                 </div>
               </div>
-              <button type="button" class="dash-qty-pill" style="background: rgba(56, 189, 248, 0.12); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); padding: 2px 9px; border-radius: 12px; font-size: 12px; font-weight: 800; cursor: pointer; font-variant-numeric: tabular-nums;">
-                ${totalMachines.toLocaleString()} Qty
-              </button>
+              <div class="dash-row-right">
+                <span class="dash-qty-pill pill-sky">
+                  <strong>${totalMachines.toLocaleString()}</strong> <small>Qty</small>
+                  <span class="dash-chevron">&rsaquo;</span>
+                </span>
+              </div>
             </div>
 
             <!-- Row: Active Machines -->
-            <div class="dash-clickable-row" data-action="inv-filter" data-status="ACTIVE" style="display: flex; justify-content: space-between; align-items: center; padding: 4.5px 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.03); cursor: pointer; transition: background 0.12s ease;">
-              <div style="display: flex; align-items: center; gap: 8px;">
-                <span style="font-size: 13.5px;">🟢</span>
-                <div>
-                  <span style="font-size: 12.5px; font-weight: 700; color: #e2e8f0;">Active Machines</span>
-                  <span style="font-size: 10.5px; color: #64748b; margin-left: 6px;">Running On Lines</span>
+            <div class="dash-clickable-row" data-action="inv-filter" data-status="ACTIVE" role="button" tabindex="0" title="Click to view Active machines on production lines">
+              <div class="dash-row-left">
+                <div class="dash-icon-box icon-emerald">🟢</div>
+                <div class="dash-row-titles">
+                  <span class="dash-row-primary">Active Machines</span>
+                  <span class="dash-row-secondary">Running on Production Lines</span>
                 </div>
               </div>
-              <button type="button" class="dash-qty-pill" style="background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.35); padding: 2px 9px; border-radius: 12px; font-size: 12px; font-weight: 800; cursor: pointer; font-variant-numeric: tabular-nums;">
-                ${activeCount.toLocaleString()} Qty
-              </button>
+              <div class="dash-row-right">
+                <span class="dash-qty-pill pill-emerald">
+                  <strong>${activeCount.toLocaleString()}</strong> <small>Qty</small>
+                  <span class="dash-chevron">&rsaquo;</span>
+                </span>
+              </div>
             </div>
 
-            <!-- Row: Repaired / Used Machines -->
-            <div class="dash-clickable-row" data-action="inv-filter" data-status="REPAIRED" style="display: flex; justify-content: space-between; align-items: center; padding: 4.5px 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.03); cursor: pointer; transition: background 0.12s ease;">
-              <div style="display: flex; align-items: center; gap: 8px;">
-                <span style="font-size: 13.5px;">🛠️</span>
-                <div>
-                  <span style="font-size: 12.5px; font-weight: 700; color: #e2e8f0;">Repaired / Serviced Machines</span>
-                  <span style="font-size: 10.5px; color: #38bdf8; margin-left: 6px;">${dateCutoff ? currentFilterLabel : 'Serviced & Ready'}</span>
+            <!-- Row: Repaired / Serviced Machines -->
+            <div class="dash-clickable-row" data-action="inv-filter" data-status="REPAIRED" role="button" tabindex="0" title="Click to view Repaired and Serviced machines">
+              <div class="dash-row-left">
+                <div class="dash-icon-box icon-cyan">🛠️</div>
+                <div class="dash-row-titles">
+                  <span class="dash-row-primary">Repaired / Serviced Machines</span>
+                  <span class="dash-row-secondary">${dateCutoff ? currentFilterLabel : 'Serviced & Ready for Production'}</span>
                 </div>
               </div>
-              <button type="button" class="dash-qty-pill" style="background: rgba(14, 165, 233, 0.15); color: #38bdf8; border: 1px solid rgba(14, 165, 233, 0.35); padding: 2px 9px; border-radius: 12px; font-size: 12px; font-weight: 800; cursor: pointer; font-variant-numeric: tabular-nums;">
-                ${repairedCount.toLocaleString()} Qty
-              </button>
+              <div class="dash-row-right">
+                <span class="dash-qty-pill pill-cyan">
+                  <strong>${repairedCount.toLocaleString()}</strong> <small>Qty</small>
+                  <span class="dash-chevron">&rsaquo;</span>
+                </span>
+              </div>
             </div>
 
             <!-- Row: Under Repair Machines -->
-            <div class="dash-clickable-row" data-action="inv-filter" data-status="MAINTENANCE" style="display: flex; justify-content: space-between; align-items: center; padding: 4.5px 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.03); cursor: pointer; transition: background 0.12s ease;">
-              <div style="display: flex; align-items: center; gap: 8px;">
-                <span style="font-size: 13.5px;">⚠️</span>
-                <div>
-                  <span style="font-size: 12.5px; font-weight: 700; color: #e2e8f0;">Under Repair Machines</span>
-                  <span style="font-size: 10.5px; color: #64748b; margin-left: 6px;">In Maintenance Queue</span>
+            <div class="dash-clickable-row" data-action="inv-filter" data-status="MAINTENANCE" role="button" tabindex="0" title="Click to view machines currently under maintenance">
+              <div class="dash-row-left">
+                <div class="dash-icon-box icon-amber">⚠️</div>
+                <div class="dash-row-titles">
+                  <span class="dash-row-primary">Under Repair Machines</span>
+                  <span class="dash-row-secondary">In Maintenance Queue / Breakdown</span>
                 </div>
               </div>
-              <button type="button" class="dash-qty-pill" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.35); padding: 2px 9px; border-radius: 12px; font-size: 12px; font-weight: 800; cursor: pointer; font-variant-numeric: tabular-nums;">
-                ${underRepairCount.toLocaleString()} Qty
-              </button>
+              <div class="dash-row-right">
+                <span class="dash-qty-pill pill-amber">
+                  <strong>${underRepairCount.toLocaleString()}</strong> <small>Qty</small>
+                  <span class="dash-chevron">&rsaquo;</span>
+                </span>
+              </div>
             </div>
 
             <!-- Row: Spare Machines / Ambiguous -->
-            <div class="dash-clickable-row" data-action="inv-filter" data-status="IDLE" style="display: flex; justify-content: space-between; align-items: center; padding: 4.5px 12px; cursor: pointer; transition: background 0.12s ease;">
-              <div style="display: flex; align-items: center; gap: 8px;">
-                <span style="font-size: 13.5px;">🗄️</span>
-                <div>
-                  <span style="font-size: 12.5px; font-weight: 700; color: #e2e8f0;">Spare Machines / Ambiguous</span>
-                  <span style="font-size: 10.5px; color: #64748b; margin-left: 6px;">Idle & Standby Buffer</span>
+            <div class="dash-clickable-row" data-action="inv-filter" data-status="IDLE" role="button" tabindex="0" title="Click to view Spare, Idle & Standby machines">
+              <div class="dash-row-left">
+                <div class="dash-icon-box icon-indigo">🗄️</div>
+                <div class="dash-row-titles">
+                  <span class="dash-row-primary">Spare Machines / Standby</span>
+                  <span class="dash-row-secondary">Idle Buffer Stock & Unassigned</span>
                 </div>
               </div>
-              <button type="button" class="dash-qty-pill" style="background: rgba(99, 102, 241, 0.15); color: #a5b4fc; border: 1px solid rgba(99, 102, 241, 0.35); padding: 2px 9px; border-radius: 12px; font-size: 12px; font-weight: 800; cursor: pointer; font-variant-numeric: tabular-nums;">
-                ${spareAmbiguousCount.toLocaleString()} Qty
-              </button>
+              <div class="dash-row-right">
+                <span class="dash-qty-pill pill-indigo">
+                  <strong>${spareAmbiguousCount.toLocaleString()}</strong> <small>Qty</small>
+                  <span class="dash-chevron">&rsaquo;</span>
+                </span>
+              </div>
             </div>
 
           </div>
-        </div>
+        </section>
 
         <!-- ================================================================= -->
         <!-- 2. SECTION 2: MACHINE TRANSFER -->
         <!-- ================================================================= -->
-        <div class="dash-section-card" style="background: #0f172a; border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; overflow: hidden; display: flex; flex-direction: column; min-height: 0; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);">
+        <section class="dash-card">
           <!-- Card Header -->
-          <div style="padding: 6px 12px; background: rgba(255, 255, 255, 0.03); border-bottom: 1px solid rgba(255, 255, 255, 0.07); display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
-            <div style="font-size: 13.5px; font-weight: 800; color: #f8fafc; display: flex; align-items: center; gap: 6px;">
-              <span>2. Machine Transfer</span>
+          <div class="dash-card-header">
+            <div class="dash-card-title-group">
+              <div class="dash-card-badge-icon icon-teal">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>
+                </svg>
+              </div>
+              <h2 class="dash-card-title">2. Machine Transfer</h2>
             </div>
-            <span style="font-size: 10.5px; font-weight: 800; color: #38bdf8; background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.25); padding: 2px 7px; border-radius: 6px;">
-              Total: ${totalTransfers} &bull; ${currentFilterLabel}
-            </span>
+            <div class="dash-card-meta-pill">
+              <span>Total: <strong>${totalTransfers}</strong></span>
+              <span class="dash-pill-sep">&bull;</span>
+              <span>${currentFilterLabel}</span>
+            </div>
+          </div>
+
+          <!-- Micro Health Bar -->
+          <div class="dash-health-bar-container">
+            <div class="dash-health-bar-labels">
+              <span class="dash-health-label">
+                <span class="status-dot dot-teal"></span> Relocation Rate: <strong>${transferCompletionRate}%</strong>
+              </span>
+              <span class="dash-health-sub">
+                ${pendingCount > 0 
+                  ? `<span class="badge-alert-inline">⚠️ ${pendingCount} Pending Approval</span>` 
+                  : `<span class="badge-ok-inline">✓ Zero Pending</span>`}
+              </span>
+            </div>
+            <div class="dash-progress-track">
+              <div class="dash-progress-seg seg-emerald" style="width: ${transferCompletionRate}%;" title="Completed: ${transferCompletionRate}%"></div>
+              <div class="dash-progress-seg seg-amber" style="width: ${totalTransfers > 0 ? (pendingCount / totalTransfers) * 100 : 0}%;" title="Pending: ${pendingCount}"></div>
+            </div>
           </div>
 
           <!-- Table Header -->
-          <div style="display: flex; justify-content: space-between; padding: 4px 12px; background: rgba(0, 0, 0, 0.3); font-size: 11px; font-weight: 800; color: #94a3b8; border-bottom: 1px solid rgba(255, 255, 255, 0.06); flex-shrink: 0;">
-            <span>Description</span>
-            <span>Quantity</span>
+          <div class="dash-table-header">
+            <span>Transfer Stage</span>
+            <span style="text-align: right;">Volume</span>
           </div>
 
           <!-- Table Rows (Evenly Distributed) -->
-          <div style="flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: space-evenly;">
+          <div class="dash-card-rows">
             
             <!-- Row: Transfer Request -->
-            <div class="dash-clickable-row" data-action="trf-filter" data-status="ALL" style="display: flex; justify-content: space-between; align-items: center; padding: 4.5px 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.03); cursor: pointer; transition: background 0.12s ease;">
-              <div style="display: flex; align-items: center; gap: 8px;">
-                <span style="font-size: 13.5px;">📋</span>
-                <div>
-                  <span style="font-size: 12.5px; font-weight: 700; color: #e2e8f0;">Transfer Request</span>
-                  <span style="font-size: 10.5px; color: #64748b; margin-left: 6px;">Total Requests (Pending: ${pendingCount})</span>
+            <div class="dash-clickable-row" data-action="trf-filter" data-status="ALL" role="button" tabindex="0" title="Click to view all transfer requests">
+              <div class="dash-row-left">
+                <div class="dash-icon-box icon-sky">📋</div>
+                <div class="dash-row-titles">
+                  <span class="dash-row-primary">Transfer Requests</span>
+                  <span class="dash-row-secondary">
+                    Total Logged
+                    ${pendingCount > 0 ? `<strong style="color: #f59e0b; margin-left: 4px;">(${pendingCount} Pending Clearance)</strong>` : ''}
+                  </span>
                 </div>
               </div>
-              <button type="button" class="dash-qty-pill" style="background: rgba(56, 189, 248, 0.12); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); padding: 2px 9px; border-radius: 12px; font-size: 12px; font-weight: 800; cursor: pointer; font-variant-numeric: tabular-nums;">
-                ${totalTransfers} Qty
-              </button>
+              <div class="dash-row-right">
+                <span class="dash-qty-pill pill-sky">
+                  <strong>${totalTransfers}</strong> <small>Qty</small>
+                  <span class="dash-chevron">&rsaquo;</span>
+                </span>
+              </div>
             </div>
 
             <!-- Row: Approved -->
-            <div class="dash-clickable-row" data-action="trf-filter" data-status="APPROVED" style="display: flex; justify-content: space-between; align-items: center; padding: 4.5px 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.03); cursor: pointer; transition: background 0.12s ease;">
-              <div style="display: flex; align-items: center; gap: 8px;">
-                <span style="font-size: 13.5px;">✅</span>
-                <div>
-                  <span style="font-size: 12.5px; font-weight: 700; color: #e2e8f0;">Approved</span>
-                  <span style="font-size: 10.5px; color: #64748b; margin-left: 6px;">Cleared For Relocation</span>
+            <div class="dash-clickable-row" data-action="trf-filter" data-status="APPROVED" role="button" tabindex="0" title="Click to view approved relocation requests">
+              <div class="dash-row-left">
+                <div class="dash-icon-box icon-cyan">✅</div>
+                <div class="dash-row-titles">
+                  <span class="dash-row-primary">Approved</span>
+                  <span class="dash-row-secondary">Cleared for Movement & Relocation</span>
                 </div>
               </div>
-              <button type="button" class="dash-qty-pill" style="background: rgba(14, 165, 233, 0.15); color: #38bdf8; border: 1px solid rgba(14, 165, 233, 0.35); padding: 2px 9px; border-radius: 12px; font-size: 12px; font-weight: 800; cursor: pointer; font-variant-numeric: tabular-nums;">
-                ${approvedCount} Qty
-              </button>
+              <div class="dash-row-right">
+                <span class="dash-qty-pill pill-cyan">
+                  <strong>${approvedCount}</strong> <small>Qty</small>
+                  <span class="dash-chevron">&rsaquo;</span>
+                </span>
+              </div>
             </div>
 
             <!-- Row: Issued / Transferred -->
-            <div class="dash-clickable-row" data-action="trf-filter" data-status="COMPLETED" style="display: flex; justify-content: space-between; align-items: center; padding: 4.5px 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.03); cursor: pointer; transition: background 0.12s ease;">
-              <div style="display: flex; align-items: center; gap: 8px;">
-                <span style="font-size: 13.5px;">🚚</span>
-                <div>
-                  <span style="font-size: 12.5px; font-weight: 700; color: #e2e8f0;">Issued / Transferred</span>
-                  <span style="font-size: 10.5px; color: #64748b; margin-left: 6px;">Delivered at Destination</span>
+            <div class="dash-clickable-row" data-action="trf-filter" data-status="COMPLETED" role="button" tabindex="0" title="Click to view completed transfers">
+              <div class="dash-row-left">
+                <div class="dash-icon-box icon-emerald">🚚</div>
+                <div class="dash-row-titles">
+                  <span class="dash-row-primary">Issued / Transferred</span>
+                  <span class="dash-row-secondary">Delivered & Verified at Destination</span>
                 </div>
               </div>
-              <button type="button" class="dash-qty-pill" style="background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.35); padding: 2px 9px; border-radius: 12px; font-size: 12px; font-weight: 800; cursor: pointer; font-variant-numeric: tabular-nums;">
-                ${issuedTransferredCount} Qty
-              </button>
+              <div class="dash-row-right">
+                <span class="dash-qty-pill pill-emerald">
+                  <strong>${issuedTransferredCount}</strong> <small>Qty</small>
+                  <span class="dash-chevron">&rsaquo;</span>
+                </span>
+              </div>
             </div>
 
             <!-- Row: Declined / Rejected -->
-            <div class="dash-clickable-row" data-action="trf-filter" data-status="REJECTED" style="display: flex; justify-content: space-between; align-items: center; padding: 4.5px 12px; cursor: pointer; transition: background 0.12s ease;">
-              <div style="display: flex; align-items: center; gap: 8px;">
-                <span style="font-size: 13.5px;">❌</span>
-                <div>
-                  <span style="font-size: 12.5px; font-weight: 700; color: #e2e8f0;">Declined / Rejected</span>
-                  <span style="font-size: 10.5px; color: #64748b; margin-left: 6px;">Declined by Authority</span>
+            <div class="dash-clickable-row" data-action="trf-filter" data-status="REJECTED" role="button" tabindex="0" title="Click to view rejected transfer requests">
+              <div class="dash-row-left">
+                <div class="dash-icon-box icon-rose">❌</div>
+                <div class="dash-row-titles">
+                  <span class="dash-row-primary">Declined / Rejected</span>
+                  <span class="dash-row-secondary">Declined by Maintenance Authority</span>
                 </div>
               </div>
-              <button type="button" class="dash-qty-pill" style="background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.35); padding: 2px 9px; border-radius: 12px; font-size: 12px; font-weight: 800; cursor: pointer; font-variant-numeric: tabular-nums;">
-                ${declinedRejectedCount} Qty
-              </button>
+              <div class="dash-row-right">
+                <span class="dash-qty-pill pill-rose">
+                  <strong>${declinedRejectedCount}</strong> <small>Qty</small>
+                  <span class="dash-chevron">&rsaquo;</span>
+                </span>
+              </div>
             </div>
 
             <!-- Hint Strip -->
-            <div style="padding: 3px 12px; background: rgba(56, 189, 248, 0.05); border-top: 1px solid rgba(56, 189, 248, 0.12); font-size: 10.5px; font-weight: 600; color: #38bdf8; display: flex; align-items: center; gap: 5px;">
-              <span>💡</span>
-              <span>Click on any quantity pill to jump straight to filtered records.</span>
+            <div class="dash-card-footer-hint">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+              </svg>
+              <span>Click any category to filter transfers instantly.</span>
             </div>
 
           </div>
-        </div>
+        </section>
 
         <!-- ================================================================= -->
         <!-- 3. SECTION 3: MACHINE SERVICING -->
         <!-- ================================================================= -->
-        <div class="dash-section-card" style="background: #0f172a; border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; overflow: hidden; display: flex; flex-direction: column; min-height: 0; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);">
+        <section class="dash-card">
           <!-- Card Header -->
-          <div style="padding: 6px 12px; background: rgba(255, 255, 255, 0.03); border-bottom: 1px solid rgba(255, 255, 255, 0.07); display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
-            <div style="font-size: 13.5px; font-weight: 800; color: #f8fafc; display: flex; align-items: center; gap: 6px;">
-              <span>3. Machine Servicing</span>
+          <div class="dash-card-header">
+            <div class="dash-card-title-group">
+              <div class="dash-card-badge-icon icon-purple">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
+                </svg>
+              </div>
+              <h2 class="dash-card-title">3. Machine Servicing</h2>
             </div>
-            <span style="font-size: 10.5px; font-weight: 800; color: #38bdf8; background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.25); padding: 2px 7px; border-radius: 6px;">
-              Scope: ${pmTotalMachines.toLocaleString()} &bull; ${currentFilterLabel}
-            </span>
+            <div class="dash-card-meta-pill">
+              <span>Scope: <strong>${pmTotalMachines.toLocaleString()}</strong></span>
+              <span class="dash-pill-sep">&bull;</span>
+              <span>${currentFilterLabel}</span>
+            </div>
+          </div>
+
+          <!-- Micro Health Bar -->
+          <div class="dash-health-bar-container">
+            <div class="dash-health-bar-labels">
+              <span class="dash-health-label">
+                <span class="status-dot dot-purple"></span> Compliance: <strong>${servicingComplianceRate}%</strong>
+              </span>
+              <span class="dash-health-sub">
+                ${pmOverdue > 0 
+                  ? `<span class="badge-critical-inline"><span class="pulse-dot"></span>${pmOverdue} Overdue Units</span>` 
+                  : `<span class="badge-ok-inline">✓ Zero Overdue</span>`}
+              </span>
+            </div>
+            <div class="dash-progress-track">
+              <div class="dash-progress-seg seg-emerald" style="width: ${servicingComplianceRate}%;" title="Serviced: ${servicingComplianceRate}%"></div>
+              <div class="dash-progress-seg seg-rose" style="width: ${pmTotalMachines > 0 ? (pmOverdue / pmTotalMachines) * 100 : 0}%;" title="Overdue: ${pmOverdue}"></div>
+            </div>
           </div>
 
           <!-- Table Header -->
-          <div style="display: flex; justify-content: space-between; padding: 4px 12px; background: rgba(0, 0, 0, 0.3); font-size: 11px; font-weight: 800; color: #94a3b8; border-bottom: 1px solid rgba(255, 255, 255, 0.06); flex-shrink: 0;">
-            <span>Description</span>
-            <span>Quantity</span>
+          <div class="dash-table-header">
+            <span>Maintenance Schedule</span>
+            <span style="text-align: right;">Machines</span>
           </div>
 
           <!-- Table Rows (Evenly Distributed) -->
-          <div style="flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: space-evenly;">
+          <div class="dash-card-rows">
             
             <!-- Row: Total Machines -->
-            <div class="dash-clickable-row" data-action="pm-filter" data-urgency="ALL" style="display: flex; justify-content: space-between; align-items: center; padding: 4px 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.03); cursor: pointer; transition: background 0.12s ease;">
-              <div style="display: flex; align-items: center; gap: 8px;">
-                <span style="font-size: 13.5px;">⚙️</span>
-                <div>
-                  <span style="font-size: 12px; font-weight: 700; color: #e2e8f0;">Total in Scope</span>
-                  <span style="font-size: 10.5px; color: #64748b; margin-left: 6px;">Active Maintenance Inventory</span>
+            <div class="dash-clickable-row" data-action="pm-filter" data-urgency="ALL" role="button" tabindex="0" title="Click to view all preventive maintenance records">
+              <div class="dash-row-left">
+                <div class="dash-icon-box icon-sky">⚙️</div>
+                <div class="dash-row-titles">
+                  <span class="dash-row-primary">Total in Scope</span>
+                  <span class="dash-row-secondary">Active Maintenance Fleet</span>
                 </div>
               </div>
-              <button type="button" class="dash-qty-pill" style="background: rgba(56, 189, 248, 0.12); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); padding: 2px 9px; border-radius: 12px; font-size: 12px; font-weight: 800; cursor: pointer; font-variant-numeric: tabular-nums;">
-                ${pmTotalMachines.toLocaleString()} Qty
-              </button>
+              <div class="dash-row-right">
+                <span class="dash-qty-pill pill-sky">
+                  <strong>${pmTotalMachines.toLocaleString()}</strong> <small>Qty</small>
+                  <span class="dash-chevron">&rsaquo;</span>
+                </span>
+              </div>
             </div>
 
             <!-- Row: Serviced Machines (Green) -->
-            <div class="dash-clickable-row" data-action="pm-filter" data-urgency="COMPLETED" style="display: flex; justify-content: space-between; align-items: center; padding: 4px 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.03); cursor: pointer; transition: background 0.12s ease;">
-              <div style="display: flex; align-items: center; gap: 8px;">
-                <span style="font-size: 13.5px;">✅</span>
-                <div>
-                  <span style="font-size: 12px; font-weight: 700; color: #e2e8f0;">Serviced Machines</span>
-                  <span style="font-size: 10.5px; color: #10b981; margin-left: 6px;">Completed (${currentFilterLabel})</span>
+            <div class="dash-clickable-row" data-action="pm-filter" data-urgency="COMPLETED" role="button" tabindex="0" title="Click to view serviced machines">
+              <div class="dash-row-left">
+                <div class="dash-icon-box icon-emerald">✅</div>
+                <div class="dash-row-titles">
+                  <span class="dash-row-primary">Serviced Machines</span>
+                  <span class="dash-row-secondary">Completed Cycles (${currentFilterLabel})</span>
                 </div>
               </div>
-              <button type="button" class="dash-qty-pill" style="background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.35); padding: 2px 9px; border-radius: 12px; font-size: 12px; font-weight: 800; cursor: pointer; font-variant-numeric: tabular-nums;">
-                ${pmServicedCount} Qty
-              </button>
+              <div class="dash-row-right">
+                <span class="dash-qty-pill pill-emerald">
+                  <strong>${pmServicedCount}</strong> <small>Qty</small>
+                  <span class="dash-chevron">&rsaquo;</span>
+                </span>
+              </div>
             </div>
 
             <!-- Row: Overdue Servicing (Red) -->
-            <div class="dash-clickable-row" data-action="pm-filter" data-urgency="OVERDUE" style="display: flex; justify-content: space-between; align-items: center; padding: 4px 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.03); cursor: pointer; transition: background 0.12s ease;">
-              <div style="display: flex; align-items: center; gap: 8px;">
-                <span style="font-size: 13.5px;">🔴</span>
-                <div>
-                  <span style="font-size: 12px; font-weight: 700; color: #e2e8f0;">Overdue Servicing</span>
-                  <span style="font-size: 10.5px; color: #ef4444; margin-left: 6px;">Needs Attention</span>
+            <div class="dash-clickable-row" data-action="pm-filter" data-urgency="OVERDUE" role="button" tabindex="0" title="Click to view urgent overdue machines requiring service">
+              <div class="dash-row-left">
+                <div class="dash-icon-box icon-rose">🔴</div>
+                <div class="dash-row-titles">
+                  <span class="dash-row-primary" style="color: #fca5a5;">Overdue Servicing</span>
+                  <span class="dash-row-secondary" style="color: #f87171;">Critical: Requires Immediate Attention</span>
                 </div>
               </div>
-              <button type="button" class="dash-qty-pill" style="background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.35); padding: 2px 9px; border-radius: 12px; font-size: 12px; font-weight: 800; cursor: pointer; font-variant-numeric: tabular-nums;">
-                ${pmOverdue} Qty
-              </button>
+              <div class="dash-row-right">
+                <span class="dash-qty-pill pill-rose pill-pulse">
+                  <strong>${pmOverdue}</strong> <small>Qty</small>
+                  <span class="dash-chevron">&rsaquo;</span>
+                </span>
+              </div>
             </div>
 
             <!-- Row: Due Today (Yellow/Amber) -->
-            <div class="dash-clickable-row" data-action="pm-filter" data-urgency="DUE_TODAY" style="display: flex; justify-content: space-between; align-items: center; padding: 4px 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.03); cursor: pointer; transition: background 0.12s ease;">
-              <div style="display: flex; align-items: center; gap: 8px;">
-                <span style="font-size: 13.5px;">🟡</span>
-                <div>
-                  <span style="font-size: 12px; font-weight: 700; color: #e2e8f0;">Due Today</span>
-                  <span style="font-size: 10.5px; color: #f59e0b; margin-left: 6px;">Scheduled Today</span>
+            <div class="dash-clickable-row" data-action="pm-filter" data-urgency="DUE_TODAY" role="button" tabindex="0" title="Click to view machines due for service today">
+              <div class="dash-row-left">
+                <div class="dash-icon-box icon-amber">🟡</div>
+                <div class="dash-row-titles">
+                  <span class="dash-row-primary">Due Today</span>
+                  <span class="dash-row-secondary">Scheduled for Current Shift</span>
                 </div>
               </div>
-              <button type="button" class="dash-qty-pill" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.35); padding: 2px 9px; border-radius: 12px; font-size: 12px; font-weight: 800; cursor: pointer; font-variant-numeric: tabular-nums;">
-                ${pmDueToday} Qty
-              </button>
+              <div class="dash-row-right">
+                <span class="dash-qty-pill pill-amber">
+                  <strong>${pmDueToday}</strong> <small>Qty</small>
+                  <span class="dash-chevron">&rsaquo;</span>
+                </span>
+              </div>
             </div>
 
             <!-- Row: Due Within 7 Days (Amber) -->
-            <div class="dash-clickable-row" data-action="pm-filter" data-urgency="DUE_SOON" style="display: flex; justify-content: space-between; align-items: center; padding: 4px 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.03); cursor: pointer; transition: background 0.12s ease;">
-              <div style="display: flex; align-items: center; gap: 8px;">
-                <span style="font-size: 13.5px;">⏳</span>
-                <div>
-                  <span style="font-size: 12px; font-weight: 700; color: #e2e8f0;">Due Within 7 Days</span>
-                  <span style="font-size: 10.5px; color: #eab308; margin-left: 6px;">Next Cycle in 7 Days</span>
+            <div class="dash-clickable-row" data-action="pm-filter" data-urgency="DUE_SOON" role="button" tabindex="0" title="Click to view machines due within 7 days">
+              <div class="dash-row-left">
+                <div class="dash-icon-box icon-yellow">⏳</div>
+                <div class="dash-row-titles">
+                  <span class="dash-row-primary">Due Within 7 Days</span>
+                  <span class="dash-row-secondary">Upcoming Weekly PM Cycle</span>
                 </div>
               </div>
-              <button type="button" class="dash-qty-pill" style="background: rgba(234, 179, 8, 0.15); color: #fde047; border: 1px solid rgba(234, 179, 8, 0.35); padding: 2px 9px; border-radius: 12px; font-size: 12px; font-weight: 800; cursor: pointer; font-variant-numeric: tabular-nums;">
-                ${pmDueWithin7Days} Qty
-              </button>
+              <div class="dash-row-right">
+                <span class="dash-qty-pill pill-yellow">
+                  <strong>${pmDueWithin7Days}</strong> <small>Qty</small>
+                  <span class="dash-chevron">&rsaquo;</span>
+                </span>
+              </div>
             </div>
 
             <!-- Row: Upcoming Servicing (Blue) -->
-            <div class="dash-clickable-row" data-action="pm-filter" data-urgency="SCHEDULED" style="display: flex; justify-content: space-between; align-items: center; padding: 4px 12px; cursor: pointer; transition: background 0.12s ease;">
-              <div style="display: flex; align-items: center; gap: 8px;">
-                <span style="font-size: 13.5px;">🗓️</span>
-                <div>
-                  <span style="font-size: 12px; font-weight: 700; color: #93c5fd;">Upcoming Servicing</span>
-                  <span style="font-size: 10.5px; color: #60a5fa; margin-left: 6px;">Future Maintenance Cycles</span>
+            <div class="dash-clickable-row" data-action="pm-filter" data-urgency="SCHEDULED" role="button" tabindex="0" title="Click to view scheduled future cycles">
+              <div class="dash-row-left">
+                <div class="dash-icon-box icon-indigo">🗓️</div>
+                <div class="dash-row-titles">
+                  <span class="dash-row-primary">Upcoming Servicing</span>
+                  <span class="dash-row-secondary">Future Maintenance Planning</span>
                 </div>
               </div>
-              <button type="button" class="dash-qty-pill" style="background: rgba(59, 130, 246, 0.15); color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.35); padding: 2px 9px; border-radius: 12px; font-size: 12px; font-weight: 800; cursor: pointer; font-variant-numeric: tabular-nums;">
-                ${pmUpcoming} Qty
-              </button>
+              <div class="dash-row-right">
+                <span class="dash-qty-pill pill-indigo">
+                  <strong>${pmUpcoming}</strong> <small>Qty</small>
+                  <span class="dash-chevron">&rsaquo;</span>
+                </span>
+              </div>
             </div>
 
           </div>
-        </div>
+        </section>
 
         <!-- ================================================================= -->
         <!-- 4. SECTION 4: NEEDLE DATA -->
         <!-- ================================================================= -->
-        <div class="dash-section-card" style="background: #0f172a; border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; overflow: hidden; display: flex; flex-direction: column; min-height: 0; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);">
+        <section class="dash-card">
           <!-- Card Header -->
-          <div style="padding: 6px 12px; background: rgba(255, 255, 255, 0.03); border-bottom: 1px solid rgba(255, 255, 255, 0.07); display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
-            <div style="font-size: 13.5px; font-weight: 800; color: #f8fafc; display: flex; align-items: center; gap: 6px;">
-              <span>4. Needle Data</span>
+          <div class="dash-card-header">
+            <div class="dash-card-title-group">
+              <div class="dash-card-badge-icon icon-emerald">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/>
+                </svg>
+              </div>
+              <h2 class="dash-card-title">4. Needle Data</h2>
             </div>
-            <span style="font-size: 10.5px; font-weight: 800; color: #38bdf8; background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.25); padding: 2px 7px; border-radius: 6px;">
-              Total Stock: ${sumNeedleStock.toLocaleString()} &bull; 4 Types
-            </span>
+            <div class="dash-card-meta-pill">
+              <span>Total Stock: <strong>${sumNeedleStock.toLocaleString()}</strong></span>
+              <span class="dash-pill-sep">&bull;</span>
+              <span>4 Types</span>
+            </div>
+          </div>
+
+          <!-- Micro Health Bar -->
+          <div class="dash-health-bar-container">
+            <div class="dash-health-bar-labels">
+              <span class="dash-health-label">
+                <span class="status-dot dot-emerald"></span> Inventory Health: 
+                <strong>${sumNeedlePending > 0 ? 'Action Needed' : 'Balanced'}</strong>
+              </span>
+              <span class="dash-health-sub">
+                ${sumNeedlePending > 0 
+                  ? `<span class="badge-alert-inline">⚠️ ${sumNeedlePending.toLocaleString()} Deficit</span>` 
+                  : `<span class="badge-ok-inline">✓ Sufficient Buffer</span>`}
+              </span>
+            </div>
+            <div class="dash-progress-track">
+              <div class="dash-progress-seg seg-emerald" style="width: ${sumNeedleRequired > 0 ? Math.min(100, (sumNeedleStock / sumNeedleRequired) * 100) : 100}%;" title="Stock Coverage"></div>
+            </div>
           </div>
 
           <!-- Needle Table Header (4 Columns) -->
-          <div style="display: grid; grid-template-columns: 2.2fr 1fr 1fr 1fr; padding: 4px 12px; background: rgba(0, 0, 0, 0.3); font-size: 11px; font-weight: 800; color: #94a3b8; border-bottom: 1px solid rgba(255, 255, 255, 0.06); text-align: center; flex-shrink: 0;">
-            <span style="text-align: left;">Needle Type</span>
-            <span>Required</span>
-            <span>Pending</span>
-            <span>Stock</span>
+          <div class="dash-needle-grid-header">
+            <span class="needle-col-spec">Needle Specification</span>
+            <span class="needle-col-val">Required</span>
+            <span class="needle-col-val">Pending</span>
+            <span class="needle-col-val">Stock</span>
           </div>
 
           <!-- Needle Table Rows (Evenly Distributed) -->
-          <div style="flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: space-evenly;">
+          <div class="dash-card-rows">
             ${needleTableRows.map(r => `
-              <div class="dash-clickable-row" data-action="needle-filter" data-needle="${r.code}" style="display: grid; grid-template-columns: 2.2fr 1fr 1fr 1fr; align-items: center; padding: 4px 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.03); cursor: pointer; transition: background 0.12s ease;">
-                <div style="display: flex; flex-direction: column; text-align: left;">
-                  <span style="font-size: 12.5px; font-weight: 800; color: #38bdf8; letter-spacing: 0.2px;">${r.code}</span>
-                  <span style="font-size: 9.5px; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${r.desc}</span>
+              <div class="dash-clickable-row dash-needle-grid-row" data-action="needle-filter" data-needle="${r.code}" role="button" tabindex="0" title="Click to open Needle Operations filtered by ${r.code}">
+                <div class="needle-col-spec">
+                  <div class="dash-needle-badge">${r.code}</div>
+                  <div class="dash-needle-desc">${r.desc}</div>
                 </div>
-                <div style="text-align: center;">
-                  <span style="background: rgba(56, 189, 248, 0.1); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.25); padding: 2px 7px; border-radius: 10px; font-size: 11.5px; font-weight: 700; font-variant-numeric: tabular-nums; display: inline-block;">
+                <div class="needle-col-val">
+                  <span class="dash-num-tag tag-sky">
                     ${r.requiredQty.toLocaleString()}
                   </span>
                 </div>
-                <div style="text-align: center;">
-                  <span style="background: ${r.pendingQuantity > 0 ? 'rgba(239, 68, 68, 0.15)' : 'rgba(255, 255, 255, 0.05)'}; color: ${r.pendingQuantity > 0 ? '#f87171' : '#94a3b8'}; border: 1px solid ${r.pendingQuantity > 0 ? 'rgba(239, 68, 68, 0.35)' : 'rgba(255, 255, 255, 0.1)'}; padding: 2px 7px; border-radius: 10px; font-size: 11.5px; font-weight: 700; font-variant-numeric: tabular-nums; display: inline-block;">
+                <div class="needle-col-val">
+                  <span class="dash-num-tag ${r.pendingQuantity > 0 ? 'tag-rose' : 'tag-muted'}">
                     ${r.pendingQuantity.toLocaleString()}
                   </span>
                 </div>
-                <div style="text-align: center;">
-                  <span style="background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.35); padding: 2px 7px; border-radius: 10px; font-size: 11.5px; font-weight: 800; font-variant-numeric: tabular-nums; display: inline-block;">
+                <div class="needle-col-val">
+                  <span class="dash-num-tag tag-emerald">
                     ${r.availableStock.toLocaleString()}
                   </span>
                 </div>
@@ -717,144 +907,1099 @@ export function renderDashboard() {
             `).join('')}
 
             <!-- Summary Total Row -->
-            <div class="dash-clickable-row" data-action="needle-filter" data-needle="ALL" style="display: grid; grid-template-columns: 2.2fr 1fr 1fr 1fr; align-items: center; padding: 5px 12px; background: rgba(56, 189, 248, 0.04); border-top: 1.5px solid rgba(56, 189, 248, 0.2); cursor: pointer; transition: background 0.12s ease;">
-              <div style="text-align: left;">
-                <span style="font-size: 12.5px; font-weight: 900; color: #ffffff;">Total</span>
-                <span style="font-size: 10px; color: #94a3b8; margin-left: 6px;">All Systems</span>
+            <div class="dash-clickable-row dash-needle-grid-row dash-needle-summary-row" data-action="needle-filter" data-needle="ALL" role="button" tabindex="0" title="Click to view all needle types">
+              <div class="needle-col-spec">
+                <span class="dash-summary-label">Total Fleet Demand</span>
+                <span class="dash-summary-sub">All 4 Production Types</span>
               </div>
-              <div style="text-align: center;">
-                <span style="background: rgba(56, 189, 248, 0.2); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.4); padding: 2px 8px; border-radius: 10px; font-size: 12px; font-weight: 900; font-variant-numeric: tabular-nums; display: inline-block;">
+              <div class="needle-col-val">
+                <span class="dash-num-tag tag-sky-bold">
                   ${sumNeedleRequired.toLocaleString()}
                 </span>
               </div>
-              <div style="text-align: center;">
-                <span style="background: ${sumNeedlePending > 0 ? 'rgba(239, 68, 68, 0.2)' : 'rgba(255, 255, 255, 0.08)'}; color: ${sumNeedlePending > 0 ? '#f87171' : '#cbd5e1'}; border: 1px solid ${sumNeedlePending > 0 ? 'rgba(239, 68, 68, 0.4)' : 'rgba(255, 255, 255, 0.15)'}; padding: 2px 8px; border-radius: 10px; font-size: 12px; font-weight: 900; font-variant-numeric: tabular-nums; display: inline-block;">
+              <div class="needle-col-val">
+                <span class="dash-num-tag ${sumNeedlePending > 0 ? 'tag-rose-bold' : 'tag-muted-bold'}">
                   ${sumNeedlePending.toLocaleString()}
                 </span>
               </div>
-              <div style="text-align: center;">
-                <span style="background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); padding: 2px 8px; border-radius: 10px; font-size: 12px; font-weight: 900; font-variant-numeric: tabular-nums; display: inline-block;">
+              <div class="needle-col-val">
+                <span class="dash-num-tag tag-emerald-bold">
                   ${sumNeedleStock.toLocaleString()}
                 </span>
               </div>
             </div>
 
           </div>
-        </div>
+        </section>
 
-      </div>
+      </main>
 
       <!-- Collapsible Live Servicing Schedules Preview Drawer -->
       ${sortedMaintMachines.length > 0 ? `
-        <div style="flex-shrink: 0; background: #0f172a; border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; overflow: hidden; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);">
+        <footer class="dash-schedules-card">
           
-          <!-- Drawer Bar -->
-          <div id="btn-dash-toggle-schedules" style="padding: 6px 12px; background: rgba(56, 189, 248, 0.06); cursor: pointer; display: flex; justify-content: space-between; align-items: center; user-select: none; transition: background 0.15s ease;">
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <span style="font-size: 13.5px;">⏱️</span>
-              <span style="font-size: 12.5px; font-weight: 800; color: #f8fafc;">Live Servicing Schedules &amp; Assigned Technicians</span>
-              <span style="font-size: 10.5px; color: #94a3b8; font-weight: 600;">(Top 5 Most Urgent Machines)</span>
+          <!-- Drawer Header Bar -->
+          <div id="btn-dash-toggle-schedules" class="dash-schedules-bar" role="button" tabindex="0" title="Toggle Live Servicing Schedules Preview">
+            <div class="dash-schedules-left">
+              <div class="dash-schedules-pulse-icon">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 14 14"/>
+                </svg>
+              </div>
+              <div class="dash-schedules-heading">
+                <span class="dash-schedules-title">Live Servicing Schedules &amp; Assigned Technicians</span>
+                <span class="dash-schedules-caption">(Top 5 Most Urgent Maintenance Jobs)</span>
+              </div>
+              <div class="dash-schedules-chips">
+                ${pmOverdue > 0 ? `<span class="dash-chip-critical">${pmOverdue} Overdue</span>` : ''}
+                ${pmDueToday > 0 ? `<span class="dash-chip-amber">${pmDueToday} Due Today</span>` : ''}
+              </div>
             </div>
-            <div style="display: flex; align-items: center; gap: 10px;">
-              <span id="dash-schedules-arrow" style="font-size: 11px; font-weight: 700; color: #38bdf8;">
+            <div class="dash-schedules-right">
+              <span id="dash-schedules-arrow" class="dash-toggle-label">
                 ${isSchedulesDrawerOpen ? '▲ Collapse Table' : '▼ Expand Table'}
               </span>
-              <button type="button" class="btn btn-secondary btn-sm" id="btn-dash-open-full-pm" style="font-size: 10.5px; height: 24px; padding: 0 8px; font-weight: 700; color: #38bdf8; border-color: rgba(56, 189, 248, 0.3);">
-                Full Schedule &rarr;
+              <button type="button" class="dash-full-schedule-btn" id="btn-dash-open-full-pm" title="Go to full Preventive Maintenance schedule">
+                <span>Full Schedule</span>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+                </svg>
               </button>
             </div>
           </div>
 
-          <!-- Collapsible Content -->
-          <div id="dash-schedules-drawer" style="display: ${isSchedulesDrawerOpen ? 'block' : 'none'}; max-height: 180px; overflow-y: auto; border-top: 1px solid rgba(255, 255, 255, 0.06);">
-            <table class="table" style="width: 100%; border-collapse: collapse; margin: 0; font-size: 12px;">
-              <thead>
-                <tr style="background: rgba(0, 0, 0, 0.35); color: #94a3b8; font-size: 11px; font-weight: 700; text-transform: uppercase;">
-                  <th style="padding: 6px 12px; text-align: left;">Machine / Serial</th>
-                  <th style="padding: 6px 12px; text-align: left;">Location</th>
-                  <th style="padding: 6px 12px; text-align: left;">Last Servicing</th>
-                  <th style="padding: 6px 12px; text-align: left;">Next Due Date</th>
-                  <th style="padding: 6px 12px; text-align: left;">Status</th>
-                  <th style="padding: 6px 12px; text-align: left;">Technician</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${sortedMaintMachines.map(m => {
-                  const urgencyColors = {
-                    'OVERDUE': { bg: 'rgba(239, 68, 68, 0.15)', text: '#f87171', border: 'rgba(239, 68, 68, 0.35)', label: 'Overdue' },
-                    'DUE_TODAY': { bg: 'rgba(245, 158, 11, 0.15)', text: '#fbbf24', border: 'rgba(245, 158, 11, 0.35)', label: 'Due Today' },
-                    'DUE_SOON': { bg: 'rgba(234, 179, 8, 0.15)', text: '#fde047', border: 'rgba(234, 179, 8, 0.35)', label: 'Due in 7d' },
-                    'SCHEDULED': { bg: 'rgba(59, 130, 246, 0.15)', text: '#93c5fd', border: 'rgba(59, 130, 246, 0.35)', label: 'Upcoming' },
-                    'COMPLETED': { bg: 'rgba(16, 185, 129, 0.15)', text: '#34d399', border: 'rgba(16, 185, 129, 0.35)', label: 'Completed' }
-                  };
-                  const uStyle = urgencyColors[m.urgency?.status] || urgencyColors['SCHEDULED'];
-                  return `
-                    <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.04); color: #cbd5e1;">
-                      <td style="padding: 6px 12px;">
-                        <div style="font-weight: 700; color: #f8fafc;">${m.machineName || 'Machine'}</div>
-                        <div style="font-size: 10px; color: #64748b; font-family: monospace;">SN: ${m.serialNumber || 'N/A'}</div>
-                      </td>
-                      <td style="padding: 6px 12px; font-size: 11px; color: #94a3b8;">
-                        ${m.floor || 'Floor'} &bull; ${m.line || 'Line'}
-                      </td>
-                      <td style="padding: 6px 12px; font-size: 11px; color: #cbd5e1;">
-                        ${m.lastServiceDate || 'None recorded'}
-                      </td>
-                      <td style="padding: 6px 12px; font-size: 11px; font-weight: 700; color: #ffffff;">
-                        ${m.nextServiceDate || 'Not scheduled'}
-                      </td>
-                      <td style="padding: 6px 12px;">
-                        <span style="background: ${uStyle.bg}; color: ${uStyle.text}; border: 1px solid ${uStyle.border}; font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 4px; display: inline-block;">
-                          ${uStyle.label}
-                        </span>
-                      </td>
-                      <td style="padding: 6px 12px; font-size: 11px; color: #cbd5e1;">
-                        ${m.assignedTechnician || 'Maintenance Team'}
-                      </td>
-                    </tr>
-                  `;
-                }).join('')}
-              </tbody>
-            </table>
+          <!-- Collapsible Content Table -->
+          <div id="dash-schedules-drawer" class="dash-schedules-drawer" style="display: ${isSchedulesDrawerOpen ? 'block' : 'none'};">
+            <div class="dash-table-responsive-wrapper">
+              <table class="dash-drawer-table">
+                <thead>
+                  <tr>
+                    <th style="width: 25%;">Machine / Asset ID</th>
+                    <th style="width: 18%;">Location</th>
+                    <th style="width: 16%;">Last Servicing</th>
+                    <th style="width: 16%;">Next Due Date</th>
+                    <th style="width: 12%;">Status</th>
+                    <th style="width: 13%;">Technician</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${sortedMaintMachines.map(m => {
+                    const urgencyColors = {
+                      'OVERDUE': { bg: 'rgba(239, 68, 68, 0.15)', text: '#fca5a5', border: 'rgba(239, 68, 68, 0.4)', label: 'Overdue', dot: '#ef4444' },
+                      'DUE_TODAY': { bg: 'rgba(245, 158, 11, 0.15)', text: '#fcd34d', border: 'rgba(245, 158, 11, 0.4)', label: 'Due Today', dot: '#f59e0b' },
+                      'DUE_SOON': { bg: 'rgba(234, 179, 8, 0.15)', text: '#fef08a', border: 'rgba(234, 179, 8, 0.4)', label: 'Due in 7d', dot: '#eab308' },
+                      'SCHEDULED': { bg: 'rgba(59, 130, 246, 0.15)', text: '#93c5fd', border: 'rgba(59, 130, 246, 0.4)', label: 'Upcoming', dot: '#3b82f6' },
+                      'COMPLETED': { bg: 'rgba(16, 185, 129, 0.15)', text: '#6ee7b7', border: 'rgba(16, 185, 129, 0.4)', label: 'Completed', dot: '#10b981' }
+                    };
+                    const uStyle = urgencyColors[m.urgency?.status] || urgencyColors['SCHEDULED'];
+                    const assetId = m.assetId || m.systemAssetId || m.customValues?.system_asset_id || '';
+                    return `
+                      <tr class="dash-drawer-row">
+                        <td>
+                          <div class="dash-maint-name">${m.machineName || 'Industrial Machine'}</div>
+                          <div class="dash-maint-sub">
+                            ${assetId ? `<span class="dash-asset-tag">${assetId}</span>` : ''}
+                            <span class="dash-serial-tag">SN: ${m.serialNumber || 'N/A'}</span>
+                          </div>
+                        </td>
+                        <td>
+                          <div class="dash-location-badge">
+                            <span class="dash-loc-unit">${m.unit || 'Unit'}</span>
+                            <span class="dash-loc-arrow">&bull;</span>
+                            <span>${m.floor || 'Floor'}</span>
+                            <span class="dash-loc-arrow">&bull;</span>
+                            <span>${m.line || 'Line'}</span>
+                          </div>
+                        </td>
+                        <td>
+                          <span class="dash-date-text">${m.lastServiceDate || 'None recorded'}</span>
+                        </td>
+                        <td>
+                          <span class="dash-date-highlight">${m.nextServiceDate || 'Not scheduled'}</span>
+                        </td>
+                        <td>
+                          <span class="dash-urgency-badge" style="background: ${uStyle.bg}; color: ${uStyle.text}; border-color: ${uStyle.border};">
+                            <span class="dash-urgency-dot" style="background: ${uStyle.dot};"></span>
+                            ${uStyle.label}
+                          </span>
+                        </td>
+                        <td>
+                          <div class="dash-technician-tag">
+                            <span class="dash-tech-avatar">${(m.assignedTechnician || 'M')[0].toUpperCase()}</span>
+                            <span>${m.assignedTechnician || 'Maintenance Team'}</span>
+                          </div>
+                        </td>
+                      </tr>
+                    `;
+                  }).join('')}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
+        </footer>
       ` : ''}
 
     </div>
 
+    <!-- Scoped Enterprise Modern SaaS Styling -->
     <style>
+      .user-friendly-dashboard {
+        height: 100%;
+        max-height: 100%;
+        display: flex;
+        flex-direction: column;
+        padding: 8px 12px;
+        gap: 8px;
+        box-sizing: border-box;
+        overflow-y: auto;
+        overflow-x: hidden;
+        background: #080d1a;
+        color: #f8fafc;
+        font-family: var(--font-main, system-ui, -apple-system, sans-serif);
+      }
+
+      /* 1. Header Toolbar */
+      .dash-toolbar {
+        flex-shrink: 0;
+        background: linear-gradient(180deg, rgba(17, 24, 39, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 10px;
+        padding: 7px 14px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 8px;
+        box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+      }
+
+      .dash-brand-block {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .dash-brand-icon {
+        width: 34px;
+        height: 34px;
+        border-radius: 9px;
+        background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+        color: #ffffff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 12px rgba(2, 132, 199, 0.35);
+        flex-shrink: 0;
+      }
+
+      .dash-brand-info {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+
+      .dash-title-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .dash-title {
+        font-size: 15px;
+        font-weight: 800;
+        color: #ffffff;
+        margin: 0;
+        letter-spacing: -0.2px;
+        line-height: 1.2;
+      }
+
+      .dash-live-badge {
+        background: rgba(16, 185, 129, 0.12);
+        color: #34d399;
+        border: 1px solid rgba(16, 185, 129, 0.3);
+        font-size: 10px;
+        font-weight: 700;
+        padding: 1px 7px;
+        border-radius: 9999px;
+        display: inline-flex;
+        align-items: center;
+        gap: 4.5px;
+        letter-spacing: 0.3px;
+      }
+
+      .dash-live-dot {
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        background: #10b981;
+        box-shadow: 0 0 8px #10b981;
+        animation: dashPulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+      }
+
+      @keyframes dashPulse {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.4; transform: scale(0.85); }
+      }
+
+      .dash-subtitle {
+        font-size: 11px;
+        color: #94a3b8;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+
+      .dash-sep {
+        color: #475569;
+        font-size: 9px;
+      }
+
+      .dash-highlight-stat {
+        color: #38bdf8;
+        font-weight: 700;
+      }
+
+      /* Segmented Date Switcher */
+      .dash-date-switcher-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        background: rgba(15, 23, 42, 0.8);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        padding: 3px 6px;
+        border-radius: 8px;
+      }
+
+      .dash-date-switcher-label {
+        font-size: 11px;
+        font-weight: 700;
+        color: #38bdf8;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        padding-left: 2px;
+      }
+
+      .dash-segmented-control {
+        display: flex;
+        align-items: center;
+        gap: 2px;
+      }
+
       .btn-dash-date-filter {
         background: transparent;
         color: #94a3b8;
         border: 1px solid transparent;
         padding: 3px 8px;
         font-size: 11px;
-        font-weight: 700;
+        font-weight: 600;
         border-radius: 6px;
         cursor: pointer;
         transition: all 0.15s ease;
         white-space: nowrap;
+        user-select: none;
       }
+
       .btn-dash-date-filter:hover {
-        background: rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.06);
         color: #ffffff;
       }
+
       .btn-dash-date-filter.active {
-        background: #0284c7;
+        background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
         color: #ffffff;
+        font-weight: 700;
         border-color: #38bdf8;
-        box-shadow: 0 0 10px rgba(2, 132, 199, 0.45);
+        box-shadow: 0 2px 8px rgba(2, 132, 199, 0.4);
       }
+
+      /* Actions & Nav Buttons */
+      .dash-actions-block {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+
+      .dash-quick-links {
+        display: flex;
+        gap: 4px;
+        align-items: center;
+      }
+
+      .dash-nav-btn {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        color: #cbd5e1;
+        height: 28px;
+        padding: 0 9px;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        cursor: pointer;
+        transition: all 0.15s ease;
+      }
+
+      .dash-nav-btn:hover {
+        background: rgba(56, 189, 248, 0.08);
+        border-color: rgba(56, 189, 248, 0.3);
+        color: #38bdf8;
+        transform: translateY(-1px);
+      }
+
+      .dash-refresh-btn {
+        background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+        border: 1px solid rgba(56, 189, 248, 0.4);
+        color: #ffffff;
+        height: 28px;
+        padding: 0 10px;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        cursor: pointer;
+        box-shadow: 0 2px 8px rgba(2, 132, 199, 0.35);
+        transition: all 0.15s ease;
+      }
+
+      .dash-refresh-btn:hover {
+        background: linear-gradient(135deg, #0369a1 0%, #075985 100%);
+        box-shadow: 0 3px 12px rgba(2, 132, 199, 0.5);
+      }
+
+      .dash-refresh-btn:active .dash-refresh-icon {
+        transform: rotate(180deg);
+        transition: transform 0.3s ease;
+      }
+
+      /* 2. Main 2x2 Grid Layout */
+      .dash-2x2-grid {
+        flex: 1;
+        min-height: 0;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: 1fr 1fr;
+        gap: 8px;
+      }
+
+      /* 3. Section Cards */
+      .dash-card {
+        background: linear-gradient(180deg, #0f172a 0%, #0b1120 100%);
+        border: 1px solid rgba(255, 255, 255, 0.07);
+        border-radius: 9px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      .dash-card:hover {
+        border-color: rgba(56, 189, 248, 0.2);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
+      }
+
+      .dash-card-header {
+        padding: 5.5px 12px;
+        background: rgba(255, 255, 255, 0.025);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-shrink: 0;
+      }
+
+      .dash-card-title-group {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+      }
+
+      .dash-card-badge-icon {
+        width: 20px;
+        height: 20px;
+        border-radius: 5px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 11px;
+      }
+
+      .icon-blue { background: rgba(56, 189, 248, 0.15); color: #38bdf8; }
+      .icon-teal { background: rgba(20, 184, 166, 0.15); color: #2dd4bf; }
+      .icon-purple { background: rgba(168, 85, 247, 0.15); color: #c084fc; }
+      .icon-emerald { background: rgba(16, 185, 129, 0.15); color: #34d399; }
+
+      .dash-card-title {
+        font-size: 13px;
+        font-weight: 800;
+        color: #ffffff;
+        margin: 0;
+        letter-spacing: -0.1px;
+      }
+
+      .dash-card-meta-pill {
+        font-size: 10.5px;
+        font-weight: 600;
+        color: #94a3b8;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        padding: 1.5px 7px;
+        border-radius: 5px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .dash-card-meta-pill strong {
+        color: #38bdf8;
+      }
+
+      .dash-pill-sep {
+        color: #475569;
+        font-size: 8px;
+      }
+
+      /* Micro Health Bar */
+      .dash-health-bar-container {
+        padding: 3.5px 12px;
+        background: rgba(0, 0, 0, 0.2);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        flex-shrink: 0;
+      }
+
+      .dash-health-bar-labels {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 10px;
+        margin-bottom: 3px;
+      }
+
+      .dash-health-label {
+        color: #cbd5e1;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .status-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        display: inline-block;
+      }
+
+      .dot-emerald { background: #10b981; }
+      .dot-teal { background: #14b8a6; }
+      .dot-purple { background: #a855f7; }
+
+      .dash-health-sub {
+        color: #94a3b8;
+        font-size: 9.5px;
+        font-weight: 500;
+      }
+
+      .badge-alert-inline {
+        color: #fbbf24;
+        font-weight: 700;
+      }
+
+      .badge-critical-inline {
+        color: #f87171;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+      }
+
+      .badge-ok-inline {
+        color: #34d399;
+        font-weight: 600;
+      }
+
+      .pulse-dot {
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        background: #ef4444;
+        display: inline-block;
+        box-shadow: 0 0 6px #ef4444;
+        animation: dashPulse 1.2s infinite;
+      }
+
+      .dash-progress-track {
+        height: 3px;
+        background: rgba(255, 255, 255, 0.06);
+        border-radius: 3px;
+        overflow: hidden;
+        display: flex;
+      }
+
+      .dash-progress-seg {
+        height: 100%;
+        transition: width 0.4s ease;
+      }
+
+      .seg-emerald { background: #10b981; }
+      .seg-amber { background: #f59e0b; }
+      .seg-rose { background: #ef4444; }
+      .seg-slate { background: #475569; }
+
+      /* Table Header */
+      .dash-table-header {
+        display: flex;
+        justify-content: space-between;
+        padding: 3px 12px;
+        background: rgba(0, 0, 0, 0.35);
+        font-size: 10px;
+        font-weight: 700;
+        color: #94a3b8;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        flex-shrink: 0;
+      }
+
+      /* Card Rows Container */
+      .dash-card-rows {
+        flex: 1;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-evenly;
+      }
+
+      /* Clickable Rows */
+      .dash-clickable-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 3.5px 12px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+        cursor: pointer;
+        transition: background 0.12s ease, border-color 0.12s ease;
+        position: relative;
+        user-select: none;
+      }
+
+      .dash-clickable-row:last-child {
+        border-bottom: none;
+      }
+
       .dash-clickable-row:hover {
-        background: rgba(255, 255, 255, 0.04) !important;
+        background: rgba(255, 255, 255, 0.04);
       }
-      .dash-clickable-row:hover .dash-qty-pill {
-        transform: translateY(-1px) scale(1.02);
-        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.35);
+
+      .dash-clickable-row:hover .dash-chevron {
+        transform: translateX(2px);
+        opacity: 1;
+        color: #ffffff;
       }
+
+      .dash-row-left {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 0;
+      }
+
+      .dash-icon-box {
+        width: 24px;
+        height: 24px;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        flex-shrink: 0;
+      }
+
+      .icon-sky { background: rgba(56, 189, 248, 0.1); }
+      .icon-emerald { background: rgba(16, 185, 129, 0.1); }
+      .icon-cyan { background: rgba(6, 182, 212, 0.1); }
+      .icon-amber { background: rgba(245, 158, 11, 0.1); }
+      .icon-yellow { background: rgba(234, 179, 8, 0.1); }
+      .icon-rose { background: rgba(239, 68, 68, 0.1); }
+      .icon-indigo { background: rgba(99, 102, 241, 0.1); }
+
+      .dash-row-titles {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+      }
+
+      .dash-row-primary {
+        font-size: 12px;
+        font-weight: 700;
+        color: #f1f5f9;
+        line-height: 1.25;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .dash-row-secondary {
+        font-size: 10px;
+        color: #64748b;
+        line-height: 1.2;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .dash-row-right {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-shrink: 0;
+      }
+
+      /* Quantity Pills with Tabular Digits */
       .dash-qty-pill {
-        transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+        border-radius: 9999px;
+        padding: 1.5px 8px;
+        font-size: 11.5px;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-family: var(--font-mono, monospace);
+        font-variant-numeric: tabular-nums;
+        transition: all 0.15s ease;
       }
+
+      .dash-qty-pill small {
+        font-size: 9.5px;
+        opacity: 0.8;
+        font-family: var(--font-main, sans-serif);
+      }
+
+      .dash-chevron {
+        font-size: 12px;
+        line-height: 1;
+        opacity: 0.5;
+        transition: transform 0.15s ease, opacity 0.15s ease;
+      }
+
+      .pill-sky {
+        background: rgba(56, 189, 248, 0.12);
+        color: #38bdf8;
+        border: 1px solid rgba(56, 189, 248, 0.3);
+      }
+
+      .pill-emerald {
+        background: rgba(16, 185, 129, 0.12);
+        color: #34d399;
+        border: 1px solid rgba(16, 185, 129, 0.3);
+      }
+
+      .pill-cyan {
+        background: rgba(6, 182, 212, 0.12);
+        color: #22d3ee;
+        border: 1px solid rgba(6, 182, 212, 0.3);
+      }
+
+      .pill-amber {
+        background: rgba(245, 158, 11, 0.12);
+        color: #fbbf24;
+        border: 1px solid rgba(245, 158, 11, 0.3);
+      }
+
+      .pill-yellow {
+        background: rgba(234, 179, 8, 0.12);
+        color: #fde047;
+        border: 1px solid rgba(234, 179, 8, 0.3);
+      }
+
+      .pill-rose {
+        background: rgba(239, 68, 68, 0.14);
+        color: #f87171;
+        border: 1px solid rgba(239, 68, 68, 0.35);
+      }
+
+      .pill-indigo {
+        background: rgba(99, 102, 241, 0.12);
+        color: #a5b4fc;
+        border: 1px solid rgba(99, 102, 241, 0.3);
+      }
+
+      .pill-pulse {
+        box-shadow: 0 0 10px rgba(239, 68, 68, 0.25);
+      }
+
+      .dash-card-footer-hint {
+        padding: 3px 12px;
+        background: rgba(56, 189, 248, 0.04);
+        border-top: 1px solid rgba(56, 189, 248, 0.08);
+        font-size: 10px;
+        font-weight: 500;
+        color: #38bdf8;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+
+      /* 4. Needle Grid Styling */
+      .dash-needle-grid-header {
+        display: grid;
+        grid-template-columns: 2.2fr 1fr 1fr 1fr;
+        padding: 3px 12px;
+        background: rgba(0, 0, 0, 0.35);
+        font-size: 10px;
+        font-weight: 700;
+        color: #94a3b8;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        flex-shrink: 0;
+      }
+
+      .dash-needle-grid-row {
+        display: grid;
+        grid-template-columns: 2.2fr 1fr 1fr 1fr;
+        align-items: center;
+      }
+
+      .needle-col-spec {
+        display: flex;
+        flex-direction: column;
+        text-align: left;
+        min-width: 0;
+      }
+
+      .needle-col-val {
+        text-align: right;
+        padding-right: 4px;
+      }
+
+      .dash-needle-badge {
+        font-size: 12px;
+        font-weight: 800;
+        color: #38bdf8;
+        letter-spacing: 0.2px;
+      }
+
+      .dash-needle-desc {
+        font-size: 9.5px;
+        color: #64748b;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .dash-num-tag {
+        font-family: var(--font-mono, monospace);
+        font-variant-numeric: tabular-nums;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 1.5px 6px;
+        border-radius: 6px;
+        display: inline-block;
+      }
+
+      .tag-sky { background: rgba(56, 189, 248, 0.08); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.2); }
+      .tag-rose { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.35); font-weight: 700; }
+      .tag-muted { background: rgba(255, 255, 255, 0.04); color: #94a3b8; border: 1px solid rgba(255, 255, 255, 0.08); }
+      .tag-emerald { background: rgba(16, 185, 129, 0.1); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.25); font-weight: 700; }
+
+      .dash-needle-summary-row {
+        background: rgba(56, 189, 248, 0.03);
+        border-top: 1px solid rgba(56, 189, 248, 0.2) !important;
+      }
+
+      .dash-summary-label {
+        font-size: 11.5px;
+        font-weight: 800;
+        color: #ffffff;
+      }
+
+      .dash-summary-sub {
+        font-size: 9.5px;
+        color: #94a3b8;
+      }
+
+      .tag-sky-bold { background: rgba(56, 189, 248, 0.18); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); font-weight: 800; }
+      .tag-rose-bold { background: rgba(239, 68, 68, 0.22); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.45); font-weight: 800; }
+      .tag-muted-bold { background: rgba(255, 255, 255, 0.06); color: #e2e8f0; border: 1px solid rgba(255, 255, 255, 0.12); font-weight: 800; }
+      .tag-emerald-bold { background: rgba(16, 185, 129, 0.18); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.35); font-weight: 800; }
+
+      /* 5. Live Servicing Schedules Drawer */
+      .dash-schedules-card {
+        flex-shrink: 0;
+        background: #0f172a;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 9px;
+        overflow: hidden;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+      }
+
+      .dash-schedules-bar {
+        padding: 5px 12px;
+        background: rgba(56, 189, 248, 0.05);
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        user-select: none;
+        transition: background 0.15s ease;
+      }
+
+      .dash-schedules-bar:hover {
+        background: rgba(56, 189, 248, 0.09);
+      }
+
+      .dash-schedules-left {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .dash-schedules-pulse-icon {
+        width: 22px;
+        height: 22px;
+        border-radius: 6px;
+        background: rgba(56, 189, 248, 0.15);
+        color: #38bdf8;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .dash-schedules-heading {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .dash-schedules-title {
+        font-size: 12.5px;
+        font-weight: 800;
+        color: #ffffff;
+      }
+
+      .dash-schedules-caption {
+        font-size: 10.5px;
+        color: #94a3b8;
+        font-weight: 500;
+      }
+
+      .dash-schedules-chips {
+        display: flex;
+        gap: 4px;
+        align-items: center;
+      }
+
+      .dash-chip-critical {
+        background: rgba(239, 68, 68, 0.15);
+        color: #fca5a5;
+        border: 1px solid rgba(239, 68, 68, 0.35);
+        font-size: 10px;
+        font-weight: 700;
+        padding: 1px 6px;
+        border-radius: 4px;
+      }
+
+      .dash-chip-amber {
+        background: rgba(245, 158, 11, 0.15);
+        color: #fcd34d;
+        border: 1px solid rgba(245, 158, 11, 0.35);
+        font-size: 10px;
+        font-weight: 700;
+        padding: 1px 6px;
+        border-radius: 4px;
+      }
+
+      .dash-schedules-right {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .dash-toggle-label {
+        font-size: 11px;
+        font-weight: 700;
+        color: #38bdf8;
+      }
+
+      .dash-full-schedule-btn {
+        background: rgba(56, 189, 248, 0.1);
+        border: 1px solid rgba(56, 189, 248, 0.3);
+        color: #38bdf8;
+        font-size: 10.5px;
+        font-weight: 700;
+        height: 24px;
+        padding: 0 8px;
+        border-radius: 5px;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        cursor: pointer;
+        transition: all 0.15s ease;
+      }
+
+      .dash-full-schedule-btn:hover {
+        background: rgba(56, 189, 248, 0.2);
+        color: #ffffff;
+      }
+
+      .dash-schedules-drawer {
+        max-height: 190px;
+        overflow-y: auto;
+        border-top: 1px solid rgba(255, 255, 255, 0.06);
+      }
+
+      .dash-table-responsive-wrapper {
+        width: 100%;
+        overflow-x: auto;
+      }
+
+      .dash-drawer-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 0;
+        font-size: 11.5px;
+      }
+
+      .dash-drawer-table thead tr {
+        background: rgba(0, 0, 0, 0.4);
+        color: #94a3b8;
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+      }
+
+      .dash-drawer-table th {
+        padding: 5px 12px;
+        text-align: left;
+        white-space: nowrap;
+      }
+
+      .dash-drawer-row {
+        border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        color: #cbd5e1;
+        transition: background 0.12s ease;
+      }
+
+      .dash-drawer-row:hover {
+        background: rgba(255, 255, 255, 0.035);
+      }
+
+      .dash-drawer-table td {
+        padding: 5px 12px;
+        vertical-align: middle;
+      }
+
+      .dash-maint-name {
+        font-weight: 700;
+        color: #ffffff;
+        font-size: 12px;
+      }
+
+      .dash-maint-sub {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-top: 1px;
+      }
+
+      .dash-asset-tag {
+        font-family: var(--font-mono, monospace);
+        font-size: 9.5px;
+        font-weight: 700;
+        color: #38bdf8;
+        background: rgba(56, 189, 248, 0.12);
+        padding: 0 4px;
+        border-radius: 3px;
+        border: 1px solid rgba(56, 189, 248, 0.25);
+      }
+
+      .dash-serial-tag {
+        font-family: var(--font-mono, monospace);
+        font-size: 9.5px;
+        color: #94a3b8;
+      }
+
+      .dash-location-badge {
+        font-size: 10.5px;
+        color: #cbd5e1;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .dash-loc-unit {
+        font-weight: 600;
+        color: #f1f5f9;
+      }
+
+      .dash-loc-arrow {
+        color: #475569;
+        font-size: 8px;
+      }
+
+      .dash-date-text {
+        font-size: 11px;
+        color: #94a3b8;
+        font-family: var(--font-mono, monospace);
+      }
+
+      .dash-date-highlight {
+        font-size: 11px;
+        font-weight: 700;
+        color: #ffffff;
+        font-family: var(--font-mono, monospace);
+      }
+
+      .dash-urgency-badge {
+        font-size: 9.5px;
+        font-weight: 800;
+        padding: 1.5px 6px;
+        border-radius: 4px;
+        border: 1px solid transparent;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        white-space: nowrap;
+      }
+
+      .dash-urgency-dot {
+        width: 4px;
+        height: 4px;
+        border-radius: 50%;
+      }
+
+      .dash-technician-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 11px;
+        color: #e2e8f0;
+      }
+
+      .dash-tech-avatar {
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+        color: #ffffff;
+        font-size: 9px;
+        font-weight: 800;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      /* 6. Responsive Breakpoints */
       @media (max-width: 1024px) {
         .dash-2x2-grid {
           grid-template-columns: 1fr !important;
@@ -863,6 +2008,25 @@ export function renderDashboard() {
         .user-friendly-dashboard {
           height: auto !important;
           max-height: none !important;
+        }
+      }
+
+      @media (max-width: 768px) {
+        .dash-toolbar {
+          flex-direction: column;
+          align-items: stretch;
+          gap: 10px;
+        }
+        .dash-date-switcher-wrapper {
+          overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
+        }
+        .dash-actions-block {
+          justify-content: space-between;
+        }
+        .dash-needle-grid-header,
+        .dash-needle-grid-row {
+          grid-template-columns: 1.8fr 1fr 1fr 1fr;
         }
       }
     </style>
@@ -951,6 +2115,15 @@ export function attachDashboardEvents() {
   const btnRefresh = document.getElementById('btn-dash-refresh');
   if (btnRefresh) {
     btnRefresh.addEventListener('click', () => {
+      const refreshIcon = btnRefresh.querySelector('.dash-refresh-icon');
+      if (refreshIcon) {
+        refreshIcon.style.transform = 'rotate(360deg)';
+        refreshIcon.style.transition = 'transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)';
+        setTimeout(() => {
+          refreshIcon.style.transform = '';
+          refreshIcon.style.transition = '';
+        }, 500);
+      }
       window.dispatchEvent(new CustomEvent('erp:storage-updated'));
     });
   }
