@@ -305,7 +305,7 @@ export function initChangePasswordModalEvents() {
   // 2. Submit Password Change
   const formPassword = document.getElementById('form-change-password-modal');
   if (formPassword) {
-    formPassword.addEventListener('submit', (e) => {
+    formPassword.addEventListener('submit', async (e) => {
       e.preventDefault();
       const cur = document.getElementById('inp-change-current-pwd')?.value;
       const newP = document.getElementById('inp-change-new-pwd')?.value;
@@ -316,14 +316,19 @@ export function initChangePasswordModalEvents() {
         return;
       }
 
+      const submitBtn = formPassword.querySelector('[type="submit"]');
+      if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = '⏳ Saving...'; }
+
       try {
-        authService.changePassword(cur, newP);
+        await authService.changePassword(cur, newP);
         showAlert('Your account password has been updated successfully.', true);
         setTimeout(() => {
           closeModal();
         }, 1200);
       } catch (err) {
         showAlert(err.message || 'Failed to update password.');
+      } finally {
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = '🔒 Update Password'; }
       }
     });
   }

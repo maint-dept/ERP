@@ -701,37 +701,37 @@ export function renderInventoryTable() {
     <div class="page-view inventory-page-wrapper" style="display: flex; flex-direction: column; gap: 6px; height: 100%; min-height: 0; padding: 6px 12px; overflow: hidden;">
       
       <!-- ── Pinned Top Control Deck (Never scrolls away) ── -->
-      <div class="inventory-sticky-header-panel" style="display: flex; flex-direction: column; gap: 6px; flex-shrink: 0; position: sticky; top: 0; z-index: 35; background: var(--bg-surface, #0f172a);">
+      <div class="inventory-sticky-header-panel" style="display: flex; flex-direction: column; gap: 6px; flex-shrink: 0; position: sticky; top: 0; z-index: 35; background: var(--bg-surface, #FFFFFF);">
         
         <!-- 1. Ultra-Compact Top Bar (Title + KPI Status Badges + Action Buttons) -->
         <div class="inventory-top-unified-bar" style="padding: 6px 12px; gap: 8px;">
           
           <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-            <h1 style="font-size: 15px; font-weight: 800; color: #fff; margin: 0; display: flex; align-items: center; gap: 6px; white-space: nowrap;">
+            <h1 style="font-size: 15px; font-weight: 800; color: var(--text-primary, #171717); margin: 0; display: flex; align-items: center; gap: 6px; white-space: nowrap;">
               <span>📦</span> Machine Inventory ${scopeBadgeHtml}
             </h1>
             
             <!-- Inline KPI Pills (Dynamically calculated based on User Access & Filter View) -->
             <div class="inventory-inline-kpis">
-              <div class="kpi-pill kpi-total" title="${showCrossFloorIdle ? 'Total standby & idle machines across other factory floors' : 'Total machines matching current scope and view'}">
+              <div class="kpi-pill kpi-total" title="${showCrossFloorIdle ? 'Total standby & idle machines across other factory floors' : 'Total machines matching current scope and view'}" style="background: var(--bg-hover, #F5F7FA); border: 1px solid var(--border-color, #D9DDE3); color: var(--text-primary, #171717);">
                 <span class="kpi-dot">🏭</span>
-                <strong class="kpi-val">${isInitialSyncPending ? '...' : countTotalMachines}</strong>
-                <span class="kpi-lbl">${showCrossFloorIdle ? 'Idle Other Floors' : 'Total'}</span>
+                <strong class="kpi-val" style="color: var(--text-primary, #171717);">${isInitialSyncPending ? '...' : countTotalMachines}</strong>
+                <span class="kpi-lbl" style="color: var(--text-secondary, #606770);">${showCrossFloorIdle ? 'Idle Other Floors' : 'TOTAL'}</span>
               </div>
-              <div class="kpi-pill kpi-running" title="Operational running machines in current scope and view" style="${showCrossFloorIdle ? 'display: none;' : ''}">
+              <div class="kpi-pill kpi-running" title="Operational running machines in current scope and view" style="${showCrossFloorIdle ? 'display: none;' : ''} background: #EAF7EF; border: 1px solid #168548; color: #168548;">
                 <span class="kpi-dot">🟢</span>
-                <strong class="kpi-val" style="color: #34d399;">${isInitialSyncPending ? '...' : totalRunning}</strong>
-                <span class="kpi-lbl">Running</span>
+                <strong class="kpi-val" style="color: #168548;">${isInitialSyncPending ? '...' : totalRunning}</strong>
+                <span class="kpi-lbl" style="color: #168548;">RUNNING</span>
               </div>
-              <div class="kpi-pill kpi-usable" title="Ready-to-use standby usable idle machines in current scope and view">
+              <div class="kpi-pill kpi-usable" title="Ready-to-use standby usable idle machines in current scope and view" style="background: #EAF4FC; border: 1px solid #0070C9; color: #0070C9;">
                 <span class="kpi-dot">🔵</span>
-                <strong class="kpi-val" style="color: #38bdf8;">${isInitialSyncPending ? '...' : totalUsableIdle}</strong>
-                <span class="kpi-lbl">Usable</span>
+                <strong class="kpi-val" style="color: #0070C9;">${isInitialSyncPending ? '...' : totalUsableIdle}</strong>
+                <span class="kpi-lbl" style="color: #0070C9;">USABLE</span>
               </div>
-              <div class="kpi-pill kpi-repair" title="Repairable / maintenance idle machines in current scope and view">
+              <div class="kpi-pill kpi-repair" title="Repairable / maintenance idle machines in current scope and view" style="background: #FFF6E5; border: 1px solid #B7791F; color: #B7791F;">
                 <span class="kpi-dot">🟡</span>
-                <strong class="kpi-val" style="color: #fbbf24;">${isInitialSyncPending ? '...' : totalRepairableIdle}</strong>
-                <span class="kpi-lbl">Repairable</span>
+                <strong class="kpi-val" style="color: #B7791F;">${isInitialSyncPending ? '...' : totalRepairableIdle}</strong>
+                <span class="kpi-lbl" style="color: #B7791F;">REPAIRABLE</span>
               </div>
             </div>
           </div>
@@ -745,11 +745,11 @@ export function renderInventoryTable() {
               </button>
             ` : ''}
 
-            <button id="btn-inventory-relocate" class="btn btn-secondary btn-sm" style="font-weight: 800; height: 28px; padding: 0 10px; font-size: 11.5px; border: 1.5px solid #38bdf8; color: #38bdf8; background: rgba(56, 189, 248, 0.12);" title="Physical Machine Verification &amp; Relocation">
+            <button id="btn-inventory-relocate" class="btn btn-secondary btn-sm" style="font-weight: 700; height: 28px; padding: 0 10px; font-size: 11.5px;" title="Physical Machine Verification &amp; Relocation">
               📍 Relocate &amp; Verify
             </button>
 
-            <button id="btn-inventory-qr-codes" class="btn btn-secondary btn-sm" style="font-weight: 800; height: 28px; padding: 0 10px; font-size: 11.5px; border: 1.5px solid #a855f7; color: #c084fc; background: rgba(168, 85, 247, 0.12);" title="QR Code &amp; Label Studio: Generate, Preview, A4 Print">
+            <button id="btn-inventory-qr-codes" class="btn btn-secondary btn-sm" style="font-weight: 700; height: 28px; padding: 0 10px; font-size: 11.5px;" title="QR Code &amp; Label Studio: Generate, Preview, A4 Print">
               🏁 QR Codes
             </button>
 
@@ -903,7 +903,7 @@ export function renderInventoryTable() {
 
             <!-- Action Buttons Group -->
             <div style="display: flex; align-items: center; gap: 5px; margin-left: auto; flex-wrap: wrap;">
-              <button id="btn-toggle-advanced-filters" class="btn btn-ghost btn-sm" style="font-size: 11px; padding: 2px 8px; color: #38bdf8; height: 30px; border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 6px;" title="Toggle Brand and Model filters">
+              <button id="btn-toggle-advanced-filters" class="btn btn-secondary btn-sm" style="font-size: 11px; padding: 2px 9px; height: 30px; font-weight: 600;" title="Toggle Brand and Model filters">
                 ${showAdvancedFilters ? '▲ Less' : 'More Filters ▾'}
               </button>
               
@@ -911,9 +911,9 @@ export function renderInventoryTable() {
                 ↺ Reset
               </button>
 
-              <button id="btn-column-picker-inline" class="btn btn-ghost btn-sm" style="font-size: 11px; padding: 2px 10px; color: #38bdf8; height: 30px; display: inline-flex; align-items: center; gap: 5px; border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 6px; background: rgba(56, 189, 248, 0.1);" title="Configure visible and frozen columns">
+              <button id="btn-column-picker-inline" class="btn btn-secondary btn-sm" style="font-size: 11px; padding: 2px 10px; color: var(--primary, #0070C9); height: 30px; display: inline-flex; align-items: center; gap: 5px; border-color: var(--primary, #0070C9); border-radius: 6px; background: var(--bg-selected, #EAF4FC); font-weight: 700;" title="Configure visible and frozen columns">
                 <span>❄️ Columns &amp; Freeze ▾</span>
-                ${frozenColKeys.length > 0 ? `<span class="badge" style="background: rgba(56, 189, 248, 0.3); color: #fff; font-size: 10px; padding: 1px 5px; font-weight: 800; border-radius: 10px;">${frozenColKeys.length}</span>` : ''}
+                ${frozenColKeys.length > 0 ? `<span class="badge" style="background: var(--primary, #0070C9); color: #fff; font-size: 10px; padding: 1px 5px; font-weight: 800; border-radius: 10px;">${frozenColKeys.length}</span>` : ''}
               </button>
             </div>
 
@@ -921,11 +921,11 @@ export function renderInventoryTable() {
 
           <!-- Active filter tags badge strip if active -->
           ${hasActiveFilters ? `
-            <div style="display: flex; align-items: center; gap: 4px; flex-wrap: wrap; margin-top: 2px; padding-top: 3px; border-top: 1px solid rgba(255, 255, 255, 0.06);">
+            <div style="display: flex; align-items: center; gap: 4px; flex-wrap: wrap; margin-top: 2px; padding-top: 3px; border-top: 1px solid var(--border-light, #E5E8EC);">
               <span style="font-size: 10px; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Active Filters:</span>
               ${activeTags.map(tag => `
-                <span class="active-filter-tag" data-key="${tag.key}" style="display: inline-flex; align-items: center; gap: 3px; background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 4px; padding: 1px 5px; font-size: 10.5px; color: #38bdf8; cursor: pointer;" title="Click to remove">
-                  ${tag.label} <span style="color: #f87171; font-weight: bold; margin-left: 2px;">✕</span>
+                <span class="active-filter-tag" data-key="${tag.key}" style="display: inline-flex; align-items: center; gap: 3px; background: #EAF4FC; border: 1px solid #0070C9; border-radius: 4px; padding: 1.5px 6px; font-size: 10.5px; color: #0070C9; cursor: pointer;" title="Click to remove">
+                  ${tag.label} <span style="color: #C62828; font-weight: bold; margin-left: 2px;">✕</span>
                 </span>
               `).join('')}
             </div>

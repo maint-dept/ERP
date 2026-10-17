@@ -75,7 +75,7 @@ class GlobalState {
       visibleColumns: new Set(savedCols && Array.isArray(savedCols) && savedCols.length > 0 ? savedCols : defaultCols),
       activeModal: null,
       activeMachineId: null,
-      theme: 'dark'
+      theme: (typeof localStorage !== 'undefined' && localStorage.getItem('al_muslim_theme')) || 'light'
     };
 
     this.listeners = new Map();

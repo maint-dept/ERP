@@ -68,7 +68,7 @@ export function renderNavbar() {
   const user = authService.getCurrentUser();
   const allUsers = authService.getAllUsers();
   const unreadNotifs = notificationService.getUnreadCount(user);
-  const currentTheme = localStorage.getItem('al_muslim_theme') || 'dark';
+  const currentTheme = localStorage.getItem('al_muslim_theme') || 'light';
 
   const roleName = getRoleName(user);
   const shortRole = getShortRole(roleName);
@@ -212,8 +212,8 @@ export function renderNavbar() {
         </div>
 
         <!-- Light / Dark Theme Switcher -->
-        <button id="btn-theme-toggle" class="nav-icon-btn" type="button" title="Theme (${currentTheme === 'light' ? 'Switch to Dark' : 'Switch to Light'})" aria-label="Toggle Theme">
-          <span class="theme-icon">${currentTheme === 'light' ? '🌙' : '☀️'}</span>
+        <button id="btn-theme-toggle" class="nav-icon-btn" type="button" title="Theme (${currentTheme === 'dark' ? 'Switch to Bright Mode' : 'Switch to Dark Mode'})" aria-label="Toggle Theme">
+          <span class="theme-icon">${currentTheme === 'dark' ? '☀️' : '🌙'}</span>
         </button>
 
         <!-- Notification Bell -->
@@ -452,17 +452,24 @@ export function initNavbarEvents() {
   const dropdownThemeBtn = document.getElementById('btn-dropdown-theme-toggle');
   if (dropdownThemeBtn) {
     dropdownThemeBtn.addEventListener('click', () => {
-      const isLight = document.body.classList.toggle('theme-light');
-      localStorage.setItem('al_muslim_theme', isLight ? 'light' : 'dark');
+      const isDark = document.body.classList.toggle('theme-dark');
+      if (isDark) {
+        document.body.classList.remove('theme-light');
+      } else {
+        document.body.classList.add('theme-light');
+      }
+      const newTheme = isDark ? 'dark' : 'light';
+      localStorage.setItem('al_muslim_theme', newTheme);
       const topThemeBtn = document.getElementById('btn-theme-toggle');
       if (topThemeBtn) {
         const topIcon = topThemeBtn.querySelector('.theme-icon') || topThemeBtn;
-        topIcon.innerHTML = isLight ? '🌙' : '☀️';
+        topIcon.innerHTML = isDark ? '☀️' : '🌙';
+        topThemeBtn.title = isDark ? 'Theme (Switch to Bright Mode)' : 'Theme (Switch to Dark Mode)';
       }
       const icon = dropdownThemeBtn.querySelector('.dropdown-theme-icon') || dropdownThemeBtn;
-      icon.innerHTML = isLight ? '🌙' : '☀️';
+      icon.innerHTML = isDark ? '☀️' : '🌙';
       const text = dropdownThemeBtn.querySelector('span:last-child');
-      if (text) text.textContent = isLight ? 'Dark' : 'Light';
+      if (text) text.textContent = isDark ? 'Bright Mode' : 'Dark Mode';
     });
   }
 
@@ -720,11 +727,17 @@ export function initNavbarEvents() {
   const themeBtn = document.getElementById('btn-theme-toggle');
   if (themeBtn) {
     themeBtn.addEventListener('click', () => {
-      const isLight = document.body.classList.toggle('theme-light');
-      localStorage.setItem('al_muslim_theme', isLight ? 'light' : 'dark');
+      const isDark = document.body.classList.toggle('theme-dark');
+      if (isDark) {
+        document.body.classList.remove('theme-light');
+      } else {
+        document.body.classList.add('theme-light');
+      }
+      const newTheme = isDark ? 'dark' : 'light';
+      localStorage.setItem('al_muslim_theme', newTheme);
       const icon = themeBtn.querySelector('.theme-icon') || themeBtn;
-      icon.innerHTML = isLight ? '🌙' : '☀️';
-      themeBtn.title = isLight ? 'Theme (Switch to Dark)' : 'Theme (Switch to Light)';
+      icon.innerHTML = isDark ? '☀️' : '🌙';
+      themeBtn.title = isDark ? 'Theme (Switch to Bright Mode)' : 'Theme (Switch to Dark Mode)';
     });
   }
 

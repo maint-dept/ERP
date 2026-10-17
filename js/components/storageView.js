@@ -59,11 +59,11 @@ export function renderStorageView() {
         <!-- Left: Title & Live KPI Pills -->
         <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; min-width: 0;">
           <div style="display: flex; align-items: center; gap: 8px;">
-            <div style="font-size: 18px; background: rgba(56, 189, 248, 0.12); border: 1px solid #38bdf8; border-radius: var(--radius-sm); width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <div style="font-size: 18px; background: #EAF4FC; border: 1px solid var(--border-color); border-radius: var(--radius-sm); width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
               🧵
             </div>
             <div>
-              <h1 style="font-size: 15px; font-weight: 800; color: #fff; margin: 0; letter-spacing: -0.2px; line-height: 1.2;">
+              <h1 style="font-size: 15px; font-weight: 800; color: var(--text-primary, #171717); margin: 0; letter-spacing: -0.2px; line-height: 1.2;">
                 Machine &amp; Model Master Setup
               </h1>
             </div>
@@ -71,21 +71,21 @@ export function renderStorageView() {
 
           <!-- Compact KPI Badges -->
           <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
-            <div style="background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: var(--radius-sm); padding: 3px 8px; display: inline-flex; align-items: center; gap: 5px;">
+            <div style="background: #EAF4FC; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 3px 8px; display: inline-flex; align-items: center; gap: 5px;">
               <span style="font-size: 12px;">🧵</span>
-              <span id="kpi-total-machines" style="font-size: 12px; font-weight: 800; color: #38bdf8;">${totalMachines} Types</span>
+              <span id="kpi-total-machines" style="font-size: 12px; font-weight: 800; color: var(--brand-primary, #0070C9);">${totalMachines} Types</span>
             </div>
 
-            <div id="btn-open-manage-brands" style="background: rgba(52, 211, 153, 0.1); border: 1px solid rgba(52, 211, 153, 0.3); border-radius: var(--radius-sm); padding: 3px 8px; display: inline-flex; align-items: center; gap: 5px; cursor: pointer; transition: all 0.15s ease;" title="Click to view and delete registered brands">
+            <div id="btn-open-manage-brands" style="background: #EAF7EF; border: 1px solid rgba(22, 133, 72, 0.3); border-radius: var(--radius-sm); padding: 3px 8px; display: inline-flex; align-items: center; gap: 5px; cursor: pointer; transition: all 0.15s ease;" title="Click to view and delete registered brands">
               <span style="font-size: 12px;">🏷️</span>
-              <span id="kpi-total-brands" style="font-size: 12px; font-weight: 800; color: #34d399;">${totalBrands} Brands</span>
+              <span id="kpi-total-brands" style="font-size: 12px; font-weight: 800; color: #168548;">${totalBrands} Brands</span>
               <span id="kpi-total-brands-sub" style="display: none;">${totalBrands === 0 ? 'No Brands Registered' : Array.from(brandSet).slice(0, 3).join(', ')}</span>
-              <span style="font-size: 10px; color: #34d399; font-weight: 800; background: rgba(52, 211, 153, 0.2); padding: 1px 4px; border-radius: 3px;">Manage &rarr;</span>
+              <span style="font-size: 10px; color: #168548; font-weight: 800; background: rgba(22, 133, 72, 0.15); padding: 1px 4px; border-radius: 3px;">Manage &rarr;</span>
             </div>
 
-            <div style="background: rgba(251, 191, 36, 0.1); border: 1px solid rgba(251, 191, 36, 0.3); border-radius: var(--radius-sm); padding: 3px 8px; display: inline-flex; align-items: center; gap: 5px;">
+            <div style="background: #FFF6E5; border: 1px solid rgba(183, 121, 31, 0.3); border-radius: var(--radius-sm); padding: 3px 8px; display: inline-flex; align-items: center; gap: 5px;">
               <span style="font-size: 12px;">🔢</span>
-              <span id="kpi-total-models" style="font-size: 12px; font-weight: 800; color: #fbbf24;">${totalModels} Models</span>
+              <span id="kpi-total-models" style="font-size: 12px; font-weight: 800; color: #B7791F;">${totalModels} Models</span>
             </div>
           </div>
         </div>
@@ -93,19 +93,19 @@ export function renderStorageView() {
         <!-- Right: Primary Workflow Actions -->
         <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
           ${isAdmin ? `
-            <button type="button" id="btn-open-excel-master-modal-top" class="btn btn-sm btn-open-excel-master-modal" style="font-weight: 800; background: linear-gradient(135deg, #059669 0%, #047857 100%); border: 1px solid #34d399; color: #fff; padding: 5px 12px; font-size: 11.5px; box-shadow: 0 2px 8px rgba(5, 150, 105, 0.35); cursor: pointer;" title="Bulk Import Machine Name, Brand & Model via Excel Sheet">
+            <button type="button" id="btn-open-excel-master-modal-top" class="btn btn-sm btn-open-excel-master-modal" style="font-weight: 700; background: #FFFFFF; border: 1px solid var(--border-color); color: var(--text-primary); padding: 5px 12px; font-size: 11.5px; cursor: pointer;" title="Bulk Import Machine Name, Brand & Model via Excel Sheet">
               📊 Excel Studio (Import / Export)
             </button>
-            <button type="button" id="btn-open-bulk-import-machine-names-top" class="btn btn-secondary btn-sm" style="font-weight: 700; border: 1px solid rgba(56, 189, 248, 0.4); color: #38bdf8; padding: 5px 10px; font-size: 11.5px;">
+            <button type="button" id="btn-open-bulk-import-machine-names-top" class="btn btn-secondary btn-sm" style="font-weight: 700; border: 1px solid var(--border-color); background: #FFFFFF; color: var(--text-primary); padding: 5px 10px; font-size: 11.5px;">
               🧵 Step 1: Add Machines
             </button>
-            <button type="button" id="btn-open-fast-brand-model-importer-top" class="btn btn-primary btn-sm" style="font-weight: 800; background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); border-color: #38bdf8; padding: 5px 12px; font-size: 11.5px; box-shadow: 0 2px 6px rgba(2, 132, 199, 0.3);">
+            <button type="button" id="btn-open-fast-brand-model-importer-top" class="btn btn-primary btn-sm" style="font-weight: 700; background: var(--brand-primary, #0070C9); border: 1px solid #005CA8; color: #fff; padding: 5px 12px; font-size: 11.5px; box-shadow: 0 1px 3px rgba(0, 112, 201, 0.2);">
               📥 Step 2: Add Models
             </button>
-            <button type="button" id="btn-storage-export-excel-top" class="btn btn-ghost btn-sm" style="font-weight: 700; color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); padding: 5px 9px; font-size: 11px;" title="Export all registered Machines, Brands & Models to Excel file">
+            <button type="button" id="btn-storage-export-excel-top" class="btn btn-ghost btn-sm" style="font-weight: 700; color: var(--brand-primary, #0070C9); border: 1px solid var(--border-color); padding: 5px 9px; font-size: 11px;" title="Export all registered Machines, Brands & Models to Excel file">
               📥 Export (.xlsx)
             </button>
-            <button type="button" id="btn-storage-add-new-machine" class="btn btn-ghost btn-sm" style="font-size: 11px; color: #94a3b8; border: 1px solid var(--border-color); padding: 5px 9px;">
+            <button type="button" id="btn-storage-add-new-machine" class="btn btn-ghost btn-sm" style="font-size: 11px; color: var(--text-secondary); border: 1px solid var(--border-color); padding: 5px 9px;">
               ➕ Add Single
             </button>
             <button type="button" id="btn-storage-clear-all-data" class="btn btn-ghost btn-sm" style="font-weight: 800; color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); padding: 5px 9px; font-size: 11px; background: rgba(239, 68, 68, 0.08);" title="Wipe all old machines, models, and brands to start 100% fresh">

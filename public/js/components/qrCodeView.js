@@ -168,14 +168,14 @@ export function renderQrCodeView() {
       .qr-header-title {
         font-size: 14px;
         font-weight: 800;
-        color: #fff;
+        color: var(--text-primary, #171717);
         margin: 0;
         line-height: 1.1;
       }
 
       .qr-header-subtitle {
         font-size: 10.5px;
-        color: #38bdf8;
+        color: var(--text-secondary, #606770);
         margin-top: 1px;
       }
 
@@ -187,8 +187,8 @@ export function renderQrCodeView() {
       }
 
       .qr-metric-pill {
-        background: rgba(255, 255, 255, 0.04);
-        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: var(--bg-surface, #FFFFFF);
+        border: 1px solid var(--border-color, #D9DDE3);
         padding: 2px 7px;
         border-radius: 4px;
         font-size: 11px;
@@ -198,12 +198,12 @@ export function renderQrCodeView() {
       }
 
       .qr-metric-label {
-        color: var(--text-muted);
+        color: var(--text-secondary, #606770);
       }
 
       .qr-metric-val {
         font-weight: 800;
-        color: #fff;
+        color: var(--text-primary, #171717);
       }
 
       .qr-studio-tabs {
@@ -213,27 +213,28 @@ export function renderQrCodeView() {
       }
 
       .btn-studio-tab {
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(255, 255, 255, 0.12);
-        color: var(--text-secondary);
+        background: #FFFFFF;
+        border: 1px solid var(--border-color, #D9DDE3);
+        color: var(--text-secondary, #606770);
         font-weight: 700;
         font-size: 11px;
         padding: 4px 10px;
-        border-radius: 14px;
+        border-radius: 6px;
         cursor: pointer;
         transition: all 0.15s ease;
       }
 
       .btn-studio-tab:hover {
-        background: rgba(255, 255, 255, 0.12);
-        color: #fff;
+        background: var(--bg-hover, #F5F7FA);
+        color: var(--text-primary, #171717);
+        border-color: #C0C5CC;
       }
 
       .btn-studio-tab.active {
-        background: #0284c7;
-        border-color: #38bdf8;
+        background: var(--brand-primary, #0070C9);
+        border-color: #005CA8;
         color: #fff;
-        box-shadow: 0 2px 6px rgba(2, 132, 199, 0.4);
+        box-shadow: 0 1px 3px rgba(0, 112, 201, 0.25);
       }
 
       .qr-studio-content-area {

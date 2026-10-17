@@ -210,10 +210,17 @@ function _initInvScrollGuard() {
 
 class ERPApplication {
   async init() {
-    // Check saved theme
+    // Check saved theme (Default is Sony-Inspired Corporate Bright Mode)
     const savedTheme = localStorage.getItem('al_muslim_theme');
-    if (savedTheme === 'light') {
+    if (savedTheme === 'dark') {
+      document.body.classList.add('theme-dark');
+      document.body.classList.remove('theme-light');
+    } else {
+      document.body.classList.remove('theme-dark');
       document.body.classList.add('theme-light');
+      if (!savedTheme) {
+        localStorage.setItem('al_muslim_theme', 'light');
+      }
     }
 
     console.log('Starting Al-Muslim Group Garments Maintenance ERP Application...');

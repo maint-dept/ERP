@@ -113,110 +113,110 @@ export function renderTransferModal() {
 
   return `
     <div class="modal-overlay" id="modal-transfer-overlay">
-      <div class="modal-dialog modal-dialog-lg" style="max-width: 900px; max-height: 90vh; display: flex; flex-direction: column; min-height: 0; background: var(--bg-card); border: 1.5px solid var(--border-color); box-shadow: 0 25px 60px rgba(0,0,0,0.5);">
+      <div class="modal-dialog modal-dialog-lg" style="max-width: 900px; max-height: 90vh; display: flex; flex-direction: column; min-height: 0; background: #FFFFFF; border: 1px solid var(--border-color, #D9DDE3); box-shadow: 0 16px 40px rgba(0,0,0,0.08); border-radius: 12px;">
         
-        <!-- Modal Header (High Contrast, Bold, Ultra Clear) -->
-        <div class="modal-header" style="background: var(--bg-surface); border-bottom: 1.5px solid var(--border-color); padding: 18px 24px;">
-          <div class="modal-title" style="display: flex; align-items: center; gap: 12px;">
-            <span style="font-size: 22px;">🔄</span>
+        <!-- Modal Header (Sony-Inspired Corporate Bright) -->
+        <div class="modal-header" style="background: #FFFFFF; border-bottom: 1px solid var(--border-color, #D9DDE3); padding: 16px 22px;">
+          <div class="modal-title" style="display: flex; align-items: center; gap: 10px;">
+            <div style="width: 32px; height: 32px; border-radius: 7px; background: #EAF4FC; border: 1px solid #D9DDE3; display: flex; align-items: center; justify-content: center; font-size: 16px; color: #0070C9; flex-shrink: 0;">🔄</div>
             <div>
-              <div style="font-size: 17px; font-weight: 800; color: var(--text-primary); letter-spacing: 0.3px;">Initiate Machine Transfer Request</div>
-              <div style="font-size: 12px; color: var(--text-muted); font-weight: 700; margin-top: 2px;">Zero-Manual-Entry &bull; Auto-Filled Machine Passport &bull; Management Approval Routing</div>
+              <div style="font-size: 16px; font-weight: 800; color: var(--text-primary, #171717); letter-spacing: -0.2px;">Initiate Machine Transfer Request</div>
+              <div style="font-size: 11.5px; color: var(--text-secondary, #606770); font-weight: 500; margin-top: 1px;">Zero-Manual-Entry &bull; Auto-Filled Machine Passport &bull; Management Approval Routing</div>
             </div>
           </div>
-          <button id="btn-close-transfer-modal" class="btn btn-ghost btn-sm" style="font-size: 18px; color: var(--text-primary); font-weight: 800; padding: 4px 10px;">✕</button>
+          <button id="btn-close-transfer-modal" class="btn btn-ghost btn-sm" style="font-size: 16px; color: var(--text-secondary, #606770); font-weight: 700; padding: 4px 8px; border-radius: 6px;">✕</button>
         </div>
 
-        <form id="form-transfer-request" class="modal-body" style="padding: 22px 26px; display: flex; flex-direction: column; gap: 20px; overflow-y: auto; flex: 1; min-height: 0;">
+        <form id="form-transfer-request" class="modal-body" style="padding: 20px 22px; display: flex; flex-direction: column; gap: 16px; overflow-y: auto; flex: 1; min-height: 0; background: #FAFAFA;">
           
           <!-- STEP 1: SEARCH MACHINE SERIAL NUMBER -->
-          <div style="background: var(--bg-surface); border: 1.5px solid #0284c7; border-radius: 12px; padding: 18px 20px; box-shadow: var(--shadow-sm);">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-              <div style="font-size: 13px; font-weight: 800; color: #0284c7; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;">
+          <div style="background: #FFFFFF; border: 1px solid var(--border-color, #D9DDE3); border-radius: 10px; padding: 16px 18px; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+              <div style="font-size: 12.5px; font-weight: 700; color: var(--primary, #0070C9); text-transform: uppercase; letter-spacing: 0.4px; display: flex; align-items: center; gap: 6px;">
                 <span>🔍 1. Search Machine by Serial Number Only</span>
               </div>
-              ${machine ? '<span class="badge badge-active" style="font-size: 11px; padding: 3px 10px; font-weight: 800;">✓ Machine Loaded</span>' : '<span class="badge" style="background: rgba(148, 163, 184, 0.25); color: var(--text-primary); font-size: 11px; font-weight: 700; border: 1px solid var(--border-color);">Awaiting Input</span>'}
+              ${machine ? '<span class="badge" style="background: #EAF7EF; color: #168548; border: 1px solid #168548; font-size: 11px; padding: 2px 8px; font-weight: 700;">✓ Machine Loaded</span>' : '<span class="badge" style="background: #F0F1F3; color: #606770; font-size: 11px; font-weight: 600; border: 1px solid #D9DDE3;">Awaiting Input</span>'}
             </div>
 
             <!-- Serial Search Input & Buttons -->
             <div style="position: relative;">
-              <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+              <div style="display: flex; gap: 8px; flex-wrap: wrap;">
                 <div style="position: relative; flex: 1; min-width: 240px;">
-                  <span style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 16px; pointer-events: none; z-index: 5; line-height: 1;">🧵</span>
+                  <span style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 15px; pointer-events: none; z-index: 5; line-height: 1; color: #8C939F;">🧵</span>
                   <input 
                     type="text" 
                     id="inp-transfer-search-serial" 
                     class="form-control has-icon-left" 
                     placeholder="Enter or search Machine Serial Number (e.g. 5369, 76, 4474)..." 
                     value="${machine?.serialNumber || ''}" 
-                    style="font-size: 14.5px; font-weight: 700; border: 1.5px solid #0284c7; padding-left: 44px !important; padding-right: ${machine ? '84px' : '14px'} !important; height: 42px; border-radius: 8px;"
+                    style="font-size: 14px; font-weight: 700; background: #FFFFFF; border: 1px solid var(--border-color, #D9DDE3); color: #171717; padding-left: 42px !important; padding-right: ${machine ? '80px' : '12px'} !important; height: 40px; border-radius: 6px;"
                     autocomplete="off"
                   />
                   ${machine ? `
-                    <button type="button" id="btn-clear-transfer-machine" title="Clear and search another machine" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: rgba(239, 68, 68, 0.25); border: 1.5px solid #ef4444; color: #ef4444; font-size: 12px; cursor: pointer; padding: 4px 10px; border-radius: 6px; font-weight: 800; z-index: 5;">✕ Clear</button>
+                    <button type="button" id="btn-clear-transfer-machine" title="Clear and search another machine" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: #FDECEC; border: 1px solid #C62828; color: #C62828; font-size: 11.5px; cursor: pointer; padding: 3px 8px; border-radius: 4px; font-weight: 700; z-index: 5;">✕ Clear</button>
                   ` : ''}
                 </div>
-                <button type="button" id="btn-search-serial-trigger" class="btn btn-primary" style="font-weight: 800; height: 42px; padding: 0 18px; font-size: 13.5px; background: linear-gradient(135deg, #0284c7, #0369a1); border-radius: 8px; white-space: nowrap;">
+                <button type="button" id="btn-search-serial-trigger" class="btn btn-primary" style="font-weight: 700; height: 40px; padding: 0 16px; font-size: 13px; background-color: var(--primary, #0070C9); border: 1px solid var(--primary, #0070C9); border-radius: 6px; white-space: nowrap;">
                   🔍 Find Machine
                 </button>
-                <button type="button" id="btn-transfer-scan-qr" class="btn" style="background: linear-gradient(135deg, #0284c7, #0369a1); border: 1.5px solid #38bdf8; color: #ffffff; font-weight: 800; height: 42px; padding: 0 16px; font-size: 13.5px; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 10px rgba(2, 132, 199, 0.5); border-radius: 8px; white-space: nowrap;" title="Scan Machine QR Code or Barcode with Camera">
-                  <span style="font-size: 16px;">📷</span> Scan QR
+                <button type="button" id="btn-transfer-scan-qr" class="btn btn-secondary" style="font-weight: 700; height: 40px; padding: 0 14px; font-size: 13px; display: inline-flex; align-items: center; gap: 6px; border-radius: 6px; border: 1px solid var(--border-color, #D9DDE3); background: #FFFFFF; color: #171717; white-space: nowrap;" title="Scan Machine QR Code or Barcode with Camera">
+                  <span style="font-size: 15px;">📷</span> Scan QR
                 </button>
               </div>
 
               <!-- Floating Serial Suggestions Dropdown -->
-              <div id="transfer-serial-suggestions" style="display: none; position: absolute; left: 0; right: 0; top: 100%; z-index: 1000; background: var(--bg-surface); border: 1.5px solid #0284c7; border-radius: 8px; max-height: 240px; overflow-y: auto; box-shadow: var(--shadow-lg); margin-top: 6px;"></div>
+              <div id="transfer-serial-suggestions" style="display: none; position: absolute; left: 0; right: 0; top: 100%; z-index: 1000; background: #FFFFFF; border: 1px solid var(--border-color, #D9DDE3); border-radius: 6px; max-height: 240px; overflow-y: auto; box-shadow: 0 10px 25px rgba(0,0,0,0.08); margin-top: 4px;"></div>
             </div>
 
-            <!-- AUTO-LOADED MACHINE DETAILS CARD (Crisp, High-Contrast Passport) -->
+            <!-- AUTO-LOADED MACHINE DETAILS CARD (Sony-Inspired Clean Passport) -->
             ${machine ? `
-              <div style="margin-top: 16px; background: var(--bg-card); border: 1.5px solid #0284c7; border-radius: 10px; padding: 16px 18px;">
+              <div style="margin-top: 14px; background: #F8F9FA; border: 1px solid var(--border-color, #D9DDE3); border-radius: 8px; padding: 14px 16px;">
                 <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px;">
                   <div>
-                    <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-                      <span style="font-size: 16px; font-weight: 800; color: var(--text-primary);">${machine.machineName?.name || machine.machineNameStr || (typeof machine.machineName === 'string' ? machine.machineName : 'Plane Machine')}</span>
-                      <span class="badge" style="background: rgba(2, 132, 199, 0.15); color: #0284c7; font-family: var(--font-mono); font-weight: 800; font-size: 13px; border: 1.5px solid #0284c7; padding: 2px 8px;">
+                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                      <span style="font-size: 15px; font-weight: 800; color: var(--text-primary, #171717);">${machine.machineName?.name || machine.machineNameStr || (typeof machine.machineName === 'string' ? machine.machineName : 'Plane Machine')}</span>
+                      <span class="badge" style="background: #EAF4FC; color: #0070C9; font-family: var(--font-mono); font-weight: 700; font-size: 12px; border: 1px solid #D9DDE3; padding: 2px 7px;">
                         ${machine.serialNumber}
                       </span>
-                      <span class="badge ${machine.status === 'ACTIVE' ? 'badge-active' : 'badge-idle'}" style="font-size: 11px; font-weight: 800; padding: 3px 8px;">
+                      <span class="badge ${machine.status === 'ACTIVE' ? 'badge-active' : 'badge-idle'}" style="font-size: 10.5px; font-weight: 700; padding: 2px 7px;">
                         ${machine.status}
                       </span>
                     </div>
-                    <div style="font-size: 13px; color: var(--text-secondary); margin-top: 6px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                      <span><strong style="color: var(--text-muted);">Brand:</strong> <span style="color: #0284c7; font-weight: 800;">${machine.brand?.name || machine.brandStr || machine.brand || 'Juki'}</span></span>
-                      <span style="color: var(--border-color);">&bull;</span>
-                      <span><strong style="color: var(--text-muted);">Model:</strong> <span style="color: var(--text-primary); font-weight: 800; font-family: var(--font-mono);">${machine.model?.name || machine.modelStr || machine.model || 'Standard'}</span></span>
+                    <div style="font-size: 12.5px; color: var(--text-secondary, #606770); margin-top: 5px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                      <span><strong style="color: var(--text-muted, #8C939F);">Brand:</strong> <span style="color: var(--primary, #0070C9); font-weight: 700;">${machine.brand?.name || machine.brandStr || machine.brand || 'Juki'}</span></span>
+                      <span style="color: var(--border-color, #D9DDE3);">&bull;</span>
+                      <span><strong style="color: var(--text-muted, #8C939F);">Model:</strong> <span style="color: var(--text-primary, #171717); font-weight: 700; font-family: var(--font-mono);">${machine.model?.name || machine.modelStr || machine.model || 'Standard'}</span></span>
                     </div>
                   </div>
 
-                  <!-- Lock Current Location Tag -->
-                  <div style="text-align: right; background: rgba(245, 158, 11, 0.12); border: 1.5px solid rgba(245, 158, 11, 0.4); border-radius: 6px; padding: 6px 12px;">
-                    <div style="font-size: 11px; font-weight: 800; color: #d97706; text-transform: uppercase; letter-spacing: 0.5px;">
-                      🔒 CURRENT LOCATION (LOCKED &bull; READ ONLY)
+                  <!-- Lock Current Location Tag (Restrained Pale Blue / Neutral Panel - Zero Harsh Orange Box) -->
+                  <div style="text-align: right; background: #FFFFFF; border: 1px solid var(--border-color, #D9DDE3); border-radius: 6px; padding: 6px 12px;">
+                    <div style="font-size: 10.5px; font-weight: 700; color: var(--text-secondary, #606770); text-transform: uppercase; letter-spacing: 0.4px; display: flex; align-items: center; justify-content: flex-end; gap: 4px;">
+                      <span>🔒</span> CURRENT LOCATION (LOCKED &bull; READ ONLY)
                     </div>
-                    <div style="font-size: 14px; font-weight: 800; color: var(--text-primary); margin-top: 2px;">
+                    <div style="font-size: 13.5px; font-weight: 700; color: var(--text-primary, #171717); margin-top: 2px;">
                       ${currentPath}
                     </div>
                   </div>
                 </div>
 
-                <!-- Specs & History Verification Strip (Clear Responsive Grid) -->
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border-color); font-size: 12px;">
+                <!-- Specs & History Verification Strip (Clean Responsive Grid) -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border-color, #D9DDE3); font-size: 11.5px;">
                   <div>
-                    <span style="color: var(--text-muted); font-weight: 700;">Asset Tag:</span>
-                    <strong style="color: var(--text-primary); font-family: var(--font-mono); font-size: 12.5px; display: block; margin-top: 2px;">${machine.customFields?.assetTag || machine.id}</strong>
+                    <span style="color: var(--text-secondary, #606770); font-weight: 600;">Asset Tag:</span>
+                    <strong style="color: var(--text-primary, #171717); font-family: var(--font-mono); font-size: 12px; display: block; margin-top: 1px;">${machine.customFields?.assetTag || machine.id}</strong>
                   </div>
                   <div>
-                    <span style="color: var(--text-muted); font-weight: 700;">Motor / Voltage:</span>
-                    <strong style="color: var(--text-primary); font-weight: 700; display: block; margin-top: 2px;">${machine.customFields?.motorType || 'Servo 220V'}</strong>
+                    <span style="color: var(--text-secondary, #606770); font-weight: 600;">Motor / Voltage:</span>
+                    <strong style="color: var(--text-primary, #171717); font-weight: 600; display: block; margin-top: 1px;">${machine.customFields?.motorType || 'Servo 220V'}</strong>
                   </div>
                   <div>
-                    <span style="color: var(--text-muted); font-weight: 700;">Past Transfers:</span>
-                    <strong style="color: #0284c7; font-weight: 800; display: block; margin-top: 2px;">${locationChangesCount} recorded</strong>
+                    <span style="color: var(--text-secondary, #606770); font-weight: 600;">Past Transfers:</span>
+                    <strong style="color: var(--primary, #0070C9); font-weight: 700; display: block; margin-top: 1px;">${locationChangesCount} recorded</strong>
                   </div>
                   <div>
-                    <span style="color: var(--text-muted); font-weight: 700;">Service / Repairs:</span>
-                    <strong style="color: #10b981; font-weight: 800; display: block; margin-top: 2px;">${servicesCount + sparePartsCount} events</strong>
+                    <span style="color: var(--text-secondary, #606770); font-weight: 600;">Service / Repairs:</span>
+                    <strong style="color: var(--success, #168548); font-weight: 700; display: block; margin-top: 1px;">${servicesCount + sparePartsCount} events</strong>
                   </div>
                 </div>
 
@@ -367,29 +367,29 @@ export function renderTransferModal() {
           </div>
 
           <!-- STEP 3: UPLOAD SUPPORTING DOCUMENT (PDF, JPG, PNG, EXCEL) -->
-          <div style="background: var(--bg-surface); border: 1.5px solid var(--border-color); border-radius: 12px; padding: 18px 20px; box-shadow: var(--shadow-sm);">
+          <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 8px; padding: 18px 20px; box-shadow: var(--shadow-sm);">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
               <div>
-                <div style="font-size: 13px; font-weight: 800; color: #d97706; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;">
+                <div style="font-size: 13px; font-weight: 700; color: var(--text-primary); text-transform: uppercase; letter-spacing: 0.3px; display: flex; align-items: center; gap: 6px;">
                   <span>📎 3. Upload Supporting / Transfer Document</span>
                 </div>
-                <div style="font-size: 12px; color: var(--text-muted); margin-top: 3px;">
+                <div style="font-size: 12px; color: var(--text-secondary); margin-top: 3px;">
                   Attach transfer sanction, management approval letter, or gate pass request.
                 </div>
               </div>
-              <span class="badge" style="background: rgba(245, 158, 11, 0.15); color: #d97706; font-size: 11px; font-weight: 800; border: 1.5px solid #f59e0b;">
+              <span class="badge" style="background: #F0F4F8; color: var(--text-secondary); font-size: 11px; font-weight: 700; border: 1px solid var(--border-color); padding: 4px 8px; border-radius: 4px;">
                 PDF &bull; JPG &bull; PNG &bull; EXCEL
               </span>
             </div>
 
             <!-- Upload Drop Zone -->
-            <div id="transfer-doc-dropzone" style="border: 2px dashed #0284c7; border-radius: 8px; padding: 22px; text-align: center; background: rgba(2, 132, 199, 0.05); cursor: pointer; transition: all 0.2s;">
-              <div style="font-size: 34px; margin-bottom: 6px;">📂</div>
-              <div style="font-size: 14px; font-weight: 800; color: var(--text-primary);">
+            <div id="transfer-doc-dropzone" style="border: 1.5px dashed var(--border-color); border-radius: 6px; padding: 22px; text-align: center; background: #FAFBFD; cursor: pointer; transition: all 0.2s;">
+              <div style="font-size: 30px; margin-bottom: 6px;">📂</div>
+              <div style="font-size: 13.5px; font-weight: 700; color: var(--text-primary);">
                 Click or Drag &amp; Drop to Upload Supporting Document
               </div>
-              <div style="font-size: 12.5px; color: var(--text-muted); margin-top: 6px;">
-                Supported formats: <strong style="color: #0284c7;">PDF (.pdf)</strong>, <strong style="color: #10b981;">Images (.jpg, .jpeg, .png)</strong>, <strong style="color: #d97706;">Excel (.xlsx, .xls)</strong>
+              <div style="font-size: 12px; color: var(--text-secondary); margin-top: 6px;">
+                Supported formats: <strong style="color: var(--brand-primary, #0070C9);">PDF (.pdf)</strong>, <strong style="color: #168548;">Images (.jpg, .jpeg, .png)</strong>, <strong style="color: #B7791F;">Excel (.xlsx, .xls)</strong>
               </div>
               <input type="file" id="inp-transfer-document" accept=".pdf,.png,.jpg,.jpeg,.xlsx,.xls" multiple style="display: none;" />
             </div>
@@ -402,13 +402,13 @@ export function renderTransferModal() {
         </form>
 
         <!-- Modal Footer -->
-        <div class="modal-footer" style="background: var(--bg-surface); border-top: 1.5px solid var(--border-color); padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+        <div class="modal-footer" style="background: var(--bg-surface); border-top: 1px solid var(--border-color); padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
           <div style="font-size: 13px; color: var(--text-primary);">
-            Requester: <strong style="color: #0284c7; font-weight: 800;">${authService.getCurrentUser()?.name || 'User'}</strong> &bull; Status will be: <strong id="transfer-status-preview" style="color: #d97706; font-weight: 800;">${(machine && !authService.canOperateMachine(machine)) ? `Pending ${currentFloorName} Release Approval` : 'Pending Admin Approval'}</strong>
+            Requester: <strong style="color: var(--brand-primary, #0070C9); font-weight: 700;">${authService.getCurrentUser()?.name || 'User'}</strong> &bull; Status will be: <strong id="transfer-status-preview" style="color: #B7791F; font-weight: 700;">${(machine && !authService.canOperateMachine(machine)) ? `Pending ${currentFloorName} Release Approval` : 'Pending Admin Approval'}</strong>
           </div>
           <div style="display: flex; gap: 12px;">
-            <button type="button" id="btn-cancel-transfer" class="btn btn-secondary" style="font-weight: 700; height: 40px; padding: 0 18px; border-radius: 6px;">Cancel</button>
-            <button type="submit" form="form-transfer-request" id="btn-submit-transfer-request" class="btn btn-primary" style="font-weight: 800; height: 40px; padding: 0 24px; font-size: 13.5px; border-radius: 6px; background: linear-gradient(135deg, #0284c7, #0369a1); box-shadow: 0 4px 15px rgba(2, 132, 199, 0.4); ${activeExistingTransfer ? 'opacity: 0.45; cursor: not-allowed;' : ''}" ${activeExistingTransfer ? 'disabled title="Cannot submit: An active transfer request already exists for this machine."' : ''}>
+            <button type="button" id="btn-cancel-transfer" class="btn btn-secondary" style="font-weight: 600; height: 38px; padding: 0 18px; border-radius: 6px; border: 1px solid var(--border-color); background: #FFFFFF; color: var(--text-primary);">Cancel</button>
+            <button type="submit" form="form-transfer-request" id="btn-submit-transfer-request" class="btn btn-primary" style="font-weight: 700; height: 38px; padding: 0 22px; font-size: 13px; border-radius: 6px; background: var(--brand-primary, #0070C9); color: #FFFFFF; border: 1px solid #005CA8; box-shadow: 0 2px 4px rgba(0, 112, 201, 0.2); ${activeExistingTransfer ? 'opacity: 0.45; cursor: not-allowed;' : ''}" ${activeExistingTransfer ? 'disabled title="Cannot submit: An active transfer request already exists for this machine."' : ''}>
               🚀 Submit Transfer Request
             </button>
           </div>
@@ -421,7 +421,7 @@ export function renderTransferModal() {
 function renderAttachedDocsHtml() {
   if (attachedDocuments.length === 0) {
     return `
-      <div style="font-size: 12px; color: #cbd5e1; font-style: italic; text-align: center; padding: 6px;">
+      <div style="font-size: 12px; color: var(--text-muted); font-style: italic; text-align: center; padding: 6px;">
         No supporting documents uploaded yet. (You may upload permission letters or transfer approvals).
       </div>
     `;
@@ -433,7 +433,7 @@ function renderAttachedDocsHtml() {
     else if (doc.name?.match(/\.(xlsx|xls)$/i)) icon = '📊';
 
     return `
-      <div style="background: var(--bg-surface); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: var(--radius-md); padding: 10px 14px; display: flex; justify-content: space-between; align-items: center;">
+      <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 10px 14px; display: flex; justify-content: space-between; align-items: center;">
         <div style="display: flex; align-items: center; gap: 10px;">
           <span style="font-size: 20px;">${icon}</span>
           <div>
@@ -444,10 +444,10 @@ function renderAttachedDocsHtml() {
           </div>
         </div>
         <div style="display: flex; align-items: center; gap: 6px;">
-          <button type="button" class="btn btn-ghost btn-sm btn-replace-doc" data-idx="${idx}" title="Replace this document" style="font-size: 11.5px; color: #38bdf8;">
+          <button type="button" class="btn btn-ghost btn-sm btn-replace-doc" data-idx="${idx}" title="Replace this document" style="font-size: 11.5px; color: var(--brand-primary, #0070C9);">
             🔄 Replace
           </button>
-          <button type="button" class="btn btn-ghost btn-sm btn-remove-doc" data-idx="${idx}" title="Remove document" style="color: #f87171; font-size: 14px;">
+          <button type="button" class="btn btn-ghost btn-sm btn-remove-doc" data-idx="${idx}" title="Remove document" style="color: #C62828; font-size: 14px;">
             🗑️
           </button>
         </div>

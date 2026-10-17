@@ -1561,18 +1561,21 @@ class PreventiveMaintenanceService {
 
     // Fetch maintenance records using index if provided, or fallback to filter
     let latestRecord = null;
+    let latestPendingRecord = null;
     let machineRecords = [];
     if (optIndex) {
       const cleanSerial = rawMachine.serialNumber ? String(rawMachine.serialNumber).trim().toUpperCase() : '';
       machineRecords = optIndex.byMachineId.get(rawMachine.id) || (cleanSerial ? optIndex.bySerial.get(cleanSerial) : null) || [];
-      latestRecord = machineRecords[0] || null;
     } else {
       const allRecords = storage.getTable(TABLE_NAMES.PREVENTIVE_MAINTENANCE) || [];
       machineRecords = allRecords
         .filter(r => (r.machineId === rawMachine.id) || (r.serialNumber && r.serialNumber.trim().toUpperCase() === rawMachine.serialNumber.trim().toUpperCase()))
         .sort((a, b) => new Date(b.serviceDate || b.createdAt) - new Date(a.serviceDate || a.createdAt));
-      latestRecord = machineRecords[0] || null;
     }
+
+    // Separate pending servicing approval requests from finalized/approved records
+    latestPendingRecord = machineRecords.find(r => r.serviceStatus === 'PENDING_APPROVAL' || r.approvalStatus === 'PENDING') || null;
+    latestRecord = machineRecords.find(r => r.serviceStatus === 'COMPLETED' || r.approvalStatus === 'APPROVED' || (!r.serviceStatus && !r.approvalStatus)) || null;
 
     let frequencyDays = config?.frequencyDays || 91;
 
@@ -1607,6 +1610,8 @@ class PreventiveMaintenanceService {
     return {
       machineId: rawMachine.id,
       serialNumber: rawMachine.serialNumber,
+      hasPendingApproval: Boolean(latestPendingRecord),
+      pendingApprovalRecord: latestPendingRecord,
       machineNameId: rawMachine.machineNameId || null,
       machineName: machineTypeName,
       machineType: config?.machineType || this.getCanonicalMachineType(machineTypeName),
@@ -1850,6 +1855,46 @@ class PreventiveMaintenanceService {
     return '245232';
   }
 
+  /**
+   * Evaluates if a user has approval authority for preventive servicing on a given floor
+   */
+  canUserApprove(user = null, floorId = null) {
+    const u = user || authService.getCurrentUser();
+    if (!u) return false;
+    if (authService.isSuperAdmin(u) || authService.isAdmin(u)) return true;
+
+    // 1. Explicit APPROVE permission on preventive_maintenance module
+    if (authService.hasAccess('preventive_maintenance', 'APPROVE', u) ||
+        authService.hasPermission('preventive_maintenance', 'APPROVE', u) ||
+        authService.hasPermission('PM_APPROVE', u)) {
+      return true;
+    }
+
+    // 2. Role or preset check (Floor Manager / Maintenance Manager / Supervisor)
+    const roleStr = String(u.role || '').toUpperCase();
+    const preset = String(u.presetName || u.presetId || '').toUpperCase();
+    const designation = String(u.designation || '').toUpperCase();
+
+    const isManagerRole = roleStr === 'MANAGER' || 
+                          roleStr === 'MAINTENANCE_MANAGER' || 
+                          roleStr === 'FLOOR_MANAGER' || 
+                          roleStr === 'MAINTENANCE_SUPERVISOR' ||
+                          preset.includes('MANAGER') || 
+                          preset.includes('SUPERVISOR') ||
+                          designation.includes('MANAGER') ||
+                          designation.includes('SUPERVISOR') ||
+                          designation.includes('IN-CHARGE');
+
+    if (isManagerRole) {
+      if (floorId) {
+        return authService.isLocationAllowed(null, floorId, null, u);
+      }
+      return true;
+    }
+
+    return false;
+  }
+
   async createServiceEntry(payload) {
     const user = authService.getCurrentUser();
     if (!payload.machineId && !payload.serialNumber) {
@@ -1875,6 +1920,10 @@ class PreventiveMaintenanceService {
 
     const oldStickerSerial = machineProfile.serviceStickerSerial !== 'STK-PENDING' ? machineProfile.serviceStickerSerial : null;
 
+    // Check user approval access: Users without APPROVE access require Floor Manager authorization
+    const canApprove = this.canUserApprove(user, machineProfile.floorId);
+    const requiresApproval = !canApprove;
+
     const recordId = `pm-rec-${Date.now()}`;
     const newRecord = {
       id: recordId,
@@ -1893,7 +1942,8 @@ class PreventiveMaintenanceService {
       workingArea: machineProfile.workingArea,
       serviceDate,
       serviceType: payload.serviceType || 'PREVENTIVE_SERVICE',
-      serviceStatus: 'COMPLETED',
+      serviceStatus: requiresApproval ? 'PENDING_APPROVAL' : 'COMPLETED',
+      approvalStatus: requiresApproval ? 'PENDING' : 'APPROVED',
       serviceStickerSerial: stickerSerial,
       previousStickerSerial: oldStickerSerial,
       servicedBy: payload.servicedBy || user?.name || 'Authorized Mechanic',
@@ -1912,7 +1962,19 @@ class PreventiveMaintenanceService {
       attachments: Array.isArray(payload.attachments) ? payload.attachments : [],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-      loggedBy: user?.username || 'admin'
+      loggedBy: user?.username || 'admin',
+      loggedById: user?.id || null,
+      submittedBy: user?.id || null,
+      submittedByName: user?.name || user?.username || 'Maintenance User',
+      submittedByRole: user?.role || user?.presetName || 'Maintenance User',
+      submittedAt: new Date().toISOString(),
+      reviewedBy: requiresApproval ? null : (user?.id || 'admin'),
+      reviewedByName: requiresApproval ? null : (user?.name || 'Administrator'),
+      reviewedAt: requiresApproval ? null : new Date().toISOString(),
+      approvedBy: requiresApproval ? null : (user?.id || 'admin'),
+      approvedByName: requiresApproval ? null : (user?.name || 'Administrator'),
+      approvedAt: requiresApproval ? null : new Date().toISOString(),
+      managerRemarks: ''
     };
 
     // 1. Save in PREVENTIVE_MAINTENANCE table — CONFIRMED WRITE
@@ -1920,58 +1982,372 @@ class PreventiveMaintenanceService {
       [...(storage.getTable(TABLE_NAMES.PREVENTIVE_MAINTENANCE) || []), newRecord]
     );
     if (!ok) throw new CloudSaveError('❌ Cloud Save Failed: PM service entry was not confirmed by the cloud.');
-    // Also update in-memory so getTable is consistent
     if (!storage.data[TABLE_NAMES.PREVENTIVE_MAINTENANCE]) storage.data[TABLE_NAMES.PREVENTIVE_MAINTENANCE] = [];
-    // The saveTable call above already set the data
 
-    // 2. Synchronize seamlessly into Machine Lifetime History (MACHINE_HISTORY)
+    if (requiresApproval) {
+      // 2a. Awaiting Floor Manager Approval
+      // Log Audit
+      auditService.log('ADD', 'PREVENTIVE_MAINTENANCE', recordId, `Submitted Preventive Service for Machine ${machineProfile.serialNumber} [Physical Sticker Sl No: ${stickerSerial}] for Floor Manager Approval`);
+
+      // Dispatch high-priority notification to Floor Manager and Supervisors
+      notificationService.notify({
+        title: '🛡️ Preventive Servicing Approval Required',
+        message: `Servicing for Machine ${machineProfile.serialNumber} (${machineProfile.floor} / ${machineProfile.line}) submitted by ${newRecord.servicedBy} (Card: ${newRecord.servicedByCardNumber || 'N/A'}) [Sticker: ${stickerSerial}]. Awaiting Floor Manager authorization.`,
+        type: 'WARNING',
+        module: 'preventive_maintenance',
+        action: 'APPROVE',
+        entityType: 'PREVENTIVE_MAINTENANCE',
+        entityId: newRecord.id,
+        targetRoles: ['ADMIN', 'SUPER_ADMIN', 'MAINTENANCE_MANAGER', 'MANAGER', 'MAINTENANCE_SUPERVISOR'],
+        locationScope: {
+          unitId: machineProfile.unitId || null,
+          floorId: machineProfile.floorId || null,
+          lineId: machineProfile.lineId || null
+        },
+        targetUrl: '#preventive-maintenance'
+      });
+    } else {
+      // 2b. Direct Approval Mode (Authorized Manager / Administrator)
+      try {
+        const machines = storage.getTable(TABLE_NAMES.MACHINES) || [];
+        const m = machines.find(x => x.id === machineProfile.machineId || (x.serialNumber && x.serialNumber.trim().toUpperCase() === machineProfile.serialNumber.trim().toUpperCase()));
+        if (m) {
+          m.lastServiceDate = serviceDate;
+          m.nextServiceDate = nextServiceDate;
+          m.serviceStickerSerial = stickerSerial;
+          m.lastServicedBy = newRecord.servicedBy;
+          m.lastServicedByCardNumber = newRecord.servicedByCardNumber || '';
+          m.updatedAt = new Date().toISOString();
+          await storage.saveTable(TABLE_NAMES.MACHINES);
+        }
+      } catch (mErr) {
+        console.warn('Error updating machine table on PM direct submit:', mErr);
+      }
+
+      // Synchronize into Machine Lifetime History (MACHINE_HISTORY)
+      try {
+        const stickerChangeNote = oldStickerSerial && oldStickerSerial !== stickerSerial 
+          ? ` (Replaced old physical sticker Sl No: ${oldStickerSerial})` 
+          : '';
+
+        historyService.recordActivity({
+          machineId: machineProfile.machineId,
+          serialNumber: machineProfile.serialNumber,
+          actionType: 'MAINTENANCE_SERVICE',
+          title: `Preventive Maintenance Completed [Sticker Sl No: ${stickerSerial}]`,
+          details: `Routine servicing performed by ${newRecord.servicedBy} (Card: ${newRecord.servicedByCardNumber || 'N/A'}). Direct approved by ${user?.name || 'Administrator'}. Next scheduled service: ${nextServiceDate}.${stickerChangeNote}`,
+          performedBy: user?.id,
+          performedByName: newRecord.servicedBy,
+          remarks: newRecord.serviceRemarks,
+          serviceRecord: {
+            serviceType: 'PREVENTIVE_MAINTENANCE',
+            stickerSerial,
+            previousStickerSerial: oldStickerSerial,
+            technician: newRecord.servicedBy,
+            workPerformed: `Preventive inspection (${(newRecord.serviceChecklist || []).filter(c => c.checked).length} items verified). ${newRecord.serviceRemarks}`,
+            sparePartsUsed: newRecord.partsReplaced,
+            nextServiceDate
+          }
+        });
+      } catch (histErr) {
+        console.warn('Error syncing with machine history passport:', histErr);
+      }
+
+      // Log Audit
+      auditService.log('ADD', 'PREVENTIVE_MAINTENANCE', recordId, `Recorded Preventive Service for Machine ${machineProfile.serialNumber} [Physical Sticker Sl No: ${stickerSerial}] (Direct Approval)`);
+
+      // Dispatch in-app notification & toast
+      notificationService.notify({
+        title: '🔧 Preventive Maintenance Logged',
+        message: `Machine ${machineProfile.serialNumber} serviced by ${newRecord.servicedBy}. Physical Sticker: ${stickerSerial}. Next due: ${nextServiceDate}.`,
+        type: 'SUCCESS',
+        module: 'preventive_maintenance',
+        action: 'VIEW',
+        entityType: 'MACHINE',
+        entityId: machineProfile.serialNumber,
+        locationScope: {
+          unitId: machineProfile.unitId || null,
+          floorId: machineProfile.floorId || null,
+          lineId: machineProfile.lineId || null
+        },
+        targetUrl: '#preventive-maintenance'
+      });
+    }
+
+    window.dispatchEvent(new CustomEvent('erp:preventive-maintenance-updated', { detail: newRecord }));
+    return newRecord;
+  }
+
+  /**
+   * Floor Manager / Administrator approves technician submitted service entry.
+   * Finalizes the machine's next service date, sticker serial, and lifetime history.
+   */
+  async approveServiceEntry(recordId, managerRemarks = '') {
+    const user = authService.getCurrentUser();
+    const existing = storage.getItem(TABLE_NAMES.PREVENTIVE_MAINTENANCE, recordId);
+    if (!existing) throw new Error('Service record not found.');
+
+    if (!this.canUserApprove(user, existing.floorId)) {
+      throw new Error('Unauthorized. Only Floor Manager, Maintenance Manager, or Administrator can approve servicing.');
+    }
+
+    if (existing.serviceStatus === 'COMPLETED' && existing.approvalStatus === 'APPROVED') {
+      throw new Error('This servicing record is already approved and finalized.');
+    }
+
+    const nowIso = new Date().toISOString();
+    const updated = {
+      ...existing,
+      serviceStatus: 'COMPLETED',
+      approvalStatus: 'APPROVED',
+      reviewedBy: user.id,
+      reviewedByName: user.name,
+      reviewedAt: nowIso,
+      approvedBy: user.id,
+      approvedByName: user.name,
+      approvedAt: nowIso,
+      managerRemarks: managerRemarks || existing.managerRemarks || '',
+      updatedAt: nowIso
+    };
+
+    // 1. Write and confirm update in PREVENTIVE_MAINTENANCE table
+    await storage.writeAndConfirm(TABLE_NAMES.PREVENTIVE_MAINTENANCE, (tbl) => {
+      const idx = tbl.findIndex(r => r.id === recordId);
+      if (idx !== -1) tbl[idx] = updated;
+      else tbl.push(updated);
+    });
+
+    // 2. Synchronize machine record in MACHINES table (Official dates & sticker)
     try {
-      const stickerChangeNote = oldStickerSerial && oldStickerSerial !== stickerSerial 
-        ? ` (Replaced old physical sticker Sl No: ${oldStickerSerial})` 
+      const machines = storage.getTable(TABLE_NAMES.MACHINES) || [];
+      const targetMachine = machines.find(m => m.id === updated.machineId || (m.serialNumber && m.serialNumber.trim().toUpperCase() === updated.serialNumber.trim().toUpperCase()));
+      if (targetMachine) {
+        targetMachine.lastServiceDate = updated.serviceDate;
+        targetMachine.nextServiceDate = updated.nextServiceDate;
+        targetMachine.serviceStickerSerial = updated.serviceStickerSerial;
+        targetMachine.lastServicedBy = updated.servicedBy;
+        targetMachine.lastServicedByCardNumber = updated.servicedByCardNumber || '';
+        targetMachine.updatedAt = nowIso;
+        await storage.saveTable(TABLE_NAMES.MACHINES);
+      }
+    } catch (mErr) {
+      console.warn('Error updating machine table on PM approval:', mErr);
+    }
+
+    // 3. Synchronize officially into Machine Lifetime History (MACHINE_HISTORY)
+    try {
+      const stickerChangeNote = updated.previousStickerSerial && updated.previousStickerSerial !== updated.serviceStickerSerial
+        ? ` (Replaced old physical sticker Sl No: ${updated.previousStickerSerial})` 
         : '';
 
       historyService.recordActivity({
-        machineId: machineProfile.machineId,
-        serialNumber: machineProfile.serialNumber,
+        machineId: updated.machineId,
+        serialNumber: updated.serialNumber,
         actionType: 'MAINTENANCE_SERVICE',
-        title: `Preventive Maintenance Completed [Sticker Sl No: ${stickerSerial}]`,
-        details: `Routine servicing performed by ${newRecord.servicedBy} (Card: ${newRecord.servicedByCardNumber || 'N/A'}). Next scheduled service: ${nextServiceDate}.${stickerChangeNote}`,
-        performedBy: user?.id,
-        performedByName: newRecord.servicedBy,
-        remarks: newRecord.serviceRemarks,
+        title: `Preventive Maintenance Approved & Completed [Sticker Sl No: ${updated.serviceStickerSerial}]`,
+        details: `Routine servicing performed by ${updated.servicedBy} (Card: ${updated.servicedByCardNumber || 'N/A'}). Approved by Floor Manager ${user.name}. Next scheduled: ${updated.nextServiceDate}.${stickerChangeNote}${managerRemarks ? ` Note: "${managerRemarks}"` : ''}`,
+        performedBy: user.id,
+        performedByName: user.name,
+        remarks: `${updated.serviceRemarks || ''} [Floor Manager Approval: ${user.name}]`.trim(),
         serviceRecord: {
           serviceType: 'PREVENTIVE_MAINTENANCE',
-          stickerSerial,
-          previousStickerSerial: oldStickerSerial,
-          technician: newRecord.servicedBy,
-          workPerformed: `Preventive inspection (${(newRecord.serviceChecklist || []).filter(c => c.checked).length} items verified). ${newRecord.serviceRemarks}`,
-          sparePartsUsed: newRecord.partsReplaced,
-          nextServiceDate
+          stickerSerial: updated.serviceStickerSerial,
+          previousStickerSerial: updated.previousStickerSerial,
+          technician: updated.servicedBy,
+          approvedBy: user.name,
+          workPerformed: `Preventive inspection (${(updated.serviceChecklist || []).filter(c => c.checked).length} items verified). ${updated.serviceRemarks}`,
+          sparePartsUsed: updated.partsReplaced,
+          nextServiceDate: updated.nextServiceDate
         }
       });
     } catch (histErr) {
       console.warn('Error syncing with machine history passport:', histErr);
     }
 
-    // 3. Log Audit
-    auditService.log('ADD', 'PREVENTIVE_MAINTENANCE', recordId, `Recorded Preventive Service for Machine ${machineProfile.serialNumber} [Physical Sticker Sl No: ${stickerSerial}]`);
+    // 4. Audit Log
+    auditService.log('PM_SERVICE_APPROVED', 'PREVENTIVE_MAINTENANCE', recordId, `Floor Manager ${user.name} approved servicing for Machine ${updated.serialNumber} [Sticker: ${updated.serviceStickerSerial}]`);
 
-    // 4. Dispatch in-app notification & toast
+    // 5. Notification to the submitting technician
     notificationService.notify({
-      title: '🔧 Preventive Maintenance Logged',
-      message: `Machine ${machineProfile.serialNumber} serviced by ${newRecord.servicedBy}. Physical Sticker: ${stickerSerial}. Next due: ${nextServiceDate}.`,
+      title: '✅ Preventive Servicing Approved',
+      message: `Your servicing for Machine ${updated.serialNumber} [Sticker: ${updated.serviceStickerSerial}] has been approved and finalized by ${user.name}.`,
       type: 'SUCCESS',
       module: 'preventive_maintenance',
       action: 'VIEW',
       entityType: 'MACHINE',
-      entityId: machineProfile.serialNumber,
+      entityId: updated.serialNumber,
+      targetUserId: updated.submittedBy || updated.loggedBy,
       locationScope: {
-        unitId: machineProfile.unitId || null,
-        floorId: machineProfile.floorId || null,
-        lineId: machineProfile.lineId || null
+        unitId: updated.unitId || null,
+        floorId: updated.floorId || null,
+        lineId: updated.lineId || null
       },
       targetUrl: '#preventive-maintenance'
     });
+
+    window.dispatchEvent(new CustomEvent('erp:preventive-maintenance-updated', { detail: updated }));
+    return updated;
+  }
+
+  /**
+   * Floor Manager / Administrator rejects technician servicing submission.
+   */
+  async rejectServiceEntry(recordId, managerRemarks = '') {
+    const user = authService.getCurrentUser();
+    const existing = storage.getItem(TABLE_NAMES.PREVENTIVE_MAINTENANCE, recordId);
+    if (!existing) throw new Error('Service record not found.');
+
+    if (!this.canUserApprove(user, existing.floorId)) {
+      throw new Error('Unauthorized. Only Floor Manager, Maintenance Manager, or Administrator can reject servicing.');
+    }
+
+    const nowIso = new Date().toISOString();
+    const updated = {
+      ...existing,
+      serviceStatus: 'REJECTED',
+      approvalStatus: 'REJECTED',
+      reviewedBy: user.id,
+      reviewedByName: user.name,
+      reviewedAt: nowIso,
+      rejectedBy: user.id,
+      rejectedByName: user.name,
+      rejectedAt: nowIso,
+      managerRemarks: managerRemarks || 'Servicing verification rejected by Floor Manager',
+      updatedAt: nowIso
+    };
+
+    await storage.writeAndConfirm(TABLE_NAMES.PREVENTIVE_MAINTENANCE, (tbl) => {
+      const idx = tbl.findIndex(r => r.id === recordId);
+      if (idx !== -1) tbl[idx] = updated;
+    });
+
+    auditService.log('PM_SERVICE_REJECTED', 'PREVENTIVE_MAINTENANCE', recordId, `Floor Manager ${user.name} rejected servicing for Machine ${existing.serialNumber}: ${managerRemarks}`);
+
+    notificationService.notify({
+      title: '❌ Preventive Servicing Rejected',
+      message: `Servicing for Machine ${existing.serialNumber} [Sticker: ${existing.serviceStickerSerial}] was rejected by Floor Manager ${user.name}. Reason: ${managerRemarks || 'Not specified'}`,
+      type: 'ERROR',
+      module: 'preventive_maintenance',
+      action: 'VIEW',
+      entityType: 'MACHINE',
+      entityId: existing.serialNumber,
+      targetUserId: existing.submittedBy || existing.loggedBy,
+      locationScope: {
+        unitId: existing.unitId || null,
+        floorId: existing.floorId || null,
+        lineId: existing.lineId || null
+      },
+      targetUrl: '#preventive-maintenance'
+    });
+
+    window.dispatchEvent(new CustomEvent('erp:preventive-maintenance-updated', { detail: updated }));
+    return updated;
+  }
+
+  /**
+   * Floor Manager / Administrator requests revision / correction from technician.
+   */
+  async requestServiceRevision(recordId, managerRemarks = '') {
+    const user = authService.getCurrentUser();
+    const existing = storage.getItem(TABLE_NAMES.PREVENTIVE_MAINTENANCE, recordId);
+    if (!existing) throw new Error('Service record not found.');
+
+    if (!this.canUserApprove(user, existing.floorId)) {
+      throw new Error('Unauthorized. Only Floor Manager, Maintenance Manager, or Administrator can request revision.');
+    }
+
+    const nowIso = new Date().toISOString();
+    const updated = {
+      ...existing,
+      serviceStatus: 'REVISION_REQUESTED',
+      approvalStatus: 'REVISION_REQUESTED',
+      reviewedBy: user.id,
+      reviewedByName: user.name,
+      reviewedAt: nowIso,
+      managerRemarks: managerRemarks || 'Floor Manager requested servicing revision / re-inspection',
+      updatedAt: nowIso
+    };
+
+    await storage.writeAndConfirm(TABLE_NAMES.PREVENTIVE_MAINTENANCE, (tbl) => {
+      const idx = tbl.findIndex(r => r.id === recordId);
+      if (idx !== -1) tbl[idx] = updated;
+    });
+
+    auditService.log('PM_SERVICE_REVISION_REQUESTED', 'PREVENTIVE_MAINTENANCE', recordId, `Floor Manager ${user.name} requested revision for Machine ${existing.serialNumber}: ${managerRemarks}`);
+
+    notificationService.notify({
+      title: '🔄 Servicing Revision Requested',
+      message: `Floor Manager ${user.name} requested revision for Machine ${existing.serialNumber} servicing: ${managerRemarks || 'Please re-inspect checklist'}`,
+      type: 'WARNING',
+      module: 'preventive_maintenance',
+      action: 'VIEW',
+      entityType: 'MACHINE',
+      entityId: existing.serialNumber,
+      targetUserId: existing.submittedBy || existing.loggedBy,
+      locationScope: {
+        unitId: existing.unitId || null,
+        floorId: existing.floorId || null,
+        lineId: existing.lineId || null
+      },
+      targetUrl: '#preventive-maintenance'
+    });
+
+    window.dispatchEvent(new CustomEvent('erp:preventive-maintenance-updated', { detail: updated }));
+    return updated;
+  }
+
+  /**
+   * Retrieves pending servicing approval requests, filtered by user location scope
+   */
+  getPendingApprovals(filters = {}) {
+    const allRecords = storage.getTable(TABLE_NAMES.PREVENTIVE_MAINTENANCE) || [];
+    const user = authService.getCurrentUser();
+
+    let pending = allRecords.filter(r => r.serviceStatus === 'PENDING_APPROVAL' || r.approvalStatus === 'PENDING');
+
+    // Enrich with live machine details
+    let enriched = pending.map(rec => {
+      const mProfile = this.getMachinePreventiveProfile(rec.machineId || rec.serialNumber);
+      return {
+        ...rec,
+        floorId: mProfile?.floorId || rec.floorId || null,
+        lineId: mProfile?.lineId || rec.lineId || null,
+        machineName: mProfile?.machineName || rec.machineName || 'Machine',
+        machineType: mProfile?.machineType || rec.machineType || '',
+        model: mProfile?.model || rec.model || '',
+        brand: mProfile?.brand || rec.brand || '',
+        floor: mProfile?.floor || rec.floor || '',
+        line: mProfile?.line || rec.line || '',
+        workingArea: mProfile?.workingArea || rec.workingArea || ''
+      };
+    });
+
+    // Filter location scoping if user is location-scoped and not Admin/SuperAdmin
+    if (user && !authService.isSuperAdmin(user) && !authService.isAdmin(user)) {
+      enriched = enriched.filter(r => authService.isLocationAllowed(r.unitId, r.floorId, r.lineId, user));
+    }
+
+    if (filters.search) {
+      const q = filters.search.toLowerCase().trim();
+      enriched = enriched.filter(r =>
+        r.serialNumber?.toLowerCase().includes(q) ||
+        r.machineName?.toLowerCase().includes(q) ||
+        r.floor?.toLowerCase().includes(q) ||
+        r.line?.toLowerCase().includes(q) ||
+        r.servicedBy?.toLowerCase().includes(q) ||
+        r.submittedByName?.toLowerCase().includes(q) ||
+        r.serviceStickerSerial?.toLowerCase().includes(q) ||
+        r.serviceRemarks?.toLowerCase().includes(q)
+      );
+    }
+
+    if (filters.floorId && filters.floorId !== 'ALL') {
+      enriched = enriched.filter(r => r.floorId === filters.floorId);
+    }
+
+    enriched.sort((a, b) => new Date(b.submittedAt || b.createdAt || 0) - new Date(a.submittedAt || a.createdAt || 0));
+    return enriched;
+  }
 
     window.dispatchEvent(new CustomEvent('erp:preventive-maintenance-updated', { detail: newRecord }));
     return newRecord;
@@ -2259,8 +2635,11 @@ class PreventiveMaintenanceService {
       filteredMachineIds.has(r.machineId) || filteredSerials.has(r.serialNumber)
     );
 
-    const servicedToday = relevantRecords.filter(r => r.serviceDate === todayStr).length;
-    const completedCount = relevantRecords.length;
+    const pendingApprovals = relevantRecords.filter(r => r.serviceStatus === 'PENDING_APPROVAL' || r.approvalStatus === 'PENDING');
+    const pendingApprovalsCount = pendingApprovals.length;
+
+    const servicedToday = relevantRecords.filter(r => r.serviceDate === todayStr && (r.serviceStatus === 'COMPLETED' || r.approvalStatus === 'APPROVED')).length;
+    const completedCount = relevantRecords.filter(r => r.serviceStatus === 'COMPLETED' || r.approvalStatus === 'APPROVED').length;
 
     // Recently Serviced (within last 30 days)
     const thirtyDaysAgo = new Date();
@@ -2301,6 +2680,7 @@ class PreventiveMaintenanceService {
       isFiltered,
       servicedToday,
       recentlyServiced,
+      pendingApprovalsCount,
       dueToday,
       dueWithin7Days,
       overdue,

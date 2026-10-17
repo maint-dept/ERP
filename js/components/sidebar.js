@@ -217,17 +217,17 @@ export function renderSidebar() {
   let html = `
     <aside class="app-sidebar" id="app-sidebar-root">
       <!-- Fixed Sidebar Brand Header -->
-      <div class="sidebar-header" style="padding: 14px 16px 12px 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255, 255, 255, 0.07); background: rgba(9, 14, 26, 0.95); flex-shrink: 0; box-sizing: border-box; width: 100%;">
+      <div class="sidebar-header" style="padding: 14px 16px 12px 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); background: var(--bg-surface, #FFFFFF); flex-shrink: 0; box-sizing: border-box; width: 100%;">
         <div class="sidebar-brand-wrapper" style="display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1; overflow: visible;">
-          <div class="brand-logo-badge" title="Al-Muslim Group Maintenance Department ERP" style="width: 38px; height: 38px; border-radius: 10px; background: linear-gradient(135deg, #0284c7 0%, #0369a1 50%, #1e3a8a 100%); display: flex; align-items: center; justify-content: center; font-size: 19px; flex-shrink: 0; box-shadow: 0 0 16px rgba(2, 132, 199, 0.4); border: 1px solid rgba(56, 189, 248, 0.4);">🔧</div>
+          <div class="brand-logo-badge" title="Al-Muslim Group Maintenance Department ERP" style="width: 36px; height: 36px; border-radius: 8px; background: var(--brand-primary, #0070C9); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; box-shadow: 0 2px 6px rgba(0, 112, 201, 0.25); color: #ffffff;">🔧</div>
           <div class="brand-text-container" style="min-width: 0; flex: 1; display: flex; flex-direction: column; justify-content: center; overflow: visible;">
             <div class="brand-title-row" style="display: flex; align-items: center; justify-content: space-between; gap: 6px; min-width: 0; width: 100%;">
-              <span class="brand-text-title" style="font-weight: 800; font-size: 13.5px; letter-spacing: 0.5px; color: #ffffff; line-height: 1.2; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6); white-space: nowrap;">AL-MUSLIM GROUP</span>
-              <span class="brand-status-pill" title="Live System Active" style="display: inline-flex; align-items: center; gap: 4px; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); border-radius: 9999px; padding: 1.5px 7px; font-size: 8.5px; font-weight: 700; color: #34d399; letter-spacing: 0.5px; flex-shrink: 0; white-space: nowrap;">
-                <span class="brand-status-dot" style="width: 5px; height: 5px; border-radius: 50%; background: #10b981; box-shadow: 0 0 6px #10b981; display: inline-block;"></span>Live
+              <span class="brand-text-title" style="font-weight: 800; font-size: 13.5px; letter-spacing: 0.3px; color: var(--text-primary, #171717); line-height: 1.2; white-space: nowrap;">AL-MUSLIM GROUP</span>
+              <span class="brand-status-pill" title="Live System Active" style="display: inline-flex; align-items: center; gap: 4px; background: #EAF7EF; border: 1px solid #168548; border-radius: 9999px; padding: 1.5px 7px; font-size: 8.5px; font-weight: 700; color: #168548; letter-spacing: 0.5px; flex-shrink: 0; white-space: nowrap;">
+                <span class="brand-status-dot" style="width: 5px; height: 5px; border-radius: 50%; background: #168548; display: inline-block;"></span>Live
               </span>
             </div>
-            <div class="brand-text-sub" style="font-size: 8.5px; color: #38bdf8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; margin-top: 3px; line-height: 1.2; white-space: nowrap;" title="Industrial Machine & Assets System">
+            <div class="brand-text-sub" style="font-size: 8.5px; color: var(--text-secondary, #606770); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 3px; line-height: 1.2; white-space: nowrap;" title="Industrial Machine & Assets System">
               INDUSTRIAL MACHINE &amp; ASSETS SYSTEM
             </div>
           </div>
@@ -347,7 +347,7 @@ export function renderSidebar() {
           <span class="user-avatar-status"></span>
         </div>
         <div style="overflow: hidden; flex: 1; min-width: 0;">
-          <div style="font-size: 12px; font-weight: 700; color: #fff; text-overflow: ellipsis; white-space: nowrap; overflow: hidden;">
+          <div style="font-size: 12px; font-weight: 700; color: var(--text-primary, #171717); text-overflow: ellipsis; white-space: nowrap; overflow: hidden;">
             ${user?.name || 'Authorized User'}
           </div>
           <div style="margin-top: 2px;">
@@ -356,13 +356,13 @@ export function renderSidebar() {
               : isAdmin 
                 ? `<span class="user-role-badge admin">🛡️ Admin</span>`
                 : (isNoAccessUser 
-                  ? `<span class="user-role-badge" style="background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4);">🔒 No Access</span>`
+                  ? `<span class="user-role-badge" style="background: #FDECEC; color: #C62828; border: 1px solid #C62828;">🔒 No Access</span>`
                   : `<span class="user-role-badge operator">👤 ${user?.presetName || (user?.role === 'USER' ? 'Maintenance User' : (user?.role || 'User'))}</span>`
                 )
             }
           </div>
         </div>
-        <span style="font-size: 14px; opacity: 0.7; color: #94a3b8;" title="Security Settings">🔒</span>
+        <span style="font-size: 14px; opacity: 0.7; color: var(--text-secondary, #606770);" title="Security Settings">🔒</span>
       </div>
     </aside>
   `;

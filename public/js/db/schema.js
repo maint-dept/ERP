@@ -988,7 +988,7 @@ export const DEFAULT_SETTINGS = {
   departmentName: 'Central Maintenance & Mechanical Engineering Department',
   defaultRowsPerPage: 50,
   enableAutoBackup: true,
-  theme: 'dark',
+  theme: 'light',
   // Unique Machine Serial Number Format Configuration: [Floor Short Code]-[Machine Number]
   serialFormatTemplate: '{FLOOR_CODE}-{NUMBER}',
   serialNumberPadding: 2, // 2 digits: 01, 02...

@@ -32,7 +32,7 @@ import { storage } from '../db/storage.js';
 import { TABLE_NAMES } from '../db/schema.js';
 
 // Local view state to preserve working session across tab switches
-let activeTab = 'dashboard'; // 'dashboard' | 'recently-serviced' | 'machine-profile' | 'master-schedule' | 'admin-config'
+let activeTab = 'dashboard'; // 'dashboard' | 'pending-approvals' | 'recently-serviced' | 'machine-profile' | 'master-schedule' | 'admin-config'
 let selectedMachineId = null; // Dynamically resolved to active machine
 let searchQuery = '';
 let filterFloorId = 'ALL';
@@ -131,9 +131,10 @@ function getValidActiveMachineId() {
 }
 
 // Active modal states
-let activePmModal = null; // null | 'service-entry' | 'qr-scanner' | 'print-sticker' | 'edit-sticker' | 'config-modal' | 'bulk-excel-modal' | 'bulk-servicing-modal'
+let activePmModal = null; // null | 'service-entry' | 'review-approval' | 'qr-scanner' | 'print-sticker' | 'edit-sticker' | 'config-modal' | 'bulk-excel-modal' | 'bulk-servicing-modal'
 let modalMachineContext = null;
 let modalServiceContext = null;
+let modalApprovalRecordId = null;
 let bulkExcelParsedRows = null;
 let bulkExcelPreviewResult = null;
 let bulkServicingParsedRows = null;
@@ -237,6 +238,11 @@ export function renderPreventiveMaintenanceView() {
               <span class="kpi-dot">⚡</span>
               <strong class="kpi-val" style="color: #22d3ee; font-size: 11px;">${metrics.servicedToday}</strong>
               <span class="kpi-lbl" style="font-size: 9.5px;">Today</span>
+            </div>
+            <div class="kpi-pill kpi-usable pm-kpi-pill" data-kpi-tab="pending-approvals" title="Servicing submissions pending Floor Manager approval" style="border-left: 3px solid #f59e0b; cursor: pointer; padding: 1px 6px; font-size: 10.5px; ${metrics.pendingApprovalsCount > 0 ? 'background: rgba(245, 158, 11, 0.2); border-color: #f59e0b;' : ''}">
+              <span class="kpi-dot">⏳</span>
+              <strong class="kpi-val" style="color: #f59e0b; font-size: 11px;">${metrics.pendingApprovalsCount || 0}</strong>
+              <span class="kpi-lbl" style="font-size: 9.5px;">Pending Approval</span>
             </div>
           </div>
         </div>
@@ -361,6 +367,9 @@ export function renderPreventiveMaintenanceView() {
         <button class="pm-tab-btn ${activeTab === 'dashboard' ? 'active' : ''}" data-pm-tab="dashboard">
           📊 Priority Reminders (${metrics.scheduledCount !== undefined ? metrics.scheduledCount : metrics.totalMachines})
         </button>
+        <button class="pm-tab-btn ${activeTab === 'pending-approvals' ? 'active' : ''}" data-pm-tab="pending-approvals" style="${metrics.pendingApprovalsCount > 0 ? 'color: #f59e0b; font-weight: 700;' : ''}">
+          🛡️ Pending Approvals ${metrics.pendingApprovalsCount > 0 ? `<span style="background: #f59e0b; color: #000; padding: 1px 6px; border-radius: 10px; font-size: 10px; margin-left: 4px; font-weight: 800;">${metrics.pendingApprovalsCount}</span>` : `(0)`}
+        </button>
         <button class="pm-tab-btn ${activeTab === 'recently-serviced' ? 'active' : ''}" data-pm-tab="recently-serviced">
           🕒 Recently Serviced (${metrics.recentlyServiced || 0})
         </button>
@@ -401,6 +410,9 @@ function renderActiveTabContent() {
     case 'dashboard':
       content = renderDashboardAndRemindersTab();
       break;
+    case 'pending-approvals':
+      content = renderPendingApprovalsTab();
+      break;
     case 'recently-serviced':
       content = renderRecentlyServicedTab();
       break;
@@ -432,6 +444,14 @@ function renderDashboardAndRemindersTab() {
     urgencyStatus: filterUrgency
   });
 
+  const metrics = preventiveMaintenanceService.getDashboardMetrics({
+    search: searchQuery,
+    floorId: filterFloorId,
+    lineId: filterLineId,
+    machineType: filterMachineType,
+    urgencyStatus: filterUrgency
+  });
+
   const overdueList = upcomingMachines.filter(m => m.urgency.status === 'OVERDUE');
   const dueTodayList = upcomingMachines.filter(m => m.urgency.status === 'DUE_TODAY');
 
@@ -446,6 +466,22 @@ function renderDashboardAndRemindersTab() {
   return `
     <div style="display: flex; flex-direction: column; gap: 5px;">
       
+      <!-- PENDING MANAGER APPROVALS BANNER IF ANY -->
+      ${metrics.pendingApprovalsCount > 0 ? `
+        <div style="background: rgba(245, 158, 11, 0.12); border: 1.5px solid rgba(245, 158, 11, 0.4); border-radius: var(--radius-md); padding: 6px 12px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px;">
+          <div style="display: flex; align-items: center; gap: 6px; font-size: 11.5px;">
+            <span style="font-size: 15px;">🛡️</span>
+            <span style="font-weight: 800; color: #fbbf24;">Action Required (Floor Manager):</span>
+            <span style="color: #cbd5e1;">
+              There are <strong style="color: #fff;">${metrics.pendingApprovalsCount}</strong> servicing records submitted by technicians awaiting Floor Manager authorization.
+            </span>
+          </div>
+          <button id="btn-pm-view-pending-approvals" class="btn btn-sm" style="background: #f59e0b; color: #000; font-weight: 800; font-size: 11px; padding: 3px 10px; border: none; border-radius: 4px; cursor: pointer;">
+            Review Approvals (${metrics.pendingApprovalsCount}) &rarr;
+          </button>
+        </div>
+      ` : ''}
+
       <!-- URGENT ALERTS BANNER IF ANY OVERDUE OR DUE TODAY -->
       ${(overdueList.length > 0 || dueTodayList.length > 0) ? `
         <div style="background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.35); border-radius: var(--radius-md); padding: 5px 12px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px;">
@@ -505,6 +541,13 @@ function renderDashboardAndRemindersTab() {
                   <td style="padding: 5px 8px; text-align: center; font-family: monospace; font-size: 10.5px; color: var(--text-muted);">${sl}</td>
                   <td style="padding: 5px 8px; white-space: nowrap;">
                     ${m.urgency.displayBadge}
+                    ${m.hasPendingApproval ? `
+                      <div style="margin-top: 3px;">
+                        <span class="badge" style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); font-size: 9.5px; padding: 1px 5px; display: inline-flex; align-items: center; gap: 3px;" title="Servicing submitted by technician - awaiting Floor Manager approval">
+                          ⏳ Approval Pending
+                        </span>
+                      </div>
+                    ` : ''}
                   </td>
                   <td style="padding: 5px 8px; font-weight: 700;">
                     <a href="javascript:void(0)" class="pm-link-machine machine-serial-link" data-serial="${escapeHtml(m.serialNumber)}" title="View Machine Profile">
@@ -607,6 +650,7 @@ function renderRecentlyServicedTab() {
             <tr style="background: #0f172a; border-bottom: 1.5px solid var(--border-color); color: var(--text-secondary); text-transform: uppercase; font-size: 10.5px; letter-spacing: 0.5px; position: sticky; top: 0; z-index: 5;">
               <th style="padding: 6px 8px; width: 40px; text-align: center;">SL</th>
               <th style="padding: 6px 8px; width: 105px;">Service Date</th>
+              <th style="padding: 6px 8px; width: 110px;">Approval Status</th>
               <th style="padding: 6px 8px; width: 120px;">Machine Serial</th>
               <th style="padding: 6px 8px;">Machine Details</th>
               <th style="padding: 6px 8px;">Location</th>
@@ -614,13 +658,13 @@ function renderRecentlyServicedTab() {
               <th style="padding: 6px 8px;">Sticker Serial</th>
               <th style="padding: 6px 8px;">Next Target</th>
               <th style="padding: 6px 8px;">Remarks &amp; Parts</th>
-              <th style="padding: 6px 8px; text-align: center; width: 125px;">Actions</th>
+              <th style="padding: 6px 8px; text-align: center; width: 135px;">Actions</th>
             </tr>
           </thead>
           <tbody>
             ${records.length === 0 ? `
               <tr>
-                <td colspan="10" style="text-align: center; padding: 30px; color: var(--text-muted);">
+                <td colspan="11" style="text-align: center; padding: 30px; color: var(--text-muted);">
                   No recent servicing records found matching the criteria.
                 </td>
               </tr>
@@ -631,6 +675,18 @@ function renderRecentlyServicedTab() {
                 <td style="padding: 5px 8px; text-align: center; font-family: monospace; font-size: 10.5px; color: var(--text-muted);">${sl}</td>
                 <td style="padding: 5px 8px; font-family: monospace; font-size: 11px; font-weight: 700; color: #10b981; white-space: nowrap;">
                   📅 ${formatDisplayDate(r.serviceDate)}
+                </td>
+                <td style="padding: 5px 8px; white-space: nowrap;">
+                  ${r.serviceStatus === 'PENDING_APPROVAL' || r.approvalStatus === 'PENDING'
+                    ? '<span class="badge" style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); font-size: 10px;">⏳ Pending Approval</span>'
+                    : (r.serviceStatus === 'REJECTED' || r.approvalStatus === 'REJECTED'
+                      ? '<span class="badge" style="background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); font-size: 10px;">❌ Rejected</span>'
+                      : (r.serviceStatus === 'REVISION_REQUESTED' || r.approvalStatus === 'REVISION_REQUESTED'
+                        ? '<span class="badge" style="background: rgba(249, 115, 22, 0.2); color: #fb923c; border: 1px solid rgba(249, 115, 22, 0.4); font-size: 10px;">🔄 Revision</span>'
+                        : '<span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #34d399; font-size: 10px;">✅ Approved</span>'
+                      )
+                    )
+                  }
                 </td>
                 <td style="padding: 5px 8px; font-weight: 700;">
                   <a href="javascript:void(0)" class="pm-link-machine machine-serial-link" data-serial="${escapeHtml(r.serialNumber)}" title="View Machine Profile">
@@ -668,6 +724,11 @@ function renderRecentlyServicedTab() {
                   ` : ''}
                 </td>
                 <td style="padding: 5px 8px; text-align: center; white-space: nowrap;">
+                  ${(r.serviceStatus === 'PENDING_APPROVAL' || r.approvalStatus === 'PENDING') ? `
+                    <button class="btn btn-sm btn-pm-review-approval" data-record-id="${r.id}" title="Review & Approve Servicing" style="background: #f59e0b; color: #000; font-weight: 700; padding: 2px 6px; font-size: 10.5px; margin-right: 2px; border: none; border-radius: 4px; cursor: pointer;">
+                      🛡️ Review
+                    </button>
+                  ` : ''}
                   <button class="btn btn-secondary btn-sm btn-pm-edit-sticker" data-record-id="${r.id}" data-current-sticker="${escapeHtml(r.serviceStickerSerial || '')}" title="Edit Sticker Serial" style="padding: 2px 5px; font-size: 10.5px; margin-right: 2px;">
                     ✏️ Sticker
                   </button>
@@ -686,6 +747,140 @@ function renderRecentlyServicedTab() {
       </div>
 
       ${renderPaginationBar(total, curPage, pmPageSize, 'completed records')}
+    </div>
+  `;
+}
+
+// -------------------------------------------------------------------------
+// TAB: PENDING APPROVALS (Floor Manager Review Queue)
+// -------------------------------------------------------------------------
+function renderPendingApprovalsTab() {
+  const user = authService.getCurrentUser();
+  const canApprove = preventiveMaintenanceService.canUserApprove ?
+    preventiveMaintenanceService.canUserApprove(user, null) :
+    (authService.isAdmin() || authService.isSuperAdmin());
+
+  const pendingRecords = preventiveMaintenanceService.getPendingApprovals({
+    search: searchQuery,
+    floorId: filterFloorId !== 'ALL' ? filterFloorId : undefined
+  });
+
+  return `
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <!-- Header Banner -->
+      <div style="background: rgba(245, 158, 11, 0.1); border: 1.5px solid rgba(245, 158, 11, 0.35); border-radius: var(--radius-md); padding: 8px 14px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 18px;">🛡️</span>
+          <div>
+            <div style="font-size: 13px; font-weight: 800; color: #fbbf24;">Servicing Pending Floor Manager Approval</div>
+            <div style="font-size: 11px; color: #94a3b8; margin-top: 1px;">
+              Review technician-submitted servicing records and approve, request revision, or reject.
+              Only approved submissions update the machine's official maintenance schedule.
+            </div>
+          </div>
+        </div>
+        <span style="font-size: 12px; color: #fbbf24; font-weight: 700; background: rgba(245, 158, 11, 0.2); padding: 3px 10px; border-radius: 12px; border: 1px solid rgba(245, 158, 11, 0.4);">
+          ${pendingRecords.length} Pending
+        </span>
+      </div>
+
+      <!-- Approvals Table -->
+      <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); overflow: hidden; box-shadow: var(--shadow-sm);">
+        <div class="table-responsive" style="max-height: calc(100vh - 220px); overflow-y: auto; overflow-x: auto; width: 100%;">
+          <table class="pm-table" style="width: 100%; min-width: 1100px; border-collapse: collapse; font-size: 11.5px; text-align: left;">
+            <thead>
+              <tr style="background: #0f172a; border-bottom: 1.5px solid var(--border-color); color: var(--text-secondary); text-transform: uppercase; font-size: 10.5px; letter-spacing: 0.5px; position: sticky; top: 0; z-index: 5;">
+                <th style="padding: 6px 8px; width: 40px; text-align: center;">SL</th>
+                <th style="padding: 6px 8px; width: 100px;">Submitted On</th>
+                <th style="padding: 6px 8px; width: 120px;">Machine Serial</th>
+                <th style="padding: 6px 8px;">Machine / Location</th>
+                <th style="padding: 6px 8px;">Technician</th>
+                <th style="padding: 6px 8px; width: 110px;">Sticker Serial</th>
+                <th style="padding: 6px 8px; width: 100px;">Service Date</th>
+                <th style="padding: 6px 8px;">Checklist</th>
+                <th style="padding: 6px 8px;">Remarks</th>
+                <th style="padding: 6px 8px; text-align: center; width: 170px;">Manager Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${pendingRecords.length === 0 ? `
+                <tr>
+                  <td colspan="10" style="text-align: center; padding: 40px; color: var(--text-muted);">
+                    <div style="font-size: 32px; margin-bottom: 8px;">✅</div>
+                    <div style="font-size: 14px; font-weight: 700; color: #fff; margin-bottom: 4px;">No Pending Approvals</div>
+                    <div style="font-size: 12px; color: #94a3b8;">All technician servicing submissions have been reviewed. Great work!</div>
+                  </td>
+                </tr>
+              ` : pendingRecords.map((r, idx) => {
+                const sl = String(idx + 1).padStart(2, '0');
+                const submittedDate = r.submittedAt ? new Date(r.submittedAt).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' }) : formatDisplayDate(r.createdAt);
+                const checklistItems = r.serviceChecklist || [];
+                const checkedCount = checklistItems.filter(c => c.checked).length;
+                const totalItems = checklistItems.length;
+                return `
+                <tr class="pm-table-row" style="border-bottom: 1px solid rgba(255,255,255,0.07); background: rgba(245, 158, 11, 0.03);">
+                  <td style="padding: 5px 8px; text-align: center; font-family: monospace; font-size: 10.5px; color: var(--text-muted);">${sl}</td>
+                  <td style="padding: 5px 8px; font-size: 10.5px; color: #fbbf24; font-family: monospace; white-space: nowrap;">${escapeHtml(submittedDate)}</td>
+                  <td style="padding: 5px 8px; font-weight: 700;">
+                    <a href="javascript:void(0)" class="pm-link-machine machine-serial-link" data-serial="${escapeHtml(r.serialNumber)}" style="color: #38bdf8;">
+                      ${escapeHtml(r.serialNumber)}
+                    </a>
+                  </td>
+                  <td style="padding: 5px 8px;">
+                    <div style="font-weight: 700; color: #fff; line-height: 1.2;">${escapeHtml(r.machineName || r.serialNumber)}</div>
+                    <div style="font-size: 10px; color: var(--text-secondary);">
+                      <span style="color: #38bdf8;">${escapeHtml(r.floor || r.floorId || '')}</span>
+                      ${r.line ? ` • ${escapeHtml(r.line)}` : ''}
+                      ${r.machineType ? ` • <span style="color: #94a3b8;">${escapeHtml(r.machineType)}</span>` : ''}
+                    </div>
+                  </td>
+                  <td style="padding: 5px 8px;">
+                    <div style="font-weight: 700; color: #fff; line-height: 1.2;">${escapeHtml(r.servicedBy || r.submittedByName || '—')}</div>
+                    <div style="font-size: 10px; color: #38bdf8; font-family: monospace;">Card: ${escapeHtml(r.servicedByCardNumber || 'N/A')}</div>
+                  </td>
+                  <td style="padding: 5px 8px; white-space: nowrap;">
+                    <span class="badge" style="background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3); font-family: monospace; font-weight: 700; font-size: 10.5px; padding: 1px 6px;">
+                      🏷️ ${escapeHtml(r.serviceStickerSerial || 'N/A')}
+                    </span>
+                  </td>
+                  <td style="padding: 5px 8px; font-family: monospace; font-size: 11px; font-weight: 700; color: #10b981; white-space: nowrap;">
+                    ${formatDisplayDate(r.serviceDate)}
+                  </td>
+                  <td style="padding: 5px 8px;">
+                    ${totalItems > 0 ? `
+                      <div style="display: flex; align-items: center; gap: 5px;">
+                        <div style="flex: 1; background: #0f172a; border-radius: 4px; height: 5px; overflow: hidden; min-width: 50px;">
+                          <div style="background: ${checkedCount === totalItems ? '#10b981' : '#f59e0b'}; height: 100%; width: ${totalItems > 0 ? Math.round((checkedCount/totalItems)*100) : 0}%; transition: width 0.3s;"></div>
+                        </div>
+                        <span style="font-size: 10px; color: #94a3b8; white-space: nowrap;">${checkedCount}/${totalItems} OK</span>
+                      </div>
+                    ` : '<span style="color: #64748b; font-size: 10.5px;">No checklist</span>'}
+                  </td>
+                  <td style="padding: 5px 8px; max-width: 160px;">
+                    <div style="font-size: 11px; color: #cbd5e1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${escapeHtml(r.serviceRemarks)}">
+                      ${escapeHtml(r.serviceRemarks || '—')}
+                    </div>
+                  </td>
+                  <td style="padding: 5px 8px; text-align: center; white-space: nowrap;">
+                    ${canApprove ? `
+                      <button class="btn btn-sm btn-pm-quick-approve" data-record-id="${r.id}" title="Quick Approve" style="background: #10b981; color: #fff; font-weight: 700; font-size: 10px; padding: 2px 6px; border: none; border-radius: 4px; cursor: pointer; margin-right: 2px;">
+                        ✅ Approve
+                      </button>
+                      <button class="btn btn-sm btn-pm-review-approval" data-record-id="${r.id}" title="Review Details & Approve" style="background: #3b82f6; color: #fff; font-weight: 700; font-size: 10px; padding: 2px 6px; border: none; border-radius: 4px; cursor: pointer; margin-right: 2px;">
+                        🔍 Review
+                      </button>
+                      <button class="btn btn-sm btn-pm-quick-reject" data-record-id="${r.id}" title="Reject Submission" style="background: rgba(239,68,68,0.15); color: #f87171; font-weight: 700; font-size: 10px; padding: 2px 5px; border: 1px solid rgba(239,68,68,0.4); border-radius: 4px; cursor: pointer;">
+                        ✕
+                      </button>
+                    ` : '<span style="color: #94a3b8; font-size: 11px;">Not Authorized</span>'}
+                  </td>
+                </tr>
+                `;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   `;
 }
@@ -1236,6 +1431,8 @@ function renderActivePmModal() {
   switch (activePmModal) {
     case 'service-entry':
       return renderServiceEntryModal();
+    case 'review-approval':
+      return renderReviewApprovalModal();
     case 'checklist-modal':
       return renderChecklistManagerModal();
     case 'qr-scanner':
@@ -1550,6 +1747,136 @@ function renderServiceEntryModal() {
           </button>
         </div>
 
+      </div>
+    </div>
+  `;
+}
+
+/**
+ * Floor Manager Review & Approve Servicing Modal
+ */
+function renderReviewApprovalModal() {
+  const record = modalApprovalRecordId
+    ? (preventiveMaintenanceService.getPendingApprovals
+        ? preventiveMaintenanceService.getPendingApprovals().find(r => r.id === modalApprovalRecordId)
+        : null)
+    : null;
+
+  if (!record) {
+    return `
+      <div class="modal-backdrop" style="position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 9999; display: flex; align-items: center; justify-content: center;">
+        <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-xl); padding: 32px; max-width: 400px; text-align: center;">
+          <div style="font-size: 28px; margin-bottom: 10px;">⚠️</div>
+          <div style="font-size: 14px; color: #fff; font-weight: 700; margin-bottom: 8px;">Record Not Found</div>
+          <button id="btn-pm-close-review-modal" class="btn btn-secondary btn-sm" style="margin-top: 12px;">Close</button>
+        </div>
+      </div>
+    `;
+  }
+
+  const checklistItems = record.serviceChecklist || [];
+  const checkedCount = checklistItems.filter(c => c.checked).length;
+  const submittedAt = record.submittedAt ? new Date(record.submittedAt).toLocaleString('en-GB') : '—';
+
+  return `
+    <div class="modal-backdrop" id="pm-review-approval-backdrop" style="position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 16px;">
+      <div class="modal-dialog" style="max-width: 780px; width: 100%; background: var(--bg-surface); border: 2px solid #f59e0b; border-radius: var(--radius-xl); box-shadow: 0 20px 40px rgba(0,0,0,0.85); display: flex; flex-direction: column; max-height: 92vh; overflow: hidden;">
+        
+        <!-- Modal Header -->
+        <div style="padding: 14px 22px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; background: #0f172a; flex-shrink: 0;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 20px;">🛡️</span>
+            <div>
+              <h3 style="font-size: 15px; font-weight: 800; color: #fbbf24; margin: 0;">Floor Manager Review — Machine ${escapeHtml(record.serialNumber)}</h3>
+              <div style="font-size: 11.5px; color: #94a3b8; margin-top: 1px;">
+                ${escapeHtml(record.machineName || '')} &bull; ${escapeHtml(record.floor || record.floorId || '')} &bull; Submitted: ${submittedAt}
+              </div>
+            </div>
+          </div>
+          <button id="btn-pm-close-review-modal" style="background: none; border: none; color: #94a3b8; font-size: 20px; cursor: pointer;">✕</button>
+        </div>
+
+        <!-- Modal Body -->
+        <div style="padding: 18px 22px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 14px;">
+
+          <!-- Technician Summary Row -->
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+            <div style="background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 10px 14px;">
+              <div style="font-size: 10px; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 4px;">Serviced By</div>
+              <div style="font-size: 13px; font-weight: 800; color: #fff;">${escapeHtml(record.servicedBy || '—')}</div>
+              <div style="font-size: 10.5px; color: #38bdf8; font-family: monospace;">Card: ${escapeHtml(record.servicedByCardNumber || 'N/A')}</div>
+            </div>
+            <div style="background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 10px 14px;">
+              <div style="font-size: 10px; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 4px;">Service Date</div>
+              <div style="font-size: 13px; font-weight: 800; color: #10b981;">${formatDisplayDate(record.serviceDate)}</div>
+              <div style="font-size: 10.5px; color: #94a3b8;">${escapeHtml(record.serviceType || 'Preventive Service')}</div>
+            </div>
+            <div style="background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 10px 14px;">
+              <div style="font-size: 10px; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 4px;">Physical Sticker Serial</div>
+              <div style="font-size: 14px; font-weight: 800; color: #c084fc; font-family: monospace;">🏷️ ${escapeHtml(record.serviceStickerSerial || 'N/A')}</div>
+              <div style="font-size: 10.5px; color: #94a3b8;">Company Tagged SL No.</div>
+            </div>
+          </div>
+
+          <!-- Checklist Verification -->
+          <div style="background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 12px 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+              <div style="font-size: 12px; font-weight: 800; color: #fff;">📋 Standard Inspection Checklist</div>
+              <span style="font-size: 11px; color: ${checkedCount === checklistItems.length ? '#10b981' : '#f59e0b'}; font-weight: 700;">
+                ${checkedCount}/${checklistItems.length} Items Completed
+              </span>
+            </div>
+            ${checklistItems.length === 0 ? `
+              <div style="color: #64748b; font-size: 12px; font-style: italic;">No checklist items recorded for this servicing entry.</div>
+            ` : `
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px; max-height: 160px; overflow-y: auto;">
+                ${checklistItems.map(item => `
+                  <div style="display: flex; align-items: center; gap: 6px; padding: 4px 6px; border-radius: 4px; background: ${item.checked ? 'rgba(16, 185, 129, 0.08)' : 'rgba(239, 68, 68, 0.08)'};">
+                    <span style="font-size: 12px;">${item.checked ? '✅' : '❌'}</span>
+                    <span style="font-size: 11px; color: ${item.checked ? '#34d399' : '#f87171'};">${escapeHtml(item.item || String(item))}</span>
+                  </div>
+                `).join('')}
+              </div>
+            `}
+          </div>
+
+          <!-- Remarks -->
+          ${record.serviceRemarks ? `
+            <div style="background: rgba(56, 189, 248, 0.06); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 8px; padding: 10px 14px;">
+              <div style="font-size: 10.5px; font-weight: 700; color: #38bdf8; margin-bottom: 4px;">📝 Technician's Service Remarks</div>
+              <div style="font-size: 12px; color: #cbd5e1;">${escapeHtml(record.serviceRemarks)}</div>
+              ${record.partsReplaced ? `<div style="font-size: 11px; color: #f59e0b; margin-top: 5px;">⚙️ Parts Replaced: ${escapeHtml(record.partsReplaced)}</div>` : ''}
+            </div>
+          ` : ''}
+
+          <!-- Manager Remarks -->
+          <div>
+            <label style="font-size: 12px; font-weight: 700; color: #cbd5e1; display: block; margin-bottom: 5px;">
+              💬 Floor Manager Remarks (Visible to Technician)
+            </label>
+            <textarea id="pm-manager-remarks-input" rows="3" placeholder="Add authorization remarks, inspection notes, or reason for rejection/revision..." 
+              style="width: 100%; padding: 9px 12px; background: var(--bg-card); border: 1.5px solid #334155; border-radius: 6px; color: #fff; font-size: 12.5px; resize: vertical; box-sizing: border-box;"></textarea>
+          </div>
+
+        </div>
+
+        <!-- Action Footer -->
+        <div style="padding: 14px 22px; border-top: 1px solid var(--border-color); background: #0f172a; display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-shrink: 0;">
+          <button type="button" id="btn-pm-close-review-modal" class="btn btn-secondary btn-sm" style="padding: 7px 14px;">
+            Cancel
+          </button>
+          <div style="display: flex; gap: 8px;">
+            <button type="button" id="btn-pm-modal-request-revision" class="btn btn-sm" style="background: rgba(249, 115, 22, 0.15); border: 1.5px solid rgba(249, 115, 22, 0.5); color: #fb923c; font-weight: 700; padding: 7px 14px; border-radius: 6px; cursor: pointer;">
+              🔄 Request Revision
+            </button>
+            <button type="button" id="btn-pm-modal-reject" class="btn btn-sm" style="background: rgba(239, 68, 68, 0.15); border: 1.5px solid rgba(239, 68, 68, 0.5); color: #f87171; font-weight: 700; padding: 7px 14px; border-radius: 6px; cursor: pointer;">
+              ✕ Reject
+            </button>
+            <button type="button" id="btn-pm-modal-approve" class="btn btn-sm" style="background: linear-gradient(135deg, #059669, #10b981); border: none; color: #fff; font-weight: 800; padding: 7px 18px; border-radius: 6px; cursor: pointer; font-size: 13px; box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4);">
+              ✓ Final Approve &amp; Finalize
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   `;
@@ -2443,6 +2770,18 @@ function renderBulkServicingModal() {
 export function initPreventiveMaintenanceEvents() {
   const container = document.querySelector('.preventive-maintenance-page');
   if (!container) return;
+
+  // Handle deep-link navigation from notification drawer
+  const handlePmTabNav = (e) => {
+    const tab = e.detail?.tab;
+    if (tab) {
+      activeTab = tab;
+      pmCurrentPage = 1;
+      rerenderView();
+    }
+  };
+  window.removeEventListener('erp:navigate-pm-tab', handlePmTabNav);
+  window.addEventListener('erp:navigate-pm-tab', handlePmTabNav);
 
   // 1. Tab switching
   container.querySelectorAll('.pm-tab-btn').forEach(btn => {
@@ -3469,7 +3808,7 @@ function bindModalEvents() {
   });
 
   // Submit Service Record
-  document.getElementById('btn-pm-submit-service')?.addEventListener('click', () => {
+  document.getElementById('btn-pm-submit-service')?.addEventListener('click', async () => {
     const prof = modalMachineContext ? preventiveMaintenanceService.getMachinePreventiveProfile(modalMachineContext) : null;
     if (!prof) {
       alert('Please search and select a machine first.');
@@ -3509,7 +3848,7 @@ function bindModalEvents() {
     });
 
     try {
-      preventiveMaintenanceService.createServiceEntry({
+      const newRecord = await preventiveMaintenanceService.createServiceEntry({
         machineId: prof.machineId,
         serialNumber: prof.serialNumber,
         serviceDate: sDate,
@@ -3525,17 +3864,149 @@ function bindModalEvents() {
         serviceRemarks: remarks
       });
 
-      notificationService.success(`Preventive maintenance recorded for machine ${prof.serialNumber} [${sticker}].`);
-      closeModal();
-      activeTab = 'recently-serviced';
+      if (newRecord && (newRecord.serviceStatus === 'PENDING_APPROVAL' || newRecord.approvalStatus === 'PENDING')) {
+        notificationService.success(`✅ Servicing submitted for Machine ${prof.serialNumber}. Awaiting Floor Manager approval.`);
+        closeModal();
+        activeTab = 'recently-serviced';
+      } else {
+        notificationService.success(`✅ Preventive maintenance completed & approved for Machine ${prof.serialNumber} [${sticker}].`);
+        closeModal();
+        activeTab = 'recently-serviced';
+      }
       rerenderView();
     } catch (err) {
       alert(err.message);
     }
   });
 
+  // ---- Approval Center Event Listeners ----
+
+  // "Review Approvals" button on dashboard banner
+  document.getElementById('btn-pm-view-pending-approvals')?.addEventListener('click', () => {
+    activeTab = 'pending-approvals';
+    rerenderView();
+  });
+
+  // Quick Approve buttons (in pending-approvals tab and recently-serviced tab)
+  container.querySelectorAll('.btn-pm-quick-approve').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const recordId = btn.getAttribute('data-record-id');
+      if (!recordId) return;
+      const remarks = 'Approved by Floor Manager.';
+      btn.disabled = true;
+      btn.textContent = '⏳ Approving...';
+      try {
+        await preventiveMaintenanceService.approveServiceEntry(recordId, remarks);
+        notificationService.success('✅ Servicing approved. Machine schedule updated.');
+        rerenderView();
+      } catch (err) {
+        btn.disabled = false;
+        btn.textContent = '✅ Approve';
+        alert('Approval error: ' + err.message);
+      }
+    });
+  });
+
+  // Quick Reject buttons
+  container.querySelectorAll('.btn-pm-quick-reject').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const recordId = btn.getAttribute('data-record-id');
+      if (!recordId) return;
+      const remarks = prompt('Enter rejection reason (optional):', '');
+      if (remarks === null) return; // cancelled
+      btn.disabled = true;
+      try {
+        await preventiveMaintenanceService.rejectServiceEntry(recordId, remarks || 'Rejected by Floor Manager.');
+        notificationService.success('❌ Servicing record rejected. Technician notified.');
+        rerenderView();
+      } catch (err) {
+        btn.disabled = false;
+        alert('Rejection error: ' + err.message);
+      }
+    });
+  });
+
+  // Open review modal buttons (both in pending-approvals tab and recently-serviced tab)
+  container.querySelectorAll('.btn-pm-review-approval').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const recordId = btn.getAttribute('data-record-id');
+      if (!recordId) return;
+      modalApprovalRecordId = recordId;
+      activePmModal = 'review-approval';
+      rerenderView();
+    });
+  });
+
+  // Review Modal Event Listeners
+  document.getElementById('btn-pm-close-review-modal')?.addEventListener('click', () => closeModal());
+
+  document.getElementById('btn-pm-modal-approve')?.addEventListener('click', async () => {
+    if (!modalApprovalRecordId) return;
+    const remarks = document.getElementById('pm-manager-remarks-input')?.value?.trim() || 'Approved by Floor Manager.';
+    const btn = document.getElementById('btn-pm-modal-approve');
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ Approving...'; }
+    try {
+      await preventiveMaintenanceService.approveServiceEntry(modalApprovalRecordId, remarks);
+      notificationService.success('✅ Servicing officially approved. Machine schedule and sticker updated.');
+      closeModal();
+      activeTab = 'pending-approvals';
+      rerenderView();
+    } catch (err) {
+      if (btn) { btn.disabled = false; btn.textContent = '✓ Final Approve & Finalize'; }
+      alert('Approval error: ' + err.message);
+    }
+  });
+
+  document.getElementById('btn-pm-modal-reject')?.addEventListener('click', async () => {
+    if (!modalApprovalRecordId) return;
+    const remarks = document.getElementById('pm-manager-remarks-input')?.value?.trim();
+    if (!remarks) {
+      alert('Please enter a rejection reason in the remarks field.');
+      document.getElementById('pm-manager-remarks-input')?.focus();
+      return;
+    }
+    const btn = document.getElementById('btn-pm-modal-reject');
+    if (btn) { btn.disabled = true; }
+    try {
+      await preventiveMaintenanceService.rejectServiceEntry(modalApprovalRecordId, remarks);
+      notificationService.success('❌ Servicing record rejected. Technician has been notified.');
+      closeModal();
+      activeTab = 'pending-approvals';
+      rerenderView();
+    } catch (err) {
+      if (btn) { btn.disabled = false; }
+      alert('Rejection error: ' + err.message);
+    }
+  });
+
+  document.getElementById('btn-pm-modal-request-revision')?.addEventListener('click', async () => {
+    if (!modalApprovalRecordId) return;
+    const remarks = document.getElementById('pm-manager-remarks-input')?.value?.trim();
+    if (!remarks) {
+      alert('Please specify what needs to be corrected in the remarks field.');
+      document.getElementById('pm-manager-remarks-input')?.focus();
+      return;
+    }
+    const btn = document.getElementById('btn-pm-modal-request-revision');
+    if (btn) { btn.disabled = true; }
+    try {
+      await preventiveMaintenanceService.requestServiceRevision(modalApprovalRecordId, remarks);
+      notificationService.success('🔄 Revision requested. Technician has been notified.');
+      closeModal();
+      activeTab = 'pending-approvals';
+      rerenderView();
+    } catch (err) {
+      if (btn) { btn.disabled = false; }
+      alert('Revision request error: ' + err.message);
+    }
+  });
+
   // 2. Scanner Modal Events
   document.getElementById('btn-pm-close-scanner')?.addEventListener('click', () => closeModal());
+
 
   const scannerSubmit = () => {
     const txt = document.getElementById('pm-scanner-text-input')?.value.trim();
@@ -4080,6 +4551,7 @@ function closeModal() {
   activePmModal = null;
   modalMachineContext = null;
   modalServiceContext = null;
+  modalApprovalRecordId = null;
 
   const modalLayer = document.getElementById('pm-modal-layer');
   if (modalLayer) {
