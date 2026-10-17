@@ -551,9 +551,8 @@ export function initTransferModalEvents() {
 
     const exactMatch = allMachines.find(m => 
       (m.serialNumber && m.serialNumber.toString().trim().toLowerCase() === q) ||
-      (m.systemAssetId && m.systemAssetId.toLowerCase() === q) ||
-      (m.permanentMachineId && m.permanentMachineId.toLowerCase() === q) ||
-      (m.permanentMachineId && m.permanentMachineId.toLowerCase().replace(/^mid-/i, 'amg-mnt-') === q) ||
+      (m.manufacturing_serial && m.manufacturing_serial.toString().trim().toLowerCase() === q) ||
+      (m.manufacturingSerial && m.manufacturingSerial.toString().trim().toLowerCase() === q) ||
       (m.id && m.id.toLowerCase() === q)
     );
 
@@ -566,9 +565,8 @@ export function initTransferModalEvents() {
 
     const partialMatch = allMachines.find(m => 
       (m.serialNumber && m.serialNumber.toString().trim().toLowerCase().includes(q)) ||
-      (m.systemAssetId && m.systemAssetId.toLowerCase().includes(q)) ||
-      (m.permanentMachineId && m.permanentMachineId.toLowerCase().includes(q)) ||
-      (m.permanentMachineId && m.permanentMachineId.toLowerCase().replace(/^mid-/i, 'amg-mnt-').includes(q))
+      (m.manufacturing_serial && m.manufacturing_serial.toString().trim().toLowerCase().includes(q)) ||
+      (m.manufacturingSerial && m.manufacturingSerial.toString().trim().toLowerCase().includes(q))
     );
 
     if (partialMatch) {
@@ -599,10 +597,9 @@ export function initTransferModalEvents() {
 
         const matches = allMachines.filter(m => 
           (m.serialNumber && m.serialNumber.toString().toLowerCase().includes(q)) ||
-          (m.id && m.id.toLowerCase().includes(q)) ||
-          (m.systemAssetId && m.systemAssetId.toLowerCase().includes(q)) ||
-          (m.permanentMachineId && m.permanentMachineId.toLowerCase().includes(q)) ||
-          (m.permanentMachineId && m.permanentMachineId.toLowerCase().replace(/^mid-/i, 'amg-mnt-').includes(q))
+          (m.manufacturing_serial && m.manufacturing_serial.toString().toLowerCase().includes(q)) ||
+          (m.manufacturingSerial && m.manufacturingSerial.toString().toLowerCase().includes(q)) ||
+          (m.id && m.id.toLowerCase().includes(q))
         ).slice(0, 8);
 
         if (matches.length === 0) {
@@ -1268,9 +1265,8 @@ export function initTransferModalEvents() {
           if (inpS) {
             const matched = allM.find(m =>
               (m.serialNumber && m.serialNumber.toString().trim().toLowerCase() === inpS) ||
-              (m.systemAssetId && m.systemAssetId.toLowerCase() === inpS) ||
-              (m.permanentMachineId && m.permanentMachineId.toLowerCase() === inpS) ||
-              (m.permanentMachineId && m.permanentMachineId.toLowerCase().replace(/^mid-/i, 'amg-mnt-') === inpS) ||
+              (m.manufacturing_serial && m.manufacturing_serial.toString().trim().toLowerCase() === inpS) ||
+              (m.manufacturingSerial && m.manufacturingSerial.toString().trim().toLowerCase() === inpS) ||
               (m.id && m.id.toLowerCase() === inpS)
             );
             if (matched) {

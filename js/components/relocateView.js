@@ -3243,12 +3243,10 @@ export function initRelocateViewEvents() {
       const matches = allMachines.filter(m => {
         if (!m) return false;
         const s = (m.serialNumber || '').toLowerCase();
-        const assetId = (m.systemAssetId || '').toLowerCase();
-        const permId = (m.permanentMachineId || '').toLowerCase();
-        const permAmg = permId.replace(/^mid-/i, 'amg-mnt-');
+        const mfg = (m.manufacturing_serial || m.manufacturingSerial || '').toLowerCase();
         const mn = (mnMap.get(m.machineNameId) || '').toLowerCase();
         const mdl = (mdlMap.get(m.modelId) || '').toLowerCase();
-        return s.includes(q) || assetId.includes(q) || permId.includes(q) || permAmg.includes(q) || mn.includes(q) || mdl.includes(q);
+        return s.includes(q) || mfg.includes(q) || mn.includes(q) || mdl.includes(q);
       }).slice(0, 15);
 
       if (matches.length === 0) {

@@ -187,7 +187,7 @@ class MachineService {
       allMachines = allMachines.filter(m => m.status === params.status);
     }
 
-    // 4. Global Multi-Field Search (Serial, Asset ID, Remarks, Model, Brand, Name, Line, Floor, Unit)
+    // 4. Global Multi-Field Search (Serial, Mfg Serial, Remarks, Model, Brand, Name, Line, Floor, Unit)
     if (params.search) {
       const q = params.search.trim().toLowerCase();
       
@@ -201,9 +201,7 @@ class MachineService {
       const untMap = new Map(storage.getTable(TABLE_NAMES.UNITS).map(x => [x.id, x.name.toLowerCase()]));
 
       allMachines = allMachines.filter(m => {
-        if (m.systemAssetId?.toLowerCase().includes(q)) return true;
-        if (m.permanentMachineId?.toLowerCase().includes(q)) return true;
-        if (m.permanentMachineId && m.permanentMachineId.toLowerCase().replace(/^mid-/i, 'amg-mnt-').includes(q)) return true;
+        // Serial Number & Manufacturer Serial Number search (Asset ID is identified exclusively via QR scan)
         if (m.serialNumber?.toLowerCase().includes(q)) return true;
         if (m.manufacturing_serial?.toLowerCase().includes(q) || m.manufacturingSerial?.toLowerCase().includes(q) || m.customValues?.manufacturing_serial?.toString().toLowerCase().includes(q)) return true;
         if (m.remarks?.toLowerCase().includes(q)) return true;

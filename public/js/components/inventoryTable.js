@@ -255,14 +255,23 @@ export function renderInventoryTable() {
       renderTh: (thStyle, thClass) => `<th class="th-sortable ${thClass}" data-sort="systemAssetId" style="width: 140px; min-width: 140px; max-width: 140px; text-align: center; cursor: pointer; ${thStyle}" title="Permanent System-Generated Asset ID">System Asset ID</th>`,
       renderTd: (m, meta, tdStyle, tdClass) => {
         let assetId = m.systemAssetId;
+        if (assetId && /^MID-/i.test(assetId)) {
+          assetId = assetId.replace(/^MID-/i, 'AMG-MNT-');
+          m.systemAssetId = assetId;
+        }
         if (!assetId && m.permanentMachineId) {
           assetId = String(m.permanentMachineId).trim().replace(/^MID-/i, 'AMG-MNT-');
           m.systemAssetId = assetId;
         }
-        if (!assetId) {
-          assetId = '—';
+        if (!assetId || !assetId.startsWith('AMG-MNT-')) {
+          if (assetId && /^\d+$/.test(assetId)) {
+            assetId = `AMG-MNT-${assetId.padStart(6, '0')}`;
+            m.systemAssetId = assetId;
+          } else if (!assetId) {
+            assetId = '—';
+          }
         }
-        return `<td class="${tdClass}" style="width: 140px; min-width: 140px; max-width: 140px; text-align: center; ${tdStyle}"><a href="javascript:void(0)" class="btn-inspect-machine" data-id="${m.id}" style="text-decoration: none;" title="Permanent System Asset ID: ${assetId} (Click to inspect)"><span class="badge" style="background: rgba(16, 185, 129, 0.12); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.35); font-family: var(--font-mono); font-size: 11.5px; font-weight: 700; padding: 2px 7px; border-radius: 4px; display: inline-block; letter-spacing: 0.3px;">${assetId}</span></a></td>`;
+        return `<td class="${tdClass}" style="width: 140px; min-width: 140px; max-width: 140px; text-align: center; ${tdStyle}"><a href="javascript:void(0)" class="btn-inspect-machine" data-id="${m.id}" style="text-decoration: none;" title="Permanent System Asset ID: ${assetId} (Click to inspect machine details)"><span class="badge" style="background: rgba(16, 185, 129, 0.12); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.35); font-family: var(--font-mono); font-size: 11.5px; font-weight: 700; padding: 2px 7px; border-radius: 4px; display: inline-block; letter-spacing: 0.3px;">${assetId}</span></a></td>`;
       }
     },
     {
@@ -838,7 +847,7 @@ export function renderInventoryTable() {
                 type="text" 
                 id="filter-search-input" 
                 class="filter-search-input has-icon-left" 
-                placeholder="Search machine, serial, asset ID, brand..." 
+                placeholder="Search machine, serial, mfg serial, brand..." 
                 value="${filters.search || ''}"
                 style="height: 30px; font-size: 12px; padding-left: 36px !important; padding-right: ${filters.search ? '58px' : '32px'} !important;"
               />
@@ -1121,11 +1130,20 @@ export function initInventoryTableEvents() {
             (m.systemAssetId && m.systemAssetId.toLowerCase() === idOrSerial.toLowerCase()) ||
             (m.permanentMachineId && m.permanentMachineId.toLowerCase() === idOrSerial.toLowerCase()) ||
             (m.permanentMachineId && m.permanentMachineId.toLowerCase().replace(/^mid-/i, 'amg-mnt-') === idOrSerial.toLowerCase()) ||
-            (m.serialNumber && m.serialNumber.toString().toLowerCase() === idOrSerial.toLowerCase())
+            (m.serialNumber && m.serialNumber.toString().toLowerCase() === idOrSerial.toLowerCase()) ||
+            (m.manufacturing_serial && m.manufacturing_serial.toString().toLowerCase() === idOrSerial.toLowerCase()) ||
+            (m.manufacturingSerial && m.manufacturingSerial.toString().toLowerCase() === idOrSerial.toLowerCase())
           );
-          const targetSerial = match ? match.serialNumber : idOrSerial;
-          state.updateFilters({ search: targetSerial, page: 1 });
-          notificationService.success(`Scanned machine: ${targetSerial}`);
+          if (match) {
+            const assetTagStr = match.systemAssetId || (match.permanentMachineId ? String(match.permanentMachineId).replace(/^MID-/i, 'AMG-MNT-') : '');
+            // Directly identify machine and open full Machine Details drawer
+            state.set('activeMachineId', match.id);
+            state.set('activeModal', 'machine-details');
+            state.updateFilters({ search: match.serialNumber, page: 1 });
+            notificationService.success(`Machine Identified: ${match.serialNumber} ${assetTagStr ? `[Asset ID: ${assetTagStr}]` : ''}`);
+          } else {
+            notificationService.warning(`No machine found for scanned code: ${idOrSerial}`);
+          }
         },
         onManualSearchRequest: () => {
           scannerSlot.innerHTML = '';
