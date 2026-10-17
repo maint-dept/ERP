@@ -265,6 +265,17 @@ class MachineService {
       let valA = a[sortField];
       let valB = b[sortField];
 
+      // Handle SL sequential order
+      if (sortField === 'sl') {
+        const numA = (a.sl !== undefined && a.sl !== null && a.sl !== '') 
+          ? Number(a.sl) 
+          : (parseInt(String(a.systemAssetId || a.permanentMachineId || '').replace(/\D/g, ''), 10) || 0);
+        const numB = (b.sl !== undefined && b.sl !== null && b.sl !== '') 
+          ? Number(b.sl) 
+          : (parseInt(String(b.systemAssetId || b.permanentMachineId || '').replace(/\D/g, ''), 10) || 0);
+        return (numA - numB) * sortOrder;
+      }
+
       // Handle nested master data sort
       if (sortField === 'machineName') {
         const nameA = storage.getItem(TABLE_NAMES.MACHINE_NAMES, a.machineNameId)?.name || '';

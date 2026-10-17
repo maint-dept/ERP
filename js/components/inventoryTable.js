@@ -613,7 +613,7 @@ export function renderInventoryTable() {
   // Build Table Header Columns
   let headerHtml = `
     <tr>
-      <th class="col-freeze-sl" style="width: 50px; min-width: 50px; max-width: 50px; text-align: center;">SL</th>
+      <th class="col-freeze-sl th-sortable" data-sort="sl" style="width: 50px; min-width: 50px; max-width: 50px; text-align: center; cursor: pointer;" title="Sort by Serial / Asset Sequence Number">SL</th>
       <th class="col-freeze-check ${checkIsLastFrozen ? 'col-frozen-boundary' : ''}" style="width: 44px; min-width: 44px; max-width: 44px; text-align: center;">
         <input type="checkbox" id="check-select-all" title="Select all visible machines" ${machines.length > 0 && selectedIds.size >= machines.length ? 'checked' : ''} />
       </th>
