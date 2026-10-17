@@ -12,7 +12,7 @@ import { renderSidebar, initSidebarEvents, updateSidebarActiveState } from './co
 import { renderHomepageView, initHomepageEvents } from './components/homepageView.js?v=4.26.23';
 import { renderLoginView, initLoginViewEvents } from './components/loginView.js?v=4.26.23';
 import { renderDashboard, initDashboardEvents } from './components/dashboard.js';
-import { renderInventoryTable, initInventoryTableEvents, syncInventorySelectionDOM } from './components/inventoryTable.js?v=4.26.24';
+import { renderInventoryTable, initInventoryTableEvents, syncInventorySelectionDOM } from './components/inventoryTable.js?v=4.26.25';
 import { renderMachineModal, initMachineModalEvents } from './components/machineModal.js';
 import { renderMachineDetails, initMachineDetailsEvents } from './components/machineDetails.js';
 import { renderTransferModal, initTransferModalEvents } from './components/transferModal.js?v=4.26.24';

@@ -338,17 +338,19 @@ class MachineService {
     });
 
     // 7. High Performance Pagination
-    const page = Math.max(1, parseInt(params.page, 10) || 1);
-    const limit = params.limit === 'ALL' ? totalRecords : Math.max(1, parseInt(params.limit, 10) || 50);
-    const totalPages = Math.ceil(totalRecords / limit) || 1;
-    const startIndex = (page - 1) * limit;
-    const paginatedItems = params.limit === 'ALL' ? allMachines : allMachines.slice(startIndex, startIndex + limit);
+    const isAll = params.limit === 'ALL' || String(params.limit).toUpperCase() === 'ALL';
+    const page = isAll ? 1 : Math.max(1, parseInt(params.page, 10) || 1);
+    const limitNum = isAll ? totalRecords : Math.max(1, parseInt(params.limit, 10) || 50);
+    const totalPages = isAll ? 1 : (Math.ceil(totalRecords / limitNum) || 1);
+    const startIndex = isAll ? 0 : (page - 1) * limitNum;
+    const paginatedItems = isAll ? allMachines : allMachines.slice(startIndex, startIndex + limitNum);
 
     return {
       items: paginatedItems,
       total: totalRecords,
       page: page,
-      limit: limit,
+      limit: isAll ? 'ALL' : limitNum,
+      pageSize: limitNum,
       totalPages: totalPages,
       metrics
     };

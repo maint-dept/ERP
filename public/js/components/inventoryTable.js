@@ -76,6 +76,8 @@ export function renderInventoryTable() {
     includeCrossFloorIdle: showCrossFloorIdle
   });
   const machines = queryResult.items;
+  const isAll = queryResult.limit === 'ALL' || filters.limit === 'ALL' || String(filters.limit).toUpperCase() === 'ALL';
+  const numLimit = isAll ? queryResult.total : (parseInt(queryResult.limit || filters.limit, 10) || 50);
 
   // 2. Summary Metric Indicators (Total Machines, Running, Usable Idle, Repairable Idle)
   // Dynamically calculated according to User Access Scope & Active Filter View
@@ -666,7 +668,7 @@ export function renderInventoryTable() {
   } else {
     machines.forEach((m, idx) => {
       const isSelected = selectedIds.has(m.id);
-      const slNo = (queryResult.page - 1) * (queryResult.limit === 'ALL' ? 0 : queryResult.limit) + idx + 1;
+      const slNo = isAll ? (idx + 1) : ((queryResult.page - 1) * numLimit + idx + 1);
       const displaySlNo = String(slNo).padStart(2, '0');
       const statusBadgeClass = `badge-${(m.status || 'ACTIVE').toLowerCase().replace('_', '')}`;
 
@@ -701,25 +703,33 @@ export function renderInventoryTable() {
   }
 
   // 6. Pagination Page Numbers Generation
-  const totalPages = Math.max(1, queryResult.totalPages || 1);
-  const curPage = queryResult.page || 1;
-  const startItem = queryResult.total === 0 ? 0 : (curPage - 1) * (queryResult.limit === 'ALL' ? 0 : queryResult.limit) + 1;
-  const endItem = queryResult.limit === 'ALL' ? queryResult.total : Math.min(curPage * queryResult.limit, queryResult.total);
+  const totalPages = isAll ? 1 : Math.max(1, queryResult.totalPages || 1);
+  const curPage = isAll ? 1 : (queryResult.page || 1);
+  const startItem = queryResult.total === 0 ? 0 : (isAll ? 1 : (curPage - 1) * numLimit + 1);
+  const endItem = isAll ? queryResult.total : Math.min(curPage * numLimit, queryResult.total);
 
   let pageButtonsHtml = '';
-  const maxButtons = 5;
-  let startP = Math.max(1, curPage - 2);
-  let endP = Math.min(totalPages, startP + maxButtons - 1);
-  if (endP - startP < maxButtons - 1) {
-    startP = Math.max(1, endP - maxButtons + 1);
-  }
-
-  for (let p = startP; p <= endP; p++) {
-    pageButtonsHtml += `
-      <button class="page-btn btn-page-number ${p === curPage ? 'active' : ''}" data-page="${p}">
-        ${p}
+  if (isAll || totalPages <= 1) {
+    pageButtonsHtml = `
+      <button class="page-btn btn-page-number active" data-page="1">
+        1
       </button>
     `;
+  } else {
+    const maxButtons = 5;
+    let startP = Math.max(1, curPage - 2);
+    let endP = Math.min(totalPages, startP + maxButtons - 1);
+    if (endP - startP < maxButtons - 1) {
+      startP = Math.max(1, endP - maxButtons + 1);
+    }
+
+    for (let p = startP; p <= endP; p++) {
+      pageButtonsHtml += `
+        <button class="page-btn btn-page-number ${p === curPage ? 'active' : ''}" data-page="${p}">
+          ${p}
+        </button>
+      `;
+    }
   }
 
   // 7. Assemble Complete Redesigned Component Layout
@@ -1034,26 +1044,26 @@ export function renderInventoryTable() {
           ${isInitialSyncPending ? 'Connecting to database...' : `Showing <strong style="color: #fff;">${startItem}–${endItem}</strong> of <strong style="color: #38bdf8;">${queryResult.total}</strong> machines`}
         </div>
 
-        <!-- Middle: Rows per page: [ 25 | 50 | 100 ] -->
+        <!-- Middle: Rows per page: [ 25 | 50 | 100 | All ] -->
         <div style="display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--text-secondary);">
           <span>Rows per page:</span>
           <select id="select-per-page" class="filter-select-compact" style="width: 80px; height: 32px; font-size: 12px;">
-            <option value="25" ${queryResult.limit === 25 ? 'selected' : ''}>25</option>
-            <option value="50" ${queryResult.limit === 50 ? 'selected' : ''}>50</option>
-            <option value="100" ${queryResult.limit === 100 ? 'selected' : ''}>100</option>
-            <option value="ALL" ${queryResult.limit === 'ALL' ? 'selected' : ''}>All</option>
+            <option value="25" ${!isAll && (queryResult.limit === 25 || filters.limit === 25 || filters.limit === '25') ? 'selected' : ''}>25</option>
+            <option value="50" ${!isAll && (queryResult.limit === 50 || filters.limit === 50 || filters.limit === '50') ? 'selected' : ''}>50</option>
+            <option value="100" ${!isAll && (queryResult.limit === 100 || filters.limit === 100 || filters.limit === '100') ? 'selected' : ''}>100</option>
+            <option value="ALL" ${isAll ? 'selected' : ''}>All</option>
           </select>
         </div>
 
         <!-- Right: Previous | 1 | 2 | 3 | Next -->
         <div class="pagination-controls">
-          <button id="btn-prev-page" class="page-btn" ${curPage <= 1 ? 'disabled' : ''} title="Previous page">
+          <button id="btn-prev-page" class="page-btn" ${(isAll || curPage <= 1) ? 'disabled' : ''} title="Previous page">
             ◀ Previous
           </button>
           
           ${pageButtonsHtml}
 
-          <button id="btn-next-page" class="page-btn" ${curPage >= totalPages ? 'disabled' : ''} title="Next page">
+          <button id="btn-next-page" class="page-btn" ${(isAll || curPage >= totalPages) ? 'disabled' : ''} title="Next page">
             Next ▶
           </button>
         </div>
@@ -1604,7 +1614,10 @@ export function initInventoryTableEvents() {
   const btnPrev = document.getElementById('btn-prev-page');
   if (btnPrev) {
     btnPrev.addEventListener('click', () => {
-      const curPage = state.get('filters')?.page || 1;
+      const curFilters = state.get('filters') || {};
+      const isCurAll = curFilters.limit === 'ALL' || String(curFilters.limit).toUpperCase() === 'ALL';
+      if (isCurAll) return;
+      const curPage = curFilters.page || 1;
       if (curPage > 1) state.updateFilters({ page: curPage - 1 });
     });
   }
@@ -1612,7 +1625,10 @@ export function initInventoryTableEvents() {
   const btnNext = document.getElementById('btn-next-page');
   if (btnNext) {
     btnNext.addEventListener('click', () => {
-      const curPage = state.get('filters')?.page || 1;
+      const curFilters = state.get('filters') || {};
+      const isCurAll = curFilters.limit === 'ALL' || String(curFilters.limit).toUpperCase() === 'ALL';
+      if (isCurAll) return;
+      const curPage = curFilters.page || 1;
       state.updateFilters({ page: curPage + 1 });
     });
   }
