@@ -158,12 +158,13 @@ class RelocateService {
 
     const allMachines = storage.getTable(TABLE_NAMES.MACHINES) || [];
 
-    // 1. Primary: Exact Immutable Machine ID or Permanent Machine ID match
+    // 1. Primary: Exact Immutable Machine ID, System Asset ID, or Permanent Machine ID match
     let match = allMachines.find(m => {
       if (!m) return false;
       const permId = (m.permanentMachineId || '').toLowerCase();
+      const sysAssetId = (m.systemAssetId || '').toLowerCase();
       const machId = (m.id || '').toLowerCase();
-      return machId === cleanLower || permId === cleanLower;
+      return machId === cleanLower || permId === cleanLower || sysAssetId === cleanLower || permId.replace(/^mid-/i, 'amg-mnt-') === cleanLower;
     });
 
     // 2. Secondary: Exact Serial Number Match (Backward compatibility for legacy tags)

@@ -172,6 +172,7 @@ class QrCodeService {
     if (!machine) return null;
 
     const permanentId = this.getPermanentMachineId(machine);
+    const systemAssetId = machine.systemAssetId || (machine.permanentMachineId ? String(machine.permanentMachineId).replace(/^MID-/i, 'AMG-MNT-') : '') || permanentId;
     const mn = masterDataService.getMachineNameById(machine.machineNameId);
     const brd = masterDataService.getBrandById(machine.brandId);
     const mdl = masterDataService.getModelById(machine.modelId);
@@ -184,6 +185,7 @@ class QrCodeService {
     return {
       machineId: machine.id,
       permanentMachineId: permanentId,
+      systemAssetId: systemAssetId,
       serialNumber: machine.serialNumber || 'N/A',
       machineName: mn?.name || machine.machineName || 'Sewing Machine',
       brand: brd?.name || machine.brand || 'N/A',
@@ -292,7 +294,14 @@ class QrCodeService {
       if (typeof localStorage !== 'undefined') {
         const stored = localStorage.getItem('erp_qr_label_config');
         if (stored) {
-          return { ...DEFAULT_LABEL_CONFIG, ...JSON.parse(stored) };
+          const parsed = JSON.parse(stored);
+          const showAsset = parsed.showSystemAssetId !== undefined ? parsed.showSystemAssetId : (parsed.showPermanentId !== undefined ? parsed.showPermanentId : true);
+          return {
+            ...DEFAULT_LABEL_CONFIG,
+            ...parsed,
+            showSystemAssetId: showAsset,
+            showPermanentId: showAsset
+          };
         }
       }
     } catch (_) {}
@@ -346,7 +355,8 @@ export const DEFAULT_LABEL_CONFIG = {
   customLocationTag: '',       // Specific custom text override if set by admin
   
   // Field visibility toggles
-  showPermanentId: true,       // MID-000026
+  showSystemAssetId: true,     // System Asset ID (AMG-MNT-XXXXXX)
+  showPermanentId: true,       // Backward compatibility alias for showSystemAssetId
   showSerialNumber: true,      // SN: 5369
   showMachineName: true,       // Plane Machine
   showBrandModel: true,        // Juki • DDL-900BB

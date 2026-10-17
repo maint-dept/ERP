@@ -46,7 +46,7 @@ import { renderPreventiveMaintenanceView, initPreventiveMaintenanceEvents } from
 import { smartStorageService } from './services/smartStorageService.js';
 import { renderRelocateView, initRelocateViewEvents } from './components/relocateView.js?v=4.26.18';
 import { renderNeedleOperationsView, initNeedleOperationsEvents } from './components/needleOperationsView.js';
-import { renderQrCodeView, initQrCodeEvents } from './components/qrCodeView.js?v=4.26.20';
+import { renderQrCodeView, initQrCodeEvents } from './components/qrCodeView.js?v=4.26.26';
 import { renderPartsTraceView, initPartsTraceEvents } from './components/partsTraceView.js';
 import { chatService } from './services/chatService.js';
 import { historyService } from './services/historyService.js';

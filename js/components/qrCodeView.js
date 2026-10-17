@@ -509,8 +509,9 @@ function filterMachines(allMachines) {
       const q = qrFilters.search.toLowerCase();
       const sn = (m.serialNumber || '').toLowerCase();
       const permId = (m.permanentMachineId || '').toLowerCase();
+      const sysAssetId = (m.systemAssetId || '').toLowerCase();
       const id = (m.id || '').toLowerCase();
-      if (!sn.includes(q) && !permId.includes(q) && !id.includes(q)) return false;
+      if (!sn.includes(q) && !permId.includes(q) && !sysAssetId.includes(q) && !id.includes(q)) return false;
     }
     return true;
   });
@@ -776,7 +777,7 @@ function renderCardsListHtml(pageMachines) {
 
           ${!isQrOnly ? `
             <div class="qr-sticker-info" style="font-size: ${cfg.fontSize === 'large' ? '12.5px' : (cfg.fontSize === 'small' ? '10px' : '11px')};">
-              ${cfg.showPermanentId ? `<span class="qr-mid-badge">${d.permanentMachineId}</span>` : ''}
+              ${(cfg.showSystemAssetId !== false && cfg.showPermanentId !== false) ? `<span class="qr-mid-badge">${d.systemAssetId || d.permanentMachineId}</span>` : ''}
               ${cfg.showSerialNumber ? `<span class="qr-sn-text">SN: ${d.serialNumber}</span>` : ''}
               ${cfg.showMachineName ? `<span class="qr-mach-name" title="${d.machineName}" style="white-space: normal; word-break: break-word; overflow-wrap: break-word; line-height: 1.25;">${d.machineName}</span>` : ''}
               ${cfg.showBrandModel ? `<span class="qr-mach-spec">${d.brand} &bull; ${d.model}</span>` : ''}
@@ -791,7 +792,7 @@ function renderCardsListHtml(pageMachines) {
             </div>
           ` : `
             <div style="font-family: var(--font-mono); font-size: 11px; font-weight: 900; color: #38bdf8; text-align: center;">
-              ${d.permanentMachineId}
+              ${d.systemAssetId || d.permanentMachineId}
             </div>
           `}
         </div>
@@ -980,8 +981,8 @@ function renderLabelDesignerModal() {
               <div style="font-size: 12px; font-weight: 800; color: #38bdf8; margin-bottom: 8px;">2. Machine Data Fields on Label</div>
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
                 <label style="display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: #fff; cursor: pointer;">
-                  <input type="checkbox" id="cfg-show-mid" ${cfg.showPermanentId ? 'checked' : ''} style="accent-color: #38bdf8;" />
-                  <span>Unique Machine ID (MID-XXXX)</span>
+                  <input type="checkbox" id="cfg-show-mid" ${(cfg.showSystemAssetId !== false && cfg.showPermanentId !== false) ? 'checked' : ''} style="accent-color: #38bdf8;" />
+                  <span>System Asset ID (AMG-MNT-XXXXXX)</span>
                 </label>
                 <label style="display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: #fff; cursor: pointer;">
                   <input type="checkbox" id="cfg-show-sn" ${cfg.showSerialNumber ? 'checked' : ''} style="accent-color: #38bdf8;" />
@@ -1146,7 +1147,7 @@ function renderDesignerPreviewCard(cfg) {
 
         ${!isQrOnly ? `
           <div class="qr-sticker-info" style="color: #0f172a; font-size: ${cfg.fontSize === 'large' ? '12.5px' : (cfg.fontSize === 'small' ? '10px' : '11px')};">
-            ${cfg.showPermanentId ? `<span style="font-family: monospace; font-size: 13px; font-weight: 900; color: #0284c7;">MID-000026</span>` : ''}
+            ${(cfg.showSystemAssetId !== false && cfg.showPermanentId !== false) ? `<span style="font-family: monospace; font-size: 13px; font-weight: 900; color: #0284c7;">AMG-MNT-000026</span>` : ''}
             ${cfg.showSerialNumber ? `<span style="font-size: 12px; font-weight: 800; color: #0f172a;">SN: 5369</span>` : ''}
             ${cfg.showMachineName ? `<span style="font-weight: 700; color: #1e293b; white-space: normal; word-break: break-word; overflow-wrap: break-word; line-height: 1.25;">Plane Machine</span>` : ''}
             ${cfg.showBrandModel ? `<span style="color: #475569;">Juki &bull; DDL-900BB</span>` : ''}
@@ -1155,7 +1156,7 @@ function renderDesignerPreviewCard(cfg) {
           </div>
         ` : `
           <div style="font-family: monospace; font-size: 12px; font-weight: 900; color: #0284c7; text-align: center;">
-            MID-000026
+            AMG-MNT-000026
           </div>
         `}
       </div>
@@ -1629,12 +1630,13 @@ export function initQrCodeEvents() {
     });
   }
 
-  const bindDesignerInput = (selector, key, isCheck = true) => {
+  const bindDesignerInput = (selector, key, isCheck = true, extraSync = null) => {
     const el = root.querySelector(selector);
     if (!el) return;
     el.addEventListener(isCheck ? 'change' : 'input', () => {
       if (!tempLabelConfig) tempLabelConfig = { ...qrCodeService.getLabelConfig() };
       tempLabelConfig[key] = isCheck ? el.checked : el.value;
+      if (extraSync) extraSync(isCheck ? el.checked : el.value);
       updateDesignerPreview(tempLabelConfig);
     });
   };
@@ -1645,7 +1647,9 @@ export function initQrCodeEvents() {
   bindDesignerInput('#cfg-loc-tag-mode', 'locationTagMode', false);
   bindDesignerInput('#cfg-custom-loc-tag', 'customLocationTag', false);
   bindDesignerInput('#cfg-show-tag-status', 'showTagStatus', true);
-  bindDesignerInput('#cfg-show-mid', 'showPermanentId', true);
+  bindDesignerInput('#cfg-show-mid', 'showSystemAssetId', true, (val) => {
+    if (tempLabelConfig) tempLabelConfig.showPermanentId = val;
+  });
   bindDesignerInput('#cfg-show-sn', 'showSerialNumber', true);
   bindDesignerInput('#cfg-show-name', 'showMachineName', true);
   bindDesignerInput('#cfg-show-spec', 'showBrandModel', true);
@@ -1819,7 +1823,7 @@ function printSingleLabel(machineId) {
           <div class="qr-box" id="print-qr"></div>
           ${!isQrOnly ? `
             <div class="info">
-              ${cfg.showPermanentId ? `<div class="mid">${d.permanentMachineId}</div>` : ''}
+              ${(cfg.showSystemAssetId !== false && cfg.showPermanentId !== false) ? `<div class="mid">${d.systemAssetId || d.permanentMachineId}</div>` : ''}
               ${cfg.showSerialNumber ? `<div class="sn">SN: ${d.serialNumber}</div>` : ''}
               ${cfg.showMachineName ? `<div style="font-weight: 700; white-space: normal; word-break: break-word; overflow-wrap: break-word; line-height: 1.25;">${d.machineName}</div>` : ''}
               ${cfg.showBrandModel ? `<div style="color: #444;">${d.brand} / ${d.model}</div>` : ''}
@@ -1828,7 +1832,7 @@ function printSingleLabel(machineId) {
             </div>
           ` : `
             <div style="font-family: monospace; font-size: 11px; font-weight: 900; text-align: center;">
-              ${d.permanentMachineId}
+              ${d.systemAssetId || d.permanentMachineId}
             </div>
           `}
         </div>
@@ -1992,7 +1996,7 @@ function printA4LabelSheet(machines) {
               
               ${!isQrOnly ? `
                 <div class="label-meta">
-                  ${cfg.showPermanentId ? `<div class="meta-mid">${d.permanentMachineId}</div>` : ''}
+                  ${(cfg.showSystemAssetId !== false && cfg.showPermanentId !== false) ? `<div class="meta-mid">${d.systemAssetId || d.permanentMachineId}</div>` : ''}
                   ${cfg.showSerialNumber ? `<div class="meta-sn">SN: ${d.serialNumber}</div>` : ''}
                   ${cfg.showMachineName ? `<div class="meta-name">${d.machineName}</div>` : ''}
                   ${cfg.showBrandModel ? `<div>${d.brand} / ${d.model}</div>` : ''}
@@ -2001,7 +2005,7 @@ function printA4LabelSheet(machines) {
                 </div>
               ` : `
                 <div style="font-family: monospace; font-size: 8pt; font-weight: 900; text-align: center;">
-                  ${d.permanentMachineId}
+                  ${d.systemAssetId || d.permanentMachineId}
                 </div>
               `}
             </div>

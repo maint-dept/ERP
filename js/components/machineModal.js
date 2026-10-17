@@ -680,7 +680,9 @@ export function initMachineModalEvents() {
           const allMachines = storage.getTable(TABLE_NAMES.MACHINES) || [];
           const existing = allMachines.find(m => 
             (m.id && m.id.toLowerCase() === rawId.toLowerCase()) ||
+            (m.systemAssetId && m.systemAssetId.toLowerCase() === rawId.toLowerCase()) ||
             (m.permanentMachineId && m.permanentMachineId.toLowerCase() === rawId.toLowerCase()) ||
+            (m.permanentMachineId && m.permanentMachineId.toLowerCase().replace(/^mid-/i, 'amg-mnt-') === rawId.toLowerCase()) ||
             (m.serialNumber && m.serialNumber.toString().toLowerCase() === rawId.toLowerCase())
           );
           const scannedSerial = existing ? existing.serialNumber : rawId;
