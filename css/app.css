@@ -1959,7 +1959,8 @@ body.modal-open {
 }
 
 .user-management-table tbody tr:hover td.uam-col-sticky-check,
-.user-management-table tbody tr:hover td.uam-col-sticky-card {
+.user-management-table tbody tr:hover td.uam-col-sticky-card,
+.user-management-table tbody tr:hover td.uam-col-sticky-card-pass {
   background-color: #132247 !important;
 }
 

@@ -84,10 +84,24 @@ let bulkPresetTemplateId = '';
 let bulkApplyScope = false;
 let bulkTargetScope = { allGroups: false, groupIds: [], allUnits: false, unitIds: [], allFloors: false, floorIds: [], allLines: false, lineIds: [] };
 
-// Password Management Filter
+// Password Management Filter & Pagination State
 let passwordMgmtSearch = '';
+let passwordMgmtCardSearch = '';
+let passwordMgmtGroup = 'ALL';
+let passwordMgmtUnit = 'ALL';
 let passwordMgmtFloor = 'ALL';
+let passwordMgmtLine = 'ALL';
+let passwordMgmtDesig = 'ALL';
+let passwordMgmtAccountStatus = 'ALL';
 let passwordMgmtStatus = 'ALL';
+let passwordMgmtQuickFilter = 'ALL'; // 'ALL' | 'TEMPORARY' | 'ACTIVE' | 'INACTIVE'
+let passwordMgmtPage = 1;
+let passwordMgmtRowsPerPage = 20;
+let passwordMgmtTotalPages = 1;
+let shouldRestorePassSearchFocus = false;
+let passSearchFocusCursorPos = 0;
+let shouldRestorePassCardSearchFocus = false;
+let passCardSearchFocusCursorPos = 0;
 
 // Export Accounts State
 let exportScope = 'ALL'; // 'ALL' | 'FLOOR' | 'GROUP' | 'UNIT' | 'LINE' | 'SELECTED' | 'FILTERED'
@@ -282,6 +296,108 @@ export function renderUserManagement() {
 
   // Sync Select All state
   const isPageAllSelected = paginatedAccounts.length > 0 && paginatedAccounts.every(a => selectedAccountIds.has(a.id));
+
+  // =========================================================================
+  // PASSWORD MANAGEMENT DATA PREPARATION, FILTERING & PAGINATION
+  // =========================================================================
+  const allPassAccounts = allAccounts.filter(a => a.hasAccount);
+  const activePassCount = allPassAccounts.filter(a => a.accountStatus === 'ACTIVE').length;
+  const inactivePassCount = allPassAccounts.filter(a => a.accountStatus === 'INACTIVE').length;
+  const tempPassCount = allPassAccounts.filter(a => a.passwordStatus === 'TEMPORARY').length;
+  const setupPassCount = allPassAccounts.filter(a => a.passwordStatus === 'ACTIVE').length;
+
+  const allPassUnits = masterDataService.getUnits ? masterDataService.getUnits(passwordMgmtGroup !== 'ALL' ? passwordMgmtGroup : null, true) : [];
+  const allPassFloors = masterDataService.getFloors ? masterDataService.getFloors(passwordMgmtUnit !== 'ALL' ? passwordMgmtUnit : null, passwordMgmtGroup !== 'ALL' ? passwordMgmtGroup : null, true) : [];
+  const allPassLines = masterDataService.getLines ? masterDataService.getLines(passwordMgmtFloor !== 'ALL' ? passwordMgmtFloor : null, passwordMgmtUnit !== 'ALL' ? passwordMgmtUnit : null, passwordMgmtGroup !== 'ALL' ? passwordMgmtGroup : null, true) : [];
+
+  if (passwordMgmtUnit !== 'ALL' && !allPassUnits.some(u => u.id === passwordMgmtUnit)) passwordMgmtUnit = 'ALL';
+  if (passwordMgmtFloor !== 'ALL' && !allPassFloors.some(f => f.id === passwordMgmtFloor)) passwordMgmtFloor = 'ALL';
+  if (passwordMgmtLine !== 'ALL' && !allPassLines.some(l => l.id === passwordMgmtLine)) passwordMgmtLine = 'ALL';
+
+  const filteredPassAccounts = allPassAccounts.filter(acc => {
+    // Quick filter chip
+    if (passwordMgmtQuickFilter === 'ACTIVE' && acc.accountStatus !== 'ACTIVE') return false;
+    if (passwordMgmtQuickFilter === 'INACTIVE' && acc.accountStatus !== 'INACTIVE') return false;
+    if (passwordMgmtQuickFilter === 'TEMPORARY' && acc.passwordStatus !== 'TEMPORARY') return false;
+    if (passwordMgmtQuickFilter === 'SETUP' && acc.passwordStatus !== 'ACTIVE') return false;
+
+    // Dedicated Card Search
+    if (passwordMgmtCardSearch) {
+      const matchCard = userAccessService.matchesCardNumber ? userAccessService.matchesCardNumber(acc.cardNumber, passwordMgmtCardSearch) : (acc.cardNumber || '').toLowerCase().includes(passwordMgmtCardSearch.toLowerCase());
+      if (!matchCard) return false;
+    }
+
+    // Text Search
+    if (passwordMgmtSearch) {
+      const q = passwordMgmtSearch.toLowerCase().trim();
+      const matchCard = userAccessService.matchesCardNumber ? userAccessService.matchesCardNumber(acc.cardNumber, passwordMgmtSearch) : (acc.cardNumber || '').toLowerCase().includes(q);
+      const matchName = (acc.employeeName || '').toLowerCase().includes(q);
+      const matchUser = (acc.username || '').toLowerCase().includes(q);
+      const matchDept = (acc.department || '').toLowerCase().includes(q);
+      const matchDesig = (acc.designation || '').toLowerCase().includes(q);
+      const matchGroup = (acc.groupName || '').toLowerCase().includes(q);
+      const matchUnit = (acc.unitName || '').toLowerCase().includes(q);
+      const matchFloor = (acc.floorName || '').toLowerCase().includes(q);
+      const matchLine = (acc.lineName || '').toLowerCase().includes(q);
+      if (!matchCard && !matchName && !matchUser && !matchDept && !matchDesig && !matchGroup && !matchUnit && !matchFloor && !matchLine) return false;
+    }
+
+    // Location Filters
+    if (passwordMgmtGroup !== 'ALL') {
+      const selectedGroup = allGroups.find(g => g.id === passwordMgmtGroup);
+      const groupName = selectedGroup ? selectedGroup.name.toLowerCase() : '';
+      const matchG = acc.groupId === passwordMgmtGroup || (groupName && (acc.groupName || '').toLowerCase() === groupName);
+      if (!matchG) return false;
+    }
+
+    if (passwordMgmtUnit !== 'ALL') {
+      const selectedUnit = allPassUnits.find(u => u.id === passwordMgmtUnit);
+      const unitName = selectedUnit ? selectedUnit.name.toLowerCase() : '';
+      const matchU = acc.unitId === passwordMgmtUnit || (unitName && (acc.unitName || '').toLowerCase() === unitName);
+      if (!matchU) return false;
+    }
+
+    if (passwordMgmtFloor !== 'ALL') {
+      const selectedFloor = allPassFloors.find(f => f.id === passwordMgmtFloor);
+      const floorName = selectedFloor ? selectedFloor.name.toLowerCase() : '';
+      const matchF = acc.floorId === passwordMgmtFloor || (floorName && (acc.floorName || '').toLowerCase() === floorName);
+      if (!matchF) return false;
+    }
+
+    if (passwordMgmtLine !== 'ALL') {
+      const selectedLine = allPassLines.find(l => l.id === passwordMgmtLine);
+      const lineName = selectedLine ? selectedLine.name.toLowerCase() : '';
+      const accLineId = acc.lineId || '';
+      const accLineName = (acc.lineName || '').toLowerCase();
+      const accArea = (acc.workingArea || acc.linkedEmployee?.workingArea || '').toLowerCase();
+      const matchL = accLineId === passwordMgmtLine || 
+                     (lineName && (accLineName === lineName || accArea === lineName || accArea.includes(lineName)));
+      if (!matchL) return false;
+    }
+
+    // Designation Filter
+    if (passwordMgmtDesig !== 'ALL' && (acc.designation || '').toLowerCase() !== passwordMgmtDesig.toLowerCase()) return false;
+
+    // Account Status Filter
+    if (passwordMgmtAccountStatus !== 'ALL' && acc.accountStatus !== passwordMgmtAccountStatus) return false;
+
+    // Password Status Filter
+    if (passwordMgmtStatus !== 'ALL') {
+      if (passwordMgmtStatus === 'TEMPORARY' && acc.passwordStatus !== 'TEMPORARY') return false;
+      if (passwordMgmtStatus === 'SETUP' && acc.passwordStatus !== 'ACTIVE') return false;
+      if (passwordMgmtStatus === 'ACTIVE' && acc.passwordStatus !== 'ACTIVE') return false;
+    }
+
+    return true;
+  });
+
+  // Calculate Pagination for Passwords
+  const totalPassMatching = filteredPassAccounts.length;
+  passwordMgmtTotalPages = Math.max(1, Math.ceil(totalPassMatching / passwordMgmtRowsPerPage));
+  if (passwordMgmtPage > passwordMgmtTotalPages) passwordMgmtPage = passwordMgmtTotalPages;
+  if (passwordMgmtPage < 1) passwordMgmtPage = 1;
+  const passStartIndex = (passwordMgmtPage - 1) * passwordMgmtRowsPerPage;
+  const paginatedPassAccounts = filteredPassAccounts.slice(passStartIndex, passStartIndex + passwordMgmtRowsPerPage);
 
   return `
     <div class="page-view uam-dashboard-page" style="display: flex; flex-direction: column; height: 100%; max-height: 100%; min-height: 0; padding: 4px 10px 4px 10px; gap: 4px; overflow: hidden; box-sizing: border-box;">
@@ -622,6 +738,138 @@ export function renderUserManagement() {
           </div>
         ` : ''}
       ` : ''}
+
+      ${activeUserSection === 'PASSWORD_MGMT' ? `
+        <!-- Password Management Tier 1: Search Inputs + Quick Filter Pills + Action Buttons + Counter -->
+        <div style="background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; padding: 6px 10px; display: flex; flex-direction: column; gap: 6px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);">
+          
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
+            <div style="display: flex; gap: 6px; flex: 1 1 500px; align-items: center; flex-wrap: wrap;">
+              
+              <!-- Card Search -->
+              <div style="width: 130px; position: relative;">
+                <span style="position: absolute; left: 8px; top: 6px; font-size: 12px; color: #38bdf8;">🪪</span>
+                <input 
+                  type="text" 
+                  id="uam-pass-card-search-input" 
+                  class="form-control font-mono" 
+                  placeholder="Card ID..." 
+                  value="${passwordMgmtCardSearch}"
+                  style="height: 26px; padding-left: 26px; font-size: 11.5px; font-weight: 700; border-radius: 5px; border: 1px solid rgba(56, 189, 248, 0.4); background: rgba(9, 14, 26, 0.85); width: 100%; box-sizing: border-box; color: #38bdf8;"
+                />
+                ${passwordMgmtCardSearch ? `
+                  <button id="btn-clear-uam-pass-card-search" type="button" style="position: absolute; right: 6px; top: 5px; background: transparent; border: none; color: #38bdf8; cursor: pointer; font-size: 10px;" title="Clear Card Search">✕</button>
+                ` : ''}
+              </div>
+
+              <!-- General Search -->
+              <div style="flex: 1 1 180px; max-width: 260px; min-width: 140px; position: relative;">
+                <span style="position: absolute; left: 8px; top: 6px; font-size: 12px; color: var(--text-muted);">🔍</span>
+                <input 
+                  type="text" 
+                  id="inp-pass-mgmt-search" 
+                  class="form-control" 
+                  placeholder="Search name, username, dept..." 
+                  value="${passwordMgmtSearch}"
+                  style="height: 26px; padding-left: 26px; font-size: 11.5px; border-radius: 5px; width: 100%; box-sizing: border-box; background: rgba(9, 14, 26, 0.7); border: 1px solid rgba(255, 255, 255, 0.12);"
+                />
+                ${passwordMgmtSearch ? `
+                  <button id="btn-clear-pass-mgmt-search" type="button" style="position: absolute; right: 6px; top: 5px; background: transparent; border: none; color: var(--text-muted); cursor: pointer; font-size: 10px;" title="Clear Search">✕</button>
+                ` : ''}
+              </div>
+
+              <!-- Inline Quick Filter Pills -->
+              <div style="display: flex; gap: 3px; align-items: center; flex-wrap: wrap;">
+                <button type="button" class="btn-pass-quick-chip" data-filter="ALL" style="padding: 0 8px; height: 24px; font-size: 10.5px; font-weight: 700; border-radius: 5px; border: 1px solid ${passwordMgmtQuickFilter === 'ALL' ? '#0284c7' : 'rgba(255, 255, 255, 0.1)'}; background: ${passwordMgmtQuickFilter === 'ALL' ? 'rgba(2, 132, 199, 0.25)' : 'rgba(15, 23, 42, 0.6)'}; color: ${passwordMgmtQuickFilter === 'ALL' ? '#38bdf8' : '#94a3b8'}; cursor: pointer;">
+                  All (${allPassAccounts.length})
+                </button>
+                <button type="button" class="btn-pass-quick-chip" data-filter="ACTIVE" style="padding: 0 8px; height: 24px; font-size: 10.5px; font-weight: 700; border-radius: 5px; border: 1px solid ${passwordMgmtQuickFilter === 'ACTIVE' ? '#10b981' : 'rgba(255, 255, 255, 0.1)'}; background: ${passwordMgmtQuickFilter === 'ACTIVE' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(15, 23, 42, 0.6)'}; color: ${passwordMgmtQuickFilter === 'ACTIVE' ? '#34d399' : '#94a3b8'}; cursor: pointer;">
+                  🟢 Active (${activePassCount})
+                </button>
+                <button type="button" class="btn-pass-quick-chip" data-filter="INACTIVE" style="padding: 0 8px; height: 24px; font-size: 10.5px; font-weight: 700; border-radius: 5px; border: 1px solid ${passwordMgmtQuickFilter === 'INACTIVE' ? '#ef4444' : 'rgba(255, 255, 255, 0.1)'}; background: ${passwordMgmtQuickFilter === 'INACTIVE' ? 'rgba(239, 68, 68, 0.2)' : 'rgba(15, 23, 42, 0.6)'}; color: ${passwordMgmtQuickFilter === 'INACTIVE' ? '#f87171' : '#94a3b8'}; cursor: pointer;">
+                  🔴 Inactive (${inactivePassCount})
+                </button>
+                <button type="button" class="btn-pass-quick-chip" data-filter="TEMPORARY" style="padding: 0 8px; height: 24px; font-size: 10.5px; font-weight: 700; border-radius: 5px; border: 1px solid ${passwordMgmtQuickFilter === 'TEMPORARY' ? '#a855f7' : 'rgba(255, 255, 255, 0.1)'}; background: ${passwordMgmtQuickFilter === 'TEMPORARY' ? 'rgba(168, 85, 247, 0.2)' : 'rgba(15, 23, 42, 0.6)'}; color: ${passwordMgmtQuickFilter === 'TEMPORARY' ? '#c084fc' : '#94a3b8'}; cursor: pointer;">
+                  🔑 Temp Pass (${tempPassCount})
+                </button>
+                <button type="button" class="btn-pass-quick-chip" data-filter="SETUP" style="padding: 0 8px; height: 24px; font-size: 10.5px; font-weight: 700; border-radius: 5px; border: 1px solid ${passwordMgmtQuickFilter === 'SETUP' ? '#10b981' : 'rgba(255, 255, 255, 0.1)'}; background: ${passwordMgmtQuickFilter === 'SETUP' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(15, 23, 42, 0.6)'}; color: ${passwordMgmtQuickFilter === 'SETUP' ? '#34d399' : '#94a3b8'}; cursor: pointer;">
+                  ✅ Active Pass (${setupPassCount})
+                </button>
+              </div>
+
+            </div>
+
+            <!-- Action Buttons + Match counter & Reset -->
+            <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
+              <button id="btn-bulk-gen-initial-pass" class="btn btn-warning btn-xs" style="font-weight: 700; height: 26px; padding: 0 10px; border-radius: 5px; display: inline-flex; align-items: center; gap: 4px;" title="Bulk generate temporary passwords">
+                <span>⚡</span> <span>Bulk Generate</span>
+              </button>
+              <button id="btn-jump-to-export-credentials" class="btn btn-secondary btn-xs" style="font-weight: 700; color: #38bdf8; border-color: rgba(56, 189, 248, 0.35); height: 26px; padding: 0 10px; border-radius: 5px; display: inline-flex; align-items: center; gap: 4px;" title="Jump to credential exports">
+                <span>🔐</span> <span>Export Credentials &rarr;</span>
+              </button>
+
+              <span style="font-size: 11px; color: #94a3b8; white-space: nowrap; margin-left: 4px;">
+                Showing <strong style="color: #fff;">${paginatedPassAccounts.length}</strong> of <strong style="color: #38bdf8;">${totalPassMatching}</strong>
+              </span>
+              ${(passwordMgmtSearch || passwordMgmtCardSearch || passwordMgmtQuickFilter !== 'ALL' || passwordMgmtGroup !== 'ALL' || passwordMgmtUnit !== 'ALL' || passwordMgmtFloor !== 'ALL' || passwordMgmtLine !== 'ALL' || passwordMgmtDesig !== 'ALL' || passwordMgmtAccountStatus !== 'ALL' || passwordMgmtStatus !== 'ALL') ? `
+                <button id="btn-clear-all-pass-filters" class="btn btn-ghost btn-xs" style="color: #f87171; font-weight: 700; border: 1px solid rgba(248, 113, 113, 0.4); border-radius: 4px; padding: 1px 6px; font-size: 10px; background: rgba(239, 68, 68, 0.1);">
+                  ✕ Clear All
+                </button>
+              ` : ''}
+            </div>
+          </div>
+
+          <!-- Tier 2: Streamlined Cascading Filters Ribbon (Single Line Toolbar) -->
+          <div style="display: flex; align-items: center; gap: 4px; overflow-x: auto; flex-wrap: nowrap; padding-bottom: 1px;">
+            <!-- Group -->
+            <select id="sel-pass-mgmt-group" class="filter-select" style="height: 25px; font-size: 11px; padding: 0 4px; max-width: 120px; border-radius: 4px; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255, 255, 255, 0.12); color: #e2e8f0;" title="Filter by Enterprise Group">
+              <option value="ALL" ${passwordMgmtGroup === 'ALL' ? 'selected' : ''}>🏢 All Groups</option>
+              ${allGroups.map(g => `<option value="${g.id}" ${passwordMgmtGroup === g.id ? 'selected' : ''}>${g.name}</option>`).join('')}
+            </select>
+
+            <!-- Unit -->
+            <select id="sel-pass-mgmt-unit" class="filter-select" style="height: 25px; font-size: 11px; padding: 0 4px; max-width: 135px; border-radius: 4px; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255, 255, 255, 0.12); color: #e2e8f0;" title="Filter by Manufacturing Unit">
+              <option value="ALL" ${passwordMgmtUnit === 'ALL' ? 'selected' : ''}>🏭 All Units</option>
+              ${allPassUnits.map(u => `<option value="${u.id}" ${passwordMgmtUnit === u.id ? 'selected' : ''}>${u.name}</option>`).join('')}
+            </select>
+
+            <!-- Floor -->
+            <select id="sel-pass-mgmt-floor" class="filter-select" style="height: 25px; font-size: 11px; padding: 0 4px; max-width: 110px; border-radius: 4px; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255, 255, 255, 0.12); color: #e2e8f0;" title="Filter by Factory Floor">
+              <option value="ALL" ${passwordMgmtFloor === 'ALL' ? 'selected' : ''}>🏢 All Floors</option>
+              ${allPassFloors.map(f => `<option value="${f.id}" ${passwordMgmtFloor === f.id ? 'selected' : ''}>${f.name}</option>`).join('')}
+            </select>
+
+            <!-- Line -->
+            <select id="sel-pass-mgmt-line" class="filter-select" style="height: 25px; font-size: 11px; padding: 0 4px; max-width: 105px; border-radius: 4px; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255, 255, 255, 0.12); color: #e2e8f0;" title="Filter by Production Line">
+              <option value="ALL" ${passwordMgmtLine === 'ALL' ? 'selected' : ''}>🧵 All Lines</option>
+              ${allPassLines.map(l => `<option value="${l.id}" ${passwordMgmtLine === l.id ? 'selected' : ''}>${l.name}</option>`).join('')}
+            </select>
+
+            <!-- Subtle Vertical Divider -->
+            <span style="height: 16px; width: 1px; background: rgba(255, 255, 255, 0.15); margin: 0 2px; flex-shrink: 0;"></span>
+
+            <!-- Designation -->
+            <select id="sel-pass-mgmt-desig" class="filter-select" style="height: 25px; font-size: 11px; padding: 0 4px; max-width: 130px; border-radius: 4px; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255, 255, 255, 0.12); color: #e2e8f0;" title="Filter by Designation">
+              <option value="ALL" ${passwordMgmtDesig === 'ALL' ? 'selected' : ''}>💼 All Designations</option>
+              ${allDesignations.map(d => `<option value="${d}" ${passwordMgmtDesig === d ? 'selected' : ''}>${d}</option>`).join('')}
+            </select>
+
+            <!-- Account Status -->
+            <select id="sel-pass-mgmt-acc-status" class="filter-select" style="height: 25px; font-size: 11px; padding: 0 4px; max-width: 95px; border-radius: 4px; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255, 255, 255, 0.12); color: #e2e8f0;" title="Filter by Account Status">
+              <option value="ALL" ${passwordMgmtAccountStatus === 'ALL' ? 'selected' : ''}>⚡ All Status</option>
+              <option value="ACTIVE" ${passwordMgmtAccountStatus === 'ACTIVE' ? 'selected' : ''}>🟢 Active</option>
+              <option value="INACTIVE" ${passwordMgmtAccountStatus === 'INACTIVE' ? 'selected' : ''}>🔴 Inactive</option>
+            </select>
+
+            <!-- Password Status -->
+            <select id="sel-pass-mgmt-status" class="filter-select" style="height: 25px; font-size: 11px; padding: 0 4px; max-width: 125px; border-radius: 4px; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255, 255, 255, 0.12); color: #e2e8f0;" title="Filter by Password Status">
+              <option value="ALL" ${passwordMgmtStatus === 'ALL' ? 'selected' : ''}>🔑 All Passwords</option>
+              <option value="SETUP" ${passwordMgmtStatus === 'SETUP' ? 'selected' : ''}>✅ Active Pass</option>
+              <option value="TEMPORARY" ${passwordMgmtStatus === 'TEMPORARY' ? 'selected' : ''}>🟡 Temporary</option>
+            </select>
+          </div>
+        </div>
+      ` : ''}
       </div> <!-- end .uam-fixed-top-deck -->
 
       <!-- =================================================================== -->
@@ -864,6 +1112,8 @@ export function renderUserManagement() {
               <button id="btn-page-last" class="btn btn-secondary btn-xs" ${currentPage === totalPages ? 'disabled' : ''} style="padding: 3px 8px; font-size: 11px;">Last ⏭</button>
             </div>
           </div>
+      ` : activeUserSection === 'PASSWORD_MGMT' ? `
+        ${renderPasswordManagementTab(paginatedPassAccounts, totalPassMatching)}
       ` : `
         <div class="uam-subtab-scroll-panel" style="flex: 1 1 0%; min-height: 0; height: 0; max-height: none; overflow-y: auto; overflow-x: auto; padding-right: 4px;">
           <!-- =================================================================== -->
@@ -875,11 +1125,6 @@ export function renderUserManagement() {
           <!-- TAB 3: BULK ACCESS ASSIGNMENT (Section 6)                           -->
           <!-- =================================================================== -->
           ${activeUserSection === 'BULK_ASSIGN' ? renderBulkAssignmentTab() : ''}
-
-          <!-- =================================================================== -->
-          <!-- TAB 4: PASSWORD MANAGEMENT DASHBOARD (Section 7 & 8)                -->
-          <!-- =================================================================== -->
-          ${activeUserSection === 'PASSWORD_MGMT' ? renderPasswordManagementTab() : ''}
 
           <!-- =================================================================== -->
           <!-- TAB 5: BULK EXCEL EXPORT FOR ALL FLOORS (Section 9 & 10)            -->
@@ -1627,180 +1872,248 @@ function renderBulkAssignmentTab() {
   `;
 }
 
-function renderPasswordManagementTab() {
-  const allAccounts = userAccessService.getAllAccountsWithManpower().filter(a => a.hasAccount);
-  const allFloors = masterDataService.getFloors ? masterDataService.getFloors(null, null, true) : [];
+function renderPasswordManagementTab(paginatedAccountsList, totalCount) {
+  let accounts = paginatedAccountsList;
+  let totalMatching = totalCount;
 
-  const filtered = allAccounts.filter(acc => {
-    if (passwordMgmtSearch) {
-      const q = passwordMgmtSearch.toLowerCase().trim();
-      const matchCard = userAccessService.matchesCardNumber ? userAccessService.matchesCardNumber(acc.cardNumber, passwordMgmtSearch) : (acc.cardNumber || '').toLowerCase().includes(q);
-      if (!matchCard && !acc.employeeName.toLowerCase().includes(q) && !acc.username.toLowerCase().includes(q)) {
-        return false;
+  if (!accounts) {
+    const allAccounts = userAccessService.getAllAccountsWithManpower().filter(a => a.hasAccount);
+    const filtered = allAccounts.filter(acc => {
+      // Quick filter chip
+      if (passwordMgmtQuickFilter === 'ACTIVE' && acc.accountStatus !== 'ACTIVE') return false;
+      if (passwordMgmtQuickFilter === 'INACTIVE' && acc.accountStatus !== 'INACTIVE') return false;
+      if (passwordMgmtQuickFilter === 'TEMPORARY' && acc.passwordStatus !== 'TEMPORARY') return false;
+      if (passwordMgmtQuickFilter === 'SETUP' && acc.passwordStatus !== 'ACTIVE') return false;
+
+      // Card Search
+      if (passwordMgmtCardSearch) {
+        const matchCard = userAccessService.matchesCardNumber ? userAccessService.matchesCardNumber(acc.cardNumber, passwordMgmtCardSearch) : (acc.cardNumber || '').toLowerCase().includes(passwordMgmtCardSearch.toLowerCase());
+        if (!matchCard) return false;
       }
-    }
-    if (passwordMgmtFloor !== 'ALL' && acc.floorId !== passwordMgmtFloor) return false;
-    if (passwordMgmtStatus !== 'ALL') {
-      if (passwordMgmtStatus === 'TEMPORARY' && acc.passwordStatus !== 'TEMPORARY') return false;
-      if (passwordMgmtStatus === 'SETUP' && acc.passwordStatus !== 'ACTIVE') return false;
-      if (passwordMgmtStatus === 'ACTIVE' && acc.passwordStatus !== 'ACTIVE') return false;
-    }
-    return true;
-  });
+
+      // General Search
+      if (passwordMgmtSearch) {
+        const q = passwordMgmtSearch.toLowerCase().trim();
+        const matchCard = userAccessService.matchesCardNumber ? userAccessService.matchesCardNumber(acc.cardNumber, passwordMgmtSearch) : (acc.cardNumber || '').toLowerCase().includes(q);
+        const matchName = (acc.employeeName || '').toLowerCase().includes(q);
+        const matchUser = (acc.username || '').toLowerCase().includes(q);
+        const matchDept = (acc.department || '').toLowerCase().includes(q);
+        const matchDesig = (acc.designation || '').toLowerCase().includes(q);
+        const matchGroup = (acc.groupName || '').toLowerCase().includes(q);
+        const matchUnit = (acc.unitName || '').toLowerCase().includes(q);
+        const matchFloor = (acc.floorName || '').toLowerCase().includes(q);
+        const matchLine = (acc.lineName || '').toLowerCase().includes(q);
+        if (!matchCard && !matchName && !matchUser && !matchDept && !matchDesig && !matchGroup && !matchUnit && !matchFloor && !matchLine) return false;
+      }
+
+      // Location Filters
+      if (passwordMgmtGroup !== 'ALL' && acc.groupId !== passwordMgmtGroup && (acc.groupName || '').toLowerCase() !== passwordMgmtGroup.toLowerCase()) return false;
+      if (passwordMgmtUnit !== 'ALL' && acc.unitId !== passwordMgmtUnit && (acc.unitName || '').toLowerCase() !== passwordMgmtUnit.toLowerCase()) return false;
+      if (passwordMgmtFloor !== 'ALL' && acc.floorId !== passwordMgmtFloor && (acc.floorName || '').toLowerCase() !== passwordMgmtFloor.toLowerCase()) return false;
+      if (passwordMgmtLine !== 'ALL') {
+        const accLineId = acc.lineId || '';
+        const accLineName = (acc.lineName || '').toLowerCase();
+        const accArea = (acc.workingArea || acc.linkedEmployee?.workingArea || '').toLowerCase();
+        if (accLineId !== passwordMgmtLine && accLineName !== passwordMgmtLine.toLowerCase() && !accArea.includes(passwordMgmtLine.toLowerCase())) return false;
+      }
+
+      // Attribute Filters
+      if (passwordMgmtDesig !== 'ALL' && (acc.designation || '').toLowerCase() !== passwordMgmtDesig.toLowerCase()) return false;
+      if (passwordMgmtAccountStatus !== 'ALL' && acc.accountStatus !== passwordMgmtAccountStatus) return false;
+      if (passwordMgmtStatus !== 'ALL') {
+        if (passwordMgmtStatus === 'TEMPORARY' && acc.passwordStatus !== 'TEMPORARY') return false;
+        if (passwordMgmtStatus === 'SETUP' && acc.passwordStatus !== 'ACTIVE') return false;
+        if (passwordMgmtStatus === 'ACTIVE' && acc.passwordStatus !== 'ACTIVE') return false;
+      }
+
+      return true;
+    });
+
+    totalMatching = filtered.length;
+    passwordMgmtTotalPages = Math.max(1, Math.ceil(totalMatching / passwordMgmtRowsPerPage));
+    if (passwordMgmtPage > passwordMgmtTotalPages) passwordMgmtPage = passwordMgmtTotalPages;
+    if (passwordMgmtPage < 1) passwordMgmtPage = 1;
+    const startIndex = (passwordMgmtPage - 1) * passwordMgmtRowsPerPage;
+    accounts = filtered.slice(startIndex, startIndex + passwordMgmtRowsPerPage);
+  }
 
   return `
-    <div style="background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 18px 20px; display: flex; flex-direction: column; gap: 14px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);">
-      
-      <!-- Top Header & Controls -->
-      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding-bottom: 14px;">
-        <div style="display: flex; align-items: center; gap: 12px;">
-          <div style="width: 38px; height: 38px; border-radius: 9px; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.35); display: flex; align-items: center; justify-content: center; font-size: 18px; color: #38bdf8;">
-            🔑
-          </div>
-          <div>
-            <h2 style="font-size: 16px; font-weight: 800; color: #fff; margin: 0; letter-spacing: -0.2px;">
-              Password Management Dashboard
-            </h2>
-            <p style="font-size: 11.5px; color: var(--text-muted); margin: 3px 0 0 0;">
-              Configure user passwords, manage initial credentials, and trigger secure administrative resets.
-            </p>
-          </div>
-        </div>
-
-        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-          <button id="btn-bulk-gen-initial-pass" class="btn btn-warning btn-sm" style="font-weight: 800; font-size: 11.5px; height: 32px; padding: 0 14px; border-radius: 6px; display: inline-flex; align-items: center; gap: 5px;">
-            <span>⚡</span> <span>Bulk Generate Passwords</span>
-          </button>
-          <button id="btn-jump-to-export-credentials" class="btn btn-secondary btn-sm" style="font-weight: 700; color: #38bdf8; font-size: 11.5px; height: 32px; padding: 0 14px; border-radius: 6px; border-color: rgba(56, 189, 248, 0.35); display: inline-flex; align-items: center; gap: 5px;">
-            <span>🔐</span> <span>Export Eligible Credentials &rarr;</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- Filters Row -->
-      <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; background: rgba(9, 14, 26, 0.7); padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.08);">
-        <div style="position: relative; width: 280px; min-width: 200px;">
-          <span style="position: absolute; left: 9px; top: 7px; font-size: 12px; color: var(--text-muted);">🔍</span>
-          <input 
-            type="text" 
-            id="inp-pass-mgmt-search" 
-            class="form-control" 
-            placeholder="Search by Card, Name, or Username..." 
-            value="${passwordMgmtSearch}"
-            style="height: 30px; padding-left: 28px; font-size: 11.5px; border-radius: 6px; width: 100%; box-sizing: border-box; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255, 255, 255, 0.12);"
-          />
-        </div>
-
-        <select id="sel-pass-mgmt-floor" class="filter-select" style="height: 30px; font-size: 11.5px; max-width: 170px; border-radius: 6px; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255, 255, 255, 0.12); color: #e2e8f0;">
-          <option value="ALL">🏢 All Floors</option>
-          ${allFloors.map(f => `<option value="${f.id}" ${passwordMgmtFloor === f.id ? 'selected' : ''}>${f.name}</option>`).join('')}
-        </select>
-
-        <select id="sel-pass-mgmt-status" class="filter-select" style="height: 30px; font-size: 11.5px; max-width: 190px; border-radius: 6px; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255, 255, 255, 0.12); color: #e2e8f0;">
-          <option value="ALL">🔑 All Password Status</option>
-          <option value="TEMPORARY" ${passwordMgmtStatus === 'TEMPORARY' ? 'selected' : ''}>🟡 Temporary Passwords</option>
-          <option value="SETUP" ${passwordMgmtStatus === 'SETUP' ? 'selected' : ''}>✅ Active Passwords</option>
-        </select>
-
-        <span style="font-size: 11.5px; color: #94a3b8; margin-left: auto; padding: 2px 8px; background: rgba(15, 23, 42, 0.6); border-radius: 5px; border: 1px solid rgba(255, 255, 255, 0.05);">
-          Showing <strong style="color: #fff;">${filtered.length}</strong> accounts
-        </span>
-      </div>
-
-      <!-- Password Accounts Table -->
-      <div style="border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; overflow-x: auto; background: rgba(11, 19, 41, 0.7);">
-        <table class="user-management-table" style="width: 100%; border-collapse: collapse; min-width: 980px;">
-          <thead>
-            <tr style="background: rgba(15, 23, 42, 0.9); border-bottom: 1px solid rgba(255, 255, 255, 0.1);">
-              <th style="padding: 10px 14px; text-align: left; width: 110px;">Card Number</th>
-              <th style="padding: 10px 14px; text-align: left; width: 170px;">Employee Name</th>
-              <th style="padding: 10px 12px; text-align: left; width: 130px;">Username</th>
-              <th style="padding: 10px 12px; text-align: left; width: 180px;">Unit</th>
-              <th style="padding: 10px 10px; text-align: center; width: 90px;">Floor</th>
-              <th style="padding: 10px 8px; text-align: center; width: 110px;">Account Status</th>
-              <th style="padding: 10px 8px; text-align: center; width: 120px;">Password Status</th>
-              <th style="padding: 10px 12px; text-align: left; width: 150px;">Last Reset</th>
-              <th style="padding: 10px 12px; text-align: center; width: 120px;">Last Login</th>
-              <th style="padding: 10px 12px; text-align: center; width: 140px;">Actions</th>
+    <!-- Password Management Table Container (Scrolls vertically & horizontally within flex viewport) -->
+    <div class="uam-table-scroll-container" style="position: relative; width: 100%; flex: 1 1 0%; min-height: 0; height: 0; max-height: none; overflow-x: auto !important; overflow-y: auto !important; background-color: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); box-shadow: var(--shadow-sm); overscroll-behavior: contain; -webkit-overflow-scrolling: touch;">
+      <table class="user-management-table" style="min-width: 1560px; width: 100%; table-layout: fixed; border-collapse: separate; border-spacing: 0;">
+        <colgroup>
+          <col style="width: 120px;"> <!-- Card Number -->
+          <col style="width: 180px;"> <!-- Employee Name -->
+          <col style="width: 135px;"> <!-- Username -->
+          <col style="width: 155px;"> <!-- Designation -->
+          <col style="width: 130px;"> <!-- Group -->
+          <col style="width: 160px;"> <!-- Unit -->
+          <col style="width: 95px;">  <!-- Floor -->
+          <col style="width: 100px;"> <!-- Line -->
+          <col style="width: 110px;"> <!-- Account Status -->
+          <col style="width: 120px;"> <!-- Password Status -->
+          <col style="width: 150px;"> <!-- Last Password Reset -->
+          <col style="width: 125px;"> <!-- Last Login -->
+          <col style="width: 155px;"> <!-- Actions -->
+        </colgroup>
+        <thead>
+          <tr>
+            <th class="uam-col-sticky-card-pass" style="width: 120px; text-align: center; padding: 8px 6px; position: sticky; left: 0; top: 0; z-index: 32; background-color: #0b1329; border-right: 2px solid rgba(56, 189, 248, 0.45); box-shadow: 3px 0 6px rgba(0, 0, 0, 0.4);">Card Number</th>
+            <th style="width: 180px; text-align: left; padding: 8px 10px;">Employee Name</th>
+            <th style="width: 135px; text-align: left; padding: 8px 10px;">Username</th>
+            <th style="width: 155px; text-align: left; padding: 8px 10px;">Designation</th>
+            <th style="width: 130px; text-align: left; padding: 8px 10px;">Group</th>
+            <th style="width: 160px; text-align: left; padding: 8px 10px;">Unit</th>
+            <th style="width: 95px; text-align: center; padding: 8px 6px;">Floor</th>
+            <th style="width: 100px; text-align: center; padding: 8px 6px;">Line</th>
+            <th style="width: 110px; text-align: center; padding: 8px 6px;">Account Status</th>
+            <th style="width: 120px; text-align: center; padding: 8px 6px;">Password Status</th>
+            <th style="width: 150px; text-align: left; padding: 8px 10px;">Last Password Reset</th>
+            <th style="width: 125px; text-align: center; padding: 8px 6px;">Last Login</th>
+            <th style="width: 155px; text-align: center; padding: 8px 8px;">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${accounts.length === 0 ? `
+            <tr>
+              <td colspan="13" style="text-align: center; padding: 48px 20px; color: var(--text-muted);">
+                <div style="font-size: 36px; margin-bottom: 10px;">🔍</div>
+                <div style="font-size: 15px; font-weight: 700; color: #fff; margin-bottom: 6px;">No Matching Password Accounts Found</div>
+                <div style="font-size: 12.5px; color: var(--text-secondary); max-width: 480px; margin: 0 auto 16px auto;">
+                  No user accounts match the active search query or filter criteria. Try clearing filters.
+                </div>
+                <div style="display: inline-flex; gap: 8px;">
+                  <button type="button" id="btn-empty-clear-pass-filters" class="btn btn-secondary btn-sm" style="font-size: 12px; font-weight: 700;">
+                    ✕ Clear All Filters
+                  </button>
+                </div>
+              </td>
             </tr>
-          </thead>
-          <tbody>
-            ${filtered.length === 0 ? `
+          ` : accounts.map(acc => {
+            const isUserActive = acc.accountStatus === 'ACTIVE';
+
+            return `
               <tr>
-                <td colspan="10" style="text-align: center; padding: 36px 20px; color: var(--text-muted); font-size: 13px;">
-                  No accounts found matching search or filter criteria.
-                </td>
-              </tr>
-            ` : filtered.map(acc => `
-              <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.05); transition: background 0.15s ease;">
-                <!-- Card Number (Clean: NO # prefix) -->
-                <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 800; color: #38bdf8; font-size: 12px; white-space: nowrap;">
-                  ${acc.cardNumber}
-                </td>
-                
-                <!-- Employee Name & Designation -->
-                <td style="padding: 10px 14px; text-align: left;">
-                  <div style="font-weight: 700; color: #fff; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 165px;" title="${acc.employeeName}">${acc.employeeName}</div>
-                  <div style="font-size: 10.5px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 165px;" title="${acc.designation || 'Staff'}">${acc.designation || 'Staff'}</div>
-                </td>
-                
-                <!-- Username -->
-                <td style="padding: 10px 12px; font-family: var(--font-mono); color: #cbd5e1; font-size: 11.5px; white-space: nowrap;">
-                  @${acc.username}
-                </td>
-                
-                <!-- Unit (Single Line Ellipsis: No Awkward 2-Line Wrap) -->
-                <td style="padding: 10px 12px; font-size: 11.5px; color: var(--text-secondary); max-width: 180px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${acc.unitName || '—'}">
-                  ${acc.unitName || '—'}
-                </td>
-                
-                <!-- Floor -->
-                <td style="padding: 10px 10px; font-size: 11.5px; color: #38bdf8; text-align: center; font-weight: 600; white-space: nowrap;">
-                  ${acc.floorName || '—'}
-                </td>
-                
-                <!-- Account Status -->
-                <td style="text-align: center; padding: 10px 8px; white-space: nowrap;">
-                  <span class="badge" style="background: ${acc.accountStatus === 'ACTIVE' ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)'}; border: 1px solid ${acc.accountStatus === 'ACTIVE' ? 'rgba(16, 185, 129, 0.35)' : 'rgba(239, 68, 68, 0.35)'}; color: ${acc.accountStatus === 'ACTIVE' ? '#34d399' : '#f87171'}; font-size: 10px; padding: 2px 7px; border-radius: 5px; font-weight: 700;">
-                    ${acc.accountStatus === 'ACTIVE' ? '🟢 Active' : '🔴 Inactive'}
+                <!-- Card Number (Freeze Pane: Sticky Left: 0) -->
+                <td class="uam-col-sticky-card-pass" style="text-align: center; width: 120px; padding: 6px 8px; position: sticky; left: 0; z-index: 12; background-color: #0b1329; border-right: 2px solid rgba(56, 189, 248, 0.45); box-shadow: 3px 0 6px rgba(0, 0, 0, 0.4);">
+                  <span class="badge uam-clickable-card-badge" data-card="${acc.cardNumber}" style="font-family: var(--font-mono); font-weight: 800; color: #38bdf8; font-size: 11.5px; background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.3); padding: 3px 8px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; white-space: nowrap; transition: all 0.15s ease;" title="Click to filter by Card ${acc.cardNumber}">
+                    <span>${acc.cardNumber}</span>
                   </span>
                 </td>
-                
+
+                <!-- Employee Name & Dept -->
+                <td style="text-align: left; width: 180px; padding: 6px 10px;">
+                  <div style="font-weight: 700; color: #fff; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${acc.employeeName}">${acc.employeeName}</div>
+                  <div style="font-size: 10px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${acc.department || ''}">${acc.department || '—'}</div>
+                </td>
+
+                <!-- Username -->
+                <td style="text-align: left; width: 135px; padding: 6px 10px;">
+                  <span style="font-family: var(--font-mono); color: #cbd5e1; font-weight: 600; font-size: 11.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: inline-block; max-width: 125px;" title="@${acc.username}">
+                    @${acc.username}
+                  </span>
+                </td>
+
+                <!-- Designation -->
+                <td style="text-align: left; width: 155px; padding: 6px 10px;">
+                  <div style="font-size: 11.5px; color: #e2e8f0; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${acc.designation}">
+                    ${acc.designation || 'Staff'}
+                  </div>
+                </td>
+
+                <!-- Group -->
+                <td style="text-align: left; width: 130px; padding: 6px 10px;">
+                  <div style="font-size: 11.5px; color: #cbd5e1; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${acc.groupName || 'Al-Muslim Group'}">
+                    ${acc.groupName || 'Al-Muslim Group'}
+                  </div>
+                </td>
+
+                <!-- Unit -->
+                <td style="text-align: left; width: 160px; padding: 6px 10px;">
+                  <div style="font-size: 11.5px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${acc.unitName || '—'}">
+                    ${acc.unitName || '—'}
+                  </div>
+                </td>
+
+                <!-- Floor -->
+                <td style="text-align: center; width: 95px; padding: 6px 6px;">
+                  <div style="font-size: 11.5px; color: #38bdf8; font-weight: 600; white-space: nowrap;">
+                    ${acc.floorName || '—'}
+                  </div>
+                </td>
+
+                <!-- Line -->
+                <td style="text-align: center; width: 100px; padding: 6px 6px;">
+                  <div style="font-size: 11.5px; color: var(--text-secondary); white-space: nowrap;">
+                    ${acc.lineName || '—'}
+                  </div>
+                </td>
+
+                <!-- Account Status -->
+                <td style="text-align: center; width: 110px; padding: 6px 6px;">
+                  <span class="badge" style="background: ${isUserActive ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)'}; border: 1px solid ${isUserActive ? 'rgba(16, 185, 129, 0.35)' : 'rgba(239, 68, 68, 0.35)'}; color: ${isUserActive ? '#34d399' : '#f87171'}; font-size: 10px; padding: 2px 7px; font-weight: 700; border-radius: 5px; white-space: nowrap;">
+                    ${isUserActive ? '🟢 Active' : '🔴 Inactive'}
+                  </span>
+                </td>
+
                 <!-- Password Status -->
-                <td style="text-align: center; padding: 10px 8px; white-space: nowrap;">
+                <td style="text-align: center; width: 120px; padding: 6px 6px;">
                   ${acc.passwordStatus === 'TEMPORARY' ? `
-                    <span class="badge" style="background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.4); color: #fbbf24; font-size: 10px; padding: 2px 8px; border-radius: 5px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">🟡 Temporary</span>
+                    <span class="badge" style="background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.4); color: #fbbf24; font-size: 10px; padding: 2px 8px; border-radius: 5px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;">🟡 Temporary</span>
                   ` : `
-                    <span class="badge" style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); color: #34d399; font-size: 10px; padding: 2px 8px; border-radius: 5px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">✅ Active</span>
+                    <span class="badge" style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); color: #34d399; font-size: 10px; padding: 2px 8px; border-radius: 5px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;">✅ Active</span>
                   `}
                 </td>
-                
-                <!-- Last Reset -->
-                <td style="padding: 10px 12px; font-size: 11px; color: var(--text-muted); white-space: nowrap;">
+
+                <!-- Last Password Reset -->
+                <td style="text-align: left; width: 150px; padding: 6px 10px; font-size: 11px; color: var(--text-muted); white-space: nowrap;">
                   ${acc.lastPasswordReset ? new Date(acc.lastPasswordReset).toLocaleDateString() + ' ' + new Date(acc.lastPasswordReset).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Never'}
                 </td>
-                
+
                 <!-- Last Login -->
-                <td style="padding: 10px 12px; font-size: 11px; text-align: center; white-space: nowrap;">
-                  ${acc.lastLoginText === 'Never Logged In' || acc.lastLoginText === '—' || !acc.lastLoginText ? `
-                    <span style="color: #64748b; font-style: italic;">Never Logged In</span>
-                  ` : `
-                    <span style="color: #cbd5e1; font-weight: 600;">${acc.lastLoginText}</span>
-                  `}
+                <td style="text-align: center; width: 125px; padding: 6px 6px; white-space: nowrap;">
+                  <div style="font-size: 11px; white-space: nowrap;">
+                    ${acc.lastLoginText === 'Never Logged In' || acc.lastLoginText === '—' || !acc.lastLoginText ? `
+                      <span style="color: #64748b; font-style: italic;">Never Logged In</span>
+                    ` : `
+                      <span style="color: #cbd5e1; font-weight: 600;">${acc.lastLoginText}</span>
+                    `}
+                  </div>
                 </td>
-                
+
                 <!-- Actions -->
-                <td style="text-align: center; padding: 10px 12px; white-space: nowrap;">
-                  <button class="btn btn-secondary btn-xs btn-pass-gen-reset" data-id="${acc.id}" style="font-weight: 700; font-size: 11px; padding: 4px 10px; border-radius: 6px; color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); background: rgba(56, 189, 248, 0.1); white-space: nowrap; display: inline-flex; align-items: center; gap: 4px;">
+                <td style="text-align: center; width: 155px; padding: 6px 8px; white-space: nowrap;">
+                  <button class="btn btn-secondary btn-xs btn-pass-gen-reset" data-id="${acc.id}" style="font-weight: 700; font-size: 11px; padding: 4px 10px; border-radius: 6px; color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); background: rgba(56, 189, 248, 0.1); white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; cursor: pointer;">
                     <span>🔑</span> <span>Change Password</span>
                   </button>
                 </td>
               </tr>
-            `).join('')}
-          </tbody>
-        </table>
+            `;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pinned Bottom Pagination Bar for Passwords -->
+    <div class="uam-fixed-bottom-bar" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; padding: 4px 10px; background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); box-shadow: var(--shadow-sm); z-index: 10; flex-shrink: 0; min-height: 34px;">
+      <div style="display: flex; align-items: center; gap: 8px; font-size: 11.5px; color: var(--text-muted);">
+        <span>Rows per page:</span>
+        <select id="pass-uam-page-size" class="filter-select" style="height: 25px; font-size: 11px; padding: 1px 6px; width: 62px;">
+          <option value="15" ${passwordMgmtRowsPerPage === 15 ? 'selected' : ''}>15</option>
+          <option value="20" ${passwordMgmtRowsPerPage === 20 ? 'selected' : ''}>20</option>
+          <option value="50" ${passwordMgmtRowsPerPage === 50 ? 'selected' : ''}>50</option>
+          <option value="100" ${passwordMgmtRowsPerPage === 100 ? 'selected' : ''}>100</option>
+        </select>
+        <span>Page <strong>${passwordMgmtPage}</strong> of <strong>${passwordMgmtTotalPages}</strong> (${totalMatching} items)</span>
       </div>
 
+      <div style="display: flex; gap: 5px; align-items: center;">
+        <button id="btn-pass-page-first" class="btn btn-secondary btn-xs" ${passwordMgmtPage === 1 ? 'disabled' : ''} style="padding: 3px 8px; font-size: 11px;">⏮ First</button>
+        <button id="btn-pass-page-prev" class="btn btn-secondary btn-xs" ${passwordMgmtPage === 1 ? 'disabled' : ''} style="padding: 3px 8px; font-size: 11px;">◀ Prev</button>
+        <span style="font-size: 11.5px; font-weight: 700; color: #fff; padding: 0 6px;">${passwordMgmtPage}</span>
+        <button id="btn-pass-page-next" class="btn btn-secondary btn-xs" ${passwordMgmtPage === passwordMgmtTotalPages ? 'disabled' : ''} style="padding: 3px 8px; font-size: 11px;">Next ▶</button>
+        <button id="btn-pass-page-last" class="btn btn-secondary btn-xs" ${passwordMgmtPage === passwordMgmtTotalPages ? 'disabled' : ''} style="padding: 3px 8px; font-size: 11px;">Last ⏭</button>
+      </div>
     </div>
   `;
 }
@@ -3277,6 +3590,30 @@ export function initUserManagementEvents() {
     }
   }
 
+  // Restore Password Search Focus and Cursor Position
+  if (shouldRestorePassSearchFocus) {
+    shouldRestorePassSearchFocus = false;
+    const restoredPassSearchInp = document.getElementById('inp-pass-mgmt-search');
+    if (restoredPassSearchInp) {
+      restoredPassSearchInp.focus();
+      try {
+        restoredPassSearchInp.setSelectionRange(passSearchFocusCursorPos, passSearchFocusCursorPos);
+      } catch (_) {}
+    }
+  }
+
+  // Restore Password Card Search Focus and Cursor Position
+  if (shouldRestorePassCardSearchFocus) {
+    shouldRestorePassCardSearchFocus = false;
+    const restoredPassCardInp = document.getElementById('uam-pass-card-search-input');
+    if (restoredPassCardInp) {
+      restoredPassCardInp.focus();
+      try {
+        restoredPassCardInp.setSelectionRange(passCardSearchFocusCursorPos, passCardSearchFocusCursorPos);
+      } catch (_) {}
+    }
+  }
+
   // Automatic Manpower Sync: if any registered employees are missing user accounts, auto-sync silently
   const allAccountsSnapshot = userAccessService.getAllAccountsWithManpower();
   const unlinkedCount = allAccountsSnapshot.filter(a => !a.hasAccount).length;
@@ -3519,10 +3856,17 @@ export function initUserManagementEvents() {
       e.stopPropagation();
       const cardNum = badge.getAttribute('data-card');
       if (cardNum && cardNum !== '—') {
-        searchQuery = cardNum;
-        currentPage = 1;
-        reRender();
-        notificationService.info(`Filtered accounts by Card ${cardNum}`);
+        if (activeUserSection === 'PASSWORD_MGMT') {
+          passwordMgmtCardSearch = cardNum;
+          passwordMgmtPage = 1;
+          reRender();
+          notificationService.info(`Filtered password accounts by Card ${cardNum}`);
+        } else {
+          cardSearchQuery = cardNum;
+          currentPage = 1;
+          reRender();
+          notificationService.info(`Filtered accounts by Card ${cardNum}`);
+        }
       }
     });
   });
@@ -4406,10 +4750,109 @@ export function initUserManagementEvents() {
   }
 
   // 9. Password Management Handlers (Tab 4)
+  // Dedicated Card Search Option
+  const passCardSearchInp = document.getElementById('uam-pass-card-search-input');
+  if (passCardSearchInp) {
+    let debounceTimer;
+    passCardSearchInp.addEventListener('input', (e) => {
+      clearTimeout(debounceTimer);
+      const val = e.target.value;
+      const curPos = e.target.selectionStart || val.length;
+      debounceTimer = setTimeout(() => {
+        passwordMgmtCardSearch = val;
+        passwordMgmtPage = 1;
+        shouldRestorePassCardSearchFocus = true;
+        passCardSearchFocusCursorPos = curPos;
+        reRender();
+      }, 200);
+    });
+    passCardSearchInp.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        passwordMgmtCardSearch = e.target.value;
+        passwordMgmtPage = 1;
+        reRender();
+      }
+    });
+  }
+
+  const btnClearPassCardSearch = document.getElementById('btn-clear-uam-pass-card-search');
+  if (btnClearPassCardSearch) {
+    btnClearPassCardSearch.addEventListener('click', () => {
+      passwordMgmtCardSearch = '';
+      passwordMgmtPage = 1;
+      reRender();
+    });
+  }
+
+  // General Search Input
   const passSearchInp = document.getElementById('inp-pass-mgmt-search');
   if (passSearchInp) {
+    let debounceTimer;
     passSearchInp.addEventListener('input', (e) => {
-      passwordMgmtSearch = e.target.value;
+      clearTimeout(debounceTimer);
+      const val = e.target.value;
+      const curPos = e.target.selectionStart || val.length;
+      debounceTimer = setTimeout(() => {
+        passwordMgmtSearch = val;
+        passwordMgmtPage = 1;
+        shouldRestorePassSearchFocus = true;
+        passSearchFocusCursorPos = curPos;
+        reRender();
+      }, 250);
+    });
+    passSearchInp.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        passwordMgmtSearch = e.target.value;
+        passwordMgmtPage = 1;
+        reRender();
+      }
+    });
+  }
+
+  const btnClearPassSearch = document.getElementById('btn-clear-pass-mgmt-search');
+  if (btnClearPassSearch) {
+    btnClearPassSearch.addEventListener('click', () => {
+      passwordMgmtSearch = '';
+      passwordMgmtPage = 1;
+      reRender();
+    });
+  }
+
+  // Quick Filter Chips
+  root.querySelectorAll('.btn-pass-quick-chip').forEach(btn => {
+    btn.addEventListener('click', () => {
+      passwordMgmtQuickFilter = btn.getAttribute('data-filter') || 'ALL';
+      passwordMgmtPage = 1;
+      reRender();
+    });
+  });
+
+  // Cascading Dropdown Filters
+  const passGroupSel = document.getElementById('sel-pass-mgmt-group');
+  if (passGroupSel) {
+    passGroupSel.addEventListener('change', (e) => {
+      passwordMgmtGroup = e.target.value;
+      passwordMgmtUnit = 'ALL';
+      passwordMgmtFloor = 'ALL';
+      passwordMgmtLine = 'ALL';
+      passwordMgmtPage = 1;
+      reRender();
+    });
+  }
+
+  const passUnitSel = document.getElementById('sel-pass-mgmt-unit');
+  if (passUnitSel) {
+    passUnitSel.addEventListener('change', (e) => {
+      passwordMgmtUnit = e.target.value;
+      if (passwordMgmtUnit !== 'ALL' && passwordMgmtGroup === 'ALL') {
+        const uObj = masterDataService.getUnitById ? masterDataService.getUnitById(passwordMgmtUnit) : null;
+        if (uObj?.groupId) passwordMgmtGroup = uObj.groupId;
+      }
+      passwordMgmtFloor = 'ALL';
+      passwordMgmtLine = 'ALL';
+      passwordMgmtPage = 1;
       reRender();
     });
   }
@@ -4418,6 +4861,55 @@ export function initUserManagementEvents() {
   if (passFloorSel) {
     passFloorSel.addEventListener('change', (e) => {
       passwordMgmtFloor = e.target.value;
+      if (passwordMgmtFloor !== 'ALL') {
+        const fObj = masterDataService.getFloorById ? masterDataService.getFloorById(passwordMgmtFloor) : null;
+        if (fObj?.unitId && passwordMgmtUnit === 'ALL') {
+          passwordMgmtUnit = fObj.unitId;
+          const uObj = masterDataService.getUnitById ? masterDataService.getUnitById(fObj.unitId) : null;
+          if (uObj?.groupId && passwordMgmtGroup === 'ALL') passwordMgmtGroup = uObj.groupId;
+        }
+      }
+      passwordMgmtLine = 'ALL';
+      passwordMgmtPage = 1;
+      reRender();
+    });
+  }
+
+  const passLineSel = document.getElementById('sel-pass-mgmt-line');
+  if (passLineSel) {
+    passLineSel.addEventListener('change', (e) => {
+      passwordMgmtLine = e.target.value;
+      if (passwordMgmtLine !== 'ALL') {
+        const lObj = masterDataService.getLineById ? masterDataService.getLineById(passwordMgmtLine) : null;
+        if (lObj?.floorId && passwordMgmtFloor === 'ALL') {
+          passwordMgmtFloor = lObj.floorId;
+          const fObj = masterDataService.getFloorById ? masterDataService.getFloorById(lObj.floorId) : null;
+          if (fObj?.unitId && passwordMgmtUnit === 'ALL') {
+            passwordMgmtUnit = fObj.unitId;
+            const uObj = masterDataService.getUnitById ? masterDataService.getUnitById(fObj.unitId) : null;
+            if (uObj?.groupId && passwordMgmtGroup === 'ALL') passwordMgmtGroup = uObj.groupId;
+          }
+        }
+      }
+      passwordMgmtPage = 1;
+      reRender();
+    });
+  }
+
+  const passDesigSel = document.getElementById('sel-pass-mgmt-desig');
+  if (passDesigSel) {
+    passDesigSel.addEventListener('change', (e) => {
+      passwordMgmtDesig = e.target.value;
+      passwordMgmtPage = 1;
+      reRender();
+    });
+  }
+
+  const passAccStatusSel = document.getElementById('sel-pass-mgmt-acc-status');
+  if (passAccStatusSel) {
+    passAccStatusSel.addEventListener('change', (e) => {
+      passwordMgmtAccountStatus = e.target.value;
+      passwordMgmtPage = 1;
       reRender();
     });
   }
@@ -4426,9 +4918,55 @@ export function initUserManagementEvents() {
   if (passStatusSel) {
     passStatusSel.addEventListener('change', (e) => {
       passwordMgmtStatus = e.target.value;
+      passwordMgmtPage = 1;
       reRender();
     });
   }
+
+  // Clear All Password Filters
+  const resetAllPassFilters = () => {
+    passwordMgmtSearch = '';
+    passwordMgmtCardSearch = '';
+    passwordMgmtQuickFilter = 'ALL';
+    passwordMgmtGroup = 'ALL';
+    passwordMgmtUnit = 'ALL';
+    passwordMgmtFloor = 'ALL';
+    passwordMgmtLine = 'ALL';
+    passwordMgmtDesig = 'ALL';
+    passwordMgmtAccountStatus = 'ALL';
+    passwordMgmtStatus = 'ALL';
+    passwordMgmtPage = 1;
+    reRender();
+  };
+
+  const btnClearAllPass = document.getElementById('btn-clear-all-pass-filters');
+  if (btnClearAllPass) btnClearAllPass.addEventListener('click', resetAllPassFilters);
+
+  const btnEmptyClearPass = document.getElementById('btn-empty-clear-pass-filters');
+  if (btnEmptyClearPass) btnEmptyClearPass.addEventListener('click', resetAllPassFilters);
+
+  // Password Pagination Controls
+  const passPageSizeSel = document.getElementById('pass-uam-page-size');
+  if (passPageSizeSel) {
+    passPageSizeSel.addEventListener('change', (e) => {
+      passwordMgmtRowsPerPage = parseInt(e.target.value, 10) || 20;
+      passwordMgmtPage = 1;
+      reRender();
+    });
+  }
+
+  const btnPassFirst = document.getElementById('btn-pass-page-first');
+  const btnPassPrev = document.getElementById('btn-pass-page-prev');
+  const btnPassNext = document.getElementById('btn-pass-page-next');
+  const btnPassLast = document.getElementById('btn-pass-page-last');
+
+  if (btnPassFirst) btnPassFirst.addEventListener('click', () => { passwordMgmtPage = 1; reRender(); });
+  if (btnPassPrev) btnPassPrev.addEventListener('click', () => { if (passwordMgmtPage > 1) { passwordMgmtPage--; reRender(); } });
+  if (btnPassNext) btnPassNext.addEventListener('click', () => { if (passwordMgmtPage < passwordMgmtTotalPages) { passwordMgmtPage++; reRender(); } });
+  if (btnPassLast) btnPassLast.addEventListener('click', () => {
+    passwordMgmtPage = passwordMgmtTotalPages;
+    reRender();
+  });
 
   root.querySelectorAll('.btn-pass-gen-reset').forEach(btn => {
     btn.addEventListener('click', () => {
