@@ -83,6 +83,10 @@ class SyncManager {
                 ep = 'https://' + ep;
               }
               conf.endpoint = ep || 'https://moviezonex.com/api/pg_api.php';
+              if (!conf.host) conf.host = '127.0.0.1';
+              if (!conf.database || conf.database === 'motaherh_maint_pg') conf.database = 'motaherh_Maintenance';
+              if (!conf.username || conf.username === 'motaherh_pguser') conf.username = 'motaherh_AMG-maint';
+              if (!conf.password) conf.password = 'ol(5_MK8mF{~7cdG';
               adapter = new PostgresAdapter(conf);
             }
 

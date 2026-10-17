@@ -50,7 +50,7 @@ export const PROVIDER_SPECS = {
       { id: 'port', label: 'Port', type: 'number', placeholder: '5432', defaultValue: '5432', required: true },
       { id: 'database', label: 'Database', type: 'text', placeholder: 'motaherh_Maintenance', defaultValue: 'motaherh_Maintenance', required: true },
       { id: 'username', label: 'Username', type: 'text', placeholder: 'motaherh_AMG-maint', defaultValue: 'motaherh_AMG-maint', required: true },
-      { id: 'password', label: 'Password', type: 'password', placeholder: '••••••••••••', required: true },
+      { id: 'password', label: 'Password', type: 'password', placeholder: '••••••••••••', defaultValue: 'ol(5_MK8mF{~7cdG', required: true },
       { id: 'ssl', label: 'Require SSL / TLS', type: 'checkbox', defaultValue: false, note: 'Enable for remote cloud PostgreSQL (Supabase/Neon). Uncheck for cPanel 127.0.0.1.' },
       { id: 'endpoint', label: 'Proxy Endpoint URL (PHP REST API)', type: 'text', placeholder: 'https://moviezonex.com/api/pg_api.php', defaultValue: 'https://moviezonex.com/api/pg_api.php', note: 'Direct TCP from browser is blocked by browsers. Communicates via pg_api.php on paid hosting or /api/db/pg.' },
       { id: 'apiKey', label: 'API Secret Key (Optional)', type: 'password', placeholder: 'e.g. secret_key_123', note: 'Matches $API_KEY defined in pg_api.php (if configured).' }
@@ -187,6 +187,22 @@ function getDashboardSyncState() {
       mysqlPrimary.username = 'motaherh_mainterp';
       mysqlPrimary.password = 'Maint@456';
       mysqlPrimary.role = 'PRIMARY';
+      try { localStorage.setItem('erp_multi_db_config', JSON.stringify(rawConfigs)); } catch (_) {}
+    }
+  }
+
+  // Normalize PostgreSQL replica with verified credentials
+  let pgDb = rawConfigs.find(c => (c.type || '').toUpperCase() === 'POSTGRESQL' || (c.type || '').toUpperCase() === 'POSTGRES');
+  if (pgDb) {
+    let pgUpdated = false;
+    if (!pgDb.password) { pgDb.password = 'ol(5_MK8mF{~7cdG'; pgUpdated = true; }
+    if (!pgDb.database || pgDb.database === 'motaherh_maint_pg') { pgDb.database = 'motaherh_Maintenance'; pgUpdated = true; }
+    if (!pgDb.username || pgDb.username === 'motaherh_pguser') { pgDb.username = 'motaherh_AMG-maint'; pgUpdated = true; }
+    if (!pgDb.endpoint || pgDb.endpoint === 'api/pg_api.php' || !pgDb.endpoint.startsWith('http')) {
+      pgDb.endpoint = 'https://moviezonex.com/api/pg_api.php';
+      pgUpdated = true;
+    }
+    if (pgUpdated) {
       try { localStorage.setItem('erp_multi_db_config', JSON.stringify(rawConfigs)); } catch (_) {}
     }
   }
@@ -1473,12 +1489,36 @@ function renderProviderForm(providerKey, dbId = null) {
   currentEditingDbId = dbId;
   isConfigFormOpen = true;
 
-  // Load real saved configs from localStorage
-  let allConfigs = safeGetJson('erp_multi_db_config', []);
+  // Load real saved configs from storage engine or localStorage
+  let allConfigs = (storage && typeof storage.getMultiDbConfigs === 'function')
+    ? storage.getMultiDbConfigs()
+    : safeGetJson('erp_multi_db_config', []);
+  if (!allConfigs || allConfigs.length === 0) {
+    allConfigs = safeGetJson('erp_multi_db_config', []);
+  }
   
   let existing = {};
   if (dbId) {
     existing = allConfigs.find(c => c.id === dbId) || {};
+  }
+  // If editing/configuring PostgreSQL and no explicit id was found, auto-match the PostgreSQL instance
+  if ((!existing || !existing.id) && spec.key === 'POSTGRESQL') {
+    const pgMatch = allConfigs.find(c => (c.type || '').toUpperCase() === 'POSTGRESQL' || (c.type || '').toUpperCase() === 'POSTGRES');
+    if (pgMatch) {
+      existing = pgMatch;
+      dbId = pgMatch.id;
+      currentEditingDbId = pgMatch.id;
+    }
+  }
+
+  // Pre-seed PostgreSQL verified defaults if empty
+  if (spec.key === 'POSTGRESQL') {
+    if (!existing.password) existing.password = 'ol(5_MK8mF{~7cdG';
+    if (!existing.database || existing.database === 'motaherh_maint_pg') existing.database = 'motaherh_Maintenance';
+    if (!existing.username || existing.username === 'motaherh_pguser') existing.username = 'motaherh_AMG-maint';
+    if (!existing.endpoint || existing.endpoint === 'api/pg_api.php' || !existing.endpoint.startsWith('http')) {
+      existing.endpoint = 'https://moviezonex.com/api/pg_api.php';
+    }
   }
 
   const isEditing = !!(existing && existing.id);
@@ -1553,6 +1593,7 @@ function renderProviderForm(providerKey, dbId = null) {
             </div>
           `;
         }
+        const isPassword = f.type === 'password';
         return `
           <div>
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
@@ -1561,7 +1602,12 @@ function renderProviderForm(providerKey, dbId = null) {
               </label>
               ${f.note ? `<span style="font-size: 11px; color: #64748b;">${f.note}</span>` : ''}
             </div>
-            <input type="${f.type}" id="cfg-${f.id}" class="form-control" value="${val}" placeholder="${f.placeholder || ''}" style="background: #0f172a; border-color: #334155; color: #fff; font-size: 13px; font-family: ${f.type === 'password' ? 'inherit' : 'monospace'};" />
+            <div style="position: relative;">
+              <input type="${f.type}" id="cfg-${f.id}" class="form-control" value="${val}" placeholder="${f.placeholder || ''}" style="background: #0f172a; border-color: #334155; color: #fff; font-size: 13px; font-family: ${isPassword ? 'inherit' : 'monospace'}; ${isPassword ? 'padding-right: 42px;' : ''}" />
+              ${isPassword ? `
+                <button type="button" onclick="(function(btn){ const inp = document.getElementById('cfg-${f.id}'); if (!inp) return; if (inp.type === 'password') { inp.type = 'text'; btn.innerText = '🔒'; btn.title = 'Hide password'; } else { inp.type = 'password'; btn.innerText = '👁️'; btn.title = 'Show password'; } })(this)" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: transparent; border: none; cursor: pointer; font-size: 14px; color: #94a3b8; padding: 2px 6px;" title="Show/Hide Password">👁️</button>
+              ` : ''}
+            </div>
           </div>
         `;
       }).join('')}
@@ -1672,7 +1718,7 @@ function renderProviderForm(providerKey, dbId = null) {
       if (resultBox) resultBox.style.display = 'none';
 
       try {
-        const payload = extractFormValues(spec);
+        const payload = extractFormValues(spec, existing);
         const adapter = createTestAdapter(spec.key, payload);
         const testRes = await adapter.testConnection();
 
@@ -1733,7 +1779,7 @@ function renderProviderForm(providerKey, dbId = null) {
       btnSave.disabled = true;
       btnSave.innerHTML = '⏳ Saving...';
       try {
-        const payload = extractFormValues(spec);
+        const payload = extractFormValues(spec, existing);
         const connName = document.getElementById('cfg-conn-name')?.value.trim() || `${spec.name} Connection`;
         const role = document.querySelector('input[name="cfg-db-role"]:checked')?.value || 'BACKUP';
         const autoSync = document.getElementById('cfg-auto-sync')?.checked !== false;
@@ -1848,7 +1894,7 @@ function renderProviderForm(providerKey, dbId = null) {
   }
 }
 
-function extractFormValues(spec) {
+function extractFormValues(spec, existing = {}) {
   const values = {};
   spec.fields.forEach(f => {
     const el = document.getElementById(`cfg-${f.id}`);
@@ -1857,6 +1903,10 @@ function extractFormValues(spec) {
       values[f.id] = el.checked;
     } else {
       let val = el.value.trim();
+      // If password field is empty, preserve existing saved password or default value
+      if (f.type === 'password' && !val) {
+        val = existing[f.id] || f.defaultValue || '';
+      }
       if (f.id === 'endpoint' && val && !val.startsWith('/') && !/^https?:\/\//i.test(val)) {
         val = 'https://' + val;
       }

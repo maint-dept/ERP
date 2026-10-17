@@ -9,14 +9,13 @@ export class PostgresAdapter extends BaseAdapter {
   constructor(config = {}) {
     super(config);
     this.type = 'POSTGRESQL';
-    this.name = config.name || 'PostgreSQL Database';
-    this.host = config.host || 'localhost';
+    this.host = config.host || '127.0.0.1';
     this.port = config.port || 5432;
-    this.database = config.database || 'motaherh_maint_pg';
-    this.username = config.username || 'motaherh_pguser';
-    this.password = config.password || '';
+    this.database = config.database || 'motaherh_Maintenance';
+    this.username = config.username || 'motaherh_AMG-maint';
+    this.password = config.password || 'ol(5_MK8mF{~7cdG';
     this.apiKey = config.apiKey || '';
-    this.ssl = config.ssl !== false;
+    this.ssl = config.ssl === true;
 
     let rawEndpoint = (config.endpoint || '').trim().replace(/\/$/, '');
     if (!rawEndpoint ||
