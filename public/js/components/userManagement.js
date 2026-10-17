@@ -2186,6 +2186,8 @@ function renderActiveModalHtml() {
         </div>
       </div>
     `;
+  }
+
   // 1b. Set / Change User Password Modal (Custom or Auto-Generated)
   if (activeModalType === 'SET_USER_PASSWORD' && targetAccount) {
     const acc = targetAccount;
