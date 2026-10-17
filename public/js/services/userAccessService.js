@@ -490,12 +490,20 @@ class UserAccessService {
         accountStatus: u.status || 'ACTIVE',
         // Priority order for passwordStatus:
         // 1. If DB says ACTIVE or SETUP, OR mustChangePassword is explicitly false → ACTIVE (permanent password set)
-        // 2. If DB says TEMPORARY or mustChangePassword is true or a temp credential is cached → TEMPORARY
-        // 3. Default fallback → ACTIVE
-        passwordStatus: (u.passwordStatus === 'ACTIVE' || u.passwordStatus === 'SETUP' || u.passwordStatus === 'CHANGED' || u.mustChangePassword === false)
-          ? 'ACTIVE'
-          : ((u.passwordStatus === 'TEMPORARY' || u.mustChangePassword === true || hasTempPassword) ? 'TEMPORARY' : 'ACTIVE'),
-        hasTempPassword: hasTempPassword && u.passwordStatus !== 'ACTIVE' && u.passwordStatus !== 'SETUP' && u.mustChangePassword !== false,
+        // 2. If DB says TEMPORARY or mustChangePassword is true → TEMPORARY
+        // 3. Fallback: If has password and not explicitly mustChangePassword → ACTIVE
+        ...(() => {
+          const isExplicitActive = u.passwordStatus === 'ACTIVE' || u.passwordStatus === 'SETUP' || u.passwordStatus === 'CHANGED' || u.mustChangePassword === false;
+          if (isExplicitActive && hasTempPassword) {
+            this.clearTemporaryCredential(u.id);
+          }
+          const isExplicitTemp = (u.passwordStatus === 'TEMPORARY' || u.mustChangePassword === true) && !isExplicitActive;
+          const resolvedStatus = isExplicitActive ? 'ACTIVE' : (isExplicitTemp ? 'TEMPORARY' : 'ACTIVE');
+          return {
+            passwordStatus: resolvedStatus,
+            hasTempPassword: isExplicitTemp && hasTempPassword
+          };
+        })(),
         permissionsSummary: totalModules > 0 ? `${totalModules} Modules (${totalActions} Actions)` : 'No Permissions',
         totalModules,
         totalActions,
@@ -942,44 +950,109 @@ class UserAccessService {
    * 7 & 8. Password Generation & Reset
    * Generates a new secure random password for a single user
    */
-  async generateOrResetPassword(userId, isReset = false) {
+  async generateOrResetPassword(userId, isReset = false, isTemporary = false) {
     const user = storage.getItem(TABLE_NAMES.USERS, userId);
     if (!user) throw new Error('User not found.');
 
     const newPlainPassword = this.generateSecurePassword(14);
     const hashedPassword = cryptoService.hashPassword(newPlainPassword);
 
-    const updatedUser = await storage.updateConfirmed(TABLE_NAMES.USERS, userId, {
+    const updates = {
       password: hashedPassword,
-      passwordStatus: 'TEMPORARY',
-      mustChangePassword: true,
+      passwordHash: hashedPassword,
+      passwordStatus: isTemporary ? 'TEMPORARY' : 'ACTIVE',
+      mustChangePassword: Boolean(isTemporary),
       lastPasswordReset: new Date().toISOString(),
       updatedAt: new Date().toISOString()
+    };
+
+    // 1. Instant local & in-memory update (0ms)
+    const updatedUser = storage.update(TABLE_NAMES.USERS, userId, updates);
+
+    // Save in temporary elevated cache only if temporary, otherwise clear it
+    if (isTemporary) {
+      this.setTemporaryCredential(userId, newPlainPassword);
+    } else {
+      this.clearTemporaryCredential(userId);
+    }
+
+    // 2. Non-blocking cloud sync in background
+    storage.saveTable(TABLE_NAMES.USERS, true).catch(e => {
+      console.warn('[UserAccessService] Background password sync notice:', e.message);
     });
-
-    if (!updatedUser) throw new CloudSaveError('Cloud save failed during password update.');
-
-    // Save in temporary elevated cache
-    this.setTemporaryCredential(userId, newPlainPassword);
 
     auditService.log(
       isReset ? 'PASSWORD_RESET_ADMIN' : 'PASSWORD_GENERATED_INITIAL',
       'SECURITY',
       userId,
-      `${isReset ? 'Reset' : 'Generated initial'} secure password for user '${user.name}' (@${user.username}) [Card #${user.cardNumber}].`
+      `${isReset ? 'Reset' : 'Generated initial'} secure password for user '${user.name}' (@${user.username}) [Card #${user.cardNumber}] - Status: ${updates.passwordStatus}.`
     );
 
     return {
       userId,
       username: user.username,
-      plainPassword: newPlainPassword
+      plainPassword: newPlainPassword,
+      isReset,
+      passwordStatus: updates.passwordStatus
+    };
+  }
+
+  /**
+   * Set custom or generated password directly for a user (Permanent Active or Temporary)
+   */
+  async setUserPassword(userId, newPlainPassword, isTemporary = false) {
+    if (!userId) throw new Error('User ID is required.');
+    if (!newPlainPassword || newPlainPassword.length < 4) {
+      throw new Error('New password must be at least 4 characters long.');
+    }
+
+    const user = storage.getItem(TABLE_NAMES.USERS, userId);
+    if (!user) throw new Error('User account not found.');
+
+    const hashedPassword = cryptoService.hashPassword(newPlainPassword);
+
+    const updates = {
+      password: hashedPassword,
+      passwordHash: hashedPassword,
+      passwordStatus: isTemporary ? 'TEMPORARY' : 'ACTIVE',
+      mustChangePassword: Boolean(isTemporary),
+      lastPasswordReset: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    // 1. Instant local & in-memory update (0ms)
+    const updatedUser = storage.update(TABLE_NAMES.USERS, userId, updates);
+
+    if (isTemporary) {
+      this.setTemporaryCredential(userId, newPlainPassword);
+    } else {
+      this.clearTemporaryCredential(userId);
+    }
+
+    // 2. Non-blocking cloud sync in background
+    storage.saveTable(TABLE_NAMES.USERS, true).catch(e => {
+      console.warn('[UserAccessService] Background custom password sync notice:', e.message);
+    });
+
+    auditService.log(
+      'PASSWORD_SET_ADMIN',
+      'SECURITY',
+      userId,
+      `Administrator configured password for user '${user.name}' (@${user.username}) [Card #${user.cardNumber}] - Status: ${updates.passwordStatus}.`
+    );
+
+    return {
+      userId,
+      username: user.username,
+      plainPassword: newPlainPassword,
+      passwordStatus: updates.passwordStatus
     };
   }
 
   /**
    * Bulk generate initial passwords or bulk reset passwords
    */
-  async bulkGenerateOrResetPasswords(userIds = [], isReset = false) {
+  async bulkGenerateOrResetPasswords(userIds = [], isReset = false, isTemporary = false) {
     if (!Array.isArray(userIds) || userIds.length === 0) {
       throw new Error('Please select at least one user account.');
     }
@@ -989,7 +1062,7 @@ class UserAccessService {
 
     for (const uid of userIds) {
       try {
-        const res = await this.generateOrResetPassword(uid, isReset);
+        const res = await this.generateOrResetPassword(uid, isReset, isTemporary);
         successful.push(res);
       } catch (err) {
         failed.push({ userId: uid, reason: err.message });
