@@ -142,6 +142,7 @@ class StorageEngine {
     this.data = {};
     this.indexes = {
       machineBySerial: new Map(),
+      machineByAssetId: new Map(),
       machinesByLine: new Map(),
       machinesByUnit: new Map(),
       machinesByFloor: new Map(),
@@ -191,6 +192,7 @@ class StorageEngine {
         try { if (typeof localStorage !== 'undefined') localStorage.setItem('al_muslim_initial_seeded', '1'); } catch (_) {}
       }
 
+      this.ensureMachineSystemAssetIds();
       this.rebuildAllIndexes();
       this.isInitialized = true;
       // Keep this._suppressServerPersist = true until syncWithServerDatabase completes to avoid premature auto-sync writes
@@ -501,6 +503,9 @@ class StorageEngine {
     if (!Array.isArray(this.data[TABLE_NAMES.LINES]) || this.data[TABLE_NAMES.LINES].length === 0) {
       this.data[TABLE_NAMES.LINES] = JSON.parse(JSON.stringify(INITIAL_DATA.lines || []));
     }
+
+    // Auto-generate permanent unique System Asset IDs (e.g. AMG-MNT-000001) for all machines
+    this.ensureMachineSystemAssetIds();
   }
 
   /**
@@ -534,6 +539,7 @@ class StorageEngine {
             }
           }
           if (idbUpdated) {
+            this.ensureMachineSystemAssetIds();
             this.rebuildAllIndexes();
             return true;
           }
@@ -1430,6 +1436,7 @@ class StorageEngine {
   rebuildAllIndexes() {
     this._invalidateTableIdMap(TABLE_NAMES.MACHINES);
     this.indexes.machineBySerial.clear();
+    if (this.indexes.machineByAssetId) this.indexes.machineByAssetId.clear();
     this.indexes.machinesByLine.clear();
     this.indexes.machinesByUnit.clear();
     this.indexes.machinesByFloor.clear();
@@ -1442,6 +1449,12 @@ class StorageEngine {
     machines.forEach(mc => {
       if (mc.serialNumber) {
         this.indexes.machineBySerial.set(mc.serialNumber.trim().toUpperCase(), mc);
+      }
+      if (mc.systemAssetId && this.indexes.machineByAssetId) {
+        this.indexes.machineByAssetId.set(mc.systemAssetId.trim().toUpperCase(), mc);
+      }
+      if (mc.permanentMachineId && this.indexes.machineByAssetId && !this.indexes.machineByAssetId.has(mc.permanentMachineId.trim().toUpperCase())) {
+        this.indexes.machineByAssetId.set(mc.permanentMachineId.trim().toUpperCase(), mc);
       }
 
       this._addToIndexMap(this.indexes.machinesByLine, mc.lineId, mc);
@@ -1503,7 +1516,7 @@ class StorageEngine {
     }
     const found = map.get(id) || map.get(String(id)) || null;
     if (!found && tableName === TABLE_NAMES.MACHINES) {
-      return this.getMachineBySerial(id);
+      return this.getMachineByAssetId(id) || this.getMachineBySerial(id);
     }
     return found;
   }
@@ -1518,6 +1531,134 @@ class StorageEngine {
     return machines.find(m => m.serialNumber && String(m.serialNumber).trim().toUpperCase() === clean) || null;
   }
 
+  getMachineByAssetId(assetId) {
+    if (!assetId) return null;
+    const clean = String(assetId).trim().toUpperCase();
+    if (this.indexes && this.indexes.machineByAssetId && this.indexes.machineByAssetId.has(clean)) {
+      return this.indexes.machineByAssetId.get(clean);
+    }
+    const machines = this.data[TABLE_NAMES.MACHINES] || [];
+    return machines.find(m => 
+      (m.systemAssetId && String(m.systemAssetId).trim().toUpperCase() === clean) ||
+      (m.permanentMachineId && String(m.permanentMachineId).trim().toUpperCase() === clean)
+    ) || null;
+  }
+
+  findMachineByAssetId(assetId) {
+    return this.getMachineByAssetId(assetId);
+  }
+
+  /**
+   * Generates the next sequential Permanent Unique System Asset ID formatted as AMG-MNT-XXXXXX (e.g. AMG-MNT-000001)
+   */
+  generateNextSystemAssetId() {
+    const machines = this.data[TABLE_NAMES.MACHINES] || [];
+    let maxNum = 0;
+    const prefix = 'AMG-MNT-';
+    const regex = /^AMG-MNT-(\d+)$/i;
+
+    machines.forEach(m => {
+      if (m && m.systemAssetId) {
+        const match = String(m.systemAssetId).trim().match(regex);
+        if (match && match[1]) {
+          const num = parseInt(match[1], 10);
+          if (!isNaN(num) && num > maxNum) {
+            maxNum = num;
+          }
+        }
+      }
+    });
+
+    if (maxNum === 0) {
+      machines.forEach(m => {
+        if (m && m.permanentMachineId) {
+          const match = String(m.permanentMachineId).trim().match(/^MID-(\d+)$/i);
+          if (match && match[1]) {
+            const num = parseInt(match[1], 10);
+            if (!isNaN(num) && num > maxNum) {
+              maxNum = num;
+            }
+          }
+        }
+      });
+    }
+
+    const nextNum = maxNum + 1;
+    return `${prefix}${String(nextNum).padStart(6, '0')}`;
+  }
+
+  /**
+   * Ensures all machines have an immutable, unique System Asset ID (AMG-MNT-XXXXXX).
+   * Automatically executes once on load/migration for all existing machines.
+   */
+  ensureMachineSystemAssetIds() {
+    const machines = this.data[TABLE_NAMES.MACHINES];
+    if (!Array.isArray(machines) || machines.length === 0) return false;
+
+    let hasUpdates = false;
+    const assignedIds = new Set();
+    let maxNum = 0;
+
+    // Pass 1: Gather existing valid AMG-MNT IDs and record highest sequence
+    machines.forEach(m => {
+      if (m && m.systemAssetId) {
+        const str = String(m.systemAssetId).trim().toUpperCase();
+        m.systemAssetId = str;
+        assignedIds.add(str);
+        const match = str.match(/^AMG-MNT-(\d+)$/i);
+        if (match && match[1]) {
+          const num = parseInt(match[1], 10);
+          if (!isNaN(num) && num > maxNum) {
+            maxNum = num;
+          }
+        }
+      }
+    });
+
+    // Pass 2: Assign permanent AMG-MNT sequential ID to any machine missing it
+    machines.forEach(m => {
+      if (!m || m.systemAssetId) return;
+
+      let candidate = '';
+      if (m.permanentMachineId) {
+        const pMatch = String(m.permanentMachineId).trim().match(/^MID-(\d+)$/i);
+        if (pMatch && pMatch[1]) {
+          const pNum = parseInt(pMatch[1], 10);
+          const mapped = `AMG-MNT-${String(pNum).padStart(6, '0')}`;
+          if (!assignedIds.has(mapped)) {
+            candidate = mapped;
+            if (pNum > maxNum) maxNum = pNum;
+          }
+        }
+      }
+
+      if (!candidate) {
+        maxNum++;
+        candidate = `AMG-MNT-${String(maxNum).padStart(6, '0')}`;
+        while (assignedIds.has(candidate)) {
+          maxNum++;
+          candidate = `AMG-MNT-${String(maxNum).padStart(6, '0')}`;
+        }
+      }
+
+      m.systemAssetId = candidate;
+      if (!m.permanentMachineId) {
+        m.permanentMachineId = candidate;
+      }
+      assignedIds.add(candidate);
+      hasUpdates = true;
+    });
+
+    if (hasUpdates) {
+      try {
+        localStorage.setItem(STORAGE_KEY_PREFIX + TABLE_NAMES.MACHINES, JSON.stringify(machines));
+      } catch (_) {}
+      this._invalidateTableIdMap(TABLE_NAMES.MACHINES);
+    }
+
+    return hasUpdates;
+  }
+
   insert(tableName, item) {
     if (!this.data[tableName]) {
       this.data[tableName] = [];
@@ -1525,6 +1666,15 @@ class StorageEngine {
 
     if (!item.id) {
       item.id = `${tableName.substring(0, 3)}-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+    }
+
+    if (tableName === TABLE_NAMES.MACHINES) {
+      if (!item.systemAssetId) {
+        item.systemAssetId = this.generateNextSystemAssetId();
+      }
+      if (!item.permanentMachineId) {
+        item.permanentMachineId = item.systemAssetId;
+      }
     }
 
     item.createdAt = item.createdAt || new Date().toISOString();
@@ -1552,6 +1702,14 @@ class StorageEngine {
     items.forEach(item => {
       if (!item.id) {
         item.id = `${tableName.substring(0, 3)}-${baseTime}-${++counter}-${Math.floor(Math.random() * 100000)}`;
+      }
+      if (tableName === TABLE_NAMES.MACHINES) {
+        if (!item.systemAssetId) {
+          item.systemAssetId = this.generateNextSystemAssetId();
+        }
+        if (!item.permanentMachineId) {
+          item.permanentMachineId = item.systemAssetId;
+        }
       }
       item.createdAt = item.createdAt || now;
       item.updatedAt = now;

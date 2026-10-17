@@ -40,6 +40,7 @@ export function renderColumnVisibilityModal() {
     { key: 'brand', label: 'Machine Brand', width: '95px', desc: 'Manufacturer / Brand' },
     { key: 'model', label: 'Machine Model', width: '120px', desc: 'Model specification number' },
     { key: 'serialNumber', label: 'Machine Serial Number', width: '130px', desc: 'Unique asset identifier tag' },
+    { key: 'systemAssetId', label: 'System Asset ID', width: '140px', desc: 'Permanent system-generated asset ID' },
     { key: 'manufacturing_serial', label: 'Manufacturing Serial Number', width: '125px', desc: 'Factory mfg serial tag' },
     { key: 'group', label: 'Group / Conglomerate', width: '110px', desc: 'Corporate group' },
     { key: 'unit', label: 'Unit / Factory', width: '140px', desc: 'Plant location' },
@@ -64,6 +65,7 @@ export function renderColumnVisibilityModal() {
 
   // Additional specification columns not in active layout
   const allSpecCols = [
+    { key: 'systemAssetId', label: 'System Asset ID', fieldKey: 'system_asset_id' },
     { key: 'group', label: 'Group / Conglomerate', fieldKey: 'group' },
     { key: 'purchase_date', label: 'Purchase Date', fieldKey: 'purchase_date' },
     { key: 'installation_date', label: 'Installation Date', fieldKey: 'installation_date' },

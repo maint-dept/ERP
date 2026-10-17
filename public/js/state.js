@@ -11,7 +11,7 @@ class GlobalState {
   constructor() {
     const defaultCols = [
       'sl', 'select', 'machineName', 'brand', 'model', 'serialNumber',
-      'manufacturing_serial', 'unit', 'floor', 'line', 'running',
+      'systemAssetId', 'manufacturing_serial', 'unit', 'floor', 'line', 'running',
       'usable_idle', 'repairable_idle', 'total_quantity', 'status',
       'service_date', 'remarks', 'actions'
     ];
@@ -25,6 +25,11 @@ class GlobalState {
           const serialIdx = savedCols.indexOf('serialNumber');
           if (serialIdx >= 0) savedCols.splice(serialIdx + 1, 0, 'manufacturing_serial');
           else savedCols.push('manufacturing_serial');
+        }
+        if (Array.isArray(savedCols) && !savedCols.includes('systemAssetId')) {
+          const serialIdx = savedCols.indexOf('serialNumber');
+          if (serialIdx >= 0) savedCols.splice(serialIdx + 1, 0, 'systemAssetId');
+          else savedCols.push('systemAssetId');
         }
       }
     } catch (e) {}

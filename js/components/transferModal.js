@@ -551,6 +551,7 @@ export function initTransferModalEvents() {
 
     const exactMatch = allMachines.find(m => 
       (m.serialNumber && m.serialNumber.toString().trim().toLowerCase() === q) ||
+      (m.systemAssetId && m.systemAssetId.toLowerCase() === q) ||
       (m.permanentMachineId && m.permanentMachineId.toLowerCase() === q) ||
       (m.id && m.id.toLowerCase() === q)
     );
@@ -564,6 +565,7 @@ export function initTransferModalEvents() {
 
     const partialMatch = allMachines.find(m => 
       (m.serialNumber && m.serialNumber.toString().trim().toLowerCase().includes(q)) ||
+      (m.systemAssetId && m.systemAssetId.toLowerCase().includes(q)) ||
       (m.permanentMachineId && m.permanentMachineId.toLowerCase().includes(q))
     );
 
@@ -596,6 +598,7 @@ export function initTransferModalEvents() {
         const matches = allMachines.filter(m => 
           (m.serialNumber && m.serialNumber.toString().toLowerCase().includes(q)) ||
           (m.id && m.id.toLowerCase().includes(q)) ||
+          (m.systemAssetId && m.systemAssetId.toLowerCase().includes(q)) ||
           (m.permanentMachineId && m.permanentMachineId.toLowerCase().includes(q))
         ).slice(0, 8);
 
@@ -668,6 +671,7 @@ export function initTransferModalEvents() {
             if (!idOrSerial) return;
             const match = allMachines.find(m => 
               (m.id && m.id.toLowerCase() === idOrSerial.toLowerCase()) ||
+              (m.systemAssetId && m.systemAssetId.toLowerCase() === idOrSerial.toLowerCase()) ||
               (m.permanentMachineId && m.permanentMachineId.toLowerCase() === idOrSerial.toLowerCase()) ||
               (m.serialNumber && m.serialNumber.toString().toLowerCase() === idOrSerial.toLowerCase())
             );
@@ -1256,6 +1260,7 @@ export function initTransferModalEvents() {
           if (inpS) {
             const matched = allM.find(m =>
               (m.serialNumber && m.serialNumber.toString().trim().toLowerCase() === inpS) ||
+              (m.systemAssetId && m.systemAssetId.toLowerCase() === inpS) ||
               (m.permanentMachineId && m.permanentMachineId.toLowerCase() === inpS) ||
               (m.id && m.id.toLowerCase() === inpS)
             );

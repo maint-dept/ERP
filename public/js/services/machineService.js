@@ -141,6 +141,13 @@ class MachineService {
   }
 
   /**
+   * Generates the next sequential Permanent Unique System Asset ID (e.g. AMG-MNT-000001)
+   */
+  generateNextSystemAssetId() {
+    return storage.generateNextSystemAssetId();
+  }
+
+  /**
    * High-Performance Scoped Query Engine (Handles infinite records with pagination & multi-filter)
    */
   getMachines(params = {}) {
@@ -194,6 +201,8 @@ class MachineService {
       const untMap = new Map(storage.getTable(TABLE_NAMES.UNITS).map(x => [x.id, x.name.toLowerCase()]));
 
       allMachines = allMachines.filter(m => {
+        if (m.systemAssetId?.toLowerCase().includes(q)) return true;
+        if (m.permanentMachineId?.toLowerCase().includes(q)) return true;
         if (m.serialNumber?.toLowerCase().includes(q)) return true;
         if (m.manufacturing_serial?.toLowerCase().includes(q) || m.manufacturingSerial?.toLowerCase().includes(q) || m.customValues?.manufacturing_serial?.toString().toLowerCase().includes(q)) return true;
         if (m.remarks?.toLowerCase().includes(q)) return true;
@@ -267,6 +276,11 @@ class MachineService {
         const bA = storage.getItem(TABLE_NAMES.BRANDS, a.brandId)?.name || '';
         const bB = storage.getItem(TABLE_NAMES.BRANDS, b.brandId)?.name || '';
         return bA.localeCompare(bB) * sortOrder;
+      }
+      if (sortField === 'systemAssetId') {
+        const saA = a.systemAssetId || a.permanentMachineId || '';
+        const saB = b.systemAssetId || b.permanentMachineId || '';
+        return String(saA).localeCompare(String(saB), undefined, { numeric: true }) * sortOrder;
       }
       if (sortField === 'manufacturing_serial' || sortField === 'manufacturingSerial') {
         const msA = a.manufacturing_serial || a.manufacturingSerial || a.customValues?.manufacturing_serial || '';
@@ -453,9 +467,14 @@ class MachineService {
       ? (running + usable_idle + repairable_idle) || qty
       : qty;
 
+    const systemAssetId = machineData.systemAssetId || storage.generateNextSystemAssetId();
+    const permanentMachineId = machineData.permanentMachineId || systemAssetId;
+
     const newMachine = {
       ...machineData,
       sl: sl,
+      systemAssetId: systemAssetId,
+      permanentMachineId: permanentMachineId,
       quantity: finalQty,
       status: status,
       running,

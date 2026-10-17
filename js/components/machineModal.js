@@ -141,6 +141,8 @@ export function renderMachineModal() {
   const totalQty = parseInt(machine?.totalQuantity || machine?.total_quantity || (rQty + uQty + rpQty > 0 ? (rQty + uQty + rpQty) : (machine?.quantity ?? 1)), 10) || 1;
 
   const remarks = machine?.remarks || '';
+  const nextAssetIdPreview = storage.generateNextSystemAssetId();
+  const currentSystemAssetId = machine?.systemAssetId || machine?.permanentMachineId || (isEdit ? '—' : nextAssetIdPreview);
 
   return `
     <div class="modal-overlay" id="modal-machine-overlay">
@@ -148,7 +150,10 @@ export function renderMachineModal() {
         <div class="modal-header" style="background: linear-gradient(135deg, #0f172a, #1e293b); border-bottom: 1px solid rgba(56, 189, 248, 0.2); padding: 14px 22px;">
           <div class="modal-title" style="display: flex; align-items: center; gap: 10px;">
             <span style="font-size: 16px; font-weight: 800; color: #fff;">${isViewOnly ? '👁️ Machine Details (View-Only)' : (isEdit ? '✏️ Edit Machine Record' : '➕ New Machine Registration')}</span>
-            ${isEdit ? `<span class="serial-number-badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); font-family: var(--font-mono); font-size: 13px; font-weight: 800; padding: 2px 10px; border-radius: 6px;">${escapeHtml(machine.serialNumber)}</span>` : ''}
+            ${isEdit ? `
+              <span class="serial-number-badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); font-family: var(--font-mono); font-size: 13px; font-weight: 800; padding: 2px 10px; border-radius: 6px;">${escapeHtml(machine.serialNumber)}</span>
+              ${machine.systemAssetId || machine.permanentMachineId ? `<span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.35); font-family: var(--font-mono); font-size: 12px; font-weight: 800; padding: 2px 8px; border-radius: 6px;">${escapeHtml(machine.systemAssetId || machine.permanentMachineId)}</span>` : ''}
+            ` : ''}
           </div>
           <button id="btn-close-machine-modal" class="btn btn-ghost btn-sm" style="font-size: 18px;" title="Close">✕</button>
         </div>
@@ -219,8 +224,23 @@ export function renderMachineModal() {
               </div>
             </div>
 
-            <!-- Row 3: Manufacturing Serial Number & Manufacturing Year -->
+            <!-- Row 3: System Asset ID & Manufacturing Serial Number -->
             <div class="form-grid-2">
+              <div class="form-group">
+                <label class="form-label" style="display: flex; justify-content: space-between; align-items: center;">
+                  <span>System Asset ID <span style="font-size: 11px; color: #10b981; font-weight: 700;">(Permanent Unique ID)</span></span>
+                  <span class="badge" style="font-size: 9.5px; padding: 1px 6px; background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.35);">${isEdit || isViewOnly ? 'PERMANENT' : 'AUTO-GENERATED'}</span>
+                </label>
+                <input
+                  type="text"
+                  id="modal-field-system-asset-id"
+                  class="form-control"
+                  value="${escapeHtml(currentSystemAssetId)}"
+                  disabled
+                  style="background: rgba(15, 23, 42, 0.7); color: #10b981; font-family: var(--font-mono); font-size: 13.5px; font-weight: 800; border-color: rgba(16, 185, 129, 0.35); cursor: not-allowed; letter-spacing: 0.5px;"
+                  title="Permanent System-Generated Unique Asset ID"
+                />
+              </div>
               <div class="form-group">
                 <label class="form-label" style="display: flex; justify-content: space-between; align-items: center;">
                   <span>Manufacturing Serial Number <span style="font-size: 11px; color: #38bdf8; font-weight: 600;">(OEM / Maker Serial)</span></span>
@@ -235,6 +255,10 @@ export function renderMachineModal() {
                   ${isViewOnly ? 'disabled style="opacity: 0.75; cursor: not-allowed;"' : ''}
                 />
               </div>
+            </div>
+
+            <!-- Row 4: Manufacturing Year & Motor Specs -->
+            <div class="form-grid-2">
               <div class="form-group">
                 <label class="form-label">Manufacturing Year <span style="font-size: 11px; color: var(--text-muted); font-weight: normal;">(Mfg Year)</span></label>
                 <input
@@ -246,7 +270,6 @@ export function renderMachineModal() {
                   ${isViewOnly ? 'disabled style="opacity: 0.75; cursor: not-allowed;"' : ''}
                 />
               </div>
-            </div>
 
             <!-- Row 4: Machine Capacity & Country of Origin -->
             <div class="form-grid-2">
@@ -1022,6 +1045,8 @@ export function initMachineModalEvents() {
         installationDate: installDate || null,
         supplier_name: supplier,
         supplier,
+        systemAssetId: machine?.systemAssetId || machine?.permanentMachineId || undefined,
+        permanentMachineId: machine?.permanentMachineId || machine?.systemAssetId || undefined,
         remarks,
         customValues
       };

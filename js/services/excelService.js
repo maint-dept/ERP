@@ -106,6 +106,7 @@ export function mapFieldKeyToTableKey(fieldKey) {
   if (k === 'machine_name' || k === 'machinename' || k === 'machine') return 'machineName';
   if (k === 'machine_brand' || k === 'brand') return 'brand';
   if (k === 'machine_model' || k === 'model') return 'model';
+  if (k === 'system_asset_id' || k === 'systemassetid' || k === 'asset_id' || k === 'assetid') return 'systemAssetId';
   if (k === 'machine_serial' || k === 'serialnumber' || k === 'serial_number' || k === 'serial' || k === 'serial_no') return 'serialNumber';
   if (k === 'manufacturing_serial' || k === 'manufacturingserial' || k === 'mfg_serial' || k === 'manufacturing_no') return 'manufacturing_serial';
   if (k === 'manufacturing_year' || k === 'manufacturingyear' || k === 'mfg_year') return 'manufacturing_year';
@@ -715,6 +716,11 @@ class ExcelService {
     // 5. Serial Number (Admin Customizable)
     if (key === 'machine_serial' || key === 'serial_number' || key === 'serialnumber' || key === 'serial' || key === 'serial_no') {
       return record.machine_serial || record.serialNumber || record.serial || '';
+    }
+
+    // 5A. Permanent System-Generated Asset ID (AMG-MNT-XXXXXX)
+    if (key === 'system_asset_id' || key === 'systemassetid' || key === 'asset_id' || key === 'assetid' || key === 'system_asset' || key === 'systemasset') {
+      return record.systemAssetId || record.permanentMachineId || '';
     }
 
     // 5B. Manufacturing (Serial / Year / Details)
@@ -3166,7 +3172,7 @@ class ExcelService {
     const { grpMap, untMap, flrMap, linMap, mnMap, brdMap, mdlMap } = lookups;
 
     const headers = [
-      'SL', 'Machine ID', 'Machine Name', 'Machine Serial', 'Group',
+      'SL', 'System Asset ID', 'Machine ID', 'Machine Name', 'Machine Serial', 'Group',
       'Unit / Factory', 'Floor', 'Line', 'Line Code', 'Brand', 'Model',
       'Machine Status', 'Installation Date', 'Remarks'
     ];
@@ -3190,6 +3196,7 @@ class ExcelService {
 
       const row = [
         i + 1,
+        m.systemAssetId || m.permanentMachineId || '—',
         m.id || `MCH-${String(i + 1).padStart(3, '0')}`,
         machineName,
         m.serialNumber || '—',
