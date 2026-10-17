@@ -51,46 +51,46 @@ export function renderMasterDataView() {
         <!-- Left: Title & Main Workflow Tabs -->
         <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
           <div style="display: flex; align-items: center; gap: 6px;">
-            <div style="font-size: 16px; background: #EAF4FC; border: 1px solid var(--border-color); border-radius: var(--radius-sm); width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <div style="font-size: 16px; background: rgba(56, 189, 248, 0.12); border: 1px solid #38bdf8; border-radius: var(--radius-sm); width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
               🏢
             </div>
-            <h1 style="font-size: 14.5px; font-weight: 800; color: var(--text-primary, #171717); margin: 0; white-space: nowrap;">
+            <h1 style="font-size: 14.5px; font-weight: 800; color: #fff; margin: 0; white-space: nowrap;">
               Plant Hierarchy &amp; Master Data
             </h1>
           </div>
 
           <!-- Primary View Mode Tabs -->
-          <div style="display: flex; gap: 4px; align-items: center; background: var(--bg-hover, #F5F7FA); padding: 2px 4px; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
-            <button class="btn ${activeTab === 'fast-entry' ? 'btn-primary' : 'btn-ghost'}" data-master-tab="fast-entry" style="font-weight: 800; font-size: 11.5px; padding: 4px 10px; border-radius: 4px; ${activeTab === 'fast-entry' ? 'background: var(--brand-primary, #0070C9); color: #fff;' : 'color: var(--text-primary, #171717);'}">
+          <div style="display: flex; gap: 4px; align-items: center; background: rgba(0,0,0,0.25); padding: 2px 4px; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+            <button class="btn ${activeTab === 'fast-entry' ? 'btn-primary' : 'btn-ghost'}" data-master-tab="fast-entry" style="font-weight: 800; font-size: 11.5px; padding: 4px 10px; border-radius: 4px; ${activeTab === 'fast-entry' ? 'background: linear-gradient(135deg, #0284c7, #2563eb); color: #fff;' : 'color: #38bdf8;'}">
               ⚡ 3-Step Guided Setup
             </button>
-            <button class="btn ${activeTab === 'tree' ? 'btn-primary' : 'btn-ghost'}" data-master-tab="tree" style="font-weight: 700; font-size: 11.5px; padding: 4px 10px; border-radius: 4px; ${activeTab === 'tree' ? 'background: var(--brand-primary, #0070C9); color: #fff;' : 'color: var(--text-primary, #171717);'}">
+            <button class="btn ${activeTab === 'tree' ? 'btn-primary' : 'btn-ghost'}" data-master-tab="tree" style="font-weight: 700; font-size: 11.5px; padding: 4px 10px; border-radius: 4px;">
               🌳 Tree View
             </button>
           </div>
 
           <!-- Compact Tables Segment -->
           <div style="display: flex; gap: 3px; align-items: center; flex-wrap: wrap;">
-            <span style="font-size: 10px; font-weight: 800; color: var(--text-secondary, #606770); text-transform: uppercase; margin-left: 4px;">Tables:</span>
-            <button class="btn ${activeTab === 'groups' ? 'btn-primary' : 'btn-ghost'}" data-master-tab="groups" style="font-weight: 700; font-size: 10.5px; padding: 3px 7px; border-radius: 4px; ${activeTab === 'groups' ? 'background: var(--brand-primary, #0070C9); color: #fff;' : 'color: var(--text-secondary, #606770);'}">
+            <span style="font-size: 10px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; margin-left: 4px;">Tables:</span>
+            <button class="btn ${activeTab === 'groups' ? 'btn-primary' : 'btn-ghost'}" data-master-tab="groups" style="font-weight: 700; font-size: 10.5px; padding: 3px 7px; border-radius: 4px;">
               Groups (${groups.length})
             </button>
-            <button class="btn ${activeTab === 'units' ? 'btn-primary' : 'btn-ghost'}" data-master-tab="units" style="font-weight: 700; font-size: 10.5px; padding: 3px 7px; border-radius: 4px; ${activeTab === 'units' ? 'background: var(--brand-primary, #0070C9); color: #fff;' : 'color: var(--text-secondary, #606770);'}">
+            <button class="btn ${activeTab === 'units' ? 'btn-primary' : 'btn-ghost'}" data-master-tab="units" style="font-weight: 700; font-size: 10.5px; padding: 3px 7px; border-radius: 4px;">
               Units (${units.length})
             </button>
-            <button class="btn ${activeTab === 'floors' ? 'btn-primary' : 'btn-ghost'}" data-master-tab="floors" style="font-weight: 700; font-size: 10.5px; padding: 3px 7px; border-radius: 4px; ${activeTab === 'floors' ? 'background: var(--brand-primary, #0070C9); color: #fff;' : 'color: var(--text-secondary, #606770);'}">
+            <button class="btn ${activeTab === 'floors' ? 'btn-primary' : 'btn-ghost'}" data-master-tab="floors" style="font-weight: 700; font-size: 10.5px; padding: 3px 7px; border-radius: 4px;">
               Floors (${floors.length})
             </button>
-            <button class="btn ${activeTab === 'lines' ? 'btn-primary' : 'btn-ghost'}" data-master-tab="lines" style="font-weight: 700; font-size: 10.5px; padding: 3px 7px; border-radius: 4px; ${activeTab === 'lines' ? 'background: var(--brand-primary, #0070C9); color: #fff;' : 'color: var(--text-secondary, #606770);'}">
+            <button class="btn ${activeTab === 'lines' ? 'btn-primary' : 'btn-ghost'}" data-master-tab="lines" style="font-weight: 700; font-size: 10.5px; padding: 3px 7px; border-radius: 4px;">
               Lines (${lines.length})
             </button>
-            <button class="btn ${activeTab === 'machinenames' ? 'btn-primary' : 'btn-ghost'}" data-master-tab="machinenames" style="font-weight: 700; font-size: 10.5px; padding: 3px 7px; border-radius: 4px; ${activeTab === 'machinenames' ? 'background: var(--brand-primary, #0070C9); color: #fff;' : 'color: var(--text-secondary, #606770);'}">
+            <button class="btn ${activeTab === 'machinenames' ? 'btn-primary' : 'btn-ghost'}" data-master-tab="machinenames" style="font-weight: 700; font-size: 10.5px; padding: 3px 7px; border-radius: 4px;">
               Machines (${machineNames.length})
             </button>
-            <button class="btn ${activeTab === 'brands' ? 'btn-primary' : 'btn-ghost'}" data-master-tab="brands" style="font-weight: 700; font-size: 10.5px; padding: 3px 7px; border-radius: 4px; ${activeTab === 'brands' ? 'background: var(--brand-primary, #0070C9); color: #fff;' : 'color: var(--text-secondary, #606770);'}">
+            <button class="btn ${activeTab === 'brands' ? 'btn-primary' : 'btn-ghost'}" data-master-tab="brands" style="font-weight: 700; font-size: 10.5px; padding: 3px 7px; border-radius: 4px;">
               Brands (${brands.length})
             </button>
-            <button class="btn ${activeTab === 'models' ? 'btn-primary' : 'btn-ghost'}" data-master-tab="models" style="font-weight: 700; font-size: 10.5px; padding: 3px 7px; border-radius: 4px; ${activeTab === 'models' ? 'background: var(--brand-primary, #0070C9); color: #fff;' : 'color: var(--text-secondary, #606770);'}">
+            <button class="btn ${activeTab === 'models' ? 'btn-primary' : 'btn-ghost'}" data-master-tab="models" style="font-weight: 700; font-size: 10.5px; padding: 3px 7px; border-radius: 4px;">
               Models (${models.length})
             </button>
           </div>
@@ -99,7 +99,7 @@ export function renderMasterDataView() {
         <!-- Right: Primary Action -->
         <div style="display: flex; gap: 6px; align-items: center;">
           ${isAdmin ? `
-            <button id="btn-master-add-new" class="btn btn-primary btn-sm" style="font-weight: 700; background: var(--brand-primary, #0070C9); border: 1px solid #005CA8; font-size: 11.5px; padding: 5px 12px; box-shadow: 0 1px 3px rgba(0, 112, 201, 0.2);">
+            <button id="btn-master-add-new" class="btn btn-primary btn-sm" style="font-weight: 800; background: linear-gradient(135deg, #0284c7, #0369a1); font-size: 11.5px; padding: 5px 12px; box-shadow: 0 2px 8px rgba(2, 132, 199, 0.3);">
               ➕ Add ${getEntityDisplayName(activeTab === 'tree' ? 'groups' : activeTab)}
             </button>
           ` : ''}

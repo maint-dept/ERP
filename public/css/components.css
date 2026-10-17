@@ -42,7 +42,7 @@
   left: 0 !important;
   right: 0 !important;
   bottom: 0 !important;
-  background-color: rgba(15, 23, 42, 0.45) !important;
+  background-color: rgba(5, 8, 16, 0.82) !important;
   backdrop-filter: blur(4px);
   display: flex !important;
   align-items: center !important;
@@ -53,10 +53,6 @@
   overflow: hidden !important;
   overscroll-behavior: contain;
   animation: fadeIn 0.15s ease;
-}
-
-body.theme-dark .modal-overlay {
-  background-color: rgba(5, 8, 16, 0.82) !important;
 }
 
 .modal-dialog,
@@ -4245,9 +4241,9 @@ body.theme-light .data-table thead th,
 body.theme-light .excel-grid-table thead th,
 body.theme-light .pm-table thead th,
 body.theme-light .transfers-table thead th {
-  color: var(--text-primary, #171717) !important;
-  background-color: var(--bg-hover, #F8F9FA) !important;
-  border-color: var(--border-color, #D9DDE3) !important;
+  color: #090e1a !important;
+  background-color: #f1f5f9 !important;
+  border-color: #cbd5e1 !important;
 }
 
 body.theme-light td,
@@ -4255,44 +4251,37 @@ body.theme-light .data-table tbody td,
 body.theme-light .excel-grid-table tbody td,
 body.theme-light .pm-table tbody td,
 body.theme-light .transfers-table tbody td {
-  color: var(--text-primary, #171717) !important;
-  background-color: var(--bg-surface, #FFFFFF) !important;
-  border-color: var(--border-light, #E5E8EC) !important;
+  color: #0f172a !important;
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
 }
 
 /* 9. Top Navbar Status Pill & Theme Button Enhancement */
 .nav-db-status-pill {
-  background: #EAF7EF !important;
-  border: 1px solid #168548 !important;
-  color: #168548 !important;
-  font-weight: 700 !important;
-  box-shadow: none !important;
-}
-
-body.theme-dark .nav-db-status-pill {
   background: rgba(16, 185, 129, 0.15) !important;
   border: 1.5px solid #10b981 !important;
   color: #34d399 !important;
-  box-shadow: 0 0 8px rgba(16, 185, 129, 0.25) !important;
+  font-weight: 800 !important;
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.25) !important;
 }
 
 .nav-icon-btn#btn-theme-toggle {
-  background: #FFFFFF !important;
-  border: 1px solid var(--border-color, #D9DDE3) !important;
-  color: var(--text-primary, #171717) !important;
+  background: #1e293b !important;
+  border: 1.5px solid #475569 !important;
+  color: #fbbf24 !important;
   cursor: pointer !important;
   transition: all 0.2s ease !important;
 }
 
 .nav-icon-btn#btn-theme-toggle:hover {
-  border-color: var(--primary, #0070C9) !important;
-  background: var(--bg-hover, #F5F7FA) !important;
+  border-color: #38bdf8 !important;
+  transform: scale(1.05);
 }
 
-body.theme-dark .nav-icon-btn#btn-theme-toggle {
-  background: #1e293b !important;
-  border: 1.5px solid #475569 !important;
-  color: #fbbf24 !important;
+body.theme-light .nav-icon-btn#btn-theme-toggle {
+  background: #e2e8f0 !important;
+  border: 1.5px solid #94a3b8 !important;
+  color: #0284c7 !important;
 }
 
 /* Printable Documents */

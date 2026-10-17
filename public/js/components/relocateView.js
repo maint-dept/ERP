@@ -71,7 +71,7 @@ export function renderRelocateView() {
           </div>
         </div>
 
-        <button type="button" id="btn-relocate-goto-qr-codes" class="btn-relocate-tab" style="border: 1px solid var(--border-color, #D9DDE3); color: var(--brand-primary, #0070C9); background: #FFFFFF; font-weight: 700;" title="Open QR Code & Label Studio">
+        <button type="button" id="btn-relocate-goto-qr-codes" class="btn-relocate-tab" style="border: 1px solid #38bdf8; color: #38bdf8; background: rgba(56, 189, 248, 0.12); font-weight: 800;" title="Open QR Code & Label Studio">
           🏁 QR Studio
         </button>
       </div>
@@ -163,14 +163,14 @@ export function renderRelocateView() {
       .relocate-main-title {
         font-size: 14px;
         font-weight: 800;
-        color: var(--text-primary, #171717);
+        color: #fff;
         margin: 0;
         line-height: 1.1;
       }
 
       .relocate-sub-title {
         font-size: 10.5px;
-        color: var(--text-secondary, #606770);
+        color: #38bdf8;
         margin-top: 1px;
       }
 
@@ -181,13 +181,13 @@ export function renderRelocateView() {
       }
 
       .btn-relocate-tab {
-        background: #FFFFFF;
-        border: 1px solid var(--border-color, #D9DDE3);
-        color: var(--text-secondary, #606770);
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: var(--text-secondary);
         font-weight: 700;
         font-size: 11px;
         padding: 4px 10px;
-        border-radius: 6px;
+        border-radius: 14px;
         cursor: pointer;
         display: inline-flex;
         align-items: center;
@@ -197,16 +197,15 @@ export function renderRelocateView() {
       }
 
       .btn-relocate-tab:hover {
-        background: var(--bg-hover, #F5F7FA);
-        color: var(--text-primary, #171717);
-        border-color: #C0C5CC;
+        background: rgba(255, 255, 255, 0.1);
+        color: #fff;
       }
 
       .btn-relocate-tab.active {
-        background: var(--brand-primary, #0070C9);
-        border-color: #005CA8;
+        background: #0284c7;
+        border-color: #38bdf8;
         color: #fff;
-        box-shadow: 0 1px 3px rgba(0, 112, 201, 0.25);
+        box-shadow: 0 2px 8px rgba(2, 132, 199, 0.4);
       }
 
       .relocate-tab-badge {

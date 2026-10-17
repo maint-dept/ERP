@@ -11,4 +11,3 @@ data/*.backup.json
 data/*_backup*.json
 data/chat_history.json
 .vscode/
-*.zip
