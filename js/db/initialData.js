@@ -31707,7 +31707,7 @@ export const INITIAL_DATA = {
       "code": "voltage",
       "label": "Operating Voltage",
       "type": "DROPDOWN",
-      "required": true,
+      "required": false,
       "options": [
         "220V Single Phase",
         "380V 3-Phase",
