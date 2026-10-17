@@ -1075,47 +1075,103 @@ export function initPreventiveMaintenanceReportEvents(container = document) {
 
   function renderPickerList(searchStr = '') {
     if (!pickerListContainer) return;
-    const all = preventiveMaintenanceService.getAllMachinesWithMaintenance ? 
-      preventiveMaintenanceService.getAllMachinesWithMaintenance({
-        floorId: reportState.floorId,
-        lineId: reportState.lineId,
-        search: searchStr
-      }) : [];
 
-    if (all.length === 0) {
+    let items = [];
+    const q = (searchStr || '').toLowerCase().trim();
+
+    // 1. Try high-performance searchMachines from preventiveMaintenanceService
+    try {
+      if (preventiveMaintenanceService && typeof preventiveMaintenanceService.searchMachines === 'function') {
+        items = preventiveMaintenanceService.searchMachines(q, 40) || [];
+      }
+    } catch (errSearch) {
+      console.warn('[PM Report] searchMachines error, switching to direct storage:', errSearch);
+      items = [];
+    }
+
+    // 2. Ultra-reliable direct fallback from storage table
+    if (!items || items.length === 0) {
+      try {
+        const allMachines = storage.getTable(TABLE_NAMES.MACHINES) || [];
+        let matched = allMachines;
+
+        // Apply active floor filter if specific floor selected
+        if (reportState.floorId && reportState.floorId !== 'ALL') {
+          matched = matched.filter(m => m.floorId === reportState.floorId || (m.floor && String(m.floor).toLowerCase() === String(reportState.floorName).toLowerCase()));
+        }
+
+        // Apply active line filter if specific line selected
+        if (reportState.lineId && reportState.lineId !== 'ALL') {
+          matched = matched.filter(m => m.lineId === reportState.lineId || (m.line && String(m.line).toLowerCase() === String(reportState.lineName).toLowerCase()));
+        }
+
+        if (q) {
+          matched = matched.filter(m => {
+            const s = (m.serialNumber || '').toLowerCase();
+            const n = (m.machineName || m.name || '').toLowerCase();
+            const mo = (m.model || '').toLowerCase();
+            const b = (m.brand || '').toLowerCase();
+            const fl = (m.floor || '').toLowerCase();
+            const ln = (m.line || '').toLowerCase();
+            return s.includes(q) || n.includes(q) || mo.includes(q) || b.includes(q) || fl.includes(q) || ln.includes(q);
+          });
+        }
+
+        items = matched.slice(0, 40).map(m => {
+          let lastSvc = m.lastServiceDate || null;
+          if (!lastSvc && m.customValues?.service_date) lastSvc = m.customValues.service_date;
+          return {
+            machineId: m.id,
+            serialNumber: m.serialNumber || '—',
+            machineName: m.machineName || m.name || 'Machine',
+            model: m.model || '—',
+            brand: m.brand || '',
+            floor: m.floor || '',
+            line: m.line || '',
+            lastServiceDate: lastSvc
+          };
+        });
+      } catch (errFallback) {
+        console.error('[PM Report] machine list fallback error:', errFallback);
+      }
+    }
+
+    if (!items || items.length === 0) {
       pickerListContainer.innerHTML = `
-        <div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 12px;">
-          No machines found matching "${escapeHtml(searchStr)}".
+        <div style="text-align: center; padding: 24px 16px; color: #94a3b8; font-size: 12px;">
+          <div style="font-size: 20px; margin-bottom: 6px;">🔍</div>
+          No machines found matching "<b>${escapeHtml(searchStr)}</b>".
+          <div style="font-size: 11px; color: #64748b; margin-top: 4px;">Try searching by machine number, model, brand, floor or line.</div>
         </div>
       `;
       return;
     }
 
-    pickerListContainer.innerHTML = all.slice(0, 50).map(m => `
-      <div class="pm-picker-item" data-mach-id="${m.machineId}" data-mach-serial="${escapeHtml(m.serialNumber)}" style="
+    pickerListContainer.innerHTML = items.map(m => `
+      <div class="pm-picker-item" data-mach-id="${escapeHtml(m.machineId || '')}" data-mach-serial="${escapeHtml(m.serialNumber || '')}" style="
         display: flex; 
         align-items: center; 
         justify-content: space-between; 
-        padding: 8px 10px; 
+        padding: 8px 12px; 
         background: #0f172a; 
         border: 1px solid #334155; 
-        border-radius: 4px; 
+        border-radius: 6px; 
         cursor: pointer;
-        transition: background 0.15s;
+        transition: all 0.15s ease;
       ">
         <div style="display: flex; flex-direction: column; gap: 2px;">
-          <div style="display: flex; align-items: center; gap: 6px;">
-            <strong style="color: #38bdf8; font-family: monospace; font-size: 13px;">${escapeHtml(m.serialNumber)}</strong>
-            <span style="font-weight: 600; font-size: 12px; color: #fff;">${escapeHtml(m.machineName)}</span>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <strong style="color: #38bdf8; font-family: monospace; font-size: 13px;">${escapeHtml(m.serialNumber || '—')}</strong>
+            <span style="font-weight: 700; font-size: 12px; color: #fff;">${escapeHtml(m.machineName || 'Machine')}</span>
           </div>
-          <div style="font-size: 10.5px; color: #94a3b8;">
-            Model: <span style="color: #cbd5e1;">${escapeHtml(m.model || '—')}</span> | 
-            Location: <span style="color: #cbd5e1;">${escapeHtml(m.floor || '')} - ${escapeHtml(m.line || '')}</span>
+          <div style="font-size: 11px; color: #94a3b8;">
+            Model: <span style="color: #cbd5e1;">${escapeHtml(m.model || m.brand || '—')}</span> | 
+            Location: <span style="color: #cbd5e1;">${escapeHtml(m.floor || '')}${m.line ? ' / ' + escapeHtml(m.line) : ''}</span>
           </div>
         </div>
-        <div style="text-align: right; font-size: 10.5px;">
-          <div style="color: #a78bfa;">Prev: ${m.lastServiceDate ? formatDMY(m.lastServiceDate) : 'Never'}</div>
-          <button type="button" class="btn btn-primary btn-xs" style="padding: 1px 6px; font-size: 10px; margin-top: 2px;">Select</button>
+        <div style="text-align: right; font-size: 11px; display: flex; flex-direction: column; align-items: flex-end; gap: 3px;">
+          <div style="color: #a78bfa; font-size: 10.5px;">Prev: <b>${m.lastServiceDate ? formatDMY(m.lastServiceDate) : 'Never'}</b></div>
+          <button type="button" class="btn btn-primary btn-xs" style="padding: 2px 8px; font-size: 10.5px; font-weight: 700;">Select</button>
         </div>
       </div>
     `).join('');
@@ -1136,13 +1192,47 @@ export function initPreventiveMaintenanceReportEvents(container = document) {
    */
   function autoFillMachineInRow(rowIdx, queryStr) {
     if (isNaN(rowIdx) || !reportState.rows[rowIdx]) return;
-    const profile = preventiveMaintenanceService.getMachinePreventiveProfile ? 
-      preventiveMaintenanceService.getMachinePreventiveProfile(queryStr) : null;
+    
+    let profile = null;
+    try {
+      if (preventiveMaintenanceService && typeof preventiveMaintenanceService.getMachinePreventiveProfile === 'function') {
+        profile = preventiveMaintenanceService.getMachinePreventiveProfile(queryStr);
+      }
+    } catch (errProfile) {
+      console.warn('[PM Report] getMachinePreventiveProfile error:', errProfile);
+    }
+
+    if (!profile) {
+      try {
+        const allM = storage.getTable(TABLE_NAMES.MACHINES) || [];
+        const clean = String(queryStr).trim().toUpperCase();
+        const rawM = allM.find(m => m.id === queryStr || (m.serialNumber && String(m.serialNumber).trim().toUpperCase() === clean));
+        if (rawM) {
+          profile = {
+            machineId: rawM.id,
+            serialNumber: rawM.serialNumber,
+            machineName: rawM.machineName || rawM.name || '',
+            model: rawM.model || rawM.brand || '',
+            line: rawM.line || '',
+            lastServiceDate: rawM.lastServiceDate || rawM.customValues?.service_date || ''
+          };
+        }
+      } catch (errDirect) {
+        console.warn('[PM Report] direct machine lookup error:', errDirect);
+      }
+    }
 
     if (profile) {
-      const nextSticker = profile.serviceStickerSerial && profile.serviceStickerSerial !== 'STK-PENDING' 
-        ? profile.serviceStickerSerial 
-        : (preventiveMaintenanceService.getNextServiceStickerSerial ? preventiveMaintenanceService.getNextServiceStickerSerial() : '245232');
+      let nextSticker = '';
+      try {
+        nextSticker = profile.serviceStickerSerial && profile.serviceStickerSerial !== 'STK-PENDING' 
+          ? profile.serviceStickerSerial 
+          : (preventiveMaintenanceService && typeof preventiveMaintenanceService.getNextServiceStickerSerial === 'function' 
+              ? preventiveMaintenanceService.getNextServiceStickerSerial() 
+              : '245232');
+      } catch (_) {
+        nextSticker = '245232';
+      }
 
       reportState.rows[rowIdx].machineId = profile.machineId || '';
       reportState.rows[rowIdx].machineNumber = profile.serialNumber || queryStr;
@@ -1159,6 +1249,7 @@ export function initPreventiveMaintenanceReportEvents(container = document) {
     } else {
       // Manual entry accepted per requirement
       reportState.rows[rowIdx].machineNumber = queryStr;
+      rerenderReport();
     }
   }
 
@@ -1166,15 +1257,24 @@ export function initPreventiveMaintenanceReportEvents(container = document) {
    * Loads machines matching current active filter (Unit, Floor, Line)
    */
   function loadMachinesByFilter() {
-    const filters = {};
-    if (reportState.floorId && reportState.floorId !== 'ALL') filters.floorId = reportState.floorId;
-    if (reportState.lineId && reportState.lineId !== 'ALL') filters.lineId = reportState.lineId;
+    let list = [];
+    try {
+      const allMachines = storage.getTable(TABLE_NAMES.MACHINES) || [];
+      let filtered = allMachines;
 
-    const list = preventiveMaintenanceService.getAllMachinesWithMaintenance ? 
-      preventiveMaintenanceService.getAllMachinesWithMaintenance(filters) : [];
+      if (reportState.floorId && reportState.floorId !== 'ALL') {
+        filtered = filtered.filter(m => m.floorId === reportState.floorId || (m.floor && String(m.floor).toLowerCase() === String(reportState.floorName).toLowerCase()));
+      }
+      if (reportState.lineId && reportState.lineId !== 'ALL') {
+        filtered = filtered.filter(m => m.lineId === reportState.lineId || (m.line && String(m.line).toLowerCase() === String(reportState.lineName).toLowerCase()));
+      }
+      list = filtered;
+    } catch (errFilter) {
+      console.warn('[PM Report] loadMachinesByFilter error:', errFilter);
+    }
 
-    if (list.length === 0) {
-      alert('No machines found in the selected filter.');
+    if (!list || list.length === 0) {
+      alert('No machines found in the selected Unit / Floor / Line filter.');
       return;
     }
 
@@ -1186,11 +1286,11 @@ export function initPreventiveMaintenanceReportEvents(container = document) {
       return {
         id: `row-${Date.now()}-${i + 1}`,
         slNo: String(i + 1).padStart(2, '0'),
-        machineId: m.machineId || '',
-        machineName: m.machineName || '',
+        machineId: m.id || '',
+        machineName: m.machineName || m.name || '',
         machineNumber: m.serialNumber || '',
         machineModel: m.model || m.brand || '',
-        previousServicingDate: m.lastServiceDate || '',
+        previousServicingDate: m.lastServiceDate || m.customValues?.service_date || '',
         stickerSerial: nextStk,
         lineOrSection: m.line || '',
         workSummary: 'Routine maintenance servicing, oiling & inspection',
@@ -1202,22 +1302,29 @@ export function initPreventiveMaintenanceReportEvents(container = document) {
 
     reportState.rows = loadedRows;
     rerenderReport();
-    notificationService.showToast ? notificationService.showToast(`Loaded ${loadedRows.length} machines into maintenance report`, 'success') : null;
+    if (notificationService && typeof notificationService.success === 'function') {
+      notificationService.success(`Loaded ${loadedRows.length} machines into maintenance report`, 'Auto-Loaded');
+    }
   }
 
   /**
    * Loads machines that are Due Today or Overdue
    */
   function loadDueOrOverdueMachines() {
-    const list = preventiveMaintenanceService.getUpcomingMaintenance ? 
-      preventiveMaintenanceService.getUpcomingMaintenance({
-        floorId: reportState.floorId,
-        lineId: reportState.lineId
-      }) : [];
+    let dueList = [];
+    try {
+      if (preventiveMaintenanceService && typeof preventiveMaintenanceService.getUpcomingMaintenance === 'function') {
+        const list = preventiveMaintenanceService.getUpcomingMaintenance({
+          floorId: reportState.floorId,
+          lineId: reportState.lineId
+        }) || [];
+        dueList = list.filter(m => m.urgency?.status === 'OVERDUE' || m.urgency?.status === 'DUE_TODAY' || m.urgency?.status === 'DUE_SOON');
+      }
+    } catch (errDue) {
+      console.warn('[PM Report] loadDueOrOverdueMachines error:', errDue);
+    }
 
-    const dueList = list.filter(m => m.urgency?.status === 'OVERDUE' || m.urgency?.status === 'DUE_TODAY' || m.urgency?.status === 'DUE_SOON');
-
-    if (dueList.length === 0) {
+    if (!dueList || dueList.length === 0) {
       alert('No overdue or upcoming maintenance machines found in the current scope.');
       return;
     }
@@ -1232,12 +1339,15 @@ export function initPreventiveMaintenanceReportEvents(container = document) {
       previousServicingDate: m.lastServiceDate || '',
       stickerSerial: m.serviceStickerSerial && m.serviceStickerSerial !== 'STK-PENDING' ? m.serviceStickerSerial : String(245240 + i + 1),
       lineOrSection: m.line || '',
-      workSummary: `Urgent preventive servicing (${m.urgency?.displayBadge ? m.urgency.status : 'Due'})`,
+      workSummary: `Urgent preventive servicing (${m.urgency?.label || m.urgency?.status || 'Due'})`,
       servicerName: m.assignedManpower || m.lastServicedBy || reportState.defaultServicer || '',
       signature: ''
     }));
 
     rerenderReport();
+    if (notificationService && typeof notificationService.success === 'function') {
+      notificationService.success(`Loaded ${reportState.rows.length} due/overdue machines`, 'Due Machines');
+    }
   }
 
   /**

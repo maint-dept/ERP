@@ -140,7 +140,7 @@ export function renderSidebar() {
     { id: 'sub-mach-transfers', targetView: 'transfers', label: 'Machine Transfers', icon: '🔄', moduleKey: 'transfers' },
     { id: 'sub-mach-relocate', targetView: 'relocate', label: 'Relocate & Verify', icon: '📍', moduleKey: 'relocate' },
     { id: 'sub-mach-qr-codes', targetView: 'qr-codes', label: 'QR Codes & Labels', icon: '🏷️', moduleKey: 'qr_codes' },
-    { id: 'sub-mach-preventive', targetView: 'preventive-maintenance', label: 'Preventive Maintenance', icon: '🛡️', moduleKey: 'preventive_maintenance' },
+    { id: 'sub-mach-preventive', targetView: 'preventive-maintenance', pmTab: 'dashboard', label: 'Preventive Maintenance', icon: '🛡️', moduleKey: 'preventive_maintenance' },
     { id: 'sub-mach-pm-report', targetView: 'preventive-maintenance', pmTab: 'maintenance-report', label: 'PM Report & Print', icon: '📑', moduleKey: 'preventive_maintenance' },
     { id: 'sub-mach-needle-ops', targetView: 'needle-operations', label: 'Needle Flow', icon: '🪡', moduleKey: 'machines' },
     { id: 'sub-mach-parts-trace', targetView: 'parts-trace', label: 'Parts Trace', icon: '🔩', moduleKey: 'parts_trace' },

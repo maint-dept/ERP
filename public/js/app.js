@@ -8,7 +8,7 @@ import { state } from './state.js';
 import { storage } from './db/storage.js';
 import { authService } from './services/authService.js';
 import { renderNavbar, initNavbarEvents } from './components/navbar.js';
-import { renderSidebar, initSidebarEvents, updateSidebarActiveState } from './components/sidebar.js?v=4.26.23';
+import { renderSidebar, initSidebarEvents, updateSidebarActiveState } from './components/sidebar.js?v=4.26.32';
 import { renderHomepageView, initHomepageEvents } from './components/homepageView.js?v=4.26.23';
 import { renderLoginView, initLoginViewEvents } from './components/loginView.js?v=4.26.23';
 import { renderDashboard, initDashboardEvents } from './components/dashboard.js?v=4.26.27';
@@ -27,7 +27,7 @@ import { renderUserManagement, initUserManagementEvents } from './components/use
 import { renderHomepageManagerView, initHomepageManagerEvents } from './components/homepageManagerView.js';
 import { renderEmailConfigView, initEmailConfigEvents } from './components/emailConfigView.js';
 import { renderExcelImportModal, initExcelImportEvents } from './components/excelImportModal.js';
-import { renderReportsView, initReportsEvents } from './components/reportsView.js';
+import { renderReportsView, initReportsEvents } from './components/reportsView.js?v=4.26.32';
 import { renderAuditLogsView, initAuditLogsEvents } from './components/auditLogsView.js';
 import { renderNotificationsDrawer, initNotificationsDrawerEvents } from './components/notificationsDrawer.js';
 import { renderSettingsView, initSettingsEvents } from './components/settingsView.js';
@@ -42,7 +42,7 @@ import { renderEtLabManagementView, initEtLabEvents, setEntActiveTab } from './c
 import { renderChangePasswordModal, initChangePasswordModalEvents } from './components/changePasswordModal.js';
 import { renderAccountSwitcherModal, initAccountSwitcherModalEvents } from './components/accountSwitcherModal.js';
 import { renderStorageView, initStorageEvents } from './components/storageView.js';
-import { renderPreventiveMaintenanceView, initPreventiveMaintenanceEvents } from './components/preventiveMaintenanceView.js?v=4.26.31';
+import { renderPreventiveMaintenanceView, initPreventiveMaintenanceEvents } from './components/preventiveMaintenanceView.js?v=4.26.32';
 import { smartStorageService } from './services/smartStorageService.js';
 import { renderRelocateView, initRelocateViewEvents } from './components/relocateView.js?v=4.26.18';
 import { renderNeedleOperationsView, initNeedleOperationsEvents } from './components/needleOperationsView.js';

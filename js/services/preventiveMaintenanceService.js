@@ -544,24 +544,25 @@ class PreventiveMaintenanceService {
     const queryNorm = query.replace(/[\s\-_/]+/g, '');
 
     const ensureSpecializedChecklist = (cfg) => {
-      if (cfg && (!cfg.checklist || cfg.checklist.length === 0 || (this.isGenericLegacyChecklist(cfg.checklist) && !cfg.machineType.toLowerCase().includes('plane') && !cfg.machineType.toLowerCase().includes('lock stitch')))) {
+      const mType = (cfg?.machineType || '').toLowerCase();
+      if (cfg && (!cfg.checklist || cfg.checklist.length === 0 || (this.isGenericLegacyChecklist(cfg.checklist) && !mType.includes('plane') && !mType.includes('lock stitch')))) {
         cfg.checklist = this.getDefaultChecklistForMachineType(cfg.machineType || machineTypeOrName);
       }
       return cfg;
     };
 
     // 1. Exact or canonical match on machineType
-    let match = configs.find(c => c.machineType && c.machineType.toLowerCase() === query);
+    let match = configs.find(c => c && c.machineType && c.machineType.toLowerCase() === query);
     if (match) return ensureSpecializedChecklist(match);
 
     const canonicalTarget = this.getCanonicalMachineType(machineTypeOrName).toLowerCase();
-    match = configs.find(c => c.machineType && c.machineType.toLowerCase() === canonicalTarget);
+    match = configs.find(c => c && c.machineType && c.machineType.toLowerCase() === canonicalTarget);
     if (match) return ensureSpecializedChecklist(match);
 
     // 2. Alias match
     match = configs.find(c => {
-      if (Array.isArray(c.aliases)) {
-        return c.aliases.some(a => a.toLowerCase() === query || a.toLowerCase().replace(/[\s\-_/]+/g, '') === queryNorm);
+      if (c && Array.isArray(c.aliases)) {
+        return c.aliases.some(a => a && (a.toLowerCase() === query || a.toLowerCase().replace(/[\s\-_/]+/g, '') === queryNorm));
       }
       return false;
     });
@@ -569,13 +570,18 @@ class PreventiveMaintenanceService {
 
     // 3. Keyword/substring match
     match = configs.find(c => {
-      const t = (c.machineType || '').toLowerCase().replace(/[\s\-_/]+/g, '');
+      if (!c || !c.machineType) return false;
+      const t = c.machineType.toLowerCase().replace(/[\s\-_/]+/g, '');
       return queryNorm.includes(t) || t.includes(queryNorm);
     });
     if (match) return ensureSpecializedChecklist(match);
 
     // Fallback: Return Plane / Lock Stitch config with tailored checklist
-    const fallback = configs.find(c => c.machineType.includes('Lock Stitch') || c.machineType.includes('Plane')) || configs[0];
+    const fallback = configs.find(c => c && c.machineType && (c.machineType.includes('Lock Stitch') || c.machineType.includes('Plane'))) || configs[0] || {
+      machineType: 'Plane / Lock Stitch Machine',
+      frequencyDays: 91,
+      checklist: []
+    };
     if (fallback) {
       return {
         ...fallback,

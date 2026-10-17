@@ -2997,6 +2997,7 @@ export function initPreventiveMaintenanceEvents() {
       const tab = btn.getAttribute('data-pm-tab');
       if (tab && tab !== activeTab) {
         activeTab = tab;
+        state.set('pmActiveTab', tab);
         pmCurrentPage = 1;
         rerenderView();
       }
@@ -3031,6 +3032,7 @@ export function initPreventiveMaintenanceEvents() {
   // Top action: Config Tab
   document.getElementById('btn-pm-tab-config')?.addEventListener('click', () => {
     activeTab = 'admin-config';
+    state.set('pmActiveTab', 'admin-config');
     pmCurrentPage = 1;
     rerenderView();
   });
@@ -3038,6 +3040,7 @@ export function initPreventiveMaintenanceEvents() {
   // Top action: Official PM Report & Print
   document.getElementById('btn-pm-top-report')?.addEventListener('click', () => {
     activeTab = 'maintenance-report';
+    state.set('pmActiveTab', 'maintenance-report');
     pmCurrentPage = 1;
     rerenderView();
   });

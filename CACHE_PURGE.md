@@ -1,2 +1,3 @@
-# CDN cache purge trigger v4.22.7
-Force re-deploy: 2026-10-13T08:44:00Z
+# CDN cache purge trigger v4.26.32
+Force re-deploy: 2026-10-17T21:15:00Z
+PM Official Report machine picker, tab switching, and config robustness fix
