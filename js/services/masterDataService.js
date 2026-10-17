@@ -381,6 +381,7 @@ class MasterDataService {
 
   /**
    * Level 7: Models (Filtered by Machine Name and Brand)
+   * Resolves canonical machine name duplicates and includes general brand models.
    */
   getModels(brandId = null, machineNameId = null, includeInactive = false) {
     let list = storage.getTable(TABLE_NAMES.MODELS) || [];
@@ -394,7 +395,27 @@ class MasterDataService {
       list = list.filter(m => m.brandId === brandId);
     }
     if (machineNameId) {
-      list = list.filter(m => m.machineNameId === machineNameId);
+      const allMnIds = new Set([machineNameId]);
+      const targetMn = storage.getItem(TABLE_NAMES.MACHINE_NAMES, machineNameId) || 
+                       (typeof INITIAL_DATA !== 'undefined' && (INITIAL_DATA.machine_names || []).find(x => x.id === machineNameId));
+      if (targetMn && targetMn.name) {
+        const norm = targetMn.name.trim().toLowerCase();
+        const allMns = storage.getTable(TABLE_NAMES.MACHINE_NAMES) || (INITIAL_DATA.machine_names || []);
+        allMns.forEach(mn => {
+          if (mn && mn.name && mn.name.trim().toLowerCase() === norm) {
+            allMnIds.add(mn.id);
+          }
+        });
+      }
+      const filteredWithMn = list.filter(m => {
+        if (!m.machineNameId) return true; // brand-level models without specific machine name restriction
+        if (allMnIds.has(m.machineNameId)) return true;
+        if (m.machineName && targetMn && m.machineName.trim().toLowerCase() === targetMn.name.trim().toLowerCase()) return true;
+        return false;
+      });
+      if (filteredWithMn.length > 0) {
+        list = filteredWithMn;
+      }
     }
     return list;
   }

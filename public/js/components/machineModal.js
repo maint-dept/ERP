@@ -96,11 +96,57 @@ export function renderMachineModal() {
   const brands = masterDataService.getBrandsForMachineName(currentMachineNameId);
 
   const currentBrandId = machine?.brandId || '';
-  // Load models: first try brand+machineName, fallback to machineName only
+  // Load models: first try brand+machineName, fallback to machineName only, fallback to brand only
   let models = currentBrandId ? masterDataService.getModels(currentBrandId, currentMachineNameId) : [];
   if (!models.length && currentMachineNameId) {
     models = masterDataService.getModels(null, currentMachineNameId);
   }
+  if (!models.length && currentBrandId) {
+    models = masterDataService.getModels(currentBrandId, null);
+  }
+
+  // Resolve machine's existing model (by modelId or by model name string)
+  let activeModelId = machine?.modelId || '';
+  const activeModelName = String(machine?.model || machine?.modelName || machine?.modelStr || machine?.customValues?.model || '').trim();
+
+  const allModelsTable = storage.getTable(TABLE_NAMES.MODELS) || [];
+  let existingModelObj = activeModelId ? (storage.getItem(TABLE_NAMES.MODELS, activeModelId) || masterDataService.getModelById(activeModelId)) : null;
+  if (!existingModelObj && activeModelName) {
+    existingModelObj = allModelsTable.find(m => (m.name || '').trim().toLowerCase() === activeModelName.toLowerCase() && (!currentBrandId || m.brandId === currentBrandId));
+    if (!existingModelObj) {
+      existingModelObj = allModelsTable.find(m => (m.name || '').trim().toLowerCase() === activeModelName.toLowerCase());
+    }
+  }
+  if (existingModelObj) {
+    activeModelId = existingModelObj.id;
+  }
+
+  // Deduplicate and ensure existing model is included in models list
+  const seenModelNames = new Set();
+  const uniqueModels = [];
+
+  if (existingModelObj) {
+    seenModelNames.add((existingModelObj.name || '').trim().toLowerCase());
+    uniqueModels.push(existingModelObj);
+  } else if (activeModelName) {
+    seenModelNames.add(activeModelName.toLowerCase());
+    uniqueModels.push({
+      id: activeModelId || activeModelName,
+      name: activeModelName,
+      brandId: currentBrandId
+    });
+    if (!activeModelId) activeModelId = activeModelName;
+  }
+
+  models.forEach(m => {
+    if (!m || !m.name) return;
+    const norm = m.name.trim().toLowerCase();
+    if (!seenModelNames.has(norm)) {
+      seenModelNames.add(norm);
+      uniqueModels.push(m);
+    }
+  });
+  models = uniqueModels;
 
   const currentGroupId = (machine?.groupId && groups.some(g => g.id === machine.groupId)) ? machine.groupId : (groups[0]?.id || 'grp-1');
   const units = masterDataService.getUnits(currentGroupId);
@@ -198,7 +244,11 @@ export function renderMachineModal() {
                 <label class="form-label">Model <span style="font-size: 11px; color: var(--text-muted); font-weight: normal;">(Optional)</span></label>
                 <select id="modal-field-model" class="form-control" ${isViewOnly ? 'disabled style="opacity: 0.75; cursor: not-allowed;"' : ''}>
                   <option value="">-- No Model (Blank) --</option>
-                  ${models.map(m => `<option value="${m.id}" ${machine?.modelId === m.id ? 'selected' : ''}>${escapeHtml(m.name)}</option>`).join('')}
+                  ${models.map(m => {
+                    const isSelected = (activeModelId && m.id === activeModelId) || 
+                                       (activeModelName && m.name && m.name.trim().toLowerCase() === activeModelName.toLowerCase());
+                    return `<option value="${m.id}" ${isSelected ? 'selected' : ''}>${escapeHtml(m.name)}</option>`;
+                  }).join('')}
                 </select>
               </div>
               <div class="form-group">
@@ -572,13 +622,22 @@ export function initMachineModalEvents() {
   const brandSelect = document.getElementById('modal-field-brand');
   const modelSelect = document.getElementById('modal-field-model');
 
+  // Resolve active machine's model for event preservation
+  const activeMachine = state.get('activeMachineId') ? storage.getItem(TABLE_NAMES.MACHINES, state.get('activeMachineId')) : null;
+  let activeMachineModelId = activeMachine?.modelId || '';
+  const activeMachineModelName = String(activeMachine?.model || activeMachine?.modelName || activeMachine?.modelStr || activeMachine?.customValues?.model || '').trim();
+  if (!activeMachineModelId && activeMachineModelName) {
+    const matched = (storage.getTable(TABLE_NAMES.MODELS) || []).find(m => (m.name || '').trim().toLowerCase() === activeMachineModelName.toLowerCase());
+    if (matched) activeMachineModelId = matched.id;
+  }
+
   // Reload models based on current brand & machine name
-  // If brand+machineName gives no results, fallback to machineName only
-  const reloadModels = (preserveSelected = false) => {
+  // If brand+machineName gives no results, fallback to machineName only, fallback to brand only
+  const reloadModels = (preserveSelected = false, defaultModelId = null) => {
     if (!modelSelect) return;
     const bId = brandSelect ? brandSelect.value : '';
     const mnId = mnSelect ? mnSelect.value : '';
-    const curModelId = preserveSelected ? modelSelect.value : '';
+    let curModelId = preserveSelected ? (modelSelect.value || defaultModelId || activeMachineModelId || '') : (defaultModelId || '');
     let models = [];
     if (bId && mnId) {
       models = masterDataService.getModels(bId, mnId);
@@ -589,9 +648,39 @@ export function initMachineModalEvents() {
     if (!models.length && bId) {
       models = masterDataService.getModels(bId, null);
     }
-    const options = ['<option value="">-- No Model (Blank) --</option>'];
+
+    const seenModelNames = new Set();
+    const uniqueModels = [];
+
+    // Ensure target model is present
+    const targetModelObj = curModelId 
+      ? (storage.getItem(TABLE_NAMES.MODELS, curModelId) || masterDataService.getModelById(curModelId))
+      : (activeMachineModelName ? (storage.getTable(TABLE_NAMES.MODELS) || []).find(m => (m.name || '').trim().toLowerCase() === activeMachineModelName.toLowerCase()) : null);
+
+    if (targetModelObj) {
+      seenModelNames.add((targetModelObj.name || '').trim().toLowerCase());
+      uniqueModels.push(targetModelObj);
+      if (!curModelId) curModelId = targetModelObj.id;
+    } else if (curModelId || (preserveSelected && activeMachineModelName)) {
+      const name = activeMachineModelName || curModelId;
+      seenModelNames.add(name.toLowerCase());
+      uniqueModels.push({ id: curModelId || name, name: name, brandId: bId });
+    }
+
     models.forEach(m => {
-      options.push(`<option value="${m.id}" ${m.id === curModelId ? 'selected' : ''}>${m.name}</option>`);
+      if (!m || !m.name) return;
+      const norm = m.name.trim().toLowerCase();
+      if (!seenModelNames.has(norm)) {
+        seenModelNames.add(norm);
+        uniqueModels.push(m);
+      }
+    });
+
+    const options = ['<option value="">-- No Model (Blank) --</option>'];
+    uniqueModels.forEach(m => {
+      const isSel = (curModelId && m.id === curModelId) || 
+                    (activeMachineModelName && m.name && m.name.trim().toLowerCase() === activeMachineModelName.toLowerCase());
+      options.push(`<option value="${m.id}" ${isSel ? 'selected' : ''}>${escapeHtml(m.name)}</option>`);
     });
     modelSelect.innerHTML = options.join('');
   };
@@ -604,7 +693,7 @@ export function initMachineModalEvents() {
     const curBrandId = preserveSelected ? brandSelect.value : '';
     const options = ['<option value="">-- No Brand (Blank) --</option>'];
     brands.forEach(b => {
-      options.push(`<option value="${b.id}" ${b.id === curBrandId ? 'selected' : ''}>${b.name}</option>`);
+      options.push(`<option value="${b.id}" ${b.id === curBrandId ? 'selected' : ''}>${escapeHtml(b.name)}</option>`);
     });
     brandSelect.innerHTML = options.join('');
     reloadModels(preserveSelected);
@@ -614,7 +703,7 @@ export function initMachineModalEvents() {
   if (brandSelect) brandSelect.addEventListener('change', () => reloadModels(false));
 
   // On form open: ensure models are populated while preserving selected model
-  reloadModels(true);
+  reloadModels(true, activeMachineModelId);
 
   // Quick Add Model in Modal with Smart Auto-Correction
   const btnQuickModel = document.getElementById('btn-quick-add-model');
@@ -1009,11 +1098,27 @@ export function initMachineModalEvents() {
       if (snInp) snInp.classList.remove('input-error');
       // ─────────────────────────────────────────────────────────────────────────
 
+      // Resolve model string name from modelId if available
+      let modelStrVal = existingMachine?.model || '';
+      if (modelId) {
+        const selectedModelObj = storage.getItem(TABLE_NAMES.MODELS, modelId) || masterDataService.getModelById(modelId);
+        if (selectedModelObj?.name) {
+          modelStrVal = selectedModelObj.name;
+        } else {
+          modelStrVal = modelId;
+        }
+      } else if (modelId === '') {
+        modelStrVal = '';
+      }
+
       const machineData = {
         serialNumber,
         machineNameId,
         brandId,
         modelId,
+        model: modelStrVal,
+        modelName: modelStrVal,
+        modelStr: modelStrVal,
         manufacturing_serial: mfgSerial,
         manufacturingSerial: mfgSerial,
         mfgSerial: mfgSerial,
