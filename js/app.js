@@ -13,7 +13,7 @@ import { renderHomepageView, initHomepageEvents } from './components/homepageVie
 import { renderLoginView, initLoginViewEvents } from './components/loginView.js?v=4.26.23';
 import { renderDashboard, initDashboardEvents } from './components/dashboard.js?v=4.26.27';
 import { renderInventoryTable, initInventoryTableEvents, syncInventorySelectionDOM } from './components/inventoryTable.js?v=4.26.25';
-import { renderMachineModal, initMachineModalEvents } from './components/machineModal.js?v=4.26.28';
+import { renderMachineModal, initMachineModalEvents } from './components/machineModal.js?v=4.26.29';
 import { renderMachineDetails, initMachineDetailsEvents } from './components/machineDetails.js';
 import { renderTransferModal, initTransferModalEvents } from './components/transferModal.js?v=4.26.24';
 import { renderTransferDetailsModal, initTransferDetailsModalEvents } from './components/transferDetailsModal.js';

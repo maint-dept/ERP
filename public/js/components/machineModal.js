@@ -13,6 +13,7 @@ import { authService } from '../services/authService.js';
 import { notificationService } from '../services/notificationService.js';
 import { smartStorageService } from '../services/smartStorageService.js?v=4.22.19';
 import { excelService, formatDisplayLine } from '../services/excelService.js';
+import { preventiveMaintenanceService } from '../services/preventiveMaintenanceService.js';
 import { CloudSaveError } from '../db/storage.js';
 import { qrCodeService } from '../services/qrCodeService.js';
 import { renderQrScannerModal, initQrScannerModalEvents } from './qrScannerModal.js?v=4.7.4';
@@ -28,37 +29,76 @@ function escapeHtml(str) {
     .replace(/'/g, '&#39;');
 }
 
-function formatForDateInput(rawVal) {
-  if (!rawVal) return '';
+function parseDateParts(rawVal) {
+  if (!rawVal) return null;
   const s = String(rawVal).trim();
-  if (!s || s === '—' || s === 'N/A' || s === 'None' || s === '-') return '';
-  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
-  try {
-    // 1. Matches YYYY-MM-DD or YYYY/MM/DD
-    let m = s.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})(?:T.*)?$/);
-    if (m) {
-      return `${m[1]}-${String(m[2]).padStart(2, '0')}-${String(m[3]).padStart(2, '0')}`;
+  if (!s || s === '—' || s === 'N/A' || s === 'None' || s === 'Never' || s === '-') return null;
+
+  // 1. Matches YYYY-MM-DD or YYYY/MM/DD
+  let m = s.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})(?:T.*)?$/);
+  if (m) {
+    return {
+      year: parseInt(m[1], 10),
+      month: parseInt(m[2], 10),
+      day: parseInt(m[3], 10)
+    };
+  }
+
+  // 2. Matches DD-MM-YYYY or DD/MM/YYYY or DD.MM.YYYY
+  m = s.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})$/);
+  if (m) {
+    const p1 = parseInt(m[1], 10);
+    const p2 = parseInt(m[2], 10);
+    const yr = parseInt(m[3], 10);
+    if (p2 > 12 && p1 <= 12) {
+      return {
+        year: yr,
+        month: p1,
+        day: p2
+      };
     }
-    // 2. Matches DD-MM-YYYY or DD/MM/YYYY or DD.MM.YYYY
-    m = s.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})$/);
-    if (m) {
-      const p1 = parseInt(m[1], 10);
-      const p2 = parseInt(m[2], 10);
-      const yr = m[3];
-      if (p2 > 12 && p1 <= 12) {
-        return `${yr}-${String(p1).padStart(2, '0')}-${String(p2).padStart(2, '0')}`;
-      }
-      return `${yr}-${String(p2).padStart(2, '0')}-${String(p1).padStart(2, '0')}`;
-    }
-    const dt = new Date(s);
-    if (!isNaN(dt.getTime())) {
-      const yyyy = dt.getFullYear();
-      const mm = String(dt.getMonth() + 1).padStart(2, '0');
-      const dd = String(dt.getDate()).padStart(2, '0');
-      return `${yyyy}-${mm}-${dd}`;
-    }
-  } catch (_) {}
-  return '';
+    return {
+      year: yr,
+      month: p2,
+      day: p1
+    };
+  }
+
+  // Fallback: Date object
+  const dt = new Date(s);
+  if (!isNaN(dt.getTime())) {
+    return {
+      year: dt.getFullYear(),
+      month: dt.getMonth() + 1,
+      day: dt.getDate()
+    };
+  }
+  return null;
+}
+
+function formatDateDMY(rawVal, separator = '/') {
+  const p = parseDateParts(rawVal);
+  if (!p) return '';
+  const dd = String(p.day).padStart(2, '0');
+  const mm = String(p.month).padStart(2, '0');
+  return `${dd}${separator}${mm}${separator}${p.year}`;
+}
+
+function formatForDateInput(rawVal) {
+  const p = parseDateParts(rawVal);
+  if (!p) return '';
+  const mm = String(p.month).padStart(2, '0');
+  const dd = String(p.day).padStart(2, '0');
+  return `${p.year}-${mm}-${dd}`;
+}
+
+function formatReadableDate(rawVal) {
+  const p = parseDateParts(rawVal);
+  if (!p) return '';
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const dd = String(p.day).padStart(2, '0');
+  const mon = months[p.month - 1] || '';
+  return `${dd} ${mon} ${p.year}`;
 }
 
 export function renderMachineModal() {
@@ -170,8 +210,28 @@ export function renderMachineModal() {
                       .sort((a, b) => (b.serviceDate || '').localeCompare(a.serviceDate || ''))[0];
     if (pm?.serviceDate) rawServiceDate = pm.serviceDate;
   }
+
+  // Resolve PM Admin Config based on current machine type
+  const machineTypeName = initialMachineName?.name || machine?.machineName || machine?.machineTypeName || '';
+  const pmConfig = preventiveMaintenanceService.getConfigByMachineType(machineTypeName);
+  const pmFrequencyDays = pmConfig?.frequencyDays || 91;
+  const pmIntervalLabel = pmConfig?.frequencyLabel || `Every ${pmFrequencyDays} Days`;
+  const pmMachineTypeLabel = pmConfig?.machineType || machineTypeName || 'Plane / Lock Stitch Machine';
+
+  // Auto-detect Next Due Service Date if Last Servicing Date exists
+  let rawNextServiceDate = machine?.nextServiceDate || machine?.customValues?.nextServiceDate || '';
+  if (!rawNextServiceDate && rawServiceDate) {
+    rawNextServiceDate = preventiveMaintenanceService.calculateNextServiceDate(rawServiceDate, pmFrequencyDays);
+  }
+
   const lastServiceDateVal = formatForDateInput(rawServiceDate);
-  const nextServiceDateVal = formatForDateInput(machine?.nextServiceDate || machine?.customValues?.nextServiceDate);
+  const lastServiceDateDMY = formatDateDMY(rawServiceDate, '/');
+  const lastServiceDateReadable = formatReadableDate(rawServiceDate);
+
+  const nextServiceDateVal = formatForDateInput(rawNextServiceDate);
+  const nextServiceDateDMY = formatDateDMY(rawNextServiceDate, '/');
+  const nextServiceDateReadable = formatReadableDate(rawNextServiceDate);
+
   const lastServicedBy = machine?.lastServicedBy || machine?.assignedManpower || machine?.customValues?.lastServicedBy || '';
   const serviceStickerSerial = machine?.serviceStickerSerial || machine?.customValues?.serviceStickerSerial || '';
 
@@ -429,25 +489,93 @@ export function renderMachineModal() {
             </div>
 
             <div class="form-grid-2">
+              <!-- Last Servicing Date -->
               <div class="form-group">
-                <label class="form-label" style="color: #f59e0b; font-weight: 700;">Last Servicing Date <span style="font-size: 11px; color: var(--text-muted); font-weight: normal;">(Service Date)</span></label>
-                <input
-                  type="date"
-                  id="modal-field-service-date"
-                  class="form-control"
-                  value="${lastServiceDateVal}"
-                  ${isViewOnly ? 'disabled style="opacity: 0.75; cursor: not-allowed;"' : ''}
-                />
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                  <label class="form-label" style="color: #f59e0b; font-weight: 700; margin-bottom: 0;">
+                    Last Servicing Date <span style="font-size: 11px; color: #fbbf24; font-weight: 600;">(DD/MM/YYYY)</span>
+                  </label>
+                  <span id="service-date-badge" style="font-size: 11px; font-weight: 700; color: #38bdf8; background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.3); padding: 1px 7px; border-radius: 4px; ${lastServiceDateReadable ? '' : 'display: none;'}">
+                    📅 ${escapeHtml(lastServiceDateReadable)}
+                  </span>
+                </div>
+                <div style="position: relative; display: flex; align-items: center;">
+                  <input
+                    type="text"
+                    id="modal-field-service-date-display"
+                    class="form-control"
+                    placeholder="DD/MM/YYYY (e.g. 11/07/2026)"
+                    value="${lastServiceDateDMY}"
+                    style="padding-right: 40px; font-family: monospace; font-size: 13.5px; font-weight: 700; color: #f8fafc;"
+                    ${isViewOnly ? 'disabled style="opacity: 0.75; cursor: not-allowed;"' : ''}
+                  />
+                  <!-- Synchronized native calendar picker overlay -->
+                  <input
+                    type="date"
+                    id="modal-field-service-date-picker"
+                    tabindex="-1"
+                    value="${lastServiceDateVal}"
+                    style="position: absolute; right: 8px; width: 28px; height: 28px; opacity: 0; cursor: pointer; z-index: 2;"
+                    ${isViewOnly ? 'disabled' : ''}
+                    title="Open calendar picker"
+                  />
+                  <span style="position: absolute; right: 10px; font-size: 16px; pointer-events: none; z-index: 1;">📅</span>
+                  <input type="hidden" id="modal-field-service-date" value="${lastServiceDateVal}" />
+                </div>
+                <div style="font-size: 10.5px; color: var(--text-muted); margin-top: 4px; display: flex; justify-content: space-between;">
+                  <span>Format: <strong>DD/MM/YYYY</strong> or click 📅</span>
+                  <span id="service-date-preview" style="color: #38bdf8; font-weight: 600;">${lastServiceDateReadable ? `Selected: ${escapeHtml(lastServiceDateReadable)}` : ''}</span>
+                </div>
               </div>
+
+              <!-- Next Due Service Date -->
               <div class="form-group">
-                <label class="form-label">Next Due Service Date <span style="font-size: 11px; color: var(--text-muted); font-weight: normal;">(Auto / Manual)</span></label>
-                <input
-                  type="date"
-                  id="modal-field-next-service-date"
-                  class="form-control"
-                  value="${nextServiceDateVal}"
-                  ${isViewOnly ? 'disabled style="opacity: 0.75; cursor: not-allowed;"' : ''}
-                />
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                  <label class="form-label" style="color: #38bdf8; font-weight: 700; margin-bottom: 0;">
+                    Next Due Service Date <span style="font-size: 11px; color: #38bdf8; font-weight: 600;">(Auto / Manual)</span>
+                  </label>
+                  <button 
+                    type="button" 
+                    id="btn-recalc-pm-due" 
+                    class="btn btn-ghost btn-xs" 
+                    style="font-size: 10.5px; padding: 1px 7px; color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 4px; display: flex; align-items: center; gap: 3px;"
+                    title="Re-calculate next due date based on Admin Preventive Maintenance schedule"
+                    ${isViewOnly ? 'disabled' : ''}
+                  >
+                    ⚡ Re-Detect
+                  </button>
+                </div>
+                <div style="position: relative; display: flex; align-items: center;">
+                  <input
+                    type="text"
+                    id="modal-field-next-service-date-display"
+                    class="form-control"
+                    placeholder="DD/MM/YYYY (Auto detected)"
+                    value="${nextServiceDateDMY}"
+                    style="padding-right: 40px; font-family: monospace; font-size: 13.5px; font-weight: 700; color: #38bdf8; background: rgba(15, 23, 42, 0.7); border-color: rgba(56, 189, 248, 0.4);"
+                    ${isViewOnly ? 'disabled style="opacity: 0.75; cursor: not-allowed;"' : ''}
+                  />
+                  <!-- Synchronized native calendar picker overlay -->
+                  <input
+                    type="date"
+                    id="modal-field-next-service-date-picker"
+                    tabindex="-1"
+                    value="${nextServiceDateVal}"
+                    style="position: absolute; right: 8px; width: 28px; height: 28px; opacity: 0; cursor: pointer; z-index: 2;"
+                    ${isViewOnly ? 'disabled' : ''}
+                    title="Open calendar picker"
+                  />
+                  <span style="position: absolute; right: 10px; font-size: 16px; pointer-events: none; z-index: 1;">📅</span>
+                  <input type="hidden" id="modal-field-next-service-date" value="${nextServiceDateVal}" />
+                </div>
+                <div style="font-size: 10.5px; color: #38bdf8; margin-top: 4px; display: flex; justify-content: space-between; align-items: center;">
+                  <span id="pm-config-hint" style="font-weight: 600;">
+                    ⚡ Auto: Admin Config (${escapeHtml(pmIntervalLabel)} &bull; ${escapeHtml(pmMachineTypeLabel)})
+                  </span>
+                  <span id="next-date-badge" style="color: #34d399; font-weight: 700;">
+                    ${nextServiceDateReadable ? escapeHtml(nextServiceDateReadable) : ''}
+                  </span>
+                </div>
               </div>
             </div>
 
@@ -974,23 +1102,161 @@ export function initMachineModalEvents() {
     });
   }
 
-  // Dynamic Next Service Date Calculation (+91 days standard cycle)
-  const serviceDateInp = document.getElementById('modal-field-service-date');
-  const nextServiceDateInp = document.getElementById('modal-field-next-service-date');
-  if (serviceDateInp && nextServiceDateInp) {
-    serviceDateInp.addEventListener('change', () => {
-      const val = serviceDateInp.value;
-      if (val && !nextServiceDateInp.value) {
-        try {
-          const d = new Date(val);
-          if (!isNaN(d.getTime())) {
-            d.setDate(d.getDate() + 91);
-            const yyyy = d.getFullYear();
-            const mm = String(d.getMonth() + 1).padStart(2, '0');
-            const dd = String(d.getDate()).padStart(2, '0');
-            nextServiceDateInp.value = `${yyyy}-${mm}-${dd}`;
-          }
-        } catch (_) {}
+  // ── Preventive Maintenance & Service Date Auto-Detection (Admin Config) ─────
+  const serviceDateDisp = document.getElementById('modal-field-service-date-display');
+  const serviceDatePicker = document.getElementById('modal-field-service-date-picker');
+  const serviceDateHidden = document.getElementById('modal-field-service-date');
+  const serviceDateBadge = document.getElementById('service-date-badge');
+  const serviceDatePreview = document.getElementById('service-date-preview');
+
+  const nextDateDisp = document.getElementById('modal-field-next-service-date-display');
+  const nextDatePicker = document.getElementById('modal-field-next-service-date-picker');
+  const nextDateHidden = document.getElementById('modal-field-next-service-date');
+  const nextDateBadge = document.getElementById('next-date-badge');
+  const pmConfigHint = document.getElementById('pm-config-hint');
+  const btnRecalcPm = document.getElementById('btn-recalc-pm-due');
+
+  const getActivePmConfig = () => {
+    let mTypeName = '';
+    if (mnSelect && mnSelect.selectedIndex >= 0) {
+      mTypeName = mnSelect.options[mnSelect.selectedIndex]?.text?.trim() || '';
+    }
+    if (!mTypeName && machine) {
+      const mnObj = storage.getItem(TABLE_NAMES.MACHINE_NAMES, machine.machineNameId);
+      mTypeName = mnObj?.name || machine.machineName || '';
+    }
+    const cfg = preventiveMaintenanceService.getConfigByMachineType(mTypeName);
+    const frequencyDays = cfg?.frequencyDays || 91;
+    const intervalLabel = cfg?.frequencyLabel || `Every ${frequencyDays} Days`;
+    const canonicalType = cfg?.machineType || mTypeName || 'Sewing Machine';
+    return { cfg, frequencyDays, intervalLabel, canonicalType };
+  };
+
+  const autoDetectNextService = (force = false) => {
+    const rawSvc = serviceDateDisp?.value || serviceDateHidden?.value || '';
+    const { frequencyDays, intervalLabel, canonicalType } = getActivePmConfig();
+
+    if (pmConfigHint) {
+      pmConfigHint.innerHTML = `⚡ Auto: Admin Config (${escapeHtml(intervalLabel)} &bull; ${escapeHtml(canonicalType)})`;
+    }
+
+    if (!rawSvc.trim()) {
+      if (force) {
+        if (nextDateDisp) nextDateDisp.value = '';
+        if (nextDatePicker) nextDatePicker.value = '';
+        if (nextDateHidden) nextDateHidden.value = '';
+        if (nextDateBadge) nextDateBadge.textContent = '';
+      }
+      return;
+    }
+
+    const nextIso = preventiveMaintenanceService.calculateNextServiceDate(rawSvc, frequencyDays);
+    if (nextIso) {
+      const nextDMY = formatDateDMY(nextIso, '/');
+      const nextReadable = formatReadableDate(nextIso);
+
+      if (nextDateDisp) nextDateDisp.value = nextDMY;
+      if (nextDatePicker) nextDatePicker.value = nextIso;
+      if (nextDateHidden) nextDateHidden.value = nextIso;
+      if (nextDateBadge) nextDateBadge.textContent = nextReadable;
+    }
+  };
+
+  const syncServiceDateFromRaw = (rawVal, triggerAuto = true) => {
+    const parts = parseDateParts(rawVal);
+    if (parts) {
+      const dmy = formatDateDMY(rawVal, '/');
+      const iso = formatForDateInput(rawVal);
+      const readable = formatReadableDate(rawVal);
+
+      if (serviceDateDisp) serviceDateDisp.value = dmy;
+      if (serviceDatePicker) serviceDatePicker.value = iso;
+      if (serviceDateHidden) serviceDateHidden.value = iso;
+      if (serviceDateBadge) {
+        serviceDateBadge.style.display = 'inline-block';
+        serviceDateBadge.textContent = `📅 ${readable}`;
+      }
+      if (serviceDatePreview) {
+        serviceDatePreview.textContent = `Selected: ${readable}`;
+      }
+      if (triggerAuto) {
+        autoDetectNextService(true);
+      }
+    } else {
+      if (serviceDateHidden) serviceDateHidden.value = '';
+      if (serviceDatePicker) serviceDatePicker.value = '';
+      if (serviceDateBadge) serviceDateBadge.style.display = 'none';
+      if (serviceDatePreview) serviceDatePreview.textContent = '';
+      if (triggerAuto) {
+        autoDetectNextService(true);
+      }
+    }
+  };
+
+  const syncNextDateFromRaw = (rawVal) => {
+    const parts = parseDateParts(rawVal);
+    if (parts) {
+      const dmy = formatDateDMY(rawVal, '/');
+      const iso = formatForDateInput(rawVal);
+      const readable = formatReadableDate(rawVal);
+
+      if (nextDateDisp) nextDateDisp.value = dmy;
+      if (nextDatePicker) nextDatePicker.value = iso;
+      if (nextDateHidden) nextDateHidden.value = iso;
+      if (nextDateBadge) nextDateBadge.textContent = readable;
+    } else {
+      if (nextDateHidden) nextDateHidden.value = '';
+      if (nextDatePicker) nextDatePicker.value = '';
+      if (nextDateBadge) nextDateBadge.textContent = '';
+    }
+  };
+
+  if (serviceDateDisp) {
+    serviceDateDisp.addEventListener('change', () => syncServiceDateFromRaw(serviceDateDisp.value, true));
+    serviceDateDisp.addEventListener('blur', () => syncServiceDateFromRaw(serviceDateDisp.value, true));
+  }
+
+  if (serviceDatePicker) {
+    serviceDatePicker.addEventListener('change', () => {
+      if (serviceDatePicker.value) {
+        syncServiceDateFromRaw(serviceDatePicker.value, true);
+      }
+    });
+  }
+
+  if (nextDateDisp) {
+    nextDateDisp.addEventListener('change', () => syncNextDateFromRaw(nextDateDisp.value));
+    nextDateDisp.addEventListener('blur', () => syncNextDateFromRaw(nextDateDisp.value));
+  }
+
+  if (nextDatePicker) {
+    nextDatePicker.addEventListener('change', () => {
+      if (nextDatePicker.value) {
+        syncNextDateFromRaw(nextDatePicker.value);
+      }
+    });
+  }
+
+  if (btnRecalcPm) {
+    btnRecalcPm.addEventListener('click', () => {
+      autoDetectNextService(true);
+      if (serviceDateDisp?.value) {
+        notificationService.info('Next Due Service Date recalculated from Admin Config.');
+      } else {
+        notificationService.warning('Please enter a Last Servicing Date first.');
+      }
+    });
+  }
+
+  // Recalculate PM interval if user changes Machine Name
+  if (mnSelect) {
+    mnSelect.addEventListener('change', () => {
+      const { intervalLabel, canonicalType } = getActivePmConfig();
+      if (pmConfigHint) {
+        pmConfigHint.innerHTML = `⚡ Auto: Admin Config (${escapeHtml(intervalLabel)} &bull; ${escapeHtml(canonicalType)})`;
+      }
+      if (serviceDateDisp?.value) {
+        autoDetectNextService(true);
       }
     });
   }
@@ -1044,9 +1310,11 @@ export function initMachineModalEvents() {
       const repairableIdle = parseInt(document.getElementById('modal-field-repairable-idle')?.value, 10) || 0;
       const quantity = parseInt(document.getElementById('modal-field-quantity')?.value, 10) || (running + usableIdle + repairableIdle) || 1;
 
-      // Preventive Maintenance & Servicing
-      const serviceDate = document.getElementById('modal-field-service-date')?.value || '';
-      const nextServiceDate = document.getElementById('modal-field-next-service-date')?.value || '';
+      // Preventive Maintenance & Servicing (Standardized DD-MM-YYYY format)
+      const rawSvcVal = document.getElementById('modal-field-service-date-display')?.value || document.getElementById('modal-field-service-date')?.value || '';
+      const rawNextSvcVal = document.getElementById('modal-field-next-service-date-display')?.value || document.getElementById('modal-field-next-service-date')?.value || '';
+      const serviceDate = formatDateDMY(rawSvcVal, '-') || '';
+      const nextServiceDate = formatDateDMY(rawNextSvcVal, '-') || '';
       const servicedBy = (document.getElementById('modal-field-serviced-by')?.value || '').trim();
       const stickerSerial = (document.getElementById('modal-field-sticker-serial')?.value || '').trim();
 
