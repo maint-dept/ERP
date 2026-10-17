@@ -131,44 +131,80 @@ export class MysqlAdapter extends BaseAdapter {
     }
   }
 
-  async saveTable(collection, dataObj) {
-    try {
-      const url = this._getUrl('save_table');
-      const res = await fetch(url, {
-        method: 'POST',
-        cache: 'no-store',
-        headers: this._headers(),
-        body: JSON.stringify({ action: 'save_table', collection, data: dataObj, apiKey: this.apiKey })
-      });
-      if (res && res.ok) {
-        const json = await res.json().catch(() => ({}));
-        return { success: true, ...json, updateTime: json.updatedAt || json.updateTime };
+  async saveTable(collection, dataObj, maxRetries = 2) {
+    let lastErr = '';
+    const bodyStr = JSON.stringify({ action: 'save_table', collection, data: dataObj, apiKey: this.apiKey });
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        const url = this._getUrl('save_table');
+        const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+        const timeoutId = controller ? setTimeout(() => controller.abort(), 120000) : null;
+        const res = await fetch(url, {
+          method: 'POST',
+          cache: 'no-store',
+          headers: this._headers(),
+          body: bodyStr,
+          signal: controller ? controller.signal : undefined
+        });
+        if (timeoutId) clearTimeout(timeoutId);
+
+        if (res && res.ok) {
+          const json = await res.json().catch(() => ({}));
+          return { success: true, ...json, updateTime: json.updatedAt || json.updateTime };
+        }
+        const errText = await res.text().catch(() => '');
+        lastErr = errText || `MySQL save-table failed: HTTP ${res.status}`;
+        if (attempt < maxRetries) {
+          console.warn(`[MySQL Adapter] Save attempt ${attempt + 1} failed for ${collection} (${lastErr}), retrying in 1.5s...`);
+          await new Promise(r => setTimeout(r, 1500));
+        }
+      } catch (e) {
+        lastErr = e.name === 'AbortError' ? 'MySQL save timed out after 120s' : e.message;
+        if (attempt < maxRetries) {
+          console.warn(`[MySQL Adapter] Network/Timeout error on attempt ${attempt + 1} for ${collection}: ${lastErr}, retrying in 1.5s...`);
+          await new Promise(r => setTimeout(r, 1500));
+        }
       }
-      const errText = await res.text().catch(() => '');
-      return { success: false, error: errText || `MySQL save-table failed: HTTP ${res.status}` };
-    } catch (e) {
-      return { success: false, error: `MySQL save-table failed: ${e.message}` };
     }
+    return { success: false, error: `MySQL save-table failed: ${lastErr}` };
   }
 
-  async saveMultipleTables(tablesObj) {
-    try {
-      const url = this._getUrl('save_multiple_tables');
-      const res = await fetch(url, {
-        method: 'POST',
-        cache: 'no-store',
-        headers: this._headers(),
-        body: JSON.stringify({ action: 'save_multiple_tables', tables: tablesObj, apiKey: this.apiKey })
-      });
-      if (res && res.ok) {
-        const json = await res.json().catch(() => ({}));
-        return { success: true, ...json, updateTime: json.updatedAt || json.updateTime };
+  async saveMultipleTables(tablesObj, maxRetries = 2) {
+    let lastErr = '';
+    const bodyStr = JSON.stringify({ action: 'save_multiple_tables', tables: tablesObj, apiKey: this.apiKey });
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        const url = this._getUrl('save_multiple_tables');
+        const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+        const timeoutId = controller ? setTimeout(() => controller.abort(), 120000) : null;
+        const res = await fetch(url, {
+          method: 'POST',
+          cache: 'no-store',
+          headers: this._headers(),
+          body: bodyStr,
+          signal: controller ? controller.signal : undefined
+        });
+        if (timeoutId) clearTimeout(timeoutId);
+
+        if (res && res.ok) {
+          const json = await res.json().catch(() => ({}));
+          return { success: true, ...json, updateTime: json.updatedAt || json.updateTime };
+        }
+        const errText = await res.text().catch(() => '');
+        lastErr = errText || `MySQL save-multiple-tables failed: HTTP ${res.status}`;
+        if (attempt < maxRetries) {
+          console.warn(`[MySQL Adapter] Save attempt ${attempt + 1} failed (${lastErr}), retrying in 1.5s...`);
+          await new Promise(r => setTimeout(r, 1500));
+        }
+      } catch (e) {
+        lastErr = e.name === 'AbortError' ? 'MySQL save timed out after 120s' : e.message;
+        if (attempt < maxRetries) {
+          console.warn(`[MySQL Adapter] Network error on attempt ${attempt + 1}: ${lastErr}, retrying in 1.5s...`);
+          await new Promise(r => setTimeout(r, 1500));
+        }
       }
-      const errText = await res.text().catch(() => '');
-      return { success: false, error: errText || `MySQL save-multiple-tables failed: HTTP ${res.status}` };
-    } catch (e) {
-      return { success: false, error: `MySQL save-multiple-tables failed: ${e.message}` };
     }
+    return { success: false, error: `MySQL save-multiple-tables failed: ${lastErr}` };
   }
 
   async getTable(collection) {

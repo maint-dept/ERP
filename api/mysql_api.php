@@ -13,6 +13,11 @@
  * =========================================================================================
  */
 
+@ini_set('memory_limit', '512M');
+@ini_set('max_execution_time', '300');
+@ini_set('post_max_size', '64M');
+@ini_set('upload_max_filesize', '64M');
+
 // --- 1. CONFIGURATION (PRE-CONFIGURED FOR YOUR CPANEL HOSTING) ---
 $DB_HOST = 'localhost';          // Standard localhost on cPanel / Paid Hosting
 $DB_PORT = 3306;                 // Default MySQL port
@@ -105,6 +110,11 @@ foreach ($dbCandidates as $candidateDb) {
             ]);
             $DB_NAME = $candidateDb;
             $DB_USER = $candidateUser;
+            try {
+                $pdo->exec("SET SESSION wait_timeout = 300;");
+                $pdo->exec("SET SESSION net_read_timeout = 300;");
+                $pdo->exec("SET SESSION net_write_timeout = 300;");
+            } catch (Exception $e) {}
             break 2;
         } catch (PDOException $e) {
             $lastError = $e->getMessage();

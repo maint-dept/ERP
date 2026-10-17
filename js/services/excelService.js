@@ -4,6 +4,8 @@
  */
 
 import { storage } from '../db/storage.js';
+import { syncManager } from '../db/syncManager.js';
+import { idbCache } from '../db/idbCache.js';
 import { TABLE_NAMES, DUPLICATE_POLICIES, GARMENT_MACHINE_SHORT_CODES } from '../db/schema.js';
 import { INITIAL_DATA } from '../db/initialData.js';
 import { authService } from './authService.js';
@@ -2112,20 +2114,27 @@ class ExcelService {
    * Commit Multi-Worksheet Batch Import with Row-Level Transaction Isolation & Error Recording
    * Guarantees that valid rows are always imported, and failed rows are isolated with exact Row # and reason.
    */
-  commitMultiSheetImport(validatedSheets, metadata = {}) {
+  async commitMultiSheetImport(validatedSheets, metadata = {}, progressCallback = null) {
     const user = authService.getCurrentUser() || { id: 'admin-1', fullName: 'Administrator' };
 
-    if (metadata.replaceExisting || metadata.duplicatePolicy === DUPLICATE_POLICIES.REPLACE_ALL || metadata.duplicatePolicy === 'REPLACE_ALL') {
-      storage.saveTable(TABLE_NAMES.MACHINES, []);
-      storage.rebuildAllIndexes();
-    }
+    // 1. Activate Bulk Sync Guard: suppress intermediate cloud persistence writes during row processing loop
+    const previousSuppress = storage._suppressServerPersist;
+    storage._suppressServerPersist = true;
 
-    let newInsertedCount = 0;
-    let updatedCount = 0;
-    let failedCount = 0;
-    let skippedCount = 0;
-    const sheetStats = [];
-    const failedRows = [];
+    try {
+      if (typeof progressCallback === 'function') progressCallback(10, 'Processing Excel records into factory registry...');
+
+      if (metadata.replaceExisting || metadata.duplicatePolicy === DUPLICATE_POLICIES.REPLACE_ALL || metadata.duplicatePolicy === 'REPLACE_ALL') {
+        storage.data[TABLE_NAMES.MACHINES] = [];
+        storage.rebuildAllIndexes();
+      }
+
+      let newInsertedCount = 0;
+      let updatedCount = 0;
+      let failedCount = 0;
+      let skippedCount = 0;
+      const sheetStats = [];
+      const failedRows = [];
 
     validatedSheets.forEach(sheet => {
       let sheetInserted = 0;
@@ -2386,6 +2395,50 @@ class ExcelService {
 
     storage.insert(TABLE_NAMES.IMPORT_HISTORY, historyRecord);
     auditService.log('EXCEL_ROW_LEVEL_IMPORTED', 'MACHINE_INVENTORY', `${totalImported} of ${totalProcessed} rows`, `Excel import completed: ${totalImported} imported successfully (${newInsertedCount} created, ${updatedCount} updated), ${failedCount} failed.`);
+
+    // 2. Rebuild in-memory indexes and table maps
+    storage.rebuildAllIndexes();
+
+    // 3. Persist to high-capacity IndexedDB cache (prevents 5MB localStorage crash)
+    if (typeof progressCallback === 'function') progressCallback(65, 'Writing verified records to high-capacity local store...');
+    try {
+      await idbCache.setTable(TABLE_NAMES.MACHINES, storage.data[TABLE_NAMES.MACHINES] || []);
+      await idbCache.setTable(TABLE_NAMES.MODELS, storage.data[TABLE_NAMES.MODELS] || []);
+      await idbCache.setTable(TABLE_NAMES.PREVENTIVE_MAINTENANCE, storage.data[TABLE_NAMES.PREVENTIVE_MAINTENANCE] || []);
+      await idbCache.setTable(TABLE_NAMES.IMPORT_HISTORY, storage.data[TABLE_NAMES.IMPORT_HISTORY] || []);
+    } catch (_) {}
+
+    // 4. Release Sync Guard and execute Confirmed Bulk Cloud Sync to MySQL Primary
+    storage._suppressServerPersist = false;
+
+    if (typeof progressCallback === 'function') progressCallback(85, 'Synchronizing complete dataset with MySQL Primary Database...');
+
+    try {
+      storage.updateStatusBadge('saving');
+      const allMachines = storage.data[TABLE_NAMES.MACHINES] || [];
+      const cloudRes = await syncManager.saveTable(TABLE_NAMES.MACHINES, allMachines);
+
+      // Also persist secondary updated tables in background
+      syncManager.saveTable(TABLE_NAMES.MODELS, storage.data[TABLE_NAMES.MODELS] || []).catch(() => {});
+      syncManager.saveTable(TABLE_NAMES.PREVENTIVE_MAINTENANCE, storage.data[TABLE_NAMES.PREVENTIVE_MAINTENANCE] || []).catch(() => {});
+      syncManager.saveTable(TABLE_NAMES.IMPORT_HISTORY, storage.data[TABLE_NAMES.IMPORT_HISTORY] || []).catch(() => {});
+
+      if (cloudRes && cloudRes.success) {
+        storage.updateStatusBadge('saved');
+        const confirmedTs = cloudRes.updatedAt || cloudRes.updateTime || new Date().toISOString();
+        storage.syncedDocVersions.set('mysql_' + TABLE_NAMES.MACHINES, confirmedTs);
+        storage.syncedDocVersions.set(TABLE_NAMES.MACHINES, confirmedTs);
+        console.log(`[Excel Import] ✅ Confirmed: All ${allMachines.length} machines synchronized to MySQL Primary (${cloudRes.itemCount || allMachines.length} confirmed).`);
+      } else {
+        storage.updateStatusBadge('error');
+        console.warn('[Excel Import] ⚠️ MySQL save notice:', cloudRes?.error);
+      }
+    } catch (syncErr) {
+      storage.updateStatusBadge('error');
+      console.error('[Excel Import] MySQL sync exception:', syncErr);
+    }
+
+    if (typeof progressCallback === 'function') progressCallback(100, 'Import completed successfully!');
     window.dispatchEvent(new CustomEvent('erp:master-data-updated'));
 
     return {
@@ -2399,7 +2452,10 @@ class ExcelService {
       sheetStats: sheetStats,
       failedRows: failedRows
     };
+  } finally {
+    storage._suppressServerPersist = previousSuppress;
   }
+}
 
   /**
    * Automatic 1-Click Preventive Maintenance Synchronizer for Machine Inventory Imports

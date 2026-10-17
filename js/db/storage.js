@@ -933,12 +933,40 @@ class StorageEngine {
             }
             return updatedM;
           });
-          this.data[tbl] = cleanMachines;
-          if (hasRemarksChanged) {
-            // Push cleaned remarks back to MySQL Primary asynchronously so remote database is permanently sanitized
-            setTimeout(() => {
-              this.saveTable(TABLE_NAMES.MACHINES, cleanMachines, false).catch(() => {});
-            }, 1200);
+
+          // 🛡️ ANTI-DOWNGRADE PROTECTION:
+          // If local client already has MORE valid machines than incoming server dataset,
+          // NEVER blindly discard local machines! Keep the local machines, merge, and re-sync to server.
+          const currentLocal = this.data[tbl] || [];
+          if (currentLocal.length > cleanMachines.length && cleanMachines.length > 0) {
+            console.warn(`[Storage Anti-Downgrade] 🛡️ Incoming server machines (${cleanMachines.length}) is smaller than local (${currentLocal.length}). Preserving local dataset to prevent data loss.`);
+            const serverSerialSet = new Set(cleanMachines.map(m => String(m.serialNumber || '').trim().toUpperCase()).filter(Boolean));
+            const serverIdSet = new Set(cleanMachines.map(m => String(m.id || '').trim()).filter(Boolean));
+
+            const uncommittedLocal = currentLocal.filter(m => {
+              const sn = String(m.serialNumber || '').trim().toUpperCase();
+              const id = String(m.id || '').trim();
+              return (!sn || !serverSerialSet.has(sn)) && (!id || !serverIdSet.has(id));
+            });
+
+            if (uncommittedLocal.length > 0) {
+              const merged = [...cleanMachines, ...uncommittedLocal];
+              this.data[tbl] = merged;
+              console.log(`[Storage Anti-Downgrade] 🛡️ Merged and preserved ${uncommittedLocal.length} local machines. Total: ${merged.length}. Syncing to MySQL...`);
+              setTimeout(() => {
+                this.saveTable(TABLE_NAMES.MACHINES, merged, true).catch(() => {});
+              }, 1500);
+            } else {
+              this.data[tbl] = cleanMachines;
+            }
+          } else {
+            this.data[tbl] = cleanMachines;
+            if (hasRemarksChanged) {
+              // Push cleaned remarks back to MySQL Primary asynchronously so remote database is permanently sanitized
+              setTimeout(() => {
+                this.saveTable(TABLE_NAMES.MACHINES, cleanMachines, false).catch(() => {});
+              }, 1200);
+            }
           }
         } else if (tbl === TABLE_NAMES.SETTINGS && Array.isArray(serverRecs[tbl])) {
           const localMultiDb = localStorage.getItem('erp_multi_db_config');

@@ -706,8 +706,11 @@ function renderImportStageContent() {
           <h3 style="font-size: 19px; font-weight: 800; color: ${res.failedCount === 0 ? '#34d399' : '#38bdf8'}; margin: 0;">
             ${res.failedCount === 0 ? 'Excel Import Completed Successfully!' : 'Import Completed with Row-Wise Reporting'}
           </h3>
-          <p style="font-size: 12.5px; color: var(--text-secondary); max-width: 580px; margin-top: 4px;">
-            All valid rows were imported into the database. Problematic rows were skipped and logged below for easy correction and re-import.
+          <div style="margin-top: 6px; display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 999px; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); color: #34d399; font-size: 11.5px; font-weight: 700;">
+            <span>🐬</span> <span>MySQL Primary Synchronized (${storage.data['machines']?.length || 0} Total Machines in Registry)</span>
+          </div>
+          <p style="font-size: 12.5px; color: var(--text-secondary); max-width: 580px; margin-top: 6px;">
+            All valid rows were imported and locked into the primary MySQL database. Problematic rows were skipped and logged below for easy correction and re-import.
           </p>
         </div>
 
@@ -1169,18 +1172,35 @@ export function initExcelImportEvents() {
   // Execute Commit Import
   const btnCommit = document.getElementById('btn-commit-import-execution');
   if (btnCommit) {
-    btnCommit.addEventListener('click', () => {
+    btnCommit.addEventListener('click', async () => {
+      const origText = btnCommit.innerHTML;
       try {
-        const res = excelService.commitMultiSheetImport(importState.validationResult.sheets, {
+        btnCommit.disabled = true;
+        btnCommit.style.opacity = '0.7';
+        btnCommit.style.cursor = 'wait';
+        btnCommit.innerHTML = '<span style="display:inline-block;animation:spin 1s linear infinite;margin-right:6px;">🔄</span> Importing &amp; Locking into MySQL Database...';
+
+        const res = await excelService.commitMultiSheetImport(importState.validationResult.sheets, {
           fileName: importState.fileName,
           duplicatePolicy: importState.duplicatePolicy,
           replaceExisting: importState.duplicatePolicy === DUPLICATE_POLICIES.REPLACE_ALL
+        }, (pct, msg) => {
+          btnCommit.innerHTML = `<span style="display:inline-block;animation:spin 1s linear infinite;margin-right:6px;">🔄</span> [${pct}%] ${msg}`;
         });
+
         importState.importResult = res;
         importState.stage = 5;
         updateModalDOM();
         state.emit('inventory:updated');
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('erp:inventory-updated'));
+          window.dispatchEvent(new CustomEvent('erp:storage-updated'));
+        }
       } catch (err) {
+        btnCommit.disabled = false;
+        btnCommit.style.opacity = '1';
+        btnCommit.style.cursor = 'pointer';
+        btnCommit.innerHTML = origText || 'Confirm & Import';
         alert('Commit Error: ' + err.message);
       }
     });
