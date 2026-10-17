@@ -939,7 +939,7 @@ export function renderUserManagement() {
                   return `
                     <tr style="background: ${isSelected ? 'rgba(2, 132, 199, 0.08)' : 'transparent'};">
                       <!-- Checkbox (Sticky Left Freeze Pane) -->
-                      <td class="uam-col-sticky-check" style="text-align: center; width: 44px; padding: 6px 4px; background-color: ${isSelected ? '#0c274c' : '#0b1329'};">
+                      <td class="uam-col-sticky-check" style="text-align: center; width: 44px; padding: 6px 4px;">
                         ${hasAccount ? `
                           <input type="checkbox" class="chk-account-row" data-id="${acc.id}" ${isSelected ? 'checked' : ''} style="cursor: pointer; width: 15px; height: 15px; accent-color: #0284c7; vertical-align: middle;" />
                         ` : `
@@ -948,7 +948,7 @@ export function renderUserManagement() {
                       </td>
                       
                       <!-- Card Number (Sticky Left Freeze Pane) -->
-                      <td class="uam-col-sticky-card" style="text-align: center; width: 115px; padding: 6px 8px; background-color: ${isSelected ? '#0c274c' : '#0b1329'};">
+                      <td class="uam-col-sticky-card" style="text-align: center; width: 115px; padding: 6px 8px;">
                         <span class="badge uam-clickable-card-badge" data-card="${acc.cardNumber}" style="font-family: var(--font-mono); font-weight: 800; color: #38bdf8; font-size: 11.5px; background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.3); padding: 3px 8px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; white-space: nowrap; transition: all 0.15s ease;" title="Click to filter by Card ${acc.cardNumber}">
                           <span>${acc.cardNumber}</span>
                         </span>
@@ -1613,10 +1613,10 @@ function renderIndividualPermissionsTab() {
       ${renderLocationScopeSection(editingScope, 'perm-scope', false)}
 
       <!-- Granular 7-Action Permissions Matrix Table -->
-      <div style="border: 1px solid var(--border-color); border-radius: var(--radius-md); overflow-x: auto; background: #0b1329;">
+      <div style="border: 1px solid var(--border-color); border-radius: var(--radius-md); overflow-x: auto; background: var(--bg-surface);">
         <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
           <thead>
-            <tr style="background: #0f172a; border-bottom: 2px solid #38bdf8; color: #cbd5e1; text-transform: uppercase; font-size: 11px;">
+            <tr style="background: var(--bg-hover); border-bottom: 2px solid #38bdf8; color: var(--text-primary); text-transform: uppercase; font-size: 11px;">
               <th style="padding: 10px 14px; text-align: left; width: 260px;">Module / Feature</th>
               <th style="padding: 10px 6px; text-align: center; width: 68px; color: #34d399;">View</th>
               <th style="padding: 10px 6px; text-align: center; width: 68px; color: #38bdf8;">Add</th>
@@ -1958,7 +1958,7 @@ function renderPasswordManagementTab(paginatedAccountsList, totalCount) {
         </colgroup>
         <thead>
           <tr>
-            <th class="uam-col-sticky-card-pass" style="width: 120px; text-align: center; padding: 8px 6px; position: sticky; left: 0; top: 0; z-index: 32; background-color: #0b1329; border-right: 2px solid rgba(56, 189, 248, 0.45); box-shadow: 3px 0 6px rgba(0, 0, 0, 0.4);">Card Number</th>
+            <th class="uam-col-sticky-card-pass" style="width: 120px; text-align: center; padding: 8px 6px;">Card Number</th>
             <th style="width: 180px; text-align: left; padding: 8px 10px;">Employee Name</th>
             <th style="width: 135px; text-align: left; padding: 8px 10px;">Username</th>
             <th style="width: 155px; text-align: left; padding: 8px 10px;">Designation</th>
@@ -1995,7 +1995,7 @@ function renderPasswordManagementTab(paginatedAccountsList, totalCount) {
             return `
               <tr>
                 <!-- Card Number (Freeze Pane: Sticky Left: 0) -->
-                <td class="uam-col-sticky-card-pass" style="text-align: center; width: 120px; padding: 6px 8px; position: sticky; left: 0; z-index: 12; background-color: #0b1329; border-right: 2px solid rgba(56, 189, 248, 0.45); box-shadow: 3px 0 6px rgba(0, 0, 0, 0.4);">
+                <td class="uam-col-sticky-card-pass" style="text-align: center; width: 120px; padding: 6px 8px; position: sticky; left: 0; z-index: 12;">
                   <span class="badge uam-clickable-card-badge" data-card="${acc.cardNumber}" style="font-family: var(--font-mono); font-weight: 800; color: #38bdf8; font-size: 11.5px; background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.3); padding: 3px 8px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; white-space: nowrap; transition: all 0.15s ease;" title="Click to filter by Card ${acc.cardNumber}">
                     <span>${acc.cardNumber}</span>
                   </span>
@@ -2506,7 +2506,7 @@ function renderActiveModalHtml() {
     const acc = targetAccount;
     return `
       <div class="modal-overlay active" id="modal-uam-overlay">
-        <div class="modal-card" style="max-width: 490px; width: 94%; border-radius: 12px; background: #0b1329; border: 1.5px solid rgba(56, 189, 248, 0.4); box-shadow: 0 25px 60px rgba(0, 0, 0, 0.85); overflow: hidden; padding: 0;">
+        <div class="modal-card" style="max-width: 490px; width: 94%; border-radius: 12px; background: var(--bg-card); border: 1.5px solid rgba(56, 189, 248, 0.4); box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5); overflow: hidden; padding: 0;">
           
           <!-- Header -->
           <div style="padding: 12px 18px; background: linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(30, 41, 59, 0.95)); border-bottom: 1px solid rgba(56, 189, 248, 0.2); display: flex; justify-content: space-between; align-items: center;">
@@ -2616,7 +2616,7 @@ function renderActiveModalHtml() {
     const data = lastGeneratedPasswordData;
     return `
       <div class="modal-overlay active" id="modal-uam-overlay">
-        <div class="modal-card" style="max-width: 450px; width: 92%; border-radius: 12px; background: #0b1329; border: 1.5px solid rgba(56, 189, 248, 0.35); box-shadow: 0 25px 60px rgba(0, 0, 0, 0.85); overflow: hidden; padding: 0;">
+        <div class="modal-card" style="max-width: 450px; width: 92%; border-radius: 12px; background: var(--bg-card); border: 1.5px solid rgba(56, 189, 248, 0.35); box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5); overflow: hidden; padding: 0;">
           
           <!-- Header (Compact & Crisp) -->
           <div style="padding: 10px 16px; background: linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(30, 41, 59, 0.95)); border-bottom: 1px solid rgba(56, 189, 248, 0.2); display: flex; justify-content: space-between; align-items: center;">
@@ -2641,7 +2641,7 @@ function renderActiveModalHtml() {
             </div>
 
             <!-- Password Card with Quick Copy -->
-            <div style="background: #070d1e; border: 1.5px solid rgba(56, 189, 248, 0.35); border-radius: 8px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; gap: 10px; box-shadow: inset 0 2px 6px rgba(0,0,0,0.6);">
+            <div style="background: var(--bg-surface); border: 1.5px solid rgba(56, 189, 248, 0.35); border-radius: 8px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; gap: 10px; box-shadow: inset 0 2px 6px rgba(0,0,0,0.2);">
               <span id="txt-generated-password" style="font-family: var(--font-mono); font-size: 16px; font-weight: 900; color: #38bdf8; letter-spacing: 1.2px; user-select: all; word-break: break-all;">
                 ${data.plainPassword}
               </span>
@@ -3077,7 +3077,7 @@ function renderActiveModalHtml() {
 
     return `
       <div class="modal-overlay active" id="modal-uam-overlay">
-        <div class="modal-card" style="max-width: 1040px; width: 96%; height: 92vh; max-height: 94vh; display: flex; flex-direction: column; padding: 0; overflow: hidden; background: #0b1329; border: 1.5px solid rgba(56, 189, 248, 0.35); box-shadow: 0 25px 60px rgba(0, 0, 0, 0.85); border-radius: 12px;">
+        <div class="modal-card" style="max-width: 1040px; width: 96%; height: 92vh; max-height: 94vh; display: flex; flex-direction: column; padding: 0; overflow: hidden; background: var(--bg-card); border: 1.5px solid rgba(56, 189, 248, 0.35); box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5); border-radius: 12px;">
           
           <!-- Modal Header (Compact & User-Friendly) -->
           <div style="padding: 10px 18px; border-bottom: 1px solid rgba(56, 189, 248, 0.2); background: linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(30, 41, 59, 0.95)); display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
@@ -3179,13 +3179,13 @@ function renderActiveModalHtml() {
             </div>
 
             <!-- Granular Permissions Table (Internal Scroll with Sticky Header) -->
-            <div style="flex: 1; min-height: 0; overflow-y: auto; overflow-x: auto; border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 8px; background: #070d1e;">
+            <div style="flex: 1; min-height: 0; overflow-y: auto; overflow-x: auto; border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 8px; background: var(--bg-surface);">
               <table style="width: 100%; border-collapse: collapse; font-size: 12px; table-layout: fixed;">
                 <thead style="position: sticky; top: 0; z-index: 20;">
-                  <tr style="background: #0f172a; border-bottom: 2px solid #38bdf8; color: #cbd5e1; text-transform: uppercase; font-size: 11px;">
-                    <th style="padding: 8px 12px; text-align: left; width: 260px; position: sticky; top: 0; background: #0f172a;">Module / Feature</th>
-                    <th style="padding: 8px 4px; text-align: center; width: 56px; color: #34d399; position: sticky; top: 0; background: #0f172a;">View</th>
-                    <th style="padding: 8px 4px; text-align: center; width: 56px; color: #38bdf8; position: sticky; top: 0; background: #0f172a;">Add</th>
+                  <tr style="background: var(--bg-hover); border-bottom: 2px solid #38bdf8; color: var(--text-primary); text-transform: uppercase; font-size: 11px;">
+                    <th style="padding: 8px 12px; text-align: left; width: 260px; position: sticky; top: 0; background: inherit;">Module / Feature</th>
+                    <th style="padding: 8px 4px; text-align: center; width: 56px; color: #34d399; position: sticky; top: 0; background: inherit;">View</th>
+                    <th style="padding: 8px 4px; text-align: center; width: 56px; color: #38bdf8; position: sticky; top: 0; background: inherit;">Add</th>
                     <th style="padding: 8px 4px; text-align: center; width: 56px; color: #fbbf24; position: sticky; top: 0; background: #0f172a;">Edit</th>
                     <th style="padding: 8px 4px; text-align: center; width: 56px; color: #f87171; position: sticky; top: 0; background: #0f172a;">Delete</th>
                     <th style="padding: 8px 4px; text-align: center; width: 56px; color: #c084fc; position: sticky; top: 0; background: #0f172a;">Import</th>

@@ -8045,7 +8045,7 @@ Tools User - Shojib - 132694 [New]`;
           </div>
 
           <!-- Modal Body Scroll Container -->
-          <div style="padding: 14px 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; background: #0b1329;">
+          <div style="padding: 14px 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; background: var(--bg-surface);">
             
             <!-- STEP 1: MANPOWER MECHANIC ASSIGNMENT -->
             <div style="background: #172554; border: 1.5px solid #38bdf8; border-radius: 10px; padding: 12px 16px; display: flex; flex-direction: column; gap: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
@@ -8115,7 +8115,7 @@ Tools User - Shojib - 132694 [New]`;
                     <span>📄</span> Requisition No :
                   </span>
                   <input type="text" id="inp-modal-requisition-no" value="${detectedRequisitionNo || ''}" placeholder="e.g. IR2507318801"
-                    style="background: #0b1329; color: #fde047; font-family: monospace; font-size: 13px; font-weight: 900; border: 1.5px solid #38bdf8; border-radius: 5px; padding: 4px 10px; width: 160px; letter-spacing: 0.5px; outline: none;" 
+                    style="color: #fde047; font-family: monospace; font-size: 13px; font-weight: 900; border: 1.5px solid #38bdf8; border-radius: 5px; padding: 4px 10px; width: 160px; letter-spacing: 0.5px; outline: none;" 
                     title="Garments Factory ERP Requisition Number (Auto-detected from PDF/OCR or enter manually)" />
                   ${detectedRequisitionNo ? `
                     <span id="badge-modal-req-status" style="font-size: 10.5px; color: #86efac; background: rgba(34,197,94,0.2); border: 1px solid #22c55e; padding: 2px 8px; border-radius: 4px; font-weight: 800; display: flex; align-items: center; gap: 4px; white-space: nowrap;">

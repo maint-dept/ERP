@@ -1856,7 +1856,7 @@ function renderSparePartsReportsTab() {
           <div class="table-responsive" style="flex: 1; min-height: 0; overflow-y: auto;">
             <table class="data-table" style="width: 100%; min-width: 1100px; border-collapse: collapse; margin: 0; font-size: 11.5px;">
               <thead>
-                <tr style="position: sticky; top: 0; z-index: 2; background: #0b1329;">
+                <tr style="position: sticky; top: 0; z-index: 2;">
                   <th style="width: 40px; text-align: center; padding: 6px 8px;">SL</th>
                   <th style="min-width: 220px; text-align: left; padding: 6px 8px;">Location Hierarchy</th>
                   <th style="min-width: 160px; text-align: left; padding: 6px 8px;">Spare Part Name</th>
@@ -1918,8 +1918,8 @@ function renderSparePartsReportsTab() {
               </tbody>
               ${aggregatedList.length > 0 ? `
                 <tfoot style="position: sticky; bottom: 0; z-index: 2;">
-                  <tr style="background: #0b1329; font-weight: 800; border-top: 2px solid #38bdf8;">
-                    <td colspan="5" style="text-align: right; color: #fff; font-size: 11.5px; letter-spacing: 0.5px; padding: 6px 12px;">TOTAL:</td>
+                  <tr style="background: var(--bg-surface); font-weight: 800; border-top: 2px solid #38bdf8;">
+                    <td colspan="5" style="text-align: right; color: var(--text-primary); font-size: 11.5px; letter-spacing: 0.5px; padding: 6px 12px;">TOTAL:</td>
                     <td style="text-align: center; color: #38bdf8; font-size: 12px; font-weight: 800; padding: 6px 8px;">${kpi.totalIssued} pcs</td>
                     <td style="text-align: center; color: #34d399; font-size: 13px; font-weight: 900; background: rgba(16, 185, 129, 0.15); padding: 6px 8px;">${kpi.totalUsed} pcs</td>
                     <td style="text-align: center; color: #fbbf24; font-size: 12px; font-weight: 800; padding: 6px 8px;">${kpi.totalReturned} pcs</td>
@@ -1939,7 +1939,7 @@ function renderSparePartsReportsTab() {
           <div class="table-responsive" style="flex: 1; min-height: 0; overflow-y: auto;">
             <table class="data-table" style="width: 100%; min-width: 1200px; border-collapse: collapse; margin: 0; font-size: 11px;">
               <thead>
-                <tr style="position: sticky; top: 0; z-index: 2; background: #0b1329;">
+                <tr style="position: sticky; top: 0; z-index: 2;">
                   <th style="width: 35px; text-align: center; padding: 6px 8px;">SL</th>
                   <th style="width: 85px; text-align: left; padding: 6px 8px;">Date</th>
                   <th style="width: 100px; text-align: left; padding: 6px 8px;">Requisition #</th>

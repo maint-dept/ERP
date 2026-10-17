@@ -291,7 +291,7 @@ export function renderPartsTraceView() {
 
       .smart-dropdown-trigger.has-val {
         border-color: rgba(56, 189, 248, 0.45);
-        background: #0d1527;
+        background: var(--bg-surface);
       }
 
       .smart-chip {

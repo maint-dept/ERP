@@ -189,16 +189,16 @@ export function renderSparePartsManagementView() {
         <table class="excel-grid-table spare-parts-table" style="margin: 0; width: 100%; min-width: 980px; table-layout: auto;">
           <thead>
             <tr style="position: sticky; top: 0; z-index: 20;">
-              <th style="width: 40px; text-align: center; position: sticky; top: 0; z-index: 20; background-color: #0b1329;">
+              <th style="width: 40px; text-align: center;">
                 <input type="checkbox" id="chk-spare-select-all" ${filtered.length > 0 && selectedItemIds.size === filtered.length ? 'checked' : ''} />
               </th>
-              <th style="width: 55px; text-align: center; position: sticky; top: 0; z-index: 20; background-color: #0b1329;">SL</th>
-              <th style="min-width: 180px; position: sticky; top: 0; z-index: 20; background-color: #0b1329;">Item Name &amp; Code</th>
-              <th style="min-width: 220px; position: sticky; top: 0; z-index: 20; background-color: #0b1329;">Area of Use / Description</th>
-              <th style="min-width: 160px; position: sticky; top: 0; z-index: 20; background-color: #0b1329;">Brand / Model / Origin</th>
-              <th style="text-align: center; width: 130px; position: sticky; top: 0; z-index: 20; background-color: #0b1329;">Machine Usage</th>
-              <th style="text-align: center; width: 90px; position: sticky; top: 0; z-index: 20; background-color: #0b1329;">Status</th>
-              <th style="text-align: center; width: 140px; position: sticky; top: 0; z-index: 20; background-color: #0b1329;">Actions</th>
+              <th style="width: 55px; text-align: center;">SL</th>
+              <th style="min-width: 180px;">Item Name &amp; Code</th>
+              <th style="min-width: 220px;">Area of Use / Description</th>
+              <th style="min-width: 160px;">Brand / Model / Origin</th>
+              <th style="text-align: center; width: 130px;">Machine Usage</th>
+              <th style="text-align: center; width: 90px;">Status</th>
+              <th style="text-align: center; width: 140px;">Actions</th>
             </tr>
           </thead>
           <tbody>

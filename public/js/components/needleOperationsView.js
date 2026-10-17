@@ -495,7 +495,7 @@ function renderTransactionModal() {
                   placeholder="🔍 Type Serial #, Barcode, Model, Brand, Line, Floor..." 
                   value="${selectedMachine ? `${selectedMachine.serialNumber} — ${spec.machineNameStr} (${spec.brandStr} ${spec.modelStr})` : (smartMachineSearchQuery || '')}" 
                   autocomplete="off"
-                  style="font-size: 13.5px; font-weight: 700; color: #ffffff !important; background: #0b1329; border: 1.5px solid ${selectedMachine ? '#10b981' : '#38bdf8'}; padding-right: 32px; height: 42px; border-radius: 6px;"
+                  style="font-size: 13.5px; font-weight: 700; border: 1.5px solid ${selectedMachine ? '#10b981' : '#38bdf8'}; padding-right: 32px; height: 42px; border-radius: 6px;"
                 />
                 <span style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-size: 14px; pointer-events: none;">
                   ${selectedMachine ? '✅' : '🔍'}

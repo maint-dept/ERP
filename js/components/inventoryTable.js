@@ -221,7 +221,7 @@ export function renderInventoryTable() {
         const viewOnlyBadge = isViewOnly 
           ? `<span class="badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); font-size: 10px; padding: 1px 6px; margin-left: 6px; vertical-align: middle; font-weight: 600; white-space: nowrap;" title="View-Only: This machine belongs to another floor or Central Idle">👁️ View Only</span>` 
           : '';
-        return `<td class="${tdClass} col-wrap-text" style="width: 200px; min-width: 200px; max-width: 200px; font-weight: 600; color: #fff; white-space: normal !important; word-break: break-word; overflow-wrap: break-word; text-overflow: clip !important; overflow: visible !important; line-height: 1.35; padding: 6px 10px; ${tdStyle}" title="${name}"><span style="display: inline; line-height: 1.35;">${name}</span>${viewOnlyBadge}</td>`;
+        return `<td class="${tdClass} col-wrap-text" style="width: 200px; min-width: 200px; max-width: 200px; font-weight: 600; color: var(--text-primary); white-space: normal !important; word-break: break-word; overflow-wrap: break-word; text-overflow: clip !important; overflow: visible !important; line-height: 1.35; padding: 6px 10px; ${tdStyle}" title="${name}"><span style="display: inline; line-height: 1.35;">${name}</span>${viewOnlyBadge}</td>`;
       }
     },
     {
@@ -595,7 +595,7 @@ export function renderInventoryTable() {
 
   columnLayout.forEach(col => {
     const thStyle = col.isFrozen 
-      ? `position: sticky !important; left: ${col.leftOffset}px !important; z-index: 30 !important; background-color: #070d1e !important;` 
+      ? `position: sticky !important; left: ${col.leftOffset}px !important; z-index: 30 !important;` 
       : '';
     const boundaryClass = col.isLastFrozen ? 'col-frozen-boundary' : '';
     const thClass = col.isFrozen ? `col-frozen-cell ${boundaryClass}` : '';
@@ -662,7 +662,7 @@ export function renderInventoryTable() {
       // Render columns in calculated sequence
       columnLayout.forEach(col => {
         const tdStyle = col.isFrozen 
-          ? `position: sticky !important; left: ${col.leftOffset}px !important; z-index: 10 !important; background-color: var(--bg-surface) !important;` 
+          ? `position: sticky !important; left: ${col.leftOffset}px !important; z-index: 10 !important;` 
           : '';
         const boundaryClass = col.isLastFrozen ? 'col-frozen-boundary' : '';
         const tdClass = col.isFrozen ? `col-frozen-cell ${boundaryClass}` : '';

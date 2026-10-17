@@ -294,7 +294,7 @@ export function renderTransferDetailsModal() {
                   class="form-control" 
                   placeholder="e.g. Verified line space, electrical power, and maintenance condition. Approved." 
                   value="Approved for relocation." 
-                  style="background: #070d1e; border-color: #38bdf8;"
+                  style="border-color: #38bdf8;"
                 />
               </div>
 

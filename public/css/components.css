@@ -910,7 +910,7 @@ tr.draggable-row.drag-over-bottom {
 .kpi-pill .kpi-val {
   font-size: 12.5px;
   font-weight: 800;
-  color: #fff;
+  color: var(--text-primary);
   font-family: var(--font-mono);
 }
 
@@ -4001,16 +4001,101 @@ body.theme-light .compact-filter-bar {
   color: #090e1a !important;
 }
 
+/* Light Theme: KPI Pills & Stat Counters */
+body.theme-light .kpi-pill {
+  background: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+}
+
+body.theme-light .kpi-pill:hover {
+  background: #f1f5f9 !important;
+  border-color: #0284c7 !important;
+}
+
+body.theme-light .kpi-pill .kpi-val {
+  color: #090e1a !important;
+}
+
+body.theme-light .kpi-pill .kpi-lbl {
+  color: #475569 !important;
+}
+
+body.theme-light .mach-summary-table tfoot td,
+body.theme-light tfoot tr[style*="background: #0b1329"] td {
+  background: #f1f5f9 !important;
+  color: #0f172a !important;
+  border-top-color: #0284c7 !important;
+}
+
+body.theme-light .mach-num-total {
+  color: #090e1a !important;
+}
+
 /* Light Theme: Fix Inline Dark Container Backgrounds */
 body.theme-light [style*="background: rgba(15, 23, 42"],
+body.theme-light [style*="background-color: rgba(15, 23, 42"],
 body.theme-light [style*="background: #0b1329"],
+body.theme-light [style*="background-color: #0b1329"],
+body.theme-light [style*="background: #070d1e"],
+body.theme-light [style*="background-color: #070d1e"],
+body.theme-light [style*="background: #0d1527"],
+body.theme-light [style*="background-color: #0d1527"],
+body.theme-light [style*="background: #080f1d"],
+body.theme-light [style*="background-color: #080f1d"],
 body.theme-light [style*="background: #0f172a"],
+body.theme-light [style*="background-color: #0f172a"],
 body.theme-light [style*="background: #1e293b"],
+body.theme-light [style*="background-color: #1e293b"],
+body.theme-light [style*="background: #172554"],
+body.theme-light [style*="background-color: #172554"],
+body.theme-light [style*="background: #132247"],
+body.theme-light [style*="background-color: #132247"],
+body.theme-light [style*="background: #0c274c"],
+body.theme-light [style*="background-color: #0c274c"],
 body.theme-light [style*="background: rgba(0, 0, 0, 0.3)"],
-body.theme-light [style*="background: rgba(0, 0, 0, 0.4)"] {
+body.theme-light [style*="background: rgba(0, 0, 0, 0.4)"],
+body.theme-light [style*="background: rgba(0, 0, 0, 0.5)"],
+body.theme-light [style*="background: rgba(0, 0, 0, 0.6)"],
+body.theme-light [style*="background: rgba(0, 0, 0, 0.7)"],
+body.theme-light [style*="background: rgba(0, 0, 0, 0.8)"] {
   background: #f8fafc !important;
   border-color: #cbd5e1 !important;
   color: #0f172a !important;
+}
+
+/* Light Theme: Dropdown & Autocomplete Results */
+body.theme-light [id*="suggestions"],
+body.theme-light [id*="autocomplete"],
+body.theme-light [id*="dropdown"] {
+  background: #ffffff !important;
+  border-color: #0284c7 !important;
+  color: #0f172a !important;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12) !important;
+}
+
+body.theme-light [id*="suggestions"] div,
+body.theme-light [id*="autocomplete"] div,
+body.theme-light [id*="dropdown"] div {
+  color: #0f172a !important;
+}
+
+body.theme-light [id*="suggestions"] div:hover,
+body.theme-light [id*="autocomplete"] div:hover,
+body.theme-light [id*="dropdown"] div:hover {
+  background: #f1f5f9 !important;
+}
+
+/* Light Theme: Disabled Form Controls */
+body.theme-light .form-control[disabled], 
+body.theme-light .form-control:disabled,
+body.theme-light select:disabled,
+body.theme-light .filter-select:disabled,
+body.theme-light input:disabled,
+body.theme-light textarea:disabled {
+  background-color: #f1f5f9 !important;
+  color: #64748b !important;
+  border-color: #cbd5e1 !important;
 }
 
 /* Light Theme: Force All Headings & Labels to Pitch-Crisp Dark */

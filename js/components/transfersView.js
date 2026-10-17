@@ -167,16 +167,16 @@ export function renderTransfersView() {
         ` : `
           <table class="transfers-table" style="width: 100% !important; margin: 0; -webkit-font-smoothing: antialiased;">
             <thead>
-              <tr style="background: #0d1527;">
-                <th style="width: 10%; padding: 7px 8px; font-size: 11px; font-weight: 800; color: #ffffff; letter-spacing: 0.3px;">Request ID</th>
-                <th style="width: 16%; padding: 7px 8px; font-size: 11px; font-weight: 800; color: #ffffff; letter-spacing: 0.3px;">Equipment Details</th>
-                <th style="width: 12%; padding: 7px 8px; font-size: 11px; font-weight: 800; color: #ffffff; letter-spacing: 0.3px;">Source (From)</th>
-                <th style="width: 12%; padding: 7px 8px; font-size: 11px; font-weight: 800; color: #ffffff; letter-spacing: 0.3px;">Destination (To)</th>
-                <th style="width: 12%; padding: 7px 8px; font-size: 11px; font-weight: 800; color: #ffffff; letter-spacing: 0.3px;">Requester &amp; Date</th>
-                <th style="width: 13%; padding: 7px 8px; font-size: 11px; font-weight: 800; color: #ffffff; letter-spacing: 0.3px;">Approval Stage</th>
-                <th style="width: 4%; padding: 7px 6px; font-size: 11px; font-weight: 800; color: #ffffff; text-align: center;">Docs</th>
-                <th style="width: 7%; padding: 7px 6px; font-size: 11px; font-weight: 800; color: #ffffff; text-align: center;">Status</th>
-                <th style="width: ${canDelete ? '16%' : '11%'}; padding: 7px 6px; font-size: 11px; font-weight: 800; color: #ffffff; text-align: center; background: #0b1329;">Actions</th>
+              <tr>
+                <th style="width: 10%; padding: 7px 8px; font-size: 11px; font-weight: 800; letter-spacing: 0.3px;">Request ID</th>
+                <th style="width: 16%; padding: 7px 8px; font-size: 11px; font-weight: 800; letter-spacing: 0.3px;">Equipment Details</th>
+                <th style="width: 12%; padding: 7px 8px; font-size: 11px; font-weight: 800; letter-spacing: 0.3px;">Source (From)</th>
+                <th style="width: 12%; padding: 7px 8px; font-size: 11px; font-weight: 800; letter-spacing: 0.3px;">Destination (To)</th>
+                <th style="width: 12%; padding: 7px 8px; font-size: 11px; font-weight: 800; letter-spacing: 0.3px;">Requester &amp; Date</th>
+                <th style="width: 13%; padding: 7px 8px; font-size: 11px; font-weight: 800; letter-spacing: 0.3px;">Approval Stage</th>
+                <th style="width: 4%; padding: 7px 6px; font-size: 11px; font-weight: 800; text-align: center;">Docs</th>
+                <th style="width: 7%; padding: 7px 6px; font-size: 11px; font-weight: 800; text-align: center;">Status</th>
+                <th style="width: ${canDelete ? '16%' : '11%'}; padding: 7px 6px; font-size: 11px; font-weight: 800; text-align: center;">Actions</th>
               </tr>
             </thead>
             <tbody>

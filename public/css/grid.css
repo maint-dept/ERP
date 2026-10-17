@@ -836,6 +836,18 @@ body.theme-light tbody tr:hover td.col-frozen-cell {
   background-color: #f1f5f9 !important;
 }
 
+body.theme-light tbody tr.selected td.col-freeze-sl,
+body.theme-light tbody tr.selected td.col-freeze-check,
+body.theme-light tbody tr.selected td.col-freeze-name,
+body.theme-light tbody tr.selected td.col-frozen-cell {
+  background-color: #e0f2fe !important;
+}
+
+body.theme-light .col-frozen-boundary {
+  border-right: 2.5px solid #0284c7 !important;
+  box-shadow: 3px 0 8px rgba(0, 0, 0, 0.1) !important;
+}
+
 body.theme-light .excel-grid-table tbody td {
   border-bottom: 1px solid #e2e8f0 !important;
   border-right: 1px solid #e2e8f0 !important;
