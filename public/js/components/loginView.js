@@ -162,7 +162,7 @@ export function renderLoginView() {
               </div>
 
               <button type="submit" id="btn-submit-first-login-change" class="btn btn-primary btn-block" style="font-weight: 800; padding: 11px; border-radius: 8px; font-size: 13.5px; background: linear-gradient(135deg, #10b981, #059669);">
-                💾 Save Password &amp; Enter ERP
+                💾 Save Password
               </button>
             </form>
           ` : ''}
@@ -418,14 +418,14 @@ export function initLoginViewEvents() {
       const submitBtn = document.getElementById('btn-submit-first-login-change');
       if (submitBtn) {
         submitBtn.disabled = true;
-        submitBtn.textContent = '⏳ Saving Password & Syncing Database...';
+        submitBtn.textContent = 'Saving Password...';
       }
 
       try {
-        // Complete first-time password setup with confirmed cloud write & clear temp credentials
+        // Complete first-time password setup instantly (in-memory + local storage + non-blocking cloud sync)
         await authService.completeFirstLoginPassword(targetUserId, newPwd);
 
-        alert('✅ Password configured successfully! Entering ERP dashboard...');
+        // 1-Click Instant Update: Transition directly to ERP dashboard without blocking browser alert
         loginMode = 'LOGIN';
         pendingFirstLoginUserId = null;
 
@@ -441,7 +441,7 @@ export function initLoginViewEvents() {
       } catch (err) {
         if (submitBtn) {
           submitBtn.disabled = false;
-          submitBtn.textContent = '💾 Save Password & Enter ERP';
+          submitBtn.textContent = '💾 Save Password';
         }
         showAlert(err.message || 'Failed to update password.');
       }

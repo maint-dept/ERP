@@ -116,7 +116,7 @@ export function renderLoginModal() {
               <div id="first-pwd-error-message" style="display: none; padding: 8px 12px; border-radius: 6px; font-size: 12px; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.4); color: #f87171;"></div>
 
               <button type="submit" class="btn btn-primary" style="font-weight: 800; height: 42px; justify-content: center; background: linear-gradient(135deg, #10b981, #059669); font-size: 13.5px;">
-                💾 Set Password &amp; Enter System
+                💾 Save Password
               </button>
             </form>
           `}
@@ -241,12 +241,11 @@ export function initLoginModalEvents() {
       const submitBtn = firstPwdForm.querySelector('button[type="submit"]');
       if (submitBtn) {
         submitBtn.disabled = true;
-        submitBtn.textContent = '⏳ Saving...';
+        submitBtn.textContent = 'Saving Password...';
       }
 
       try {
         await authService.completeFirstLoginPassword(pendingUserId, newPwd);
-        alert('✅ Password set successfully! Entering ERP dashboard...');
         closeModal();
         const activeUser = authService.getCurrentUser();
         const allowedView = authService.getFirstAllowedView(activeUser) || 'dashboard';
@@ -255,7 +254,7 @@ export function initLoginModalEvents() {
       } catch (err) {
         if (submitBtn) {
           submitBtn.disabled = false;
-          submitBtn.textContent = 'Save Password & Enter ERP';
+          submitBtn.textContent = '💾 Save Password';
         }
         if (firstErrBox) {
           firstErrBox.textContent = err.message || 'Failed to update password.';
