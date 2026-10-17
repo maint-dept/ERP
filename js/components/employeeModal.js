@@ -303,7 +303,7 @@ function renderTransferEmployeeModal({ employeeId }) {
               </div>
               <div>
                 <span style="color: var(--text-muted); font-size: 11px;">Card ID:</span>
-                <div style="font-family: var(--font-mono); font-weight: 800; color: #38bdf8;">#${emp.cardNumber}</div>
+                <div style="font-family: var(--font-mono); font-weight: 800; color: #38bdf8;">${emp.cardNumber}</div>
               </div>
               <div>
                 <span style="color: var(--text-muted); font-size: 11px;">Current Dept:</span>
@@ -707,7 +707,7 @@ export function initEmployeeModalEvents(refreshParentCallback) {
           ${allMatches.map(emp => `
             <div class="emp-card-search-item" data-card="${emp.cardNumber}" style="padding: 9px 14px; border-bottom: 1px solid rgba(255,255,255,0.04); cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: background 0.15s;" onmouseover="this.style.background='rgba(56,189,248,0.15)'" onmouseout="this.style.background='transparent'">
               <div>
-                <span style="font-family: var(--font-mono); font-weight: 900; color: #38bdf8; font-size: 13px;">#${emp.cardNumber}</span>
+                <span style="font-family: var(--font-mono); font-weight: 900; color: #38bdf8; font-size: 13px;">${emp.cardNumber}</span>
                 <span style="font-weight: 700; color: #fff; margin-left: 8px;">${emp.name}</span>
                 <div style="font-size: 11px; color: var(--text-muted); margin-top: 1px;">
                   ${emp.designation} &bull; ${emp.department} (${emp.floorName || 'General Floor'})

@@ -260,7 +260,7 @@ function renderEmployeeListTable({ title, subtitle, employees, isInactiveView })
               type="text" 
               id="mp-filter-search" 
               class="form-control" 
-              placeholder="🔍 Search by Card #, Name, Dept, Phone..." 
+              placeholder="🔍 Search by Card, Name, Dept, Phone..." 
               value="${filterState.search}" 
               style="font-size: 12.5px; height: 34px;"
             />
@@ -387,7 +387,7 @@ function renderEmployeeListTable({ title, subtitle, employees, isInactiveView })
                   />
                 </th>
                 <th style="width: 45px; text-align: center;">SL</th>
-                <th style="width: 125px;">Card #</th>
+                <th style="width: 125px;">Card Number</th>
                 <th style="min-width: 175px;">Employee Name</th>
                 <th style="min-width: 155px;">Department</th>
                 <th style="min-width: 160px;">Designation</th>
@@ -580,7 +580,7 @@ function renderEmployeeTransfersTab(transfers) {
                 <td style="font-family: var(--font-mono); font-size: 12px; color: #38bdf8;">${tr.transferDate || '—'}</td>
                 <td>
                   <div style="font-weight: 700; color: #fff;">${tr.employeeName}</div>
-                  <div style="font-family: var(--font-mono); color: var(--text-muted); font-size: 11px;">#${tr.cardNumber || ''}</div>
+                  <div style="font-family: var(--font-mono); color: var(--text-muted); font-size: 11px;">${tr.cardNumber || ''}</div>
                 </td>
                 <td style="font-size: 12px; color: #f87171;">
                   ${tr.fromLocation?.locationPath || '—'} <span style="color: var(--text-muted);">(${tr.fromLocation?.department || '—'})</span>
@@ -648,7 +648,7 @@ function renderEmployeeLeavesTab(leaves) {
                 <td style="text-align: center; color: var(--text-muted); font-family: var(--font-mono); font-size: 12px;">${idx + 1}</td>
                 <td>
                   <div style="font-weight: 700; color: #fff;">${lv.employeeName}</div>
-                  <div style="font-family: var(--font-mono); color: var(--text-muted); font-size: 11px;">#${lv.cardNumber || ''}</div>
+                  <div style="font-family: var(--font-mono); color: var(--text-muted); font-size: 11px;">${lv.cardNumber || ''}</div>
                 </td>
                 <td style="font-size: 12px; color: #38bdf8; font-weight: 600;">${lv.leaveType}</td>
                 <td style="font-family: var(--font-mono); font-size: 12px; text-align: center;">${lv.startDate}</td>

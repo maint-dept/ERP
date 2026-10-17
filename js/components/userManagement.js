@@ -476,7 +476,7 @@ export function renderUserManagement() {
                   type="text" 
                   id="uam-card-search-input" 
                   class="form-control font-mono" 
-                  placeholder="Card # (e.g. 05234)..." 
+                  placeholder="Card ID (e.g. 05234)..." 
                   value="${cardSearchQuery}"
                   style="height: 30px; padding-left: 30px; font-size: 12px; font-weight: 700; border-radius: 6px; border: 1px solid rgba(56, 189, 248, 0.45); background: rgba(9, 14, 26, 0.85); width: 100%; box-sizing: border-box; color: #38bdf8;"
                 />
@@ -721,9 +721,9 @@ export function renderUserManagement() {
                       </td>
                       
                       <!-- Card Number (Sticky Left Freeze Pane) -->
-                      <td class="uam-col-sticky-card" style="text-align: center; width: 120px; padding: 6px 8px; background-color: ${isSelected ? '#0c274c' : '#0b1329'};">
-                        <span class="badge uam-clickable-card-badge" data-card="${acc.cardNumber}" style="font-family: var(--font-mono); font-weight: 800; color: #38bdf8; font-size: 11px; background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.3); padding: 2px 7px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 4px; white-space: nowrap; transition: all 0.15s ease;" title="Click to filter by Card #${acc.cardNumber}">
-                          <span>🪪</span> <span>#${acc.cardNumber}</span>
+                      <td class="uam-col-sticky-card" style="text-align: center; width: 115px; padding: 6px 8px; background-color: ${isSelected ? '#0c274c' : '#0b1329'};">
+                        <span class="badge uam-clickable-card-badge" data-card="${acc.cardNumber}" style="font-family: var(--font-mono); font-weight: 800; color: #38bdf8; font-size: 11.5px; background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.3); padding: 3px 8px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; white-space: nowrap; transition: all 0.15s ease;" title="Click to filter by Card ${acc.cardNumber}">
+                          <span>${acc.cardNumber}</span>
                         </span>
                       </td>
 
@@ -782,11 +782,11 @@ export function renderUserManagement() {
                       <!-- Status -->
                       <td style="text-align: center; width: 95px; padding: 6px 6px;">
                         ${hasAccount ? `
-                          <span class="badge ${isUserActive ? 'badge-active' : 'badge-maint'}" style="font-size: 10px; padding: 2px 7px; font-weight: 700; white-space: nowrap;">
-                            ${acc.accountStatus}
+                          <span class="badge" style="background: ${isUserActive ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)'}; border: 1px solid ${isUserActive ? 'rgba(16, 185, 129, 0.35)' : 'rgba(239, 68, 68, 0.35)'}; color: ${isUserActive ? '#34d399' : '#f87171'}; font-size: 10px; padding: 2px 7px; font-weight: 700; border-radius: 5px; white-space: nowrap;">
+                            ${isUserActive ? '🟢 Active' : '🔴 Inactive'}
                           </span>
                         ` : `
-                          <span class="badge badge-warning" style="font-size: 10px; padding: 2px 7px; font-weight: 700; white-space: nowrap;">PENDING</span>
+                          <span class="badge" style="background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.35); color: #fbbf24; font-size: 10px; padding: 2px 7px; font-weight: 700; border-radius: 5px; white-space: nowrap;">⏳ Pending</span>
                         `}
                       </td>
 
@@ -1213,9 +1213,9 @@ function renderIndividualPermissionsTab() {
               <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                 <span style="font-size: 16px; font-weight: 800; color: #fff;">${escapeHtml(selectedUser.name)}</span>
                 <button type="button" id="btn-perm-copy-card" class="badge" data-card="${selectedUser.cardNumber || selectedUser.employeeId || ''}" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); font-family: var(--font-mono); font-weight: 800; font-size: 12px; padding: 2px 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;" title="Click to copy Card Number to clipboard">
-                  <span>🪪</span> <span>#${selectedUser.cardNumber || selectedUser.employeeId || '—'}</span> <span>📋</span>
+                  <span>${selectedUser.cardNumber || selectedUser.employeeId || '—'}</span> <span>📋</span>
                 </button>
-                <span class="badge ${selectedUser.status === 'ACTIVE' ? 'badge-active' : 'badge-maint'}" style="font-size: 10.5px;">${selectedUser.status}</span>
+                <span class="badge" style="background: ${selectedUser.status === 'ACTIVE' ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)'}; border: 1px solid ${selectedUser.status === 'ACTIVE' ? 'rgba(16, 185, 129, 0.35)' : 'rgba(239, 68, 68, 0.35)'}; color: ${selectedUser.status === 'ACTIVE' ? '#34d399' : '#f87171'}; font-size: 10.5px; padding: 2px 7px; border-radius: 5px; font-weight: 700;">${selectedUser.status === 'ACTIVE' ? '🟢 Active' : '🔴 Inactive'}</span>
                 <span style="background: rgba(56, 189, 248, 0.12); color: #38bdf8; font-size: 10.5px; font-weight: 700; padding: 2px 7px; border-radius: 6px;">
                   ${selectedUser.role}
                 </span>
@@ -1258,7 +1258,7 @@ function renderIndividualPermissionsTab() {
                 type="text" 
                 id="inp-perm-smart-search" 
                 class="form-control font-mono" 
-                placeholder="Type Card # (e.g. 128426), Name, @username..." 
+                placeholder="Type Card Number (e.g. 128426), Name, @username..." 
                 value="${permCardSearchQuery || ''}"
                 autocomplete="off"
                 style="height: 36px; font-size: 12.5px; font-weight: 600; padding-left: 32px; padding-right: 32px; border-radius: 8px; border: 1.5px solid rgba(56, 189, 248, 0.45); background: rgba(9, 14, 26, 0.95); width: 100%; box-sizing: border-box; color: #fff;"
@@ -1280,7 +1280,7 @@ function renderIndividualPermissionsTab() {
             <option value="" ${!selectedUser ? 'selected' : ''}>-- Choose an Account (${users.length} Available) --</option>
             ${users.map(u => `
               <option value="${u.id}" ${selectedUser && u.id === selectedUser.id ? 'selected' : ''}>
-                #${u.cardNumber || u.employeeId || '—'} - ${escapeHtml(u.name)} (${escapeHtml(u.designation || u.department || 'User')})
+                ${u.cardNumber || u.employeeId || '—'} - ${escapeHtml(u.name)} (${escapeHtml(u.designation || u.department || 'User')})
               </option>
             `).join('')}
           </select>
@@ -1306,7 +1306,7 @@ function renderIndividualPermissionsTab() {
               No User Account Selected
             </h3>
             <p style="font-size: 13px; color: var(--text-secondary); margin: 0; line-height: 1.5;">
-              Use the <strong>Smart Search</strong> above (type Card #, Name, or Username) or pick an account from the dropdown list to view and configure their individual permissions and location access restrictions.
+              Use the <strong>Smart Search</strong> above (type Card Number, Name, or Username) or pick an account from the dropdown list to view and configure their individual permissions and location access restrictions.
             </p>
           </div>
 
@@ -1316,7 +1316,7 @@ function renderIndividualPermissionsTab() {
             <div style="display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; max-width: 720px;">
               ${users.slice(0, 6).map(u => `
                 <button type="button" class="btn btn-secondary btn-xs btn-perm-quick-pick" data-id="${u.id}" style="font-size: 11px; padding: 5px 10px; border-radius: 6px; display: inline-flex; align-items: center; gap: 5px; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(56, 189, 248, 0.3); cursor: pointer;">
-                  <span style="color: #38bdf8; font-family: var(--font-mono); font-weight: 800;">#${u.cardNumber || u.employeeId || '—'}</span>
+                  <span style="color: #38bdf8; font-family: var(--font-mono); font-weight: 800;">${u.cardNumber || u.employeeId || '—'}</span>
                   <span style="color: #fff; font-weight: 600;">${escapeHtml(u.name)}</span>
                 </button>
               `).join('')}
@@ -1670,120 +1670,151 @@ function renderPasswordManagementTab() {
   });
 
   return `
-    <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 20px; display: flex; flex-direction: column; gap: 16px; box-shadow: var(--shadow-sm);">
+    <div style="background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 18px 20px; display: flex; flex-direction: column; gap: 14px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);">
       
-      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
-        <div>
-          <h2 style="font-size: 17px; font-weight: 800; color: #fff; margin: 0;">
-            🔑 Password Management Dashboard
-          </h2>
-          <p style="font-size: 12px; color: var(--text-secondary); margin: 3px 0 0 0;">
-            Generate cryptographically secure 14-character initial passwords, trigger authorized resets, and prepare accounts for credential export.
-          </p>
+      <!-- Top Header & Controls -->
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding-bottom: 14px;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div style="width: 38px; height: 38px; border-radius: 9px; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.35); display: flex; align-items: center; justify-content: center; font-size: 18px; color: #38bdf8;">
+            🔑
+          </div>
+          <div>
+            <h2 style="font-size: 16px; font-weight: 800; color: #fff; margin: 0; letter-spacing: -0.2px;">
+              Password Management Dashboard
+            </h2>
+            <p style="font-size: 11.5px; color: var(--text-muted); margin: 3px 0 0 0;">
+              Configure user passwords, manage initial credentials, and trigger secure administrative resets.
+            </p>
+          </div>
         </div>
 
         <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-          <button id="btn-bulk-gen-initial-pass" class="btn btn-warning btn-sm" style="font-weight: 700; font-size: 12px;">
-            ⚡ Bulk Generate Initial Passwords
+          <button id="btn-bulk-gen-initial-pass" class="btn btn-warning btn-sm" style="font-weight: 800; font-size: 11.5px; height: 32px; padding: 0 14px; border-radius: 6px; display: inline-flex; align-items: center; gap: 5px;">
+            <span>⚡</span> <span>Bulk Generate Passwords</span>
           </button>
-          <button id="btn-jump-to-export-credentials" class="btn btn-secondary btn-sm" style="font-weight: 700; color: #38bdf8; font-size: 12px;">
-            🔐 Export Eligible Credentials &rarr;
+          <button id="btn-jump-to-export-credentials" class="btn btn-secondary btn-sm" style="font-weight: 700; color: #38bdf8; font-size: 11.5px; height: 32px; padding: 0 14px; border-radius: 6px; border-color: rgba(56, 189, 248, 0.35); display: inline-flex; align-items: center; gap: 5px;">
+            <span>🔐</span> <span>Export Eligible Credentials &rarr;</span>
           </button>
         </div>
       </div>
 
       <!-- Filters Row -->
-      <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; background: rgba(15, 23, 42, 0.6); padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border-color);">
-        <input 
-          type="text" 
-          id="inp-pass-mgmt-search" 
-          class="form-control" 
-          placeholder="Search by Card #, Name, or Username..." 
-          value="${passwordMgmtSearch}"
-          style="height: 32px; font-size: 12px; max-width: 280px;"
-        />
+      <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; background: rgba(9, 14, 26, 0.7); padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.08);">
+        <div style="position: relative; width: 280px; min-width: 200px;">
+          <span style="position: absolute; left: 9px; top: 7px; font-size: 12px; color: var(--text-muted);">🔍</span>
+          <input 
+            type="text" 
+            id="inp-pass-mgmt-search" 
+            class="form-control" 
+            placeholder="Search by Card, Name, or Username..." 
+            value="${passwordMgmtSearch}"
+            style="height: 30px; padding-left: 28px; font-size: 11.5px; border-radius: 6px; width: 100%; box-sizing: border-box; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255, 255, 255, 0.12);"
+          />
+        </div>
 
-        <select id="sel-pass-mgmt-floor" class="filter-select" style="height: 32px; font-size: 12px; max-width: 180px;">
+        <select id="sel-pass-mgmt-floor" class="filter-select" style="height: 30px; font-size: 11.5px; max-width: 170px; border-radius: 6px; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255, 255, 255, 0.12); color: #e2e8f0;">
           <option value="ALL">🏢 All Floors</option>
           ${allFloors.map(f => `<option value="${f.id}" ${passwordMgmtFloor === f.id ? 'selected' : ''}>${f.name}</option>`).join('')}
         </select>
 
-        <select id="sel-pass-mgmt-status" class="filter-select" style="height: 32px; font-size: 12px; max-width: 180px;">
+        <select id="sel-pass-mgmt-status" class="filter-select" style="height: 30px; font-size: 11.5px; max-width: 190px; border-radius: 6px; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255, 255, 255, 0.12); color: #e2e8f0;">
           <option value="ALL">🔑 All Password Status</option>
-          <option value="TEMPORARY" ${passwordMgmtStatus === 'TEMPORARY' ? 'selected' : ''}>🟡 Temporary Initial Passwords</option>
-          <option value="SETUP" ${passwordMgmtStatus === 'SETUP' ? 'selected' : ''}>✅ Setup / Active Passwords</option>
+          <option value="TEMPORARY" ${passwordMgmtStatus === 'TEMPORARY' ? 'selected' : ''}>🟡 Temporary Passwords</option>
+          <option value="SETUP" ${passwordMgmtStatus === 'SETUP' ? 'selected' : ''}>✅ Active Passwords</option>
         </select>
 
-        <span style="font-size: 12px; color: var(--text-muted); margin-left: auto;">
-          Showing <strong>${filtered.length}</strong> accounts
+        <span style="font-size: 11.5px; color: #94a3b8; margin-left: auto; padding: 2px 8px; background: rgba(15, 23, 42, 0.6); border-radius: 5px; border: 1px solid rgba(255, 255, 255, 0.05);">
+          Showing <strong style="color: #fff;">${filtered.length}</strong> accounts
         </span>
       </div>
 
-      <!-- Password Accounts Table (Section 8) -->
-      <div style="border: 1px solid var(--border-color); border-radius: var(--radius-md); overflow-x: auto;">
-        <table class="user-management-table" style="width: 100%; border-collapse: collapse;">
+      <!-- Password Accounts Table -->
+      <div style="border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; overflow-x: auto; background: rgba(11, 19, 41, 0.7);">
+        <table class="user-management-table" style="width: 100%; border-collapse: collapse; min-width: 980px;">
           <thead>
-            <tr>
-              <th style="padding: 10px 12px;">Card Number</th>
-              <th style="padding: 10px 12px;">Employee Name</th>
-              <th style="padding: 10px 12px;">Username</th>
-              <th style="padding: 10px 10px;">Unit</th>
-              <th style="padding: 10px 10px;">Floor</th>
-              <th style="padding: 10px 8px; text-align: center;">Account Status</th>
-              <th style="padding: 10px 8px; text-align: center;">Password Status</th>
-              <th style="padding: 10px 12px;">Last Password Reset</th>
-              <th style="padding: 10px 12px;">Last Login</th>
-              <th style="padding: 10px 12px; text-align: center;">Actions</th>
+            <tr style="background: rgba(15, 23, 42, 0.9); border-bottom: 1px solid rgba(255, 255, 255, 0.1);">
+              <th style="padding: 10px 14px; text-align: left; width: 110px;">Card Number</th>
+              <th style="padding: 10px 14px; text-align: left; width: 170px;">Employee Name</th>
+              <th style="padding: 10px 12px; text-align: left; width: 130px;">Username</th>
+              <th style="padding: 10px 12px; text-align: left; width: 180px;">Unit</th>
+              <th style="padding: 10px 10px; text-align: center; width: 90px;">Floor</th>
+              <th style="padding: 10px 8px; text-align: center; width: 110px;">Account Status</th>
+              <th style="padding: 10px 8px; text-align: center; width: 120px;">Password Status</th>
+              <th style="padding: 10px 12px; text-align: left; width: 150px;">Last Reset</th>
+              <th style="padding: 10px 12px; text-align: center; width: 120px;">Last Login</th>
+              <th style="padding: 10px 12px; text-align: center; width: 140px;">Actions</th>
             </tr>
           </thead>
           <tbody>
             ${filtered.length === 0 ? `
               <tr>
-                <td colspan="10" style="text-align: center; padding: 28px; color: var(--text-muted); font-size: 13px;">
-                  No accounts found matching filters.
+                <td colspan="10" style="text-align: center; padding: 36px 20px; color: var(--text-muted); font-size: 13px;">
+                  No accounts found matching search or filter criteria.
                 </td>
               </tr>
             ` : filtered.map(acc => `
-              <tr>
-                <td style="padding: 9px 12px; font-family: var(--font-mono); font-weight: 800; color: #38bdf8;">
-                  #${acc.cardNumber}
+              <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.05); transition: background 0.15s ease;">
+                <!-- Card Number (Clean: NO # prefix) -->
+                <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 800; color: #38bdf8; font-size: 12px; white-space: nowrap;">
+                  ${acc.cardNumber}
                 </td>
-                <td style="padding: 9px 12px; font-weight: 700; color: #fff;">
-                  ${acc.employeeName}
+                
+                <!-- Employee Name & Designation -->
+                <td style="padding: 10px 14px; text-align: left;">
+                  <div style="font-weight: 700; color: #fff; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 165px;" title="${acc.employeeName}">${acc.employeeName}</div>
+                  <div style="font-size: 10.5px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 165px;" title="${acc.designation || 'Staff'}">${acc.designation || 'Staff'}</div>
                 </td>
-                <td style="padding: 9px 12px; font-family: var(--font-mono); color: #cbd5e1;">
+                
+                <!-- Username -->
+                <td style="padding: 10px 12px; font-family: var(--font-mono); color: #cbd5e1; font-size: 11.5px; white-space: nowrap;">
                   @${acc.username}
                 </td>
-                <td style="padding: 9px 10px; font-size: 11.5px; color: var(--text-secondary);">
-                  ${acc.unitName}
+                
+                <!-- Unit (Single Line Ellipsis: No Awkward 2-Line Wrap) -->
+                <td style="padding: 10px 12px; font-size: 11.5px; color: var(--text-secondary); max-width: 180px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${acc.unitName || '—'}">
+                  ${acc.unitName || '—'}
                 </td>
-                <td style="padding: 9px 10px; font-size: 11.5px; color: #38bdf8;">
-                  ${acc.floorName}
+                
+                <!-- Floor -->
+                <td style="padding: 10px 10px; font-size: 11.5px; color: #38bdf8; text-align: center; font-weight: 600; white-space: nowrap;">
+                  ${acc.floorName || '—'}
                 </td>
-                <td style="text-align: center; padding: 9px 8px;">
-                  <span class="badge ${acc.accountStatus === 'ACTIVE' ? 'badge-active' : 'badge-maint'}" style="font-size: 10px;">
-                    ${acc.accountStatus}
+                
+                <!-- Account Status -->
+                <td style="text-align: center; padding: 10px 8px; white-space: nowrap;">
+                  <span class="badge" style="background: ${acc.accountStatus === 'ACTIVE' ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)'}; border: 1px solid ${acc.accountStatus === 'ACTIVE' ? 'rgba(16, 185, 129, 0.35)' : 'rgba(239, 68, 68, 0.35)'}; color: ${acc.accountStatus === 'ACTIVE' ? '#34d399' : '#f87171'}; font-size: 10px; padding: 2px 7px; border-radius: 5px; font-weight: 700;">
+                    ${acc.accountStatus === 'ACTIVE' ? '🟢 Active' : '🔴 Inactive'}
                   </span>
                 </td>
-                <td style="text-align: center; padding: 9px 8px;">
-                                    ${acc.passwordStatus === 'TEMPORARY' ? `
-                    <span class="badge badge-warning" style="font-size: 10px;">🟡 Temporary</span>
+                
+                <!-- Password Status -->
+                <td style="text-align: center; padding: 10px 8px; white-space: nowrap;">
+                  ${acc.passwordStatus === 'TEMPORARY' ? `
+                    <span class="badge" style="background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.4); color: #fbbf24; font-size: 10px; padding: 2px 8px; border-radius: 5px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">🟡 Temporary</span>
                   ` : `
-                    <span class="badge badge-active" style="font-size: 10px;">✅ Active</span>
+                    <span class="badge" style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); color: #34d399; font-size: 10px; padding: 2px 8px; border-radius: 5px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">✅ Active</span>
                   `}
                 </td>
-                <td style="padding: 9px 12px; font-size: 11px; color: var(--text-muted);">
-                  ${acc.lastPasswordReset ? new Date(acc.lastPasswordReset).toLocaleString() : 'Never'}
+                
+                <!-- Last Reset -->
+                <td style="padding: 10px 12px; font-size: 11px; color: var(--text-muted); white-space: nowrap;">
+                  ${acc.lastPasswordReset ? new Date(acc.lastPasswordReset).toLocaleDateString() + ' ' + new Date(acc.lastPasswordReset).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Never'}
                 </td>
-                <td style="padding: 9px 12px; font-size: 11px; color: var(--text-muted);">
-                  ${acc.lastLoginText}
+                
+                <!-- Last Login -->
+                <td style="padding: 10px 12px; font-size: 11px; text-align: center; white-space: nowrap;">
+                  ${acc.lastLoginText === 'Never Logged In' || acc.lastLoginText === '—' || !acc.lastLoginText ? `
+                    <span style="color: #64748b; font-style: italic;">Never Logged In</span>
+                  ` : `
+                    <span style="color: #cbd5e1; font-weight: 600;">${acc.lastLoginText}</span>
+                  `}
                 </td>
-                <td style="text-align: center; padding: 9px 12px;">
-                  <div style="display: inline-flex; gap: 6px;">
-                                        <button class="btn btn-secondary btn-xs btn-pass-gen-reset" data-id="${acc.id}" data-is-reset="${acc.passwordStatus !== 'TEMPORARY'}" style="font-weight: 700; font-size: 11px; color: #38bdf8;">
-                      ${acc.passwordStatus === 'TEMPORARY' ? '⚡ Re-generate' : '🔄 Reset Password'}
-                    </button>
-                  </div>
+                
+                <!-- Actions -->
+                <td style="text-align: center; padding: 10px 12px; white-space: nowrap;">
+                  <button class="btn btn-secondary btn-xs btn-pass-gen-reset" data-id="${acc.id}" style="font-weight: 700; font-size: 11px; padding: 4px 10px; border-radius: 6px; color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); background: rgba(56, 189, 248, 0.1); white-space: nowrap; display: inline-flex; align-items: center; gap: 4px;">
+                    <span>🔑</span> <span>Change Password</span>
+                  </button>
                 </td>
               </tr>
             `).join('')}
@@ -1970,7 +2001,7 @@ function renderActivityLogsTab() {
           type="text" 
           id="inp-uam-log-search" 
           class="form-control" 
-          placeholder="Filter logs by Card #, User, Admin, or Details..." 
+          placeholder="Filter logs by Card, User, Admin, or Details..." 
           value="${logSearchQuery}"
           style="height: 32px; font-size: 12px; max-width: 320px;"
         />
@@ -2128,7 +2159,7 @@ function renderActiveModalHtml() {
               <span style="font-size: 24px;">👤</span>
               <div>
                 <h3 style="margin: 0; font-size: 16px; font-weight: 800; color: #fff;">User &amp; Manpower Account Details</h3>
-                <p style="margin: 2px 0 0 0; font-size: 11.5px; color: var(--text-muted);">#${acc.cardNumber} • @${acc.username}</p>
+                <p style="margin: 2px 0 0 0; font-size: 11.5px; color: var(--text-muted);">${acc.cardNumber} • @${acc.username}</p>
               </div>
             </div>
             <button class="btn btn-ghost btn-sm btn-close-uam-modal" style="font-size: 16px;">✕</button>
@@ -2137,7 +2168,7 @@ function renderActiveModalHtml() {
           <div style="padding: 16px 0; display: flex; flex-direction: column; gap: 14px; font-size: 12.5px;">
             
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; background: rgba(15, 23, 42, 0.6); padding: 14px; border-radius: 8px; border: 1px solid var(--border-color);">
-              <div><strong style="color: var(--text-muted);">Card ID:</strong> <span style="font-family: var(--font-mono); color: #38bdf8; font-weight: 800;">#${acc.cardNumber}</span></div>
+              <div><strong style="color: var(--text-muted);">Card ID:</strong> <span style="font-family: var(--font-mono); color: #38bdf8; font-weight: 800;">${acc.cardNumber}</span></div>
               <div><strong style="color: var(--text-muted);">Employee Name:</strong> <span style="color: #fff; font-weight: 700;">${acc.employeeName}</span></div>
               <div><strong style="color: var(--text-muted);">Username:</strong> <span style="color: #cbd5e1; font-family: var(--font-mono);">@${acc.username}</span></div>
               <div><strong style="color: var(--text-muted);">Designation:</strong> <span style="color: #fff;">${acc.designation}</span></div>
@@ -2190,7 +2221,7 @@ function renderActiveModalHtml() {
               <div>
                 <h3 style="margin: 0; font-size: 15px; font-weight: 800; color: #fff;">Change User Password</h3>
                 <p style="margin: 2px 0 0 0; font-size: 11px; color: var(--text-muted);">
-                  User: <span style="color: #38bdf8; font-family: var(--font-mono); font-weight: 700;">@${acc.username}</span> • <span style="color: #cbd5e1;">#${acc.cardNumber}</span>
+                  User: <span style="color: #38bdf8; font-family: var(--font-mono); font-weight: 700;">@${acc.username}</span> • <span style="color: #cbd5e1;">${acc.cardNumber}</span>
                 </p>
               </div>
             </div>
@@ -2463,7 +2494,7 @@ function renderActiveModalHtml() {
                     <!-- Left: Card Badge & Name/Designation -->
                     <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
                       <span class="badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; font-weight: 800; padding: 3px 8px; border-radius: 6px; font-family: var(--font-mono); font-size: 11.5px; border: 1px solid rgba(56, 189, 248, 0.3); white-space: nowrap;">
-                        🪪 #${s.cardNumber || '—'}
+                        🪪 ${s.cardNumber || '—'}
                       </span>
                       <div style="min-width: 0;">
                         <div style="font-weight: 700; color: #fff; font-size: 13px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">${s.name}</div>
@@ -2501,7 +2532,7 @@ function renderActiveModalHtml() {
                 <div style="max-height: 120px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px;">
                   ${failedList.map(f => `
                     <div style="color: #fca5a5; padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,0.04); display: flex; justify-content: space-between;">
-                      <span>#${f.cardNumber} - ${f.name}</span>
+                      <span>${f.cardNumber} - ${f.name}</span>
                       <span style="font-size: 11px; color: #ef4444;">${f.error}</span>
                     </div>
                   `).join('')}
@@ -2613,7 +2644,7 @@ function renderActiveModalHtml() {
                         <div style="min-width: 0;">
                           <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                             <span style="font-family: var(--font-mono); font-weight: 800; color: #38bdf8; font-size: 13px; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.3); padding: 2px 7px; border-radius: 5px;">
-                              #${selEmp.cardNumber}
+                              ${selEmp.cardNumber}
                             </span>
                             <strong style="font-size: 14px; color: #fff;">${selEmp.name}</strong>
                             ${hasExistingUser ? `
@@ -2636,7 +2667,7 @@ function renderActiveModalHtml() {
                     <!-- Live Card Search Autocomplete Input -->
                     <div style="position: relative;">
                       <label style="display: flex; justify-content: space-between; align-items: center; font-size: 12px; font-weight: 700; color: #38bdf8; margin-bottom: 6px;">
-                        <span>🔍 Search Employee Card (Card # or Name) *</span>
+                        <span>🔍 Search Employee Card (Card ID or Name) *</span>
                         <span style="font-size: 11px; font-weight: normal; color: var(--text-muted);">${activeEmployees.length} employees available</span>
                       </label>
                       
@@ -2646,7 +2677,7 @@ function renderActiveModalHtml() {
                           type="text" 
                           id="inp-add-user-card-search" 
                           class="form-control" 
-                          placeholder="Type Card # (e.g. AMG-0000083 or 083) or Name to search..." 
+                          placeholder="Type Card (e.g. AMG-0000083 or 083) or Name to search..." 
                           value="${addModalCardSearchQuery}"
                           autocomplete="off" 
                           style="height: 38px; padding-left: 36px; padding-right: 30px; font-size: 13px; border-radius: 8px; border: 1px solid rgba(56, 189, 248, 0.4); background: rgba(15, 23, 42, 0.95); width: 100%; box-sizing: border-box;"
@@ -3005,7 +3036,7 @@ function renderActiveModalHtml() {
           <!-- Controls Bar -->
           <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; padding: 0 0 12px 0; border-bottom: 1px solid var(--border-color); flex-shrink: 0;">
             <div style="flex: 1; min-width: 200px;">
-              <input type="text" id="inp-assign-preset-search" class="form-control" placeholder="Search by name, card #, or username..." style="height: 32px; font-size: 12px;" />
+              <input type="text" id="inp-assign-preset-search" class="form-control" placeholder="Search by name, card, or username..." style="height: 32px; font-size: 12px;" />
             </div>
             <div style="display: flex; gap: 6px;">
               <button type="button" id="btn-assign-preset-select-all" class="btn btn-secondary btn-xs" style="color: #38bdf8; font-weight: 700;">
@@ -3028,7 +3059,7 @@ function renderActiveModalHtml() {
                     <input type="checkbox" class="chk-assign-preset-user" data-uid="${u.id}" ${isChecked ? 'checked' : ''} style="cursor: pointer; width: 15px; height: 15px; accent-color: #0284c7;" />
                     <div>
                       <div style="display: flex; align-items: center; gap: 8px;">
-                        <span style="font-family: var(--font-mono); font-size: 11.5px; color: #38bdf8; font-weight: 700;">#${cardStr}</span>
+                        <span style="font-family: var(--font-mono); font-size: 11.5px; color: #38bdf8; font-weight: 700;">${cardStr}</span>
                         <strong style="font-size: 12.5px; color: #fff;">${u.name}</strong>
                         <span style="font-size: 11px; color: #94a3b8; font-family: var(--font-mono);">@${u.username}</span>
                       </div>
@@ -3510,7 +3541,7 @@ export function initUserManagementEvents() {
         searchQuery = cardNum;
         currentPage = 1;
         reRender();
-        notificationService.info(`Filtered accounts by Card #${cardNum}`);
+        notificationService.info(`Filtered accounts by Card ${cardNum}`);
       }
     });
   });
@@ -3686,7 +3717,7 @@ export function initUserManagementEvents() {
           isReset: false
         };
         activeModalType = 'PASSWORD_RESULT';
-        notificationService.success(`Created account @${res.user.username} for #${emp.cardNumber}`);
+        notificationService.success(`Created account @${res.user.username} for Card ${emp.cardNumber}`);
         reRender();
       } catch (err) {
         notificationService.error('Failed to create account: ' + err.message);
@@ -3842,7 +3873,7 @@ export function initUserManagementEvents() {
         if (navigator.clipboard && navigator.clipboard.writeText) {
           navigator.clipboard.writeText(card);
         }
-        notificationService.info(`Copied Card #${card} to clipboard!`);
+        notificationService.info(`Copied Card ${card} to clipboard!`);
       }
     });
   }
@@ -3856,7 +3887,7 @@ export function initUserManagementEvents() {
       if (cIdx > 0) {
         selectUserForPermissions(users[cIdx - 1].id, true);
         reRender();
-        notificationService.info(`Switched to Card #${users[cIdx - 1].cardNumber || users[cIdx - 1].employeeId} (${users[cIdx - 1].name})`);
+        notificationService.info(`Switched to Card ${users[cIdx - 1].cardNumber || users[cIdx - 1].employeeId} (${users[cIdx - 1].name})`);
       }
     });
   }
@@ -3869,7 +3900,7 @@ export function initUserManagementEvents() {
       if (cIdx >= 0 && cIdx < users.length - 1) {
         selectUserForPermissions(users[cIdx + 1].id, true);
         reRender();
-        notificationService.info(`Switched to Card #${users[cIdx + 1].cardNumber || users[cIdx + 1].employeeId} (${users[cIdx + 1].name})`);
+        notificationService.info(`Switched to Card ${users[cIdx + 1].cardNumber || users[cIdx + 1].employeeId} (${users[cIdx + 1].name})`);
       }
     });
   }
@@ -3883,7 +3914,7 @@ export function initUserManagementEvents() {
         reRender();
         const u = storage.getItem(TABLE_NAMES.USERS, id);
         if (u) {
-          notificationService.success(`Loaded permissions & location scope for ${u.name} (Card #${u.cardNumber || u.employeeId})`);
+          notificationService.success(`Loaded permissions & location scope for ${u.name} (Card ${u.cardNumber || u.employeeId})`);
         }
       }
     });
@@ -3949,7 +3980,7 @@ export function initUserManagementEvents() {
           <div class="perm-smart-result-item" data-id="${u.id}" style="padding: 9px 14px; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; justify-content: space-between; align-items: center; transition: all 0.15s ease;">
             <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
               <span style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); font-family: var(--font-mono); font-size: 11px; font-weight: 800; padding: 2px 7px; border-radius: 4px; white-space: nowrap;">
-                🪪 #${cardNum}
+                🪪 ${cardNum}
               </span>
               <div style="min-width: 0;">
                 <div style="font-size: 12.5px; font-weight: 700; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
@@ -3984,7 +4015,7 @@ export function initUserManagementEvents() {
             reRender();
             const target = storage.getItem(TABLE_NAMES.USERS, id);
             if (target) {
-              notificationService.success(`Loaded permissions & location scope for ${target.name} (Card #${target.cardNumber || target.employeeId})`);
+              notificationService.success(`Loaded permissions & location scope for ${target.name} (Card ${target.cardNumber || target.employeeId})`);
             }
           }
         });
@@ -4023,7 +4054,7 @@ export function initUserManagementEvents() {
             selectUserForPermissions(matched.id, true);
             smartSearchDropdown.style.display = 'none';
             reRender();
-            notificationService.success(`Loaded permissions & location scope for ${matched.name} (Card #${matched.cardNumber || matched.employeeId})`);
+            notificationService.success(`Loaded permissions & location scope for ${matched.name} (Card ${matched.cardNumber || matched.employeeId})`);
           } else {
             notificationService.warning(`No account found matching "${smartSearchInp.value}"`);
           }
@@ -4062,7 +4093,7 @@ export function initUserManagementEvents() {
         selectUserForPermissions(val, true);
         const u = storage.getItem(TABLE_NAMES.USERS, val);
         if (u) {
-          notificationService.success(`Switched to ${u.name} (Card #${u.cardNumber || u.employeeId})`);
+          notificationService.success(`Switched to ${u.name} (Card ${u.cardNumber || u.employeeId})`);
         }
       } else {
         selectUserForPermissions(null, true);
@@ -4747,7 +4778,7 @@ export function initUserManagementEvents() {
           <div class="uam-emp-suggestion-item" data-id="${e.id}" style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; border-radius: 6px; cursor: pointer; transition: background 0.15s; border-bottom: 1px solid rgba(255,255,255,0.04); gap: 10px;">
             <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
               <span style="font-family: var(--font-mono); font-weight: 800; font-size: 12px; color: #38bdf8; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.3); padding: 2px 7px; border-radius: 5px; white-space: nowrap;">
-                🪪 #${e.cardNumber}
+                🪪 ${e.cardNumber}
               </span>
               <div style="min-width: 0;">
                 <div style="font-weight: 700; font-size: 13px; color: #fff; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">${e.name}</div>
