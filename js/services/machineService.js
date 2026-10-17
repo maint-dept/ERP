@@ -466,8 +466,16 @@ class MachineService {
       ? (running + usable_idle + repairable_idle) || qty
       : qty;
 
-    const systemAssetId = machineData.systemAssetId || storage.generateNextSystemAssetId();
-    const permanentMachineId = machineData.permanentMachineId || systemAssetId;
+    let systemAssetId = machineData.systemAssetId;
+    const existingAssetIds = new Set(
+      (storage.getTable(TABLE_NAMES.MACHINES) || [])
+        .map(m => m.systemAssetId || (m.permanentMachineId ? String(m.permanentMachineId).replace(/^MID-/i, 'AMG-MNT-') : ''))
+        .filter(Boolean)
+    );
+    if (!systemAssetId || existingAssetIds.has(systemAssetId)) {
+      systemAssetId = storage.generateNextSystemAssetId();
+    }
+    const permanentMachineId = systemAssetId;
 
     const newMachine = {
       ...machineData,
@@ -552,24 +560,26 @@ class MachineService {
     if (!storage.data[TABLE_NAMES.MACHINES]) {
       storage.data[TABLE_NAMES.MACHINES] = [];
     }
-    storage.data[TABLE_NAMES.MACHINES].push(newMachine);
+    const existingIndex = storage.data[TABLE_NAMES.MACHINES].findIndex(m => m && m.id === newMachine.id);
+    if (existingIndex === -1) {
+      storage.data[TABLE_NAMES.MACHINES].push(newMachine);
+    } else {
+      storage.data[TABLE_NAMES.MACHINES][existingIndex] = newMachine;
+    }
     storage.rebuildAllIndexes();
     try {
       localStorage.setItem('al_muslim_erp_' + TABLE_NAMES.MACHINES, JSON.stringify(storage.data[TABLE_NAMES.MACHINES]));
+    } catch (_) {}
+    try {
+      if (typeof idbCache !== 'undefined' && idbCache.setTable) {
+        idbCache.setTable(TABLE_NAMES.MACHINES, storage.data[TABLE_NAMES.MACHINES]);
+      }
     } catch (_) {}
 
     // 2. Background non-blocking cloud sync
     syncManager.saveRecord(TABLE_NAMES.MACHINES, newMachine.id, newMachine).catch(e => {
       console.warn('[SyncManager] Add machine cloud sync queued in background:', e.message);
     });
-    if (!storage.data[TABLE_NAMES.MACHINES]) {
-      storage.data[TABLE_NAMES.MACHINES] = [];
-    }
-    storage.data[TABLE_NAMES.MACHINES].push(newMachine);
-    storage.rebuildAllIndexes();
-    try {
-      localStorage.setItem('al_muslim_erp_' + TABLE_NAMES.MACHINES, JSON.stringify(storage.data[TABLE_NAMES.MACHINES]));
-    } catch (_) {}
     const created = newMachine;
 
     auditService.log('MACHINE_ADDED', 'MACHINE', created.serialNumber, `Added machine: ${created.serialNumber}`);

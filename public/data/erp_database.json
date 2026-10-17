@@ -31673,6 +31673,12 @@
       "status": "ACTIVE",
       "createdAt": "2026-10-15T14:32:53.139Z",
       "updatedAt": "2026-10-15T14:32:53.139Z"
+    },
+    {
+      "id": "bra-1788870296743-965",
+      "name": "Juki",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-17T11:21:22.446Z"
     }
   ],
   "categories": [
@@ -43997,6 +44003,210 @@
       "code": "BOTT",
       "status": "ACTIVE",
       "createdAt": "2026-10-15T15:12:37.412Z"
+    },
+    {
+      "id": "mn-1791524135328-lani",
+      "name": "Bottom Hamming Chain Stitch Machine",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-15T14:36:02.347Z"
+    },
+    {
+      "id": "mn-1791524135308-cccc",
+      "name": "Chain Stitch Machine",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-15T14:36:02.347Z"
+    },
+    {
+      "id": "mn-1791524135302-3wzk",
+      "name": "Double Needle Lock Stitch Machine",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-15T14:36:02.347Z"
+    },
+    {
+      "id": "mn-1791524135333-tk90",
+      "name": "Lable Attach Machine (Velcro)",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-15T14:36:02.347Z"
+    },
+    {
+      "id": "mn-1791524135307-f848",
+      "name": "Over Lock Machine",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-15T14:36:02.347Z"
+    },
+    {
+      "id": "mn-1791524135296-jrsq",
+      "name": "Single Needle Lock Stitch Machine",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-15T14:36:02.347Z"
+    },
+    {
+      "id": "mn-1791524135363-ka6e",
+      "name": "Snap Button Machine",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-15T14:36:02.347Z"
+    },
+    {
+      "id": "mn-1791524135374-cdiy",
+      "name": "Wrapping & Knotting Machine",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-15T14:36:02.347Z"
+    },
+    {
+      "id": "mn-1791524135315-2y8s",
+      "name": "Bar tak Machine",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-15T14:36:02.347Z"
+    },
+    {
+      "id": "mn-1791524135321-fyhy",
+      "name": "Button Stitch Machine",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-15T14:36:02.347Z"
+    },
+    {
+      "id": "mn-1791524135372-scc7",
+      "name": "Plastic Staple Attache Machine",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-15T14:36:02.347Z"
+    },
+    {
+      "id": "mn-1",
+      "name": "Needle Detector Machine",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-15T14:36:02.347Z"
+    },
+    {
+      "id": "mn-1791524135367-vzws",
+      "name": "Heat Transfer Machine",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-15T14:36:02.347Z"
+    },
+    {
+      "id": "mn-1791524135304-ysv0",
+      "name": "Feed of The Arm Machine",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-15T14:36:02.347Z"
+    },
+    {
+      "id": "mn-1791524135354-3k4u",
+      "name": "Pocket Attach Machine",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-15T14:36:02.347Z"
+    },
+    {
+      "id": "mn-1791524135352-cpih",
+      "name": "Pocket Rolling Machine",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-15T14:36:02.347Z"
+    },
+    {
+      "id": "mn-1791524135327-69ad",
+      "name": "Bottom Hamming Lock Stitch Machine (Bedoly)",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-15T14:36:02.347Z"
+    },
+    {
+      "id": "mn-1791524135322-nebp",
+      "name": "Button Hole Machine",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-15T14:36:02.347Z"
+    },
+    {
+      "id": "mn-1791524135300-mavf",
+      "name": "Edge Cutter Machine (Vertical)",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-15T14:36:02.347Z"
+    },
+    {
+      "id": "mn-1791524135324-0cyf",
+      "name": "Eyelet Hole Machine",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-15T14:36:02.347Z"
+    },
+    {
+      "id": "mn-1791524135336-xcht",
+      "name": "Flat Lock Machine",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-15T14:36:02.347Z"
+    },
+    {
+      "id": "mn-1791524135350-221v",
+      "name": "Loop Attach Machine",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-15T14:36:02.347Z"
+    },
+    {
+      "id": "mn-1791524135313-ufae",
+      "name": "Multi Needle Chain Stitch Machine",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-15T14:36:02.347Z"
+    },
+    {
+      "id": "mn-1791524135343-mwt2",
+      "name": "Top Stitch Machine",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-15T14:36:02.347Z"
+    },
+    {
+      "id": "mn-1791524135343-pckp",
+      "name": "Zipper Joint Machine",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-15T14:36:02.347Z"
+    },
+    {
+      "id": "mn-1791524135326-8svp",
+      "name": "Automatic Pocket Welting (APW) Machine",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-15T14:36:02.347Z"
+    },
+    {
+      "id": "mn-1791524135359-tcza",
+      "name": "Fake Down Filling Machine",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-15T14:36:02.347Z"
+    },
+    {
+      "id": "mn-1791524135355-bzz2",
+      "name": "Single Head Template",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-15T14:36:02.347Z"
+    },
+    {
+      "id": "mn-1791524135358-l9yq",
+      "name": "Template Plastic Cutter Machine",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-15T14:36:02.347Z"
+    },
+    {
+      "id": "mn-1791524135338-3wec",
+      "name": "Flat Lock with Raw Edge Cutting Machine",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-15T14:36:02.347Z"
+    },
+    {
+      "id": "mn-1791524135348-qzy9",
+      "name": "Saddle Stitch Machine",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-15T14:36:02.347Z"
+    },
+    {
+      "id": "mn-1791524135360-msq3",
+      "name": "Double Head Auto Elastic Joint Sewing Machine",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-15T14:36:02.347Z"
+    },
+    {
+      "id": "mn-1791524135327-fqz2",
+      "name": "Bottom Hamming Lock Stitch Machine",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-15T14:36:02.347Z"
+    },
+    {
+      "id": "mn-1791524135326-58j5",
+      "name": "Laser Cut APW Machine",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-15T14:36:02.347Z"
     }
   ],
   "machines": [
@@ -44464,7 +44674,7 @@
     },
     {
       "id": "mac-1788870312678-970",
-      "permanentMachineId": "AMG-MNT-000970",
+      "permanentMachineId": "AMG-MNT-000012",
       "serialNumber": "F/A-229",
       "machineNameId": "mn-1788869247100-2uyc",
       "brandId": "brd-1791167281510-9p0e",
@@ -44502,7 +44712,7 @@
       "modelStr": "MS-1261",
       "modelName": "MS-1261",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000970"
+      "systemAssetId": "AMG-MNT-000012"
     },
     {
       "id": "mac-00013-t22",
@@ -44590,7 +44800,7 @@
     },
     {
       "id": "mac-1788870312796-689",
-      "permanentMachineId": "AMG-MNT-000689",
+      "permanentMachineId": "AMG-MNT-000015",
       "serialNumber": "P/M-819",
       "machineNameId": "mn-1792077157398-8mma",
       "brandId": "brd-1791167281510-9p0e",
@@ -44628,7 +44838,7 @@
       "modelStr": "DDL-9000B",
       "modelName": "DDL-9000B",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000689"
+      "systemAssetId": "AMG-MNT-000015"
     },
     {
       "id": "mac-00016-t22",
@@ -45724,7 +45934,7 @@
     },
     {
       "id": "mac-1788870312741-480",
-      "permanentMachineId": "AMG-MNT-000480",
+      "permanentMachineId": "AMG-MNT-000042",
       "serialNumber": "F/A-181",
       "machineNameId": "mn-1788869247100-2uyc",
       "brandId": "brd-1791167281510-9p0e",
@@ -45762,7 +45972,7 @@
       "modelStr": "MS-1261",
       "modelName": "MS-1261",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000480"
+      "systemAssetId": "AMG-MNT-000042"
     },
     {
       "id": "mac-00043-t22",
@@ -45892,7 +46102,7 @@
     },
     {
       "id": "mac-1788870312737-835",
-      "permanentMachineId": "AMG-MNT-000835",
+      "permanentMachineId": "AMG-MNT-000046",
       "serialNumber": "K/S-13",
       "machineNameId": "mn-1788869247176-2gzf",
       "brandId": "brd-1791167281518-1oda",
@@ -45930,7 +46140,7 @@
       "modelStr": "DFB1411PXP",
       "modelName": "DFB1411PXP",
       "brand": "KANSAI SPECIAL",
-      "systemAssetId": "AMG-MNT-000835"
+      "systemAssetId": "AMG-MNT-000046"
     },
     {
       "id": "mac-00047-t22",
@@ -46186,7 +46396,7 @@
     },
     {
       "id": "mac-1788870312613-964",
-      "permanentMachineId": "AMG-MNT-000964",
+      "permanentMachineId": "AMG-MNT-000053",
       "serialNumber": "S/S-99",
       "machineNameId": "mn-1788869247159-lw1e",
       "brandId": "brd-1791167281524-wjoa",
@@ -46224,7 +46434,7 @@
       "modelName": "ZJ3820-BD",
       "brand": "ZOJE",
       "machineName": "Safety Stitch M/C",
-      "systemAssetId": "AMG-MNT-000964"
+      "systemAssetId": "AMG-MNT-000053"
     },
     {
       "id": "mac-00054-t22",
@@ -46312,7 +46522,7 @@
     },
     {
       "id": "mac-1788870312613-209",
-      "permanentMachineId": "AMG-MNT-000209",
+      "permanentMachineId": "AMG-MNT-000056",
       "serialNumber": "P/F-10",
       "machineNameId": "mn-1792077157399-5kmi",
       "brandId": "brd-1791461137716-0vne",
@@ -46350,11 +46560,11 @@
       "modelStr": "TH-500-07",
       "modelName": "TH-500-07",
       "brand": "IHG",
-      "systemAssetId": "AMG-MNT-000209"
+      "systemAssetId": "AMG-MNT-000056"
     },
     {
       "id": "mac-1792072746194-56-9701",
-      "permanentMachineId": "AMG-MNT-000689",
+      "permanentMachineId": "AMG-MNT-000057",
       "serialNumber": "O/L-819",
       "machineNameId": "mn-1788869247118-qyw5",
       "brandId": "brd-1791167281510-9p0e",
@@ -46392,7 +46602,7 @@
       "modelStr": "MO-6714DA",
       "modelName": "MO-6714DA",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000689"
+      "systemAssetId": "AMG-MNT-000057"
     },
     {
       "id": "mac-00058-t22",
@@ -46732,7 +46942,7 @@
     },
     {
       "id": "mac-1788870312554-355",
-      "permanentMachineId": "AMG-MNT-000355",
+      "permanentMachineId": "AMG-MNT-000066",
       "serialNumber": "P/M-700",
       "machineNameId": "mn-1792077157398-8mma",
       "brandId": "brd-1791167281510-9p0e",
@@ -46770,7 +46980,7 @@
       "modelStr": "DDL-900C",
       "modelName": "DDL-900C",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000355"
+      "systemAssetId": "AMG-MNT-000066"
     },
     {
       "id": "mac-00067-t22",
@@ -47194,7 +47404,7 @@
     },
     {
       "id": "mac-1788870312558-791",
-      "permanentMachineId": "AMG-MNT-000791",
+      "permanentMachineId": "AMG-MNT-000077",
       "serialNumber": "B/T-218",
       "machineNameId": "mn-1788869247205-his3",
       "brandId": "brd-1791167281510-9p0e",
@@ -47232,11 +47442,11 @@
       "modelStr": "LK-1900B",
       "modelName": "LK-1900B",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000791"
+      "systemAssetId": "AMG-MNT-000077"
     },
     {
       "id": "mac-1788870312644-697",
-      "permanentMachineId": "AMG-MNT-000697",
+      "permanentMachineId": "AMG-MNT-000078",
       "serialNumber": "C/S-450",
       "machineNameId": "mn-1788869247141-kx1a",
       "brandId": "brd-1791167281524-wjoa",
@@ -47274,7 +47484,7 @@
       "modelStr": "ZJ3800BD",
       "modelName": "ZJ3800BD",
       "brand": "ZOJE",
-      "systemAssetId": "AMG-MNT-000697"
+      "systemAssetId": "AMG-MNT-000078"
     },
     {
       "id": "mac-00079-t22",
@@ -47488,7 +47698,7 @@
     },
     {
       "id": "mac-1788870312676-856",
-      "permanentMachineId": "AMG-MNT-000856",
+      "permanentMachineId": "AMG-MNT-000084",
       "serialNumber": "F/A-231",
       "machineNameId": "mn-1788869247100-2uyc",
       "brandId": "brd-1791167281510-9p0e",
@@ -47526,7 +47736,7 @@
       "modelStr": "MS-1261",
       "modelName": "MS-1261",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000856"
+      "systemAssetId": "AMG-MNT-000084"
     },
     {
       "id": "mac-00085-t22",
@@ -48160,7 +48370,7 @@
     },
     {
       "id": "mac-1788870312616-59",
-      "permanentMachineId": "AMG-MNT-000059",
+      "permanentMachineId": "AMG-MNT-000100",
       "serialNumber": "E/H-52",
       "machineNameId": "mn-1792077157399-9t5r",
       "brandId": "brd-1791167281510-9p0e",
@@ -48198,11 +48408,11 @@
       "modelStr": "MEB-3200J",
       "modelName": "MEB-3200J",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000059"
+      "systemAssetId": "AMG-MNT-000100"
     },
     {
       "id": "mac-1788870312683-594",
-      "permanentMachineId": "AMG-MNT-000594",
+      "permanentMachineId": "AMG-MNT-000101",
       "serialNumber": "P/M-919",
       "machineNameId": "mn-1792077157398-8mma",
       "brandId": "brd-1791167281510-9p0e",
@@ -48240,7 +48450,7 @@
       "modelStr": "DDL-900C",
       "modelName": "DDL-900C",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000594"
+      "systemAssetId": "AMG-MNT-000101"
     },
     {
       "id": "mac-1790660610811-553",
@@ -48370,7 +48580,7 @@
     },
     {
       "id": "mac-1788870312576-298",
-      "permanentMachineId": "AMG-MNT-000298",
+      "permanentMachineId": "AMG-MNT-000105",
       "serialNumber": "O/L-484",
       "machineNameId": "mn-1788869247118-qyw5",
       "brandId": "brd-1791167281510-9p0e",
@@ -48408,11 +48618,11 @@
       "modelStr": "MO-6714S",
       "modelName": "MO-6714S",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000298"
+      "systemAssetId": "AMG-MNT-000105"
     },
     {
       "id": "mac-1792072746195-105-4817",
-      "permanentMachineId": "AMG-MNT-000298",
+      "permanentMachineId": "AMG-MNT-000106",
       "serialNumber": "P/M-484",
       "machineNameId": "mn-1792077157398-8mma",
       "brandId": "brd-1791167281510-9p0e",
@@ -48450,7 +48660,7 @@
       "modelStr": "DDL-9000B-SH",
       "modelName": "DDL-9000B-SH",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000298"
+      "systemAssetId": "AMG-MNT-000106"
     },
     {
       "id": "mac-00107-t22",
@@ -49252,7 +49462,7 @@
     },
     {
       "id": "mac-1788870312550-191",
-      "permanentMachineId": "AMG-MNT-000191",
+      "permanentMachineId": "AMG-MNT-000126",
       "serialNumber": "B/T-225",
       "machineNameId": "mn-1788869247205-his3",
       "brandId": "brd-1791167281510-9p0e",
@@ -49290,7 +49500,7 @@
       "modelStr": "LK-1900B-SH",
       "modelName": "LK-1900B-SH",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000191"
+      "systemAssetId": "AMG-MNT-000126"
     },
     {
       "id": "mac-00127-t22",
@@ -49378,7 +49588,7 @@
     },
     {
       "id": "mac-1788870312781-352",
-      "permanentMachineId": "AMG-MNT-000352",
+      "permanentMachineId": "AMG-MNT-000129",
       "serialNumber": "B/T-200",
       "machineNameId": "mn-1788869247205-his3",
       "brandId": "brd-1791167281510-9p0e",
@@ -49416,7 +49626,7 @@
       "modelStr": "LK-1900A-HS",
       "modelName": "LK-1900A-HS",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000352"
+      "systemAssetId": "AMG-MNT-000129"
     },
     {
       "id": "mac-00130-t22",
@@ -50218,7 +50428,7 @@
     },
     {
       "id": "mac-1788870312542-205",
-      "permanentMachineId": "AMG-MNT-000205",
+      "permanentMachineId": "AMG-MNT-000149",
       "serialNumber": "P/M-2211",
       "machineNameId": "mn-1792077157398-8mma",
       "brandId": "brd-1791167281510-9p0e",
@@ -50256,7 +50466,7 @@
       "modelStr": "DDL-9000B-SH",
       "modelName": "DDL-9000B-SH",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000205"
+      "systemAssetId": "AMG-MNT-000149"
     },
     {
       "id": "mac-00150-t22",
@@ -51226,7 +51436,7 @@
     },
     {
       "id": "mac-1792072746195-172-7132",
-      "permanentMachineId": "AMG-MNT-000835",
+      "permanentMachineId": "AMG-MNT-000173",
       "serialNumber": "Spd/M-13",
       "machineNameId": "mn-1788869249252-08ik",
       "brandId": "brd-1791167281578-f4pd",
@@ -51264,7 +51474,7 @@
       "modelStr": "NA-800",
       "modelName": "NA-800",
       "brand": "TSM",
-      "systemAssetId": "AMG-MNT-000835"
+      "systemAssetId": "AMG-MNT-000173"
     },
     {
       "id": "mac-00174-t22",
@@ -51646,7 +51856,7 @@
     },
     {
       "id": "mac-1788870312630-816",
-      "permanentMachineId": "AMG-MNT-000816",
+      "permanentMachineId": "AMG-MNT-000183",
       "serialNumber": "O/L-475",
       "machineNameId": "mn-1788869247118-qyw5",
       "brandId": "brd-1791167281510-9p0e",
@@ -51684,7 +51894,7 @@
       "modelStr": "MO-6714DA",
       "modelName": "MO-6714DA",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000816"
+      "systemAssetId": "AMG-MNT-000183"
     },
     {
       "id": "mac-00184-t22",
@@ -51814,7 +52024,7 @@
     },
     {
       "id": "mac-1788870312578-586",
-      "permanentMachineId": "AMG-MNT-000586",
+      "permanentMachineId": "AMG-MNT-000187",
       "serialNumber": "K/S-220",
       "machineNameId": "mn-1788869247205-his3",
       "brandId": "brd-1791167281518-1oda",
@@ -51852,11 +52062,11 @@
       "modelStr": "LK-1900A",
       "modelName": "LK-1900A",
       "brand": "KANSAI SPECIAL",
-      "systemAssetId": "AMG-MNT-000586"
+      "systemAssetId": "AMG-MNT-000187"
     },
     {
       "id": "mac-1788870312564-464",
-      "permanentMachineId": "AMG-MNT-000464",
+      "permanentMachineId": "AMG-MNT-000188",
       "serialNumber": "P/M-4892",
       "machineNameId": "mn-1792077157398-8mma",
       "brandId": "brd-1791167281510-9p0e",
@@ -51894,7 +52104,7 @@
       "modelStr": "DDL-9000B-SH",
       "modelName": "DDL-9000B-SH",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000464"
+      "systemAssetId": "AMG-MNT-000188"
     },
     {
       "id": "mac-00189-t22",
@@ -52108,7 +52318,7 @@
     },
     {
       "id": "mac-1788870312948-184",
-      "permanentMachineId": "AMG-MNT-000184",
+      "permanentMachineId": "AMG-MNT-000194",
       "serialNumber": "P/M-326",
       "machineNameId": "mn-1792077157398-8mma",
       "brandId": "brd-1791167281510-9p0e",
@@ -52146,7 +52356,7 @@
       "modelStr": "DDL-8700-7",
       "modelName": "DDL-8700-7",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000184"
+      "systemAssetId": "AMG-MNT-000194"
     },
     {
       "id": "mac-00195-t22",
@@ -53704,7 +53914,7 @@
     },
     {
       "id": "mac-1788870312727-499",
-      "permanentMachineId": "AMG-MNT-000499",
+      "permanentMachineId": "AMG-MNT-000232",
       "serialNumber": "O/L-127",
       "machineNameId": "mn-1788869247118-qyw5",
       "brandId": "brd-1791167281510-9p0e",
@@ -53742,7 +53952,7 @@
       "modelStr": "MO-6716S",
       "modelName": "MO-6716S",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000499"
+      "systemAssetId": "AMG-MNT-000232"
     },
     {
       "id": "mac-00233-t22",
@@ -54292,7 +54502,7 @@
     },
     {
       "id": "mac-1788870312555-68",
-      "permanentMachineId": "AMG-MNT-000068",
+      "permanentMachineId": "AMG-MNT-000246",
       "serialNumber": "B/T-1264",
       "machineNameId": "mn-1788869247205-his3",
       "brandId": "brd-1791167281510-9p0e",
@@ -54330,7 +54540,7 @@
       "modelStr": "LK-1900BN",
       "modelName": "LK-1900BN",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000068"
+      "systemAssetId": "AMG-MNT-000246"
     },
     {
       "id": "mac-1790670118330-445",
@@ -54796,7 +55006,7 @@
     },
     {
       "id": "mac-1788870312710-906",
-      "permanentMachineId": "AMG-MNT-000906",
+      "permanentMachineId": "AMG-MNT-000258",
       "serialNumber": "P/M-2706",
       "machineNameId": "mn-1792077157398-8mma",
       "brandId": "brd-1791167281510-9p0e",
@@ -54834,7 +55044,7 @@
       "modelStr": "DDL-9000B-SH",
       "modelName": "DDL-9000B-SH",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000906"
+      "systemAssetId": "AMG-MNT-000258"
     },
     {
       "id": "mac-00259-t22",
@@ -55132,7 +55342,7 @@
     },
     {
       "id": "mac-1788870312933-763",
-      "permanentMachineId": "AMG-MNT-000763",
+      "permanentMachineId": "AMG-MNT-000266",
       "serialNumber": "F/L-66",
       "machineNameId": "mn-1788869247389-og7v",
       "brandId": "brd-1791167281511-lwvy",
@@ -55170,7 +55380,7 @@
       "modelStr": "K5001GB",
       "modelName": "K5001GB",
       "brand": "JACK",
-      "systemAssetId": "AMG-MNT-000763"
+      "systemAssetId": "AMG-MNT-000266"
     },
     {
       "id": "mac-00267-t22",
@@ -55678,7 +55888,7 @@
     },
     {
       "id": "mac-1788870312805-318",
-      "permanentMachineId": "AMG-MNT-000318",
+      "permanentMachineId": "AMG-MNT-000279",
       "serialNumber": "P/F-14",
       "machineNameId": "mn-1792077157399-5kmi",
       "brandId": "brd-1791167281513-qhs3",
@@ -55716,7 +55926,7 @@
       "modelStr": "CM-5003A",
       "modelName": "CM-5003A",
       "brand": "ZUSAN",
-      "systemAssetId": "AMG-MNT-000318"
+      "systemAssetId": "AMG-MNT-000279"
     },
     {
       "id": "mac-00280-t22",
@@ -57064,7 +57274,7 @@
     },
     {
       "id": "mac-1788870312583-148",
-      "permanentMachineId": "AMG-MNT-000148",
+      "permanentMachineId": "AMG-MNT-000312",
       "serialNumber": "P/M-2261",
       "machineNameId": "mn-1792077157398-8mma",
       "brandId": "brd-1791167281510-9p0e",
@@ -57102,7 +57312,7 @@
       "modelStr": "DDL-900C",
       "modelName": "DDL-900C",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000148"
+      "systemAssetId": "AMG-MNT-000312"
     },
     {
       "id": "mac-00313-t22",
@@ -57232,7 +57442,7 @@
     },
     {
       "id": "mac-1788870312738-387",
-      "permanentMachineId": "AMG-MNT-000387",
+      "permanentMachineId": "AMG-MNT-000316",
       "serialNumber": "C/S-2",
       "machineNameId": "mn-1792077157400-p884",
       "brandId": "brd-1791167281524-wjoa",
@@ -57270,7 +57480,7 @@
       "modelStr": "CM-380",
       "modelName": "CM-380",
       "brand": "ZOJE",
-      "systemAssetId": "AMG-MNT-000387"
+      "systemAssetId": "AMG-MNT-000316"
     },
     {
       "id": "mac-1790670113027-643",
@@ -57652,7 +57862,7 @@
     },
     {
       "id": "mac-1788870312549-137",
-      "permanentMachineId": "AMG-MNT-000137",
+      "permanentMachineId": "AMG-MNT-000326",
       "serialNumber": "O/L-822",
       "machineNameId": "mn-1788869247118-qyw5",
       "brandId": "brd-1791167281510-9p0e",
@@ -57690,7 +57900,7 @@
       "modelStr": "MO-6716S",
       "modelName": "MO-6716S",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000137"
+      "systemAssetId": "AMG-MNT-000326"
     },
     {
       "id": "mac-00327-t22",
@@ -57862,7 +58072,7 @@
     },
     {
       "id": "mac-1788870312972-161",
-      "permanentMachineId": "AMG-MNT-000161",
+      "permanentMachineId": "AMG-MNT-000331",
       "serialNumber": "O/L-576",
       "machineNameId": "mn-1788869247118-qyw5",
       "brandId": "brd-1791167281510-9p0e",
@@ -57900,11 +58110,11 @@
       "modelStr": "MO-6716S",
       "modelName": "MO-6716S",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000161"
+      "systemAssetId": "AMG-MNT-000331"
     },
     {
       "id": "mac-1788870312692-249",
-      "permanentMachineId": "AMG-MNT-000249",
+      "permanentMachineId": "AMG-MNT-000332",
       "serialNumber": "O/L-95",
       "machineNameId": "mn-1788869247118-qyw5",
       "brandId": "brd-1791167281510-9p0e",
@@ -57942,7 +58152,7 @@
       "modelStr": "MO-6716S",
       "modelName": "MO-6716S",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000249"
+      "systemAssetId": "AMG-MNT-000332"
     },
     {
       "id": "mac-00333-t22",
@@ -58198,7 +58408,7 @@
     },
     {
       "id": "mac-1788870312546-629",
-      "permanentMachineId": "AMG-MNT-000629",
+      "permanentMachineId": "AMG-MNT-000339",
       "serialNumber": "B/S-153",
       "machineNameId": "mn-1792077157400-wlnp",
       "brandId": "brd-1791167281510-9p0e",
@@ -58236,7 +58446,7 @@
       "modelStr": "LK-1903A-SS",
       "modelName": "LK-1903A-SS",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000629"
+      "systemAssetId": "AMG-MNT-000339"
     },
     {
       "id": "mac-00340-t22",
@@ -60004,7 +60214,7 @@
     },
     {
       "id": "mac-1788870312635-202",
-      "permanentMachineId": "AMG-MNT-000202",
+      "permanentMachineId": "AMG-MNT-000382",
       "serialNumber": "B/T-325",
       "machineNameId": "mn-1788869247205-his3",
       "brandId": "brd-1791167281510-9p0e",
@@ -60042,7 +60252,7 @@
       "modelStr": "LK-1900B",
       "modelName": "LK-1900B",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000202"
+      "systemAssetId": "AMG-MNT-000382"
     },
     {
       "id": "mac-00383-t22",
@@ -60634,7 +60844,7 @@
     },
     {
       "id": "mac-1788870312763-89",
-      "permanentMachineId": "AMG-MNT-000089",
+      "permanentMachineId": "AMG-MNT-000397",
       "serialNumber": "B/T-105",
       "machineNameId": "mn-1788869247205-his3",
       "brandId": "brd-1791167281510-9p0e",
@@ -60672,7 +60882,7 @@
       "modelStr": "LK-1900B",
       "modelName": "LK-1900B",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000089"
+      "systemAssetId": "AMG-MNT-000397"
     },
     {
       "id": "mac-1790670107007-647",
@@ -61600,7 +61810,7 @@
     },
     {
       "id": "mac-1788870312897-653",
-      "permanentMachineId": "AMG-MNT-000653",
+      "permanentMachineId": "AMG-MNT-000420",
       "serialNumber": "S/B-292",
       "machineNameId": "mn-1788869248254-ez5p",
       "brandId": "brd-1791461137730-nwll",
@@ -61638,7 +61848,7 @@
       "modelStr": "XD-818",
       "modelName": "XD-818",
       "brand": "XIDING",
-      "systemAssetId": "AMG-MNT-000653"
+      "systemAssetId": "AMG-MNT-000420"
     },
     {
       "id": "mac-1790670117018-662",
@@ -61978,7 +62188,7 @@
     },
     {
       "id": "mac-1792072746195-428-9111",
-      "permanentMachineId": "AMG-MNT-000763",
+      "permanentMachineId": "AMG-MNT-000429",
       "serialNumber": "B/S-66",
       "machineNameId": "mn-1792077157400-wlnp",
       "brandId": "brd-1791167281510-9p0e",
@@ -62016,7 +62226,7 @@
       "modelStr": "LK-1903B",
       "modelName": "LK-1903B",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000763"
+      "systemAssetId": "AMG-MNT-000429"
     },
     {
       "id": "mac-1790670112685-570",
@@ -62188,7 +62398,7 @@
     },
     {
       "id": "mac-1792072746195-433-5779",
-      "permanentMachineId": "AMG-MNT-000318",
+      "permanentMachineId": "AMG-MNT-000434",
       "serialNumber": "B/S-14",
       "machineNameId": "mn-1792077157400-wlnp",
       "brandId": "brd-1791167281510-9p0e",
@@ -62226,7 +62436,7 @@
       "modelStr": "LK-1903B",
       "modelName": "LK-1903B",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000318"
+      "systemAssetId": "AMG-MNT-000434"
     },
     {
       "id": "mac-00435-t22",
@@ -62314,7 +62524,7 @@
     },
     {
       "id": "mac-1792072746195-436-1242",
-      "permanentMachineId": "AMG-MNT-000209",
+      "permanentMachineId": "AMG-MNT-000437",
       "serialNumber": "Pls/St-10",
       "machineNameId": "mn-1788869248629-r0en",
       "brandId": "brd-1791167281563-mx5c",
@@ -62352,11 +62562,11 @@
       "modelStr": "ST-9000",
       "modelName": "ST-9000",
       "brand": "AVERY",
-      "systemAssetId": "AMG-MNT-000209"
+      "systemAssetId": "AMG-MNT-000437"
     },
     {
       "id": "mac-1792072746195-437-4259",
-      "permanentMachineId": "AMG-MNT-000835",
+      "permanentMachineId": "AMG-MNT-000438",
       "serialNumber": "Pls/St-13",
       "machineNameId": "mn-1788869248629-r0en",
       "brandId": "brd-1791167281563-mx5c",
@@ -62394,11 +62604,11 @@
       "modelStr": "ST-9000",
       "modelName": "ST-9000",
       "brand": "AVERY",
-      "systemAssetId": "AMG-MNT-000835"
+      "systemAssetId": "AMG-MNT-000438"
     },
     {
       "id": "mac-1788870312723-492",
-      "permanentMachineId": "AMG-MNT-000492",
+      "permanentMachineId": "AMG-MNT-000439",
       "serialNumber": "B/S-197",
       "machineNameId": "mn-1792077157400-wlnp",
       "brandId": "brd-1791167281510-9p0e",
@@ -62436,7 +62646,7 @@
       "modelStr": "LK-1903B",
       "modelName": "LK-1903B",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000492"
+      "systemAssetId": "AMG-MNT-000439"
     },
     {
       "id": "mac-1790670107394-927",
@@ -62734,7 +62944,7 @@
     },
     {
       "id": "mac-1792072746195-446-7090",
-      "permanentMachineId": "AMG-MNT-000856",
+      "permanentMachineId": "AMG-MNT-000447",
       "serialNumber": "S/B-231",
       "machineNameId": "mn-1788869248254-ez5p",
       "brandId": "brd-1791461137730-nwll",
@@ -62772,7 +62982,7 @@
       "modelStr": "XD-818",
       "modelName": "XD-818",
       "brand": "XIDING",
-      "systemAssetId": "AMG-MNT-000856"
+      "systemAssetId": "AMG-MNT-000447"
     },
     {
       "id": "mac-1792072746195-447-1175",
@@ -63196,7 +63406,7 @@
     },
     {
       "id": "mac-1792072746195-457-6925",
-      "permanentMachineId": "AMG-MNT-000249",
+      "permanentMachineId": "AMG-MNT-000458",
       "serialNumber": "H/T-95",
       "machineNameId": "mn-1788869248343-8lne",
       "brandId": "brd-1791461137735-3ke0",
@@ -63234,7 +63444,7 @@
       "modelStr": "EC-1012A",
       "modelName": "EC-1012A",
       "brand": "ESHA",
-      "systemAssetId": "AMG-MNT-000249"
+      "systemAssetId": "AMG-MNT-000458"
     },
     {
       "id": "mac-1792072746195-458-7037",
@@ -63280,7 +63490,7 @@
     },
     {
       "id": "mac-1788870312744-3",
-      "permanentMachineId": "AMG-MNT-000003",
+      "permanentMachineId": "AMG-MNT-000460",
       "serialNumber": "B/S-88",
       "machineNameId": "mn-1792077157400-wlnp",
       "brandId": "brd-1791167281510-9p0e",
@@ -63318,11 +63528,11 @@
       "modelStr": "LK-1903A",
       "modelName": "LK-1903A",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000003"
+      "systemAssetId": "AMG-MNT-000460"
     },
     {
       "id": "mac-1788870312798-453",
-      "permanentMachineId": "AMG-MNT-000453",
+      "permanentMachineId": "AMG-MNT-000461",
       "serialNumber": "S/B-304",
       "machineNameId": "mn-1788869248254-ez5p",
       "brandId": "brd-1791461137730-nwll",
@@ -63360,7 +63570,7 @@
       "modelStr": "XD-818",
       "modelName": "XD-818",
       "brand": "XIDING",
-      "systemAssetId": "AMG-MNT-000453"
+      "systemAssetId": "AMG-MNT-000461"
     },
     {
       "id": "mac-00462-t22",
@@ -63406,7 +63616,7 @@
     },
     {
       "id": "mac-1788870312741-591",
-      "permanentMachineId": "AMG-MNT-000591",
+      "permanentMachineId": "AMG-MNT-000463",
       "serialNumber": "S/B-335",
       "machineNameId": "mn-1788869248254-ez5p",
       "brandId": "brd-1791461137730-nwll",
@@ -63444,7 +63654,7 @@
       "modelStr": "XD-818",
       "modelName": "XD-818",
       "brand": "XIDING",
-      "systemAssetId": "AMG-MNT-000591"
+      "systemAssetId": "AMG-MNT-000463"
     },
     {
       "id": "mac-1790670110483-694",
@@ -64666,7 +64876,7 @@
     },
     {
       "id": "mac-1792072746195-492-1336",
-      "permanentMachineId": "AMG-MNT-000629",
+      "permanentMachineId": "AMG-MNT-000493",
       "serialNumber": "F/A-153",
       "machineNameId": "mn-1788869247100-2uyc",
       "brandId": "brd-1791167281510-9p0e",
@@ -64704,7 +64914,7 @@
       "modelStr": "MS-1261",
       "modelName": "MS-1261",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000629"
+      "systemAssetId": "AMG-MNT-000493"
     },
     {
       "id": "mac-1790670111768-748",
@@ -66430,7 +66640,7 @@
     },
     {
       "id": "mac-1788870312896-350",
-      "permanentMachineId": "AMG-MNT-000350",
+      "permanentMachineId": "AMG-MNT-000535",
       "serialNumber": "P/M-2853",
       "machineNameId": "mn-1792077157398-8mma",
       "brandId": "brd-1791167281510-9p0e",
@@ -66468,7 +66678,7 @@
       "modelStr": "DDL-900C",
       "modelName": "DDL-900C",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000350"
+      "systemAssetId": "AMG-MNT-000535"
     },
     {
       "id": "mac-00536-t22",
@@ -66556,7 +66766,7 @@
     },
     {
       "id": "mac-1788870312734-208",
-      "permanentMachineId": "AMG-MNT-000208",
+      "permanentMachineId": "AMG-MNT-000538",
       "serialNumber": "C/S-421",
       "machineNameId": "mn-1788869247141-kx1a",
       "brandId": "brd-1791167281524-wjoa",
@@ -66594,7 +66804,7 @@
       "modelStr": "CM-380",
       "modelName": "CM-380",
       "brand": "ZOJE",
-      "systemAssetId": "AMG-MNT-000208"
+      "systemAssetId": "AMG-MNT-000538"
     },
     {
       "id": "mac-00539-t22",
@@ -67144,7 +67354,7 @@
     },
     {
       "id": "mac-1792072746195-551-4981",
-      "permanentMachineId": "AMG-MNT-000202",
+      "permanentMachineId": "AMG-MNT-000552",
       "serialNumber": "K/S-325",
       "machineNameId": "mn-1788869247176-2gzf",
       "brandId": "brd-1791167281518-1oda",
@@ -67182,7 +67392,7 @@
       "modelStr": "DFB1411P-XP",
       "modelName": "DFB1411P-XP",
       "brand": "KANSAI SPECIAL",
-      "systemAssetId": "AMG-MNT-000202"
+      "systemAssetId": "AMG-MNT-000552"
     },
     {
       "id": "mac-00553-t22",
@@ -68404,7 +68614,7 @@
     },
     {
       "id": "mac-1792072746195-581-7188",
-      "permanentMachineId": "AMG-MNT-000059",
+      "permanentMachineId": "AMG-MNT-000582",
       "serialNumber": "F/L-52",
       "machineNameId": "mn-1788869247118-qyw5",
       "brandId": "brd-1791167281510-9p0e",
@@ -68442,7 +68652,7 @@
       "modelStr": "MO-6716S",
       "modelName": "MO-6716S",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000059"
+      "systemAssetId": "AMG-MNT-000582"
     },
     {
       "id": "mac-00583-t22",
@@ -68656,7 +68866,7 @@
     },
     {
       "id": "mac-1788870312768-479",
-      "permanentMachineId": "AMG-MNT-000479",
+      "permanentMachineId": "AMG-MNT-000588",
       "serialNumber": "V/T-645",
       "machineNameId": "mn-1792077157398-lasb",
       "brandId": "brd-1791167281510-9p0e",
@@ -68694,7 +68904,7 @@
       "modelStr": "DLM-5200N",
       "modelName": "DLM-5200N",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000479"
+      "systemAssetId": "AMG-MNT-000588"
     },
     {
       "id": "mac-00589-t22",
@@ -69328,7 +69538,7 @@
     },
     {
       "id": "mac-1788870312549-955",
-      "permanentMachineId": "AMG-MNT-000955",
+      "permanentMachineId": "AMG-MNT-000604",
       "serialNumber": "K/S-213",
       "machineNameId": "mn-1788869247176-2gzf",
       "brandId": "brd-1791167281518-1oda",
@@ -69366,7 +69576,7 @@
       "modelStr": "DFB-1411P-XP",
       "modelName": "DFB-1411P-XP",
       "brand": "KANSAI SPECIAL",
-      "systemAssetId": "AMG-MNT-000955"
+      "systemAssetId": "AMG-MNT-000604"
     },
     {
       "id": "mac-00605-t22",
@@ -69622,7 +69832,7 @@
     },
     {
       "id": "mac-1788870312789-281",
-      "permanentMachineId": "AMG-MNT-000281",
+      "permanentMachineId": "AMG-MNT-000611",
       "serialNumber": "B/H-79",
       "machineNameId": "mn-1788869247243-7wlt",
       "brandId": "brd-1791167281510-9p0e",
@@ -69660,11 +69870,11 @@
       "modelStr": "LBH-1790S",
       "modelName": "LBH-1790S",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000281"
+      "systemAssetId": "AMG-MNT-000611"
     },
     {
       "id": "mac-1788870312780-849",
-      "permanentMachineId": "AMG-MNT-000849",
+      "permanentMachineId": "AMG-MNT-000612",
       "serialNumber": "B/S-413",
       "machineNameId": "mn-1792077157400-wlnp",
       "brandId": "brd-1791167281510-9p0e",
@@ -69702,7 +69912,7 @@
       "modelStr": "LK-1903A-SS",
       "modelName": "LK-1903A-SS",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000849"
+      "systemAssetId": "AMG-MNT-000612"
     },
     {
       "id": "mac-00613-t22",
@@ -70000,7 +70210,7 @@
     },
     {
       "id": "mac-1792072746195-619-9362",
-      "permanentMachineId": "AMG-MNT-000629",
+      "permanentMachineId": "AMG-MNT-000620",
       "serialNumber": "K/S-153",
       "machineNameId": "mn-1788869247176-2gzf",
       "brandId": "brd-1791167281518-1oda",
@@ -70038,7 +70248,7 @@
       "modelStr": "DFB-1411P-XP",
       "modelName": "DFB-1411P-XP",
       "brand": "KANSAI SPECIAL",
-      "systemAssetId": "AMG-MNT-000629"
+      "systemAssetId": "AMG-MNT-000620"
     },
     {
       "id": "mac-00621-t22",
@@ -70756,7 +70966,7 @@
     },
     {
       "id": "mac-1788870312575-25",
-      "permanentMachineId": "AMG-MNT-000025",
+      "permanentMachineId": "AMG-MNT-000638",
       "serialNumber": "B/T-187",
       "machineNameId": "mn-1788869247205-his3",
       "brandId": "brd-1791167281510-9p0e",
@@ -70794,7 +71004,7 @@
       "modelStr": "LK-1900AN-HS",
       "modelName": "LK-1900AN-HS",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000025"
+      "systemAssetId": "AMG-MNT-000638"
     },
     {
       "id": "mac-1790670108298-744",
@@ -71218,7 +71428,7 @@
     },
     {
       "id": "mac-1788870312570-383",
-      "permanentMachineId": "AMG-MNT-000383",
+      "permanentMachineId": "AMG-MNT-000649",
       "serialNumber": "V/T-638",
       "machineNameId": "mn-1792077157398-lasb",
       "brandId": "brd-1791167281510-9p0e",
@@ -71256,7 +71466,7 @@
       "modelStr": "DLM-5200N",
       "modelName": "DLM-5200N",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000383"
+      "systemAssetId": "AMG-MNT-000649"
     },
     {
       "id": "mac-00650-t22",
@@ -71302,7 +71512,7 @@
     },
     {
       "id": "mac-1788870312944-699",
-      "permanentMachineId": "AMG-MNT-000699",
+      "permanentMachineId": "AMG-MNT-000651",
       "serialNumber": "P/M-3419",
       "machineNameId": "mn-1792077157398-8mma",
       "brandId": "brd-1791167281510-9p0e",
@@ -71340,7 +71550,7 @@
       "modelStr": "DDL-9000B-SH",
       "modelName": "DDL-9000B-SH",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000699"
+      "systemAssetId": "AMG-MNT-000651"
     },
     {
       "id": "mac-00652-t22",
@@ -71680,7 +71890,7 @@
     },
     {
       "id": "mac-1792072746195-659-2654",
-      "permanentMachineId": "AMG-MNT-000191",
+      "permanentMachineId": "AMG-MNT-000660",
       "serialNumber": "C/S-225",
       "machineNameId": "mn-1788869248254-ez5p",
       "brandId": "brd-1791167281510-9p0e",
@@ -71718,7 +71928,7 @@
       "modelStr": "NS-47",
       "modelName": "NS-47",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000191"
+      "systemAssetId": "AMG-MNT-000660"
     },
     {
       "id": "mac-1790670111393-733",
@@ -72058,7 +72268,7 @@
     },
     {
       "id": "mac-1788870312950-936",
-      "permanentMachineId": "AMG-MNT-000936",
+      "permanentMachineId": "AMG-MNT-000669",
       "serialNumber": "B/H-43",
       "machineNameId": "mn-1788869247243-7wlt",
       "brandId": "brd-1791167281510-9p0e",
@@ -72096,7 +72306,7 @@
       "modelStr": "LBH-1790",
       "modelName": "LBH-1790",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000936"
+      "systemAssetId": "AMG-MNT-000669"
     },
     {
       "id": "mac-00670-t22",
@@ -72982,7 +73192,7 @@
     },
     {
       "id": "mac-1788870312548-376",
-      "permanentMachineId": "AMG-MNT-000376",
+      "permanentMachineId": "AMG-MNT-000691",
       "serialNumber": "B/T-248",
       "machineNameId": "mn-1788869247205-his3",
       "brandId": "brd-1791167281510-9p0e",
@@ -73020,7 +73230,7 @@
       "modelStr": "LK-1900A-SH",
       "modelName": "LK-1900A-SH",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000376"
+      "systemAssetId": "AMG-MNT-000691"
     },
     {
       "id": "mac-00692-t22",
@@ -73612,7 +73822,7 @@
     },
     {
       "id": "mac-1788870312556-527",
-      "permanentMachineId": "AMG-MNT-000527",
+      "permanentMachineId": "AMG-MNT-000706",
       "serialNumber": "B/T-318",
       "machineNameId": "mn-1788869247205-his3",
       "brandId": "brd-1791167281510-9p0e",
@@ -73650,7 +73860,7 @@
       "modelStr": "LK-1900A-HS",
       "modelName": "LK-1900A-HS",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000527"
+      "systemAssetId": "AMG-MNT-000706"
     },
     {
       "id": "mac-00707-t22",
@@ -73780,7 +73990,7 @@
     },
     {
       "id": "mac-1788870312545-538",
-      "permanentMachineId": "AMG-MNT-000538",
+      "permanentMachineId": "AMG-MNT-000710",
       "serialNumber": "O/L-124",
       "machineNameId": "mn-1788869247118-qyw5",
       "brandId": "brd-1791167281510-9p0e",
@@ -73818,7 +74028,7 @@
       "modelStr": "MO-6716S",
       "modelName": "MO-6716S",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000538"
+      "systemAssetId": "AMG-MNT-000710"
     },
     {
       "id": "mac-00711-t22",
@@ -73990,7 +74200,7 @@
     },
     {
       "id": "mac-1788870312568-205",
-      "permanentMachineId": "AMG-MNT-000205",
+      "permanentMachineId": "AMG-MNT-000715",
       "serialNumber": "P/M-4340",
       "machineNameId": "mn-1792077157398-8mma",
       "brandId": "brd-1791167281510-9p0e",
@@ -74028,7 +74238,7 @@
       "modelStr": "DDL-9000B",
       "modelName": "DDL-9000B",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000205"
+      "systemAssetId": "AMG-MNT-000715"
     },
     {
       "id": "mac-00716-t22",
@@ -74452,7 +74662,7 @@
     },
     {
       "id": "mac-1792072746196-2061-4819",
-      "permanentMachineId": "AMG-MNT-000318",
+      "permanentMachineId": "AMG-MNT-000726",
       "serialNumber": "B/T-14",
       "machineNameId": "mn-1788869247205-his3",
       "brandId": "brd-1791167281510-9p0e",
@@ -74490,11 +74700,11 @@
       "modelStr": "LK-1900A",
       "modelName": "LK-1900A",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000318"
+      "systemAssetId": "AMG-MNT-000726"
     },
     {
       "id": "mac-1792072746195-726-8763",
-      "permanentMachineId": "AMG-MNT-000964",
+      "permanentMachineId": "AMG-MNT-000727",
       "serialNumber": "C/S-99",
       "machineNameId": "mn-1788869247141-kx1a",
       "brandId": "brd-1791167281510-9p0e",
@@ -74532,7 +74742,7 @@
       "modelStr": "ZJ3820BD",
       "modelName": "ZJ3820BD",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000964"
+      "systemAssetId": "AMG-MNT-000727"
     },
     {
       "id": "mac-1792072746195-727-3597",
@@ -74620,7 +74830,7 @@
     },
     {
       "id": "mac-1788870312546-864",
-      "permanentMachineId": "AMG-MNT-000864",
+      "permanentMachineId": "AMG-MNT-000730",
       "serialNumber": "B/T-186",
       "machineNameId": "mn-1788869247205-his3",
       "brandId": "brd-1791167281510-9p0e",
@@ -74658,11 +74868,11 @@
       "modelStr": "LK-1900A",
       "modelName": "LK-1900A",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000864"
+      "systemAssetId": "AMG-MNT-000730"
     },
     {
       "id": "mac-1788870312667-118",
-      "permanentMachineId": "AMG-MNT-000118",
+      "permanentMachineId": "AMG-MNT-000731",
       "serialNumber": "P/M-5092",
       "machineNameId": "mn-1792077157398-8mma",
       "brandId": "brd-1791167281510-9p0e",
@@ -74700,7 +74910,7 @@
       "modelStr": "DDL-8700-7",
       "modelName": "DDL-8700-7",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000118"
+      "systemAssetId": "AMG-MNT-000731"
     },
     {
       "id": "mac-00732-t22",
@@ -74956,7 +75166,7 @@
     },
     {
       "id": "mac-1788870312575-216",
-      "permanentMachineId": "AMG-MNT-000216",
+      "permanentMachineId": "AMG-MNT-000738",
       "serialNumber": "K/S-660",
       "machineNameId": "mn-1788869247176-2gzf",
       "brandId": "brd-1791167281518-1oda",
@@ -74994,7 +75204,7 @@
       "modelStr": "DFB-1411P-XP",
       "modelName": "DFB-1411P-XP",
       "brand": "KANSAI SPECIAL",
-      "systemAssetId": "AMG-MNT-000216"
+      "systemAssetId": "AMG-MNT-000738"
     },
     {
       "id": "mac-00739-t22",
@@ -75838,7 +76048,7 @@
     },
     {
       "id": "mac-1788870312855-272",
-      "permanentMachineId": "AMG-MNT-000272",
+      "permanentMachineId": "AMG-MNT-000759",
       "serialNumber": "P/M-961",
       "machineNameId": "mn-1792077157398-8mma",
       "brandId": "brd-1791167281510-9p0e",
@@ -75876,7 +76086,7 @@
       "modelStr": "DDL-9000B-SH",
       "modelName": "DDL-9000B-SH",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000272"
+      "systemAssetId": "AMG-MNT-000759"
     },
     {
       "id": "mac-00760-t22",
@@ -77098,7 +77308,7 @@
     },
     {
       "id": "mac-1788870312647-86",
-      "permanentMachineId": "AMG-MNT-000086",
+      "permanentMachineId": "AMG-MNT-000789",
       "serialNumber": "K/S-115",
       "machineNameId": "mn-1788869247176-2gzf",
       "brandId": "brd-1791167281518-1oda",
@@ -77136,7 +77346,7 @@
       "modelStr": "DFB-1411P-XP",
       "modelName": "DFB-1411P-XP",
       "brand": "KANSAI SPECIAL",
-      "systemAssetId": "AMG-MNT-000086"
+      "systemAssetId": "AMG-MNT-000789"
     },
     {
       "id": "mac-00790-t22",
@@ -77896,7 +78106,7 @@
     },
     {
       "id": "mac-1788870312790-833",
-      "permanentMachineId": "AMG-MNT-000833",
+      "permanentMachineId": "AMG-MNT-000808",
       "serialNumber": "P/M-731",
       "machineNameId": "mn-1792077157398-8mma",
       "brandId": "brd-1791167281510-9p0e",
@@ -77934,7 +78144,7 @@
       "modelStr": "DDL-900C",
       "modelName": "DDL-900C",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000833"
+      "systemAssetId": "AMG-MNT-000808"
     },
     {
       "id": "mac-1790670108177-544",
@@ -78442,7 +78652,7 @@
     },
     {
       "id": "mac-1788870312612-55",
-      "permanentMachineId": "AMG-MNT-000055",
+      "permanentMachineId": "AMG-MNT-000821",
       "serialNumber": "P/M-1747",
       "machineNameId": "mn-1792077157398-8mma",
       "brandId": "brd-1791167281510-9p0e",
@@ -78480,7 +78690,7 @@
       "modelStr": "DDL-9000B-SH",
       "modelName": "DDL-9000B-SH",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000055"
+      "systemAssetId": "AMG-MNT-000821"
     },
     {
       "id": "mac-00822-t22",
@@ -78694,7 +78904,7 @@
     },
     {
       "id": "mac-1792072746196-2655-1672",
-      "permanentMachineId": "AMG-MNT-000184",
+      "permanentMachineId": "AMG-MNT-000827",
       "serialNumber": "K/S-326",
       "machineNameId": "mn-1788869247176-2gzf",
       "brandId": "brd-1791167281518-1oda",
@@ -78732,7 +78942,7 @@
       "modelStr": "DFB-1411P-XP",
       "modelName": "DFB-1411P-XP",
       "brand": "KANSAI SPECIAL",
-      "systemAssetId": "AMG-MNT-000184"
+      "systemAssetId": "AMG-MNT-000827"
     },
     {
       "id": "mac-00828-t22",
@@ -80290,7 +80500,7 @@
     },
     {
       "id": "mac-1792072746195-864-3617",
-      "permanentMachineId": "AMG-MNT-000835",
+      "permanentMachineId": "AMG-MNT-000865",
       "serialNumber": "B/T-13",
       "machineNameId": "mn-1788869247205-his3",
       "brandId": "brd-1791167281510-9p0e",
@@ -80328,7 +80538,7 @@
       "modelStr": "LK-1900A",
       "modelName": "LK-1900A",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000835"
+      "systemAssetId": "AMG-MNT-000865"
     },
     {
       "id": "mac-00866-t22",
@@ -81004,7 +81214,7 @@
     },
     {
       "id": "mac-1788870312736-676",
-      "permanentMachineId": "AMG-MNT-000676",
+      "permanentMachineId": "AMG-MNT-000882",
       "serialNumber": "C/S-125",
       "machineNameId": "mn-1788869247141-kx1a",
       "brandId": "brd-1791167281510-9p0e",
@@ -81042,7 +81252,7 @@
       "modelStr": "CM-3800",
       "modelName": "CM-3800",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000676"
+      "systemAssetId": "AMG-MNT-000882"
     },
     {
       "id": "mac-00883-t22",
@@ -81424,7 +81634,7 @@
     },
     {
       "id": "mac-1788870312929-368",
-      "permanentMachineId": "AMG-MNT-000368",
+      "permanentMachineId": "AMG-MNT-000892",
       "serialNumber": "B/T-312",
       "machineNameId": "mn-1788869247205-his3",
       "brandId": "brd-1791167281510-9p0e",
@@ -81462,7 +81672,7 @@
       "modelStr": "LK-1900A-HS",
       "modelName": "LK-1900A-HS",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000368"
+      "systemAssetId": "AMG-MNT-000892"
     },
     {
       "id": "mac-00893-t22",
@@ -81886,7 +82096,7 @@
     },
     {
       "id": "mac-1788870312681-108",
-      "permanentMachineId": "AMG-MNT-000108",
+      "permanentMachineId": "AMG-MNT-000903",
       "serialNumber": "O/L-242",
       "machineNameId": "mn-1788869247118-qyw5",
       "brandId": "brd-1791167281510-9p0e",
@@ -81924,7 +82134,7 @@
       "modelStr": "MO-6714S",
       "modelName": "MO-6714S",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000108"
+      "systemAssetId": "AMG-MNT-000903"
     },
     {
       "id": "mac-00904-t22",
@@ -82348,7 +82558,7 @@
     },
     {
       "id": "mac-1788870312799-756",
-      "permanentMachineId": "AMG-MNT-000756",
+      "permanentMachineId": "AMG-MNT-000914",
       "serialNumber": "O/L-352",
       "machineNameId": "mn-1788869247118-qyw5",
       "brandId": "brd-1791167281510-9p0e",
@@ -82386,7 +82596,7 @@
       "modelStr": "MO-6716S",
       "modelName": "MO-6716S",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000756"
+      "systemAssetId": "AMG-MNT-000914"
     },
     {
       "id": "mac-00915-t22",
@@ -82768,7 +82978,7 @@
     },
     {
       "id": "mac-1788870312637-515",
-      "permanentMachineId": "AMG-MNT-000515",
+      "permanentMachineId": "AMG-MNT-000924",
       "serialNumber": "C/S-380",
       "machineNameId": "mn-1788869247141-kx1a",
       "brandId": "brd-1791167281524-wjoa",
@@ -82806,7 +83016,7 @@
       "modelStr": "ZJ-3800-PLB-J",
       "modelName": "ZJ-3800-PLB-J",
       "brand": "ZOJE",
-      "systemAssetId": "AMG-MNT-000515"
+      "systemAssetId": "AMG-MNT-000924"
     },
     {
       "id": "mac-00925-t22",
@@ -82894,7 +83104,7 @@
     },
     {
       "id": "mac-1788870312639-690",
-      "permanentMachineId": "AMG-MNT-000690",
+      "permanentMachineId": "AMG-MNT-000927",
       "serialNumber": "P/M-24",
       "machineNameId": "mn-1792077157398-8mma",
       "brandId": "brd-1791167281510-9p0e",
@@ -82932,7 +83142,7 @@
       "modelStr": "DDL-900C",
       "modelName": "DDL-900C",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000690"
+      "systemAssetId": "AMG-MNT-000927"
     },
     {
       "id": "mac-00928-t22",
@@ -83188,7 +83398,7 @@
     },
     {
       "id": "mac-1788870312556-958",
-      "permanentMachineId": "AMG-MNT-000958",
+      "permanentMachineId": "AMG-MNT-000934",
       "serialNumber": "O/L-826",
       "machineNameId": "mn-1788869247118-qyw5",
       "brandId": "brd-1791167281510-9p0e",
@@ -83226,11 +83436,11 @@
       "modelStr": "MO-6716S",
       "modelName": "MO-6716S",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000958"
+      "systemAssetId": "AMG-MNT-000934"
     },
     {
       "id": "mac-1788870312724-473",
-      "permanentMachineId": "AMG-MNT-000473",
+      "permanentMachineId": "AMG-MNT-000935",
       "serialNumber": "V/T-71",
       "machineNameId": "mn-1792077157398-lasb",
       "brandId": "brd-1791167281510-9p0e",
@@ -83268,7 +83478,7 @@
       "modelStr": "DLM-5200N",
       "modelName": "DLM-5200N",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000473"
+      "systemAssetId": "AMG-MNT-000935"
     },
     {
       "id": "mac-00936-t22",
@@ -83650,7 +83860,7 @@
     },
     {
       "id": "mac-1788870312562-983",
-      "permanentMachineId": "AMG-MNT-000983",
+      "permanentMachineId": "AMG-MNT-000945",
       "serialNumber": "O/L-510",
       "machineNameId": "mn-1788869247118-qyw5",
       "brandId": "brd-1791167281510-9p0e",
@@ -83688,7 +83898,7 @@
       "modelStr": "MO-6714S",
       "modelName": "MO-6714S",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000983"
+      "systemAssetId": "AMG-MNT-000945"
     },
     {
       "id": "mac-00946-t22",
@@ -84364,7 +84574,7 @@
     },
     {
       "id": "mac-1788870312910-664",
-      "permanentMachineId": "AMG-MNT-000664",
+      "permanentMachineId": "AMG-MNT-000962",
       "serialNumber": "B/T-202",
       "machineNameId": "mn-1788869247205-his3",
       "brandId": "brd-1791167281510-9p0e",
@@ -84402,7 +84612,7 @@
       "modelStr": "LK-1900AN-HS",
       "modelName": "LK-1900AN-HS",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000664"
+      "systemAssetId": "AMG-MNT-000962"
     },
     {
       "id": "mac-00963-t22",
@@ -84952,7 +85162,7 @@
     },
     {
       "id": "mac-1788870312827-155",
-      "permanentMachineId": "AMG-MNT-000155",
+      "permanentMachineId": "AMG-MNT-000976",
       "serialNumber": "P/M-1579",
       "machineNameId": "mn-1792077157398-8mma",
       "brandId": "brd-1791167281510-9p0e",
@@ -84990,7 +85200,7 @@
       "modelStr": "DDL-8700-7",
       "modelName": "DDL-8700-7",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000155"
+      "systemAssetId": "AMG-MNT-000976"
     },
     {
       "id": "mac-00977-t22",
@@ -85582,7 +85792,7 @@
     },
     {
       "id": "mac-1788870312649-584",
-      "permanentMachineId": "AMG-MNT-000584",
+      "permanentMachineId": "AMG-MNT-000991",
       "serialNumber": "C/S-268",
       "machineNameId": "mn-1788869247141-kx1a",
       "brandId": "brd-1791167281513-qhs3",
@@ -85620,7 +85830,7 @@
       "modelStr": "CM-380",
       "modelName": "CM-380",
       "brand": "ZUSAN",
-      "systemAssetId": "AMG-MNT-000584"
+      "systemAssetId": "AMG-MNT-000991"
     },
     {
       "id": "mac-00992-t22",
@@ -85876,7 +86086,7 @@
     },
     {
       "id": "mac-1788870312875-447",
-      "permanentMachineId": "AMG-MNT-000447",
+      "permanentMachineId": "AMG-MNT-000998",
       "serialNumber": "B/S-94",
       "machineNameId": "mn-1792077157400-wlnp",
       "brandId": "brd-1791167281510-9p0e",
@@ -85914,7 +86124,7 @@
       "modelStr": "LK-1903B-SS",
       "modelName": "LK-1903B-SS",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000447"
+      "systemAssetId": "AMG-MNT-000998"
     },
     {
       "id": "mac-00999-t22",
@@ -85960,7 +86170,7 @@
     },
     {
       "id": "mac-1788870312823-380",
-      "permanentMachineId": "AMG-MNT-000380",
+      "permanentMachineId": "AMG-MNT-001000",
       "serialNumber": "O/L-921",
       "machineNameId": "mn-1788869247118-qyw5",
       "brandId": "brd-1791167281510-9p0e",
@@ -85998,7 +86208,7 @@
       "modelStr": "MO-6716S",
       "modelName": "MO-6716S",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000380"
+      "systemAssetId": "AMG-MNT-001000"
     },
     {
       "id": "mac-01001-t22",
@@ -86086,7 +86296,7 @@
     },
     {
       "id": "mac-1792072746195-1002-1028",
-      "permanentMachineId": "AMG-MNT-000480",
+      "permanentMachineId": "AMG-MNT-001003",
       "serialNumber": "V/T-181",
       "machineNameId": "mn-1792077157398-lasb",
       "brandId": "brd-1791461137683-6jq9",
@@ -86124,7 +86334,7 @@
       "modelStr": "B-5200",
       "modelName": "B-5200",
       "brand": "BROS",
-      "systemAssetId": "AMG-MNT-000480"
+      "systemAssetId": "AMG-MNT-001003"
     },
     {
       "id": "mac-01004-t22",
@@ -86212,7 +86422,7 @@
     },
     {
       "id": "mac-1788870312607-734",
-      "permanentMachineId": "AMG-MNT-000734",
+      "permanentMachineId": "AMG-MNT-001006",
       "serialNumber": "K/S-427",
       "machineNameId": "mn-1788869247176-2gzf",
       "brandId": "brd-1791167281518-1oda",
@@ -86250,7 +86460,7 @@
       "modelStr": "WFB5509P",
       "modelName": "WFB5509P",
       "brand": "KANSAI SPECIAL",
-      "systemAssetId": "AMG-MNT-000734"
+      "systemAssetId": "AMG-MNT-001006"
     },
     {
       "id": "mac-01007-t22",
@@ -86590,7 +86800,7 @@
     },
     {
       "id": "mac-1788870312606-142",
-      "permanentMachineId": "AMG-MNT-000142",
+      "permanentMachineId": "AMG-MNT-001015",
       "serialNumber": "C/S-483",
       "machineNameId": "mn-1788869247141-kx1a",
       "brandId": "brd-1791167281524-wjoa",
@@ -86628,7 +86838,7 @@
       "modelStr": "ZJ3800-PLB-BD",
       "modelName": "ZJ3800-PLB-BD",
       "brand": "ZOJE",
-      "systemAssetId": "AMG-MNT-000142"
+      "systemAssetId": "AMG-MNT-001015"
     },
     {
       "id": "mac-01016-t22",
@@ -87640,7 +87850,7 @@
     },
     {
       "id": "mac-1792072746195-1039-7542",
-      "permanentMachineId": "AMG-MNT-000964",
+      "permanentMachineId": "AMG-MNT-001040",
       "serialNumber": "P/F-99",
       "machineNameId": "mn-1792077157399-5kmi",
       "brandId": "brd-1791167281518-1oda",
@@ -87678,7 +87888,7 @@
       "modelStr": "NW8842-1G",
       "modelName": "NW8842-1G",
       "brand": "KANSAI SPECIAL",
-      "systemAssetId": "AMG-MNT-000964"
+      "systemAssetId": "AMG-MNT-001040"
     },
     {
       "id": "mac-01041-t22",
@@ -87724,7 +87934,7 @@
     },
     {
       "id": "mac-1792072746195-1041-4800",
-      "permanentMachineId": "AMG-MNT-000281",
+      "permanentMachineId": "AMG-MNT-001042",
       "serialNumber": "K/S-79",
       "machineNameId": "mn-1788869247176-2gzf",
       "brandId": "brd-1791167281518-1oda",
@@ -87762,7 +87972,7 @@
       "modelStr": "DFB-1411P-XP",
       "modelName": "DFB-1411P-XP",
       "brand": "KANSAI SPECIAL",
-      "systemAssetId": "AMG-MNT-000281"
+      "systemAssetId": "AMG-MNT-001042"
     },
     {
       "id": "mac-01043-t22",
@@ -88984,7 +89194,7 @@
     },
     {
       "id": "mac-1792072746195-1071-1238",
-      "permanentMachineId": "AMG-MNT-000209",
+      "permanentMachineId": "AMG-MNT-001072",
       "serialNumber": "APW-10",
       "machineNameId": "mn-1792077157399-ydsj",
       "brandId": "brd-1791167281510-9p0e",
@@ -89022,7 +89232,7 @@
       "modelStr": "LH-895",
       "modelName": "LH-895",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000209"
+      "systemAssetId": "AMG-MNT-001072"
     },
     {
       "id": "mac-1790670108969-305",
@@ -89488,7 +89698,7 @@
     },
     {
       "id": "mac-1788870312602-950",
-      "permanentMachineId": "AMG-MNT-000950",
+      "permanentMachineId": "AMG-MNT-001084",
       "serialNumber": "V/T-514",
       "machineNameId": "mn-1792077157398-lasb",
       "brandId": "brd-1791167281510-9p0e",
@@ -89526,11 +89736,11 @@
       "modelStr": "DLM-5200N",
       "modelName": "DLM-5200N",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000950"
+      "systemAssetId": "AMG-MNT-001084"
     },
     {
       "id": "mac-1792072746195-1084-5833",
-      "permanentMachineId": "AMG-MNT-000499",
+      "permanentMachineId": "AMG-MNT-001085",
       "serialNumber": "V/T-127",
       "machineNameId": "mn-1792077157398-lasb",
       "brandId": "brd-1791167281510-9p0e",
@@ -89568,7 +89778,7 @@
       "modelStr": "DLM-5200N",
       "modelName": "DLM-5200N",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000499"
+      "systemAssetId": "AMG-MNT-001085"
     },
     {
       "id": "mac-1792072746195-1085-7347",
@@ -90874,7 +91084,7 @@
     },
     {
       "id": "mac-1792072746195-1116-7617",
-      "permanentMachineId": "AMG-MNT-000249",
+      "permanentMachineId": "AMG-MNT-001117",
       "serialNumber": "P/M-95",
       "machineNameId": "mn-1792077157398-8mma",
       "brandId": "brd-1791167281510-9p0e",
@@ -90912,7 +91122,7 @@
       "modelStr": "DDL-900BB",
       "modelName": "DDL-900BB",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000249"
+      "systemAssetId": "AMG-MNT-001117"
     },
     {
       "id": "mac-1790670106775-324",
@@ -93898,7 +94108,7 @@
     },
     {
       "id": "mac-1792072746195-1188-2967",
-      "permanentMachineId": "AMG-MNT-000591",
+      "permanentMachineId": "AMG-MNT-001189",
       "serialNumber": "V/T-335",
       "machineNameId": "mn-1792077157398-lasb",
       "brandId": "brd-1791167281510-9p0e",
@@ -93936,7 +94146,7 @@
       "modelStr": "DLM-5200N",
       "modelName": "DLM-5200N",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000591"
+      "systemAssetId": "AMG-MNT-001189"
     },
     {
       "id": "mac-01190-t22",
@@ -95830,7 +96040,7 @@
     },
     {
       "id": "mac-1788870312548-232",
-      "permanentMachineId": "AMG-MNT-000232",
+      "permanentMachineId": "AMG-MNT-001235",
       "serialNumber": "C/S-4",
       "machineNameId": "mn-1788869247141-kx1a",
       "brandId": "brd-1791167281510-9p0e",
@@ -95868,7 +96078,7 @@
       "modelStr": "CM-3800",
       "modelName": "CM-3800",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000232"
+      "systemAssetId": "AMG-MNT-001235"
     },
     {
       "id": "mac-01236-t22",
@@ -97552,7 +97762,7 @@
     },
     {
       "id": "mac-1792072746195-1275-2444",
-      "permanentMachineId": "AMG-MNT-000473",
+      "permanentMachineId": "AMG-MNT-001276",
       "serialNumber": "C/S-71",
       "machineNameId": "mn-1788869247141-kx1a",
       "brandId": "brd-1791167281524-wjoa",
@@ -97590,11 +97800,11 @@
       "modelStr": "ZJ-3800-BD",
       "modelName": "ZJ-3800-BD",
       "brand": "ZOJE",
-      "systemAssetId": "AMG-MNT-000473"
+      "systemAssetId": "AMG-MNT-001276"
     },
     {
       "id": "mac-1792072746195-1276-1801",
-      "permanentMachineId": "AMG-MNT-000835",
+      "permanentMachineId": "AMG-MNT-001277",
       "serialNumber": "C/S-13",
       "machineNameId": "mn-1788869247141-kx1a",
       "brandId": "brd-1791167281524-wjoa",
@@ -97632,7 +97842,7 @@
       "modelStr": "ZJ-3800-BD",
       "modelName": "ZJ-3800-BD",
       "brand": "ZOJE",
-      "systemAssetId": "AMG-MNT-000835"
+      "systemAssetId": "AMG-MNT-001277"
     },
     {
       "id": "mac-01278-t22",
@@ -99484,7 +99694,7 @@
     },
     {
       "id": "mac-1788870312583-130",
-      "permanentMachineId": "AMG-MNT-000130",
+      "permanentMachineId": "AMG-MNT-001322",
       "serialNumber": "P/M-2197",
       "machineNameId": "mn-1792077157398-8mma",
       "brandId": "brd-1791167281510-9p0e",
@@ -99522,7 +99732,7 @@
       "modelStr": "DDL-900C",
       "modelName": "DDL-900C",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000130"
+      "systemAssetId": "AMG-MNT-001322"
     },
     {
       "id": "mac-1790670110810-240",
@@ -99904,7 +100114,7 @@
     },
     {
       "id": "mac-1788870312548-225",
-      "permanentMachineId": "AMG-MNT-000225",
+      "permanentMachineId": "AMG-MNT-001332",
       "serialNumber": "B/H-223",
       "machineNameId": "mn-1788869247243-7wlt",
       "brandId": "brd-1791167281510-9p0e",
@@ -99942,7 +100152,7 @@
       "modelStr": "LBH-1790BN",
       "modelName": "LBH-1790BN",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000225"
+      "systemAssetId": "AMG-MNT-001332"
     },
     {
       "id": "mac-1792072746195-1332-5757",
@@ -99988,7 +100198,7 @@
     },
     {
       "id": "mac-1792072746195-1333-2974",
-      "permanentMachineId": "AMG-MNT-000272",
+      "permanentMachineId": "AMG-MNT-001334",
       "serialNumber": "C/S-961",
       "machineNameId": "mn-1788869247141-kx1a",
       "brandId": "brd-1791167281524-wjoa",
@@ -100026,7 +100236,7 @@
       "modelStr": "ZJ-3820-BD",
       "modelName": "ZJ-3820-BD",
       "brand": "ZOJE",
-      "systemAssetId": "AMG-MNT-000272"
+      "systemAssetId": "AMG-MNT-001334"
     },
     {
       "id": "mac-01335-t22",
@@ -102046,7 +102256,7 @@
     },
     {
       "id": "mac-1788870312563-367",
-      "permanentMachineId": "AMG-MNT-000367",
+      "permanentMachineId": "AMG-MNT-001383",
       "serialNumber": "C/S-502",
       "machineNameId": "mn-1788869247141-kx1a",
       "brandId": "brd-1791167281511-lwvy",
@@ -102084,7 +102294,7 @@
       "modelStr": "JK8558WD",
       "modelName": "JK8558WD",
       "brand": "JACK",
-      "systemAssetId": "AMG-MNT-000367"
+      "systemAssetId": "AMG-MNT-001383"
     },
     {
       "id": "mac-01384-t22",
@@ -102718,7 +102928,7 @@
     },
     {
       "id": "mac-1792072746195-1398-3477",
-      "permanentMachineId": "AMG-MNT-000664",
+      "permanentMachineId": "AMG-MNT-001399",
       "serialNumber": "O/L-202",
       "machineNameId": "mn-1788869247118-qyw5",
       "brandId": "brd-1791167281510-9p0e",
@@ -102756,7 +102966,7 @@
       "modelStr": "MO-6716S",
       "modelName": "MO-6716S",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000664"
+      "systemAssetId": "AMG-MNT-001399"
     },
     {
       "id": "mac-1790670112606-35",
@@ -104272,7 +104482,7 @@
     },
     {
       "id": "mac-1788870312633-211",
-      "permanentMachineId": "AMG-MNT-000211",
+      "permanentMachineId": "AMG-MNT-001436",
       "serialNumber": "C/S-11",
       "machineNameId": "mn-1788869247141-kx1a",
       "brandId": "brd-1791167281524-wjoa",
@@ -104310,7 +104520,7 @@
       "modelStr": "ZJ-3800-PLB-J",
       "modelName": "ZJ-3800-PLB-J",
       "brand": "ZOJE",
-      "systemAssetId": "AMG-MNT-000211"
+      "systemAssetId": "AMG-MNT-001436"
     },
     {
       "id": "mac-01437-t22",
@@ -105994,7 +106204,7 @@
     },
     {
       "id": "mac-1792072746195-1476-9766",
-      "permanentMachineId": "AMG-MNT-000447",
+      "permanentMachineId": "AMG-MNT-001477",
       "serialNumber": "P/M-94",
       "machineNameId": "mn-1792077157398-8mma",
       "brandId": "brd-1791167281510-9p0e",
@@ -106032,7 +106242,7 @@
       "modelStr": "DDL-900C",
       "modelName": "DDL-900C",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000447"
+      "systemAssetId": "AMG-MNT-001477"
     },
     {
       "id": "mac-1792072746195-1477-9095",
@@ -106162,7 +106372,7 @@
     },
     {
       "id": "mac-1788870312794-463",
-      "permanentMachineId": "AMG-MNT-000463",
+      "permanentMachineId": "AMG-MNT-001481",
       "serialNumber": "B/H-38",
       "machineNameId": "mn-1788869247243-7wlt",
       "brandId": "brd-1791167281510-9p0e",
@@ -106200,11 +106410,11 @@
       "modelStr": "LBH-1790",
       "modelName": "LBH-1790",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000463"
+      "systemAssetId": "AMG-MNT-001481"
     },
     {
       "id": "mac-1792072746195-1481-3262",
-      "permanentMachineId": "AMG-MNT-000211",
+      "permanentMachineId": "AMG-MNT-001482",
       "serialNumber": "B/H-11",
       "machineNameId": "mn-1788869247243-7wlt",
       "brandId": "brd-1791167281510-9p0e",
@@ -106242,7 +106452,7 @@
       "modelStr": "LBH-1790AN",
       "modelName": "LBH-1790AN",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000211"
+      "systemAssetId": "AMG-MNT-001482"
     },
     {
       "id": "mac-1792072746195-1482-4086",
@@ -106456,7 +106666,7 @@
     },
     {
       "id": "mac-1792072746195-1487-7700",
-      "permanentMachineId": "AMG-MNT-000676",
+      "permanentMachineId": "AMG-MNT-001488",
       "serialNumber": "C/S-125",
       "machineNameId": "mn-1788869247141-kx1a",
       "brandId": "brd-1791167281510-9p0e",
@@ -106494,7 +106704,7 @@
       "modelStr": "CM-3800",
       "modelName": "CM-3800",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000676"
+      "systemAssetId": "AMG-MNT-001488"
     },
     {
       "id": "mac-01489-t22",
@@ -107044,7 +107254,7 @@
     },
     {
       "id": "mac-1792072746195-1501-8471",
-      "permanentMachineId": "AMG-MNT-000936",
+      "permanentMachineId": "AMG-MNT-001502",
       "serialNumber": "E/H-43",
       "machineNameId": "mn-1792077157399-9t5r",
       "brandId": "brd-1791167281510-9p0e",
@@ -107082,7 +107292,7 @@
       "modelStr": "MEB-3200J",
       "modelName": "MEB-3200J",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000936"
+      "systemAssetId": "AMG-MNT-001502"
     },
     {
       "id": "mac-1792072746195-1502-7933",
@@ -107380,7 +107590,7 @@
     },
     {
       "id": "mac-1792072746195-1509-2950",
-      "permanentMachineId": "AMG-MNT-000473",
+      "permanentMachineId": "AMG-MNT-001510",
       "serialNumber": "F/A-71",
       "machineNameId": "mn-1788869247100-2uyc",
       "brandId": "brd-1791167281510-9p0e",
@@ -107418,7 +107628,7 @@
       "modelStr": "KZ-1060",
       "modelName": "KZ-1060",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000473"
+      "systemAssetId": "AMG-MNT-001510"
     },
     {
       "id": "mac-01511-t22",
@@ -107800,7 +108010,7 @@
     },
     {
       "id": "mac-1792072746195-1519-3441",
-      "permanentMachineId": "AMG-MNT-000003",
+      "permanentMachineId": "AMG-MNT-001520",
       "serialNumber": "P/F-88",
       "machineNameId": "mn-1792077157399-5kmi",
       "brandId": "brd-1791167281518-1oda",
@@ -107838,7 +108048,7 @@
       "modelStr": "NW8842-1G",
       "modelName": "NW8842-1G",
       "brand": "KANSAI SPECIAL",
-      "systemAssetId": "AMG-MNT-000003"
+      "systemAssetId": "AMG-MNT-001520"
     },
     {
       "id": "mac-01521-t22",
@@ -108094,7 +108304,7 @@
     },
     {
       "id": "mac-1792072746195-1526-3894",
-      "permanentMachineId": "AMG-MNT-000272",
+      "permanentMachineId": "AMG-MNT-001527",
       "serialNumber": "P/M-961",
       "machineNameId": "mn-1792077157398-8mma",
       "brandId": "brd-1791167281510-9p0e",
@@ -108132,7 +108342,7 @@
       "modelStr": "DDL-9000B-SH",
       "modelName": "DDL-9000B-SH",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000272"
+      "systemAssetId": "AMG-MNT-001527"
     },
     {
       "id": "mac-01528-t22",
@@ -109648,7 +109858,7 @@
     },
     {
       "id": "mac-1792072746195-1563-4145",
-      "permanentMachineId": "AMG-MNT-000025",
+      "permanentMachineId": "AMG-MNT-001564",
       "serialNumber": "F/A-187",
       "machineNameId": "mn-1788869247100-2uyc",
       "brandId": "brd-1791167281510-9p0e",
@@ -109686,7 +109896,7 @@
       "modelStr": "MS-1261",
       "modelName": "MS-1261",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000025"
+      "systemAssetId": "AMG-MNT-001564"
     },
     {
       "id": "mac-1792072746195-1564-9573",
@@ -109774,7 +109984,7 @@
     },
     {
       "id": "mac-1792072746195-1566-3281",
-      "permanentMachineId": "AMG-MNT-000463",
+      "permanentMachineId": "AMG-MNT-001567",
       "serialNumber": "K/S-38",
       "machineNameId": "mn-1788869247176-2gzf",
       "brandId": "brd-1791167281518-1oda",
@@ -109812,7 +110022,7 @@
       "modelStr": "DFB-1411P-XP",
       "modelName": "DFB-1411P-XP",
       "brand": "KANSAI SPECIAL",
-      "systemAssetId": "AMG-MNT-000463"
+      "systemAssetId": "AMG-MNT-001567"
     },
     {
       "id": "mac-1790670121381-501",
@@ -111286,7 +111496,7 @@
     },
     {
       "id": "mac-1792072746195-1602-4243",
-      "permanentMachineId": "AMG-MNT-000232",
+      "permanentMachineId": "AMG-MNT-001603",
       "serialNumber": "P/M-4",
       "machineNameId": "mn-1792077157398-8mma",
       "brandId": "brd-1791167281510-9p0e",
@@ -111324,7 +111534,7 @@
       "modelStr": "DDL-900C",
       "modelName": "DDL-900C",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000232"
+      "systemAssetId": "AMG-MNT-001603"
     },
     {
       "id": "mac-1792072746195-1603-6878",
@@ -117166,7 +117376,7 @@
     },
     {
       "id": "mac-1788870312584-148",
-      "permanentMachineId": "AMG-MNT-000148",
+      "permanentMachineId": "AMG-MNT-001743",
       "serialNumber": "V/T-434",
       "machineNameId": "mn-1792077157398-lasb",
       "brandId": "brd-1791167281510-9p0e",
@@ -117204,7 +117414,7 @@
       "modelStr": "DLM-5200N",
       "modelName": "DLM-5200N",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000148"
+      "systemAssetId": "AMG-MNT-001743"
     },
     {
       "id": "mac-1792072746196-1743-6047",
@@ -117376,7 +117586,7 @@
     },
     {
       "id": "mac-1788870312674-237",
-      "permanentMachineId": "AMG-MNT-000237",
+      "permanentMachineId": "AMG-MNT-001748",
       "serialNumber": "F/A-84",
       "machineNameId": "mn-1788869247100-2uyc",
       "brandId": "brd-1791167281510-9p0e",
@@ -117414,7 +117624,7 @@
       "modelStr": "MS-1261",
       "modelName": "MS-1261",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000237"
+      "systemAssetId": "AMG-MNT-001748"
     },
     {
       "id": "mac-1792072746196-1748-2677",
@@ -119602,7 +119812,7 @@
     },
     {
       "id": "mac-1792072746196-1800-2989",
-      "permanentMachineId": "AMG-MNT-000447",
+      "permanentMachineId": "AMG-MNT-001801",
       "serialNumber": "O/L-94",
       "machineNameId": "mn-1788869247118-qyw5",
       "brandId": "brd-1791167281510-9p0e",
@@ -119640,7 +119850,7 @@
       "modelStr": "MO-6716S",
       "modelName": "MO-6716S",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000447"
+      "systemAssetId": "AMG-MNT-001801"
     },
     {
       "id": "mac-01802-t22",
@@ -120652,7 +120862,7 @@
     },
     {
       "id": "mac-1792072746196-1825-7779",
-      "permanentMachineId": "AMG-MNT-000211",
+      "permanentMachineId": "AMG-MNT-001826",
       "serialNumber": "E/H-11",
       "machineNameId": "mn-1792077157399-9t5r",
       "brandId": "brd-1791167281510-9p0e",
@@ -120690,11 +120900,11 @@
       "modelStr": "MEB-3200J",
       "modelName": "MEB-3200J",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000211"
+      "systemAssetId": "AMG-MNT-001826"
     },
     {
       "id": "mac-1792072746196-1826-4327",
-      "permanentMachineId": "AMG-MNT-000209",
+      "permanentMachineId": "AMG-MNT-001827",
       "serialNumber": "E/H-10",
       "machineNameId": "mn-1792077157399-9t5r",
       "brandId": "brd-1791167281510-9p0e",
@@ -120732,7 +120942,7 @@
       "modelStr": "MEB-3200J",
       "modelName": "MEB-3200J",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000209"
+      "systemAssetId": "AMG-MNT-001827"
     },
     {
       "id": "mac-01828-t22",
@@ -120862,7 +121072,7 @@
     },
     {
       "id": "mac-1788870312558-327",
-      "permanentMachineId": "AMG-MNT-000327",
+      "permanentMachineId": "AMG-MNT-001831",
       "serialNumber": "B/T-443",
       "machineNameId": "mn-1788869247205-his3",
       "brandId": "brd-1791167281510-9p0e",
@@ -120900,7 +121110,7 @@
       "modelStr": "LK-1900B",
       "modelName": "LK-1900B",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000327"
+      "systemAssetId": "AMG-MNT-001831"
     },
     {
       "id": "mac-01832-t22",
@@ -121702,7 +121912,7 @@
     },
     {
       "id": "mac-1792072746196-1850-4416",
-      "permanentMachineId": "AMG-MNT-000835",
+      "permanentMachineId": "AMG-MNT-001851",
       "serialNumber": "O/L-13",
       "machineNameId": "mn-1788869247118-qyw5",
       "brandId": "brd-1791167281510-9p0e",
@@ -121740,7 +121950,7 @@
       "modelStr": "MO-6714DA",
       "modelName": "MO-6714DA",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000835"
+      "systemAssetId": "AMG-MNT-001851"
     },
     {
       "id": "mac-01852-t22",
@@ -122038,7 +122248,7 @@
     },
     {
       "id": "mac-1792072746196-1858-3024",
-      "permanentMachineId": "AMG-MNT-000964",
+      "permanentMachineId": "AMG-MNT-001859",
       "serialNumber": "P/M-99",
       "machineNameId": "mn-1792077157398-8mma",
       "brandId": "brd-1791167281510-9p0e",
@@ -122076,7 +122286,7 @@
       "modelStr": "DDL-8000A",
       "modelName": "DDL-8000A",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000964"
+      "systemAssetId": "AMG-MNT-001859"
     },
     {
       "id": "mac-01860-t22",
@@ -122584,7 +122794,7 @@
     },
     {
       "id": "mac-1792072746196-1871-4488",
-      "permanentMachineId": "AMG-MNT-000676",
+      "permanentMachineId": "AMG-MNT-001872",
       "serialNumber": "P/M-125",
       "machineNameId": "mn-1792077157398-8mma",
       "brandId": "brd-1791167281510-9p0e",
@@ -122622,7 +122832,7 @@
       "modelStr": "DDL-9000B",
       "modelName": "DDL-9000B",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000676"
+      "systemAssetId": "AMG-MNT-001872"
     },
     {
       "id": "mac-01873-t22",
@@ -123088,7 +123298,7 @@
     },
     {
       "id": "mac-1792072746196-1883-7826",
-      "permanentMachineId": "AMG-MNT-000327",
+      "permanentMachineId": "AMG-MNT-001884",
       "serialNumber": "P/M-443",
       "machineNameId": "mn-1792077157398-8mma",
       "brandId": "brd-1791167281510-9p0e",
@@ -123126,7 +123336,7 @@
       "modelStr": "DDL-900C",
       "modelName": "DDL-900C",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000327"
+      "systemAssetId": "AMG-MNT-001884"
     },
     {
       "id": "mac-1792072746196-1884-6390",
@@ -123172,7 +123382,7 @@
     },
     {
       "id": "mac-1792072746196-1885-9526",
-      "permanentMachineId": "AMG-MNT-000690",
+      "permanentMachineId": "AMG-MNT-001886",
       "serialNumber": "B/T-24",
       "machineNameId": "mn-1788869247205-his3",
       "brandId": "brd-1791167281510-9p0e",
@@ -123210,7 +123420,7 @@
       "modelStr": "LK-1900A",
       "modelName": "LK-1900A",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000690"
+      "systemAssetId": "AMG-MNT-001886"
     },
     {
       "id": "mac-01887-t22",
@@ -123256,7 +123466,7 @@
     },
     {
       "id": "mac-1788870312634-901",
-      "permanentMachineId": "AMG-MNT-000901",
+      "permanentMachineId": "AMG-MNT-001888",
       "serialNumber": "C/S-479",
       "machineNameId": "mn-1788869247141-kx1a",
       "brandId": "brd-1791167281511-lwvy",
@@ -123294,7 +123504,7 @@
       "modelStr": "JK-8558WD",
       "modelName": "JK-8558WD",
       "brand": "JACK",
-      "systemAssetId": "AMG-MNT-000901"
+      "systemAssetId": "AMG-MNT-001888"
     },
     {
       "id": "mac-01889-t22",
@@ -123676,7 +123886,7 @@
     },
     {
       "id": "mac-1788870312585-349",
-      "permanentMachineId": "AMG-MNT-000349",
+      "permanentMachineId": "AMG-MNT-001898",
       "serialNumber": "V/T-168",
       "machineNameId": "mn-1792077157398-lasb",
       "brandId": "brd-1791167281510-9p0e",
@@ -123714,7 +123924,7 @@
       "modelStr": "DLM-5200N",
       "modelName": "DLM-5200N",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000349"
+      "systemAssetId": "AMG-MNT-001898"
     },
     {
       "id": "mac-01899-t22",
@@ -123886,7 +124096,7 @@
     },
     {
       "id": "mac-1792072746196-1902-8963",
-      "permanentMachineId": "AMG-MNT-000211",
+      "permanentMachineId": "AMG-MNT-001903",
       "serialNumber": "K/S-11",
       "machineNameId": "mn-1792077157402-cg3a",
       "brandId": "brd-1791167281518-1oda",
@@ -123924,7 +124134,7 @@
       "modelStr": "DFB-1411",
       "modelName": "DFB-1411",
       "brand": "KANSAI SPECIAL",
-      "systemAssetId": "AMG-MNT-000211"
+      "systemAssetId": "AMG-MNT-001903"
     },
     {
       "id": "mac-01904-t22",
@@ -124390,7 +124600,7 @@
     },
     {
       "id": "mac-1788870312850-538",
-      "permanentMachineId": "AMG-MNT-000538",
+      "permanentMachineId": "AMG-MNT-001915",
       "serialNumber": "P/M-498",
       "machineNameId": "mn-1792077157398-8mma",
       "brandId": "brd-1791167281510-9p0e",
@@ -124428,7 +124638,7 @@
       "modelStr": "DDL-9000B",
       "modelName": "DDL-9000B",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000538"
+      "systemAssetId": "AMG-MNT-001915"
     },
     {
       "id": "mac-01916-t22",
@@ -124894,7 +125104,7 @@
     },
     {
       "id": "mac-1792072746196-1926-5057",
-      "permanentMachineId": "AMG-MNT-000958",
+      "permanentMachineId": "AMG-MNT-001927",
       "serialNumber": "P/M-826",
       "machineNameId": "mn-1792077157398-8mma",
       "brandId": "brd-1791167281510-9p0e",
@@ -124932,7 +125142,7 @@
       "modelStr": "DDL-900OB",
       "modelName": "DDL-900OB",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000958"
+      "systemAssetId": "AMG-MNT-001927"
     },
     {
       "id": "mac-01928-t22",
@@ -125146,7 +125356,7 @@
     },
     {
       "id": "mac-1788870312603-390",
-      "permanentMachineId": "AMG-MNT-000390",
+      "permanentMachineId": "AMG-MNT-001933",
       "serialNumber": "C/S-133",
       "machineNameId": "mn-1788869247141-kx1a",
       "brandId": "brd-1791167281510-9p0e",
@@ -125184,7 +125394,7 @@
       "modelStr": "MH-380",
       "modelName": "MH-380",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000390"
+      "systemAssetId": "AMG-MNT-001933"
     },
     {
       "id": "mac-01934-t22",
@@ -125818,7 +126028,7 @@
     },
     {
       "id": "mac-1788870312792-236",
-      "permanentMachineId": "AMG-MNT-000236",
+      "permanentMachineId": "AMG-MNT-001949",
       "serialNumber": "O/L-460",
       "machineNameId": "mn-1788869247118-qyw5",
       "brandId": "brd-1791167281510-9p0e",
@@ -125856,7 +126066,7 @@
       "modelStr": "MO-6714DA",
       "modelName": "MO-6714DA",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000236"
+      "systemAssetId": "AMG-MNT-001949"
     },
     {
       "id": "mac-1792072746196-1949-9129",
@@ -126826,7 +127036,7 @@
     },
     {
       "id": "mac-1792072746196-1972-1080",
-      "permanentMachineId": "AMG-MNT-000349",
+      "permanentMachineId": "AMG-MNT-001973",
       "serialNumber": "B/T-168",
       "machineNameId": "mn-1788869247205-his3",
       "brandId": "brd-1791167281510-9p0e",
@@ -126864,7 +127074,7 @@
       "modelStr": "LK-1900A",
       "modelName": "LK-1900A",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000349"
+      "systemAssetId": "AMG-MNT-001973"
     },
     {
       "id": "mac-01974-t22",
@@ -127750,7 +127960,7 @@
     },
     {
       "id": "mac-1788870312843-250",
-      "permanentMachineId": "AMG-MNT-000250",
+      "permanentMachineId": "AMG-MNT-001995",
       "serialNumber": "O/L-267",
       "machineNameId": "mn-1788869247118-qyw5",
       "brandId": "brd-1791167281510-9p0e",
@@ -127788,7 +127998,7 @@
       "modelStr": "MO-6716S",
       "modelName": "MO-6716S",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000250"
+      "systemAssetId": "AMG-MNT-001995"
     },
     {
       "id": "mac-1790670118758-637",
@@ -128253,7 +128463,7 @@
     },
     {
       "id": "mac-1788870312562-442",
-      "permanentMachineId": "AMG-MNT-000442",
+      "permanentMachineId": "AMG-MNT-002007",
       "serialNumber": "P/M-5537",
       "machineNameId": "mn-1792077157398-8mma",
       "brandId": "brd-1791167281510-9p0e",
@@ -128291,7 +128501,7 @@
       "modelStr": "DDL-9000B",
       "modelName": "DDL-9000B",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000442"
+      "systemAssetId": "AMG-MNT-002007"
     },
     {
       "id": "mac-02008-t22",
@@ -129219,7 +129429,7 @@
     },
     {
       "id": "mac-1788870312579-309",
-      "permanentMachineId": "AMG-MNT-000309",
+      "permanentMachineId": "AMG-MNT-002030",
       "serialNumber": "K/S-219",
       "machineNameId": "mn-1792077157402-cg3a",
       "brandId": "brd-1791167281518-1oda",
@@ -129257,7 +129467,7 @@
       "modelStr": "DFB-1411",
       "modelName": "DFB-1411",
       "brand": "KANSAI SPECIAL",
-      "systemAssetId": "AMG-MNT-000309"
+      "systemAssetId": "AMG-MNT-002030"
     },
     {
       "id": "mac-1792072746196-2030-5393",
@@ -129471,7 +129681,7 @@
     },
     {
       "id": "mac-1792072746196-2035-8172",
-      "permanentMachineId": "AMG-MNT-000059",
+      "permanentMachineId": "AMG-MNT-002036",
       "serialNumber": "O/L-52",
       "machineNameId": "mn-1788869247118-qyw5",
       "brandId": "brd-1791167281510-9p0e",
@@ -129509,7 +129719,7 @@
       "modelStr": "MO-6716S",
       "modelName": "MO-6716S",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000059"
+      "systemAssetId": "AMG-MNT-002036"
     },
     {
       "id": "mac-1792072746196-2036-6877",
@@ -129597,7 +129807,7 @@
     },
     {
       "id": "mac-1788870312793-244",
-      "permanentMachineId": "AMG-MNT-000244",
+      "permanentMachineId": "AMG-MNT-002039",
       "serialNumber": "O/L-100",
       "machineNameId": "mn-1788869247118-qyw5",
       "brandId": "brd-1791167281510-9p0e",
@@ -129635,11 +129845,11 @@
       "modelStr": "MO-6716S",
       "modelName": "MO-6716S",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000244"
+      "systemAssetId": "AMG-MNT-002039"
     },
     {
       "id": "mac-1792072746196-2039-6947",
-      "permanentMachineId": "AMG-MNT-000184",
+      "permanentMachineId": "AMG-MNT-002040",
       "serialNumber": "P/M-326",
       "machineNameId": "mn-1792077157398-8mma",
       "brandId": "brd-1791167281510-9p0e",
@@ -129677,7 +129887,7 @@
       "modelStr": "DDL-8700-7",
       "modelName": "DDL-8700-7",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000184"
+      "systemAssetId": "AMG-MNT-002040"
     },
     {
       "id": "mac-02041-t22",
@@ -130101,7 +130311,7 @@
     },
     {
       "id": "mac-1788870312874-713",
-      "permanentMachineId": "AMG-MNT-000713",
+      "permanentMachineId": "AMG-MNT-002051",
       "serialNumber": "P/M-708",
       "machineNameId": "mn-1792077157398-8mma",
       "brandId": "brd-1791167281510-9p0e",
@@ -130139,7 +130349,7 @@
       "modelStr": "DDL-9000B",
       "modelName": "DDL-9000B",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000713"
+      "systemAssetId": "AMG-MNT-002051"
     },
     {
       "id": "mac-02052-t22",
@@ -130227,7 +130437,7 @@
     },
     {
       "id": "mac-1792072746196-2053-1169",
-      "permanentMachineId": "AMG-MNT-000689",
+      "permanentMachineId": "AMG-MNT-002054",
       "serialNumber": "P/M-819",
       "machineNameId": "mn-1792077157398-8mma",
       "brandId": "brd-1791167281510-9p0e",
@@ -130265,7 +130475,7 @@
       "modelStr": "DDL-9000B",
       "modelName": "DDL-9000B",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000689"
+      "systemAssetId": "AMG-MNT-002054"
     },
     {
       "id": "mac-02055-t22",
@@ -130563,7 +130773,7 @@
     },
     {
       "id": "mac-uniq-1792072826911-2061-3431",
-      "permanentMachineId": "AMG-MNT-000318",
+      "permanentMachineId": "AMG-MNT-002062",
       "serialNumber": "B/T-14",
       "machineNameId": "mn-1788869247205-his3",
       "brandId": "brd-1791167281510-9p0e",
@@ -130601,7 +130811,7 @@
       "modelStr": "LK-1900A",
       "modelName": "LK-1900A",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000318"
+      "systemAssetId": "AMG-MNT-002062"
     },
     {
       "id": "mac-02063-t22",
@@ -132537,7 +132747,7 @@
     },
     {
       "id": "mac-1792072746196-2108-3666",
-      "permanentMachineId": "AMG-MNT-000453",
+      "permanentMachineId": "AMG-MNT-002109",
       "serialNumber": "C/S-304",
       "machineNameId": "mn-1788869247141-kx1a",
       "brandId": "brd-1791167281510-9p0e",
@@ -132575,7 +132785,7 @@
       "modelStr": "MH380",
       "modelName": "MH380",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000453"
+      "systemAssetId": "AMG-MNT-002109"
     },
     {
       "id": "mac-02110-t22",
@@ -132663,7 +132873,7 @@
     },
     {
       "id": "mac-1792072746196-2111-1213",
-      "permanentMachineId": "AMG-MNT-000664",
+      "permanentMachineId": "AMG-MNT-002112",
       "serialNumber": "C/S-202",
       "machineNameId": "mn-1788869247141-kx1a",
       "brandId": "brd-1791167281524-wjoa",
@@ -132701,7 +132911,7 @@
       "modelStr": "ZJ3800",
       "modelName": "ZJ3800",
       "brand": "ZOJE",
-      "systemAssetId": "AMG-MNT-000664"
+      "systemAssetId": "AMG-MNT-002112"
     },
     {
       "id": "mac-02113-t22",
@@ -133167,7 +133377,7 @@
     },
     {
       "id": "mac-1788870312746-94",
-      "permanentMachineId": "AMG-MNT-000094",
+      "permanentMachineId": "AMG-MNT-002124",
       "serialNumber": "O/L-341",
       "machineNameId": "mn-1788869247118-qyw5",
       "brandId": "brd-1791167281510-9p0e",
@@ -133205,11 +133415,11 @@
       "modelStr": "MO-6716S",
       "modelName": "MO-6716S",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000094"
+      "systemAssetId": "AMG-MNT-002124"
     },
     {
       "id": "mac-1788870312559-520",
-      "permanentMachineId": "AMG-MNT-000520",
+      "permanentMachineId": "AMG-MNT-002125",
       "serialNumber": "O/L-774",
       "machineNameId": "mn-1788869247118-qyw5",
       "brandId": "brd-1791167281510-9p0e",
@@ -133247,7 +133457,7 @@
       "modelStr": "MO-6716S",
       "modelName": "MO-6716S",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000520"
+      "systemAssetId": "AMG-MNT-002125"
     },
     {
       "id": "mac-02126-t22",
@@ -133461,7 +133671,7 @@
     },
     {
       "id": "mac-1788870312553-591",
-      "permanentMachineId": "AMG-MNT-000591",
+      "permanentMachineId": "AMG-MNT-002131",
       "serialNumber": "P/M-6366",
       "machineNameId": "mn-1792077157398-8mma",
       "brandId": "brd-1791167281510-9p0e",
@@ -133499,7 +133709,7 @@
       "modelStr": "DDL-8000A",
       "modelName": "DDL-8000A",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000591"
+      "systemAssetId": "AMG-MNT-002131"
     },
     {
       "id": "mac-02132-t22",
@@ -133545,7 +133755,7 @@
     },
     {
       "id": "mac-1792072746196-2132-2057",
-      "permanentMachineId": "AMG-MNT-000137",
+      "permanentMachineId": "AMG-MNT-002133",
       "serialNumber": "P/M-822",
       "machineNameId": "mn-1792077157398-8mma",
       "brandId": "brd-1791167281510-9p0e",
@@ -133583,7 +133793,7 @@
       "modelStr": "DDL-9000B",
       "modelName": "DDL-9000B",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000137"
+      "systemAssetId": "AMG-MNT-002133"
     },
     {
       "id": "mac-02134-t22",
@@ -134511,7 +134721,7 @@
     },
     {
       "id": "mac-1792072746196-2155-3627",
-      "permanentMachineId": "AMG-MNT-000629",
+      "permanentMachineId": "AMG-MNT-002156",
       "serialNumber": "C/S-153",
       "machineNameId": "mn-1788869247141-kx1a",
       "brandId": "brd-1791167281510-9p0e",
@@ -134549,7 +134759,7 @@
       "modelStr": "MH380",
       "modelName": "MH380",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000629"
+      "systemAssetId": "AMG-MNT-002156"
     },
     {
       "id": "mac-02157-t22",
@@ -134763,7 +134973,7 @@
     },
     {
       "id": "mac-1788870312556-302",
-      "permanentMachineId": "AMG-MNT-000302",
+      "permanentMachineId": "AMG-MNT-002162",
       "serialNumber": "V/T-136",
       "machineNameId": "mn-1792077157398-lasb",
       "brandId": "brd-1791167281510-9p0e",
@@ -134801,7 +135011,7 @@
       "modelStr": "DLM-5200N",
       "modelName": "DLM-5200N",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000302"
+      "systemAssetId": "AMG-MNT-002162"
     },
     {
       "id": "mac-02163-t22",
@@ -134931,7 +135141,7 @@
     },
     {
       "id": "mac-1788870312680-165",
-      "permanentMachineId": "AMG-MNT-000165",
+      "permanentMachineId": "AMG-MNT-002166",
       "serialNumber": "K/S-161",
       "machineNameId": "mn-1792077157402-cg3a",
       "brandId": "brd-1791167281518-1oda",
@@ -134969,7 +135179,7 @@
       "modelStr": "DFB-1411",
       "modelName": "DFB-1411",
       "brand": "KANSAI SPECIAL",
-      "systemAssetId": "AMG-MNT-000165"
+      "systemAssetId": "AMG-MNT-002166"
     },
     {
       "id": "mac-02167-t22",
@@ -135015,7 +135225,7 @@
     },
     {
       "id": "mac-1788870312756-651",
-      "permanentMachineId": "AMG-MNT-000651",
+      "permanentMachineId": "AMG-MNT-002168",
       "serialNumber": "O/L-877",
       "machineNameId": "mn-1788869247118-qyw5",
       "brandId": "brd-1791167281510-9p0e",
@@ -135053,7 +135263,7 @@
       "modelStr": "MO-6716S",
       "modelName": "MO-6716S",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000651"
+      "systemAssetId": "AMG-MNT-002168"
     },
     {
       "id": "mac-02169-t22",
@@ -136065,7 +136275,7 @@
     },
     {
       "id": "mac-1788870312735-469",
-      "permanentMachineId": "AMG-MNT-000469",
+      "permanentMachineId": "AMG-MNT-002193",
       "serialNumber": "P/M-317",
       "machineNameId": "mn-1792077157398-8mma",
       "brandId": "brd-1791167281510-9p0e",
@@ -136103,7 +136313,7 @@
       "modelStr": "DDL-900BB",
       "modelName": "DDL-900BB",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000469"
+      "systemAssetId": "AMG-MNT-002193"
     },
     {
       "id": "mac-02194-t22",
@@ -136737,7 +136947,7 @@
     },
     {
       "id": "mac-1788870312561-48",
-      "permanentMachineId": "AMG-MNT-000048",
+      "permanentMachineId": "AMG-MNT-002209",
       "serialNumber": "V/T-452",
       "machineNameId": "mn-1792077157398-lasb",
       "brandId": "brd-1791167281513-qhs3",
@@ -136775,7 +136985,7 @@
       "modelStr": "CM-5300",
       "modelName": "CM-5300",
       "brand": "ZUSAN",
-      "systemAssetId": "AMG-MNT-000048"
+      "systemAssetId": "AMG-MNT-002209"
     },
     {
       "id": "mac-02210-t22",
@@ -136863,7 +137073,7 @@
     },
     {
       "id": "mac-1788870312611-74",
-      "permanentMachineId": "AMG-MNT-000074",
+      "permanentMachineId": "AMG-MNT-002212",
       "serialNumber": "F/A-256",
       "machineNameId": "mn-1788869247100-2uyc",
       "brandId": "brd-1791167281510-9p0e",
@@ -136901,7 +137111,7 @@
       "modelStr": "MS1261",
       "modelName": "MS1261",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000074"
+      "systemAssetId": "AMG-MNT-002212"
     },
     {
       "id": "mac-uniq-1792072826911-2212-4935",
@@ -136989,7 +137199,7 @@
     },
     {
       "id": "mac-1792072746196-2214-2068",
-      "permanentMachineId": "AMG-MNT-000309",
+      "permanentMachineId": "AMG-MNT-002215",
       "serialNumber": "F/A-219",
       "machineNameId": "mn-1788869247100-2uyc",
       "brandId": "brd-1791167281510-9p0e",
@@ -137027,11 +137237,11 @@
       "modelStr": "MS1261",
       "modelName": "MS1261",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000309"
+      "systemAssetId": "AMG-MNT-002215"
     },
     {
       "id": "mac-1792072746196-2215-7954",
-      "permanentMachineId": "AMG-MNT-000244",
+      "permanentMachineId": "AMG-MNT-002216",
       "serialNumber": "F/A-100",
       "machineNameId": "mn-1788869247100-2uyc",
       "brandId": "brd-1791167281510-9p0e",
@@ -137069,7 +137279,7 @@
       "modelStr": "MS-1261",
       "modelName": "MS-1261",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000244"
+      "systemAssetId": "AMG-MNT-002216"
     },
     {
       "id": "mac-1790670110584-940",
@@ -137199,7 +137409,7 @@
     },
     {
       "id": "mac-1792072746196-2219-2378",
-      "permanentMachineId": "AMG-MNT-000473",
+      "permanentMachineId": "AMG-MNT-002220",
       "serialNumber": "K/S-71",
       "machineNameId": "mn-1792077157402-cg3a",
       "brandId": "brd-1791167281518-1oda",
@@ -137237,7 +137447,7 @@
       "modelStr": "DFB-1411",
       "modelName": "DFB-1411",
       "brand": "KANSAI SPECIAL",
-      "systemAssetId": "AMG-MNT-000473"
+      "systemAssetId": "AMG-MNT-002220"
     },
     {
       "id": "mac-1792072746196-2220-6976",
@@ -137745,7 +137955,7 @@
     },
     {
       "id": "mac-1792072746196-2232-9287",
-      "permanentMachineId": "AMG-MNT-000734",
+      "permanentMachineId": "AMG-MNT-002233",
       "serialNumber": "P/M-427",
       "machineNameId": "mn-1792077157398-8mma",
       "brandId": "brd-1791167281510-9p0e",
@@ -137783,7 +137993,7 @@
       "modelStr": "DDL-8700-7",
       "modelName": "DDL-8700-7",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000734"
+      "systemAssetId": "AMG-MNT-002233"
     },
     {
       "id": "mac-02234-t22",
@@ -138291,7 +138501,7 @@
     },
     {
       "id": "mac-1792072746196-2245-1802",
-      "permanentMachineId": "AMG-MNT-000734",
+      "permanentMachineId": "AMG-MNT-002246",
       "serialNumber": "B/T-427",
       "machineNameId": "mn-1788869247205-his3",
       "brandId": "brd-1791167281510-9p0e",
@@ -138329,7 +138539,7 @@
       "modelStr": "LK1900BN",
       "modelName": "LK1900BN",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000734"
+      "systemAssetId": "AMG-MNT-002246"
     },
     {
       "id": "mac-02247-t22",
@@ -138375,7 +138585,7 @@
     },
     {
       "id": "mac-1788870312544-638",
-      "permanentMachineId": "AMG-MNT-000638",
+      "permanentMachineId": "AMG-MNT-002248",
       "serialNumber": "B/T-354",
       "machineNameId": "mn-1788869247205-his3",
       "brandId": "brd-1791167281510-9p0e",
@@ -138413,7 +138623,7 @@
       "modelStr": "LK1900BN",
       "modelName": "LK1900BN",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000638"
+      "systemAssetId": "AMG-MNT-002248"
     },
     {
       "id": "mac-02249-t22",
@@ -139509,7 +139719,7 @@
     },
     {
       "id": "mac-1792072746196-2274-8323",
-      "permanentMachineId": "AMG-MNT-000376",
+      "permanentMachineId": "AMG-MNT-002275",
       "serialNumber": "P/M-248",
       "machineNameId": "mn-1792077157398-8mma",
       "brandId": "brd-1791167281510-9p0e",
@@ -139547,7 +139757,7 @@
       "modelStr": "DDL-9000B",
       "modelName": "DDL-9000B",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000376"
+      "systemAssetId": "AMG-MNT-002275"
     },
     {
       "id": "mac-02276-t22",
@@ -139635,7 +139845,7 @@
     },
     {
       "id": "mac-1788870312605-15",
-      "permanentMachineId": "AMG-MNT-000015",
+      "permanentMachineId": "AMG-MNT-002278",
       "serialNumber": "P/M-480",
       "machineNameId": "mn-1792077157398-8mma",
       "brandId": "brd-1791167281510-9p0e",
@@ -139673,7 +139883,7 @@
       "modelStr": "DDL-9000B",
       "modelName": "DDL-9000B",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000015"
+      "systemAssetId": "AMG-MNT-002278"
     },
     {
       "id": "mac-02279-t22",
@@ -140223,7 +140433,7 @@
     },
     {
       "id": "mac-1792072746196-2291-4251",
-      "permanentMachineId": "AMG-MNT-000209",
+      "permanentMachineId": "AMG-MNT-002292",
       "serialNumber": "B/T-10",
       "machineNameId": "mn-1788869247205-his3",
       "brandId": "brd-1791167281510-9p0e",
@@ -140261,7 +140471,7 @@
       "modelStr": "LK1900BN",
       "modelName": "LK1900BN",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000209"
+      "systemAssetId": "AMG-MNT-002292"
     },
     {
       "id": "mac-02293-t22",
@@ -140643,7 +140853,7 @@
     },
     {
       "id": "mac-1788870312861-58",
-      "permanentMachineId": "AMG-MNT-000058",
+      "permanentMachineId": "AMG-MNT-002302",
       "serialNumber": "F/A-205",
       "machineNameId": "mn-1788869247100-2uyc",
       "brandId": "brd-1791167281510-9p0e",
@@ -140681,7 +140891,7 @@
       "modelStr": "MS1261",
       "modelName": "MS1261",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000058"
+      "systemAssetId": "AMG-MNT-002302"
     },
     {
       "id": "mac-02303-t22",
@@ -140937,7 +141147,7 @@
     },
     {
       "id": "mac-1788870312772-98",
-      "permanentMachineId": "AMG-MNT-000098",
+      "permanentMachineId": "AMG-MNT-002309",
       "serialNumber": "P/M-875",
       "machineNameId": "mn-1792077157398-8mma",
       "brandId": "brd-1791167281510-9p0e",
@@ -140975,7 +141185,7 @@
       "modelStr": "DDL9000B",
       "modelName": "DDL9000B",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000098"
+      "systemAssetId": "AMG-MNT-002309"
     },
     {
       "id": "mac-02310-t22",
@@ -142155,7 +142365,7 @@
     },
     {
       "id": "mac-1788870312638-169",
-      "permanentMachineId": "AMG-MNT-000169",
+      "permanentMachineId": "AMG-MNT-002338",
       "serialNumber": "C/S-455",
       "machineNameId": "mn-1788869247141-kx1a",
       "brandId": "brd-1791167281511-lwvy",
@@ -142193,7 +142403,7 @@
       "modelStr": "JK-8558WD",
       "modelName": "JK-8558WD",
       "brand": "JACK",
-      "systemAssetId": "AMG-MNT-000169"
+      "systemAssetId": "AMG-MNT-002338"
     },
     {
       "id": "mac-1792072746196-2338-4838",
@@ -142449,7 +142659,7 @@
     },
     {
       "id": "mac-1792072746196-2344-7996",
-      "permanentMachineId": "AMG-MNT-000676",
+      "permanentMachineId": "AMG-MNT-002345",
       "serialNumber": "V/T-125",
       "machineNameId": "mn-1792077157398-lasb",
       "brandId": "brd-1791167281510-9p0e",
@@ -142487,7 +142697,7 @@
       "modelStr": "DLM-5200N",
       "modelName": "DLM-5200N",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000676"
+      "systemAssetId": "AMG-MNT-002345"
     },
     {
       "id": "mac-1792072746196-2345-8188",
@@ -142911,7 +143121,7 @@
     },
     {
       "id": "mac-1788870312574-800",
-      "permanentMachineId": "AMG-MNT-000800",
+      "permanentMachineId": "AMG-MNT-002356",
       "serialNumber": "O/L-729",
       "machineNameId": "mn-1788869247118-qyw5",
       "brandId": "brd-1791167281510-9p0e",
@@ -142949,7 +143159,7 @@
       "modelStr": "MO-6716S",
       "modelName": "MO-6716S",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000800"
+      "systemAssetId": "AMG-MNT-002356"
     },
     {
       "id": "mac-02357-t22",
@@ -143163,7 +143373,7 @@
     },
     {
       "id": "mac-1792072746196-2361-2877",
-      "permanentMachineId": "AMG-MNT-000148",
+      "permanentMachineId": "AMG-MNT-002362",
       "serialNumber": "P/M-434",
       "machineNameId": "mn-1792077157398-8mma",
       "brandId": "brd-1791167281510-9p0e",
@@ -143201,7 +143411,7 @@
       "modelStr": "DDL-9000B",
       "modelName": "DDL-9000B",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000148"
+      "systemAssetId": "AMG-MNT-002362"
     },
     {
       "id": "mac-02363-t22",
@@ -143373,7 +143583,7 @@
     },
     {
       "id": "mac-1788870312791-42",
-      "permanentMachineId": "AMG-MNT-000042",
+      "permanentMachineId": "AMG-MNT-002367",
       "serialNumber": "P/M-702",
       "machineNameId": "mn-1792077157398-8mma",
       "brandId": "brd-1791167281510-9p0e",
@@ -143411,7 +143621,7 @@
       "modelStr": "DDL-9000B",
       "modelName": "DDL-9000B",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000042"
+      "systemAssetId": "AMG-MNT-002367"
     },
     {
       "id": "mac-02368-t22",
@@ -143709,7 +143919,7 @@
     },
     {
       "id": "mac-1788870312577-429",
-      "permanentMachineId": "AMG-MNT-000429",
+      "permanentMachineId": "AMG-MNT-002375",
       "serialNumber": "P/M-5493",
       "machineNameId": "mn-1792077157398-8mma",
       "brandId": "brd-1791167281510-9p0e",
@@ -143747,7 +143957,7 @@
       "modelStr": "DDL-900BB",
       "modelName": "DDL-900BB",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000429"
+      "systemAssetId": "AMG-MNT-002375"
     },
     {
       "id": "mac-02376-t22",
@@ -144381,7 +144591,7 @@
     },
     {
       "id": "mac-1792072746196-2390-3299",
-      "permanentMachineId": "AMG-MNT-000191",
+      "permanentMachineId": "AMG-MNT-002391",
       "serialNumber": "F/A-225",
       "machineNameId": "mn-1788869247100-2uyc",
       "brandId": "brd-1791167281510-9p0e",
@@ -144419,7 +144629,7 @@
       "modelStr": "MS1261",
       "modelName": "MS1261",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000191"
+      "systemAssetId": "AMG-MNT-002391"
     },
     {
       "id": "mac-02392-t22",
@@ -144465,7 +144675,7 @@
     },
     {
       "id": "mac-1788870312615-279",
-      "permanentMachineId": "AMG-MNT-000279",
+      "permanentMachineId": "AMG-MNT-002393",
       "serialNumber": "K/S-72",
       "machineNameId": "mn-1792077157402-cg3a",
       "brandId": "brd-1791167281518-1oda",
@@ -144503,7 +144713,7 @@
       "modelStr": "DFB-1411",
       "modelName": "DFB-1411",
       "brand": "KANSAI SPECIAL",
-      "systemAssetId": "AMG-MNT-000279"
+      "systemAssetId": "AMG-MNT-002393"
     },
     {
       "id": "mac-02394-t22",
@@ -144549,7 +144759,7 @@
     },
     {
       "id": "mac-1792072746196-2394-6954",
-      "permanentMachineId": "AMG-MNT-000936",
+      "permanentMachineId": "AMG-MNT-002395",
       "serialNumber": "O/L-43",
       "machineNameId": "mn-1788869247118-qyw5",
       "brandId": "brd-1791167281510-9p0e",
@@ -144587,11 +144797,11 @@
       "modelStr": "MO-6714DA",
       "modelName": "MO-6714DA",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000936"
+      "systemAssetId": "AMG-MNT-002395"
     },
     {
       "id": "mac-1788870312648-537",
-      "permanentMachineId": "AMG-MNT-000537",
+      "permanentMachineId": "AMG-MNT-002396",
       "serialNumber": "O/L-319",
       "machineNameId": "mn-1788869247118-qyw5",
       "brandId": "brd-1791167281510-9p0e",
@@ -144629,7 +144839,7 @@
       "modelStr": "MO-6716S",
       "modelName": "MO-6716S",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000537"
+      "systemAssetId": "AMG-MNT-002396"
     },
     {
       "id": "mac-02397-t22",
@@ -144801,7 +145011,7 @@
     },
     {
       "id": "mac-1792072746196-2400-2999",
-      "permanentMachineId": "AMG-MNT-000983",
+      "permanentMachineId": "AMG-MNT-002401",
       "serialNumber": "P/M-510",
       "machineNameId": "mn-1792077157398-8mma",
       "brandId": "brd-1791167281511-lwvy",
@@ -144839,7 +145049,7 @@
       "modelStr": "A4",
       "modelName": "A4",
       "brand": "JACK",
-      "systemAssetId": "AMG-MNT-000983"
+      "systemAssetId": "AMG-MNT-002401"
     },
     {
       "id": "mac-02402-t22",
@@ -144885,7 +145095,7 @@
     },
     {
       "id": "mac-1788870312612-687",
-      "permanentMachineId": "AMG-MNT-000687",
+      "permanentMachineId": "AMG-MNT-002403",
       "serialNumber": "P/M-512",
       "machineNameId": "mn-1792077157398-8mma",
       "brandId": "brd-1791167281510-9p0e",
@@ -144923,7 +145133,7 @@
       "modelStr": "DDL-9000B",
       "modelName": "DDL-9000B",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000687"
+      "systemAssetId": "AMG-MNT-002403"
     },
     {
       "id": "mac-02404-t22",
@@ -145725,7 +145935,7 @@
     },
     {
       "id": "mac-1788870312640-757",
-      "permanentMachineId": "AMG-MNT-000757",
+      "permanentMachineId": "AMG-MNT-002423",
       "serialNumber": "C/S-82",
       "machineNameId": "mn-1788869247141-kx1a",
       "brandId": "brd-1791167281511-lwvy",
@@ -145763,7 +145973,7 @@
       "modelStr": "JK-8558WD",
       "modelName": "JK-8558WD",
       "brand": "JACK",
-      "systemAssetId": "AMG-MNT-000757"
+      "systemAssetId": "AMG-MNT-002423"
     },
     {
       "id": "mac-1792072746196-2423-2813",
@@ -146439,7 +146649,7 @@
     },
     {
       "id": "mac-1788870312611-374",
-      "permanentMachineId": "AMG-MNT-000374",
+      "permanentMachineId": "AMG-MNT-002440",
       "serialNumber": "O/L-365",
       "machineNameId": "mn-1788869247118-qyw5",
       "brandId": "brd-1791167281510-9p0e",
@@ -146477,7 +146687,7 @@
       "modelStr": "MO-6716S",
       "modelName": "MO-6716S",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000374"
+      "systemAssetId": "AMG-MNT-002440"
     },
     {
       "id": "mac-02441-t22",
@@ -146649,7 +146859,7 @@
     },
     {
       "id": "mac-1788870312745-907",
-      "permanentMachineId": "AMG-MNT-000907",
+      "permanentMachineId": "AMG-MNT-002445",
       "serialNumber": "P/M-856",
       "machineNameId": "mn-1792077157398-8mma",
       "brandId": "brd-1791167281510-9p0e",
@@ -146687,7 +146897,7 @@
       "modelStr": "DDL-9000B",
       "modelName": "DDL-9000B",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000907"
+      "systemAssetId": "AMG-MNT-002445"
     },
     {
       "id": "mac-02446-t22",
@@ -147069,7 +147279,7 @@
     },
     {
       "id": "mac-1788870312572-545",
-      "permanentMachineId": "AMG-MNT-000545",
+      "permanentMachineId": "AMG-MNT-002455",
       "serialNumber": "P/M-5512",
       "machineNameId": "mn-1792077157398-8mma",
       "brandId": "brd-1791167281510-9p0e",
@@ -147107,7 +147317,7 @@
       "modelStr": "DDL-9000B",
       "modelName": "DDL-9000B",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000545"
+      "systemAssetId": "AMG-MNT-002455"
     },
     {
       "id": "mac-02456-t22",
@@ -147531,7 +147741,7 @@
     },
     {
       "id": "mac-1792072746196-2465-9260",
-      "permanentMachineId": "AMG-MNT-000469",
+      "permanentMachineId": "AMG-MNT-002466",
       "serialNumber": "B/T-317",
       "machineNameId": "mn-1788869247205-his3",
       "brandId": "brd-1791167281510-9p0e",
@@ -147569,7 +147779,7 @@
       "modelStr": "LK-1900A",
       "modelName": "LK-1900A",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000469"
+      "systemAssetId": "AMG-MNT-002466"
     },
     {
       "id": "mac-1790670117435-218",
@@ -148455,7 +148665,7 @@
     },
     {
       "id": "mac-1788870312542-245",
-      "permanentMachineId": "AMG-MNT-000245",
+      "permanentMachineId": "AMG-MNT-002488",
       "serialNumber": "O/L-726",
       "machineNameId": "mn-1788869247118-qyw5",
       "brandId": "brd-1791167281510-9p0e",
@@ -148493,7 +148703,7 @@
       "modelStr": "MO-6716S",
       "modelName": "MO-6716S",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000245"
+      "systemAssetId": "AMG-MNT-002488"
     },
     {
       "id": "mac-02489-t22",
@@ -148581,7 +148791,7 @@
     },
     {
       "id": "mac-1788870312956-206",
-      "permanentMachineId": "AMG-MNT-000206",
+      "permanentMachineId": "AMG-MNT-002491",
       "serialNumber": "P/M-1844",
       "machineNameId": "mn-1792077157398-8mma",
       "brandId": "brd-1791167281510-9p0e",
@@ -148619,7 +148829,7 @@
       "modelStr": "DDL-9000B",
       "modelName": "DDL-9000B",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000206"
+      "systemAssetId": "AMG-MNT-002491"
     },
     {
       "id": "mac-02492-t22",
@@ -148791,7 +149001,7 @@
     },
     {
       "id": "mac-1788870312574-648",
-      "permanentMachineId": "AMG-MNT-000648",
+      "permanentMachineId": "AMG-MNT-002496",
       "serialNumber": "P/M-727",
       "machineNameId": "mn-1792077157398-8mma",
       "brandId": "brd-1791167281510-9p0e",
@@ -148829,7 +149039,7 @@
       "modelStr": "DDL-9000B",
       "modelName": "DDL-9000B",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000648"
+      "systemAssetId": "AMG-MNT-002496"
     },
     {
       "id": "mac-02497-t22",
@@ -149043,7 +149253,7 @@
     },
     {
       "id": "mac-1792072746196-2501-4741",
-      "permanentMachineId": "AMG-MNT-000849",
+      "permanentMachineId": "AMG-MNT-002502",
       "serialNumber": "P/M-413",
       "machineNameId": "mn-1792077157398-8mma",
       "brandId": "brd-1791167281510-9p0e",
@@ -149081,7 +149291,7 @@
       "modelStr": "DDL-9000B",
       "modelName": "DDL-9000B",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000849"
+      "systemAssetId": "AMG-MNT-002502"
     },
     {
       "id": "mac-02503-t22",
@@ -149253,7 +149463,7 @@
     },
     {
       "id": "mac-1792072746196-2506-7545",
-      "permanentMachineId": "AMG-MNT-000453",
+      "permanentMachineId": "AMG-MNT-002507",
       "serialNumber": "B/T-304",
       "machineNameId": "mn-1788869247205-his3",
       "brandId": "brd-1791167281510-9p0e",
@@ -149291,7 +149501,7 @@
       "modelStr": "LK-1900B",
       "modelName": "LK-1900B",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000453"
+      "systemAssetId": "AMG-MNT-002507"
     },
     {
       "id": "mac-02508-t22",
@@ -149589,7 +149799,7 @@
     },
     {
       "id": "mac-1792072746196-2514-1088",
-      "permanentMachineId": "AMG-MNT-000209",
+      "permanentMachineId": "AMG-MNT-002515",
       "serialNumber": "F/A-10",
       "machineNameId": "mn-1788869247100-2uyc",
       "brandId": "brd-1791167281510-9p0e",
@@ -149627,7 +149837,7 @@
       "modelStr": "MS1261",
       "modelName": "MS1261",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000209"
+      "systemAssetId": "AMG-MNT-002515"
     },
     {
       "id": "mac-02516-t22",
@@ -149715,7 +149925,7 @@
     },
     {
       "id": "mac-1792072746196-2517-6387",
-      "permanentMachineId": "AMG-MNT-000355",
+      "permanentMachineId": "AMG-MNT-002518",
       "serialNumber": "O/L-700",
       "machineNameId": "mn-1788869247118-qyw5",
       "brandId": "brd-1791167281510-9p0e",
@@ -149753,7 +149963,7 @@
       "modelStr": "MO-6716S",
       "modelName": "MO-6716S",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000355"
+      "systemAssetId": "AMG-MNT-002518"
     },
     {
       "id": "mac-02519-t22",
@@ -150303,7 +150513,7 @@
     },
     {
       "id": "mac-1788870312576-467",
-      "permanentMachineId": "AMG-MNT-000467",
+      "permanentMachineId": "AMG-MNT-002532",
       "serialNumber": "B/T-149",
       "machineNameId": "mn-1788869247205-his3",
       "brandId": "brd-1791167281510-9p0e",
@@ -150341,7 +150551,7 @@
       "modelStr": "LK-1900AN",
       "modelName": "LK-1900AN",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000467"
+      "systemAssetId": "AMG-MNT-002532"
     },
     {
       "id": "mac-02533-t22",
@@ -150723,7 +150933,7 @@
     },
     {
       "id": "mac-1792072746196-2541-5753",
-      "permanentMachineId": "AMG-MNT-000211",
+      "permanentMachineId": "AMG-MNT-002542",
       "serialNumber": "F/L-11",
       "machineNameId": "mn-1788869247389-og7v",
       "brandId": "brd-1791167281511-lwvy",
@@ -150761,7 +150971,7 @@
       "modelStr": "K5001GB",
       "modelName": "K5001GB",
       "brand": "JACK",
-      "systemAssetId": "AMG-MNT-000211"
+      "systemAssetId": "AMG-MNT-002542"
     },
     {
       "id": "mac-1792072746196-2542-9504",
@@ -150849,7 +151059,7 @@
     },
     {
       "id": "mac-1788870312641-191",
-      "permanentMachineId": "AMG-MNT-000191",
+      "permanentMachineId": "AMG-MNT-002545",
       "serialNumber": "O/L-247",
       "machineNameId": "mn-1788869247118-qyw5",
       "brandId": "brd-1791167281510-9p0e",
@@ -150887,7 +151097,7 @@
       "modelStr": "MO-6716S",
       "modelName": "MO-6716S",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000191"
+      "systemAssetId": "AMG-MNT-002545"
     },
     {
       "id": "mac-02546-t22",
@@ -151773,7 +151983,7 @@
     },
     {
       "id": "mac-1788870312973-795",
-      "permanentMachineId": "AMG-MNT-000795",
+      "permanentMachineId": "AMG-MNT-002567",
       "serialNumber": "V/T-129",
       "machineNameId": "mn-1792077157398-lasb",
       "brandId": "brd-1791167281510-9p0e",
@@ -151811,7 +152021,7 @@
       "modelStr": "DLM-5200N",
       "modelName": "DLM-5200N",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000795"
+      "systemAssetId": "AMG-MNT-002567"
     },
     {
       "id": "mac-02568-t22",
@@ -153201,7 +153411,7 @@
     },
     {
       "id": "mac-1792072746196-2600-6185",
-      "permanentMachineId": "AMG-MNT-000387",
+      "permanentMachineId": "AMG-MNT-002601",
       "serialNumber": "P/F-2",
       "machineNameId": "mn-1792077157399-5kmi",
       "brandId": "brd-1791167281518-1oda",
@@ -153239,7 +153449,7 @@
       "modelStr": "NW8842-1G",
       "modelName": "NW8842-1G",
       "brand": "KANSAI SPECIAL",
-      "systemAssetId": "AMG-MNT-000387"
+      "systemAssetId": "AMG-MNT-002601"
     },
     {
       "id": "mac-02602-t22",
@@ -153285,7 +153495,7 @@
     },
     {
       "id": "mac-1788870312729-883",
-      "permanentMachineId": "AMG-MNT-000883",
+      "permanentMachineId": "AMG-MNT-002603",
       "serialNumber": "P/M-716",
       "machineNameId": "mn-1792077157398-8mma",
       "brandId": "brd-1791167281510-9p0e",
@@ -153323,7 +153533,7 @@
       "modelStr": "DDL-900C",
       "modelName": "DDL-900C",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000883"
+      "systemAssetId": "AMG-MNT-002603"
     },
     {
       "id": "mac-02604-t22",
@@ -153369,7 +153579,7 @@
     },
     {
       "id": "mac-1788870312557-519",
-      "permanentMachineId": "AMG-MNT-000519",
+      "permanentMachineId": "AMG-MNT-002605",
       "serialNumber": "P/M-1059",
       "machineNameId": "mn-1792077157398-8mma",
       "brandId": "brd-1791167281510-9p0e",
@@ -153407,7 +153617,7 @@
       "modelStr": "DDL-900C",
       "modelName": "DDL-900C",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000519"
+      "systemAssetId": "AMG-MNT-002605"
     },
     {
       "id": "mac-02606-t22",
@@ -154251,7 +154461,7 @@
     },
     {
       "id": "mac-1792072746196-2625-7405",
-      "permanentMachineId": "AMG-MNT-000519",
+      "permanentMachineId": "AMG-MNT-002626",
       "serialNumber": "O/L-1059",
       "machineNameId": "mn-1788869247118-qyw5",
       "brandId": "brd-1791167281510-9p0e",
@@ -154289,7 +154499,7 @@
       "modelStr": "MO-6716S",
       "modelName": "MO-6716S",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000519"
+      "systemAssetId": "AMG-MNT-002626"
     },
     {
       "id": "mac-1790670109306-353",
@@ -154755,7 +154965,7 @@
     },
     {
       "id": "mac-1788870312747-427",
-      "permanentMachineId": "AMG-MNT-000427",
+      "permanentMachineId": "AMG-MNT-002638",
       "serialNumber": "P/M-2279",
       "machineNameId": "mn-1792077157398-8mma",
       "brandId": "brd-1791167281510-9p0e",
@@ -154793,11 +155003,11 @@
       "modelStr": "DDL-900C",
       "modelName": "DDL-900C",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000427"
+      "systemAssetId": "AMG-MNT-002638"
     },
     {
       "id": "mac-1788870312608-763",
-      "permanentMachineId": "AMG-MNT-000763",
+      "permanentMachineId": "AMG-MNT-002639",
       "serialNumber": "P/M-690",
       "machineNameId": "mn-1792077157398-8mma",
       "brandId": "brd-1791167281510-9p0e",
@@ -154835,7 +155045,7 @@
       "modelStr": "DDL-900C",
       "modelName": "DDL-900C",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000763"
+      "systemAssetId": "AMG-MNT-002639"
     },
     {
       "id": "mac-02640-t22",
@@ -154965,7 +155175,7 @@
     },
     {
       "id": "mac-1788870312558-2",
-      "permanentMachineId": "AMG-MNT-000002",
+      "permanentMachineId": "AMG-MNT-002643",
       "serialNumber": "P/M-758",
       "machineNameId": "mn-1792077157398-8mma",
       "brandId": "brd-1791167281510-9p0e",
@@ -155003,7 +155213,7 @@
       "modelStr": "DDL-900C",
       "modelName": "DDL-900C",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000002"
+      "systemAssetId": "AMG-MNT-002643"
     },
     {
       "id": "mac-02644-t22",
@@ -155511,7 +155721,7 @@
     },
     {
       "id": "mac-uniq-1792072826911-2655-6338",
-      "permanentMachineId": "AMG-MNT-000184",
+      "permanentMachineId": "AMG-MNT-002656",
       "serialNumber": "K/S-326",
       "machineNameId": "mn-1788869247176-2gzf",
       "brandId": "brd-1791167281518-1oda",
@@ -155549,7 +155759,7 @@
       "modelStr": "DFB-1411P-XP",
       "modelName": "DFB-1411P-XP",
       "brand": "KANSAI SPECIAL",
-      "systemAssetId": "AMG-MNT-000184"
+      "systemAssetId": "AMG-MNT-002656"
     },
     {
       "id": "mac-02657-t22",
@@ -155595,7 +155805,7 @@
     },
     {
       "id": "mac-1788870312604-617",
-      "permanentMachineId": "AMG-MNT-000617",
+      "permanentMachineId": "AMG-MNT-002658",
       "serialNumber": "O/L-245",
       "machineNameId": "mn-1788869247118-qyw5",
       "brandId": "brd-1791167281510-9p0e",
@@ -155633,7 +155843,7 @@
       "modelStr": "MO-6714DA",
       "modelName": "MO-6714DA",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000617"
+      "systemAssetId": "AMG-MNT-002658"
     },
     {
       "id": "mac-02659-t22",
@@ -155763,7 +155973,7 @@
     },
     {
       "id": "mac-1792072746196-2661-3641",
-      "permanentMachineId": "AMG-MNT-000318",
+      "permanentMachineId": "AMG-MNT-002662",
       "serialNumber": "O/L-14",
       "machineNameId": "mn-1788869247118-qyw5",
       "brandId": "brd-1791167281510-9p0e",
@@ -155801,7 +156011,7 @@
       "modelStr": "MO-6716S",
       "modelName": "MO-6716S",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000318"
+      "systemAssetId": "AMG-MNT-002662"
     },
     {
       "id": "mac-02663-t22",
@@ -156687,7 +156897,7 @@
     },
     {
       "id": "mac-1792072746196-2683-8783",
-      "permanentMachineId": "AMG-MNT-000165",
+      "permanentMachineId": "AMG-MNT-002684",
       "serialNumber": "V/T-161",
       "machineNameId": "mn-1792077157398-lasb",
       "brandId": "brd-1791167281510-9p0e",
@@ -156725,7 +156935,7 @@
       "modelStr": "DLM-5200N",
       "modelName": "DLM-5200N",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000165"
+      "systemAssetId": "AMG-MNT-002684"
     },
     {
       "id": "mac-02685-t22",
@@ -157527,7 +157737,7 @@
     },
     {
       "id": "mac-1788870312661-898",
-      "permanentMachineId": "AMG-MNT-000898",
+      "permanentMachineId": "AMG-MNT-002704",
       "serialNumber": "P/M-2256",
       "machineNameId": "mn-1792077157398-8mma",
       "brandId": "brd-1791167281510-9p0e",
@@ -157565,7 +157775,7 @@
       "modelStr": "DDL-900C",
       "modelName": "DDL-900C",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000898"
+      "systemAssetId": "AMG-MNT-002704"
     },
     {
       "id": "mac-02705-t22",
@@ -157821,7 +158031,7 @@
     },
     {
       "id": "mac-1792072746196-2710-4576",
-      "permanentMachineId": "AMG-MNT-000250",
+      "permanentMachineId": "AMG-MNT-002711",
       "serialNumber": "B/T-267",
       "machineNameId": "mn-1788869247205-his3",
       "brandId": "brd-1791167281510-9p0e",
@@ -157859,7 +158069,7 @@
       "modelStr": "LK-1900AN",
       "modelName": "LK-1900AN",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000250"
+      "systemAssetId": "AMG-MNT-002711"
     },
     {
       "id": "mac-1792072746196-2711-6820",
@@ -157989,7 +158199,7 @@
     },
     {
       "id": "mac-1792072746196-2714-2870",
-      "permanentMachineId": "AMG-MNT-000074",
+      "permanentMachineId": "AMG-MNT-002715",
       "serialNumber": "B/S-256",
       "machineNameId": "mn-1792077157400-wlnp",
       "brandId": "brd-1791167281510-9p0e",
@@ -158027,11 +158237,11 @@
       "modelStr": "LK-1903B-SS",
       "modelName": "LK-1903B-SS",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000074"
+      "systemAssetId": "AMG-MNT-002715"
     },
     {
       "id": "mac-1792072746196-2715-3554",
-      "permanentMachineId": "AMG-MNT-000757",
+      "permanentMachineId": "AMG-MNT-002716",
       "serialNumber": "B/S-82",
       "machineNameId": "mn-1792077157400-wlnp",
       "brandId": "brd-1791167281510-9p0e",
@@ -158069,11 +158279,11 @@
       "modelStr": "LK-1903B-SS",
       "modelName": "LK-1903B-SS",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000757"
+      "systemAssetId": "AMG-MNT-002716"
     },
     {
       "id": "mac-1792072746196-2716-9105",
-      "permanentMachineId": "AMG-MNT-000936",
+      "permanentMachineId": "AMG-MNT-002717",
       "serialNumber": "C/S-43",
       "machineNameId": "mn-1788869247141-kx1a",
       "brandId": "brd-1791167281510-9p0e",
@@ -158111,7 +158321,7 @@
       "modelStr": "CM-380",
       "modelName": "CM-380",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000936"
+      "systemAssetId": "AMG-MNT-002717"
     },
     {
       "id": "mac-02718-t22",
@@ -158493,7 +158703,7 @@
     },
     {
       "id": "mac-1792072746196-2726-2999",
-      "permanentMachineId": "AMG-MNT-000349",
+      "permanentMachineId": "AMG-MNT-002727",
       "serialNumber": "F/A-168",
       "machineNameId": "mn-1788869247100-2uyc",
       "brandId": "brd-1791167281510-9p0e",
@@ -158531,11 +158741,11 @@
       "modelStr": "MS-1190",
       "modelName": "MS-1190",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000349"
+      "systemAssetId": "AMG-MNT-002727"
     },
     {
       "id": "mac-1788870312616-543",
-      "permanentMachineId": "AMG-MNT-000543",
+      "permanentMachineId": "AMG-MNT-002728",
       "serialNumber": "F/A-122",
       "machineNameId": "mn-1788869247100-2uyc",
       "brandId": "brd-1791167281510-9p0e",
@@ -158573,7 +158783,7 @@
       "modelStr": "MS-1261",
       "modelName": "MS-1261",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000543"
+      "systemAssetId": "AMG-MNT-002728"
     },
     {
       "id": "mac-02729-t22",
@@ -158955,7 +159165,7 @@
     },
     {
       "id": "mac-1792072746196-2737-2194",
-      "permanentMachineId": "AMG-MNT-000447",
+      "permanentMachineId": "AMG-MNT-002738",
       "serialNumber": "P/F-94",
       "machineNameId": "mn-1792077157399-5kmi",
       "brandId": "brd-1791167281518-1oda",
@@ -158993,7 +159203,7 @@
       "modelStr": "NW8842-1G",
       "modelName": "NW8842-1G",
       "brand": "KANSAI SPECIAL",
-      "systemAssetId": "AMG-MNT-000447"
+      "systemAssetId": "AMG-MNT-002738"
     },
     {
       "id": "mac-1792072746196-2738-6600",
@@ -159711,7 +159921,7 @@
     },
     {
       "id": "mac-1792072746196-2755-8312",
-      "permanentMachineId": "AMG-MNT-000463",
+      "permanentMachineId": "AMG-MNT-002756",
       "serialNumber": "O/L-38",
       "machineNameId": "mn-1788869247118-qyw5",
       "brandId": "brd-1791167281510-9p0e",
@@ -159749,7 +159959,7 @@
       "modelStr": "MO-6716S",
       "modelName": "MO-6716S",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000463"
+      "systemAssetId": "AMG-MNT-002756"
     },
     {
       "id": "mac-02757-t22",
@@ -159879,7 +160089,7 @@
     },
     {
       "id": "mac-1792072746196-2759-6181",
-      "permanentMachineId": "AMG-MNT-000390",
+      "permanentMachineId": "AMG-MNT-002760",
       "serialNumber": "B/S-133",
       "machineNameId": "mn-1792077157400-wlnp",
       "brandId": "brd-1791167281510-9p0e",
@@ -159917,7 +160127,7 @@
       "modelStr": "LK-1903AN",
       "modelName": "LK-1903AN",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000390"
+      "systemAssetId": "AMG-MNT-002760"
     },
     {
       "id": "mac-02761-t22",
@@ -159963,7 +160173,7 @@
     },
     {
       "id": "mac-1792072746196-2761-4448",
-      "permanentMachineId": "AMG-MNT-000108",
+      "permanentMachineId": "AMG-MNT-002762",
       "serialNumber": "C/S-242",
       "machineNameId": "mn-1788869247141-kx1a",
       "brandId": "brd-1791167281513-qhs3",
@@ -160001,7 +160211,7 @@
       "modelStr": "CM-380",
       "modelName": "CM-380",
       "brand": "ZUSAN",
-      "systemAssetId": "AMG-MNT-000108"
+      "systemAssetId": "AMG-MNT-002762"
     },
     {
       "id": "mac-02763-t22",
@@ -160215,7 +160425,7 @@
     },
     {
       "id": "mac-1788870312722-436",
-      "permanentMachineId": "AMG-MNT-000436",
+      "permanentMachineId": "AMG-MNT-002768",
       "serialNumber": "K/S-232",
       "machineNameId": "mn-1788869247176-2gzf",
       "brandId": "brd-1791167281518-1oda",
@@ -160253,7 +160463,7 @@
       "modelStr": "DFB-1411P-XP",
       "modelName": "DFB-1411P-XP",
       "brand": "KANSAI SPECIAL",
-      "systemAssetId": "AMG-MNT-000436"
+      "systemAssetId": "AMG-MNT-002768"
     },
     {
       "id": "mac-02769-t22",
@@ -160341,7 +160551,7 @@
     },
     {
       "id": "mac-1788870312628-815",
-      "permanentMachineId": "AMG-MNT-000815",
+      "permanentMachineId": "AMG-MNT-002771",
       "serialNumber": "O/L-415",
       "machineNameId": "mn-1788869247118-qyw5",
       "brandId": "brd-1791167281510-9p0e",
@@ -160379,11 +160589,11 @@
       "modelStr": "MO-6716S",
       "modelName": "MO-6716S",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000815"
+      "systemAssetId": "AMG-MNT-002771"
     },
     {
       "id": "mac-1788870312649-916",
-      "permanentMachineId": "AMG-MNT-000916",
+      "permanentMachineId": "AMG-MNT-002772",
       "serialNumber": "O/L-412",
       "machineNameId": "mn-1788869247118-qyw5",
       "brandId": "brd-1791167281510-9p0e",
@@ -160421,11 +160631,11 @@
       "modelStr": "MO-6716S",
       "modelName": "MO-6716S",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000916"
+      "systemAssetId": "AMG-MNT-002772"
     },
     {
       "id": "mac-1792072746196-2772-5720",
-      "permanentMachineId": "AMG-MNT-000849",
+      "permanentMachineId": "AMG-MNT-002773",
       "serialNumber": "O/L-413",
       "machineNameId": "mn-1788869247118-qyw5",
       "brandId": "brd-1791167281510-9p0e",
@@ -160463,7 +160673,7 @@
       "modelStr": "MO-6716S",
       "modelName": "MO-6716S",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000849"
+      "systemAssetId": "AMG-MNT-002773"
     },
     {
       "id": "mac-02774-t22",
@@ -162189,7 +162399,7 @@
     },
     {
       "id": "mac-1792072746196-2814-7744",
-      "permanentMachineId": "AMG-MNT-000436",
+      "permanentMachineId": "AMG-MNT-002815",
       "serialNumber": "C/S-232",
       "machineNameId": "mn-1788869247141-kx1a",
       "brandId": "brd-1791167281513-qhs3",
@@ -162227,11 +162437,11 @@
       "modelStr": "CM-380",
       "modelName": "CM-380",
       "brand": "ZUSAN",
-      "systemAssetId": "AMG-MNT-000436"
+      "systemAssetId": "AMG-MNT-002815"
     },
     {
       "id": "mac-1792072746196-2815-1918",
-      "permanentMachineId": "AMG-MNT-000916",
+      "permanentMachineId": "AMG-MNT-002816",
       "serialNumber": "C/S-412",
       "machineNameId": "mn-1788869247141-kx1a",
       "brandId": "brd-1791167281513-qhs3",
@@ -162269,7 +162479,7 @@
       "modelStr": "CM-380",
       "modelName": "CM-380",
       "brand": "ZUSAN",
-      "systemAssetId": "AMG-MNT-000916"
+      "systemAssetId": "AMG-MNT-002816"
     },
     {
       "id": "mac-02817-t22",
@@ -162399,7 +162609,7 @@
     },
     {
       "id": "mac-1792072746196-2819-6333",
-      "permanentMachineId": "AMG-MNT-000249",
+      "permanentMachineId": "AMG-MNT-002820",
       "serialNumber": "K/S-95",
       "machineNameId": "mn-1788869247176-2gzf",
       "brandId": "brd-1791167281518-1oda",
@@ -162437,7 +162647,7 @@
       "modelStr": "DFB-1411P-XP",
       "modelName": "DFB-1411P-XP",
       "brand": "KANSAI SPECIAL",
-      "systemAssetId": "AMG-MNT-000249"
+      "systemAssetId": "AMG-MNT-002820"
     },
     {
       "id": "mac-02821-t22",
@@ -162735,7 +162945,7 @@
     },
     {
       "id": "mac-1792072746196-2827-1681",
-      "permanentMachineId": "AMG-MNT-000387",
+      "permanentMachineId": "AMG-MNT-002828",
       "serialNumber": "C/S-2",
       "machineNameId": "mn-1788869247159-lw1e",
       "brandId": "brd-1791167281513-qhs3",
@@ -162773,7 +162983,7 @@
       "modelName": "CM-380",
       "brand": "ZUSAN",
       "machineName": "Safety Stitch M/C",
-      "systemAssetId": "AMG-MNT-000387"
+      "systemAssetId": "AMG-MNT-002828"
     },
     {
       "id": "mac-1792072746196-2828-9057",
@@ -164541,7 +164751,7 @@
     },
     {
       "id": "mac-1792072746196-2870-5156",
-      "permanentMachineId": "AMG-MNT-000387",
+      "permanentMachineId": "AMG-MNT-002871",
       "serialNumber": "B/H-2",
       "machineNameId": "mn-1788869247243-7wlt",
       "brandId": "brd-1791167281510-9p0e",
@@ -164579,11 +164789,11 @@
       "modelStr": "LBH-1790S",
       "modelName": "LBH-1790S",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000387"
+      "systemAssetId": "AMG-MNT-002871"
     },
     {
       "id": "mac-1792072746196-2871-3530",
-      "permanentMachineId": "AMG-MNT-000232",
+      "permanentMachineId": "AMG-MNT-002872",
       "serialNumber": "B/S-4",
       "machineNameId": "mn-1792077157400-wlnp",
       "brandId": "brd-1791167281510-9p0e",
@@ -164621,7 +164831,7 @@
       "modelStr": "LK-1903A-SS",
       "modelName": "LK-1903A-SS",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000232"
+      "systemAssetId": "AMG-MNT-002872"
     },
     {
       "id": "mac-02873-t22",
@@ -164667,7 +164877,7 @@
     },
     {
       "id": "mac-1792072746196-2873-1021",
-      "permanentMachineId": "AMG-MNT-000025",
+      "permanentMachineId": "AMG-MNT-002874",
       "serialNumber": "C/S-187",
       "machineNameId": "mn-1788869247141-kx1a",
       "brandId": "brd-1791167281524-wjoa",
@@ -164705,7 +164915,7 @@
       "modelStr": "ZJ-3800-PLB-BD",
       "modelName": "ZJ-3800-PLB-BD",
       "brand": "ZOJE",
-      "systemAssetId": "AMG-MNT-000025"
+      "systemAssetId": "AMG-MNT-002874"
     },
     {
       "id": "mac-02875-t22",
@@ -164751,7 +164961,7 @@
     },
     {
       "id": "mac-1792072746196-2875-1070",
-      "permanentMachineId": "AMG-MNT-000795",
+      "permanentMachineId": "AMG-MNT-002876",
       "serialNumber": "C/S-129",
       "machineNameId": "mn-1788869247141-kx1a",
       "brandId": "brd-1791167281513-qhs3",
@@ -164789,7 +164999,7 @@
       "modelStr": "CM-380",
       "modelName": "CM-380",
       "brand": "ZUSAN",
-      "systemAssetId": "AMG-MNT-000795"
+      "systemAssetId": "AMG-MNT-002876"
     },
     {
       "id": "mac-02877-t22",
@@ -165045,7 +165255,7 @@
     },
     {
       "id": "mac-1792072746196-2882-4123",
-      "permanentMachineId": "AMG-MNT-000279",
+      "permanentMachineId": "AMG-MNT-002883",
       "serialNumber": "F/A-72",
       "machineNameId": "mn-1788869247100-2uyc",
       "brandId": "brd-1791167281510-9p0e",
@@ -165083,7 +165293,7 @@
       "modelStr": "KZ-1060",
       "modelName": "KZ-1060",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000279"
+      "systemAssetId": "AMG-MNT-002883"
     },
     {
       "id": "mac-02884-t22",
@@ -166053,7 +166263,7 @@
     },
     {
       "id": "mac-1788870312543-789",
-      "permanentMachineId": "AMG-MNT-000789",
+      "permanentMachineId": "AMG-MNT-002907",
       "serialNumber": "P/M-4772",
       "machineNameId": "mn-1792077157398-8mma",
       "brandId": "brd-1791167281510-9p0e",
@@ -166091,7 +166301,7 @@
       "modelStr": "DDL-9000B-SH",
       "modelName": "DDL-9000B-SH",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000789"
+      "systemAssetId": "AMG-MNT-002907"
     },
     {
       "id": "mac-02908-t22",
@@ -166977,7 +167187,7 @@
     },
     {
       "id": "mac-1788870312581-463",
-      "permanentMachineId": "AMG-MNT-000463",
+      "permanentMachineId": "AMG-MNT-002929",
       "serialNumber": "P/M-896",
       "machineNameId": "mn-1792077157398-8mma",
       "brandId": "brd-1791167281510-9p0e",
@@ -167015,7 +167225,7 @@
       "modelStr": "DDL-900C",
       "modelName": "DDL-900C",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000463"
+      "systemAssetId": "AMG-MNT-002929"
     },
     {
       "id": "mac-02930-t22",
@@ -167565,7 +167775,7 @@
     },
     {
       "id": "mac-1792072746196-2942-4975",
-      "permanentMachineId": "AMG-MNT-000225",
+      "permanentMachineId": "AMG-MNT-002943",
       "serialNumber": "C/S-223",
       "machineNameId": "mn-1788869247141-kx1a",
       "brandId": "brd-1791167281510-9p0e",
@@ -167603,7 +167813,7 @@
       "modelStr": "CM-3800",
       "modelName": "CM-3800",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000225"
+      "systemAssetId": "AMG-MNT-002943"
     },
     {
       "id": "mac-02944-t22",
@@ -167691,7 +167901,7 @@
     },
     {
       "id": "mac-1792072746196-2945-1511",
-      "permanentMachineId": "AMG-MNT-000734",
+      "permanentMachineId": "AMG-MNT-002946",
       "serialNumber": "C/S-427",
       "machineNameId": "mn-1788869247141-kx1a",
       "brandId": "brd-1791167281513-qhs3",
@@ -167729,7 +167939,7 @@
       "modelStr": "CM-380",
       "modelName": "CM-380",
       "brand": "ZUSAN",
-      "systemAssetId": "AMG-MNT-000734"
+      "systemAssetId": "AMG-MNT-002946"
     },
     {
       "id": "mac-02947-t22",
@@ -167943,7 +168153,7 @@
     },
     {
       "id": "mac-1792072746196-2951-5859",
-      "permanentMachineId": "AMG-MNT-000003",
+      "permanentMachineId": "AMG-MNT-002952",
       "serialNumber": "K/S-88",
       "machineNameId": "mn-1788869247176-2gzf",
       "brandId": "brd-1791167281518-1oda",
@@ -167981,7 +168191,7 @@
       "modelStr": "DFB-1411P-XP",
       "modelName": "DFB-1411P-XP",
       "brand": "KANSAI SPECIAL",
-      "systemAssetId": "AMG-MNT-000003"
+      "systemAssetId": "AMG-MNT-002952"
     },
     {
       "id": "mac-02953-t22",
@@ -168321,7 +168531,7 @@
     },
     {
       "id": "mac-1792072746196-2960-7823",
-      "permanentMachineId": "AMG-MNT-000237",
+      "permanentMachineId": "AMG-MNT-002961",
       "serialNumber": "P/F-84",
       "machineNameId": "mn-1792077157399-5kmi",
       "brandId": "brd-1791167281518-1oda",
@@ -168359,7 +168569,7 @@
       "modelStr": "NW8842-1G",
       "modelName": "NW8842-1G",
       "brand": "KANSAI SPECIAL",
-      "systemAssetId": "AMG-MNT-000237"
+      "systemAssetId": "AMG-MNT-002961"
     },
     {
       "id": "mac-1792072746196-2961-1512",
@@ -168699,7 +168909,7 @@
     },
     {
       "id": "mac-1788870312870-757",
-      "permanentMachineId": "AMG-MNT-000757",
+      "permanentMachineId": "AMG-MNT-002970",
       "serialNumber": "P/M-5037",
       "machineNameId": "mn-1792077157398-8mma",
       "brandId": "brd-1791167281510-9p0e",
@@ -168737,7 +168947,7 @@
       "modelStr": "DDL-8700-7",
       "modelName": "DDL-8700-7",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000757"
+      "systemAssetId": "AMG-MNT-002970"
     },
     {
       "id": "mac-02971-t22",
@@ -170043,7 +170253,7 @@
     },
     {
       "id": "mac-1788870312544-99",
-      "permanentMachineId": "AMG-MNT-000099",
+      "permanentMachineId": "AMG-MNT-003002",
       "serialNumber": "P/M-5030",
       "machineNameId": "mn-1792077157398-8mma",
       "brandId": "brd-1791167281510-9p0e",
@@ -170081,7 +170291,7 @@
       "modelStr": "DDL-8700-7",
       "modelName": "DDL-8700-7",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000099"
+      "systemAssetId": "AMG-MNT-003002"
     },
     {
       "id": "mac-03003-t22",
@@ -170505,7 +170715,7 @@
     },
     {
       "id": "mac-1792072746196-3012-7105",
-      "permanentMachineId": "AMG-MNT-000302",
+      "permanentMachineId": "AMG-MNT-003013",
       "serialNumber": "B/S-136",
       "machineNameId": "mn-1792077157400-wlnp",
       "brandId": "brd-1791167281510-9p0e",
@@ -170543,11 +170753,11 @@
       "modelStr": "LK-1903A-SS",
       "modelName": "LK-1903A-SS",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000302"
+      "systemAssetId": "AMG-MNT-003013"
     },
     {
       "id": "mac-1792072746196-3013-8754",
-      "permanentMachineId": "AMG-MNT-000849",
+      "permanentMachineId": "AMG-MNT-003014",
       "serialNumber": "C/S-413",
       "machineNameId": "mn-1788869247141-kx1a",
       "brandId": "brd-1791167281513-qhs3",
@@ -170585,7 +170795,7 @@
       "modelStr": "CM-380",
       "modelName": "CM-380",
       "brand": "ZUSAN",
-      "systemAssetId": "AMG-MNT-000849"
+      "systemAssetId": "AMG-MNT-003014"
     },
     {
       "id": "mac-1792072746196-3014-2119",
@@ -170925,7 +171135,7 @@
     },
     {
       "id": "mac-1792072746196-3022-4547",
-      "permanentMachineId": "AMG-MNT-000543",
+      "permanentMachineId": "AMG-MNT-003023",
       "serialNumber": "F/L-122",
       "machineNameId": "mn-1788869247389-og7v",
       "brandId": "brd-1791167281513-qhs3",
@@ -170963,7 +171173,7 @@
       "modelStr": "CM-W562-1",
       "modelName": "CM-W562-1",
       "brand": "ZUSAN",
-      "systemAssetId": "AMG-MNT-000543"
+      "systemAssetId": "AMG-MNT-003023"
     },
     {
       "id": "mac-03024-t22",
@@ -172605,7 +172815,7 @@
     },
     {
       "id": "mac-1788870312573-106",
-      "permanentMachineId": "AMG-MNT-000106",
+      "permanentMachineId": "AMG-MNT-003063",
       "serialNumber": "P/M-5015",
       "machineNameId": "mn-1792077157398-8mma",
       "brandId": "brd-1791167281510-9p0e",
@@ -172643,7 +172853,7 @@
       "modelStr": "DDL-8700-7",
       "modelName": "DDL-8700-7",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000106"
+      "systemAssetId": "AMG-MNT-003063"
     },
     {
       "id": "mac-03064-t22",
@@ -173151,7 +173361,7 @@
     },
     {
       "id": "mac-1788870312719-964",
-      "permanentMachineId": "AMG-MNT-000964",
+      "permanentMachineId": "AMG-MNT-003076",
       "serialNumber": "P/M-5042",
       "machineNameId": "mn-1792077157398-8mma",
       "brandId": "brd-1791167281510-9p0e",
@@ -173189,7 +173399,7 @@
       "modelStr": "DDL-9000B-SH",
       "modelName": "DDL-9000B-SH",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000964"
+      "systemAssetId": "AMG-MNT-003076"
     },
     {
       "id": "mac-03077-t22",
@@ -173403,7 +173613,7 @@
     },
     {
       "id": "mac-1788870312589-358",
-      "permanentMachineId": "AMG-MNT-000358",
+      "permanentMachineId": "AMG-MNT-003082",
       "serialNumber": "P/M-3995",
       "machineNameId": "mn-1792077157398-8mma",
       "brandId": "brd-1791167281510-9p0e",
@@ -173441,7 +173651,7 @@
       "modelStr": "DDL-9000B-SH",
       "modelName": "DDL-9000B-SH",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000358"
+      "systemAssetId": "AMG-MNT-003082"
     },
     {
       "id": "mac-03083-t22",
@@ -173571,7 +173781,7 @@
     },
     {
       "id": "mac-1788870312694-56",
-      "permanentMachineId": "AMG-MNT-000056",
+      "permanentMachineId": "AMG-MNT-003086",
       "serialNumber": "P/M-5045",
       "machineNameId": "mn-1792077157398-8mma",
       "brandId": "brd-1791167281510-9p0e",
@@ -173609,7 +173819,7 @@
       "modelStr": "DDL-9000B-SH",
       "modelName": "DDL-9000B-SH",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000056"
+      "systemAssetId": "AMG-MNT-003086"
     },
     {
       "id": "mac-03087-t22",
@@ -174033,7 +174243,7 @@
     },
     {
       "id": "mac-1792072746196-3096-5091",
-      "permanentMachineId": "AMG-MNT-000763",
+      "permanentMachineId": "AMG-MNT-003097",
       "serialNumber": "B/H-66",
       "machineNameId": "mn-1788869247243-7wlt",
       "brandId": "brd-1791167281510-9p0e",
@@ -174071,7 +174281,7 @@
       "modelStr": "LBH-1790S",
       "modelName": "LBH-1790S",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000763"
+      "systemAssetId": "AMG-MNT-003097"
     },
     {
       "id": "mac-1792072746196-3097-4586",
@@ -174285,7 +174495,7 @@
     },
     {
       "id": "mac-1792072746196-3102-6737",
-      "permanentMachineId": "AMG-MNT-000237",
+      "permanentMachineId": "AMG-MNT-003103",
       "serialNumber": "E/H-84",
       "machineNameId": "mn-1792077157399-9t5r",
       "brandId": "brd-1791167281510-9p0e",
@@ -174323,7 +174533,7 @@
       "modelStr": "MEB-3200J",
       "modelName": "MEB-3200J",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000237"
+      "systemAssetId": "AMG-MNT-003103"
     },
     {
       "id": "mac-03104-t22",
@@ -174411,7 +174621,7 @@
     },
     {
       "id": "mac-1792072746196-3105-7506",
-      "permanentMachineId": "AMG-MNT-000617",
+      "permanentMachineId": "AMG-MNT-003106",
       "serialNumber": "K/S-245",
       "machineNameId": "mn-1788869247176-2gzf",
       "brandId": "brd-1791167281518-1oda",
@@ -174449,7 +174659,7 @@
       "modelStr": "DFB-1411P-XP",
       "modelName": "DFB-1411P-XP",
       "brand": "KANSAI SPECIAL",
-      "systemAssetId": "AMG-MNT-000617"
+      "systemAssetId": "AMG-MNT-003106"
     },
     {
       "id": "mac-03107-t22",
@@ -174873,7 +175083,7 @@
     },
     {
       "id": "mac-1792072746196-3116-6694",
-      "permanentMachineId": "AMG-MNT-000118",
+      "permanentMachineId": "AMG-MNT-003117",
       "serialNumber": "P/M-5092",
       "machineNameId": "mn-1792077157398-8mma",
       "brandId": "brd-1791167281510-9p0e",
@@ -174911,7 +175121,7 @@
       "modelStr": "DDL-8700-7",
       "modelName": "DDL-8700-7",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000118"
+      "systemAssetId": "AMG-MNT-003117"
     },
     {
       "id": "mac-03118-t22",
@@ -175293,7 +175503,7 @@
     },
     {
       "id": "mac-1788870312671-861",
-      "permanentMachineId": "AMG-MNT-000861",
+      "permanentMachineId": "AMG-MNT-003127",
       "serialNumber": "P/M-5051",
       "machineNameId": "mn-1792077157398-8mma",
       "brandId": "brd-1791167281510-9p0e",
@@ -175331,11 +175541,11 @@
       "modelStr": "DDL-8700-7",
       "modelName": "DDL-8700-7",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000861"
+      "systemAssetId": "AMG-MNT-003127"
     },
     {
       "id": "mac-1788870312707-10",
-      "permanentMachineId": "AMG-MNT-000010",
+      "permanentMachineId": "AMG-MNT-003128",
       "serialNumber": "P/M-5154",
       "machineNameId": "mn-1792077157398-8mma",
       "brandId": "brd-1791167281510-9p0e",
@@ -175373,7 +175583,7 @@
       "modelStr": "DDL-8700-7",
       "modelName": "DDL-8700-7",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000010"
+      "systemAssetId": "AMG-MNT-003128"
     },
     {
       "id": "mac-03129-t22",
@@ -175629,7 +175839,7 @@
     },
     {
       "id": "mac-1788870312625-280",
-      "permanentMachineId": "AMG-MNT-000280",
+      "permanentMachineId": "AMG-MNT-003135",
       "serialNumber": "P/M-5115",
       "machineNameId": "mn-1792077157398-8mma",
       "brandId": "brd-1791167281510-9p0e",
@@ -175667,7 +175877,7 @@
       "modelStr": "DDL-9000B-SH",
       "modelName": "DDL-9000B-SH",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000280"
+      "systemAssetId": "AMG-MNT-003135"
     },
     {
       "id": "mac-03136-t22",
@@ -177099,7 +177309,7 @@
     },
     {
       "id": "mac-1792072746196-3169-3406",
-      "permanentMachineId": "AMG-MNT-000208",
+      "permanentMachineId": "AMG-MNT-003170",
       "serialNumber": "C/S-421",
       "machineNameId": "mn-1788869247141-kx1a",
       "brandId": "brd-1791167281513-qhs3",
@@ -177137,7 +177347,7 @@
       "modelStr": "CM-380",
       "modelName": "CM-380",
       "brand": "ZUSAN",
-      "systemAssetId": "AMG-MNT-000208"
+      "systemAssetId": "AMG-MNT-003170"
     },
     {
       "id": "mac-03171-t22",
@@ -177183,7 +177393,7 @@
     },
     {
       "id": "mac-1792072746196-3171-1030",
-      "permanentMachineId": "AMG-MNT-000208",
+      "permanentMachineId": "AMG-MNT-003172",
       "serialNumber": "V/T-421",
       "machineNameId": "mn-1792077157398-lasb",
       "brandId": "brd-1791167281532-12l5",
@@ -177221,7 +177431,7 @@
       "modelStr": "MAX55597",
       "modelName": "MAX55597",
       "brand": "MAX",
-      "systemAssetId": "AMG-MNT-000208"
+      "systemAssetId": "AMG-MNT-003172"
     },
     {
       "id": "mac-1792072746196-3172-9546",
@@ -178107,7 +178317,7 @@
     },
     {
       "id": "mac-1788870312580-50",
-      "permanentMachineId": "AMG-MNT-000050",
+      "permanentMachineId": "AMG-MNT-003194",
       "serialNumber": "P/M-4991",
       "machineNameId": "mn-1792077157398-8mma",
       "brandId": "brd-1791167281510-9p0e",
@@ -178145,7 +178355,7 @@
       "modelStr": "DDL-8700-7",
       "modelName": "DDL-8700-7",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000050"
+      "systemAssetId": "AMG-MNT-003194"
     },
     {
       "id": "mac-03195-t22",
@@ -180963,7 +181173,7 @@
     },
     {
       "id": "mac-1788870312543-113",
-      "permanentMachineId": "AMG-MNT-000113",
+      "permanentMachineId": "AMG-MNT-003262",
       "serialNumber": "P/M-2199",
       "machineNameId": "mn-1792077157398-8mma",
       "brandId": "brd-1791167281510-9p0e",
@@ -181001,7 +181211,7 @@
       "modelStr": "DDL-900C",
       "modelName": "DDL-900C",
       "brand": "JUKI",
-      "systemAssetId": "AMG-MNT-000113"
+      "systemAssetId": "AMG-MNT-003262"
     },
     {
       "id": "mac-03263-t22",
@@ -329013,6 +329223,1315 @@
       "createdAt": "2026-10-17T02:09:35.728Z",
       "id": "mod-1792202975728-12",
       "updatedAt": "2026-10-17T02:09:35.728Z"
+    },
+    {
+      "id": "mod-1788870296743-332",
+      "brandId": "brd-1791167281510-9p0e",
+      "name": "DDL-900BB",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1788870296744-957",
+      "brandId": "brd-1791167281510-9p0e",
+      "name": "DDL-900C",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1792077157398-7108",
+      "brandId": "brd-1791167281510-9p0e",
+      "name": "LH-3578A-7",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1792077157398-pkmr",
+      "brandId": "brd-1791167281510-9p0e",
+      "name": "DDL-9000B-HS",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1792077157398-7gpx",
+      "brandId": "brd-1791167281524-wjoa",
+      "name": "ZJ3800BD",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1788870296745-665",
+      "brandId": "brd-1791167281510-9p0e",
+      "name": "MS-1261",
+      "status": "ACTIVE",
+      "createdAt": "2026-09-29T08:21:48.049Z"
+    },
+    {
+      "id": "mod-1788870296744-295",
+      "brandId": "brd-1791167281510-9p0e",
+      "name": "MO-6714DA",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1788870296744-452",
+      "brandId": "brd-1791167281510-9p0e",
+      "name": "MO-6716S",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1792077157398-w2yi",
+      "brandId": "brd-1791167281510-9p0e",
+      "name": "DDL-9000B",
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:25:12.796Z"
+    },
+    {
+      "id": "mod-1788870296745-277",
+      "brandId": "brd-1791167281510-9p0e",
+      "name": "LK-1900BN",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1792077157398-1gey",
+      "brandId": "brd-1791167281518-1oda",
+      "name": "NC1001GJ",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1792077157398-8cdz",
+      "brandId": "brd-1791167281510-9p0e",
+      "name": "LK-1900A-HS",
+      "status": "ACTIVE",
+      "createdAt": "2026-09-29T08:21:53.218Z"
+    },
+    {
+      "id": "mod-1788870296744-331",
+      "brandId": "brd-1791167281510-9p0e",
+      "name": "LK-1900B",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1788870296744-544",
+      "brandId": "brd-1791167281510-9p0e",
+      "name": "DLM-5200N",
+      "status": "ACTIVE",
+      "createdAt": "2026-09-29T08:21:56.574Z"
+    },
+    {
+      "id": "mod-1792077157398-frvh",
+      "brandId": "brd-1791167281511-lwvy",
+      "name": "MH380",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1792077157399-788q",
+      "brandId": "brd-1791167281524-wjoa",
+      "name": "C-5000",
+      "status": "ACTIVE",
+      "createdAt": "2026-09-29T08:21:46.862Z"
+    },
+    {
+      "id": "mod-1792077157399-t0v9",
+      "brandId": "brd-1791167281518-f2wh",
+      "name": "DA-928A-5",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1792077157399-s5qj",
+      "brandId": "brd-1791167281510-9p0e",
+      "name": "MO-6714S",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1792077157399-kltu",
+      "brandId": "brd-1791167281510-9p0e",
+      "name": "LH-3588A-7",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1792077157399-k8ab",
+      "brandId": "brd-1791167281511-lwvy",
+      "name": "K5001GB",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1792077157399-b0i0",
+      "brandId": "brd-1791167281518-1oda",
+      "name": "DFB1411PXP",
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:25:12.737Z"
+    },
+    {
+      "id": "mod-1792077157399-sb3g",
+      "brandId": "brd-1791167281518-1oda",
+      "name": "NC100GJCD",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1788870296743-691",
+      "brandId": "brd-1791167281510-9p0e",
+      "name": "DDL-9000B-SH",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1792077157399-l0xy",
+      "brandId": "brd-1791167281510-9p0e",
+      "name": "LH-895",
+      "status": "ACTIVE",
+      "createdAt": "2026-09-29T08:21:48.260Z"
+    },
+    {
+      "id": "mod-1792077157399-yv5n",
+      "brandId": "brd-1791167281524-wjoa",
+      "name": "ZJ3820-BD",
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:25:12.613Z"
+    },
+    {
+      "id": "mod-1792077157399-9lpi",
+      "brandId": "brd-1791167281513-qhs3",
+      "name": "CM-W562-1",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1792077157399-d17h",
+      "brandId": "brd-1791461137716-0vne",
+      "name": "TH-500-07",
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:25:12.613Z"
+    },
+    {
+      "id": "mod-1792077157399-i8on",
+      "brandId": "brd-1791167281510-9p0e",
+      "name": "LK-1900A",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1792077157399-6uf7",
+      "brandId": "brd-1791167281524-wjoa",
+      "name": "ZJ3800PLBJ",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1792077157399-uy2z",
+      "brandId": "brd-1791167281510-9p0e",
+      "name": "LBH-1790AN",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1792077157399-r60i",
+      "brandId": "brd-1791167281510-9p0e",
+      "name": "MEB-3200J",
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:25:12.616Z"
+    },
+    {
+      "id": "mod-1792077157399-5561",
+      "brandId": "brd-1791167281510-9p0e",
+      "name": "LK-1900A-SS",
+      "status": "ACTIVE",
+      "createdAt": "2026-09-29T05:43:30.811Z"
+    },
+    {
+      "id": "mod-1788870296744-43",
+      "brandId": "brd-1791167281510-9p0e",
+      "name": "DDL-8000A",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1792077157399-60x1",
+      "brandId": "brd-1791167281524-wjoa",
+      "name": "ZJ-3800-BD",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1792077157399-3n1f",
+      "brandId": "brd-1791167281513-qhs3",
+      "name": "NW-8842",
+      "status": "ACTIVE",
+      "createdAt": "2026-09-29T08:21:48.239Z"
+    },
+    {
+      "id": "mod-1792077157399-czey",
+      "brandId": "brd-1791167281518-1oda",
+      "name": "XD-818",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1792077157399-yvae",
+      "brandId": "brd-1791167281510-9p0e",
+      "name": "LK-1900B-SH",
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:25:12.550Z"
+    },
+    {
+      "id": "mod-1792077157399-j45a",
+      "brandId": "brd-1791167281577-pw5c",
+      "name": "KS-AUV",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1792077157399-8rqx",
+      "brandId": "brd-1791167281577-pw5c",
+      "name": "KM-SV",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1792077157399-9n5t",
+      "brandId": "brd-1791726496715-wxaj",
+      "name": "ST-110",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1792077157399-q14s",
+      "brandId": "brd-1791167281578-f4pd",
+      "name": "EC-610A",
+      "status": "ACTIVE",
+      "createdAt": "2026-09-29T08:21:55.017Z"
+    },
+    {
+      "id": "mod-1792077157399-v7ml",
+      "brandId": "brd-1791167281578-f4pd",
+      "name": "NA-600FN",
+      "status": "ACTIVE",
+      "createdAt": "2026-09-29T08:21:51.425Z"
+    },
+    {
+      "id": "mod-1792077157399-dghy",
+      "brandId": "brd-1791167281578-f4pd",
+      "name": "NA-800",
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:25:12.737Z"
+    },
+    {
+      "id": "mod-1792077157399-otdz",
+      "brandId": "brd-1791167281561-72wt",
+      "name": "OP-60LNII",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1792077157399-v7vr",
+      "brandId": "brd-1791167281561-72wt",
+      "name": "UW-2L",
+      "status": "ACTIVE",
+      "createdAt": "2026-09-29T08:22:01.335Z"
+    },
+    {
+      "id": "mod-1792077157399-0t80",
+      "brandId": "brd-1791726496747-upse",
+      "name": "KAI-700PN",
+      "status": "ACTIVE",
+      "createdAt": "2026-09-29T08:21:46.552Z"
+    },
+    {
+      "id": "mod-1792077157399-e4hl",
+      "brandId": "brd-1791726496704-0lci",
+      "name": "SR-400-N",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1792077157399-tdj4",
+      "brandId": "brd-1791726496709-f7yl",
+      "name": "JN-329S-LF-ED 84\"",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1792077157399-umsc",
+      "brandId": "brd-1791726496737-ur0c",
+      "name": "SM-201L",
+      "status": "ACTIVE",
+      "createdAt": "2026-09-29T08:21:49.586Z"
+    },
+    {
+      "id": "mod-1792077157399-7gyx",
+      "brandId": "brd-1791167281510-9p0e",
+      "name": "MO6716S",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1792077157399-v9oe",
+      "brandId": "brd-1791167281519-iwqm",
+      "name": "CM-W562",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1788870296744-767",
+      "brandId": "brd-1791167281510-9p0e",
+      "name": "DDL-8700-7",
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:25:12.948Z"
+    },
+    {
+      "id": "mod-1792077157399-tzpw",
+      "brandId": "brd-1791167281524-wjoa",
+      "name": "ZJ-3800-PLB",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1792077157400-hqto",
+      "brandId": "brd-1791167281511-lwvy",
+      "name": "JK-8558WD",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1792077157400-b7ov",
+      "brandId": "brd-1791167281511-lwvy",
+      "name": "A4E-H",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1792077157400-37o9",
+      "brandId": "brd-1791167281510-9p0e",
+      "name": "MEB-3200C",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1792077157400-8ktd",
+      "brandId": "brd-1791167281518-1oda",
+      "name": "DFB-1411P-XP",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1792077157400-il9r",
+      "brandId": "brd-1791167281518-1oda",
+      "name": "DFB-1415P-XP",
+      "status": "ACTIVE",
+      "createdAt": "2026-09-29T08:21:54.956Z"
+    },
+    {
+      "id": "mod-1792077157400-rxmy",
+      "brandId": "brd-1791167281518-1oda",
+      "name": "SQ7803LR",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1792077157400-1lt3",
+      "brandId": "brd-1791167281513-qhs3",
+      "name": "CM-5003A",
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:25:12.805Z"
+    },
+    {
+      "id": "mod-1792077157400-u9hc",
+      "brandId": "brd-1791167281510-9p0e",
+      "name": "AMS-210EN",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1792077157400-lpia",
+      "brandId": "brd-1791167281524-wjoa",
+      "name": "3800-BD",
+      "status": "ACTIVE",
+      "createdAt": "2026-09-29T08:21:48.260Z"
+    },
+    {
+      "id": "mod-1792077157400-o5i0",
+      "brandId": "brd-1791167281510-9p0e",
+      "name": "LK-1903B-SS",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1792077157400-z7wb",
+      "brandId": "brd-1791167281518-1oda",
+      "name": "DFB1415PXP",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1788870296745-928",
+      "brandId": "brd-1791167281524-wjoa",
+      "name": "CM-380",
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:25:12.738Z"
+    },
+    {
+      "id": "mod-1792077157400-g5i8",
+      "brandId": "brd-1791167281513-qhs3",
+      "name": "CM-W5621",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1792077157400-jqs8",
+      "brandId": "brd-1791167281524-wjoa",
+      "name": "ZJ3800-BD",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1792077157400-dyjb",
+      "brandId": "brd-1791167281538-vaue",
+      "name": "JT-801M",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1792077157400-ug7c",
+      "brandId": "brd-1791167281510-9p0e",
+      "name": "LK-1903A-SS",
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:25:12.546Z"
+    },
+    {
+      "id": "mod-1792077157400-k1g3",
+      "brandId": "brd-1791167281510-9p0e",
+      "name": "LK-1903B",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1792077157400-g6uw",
+      "brandId": "brd-1791461137733-a0ip",
+      "name": "DM17",
+      "status": "ACTIVE",
+      "createdAt": "2026-09-29T08:21:54.851Z"
+    },
+    {
+      "id": "mod-1792077157400-93xi",
+      "brandId": "brd-1791461137730-nwll",
+      "name": "XD-818D",
+      "status": "ACTIVE",
+      "createdAt": "2026-09-29T08:21:58.442Z"
+    },
+    {
+      "id": "mod-1792077157400-oqoq",
+      "brandId": "bra-1791287318691-664",
+      "name": "NS-47U",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1792077157400-e1a3",
+      "brandId": "brd-1791167281510-9p0e",
+      "name": "DDL-9000A",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1792077157401-00ai",
+      "brandId": "brd-1791167281510-9p0e",
+      "name": "LK-19000A",
+      "status": "ACTIVE",
+      "createdAt": "2026-09-29T08:22:01.140Z"
+    },
+    {
+      "id": "mod-1792077157401-759j",
+      "brandId": "brd-1791167281563-mx5c",
+      "name": "ST-9000",
+      "status": "ACTIVE",
+      "createdAt": "2026-09-29T08:21:52.685Z"
+    },
+    {
+      "id": "mod-1792077157401-sqda",
+      "brandId": "brd-1791461137735-3ke0",
+      "name": "EC-1012A",
+      "status": "ACTIVE",
+      "createdAt": "2026-09-29T08:21:53.301Z"
+    },
+    {
+      "id": "mod-1792077157401-jze0",
+      "brandId": "brd-1791167281566-c8dc",
+      "name": "BFS-T",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1792077157401-mgz2",
+      "brandId": "brd-1791461137732-ccsi",
+      "name": "WD-DS80",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1792077157401-24ox",
+      "brandId": "brd-1791461137732-ccsi",
+      "name": "WD-DS117",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1792077157401-jufr",
+      "brandId": "brd-1791167281510-9p0e",
+      "name": "LK-1903A",
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:25:12.744Z"
+    },
+    {
+      "id": "mod-1792077157401-ze38",
+      "brandId": "brd-1791167281510-9p0e",
+      "name": "LK-1900AN-HS",
+      "status": "ACTIVE",
+      "createdAt": "2026-09-29T08:21:50.483Z"
+    },
+    {
+      "id": "mod-1792077157401-bdui",
+      "brandId": "brd-1791461137733-a0ip",
+      "name": "DM-17",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1792077157401-8qup",
+      "brandId": "brd-1791167281518-f2wh",
+      "name": "DA-9280",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1792077157401-r6ol",
+      "brandId": "brd-1791167281510-9p0e",
+      "name": "MO-6714",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1792077157401-c69l",
+      "brandId": "brd-1791167281524-wjoa",
+      "name": "ZJ-3820-BD",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1792077157401-bmiz",
+      "brandId": "brd-1791167281510-9p0e",
+      "name": "LK-1900AN",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1792077157401-b4ri",
+      "brandId": "brd-1791167281518-1oda",
+      "name": "DFB1411P-XP",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1788870296745-377",
+      "brandId": "brd-1791167281519-iwqm",
+      "name": "KZ-1060",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1792077157401-p745",
+      "brandId": "brd-1791167281510-9p0e",
+      "name": "6390-07",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1792077157401-g1jd",
+      "brandId": "brd-1791167281519-iwqm",
+      "name": "KZ-1060JL-T2",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1792077157401-v0jx",
+      "brandId": "brd-1791167281510-9p0e",
+      "name": "8558-WD",
+      "status": "ACTIVE",
+      "createdAt": "2026-09-29T08:21:54.943Z"
+    },
+    {
+      "id": "mod-1790659051038-555",
+      "brandId": "brd-1791167281510-9p0e",
+      "name": "LBH-1790S",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1788870296746-285",
+      "brandId": "brd-1791167281518-1oda",
+      "name": "DFB-1411",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1792077157402-uvzb",
+      "brandId": "brd-1791167281510-9p0e",
+      "name": "DDL-9000C",
+      "status": "ACTIVE",
+      "createdAt": "2026-09-29T08:21:49.198Z"
+    },
+    {
+      "id": "mod-1788870296743-83",
+      "brandId": "brd-1791167281510-9p0e",
+      "name": "LH-3588A",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1792077157402-z719",
+      "brandId": "brd-1791167281518-1oda",
+      "name": "WFB-5509P",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1792077157402-od93",
+      "brandId": "brd-1791167281510-9p0e",
+      "name": "DDL-9000A-SH",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1788870296745-790",
+      "brandId": "brd-1791167281510-9p0e",
+      "name": "LH-3578A",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1788870296745-671",
+      "brandId": "brd-1791167281510-9p0e",
+      "name": "NS-47",
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:25:12.550Z"
+    },
+    {
+      "id": "mod-1792077157402-18x2",
+      "brandId": "brd-1791167281510-9p0e",
+      "name": "DLN-6390-7",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1792077157402-k2ze",
+      "brandId": "brd-1791167281510-9p0e",
+      "name": "MS-1261M",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1788870296745-891",
+      "brandId": "brd-1791167281510-9p0e",
+      "name": "LBH-1790",
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:25:12.950Z"
+    },
+    {
+      "id": "mod-1788870296745-834",
+      "brandId": "brd-1791167281510-9p0e",
+      "name": "MS-1190",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1792077157402-yvtl",
+      "brandId": "brd-1791167281510-9p0e",
+      "name": "MEB-3200S",
+      "status": "ACTIVE",
+      "createdAt": "2026-09-29T08:21:46.539Z"
+    },
+    {
+      "id": "mod-1788870296744-679",
+      "brandId": "brd-1791167281515-k9cg",
+      "name": "BDL-B5593B-7",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1792077157402-1j07",
+      "brandId": "brd-1791167281538-vaue",
+      "name": "JT-801PI",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1792077157402-zr0n",
+      "brandId": "brd-1791167281510-9p0e",
+      "name": "LK-1900A-SH",
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:25:12.548Z"
+    },
+    {
+      "id": "mod-1792077157402-b862",
+      "brandId": "brd-1791167281519-iwqm",
+      "name": "AGM-8000",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1792077157402-vxpu",
+      "brandId": "brd-1791167281510-9p0e",
+      "name": "ZJ3820BD",
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:25:12.613Z"
+    },
+    {
+      "id": "mod-1792077157402-b8t7",
+      "brandId": "brd-1791167281510-9p0e",
+      "name": "5200N",
+      "status": "ACTIVE",
+      "createdAt": "2026-09-29T08:21:53.539Z"
+    },
+    {
+      "id": "mod-1792077157402-e3cy",
+      "brandId": "brd-1791167281510-9p0e",
+      "name": "CM-3800",
+      "status": "ACTIVE",
+      "createdAt": "2026-09-29T08:22:01.520Z"
+    },
+    {
+      "id": "mod-1792077157402-auh9",
+      "brandId": "brd-1791167281510-9p0e",
+      "name": "MS1261",
+      "status": "ACTIVE",
+      "createdAt": "2026-09-29T08:21:51.768Z"
+    },
+    {
+      "id": "mod-1792077157402-su6p",
+      "brandId": "brd-1791167281519-iwqm",
+      "name": "KZ-1060/JL",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1792077157402-42hx",
+      "brandId": "brd-1791167281518-1oda",
+      "name": "WFB5509P",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1792077157402-parq",
+      "brandId": "brd-1791167281510-9p0e",
+      "name": "MS-1261A",
+      "status": "ACTIVE",
+      "createdAt": "2026-09-29T08:21:50.659Z"
+    },
+    {
+      "id": "mod-1792077157403-byrf",
+      "brandId": "brd-1791167281510-9p0e",
+      "name": "LK-1900B-HS",
+      "status": "ACTIVE",
+      "createdAt": "2026-09-29T08:21:48.093Z"
+    },
+    {
+      "id": "mod-1792077157403-hvyn",
+      "brandId": "brd-1791167281511-lwvy",
+      "name": "JK8558WD",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1792077157403-iek8",
+      "brandId": "brd-1791167281510-9p0e",
+      "name": "LK-1903AN",
+      "status": "ACTIVE",
+      "createdAt": "2026-09-29T08:21:51.302Z"
+    },
+    {
+      "id": "mod-1792077157403-jzkt",
+      "brandId": "brd-1791167281518-1oda",
+      "name": "LK1900A",
+      "status": "ACTIVE",
+      "createdAt": "2026-09-29T08:21:51.555Z"
+    },
+    {
+      "id": "mod-1792077157403-2s3j",
+      "brandId": "brd-1791167281524-wjoa",
+      "name": "ZJ-3800-PLB-J",
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:25:12.637Z"
+    },
+    {
+      "id": "mod-1792077157403-nncz",
+      "brandId": "brd-1791167281519-iwqm",
+      "name": "KZ1060JL-TJ-2",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1792077157403-jsiv",
+      "brandId": "brd-1791167281510-9p0e",
+      "name": "JUKI (MS 1261)",
+      "status": "ACTIVE",
+      "createdAt": "2026-09-29T08:21:52.636Z"
+    },
+    {
+      "id": "mod-1792077157403-p9wn",
+      "brandId": "brd-1791167281532-12l5",
+      "name": "MAX500-01GB",
+      "status": "ACTIVE",
+      "createdAt": "2026-09-29T08:21:48.093Z"
+    },
+    {
+      "id": "mod-1792077157403-j2k0",
+      "brandId": "brd-1791167281510-9p0e",
+      "name": "MO-6716DA",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1792077157403-y0nw",
+      "brandId": "brd-1791167281518-1oda",
+      "name": "NW88421GCS1",
+      "status": "ACTIVE",
+      "createdAt": "2026-09-29T08:21:48.093Z"
+    },
+    {
+      "id": "mod-1792077157403-inpl",
+      "brandId": "brd-1791167281519-iwqm",
+      "name": "KZ-1060-JL",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1792077157403-il89",
+      "brandId": "brd-1791461137683-6jq9",
+      "name": "B-5200",
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:25:12.741Z"
+    },
+    {
+      "id": "mod-1792077157403-zjw2",
+      "brandId": "brd-1791167281524-wjoa",
+      "name": "ZJ3800-PLB-BD",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1792077157403-njye",
+      "brandId": "brd-1791167281510-9p0e",
+      "name": "LBH-1790BN",
+      "status": "ACTIVE",
+      "createdAt": "2026-09-29T08:21:52.242Z"
+    },
+    {
+      "id": "mod-1792077157403-omx0",
+      "brandId": "brd-1791167281524-wjoa",
+      "name": "CM-383",
+      "status": "ACTIVE",
+      "createdAt": "2026-09-29T08:21:51.302Z"
+    },
+    {
+      "id": "mod-1792077157403-2nu7",
+      "brandId": "brd-1791167281510-9p0e",
+      "name": "LH-380",
+      "status": "ACTIVE",
+      "createdAt": "2026-09-29T08:21:55.053Z"
+    },
+    {
+      "id": "mod-1792077157403-q2c8",
+      "brandId": "brd-1791167281518-1oda",
+      "name": "NW8842-1G",
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:25:12.613Z"
+    },
+    {
+      "id": "mod-1792077157404-r77w",
+      "brandId": "brd-1791167281532-ogw9",
+      "name": "CM-101-SD",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1790659051048-171",
+      "brandId": "brd-1791167281518-f2wh",
+      "name": "DA-928-A-5",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1792077157405-7907",
+      "brandId": "brd-1791167281518-1oda",
+      "name": "NC1001GJF",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1792077157405-34zw",
+      "brandId": "brd-1791167281532-12l5",
+      "name": "MAX55597",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1792077157405-a12v",
+      "brandId": "brd-1791167281518-1oda",
+      "name": "DFB-1412P-XP",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1792077157406-dgqh",
+      "brandId": "brd-1791167281515-k9cg",
+      "name": "BDL-B5490B-7",
+      "status": "ACTIVE",
+      "createdAt": "2026-09-29T08:21:49.115Z"
+    },
+    {
+      "id": "mod-1792077157407-gsjc",
+      "brandId": "brd-1791167281510-9p0e",
+      "name": "MH-380",
+      "status": "ACTIVE",
+      "createdAt": "2026-09-29T08:21:49.198Z"
+    },
+    {
+      "id": "mod-1792077157407-1zdv",
+      "brandId": "brd-1791167281510-9p0e",
+      "name": "DDL900C",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1792077157407-8pqf",
+      "brandId": "brd-1791167281510-9p0e",
+      "name": "DDL-900OB",
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:25:12.556Z"
+    },
+    {
+      "id": "mod-1792077157407-k5rv",
+      "brandId": "brd-1791167281524-wjoa",
+      "name": "ZJ3800",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1792077157407-qgpe",
+      "brandId": "brd-1791167281513-qhs3",
+      "name": "CM5300",
+      "status": "ACTIVE",
+      "createdAt": "2026-09-29T08:21:49.935Z"
+    },
+    {
+      "id": "mod-1792077157407-j5f2",
+      "brandId": "brd-1791167281513-qhs3",
+      "name": "CM-5300BD",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1792077157407-gunj",
+      "brandId": "brd-1791167281510-9p0e",
+      "name": "HM-380",
+      "status": "ACTIVE",
+      "createdAt": "2026-09-29T08:22:01.140Z"
+    },
+    {
+      "id": "mod-1792077157407-m2dn",
+      "brandId": "brd-1791167281524-wjoa",
+      "name": "ZJ3820",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1792077157407-oqkj",
+      "brandId": "brd-1791167281517-0joc",
+      "name": "2261-H",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1792077157407-bber",
+      "brandId": "brd-1791167281532-12l5",
+      "name": "500B",
+      "status": "ACTIVE",
+      "createdAt": "2026-09-29T08:21:46.900Z"
+    },
+    {
+      "id": "mod-1792077157408-n9ym",
+      "brandId": "brd-1791167281510-9p0e",
+      "name": "DDL-8700-8",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1792077157408-hil6",
+      "brandId": "brd-1791167281510-9p0e",
+      "name": "LK1900B",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1788870296745-408",
+      "brandId": "brd-1791167281518-1oda",
+      "name": "WFB-5509",
+      "status": "ACTIVE",
+      "createdAt": "2026-09-29T08:21:59.354Z"
+    },
+    {
+      "id": "mod-1792077157409-vum5",
+      "brandId": "brd-1791167281510-9p0e",
+      "name": "LK1900BN",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1792077157409-iqpl",
+      "brandId": "brd-1791167281510-9p0e",
+      "name": "DDL9000B",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1792077157409-urz7",
+      "brandId": "brd-1791167281510-9p0e",
+      "name": "DDL900BB",
+      "status": "ACTIVE",
+      "createdAt": "2026-09-29T08:21:49.572Z"
+    },
+    {
+      "id": "mod-1792077157409-ka6x",
+      "brandId": "brd-1791167281510-9p0e",
+      "name": "LK-1903S",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1788870296744-312",
+      "brandId": "brd-1791167281513-qhs3",
+      "name": "CM-5300",
+      "status": "ACTIVE",
+      "createdAt": "2026-09-08T12:25:12.561Z"
+    },
+    {
+      "id": "mod-1788870296744-927",
+      "brandId": "brd-1791167281524-wjoa",
+      "name": "ZJ-3800",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1788870296746-564",
+      "brandId": "brd-1791167281524-wjoa",
+      "name": "ZJ-3820",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1790659051064-665",
+      "brandId": "brd-1791167281513-qhs3",
+      "name": "W562",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1792077157410-sbh6",
+      "brandId": "brd-1791167281510-9p0e",
+      "name": "MH-381",
+      "status": "ACTIVE",
+      "createdAt": "2026-09-29T08:21:49.448Z"
+    },
+    {
+      "id": "mod-1792077157410-6ci6",
+      "brandId": "brd-1791167281510-9p0e",
+      "name": "LH-3588A-8",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1792077157410-jare",
+      "brandId": "brd-1791167281510-9p0e",
+      "name": "LA-1900A",
+      "status": "ACTIVE",
+      "createdAt": "2026-09-29T08:21:53.750Z"
+    },
+    {
+      "id": "mod-1792077157410-1i8t",
+      "brandId": "brd-1791167281511-lwvy",
+      "name": "A4",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1792077157411-immu",
+      "brandId": "brd-1791167281510-9p0e",
+      "name": "LK-1903BN",
+      "status": "ACTIVE",
+      "createdAt": "2026-09-29T08:21:46.589Z"
+    },
+    {
+      "id": "mod-1792077157411-zhqi",
+      "brandId": "brd-1791167281510-9p0e",
+      "name": "LH-3578",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1792077157411-tsjh",
+      "brandId": "brd-1791167281518-1oda",
+      "name": "NC1001GJ-CD",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1792077157412-mmun",
+      "brandId": "brd-1791167281515-k9cg",
+      "name": "BDL-B5090-7-2TL",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1788870296744-172",
+      "brandId": "brd-1791167281515-k9cg",
+      "name": "BDL-B7491B",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1792077157412-god5",
+      "brandId": "brd-1791167281556-xwta",
+      "name": "N6-S",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1792077157412-kxdu",
+      "brandId": "brd-1791167281511-1zo6",
+      "name": "GC-6170-D2",
+      "status": "ACTIVE",
+      "createdAt": "2026-09-29T08:21:47.007Z"
+    },
+    {
+      "id": "mod-1792077157412-pxa9",
+      "brandId": "brd-1791167281524-wjoa",
+      "name": "ZJ-3800-PLB-BD",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1792077157413-shyi",
+      "brandId": "brd-1791167281513-qhs3",
+      "name": "CM-370-BD",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-12T11:10:28.000Z"
+    },
+    {
+      "id": "mod-1792077157414-0l6f",
+      "brandId": "brd-1791167281510-9p0e",
+      "name": "LK-1903",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-14T04:31:24.514Z"
+    },
+    {
+      "id": "mod-1792077157414-62ah",
+      "brandId": "brd-1791167281510-9p0e",
+      "name": "MF 7523",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-14T04:31:24.514Z"
+    },
+    {
+      "id": "mod-1792077157414-v7g7",
+      "brandId": "brd-gmc-mv83lgqi",
+      "name": "GMC 500-01",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-14T04:31:24.514Z"
+    },
+    {
+      "id": "mod-1792077157414-8mgy",
+      "brandId": "brd-1791167281563-mx5c",
+      "name": "ST9000",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-14T04:31:24.514Z"
+    },
+    {
+      "id": "mod-1792077157414-qksl",
+      "brandId": "brd-1791167281511-lwvy",
+      "name": "K-5D01GBX356",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-14T04:31:24.514Z"
+    },
+    {
+      "id": "mod-1792077157414-01dv",
+      "brandId": "brd-1791167281561-2xo8",
+      "name": "HT-1D",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-14T04:31:24.514Z"
+    },
+    {
+      "id": "mod-1792077157414-e5c3",
+      "brandId": "brd-1791167281524-wjoa",
+      "name": "ZJ-3800-PLB-J-BD",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-14T04:31:24.514Z"
+    },
+    {
+      "id": "mod-1792077157414-5sns",
+      "brandId": "brd-1791167281511-lwvy",
+      "name": "KS-DOIGBX356",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-14T04:31:24.514Z"
+    },
+    {
+      "id": "mod-1792077157414-q5o6",
+      "brandId": "brd-1791167281510-9p0e",
+      "name": "ME-7923-411B56",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-14T04:31:24.514Z"
+    },
+    {
+      "id": "mod-1792077157414-pn8o",
+      "brandId": "brd-1791167281542-fjqz",
+      "name": "MB1006D-IM",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-14T04:31:24.514Z"
+    },
+    {
+      "id": "mod-1792077157414-bk8l",
+      "brandId": "brd-1791167281532-12l5",
+      "name": "MAX-515",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-14T04:31:24.514Z"
+    },
+    {
+      "id": "mod-1792077157414-cjko",
+      "brandId": "brd-1791167281532-ogw9",
+      "name": "HS801",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-14T04:31:24.514Z"
+    },
+    {
+      "id": "mod-1792077157414-hitp",
+      "brandId": "brd-1791167281511-1zo6",
+      "name": "GT655-02",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-14T04:31:24.514Z"
+    },
+    {
+      "id": "mod-1792077157414-km71",
+      "brandId": "brd-1791167281511-1zo6",
+      "name": "GT2530D",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-14T04:31:24.514Z"
     }
   ],
   "notifications": [
@@ -387505,19 +389024,6 @@
       "status": "ACTIVE",
       "createdAt": "2026-09-08T12:24:56.743Z",
       "updatedAt": "2026-09-08T12:24:56.743Z"
-    }
-  ],
-  "test_sync": [
-    {
-      "id": "1",
-      "name": "test"
-    }
-  ],
-  "test_sync_check": [],
-  "test_table": [],
-  "test_table_probe": [
-    {
-      "id": 1
     }
   ],
   "tool_allocations": [

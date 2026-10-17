@@ -506,6 +506,7 @@ class StorageEngine {
 
     // Auto-generate permanent unique System Asset IDs (e.g. AMG-MNT-000001) for all machines
     this.ensureMachineSystemAssetIds();
+    this.ensureForeignIntegrity();
   }
 
   /**
@@ -975,6 +976,7 @@ class StorageEngine {
           } else {
             this.data[tbl] = cleanMachines;
             const idsUpdated = this.ensureMachineSystemAssetIds();
+            this.ensureForeignIntegrity();
             if (idsUpdated || hasRemarksChanged) {
               // Push cleaned remarks & migrated System Asset IDs back to MySQL Primary asynchronously
               setTimeout(() => {
@@ -1566,6 +1568,80 @@ class StorageEngine {
   }
 
   /**
+   * Automatically heals foreign key relations between machines and master tables.
+   * Guarantees 0 missing machine names, brands, or models.
+   */
+  ensureForeignIntegrity() {
+    const machines = this.data[TABLE_NAMES.MACHINES];
+    if (!Array.isArray(machines) || machines.length === 0) return false;
+
+    let hasUpdates = false;
+
+    // 1. Brands
+    if (!Array.isArray(this.data[TABLE_NAMES.BRANDS])) this.data[TABLE_NAMES.BRANDS] = [];
+    const brandMap = new Map(this.data[TABLE_NAMES.BRANDS].map(b => [b.id, b]));
+
+    // 2. Machine Names
+    if (!Array.isArray(this.data[TABLE_NAMES.MACHINE_NAMES])) this.data[TABLE_NAMES.MACHINE_NAMES] = [];
+    const mnMap = new Map(this.data[TABLE_NAMES.MACHINE_NAMES].map(m => [m.id, m]));
+
+    // 3. Models
+    if (!Array.isArray(this.data[TABLE_NAMES.MODELS])) this.data[TABLE_NAMES.MODELS] = [];
+    const mdlMap = new Map(this.data[TABLE_NAMES.MODELS].map(m => [m.id, m]));
+
+    machines.forEach(m => {
+      if (!m) return;
+
+      // Brand check
+      if (m.brandId && !brandMap.has(m.brandId)) {
+        const newBrand = {
+          id: m.brandId,
+          name: m.brand || m.brandName || 'Generic',
+          status: 'ACTIVE',
+          createdAt: m.createdAt || new Date().toISOString()
+        };
+        this.data[TABLE_NAMES.BRANDS].push(newBrand);
+        brandMap.set(newBrand.id, newBrand);
+        hasUpdates = true;
+      }
+
+      // Machine Name check
+      if (m.machineNameId && !mnMap.has(m.machineNameId)) {
+        const newName = {
+          id: m.machineNameId,
+          name: m.machineName || m.machineNameStr || 'Sewing Machine',
+          status: 'ACTIVE',
+          createdAt: m.createdAt || new Date().toISOString()
+        };
+        this.data[TABLE_NAMES.MACHINE_NAMES].push(newName);
+        mnMap.set(newName.id, newName);
+        hasUpdates = true;
+      }
+
+      // Model check
+      if (m.modelId && !mdlMap.has(m.modelId)) {
+        const newModel = {
+          id: m.modelId,
+          brandId: m.brandId || 'bra-1',
+          name: m.model || m.modelStr || m.modelName || 'Standard',
+          status: 'ACTIVE',
+          createdAt: m.createdAt || new Date().toISOString()
+        };
+        this.data[TABLE_NAMES.MODELS].push(newModel);
+        mdlMap.set(newModel.id, newModel);
+        hasUpdates = true;
+      }
+    });
+
+    if (hasUpdates) {
+      this.saveTable(TABLE_NAMES.BRANDS, false);
+      this.saveTable(TABLE_NAMES.MACHINE_NAMES, false);
+      this.saveTable(TABLE_NAMES.MODELS, false);
+    }
+    return hasUpdates;
+  }
+
+  /**
    * Generates the next sequential Permanent Unique System Asset ID formatted as AMG-MNT-XXXXXX (e.g. AMG-MNT-000001)
    */
   generateNextSystemAssetId() {
@@ -1591,7 +1667,7 @@ class StorageEngine {
       }
     });
 
-    const nextNum = maxNum + 1;
+    const nextNum = Math.max(machines.length, maxNum) + 1;
     return `${prefix}${String(nextNum).padStart(6, '0')}`;
   }
 
@@ -1604,68 +1680,126 @@ class StorageEngine {
     if (!Array.isArray(machines) || machines.length === 0) return false;
 
     let hasUpdates = false;
-    const assignedIds = new Set();
-    let maxNum = 0;
+    const totalCount = machines.length;
 
-    // Pass 1: Gather existing valid AMG-MNT IDs and record highest sequence
-    machines.forEach(m => {
-      if (m && m.systemAssetId) {
-        let str = String(m.systemAssetId).trim().toUpperCase();
-        if (/^MID-(\d+)$/i.test(str)) {
-          str = str.replace(/^MID-/i, 'AMG-MNT-');
-          m.systemAssetId = str;
-          hasUpdates = true;
-        }
-        assignedIds.add(str);
-        const match = str.match(/^AMG-MNT-(\d+)$/i);
-        if (match && match[1]) {
-          const num = parseInt(match[1], 10);
-          if (!isNaN(num) && num > maxNum) {
-            maxNum = num;
-          }
-        }
+    // Check for duplicate asset IDs or sequence drift
+    const seenMap = new Map();
+    let hasDuplicates = false;
+    let maxNum = 0;
+    let missingCount = 0;
+
+    machines.forEach((m, idx) => {
+      if (!m) return;
+      let raw = m.systemAssetId || m.permanentMachineId;
+      if (!raw) {
+        missingCount++;
+        return;
+      }
+      let str = String(raw).trim().toUpperCase();
+      if (/^MID-(\d+)$/i.test(str)) {
+        str = str.replace(/^MID-/i, 'AMG-MNT-');
+        m.systemAssetId = str;
+        m.permanentMachineId = str;
+        hasUpdates = true;
+      }
+      const match = str.match(/^AMG-MNT-(\d+)$/i);
+      if (!match) {
+        missingCount++;
+        return;
+      }
+      const num = parseInt(match[1], 10);
+      if (num > maxNum) maxNum = num;
+      if (seenMap.has(str)) {
+        hasDuplicates = true;
+      } else {
+        seenMap.set(str, m);
       }
     });
 
-    // Pass 2: Assign permanent AMG-MNT sequential ID to any machine missing it or having legacy MID-
-    machines.forEach(m => {
-      if (!m) return;
+    // Drift condition: duplicates exist, or max sequence exceeds total count by more than 10 (e.g. 6540 for 6466 machines), or missing IDs
+    const hasDrift = hasDuplicates || (maxNum > totalCount + 10 && missingCount === 0 && seenMap.size <= totalCount);
 
-      if (!m.systemAssetId) {
-        let candidate = '';
-        if (m.permanentMachineId) {
-          const pMatch = String(m.permanentMachineId).trim().match(/^(?:MID|AMG-MNT)-(\d+)$/i);
-          if (pMatch && pMatch[1]) {
-            const pNum = parseInt(pMatch[1], 10);
-            const mapped = `AMG-MNT-${String(pNum).padStart(6, '0')}`;
-            if (!assignedIds.has(mapped)) {
-              candidate = mapped;
-              if (pNum > maxNum) maxNum = pNum;
+    if (hasDrift) {
+      console.warn(`[Asset ID Safeguard] ⚠️ Detected Asset ID sequence drift/duplicates (Total: ${totalCount}, Max: ${maxNum}, Dupes: ${hasDuplicates}). Auto-normalizing sequence strictly 1..${totalCount}...`);
+      
+      const usedIds = new Set();
+      // First pass: preserve valid unique IDs that fall within [1..totalCount]
+      machines.forEach(m => {
+        if (!m) return;
+        const raw = m.systemAssetId;
+        if (raw) {
+          const match = String(raw).trim().match(/^AMG-MNT-(\d+)$/i);
+          if (match) {
+            const num = parseInt(match[1], 10);
+            const candidate = `AMG-MNT-${String(num).padStart(6, '0')}`;
+            if (num >= 1 && num <= totalCount && !usedIds.has(candidate)) {
+              usedIds.add(candidate);
+              if (m.systemAssetId !== candidate || m.permanentMachineId !== candidate) {
+                m.systemAssetId = candidate;
+                m.permanentMachineId = candidate;
+                hasUpdates = true;
+              }
+              return;
             }
           }
         }
+      });
 
-        if (!candidate) {
-          maxNum++;
-          candidate = `AMG-MNT-${String(maxNum).padStart(6, '0')}`;
-          while (assignedIds.has(candidate)) {
+      // Second pass: fill remaining machines sequentially from 1 to totalCount
+      let seqCounter = 1;
+      machines.forEach(m => {
+        if (!m) return;
+        const current = m.systemAssetId;
+        if (!current || !usedIds.has(current) || !/^AMG-MNT-\d+$/i.test(current)) {
+          while (usedIds.has(`AMG-MNT-${String(seqCounter).padStart(6, '0')}`)) {
+            seqCounter++;
+          }
+          const assigned = `AMG-MNT-${String(seqCounter).padStart(6, '0')}`;
+          usedIds.add(assigned);
+          seqCounter++;
+          m.systemAssetId = assigned;
+          m.permanentMachineId = assigned;
+          hasUpdates = true;
+        }
+      });
+    } else {
+      // Standard incremental pass: preserve existing valid IDs, fill only missing
+      const assignedIds = new Set(seenMap.keys());
+      machines.forEach(m => {
+        if (!m) return;
+        if (!m.systemAssetId) {
+          let candidate = '';
+          if (m.permanentMachineId) {
+            const pMatch = String(m.permanentMachineId).trim().match(/^(?:MID|AMG-MNT)-(\d+)$/i);
+            if (pMatch && pMatch[1]) {
+              const pNum = parseInt(pMatch[1], 10);
+              const mapped = `AMG-MNT-${String(pNum).padStart(6, '0')}`;
+              if (!assignedIds.has(mapped)) {
+                candidate = mapped;
+                if (pNum > maxNum) maxNum = pNum;
+              }
+            }
+          }
+          if (!candidate) {
             maxNum++;
             candidate = `AMG-MNT-${String(maxNum).padStart(6, '0')}`;
+            while (assignedIds.has(candidate)) {
+              maxNum++;
+              candidate = `AMG-MNT-${String(maxNum).padStart(6, '0')}`;
+            }
           }
+          m.systemAssetId = candidate;
+          m.permanentMachineId = candidate;
+          assignedIds.add(candidate);
+          hasUpdates = true;
         }
 
-        m.systemAssetId = candidate;
-        m.permanentMachineId = candidate;
-        assignedIds.add(candidate);
-        hasUpdates = true;
-      }
-
-      // Also ensure permanentMachineId strictly matches systemAssetId and has no legacy MID-
-      if (m.systemAssetId && (!m.permanentMachineId || /^MID-/i.test(m.permanentMachineId))) {
-        m.permanentMachineId = m.systemAssetId;
-        hasUpdates = true;
-      }
-    });
+        if (m.systemAssetId && (!m.permanentMachineId || /^MID-/i.test(m.permanentMachineId))) {
+          m.permanentMachineId = m.systemAssetId;
+          hasUpdates = true;
+        }
+      });
+    }
 
     if (hasUpdates) {
       try {
@@ -1690,11 +1824,25 @@ class StorageEngine {
     }
 
     if (tableName === TABLE_NAMES.MACHINES) {
-      if (!item.systemAssetId) {
+      const existingAssetIds = new Set(
+        (this.data[TABLE_NAMES.MACHINES] || [])
+          .map(m => m.systemAssetId)
+          .filter(Boolean)
+      );
+      if (!item.systemAssetId || existingAssetIds.has(item.systemAssetId)) {
         item.systemAssetId = this.generateNextSystemAssetId();
       }
-      if (!item.permanentMachineId) {
+      if (!item.permanentMachineId || existingAssetIds.has(item.permanentMachineId)) {
         item.permanentMachineId = item.systemAssetId;
+      }
+      // Also prevent duplicate machine array insertion by id
+      const existingIdx = this.data[TABLE_NAMES.MACHINES].findIndex(m => m && m.id === item.id);
+      if (existingIdx !== -1) {
+        this.data[TABLE_NAMES.MACHINES][existingIdx] = item;
+        this._invalidateTableIdMap(tableName);
+        this.saveTable(tableName);
+        this.rebuildAllIndexes();
+        return item;
       }
     }
 
@@ -1720,14 +1868,40 @@ class StorageEngine {
     const now = new Date().toISOString();
     const baseTime = Date.now();
     let counter = 0;
+
+    let nextSeqNum = 0;
+    const existingAssetIds = new Set();
+    if (tableName === TABLE_NAMES.MACHINES) {
+      let maxNum = 0;
+      (this.data[TABLE_NAMES.MACHINES] || []).forEach(m => {
+        if (!m) return;
+        if (m.systemAssetId) {
+          existingAssetIds.add(m.systemAssetId);
+          const match = String(m.systemAssetId).trim().match(/^AMG-MNT-(\d+)$/i);
+          if (match && match[1]) {
+            const num = parseInt(match[1], 10);
+            if (!isNaN(num) && num > maxNum) maxNum = num;
+          }
+        }
+      });
+      nextSeqNum = Math.max((this.data[TABLE_NAMES.MACHINES] || []).length, maxNum);
+    }
+
     items.forEach(item => {
       if (!item.id) {
         item.id = `${tableName.substring(0, 3)}-${baseTime}-${++counter}-${Math.floor(Math.random() * 100000)}`;
       }
       if (tableName === TABLE_NAMES.MACHINES) {
-        if (!item.systemAssetId) {
-          item.systemAssetId = this.generateNextSystemAssetId();
+        if (!item.systemAssetId || existingAssetIds.has(item.systemAssetId)) {
+          nextSeqNum++;
+          let candidate = `AMG-MNT-${String(nextSeqNum).padStart(6, '0')}`;
+          while (existingAssetIds.has(candidate)) {
+            nextSeqNum++;
+            candidate = `AMG-MNT-${String(nextSeqNum).padStart(6, '0')}`;
+          }
+          item.systemAssetId = candidate;
         }
+        existingAssetIds.add(item.systemAssetId);
         if (!item.permanentMachineId) {
           item.permanentMachineId = item.systemAssetId;
         }
@@ -1759,6 +1933,16 @@ class StorageEngine {
     }
     if (index === -1) return null;
 
+    if (tableName === TABLE_NAMES.MACHINES && updates && updates.systemAssetId) {
+      const isDuplicate = (this.data[TABLE_NAMES.MACHINES] || []).some(
+        m => m && m.id !== id && m.systemAssetId === updates.systemAssetId
+      );
+      if (isDuplicate) {
+        console.warn(`[Asset ID Safeguard] ⚠️ Duplicate systemAssetId '${updates.systemAssetId}' rejected on update for machine ${id}.`);
+        delete updates.systemAssetId;
+      }
+    }
+
     table[index] = {
       ...table[index],
       ...updates,
@@ -1776,6 +1960,25 @@ class StorageEngine {
   }
 
   delete(tableName, id) {
+    // Safeguard: Prevent deleting master entities if active machines reference them
+    if ([TABLE_NAMES.MACHINE_NAMES, TABLE_NAMES.BRANDS, TABLE_NAMES.MODELS, TABLE_NAMES.UNITS, TABLE_NAMES.FLOORS, TABLE_NAMES.LINES].includes(tableName)) {
+      const machines = this.data[TABLE_NAMES.MACHINES] || [];
+      const hasReference = machines.some(m => {
+        if (!m) return false;
+        if (tableName === TABLE_NAMES.MACHINE_NAMES) return m.machineNameId === id;
+        if (tableName === TABLE_NAMES.BRANDS) return m.brandId === id;
+        if (tableName === TABLE_NAMES.MODELS) return m.modelId === id;
+        if (tableName === TABLE_NAMES.UNITS) return m.unitId === id;
+        if (tableName === TABLE_NAMES.FLOORS) return m.floorId === id;
+        if (tableName === TABLE_NAMES.LINES) return m.lineId === id;
+        return false;
+      });
+      if (hasReference) {
+        console.warn(`[Integrity Safeguard] 🛡️ Deletion prevented for ${tableName} id '${id}' because active machines reference it.`);
+        return false;
+      }
+    }
+
     const table = this.data[tableName] || [];
     const index = table.findIndex(item => item.id === id);
     if (index === -1) return false;
@@ -1799,6 +2002,21 @@ class StorageEngine {
     if (!item.id) {
       item.id = `${tableName.substring(0, 3)}-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
     }
+
+    if (tableName === TABLE_NAMES.MACHINES) {
+      const existingAssetIds = new Set(
+        (this.data[TABLE_NAMES.MACHINES] || [])
+          .map(m => m.systemAssetId)
+          .filter(Boolean)
+      );
+      if (!item.systemAssetId || existingAssetIds.has(item.systemAssetId)) {
+        item.systemAssetId = this.generateNextSystemAssetId();
+      }
+      if (!item.permanentMachineId || existingAssetIds.has(item.permanentMachineId)) {
+        item.permanentMachineId = item.systemAssetId;
+      }
+    }
+
     item.createdAt = item.createdAt || new Date().toISOString();
     item.updatedAt = new Date().toISOString();
 
@@ -1823,6 +2041,16 @@ class StorageEngine {
     const index = table.findIndex(item => item.id === id);
     if (index === -1) return null;
 
+    if (tableName === TABLE_NAMES.MACHINES && updates && updates.systemAssetId) {
+      const isDuplicate = (this.data[TABLE_NAMES.MACHINES] || []).some(
+        m => m && m.id !== id && m.systemAssetId === updates.systemAssetId
+      );
+      if (isDuplicate) {
+        console.warn(`[Asset ID Safeguard] ⚠️ Duplicate systemAssetId '${updates.systemAssetId}' rejected on update for machine ${id}.`);
+        delete updates.systemAssetId;
+      }
+    }
+
     const oldItem = JSON.parse(JSON.stringify(table[index]));
     table[index] = {
       ...table[index],
@@ -1844,6 +2072,25 @@ class StorageEngine {
   }
 
   async deleteConfirmed(tableName, id) {
+    // Safeguard: Prevent deleting master entities if active machines reference them
+    if ([TABLE_NAMES.MACHINE_NAMES, TABLE_NAMES.BRANDS, TABLE_NAMES.MODELS, TABLE_NAMES.UNITS, TABLE_NAMES.FLOORS, TABLE_NAMES.LINES].includes(tableName)) {
+      const machines = this.data[TABLE_NAMES.MACHINES] || [];
+      const hasReference = machines.some(m => {
+        if (!m) return false;
+        if (tableName === TABLE_NAMES.MACHINE_NAMES) return m.machineNameId === id;
+        if (tableName === TABLE_NAMES.BRANDS) return m.brandId === id;
+        if (tableName === TABLE_NAMES.MODELS) return m.modelId === id;
+        if (tableName === TABLE_NAMES.UNITS) return m.unitId === id;
+        if (tableName === TABLE_NAMES.FLOORS) return m.floorId === id;
+        if (tableName === TABLE_NAMES.LINES) return m.lineId === id;
+        return false;
+      });
+      if (hasReference) {
+        console.warn(`[Integrity Safeguard] 🛡️ Deletion prevented for ${tableName} id '${id}' because active machines reference it.`);
+        return false;
+      }
+    }
+
     const table = this.data[tableName] || [];
     const index = table.findIndex(item => item.id === id);
     if (index === -1) return false;
