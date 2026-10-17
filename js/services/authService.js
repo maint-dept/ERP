@@ -574,6 +574,15 @@ class AuthService {
       }
     }
 
+    // Case C: Target account has No Access (Pending Admin Assignment)
+    const isTargetNoAccess = target.role === 'NO_ACCESS' || 
+      target.roleId === 'role-no-access' || 
+      target.presetId === 'no_access' || 
+      (target.presetName && target.presetName.toLowerCase().includes('no access'));
+    if (isTargetNoAccess && !isReturningToAdmin) {
+      throw new Error(`Access Denied: Cannot switch to account '${target.name || target.username}'. This account currently has No Access (Pending Admin Assignment). Assign a role preset or permissions in User Management first.`);
+    }
+
     // If an Admin/Super Admin is switching into a different user account, save impersonator session
     if ((isCurrentSuper || isCurrentAdmin) && target.id !== activeUser.id && !impersonatorId) {
       try {
@@ -2175,50 +2184,65 @@ class AuthService {
     const user = storage.getItem(TABLE_NAMES.USERS, userId);
     if (!user) throw new Error('User record not found in database.');
 
-    const isSelf = Boolean(this.currentUser && this.currentUser.id === userId);
-    const isFirstLogin = Boolean(user.mustChangePassword);
+    const isSelf = Boolean(this.currentUser && (this.currentUser.id === userId || this.currentUser.id == userId));
+    const isFirstLogin = Boolean(user.mustChangePassword || user.passwordStatus === 'TEMPORARY');
     if (!isSelf && !isFirstLogin && !this.canManageUsers()) {
       throw new Error('Access Denied: You do not have permission to configure this account.');
     }
 
     const hashedPassword = cryptoService.hashPassword(newPassword);
 
-    // Single atomic confirmed write directly to database.
-    // Save BOTH 'password' and 'passwordHash' to cover all code paths that verify either field.
-    // Set passwordStatus: 'ACTIVE' so Admin Panel reflects the correct state immediately.
-    const updated = await storage.updateConfirmed(TABLE_NAMES.USERS, userId, {
+    const updates = {
       password: hashedPassword,
       passwordHash: hashedPassword,
       mustChangePassword: false,
       passwordStatus: 'ACTIVE',
       lastPasswordReset: new Date().toISOString(),
       updatedAt: new Date().toISOString()
-    });
+    };
 
-    if (!updated) {
-      throw new CloudSaveError('❌ Cloud Save Failed: Password setup was not confirmed by the database.');
-    }
+    // 1. Instant local & in-memory update (0ms latency, 1-click instant login)
+    const updated = storage.update(TABLE_NAMES.USERS, userId, updates);
 
-    // Update in-memory session and localStorage
-    this.currentUser = updated;
+    // 2. Update in-memory session and localStorage immediately
+    this.currentUser = updated || { ...user, ...updates };
     if (typeof localStorage !== 'undefined') {
-      localStorage.setItem('al_muslim_active_user_id', updated.id);
+      localStorage.setItem('al_muslim_active_user_id', userId);
     }
 
-    // Clear temporary credential cache so admin panel immediately shows ACTIVE
+    // 3. Clear temporary credential cache immediately (0ms non-blocking)
     try {
-      const { userAccessService } = await import('./userAccessService.js');
-      userAccessService.clearTemporaryCredential(userId);
+      if (typeof sessionStorage !== 'undefined') {
+        const raw = sessionStorage.getItem('al_muslim_temporary_credentials_cache');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) {
+            const filtered = parsed.filter(([id]) => id !== userId);
+            sessionStorage.setItem('al_muslim_temporary_credentials_cache', JSON.stringify(filtered));
+          }
+        }
+      }
+      if (typeof window !== 'undefined' && window.userAccessService) {
+        window.userAccessService.clearTemporaryCredential(userId);
+      }
+      import('./userAccessService.js').then(({ userAccessService }) => {
+        userAccessService?.clearTemporaryCredential(userId);
+      }).catch(() => {});
     } catch (_) {}
 
     auditService.log(
       'FIRST_LOGIN_PASSWORD_SET',
       'SECURITY',
       userId,
-      `User '${updated.name}' (@${updated.username}) configured permanent password on first login. Password status updated to ACTIVE.`
+      `User '${this.currentUser.name}' (@${this.currentUser.username}) configured permanent password on first login. Password status updated to ACTIVE.`
     );
 
-    return updated;
+    // 4. Background Cloud Database Sync (Non-blocking, does not freeze UI)
+    storage.saveTable(TABLE_NAMES.USERS, true).catch(err => {
+      console.warn('[AuthService] Background cloud password sync notice:', err.message);
+    });
+
+    return this.currentUser;
   }
 
   requestPasswordResetOTP(identifier) {

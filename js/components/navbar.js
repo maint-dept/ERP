@@ -7,6 +7,23 @@ import { authService } from '../services/authService.js';
 import { notificationService } from '../services/notificationService.js';
 import { state } from '../state.js';
 import { storage } from '../db/storage.js';
+import { 
+  getEmployeeMap, 
+  getUserCardNumber, 
+  checkUserAccessStatus, 
+  matchesUserQuery, 
+  switchActiveAccount 
+} from './accountSwitcherModal.js';
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
 
 function getRoleName(user) {
   if (!user) return 'User';
@@ -63,34 +80,74 @@ export function renderNavbar() {
   const impersonator = authService.getImpersonatorAdmin();
   const canSwitchAccounts = isSuperAdmin || isAdmin;
 
-  // Filter allowed accounts for switching:
-  // - Super Admin can switch to any user account (Super Admin, Admin, Users)
-  // - Admin can login/switch to standard user accounts, but CANNOT switch to Super Admin
-  // - Regular users cannot switch to any account
-  let allowedSwitchUsers = [];
-  if (isSuperAdmin) {
-    allowedSwitchUsers = allUsers;
-  } else if (isAdmin) {
-    allowedSwitchUsers = allUsers.filter(u => u.id === user?.id || (!authService.isSuperAdmin(u) && !authService.isAdmin(u)));
+  // Separate Super Admin & Admin accounts from standard Factory Users
+  const empMap = getEmployeeMap();
+  const adminAccounts = [];
+  const factoryUsers = [];
+
+  for (let i = 0; i < allUsers.length; i++) {
+    const u = allUsers[i];
+    if (authService.isSuperAdmin(u) || authService.isAdmin(u)) {
+      adminAccounts.push(u);
+    } else {
+      factoryUsers.push(u);
+    }
   }
 
-  const userOptions = allowedSwitchUsers.map(u => {
-    const isSelected = u.id === user?.id ? 'selected' : '';
-    let rName = '';
-    if (authService.isSuperAdmin(u)) {
-      rName = 'Super Administrator';
-    } else if (authService.isAdmin(u)) {
-      rName = 'Administrator';
-    } else if (u.presetName) {
-      rName = u.presetName;
-    } else if (u.presetId) {
-      const p = authService.getPresetById(u.presetId);
-      rName = p?.name || 'Maintenance User';
-    } else {
-      const rObj = authService.getRoleById(u.roleId) || authService.getRoleByCode(u.role);
-      rName = rObj?.name || (u.role === 'USER' ? 'Maintenance User' : (u.role || 'Maintenance User'));
-    }
-    return `<option value="${u.id}" ${isSelected}>${rName}: ${u.name}</option>`;
+  // Sort admins: Super Admin first, then Admins
+  adminAccounts.sort((a, b) => {
+    const aSuper = authService.isSuperAdmin(a) ? 1 : 0;
+    const bSuper = authService.isSuperAdmin(b) ? 1 : 0;
+    if (aSuper !== bSuper) return bSuper - aSuper;
+    return (a.name || '').localeCompare(b.name || '');
+  });
+
+  const adminCardsHtml = adminAccounts.map(u => {
+    const isCurrent = u.id === user?.id;
+    const isTargetSuper = authService.isSuperAdmin(u);
+    const uCard = getUserCardNumber(u, empMap);
+    const initial = getUserInitial(u);
+    
+    // Can switch check:
+    // - Super Admin can switch to any admin
+    // - Admin cannot switch to Super Admin
+    const canSwitch = !isCurrent && (isSuperAdmin || !isTargetSuper);
+
+    return `
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: 5px 8px; background: ${isCurrent ? 'rgba(2, 132, 199, 0.15)' : 'rgba(15, 23, 42, 0.6)'}; border: 1px solid ${isCurrent ? '#0284c7' : 'rgba(255, 255, 255, 0.06)'}; border-radius: 6px; gap: 8px;">
+        <div style="display: flex; align-items: center; gap: 7px; min-width: 0; flex: 1;">
+          <div style="width: 24px; height: 24px; border-radius: 50%; background: ${isTargetSuper ? 'linear-gradient(135deg, #0284c7, #38bdf8)' : 'linear-gradient(135deg, #d97706, #f59e0b)'}; color: #fff; font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            ${initial}
+          </div>
+          <div style="min-width: 0; flex: 1;">
+            <div style="font-size: 11.5px; font-weight: 700; color: #f8fafc; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+              ${escapeHtml(u.name || u.username)}
+            </div>
+            <div style="display: flex; align-items: center; gap: 5px; font-size: 10px;">
+              <span style="font-weight: 700; color: ${isTargetSuper ? '#38bdf8' : '#f59e0b'};">
+                ${isTargetSuper ? '🛡️ Super Admin' : '👑 Admin'}
+              </span>
+              ${uCard ? `<span style="color: #94a3b8; font-family: var(--font-mono);">#${escapeHtml(uCard)}</span>` : ''}
+            </div>
+          </div>
+        </div>
+        <div style="flex-shrink: 0;">
+          ${isCurrent ? `
+            <span style="font-size: 10px; font-weight: 800; color: #38bdf8; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.35); padding: 1px 6px; border-radius: 4px;">
+              Active
+            </span>
+          ` : canSwitch ? `
+            <button type="button" class="btn btn-primary btn-xs btn-nav-switch-user" data-user-id="${u.id}" style="font-size: 10.5px; font-weight: 800; padding: 2px 8px; border-radius: 4px; background: linear-gradient(135deg, #0284c7, #0369a1); cursor: pointer;" title="Switch to ${escapeHtml(u.name)}">
+              Switch
+            </button>
+          ` : `
+            <span style="font-size: 10px; color: #94a3b8; font-weight: 600;" title="Administrators cannot switch to Super Administrator accounts">
+              Restricted
+            </span>
+          `}
+        </div>
+      </div>
+    `;
   }).join('');
 
   const viewTitles = {
@@ -230,18 +287,71 @@ export function renderNavbar() {
                 </button>
               </div>
               <div class="nav-user-dropdown-divider"></div>
-            ` : (canSwitchAccounts && userOptions) ? `
-              <!-- Role Switcher Section (Admin & Super Admin Only) -->
-              <div class="nav-user-dropdown-section">
-                <div class="nav-user-dropdown-section-title">
-                  <span>🎭</span> ${isSuperAdmin ? 'Switch Role / Account' : 'Login to User Account'}
+            ` : canSwitchAccounts ? `
+              <!-- Enhanced Role & Account Switcher Hub -->
+              <div class="nav-user-dropdown-section nav-account-switcher-section" style="padding: 12px 14px;">
+                
+                <!-- Section Header with Quick Popup Trigger -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                  <div class="nav-user-dropdown-section-title" style="margin-bottom: 0;">
+                    <span>🎭</span> ${isSuperAdmin ? 'Switch Role / Account' : 'Login to User Account'}
+                  </div>
+                  <button type="button" id="btn-open-switcher-popup-nav" class="btn btn-ghost btn-xs" style="color: #38bdf8; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; padding: 2px 7px; border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 5px; background: rgba(56, 189, 248, 0.1); cursor: pointer;" title="Open full searchable account switcher popup">
+                    <span>🔍 Search Popup</span>
+                    <span style="font-size: 10px;">↗</span>
+                  </button>
                 </div>
-                <div class="nav-user-dropdown-select-box">
-                  <select id="role-switcher-select" class="dropdown-role-select" title="${isSuperAdmin ? 'Switch active account' : 'Login to user account'}">
-                    ${userOptions}
-                  </select>
+
+                <!-- 1. Super Admin & Admin Accounts (Kept Separate) -->
+                <div class="switcher-mgmt-wrapper" style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(245, 158, 11, 0.25); border-radius: 8px; padding: 8px 10px; margin-bottom: 10px;">
+                  <div style="font-size: 10px; font-weight: 800; color: #f59e0b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; display: flex; align-items: center; gap: 5px;">
+                    <span>👑</span> Administrators &amp; Managers
+                  </div>
+                  <div class="switcher-mgmt-list" style="display: flex; flex-direction: column; gap: 6px;">
+                    ${adminCardsHtml}
+                  </div>
                 </div>
-                <div class="nav-user-dropdown-hint">${isSuperAdmin ? 'Full Super Admin access to all factory accounts' : 'Admin access to standard user accounts'}</div>
+
+                <!-- 2. Searchable Factory Users -->
+                <div class="switcher-users-wrapper">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                    <div style="font-size: 10px; font-weight: 800; color: #38bdf8; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 5px;">
+                      <span>👥</span> Factory Users
+                    </div>
+                    <span style="font-size: 10px; font-weight: 700; color: #94a3b8;" id="nav-dropdown-users-count">${factoryUsers.length} accounts</span>
+                  </div>
+
+                  <!-- Search Input Box -->
+                  <div style="position: relative; display: flex; align-items: center; margin-bottom: 6px;">
+                    <span style="position: absolute; left: 8px; font-size: 12px; color: #38bdf8; pointer-events: none;">🔍</span>
+                    <input 
+                      type="text" 
+                      id="inp-nav-dropdown-search" 
+                      class="dropdown-role-select" 
+                      style="width: 100%; height: 32px; padding: 0 28px 0 28px; font-size: 11.5px; font-weight: 600; border-radius: 6px; background: rgba(11, 17, 32, 0.85); border: 1px solid rgba(56, 189, 248, 0.35);" 
+                      placeholder="Search Card # or Name..." 
+                      autocomplete="off"
+                      spellcheck="false"
+                    />
+                    <button 
+                      type="button" 
+                      id="btn-nav-dropdown-search-clear" 
+                      style="position: absolute; right: 6px; background: none; border: none; color: #94a3b8; font-size: 12px; cursor: pointer; padding: 2px 4px; display: none;"
+                      title="Clear"
+                    >✕</button>
+                  </div>
+
+                  <!-- Live Search Matches Container -->
+                  <div id="nav-dropdown-search-results" class="custom-scrollbar" style="max-height: 160px; overflow-y: auto; display: flex; flex-direction: column; gap: 5px;">
+                    <div style="padding: 10px 8px; text-align: center; font-size: 11px; color: #94a3b8; background: rgba(15, 23, 42, 0.4); border-radius: 6px; line-height: 1.4;">
+                      Type a <strong>Card #</strong> or <strong>Name</strong> above to search across ${factoryUsers.length} factory accounts, or click <button type="button" class="btn-open-switcher-popup-text" style="background: none; border: none; color: #38bdf8; font-weight: 700; cursor: pointer; text-decoration: underline; padding: 0;">Open Search Popup ↗</button>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="nav-user-dropdown-hint" style="margin-top: 8px;">
+                  ${isSuperAdmin ? 'Full Super Admin access to all factory accounts' : 'Admin access to standard authorized user accounts'}
+                </div>
               </div>
               <div class="nav-user-dropdown-divider"></div>
             ` : ''}
@@ -404,20 +514,157 @@ export function initNavbarEvents() {
     btnNavExit.addEventListener('click', handleExitImpersonation);
   }
 
-  // Role Switcher Select
-  const roleSelect = document.getElementById('role-switcher-select');
-  if (roleSelect) {
-    roleSelect.addEventListener('change', (e) => {
-      try {
-        const switched = authService.switchUser(e.target.value);
-        state.resetFilters();
-        const landingView = authService.getFirstAllowedView(switched);
-        window.location.hash = '#' + landingView;
-        window.location.reload();
-      } catch (err) {
-        alert(err.message);
+  // Open Account Switcher Modal Trigger
+  const openModalBtn = document.getElementById('btn-open-switcher-popup-nav');
+  const openAccountSwitcherModal = () => {
+    closeDropdown();
+    state.set('activeModal', 'account-switcher');
+  };
+
+  if (openModalBtn) {
+    openModalBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openAccountSwitcherModal();
+    });
+  }
+
+  // Handle open modal clicks inside results container
+  if (dropdown) {
+    dropdown.addEventListener('click', (e) => {
+      if (e.target.closest('.btn-open-switcher-popup-text')) {
+        e.preventDefault();
+        e.stopPropagation();
+        openAccountSwitcherModal();
       }
     });
+  }
+
+  // Attach switch button click handlers in navbar dropdown
+  const attachDropdownItemClicks = () => {
+    if (!dropdown) return;
+    const switchBtns = dropdown.querySelectorAll('.btn-nav-switch-user');
+    switchBtns.forEach(btn => {
+      btn.onclick = (e) => {
+        e.stopPropagation();
+        const targetId = btn.getAttribute('data-user-id');
+        if (targetId) {
+          closeDropdown();
+          switchActiveAccount(targetId, (msg) => alert(msg));
+        }
+      };
+    });
+
+    const blockedBtns = dropdown.querySelectorAll('.btn-nav-blocked-user');
+    blockedBtns.forEach(btn => {
+      btn.onclick = (e) => {
+        e.stopPropagation();
+        const uName = btn.getAttribute('data-user-name') || 'User';
+        alert(`🔒 Access Denied: User '${uName}' currently has No Access (Pending Admin Assignment). Assign a role or permissions in User Management first.`);
+      };
+    });
+  };
+
+  attachDropdownItemClicks();
+
+  // Live Dropdown Search for Factory Users
+  const dropdownSearchInput = document.getElementById('inp-nav-dropdown-search');
+  const dropdownSearchClear = document.getElementById('btn-nav-dropdown-search-clear');
+  const dropdownResultsContainer = document.getElementById('nav-dropdown-search-results');
+
+  if (dropdownSearchInput) {
+    const renderDropdownSearchResults = (q) => {
+      const cleanQ = (q || '').trim();
+      if (dropdownSearchClear) {
+        dropdownSearchClear.style.display = cleanQ ? 'block' : 'none';
+      }
+      if (!dropdownResultsContainer) return;
+
+      if (!cleanQ) {
+        const allUsers = authService.getAllUsers();
+        const factoryCount = allUsers.filter(u => !authService.isSuperAdmin(u) && !authService.isAdmin(u)).length;
+        dropdownResultsContainer.innerHTML = `
+          <div style="padding: 10px 8px; text-align: center; font-size: 11px; color: #94a3b8; background: rgba(15, 23, 42, 0.4); border-radius: 6px; line-height: 1.4;">
+            Type a <strong>Card #</strong> or <strong>Name</strong> above to search across ${factoryCount} factory accounts, or click <button type="button" class="btn-open-switcher-popup-text" style="background: none; border: none; color: #38bdf8; font-weight: 700; cursor: pointer; text-decoration: underline; padding: 0;">Open Search Popup ↗</button>
+          </div>
+        `;
+        return;
+      }
+
+      const allUsers = authService.getAllUsers();
+      const empMap = getEmployeeMap();
+      const factoryMatches = allUsers
+        .filter(u => !authService.isSuperAdmin(u) && !authService.isAdmin(u))
+        .filter(u => matchesUserQuery(u, cleanQ, empMap));
+
+      if (factoryMatches.length === 0) {
+        dropdownResultsContainer.innerHTML = `
+          <div style="padding: 10px 8px; text-align: center; font-size: 11px; color: #f87171; background: rgba(239, 68, 68, 0.08); border-radius: 6px;">
+            ⚠️ No factory accounts match "<strong>${escapeHtml(cleanQ)}</strong>"
+          </div>
+        `;
+        return;
+      }
+
+      const topMatches = factoryMatches.slice(0, 15);
+      let html = topMatches.map(u => {
+        const status = checkUserAccessStatus(u);
+        const cardNum = getUserCardNumber(u, empMap);
+        const initial = getUserInitial(u);
+        return `
+          <div class="nav-switcher-item" style="display: flex; align-items: center; justify-content: space-between; padding: 6px 8px; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 6px; gap: 8px;">
+            <div style="display: flex; align-items: center; gap: 7px; min-width: 0; flex: 1;">
+              <div style="width: 24px; height: 24px; border-radius: 50%; background: ${status.hasAccess ? 'linear-gradient(135deg, #059669, #10b981)' : 'rgba(100, 116, 139, 0.3)'}; color: #fff; font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                ${initial}
+              </div>
+              <div style="min-width: 0; flex: 1;">
+                <div style="display: flex; align-items: center; gap: 5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                  <span style="font-size: 11.5px; font-weight: 700; color: #f8fafc;">${escapeHtml(u.name || u.username)}</span>
+                  ${cardNum ? `<span style="font-size: 9.5px; font-weight: 800; color: #38bdf8; background: rgba(56, 189, 248, 0.15); padding: 0 4px; border-radius: 3px; border: 1px solid rgba(56, 189, 248, 0.3); font-family: var(--font-mono);">#${escapeHtml(cardNum)}</span>` : ''}
+                </div>
+                <div style="font-size: 10px; color: ${status.hasAccess ? '#34d399' : '#f87171'}; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                  ${status.hasAccess ? `✓ ${escapeHtml(status.roleName)}` : '🔒 No Access (Pending Admin Assignment)'}
+                </div>
+              </div>
+            </div>
+            <div style="flex-shrink: 0;">
+              ${status.hasAccess ? `
+                <button type="button" class="btn btn-primary btn-xs btn-nav-switch-user" data-user-id="${u.id}" style="font-size: 10.5px; font-weight: 800; padding: 2px 8px; border-radius: 4px; background: linear-gradient(135deg, #0284c7, #0369a1); cursor: pointer;" title="Enter ${escapeHtml(u.name)}'s account">
+                  Enter ➔
+                </button>
+              ` : `
+                <button type="button" class="btn btn-ghost btn-xs btn-nav-blocked-user" data-user-name="${escapeHtml(u.name)}" style="font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; background: rgba(239, 68, 68, 0.12); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.25); cursor: not-allowed;" title="No Access (Pending Admin Assignment)">
+                  🔒 Blocked
+                </button>
+              `}
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      if (factoryMatches.length > 15) {
+        html += `
+          <div style="text-align: center; padding: 4px; font-size: 10.5px; color: #94a3b8;">
+            Showing top 15 of ${factoryMatches.length}. <button type="button" class="btn-open-switcher-popup-text" style="background: none; border: none; color: #38bdf8; font-weight: 700; cursor: pointer; text-decoration: underline; padding: 0;">View all in Popup ↗</button>
+          </div>
+        `;
+      }
+
+      dropdownResultsContainer.innerHTML = html;
+      attachDropdownItemClicks();
+    };
+
+    dropdownSearchInput.addEventListener('input', (e) => {
+      renderDropdownSearchResults(e.target.value);
+    });
+
+    if (dropdownSearchClear) {
+      dropdownSearchClear.addEventListener('click', (e) => {
+        e.stopPropagation();
+        dropdownSearchInput.value = '';
+        renderDropdownSearchResults('');
+        dropdownSearchInput.focus();
+      });
+    }
   }
 
   // Public Homepage Button

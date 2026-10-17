@@ -2221,3 +2221,84 @@ body.theme-light .modal-card label.form-label {
   color: #0f172a;
   font-weight: 700;
 }
+
+/* =========================================================
+   Account Switcher Dropdown & Search Popup Modal Styles
+   ========================================================= */
+.nav-account-switcher-section {
+  padding: 12px 14px;
+}
+
+.nav-switcher-item {
+  transition: all 0.16s ease;
+}
+
+.nav-switcher-item:hover {
+  background: rgba(30, 41, 59, 0.8) !important;
+  border-color: rgba(56, 189, 248, 0.3) !important;
+}
+
+.account-switcher-row {
+  transition: transform 0.14s ease, border-color 0.14s ease, background 0.14s ease, box-shadow 0.14s ease;
+}
+
+.account-switcher-row:hover:not(.is-blocked-account) {
+  border-color: rgba(56, 189, 248, 0.45) !important;
+  background: rgba(30, 41, 59, 0.8) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+}
+
+.account-switcher-row.is-active-session {
+  box-shadow: 0 0 0 1px #0284c7, 0 4px 14px rgba(2, 132, 199, 0.2);
+}
+
+.account-switcher-row.is-blocked-account {
+  opacity: 0.88;
+}
+
+.account-switcher-row.is-blocked-account:hover {
+  border-color: rgba(239, 68, 68, 0.35) !important;
+}
+
+/* Light Theme overrides for Account Switcher */
+body.theme-light .modal-account-switcher-dialog {
+  background: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2) !important;
+}
+
+body.theme-light .account-switcher-search-wrapper input {
+  background: #f8fafc !important;
+  border-color: #94a3b8 !important;
+  color: #0f172a !important;
+}
+
+body.theme-light .account-switcher-row {
+  background: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+}
+
+body.theme-light .account-switcher-row:hover:not(.is-blocked-account) {
+  background: #f1f5f9 !important;
+  border-color: #0284c7 !important;
+}
+
+body.theme-light .account-switcher-row span {
+  color: #0f172a;
+}
+
+body.theme-light .switcher-mgmt-wrapper {
+  background: #f8fafc !important;
+  border-color: #cbd5e1 !important;
+}
+
+body.theme-light .nav-switcher-item {
+  background: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+}
+
+body.theme-light .nav-switcher-item:hover {
+  background: #f1f5f9 !important;
+}
+

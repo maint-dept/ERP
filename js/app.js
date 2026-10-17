@@ -40,6 +40,7 @@ import { renderToolsManagementView, initToolsManagementEvents } from './componen
 import { renderManpowerView, initManpowerEvents } from './components/manpowerView.js';
 import { renderEtLabManagementView, initEtLabEvents, setEntActiveTab } from './components/etLabManagementView.js';
 import { renderChangePasswordModal, initChangePasswordModalEvents } from './components/changePasswordModal.js';
+import { renderAccountSwitcherModal, initAccountSwitcherModalEvents } from './components/accountSwitcherModal.js';
 import { renderStorageView, initStorageEvents } from './components/storageView.js';
 import { renderPreventiveMaintenanceView, initPreventiveMaintenanceEvents } from './components/preventiveMaintenanceView.js';
 import { smartStorageService } from './services/smartStorageService.js';
@@ -921,6 +922,8 @@ class ERPApplication {
         return renderColumnVisibilityModal();
       case 'notifications':
         return renderNotificationsDrawer();
+      case 'account-switcher':
+        return renderAccountSwitcherModal();
       default:
         return '';
     }
@@ -1064,6 +1067,9 @@ class ERPApplication {
         break;
       case 'notifications':
         initNotificationsDrawerEvents();
+        break;
+      case 'account-switcher':
+        initAccountSwitcherModalEvents();
         break;
       case 'user-perms-modal':
       case 'reset-password-modal':

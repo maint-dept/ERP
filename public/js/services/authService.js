@@ -574,6 +574,15 @@ class AuthService {
       }
     }
 
+    // Case C: Target account has No Access (Pending Admin Assignment)
+    const isTargetNoAccess = target.role === 'NO_ACCESS' || 
+      target.roleId === 'role-no-access' || 
+      target.presetId === 'no_access' || 
+      (target.presetName && target.presetName.toLowerCase().includes('no access'));
+    if (isTargetNoAccess && !isReturningToAdmin) {
+      throw new Error(`Access Denied: Cannot switch to account '${target.name || target.username}'. This account currently has No Access (Pending Admin Assignment). Assign a role preset or permissions in User Management first.`);
+    }
+
     // If an Admin/Super Admin is switching into a different user account, save impersonator session
     if ((isCurrentSuper || isCurrentAdmin) && target.id !== activeUser.id && !impersonatorId) {
       try {
