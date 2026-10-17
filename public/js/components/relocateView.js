@@ -1173,8 +1173,8 @@ function renderConfirmationModal() {
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
               <div style="display: flex; align-items: center; gap: 8px;">
                 <span style="font-size: 16px; font-family: var(--font-mono); font-weight: 900; color: #fff;">${pendingScanMachine.serialNumber}</span>
-                <span style="font-size: 11px; font-family: var(--font-mono); font-weight: 800; background: rgba(56,189,248,0.15); border: 1px solid #38bdf8; border-radius: 4px; padding: 1px 6px; color: #38bdf8;" title="Permanent Unique Machine ID">
-                  ${pendingScanMachine.permanentMachineId || pendingScanMachine.id}
+                <span style="font-size: 11px; font-family: var(--font-mono); font-weight: 800; background: rgba(16,185,129,0.15); border: 1px solid #10b981; border-radius: 4px; padding: 1px 6px; color: #10b981;" title="Permanent System Asset ID">
+                  ${pendingScanMachine.systemAssetId || (pendingScanMachine.permanentMachineId ? String(pendingScanMachine.permanentMachineId).replace(/^MID-/i, 'AMG-MNT-') : '') || pendingScanMachine.id}
                 </span>
               </div>
               <span class="badge ${evalResult.badgeClass}" style="font-size: 11px;">${evalResult.icon} ${evalResult.label}</span>
@@ -3243,10 +3243,12 @@ export function initRelocateViewEvents() {
       const matches = allMachines.filter(m => {
         if (!m) return false;
         const s = (m.serialNumber || '').toLowerCase();
+        const assetId = (m.systemAssetId || '').toLowerCase();
         const permId = (m.permanentMachineId || '').toLowerCase();
+        const permAmg = permId.replace(/^mid-/i, 'amg-mnt-');
         const mn = (mnMap.get(m.machineNameId) || '').toLowerCase();
         const mdl = (mdlMap.get(m.modelId) || '').toLowerCase();
-        return s.includes(q) || permId.includes(q) || mn.includes(q) || mdl.includes(q);
+        return s.includes(q) || assetId.includes(q) || permId.includes(q) || permAmg.includes(q) || mn.includes(q) || mdl.includes(q);
       }).slice(0, 15);
 
       if (matches.length === 0) {
@@ -3254,19 +3256,22 @@ export function initRelocateViewEvents() {
         return;
       }
 
-      manualSearchResults.innerHTML = matches.map(m => `
+      manualSearchResults.innerHTML = matches.map(m => {
+        const itemAssetId = m.systemAssetId || (m.permanentMachineId ? String(m.permanentMachineId).replace(/^MID-/i, 'AMG-MNT-') : '');
+        return `
         <div class="manual-search-item" data-id="${m.id}" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 10px 12px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: all 0.2s ease;">
           <div>
             <div style="display: flex; align-items: center; gap: 6px;">
               <span style="font-family: var(--font-mono); font-weight: 800; color: #38bdf8; font-size: 13.5px;">${m.serialNumber}</span>
-              ${m.permanentMachineId ? `<span style="font-size: 10px; font-family: var(--font-mono); background: rgba(56,189,248,0.15); color: #38bdf8; padding: 1px 4px; border-radius: 3px;">${m.permanentMachineId}</span>` : ''}
+              ${itemAssetId ? `<span style="font-size: 10px; font-family: var(--font-mono); background: rgba(16,185,129,0.15); color: #10b981; border: 1px solid rgba(16,185,129,0.3); padding: 1px 5px; border-radius: 3px; font-weight: 700;">${itemAssetId}</span>` : ''}
             </div>
             <div style="font-size: 12.5px; color: #fff; font-weight: 600;">${mnMap.get(m.machineNameId) || 'Machine'}</div>
             <div style="font-size: 11px; color: var(--text-muted);">${brdMap.get(m.brandId) || ''} &bull; ${mdlMap.get(m.modelId) || ''} &bull; Floor: ${flrMap.get(m.floorId) || ''} / ${linMap.get(m.lineId) || ''}</div>
           </div>
           <button type="button" class="btn btn-primary btn-sm" style="font-size: 11.5px; padding: 6px 12px; min-height: 36px;">Select &rarr;</button>
         </div>
-      `).join('');
+      `;
+      }).join('');
 
       manualSearchResults.querySelectorAll('.manual-search-item').forEach(item => {
         item.addEventListener('click', () => {

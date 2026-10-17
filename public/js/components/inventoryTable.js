@@ -254,7 +254,14 @@ export function renderInventoryTable() {
       width: 140,
       renderTh: (thStyle, thClass) => `<th class="th-sortable ${thClass}" data-sort="systemAssetId" style="width: 140px; min-width: 140px; max-width: 140px; text-align: center; cursor: pointer; ${thStyle}" title="Permanent System-Generated Asset ID">System Asset ID</th>`,
       renderTd: (m, meta, tdStyle, tdClass) => {
-        const assetId = m.systemAssetId || m.permanentMachineId || '—';
+        let assetId = m.systemAssetId;
+        if (!assetId && m.permanentMachineId) {
+          assetId = String(m.permanentMachineId).trim().replace(/^MID-/i, 'AMG-MNT-');
+          m.systemAssetId = assetId;
+        }
+        if (!assetId) {
+          assetId = '—';
+        }
         return `<td class="${tdClass}" style="width: 140px; min-width: 140px; max-width: 140px; text-align: center; ${tdStyle}"><a href="javascript:void(0)" class="btn-inspect-machine" data-id="${m.id}" style="text-decoration: none;" title="Permanent System Asset ID: ${assetId} (Click to inspect)"><span class="badge" style="background: rgba(16, 185, 129, 0.12); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.35); font-family: var(--font-mono); font-size: 11.5px; font-weight: 700; padding: 2px 7px; border-radius: 4px; display: inline-block; letter-spacing: 0.3px;">${assetId}</span></a></td>`;
       }
     },
@@ -1113,6 +1120,7 @@ export function initInventoryTableEvents() {
             (m.id && m.id.toLowerCase() === idOrSerial.toLowerCase()) ||
             (m.systemAssetId && m.systemAssetId.toLowerCase() === idOrSerial.toLowerCase()) ||
             (m.permanentMachineId && m.permanentMachineId.toLowerCase() === idOrSerial.toLowerCase()) ||
+            (m.permanentMachineId && m.permanentMachineId.toLowerCase().replace(/^mid-/i, 'amg-mnt-') === idOrSerial.toLowerCase()) ||
             (m.serialNumber && m.serialNumber.toString().toLowerCase() === idOrSerial.toLowerCase())
           );
           const targetSerial = match ? match.serialNumber : idOrSerial;

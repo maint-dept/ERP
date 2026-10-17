@@ -204,7 +204,7 @@ export function renderTransferModal() {
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border-color); font-size: 12px;">
                   <div>
                     <span style="color: var(--text-muted); font-weight: 700;">Asset Tag:</span>
-                    <strong style="color: var(--text-primary); font-family: var(--font-mono); font-size: 12.5px; display: block; margin-top: 2px;">${machine.customFields?.assetTag || machine.id}</strong>
+                    <strong style="color: #10b981; font-family: var(--font-mono); font-size: 12.5px; display: block; margin-top: 2px;">${machine.systemAssetId || (machine.permanentMachineId ? String(machine.permanentMachineId).replace(/^MID-/i, 'AMG-MNT-') : '') || machine.id}</strong>
                   </div>
                   <div>
                     <span style="color: var(--text-muted); font-weight: 700;">Motor / Voltage:</span>
@@ -553,6 +553,7 @@ export function initTransferModalEvents() {
       (m.serialNumber && m.serialNumber.toString().trim().toLowerCase() === q) ||
       (m.systemAssetId && m.systemAssetId.toLowerCase() === q) ||
       (m.permanentMachineId && m.permanentMachineId.toLowerCase() === q) ||
+      (m.permanentMachineId && m.permanentMachineId.toLowerCase().replace(/^mid-/i, 'amg-mnt-') === q) ||
       (m.id && m.id.toLowerCase() === q)
     );
 
@@ -566,7 +567,8 @@ export function initTransferModalEvents() {
     const partialMatch = allMachines.find(m => 
       (m.serialNumber && m.serialNumber.toString().trim().toLowerCase().includes(q)) ||
       (m.systemAssetId && m.systemAssetId.toLowerCase().includes(q)) ||
-      (m.permanentMachineId && m.permanentMachineId.toLowerCase().includes(q))
+      (m.permanentMachineId && m.permanentMachineId.toLowerCase().includes(q)) ||
+      (m.permanentMachineId && m.permanentMachineId.toLowerCase().replace(/^mid-/i, 'amg-mnt-').includes(q))
     );
 
     if (partialMatch) {
@@ -599,13 +601,14 @@ export function initTransferModalEvents() {
           (m.serialNumber && m.serialNumber.toString().toLowerCase().includes(q)) ||
           (m.id && m.id.toLowerCase().includes(q)) ||
           (m.systemAssetId && m.systemAssetId.toLowerCase().includes(q)) ||
-          (m.permanentMachineId && m.permanentMachineId.toLowerCase().includes(q))
+          (m.permanentMachineId && m.permanentMachineId.toLowerCase().includes(q)) ||
+          (m.permanentMachineId && m.permanentMachineId.toLowerCase().replace(/^mid-/i, 'amg-mnt-').includes(q))
         ).slice(0, 8);
 
         if (matches.length === 0) {
           suggestionsBox.innerHTML = `
             <div style="padding: 10px 14px; font-size: 12px; color: var(--text-muted); text-align: center;">
-              No machines matching serial '${e.target.value}'.
+              No machines matching '${e.target.value}'.
             </div>
           `;
           suggestionsBox.style.display = 'block';
@@ -615,10 +618,14 @@ export function initTransferModalEvents() {
         suggestionsBox.innerHTML = matches.map(m => {
           const enriched = machineService.getEnrichedMachine(m.id);
           const loc = enriched?.floor?.name || m.floor || 'Floor';
+          const assetTagStr = m.systemAssetId || (m.permanentMachineId ? String(m.permanentMachineId).replace(/^MID-/i, 'AMG-MNT-') : '');
           return `
             <div class="serial-suggest-item" data-id="${m.id}" style="padding: 8px 14px; border-bottom: 1px solid var(--border-color); cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: background 0.15s;">
               <div>
-                <div style="font-weight: 800; color: #0284c7; font-size: 13px; font-family: monospace;">${m.serialNumber}</div>
+                <div style="font-weight: 800; color: #0284c7; font-size: 13px; font-family: monospace;">
+                  ${m.serialNumber}
+                  ${assetTagStr ? `<span style="color: #10b981; font-size: 11px; margin-left: 6px; font-weight: 700;">[${assetTagStr}]</span>` : ''}
+                </div>
                 <div style="font-size: 11px; color: var(--text-secondary);">${enriched?.machineName?.name || m.lineName || 'Machine'} (${enriched?.brand?.name || ''})</div>
               </div>
               <span class="badge" style="background: rgba(2, 132, 199, 0.12); color: #0284c7; border: 1px solid #0284c7; font-size: 10.5px; font-weight: 700;">📍 ${loc}</span>
@@ -673,6 +680,7 @@ export function initTransferModalEvents() {
               (m.id && m.id.toLowerCase() === idOrSerial.toLowerCase()) ||
               (m.systemAssetId && m.systemAssetId.toLowerCase() === idOrSerial.toLowerCase()) ||
               (m.permanentMachineId && m.permanentMachineId.toLowerCase() === idOrSerial.toLowerCase()) ||
+              (m.permanentMachineId && m.permanentMachineId.toLowerCase().replace(/^mid-/i, 'amg-mnt-') === idOrSerial.toLowerCase()) ||
               (m.serialNumber && m.serialNumber.toString().toLowerCase() === idOrSerial.toLowerCase())
             );
             const targetSerial = match ? match.serialNumber : idOrSerial;
@@ -1262,6 +1270,7 @@ export function initTransferModalEvents() {
               (m.serialNumber && m.serialNumber.toString().trim().toLowerCase() === inpS) ||
               (m.systemAssetId && m.systemAssetId.toLowerCase() === inpS) ||
               (m.permanentMachineId && m.permanentMachineId.toLowerCase() === inpS) ||
+              (m.permanentMachineId && m.permanentMachineId.toLowerCase().replace(/^mid-/i, 'amg-mnt-') === inpS) ||
               (m.id && m.id.toLowerCase() === inpS)
             );
             if (matched) {

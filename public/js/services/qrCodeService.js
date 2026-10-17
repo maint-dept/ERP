@@ -14,21 +14,20 @@ class QrCodeService {
    */
   getPermanentMachineId(machine) {
     if (!machine) return '';
+    if (machine.systemAssetId) {
+      return machine.systemAssetId;
+    }
     if (machine.permanentMachineId) {
-      return machine.permanentMachineId;
+      const converted = String(machine.permanentMachineId).replace(/^MID-/i, 'AMG-MNT-');
+      machine.systemAssetId = converted;
+      machine.permanentMachineId = converted;
+      return converted;
     }
 
-    // Auto-generate stable readable Permanent Machine ID from machine.id
-    // e.g. mac-1788870312541-26 -> MID-000026
-    const numPart = (machine.id || '').split('-').pop();
-    const cleanNum = numPart && !isNaN(parseInt(numPart, 10))
-      ? String(parseInt(numPart, 10)).padStart(6, '0')
-      : String(Math.abs(this._hashString(machine.id || machine.serialNumber || '0'))).slice(-6).padStart(6, '0');
-
-    const permanentId = `MID-${cleanNum}`;
-
-    // Persist to machine in storage
-    machine.permanentMachineId = permanentId;
+    // Auto-generate stable readable AMG-MNT-XXXXXX ID
+    const nextId = storage.generateNextSystemAssetId();
+    machine.systemAssetId = nextId;
+    machine.permanentMachineId = nextId;
     if (!machine.qrStatus) {
       machine.qrStatus = 'ACTIVE';
     }
@@ -36,12 +35,13 @@ class QrCodeService {
       machine.qrGeneratedAt = machine.createdAt || new Date().toISOString();
     }
     storage.update(TABLE_NAMES.MACHINES, machine.id, {
-      permanentMachineId: permanentId,
+      systemAssetId: nextId,
+      permanentMachineId: nextId,
       qrStatus: machine.qrStatus,
       qrGeneratedAt: machine.qrGeneratedAt
     });
 
-    return permanentId;
+    return nextId;
   }
 
   /**
@@ -146,8 +146,8 @@ class QrCodeService {
       };
     }
 
-    // 3. Raw Permanent Machine ID (MID-xxxxxx or mac-xxxxxx)
-    if (/^MID-\d+/i.test(trimmed) || /^mac-/i.test(trimmed)) {
+    // 3. Raw System Asset ID or Permanent Machine ID (AMG-MNT-xxxxxx, MID-xxxxxx or mac-xxxxxx)
+    if (/^AMG-MNT-\d+/i.test(trimmed) || /^MID-\d+/i.test(trimmed) || /^mac-/i.test(trimmed)) {
       return {
         type: 'MACHINE',
         identifier: trimmed,

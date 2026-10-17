@@ -141,8 +141,8 @@ export function renderMachineModal() {
   const totalQty = parseInt(machine?.totalQuantity || machine?.total_quantity || (rQty + uQty + rpQty > 0 ? (rQty + uQty + rpQty) : (machine?.quantity ?? 1)), 10) || 1;
 
   const remarks = machine?.remarks || '';
-  const nextAssetIdPreview = storage.generateNextSystemAssetId();
-  const currentSystemAssetId = machine?.systemAssetId || machine?.permanentMachineId || (isEdit ? '—' : nextAssetIdPreview);
+  const rawAssetId = machine?.systemAssetId || (machine?.permanentMachineId ? String(machine.permanentMachineId).replace(/^MID-/i, 'AMG-MNT-') : '');
+  const currentSystemAssetId = rawAssetId || (isEdit ? '—' : nextAssetIdPreview);
 
   return `
     <div class="modal-overlay" id="modal-machine-overlay">
@@ -152,7 +152,7 @@ export function renderMachineModal() {
             <span style="font-size: 16px; font-weight: 800; color: #fff;">${isViewOnly ? '👁️ Machine Details (View-Only)' : (isEdit ? '✏️ Edit Machine Record' : '➕ New Machine Registration')}</span>
             ${isEdit ? `
               <span class="serial-number-badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); font-family: var(--font-mono); font-size: 13px; font-weight: 800; padding: 2px 10px; border-radius: 6px;">${escapeHtml(machine.serialNumber)}</span>
-              ${machine.systemAssetId || machine.permanentMachineId ? `<span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.35); font-family: var(--font-mono); font-size: 12px; font-weight: 800; padding: 2px 8px; border-radius: 6px;">${escapeHtml(machine.systemAssetId || machine.permanentMachineId)}</span>` : ''}
+              ${rawAssetId ? `<span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.35); font-family: var(--font-mono); font-size: 12px; font-weight: 800; padding: 2px 8px; border-radius: 6px;">${escapeHtml(rawAssetId)}</span>` : ''}
             ` : ''}
           </div>
           <button id="btn-close-machine-modal" class="btn btn-ghost btn-sm" style="font-size: 18px;" title="Close">✕</button>
@@ -1044,9 +1044,8 @@ export function initMachineModalEvents() {
         installation_date: installDate || null,
         installationDate: installDate || null,
         supplier_name: supplier,
-        supplier,
-        systemAssetId: machine?.systemAssetId || machine?.permanentMachineId || undefined,
-        permanentMachineId: machine?.permanentMachineId || machine?.systemAssetId || undefined,
+        systemAssetId: machine?.systemAssetId || (machine?.permanentMachineId ? String(machine.permanentMachineId).replace(/^MID-/i, 'AMG-MNT-') : undefined),
+        permanentMachineId: machine?.systemAssetId || (machine?.permanentMachineId ? String(machine.permanentMachineId).replace(/^MID-/i, 'AMG-MNT-') : undefined),
         remarks,
         customValues
       };

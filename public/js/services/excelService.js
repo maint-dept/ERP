@@ -720,7 +720,7 @@ class ExcelService {
 
     // 5A. Permanent System-Generated Asset ID (AMG-MNT-XXXXXX)
     if (key === 'system_asset_id' || key === 'systemassetid' || key === 'asset_id' || key === 'assetid' || key === 'system_asset' || key === 'systemasset') {
-      return record.systemAssetId || record.permanentMachineId || '';
+      return record.systemAssetId || (record.permanentMachineId ? String(record.permanentMachineId).replace(/^MID-/i, 'AMG-MNT-') : '') || '';
     }
 
     // 5B. Manufacturing (Serial / Year / Details)
@@ -3196,7 +3196,7 @@ class ExcelService {
 
       const row = [
         i + 1,
-        m.systemAssetId || m.permanentMachineId || '—',
+        m.systemAssetId || (m.permanentMachineId ? String(m.permanentMachineId).replace(/^MID-/i, 'AMG-MNT-') : '') || '—',
         m.id || `MCH-${String(i + 1).padStart(3, '0')}`,
         machineName,
         m.serialNumber || '—',

@@ -203,6 +203,7 @@ class MachineService {
       allMachines = allMachines.filter(m => {
         if (m.systemAssetId?.toLowerCase().includes(q)) return true;
         if (m.permanentMachineId?.toLowerCase().includes(q)) return true;
+        if (m.permanentMachineId && m.permanentMachineId.toLowerCase().replace(/^mid-/i, 'amg-mnt-').includes(q)) return true;
         if (m.serialNumber?.toLowerCase().includes(q)) return true;
         if (m.manufacturing_serial?.toLowerCase().includes(q) || m.manufacturingSerial?.toLowerCase().includes(q) || m.customValues?.manufacturing_serial?.toString().toLowerCase().includes(q)) return true;
         if (m.remarks?.toLowerCase().includes(q)) return true;
@@ -278,8 +279,8 @@ class MachineService {
         return bA.localeCompare(bB) * sortOrder;
       }
       if (sortField === 'systemAssetId') {
-        const saA = a.systemAssetId || a.permanentMachineId || '';
-        const saB = b.systemAssetId || b.permanentMachineId || '';
+        const saA = a.systemAssetId || (a.permanentMachineId ? String(a.permanentMachineId).replace(/^MID-/i, 'AMG-MNT-') : '') || '';
+        const saB = b.systemAssetId || (b.permanentMachineId ? String(b.permanentMachineId).replace(/^MID-/i, 'AMG-MNT-') : '') || '';
         return String(saA).localeCompare(String(saB), undefined, { numeric: true }) * sortOrder;
       }
       if (sortField === 'manufacturing_serial' || sortField === 'manufacturingSerial') {

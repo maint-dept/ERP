@@ -55,6 +55,7 @@ export function renderMachineDetails() {
 
   // Extended Specifications
   const mfgSerialNumber = machine.manufacturing_serial || machine.manufacturingSerial || machine.customValues?.manufacturing_serial || machine.customValues?.manufacturingSerial || machine.manufacturingNo || machine.mfgSerial || machine.manufacturing || '';
+  const displayAssetId = machine.systemAssetId || (machine.permanentMachineId ? String(machine.permanentMachineId).replace(/^MID-/i, 'AMG-MNT-') : '') || '—';
   
   let rawServiceDate = machine.lastServiceDate || machine.service_date || machine.serviceDate || machine.customValues?.service_date || '';
   if (!rawServiceDate && (machine.id || machine.serialNumber)) {
@@ -162,7 +163,7 @@ export function renderMachineDetails() {
                     SN: ${machine.serialNumber} ${mfgSerialNumber ? `<span style="font-size: 11px; color: #555; font-weight: 600;">(Mfg: ${escapeHtml(mfgSerialNumber)})</span>` : ''}
                   </div>
                   <div style="font-family: var(--font-mono); font-size: 11.5px; font-weight: 800; color: #10b981; margin-top: 2px;">
-                    Asset ID: ${escapeHtml(machine.systemAssetId || machine.permanentMachineId || '—')}
+                    Asset ID: ${escapeHtml(displayAssetId)}
                   </div>
                 </div>
                 <div style="display: flex; flex-direction: column; align-items: center;">
@@ -182,7 +183,7 @@ export function renderMachineDetails() {
                 📋 Machine Information &amp; Technical Specifications
               </h4>
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 12.5px;">
-                <div><span style="color: var(--text-muted);">System Asset ID:</span> <strong style="color: #10b981; font-family: var(--font-mono);">${escapeHtml(machine.systemAssetId || machine.permanentMachineId || '—')}</strong></div>
+                <div><span style="color: var(--text-muted);">System Asset ID:</span> <strong style="color: #10b981; font-family: var(--font-mono);">${escapeHtml(displayAssetId)}</strong></div>
                 <div><span style="color: var(--text-muted);">Machine Serial Number:</span> <strong style="color: #38bdf8; font-family: var(--font-mono);">${machine.serialNumber}</strong></div>
                 <div><span style="color: var(--text-muted);">Manufacturing Serial No:</span> <strong style="color: #38bdf8; font-family: var(--font-mono);">${escapeHtml(mfgSerialNumber) || '—'}</strong></div>
                 <div><span style="color: var(--text-muted);">Machine Status:</span> <span class="badge badge-${(machine.status || 'ACTIVE').toLowerCase()}">${machine.status || 'ACTIVE'}</span></div>

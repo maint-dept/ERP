@@ -958,19 +958,27 @@ class StorageEngine {
             if (uncommittedLocal.length > 0) {
               const merged = [...cleanMachines, ...uncommittedLocal];
               this.data[tbl] = merged;
+              this.ensureMachineSystemAssetIds();
               console.log(`[Storage Anti-Downgrade] 🛡️ Merged and preserved ${uncommittedLocal.length} local machines. Total: ${merged.length}. Syncing to MySQL...`);
               setTimeout(() => {
                 this.saveTable(TABLE_NAMES.MACHINES, merged, true).catch(() => {});
               }, 1500);
             } else {
               this.data[tbl] = cleanMachines;
+              const idsUpdated = this.ensureMachineSystemAssetIds();
+              if (idsUpdated || hasRemarksChanged) {
+                setTimeout(() => {
+                  this.saveTable(TABLE_NAMES.MACHINES, this.data[tbl], false).catch(() => {});
+                }, 1200);
+              }
             }
           } else {
             this.data[tbl] = cleanMachines;
-            if (hasRemarksChanged) {
-              // Push cleaned remarks back to MySQL Primary asynchronously so remote database is permanently sanitized
+            const idsUpdated = this.ensureMachineSystemAssetIds();
+            if (idsUpdated || hasRemarksChanged) {
+              // Push cleaned remarks & migrated System Asset IDs back to MySQL Primary asynchronously
               setTimeout(() => {
-                this.saveTable(TABLE_NAMES.MACHINES, cleanMachines, false).catch(() => {});
+                this.saveTable(TABLE_NAMES.MACHINES, this.data[tbl], false).catch(() => {});
               }, 1200);
             }
           }
@@ -1453,8 +1461,11 @@ class StorageEngine {
       if (mc.systemAssetId && this.indexes.machineByAssetId) {
         this.indexes.machineByAssetId.set(mc.systemAssetId.trim().toUpperCase(), mc);
       }
-      if (mc.permanentMachineId && this.indexes.machineByAssetId && !this.indexes.machineByAssetId.has(mc.permanentMachineId.trim().toUpperCase())) {
-        this.indexes.machineByAssetId.set(mc.permanentMachineId.trim().toUpperCase(), mc);
+      if (mc.permanentMachineId && this.indexes.machineByAssetId) {
+        const rawUpper = mc.permanentMachineId.trim().toUpperCase();
+        this.indexes.machineByAssetId.set(rawUpper, mc);
+        const amgVariant = rawUpper.replace(/^MID-/i, 'AMG-MNT-');
+        this.indexes.machineByAssetId.set(amgVariant, mc);
       }
 
       this._addToIndexMap(this.indexes.machinesByLine, mc.lineId, mc);
@@ -1537,10 +1548,16 @@ class StorageEngine {
     if (this.indexes && this.indexes.machineByAssetId && this.indexes.machineByAssetId.has(clean)) {
       return this.indexes.machineByAssetId.get(clean);
     }
+    const cleanAmg = clean.replace(/^MID-/i, 'AMG-MNT-');
+    if (this.indexes && this.indexes.machineByAssetId && this.indexes.machineByAssetId.has(cleanAmg)) {
+      return this.indexes.machineByAssetId.get(cleanAmg);
+    }
     const machines = this.data[TABLE_NAMES.MACHINES] || [];
     return machines.find(m => 
       (m.systemAssetId && String(m.systemAssetId).trim().toUpperCase() === clean) ||
-      (m.permanentMachineId && String(m.permanentMachineId).trim().toUpperCase() === clean)
+      (m.permanentMachineId && String(m.permanentMachineId).trim().toUpperCase() === clean) ||
+      (m.systemAssetId && String(m.systemAssetId).trim().toUpperCase() === cleanAmg) ||
+      (m.permanentMachineId && String(m.permanentMachineId).trim().toUpperCase() === cleanAmg)
     ) || null;
   }
 
@@ -1555,33 +1572,24 @@ class StorageEngine {
     const machines = this.data[TABLE_NAMES.MACHINES] || [];
     let maxNum = 0;
     const prefix = 'AMG-MNT-';
-    const regex = /^AMG-MNT-(\d+)$/i;
 
     machines.forEach(m => {
-      if (m && m.systemAssetId) {
-        const match = String(m.systemAssetId).trim().match(regex);
+      if (!m) return;
+      if (m.systemAssetId) {
+        const match = String(m.systemAssetId).trim().match(/^AMG-MNT-(\d+)$/i);
         if (match && match[1]) {
           const num = parseInt(match[1], 10);
-          if (!isNaN(num) && num > maxNum) {
-            maxNum = num;
-          }
+          if (!isNaN(num) && num > maxNum) maxNum = num;
+        }
+      }
+      if (m.permanentMachineId) {
+        const pMatch = String(m.permanentMachineId).trim().match(/^(?:MID|AMG-MNT)-(\d+)$/i);
+        if (pMatch && pMatch[1]) {
+          const num = parseInt(pMatch[1], 10);
+          if (!isNaN(num) && num > maxNum) maxNum = num;
         }
       }
     });
-
-    if (maxNum === 0) {
-      machines.forEach(m => {
-        if (m && m.permanentMachineId) {
-          const match = String(m.permanentMachineId).trim().match(/^MID-(\d+)$/i);
-          if (match && match[1]) {
-            const num = parseInt(match[1], 10);
-            if (!isNaN(num) && num > maxNum) {
-              maxNum = num;
-            }
-          }
-        }
-      });
-    }
 
     const nextNum = maxNum + 1;
     return `${prefix}${String(nextNum).padStart(6, '0')}`;
@@ -1602,8 +1610,12 @@ class StorageEngine {
     // Pass 1: Gather existing valid AMG-MNT IDs and record highest sequence
     machines.forEach(m => {
       if (m && m.systemAssetId) {
-        const str = String(m.systemAssetId).trim().toUpperCase();
-        m.systemAssetId = str;
+        let str = String(m.systemAssetId).trim().toUpperCase();
+        if (/^MID-(\d+)$/i.test(str)) {
+          str = str.replace(/^MID-/i, 'AMG-MNT-');
+          m.systemAssetId = str;
+          hasUpdates = true;
+        }
         assignedIds.add(str);
         const match = str.match(/^AMG-MNT-(\d+)$/i);
         if (match && match[1]) {
@@ -1615,41 +1627,50 @@ class StorageEngine {
       }
     });
 
-    // Pass 2: Assign permanent AMG-MNT sequential ID to any machine missing it
+    // Pass 2: Assign permanent AMG-MNT sequential ID to any machine missing it or having legacy MID-
     machines.forEach(m => {
-      if (!m || m.systemAssetId) return;
+      if (!m) return;
 
-      let candidate = '';
-      if (m.permanentMachineId) {
-        const pMatch = String(m.permanentMachineId).trim().match(/^MID-(\d+)$/i);
-        if (pMatch && pMatch[1]) {
-          const pNum = parseInt(pMatch[1], 10);
-          const mapped = `AMG-MNT-${String(pNum).padStart(6, '0')}`;
-          if (!assignedIds.has(mapped)) {
-            candidate = mapped;
-            if (pNum > maxNum) maxNum = pNum;
+      if (!m.systemAssetId) {
+        let candidate = '';
+        if (m.permanentMachineId) {
+          const pMatch = String(m.permanentMachineId).trim().match(/^(?:MID|AMG-MNT)-(\d+)$/i);
+          if (pMatch && pMatch[1]) {
+            const pNum = parseInt(pMatch[1], 10);
+            const mapped = `AMG-MNT-${String(pNum).padStart(6, '0')}`;
+            if (!assignedIds.has(mapped)) {
+              candidate = mapped;
+              if (pNum > maxNum) maxNum = pNum;
+            }
           }
         }
-      }
 
-      if (!candidate) {
-        maxNum++;
-        candidate = `AMG-MNT-${String(maxNum).padStart(6, '0')}`;
-        while (assignedIds.has(candidate)) {
+        if (!candidate) {
           maxNum++;
           candidate = `AMG-MNT-${String(maxNum).padStart(6, '0')}`;
+          while (assignedIds.has(candidate)) {
+            maxNum++;
+            candidate = `AMG-MNT-${String(maxNum).padStart(6, '0')}`;
+          }
         }
+
+        m.systemAssetId = candidate;
+        m.permanentMachineId = candidate;
+        assignedIds.add(candidate);
+        hasUpdates = true;
       }
 
-      m.systemAssetId = candidate;
-      if (!m.permanentMachineId) {
-        m.permanentMachineId = candidate;
+      // Also ensure permanentMachineId strictly matches systemAssetId and has no legacy MID-
+      if (m.systemAssetId && (!m.permanentMachineId || /^MID-/i.test(m.permanentMachineId))) {
+        m.permanentMachineId = m.systemAssetId;
+        hasUpdates = true;
       }
-      assignedIds.add(candidate);
-      hasUpdates = true;
     });
 
     if (hasUpdates) {
+      try {
+        idbCache.setTable(TABLE_NAMES.MACHINES, machines);
+      } catch (_) {}
       try {
         localStorage.setItem(STORAGE_KEY_PREFIX + TABLE_NAMES.MACHINES, JSON.stringify(machines));
       } catch (_) {}

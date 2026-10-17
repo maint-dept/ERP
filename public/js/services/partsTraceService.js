@@ -818,7 +818,7 @@ class PartsTraceService {
     };
 
     // 2. Extract potential serial numbers / machine IDs
-    const potentialNumbers = textPool.match(/\b(?:MID-\d{3,8}|MCH-\d{3,8}|SL-\d{2,6}|[A-Z]{1,3}-\d{2,6}|\d{3,6})\b/gi) || [];
+    const potentialNumbers = textPool.match(/\b(?:AMG-MNT-\d{3,8}|MID-\d{3,8}|MCH-\d{3,8}|SL-\d{2,6}|[A-Z]{1,3}-\d{2,6}|\d{3,6})\b/gi) || [];
     const candidates = [];
 
     for (const num of potentialNumbers) {
@@ -828,11 +828,12 @@ class PartsTraceService {
 
       const found = allMachines.find(m => {
         const s = (m.serialNumber || '').toLowerCase();
+        const said = (m.systemAssetId || '').toLowerCase();
         const pid = (m.permanentMachineId || '').toLowerCase();
         const id = (m.id || '').toLowerCase();
         const code = String(m.customValues?.machine_code || '').toLowerCase();
 
-        return s === cleanNum || pid === cleanNum || id === cleanNum || code === cleanNum ||
+        return s === cleanNum || said === cleanNum || pid === cleanNum || id === cleanNum || code === cleanNum ||
                (cleanNum.length >= 3 && (s.endsWith(cleanNum) || s.includes(cleanNum)));
       });
 
@@ -893,7 +894,8 @@ class PartsTraceService {
         matchedMachine: {
           id: `ext-mac-${bestSerial}`,
           serialNumber: bestSerial,
-          permanentMachineId: `MID-${bestSerial}`,
+          systemAssetId: `AMG-MNT-${bestSerial.padStart(6, '0')}`,
+          permanentMachineId: `AMG-MNT-${bestSerial.padStart(6, '0')}`,
           machineName: detectedType || 'Plane Machine (Lockstitch)',
           brand: 'Juki',
           model: 'Standard',
