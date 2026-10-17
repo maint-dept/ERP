@@ -2349,10 +2349,6 @@ class PreventiveMaintenanceService {
     return enriched;
   }
 
-    window.dispatchEvent(new CustomEvent('erp:preventive-maintenance-updated', { detail: newRecord }));
-    return newRecord;
-  }
-
   async updateServiceEntry(recordId, updateData) {
     const existing = storage.getItem(TABLE_NAMES.PREVENTIVE_MAINTENANCE, recordId);
     if (!existing) throw new Error('Service record not found.');
