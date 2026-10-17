@@ -23,6 +23,7 @@ import { notificationService } from '../services/notificationService.js';
 import { etLabService } from '../services/etLabService.js';
 import { pdfService } from '../services/pdfService.js';
 import { updateSidebarActiveState } from './sidebar.js';
+import { renderPreventiveMaintenanceReportView, initPreventiveMaintenanceReportEvents } from './preventiveMaintenanceReportView.js';
 import { state } from '../state.js';
 
 let currentReportTab = 'machines'; // 'machines', 'transfers', 'spareparts', 'export'
@@ -49,12 +50,14 @@ export function renderReportsView() {
   const canSpareReport = authService.isAdmin() || authService.hasAccess('reports', 'VIEW_PARTS_REPORT') || authService.isModuleAllowed('spare_parts');
   const canEtLabReport = authService.isAdmin() || authService.hasAccess('reports', 'VIEW_ETLAB_REPORT') || authService.isModuleAllowed('et_lab');
   const canExportCenter = authService.isAdmin() || authService.hasAccess('reports', 'EXPORT_MACHINE_REPORT') || authService.hasAccess('reports', 'EXPORT') || authService.isModuleAllowed('reports');
+  const canPmReport = authService.isAdmin() || authService.isModuleAllowed('preventive_maintenance');
 
   const allowedTabs = [];
   if (canMachReport) allowedTabs.push('machines');
   if (canTransReport) allowedTabs.push('transfers');
   if (canSpareReport) allowedTabs.push('spareparts');
   if (canEtLabReport) allowedTabs.push('etlab');
+  if (canPmReport) allowedTabs.push('preventive');
   if (canExportCenter) allowedTabs.push('export');
 
   const requestedTab = state.get('reportActiveTab');
@@ -149,6 +152,10 @@ export function renderReportsView() {
         <button class="btn btn-xs ${currentReportTab === 'etlab' ? 'btn-primary' : 'btn-ghost'}" data-report-tab-btn="etlab" style="font-weight: 700; font-size: 11px; padding: 3px 8px; height: 26px; white-space: nowrap;">
           🔬 ENT Lab Report (${etLabBoards.length})
         </button>` : ''}
+        ${canPmReport ? `
+        <button class="btn btn-xs ${currentReportTab === 'preventive' ? 'btn-primary' : 'btn-ghost'}" data-report-tab-btn="preventive" style="font-weight: 700; font-size: 11px; padding: 3px 8px; height: 26px; white-space: nowrap; color: ${currentReportTab === 'preventive' ? '#fff' : '#10b981'};">
+          🛡️ PM Official Form
+        </button>` : ''}
         ${canExportCenter ? `
         <button class="btn btn-xs ${currentReportTab === 'export' ? 'btn-primary' : 'btn-ghost'}" data-report-tab-btn="export" style="font-weight: 700; font-size: 11px; padding: 3px 8px; height: 26px; white-space: nowrap; color: ${currentReportTab === 'export' ? '#fff' : '#38bdf8'};">
           📤 1-Click Excel Export Center
@@ -172,6 +179,8 @@ function renderActiveTabHtml({ allMachines, allTransfers, completedTransfers, re
     return renderSparePartsReportsTab(replacementLogs, sparePartsMaster);
   } else if (currentReportTab === 'etlab') {
     return renderEtLabReportsTab(etLabBoards);
+  } else if (currentReportTab === 'preventive') {
+    return renderPreventiveMaintenanceReportView();
   } else if (currentReportTab === 'export') {
     return renderExportCenterTab(allMachines, allTransfers, replacementLogs, sparePartsMaster);
   }
@@ -3158,5 +3167,10 @@ export function initReportsEvents() {
         await excelService.exportCompleteErpWorkbook(`AlMuslim_Master_ERP_Workbook_${new Date().toISOString().split('T')[0]}.xlsx`);
       }, 'Exporting Full ERP Workbook...', 'Complete ERP workbook downloaded successfully!');
     });
+  }
+
+  // Initialize PM Official Report events if active
+  if (currentReportTab === 'preventive') {
+    initPreventiveMaintenanceReportEvents(document.getElementById('reports-tab-content'));
   }
 }

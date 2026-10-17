@@ -228,6 +228,84 @@
     break-before: avoid !important;
     margin-top: 50px !important;
   }
+
+  /* Official Preventive Machine Maintenance Report Print Rules */
+  @page {
+    size: A4 landscape;
+    margin: 6mm 8mm 6mm 8mm;
+  }
+
+  .pm-report-module-wrapper,
+  .pm-official-sheet-wrapper,
+  #pm-official-report-printable,
+  .pm-official-sheet {
+    display: block !important;
+    visibility: visible !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    box-shadow: none !important;
+    border: none !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: auto !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .pm-report-toolbar,
+  .pm-tabs-bar,
+  .inventory-top-unified-bar,
+  .compact-filter-bar,
+  .btn-pm-del-row,
+  .btn-quick-work-chip,
+  .btn-pm-row-pick-mach,
+  .btn-pm-row-del,
+  .modal-overlay,
+  .no-print {
+    display: none !important;
+    visibility: hidden !important;
+  }
+
+  .pm-official-table {
+    border-collapse: collapse !important;
+    width: 100% !important;
+    border: 1.5px solid #000000 !important;
+  }
+
+  .pm-official-table thead {
+    display: table-header-group !important;
+  }
+
+  .pm-official-table th,
+  .pm-official-table td {
+    border: 1px solid #000000 !important;
+    color: #000000 !important;
+    background: #ffffff !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .pm-official-table tr {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  .pm-row-input,
+  .pm-sheet-inline-input {
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    color: #000000 !important;
+  }
+
+  .pm-official-signatures {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    display: flex !important;
+    width: 100% !important;
+    margin-top: 35px !important;
+  }
 }
 
 

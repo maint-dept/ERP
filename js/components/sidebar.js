@@ -40,6 +40,7 @@ export function renderSidebar() {
   const expandedGroups = getExpandedGroups();
   const activeReportTab = state.get('reportActiveTab') || 'machines';
   const activeManpowerTab = state.get('manpowerActiveTab') || 'active';
+  const activePmTab = state.get('pmActiveTab') || 'dashboard';
 
   // Auto expand parent group of current view
   if (['inventory', 'transfers', 'relocate', 'qr-codes', 'preventive-maintenance', 'needle-operations', 'parts-trace', 'machine-history'].includes(currentView)) {
@@ -83,6 +84,8 @@ export function renderSidebar() {
               isSubActive = (sub.reportTab === activeReportTab);
             } else if (currentView === 'manpower' && sub.targetView === 'manpower') {
               isSubActive = (sub.manpowerTab === activeManpowerTab);
+            } else if (currentView === 'preventive-maintenance' && sub.targetView === 'preventive-maintenance') {
+              isSubActive = sub.pmTab ? (sub.pmTab === activePmTab) : (!activePmTab || activePmTab === 'dashboard');
             } else {
               isSubActive = (sub.targetView === currentView);
             }
@@ -94,6 +97,7 @@ export function renderSidebar() {
                 data-sub-id="${sub.id}"
                 ${sub.reportTab ? `data-report-tab="${sub.reportTab}"` : ''}
                 ${sub.manpowerTab ? `data-manpower-tab="${sub.manpowerTab}"` : ''}
+                ${sub.pmTab ? `data-pm-tab="${sub.pmTab}"` : ''}
                 id="nav-subitem-${sub.id}"
                 title="${sub.label}"
               >
@@ -137,6 +141,7 @@ export function renderSidebar() {
     { id: 'sub-mach-relocate', targetView: 'relocate', label: 'Relocate & Verify', icon: '📍', moduleKey: 'relocate' },
     { id: 'sub-mach-qr-codes', targetView: 'qr-codes', label: 'QR Codes & Labels', icon: '🏷️', moduleKey: 'qr_codes' },
     { id: 'sub-mach-preventive', targetView: 'preventive-maintenance', label: 'Preventive Maintenance', icon: '🛡️', moduleKey: 'preventive_maintenance' },
+    { id: 'sub-mach-pm-report', targetView: 'preventive-maintenance', pmTab: 'maintenance-report', label: 'PM Report & Print', icon: '📑', moduleKey: 'preventive_maintenance' },
     { id: 'sub-mach-needle-ops', targetView: 'needle-operations', label: 'Needle Flow', icon: '🪡', moduleKey: 'machines' },
     { id: 'sub-mach-parts-trace', targetView: 'parts-trace', label: 'Parts Trace', icon: '🔩', moduleKey: 'parts_trace' },
     { id: 'sub-mach-history', targetView: 'machine-history', label: 'Machine Lifetime (Passport)', icon: '📜', moduleKey: 'machine_history' }
@@ -417,6 +422,7 @@ export function initSidebarEvents() {
     const reportTab = el.getAttribute('data-report-tab');
     const mpTab = el.getAttribute('data-manpower-tab');
     const userTab = el.getAttribute('data-user-tab');
+    const pmTab = el.getAttribute('data-pm-tab');
     const curView = state.get('currentView');
 
     // Close mobile sidebar drawer if open
@@ -437,11 +443,14 @@ export function initSidebarEvents() {
     if (userTab) {
       state.set('userAccessActiveTab', userTab);
     }
+    if (pmTab) {
+      state.set('pmActiveTab', pmTab);
+    }
 
     if (view) {
       updateSidebarActiveState(view, subId);
 
-      if (curView === view && (reportTab || mpTab || userTab)) {
+      if (curView === view && (reportTab || mpTab || userTab || pmTab)) {
         // Same view with subtab: perform fast in-place subtab transition
         if (reportTab) {
           const btn = document.querySelector(`[data-report-tab-btn="${reportTab}"]`);
@@ -451,6 +460,9 @@ export function initSidebarEvents() {
           if (btn) btn.click();
         } else if (userTab) {
           const btn = document.querySelector(`[data-user-tab="${userTab}"]`);
+          if (btn) btn.click();
+        } else if (pmTab) {
+          const btn = document.querySelector(`[data-pm-tab="${pmTab}"]`);
           if (btn) btn.click();
         }
       } else {
@@ -600,6 +612,7 @@ export function initSidebarEvents() {
 export function updateSidebarActiveState(currentView, activeSubId = null) {
   const activeReportTab = state.get('reportActiveTab') || 'machines';
   const activeManpowerTab = state.get('manpowerActiveTab') || 'active';
+  const activePmTab = state.get('pmActiveTab') || 'dashboard';
 
   // Update direct items
   document.querySelectorAll('.nav-item').forEach(el => {
@@ -617,6 +630,7 @@ export function updateSidebarActiveState(currentView, activeSubId = null) {
     const view = el.getAttribute('data-view');
     const reportTab = el.getAttribute('data-report-tab');
     const mpTab = el.getAttribute('data-manpower-tab');
+    const pmTab = el.getAttribute('data-pm-tab');
 
     let isActive = false;
     if (view === currentView) {
@@ -624,6 +638,8 @@ export function updateSidebarActiveState(currentView, activeSubId = null) {
         isActive = (reportTab === activeReportTab);
       } else if (currentView === 'manpower') {
         isActive = (mpTab === activeManpowerTab);
+      } else if (currentView === 'preventive-maintenance') {
+        isActive = pmTab ? (pmTab === activePmTab) : (!activePmTab || activePmTab === 'dashboard');
       } else if (activeSubId) {
         isActive = (subId === activeSubId || el.id === `nav-subitem-${activeSubId}`);
       } else {

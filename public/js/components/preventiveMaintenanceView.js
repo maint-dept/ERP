@@ -30,9 +30,10 @@ import { notificationService } from '../services/notificationService.js';
 import { excelService } from '../services/excelService.js';
 import { storage } from '../db/storage.js';
 import { TABLE_NAMES } from '../db/schema.js';
+import { renderPreventiveMaintenanceReportView, initPreventiveMaintenanceReportEvents } from './preventiveMaintenanceReportView.js';
 
 // Local view state to preserve working session across tab switches
-let activeTab = 'dashboard'; // 'dashboard' | 'pending-approvals' | 'recently-serviced' | 'machine-profile' | 'master-schedule' | 'admin-config'
+let activeTab = 'dashboard'; // 'dashboard' | 'pending-approvals' | 'recently-serviced' | 'machine-profile' | 'master-schedule' | 'admin-config' | 'maintenance-report'
 let selectedMachineId = null; // Dynamically resolved to active machine
 let searchQuery = '';
 let filterFloorId = 'ALL';
@@ -155,6 +156,13 @@ export function renderPreventiveMaintenanceView() {
     state.set('pmFilterUrgency', null);
   }
 
+  // Consume any tab request passed from external links or sidebar
+  const statePmTab = state.get('pmActiveTab');
+  if (statePmTab) {
+    activeTab = statePmTab;
+    state.set('pmActiveTab', null);
+  }
+
   // Active filter payload for dynamic metrics calculation
   const activeFilters = {
     search: searchQuery,
@@ -271,6 +279,9 @@ export function renderPreventiveMaintenanceView() {
               ⚡ Bulk Import
             </button>
           ` : ''}
+          <button id="btn-pm-top-report" class="btn btn-secondary btn-sm" style="font-weight: 700; padding: 2px 8px; font-size: 11.5px; height: 26px; color: #38bdf8; border-color: rgba(56, 189, 248, 0.4); background: rgba(56, 189, 248, 0.1);" title="Open Official Preventive Machine Maintenance Report &amp; Print Sheet">
+            📑 PM Report
+          </button>
           ${canConfig ? `
             <button id="btn-pm-top-bulk-excel" class="btn btn-secondary btn-sm" style="font-weight: 700; padding: 2px 7px; font-size: 11.5px; height: 26px; color: #38bdf8; border-color: rgba(56, 189, 248, 0.4); background: rgba(56, 189, 248, 0.1);" title="Bulk configure maintenance intervals (days) via Excel">
               📊 Excel Days
@@ -379,6 +390,9 @@ export function renderPreventiveMaintenanceView() {
         <button class="pm-tab-btn ${activeTab === 'master-schedule' ? 'active' : ''}" data-pm-tab="master-schedule">
           📅 Master Schedule (${metrics.globalTotalMachines || metrics.totalMachines})
         </button>
+        <button class="pm-tab-btn ${activeTab === 'maintenance-report' ? 'active' : ''}" data-pm-tab="maintenance-report">
+          📑 Official PM Report &amp; Print
+        </button>
         ${canConfig ? `
           <button class="pm-tab-btn ${activeTab === 'admin-config' ? 'active' : ''}" data-pm-tab="admin-config">
             ⚙️ Admin Config (${configs.length})
@@ -421,6 +435,9 @@ function renderActiveTabContent() {
       break;
     case 'master-schedule':
       content = renderMasterScheduleTab();
+      break;
+    case 'maintenance-report':
+      content = renderPreventiveMaintenanceReportView();
       break;
     case 'admin-config':
       content = renderAdminConfigTab();
@@ -3018,6 +3035,13 @@ export function initPreventiveMaintenanceEvents() {
     rerenderView();
   });
 
+  // Top action: Official PM Report & Print
+  document.getElementById('btn-pm-top-report')?.addEventListener('click', () => {
+    activeTab = 'maintenance-report';
+    pmCurrentPage = 1;
+    rerenderView();
+  });
+
   // Top action: Bulk Excel Days
   document.getElementById('btn-pm-top-bulk-excel')?.addEventListener('click', () => {
     bulkExcelParsedRows = null;
@@ -3395,6 +3419,11 @@ export function initPreventiveMaintenanceEvents() {
       }
     });
   });
+
+  // Initialize Report View events if maintenance-report tab is active
+  if (activeTab === 'maintenance-report') {
+    initPreventiveMaintenanceReportEvents(container);
+  }
 
   // Modal event bindings
   bindModalEvents(container);
