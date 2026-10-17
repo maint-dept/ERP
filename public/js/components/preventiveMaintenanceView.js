@@ -1151,7 +1151,7 @@ function renderMachineProfileTab() {
                       ` : ''}
                     </td>
                     <td style="padding: 8px 10px; text-align: center;">
-                      <button class="btn btn-secondary btn-sm btn-pm-edit-sticker" data-record-id="${h.id}" data-current-sticker="${escapeHtml(h.serviceStickerSerial || '')}" title="Edit Sticker" style="padding: 3px 6px; font-size: 10.5px;">
+                      <button type="button" class="btn btn-secondary btn-sm btn-pm-edit-record" data-record-id="${h.id}" data-serial="${escapeHtml(profile.serialNumber)}" title="Edit Maintenance Record" style="padding: 3px 7px; font-size: 11px; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.4); color: #38bdf8; border-radius: 4px; cursor: pointer;">
                         ✏️
                       </button>
                     </td>
@@ -1439,6 +1439,8 @@ function renderActivePmModal() {
       return renderQrScannerModal();
     case 'print-sticker':
       return renderPrintStickerModal();
+    case 'edit-service-record':
+      return renderEditServiceRecordModal();
     case 'edit-sticker':
     case 'replace-sticker':
       return renderReplaceStickerModal();
@@ -1494,7 +1496,7 @@ function renderServiceEntryModal() {
               </div>
             </div>
           </div>
-          <button id="btn-pm-close-service-modal" style="background: none; border: none; color: #94a3b8; font-size: 20px; cursor: pointer;">✕</button>
+          <button type="button" class="btn-pm-modal-close" id="btn-pm-close-service-modal" style="background: none; border: none; color: #94a3b8; font-size: 20px; cursor: pointer; padding: 4px;" title="Close Modal">✕</button>
         </div>
 
         <!-- Modal Form Body -->
@@ -1739,7 +1741,7 @@ function renderServiceEntryModal() {
 
         <!-- Modal Footer -->
         <div style="padding: 14px 24px; border-top: 1px solid var(--border-color); background: #0f172a; display: flex; justify-content: flex-end; gap: 10px;">
-          <button type="button" id="btn-pm-cancel-service" class="btn btn-secondary btn-sm" style="padding: 8px 16px;">
+          <button type="button" id="btn-pm-cancel-service" class="btn btn-secondary btn-sm btn-pm-modal-close" style="padding: 8px 16px;">
             Cancel
           </button>
           <button type="button" id="btn-pm-submit-service" class="btn btn-primary btn-sm" style="padding: 8px 22px; font-weight: 700;">
@@ -1768,7 +1770,7 @@ function renderReviewApprovalModal() {
         <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-xl); padding: 32px; max-width: 400px; text-align: center;">
           <div style="font-size: 28px; margin-bottom: 10px;">⚠️</div>
           <div style="font-size: 14px; color: #fff; font-weight: 700; margin-bottom: 8px;">Record Not Found</div>
-          <button id="btn-pm-close-review-modal" class="btn btn-secondary btn-sm" style="margin-top: 12px;">Close</button>
+          <button type="button" id="btn-pm-close-review-modal" class="btn btn-secondary btn-sm btn-pm-modal-close" style="margin-top: 12px;">Close</button>
         </div>
       </div>
     `;
@@ -1793,7 +1795,7 @@ function renderReviewApprovalModal() {
               </div>
             </div>
           </div>
-          <button id="btn-pm-close-review-modal" style="background: none; border: none; color: #94a3b8; font-size: 20px; cursor: pointer;">✕</button>
+          <button type="button" class="btn-pm-modal-close" id="btn-pm-close-review-modal" style="background: none; border: none; color: #94a3b8; font-size: 20px; cursor: pointer; padding: 4px;" title="Close Modal">✕</button>
         </div>
 
         <!-- Modal Body -->
@@ -1862,7 +1864,7 @@ function renderReviewApprovalModal() {
 
         <!-- Action Footer -->
         <div style="padding: 14px 22px; border-top: 1px solid var(--border-color); background: #0f172a; display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-shrink: 0;">
-          <button type="button" id="btn-pm-close-review-modal" class="btn btn-secondary btn-sm" style="padding: 7px 14px;">
+          <button type="button" id="btn-pm-cancel-review-modal" class="btn btn-secondary btn-sm btn-pm-modal-close" style="padding: 7px 14px;">
             Cancel
           </button>
           <div style="display: flex; gap: 8px;">
@@ -1895,7 +1897,7 @@ function renderQrScannerModal() {
             <span style="font-size: 20px;">📷</span>
             <h3 style="font-size: 15px; font-weight: 800; color: #fff; margin: 0;">Scan Machine QR Code / Barcode</h3>
           </div>
-          <button id="btn-pm-close-scanner" style="background: none; border: none; color: #94a3b8; font-size: 18px; cursor: pointer;">✕</button>
+          <button type="button" class="btn-pm-modal-close" id="btn-pm-close-scanner" style="background: none; border: none; color: #94a3b8; font-size: 18px; cursor: pointer; padding: 4px;" title="Close Modal">✕</button>
         </div>
 
         <div style="padding: 24px; text-align: center;">
@@ -1959,7 +1961,7 @@ function renderPrintStickerModal() {
         <div class="modal-dialog" style="max-width: 500px; width: 100%; background: var(--bg-surface); border: 1.5px solid #ef4444; border-radius: var(--radius-xl); padding: 24px; text-align: center;">
           <h3 style="color: #fff; margin-bottom: 8px;">No Machine Available to Print</h3>
           <p style="color: var(--text-secondary); font-size: 13px; margin-bottom: 16px;">Please select or add a machine before printing maintenance stickers.</p>
-          <button id="btn-pm-close-print" class="btn btn-secondary btn-sm">Close</button>
+          <button type="button" id="btn-pm-close-print" class="btn btn-secondary btn-sm btn-pm-modal-close">Close</button>
         </div>
       </div>
     `;
@@ -1983,7 +1985,7 @@ function renderPrintStickerModal() {
             <span style="font-size: 18px;">🏷️</span>
             <h3 style="font-size: 15px; font-weight: 800; color: #fff; margin: 0;">Printable Company Maintenance Sticker</h3>
           </div>
-          <button id="btn-pm-close-print" style="background: none; border: none; color: #94a3b8; font-size: 18px; cursor: pointer;">✕</button>
+          <button type="button" class="btn-pm-modal-close" id="btn-pm-close-print" style="background: none; border: none; color: #94a3b8; font-size: 18px; cursor: pointer; padding: 4px;" title="Close Modal">✕</button>
         </div>
 
         <div style="padding: 24px; text-align: center; background: #090d16;">
@@ -2093,11 +2095,200 @@ function renderPrintStickerModal() {
             <button id="btn-pm-execute-print" class="btn btn-primary btn-sm" style="padding: 9px 26px; font-weight: 800; font-size: 13px;">
               🖨️ Print Physical Sticker Label
             </button>
-            <button id="btn-pm-cancel-print" class="btn btn-secondary btn-sm" style="padding: 9px 20px;">
+            <button type="button" id="btn-pm-cancel-print" class="btn btn-secondary btn-sm btn-pm-modal-close" style="padding: 9px 20px;">
               Close
             </button>
           </div>
 
+        </div>
+
+      </div>
+    </div>
+  `;
+}
+
+/**
+ * Dedicated Edit Maintenance Record Modal
+ * Allows updating Service Date, Type, Serviced By, Next Target Date, Sticker Sl No, and Remarks
+ */
+function renderEditServiceRecordModal() {
+  const recId = modalServiceContext?.recordId;
+  const record = recId ? storage.getItem(TABLE_NAMES.PREVENTIVE_MAINTENANCE, recId) : null;
+  const serial = modalMachineContext || record?.serialNumber;
+  const profile = serial ? preventiveMaintenanceService.getMachinePreventiveProfile(serial) : null;
+
+  if (!record && !profile) return '';
+
+  const recData = record || {};
+  const machineName = profile?.machineName || recData.machineName || 'Sewing Machine';
+  const brand = profile?.brand || recData.brand || '';
+  const model = profile?.model || recData.model || '';
+  const floor = profile?.floor || recData.floor || '';
+  const line = profile?.line || recData.line || '';
+  const serialNumber = profile?.serialNumber || recData.serialNumber || serial || '';
+  const freqDays = profile?.frequencyDays || 91;
+
+  // Format dates for input[type="date"]
+  const sDate = recData.serviceDate ? recData.serviceDate.split('T')[0] : '';
+  const nDate = recData.nextServiceDate ? recData.nextServiceDate.split('T')[0] : '';
+  const sticker = recData.serviceStickerSerial || (profile?.serviceStickerSerial !== 'STK-PENDING' ? profile?.serviceStickerSerial : '') || '';
+  const sType = recData.serviceType || 'PREVENTIVE_SERVICE';
+  const servicedBy = recData.servicedBy || profile?.lastServicedBy || '';
+  const servicedByCard = recData.servicedByCardNumber || profile?.lastServicedByCardNumber || '';
+  const remarks = recData.serviceRemarks || '';
+  const parts = recData.partsReplaced || '';
+
+  return `
+    <div class="modal-backdrop" id="pm-edit-record-backdrop" style="position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 16px;">
+      <div class="modal-dialog" style="max-width: 560px; width: 100%; background: var(--bg-surface); border: 1.5px solid #38bdf8; border-radius: var(--radius-lg); box-shadow: 0 20px 40px rgba(0,0,0,0.85); overflow: hidden; display: flex; flex-direction: column; max-height: 90vh;">
+        
+        <!-- Modal Header -->
+        <div style="padding: 14px 18px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; background: #0f172a;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 20px;">✏️</span>
+            <div>
+              <h3 style="font-size: 15px; font-weight: 800; color: #fff; margin: 0;">
+                Edit Maintenance Service Record
+              </h3>
+              <div style="font-size: 11.5px; color: #38bdf8; margin-top: 2px;">
+                Machine: <strong>${escapeHtml(serialNumber)}</strong> &bull; ${escapeHtml(machineName)} (${escapeHtml(floor)} - ${escapeHtml(line)})
+              </div>
+            </div>
+          </div>
+          <button type="button" class="btn-pm-modal-close" id="btn-pm-close-edit-record" style="background: none; border: none; color: #94a3b8; font-size: 18px; cursor: pointer; padding: 4px 8px;" title="Close Modal">✕</button>
+        </div>
+
+        <!-- Modal Body -->
+        <div style="padding: 18px 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px;">
+          <input type="hidden" id="pm-edit-record-id" value="${escapeHtml(recId || '')}" />
+          <input type="hidden" id="pm-edit-record-serial" value="${escapeHtml(serialNumber)}" />
+          <input type="hidden" id="pm-edit-record-freq" value="${freqDays}" />
+
+          <!-- Service Date & Service Type -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <div>
+              <label style="font-size: 11.5px; font-weight: 700; color: #cbd5e1; display: block; margin-bottom: 4px;">
+                Service Date *
+              </label>
+              <input 
+                type="date" 
+                id="pm-edit-service-date" 
+                value="${sDate}" 
+                style="width: 100%; padding: 8px 10px; background: var(--bg-card); border: 1.5px solid var(--border-color); border-radius: 6px; color: #fff; font-size: 12.5px; font-family: monospace;" 
+              />
+            </div>
+            <div>
+              <label style="font-size: 11.5px; font-weight: 700; color: #cbd5e1; display: block; margin-bottom: 4px;">
+                Service Type
+              </label>
+              <select id="pm-edit-service-type" style="width: 100%; padding: 8px 10px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 6px; color: #fff; font-size: 12.5px;">
+                <option value="PREVENTIVE_SERVICE" ${sType === 'PREVENTIVE_SERVICE' ? 'selected' : ''}>Preventive Service</option>
+                <option value="ROUTINE_INSPECTION" ${sType === 'ROUTINE_INSPECTION' ? 'selected' : ''}>Routine Inspection</option>
+                <option value="OVERHAUL" ${sType === 'OVERHAUL' ? 'selected' : ''}>Major Overhaul</option>
+                <option value="CALIBRATION" ${sType === 'CALIBRATION' ? 'selected' : ''}>Calibration &amp; Timing</option>
+                <option value="LUBRICATION" ${sType === 'LUBRICATION' ? 'selected' : ''}>Lubrication &amp; Cleaning</option>
+                <option value="STICKER_TAGGING" ${sType === 'STICKER_TAGGING' ? 'selected' : ''}>Physical Sticker Tagging</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Serviced By (Mechanic Name) & Card Number -->
+          <div style="display: grid; grid-template-columns: 1.4fr 1fr; gap: 10px;">
+            <div>
+              <label style="font-size: 11.5px; font-weight: 700; color: #cbd5e1; display: block; margin-bottom: 4px;">
+                Serviced By (Technician Name) *
+              </label>
+              <input 
+                type="text" 
+                id="pm-edit-serviced-by" 
+                value="${escapeHtml(servicedBy)}" 
+                placeholder="Technician / Mechanic name" 
+                style="width: 100%; padding: 8px 10px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 6px; color: #fff; font-size: 12.5px;" 
+              />
+            </div>
+            <div>
+              <label style="font-size: 11.5px; font-weight: 700; color: #cbd5e1; display: block; margin-bottom: 4px;">
+                Card Number
+              </label>
+              <input 
+                type="text" 
+                id="pm-edit-serviced-by-card" 
+                value="${escapeHtml(servicedByCard)}" 
+                placeholder="Card No." 
+                style="width: 100%; padding: 8px 10px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 6px; color: #fff; font-size: 12.5px; font-family: monospace;" 
+              />
+            </div>
+          </div>
+
+          <!-- Next Target Date & Sticker Serial -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <div>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                <label style="font-size: 11.5px; font-weight: 700; color: #38bdf8; margin: 0;">
+                  Next Service Target *
+                </label>
+                <button type="button" id="btn-pm-edit-autocalc-next" class="btn btn-outline-primary btn-sm" style="font-size: 10px; padding: 1px 6px; border-color: #38bdf8; color: #38bdf8;" title="Auto-calculate based on ${freqDays} days interval">
+                  🔄 Auto-Calc (+${freqDays}d)
+                </button>
+              </div>
+              <input 
+                type="date" 
+                id="pm-edit-next-date" 
+                value="${nDate}" 
+                style="width: 100%; padding: 8px 10px; background: var(--bg-card); border: 1.5px solid #38bdf8; border-radius: 6px; color: #fff; font-size: 12.5px; font-family: monospace;" 
+              />
+            </div>
+            <div>
+              <label style="font-size: 11.5px; font-weight: 700; color: #c084fc; display: block; margin-bottom: 4px;">
+                Service Sticker Serial (Sl No.)
+              </label>
+              <input 
+                type="text" 
+                id="pm-edit-sticker-serial" 
+                value="${escapeHtml(sticker)}" 
+                placeholder="e.g. 238168 or 245231" 
+                style="width: 100%; padding: 8px 10px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 6px; color: #fff; font-size: 12.5px; font-family: monospace; font-weight: 700;" 
+              />
+            </div>
+          </div>
+
+          <!-- Parts Replaced -->
+          <div>
+            <label style="font-size: 11.5px; font-weight: 700; color: #cbd5e1; display: block; margin-bottom: 4px;">
+              Parts Replaced (Optional)
+            </label>
+            <input 
+              type="text" 
+              id="pm-edit-parts-replaced" 
+              value="${escapeHtml(parts)}" 
+              placeholder="e.g. Rotary Hook, Needle Plate, Feed Dog" 
+              style="width: 100%; padding: 8px 10px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 6px; color: #fff; font-size: 12.5px;" 
+            />
+          </div>
+
+          <!-- Checklist & Remarks -->
+          <div>
+            <label style="font-size: 11.5px; font-weight: 700; color: #cbd5e1; display: block; margin-bottom: 4px;">
+              Checklist &amp; Remarks
+            </label>
+            <textarea 
+              id="pm-edit-remarks" 
+              rows="3" 
+              placeholder="Enter service remarks or inspection notes..." 
+              style="width: 100%; padding: 8px 10px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 6px; color: #fff; font-size: 12.5px; line-height: 1.4;"
+            >${escapeHtml(remarks)}</textarea>
+          </div>
+
+        </div>
+
+        <!-- Modal Footer -->
+        <div style="padding: 12px 20px; border-top: 1px solid var(--border-color); background: #0f172a; display: flex; justify-content: flex-end; gap: 10px; align-items: center;">
+          <button type="button" class="btn btn-secondary btn-sm btn-pm-modal-close" id="btn-pm-cancel-edit-record" style="padding: 8px 18px;">
+            Cancel
+          </button>
+          <button type="button" class="btn btn-primary btn-sm" id="btn-pm-save-edit-record" style="padding: 8px 22px; font-weight: 700;">
+            💾 Save Maintenance Record
+          </button>
         </div>
 
       </div>
@@ -2132,7 +2323,7 @@ function renderReplaceStickerModal() {
               </div>
             </div>
           </div>
-          <button id="btn-pm-close-replace-modal" style="background: none; border: none; color: #94a3b8; font-size: 18px; cursor: pointer;">✕</button>
+          <button type="button" class="btn-pm-modal-close" id="btn-pm-close-replace-modal" style="background: none; border: none; color: #94a3b8; font-size: 18px; cursor: pointer; padding: 4px;" title="Close Modal">✕</button>
         </div>
 
         <div style="padding: 20px; display: flex; flex-direction: column; gap: 14px;">
@@ -2176,8 +2367,8 @@ function renderReplaceStickerModal() {
           </div>
 
           <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px;">
-            <button id="btn-pm-cancel-replace-sticker" class="btn btn-secondary btn-sm" style="padding: 8px 16px;">Cancel</button>
-            <button id="btn-pm-confirm-replace-sticker" class="btn btn-primary btn-sm" style="padding: 8px 22px; font-weight: 700;">
+            <button type="button" id="btn-pm-cancel-replace-sticker" class="btn btn-secondary btn-sm btn-pm-modal-close" style="padding: 8px 16px;">Cancel</button>
+            <button type="button" id="btn-pm-confirm-replace-sticker" class="btn btn-primary btn-sm" style="padding: 8px 22px; font-weight: 700;">
               💾 Save &amp; Tag New Sticker
             </button>
           </div>
@@ -2223,7 +2414,7 @@ function renderChecklistManagerModal() {
               </div>
             </div>
           </div>
-          <button id="btn-pm-close-checklist-modal" style="background: none; border: none; color: #94a3b8; font-size: 20px; cursor: pointer;">✕</button>
+          <button type="button" class="btn-pm-modal-close" id="btn-pm-close-checklist-modal" style="background: none; border: none; color: #94a3b8; font-size: 20px; cursor: pointer; padding: 4px;" title="Close Modal">✕</button>
         </div>
 
         <!-- Modal Body -->
@@ -2304,7 +2495,7 @@ function renderChecklistManagerModal() {
             Changes persist permanently to cloud database storage.
           </div>
           <div style="display: flex; gap: 10px;">
-            <button type="button" id="btn-pm-chk-mgr-cancel" class="btn btn-secondary btn-sm" style="padding: 8px 16px;">
+            <button type="button" id="btn-pm-chk-mgr-cancel" class="btn btn-secondary btn-sm btn-pm-modal-close" style="padding: 8px 16px;">
               Cancel
             </button>
             <button type="button" id="btn-pm-chk-mgr-save" class="btn btn-primary btn-sm" style="padding: 8px 22px; font-weight: 700;">
@@ -2342,7 +2533,7 @@ function renderConfigModal() {
           <h3 style="font-size: 15px; font-weight: 800; color: #fff; margin: 0;">
             ⚙️ ${cfg.id ? 'Edit' : 'Add'} Machine Type Schedule Config
           </h3>
-          <button id="btn-pm-close-config-modal" style="background: none; border: none; color: #94a3b8; font-size: 18px; cursor: pointer;">✕</button>
+          <button type="button" class="btn-pm-modal-close" id="btn-pm-close-config-modal" style="background: none; border: none; color: #94a3b8; font-size: 18px; cursor: pointer; padding: 4px;" title="Close Modal">✕</button>
         </div>
 
         <div style="padding: 20px; max-height: 80vh; overflow-y: auto; display: flex; flex-direction: column; gap: 14px;">
@@ -2378,7 +2569,7 @@ function renderConfigModal() {
           </div>
 
           <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px;">
-            <button id="btn-pm-cancel-config" class="btn btn-secondary btn-sm">Cancel</button>
+            <button type="button" id="btn-pm-cancel-config" class="btn btn-secondary btn-sm btn-pm-modal-close" style="padding: 7px 16px;">Cancel</button>
             <button id="btn-pm-save-config" class="btn btn-primary btn-sm" style="font-weight: 700;">
               💾 Save Configuration
             </button>
@@ -2415,7 +2606,7 @@ function renderBulkExcelConfigModal() {
               </p>
             </div>
           </div>
-          <button id="btn-pm-close-bulk-modal" style="background: none; border: none; color: #94a3b8; font-size: 20px; cursor: pointer; padding: 4px;" title="Close Modal">✕</button>
+          <button type="button" class="btn-pm-modal-close" id="btn-pm-close-bulk-modal" style="background: none; border: none; color: #94a3b8; font-size: 20px; cursor: pointer; padding: 4px;" title="Close Modal">✕</button>
         </div>
 
         <!-- Body -->
@@ -2556,7 +2747,7 @@ function renderBulkExcelConfigModal() {
 
         <!-- Footer -->
         <div style="padding: 14px 22px; border-top: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; background: #0f172a;">
-          <button id="btn-pm-cancel-bulk-modal" class="btn btn-secondary btn-sm" style="font-weight: 600; padding: 6px 14px;">
+          <button type="button" id="btn-pm-cancel-bulk-modal" class="btn btn-secondary btn-sm btn-pm-modal-close" style="font-weight: 600; padding: 6px 14px;">
             Cancel
           </button>
           
@@ -2604,7 +2795,7 @@ function renderBulkServicingModal() {
               </p>
             </div>
           </div>
-          <button id="btn-pm-close-bulk-servicing-modal" style="background: none; border: none; color: #94a3b8; font-size: 20px; cursor: pointer; padding: 4px;" title="Close Modal">✕</button>
+          <button type="button" class="btn-pm-modal-close" id="btn-pm-close-bulk-servicing-modal" style="background: none; border: none; color: #94a3b8; font-size: 20px; cursor: pointer; padding: 4px;" title="Close Modal">✕</button>
         </div>
 
         <!-- Body -->
@@ -2742,7 +2933,7 @@ function renderBulkServicingModal() {
 
         <!-- Footer -->
         <div style="padding: 14px 22px; border-top: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; background: #0f172a;">
-          <button id="btn-pm-cancel-bulk-servicing" class="btn btn-secondary btn-sm" style="font-weight: 600; padding: 6px 14px;">
+          <button type="button" id="btn-pm-cancel-bulk-servicing" class="btn btn-secondary btn-sm btn-pm-modal-close" style="font-weight: 600; padding: 6px 14px;">
             Cancel
           </button>
           
@@ -3120,14 +3311,15 @@ export function initPreventiveMaintenanceEvents() {
     });
   });
 
-  // Edit sticker serial button
-  container.querySelectorAll('.btn-pm-edit-sticker').forEach(btn => {
+  // Edit maintenance service record button
+  container.querySelectorAll('.btn-pm-edit-record, .btn-pm-edit-sticker').forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
       const recId = btn.getAttribute('data-record-id');
-      const curSticker = btn.getAttribute('data-current-sticker');
-      modalServiceContext = { recordId: recId, currentSticker: curSticker };
-      activePmModal = 'edit-sticker';
+      const serial = btn.getAttribute('data-serial') || modalMachineContext || selectedMachineId;
+      modalMachineContext = serial;
+      modalServiceContext = { recordId: recId };
+      activePmModal = 'edit-service-record';
       rerenderView();
     });
   });
@@ -3205,10 +3397,12 @@ export function initPreventiveMaintenanceEvents() {
   });
 
   // Modal event bindings
-  bindModalEvents();
+  bindModalEvents(container);
 }
 
-function bindModalEvents() {
+function bindModalEvents(container) {
+  const pmContainer = container || document.querySelector('.preventive-maintenance-page') || document;
+
   // 1. Service Entry Modal Events
   document.getElementById('btn-pm-close-service-modal')?.addEventListener('click', () => closeModal());
   document.getElementById('btn-pm-cancel-service')?.addEventListener('click', () => closeModal());
@@ -3888,7 +4082,7 @@ function bindModalEvents() {
   });
 
   // Quick Approve buttons (in pending-approvals tab and recently-serviced tab)
-  container.querySelectorAll('.btn-pm-quick-approve').forEach(btn => {
+  pmContainer.querySelectorAll('.btn-pm-quick-approve').forEach(btn => {
     btn.addEventListener('click', async (e) => {
       e.stopPropagation();
       const recordId = btn.getAttribute('data-record-id');
@@ -3909,7 +4103,7 @@ function bindModalEvents() {
   });
 
   // Quick Reject buttons
-  container.querySelectorAll('.btn-pm-quick-reject').forEach(btn => {
+  pmContainer.querySelectorAll('.btn-pm-quick-reject').forEach(btn => {
     btn.addEventListener('click', async (e) => {
       e.stopPropagation();
       const recordId = btn.getAttribute('data-record-id');
@@ -3929,7 +4123,7 @@ function bindModalEvents() {
   });
 
   // Open review modal buttons (both in pending-approvals tab and recently-serviced tab)
-  container.querySelectorAll('.btn-pm-review-approval').forEach(btn => {
+  pmContainer.querySelectorAll('.btn-pm-review-approval').forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
       const recordId = btn.getAttribute('data-record-id');
@@ -4051,20 +4245,80 @@ function bindModalEvents() {
     window.print();
   });
 
-  // 4. Edit Sticker Serial Modal Events
-  document.getElementById('btn-pm-close-edit-sticker')?.addEventListener('click', () => closeModal());
-  document.getElementById('btn-pm-cancel-edit-sticker')?.addEventListener('click', () => closeModal());
-  document.getElementById('btn-pm-save-edit-sticker')?.addEventListener('click', () => {
-    const recId = document.getElementById('pm-edit-sticker-record-id')?.value;
-    const newSticker = document.getElementById('pm-edit-sticker-input')?.value.trim();
-    if (!newSticker) {
-      alert('Sticker serial number cannot be blank.');
+  // 4. Edit Maintenance Record Modal Events
+  document.getElementById('btn-pm-close-edit-record')?.addEventListener('click', () => closeModal());
+  document.getElementById('btn-pm-cancel-edit-record')?.addEventListener('click', () => closeModal());
+
+  // Auto-calc next target date on service date change in edit modal
+  document.getElementById('pm-edit-service-date')?.addEventListener('change', (e) => {
+    const freq = parseInt(document.getElementById('pm-edit-record-freq')?.value, 10) || 91;
+    const nextDateInput = document.getElementById('pm-edit-next-date');
+    if (nextDateInput && e.target.value) {
+      nextDateInput.value = preventiveMaintenanceService.calculateNextServiceDate(e.target.value, freq);
+    }
+  });
+
+  document.getElementById('btn-pm-edit-autocalc-next')?.addEventListener('click', () => {
+    const sDate = document.getElementById('pm-edit-service-date')?.value;
+    const freq = parseInt(document.getElementById('pm-edit-record-freq')?.value, 10) || 91;
+    const nextDateInput = document.getElementById('pm-edit-next-date');
+    if (nextDateInput && sDate) {
+      nextDateInput.value = preventiveMaintenanceService.calculateNextServiceDate(sDate, freq);
+    }
+  });
+
+  document.getElementById('btn-pm-save-edit-record')?.addEventListener('click', async () => {
+    const recId = document.getElementById('pm-edit-record-id')?.value;
+    if (!recId) {
+      alert('Record ID is missing.');
       return;
     }
-    preventiveMaintenanceService.updateStickerSerial(recId, newSticker);
-    notificationService.success(`Sticker serial updated to ${newSticker}.`);
-    closeModal();
-    rerenderView();
+    const sDate = document.getElementById('pm-edit-service-date')?.value;
+    const sType = document.getElementById('pm-edit-service-type')?.value;
+    const tech = document.getElementById('pm-edit-serviced-by')?.value?.trim();
+    const card = document.getElementById('pm-edit-serviced-by-card')?.value?.trim();
+    const nDate = document.getElementById('pm-edit-next-date')?.value;
+    const sticker = document.getElementById('pm-edit-sticker-serial')?.value?.trim();
+    const parts = document.getElementById('pm-edit-parts-replaced')?.value?.trim();
+    const remarks = document.getElementById('pm-edit-remarks')?.value?.trim();
+
+    if (!sDate) {
+      alert('Please select a Service Date.');
+      document.getElementById('pm-edit-service-date')?.focus();
+      return;
+    }
+    if (!tech) {
+      alert('Please enter technician/mechanic name.');
+      document.getElementById('pm-edit-serviced-by')?.focus();
+      return;
+    }
+
+    const btnSave = document.getElementById('btn-pm-save-edit-record');
+    if (btnSave) {
+      btnSave.disabled = true;
+      btnSave.textContent = 'Saving...';
+    }
+
+    try {
+      await preventiveMaintenanceService.updateServiceEntry(recId, {
+        serviceDate: sDate,
+        serviceType: sType,
+        servicedBy: tech,
+        servicedByCardNumber: card,
+        nextServiceDate: nDate,
+        serviceStickerSerial: sticker,
+        partsReplaced: parts,
+        serviceRemarks: remarks
+      });
+      notificationService.success('Maintenance service record successfully updated.');
+      closeModal();
+    } catch (err) {
+      alert('Error updating maintenance record: ' + err.message);
+      if (btnSave) {
+        btnSave.disabled = false;
+        btnSave.textContent = '💾 Save Maintenance Record';
+      }
+    }
   });
 
   // 5. Config Modal Events
@@ -4534,6 +4788,36 @@ function bindModalEvents() {
       alert('Error applying bulk servicing: ' + err.message);
     }
   });
+
+  // Universal modal close handler (catches all .btn-pm-modal-close across all PM modals)
+  pmContainer.querySelectorAll('.btn-pm-modal-close').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      closeModal();
+    });
+  });
+
+  // Modal backdrop click to dismiss modal
+  pmContainer.querySelectorAll('.modal-backdrop').forEach(bd => {
+    bd.addEventListener('click', (e) => {
+      if (e.target === bd) {
+        e.preventDefault();
+        e.stopPropagation();
+        closeModal();
+      }
+    });
+  });
+
+  // Keyboard Escape listener to dismiss any active PM modal
+  const handlePmEscape = (e) => {
+    if (e.key === 'Escape' && activePmModal) {
+      e.preventDefault();
+      closeModal();
+    }
+  };
+  window.removeEventListener('keydown', handlePmEscape);
+  window.addEventListener('keydown', handlePmEscape);
 }
 
 function selectMachineBySerial(serialOrId) {
@@ -4552,13 +4836,16 @@ function closeModal() {
   modalMachineContext = null;
   modalServiceContext = null;
   modalApprovalRecordId = null;
+  bulkExcelParsedRows = null;
+  bulkExcelPreviewResult = null;
+  bulkServicingParsedRows = null;
+  bulkServicingPreviewResult = null;
 
   const modalLayer = document.getElementById('pm-modal-layer');
   if (modalLayer) {
     modalLayer.innerHTML = '';
-  } else {
-    rerenderView();
   }
+  rerenderView();
 }
 
 function rerenderView() {

@@ -2364,6 +2364,31 @@ class PreventiveMaintenanceService {
       const idx = tbl.findIndex(r => r.id === recordId);
       if (idx !== -1) tbl[idx] = updated;
     });
+
+    // Also update machine table if this was/is the latest service record for this machine
+    try {
+      const allRecords = storage.getTable(TABLE_NAMES.PREVENTIVE_MAINTENANCE) || [];
+      const machineRecords = allRecords
+        .filter(r => (r.machineId === updated.machineId) || (r.serialNumber === updated.serialNumber))
+        .sort((a, b) => new Date(b.serviceDate || b.createdAt) - new Date(a.serviceDate || a.createdAt));
+
+      if (machineRecords[0] && machineRecords[0].id === recordId) {
+        await storage.writeAndConfirm(TABLE_NAMES.MACHINES, (machines) => {
+          const m = machines.find(x => x.id === updated.machineId || (x.serialNumber && x.serialNumber.trim().toUpperCase() === updated.serialNumber.trim().toUpperCase()));
+          if (m) {
+            if (updated.serviceDate) m.lastServiceDate = updated.serviceDate;
+            if (updated.nextServiceDate) m.nextServiceDate = updated.nextServiceDate;
+            if (updated.serviceStickerSerial) m.serviceStickerSerial = updated.serviceStickerSerial;
+            if (updated.servicedBy) m.lastServicedBy = updated.servicedBy;
+            if (updated.servicedByCardNumber !== undefined) m.lastServicedByCardNumber = updated.servicedByCardNumber;
+            m.updatedAt = new Date().toISOString();
+          }
+        });
+      }
+    } catch (mErr) {
+      console.warn('Machine sync warning on PM service entry update:', mErr);
+    }
+
     auditService.log('EDIT', 'PREVENTIVE_MAINTENANCE', recordId, `Updated Preventive Service Record for ${updated.serialNumber}`);
     window.dispatchEvent(new CustomEvent('erp:preventive-maintenance-updated', { detail: updated }));
     return updated;

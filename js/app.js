@@ -42,7 +42,7 @@ import { renderEtLabManagementView, initEtLabEvents, setEntActiveTab } from './c
 import { renderChangePasswordModal, initChangePasswordModalEvents } from './components/changePasswordModal.js';
 import { renderAccountSwitcherModal, initAccountSwitcherModalEvents } from './components/accountSwitcherModal.js';
 import { renderStorageView, initStorageEvents } from './components/storageView.js';
-import { renderPreventiveMaintenanceView, initPreventiveMaintenanceEvents } from './components/preventiveMaintenanceView.js';
+import { renderPreventiveMaintenanceView, initPreventiveMaintenanceEvents } from './components/preventiveMaintenanceView.js?v=4.26.31';
 import { smartStorageService } from './services/smartStorageService.js';
 import { renderRelocateView, initRelocateViewEvents } from './components/relocateView.js?v=4.26.18';
 import { renderNeedleOperationsView, initNeedleOperationsEvents } from './components/needleOperationsView.js';
