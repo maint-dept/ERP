@@ -912,6 +912,18 @@ class StorageEngine {
         try {
           const mysqlTsRes = await syncManager.primaryAdapter.getTableTimestamps();
           if (mysqlTsRes && mysqlTsRes.success && mysqlTsRes.timestamps) {
+            // If MySQL was offline during startup and we recovered from PostgreSQL, sync data back to MySQL now that it's online
+            if (this._primaryRecoverPending) {
+              this._primaryRecoverPending = false;
+              console.log('[Storage Multi-Device Sync] 🔄 MySQL Primary is back online! Syncing active records to MySQL...');
+              syncManager.runFullSync('mysql_primary').then(() => {
+                console.log('[Storage Multi-Device Sync] ✅ MySQL Primary recovery sync completed!');
+              }).catch(err => {
+                console.warn('[Storage Multi-Device Sync] MySQL recovery sync retry scheduled:', err.message);
+                this._primaryRecoverPending = true;
+              });
+            }
+
             const mysqlUpdates = [];
             const parseTs = (ts) => {
               if (!ts) return 0;
@@ -1286,6 +1298,7 @@ class StorageEngine {
             this._suppressServerPersist = false;
             Object.keys(pgRes.tables).forEach(t => this._loadedSecondaryTables.add(t));
             this.updateStatusBadge('saved');
+            this._primaryRecoverPending = true; // Mark MySQL Primary as needing recovery sync once reachable
 
             if (typeof window !== 'undefined') {
               window.dispatchEvent(new CustomEvent('erp:critical-data-ready'));

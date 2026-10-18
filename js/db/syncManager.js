@@ -254,6 +254,14 @@ class SyncManager {
 
     // 2. PRIMARY FAILED -> Automatic Failover to PostgreSQL Secondary Backup Replica
     console.warn(`[SyncManager] ⚠️ Primary MySQL unavailable. Initiating automatic failover to PostgreSQL Secondary Replica...`);
+    
+    // Queue retry for primary MySQL so all tables are synced to MySQL when it recovers
+    if (this.primaryAdapter) {
+      for (const [collection, dataObj] of Object.entries(tablesObj)) {
+        this._queueRetry(this.primaryAdapter, collection, null, 'SAVE_TABLE', dataObj, 'Primary MySQL was unavailable during multi-table save');
+      }
+    }
+
     const pgAdapter = this.getPostgresAdapter();
     if (pgAdapter && typeof pgAdapter.saveMultipleTables === 'function') {
       try {
@@ -411,7 +419,9 @@ class SyncManager {
     const pending = await retryQueue.getPending();
     for (const item of pending) {
       let adapter = this.secondaryAdapters.get(item.dbId);
-      if (item.dbId === 'default_fb') adapter = this.primaryAdapter;
+      if (item.dbId === 'default_fb' || (this.primaryAdapter && (item.dbId === this.primaryAdapter.id || item.dbId === 'mysql_primary'))) {
+        adapter = this.primaryAdapter;
+      }
 
       if (!adapter) continue; // Database removed or disabled
 
