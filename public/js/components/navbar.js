@@ -211,8 +211,8 @@ export function renderNavbar() {
           <span class="db-status-text">MySQL Synced</span>
         </div>
 
-        <!-- Light / Dark Theme Switcher -->
-        <button id="btn-theme-toggle" class="nav-icon-btn" type="button" title="Theme (${currentTheme === 'light' ? 'Switch to Dark' : 'Switch to Light'})" aria-label="Toggle Theme">
+        <!-- Light / Dark Theme Switcher (Hidden) -->
+        <button id="btn-theme-toggle" class="nav-icon-btn" type="button" style="display: none !important;" title="Theme (${currentTheme === 'light' ? 'Switch to Dark' : 'Switch to Light'})" aria-label="Toggle Theme">
           <span class="theme-icon">${currentTheme === 'light' ? '🌙' : '☀️'}</span>
         </button>
 
@@ -259,14 +259,14 @@ export function renderNavbar() {
               </div>
             </div>
 
-            <!-- Mobile Utility Row (Cloud Sync Status & Theme Switcher) -->
+            <!-- Mobile Utility Row (Cloud Sync Status) -->
             <div class="nav-user-dropdown-section" style="padding-bottom: 6px;">
               <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(15, 23, 42, 0.6); padding: 8px 10px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.08); gap: 8px;">
                 <div style="display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; color: #38bdf8; font-weight: 700;">
                   <span class="nav-db-pulse-dot" style="width: 7px; height: 7px;"></span>
                   <span>Cloud Synced</span>
                 </div>
-                <button type="button" id="btn-dropdown-theme-toggle" class="btn btn-ghost btn-xs" style="color: #f1f5f9; font-size: 11.5px; display: inline-flex; align-items: center; gap: 5px; padding: 4px 8px; border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 6px; background: rgba(56, 189, 248, 0.12); cursor: pointer;" title="Toggle Light / Dark Theme">
+                <button type="button" id="btn-dropdown-theme-toggle" class="btn btn-ghost btn-xs" style="display: none !important;" title="Toggle Light / Dark Theme">
                   <span class="dropdown-theme-icon">${currentTheme === 'light' ? '🌙' : '☀️'}</span>
                   <span>${currentTheme === 'light' ? 'Dark' : 'Light'}</span>
                 </button>

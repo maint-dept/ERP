@@ -4261,23 +4261,10 @@ body.theme-light .transfers-table tbody td {
   box-shadow: 0 0 10px rgba(16, 185, 129, 0.25) !important;
 }
 
-.nav-icon-btn#btn-theme-toggle {
-  background: #1e293b !important;
-  border: 1.5px solid #475569 !important;
-  color: #fbbf24 !important;
-  cursor: pointer !important;
-  transition: all 0.2s ease !important;
-}
-
-.nav-icon-btn#btn-theme-toggle:hover {
-  border-color: #38bdf8 !important;
-  transform: scale(1.05);
-}
-
-body.theme-light .nav-icon-btn#btn-theme-toggle {
-  background: #e2e8f0 !important;
-  border: 1.5px solid #94a3b8 !important;
-  color: #0284c7 !important;
+.nav-icon-btn#btn-theme-toggle,
+#btn-theme-toggle,
+#btn-dropdown-theme-toggle {
+  display: none !important;
 }
 
 /* Printable Documents */
