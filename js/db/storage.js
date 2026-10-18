@@ -734,6 +734,12 @@ class StorageEngine {
       const currentPromise = (async () => {
         try {
           const currentRecords = this.data[table];
+          if (table === TABLE_NAMES.MACHINES && Array.isArray(currentRecords)) {
+            if (currentRecords.length > 0 && currentRecords.length < 6450) {
+              console.warn(`[Anti-Downgrade Safeguard] 🛑 Blocked saving machines table with ${currentRecords.length} records (< 6,450 required master inventory).`);
+              return { success: false, error: 'Anti-Downgrade Safeguard: Machine count cannot be less than 6,450.' };
+            }
+          }
           const result = await syncManager.saveTable(table, currentRecords);
           if (result && result.success) {
             this._isCloudConnected = true;
@@ -1063,23 +1069,12 @@ class StorageEngine {
               }, 1500);
             } else {
               this.data[tbl] = cleanMachines;
-              const idsUpdated = this.ensureMachineSystemAssetIds();
-              if (idsUpdated || hasRemarksChanged) {
-                setTimeout(() => {
-                  this.saveTable(TABLE_NAMES.MACHINES, this.data[tbl], false).catch(() => {});
-                }, 1200);
-              }
+              this.ensureMachineSystemAssetIds();
             }
           } else {
             this.data[tbl] = cleanMachines;
-            const idsUpdated = this.ensureMachineSystemAssetIds();
+            this.ensureMachineSystemAssetIds();
             this.ensureForeignIntegrity();
-            if (idsUpdated || hasRemarksChanged) {
-              // Push cleaned remarks & migrated System Asset IDs back to MySQL Primary asynchronously
-              setTimeout(() => {
-                this.saveTable(TABLE_NAMES.MACHINES, this.data[tbl], false).catch(() => {});
-              }, 1200);
-            }
           }
         } else if (tbl === TABLE_NAMES.SETTINGS && Array.isArray(serverRecs[tbl])) {
           const localMultiDb = localStorage.getItem('erp_multi_db_config');

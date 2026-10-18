@@ -230,6 +230,20 @@ try {
                 throw new Exception('Missing "data" payload.');
             }
 
+            if ($collection === 'machines' && is_array($data)) {
+                $checkStmt = $pdo->prepare("SELECT `item_count` FROM `erp_tables` WHERE `table_name` = 'machines'");
+                $checkStmt->execute();
+                $existingCount = intval($checkStmt->fetchColumn() ?: 0);
+                if ($existingCount >= 6450 && count($data) < $existingCount) {
+                    http_response_code(400);
+                    echo json_encode([
+                        'success' => false,
+                        'error' => "Anti-Downgrade Safeguard: Rejection triggered. Cannot overwrite $existingCount machines with fewer records (" . count($data) . ")."
+                    ]);
+                    exit;
+                }
+            }
+
             $jsonStr = is_string($data) ? $data : json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
             $itemCount = is_array($data) ? count($data) : 1;
 
