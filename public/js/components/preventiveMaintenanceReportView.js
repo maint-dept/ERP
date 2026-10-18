@@ -658,7 +658,180 @@ export function renderPreventiveMaintenanceReportView() {
   return `
     <div class="pm-report-module-wrapper" style="display: flex; flex-direction: column; gap: 8px; width: 100%; box-sizing: border-box;">
       
-      <!-- 1. TOP INTERACTIVE TOOLBAR (HIDDEN IN PRINT) -->
+      <!-- Embedded Typography, Text-Wrap & Fixed A4 Landscape Layout Rules -->
+      <style>
+        .pm-official-sheet {
+          width: 297mm !important;
+          min-height: 202mm !important;
+          max-height: 202mm !important;
+          height: 202mm !important;
+          display: flex !important;
+          flex-direction: column !important;
+          justify-content: space-between !important;
+          background: #ffffff !important;
+          color: #000000 !important;
+          box-sizing: border-box !important;
+          padding: 5mm 8mm 4mm 8mm !important;
+          box-shadow: 0 4px 15px rgba(0,0,0,0.35) !important;
+          font-family: 'Segoe UI', Arial, Helvetica, sans-serif !important;
+          font-size: 10px !important;
+          line-height: 1.25 !important;
+          margin: 0 auto !important;
+          position: relative !important;
+          overflow: hidden !important;
+        }
+        .pm-official-table {
+          width: 100% !important;
+          border-collapse: collapse !important;
+          table-layout: fixed !important;
+          border: 1.5px solid #000000 !important;
+          font-size: 9.5px !important;
+        }
+        .pm-official-table th,
+        .pm-official-table td {
+          white-space: normal !important;
+          word-break: break-word !important;
+          overflow-wrap: break-word !important;
+          word-wrap: break-word !important;
+          line-height: 1.25 !important;
+          vertical-align: middle !important;
+          box-sizing: border-box !important;
+        }
+        .pm-official-signatures {
+          display: flex !important;
+          justify-content: space-between !important;
+          align-items: flex-end !important;
+          margin-top: auto !important;
+          padding-top: 14px !important;
+          width: 100% !important;
+          page-break-inside: avoid !important;
+          break-inside: avoid !important;
+        }
+        .pm-official-signatures .pm-sign-col {
+          flex: 1 1 25% !important;
+          width: 25% !important;
+          max-width: 25% !important;
+          text-align: center !important;
+          box-sizing: border-box !important;
+          padding: 0 6px !important;
+        }
+        .pm-official-signatures .pm-sign-box {
+          width: 100% !important;
+          max-width: 160px !important;
+          margin: 0 auto !important;
+          text-align: center !important;
+        }
+        .pm-official-signatures .pm-sign-line {
+          border-top: 1.5px solid #000000 !important;
+          padding-top: 4px !important;
+          font-weight: 800 !important;
+          font-size: 11px !important;
+          color: #000000 !important;
+          width: 100% !important;
+          text-align: center !important;
+          white-space: nowrap !important;
+        }
+        @media print {
+          @page {
+            size: A4 landscape !important;
+            margin: 5mm 6mm 5mm 6mm !important;
+          }
+          html, body {
+            margin: 0 !important;
+            padding: 0 !important;
+            background: #ffffff !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+          body * {
+            visibility: hidden !important;
+          }
+          #pm-official-report-printable,
+          #pm-official-report-printable * {
+            visibility: visible !important;
+          }
+          #pm-official-report-printable {
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            background: transparent !important;
+          }
+          .pm-official-sheet {
+            width: 100% !important;
+            min-height: 198mm !important;
+            max-height: 198mm !important;
+            height: 198mm !important;
+            padding: 4mm 6mm 3mm 6mm !important;
+            margin: 0 auto !important;
+            box-shadow: none !important;
+            border: none !important;
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: space-between !important;
+            page-break-after: avoid !important;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+            overflow: hidden !important;
+          }
+          .pm-official-table {
+            width: 100% !important;
+            border-collapse: collapse !important;
+            table-layout: fixed !important;
+            border: 1.5px solid #000000 !important;
+            font-size: 9.5px !important;
+          }
+          .pm-official-table th,
+          .pm-official-table td {
+            white-space: normal !important;
+            word-break: break-word !important;
+            overflow-wrap: break-word !important;
+            word-wrap: break-word !important;
+            line-height: 1.25 !important;
+            vertical-align: middle !important;
+            box-sizing: border-box !important;
+          }
+          .pm-official-signatures {
+            display: flex !important;
+            justify-content: space-between !important;
+            align-items: flex-end !important;
+            margin-top: auto !important;
+            padding-top: 12px !important;
+            width: 100% !important;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+          }
+          .pm-official-signatures .pm-sign-col {
+            flex: 1 1 25% !important;
+            width: 25% !important;
+            max-width: 25% !important;
+            text-align: center !important;
+            box-sizing: border-box !important;
+            padding: 0 6px !important;
+          }
+          .pm-official-signatures .pm-sign-box {
+            width: 100% !important;
+            max-width: 160px !important;
+            margin: 0 auto !important;
+            text-align: center !important;
+          }
+          .pm-official-signatures .pm-sign-line {
+            border-top: 1.5px solid #000000 !important;
+            padding-top: 4px !important;
+            font-weight: 800 !important;
+            font-size: 11px !important;
+            color: #000000 !important;
+            width: 100% !important;
+            text-align: center !important;
+            white-space: nowrap !important;
+          }
+          .no-print {
+            display: none !important;
+          }
+        }
+      </style>
       <div class="pm-report-toolbar no-print" style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 8px 12px; display: flex; flex-direction: column; gap: 8px; box-shadow: var(--shadow-sm);">
         
         <!-- Filter Row & Document Parameters -->
@@ -811,17 +984,23 @@ export function renderPreventiveMaintenanceReportView() {
         
         <div class="pm-official-sheet" style="
           width: 297mm; 
-          min-height: 210mm; 
+          min-height: 202mm; 
+          max-height: 202mm;
+          height: 202mm;
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
           background: #ffffff; 
           color: #000000; 
           box-sizing: border-box; 
-          padding: 8mm 10mm; 
+          padding: 5mm 8mm 4mm 8mm; 
           box-shadow: 0 4px 15px rgba(0,0,0,0.35); 
           font-family: 'Segoe UI', Arial, Helvetica, sans-serif; 
-          font-size: 11px; 
-          line-height: 1.3;
+          font-size: 10px; 
+          line-height: 1.25;
           margin: 0 auto;
           position: relative;
+          overflow: hidden;
         ">
 
           <!-- A. OFFICIAL REPORT HEADER -->
@@ -940,27 +1119,27 @@ export function renderPreventiveMaintenanceReportView() {
               <col style="width: 4%;" />    <!-- 1. Sl. No. -->
               <col style="width: 12%;" />   <!-- 2. M/C Name -->
               <col style="width: 10%;" />   <!-- 3. M/C Number -->
-              <col style="width: 10%;" />   <!-- 4. M/C Model/Type -->
-              <col style="width: 9%;" />    <!-- 5. Previous Servicing Date: -->
+              <col style="width: 11%;" />   <!-- 4. M/C Model/Type -->
+              <col style="width: 9.5%;" />  <!-- 5. Previous Servicing Date: -->
               <col style="width: 8%;" />    <!-- 6. Sticker Sl. No. -->
-              <col style="width: 8%;" />    <!-- 7. Line or Section -->
-              <col style="width: 25%;" />   <!-- 8. Work Summary (Wide Column) -->
-              <col style="width: 7%;" />    <!-- 9. Servicer Name -->
-              <col style="width: 7%;" />    <!-- 10. Signature -->
+              <col style="width: 8.5%;" />  <!-- 7. Line or Section -->
+              <col style="width: 23%;" />   <!-- 8. Work Summary (Wide Column) -->
+              <col style="width: 9%;" />    <!-- 9. Servicer Name -->
+              <col style="width: 5%;" />    <!-- 10. Signature -->
             </colgroup>
 
             <thead>
               <tr style="border-bottom: 1.5px solid #000000;">
-                <th style="border: 1px solid #000000; padding: 5px 2px; text-align: center; vertical-align: middle; font-weight: 700; font-size: 9.5px; background: #fff; color: #000;">Sl.<br/>No.</th>
-                <th style="border: 1px solid #000000; padding: 5px 4px; text-align: center; vertical-align: middle; font-weight: 700; font-size: 9.5px; background: #fff; color: #000;">M/C Name</th>
-                <th style="border: 1px solid #000000; padding: 5px 4px; text-align: center; vertical-align: middle; font-weight: 700; font-size: 9.5px; background: #fff; color: #000;">M/C<br/>Number</th>
-                <th style="border: 1px solid #000000; padding: 5px 4px; text-align: center; vertical-align: middle; font-weight: 700; font-size: 9.5px; background: #fff; color: #000;">M/C Model/Type</th>
-                <th style="border: 1px solid #000000; padding: 5px 4px; text-align: center; vertical-align: middle; font-weight: 700; font-size: 9.5px; background: #fff; color: #000;">Previous<br/>Servicing<br/>Date:</th>
-                <th style="border: 1px solid #000000; padding: 5px 4px; text-align: center; vertical-align: middle; font-weight: 700; font-size: 9.5px; background: #fff; color: #000;">Sticker Sl.<br/>No.</th>
-                <th style="border: 1px solid #000000; padding: 5px 4px; text-align: center; vertical-align: middle; font-weight: 700; font-size: 9.5px; background: #fff; color: #000;">Line or<br/>Section</th>
-                <th style="border: 1px solid #000000; padding: 5px 6px; text-align: center; vertical-align: middle; font-weight: 700; font-size: 9.5px; background: #fff; color: #000;">Work Summary</th>
-                <th style="border: 1px solid #000000; padding: 5px 4px; text-align: center; vertical-align: middle; font-weight: 700; font-size: 9.5px; background: #fff; color: #000;">Servicer Name</th>
-                <th style="border: 1px solid #000000; padding: 5px 4px; text-align: center; vertical-align: middle; font-weight: 700; font-size: 9.5px; background: #fff; color: #000;">Signature</th>
+                <th style="border: 1px solid #000000; padding: 5px 2px; text-align: center; vertical-align: middle; font-weight: 700; font-size: 9.5px; background: #fff; color: #000; white-space: normal; word-break: break-word;">Sl.<br/>No.</th>
+                <th style="border: 1px solid #000000; padding: 5px 3px; text-align: center; vertical-align: middle; font-weight: 700; font-size: 9.5px; background: #fff; color: #000; white-space: normal; word-break: break-word;">M/C Name</th>
+                <th style="border: 1px solid #000000; padding: 5px 3px; text-align: center; vertical-align: middle; font-weight: 700; font-size: 9.5px; background: #fff; color: #000; white-space: normal; word-break: break-word;">M/C<br/>Number</th>
+                <th style="border: 1px solid #000000; padding: 5px 3px; text-align: center; vertical-align: middle; font-weight: 700; font-size: 9.5px; background: #fff; color: #000; white-space: normal; word-break: break-word;">M/C Model/Type</th>
+                <th style="border: 1px solid #000000; padding: 5px 3px; text-align: center; vertical-align: middle; font-weight: 700; font-size: 9.5px; background: #fff; color: #000; white-space: normal; word-break: break-word;">Previous<br/>Servicing<br/>Date:</th>
+                <th style="border: 1px solid #000000; padding: 5px 3px; text-align: center; vertical-align: middle; font-weight: 700; font-size: 9.5px; background: #fff; color: #000; white-space: normal; word-break: break-word;">Sticker Sl.<br/>No.</th>
+                <th style="border: 1px solid #000000; padding: 5px 3px; text-align: center; vertical-align: middle; font-weight: 700; font-size: 9.5px; background: #fff; color: #000; white-space: normal; word-break: break-word;">Line or<br/>Section</th>
+                <th style="border: 1px solid #000000; padding: 5px 4px; text-align: center; vertical-align: middle; font-weight: 700; font-size: 9.5px; background: #fff; color: #000; white-space: normal; word-break: break-word;">Work Summary</th>
+                <th style="border: 1px solid #000000; padding: 5px 3px; text-align: center; vertical-align: middle; font-weight: 700; font-size: 9.5px; background: #fff; color: #000; white-space: normal; word-break: break-word;">Servicer Name</th>
+                <th style="border: 1px solid #000000; padding: 5px 2px; text-align: center; vertical-align: middle; font-weight: 700; font-size: 9.5px; background: #fff; color: #000; white-space: normal; word-break: break-word;">Signature</th>
               </tr>
             </thead>
 
@@ -971,35 +1150,35 @@ export function renderPreventiveMaintenanceReportView() {
                 if (reportState.previewMode) {
                   // Clean Print / Preview Mode (No input outlines, exact paper appearance)
                   return `
-                    <tr style="min-height: 38px; height: 38px;">
-                      <td style="border: 1px solid #000000; text-align: center; font-weight: 700; font-size: 10px; padding: 4px 2px; vertical-align: middle;">
+                    <tr style="min-height: 36px; height: 36px;">
+                      <td style="border: 1px solid #000000; text-align: center; font-weight: 700; font-size: 9.5px; padding: 4px 2px; vertical-align: middle; white-space: normal; word-break: break-word;">
                         ${slFormatted}
                       </td>
-                      <td style="border: 1px solid #000000; text-align: left; padding: 4px 6px; vertical-align: middle; font-size: 9.5px; word-break: break-word;">
+                      <td style="border: 1px solid #000000; text-align: left; padding: 4px 5px; vertical-align: middle; font-size: 9.5px; white-space: normal; word-break: break-word; overflow-wrap: break-word; line-height: 1.25;">
                         ${escapeHtml(row.machineName || '')}
                       </td>
-                      <td style="border: 1px solid #000000; text-align: center; font-weight: 700; padding: 4px; vertical-align: middle; font-size: 10px; font-family: monospace;">
+                      <td style="border: 1px solid #000000; text-align: center; font-weight: 700; padding: 4px 3px; vertical-align: middle; font-size: 9.5px; font-family: monospace; white-space: normal; word-break: break-word; overflow-wrap: break-word;">
                         ${escapeHtml(row.machineNumber || '')}
                       </td>
-                      <td style="border: 1px solid #000000; text-align: center; padding: 4px; vertical-align: middle; font-size: 9.5px; word-break: break-word;">
+                      <td style="border: 1px solid #000000; text-align: center; padding: 4px 3px; vertical-align: middle; font-size: 9.5px; white-space: normal; word-break: break-word; overflow-wrap: break-word; line-height: 1.25;">
                         ${escapeHtml(row.machineModel || '')}
                       </td>
-                      <td style="border: 1px solid #000000; text-align: center; padding: 4px; vertical-align: middle; font-size: 9.5px; white-space: nowrap;">
+                      <td style="border: 1px solid #000000; text-align: center; padding: 4px 2px; vertical-align: middle; font-size: 9.5px; white-space: normal; word-break: break-word; line-height: 1.2;">
                         ${escapeHtml(row.previousServicingDate ? formatDMY(row.previousServicingDate) : '')}
                       </td>
-                      <td style="border: 1px solid #000000; text-align: center; font-weight: 600; padding: 4px; vertical-align: middle; font-size: 9.5px; font-family: monospace;">
+                      <td style="border: 1px solid #000000; text-align: center; font-weight: 600; padding: 4px 2px; vertical-align: middle; font-size: 9.5px; font-family: monospace; white-space: normal; word-break: break-word;">
                         ${escapeHtml(row.stickerSerial || '')}
                       </td>
-                      <td style="border: 1px solid #000000; text-align: center; padding: 4px; vertical-align: middle; font-size: 9.5px; word-break: break-word;">
+                      <td style="border: 1px solid #000000; text-align: center; padding: 4px 3px; vertical-align: middle; font-size: 9.5px; white-space: normal; word-break: break-word; overflow-wrap: break-word; line-height: 1.25;">
                         ${escapeHtml(row.lineOrSection || '')}
                       </td>
-                      <td style="border: 1px solid #000000; text-align: left; padding: 4px 6px; vertical-align: middle; font-size: 9.5px; line-height: 1.25; word-break: break-word;">
+                      <td style="border: 1px solid #000000; text-align: left; padding: 4px 5px; vertical-align: middle; font-size: 9.5px; line-height: 1.25; white-space: normal; word-break: break-word; overflow-wrap: break-word;">
                         ${escapeHtml(row.workSummary || '')}
                       </td>
-                      <td style="border: 1px solid #000000; text-align: center; padding: 4px; vertical-align: middle; font-size: 9.5px; word-break: break-word;">
+                      <td style="border: 1px solid #000000; text-align: center; padding: 4px 3px; vertical-align: middle; font-size: 9.5px; white-space: normal; word-break: break-word; overflow-wrap: break-word; line-height: 1.25;">
                         ${escapeHtml(row.servicerName || '')}
                       </td>
-                      <td style="border: 1px solid #000000; text-align: center; padding: 4px; vertical-align: middle; font-size: 9.5px;">
+                      <td style="border: 1px solid #000000; text-align: center; padding: 4px 2px; vertical-align: middle; font-size: 9.5px; white-space: normal; word-break: break-word;">
                         ${row.signature ? `<span style="font-family: cursive; font-size: 11px; color: #1e3a8a;">${escapeHtml(row.signature)}</span>` : ''}
                       </td>
                     </tr>
@@ -1140,61 +1319,70 @@ export function renderPreventiveMaintenanceReportView() {
             </tbody>
           </table>
 
-          <!-- D. FOUR APPROVAL SIGNATURE POSITIONS (Bottom of Official Sheet) -->
+          <!-- D. FOUR APPROVAL SIGNATURE POSITIONS (Bottom of Official Sheet - FIXED AT BOTTOM, ALL EQUAL WIDTH) -->
           <div class="pm-official-signatures" style="
             display: flex; 
             justify-content: space-between; 
             align-items: flex-end; 
-            margin-top: 45px; 
+            margin-top: auto; 
+            padding-top: 14px; 
             width: 100%;
             page-break-inside: avoid;
             break-inside: avoid;
           ">
             
             <!-- 1. Engineer -->
-            <div style="width: 20%; text-align: center;">
-              <div style="min-height: 38px; display: flex; align-items: center; justify-content: center;">
-                <span class="digital-sign-placeholder" style="font-family: cursive; font-size: 13px; color: #1e3a8a;"></span>
-              </div>
-              <div style="border-top: 1.5px solid #000000; padding-top: 4px; font-weight: 800; font-size: 11px; color: #000000;">
-                Engineer
+            <div class="pm-sign-col" style="flex: 1 1 25%; max-width: 25%; width: 25%; text-align: center; box-sizing: border-box; padding: 0 8px;">
+              <div class="pm-sign-box" style="width: 100%; max-width: 160px; margin: 0 auto; text-align: center;">
+                <div style="min-height: 36px; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 2px;">
+                  <span class="digital-sign-placeholder" style="font-family: cursive; font-size: 13px; color: #1e3a8a;"></span>
+                </div>
+                <div class="pm-sign-line" style="border-top: 1.5px solid #000000; padding-top: 4px; font-weight: 800; font-size: 11px; color: #000000; width: 100%; text-align: center; white-space: nowrap;">
+                  Engineer
+                </div>
               </div>
             </div>
 
             <!-- 2. Manager -->
-            <div style="width: 20%; text-align: center;">
-              <div style="min-height: 38px; display: flex; align-items: center; justify-content: center;">
-                <span class="digital-sign-placeholder" style="font-family: cursive; font-size: 13px; color: #1e3a8a;"></span>
-              </div>
-              <div style="border-top: 1.5px solid #000000; padding-top: 4px; font-weight: 800; font-size: 11px; color: #000000;">
-                Manager
+            <div class="pm-sign-col" style="flex: 1 1 25%; max-width: 25%; width: 25%; text-align: center; box-sizing: border-box; padding: 0 8px;">
+              <div class="pm-sign-box" style="width: 100%; max-width: 160px; margin: 0 auto; text-align: center;">
+                <div style="min-height: 36px; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 2px;">
+                  <span class="digital-sign-placeholder" style="font-family: cursive; font-size: 13px; color: #1e3a8a;"></span>
+                </div>
+                <div class="pm-sign-line" style="border-top: 1.5px solid #000000; padding-top: 4px; font-weight: 800; font-size: 11px; color: #000000; width: 100%; text-align: center; white-space: nowrap;">
+                  Manager
+                </div>
               </div>
             </div>
 
             <!-- 3. Sr. Manager / AGM -->
-            <div style="width: 20%; text-align: center;">
-              <div style="min-height: 38px; display: flex; align-items: center; justify-content: center;">
-                <span class="digital-sign-placeholder" style="font-family: cursive; font-size: 13px; color: #1e3a8a;"></span>
-              </div>
-              <div style="border-top: 1.5px solid #000000; padding-top: 4px; font-weight: 800; font-size: 11px; color: #000000;">
-                Sr. Manager/AGM
+            <div class="pm-sign-col" style="flex: 1 1 25%; max-width: 25%; width: 25%; text-align: center; box-sizing: border-box; padding: 0 8px;">
+              <div class="pm-sign-box" style="width: 100%; max-width: 160px; margin: 0 auto; text-align: center;">
+                <div style="min-height: 36px; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 2px;">
+                  <span class="digital-sign-placeholder" style="font-family: cursive; font-size: 13px; color: #1e3a8a;"></span>
+                </div>
+                <div class="pm-sign-line" style="border-top: 1.5px solid #000000; padding-top: 4px; font-weight: 800; font-size: 11px; color: #000000; width: 100%; text-align: center; white-space: nowrap;">
+                  Sr. Manager/AGM
+                </div>
               </div>
             </div>
 
             <!-- 4. General Manager -->
-            <div style="width: 20%; text-align: center;">
-              <div style="min-height: 38px; display: flex; align-items: center; justify-content: center;">
-                <span class="digital-sign-placeholder" style="font-family: cursive; font-size: 13px; color: #1e3a8a;"></span>
-              </div>
-              <div style="border-top: 1.5px solid #000000; padding-top: 4px; font-weight: 800; font-size: 11px; color: #000000;">
-                General Manager
+            <div class="pm-sign-col" style="flex: 1 1 25%; max-width: 25%; width: 25%; text-align: center; box-sizing: border-box; padding: 0 8px;">
+              <div class="pm-sign-box" style="width: 100%; max-width: 160px; margin: 0 auto; text-align: center;">
+                <div style="min-height: 36px; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 2px;">
+                  <span class="digital-sign-placeholder" style="font-family: cursive; font-size: 13px; color: #1e3a8a;"></span>
+                </div>
+                <div class="pm-sign-line" style="border-top: 1.5px solid #000000; padding-top: 4px; font-weight: 800; font-size: 11px; color: #000000; width: 100%; text-align: center; white-space: nowrap;">
+                  General Manager
+                </div>
               </div>
             </div>
 
           </div>
 
           <!-- Bottom Footer Note for Official Print -->
-          <div style="margin-top: 18px; display: flex; justify-content: space-between; align-items: center; font-size: 8.5px; color: #555555; border-top: 1px dotted #cccccc; padding-top: 3px;">
+          <div style="margin-top: 8px; display: flex; justify-content: space-between; align-items: center; font-size: 8.5px; color: #555555; border-top: 1px dotted #cccccc; padding-top: 3px;">
             <span>Form Ref: AM-MNT-PMM-01 (A4 Landscape)</span>
             <span>Generated from Al-Muslim Central Maintenance Department ERP System</span>
             <span>Page ${curPage} of ${totalPages}</span>
@@ -1602,10 +1790,28 @@ export function initPreventiveMaintenanceReportEvents(container = document) {
    * Direct Official Print Function (window.print with A4 Landscape standalone document)
    */
   function triggerOfficialPrint() {
+    const wasPreview = reportState.previewMode;
+    if (!wasPreview) {
+      reportState.previewMode = true;
+      rerenderReport();
+    }
+
     const sheetEl = document.querySelector('.pm-official-sheet');
     if (!sheetEl) {
       window.print();
+      if (!wasPreview) {
+        reportState.previewMode = false;
+        rerenderReport();
+      }
       return;
+    }
+
+    const sheetHtml = sheetEl.outerHTML;
+
+    // Restore edit mode on screen if user was in edit mode
+    if (!wasPreview) {
+      reportState.previewMode = false;
+      rerenderReport();
     }
 
     const html = `
@@ -1617,36 +1823,92 @@ export function initPreventiveMaintenanceReportEvents(container = document) {
         <style>
           @page {
             size: A4 landscape;
-            margin: 6mm 8mm 6mm 8mm;
+            margin: 5mm 6mm;
           }
           * {
-            box-sizing: border-box;
+            box-sizing: border-box !important;
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
           }
-          body {
-            font-family: 'Segoe UI', Arial, Helvetica, sans-serif;
-            background: #ffffff;
-            color: #000000;
-            margin: 0;
-            padding: 0;
-            font-size: 11px;
+          html, body {
+            font-family: 'Segoe UI', Arial, Helvetica, sans-serif !important;
+            background: #ffffff !important;
+            color: #000000 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            font-size: 10px !important;
+            width: 100% !important;
+            height: 100% !important;
           }
           .pm-official-sheet {
-            width: 100%;
-            padding: 0;
-            background: #fff;
+            width: 100% !important;
+            max-width: 100% !important;
+            height: 198mm !important;
+            min-height: 198mm !important;
+            max-height: 198mm !important;
+            box-sizing: border-box !important;
+            padding: 4mm 6mm 3mm 6mm !important;
+            margin: 0 auto !important;
+            box-shadow: none !important;
+            border: none !important;
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: space-between !important;
+            overflow: hidden !important;
+            page-break-after: avoid !important;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
           }
-          table {
-            border-collapse: collapse;
-            width: 100%;
+          .pm-official-table {
+            width: 100% !important;
+            border-collapse: collapse !important;
+            table-layout: fixed !important;
+            border: 1.5px solid #000000 !important;
+            font-size: 9.5px !important;
           }
-          thead {
-            display: table-header-group;
+          .pm-official-table th,
+          .pm-official-table td {
+            white-space: normal !important;
+            word-break: break-word !important;
+            overflow-wrap: break-word !important;
+            word-wrap: break-word !important;
+            line-height: 1.25 !important;
+            vertical-align: middle !important;
+            box-sizing: border-box !important;
           }
-          tr {
-            page-break-inside: avoid;
-            break-inside: avoid;
+          .pm-official-signatures {
+            display: flex !important;
+            justify-content: space-between !important;
+            align-items: flex-end !important;
+            margin-top: auto !important;
+            padding-top: 12px !important;
+            width: 100% !important;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+          }
+          .pm-official-signatures .pm-sign-col {
+            flex: 1 1 25% !important;
+            width: 25% !important;
+            max-width: 25% !important;
+            text-align: center !important;
+            box-sizing: border-box !important;
+            padding: 0 6px !important;
+          }
+          .pm-official-signatures .pm-sign-box {
+            width: 100% !important;
+            max-width: 160px !important;
+            margin: 0 auto !important;
+            text-align: center !important;
+          }
+          .pm-official-signatures .pm-sign-line {
+            border-top: 1.5px solid #000000 !important;
+            padding-top: 4px !important;
+            font-weight: 800 !important;
+            font-size: 11px !important;
+            color: #000000 !important;
+            width: 100% !important;
+            text-align: center !important;
+            white-space: nowrap !important;
           }
           .no-print {
             display: none !important;
@@ -1654,8 +1916,8 @@ export function initPreventiveMaintenanceReportEvents(container = document) {
         </style>
       </head>
       <body>
-        <div style="padding: 4px 6px;">
-          ${sheetEl.outerHTML}
+        <div style="width: 100%; margin: 0; padding: 0;">
+          ${sheetHtml}
         </div>
         <script>
           window.onload = function() {
