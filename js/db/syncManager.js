@@ -32,6 +32,7 @@ class SyncManager {
       retryEnabled: true,
       enabled: true,
       autoSync: true
+    };
     this.secondaryAdapters = new Map(); // dbId -> adapter
 
     // Permanent Enterprise Secondary Backup Target (PostgreSQL)
