@@ -32,8 +32,46 @@ class SyncManager {
       retryEnabled: true,
       enabled: true,
       autoSync: true
-    };
     this.secondaryAdapters = new Map(); // dbId -> adapter
+
+    // Permanent Enterprise Secondary Backup Target (PostgreSQL)
+    const defaultPg = new PostgresAdapter({
+      id: 'db_postgresql_replica',
+      name: 'PostgreSQL Database Connection',
+      type: 'POSTGRESQL',
+      role: 'BACKUP',
+      host: '127.0.0.1',
+      port: 5432,
+      database: 'motaherh_Maintenance',
+      username: 'motaherh_AMG-maint',
+      password: 'ol(5_MK8mF{~7cdG',
+      endpoint: 'https://moviezonex.com/api/pg_api.php',
+      apiKey: '',
+      ssl: false,
+      enabled: true,
+      autoSync: true,
+      retryEnabled: true
+    });
+    defaultPg.id = 'db_postgresql_replica';
+    defaultPg.name = 'PostgreSQL Database Connection';
+    defaultPg.config = {
+      id: 'db_postgresql_replica',
+      name: 'PostgreSQL Database Connection',
+      type: 'POSTGRESQL',
+      role: 'BACKUP',
+      host: '127.0.0.1',
+      port: 5432,
+      database: 'motaherh_Maintenance',
+      username: 'motaherh_AMG-maint',
+      password: 'ol(5_MK8mF{~7cdG',
+      endpoint: 'https://moviezonex.com/api/pg_api.php',
+      apiKey: '',
+      ssl: false,
+      enabled: true,
+      autoSync: true,
+      retryEnabled: true
+    };
+    this.secondaryAdapters.set('db_postgresql_replica', defaultPg);
     this.configLoaded = false;
   }
 
@@ -55,6 +93,53 @@ class SyncManager {
 
       // Always clear old adapters before rebuilding (prevents stale adapter bug)
       this.secondaryAdapters.clear();
+
+      if (!configs || !Array.isArray(configs) || configs.length === 0) {
+        configs = [
+          this.primaryAdapter.config,
+          {
+            id: 'db_postgresql_replica',
+            name: 'PostgreSQL Database Connection',
+            type: 'POSTGRESQL',
+            role: 'BACKUP',
+            host: '127.0.0.1',
+            port: 5432,
+            database: 'motaherh_Maintenance',
+            username: 'motaherh_AMG-maint',
+            password: 'ol(5_MK8mF{~7cdG',
+            endpoint: 'https://moviezonex.com/api/pg_api.php',
+            apiKey: '',
+            ssl: false,
+            enabled: true,
+            autoSync: true,
+            retryEnabled: true,
+            updatedAt: new Date().toISOString()
+          }
+        ];
+      }
+
+      // Guarantee PostgreSQL secondary backup replica is ALWAYS present and active
+      const hasPg = configs.some(c => (c.type || '').toUpperCase() === 'POSTGRESQL' || (c.type || '').toUpperCase() === 'POSTGRES');
+      if (!hasPg) {
+        configs.push({
+          id: 'db_postgresql_replica',
+          name: 'PostgreSQL Database Connection',
+          type: 'POSTGRESQL',
+          role: 'BACKUP',
+          host: '127.0.0.1',
+          port: 5432,
+          database: 'motaherh_Maintenance',
+          username: 'motaherh_AMG-maint',
+          password: 'ol(5_MK8mF{~7cdG',
+          endpoint: 'https://moviezonex.com/api/pg_api.php',
+          apiKey: '',
+          ssl: false,
+          enabled: true,
+          autoSync: true,
+          retryEnabled: true,
+          updatedAt: new Date().toISOString()
+        });
+      }
 
       if (configs && Array.isArray(configs)) {
         configs.forEach(conf => {
@@ -83,10 +168,17 @@ class SyncManager {
                 ep = 'https://' + ep;
               }
               conf.endpoint = ep || 'https://moviezonex.com/api/pg_api.php';
+              conf.id = 'db_postgresql_replica';
+              conf.name = conf.name || 'PostgreSQL Database Connection';
+              conf.role = 'BACKUP';
               if (!conf.host) conf.host = '127.0.0.1';
+              if (!conf.port) conf.port = 5432;
               if (!conf.database || conf.database === 'motaherh_maint_pg') conf.database = 'motaherh_Maintenance';
               if (!conf.username || conf.username === 'motaherh_pguser') conf.username = 'motaherh_AMG-maint';
               if (!conf.password) conf.password = 'ol(5_MK8mF{~7cdG';
+              conf.enabled = true;
+              conf.autoSync = true;
+              conf.retryEnabled = true;
               adapter = new PostgresAdapter(conf);
             }
 
@@ -132,28 +224,59 @@ class SyncManager {
     await this.loadConfig();
   }
 
+  getPostgresAdapter() {
+    return this.secondaryAdapters.get('db_postgresql_replica') || 
+      Array.from(this.secondaryAdapters.values()).find(a => (a.type || '').toUpperCase() === 'POSTGRESQL' || (a.type || '').toUpperCase() === 'POSTGRES') ||
+      null;
+  }
+
   async saveMultipleTables(tablesObj) {
     await this._ensureConfig();
     
-    // 1. Try Primary
-    if (this.primaryAdapter.saveMultipleTables) {
-      const primaryResult = await this.primaryAdapter.saveMultipleTables(tablesObj);
-      if (primaryResult.success) {
-        for (const [collection, dataObj] of Object.entries(tablesObj)) {
-           this._fanoutTableSave(collection, dataObj);
+    // 1. Try Primary (MySQL)
+    let primarySuccess = false;
+    let primaryResult = null;
+    try {
+      if (this.primaryAdapter && this.primaryAdapter.saveMultipleTables) {
+        primaryResult = await this.primaryAdapter.saveMultipleTables(tablesObj);
+        if (primaryResult && primaryResult.success) {
+          primarySuccess = true;
+          for (const [collection, dataObj] of Object.entries(tablesObj)) {
+             this._fanoutTableSave(collection, dataObj);
+          }
+          return primaryResult;
         }
-        return primaryResult;
       }
-      return primaryResult;
-    } else {
-      // Fallback
-      let result = { success: true };
-      for (const [collection, dataObj] of Object.entries(tablesObj)) {
-         const res = await this.saveTable(collection, dataObj);
-         if (!res.success) result = res;
-      }
-      return result;
+    } catch (e) {
+      console.warn('[SyncManager] Primary MySQL saveMultipleTables exception:', e.message);
     }
+
+    // 2. PRIMARY FAILED -> Automatic Failover to PostgreSQL Secondary Backup Replica
+    console.warn(`[SyncManager] ⚠️ Primary MySQL unavailable. Initiating automatic failover to PostgreSQL Secondary Replica...`);
+    const pgAdapter = this.getPostgresAdapter();
+    if (pgAdapter && typeof pgAdapter.saveMultipleTables === 'function') {
+      try {
+        const failoverResult = await pgAdapter.saveMultipleTables(tablesObj);
+        if (failoverResult && failoverResult.success) {
+          console.log(`[SyncManager] 🐘 Failover save to PostgreSQL successful! Data preserved in backup replica.`);
+          this._recordMetric(pgAdapter.id, { lastSyncTime: new Date().toLocaleString(), failed: 0 });
+          for (const [collection, dataObj] of Object.entries(tablesObj)) {
+            this._fanoutTableSave(collection, dataObj, pgAdapter.id);
+          }
+          return failoverResult;
+        }
+      } catch (pgErr) {
+        console.error('[SyncManager] PostgreSQL failover write error:', pgErr.message);
+      }
+    }
+
+    // 3. Fallback table by table
+    let result = { success: true };
+    for (const [collection, dataObj] of Object.entries(tablesObj)) {
+       const res = await this.saveTable(collection, dataObj);
+       if (!res.success) result = res;
+    }
+    return result;
   }
 
   /**

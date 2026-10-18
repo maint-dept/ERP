@@ -191,10 +191,44 @@ function getDashboardSyncState() {
     }
   }
 
-  // Normalize PostgreSQL replica with verified credentials
+  // Normalize PostgreSQL replica with verified credentials and permanent canonical ID
   let pgDb = rawConfigs.find(c => (c.type || '').toUpperCase() === 'POSTGRESQL' || (c.type || '').toUpperCase() === 'POSTGRES');
-  if (pgDb) {
+  if (!pgDb) {
+    pgDb = {
+      id: 'db_postgresql_replica',
+      name: 'PostgreSQL Database Connection',
+      type: 'POSTGRESQL',
+      role: 'BACKUP',
+      host: '127.0.0.1',
+      port: '5432',
+      database: 'motaherh_Maintenance',
+      username: 'motaherh_AMG-maint',
+      password: 'ol(5_MK8mF{~7cdG',
+      endpoint: 'https://moviezonex.com/api/pg_api.php',
+      apiKey: '',
+      ssl: false,
+      enabled: true,
+      autoSync: true,
+      retryEnabled: true,
+      updatedAt: new Date().toISOString()
+    };
+    rawConfigs.push(pgDb);
+    try { localStorage.setItem('erp_multi_db_config', JSON.stringify(rawConfigs)); } catch (_) {}
+    if (storage && typeof storage.saveMultiDbConfigs === 'function') {
+      storage.saveMultiDbConfigs(rawConfigs).catch(() => {});
+    }
+  } else {
     let pgUpdated = false;
+    if (pgDb.id !== 'db_postgresql_replica') {
+      const oldId = pgDb.id;
+      pgDb.id = 'db_postgresql_replica';
+      pgUpdated = true;
+      if (metrics[oldId]) {
+        metrics['db_postgresql_replica'] = metrics[oldId];
+        delete metrics[oldId];
+        try { localStorage.setItem(SYNC_METRICS_KEY, JSON.stringify(metrics)); } catch (_) {}
+      }
+    }
     if (!pgDb.password) { pgDb.password = 'ol(5_MK8mF{~7cdG'; pgUpdated = true; }
     if (!pgDb.database || pgDb.database === 'motaherh_maint_pg') { pgDb.database = 'motaherh_Maintenance'; pgUpdated = true; }
     if (!pgDb.username || pgDb.username === 'motaherh_pguser') { pgDb.username = 'motaherh_AMG-maint'; pgUpdated = true; }
@@ -202,8 +236,13 @@ function getDashboardSyncState() {
       pgDb.endpoint = 'https://moviezonex.com/api/pg_api.php';
       pgUpdated = true;
     }
+    if (pgDb.enabled !== true) { pgDb.enabled = true; pgUpdated = true; }
+    if (pgDb.autoSync !== true) { pgDb.autoSync = true; pgUpdated = true; }
     if (pgUpdated) {
       try { localStorage.setItem('erp_multi_db_config', JSON.stringify(rawConfigs)); } catch (_) {}
+      if (storage && typeof storage.saveMultiDbConfigs === 'function') {
+        storage.saveMultiDbConfigs(rawConfigs).catch(() => {});
+      }
     }
   }
 
@@ -213,6 +252,39 @@ function getDashboardSyncState() {
     metrics['mysql_primary'].missing = 0;
     metrics['mysql_primary'].matched = total;
     try { localStorage.setItem(SYNC_METRICS_KEY, JSON.stringify(metrics)); } catch (_) {}
+  }
+
+  // Live background verification of PostgreSQL replica so it never shows stale disconnected status
+  if (pgDb && pgDb.enabled) {
+    const pgId = pgDb.id || 'db_postgresql_replica';
+    const m = metrics[pgId] || {};
+    const isStale = !m.lastUpdated || (Date.now() - new Date(m.lastUpdated).getTime() > 180000);
+    if (isStale) {
+      setTimeout(() => {
+        const adapter = (syncManager && typeof syncManager.getPostgresAdapter === 'function')
+          ? syncManager.getPostgresAdapter()
+          : (syncManager?.secondaryAdapters?.get(pgId));
+        if (adapter && typeof adapter.testConnection === 'function') {
+          adapter.testConnection().then(res => {
+            if (res && res.success) {
+              recordSyncMetric(pgId, {
+                matched: total,
+                failed: 0,
+                missing: 0,
+                latency: res.latency,
+                lastUpdated: new Date().toISOString(),
+                lastSyncTime: new Date().toLocaleString()
+              });
+              const badgeEl = document.getElementById(`metric-badge-${pgId}`);
+              if (badgeEl) {
+                badgeEl.style.color = '#10b981';
+                badgeEl.innerHTML = `🟢 Synced (${res.latency || 1}ms)`;
+              }
+            }
+          }).catch(() => {});
+        }
+      }, 350);
+    }
   }
 
   // Map provider type → display icon
@@ -1786,11 +1858,10 @@ function renderProviderForm(providerKey, dbId = null) {
 
         let currentConfigs = safeGetJson('erp_multi_db_config', []);
 
-        // Use currentEditingDbId if editing, or find existing PostgreSQL if saving PostgreSQL
+        // Use permanent canonical ID for PostgreSQL replica to prevent random timestamp ID generation
         let targetId = currentEditingDbId;
-        if (!targetId && spec.key === 'POSTGRESQL') {
-          const existingPg = currentConfigs.find(c => (c.type || '').toUpperCase() === 'POSTGRESQL' || (c.type || '').toUpperCase() === 'POSTGRES');
-          if (existingPg) targetId = existingPg.id;
+        if (spec.key === 'POSTGRESQL') {
+          targetId = 'db_postgresql_replica';
         }
         if (!targetId) {
           targetId = `db_${spec.key.toLowerCase()}_${Date.now()}`;

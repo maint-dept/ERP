@@ -1266,6 +1266,42 @@ class StorageEngine {
       this._suppressServerPersist = false;
     }
 
+    // 1. Failover: If MySQL Primary is unreachable, recover directly from PostgreSQL Secondary Backup!
+    if (!cloudLoadedSuccessfully) {
+      try {
+        const pgAdapter = (syncManager && typeof syncManager.getPostgresAdapter === 'function')
+          ? syncManager.getPostgresAdapter()
+          : (syncManager?.secondaryAdapters?.get('db_postgresql_replica'));
+        if (pgAdapter && typeof pgAdapter.getAllTables === 'function') {
+          console.warn(`[Storage] ⚠️ MySQL Primary offline. Initiating automatic failover to PostgreSQL Backup (${pgAdapter.endpoint})...`);
+          const pgRes = await pgAdapter.getAllTables();
+          if (pgRes && pgRes.success && pgRes.tables && Object.keys(pgRes.tables).length > 0) {
+            console.log(`[Storage] 🐘 Successfully recovered ${Object.keys(pgRes.tables).length} tables from PostgreSQL Secondary Replica!`);
+            this.applyIncomingDatabaseRecords(pgRes.tables, 'PostgreSQL Secondary Replica');
+            this._isCloudConnected = true;
+            cloudLoadedSuccessfully = true;
+            this._hasCriticalSyncCompleted = true;
+            this._hasInitialSyncCompleted = true;
+            this._hasFullSecondarySyncCompleted = true;
+            this._suppressServerPersist = false;
+            Object.keys(pgRes.tables).forEach(t => this._loadedSecondaryTables.add(t));
+            this.updateStatusBadge('saved');
+
+            if (typeof window !== 'undefined') {
+              window.dispatchEvent(new CustomEvent('erp:critical-data-ready'));
+              window.dispatchEvent(new CustomEvent('erp:storage-updated'));
+              window.dispatchEvent(new CustomEvent('erp:secondary-data-ready'));
+              window.dispatchEvent(new CustomEvent('erp:tools-updated'));
+            }
+
+            return;
+          }
+        }
+      } catch (pgErr) {
+        console.warn('[Storage] PostgreSQL failover notice:', pgErr.message);
+      }
+    }
+
     // 2. Local Node.js server sync (Secondary / Offline Backup only)
     try {
       const url = getApiEndpoint('/api/db/records');
@@ -2410,7 +2446,18 @@ class StorageEngine {
         } else if (!/^https?:\/\//i.test(ep) && !ep.startsWith('/')) {
           ep = 'https://' + ep;
         }
-        clone.endpoint = ep;
+        clone.endpoint = ep || 'https://moviezonex.com/api/pg_api.php';
+        clone.id = 'db_postgresql_replica';
+        clone.name = clone.name || 'PostgreSQL Database Connection';
+        clone.role = 'BACKUP';
+        if (!clone.host) clone.host = '127.0.0.1';
+        if (!clone.port) clone.port = 5432;
+        if (!clone.database || clone.database === 'motaherh_maint_pg') clone.database = 'motaherh_Maintenance';
+        if (!clone.username || clone.username === 'motaherh_pguser') clone.username = 'motaherh_AMG-maint';
+        if (!clone.password) clone.password = 'ol(5_MK8mF{~7cdG';
+        clone.enabled = true;
+        clone.autoSync = true;
+        clone.retryEnabled = true;
       }
       return clone;
     });
@@ -2422,8 +2469,29 @@ class StorageEngine {
     try {
       const local = localStorage.getItem('erp_multi_db_config');
       if (local) {
-        const parsed = JSON.parse(local);
+        let parsed = JSON.parse(local);
         if (Array.isArray(parsed) && parsed.length > 0) {
+          const hasPg = parsed.some(c => (c.type || '').toUpperCase() === 'POSTGRESQL' || (c.type || '').toUpperCase() === 'POSTGRES');
+          if (!hasPg) {
+            parsed.push({
+              id: 'db_postgresql_replica',
+              name: 'PostgreSQL Database Connection',
+              type: 'POSTGRESQL',
+              role: 'BACKUP',
+              host: '127.0.0.1',
+              port: 5432,
+              database: 'motaherh_Maintenance',
+              username: 'motaherh_AMG-maint',
+              password: 'ol(5_MK8mF{~7cdG',
+              endpoint: 'https://moviezonex.com/api/pg_api.php',
+              apiKey: '',
+              ssl: false,
+              enabled: true,
+              autoSync: true,
+              retryEnabled: true,
+              updatedAt: new Date().toISOString()
+            });
+          }
           const sanitized = this._sanitizeDbConfigs(parsed);
           this._syncMultiDbToSettings(sanitized);
           return sanitized;
@@ -2450,23 +2518,43 @@ class StorageEngine {
       }
     } catch (_) {}
 
-    return [{
-      id: 'mysql_primary',
-      name: 'MySQL (maint_erp)',
-      type: 'MYSQL',
-      role: 'PRIMARY',
-      host: 'localhost',
-      port: 3306,
-      database: 'motaherh_maint-erp',
-      username: 'motaherh_mainterp',
-      password: 'Maint@456',
-      endpoint: 'https://moviezonex.com/mysql_api.php',
-      apiKey: '',
-      enabled: true,
-      autoSync: true,
-      retryEnabled: true,
-      updatedAt: new Date().toISOString()
-    }];
+    return [
+      {
+        id: 'mysql_primary',
+        name: 'MySQL (maint_erp)',
+        type: 'MYSQL',
+        role: 'PRIMARY',
+        host: 'localhost',
+        port: 3306,
+        database: 'motaherh_maint-erp',
+        username: 'motaherh_mainterp',
+        password: 'Maint@456',
+        endpoint: 'https://moviezonex.com/mysql_api.php',
+        apiKey: '',
+        enabled: true,
+        autoSync: true,
+        retryEnabled: true,
+        updatedAt: new Date().toISOString()
+      },
+      {
+        id: 'db_postgresql_replica',
+        name: 'PostgreSQL Database Connection',
+        type: 'POSTGRESQL',
+        role: 'BACKUP',
+        host: '127.0.0.1',
+        port: 5432,
+        database: 'motaherh_Maintenance',
+        username: 'motaherh_AMG-maint',
+        password: 'ol(5_MK8mF{~7cdG',
+        endpoint: 'https://moviezonex.com/api/pg_api.php',
+        apiKey: '',
+        ssl: false,
+        enabled: true,
+        autoSync: true,
+        retryEnabled: true,
+        updatedAt: new Date().toISOString()
+      }
+    ];
   }
 
   _syncMultiDbToSettings(configs) {
