@@ -2031,19 +2031,19 @@ class StorageEngine {
     // Core Rule: Composite Key = Machine Name + Brand + Model + Machine Serial Number
     // - Record is duplicate when Machine Name, Brand, Model, and Serial Number match.
     // - Serial Conflict with partial/blank specs: Retains the master record having complete 4-field specs & active relations.
-    const normKey = (val) => String(val || '').trim().toUpperCase().replace(/[\s\-_]+/g, '');
+    const cleanStr = (val) => String(val || '').trim().toUpperCase();
     const compositeMap = new Map();
     const serialMap = new Map();
     let hasDuplicateRecords = false;
 
     machines.forEach((m, idx) => {
       if (!m) return;
-      const serial = normKey(m.serialNumber || m.machineSerial);
+      const serial = cleanStr(m.serialNumber || m.machineSerial);
       if (!serial) return;
 
-      const name = normKey(m.name || m.machineName);
-      const brand = normKey(m.brand);
-      const model = normKey(m.model);
+      const name = cleanStr(m.name || m.machineName);
+      const brand = cleanStr(m.brand);
+      const model = cleanStr(m.model);
       const compKey = `${name}|${brand}|${model}|${serial}`;
 
       if (compositeMap.has(compKey) || serialMap.has(serial)) {
