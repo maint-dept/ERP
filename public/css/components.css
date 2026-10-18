@@ -1977,22 +1977,48 @@ td.td-actions-active {
    PREVENTIVE MACHINE MAINTENANCE STYLES
    ========================================================================= */
 
+.pm-tabs-bar {
+  display: flex !important;
+  align-items: center;
+  gap: 3px;
+  border-bottom: 1.5px solid var(--border-color);
+  margin-top: 1px;
+  margin-bottom: 2px;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  white-space: nowrap !important;
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+  -webkit-overflow-scrolling: touch !important;
+  max-width: 100% !important;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.pm-tabs-bar::-webkit-scrollbar {
+  display: none !important;
+}
+
 .pm-tab-btn {
-  padding: 6px 14px;
+  padding: 4px 8px;
   background: none;
   border: none;
-  border-bottom: 2.5px solid transparent;
+  border-bottom: 2px solid transparent;
   color: var(--text-secondary);
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 700;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.15s ease;
   white-space: nowrap;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .pm-tab-btn:hover {
   color: #fff;
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .pm-tab-btn.active {

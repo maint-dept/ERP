@@ -200,7 +200,7 @@ export function renderPreventiveMaintenanceView() {
   const hasActiveFilters = activeTags.length > 0;
 
   return `
-    <div class="page-view preventive-maintenance-page inventory-page-wrapper" style="display: flex; flex-direction: column; gap: 4px; height: 100%; min-height: 0; background: var(--bg-main); color: var(--text-primary); overflow-y: auto; padding: 4px 10px;">
+    <div class="page-view preventive-maintenance-page inventory-page-wrapper" style="display: flex; flex-direction: column; gap: 4px; height: 100%; min-height: 0; background: var(--bg-main); color: var(--text-primary); overflow-y: auto; overflow-x: hidden; max-width: 100%; box-sizing: border-box; padding: 4px 10px;">
       
       <!-- 1. ULTRA-COMPACT TOP BAR (Title + KPI Status Pills + Quick Action Buttons) -->
       <div class="inventory-top-unified-bar" style="padding: 4px 8px; display: flex; justify-content: space-between; align-items: center; gap: 6px; flex-wrap: wrap;">
@@ -250,7 +250,7 @@ export function renderPreventiveMaintenanceView() {
             <div class="kpi-pill kpi-usable pm-kpi-pill" data-kpi-tab="pending-approvals" title="Servicing submissions pending Floor Manager approval" style="border-left: 3px solid #f59e0b; cursor: pointer; padding: 1px 6px; font-size: 10.5px; ${metrics.pendingApprovalsCount > 0 ? 'background: rgba(245, 158, 11, 0.2); border-color: #f59e0b;' : ''}">
               <span class="kpi-dot">⏳</span>
               <strong class="kpi-val" style="color: #f59e0b; font-size: 11px;">${metrics.pendingApprovalsCount || 0}</strong>
-              <span class="kpi-lbl" style="font-size: 9.5px;">Pending Approval</span>
+              <span class="kpi-lbl" style="font-size: 9.5px;">Pending</span>
             </div>
           </div>
         </div>
@@ -374,28 +374,28 @@ export function renderPreventiveMaintenanceView() {
       </div>
 
       <!-- 3. COMPACT NAVIGATION TABS BAR WITH RECORD COUNTS -->
-      <div class="pm-tabs-bar" style="display: flex; gap: 2px; border-bottom: 1.5px solid var(--border-color); margin-top: 1px; margin-bottom: 2px;">
-        <button class="pm-tab-btn ${activeTab === 'dashboard' ? 'active' : ''}" data-pm-tab="dashboard">
-          📊 Priority Reminders (${metrics.scheduledCount !== undefined ? metrics.scheduledCount : metrics.totalMachines})
+      <div class="pm-tabs-bar" style="display: flex; align-items: center; gap: 3px; border-bottom: 1.5px solid var(--border-color); margin-top: 1px; margin-bottom: 2px; overflow-x: auto; overflow-y: hidden; white-space: nowrap; max-width: 100%; width: 100%; box-sizing: border-box; scrollbar-width: none;">
+        <button class="pm-tab-btn ${activeTab === 'dashboard' ? 'active' : ''}" data-pm-tab="dashboard" title="Priority Next Servicing Reminders">
+          📊 Reminders (${metrics.scheduledCount !== undefined ? metrics.scheduledCount : metrics.totalMachines})
         </button>
-        <button class="pm-tab-btn ${activeTab === 'pending-approvals' ? 'active' : ''}" data-pm-tab="pending-approvals" style="${metrics.pendingApprovalsCount > 0 ? 'color: #f59e0b; font-weight: 700;' : ''}">
-          🛡️ Pending Approvals ${metrics.pendingApprovalsCount > 0 ? `<span style="background: #f59e0b; color: #000; padding: 1px 6px; border-radius: 10px; font-size: 10px; margin-left: 4px; font-weight: 800;">${metrics.pendingApprovalsCount}</span>` : `(0)`}
+        <button class="pm-tab-btn ${activeTab === 'pending-approvals' ? 'active' : ''}" data-pm-tab="pending-approvals" title="Submissions Pending Floor Manager Approval" style="${metrics.pendingApprovalsCount > 0 ? 'color: #f59e0b; font-weight: 700;' : ''}">
+          🛡️ Approvals ${metrics.pendingApprovalsCount > 0 ? `<span style="background: #f59e0b; color: #000; padding: 1px 5px; border-radius: 10px; font-size: 9.5px; margin-left: 3px; font-weight: 800;">${metrics.pendingApprovalsCount}</span>` : `(0)`}
         </button>
-        <button class="pm-tab-btn ${activeTab === 'recently-serviced' ? 'active' : ''}" data-pm-tab="recently-serviced">
-          🕒 Recently Serviced (${metrics.recentlyServiced || 0})
+        <button class="pm-tab-btn ${activeTab === 'recently-serviced' ? 'active' : ''}" data-pm-tab="recently-serviced" title="Recently Serviced Machine Records">
+          🕒 Serviced (${metrics.recentlyServiced || 0})
         </button>
-        <button class="pm-tab-btn ${activeTab === 'machine-profile' ? 'active' : ''}" data-pm-tab="machine-profile">
-          🔍 Machine Profile
+        <button class="pm-tab-btn ${activeTab === 'machine-profile' ? 'active' : ''}" data-pm-tab="machine-profile" title="Machine Preventive Maintenance Profile & History">
+          🔍 Profile
         </button>
-        <button class="pm-tab-btn ${activeTab === 'master-schedule' ? 'active' : ''}" data-pm-tab="master-schedule">
-          📅 Master Schedule (${metrics.globalTotalMachines || metrics.totalMachines})
+        <button class="pm-tab-btn ${activeTab === 'master-schedule' ? 'active' : ''}" data-pm-tab="master-schedule" title="Plant-Wide Master Maintenance Schedule">
+          📅 Schedule (${metrics.globalTotalMachines || metrics.totalMachines})
         </button>
-        <button class="pm-tab-btn ${activeTab === 'maintenance-report' ? 'active' : ''}" data-pm-tab="maintenance-report" style="${activeTab === 'maintenance-report' ? 'color: #38bdf8; font-weight: 800; border-bottom: 2.5px solid #38bdf8; background: rgba(56, 189, 248, 0.12);' : ''}">
-          📄 Official PM Report
+        <button class="pm-tab-btn ${activeTab === 'maintenance-report' ? 'active' : ''}" data-pm-tab="maintenance-report" title="Official Preventive Maintenance Report & Print Sheet" style="${activeTab === 'maintenance-report' ? 'color: #38bdf8; font-weight: 800; border-bottom: 2px solid #38bdf8; background: rgba(56, 189, 248, 0.12);' : ''}">
+          📄 PM Report
         </button>
         ${canConfig ? `
-          <button class="pm-tab-btn ${activeTab === 'admin-config' ? 'active' : ''}" data-pm-tab="admin-config">
-            ⚙️ Admin Config (${configs.length})
+          <button class="pm-tab-btn ${activeTab === 'admin-config' ? 'active' : ''}" data-pm-tab="admin-config" title="Admin Schedule Configuration & Checklists">
+            ⚙️ Config (${configs.length})
           </button>
         ` : ''}
       </div>
