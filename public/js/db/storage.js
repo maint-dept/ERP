@@ -2027,25 +2027,38 @@ class StorageEngine {
 
     let hasUpdates = false;
 
-    // Step 1: Detect and deduplicate according to ERP Composite Rules:
-    // Rule A: Composite Duplicate: Machine Name + Brand + Model + Serial Number (all 4 fields match)
-    // Rule B: Serial Conflict: Duplicate serial with partial/empty specs -> Retain the record with complete Name, Brand, Model & active history
+    // Step 1: Detect and deduplicate according to ERP 4-Field Composite Rules:
+    // Core Rule: Composite Key = Machine Name + Brand + Model + Machine Serial Number
+    // - Record is duplicate when Machine Name, Brand, Model, and Serial Number match.
+    // - Serial Conflict with partial/blank specs: Retains the master record having complete 4-field specs & active relations.
+    const normKey = (val) => String(val || '').trim().toUpperCase().replace(/[\s\-_]+/g, '');
+    const compositeMap = new Map();
     const serialMap = new Map();
-    let hasDuplicateSerials = false;
+    let hasDuplicateRecords = false;
+
     machines.forEach((m, idx) => {
       if (!m) return;
-      const s = String(m.serialNumber || m.machineSerial || '').trim().toUpperCase();
-      if (!s) return;
-      if (serialMap.has(s)) {
-        hasDuplicateSerials = true;
-        serialMap.get(s).push({ index: idx, machine: m });
-      } else {
-        serialMap.set(s, [{ index: idx, machine: m }]);
+      const serial = normKey(m.serialNumber || m.machineSerial);
+      if (!serial) return;
+
+      const name = normKey(m.name || m.machineName);
+      const brand = normKey(m.brand);
+      const model = normKey(m.model);
+      const compKey = `${name}|${brand}|${model}|${serial}`;
+
+      if (compositeMap.has(compKey) || serialMap.has(serial)) {
+        hasDuplicateRecords = true;
       }
+
+      if (!serialMap.has(serial)) serialMap.set(serial, []);
+      serialMap.get(serial).push({ index: idx, machine: m, compKey });
+
+      if (!compositeMap.has(compKey)) compositeMap.set(compKey, []);
+      compositeMap.get(compKey).push({ index: idx, machine: m });
     });
 
-    if (hasDuplicateSerials) {
-      console.warn(`[Asset ID Safeguard] ⚠️ Duplicate machine records detected. Resolving via 4-field composite rule (Machine Name + Brand + Model + Serial)...`);
+    if (hasDuplicateRecords) {
+      console.warn(`[Asset ID Safeguard] ⚠️ Duplicate machine records detected. Resolving strictly by 4-field rule (Machine Name + Brand + Model + Serial)...`);
       const retainedList = [];
       for (const [serial, entries] of serialMap.entries()) {
         if (entries.length === 1) {
@@ -2131,7 +2144,7 @@ class StorageEngine {
     });
 
     // Sequence drift occurs when duplicates exist, or max sequence doesn't match totalCount, or IDs are missing
-    const hasDrift = hasDuplicates || missingCount > 0 || maxNum !== totalCount || hasDuplicateSerials;
+    const hasDrift = hasDuplicates || missingCount > 0 || maxNum !== totalCount || hasDuplicateRecords;
 
     if (hasDrift) {
       console.warn(`[Asset ID Safeguard] ⚠️ Normalizing Asset ID sequence strictly 1..${totalCount} (Max: ${maxNum}, Dupes: ${hasDuplicates}, Missing: ${missingCount})...`);
