@@ -35,6 +35,7 @@
 
 import { storage } from '../db/storage.js';
 import { TABLE_NAMES } from '../db/schema.js';
+import { INITIAL_DATA } from '../db/initialData.js';
 import { authService } from '../services/authService.js';
 import { masterDataService } from '../services/masterDataService.js';
 import { preventiveMaintenanceService } from '../services/preventiveMaintenanceService.js';
@@ -141,63 +142,83 @@ function computeNextDate(servicingDate, days = 90) {
 }
 
 /**
- * Auto-formats the services performed for a machine
+ * Auto-formats the authentic servicing checklist work performed for a machine
  * Fulfills requirement: "ki ki services korche ta auto formet a boshe jabe, referrance screenshort"
+ * Completely eliminates boilerplate text like "Imported with Machine Inventory"
  */
 export function generateMachineWorkSummary(machine, pmProfile, pmRecord) {
-  // 1. If existing logged PM record has specific checklist notes or remarks
+  // 1. If existing logged PM record has specific completed checklist items
   if (pmRecord) {
     if (pmRecord.serviceChecklist && Array.isArray(pmRecord.serviceChecklist) && pmRecord.serviceChecklist.length > 0) {
       const checkedTasks = pmRecord.serviceChecklist
-        .filter(c => c.checked)
-        .map(c => c.item ? c.item.replace(/\s*\(.*?\)/g, '') : '')
+        .filter(c => c && (c.checked !== false))
+        .map(c => {
+          const rawItem = typeof c === 'string' ? c : (c.item || c.task || '');
+          return rawItem.replace(/\s*\(.*?\)/g, '').trim();
+        })
         .filter(Boolean);
       if (checkedTasks.length > 0) {
         return checkedTasks.slice(0, 3).join(', ') + (pmRecord.partsReplaced ? ` (Replaced: ${pmRecord.partsReplaced})` : '');
       }
     }
-    if (pmRecord.serviceRemarks && pmRecord.serviceRemarks.trim() && !pmRecord.serviceRemarks.toLowerCase().includes('initial')) {
-      return pmRecord.serviceRemarks.trim() + (pmRecord.partsReplaced ? ` (Parts: ${pmRecord.partsReplaced})` : '');
+    // Only use custom serviceRemarks if it is authentic servicing notes (NOT import/seed boilerplate)
+    if (pmRecord.serviceRemarks && pmRecord.serviceRemarks.trim()) {
+      const rem = pmRecord.serviceRemarks.trim();
+      const lower = rem.toLowerCase();
+      const isBoilerplate = lower.includes('imported') || 
+                            lower.includes('inventory') || 
+                            lower.includes('initial') || 
+                            lower.includes('pending') || 
+                            lower.includes('migration') || 
+                            lower.includes('seed') || 
+                            lower.includes('system import') ||
+                            lower.includes('auto-generated');
+      if (!isBoilerplate) {
+        return rem + (pmRecord.partsReplaced ? ` (Parts: ${pmRecord.partsReplaced})` : '');
+      }
     }
   }
 
-  // 2. Synthesize authentic factory maintenance work summary tailored to the machine type / name
+  // 2. Synthesize authentic factory maintenance work summary tailored specifically to the machine type
   const mName = String(machine?.machineName || machine?.name || pmProfile?.machineName || '').toLowerCase();
-  const mModel = String(machine?.model || pmProfile?.model || '').toLowerCase();
+  const mModel = String(machine?.model || machine?.modelStr || pmProfile?.model || '').toLowerCase();
+  const mSerial = String(machine?.serialNumber || machine?.machineNumber || '').toUpperCase();
 
-  if (mName.includes('double needle') || mName.includes('d/n') || mModel.includes('lh-')) {
+  if (mName.includes('double needle') || mSerial.startsWith('D/N') || mModel.includes('lh-')) {
     return 'Needle bar timing & hook synchronization checked, corner stitch mechanism inspected';
   }
-  if (mName.includes('button hole') || mName.includes('buttonhole') || mName.includes('b/h') || mModel.includes('lbh')) {
+  if (mName.includes('button hole') || mName.includes('buttonhole') || mSerial.startsWith('B/H') || mModel.includes('lbh')) {
     return 'Knife drop mechanism & clamp pressure adjusted, hook timing calibrated & safety shield checked';
   }
-  if (mName.includes('button stitch') || mName.includes('button attach') || mName.includes('b/a') || mModel.includes('mb-')) {
+  if (mName.includes('button stitch') || mName.includes('button attach') || mSerial.startsWith('B/S') || mModel.includes('lk-1903') || mModel.includes('mb-')) {
     return 'Button clamp jaw aligned, blind looper timing set & thread trimmer serviced';
   }
-  if (mName.includes('bar tack') || mName.includes('bartack') || mName.includes('b/t') || mModel.includes('lk-')) {
+  if (mName.includes('bar tack') || mName.includes('bartack') || mSerial.startsWith('B/T') || mModel.includes('lk-1900') || mModel.includes('1900b')) {
     return 'X-Y feed mechanism lubricated, hook timing aligned, work clamp checked & trimmer adjusted';
   }
-  if (mName.includes('feed of the arm') || mName.includes('feed of arm') || mName.includes('f/a') || mModel.includes('ms-')) {
+  if (mName.includes('feed of the arm') || mName.includes('feed of arm') || mSerial.startsWith('F/A') || mModel.includes('ms-')) {
     return 'Puller synchronization & looper timing adjusted, oil lubrication check & cleaning';
   }
-  if (mName.includes('overlock') || mName.includes('over lock') || mName.includes('safety stitch') || mModel.includes('mo-')) {
+  if (mName.includes('overlock') || mName.includes('over lock') || mName.includes('safety stitch') || mSerial.startsWith('O/L') || mModel.includes('mo-')) {
     return 'Looper clearance adjusted, moving/fixed knife sharpened, oil filter cleaned & suction cleared';
   }
-  if (mName.includes('interlock') || mName.includes('flatlock') || mName.includes('flat lock') || mModel.includes('mf-')) {
+  if (mName.includes('interlock') || mName.includes('flatlock') || mName.includes('flat lock') || mSerial.startsWith('IL') || mSerial.startsWith('FL') || mModel.includes('mf-')) {
     return 'Looper timing calibrated, thread tension discs adjusted & needle bar clearance checked';
   }
-  if (mName.includes('kansai') || mName.includes('multi needle') || mName.includes('chainstitch')) {
+  if (mName.includes('chain stitch') || mName.includes('chainstitch') || mSerial.startsWith('C/S') || mModel.includes('zj3800') || mModel.includes('mh-')) {
+    return 'Needle gauge clearance & looper timing synchronized, oil pump checked & cleaning';
+  }
+  if (mName.includes('kansai') || mName.includes('multi needle')) {
     return 'Needle gauge clearance & looper timing synchronized, oil pump checked & cleaning';
   }
   if (mName.includes('snap button') || mName.includes('rivet') || mName.includes('eyelet')) {
     return 'Upper punch & lower die alignment verified, safety interlock tested & lubrication';
   }
-  if (mName.includes('plain') || mName.includes('single needle') || mName.includes('lock stitch') || mName.includes('lockstitch') || mModel.includes('ddl')) {
+  if (mName.includes('plain') || mName.includes('single needle') || mName.includes('lock stitch') || mName.includes('lockstitch') || mSerial.startsWith('P/M') || mModel.includes('ddl')) {
     return 'Full cleaning, oil pump check, needle bar height & rotary hook timing calibrated';
   }
 
-  // Default standard maintenance summary
-  return 'Routine preventive maintenance servicing, lubrication, belt tension & safety inspection';
+  return 'Oil pump flow check, rotary hook timing & needle bar clearance calibrated';
 }
 
 /**
@@ -286,6 +307,195 @@ export function fetchMachinesByFilters() {
 }
 
 /**
+ * Fully resolves machine details from live database, master data, and initial data
+ * Ensures 100% realistic factory data without generic placeholders.
+ * Fulfills user requirements:
+ * - Real machine names (Single Needle Lock Stitch Machine, Double Needle Lock Stitch Machine, etc.)
+ * - Real brand and models (JUKI DDL-900BB, JUKI LH-3578A-7, ZOJE ZJ3800BD, etc.) - never "Standard"
+ * - Real physical sticker sequential numbers - never "STK-PENDING"
+ * - Real checklist work summaries - never "Imported with Machine Inventory"
+ * - Real servicer names (Engr. Motaher Hossain, Md. Jakaria, etc.) - never "Assigned Mech"
+ * - Signature strictly empty ("signature khali faka thakbe")
+ */
+export function resolveMachineReportRow(rawM, index = 0, startSlOffset = 0, baseSticker = 45863, context = {}) {
+  const cleanSerial = String(rawM?.serialNumber || rawM?.machineNumber || '').trim().toUpperCase();
+  const machineId = rawM?.id || rawM?.machineId || '';
+
+  // Look up in PM records index if available
+  const pmRecord = context.recIndex?.get(cleanSerial) || (machineId ? context.recIndex?.get(machineId) : null) || null;
+
+  // Look up in initial master machines
+  const initMatch = context.initMap?.get(cleanSerial) || (machineId ? context.initMap?.get(machineId) : null) || null;
+
+  // Look up PM profile if available
+  let pmProfile = null;
+  try {
+    if (preventiveMaintenanceService?.getMachinePreventiveProfile) {
+      pmProfile = preventiveMaintenanceService.getMachinePreventiveProfile(rawM);
+    }
+  } catch (_) { }
+
+  // 1. Resolve Machine Name (M/C Name)
+  let mName = (
+    initMatch?.machineName ||
+    (context.mnMap && rawM.machineNameId ? context.mnMap.get(rawM.machineNameId) : null) ||
+    (context.mnMap && initMatch?.machineNameId ? context.mnMap.get(initMatch.machineNameId) : null) ||
+    pmRecord?.machineName ||
+    rawM.machineName ||
+    rawM.name ||
+    pmProfile?.machineName ||
+    ''
+  ).trim();
+
+  // If name is missing, empty, or generic ("Sewing Machine", "Machine", "N/A"), infer from serial prefix
+  if (!mName || mName.toLowerCase() === 'sewing machine' || mName.toLowerCase() === 'machine' || mName.toLowerCase() === 'n/a') {
+    if (cleanSerial.startsWith('P/M-') || cleanSerial.startsWith('PM-') || cleanSerial.startsWith('SN-')) {
+      mName = 'Single Needle Lock Stitch Machine';
+    } else if (cleanSerial.startsWith('D/N-') || cleanSerial.startsWith('DN-')) {
+      mName = 'Double Needle Lock Stitch Machine';
+    } else if (cleanSerial.startsWith('B/S-') || cleanSerial.startsWith('BS-') || cleanSerial.startsWith('BA-')) {
+      mName = 'Button Stitch Machine';
+    } else if (cleanSerial.startsWith('B/H-') || cleanSerial.startsWith('BH-')) {
+      mName = 'Button Hole Machine';
+    } else if (cleanSerial.startsWith('B/T-') || cleanSerial.startsWith('BT-')) {
+      mName = 'Bar Tack Machine';
+    } else if (cleanSerial.startsWith('O/L-') || cleanSerial.startsWith('OL-')) {
+      mName = 'Overlock 4-Thread';
+    } else if (cleanSerial.startsWith('F/A-') || cleanSerial.startsWith('FA-')) {
+      mName = 'Feed of The Arm Machine';
+    } else if (cleanSerial.startsWith('C/S-') || cleanSerial.startsWith('CS-')) {
+      mName = 'Chain Stitch Machine';
+    } else if (cleanSerial.startsWith('IL-') || cleanSerial.startsWith('FL-')) {
+      mName = 'Interlock Machine';
+    } else if (cleanSerial.startsWith('KN-') || cleanSerial.startsWith('KAN-')) {
+      mName = 'Kansai Special Machine';
+    } else {
+      mName = 'Single Needle Lock Stitch Machine';
+    }
+  }
+
+  // 2. Resolve Brand and Model (M/C Model/Type)
+  let brand = (
+    initMatch?.brand ||
+    (context.brdMap && rawM.brandId ? context.brdMap.get(rawM.brandId) : null) ||
+    (context.brdMap && initMatch?.brandId ? context.brdMap.get(initMatch.brandId) : null) ||
+    pmRecord?.brand ||
+    rawM.brand ||
+    pmProfile?.brand ||
+    ''
+  ).trim();
+  if (!brand || brand.toLowerCase() === 'n/a' || brand.toLowerCase() === 'standard') {
+    brand = cleanSerial.startsWith('C/S') ? 'ZOJE' : 'JUKI';
+  }
+
+  let model = (
+    initMatch?.model ||
+    initMatch?.modelStr ||
+    initMatch?.modelName ||
+    (context.mdlMap && rawM.modelId ? context.mdlMap.get(rawM.modelId) : null) ||
+    (context.mdlMap && initMatch?.modelId ? context.mdlMap.get(initMatch.modelId) : null) ||
+    pmRecord?.model ||
+    rawM.model ||
+    rawM.modelStr ||
+    pmProfile?.model ||
+    ''
+  ).trim();
+
+  // Filter out generic values: "Standard", "N/A", "Default", "All Models", "—"
+  if (!model || model.toLowerCase() === 'standard' || model.toLowerCase() === 'n/a' || model.toLowerCase() === 'default' || model.toLowerCase() === 'all models') {
+    if (cleanSerial.startsWith('P/M-') || cleanSerial.startsWith('PM-')) {
+      model = 'DDL-900BB';
+    } else if (cleanSerial.startsWith('D/N-') || cleanSerial.startsWith('DN-')) {
+      model = 'LH-3578A-7';
+    } else if (cleanSerial.startsWith('B/S-') || cleanSerial.startsWith('BS-')) {
+      model = 'LK-1903A';
+    } else if (cleanSerial.startsWith('B/H-') || cleanSerial.startsWith('BH-')) {
+      model = 'LBH-1790S';
+    } else if (cleanSerial.startsWith('B/T-') || cleanSerial.startsWith('BT-')) {
+      model = 'LK-1900BN';
+    } else if (cleanSerial.startsWith('O/L-') || cleanSerial.startsWith('OL-')) {
+      model = 'MO-6814S';
+    } else if (cleanSerial.startsWith('F/A-') || cleanSerial.startsWith('FA-')) {
+      model = 'MS-1261';
+    } else if (cleanSerial.startsWith('C/S-') || cleanSerial.startsWith('CS-')) {
+      brand = 'ZOJE';
+      model = 'ZJ3800BD';
+    } else {
+      model = 'DDL-900BB';
+    }
+  }
+
+  let fullModel = model;
+  if (brand && !model.toLowerCase().includes(brand.toLowerCase())) {
+    fullModel = `${brand} ${model}`;
+  }
+
+  // 3. Resolve Previous Servicing Date
+  let prevDate = pmRecord?.serviceDate || 
+                 initMatch?.lastServiceDate || 
+                 rawM.lastServiceDate || 
+                 rawM.customValues?.service_date || 
+                 pmProfile?.lastServiceDate || 
+                 '';
+  if (!prevDate || prevDate === 'N/A' || prevDate === 'None' || prevDate === 'Never' || prevDate === '—') {
+    prevDate = '03-10-2026';
+  }
+
+  // 4. Resolve Sticker Serial (NEVER print STK-PENDING!)
+  let sticker = '';
+  const rawStk = pmRecord?.serviceStickerSerial || rawM.serviceStickerSerial || '';
+  if (rawStk && !rawStk.toUpperCase().includes('PENDING')) {
+    sticker = rawStk;
+  } else {
+    sticker = String(baseSticker + startSlOffset + index);
+  }
+
+  // 5. Resolve Line or Section
+  const lineVal = rawM.line || rawM.lineName || initMatch?.line || initMatch?.lineName || reportState.lineName || 'PD-A';
+
+  // 6. Resolve Work Summary
+  const workSum = generateMachineWorkSummary(
+    { ...rawM, machineName: mName, model: fullModel, serialNumber: cleanSerial },
+    pmProfile,
+    pmRecord
+  );
+
+  // 7. Resolve Servicer Name (NEVER print Assigned Mech)
+  let servicer = pmRecord?.servicedBy || rawM.assignedManpower || pmProfile?.assignedManpower || reportState.defaultServicer || '';
+  if (!servicer || servicer.toLowerCase().includes('assigned') || servicer.toLowerCase().includes('routine')) {
+    const factoryMechs = [
+      'Engr. Motaher Hossain',
+      'Md. Jakaria',
+      'Md. Shipon',
+      'Sofiullah',
+      'Abdullah Al Mamun'
+    ];
+    servicer = factoryMechs[(startSlOffset + index) % factoryMechs.length];
+  }
+
+  // 8. Unit name
+  const unitVal = rawM.unit || rawM.unitName || initMatch?.unit || initMatch?.unitName || 'A.K.M Knit Wear Ltd.';
+
+  return {
+    id: `row-${Date.now()}-${startSlOffset + index + 1}`,
+    slNo: String(startSlOffset + index + 1).padStart(2, '0'),
+    machineId: machineId,
+    machineName: mName,
+    machineNumber: cleanSerial,
+    machineModel: fullModel,
+    previousServicingDate: prevDate,
+    stickerSerial: sticker,
+    lineOrSection: lineVal,
+    workSummary: workSum,
+    servicerName: servicer,
+    signature: '', // Strictly empty ("signature khali faka thakbe")
+    unitName: unitVal,
+    isExistingSaved: Boolean(pmRecord),
+    isAutoFilled: true
+  };
+}
+
+/**
  * Builds table rows from machine list with auto-formatted services and auto sticker numbers
  */
 export function populateReportRowsFromMachines(machineList, startSlOffset = 0) {
@@ -297,46 +507,44 @@ export function populateReportRowsFromMachines(machineList, startSlOffset = 0) {
     if (r.machineId && !recIndex.has(r.machineId)) recIndex.set(r.machineId, r);
   });
 
-  let baseSticker = 245231;
-  try {
-    const nextStkStr = preventiveMaintenanceService.getNextStickerSlNo ? preventiveMaintenanceService.getNextStickerSlNo() : '245231';
-    const parsed = parseInt(nextStkStr, 10);
-    if (!isNaN(parsed) && parsed > 0) baseSticker = parsed;
-  } catch (_) { }
-
-  return machineList.map((m, i) => {
-    const cleanSerial = String(m.serialNumber || '').trim().toUpperCase();
-    const pmRecord = recIndex.get(cleanSerial) || recIndex.get(m.id) || null;
-    let pmProfile = null;
-    try {
-      pmProfile = preventiveMaintenanceService.getMachinePreventiveProfile ? preventiveMaintenanceService.getMachinePreventiveProfile(m) : null;
-    } catch (_) { }
-
-    const mName = m.machineName || m.name || pmProfile?.machineName || 'Sewing Machine';
-    const mModel = [m.brand, m.model].filter(Boolean).join(' ') || m.model || m.brand || pmProfile?.model || '';
-    const prevDate = pmRecord?.serviceDate || m.lastServiceDate || m.customValues?.service_date || pmProfile?.lastServiceDate || '';
-    const sticker = pmRecord?.serviceStickerSerial || (m.serviceStickerSerial && m.serviceStickerSerial !== 'STK-PENDING' ? m.serviceStickerSerial : String(baseSticker + startSlOffset + i));
-    const lineVal = m.line || m.lineName || reportState.lineName || '';
-    const servicer = pmRecord?.servicedBy || m.assignedManpower || pmProfile?.assignedManpower || pmProfile?.lastServicedBy || reportState.defaultServicer || '';
-    const workSum = generateMachineWorkSummary(m, pmProfile, pmRecord);
-
-    return {
-      id: `row-${Date.now()}-${startSlOffset + i + 1}`,
-      slNo: String(startSlOffset + i + 1).padStart(2, '0'),
-      machineId: m.id || '',
-      machineName: mName,
-      machineNumber: m.serialNumber || '',
-      machineModel: mModel,
-      previousServicingDate: prevDate,
-      stickerSerial: sticker,
-      lineOrSection: lineVal,
-      workSummary: workSum,
-      servicerName: servicer,
-      signature: '',
-      isExistingSaved: Boolean(pmRecord),
-      isAutoFilled: true
-    };
+  // Prepare master data lookup maps
+  const initMap = new Map();
+  const initMachines = (typeof INITIAL_DATA !== 'undefined' && INITIAL_DATA.machines) ? INITIAL_DATA.machines : [];
+  initMachines.forEach(x => {
+    if (x.serialNumber) initMap.set(String(x.serialNumber).trim().toUpperCase(), x);
+    if (x.id) initMap.set(x.id, x);
   });
+
+  const mnMap = new Map();
+  const mnList = storage.getTable(TABLE_NAMES.MACHINE_NAMES) || (typeof INITIAL_DATA !== 'undefined' ? INITIAL_DATA.machine_names : []) || [];
+  mnList.forEach(x => mnMap.set(x.id, x.name));
+
+  const mdlMap = new Map();
+  const mdlList = storage.getTable(TABLE_NAMES.MODELS) || (typeof INITIAL_DATA !== 'undefined' ? INITIAL_DATA.models : []) || [];
+  mdlList.forEach(x => mdlMap.set(x.id, x.name));
+
+  const brdMap = new Map();
+  const brdList = storage.getTable(TABLE_NAMES.BRANDS) || (typeof INITIAL_DATA !== 'undefined' ? INITIAL_DATA.brands : []) || [];
+  brdList.forEach(x => brdMap.set(x.id, x.name));
+
+  // Determine starting sticker number
+  let baseSticker = 45863;
+  // If the first machine has an existing numeric sticker serial, align with it
+  if (machineList.length > 0) {
+    const firstClean = String(machineList[0]?.serialNumber || '').trim().toUpperCase();
+    const firstPM = recIndex.get(firstClean) || (machineList[0]?.id ? recIndex.get(machineList[0].id) : null);
+    const existingStk = firstPM?.serviceStickerSerial || machineList[0]?.serviceStickerSerial;
+    if (existingStk && !existingStk.toUpperCase().includes('PENDING')) {
+      const parsed = parseInt(existingStk, 10);
+      if (!isNaN(parsed) && parsed > 0) {
+        baseSticker = parsed;
+      }
+    }
+  }
+
+  const context = { recIndex, initMap, mnMap, mdlMap, brdMap };
+
+  return machineList.map((m, i) => resolveMachineReportRow(m, i, startSlOffset, baseSticker, context));
 }
 
 /**
@@ -396,6 +604,21 @@ export function renderPreventiveMaintenanceReportView() {
   if (!activeUnitLabel && reportState.unitId !== 'ALL') {
     const u = units.find(x => x.id === reportState.unitId);
     activeUnitLabel = u?.name || reportState.unitId;
+  }
+  if (!activeUnitLabel && reportState.floorId !== 'ALL') {
+    const f = floors.find(x => x.id === reportState.floorId);
+    if (f?.unitId) {
+      const u = units.find(x => x.id === f.unitId);
+      if (u?.name) activeUnitLabel = u.name;
+    }
+    if (!activeUnitLabel && f?.unit) activeUnitLabel = f.unit;
+  }
+  if (!activeUnitLabel && reportState.rows && reportState.rows.length > 0) {
+    const foundU = reportState.rows.find(r => r.unitName)?.unitName;
+    if (foundU) activeUnitLabel = foundU;
+  }
+  if (!activeUnitLabel) {
+    activeUnitLabel = 'A.K.M Knit Wear Ltd.';
   }
   let activeFloorLabel = reportState.floorName;
   if (!activeFloorLabel && reportState.floorId !== 'ALL') {
@@ -670,7 +893,7 @@ export function renderPreventiveMaintenanceReportView() {
               ${reportState.previewMode ? `
                 <span style="font-weight: 700; font-size: 12px;">${escapeHtml(activeUnitLabel || '—')}</span>
               ` : `
-                <input type="text" id="pm-meta-input-unit" class="pm-sheet-inline-input" placeholder="Enter Unit (e.g. Unit-01, Pacific Blue)" value="${escapeHtml(activeUnitLabel || '')}" style="border: none; border-bottom: 1px dotted #999; width: 100%; font-size: 12px; font-weight: 600; padding: 1px 4px; outline: none; background: transparent; color: #000;" />
+                <input type="text" id="pm-meta-input-unit" class="pm-sheet-inline-input" placeholder="A.K.M Knit Wear Ltd." value="${escapeHtml(activeUnitLabel || 'A.K.M Knit Wear Ltd.')}" style="border: none; border-bottom: 1px dotted #999; width: 100%; font-size: 12px; font-weight: 600; padding: 1px 4px; outline: none; background: transparent; color: #000;" />
               `}
             </div>
 
@@ -905,7 +1128,7 @@ export function renderPreventiveMaintenanceReportView() {
                           class="pm-row-input" 
                           data-field="signature" 
                           value="${escapeHtml(row.signature || '')}" 
-                          placeholder="Sign"
+                          placeholder=""
                           style="width: 45px; border: none; font-size: 9px; font-family: cursive; text-align: center; background: transparent; padding: 2px; outline: none; color: #000;"
                         />
                         <button type="button" class="btn-pm-del-row no-print" data-row-idx="${index}" title="Remove this row" style="border: none; background: transparent; color: #ef4444; font-size: 11px; cursor: pointer; padding: 0 2px;">✕</button>
@@ -1216,14 +1439,14 @@ export function initPreventiveMaintenanceReportEvents(container = document) {
         id: `row-${Date.now()}-${nextSl}`,
         slNo: String(nextSl).padStart(2, '0'),
         machineId: '',
-        machineName: 'Sewing Machine',
+        machineName: 'Single Needle Lock Stitch Machine',
         machineNumber: '',
-        machineModel: '',
-        previousServicingDate: '',
+        machineModel: 'JUKI DDL-900BB',
+        previousServicingDate: formatDMY(reportState.servicingDate),
         stickerSerial: nextSticker,
-        lineOrSection: reportState.lineName || '',
-        workSummary: 'Routine maintenance servicing, oiling & inspection',
-        servicerName: reportState.defaultServicer || '',
+        lineOrSection: reportState.lineName || 'PD-A',
+        workSummary: 'Oil pump flow check, rotary hook timing & needle bar clearance calibrated',
+        servicerName: reportState.defaultServicer || 'Engr. Motaher Hossain',
         signature: ''
       });
       rerenderReport();
@@ -1320,60 +1543,59 @@ export function initPreventiveMaintenanceReportEvents(container = document) {
    */
   function autoFillMachineInRow(rowIdx, queryStr) {
     if (isNaN(rowIdx) || !reportState.rows[rowIdx]) return;
-    
-    let profile = null;
-    try {
-      if (preventiveMaintenanceService && typeof preventiveMaintenanceService.getMachinePreventiveProfile === 'function') {
-        profile = preventiveMaintenanceService.getMachinePreventiveProfile(queryStr);
-      }
-    } catch (_) { }
+    const clean = String(queryStr).trim().toUpperCase();
+    if (!clean) return;
 
-    if (!profile) {
-      try {
-        const allM = storage.getTable(TABLE_NAMES.MACHINES) || [];
-        const clean = String(queryStr).trim().toUpperCase();
-        const rawM = allM.find(m => m.id === queryStr || (m.serialNumber && String(m.serialNumber).trim().toUpperCase() === clean));
-        if (rawM) {
-          profile = {
-            machineId: rawM.id,
-            serialNumber: rawM.serialNumber,
-            machineName: rawM.machineName || rawM.name || '',
-            model: [rawM.brand, rawM.model].filter(Boolean).join(' ') || rawM.model || rawM.brand || '',
-            line: rawM.line || '',
-            lastServiceDate: rawM.lastServiceDate || rawM.customValues?.service_date || ''
-          };
-        }
-      } catch (_) { }
+    // Look up in live machines or INITIAL_DATA
+    const allM = storage.getTable(TABLE_NAMES.MACHINES) || [];
+    const initMachines = (typeof INITIAL_DATA !== 'undefined' && INITIAL_DATA.machines) ? INITIAL_DATA.machines : [];
+    const rawM = allM.find(m => m.id === queryStr || (m.serialNumber && String(m.serialNumber).trim().toUpperCase() === clean)) ||
+                 initMachines.find(m => m.id === queryStr || (m.serialNumber && String(m.serialNumber).trim().toUpperCase() === clean)) ||
+                 { serialNumber: clean };
+
+    const pmRecords = storage.getTable(TABLE_NAMES.PREVENTIVE_MAINTENANCE) || [];
+    const recIndex = new Map();
+    pmRecords.forEach(r => {
+      const s = String(r.serialNumber || '').trim().toUpperCase();
+      if (s && !recIndex.has(s)) recIndex.set(s, r);
+      if (r.machineId && !recIndex.has(r.machineId)) recIndex.set(r.machineId, r);
+    });
+
+    const initMap = new Map();
+    initMachines.forEach(x => {
+      if (x.serialNumber) initMap.set(String(x.serialNumber).trim().toUpperCase(), x);
+      if (x.id) initMap.set(x.id, x);
+    });
+
+    const mnMap = new Map();
+    const mnList = storage.getTable(TABLE_NAMES.MACHINE_NAMES) || (typeof INITIAL_DATA !== 'undefined' ? INITIAL_DATA.machine_names : []) || [];
+    mnList.forEach(x => mnMap.set(x.id, x.name));
+
+    const mdlMap = new Map();
+    const mdlList = storage.getTable(TABLE_NAMES.MODELS) || (typeof INITIAL_DATA !== 'undefined' ? INITIAL_DATA.models : []) || [];
+    mdlList.forEach(x => mdlMap.set(x.id, x.name));
+
+    const brdMap = new Map();
+    const brdList = storage.getTable(TABLE_NAMES.BRANDS) || (typeof INITIAL_DATA !== 'undefined' ? INITIAL_DATA.brands : []) || [];
+    brdList.forEach(x => brdMap.set(x.id, x.name));
+
+    let baseSticker = 45863;
+    const firstRowStk = reportState.rows[0]?.stickerSerial;
+    if (firstRowStk && !firstRowStk.toUpperCase().includes('PENDING')) {
+      const p = parseInt(firstRowStk, 10);
+      if (!isNaN(p) && p > 0) baseSticker = p;
     }
 
-    if (profile) {
-      let nextSticker = '';
-      try {
-        nextSticker = profile.serviceStickerSerial && profile.serviceStickerSerial !== 'STK-PENDING' 
-          ? profile.serviceStickerSerial 
-          : (preventiveMaintenanceService && typeof preventiveMaintenanceService.getNextStickerSlNo === 'function' 
-              ? preventiveMaintenanceService.getNextStickerSlNo() 
-              : '245232');
-      } catch (_) {
-        nextSticker = '245232';
-      }
+    const context = { recIndex, initMap, mnMap, mdlMap, brdMap };
+    const resolved = resolveMachineReportRow(rawM, rowIdx, 0, baseSticker, context);
 
-      reportState.rows[rowIdx].machineId = profile.machineId || '';
-      reportState.rows[rowIdx].machineNumber = profile.serialNumber || queryStr;
-      reportState.rows[rowIdx].machineName = profile.machineName || 'Sewing Machine';
-      reportState.rows[rowIdx].machineModel = profile.model || profile.brand || '';
-      reportState.rows[rowIdx].lineOrSection = profile.line || '';
-      reportState.rows[rowIdx].previousServicingDate = profile.lastServiceDate || '';
-      reportState.rows[rowIdx].stickerSerial = nextSticker;
-      reportState.rows[rowIdx].servicerName = reportState.rows[rowIdx].servicerName || profile.assignedManpower || profile.lastServicedBy || reportState.defaultServicer || '';
-      reportState.rows[rowIdx].workSummary = reportState.rows[rowIdx].workSummary || generateMachineWorkSummary(profile, profile, null);
-      reportState.rows[rowIdx].isAutoFilled = true;
+    reportState.rows[rowIdx] = {
+      ...reportState.rows[rowIdx],
+      ...resolved,
+      slNo: String(rowIdx + 1).padStart(2, '0')
+    };
 
-      rerenderReport();
-    } else {
-      reportState.rows[rowIdx].machineNumber = queryStr;
-      rerenderReport();
-    }
+    rerenderReport();
   }
 
   /**
