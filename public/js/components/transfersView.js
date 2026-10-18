@@ -277,9 +277,9 @@ export function renderTransfersView() {
                         <button class="btn ${isPending && !canApprove ? 'btn-primary' : 'btn-secondary'} btn-sm btn-view-transfer-details" data-id="${req.id}" style="font-size: 10px; padding: 3px 6px; font-weight: 700; white-space: nowrap;">
                           ${isPending ? 'Details' : 'View'}
                         </button>
-                        ${!isCompleted && !isRejected && (req.requestedBy === authService.getCurrentUser()?.id || authService.isAdmin()) ? `
-                          <button class="btn btn-warning btn-sm btn-edit-transfer-row" data-id="${req.id}" title="Edit" style="font-size: 10px; padding: 3px 6px; font-weight: 700; white-space: nowrap; background: rgba(245,158,11,0.2); border: 1px solid #f59e0b; color: #fbbf24;">
-                            ✏️
+                        ${(authService.isAdmin() || (!isCompleted && !isRejected && req.requestedBy === authService.getCurrentUser()?.id)) ? `
+                          <button class="btn btn-warning btn-sm btn-edit-transfer-row" data-id="${req.id}" title="Edit Transfer Request (Admin / Super Admin)" style="font-size: 10px; padding: 3px 6px; font-weight: 700; white-space: nowrap; background: rgba(245,158,11,0.2); border: 1px solid #f59e0b; color: #fbbf24; cursor: pointer;">
+                            ✏️ Edit
                           </button>
                         ` : ''}
                         <button class="btn btn-ghost btn-sm btn-print-transfer-row" data-id="${req.id}" title="Print Gate Pass" style="font-size: 11px; padding: 3px 5px; color: #38bdf8;">🖨️</button>

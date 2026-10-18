@@ -364,8 +364,8 @@ export function renderTransferDetailsModal() {
           </div>
 
           <div style="display: flex; gap: 10px; align-items: center;">
-            ${!isCompleted && !isRejected && (req.requestedBy === user.id || authService.isAdmin()) ? `
-              <button id="btn-action-edit-transfer" class="btn btn-warning" data-id="${req.id}" style="font-weight: 700; font-size: 12px; padding: 6px 14px; background: #f59e0b; border-color: #f59e0b; color: #000;">
+            ${(authService.isAdmin() || (!isCompleted && !isRejected && req.requestedBy === user.id)) ? `
+              <button id="btn-action-edit-transfer" class="btn btn-warning" data-id="${req.id}" style="font-weight: 700; font-size: 12px; padding: 6px 14px; background: #f59e0b; border-color: #f59e0b; color: #000; cursor: pointer;">
                 ✏️ Edit Destination / Location
               </button>
             ` : ''}

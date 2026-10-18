@@ -56,7 +56,9 @@ export function renderEditTransferModal() {
   const isCompleted = safeStatus === TRANSFER_STATUSES.COMPLETED;
   const isRejected = safeStatus === TRANSFER_STATUSES.REJECTED;
 
-  if (isCompleted || isRejected) {
+  const isAdmin = authService.isAdmin();
+
+  if ((isCompleted || isRejected) && !isAdmin) {
     return `
       <div class="modal-overlay" id="modal-edit-transfer-overlay">
         <div class="modal-dialog" style="max-width: 540px; padding: 24px; text-align: center; background: #0f172a; border: 1.5px solid #ef4444;">
@@ -64,7 +66,7 @@ export function renderEditTransferModal() {
           <div style="font-size: 16px; font-weight: 800; color: #f87171;">Transfer Request Already Finalized</div>
           <div style="font-size: 12.5px; color: #cbd5e1; margin-top: 8px; line-height: 1.5;">
             Transfer Request <strong>#${req.requestNumber || req.id || 'TR-REQ'}</strong> is in <strong>${safeStatus.replace(/_/g, ' ')}</strong> state. 
-            Destination location can only be edited before official approval is completed.
+            Destination location can only be edited before official approval is completed (or by an Administrator).
           </div>
           <button type="button" id="btn-close-edit-transfer-fallback" class="btn btn-secondary" style="margin-top: 16px;">
             Return to Details
@@ -105,7 +107,9 @@ export function renderEditTransferModal() {
                 Edit Transfer Request — <span style="color: #38bdf8; font-family: var(--font-mono);">${req.requestNumber}</span>
               </div>
               <div style="font-size: 11px; color: #fbbf24; font-weight: 600;">
-                Correct Target Destination Location &bull; Update Setup Remarks &bull; Allowed Before Approval
+                ${(isCompleted || isRejected) && isAdmin 
+                  ? '⚡ Admin Override: Editing Completed/Finalized Record &bull; Destination change will update machine location' 
+                  : 'Correct Target Destination Location &bull; Update Setup Remarks &bull; Allowed Before Approval'}
               </div>
             </div>
           </div>
@@ -650,9 +654,10 @@ export function initEditTransferModalEvents() {
           return;
         }
 
-        // Check if target is identical to machine's current location
+        // Check if target is identical to machine's current location (only for non-completed transfers)
+        const isCompleted = req.status === TRANSFER_STATUSES.COMPLETED;
         const machine = storage.getItem(TABLE_NAMES.MACHINES, req.machineId);
-        if (machine && machine.unitId === destUnitId && machine.floorId === destFloorId && machine.lineId === destLineId) {
+        if (!isCompleted && machine && machine.unitId === destUnitId && machine.floorId === destFloorId && machine.lineId === destLineId) {
           notificationService.error('Invalid Destination: Target Line is identical to the machine\'s current physical location.');
           return;
         }

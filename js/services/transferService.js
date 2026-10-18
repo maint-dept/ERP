@@ -1428,19 +1428,23 @@ class TransferService {
     const req = this.getTransferRequestById(requestId);
     if (!req) throw new Error('Transfer request not found.');
 
-    if (req.status === TRANSFER_STATUSES.COMPLETED) {
-      throw new Error('This transfer request has already been approved and completed. Destination location cannot be modified.');
+    const isCompleted = req.status === TRANSFER_STATUSES.COMPLETED;
+    const isRejected = req.status === TRANSFER_STATUSES.REJECTED;
+    const isAdmin = authService.isAdmin();
+
+    if (isCompleted && !isAdmin) {
+      throw new Error('This transfer request has already been approved and completed. Destination location cannot be modified by non-admin users.');
     }
-    if (req.status === TRANSFER_STATUSES.REJECTED) {
-      throw new Error('This transfer request has been rejected and cannot be edited.');
+    if (isRejected && !isAdmin) {
+      throw new Error('This transfer request has been rejected and cannot be edited by non-admin users.');
     }
 
-    if (req.requestedBy !== user.id && !authService.isAdmin()) {
+    if (req.requestedBy !== user.id && !isAdmin) {
       throw new Error('Access Denied: Only the original requester or an Administrator can edit this transfer request.');
     }
 
     const machine = storage.getItem(TABLE_NAMES.MACHINES, req.machineId);
-    if (machine && machine.unitId === destUnitId && machine.floorId === destFloorId && machine.lineId === destLineId) {
+    if (!isCompleted && machine && machine.unitId === destUnitId && machine.floorId === destFloorId && machine.lineId === destLineId) {
       throw new Error('Invalid Destination: Target Line is identical to the machine\'s current location.');
     }
 
@@ -1516,11 +1520,11 @@ class TransferService {
       destPath,
       reason: (reason && reason.trim()) ? reason.trim() : req.reason,
       remarks: remarks !== undefined ? remarks.trim() : req.remarks,
-      workflowId: newWorkflowId,
-      workflowName: newWorkflowName,
-      levels: newLevels,
-      currentLevel: 1, // Reset to Level 1 verification for the new destination
-      status: req.status === TRANSFER_STATUSES.REVISION_REQUESTED ? TRANSFER_STATUSES.PENDING_APPROVAL : req.status,
+      workflowId: isCompleted ? req.workflowId : newWorkflowId,
+      workflowName: isCompleted ? req.workflowName : newWorkflowName,
+      levels: isCompleted ? req.levels : newLevels,
+      currentLevel: isCompleted ? req.currentLevel : 1, // Keep completed level if already completed
+      status: isCompleted ? TRANSFER_STATUSES.COMPLETED : (req.status === TRANSFER_STATUSES.REVISION_REQUESTED ? TRANSFER_STATUSES.PENDING_APPROVAL : req.status),
       approvalHistory: updatedHistory,
       updatedAt: now.toISOString()
     };
@@ -1530,6 +1534,40 @@ class TransferService {
     }
 
     const updated = storage.update(TABLE_NAMES.TRANSFER_REQUESTS, req.id, updatedFields);
+
+    // If Admin edited a completed transfer's destination, also sync machine physical location and ledger
+    if (isCompleted && isAdmin) {
+      if (machine && (machine.unitId !== destUnitId || machine.floorId !== destFloorId || machine.lineId !== destLineId || machine.groupId !== (destGroupId || req.destGroupId))) {
+        storage.update(TABLE_NAMES.MACHINES, machine.id, {
+          groupId: destGroupId || req.destGroupId,
+          unitId: destUnitId,
+          floorId: destFloorId,
+          lineId: destLineId,
+          location: { unit: destUnit, floor: destFloor, line: destLine },
+          updatedAt: now.toISOString()
+        });
+        storage.saveTable(TABLE_NAMES.MACHINES, true);
+        if (typeof syncManager !== 'undefined' && syncManager.primaryAdapter) {
+          syncManager.saveRecord(TABLE_NAMES.MACHINES, machine.id, storage.getItem(TABLE_NAMES.MACHINES, machine.id)).catch(() => {});
+        }
+      }
+      const completedTransfers = storage.getTable(TABLE_NAMES.TRANSFERS) || [];
+      const ledgerEntry = completedTransfers.find(t => t.requestId === req.id || t.requestNumber === req.requestNumber);
+      if (ledgerEntry) {
+        storage.update(TABLE_NAMES.TRANSFERS, ledgerEntry.id, {
+          destGroupId: destGroupId || req.destGroupId,
+          destUnitId,
+          destFloorId,
+          destLineId,
+          destLocation: { unit: destUnit, floor: destFloor, line: destLine },
+          destPath,
+          reason: (reason && reason.trim()) ? reason.trim() : req.reason,
+          remarks: remarks !== undefined ? remarks.trim() : req.remarks,
+          updatedAt: now.toISOString()
+        });
+        storage.saveTable(TABLE_NAMES.TRANSFERS, true);
+      }
+    }
 
     auditService.log(
       'TRANSFER_REQUEST_EDITED',
