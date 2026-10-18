@@ -390,8 +390,8 @@ export function renderPreventiveMaintenanceView() {
         <button class="pm-tab-btn ${activeTab === 'master-schedule' ? 'active' : ''}" data-pm-tab="master-schedule">
           📅 Master Schedule (${metrics.globalTotalMachines || metrics.totalMachines})
         </button>
-        <button class="pm-tab-btn ${activeTab === 'maintenance-report' ? 'active' : ''}" data-pm-tab="maintenance-report">
-          📑 Official PM Report &amp; Print
+        <button class="pm-tab-btn ${activeTab === 'maintenance-report' ? 'active' : ''}" data-pm-tab="maintenance-report" style="${activeTab === 'maintenance-report' ? 'color: #38bdf8; font-weight: 800; border-bottom: 2.5px solid #38bdf8; background: rgba(56, 189, 248, 0.12);' : ''}">
+          📄 Official PM Report
         </button>
         ${canConfig ? `
           <button class="pm-tab-btn ${activeTab === 'admin-config' ? 'active' : ''}" data-pm-tab="admin-config">
