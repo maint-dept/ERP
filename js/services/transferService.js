@@ -1458,27 +1458,99 @@ class TransferService {
     const destLine = storage.getItem(TABLE_NAMES.LINES, destLineId)?.name || 'Line';
 
     const now = new Date();
-    const oldDestPath = req.destPath || 'Previous Location';
+    const oldDestPath = req.destPath || masterDataService.getFullLocationPath(req.destUnitId, req.destFloorId, req.destLineId, req.destGroupId) || 'Previous Location';
 
-    const updatedHistory = [
-      ...(req.approvalHistory || []),
-      {
-        level: req.currentLevel,
-        action: 'DESTINATION_EDITED',
-        approverName: user.name,
-        approverRole: user.role,
-        date: now.toLocaleDateString('en-GB'),
-        time: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        timestamp: now.toISOString(),
-        remarks: `Destination location edited from "${oldDestPath}" to "${destPath}". Note: ${reason || 'Location correction'}`
-      }
-    ];
+    // 1. Detect which fields were actually modified
+    const isDestChanged = Boolean(
+      req.destUnitId !== destUnitId ||
+      req.destFloorId !== destFloorId ||
+      req.destLineId !== destLineId ||
+      (destGroupId && req.destGroupId && req.destGroupId !== destGroupId) ||
+      (oldDestPath.trim().toLowerCase() !== destPath.trim().toLowerCase())
+    );
 
-    // Re-evaluate approval workflow if destination location changed
+    const oldReason = (req.reason || '').trim();
+    const newReason = (reason !== undefined && reason !== null) ? reason.trim() : oldReason;
+    const isReasonChanged = Boolean(newReason !== oldReason);
+
+    const oldRemarks = (req.remarks || '').trim();
+    const newRemarks = (remarks !== undefined && remarks !== null) ? remarks.trim() : oldRemarks;
+    const isRemarksChanged = Boolean(newRemarks !== oldRemarks);
+
+    const oldDocs = req.documents || [];
+    const newDocs = Array.isArray(documents) ? documents : oldDocs;
+    const isDocsChanged = Boolean(
+      Array.isArray(documents) && (
+        oldDocs.length !== newDocs.length ||
+        JSON.stringify(oldDocs.map(d => d.id || d.name)) !== JSON.stringify(newDocs.map(d => d.id || d.name))
+      )
+    );
+
+    const hasAnyChange = isDestChanged || isReasonChanged || isRemarksChanged || isDocsChanged;
+
+    // 2. Build human-readable audit trail log based strictly on what was edited
+    const changeDescriptions = [];
+    if (isDestChanged) {
+      changeDescriptions.push(`Destination location changed from "${oldDestPath}" to "${destPath}"`);
+    }
+    if (isRemarksChanged) {
+      changeDescriptions.push(oldRemarks ? `Staff notes updated from "${oldRemarks}" to "${newRemarks}"` : `Staff notes updated to: "${newRemarks}"`);
+    }
+    if (isReasonChanged) {
+      changeDescriptions.push(oldReason ? `Transfer reason updated from "${oldReason}" to "${newReason}"` : `Transfer reason set to: "${newReason}"`);
+    }
+    if (isDocsChanged) {
+      changeDescriptions.push(`Attached documents updated (${newDocs.length} file${newDocs.length === 1 ? '' : 's'})`);
+    }
+
+    // Determine the exact audit action
+    let auditAction = 'TRANSFER_EDITED';
+    if (isRemarksChanged && !isDestChanged && !isReasonChanged && !isDocsChanged) {
+      auditAction = 'NOTE_EDITED';
+    } else if (isReasonChanged && !isDestChanged && !isRemarksChanged && !isDocsChanged) {
+      auditAction = 'REASON_EDITED';
+    } else if (isDestChanged && !isRemarksChanged && !isReasonChanged && !isDocsChanged) {
+      auditAction = 'DESTINATION_EDITED';
+    } else if (isDestChanged && isRemarksChanged && !isReasonChanged && !isDocsChanged) {
+      auditAction = 'DESTINATION_&_NOTE_EDITED';
+    } else if (isDestChanged && isReasonChanged && !isRemarksChanged && !isDocsChanged) {
+      auditAction = 'DESTINATION_&_REASON_EDITED';
+    } else if (isReasonChanged && isRemarksChanged && !isDestChanged && !isDocsChanged) {
+      auditAction = 'REASON_&_NOTE_EDITED';
+    } else if (isDocsChanged && !isDestChanged && !isRemarksChanged && !isReasonChanged) {
+      auditAction = 'DOCUMENTS_UPDATED';
+    } else if (changeDescriptions.length > 0) {
+      auditAction = 'DETAILS_EDITED';
+    } else {
+      auditAction = 'DETAILS_CONFIRMED';
+    }
+
+    const auditRemarks = changeDescriptions.length > 0
+      ? changeDescriptions.join('. ') + '.'
+      : 'Transfer details reviewed with no changes.';
+
+    let updatedHistory = req.approvalHistory || [];
+    if (hasAnyChange) {
+      updatedHistory = [
+        ...updatedHistory,
+        {
+          level: req.currentLevel,
+          action: auditAction,
+          approverName: user.name,
+          approverRole: user.role,
+          date: now.toLocaleDateString('en-GB'),
+          time: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          timestamp: now.toISOString(),
+          remarks: auditRemarks
+        }
+      ];
+    }
+
+    // Re-evaluate approval workflow ONLY if destination location changed
     let newLevels = req.levels;
     let newWorkflowName = req.workflowName;
     let newWorkflowId = req.workflowId;
-    if (req.destUnitId !== destUnitId || req.destFloorId !== destFloorId || req.destLineId !== destLineId) {
+    if (isDestChanged) {
       try {
         const mn = machine ? storage.getItem(TABLE_NAMES.MACHINE_NAMES, machine.machineNameId) : null;
         const matchedWf = workflowService.matchWorkflow({
@@ -1518,13 +1590,13 @@ class TransferService {
       destLineId,
       destLocation: { unit: destUnit, floor: destFloor, line: destLine },
       destPath,
-      reason: (reason && reason.trim()) ? reason.trim() : req.reason,
-      remarks: remarks !== undefined ? remarks.trim() : req.remarks,
+      reason: newReason,
+      remarks: newRemarks,
       workflowId: isCompleted ? req.workflowId : newWorkflowId,
       workflowName: isCompleted ? req.workflowName : newWorkflowName,
       levels: isCompleted ? req.levels : newLevels,
-      currentLevel: isCompleted ? req.currentLevel : 1, // Keep completed level if already completed
-      status: isCompleted ? TRANSFER_STATUSES.COMPLETED : (req.status === TRANSFER_STATUSES.REVISION_REQUESTED ? TRANSFER_STATUSES.PENDING_APPROVAL : req.status),
+      currentLevel: isCompleted ? req.currentLevel : (isDestChanged ? 1 : req.currentLevel),
+      status: isCompleted ? TRANSFER_STATUSES.COMPLETED : (req.status === TRANSFER_STATUSES.REVISION_REQUESTED ? (isDestChanged ? TRANSFER_STATUSES.PENDING_APPROVAL : req.status) : req.status),
       approvalHistory: updatedHistory,
       updatedAt: now.toISOString()
     };
@@ -1537,7 +1609,7 @@ class TransferService {
 
     // If Admin edited a completed transfer's destination, also sync machine physical location and ledger
     if (isCompleted && isAdmin) {
-      if (machine && (machine.unitId !== destUnitId || machine.floorId !== destFloorId || machine.lineId !== destLineId || machine.groupId !== (destGroupId || req.destGroupId))) {
+      if (isDestChanged && machine && (machine.unitId !== destUnitId || machine.floorId !== destFloorId || machine.lineId !== destLineId || machine.groupId !== (destGroupId || req.destGroupId))) {
         storage.update(TABLE_NAMES.MACHINES, machine.id, {
           groupId: destGroupId || req.destGroupId,
           unitId: destUnitId,
@@ -1554,26 +1626,33 @@ class TransferService {
       const completedTransfers = storage.getTable(TABLE_NAMES.TRANSFERS) || [];
       const ledgerEntry = completedTransfers.find(t => t.requestId === req.id || t.requestNumber === req.requestNumber);
       if (ledgerEntry) {
-        storage.update(TABLE_NAMES.TRANSFERS, ledgerEntry.id, {
-          destGroupId: destGroupId || req.destGroupId,
-          destUnitId,
-          destFloorId,
-          destLineId,
-          destLocation: { unit: destUnit, floor: destFloor, line: destLine },
-          destPath,
-          reason: (reason && reason.trim()) ? reason.trim() : req.reason,
-          remarks: remarks !== undefined ? remarks.trim() : req.remarks,
+        const ledgerUpdates = {
+          reason: newReason,
+          remarks: newRemarks,
           updatedAt: now.toISOString()
-        });
+        };
+        if (isDestChanged) {
+          ledgerUpdates.destGroupId = destGroupId || req.destGroupId;
+          ledgerUpdates.destUnitId = destUnitId;
+          ledgerUpdates.destFloorId = destFloorId;
+          ledgerUpdates.destLineId = destLineId;
+          ledgerUpdates.destLocation = { unit: destUnit, floor: destFloor, line: destLine };
+          ledgerUpdates.destPath = destPath;
+        }
+        storage.update(TABLE_NAMES.TRANSFERS, ledgerEntry.id, ledgerUpdates);
         storage.saveTable(TABLE_NAMES.TRANSFERS, true);
       }
     }
 
+    let logEvent = 'TRANSFER_REQUEST_EDITED';
+    if (isRemarksChanged && !isDestChanged) logEvent = 'TRANSFER_NOTE_EDITED';
+    else if (isDestChanged && !isRemarksChanged) logEvent = 'TRANSFER_DESTINATION_EDITED';
+
     auditService.log(
-      'TRANSFER_REQUEST_EDITED',
+      logEvent,
       'TRANSFER',
       req.requestNumber,
-      `Destination edited to ${destPath} by ${user.name}`
+      `${auditAction.replace(/_/g, ' ')} by ${user.name}: ${auditRemarks}`
     );
 
     // Instant local persistence & immediate cloud sync
@@ -1582,27 +1661,50 @@ class TransferService {
       syncManager.saveRecord(TABLE_NAMES.TRANSFER_REQUESTS, req.id, updated).catch(e => console.warn('Sync transfer request notice:', e.message));
     }
 
-    // Notify approvers at new location
-    notificationService.notify({
-      title: '✏️ Transfer Request Destination Updated',
-      message: `${user.name} updated destination of transfer request ${req.requestNumber} for Machine ${req.machineInfo?.serialNumber} to ${destLine} on ${destFloor}.`,
-      type: 'APPROVAL_REQUEST',
-      module: 'transfers',
-      action: 'APPROVE',
-      entityType: 'TRANSFER',
-      entityId: req.id,
-      targetUrl: '#approvals',
-      locationScope: {
-        sourceFloorId: req.sourceFloorId || null,
-        destFloorId: destFloorId || null,
-        sourceUnitId: req.sourceUnitId || null,
-        destUnitId: destUnitId || null,
-        unitId: destUnitId,
-        floorId: destFloorId
+    // Notify approvers at new location or notify note update
+    if (hasAnyChange) {
+      let notifTitle = '✏️ Transfer Request Updated';
+      let notifMsg = `${user.name} updated transfer request ${req.requestNumber} for Machine ${req.machineInfo?.serialNumber || ''}. ${auditRemarks}`;
+      if (isRemarksChanged && !isDestChanged && !isReasonChanged) {
+        notifTitle = '✏️ Transfer Request Note Updated';
+        notifMsg = `${user.name} updated the notes on transfer request ${req.requestNumber}: "${newRemarks}"`;
+      } else if (isDestChanged && !isRemarksChanged) {
+        notifTitle = '✏️ Transfer Request Destination Updated';
+        notifMsg = `${user.name} updated destination of transfer request ${req.requestNumber} for Machine ${req.machineInfo?.serialNumber || ''} to ${destLine} on ${destFloor}.`;
       }
-    });
 
-    return updated;
+      notificationService.notify({
+        title: notifTitle,
+        message: notifMsg,
+        type: 'APPROVAL_REQUEST',
+        module: 'transfers',
+        action: 'APPROVE',
+        entityType: 'TRANSFER',
+        entityId: req.id,
+        targetUrl: '#approvals',
+        locationScope: {
+          sourceFloorId: req.sourceFloorId || null,
+          destFloorId: destFloorId || null,
+          sourceUnitId: req.sourceUnitId || null,
+          destUnitId: destUnitId || null,
+          unitId: destUnitId,
+          floorId: destFloorId
+        }
+      });
+    }
+
+    return {
+      ...updated,
+      _meta: {
+        auditAction,
+        auditRemarks,
+        isRemarksChanged,
+        isDestChanged,
+        isReasonChanged,
+        isDocsChanged,
+        hasAnyChange
+      }
+    };
   }
 
   /**

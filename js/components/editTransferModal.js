@@ -108,8 +108,8 @@ export function renderEditTransferModal() {
               </div>
               <div style="font-size: 11px; color: #fbbf24; font-weight: 600;">
                 ${(isCompleted || isRejected) && isAdmin 
-                  ? '⚡ Admin Override: Editing Completed/Finalized Record &bull; Destination change will update machine location' 
-                  : 'Correct Target Destination Location &bull; Update Setup Remarks &bull; Allowed Before Approval'}
+                  ? '⚡ Admin Override: Edit Destination Location, Reason, Staff Notes / Remarks, or Supporting Documents' 
+                  : 'Edit Destination Location &bull; Update Reason / Staff Notes &bull; Attach Supporting Documents'}
               </div>
             </div>
           </div>
@@ -680,7 +680,18 @@ export function initEditTransferModalEvents() {
           documents: docsToSubmit
         });
 
-        notificationService.success(`Destination updated to ${updated.destPath}`);
+        const meta = updated._meta || {};
+        if (!meta.hasAnyChange) {
+          notificationService.info('No changes were made to the transfer request.');
+        } else if (meta.isRemarksChanged && !meta.isDestChanged && !meta.isReasonChanged) {
+          notificationService.success('Staff notes / remarks updated successfully.');
+        } else if (meta.isReasonChanged && !meta.isDestChanged && !meta.isRemarksChanged) {
+          notificationService.success('Transfer reason updated successfully.');
+        } else if (meta.isDestChanged && !meta.isRemarksChanged) {
+          notificationService.success(`Destination updated to ${updated.destPath}`);
+        } else {
+          notificationService.success(`Transfer request updated (${meta.auditAction ? meta.auditAction.replace(/_/g, ' ') : 'Saved'})`);
+        }
         state.set('activeModal', 'transfer-details');
         state.emit('inventory:updated');
       } catch (err) {

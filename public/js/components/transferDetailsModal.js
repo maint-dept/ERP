@@ -329,28 +329,54 @@ export function renderTransferDetailsModal() {
                   </tr>
                 </thead>
                 <tbody>
-                  ${(req.approvalHistory || []).map(h => `
-                    <tr>
-                      <td style="text-align: center; font-family: var(--font-mono); font-weight: 700; color: #38bdf8;">
-                        ${h.level === 0 ? 'Init' : `L-${h.level}`}
-                      </td>
-                      <td>
-                        <div style="font-weight: 700; color: #fff;">${h.approverName}</div>
-                        <div style="font-size: 10px; color: var(--text-muted);">${h.approverRole}</div>
-                      </td>
-                      <td>
-                        <span class="badge ${h.action === 'APPROVED' || h.action === 'FINAL_APPROVAL_COMPLETED' ? 'badge-active' : (h.action === 'REJECTED' ? 'badge-breakdown' : 'badge-idle')}">
-                          ${h.action.replace(/_/g, ' ')}
-                        </span>
-                      </td>
-                      <td style="font-family: var(--font-mono); font-size: 11px;">
-                        ${h.date} ${h.time || ''}
-                      </td>
-                      <td style="color: var(--text-secondary);">
-                        ${h.remarks || '—'}
-                      </td>
-                    </tr>
-                  `).join('')}
+                  ${(req.approvalHistory || []).map(h => {
+                    let displayAction = h.action || 'APPROVED';
+                    let displayRemarks = h.remarks || '—';
+
+                    // Backward compatibility: If past entry was logged as DESTINATION_EDITED but destination didn't change
+                    if (displayAction === 'DESTINATION_EDITED' && typeof displayRemarks === 'string') {
+                      const matchIdentical = displayRemarks.match(/^Destination location edited from "([^"]+)" to "([^"]+)"\.?\s*(?:Note:\s*(.*))?$/i);
+                      if (matchIdentical && matchIdentical[1].trim().toLowerCase() === matchIdentical[2].trim().toLowerCase()) {
+                        displayAction = 'NOTE_EDITED';
+                        const noteText = (matchIdentical[3] || '').trim();
+                        displayRemarks = noteText ? `Staff note / reference updated: "${noteText}"` : 'Transfer request details updated.';
+                      }
+                    }
+
+                    let badgeClass = 'badge-idle';
+                    if (displayAction === 'APPROVED' || displayAction === 'FINAL_APPROVAL_COMPLETED') {
+                      badgeClass = 'badge-active';
+                    } else if (displayAction === 'REJECTED' || displayAction === 'CANCELLED') {
+                      badgeClass = 'badge-breakdown';
+                    } else if (displayAction.includes('NOTE') || displayAction.includes('REMARK')) {
+                      badgeClass = 'badge-maint';
+                    } else if (displayAction.includes('DESTINATION')) {
+                      badgeClass = 'badge-idle';
+                    }
+
+                    return `
+                      <tr>
+                        <td style="text-align: center; font-family: var(--font-mono); font-weight: 700; color: #38bdf8;">
+                          ${h.level === 0 ? 'Init' : `L-${h.level}`}
+                        </td>
+                        <td>
+                          <div style="font-weight: 700; color: #fff;">${h.approverName}</div>
+                          <div style="font-size: 10px; color: var(--text-muted);">${h.approverRole}</div>
+                        </td>
+                        <td>
+                          <span class="badge ${badgeClass}">
+                            ${displayAction.replace(/_/g, ' ')}
+                          </span>
+                        </td>
+                        <td style="font-family: var(--font-mono); font-size: 11px;">
+                          ${h.date} ${h.time || ''}
+                        </td>
+                        <td style="color: var(--text-secondary);">
+                          ${displayRemarks}
+                        </td>
+                      </tr>
+                    `;
+                  }).join('')}
                 </tbody>
               </table>
             </div>
@@ -365,8 +391,8 @@ export function renderTransferDetailsModal() {
 
           <div style="display: flex; gap: 10px; align-items: center;">
             ${(authService.isAdmin() || (!isCompleted && !isRejected && req.requestedBy === user.id)) ? `
-              <button id="btn-action-edit-transfer" class="btn btn-warning" data-id="${req.id}" style="font-weight: 700; font-size: 12px; padding: 6px 14px; background: #f59e0b; border-color: #f59e0b; color: #000; cursor: pointer;">
-                ✏️ Edit Destination / Location
+              <button id="btn-action-edit-transfer" class="btn btn-warning" data-id="${req.id}" title="Edit destination location, reason, notes, or attached documents" style="font-weight: 700; font-size: 12px; padding: 6px 14px; background: #f59e0b; border-color: #f59e0b; color: #000; cursor: pointer;">
+                ✏️ Edit Transfer Request
               </button>
             ` : ''}
 

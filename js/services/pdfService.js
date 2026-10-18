@@ -317,19 +317,43 @@ class PDFService {
     const statusColor = isCompleted ? '#16a34a' : (req.status === 'REJECTED' ? '#dc2626' : '#d97706');
 
     // Build Approval History Table Rows
-    const historyRows = (req.approvalHistory || []).map((h, i) => `
-      <tr>
-        <td style="text-align: center; font-weight: 700;">${h.level === 0 ? 'Init' : `L-${h.level}`}</td>
-        <td style="font-weight: 600;">${h.approverName} <span style="font-size: 10px; color: #64748b;">(${h.approverRole})</span></td>
-        <td style="text-align: center;">
-          <span style="font-weight: 700; color: ${h.action === 'APPROVED' ? '#16a34a' : (h.action === 'REJECTED' ? '#dc2626' : '#0284c7')};">
-            ${(h.action || 'APPROVED').replace(/_/g, ' ')}
-          </span>
-        </td>
-        <td style="text-align: center; font-family: monospace;">${h.date} ${h.time || ''}</td>
-        <td style="font-size: 11px;">${h.remarks || '—'}</td>
-      </tr>
-    `).join('');
+    const historyRows = (req.approvalHistory || []).map((h, i) => {
+      let displayAction = h.action || 'APPROVED';
+      let displayRemarks = h.remarks || '—';
+
+      // Backward compatibility: If past entry was logged as DESTINATION_EDITED but destination didn't change
+      if (displayAction === 'DESTINATION_EDITED' && typeof displayRemarks === 'string') {
+        const matchIdentical = displayRemarks.match(/^Destination location edited from "([^"]+)" to "([^"]+)"\.?\s*(?:Note:\s*(.*))?$/i);
+        if (matchIdentical && matchIdentical[1].trim().toLowerCase() === matchIdentical[2].trim().toLowerCase()) {
+          displayAction = 'NOTE_EDITED';
+          const noteText = (matchIdentical[3] || '').trim();
+          displayRemarks = noteText ? `Staff note / reference updated: "${noteText}"` : 'Transfer request details updated.';
+        }
+      }
+
+      let actionColor = '#0284c7';
+      if (displayAction === 'APPROVED' || displayAction === 'FINAL_APPROVAL_COMPLETED') {
+        actionColor = '#16a34a';
+      } else if (displayAction === 'REJECTED' || displayAction === 'CANCELLED') {
+        actionColor = '#dc2626';
+      } else if (displayAction.includes('NOTE') || displayAction.includes('REMARK')) {
+        actionColor = '#d97706';
+      }
+
+      return `
+        <tr>
+          <td style="text-align: center; font-weight: 700;">${h.level === 0 ? 'Init' : `L-${h.level}`}</td>
+          <td style="font-weight: 600;">${h.approverName} <span style="font-size: 10px; color: #64748b;">(${h.approverRole})</span></td>
+          <td style="text-align: center;">
+            <span style="font-weight: 700; color: ${actionColor};">
+              ${displayAction.replace(/_/g, ' ')}
+            </span>
+          </td>
+          <td style="text-align: center; font-family: monospace;">${h.date} ${h.time || ''}</td>
+          <td style="font-size: 11px;">${displayRemarks}</td>
+        </tr>
+      `;
+    }).join('');
 
     // Documents summary
     const docsHtml = (req.documents || []).map(d => `
