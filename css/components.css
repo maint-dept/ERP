@@ -4217,7 +4217,6 @@ body, input, select, textarea, button, table, th, td, label, p, span, h1, h2, h3
 }
 
 /* Dark Mode Universal Text Sharpness */
-th,
 .data-table thead th,
 .excel-grid-table thead th,
 .pm-table thead th,
@@ -4227,7 +4226,6 @@ th,
   letter-spacing: 0.3px;
 }
 
-td,
 .data-table tbody td,
 .excel-grid-table tbody td,
 .pm-table tbody td,
@@ -4236,7 +4234,6 @@ td,
 }
 
 /* Light Mode Universal Table Typography */
-body.theme-light th,
 body.theme-light .data-table thead th,
 body.theme-light .excel-grid-table thead th,
 body.theme-light .pm-table thead th,
@@ -4246,7 +4243,6 @@ body.theme-light .transfers-table thead th {
   border-color: #cbd5e1 !important;
 }
 
-body.theme-light td,
 body.theme-light .data-table tbody td,
 body.theme-light .excel-grid-table tbody td,
 body.theme-light .pm-table tbody td,

@@ -686,6 +686,23 @@ export function renderPreventiveMaintenanceReportView() {
           table-layout: fixed !important;
           border: 1.5px solid #000000 !important;
           font-size: 9.5px !important;
+          color: #000000 !important;
+          background: #ffffff !important;
+        }
+        .pm-official-table thead th,
+        .pm-official-table th {
+          color: #000000 !important;
+          background: #ffffff !important;
+          background-color: #ffffff !important;
+          border: 1px solid #000000 !important;
+          font-weight: 800 !important;
+        }
+        .pm-official-table tbody td,
+        .pm-official-table td {
+          color: #000000 !important;
+          background: #ffffff !important;
+          background-color: #ffffff !important;
+          border: 1px solid #000000 !important;
         }
         .pm-official-table th,
         .pm-official-table td {
@@ -1120,16 +1137,16 @@ export function renderPreventiveMaintenanceReportView() {
 
             <thead>
               <tr style="border-bottom: 1.5px solid #000000;">
-                <th style="border: 1px solid #000000; padding: 5px 2px; text-align: center; vertical-align: middle; font-weight: 700; font-size: 9.5px; background: #fff; color: #000; white-space: normal; word-break: break-word;">Sl.<br/>No.</th>
-                <th style="border: 1px solid #000000; padding: 5px 3px; text-align: center; vertical-align: middle; font-weight: 700; font-size: 9.5px; background: #fff; color: #000; white-space: normal; word-break: break-word;">M/C Name</th>
-                <th style="border: 1px solid #000000; padding: 5px 3px; text-align: center; vertical-align: middle; font-weight: 700; font-size: 9.5px; background: #fff; color: #000; white-space: normal; word-break: break-word;">M/C<br/>Number</th>
-                <th style="border: 1px solid #000000; padding: 5px 3px; text-align: center; vertical-align: middle; font-weight: 700; font-size: 9.5px; background: #fff; color: #000; white-space: normal; word-break: break-word;">M/C Model/Type</th>
-                <th style="border: 1px solid #000000; padding: 5px 3px; text-align: center; vertical-align: middle; font-weight: 700; font-size: 9.5px; background: #fff; color: #000; white-space: normal; word-break: break-word;">Previous<br/>Servicing<br/>Date:</th>
-                <th style="border: 1px solid #000000; padding: 5px 3px; text-align: center; vertical-align: middle; font-weight: 700; font-size: 9.5px; background: #fff; color: #000; white-space: normal; word-break: break-word;">Sticker Sl.<br/>No.</th>
-                <th style="border: 1px solid #000000; padding: 5px 3px; text-align: center; vertical-align: middle; font-weight: 700; font-size: 9.5px; background: #fff; color: #000; white-space: normal; word-break: break-word;">Line or<br/>Section</th>
-                <th style="border: 1px solid #000000; padding: 5px 4px; text-align: center; vertical-align: middle; font-weight: 700; font-size: 9.5px; background: #fff; color: #000; white-space: normal; word-break: break-word;">Work Summary</th>
-                <th style="border: 1px solid #000000; padding: 5px 3px; text-align: center; vertical-align: middle; font-weight: 700; font-size: 9.5px; background: #fff; color: #000; white-space: normal; word-break: break-word;">Servicer Name</th>
-                <th style="border: 1px solid #000000; padding: 5px 2px; text-align: center; vertical-align: middle; font-weight: 700; font-size: 9.5px; background: #fff; color: #000; white-space: normal; word-break: break-word;">Signature</th>
+                <th style="border: 1px solid #000000; padding: 5px 2px; text-align: center; vertical-align: middle; font-weight: 800; font-size: 9.5px; background: #ffffff !important; color: #000000 !important; white-space: normal; word-break: break-word;">Sl.<br/>No.</th>
+                <th style="border: 1px solid #000000; padding: 5px 3px; text-align: center; vertical-align: middle; font-weight: 800; font-size: 9.5px; background: #ffffff !important; color: #000000 !important; white-space: normal; word-break: break-word;">M/C Name</th>
+                <th style="border: 1px solid #000000; padding: 5px 3px; text-align: center; vertical-align: middle; font-weight: 800; font-size: 9.5px; background: #ffffff !important; color: #000000 !important; white-space: normal; word-break: break-word;">M/C<br/>Number</th>
+                <th style="border: 1px solid #000000; padding: 5px 3px; text-align: center; vertical-align: middle; font-weight: 800; font-size: 9.5px; background: #ffffff !important; color: #000000 !important; white-space: normal; word-break: break-word;">M/C Model/Type</th>
+                <th style="border: 1px solid #000000; padding: 5px 3px; text-align: center; vertical-align: middle; font-weight: 800; font-size: 9.5px; background: #ffffff !important; color: #000000 !important; white-space: normal; word-break: break-word;">Previous<br/>Servicing<br/>Date:</th>
+                <th style="border: 1px solid #000000; padding: 5px 3px; text-align: center; vertical-align: middle; font-weight: 800; font-size: 9.5px; background: #ffffff !important; color: #000000 !important; white-space: normal; word-break: break-word;">Sticker Sl.<br/>No.</th>
+                <th style="border: 1px solid #000000; padding: 5px 3px; text-align: center; vertical-align: middle; font-weight: 800; font-size: 9.5px; background: #ffffff !important; color: #000000 !important; white-space: normal; word-break: break-word;">Line or<br/>Section</th>
+                <th style="border: 1px solid #000000; padding: 5px 4px; text-align: center; vertical-align: middle; font-weight: 800; font-size: 9.5px; background: #ffffff !important; color: #000000 !important; white-space: normal; word-break: break-word;">Work Summary</th>
+                <th style="border: 1px solid #000000; padding: 5px 3px; text-align: center; vertical-align: middle; font-weight: 800; font-size: 9.5px; background: #ffffff !important; color: #000000 !important; white-space: normal; word-break: break-word;">Servicer Name</th>
+                <th style="border: 1px solid #000000; padding: 5px 2px; text-align: center; vertical-align: middle; font-weight: 800; font-size: 9.5px; background: #ffffff !important; color: #000000 !important; white-space: normal; word-break: break-word;">Signature</th>
               </tr>
             </thead>
 
@@ -1855,6 +1872,23 @@ export function initPreventiveMaintenanceReportEvents(container = document) {
             table-layout: fixed !important;
             border: 1.5px solid #000000 !important;
             font-size: 9.5px !important;
+            color: #000000 !important;
+            background: #ffffff !important;
+          }
+          .pm-official-table thead th,
+          .pm-official-table th {
+            color: #000000 !important;
+            background: #ffffff !important;
+            background-color: #ffffff !important;
+            border: 1px solid #000000 !important;
+            font-weight: 800 !important;
+          }
+          .pm-official-table tbody td,
+          .pm-official-table td {
+            color: #000000 !important;
+            background: #ffffff !important;
+            background-color: #ffffff !important;
+            border: 1px solid #000000 !important;
           }
           .pm-official-table th,
           .pm-official-table td {
