@@ -912,18 +912,6 @@ class StorageEngine {
         try {
           const mysqlTsRes = await syncManager.primaryAdapter.getTableTimestamps();
           if (mysqlTsRes && mysqlTsRes.success && mysqlTsRes.timestamps) {
-            // If MySQL was offline during startup and we recovered from PostgreSQL, sync data back to MySQL now that it's online
-            if (this._primaryRecoverPending) {
-              this._primaryRecoverPending = false;
-              console.log('[Storage Multi-Device Sync] 🔄 MySQL Primary is back online! Syncing active records to MySQL...');
-              syncManager.runFullSync('mysql_primary').then(() => {
-                console.log('[Storage Multi-Device Sync] ✅ MySQL Primary recovery sync completed!');
-              }).catch(err => {
-                console.warn('[Storage Multi-Device Sync] MySQL recovery sync retry scheduled:', err.message);
-                this._primaryRecoverPending = true;
-              });
-            }
-
             const mysqlUpdates = [];
             const parseTs = (ts) => {
               if (!ts) return 0;
@@ -1262,6 +1250,11 @@ class StorageEngine {
             }
           }).catch(() => {});
 
+          // Asynchronously backup to PostgreSQL secondary replica (unidirectional MySQL -> PostgreSQL)
+          syncManager.backupToPostgres().catch(err => {
+            console.warn('[Storage Startup] PostgreSQL replica backup notice:', err.message);
+          });
+
           if (typeof window !== 'undefined') {
             window.dispatchEvent(new CustomEvent('erp:critical-data-ready'));
             window.dispatchEvent(new CustomEvent('erp:storage-updated'));
@@ -1278,48 +1271,21 @@ class StorageEngine {
       this._suppressServerPersist = false;
     }
 
-    // 1. Failover: If MySQL Primary is unreachable, recover directly from PostgreSQL Secondary Backup!
+    // 1. Fallback / Failure Handling: MySQL Primary is the ONLY authoritative operational database.
+    // PostgreSQL is strictly a secondary backup replica and must NEVER automatically overwrite MySQL.
     if (!cloudLoadedSuccessfully) {
-      try {
-        const pgAdapter = (syncManager && typeof syncManager.getPostgresAdapter === 'function')
-          ? syncManager.getPostgresAdapter()
-          : (syncManager?.secondaryAdapters?.get('db_postgresql_replica'));
-        if (pgAdapter && typeof pgAdapter.getAllTables === 'function') {
-          console.warn(`[Storage] ⚠️ MySQL Primary offline. Initiating automatic failover to PostgreSQL Backup (${pgAdapter.endpoint})...`);
-          const pgRes = await pgAdapter.getAllTables();
-          if (pgRes && pgRes.success && pgRes.tables && Object.keys(pgRes.tables).length > 0) {
-            console.log(`[Storage] 🐘 Successfully recovered ${Object.keys(pgRes.tables).length} tables from PostgreSQL Secondary Replica!`);
-            this.applyIncomingDatabaseRecords(pgRes.tables, 'PostgreSQL Secondary Replica');
-            this._isCloudConnected = true;
-            cloudLoadedSuccessfully = true;
-            this._hasCriticalSyncCompleted = true;
-            this._hasInitialSyncCompleted = true;
-            this._hasFullSecondarySyncCompleted = true;
-            this._suppressServerPersist = false;
-            Object.keys(pgRes.tables).forEach(t => this._loadedSecondaryTables.add(t));
-            this.updateStatusBadge('saved');
-            this._primaryRecoverPending = true; // Mark MySQL Primary as needing recovery sync once reachable
-
-            if (typeof window !== 'undefined') {
-              window.dispatchEvent(new CustomEvent('erp:critical-data-ready'));
-              window.dispatchEvent(new CustomEvent('erp:storage-updated'));
-              window.dispatchEvent(new CustomEvent('erp:secondary-data-ready'));
-              window.dispatchEvent(new CustomEvent('erp:tools-updated'));
-            }
-
-            return;
-          }
-        }
-      } catch (pgErr) {
-        console.warn('[Storage] PostgreSQL failover notice:', pgErr.message);
-      }
+      console.warn('[Storage] ⚠️ MySQL Primary is unreachable. Preserving authoritative local cache without overwriting operational state.');
+      this._isCloudConnected = false;
+      this._hasInitialSyncCompleted = true;
+      this._suppressServerPersist = false;
+      this.updateStatusBadge('offline');
     }
 
     // 2. Local Node.js server sync (Secondary / Offline Backup only)
     try {
       const url = getApiEndpoint('/api/db/records');
       if (cloudLoadedSuccessfully) {
-        // If Cloud Firestore is authoritative and updated, keep local Node server in sync with cloud data
+        // Keep local Node server in sync with cloud data
         const cu = (typeof window !== 'undefined' && window.authService?.getCurrentUser) ? window.authService.getCurrentUser() : null;
         fetch(url, {
           method: 'POST',
@@ -1331,32 +1297,142 @@ class StorageEngine {
           body: JSON.stringify(this.data)
         }).catch(() => {});
       } else {
-        // Cloud was unavailable: fallback to local Node server
-        const res = await fetch(url, { cache: 'no-store' });
-        if (res.ok) {
-          const data = await res.json();
-          if (data && data.status === 'ok' && data.records && typeof data.records === 'object') {
-            const serverRecs = data.records;
-            const hasServerData = Array.isArray(serverRecs.machines) && serverRecs.machines.length > 0;
-            if (hasServerData) {
-              this.applyIncomingDatabaseRecords(serverRecs, 'Local Server (data/erp_database.json)');
+        // Cloud was unavailable: only fallback if local memory has no machine data
+        const hasExistingData = (this.data[TABLE_NAMES.MACHINES]?.length > 0) || (this.data[TABLE_NAMES.USERS]?.length > 0);
+        if (!hasExistingData) {
+          const res = await fetch(url, { cache: 'no-store' });
+          if (res.ok) {
+            const data = await res.json();
+            if (data && data.status === 'ok' && data.records && typeof data.records === 'object') {
+              const serverRecs = data.records;
+              const hasServerData = Array.isArray(serverRecs.machines) && serverRecs.machines.length > 0;
+              if (hasServerData) {
+                this.applyIncomingDatabaseRecords(serverRecs, 'Local Server (data/erp_database.json)');
+              }
             }
           }
         }
       }
     } catch (e) {
       if (!cloudLoadedSuccessfully) {
-        // 3. Static database fallback if both Cloud and Node server are offline
-        try {
-          const staticRes = await fetch('data/erp_database.json?v=' + Date.now(), { cache: 'no-store' });
-          if (staticRes.ok) {
-            const staticData = await staticRes.json();
-            if (staticData && Array.isArray(staticData.machines) && staticData.machines.length > 0) {
-              this.applyIncomingDatabaseRecords(staticData, 'Static Factory Database (data/erp_database.json)');
+        const hasExistingData = (this.data[TABLE_NAMES.MACHINES]?.length > 0) || (this.data[TABLE_NAMES.USERS]?.length > 0);
+        if (!hasExistingData) {
+          // 3. Static database fallback ONLY if no cached data exists at all
+          try {
+            const staticRes = await fetch('data/erp_database.json?v=' + Date.now(), { cache: 'no-store' });
+            if (staticRes.ok) {
+              const staticData = await staticRes.json();
+              if (staticData && Array.isArray(staticData.machines) && staticData.machines.length > 0) {
+                this.applyIncomingDatabaseRecords(staticData, 'Static Factory Database (data/erp_database.json)');
+              }
             }
-          }
-        } catch (_) {}
+          } catch (_) {}
+        }
       }
+    }
+  }
+
+  /**
+   * Fast, targeted refresh of a single table directly from MySQL Primary Database (<200ms).
+   * Ensures UI gets the latest committed operational records without downloading all 58 tables.
+   *
+   * @param {string} tableName - e.g. TABLE_NAMES.USERS or TABLE_NAMES.EMPLOYEES
+   * @returns {Promise<{success: boolean, count: number}>}
+   */
+  async refreshTableFromMySQL(tableName) {
+    if (!tableName) return { success: false, count: 0 };
+    try {
+      await syncManager._ensureConfig();
+      if (!syncManager.primaryAdapter || syncManager.primaryAdapter.type !== 'MYSQL') {
+        throw new Error('MySQL Primary adapter is not configured or offline.');
+      }
+
+      console.log(`[Storage] 🐬 Refreshing table '${tableName}' directly from MySQL Primary...`);
+      const res = await syncManager.primaryAdapter.getTable(tableName);
+      if (res && res.success && res.data !== undefined) {
+        const records = res.data;
+        this.data[tableName] = records;
+        this._invalidateTableIdMap(tableName);
+
+        // Update high-capacity caches
+        try { await idbCache.setTable(tableName, records); } catch (_) {}
+        try { localStorage.setItem(STORAGE_KEY_PREFIX + tableName, JSON.stringify(records)); } catch (_) {}
+
+        // Update sync timestamp
+        const confirmedTs = res.updateTime || new Date().toISOString();
+        this.syncedDocVersions.set('mysql_' + tableName, confirmedTs);
+        this.syncedDocVersions.set(tableName, confirmedTs);
+        if (!this.lastTableUpdates) this.lastTableUpdates = {};
+        this.lastTableUpdates[tableName] = Date.now();
+
+        // Dispatch events
+        if (typeof window !== 'undefined') {
+          if (tableName === TABLE_NAMES.USERS) {
+            window.dispatchEvent(new CustomEvent('erp:users-updated'));
+          } else if (tableName === TABLE_NAMES.EMPLOYEES) {
+            window.dispatchEvent(new CustomEvent('erp:employees-updated'));
+          } else if (tableName === TABLE_NAMES.MACHINES) {
+            this.rebuildAllIndexes();
+            window.dispatchEvent(new CustomEvent('erp:inventory-updated'));
+          }
+          window.dispatchEvent(new CustomEvent('erp:storage-updated'));
+        }
+
+        this.updateStatusBadge('saved');
+        const count = Array.isArray(records) ? records.length : (records && typeof records === 'object' ? Object.keys(records).length : 0);
+        return { success: true, count };
+      }
+      return { success: false, count: 0, error: res?.error || 'Failed to fetch table from MySQL Primary' };
+    } catch (err) {
+      console.warn(`[Storage] Refresh table '${tableName}' failed:`, err.message);
+      return { success: false, count: 0, error: err.message };
+    }
+  }
+
+  /**
+   * Authoritative MySQL Primary Database Synchronization.
+   * Triggered by the header status badge or manual sync actions.
+   * 1. Confirms live connectivity to MySQL Primary
+   * 2. Checks and fetches any remote updates from MySQL
+   * 3. Triggers background unidirectional backup fan-out to PostgreSQL replica
+   * 4. Updates status pill with verified timestamp
+   */
+  async syncWithMySQLPrimary() {
+    this.updateStatusBadge('saving');
+    try {
+      await syncManager._ensureConfig();
+      if (!syncManager.primaryAdapter || syncManager.primaryAdapter.type !== 'MYSQL') {
+        throw new Error('MySQL Primary adapter is not configured.');
+      }
+
+      // Ping MySQL Primary
+      const pingRes = await syncManager.primaryAdapter.ping();
+      if (!pingRes || !pingRes.success) {
+        throw new Error(pingRes?.error || 'MySQL Primary Database is unreachable.');
+      }
+
+      // Sync remote table changes
+      await this.checkAndSyncRemoteChanges();
+
+      // Trigger unidirectional background backup to PostgreSQL Secondary Replica
+      syncManager.backupToPostgres().catch(err => {
+        console.warn('[Sync] Background PostgreSQL backup notice:', err.message);
+      });
+
+      this._isCloudConnected = true;
+      const nowStr = new Date().toLocaleTimeString();
+      this.updateStatusBadge('saved');
+
+      const statusEl = document.getElementById('nav-db-status');
+      if (statusEl) {
+        statusEl.title = `MySQL Primary Synchronized (Last Sync: ${nowStr}) • PostgreSQL Backup Updated`;
+      }
+
+      return { success: true, timestamp: nowStr };
+    } catch (err) {
+      console.error('[Sync] MySQL Primary sync error:', err);
+      this.updateStatusBadge('error');
+      throw err;
     }
   }
 
@@ -2110,7 +2186,7 @@ class StorageEngine {
       if (existingIdx !== -1) {
         this.data[TABLE_NAMES.MACHINES][existingIdx] = item;
         this._invalidateTableIdMap(tableName);
-        this.saveTable(tableName);
+        this.saveTable(tableName, true);
         this.rebuildAllIndexes();
         return item;
       }
@@ -2121,7 +2197,7 @@ class StorageEngine {
 
     this.data[tableName].push(item);
     this._invalidateTableIdMap(tableName);
-    this.saveTable(tableName);
+    this.saveTable(tableName, true);
 
     if (tableName === TABLE_NAMES.MACHINES) {
       this.rebuildAllIndexes();
@@ -2220,7 +2296,7 @@ class StorageEngine {
     };
 
     this._invalidateTableIdMap(tableName);
-    this.saveTable(tableName);
+    this.saveTable(tableName, true);
 
     if (tableName === TABLE_NAMES.MACHINES) {
       this.rebuildAllIndexes();
@@ -2254,7 +2330,7 @@ class StorageEngine {
     if (index === -1) return false;
 
     const removed = table.splice(index, 1)[0];
-    this.saveTable(tableName);
+    this.saveTable(tableName, true);
 
     if (tableName === TABLE_NAMES.MACHINES) {
       this.rebuildAllIndexes();

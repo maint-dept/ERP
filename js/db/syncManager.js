@@ -234,124 +234,74 @@ class SyncManager {
   async saveMultipleTables(tablesObj) {
     await this._ensureConfig();
     
-    // 1. Try Primary (MySQL)
-    let primarySuccess = false;
-    let primaryResult = null;
-    try {
-      if (this.primaryAdapter && this.primaryAdapter.saveMultipleTables) {
-        primaryResult = await this.primaryAdapter.saveMultipleTables(tablesObj);
-        if (primaryResult && primaryResult.success) {
-          primarySuccess = true;
-          for (const [collection, dataObj] of Object.entries(tablesObj)) {
-             this._fanoutTableSave(collection, dataObj);
-          }
-          return primaryResult;
-        }
-      }
-    } catch (e) {
-      console.warn('[SyncManager] Primary MySQL saveMultipleTables exception:', e.message);
+    // 1. Mandatory Policy: MySQL is the SINGLE AUTHORITATIVE PRIMARY DATABASE
+    if (!this.primaryAdapter) {
+      throw new Error('CRITICAL: Primary MySQL database adapter is not initialized.');
     }
 
-    // 2. PRIMARY FAILED -> Automatic Failover to PostgreSQL Secondary Backup Replica
-    console.warn(`[SyncManager] ⚠️ Primary MySQL unavailable. Initiating automatic failover to PostgreSQL Secondary Replica...`);
-    
-    // Queue retry for primary MySQL so all tables are synced to MySQL when it recovers
-    if (this.primaryAdapter) {
-      for (const [collection, dataObj] of Object.entries(tablesObj)) {
-        this._queueRetry(this.primaryAdapter, collection, null, 'SAVE_TABLE', dataObj, 'Primary MySQL was unavailable during multi-table save');
-      }
+    const primaryResult = await this.primaryAdapter.saveMultipleTables(tablesObj);
+    if (!primaryResult || !primaryResult.success) {
+      const errMsg = primaryResult?.error || 'Primary MySQL saveMultipleTables operation failed.';
+      console.error(`[SyncManager] ❌ Primary MySQL write failed: ${errMsg}`);
+      this._queueRetry(this.primaryAdapter, 'multiple', null, 'SAVE_MULTIPLE_TABLES', tablesObj, errMsg);
+      return { success: false, error: errMsg };
     }
 
-    const pgAdapter = this.getPostgresAdapter();
-    if (pgAdapter && typeof pgAdapter.saveMultipleTables === 'function') {
-      try {
-        const failoverResult = await pgAdapter.saveMultipleTables(tablesObj);
-        if (failoverResult && failoverResult.success) {
-          console.log(`[SyncManager] 🐘 Failover save to PostgreSQL successful! Data preserved in backup replica.`);
-          this._recordMetric(pgAdapter.id, { lastSyncTime: new Date().toLocaleString(), failed: 0 });
-          for (const [collection, dataObj] of Object.entries(tablesObj)) {
-            this._fanoutTableSave(collection, dataObj, pgAdapter.id);
-          }
-          return failoverResult;
-        }
-      } catch (pgErr) {
-        console.error('[SyncManager] PostgreSQL failover write error:', pgErr.message);
-      }
-    }
-
-    // 3. Fallback table by table
-    let result = { success: true };
+    // 2. Unidirectional Backup Fan-out: MySQL (Authoritative) → PostgreSQL (Backup Replica)
+    // Backup failures never roll back or invalidate successful MySQL primary commits.
     for (const [collection, dataObj] of Object.entries(tablesObj)) {
-       const res = await this.saveTable(collection, dataObj);
-       if (!res.success) result = res;
+      this._fanoutTableSave(collection, dataObj);
     }
-    return result;
+
+    return primaryResult;
   }
 
   /**
-   * Save an entire table to Primary (MySQL), then Fan-out to Secondaries
+   * Save an entire table to Primary (MySQL), then Unidirectionally Fan-out to PostgreSQL Backup
    */
   async saveTable(collection, dataObj) {
     await this._ensureConfig();
 
-    // 1. Try Primary
+    if (!this.primaryAdapter) {
+      throw new Error('CRITICAL: Primary MySQL database adapter is not initialized.');
+    }
+
+    // 1. Write to Primary (MySQL) - operation only succeeds if committed to MySQL
     const primaryResult = await this.primaryAdapter.saveTable(collection, dataObj);
-    if (primaryResult.success) {
-      this._fanoutTableSave(collection, dataObj);
-      return primaryResult;
+    if (!primaryResult || !primaryResult.success) {
+      const errMsg = primaryResult?.error || `Primary MySQL saveTable failed for collection "${collection}".`;
+      console.error(`[SyncManager] ❌ Primary MySQL saveTable failed: ${errMsg}`);
+      this._queueRetry(this.primaryAdapter, collection, null, 'SAVE_TABLE', dataObj, errMsg);
+      return { success: false, error: errMsg };
     }
 
-    // 2. PRIMARY FAILED -> Initiate Automatic Failover
-    console.warn(`Primary DB failed on ${collection}. Initiating automatic failover...`);
-    this._queueRetry(this.primaryAdapter, collection, null, 'SAVE_TABLE', dataObj, primaryResult.error);
-
-    for (const [id, adapter] of this.secondaryAdapters.entries()) {
-      if (!adapter.config.enabled) continue;
-
-      const failoverResult = await adapter.saveTable(collection, dataObj);
-      if (failoverResult.success) {
-        console.log(`✅ Failover successful on ${adapter.name}`);
-        this._fanoutTableSave(collection, dataObj, id); // Fan out to the rest
-        return failoverResult;
-      } else {
-        this._queueRetry(adapter, collection, null, 'SAVE_TABLE', dataObj, failoverResult.error);
-      }
-    }
-
-    throw new Error('CRITICAL: Primary and all Secondary databases failed to write.');
+    // 2. Unidirectional Fan-out to PostgreSQL Backup Replica (Non-blocking backup)
+    this._fanoutTableSave(collection, dataObj);
+    return primaryResult;
   }
 
   /**
-   * Save a single record to Primary (MySQL), then Fan-out to Secondaries
+   * Save a single record to Primary (MySQL), then Unidirectionally Fan-out to PostgreSQL Backup
    */
   async saveRecord(collection, docId, data) {
     await this._ensureConfig();
 
-    // 1. Try Primary
+    if (!this.primaryAdapter) {
+      throw new Error('CRITICAL: Primary MySQL database adapter is not initialized.');
+    }
+
+    // 1. Write to Primary (MySQL)
     const primaryResult = await this.primaryAdapter.saveRecord(collection, docId, data);
-    if (primaryResult.success) {
-      this._fanoutRecordSave(collection, docId, data);
-      return primaryResult;
+    if (!primaryResult || !primaryResult.success) {
+      const errMsg = primaryResult?.error || `Primary MySQL saveRecord failed for "${collection}/${docId}".`;
+      console.error(`[SyncManager] ❌ Primary MySQL saveRecord failed: ${errMsg}`);
+      this._queueRetry(this.primaryAdapter, collection, docId, 'SAVE_RECORD', data, errMsg);
+      return { success: false, error: errMsg };
     }
 
-    // 2. PRIMARY FAILED -> Initiate Automatic Failover
-    console.warn(`Primary DB failed on record ${docId}. Initiating failover...`);
-    this._queueRetry(this.primaryAdapter, collection, docId, 'SAVE_RECORD', data, primaryResult.error);
-
-    for (const [id, adapter] of this.secondaryAdapters.entries()) {
-      if (!adapter.config.enabled) continue;
-
-      const failoverResult = await adapter.saveRecord(collection, docId, data);
-      if (failoverResult.success) {
-        console.log(`✅ Failover successful on ${adapter.name}`);
-        this._fanoutRecordSave(collection, docId, data, id); // Fan out to the rest
-        return failoverResult;
-      } else {
-        this._queueRetry(adapter, collection, docId, 'SAVE_RECORD', data, failoverResult.error);
-      }
-    }
-
-    throw new Error('CRITICAL: Primary and all Secondary databases failed to write.');
+    // 2. Unidirectional Fan-out to PostgreSQL Backup Replica
+    this._fanoutRecordSave(collection, docId, data);
+    return primaryResult;
   }
 
   async _fanoutTableSave(collection, dataObj, excludeDbId = null) {
@@ -450,7 +400,6 @@ class SyncManager {
     }
   }
 
-  /**
   /**
    * Run a Full Initial Sync / Migration from Primary (MySQL) to a specific Secondary Database.
    * Reads all tables from in-memory storage (mirrors MySQL Primary) and bulk-upserts to the target.
@@ -610,6 +559,26 @@ class SyncManager {
       else if (val && typeof val === 'object') count += Object.keys(val).length;
     }
     return count;
+  }
+
+  /**
+   * Safely backup all committed MySQL tables in memory to PostgreSQL Backup Replica.
+   * This is strictly a unidirectional push: MySQL Primary (Authoritative) → PostgreSQL Backup Replica.
+   * Backup errors never roll back or alter MySQL data.
+   */
+  async backupToPostgres() {
+    await this._ensureConfig();
+    const pgAdapter = this.getPostgresAdapter();
+    if (!pgAdapter || !pgAdapter.config || !pgAdapter.config.enabled) {
+      return { success: false, error: 'PostgreSQL Backup is not configured or disabled' };
+    }
+    try {
+      const ok = await this.runFullSync(pgAdapter.id);
+      return { success: ok };
+    } catch (err) {
+      console.warn('[SyncManager] PostgreSQL backup notice:', err.message);
+      return { success: false, error: err.message };
+    }
   }
 
   _recordMetric(dbId, patch) {

@@ -180,16 +180,23 @@ export function initLoginModalEvents() {
 
   // Submit Login
   if (form) {
-    form.addEventListener('submit', (e) => {
+    form.addEventListener('submit', async (e) => {
       e.preventDefault();
       const username = document.getElementById('login-input-username')?.value.trim();
       const password = document.getElementById('login-input-password')?.value;
 
       if (!username || !password) return;
 
+      const submitBtn = form.querySelector('button[type="submit"]');
+      const origBtnHtml = submitBtn ? submitBtn.innerHTML : '';
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span style="display:inline-block; animation:spin 1s linear infinite;">🔄</span> Signing in...';
+      }
+
       try {
         if (errBox) errBox.style.display = 'none';
-        const res = authService.login(username, password);
+        const res = await authService.login(username, password);
 
         if (res.mustChangePassword) {
           modalMode = 'FIRST_PASSWORD_CHANGE';
@@ -207,6 +214,11 @@ export function initLoginModalEvents() {
         if (errBox) {
           errBox.textContent = err.message || 'Login failed. Please check your credentials.';
           errBox.style.display = 'block';
+        }
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = origBtnHtml;
         }
       }
     });

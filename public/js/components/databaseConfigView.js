@@ -1278,8 +1278,12 @@ export function initDatabaseConfigEvents() {
       await syncManager.reloadConfig();
       let successCount = 0, failCount = 0;
       const total = getTotalRecordCount();
-      for (const c of cfgs) {
-        if (!c.enabled) continue;
+      // Ensure MySQL Primary is authoritative and synced FIRST before any replica
+      const primaryConfigs = cfgs.filter(c => c.enabled && (c.id === 'mysql_primary' || c.type === 'MYSQL'));
+      const secondaryConfigs = cfgs.filter(c => c.enabled && c.id !== 'mysql_primary' && c.type !== 'MYSQL');
+      const orderedConfigs = [...primaryConfigs, ...secondaryConfigs];
+
+      for (const c of orderedConfigs) {
         try {
           await syncManager.runFullSync(c.id);
           recordSyncMetric(c.id, {

@@ -4166,15 +4166,18 @@ export function initUserManagementEvents() {
       btnRefresh.innerHTML = `<span style="display:inline-block; animation:spin 1s linear infinite;">🔄</span> Syncing...`;
       notificationService.info('Synchronizing Manpower database and user access records...');
       try {
-        if (typeof storage.syncWithServerDatabase === 'function') {
-          await storage.syncWithServerDatabase();
-        }
+        // Targeted fast refresh directly from authoritative MySQL Primary (<250ms)
+        await storage.refreshTableFromMySQL(TABLE_NAMES.USERS);
+        await storage.refreshTableFromMySQL(TABLE_NAMES.EMPLOYEES);
+        await storage.refreshTableFromMySQL(TABLE_NAMES.ROLES);
+        await storage.refreshTableFromMySQL(TABLE_NAMES.PERMISSION_PRESETS);
+
         const res = await userAccessService.syncAllManpowerAccounts();
         if (res && res.success) {
           if (res.newAccountsCount > 0) {
             notificationService.success(`Sync Succeeded: Auto-created ${res.newAccountsCount} new user accounts for Manpower employees! (Zero Default Permissions)`);
           } else {
-            notificationService.success(`Sync Complete: All ${res.totalEmployees || 'registered'} Manpower employees & user accounts are fully in sync.`);
+            notificationService.success(`Sync Complete: All ${res.totalEmployees || 'registered'} Manpower employees & user accounts are fully in sync with MySQL Primary.`);
           }
           reRender();
         } else {

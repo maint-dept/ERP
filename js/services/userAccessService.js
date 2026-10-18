@@ -966,8 +966,8 @@ class UserAccessService {
       updatedAt: new Date().toISOString()
     };
 
-    // 1. Instant local & in-memory update (0ms)
-    const updatedUser = storage.update(TABLE_NAMES.USERS, userId, updates);
+    // 1. Confirmed write directly to MySQL Primary and local caches
+    const updatedUser = await storage.updateConfirmed(TABLE_NAMES.USERS, userId, updates);
 
     // Save in temporary elevated cache only if temporary, otherwise clear it
     if (isTemporary) {
@@ -975,11 +975,6 @@ class UserAccessService {
     } else {
       this.clearTemporaryCredential(userId);
     }
-
-    // 2. Non-blocking cloud sync in background
-    storage.saveTable(TABLE_NAMES.USERS, true).catch(e => {
-      console.warn('[UserAccessService] Background password sync notice:', e.message);
-    });
 
     auditService.log(
       isReset ? 'PASSWORD_RESET_ADMIN' : 'PASSWORD_GENERATED_INITIAL',
@@ -1020,19 +1015,14 @@ class UserAccessService {
       updatedAt: new Date().toISOString()
     };
 
-    // 1. Instant local & in-memory update (0ms)
-    const updatedUser = storage.update(TABLE_NAMES.USERS, userId, updates);
+    // 1. Confirmed write directly to MySQL Primary and local caches
+    const updatedUser = await storage.updateConfirmed(TABLE_NAMES.USERS, userId, updates);
 
     if (isTemporary) {
       this.setTemporaryCredential(userId, newPlainPassword);
     } else {
       this.clearTemporaryCredential(userId);
     }
-
-    // 2. Non-blocking cloud sync in background
-    storage.saveTable(TABLE_NAMES.USERS, true).catch(e => {
-      console.warn('[UserAccessService] Background custom password sync notice:', e.message);
-    });
 
     auditService.log(
       'PASSWORD_SET_ADMIN',
@@ -1057,15 +1047,48 @@ class UserAccessService {
       throw new Error('Please select at least one user account.');
     }
 
+    const users = storage.getTable(TABLE_NAMES.USERS) || [];
     const successful = [];
     const failed = [];
+    let hasModified = false;
 
     for (const uid of userIds) {
-      try {
-        const res = await this.generateOrResetPassword(uid, isReset, isTemporary);
-        successful.push(res);
-      } catch (err) {
-        failed.push({ userId: uid, reason: err.message });
+      const user = users.find(u => u && u.id === uid);
+      if (!user) {
+        failed.push({ userId: uid, reason: 'User account not found' });
+        continue;
+      }
+
+      const newPlainPassword = this.generateSecurePassword(14);
+      const hashedPassword = cryptoService.hashPassword(newPlainPassword);
+
+      user.password = hashedPassword;
+      user.passwordHash = hashedPassword;
+      user.passwordStatus = isTemporary ? 'TEMPORARY' : 'ACTIVE';
+      user.mustChangePassword = Boolean(isTemporary);
+      user.lastPasswordReset = new Date().toISOString();
+      user.updatedAt = new Date().toISOString();
+      hasModified = true;
+
+      if (isTemporary) {
+        this.setTemporaryCredential(uid, newPlainPassword);
+      } else {
+        this.clearTemporaryCredential(uid);
+      }
+
+      successful.push({
+        userId: uid,
+        username: user.username,
+        plainPassword: newPlainPassword,
+        isReset,
+        passwordStatus: user.passwordStatus
+      });
+    }
+
+    if (hasModified) {
+      await storage.saveTable(TABLE_NAMES.USERS, users, true);
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('erp:users-updated'));
       }
     }
 

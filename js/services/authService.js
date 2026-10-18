@@ -443,18 +443,43 @@ class AuthService {
   /**
    * User Login with Email Address or Username & secure password verification
    */
-  login(identifier, password) {
-    const users = storage.getTable(TABLE_NAMES.USERS) || [];
+  async login(identifier, password) {
+    let users = storage.getTable(TABLE_NAMES.USERS) || [];
     const cleanId = (identifier || '').trim().toLowerCase();
     
     // Support login by either email or username
     let user = users.find(u => u.username?.toLowerCase() === cleanId || u.email?.toLowerCase() === cleanId);
+    
+    // Verify password against local cache first
+    let storedHash = user ? (user.password || user.passwordHash) : null;
+    let isPasswordValid = (user && storedHash) ? cryptoService.verifyPassword(password, storedHash) : false;
+
+    // If account not found locally OR password verification failed,
+    // query MySQL Primary directly to verify against latest authoritative database records
+    if (!user || !isPasswordValid) {
+      try {
+        console.log('[AuthService] 🐬 Checking authoritative credentials directly with MySQL Primary...');
+        const refreshRes = await storage.refreshTableFromMySQL(TABLE_NAMES.USERS);
+        if (refreshRes && refreshRes.success) {
+          users = storage.getTable(TABLE_NAMES.USERS) || [];
+          user = users.find(u => u.username?.toLowerCase() === cleanId || u.email?.toLowerCase() === cleanId);
+          storedHash = user ? (user.password || user.passwordHash) : null;
+          isPasswordValid = (user && storedHash) ? cryptoService.verifyPassword(password, storedHash) : false;
+        }
+      } catch (err) {
+        console.warn('[AuthService] Authoritative MySQL Primary check notice:', err.message);
+      }
+    }
+
     if (!user) {
       // Auto-heal fallback if motaher or primary admin is requested but missing in local storage cache
       this.cleanDemoUsers();
       const reloadedUsers = storage.getTable(TABLE_NAMES.USERS) || [];
       user = reloadedUsers.find(u => u.username?.toLowerCase() === cleanId || u.email?.toLowerCase() === cleanId);
+      storedHash = user ? (user.password || user.passwordHash) : null;
+      isPasswordValid = (user && storedHash) ? cryptoService.verifyPassword(password, storedHash) : false;
     }
+
     if (!user) {
       throw new Error(`Invalid credentials. No account found for '${identifier}'.`);
     }
@@ -463,11 +488,6 @@ class AuthService {
       throw new Error(`Account '${user.name}' (${user.email || user.username}) is currently INACTIVE. Please contact the administrator.`);
     }
 
-    // Verify password — check both 'password' and 'passwordHash' because different creation
-    // paths store the hash in different fields (individual creation → 'password',
-    // batch/manpower creation → 'passwordHash').
-    const storedHash = user.password || user.passwordHash;
-    const isPasswordValid = storedHash ? cryptoService.verifyPassword(password, storedHash) : false;
     if (!isPasswordValid) {
       throw new Error('Incorrect password. Please verify your credentials.');
     }
@@ -2201,8 +2221,8 @@ class AuthService {
       updatedAt: new Date().toISOString()
     };
 
-    // 1. Instant local & in-memory update (0ms latency, 1-click instant login)
-    const updated = storage.update(TABLE_NAMES.USERS, userId, updates);
+    // 1. Confirmed write directly to MySQL Primary and local caches
+    const updated = await storage.updateConfirmed(TABLE_NAMES.USERS, userId, updates);
 
     // 2. Update in-memory session and localStorage immediately
     this.currentUser = updated || { ...user, ...updates };
@@ -2236,11 +2256,6 @@ class AuthService {
       userId,
       `User '${this.currentUser.name}' (@${this.currentUser.username}) configured permanent password on first login. Password status updated to ACTIVE.`
     );
-
-    // 4. Background Cloud Database Sync (Non-blocking, does not freeze UI)
-    storage.saveTable(TABLE_NAMES.USERS, true).catch(err => {
-      console.warn('[AuthService] Background cloud password sync notice:', err.message);
-    });
 
     return this.currentUser;
   }

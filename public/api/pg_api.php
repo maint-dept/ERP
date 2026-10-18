@@ -14,13 +14,13 @@
  */
 
 // --- 1. DEFAULT CONFIGURATION (Can be overridden by headers or request body) ---
-$DB_HOST = 'localhost';          // 'localhost' for cPanel PostgreSQL, or remote cloud host (e.g. Neon, Supabase, Render)
-$DB_PORT = 5432;                 // Standard PostgreSQL port
-$DB_NAME = 'motaherh_maint_pg';  // PostgreSQL Database Name
-$DB_USER = 'motaherh_pguser';    // PostgreSQL Username
-$DB_PASS = '';                   // PostgreSQL Password
-$DB_SSL  = false;                // Set to true for remote cloud PostgreSQL (require SSL)
-$API_KEY = '';                   // Optional: Set a secret key if desired
+$DB_HOST = '127.0.0.1';             // '127.0.0.1' or 'localhost' for cPanel PostgreSQL
+$DB_PORT = 5432;                    // Standard PostgreSQL port
+$DB_NAME = 'motaherh_Maintenance';  // PostgreSQL Database Name
+$DB_USER = 'motaherh_AMG-maint';    // PostgreSQL Username
+$DB_PASS = 'ol(5_MK8mF{~7cdG';      // PostgreSQL Password
+$DB_SSL  = false;                   // Set to true for remote cloud PostgreSQL (require SSL)
+$API_KEY = '';                      // Optional: Set a secret key if desired
 
 // --- 2. CORS & ANTI-CACHE HEADERS (Allows GitHub Pages & frontend to connect securely) ---
 header('Access-Control-Allow-Origin: *');
@@ -62,38 +62,44 @@ if (strpos($authHeader, 'Bearer ') === 0) {
     $headerKey = substr($authHeader, 7);
 }
 
-if (!empty($body['dbHost'])) {
-    $DB_HOST = $body['dbHost'];
+$inputHost = $body['dbHost'] ?? $body['host'] ?? null;
+if (!empty($inputHost)) {
+    $DB_HOST = $inputHost;
 } elseif (!empty($headers['X-DB-Host']) || !empty($headers['x-db-host'])) {
     $DB_HOST = $headers['X-DB-Host'] ?? $headers['x-db-host'];
 }
 
-if (!empty($body['dbPort'])) {
-    $DB_PORT = intval($body['dbPort']);
+$inputPort = $body['dbPort'] ?? $body['port'] ?? null;
+if (!empty($inputPort)) {
+    $DB_PORT = intval($inputPort);
 } elseif (!empty($headers['X-DB-Port']) || !empty($headers['x-db-port'])) {
     $DB_PORT = intval($headers['X-DB-Port'] ?? $headers['x-db-port']);
 }
 
-if (!empty($body['dbName'])) {
-    $DB_NAME = $body['dbName'];
+$inputName = $body['dbName'] ?? $body['database'] ?? null;
+if (!empty($inputName)) {
+    $DB_NAME = $inputName;
 } elseif (!empty($headers['X-DB-Name']) || !empty($headers['x-db-name'])) {
     $DB_NAME = $headers['X-DB-Name'] ?? $headers['x-db-name'];
 }
 
-if (!empty($body['dbUser'])) {
-    $DB_USER = $body['dbUser'];
+$inputUser = $body['dbUser'] ?? $body['username'] ?? null;
+if (!empty($inputUser)) {
+    $DB_USER = $inputUser;
 } elseif (!empty($headers['X-DB-User']) || !empty($headers['x-db-user'])) {
     $DB_USER = $headers['X-DB-User'] ?? $headers['x-db-user'];
 }
 
-if (isset($body['dbPass'])) {
-    $DB_PASS = $body['dbPass'];
+$inputPass = $body['dbPass'] ?? $body['password'] ?? null;
+if ($inputPass !== null) {
+    $DB_PASS = $inputPass;
 } elseif (isset($headers['X-DB-Pass']) || isset($headers['x-db-pass'])) {
     $DB_PASS = $headers['X-DB-Pass'] ?? $headers['x-db-pass'];
 }
 
-if (isset($body['dbSsl'])) {
-    $DB_SSL = ($body['dbSsl'] === true || $body['dbSsl'] === '1' || $body['dbSsl'] === 1);
+$inputSsl = $body['dbSsl'] ?? $body['ssl'] ?? null;
+if ($inputSsl !== null) {
+    $DB_SSL = ($inputSsl === true || $inputSsl === '1' || $inputSsl === 1);
 } elseif (isset($headers['X-DB-SSL']) || isset($headers['x-db-ssl'])) {
     $sslVal = $headers['X-DB-SSL'] ?? $headers['x-db-ssl'];
     $DB_SSL = ($sslVal === '1' || $sslVal === 'true' || $sslVal === true);
@@ -215,7 +221,6 @@ try {
             if (empty($tablesData)) {
                 throw new Exception('Missing "tables" data.');
             }
-            $pdo->beginTransaction();
             foreach ($tablesData as $collection => $data) {
                 $jsonStr = is_string($data) ? $data : json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
                 $itemCount = is_array($data) ? count($data) : 1;

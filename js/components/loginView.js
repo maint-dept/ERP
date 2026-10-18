@@ -355,7 +355,7 @@ export function initLoginViewEvents() {
   // Submit Standard Login Form
   const loginForm = document.getElementById('form-full-login');
   if (loginForm) {
-    loginForm.addEventListener('submit', (e) => {
+    loginForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       hideAlert();
 
@@ -368,6 +368,13 @@ export function initLoginViewEvents() {
         return;
       }
 
+      const submitBtn = document.getElementById('btn-submit-full-login');
+      const origBtnHtml = submitBtn ? submitBtn.innerHTML : '';
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span style="display:inline-block; animation:spin 1s linear infinite;">🔄</span> Signing In...';
+      }
+
       try {
         if (rememberMe) {
           localStorage.setItem('al_muslim_remember_me', 'true');
@@ -377,7 +384,7 @@ export function initLoginViewEvents() {
           localStorage.removeItem('al_muslim_saved_username');
         }
 
-        const res = authService.login(username, password);
+        const res = await authService.login(username, password);
 
         if (res.mustChangePassword) {
           loginMode = 'FIRST_LOGIN_CHANGE';
@@ -390,6 +397,11 @@ export function initLoginViewEvents() {
         state.emit('inventory:updated');
       } catch (err) {
         showAlert(err.message || 'Login failed. Please check your credentials.');
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = origBtnHtml;
+        }
       }
     });
   }
