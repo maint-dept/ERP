@@ -832,150 +832,140 @@ export function renderPreventiveMaintenanceReportView() {
           }
         }
       </style>
-      <div class="pm-report-toolbar no-print" style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 8px 12px; display: flex; flex-direction: column; gap: 8px; box-shadow: var(--shadow-sm);">
+      <div class="pm-report-toolbar no-print" style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 5px 8px; display: flex; flex-direction: column; gap: 4px; box-shadow: var(--shadow-sm);">
         
-        <!-- Filter Row & Document Parameters -->
-        <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;">
+        <!-- ROW 1: Compact Title, Badges & Primary Actions (Print, Export, Save, Mode) -->
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 6px; flex-wrap: wrap;">
           
-          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-            <span style="font-size: 16px;">📑</span>
-            <div style="display: flex; flex-direction: column;">
-              <div style="display: flex; align-items: center; gap: 6px;">
-                <h2 style="font-size: 14px; font-weight: 800; color: #fff; margin: 0;">Official Maintenance Report &amp; Print System</h2>
-                <span class="badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); font-size: 10px; padding: 1px 6px;">
-                  Al-Muslim Standard
-                </span>
-                <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); font-size: 10px; padding: 1px 6px;">
-                  ${filledCount} M/C Loaded (${totalMatching} Total)
-                </span>
-              </div>
-              <span style="font-size: 11px; color: var(--text-muted);">
-                Exact 10-column physical maintenance sheet matching factory standard with auto-formatted work summary &amp; bottom signatures.
-              </span>
-            </div>
+          <!-- Title & Badges -->
+          <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+            <span style="font-size: 14px;">📑</span>
+            <h2 style="font-size: 13px; font-weight: 800; color: #fff; margin: 0; white-space: nowrap;">Official PM Report &amp; Print</h2>
+            <span class="badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); font-size: 10px; font-weight: 700; padding: 1px 6px;">
+              Al-Muslim Standard
+            </span>
+            <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); font-size: 10px; font-weight: 700; padding: 1px 6px;">
+              ${filledCount} M/C Loaded (${totalMatching} Total)
+            </span>
           </div>
 
-          <!-- Action Buttons Group (Export, Print, Save, Preview) -->
-          <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-left: auto;">
+          <!-- Primary Action Buttons Group -->
+          <div style="display: flex; align-items: center; gap: 4px; flex-wrap: wrap; margin-left: auto;">
             ${canSave ? `
-              <button id="btn-pm-report-save-record" class="btn btn-primary btn-sm" style="font-weight: 800; background: #10b981; border-color: #059669; color: #fff; height: 30px; font-size: 12px; display: inline-flex; align-items: center; gap: 4px;" title="Save filled rows into database & update machine maintenance history">
+              <button id="btn-pm-report-save-record" class="btn btn-primary btn-xs" style="font-weight: 700; background: #10b981; border-color: #059669; color: #fff; height: 26px; padding: 0 8px; font-size: 11.5px; display: inline-flex; align-items: center; gap: 3px;" title="Save filled rows into database &amp; update machine maintenance history">
                 <span>💾</span> Save Record
               </button>
             ` : ''}
 
-            <button id="btn-pm-report-print-direct" class="btn btn-secondary btn-sm" style="font-weight: 700; height: 30px; font-size: 12px; display: inline-flex; align-items: center; gap: 4px;" title="Print official A4 Landscape report or save as PDF">
+            <button id="btn-pm-report-print-direct" class="btn btn-secondary btn-xs" style="font-weight: 700; height: 26px; padding: 0 8px; font-size: 11.5px; display: inline-flex; align-items: center; gap: 3px;" title="Print official A4 Landscape report or save as PDF">
               <span>🖨️</span> Print Report
             </button>
 
             ${canExport ? `
-              <button id="btn-pm-report-export-pdf" class="btn btn-secondary btn-sm" style="font-weight: 700; height: 30px; font-size: 12px; display: inline-flex; align-items: center; gap: 4px;" title="Export official PDF document">
-                <span>📄</span> Export PDF
+              <button id="btn-pm-report-export-pdf" class="btn btn-secondary btn-xs" style="font-weight: 600; height: 26px; padding: 0 7px; font-size: 11.5px; display: inline-flex; align-items: center; gap: 3px;" title="Export official PDF document">
+                <span>📄</span> PDF
               </button>
-              <button id="btn-pm-report-export-excel" class="btn btn-secondary btn-sm" style="font-weight: 700; color: #10b981; border-color: rgba(16, 185, 129, 0.4); height: 30px; font-size: 12px; display: inline-flex; align-items: center; gap: 4px;" title="Export to official Excel (.xlsx) file">
-                <span>📊</span> Export Excel
+              <button id="btn-pm-report-export-excel" class="btn btn-secondary btn-xs" style="font-weight: 600; color: #10b981; border-color: rgba(16, 185, 129, 0.4); height: 26px; padding: 0 7px; font-size: 11.5px; display: inline-flex; align-items: center; gap: 3px;" title="Export to official Excel (.xlsx) file">
+                <span>📊</span> Excel
               </button>
-              <button id="btn-pm-report-export-csv" class="btn btn-secondary btn-sm" style="font-weight: 700; height: 30px; font-size: 12px; display: inline-flex; align-items: center; gap: 4px;" title="Download CSV file">
-                <span>📥</span> Export CSV
+              <button id="btn-pm-report-export-csv" class="btn btn-secondary btn-xs" style="font-weight: 600; height: 26px; padding: 0 7px; font-size: 11.5px; display: inline-flex; align-items: center; gap: 3px;" title="Download CSV file">
+                <span>📥</span> CSV
               </button>
             ` : ''}
 
-            <button id="btn-pm-report-toggle-preview" class="btn btn-secondary btn-sm" style="font-weight: 700; height: 30px; font-size: 12px; display: inline-flex; align-items: center; gap: 4px;" title="Toggle between Edit and Preview mode">
+            <button id="btn-pm-report-toggle-preview" class="btn btn-secondary btn-xs" style="font-weight: 700; height: 26px; padding: 0 8px; font-size: 11.5px; display: inline-flex; align-items: center; gap: 3px;" title="Toggle between Edit and Preview mode">
               <span>${reportState.previewMode ? '✏️ Edit Mode' : '👁️ Preview'}</span>
             </button>
           </div>
         </div>
 
-        <!-- Secondary Controls Bar: Parameter Inputs (Unit, Floor/Area, Line/Section, Dates, Mode) -->
-        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding-top: 6px; border-top: 1px solid rgba(255, 255, 255, 0.06); font-size: 11.5px;">
+        <!-- ROW 2: Filters, Quick Actions & Integrated Compact Pagination -->
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 6px; flex-wrap: wrap; padding-top: 3px; border-top: 1px solid rgba(255, 255, 255, 0.06); font-size: 11px;">
           
-          <!-- Unit Selector -->
-          <div style="display: flex; align-items: center; gap: 4px;">
-            <label style="color: var(--text-muted); font-weight: 700;">Unit:</label>
-            <select id="pm-rep-filter-unit" class="filter-select-compact" style="height: 28px; width: 140px; font-size: 11.5px;">
-              <option value="ALL" ${reportState.unitId === 'ALL' ? 'selected' : ''}>All Units (${units.length})</option>
-              ${units.map(u => `<option value="${u.id}" ${reportState.unitId === u.id ? 'selected' : ''}>${escapeHtml(u.name)}</option>`).join('')}
-            </select>
-          </div>
-
-          <!-- Floor / Area Selector (Auto-cascading & instant table load) -->
-          <div style="display: flex; align-items: center; gap: 4px;">
-            <label style="color: #38bdf8; font-weight: 700;">Floor / Area:</label>
-            <select id="pm-rep-filter-floor" class="filter-select-compact" style="height: 28px; width: 140px; font-size: 11.5px; border-color: rgba(56, 189, 248, 0.4);">
-              <option value="ALL" ${reportState.floorId === 'ALL' ? 'selected' : ''}>All Floors (${floors.length})</option>
-              ${floors.map(f => `<option value="${f.id}" ${reportState.floorId === f.id ? 'selected' : ''}>${escapeHtml(f.name)}</option>`).join('')}
-            </select>
-          </div>
-
-          <!-- Line / Section Selector (Auto-cascading) -->
-          <div style="display: flex; align-items: center; gap: 4px;">
-            <label style="color: #38bdf8; font-weight: 700;">Line / Section:</label>
-            <select id="pm-rep-filter-line" class="filter-select-compact" style="height: 28px; width: 130px; font-size: 11.5px;">
-              <option value="ALL" ${reportState.lineId === 'ALL' ? 'selected' : ''}>All Lines (${lines.length})</option>
-              ${lines.map(l => `<option value="${l.id}" ${reportState.lineId === l.id ? 'selected' : ''}>${escapeHtml(l.name)}</option>`).join('')}
-            </select>
-          </div>
-
-          <!-- Filter Mode Selector (All, Due, Recent) -->
-          <div style="display: flex; align-items: center; gap: 4px;">
-            <label style="color: var(--text-muted); font-weight: 700;">Status:</label>
-            <select id="pm-rep-filter-mode" class="filter-select-compact" style="height: 28px; width: 130px; font-size: 11.5px;">
-              <option value="ALL" ${reportState.filterMode === 'ALL' ? 'selected' : ''}>📋 All Machines</option>
-              <option value="DUE" ${reportState.filterMode === 'DUE' ? 'selected' : ''}>🚨 Due / Overdue</option>
-              <option value="RECENT" ${reportState.filterMode === 'RECENT' ? 'selected' : ''}>🕒 Recently Serviced</option>
-            </select>
-          </div>
-
-          <!-- Servicing Date -->
-          <div style="display: flex; align-items: center; gap: 4px;">
-            <label style="color: var(--text-muted); font-weight: 700;">Servicing Date:</label>
-            <input type="date" id="pm-rep-servicing-date" class="filter-search-input" value="${reportState.servicingDate || ''}" style="height: 28px; width: 125px; font-size: 11px; padding: 2px 6px;" />
-          </div>
-
-          <!-- Next Servicing Date -->
-          <div style="display: flex; align-items: center; gap: 4px;">
-            <label style="color: var(--text-muted); font-weight: 700;">Next Date:</label>
-            <input type="date" id="pm-rep-next-servicing-date" class="filter-search-input" value="${reportState.nextServicingDate || ''}" style="height: 28px; width: 125px; font-size: 11px; padding: 2px 6px;" />
-          </div>
-
-          <!-- Quick Row Actions -->
-          <div style="display: flex; align-items: center; gap: 5px; margin-left: auto; flex-wrap: wrap;">
-            <button id="btn-pm-rep-add-row" class="btn btn-secondary btn-sm" style="font-weight: 700; font-size: 11px; height: 26px; padding: 0 8px;" title="Add a blank row to the table">
-              ➕ Add Row
-            </button>
-            <button id="btn-pm-rep-print-blank" class="btn btn-secondary btn-sm" style="font-weight: 700; font-size: 11px; height: 26px; padding: 0 8px;" title="Reset and print a blank official 10-row sheet for hand-written floor logs">
-              📝 Blank 10-Row Form
-            </button>
-            <button id="btn-pm-rep-clear-table" class="btn btn-ghost btn-sm" style="font-size: 11px; height: 26px; color: #f87171;" title="Reset filters & reload initial rows">
-              ↺ Reset
-            </button>
-          </div>
-
-        </div>
-
-        <!-- Tertiary Strip: Quick Pagination Controls for Standard 10-Row Sheets -->
-        ${totalMatching > 10 ? `
-          <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; padding-top: 4px; border-top: 1px dotted rgba(255, 255, 255, 0.08); font-size: 11px;">
-            <div style="display: flex; align-items: center; gap: 6px;">
-              <span style="color: #cbd5e1;">Floor Scope Machines: <strong style="color: #38bdf8;">${totalMatching}</strong></span>
-              <span style="color: var(--text-muted);">|</span>
-              <span style="color: #94a3b8;">Page <strong style="color: #fff;">${curPage}</strong> of <strong>${totalPages}</strong> (10 Rows per Official Sheet)</span>
+          <!-- Filters Group -->
+          <div style="display: flex; align-items: center; gap: 5px; flex-wrap: wrap;">
+            <!-- Unit Selector -->
+            <div style="display: flex; align-items: center; gap: 3px;">
+              <label style="color: var(--text-muted); font-weight: 700;">Unit:</label>
+              <select id="pm-rep-filter-unit" class="filter-select-compact" style="height: 25px; width: 115px; font-size: 11px; padding: 1px 4px;">
+                <option value="ALL" ${reportState.unitId === 'ALL' ? 'selected' : ''}>All Units (${units.length})</option>
+                ${units.map(u => `<option value="${u.id}" ${reportState.unitId === u.id ? 'selected' : ''}>${escapeHtml(u.name)}</option>`).join('')}
+              </select>
             </div>
 
-            <div style="display: flex; align-items: center; gap: 4px;">
-              <button id="btn-pm-rep-prev-page" class="btn btn-secondary btn-xs" ${curPage <= 1 ? 'disabled style="opacity: 0.5;"' : ''} style="height: 24px; padding: 0 8px; font-weight: 700;">
-                ◀ Prev 10
+            <!-- Floor / Area Selector -->
+            <div style="display: flex; align-items: center; gap: 3px;">
+              <label style="color: #38bdf8; font-weight: 700;">Floor:</label>
+              <select id="pm-rep-filter-floor" class="filter-select-compact" style="height: 25px; width: 120px; font-size: 11px; border-color: rgba(56, 189, 248, 0.4); padding: 1px 4px;">
+                <option value="ALL" ${reportState.floorId === 'ALL' ? 'selected' : ''}>All Floors (${floors.length})</option>
+                ${floors.map(f => `<option value="${f.id}" ${reportState.floorId === f.id ? 'selected' : ''}>${escapeHtml(f.name)}</option>`).join('')}
+              </select>
+            </div>
+
+            <!-- Line / Section Selector -->
+            <div style="display: flex; align-items: center; gap: 3px;">
+              <label style="color: #38bdf8; font-weight: 700;">Line:</label>
+              <select id="pm-rep-filter-line" class="filter-select-compact" style="height: 25px; width: 105px; font-size: 11px; padding: 1px 4px;">
+                <option value="ALL" ${reportState.lineId === 'ALL' ? 'selected' : ''}>All Lines (${lines.length})</option>
+                ${lines.map(l => `<option value="${l.id}" ${reportState.lineId === l.id ? 'selected' : ''}>${escapeHtml(l.name)}</option>`).join('')}
+              </select>
+            </div>
+
+            <!-- Filter Mode Selector -->
+            <div style="display: flex; align-items: center; gap: 3px;">
+              <label style="color: var(--text-muted); font-weight: 700;">Status:</label>
+              <select id="pm-rep-filter-mode" class="filter-select-compact" style="height: 25px; width: 105px; font-size: 11px; padding: 1px 4px;">
+                <option value="ALL" ${reportState.filterMode === 'ALL' ? 'selected' : ''}>📋 All M/C</option>
+                <option value="DUE" ${reportState.filterMode === 'DUE' ? 'selected' : ''}>🚨 Due / Overdue</option>
+                <option value="RECENT" ${reportState.filterMode === 'RECENT' ? 'selected' : ''}>🕒 Serviced</option>
+              </select>
+            </div>
+
+            <!-- Servicing Date -->
+            <div style="display: flex; align-items: center; gap: 3px;">
+              <label style="color: var(--text-muted); font-weight: 700;">Date:</label>
+              <input type="date" id="pm-rep-servicing-date" class="filter-search-input" value="${reportState.servicingDate || ''}" style="height: 25px; width: 115px; font-size: 11px; padding: 1px 4px;" title="Servicing Date" />
+            </div>
+
+            <!-- Next Servicing Date -->
+            <div style="display: flex; align-items: center; gap: 3px;">
+              <label style="color: var(--text-muted); font-weight: 700;">Next:</label>
+              <input type="date" id="pm-rep-next-servicing-date" class="filter-search-input" value="${reportState.nextServicingDate || ''}" style="height: 25px; width: 115px; font-size: 11px; padding: 1px 4px;" title="Next Servicing Date" />
+            </div>
+          </div>
+
+          <!-- Quick Actions & Integrated Compact Pagination -->
+          <div style="display: flex; align-items: center; gap: 4px; flex-wrap: wrap; margin-left: auto;">
+            <button id="btn-pm-rep-add-row" class="btn btn-secondary btn-xs" style="font-weight: 700; font-size: 11px; height: 25px; padding: 0 6px;" title="Add a blank row to the table">
+              ➕ Add Row
+            </button>
+            <button id="btn-pm-rep-print-blank" class="btn btn-secondary btn-xs" style="font-weight: 700; font-size: 11px; height: 25px; padding: 0 6px;" title="Reset and print a blank official 10-row sheet for hand-written floor logs">
+              📝 Blank Form
+            </button>
+            <button id="btn-pm-rep-clear-table" class="btn btn-ghost btn-xs" style="font-size: 11px; height: 25px; padding: 0 5px; color: #f87171;" title="Reset filters &amp; reload initial rows">
+              ↺ Reset
+            </button>
+
+            <!-- Inline Pagination -->
+            <div style="display: flex; align-items: center; gap: 3px; padding-left: 5px; border-left: 1px solid rgba(255, 255, 255, 0.1);">
+              <span style="color: #94a3b8; font-size: 10.5px; white-space: nowrap;">
+                P.<strong style="color: #fff;">${curPage}</strong>/${totalPages} <span style="color: #38bdf8;">(${totalMatching})</span>
+              </span>
+              <button id="btn-pm-rep-prev-page" class="btn btn-secondary btn-xs" ${curPage <= 1 ? 'disabled style="opacity: 0.5;"' : ''} style="height: 23px; padding: 0 5px; font-weight: 700; font-size: 10.5px;" title="Previous page">
+                ◀
               </button>
-              <button id="btn-pm-rep-next-page" class="btn btn-secondary btn-xs" ${curPage >= totalPages ? 'disabled style="opacity: 0.5;"' : ''} style="height: 24px; padding: 0 8px; font-weight: 700;">
-                Next 10 ▶
+              <button id="btn-pm-rep-next-page" class="btn btn-secondary btn-xs" ${curPage >= totalPages ? 'disabled style="opacity: 0.5;"' : ''} style="height: 23px; padding: 0 5px; font-weight: 700; font-size: 10.5px;" title="Next page">
+                ▶
               </button>
-              <select id="pm-rep-page-size" class="filter-select-compact" style="height: 24px; font-size: 10.5px; width: 110px; margin-left: 6px;">
-                <option value="10" ${reportState.pageSize === 10 ? 'selected' : ''}>10 per Sheet</option>
-                <option value="20" ${reportState.pageSize === 20 ? 'selected' : ''}>20 per Sheet</option>
-                <option value="ALL" ${reportState.pageSize === 'ALL' ? 'selected' : ''}>All Machines</option>
+              <select id="pm-rep-page-size" class="filter-select-compact" style="height: 23px; font-size: 10px; width: 85px; padding: 0 2px;">
+                <option value="10" ${reportState.pageSize === 10 ? 'selected' : ''}>10 / Sheet</option>
+                <option value="20" ${reportState.pageSize === 20 ? 'selected' : ''}>20 / Sheet</option>
+                <option value="ALL" ${reportState.pageSize === 'ALL' ? 'selected' : ''}>All M/C</option>
               </select>
             </div>
           </div>
-        ` : ''}
+
+        </div>
 
       </div>
 

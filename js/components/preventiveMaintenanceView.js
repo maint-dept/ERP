@@ -200,7 +200,7 @@ export function renderPreventiveMaintenanceView() {
   const hasActiveFilters = activeTags.length > 0;
 
   return `
-    <div class="page-view preventive-maintenance-page inventory-page-wrapper" style="display: flex; flex-direction: column; gap: 5px; height: 100%; min-height: 0; background: var(--bg-main); color: var(--text-primary); overflow-y: auto; padding: 6px 12px;">
+    <div class="page-view preventive-maintenance-page inventory-page-wrapper" style="display: flex; flex-direction: column; gap: 4px; height: 100%; min-height: 0; background: var(--bg-main); color: var(--text-primary); overflow-y: auto; padding: 4px 10px;">
       
       <!-- 1. ULTRA-COMPACT TOP BAR (Title + KPI Status Pills + Quick Action Buttons) -->
       <div class="inventory-top-unified-bar" style="padding: 4px 8px; display: flex; justify-content: space-between; align-items: center; gap: 6px; flex-wrap: wrap;">
@@ -279,7 +279,7 @@ export function renderPreventiveMaintenanceView() {
               ⚡ Bulk Import
             </button>
           ` : ''}
-          <button id="btn-pm-top-report" class="btn btn-secondary btn-sm" style="font-weight: 700; padding: 2px 8px; font-size: 11.5px; height: 26px; color: #38bdf8; border-color: rgba(56, 189, 248, 0.4); background: rgba(56, 189, 248, 0.1);" title="Open Official Preventive Machine Maintenance Report &amp; Print Sheet">
+          <button id="btn-pm-top-report" class="btn btn-secondary btn-sm" style="font-weight: 700; padding: 2px 8px; font-size: 11.5px; height: 26px; color: #38bdf8; border-color: ${activeTab === 'maintenance-report' ? '#38bdf8' : 'rgba(56, 189, 248, 0.4)'}; background: ${activeTab === 'maintenance-report' ? 'rgba(56, 189, 248, 0.25)' : 'rgba(56, 189, 248, 0.1)'};" title="Open Official Preventive Machine Maintenance Report &amp; Print Sheet">
             📑 PM Report
           </button>
           ${canConfig ? `
@@ -293,8 +293,8 @@ export function renderPreventiveMaintenanceView() {
         </div>
       </div>
 
-      <!-- 2. STREAMLINED 1-ROW FILTER BAR -->
-      <div class="compact-filter-bar" style="padding: 4px 8px; display: flex; flex-direction: column; gap: 4px; background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); box-shadow: var(--shadow-sm);">
+      <!-- 2. STREAMLINED 1-ROW FILTER BAR (Hidden on Official PM Report & Print tab) -->
+      <div class="compact-filter-bar" style="padding: 4px 8px; display: flex; flex-direction: column; gap: 4px; background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); box-shadow: var(--shadow-sm); ${activeTab === 'maintenance-report' ? 'display: none !important;' : ''}">
         
         <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap; width: 100%;">
           
@@ -446,7 +446,7 @@ function renderActiveTabContent() {
       content = renderDashboardAndRemindersTab();
       break;
   }
-  return `<div class="pm-tab-content-wrapper" style="max-width: 1560px; width: 100%; margin: 0 auto; display: flex; flex-direction: column; gap: 10px;">${content}</div>`;
+  return `<div class="pm-tab-content-wrapper" style="max-width: 1560px; width: 100%; margin: 0 auto; display: flex; flex-direction: column; gap: 4px;">${content}</div>`;
 }
 
 // -------------------------------------------------------------------------
