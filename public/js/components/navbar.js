@@ -424,19 +424,21 @@ export function initNavbarEvents() {
     profilePill.addEventListener('click', toggleDropdown);
   }
 
-  // Click Database Status Pill to trigger manual sync
+  // Click Database Status Pill to trigger manual sync with authoritative MySQL Primary
   const navDbStatus = document.getElementById('nav-db-status');
   if (navDbStatus) {
     navDbStatus.addEventListener('click', async () => {
+      if (navDbStatus._isSyncing) return;
+      navDbStatus._isSyncing = true;
       try {
-        storage.updateStatusBadge('saving');
-        await storage.syncWithServerDatabase();
-        storage.updateStatusBadge('saved');
-        notificationService.success('MySQL Primary Database synchronized successfully!');
+        notificationService.info('Synchronizing with MySQL Primary Database...');
+        const res = await storage.syncWithMySQLPrimary();
+        notificationService.success(`MySQL Primary Synced at ${res.timestamp || new Date().toLocaleTimeString()} (PostgreSQL Backup Updated)`);
       } catch (err) {
         console.error('Manual navbar sync error:', err);
-        storage.updateStatusBadge('error');
-        notificationService.error('Sync failed: ' + (err.message || 'Check connection'));
+        notificationService.error(`MySQL Sync Failed: ${err.message || 'Connection error'}. Check server status.`);
+      } finally {
+        navDbStatus._isSyncing = false;
       }
     });
   }
@@ -770,23 +772,6 @@ export function initNavbarEvents() {
     }
   };
 
-  // Persistent MySQL Database Status & Manual Sync Trigger
-  const navDbStatus = document.getElementById('nav-db-status');
-  if (navDbStatus) {
-    navDbStatus.addEventListener('click', async () => {
-      if (navDbStatus._isSyncing) return;
-      navDbStatus._isSyncing = true;
-      try {
-        notificationService.info('Synchronizing with MySQL Primary Database...');
-        const res = await storage.syncWithMySQLPrimary();
-        notificationService.success(`MySQL Primary Synced at ${res.timestamp || new Date().toLocaleTimeString()} (PostgreSQL Backup Updated)`);
-      } catch (err) {
-        notificationService.error(`MySQL Sync Failed: ${err.message || 'Connection error'}. Check server status.`);
-      } finally {
-        navDbStatus._isSyncing = false;
-      }
-    });
-  }
 
   if (window.__navNotifHandler) {
     window.removeEventListener('erp:notification-updated', window.__navNotifHandler);
