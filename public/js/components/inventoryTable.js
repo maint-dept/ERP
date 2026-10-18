@@ -218,7 +218,7 @@ export function renderInventoryTable() {
       width: 200,
       renderTh: (thStyle, thClass) => `<th class="th-sortable ${thClass}" data-sort="machineName" style="width: 200px; min-width: 200px; max-width: 200px; cursor: pointer; ${thStyle}">Machine Name</th>`,
       renderTd: (m, meta, tdStyle, tdClass) => {
-        const name = (mnMap.get(m.machineNameId) || m.machineName || m.name || brdMap.get(m.brandId) || (m.brand ? m.brand + ' Machine' : '') || '—').trim();
+        const name = (storage.resolveMachineName ? storage.resolveMachineName(m) : (mnMap.get(m.machineNameId) || m.machineName || m.name || '—')).trim();
         const isViewOnly = authService.isMachineViewOnlyForUser(m, null, showCrossFloorIdle);
         const viewOnlyBadge = isViewOnly 
           ? `<span class="badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); font-size: 10px; padding: 1px 6px; margin-left: 6px; vertical-align: middle; font-weight: 600; white-space: nowrap;" title="View-Only: This machine belongs to another floor or Central Idle">👁️ View Only</span>` 
@@ -232,7 +232,8 @@ export function renderInventoryTable() {
       width: 120,
       renderTh: (thStyle, thClass) => `<th class="th-sortable ${thClass}" data-sort="model" style="width: 120px; min-width: 120px; max-width: 120px; text-align: center; cursor: pointer; ${thStyle}">Model</th>`,
       renderTd: (m, meta, tdStyle, tdClass) => {
-        const candidate = mdlMap.get(m.modelId) || 
+        const candidate = (storage.resolveMachineModel ? storage.resolveMachineModel(m) : null) ||
+          mdlMap.get(m.modelId) || 
           m.model || 
           m.modelName || 
           m.modelStr || 
@@ -781,6 +782,10 @@ export function renderInventoryTable() {
               </button>
             ` : ''}
 
+            <button id="btn-inventory-sync-db" class="btn btn-secondary btn-sm" style="font-weight: 800; height: 28px; padding: 0 10px; font-size: 11.5px; border: 1.5px solid #10b981; color: #34d399; background: rgba(16, 185, 129, 0.12);" title="Force Synchronize Machine Inventory with MySQL Primary Cloud Database">
+              🔄 Sync Data
+            </button>
+
             <button id="btn-inventory-relocate" class="btn btn-secondary btn-sm" style="font-weight: 800; height: 28px; padding: 0 10px; font-size: 11.5px; border: 1.5px solid #38bdf8; color: #38bdf8; background: rgba(56, 189, 248, 0.12);" title="Physical Machine Verification &amp; Relocation">
               📍 Relocate &amp; Verify
             </button>
@@ -1075,6 +1080,46 @@ export function renderInventoryTable() {
 }
 
 export function initInventoryTableEvents() {
+  // Dedicated MySQL Primary Cloud Database Synchronization
+  const btnSyncDb = document.getElementById('btn-inventory-sync-db');
+  if (btnSyncDb) {
+    btnSyncDb.addEventListener('click', async () => {
+      notificationService.withLoading(btnSyncDb, async () => {
+        try {
+          await storage.syncWithServerDatabase();
+          const container = document.getElementById('main-view-container');
+          if (container && state.get('currentView') === 'inventory') {
+            container.innerHTML = renderInventoryTable();
+            initInventoryTableEvents();
+          }
+          notificationService.success('Machine Inventory successfully synchronized with MySQL Primary Database!');
+        } catch (err) {
+          console.error('Data Sync failed:', err);
+          notificationService.error('Data Sync failed: ' + (err.message || 'Check database connection.'));
+        }
+      }, 'Synchronizing with MySQL Primary...', 'Data synchronized!');
+    });
+  }
+
+  // Real-time synchronization event listener for Machine Inventory table
+  const handleInventoryDataRefreshed = () => {
+    if (state.get('currentView') === 'inventory') {
+      const container = document.getElementById('main-view-container');
+      if (container) {
+        container.innerHTML = renderInventoryTable();
+        initInventoryTableEvents();
+      }
+    }
+  };
+
+  if (window._inventorySyncListener) {
+    window.removeEventListener('erp:inventory-updated', window._inventorySyncListener);
+    window.removeEventListener('erp:storage-updated', window._inventorySyncListener);
+  }
+  window._inventorySyncListener = handleInventoryDataRefreshed;
+  window.addEventListener('erp:inventory-updated', handleInventoryDataRefreshed);
+  window.addEventListener('erp:storage-updated', handleInventoryDataRefreshed);
+
   // Relocate Page Navigation
   const btnRelocate = document.getElementById('btn-inventory-relocate');
   if (btnRelocate) {

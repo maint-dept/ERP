@@ -279,7 +279,7 @@ export function renderDashboard() {
   for (let i = 0; i < machines.length; i++) {
     const m = machines[i];
     const specType = m.specNeedleType || m.needleType || '';
-    const mName = m.machineNameStr || mnMap.get(m.machineNameId) || m.machineName || '';
+    const mName = (storage.resolveMachineName ? storage.resolveMachineName(m) : (m.machineNameStr || mnMap.get(m.machineNameId) || m.machineName || ''));
     const mQty = Math.max(1, parseInt(m.quantity ?? 1, 10) || 1);
 
     for (let j = 0; j < targetNeedleConfigs.length; j++) {

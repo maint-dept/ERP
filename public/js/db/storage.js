@@ -38,6 +38,56 @@ const DUPLICATE_ID_MAP = {
 };
 const duplicateIdMap = DUPLICATE_ID_MAP;
 
+export const SERIAL_PREFIX_MAP = {
+  'C/C/M': 'Cloth Cutting Machine',
+  'P/C/Drill': 'Power Cloth Drill Machine',
+  'T/S': 'Thread Sucker',
+  'F/M': 'Fusing Machine',
+  'R/C/M': 'Rib Cutting Machine',
+  'E/C/M': 'End Cutter Machine',
+  'F/R/M': 'Fabric Relax Machine',
+  'B/K/M': 'Band Knife Cutting Machine',
+  'Bnd/K/C/M': 'Band Knife Cutting Machine',
+  'S/M': 'Spreading Machine',
+  'Spd/M': 'Spreading Machine',
+  'P/M': 'Plane Machine',
+  'O/L': 'Over Lock Machine',
+  'F/L': 'Flat Lock Machine',
+  'D/N': 'Double Needle Machine',
+  'B/T': 'Bar tak Machine',
+  'B/H': 'Button Hole Machine',
+  'B/S': 'Button Stitch Machine',
+  'F/A': 'Feed of The Arm Machine',
+  'F/O/A': 'Feed of The Arm Machine',
+  'K/S': 'Multi Needle Chain Stitch Machine',
+  'C/S': 'Chain Stitch Machine',
+  'S/B': 'Snap Button Machine',
+  'SNAP': 'Snap Button Machine',
+  'Y.K.K': 'Snap Button Machine',
+  'S/S': 'Safety Stitch M/C',
+  'V/T': 'Edge Cutter Machine (Vertical)',
+  'Z/Z': 'Zig Zag Machine',
+  'B/Ham': 'Bottom Hamming Chain Stitch Machine',
+  'P/A': 'Pocket Attach Machine',
+  'P/R': 'Pocket Rolling Machine',
+  'P/F': 'Pocket Facing Machine',
+  'Pls/S/A': 'Plastic Staple Attache Machine',
+  'Pls/St': 'Plastic Staple Attache Machine',
+  'Wr/Kt': 'Wrapping & Knotting Machine',
+  'N/D': 'Needle Detector',
+  'APW': 'Automatic Pocket Welting',
+  'Tem': 'Single Head Template',
+  'Tem/Ct': 'Template Plastic Cutter Machine',
+  'Els/Jt': 'Double Head Auto Elastic Joint Sewing Machine',
+  'Bln/St': 'Ham  Blind Stitch Machine',
+  'F/D/Fill': 'Fake Down Filling Machine',
+  'L/A': 'Pattern Machine',
+  'L/Ct': 'Laser Cut APW Machine',
+  'V/A': 'Lable Attach Machine (Velcro)',
+  'Z/Jt': 'Zipper Joint Machine',
+  'Zi/Jn': 'Zipper Joint Machine'
+};
+
 /**
  * CloudSaveError — thrown when a Firestore write was attempted but HTTP 200 was NOT confirmed.
  * UI components catch this to keep modals open and show error toast without showing false success.
@@ -463,23 +513,12 @@ class StorageEngine {
       }
     });
 
-    // Deduplicate MACHINE_NAMES table: strip duplicates and ensure canonical 76
-    const duplicateIds = new Set(Object.keys(duplicateIdMap));
+    // Retain all valid records in MACHINE_NAMES table (never drop IDs referenced by machines)
     const currentMN = this.data[TABLE_NAMES.MACHINE_NAMES] || [];
-    const uniqueMN = [];
-    const seenMN = new Set();
-    currentMN.forEach(mn => {
-      if (mn && mn.name && !duplicateIds.has(mn.id)) {
-        const norm = mn.name.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
-        if (!seenMN.has(norm)) {
-          seenMN.add(norm);
-          uniqueMN.push(mn);
-        }
-      }
-    });
-    if (uniqueMN.length !== currentMN.length) {
-      this.data[TABLE_NAMES.MACHINE_NAMES] = uniqueMN;
-    }
+    const mnMapById = new Map();
+    (INITIAL_DATA.machine_names || []).forEach(mn => { if (mn && mn.id) mnMapById.set(mn.id, mn); });
+    currentMN.forEach(mn => { if (mn && mn.id) mnMapById.set(mn.id, mn); });
+    this.data[TABLE_NAMES.MACHINE_NAMES] = Array.from(mnMapById.values());
 
     // Auto-heal empty or missing core master tables from INITIAL_DATA
     if (!Array.isArray(this.data[TABLE_NAMES.MACHINE_NAMES]) || this.data[TABLE_NAMES.MACHINE_NAMES].length === 0) {
@@ -909,19 +948,12 @@ class StorageEngine {
 
       if (Array.isArray(serverRecs[tbl])) {
         if (tbl === TABLE_NAMES.MACHINE_NAMES) {
-          const seen = new Set();
-          const cleanRecs = [];
-          const dupIds = new Set(Object.keys(duplicateIdMap));
-          serverRecs[tbl].forEach(m => {
-            if (m && m.name && !dupIds.has(m.id)) {
-              const norm = m.name.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
-              if (!seen.has(norm)) {
-                seen.add(norm);
-                cleanRecs.push(m);
-              }
-            }
-          });
-          this.data[tbl] = cleanRecs;
+          const incomingMN = serverRecs[tbl] || [];
+          const mnMapById = new Map();
+          (INITIAL_DATA.machine_names || []).forEach(mn => { if (mn && mn.id) mnMapById.set(mn.id, mn); });
+          (this.data[tbl] || []).forEach(mn => { if (mn && mn.id) mnMapById.set(mn.id, mn); });
+          incomingMN.forEach(mn => { if (mn && mn.id) mnMapById.set(mn.id, mn); });
+          this.data[tbl] = Array.from(mnMapById.values());
         } else if (tbl === TABLE_NAMES.MACHINES) {
           const incoming = serverRecs[tbl] || [];
           let hasRemarksChanged = false;
@@ -1490,6 +1522,61 @@ class StorageEngine {
 
   getTable(tableName) {
     return this.data[tableName] || [];
+  }
+
+  resolveMachineName(m) {
+    if (!m) return 'Plane Machine';
+    const brandTable = this.data[TABLE_NAMES.BRANDS] || [];
+    const brandSet = new Set(brandTable.map(b => (b?.name || '').trim().toLowerCase()).filter(Boolean));
+    (INITIAL_DATA.brands || []).forEach(b => { if (b?.name) brandSet.add(b.name.trim().toLowerCase()); });
+
+    let nameFromId = '';
+    if (m.machineNameId) {
+      const mnObj = this.getItem(TABLE_NAMES.MACHINE_NAMES, m.machineNameId);
+      if (mnObj && mnObj.name) nameFromId = mnObj.name.trim();
+    }
+
+    const isBrand = nameFromId && brandSet.has(nameFromId.toLowerCase());
+    if (nameFromId && !isBrand && nameFromId !== 'Sewing Machine') {
+      return nameFromId;
+    }
+
+    // Serial prefix match (e.g. C/C/M -> Cloth Cutting Machine, T/S -> Thread Sucker, Z/Z -> Zig Zag Machine)
+    if (m.serialNumber && typeof m.serialNumber === 'string') {
+      const s = m.serialNumber.trim();
+      for (const [pfx, canon] of Object.entries(SERIAL_PREFIX_MAP)) {
+        if (s.startsWith(pfx + '-') || s.startsWith(pfx + ' ') || s.startsWith(pfx + '/') || s.toUpperCase().startsWith(pfx.toUpperCase() + '-')) {
+          return canon;
+        }
+      }
+      const part = s.split(/[-_]/)[0];
+      if (SERIAL_PREFIX_MAP[part]) return SERIAL_PREFIX_MAP[part];
+    }
+
+    if (nameFromId && !isBrand) return nameFromId;
+
+    // Inline machineName / name (if not brand name)
+    const inline = (m.machineName || m.name || '').trim();
+    if (inline && !brandSet.has(inline.toLowerCase())) {
+      return inline;
+    }
+
+    return 'Plane Machine';
+  }
+
+  resolveMachineModel(m) {
+    if (!m) return 'Standard';
+    let mdl = '';
+    if (m.modelId) {
+      const mdlObj = this.getItem(TABLE_NAMES.MODELS, m.modelId);
+      if (mdlObj && mdlObj.name) mdl = mdlObj.name.trim();
+    }
+    if (mdl && mdl.toLowerCase() !== 'standard') return mdl;
+
+    const raw = (m.model || m.modelName || m.modelStr || (m.customValues && m.customValues.model) || '').trim();
+    if (raw && raw.toLowerCase() !== 'standard') return raw;
+
+    return mdl || raw || 'Standard';
   }
 
   setTable(tableName, items) {

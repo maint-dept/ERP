@@ -206,7 +206,7 @@ export function renderNavbar() {
       <!-- Right: Status, Theme, Notifications & User Dropdown Capsule -->
       <div class="header-right">
         <!-- Persistent Database Store Status -->
-        <div id="nav-db-status" class="nav-db-status-pill" title="Persistent MySQL Database Active &amp; Synchronized">
+        <div id="nav-db-status" class="nav-db-status-pill" style="cursor: pointer;" title="Persistent MySQL Database Active &amp; Synchronized (Click to Sync Now)">
           <span style="font-size: 13px; line-height: 1;">🐬</span>
           <span class="db-status-text">MySQL Synced</span>
         </div>
@@ -422,6 +422,23 @@ export function initNavbarEvents() {
 
   if (profilePill) {
     profilePill.addEventListener('click', toggleDropdown);
+  }
+
+  // Click Database Status Pill to trigger manual sync
+  const navDbStatus = document.getElementById('nav-db-status');
+  if (navDbStatus) {
+    navDbStatus.addEventListener('click', async () => {
+      try {
+        storage.updateStatusBadge('saving');
+        await storage.syncWithServerDatabase();
+        storage.updateStatusBadge('saved');
+        notificationService.success('MySQL Primary Database synchronized successfully!');
+      } catch (err) {
+        console.error('Manual navbar sync error:', err);
+        storage.updateStatusBadge('error');
+        notificationService.error('Sync failed: ' + (err.message || 'Check connection'));
+      }
+    });
   }
 
   // Mobile Hamburger Toggle

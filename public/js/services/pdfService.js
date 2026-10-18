@@ -26,9 +26,9 @@ class PDFService {
 
     // Build Table Rows
     const rowsHtml = machines.map((m, i) => {
-      const mn = storage.getItem(TABLE_NAMES.MACHINE_NAMES, m.machineNameId)?.name || 'N/A';
-      const brand = storage.getItem(TABLE_NAMES.BRANDS, m.brandId)?.name || 'N/A';
-      const model = storage.getItem(TABLE_NAMES.MODELS, m.modelId)?.name || 'N/A';
+      const mn = (storage.resolveMachineName ? storage.resolveMachineName(m) : storage.getItem(TABLE_NAMES.MACHINE_NAMES, m.machineNameId)?.name) || m.machineName || 'Plane Machine';
+      const brand = storage.getItem(TABLE_NAMES.BRANDS, m.brandId)?.name || m.brand || '—';
+      const model = (storage.resolveMachineModel ? storage.resolveMachineModel(m) : storage.getItem(TABLE_NAMES.MODELS, m.modelId)?.name) || m.model || 'Standard';
       const unit = storage.getItem(TABLE_NAMES.UNITS, m.unitId)?.name || 'N/A';
       const floor = storage.getItem(TABLE_NAMES.FLOORS, m.floorId)?.name || 'N/A';
       const line = storage.getItem(TABLE_NAMES.LINES, m.lineId)?.name || 'N/A';

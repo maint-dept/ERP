@@ -685,9 +685,9 @@ export function getMachineSummaryGroupedData(allMachines) {
 
   // 2. Aggregate counts dynamically into Machine Name -> Model
   filteredMachines.forEach(m => {
-    // Resolve Machine Name & Model with multi-tier fallback
-    let rawMachName = (mnMap.get(m.machineNameId) || m.machineName || m.name || brdMap.get(m.brandId) || (m.brand ? m.brand + ' Machine' : '') || 'Plane Machine').trim();
-    let rawModel = (mdlMap.get(m.modelId) || m.model || m.modelName || 'Standard').trim();
+    // Resolve Machine Name & Model with multi-tier fallback (never allow brand names in machine column)
+    let rawMachName = (storage.resolveMachineName ? storage.resolveMachineName(m) : (mnMap.get(m.machineNameId) || m.machineName || 'Plane Machine')).trim();
+    let rawModel = (storage.resolveMachineModel ? storage.resolveMachineModel(m) : (mdlMap.get(m.modelId) || m.model || m.modelName || 'Standard')).trim();
 
     const r = parseInt(m.running ?? m.qty_running ?? (m.status === 'ACTIVE' ? (m.quantity ?? 1) : 0), 10) || 0;
     const u = parseInt(m.usable_idle ?? m.usableIdle ?? (m.status === 'IDLE' ? (m.quantity ?? 1) : 0), 10) || 0;
@@ -2529,23 +2529,21 @@ export function initReportsEvents() {
     });
   }
 
-  // Real-time database & local listeners for Transfer Reports tab —
-  // Fires when any device writes to TRANSFERS or TRANSFER_REQUESTS or locally.
-  const handleTransfersUpdated = () => {
-    if (currentReportTab === 'transfers') {
-      const tabContent = document.getElementById('reports-tab-content');
-      if (tabContent) {
-        const allMachines = machineService.getMachines({ limit: 'ALL' }).items || [];
-        const allTransfers = transferService.getTransferRequests({ status: 'ALL' }) || [];
-        const completedTransfers = storage.getTable(TABLE_NAMES.TRANSFERS) || [];
-        const allHistory = historyService.getMachineHistory() || [];
-        const sparePartsMaster = historyService.getSparePartsMaster() || [];
-        const etLabBoards = etLabService.getBoards() || [];
-        const floors = storage.getTable(TABLE_NAMES.FLOORS) || [];
-        const replacementLogs = allHistory.filter(h => h.actionType === 'SPARE_PART_REPLACEMENT' || h.sparePart);
-        tabContent.innerHTML = renderActiveTabHtml({ allMachines, allTransfers, completedTransfers, replacementLogs, sparePartsMaster, etLabBoards, floors });
-        initReportsEvents();
-      }
+  // Real-time database & local listeners for Reports tabs (Machine Summary, Transfers, Spares, etc.)
+  // Fires when any device writes or MySQL sync updates storage.
+  const handleReportsDataUpdated = () => {
+    const tabContent = document.getElementById('reports-tab-content');
+    if (tabContent) {
+      const allMachines = machineService.getMachines({ limit: 'ALL' }).items || [];
+      const allTransfers = transferService.getTransferRequests({ status: 'ALL' }) || [];
+      const completedTransfers = storage.getTable(TABLE_NAMES.TRANSFERS) || [];
+      const allHistory = historyService.getMachineHistory() || [];
+      const sparePartsMaster = historyService.getSparePartsMaster() || [];
+      const etLabBoards = etLabService.getBoards() || [];
+      const floors = storage.getTable(TABLE_NAMES.FLOORS) || [];
+      const replacementLogs = allHistory.filter(h => h.actionType === 'SPARE_PART_REPLACEMENT' || h.sparePart);
+      tabContent.innerHTML = renderActiveTabHtml({ allMachines, allTransfers, completedTransfers, replacementLogs, sparePartsMaster, etLabBoards, floors });
+      initReportsEvents();
     }
   };
 
@@ -2554,10 +2552,10 @@ export function initReportsEvents() {
     window.removeEventListener('erp:inventory-updated', window._reportsTransferListener);
     window.removeEventListener('erp:storage-updated', window._reportsTransferListener);
   }
-  window._reportsTransferListener = handleTransfersUpdated;
-  window.addEventListener('erp:transfers-updated', handleTransfersUpdated);
-  window.addEventListener('erp:inventory-updated', handleTransfersUpdated);
-  window.addEventListener('erp:storage-updated', handleTransfersUpdated);
+  window._reportsTransferListener = handleReportsDataUpdated;
+  window.addEventListener('erp:transfers-updated', handleReportsDataUpdated);
+  window.addEventListener('erp:inventory-updated', handleReportsDataUpdated);
+  window.addEventListener('erp:storage-updated', handleReportsDataUpdated);
 
   // Helper to re-render Transfer Reports tab in place without page jump
   const refreshTransferReportsTabInPlace = () => {

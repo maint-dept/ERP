@@ -1504,9 +1504,9 @@ function getEnrichedMachinesList() {
   linTable.forEach(x => linMap.set(x.id, x.name));
 
   return allMachines.map(m => {
-    const resolvedName = mnMap.get(m.machineNameId) || m.machineName || m.name || (m.brand ? m.brand + ' Machine' : 'Sewing Machine');
-    const resolvedBrand = brdMap.get(m.brandId) || m.brand || 'Juki';
-    const resolvedModel = mdlMap.get(m.modelId) || m.model || m.modelName || 'Standard';
+    const resolvedName = (storage.resolveMachineName ? storage.resolveMachineName(m) : (mnMap.get(m.machineNameId) || m.machineName || 'Plane Machine'));
+    const resolvedBrand = brdMap.get(m.brandId) || m.brand || '—';
+    const resolvedModel = (storage.resolveMachineModel ? storage.resolveMachineModel(m) : (mdlMap.get(m.modelId) || m.model || 'Standard'));
     const resolvedFloor = flrMap.get(m.floorId) || m.floorName || m.floor || '';
     const resolvedLine = linMap.get(m.lineId) || m.lineName || m.line || '';
 
