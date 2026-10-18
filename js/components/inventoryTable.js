@@ -123,12 +123,27 @@ export function renderInventoryTable() {
   });
 
   const modelByBrandAndMachine = new Map();
-  liveModels.forEach(m => {
-    if (m && m.name && m.brandId && m.machineNameId) {
+  (INITIAL_DATA.models || []).forEach(m => {
+    if (m && m.name && m.brandId && m.machineNameId && m.name.toLowerCase() !== 'standard') {
       const key = `${m.brandId}:::${m.machineNameId}`;
       if (!modelByBrandAndMachine.has(key)) modelByBrandAndMachine.set(key, m.name);
     }
   });
+  liveModels.forEach(m => {
+    if (m && m.name && m.brandId && m.machineNameId && m.name.toLowerCase() !== 'standard') {
+      const key = `${m.brandId}:::${m.machineNameId}`;
+      if (!modelByBrandAndMachine.has(key)) modelByBrandAndMachine.set(key, m.name);
+    }
+  });
+
+  const initialMachineBySerial = new Map();
+  const initialMachineById = new Map();
+  if (typeof INITIAL_DATA !== 'undefined' && Array.isArray(INITIAL_DATA.machines)) {
+    INITIAL_DATA.machines.forEach(x => {
+      if (x && x.serialNumber) initialMachineBySerial.set(String(x.serialNumber).trim().toUpperCase(), x);
+      if (x && x.id) initialMachineById.set(x.id, x);
+    });
+  }
 
   const untMap = new Map();
   (INITIAL_DATA.units || []).forEach(x => x && x.id && untMap.set(x.id, x.name));
@@ -232,15 +247,58 @@ export function renderInventoryTable() {
       width: 120,
       renderTh: (thStyle, thClass) => `<th class="th-sortable ${thClass}" data-sort="model" style="width: 120px; min-width: 120px; max-width: 120px; text-align: center; cursor: pointer; ${thStyle}">Model</th>`,
       renderTd: (m, meta, tdStyle, tdClass) => {
-        const candidate = (storage.resolveMachineModel ? storage.resolveMachineModel(m) : null) ||
-          mdlMap.get(m.modelId) || 
-          m.model || 
-          m.modelName || 
-          m.modelStr || 
-          m.customValues?.model || 
-          modelByBrandAndMachine.get(`${m.brandId}:::${m.machineNameId}`) || 
-          '—';
-        const mdl = String(candidate || '—').trim();
+        let mdl = '';
+        // 1. Direct machine properties if valid (not 'Standard')
+        for (const raw of [m.model, m.modelName, m.modelStr, m.customValues?.model]) {
+          if (raw && typeof raw === 'string' && raw.trim() && raw.trim().toLowerCase() !== 'standard') {
+            mdl = raw.trim();
+            break;
+          }
+        }
+        // 2. Storage helper resolution if valid (not 'Standard')
+        if (!mdl && storage.resolveMachineModel) {
+          const fromStorage = storage.resolveMachineModel(m);
+          if (fromStorage && fromStorage.trim().toLowerCase() !== 'standard') {
+            mdl = fromStorage.trim();
+          }
+        }
+        // 3. Lookup modelId in mdlMap (if not 'Standard')
+        if (!mdl && m.modelId) {
+          const fromMap = mdlMap.get(m.modelId);
+          if (fromMap && fromMap.trim().toLowerCase() !== 'standard') {
+            mdl = fromMap.trim();
+          }
+        }
+        // 4. Lookup canonical machine in INITIAL_DATA fallback
+        if (!mdl) {
+          const sn = (m.serialNumber || '').trim().toUpperCase();
+          const canon = (sn && initialMachineBySerial.get(sn)) || (m.id && initialMachineById.get(m.id));
+          if (canon) {
+            for (const raw of [canon.model, canon.modelName, canon.modelStr]) {
+              if (raw && typeof raw === 'string' && raw.trim() && raw.trim().toLowerCase() !== 'standard') {
+                mdl = raw.trim();
+                break;
+              }
+            }
+            if (!mdl && canon.modelId && mdlMap.has(canon.modelId)) {
+              const cMdl = mdlMap.get(canon.modelId);
+              if (cMdl && cMdl.trim().toLowerCase() !== 'standard') mdl = cMdl.trim();
+            }
+          }
+        }
+        // 5. Lookup model by brand + machine name mapping
+        if (!mdl && m.brandId && m.machineNameId) {
+          const bmMdl = modelByBrandAndMachine.get(`${m.brandId}:::${m.machineNameId}`);
+          if (bmMdl && bmMdl.trim().toLowerCase() !== 'standard') {
+            mdl = bmMdl.trim();
+          }
+        }
+        // 6. Last resort fallback
+        if (!mdl) {
+          const rawLast = (m.model || m.modelName || m.modelStr || mdlMap.get(m.modelId) || '').trim();
+          mdl = rawLast || '—';
+        }
+
         return `<td class="${tdClass}" style="width: 120px; min-width: 120px; max-width: 120px; text-align: center; overflow: hidden; text-overflow: ellipsis; font-family: var(--font-mono); font-weight: 600; ${tdStyle}" title="${mdl}">${mdl}</td>`;
       }
     },

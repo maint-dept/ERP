@@ -1631,6 +1631,12 @@ class StorageEngine {
 
   resolveMachineModel(m) {
     if (!m) return 'Standard';
+
+    // 1. Check raw inline fields on machine first if they have a non-"Standard" factory model
+    const raw = (m.model || m.modelName || m.modelStr || (m.customValues && m.customValues.model) || '').trim();
+    if (raw && raw.toLowerCase() !== 'standard') return raw;
+
+    // 2. Lookup by m.modelId in MODELS table
     let mdl = '';
     if (m.modelId) {
       const mdlObj = this.getItem(TABLE_NAMES.MODELS, m.modelId);
@@ -1638,10 +1644,30 @@ class StorageEngine {
     }
     if (mdl && mdl.toLowerCase() !== 'standard') return mdl;
 
-    const raw = (m.model || m.modelName || m.modelStr || (m.customValues && m.customValues.model) || '').trim();
-    if (raw && raw.toLowerCase() !== 'standard') return raw;
+    // 3. Master seed & canonical fallback lookup
+    if (typeof INITIAL_DATA !== 'undefined' && Array.isArray(INITIAL_DATA.machines)) {
+      if (!this._initialMachineBySerial) {
+        this._initialMachineBySerial = new Map();
+        this._initialMachineById = new Map();
+        (INITIAL_DATA.machines || []).forEach(im => {
+          if (im && im.serialNumber) this._initialMachineBySerial.set(String(im.serialNumber).trim().toUpperCase(), im);
+          if (im && im.id) this._initialMachineById.set(im.id, im);
+        });
+      }
+      const sn = (m.serialNumber || '').trim().toUpperCase();
+      const canon = (sn ? this._initialMachineBySerial.get(sn) : null) || (m.id ? this._initialMachineById.get(m.id) : null);
+      if (canon) {
+        const cRaw = (canon.model || canon.modelName || canon.modelStr || '').trim();
+        if (cRaw && cRaw.toLowerCase() !== 'standard') return cRaw;
+        if (canon.modelId) {
+          const cMdlObj = this.getItem(TABLE_NAMES.MODELS, canon.modelId) || (INITIAL_DATA.models || []).find(x => x.id === canon.modelId);
+          if (cMdlObj && cMdlObj.name && cMdlObj.name.toLowerCase() !== 'standard') return cMdlObj.name.trim();
+        }
+      }
+    }
 
-    return mdl || raw || 'Standard';
+    // 4. Return any existing value or fallback
+    return raw || mdl || 'Standard';
   }
 
   setTable(tableName, items) {
@@ -1741,6 +1767,46 @@ class StorageEngine {
     if (!Array.isArray(this.data[TABLE_NAMES.MODELS])) this.data[TABLE_NAMES.MODELS] = [];
     const mdlMap = new Map(this.data[TABLE_NAMES.MODELS].map(m => [m.id, m]));
 
+    // Seed any missing master models from INITIAL_DATA.models
+    if (typeof INITIAL_DATA !== 'undefined' && Array.isArray(INITIAL_DATA.models)) {
+      INITIAL_DATA.models.forEach(im => {
+        if (im && im.id && !mdlMap.has(im.id)) {
+          this.data[TABLE_NAMES.MODELS].push(im);
+          mdlMap.set(im.id, im);
+          hasUpdates = true;
+        }
+      });
+    }
+
+    // Auto-heal any machines with "Standard" or missing model
+    if (typeof INITIAL_DATA !== 'undefined' && Array.isArray(INITIAL_DATA.machines)) {
+      const canonBySerial = new Map();
+      const canonById = new Map();
+      (INITIAL_DATA.machines || []).forEach(im => {
+        if (im && im.serialNumber) canonBySerial.set(String(im.serialNumber).trim().toUpperCase(), im);
+        if (im && im.id) canonById.set(im.id, im);
+      });
+
+      machines.forEach(m => {
+        if (!m) return;
+        const currentMdl = (m.model || m.modelName || m.modelStr || '').trim();
+        if (!currentMdl || currentMdl.toLowerCase() === 'standard' || m.modelId === 'mod-1792291200071-x7i9') {
+          const sn = (m.serialNumber || '').trim().toUpperCase();
+          const canon = (sn && canonBySerial.get(sn)) || (m.id && canonById.get(m.id));
+          if (canon) {
+            const cMdl = (canon.model || canon.modelName || canon.modelStr || '').trim();
+            if (cMdl && cMdl.toLowerCase() !== 'standard') {
+              m.model = cMdl;
+              m.modelName = canon.modelName || cMdl;
+              m.modelStr = canon.modelStr || cMdl;
+              if (canon.modelId) m.modelId = canon.modelId;
+              hasUpdates = true;
+            }
+          }
+        }
+      });
+    }
+
     machines.forEach(m => {
       if (!m) return;
 
@@ -1772,10 +1838,13 @@ class StorageEngine {
 
       // Model check
       if (m.modelId && !mdlMap.has(m.modelId)) {
+        const fallbackName = (m.model && m.model.toLowerCase() !== 'standard') ? m.model.trim() :
+          ((m.modelStr && m.modelStr.toLowerCase() !== 'standard') ? m.modelStr.trim() :
+          ((m.modelName && m.modelName.toLowerCase() !== 'standard') ? m.modelName.trim() : 'Standard'));
         const newModel = {
           id: m.modelId,
           brandId: m.brandId || 'bra-1',
-          name: m.model || m.modelStr || m.modelName || 'Standard',
+          name: fallbackName,
           status: 'ACTIVE',
           createdAt: m.createdAt || new Date().toISOString()
         };

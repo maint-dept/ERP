@@ -217,6 +217,7 @@ class MachineService {
         if (mnMap.get(m.machineNameId)?.includes(q)) return true;
         if (brdMap.get(m.brandId)?.includes(q)) return true;
         if (mdlMap.get(m.modelId)?.includes(q)) return true;
+        if (m.model?.toLowerCase().includes(q) || m.modelName?.toLowerCase().includes(q) || m.modelStr?.toLowerCase().includes(q)) return true;
         const lName = linMap.get(m.lineId) || m.line?.toLowerCase() || '';
         if (lName.includes(q)) return true;
         const cleanL = lName.replace(/^[a-z]{2,3}-/i, '').trim();
@@ -307,9 +308,9 @@ class MachineService {
         return String(msA).localeCompare(String(msB)) * sortOrder;
       }
       if (sortField === 'model') {
-        const mA = storage.getItem(TABLE_NAMES.MODELS, a.modelId)?.name || '';
-        const mB = storage.getItem(TABLE_NAMES.MODELS, b.modelId)?.name || '';
-        return mA.localeCompare(mB) * sortOrder;
+        const mA = (storage.resolveMachineModel ? storage.resolveMachineModel(a) : (a.model || storage.getItem(TABLE_NAMES.MODELS, a.modelId)?.name || '')) || '';
+        const mB = (storage.resolveMachineModel ? storage.resolveMachineModel(b) : (b.model || storage.getItem(TABLE_NAMES.MODELS, b.modelId)?.name || '')) || '';
+        return String(mA).localeCompare(String(mB)) * sortOrder;
       }
       if (sortField === 'group') {
         const gA = storage.getItem(TABLE_NAMES.GROUPS, a.groupId)?.name || a.group || '';
