@@ -68,6 +68,10 @@ export class MysqlAdapter extends BaseAdapter {
     return `${this.endpoint}/${action}?${tParam}`;
   }
 
+  async ping() {
+    return this.testConnection();
+  }
+
   async testConnection() {
     try {
       const start = Date.now();

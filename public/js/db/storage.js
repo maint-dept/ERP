@@ -1401,7 +1401,10 @@ class StorageEngine {
       }
 
       // Ping MySQL Primary
-      const pingRes = await syncManager.primaryAdapter.ping();
+      const pingFn = typeof syncManager.primaryAdapter.ping === 'function'
+        ? syncManager.primaryAdapter.ping.bind(syncManager.primaryAdapter)
+        : syncManager.primaryAdapter.testConnection.bind(syncManager.primaryAdapter);
+      const pingRes = await pingFn();
       if (!pingRes || !pingRes.success) {
         throw new Error(pingRes?.error || 'MySQL Primary Database is unreachable.');
       }
