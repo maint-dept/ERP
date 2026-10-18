@@ -1694,21 +1694,32 @@ class PreventiveMaintenanceService {
     }
 
     if (filters.floorId && filters.floorId !== 'ALL') {
-      const flrObj = storage.getItem(TABLE_NAMES.FLOORS, filters.floorId);
-      const flrName = (flrObj?.name || '').toLowerCase().trim();
-      filtered = filtered.filter(p => 
-        p.floorId === filters.floorId || 
-        (flrName && (p.floor || '').toLowerCase().trim() === flrName)
-      );
+      const allFloors = storage.getTable(TABLE_NAMES.FLOORS) || [];
+      const flrObj = storage.getItem(TABLE_NAMES.FLOORS, filters.floorId) || 
+        allFloors.find(f => f.id === filters.floorId || (f.name && f.name.toLowerCase() === String(filters.floorId).toLowerCase()) || (f.code && f.code.toLowerCase() === String(filters.floorId).toLowerCase()));
+      const flrName = (flrObj?.name || (typeof filters.floorName === 'string' ? filters.floorName : filters.floorId) || '').toLowerCase().trim();
+      const flrCode = (flrObj?.code || '').toLowerCase().trim();
+      filtered = filtered.filter(p => {
+        if (p.floorId && (p.floorId === filters.floorId || (flrObj && p.floorId === flrObj.id))) return true;
+        const pf = (p.floor || '').toLowerCase().trim();
+        const pfc = (p.floorCode || '').toLowerCase().trim();
+        if (flrName && (pf === flrName || pf.includes(flrName) || flrName.includes(pf))) return true;
+        if (flrCode && (pfc === flrCode || pf.startsWith(flrCode + '-') || pf.includes(flrCode))) return true;
+        return false;
+      });
     }
 
     if (filters.lineId && filters.lineId !== 'ALL') {
-      const linObj = storage.getItem(TABLE_NAMES.LINES, filters.lineId);
-      const linName = (linObj?.name || '').toLowerCase().trim();
-      filtered = filtered.filter(p => 
-        p.lineId === filters.lineId || 
-        (linName && (p.line || '').toLowerCase().trim() === linName)
-      );
+      const allLines = storage.getTable(TABLE_NAMES.LINES) || [];
+      const linObj = storage.getItem(TABLE_NAMES.LINES, filters.lineId) ||
+        allLines.find(l => l.id === filters.lineId || (l.name && l.name.toLowerCase() === String(filters.lineId).toLowerCase()) || (l.code && l.code.toLowerCase() === String(filters.lineId).toLowerCase()));
+      const linName = (linObj?.name || (typeof filters.lineName === 'string' ? filters.lineName : filters.lineId) || '').toLowerCase().trim();
+      filtered = filtered.filter(p => {
+        if (p.lineId && (p.lineId === filters.lineId || (linObj && p.lineId === linObj.id))) return true;
+        const pl = (p.line || '').toLowerCase().trim();
+        if (linName && (pl === linName || pl.includes(linName) || linName.includes(pl))) return true;
+        return false;
+      });
     }
 
     if (filters.machineType && filters.machineType !== 'ALL') {
@@ -1775,21 +1786,31 @@ class PreventiveMaintenanceService {
     }
 
     if (filters.floorId && filters.floorId !== 'ALL') {
-      const flrObj = storage.getItem(TABLE_NAMES.FLOORS, filters.floorId);
+      const allFloors = storage.getTable(TABLE_NAMES.FLOORS) || [];
+      const flrObj = storage.getItem(TABLE_NAMES.FLOORS, filters.floorId) || 
+        allFloors.find(f => f.id === filters.floorId || (f.name && f.name.toLowerCase() === String(filters.floorId).toLowerCase()) || (f.code && f.code.toLowerCase() === String(filters.floorId).toLowerCase()));
       const flrName = (flrObj?.name || '').toLowerCase().trim();
-      enrichedRecords = enrichedRecords.filter(r => 
-        r.floorId === filters.floorId || 
-        (flrName && (r.floor || '').toLowerCase().trim() === flrName)
-      );
+      const flrCode = (flrObj?.code || '').toLowerCase().trim();
+      enrichedRecords = enrichedRecords.filter(r => {
+        if (r.floorId && (r.floorId === filters.floorId || (flrObj && r.floorId === flrObj.id))) return true;
+        const rf = (r.floor || '').toLowerCase().trim();
+        if (flrName && (rf === flrName || rf.includes(flrName) || flrName.includes(rf))) return true;
+        if (flrCode && (rf.startsWith(flrCode + '-') || rf.includes(flrCode))) return true;
+        return false;
+      });
     }
 
     if (filters.lineId && filters.lineId !== 'ALL') {
-      const linObj = storage.getItem(TABLE_NAMES.LINES, filters.lineId);
+      const allLines = storage.getTable(TABLE_NAMES.LINES) || [];
+      const linObj = storage.getItem(TABLE_NAMES.LINES, filters.lineId) ||
+        allLines.find(l => l.id === filters.lineId || (l.name && l.name.toLowerCase() === String(filters.lineId).toLowerCase()) || (l.code && l.code.toLowerCase() === String(filters.lineId).toLowerCase()));
       const linName = (linObj?.name || '').toLowerCase().trim();
-      enrichedRecords = enrichedRecords.filter(r => 
-        r.lineId === filters.lineId || 
-        (linName && (r.line || '').toLowerCase().trim() === linName)
-      );
+      enrichedRecords = enrichedRecords.filter(r => {
+        if (r.lineId && (r.lineId === filters.lineId || (linObj && r.lineId === linObj.id))) return true;
+        const rl = (r.line || '').toLowerCase().trim();
+        if (linName && (rl === linName || rl.includes(linName) || linName.includes(rl))) return true;
+        return false;
+      });
     }
 
     if (filters.machineType && filters.machineType !== 'ALL') {

@@ -154,7 +154,7 @@ export function renderReportsView() {
         </button>` : ''}
         ${canPmReport ? `
         <button class="btn btn-xs ${currentReportTab === 'preventive' ? 'btn-primary' : 'btn-ghost'}" data-report-tab-btn="preventive" style="font-weight: 700; font-size: 11px; padding: 3px 8px; height: 26px; white-space: nowrap; color: ${currentReportTab === 'preventive' ? '#fff' : '#10b981'};">
-          🛡️ PM Official Form
+          📑 PM Report &amp; Print
         </button>` : ''}
         ${canExportCenter ? `
         <button class="btn btn-xs ${currentReportTab === 'export' ? 'btn-primary' : 'btn-ghost'}" data-report-tab-btn="export" style="font-weight: 700; font-size: 11px; padding: 3px 8px; height: 26px; white-space: nowrap; color: ${currentReportTab === 'export' ? '#fff' : '#38bdf8'};">

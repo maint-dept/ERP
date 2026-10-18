@@ -141,7 +141,6 @@ export function renderSidebar() {
     { id: 'sub-mach-relocate', targetView: 'relocate', label: 'Relocate & Verify', icon: '📍', moduleKey: 'relocate' },
     { id: 'sub-mach-qr-codes', targetView: 'qr-codes', label: 'QR Codes & Labels', icon: '🏷️', moduleKey: 'qr_codes' },
     { id: 'sub-mach-preventive', targetView: 'preventive-maintenance', pmTab: 'dashboard', label: 'Preventive Maintenance', icon: '🛡️', moduleKey: 'preventive_maintenance' },
-    { id: 'sub-mach-pm-report', targetView: 'preventive-maintenance', pmTab: 'maintenance-report', label: 'PM Report & Print', icon: '📑', moduleKey: 'preventive_maintenance' },
     { id: 'sub-mach-needle-ops', targetView: 'needle-operations', label: 'Needle Flow', icon: '🪡', moduleKey: 'machines' },
     { id: 'sub-mach-parts-trace', targetView: 'parts-trace', label: 'Parts Trace', icon: '🔩', moduleKey: 'parts_trace' },
     { id: 'sub-mach-history', targetView: 'machine-history', label: 'Machine Lifetime (Passport)', icon: '📜', moduleKey: 'machine_history' }
@@ -191,6 +190,7 @@ export function renderSidebar() {
     { id: 'sub-report-transfer', targetView: 'reports', reportTab: 'transfers', label: 'Transfer Reports', icon: '🔄', moduleKey: 'transfers' },
     { id: 'sub-report-spare', targetView: 'reports', reportTab: 'spareparts', label: 'Spare Parts Reports', icon: '⚙️', moduleKey: 'spare_parts' },
     { id: 'sub-report-etlab', targetView: 'reports', reportTab: 'etlab', label: 'ENT Lab Report', icon: '🔬', moduleKey: 'et_lab' },
+    { id: 'sub-report-pm', targetView: 'reports', reportTab: 'preventive', label: 'PM Report & Print', icon: '📑', moduleKey: 'preventive_maintenance' },
     { id: 'sub-report-export', targetView: 'reports', reportTab: 'export', label: 'Excel Export Center', icon: '📥', moduleKey: 'reports' }
   ].filter(it => authService.isAdmin() || (authService.isModuleAllowed('reports') && (it.moduleKey === 'reports' || authService.isModuleAllowed(it.moduleKey))));
 
