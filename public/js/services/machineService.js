@@ -153,6 +153,15 @@ class MachineService {
   getMachines(params = {}) {
     let allMachines = storage.getTable(TABLE_NAMES.MACHINES) || [];
 
+    // Filter out dummy test machines
+    allMachines = allMachines.filter(m => {
+      if (!m) return false;
+      const s = String(m.serialNumber || '').trim().toLowerCase();
+      const n = String(m.machineName || m.name || '').trim().toLowerCase();
+      const id = String(m.id || '').trim().toLowerCase();
+      return s !== 'test' && n !== 'test' && id !== 'test' && id !== 'test_item_999';
+    });
+
     // 1. Strict Backend / Storage-level Organization Scoping (Cross-Floor Idle view is optional via includeCrossFloorIdle)
     const scoped = authService.getScopedFilter();
     if (scoped || params.includeCrossFloorIdle) {

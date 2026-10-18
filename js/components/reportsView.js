@@ -70,7 +70,13 @@ export function renderReportsView() {
     state.set('reportActiveTab', currentReportTab);
   }
 
-  const allMachines = machineService.getMachines({ limit: 'ALL' }).items || [];
+  const allMachines = (machineService.getMachines({ limit: 'ALL' }).items || []).filter(m => {
+    if (!m) return false;
+    const s = String(m.serialNumber || '').trim().toLowerCase();
+    const n = String(m.machineName || m.name || '').trim().toLowerCase();
+    const id = String(m.id || '').trim().toLowerCase();
+    return s !== 'test' && n !== 'test' && id !== 'test' && id !== 'test_item_999';
+  });
   const allTransfers = transferService.getTransferRequests({ status: 'ALL' }) || [];
   const completedTransfers = storage.getTable(TABLE_NAMES.TRANSFERS) || [];
   const allHistory = historyService.getMachineHistory() || [];
@@ -667,6 +673,12 @@ export function getMachineSummaryGroupedData(allMachines) {
 
   // 1. Filter machines by selected Location (Group -> Unit -> Floor -> Line) and Status
   const filteredMachines = allMachines.filter(m => {
+    if (!m) return false;
+    const s = String(m.serialNumber || '').trim().toLowerCase();
+    const n = String(m.machineName || m.name || '').trim().toLowerCase();
+    const id = String(m.id || '').trim().toLowerCase();
+    if (s === 'test' || n === 'test' || id === 'test' || id === 'test_item_999') return false;
+
     const h = resolveHierarchy(m);
     if (machineReportFilterState.groupId && h.groupId !== machineReportFilterState.groupId) return false;
     if (machineReportFilterState.unitId && h.unitId !== machineReportFilterState.unitId) return false;
@@ -793,6 +805,9 @@ export function getMachineSummaryGroupedData(allMachines) {
       models
     };
   });
+
+  // Filter out any empty groups where total === 0, or any test groups
+  groupedList = groupedList.filter(grp => grp.total > 0 && grp.machineName.trim().toLowerCase() !== 'test');
 
   // Sort groups strictly by their fixed sequential order (sortOrder), NEVER scramble by total!
   groupedList.sort((a, b) => {
@@ -2534,7 +2549,13 @@ export function initReportsEvents() {
   const handleReportsDataUpdated = () => {
     const tabContent = document.getElementById('reports-tab-content');
     if (tabContent) {
-      const allMachines = machineService.getMachines({ limit: 'ALL' }).items || [];
+      const allMachines = (machineService.getMachines({ limit: 'ALL' }).items || []).filter(m => {
+        if (!m) return false;
+        const s = String(m.serialNumber || '').trim().toLowerCase();
+        const n = String(m.machineName || m.name || '').trim().toLowerCase();
+        const id = String(m.id || '').trim().toLowerCase();
+        return s !== 'test' && n !== 'test' && id !== 'test' && id !== 'test_item_999';
+      });
       const allTransfers = transferService.getTransferRequests({ status: 'ALL' }) || [];
       const completedTransfers = storage.getTable(TABLE_NAMES.TRANSFERS) || [];
       const allHistory = historyService.getMachineHistory() || [];

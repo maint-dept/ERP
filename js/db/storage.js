@@ -543,6 +543,54 @@ class StorageEngine {
       this.data[TABLE_NAMES.LINES] = JSON.parse(JSON.stringify(INITIAL_DATA.lines || []));
     }
 
+    // Automatically purge dummy "test" machine and master data records
+    let testPurged = false;
+    if (Array.isArray(this.data[TABLE_NAMES.MACHINES])) {
+      const origMachCount = this.data[TABLE_NAMES.MACHINES].length;
+      this.data[TABLE_NAMES.MACHINES] = this.data[TABLE_NAMES.MACHINES].filter(m => {
+        if (!m) return false;
+        const s = String(m.serialNumber || '').trim().toLowerCase();
+        const n = String(m.machineName || m.name || '').trim().toLowerCase();
+        const id = String(m.id || '').trim().toLowerCase();
+        return s !== 'test' && n !== 'test' && id !== 'test' && id !== 'test_item_999';
+      });
+      if (this.data[TABLE_NAMES.MACHINES].length !== origMachCount) {
+        testPurged = true;
+      }
+    }
+
+    if (Array.isArray(this.data[TABLE_NAMES.MACHINE_NAMES])) {
+      const origMnCount = this.data[TABLE_NAMES.MACHINE_NAMES].length;
+      this.data[TABLE_NAMES.MACHINE_NAMES] = this.data[TABLE_NAMES.MACHINE_NAMES].filter(mn => {
+        if (!mn) return false;
+        const n = String(mn.name || '').trim().toLowerCase();
+        const id = String(mn.id || '').trim().toLowerCase();
+        return n !== 'test' && id !== 'test';
+      });
+      if (this.data[TABLE_NAMES.MACHINE_NAMES].length !== origMnCount) {
+        testPurged = true;
+        this.saveTable(TABLE_NAMES.MACHINE_NAMES, false);
+      }
+    }
+
+    if (Array.isArray(this.data[TABLE_NAMES.MODELS])) {
+      const origMdlCount = this.data[TABLE_NAMES.MODELS].length;
+      this.data[TABLE_NAMES.MODELS] = this.data[TABLE_NAMES.MODELS].filter(mdl => {
+        if (!mdl) return false;
+        const n = String(mdl.name || '').trim().toLowerCase();
+        const id = String(mdl.id || '').trim().toLowerCase();
+        return n !== 'test' && id !== 'test';
+      });
+      if (this.data[TABLE_NAMES.MODELS].length !== origMdlCount) {
+        testPurged = true;
+        this.saveTable(TABLE_NAMES.MODELS, false);
+      }
+    }
+
+    if (testPurged) {
+      this.saveTable(TABLE_NAMES.MACHINES, true);
+    }
+
     // Auto-generate permanent unique System Asset IDs (e.g. AMG-MNT-000001) for all machines
     this.ensureMachineSystemAssetIds();
     this.ensureForeignIntegrity();
@@ -565,7 +613,24 @@ class StorageEngine {
               const currentCount = Array.isArray(currentRecs) ? currentRecs.length : 0;
               // Hydrate from IDB if memory is empty, or if IDB has more records
               if (currentCount === 0 || records.length > currentCount) {
-                this.data[tbl] = records;
+                if (tbl === TABLE_NAMES.MACHINES) {
+                  this.data[tbl] = records.filter(m => {
+                    if (!m) return false;
+                    const s = String(m.serialNumber || '').trim().toLowerCase();
+                    const n = String(m.machineName || m.name || '').trim().toLowerCase();
+                    const id = String(m.id || '').trim().toLowerCase();
+                    return s !== 'test' && n !== 'test' && id !== 'test' && id !== 'test_item_999';
+                  });
+                } else if (tbl === TABLE_NAMES.MACHINE_NAMES || tbl === TABLE_NAMES.MODELS) {
+                  this.data[tbl] = records.filter(item => {
+                    if (!item) return false;
+                    const n = String(item.name || '').trim().toLowerCase();
+                    const id = String(item.id || '').trim().toLowerCase();
+                    return n !== 'test' && id !== 'test';
+                  });
+                } else {
+                  this.data[tbl] = records;
+                }
                 idbUpdated = true;
               }
             } else if (records && typeof records === 'object' && !Array.isArray(records) && Object.keys(records).length > 0) {
