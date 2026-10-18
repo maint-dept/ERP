@@ -2027,7 +2027,9 @@ class StorageEngine {
 
     let hasUpdates = false;
 
-    // Step 1: Detect and deduplicate identical serial numbers
+    // Step 1: Detect and deduplicate according to ERP Composite Rules:
+    // Rule A: Composite Duplicate: Machine Name + Brand + Model + Serial Number (all 4 fields match)
+    // Rule B: Serial Conflict: Duplicate serial with partial/empty specs -> Retain the record with complete Name, Brand, Model & active history
     const serialMap = new Map();
     let hasDuplicateSerials = false;
     machines.forEach((m, idx) => {
@@ -2043,26 +2045,36 @@ class StorageEngine {
     });
 
     if (hasDuplicateSerials) {
-      console.warn(`[Asset ID Safeguard] ⚠️ Duplicate machine serial numbers detected. Auto-deduplicating to retain only one record per unique serial...`);
+      console.warn(`[Asset ID Safeguard] ⚠️ Duplicate machine records detected. Resolving via 4-field composite rule (Machine Name + Brand + Model + Serial)...`);
       const retainedList = [];
       for (const [serial, entries] of serialMap.entries()) {
         if (entries.length === 1) {
           retainedList.push(entries[0]);
         } else {
           hasUpdates = true;
-          // Sort to pick the best/most recent/complete record
+          // Sort to prioritize the most complete, validated record:
+          // 1. Full composite match (Machine Name + Brand + Model + Serial)
+          // 2. Most recent update timestamp
+          // 3. Highest spec completeness (Name, Brand, Model, Floor, Line, Status)
           const sorted = [...entries].sort((a, b) => {
+            // Check composite completeness (Machine Name, Brand, Model, Serial)
+            const aComp = (a.machine.name || a.machine.machineName) && a.machine.brand && a.machine.model ? 1 : 0;
+            const bComp = (b.machine.name || b.machine.machineName) && b.machine.brand && b.machine.model ? 1 : 0;
+            if (aComp !== bComp) return bComp - aComp;
+
             const aTime = new Date(a.machine.updatedAt || a.machine.createdAt || 0).getTime();
             const bTime = new Date(b.machine.updatedAt || b.machine.createdAt || 0).getTime();
             if (aTime !== bTime) return bTime - aTime;
+
             const score = (m) => {
               let s = 0;
-              if (m.name || m.machineName) s++;
-              if (m.model) s++;
-              if (m.brand) s++;
+              if (m.name || m.machineName) s += 2;
+              if (m.brand) s += 2;
+              if (m.model) s += 2;
               if (m.floor) s++;
               if (m.line) s++;
               if (m.status) s++;
+              if (m.lastServiceDate || m.lastService) s++;
               return s;
             };
             return score(b.machine) - score(a.machine);
