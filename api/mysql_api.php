@@ -154,11 +154,46 @@ if (empty($action)) {
     $action = 'ping';
 }
 
+function validateMachinesDataset($machines) {
+    if (!is_array($machines)) {
+        throw new Exception("Machines payload must be an array.");
+    }
+    $count = count($machines);
+    if ($count < 6450) {
+        http_response_code(400);
+        echo json_encode([
+            'success' => false,
+            'error' => "Anti-Downgrade Safeguard: Machine inventory must contain at least 6,450 records ({$count} provided). Save rejected."
+        ]);
+        exit;
+    }
+    $seenSerials = [];
+    $dupSerials = [];
+    foreach ($machines as $m) {
+        $s = strtoupper(trim($m['serialNumber'] ?? $m['machineSerial'] ?? ''));
+        if (!empty($s)) {
+            if (isset($seenSerials[$s])) {
+                $dupSerials[] = $s;
+            } else {
+                $seenSerials[$s] = true;
+            }
+        }
+    }
+    if (!empty($dupSerials)) {
+        http_response_code(400);
+        echo json_encode([
+            'success' => false,
+            'error' => "Anti-Junk Safeguard: Machines payload contains " . count($dupSerials) . " duplicate serial numbers (e.g. {$dupSerials[0]}). Save rejected."
+        ]);
+        exit;
+    }
+}
+
 // --- 6. ROUTE ACTIONS ---
 try {
     ensureTableExists($pdo);
 
-    if (in_array($action, ['save_table', 'save-table', 'save_multiple_tables', 'upsert', 'save_record', 'delete', 'delete_record'])) {
+    if (in_array($action, ['save_table', 'save-table', 'save_multiple_tables', 'upsert', 'save_record', 'delete', 'delete_record', 'drop_table', 'delete_table'])) {
         $pdo->beginTransaction();
     }
 
@@ -170,8 +205,8 @@ try {
             $info = $stmt->fetch();
             $latency = round((microtime(true) - $start) * 1000);
 
-            // Count tables stored
-            $countStmt = $pdo->query("SELECT COUNT(*) AS total_tables, COALESCE(SUM(item_count), 0) AS total_items FROM erp_tables");
+            // Count tables stored (filtering test and probe tables)
+            $countStmt = $pdo->query("SELECT COUNT(*) AS total_tables, COALESCE(SUM(item_count), 0) AS total_items FROM erp_tables WHERE table_name NOT LIKE 'test_%' AND table_name NOT LIKE '\\_%'");
             $summary = $countStmt->fetch();
 
             echo json_encode([
@@ -191,6 +226,9 @@ try {
             $tablesData = $body['tables'] ?? [];
             if (empty($tablesData)) {
                 throw new Exception('Missing "tables" data.');
+            }
+            if (isset($tablesData['machines'])) {
+                validateMachinesDataset($tablesData['machines']);
             }
             foreach ($tablesData as $collection => $data) {
                 $jsonStr = is_string($data) ? $data : json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
@@ -230,18 +268,8 @@ try {
                 throw new Exception('Missing "data" payload.');
             }
 
-            if ($collection === 'machines' && is_array($data)) {
-                $checkStmt = $pdo->prepare("SELECT `item_count` FROM `erp_tables` WHERE `table_name` = 'machines'");
-                $checkStmt->execute();
-                $existingCount = intval($checkStmt->fetchColumn() ?: 0);
-                if ($existingCount >= 6450 && count($data) < $existingCount) {
-                    http_response_code(400);
-                    echo json_encode([
-                        'success' => false,
-                        'error' => "Anti-Downgrade Safeguard: Rejection triggered. Cannot overwrite $existingCount machines with fewer records (" . count($data) . ")."
-                    ]);
-                    exit;
-                }
+            if ($collection === 'machines') {
+                validateMachinesDataset($data);
             }
 
             $jsonStr = is_string($data) ? $data : json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
@@ -304,7 +332,7 @@ try {
         // --- GET ALL TABLES (For Initial Load / App Start) ---
         case 'get_all':
         case 'get-all':
-            $stmt = $pdo->query("SELECT `table_name`, `raw_json`, `item_count`, `updated_at` FROM `erp_tables`");
+            $stmt = $pdo->query("SELECT `table_name`, `raw_json`, `item_count`, `updated_at` FROM `erp_tables` WHERE `table_name` NOT LIKE 'test_%' AND `table_name` NOT LIKE '\\_%'");
             $rows = $stmt->fetchAll();
 
             $allData = [];
@@ -433,9 +461,30 @@ try {
             ]);
             break;
 
+        // --- DROP / PURGE JUNK TABLE ---
+        case 'drop_table':
+        case 'delete_table':
+            $collection = $body['collection'] ?? $_GET['table'] ?? '';
+            if (empty($collection)) {
+                throw new Exception('Missing "collection" or "table" parameter.');
+            }
+            if (in_array($collection, ['machines', 'users', 'employees', 'lines', 'floors', 'units', 'groups'])) {
+                throw new Exception("Security Policy: Cannot drop core ERP table '{$collection}'.");
+            }
+            $stmt = $pdo->prepare("DELETE FROM `erp_tables` WHERE `table_name` = :name");
+            $stmt->execute([':name' => $collection]);
+            $pdo->commit();
+
+            echo json_encode([
+                'success' => true,
+                'table' => $collection,
+                'dropped' => true
+            ]);
+            break;
+
         // --- STATS / SUMMARY ---
         case 'stats':
-            $stmt = $pdo->query("SELECT `table_name`, `item_count`, LENGTH(`raw_json`) AS size_bytes, `updated_at` FROM `erp_tables` ORDER BY `item_count` DESC");
+            $stmt = $pdo->query("SELECT `table_name`, `item_count`, LENGTH(`raw_json`) AS size_bytes, `updated_at` FROM `erp_tables` WHERE `table_name` NOT LIKE 'test_%' AND `table_name` NOT LIKE '\\_%' ORDER BY `item_count` DESC");
             $tables = $stmt->fetchAll();
 
             $totalBytes = 0;
@@ -458,7 +507,7 @@ try {
             http_response_code(400);
             echo json_encode([
                 'success' => false,
-                'error' => "Unknown action '{$action}'. Valid actions: ping, save_table, get_table, get_all, upsert, delete, stats."
+                'error' => "Unknown action '{$action}'. Valid actions: ping, save_table, get_table, get_all, upsert, delete, stats, drop_table."
             ]);
             break;
     }
