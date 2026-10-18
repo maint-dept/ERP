@@ -139,14 +139,15 @@ class SmartStorageService {
 
     // 1. Static Alias & Typo Mappings (Garments Factory Domain Specific)
     const staticAliases = {
-      'plain machine 1-needle': 'Plane Machine',
-      'plain machine 1 needle': 'Plane Machine',
-      'plain machine': 'Plane Machine',
-      'plane mashin': 'Plane Machine',
-      'single needle lockstitch': 'Plane Machine',
-      'single needle': 'Plane Machine',
-      'snls': 'Plane Machine',
-      'lockstitch': 'Plane Machine',
+      'plain machine 1-needle': 'Single Needle Lock Stitch Machine',
+      'plain machine 1 needle': 'Single Needle Lock Stitch Machine',
+      'plain machine': 'Single Needle Lock Stitch Machine',
+      'plane machine': 'Single Needle Lock Stitch Machine',
+      'plane mashin': 'Single Needle Lock Stitch Machine',
+      'single needle lockstitch': 'Single Needle Lock Stitch Machine',
+      'single needle': 'Single Needle Lock Stitch Machine',
+      'snls': 'Single Needle Lock Stitch Machine',
+      'lockstitch': 'Single Needle Lock Stitch Machine',
       'overlock 4-thread': 'Over Lock Machine',
       'overlock 4 thread': 'Over Lock Machine',
       'overlock 5-thread': 'Over Lock Machine',
@@ -265,7 +266,7 @@ class SmartStorageService {
     if (/^(SG|TOP\s*STITCH)/i.test(u)) return 'Top Stitch Machine';
     if (/^(KZ|BOTTOM\s*HAM)/i.test(u)) return 'Bottom Hamming Lock Stitch Machine';
     if (/^(WX|IH|BUTTON\s*STITCH)/i.test(u)) return 'Button Stitch';
-    if (/^(DDL|1-?NEEDLE\s*PLAIN|PLAIN\s*MACHINE|LOCK\s*STITCH)/i.test(u)) return 'Plane Machine';
+    if (/^(DDL|1-?NEEDLE\s*PLAIN|PLAIN\s*MACHINE|LOCK\s*STITCH)/i.test(u)) return 'Single Needle Lock Stitch Machine';
     return null;
   }
 
@@ -289,7 +290,7 @@ class SmartStorageService {
       if (item && item.category === 'MACHINE') {
         const curMName = (item.machineName || '').trim().toLowerCase();
         if (curMName === 'plane machine' || curMName === 'plain machine' || !curMName) {
-          const properMachine = this.inferMachineTypeFromModel(item.model);
+          const properMachine = this.inferMachineTypeFromModel(item.model) || 'Single Needle Lock Stitch Machine';
           if (properMachine && properMachine.toLowerCase() !== 'plane machine') {
             item.machineName = properMachine;
             item.updatedAt = new Date().toISOString();
@@ -307,7 +308,7 @@ class SmartStorageService {
         const curMId = mdl.machineNameId || '';
         const isPlane = (curMName && curMName.toLowerCase().includes('plane')) || (planeMnId && curMId === planeMnId);
         if (isPlane || !curMName) {
-          const properMachine = this.inferMachineTypeFromModel(mdl.name);
+          const properMachine = this.inferMachineTypeFromModel(mdl.name) || 'Single Needle Lock Stitch Machine';
           if (properMachine && properMachine.toLowerCase() !== 'plane machine') {
             mdl.machineName = properMachine;
             const targetId = getMnId(properMachine);
@@ -322,6 +323,12 @@ class SmartStorageService {
     if (modified) {
       storage.setTable(TABLE_NAMES.STORAGE_MASTER, smTable);
       storage.setTable(TABLE_NAMES.MODELS, mdlTable);
+      if (typeof storage.saveMultipleTables === 'function') {
+        storage.saveMultipleTables({
+          [TABLE_NAMES.STORAGE_MASTER]: smTable,
+          [TABLE_NAMES.MODELS]: mdlTable
+        }).catch(() => {});
+      }
     }
   }
 
@@ -682,20 +689,33 @@ class SmartStorageService {
 
     // 1. Remove all models under this machineName in STORAGE_MASTER
     const allSm = storage.getTable(TABLE_NAMES.STORAGE_MASTER) || [];
-    const newSm = allSm.filter(it => it.category !== 'MACHINE' || (it.machineName || '').trim().toLowerCase() !== lower);
+    const newSm = allSm.filter(it => it.category !== 'MACHINE' || (
+      (it.machineName || '').trim().toLowerCase() !== lower &&
+      this.resolveCanonicalMachineName(it.machineName).toLowerCase() !== lower
+    ));
     const deletedCount = allSm.length - newSm.length;
 
     // 2. Remove from MODELS table
     const allMdl = storage.getTable(TABLE_NAMES.MODELS) || [];
     const allMn = storage.getTable(TABLE_NAMES.MACHINE_NAMES) || [];
-    const targetMn = allMn.find(m => m.name && m.name.trim().toLowerCase() === lower);
+    const targetMnIds = new Set(allMn.filter(m => m.name && (
+      m.name.trim().toLowerCase() === lower ||
+      this.resolveCanonicalMachineName(m.name).toLowerCase() === lower
+    )).map(m => m.id));
+
     const newMdl = allMdl.filter(m => 
-      (m.machineName && m.machineName.trim().toLowerCase() !== lower) &&
-      (!targetMn || m.machineNameId !== targetMn.id)
+      (m.machineName && m.machineName.trim().toLowerCase() !== lower && this.resolveCanonicalMachineName(m.machineName).toLowerCase() !== lower) &&
+      (!m.machineNameId || !targetMnIds.has(m.machineNameId))
     );
 
     // 3. Remove from MACHINE_NAMES table
-    const newMn = allMn.filter(m => !m.name || m.name.trim().toLowerCase() !== lower);
+    const newMn = allMn.filter(m => {
+      if (!m || !m.name) return true;
+      const nLower = m.name.trim().toLowerCase();
+      if (nLower === lower) return false;
+      if (targetMnIds.has(m.id)) return false;
+      return true;
+    });
 
     // 4. Save atomically in single request
     await storage.saveMultipleTables({
@@ -1336,7 +1356,7 @@ class SmartStorageService {
     };
   }
 
-  parseThreeColumnInput(machineText = '', brandText = '', modelText = '', defaultMachine = 'Plane Machine', defaultBrand = 'JUKI') {
+  parseThreeColumnInput(machineText = '', brandText = '', modelText = '', defaultMachine = 'Single Needle Lock Stitch Machine', defaultBrand = 'JUKI') {
     // Check if any box contains tab-delimited Excel paste
     const checkForTabs = (txt) => {
       const lines = String(txt || '').split(/\r?\n/).filter(l => l.trim().length > 0);
@@ -1362,7 +1382,7 @@ class SmartStorageService {
           col2.push(parts[1]);
           col3.push(parts[2]);
         } else if (parts.length === 2) {
-          col1.push(defaultMachine || 'Plane Machine');
+          col1.push(defaultMachine || 'Single Needle Lock Stitch Machine');
           col2.push(parts[0]);
           col3.push(parts[1]);
         }
@@ -1405,7 +1425,7 @@ class SmartStorageService {
       } else if (mNonEmpty.length > 0) {
         machine = mNonEmpty[mNonEmpty.length - 1];
       } else {
-        machine = defaultMachine || 'Plane Machine';
+        machine = defaultMachine || 'Single Needle Lock Stitch Machine';
       }
 
       let brand = '';
@@ -3709,7 +3729,7 @@ class SmartStorageService {
     if (exportRows.length === 0) {
       exportRows.push({
         'Sl No': 1,
-        'Machine Name': 'Plane Machine',
+        'Machine Name': 'Single Needle Lock Stitch Machine',
         'Brand': 'JUKI',
         'Model': 'DDL-8700',
         'Needle Brand': 'ORGAN',
@@ -3749,10 +3769,10 @@ class SmartStorageService {
     }
 
     const templateData = [
-      { 'Sl No': 1, 'Machine Name': 'Plane Machine', 'Brand': 'JUKI', 'Model': 'DDL-8700', 'Needle Brand': 'ORGAN', 'Needle Type / Size': 'DBx1 #14', 'Required Needles': 1, 'Remarks': 'Single Needle High Speed Lockstitch' },
-      { 'Sl No': 2, 'Machine Name': 'Plane Machine', 'Brand': 'JUKI', 'Model': 'DDL-9000C', 'Needle Brand': 'ORGAN', 'Needle Type / Size': 'DBx1 #14', 'Required Needles': 1, 'Remarks': 'Direct-Drive Computerized Lockstitch' },
-      { 'Sl No': 3, 'Machine Name': 'Plane Machine', 'Brand': 'BROTHER', 'Model': 'S-7200C', 'Needle Brand': 'ORGAN', 'Needle Type / Size': 'DBx1 #14', 'Required Needles': 1, 'Remarks': 'Direct Drive Electronic Lockstitch' },
-      { 'Sl No': 4, 'Machine Name': 'Plane Machine', 'Brand': 'JACK', 'Model': 'A4', 'Needle Brand': 'ORGAN', 'Needle Type / Size': 'DBx1 #14', 'Required Needles': 1, 'Remarks': 'Computerized Lockstitch Machine' },
+      { 'Sl No': 1, 'Machine Name': 'Single Needle Lock Stitch Machine', 'Brand': 'JUKI', 'Model': 'DDL-8700', 'Needle Brand': 'ORGAN', 'Needle Type / Size': 'DBx1 #14', 'Required Needles': 1, 'Remarks': 'Single Needle High Speed Lockstitch' },
+      { 'Sl No': 2, 'Machine Name': 'Single Needle Lock Stitch Machine', 'Brand': 'JUKI', 'Model': 'DDL-9000C', 'Needle Brand': 'ORGAN', 'Needle Type / Size': 'DBx1 #14', 'Required Needles': 1, 'Remarks': 'Direct-Drive Computerized Lockstitch' },
+      { 'Sl No': 3, 'Machine Name': 'Single Needle Lock Stitch Machine', 'Brand': 'BROTHER', 'Model': 'S-7200C', 'Needle Brand': 'ORGAN', 'Needle Type / Size': 'DBx1 #14', 'Required Needles': 1, 'Remarks': 'Direct Drive Electronic Lockstitch' },
+      { 'Sl No': 4, 'Machine Name': 'Single Needle Lock Stitch Machine', 'Brand': 'JACK', 'Model': 'A4', 'Needle Brand': 'ORGAN', 'Needle Type / Size': 'DBx1 #14', 'Required Needles': 1, 'Remarks': 'Computerized Lockstitch Machine' },
       { 'Sl No': 5, 'Machine Name': 'Overlock Machine', 'Brand': 'PEGASUS', 'Model': 'M952-52', 'Needle Brand': 'ORGAN', 'Needle Type / Size': 'DCx27 #11', 'Required Needles': 2, 'Remarks': '4-Thread High Speed Overlock' },
       { 'Sl No': 6, 'Machine Name': 'Overlock Machine', 'Brand': 'JUKI', 'Model': 'MO-6814S', 'Needle Brand': 'ORGAN', 'Needle Type / Size': 'DCx27 #11', 'Required Needles': 2, 'Remarks': '4-Thread Super High Speed Overlock' },
       { 'Sl No': 7, 'Machine Name': 'Overlock Machine', 'Brand': 'SIRUBA', 'Model': '747K-514M2-24', 'Needle Brand': 'ORGAN', 'Needle Type / Size': 'DCx27 #11', 'Required Needles': 2, 'Remarks': 'High Speed Overlock Machine' },

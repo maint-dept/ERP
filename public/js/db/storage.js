@@ -466,8 +466,9 @@ class StorageEngine {
     // Auto-migrate legacy storage_master machine names to canonical names
     const currentSM = this.data[TABLE_NAMES.STORAGE_MASTER] || [];
     const smAliasMap = {
-      'plain machine 1-needle': 'Plane Machine',
-      'plain machine': 'Plane Machine',
+      'plain machine 1-needle': 'Single Needle Lock Stitch Machine',
+      'plain machine': 'Single Needle Lock Stitch Machine',
+      'plane machine': 'Single Needle Lock Stitch Machine',
       'overlock 4-thread': 'Over Lock Machine',
       'overlock 5-thread': 'Over Lock Machine',
       'flatlock cylinder bed': 'Flat Lock Machine',
@@ -513,11 +514,18 @@ class StorageEngine {
       }
     });
 
-    // Retain all valid records in MACHINE_NAMES table (never drop IDs referenced by machines)
+    // Retain all valid records in MACHINE_NAMES table (preserve IDs actively referenced by machines)
     const currentMN = this.data[TABLE_NAMES.MACHINE_NAMES] || [];
     const mnMapById = new Map();
-    (INITIAL_DATA.machine_names || []).forEach(mn => { if (mn && mn.id) mnMapById.set(mn.id, mn); });
     currentMN.forEach(mn => { if (mn && mn.id) mnMapById.set(mn.id, mn); });
+    if (Array.isArray(this.data[TABLE_NAMES.MACHINES])) {
+      const activeMnIds = new Set(this.data[TABLE_NAMES.MACHINES].map(m => m && m.machineNameId).filter(Boolean));
+      (INITIAL_DATA.machine_names || []).forEach(mn => {
+        if (mn && mn.id && activeMnIds.has(mn.id) && !mnMapById.has(mn.id)) {
+          mnMapById.set(mn.id, mn);
+        }
+      });
+    }
     this.data[TABLE_NAMES.MACHINE_NAMES] = Array.from(mnMapById.values());
 
     // Auto-heal empty or missing core master tables from INITIAL_DATA
@@ -1020,11 +1028,9 @@ class StorageEngine {
       if (Array.isArray(serverRecs[tbl])) {
         if (tbl === TABLE_NAMES.MACHINE_NAMES) {
           const incomingMN = serverRecs[tbl] || [];
-          const mnMapById = new Map();
-          (INITIAL_DATA.machine_names || []).forEach(mn => { if (mn && mn.id) mnMapById.set(mn.id, mn); });
-          (this.data[tbl] || []).forEach(mn => { if (mn && mn.id) mnMapById.set(mn.id, mn); });
-          incomingMN.forEach(mn => { if (mn && mn.id) mnMapById.set(mn.id, mn); });
-          this.data[tbl] = Array.from(mnMapById.values());
+          if (incomingMN.length > 0) {
+            this.data[tbl] = incomingMN;
+          }
         } else if (tbl === TABLE_NAMES.MACHINES) {
           const incoming = serverRecs[tbl] || [];
           let hasRemarksChanged = false;

@@ -1959,7 +1959,7 @@ class ExcelService {
 
   _inferNameFromSheet(sheetName) {
     const clean = (sheetName || '').trim();
-    if (clean.toLowerCase().includes('plain')) return 'Plane Machine';
+    if (clean.toLowerCase().includes('plain') || clean.toLowerCase().includes('plane')) return 'Single Needle Lock Stitch Machine';
     if (clean.toLowerCase().includes('overlock')) return 'Overlock Machine';
     if (clean.toLowerCase().includes('interlock') || clean.toLowerCase().includes('flatlock')) return 'Flat Lock Machine';
     if (clean.toLowerCase().includes('button')) return 'Button Hole Machine';

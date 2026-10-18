@@ -1285,7 +1285,7 @@ function renderStorageModal() {
       allRegisteredMachines.unshift(defaultMachine);
     }
     if (allRegisteredMachines.length === 0) {
-      allRegisteredMachines.push('Plane Machine', 'Overlock Machine', 'Vertical Machine', 'Interlock Machine');
+      allRegisteredMachines.push('Single Needle Lock Stitch Machine', 'Overlock Machine', 'Vertical Machine', 'Interlock Machine');
     }
 
     const machineOptions = allRegisteredMachines.map((m, idx) => `
@@ -1779,7 +1779,7 @@ function renderStorageModal() {
                 id="txt-bulk-machine-names" 
                 class="form-control" 
                 rows="7" 
-                placeholder="Plane Machine&#10;Overlock Machine&#10;Vertical Machine&#10;Interlock Machine&#10;Button Hole Machine&#10;Button Attach Machine&#10;Feed Off The Arm Machine&#10;...paste your list here"
+                placeholder="Single Needle Lock Stitch Machine&#10;Overlock Machine&#10;Vertical Machine&#10;Interlock Machine&#10;Button Hole Machine&#10;Button Attach Machine&#10;Feed Off The Arm Machine&#10;...paste your list here"
                 style="font-family: var(--font-mono); font-size: 12px; line-height: 1.5;"
                 required
               ></textarea>
@@ -4211,7 +4211,7 @@ function initModalInteractions() {
     if (btnSampleMn && txtMn) {
       btnSampleMn.addEventListener('click', (e) => {
         e.preventDefault();
-        txtMn.value = "Plane Machine\nOverlock Machine\nVertical Machine\nInterlock Machine\nButton Hole Machine\nButton Attach Machine\nFeed Off The Arm Machine";
+        txtMn.value = "Single Needle Lock Stitch Machine\nOverlock Machine\nVertical Machine\nInterlock Machine\nButton Hole Machine\nButton Attach Machine\nFeed Off The Arm Machine";
         updateMnCount();
       });
     }

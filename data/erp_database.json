@@ -43223,15 +43223,6 @@
   ],
   "machine_names": [
     {
-      "id": "mn-1788869247046-drnu",
-      "name": "Plane Machine",
-      "code": "PLAN",
-      "sortOrder": 1,
-      "status": "ACTIVE",
-      "createdAt": "2026-09-08T12:07:27.046Z",
-      "updatedAt": "2026-09-08T12:07:27.046Z"
-    },
-    {
       "id": "mn-1788869247061-9dsy",
       "name": "Vertical Machine",
       "code": "VERT",
@@ -398423,442 +398414,442 @@
     {
       "id": "sm-mod-1788870296743-332",
       "category": "MACHINE",
-      "machineName": "Plane Machine",
+      "machineName": "Single Needle Lock Stitch Machine",
       "brand": "JUKI",
       "model": "DDL-900BB",
       "sortOrder": 1,
       "status": "ACTIVE",
       "createdAt": "2026-09-08T12:24:56.743Z",
-      "updatedAt": "2026-09-08T12:24:56.743Z"
+      "updatedAt": "2026-10-18T13:37:28.926Z"
     },
     {
       "id": "sm-mod-1788870296743-83",
       "category": "MACHINE",
-      "machineName": "Plane Machine",
+      "machineName": "Single Needle Lock Stitch Machine",
       "brand": "JUKI",
       "model": "LH-3588A",
       "sortOrder": 2,
       "status": "ACTIVE",
       "createdAt": "2026-09-08T12:24:56.743Z",
-      "updatedAt": "2026-09-08T12:24:56.743Z"
+      "updatedAt": "2026-10-18T13:37:28.943Z"
     },
     {
       "id": "sm-mod-1788870296743-691",
       "category": "MACHINE",
-      "machineName": "Plane Machine",
+      "machineName": "Single Needle Lock Stitch Machine",
       "brand": "JUKI",
       "model": "DDL-9000B-SH",
       "sortOrder": 3,
       "status": "ACTIVE",
       "createdAt": "2026-09-08T12:24:56.744Z",
-      "updatedAt": "2026-09-08T12:24:56.744Z"
+      "updatedAt": "2026-10-18T13:37:28.943Z"
     },
     {
       "id": "sm-mod-1788870296744-957",
       "category": "MACHINE",
-      "machineName": "Plane Machine",
+      "machineName": "Single Needle Lock Stitch Machine",
       "brand": "JUKI",
       "model": "DDL-900C",
       "sortOrder": 4,
       "status": "ACTIVE",
       "createdAt": "2026-09-08T12:24:56.744Z",
-      "updatedAt": "2026-09-08T12:24:56.744Z"
+      "updatedAt": "2026-10-18T13:37:28.943Z"
     },
     {
       "id": "sm-mod-1788870296744-43",
       "category": "MACHINE",
-      "machineName": "Plane Machine",
+      "machineName": "Single Needle Lock Stitch Machine",
       "brand": "JUKI",
       "model": "DDL-8000A",
       "sortOrder": 5,
       "status": "ACTIVE",
       "createdAt": "2026-09-08T12:24:56.744Z",
-      "updatedAt": "2026-09-08T12:24:56.744Z"
+      "updatedAt": "2026-10-18T13:37:28.943Z"
     },
     {
       "id": "sm-mod-1788870296744-452",
       "category": "MACHINE",
-      "machineName": "Plane Machine",
+      "machineName": "Single Needle Lock Stitch Machine",
       "brand": "JUKI",
       "model": "MO-6716S",
       "sortOrder": 6,
       "status": "ACTIVE",
       "createdAt": "2026-09-08T12:24:56.744Z",
-      "updatedAt": "2026-09-08T12:24:56.744Z"
+      "updatedAt": "2026-10-18T13:37:28.943Z"
     },
     {
       "id": "sm-mod-1788870296744-679",
       "category": "MACHINE",
-      "machineName": "Plane Machine",
+      "machineName": "Single Needle Lock Stitch Machine",
       "brand": "JUKI",
       "model": "BDL-B5593B-7",
       "sortOrder": 7,
       "status": "ACTIVE",
       "createdAt": "2026-09-08T12:24:56.744Z",
-      "updatedAt": "2026-09-08T12:24:56.744Z"
+      "updatedAt": "2026-10-18T13:37:28.943Z"
     },
     {
       "id": "sm-mod-1788870296744-31",
       "category": "MACHINE",
-      "machineName": "Plane Machine",
+      "machineName": "Single Needle Lock Stitch Machine",
       "brand": "JUKI",
       "model": "BDL-B5090B-7",
       "sortOrder": 8,
       "status": "ACTIVE",
       "createdAt": "2026-09-08T12:24:56.744Z",
-      "updatedAt": "2026-09-08T12:24:56.744Z"
+      "updatedAt": "2026-10-18T13:37:28.943Z"
     },
     {
       "id": "sm-mod-1788870296744-17",
       "category": "MACHINE",
-      "machineName": "Plane Machine",
+      "machineName": "Single Needle Lock Stitch Machine",
       "brand": "JUKI",
       "model": "WFB-8202",
       "sortOrder": 9,
       "status": "ACTIVE",
       "createdAt": "2026-09-08T12:24:56.744Z",
-      "updatedAt": "2026-09-08T12:24:56.744Z"
+      "updatedAt": "2026-10-18T13:37:28.943Z"
     },
     {
       "id": "sm-mod-1788870296744-331",
       "category": "MACHINE",
-      "machineName": "Plane Machine",
+      "machineName": "Single Needle Lock Stitch Machine",
       "brand": "JUKI",
       "model": "LK-1900B",
       "sortOrder": 10,
       "status": "ACTIVE",
       "createdAt": "2026-09-08T12:24:56.744Z",
-      "updatedAt": "2026-09-08T12:24:56.744Z"
+      "updatedAt": "2026-10-18T13:37:28.943Z"
     },
     {
       "id": "sm-mod-1788870296744-767",
       "category": "MACHINE",
-      "machineName": "Plane Machine",
+      "machineName": "Single Needle Lock Stitch Machine",
       "brand": "JUKI",
       "model": "DDL-8700-7",
       "sortOrder": 11,
       "status": "ACTIVE",
       "createdAt": "2026-09-08T12:24:56.744Z",
-      "updatedAt": "2026-09-08T12:24:56.744Z"
+      "updatedAt": "2026-10-18T13:37:28.943Z"
     },
     {
       "id": "sm-mod-1788870296744-927",
       "category": "MACHINE",
-      "machineName": "Plane Machine",
+      "machineName": "Single Needle Lock Stitch Machine",
       "brand": "JUKI",
       "model": "ZJ-3800",
       "sortOrder": 12,
       "status": "ACTIVE",
       "createdAt": "2026-09-08T12:24:56.744Z",
-      "updatedAt": "2026-09-08T12:24:56.744Z"
+      "updatedAt": "2026-10-18T13:37:28.943Z"
     },
     {
       "id": "sm-mod-1788870296744-544",
       "category": "MACHINE",
-      "machineName": "Plane Machine",
+      "machineName": "Single Needle Lock Stitch Machine",
       "brand": "JUKI",
       "model": "DLM-5200N",
       "sortOrder": 13,
       "status": "ACTIVE",
       "createdAt": "2026-09-08T12:24:56.744Z",
-      "updatedAt": "2026-09-08T12:24:56.744Z"
+      "updatedAt": "2026-10-18T13:37:28.943Z"
     },
     {
       "id": "sm-mod-1788870296744-312",
       "category": "MACHINE",
-      "machineName": "Plane Machine",
+      "machineName": "Single Needle Lock Stitch Machine",
       "brand": "JUKI",
       "model": "CM-5300",
       "sortOrder": 14,
       "status": "ACTIVE",
       "createdAt": "2026-09-08T12:24:56.744Z",
-      "updatedAt": "2026-09-08T12:24:56.744Z"
+      "updatedAt": "2026-10-18T13:37:28.943Z"
     },
     {
       "id": "sm-mod-1788870296744-172",
       "category": "MACHINE",
-      "machineName": "Plane Machine",
+      "machineName": "Single Needle Lock Stitch Machine",
       "brand": "JUKI",
       "model": "BDL-B7491B",
       "sortOrder": 15,
       "status": "ACTIVE",
       "createdAt": "2026-09-08T12:24:56.744Z",
-      "updatedAt": "2026-09-08T12:24:56.744Z"
+      "updatedAt": "2026-10-18T13:37:28.943Z"
     },
     {
       "id": "sm-mod-1788870296744-295",
       "category": "MACHINE",
-      "machineName": "Plane Machine",
+      "machineName": "Single Needle Lock Stitch Machine",
       "brand": "JUKI",
       "model": "MO-6714DA",
       "sortOrder": 16,
       "status": "ACTIVE",
       "createdAt": "2026-09-08T12:24:56.744Z",
-      "updatedAt": "2026-09-08T12:24:56.744Z"
+      "updatedAt": "2026-10-18T13:37:28.943Z"
     },
     {
       "id": "sm-mod-1788870296745-715",
       "category": "MACHINE",
-      "machineName": "Plane Machine",
+      "machineName": "Single Needle Lock Stitch Machine",
       "brand": "JUKI",
       "model": "BDL--B6490C-7",
       "sortOrder": 17,
       "status": "ACTIVE",
       "createdAt": "2026-09-08T12:24:56.745Z",
-      "updatedAt": "2026-09-08T12:24:56.745Z"
+      "updatedAt": "2026-10-18T13:37:28.943Z"
     },
     {
       "id": "sm-mod-1788870296745-273",
       "category": "MACHINE",
-      "machineName": "Plane Machine",
+      "machineName": "Single Needle Lock Stitch Machine",
       "brand": "JUKI",
       "model": "DFB-1415",
       "sortOrder": 18,
       "status": "ACTIVE",
       "createdAt": "2026-09-08T12:24:56.745Z",
-      "updatedAt": "2026-09-08T12:24:56.745Z"
+      "updatedAt": "2026-10-18T13:37:28.943Z"
     },
     {
       "id": "sm-mod-1788870296745-277",
       "category": "MACHINE",
-      "machineName": "Plane Machine",
+      "machineName": "Single Needle Lock Stitch Machine",
       "brand": "JUKI",
       "model": "LK-1900BN",
       "sortOrder": 19,
       "status": "ACTIVE",
       "createdAt": "2026-09-08T12:24:56.745Z",
-      "updatedAt": "2026-09-08T12:24:56.745Z"
+      "updatedAt": "2026-10-18T13:37:28.943Z"
     },
     {
       "id": "sm-mod-1788870296745-671",
       "category": "MACHINE",
-      "machineName": "Plane Machine",
+      "machineName": "Single Needle Lock Stitch Machine",
       "brand": "JUKI",
       "model": "NS-47",
       "sortOrder": 20,
       "status": "ACTIVE",
       "createdAt": "2026-09-08T12:24:56.745Z",
-      "updatedAt": "2026-09-08T12:24:56.745Z"
+      "updatedAt": "2026-10-18T13:37:28.943Z"
     },
     {
       "id": "sm-mod-1788870296745-790",
       "category": "MACHINE",
-      "machineName": "Plane Machine",
+      "machineName": "Single Needle Lock Stitch Machine",
       "brand": "JUKI",
       "model": "LH-3578A",
       "sortOrder": 21,
       "status": "ACTIVE",
       "createdAt": "2026-09-08T12:24:56.745Z",
-      "updatedAt": "2026-09-08T12:24:56.745Z"
+      "updatedAt": "2026-10-18T13:37:28.943Z"
     },
     {
       "id": "sm-mod-1788870296745-928",
       "category": "MACHINE",
-      "machineName": "Plane Machine",
+      "machineName": "Single Needle Lock Stitch Machine",
       "brand": "JUKI",
       "model": "CM-380",
       "sortOrder": 22,
       "status": "ACTIVE",
       "createdAt": "2026-09-08T12:24:56.745Z",
-      "updatedAt": "2026-09-08T12:24:56.745Z"
+      "updatedAt": "2026-10-18T13:37:28.943Z"
     },
     {
       "id": "sm-mod-1788870296745-343",
       "category": "MACHINE",
-      "machineName": "Plane Machine",
+      "machineName": "Single Needle Lock Stitch Machine",
       "brand": "JUKI",
       "model": "JK-8558",
       "sortOrder": 23,
       "status": "ACTIVE",
       "createdAt": "2026-09-08T12:24:56.745Z",
-      "updatedAt": "2026-09-08T12:24:56.745Z"
+      "updatedAt": "2026-10-18T13:37:28.943Z"
     },
     {
       "id": "sm-mod-1788870296745-408",
       "category": "MACHINE",
-      "machineName": "Plane Machine",
+      "machineName": "Single Needle Lock Stitch Machine",
       "brand": "JUKI",
       "model": "WFB-5509",
       "sortOrder": 24,
       "status": "ACTIVE",
       "createdAt": "2026-09-08T12:24:56.745Z",
-      "updatedAt": "2026-09-08T12:24:56.745Z"
+      "updatedAt": "2026-10-18T13:37:28.943Z"
     },
     {
       "id": "sm-mod-1788870296745-517",
       "category": "MACHINE",
-      "machineName": "Plane Machine",
+      "machineName": "Single Needle Lock Stitch Machine",
       "brand": "JUKI",
       "model": "DA-928-A-9",
       "sortOrder": 25,
       "status": "ACTIVE",
       "createdAt": "2026-09-08T12:24:56.745Z",
-      "updatedAt": "2026-09-08T12:24:56.745Z"
+      "updatedAt": "2026-10-18T13:37:28.943Z"
     },
     {
       "id": "sm-mod-1788870296745-834",
       "category": "MACHINE",
-      "machineName": "Plane Machine",
+      "machineName": "Single Needle Lock Stitch Machine",
       "brand": "JUKI",
       "model": "MS-1190",
       "sortOrder": 26,
       "status": "ACTIVE",
       "createdAt": "2026-09-08T12:24:56.745Z",
-      "updatedAt": "2026-09-08T12:24:56.745Z"
+      "updatedAt": "2026-10-18T13:37:28.943Z"
     },
     {
       "id": "sm-mod-1788870296745-463",
       "category": "MACHINE",
-      "machineName": "Plane Machine",
+      "machineName": "Single Needle Lock Stitch Machine",
       "brand": "JUKI",
       "model": "JT-801N",
       "sortOrder": 27,
       "status": "ACTIVE",
       "createdAt": "2026-09-08T12:24:56.745Z",
-      "updatedAt": "2026-09-08T12:24:56.745Z"
+      "updatedAt": "2026-10-18T13:37:28.943Z"
     },
     {
       "id": "sm-mod-1788870296745-194",
       "category": "MACHINE",
-      "machineName": "Plane Machine",
+      "machineName": "Single Needle Lock Stitch Machine",
       "brand": "JUKI",
       "model": "SG-8200",
       "sortOrder": 28,
       "status": "ACTIVE",
       "createdAt": "2026-09-08T12:24:56.745Z",
-      "updatedAt": "2026-09-08T12:24:56.745Z"
+      "updatedAt": "2026-10-18T13:37:28.943Z"
     },
     {
       "id": "sm-mod-1788870296745-377",
       "category": "MACHINE",
-      "machineName": "Plane Machine",
+      "machineName": "Single Needle Lock Stitch Machine",
       "brand": "JUKI",
       "model": "KZ-1060",
       "sortOrder": 29,
       "status": "ACTIVE",
       "createdAt": "2026-09-08T12:24:56.745Z",
-      "updatedAt": "2026-09-08T12:24:56.745Z"
+      "updatedAt": "2026-10-18T13:37:28.943Z"
     },
     {
       "id": "sm-mod-1788870296745-665",
       "category": "MACHINE",
-      "machineName": "Plane Machine",
+      "machineName": "Single Needle Lock Stitch Machine",
       "brand": "JUKI",
       "model": "MS-1261",
       "sortOrder": 30,
       "status": "ACTIVE",
       "createdAt": "2026-09-08T12:24:56.745Z",
-      "updatedAt": "2026-09-08T12:24:56.745Z"
+      "updatedAt": "2026-10-18T13:37:28.943Z"
     },
     {
       "id": "sm-mod-1788870296745-148",
       "category": "MACHINE",
-      "machineName": "Plane Machine",
+      "machineName": "Single Needle Lock Stitch Machine",
       "brand": "JUKI",
       "model": "2000C",
       "sortOrder": 31,
       "status": "ACTIVE",
       "createdAt": "2026-09-08T12:24:56.745Z",
-      "updatedAt": "2026-09-08T12:24:56.745Z"
+      "updatedAt": "2026-10-18T13:37:28.943Z"
     },
     {
       "id": "sm-mod-1788870296745-891",
       "category": "MACHINE",
-      "machineName": "Plane Machine",
+      "machineName": "Single Needle Lock Stitch Machine",
       "brand": "JUKI",
       "model": "LBH-1790",
       "sortOrder": 32,
       "status": "ACTIVE",
       "createdAt": "2026-09-08T12:24:56.745Z",
-      "updatedAt": "2026-09-08T12:24:56.745Z"
+      "updatedAt": "2026-10-18T13:37:28.943Z"
     },
     {
       "id": "sm-mod-1788870296746-465",
       "category": "MACHINE",
-      "machineName": "Plane Machine",
+      "machineName": "Single Needle Lock Stitch Machine",
       "brand": "JUKI",
       "model": "WX-8842",
       "sortOrder": 33,
       "status": "ACTIVE",
       "createdAt": "2026-09-08T12:24:56.746Z",
-      "updatedAt": "2026-09-08T12:24:56.746Z"
+      "updatedAt": "2026-10-18T13:37:28.943Z"
     },
     {
       "id": "sm-mod-1788870296746-387",
       "category": "MACHINE",
-      "machineName": "Plane Machine",
+      "machineName": "Single Needle Lock Stitch Machine",
       "brand": "JUKI",
       "model": "VAX-W500",
       "sortOrder": 34,
       "status": "ACTIVE",
       "createdAt": "2026-09-08T12:24:56.746Z",
-      "updatedAt": "2026-09-08T12:24:56.746Z"
+      "updatedAt": "2026-10-18T13:37:28.943Z"
     },
     {
       "id": "sm-mod-1788870296746-579",
       "category": "MACHINE",
-      "machineName": "Plane Machine",
+      "machineName": "Single Needle Lock Stitch Machine",
       "brand": "JUKI",
       "model": "IH-500-7",
       "sortOrder": 35,
       "status": "ACTIVE",
       "createdAt": "2026-09-08T12:24:56.746Z",
-      "updatedAt": "2026-09-08T12:24:56.746Z"
+      "updatedAt": "2026-10-18T13:37:28.943Z"
     },
     {
       "id": "sm-mod-1788870296746-910",
       "category": "MACHINE",
-      "machineName": "Plane Machine",
+      "machineName": "Single Needle Lock Stitch Machine",
       "brand": "JUKI",
       "model": "CM-5003",
       "sortOrder": 36,
       "status": "ACTIVE",
       "createdAt": "2026-09-08T12:24:56.746Z",
-      "updatedAt": "2026-09-08T12:24:56.746Z"
+      "updatedAt": "2026-10-18T13:37:28.943Z"
     },
     {
       "id": "sm-mod-1788870296746-861",
       "category": "MACHINE",
-      "machineName": "Plane Machine",
+      "machineName": "Single Needle Lock Stitch Machine",
       "brand": "JUKI",
       "model": "MF-7923",
       "sortOrder": 37,
       "status": "ACTIVE",
       "createdAt": "2026-09-08T12:24:56.746Z",
-      "updatedAt": "2026-09-08T12:24:56.746Z"
+      "updatedAt": "2026-10-18T13:37:28.943Z"
     },
     {
       "id": "sm-mod-1788870296746-285",
       "category": "MACHINE",
-      "machineName": "Plane Machine",
+      "machineName": "Single Needle Lock Stitch Machine",
       "brand": "JUKI",
       "model": "DFB-1411",
       "sortOrder": 38,
       "status": "ACTIVE",
       "createdAt": "2026-09-08T12:24:56.746Z",
-      "updatedAt": "2026-09-08T12:24:56.746Z"
+      "updatedAt": "2026-10-18T13:37:28.943Z"
     },
     {
       "id": "sm-mod-1788870296746-919",
       "category": "MACHINE",
-      "machineName": "Plane Machine",
+      "machineName": "Single Needle Lock Stitch Machine",
       "brand": "JUKI",
       "model": "BBL-900BB",
       "sortOrder": 39,
       "status": "ACTIVE",
       "createdAt": "2026-09-08T12:24:56.746Z",
-      "updatedAt": "2026-09-08T12:24:56.746Z"
+      "updatedAt": "2026-10-18T13:37:28.943Z"
     },
     {
       "id": "sm-mod-1788870296746-564",
       "category": "MACHINE",
-      "machineName": "Plane Machine",
+      "machineName": "Single Needle Lock Stitch Machine",
       "brand": "JUKI",
       "model": "ZJ-3820",
       "sortOrder": 40,
       "status": "ACTIVE",
       "createdAt": "2026-09-08T12:24:56.746Z",
-      "updatedAt": "2026-09-08T12:24:56.746Z"
+      "updatedAt": "2026-10-18T13:37:28.943Z"
     },
     {
       "id": "sm-md-1",
@@ -398874,13 +398865,13 @@
     {
       "id": "sm-mod-1790659051019-763",
       "category": "MACHINE",
-      "machineName": "Plane Machine",
+      "machineName": "Single Needle Lock Stitch Machine",
       "brand": "JUKI",
       "model": "DDL-8700",
       "sortOrder": 42,
       "status": "ACTIVE",
       "createdAt": "2026-09-08T12:24:56.743Z",
-      "updatedAt": "2026-09-08T12:24:56.743Z"
+      "updatedAt": "2026-10-18T13:37:28.943Z"
     },
     {
       "id": "sm-mod-1790659051021-696",
@@ -399061,13 +399052,13 @@
     {
       "id": "sm-mod-1790659051082-845",
       "category": "MACHINE",
-      "machineName": "Plane Machine",
+      "machineName": "Single Needle Lock Stitch Machine",
       "brand": "JUKI",
       "model": "DDL-8700-7",
       "sortOrder": 59,
       "status": "ACTIVE",
       "createdAt": "2026-09-08T12:24:56.743Z",
-      "updatedAt": "2026-09-08T12:24:56.743Z"
+      "updatedAt": "2026-10-18T13:37:28.943Z"
     },
     {
       "id": "sm-mod-1790659051091-998",
