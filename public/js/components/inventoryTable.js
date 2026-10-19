@@ -7,7 +7,7 @@
 import { storage } from '../db/storage.js';
 import { TABLE_NAMES } from '../db/schema.js';
 import { INITIAL_DATA } from '../db/initialData.js';
-import { machineService } from '../services/machineService.js';
+import { machineService, isAmbulanceMachine } from '../services/machineService.js';
 import { masterDataService } from '../services/masterDataService.js';
 import { customFieldService } from '../services/customFieldService.js';
 import { authService } from '../services/authService.js';
@@ -86,6 +86,7 @@ export function renderInventoryTable() {
   const totalRunning = queryResult.metrics?.running ?? 0;
   const totalUsableIdle = queryResult.metrics?.usable ?? 0;
   const totalRepairableIdle = queryResult.metrics?.repairable ?? 0;
+  const totalAmbulance = queryResult.metrics?.ambulance ?? 0;
 
   // 3. Hierarchical Cascading Dropdown Options (Group -> Unit -> Floor -> Line)
   // When cross-floor idle is off, respect assigned location scope (shows only user's assigned floor)
@@ -307,7 +308,7 @@ export function renderInventoryTable() {
       label: 'Serial Number',
       width: 130,
       renderTh: (thStyle, thClass) => `<th class="th-sortable ${thClass}" data-sort="serialNumber" style="width: 130px; min-width: 130px; max-width: 130px; text-align: center; cursor: pointer; ${thStyle}">Serial Number</th>`,
-      renderTd: (m, meta, tdStyle, tdClass) => `<td class="${tdClass}" style="width: 130px; min-width: 130px; max-width: 130px; text-align: center; ${tdStyle}"><a href="javascript:void(0)" class="machine-serial-link btn-inspect-machine" data-id="${m.id}" title="Click to view full machine lifetime & specifications">${m.serialNumber || '—'}</a></td>`
+      renderTd: (m, meta, tdStyle, tdClass) => `<td class="${tdClass}" style="width: 130px; min-width: 130px; max-width: 130px; text-align: center; ${tdStyle}"><a href="javascript:void(0)" class="machine-serial-link btn-inspect-machine" data-id="${m.id}" title="Click to view full machine lifetime & specifications">${m.serialNumber || '—'}</a>${meta.isAmb ? ` <span class="badge" style="font-size: 9px; padding: 1px 4px; background: rgba(244, 63, 94, 0.15); color: #fda4af; border: 1px solid rgba(244, 63, 94, 0.4); border-radius: 4px; vertical-align: middle; margin-left: 2px;" title="Standby Ambulance Machine for Line Breakdowns">🚑 AMB</span>` : ''}</td>`
     },
     {
       key: 'systemAssetId',
@@ -451,7 +452,7 @@ export function renderInventoryTable() {
       label: 'Status',
       width: 95,
       renderTh: (thStyle, thClass) => `<th class="th-sortable ${thClass}" data-sort="status" style="width: 95px; min-width: 95px; max-width: 95px; text-align: center; cursor: pointer; ${thStyle}">Status</th>`,
-      renderTd: (m, meta, tdStyle, tdClass) => `<td class="${tdClass}" style="width: 95px; min-width: 95px; max-width: 95px; text-align: center; ${tdStyle}"><span class="badge ${meta.statusBadgeClass}">${(m.status || 'ACTIVE').replace('_', ' ')}</span></td>`
+      renderTd: (m, meta, tdStyle, tdClass) => `<td class="${tdClass}" style="width: 95px; min-width: 95px; max-width: 95px; text-align: center; ${tdStyle}"><span class="badge ${meta.statusBadgeClass}">${meta.displayStatus || (m.status || 'ACTIVE').replace(/_/g, ' ')}</span></td>`
     },
     {
       key: 'service_date',
@@ -594,6 +595,9 @@ export function renderInventoryTable() {
               ` : ''}
               ${(authService.hasAccess('machines', 'EDIT') && authService.canOperateMachine(m)) ? `
                 <div class="actions-menu-divider"></div>
+                <button type="button" class="actions-menu-item btn-toggle-ambulance-machine" data-id="${m.id}" style="color: ${meta.isAmb ? '#fda4af' : '#38bdf8'}; font-weight: 600;">
+                  ${meta.isAmb ? '🚑 Remove Ambulance Status' : '🚑 Set as Ambulance Machine'}
+                </button>
                 <button type="button" class="actions-menu-item btn-edit-machine" data-id="${m.id}">
                   ✏️ Edit Machine
                 </button>
@@ -712,8 +716,10 @@ export function renderInventoryTable() {
         <td colspan="${columnLayout.length + 2}" style="text-align: center; padding: 48px 20px;">
           <div style="font-size: 32px; margin-bottom: 8px;">🔍</div>
           <div style="font-size: 15px; font-weight: 700; color: var(--text-primary);">No machines found</div>
-          <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px; max-width: 380px; margin-left: auto; margin-right: auto;">
-            No machines match your current search or location filters. Try resetting the filters.
+          <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px; max-width: 420px; margin-left: auto; margin-right: auto; line-height: 1.5;">
+            ${filters.status === 'AMBULANCE' 
+              ? 'No machines are currently designated as <strong>Ambulance Machines</strong>. You can mark ready standby machines as Ambulance using the row action (⋮ Actions &rarr; Set as Ambulance Machine) or in the machine edit form.' 
+              : 'No machines match your current search or location filters. Try resetting the filters.'}
           </div>
           <div style="margin-top: 14px; display: flex; gap: 8px; justify-content: center;">
             <button id="btn-empty-reset-filters" class="btn btn-secondary btn-sm">↺ Reset Filters</button>
@@ -729,13 +735,31 @@ export function renderInventoryTable() {
       const isSelected = selectedIds.has(m.id);
       const slNo = isAll ? (idx + 1) : ((queryResult.page - 1) * numLimit + idx + 1);
       const displaySlNo = String(slNo).padStart(2, '0');
-      const statusBadgeClass = `badge-${(m.status || 'ACTIVE').toLowerCase().replace('_', '')}`;
 
       // Quantities
       const rQty = parseInt(m.running ?? m.qty_running ?? (m.status === 'ACTIVE' ? (m.quantity ?? 1) : 0), 10) || 0;
       const uQty = parseInt(m.usable_idle ?? m.usableIdle ?? (m.status === 'IDLE' ? (m.quantity ?? 1) : 0), 10) || 0;
       const rpQty = parseInt(m.repairable_idle ?? m.repairableIdle ?? ((m.status === 'MAINTENANCE' || m.status === 'BREAKDOWN') ? (m.quantity ?? 1) : 0), 10) || 0;
       const totalQty = m.totalQuantity || m.total_quantity || (rQty + uQty + rpQty > 0 ? (rQty + uQty + rpQty) : (m.quantity ?? 1));
+
+      // Operational & Ambulance Status Determination
+      const isAmb = isAmbulanceMachine(m);
+      let displayStatus = (m.status || 'ACTIVE').replace(/_/g, ' ');
+      let statusBadgeClass = `badge-${(m.status || 'ACTIVE').toLowerCase().replace(/_/g, '')}`;
+
+      if (isAmb) {
+        displayStatus = 'AMBULANCE';
+        statusBadgeClass = 'badge-ambulance';
+      } else if (uQty > 0 && (m.status === 'INACTIVE' || m.status === 'IDLE' || m.status === 'USABLE_IDLE')) {
+        displayStatus = 'USABLE IDLE';
+        statusBadgeClass = 'badge-idle';
+      } else if (rpQty > 0 && (m.status === 'INACTIVE' || m.status === 'MAINTENANCE' || m.status === 'REPAIRABLE_IDLE')) {
+        displayStatus = 'REPAIRABLE IDLE';
+        statusBadgeClass = 'badge-maint';
+      } else if (m.status === 'ACTIVE') {
+        displayStatus = 'ACTIVE';
+        statusBadgeClass = 'badge-active';
+      }
 
       let row = `<tr class="${isSelected ? 'selected' : ''}" data-id="${m.id}">`;
 
@@ -753,7 +777,7 @@ export function renderInventoryTable() {
           : '';
         const boundaryClass = col.isLastFrozen ? 'col-frozen-boundary' : '';
         const tdClass = col.isFrozen ? `col-frozen-cell ${boundaryClass}` : '';
-        row += col.renderTd(m, { rQty, uQty, rpQty, totalQty, statusBadgeClass }, tdStyle, tdClass);
+        row += col.renderTd(m, { rQty, uQty, rpQty, totalQty, statusBadgeClass, displayStatus, isAmb }, tdStyle, tdClass);
       });
 
       row += `</tr>`;
@@ -806,27 +830,32 @@ export function renderInventoryTable() {
               <span>📦</span> Machine Inventory ${scopeBadgeHtml}
             </h1>
             
-            <!-- Inline KPI Pills (Dynamically calculated based on User Access & Filter View) -->
+            <!-- Inline KPI Pills (Dynamically calculated based on User Access & Filter View - Click to Filter) -->
             <div class="inventory-inline-kpis">
-              <div class="kpi-pill kpi-total" title="${showCrossFloorIdle ? 'Total standby & idle machines across other factory floors' : 'Total machines matching current scope and view'}">
+              <div class="kpi-pill kpi-total ${!filters.status || filters.status === 'ALL' ? 'active-kpi' : ''}" data-kpi-status="ALL" title="${showCrossFloorIdle ? 'Total standby & idle machines across other factory floors (Click to view all)' : 'Total machines matching current scope (Click to view all)'}" style="cursor: pointer;">
                 <span class="kpi-dot">🏭</span>
                 <strong class="kpi-val">${isInitialSyncPending ? '...' : countTotalMachines}</strong>
                 <span class="kpi-lbl">${showCrossFloorIdle ? 'Idle Other Floors' : 'Total'}</span>
               </div>
-              <div class="kpi-pill kpi-running" title="Operational running machines in current scope and view" style="${showCrossFloorIdle ? 'display: none;' : ''}">
+              <div class="kpi-pill kpi-running ${(filters.status === 'RUNNING' || filters.status === 'ACTIVE') ? 'active-kpi' : ''}" data-kpi-status="RUNNING" title="Operational running machines in current scope (Click to filter Running)" style="${showCrossFloorIdle ? 'display: none;' : ''}; cursor: pointer;">
                 <span class="kpi-dot">🟢</span>
                 <strong class="kpi-val" style="color: #34d399;">${isInitialSyncPending ? '...' : totalRunning}</strong>
                 <span class="kpi-lbl">Running</span>
               </div>
-              <div class="kpi-pill kpi-usable" title="Ready-to-use standby usable idle machines in current scope and view">
+              <div class="kpi-pill kpi-usable ${(filters.status === 'USABLE' || filters.status === 'USABLE_IDLE') ? 'active-kpi' : ''}" data-kpi-status="USABLE" title="Ready-to-use standby usable idle machines (Click to filter Usable Idle)" style="cursor: pointer;">
                 <span class="kpi-dot">🔵</span>
                 <strong class="kpi-val" style="color: #38bdf8;">${isInitialSyncPending ? '...' : totalUsableIdle}</strong>
                 <span class="kpi-lbl">Usable</span>
               </div>
-              <div class="kpi-pill kpi-repair" title="Repairable / maintenance idle machines in current scope and view">
+              <div class="kpi-pill kpi-repair ${(filters.status === 'REPAIRABLE' || filters.status === 'REPAIRABLE_IDLE') ? 'active-kpi' : ''}" data-kpi-status="REPAIRABLE" title="Repairable / maintenance idle machines (Click to filter Repairable Idle)" style="cursor: pointer;">
                 <span class="kpi-dot">🟡</span>
                 <strong class="kpi-val" style="color: #fbbf24;">${isInitialSyncPending ? '...' : totalRepairableIdle}</strong>
                 <span class="kpi-lbl">Repairable</span>
+              </div>
+              <div class="kpi-pill kpi-ambulance ${filters.status === 'AMBULANCE' ? 'active-kpi' : ''}" data-kpi-status="AMBULANCE" title="Standby ambulance machines ready for emergency line replacement (Click to filter Ambulance)" style="cursor: pointer;">
+                <span class="kpi-dot">🚑</span>
+                <strong class="kpi-val" style="color: #f43f5e;">${isInitialSyncPending ? '...' : totalAmbulance}</strong>
+                <span class="kpi-lbl">Ambulance</span>
               </div>
             </div>
           </div>
@@ -982,20 +1011,23 @@ export function renderInventoryTable() {
             </div>
 
             <!-- Status -->
-            <div class="filter-select-item" style="flex: 1 1 120px; min-width: 115px;">
+            <div class="filter-select-item" style="flex: 1 1 135px; min-width: 125px;">
               <select id="filter-status-select" class="filter-select-compact" style="height: 30px; font-size: 11.5px; width: 100%;">
                 ${showCrossFloorIdle ? `
                   <option value="ALL" ${!filters.status || filters.status === 'ALL' ? 'selected' : ''}>All Idle Machines</option>
-                  <option value="USABLE_IDLE" ${filters.status === 'USABLE_IDLE' ? 'selected' : ''}>✨ Usable Idle</option>
-                  <option value="IDLE" ${filters.status === 'IDLE' ? 'selected' : ''}>💤 Standby Idle</option>
-                  <option value="REPAIRABLE_IDLE" ${filters.status === 'REPAIRABLE_IDLE' ? 'selected' : ''}>🟡 Repairable Idle</option>
+                  <option value="USABLE" ${filters.status === 'USABLE' || filters.status === 'USABLE_IDLE' ? 'selected' : ''}>✨ Usable Idle (${totalUsableIdle})</option>
+                  <option value="REPAIRABLE" ${filters.status === 'REPAIRABLE' || filters.status === 'REPAIRABLE_IDLE' ? 'selected' : ''}>🟡 Repairable Idle (${totalRepairableIdle})</option>
                   <option value="MAINTENANCE" ${filters.status === 'MAINTENANCE' ? 'selected' : ''}>🔧 In Maintenance</option>
+                  <option value="BREAKDOWN" ${filters.status === 'BREAKDOWN' ? 'selected' : ''}>🔴 Breakdown</option>
+                  <option value="AMBULANCE" ${filters.status === 'AMBULANCE' ? 'selected' : ''}>🚑 Ambulance Machine (${totalAmbulance})</option>
                 ` : `
                   <option value="ALL" ${!filters.status || filters.status === 'ALL' ? 'selected' : ''}>All Status</option>
-                  <option value="ACTIVE" ${filters.status === 'ACTIVE' ? 'selected' : ''}>🟢 Active</option>
-                  <option value="IDLE" ${filters.status === 'IDLE' ? 'selected' : ''}>💤 Idle</option>
-                  <option value="MAINTENANCE" ${filters.status === 'MAINTENANCE' ? 'selected' : ''}>🟡 Maint</option>
+                  <option value="RUNNING" ${filters.status === 'RUNNING' || filters.status === 'ACTIVE' ? 'selected' : ''}>🟢 Running / Active</option>
+                  <option value="USABLE" ${filters.status === 'USABLE' || filters.status === 'USABLE_IDLE' || filters.status === 'IDLE' ? 'selected' : ''}>🔵 Usable Idle (${totalUsableIdle})</option>
+                  <option value="REPAIRABLE" ${filters.status === 'REPAIRABLE' || filters.status === 'REPAIRABLE_IDLE' ? 'selected' : ''}>🟡 Repairable Idle (${totalRepairableIdle})</option>
+                  <option value="MAINTENANCE" ${filters.status === 'MAINTENANCE' ? 'selected' : ''}>🔧 In Maintenance</option>
                   <option value="BREAKDOWN" ${filters.status === 'BREAKDOWN' ? 'selected' : ''}>🔴 Breakdown</option>
+                  <option value="AMBULANCE" ${filters.status === 'AMBULANCE' ? 'selected' : ''}>🚑 Ambulance Machine (${totalAmbulance})</option>
                 `}
               </select>
             </div>
@@ -1276,6 +1308,46 @@ export function initInventoryTableEvents() {
       state.updateFilters({ status: e.target.value, page: 1 });
     });
   }
+
+  // 2b. Interactive KPI Status Pills Click Handlers (Direct Connection with Status Filter)
+  document.querySelectorAll('.inventory-inline-kpis .kpi-pill[data-kpi-status]').forEach(pill => {
+    pill.addEventListener('click', () => {
+      const targetStatus = pill.getAttribute('data-kpi-status');
+      const currentStatus = state.get('filters')?.status || 'ALL';
+      
+      // Toggle logic: If already active and not ALL, clicking it again resets to ALL
+      if (currentStatus === targetStatus && targetStatus !== 'ALL') {
+        state.updateFilters({ status: 'ALL', page: 1 });
+      } else {
+        state.updateFilters({ status: targetStatus, page: 1 });
+      }
+    });
+  });
+
+  // 2c. Toggle Ambulance Machine Quick Action
+  document.querySelectorAll('.btn-toggle-ambulance-machine').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const id = btn.getAttribute('data-id');
+      const machine = storage.getItem(TABLE_NAMES.MACHINES, id);
+      if (!machine) return;
+      const nextAmb = !isAmbulanceMachine(machine);
+      try {
+        await machineService.updateMachine(id, {
+          isAmbulance: nextAmb,
+          status: nextAmb ? (machine.status === 'ACTIVE' ? 'ACTIVE' : 'AMBULANCE') : (machine.status === 'AMBULANCE' ? 'ACTIVE' : machine.status)
+        });
+        notificationService.success(`Machine #${machine.serialNumber || id} ${nextAmb ? 'designated as 🚑 Ambulance Machine' : 'removed from Ambulance status'}`);
+        const container = document.getElementById('main-view-container');
+        if (container && state.get('currentView') === 'inventory') {
+          container.innerHTML = renderInventoryTable();
+          initInventoryTableEvents();
+        }
+      } catch (err) {
+        notificationService.error(`Failed to update machine: ${err.message}`);
+      }
+    });
+  });
 
   // 3. Hierarchical Cascading Dropdown Handlers (Group -> Unit -> Floor -> Line)
   const groupSelect = document.getElementById('filter-group');

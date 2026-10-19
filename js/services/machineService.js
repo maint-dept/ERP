@@ -15,7 +15,31 @@ import { notificationService } from './notificationService.js';
 import { historyService } from './historyService.js';
 import { syncManager } from '../db/syncManager.js';
 
+/**
+ * Universal Ambulance / Standby Line Replacement Machine Checker
+ * Matches ambulance flag, status, or designated keywords in workingArea/line/remarks.
+ */
+export function isAmbulanceMachine(m) {
+  if (!m) return false;
+  if (m.isAmbulance === true || m.isAmbulance === 1 || m.isAmbulance === 'true') return true;
+  if (m.is_ambulance === true || m.is_ambulance === 1 || m.is_ambulance === 'true' || m.is_ambulance === '1') return true;
+  if (m.ambulance === true || m.ambulance === 1 || m.ambulance === 'true') return true;
+  if (String(m.status || '').toUpperCase() === 'AMBULANCE') return true;
+  if (m.customValues?.is_ambulance || m.customValues?.ambulance) return true;
+  const rem = String(m.remarks || '').toLowerCase();
+  if (rem.includes('ambulance') || rem.includes('standby line replacement') || rem.includes('stand-by replacement')) return true;
+  const lin = String(m.line || '').toLowerCase();
+  if (lin.includes('ambulance')) return true;
+  const wa = String(m.workingArea || '').toLowerCase();
+  if (wa.includes('ambulance')) return true;
+  return false;
+}
+
 class MachineService {
+  isAmbulanceMachine(m) {
+    return isAmbulanceMachine(m);
+  }
+
   /**
    * Comprehensive Composite Duplicate Check for Machine Inventory:
    *
@@ -192,10 +216,6 @@ class MachineService {
     if (params.modelId) {
       allMachines = allMachines.filter(m => m.modelId === params.modelId);
     }
-    if (params.status && params.status !== 'ALL') {
-      allMachines = allMachines.filter(m => m.status === params.status);
-    }
-
     // 4. Global Multi-Field Search (Serial, Mfg Serial, Remarks, Model, Brand, Name, Line, Floor, Unit)
     if (params.search) {
       const q = params.search.trim().toLowerCase();
@@ -244,12 +264,12 @@ class MachineService {
       }
     }
 
-    const totalRecords = allMachines.length;
-
-    // Calculate accurate dynamic KPI summary metrics for this filtered & scoped dataset
+    // Dynamic Scope KPI Metrics (Computed across current location, search & hierarchy scope before narrowing by status)
+    const scopeTotal = allMachines.length;
     let runningQty = 0;
     let usableIdleQty = 0;
     let repairableIdleQty = 0;
+    let ambulanceQty = 0;
 
     allMachines.forEach(m => {
       const r = parseInt(m.running ?? m.qty_running ?? (m.status === 'ACTIVE' ? (m.quantity ?? 1) : 0), 10) || 0;
@@ -258,14 +278,52 @@ class MachineService {
       runningQty += r;
       usableIdleQty += u;
       repairableIdleQty += rp;
+      if (isAmbulanceMachine(m)) {
+        ambulanceQty++;
+      }
     });
 
     const metrics = {
-      total: totalRecords,
+      total: scopeTotal,
       running: runningQty,
       usable: usableIdleQty,
-      repairable: repairableIdleQty
+      repairable: repairableIdleQty,
+      ambulance: ambulanceQty
     };
+
+    // 6. Unified Status & Operational Filter (RUNNING, USABLE, REPAIRABLE, AMBULANCE, MAINTENANCE, BREAKDOWN)
+    if (params.status && params.status !== 'ALL') {
+      const st = String(params.status).trim().toUpperCase();
+      if (st === 'RUNNING' || st === 'ACTIVE') {
+        allMachines = allMachines.filter(m => {
+          const r = parseInt(m.running ?? m.qty_running ?? (m.status === 'ACTIVE' ? (m.quantity ?? 1) : 0), 10) || 0;
+          return r > 0 || m.status === 'ACTIVE';
+        });
+      } else if (st === 'USABLE' || st === 'USABLE_IDLE' || st === 'IDLE') {
+        allMachines = allMachines.filter(m => {
+          const u = parseInt(m.usable_idle ?? m.usableIdle ?? (m.status === 'IDLE' ? (m.quantity ?? 1) : 0), 10) || 0;
+          return u > 0 || m.status === 'IDLE' || m.status === 'USABLE_IDLE' || m.status === 'USABLE';
+        });
+      } else if (st === 'REPAIRABLE' || st === 'REPAIRABLE_IDLE') {
+        allMachines = allMachines.filter(m => {
+          const rp = parseInt(m.repairable_idle ?? m.repairableIdle ?? ((m.status === 'MAINTENANCE' || m.status === 'BREAKDOWN') ? (m.quantity ?? 1) : 0), 10) || 0;
+          return rp > 0 || m.status === 'REPAIRABLE' || m.status === 'REPAIRABLE_IDLE';
+        });
+      } else if (st === 'MAINTENANCE') {
+        allMachines = allMachines.filter(m => {
+          const rp = parseInt(m.repairable_idle ?? m.repairableIdle ?? 0, 10) || 0;
+          return m.status === 'MAINTENANCE' || (rp > 0 && m.status !== 'BREAKDOWN');
+        });
+      } else if (st === 'BREAKDOWN') {
+        allMachines = allMachines.filter(m => m.status === 'BREAKDOWN');
+      } else if (st === 'AMBULANCE') {
+        allMachines = allMachines.filter(m => isAmbulanceMachine(m));
+      } else {
+        allMachines = allMachines.filter(m => m.status === params.status);
+      }
+    }
+
+    const totalRecords = allMachines.length;
 
     // 6. Multi-Column Sorting
     const sortField = params.sortField || 'sl';

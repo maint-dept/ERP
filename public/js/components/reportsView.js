@@ -12,7 +12,7 @@
 import { storage } from '../db/storage.js';
 import { TABLE_NAMES, TRANSFER_STATUSES } from '../db/schema.js';
 import { INITIAL_DATA } from '../db/initialData.js';
-import { machineService } from '../services/machineService.js';
+import { machineService, isAmbulanceMachine } from '../services/machineService.js';
 import { masterDataService } from '../services/masterDataService.js';
 import { excelService, formatDisplayLine } from '../services/excelService.js';
 import { transferService, resolveTransferMachineDetails } from '../services/transferService.js';
@@ -684,7 +684,27 @@ export function getMachineSummaryGroupedData(allMachines) {
     if (machineReportFilterState.unitId && h.unitId !== machineReportFilterState.unitId) return false;
     if (machineReportFilterState.floorId && h.floorId !== machineReportFilterState.floorId) return false;
     if (machineReportFilterState.lineId && h.lineId !== machineReportFilterState.lineId) return false;
-    if (machineReportFilterState.status !== 'ALL' && m.status !== machineReportFilterState.status) return false;
+    if (machineReportFilterState.status !== 'ALL') {
+      const st = String(machineReportFilterState.status).toUpperCase();
+      if (st === 'ACTIVE' || st === 'RUNNING') {
+        const r = parseInt(m.running ?? m.qty_running ?? (m.status === 'ACTIVE' ? (m.quantity ?? 1) : 0), 10) || 0;
+        if (!(r > 0 || m.status === 'ACTIVE')) return false;
+      } else if (st === 'IDLE' || st === 'USABLE' || st === 'USABLE_IDLE') {
+        const u = parseInt(m.usable_idle ?? m.usableIdle ?? (m.status === 'IDLE' ? (m.quantity ?? 1) : 0), 10) || 0;
+        if (!(u > 0 || m.status === 'IDLE' || m.status === 'USABLE_IDLE' || m.status === 'USABLE')) return false;
+      } else if (st === 'REPAIRABLE' || st === 'REPAIRABLE_IDLE') {
+        const rp = parseInt(m.repairable_idle ?? m.repairableIdle ?? ((m.status === 'MAINTENANCE' || m.status === 'BREAKDOWN') ? (m.quantity ?? 1) : 0), 10) || 0;
+        if (!(rp > 0 || m.status === 'REPAIRABLE' || m.status === 'REPAIRABLE_IDLE')) return false;
+      } else if (st === 'MAINTENANCE') {
+        if (m.status !== 'MAINTENANCE') return false;
+      } else if (st === 'BREAKDOWN') {
+        if (m.status !== 'BREAKDOWN') return false;
+      } else if (st === 'AMBULANCE') {
+        if (!isAmbulanceMachine(m)) return false;
+      } else if (m.status !== machineReportFilterState.status) {
+        return false;
+      }
+    }
     return true;
   });
 
@@ -962,12 +982,14 @@ function renderMachineReportsTab(allMachines) {
           </select>
 
           <!-- Status Filter -->
-          <select id="mr-filter-status" class="form-control" style="height: 28px; font-size: 11.5px; font-weight: 600; color: #fff; background: rgba(15, 23, 42, 0.85); border: 1px solid var(--border-color); border-radius: 4px; padding: 2px 6px; min-width: 100px; max-width: 120px;">
+          <select id="mr-filter-status" class="form-control" style="height: 28px; font-size: 11.5px; font-weight: 600; color: #fff; background: rgba(15, 23, 42, 0.85); border: 1px solid var(--border-color); border-radius: 4px; padding: 2px 6px; min-width: 110px; max-width: 140px;">
             <option value="ALL" ${machineReportFilterState.status === 'ALL' ? 'selected' : ''} style="background: #0f172a; color: #fff;">All Status</option>
-            <option value="ACTIVE" ${machineReportFilterState.status === 'ACTIVE' ? 'selected' : ''} style="background: #0f172a; color: #fff;">🟢 Active</option>
-            <option value="IDLE" ${machineReportFilterState.status === 'IDLE' ? 'selected' : ''} style="background: #0f172a; color: #fff;">🔵 Idle</option>
-            <option value="MAINTENANCE" ${machineReportFilterState.status === 'MAINTENANCE' ? 'selected' : ''} style="background: #0f172a; color: #fff;">🟡 Maintenance</option>
+            <option value="ACTIVE" ${machineReportFilterState.status === 'ACTIVE' ? 'selected' : ''} style="background: #0f172a; color: #fff;">🟢 Active / Running</option>
+            <option value="IDLE" ${machineReportFilterState.status === 'IDLE' ? 'selected' : ''} style="background: #0f172a; color: #fff;">🔵 Usable Idle</option>
+            <option value="REPAIRABLE" ${machineReportFilterState.status === 'REPAIRABLE' ? 'selected' : ''} style="background: #0f172a; color: #fff;">🟡 Repairable Idle</option>
+            <option value="MAINTENANCE" ${machineReportFilterState.status === 'MAINTENANCE' ? 'selected' : ''} style="background: #0f172a; color: #fff;">🔧 Maintenance</option>
             <option value="BREAKDOWN" ${machineReportFilterState.status === 'BREAKDOWN' ? 'selected' : ''} style="background: #0f172a; color: #fff;">🔴 Breakdown</option>
+            <option value="AMBULANCE" ${machineReportFilterState.status === 'AMBULANCE' ? 'selected' : ''} style="background: #0f172a; color: #fff;">🚑 Ambulance Machine</option>
           </select>
 
           <!-- Reset Filters -->

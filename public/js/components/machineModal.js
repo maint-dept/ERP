@@ -448,9 +448,26 @@ export function renderMachineModal() {
               <div class="form-group">
                 <label class="form-label">Status <span class="req">*</span></label>
                 <select id="modal-field-status" class="form-control" ${isViewOnly ? 'disabled style="opacity: 0.75; cursor: not-allowed;"' : 'required'}>
-                  ${MACHINE_STATUSES.map(s => `<option value="${s.id}" ${machine?.status === s.id ? 'selected' : ''}>${s.label}</option>`).join('')}
+                  ${MACHINE_STATUSES.map(s => `<option value="${s.id}" ${(machine?.status === s.id || (s.id === 'AMBULANCE' && machine?.isAmbulance)) ? 'selected' : ''}>${s.label}</option>`).join('')}
                 </select>
               </div>
+            </div>
+
+            <!-- Ambulance Machine Standby Designation -->
+            <div style="margin-top: 4px;">
+              <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 8px 12px; background: rgba(244, 63, 94, 0.08); border: 1px solid rgba(244, 63, 94, 0.25); border-radius: 6px;">
+                <input
+                  type="checkbox"
+                  id="modal-field-is-ambulance"
+                  ${machine?.isAmbulance || machine?.status === 'AMBULANCE' ? 'checked' : ''}
+                  ${isViewOnly ? 'disabled style="cursor: not-allowed;"' : 'style="cursor: pointer;"'}
+                  style="width: 17px; height: 17px; accent-color: #f43f5e;"
+                />
+                <div>
+                  <span style="font-size: 12.5px; font-weight: 700; color: #fda4af;">🚑 Ambulance Machine (Standby Replacement)</span>
+                  <span style="font-size: 11px; color: var(--text-muted); display: block; margin-top: 1px;">Ready backup standby machine used to immediately replace line breakdown machines</span>
+                </div>
+              </label>
             </div>
           </div>
 
@@ -1081,6 +1098,8 @@ export function initMachineModalEvents() {
   if (usableInp) usableInp.addEventListener('input', syncTotalQuantity);
   if (repairableInp) repairableInp.addEventListener('input', syncTotalQuantity);
 
+  const ambCheck = document.getElementById('modal-field-is-ambulance');
+
   if (statusSelect) {
     statusSelect.addEventListener('change', () => {
       const curStatus = statusSelect.value;
@@ -1093,12 +1112,27 @@ export function initMachineModalEvents() {
         if (usableInp) usableInp.value = curQty;
         if (runningInp) runningInp.value = 0;
         if (repairableInp) repairableInp.value = 0;
+      } else if (curStatus === 'AMBULANCE') {
+        if (ambCheck) ambCheck.checked = true;
+        if (usableInp) usableInp.value = curQty;
+        if (runningInp) runningInp.value = 0;
+        if (repairableInp) repairableInp.value = 0;
       } else if (curStatus === 'MAINTENANCE' || curStatus === 'BREAKDOWN') {
         if (repairableInp) repairableInp.value = curQty;
         if (runningInp) runningInp.value = 0;
         if (usableInp) usableInp.value = 0;
       }
       syncTotalQuantity();
+    });
+  }
+
+  if (ambCheck) {
+    ambCheck.addEventListener('change', () => {
+      if (ambCheck.checked && statusSelect && statusSelect.value === 'IDLE') {
+        statusSelect.value = 'AMBULANCE';
+      } else if (!ambCheck.checked && statusSelect && statusSelect.value === 'AMBULANCE') {
+        statusSelect.value = 'IDLE';
+      }
     });
   }
 
@@ -1305,6 +1339,7 @@ export function initMachineModalEvents() {
 
       // Status & Quantities Breakdown
       const status = document.getElementById('modal-field-status')?.value || 'ACTIVE';
+      const isAmbulance = Boolean(document.getElementById('modal-field-is-ambulance')?.checked || status === 'AMBULANCE');
       const running = parseInt(document.getElementById('modal-field-running')?.value, 10) || 0;
       const usableIdle = parseInt(document.getElementById('modal-field-usable-idle')?.value, 10) || 0;
       const repairableIdle = parseInt(document.getElementById('modal-field-repairable-idle')?.value, 10) || 0;
@@ -1403,6 +1438,8 @@ export function initMachineModalEvents() {
         floorId,
         lineId,
         status,
+        isAmbulance,
+        is_ambulance: isAmbulance ? 1 : 0,
         running,
         usable_idle: usableIdle,
         repairable_idle: repairableIdle,

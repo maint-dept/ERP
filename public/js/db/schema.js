@@ -926,6 +926,7 @@ export const MACHINE_STATUSES = [
   { id: 'MAINTENANCE', label: 'Under Maintenance', color: '#f59e0b', bg: '#fffbeb' },
   { id: 'BREAKDOWN', label: 'Breakdown', color: '#ef4444', bg: '#fef2f2' },
   { id: 'IDLE', label: 'Idle / Standby', color: '#6366f1', bg: '#eef2ff' },
+  { id: 'AMBULANCE', label: 'Ambulance Machine', color: '#f43f5e', bg: '#fff1f2' },
   { id: 'PENDING_APPROVAL', label: 'Pending Approval', color: '#8b5cf6', bg: '#f5f3ff' },
   { id: 'IN_TRANSFER', label: 'Transfer in Progress', color: '#0ea5e9', bg: '#f0f9ff' },
   { id: 'INACTIVE', label: 'Inactive', color: '#64748b', bg: '#f1f5f9' },

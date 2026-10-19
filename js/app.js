@@ -12,9 +12,9 @@ import { renderSidebar, initSidebarEvents, updateSidebarActiveState } from './co
 import { renderHomepageView, initHomepageEvents } from './components/homepageView.js?v=4.26.23';
 import { renderLoginView, initLoginViewEvents } from './components/loginView.js?v=4.26.23';
 import { renderDashboard, initDashboardEvents } from './components/dashboard.js?v=4.26.27';
-import { renderInventoryTable, initInventoryTableEvents, syncInventorySelectionDOM } from './components/inventoryTable.js?v=4.26.25';
-import { renderMachineModal, initMachineModalEvents } from './components/machineModal.js?v=4.26.29';
-import { renderMachineDetails, initMachineDetailsEvents } from './components/machineDetails.js';
+import { renderInventoryTable, initInventoryTableEvents, syncInventorySelectionDOM } from './components/inventoryTable.js?v=4.26.41';
+import { renderMachineModal, initMachineModalEvents } from './components/machineModal.js?v=4.26.41';
+import { renderMachineDetails, initMachineDetailsEvents } from './components/machineDetails.js?v=4.26.41';
 import { renderTransferModal, initTransferModalEvents } from './components/transferModal.js?v=4.26.24';
 import { renderTransferDetailsModal, initTransferDetailsModalEvents } from './components/transferDetailsModal.js';
 import { renderEditTransferModal, initEditTransferModalEvents } from './components/editTransferModal.js?v=4.26.24';
@@ -27,7 +27,7 @@ import { renderUserManagement, initUserManagementEvents } from './components/use
 import { renderHomepageManagerView, initHomepageManagerEvents } from './components/homepageManagerView.js';
 import { renderEmailConfigView, initEmailConfigEvents } from './components/emailConfigView.js';
 import { renderExcelImportModal, initExcelImportEvents } from './components/excelImportModal.js';
-import { renderReportsView, initReportsEvents } from './components/reportsView.js?v=4.26.32';
+import { renderReportsView, initReportsEvents } from './components/reportsView.js?v=4.26.41';
 import { renderAuditLogsView, initAuditLogsEvents } from './components/auditLogsView.js';
 import { renderNotificationsDrawer, initNotificationsDrawerEvents } from './components/notificationsDrawer.js';
 import { renderSettingsView, initSettingsEvents } from './components/settingsView.js';

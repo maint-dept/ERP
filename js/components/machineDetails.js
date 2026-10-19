@@ -13,6 +13,7 @@ import { transferService } from '../services/transferService.js';
 import { historyService } from '../services/historyService.js';
 import { authService } from '../services/authService.js';
 import { excelService } from '../services/excelService.js';
+import { isAmbulanceMachine } from '../services/machineService.js';
 import { state } from '../state.js';
 
 let activeDetailsTab = 'overview'; // 'overview', 'location-history', 'spare-parts', 'service-history', 'transfers'
@@ -79,8 +80,9 @@ export function renderMachineDetails() {
         <!-- Header -->
         <div class="drawer-header" style="background: var(--bg-surface); padding: 16px 22px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
           <div>
-            <div style="font-size: 11px; color: #38bdf8; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">
-              Machine Lifetime &amp; Details
+            <div style="font-size: 11px; color: #38bdf8; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;">
+              <span>Machine Lifetime &amp; Details</span>
+              ${isAmbulanceMachine(machine) ? '<span class="badge badge-ambulance" style="font-size: 9.5px; padding: 1px 6px;">🚑 AMBULANCE MACHINE</span>' : ''}
             </div>
             <div style="font-size: 17px; font-weight: 800; color: #fff; margin-top: 2px;">
               ${mn?.name || machine.machineName || 'Machine'} — ${brd?.name || machine.brand || ''} ${mdl?.name || machine.model || ''}
@@ -186,7 +188,7 @@ export function renderMachineDetails() {
                 <div><span style="color: var(--text-muted);">System Asset ID:</span> <strong style="color: #10b981; font-family: var(--font-mono);">${escapeHtml(displayAssetId)}</strong></div>
                 <div><span style="color: var(--text-muted);">Machine Serial Number:</span> <strong style="color: #38bdf8; font-family: var(--font-mono);">${machine.serialNumber}</strong></div>
                 <div><span style="color: var(--text-muted);">Manufacturing Serial No:</span> <strong style="color: #38bdf8; font-family: var(--font-mono);">${escapeHtml(mfgSerialNumber) || '—'}</strong></div>
-                <div><span style="color: var(--text-muted);">Machine Status:</span> <span class="badge badge-${(machine.status || 'ACTIVE').toLowerCase()}">${machine.status || 'ACTIVE'}</span></div>
+                <div><span style="color: var(--text-muted);">Machine Status:</span> ${isAmbulanceMachine(machine) ? '<span class="badge badge-ambulance">🚑 AMBULANCE</span>' : (uQty > 0 && (machine.status === 'INACTIVE' || machine.status === 'IDLE' || machine.status === 'USABLE_IDLE') ? '<span class="badge badge-idle">USABLE IDLE</span>' : (rpQty > 0 && (machine.status === 'INACTIVE' || machine.status === 'MAINTENANCE' || machine.status === 'REPAIRABLE_IDLE') ? '<span class="badge badge-maint">REPAIRABLE IDLE</span>' : `<span class="badge badge-${(machine.status || 'ACTIVE').toLowerCase()}">${machine.status || 'ACTIVE'}</span>`))}</div>
                 <div><span style="color: var(--text-muted);">Machine Name:</span> <strong style="color: #fff;">${mn?.name || machine.machineName || '—'}</strong></div>
                 <div><span style="color: var(--text-muted);">Brand &amp; Model:</span> <strong style="color: #fff;">${brd?.name || machine.brand || '—'} ${mdl?.name || machine.model || ''}</strong></div>
                 <div><span style="color: var(--text-muted);">Unit / Factory:</span> <strong style="color: #fff;">${unt?.name || machine.unit || '—'}</strong></div>
