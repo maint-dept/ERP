@@ -462,6 +462,24 @@ class ExcelService {
     } else {
       let changed = false;
 
+      // 0. Auto-migrate: ensure System Asset ID (system_asset_id) exists and is visible at the beginning
+      const assetIdCol = active.columns.find(c => c.fieldKey === 'system_asset_id' || c.fieldKey === 'systemAssetId');
+      if (!assetIdCol) {
+        active.columns.unshift({
+          id: 'col-system-asset-id',
+          header: 'System Asset ID',
+          fieldKey: 'system_asset_id',
+          required: false,
+          defaultValue: '',
+          order: 1,
+          visible: true
+        });
+        changed = true;
+      } else if (!assetIdCol.visible) {
+        assetIdCol.visible = true;
+        changed = true;
+      }
+
       // 1. Auto-migrate: ensure manufacturing_serial exists in Standard Garments Machinery Layout if missing
       const hasMfg = active.columns.some(c => c.fieldKey === 'manufacturing_serial');
       if (!hasMfg) {
@@ -513,7 +531,7 @@ class ExcelService {
     const def = this._getDefaultStructure();
     storage.setTable(TABLE_NAMES.EXCEL_STRUCTURES, [def]);
     storage.saveTable(TABLE_NAMES.EXCEL_STRUCTURES);
-    window.dispatchEvent(new CustomEvent('erp:excel-structure-updated'));
+    if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('erp:excel-structure-updated'));
     return def;
   }
 
@@ -532,9 +550,8 @@ class ExcelService {
       throw new Error('Unauthorized to modify Excel structures.');
     }
 
-    // Filter out sl and assetId
+    // Filter out sl and sl_no (System Asset ID is preserved as permanent tag)
     structure.columns = (structure.columns || []).filter(c => 
-      c.fieldKey !== 'assetId' && c.fieldKey !== 'asset_id' &&
       c.fieldKey !== 'sl' && c.fieldKey !== 'sl_no'
     );
 
@@ -558,7 +575,7 @@ class ExcelService {
       storage.insert(TABLE_NAMES.EXCEL_STRUCTURES, structure);
     }
     auditService.log('EXCEL_STRUCTURE_SAVED', 'EXCEL_STRUCTURE', structure.id, `Saved Excel column structure: ${structure.name}`);
-    window.dispatchEvent(new CustomEvent('erp:excel-structure-updated'));
+    if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('erp:excel-structure-updated'));
     return structure;
   }
 
@@ -579,7 +596,7 @@ class ExcelService {
     } else {
       storage.insert(TABLE_NAMES.EXCEL_STRUCTURES, struct);
     }
-    window.dispatchEvent(new CustomEvent('erp:excel-structure-updated'));
+    if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('erp:excel-structure-updated'));
   }
 
   _getDefaultStructure() {
@@ -588,21 +605,22 @@ class ExcelService {
       name: 'Standard Garments Machinery Layout',
       isDefault: true,
       columns: [
-        { id: 'col-1', header: 'Machine Name', fieldKey: 'machine_name', required: true, defaultValue: '', order: 1, visible: true },
-        { id: 'col-2', header: 'Machine Brand', fieldKey: 'machine_brand', required: false, defaultValue: '', order: 2, visible: true },
-        { id: 'col-3', header: 'Machine Model', fieldKey: 'machine_model', required: false, defaultValue: '', order: 3, visible: true },
-        { id: 'col-4', header: 'Machine Serial', fieldKey: 'machine_serial', required: false, defaultValue: '', order: 4, visible: true },
-        { id: 'col-5', header: 'Manufacturing Serial Number', fieldKey: 'manufacturing_serial', required: false, defaultValue: '', order: 5, visible: true },
-        { id: 'col-6', header: 'Unit/Factory', fieldKey: 'unit_factory', required: true, defaultValue: 'AKM Knitwear Ltd.', order: 6, visible: true },
-        { id: 'col-7', header: 'Floor', fieldKey: 'floor', required: true, defaultValue: '3rd Floor', order: 7, visible: true },
-        { id: 'col-8', header: 'Line', fieldKey: 'line', required: true, defaultValue: 'Line JA-A', order: 8, visible: true },
-        { id: 'col-9', header: 'Running', fieldKey: 'running', required: false, defaultValue: '1', order: 9, visible: true },
-        { id: 'col-10', header: 'Usable Idle', fieldKey: 'usable_idle', required: false, defaultValue: '0', order: 10, visible: true },
-        { id: 'col-11', header: 'Repairable Idle', fieldKey: 'repairable_idle', required: false, defaultValue: '0', order: 11, visible: true },
-        { id: 'col-12', header: 'Total Quantity', fieldKey: 'total_quantity', required: false, defaultValue: '— (Auto-Calculated)', order: 12, visible: true, isCalculated: true, readOnly: true },
-        { id: 'col-13', header: 'Machine Status', fieldKey: 'machine_status', required: false, defaultValue: 'ACTIVE', order: 13, visible: true },
-        { id: 'col-14', header: 'Last Service Date', fieldKey: 'service_date', required: false, defaultValue: '', order: 14, visible: true },
-        { id: 'col-15', header: 'Remarks', fieldKey: 'remarks', required: false, defaultValue: '', order: 15, visible: true }
+        { id: 'col-0', header: 'System Asset ID', fieldKey: 'system_asset_id', required: false, defaultValue: '', order: 1, visible: true },
+        { id: 'col-1', header: 'Machine Name', fieldKey: 'machine_name', required: true, defaultValue: '', order: 2, visible: true },
+        { id: 'col-2', header: 'Machine Brand', fieldKey: 'machine_brand', required: false, defaultValue: '', order: 3, visible: true },
+        { id: 'col-3', header: 'Machine Model', fieldKey: 'machine_model', required: false, defaultValue: '', order: 4, visible: true },
+        { id: 'col-4', header: 'Machine Serial', fieldKey: 'machine_serial', required: false, defaultValue: '', order: 5, visible: true },
+        { id: 'col-5', header: 'Manufacturing Serial Number', fieldKey: 'manufacturing_serial', required: false, defaultValue: '', order: 6, visible: true },
+        { id: 'col-6', header: 'Unit/Factory', fieldKey: 'unit_factory', required: true, defaultValue: 'AKM Knitwear Ltd.', order: 7, visible: true },
+        { id: 'col-7', header: 'Floor', fieldKey: 'floor', required: true, defaultValue: '3rd Floor', order: 8, visible: true },
+        { id: 'col-8', header: 'Line', fieldKey: 'line', required: true, defaultValue: 'Line JA-A', order: 9, visible: true },
+        { id: 'col-9', header: 'Running', fieldKey: 'running', required: false, defaultValue: '1', order: 10, visible: true },
+        { id: 'col-10', header: 'Usable Idle', fieldKey: 'usable_idle', required: false, defaultValue: '0', order: 11, visible: true },
+        { id: 'col-11', header: 'Repairable Idle', fieldKey: 'repairable_idle', required: false, defaultValue: '0', order: 12, visible: true },
+        { id: 'col-12', header: 'Total Quantity', fieldKey: 'total_quantity', required: false, defaultValue: '— (Auto-Calculated)', order: 13, visible: true, isCalculated: true, readOnly: true },
+        { id: 'col-13', header: 'Machine Status', fieldKey: 'machine_status', required: false, defaultValue: 'ACTIVE', order: 14, visible: true },
+        { id: 'col-14', header: 'Last Service Date', fieldKey: 'service_date', required: false, defaultValue: '', order: 15, visible: true },
+        { id: 'col-15', header: 'Remarks', fieldKey: 'remarks', required: false, defaultValue: '', order: 16, visible: true }
       ]
     };
   }
@@ -720,7 +738,12 @@ class ExcelService {
 
     // 5A. Permanent System-Generated Asset ID (AMG-MNT-XXXXXX)
     if (key === 'system_asset_id' || key === 'systemassetid' || key === 'asset_id' || key === 'assetid' || key === 'system_asset' || key === 'systemasset') {
-      return record.systemAssetId || (record.permanentMachineId ? String(record.permanentMachineId).replace(/^MID-/i, 'AMG-MNT-') : '') || '';
+      let saId = record.systemAssetId || (record.permanentMachineId ? String(record.permanentMachineId).replace(/^MID-/i, 'AMG-MNT-') : '');
+      if (!saId && record.id) {
+        const numPart = String(record.id).replace(/\D/g, '');
+        if (numPart) saId = `AMG-MNT-${numPart.padStart(6, '0')}`;
+      }
+      return saId || '';
     }
 
     // 5B. Manufacturing (Serial / Year / Details)
@@ -1173,6 +1196,10 @@ class ExcelService {
     const lowerHeaders = fileHeaders.map(h => ({ raw: h, clean: h.toLowerCase().replace(/[^a-z0-9]/g, '') }));
 
     const patterns = {
+      system_asset_id: [
+        'systemassetid', 'systemasset', 'permanentmachineid', 'assetid', 'assetno',
+        'assettag', 'systemid', 'machineassetid', 'assetcode', 'amgmnt', 'amg'
+      ],
       machine_name: ['machinename', 'machinetype', 'mcname', 'itemname', 'machinedescription', 'type', 'machine'],
       machine_brand: ['machinebrand', 'brand', 'mcbrand', 'make', 'manufacturer', 'company'],
       machine_model: ['machinemodel', 'model', 'mcmodel', 'modelno', 'modelnumber', 'specification', 'spec'],
@@ -1183,15 +1210,17 @@ class ExcelService {
         'mcserial', 'mcserialnumber', 'mcserialno', 'mcnumber', 'mcno',
         'm/cno', 'm/cnumber', 'm/cserial', 'm/cserialno',
         'sn', 'msn', 'machinecode', 'machinesl', 'mcsl',
-        'assetno', 'assetid', 'assettag', 'barcode'
+        'barcode'
       ],
       manufacturing: [
         'manufacturing', 'manufacturingserial', 'manufacturingserialnumber',
         'manufacturingno', 'mfgserial', 'mfgno', 'manufacture', 'mfg'
       ],
       manufacturing_serial: [
-        'manufacturingserialnumber', 'manufacturingserial', 'manufacturingno',
-        'mfgserial', 'mfgno', 'manufacturerserial', 'originalserial'
+        'manufacturingserialnumber', 'manufacturingserial', 'manufacturingserialno',
+        'manufacturingno', 'mfgserial', 'mfgserialno', 'mfgno',
+        'manufacturerserial', 'manufacturerno', 'manufacturernumber', 'factoryserial',
+        'originalserial', 'originalserialnumber'
       ],
       manufacturing_year: [
         'manufacturingyear', 'mfgyear', 'manufacturingdate', 'mfgdate', 'yearofmanufacture'
@@ -1270,6 +1299,24 @@ class ExcelService {
     const existingMachines = storage.getTable(TABLE_NAMES.MACHINES) || [];
     const existingSerialsMap = new Map(existingMachines.map(m => [m.serialNumber.trim().toUpperCase(), m]));
 
+    // Fast O(1) lookup map for Permanent System Asset IDs
+    const existingAssetIdMap = new Map();
+    existingMachines.forEach(m => {
+      if (m.systemAssetId) {
+        existingAssetIdMap.set(String(m.systemAssetId).trim().toUpperCase(), m);
+      }
+      if (m.permanentMachineId) {
+        const pKey = String(m.permanentMachineId).trim().toUpperCase();
+        existingAssetIdMap.set(pKey, m);
+        existingAssetIdMap.set(pKey.replace(/^MID-/i, 'AMG-MNT-'), m);
+      }
+      if (m.id) {
+        existingAssetIdMap.set(String(m.id).trim().toUpperCase(), m);
+        const numOnly = String(m.id).replace(/\D/g, '');
+        if (numOnly) existingAssetIdMap.set(`AMG-MNT-${numOnly.padStart(6, '0')}`, m);
+      }
+    });
+
     const units = storage.getTable(TABLE_NAMES.UNITS) || [];
     const floors = storage.getTable(TABLE_NAMES.FLOORS) || [];
     const lines = storage.getTable(TABLE_NAMES.LINES) || [];
@@ -1312,6 +1359,7 @@ class ExcelService {
     // Global in-file composite duplicate tracker: compKey -> { sheetName, rowNumber, cell, serialNumber, machineName, brand, model }
     const globalSeenCompositeInFile = new Map();
     const globalSeenSerialsInFile = new Map(); // SN -> { sheetName, rowNumber, cell }
+    const globalSeenAssetIdInFile = new Map(); // AssetID -> { sheetName, rowNumber, cell, serialNumber }
 
     const validatedSheets = [];
     const allValidationErrors = []; // Diagnostic errors list: { sheetName, rowNumber, cell, column, enteredValue, error, severity, suggestedCorrection }
@@ -1341,10 +1389,11 @@ class ExcelService {
       return String(val).trim().replace(/\s+/g, ' ');
     };
 
-    parsedSheets.forEach(sheet => {
-      if (!sheet.selected) return;
+    const sheetList = Array.isArray(parsedSheets) ? parsedSheets : (parsedSheets?.sheets || []);
+    sheetList.forEach(sheet => {
+      if (sheet.selected === false) return;
 
-      const mapping = sheetMappings[sheet.name] || sheet.suggestedMapping || {};
+      const mapping = sheetMappings[sheet.name] || sheet.suggestedMapping || this.suggestColumnMapping(sheet.headers || Object.keys(sheet.rows?.[0] || {}), sheet.name) || {};
       const sheetRecords = [];
       let sheetValidCount = 0;
       let sheetInvalidCount = 0;
@@ -1389,6 +1438,61 @@ class ExcelService {
         let floorStr = mapped.floor || '';
         let lineStr = mapped.line || '';
 
+        // Permanent System Asset ID extraction (AMG-MNT-XXXXXX)
+        let systemAssetId = mapped.system_asset_id || mapped.systemAssetId || mapped.asset_id || mapped.assetid || '';
+        if (!systemAssetId) {
+          const assetCandidateKeys = [
+            'systemassetid', 'systemasset', 'permanentmachineid', 'assetid', 'assetno',
+            'assettag', 'systemid', 'machineassetid', 'assetcode', 'amgmnt', 'amg'
+          ];
+          for (const candKey of assetCandidateKeys) {
+            for (const [k, v] of Object.entries(row)) {
+              if (v !== undefined && v !== null && String(v).trim() !== '') {
+                const cleanK = k.toLowerCase().replace(/[^a-z0-9]/g, '');
+                if (cleanK === candKey) {
+                  systemAssetId = cleanSpaces(v);
+                  break;
+                }
+              }
+            }
+            if (systemAssetId) break;
+          }
+          if (!systemAssetId) {
+            for (const [k, v] of Object.entries(row)) {
+              if (v !== undefined && v !== null && String(v).trim() !== '') {
+                const cleanK = k.toLowerCase().replace(/[^a-z0-9]/g, '');
+                if (cleanK.includes('systemasset') || (cleanK.includes('asset') && cleanK.includes('id'))) {
+                  systemAssetId = cleanSpaces(v);
+                  break;
+                }
+              }
+            }
+          }
+        }
+
+        // Manufacturing Serial Number extraction with thorough fallback
+        let manufacturingSerial = mapped.manufacturing_serial || mapped.manufacturing || '';
+        if (!manufacturingSerial) {
+          const mfgCandidates = [
+            'manufacturingserialnumber', 'manufacturingserial', 'manufacturingserialno',
+            'manufacturingno', 'mfgserial', 'mfgserialno', 'mfgno',
+            'manufacturerserial', 'manufacturerno', 'manufacturernumber', 'factoryserial',
+            'originalserial', 'originalserialnumber'
+          ];
+          for (const candKey of mfgCandidates) {
+            for (const [k, v] of Object.entries(row)) {
+              if (v !== undefined && v !== null && String(v).trim() !== '') {
+                const cleanK = k.toLowerCase().replace(/[^a-z0-9]/g, '');
+                if (cleanK === candKey) {
+                  manufacturingSerial = cleanSpaces(v);
+                  break;
+                }
+              }
+            }
+            if (manufacturingSerial) break;
+          }
+        }
+
         // Fallback search across all possible columns in raw row if serialNumber is still empty
         if (!serialNumber) {
           const serialCandidateKeys = [
@@ -1396,7 +1500,6 @@ class ExcelService {
             'machinenumber', 'machineno', 'machinenoonlynumber', 'machinenum',
             'serialnumber', 'serialno', 'serialnum', 'serial',
             'mcserial', 'mcserialnumber', 'mcserialno', 'mcnumber', 'mcno',
-            'manufacturingserialnumber', 'manufacturingserial',
             'sn', 'msn', 'machinecode', 'machinesl', 'mcsl',
             'slno', 'sino', 'sl', 'sno'
           ];
@@ -1670,18 +1773,49 @@ class ExcelService {
         }
 
         // -------------------------------------------------------------------------
-        // 3. Composite Duplicate Check: Machine Name + Brand + Model + Serial
+        // 3. Composite Duplicate Check & Primary Key Target Resolution
         // -------------------------------------------------------------------------
         // Rules:
-        // - Record is duplicate IF AND ONLY IF (Machine Name + Brand + Model + Serial) match!
-        // - If any of the composite items differ, it is NOT considered duplicate.
-        const compKey = `${normKey(machineNameStr)}|${normKey(brandStr)}|${normKey(modelStr)}|${normKey(serialNumber)}`;
-        const serialCell = getCellAddress(mapping.machine_serial || mapping.machine_model, rowNumber);
+        // - If System Asset ID is present, it is the globally unique hardware identity (ASSET:ID).
+        // - If no System Asset ID, record is duplicate IF AND ONLY IF (Name + Brand + Model + Serial) match!
+        const normAssetId = systemAssetId ? systemAssetId.trim().toUpperCase() : '';
+        const compKey = normAssetId
+          ? `ASSET:${normAssetId}`
+          : `${normKey(machineNameStr)}|${normKey(brandStr)}|${normKey(modelStr)}|${normKey(serialNumber)}`;
+        const serialCell = getCellAddress(mapping.system_asset_id || mapping.machine_serial || mapping.machine_model, rowNumber);
 
         let isDuplicate = false;
 
-        // A. Intra-file & Cross-Sheet Composite Duplicate Check
-        if (globalSeenCompositeInFile.has(compKey)) {
+        // A. Intra-file & Cross-Sheet Duplicate Check
+        if (normAssetId && globalSeenAssetIdInFile.has(normAssetId)) {
+          isDuplicate = true;
+          const prev = globalSeenAssetIdInFile.get(normAssetId);
+          const err = `Duplicate System Asset ID '${systemAssetId}' matches another row in file (First seen in sheet '${prev.sheetName}', Cell ${prev.cell}).`;
+          rowErrors.push(err);
+          allValidationErrors.push({
+            sheetName: sheet.name,
+            rowNumber: rowNumber,
+            cell: serialCell,
+            column: mapping.system_asset_id || 'System Asset ID',
+            enteredValue: systemAssetId,
+            error: err,
+            suggestedCorrection: `Ensure each machine row has a unique System Asset ID. Check row ${prev.rowNumber} (${prev.sheetName}: Cell ${prev.cell}).`,
+            severity: 'ERROR'
+          });
+          grandDuplicatesList.push({
+            sheetName: sheet.name,
+            cell: serialCell,
+            rowNumber: rowNumber,
+            column: mapping.system_asset_id || 'System Asset ID',
+            serialNumber: serialNumber || systemAssetId,
+            machineName: machineNameStr,
+            brand: brandStr,
+            model: modelStr,
+            reason: err
+          });
+          sheetDuplicateCount++;
+          grandDuplicateRows++;
+        } else if (!normAssetId && globalSeenCompositeInFile.has(compKey)) {
           isDuplicate = true;
           const prev = globalSeenCompositeInFile.get(compKey);
           const err = `Duplicate Machine Record: Name ('${machineNameStr}'), Brand ('${brandStr}'), Model ('${modelStr}'), and Serial ('${serialNumber}') match another row in file (First seen in sheet '${prev.sheetName}', Cell ${prev.cell}).`;
@@ -1710,6 +1844,14 @@ class ExcelService {
           sheetDuplicateCount++;
           grandDuplicateRows++;
         } else {
+          if (normAssetId) {
+            globalSeenAssetIdInFile.set(normAssetId, {
+              sheetName: sheet.name,
+              rowNumber: rowNumber,
+              cell: serialCell,
+              serialNumber: serialNumber
+            });
+          }
           globalSeenCompositeInFile.set(compKey, {
             sheetName: sheet.name,
             rowNumber: rowNumber,
@@ -1721,18 +1863,46 @@ class ExcelService {
           });
         }
 
-        // B. Database Existence & Composite Duplicate Check
+        // B. Database Existence & Target Machine Matching
+        // Priority 1: Match by System Asset ID (Guarantees target-only in-place update)
+        // Priority 2: Match by Composite Specs (Name + Brand + Model + Serial)
+        // Priority 3: Match by Serial Number
         const isReplaceAll = (duplicatePolicy === DUPLICATE_POLICIES.REPLACE_ALL || duplicatePolicy === 'REPLACE_ALL');
+        const matchedByAssetId = normAssetId ? (existingAssetIdMap.get(normAssetId) || null) : null;
         const existingMachineByComposite = existingCompositeMap.get(compKey);
         const existingMachineBySerial = serialNumber ? existingSerialsMap.get(serialNumber.toUpperCase()) : null;
-        let existingMachine = existingMachineByComposite || existingMachineBySerial;
+        let existingMachine = matchedByAssetId || existingMachineByComposite || existingMachineBySerial;
         let isUpdate = false;
 
         if (isReplaceAll) {
           sheetNewCount++;
           grandNewRows++;
         } else if (existingMachine) {
-          if (existingMachineByComposite) {
+          if (matchedByAssetId) {
+            // Matched by permanent System Asset ID! Target exact machine for in-place update!
+            if (duplicatePolicy === DUPLICATE_POLICIES.SKIP || duplicatePolicy === 'SKIP') {
+              isDuplicate = true;
+              const warnReason = `Machine with Asset ID '${systemAssetId}' already exists in database and will be skipped.`;
+              rowWarnings.push(warnReason);
+              grandDuplicatesList.push({
+                sheetName: sheet.name,
+                cell: serialCell,
+                rowNumber: rowNumber,
+                column: mapping.system_asset_id || 'System Asset ID',
+                serialNumber: serialNumber || systemAssetId,
+                machineName: machineNameStr,
+                brand: brandStr,
+                model: modelStr,
+                reason: warnReason
+              });
+              sheetDuplicateCount++;
+              grandDuplicateRows++;
+            } else {
+              isUpdate = true;
+              sheetUpdateCount++;
+              grandUpdateRows++;
+            }
+          } else if (existingMachineByComposite) {
             // Full composite duplicate (Name, Brand, Model, Serial all match)
             if (duplicatePolicy === DUPLICATE_POLICIES.REJECT || duplicatePolicy === 'REJECT') {
               isDuplicate = true;
@@ -1825,8 +1995,8 @@ class ExcelService {
             if (rawVal) customValues[cf.code] = rawVal;
           }
         });
-        if (mapped.manufacturing) customValues.manufacturing = mapped.manufacturing;
-        if (mapped.manufacturing_serial) customValues.manufacturing_serial = mapped.manufacturing_serial;
+        if (mapped.manufacturing || manufacturingSerial) customValues.manufacturing = manufacturingSerial || mapped.manufacturing;
+        if (mapped.manufacturing_serial || manufacturingSerial) customValues.manufacturing_serial = manufacturingSerial;
         if (mapped.manufacturing_year) customValues.manufacturing_year = mapped.manufacturing_year;
 
         // 5B. Preventive Maintenance Servicing Columns
@@ -1850,7 +2020,7 @@ class ExcelService {
         // Calculate Diff for Updates
         let diffs = [];
         if (isUpdate && existingMachine) {
-          diffs = this._calculateBulkUpdateDiff(existingMachine, mapped, customValues, foundMN, foundBrand, foundModel, foundUnit, foundFloor, foundLine);
+          diffs = this._calculateBulkUpdateDiff(existingMachine, mapped, customValues, foundMN, foundBrand, foundModel, foundUnit, foundFloor, foundLine, manufacturingSerial);
         }
 
         const isValid = rowErrors.length === 0;
@@ -1875,6 +2045,7 @@ class ExcelService {
           warnings: rowWarnings,
           diffs: diffs,
           data: {
+            systemAssetId: matchedByAssetId?.systemAssetId || systemAssetId || undefined,
             serialNumber: serialNumber,
             machineNameId: foundMN?.id || (machineNames[0]?.id || 'mn-1'),
             machineNameStr: foundMN?.name || machineNameStr,
@@ -1896,8 +2067,8 @@ class ExcelService {
             quantity: totalQtyVal,
             status: statusStr,
             remarks: (mapped.remarks && !mapped.remarks.toLowerCase().startsWith('imported from sheet')) ? mapped.remarks : '',
-            manufacturing: mapped.manufacturing || '',
-            manufacturingSerial: mapped.manufacturing_serial || mapped.manufacturing || '',
+            manufacturing: manufacturingSerial || mapped.manufacturing || '',
+            manufacturingSerial: manufacturingSerial || mapped.manufacturing || '',
             manufacturingYear: mapped.manufacturing_year || '',
             customValues: customValues,
             serviceDate: cleanServiceDate,
@@ -1968,7 +2139,7 @@ class ExcelService {
     return clean;
   }
 
-  _calculateBulkUpdateDiff(existing, mapped, customValues, foundMN, foundBrand, foundModel, foundUnit, foundFloor, foundLine) {
+  _calculateBulkUpdateDiff(existing, mapped, customValues, foundMN, foundBrand, foundModel, foundUnit, foundFloor, foundLine, mfgSerial = '') {
     const diffs = [];
     const mnMap = new Map(storage.getTable(TABLE_NAMES.MACHINE_NAMES).map(x => [x.id, x.name]));
     const brdMap = new Map(storage.getTable(TABLE_NAMES.BRANDS).map(x => [x.id, x.name]));
@@ -1982,6 +2153,18 @@ class ExcelService {
         diffs.push({ field, label, oldValue: oldVal || '—', newValue: newVal });
       }
     };
+
+    const curSn = existing.serialNumber || '';
+    const newSn = mapped.machine_serial || mapped.serialNumber || '';
+    if (newSn && newSn !== curSn) {
+      checkField('serialNumber', 'Machine Serial', curSn, newSn);
+    }
+
+    const curMfg = existing.manufacturingSerial || existing.manufacturing || '';
+    const newMfg = mfgSerial || mapped.manufacturing_serial || mapped.manufacturing || '';
+    if (newMfg && newMfg !== curMfg) {
+      checkField('manufacturingSerial', 'Manufacturing Serial Number', curMfg, newMfg);
+    }
 
     if (foundMN && foundMN.id !== existing.machineNameId) {
       checkField('machineNameId', 'Machine Name', mnMap.get(existing.machineNameId), foundMN.name);
@@ -2142,7 +2325,8 @@ class ExcelService {
       const sheetStats = [];
       const failedRows = [];
 
-    validatedSheets.forEach(sheet => {
+    const sheetsList = Array.isArray(validatedSheets) ? validatedSheets : (validatedSheets?.sheets || []);
+    sheetsList.forEach(sheet => {
       let sheetInserted = 0;
       let sheetUpdated = 0;
       let sheetFailed = 0;
@@ -2193,7 +2377,9 @@ class ExcelService {
 
         try {
           if (item.isUpdate && item.existingMachineId) {
-            const existing = storage.getItem(TABLE_NAMES.MACHINES, item.existingMachineId);
+            const existing = (typeof storage.getItem === 'function' ? storage.getItem(TABLE_NAMES.MACHINES, item.existingMachineId) : null) ||
+                             (typeof storage.getMachineByAssetId === 'function' ? storage.getMachineByAssetId(item.existingMachineId) : null) ||
+                             (storage.getTable(TABLE_NAMES.MACHINES) || storage.data?.[TABLE_NAMES.MACHINES] || []).find(m => m && (m.id === item.existingMachineId || m.systemAssetId === item.existingMachineId));
             if (existing) {
               const updates = {
                 updatedBy: user.id,
@@ -2242,6 +2428,19 @@ class ExcelService {
               if (d.remarks !== undefined) {
                 updates.remarks = (d.remarks && !d.remarks.toLowerCase().startsWith('imported from sheet')) ? d.remarks : '';
               }
+
+              // Update Manufacturing Specs on existing machine
+              if (d.manufacturingSerial !== undefined && d.manufacturingSerial !== '') {
+                updates.manufacturingSerial = d.manufacturingSerial;
+                updates.manufacturing = d.manufacturingSerial;
+              } else if (d.manufacturing !== undefined && d.manufacturing !== '') {
+                updates.manufacturingSerial = d.manufacturing;
+                updates.manufacturing = d.manufacturing;
+              }
+              if (d.manufacturingYear !== undefined && d.manufacturingYear !== '') {
+                updates.manufacturingYear = d.manufacturingYear;
+              }
+
               // Update Running / Usable Idle / Repairable Idle from Excel if provided
               if (d.running !== undefined) updates.running = Number(d.running);
               if (d.usableIdle !== undefined) updates.usable_idle = Number(d.usableIdle);
@@ -2260,7 +2459,8 @@ class ExcelService {
 
               storage.update(TABLE_NAMES.MACHINES, existing.id, updates);
               if (d.serviceDate) {
-                this._syncPreventiveMaintenanceRecord(existing, d, user);
+                const mergedExisting = { ...existing, ...updates };
+                this._syncPreventiveMaintenanceRecord(mergedExisting, d, user);
               } else if (sheet.mapping && (sheet.mapping.service_date || sheet.mapping.last_service_date || sheet.mapping.servicedate)) {
                 // Explicitly clear service dates if the sheet has a service date column and this row was left blank
                 storage.update(TABLE_NAMES.MACHINES, existing.id, {
@@ -2293,7 +2493,8 @@ class ExcelService {
               if (foundMdl) modelId = foundMdl.id;
             }
 
-            const unitObj = storage.getItem(TABLE_NAMES.UNITS, d.unitId || 'unt-1');
+            const unitObj = (typeof storage.getItem === 'function' ? storage.getItem(TABLE_NAMES.UNITS, d.unitId || 'unt-1') : null) ||
+                            (storage.getTable(TABLE_NAMES.UNITS) || storage.data?.[TABLE_NAMES.UNITS] || []).find(u => u && u.id === (d.unitId || 'unt-1'));
             const resolvedGroupId = unitObj?.groupId || d.groupId || 'grp-1';
 
             const runQty = d.running !== undefined ? Number(d.running) : (d.status === 'ACTIVE' ? (Number(d.quantity) || 1) : 0);
@@ -2445,7 +2646,7 @@ class ExcelService {
     }
 
     if (typeof progressCallback === 'function') progressCallback(100, 'Import completed successfully!');
-    window.dispatchEvent(new CustomEvent('erp:master-data-updated'));
+    if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('erp:master-data-updated'));
 
     return {
       success: totalImported > 0 || totalProcessed === 0,
@@ -2590,7 +2791,7 @@ class ExcelService {
         });
       }
 
-      window.dispatchEvent(new CustomEvent('erp:preventive-maintenance-updated'));
+      if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('erp:preventive-maintenance-updated'));
     } catch (err) {
       console.warn('Preventive Maintenance automatic sync failed for machine', machine?.serialNumber, err);
     }
@@ -2726,27 +2927,28 @@ class ExcelService {
     }
 
     // 3. Define Standard Raw File Headers + Diagnostic Fix Columns
-    // Columns A-O are EXACTLY identical to the official Import Template!
+    // Columns A-P are EXACTLY identical to the official Import Template!
     const headers = [
-      'Machine Name',                // Col A
-      'Machine Brand',               // Col B
-      'Machine Model',               // Col C
-      'Machine Serial',              // Col D
-      'Manufacturing Serial Number', // Col E
-      'Unit/Factory',                // Col F
-      'Floor',                       // Col G
-      'Line',                        // Col H
-      'Running',                     // Col I
-      'Usable Idle',                 // Col J
-      'Repairable Idle',             // Col K
-      'Total Quantity',              // Col L
-      'Machine Status',              // Col M
-      'Last Service Date',           // Col N
-      'Remarks',                     // Col O
-      'Error Reason',                // Col P - Detailed error description
-      'Suggested Correction',        // Col Q - Step-by-step fix suggestion
-      'Original Sheet',              // Col R - Reference sheet name in original file
-      'Original Row'                 // Col S - Row number in original file
+      'System Asset ID',             // Col A
+      'Machine Name',                // Col B
+      'Machine Brand',               // Col C
+      'Machine Model',               // Col D
+      'Machine Serial',              // Col E
+      'Manufacturing Serial Number', // Col F
+      'Unit/Factory',                // Col G
+      'Floor',                       // Col H
+      'Line',                        // Col I
+      'Running',                     // Col J
+      'Usable Idle',                 // Col K
+      'Repairable Idle',             // Col L
+      'Total Quantity',              // Col M
+      'Machine Status',              // Col N
+      'Last Service Date',           // Col O
+      'Remarks',                     // Col P
+      'Error Reason',                // Col Q - Detailed error description
+      'Suggested Correction',        // Col R - Step-by-step fix suggestion
+      'Original Sheet',              // Col S - Reference sheet name in original file
+      'Original Row'                 // Col T - Row number in original file
     ];
 
     const reportRows = [headers];
@@ -2768,6 +2970,7 @@ class ExcelService {
         return defaultVal;
       };
 
+      const systemAssetId = getVal(d.systemAssetId, ['System Asset ID', 'system_asset_id', 'Asset ID', 'asset_id', 'Permanent Machine ID']);
       const machineName = getVal(d.machineNameStr, ['Machine Name', 'machine_name', 'MachineName', 'Machine', 'Item Name', 'mc_name', 'itemname']);
       const machineBrand = getVal(d.brandStr, ['Machine Brand', 'machine_brand', 'Brand', 'brand', 'mcbrand', 'make']);
       const machineModel = getVal(d.modelStr, ['Machine Model', 'machine_model', 'Model', 'model', 'mcmodel', 'modelno']);
@@ -2811,6 +3014,7 @@ class ExcelService {
       }
 
       reportRows.push([
+        systemAssetId,
         machineName,
         machineBrand,
         machineModel,
@@ -2836,25 +3040,26 @@ class ExcelService {
     // Build Sheet 1: Error Machine Records
     const wsReport = XLSX.utils.aoa_to_sheet(reportRows);
     wsReport['!cols'] = [
-      { wch: 25 }, // Col A: Machine Name
-      { wch: 18 }, // Col B: Machine Brand
-      { wch: 20 }, // Col C: Machine Model
-      { wch: 20 }, // Col D: Machine Serial
-      { wch: 22 }, // Col E: Manufacturing Serial Number
-      { wch: 22 }, // Col F: Unit/Factory
-      { wch: 18 }, // Col G: Floor
-      { wch: 18 }, // Col H: Line
-      { wch: 10 }, // Col I: Running
-      { wch: 12 }, // Col J: Usable Idle
-      { wch: 14 }, // Col K: Repairable Idle
-      { wch: 14 }, // Col L: Total Quantity
-      { wch: 14 }, // Col L: Machine Status
-      { wch: 26 }, // Col M: Remarks
-      { wch: 18 }, // Col N: Last Service Date
-      { wch: 45 }, // Col O: Error Reason
-      { wch: 55 }, // Col P: Suggested Correction
-      { wch: 18 }, // Col Q: Original Sheet
-      { wch: 14 }  // Col R: Original Row
+      { wch: 18 }, // Col A: System Asset ID
+      { wch: 25 }, // Col B: Machine Name
+      { wch: 18 }, // Col C: Machine Brand
+      { wch: 20 }, // Col D: Machine Model
+      { wch: 20 }, // Col E: Machine Serial
+      { wch: 22 }, // Col F: Manufacturing Serial Number
+      { wch: 22 }, // Col G: Unit/Factory
+      { wch: 18 }, // Col H: Floor
+      { wch: 18 }, // Col I: Line
+      { wch: 10 }, // Col J: Running
+      { wch: 12 }, // Col K: Usable Idle
+      { wch: 14 }, // Col L: Repairable Idle
+      { wch: 14 }, // Col M: Total Quantity
+      { wch: 15 }, // Col N: Machine Status
+      { wch: 16 }, // Col O: Last Service Date
+      { wch: 25 }, // Col P: Remarks
+      { wch: 45 }, // Col Q: Error Reason
+      { wch: 50 }, // Col R: Suggested Correction
+      { wch: 18 }, // Col S: Original Sheet
+      { wch: 14 }  // Col T: Original Row
     ];
 
     XLSX.utils.book_append_sheet(wb, wsReport, 'Failed Machines (Fix & Upload)');
@@ -3004,6 +3209,15 @@ class ExcelService {
 
     // Ensure core template columns exist and are visible in template export
     let visibleCols = this.getVisibleColumns();
+    const hasSystemAssetId = visibleCols.some(c => c.fieldKey === 'system_asset_id');
+    if (!hasSystemAssetId) {
+      const aCol = (struct.columns || []).find(c => c.fieldKey === 'system_asset_id');
+      if (aCol) {
+        aCol.visible = true;
+        storage.update(TABLE_NAMES.EXCEL_STRUCTURES, struct.id, struct);
+      }
+      visibleCols = this.getVisibleColumns();
+    }
     const hasServiceDate = visibleCols.some(c => c.fieldKey === 'service_date');
     if (!hasServiceDate) {
       const sCol = (struct.columns || []).find(c => c.fieldKey === 'service_date');

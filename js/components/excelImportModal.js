@@ -142,6 +142,7 @@ function renderImportStageContent() {
 
     // Add canonical recommended fields if not already in active structure
     const canonicalDefaults = [
+      { key: 'system_asset_id', label: 'System Asset ID [AMG-MNT-XXXXXX] (system_asset_id)', required: false },
       { key: 'machine_name', label: 'Machine Name (machine_name)', required: true },
       { key: 'machine_brand', label: 'Machine Brand (machine_brand)', required: false },
       { key: 'machine_model', label: 'Machine Model (machine_model)', required: false },

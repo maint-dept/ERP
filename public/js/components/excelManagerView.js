@@ -132,7 +132,7 @@ function renderTabContent(tab, struct, columns, customFields, importHistory) {
                     <code style="background: rgba(56, 189, 248, 0.1); color: #38bdf8; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 700;">
                       ${col.fieldKey || col.systemField}
                     </code>
-                    ${isCalculated ? `<span class="badge badge-idle" style="font-size: 9px; margin-left: 3px; color: #38bdf8; padding: 1px 4px;">⚙️ Auto</span>` : ''}
+                    ${col.fieldKey === 'system_asset_id' ? `<span class="badge" style="font-size: 9px; margin-left: 3px; background: rgba(34, 197, 94, 0.15); color: #4ade80; border: 1px solid #22c55e; padding: 1px 4px;" title="Permanent System Asset ID (AMG-MNT-XXXXXX)">🏷️ Asset ID</span>` : ''}
                     ${col.fieldKey === 'machine_serial' || col.fieldKey === 'serial_number' ? `<span class="badge" style="font-size: 9px; margin-left: 3px; background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid #38bdf8; padding: 1px 4px;" title="Admin can customize header label, mandatory requirement, default value, order, or visibility">✏️ Custom</span>` : ''}
                     ${col.fieldKey === 'manufacturing' || col.fieldKey === 'manufacturing_serial' || col.fieldKey === 'manufacturing_year' ? `<span class="badge" style="font-size: 9px; margin-left: 3px; background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid #a855f7; padding: 1px 4px;">🏭 Mfg</span>` : ''}
                   </td>
@@ -643,6 +643,7 @@ export function initExcelManagerEvents() {
 function openAddExcelColumnModal() {
   const customFields = customFieldService.getAllFields();
   const presets = [
+    { key: 'system_asset_id', header: 'System Asset ID', required: false, def: '', desc: 'Permanent System-Generated Asset ID (AMG-MNT-XXXXXX)' },
     { key: 'machine_name', header: 'Machine Name', required: true, def: '', desc: 'Machine Classification / Type' },
     { key: 'machine_brand', header: 'Machine Brand', required: true, def: '', desc: 'Brand / Manufacturer' },
     { key: 'machine_model', header: 'Machine Model', required: true, def: '', desc: 'Machine Model' },

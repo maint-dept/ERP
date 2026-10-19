@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Al-Muslim Group Garments Factory Maintenance Machine ERP
  * Machine History & Lifecycle Tracking Service
  * Handles Automatic Activity Tracking, Location Audits, Service & Repair Logs, Spare Parts & Passport Generation
@@ -79,9 +79,11 @@ class HistoryService {
       );
 
       // Dispatch event
-      window.dispatchEvent(new CustomEvent('erp:machine-history-updated', {
-        detail: { historyRecord }
-      }));
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('erp:machine-history-updated', {
+          detail: { historyRecord }
+        }));
+      }
 
       return historyRecord;
     } catch (err) {
