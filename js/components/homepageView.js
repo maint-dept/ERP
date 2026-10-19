@@ -427,7 +427,6 @@ export function initHomepageEvents() {
   const btnHeaderAdmin = document.getElementById('btn-header-login-admin');
   if (btnHeaderAdmin) {
     btnHeaderAdmin.addEventListener('click', () => {
-      localStorage.setItem('al_muslim_saved_username', 'superadmin');
       window.location.hash = '#login';
       state.set('currentView', 'login');
     });
@@ -437,7 +436,6 @@ export function initHomepageEvents() {
   const btnHeaderUser = document.getElementById('btn-header-login-user');
   if (btnHeaderUser) {
     btnHeaderUser.addEventListener('click', () => {
-      localStorage.setItem('al_muslim_saved_username', 'user');
       window.location.hash = '#login';
       state.set('currentView', 'login');
     });
@@ -447,7 +445,6 @@ export function initHomepageEvents() {
   const btnHeroAdmin = document.getElementById('btn-hero-admin-login');
   if (btnHeroAdmin) {
     btnHeroAdmin.addEventListener('click', () => {
-      localStorage.setItem('al_muslim_saved_username', 'superadmin');
       window.location.hash = '#login';
       state.set('currentView', 'login');
     });
@@ -457,7 +454,6 @@ export function initHomepageEvents() {
   const btnHeroUser = document.getElementById('btn-hero-user-login');
   if (btnHeroUser) {
     btnHeroUser.addEventListener('click', () => {
-      localStorage.setItem('al_muslim_saved_username', 'user');
       window.location.hash = '#login';
       state.set('currentView', 'login');
     });
@@ -521,7 +517,6 @@ export function initHomepageEvents() {
         window.location.hash = '#homepage-manager';
         state.set('currentView', 'homepage-manager');
       } else {
-        localStorage.setItem('al_muslim_saved_username', 'superadmin');
         window.location.hash = '#login';
         state.set('currentView', 'login');
       }
