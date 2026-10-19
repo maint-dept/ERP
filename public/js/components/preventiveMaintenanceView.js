@@ -43,6 +43,7 @@ let filterUrgency = 'ALL';
 let filterDateFrom = '';
 let filterDateTo = '';
 let filterServicedBy = 'ALL';
+let showPmReportTopBar = false; // Collapsed by default on Official PM Report tab for maximum vertical viewing space
 
 // Pagination state variables (matching Machine Inventory UX)
 let pmCurrentPage = 1;
@@ -203,7 +204,7 @@ export function renderPreventiveMaintenanceView() {
     <div class="page-view preventive-maintenance-page inventory-page-wrapper" style="display: flex; flex-direction: column; gap: 4px; height: 100%; min-height: 0; background: var(--bg-main); color: var(--text-primary); overflow-y: auto; overflow-x: hidden; max-width: 100%; box-sizing: border-box; padding: 4px 10px;">
       
       <!-- 1. ULTRA-COMPACT TOP BAR (Title + KPI Status Pills + Quick Action Buttons) -->
-      <div class="inventory-top-unified-bar" style="padding: 4px 8px; display: flex; justify-content: space-between; align-items: center; gap: 6px; flex-wrap: wrap;">
+      <div class="inventory-top-unified-bar" style="padding: 4px 8px; display: flex; justify-content: space-between; align-items: center; gap: 6px; flex-wrap: wrap; ${activeTab === 'maintenance-report' && !showPmReportTopBar ? 'display: none !important;' : ''}">
         
         <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
           <h1 style="font-size: 14px; font-weight: 800; color: #fff; margin: 0; display: flex; align-items: center; gap: 5px; white-space: nowrap;">
@@ -397,6 +398,13 @@ export function renderPreventiveMaintenanceView() {
           <button class="pm-tab-btn ${activeTab === 'admin-config' ? 'active' : ''}" data-pm-tab="admin-config" title="Admin Schedule Configuration & Checklists">
             ⚙️ Config (${configs.length})
           </button>
+        ` : ''}
+        ${activeTab === 'maintenance-report' ? `
+          <div style="margin-left: auto; display: flex; align-items: center; gap: 6px; padding-right: 4px;">
+            <button id="btn-pm-toggle-top-summary" type="button" class="btn btn-ghost btn-xs" style="font-size: 10px; font-weight: 700; color: #94a3b8; padding: 2px 8px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.12); cursor: pointer; display: inline-flex; align-items: center; gap: 4px;" title="Toggle overview KPI numbers and top action buttons">
+              <span>${showPmReportTopBar ? '▲ Hide Overview' : '▼ Overview'}</span>
+            </button>
+          </div>
         ` : ''}
       </div>
 
@@ -3042,6 +3050,12 @@ export function initPreventiveMaintenanceEvents() {
     activeTab = 'maintenance-report';
     state.set('pmActiveTab', 'maintenance-report');
     pmCurrentPage = 1;
+    rerenderView();
+  });
+
+  // Toggle Overview bar on PM Report tab
+  document.getElementById('btn-pm-toggle-top-summary')?.addEventListener('click', () => {
+    showPmReportTopBar = !showPmReportTopBar;
     rerenderView();
   });
 
