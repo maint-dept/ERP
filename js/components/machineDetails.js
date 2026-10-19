@@ -75,7 +75,7 @@ export function renderMachineDetails() {
 
   return `
     <div class="drawer-overlay" id="drawer-machine-details-overlay">
-      <div class="drawer-panel" style="max-width: 680px; width: 100%;">
+      <div class="drawer-panel" style="max-width: 820px; width: 100%;">
         
         <!-- Header -->
         <div class="drawer-header" style="background: var(--bg-surface); padding: 16px 22px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
@@ -88,25 +88,29 @@ export function renderMachineDetails() {
               ${mn?.name || machine.machineName || 'Machine'} — ${brd?.name || machine.brand || ''} ${mdl?.name || machine.model || ''}
             </div>
           </div>
-          <button id="btn-close-details-drawer" class="btn btn-ghost btn-sm" style="font-size: 18px;">✕</button>
+          <button id="btn-close-details-drawer" class="btn btn-ghost btn-sm" style="font-size: 18px;" title="Close">✕</button>
         </div>
 
-        <!-- Subheader Tabs -->
-        <div style="display: flex; gap: 4px; padding: 10px 20px; background: var(--bg-card); border-bottom: 1px solid var(--border-color); overflow-x: auto;">
-          <button class="btn btn-sm btn-details-tab ${activeDetailsTab === 'overview' ? 'btn-primary' : 'btn-ghost'}" data-tab="overview" style="font-size: 12px; font-weight: 700; white-space: nowrap;">
+        <!-- Subheader Tabs (Compact, user-friendly, non-clipping pill navigation) -->
+        <div style="display: flex; gap: 6px; padding: 8px 18px; background: var(--bg-card); border-bottom: 1px solid var(--border-color); overflow-x: auto; align-items: center; justify-content: flex-start; scrollbar-width: none;">
+          <button class="btn btn-sm btn-details-tab ${activeDetailsTab === 'overview' ? 'btn-primary' : 'btn-ghost'}" data-tab="overview" style="font-size: 12px; font-weight: 700; white-space: nowrap; flex-shrink: 0; padding: 6px 12px; border-radius: 6px;">
             📋 Overview
           </button>
-          <button class="btn btn-sm btn-details-tab ${activeDetailsTab === 'location-history' ? 'btn-primary' : 'btn-ghost'}" data-tab="location-history" style="font-size: 12px; font-weight: 700; white-space: nowrap;">
-            📍 Location History (${locationHistory.length})
+          <button class="btn btn-sm btn-details-tab ${activeDetailsTab === 'location-history' ? 'btn-primary' : 'btn-ghost'}" data-tab="location-history" style="font-size: 12px; font-weight: 700; white-space: nowrap; flex-shrink: 0; padding: 6px 12px; border-radius: 6px; display: inline-flex; align-items: center; gap: 5px;">
+            <span>📍 Location</span>
+            <span style="font-size: 10.5px; padding: 1px 6px; border-radius: 999px; background: ${activeDetailsTab === 'location-history' ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.08)'}; color: ${activeDetailsTab === 'location-history' ? '#fff' : 'var(--text-muted)'}; font-weight: 700;">${locationHistory.length}</span>
           </button>
-          <button class="btn btn-sm btn-details-tab ${activeDetailsTab === 'spare-parts' ? 'btn-primary' : 'btn-ghost'}" data-tab="spare-parts" style="font-size: 12px; font-weight: 700; white-space: nowrap;">
-            🔧 Spare Parts (${sparePartsHistory.length})
+          <button class="btn btn-sm btn-details-tab ${activeDetailsTab === 'spare-parts' ? 'btn-primary' : 'btn-ghost'}" data-tab="spare-parts" style="font-size: 12px; font-weight: 700; white-space: nowrap; flex-shrink: 0; padding: 6px 12px; border-radius: 6px; display: inline-flex; align-items: center; gap: 5px;">
+            <span>🔧 Spare Parts</span>
+            <span style="font-size: 10.5px; padding: 1px 6px; border-radius: 999px; background: ${activeDetailsTab === 'spare-parts' ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.08)'}; color: ${activeDetailsTab === 'spare-parts' ? '#fff' : 'var(--text-muted)'}; font-weight: 700;">${sparePartsHistory.length}</span>
           </button>
-          <button class="btn btn-sm btn-details-tab ${activeDetailsTab === 'service-history' ? 'btn-primary' : 'btn-ghost'}" data-tab="service-history" style="font-size: 12px; font-weight: 700; white-space: nowrap;">
-            🛠️ Service History (${serviceHistory.length})
+          <button class="btn btn-sm btn-details-tab ${activeDetailsTab === 'service-history' ? 'btn-primary' : 'btn-ghost'}" data-tab="service-history" style="font-size: 12px; font-weight: 700; white-space: nowrap; flex-shrink: 0; padding: 6px 12px; border-radius: 6px; display: inline-flex; align-items: center; gap: 5px;">
+            <span>🛠️ Service</span>
+            <span style="font-size: 10.5px; padding: 1px 6px; border-radius: 999px; background: ${activeDetailsTab === 'service-history' ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.08)'}; color: ${activeDetailsTab === 'service-history' ? '#fff' : 'var(--text-muted)'}; font-weight: 700;">${serviceHistory.length}</span>
           </button>
-          <button class="btn btn-sm btn-details-tab ${activeDetailsTab === 'transfers' ? 'btn-primary' : 'btn-ghost'}" data-tab="transfers" style="font-size: 12px; font-weight: 700; white-space: nowrap;">
-            🔄 Transfers (${transferHistory.length})
+          <button class="btn btn-sm btn-details-tab ${activeDetailsTab === 'transfers' ? 'btn-primary' : 'btn-ghost'}" data-tab="transfers" style="font-size: 12px; font-weight: 700; white-space: nowrap; flex-shrink: 0; padding: 6px 12px; border-radius: 6px; display: inline-flex; align-items: center; gap: 5px;">
+            <span>🔄 Transfers</span>
+            <span style="font-size: 10.5px; padding: 1px 6px; border-radius: 999px; background: ${activeDetailsTab === 'transfers' ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.08)'}; color: ${activeDetailsTab === 'transfers' ? '#fff' : 'var(--text-muted)'}; font-weight: 700;">${transferHistory.length}</span>
           </button>
         </div>
 
@@ -121,22 +125,22 @@ export function renderMachineDetails() {
 
           <!-- Top Action Shortcuts -->
           <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-            <button id="btn-drawer-full-history" class="btn btn-secondary btn-sm" style="flex: 1; font-weight: 600;">
-              📜 Full Lifetime Passport
+            <button id="btn-drawer-full-history" class="btn btn-secondary btn-sm" title="Full Machine History &amp; Passport" style="flex: 1; min-width: 125px; font-weight: 600; white-space: nowrap; justify-content: center;">
+              📜 Full Passport
             </button>
-            <button id="btn-drawer-preventive" class="btn btn-secondary btn-sm" style="flex: 1; font-weight: 700; color: #38bdf8; border-color: #0284c7;">
-              🛡️ Preventive Maintenance
+            <button id="btn-drawer-preventive" class="btn btn-secondary btn-sm" title="Preventive Maintenance Schedule &amp; Status" style="flex: 1; min-width: 135px; font-weight: 700; color: #38bdf8; border-color: #0284c7; white-space: nowrap; justify-content: center;">
+              🛡️ Preventive Maint.
             </button>
-            <button id="btn-print-asset-tag" class="btn btn-secondary btn-sm" style="flex: 1;">
+            <button id="btn-print-asset-tag" class="btn btn-secondary btn-sm" title="Print Asset Tag &amp; QR Code" style="flex: 1; min-width: 115px; white-space: nowrap; justify-content: center;">
               🏷️ Print Asset Tag
             </button>
             ${(authService.canRequestTransfer() && (authService.canOperateMachine(machine) || authService.isIdleMachine(machine))) ? `
-              <button id="btn-drawer-transfer" class="btn btn-secondary btn-sm" style="flex: 1; font-weight: 700; color: #38bdf8; border-color: rgba(56, 189, 248, 0.4); background: rgba(56, 189, 248, 0.1);">
-                🔄 ${authService.canOperateMachine(machine) ? 'Relocate' : 'Request Transfer'}
+              <button id="btn-drawer-transfer" class="btn btn-secondary btn-sm" title="${authService.canOperateMachine(machine) ? 'Relocate Machine' : 'Request Transfer'}" style="flex: 1; min-width: 105px; font-weight: 700; color: #38bdf8; border-color: rgba(56, 189, 248, 0.4); background: rgba(56, 189, 248, 0.1); white-space: nowrap; justify-content: center;">
+                🔄 ${authService.canOperateMachine(machine) ? 'Relocate' : 'Transfer'}
               </button>
             ` : ''}
             ${(authService.hasAccess('machines', 'EDIT') && authService.canOperateMachine(machine)) ? `
-              <button id="btn-drawer-edit" class="btn btn-primary btn-sm" style="flex: 1;">
+              <button id="btn-drawer-edit" class="btn btn-primary btn-sm" title="Edit Machine Technical Specifications" style="flex: 1; min-width: 105px; white-space: nowrap; justify-content: center;">
                 ✏️ Edit Machine
               </button>
             ` : ''}

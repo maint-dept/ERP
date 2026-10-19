@@ -265,8 +265,8 @@
   top: 0;
   right: 0;
   bottom: 0;
-  width: 680px;
-  max-width: 92vw;
+  width: 820px;
+  max-width: 94vw;
   background-color: var(--bg-surface);
   border-left: 1px solid var(--border-color);
   box-shadow: -10px 0 40px rgba(0, 0, 0, 0.6);
@@ -1599,7 +1599,7 @@ td.td-actions-active {
 
 @media (max-width: 992px) {
   .drawer-panel {
-    width: min(560px, 92vw);
+    width: min(680px, 94vw);
   }
 
   .kpi-grid {
