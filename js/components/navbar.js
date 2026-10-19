@@ -224,6 +224,14 @@ export function renderNavbar() {
           </span>
         </button>
 
+        ${(isSuperAdmin || isAdmin) && authService.isMaintenanceModeActive() ? `
+          <!-- Maintenance Mode Active Warning Badge -->
+          <button id="btn-nav-maint-badge" class="btn btn-xs" style="background: rgba(245, 158, 11, 0.2); border: 1.5px solid #f59e0b; color: #fbbf24; font-weight: 800; font-size: 11.5px; padding: 3px 10px; display: inline-flex; align-items: center; gap: 5px; border-radius: 6px; cursor: pointer; white-space: nowrap; box-shadow: 0 0 12px rgba(245, 158, 11, 0.35);" title="System Maintenance Mode is ACTIVE. Non-admins cannot log in. Click to manage.">
+            <span>🛠️</span>
+            <span>Maintenance Mode ON</span>
+          </button>
+        ` : ''}
+
         ${impersonator ? `
           <!-- Impersonation Quick Return Pill in Top Header -->
           <button id="btn-nav-exit-impersonation" class="btn btn-xs" style="background: rgba(2, 132, 199, 0.2); border: 1.5px solid #38bdf8; color: #38bdf8; font-weight: 700; font-size: 11.5px; padding: 3px 9px; display: inline-flex; align-items: center; gap: 5px; border-radius: 6px; cursor: pointer; white-space: nowrap; box-shadow: 0 0 10px rgba(56, 189, 248, 0.25);" title="Exit impersonation and return to your Admin account">
@@ -773,6 +781,18 @@ export function initNavbarEvents() {
       closeDropdown();
       const cur = state.get('activeModal');
       state.set('activeModal', cur === 'notifications' ? null : 'notifications');
+    });
+  }
+
+  // Maintenance Mode Badge Click Handler
+  const btnNavMaint = document.getElementById('btn-nav-maint-badge');
+  if (btnNavMaint) {
+    btnNavMaint.addEventListener('click', () => {
+      window.location.hash = '#settings';
+      state.set('currentView', 'settings');
+      setTimeout(() => {
+        document.getElementById('card-maintenance-mode')?.scrollIntoView({ behavior: 'smooth' });
+      }, 150);
     });
   }
 

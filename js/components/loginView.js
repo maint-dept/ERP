@@ -19,12 +19,12 @@ export function renderLoginView() {
     localStorage.removeItem('al_muslim_saved_username');
   } catch (_) {}
 
-  // Determine active tab: check state or sessionStorage (default to 'user' if not explicitly set)
+  // Determine active tab: check state or sessionStorage (default to 'admin' if maintenance mode is active, otherwise 'user')
   let activeTab = 'user';
   try {
-    activeTab = state.get('loginTab') || sessionStorage.getItem('al_muslim_login_tab') || 'user';
+    activeTab = state.get('loginTab') || sessionStorage.getItem('al_muslim_login_tab') || (authService.isMaintenanceModeActive() ? 'admin' : 'user');
   } catch (_) {
-    activeTab = state.get('loginTab') || 'user';
+    activeTab = state.get('loginTab') || (authService.isMaintenanceModeActive() ? 'admin' : 'user');
   }
   const isAdminActive = activeTab === 'admin';
 
@@ -63,6 +63,26 @@ export function renderLoginView() {
               ${loginMode === 'LOGIN' ? 'Enter your registered credentials to access machine inventory, transfers, and maintenance logs.' : (loginMode === 'FIRST_LOGIN_CHANGE' ? 'Please configure your permanent private password to enter the system.' : (loginMode === 'FORGOT_REQUEST' ? 'Enter your registered Email address or Username to receive a password reset code.' : `Enter the 6-digit code sent for account '${resetTargetUsername}'.`))}
             </p>
           </div>
+
+          <!-- Maintenance Mode Notification Box (When Active) -->
+          ${authService.isMaintenanceModeActive() ? `
+            <div style="background: rgba(245, 158, 11, 0.15); border: 1.5px solid rgba(245, 158, 11, 0.5); border-radius: 8px; padding: 12px 14px; margin-bottom: 18px; font-size: 12px; color: #fbbf24; line-height: 1.45;">
+              <div style="font-weight: 800; font-size: 12.5px; display: flex; align-items: center; gap: 6px; margin-bottom: 4px; color: #fef08a;">
+                <span>🛠️</span> System Maintenance Mode Active
+              </div>
+              <div style="color: #fef9c3;">
+                ${authService.getMaintenanceModeConfig().message || 'Routine maintenance is in progress. General user access is temporarily disabled.'}
+              </div>
+              ${authService.getMaintenanceModeConfig().estimatedEnd ? `
+                <div style="margin-top: 5px; font-size: 11.5px; color: #fde68a;">
+                  ⏳ Expected completion: <strong>${authService.getMaintenanceModeConfig().estimatedEnd}</strong>
+                </div>
+              ` : ''}
+              <div style="margin-top: 6px; font-size: 11px; color: #cbd5e1; border-top: 1px dashed rgba(245, 158, 11, 0.3); padding-top: 5px;">
+                Authorized Administrators may sign in via the <strong>👑 Admin Login</strong> tab.
+              </div>
+            </div>
+          ` : ''}
 
           <!-- Role Selection Tabs for Admin vs User -->
           ${loginMode === 'LOGIN' ? `
@@ -346,9 +366,9 @@ export function initLoginViewEvents() {
   if (tabAdmin && tabUser && inpUser) {
     let activeTab = 'user';
     try {
-      activeTab = state.get('loginTab') || sessionStorage.getItem('al_muslim_login_tab') || 'user';
+      activeTab = state.get('loginTab') || sessionStorage.getItem('al_muslim_login_tab') || (authService.isMaintenanceModeActive() ? 'admin' : 'user');
     } catch (_) {
-      activeTab = state.get('loginTab') || 'user';
+      activeTab = state.get('loginTab') || (authService.isMaintenanceModeActive() ? 'admin' : 'user');
     }
 
     if (activeTab === 'admin') {

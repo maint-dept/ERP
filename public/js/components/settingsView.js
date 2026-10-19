@@ -7,6 +7,17 @@ import { storage } from '../db/storage.js';
 import { TABLE_NAMES } from '../db/schema.js';
 import { state } from '../state.js';
 import { masterDataService } from '../services/masterDataService.js';
+import { authService } from '../services/authService.js';
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
 
 export const REPORT_TYPES = [
   { key: 'ALL', label: 'All Reports (Default)', description: 'Universal baseline signature template for all reports' },
@@ -312,6 +323,94 @@ export function renderSettingsView() {
           </button>
         </div>
 
+        <!-- Card: System Maintenance Mode & Access Lockdown Control -->
+        <div id="card-maintenance-mode" style="background: var(--bg-surface); border: 1.5px solid ${settings.maintenanceMode ? '#f59e0b' : 'rgba(245, 158, 11, 0.35)'}; border-radius: var(--radius-lg); padding: 22px; display: flex; flex-direction: column; gap: 16px; grid-column: 1 / -1; box-shadow: ${settings.maintenanceMode ? '0 0 25px rgba(245, 158, 11, 0.25)' : '0 4px 20px rgba(0,0,0,0.2)'};">
+          
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; flex-wrap: wrap; gap: 12px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span style="font-size: 26px;">🛠️</span>
+              <div>
+                <h3 style="font-size: 16px; font-weight: 800; color: #fbbf24; margin: 0; display: flex; align-items: center; gap: 8px;">
+                  <span>System Maintenance Mode &amp; Access Lockdown</span>
+                </h3>
+                <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">
+                  Temporarily lock user access to perform server updates, data migrations, or scheduled maintenance.
+                </div>
+              </div>
+            </div>
+
+            <!-- Live Status Indicator Pill -->
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span class="badge" style="font-size: 12px; padding: 6px 14px; font-weight: 800; border-radius: 20px; ${settings.maintenanceMode ? 'background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1.5px solid #ef4444;' : 'background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1.5px solid #10b981;'}">
+                ${settings.maintenanceMode ? '🔴 MAINTENANCE MODE ACTIVE (Users Locked Out)' : '🟢 SYSTEM OPERATIONAL (Normal Public Access)'}
+              </span>
+            </div>
+          </div>
+
+          <!-- Description Box -->
+          <div style="background: ${settings.maintenanceMode ? 'rgba(245, 158, 11, 0.12)' : 'rgba(15, 23, 42, 0.6)'}; border: 1px solid ${settings.maintenanceMode ? 'rgba(245, 158, 11, 0.4)' : 'rgba(255, 255, 255, 0.08)'}; border-radius: 8px; padding: 12px 16px; font-size: 12.5px; color: #e2e8f0; line-height: 1.5;">
+            🔒 <strong>Policy Rule:</strong> When Maintenance Mode is <strong>ENABLED</strong>, regular factory users, operators, and viewers cannot log in. Administrators and Super Admins retain full bypass access to manage data and configure system options.
+          </div>
+
+          <!-- Controls Grid -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px;">
+            
+            <!-- Left Column: Toggles & Timing -->
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+              
+              <div style="background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 14px 16px; display: flex; align-items: center; justify-content: space-between;">
+                <div>
+                  <div style="font-weight: 700; color: #fff; font-size: 13.5px;">Enable Maintenance Mode</div>
+                  <div style="font-size: 11.5px; color: var(--text-muted);">Lock out regular users and show maintenance notice.</div>
+                </div>
+                <input type="checkbox" id="setting-maintenance-mode-toggle" ${settings.maintenanceMode ? 'checked' : ''} style="width: 20px; height: 20px; cursor: pointer;" />
+              </div>
+
+              <div style="background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 14px 16px; display: flex; align-items: center; justify-content: space-between;">
+                <div>
+                  <div style="font-weight: 700; color: #fff; font-size: 13px;">Allow Administrator Bypass</div>
+                  <div style="font-size: 11.5px; color: var(--text-muted);">Super Admins &amp; Admins can sign in and work during maintenance.</div>
+                </div>
+                <input type="checkbox" id="setting-maintenance-allow-admin" ${settings.maintenanceAllowAdmin !== false ? 'checked' : ''} style="width: 18px; height: 18px; cursor: pointer;" />
+              </div>
+
+              <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" style="font-weight: 700; font-size: 12px; color: #cbd5e1;">Estimated Completion Time (Optional)</label>
+                <input type="text" id="setting-maintenance-estimated-end" class="form-control" value="${escapeHtml(settings.maintenanceEstimatedEnd || '')}" placeholder="e.g. Today at 08:30 PM (approx. 45 mins)" style="font-size: 13px; background: #0f172a;" />
+              </div>
+
+            </div>
+
+            <!-- Right Column: Notice Message -->
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+              <label class="form-label" style="font-weight: 700; font-size: 12px; color: #cbd5e1; margin-bottom: 0;">Public Maintenance Notice Message</label>
+              <textarea id="setting-maintenance-message" class="form-control" rows="5" placeholder="Enter custom notice message displayed to users..." style="resize: vertical; font-size: 12.5px; line-height: 1.5; min-height: 130px; background: #0f172a;">${escapeHtml(settings.maintenanceMessage || 'Routine scheduled system maintenance and server upgrade is currently in progress. Normal operations will resume shortly.')}</textarea>
+              
+              ${settings.maintenanceEnabledAt ? `
+                <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 4px;">
+                  🕒 Last activated on <strong>${new Date(settings.maintenanceEnabledAt).toLocaleString()}</strong> by <strong>${escapeHtml(settings.maintenanceEnabledBy || 'Administrator')}</strong>
+                </div>
+              ` : ''}
+            </div>
+
+          </div>
+
+          <!-- Action Footer -->
+          <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); padding-top: 14px; margin-top: 4px; flex-wrap: wrap; gap: 10px;">
+            <button type="button" id="btn-quick-toggle-maint" class="btn ${settings.maintenanceMode ? 'btn-danger' : 'btn-secondary'} btn-sm" style="font-weight: 700;">
+              ${settings.maintenanceMode ? '⏹️ Turn OFF Maintenance Mode' : '⚡ 1-Click Activate Maintenance Mode'}
+            </button>
+
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <span id="save-maint-feedback-msg" style="font-size: 12px; color: #34d399; font-weight: 600; display: none;"></span>
+              <button type="button" id="btn-save-maintenance-settings" class="btn btn-primary btn-sm" style="font-weight: 800; background: linear-gradient(135deg, #f59e0b, #d97706); border-color: #f59e0b; padding: 8px 24px; box-shadow: 0 4px 16px rgba(245, 158, 11, 0.4);">
+                💾 Save Maintenance Settings
+              </button>
+            </div>
+          </div>
+
+        </div>
+
         <!-- Card 3: Machine Serial Number Format & Location Short Code Policy (ADMIN CONFIGURATION) -->
         <div style="background: var(--bg-surface); border: 1px solid rgba(56, 189, 248, 0.35); border-radius: var(--radius-lg); padding: 20px; display: flex; flex-direction: column; gap: 14px; grid-column: 1 / -1; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);">
           <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">
@@ -408,6 +507,67 @@ export function initSettingsEvents() {
         saveGen.disabled = false;
         saveGen.innerHTML = origText;
       }, 1500);
+    });
+  }
+
+  // Maintenance Mode Save Handler
+  const saveMaintBtn = document.getElementById('btn-save-maintenance-settings');
+  if (saveMaintBtn) {
+    saveMaintBtn.addEventListener('click', async () => {
+      const isEnabled = document.getElementById('setting-maintenance-mode-toggle')?.checked;
+      const message = document.getElementById('setting-maintenance-message')?.value.trim();
+      const estimatedEnd = document.getElementById('setting-maintenance-estimated-end')?.value.trim();
+      const allowAdmin = document.getElementById('setting-maintenance-allow-admin')?.checked;
+
+      const origText = saveMaintBtn.innerHTML;
+      saveMaintBtn.disabled = true;
+      saveMaintBtn.innerHTML = 'Saving...';
+
+      try {
+        await authService.setMaintenanceMode(isEnabled, { message, estimatedEnd, allowAdmin });
+        const feedback = document.getElementById('save-maint-feedback-msg');
+        if (feedback) {
+          feedback.textContent = '✓ Maintenance settings saved successfully!';
+          feedback.style.display = 'inline-block';
+          setTimeout(() => { feedback.style.display = 'none'; }, 3000);
+        }
+        state.emit('inventory:updated');
+        state.set('currentView', 'settings');
+      } catch (err) {
+        alert('Failed to save maintenance settings: ' + err.message);
+      } finally {
+        saveMaintBtn.disabled = false;
+        saveMaintBtn.innerHTML = origText;
+      }
+    });
+  }
+
+  // Quick 1-Click Toggle Maintenance Mode Button
+  const quickToggleMaintBtn = document.getElementById('btn-quick-toggle-maint');
+  if (quickToggleMaintBtn) {
+    quickToggleMaintBtn.addEventListener('click', async () => {
+      const currentConfig = authService.getMaintenanceModeConfig();
+      const willEnable = !currentConfig.enabled;
+      
+      const confirmMsg = willEnable 
+        ? 'Are you sure you want to ACTIVATE System Maintenance Mode?\n\nNon-administrator users will be prevented from logging in until maintenance mode is turned off.'
+        : 'Are you sure you want to TURN OFF System Maintenance Mode?\n\nNormal access will be restored for all users.';
+      
+      if (!confirm(confirmMsg)) return;
+
+      quickToggleMaintBtn.disabled = true;
+      try {
+        await authService.setMaintenanceMode(willEnable, {
+          message: document.getElementById('setting-maintenance-message')?.value.trim() || currentConfig.message,
+          estimatedEnd: document.getElementById('setting-maintenance-estimated-end')?.value.trim() || currentConfig.estimatedEnd,
+          allowAdmin: document.getElementById('setting-maintenance-allow-admin')?.checked ?? currentConfig.allowAdmin
+        });
+        state.emit('inventory:updated');
+        state.set('currentView', 'settings');
+      } catch (err) {
+        alert('Failed to toggle maintenance mode: ' + err.message);
+        quickToggleMaintBtn.disabled = false;
+      }
     });
   }
 

@@ -1017,5 +1017,12 @@ export const DEFAULT_SETTINGS = {
   signatory2Title: 'Verified By (AGM / Sr. AGM)',
   signatory3Name: 'Mohammad Liton Miah',
   signatory3Title: 'Approved By (GM)',
-  showSignaturesOnPdf: true
+  showSignaturesOnPdf: true,
+  // System Maintenance Mode Configuration
+  maintenanceMode: false,
+  maintenanceMessage: 'Routine scheduled system maintenance and server upgrade is currently in progress. Normal operations will resume shortly.',
+  maintenanceEstimatedEnd: '',
+  maintenanceAllowAdmin: true,
+  maintenanceEnabledAt: null,
+  maintenanceEnabledBy: null
 };

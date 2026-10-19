@@ -482,6 +482,25 @@ class ERPApplication {
               ${renderNavbar()}
             </div>
 
+            ${(authService.isSuperAdmin() || authService.isAdmin()) && authService.isMaintenanceModeActive() ? `
+              <!-- Global Top Maintenance Alert Ribbon for Administrators -->
+              <div id="admin-maintenance-top-ribbon" style="background: linear-gradient(90deg, #92400e, #b45309, #d97706); color: #fff; padding: 6px 20px; display: flex; align-items: center; justify-content: space-between; font-size: 12px; font-weight: 700; border-bottom: 1px solid rgba(251, 191, 36, 0.4); box-shadow: 0 2px 10px rgba(0,0,0,0.3); z-index: 40; flex-wrap: wrap; gap: 8px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span style="font-size: 15px;">🛠️</span>
+                  <span>SYSTEM MAINTENANCE MODE IS ACTIVE &mdash; Regular users cannot log in.</span>
+                  ${authService.getMaintenanceModeConfig().estimatedEnd ? `<span style="opacity: 0.9;">(ETA: ${authService.getMaintenanceModeConfig().estimatedEnd})</span>` : ''}
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <button id="btn-ribbon-disable-maint" class="btn btn-xs" style="background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.4); color: #fff; font-weight: 700; padding: 2px 10px; border-radius: 4px; cursor: pointer;">
+                    Turn Off
+                  </button>
+                  <button id="btn-ribbon-open-maint-settings" class="btn btn-xs btn-ghost" style="color: #fef08a; padding: 2px 6px; font-weight: 700; cursor: pointer;">
+                    ⚙️ Settings &rarr;
+                  </button>
+                </div>
+              </div>
+            ` : ''}
+
             <!-- Active Page View Container (Always vertically scrollable with native high-contrast scrollbar) -->
             <div id="main-view-container" style="flex: 1; display: flex; flex-direction: column; min-height: 0; min-width: 0; overflow-y: auto; overflow-x: hidden;">
               ${this.getActiveViewHtml()}
@@ -766,6 +785,36 @@ class ERPApplication {
       };
 
       const currentUser = authService.getCurrentUser();
+
+      // Check if maintenance mode is active and user cannot bypass
+      if (authService.isMaintenanceModeActive() && !authService.canBypassMaintenance(currentUser) && currentView !== 'home' && currentView !== 'login') {
+        const maint = authService.getMaintenanceModeConfig();
+        return `
+          <div style="flex: 1; display: flex; align-items: center; justify-content: center; padding: 40px 20px; background: radial-gradient(circle at 50% 30%, #1c1917 0%, #0c0a09 100%); min-height: 70vh;">
+            <div style="max-width: 540px; width: 100%; background: rgba(28, 25, 23, 0.95); border: 1.5px solid rgba(245, 158, 11, 0.4); border-radius: 16px; padding: 36px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.7);">
+              <div style="width: 64px; height: 64px; background: rgba(245, 158, 11, 0.15); border: 2px solid #f59e0b; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 32px; margin-bottom: 20px; box-shadow: 0 0 25px rgba(245, 158, 11, 0.3);">
+                🛠️
+              </div>
+              <h2 style="font-size: 22px; font-weight: 800; color: #fff; margin-bottom: 8px;">
+                System Under Maintenance
+              </h2>
+              <p style="color: #fbbf24; font-size: 13.5px; font-weight: 600; margin-bottom: 14px;">
+                Routine Scheduled Maintenance in Progress
+              </p>
+              <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 16px; margin-bottom: 24px; text-align: left; font-size: 13px; color: #cbd5e1; line-height: 1.6;">
+                ${maint.message || 'Routine scheduled maintenance and server upgrade is currently in progress. Normal operations will resume shortly.'}
+                ${maint.estimatedEnd ? `<div style="margin-top: 10px; font-weight: 700; color: #fde68a;">⏳ Estimated Completion: ${maint.estimatedEnd}</div>` : ''}
+              </div>
+              <div style="display: flex; gap: 12px; justify-content: center;">
+                <button id="btn-maint-user-logout" class="btn btn-primary" style="font-weight: 800; background: linear-gradient(135deg, #f59e0b, #d97706); border-color: #f59e0b; padding: 10px 24px;">
+                  🔒 Sign Out / Return to Homepage
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
       const requiredModule = viewToModuleMap[currentView];
       if (requiredModule && !authService.isAdmin() && !authService.isModuleAllowed(requiredModule)) {
         const allowedView = authService.getFirstAllowedView(currentUser);
@@ -937,6 +986,45 @@ class ERPApplication {
     initSidebarEvents();
     this.initViewEvents();
     this.initModalEvents();
+
+    // Admin Top Maintenance Ribbon actions
+    const btnRibbonDisable = document.getElementById('btn-ribbon-disable-maint');
+    if (btnRibbonDisable) {
+      btnRibbonDisable.addEventListener('click', async () => {
+        if (!confirm('Turn OFF System Maintenance Mode now?\n\nNormal user access will be immediately restored.')) return;
+        btnRibbonDisable.disabled = true;
+        btnRibbonDisable.textContent = 'Turning off...';
+        try {
+          await authService.setMaintenanceMode(false);
+          state.emit('inventory:updated');
+          this.render();
+        } catch (err) {
+          alert('Error turning off maintenance mode: ' + err.message);
+          btnRibbonDisable.disabled = false;
+        }
+      });
+    }
+
+    const btnRibbonSettings = document.getElementById('btn-ribbon-open-maint-settings');
+    if (btnRibbonSettings) {
+      btnRibbonSettings.addEventListener('click', () => {
+        window.location.hash = '#settings';
+        state.set('currentView', 'settings');
+        setTimeout(() => {
+          document.getElementById('card-maintenance-mode')?.scrollIntoView({ behavior: 'smooth' });
+        }, 150);
+      });
+    }
+
+    // Maintenance lockout screen logout button for regular users
+    const btnMaintLogout = document.getElementById('btn-maint-user-logout');
+    if (btnMaintLogout) {
+      btnMaintLogout.addEventListener('click', () => {
+        authService.logout();
+        window.location.hash = '#home';
+        state.set('currentView', 'home');
+      });
+    }
   }
 
   initViewEvents(targetView = null) {

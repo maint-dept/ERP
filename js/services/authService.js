@@ -507,6 +507,13 @@ class AuthService {
       throw new Error('Incorrect password. Please verify your credentials.');
     }
 
+    // Check System Maintenance Mode: only allowed Admin/Super Admin users may log in
+    if (!this.canBypassMaintenance(user)) {
+      const maint = this.getMaintenanceModeConfig();
+      const endInfo = maint.estimatedEnd ? ` (Expected completion: ${maint.estimatedEnd})` : '';
+      throw new Error(`⚠️ SYSTEM MAINTENANCE IN PROGRESS: ${maint.message}${endInfo} — Only Authorized Administrators can sign in at this time.`);
+    }
+
     // Auto-upgrade: normalise so both 'password' and 'passwordHash' always hold the same hash.
     // This prevents login failures after password changes and fixes batch-created accounts.
     const effectiveHash = cryptoService.isHashed(storedHash) ? storedHash : cryptoService.hashPassword(password);
@@ -1052,6 +1059,68 @@ class AuthService {
     const u = user || this.currentUser;
     if (!u) return false;
     return u?.role === 'VIEWER' || u?.roleId === 'role-viewer' || u?.presetId === 'preset_view_only';
+  }
+
+  // ==========================================
+  // System Maintenance Mode Controls
+  // ==========================================
+  getMaintenanceModeConfig() {
+    const settings = storage.getTable(TABLE_NAMES.SETTINGS) || {};
+    return {
+      enabled: Boolean(settings.maintenanceMode),
+      message: settings.maintenanceMessage || 'Routine scheduled system maintenance is currently in progress. Normal operations will resume shortly.',
+      estimatedEnd: settings.maintenanceEstimatedEnd || '',
+      allowAdmin: settings.maintenanceAllowAdmin !== false,
+      enabledAt: settings.maintenanceEnabledAt || null,
+      enabledBy: settings.maintenanceEnabledBy || null
+    };
+  }
+
+  isMaintenanceModeActive() {
+    return Boolean(this.getMaintenanceModeConfig().enabled);
+  }
+
+  canBypassMaintenance(user = null) {
+    const u = user || this.currentUser;
+    if (!u) return false;
+    const config = this.getMaintenanceModeConfig();
+    if (!config.enabled) return true;
+    if (this.isSuperAdmin(u)) return true;
+    if (config.allowAdmin && this.isAdmin(u)) return true;
+    return false;
+  }
+
+  async setMaintenanceMode(enabled, options = {}) {
+    const current = storage.getTable(TABLE_NAMES.SETTINGS) || {};
+    const u = this.getCurrentUser();
+    const updated = {
+      ...current,
+      maintenanceMode: Boolean(enabled),
+      maintenanceMessage: options.message !== undefined ? options.message : (current.maintenanceMessage || 'Routine scheduled system maintenance is currently in progress. Normal operations will resume shortly.'),
+      maintenanceEstimatedEnd: options.estimatedEnd !== undefined ? options.estimatedEnd : (current.maintenanceEstimatedEnd || ''),
+      maintenanceAllowAdmin: options.allowAdmin !== undefined ? Boolean(options.allowAdmin) : (current.maintenanceAllowAdmin !== false)
+    };
+
+    if (enabled) {
+      updated.maintenanceEnabledAt = new Date().toISOString();
+      updated.maintenanceEnabledBy = u?.name || u?.username || 'Administrator';
+    }
+
+    storage.data[TABLE_NAMES.SETTINGS] = updated;
+    await storage.saveTable(TABLE_NAMES.SETTINGS, true);
+
+    try {
+      auditService.log(
+        enabled ? 'MAINTENANCE_MODE_ENABLED' : 'MAINTENANCE_MODE_DISABLED',
+        'SETTINGS',
+        'system_settings',
+        `System Maintenance Mode was turned ${enabled ? 'ON' : 'OFF'} by '${u?.name || 'Administrator'}'.`,
+        null,
+        { enabled, message: updated.maintenanceMessage, estimatedEnd: updated.maintenanceEstimatedEnd }
+      );
+    } catch (_) {}
+
+    return updated;
   }
 
   // ==========================================

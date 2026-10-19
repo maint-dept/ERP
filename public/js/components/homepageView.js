@@ -116,6 +116,16 @@ export function renderHomepageView(isDraft = false) {
         </div>
       </header>
 
+      <!-- System Maintenance Notice Bar (When Maintenance Mode is Active) -->
+      ${authService.isMaintenanceModeActive() ? `
+        <div style="background: linear-gradient(90deg, #92400e, #b45309, #d97706); color: #fff; padding: 12px 24px; text-align: center; font-size: 13px; font-weight: 600; box-shadow: 0 4px 20px rgba(180, 83, 9, 0.4); display: flex; align-items: center; justify-content: center; gap: 10px; border-bottom: 1px solid rgba(251, 191, 36, 0.4); z-index: 50;">
+          <span style="font-size: 18px; line-height: 1;">⚠️</span>
+          <span>
+            <strong>System Maintenance Mode Active:</strong> ${authService.getMaintenanceModeConfig().message || 'Routine maintenance and server upgrade is underway.'}${authService.getMaintenanceModeConfig().estimatedEnd ? ` (Expected: ${authService.getMaintenanceModeConfig().estimatedEnd})` : ''} &bull; <span style="opacity: 0.95;">General user access is temporarily paused. Administrators may log in via <strong>👑 Admin Login</strong>.</span>
+          </span>
+        </div>
+      ` : ''}
+
       <!-- 2. DYNAMIC HERO SECTION -->
       ${hero.enabled !== false ? `
         <section id="hero" style="position: relative; padding: 65px 32px 50px; max-width: 1200px; margin: 0 auto; text-align: center; width: 100%;">
