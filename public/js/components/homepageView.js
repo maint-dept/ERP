@@ -144,51 +144,9 @@ export function renderHomepageView(isDraft = false) {
             </h2>
 
             <!-- Description -->
-            <p style="font-size: 14.5px; color: #cbd5e1; max-width: 800px; margin: 0 auto 30px; line-height: 1.6;">
+            <p style="font-size: 14.5px; color: #cbd5e1; max-width: 800px; margin: 0 auto 36px; line-height: 1.6;">
               ${hero.description || ''}
             </p>
-
-            <!-- Separate Primary & Secondary Buttons (Admin Login vs User Login) -->
-            <div style="display: flex; justify-content: center; gap: 14px; flex-wrap: wrap; margin-bottom: 24px;">
-              <button 
-                id="btn-hero-admin-login" 
-                class="btn btn-primary" 
-                style="font-size: 14.5px; font-weight: 800; padding: 12px 28px; border-radius: 8px; box-shadow: 0 4px 25px rgba(2, 132, 199, 0.5); display: flex; align-items: center; gap: 8px; background: linear-gradient(135deg, #0284c7, #0369a1);"
-              >
-                <span>👑</span>
-                <span>Admin Login</span>
-              </button>
-
-              <button 
-                id="btn-hero-user-login" 
-                class="btn btn-secondary" 
-                style="font-size: 14.5px; font-weight: 700; padding: 12px 26px; border-radius: 8px; border: 1.5px solid rgba(167, 139, 250, 0.4); background: rgba(30, 41, 59, 0.6); color: #c4b5fd; display: flex; align-items: center; gap: 8px;"
-              >
-                <span>👤</span>
-                <span>User Login</span>
-              </button>
-
-              <button 
-                id="btn-hero-explore-registry" 
-                class="btn btn-ghost" 
-                style="font-size: 14px; font-weight: 600; padding: 12px 20px; border-radius: 8px; color: #38bdf8; display: flex; align-items: center; gap: 6px; border: 1px solid rgba(56, 189, 248, 0.2);"
-              >
-                <span>📦</span>
-                <span>Explore Registry</span>
-              </button>
-            </div>
-
-            <!-- Quick 1-Click Fast Login Access Bar -->
-            <div style="display: inline-flex; align-items: center; gap: 10px; background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 30px; padding: 6px 18px; margin-bottom: 36px; box-shadow: 0 4px 15px rgba(0,0,0,0.4);">
-              <span style="font-size: 11.5px; color: #94a3b8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">⚡ Instant 1-Click Demo:</span>
-              <button id="btn-quick-enter-superadmin" class="btn btn-ghost btn-xs" style="font-weight: 700; font-size: 11.5px; color: #38bdf8; padding: 2px 8px; border-radius: 12px; background: rgba(2, 132, 199, 0.15);">
-                👑 Super Admin
-              </button>
-              <span style="color: rgba(255,255,255,0.2);">|</span>
-              <button id="btn-quick-enter-user" class="btn btn-ghost btn-xs" style="font-weight: 700; font-size: 11.5px; color: #a78bfa; padding: 2px 8px; border-radius: 12px; background: rgba(167, 139, 250, 0.15);">
-                👤 Standard User
-              </button>
-            </div>
 
             <!-- Live Metrics Strip (if enabled) -->
             ${hero.showLiveMetrics !== false ? `
@@ -374,13 +332,6 @@ export function renderHomepageView(isDraft = false) {
             ` : ''}
           </div>
           
-          <div style="display: flex; align-items: center; gap: 14px;">
-            <span style="color: #38bdf8; font-weight: 700;">${footer.systemVersion || 'v2.6 Enterprise Edition'}</span>
-            <span>&bull;</span>
-            <button id="btn-footer-admin-link" style="background: none; border: none; color: #fbbf24; cursor: pointer; font-size: 11.5px; font-weight: 700; padding: 0;">
-              ⚙️ Admin Console
-            </button>
-          </div>
         </footer>
       ` : ''}
 
@@ -427,6 +378,10 @@ export function initHomepageEvents() {
   const btnHeaderAdmin = document.getElementById('btn-header-login-admin');
   if (btnHeaderAdmin) {
     btnHeaderAdmin.addEventListener('click', () => {
+      state.set('loginTab', 'admin');
+      try {
+        sessionStorage.setItem('al_muslim_login_tab', 'admin');
+      } catch (_) {}
       window.location.hash = '#login';
       state.set('currentView', 'login');
     });
@@ -436,40 +391,12 @@ export function initHomepageEvents() {
   const btnHeaderUser = document.getElementById('btn-header-login-user');
   if (btnHeaderUser) {
     btnHeaderUser.addEventListener('click', () => {
+      state.set('loginTab', 'user');
+      try {
+        sessionStorage.setItem('al_muslim_login_tab', 'user');
+      } catch (_) {}
       window.location.hash = '#login';
       state.set('currentView', 'login');
-    });
-  }
-
-  // Hero Admin Login
-  const btnHeroAdmin = document.getElementById('btn-hero-admin-login');
-  if (btnHeroAdmin) {
-    btnHeroAdmin.addEventListener('click', () => {
-      window.location.hash = '#login';
-      state.set('currentView', 'login');
-    });
-  }
-
-  // Hero User Login
-  const btnHeroUser = document.getElementById('btn-hero-user-login');
-  if (btnHeroUser) {
-    btnHeroUser.addEventListener('click', () => {
-      window.location.hash = '#login';
-      state.set('currentView', 'login');
-    });
-  }
-
-  // Hero Explore Registry
-  const btnHeroExplore = document.getElementById('btn-hero-explore-registry');
-  if (btnHeroExplore) {
-    btnHeroExplore.addEventListener('click', () => {
-      if (authService.isAuthenticated()) {
-        window.location.hash = '#inventory';
-        state.set('currentView', 'inventory');
-      } else {
-        window.location.hash = '#login';
-        state.set('currentView', 'login');
-      }
     });
   }
 
@@ -503,20 +430,10 @@ export function initHomepageEvents() {
         window.location.hash = '#dashboard';
         state.set('currentView', 'dashboard');
       } else {
-        window.location.hash = '#login';
-        state.set('currentView', 'login');
-      }
-    });
-  }
-
-  // Footer Admin Console Link
-  const btnFooterAdmin = document.getElementById('btn-footer-admin-link');
-  if (btnFooterAdmin) {
-    btnFooterAdmin.addEventListener('click', () => {
-      if (authService.getCurrentUser()) {
-        window.location.hash = '#homepage-manager';
-        state.set('currentView', 'homepage-manager');
-      } else {
+        state.set('loginTab', 'user');
+        try {
+          sessionStorage.setItem('al_muslim_login_tab', 'user');
+        } catch (_) {}
         window.location.hash = '#login';
         state.set('currentView', 'login');
       }

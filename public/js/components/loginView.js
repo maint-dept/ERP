@@ -19,6 +19,15 @@ export function renderLoginView() {
     localStorage.removeItem('al_muslim_saved_username');
   } catch (_) {}
 
+  // Determine active tab: check state or sessionStorage (default to 'user' if not explicitly set)
+  let activeTab = 'user';
+  try {
+    activeTab = state.get('loginTab') || sessionStorage.getItem('al_muslim_login_tab') || 'user';
+  } catch (_) {
+    activeTab = state.get('loginTab') || 'user';
+  }
+  const isAdminActive = activeTab === 'admin';
+
   return `
     <div class="login-page-wrapper" style="min-height: 100vh; background: radial-gradient(circle at 50% 20%, #172554 0%, #0b0f19 75%); display: flex; flex-direction: column; justify-content: space-between; font-family: var(--font-main); color: #fff;">
       
@@ -58,10 +67,10 @@ export function renderLoginView() {
           <!-- Role Selection Tabs for Admin vs User -->
           ${loginMode === 'LOGIN' ? `
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 20px; background: rgba(30, 41, 59, 0.6); padding: 4px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08);">
-              <button type="button" id="tab-login-admin" class="btn btn-sm btn-ghost" style="font-weight: 700; border-radius: 6px; font-size: 12.5px; color: #94a3b8; background: none;">
+              <button type="button" id="tab-login-admin" class="btn btn-sm ${isAdminActive ? '' : 'btn-ghost'}" style="font-weight: 700; border-radius: 6px; font-size: 12.5px; ${isAdminActive ? 'background: #0284c7; color: #fff;' : 'color: #94a3b8; background: none;'}">
                 👑 Admin Login
               </button>
-              <button type="button" id="tab-login-user" class="btn btn-sm" style="font-weight: 700; border-radius: 6px; font-size: 12.5px; background: #0284c7; color: #fff;">
+              <button type="button" id="tab-login-user" class="btn btn-sm ${isAdminActive ? 'btn-ghost' : ''}" style="font-weight: 700; border-radius: 6px; font-size: 12.5px; ${isAdminActive ? 'color: #94a3b8; background: none;' : 'background: #0284c7; color: #fff;'}">
                 👤 User Login
               </button>
             </div>
@@ -83,7 +92,7 @@ export function renderLoginView() {
                     type="text" 
                     id="inp-full-username" 
                     class="form-control" 
-                    placeholder="User username or email (e.g. user)" 
+                    placeholder="${isAdminActive ? 'Admin username or email (e.g. admin or superadmin)' : 'User username or email (e.g. user)'}" 
                     value=""
                     required 
                     autocomplete="username"
@@ -335,11 +344,36 @@ export function initLoginViewEvents() {
   const inpPwd = document.getElementById('inp-full-password');
 
   if (tabAdmin && tabUser && inpUser) {
+    let activeTab = 'user';
+    try {
+      activeTab = state.get('loginTab') || sessionStorage.getItem('al_muslim_login_tab') || 'user';
+    } catch (_) {
+      activeTab = state.get('loginTab') || 'user';
+    }
+
+    if (activeTab === 'admin') {
+      tabAdmin.style.background = '#0284c7';
+      tabAdmin.style.color = '#fff';
+      tabUser.style.background = 'none';
+      tabUser.style.color = '#94a3b8';
+      inpUser.placeholder = 'Admin username or email (e.g. admin or superadmin)';
+    } else {
+      tabUser.style.background = '#0284c7';
+      tabUser.style.color = '#fff';
+      tabAdmin.style.background = 'none';
+      tabAdmin.style.color = '#94a3b8';
+      inpUser.placeholder = 'User username or email (e.g. user)';
+    }
+
     // Always clear username and password on login view load
     inpUser.value = '';
     if (inpPwd) inpPwd.value = '';
 
     tabAdmin.addEventListener('click', () => {
+      state.set('loginTab', 'admin');
+      try {
+        sessionStorage.setItem('al_muslim_login_tab', 'admin');
+      } catch (_) {}
       tabAdmin.style.background = '#0284c7';
       tabAdmin.style.color = '#fff';
       tabUser.style.background = 'none';
@@ -350,6 +384,10 @@ export function initLoginViewEvents() {
     });
 
     tabUser.addEventListener('click', () => {
+      state.set('loginTab', 'user');
+      try {
+        sessionStorage.setItem('al_muslim_login_tab', 'user');
+      } catch (_) {}
       tabUser.style.background = '#0284c7';
       tabUser.style.color = '#fff';
       tabAdmin.style.background = 'none';
