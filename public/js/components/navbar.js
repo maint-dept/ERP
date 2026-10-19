@@ -249,7 +249,7 @@ export function renderNavbar() {
           </button>
 
           <!-- Floating User Account & Role Hub Dropdown -->
-          <div id="navbar-user-dropdown" class="nav-user-dropdown" style="display: none;">
+          <div id="navbar-user-dropdown" class="nav-user-dropdown custom-scrollbar" style="display: none; max-height: calc(100vh - 80px); overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain;">
             <div class="nav-user-dropdown-header">
               <div class="nav-user-dropdown-avatar">${userInitial}</div>
               <div class="nav-user-dropdown-info">
@@ -413,6 +413,9 @@ export function initNavbarEvents() {
       closeDropdown();
     } else {
       dropdown.style.display = 'block';
+      dropdown.style.maxHeight = 'calc(100vh - 80px)';
+      dropdown.style.overflowY = 'auto';
+      dropdown.style.overflowX = 'hidden';
       if (profilePill) {
         profilePill.classList.add('active');
         profilePill.setAttribute('aria-expanded', 'true');

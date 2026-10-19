@@ -997,7 +997,7 @@ body.modal-open {
   top: calc(100% + 8px);
   right: 0;
   width: 340px;
-  max-height: calc(100vh - 75px);
+  max-height: calc(100vh - 80px) !important;
   background: var(--bg-surface);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
@@ -1005,26 +1005,29 @@ body.modal-open {
   z-index: 1000;
   display: none;
   animation: dropdownFadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
   overscroll-behavior: contain;
   scrollbar-width: thin;
-  scrollbar-color: rgba(56, 189, 248, 0.35) rgba(15, 23, 42, 0.5);
+  scrollbar-color: #38bdf8 rgba(15, 23, 42, 0.7);
 }
 
 /* Custom Scrollbar for Dropdown */
 .nav-user-dropdown::-webkit-scrollbar {
-  width: 6px;
+  width: 7px !important;
+  display: block !important;
 }
 .nav-user-dropdown::-webkit-scrollbar-track {
-  background: rgba(15, 23, 42, 0.4);
-}
-.nav-user-dropdown::-webkit-scrollbar-thumb {
-  background: rgba(56, 189, 248, 0.35);
+  background: rgba(15, 23, 42, 0.7) !important;
   border-radius: 4px;
 }
+.nav-user-dropdown::-webkit-scrollbar-thumb {
+  background: #38bdf8 !important;
+  border-radius: 4px;
+  border: 1px solid rgba(15, 23, 42, 0.5);
+}
 .nav-user-dropdown::-webkit-scrollbar-thumb:hover {
-  background: rgba(56, 189, 248, 0.65);
+  background: #0284c7 !important;
 }
 
 @keyframes dropdownFadeIn {
