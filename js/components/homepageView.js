@@ -22,6 +22,17 @@ export function renderHomepageView(isDraft = false) {
   const isLoggedIn = !!currentUser;
   const userInitial = (currentUser?.name?.replace(/^(Engr\.|Dr\.|Mr\.|Mrs\.|Ms\.|Md\.)\s+/i, '') || currentUser?.name || currentUser?.username || 'U').trim().charAt(0).toUpperCase();
 
+  const isMaintenance = authService.isMaintenanceModeActive();
+  const maintConfig = authService.getMaintenanceModeConfig();
+  const canBypass = authService.canBypassMaintenance(currentUser);
+
+  // 1. MAINTENANCE MODE LOCKDOWN FOR VISITORS & NON-ADMINS:
+  // When Maintenance Mode is active, visitors and non-admin users ONLY see the official maintenance notice.
+  // NO operational machinery data, modules, or factory statistics are exposed.
+  if (isMaintenance && !canBypass) {
+    return renderMaintenanceLockdownHomepage({ currentUser, isLoggedIn, userInitial, maintConfig });
+  }
+
   const machines = storage.getTable(TABLE_NAMES.MACHINES) || [];
   const transfers = storage.getTable(TABLE_NAMES.TRANSFERS) || [];
   const spareParts = storage.getTable(TABLE_NAMES.SPARE_PARTS_MASTER) || [];
@@ -116,15 +127,28 @@ export function renderHomepageView(isDraft = false) {
         </div>
       </header>
 
-      <!-- System Maintenance Notice Bar (When Maintenance Mode is Active) -->
-      ${authService.isMaintenanceModeActive() ? `
-        <div style="background: linear-gradient(90deg, #92400e, #b45309, #d97706); color: #fff; padding: 12px 24px; text-align: center; font-size: 13px; font-weight: 600; box-shadow: 0 4px 20px rgba(180, 83, 9, 0.4); display: flex; align-items: center; justify-content: center; gap: 10px; border-bottom: 1px solid rgba(251, 191, 36, 0.4); z-index: 50;">
-          <span style="font-size: 18px; line-height: 1;">⚠️</span>
-          <span>
-            <strong>System Maintenance Mode Active:</strong> ${authService.getMaintenanceModeConfig().message || 'Routine maintenance and server upgrade is underway.'}${authService.getMaintenanceModeConfig().estimatedEnd ? ` (Expected: ${authService.getMaintenanceModeConfig().estimatedEnd})` : ''} &bull; <span style="opacity: 0.95;">General user access is temporarily paused. Administrators may log in via <strong>👑 Admin Login</strong>.</span>
-          </span>
+      ${isMaintenance && canBypass ? `
+        <!-- Administrator Maintenance Mode Ribbon (For Logged-in Admins Only) -->
+        <div style="background: linear-gradient(90deg, #92400e, #b45309, #d97706); color: #fff; padding: 10px 24px; text-align: center; font-size: 13px; font-weight: 600; box-shadow: 0 4px 20px rgba(180, 83, 9, 0.4); display: flex; align-items: center; justify-content: space-between; gap: 10px; border-bottom: 1px solid rgba(251, 191, 36, 0.4); z-index: 50; flex-wrap: wrap;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 16px;">⚠️</span>
+            <span>
+              <strong>System Maintenance Mode Active:</strong> Public visitors and general users see the lockdown notice only. You are viewing as an authorized Administrator.
+            </span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <button id="btn-home-maint-settings" class="btn btn-xs" style="background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.4); color: #fff; font-weight: 700; padding: 3px 10px; border-radius: 4px; cursor: pointer;">
+              ⚙️ Maintenance Settings
+            </button>
+          </div>
         </div>
-      ` : ''}
+      ` : (!isLoggedIn ? `
+        <!-- Visitor Public Portal Notice -->
+        <div style="background: rgba(15, 23, 42, 0.75); border-bottom: 1px solid rgba(56, 189, 248, 0.15); padding: 8px 24px; text-align: center; font-size: 12px; color: #94a3b8; display: flex; align-items: center; justify-content: center; gap: 8px;">
+          <span style="color: #38bdf8; font-weight: 800;">📢 Visitor Notice:</span>
+          <span>You are viewing the public portal. Internal machine assets, inventory records, and floor operations require factory login.</span>
+        </div>
+      ` : '')}
 
       <!-- 2. DYNAMIC HERO SECTION -->
       ${hero.enabled !== false ? `
@@ -158,24 +182,28 @@ export function renderHomepageView(isDraft = false) {
               ${hero.description || ''}
             </p>
 
-            <!-- Live Metrics Strip (if enabled) -->
+            <!-- Live Metrics Strip (if enabled) - Privacy Protected for Unauthenticated Visitors -->
             ${hero.showLiveMetrics !== false ? `
               <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; max-width: 960px; margin: 0 auto; background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 12px; padding: 18px 24px; box-shadow: 0 8px 32px rgba(0,0,0,0.37);">
                 <div style="border-right: 1px solid rgba(255,255,255,0.08); padding-right: 12px;">
-                  <div style="font-size: 26px; font-weight: 900; color: #38bdf8; font-family: var(--font-mono);">${machines.length}</div>
+                  <div style="font-size: 26px; font-weight: 900; color: #38bdf8; font-family: var(--font-mono);">${isLoggedIn ? machines.length : '<span style="font-size: 18px; letter-spacing: 2px; color: #64748b;">••••</span>'}</div>
                   <div style="font-size: 12px; color: #94a3b8; font-weight: 600; text-transform: uppercase;">Total Machines</div>
+                  ${!isLoggedIn ? `<div style="font-size: 10px; color: #38bdf8; margin-top: 3px; font-weight: 700; cursor: pointer;" class="btn-live-metric-login">🔒 Sign in to view</div>` : ''}
                 </div>
                 <div style="border-right: 1px solid rgba(255,255,255,0.08); padding-right: 12px;">
-                  <div style="font-size: 26px; font-weight: 900; color: #34d399; font-family: var(--font-mono);">${activeCount}</div>
+                  <div style="font-size: 26px; font-weight: 900; color: #34d399; font-family: var(--font-mono);">${isLoggedIn ? activeCount : '<span style="font-size: 18px; letter-spacing: 2px; color: #64748b;">••••</span>'}</div>
                   <div style="font-size: 12px; color: #94a3b8; font-weight: 600; text-transform: uppercase;">Active in Lines</div>
+                  ${!isLoggedIn ? `<div style="font-size: 10px; color: #34d399; margin-top: 3px; font-weight: 700; cursor: pointer;" class="btn-live-metric-login">🔒 Sign in to view</div>` : ''}
                 </div>
                 <div style="border-right: 1px solid rgba(255,255,255,0.08); padding-right: 12px;">
-                  <div style="font-size: 26px; font-weight: 900; color: #fbbf24; font-family: var(--font-mono);">${transfers.length}</div>
+                  <div style="font-size: 26px; font-weight: 900; color: #fbbf24; font-family: var(--font-mono);">${isLoggedIn ? transfers.length : '<span style="font-size: 18px; letter-spacing: 2px; color: #64748b;">••••</span>'}</div>
                   <div style="font-size: 12px; color: #94a3b8; font-weight: 600; text-transform: uppercase;">Transfers Tracked</div>
+                  ${!isLoggedIn ? `<div style="font-size: 10px; color: #fbbf24; margin-top: 3px; font-weight: 700; cursor: pointer;" class="btn-live-metric-login">🔒 Sign in to view</div>` : ''}
                 </div>
                 <div>
-                  <div style="font-size: 26px; font-weight: 900; color: #c084fc; font-family: var(--font-mono);">${spareParts.length}</div>
+                  <div style="font-size: 26px; font-weight: 900; color: #c084fc; font-family: var(--font-mono);">${isLoggedIn ? spareParts.length : '<span style="font-size: 18px; letter-spacing: 2px; color: #64748b;">••••</span>'}</div>
                   <div style="font-size: 12px; color: #94a3b8; font-weight: 600; text-transform: uppercase;">Master Spare Parts</div>
+                  ${!isLoggedIn ? `<div style="font-size: 10px; color: #c084fc; margin-top: 3px; font-weight: 700; cursor: pointer;" class="btn-live-metric-login">🔒 Sign in to view</div>` : ''}
                 </div>
               </div>
             ` : ''}
@@ -341,9 +369,138 @@ export function renderHomepageView(isDraft = false) {
               </span>
             ` : ''}
           </div>
-          
         </footer>
       ` : ''}
+
+    </div>
+  `;
+}
+
+/**
+ * Dedicated Maintenance Lockdown Homepage for Visitors and Regular Users
+ * Strictly shields all machine records, counts, and modules while displaying the official notice.
+ */
+function renderMaintenanceLockdownHomepage({ currentUser, isLoggedIn, userInitial, maintConfig }) {
+  return `
+    <div class="public-homepage-wrapper" style="min-height: 100vh; width: 100%; background: #0b0f19; color: #f8fafc; font-family: var(--font-main); display: flex; flex-direction: column; position: relative;">
+      
+      <!-- 1. STICKY PUBLIC HEADER -->
+      <header class="public-header" style="position: -webkit-sticky; position: sticky; top: 0; left: 0; right: 0; z-index: 1000; background: rgba(11, 15, 25, 0.95); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-bottom: 1px solid rgba(245, 158, 11, 0.3); padding: 14px 32px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 25px rgba(0,0,0,0.6); flex-shrink: 0;">
+        
+        <!-- Brand Logo -->
+        <div class="header-brand" style="display: flex; align-items: center; gap: 12px; cursor: pointer;" id="home-brand-logo">
+          <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #d97706 0%, #f59e0b 100%); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; box-shadow: 0 0 15px rgba(245, 158, 11, 0.4);">
+            🛠️
+          </div>
+          <div>
+            <div style="font-weight: 900; font-size: 15px; letter-spacing: 0.8px; color: #ffffff; line-height: 1.2;">
+              AL-MUSLIM GROUP
+            </div>
+            <div style="font-size: 10.5px; color: #94a3b8; font-weight: 500;">
+              Industrial Machine &amp; Assets Management System
+            </div>
+          </div>
+        </div>
+
+        <!-- Maintenance Status Badge -->
+        <div style="display: flex; align-items: center; gap: 8px; background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.35); padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 700; color: #fbbf24;">
+          <span style="width: 8px; height: 8px; border-radius: 50%; background: #f59e0b; box-shadow: 0 0 8px #f59e0b; display: inline-block;"></span>
+          <span>MAINTENANCE MODE ACTIVE</span>
+        </div>
+
+        <!-- Action: Admin Login or User Logout -->
+        <div style="display: flex; align-items: center; gap: 10px;">
+          ${isLoggedIn ? `
+            <div style="display: flex; align-items: center; gap: 8px; background: rgba(30, 41, 59, 0.8); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 20px; padding: 3px 12px 3px 6px;">
+              <div style="width: 24px; height: 24px; border-radius: 50%; background: #f59e0b; color: #000; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700;">
+                ${userInitial}
+              </div>
+              <span style="font-size: 12px; font-weight: 700; color: #e2e8f0;">${currentUser.name || 'User'}</span>
+            </div>
+            <button id="btn-home-logout" class="btn btn-ghost btn-sm" style="color: #f87171; font-size: 12px; padding: 5px 8px;" title="Logout">
+              🔒 Logout
+            </button>
+          ` : `
+            <button id="btn-header-login-admin" class="btn btn-primary btn-sm" style="font-weight: 800; padding: 8px 18px; border-radius: 6px; font-size: 13px; background: linear-gradient(135deg, #0284c7, #0369a1); box-shadow: 0 0 15px rgba(2, 132, 199, 0.4);">
+              👑 Admin Login
+            </button>
+          `}
+        </div>
+      </header>
+
+      <!-- 2. DEDICATED MAINTENANCE NOTICE & LOCKDOWN CARD (NO DATA EXPOSURE) -->
+      <main style="flex: 1; display: flex; align-items: center; justify-content: center; padding: 48px 24px; position: relative;">
+        
+        <!-- Background Atmospheric Glow -->
+        <div style="position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); width: 750px; height: 400px; background: radial-gradient(circle, rgba(245, 158, 11, 0.15) 0%, rgba(11, 15, 25, 0) 70%); pointer-events: none; z-index: 0;"></div>
+
+        <div style="position: relative; z-index: 1; max-width: 680px; width: 100%; background: linear-gradient(145deg, #131b2e, #0e1526); border: 1.5px solid rgba(245, 158, 11, 0.35); border-radius: 16px; padding: 40px 36px; box-shadow: 0 20px 60px rgba(0,0,0,0.65); text-align: center;">
+          
+          <!-- Pulsing Maintenance Icon -->
+          <div style="width: 80px; height: 80px; margin: 0 auto 20px; background: radial-gradient(circle, rgba(245, 158, 11, 0.25) 0%, rgba(245, 158, 11, 0.05) 70%); border: 2px solid #f59e0b; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 38px; box-shadow: 0 0 35px rgba(245, 158, 11, 0.35);">
+            🛠️
+          </div>
+
+          <!-- Badge -->
+          <div style="display: inline-flex; align-items: center; gap: 8px; background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.4); border-radius: 20px; padding: 5px 16px; margin-bottom: 18px; font-size: 11.5px; font-weight: 800; color: #fbbf24; letter-spacing: 0.8px;">
+            <span style="font-size: 13px;">🔒</span> SYSTEM UNDER MAINTENANCE
+          </div>
+
+          <!-- Main Heading -->
+          <h1 style="font-size: 28px; font-weight: 900; color: #ffffff; margin-bottom: 10px; line-height: 1.25; letter-spacing: -0.3px;">
+            Scheduled Maintenance in Progress
+          </h1>
+
+          <!-- Subtitle -->
+          <p style="font-size: 14.5px; color: #94a3b8; margin-bottom: 24px; line-height: 1.5;">
+            Public access to machinery records, live operational telemetry, and user portals is temporarily paused.
+          </p>
+
+          <!-- Official Public Notice Box -->
+          <div style="background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(245, 158, 11, 0.3); border-left: 4px solid #f59e0b; border-radius: 10px; padding: 20px 22px; margin-bottom: 24px; text-align: left; box-shadow: inset 0 2px 6px rgba(0,0,0,0.3);">
+            <div style="display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 800; color: #fde68a; margin-bottom: 8px;">
+              <span>📢</span> Official Notice:
+            </div>
+            <div style="font-size: 14px; color: #f1f5f9; line-height: 1.6; font-weight: 500;">
+              ${maintConfig.message || 'Routine scheduled system maintenance and server upgrade is currently in progress. Normal operations will resume shortly.'}
+            </div>
+            ${maintConfig.estimatedEnd ? `
+              <div style="margin-top: 14px; padding-top: 10px; border-top: 1px dashed rgba(245, 158, 11, 0.25); display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: #fbbf24; font-weight: 700;">
+                <span>⏳</span>
+                <span>Expected Completion / ETA: <strong>${maintConfig.estimatedEnd}${/^\d+$/.test(maintConfig.estimatedEnd.toString().trim()) ? ' Minutes' : ''}</strong></span>
+              </div>
+            ` : ''}
+          </div>
+
+          <!-- Security Policy Note -->
+          <div style="font-size: 12px; color: #64748b; margin-bottom: 28px; line-height: 1.5; background: rgba(0,0,0,0.25); padding: 10px 14px; border-radius: 8px;">
+            🔒 All operational machine registries, spare parts logs, and relocation tracking data are shielded to preserve system integrity.
+          </div>
+
+          <!-- Action Buttons -->
+          <div style="display: flex; gap: 14px; justify-content: center; flex-wrap: wrap;">
+            <button id="btn-maint-notice-admin-login" class="btn btn-primary" style="font-weight: 800; padding: 11px 24px; border-radius: 8px; font-size: 13.5px; background: linear-gradient(135deg, #0284c7, #0369a1); box-shadow: 0 0 20px rgba(2, 132, 199, 0.45); display: flex; align-items: center; gap: 8px;">
+              <span>👑</span>
+              <span>Administrator Login</span>
+            </button>
+            <button id="btn-maint-notice-refresh" class="btn btn-secondary" style="font-weight: 700; padding: 11px 20px; border-radius: 8px; font-size: 13.5px; border: 1px solid rgba(255, 255, 255, 0.15); color: #cbd5e1; display: flex; align-items: center; gap: 8px;">
+              <span>🔄</span>
+              <span>Check Status / Refresh</span>
+            </button>
+          </div>
+
+        </div>
+      </main>
+
+      <!-- 3. MINIMAL FOOTER -->
+      <footer style="border-top: 1px solid rgba(255,255,255,0.06); background: #070a12; padding: 18px 32px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; font-size: 11.5px; color: #64748b; flex-shrink: 0;">
+        <div>
+          &copy; 2026 Al-Muslim Group Garments Factory Maintenance Department ERP. All Rights Reserved.
+        </div>
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <span>🔒 Maintenance Operations Shield Active</span>
+        </div>
+      </footer>
 
     </div>
   `;
@@ -396,6 +553,48 @@ export function initHomepageEvents() {
       state.set('currentView', 'login');
     });
   }
+
+  // Maintenance Notice Administrator Login Button
+  const btnMaintAdmin = document.getElementById('btn-maint-notice-admin-login');
+  if (btnMaintAdmin) {
+    btnMaintAdmin.addEventListener('click', () => {
+      state.set('loginTab', 'admin');
+      try {
+        sessionStorage.setItem('al_muslim_login_tab', 'admin');
+      } catch (_) {}
+      window.location.hash = '#login';
+      state.set('currentView', 'login');
+    });
+  }
+
+  // Maintenance Notice Check Status / Refresh Button
+  const btnMaintRefresh = document.getElementById('btn-maint-notice-refresh');
+  if (btnMaintRefresh) {
+    btnMaintRefresh.addEventListener('click', () => {
+      window.location.reload();
+    });
+  }
+
+  // Admin ribbon settings button
+  const btnHomeMaintSettings = document.getElementById('btn-home-maint-settings');
+  if (btnHomeMaintSettings) {
+    btnHomeMaintSettings.addEventListener('click', () => {
+      window.location.hash = '#settings';
+      state.set('currentView', 'settings');
+    });
+  }
+
+  // Live Metrics login triggers for unauthenticated visitors
+  document.querySelectorAll('.btn-live-metric-login').forEach(btn => {
+    btn.addEventListener('click', () => {
+      state.set('loginTab', 'user');
+      try {
+        sessionStorage.setItem('al_muslim_login_tab', 'user');
+      } catch (_) {}
+      window.location.hash = '#login';
+      state.set('currentView', 'login');
+    });
+  });
 
   // Header User Login
   const btnHeaderUser = document.getElementById('btn-header-login-user');
