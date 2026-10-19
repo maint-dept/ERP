@@ -852,115 +852,97 @@ export function renderPreventiveMaintenanceReportView() {
       <div class="pm-report-toolbar no-print" style="
         background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%); 
         border: 1px solid rgba(56, 189, 248, 0.25); 
-        border-radius: var(--radius-md); 
-        padding: 6px 12px; 
+        border-radius: 6px; 
+        padding: 8px 12px; 
         display: flex; 
         flex-direction: column; 
-        gap: 5px; 
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+        gap: 6px; 
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
         margin-bottom: 6px;
       ">
         
-        <!-- ROW 1: Title, Badges, Integrated Sheet Navigation & Primary Action Buttons -->
-        <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; padding-bottom: 5px; border-bottom: 1px solid rgba(255, 255, 255, 0.08);">
+        <!-- ROW 1: Document Identity & Action Buttons -->
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; padding-bottom: 6px; border-bottom: 1px solid rgba(255, 255, 255, 0.08);">
           
-          <!-- Left: Title & Quick Status Badges -->
+          <!-- Left: Title & Status Badges -->
           <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
             <span style="font-size: 15px;">📄</span>
-            <h2 style="font-size: 13px; font-weight: 800; color: #ffffff; margin: 0; white-space: nowrap; letter-spacing: 0.2px;">Official PM Report &amp; Print</h2>
-            <span class="badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 4px; white-space: nowrap;">
-              Al-Muslim Std
+            <h2 style="font-size: 13.5px; font-weight: 800; color: #ffffff; margin: 0; white-space: nowrap; letter-spacing: 0.2px;">Official PM Report &amp; Print</h2>
+            <span class="badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); font-size: 10.5px; font-weight: 700; padding: 2px 7px; border-radius: 4px; white-space: nowrap;">
+              Al-Muslim Standard
             </span>
-            <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.35); font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 4px; white-space: nowrap;">
-              ${filledCount}/${totalMatching} M/C
+            <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); font-size: 10.5px; font-weight: 700; padding: 2px 7px; border-radius: 4px; white-space: nowrap;">
+              ${filledCount} / ${totalMatching} M/C Loaded
             </span>
           </div>
 
-          <!-- Center: Prominent Sheet Navigation -->
-          <div style="display: inline-flex; align-items: center; gap: 4px; padding: 1px 6px; background: rgba(15, 23, 42, 0.85); border-radius: 5px; border: 1px solid rgba(255, 255, 255, 0.12); margin: 0 auto;">
-            <button id="btn-pm-rep-prev-page" class="btn btn-secondary btn-xs" ${curPage <= 1 ? 'disabled style="opacity: 0.4;"' : ''} style="height: 23px; padding: 0 7px; font-weight: 800; font-size: 11px; border-radius: 3px;" title="Previous sheet">
-              ◀
-            </button>
-            <span style="color: #94a3b8; font-size: 11px; font-weight: 700; white-space: nowrap; padding: 0 4px;">
-              Sheet <strong style="color: #ffffff;">${curPage}</strong> of ${totalPages}
-            </span>
-            <button id="btn-pm-rep-next-page" class="btn btn-secondary btn-xs" ${curPage >= totalPages ? 'disabled style="opacity: 0.4;"' : ''} style="height: 23px; padding: 0 7px; font-weight: 800; font-size: 11px; border-radius: 3px;" title="Next sheet">
-              ▶
-            </button>
-            <select id="pm-rep-page-size" class="filter-select-compact" style="height: 23px; font-size: 10.5px; font-weight: 700; width: 90px; padding: 0 3px; background: #0f172a; color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 3px;">
-              <option value="10" ${reportState.pageSize === 10 ? 'selected' : ''}>10 / Sheet</option>
-              <option value="20" ${reportState.pageSize === 20 ? 'selected' : ''}>20 / Sheet</option>
-              <option value="ALL" ${reportState.pageSize === 'ALL' ? 'selected' : ''}>All M/C</option>
-            </select>
-          </div>
-
-          <!-- Right: Output & Action Buttons -->
-          <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0; margin-left: auto;">
+          <!-- Right: Action Buttons Group (All Uniform Height 28px) -->
+          <div style="display: flex; align-items: center; gap: 5px; flex-shrink: 0; margin-left: auto;">
             ${canSave ? `
-              <button id="btn-pm-report-save-record" class="btn btn-primary btn-xs" style="font-weight: 800; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: 1px solid #059669; color: #ffffff; height: 25px; padding: 0 10px; font-size: 11px; display: inline-flex; align-items: center; gap: 4px; border-radius: 4px; box-shadow: 0 2px 6px rgba(16, 185, 129, 0.3); cursor: pointer;" title="Save filled rows into database &amp; update machine maintenance history">
+              <button id="btn-pm-report-save-record" class="btn btn-primary btn-sm" style="font-weight: 800; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: 1px solid #059669; color: #ffffff; height: 28px; padding: 0 11px; font-size: 11px; display: inline-flex; align-items: center; gap: 4px; border-radius: 4px; box-shadow: 0 2px 6px rgba(16, 185, 129, 0.3); cursor: pointer;" title="Save filled rows into database &amp; update machine maintenance history">
                 <span>💾</span> Save Record
               </button>
             ` : ''}
 
-            <button id="btn-pm-report-print-direct" class="btn btn-secondary btn-xs" style="font-weight: 800; background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); border: 1px solid #0284c7; color: #ffffff; height: 25px; padding: 0 10px; font-size: 11px; display: inline-flex; align-items: center; gap: 4px; border-radius: 4px; box-shadow: 0 2px 6px rgba(2, 132, 199, 0.3); cursor: pointer;" title="Print official A4 Landscape report or save as PDF">
-              <span>🖨️</span> Print Sheet
+            <button id="btn-pm-report-print-direct" class="btn btn-secondary btn-sm" style="font-weight: 800; background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); border: 1px solid #0284c7; color: #ffffff; height: 28px; padding: 0 11px; font-size: 11px; display: inline-flex; align-items: center; gap: 4px; border-radius: 4px; box-shadow: 0 2px 6px rgba(2, 132, 199, 0.3); cursor: pointer;" title="Print official A4 Landscape report or save as PDF">
+              <span>🖨️</span> Print Report
             </button>
 
             ${canExport ? `
-              <button id="btn-pm-report-export-pdf" class="btn btn-secondary btn-xs" style="font-weight: 700; height: 25px; padding: 0 7px; font-size: 11px; display: inline-flex; align-items: center; gap: 3px; border-radius: 4px; background: rgba(30, 41, 59, 0.85); border: 1px solid rgba(255, 255, 255, 0.15); cursor: pointer;" title="Export official PDF document">
+              <button id="btn-pm-report-export-pdf" class="btn btn-secondary btn-sm" style="font-weight: 700; height: 28px; padding: 0 8px; font-size: 11px; display: inline-flex; align-items: center; gap: 3px; border-radius: 4px; background: rgba(30, 41, 59, 0.85); border: 1px solid rgba(255, 255, 255, 0.15); cursor: pointer;" title="Export official PDF document">
                 <span>📄</span> PDF
               </button>
-              <button id="btn-pm-report-export-excel" class="btn btn-secondary btn-xs" style="font-weight: 700; color: #10b981; border: 1px solid rgba(16, 185, 129, 0.4); height: 25px; padding: 0 7px; font-size: 11px; display: inline-flex; align-items: center; gap: 3px; border-radius: 4px; background: rgba(16, 185, 129, 0.08); cursor: pointer;" title="Export to official Excel (.xlsx) file">
+              <button id="btn-pm-report-export-excel" class="btn btn-secondary btn-sm" style="font-weight: 700; color: #10b981; border: 1px solid rgba(16, 185, 129, 0.4); height: 28px; padding: 0 8px; font-size: 11px; display: inline-flex; align-items: center; gap: 3px; border-radius: 4px; background: rgba(16, 185, 129, 0.08); cursor: pointer;" title="Export to official Excel (.xlsx) file">
                 <span>📊</span> Excel
               </button>
-              <button id="btn-pm-report-export-csv" class="btn btn-secondary btn-xs" style="font-weight: 700; height: 25px; padding: 0 7px; font-size: 11px; display: inline-flex; align-items: center; gap: 3px; border-radius: 4px; background: rgba(30, 41, 59, 0.85); border: 1px solid rgba(255, 255, 255, 0.15); cursor: pointer;" title="Download CSV file">
+              <button id="btn-pm-report-export-csv" class="btn btn-secondary btn-sm" style="font-weight: 700; height: 28px; padding: 0 8px; font-size: 11px; display: inline-flex; align-items: center; gap: 3px; border-radius: 4px; background: rgba(30, 41, 59, 0.85); border: 1px solid rgba(255, 255, 255, 0.15); cursor: pointer;" title="Download CSV file">
                 <span>📥</span> CSV
               </button>
             ` : ''}
 
-            <button id="btn-pm-report-toggle-preview" class="btn btn-secondary btn-xs" style="font-weight: 700; height: 25px; padding: 0 8px; font-size: 11px; display: inline-flex; align-items: center; gap: 4px; border-radius: 4px; border: 1px solid ${reportState.previewMode ? '#38bdf8' : 'rgba(255, 255, 255, 0.2)'}; background: ${reportState.previewMode ? 'rgba(56, 189, 248, 0.15)' : 'rgba(30, 41, 59, 0.85)'}; color: ${reportState.previewMode ? '#38bdf8' : '#e2e8f0'}; cursor: pointer;" title="Toggle between Edit and Preview mode">
-              <span>${reportState.previewMode ? '✏️ Edit' : '👁️ Preview'}</span>
+            <button id="btn-pm-report-toggle-preview" class="btn btn-secondary btn-sm" style="font-weight: 700; height: 28px; padding: 0 9px; font-size: 11px; display: inline-flex; align-items: center; gap: 4px; border-radius: 4px; border: 1px solid ${reportState.previewMode ? '#38bdf8' : 'rgba(255, 255, 255, 0.2)'}; background: ${reportState.previewMode ? 'rgba(56, 189, 248, 0.15)' : 'rgba(30, 41, 59, 0.85)'}; color: ${reportState.previewMode ? '#38bdf8' : '#e2e8f0'}; cursor: pointer;" title="Toggle between Edit and Preview mode">
+              <span>${reportState.previewMode ? '✏️ Edit Mode' : '👁️ Preview'}</span>
             </button>
           </div>
         </div>
 
-        <!-- ROW 2: Filters, Dates & Sheet Tools (1 Unified Clean Row) -->
+        <!-- ROW 2: Filters, Dates, Operations & Pagination (All Uniform Height 26px) -->
         <div style="display: flex; align-items: center; justify-content: space-between; gap: 6px; flex-wrap: wrap;">
           
-          <!-- Filters & Dates Group -->
+          <!-- Filters & Dates Cluster -->
           <div style="display: flex; align-items: center; gap: 5px; flex-wrap: wrap;">
             
             <!-- Unit Selector -->
-            <div style="display: inline-flex; align-items: center; gap: 3px;">
-              <label style="color: #f59e0b; font-weight: 800; font-size: 10.5px; white-space: nowrap;">Unit:</label>
-              <select id="pm-rep-filter-unit" class="filter-select-compact" style="height: 24px; width: 110px; font-size: 10.5px; font-weight: 600; padding: 1px 3px; background: #0f172a; color: #ffffff; border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 4px;">
+            <div style="display: inline-flex; align-items: center; gap: 3px; background: rgba(15, 23, 42, 0.6); padding: 1px 4px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.1);">
+              <span style="color: #f59e0b; font-weight: 800; font-size: 10.5px; white-space: nowrap;">Unit:</span>
+              <select id="pm-rep-filter-unit" class="filter-select-compact" style="height: 24px; width: 105px; font-size: 10.5px; font-weight: 600; padding: 1px 3px; background: transparent; color: #ffffff; border: none; outline: none;">
                 <option value="ALL" ${reportState.unitId === 'ALL' ? 'selected' : ''}>All Units (${units.length})</option>
                 ${units.map(u => `<option value="${u.id}" ${reportState.unitId === u.id ? 'selected' : ''}>${escapeHtml(u.name)}</option>`).join('')}
               </select>
             </div>
 
             <!-- Floor Selector -->
-            <div style="display: inline-flex; align-items: center; gap: 3px;">
-              <label style="color: #38bdf8; font-weight: 800; font-size: 10.5px; white-space: nowrap;">Floor:</label>
-              <select id="pm-rep-filter-floor" class="filter-select-compact" style="height: 24px; width: 115px; font-size: 10.5px; font-weight: 600; padding: 1px 3px; background: #0f172a; color: #ffffff; border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 4px;">
+            <div style="display: inline-flex; align-items: center; gap: 3px; background: rgba(15, 23, 42, 0.6); padding: 1px 4px; border-radius: 4px; border: 1px solid rgba(56, 189, 248, 0.3);">
+              <span style="color: #38bdf8; font-weight: 800; font-size: 10.5px; white-space: nowrap;">Floor:</span>
+              <select id="pm-rep-filter-floor" class="filter-select-compact" style="height: 24px; width: 110px; font-size: 10.5px; font-weight: 600; padding: 1px 3px; background: transparent; color: #ffffff; border: none; outline: none;">
                 <option value="ALL" ${reportState.floorId === 'ALL' ? 'selected' : ''}>All Floors (${floors.length})</option>
                 ${floors.map(f => `<option value="${f.id}" ${reportState.floorId === f.id ? 'selected' : ''}>${escapeHtml(f.name)}</option>`).join('')}
               </select>
             </div>
 
             <!-- Line Selector -->
-            <div style="display: inline-flex; align-items: center; gap: 3px;">
-              <label style="color: #c084fc; font-weight: 800; font-size: 10.5px; white-space: nowrap;">Line:</label>
-              <select id="pm-rep-filter-line" class="filter-select-compact" style="height: 24px; width: 100px; font-size: 10.5px; font-weight: 600; padding: 1px 3px; background: #0f172a; color: #ffffff; border: 1px solid rgba(168, 85, 247, 0.4); border-radius: 4px;">
+            <div style="display: inline-flex; align-items: center; gap: 3px; background: rgba(15, 23, 42, 0.6); padding: 1px 4px; border-radius: 4px; border: 1px solid rgba(168, 85, 247, 0.3);">
+              <span style="color: #c084fc; font-weight: 800; font-size: 10.5px; white-space: nowrap;">Line:</span>
+              <select id="pm-rep-filter-line" class="filter-select-compact" style="height: 24px; width: 95px; font-size: 10.5px; font-weight: 600; padding: 1px 3px; background: transparent; color: #ffffff; border: none; outline: none;">
                 <option value="ALL" ${reportState.lineId === 'ALL' ? 'selected' : ''}>All Lines (${lines.length})</option>
                 ${lines.map(l => `<option value="${l.id}" ${reportState.lineId === l.id ? 'selected' : ''}>${escapeHtml(l.name)}</option>`).join('')}
               </select>
             </div>
 
             <!-- Status Selector -->
-            <div style="display: inline-flex; align-items: center; gap: 3px;">
-              <label style="color: #94a3b8; font-weight: 800; font-size: 10.5px; white-space: nowrap;">Status:</label>
-              <select id="pm-rep-filter-mode" class="filter-select-compact" style="height: 24px; width: 95px; font-size: 10.5px; font-weight: 600; padding: 1px 3px; background: #0f172a; color: #ffffff; border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 4px;">
+            <div style="display: inline-flex; align-items: center; gap: 3px; background: rgba(15, 23, 42, 0.6); padding: 1px 4px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.1);">
+              <span style="color: #94a3b8; font-weight: 800; font-size: 10.5px; white-space: nowrap;">Status:</span>
+              <select id="pm-rep-filter-mode" class="filter-select-compact" style="height: 24px; width: 90px; font-size: 10.5px; font-weight: 600; padding: 1px 3px; background: transparent; color: #ffffff; border: none; outline: none;">
                 <option value="ALL" ${reportState.filterMode === 'ALL' ? 'selected' : ''}>📋 All M/C</option>
                 <option value="DUE" ${reportState.filterMode === 'DUE' ? 'selected' : ''}>🚨 Due</option>
                 <option value="RECENT" ${reportState.filterMode === 'RECENT' ? 'selected' : ''}>🕒 Serviced</option>
@@ -968,51 +950,74 @@ export function renderPreventiveMaintenanceReportView() {
             </div>
 
             <!-- Visual Divider -->
-            <div style="width: 1px; height: 16px; background: rgba(255, 255, 255, 0.12); margin: 0 2px;"></div>
+            <div style="width: 1px; height: 16px; background: rgba(255, 255, 255, 0.15); margin: 0 2px;"></div>
 
             <!-- Servicing Date -->
-            <div style="display: inline-flex; align-items: center; gap: 3px; background: rgba(15, 23, 42, 0.7); padding: 0 5px; border-radius: 4px; border: 1px solid rgba(56, 189, 248, 0.4);">
+            <div style="display: inline-flex; align-items: center; gap: 3px; background: rgba(15, 23, 42, 0.7); padding: 1px 5px; border-radius: 4px; border: 1px solid rgba(56, 189, 248, 0.35);">
               <span style="font-size: 11px;">📅</span>
-              <label style="color: #38bdf8; font-weight: 800; font-size: 10.5px; white-space: nowrap;">Date:</label>
+              <span style="color: #38bdf8; font-weight: 800; font-size: 10.5px; white-space: nowrap;">Date:</span>
               <input 
                 type="date" 
                 id="pm-rep-servicing-date" 
                 class="filter-search-input" 
                 value="${reportState.servicingDate || ''}" 
-                style="height: 22px; width: 125px; font-size: 11px; font-weight: 700; padding: 1px 3px; background: #0f172a; color: #ffffff; border: none; outline: none;" 
+                style="height: 22px; width: 115px; font-size: 11px; font-weight: 700; padding: 0 2px; background: transparent; color: #ffffff; border: none; outline: none;" 
                 title="Servicing Date" 
               />
             </div>
 
             <!-- Next Servicing Date -->
-            <div style="display: inline-flex; align-items: center; gap: 3px; background: rgba(15, 23, 42, 0.7); padding: 0 5px; border-radius: 4px; border: 1px solid rgba(16, 185, 129, 0.4);">
+            <div style="display: inline-flex; align-items: center; gap: 3px; background: rgba(15, 23, 42, 0.7); padding: 1px 5px; border-radius: 4px; border: 1px solid rgba(16, 185, 129, 0.35);">
               <span style="font-size: 11px;">⏳</span>
-              <label style="color: #10b981; font-weight: 800; font-size: 10.5px; white-space: nowrap;">Next (90d):</label>
+              <span style="color: #10b981; font-weight: 800; font-size: 10.5px; white-space: nowrap;">Next (90d):</span>
               <input 
                 type="date" 
                 id="pm-rep-next-servicing-date" 
                 class="filter-search-input" 
                 value="${reportState.nextServicingDate || ''}" 
-                style="height: 22px; width: 125px; font-size: 11px; font-weight: 700; padding: 1px 3px; background: #0f172a; color: #10b981; border: none; outline: none;" 
+                style="height: 22px; width: 115px; font-size: 11px; font-weight: 700; padding: 0 2px; background: transparent; color: #10b981; border: none; outline: none;" 
                 title="Next Servicing Date (Default: 90 days after Servicing Date)" 
               />
             </div>
 
           </div>
 
-          <!-- Quick Actions Group -->
+          <!-- Sheet Editing Tools & Pagination Cluster -->
           <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0; margin-left: auto;">
-            <button id="btn-pm-rep-add-row" class="btn btn-secondary btn-xs" style="font-weight: 800; font-size: 10.5px; height: 24px; padding: 0 7px; border-radius: 4px; display: inline-flex; align-items: center; gap: 3px; background: rgba(30, 41, 59, 0.85); border: 1px solid rgba(255, 255, 255, 0.15);" title="Add a blank row to the sheet">
+            
+            <button id="btn-pm-rep-add-row" class="btn btn-secondary btn-xs" style="font-weight: 800; font-size: 10.5px; height: 26px; padding: 0 8px; border-radius: 4px; display: inline-flex; align-items: center; gap: 3px; background: rgba(30, 41, 59, 0.85); border: 1px solid rgba(255, 255, 255, 0.15);" title="Add a blank row to the sheet">
               <span>➕</span> Add Row
             </button>
 
-            <button id="btn-pm-rep-print-blank" class="btn btn-secondary btn-xs" style="font-weight: 800; font-size: 10.5px; height: 24px; padding: 0 7px; border-radius: 4px; display: inline-flex; align-items: center; gap: 3px; background: rgba(30, 41, 59, 0.85); border: 1px solid rgba(255, 255, 255, 0.15);" title="Reset and print a blank official 10-row sheet for manual hand-written floor logs">
+            <button id="btn-pm-rep-print-blank" class="btn btn-secondary btn-xs" style="font-weight: 800; font-size: 10.5px; height: 26px; padding: 0 8px; border-radius: 4px; display: inline-flex; align-items: center; gap: 3px; background: rgba(30, 41, 59, 0.85); border: 1px solid rgba(255, 255, 255, 0.15);" title="Reset and print a blank official 10-row sheet for manual hand-written floor logs">
               <span>📝</span> Blank Form
             </button>
 
-            <button id="btn-pm-rep-clear-table" class="btn btn-ghost btn-xs" style="font-size: 10.5px; font-weight: 700; height: 24px; padding: 0 6px; color: #f87171; border-radius: 4px; border: 1px solid rgba(248, 113, 113, 0.25);" title="Reset filters &amp; reload initial rows">
+            <button id="btn-pm-rep-clear-table" class="btn btn-ghost btn-xs" style="font-size: 10.5px; font-weight: 700; height: 26px; padding: 0 6px; color: #f87171; border-radius: 4px; border: 1px solid rgba(248, 113, 113, 0.25);" title="Reset filters &amp; reload initial rows">
               <span>↺</span> Reset
             </button>
+
+            <!-- Visual Divider -->
+            <div style="width: 1px; height: 16px; background: rgba(255, 255, 255, 0.15); margin: 0 2px;"></div>
+
+            <!-- Integrated Sheet Navigator -->
+            <div style="display: inline-flex; align-items: center; gap: 3px; padding: 1px 5px; background: rgba(15, 23, 42, 0.85); border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.12);">
+              <button id="btn-pm-rep-prev-page" class="btn btn-secondary btn-xs" ${curPage <= 1 ? 'disabled style="opacity: 0.4;"' : ''} style="height: 22px; padding: 0 6px; font-weight: 800; font-size: 10.5px; border-radius: 3px;" title="Previous sheet">
+                ◀
+              </button>
+              <span style="color: #94a3b8; font-size: 10.5px; font-weight: 700; white-space: nowrap; padding: 0 3px;">
+                P.<strong style="color: #ffffff;">${curPage}</strong>/${totalPages} <span style="color: #38bdf8;">(${totalMatching})</span>
+              </span>
+              <button id="btn-pm-rep-next-page" class="btn btn-secondary btn-xs" ${curPage >= totalPages ? 'disabled style="opacity: 0.4;"' : ''} style="height: 22px; padding: 0 6px; font-weight: 800; font-size: 10.5px; border-radius: 3px;" title="Next sheet">
+                ▶
+              </button>
+              <select id="pm-rep-page-size" class="filter-select-compact" style="height: 22px; font-size: 10px; font-weight: 700; width: 88px; padding: 0 2px; background: #0f172a; color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 3px;">
+                <option value="10" ${reportState.pageSize === 10 ? 'selected' : ''}>10 / Sheet</option>
+                <option value="20" ${reportState.pageSize === 20 ? 'selected' : ''}>20 / Sheet</option>
+                <option value="ALL" ${reportState.pageSize === 'ALL' ? 'selected' : ''}>All M/C</option>
+              </select>
+            </div>
+
           </div>
 
         </div>

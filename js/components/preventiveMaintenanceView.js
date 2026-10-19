@@ -30,7 +30,7 @@ import { notificationService } from '../services/notificationService.js';
 import { excelService } from '../services/excelService.js';
 import { storage } from '../db/storage.js';
 import { TABLE_NAMES } from '../db/schema.js';
-import { renderPreventiveMaintenanceReportView, initPreventiveMaintenanceReportEvents } from './preventiveMaintenanceReportView.js';
+import { renderPreventiveMaintenanceReportView, initPreventiveMaintenanceReportEvents } from './preventiveMaintenanceReportView.js?v=4.26.40';
 
 // Local view state to preserve working session across tab switches
 let activeTab = 'dashboard'; // 'dashboard' | 'pending-approvals' | 'recently-serviced' | 'machine-profile' | 'master-schedule' | 'admin-config' | 'maintenance-report'
