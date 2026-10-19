@@ -250,25 +250,20 @@ export function renderNavbar() {
 
           <!-- Floating User Account & Role Hub Dropdown -->
           <div id="navbar-user-dropdown" class="nav-user-dropdown" style="display: none;">
-            <div class="nav-user-dropdown-header" style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
-              <div style="display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1;">
-                <div class="nav-user-dropdown-avatar" style="width: 38px; height: 38px; font-size: 15px;">${userInitial}</div>
-                <div class="nav-user-dropdown-info" style="min-width: 0;">
-                  <div class="nav-user-dropdown-name" style="font-size: 13px;">${displayName}</div>
-                  <div class="nav-user-dropdown-email" style="font-size: 11px;">@${user?.username || 'user'}${user?.email ? ` • ${user.email}` : ''}</div>
-                  <div class="nav-user-dropdown-role-badge" style="font-size: 9.5px; padding: 1px 6px;">${(user?.role === 'NO_ACCESS' || user?.roleId === 'role-no-access') ? '🔒' : (isSuperAdmin ? '🛡️' : (isAdmin ? '👑' : '👤'))} ${roleName}</div>
-                </div>
+            <div class="nav-user-dropdown-header">
+              <div class="nav-user-dropdown-avatar">${userInitial}</div>
+              <div class="nav-user-dropdown-info">
+                <div class="nav-user-dropdown-name">${displayName}</div>
+                <div class="nav-user-dropdown-email">@${user?.username || 'user'}${user?.email ? ` • ${user.email}` : ''}</div>
+                <div class="nav-user-dropdown-role-badge">${(user?.role === 'NO_ACCESS' || user?.roleId === 'role-no-access') ? '🔒' : (isSuperAdmin ? '🛡️' : (isAdmin ? '👑' : '👤'))} ${roleName}</div>
               </div>
-              <button type="button" id="btn-navbar-header-logout" class="btn btn-ghost btn-xs" style="color: #f87171; border: 1px solid rgba(239, 68, 68, 0.35); background: rgba(239, 68, 68, 0.1); font-size: 11px; font-weight: 800; padding: 4px 8px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0;" title="Quick Sign Out">
-                <span>🚪</span> Sign Out
-              </button>
             </div>
 
             <!-- Mobile Utility Row (Cloud Sync Status) -->
-            <div class="nav-user-dropdown-section" style="padding: 6px 12px;">
-              <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(15, 23, 42, 0.6); padding: 6px 10px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.08); gap: 8px;">
-                <div style="display: inline-flex; align-items: center; gap: 6px; font-size: 11px; color: #38bdf8; font-weight: 700;">
-                  <span class="nav-db-pulse-dot" style="width: 6px; height: 6px;"></span>
+            <div class="nav-user-dropdown-section" style="padding-bottom: 6px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(15, 23, 42, 0.6); padding: 8px 10px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.08); gap: 8px;">
+                <div style="display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; color: #38bdf8; font-weight: 700;">
+                  <span class="nav-db-pulse-dot" style="width: 7px; height: 7px;"></span>
                   <span>Cloud Synced</span>
                 </div>
                 <button type="button" id="btn-dropdown-theme-toggle" class="btn btn-ghost btn-xs" style="display: none !important;" title="Toggle Light / Dark Theme">
@@ -280,7 +275,7 @@ export function renderNavbar() {
 
             ${impersonator ? `
               <!-- Active Impersonation Session Banner -->
-              <div class="nav-user-dropdown-section" style="background: rgba(2, 132, 199, 0.15); border: 1.5px dashed #38bdf8; border-radius: 8px; padding: 10px; margin: 8px 10px;">
+              <div class="nav-user-dropdown-section" style="background: rgba(2, 132, 199, 0.15); border: 1.5px dashed #38bdf8; border-radius: 8px; padding: 10px; margin-bottom: 8px;">
                 <div style="font-size: 11px; font-weight: 800; color: #38bdf8; display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
                   <span>🎭</span> Viewing as User
                 </div>
@@ -294,46 +289,46 @@ export function renderNavbar() {
               <div class="nav-user-dropdown-divider"></div>
             ` : canSwitchAccounts ? `
               <!-- Enhanced Role & Account Switcher Hub -->
-              <div class="nav-user-dropdown-section nav-account-switcher-section" style="padding: 10px 12px;">
+              <div class="nav-user-dropdown-section nav-account-switcher-section" style="padding: 12px 14px;">
                 
                 <!-- Section Header with Quick Popup Trigger -->
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                  <div class="nav-user-dropdown-section-title" style="margin-bottom: 0; font-size: 10.5px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                  <div class="nav-user-dropdown-section-title" style="margin-bottom: 0;">
                     <span>🎭</span> ${isSuperAdmin ? 'Switch Role / Account' : 'Login to User Account'}
                   </div>
-                  <button type="button" id="btn-open-switcher-popup-nav" class="btn btn-ghost btn-xs" style="color: #38bdf8; font-size: 10.5px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; padding: 2px 6px; border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 5px; background: rgba(56, 189, 248, 0.1); cursor: pointer;" title="Open full searchable account switcher popup">
+                  <button type="button" id="btn-open-switcher-popup-nav" class="btn btn-ghost btn-xs" style="color: #38bdf8; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; padding: 2px 7px; border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 5px; background: rgba(56, 189, 248, 0.1); cursor: pointer;" title="Open full searchable account switcher popup">
                     <span>🔍 Search Popup</span>
-                    <span style="font-size: 9px;">↗</span>
+                    <span style="font-size: 10px;">↗</span>
                   </button>
                 </div>
 
                 <!-- 1. Super Admin & Admin Accounts (Kept Separate) -->
-                <div class="switcher-mgmt-wrapper" style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(245, 158, 11, 0.25); border-radius: 8px; padding: 6px 8px; margin-bottom: 8px;">
-                  <div style="font-size: 9.5px; font-weight: 800; color: #f59e0b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px; display: flex; align-items: center; gap: 4px;">
+                <div class="switcher-mgmt-wrapper" style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(245, 158, 11, 0.25); border-radius: 8px; padding: 8px 10px; margin-bottom: 10px;">
+                  <div style="font-size: 10px; font-weight: 800; color: #f59e0b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; display: flex; align-items: center; gap: 5px;">
                     <span>👑</span> Administrators &amp; Managers
                   </div>
-                  <div class="switcher-mgmt-list custom-scrollbar" style="display: flex; flex-direction: column; gap: 5px; max-height: 110px; overflow-y: auto;">
+                  <div class="switcher-mgmt-list" style="display: flex; flex-direction: column; gap: 6px;">
                     ${adminCardsHtml}
                   </div>
                 </div>
 
                 <!-- 2. Searchable Factory Users -->
                 <div class="switcher-users-wrapper">
-                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
-                    <div style="font-size: 9.5px; font-weight: 800; color: #38bdf8; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 4px;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                    <div style="font-size: 10px; font-weight: 800; color: #38bdf8; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 5px;">
                       <span>👥</span> Factory Users
                     </div>
-                    <span style="font-size: 9.5px; font-weight: 700; color: #94a3b8;" id="nav-dropdown-users-count">${factoryUsers.length} accounts</span>
+                    <span style="font-size: 10px; font-weight: 700; color: #94a3b8;" id="nav-dropdown-users-count">${factoryUsers.length} accounts</span>
                   </div>
 
                   <!-- Search Input Box -->
                   <div style="position: relative; display: flex; align-items: center; margin-bottom: 6px;">
-                    <span style="position: absolute; left: 8px; font-size: 11px; color: #38bdf8; pointer-events: none;">🔍</span>
+                    <span style="position: absolute; left: 8px; font-size: 12px; color: #38bdf8; pointer-events: none;">🔍</span>
                     <input 
                       type="text" 
                       id="inp-nav-dropdown-search" 
                       class="dropdown-role-select" 
-                      style="width: 100%; height: 30px; padding: 0 26px 0 26px; font-size: 11px; font-weight: 600; border-radius: 6px; background: rgba(11, 17, 32, 0.85); border: 1px solid rgba(56, 189, 248, 0.35);" 
+                      style="width: 100%; height: 32px; padding: 0 28px 0 28px; font-size: 11.5px; font-weight: 600; border-radius: 6px; background: rgba(11, 17, 32, 0.85); border: 1px solid rgba(56, 189, 248, 0.35);" 
                       placeholder="Search Card # or Name..." 
                       autocomplete="off"
                       spellcheck="false"
@@ -341,20 +336,20 @@ export function renderNavbar() {
                     <button 
                       type="button" 
                       id="btn-nav-dropdown-search-clear" 
-                      style="position: absolute; right: 6px; background: none; border: none; color: #94a3b8; font-size: 11px; cursor: pointer; padding: 2px 4px; display: none;"
+                      style="position: absolute; right: 6px; background: none; border: none; color: #94a3b8; font-size: 12px; cursor: pointer; padding: 2px 4px; display: none;"
                       title="Clear"
                     >✕</button>
                   </div>
 
                   <!-- Live Search Matches Container -->
-                  <div id="nav-dropdown-search-results" class="custom-scrollbar" style="max-height: 130px; overflow-y: auto; display: flex; flex-direction: column; gap: 5px;">
-                    <div style="padding: 8px 6px; text-align: center; font-size: 10.5px; color: #94a3b8; background: rgba(15, 23, 42, 0.4); border-radius: 6px; line-height: 1.35;">
+                  <div id="nav-dropdown-search-results" class="custom-scrollbar" style="max-height: 160px; overflow-y: auto; display: flex; flex-direction: column; gap: 5px;">
+                    <div style="padding: 10px 8px; text-align: center; font-size: 11px; color: #94a3b8; background: rgba(15, 23, 42, 0.4); border-radius: 6px; line-height: 1.4;">
                       Type a <strong>Card #</strong> or <strong>Name</strong> above to search across ${factoryUsers.length} factory accounts, or click <button type="button" class="btn-open-switcher-popup-text" style="background: none; border: none; color: #38bdf8; font-weight: 700; cursor: pointer; text-decoration: underline; padding: 0;">Open Search Popup ↗</button>
                     </div>
                   </div>
                 </div>
 
-                <div class="nav-user-dropdown-hint" style="margin-top: 6px; font-size: 9.5px;">
+                <div class="nav-user-dropdown-hint" style="margin-top: 8px;">
                   ${isSuperAdmin ? 'Full Super Admin access to all factory accounts' : 'Admin access to standard authorized user accounts'}
                 </div>
               </div>
@@ -362,31 +357,33 @@ export function renderNavbar() {
             ` : ''}
 
             <!-- Quick Account Actions -->
-            <div class="nav-user-dropdown-items" style="padding: 4px 6px;">
-              <button type="button" id="btn-navbar-change-pwd" class="nav-user-dropdown-item" title="Change your account password & profile" style="padding: 6px 10px;">
+            <div class="nav-user-dropdown-items">
+              <button type="button" id="btn-navbar-change-pwd" class="nav-user-dropdown-item" title="Change your account password & profile">
                 <span class="dropdown-item-icon">🔑</span>
                 <div class="dropdown-item-content">
-                  <span class="dropdown-item-title" style="font-size: 12px;">Change Password</span>
-                  <span class="dropdown-item-desc" style="font-size: 10px;">Update credentials & security</span>
+                  <span class="dropdown-item-title">Change Password</span>
+                  <span class="dropdown-item-desc">Update credentials & security</span>
                 </div>
               </button>
 
-              <button type="button" id="btn-navbar-home" class="nav-user-dropdown-item" title="View Public Landing Page" style="padding: 6px 10px;">
+              <button type="button" id="btn-navbar-home" class="nav-user-dropdown-item" title="View Public Landing Page">
                 <span class="dropdown-item-icon">🏠</span>
                 <div class="dropdown-item-content">
-                  <span class="dropdown-item-title" style="font-size: 12px;">Public Homepage</span>
-                  <span class="dropdown-item-desc" style="font-size: 10px;">Open visitor portal & company overview</span>
+                  <span class="dropdown-item-title">Public Homepage</span>
+                  <span class="dropdown-item-desc">Open visitor portal & company overview</span>
                 </div>
               </button>
             </div>
 
             <div class="nav-user-dropdown-divider"></div>
 
-            <!-- Sign Out (Sticky Footer) -->
+            <!-- Sign Out -->
             <div class="nav-user-dropdown-footer">
-              <button type="button" id="btn-navbar-logout" class="nav-user-dropdown-item nav-user-dropdown-logout" style="justify-content: center; background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px; padding: 10px 14px; font-weight: 800; color: #f87171; display: flex; align-items: center; gap: 8px; width: 100%; cursor: pointer;" title="End your active session">
-                <span style="font-size: 16px;">🚪</span>
-                <span style="font-size: 13px; font-weight: 800; letter-spacing: 0.3px;">Sign Out</span>
+              <button type="button" id="btn-navbar-logout" class="nav-user-dropdown-item nav-user-dropdown-logout" title="End your active session">
+                <span class="dropdown-item-icon">🚪</span>
+                <div class="dropdown-item-content">
+                  <span class="dropdown-item-title">Sign Out</span>
+                </div>
               </button>
             </div>
           </div>
@@ -411,11 +408,11 @@ export function initNavbarEvents() {
   const toggleDropdown = (e) => {
     if (e) e.stopPropagation();
     if (!dropdown) return;
-    const isVisible = dropdown.style.display === 'flex' || dropdown.style.display === 'block';
+    const isVisible = dropdown.style.display === 'block';
     if (isVisible) {
       closeDropdown();
     } else {
-      dropdown.style.display = 'flex';
+      dropdown.style.display = 'block';
       if (profilePill) {
         profilePill.classList.add('active');
         profilePill.setAttribute('aria-expanded', 'true');
@@ -497,7 +494,7 @@ export function initNavbarEvents() {
 
   // Global click to close dropdown when clicking outside
   document.addEventListener('click', (e) => {
-    if (dropdown && (dropdown.style.display === 'flex' || dropdown.style.display === 'block')) {
+    if (dropdown && dropdown.style.display === 'block') {
       if (!dropdown.contains(e.target) && !profilePill?.contains(e.target)) {
         closeDropdown();
       }
@@ -506,7 +503,7 @@ export function initNavbarEvents() {
 
   // Close on Escape key
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && dropdown && (dropdown.style.display === 'flex' || dropdown.style.display === 'block')) {
+    if (e.key === 'Escape' && dropdown && dropdown.style.display === 'block') {
       closeDropdown();
     }
   });
@@ -723,29 +720,22 @@ export function initNavbarEvents() {
     });
   }
 
-  // Logout Buttons (Sticky footer + Quick header button)
-  const handleLogout = () => {
-    closeDropdown();
-    if (confirm('Are you sure you want to log out of your session?')) {
-      try {
-        storage.flushImmediate();
-      } catch (_) {}
-      authService.logout();
-      try {
-        window.location.hash = '#login';
-      } catch (_) { }
-      state.set('currentView', 'login');
-    }
-  };
-
+  // Logout Button
   const btnLogout = document.getElementById('btn-navbar-logout');
   if (btnLogout) {
-    btnLogout.addEventListener('click', handleLogout);
-  }
-
-  const btnHeaderLogout = document.getElementById('btn-navbar-header-logout');
-  if (btnHeaderLogout) {
-    btnHeaderLogout.addEventListener('click', handleLogout);
+    btnLogout.addEventListener('click', () => {
+      closeDropdown();
+      if (confirm('Are you sure you want to log out of your session?')) {
+        try {
+          storage.flushImmediate();
+        } catch (_) {}
+        authService.logout();
+        try {
+          window.location.hash = '#login';
+        } catch (_) { }
+        state.set('currentView', 'login');
+      }
+    });
   }
 
   // Profile update event
