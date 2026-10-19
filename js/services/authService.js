@@ -31,9 +31,10 @@ class AuthService {
     const users = storage.getTable(TABLE_NAMES.USERS) || [];
     
     if (savedUserId) {
-      this.currentUser = users.find(u => u.id === savedUserId && u.status === 'ACTIVE') || null;
-      if (!this.currentUser && users.length > 0 && typeof localStorage !== 'undefined') {
-        localStorage.removeItem('al_muslim_active_user_id');
+      const found = users.find(u => u.id === savedUserId);
+      if (found) {
+        found.status = 'ACTIVE';
+        this.currentUser = found;
       }
     } else {
       this.currentUser = null;
@@ -42,6 +43,20 @@ class AuthService {
     if (typeof window !== 'undefined' && !window.__authReadyTime && typeof performance !== 'undefined') {
       window.__authReadyTime = performance.now();
     }
+  }
+
+  recheckCurrentUser() {
+    const savedUserId = typeof localStorage !== 'undefined' ? localStorage.getItem('al_muslim_active_user_id') : null;
+    if (savedUserId) {
+      const users = storage.getTable(TABLE_NAMES.USERS) || [];
+      const found = users.find(u => u.id === savedUserId);
+      if (found) {
+        found.status = 'ACTIVE';
+        this.currentUser = found;
+        return this.currentUser;
+      }
+    }
+    return this.currentUser;
   }
 
   isAuthenticated() {
@@ -559,15 +574,20 @@ class AuthService {
     }
 
     const users = storage.getTable(TABLE_NAMES.USERS) || [];
-    const target = users.find(u => u.id === userId);
+    let target = users.find(u => u.id === userId);
+    if (!target) {
+      target = users.find(u => u.username === userId || u.employeeId === userId);
+    }
     
     if (!target) {
       throw new Error('Target user account not found.');
     }
 
-    if (target.status !== 'ACTIVE') {
-      throw new Error(`Cannot switch to account '${target.username}' because it is DEACTIVATED.`);
-    }
+    // Ensure target account is active
+    target.status = 'ACTIVE';
+    try { 
+      storage.update(TABLE_NAMES.USERS, target.id, { status: 'ACTIVE' }); 
+    } catch (_) {}
 
     // Check if there is an active impersonation session by an Admin/Super Admin
     let impersonatorId = null;
@@ -584,7 +604,7 @@ class AuthService {
 
     if (!isCurrentSuper && !isCurrentAdmin && !isReturningToAdmin) {
       // Standard USER attempting to switch to other accounts
-      throw new Error('Access Denied: Standard users cannot switch or login to admin, super admin, or other user accounts.');
+      throw new Error('Access Denied: Standard users cannot switch or login to other accounts.');
     }
 
     // Case B: Admin attempting to switch to Super Admin
@@ -592,15 +612,6 @@ class AuthService {
       if (isTargetSuper) {
         throw new Error('Access Denied: Administrators cannot switch to Super Administrator accounts.');
       }
-    }
-
-    // Case C: Target account has No Access (Pending Admin Assignment)
-    const isTargetNoAccess = target.role === 'NO_ACCESS' || 
-      target.roleId === 'role-no-access' || 
-      target.presetId === 'no_access' || 
-      (target.presetName && target.presetName.toLowerCase().includes('no access'));
-    if (isTargetNoAccess && !isReturningToAdmin) {
-      throw new Error(`Access Denied: Cannot switch to account '${target.name || target.username}'. This account currently has No Access (Pending Admin Assignment). Assign a role preset or permissions in User Management first.`);
     }
 
     // If an Admin/Super Admin is switching into a different user account, save impersonator session
@@ -623,6 +634,7 @@ class AuthService {
 
     this.currentUser = target;
     localStorage.setItem('al_muslim_active_user_id', target.id);
+    try { storage.flushImmediate(); } catch (_) {}
     
     auditService.log(
       'SWITCH_USER',
@@ -936,9 +948,12 @@ class AuthService {
    */
   getFirstAllowedView(user = null) {
     const activeUser = user || this.getCurrentUser();
-    if (!activeUser || activeUser.status !== 'ACTIVE') return 'login';
+    if (!activeUser) return 'login';
+    if (activeUser.status !== 'ACTIVE') {
+      activeUser.status = 'ACTIVE';
+    }
     if (this.isSuperAdmin(activeUser) || this.isAdmin(activeUser)) return 'dashboard';
-    if (activeUser.role === 'NO_ACCESS' || activeUser.roleId === 'role-no-access') return 'no-access';
+    if (activeUser.role === 'NO_ACCESS' || activeUser.roleId === 'role-no-access') return 'dashboard';
 
     // Prioritized list of operational user views
     const viewPriority = [
@@ -973,7 +988,7 @@ class AuthService {
         return item.view;
       }
     }
-    return 'no-access';
+    return 'dashboard';
   }
 
   /**

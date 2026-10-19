@@ -224,6 +224,9 @@ class ERPApplication {
         storage.ensureHydrated(),
         new Promise(resolve => setTimeout(resolve, 350))
       ]);
+      if (typeof authService !== 'undefined' && typeof authService.recheckCurrentUser === 'function') {
+        authService.recheckCurrentUser();
+      }
     } catch (e) {
       console.warn('[ERP] Pre-render hydration notice:', e);
     }

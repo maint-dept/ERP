@@ -513,10 +513,26 @@ export function initNavbarEvents() {
     try {
       const switched = authService.exitImpersonation();
       if (switched) {
+        state.set('currentUser', switched);
         state.resetFilters();
-        const landingView = authService.getFirstAllowedView(switched);
-        window.location.hash = '#' + landingView;
-        window.location.reload();
+        const landingView = authService.getFirstAllowedView(switched) || 'dashboard';
+        state.set('currentView', landingView);
+        try {
+          if (window.history && window.history.replaceState) {
+            window.history.replaceState({ view: landingView }, '', '#' + landingView);
+          } else {
+            window.location.hash = '#' + landingView;
+          }
+        } catch (_) {}
+        if (window.__erpApp && typeof window.__erpApp.render === 'function') {
+          window.__erpApp.render();
+          if (typeof window.__erpApp.showToast === 'function') {
+            window.__erpApp.showToast('Returned to Admin', `Active session restored to ${switched.name} (${switched.role === 'SUPER_ADMIN' ? 'Super Admin' : 'Admin'}).`, 'info');
+          }
+        } else {
+          window.location.hash = '#' + landingView;
+          window.location.reload();
+        }
       }
     } catch (err) {
       alert(err.message);

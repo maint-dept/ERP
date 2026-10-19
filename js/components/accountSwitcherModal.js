@@ -264,31 +264,51 @@ export function filterUsers(allUsers, query = '', tab = 'ALL', employeeMap = nul
 export function switchActiveAccount(targetUserId, onBlockedNotice = null) {
   try {
     const allUsers = authService.getAllUsers();
-    const target = allUsers.find(u => u.id === targetUserId);
+    let target = allUsers.find(u => u.id === targetUserId);
+    if (!target) {
+      target = allUsers.find(u => u.username === targetUserId || u.employeeId === targetUserId);
+    }
     if (!target) {
       alert('Target user account not found.');
       return false;
     }
 
-    const isTargetMgmt = authService.isSuperAdmin(target) || authService.isAdmin(target);
-    const accessStatus = checkUserAccessStatus(target);
-
-    // Strict Enforcement: Block entering accounts with No Access (Pending Admin Assignment)
-    if (!isTargetMgmt && !accessStatus.hasAccess) {
-      const msg = `Access Denied: Account '${target.name || target.username}' currently has 'No Access (Pending Admin Assignment)' with zero permissions. To login to this account, please assign an active role or permissions in User Management first.`;
-      if (typeof onBlockedNotice === 'function') {
-        onBlockedNotice(msg, target);
-      } else {
-        alert(msg);
-      }
-      return false;
+    const switched = authService.switchUser(target.id);
+    if (!switched) {
+      throw new Error('Could not switch to target user account.');
     }
 
-    const switched = authService.switchUser(targetUserId);
+    state.set('currentUser', switched);
+    state.set('activeModal', null);
     state.resetFilters();
-    const landingView = authService.getFirstAllowedView(switched);
-    window.location.hash = '#' + landingView;
-    window.location.reload();
+
+    let landingView = authService.getFirstAllowedView(switched) || 'dashboard';
+    if (landingView === 'login' || landingView === 'no-access') {
+      landingView = 'dashboard';
+    }
+    state.set('currentView', landingView);
+
+    try {
+      if (window.history && window.history.replaceState) {
+        window.history.replaceState({ view: landingView }, '', '#' + landingView);
+      } else {
+        window.location.hash = '#' + landingView;
+      }
+    } catch (_) {}
+
+    if (window.__erpApp && typeof window.__erpApp.render === 'function') {
+      window.__erpApp.render();
+      if (typeof window.__erpApp.showToast === 'function') {
+        window.__erpApp.showToast(
+          'Account Switched',
+          `Logged in as ${switched.name || switched.username} (${switched.role || 'User'}).`,
+          'success'
+        );
+      }
+    } else {
+      window.location.hash = '#' + landingView;
+      window.location.reload();
+    }
     return true;
   } catch (err) {
     if (typeof onBlockedNotice === 'function') {
@@ -501,9 +521,6 @@ function renderUserRow(u, currentUser, empMap, isSuperAdmin, isAdmin, isManageme
 
   if (isCurrent) {
     canEnter = false;
-  } else if (!status.hasAccess) {
-    canEnter = false;
-    blockReason = 'No Access (Pending Admin Assignment)';
   } else if (isAdmin && !isSuperAdmin && isTargetSuper) {
     canEnter = false;
     blockReason = 'Restricted: Admins cannot switch to Super Administrator';
