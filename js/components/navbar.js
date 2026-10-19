@@ -211,8 +211,8 @@ export function renderNavbar() {
           <span class="db-status-text">MySQL Synced</span>
         </div>
 
-        <!-- Light / Dark Theme Switcher -->
-        <button id="btn-theme-toggle" class="nav-icon-btn" type="button" title="Theme (${currentTheme === 'light' ? 'Switch to Dark' : 'Switch to Light'})" aria-label="Toggle Theme">
+        <!-- Light / Dark Theme Switcher (Hidden) -->
+        <button id="btn-theme-toggle" class="nav-icon-btn" type="button" style="display: none !important;" title="Theme (${currentTheme === 'light' ? 'Switch to Dark' : 'Switch to Light'})" aria-label="Toggle Theme">
           <span class="theme-icon">${currentTheme === 'light' ? '🌙' : '☀️'}</span>
         </button>
 

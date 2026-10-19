@@ -7,11 +7,11 @@
 import { state } from './state.js';
 import { storage } from './db/storage.js';
 import { authService } from './services/authService.js';
-import { renderNavbar, initNavbarEvents } from './components/navbar.js?v=4.26.43';
-import { renderSidebar, initSidebarEvents, updateSidebarActiveState } from './components/sidebar.js?v=4.26.43';
+import { renderNavbar, initNavbarEvents } from './components/navbar.js?v=4.26.44';
+import { renderSidebar, initSidebarEvents, updateSidebarActiveState } from './components/sidebar.js?v=4.26.44';
 import { renderHomepageView, initHomepageEvents } from './components/homepageView.js?v=4.26.23';
 import { renderLoginView, initLoginViewEvents } from './components/loginView.js?v=4.26.23';
-import { renderDashboard, initDashboardEvents } from './components/dashboard.js?v=4.26.43';
+import { renderDashboard, initDashboardEvents } from './components/dashboard.js?v=4.26.44';
 import { renderInventoryTable, initInventoryTableEvents, syncInventorySelectionDOM } from './components/inventoryTable.js?v=4.26.41';
 import { renderMachineModal, initMachineModalEvents } from './components/machineModal.js?v=4.26.41';
 import { renderMachineDetails, initMachineDetailsEvents } from './components/machineDetails.js?v=4.26.41';
