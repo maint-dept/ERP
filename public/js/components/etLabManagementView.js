@@ -176,6 +176,11 @@ function renderEntBoardsContent(kpi, allBoards, filteredBoards, currentBoard, co
             + New Board
           </button>
 
+          <button id="btn-open-ent-excel-import" class="btn btn-secondary btn-sm" style="height: 42px; font-weight: 700; border-color: #10b981; color: #34d399; display: flex; align-items: center; gap: 6px;" title="Import Spare Parts & Circuit Boards from Excel">
+            <span>📥</span>
+            <span>Import Excel</span>
+          </button>
+
           <button 
             id="btn-ent-top-spare-config" 
             class="btn btn-secondary btn-sm" 
@@ -1134,9 +1139,15 @@ function renderEntLabConfigInlineView() {
             </div>
           </div>
         </div>
-        <button id="btn-inline-open-spare-parts" class="btn btn-primary" style="font-weight: 800; background: linear-gradient(135deg, #0284c7, #0369a1); border: 1.5px solid #38bdf8; box-shadow: 0 4px 14px rgba(2, 132, 199, 0.4); padding: 8px 18px;">
-          🚀 Open Spare Parts Catalog &amp; Studio
-        </button>
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+          <button id="btn-inline-open-ent-excel-import" class="btn btn-secondary" style="font-weight: 800; border-color: #10b981; color: #34d399; padding: 8px 16px; display: flex; align-items: center; gap: 6px;" title="Import Spare Parts & Circuit Boards from Excel">
+            <span>📥</span>
+            <span>Import Excel (ENT Parts)</span>
+          </button>
+          <button id="btn-inline-open-spare-parts" class="btn btn-primary" style="font-weight: 800; background: linear-gradient(135deg, #0284c7, #0369a1); border: 1.5px solid #38bdf8; box-shadow: 0 4px 14px rgba(2, 132, 199, 0.4); padding: 8px 18px;">
+            🚀 Open Spare Parts Catalog &amp; Studio
+          </button>
+        </div>
       </div>
 
       <div style="display: grid; grid-template-columns: 1.3fr 1fr; gap: 16px;">
@@ -1574,6 +1585,10 @@ function initEntLabConfigInlineEvents(refreshEntLab) {
     refreshEntLab();
   });
 
+  document.getElementById('btn-inline-open-ent-excel-import')?.addEventListener('click', () => {
+    openEntLabExcelImportModal();
+  });
+
   // Real-time Manpower Autocomplete Search & Auto-Fill
   setupManpowerTechAutocomplete({
     inputEl: document.getElementById('inline-tech-name'),
@@ -1589,7 +1604,7 @@ function initEntLabConfigInlineEvents(refreshEntLab) {
     existingTechs
   });
 
-  document.getElementById('btn-inline-add-tech')?.addEventListener('click', () => {
+  document.getElementById('btn-inline-add-tech')?.addEventListener('click', async () => {
     const inputEl = document.getElementById('inline-tech-name');
     const name = inputEl?.value.trim();
     const role = document.getElementById('inline-tech-role')?.value.trim() || 'ENT Specialist';
@@ -1599,7 +1614,7 @@ function initEntLabConfigInlineEvents(refreshEntLab) {
 
     if (name) {
       try {
-        etLabService.addTechnician({
+        await etLabService.addTechnician({
           name,
           cardNumber,
           role,
@@ -1617,22 +1632,34 @@ function initEntLabConfigInlineEvents(refreshEntLab) {
   });
 
   document.querySelectorAll('.btn-inline-del-tech').forEach(btn => {
-    btn.addEventListener('click', (e) => {
+    btn.addEventListener('click', async (e) => {
       const id = e.currentTarget.getAttribute('data-id');
       if (id) {
-        etLabService.deleteTechnician(id);
-        refreshEntLab();
-        notificationService.success('Technician removed.');
+        btn.disabled = true;
+        btn.innerHTML = '⏳';
+        try {
+          await etLabService.deleteTechnician(id);
+          refreshEntLab();
+          notificationService.success('Technician removed from ENT Lab staff.');
+        } catch (err) {
+          notificationService.error(err.message || 'Failed to remove technician.');
+          btn.disabled = false;
+          btn.innerHTML = '🗑️';
+        }
       }
     });
   });
 
-  document.getElementById('btn-inline-add-cat')?.addEventListener('click', () => {
+  document.getElementById('btn-inline-add-cat')?.addEventListener('click', async () => {
     const name = document.getElementById('inline-cat-name')?.value.trim();
     if (name) {
-      etLabService.addCategory(name);
-      refreshEntLab();
-      notificationService.success(`Category "${name}" added!`);
+      try {
+        await etLabService.addCategory(name);
+        refreshEntLab();
+        notificationService.success(`Category "${name}" added!`);
+      } catch (err) {
+        notificationService.error(err.message || 'Failed to add category.');
+      }
     } else {
       notificationService.warning('Please enter a category name.');
     }
@@ -1664,9 +1691,15 @@ function initEntLabConfigInlineEvents(refreshEntLab) {
           isDestructive: true
         });
         if (confirmed) {
-          etLabService.deleteCategory(id);
-          refreshEntLab();
-          notificationService.success(`Category "${name}" deleted.`);
+          btn.disabled = true;
+          try {
+            await etLabService.deleteCategory(id);
+            refreshEntLab();
+            notificationService.success(`Category "${name}" deleted.`);
+          } catch (err) {
+            notificationService.error(err.message || 'Failed to delete category.');
+            btn.disabled = false;
+          }
         }
       }
     });
@@ -1676,7 +1709,7 @@ function initEntLabConfigInlineEvents(refreshEntLab) {
     openEditCompanyModal(null, refreshEntLab);
   });
 
-  document.getElementById('btn-inline-add-comp')?.addEventListener('click', () => {
+  document.getElementById('btn-inline-add-comp')?.addEventListener('click', async () => {
     const name = document.getElementById('inline-comp-name')?.value.trim();
     const contactRaw = document.getElementById('inline-comp-contact')?.value.trim() || '';
     if (name) {
@@ -1695,9 +1728,13 @@ function initEntLabConfigInlineEvents(refreshEntLab) {
         contactPerson = parts[0];
         phone = parts[1] || '';
       }
-      etLabService.addCompany(name, contactPerson, phone);
-      refreshEntLab();
-      notificationService.success(`Company "${name}" added!`);
+      try {
+        await etLabService.addCompany(name, contactPerson, phone);
+        refreshEntLab();
+        notificationService.success(`Company "${name}" added!`);
+      } catch (err) {
+        notificationService.error(err.message || 'Failed to add company.');
+      }
     } else {
       notificationService.warning('Please enter a company name.');
     }
@@ -1729,9 +1766,15 @@ function initEntLabConfigInlineEvents(refreshEntLab) {
           isDestructive: true
         });
         if (confirmed) {
-          etLabService.deleteCompany(id);
-          refreshEntLab();
-          notificationService.success(`Company "${compName}" deleted.`);
+          btn.disabled = true;
+          try {
+            await etLabService.deleteCompany(id);
+            refreshEntLab();
+            notificationService.success(`Company "${compName}" deleted.`);
+          } catch (err) {
+            notificationService.error(err.message || 'Failed to delete company.');
+            btn.disabled = false;
+          }
         }
       }
     });
@@ -1801,9 +1844,13 @@ export function initEtLabEvents() {
         const s = (b.boardSerial || '').toLowerCase();
         const n = (b.partName || '').toLowerCase();
         const m = (b.modelNo || '').toLowerCase();
+        const p = (b.partNo || '').toLowerCase();
         const j = (b.jukiSlNo || b.slNo || '').toLowerCase();
         const mach = (b.currentMachineSerial || '').toLowerCase();
-        return s.includes(q) || n.includes(q) || m.includes(q) || j.includes(q) || mach.includes(q);
+        const cat = (b.category || '').toLowerCase();
+        const bill = (b.billNo || '').toLowerCase();
+        const rem = (b.remarks || '').toLowerCase();
+        return s.includes(q) || n.includes(q) || m.includes(q) || p.includes(q) || j.includes(q) || mach.includes(q) || cat.includes(q) || bill.includes(q) || rem.includes(q);
       }).slice(0, 15);
 
       highlightedIndex = -1;
@@ -2024,6 +2071,11 @@ export function initEtLabEvents() {
   // 8. Add New Board Modal
   document.getElementById('btn-open-add-board-modal')?.addEventListener('click', () => {
     openAddOrEditBoardModal(null);
+  });
+
+  // 8b. Excel Import Modal for ENT Lab
+  document.getElementById('btn-open-ent-excel-import')?.addEventListener('click', () => {
+    openEntLabExcelImportModal();
   });
 
   // 9. Edit Board Specs Modal
@@ -3265,6 +3317,17 @@ function openAddOrEditBoardModal(board = null) {
         <form id="form-board-master">
           <div class="modal-body" style="padding: 20px; display: flex; flex-direction: column; gap: 12px; max-height: 75vh; overflow-y: auto;">
             
+            ${!isEdit ? `
+              <div style="background: rgba(16, 185, 129, 0.1); border: 1px dashed rgba(52, 211, 153, 0.4); border-radius: 8px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+                <div style="font-size: 11.5px; color: #a7f3d0;">
+                  ⚡ Have multiple spare parts or circuit boards in an Excel spreadsheet?
+                </div>
+                <button type="button" id="btn-modal-switch-to-excel" class="btn btn-xs" style="background: linear-gradient(135deg, #059669, #047857); color: #fff; font-weight: 700; padding: 5px 12px; border-radius: 4px; border: 1px solid #34d399; cursor: pointer; white-space: nowrap;">
+                  📥 Bulk Import from Excel
+                </button>
+              </div>
+            ` : ''}
+
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
               <div class="form-group">
                 <label class="form-label required">Board ID / Unit Number</label>
@@ -3431,8 +3494,16 @@ function openAddOrEditBoardModal(board = null) {
 
   overlay.querySelectorAll('.btn-close-board-modal').forEach(b => b.addEventListener('click', close));
 
-  document.getElementById('form-board-master').addEventListener('submit', (e) => {
+  document.getElementById('btn-modal-switch-to-excel')?.addEventListener('click', () => {
+    close();
+    openEntLabExcelImportModal();
+  });
+
+  document.getElementById('form-board-master').addEventListener('submit', async (e) => {
     e.preventDefault();
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    if (submitBtn) submitBtn.disabled = true;
+
     const boardSerial = document.getElementById('modal-board-serial').value.trim();
     const partName = document.getElementById('modal-part-name').value.trim();
     const category = document.getElementById('modal-category').value;
@@ -3448,12 +3519,12 @@ function openAddOrEditBoardModal(board = null) {
 
     try {
       if (isEdit) {
-        etLabService.updateBoard(board.id, {
+        await etLabService.updateBoard(board.id, {
           partName, category, modelNo, partNo, jukiSlNo, qty, comeDate, location, billNo, gpNo, remarks
         });
         notificationService.success(`Board ${board.boardSerial} updated successfully!`);
       } else {
-        etLabService.createBoard({
+        await etLabService.createBoard({
           boardSerial, partName, category, modelNo, partNo, jukiSlNo, qty, comeDate, location, billNo, gpNo, remarks
         });
         selectedBoardSerial = boardSerial;
@@ -3466,7 +3537,8 @@ function openAddOrEditBoardModal(board = null) {
         initEtLabEvents();
       }
     } catch (err) {
-      alert('Failed to save board: ' + err.message);
+      if (submitBtn) submitBtn.disabled = false;
+      notificationService.error('Failed to save board: ' + err.message);
     }
   });
 }
@@ -3701,7 +3773,7 @@ function openAdminConfigModal() {
     existingTechs
   });
 
-  document.getElementById('btn-admin-add-tech')?.addEventListener('click', () => {
+  document.getElementById('btn-admin-add-tech')?.addEventListener('click', async () => {
     const inputEl = document.getElementById('admin-new-tech-name');
     const name = inputEl?.value.trim();
     const role = document.getElementById('admin-new-tech-role')?.value.trim() || 'ENT Specialist';
@@ -3711,7 +3783,7 @@ function openAdminConfigModal() {
 
     if (name) {
       try {
-        etLabService.addTechnician({
+        await etLabService.addTechnician({
           name,
           cardNumber,
           role,
@@ -3730,24 +3802,36 @@ function openAdminConfigModal() {
   });
 
   overlay.querySelectorAll('.btn-del-tech').forEach(btn => {
-    btn.addEventListener('click', (e) => {
+    btn.addEventListener('click', async (e) => {
       const id = e.currentTarget.getAttribute('data-id');
       if (id) {
-        etLabService.deleteTechnician(id);
-        close();
-        openAdminConfigModal();
-        notificationService.success('Technician removed.');
+        btn.disabled = true;
+        btn.innerHTML = '⏳';
+        try {
+          await etLabService.deleteTechnician(id);
+          close();
+          openAdminConfigModal();
+          notificationService.success('Technician removed from ENT Lab staff.');
+        } catch (err) {
+          notificationService.error(err.message || 'Failed to remove technician.');
+          btn.disabled = false;
+          btn.innerHTML = '🗑️';
+        }
       }
     });
   });
 
-  document.getElementById('btn-admin-add-category')?.addEventListener('click', () => {
+  document.getElementById('btn-admin-add-category')?.addEventListener('click', async () => {
     const name = document.getElementById('admin-new-cat-name')?.value.trim();
     if (name) {
-      etLabService.addCategory(name);
-      close();
-      openAdminConfigModal();
-      notificationService.success(`Category "${name}" added!`);
+      try {
+        await etLabService.addCategory(name);
+        close();
+        openAdminConfigModal();
+        notificationService.success(`Category "${name}" added!`);
+      } catch (err) {
+        notificationService.error(err.message || 'Failed to add category.');
+      }
     } else {
       notificationService.warning('Please enter a category name.');
     }
@@ -3781,10 +3865,16 @@ function openAdminConfigModal() {
           isDestructive: true
         });
         if (confirmed) {
-          etLabService.deleteCategory(id);
-          close();
-          openAdminConfigModal();
-          notificationService.success(`Category "${name}" deleted.`);
+          btn.disabled = true;
+          try {
+            await etLabService.deleteCategory(id);
+            close();
+            openAdminConfigModal();
+            notificationService.success(`Category "${name}" deleted.`);
+          } catch (err) {
+            notificationService.error(err.message || 'Failed to delete category.');
+            btn.disabled = false;
+          }
         }
       }
     });
@@ -4087,3 +4177,321 @@ function exportEntLabExcel() {
 
   XLSX.writeFile(wb, `ET_Lab_Management_Ledger_${new Date().toISOString().split('T')[0]}.xlsx`);
 }
+
+/**
+ * ============================================================
+ * EXCEL IMPORT FOR ENT LAB CIRCUIT BOARDS & SPARE PARTS
+ * ============================================================
+ */
+export function openEntLabExcelImportModal() {
+  if (typeof XLSX === 'undefined') {
+    notificationService.error('Excel library is still loading. Please check your connection and try again.');
+    return;
+  }
+
+  const modalHtml = `
+    <div class="modal-overlay" id="ent-excel-import-modal-overlay" style="position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(5px); z-index: 10000; display: flex; align-items: center; justify-content: center; padding: 18px; overflow-y: auto;">
+      <div class="modal-dialog" style="background: var(--bg-surface); border: 1.5px solid #38bdf8; border-radius: var(--radius-xl); width: 100%; max-width: 760px; max-height: 92vh; display: flex; flex-direction: column; min-height: 0; box-shadow: 0 20px 60px rgba(0,0,0,0.8); overflow: hidden;">
+        
+        <!-- Header -->
+        <div class="modal-header" style="background: linear-gradient(135deg, #0284c7, #0369a1); padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.15); flex-shrink: 0;">
+          <div style="display: flex; align-items: center; gap: 10px; color: #fff;">
+            <span style="font-size: 24px;">📥</span>
+            <div>
+              <div style="font-size: 16px; font-weight: 800; color: #fff; letter-spacing: -0.3px;">
+                Import ENT Lab Circuit Boards &amp; Spare Parts
+              </div>
+              <div style="font-size: 11.5px; color: #bae6fd; font-weight: 600; margin-top: 1px;">
+                Bulk upload parts catalog &bull; Auto-registers categories &bull; Instant fuzzy search
+              </div>
+            </div>
+          </div>
+          <button type="button" class="btn btn-ghost btn-sm btn-close-ent-import" style="color: #fff; font-size: 18px; line-height: 1; padding: 4px 8px;">✕</button>
+        </div>
+
+        <!-- Body -->
+        <div class="modal-body" style="padding: 18px 22px; display: flex; flex-direction: column; gap: 14px; overflow-y: auto; flex: 1; min-height: 0;">
+          
+          <!-- Instructions & Template Download Bar -->
+          <div style="background: rgba(2, 132, 199, 0.12); border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 8px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <div style="font-size: 12px; color: #e0f2fe; line-height: 1.5; flex: 1; min-width: 240px;">
+              <strong>Supported Columns:</strong> <code>Part Name, Model No, Part No, Category, Board Serial (Optional), JUKI SL No, Qty, Machine Serial, Bill No, Location, Remarks</code>.
+              <div style="font-size: 11px; color: #38bdf8; margin-top: 2px;">
+                ⚡ New categories will automatically be registered in <strong>Board Categories &amp; Hardware Types</strong>!
+              </div>
+            </div>
+            <button id="btn-dl-ent-template" class="btn btn-secondary btn-sm" style="font-weight: 700; border-color: #38bdf8; color: #38bdf8; white-space: nowrap; display: flex; align-items: center; gap: 6px;">
+              <span>📋</span>
+              <span>Download Excel Template</span>
+            </button>
+          </div>
+
+          <!-- Drag & Drop Zone -->
+          <div id="ent-excel-dropzone" style="border: 2px dashed #38bdf8; border-radius: 10px; padding: 30px 20px; text-align: center; background: rgba(56, 189, 248, 0.04); cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+            <div style="font-size: 40px; margin-bottom: 8px;">📊</div>
+            <div style="font-size: 14px; font-weight: 700; color: #fff;">
+              Click to select or drag &amp; drop Excel file (.xlsx, .xls, .csv)
+            </div>
+            <div style="font-size: 11.5px; color: #94a3b8; margin-top: 4px;">
+              Fast processing of all garments maintenance electronic spare parts sheets
+            </div>
+            <input type="file" id="ent-file-input" accept=".xlsx, .xls, .csv" style="display: none;" />
+          </div>
+
+          <!-- Options & Live Preview (Populated after file selected) -->
+          <div id="ent-import-preview-section" style="display: none; flex-direction: column; gap: 12px;">
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 8px;">
+              <div style="font-size: 12.5px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 8px;">
+                <span>📋 File Data Preview:</span>
+                <span id="ent-import-row-count-badge" style="background: rgba(16, 185, 129, 0.2); color: #34d399; font-size: 11px; padding: 2px 8px; border-radius: 12px; font-weight: 700;"></span>
+              </div>
+              <div style="font-size: 11px; color: #94a3b8;" id="ent-import-filename-label"></div>
+            </div>
+
+            <!-- Preview Table -->
+            <div style="max-height: 190px; overflow: auto; border: 1px solid var(--border-color); border-radius: 6px; background: rgba(15, 23, 42, 0.8);">
+              <table style="width: 100%; border-collapse: collapse; font-size: 11px; text-align: left;">
+                <thead>
+                  <tr style="background: rgba(30, 41, 59, 0.95); position: sticky; top: 0; color: #38bdf8; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                    <th style="padding: 6px 10px;">#</th>
+                    <th style="padding: 6px 10px;">Part / Board Name</th>
+                    <th style="padding: 6px 10px;">Model No</th>
+                    <th style="padding: 6px 10px;">Part No</th>
+                    <th style="padding: 6px 10px;">Category</th>
+                    <th style="padding: 6px 10px;">Board Serial</th>
+                    <th style="padding: 6px 10px;">JUKI S/N</th>
+                    <th style="padding: 6px 10px;">Machine</th>
+                  </tr>
+                </thead>
+                <tbody id="ent-import-preview-tbody"></tbody>
+              </table>
+            </div>
+
+            <!-- Import Configurations -->
+            <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; padding: 10px 14px; display: flex; flex-direction: column; gap: 8px;">
+              <label style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #e2e8f0; cursor: pointer;">
+                <input type="checkbox" id="chk-ent-auto-cats" checked style="accent-color: #38bdf8; cursor: pointer;" />
+                <span>Auto-register new Hardware Categories in <strong>Board Categories &amp; Hardware Types</strong></span>
+              </label>
+              <label style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #e2e8f0; cursor: pointer;">
+                <input type="checkbox" id="chk-ent-update-dups" checked style="accent-color: #38bdf8; cursor: pointer;" />
+                <span>Update existing items if Serial Number or (Name + Model + Part No) matches</span>
+              </label>
+            </div>
+
+          </div>
+
+          <!-- Feedback Banner -->
+          <div id="ent-import-feedback" style="display: none; padding: 12px 16px; border-radius: 8px; font-size: 12.5px; line-height: 1.5;"></div>
+
+        </div>
+
+        <!-- Footer -->
+        <div class="modal-footer" style="padding: 12px 20px; background: var(--bg-card); border-top: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
+          <button type="button" class="btn btn-secondary btn-sm btn-close-ent-import">Cancel</button>
+          <button type="button" id="btn-execute-ent-import" class="btn btn-primary" disabled style="font-weight: 800; background: linear-gradient(135deg, #0284c7, #0369a1); border: 1.5px solid #38bdf8; padding: 8px 22px;">
+            🚀 Commit Excel Import
+          </button>
+        </div>
+
+      </div>
+    </div>
+  `;
+
+  document.body.insertAdjacentHTML('beforeend', modalHtml);
+  const overlay = document.getElementById('ent-excel-import-modal-overlay');
+  const close = () => overlay?.remove();
+
+  overlay.querySelectorAll('.btn-close-ent-import').forEach(b => b.addEventListener('click', close));
+
+  const dropzone = document.getElementById('ent-excel-dropzone');
+  const fileInput = document.getElementById('ent-file-input');
+  const previewSection = document.getElementById('ent-import-preview-section');
+  const previewTbody = document.getElementById('ent-import-preview-tbody');
+  const rowCountBadge = document.getElementById('ent-import-row-count-badge');
+  const filenameLabel = document.getElementById('ent-import-filename-label');
+  const btnCommit = document.getElementById('btn-execute-ent-import');
+  const btnDlTemplate = document.getElementById('btn-dl-ent-template');
+  const feedback = document.getElementById('ent-import-feedback');
+
+  let parsedRows = [];
+
+  // Download Excel Template
+  btnDlTemplate.addEventListener('click', () => {
+    const wb = XLSX.utils.book_new();
+    const templateData = [
+      ['Part Name', 'Model No', 'Part No', 'Category', 'Board Serial', 'JUKI SL No', 'Quantity', 'Current Machine Serial', 'Bill No', 'Location', 'Remarks'],
+      ['Main CPU Control Board', 'SC-920', '400-05441', 'Main CPU Control Board', '', 'JK-99214', 1, '', 'INV-2026-101', 'ENT Lab Shelf A-1', 'Central Lab spare CPU board'],
+      ['Servo Motor Drive PCB', 'MD-500', '291-0021-01', 'Servo Motor Drive PCB', '', 'JK-88102', 1, 'JA-01', 'BILL-4412', 'Jamuna Line 01', 'Direct drive servo board'],
+      ['Operation Panel & Display PCB', 'CP-180', '236-4101', 'Operation Panel & Display PCB', '', 'OP-77120', 1, '', 'INV-2026-105', 'ENT Lab Shelf B-2', 'Membrane panel unit'],
+      ['Power Supply & Transformer Unit', 'PS-350W', 'ET-PWR-001', 'Power Supply & Transformer Unit', '', 'TR-3301', 1, 'BG-02', 'BILL-4490', 'Buriganga Bay', 'Repaired 24V switching supply'],
+      ['Sensor & Position Encoder Board', 'SE-900', 'SN-900-B', 'Sensor & Position Encoder Board', '', 'EN-1102', 2, '', 'INV-2026-110', 'Drawer E-4', 'Needle position encoder'],
+      ['Inverter Drive Board', 'FR-D720', 'INV-D720', 'Inverter Power Unit', '', 'IV-55410', 1, '', 'BILL-4500', 'Shelf C-1', '0.75kW Inverter PCB module'],
+      ['Solenoid Valve Driver Board', 'SOL-DRV-04', 'SL-400', 'Solenoid Drive PCB', '', 'SD-9021', 1, '', 'INV-2026-112', 'Drawer E-2', 'Auto-trimmer solenoid drive'],
+      ['Thread Trimmer Control Unit', 'TC-100', 'TC-100-A', 'Main CPU Control Board', '', 'TC-8840', 1, 'JA-05', 'BILL-4520', 'Jamuna Line 05', 'Trimmer electronics unit']
+    ];
+    const ws = XLSX.utils.aoa_to_sheet(templateData);
+    ws['!cols'] = [
+      { wch: 30 }, // Part Name
+      { wch: 14 }, // Model No
+      { wch: 16 }, // Part No
+      { wch: 32 }, // Category
+      { wch: 16 }, // Board Serial
+      { wch: 16 }, // JUKI SL No
+      { wch: 10 }, // Qty
+      { wch: 22 }, // Machine Serial
+      { wch: 14 }, // Bill No
+      { wch: 20 }, // Location
+      { wch: 28 }  // Remarks
+    ];
+    XLSX.utils.book_append_sheet(wb, ws, 'ENT Lab Spare Parts');
+    XLSX.writeFile(wb, 'ENT_Lab_Spare_Parts_Template.xlsx');
+  });
+
+  // Dropzone click & drag
+  dropzone.addEventListener('click', () => fileInput.click());
+  dropzone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropzone.style.background = 'rgba(56, 189, 248, 0.12)';
+  });
+  dropzone.addEventListener('dragleave', () => {
+    dropzone.style.background = 'rgba(56, 189, 248, 0.04)';
+  });
+  dropzone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropzone.style.background = 'rgba(56, 189, 248, 0.04)';
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleFileSelected(e.dataTransfer.files[0]);
+    }
+  });
+
+  fileInput.addEventListener('change', (e) => {
+    if (e.target.files && e.target.files[0]) {
+      handleFileSelected(e.target.files[0]);
+    }
+  });
+
+  function handleFileSelected(file) {
+    const reader = new FileReader();
+    reader.onload = (re) => {
+      try {
+        const data = new Uint8Array(re.target.result);
+        const wb = XLSX.read(data, { type: 'array' });
+        const firstSheetName = wb.SheetNames[0];
+        const sheet = wb.Sheets[firstSheetName];
+        const rows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+
+        if (!rows || rows.length === 0) {
+          notificationService.warning('The uploaded sheet contains no data rows.');
+          return;
+        }
+
+        parsedRows = rows;
+
+        // Update Dropzone visual
+        dropzone.innerHTML = `
+          <div style="font-size: 32px; color: #10b981; margin-bottom: 4px;">✅</div>
+          <div style="font-weight: 800; color: #fff; font-size: 14px;">${file.name}</div>
+          <div style="font-size: 11.5px; color: #38bdf8; margin-top: 2px;">
+            File loaded successfully &bull; ${(file.size / 1024).toFixed(1)} KB &bull; Sheet: "${firstSheetName}"
+          </div>
+        `;
+        dropzone.style.borderColor = '#10b981';
+        dropzone.style.background = 'rgba(16, 185, 129, 0.06)';
+
+        // Update Preview
+        filenameLabel.textContent = file.name;
+        rowCountBadge.textContent = `${rows.length} rows detected`;
+
+        const sampleRows = rows.slice(0, 5);
+        previewTbody.innerHTML = sampleRows.map((r, i) => {
+          const name = r['Part Name'] || r['Board Name'] || r['Item Name'] || r['Name'] || r['Description'] || '—';
+          const model = r['Model No'] || r['Model'] || '—';
+          const partNo = r['Part No'] || r['Part Number'] || r['Code'] || '—';
+          const cat = r['Category'] || r['Hardware Type'] || 'Main CPU Control Board';
+          const serial = r['Board Serial'] || r['Serial No'] || r['S/N'] || '<span style="color:#38bdf8; font-style:italic;">[Auto BRD]</span>';
+          const juki = r['JUKI SL No'] || r['SL No'] || '—';
+          const mach = r['Current Machine Serial'] || r['Machine Serial'] || '—';
+
+          return `
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+              <td style="padding: 6px 10px; color: #94a3b8;">${i + 1}</td>
+              <td style="padding: 6px 10px; font-weight: 700; color: #fff;">${escapeHtml(String(name))}</td>
+              <td style="padding: 6px 10px; color: #cbd5e1; font-family: var(--font-mono);">${escapeHtml(String(model))}</td>
+              <td style="padding: 6px 10px; color: #cbd5e1; font-family: var(--font-mono);">${escapeHtml(String(partNo))}</td>
+              <td style="padding: 6px 10px; color: #86efac;">${escapeHtml(String(cat))}</td>
+              <td style="padding: 6px 10px; font-family: var(--font-mono);">${serial}</td>
+              <td style="padding: 6px 10px; font-family: var(--font-mono); color: #94a3b8;">${escapeHtml(String(juki))}</td>
+              <td style="padding: 6px 10px; color: ${mach !== '—' ? '#38bdf8' : '#94a3b8'};">${escapeHtml(String(mach))}</td>
+            </tr>
+          `;
+        }).join('');
+
+        previewSection.style.display = 'flex';
+        btnCommit.disabled = false;
+        btnCommit.innerHTML = `🚀 Import ${rows.length} Parts into ENT Lab`;
+
+      } catch (err) {
+        notificationService.error(`Failed to parse Excel file: ${err.message}`);
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  }
+
+  // Commit Import
+  btnCommit.addEventListener('click', async () => {
+    if (!parsedRows || parsedRows.length === 0) return;
+
+    const autoCategories = document.getElementById('chk-ent-auto-cats')?.checked !== false;
+    const updateDuplicates = document.getElementById('chk-ent-update-dups')?.checked !== false;
+
+    btnCommit.disabled = true;
+    btnCommit.innerHTML = '⏳ Importing into ENT Lab Database...';
+
+    try {
+      const res = await etLabService.importBoardsFromRows(parsedRows, {
+        autoCategories,
+        updateDuplicates
+      });
+
+      feedback.style.display = 'block';
+      feedback.style.background = 'rgba(16, 185, 129, 0.15)';
+      feedback.style.border = '1px solid #10b981';
+      feedback.style.color = '#86efac';
+      feedback.innerHTML = `
+        <div style="font-weight: 800; font-size: 14px; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+          <span>🎉</span>
+          <span>ENT Lab Excel Import Complete!</span>
+        </div>
+        <div>&bull; <strong>${res.importedCount} new items</strong> registered with sequential Board Serials.</div>
+        <div>&bull; <strong>${res.updatedCount} existing records</strong> matched &amp; updated with latest specs.</div>
+        ${res.newCategoriesCount > 0 ? `<div>&bull; <strong>${res.newCategoriesCount} new hardware categories</strong> added to Board Categories &amp; Hardware Types.</div>` : ''}
+        <div style="margin-top: 6px; font-weight: 700; color: #38bdf8;">
+          Total ENT Catalog: ${res.totalInCatalog} items &bull; All items are now instantly searchable in the ENT Lab search bar!
+        </div>
+      `;
+
+      notificationService.success(`Successfully imported ${res.importedCount} items into ENT Lab!`);
+
+      setTimeout(() => {
+        close();
+        const container = document.getElementById('main-view-container');
+        if (container) {
+          container.innerHTML = renderEtLabManagementView();
+          initEtLabEvents();
+        }
+      }, 1600);
+
+    } catch (err) {
+      btnCommit.disabled = false;
+      btnCommit.innerHTML = '🚀 Retry Import';
+      feedback.style.display = 'block';
+      feedback.style.background = 'rgba(239, 68, 68, 0.15)';
+      feedback.style.border = '1px solid #ef4444';
+      feedback.style.color = '#fca5a5';
+      feedback.innerHTML = `<strong>❌ Import Error:</strong> ${err.message}`;
+    }
+  });
+}
+

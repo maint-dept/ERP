@@ -2547,7 +2547,8 @@ export function openSparePartsImportModal() {
         setTimeout(() => {
           close();
           window.dispatchEvent(new CustomEvent('erp:master-data-updated'));
-        }, 2000);
+          window.dispatchEvent(new CustomEvent('erp:spare-parts-updated'));
+        }, 1500);
       } else {
         const results = historyService.importSparePartsExcel(fileBuffer);
         feedback.style.display = 'block';

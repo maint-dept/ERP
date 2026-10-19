@@ -1286,7 +1286,8 @@ class HistoryService {
       }
     });
 
-    storage.saveTable(TABLE_NAMES.SPARE_PARTS_MASTER);
+    storage.saveTable(TABLE_NAMES.SPARE_PARTS_MASTER, true);
+    window.dispatchEvent(new CustomEvent('erp:spare-parts-updated'));
     return {
       importedCount,
       updatedCount,

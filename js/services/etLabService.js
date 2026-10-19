@@ -78,9 +78,9 @@ class EtLabService {
   }
 
   /**
-   * Quick fuzzy search across Board SL, Name, P.No, Model, JUKI SL
+   * Quick fuzzy search across Board SL, Name, P.No, Model, JUKI SL, Category, Bill No & Location
    */
-  searchBoardsFuzzy(query, limit = 15) {
+  searchBoardsFuzzy(query, limit = 20) {
     if (!query) return (storage.getTable(TABLE_NAMES.ET_BOARDS) || []).slice(0, limit);
     const q = query.trim().toLowerCase();
     const all = storage.getTable(TABLE_NAMES.ET_BOARDS) || [];
@@ -92,7 +92,13 @@ class EtLabService {
       const j = (b.jukiSlNo || '').toLowerCase();
       const sl = (b.slNo || '').toLowerCase();
       const mach = (b.currentMachineSerial || '').toLowerCase();
-      return s.includes(q) || n.includes(q) || m.includes(q) || p.includes(q) || j.includes(q) || sl.includes(q) || mach.includes(q);
+      const cat = (b.category || '').toLowerCase();
+      const bill = (b.billNo || '').toLowerCase();
+      const loc = (b.location || '').toLowerCase();
+      const rem = (b.remarks || '').toLowerCase();
+      return s.includes(q) || n.includes(q) || m.includes(q) || p.includes(q) || 
+             j.includes(q) || sl.includes(q) || mach.includes(q) || cat.includes(q) ||
+             bill.includes(q) || loc.includes(q) || rem.includes(q);
     }).slice(0, limit);
   }
 
@@ -218,6 +224,202 @@ class EtLabService {
     auditService.log('DELETE', 'ET_LAB', id, `Deleted ENT Lab Board [${existing.boardSerial}]`);
     window.dispatchEvent(new CustomEvent('erp:et-lab-updated', { detail: { deletedId: id } }));
     return true;
+  }
+
+  /**
+   * Bulk import Circuit Boards & Electronics Spare Parts from Excel workbook rows
+   * Automatically assigns sequential BRD-XXXXX if Serial not given,
+   * registers new Hardware Categories into ET_CATEGORIES, and detects duplicates.
+   */
+  async importBoardsFromRows(rows = [], options = {}) {
+    if (!rows || rows.length === 0) {
+      throw new Error('No data rows found in uploaded Excel file.');
+    }
+
+    const user = authService.getCurrentUser();
+    const existingBoards = storage.getTable(TABLE_NAMES.ET_BOARDS) || [];
+    const existingCats = storage.getTable(TABLE_NAMES.ET_CATEGORIES) || [];
+
+    // Helper map of existing categories (normalized)
+    const catMap = new Map();
+    existingCats.forEach(c => {
+      if (c && c.name) catMap.set(c.name.trim().toLowerCase(), c.name.trim());
+    });
+
+    // Helper maps of existing boards by serial & composite key
+    const serialMap = new Map();
+    const compositeMap = new Map();
+    existingBoards.forEach(b => {
+      if (b.boardSerial) serialMap.set(b.boardSerial.trim().toUpperCase(), b);
+      const key = `${(b.partName || '').trim().toLowerCase()}|${(b.modelNo || '').trim().toLowerCase()}|${(b.partNo || '').trim().toLowerCase()}`;
+      if (key !== '||') compositeMap.set(key, b);
+    });
+
+    // Determine highest existing board serial number (e.g. BRD-00025 -> 25)
+    let maxNum = 0;
+    existingBoards.forEach(b => {
+      if (b.boardSerial) {
+        const match = String(b.boardSerial).match(/BRD-(\d+)/i);
+        if (match) {
+          const num = parseInt(match[1], 10);
+          if (num > maxNum) maxNum = num;
+        }
+      }
+    });
+
+    let importedCount = 0;
+    let updatedCount = 0;
+    let duplicateCount = 0;
+    let newCategoriesCount = 0;
+    const newCategoriesToAdd = [];
+
+    const processedBoards = [...existingBoards];
+
+    for (let idx = 0; idx < rows.length; idx++) {
+      const row = rows[idx];
+      const getVal = (keys, fallback = '') => {
+        for (const k of keys) {
+          if (row[k] !== undefined && row[k] !== null && String(row[k]).trim() !== '') {
+            return String(row[k]).trim();
+          }
+        }
+        return fallback;
+      };
+
+      const rawName = getVal([
+        'Part Name', 'Board Name', 'Item Name', 'Name', 'Item', 'Hardware Name',
+        'partName', 'part_name', 'board_name', 'item_name', 'Description', 'Spare Part Name'
+      ]);
+      if (!rawName) continue; // Skip empty rows
+
+      const modelNo = getVal(['Model No', 'Model', 'Model Number', 'modelNo', 'model_no', 'Machine Model']);
+      const partNo = getVal(['Part No', 'Part Number', 'Part Code', 'Code', 'P.No', 'partNo', 'part_no', 'Part#']);
+      const category = getVal(['Category', 'Hardware Type', 'Board Category', 'Type', 'category', 'Item Type']);
+      const jukiSlNo = getVal(['JUKI SL No', 'JUKI Serial', 'Maker Serial', 'SL No', 'jukiSlNo', 'juki_sl_no', 'slNo', 'sl_no', 'Manufacturer S/N']);
+      const machineSerial = getVal(['Current Machine Serial', 'Machine Serial', 'Machine', 'Installed Machine', 'currentMachineSerial', 'machine_serial', 'Machine S/N']);
+      const billNo = getVal(['Bill No', 'Invoice No', 'Chalan No', 'billNo', 'bill_no', 'Bill#', 'Invoice#', 'Challan No']);
+      const gpNo = getVal(['Gate Pass No', 'GP No', 'gpNo', 'gp_no']);
+      const location = getVal(['Location', 'Shelf', 'Stock Shelf', 'Bay', 'location'], 'ENT Lab Stock Shelf');
+      const remarks = getVal(['Remarks', 'Comments', 'Notes', 'Description', 'remarks']);
+      const qty = parseInt(getVal(['Quantity', 'Qty', 'qty'], '1'), 10) || 1;
+      const status = getVal(['Status', 'Current Status', 'status'], machineSerial ? 'RUNNING_MACHINE' : 'AVAILABLE_SPARE');
+
+      // Auto-register new category in ET_CATEGORIES if not exists
+      let finalCategory = category || 'Main CPU Control Board';
+      if (finalCategory) {
+        const normCat = finalCategory.trim().toLowerCase();
+        if (!catMap.has(normCat)) {
+          catMap.set(normCat, finalCategory.trim());
+          newCategoriesToAdd.push({
+            id: `etcat-${Date.now()}-${++newCategoriesCount}`,
+            name: finalCategory.trim(),
+            code: finalCategory.trim().toUpperCase().replace(/\s+/g, '_'),
+            description: `Auto-registered from Excel import`,
+            status: 'ACTIVE'
+          });
+        } else {
+          finalCategory = catMap.get(normCat);
+        }
+      }
+
+      // Explicit or generated boardSerial
+      let boardSerial = getVal(['Board Serial', 'Serial No', 'Serial Number', 'S/N', 'Serial', 'Unit No', 'BRD No', 'boardSerial', 'board_serial', 'Board ID']);
+      if (boardSerial) {
+        boardSerial = boardSerial.toUpperCase();
+      }
+
+      // Check duplicates
+      let existingMatch = null;
+      if (boardSerial && serialMap.has(boardSerial)) {
+        existingMatch = serialMap.get(boardSerial);
+      } else if (!boardSerial) {
+        const key = `${rawName.toLowerCase()}|${modelNo.toLowerCase()}|${partNo.toLowerCase()}`;
+        if (key !== '||' && compositeMap.has(key)) {
+          existingMatch = compositeMap.get(key);
+        }
+      }
+
+      if (existingMatch && options.updateDuplicates !== false) {
+        duplicateCount++;
+        updatedCount++;
+        existingMatch.partName = rawName;
+        if (modelNo) existingMatch.modelNo = modelNo;
+        if (partNo) existingMatch.partNo = partNo;
+        if (finalCategory) existingMatch.category = finalCategory;
+        if (jukiSlNo) {
+          existingMatch.jukiSlNo = jukiSlNo;
+          existingMatch.slNo = jukiSlNo;
+        }
+        if (billNo) existingMatch.billNo = billNo;
+        if (gpNo) existingMatch.gpNo = gpNo;
+        if (location) existingMatch.location = location;
+        if (remarks) existingMatch.remarks = remarks;
+        if (machineSerial) {
+          existingMatch.currentMachineSerial = machineSerial.toUpperCase();
+          existingMatch.status = 'RUNNING_MACHINE';
+        }
+        existingMatch.updatedAt = new Date().toISOString();
+      } else {
+        // Generate serial if missing or duplicate serial was forced new
+        if (!boardSerial || (existingMatch && options.updateDuplicates === false)) {
+          maxNum++;
+          boardSerial = `BRD-${String(maxNum).padStart(5, '0')}`;
+        }
+
+        const newBoard = {
+          id: `brd-${Date.now()}-${++importedCount}-${Math.floor(Math.random() * 1000)}`,
+          boardSerial,
+          modelNo,
+          partName: rawName,
+          partNo,
+          slNo: jukiSlNo || '',
+          jukiSlNo: jukiSlNo || '',
+          qty,
+          comeDate: new Date().toISOString().split('T')[0],
+          gpNo,
+          billNo,
+          remarks: remarks || 'Imported via Excel spreadsheet',
+          category: finalCategory,
+          status: machineSerial ? 'RUNNING_MACHINE' : (status || 'AVAILABLE_SPARE'),
+          currentMachineSerial: machineSerial ? machineSerial.toUpperCase() : null,
+          currentMachineId: null,
+          installedDate: machineSerial ? new Date().toISOString().split('T')[0] : null,
+          installedBy: null,
+          location,
+          createdAt: new Date().toISOString(),
+          createdBy: user?.name || 'System Admin'
+        };
+
+        processedBoards.push(newBoard);
+        serialMap.set(boardSerial, newBoard);
+      }
+    }
+
+    // Persist new categories if any were created
+    if (newCategoriesToAdd.length > 0) {
+      await storage.writeAndConfirm(TABLE_NAMES.ET_CATEGORIES, (tbl) => {
+        newCategoriesToAdd.forEach(c => tbl.push(c));
+      });
+      await storage.saveTable(TABLE_NAMES.ET_CATEGORIES, true);
+    }
+
+    // Persist boards confirmed write
+    await storage.writeAndConfirm(TABLE_NAMES.ET_BOARDS, (tbl) => {
+      tbl.length = 0;
+      processedBoards.forEach(b => tbl.push(b));
+    });
+    await storage.saveTable(TABLE_NAMES.ET_BOARDS, true);
+
+    auditService.log('IMPORT', 'ET_LAB', 'EXCEL_BATCH', `Imported ${importedCount} boards, updated ${updatedCount} existing records from Excel.`);
+    window.dispatchEvent(new CustomEvent('erp:et-lab-updated'));
+
+    return {
+      importedCount,
+      updatedCount,
+      duplicateCount,
+      newCategoriesCount,
+      totalInCatalog: processedBoards.length
+    };
   }
 
   // ============================================================
@@ -1307,14 +1509,17 @@ class EtLabService {
     return updated;
   }
 
-  deleteCompany(id) {
-    let list = this.getCompanies();
-    const comp = list.find(c => c.id === id);
-    list = list.filter(c => c.id !== id);
-    storage.setTable(TABLE_NAMES.ET_COMPANIES, list);
+  async deleteCompany(id) {
+    let comp = null;
+    await storage.writeAndConfirm(TABLE_NAMES.ET_COMPANIES, (tbl) => {
+      const idx = tbl.findIndex(c => c.id === id);
+      if (idx !== -1) comp = tbl.splice(idx, 1)[0];
+    });
+    await storage.saveTable(TABLE_NAMES.ET_COMPANIES, true);
     if (comp) {
       auditService.log('CONFIG', 'ET_LAB', id, `Deleted external repair company: ${comp.name}`);
     }
+    window.dispatchEvent(new CustomEvent('erp:et-lab-updated', { detail: { action: 'delete-company', id } }));
     return true;
   }
 
@@ -1333,6 +1538,7 @@ class EtLabService {
     };
     // CONFIRMED WRITE
     await storage.writeAndConfirm(TABLE_NAMES.ET_CATEGORIES, (tbl) => { tbl.push(newCat); });
+    await storage.saveTable(TABLE_NAMES.ET_CATEGORIES, true);
     auditService.log('CONFIG', 'ET_LAB', newCat.id, `Added category: ${newCat.name}`);
     return newCat;
   }
@@ -1346,18 +1552,22 @@ class EtLabService {
       tbl[idx] = { ...tbl[idx], ...updates };
       updated = tbl[idx];
     });
+    await storage.saveTable(TABLE_NAMES.ET_CATEGORIES, true);
     auditService.log('CONFIG', 'ET_LAB', id, `Updated category: ${updated?.name || id}`);
     return updated;
   }
 
-  deleteCategory(id) {
-    let list = this.getCategories();
-    const cat = list.find(c => c.id === id);
-    list = list.filter(c => c.id !== id);
-    storage.setTable(TABLE_NAMES.ET_CATEGORIES, list);
+  async deleteCategory(id) {
+    let cat = null;
+    await storage.writeAndConfirm(TABLE_NAMES.ET_CATEGORIES, (tbl) => {
+      const idx = tbl.findIndex(c => c.id === id);
+      if (idx !== -1) cat = tbl.splice(idx, 1)[0];
+    });
+    await storage.saveTable(TABLE_NAMES.ET_CATEGORIES, true);
     if (cat) {
       auditService.log('CONFIG', 'ET_LAB', id, `Deleted category: ${cat.name}`);
     }
+    window.dispatchEvent(new CustomEvent('erp:et-lab-updated', { detail: { action: 'delete-category', id } }));
     return true;
   }
 
@@ -1366,8 +1576,10 @@ class EtLabService {
   // ============================================================
 
   getTechnicians() {
-    const table = storage.getTable(TABLE_NAMES.ET_TECHNICIANS) || [];
-    if (table.length === 0) {
+    const table = storage.getTable(TABLE_NAMES.ET_TECHNICIANS);
+    // Only seed initial factory data if table is null/undefined AND was never seeded before
+    const hasSeeded = typeof localStorage !== 'undefined' ? !!localStorage.getItem('al_muslim_et_techs_seeded') : true;
+    if (!Array.isArray(table) || (!hasSeeded && table.length === 0)) {
       // Seed with initial dedicated ENT technicians from Manpower
       const initial = [
         {
@@ -1398,9 +1610,11 @@ class EtLabService {
           status: 'ACTIVE'
         }
       ];
+      try { if (typeof localStorage !== 'undefined') localStorage.setItem('al_muslim_et_techs_seeded', '1'); } catch (_) {}
       storage.setTable(TABLE_NAMES.ET_TECHNICIANS, initial);
       return initial;
     }
+
     // Clean up any old E&T in stored records and persist cleaned version
     let modified = false;
     const cleaned = table.map(t => {
@@ -1456,16 +1670,31 @@ class EtLabService {
       phone: resolvedPhone,
       status: 'ACTIVE'
     };
+    // Mark seeded flag so empty array is preserved if later deleted
+    try { if (typeof localStorage !== 'undefined') localStorage.setItem('al_muslim_et_techs_seeded', '1'); } catch (_) {}
     // CONFIRMED WRITE
     await storage.writeAndConfirm(TABLE_NAMES.ET_TECHNICIANS, (tbl) => { tbl.push(newTech); });
+    await storage.saveTable(TABLE_NAMES.ET_TECHNICIANS, true);
     auditService.log('CONFIG', 'ET_LAB', newTech.id, `Added ENT Lab technician: ${newTech.name}`);
+    window.dispatchEvent(new CustomEvent('erp:et-lab-updated', { detail: { action: 'add-tech', tech: newTech } }));
     return newTech;
   }
 
-  deleteTechnician(id) {
-    let list = this.getTechnicians();
-    list = list.filter(t => t.id !== id);
-    storage.setTable(TABLE_NAMES.ET_TECHNICIANS, list);
+  async deleteTechnician(id) {
+    let removed = null;
+    await storage.writeAndConfirm(TABLE_NAMES.ET_TECHNICIANS, (tbl) => {
+      const idx = tbl.findIndex(t => t.id === id);
+      if (idx !== -1) {
+        removed = tbl.splice(idx, 1)[0];
+      }
+    });
+    // Mark seeded flag so empty array is preserved and never auto-reseeds
+    try { if (typeof localStorage !== 'undefined') localStorage.setItem('al_muslim_et_techs_seeded', '1'); } catch (_) {}
+    await storage.saveTable(TABLE_NAMES.ET_TECHNICIANS, true);
+    if (removed) {
+      auditService.log('CONFIG', 'ET_LAB', id, `Removed ENT Lab technician: ${removed.name || id}`);
+    }
+    window.dispatchEvent(new CustomEvent('erp:et-lab-updated', { detail: { action: 'delete-tech', id } }));
     return true;
   }
 
