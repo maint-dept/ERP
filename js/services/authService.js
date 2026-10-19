@@ -32,6 +32,9 @@ class AuthService {
     
     if (savedUserId) {
       this.currentUser = users.find(u => u.id === savedUserId && u.status === 'ACTIVE') || null;
+      if (!this.currentUser && users.length > 0 && typeof localStorage !== 'undefined') {
+        localStorage.removeItem('al_muslim_active_user_id');
+      }
     } else {
       this.currentUser = null;
     }
@@ -556,18 +559,14 @@ class AuthService {
     }
 
     const users = storage.getTable(TABLE_NAMES.USERS) || [];
-    let target = users.find(u => u.id === userId);
-    if (!target) {
-      target = users.find(u => u.username === userId || u.employeeId === userId);
-    }
+    const target = users.find(u => u.id === userId);
     
     if (!target) {
       throw new Error('Target user account not found.');
     }
 
     if (target.status !== 'ACTIVE') {
-      target.status = 'ACTIVE';
-      try { storage.update(TABLE_NAMES.USERS, target.id, { status: 'ACTIVE' }); } catch (_) {}
+      throw new Error(`Cannot switch to account '${target.username}' because it is DEACTIVATED.`);
     }
 
     // Check if there is an active impersonation session by an Admin/Super Admin
@@ -593,6 +592,15 @@ class AuthService {
       if (isTargetSuper) {
         throw new Error('Access Denied: Administrators cannot switch to Super Administrator accounts.');
       }
+    }
+
+    // Case C: Target account has No Access (Pending Admin Assignment)
+    const isTargetNoAccess = target.role === 'NO_ACCESS' || 
+      target.roleId === 'role-no-access' || 
+      target.presetId === 'no_access' || 
+      (target.presetName && target.presetName.toLowerCase().includes('no access'));
+    if (isTargetNoAccess && !isReturningToAdmin) {
+      throw new Error(`Access Denied: Cannot switch to account '${target.name || target.username}'. This account currently has No Access (Pending Admin Assignment). Assign a role preset or permissions in User Management first.`);
     }
 
     // If an Admin/Super Admin is switching into a different user account, save impersonator session

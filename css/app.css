@@ -996,17 +996,15 @@ body.modal-open {
   position: absolute;
   top: calc(100% + 8px);
   right: 0;
-  width: 350px;
-  max-height: calc(100vh - 75px);
+  width: 340px;
   background: var(--bg-surface);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
   box-shadow: 0 16px 40px -4px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.05);
   z-index: 1000;
   display: none;
-  flex-direction: column;
-  overflow: hidden;
   animation: dropdownFadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
 }
 
 @keyframes dropdownFadeIn {
@@ -1021,37 +1019,12 @@ body.modal-open {
 }
 
 .nav-user-dropdown-header {
-  padding: 12px 14px;
+  padding: 16px;
   background: rgba(255, 255, 255, 0.02);
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 10px;
+  gap: 12px;
   border-bottom: 1px solid var(--border-color);
-  flex-shrink: 0;
-}
-
-.nav-user-dropdown-body {
-  flex: 1 1 auto;
-  overflow-y: auto;
-  overflow-x: hidden;
-  overscroll-behavior: contain;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(56, 189, 248, 0.35) rgba(15, 23, 42, 0.4);
-}
-
-.nav-user-dropdown-body::-webkit-scrollbar {
-  width: 5px;
-}
-.nav-user-dropdown-body::-webkit-scrollbar-track {
-  background: rgba(15, 23, 42, 0.4);
-}
-.nav-user-dropdown-body::-webkit-scrollbar-thumb {
-  background: rgba(56, 189, 248, 0.35);
-  border-radius: 4px;
-}
-.nav-user-dropdown-body::-webkit-scrollbar-thumb:hover {
-  background: rgba(56, 189, 248, 0.6);
 }
 
 .nav-user-dropdown-avatar {
@@ -1212,13 +1185,7 @@ body.modal-open {
 }
 
 .nav-user-dropdown-footer {
-  padding: 8px 10px;
-  background: var(--bg-surface);
-  border-top: 1px solid var(--border-color);
-  flex-shrink: 0;
-  position: sticky;
-  bottom: 0;
-  z-index: 10;
+  padding: 6px;
 }
 
 .nav-user-dropdown-logout {
@@ -1230,7 +1197,7 @@ body.modal-open {
 }
 
 .nav-user-dropdown-logout:hover {
-  background: rgba(239, 68, 68, 0.14) !important;
+  background: rgba(239, 68, 68, 0.12) !important;
 }
 
 .nav-user-dropdown-logout:hover .dropdown-item-title {
