@@ -56,10 +56,10 @@ export function renderLoginView() {
           <!-- Role Selection Tabs for Admin vs User -->
           ${loginMode === 'LOGIN' ? `
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 20px; background: rgba(30, 41, 59, 0.6); padding: 4px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08);">
-              <button type="button" id="tab-login-admin" class="btn btn-sm" style="font-weight: 700; border-radius: 6px; font-size: 12.5px; background: #0284c7; color: #fff;">
+              <button type="button" id="tab-login-admin" class="btn btn-sm btn-ghost" style="font-weight: 700; border-radius: 6px; font-size: 12.5px; color: #94a3b8; background: none;">
                 👑 Admin Login
               </button>
-              <button type="button" id="tab-login-user" class="btn btn-sm btn-ghost" style="font-weight: 700; border-radius: 6px; font-size: 12.5px; color: #94a3b8;">
+              <button type="button" id="tab-login-user" class="btn btn-sm" style="font-weight: 700; border-radius: 6px; font-size: 12.5px; background: #0284c7; color: #fff;">
                 👤 User Login
               </button>
             </div>
@@ -81,10 +81,10 @@ export function renderLoginView() {
                     type="text" 
                     id="inp-full-username" 
                     class="form-control" 
-                    placeholder="Enter username or registered email" 
-                    value="${savedUsername || ''}"
+                    placeholder="User username or email (e.g. user)" 
+                    value=""
                     required 
-                    autocomplete="username"
+                    autocomplete="off"
                     style="padding-left: 44px !important; background: rgba(30, 41, 59, 0.8); border-color: rgba(255,255,255,0.15); color: #fff; font-size: 13.5px; height: 42px;"
                   />
                 </div>
@@ -339,6 +339,7 @@ export function initLoginViewEvents() {
       tabUser.style.background = 'none';
       tabUser.style.color = '#94a3b8';
       inpUser.placeholder = 'Admin username or email (e.g. admin or superadmin)';
+      inpUser.value = '';
       if (inpPwd) inpPwd.value = '';
     });
 
@@ -348,6 +349,7 @@ export function initLoginViewEvents() {
       tabAdmin.style.background = 'none';
       tabAdmin.style.color = '#94a3b8';
       inpUser.placeholder = 'User username or email (e.g. user)';
+      inpUser.value = '';
       if (inpPwd) inpPwd.value = '';
     });
   }
