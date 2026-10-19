@@ -321,10 +321,10 @@ export function initChangePasswordModalEvents() {
 
       try {
         await authService.changePassword(cur, newP);
-        showAlert('Your account password has been updated successfully.', true);
+        showAlert('✓ Password updated successfully. For your security, other active device sessions have been automatically logged out.', true);
         setTimeout(() => {
           closeModal();
-        }, 1200);
+        }, 1600);
       } catch (err) {
         showAlert(err.message || 'Failed to update password.');
       } finally {

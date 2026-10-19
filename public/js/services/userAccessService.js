@@ -957,17 +957,27 @@ class UserAccessService {
     const newPlainPassword = this.generateSecurePassword(14);
     const hashedPassword = cryptoService.hashPassword(newPlainPassword);
 
+    const newResetTimestamp = new Date().toISOString();
     const updates = {
       password: hashedPassword,
       passwordHash: hashedPassword,
       passwordStatus: isTemporary ? 'TEMPORARY' : 'ACTIVE',
       mustChangePassword: Boolean(isTemporary),
-      lastPasswordReset: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      lastPasswordReset: newResetTimestamp,
+      passwordChangedAt: newResetTimestamp,
+      updatedAt: newResetTimestamp
     };
 
     // 1. Confirmed write directly to MySQL Primary and local caches
     const updatedUser = await storage.updateConfirmed(TABLE_NAMES.USERS, userId, updates);
+
+    // If current user is the one reset, update local session stamp
+    try {
+      const activeId = localStorage.getItem('al_muslim_active_user_id');
+      if (activeId === userId) {
+        localStorage.setItem('al_muslim_session_pwd_reset', newResetTimestamp);
+      }
+    } catch (_) {}
 
     // Save in temporary elevated cache only if temporary, otherwise clear it
     if (isTemporary) {
@@ -1006,17 +1016,26 @@ class UserAccessService {
 
     const hashedPassword = cryptoService.hashPassword(newPlainPassword);
 
+    const newResetTimestamp = new Date().toISOString();
     const updates = {
       password: hashedPassword,
       passwordHash: hashedPassword,
       passwordStatus: isTemporary ? 'TEMPORARY' : 'ACTIVE',
       mustChangePassword: Boolean(isTemporary),
-      lastPasswordReset: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      lastPasswordReset: newResetTimestamp,
+      passwordChangedAt: newResetTimestamp,
+      updatedAt: newResetTimestamp
     };
 
     // 1. Confirmed write directly to MySQL Primary and local caches
     const updatedUser = await storage.updateConfirmed(TABLE_NAMES.USERS, userId, updates);
+
+    try {
+      const activeId = localStorage.getItem('al_muslim_active_user_id');
+      if (activeId === userId) {
+        localStorage.setItem('al_muslim_session_pwd_reset', newResetTimestamp);
+      }
+    } catch (_) {}
 
     if (isTemporary) {
       this.setTemporaryCredential(userId, newPlainPassword);

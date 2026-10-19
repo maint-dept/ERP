@@ -32,12 +32,39 @@ class AuthService {
     
     if (savedUserId) {
       const found = users.find(u => u.id === savedUserId);
-      if (found) {
-        found.status = 'ACTIVE';
-        this.currentUser = found;
+      if (found && found.status === 'ACTIVE') {
+        // Multi-device session security check:
+        const localPwdStamp = typeof localStorage !== 'undefined' ? localStorage.getItem('al_muslim_session_pwd_reset') : null;
+        const dbPwdStamp = found.lastPasswordReset || found.passwordChangedAt;
+        if (dbPwdStamp && localPwdStamp && localPwdStamp !== dbPwdStamp) {
+          console.warn('[AuthService] 🔒 Password was changed on another device. Invaliding local session.');
+          this.currentUser = null;
+          if (typeof localStorage !== 'undefined') {
+            localStorage.removeItem('al_muslim_active_user_id');
+            localStorage.removeItem('al_muslim_session_pwd_reset');
+            localStorage.removeItem('al_muslim_session_token');
+          }
+          if (typeof sessionStorage !== 'undefined') {
+            try { sessionStorage.setItem('al_muslim_session_invalidated_reason', 'PASSWORD_CHANGED'); } catch (_) {}
+          }
+        } else {
+          this.currentUser = found;
+          if (!localPwdStamp && dbPwdStamp && typeof localStorage !== 'undefined') {
+            localStorage.setItem('al_muslim_session_pwd_reset', dbPwdStamp);
+          }
+        }
+      } else {
+        this.currentUser = null;
+        if (typeof localStorage !== 'undefined') {
+          localStorage.removeItem('al_muslim_active_user_id');
+        }
       }
     } else {
       this.currentUser = null;
+    }
+
+    if (typeof window !== 'undefined') {
+      window.__authService = this;
     }
 
     if (typeof window !== 'undefined' && !window.__authReadyTime && typeof performance !== 'undefined') {
@@ -50,8 +77,13 @@ class AuthService {
     if (savedUserId) {
       const users = storage.getTable(TABLE_NAMES.USERS) || [];
       const found = users.find(u => u.id === savedUserId);
-      if (found) {
-        found.status = 'ACTIVE';
+      if (found && found.status === 'ACTIVE') {
+        const localPwdStamp = typeof localStorage !== 'undefined' ? localStorage.getItem('al_muslim_session_pwd_reset') : null;
+        const dbPwdStamp = found.lastPasswordReset || found.passwordChangedAt;
+        if (dbPwdStamp && localPwdStamp && localPwdStamp !== dbPwdStamp) {
+          this.terminateSessionDueToPasswordChange();
+          return null;
+        }
         this.currentUser = found;
         return this.currentUser;
       }
@@ -388,10 +420,25 @@ class AuthService {
     if (!this.currentUser && typeof localStorage !== 'undefined' && localStorage.getItem('al_muslim_active_user_id')) {
       this.init();
     }
-    // Refresh from storage to get latest permissions (e.g. updated by another device via database sync)
+    // Refresh from storage to get latest permissions and security state
     if (this.currentUser?.id) {
       const fresh = storage.getItem(TABLE_NAMES.USERS, this.currentUser.id);
-      if (fresh && fresh.status === 'ACTIVE') {
+      if (fresh) {
+        // Multi-device session security check:
+        const localPwdStamp = typeof localStorage !== 'undefined' ? localStorage.getItem('al_muslim_session_pwd_reset') : null;
+        const dbPwdStamp = fresh.lastPasswordReset || fresh.passwordChangedAt;
+        if (dbPwdStamp && localPwdStamp && localPwdStamp !== dbPwdStamp) {
+          console.warn('[AuthService] 🔒 Password was changed on another device. Terminating local session.');
+          this.terminateSessionDueToPasswordChange();
+          return null;
+        }
+
+        if (fresh.status !== 'ACTIVE') {
+          console.warn('[AuthService] Account status is no longer ACTIVE. Terminating local session.');
+          this.logout();
+          return null;
+        }
+
         // Only update if something relevant changed (avoid infinite loops)
         if (JSON.stringify(fresh.permissions) !== JSON.stringify(this.currentUser.permissions) ||
             fresh.role !== this.currentUser.role ||
@@ -523,9 +570,15 @@ class AuthService {
       user.passwordHash = effectiveHash;
     }
 
-    // Set active user
+    // Set active user & establish session security token
     this.currentUser = user;
     localStorage.setItem('al_muslim_active_user_id', user.id);
+
+    // Save session password reset stamp and unique session token on this device
+    const sessionPwdStamp = user.lastPasswordReset || user.passwordChangedAt || 'INIT_PWD';
+    localStorage.setItem('al_muslim_session_pwd_reset', sessionPwdStamp);
+    const sessionToken = 'sess_' + Date.now() + '_' + Math.random().toString(36).substring(2, 9);
+    localStorage.setItem('al_muslim_session_token', sessionToken);
 
     // Update lastLoginAt
     const now = new Date().toISOString();
@@ -566,6 +619,8 @@ class AuthService {
       sessionStorage.removeItem('al_muslim_impersonator_admin_id');
       sessionStorage.removeItem('al_muslim_impersonator_admin_name');
       sessionStorage.removeItem('al_muslim_impersonator_admin_role');
+      localStorage.removeItem('al_muslim_session_pwd_reset');
+      localStorage.removeItem('al_muslim_session_token');
     } catch (_) {}
     localStorage.removeItem('al_muslim_active_user_id');
     this.currentUser = null;
@@ -1059,6 +1114,54 @@ class AuthService {
     const u = user || this.currentUser;
     if (!u) return false;
     return u?.role === 'VIEWER' || u?.roleId === 'role-viewer' || u?.presetId === 'preset_view_only';
+  }
+
+  // ==========================================
+  // Multi-Device Session Security & Heartbeat
+  // ==========================================
+  checkSessionSecurity() {
+    if (!this.currentUser?.id) return true;
+    const fresh = storage.getItem(TABLE_NAMES.USERS, this.currentUser.id);
+    if (!fresh) return true;
+
+    if (fresh.status !== 'ACTIVE') {
+      console.warn('[AuthService] Account status is no longer ACTIVE. Terminating session.');
+      this.logout();
+      if (typeof window !== 'undefined') {
+        window.location.hash = '#login';
+        if (typeof state !== 'undefined' && state.set) state.set('currentView', 'login');
+      }
+      return false;
+    }
+
+    const localPwdStamp = typeof localStorage !== 'undefined' ? localStorage.getItem('al_muslim_session_pwd_reset') : null;
+    const dbPwdStamp = fresh.lastPasswordReset || fresh.passwordChangedAt;
+
+    if (dbPwdStamp && localPwdStamp && localPwdStamp !== dbPwdStamp) {
+      console.warn('[AuthService] 🔒 Password changed on another device. Terminating local session for protection.');
+      this.terminateSessionDueToPasswordChange();
+      return false;
+    }
+
+    return true;
+  }
+
+  terminateSessionDueToPasswordChange() {
+    this.logout();
+    if (typeof sessionStorage !== 'undefined') {
+      try {
+        sessionStorage.setItem('al_muslim_session_invalidated_reason', 'PASSWORD_CHANGED');
+      } catch (_) {}
+    }
+    if (typeof window !== 'undefined') {
+      window.location.hash = '#login';
+      if (typeof state !== 'undefined' && state.set) {
+        state.set('currentView', 'login');
+      }
+      try {
+        window.dispatchEvent(new CustomEvent('erp:session-terminated', { detail: { reason: 'PASSWORD_CHANGED' } }));
+      } catch (_) {}
+    }
   }
 
   // ==========================================
@@ -2193,16 +2296,23 @@ class AuthService {
 
     const hashedPassword = cryptoService.hashPassword(newPassword);
 
+    const newResetTimestamp = new Date().toISOString();
+
     // Atomic confirmed write — save both hash fields and mark ACTIVE
     const resetOk = await storage.updateConfirmed(TABLE_NAMES.USERS, userId, {
       password: hashedPassword,
       passwordHash: hashedPassword,
       mustChangePassword: false,
       passwordStatus: 'ACTIVE',
-      lastPasswordReset: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      lastPasswordReset: newResetTimestamp,
+      passwordChangedAt: newResetTimestamp,
+      updatedAt: newResetTimestamp
     });
     if (!resetOk) throw new CloudSaveError('❌ Cloud Save Failed: Password reset was not confirmed by the cloud.');
+
+    if (this.currentUser?.id === userId && typeof localStorage !== 'undefined') {
+      localStorage.setItem('al_muslim_session_pwd_reset', newResetTimestamp);
+    }
 
     // Also clear temp credential cache
     try {
@@ -2241,6 +2351,7 @@ class AuthService {
     }
 
     const hashedPassword = cryptoService.hashPassword(newPassword);
+    const newResetTimestamp = new Date().toISOString();
 
     // Single atomic confirmed write — save both hash fields and mark ACTIVE
     const updated = await storage.updateConfirmed(TABLE_NAMES.USERS, this.currentUser.id, {
@@ -2248,14 +2359,18 @@ class AuthService {
       passwordHash: hashedPassword,
       mustChangePassword: false,
       passwordStatus: 'ACTIVE',
-      lastPasswordReset: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      lastPasswordReset: newResetTimestamp,
+      passwordChangedAt: newResetTimestamp,
+      updatedAt: newResetTimestamp
     });
 
     if (!updated) throw new CloudSaveError('❌ Cloud Save Failed: Password change was not confirmed by the cloud.');
 
-    // Update in-memory session with confirmed DB record
+    // Update in-memory session with confirmed DB record and update this device's session timestamp
     this.currentUser = updated;
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('al_muslim_session_pwd_reset', newResetTimestamp);
+    }
 
     // Clear the temporary credential cache so admin panel shows SETUP (not TEMPORARY)
     try {
@@ -2295,23 +2410,26 @@ class AuthService {
     }
 
     const hashedPassword = cryptoService.hashPassword(newPassword);
+    const newResetTimestamp = new Date().toISOString();
 
     const updates = {
       password: hashedPassword,
       passwordHash: hashedPassword,
       mustChangePassword: false,
       passwordStatus: 'ACTIVE',
-      lastPasswordReset: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      lastPasswordReset: newResetTimestamp,
+      passwordChangedAt: newResetTimestamp,
+      updatedAt: newResetTimestamp
     };
 
     // 1. Confirmed write directly to MySQL Primary and local caches
     const updated = await storage.updateConfirmed(TABLE_NAMES.USERS, userId, updates);
 
-    // 2. Update in-memory session and localStorage immediately
+    // 2. Update in-memory session and localStorage immediately (including this device's session timestamp)
     this.currentUser = updated || { ...user, ...updates };
     if (typeof localStorage !== 'undefined') {
       localStorage.setItem('al_muslim_active_user_id', userId);
+      localStorage.setItem('al_muslim_session_pwd_reset', newResetTimestamp);
     }
 
     // 3. Clear temporary credential cache immediately (0ms non-blocking)

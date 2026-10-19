@@ -334,6 +334,15 @@ export function initLoginViewEvents() {
     }
   };
 
+  // Check if session was invalidated because password was changed on another device
+  try {
+    const invalidReason = sessionStorage.getItem('al_muslim_session_invalidated_reason');
+    if (invalidReason === 'PASSWORD_CHANGED') {
+      sessionStorage.removeItem('al_muslim_session_invalidated_reason');
+      showAlert('🔒 Security Alert: Your password was changed on another device. Other active sessions have been automatically logged out for your account security. Please sign in with your new password.', 'warning');
+    }
+  } catch (_) {}
+
   // Toggle Password Visibility
   const toggleBtn = document.getElementById('btn-toggle-pwd-visibility');
   const pwdInput = document.getElementById('inp-full-password');

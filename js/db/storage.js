@@ -293,6 +293,10 @@ class StorageEngine {
             if (!this.isUserTyping()) {
               this.checkAndSyncRemoteChanges();
             }
+            // Multi-device session security check (terminates session if password changed elsewhere)
+            if (typeof window !== 'undefined' && window.__authService && typeof window.__authService.checkSessionSecurity === 'function') {
+              window.__authService.checkSessionSecurity();
+            }
           }, 3500);
         }
       }
