@@ -20,7 +20,7 @@
  */
 
 import { state } from '../state.js';
-import { router } from '../services/router.js?v=4.26.49';
+import { router } from '../services/router.js?v=4.26.50';
 import { authService } from '../services/authService.js';
 import { barcodeService } from '../services/barcodeService.js';
 import { masterDataService } from '../services/masterDataService.js';
@@ -2985,16 +2985,25 @@ function renderBulkServicingModal() {
 // EVENT HANDLERS & BINDINGS
 // =========================================================================
 
+function setPmActiveTab(tab, options = {}) {
+  if (!tab) return;
+  activeTab = tab;
+  state.set('pmActiveTab', tab);
+  pmCurrentPage = 1;
+  try {
+    router.navigate('preventive-maintenance', { tab, skipViewSwitch: true, replace: options.replace || false });
+  } catch (_) {}
+}
+
 export function initPreventiveMaintenanceEvents() {
   const container = document.querySelector('.preventive-maintenance-page');
   if (!container) return;
 
-  // Handle deep-link navigation from notification drawer
+  // Handle deep-link navigation from notification drawer or router
   const handlePmTabNav = (e) => {
     const tab = e.detail?.tab;
-    if (tab) {
-      activeTab = tab;
-      pmCurrentPage = 1;
+    if (tab && tab !== activeTab) {
+      setPmActiveTab(tab);
       rerenderView();
     }
   };
@@ -3006,12 +3015,7 @@ export function initPreventiveMaintenanceEvents() {
     btn.addEventListener('click', (e) => {
       const tab = btn.getAttribute('data-pm-tab');
       if (tab && tab !== activeTab) {
-        activeTab = tab;
-        state.set('pmActiveTab', tab);
-        pmCurrentPage = 1;
-        try {
-          router.navigate('preventive-maintenance', { tab, skipViewSwitch: true });
-        } catch (_) {}
+        setPmActiveTab(tab);
         rerenderView();
       }
     });
@@ -3044,17 +3048,13 @@ export function initPreventiveMaintenanceEvents() {
 
   // Top action: Config Tab
   document.getElementById('btn-pm-tab-config')?.addEventListener('click', () => {
-    activeTab = 'admin-config';
-    state.set('pmActiveTab', 'admin-config');
-    pmCurrentPage = 1;
+    setPmActiveTab('admin-config');
     rerenderView();
   });
 
   // Top action: Official PM Report & Print
   document.getElementById('btn-pm-top-report')?.addEventListener('click', () => {
-    activeTab = 'maintenance-report';
-    state.set('pmActiveTab', 'maintenance-report');
-    pmCurrentPage = 1;
+    setPmActiveTab('maintenance-report');
     rerenderView();
   });
 
@@ -3232,8 +3232,7 @@ export function initPreventiveMaintenanceEvents() {
     card.addEventListener('click', () => {
       const u = card.getAttribute('data-kpi-urgency');
       filterUrgency = u || 'ALL';
-      activeTab = 'dashboard';
-      pmCurrentPage = 1;
+      setPmActiveTab('dashboard');
       rerenderView();
     });
   });
@@ -3242,8 +3241,7 @@ export function initPreventiveMaintenanceEvents() {
     card.addEventListener('click', () => {
       const t = card.getAttribute('data-kpi-tab');
       if (t) {
-        activeTab = t;
-        pmCurrentPage = 1;
+        setPmActiveTab(t);
         rerenderView();
       }
     });
@@ -3256,8 +3254,7 @@ export function initPreventiveMaintenanceEvents() {
       filterLineId = 'ALL';
       filterMachineType = 'ALL';
       filterUrgency = 'ALL';
-      activeTab = 'dashboard';
-      pmCurrentPage = 1;
+      setPmActiveTab('dashboard');
       rerenderView();
     });
   });
@@ -4112,11 +4109,11 @@ function bindModalEvents(container) {
       if (newRecord && (newRecord.serviceStatus === 'PENDING_APPROVAL' || newRecord.approvalStatus === 'PENDING')) {
         notificationService.success(`✅ Servicing submitted for Machine ${prof.serialNumber}. Awaiting Floor Manager approval.`);
         closeModal();
-        activeTab = 'recently-serviced';
+        setPmActiveTab('recently-serviced');
       } else {
         notificationService.success(`✅ Preventive maintenance completed & approved for Machine ${prof.serialNumber} [${sticker}].`);
         closeModal();
-        activeTab = 'recently-serviced';
+        setPmActiveTab('recently-serviced');
       }
       rerenderView();
     } catch (err) {
@@ -4128,7 +4125,7 @@ function bindModalEvents(container) {
 
   // "Review Approvals" button on dashboard banner
   document.getElementById('btn-pm-view-pending-approvals')?.addEventListener('click', () => {
-    activeTab = 'pending-approvals';
+    setPmActiveTab('pending-approvals');
     rerenderView();
   });
 
@@ -4197,7 +4194,7 @@ function bindModalEvents(container) {
       await preventiveMaintenanceService.approveServiceEntry(modalApprovalRecordId, remarks);
       notificationService.success('✅ Servicing officially approved. Machine schedule and sticker updated.');
       closeModal();
-      activeTab = 'pending-approvals';
+      setPmActiveTab('pending-approvals');
       rerenderView();
     } catch (err) {
       if (btn) { btn.disabled = false; btn.textContent = '✓ Final Approve & Finalize'; }
@@ -4219,7 +4216,7 @@ function bindModalEvents(container) {
       await preventiveMaintenanceService.rejectServiceEntry(modalApprovalRecordId, remarks);
       notificationService.success('❌ Servicing record rejected. Technician has been notified.');
       closeModal();
-      activeTab = 'pending-approvals';
+      setPmActiveTab('pending-approvals');
       rerenderView();
     } catch (err) {
       if (btn) { btn.disabled = false; }
@@ -4241,7 +4238,7 @@ function bindModalEvents(container) {
       await preventiveMaintenanceService.requestServiceRevision(modalApprovalRecordId, remarks);
       notificationService.success('🔄 Revision requested. Technician has been notified.');
       closeModal();
-      activeTab = 'pending-approvals';
+      setPmActiveTab('pending-approvals');
       rerenderView();
     } catch (err) {
       if (btn) { btn.disabled = false; }
@@ -4833,7 +4830,7 @@ function bindModalEvents(container) {
       bulkServicingParsedRows = null;
       bulkServicingPreviewResult = null;
       closeModal();
-      activeTab = 'recently-serviced';
+      setPmActiveTab('recently-serviced');
       rerenderView();
     } catch (err) {
       alert('Error applying bulk servicing: ' + err.message);
@@ -4875,7 +4872,7 @@ function selectMachineBySerial(serialOrId) {
   const prof = preventiveMaintenanceService.getMachinePreventiveProfile(serialOrId);
   if (prof) {
     selectedMachineId = prof.machineId;
-    activeTab = 'machine-profile';
+    setPmActiveTab('machine-profile');
     rerenderView();
   } else {
     alert(`Machine with Serial or ID "${serialOrId}" not found in ERP inventory.`);

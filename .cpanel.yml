@@ -3,9 +3,8 @@ deployment:
   tasks:
     - export DEPLOYPATH=/home/motaherh/moviezonex.com
     - /bin/cp -R * $DEPLOYPATH/
-    - /bin/cp -f .htaccess $DEPLOYPATH/.htaccess 2>/dev/null || true
+    - /bin/cp -R public/* $DEPLOYPATH/
     - /bin/cp -f public/.htaccess $DEPLOYPATH/.htaccess 2>/dev/null || true
-    - /bin/cp -f 404.html $DEPLOYPATH/404.html 2>/dev/null || true
     - /bin/cp -f public/404.html $DEPLOYPATH/404.html 2>/dev/null || true
     - /bin/mkdir -p $DEPLOYPATH/tmp
     - /bin/touch $DEPLOYPATH/tmp/restart.txt

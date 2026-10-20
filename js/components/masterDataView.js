@@ -11,6 +11,7 @@ import { qrCodeService } from '../services/qrCodeService.js';
 import { authService } from '../services/authService.js';
 import { notificationService } from '../services/notificationService.js';
 import { state } from '../state.js';
+import { router } from '../services/router.js?v=4.26.50';
 
 let activeTab = 'fast-entry'; // 'fast-entry', 'tree', 'groups', 'units', 'floors', 'lines', 'machinenames', 'brands', 'models'
 let cascadeGroupId = '';
@@ -29,7 +30,8 @@ export function renderMasterDataView() {
   const requestedTab = state.get('masterDataActiveTab');
   if (requestedTab) {
     activeTab = requestedTab;
-    state.set('masterDataActiveTab', null);
+  } else {
+    state.set('masterDataActiveTab', activeTab);
   }
 
   const isAdmin = authService.isAdmin();
@@ -1646,6 +1648,10 @@ export function initMasterDataEvents() {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
       activeTab = btn.getAttribute('data-master-tab');
+      state.set('masterDataActiveTab', activeTab);
+      try {
+        router.navigate('master-data', { tab: activeTab, skipViewSwitch: true });
+      } catch (_) {}
       selectedItemIds.clear();
       searchFilter = '';
       parentFilter = '';

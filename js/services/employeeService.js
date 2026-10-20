@@ -699,6 +699,58 @@ class EmployeeService {
   }
 
   /**
+   * Discover available floor options (master floors + active sections/areas) for dropdown filtering
+   */
+  getAvailableFloorOptions(unitId = 'ALL', groupId = 'ALL') {
+    this._ensureSeedData();
+    const mdFloors = masterDataService.getFloors(
+      unitId !== 'ALL' ? unitId : null,
+      groupId !== 'ALL' ? groupId : null,
+      true
+    ) || [];
+
+    const optionsMap = new Map();
+
+    // 1. Add Master Data floors
+    mdFloors.forEach(f => {
+      optionsMap.set(f.id, { id: f.id, label: f.name });
+    });
+
+    // 2. Discover sections / floors from registered workforce
+    let employees = storage.getTable(TABLE_NAMES.EMPLOYEES) || [];
+    if (unitId !== 'ALL') {
+      employees = employees.filter(e => {
+        if (e.unitId) return e.unitId === unitId;
+        if (e.unitName) {
+          const uObj = masterDataService.getUnitById ? masterDataService.getUnitById(unitId) : null;
+          if (uObj && (uObj.name.toLowerCase() === e.unitName.trim().toLowerCase() || (uObj.code && uObj.code.toLowerCase() === e.unitName.trim().toLowerCase()))) return true;
+        }
+        return false;
+      });
+    }
+
+    employees.forEach(e => {
+      const area = (e.workingArea || e.floorName || '').trim();
+      if (!area) return;
+
+      const exists = mdFloors.some(f => {
+        const c1 = f.name.toLowerCase().replace(/floor|line/g, '').trim();
+        const c2 = area.toLowerCase().replace(/floor|line/g, '').trim();
+        return c1 === c2 || c2.startsWith(c1) || c1.startsWith(c2);
+      });
+
+      if (!exists) {
+        const key = `area:${area}`;
+        if (!optionsMap.has(key)) {
+          optionsMap.set(key, { id: key, label: area });
+        }
+      }
+    });
+
+    return Array.from(optionsMap.values()).sort((a, b) => a.label.localeCompare(b.label));
+  }
+
+  /**
    * Get all registered employees with comprehensive multi-parameter filtering
    * @param {Object} filters
    * @returns {Array} Enriched employee objects
@@ -707,17 +759,37 @@ class EmployeeService {
     this._ensureSeedData();
     let list = storage.getTable(TABLE_NAMES.EMPLOYEES) || [];
 
-    // 1. Text Search (Name, Card ID, Phone, Designation, Working Area)
+    const flrMap = new Map((storage.getTable(TABLE_NAMES.FLOORS) || []).map(x => [x.id, x.name]));
+    const untMap = new Map((storage.getTable(TABLE_NAMES.UNITS) || []).map(x => [x.id, x.name]));
+
+    // 1. Text Search (Name, Card ID, Phone, Designation, Dept, Working Area, Unit, Floor)
     if (filters.search && filters.search.trim()) {
       const q = filters.search.toLowerCase().trim();
-      list = list.filter(e =>
-        (e.name && e.name.toLowerCase().includes(q)) ||
-        (e.cardNumber && String(e.cardNumber).toLowerCase().includes(q)) ||
-        (e.designation && e.designation.toLowerCase().includes(q)) ||
-        (e.department && e.department.toLowerCase().includes(q)) ||
-        (e.phone && e.phone.toLowerCase().includes(q)) ||
-        (e.workingArea && e.workingArea.toLowerCase().includes(q))
-      );
+      const cleanQ = q.replace(/[^a-z0-9]/g, '');
+
+      list = list.filter(e => {
+        const name = (e.name || '').toLowerCase();
+        const card = String(e.cardNumber || '').toLowerCase();
+        const cleanCard = card.replace(/[^a-z0-9]/g, '');
+        const desig = (e.designation || '').toLowerCase();
+        const dept = (e.department || '').toLowerCase();
+        const phone = (e.phone || '').toLowerCase();
+        const area = (e.workingArea || '').toLowerCase();
+        const unitName = (untMap.get(e.unitId) || e.unitName || '').toLowerCase();
+        const floorName = (flrMap.get(e.floorId) || e.floorName || '').toLowerCase();
+
+        return (
+          name.includes(q) ||
+          card.includes(q) ||
+          (cleanQ && cleanCard.includes(cleanQ)) ||
+          desig.includes(q) ||
+          dept.includes(q) ||
+          phone.includes(q) ||
+          area.includes(q) ||
+          unitName.includes(q) ||
+          floorName.includes(q)
+        );
+      });
     }
 
     // 2. Status Filter
@@ -739,25 +811,47 @@ class EmployeeService {
 
     // 5. Plant Hierarchy Filters (Group -> Unit -> Floor -> Line)
     if (filters.groupId && filters.groupId !== 'ALL') {
-      list = list.filter(e => e.groupId === filters.groupId);
+      list = list.filter(e => (e.groupId || 'grp-1') === filters.groupId);
     }
+
     if (filters.unitId && filters.unitId !== 'ALL') {
       list = list.filter(e => {
-        if (e.unitId === filters.unitId) return true;
-        if (e.floorId) {
-          const flr = masterDataService.getFloorById ? masterDataService.getFloorById(e.floorId) : null;
-          if (flr && flr.unitId === filters.unitId) return true;
-        }
+        // Authoritative unitId
+        if (e.unitId) return e.unitId === filters.unitId;
+        // Unit name or code match if unitId is missing
         if (e.unitName) {
           const uObj = masterDataService.getUnitById ? masterDataService.getUnitById(filters.unitId) : null;
           if (uObj && (uObj.name.toLowerCase() === e.unitName.trim().toLowerCase() || (uObj.code && uObj.code.toLowerCase() === e.unitName.trim().toLowerCase()))) return true;
         }
+        // Fallback only if no unitId AND no unitName
+        if (!e.unitId && !e.unitName && e.floorId) {
+          const flr = masterDataService.getFloorById ? masterDataService.getFloorById(e.floorId) : null;
+          if (flr && flr.unitId === filters.unitId) return true;
+        }
         return false;
       });
     }
+
     if (filters.floorId && filters.floorId !== 'ALL') {
-      list = list.filter(e => e.floorId === filters.floorId);
+      list = list.filter(e => {
+        if (filters.floorId.startsWith('area:')) {
+          const area = filters.floorId.slice(5).trim().toLowerCase();
+          return (e.workingArea && e.workingArea.trim().toLowerCase() === area) ||
+                 (e.floorName && e.floorName.trim().toLowerCase() === area);
+        }
+        // Direct floor ID match
+        if (e.floorId === filters.floorId) return true;
+        // Match master floor name against employee's floorName or workingArea
+        const flr = masterDataService.getFloorById ? masterDataService.getFloorById(filters.floorId) : null;
+        if (flr) {
+          const cleanName = flr.name.toLowerCase().replace(/floor|line/g, '').trim();
+          if (e.floorName && e.floorName.toLowerCase().includes(cleanName)) return true;
+          if (e.workingArea && e.workingArea.toLowerCase().includes(cleanName)) return true;
+        }
+        return false;
+      });
     }
+
     if (filters.lineId && filters.lineId !== 'ALL') {
       list = list.filter(e => e.lineId === filters.lineId);
     }
@@ -797,16 +891,25 @@ class EmployeeService {
       if (unit) unitId = unit.id;
     }
 
-    let groupId = emp.groupId || unit?.groupId || floor?.groupId || 'grp-1';
+    // Prevent mismatched floor assignment (e.g. employee in unt-2 having floor flr-4 belonging to unt-1)
+    let validFloor = floor;
+    if (floor && floor.unitId && unitId && floor.unitId !== unitId) {
+      validFloor = null;
+    }
+
+    let groupId = emp.groupId || unit?.groupId || validFloor?.groupId || 'grp-1';
     let group = groupId ? (masterDataService.getGroupById ? masterDataService.getGroupById(groupId) : null) : null;
     let line = emp.lineId ? (masterDataService.getLineById ? masterDataService.getLineById(emp.lineId) : null) : null;
 
     const groupName = group?.name || emp.groupName || 'Al-Muslim Group';
     const unitName = unit?.name || emp.unitName || '';
-    const floorName = floor?.name || emp.floorName || emp.floor || '';
+    const floorName = validFloor?.name || emp.floorName || emp.workingArea || emp.floor || '';
     const lineName = line?.name || emp.lineName || '';
 
-    const locationPath = [groupName, unitName, floorName, lineName || emp.workingArea].filter(Boolean).join(' > ');
+    const locationParts = [groupName, unitName];
+    if (floorName && floorName !== unitName) locationParts.push(floorName);
+    if (lineName && lineName !== floorName) locationParts.push(lineName);
+    const locationPath = locationParts.filter(Boolean).join(' > ');
 
     return {
       ...emp,

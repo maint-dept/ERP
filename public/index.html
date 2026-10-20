@@ -236,8 +236,8 @@
       window.location.replace(base + '?t=' + Date.now() + window.location.hash);
     };
 
-    // Build version v4.26.49 — SPA URL routing and on-demand lazy loading
-    var CURRENT_BUILD = '4.26.49';
+    // Build version v4.26.50 — SPA URL routing and on-demand lazy loading
+    var CURRENT_BUILD = '4.26.50';
 
     // Silently unregister any old Service Workers and clear all caches
     (function() {
@@ -250,7 +250,7 @@
         if ('serviceWorker' in navigator) {
           navigator.serviceWorker.getRegistrations().then(function(regs) {
             regs.forEach(function(r) {
-              console.log('[ERP v4.26.49] Unregistering SW:', r.scope);
+              console.log('[ERP v4.26.50] Unregistering SW:', r.scope);
               r.unregister();
             });
           });
@@ -260,8 +260,8 @@
     })();
   </script>
 
-  <!-- Main ES Module Application Entrypoint (Cache-Busted v4.26.49) -->
-  <script type="module" src="js/app.js?v=4.26.49"></script>
+  <!-- Main ES Module Application Entrypoint (Cache-Busted v4.26.50) -->
+  <script type="module" src="js/app.js?v=4.26.50"></script>
 
   <style>
     @keyframes spin {

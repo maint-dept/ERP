@@ -39,6 +39,10 @@ let selectedPartDraftId = null;
 let activeReportType = 'issue-summary';
 
 export function renderPartsTraceView() {
+  const stateTab = state.get('partsTraceActiveTab');
+  if (stateTab) {
+    activeTab = stateTab;
+  }
   const stats = partsTraceService.getDashboardStats();
   const canUpload = authService.isSuperAdmin() || authService.isAdmin() || authService.hasAccess('parts_trace', 'UPLOAD_PDF');
   const canManageMaster = authService.isSuperAdmin() || authService.isAdmin() || authService.hasAccess('parts_trace', 'MANAGE_MASTER');
@@ -2352,6 +2356,10 @@ export function initPartsTraceEvents() {
   root.querySelectorAll('.btn-trace-tab').forEach(btn => {
     btn.addEventListener('click', () => {
       activeTab = btn.getAttribute('data-tab');
+      state.set('partsTraceActiveTab', activeTab);
+      try {
+        if (typeof window.router !== 'undefined') window.router.navigate('parts-trace', { tab: activeTab, skipViewSwitch: true });
+      } catch (_) {}
       refresh();
     });
   });

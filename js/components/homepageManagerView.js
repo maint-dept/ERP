@@ -21,6 +21,10 @@ let activeEditorTab = 'sections'; // 'sections' | 'hero' | 'features' | 'modules
 let activeModalState = null; // { type: 'ADD_FEATURE'|'EDIT_FEATURE'|'ADD_MODULE'|'EDIT_MODULE'|'PREVIEW', item: Object }
 
 export function renderHomepageManagerView() {
+  const stateTab = state.get('homeManagerActiveTab');
+  if (stateTab) {
+    activeEditorTab = stateTab;
+  }
   const config = homepageService.getDraftConfig();
   const published = homepageService.getPublishedConfig();
   const isAdmin = authService.isAdmin();
@@ -795,6 +799,10 @@ export function initHomepageManagerEvents() {
       const cfg = collectCurrentFormValues(homepageService.getDraftConfig());
       homepageService.saveDraftConfig(cfg);
       activeEditorTab = btn.getAttribute('data-home-tab');
+      state.set('homeManagerActiveTab', activeEditorTab);
+      try {
+        if (typeof window.router !== 'undefined') window.router.navigate('homepage-manager', { tab: activeEditorTab, skipViewSwitch: true });
+      } catch (_) {}
       refreshView();
     });
   });
@@ -806,6 +814,10 @@ export function initHomepageManagerEvents() {
       const cfg = collectCurrentFormValues(homepageService.getDraftConfig());
       homepageService.saveDraftConfig(cfg);
       activeEditorTab = btn.getAttribute('data-target-tab');
+      state.set('homeManagerActiveTab', activeEditorTab);
+      try {
+        if (typeof window.router !== 'undefined') window.router.navigate('homepage-manager', { tab: activeEditorTab, skipViewSwitch: true });
+      } catch (_) {}
       refreshView();
     });
   });

@@ -2535,6 +2535,11 @@ export function updateToolsNavbarVisuals(activeTab) {
 export function navigateToTab(tabName) {
   currentActiveTab = tabName;
   state.set('toolsActiveTab', tabName);
+  try {
+    if (typeof window.router !== 'undefined' && typeof window.router.navigate === 'function') {
+      window.router.navigate('tools-management', { tab: tabName, skipViewSwitch: true });
+    }
+  } catch (_) {}
   updateToolsNavbarVisuals(tabName);
   const container = document.getElementById('tools-tab-content-container');
   if (container) {

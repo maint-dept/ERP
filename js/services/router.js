@@ -2,13 +2,13 @@
  * Al-Muslim Group Garments Factory Maintenance Machine ERP
  * Centralized Single Page Application (SPA) URL Router & History Manager
  * Supports:
- * - HTML5 History API (Clean Pathnames: /inventory, /dashboard, /transfers, etc.)
+ * - HTML5 History API (Clean Pathnames: /inventory, /transfers, /reports/transfers, etc.)
  * - Automatic Base Path detection (/ERP on GitHub Pages vs / on root/cPanel/localhost)
  * - Deep linking with direct module access & browser refresh preservation
  * - Browser Back & Forward (popstate) seamless handling without full page reload
- * - Query parameter preservation (subtabs: ?tab=transfers, ?search=..., ?redirect=...)
+ * - Sub-feature and Tab routing (/reports/transfers, /manpower/active, /users/permissions, etc.)
  * - Zero permissions / RBAC authorization guard verification before view switch
- * - Graceful legacy hash fallback for older bookmarks (#inventory -> /inventory)
+ * - Graceful 404 query fallback (?p=/inventory) and legacy hash fallback (#inventory)
  */
 
 import { authService } from './authService.js';
@@ -22,6 +22,7 @@ const ROUTE_VIEW_MAP = {
   'dashboard': 'dashboard',
   'inventory': 'inventory',
   'machines': 'inventory',
+  'machine-inventory': 'inventory',
   'relocate': 'relocate',
   'needle-operations': 'needle-operations',
   'needle-flow': 'needle-operations',
@@ -45,17 +46,58 @@ const ROUTE_VIEW_MAP = {
   'spare-parts': 'spare-parts',
   'tools-management': 'tools-management',
   'tools': 'tools-management',
+  'tools-equipment': 'tools-management',
   'storage': 'storage',
   'manpower': 'manpower',
   'master-data': 'master-data',
   'users': 'users',
   'user-management': 'users',
+  'user-access': 'users',
   'homepage-manager': 'homepage-manager',
   'email-config': 'email-config',
   'audit-logs': 'audit-logs',
   'settings': 'settings',
   'database-config': 'database-config',
   'no-access': 'no-access'
+};
+
+// Map clean URL tab slugs to internal component state keys and vice versa
+const USER_SLUG_TO_TAB = {
+  'accounts': 'ACCOUNTS',
+  'permissions': 'PERMISSIONS',
+  'bulk-assign': 'BULK_ASSIGN',
+  'passwords': 'PASSWORD_MGMT',
+  'password-mgmt': 'PASSWORD_MGMT',
+  'export': 'EXPORT_ACCOUNTS',
+  'export-accounts': 'EXPORT_ACCOUNTS',
+  'logs': 'ACTIVITY_LOGS',
+  'activity-logs': 'ACTIVITY_LOGS',
+  'presets': 'PRESETS'
+};
+
+const USER_TAB_TO_SLUG = {
+  'ACCOUNTS': 'accounts',
+  'PERMISSIONS': 'permissions',
+  'BULK_ASSIGN': 'bulk-assign',
+  'PASSWORD_MGMT': 'passwords',
+  'EXPORT_ACCOUNTS': 'export',
+  'ACTIVITY_LOGS': 'logs',
+  'PRESETS': 'presets'
+};
+
+const REPORT_SLUG_MAP = {
+  'machine': 'machines',
+  'machines': 'machines',
+  'transfer': 'transfers',
+  'transfers': 'transfers',
+  'spare': 'spareparts',
+  'spare-parts': 'spareparts',
+  'spareparts': 'spareparts',
+  'etlab': 'etlab',
+  'et-lab': 'etlab',
+  'pm': 'preventive',
+  'preventive': 'preventive',
+  'export': 'export'
 };
 
 // Document titles for each view
@@ -131,10 +173,10 @@ class SPAModuleRouter {
   /**
    * Parses current browser URL to determine view, subtabs, and query parameters.
    * Handles:
-   * 1. Pathname routing: /inventory, /transfers, /reports
+   * 1. Pathname routing: /inventory, /transfers, /reports/transfers
    * 2. Query params: ?tab=transfers, ?search=..., ?redirect=...
    * 3. Legacy hash routes: #/inventory, #inventory
-   * 4. GitHub Pages 404 redirect param: ?p=/inventory
+   * 4. GitHub Pages 404 redirect param: ?p=/inventory or ?p=/reports/transfers
    */
   parseCurrentRoute() {
     if (typeof window === 'undefined' || !window.location) {
@@ -146,7 +188,7 @@ class SPAModuleRouter {
 
     // Check if redirect path was passed via GitHub Pages 404 query param (?p=/inventory)
     if (searchParams.has('p')) {
-      const p = searchParams.get('p') || '';
+      const p = decodeURIComponent(searchParams.get('p') || '');
       relPath = p.replace(/^\/+|\/+$/g, '');
     }
 
@@ -171,12 +213,19 @@ class SPAModuleRouter {
     let targetView = ROUTE_VIEW_MAP[routeKey] || (routeKey ? routeKey : 'home');
 
     // Extract subtab from query param or secondary path segment
-    let tab = searchParams.get('tab') || subSegment || null;
+    let rawTab = searchParams.get('tab') || subSegment || null;
+    let tab = rawTab;
+
+    if (targetView === 'reports' && tab) {
+      tab = REPORT_SLUG_MAP[tab] || tab;
+    } else if (targetView === 'users' && tab) {
+      tab = USER_SLUG_TO_TAB[tab.toLowerCase()] || tab;
+    }
 
     // Build parameter dictionary
     const params = {};
     for (const [k, v] of searchParams.entries()) {
-      if (k !== 'p') {
+      if (k !== 'p' && k !== 'tab') {
         params[k] = v;
       }
     }
@@ -196,11 +245,12 @@ class SPAModuleRouter {
    */
   buildUrl(view, options = {}) {
     const base = this.getBasePath();
-    const tab = options.tab || null;
+    let tab = options.tab || null;
     const query = options.params ? { ...options.params } : {};
 
-    if (tab) {
-      query.tab = tab;
+    // Normalize user tab to clean slug if applicable
+    if (tab && view === 'users' && USER_TAB_TO_SLUG[tab]) {
+      tab = USER_TAB_TO_SLUG[tab];
     }
 
     let pathPart = '';
@@ -208,6 +258,9 @@ class SPAModuleRouter {
       pathPart = base ? base + '/' : '/';
     } else {
       pathPart = (base ? base : '') + '/' + encodeURIComponent(view);
+      if (tab) {
+        pathPart += '/' + encodeURIComponent(tab);
+      }
     }
 
     const queryString = Object.keys(query).length > 0 
@@ -218,12 +271,41 @@ class SPAModuleRouter {
   }
 
   /**
-   * Sets document title based on the active view
+   * Sets document title based on the active view and optional subtab
    */
-  updateTitle(view) {
+  updateTitle(view, tab = null) {
     if (typeof document === 'undefined') return;
-    const title = VIEW_TITLES[view] || (view ? `${view.charAt(0).toUpperCase() + view.slice(1)} — Al-Muslim Group ERP` : 'Al-Muslim Group ERP');
-    document.title = title;
+    let baseTitle = VIEW_TITLES[view] || (view ? `${view.charAt(0).toUpperCase() + view.slice(1)} — Al-Muslim Group ERP` : 'Al-Muslim Group ERP');
+    if (tab && tab !== 'dashboard' && tab !== 'machines' && tab !== 'active' && tab !== 'tools-list' && tab !== 'boards' && tab !== 'scan') {
+      const displayTab = USER_TAB_TO_SLUG[tab] || tab;
+      const formattedTab = displayTab.replace(/[-_]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+      baseTitle = `${formattedTab} | ${baseTitle}`;
+    }
+    document.title = baseTitle;
+  }
+
+  /**
+   * Retrieves active subtab for a given view from reactive state
+   */
+  getCurrentSubtab(view) {
+    if (!view) return null;
+    if (view === 'reports') return state.get('reportActiveTab') || 'machines';
+    if (view === 'manpower') return state.get('manpowerActiveTab') || 'active';
+    if (view === 'preventive-maintenance') return state.get('pmActiveTab') || 'dashboard';
+    if (view === 'master-data') return state.get('masterDataActiveTab') || 'fast-entry';
+    if (view === 'users') {
+      const uTab = state.get('userAccessActiveTab') || 'ACCOUNTS';
+      return USER_TAB_TO_SLUG[uTab] || uTab.toLowerCase();
+    }
+    if (view === 'tools-management') return state.get('toolsActiveTab') || 'tools-add';
+    if (view === 'et-lab') return state.get('etLabActiveTab') || 'boards';
+    if (view === 'excel-manager') return state.get('excelActiveTab') || 'structure';
+    if (view === 'homepage-manager') return state.get('homeManagerActiveTab') || 'sections';
+    if (view === 'relocate') return state.get('relocateActiveTab') || 'scan';
+    if (view === 'parts-trace') return state.get('partsTraceActiveTab') || 'dashboard';
+    if (view === 'machine-history') return state.get('historyActiveTab') || 'timeline';
+    if (view === 'qr-codes') return state.get('qrStudioTab') || 'machine';
+    return null;
   }
 
   /**
@@ -231,8 +313,10 @@ class SPAModuleRouter {
    */
   syncSubtabState(view, tab) {
     if (!tab) return;
+    const lowerTab = String(tab).toLowerCase();
     if (view === 'reports') {
-      state.set('reportActiveTab', tab);
+      const normalized = REPORT_SLUG_MAP[lowerTab] || tab;
+      state.set('reportActiveTab', normalized);
     } else if (view === 'manpower') {
       state.set('manpowerActiveTab', tab);
     } else if (view === 'preventive-maintenance') {
@@ -240,7 +324,27 @@ class SPAModuleRouter {
     } else if (view === 'master-data') {
       state.set('masterDataActiveTab', tab);
     } else if (view === 'users') {
-      state.set('userAccessActiveTab', tab);
+      const normalized = USER_SLUG_TO_TAB[lowerTab] || tab.toUpperCase();
+      state.set('userAccessActiveTab', normalized);
+      if (typeof localStorage !== 'undefined') {
+        try { localStorage.setItem('al_muslim_user_access_section', normalized); } catch (_) {}
+      }
+    } else if (view === 'tools-management') {
+      state.set('toolsActiveTab', tab);
+    } else if (view === 'et-lab') {
+      state.set('etLabActiveTab', tab);
+    } else if (view === 'excel-manager') {
+      state.set('excelActiveTab', tab);
+    } else if (view === 'homepage-manager') {
+      state.set('homeManagerActiveTab', tab);
+    } else if (view === 'relocate') {
+      state.set('relocateActiveTab', tab);
+    } else if (view === 'parts-trace') {
+      state.set('partsTraceActiveTab', tab);
+    } else if (view === 'machine-history') {
+      state.set('historyActiveTab', tab);
+    } else if (view === 'qr-codes') {
+      state.set('qrStudioTab', tab);
     }
   }
 
@@ -253,7 +357,7 @@ class SPAModuleRouter {
     if (typeof window === 'undefined') return;
 
     const replace = !!options.replace;
-    const tab = options.tab || null;
+    let tab = options.tab !== undefined ? options.tab : this.getCurrentSubtab(targetView);
     const params = options.params || {};
     const targetUrl = this.buildUrl(targetView, { tab, params });
 
@@ -277,11 +381,16 @@ class SPAModuleRouter {
     }
 
     // Update document title
-    this.updateTitle(targetView);
+    this.updateTitle(targetView, tab);
 
     // Synchronize global reactive state if needed
     if (state.get('currentView') !== targetView) {
       state.set('currentView', targetView);
+    }
+
+    // Trigger view transition in app singleton unless skipped
+    if (!options.skipViewSwitch && typeof window.app !== 'undefined' && typeof window.app.switchView === 'function') {
+      window.app.switchView(targetView, { tab, replace: true, skipHistory: true });
     }
 
     // Notify registered router listeners
@@ -315,11 +424,11 @@ class SPAModuleRouter {
       this.syncSubtabState(targetView, parsed.tab);
     }
 
-    this.updateTitle(targetView);
+    this.updateTitle(targetView, parsed.tab);
 
     // Seamlessly transition view via app singleton
     if (typeof window.app !== 'undefined' && typeof window.app.switchView === 'function') {
-      window.app.switchView(targetView);
+      window.app.switchView(targetView, { tab: parsed.tab, replace: true, skipHistory: true });
     } else {
       state.set('currentView', targetView);
     }
@@ -328,7 +437,7 @@ class SPAModuleRouter {
   }
 
   /**
-   * Initializes router listeners, normalizes legacy hash URLs, and binds popstate
+   * Initializes router listeners, normalizes legacy hash URLs or 404 redirects, and binds popstate
    */
   init() {
     if (typeof window === 'undefined') return;
@@ -348,6 +457,8 @@ class SPAModuleRouter {
       const tab = target.getAttribute('data-report-tab') || 
                   target.getAttribute('data-manpower-tab') || 
                   target.getAttribute('data-pm-tab') || 
+                  target.getAttribute('data-user-tab') || 
+                  target.getAttribute('data-master-tab') || 
                   target.getAttribute('data-tab');
 
       if (view) {
@@ -357,16 +468,17 @@ class SPAModuleRouter {
       }
     });
 
-    // Normalize any legacy hash URLs on startup to clean pathname
+    // Clean up any 404 query param (?p=...) or normalize legacy hash URLs on startup to clean pathname
+    const searchParams = new URLSearchParams(window.location.search || '');
     const parsed = this.parseCurrentRoute();
-    if (window.location.hash && (window.location.pathname === '/' || window.location.pathname.toLowerCase() === '/erp' || window.location.pathname.toLowerCase() === '/erp/')) {
+    if (searchParams.has('p') || (window.location.hash && (window.location.pathname === '/' || window.location.pathname.toLowerCase() === '/erp' || window.location.pathname.toLowerCase() === '/erp/'))) {
       const cleanUrl = this.buildUrl(parsed.view, { tab: parsed.tab, params: parsed.params });
       try {
-        window.history.replaceState({ view: parsed.view, tab: parsed.tab }, '', cleanUrl);
+        window.history.replaceState({ view: parsed.view, tab: parsed.tab, params: parsed.params }, '', cleanUrl);
       } catch (_) {}
     }
 
-    this.updateTitle(parsed.view);
+    this.updateTitle(parsed.view, parsed.tab);
   }
 
   on(event, callback) {
@@ -385,3 +497,5 @@ export const router = new SPAModuleRouter();
 if (typeof window !== 'undefined') {
   window.router = router;
 }
+
+export default router;

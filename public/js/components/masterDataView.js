@@ -11,7 +11,7 @@ import { qrCodeService } from '../services/qrCodeService.js';
 import { authService } from '../services/authService.js';
 import { notificationService } from '../services/notificationService.js';
 import { state } from '../state.js';
-import { router } from '../services/router.js?v=4.26.49';
+import { router } from '../services/router.js?v=4.26.50';
 
 let activeTab = 'fast-entry'; // 'fast-entry', 'tree', 'groups', 'units', 'floors', 'lines', 'machinenames', 'brands', 'models'
 let cascadeGroupId = '';

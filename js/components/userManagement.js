@@ -21,6 +21,7 @@ import { masterDataService } from '../services/masterDataService.js';
 import { employeeService } from '../services/employeeService.js';
 import { notificationService } from '../services/notificationService.js';
 import { state } from '../state.js';
+import { router } from '../services/router.js?v=4.26.50';
 
 // Active Sub-feature Section
 // 'ACCOUNTS' | 'PERMISSIONS' | 'BULK_ASSIGN' | 'PASSWORD_MGMT' | 'EXPORT_ACCOUNTS' | 'ACTIVITY_LOGS' | 'PRESETS'
@@ -173,6 +174,10 @@ export const PERMISSION_CONFIG_MODULES = [
 ];
 
 export function renderUserManagement() {
+  const stateSection = state.get('userAccessActiveTab');
+  if (stateSection) {
+    activeUserSection = stateSection;
+  }
   const currentUser = authService.getCurrentUser();
   const isAdmin = authService.isAdmin();
   const isSuperAdmin = authService.isSuperAdmin();
@@ -3709,9 +3714,13 @@ export function initUserManagementEvents() {
       const tab = btn.getAttribute('data-tab');
       if (tab) {
         activeUserSection = tab;
+        state.set('userAccessActiveTab', tab);
         if (typeof localStorage !== 'undefined') {
           localStorage.setItem('al_muslim_user_access_section', tab);
         }
+        try {
+          router.navigate('users', { tab, skipViewSwitch: true });
+        } catch (_) {}
         reRender();
       }
     });

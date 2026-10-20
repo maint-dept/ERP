@@ -333,14 +333,19 @@ class MachineService {
       let valA = a[sortField];
       let valB = b[sortField];
 
-      // Handle SL sequential order
+      // Helper to extract true sequential asset number (000001 -> 006450)
+      const getAssetSeq = (m) => {
+        const idStr = String(m.systemAssetId || m.permanentMachineId || '');
+        const match = idStr.match(/\d+/);
+        if (match) return parseInt(match[0], 10);
+        if (m.sl !== undefined && m.sl !== null && m.sl !== '') return Number(m.sl);
+        return 0;
+      };
+
+      // Handle SL sequential order (Asset ID sequence 000001 -> 006450)
       if (sortField === 'sl') {
-        const numA = (a.sl !== undefined && a.sl !== null && a.sl !== '') 
-          ? Number(a.sl) 
-          : (parseInt(String(a.systemAssetId || a.permanentMachineId || '').replace(/\D/g, ''), 10) || 0);
-        const numB = (b.sl !== undefined && b.sl !== null && b.sl !== '') 
-          ? Number(b.sl) 
-          : (parseInt(String(b.systemAssetId || b.permanentMachineId || '').replace(/\D/g, ''), 10) || 0);
+        const numA = getAssetSeq(a);
+        const numB = getAssetSeq(b);
         return (numA - numB) * sortOrder;
       }
 
@@ -356,6 +361,9 @@ class MachineService {
         return bA.localeCompare(bB) * sortOrder;
       }
       if (sortField === 'systemAssetId') {
+        const numA = getAssetSeq(a);
+        const numB = getAssetSeq(b);
+        if (numA !== numB) return (numA - numB) * sortOrder;
         const saA = a.systemAssetId || (a.permanentMachineId ? String(a.permanentMachineId).replace(/^MID-/i, 'AMG-MNT-') : '') || '';
         const saB = b.systemAssetId || (b.permanentMachineId ? String(b.permanentMachineId).replace(/^MID-/i, 'AMG-MNT-') : '') || '';
         return String(saA).localeCompare(String(saB), undefined, { numeric: true }) * sortOrder;

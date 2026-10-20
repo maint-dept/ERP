@@ -19,7 +19,7 @@ import { excelService } from '../services/excelService.js';
 import { authService } from '../services/authService.js';
 import { notificationService } from '../services/notificationService.js';
 import { state } from '../state.js';
-import { router } from '../services/router.js?v=4.26.49';
+import { router } from '../services/router.js?v=4.26.50';
 import { renderEmployeeModal, initEmployeeModalEvents } from './employeeModal.js';
 
 let activeManpowerTab = 'active'; // 'active', 'inactive', 'transfers', 'leaves', 'custom-fields'

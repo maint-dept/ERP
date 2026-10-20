@@ -7,16 +7,16 @@
 import { state } from './state.js';
 import { storage } from './db/storage.js';
 import { authService } from './services/authService.js';
-import { renderNavbar, initNavbarEvents } from './components/navbar.js?v=4.26.48';
-import { renderSidebar, initSidebarEvents, updateSidebarActiveState } from './components/sidebar.js?v=4.26.48';
-import { renderHomepageView, initHomepageEvents } from './components/homepageView.js?v=4.26.48';
-import { renderLoginView, initLoginViewEvents } from './components/loginView.js?v=4.26.48';
-import { renderDashboard, initDashboardEvents } from './components/dashboard.js?v=4.26.48';
-import { renderMachineModal, initMachineModalEvents } from './components/machineModal.js?v=4.26.48';
-import { renderMachineDetails, initMachineDetailsEvents } from './components/machineDetails.js?v=4.26.48';
-import { renderTransferModal, initTransferModalEvents } from './components/transferModal.js?v=4.26.48';
+import { renderNavbar, initNavbarEvents } from './components/navbar.js?v=4.26.50';
+import { renderSidebar, initSidebarEvents, updateSidebarActiveState } from './components/sidebar.js?v=4.26.50';
+import { renderHomepageView, initHomepageEvents } from './components/homepageView.js?v=4.26.50';
+import { renderLoginView, initLoginViewEvents } from './components/loginView.js?v=4.26.50';
+import { renderDashboard, initDashboardEvents } from './components/dashboard.js?v=4.26.50';
+import { renderMachineModal, initMachineModalEvents } from './components/machineModal.js?v=4.26.50';
+import { renderMachineDetails, initMachineDetailsEvents } from './components/machineDetails.js?v=4.26.50';
+import { renderTransferModal, initTransferModalEvents } from './components/transferModal.js?v=4.26.50';
 import { renderTransferDetailsModal, initTransferDetailsModalEvents } from './components/transferDetailsModal.js';
-import { renderEditTransferModal, initEditTransferModalEvents } from './components/editTransferModal.js?v=4.26.48';
+import { renderEditTransferModal, initEditTransferModalEvents } from './components/editTransferModal.js?v=4.26.50';
 import { renderExcelImportModal, initExcelImportEvents } from './components/excelImportModal.js';
 import { renderColumnVisibilityModal, initColumnVisibilityEvents } from './components/columnVisibilityModal.js';
 import { renderNotificationsDrawer, initNotificationsDrawerEvents } from './components/notificationsDrawer.js';
@@ -28,8 +28,8 @@ import { historyService } from './services/historyService.js';
 import { auditService } from './services/auditService.js';
 import { notificationService } from './services/notificationService.js';
 import { syncManager } from './db/syncManager.js';
-import { router } from './services/router.js?v=4.26.48';
-import { moduleLoader } from './services/moduleLoader.js?v=4.26.48';
+import { router } from './services/router.js?v=4.26.50';
+import { moduleLoader } from './services/moduleLoader.js?v=4.26.50';
 
 /**
  * Captures all active scroll, viewport, and focused input states.
@@ -523,7 +523,7 @@ class ERPApplication {
   /**
    * Fast, ultra-smooth view transition that preserves scroll & avoids layout shifts
    */
-  switchView(newView) {
+  switchView(newView, options = {}) {
     if (this._isSwitchingView) return;
     this._isSwitchingView = true;
 
@@ -543,6 +543,11 @@ class ERPApplication {
         }
       }
 
+      // If a subtab is provided in options, synchronize it to reactive state
+      if (options.tab) {
+        router.syncSubtabState(newView, options.tab);
+      }
+
       // Trigger non-blocking on-demand table loading for this view
       if (typeof storage !== 'undefined' && typeof storage.ensureTablesForView === 'function') {
         storage.ensureTablesForView(newView).catch(() => {});
@@ -552,22 +557,27 @@ class ERPApplication {
       const isStandaloneTarget = newView === 'home' || newView === 'login';
       const isCurrentlyStandalone = !document.getElementById('sidebar-container');
 
-      const updateHistoryState = (view) => {
+      const updateHistoryState = (view, tab) => {
+        if (options.skipHistory) return;
         try {
-          router.navigate(view, { replace: false });
+          router.navigate(view, { tab: tab !== undefined ? tab : options.tab, replace: options.replace || false, skipViewSwitch: true });
         } catch (e) { }
       };
 
       if (isStandaloneTarget || isCurrentlyStandalone) {
         this._currentRenderedView = newView;
-        updateHistoryState(newView);
+        updateHistoryState(newView, options.tab);
         this.render();
         return;
       }
 
-      // If view is already rendered and active, just ensure sidebar highlights match and return instantly
+      // If view is already rendered and active:
       if (this._currentRenderedView === newView && state.get('currentView') === newView) {
         updateSidebarActiveState(newView);
+        updateHistoryState(newView, options.tab);
+        if (options.tab) {
+          this.switchSubtabInActiveView(newView, options.tab);
+        }
         return;
       }
 
@@ -584,14 +594,78 @@ class ERPApplication {
       this.renderMainContent(false, false, newView);
       this._currentRenderedView = newView;
 
-      // Sync browser history state smoothly
-      updateHistoryState(newView);
+      // Sync browser history state smoothly with active subtab
+      updateHistoryState(newView, options.tab);
 
     } catch (err) {
       console.error('Error during smooth view transition:', err);
       this.render();
     } finally {
       this._isSwitchingView = false;
+    }
+  }
+
+  /**
+   * Switches in-page subtab within an already rendered view without reloading
+   */
+  switchSubtabInActiveView(view, tab) {
+    if (!tab) return;
+    try {
+      if (view === 'reports') {
+        const btn = document.querySelector(`[data-report-tab-btn="${tab}"]`);
+        if (btn) btn.click();
+      } else if (view === 'manpower') {
+        const btn = document.querySelector(`[data-manpower-tab="${tab}"]`);
+        if (btn) btn.click();
+      } else if (view === 'preventive-maintenance') {
+        const btn = document.querySelector(`[data-pm-tab="${tab}"]`);
+        if (btn) {
+          btn.click();
+        } else {
+          window.dispatchEvent(new CustomEvent('erp:navigate-pm-tab', { detail: { tab } }));
+        }
+      } else if (view === 'master-data') {
+        const btn = document.querySelector(`[data-master-tab="${tab}"]`);
+        if (btn) btn.click();
+      } else if (view === 'users') {
+        const btn = document.querySelector(`.tab-btn-uam[data-tab="${tab}"]`) || 
+                    document.querySelector(`.tab-btn-uam[data-tab="${tab.toUpperCase()}"]`);
+        if (btn) btn.click();
+      } else if (view === 'tools-management') {
+        const btn = document.querySelector(`.tools-tab-btn[data-tab="${tab}"]`);
+        if (btn) btn.click();
+      } else if (view === 'et-lab') {
+        if (tab === 'spare-parts') {
+          const btn = document.getElementById('ent-tab-btn-spare-parts');
+          if (btn) btn.click();
+        } else if (tab === 'lab-config') {
+          const btn = document.getElementById('ent-tab-btn-lab-config');
+          if (btn) btn.click();
+        } else {
+          const btn = document.getElementById('ent-tab-btn-boards');
+          if (btn) btn.click();
+        }
+      } else if (view === 'excel-manager') {
+        const btn = document.querySelector(`[data-tab="${tab}"]`);
+        if (btn) btn.click();
+      } else if (view === 'homepage-manager') {
+        const btn = document.querySelector(`[data-home-tab="${tab}"]`);
+        if (btn) btn.click();
+      } else if (view === 'relocate') {
+        const btn = document.querySelector(`.btn-relocate-tab[data-tab="${tab}"]`);
+        if (btn) btn.click();
+      } else if (view === 'parts-trace') {
+        const btn = document.querySelector(`.btn-trace-tab[data-tab="${tab}"]`);
+        if (btn) btn.click();
+      } else if (view === 'machine-history') {
+        const btn = document.querySelector(`.history-tab-btn[data-tab="${tab}"]`);
+        if (btn) btn.click();
+      } else if (view === 'qr-codes') {
+        const btn = document.querySelector(`.btn-studio-tab[data-tab="${tab}"]`);
+        if (btn) btn.click();
+      }
+    } catch (e) {
+      console.warn('Subtab switch error:', e);
     }
   }
 

@@ -15,7 +15,7 @@ import { storage } from '../db/storage.js';
 import { TABLE_NAMES } from '../db/schema.js';
 import { homepageService } from '../services/homepageService.js';
 import { state } from '../state.js';
-import { router } from '../services/router.js?v=4.26.48';
+import { router } from '../services/router.js?v=4.26.50';
 
 export function renderHomepageView(isDraft = false) {
   const config = isDraft ? homepageService.getDraftConfig() : homepageService.getPublishedConfig();

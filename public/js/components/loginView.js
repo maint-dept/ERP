@@ -6,7 +6,7 @@
 import { authService } from '../services/authService.js';
 import { emailService } from '../services/emailService.js';
 import { state } from '../state.js';
-import { router } from '../services/router.js?v=4.26.49';
+import { router } from '../services/router.js?v=4.26.50';
 
 let loginMode = 'LOGIN'; // 'LOGIN' | 'FORGOT_REQUEST' | 'FORGOT_VERIFY' | 'FIRST_LOGIN_CHANGE'
 let resetTargetUsername = '';

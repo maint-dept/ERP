@@ -6,7 +6,7 @@
 import { authService } from '../services/authService.js';
 import { emailService } from '../services/emailService.js';
 import { state } from '../state.js';
-import { router } from '../services/router.js?v=4.26.48';
+import { router } from '../services/router.js?v=4.26.50';
 
 let loginMode = 'LOGIN'; // 'LOGIN' | 'FORGOT_REQUEST' | 'FORGOT_VERIFY' | 'FIRST_LOGIN_CHANGE'
 let resetTargetUsername = '';
@@ -473,14 +473,30 @@ export function initLoginViewEvents() {
           return;
         }
 
-        const redirectParam = router.parseCurrentRoute().params.redirect;
+        const redirectParam = router.parseCurrentRoute().params.redirect || 
+                              (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('al_muslim_post_login_redirect') : null);
+        if (typeof sessionStorage !== 'undefined') {
+          try { sessionStorage.removeItem('al_muslim_post_login_redirect'); } catch (_) {}
+        }
+
         let dest = 'dashboard';
-        if (redirectParam && authService.isViewAllowed(redirectParam, res.user)) {
-          dest = redirectParam;
+        let destTab = null;
+
+        if (redirectParam) {
+          const parts = redirectParam.split('/');
+          const candView = parts[0];
+          const candTab = parts[1] || null;
+          if (authService.isViewAllowed(candView, res.user)) {
+            dest = candView;
+            destTab = candTab;
+          } else {
+            dest = authService.getFirstAllowedView(res.user) || 'dashboard';
+          }
         } else {
           dest = authService.getFirstAllowedView(res.user) || 'dashboard';
         }
-        router.navigate(dest, { replace: true });
+
+        router.navigate(dest, { tab: destTab, replace: true });
         state.set('currentView', dest);
         state.emit('inventory:updated');
       } catch (err) {

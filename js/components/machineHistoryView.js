@@ -31,6 +31,10 @@ let historyFilters = {
 };
 
 export function renderMachineHistoryView() {
+  const stateTab = state.get('historyActiveTab');
+  if (stateTab) {
+    activeTab = stateTab;
+  }
   const allMachines = storage.getTable(TABLE_NAMES.MACHINES) || [];
   const allGroups = masterDataService.getGroups(true);
   const allUnits = masterDataService.getUnits(null, true);
@@ -1388,6 +1392,10 @@ export function initMachineHistoryEvents() {
       document.querySelectorAll('.history-tab-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       activeTab = btn.getAttribute('data-tab');
+      state.set('historyActiveTab', activeTab);
+      try {
+        if (typeof window.router !== 'undefined') window.router.navigate('machine-history', { tab: activeTab, skipViewSwitch: true });
+      } catch (_) {}
       window.dispatchEvent(new CustomEvent('erp:master-data-updated'));
     });
   });

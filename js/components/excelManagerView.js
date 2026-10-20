@@ -13,6 +13,10 @@ import { state } from '../state.js';
 let activeTab = 'structure'; // 'structure', 'template', 'history'
 
 export function renderExcelManagerView() {
+  const stateTab = state.get('excelActiveTab');
+  if (stateTab) {
+    activeTab = stateTab;
+  }
   const struct = excelService.getActiveStructure();
   const columns = [...(struct.columns || [])].sort((a, b) => (a.order || 0) - (b.order || 0));
   const customFields = customFieldService.getAllFields();
@@ -372,6 +376,10 @@ export function initExcelManagerEvents() {
   document.querySelectorAll('[data-tab]').forEach(btn => {
     btn.addEventListener('click', () => {
       activeTab = btn.getAttribute('data-tab');
+      state.set('excelActiveTab', activeTab);
+      try {
+        if (typeof window.router !== 'undefined') window.router.navigate('excel-manager', { tab: activeTab, skipViewSwitch: true });
+      } catch (_) {}
       const view = document.getElementById('main-view-container');
       if (view) {
         view.innerHTML = renderExcelManagerView();

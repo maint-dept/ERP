@@ -7,16 +7,16 @@
 import { state } from './state.js';
 import { storage } from './db/storage.js';
 import { authService } from './services/authService.js';
-import { renderNavbar, initNavbarEvents } from './components/navbar.js?v=4.26.48';
-import { renderSidebar, initSidebarEvents, updateSidebarActiveState } from './components/sidebar.js?v=4.26.48';
-import { renderHomepageView, initHomepageEvents } from './components/homepageView.js?v=4.26.48';
-import { renderLoginView, initLoginViewEvents } from './components/loginView.js?v=4.26.48';
-import { renderDashboard, initDashboardEvents } from './components/dashboard.js?v=4.26.48';
-import { renderMachineModal, initMachineModalEvents } from './components/machineModal.js?v=4.26.48';
-import { renderMachineDetails, initMachineDetailsEvents } from './components/machineDetails.js?v=4.26.48';
-import { renderTransferModal, initTransferModalEvents } from './components/transferModal.js?v=4.26.48';
+import { renderNavbar, initNavbarEvents } from './components/navbar.js?v=4.26.50';
+import { renderSidebar, initSidebarEvents, updateSidebarActiveState } from './components/sidebar.js?v=4.26.50';
+import { renderHomepageView, initHomepageEvents } from './components/homepageView.js?v=4.26.50';
+import { renderLoginView, initLoginViewEvents } from './components/loginView.js?v=4.26.50';
+import { renderDashboard, initDashboardEvents } from './components/dashboard.js?v=4.26.50';
+import { renderMachineModal, initMachineModalEvents } from './components/machineModal.js?v=4.26.50';
+import { renderMachineDetails, initMachineDetailsEvents } from './components/machineDetails.js?v=4.26.50';
+import { renderTransferModal, initTransferModalEvents } from './components/transferModal.js?v=4.26.50';
 import { renderTransferDetailsModal, initTransferDetailsModalEvents } from './components/transferDetailsModal.js';
-import { renderEditTransferModal, initEditTransferModalEvents } from './components/editTransferModal.js?v=4.26.48';
+import { renderEditTransferModal, initEditTransferModalEvents } from './components/editTransferModal.js?v=4.26.50';
 import { renderExcelImportModal, initExcelImportEvents } from './components/excelImportModal.js';
 import { renderColumnVisibilityModal, initColumnVisibilityEvents } from './components/columnVisibilityModal.js';
 import { renderNotificationsDrawer, initNotificationsDrawerEvents } from './components/notificationsDrawer.js';
@@ -28,8 +28,8 @@ import { historyService } from './services/historyService.js';
 import { auditService } from './services/auditService.js';
 import { notificationService } from './services/notificationService.js';
 import { syncManager } from './db/syncManager.js';
-import { router } from './services/router.js?v=4.26.48';
-import { moduleLoader } from './services/moduleLoader.js?v=4.26.48';
+import { router } from './services/router.js?v=4.26.50';
+import { moduleLoader } from './services/moduleLoader.js?v=4.26.50';
 
 /**
  * Captures all active scroll, viewport, and focused input states.

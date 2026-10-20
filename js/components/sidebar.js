@@ -11,8 +11,8 @@
 
 import { authService } from '../services/authService.js';
 import { state } from '../state.js';
-import { router } from '../services/router.js?v=4.26.48';
-import { moduleLoader } from '../services/moduleLoader.js?v=4.26.48';
+import { router } from '../services/router.js?v=4.26.50';
+import { moduleLoader } from '../services/moduleLoader.js?v=4.26.50';
 
 const STORAGE_KEY_EXPANDED = 'al_muslim_sidebar_expanded_menus';
 
@@ -450,36 +450,9 @@ export function initSidebarEvents() {
     }
 
     if (view) {
-      updateSidebarActiveState(view, subId);
       const tab = reportTab || mpTab || userTab || pmTab || null;
-
-      if (curView === view && tab) {
-        // Same view with subtab: update URL and perform fast in-place subtab transition
-        router.navigate(view, { tab });
-        if (reportTab) {
-          const btn = document.querySelector(`[data-report-tab-btn="${reportTab}"]`);
-          if (btn) btn.click();
-        } else if (mpTab) {
-          const btn = document.querySelector(`[data-manpower-tab="${mpTab}"]`);
-          if (btn) btn.click();
-        } else if (userTab) {
-          const btn = document.querySelector(`[data-user-tab="${userTab}"]`);
-          if (btn) btn.click();
-        } else if (pmTab) {
-          const btn = document.querySelector(`[data-pm-tab="${pmTab}"]`);
-          if (btn) btn.click();
-        }
-      } else {
-        // Instant visual feedback & clean URL update
-        router.navigate(view, { tab });
-        requestAnimationFrame(() => {
-          if (typeof window.app !== 'undefined' && typeof window.app.switchView === 'function') {
-            window.app.switchView(view);
-          } else {
-            state.set('currentView', view);
-          }
-        });
-      }
+      updateSidebarActiveState(view, subId);
+      router.navigate(view, { tab });
     }
   });
 

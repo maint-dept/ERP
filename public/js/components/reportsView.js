@@ -25,7 +25,7 @@ import { pdfService } from '../services/pdfService.js';
 import { updateSidebarActiveState } from './sidebar.js';
 import { renderPreventiveMaintenanceReportView, initPreventiveMaintenanceReportEvents } from './preventiveMaintenanceReportView.js?v=4.26.40';
 import { state } from '../state.js';
-import { router } from '../services/router.js?v=4.26.49';
+import { router } from '../services/router.js?v=4.26.50';
 
 let currentReportTab = 'machines'; // 'machines', 'transfers', 'spareparts', 'export'
 let filterFloor = 'ALL';

@@ -25,6 +25,7 @@ import { pdfService } from '../services/pdfService.js';
 import { updateSidebarActiveState } from './sidebar.js';
 import { renderPreventiveMaintenanceReportView, initPreventiveMaintenanceReportEvents } from './preventiveMaintenanceReportView.js?v=4.26.40';
 import { state } from '../state.js';
+import { router } from '../services/router.js?v=4.26.50';
 
 let currentReportTab = 'machines'; // 'machines', 'transfers', 'spareparts', 'export'
 let filterFloor = 'ALL';
@@ -2152,6 +2153,9 @@ export function initReportsEvents() {
     if (!tab) return;
     currentReportTab = tab;
     state.set('reportActiveTab', tab);
+    try {
+      router.navigate('reports', { tab, skipViewSwitch: true });
+    } catch (_) {}
 
     // 1. Update tab buttons in-place
     document.querySelectorAll('[data-report-tab-btn]').forEach(btn => {

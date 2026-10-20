@@ -19,6 +19,7 @@ import { excelService } from '../services/excelService.js';
 import { authService } from '../services/authService.js';
 import { notificationService } from '../services/notificationService.js';
 import { state } from '../state.js';
+import { router } from '../services/router.js?v=4.26.50';
 import { renderEmployeeModal, initEmployeeModalEvents } from './employeeModal.js';
 
 let activeManpowerTab = 'active'; // 'active', 'inactive', 'transfers', 'leaves', 'custom-fields'
@@ -109,6 +110,23 @@ export function renderManpowerView() {
   const stats = employeeService.getManpowerStats();
   const isAdmin = authService.isAdmin();
 
+  const isFiltered = Boolean(
+    (filterState.search && filterState.search.trim()) ||
+    (filterState.designation && filterState.designation !== 'ALL') ||
+    (filterState.unitId && filterState.unitId !== 'ALL') ||
+    (filterState.floorId && filterState.floorId !== 'ALL') ||
+    (filterState.department && filterState.department !== 'ALL') ||
+    (filterState.groupId && filterState.groupId !== 'ALL')
+  );
+
+  let activeFilterCount = 0;
+  if (filterState.search && filterState.search.trim()) activeFilterCount++;
+  if (filterState.designation && filterState.designation !== 'ALL') activeFilterCount++;
+  if (filterState.unitId && filterState.unitId !== 'ALL') activeFilterCount++;
+  if (filterState.floorId && filterState.floorId !== 'ALL') activeFilterCount++;
+  if (filterState.department && filterState.department !== 'ALL') activeFilterCount++;
+  if (filterState.groupId && filterState.groupId !== 'ALL') activeFilterCount++;
+
   // Active employees list
   const activeEmployees = employeeService.getAllEmployees({
     ...filterState,
@@ -124,62 +142,65 @@ export function renderManpowerView() {
   const customFields = employeeCustomFieldService.getAllFields();
 
   return `
-    <div class="page-view" style="display: flex; flex-direction: column; gap: 12px; width: 100%; max-width: 100%; height: 100%; overflow: hidden; box-sizing: border-box; padding: 12px 20px;">
+    <div class="page-view" style="display: flex; flex-direction: column; gap: 8px; width: 100%; max-width: 100%; height: 100%; overflow: hidden; box-sizing: border-box; padding: 8px 14px;">
       
-      <!-- Top Title Bar (Responsive) -->
-      <div class="view-header-row" style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; flex-shrink: 0;">
-        <div style="min-width: 0; flex: 1;">
-          <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-            <span style="font-size: 22px;">👥</span>
-            <h1 style="font-size: 18px; font-weight: 800; color: #fff; margin: 0; word-break: break-word;">
-              Manpower Management
-            </h1>
-            <span class="badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); font-size: 11px; padding: 2px 8px; white-space: nowrap;">
-              ${stats.total} Total Workforce
+      <!-- Compact Top Command Bar: Unified Header, Tabs & Actions in One Single Row -->
+      <div class="view-header-row" style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 6px 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; flex-shrink: 0;">
+        
+        <!-- Left: Title & Count Badges -->
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+          <span style="font-size: 18px; line-height: 1;">👥</span>
+          <h1 style="font-size: 15px; font-weight: 800; color: #fff; margin: 0; white-space: nowrap;">
+            Manpower Management
+          </h1>
+          <span class="badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); font-size: 11px; padding: 2px 7px; font-weight: 700; white-space: nowrap;">
+            ${stats.total} Total
+          </span>
+          ${isFiltered ? `
+            <span class="badge" style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); font-size: 11px; padding: 2px 7px; font-weight: 700; white-space: nowrap;">
+              ⚡ Filtered: ${activeManpowerTab === 'active' ? activeEmployees.length : inactiveEmployees.length} Matches
             </span>
-          </div>
-          <p style="font-size: 11.5px; color: var(--text-secondary); margin-top: 2px; margin-bottom: 0;">
-            Manage plant mechanics, technicians, line supervisors, floor allocations, and leave rosters.
-          </p>
+          ` : ''}
         </div>
 
-        <div class="view-header-actions" style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
-          <button id="btn-manpower-add-emp" class="btn btn-primary btn-sm" style="font-weight: 700; background: linear-gradient(135deg, #0284c7, #0369a1); box-shadow: 0 2px 10px rgba(2, 132, 199, 0.35); white-space: nowrap;">
+        <!-- Center: Segmented Navigation Pills -->
+        <div id="manpower-nav-tabs-bar" style="display: flex; gap: 4px; align-items: center; background: rgba(15, 23, 42, 0.6); padding: 3px 4px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.08); overflow-x: auto; scrollbar-width: none;">
+          <button class="btn btn-xs ${activeManpowerTab === 'active' ? 'btn-primary' : 'btn-ghost'}" data-manpower-tab="active" style="font-size: 11.5px; font-weight: 700; padding: 3px 10px; height: 26px; border-radius: 6px; white-space: nowrap;">
+            🟢 Active (${isFiltered ? `${activeEmployees.length}/${stats.active}` : stats.active})
+          </button>
+          <button class="btn btn-xs ${activeManpowerTab === 'inactive' ? 'btn-primary' : 'btn-ghost'}" data-manpower-tab="inactive" style="font-size: 11.5px; font-weight: 700; padding: 3px 10px; height: 26px; border-radius: 6px; white-space: nowrap;">
+            🔴 Inactive (${isFiltered ? `${inactiveEmployees.length}/${stats.inactive + stats.onLeave}` : (stats.inactive + stats.onLeave)})
+          </button>
+          <button class="btn btn-xs ${activeManpowerTab === 'transfers' ? 'btn-primary' : 'btn-ghost'}" data-manpower-tab="transfers" style="font-size: 11.5px; font-weight: 700; padding: 3px 10px; height: 26px; border-radius: 6px; white-space: nowrap;">
+            🔄 Transfers (${transfers.length})
+          </button>
+          <button class="btn btn-xs ${activeManpowerTab === 'leaves' ? 'btn-primary' : 'btn-ghost'}" data-manpower-tab="leaves" style="font-size: 11.5px; font-weight: 700; padding: 3px 10px; height: 26px; border-radius: 6px; white-space: nowrap;">
+            🏖️ Leaves (${leaves.length})
+          </button>
+          ${isAdmin ? `
+            <button class="btn btn-xs ${activeManpowerTab === 'custom-fields' ? 'btn-primary' : 'btn-ghost'}" data-manpower-tab="custom-fields" style="font-size: 11.5px; font-weight: 700; padding: 3px 10px; height: 26px; border-radius: 6px; white-space: nowrap; color: ${activeManpowerTab === 'custom-fields' ? '#fff' : '#fbbf24'};">
+              ⚙️ Custom Fields (${customFields.length})
+            </button>
+          ` : ''}
+        </div>
+
+        <!-- Right: Actions -->
+        <div class="view-header-actions" style="display: flex; gap: 6px; align-items: center; flex-wrap: nowrap;">
+          <button id="btn-manpower-add-emp" class="btn btn-primary btn-xs" style="font-weight: 700; font-size: 11.5px; height: 28px; padding: 0 10px; background: linear-gradient(135deg, #0284c7, #0369a1); white-space: nowrap;">
             ➕ Add Employee
           </button>
-          <button id="btn-manpower-import-excel" class="btn btn-secondary btn-sm" style="font-weight: 700; white-space: nowrap;">
-            📥 Excel Import
+          <button id="btn-manpower-import-excel" class="btn btn-secondary btn-xs" style="font-weight: 700; font-size: 11.5px; height: 28px; padding: 0 9px; white-space: nowrap;">
+            📥 Import
           </button>
-          <button id="btn-manpower-export-excel" class="btn btn-secondary btn-sm" style="font-weight: 700; white-space: nowrap;">
-            📤 Excel Export (.xlsx)
+          <button id="btn-manpower-export-excel" class="btn btn-secondary btn-xs" style="font-weight: 700; font-size: 11.5px; height: 28px; padding: 0 9px; white-space: nowrap;">
+            📤 Export (.xlsx)
           </button>
         </div>
       </div>
 
-      <!-- Navigation Tabs (Clean Button Pills, Fixed Height) -->
-      <div id="manpower-nav-tabs-bar" style="display: flex; gap: 8px; border-bottom: 2px solid var(--border-color); padding-bottom: 6px; flex-wrap: nowrap; flex-shrink: 0; overflow-x: auto; scrollbar-width: none; height: 38px; align-items: center;">
-        <button class="btn btn-sm ${activeManpowerTab === 'active' ? 'btn-primary' : 'btn-ghost'}" data-manpower-tab="active" style="font-size: 12.5px; font-weight: 700; white-space: nowrap;">
-          🟢 Active Manpower (${stats.active})
-        </button>
-        <button class="btn btn-sm ${activeManpowerTab === 'inactive' ? 'btn-primary' : 'btn-ghost'}" data-manpower-tab="inactive" style="font-size: 12.5px; font-weight: 700; white-space: nowrap;">
-          🔴 Inactive Manpower (${stats.inactive + stats.onLeave})
-        </button>
-        <button class="btn btn-sm ${activeManpowerTab === 'transfers' ? 'btn-primary' : 'btn-ghost'}" data-manpower-tab="transfers" style="font-size: 12.5px; font-weight: 700; white-space: nowrap;">
-          🔄 Employee Transfer (${transfers.length})
-        </button>
-        <button class="btn btn-sm ${activeManpowerTab === 'leaves' ? 'btn-primary' : 'btn-ghost'}" data-manpower-tab="leaves" style="font-size: 12.5px; font-weight: 700; white-space: nowrap;">
-          🏖️ Leave Records (${leaves.length})
-        </button>
-        ${isAdmin ? `
-          <button class="btn btn-sm ${activeManpowerTab === 'custom-fields' ? 'btn-primary' : 'btn-ghost'}" data-manpower-tab="custom-fields" style="font-size: 12.5px; font-weight: 700; white-space: nowrap; color: ${activeManpowerTab === 'custom-fields' ? '#fff' : '#fbbf24'};">
-            ⚙️ Custom Fields (${customFields.length})
-          </button>
-        ` : ''}
-      </div>
-
-      <!-- Active Tab Content (Screen-Fit Container) -->
-      <div id="manpower-tab-container" style="display: flex; flex-direction: column; gap: 10px; flex: 1 1 0; min-height: 0; overflow: hidden;">
-        ${renderActiveTabContent({ stats, activeEmployees, inactiveEmployees, transfers, leaves, customFields, isAdmin })}
+      <!-- Active Tab Content -->
+      <div id="manpower-tab-container" style="display: flex; flex-direction: column; gap: 8px; flex: 1 1 0; min-height: 0; overflow: hidden;">
+        ${renderActiveTabContent({ stats, activeEmployees, inactiveEmployees, transfers, leaves, customFields, isAdmin, isFiltered, activeFilterCount })}
       </div>
 
       <!-- Employee Modal Layer -->
@@ -192,21 +213,23 @@ export function renderManpowerView() {
   `;
 }
 
-function renderActiveTabContent({ stats, activeEmployees, inactiveEmployees, transfers, leaves, customFields, isAdmin }) {
+function renderActiveTabContent({ stats, activeEmployees, inactiveEmployees, transfers, leaves, customFields, isAdmin, isFiltered, activeFilterCount }) {
   switch (activeManpowerTab) {
     case 'active':
       return renderEmployeeListTable({
-        title: '🟢 Active Workforce Roster',
-        subtitle: 'Currently active and operational personnel deployed across factory lines',
+        title: '🟢 Active Workforce',
         employees: activeEmployees,
-        isInactiveView: false
+        isInactiveView: false,
+        isFiltered,
+        activeFilterCount
       });
     case 'inactive':
       return renderEmployeeListTable({
-        title: '🔴 Inactive / On-Leave / Resigned Workforce',
-        subtitle: 'Inactive, suspended, on-leave, or resigned personnel. Click Activate (▶️) to restore to Active status.',
+        title: '🔴 Inactive Workforce',
         employees: inactiveEmployees,
-        isInactiveView: true
+        isInactiveView: true,
+        isFiltered,
+        activeFilterCount
       });
     case 'transfers':
       return renderEmployeeTransfersTab(transfers);
@@ -216,10 +239,11 @@ function renderActiveTabContent({ stats, activeEmployees, inactiveEmployees, tra
       return renderCustomFieldsTab(customFields);
     default:
       return renderEmployeeListTable({
-        title: '🟢 Active Workforce Roster',
-        subtitle: 'Currently active and operational personnel',
+        title: '🟢 Active Workforce',
         employees: activeEmployees,
-        isInactiveView: false
+        isInactiveView: false,
+        isFiltered,
+        activeFilterCount
       });
   }
 }
@@ -227,14 +251,10 @@ function renderActiveTabContent({ stats, activeEmployees, inactiveEmployees, tra
 // ---------------------------------------------------------------------------
 // 1. ACTIVE & INACTIVE EMPLOYEE TABLE
 // ---------------------------------------------------------------------------
-function renderEmployeeListTable({ title, subtitle, employees, isInactiveView }) {
+function renderEmployeeListTable({ title, employees, isInactiveView, isFiltered, activeFilterCount }) {
   const groups = masterDataService.getGroups(true);
   const units  = masterDataService.getUnits(filterState.groupId !== 'ALL' ? filterState.groupId : null, true);
-  const floors = masterDataService.getFloors(
-    filterState.unitId  !== 'ALL' ? filterState.unitId  : null,
-    filterState.groupId !== 'ALL' ? filterState.groupId : null,
-    true
-  );
+  const floorOptions = employeeService.getAvailableFloorOptions(filterState.unitId, filterState.groupId);
 
   const flrMap = new Map((storage.getTable(TABLE_NAMES.FLOORS) || []).map(x => [x.id, x.name]));
   const untMap = new Map((storage.getTable(TABLE_NAMES.UNITS) || []).map(x => [x.id, x.name]));
@@ -248,174 +268,164 @@ function renderEmployeeListTable({ title, subtitle, employees, isInactiveView })
   const someSelected = selectedCount > 0 && selectedCount < employees.length;
 
   return `
-    <div style="display: flex; flex-direction: column; gap: 10px; flex: 1 1 0; min-height: 0; overflow: hidden;">
+    <div style="display: flex; flex-direction: column; gap: 8px; flex: 1 1 0; min-height: 0; overflow: hidden;">
       
-      <!-- Search & Filters Toolbar -->
-      <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 10px 14px; display: flex; flex-direction: column; gap: 8px; flex-shrink: 0;">
-        <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
-          
-          <!-- Prominent Instant Search -->
-          <div style="flex: 1.5; min-width: 220px;">
-            <input 
-              type="text" 
-              id="mp-filter-search" 
-              class="form-control" 
-              placeholder="🔍 Search by Card, Name, Dept, Phone..." 
-              value="${filterState.search}" 
-              style="font-size: 12.5px; height: 34px;"
-            />
-          </div>
-
-          <!-- Designation Filter (Dynamic from actual employee data) -->
-          <div style="flex: 1; min-width: 140px;">
-            <select id="mp-filter-desig" class="filter-select" style="font-size: 12px; height: 34px;">
-              <option value="ALL">All Designations</option>
-              ${employeeService.getDistinctDesignations().map(d => `<option value="${d}" ${filterState.designation === d ? 'selected' : ''}>${d}</option>`).join('')}
-            </select>
-          </div>
-
-          <!-- Group Filter (from Master Data) -->
-          ${groups.length > 0 ? `
-          <div style="flex: 1; min-width: 130px;">
-            <select id="mp-filter-group" class="filter-select" style="font-size: 12px; height: 34px;">
-              <option value="ALL">All Groups</option>
-              ${groups.map(g => `<option value="${g.id}" ${filterState.groupId === g.id ? 'selected' : ''}>${g.name}</option>`).join('')}
-            </select>
-          </div>
-          ` : ''}
-
-          <!-- Unit / Factory Filter (cascades from Group) -->
-          <div style="flex: 1; min-width: 130px;">
-            <select id="mp-filter-unit" class="filter-select" style="font-size: 12px; height: 34px;">
-              <option value="ALL">All Factories / Units</option>
-              ${units.map(u => `<option value="${u.id}" ${filterState.unitId === u.id ? 'selected' : ''}>${u.name}</option>`).join('')}
-            </select>
-          </div>
-
-          <!-- Floor Filter (cascades from Unit) -->
-          <div style="flex: 1; min-width: 130px;">
-            <select id="mp-filter-floor" class="filter-select" style="font-size: 12px; height: 34px;">
-              <option value="ALL">All Floors</option>
-              ${floors.map(f => `<option value="${f.id}" ${filterState.floorId === f.id ? 'selected' : ''}>${f.name}</option>`).join('')}
-            </select>
-          </div>
-
-          <!-- Reset Button -->
-          <button id="btn-mp-reset-filters" class="btn btn-ghost btn-sm" style="font-weight: 700; color: #f87171; font-size: 11.5px; height: 34px;" title="Reset all filters">
-            ↺ Reset
-          </button>
+      <!-- Compact Search & Filters Toolbar -->
+      <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 6px 10px; display: flex; gap: 6px; flex-wrap: wrap; align-items: center; flex-shrink: 0;">
+        
+        <!-- Live Instant Search -->
+        <div style="flex: 1.5; min-width: 190px;">
+          <input 
+            type="text" 
+            id="mp-filter-search" 
+            class="form-control" 
+            placeholder="🔍 Search card, name, unit, floor, phone..." 
+            value="${filterState.search}" 
+            style="font-size: 12px; height: 30px; padding: 4px 8px;"
+          />
         </div>
+
+        <!-- Designation Filter (Dynamic from actual employee data) -->
+        <div style="flex: 1; min-width: 130px;">
+          <select id="mp-filter-desig" class="filter-select" style="font-size: 11.5px; height: 30px; padding: 2px 6px;">
+            <option value="ALL">All Designations</option>
+            ${employeeService.getDistinctDesignations().map(d => `<option value="${d}" ${filterState.designation === d ? 'selected' : ''}>${d}</option>`).join('')}
+          </select>
+        </div>
+
+        <!-- Group Filter (only if multiple groups exist) -->
+        ${groups.length > 1 ? `
+        <div style="flex: 0.8; min-width: 110px;">
+          <select id="mp-filter-group" class="filter-select" style="font-size: 11.5px; height: 30px; padding: 2px 6px;">
+            <option value="ALL">All Groups</option>
+            ${groups.map(g => `<option value="${g.id}" ${filterState.groupId === g.id ? 'selected' : ''}>${g.name}</option>`).join('')}
+          </select>
+        </div>
+        ` : ''}
+
+        <!-- Unit / Factory Filter -->
+        <div style="flex: 1.1; min-width: 140px;">
+          <select id="mp-filter-unit" class="filter-select" style="font-size: 11.5px; height: 30px; padding: 2px 6px;">
+            <option value="ALL">All Factories / Units</option>
+            ${units.map(u => `<option value="${u.id}" ${filterState.unitId === u.id ? 'selected' : ''}>${u.name}</option>`).join('')}
+          </select>
+        </div>
+
+        <!-- Floor / Section Filter (Cascades accurately from selected Unit) -->
+        <div style="flex: 1; min-width: 130px;">
+          <select id="mp-filter-floor" class="filter-select" style="font-size: 11.5px; height: 30px; padding: 2px 6px;">
+            <option value="ALL">All Floors / Sections</option>
+            ${floorOptions.map(f => `<option value="${f.id}" ${filterState.floorId === f.id ? 'selected' : ''}>${f.label}</option>`).join('')}
+          </select>
+        </div>
+
+        <!-- Reset Button -->
+        <button id="btn-mp-reset-filters" class="btn ${isFiltered ? 'btn-secondary' : 'btn-ghost'} btn-xs" style="font-weight: 700; color: ${isFiltered ? '#f87171' : 'var(--text-muted)'}; font-size: 11px; height: 30px; padding: 0 8px; white-space: nowrap;" title="Reset all filters">
+          ↺ Reset ${isFiltered ? `(${activeFilterCount})` : ''}
+        </button>
       </div>
 
-      <!-- Bulk Actions Bar (Shown when 1 or more employees are selected) -->
-      ${selectedCount > 0 ? `
-        <div class="manpower-bulk-bar" style="flex-shrink: 0;">
-          <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-            <span class="badge" style="background: #0284c7; color: #fff; font-size: 12px; font-weight: 800; padding: 4px 10px; border-radius: 6px; box-shadow: 0 0 10px rgba(2, 132, 199, 0.4);">
-              ✓ ${selectedCount} employee(s) selected
-            </span>
-            <span style="font-size: 12px; color: var(--text-secondary); display: inline-block;">
-              Bulk actions for selected records:
-            </span>
-          </div>
-
-          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-            <!-- Bulk Activate / Deactivate -->
-            ${isInactiveView ? `
-              <button id="btn-mp-bulk-toggle" class="btn btn-success btn-xs" style="font-weight: 700; padding: 5px 12px; font-size: 11.5px;">
-                ▶️ Activate Selected (${selectedCount})
-              </button>
-            ` : `
-              <button id="btn-mp-bulk-toggle" class="btn btn-secondary btn-xs" style="font-weight: 700; color: #fbbf24; border-color: rgba(251, 191, 36, 0.4); padding: 5px 12px; font-size: 11.5px;">
-                ⏸️ Deactivate Selected (${selectedCount})
-              </button>
-            `}
-
-            <!-- Bulk Delete -->
-            <button id="btn-mp-bulk-delete" class="btn btn-ghost btn-xs" style="font-weight: 700; color: #f87171; border: 1px solid rgba(248, 113, 113, 0.4); background: rgba(239, 68, 68, 0.12); padding: 5px 12px; font-size: 11.5px;">
-              🗑️ Delete Selected (${selectedCount})
-            </button>
-
-            <!-- Bulk Export -->
-            <button id="btn-mp-bulk-export" class="btn btn-secondary btn-xs" style="font-weight: 700; padding: 5px 12px; font-size: 11.5px;">
-              📤 Export Selected (.xlsx)
-            </button>
-
-            <!-- Deselect All -->
-            <button id="btn-mp-clear-selection" class="btn btn-ghost btn-xs" style="color: var(--text-muted); font-size: 11.5px; padding: 4px 8px;">
-              ✕ Deselect
-            </button>
-          </div>
-        </div>
-      ` : ''}
-
       <!-- Employee Table Card (Fills Remaining Viewport Space) -->
-      <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); flex: 1 1 0; min-height: 0; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);">
+      <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); flex: 1 1 0; min-height: 0; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);">
         
-        <!-- Table Header Bar -->
-        <div style="padding: 10px 16px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; flex-shrink: 0; background: rgba(15, 23, 42, 0.5);">
-          <div>
-            <h3 style="margin: 0; font-size: 14.5px; font-weight: 800; color: var(--text-primary);">${title}</h3>
-            <p style="margin: 2px 0 0 0; font-size: 11.5px; color: var(--text-muted);">${subtitle}</p>
-          </div>
-          <div style="display: flex; align-items: center; gap: 10px;">
+        <!-- Streamlined Table Header Bar -->
+        <div style="padding: 6px 12px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; flex-shrink: 0; background: rgba(15, 23, 42, 0.5); min-height: 34px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 12.5px; font-weight: 800; color: #fff;">
+              ${title}
+            </span>
+            <span style="font-size: 11.5px; font-weight: 700; color: #38bdf8;">
+              (${employees.length} ${employees.length === 1 ? 'employee' : 'employees'})
+            </span>
             ${selectedCount > 0 ? `
-              <span style="font-size: 12px; font-weight: 700; color: #38bdf8;">
-                ${selectedCount} of ${employees.length} selected
+              <span class="badge" style="background: #0284c7; color: #fff; font-size: 11px; font-weight: 700; padding: 2px 7px;">
+                ✓ ${selectedCount} selected
               </span>
-            ` : `
-              <span style="font-size: 12px; color: #38bdf8; font-weight: 700;">
-                ${employees.length} record(s) listed
-              </span>
-            `}
+            ` : ''}
           </div>
+
+          <!-- Inline Bulk Actions or Status Info -->
+          ${selectedCount > 0 ? `
+            <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+              ${isInactiveView ? `
+                <button id="btn-mp-bulk-toggle" class="btn btn-success btn-xs" style="font-weight: 700; height: 24px; padding: 0 8px; font-size: 11px;">
+                  ▶️ Activate (${selectedCount})
+                </button>
+              ` : `
+                <button id="btn-mp-bulk-toggle" class="btn btn-secondary btn-xs" style="font-weight: 700; color: #fbbf24; border-color: rgba(251, 191, 36, 0.4); height: 24px; padding: 0 8px; font-size: 11px;">
+                  ⏸️ Deactivate (${selectedCount})
+                </button>
+              `}
+              <button id="btn-mp-bulk-delete" class="btn btn-ghost btn-xs" style="font-weight: 700; color: #f87171; border: 1px solid rgba(248, 113, 113, 0.4); background: rgba(239, 68, 68, 0.12); height: 24px; padding: 0 8px; font-size: 11px;">
+                🗑️ Delete (${selectedCount})
+              </button>
+              <button id="btn-mp-bulk-export" class="btn btn-secondary btn-xs" style="font-weight: 700; height: 24px; padding: 0 8px; font-size: 11px;">
+                📤 Export
+              </button>
+              <button id="btn-mp-clear-selection" class="btn btn-ghost btn-xs" style="color: var(--text-muted); height: 24px; padding: 0 6px; font-size: 11px;">
+                ✕ Clear
+              </button>
+            </div>
+          ` : `
+            <div style="font-size: 11px; color: var(--text-muted);">
+              ${isFiltered ? '⚡ Filtered View Active' : 'Real-time plant workforce roster'}
+            </div>
+          `}
         </div>
 
-        <!-- Table Scroll Container (Sticky Headers & Immediate Bottom Horizontal Scrollbar) -->
+        <!-- Table Scroll Container -->
         <div class="manpower-table-scroll-container">
           <table class="excel-grid-table manpower-grid-table" style="margin: 0; width: 100%;">
             <thead>
               <tr>
-                <th style="width: 44px; text-align: center; vertical-align: middle;">
+                <th style="width: 40px; text-align: center; vertical-align: middle;">
                   <input 
                     type="checkbox" 
                     id="mp-select-all" 
                     ${allSelected ? 'checked' : ''} 
                     ${someSelected ? 'data-indeterminate="true"' : ''}
                     title="Select all listed employees" 
-                    style="cursor: pointer; width: 15px; height: 15px; accent-color: #0284c7; vertical-align: middle;" 
+                    style="cursor: pointer; width: 14px; height: 14px; accent-color: #0284c7; vertical-align: middle;" 
                   />
                 </th>
-                <th style="width: 45px; text-align: center;">SL</th>
-                <th style="width: 125px;">Card Number</th>
+                <th style="width: 42px; text-align: center;">SL</th>
+                <th style="width: 120px;">Card Number</th>
                 <th style="min-width: 175px;">Employee Name</th>
-                <th style="min-width: 155px;">Department</th>
+                <th style="min-width: 150px;">Department</th>
                 <th style="min-width: 160px;">Designation</th>
-                <th style="min-width: 170px;">Floor / Unit</th>
-                <th style="text-align: center; width: 110px;">Joining Date</th>
-                <th style="text-align: center; width: 105px;">Status</th>
-                <th style="text-align: center; width: 160px;">Actions</th>
+                <th style="min-width: 180px;">Floor / Unit</th>
+                <th style="text-align: center; width: 105px;">Joining Date</th>
+                <th style="text-align: center; width: 100px;">Status</th>
+                <th style="text-align: center; width: 155px;">Actions</th>
               </tr>
             </thead>
             <tbody>
               ${employees.length === 0 ? `
                 <tr>
-                  <td colspan="10" style="text-align: center; padding: 40px 20px; color: var(--text-muted);">
-                    <div style="font-size: 32px; margin-bottom: 8px;">🔍</div>
-                    <div style="font-size: 15px; font-weight: 700; color: #fff;">No employees found</div>
-                    <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">
-                      ${isInactiveView ? 'Zero inactive employees. All registered personnel are currently Active!' : 'No active employees matched your search query or filters.'}
+                  <td colspan="10" style="text-align: center; padding: 36px 20px; color: var(--text-muted);">
+                    <div style="font-size: 28px; margin-bottom: 6px;">🔍</div>
+                    <div style="font-size: 14px; font-weight: 700; color: #fff;">No employees match your search or filters</div>
+                    <div style="font-size: 11.5px; color: var(--text-secondary); margin-top: 4px;">
+                      Try resetting filters or adjusting search terms.
                     </div>
                   </td>
                 </tr>
               ` : employees.map((emp, idx) => {
     const isActive = emp.status === 'ACTIVE';
     const isSelected = selectedEmployeeIds.has(emp.id);
-    const floorName = flrMap.get(emp.floorId) || emp.floorName || '';
+
+    const flrObj = emp.floorId ? storage.getItem(TABLE_NAMES.FLOORS, emp.floorId) : null;
+    const floorNameFromId = (flrObj && (!emp.unitId || flrObj.unitId === emp.unitId)) ? flrObj.name : '';
+    const effectiveFloor = floorNameFromId || emp.floorName || emp.workingArea || '';
     const unitName = untMap.get(emp.unitId) || emp.unitName || '';
     const lineName = linMap.get(emp.lineId) || emp.lineName || '';
-    const locationStr = unitName || floorName ? `${unitName}${floorName ? ' • ' + floorName : ''}${lineName ? ' (' + lineName + ')' : ''}` : (emp.workingArea || '—');
 
+    const locationParts = [];
+    if (unitName) locationParts.push(unitName);
+    if (effectiveFloor && effectiveFloor !== unitName) locationParts.push(effectiveFloor);
+    if (lineName && lineName !== effectiveFloor) locationParts.push(`(${lineName})`);
+
+    const locationStr = locationParts.length > 0 ? locationParts.join(' • ') : (emp.workingArea || '—');
     const statusBadge = isActive ? 'badge-active' : (emp.status === 'ON_LEAVE' ? 'badge-maint' : 'badge-breakdown');
 
     return `
@@ -427,91 +437,91 @@ function renderEmployeeListTable({ title, subtitle, employees, isInactiveView })
                         class="mp-row-checkbox" 
                         data-emp-id="${emp.id}" 
                         ${isSelected ? 'checked' : ''} 
-                        style="cursor: pointer; width: 15px; height: 15px; accent-color: #0284c7; vertical-align: middle;" 
+                        style="cursor: pointer; width: 14px; height: 14px; accent-color: #0284c7; vertical-align: middle;" 
                       />
                     </td>
 
                     <!-- SL -->
-                    <td style="text-align: center; color: var(--text-muted); font-family: var(--font-mono); font-size: 12px; vertical-align: middle;">
+                    <td style="text-align: center; color: var(--text-muted); font-family: var(--font-mono); font-size: 11.5px; vertical-align: middle;">
                       ${idx + 1}
                     </td>
                     
-                    <!-- Card # / ID: distinct pill/badge for instant eye recognition -->
+                    <!-- Card # / ID -->
                     <td style="vertical-align: middle;">
-                      <span style="display: inline-block; font-family: var(--font-mono); font-weight: 800; color: #38bdf8; background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.28); padding: 3px 8px; border-radius: 4px; font-size: 12px; letter-spacing: 0.4px;">
+                      <span style="display: inline-block; font-family: var(--font-mono); font-weight: 800; color: #38bdf8; background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.28); padding: 2px 7px; border-radius: 4px; font-size: 11.5px; letter-spacing: 0.4px;">
                         ${emp.cardNumber || emp.id}
                       </span>
                     </td>
 
-                    <!-- Name: bold white with phone underneath -->
+                    <!-- Name -->
                     <td style="vertical-align: middle;">
-                      <div style="font-weight: 700; color: ${isActive ? 'var(--text-primary)' : 'var(--text-muted)'}; font-size: 13.5px; line-height: 1.3;">
+                      <div style="font-weight: 700; color: ${isActive ? 'var(--text-primary)' : 'var(--text-muted)'}; font-size: 13px; line-height: 1.3;">
                         ${emp.name}
                       </div>
-                      ${emp.phone ? `<div style="font-size: 11px; color: var(--text-muted); font-family: var(--font-mono); margin-top: 2px;">📞 ${emp.phone}</div>` : ''}
+                      ${emp.phone ? `<div style="font-size: 10.5px; color: var(--text-muted); font-family: var(--font-mono); margin-top: 2px;">📞 ${emp.phone}</div>` : ''}
                     </td>
 
-                    <!-- Department: clear pill badge -->
+                    <!-- Department -->
                     <td style="vertical-align: middle;">
-                      <span style="display: inline-flex; align-items: center; gap: 4px; background: rgba(56, 189, 248, 0.1); color: #0284c7; font-weight: 700; border: 1px solid rgba(255, 255, 255, 0.1); padding: 3px 8px; border-radius: 4px; font-size: 11.5px; font-weight: 600;">
+                      <span style="display: inline-flex; align-items: center; gap: 4px; background: rgba(56, 189, 248, 0.08); color: #0284c7; font-weight: 600; border: 1px solid rgba(255, 255, 255, 0.08); padding: 2px 7px; border-radius: 4px; font-size: 11px;">
                         🏢 ${emp.department || 'General'}
                       </span>
                     </td>
 
-                    <!-- Designation: distinct crisp font -->
-                    <td style="vertical-align: middle; font-size: 12.5px; color: #cbd5e1; font-weight: 600;">
+                    <!-- Designation -->
+                    <td style="vertical-align: middle; font-size: 12px; color: #cbd5e1; font-weight: 600;">
                       ${emp.designation || 'Technician'}
                     </td>
 
                     <!-- Floor / Unit -->
-                    <td style="vertical-align: middle; font-size: 12px; color: #e2e8f0;">
+                    <td style="vertical-align: middle; font-size: 11.5px; color: #e2e8f0;">
                       <span style="color: var(--text-muted); margin-right: 3px;">📍</span>${locationStr}
                     </td>
 
                     <!-- Joining Date -->
-                    <td style="text-align: center; vertical-align: middle; font-family: var(--font-mono); font-size: 12px; color: var(--text-secondary);">
+                    <td style="text-align: center; vertical-align: middle; font-family: var(--font-mono); font-size: 11.5px; color: var(--text-secondary);">
                       ${formatJoinDate(emp.joinDate)}
                     </td>
 
                     <!-- Status -->
                     <td style="text-align: center; vertical-align: middle;">
-                      <span class="badge ${statusBadge}" style="font-size: 10.5px; font-weight: 700; padding: 3px 8px;">
+                      <span class="badge ${statusBadge}" style="font-size: 10px; font-weight: 700; padding: 2px 7px;">
                         ${emp.status}
                       </span>
                     </td>
 
                     <!-- Actions -->
                     <td style="text-align: center; vertical-align: middle;" onclick="event.stopPropagation();">
-                      <div style="display: flex; gap: 5px; justify-content: center; align-items: center;">
+                      <div style="display: flex; gap: 4px; justify-content: center; align-items: center;">
                         
                         <!-- View / ID Badge -->
-                        <button class="btn btn-ghost btn-xs btn-emp-card" data-emp-id="${emp.id}" title="View Details &amp; Digital ID Card" style="padding: 4px 7px; font-size: 13px;">
+                        <button class="btn btn-ghost btn-xs btn-emp-card" data-emp-id="${emp.id}" title="View Details &amp; Digital ID Card" style="padding: 3px 6px; font-size: 12px;">
                           👁️
                         </button>
 
                         <!-- Edit -->
-                        <button class="btn btn-secondary btn-xs btn-emp-edit" data-emp-id="${emp.id}" title="Edit Employee Profile" style="padding: 4px 7px; font-size: 13px;">
+                        <button class="btn btn-secondary btn-xs btn-emp-edit" data-emp-id="${emp.id}" title="Edit Employee Profile" style="padding: 3px 6px; font-size: 12px;">
                           ✏️
                         </button>
 
                         <!-- Transfer -->
-                        <button class="btn btn-secondary btn-xs btn-emp-transfer" data-emp-id="${emp.id}" title="Transfer / Relocate Employee" style="padding: 4px 7px; font-size: 13px;">
+                        <button class="btn btn-secondary btn-xs btn-emp-transfer" data-emp-id="${emp.id}" title="Transfer / Relocate Employee" style="padding: 3px 6px; font-size: 12px;">
                           🔄
                         </button>
 
                         <!-- Activate / Deactivate Toggle -->
                         ${isInactiveView ? `
-                          <button class="btn btn-success btn-xs btn-emp-quick-toggle" data-emp-id="${emp.id}" data-target-status="ACTIVE" title="Reactivate to Active" style="padding: 4px 8px; font-size: 11px; font-weight: 700;">
+                          <button class="btn btn-success btn-xs btn-emp-quick-toggle" data-emp-id="${emp.id}" data-target-status="ACTIVE" title="Reactivate to Active" style="padding: 3px 7px; font-size: 10.5px; font-weight: 700;">
                             ▶️ Activate
                           </button>
                         ` : `
-                          <button class="btn btn-ghost btn-xs btn-emp-quick-toggle" data-emp-id="${emp.id}" data-target-status="INACTIVE" title="Deactivate / Move to Inactive" style="color: #fbbf24; padding: 4px 8px; font-size: 11px; font-weight: 700; border: 1px solid rgba(251,191,36,0.3);">
+                          <button class="btn btn-ghost btn-xs btn-emp-quick-toggle" data-emp-id="${emp.id}" data-target-status="INACTIVE" title="Deactivate / Move to Inactive" style="color: #fbbf24; padding: 3px 7px; font-size: 10.5px; font-weight: 700; border: 1px solid rgba(251,191,36,0.3);">
                             ⏸️ Deactivate
                           </button>
                         `}
 
-                        <!-- Delete Record with Confirmation -->
-                        <button class="btn btn-ghost btn-xs btn-emp-delete" data-emp-id="${emp.id}" title="Delete Record" style="color: #f87171; padding: 4px 7px; font-size: 13px;">
+                        <!-- Delete Record -->
+                        <button class="btn btn-ghost btn-xs btn-emp-delete" data-emp-id="${emp.id}" title="Delete Record" style="color: #f87171; padding: 3px 6px; font-size: 12px;">
                           🗑️
                         </button>
 
@@ -525,7 +535,7 @@ function renderEmployeeListTable({ title, subtitle, employees, isInactiveView })
         </div>
 
         <!-- Table Footer -->
-        <div style="padding: 9px 16px; font-size: 11.5px; color: var(--text-muted); display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); flex-shrink: 0; background: rgba(15, 23, 42, 0.4);">
+        <div style="padding: 6px 12px; font-size: 11px; color: var(--text-muted); display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); flex-shrink: 0; background: rgba(15, 23, 42, 0.4);">
           <span>Showing <strong>${employees.length}</strong> workforce records${selectedCount > 0 ? ` (${selectedCount} selected)` : ''}</span>
           <span>⚡ Select rows to perform bulk actions: Delete, Deactivate/Activate, or Export</span>
         </div>
@@ -785,6 +795,9 @@ export function initManpowerEvents() {
       e.stopPropagation();
       activeManpowerTab = btn.getAttribute('data-manpower-tab');
       state.set('manpowerActiveTab', activeManpowerTab);
+      try {
+        router.navigate('manpower', { tab: activeManpowerTab, skipViewSwitch: true });
+      } catch (_) {}
       selectedEmployeeIds.clear();
       refreshView();
     });
@@ -1122,6 +1135,7 @@ export function initManpowerEvents() {
         unitId: 'ALL',
         floorId: 'ALL'
       };
+      selectedEmployeeIds.clear();
       refreshView();
     });
   }

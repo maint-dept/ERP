@@ -46,17 +46,17 @@ class GlobalState {
     let initialSubtab = null;
     try {
       if (typeof window !== 'undefined' && window.location) {
-        // 1. Check pathname (e.g. /inventory, /ERP/transfers, /reports)
+        // 1. Check pathname (e.g. /inventory, /ERP/transfers, /reports/transfers)
         let pathname = window.location.pathname || '';
         if (pathname.toLowerCase().startsWith('/erp')) {
           pathname = pathname.slice(4);
         }
         let cleanPath = pathname.replace(/^\/+|\/+$/g, '').toLowerCase();
 
-        // 2. Check query params (?p=/inventory from 404 fallback or ?tab=...)
+        // 2. Check query params (?p=/inventory or ?p=/reports/transfers from 404 fallback or ?tab=...)
         const searchParams = new URLSearchParams(window.location.search || '');
         if (searchParams.has('p')) {
-          cleanPath = (searchParams.get('p') || '').replace(/^\/+|\/+$/g, '').toLowerCase();
+          cleanPath = decodeURIComponent(searchParams.get('p') || '').replace(/^\/+|\/+$/g, '').toLowerCase();
         }
         if (searchParams.has('tab')) {
           initialSubtab = searchParams.get('tab');
@@ -81,9 +81,11 @@ class GlobalState {
           'dashboard': 'dashboard',
           'inventory': 'inventory',
           'machines': 'inventory',
+          'machine-inventory': 'inventory',
           'relocate': 'relocate',
           'needle-operations': 'needle-operations',
           'needle-flow': 'needle-operations',
+          'needle': 'needle-operations',
           'qr-codes': 'qr-codes',
           'qr': 'qr-codes',
           'transfers': 'transfers',
@@ -103,11 +105,13 @@ class GlobalState {
           'spare-parts': 'spare-parts',
           'tools-management': 'tools-management',
           'tools': 'tools-management',
+          'tools-equipment': 'tools-management',
           'storage': 'storage',
           'manpower': 'manpower',
           'master-data': 'master-data',
           'users': 'users',
           'user-management': 'users',
+          'user-access': 'users',
           'homepage-manager': 'homepage-manager',
           'email-config': 'email-config',
           'audit-logs': 'audit-logs',
@@ -121,6 +125,10 @@ class GlobalState {
         if (resolvedView && resolvedView !== 'home') {
           if (!activeUserId && resolvedView !== 'login') {
             initialView = 'login';
+            try {
+              const redirectPath = initialSubtab ? `${resolvedView}/${initialSubtab}` : resolvedView;
+              sessionStorage.setItem('al_muslim_post_login_redirect', redirectPath);
+            } catch (_) {}
           } else {
             initialView = resolvedView;
           }
@@ -128,12 +136,43 @@ class GlobalState {
       }
     } catch (_) {}
 
+    // Normalize initial subtabs
+    const userSlugMap = {
+      'accounts': 'ACCOUNTS', 'permissions': 'PERMISSIONS', 'bulk-assign': 'BULK_ASSIGN',
+      'passwords': 'PASSWORD_MGMT', 'password-mgmt': 'PASSWORD_MGMT', 'export': 'EXPORT_ACCOUNTS',
+      'logs': 'ACTIVITY_LOGS', 'presets': 'PRESETS'
+    };
+    const reportSlugMap = {
+      'machine': 'machines', 'machines': 'machines', 'transfer': 'transfers', 'transfers': 'transfers',
+      'spare': 'spareparts', 'spare-parts': 'spareparts', 'spareparts': 'spareparts',
+      'etlab': 'etlab', 'et-lab': 'etlab', 'pm': 'preventive', 'preventive': 'preventive', 'export': 'export'
+    };
+
+    let resolvedReportTab = 'machines';
+    if (initialView === 'reports' && initialSubtab) {
+      resolvedReportTab = reportSlugMap[initialSubtab.toLowerCase()] || initialSubtab;
+    }
+
+    let resolvedUserTab = 'ACCOUNTS';
+    if (initialView === 'users' && initialSubtab) {
+      resolvedUserTab = userSlugMap[initialSubtab.toLowerCase()] || initialSubtab.toUpperCase();
+    }
+
     this.state = {
-      currentView: initialView, // 'dashboard', 'inventory', 'master-data', 'custom-fields', 'approvals', 'users', 'reports', 'audit-logs', 'settings'
-      reportActiveTab: (initialView === 'reports' && initialSubtab) ? initialSubtab : 'machines',
+      currentView: initialView,
+      reportActiveTab: resolvedReportTab,
       manpowerActiveTab: (initialView === 'manpower' && initialSubtab) ? initialSubtab : 'active',
       pmActiveTab: (initialView === 'preventive-maintenance' && initialSubtab) ? initialSubtab : 'dashboard',
-      masterDataActiveTab: (initialView === 'master-data' && initialSubtab) ? initialSubtab : 'machines',
+      masterDataActiveTab: (initialView === 'master-data' && initialSubtab) ? initialSubtab : 'fast-entry',
+      userAccessActiveTab: resolvedUserTab,
+      toolsActiveTab: (initialView === 'tools-management' && initialSubtab) ? initialSubtab : 'tools-add',
+      etLabActiveTab: (initialView === 'et-lab' && initialSubtab) ? initialSubtab : (initialView === 'spare-parts' ? 'spare-parts' : 'boards'),
+      excelActiveTab: (initialView === 'excel-manager' && initialSubtab) ? initialSubtab : 'structure',
+      homeManagerActiveTab: (initialView === 'homepage-manager' && initialSubtab) ? initialSubtab : 'sections',
+      relocateActiveTab: (initialView === 'relocate' && initialSubtab) ? initialSubtab : 'scan',
+      partsTraceActiveTab: (initialView === 'parts-trace' && initialSubtab) ? initialSubtab : 'dashboard',
+      historyActiveTab: (initialView === 'machine-history' && initialSubtab) ? initialSubtab : 'timeline',
+      qrStudioTab: (initialView === 'qr-codes' && initialSubtab) ? initialSubtab : 'machine',
       showCrossFloorIdle: false, // Explicit toggle for viewing cross-floor idle machines
       filters: {
         groupId: '',
