@@ -114,6 +114,7 @@ export function renderHomepageView(isDraft = false) {
             <button id="btn-home-logout" class="btn btn-ghost btn-sm" style="color: #f87171; font-size: 12px; padding: 5px 8px;" title="Logout">
               🔒 Logout
             </button>
+          ` : `
             <!-- Staff & Personnel Sign In Portal -->
             <button id="btn-header-login-user" class="btn btn-primary btn-sm" style="font-weight: 800; padding: 7px 18px; border-radius: 6px; font-size: 13px; background: linear-gradient(135deg, #0284c7, #0369a1); box-shadow: 0 0 15px rgba(2, 132, 199, 0.45); display: flex; align-items: center; gap: 6px;">
               <span>🔐</span>
