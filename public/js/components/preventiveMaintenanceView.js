@@ -20,6 +20,7 @@
  */
 
 import { state } from '../state.js';
+import { router } from '../services/router.js?v=4.26.49';
 import { authService } from '../services/authService.js';
 import { barcodeService } from '../services/barcodeService.js';
 import { masterDataService } from '../services/masterDataService.js';
@@ -161,7 +162,8 @@ export function renderPreventiveMaintenanceView() {
   const statePmTab = state.get('pmActiveTab');
   if (statePmTab) {
     activeTab = statePmTab;
-    state.set('pmActiveTab', null);
+  } else {
+    state.set('pmActiveTab', activeTab);
   }
 
   // Active filter payload for dynamic metrics calculation
@@ -3007,6 +3009,9 @@ export function initPreventiveMaintenanceEvents() {
         activeTab = tab;
         state.set('pmActiveTab', tab);
         pmCurrentPage = 1;
+        try {
+          router.navigate('preventive-maintenance', { tab, skipViewSwitch: true });
+        } catch (_) {}
         rerenderView();
       }
     });

@@ -12,94 +12,95 @@
 
 const MODULE_REGISTRY = {
   'inventory': {
-    path: '../components/inventoryTable.js?v=4.26.48',
+    path: '../components/inventoryTable.js?v=4.26.49',
     renderName: 'renderInventoryTable',
     initName: 'initInventoryTableEvents',
     type: 'table'
   },
   'transfers': {
-    path: '../components/transfersView.js?v=4.26.48',
+    path: '../components/transfersView.js?v=4.26.49',
     renderName: 'renderTransfersView',
     initName: 'initTransfersViewEvents',
     type: 'table'
   },
   'relocate': {
-    path: '../components/relocateView.js?v=4.26.48',
+    path: '../components/relocateView.js?v=4.26.49',
     renderName: 'renderRelocateView',
     initName: 'initRelocateViewEvents',
     type: 'table'
   },
   'needle-operations': {
-    path: '../components/needleOperationsView.js?v=4.26.48',
+    path: '../components/needleOperationsView.js?v=4.26.49',
     renderName: 'renderNeedleOperationsView',
     initName: 'initNeedleOperationsEvents',
     type: 'table'
   },
   'qr-codes': {
-    path: '../components/qrCodeView.js?v=4.26.48',
+    path: '../components/qrCodeView.js?v=4.26.49',
     renderName: 'renderQrCodeView',
     initName: 'initQrCodeEvents',
     type: 'grid'
   },
   'parts-trace': {
-    path: '../components/partsTraceView.js?v=4.26.48',
+    path: '../components/partsTraceView.js?v=4.26.49',
     renderName: 'renderPartsTraceView',
     initName: 'initPartsTraceEvents',
     type: 'table'
   },
   'machine-history': {
-    path: '../components/machineHistoryView.js?v=4.26.48',
+    path: '../components/machineHistoryView.js?v=4.26.49',
     renderName: 'renderMachineHistoryView',
     initName: 'initMachineHistoryEvents',
     type: 'cards'
   },
   'preventive-maintenance': {
-    path: '../components/preventiveMaintenanceView.js?v=4.26.48',
+    path: '../components/preventiveMaintenanceView.js?v=4.26.49',
     renderName: 'renderPreventiveMaintenanceView',
     initName: 'initPreventiveMaintenanceEvents',
     type: 'table'
   },
   'transfer-workflows': {
-    path: '../components/transferWorkflowBuilder.js?v=4.26.48',
+    path: '../components/transferWorkflowBuilder.js?v=4.26.49',
     renderName: 'renderTransferWorkflowBuilder',
     initName: 'initTransferWorkflowBuilderEvents',
     type: 'form'
   },
   'reports': {
-    path: '../components/reportsView.js?v=4.26.48',
+    path: '../components/reportsView.js?v=4.26.49',
     renderName: 'renderReportsView',
     initName: 'initReportsEvents',
     type: 'grid'
   },
   'resource-library': {
-    path: '../components/resourceLibraryView.js?v=4.26.48',
+    path: '../components/resourceLibraryView.js?v=4.26.49',
     renderName: 'renderResourceLibraryView',
     initName: 'initResourceLibraryEvents',
     type: 'grid'
   },
   'excel-manager': {
-    path: '../components/excelManagerView.js?v=4.26.48',
+    path: '../components/excelManagerView.js?v=4.26.49',
     renderName: 'renderExcelManagerView',
     initName: 'initExcelManagerEvents',
     type: 'cards'
   },
   'custom-fields': {
-    path: '../components/inventoryTable.js?v=4.26.48',
+    path: '../components/inventoryTable.js?v=4.26.49',
     renderName: 'renderInventoryTable',
     initName: 'initInventoryTableEvents',
     type: 'table'
   },
   'et-lab': {
-    path: '../components/etLabManagementView.js?v=4.26.48',
+    path: '../components/etLabManagementView.js?v=4.26.49',
     renderName: 'renderEtLabManagementView',
     initName: 'initEtLabEvents',
     type: 'table',
     beforeRender: (mod) => {
-      if (typeof mod.setEntActiveTab === 'function') mod.setEntActiveTab('boards');
+      const tab = state.get('etLabActiveTab') || 'boards';
+      if (typeof mod.setEntActiveTab === 'function') mod.setEntActiveTab(tab);
     }
   },
   'spare-parts': {
-    path: '../components/etLabManagementView.js?v=4.26.48',
+    path: '../components/etLabManagementView.js?v=4.26.49',
     renderName: 'renderEtLabManagementView',
     initName: 'initEtLabEvents',
     type: 'table',
@@ -108,61 +109,61 @@ const MODULE_REGISTRY = {
     }
   },
   'tools-management': {
-    path: '../components/toolsManagementView.js?v=4.26.48',
+    path: '../components/toolsManagementView.js?v=4.26.49',
     renderName: 'renderToolsManagementView',
     initName: 'initToolsManagementEvents',
     type: 'table'
   },
   'storage': {
-    path: '../components/storageView.js?v=4.26.48',
+    path: '../components/storageView.js?v=4.26.49',
     renderName: 'renderStorageView',
     initName: 'initStorageEvents',
     type: 'table'
   },
   'manpower': {
-    path: '../components/manpowerView.js?v=4.26.48',
+    path: '../components/manpowerView.js?v=4.26.49',
     renderName: 'renderManpowerView',
     initName: 'initManpowerEvents',
     type: 'table'
   },
   'master-data': {
-    path: '../components/masterDataView.js?v=4.26.48',
+    path: '../components/masterDataView.js?v=4.26.49',
     renderName: 'renderMasterDataView',
     initName: 'initMasterDataEvents',
     type: 'table'
   },
   'users': {
-    path: '../components/userManagement.js?v=4.26.48',
+    path: '../components/userManagement.js?v=4.26.49',
     renderName: 'renderUserManagement',
     initName: 'initUserManagementEvents',
     type: 'table'
   },
   'homepage-manager': {
-    path: '../components/homepageManagerView.js?v=4.26.48',
+    path: '../components/homepageManagerView.js?v=4.26.49',
     renderName: 'renderHomepageManagerView',
     initName: 'initHomepageManagerEvents',
     type: 'form'
   },
   'email-config': {
-    path: '../components/emailConfigView.js?v=4.26.48',
+    path: '../components/emailConfigView.js?v=4.26.49',
     renderName: 'renderEmailConfigView',
     initName: 'initEmailConfigEvents',
     type: 'form'
   },
   'audit-logs': {
-    path: '../components/auditLogsView.js?v=4.26.48',
+    path: '../components/auditLogsView.js?v=4.26.49',
     renderName: 'renderAuditLogsView',
     initName: 'initAuditLogsEvents',
     type: 'table'
   },
   'settings': {
-    path: '../components/settingsView.js?v=4.26.48',
+    path: '../components/settingsView.js?v=4.26.49',
     renderName: 'renderSettingsView',
     initName: 'initSettingsEvents',
     type: 'form'
   },
   'database-config': {
-    path: '../components/databaseConfigView.js?v=4.26.48',
+    path: '../components/databaseConfigView.js?v=4.26.49',
     renderName: 'renderDatabaseConfigView',
     initName: 'initDatabaseConfigEvents',
     type: 'form'

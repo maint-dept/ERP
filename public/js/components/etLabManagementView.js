@@ -34,6 +34,10 @@ export function getEntActiveTab() {
 }
 
 export function renderEtLabManagementView() {
+  const stateTab = state.get('etLabActiveTab');
+  if (stateTab) {
+    activeEntTab = stateTab;
+  }
   const kpi = etLabService.getGlobalStats();
   const allBoards = etLabService.getBoards();
   const filteredBoards = etLabService.getBoards({
@@ -1798,21 +1802,29 @@ export function initEtLabEvents() {
   // Sub-Tab Switching Handlers
   document.getElementById('ent-tab-btn-boards')?.addEventListener('click', () => {
     activeEntTab = 'boards';
+    state.set('etLabActiveTab', 'boards');
+    try { if (typeof window.router !== 'undefined') window.router.navigate('et-lab', { tab: 'boards', skipViewSwitch: true }); } catch (_) {}
     refreshEntLab();
   });
 
   document.getElementById('ent-tab-btn-spare-parts')?.addEventListener('click', () => {
     activeEntTab = 'spare-parts';
+    state.set('etLabActiveTab', 'spare-parts');
+    try { if (typeof window.router !== 'undefined') window.router.navigate('et-lab', { tab: 'spare-parts', skipViewSwitch: true }); } catch (_) {}
     refreshEntLab();
   });
 
   document.getElementById('ent-tab-btn-lab-config')?.addEventListener('click', () => {
     activeEntTab = 'lab-config';
+    state.set('etLabActiveTab', 'lab-config');
+    try { if (typeof window.router !== 'undefined') window.router.navigate('et-lab', { tab: 'lab-config', skipViewSwitch: true }); } catch (_) {}
     refreshEntLab();
   });
 
   document.getElementById('btn-ent-top-spare-config')?.addEventListener('click', () => {
     activeEntTab = 'spare-parts';
+    state.set('etLabActiveTab', 'spare-parts');
+    try { if (typeof window.router !== 'undefined') window.router.navigate('et-lab', { tab: 'spare-parts', skipViewSwitch: true }); } catch (_) {}
     refreshEntLab();
   });
 

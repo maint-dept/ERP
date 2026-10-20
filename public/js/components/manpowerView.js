@@ -19,6 +19,7 @@ import { excelService } from '../services/excelService.js';
 import { authService } from '../services/authService.js';
 import { notificationService } from '../services/notificationService.js';
 import { state } from '../state.js';
+import { router } from '../services/router.js?v=4.26.49';
 import { renderEmployeeModal, initEmployeeModalEvents } from './employeeModal.js';
 
 let activeManpowerTab = 'active'; // 'active', 'inactive', 'transfers', 'leaves', 'custom-fields'
@@ -794,6 +795,9 @@ export function initManpowerEvents() {
       e.stopPropagation();
       activeManpowerTab = btn.getAttribute('data-manpower-tab');
       state.set('manpowerActiveTab', activeManpowerTab);
+      try {
+        router.navigate('manpower', { tab: activeManpowerTab, skipViewSwitch: true });
+      } catch (_) {}
       selectedEmployeeIds.clear();
       refreshView();
     });

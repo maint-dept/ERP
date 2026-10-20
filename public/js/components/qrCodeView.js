@@ -45,6 +45,10 @@ let labelDesignerModalOpen = false;
 let tempLabelConfig = null;
 
 export function renderQrCodeView() {
+  const stateTab = state.get('qrStudioTab');
+  if (stateTab) {
+    activeStudioTab = stateTab;
+  }
   const allMachines = storage.getTable(TABLE_NAMES.MACHINES) || [];
   const locationQrs = qrCodeService.getAllLocationQrs();
 
@@ -1379,6 +1383,10 @@ export function initQrCodeEvents() {
   root.querySelectorAll('.btn-studio-tab').forEach(btn => {
     btn.addEventListener('click', () => {
       activeStudioTab = btn.getAttribute('data-tab');
+      state.set('qrStudioTab', activeStudioTab);
+      try {
+        if (typeof window.router !== 'undefined') window.router.navigate('qr-codes', { tab: activeStudioTab, skipViewSwitch: true });
+      } catch (_) {}
       refreshView();
     });
   });

@@ -36,6 +36,10 @@ let viewingSessionModal = null; // Session object or null
 let approvalsFilter = 'ALL'; // 'ALL' | 'IDLE' | 'RELOCATION'
 
 export function renderRelocateView() {
+  const stateTab = state.get('relocateActiveTab');
+  if (stateTab) {
+    activeTab = stateTab;
+  }
   const activeSession = relocateService.getActiveSession();
   const pendingApprovals = relocateService.getPendingApprovals();
   const idleMachines = relocateService.getIdleMachines();
@@ -3028,6 +3032,10 @@ export function initRelocateViewEvents() {
       manualSearchModalOpen = false;
       completeModalOpen = false;
       activeTab = btn.getAttribute('data-tab');
+      state.set('relocateActiveTab', activeTab);
+      try {
+        if (typeof window.router !== 'undefined') window.router.navigate('relocate', { tab: activeTab, skipViewSwitch: true });
+      } catch (_) {}
       refreshView();
     });
   });
