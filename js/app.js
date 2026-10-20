@@ -10,7 +10,7 @@ import { authService } from './services/authService.js';
 import { renderNavbar, initNavbarEvents } from './components/navbar.js?v=4.26.52';
 import { renderSidebar, initSidebarEvents, updateSidebarActiveState } from './components/sidebar.js?v=4.26.52';
 import { renderHomepageView, initHomepageEvents } from './components/homepageView.js?v=4.26.52';
-import { renderLoginView, initLoginViewEvents } from './components/loginView.js?v=4.26.52';
+import { renderLoginView, initLoginViewEvents } from './components/loginView.js?v=4.26.55';
 import { renderDashboard, initDashboardEvents } from './components/dashboard.js?v=4.26.52';
 import { renderMachineModal, initMachineModalEvents } from './components/machineModal.js?v=4.26.50';
 import { renderMachineDetails, initMachineDetailsEvents } from './components/machineDetails.js?v=4.26.50';
