@@ -7,53 +7,29 @@
 import { state } from './state.js';
 import { storage } from './db/storage.js';
 import { authService } from './services/authService.js';
-import { renderNavbar, initNavbarEvents } from './components/navbar.js?v=4.26.44';
-import { renderSidebar, initSidebarEvents, updateSidebarActiveState } from './components/sidebar.js?v=4.26.44';
-import { renderHomepageView, initHomepageEvents } from './components/homepageView.js?v=4.26.23';
-import { renderLoginView, initLoginViewEvents } from './components/loginView.js?v=4.26.23';
-import { renderDashboard, initDashboardEvents } from './components/dashboard.js?v=4.26.44';
-import { renderInventoryTable, initInventoryTableEvents, syncInventorySelectionDOM } from './components/inventoryTable.js?v=4.26.41';
-import { renderMachineModal, initMachineModalEvents } from './components/machineModal.js?v=4.26.41';
-import { renderMachineDetails, initMachineDetailsEvents } from './components/machineDetails.js?v=4.26.41';
-import { renderTransferModal, initTransferModalEvents } from './components/transferModal.js?v=4.26.24';
+import { renderNavbar, initNavbarEvents } from './components/navbar.js?v=4.26.48';
+import { renderSidebar, initSidebarEvents, updateSidebarActiveState } from './components/sidebar.js?v=4.26.48';
+import { renderHomepageView, initHomepageEvents } from './components/homepageView.js?v=4.26.48';
+import { renderLoginView, initLoginViewEvents } from './components/loginView.js?v=4.26.48';
+import { renderDashboard, initDashboardEvents } from './components/dashboard.js?v=4.26.48';
+import { renderMachineModal, initMachineModalEvents } from './components/machineModal.js?v=4.26.48';
+import { renderMachineDetails, initMachineDetailsEvents } from './components/machineDetails.js?v=4.26.48';
+import { renderTransferModal, initTransferModalEvents } from './components/transferModal.js?v=4.26.48';
 import { renderTransferDetailsModal, initTransferDetailsModalEvents } from './components/transferDetailsModal.js';
-import { renderEditTransferModal, initEditTransferModalEvents } from './components/editTransferModal.js?v=4.26.24';
-import { renderTransfersView, initTransfersViewEvents } from './components/transfersView.js';
-import { renderTransferWorkflowBuilder, initTransferWorkflowBuilderEvents } from './components/transferWorkflowBuilder.js';
-import { renderMasterDataView, initMasterDataEvents } from './components/masterDataView.js';
-import { renderCustomFieldsMgr, initCustomFieldsEvents } from './components/customFieldsMgr.js';
-import { renderExcelManagerView, initExcelManagerEvents } from './components/excelManagerView.js';
-import { renderUserManagement, initUserManagementEvents } from './components/userManagement.js';
-import { renderHomepageManagerView, initHomepageManagerEvents } from './components/homepageManagerView.js';
-import { renderEmailConfigView, initEmailConfigEvents } from './components/emailConfigView.js';
+import { renderEditTransferModal, initEditTransferModalEvents } from './components/editTransferModal.js?v=4.26.48';
 import { renderExcelImportModal, initExcelImportEvents } from './components/excelImportModal.js';
-import { renderReportsView, initReportsEvents } from './components/reportsView.js?v=4.26.41';
-import { renderAuditLogsView, initAuditLogsEvents } from './components/auditLogsView.js';
-import { renderNotificationsDrawer, initNotificationsDrawerEvents } from './components/notificationsDrawer.js';
-import { renderSettingsView, initSettingsEvents } from './components/settingsView.js';
-import { renderDatabaseConfigView, initDatabaseConfigEvents } from './components/databaseConfigView.js';
-import { renderResourceLibraryView, initResourceLibraryEvents } from './components/resourceLibraryView.js';
 import { renderColumnVisibilityModal, initColumnVisibilityEvents } from './components/columnVisibilityModal.js';
-import { renderMachineHistoryView, initMachineHistoryEvents } from './components/machineHistoryView.js';
-import { renderSparePartsManagementView, initSparePartsManagementEvents } from './components/sparePartsManagementView.js';
-import { renderToolsManagementView, initToolsManagementEvents } from './components/toolsManagementView.js';
-import { renderManpowerView, initManpowerEvents } from './components/manpowerView.js';
-import { renderEtLabManagementView, initEtLabEvents, setEntActiveTab } from './components/etLabManagementView.js';
+import { renderNotificationsDrawer, initNotificationsDrawerEvents } from './components/notificationsDrawer.js';
 import { renderChangePasswordModal, initChangePasswordModalEvents } from './components/changePasswordModal.js';
 import { renderAccountSwitcherModal, initAccountSwitcherModalEvents } from './components/accountSwitcherModal.js';
-import { renderStorageView, initStorageEvents } from './components/storageView.js';
-import { renderPreventiveMaintenanceView, initPreventiveMaintenanceEvents } from './components/preventiveMaintenanceView.js?v=4.26.40';
 import { smartStorageService } from './services/smartStorageService.js';
-import { renderRelocateView, initRelocateViewEvents } from './components/relocateView.js?v=4.26.18';
-import { renderNeedleOperationsView, initNeedleOperationsEvents } from './components/needleOperationsView.js';
-import { renderQrCodeView, initQrCodeEvents } from './components/qrCodeView.js?v=4.26.26';
-import { renderPartsTraceView, initPartsTraceEvents } from './components/partsTraceView.js';
 import { chatService } from './services/chatService.js';
 import { historyService } from './services/historyService.js';
 import { auditService } from './services/auditService.js';
 import { notificationService } from './services/notificationService.js';
 import { syncManager } from './db/syncManager.js';
 import { router } from './services/router.js?v=4.26.48';
+import { moduleLoader } from './services/moduleLoader.js?v=4.26.48';
 
 /**
  * Captures all active scroll, viewport, and focused input states.
@@ -210,6 +186,10 @@ function _initInvScrollGuard() {
 }
 
 class ERPApplication {
+  constructor() {
+    this._moduleLoadSeq = 0;
+  }
+
   async init() {
     // Check saved theme
     const savedTheme = localStorage.getItem('al_muslim_theme');
@@ -236,6 +216,11 @@ class ERPApplication {
     window.__appLoaded = true;
     router.init();
     this.bindEvents();
+
+    // Idle-time background module prefetching for instant 0ms subsequent transitions
+    if (typeof moduleLoader !== 'undefined' && typeof moduleLoader.prefetchCommonModules === 'function') {
+      moduleLoader.prefetchCommonModules();
+    }
 
     // Self-healing check: guarantee that all machines in inventory have valid model links
     try {
@@ -266,7 +251,12 @@ class ERPApplication {
     // Selection changed handled in-place with instant DOM sync without destroying table DOM or resetting scroll
     state.on('selection:changed', (selList) => {
       try {
-        syncInventorySelectionDOM(selList);
+        if (moduleLoader.isLoaded('inventory')) {
+          const mod = moduleLoader.getLoaded('inventory')?.module;
+          if (mod && typeof mod.syncInventorySelectionDOM === 'function') {
+            mod.syncInventorySelectionDOM(selList);
+          }
+        }
       } catch (e) {
         console.error('Error syncing inventory selection:', e);
       }
@@ -662,22 +652,70 @@ class ERPApplication {
       }
 
       const container = document.getElementById('main-view-container');
-      if (container) {
-        const savedState = preserveScroll ? captureAppState() : null;
-        container.innerHTML = this.getActiveViewHtml(activeView);
-        this.initViewEvents(activeView);
-        // Re-attach scroll guard to newly rendered inventory viewport
-        _initInvScrollGuard();
-        if (preserveScroll && savedState) {
-          restoreAppState(savedState);
-        } else {
-          container.scrollTop = 0;
-          container.scrollLeft = 0;
-          const pv = container.querySelector('.page-view');
-          if (pv) {
-            pv.scrollTop = 0;
-            pv.scrollLeft = 0;
+      if (!container) return;
+
+      const savedState = preserveScroll ? captureAppState() : null;
+
+      // Handle lazy-loaded modules via moduleLoader
+      if (moduleLoader.isLazyView(activeView) && !moduleLoader.isLoaded(activeView)) {
+        // 1. Show sleek dark skeleton instantly for 0ms visual feedback
+        container.innerHTML = moduleLoader.renderSkeleton(activeView);
+
+        // 2. Load module asynchronously
+        const seq = ++this._moduleLoadSeq;
+        moduleLoader.load(activeView).then((loaded) => {
+          // Race condition check: user may have navigated away during download
+          if (this._moduleLoadSeq !== seq || state.get('currentView') !== activeView) {
+            return;
           }
+          if (loaded.beforeRender) loaded.beforeRender();
+          container.innerHTML = loaded.render();
+          if (typeof loaded.initEvents === 'function') {
+            loaded.initEvents();
+          }
+          if (activeView === 'inventory') {
+            _initInvScrollGuard();
+          }
+          if (preserveScroll && savedState) {
+            restoreAppState(savedState);
+          } else {
+            container.scrollTop = 0;
+            container.scrollLeft = 0;
+            const pv = container.querySelector('.page-view');
+            if (pv) {
+              pv.scrollTop = 0;
+              pv.scrollLeft = 0;
+            }
+          }
+        }).catch((err) => {
+          console.error(`[App] Error loading lazy module '${activeView}':`, err);
+          container.innerHTML = `
+            <div style="padding: 30px; text-align: center; background: var(--bg-surface); border: 1px solid #ef4444; border-radius: var(--radius-lg); margin: 20px;">
+              <div style="font-size: 32px; margin-bottom: 8px;">⚠️</div>
+              <h3 style="color: #f87171; font-weight: 700; margin-bottom: 8px;">Module Loading Notice</h3>
+              <p style="color: var(--text-secondary); font-size: 13px; margin-bottom: 14px;">An error occurred while loading module '${activeView}': ${err.message}</p>
+              <button onclick="router.navigate('dashboard')" class="btn btn-primary btn-sm">Return to Dashboard</button>
+            </div>
+          `;
+        });
+        return;
+      }
+
+      // Synchronous render (Dashboard, already-cached lazy module, or standalone)
+      container.innerHTML = this.getActiveViewHtml(activeView);
+      this.initViewEvents(activeView);
+      if (activeView === 'inventory') {
+        _initInvScrollGuard();
+      }
+      if (preserveScroll && savedState) {
+        restoreAppState(savedState);
+      } else {
+        container.scrollTop = 0;
+        container.scrollLeft = 0;
+        const pv = container.querySelector('.page-view');
+        if (pv) {
+          pv.scrollTop = 0;
+          pv.scrollLeft = 0;
         }
       }
     } catch (err) {
@@ -863,67 +901,22 @@ class ERPApplication {
             </div>
           `;
         }
-        case 'home':
-          return renderHomepageView();
-        case 'login':
-          return renderLoginView();
-        case 'dashboard':
-          return renderDashboard();
-        case 'inventory':
-          return renderInventoryTable();
-        case 'relocate':
-          return renderRelocateView();
-        case 'needle-operations':
-          return renderNeedleOperationsView();
-        case 'qr-codes':
-          return renderQrCodeView();
-        case 'transfers':
-          return renderTransfersView();
-        case 'parts-trace':
-          return renderPartsTraceView();
-        case 'machine-history':
-          return renderMachineHistoryView();
-        case 'preventive-maintenance':
-          return renderPreventiveMaintenanceView();
-        case 'transfer-workflows':
-          return renderTransferWorkflowBuilder();
-        case 'reports':
-          return renderReportsView();
-        case 'resource-library':
-          return renderResourceLibraryView();
-        case 'excel-manager':
-          return renderExcelManagerView();
-        case 'custom-fields':
-          setTimeout(() => state.set('currentView', 'inventory'), 0);
-          return renderInventoryTable();
-        case 'et-lab':
-          return renderEtLabManagementView();
-        case 'spare-parts':
-          setEntActiveTab('spare-parts');
-          return renderEtLabManagementView();
-        case 'tools-management':
-          return renderToolsManagementView();
-        case 'storage':
-          return renderStorageView();
-        case 'manpower':
-          return renderManpowerView();
-        case 'master-data':
-          return renderMasterDataView();
-        case 'users':
-          return renderUserManagement();
-        case 'homepage-manager':
-          return renderHomepageManagerView();
-        case 'email-config':
-          return renderEmailConfigView();
-        case 'audit-logs':
-          return renderAuditLogsView();
-        case 'settings':
-          return renderSettingsView();
-        case 'database-config':
-          return renderDatabaseConfigView();
-        default:
-          return renderDashboard();
+      if (currentView === 'home') return renderHomepageView();
+      if (currentView === 'login') return renderLoginView();
+      if (currentView === 'dashboard') return renderDashboard();
+
+      // Check if module is managed by lazy moduleLoader
+      if (moduleLoader.isLazyView(currentView)) {
+        if (moduleLoader.isLoaded(currentView)) {
+          const loaded = moduleLoader.getLoaded(currentView);
+          if (loaded.beforeRender) loaded.beforeRender();
+          return loaded.render();
+        } else {
+          return moduleLoader.renderSkeleton(currentView);
+        }
       }
+
+      return renderDashboard();
     } catch (viewErr) {
       console.error('Component render error:', viewErr);
       return `
@@ -1015,101 +1008,60 @@ class ERPApplication {
 
   initViewEvents(targetView = null) {
     const currentView = targetView || state.get('currentView') || 'dashboard';
-    switch (currentView) {
-      case 'dashboard':
-        initDashboardEvents();
-        break;
-      case 'inventory':
-        initInventoryTableEvents();
-        // Attach scroll guard after events are initialized — protects against background re-render during scroll
-        _initInvScrollGuard();
-        break;
-      case 'relocate':
-        initRelocateViewEvents();
-        break;
-      case 'needle-operations':
-        initNeedleOperationsEvents();
-        break;
-      case 'qr-codes':
-        initQrCodeEvents();
-        break;
-      case 'transfers':
-        initTransfersViewEvents();
-        break;
-      case 'parts-trace':
-        initPartsTraceEvents();
-        break;
-      case 'machine-history':
-        initMachineHistoryEvents();
-        break;
-      case 'preventive-maintenance':
-        initPreventiveMaintenanceEvents();
-        break;
-      case 'transfer-workflows':
-        initTransferWorkflowBuilderEvents();
-        break;
-      case 'reports':
-        initReportsEvents();
-        break;
-      case 'resource-library':
-        initResourceLibraryEvents();
-        break;
-      case 'excel-manager':
-        initExcelManagerEvents();
-        break;
-      case 'custom-fields':
-        initInventoryTableEvents();
-        break;
-      case 'et-lab':
-      case 'spare-parts':
-        initEtLabEvents();
-        break;
-      case 'tools-management':
-        initToolsManagementEvents();
-        break;
-      case 'storage':
-        initStorageEvents();
-        break;
-      case 'manpower':
-        initManpowerEvents();
-        break;
-      case 'master-data':
-        initMasterDataEvents();
-        break;
-      case 'users':
-        initUserManagementEvents();
-        break;
-      case 'homepage-manager':
-        initHomepageManagerEvents();
-        break;
-      case 'email-config':
-        initEmailConfigEvents();
-        break;
-      case 'audit-logs':
-        initAuditLogsEvents();
-        break;
-      case 'settings':
-        initSettingsEvents();
-        break;
-      case 'database-config':
-        initDatabaseConfigEvents();
-        break;
-      case 'no-access': {
-        const btnLogout = document.getElementById('btn-no-access-logout');
-        if (btnLogout) {
-          btnLogout.addEventListener('click', () => {
-            authService.logout();
-            window.location.reload();
-          });
+
+    if (currentView === 'dashboard') {
+      initDashboardEvents();
+      return;
+    }
+
+    if (moduleLoader.isLazyView(currentView)) {
+      if (moduleLoader.isLoaded(currentView)) {
+        const loaded = moduleLoader.getLoaded(currentView);
+        if (typeof loaded.initEvents === 'function') {
+          loaded.initEvents();
         }
-        const btnCheck = document.getElementById('btn-no-access-check');
-        if (btnCheck) {
-          btnCheck.addEventListener('click', () => {
-            window.location.reload();
-          });
+        if (currentView === 'inventory') {
+          _initInvScrollGuard();
         }
-        break;
+      } else {
+        // Module not yet loaded (e.g. from initial page render) -> load dynamically
+        const seq = ++this._moduleLoadSeq;
+        moduleLoader.load(currentView).then((loaded) => {
+          if (this._moduleLoadSeq !== seq || state.get('currentView') !== currentView) {
+            return;
+          }
+          const container = document.getElementById('main-view-container');
+          if (!container) return;
+          if (loaded.beforeRender) loaded.beforeRender();
+          container.innerHTML = loaded.render();
+          if (typeof loaded.initEvents === 'function') {
+            loaded.initEvents();
+          }
+          if (currentView === 'inventory') {
+            _initInvScrollGuard();
+          }
+        }).catch((err) => {
+          console.error(`[App] Error loading view '${currentView}':`, err);
+        });
       }
+      return;
+    }
+
+    if (currentView === 'no-access') {
+      const btnLogout = document.getElementById('btn-no-access-logout');
+      if (btnLogout) {
+        btnLogout.addEventListener('click', () => {
+          authService.logout();
+          window.location.reload();
+        });
+      }
+      const btnCheck = document.getElementById('btn-no-access-check');
+      if (btnCheck) {
+        btnCheck.addEventListener('click', () => {
+          window.location.reload();
+        });
+      }
+      return;
     }
   }
 
@@ -1150,7 +1102,10 @@ class ERPApplication {
         break;
       case 'user-perms-modal':
       case 'reset-password-modal':
-        initUserManagementEvents();
+        if (moduleLoader.isLoaded('users')) {
+          const mod = moduleLoader.getLoaded('users');
+          if (typeof mod.initEvents === 'function') mod.initEvents();
+        }
         break;
     }
   }
@@ -1268,6 +1223,8 @@ if (typeof window !== 'undefined') {
   window.authService = authService;
   window.historyService = historyService;
   window.auditService = auditService;
+  window.moduleLoader = moduleLoader;
+  window.router = router;
 }
 
 if (typeof document !== 'undefined') {

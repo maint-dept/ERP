@@ -12,6 +12,7 @@
 import { authService } from '../services/authService.js';
 import { state } from '../state.js';
 import { router } from '../services/router.js?v=4.26.48';
+import { moduleLoader } from '../services/moduleLoader.js?v=4.26.48';
 
 const STORAGE_KEY_EXPANDED = 'al_muslim_sidebar_expanded_menus';
 
@@ -479,6 +480,19 @@ export function initSidebarEvents() {
           }
         });
       }
+    }
+  });
+
+  // 2.1 Intelligent Hover & Touch Module Prefetching (0ms instant transition preparation)
+  sidebar.querySelectorAll('.nav-item, .nav-subitem').forEach(itemEl => {
+    const v = itemEl.getAttribute('data-view');
+    if (v) {
+      itemEl.addEventListener('pointerenter', () => {
+        moduleLoader.prefetch(v);
+      }, { passive: true });
+      itemEl.addEventListener('touchstart', () => {
+        moduleLoader.prefetch(v);
+      }, { passive: true });
     }
   });
 
