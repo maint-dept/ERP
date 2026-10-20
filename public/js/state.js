@@ -74,6 +74,8 @@ class GlobalState {
           initialSubtab = segments[1];
         }
 
+        const activeAdminSlug = ((typeof localStorage !== 'undefined' ? localStorage.getItem('al_muslim_admin_login_slug') : null) || 'secure-admin-gateway').trim().toLowerCase();
+
         const routeMap = {
           '': 'home',
           'home': 'home',
@@ -117,13 +119,19 @@ class GlobalState {
           'audit-logs': 'audit-logs',
           'settings': 'settings',
           'database-config': 'database-config',
-          'no-access': 'no-access'
+          'no-access': 'no-access',
+          'admin-login': 'admin-login',
+          'secure-admin-gateway': 'admin-login',
+          [activeAdminSlug]: 'admin-login'
         };
 
-        const resolvedView = routeMap[routeKey] || (routeKey ? routeKey : 'home');
+        let resolvedView = routeMap[routeKey] || (routeKey ? routeKey : 'home');
+        if (routeKey === activeAdminSlug || routeKey === 'secure-admin-gateway') {
+          resolvedView = 'admin-login';
+        }
 
         if (resolvedView && resolvedView !== 'home') {
-          if (!activeUserId && resolvedView !== 'login') {
+          if (!activeUserId && resolvedView !== 'login' && resolvedView !== 'admin-login') {
             initialView = 'login';
             try {
               const redirectPath = initialSubtab ? `${resolvedView}/${initialSubtab}` : resolvedView;

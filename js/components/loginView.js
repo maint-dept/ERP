@@ -13,32 +13,46 @@ let resetTargetUsername = '';
 let resetTargetEmail = '';
 let generatedDemoOtp = '';
 let pendingFirstLoginUserId = null;
+let _currentIsAdminGateway = false;
 
-export function renderLoginView() {
+export function renderLoginView(isAdminGateway = false) {
+  _currentIsAdminGateway = Boolean(isAdminGateway);
   const rememberMe = localStorage.getItem('al_muslim_remember_me') === 'true';
   try {
     localStorage.removeItem('al_muslim_saved_username');
   } catch (_) {}
 
-  // Determine active tab: check state or sessionStorage (default to 'admin' if maintenance mode is active, otherwise 'user')
-  let activeTab = 'user';
-  try {
-    activeTab = state.get('loginTab') || sessionStorage.getItem('al_muslim_login_tab') || (authService.isMaintenanceModeActive() ? 'admin' : 'user');
-  } catch (_) {
-    activeTab = state.get('loginTab') || (authService.isMaintenanceModeActive() ? 'admin' : 'user');
-  }
-  const isAdminActive = activeTab === 'admin';
+  const isMaintActive = authService.isMaintenanceModeActive();
+  const maintConfig = authService.getMaintenanceModeConfig();
+
+  // Page background: Cyber-emerald obsidian for Admin Gateway, deep navy for User Portal
+  const pageBg = isAdminGateway
+    ? 'radial-gradient(circle at 50% 18%, #064e3b 0%, #021714 35%, #020617 80%, #000000 100%)'
+    : 'radial-gradient(circle at 50% 20%, #172554 0%, #0b0f19 75%)';
+
+  const cardBorder = isAdminGateway
+    ? '1.5px solid rgba(16, 185, 129, 0.45)'
+    : '1px solid rgba(56, 189, 248, 0.25)';
+
+  const cardShadow = isAdminGateway
+    ? '0 20px 60px rgba(0,0,0,0.85), 0 0 35px rgba(16, 185, 129, 0.18)'
+    : '0 15px 45px rgba(0,0,0,0.65)';
 
   return `
-    <div class="login-page-wrapper" style="min-height: 100vh; background: radial-gradient(circle at 50% 20%, #172554 0%, #0b0f19 75%); display: flex; flex-direction: column; justify-content: space-between; font-family: var(--font-main); color: #fff;">
+    <div class="login-page-wrapper" style="min-height: 100vh; background: ${pageBg}; display: flex; flex-direction: column; justify-content: space-between; font-family: var(--font-main); color: #fff;">
       
       <!-- Top Navigation Ribbon -->
       <div style="padding: 18px 32px; display: flex; justify-content: space-between; align-items: center;">
         <div style="display: flex; align-items: center; gap: 10px; cursor: pointer;" id="login-nav-home">
-          <div style="width: 34px; height: 34px; background: #0284c7; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px;">
-            🔧
+          <div style="width: 34px; height: 34px; background: ${isAdminGateway ? 'linear-gradient(135deg, #059669, #0d9488)' : '#0284c7'}; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px;">
+            ${isAdminGateway ? '🛡️' : '🔧'}
           </div>
-          <span style="font-weight: 800; font-size: 15px; color: #fff; letter-spacing: 0.5px;">AL-MUSLIM GROUP</span>
+          <div style="display: flex; flex-direction: column;">
+            <span style="font-weight: 800; font-size: 14.5px; color: #fff; letter-spacing: 0.5px;">AL-MUSLIM GROUP</span>
+            <span style="font-size: 10.5px; color: ${isAdminGateway ? '#34d399' : '#38bdf8'}; font-weight: 700;">
+              ${isAdminGateway ? 'Administrative Gateway &bull; Confidential' : 'Maintenance Department ERP'}
+            </span>
+          </div>
         </div>
 
         <button id="btn-back-to-home" class="btn btn-ghost btn-sm" style="color: #94a3b8; font-size: 13px; display: flex; align-items: center; gap: 6px;">
@@ -48,57 +62,73 @@ export function renderLoginView() {
       </div>
 
       <!-- Main Central Authentication Container -->
-      <div style="max-width: 460px; width: 100%; margin: 20px auto 40px; padding: 0 16px;">
+      <div style="max-width: 470px; width: 100%; margin: 16px auto 36px; padding: 0 16px;">
         
-        <div style="background: rgba(15, 23, 42, 0.88); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 14px; box-shadow: 0 15px 45px rgba(0,0,0,0.65); padding: 32px; backdrop-filter: blur(16px);">
+        <div style="background: rgba(15, 23, 42, 0.92); border: ${cardBorder}; border-radius: 16px; box-shadow: ${cardShadow}; padding: 32px; backdrop-filter: blur(20px);">
           
           <!-- Card Header -->
           <div style="text-align: center; margin-bottom: 24px;">
-            <div style="width: 56px; height: 56px; background: rgba(2, 132, 199, 0.2); border: 1.5px solid rgba(56, 189, 248, 0.4); border-radius: 14px; display: inline-flex; align-items: center; justify-content: center; font-size: 26px; margin-bottom: 12px; box-shadow: 0 0 20px rgba(2, 132, 199, 0.4);">
-              ${loginMode === 'LOGIN' ? '🔐' : (loginMode === 'FIRST_LOGIN_CHANGE' ? '🔑' : '📩')}
+            <div style="width: 60px; height: 60px; background: ${isAdminGateway ? 'rgba(16, 185, 129, 0.15)' : 'rgba(2, 132, 199, 0.2)'}; border: 1.5px solid ${isAdminGateway ? 'rgba(16, 185, 129, 0.5)' : 'rgba(56, 189, 248, 0.4)'}; border-radius: 16px; display: inline-flex; align-items: center; justify-content: center; font-size: 28px; margin-bottom: 12px; box-shadow: 0 0 24px ${isAdminGateway ? 'rgba(16, 185, 129, 0.35)' : 'rgba(2, 132, 199, 0.4)'};">
+              ${loginMode === 'LOGIN' ? (isAdminGateway ? '🛡️' : '🔐') : (loginMode === 'FIRST_LOGIN_CHANGE' ? '🔑' : '📩')}
             </div>
-            <h2 style="font-size: 22px; font-weight: 800; color: #ffffff; margin-bottom: 4px;">
-              ${loginMode === 'LOGIN' ? 'Sign in to Maintenance Department ERP' : (loginMode === 'FIRST_LOGIN_CHANGE' ? 'First Login Password Setup' : (loginMode === 'FORGOT_REQUEST' ? 'Password Recovery' : 'Set New Password'))}
+            
+            <!-- Category Badge -->
+            <div style="margin-bottom: 8px;">
+              <span class="badge" style="font-size: 11px; font-weight: 800; letter-spacing: 0.6px; padding: 4px 12px; border-radius: 20px; ${isAdminGateway ? 'background: rgba(16, 185, 129, 0.18); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.45);' : 'background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.4);'}">
+                ${isAdminGateway ? '🛡️ RESTRICTED ACCESS &bull; SYSTEM ADMINISTRATORS ONLY' : '👤 USER ACCESS PORTAL'}
+              </span>
+            </div>
+
+            <h2 style="font-size: 21px; font-weight: 800; color: #ffffff; margin-bottom: 6px;">
+              ${loginMode === 'LOGIN' 
+                ? (isAdminGateway ? 'Administrative Security Gateway' : 'Sign in to Maintenance ERP') 
+                : (loginMode === 'FIRST_LOGIN_CHANGE' ? 'First Login Password Setup' : (loginMode === 'FORGOT_REQUEST' ? 'Password Recovery' : 'Set New Password'))}
             </h2>
-            <p style="font-size: 12.5px; color: #94a3b8; line-height: 1.4;">
-              ${loginMode === 'LOGIN' ? 'Enter your registered credentials to access machine inventory, transfers, and maintenance logs.' : (loginMode === 'FIRST_LOGIN_CHANGE' ? 'Please configure your permanent private password to enter the system.' : (loginMode === 'FORGOT_REQUEST' ? 'Enter your registered Email address or Username to receive a password reset code.' : `Enter the 6-digit code sent for account '${resetTargetUsername}'.`))}
+            <p style="font-size: 12.5px; color: #94a3b8; line-height: 1.45; margin: 0;">
+              ${loginMode === 'LOGIN' 
+                ? (isAdminGateway ? 'Authorized Maintenance System Administrators & Master Engineers Only. Strictly Confidential & Monitored.' : 'Enter your employee credentials to access factory equipment, maintenance requests, and spare parts.') 
+                : (loginMode === 'FIRST_LOGIN_CHANGE' ? 'Please configure your permanent private password to enter the system.' : (loginMode === 'FORGOT_REQUEST' ? 'Enter your registered Email address or Username to receive a password reset code.' : `Enter the 6-digit code sent for account '${resetTargetUsername}'.`))}
             </p>
+
+            ${isAdminGateway && loginMode === 'LOGIN' ? `
+              <div style="display: flex; justify-content: center; gap: 12px; font-size: 10.5px; color: #64748b; margin-top: 10px; font-family: var(--font-mono);">
+                <span>🔒 256-Bit TLS</span>
+                <span>&bull;</span>
+                <span>👁️ Monitored Session</span>
+                <span>&bull;</span>
+                <span>🚫 Unindexed Gateway</span>
+              </div>
+            ` : ''}
           </div>
 
-          <!-- Maintenance Mode Notification Box (When Active) -->
-          ${authService.isMaintenanceModeActive() ? `
+          <!-- Maintenance Mode Notification Box -->
+          ${isMaintActive ? `
             <div style="background: rgba(245, 158, 11, 0.15); border: 1.5px solid rgba(245, 158, 11, 0.5); border-radius: 8px; padding: 12px 14px; margin-bottom: 18px; font-size: 12px; color: #fbbf24; line-height: 1.45;">
               <div style="font-weight: 800; font-size: 12.5px; display: flex; align-items: center; gap: 6px; margin-bottom: 4px; color: #fef08a;">
                 <span>🛠️</span> System Maintenance Mode Active
               </div>
               <div style="color: #fef9c3;">
-                ${authService.getMaintenanceModeConfig().message || 'Routine maintenance is in progress. General user access is temporarily disabled.'}
+                ${maintConfig.message || 'Routine maintenance is in progress.'}
               </div>
-              ${authService.getMaintenanceModeConfig().estimatedEnd ? `
+              ${maintConfig.estimatedEnd ? `
                 <div style="margin-top: 5px; font-size: 11.5px; color: #fde68a;">
-                  ⏳ Expected completion: <strong>${authService.getMaintenanceModeConfig().estimatedEnd}</strong>
+                  ⏳ Expected completion: <strong>${maintConfig.estimatedEnd}</strong>
                 </div>
               ` : ''}
-              <div style="margin-top: 6px; font-size: 11px; color: #cbd5e1; border-top: 1px dashed rgba(245, 158, 11, 0.3); padding-top: 5px;">
-                Authorized Administrators may sign in via the <strong>👑 Admin Login</strong> tab.
-              </div>
-            </div>
-          ` : ''}
-
-          <!-- Role Selection Tabs for Admin vs User -->
-          ${loginMode === 'LOGIN' ? `
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 20px; background: rgba(30, 41, 59, 0.6); padding: 4px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08);">
-              <button type="button" id="tab-login-admin" class="btn btn-sm ${isAdminActive ? '' : 'btn-ghost'}" style="font-weight: 700; border-radius: 6px; font-size: 12.5px; ${isAdminActive ? 'background: #0284c7; color: #fff;' : 'color: #94a3b8; background: none;'}">
-                👑 Admin Login
-              </button>
-              <button type="button" id="tab-login-user" class="btn btn-sm ${isAdminActive ? 'btn-ghost' : ''}" style="font-weight: 700; border-radius: 6px; font-size: 12.5px; ${isAdminActive ? 'color: #94a3b8; background: none;' : 'background: #0284c7; color: #fff;'}">
-                👤 User Login
-              </button>
+              ${isAdminGateway ? `
+                <div style="margin-top: 6px; font-size: 11px; color: #86efac; border-top: 1px dashed rgba(245, 158, 11, 0.3); padding-top: 5px;">
+                  ✓ Admin bypass authenticated. You can log in to manage system updates.
+                </div>
+              ` : `
+                <div style="margin-top: 6px; font-size: 11px; color: #cbd5e1; border-top: 1px dashed rgba(245, 158, 11, 0.3); padding-top: 5px;">
+                  General user access is temporarily disabled during scheduled maintenance.
+                </div>
+              `}
             </div>
           ` : ''}
 
           <!-- Alert / Error Display Container -->
-          <div id="login-alert-box" style="display: none; padding: 12px 14px; border-radius: 6px; font-size: 12.5px; margin-bottom: 16px; font-weight: 600; line-height: 1.4;"></div>
+          <div id="login-alert-box" style="display: none; padding: 12px 14px; border-radius: 8px; font-size: 12.5px; margin-bottom: 16px; font-weight: 600; line-height: 1.45;"></div>
 
           <!-- FORM MODE 1: STANDARD LOGIN -->
           ${loginMode === 'LOGIN' ? `
@@ -106,18 +136,22 @@ export function renderLoginView() {
               
               <!-- Username or Email -->
               <div class="form-group" style="margin-bottom: 16px;">
-                <label class="form-label" style="font-size: 12px; color: #cbd5e1; font-weight: 600;">Email Address or Username</label>
+                <label class="form-label" style="font-size: 12px; color: #cbd5e1; font-weight: 600;">
+                  ${isAdminGateway ? 'Administrator Username or Email' : 'Employee ID, Username, or Email'}
+                </label>
                 <div style="position: relative; display: flex; align-items: center;">
-                  <span style="position: absolute; left: 14px; font-size: 15px; opacity: 0.8; pointer-events: none; z-index: 5; line-height: 1;">👤</span>
+                  <span style="position: absolute; left: 14px; font-size: 15px; opacity: 0.8; pointer-events: none; z-index: 5; line-height: 1;">
+                    ${isAdminGateway ? '🛡️' : '👤'}
+                  </span>
                   <input 
                     type="text" 
                     id="inp-full-username" 
                     class="form-control" 
-                    placeholder="${isAdminActive ? 'Admin username or email (e.g. admin or superadmin)' : 'User username or email (e.g. user)'}" 
+                    placeholder="${isAdminGateway ? 'Administrator username or email (e.g. motaher, admin, superadmin)' : 'Employee ID, username, or email (e.g. user)'}" 
                     value=""
                     required 
                     autocomplete="username"
-                    style="padding-left: 44px !important; background: rgba(30, 41, 59, 0.8); border-color: rgba(255,255,255,0.15); color: #fff; font-size: 13.5px; height: 42px;"
+                    style="padding-left: 44px !important; background: rgba(30, 41, 59, 0.85); border-color: ${isAdminGateway ? 'rgba(16, 185, 129, 0.35)' : 'rgba(255,255,255,0.15)'}; color: #fff; font-size: 13.5px; height: 42px;"
                   />
                 </div>
               </div>
@@ -126,7 +160,7 @@ export function renderLoginView() {
               <div class="form-group" style="margin-bottom: 14px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
                   <label class="form-label" style="font-size: 12px; color: #cbd5e1; font-weight: 600; margin: 0;">Password</label>
-                  <a href="#" id="link-forgot-password" style="font-size: 11.5px; color: #38bdf8; text-decoration: none; font-weight: 600;">Forgot Password?</a>
+                  <a href="#" id="link-forgot-password" style="font-size: 11.5px; color: ${isAdminGateway ? '#34d399' : '#38bdf8'}; text-decoration: none; font-weight: 600;">Forgot Password?</a>
                 </div>
                 <div style="position: relative; display: flex; align-items: center;">
                   <span style="position: absolute; left: 14px; font-size: 15px; opacity: 0.8; pointer-events: none; z-index: 5; line-height: 1;">🔒</span>
@@ -134,11 +168,11 @@ export function renderLoginView() {
                     type="password" 
                     id="inp-full-password" 
                     class="form-control" 
-                    placeholder="Enter account password" 
+                    placeholder="${isAdminGateway ? 'Enter master administrative password' : 'Enter account password'}" 
                     value=""
                     required 
                     autocomplete="current-password"
-                    style="padding-left: 44px !important; padding-right: 44px !important; background: rgba(30, 41, 59, 0.8); border-color: rgba(255,255,255,0.15); color: #fff; font-size: 13.5px; height: 42px;"
+                    style="padding-left: 44px !important; padding-right: 44px !important; background: rgba(30, 41, 59, 0.85); border-color: ${isAdminGateway ? 'rgba(16, 185, 129, 0.35)' : 'rgba(255,255,255,0.15)'}; color: #fff; font-size: 13.5px; height: 42px;"
                   />
                   <span id="btn-toggle-pwd-visibility" style="position: absolute; right: 14px; font-size: 15px; cursor: pointer; opacity: 0.7; z-index: 5;" title="Toggle visibility">👁️</span>
                 </div>
@@ -153,8 +187,8 @@ export function renderLoginView() {
               </div>
 
               <!-- Submit Button -->
-              <button type="submit" id="btn-submit-full-login" class="btn btn-primary btn-block" style="font-weight: 800; font-size: 14px; padding: 12px; border-radius: 8px; box-shadow: 0 4px 20px rgba(2, 132, 199, 0.5);">
-                🔐 Sign In to ERP
+              <button type="submit" id="btn-submit-full-login" class="btn btn-primary btn-block" style="font-weight: 800; font-size: 14px; padding: 12px; border-radius: 8px; ${isAdminGateway ? 'background: linear-gradient(135deg, #059669, #0284c7); border-color: #059669; box-shadow: 0 4px 20px rgba(5, 150, 105, 0.45);' : 'box-shadow: 0 4px 20px rgba(2, 132, 199, 0.5);'}">
+                ${isAdminGateway ? '🛡️ Authenticate &amp; Enter Admin Gateway' : '🔐 Sign In to User Portal'}
               </button>
 
             </form>
@@ -305,7 +339,8 @@ export function renderLoginView() {
   `;
 }
 
-export function initLoginViewEvents() {
+export function initLoginViewEvents(isAdminGateway = false) {
+  _currentIsAdminGateway = Boolean(isAdminGateway);
   const alertBox = document.getElementById('login-alert-box');
 
   const showAlert = (msg, type = 'danger') => {
@@ -369,66 +404,11 @@ export function initLoginViewEvents() {
     state.set('currentView', 'home');
   });
 
-  // Admin vs User Tabs
-  const tabAdmin = document.getElementById('tab-login-admin');
-  const tabUser = document.getElementById('tab-login-user');
+  // Clear inputs on page load
   const inpUser = document.getElementById('inp-full-username');
   const inpPwd = document.getElementById('inp-full-password');
-
-  if (tabAdmin && tabUser && inpUser) {
-    let activeTab = 'user';
-    try {
-      activeTab = state.get('loginTab') || sessionStorage.getItem('al_muslim_login_tab') || (authService.isMaintenanceModeActive() ? 'admin' : 'user');
-    } catch (_) {
-      activeTab = state.get('loginTab') || (authService.isMaintenanceModeActive() ? 'admin' : 'user');
-    }
-
-    if (activeTab === 'admin') {
-      tabAdmin.style.background = '#0284c7';
-      tabAdmin.style.color = '#fff';
-      tabUser.style.background = 'none';
-      tabUser.style.color = '#94a3b8';
-      inpUser.placeholder = 'Admin username or email (e.g. admin or superadmin)';
-    } else {
-      tabUser.style.background = '#0284c7';
-      tabUser.style.color = '#fff';
-      tabAdmin.style.background = 'none';
-      tabAdmin.style.color = '#94a3b8';
-      inpUser.placeholder = 'User username or email (e.g. user)';
-    }
-
-    // Always clear username and password on login view load
-    inpUser.value = '';
-    if (inpPwd) inpPwd.value = '';
-
-    tabAdmin.addEventListener('click', () => {
-      state.set('loginTab', 'admin');
-      try {
-        sessionStorage.setItem('al_muslim_login_tab', 'admin');
-      } catch (_) {}
-      tabAdmin.style.background = '#0284c7';
-      tabAdmin.style.color = '#fff';
-      tabUser.style.background = 'none';
-      tabUser.style.color = '#94a3b8';
-      inpUser.placeholder = 'Admin username or email (e.g. admin or superadmin)';
-      inpUser.value = '';
-      if (inpPwd) inpPwd.value = '';
-    });
-
-    tabUser.addEventListener('click', () => {
-      state.set('loginTab', 'user');
-      try {
-        sessionStorage.setItem('al_muslim_login_tab', 'user');
-      } catch (_) {}
-      tabUser.style.background = '#0284c7';
-      tabUser.style.color = '#fff';
-      tabAdmin.style.background = 'none';
-      tabAdmin.style.color = '#94a3b8';
-      inpUser.placeholder = 'User username or email (e.g. user)';
-      inpUser.value = '';
-      if (inpPwd) inpPwd.value = '';
-    });
-  }
+  if (inpUser) inpUser.value = '';
+  if (inpPwd) inpPwd.value = '';
 
   // Submit Standard Login Form
   const loginForm = document.getElementById('form-full-login');
@@ -450,7 +430,7 @@ export function initLoginViewEvents() {
       const origBtnHtml = submitBtn ? submitBtn.innerHTML : '';
       if (submitBtn) {
         submitBtn.disabled = true;
-        submitBtn.innerHTML = '<span style="display:inline-block; animation:spin 1s linear infinite;">🔄</span> Signing In...';
+        submitBtn.innerHTML = '<span style="display:inline-block; animation:spin 1s linear infinite;">🔄</span> Authenticating...';
       }
 
       try {
@@ -463,13 +443,15 @@ export function initLoginViewEvents() {
           localStorage.removeItem('al_muslim_saved_username');
         } catch (_) {}
 
-        const res = await authService.login(username, password);
+        // Enforce strict Admin vs User gateway isolation
+        const res = await authService.login(username, password, { isAdminGateway: _currentIsAdminGateway });
 
         if (res.mustChangePassword) {
           loginMode = 'FIRST_LOGIN_CHANGE';
           pendingFirstLoginUserId = res.user.id;
-          router.navigate('login', { replace: true });
-          state.set('currentView', 'login');
+          const returnView = _currentIsAdminGateway ? 'admin-login' : 'login';
+          router.navigate(returnView, { replace: true });
+          state.set('currentView', returnView);
           return;
         }
 
@@ -571,7 +553,8 @@ export function initLoginViewEvents() {
     e.preventDefault();
     hideAlert();
     loginMode = 'FORGOT_REQUEST';
-    state.set('currentView', 'login');
+    const target = _currentIsAdminGateway ? 'admin-login' : 'login';
+    state.set('currentView', target);
   });
 
   // Back to login links
@@ -579,7 +562,8 @@ export function initLoginViewEvents() {
     e.preventDefault();
     hideAlert();
     loginMode = 'LOGIN';
-    state.set('currentView', 'login');
+    const target = _currentIsAdminGateway ? 'admin-login' : 'login';
+    state.set('currentView', target);
   };
   document.getElementById('link-back-to-login')?.addEventListener('click', returnToLogin);
   document.getElementById('link-back-to-login-2')?.addEventListener('click', returnToLogin);
@@ -606,7 +590,8 @@ export function initLoginViewEvents() {
         resetTargetEmail = res.email;
         generatedDemoOtp = res.otpCode;
         loginMode = 'FORGOT_VERIFY';
-        state.set('currentView', 'login');
+        const target = _currentIsAdminGateway ? 'admin-login' : 'login';
+        state.set('currentView', target);
       } catch (err) {
         showAlert(err.message);
       }
@@ -638,7 +623,8 @@ export function initLoginViewEvents() {
         authService.completePasswordReset(resetTargetUsername, otp, newPwd);
         alert('✅ Password reset successful! You can now sign in with your new password.');
         loginMode = 'LOGIN';
-        state.set('currentView', 'login');
+        const target = _currentIsAdminGateway ? 'admin-login' : 'login';
+        state.set('currentView', target);
       } catch (err) {
         showAlert(err.message);
       }

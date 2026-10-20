@@ -1,0 +1,58 @@
+# =========================================================================
+# Al-Muslim Group Garments Factory Maintenance Machine ERP
+# Robots & Search Engine Crawler Protection Directives
+# Canonical Website: https://maint-dept.github.io/ERP/
+# =========================================================================
+
+User-agent: *
+# Strictly block all administrative security gateways and confidential routes
+Disallow: /secure-admin-gateway
+Disallow: /secure-admin-gateway/
+Disallow: /*gateway*
+Disallow: /*admin*
+Disallow: /api/
+Disallow: /data/
+Disallow: /backups/
+Disallow: /logs/
+
+# Allow public landing portal and standard user login
+Allow: /
+Allow: /ERP/
+Allow: /ERP/login
+Allow: /login
+Allow: /home
+
+# Major Search Engine Explicit Rules
+User-agent: Googlebot
+Disallow: /secure-admin-gateway
+Disallow: /*gateway*
+Disallow: /*admin*
+Disallow: /api/
+Disallow: /data/
+Disallow: /backups/
+
+User-agent: Bingbot
+Disallow: /secure-admin-gateway
+Disallow: /*gateway*
+Disallow: /*admin*
+Disallow: /api/
+Disallow: /data/
+Disallow: /backups/
+
+User-agent: Slurp
+Disallow: /
+
+User-agent: DuckDuckBot
+Disallow: /secure-admin-gateway
+Disallow: /*gateway*
+Disallow: /*admin*
+
+User-agent: Baiduspider
+Disallow: /secure-admin-gateway
+Disallow: /*gateway*
+Disallow: /*admin*
+
+User-agent: Yandex
+Disallow: /secure-admin-gateway
+Disallow: /*gateway*
+Disallow: /*admin*

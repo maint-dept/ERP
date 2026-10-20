@@ -8,6 +8,7 @@ import { TABLE_NAMES } from '../db/schema.js';
 import { state } from '../state.js';
 import { masterDataService } from '../services/masterDataService.js';
 import { authService } from '../services/authService.js';
+import { router } from '../services/router.js';
 
 function escapeHtml(str) {
   if (!str) return '';
@@ -176,6 +177,13 @@ export function renderSettingsView() {
   const availableEmployees = getAvailableSignatoryEmployees();
   const hasCustom = getSignaturesForReport(activeReportKey, true) !== null;
 
+  const currentOrigin = (typeof window !== 'undefined' && window.location) ? window.location.origin : 'https://maint-dept.github.io';
+  const basePath = (typeof router !== 'undefined' && typeof router.getBasePath === 'function') ? router.getBasePath() : '';
+  const currentAdminSlug = (typeof authService !== 'undefined' && typeof authService.getAdminLoginSlug === 'function')
+    ? authService.getAdminLoginSlug()
+    : (settings.adminLoginSlug || 'secure-admin-gateway');
+  const fullAdminUrl = `${currentOrigin}${basePath}/${currentAdminSlug}`;
+
   return `
     <div class="page-view">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
@@ -321,6 +329,136 @@ export function renderSettingsView() {
           <button id="btn-save-approval-settings" class="btn btn-success btn-sm" style="align-self: flex-start;">
             💾 Save Approval Policies
           </button>
+        </div>
+
+        <!-- Card: Admin Login URL Customization & Gateway Security -->
+        <div id="card-admin-url-gateway" style="background: var(--bg-surface); border: 1.5px solid rgba(16, 185, 129, 0.45); border-radius: var(--radius-lg); padding: 22px; display: flex; flex-direction: column; gap: 16px; grid-column: 1 / -1; box-shadow: 0 4px 24px rgba(16, 185, 129, 0.12);">
+          
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; flex-wrap: wrap; gap: 12px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span style="font-size: 26px;">🔐</span>
+              <div>
+                <h3 style="font-size: 16px; font-weight: 800; color: #34d399; margin: 0; display: flex; align-items: center; gap: 8px;">
+                  <span>Admin Login URL Customization &amp; Gateway Security</span>
+                </h3>
+                <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">
+                  Dedicated, customizable Admin Gateway decoupled from User Login (/login), hidden from regular users, and unindexed.
+                </div>
+              </div>
+            </div>
+
+            <!-- Badges -->
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+              <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1.5px solid #10b981; font-weight: 800; font-size: 11px; padding: 5px 12px; border-radius: 20px;">
+                🛡️ UNINDEXED (NOINDEX, NOFOLLOW)
+              </span>
+              <span class="badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.4); font-size: 11px; padding: 5px 10px;">
+                🔒 ADMINS ONLY
+              </span>
+              <span class="badge" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); font-size: 11px; padding: 5px 10px;">
+                👁️ OBFUSCATED FROM USERS
+              </span>
+            </div>
+          </div>
+
+          <!-- Feature / Architecture Compliance Checklist -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; background: rgba(15, 23, 42, 0.65); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; padding: 14px 16px; font-size: 12px; line-height: 1.5;">
+            <div style="color: #e2e8f0; display: flex; align-items: flex-start; gap: 8px;">
+              <span style="color: #34d399; font-weight: 800;">✓</span>
+              <span><strong>User Login Preserved:</strong> <code>/login</code> remains unchanged, standard, and fully operational.</span>
+            </div>
+            <div style="color: #e2e8f0; display: flex; align-items: flex-start; gap: 8px;">
+              <span style="color: #34d399; font-weight: 800;">✓</span>
+              <span><strong>Separate &amp; Customizable:</strong> Admin URL is decoupled and can be changed to any custom slug at will.</span>
+            </div>
+            <div style="color: #e2e8f0; display: flex; align-items: flex-start; gap: 8px;">
+              <span style="color: #34d399; font-weight: 800;">✓</span>
+              <span><strong>Search Engine Blocking:</strong> Googlebot/Bingbot blocked via <code>robots.txt</code>, dynamic <code>noindex</code> meta, and headers.</span>
+            </div>
+            <div style="color: #e2e8f0; display: flex; align-items: flex-start; gap: 8px;">
+              <span style="color: #34d399; font-weight: 800;">✓</span>
+              <span><strong>Strict Role Gate:</strong> Standard users cannot enter Admin Gateway; admin accounts cannot log in via public User portal.</span>
+            </div>
+          </div>
+
+          <!-- Active Secret URL Display Box -->
+          <div style="background: rgba(15, 23, 42, 0.9); border: 1.5px solid rgba(16, 185, 129, 0.4); border-radius: 10px; padding: 16px; display: flex; flex-direction: column; gap: 10px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+              <label style="font-size: 12.5px; font-weight: 700; color: #cbd5e1; margin: 0; display: flex; align-items: center; gap: 6px;">
+                <span>🔗 Current Secret Admin Login URL:</span>
+                <span style="font-size: 11px; color: #94a3b8; font-weight: 400;">(Share only with authorized maintenance administrators)</span>
+              </label>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <button type="button" id="btn-copy-admin-slug-url" class="btn btn-secondary btn-sm" style="font-weight: 700; color: #34d399; border-color: rgba(16, 185, 129, 0.4); display: flex; align-items: center; gap: 6px;">
+                  <span>📋</span>
+                  <span id="copy-admin-btn-text">Copy Secret Admin URL</span>
+                </button>
+                <a id="link-open-admin-gateway" href="${escapeHtml(fullAdminUrl)}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm" style="font-weight: 700; color: #38bdf8; border-color: rgba(56, 189, 248, 0.4); text-decoration: none; display: flex; align-items: center; gap: 6px;">
+                  <span>↗️</span>
+                  <span>Open Gateway</span>
+                </a>
+              </div>
+            </div>
+
+            <div style="display: flex; align-items: center; background: #030712; border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 6px; padding: 10px 14px; overflow-x: auto;">
+              <code id="display-full-admin-url" style="font-family: var(--font-mono); font-size: 13.5px; color: #34d399; font-weight: 700; word-break: break-all;">
+                ${escapeHtml(fullAdminUrl)}
+              </code>
+            </div>
+          </div>
+
+          <!-- Slug Customization Input & Live Preview -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px;">
+            
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label" style="font-size: 12.5px; font-weight: 700; color: #cbd5e1;">
+                Custom Admin Gateway Slug <span class="req">*</span>
+              </label>
+              <div style="position: relative; display: flex; align-items: center;">
+                <span style="position: absolute; left: 12px; font-size: 13px; color: var(--text-muted); font-family: var(--font-mono); pointer-events: none;">
+                  /${basePath ? basePath.replace(/^\/+/, '') + '/' : ''}
+                </span>
+                <input 
+                  type="text" 
+                  id="setting-admin-login-slug" 
+                  class="form-control" 
+                  value="${escapeHtml(currentAdminSlug)}" 
+                  placeholder="e.g. secure-admin-gateway, mg-adm-console, etc." 
+                  maxlength="50"
+                  style="padding-left: ${basePath ? '85px' : '30px'} !important; font-family: var(--font-mono); font-weight: 700; color: #34d399; background: #0f172a; font-size: 13.5px;" 
+                />
+              </div>
+              <div style="font-size: 11px; color: var(--text-muted); margin-top: 5px;">
+                Min 3 chars. Letters, numbers, hyphens (-) and underscores (_) only. Cannot use reserved routes like <code>login</code>, <code>home</code>, <code>inventory</code>.
+              </div>
+            </div>
+
+            <!-- Live URL Preview -->
+            <div style="display: flex; flex-direction: column; justify-content: center; background: rgba(15, 23, 42, 0.7); border: 1px dashed rgba(16, 185, 129, 0.35); border-radius: 8px; padding: 12px 16px;">
+              <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">
+                Live Resulting URL Preview:
+              </div>
+              <div id="live-slug-preview-text" style="font-family: var(--font-mono); font-size: 13px; color: #6ee7b7; font-weight: 700; margin-top: 4px; word-break: break-all;">
+                ${escapeHtml(fullAdminUrl)}
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Action Footer -->
+          <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); padding-top: 14px; margin-top: 4px; flex-wrap: wrap; gap: 10px;">
+            <button type="button" id="btn-reset-admin-slug-default" class="btn btn-secondary btn-sm" style="font-size: 12px; color: #f59e0b; border-color: rgba(245, 158, 11, 0.4);" title="Revert to standard default secure-admin-gateway">
+              🔄 Reset to Default Slug (secure-admin-gateway)
+            </button>
+
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <span id="save-admin-slug-feedback-msg" style="font-size: 12px; color: #34d399; font-weight: 600; display: none;"></span>
+              <button type="button" id="btn-save-admin-slug-setting" class="btn btn-primary btn-sm" style="font-weight: 800; background: linear-gradient(135deg, #059669, #0d9488); border-color: #059669; padding: 8px 24px; box-shadow: 0 4px 16px rgba(5, 150, 105, 0.4);">
+                💾 Save Custom Admin URL
+              </button>
+            </div>
+          </div>
+
         </div>
 
         <!-- Card: System Maintenance Mode & Access Lockdown Control -->
@@ -568,6 +706,100 @@ export function initSettingsEvents() {
         alert('Failed to toggle maintenance mode: ' + err.message);
         quickToggleMaintBtn.disabled = false;
       }
+    });
+  }
+
+  // ==========================================
+  // Admin Login Gateway URL Settings Handlers
+  // ==========================================
+  const slugInput = document.getElementById('setting-admin-login-slug');
+  const liveSlugPreview = document.getElementById('live-slug-preview-text');
+  const displayFullUrl = document.getElementById('display-full-admin-url');
+  const copyBtn = document.getElementById('btn-copy-admin-slug-url');
+  const copyBtnText = document.getElementById('copy-admin-btn-text');
+  const saveAdminSlugBtn = document.getElementById('btn-save-admin-slug-setting');
+  const resetAdminSlugBtn = document.getElementById('btn-reset-admin-slug-default');
+  const slugFeedbackMsg = document.getElementById('save-admin-slug-feedback-msg');
+
+  const updatePreviewUrl = () => {
+    if (!slugInput || !liveSlugPreview) return;
+    const rawVal = (slugInput.value || '').trim().toLowerCase();
+    const cleanSlug = rawVal.replace(/^\/+|\/+$/g, '') || 'secure-admin-gateway';
+    const origin = (typeof window !== 'undefined' && window.location) ? window.location.origin : 'https://maint-dept.github.io';
+    const base = (typeof router !== 'undefined' && typeof router.getBasePath === 'function') ? router.getBasePath() : '';
+    const newFullUrl = `${origin}${base}/${cleanSlug}`;
+    liveSlugPreview.textContent = newFullUrl;
+  };
+
+  if (slugInput) {
+    slugInput.addEventListener('input', updatePreviewUrl);
+  }
+
+  if (copyBtn) {
+    copyBtn.addEventListener('click', async () => {
+      const urlToCopy = displayFullUrl?.textContent?.trim() || liveSlugPreview?.textContent?.trim();
+      if (!urlToCopy) return;
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(urlToCopy);
+        } else {
+          const tempInp = document.createElement('input');
+          tempInp.value = urlToCopy;
+          document.body.appendChild(tempInp);
+          tempInp.select();
+          document.execCommand('copy');
+          document.body.removeChild(tempInp);
+        }
+        if (copyBtnText) copyBtnText.textContent = '✓ Copied to Clipboard!';
+        setTimeout(() => {
+          if (copyBtnText) copyBtnText.textContent = 'Copy Secret Admin URL';
+        }, 2200);
+      } catch (err) {
+        alert('Could not copy automatically. URL is: ' + urlToCopy);
+      }
+    });
+  }
+
+  if (saveAdminSlugBtn) {
+    saveAdminSlugBtn.addEventListener('click', async () => {
+      const origText = saveAdminSlugBtn.innerHTML;
+      const slugVal = slugInput?.value?.trim().toLowerCase();
+      saveAdminSlugBtn.disabled = true;
+      saveAdminSlugBtn.innerHTML = 'Saving Slug...';
+
+      try {
+        const savedSlug = await authService.setAdminLoginSlug(slugVal);
+        const origin = (typeof window !== 'undefined' && window.location) ? window.location.origin : 'https://maint-dept.github.io';
+        const base = (typeof router !== 'undefined' && typeof router.getBasePath === 'function') ? router.getBasePath() : '';
+        const savedFullUrl = `${origin}${base}/${savedSlug}`;
+
+        if (displayFullUrl) displayFullUrl.textContent = savedFullUrl;
+        if (liveSlugPreview) liveSlugPreview.textContent = savedFullUrl;
+        if (slugInput) slugInput.value = savedSlug;
+
+        const openBtn = document.getElementById('link-open-admin-gateway');
+        if (openBtn) openBtn.href = savedFullUrl;
+
+        if (slugFeedbackMsg) {
+          slugFeedbackMsg.textContent = `✓ Admin URL updated to '/${savedSlug}'!`;
+          slugFeedbackMsg.style.display = 'inline-block';
+          setTimeout(() => { slugFeedbackMsg.style.display = 'none'; }, 3500);
+        }
+      } catch (err) {
+        alert('Error updating Admin Login URL: ' + err.message);
+      } finally {
+        saveAdminSlugBtn.disabled = false;
+        saveAdminSlugBtn.innerHTML = origText;
+      }
+    });
+  }
+
+  if (resetAdminSlugBtn) {
+    resetAdminSlugBtn.addEventListener('click', async () => {
+      if (!confirm('Revert Admin Login URL slug back to default "secure-admin-gateway"?')) return;
+      if (slugInput) slugInput.value = 'secure-admin-gateway';
+      updatePreviewUrl();
+      if (saveAdminSlugBtn) saveAdminSlugBtn.click();
     });
   }
 

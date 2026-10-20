@@ -7,11 +7,11 @@
 import { state } from './state.js';
 import { storage } from './db/storage.js';
 import { authService } from './services/authService.js';
-import { renderNavbar, initNavbarEvents } from './components/navbar.js?v=4.26.50';
-import { renderSidebar, initSidebarEvents, updateSidebarActiveState } from './components/sidebar.js?v=4.26.50';
-import { renderHomepageView, initHomepageEvents } from './components/homepageView.js?v=4.26.50';
-import { renderLoginView, initLoginViewEvents } from './components/loginView.js?v=4.26.50';
-import { renderDashboard, initDashboardEvents } from './components/dashboard.js?v=4.26.50';
+import { renderNavbar, initNavbarEvents } from './components/navbar.js?v=4.26.52';
+import { renderSidebar, initSidebarEvents, updateSidebarActiveState } from './components/sidebar.js?v=4.26.52';
+import { renderHomepageView, initHomepageEvents } from './components/homepageView.js?v=4.26.52';
+import { renderLoginView, initLoginViewEvents } from './components/loginView.js?v=4.26.52';
+import { renderDashboard, initDashboardEvents } from './components/dashboard.js?v=4.26.52';
 import { renderMachineModal, initMachineModalEvents } from './components/machineModal.js?v=4.26.50';
 import { renderMachineDetails, initMachineDetailsEvents } from './components/machineDetails.js?v=4.26.50';
 import { renderTransferModal, initTransferModalEvents } from './components/transferModal.js?v=4.26.50';
@@ -435,10 +435,11 @@ class ERPApplication {
       }
 
       // 2. Standalone View: Dedicated Login & Password Recovery Page
-      if (currentView === 'login') {
+      if (currentView === 'login' || currentView === 'admin-login') {
+        const isAdminGateway = currentView === 'admin-login';
         root.innerHTML = `
           <div id="login-root-container">
-            ${renderLoginView()}
+            ${renderLoginView(isAdminGateway)}
           </div>
           <div id="modal-layer">
             ${this.getActiveModalHtml()}
@@ -446,7 +447,7 @@ class ERPApplication {
           <div id="toast-root" class="toast-container"></div>
         `;
         window.__appLoaded = true;
-        initLoginViewEvents();
+        initLoginViewEvents(isAdminGateway);
         this.initModalEvents();
         return;
       }
@@ -530,13 +531,13 @@ class ERPApplication {
     try {
       const currentUser = authService.getCurrentUser();
       // Security Gate: Redirect unauthenticated requests to login
-      if (!currentUser && newView !== 'home' && newView !== 'login') {
+      if (!currentUser && newView !== 'home' && newView !== 'login' && newView !== 'admin-login') {
         newView = 'login';
         state.set('currentView', 'login');
       }
 
       // Authorization Gate: Redirect unauthorized view requests straight to user's first allowed view
-      if (currentUser && newView !== 'home' && newView !== 'login') {
+      if (currentUser && newView !== 'home' && newView !== 'login' && newView !== 'admin-login') {
         if (!authService.isViewAllowed(newView, currentUser)) {
           newView = authService.getFirstAllowedView(currentUser);
           state.set('currentView', newView);
@@ -553,8 +554,8 @@ class ERPApplication {
         storage.ensureTablesForView(newView).catch(() => {});
       }
 
-      // If entering or leaving standalone views (home or login), do full render
-      const isStandaloneTarget = newView === 'home' || newView === 'login';
+      // If entering or leaving standalone views (home or login or admin-login), do full render
+      const isStandaloneTarget = newView === 'home' || newView === 'login' || newView === 'admin-login';
       const isCurrentlyStandalone = !document.getElementById('sidebar-container');
 
       const updateHistoryState = (view, tab) => {
@@ -975,7 +976,7 @@ class ERPApplication {
         `;
       }
       if (currentView === 'home') return renderHomepageView();
-      if (currentView === 'login') return renderLoginView();
+      if (currentView === 'login' || currentView === 'admin-login') return renderLoginView(currentView === 'admin-login');
       if (currentView === 'dashboard') return renderDashboard();
 
       // Check if module is managed by lazy moduleLoader

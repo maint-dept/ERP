@@ -504,10 +504,13 @@ class AuthService {
 
   /**
    * User Login with Email Address or Username & secure password verification
+   * Supports dedicated separation between standard User Portal and private Admin Gateway
    */
-  async login(identifier, password) {
+  async login(identifier, password, options = {}) {
     let users = storage.getTable(TABLE_NAMES.USERS) || [];
     const cleanId = (identifier || '').trim().toLowerCase();
+    const isAdminGateway = Boolean(options.isAdminGateway);
+    const allowAnyRole = Boolean(options.allowAnyRole);
     
     // Support login by either email or username
     let user = users.find(u => u.username?.toLowerCase() === cleanId || u.email?.toLowerCase() === cleanId);
@@ -554,6 +557,21 @@ class AuthService {
       throw new Error('Incorrect password. Please verify your credentials.');
     }
 
+    // Role Enforcement & Gateway Isolation Gate:
+    // Only Administrators can access via the private Admin URL Gateway.
+    // Administrators cannot sign in via the standard public User Portal (/login).
+    const isUserAdmin = this.isAdmin(user) || this.isSuperAdmin(user);
+
+    if (isAdminGateway) {
+      if (!isUserAdmin) {
+        throw new Error('⛔ Access Denied: This administrative gateway is restricted exclusively to authorized System Administrators. Standard factory users must sign in via the standard User Login portal.');
+      }
+    } else if (!allowAnyRole) {
+      if (isUserAdmin) {
+        throw new Error('🔒 Administrative Account Restricted: Administrative accounts cannot sign in through the general user portal. Please access the system via the dedicated private Admin Login Gateway URL.');
+      }
+    }
+
     // Check System Maintenance Mode: only allowed Admin/Super Admin users may log in
     if (!this.canBypassMaintenance(user)) {
       const maint = this.getMaintenanceModeConfig();
@@ -572,13 +590,17 @@ class AuthService {
 
     // Set active user & establish session security token
     this.currentUser = user;
-    localStorage.setItem('al_muslim_active_user_id', user.id);
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('al_muslim_active_user_id', user.id);
+    }
 
     // Save session password reset stamp and unique session token on this device
     const sessionPwdStamp = user.lastPasswordReset || user.passwordChangedAt || 'INIT_PWD';
-    localStorage.setItem('al_muslim_session_pwd_reset', sessionPwdStamp);
-    const sessionToken = 'sess_' + Date.now() + '_' + Math.random().toString(36).substring(2, 9);
-    localStorage.setItem('al_muslim_session_token', sessionToken);
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('al_muslim_session_pwd_reset', sessionPwdStamp);
+      const sessionToken = 'sess_' + Date.now() + '_' + Math.random().toString(36).substring(2, 9);
+      localStorage.setItem('al_muslim_session_token', sessionToken);
+    }
 
     // Update lastLoginAt
     const now = new Date().toISOString();
@@ -616,13 +638,17 @@ class AuthService {
     }
 
     try {
-      sessionStorage.removeItem('al_muslim_impersonator_admin_id');
-      sessionStorage.removeItem('al_muslim_impersonator_admin_name');
-      sessionStorage.removeItem('al_muslim_impersonator_admin_role');
-      localStorage.removeItem('al_muslim_session_pwd_reset');
-      localStorage.removeItem('al_muslim_session_token');
+      if (typeof sessionStorage !== 'undefined') {
+        sessionStorage.removeItem('al_muslim_impersonator_admin_id');
+        sessionStorage.removeItem('al_muslim_impersonator_admin_name');
+        sessionStorage.removeItem('al_muslim_impersonator_admin_role');
+      }
+      if (typeof localStorage !== 'undefined') {
+        localStorage.removeItem('al_muslim_session_pwd_reset');
+        localStorage.removeItem('al_muslim_session_token');
+        localStorage.removeItem('al_muslim_active_user_id');
+      }
     } catch (_) {}
-    localStorage.removeItem('al_muslim_active_user_id');
     this.currentUser = null;
   }
 
@@ -1224,6 +1250,84 @@ class AuthService {
     } catch (_) {}
 
     return updated;
+  }
+
+  // ==========================================
+  // Dedicated Admin Login URL Gateway Manager
+  // ==========================================
+  getAdminLoginSlug() {
+    let slug = '';
+    try {
+      const settings = storage.getTable(TABLE_NAMES.SETTINGS) || {};
+      slug = settings.adminLoginSlug || settings.admin_login_slug;
+    } catch (_) {}
+    if (!slug && typeof localStorage !== 'undefined') {
+      try {
+        slug = localStorage.getItem('al_muslim_admin_login_slug');
+      } catch (_) {}
+    }
+    return (slug || 'secure-admin-gateway').trim().toLowerCase();
+  }
+
+  async setAdminLoginSlug(newSlug) {
+    const raw = (newSlug || '').trim().toLowerCase();
+    if (!raw) {
+      throw new Error('Admin Login URL slug cannot be empty.');
+    }
+    if (raw.length < 3) {
+      throw new Error('Admin Login URL slug must be at least 3 characters long.');
+    }
+    if (raw.length > 50) {
+      throw new Error('Admin Login URL slug cannot exceed 50 characters.');
+    }
+    const slugRegex = /^[a-z0-9][a-z0-9-_]*[a-z0-9]$/;
+    if (!slugRegex.test(raw)) {
+      throw new Error('Admin Login URL slug may only contain letters, numbers, hyphens (-), and underscores (_), and cannot start or end with a symbol.');
+    }
+
+    const reservedRoutes = [
+      'login', 'logout', 'home', 'index', 'dashboard', 'inventory', 'machines',
+      'machine-inventory', 'relocate', 'needle-operations', 'needle-flow', 'needle',
+      'qr-codes', 'qr', 'transfers', 'transfer-workflows', 'parts-trace', 'machine-history',
+      'passport', 'preventive-maintenance', 'pm', 'reports', 'resource-library', 'documents',
+      'excel-manager', 'excel-center', 'custom-fields', 'et-lab', 'spare-parts', 'tools-management',
+      'tools', 'tools-equipment', 'storage', 'manpower', 'master-data', 'users', 'user-management', 'user-access',
+      'homepage-manager', 'email-config', 'audit-logs', 'settings', 'database-config', 'no-access',
+      'api', 'data', 'backup', 'backups', 'public', 'assets', 'css', 'js', 'lib'
+    ];
+    if (reservedRoutes.includes(raw)) {
+      throw new Error(`The slug '${raw}' is a reserved system route. Please choose a different custom admin URL slug.`);
+    }
+
+    const current = storage.getTable(TABLE_NAMES.SETTINGS) || {};
+    const oldSlug = current.adminLoginSlug || 'secure-admin-gateway';
+    const u = this.getCurrentUser();
+    const updated = {
+      ...current,
+      adminLoginSlug: raw,
+      adminLoginSlugUpdatedAt: new Date().toISOString(),
+      adminLoginSlugUpdatedBy: u?.name || u?.username || 'Administrator'
+    };
+
+    storage.data[TABLE_NAMES.SETTINGS] = updated;
+    await storage.saveTable(TABLE_NAMES.SETTINGS, true);
+
+    try {
+      localStorage.setItem('al_muslim_admin_login_slug', raw);
+    } catch (_) {}
+
+    try {
+      auditService.log(
+        'ADMIN_URL_SLUG_UPDATED',
+        'SETTINGS',
+        'system_settings',
+        `Admin Login Gateway URL slug was updated from '${oldSlug}' to '${raw}' by '${u?.name || 'Administrator'}'.`,
+        null,
+        { oldSlug, newSlug: raw }
+      );
+    } catch (_) {}
+
+    return raw;
   }
 
   // ==========================================

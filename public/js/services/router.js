@@ -58,7 +58,9 @@ const ROUTE_VIEW_MAP = {
   'audit-logs': 'audit-logs',
   'settings': 'settings',
   'database-config': 'database-config',
-  'no-access': 'no-access'
+  'no-access': 'no-access',
+  'admin-login': 'admin-login',
+  'secure-admin-gateway': 'admin-login'
 };
 
 // Map clean URL tab slugs to internal component state keys and vice versa
@@ -130,7 +132,8 @@ const VIEW_TITLES = {
   'audit-logs': 'System Security & Audit Logs — Al-Muslim Group ERP',
   'settings': 'Factory ERP Settings — Al-Muslim Group ERP',
   'database-config': 'Primary Database & Sync Settings — Al-Muslim Group ERP',
-  'no-access': 'Access Pending — Al-Muslim Group ERP'
+  'no-access': 'Access Pending — Al-Muslim Group ERP',
+  'admin-login': 'Admin Security Gateway — Al-Muslim Group ERP'
 };
 
 class SPAModuleRouter {
@@ -209,6 +212,15 @@ class SPAModuleRouter {
       }
     }
 
+    // Check if routeKey matches active custom admin login slug
+    const activeAdminSlug = (typeof authService !== 'undefined' && typeof authService.getAdminLoginSlug === 'function')
+      ? authService.getAdminLoginSlug()
+      : (typeof localStorage !== 'undefined' ? localStorage.getItem('al_muslim_admin_login_slug') : 'secure-admin-gateway') || 'secure-admin-gateway';
+
+    if (routeKey === activeAdminSlug || routeKey === 'admin-login' || routeKey === 'secure-admin-gateway') {
+      routeKey = 'admin-login';
+    }
+
     // Determine target view
     let targetView = ROUTE_VIEW_MAP[routeKey] || (routeKey ? routeKey : 'home');
 
@@ -256,6 +268,14 @@ class SPAModuleRouter {
     let pathPart = '';
     if (!view || view === 'home') {
       pathPart = base ? base + '/' : '/';
+    } else if (view === 'admin-login') {
+      const activeAdminSlug = (typeof authService !== 'undefined' && typeof authService.getAdminLoginSlug === 'function')
+        ? authService.getAdminLoginSlug()
+        : (typeof localStorage !== 'undefined' ? localStorage.getItem('al_muslim_admin_login_slug') : 'secure-admin-gateway') || 'secure-admin-gateway';
+      pathPart = (base ? base : '') + '/' + encodeURIComponent(activeAdminSlug);
+      if (tab) {
+        pathPart += '/' + encodeURIComponent(tab);
+      }
     } else {
       pathPart = (base ? base : '') + '/' + encodeURIComponent(view);
       if (tab) {
@@ -272,6 +292,7 @@ class SPAModuleRouter {
 
   /**
    * Sets document title based on the active view and optional subtab
+   * and enforces search engine indexing protection.
    */
   updateTitle(view, tab = null) {
     if (typeof document === 'undefined') return;
@@ -282,6 +303,27 @@ class SPAModuleRouter {
       baseTitle = `${formattedTab} | ${baseTitle}`;
     }
     document.title = baseTitle;
+    this.manageRobotsMeta(view === 'admin-login');
+  }
+
+  /**
+   * Dynamically enforces search engine robots directives:
+   * Strictly blocks Googlebot, Bingbot and all web crawlers from indexing Admin Login Gateway.
+   * Restores normal indexing for standard public portal views.
+   */
+  manageRobotsMeta(isPrivateAdminGateway = false) {
+    if (typeof document === 'undefined') return;
+    let meta = document.querySelector('meta[name="robots"]');
+    if (!meta) {
+      meta = document.createElement('meta');
+      meta.name = 'robots';
+      document.head.appendChild(meta);
+    }
+    if (isPrivateAdminGateway) {
+      meta.content = 'noindex, nofollow, noarchive, nosnippet, noimageindex';
+    } else {
+      meta.content = 'index, follow';
+    }
   }
 
   /**
@@ -406,12 +448,12 @@ class SPAModuleRouter {
     const currentUser = authService.getCurrentUser();
 
     // Security & Authorization Guard on Back/Forward navigation
-    if (!currentUser && targetView !== 'home' && targetView !== 'login') {
+    if (!currentUser && targetView !== 'home' && targetView !== 'login' && targetView !== 'admin-login') {
       this.navigate('login', { replace: true, params: { redirect: targetView } });
       return;
     }
 
-    if (currentUser && targetView !== 'home' && targetView !== 'login') {
+    if (currentUser && targetView !== 'home' && targetView !== 'login' && targetView !== 'admin-login') {
       if (!authService.isViewAllowed(targetView, currentUser)) {
         const allowedView = authService.getFirstAllowedView(currentUser);
         this.navigate(allowedView, { replace: true });

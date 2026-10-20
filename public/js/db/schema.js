@@ -1024,5 +1024,9 @@ export const DEFAULT_SETTINGS = {
   maintenanceEstimatedEnd: '',
   maintenanceAllowAdmin: true,
   maintenanceEnabledAt: null,
-  maintenanceEnabledBy: null
+  maintenanceEnabledBy: null,
+  // Admin Login URL Gateway Configuration (Obfuscated & Customizable)
+  adminLoginSlug: 'secure-admin-gateway',
+  adminLoginSlugUpdatedAt: null,
+  adminLoginSlugUpdatedBy: null
 };

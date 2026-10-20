@@ -22,11 +22,17 @@ Options -Indexes
 # If mod_rewrite is disabled or bypassed by LiteSpeed, ErrorDocument 404 serves /index.html
 ErrorDocument 404 /index.html
 
-# 4. Prevent browser caching of HTML entrypoints
+# 4. Prevent browser caching of HTML entrypoints & search engine indexing defense
 <IfModule mod_headers.c>
   <FilesMatch "^(index\.html|404\.html)$">
     Header set Cache-Control "no-cache, no-store, must-revalidate"
     Header set Pragma "no-cache"
     Header set Expires "0"
   </FilesMatch>
+
+  # Block Search Engine indexers on administrative and sensitive endpoints
+  <IfModule mod_setenvif.c>
+    SetEnvIfNoCase Request_URI "(admin|gateway|api|backups)" IS_PRIVATE_ENDPOINT
+  </IfModule>
+  Header set X-Robots-Tag "noindex, nofollow, noarchive, nosnippet" env=IS_PRIVATE_ENDPOINT
 </IfModule>

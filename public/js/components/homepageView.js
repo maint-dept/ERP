@@ -114,15 +114,10 @@ export function renderHomepageView(isDraft = false) {
             <button id="btn-home-logout" class="btn btn-ghost btn-sm" style="color: #f87171; font-size: 12px; padding: 5px 8px;" title="Logout">
               🔒 Logout
             </button>
-          ` : `
-            <!-- Separate Admin Login -->
-            <button id="btn-header-login-admin" class="btn btn-primary btn-sm" style="font-weight: 800; padding: 7px 14px; border-radius: 6px; font-size: 12.5px; background: linear-gradient(135deg, #0284c7, #0369a1); box-shadow: 0 0 15px rgba(2, 132, 199, 0.4);">
-              👑 Admin Login
-            </button>
-
-            <!-- Separate User Login -->
-            <button id="btn-header-login-user" class="btn btn-secondary btn-sm" style="font-weight: 700; padding: 7px 14px; border-radius: 6px; font-size: 12.5px; border: 1px solid rgba(167, 139, 250, 0.4); color: #c4b5fd;">
-              👤 User Login
+            <!-- Staff & Personnel Sign In Portal -->
+            <button id="btn-header-login-user" class="btn btn-primary btn-sm" style="font-weight: 800; padding: 7px 18px; border-radius: 6px; font-size: 13px; background: linear-gradient(135deg, #0284c7, #0369a1); box-shadow: 0 0 15px rgba(2, 132, 199, 0.45); display: flex; align-items: center; gap: 6px;">
+              <span>🔐</span>
+              <span>Sign In</span>
             </button>
           `}
         </div>
@@ -480,9 +475,9 @@ function renderMaintenanceLockdownHomepage({ currentUser, isLoggedIn, userInitia
 
           <!-- Action Buttons -->
           <div style="display: flex; gap: 14px; justify-content: center; flex-wrap: wrap;">
-            <button id="btn-maint-notice-admin-login" class="btn btn-primary" style="font-weight: 800; padding: 11px 24px; border-radius: 8px; font-size: 13.5px; background: linear-gradient(135deg, #0284c7, #0369a1); box-shadow: 0 0 20px rgba(2, 132, 199, 0.45); display: flex; align-items: center; gap: 8px;">
-              <span>👑</span>
-              <span>Administrator Login</span>
+            <button id="btn-maint-notice-login" class="btn btn-primary" style="font-weight: 800; padding: 11px 24px; border-radius: 8px; font-size: 13.5px; background: linear-gradient(135deg, #0284c7, #0369a1); box-shadow: 0 0 20px rgba(2, 132, 199, 0.45); display: flex; align-items: center; gap: 8px;">
+              <span>🔐</span>
+              <span>Sign In</span>
             </button>
             <button id="btn-maint-notice-refresh" class="btn btn-secondary" style="font-weight: 700; padding: 11px 20px; border-radius: 8px; font-size: 13.5px; border: 1px solid rgba(255, 255, 255, 0.15); color: #cbd5e1; display: flex; align-items: center; gap: 8px;">
               <span>🔄</span>
@@ -542,27 +537,10 @@ export function initHomepageEvents() {
     });
   }
 
-  // Header Admin Login
-  const btnHeaderAdmin = document.getElementById('btn-header-login-admin');
-  if (btnHeaderAdmin) {
-    btnHeaderAdmin.addEventListener('click', () => {
-      state.set('loginTab', 'admin');
-      try {
-        sessionStorage.setItem('al_muslim_login_tab', 'admin');
-      } catch (_) {}
-      router.navigate('login');
-      state.set('currentView', 'login');
-    });
-  }
-
-  // Maintenance Notice Administrator Login Button
-  const btnMaintAdmin = document.getElementById('btn-maint-notice-admin-login');
-  if (btnMaintAdmin) {
-    btnMaintAdmin.addEventListener('click', () => {
-      state.set('loginTab', 'admin');
-      try {
-        sessionStorage.setItem('al_muslim_login_tab', 'admin');
-      } catch (_) {}
+  // Maintenance Notice Sign In Button
+  const btnMaintLogin = document.getElementById('btn-maint-notice-login');
+  if (btnMaintLogin) {
+    btnMaintLogin.addEventListener('click', () => {
       router.navigate('login');
       state.set('currentView', 'login');
     });
