@@ -74,7 +74,17 @@ class GlobalState {
           initialSubtab = segments[1];
         }
 
-        const activeAdminSlug = ((typeof localStorage !== 'undefined' ? localStorage.getItem('al_muslim_admin_login_slug') : null) || 'secure-admin-gateway').trim().toLowerCase();
+        let activeAdminSlug = null;
+        if (typeof localStorage !== 'undefined') {
+          activeAdminSlug = localStorage.getItem('al_muslim_admin_login_slug');
+          if (!activeAdminSlug) {
+            try {
+              const savedSettings = JSON.parse(localStorage.getItem('al_muslim_erp_settings') || '{}');
+              activeAdminSlug = savedSettings.adminLoginSlug || savedSettings.admin_login_slug || null;
+            } catch (_) {}
+          }
+        }
+        activeAdminSlug = (activeAdminSlug || 'secure-admin-gateway').trim().toLowerCase();
 
         const routeMap = {
           '': 'home',

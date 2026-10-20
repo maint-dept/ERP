@@ -991,7 +991,7 @@ class AuthService {
     const activeUser = user || this.getCurrentUser();
     if (!activeUser || activeUser.status !== 'ACTIVE') return false;
     if (this.isSuperAdmin(activeUser) || this.isAdmin(activeUser)) return true;
-    if (rawViewName === 'home' || rawViewName === 'login' || rawViewName === 'no-access') return true;
+    if (rawViewName === 'home' || rawViewName === 'login' || rawViewName === 'admin-login' || rawViewName === 'no-access') return true;
 
     // Strict No Access enforcement
     if (activeUser.role === 'NO_ACCESS' || activeUser.roleId === 'role-no-access') return false;
@@ -1264,13 +1264,27 @@ class AuthService {
     if (!slug && typeof localStorage !== 'undefined') {
       try {
         slug = localStorage.getItem('al_muslim_admin_login_slug');
+        if (!slug) {
+          const saved = JSON.parse(localStorage.getItem('al_muslim_erp_settings') || '{}');
+          slug = saved.adminLoginSlug || saved.admin_login_slug || '';
+        }
       } catch (_) {}
     }
     return (slug || 'secure-admin-gateway').trim().toLowerCase();
   }
 
   async setAdminLoginSlug(newSlug) {
-    const raw = (newSlug || '').trim().toLowerCase();
+    let raw = (newSlug || '').trim().toLowerCase();
+    // Auto-strip full URL if pasted by accident (e.g. https://moviezonex.com/my-admin -> my-admin)
+    try {
+      if (raw.startsWith('http://') || raw.startsWith('https://')) {
+        const u = new URL(raw);
+        raw = u.pathname;
+      }
+    } catch (_) {}
+    if (raw.startsWith('/erp/')) raw = raw.slice(5);
+    raw = raw.replace(/^\/+|\/+$/g, '');
+
     if (!raw) {
       throw new Error('Admin Login URL slug cannot be empty.');
     }
@@ -1314,6 +1328,13 @@ class AuthService {
 
     try {
       localStorage.setItem('al_muslim_admin_login_slug', raw);
+      localStorage.setItem('al_muslim_erp_settings', JSON.stringify(updated));
+    } catch (_) {}
+
+    try {
+      if (typeof syncManager !== 'undefined' && syncManager.primaryAdapter) {
+        syncManager.primaryAdapter.saveTable(TABLE_NAMES.SETTINGS, updated).catch(() => {});
+      }
     } catch (_) {}
 
     try {

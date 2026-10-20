@@ -208,6 +208,13 @@ class ERPApplication {
       if (typeof authService !== 'undefined' && typeof authService.recheckCurrentUser === 'function') {
         authService.recheckCurrentUser();
       }
+      // Re-verify route against freshly hydrated settings (e.g. if custom admin login slug was loaded)
+      try {
+        const parsedRoute = router.parseCurrentRoute();
+        if (parsedRoute.view === 'admin-login') {
+          state.set('currentView', 'admin-login');
+        }
+      } catch (_) {}
     } catch (e) {
       console.warn('[ERP] Pre-render hydration notice:', e);
     }
@@ -396,7 +403,7 @@ class ERPApplication {
       let currentView = state.get('currentView') || 'home';
 
       // Security Gate: Protect internal ERP shell from unauthenticated access
-      if (!currentUser && currentView !== 'home' && currentView !== 'login') {
+      if (!currentUser && currentView !== 'home' && currentView !== 'login' && currentView !== 'admin-login') {
         const attemptedView = currentView;
         currentView = 'login';
         state.set('currentView', 'login');
@@ -406,7 +413,7 @@ class ERPApplication {
       }
 
       // Authorization Gate: Redirect unauthorized view requests straight to user's first allowed view
-      if (currentUser && currentView !== 'home' && currentView !== 'login') {
+      if (currentUser && currentView !== 'home' && currentView !== 'login' && currentView !== 'admin-login') {
         if (!authService.isViewAllowed(currentView, currentUser)) {
           const allowedView = authService.getFirstAllowedView(currentUser);
           currentView = allowedView;
@@ -888,7 +895,7 @@ class ERPApplication {
       const currentUser = authService.getCurrentUser();
 
       // Check if maintenance mode is active and user cannot bypass
-      if (authService.isMaintenanceModeActive() && !authService.canBypassMaintenance(currentUser) && currentView !== 'home' && currentView !== 'login') {
+      if (authService.isMaintenanceModeActive() && !authService.canBypassMaintenance(currentUser) && currentView !== 'home' && currentView !== 'login' && currentView !== 'admin-login') {
         const maint = authService.getMaintenanceModeConfig();
         return `
           <div style="flex: 1; display: flex; align-items: center; justify-content: center; padding: 40px 20px; background: radial-gradient(circle at 50% 30%, #1c1917 0%, #0c0a09 100%); min-height: 70vh;">

@@ -763,7 +763,8 @@ export function initSettingsEvents() {
   if (saveAdminSlugBtn) {
     saveAdminSlugBtn.addEventListener('click', async () => {
       const origText = saveAdminSlugBtn.innerHTML;
-      const slugVal = slugInput?.value?.trim().toLowerCase();
+      let slugVal = (slugInput?.value || '').trim().toLowerCase();
+      slugVal = slugVal.replace(/^\/+|\/+$/g, '');
       saveAdminSlugBtn.disabled = true;
       saveAdminSlugBtn.innerHTML = 'Saving Slug...';
 
