@@ -3,167 +3,174 @@
  * High-Performance Module Lazy-Loader & Intelligent Prefetch Engine
  * 
  * Features:
- * - Dynamic on-demand ES module importing (eliminates 3.4MB of initial payload)
- * - In-memory module caching for 0ms instantaneous subsequent transitions
- * - Smart hover & idle-time prefetching (requestIdleCallback)
- * - Shimmering dark-mode layout skeleton while loading on slow networks
- * - Race-condition guard for rapid switching
+ * - Dynamic on-demand ES module importing with memory caching for 0ms instantaneous transitions
+ * - Intelligent Proactive Background Preloader: warms all operational modules post-startup
+ * - Immediate Zero-Delay Hover/Touch Warmup (pre-loads before user click finishes)
+ * - Accordion Group Pre-warming (preloads child views on category hover/expand)
+ * - Shimmering dark-mode layout skeleton for graceful fallback
+ * - Race-condition guard for rapid switching & parallel startup hydration
  */
+
+export const BUILD_VER = '4.26.57';
 
 const MODULE_REGISTRY = {
   'inventory': {
-    path: '../components/inventoryTable.js?v=4.26.50',
+    path: `../components/inventoryTable.js?v=${BUILD_VER}`,
     renderName: 'renderInventoryTable',
     initName: 'initInventoryTableEvents',
     type: 'table'
   },
   'transfers': {
-    path: '../components/transfersView.js?v=4.26.50',
+    path: `../components/transfersView.js?v=${BUILD_VER}`,
     renderName: 'renderTransfersView',
     initName: 'initTransfersViewEvents',
     type: 'table'
   },
   'relocate': {
-    path: '../components/relocateView.js?v=4.26.50',
+    path: `../components/relocateView.js?v=${BUILD_VER}`,
     renderName: 'renderRelocateView',
     initName: 'initRelocateViewEvents',
     type: 'table'
   },
   'needle-operations': {
-    path: '../components/needleOperationsView.js?v=4.26.50',
+    path: `../components/needleOperationsView.js?v=${BUILD_VER}`,
     renderName: 'renderNeedleOperationsView',
     initName: 'initNeedleOperationsEvents',
     type: 'table'
   },
   'qr-codes': {
-    path: '../components/qrCodeView.js?v=4.26.50',
+    path: `../components/qrCodeView.js?v=${BUILD_VER}`,
     renderName: 'renderQrCodeView',
     initName: 'initQrCodeEvents',
     type: 'grid'
   },
   'parts-trace': {
-    path: '../components/partsTraceView.js?v=4.26.50',
+    path: `../components/partsTraceView.js?v=${BUILD_VER}`,
     renderName: 'renderPartsTraceView',
     initName: 'initPartsTraceEvents',
     type: 'table'
   },
   'machine-history': {
-    path: '../components/machineHistoryView.js?v=4.26.50',
+    path: `../components/machineHistoryView.js?v=${BUILD_VER}`,
     renderName: 'renderMachineHistoryView',
     initName: 'initMachineHistoryEvents',
     type: 'cards'
   },
   'preventive-maintenance': {
-    path: '../components/preventiveMaintenanceView.js?v=4.26.50',
+    path: `../components/preventiveMaintenanceView.js?v=${BUILD_VER}`,
     renderName: 'renderPreventiveMaintenanceView',
     initName: 'initPreventiveMaintenanceEvents',
     type: 'table'
   },
   'transfer-workflows': {
-    path: '../components/transferWorkflowBuilder.js?v=4.26.51',
+    path: `../components/transferWorkflowBuilder.js?v=${BUILD_VER}`,
     renderName: 'renderTransferWorkflowBuilder',
     initName: 'initTransferWorkflowBuilderEvents',
     type: 'form'
   },
   'reports': {
-    path: '../components/reportsView.js?v=4.26.50',
+    path: `../components/reportsView.js?v=${BUILD_VER}`,
     renderName: 'renderReportsView',
     initName: 'initReportsEvents',
     type: 'grid'
   },
   'resource-library': {
-    path: '../components/resourceLibraryView.js?v=4.26.50',
+    path: `../components/resourceLibraryView.js?v=${BUILD_VER}`,
     renderName: 'renderResourceLibraryView',
     initName: 'initResourceLibraryEvents',
     type: 'grid'
   },
   'excel-manager': {
-    path: '../components/excelManagerView.js?v=4.26.50',
+    path: `../components/excelManagerView.js?v=${BUILD_VER}`,
     renderName: 'renderExcelManagerView',
     initName: 'initExcelManagerEvents',
     type: 'cards'
   },
   'custom-fields': {
-    path: '../components/inventoryTable.js?v=4.26.50',
+    path: `../components/inventoryTable.js?v=${BUILD_VER}`,
     renderName: 'renderInventoryTable',
     initName: 'initInventoryTableEvents',
     type: 'table'
   },
   'et-lab': {
-    path: '../components/etLabManagementView.js?v=4.26.50',
+    path: `../components/etLabManagementView.js?v=${BUILD_VER}`,
     renderName: 'renderEtLabManagementView',
     initName: 'initEtLabEvents',
     type: 'table',
     beforeRender: (mod) => {
-      const tab = state.get('etLabActiveTab') || 'boards';
-      if (typeof mod.setEntActiveTab === 'function') mod.setEntActiveTab(tab);
+      try {
+        const tab = (typeof window !== 'undefined' && window.state) ? window.state.get('etLabActiveTab') : 'boards';
+        if (typeof mod.setEntActiveTab === 'function') mod.setEntActiveTab(tab || 'boards');
+      } catch (_) {}
     }
   },
   'spare-parts': {
-    path: '../components/etLabManagementView.js?v=4.26.50',
+    path: `../components/etLabManagementView.js?v=${BUILD_VER}`,
     renderName: 'renderEtLabManagementView',
     initName: 'initEtLabEvents',
     type: 'table',
     beforeRender: (mod) => {
-      if (typeof mod.setEntActiveTab === 'function') mod.setEntActiveTab('spare-parts');
+      try {
+        if (typeof mod.setEntActiveTab === 'function') mod.setEntActiveTab('spare-parts');
+      } catch (_) {}
     }
   },
   'tools-management': {
-    path: '../components/toolsManagementView.js?v=4.26.50',
+    path: `../components/toolsManagementView.js?v=${BUILD_VER}`,
     renderName: 'renderToolsManagementView',
     initName: 'initToolsManagementEvents',
     type: 'table'
   },
   'storage': {
-    path: '../components/storageView.js?v=4.26.50',
+    path: `../components/storageView.js?v=${BUILD_VER}`,
     renderName: 'renderStorageView',
     initName: 'initStorageEvents',
     type: 'table'
   },
   'manpower': {
-    path: '../components/manpowerView.js?v=4.26.50',
+    path: `../components/manpowerView.js?v=${BUILD_VER}`,
     renderName: 'renderManpowerView',
     initName: 'initManpowerEvents',
     type: 'table'
   },
   'master-data': {
-    path: '../components/masterDataView.js?v=4.26.50',
+    path: `../components/masterDataView.js?v=${BUILD_VER}`,
     renderName: 'renderMasterDataView',
     initName: 'initMasterDataEvents',
     type: 'table'
   },
   'users': {
-    path: '../components/userManagement.js?v=4.26.50',
+    path: `../components/userManagement.js?v=${BUILD_VER}`,
     renderName: 'renderUserManagement',
     initName: 'initUserManagementEvents',
     type: 'table'
   },
   'homepage-manager': {
-    path: '../components/homepageManagerView.js?v=4.26.50',
+    path: `../components/homepageManagerView.js?v=${BUILD_VER}`,
     renderName: 'renderHomepageManagerView',
     initName: 'initHomepageManagerEvents',
     type: 'form'
   },
   'email-config': {
-    path: '../components/emailConfigView.js?v=4.26.50',
+    path: `../components/emailConfigView.js?v=${BUILD_VER}`,
     renderName: 'renderEmailConfigView',
     initName: 'initEmailConfigEvents',
     type: 'form'
   },
   'audit-logs': {
-    path: '../components/auditLogsView.js?v=4.26.50',
+    path: `../components/auditLogsView.js?v=${BUILD_VER}`,
     renderName: 'renderAuditLogsView',
     initName: 'initAuditLogsEvents',
     type: 'table'
   },
   'settings': {
-    path: '../components/settingsView.js?v=4.26.50',
+    path: `../components/settingsView.js?v=${BUILD_VER}`,
     renderName: 'renderSettingsView',
     initName: 'initSettingsEvents',
     type: 'form'
   },
   'database-config': {
-    path: '../components/databaseConfigView.js?v=4.26.50',
+    path: `../components/databaseConfigView.js?v=${BUILD_VER}`,
     renderName: 'renderDatabaseConfigView',
     initName: 'initDatabaseConfigEvents',
     type: 'form'
@@ -175,6 +182,7 @@ class ModuleLazyLoader {
     this._loadedModules = new Map();
     this._loadingPromises = new Map();
     this._prefetched = new Set();
+    this._isPreloadingAll = false;
   }
 
   /**
@@ -200,6 +208,7 @@ class ModuleLazyLoader {
 
   /**
    * Dynamically imports and caches module definition
+   * Re-uses inflight promise to avoid redundant concurrent network calls
    */
   async load(view) {
     if (this._loadedModules.has(view)) {
@@ -239,36 +248,98 @@ class ModuleLazyLoader {
   }
 
   /**
-   * Prefetches module in background without blocking active view
+   * Prefetches module in background without blocking active view.
+   * If immediate is true, initiates import directly (used on hover, touch, pointerdown).
    */
-  prefetch(view) {
-    if (!view || this._prefetched.has(view) || this.isLoaded(view) || !this.isLazyView(view)) {
+  prefetch(view, immediate = false) {
+    if (!view || this.isLoaded(view) || !this.isLazyView(view)) {
+      return;
+    }
+
+    if (immediate) {
+      this.load(view).catch(() => {});
+      return;
+    }
+
+    if (this._prefetched.has(view)) {
       return;
     }
     this._prefetched.add(view);
 
-    // Use requestIdleCallback if available, otherwise setTimeout
     if (typeof window !== 'undefined') {
       if ('requestIdleCallback' in window) {
         window.requestIdleCallback(() => {
           this.load(view).catch(() => {});
-        }, { timeout: 2000 });
+        }, { timeout: 1500 });
       } else {
         setTimeout(() => {
           this.load(view).catch(() => {});
-        }, 100);
+        }, 50);
       }
     }
   }
 
   /**
-   * Automatically prefetch common operational modules during user idle time
+   * Immediately pre-warms a list of views (e.g. all children of an expanded accordion)
+   */
+  prefetchGroup(views) {
+    if (!Array.isArray(views)) return;
+    views.forEach(v => {
+      if (v && this.isLazyView(v) && !this.isLoaded(v)) {
+        this.load(v).catch(() => {});
+      }
+    });
+  }
+
+  /**
+   * Proactive background preloader:
+   * Systematically warms up all ERP modules in background batches post-initialization.
+   * Ensures that by the time the user explores ANY menu or section, it is already cached!
+   */
+  async preloadAllModules() {
+    if (this._isPreloadingAll) return;
+    this._isPreloadingAll = true;
+
+    // High priority operational views to pre-warm first
+    const priorityViews = [
+      'users',
+      'inventory',
+      'transfers',
+      'preventive-maintenance',
+      'relocate',
+      'needle-operations',
+      'reports',
+      'manpower',
+      'storage',
+      'qr-codes',
+      'parts-trace',
+      'machine-history',
+      'tools-management',
+      'master-data',
+      'settings'
+    ];
+
+    const secondaryViews = Object.keys(MODULE_REGISTRY).filter(v => !priorityViews.includes(v));
+    const allViewsToPreload = [...priorityViews, ...secondaryViews];
+
+    for (const view of allViewsToPreload) {
+      if (!this.isLoaded(view) && this.isLazyView(view)) {
+        try {
+          await this.load(view);
+          // Yield to UI thread between module compiles
+          await new Promise(resolve => setTimeout(resolve, 40));
+        } catch (_) {}
+      }
+    }
+
+    this._isPreloadingAll = false;
+  }
+
+  /**
+   * Backwards compatible helper
    */
   prefetchCommonModules() {
-    const common = ['inventory', 'transfers', 'preventive-maintenance'];
-    common.forEach((view, idx) => {
-      setTimeout(() => this.prefetch(view), (idx + 1) * 800);
-    });
+    this.preloadAllModules();
   }
 
   /**
@@ -354,3 +425,5 @@ export const moduleLoader = new ModuleLazyLoader();
 if (typeof window !== 'undefined') {
   window.moduleLoader = moduleLoader;
 }
+
+export default moduleLoader;

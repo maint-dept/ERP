@@ -260,9 +260,13 @@ class SPAModuleRouter {
     let tab = options.tab || null;
     const query = options.params ? { ...options.params } : {};
 
-    // Normalize user tab to clean slug if applicable
-    if (tab && view === 'users' && USER_TAB_TO_SLUG[tab]) {
-      tab = USER_TAB_TO_SLUG[tab];
+    // Normalize tab to clean lowercase URL slug
+    if (tab && typeof tab === 'string') {
+      if (view === 'users' && USER_TAB_TO_SLUG[tab]) {
+        tab = USER_TAB_TO_SLUG[tab];
+      } else {
+        tab = tab.toLowerCase().trim();
+      }
     }
 
     let pathPart = '';
@@ -425,9 +429,9 @@ class SPAModuleRouter {
     // Update document title
     this.updateTitle(targetView, tab);
 
-    // Synchronize global reactive state if needed
+    // Synchronize global reactive state if needed without triggering redundant untracked switchView
     if (state.get('currentView') !== targetView) {
-      state.set('currentView', targetView);
+      state.set('currentView', targetView, { silent: true });
     }
 
     // Trigger view transition in app singleton unless skipped
@@ -472,7 +476,7 @@ class SPAModuleRouter {
     if (typeof window.app !== 'undefined' && typeof window.app.switchView === 'function') {
       window.app.switchView(targetView, { tab: parsed.tab, replace: true, skipHistory: true });
     } else {
-      state.set('currentView', targetView);
+      state.set('currentView', targetView, { silent: true });
     }
 
     this._emit('route:changed', { view: targetView, tab: parsed.tab, params: parsed.params });

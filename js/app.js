@@ -27,9 +27,8 @@ import { chatService } from './services/chatService.js';
 import { historyService } from './services/historyService.js';
 import { auditService } from './services/auditService.js';
 import { notificationService } from './services/notificationService.js';
-import { syncManager } from './db/syncManager.js';
-import { router } from './services/router.js?v=4.26.51';
-import { moduleLoader } from './services/moduleLoader.js?v=4.26.51';
+import { router } from './services/router.js?v=4.26.57';
+import { moduleLoader } from './services/moduleLoader.js?v=4.26.57';
 
 /**
  * Captures all active scroll, viewport, and focused input states.
@@ -199,11 +198,31 @@ class ERPApplication {
 
     console.log('Starting Al-Muslim Group Garments Maintenance ERP Application...');
 
-    // Await instant IndexedDB cache hydration before first render (max 350ms safety guard)
+    // Fast initial route determination for parallel module warming
+    let initialView = state.get('currentView') || 'dashboard';
     try {
-      await Promise.race([
-        storage.ensureHydrated(),
-        new Promise(resolve => setTimeout(resolve, 350))
+      const parsedInitialRoute = router.parseCurrentRoute();
+      if (parsedInitialRoute && parsedInitialRoute.view) {
+        initialView = parsedInitialRoute.view;
+      }
+    } catch (_) {}
+
+    // Pre-warm initial view module IMMEDIATELY in parallel with IndexedDB cache hydration
+    const initialModuleWarmup = (typeof moduleLoader !== 'undefined' && moduleLoader.isLazyView(initialView) && !moduleLoader.isLoaded(initialView))
+      ? moduleLoader.load(initialView).catch(err => console.warn('[App] Initial module pre-warm notice:', err))
+      : Promise.resolve();
+
+    // Await instant IndexedDB cache hydration AND initial view module in parallel (max 380ms safety guard)
+    try {
+      await Promise.all([
+        Promise.race([
+          storage.ensureHydrated(),
+          new Promise(resolve => setTimeout(resolve, 350))
+        ]),
+        Promise.race([
+          initialModuleWarmup,
+          new Promise(resolve => setTimeout(resolve, 380))
+        ])
       ]);
       if (typeof authService !== 'undefined' && typeof authService.recheckCurrentUser === 'function') {
         authService.recheckCurrentUser();
@@ -212,7 +231,7 @@ class ERPApplication {
       try {
         const parsedRoute = router.parseCurrentRoute();
         if (parsedRoute.view === 'admin-login') {
-          state.set('currentView', 'admin-login');
+          state.set('currentView', 'admin-login', { silent: true });
         }
       } catch (_) {}
     } catch (e) {
@@ -224,9 +243,11 @@ class ERPApplication {
     router.init();
     this.bindEvents();
 
-    // Idle-time background module prefetching for instant 0ms subsequent transitions
-    if (typeof moduleLoader !== 'undefined' && typeof moduleLoader.prefetchCommonModules === 'function') {
-      moduleLoader.prefetchCommonModules();
+    // Proactive background module preloading: warms up all operational ERP modules post-startup
+    if (typeof moduleLoader !== 'undefined' && typeof moduleLoader.preloadAllModules === 'function') {
+      setTimeout(() => {
+        moduleLoader.preloadAllModules();
+      }, 100);
     }
 
     // Self-healing check: guarantee that all machines in inventory have valid model links
@@ -235,7 +256,11 @@ class ERPApplication {
     } catch (_) {}
 
     // Global State & Event Subscriptions
-    state.on('change:currentView', (view) => this.switchView(view));
+    state.on('change:currentView', (view) => {
+      if (!this._isSwitchingView && this._currentRenderedView !== view) {
+        this.switchView(view);
+      }
+    });
     state.on('change:activeModal', () => this.renderModalsOnly());
     state.on('change:masterDataActiveTab', () => this.renderMainContent());
     state.on('filters:changed', () => this.renderMainContent());
@@ -540,14 +565,14 @@ class ERPApplication {
       // Security Gate: Redirect unauthenticated requests to login
       if (!currentUser && newView !== 'home' && newView !== 'login' && newView !== 'admin-login') {
         newView = 'login';
-        state.set('currentView', 'login');
+        state.set('currentView', 'login', { silent: true });
       }
 
       // Authorization Gate: Redirect unauthorized view requests straight to user's first allowed view
       if (currentUser && newView !== 'home' && newView !== 'login' && newView !== 'admin-login') {
         if (!authService.isViewAllowed(newView, currentUser)) {
           newView = authService.getFirstAllowedView(currentUser);
-          state.set('currentView', newView);
+          state.set('currentView', newView, { silent: true });
         }
       }
 
@@ -591,15 +616,15 @@ class ERPApplication {
 
       // Ensure state is updated to new view without duplicate recursive renders
       if (state.get('currentView') !== newView) {
-        state.set('currentView', newView);
+        state.set('currentView', newView, { silent: true });
       }
 
       // 1. Update active sidebar item and parent accordion in-place
       updateSidebarActiveState(newView);
       // 2. Update navbar title & header
       this.renderNavbarOnly();
-      // 3. Render main page content with clean scroll reset and explicit target view
-      this.renderMainContent(false, false, newView);
+      // 3. Render main page content with clean scroll reset, explicit target view, and subtab
+      this.renderMainContent(false, false, newView, options.tab);
       this._currentRenderedView = newView;
 
       // Sync browser history state smoothly with active subtab
@@ -713,7 +738,7 @@ class ERPApplication {
     }, 100);
   }
 
-  renderMainContent(preserveScroll = true, isBackgroundSync = false, targetView = null) {
+  renderMainContent(preserveScroll = true, isBackgroundSync = false, targetView = null, activeSubtab = null) {
     try {
       const activeView = targetView || state.get('currentView') || 'dashboard';
       if (isBackgroundSync) {
@@ -740,10 +765,10 @@ class ERPApplication {
 
       // Handle lazy-loaded modules via moduleLoader
       if (moduleLoader.isLazyView(activeView) && !moduleLoader.isLoaded(activeView)) {
-        // 1. Show sleek dark skeleton instantly for 0ms visual feedback
+        // 1. Show sleek dark skeleton instantly for visual feedback
         container.innerHTML = moduleLoader.renderSkeleton(activeView);
 
-        // 2. Load module asynchronously
+        // 2. Load module asynchronously with high priority
         const seq = ++this._moduleLoadSeq;
         moduleLoader.load(activeView).then((loaded) => {
           // Race condition check: user may have navigated away during download
@@ -754,6 +779,9 @@ class ERPApplication {
           container.innerHTML = loaded.render();
           if (typeof loaded.initEvents === 'function') {
             loaded.initEvents();
+          }
+          if (activeSubtab) {
+            this.switchSubtabInActiveView(activeView, activeSubtab);
           }
           if (activeView === 'inventory') {
             _initInvScrollGuard();
@@ -786,6 +814,9 @@ class ERPApplication {
       // Synchronous render (Dashboard, already-cached lazy module, or standalone)
       container.innerHTML = this.getActiveViewHtml(activeView);
       this.initViewEvents(activeView);
+      if (activeSubtab) {
+        this.switchSubtabInActiveView(activeView, activeSubtab);
+      }
       if (activeView === 'inventory') {
         _initInvScrollGuard();
       }

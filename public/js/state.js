@@ -246,10 +246,12 @@ class GlobalState {
     return this.state[key];
   }
 
-  set(key, value) {
+  set(key, value, options = {}) {
     this.state[key] = value;
-    this.emit(`change:${key}`, value);
-    this.emit('change', { [key]: value });
+    if (!options || !options.silent) {
+      this.emit(`change:${key}`, value);
+      this.emit('change', { [key]: value });
+    }
   }
 
   updateFilters(partialFilters) {

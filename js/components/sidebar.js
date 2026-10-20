@@ -11,8 +11,8 @@
 
 import { authService } from '../services/authService.js';
 import { state } from '../state.js';
-import { router } from '../services/router.js?v=4.26.50';
-import { moduleLoader } from '../services/moduleLoader.js?v=4.26.50';
+import { router } from '../services/router.js?v=4.26.57';
+import { moduleLoader } from '../services/moduleLoader.js?v=4.26.57';
 
 const STORAGE_KEY_EXPANDED = 'al_muslim_sidebar_expanded_menus';
 
@@ -381,12 +381,28 @@ export function initSidebarEvents() {
   const sidebar = document.getElementById('app-sidebar-root');
   if (!sidebar) return;
 
-  // 1. Accordion Group Expand / Collapse Toggle
+  // 1. Accordion Group Expand / Collapse Toggle & Instant Child Pre-warming
   sidebar.querySelectorAll('[data-group-toggle]').forEach(header => {
+    const groupId = header.getAttribute('data-group-toggle');
+
+    const warmAccordionChildren = () => {
+      const submenu = document.getElementById(`submenu-${groupId}`);
+      if (submenu) {
+        submenu.querySelectorAll('[data-view]').forEach(childEl => {
+          const cv = childEl.getAttribute('data-view');
+          if (cv) moduleLoader.prefetch(cv, true);
+        });
+      }
+    };
+
+    // Pre-warm child modules on header hover and touch before the user even clicks a child item
+    header.addEventListener('pointerenter', warmAccordionChildren, { passive: true });
+    header.addEventListener('touchstart', warmAccordionChildren, { passive: true });
+
     header.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
-      const groupId = header.getAttribute('data-group-toggle');
+      warmAccordionChildren();
       const submenu = document.getElementById(`submenu-${groupId}`);
       const chevron = document.getElementById(`chevron-${groupId}`);
 
@@ -456,15 +472,18 @@ export function initSidebarEvents() {
     }
   });
 
-  // 2.1 Intelligent Hover & Touch Module Prefetching (0ms instant transition preparation)
+  // 2.1 Intelligent Immediate Module Warmup (0ms instant transition preparation)
   sidebar.querySelectorAll('.nav-item, .nav-subitem').forEach(itemEl => {
     const v = itemEl.getAttribute('data-view');
     if (v) {
       itemEl.addEventListener('pointerenter', () => {
-        moduleLoader.prefetch(v);
+        moduleLoader.prefetch(v, true);
       }, { passive: true });
       itemEl.addEventListener('touchstart', () => {
-        moduleLoader.prefetch(v);
+        moduleLoader.prefetch(v, true);
+      }, { passive: true });
+      itemEl.addEventListener('pointerdown', () => {
+        moduleLoader.prefetch(v, true);
       }, { passive: true });
     }
   });
