@@ -11,6 +11,7 @@
 
 import { authService } from '../services/authService.js';
 import { state } from '../state.js';
+import { router } from '../services/router.js?v=4.26.48';
 
 const STORAGE_KEY_EXPANDED = 'al_muslim_sidebar_expanded_menus';
 
@@ -449,9 +450,11 @@ export function initSidebarEvents() {
 
     if (view) {
       updateSidebarActiveState(view, subId);
+      const tab = reportTab || mpTab || userTab || pmTab || null;
 
-      if (curView === view && (reportTab || mpTab || userTab || pmTab)) {
-        // Same view with subtab: perform fast in-place subtab transition
+      if (curView === view && tab) {
+        // Same view with subtab: update URL and perform fast in-place subtab transition
+        router.navigate(view, { tab });
         if (reportTab) {
           const btn = document.querySelector(`[data-report-tab-btn="${reportTab}"]`);
           if (btn) btn.click();
@@ -466,7 +469,8 @@ export function initSidebarEvents() {
           if (btn) btn.click();
         }
       } else {
-        // Instant visual feedback: allow browser to immediately paint active state before rendering
+        // Instant visual feedback & clean URL update
+        router.navigate(view, { tab });
         requestAnimationFrame(() => {
           if (typeof window.app !== 'undefined' && typeof window.app.switchView === 'function') {
             window.app.switchView(view);

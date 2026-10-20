@@ -53,6 +53,7 @@ import { historyService } from './services/historyService.js';
 import { auditService } from './services/auditService.js';
 import { notificationService } from './services/notificationService.js';
 import { syncManager } from './db/syncManager.js';
+import { router } from './services/router.js?v=4.26.48';
 
 /**
  * Captures all active scroll, viewport, and focused input states.
@@ -233,6 +234,7 @@ class ERPApplication {
 
     this.render();
     window.__appLoaded = true;
+    router.init();
     this.bindEvents();
 
     // Self-healing check: guarantee that all machines in inventory have valid model links
@@ -405,12 +407,11 @@ class ERPApplication {
 
       // Security Gate: Protect internal ERP shell from unauthenticated access
       if (!currentUser && currentView !== 'home' && currentView !== 'login') {
+        const attemptedView = currentView;
         currentView = 'login';
         state.set('currentView', 'login');
         try {
-          if (window.history && window.history.replaceState) {
-            window.history.replaceState({ view: 'login' }, '', '#login');
-          }
+          router.navigate('login', { replace: true, params: { redirect: attemptedView } });
         } catch (_) { }
       }
 
@@ -421,9 +422,7 @@ class ERPApplication {
           currentView = allowedView;
           state.set('currentView', allowedView);
           try {
-            if (window.history && window.history.replaceState) {
-              window.history.replaceState({ view: allowedView }, '', `#${allowedView}`);
-            }
+            router.navigate(allowedView, { replace: true });
           } catch (_) { }
         }
       }
@@ -565,18 +564,7 @@ class ERPApplication {
 
       const updateHistoryState = (view) => {
         try {
-          if (window.history && window.history.pushState) {
-            if (view === 'home') {
-              const cleanUrl = (window.location.pathname || '/') + (window.location.search || '');
-              if (window.location.hash) {
-                window.history.pushState({ view: 'home' }, '', cleanUrl);
-              } else {
-                window.history.replaceState({ view: 'home' }, '', cleanUrl);
-              }
-            } else {
-              window.history.pushState({ view }, '', `#${view}`);
-            }
-          }
+          router.navigate(view, { replace: false });
         } catch (e) { }
       };
 
@@ -822,9 +810,7 @@ class ERPApplication {
           setTimeout(() => {
             state.set('currentView', allowedView);
             try {
-              if (window.history && window.history.replaceState) {
-                window.history.replaceState({ view: allowedView }, '', `#${allowedView}`);
-              }
+              router.navigate(allowedView, { replace: true });
             } catch (_) {}
             this.render();
           }, 0);
@@ -1238,36 +1224,13 @@ class ERPApplication {
       }
     });
 
-    // 3. Browser Back / Forward & Hash Navigation Support
-    window.addEventListener('popstate', (e) => {
-      const hash = window.location.hash ? window.location.hash.replace(/^#/, '').trim() : '';
-      let targetView = (e.state && e.state.view) ? e.state.view : hash;
-      if (!targetView || targetView === 'home') {
-        targetView = 'home';
-      }
-      const cu = authService.getCurrentUser();
-      if (cu && targetView !== 'home' && targetView !== 'login' && !authService.isViewAllowed(targetView, cu)) {
-        targetView = authService.getFirstAllowedView(cu);
-        try {
-          window.history.replaceState({ view: targetView }, '', `#${targetView}`);
-        } catch (_) {}
-      }
-      state.set('currentView', targetView);
-      this.switchView(targetView);
-    });
-
+    // 3. Browser Back / Forward (Popstate) & Hash Migration Support handled via router
     window.addEventListener('hashchange', () => {
-      const h = window.location.hash ? window.location.hash.replace(/^#/, '').trim() : '';
-      let viewToLoad = (!h || h === 'home') ? 'home' : h;
-      const cu = authService.getCurrentUser();
-      if (cu && viewToLoad !== 'home' && viewToLoad !== 'login' && !authService.isViewAllowed(viewToLoad, cu)) {
-        viewToLoad = authService.getFirstAllowedView(cu);
-        try {
-          window.history.replaceState({ view: viewToLoad }, '', `#${viewToLoad}`);
-        } catch (_) {}
+      const parsed = router.parseCurrentRoute();
+      if (parsed.view) {
+        state.set('currentView', parsed.view);
+        this.switchView(parsed.view);
       }
-      state.set('currentView', viewToLoad);
-      this.switchView(viewToLoad);
     });
 
     const resetSeedBtn = document.getElementById('btn-quick-seed');

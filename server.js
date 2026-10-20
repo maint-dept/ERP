@@ -539,7 +539,13 @@ const server = http.createServer((req, res) => {
     }));
   }
 
-  let safePath = urlPath === '/' ? '/index.html' : urlPath;
+  let cleanUrl = urlPath;
+  if (cleanUrl.toLowerCase().startsWith('/erp/')) {
+    cleanUrl = cleanUrl.slice(4);
+  } else if (cleanUrl.toLowerCase() === '/erp') {
+    cleanUrl = '/';
+  }
+  let safePath = cleanUrl === '/' ? '/index.html' : cleanUrl;
   let filePath = path.join(PUBLIC_DIR, path.normalize(safePath).replace(/^(\.\.[\/\\])+/, ''));
 
   fs.stat(filePath, (err, stats) => {

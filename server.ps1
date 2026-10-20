@@ -63,6 +63,9 @@ try {
             }
 
             $urlPath = $request.Url.LocalPath
+            if ($urlPath -match "^(?i)/erp(/.*)?$") {
+                $urlPath = if ($Matches[1]) { $Matches[1] } else { "/" }
+            }
             if ($urlPath -eq "/" -or $urlPath -eq "") {
                 $urlPath = "/index.html"
             }

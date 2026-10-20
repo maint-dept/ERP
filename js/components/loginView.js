@@ -6,6 +6,7 @@
 import { authService } from '../services/authService.js';
 import { emailService } from '../services/emailService.js';
 import { state } from '../state.js';
+import { router } from '../services/router.js?v=4.26.48';
 
 let loginMode = 'LOGIN'; // 'LOGIN' | 'FORGOT_REQUEST' | 'FORGOT_VERIFY' | 'FIRST_LOGIN_CHANGE'
 let resetTargetUsername = '';
@@ -360,9 +361,11 @@ export function initLoginViewEvents() {
 
   // Back to Homepage Navigation
   document.getElementById('btn-back-to-home')?.addEventListener('click', () => {
+    router.navigate('home');
     state.set('currentView', 'home');
   });
   document.getElementById('login-nav-home')?.addEventListener('click', () => {
+    router.navigate('home');
     state.set('currentView', 'home');
   });
 
@@ -465,11 +468,20 @@ export function initLoginViewEvents() {
         if (res.mustChangePassword) {
           loginMode = 'FIRST_LOGIN_CHANGE';
           pendingFirstLoginUserId = res.user.id;
+          router.navigate('login', { replace: true });
           state.set('currentView', 'login');
           return;
         }
 
-        state.set('currentView', 'dashboard');
+        const redirectParam = router.parseCurrentRoute().params.redirect;
+        let dest = 'dashboard';
+        if (redirectParam && authService.isViewAllowed(redirectParam, res.user)) {
+          dest = redirectParam;
+        } else {
+          dest = authService.getFirstAllowedView(res.user) || 'dashboard';
+        }
+        router.navigate(dest, { replace: true });
+        state.set('currentView', dest);
         state.emit('inventory:updated');
       } catch (err) {
         showAlert(err.message || 'Login failed. Please check your credentials.');
@@ -518,13 +530,15 @@ export function initLoginViewEvents() {
         pendingFirstLoginUserId = null;
 
         const activeUser = authService.getCurrentUser();
-        const allowedView = authService.getFirstAllowedView(activeUser) || 'dashboard';
+        const redirectParam = router.parseCurrentRoute().params.redirect;
+        let allowedView = 'dashboard';
+        if (redirectParam && authService.isViewAllowed(redirectParam, activeUser)) {
+          allowedView = redirectParam;
+        } else {
+          allowedView = authService.getFirstAllowedView(activeUser) || 'dashboard';
+        }
+        router.navigate(allowedView, { replace: true });
         state.set('currentView', allowedView);
-        try {
-          if (window.history && window.history.replaceState) {
-            window.history.replaceState({ view: allowedView }, '', `#${allowedView}`);
-          }
-        } catch (_) {}
         state.emit('inventory:updated');
       } catch (err) {
         if (submitBtn) {

@@ -1,0 +1,25 @@
+# Al-Muslim Group Garments Factory Maintenance Machine ERP
+# Apache / LiteSpeed / cPanel SPA Route Fallback & Cache Rules
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # Allow direct access to real existing files and directories
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # Route fallback to index.html for Single Page Application URLs
+  RewriteRule ^ index.html [L]
+</IfModule>
+
+# Browser Caching Headers
+<IfModule mod_headers.c>
+  # Always serve index.html with no-cache headers to ensure immediate SPA version detection
+  <FilesMatch "^(index\.html|404\.html)$">
+    Header set Cache-Control "no-cache, no-store, must-revalidate"
+    Header set Pragma "no-cache"
+    Header set Expires "0"
+  </FilesMatch>
+</IfModule>

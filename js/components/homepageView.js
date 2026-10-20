@@ -15,6 +15,7 @@ import { storage } from '../db/storage.js';
 import { TABLE_NAMES } from '../db/schema.js';
 import { homepageService } from '../services/homepageService.js';
 import { state } from '../state.js';
+import { router } from '../services/router.js?v=4.26.48';
 
 export function renderHomepageView(isDraft = false) {
   const config = isDraft ? homepageService.getDraftConfig() : homepageService.getPublishedConfig();
@@ -549,7 +550,7 @@ export function initHomepageEvents() {
       try {
         sessionStorage.setItem('al_muslim_login_tab', 'admin');
       } catch (_) {}
-      window.location.hash = '#login';
+      router.navigate('login');
       state.set('currentView', 'login');
     });
   }
@@ -562,7 +563,7 @@ export function initHomepageEvents() {
       try {
         sessionStorage.setItem('al_muslim_login_tab', 'admin');
       } catch (_) {}
-      window.location.hash = '#login';
+      router.navigate('login');
       state.set('currentView', 'login');
     });
   }
@@ -579,7 +580,7 @@ export function initHomepageEvents() {
   const btnHomeMaintSettings = document.getElementById('btn-home-maint-settings');
   if (btnHomeMaintSettings) {
     btnHomeMaintSettings.addEventListener('click', () => {
-      window.location.hash = '#settings';
+      router.navigate('settings');
       state.set('currentView', 'settings');
     });
   }
@@ -591,7 +592,7 @@ export function initHomepageEvents() {
       try {
         sessionStorage.setItem('al_muslim_login_tab', 'user');
       } catch (_) {}
-      window.location.hash = '#login';
+      router.navigate('login');
       state.set('currentView', 'login');
     });
   });
@@ -604,7 +605,7 @@ export function initHomepageEvents() {
       try {
         sessionStorage.setItem('al_muslim_login_tab', 'user');
       } catch (_) {}
-      window.location.hash = '#login';
+      router.navigate('login');
       state.set('currentView', 'login');
     });
   }
@@ -613,7 +614,7 @@ export function initHomepageEvents() {
   const btnEnterErp = document.getElementById('btn-home-enter-erp');
   if (btnEnterErp) {
     btnEnterErp.addEventListener('click', () => {
-      window.location.hash = '#dashboard';
+      router.navigate('dashboard');
       state.set('currentView', 'dashboard');
     });
   }
@@ -626,8 +627,8 @@ export function initHomepageEvents() {
         storage.flushImmediate();
       } catch (_) {}
       authService.logout();
-      window.location.hash = '#login';
-      window.location.reload();
+      router.navigate('login', { replace: true });
+      state.set('currentView', 'login');
     });
   }
 
@@ -636,14 +637,14 @@ export function initHomepageEvents() {
   if (btnContactLogin) {
     btnContactLogin.addEventListener('click', () => {
       if (authService.getCurrentUser()) {
-        window.location.hash = '#dashboard';
+        router.navigate('dashboard');
         state.set('currentView', 'dashboard');
       } else {
         state.set('loginTab', 'user');
         try {
           sessionStorage.setItem('al_muslim_login_tab', 'user');
         } catch (_) {}
-        window.location.hash = '#login';
+        router.navigate('login');
         state.set('currentView', 'login');
       }
     });
@@ -653,7 +654,7 @@ export function initHomepageEvents() {
   document.querySelectorAll('.home-module-card').forEach(card => {
     card.addEventListener('click', () => {
       const target = card.getAttribute('data-view') || 'dashboard';
-      window.location.hash = '#' + target;
+      router.navigate(target);
       state.set('currentView', target);
     });
   });

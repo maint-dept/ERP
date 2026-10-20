@@ -43,14 +43,86 @@ class GlobalState {
 
     const activeUserId = typeof localStorage !== 'undefined' ? localStorage.getItem('al_muslim_active_user_id') : null;
     let initialView = 'home';
+    let initialSubtab = null;
     try {
-      if (typeof window !== 'undefined' && window.location && window.location.hash) {
-        const h = window.location.hash.replace(/^#/, '').trim();
-        if (h && h !== 'home') {
-          if (!activeUserId && h !== 'login') {
+      if (typeof window !== 'undefined' && window.location) {
+        // 1. Check pathname (e.g. /inventory, /ERP/transfers, /reports)
+        let pathname = window.location.pathname || '';
+        if (pathname.toLowerCase().startsWith('/erp')) {
+          pathname = pathname.slice(4);
+        }
+        let cleanPath = pathname.replace(/^\/+|\/+$/g, '').toLowerCase();
+
+        // 2. Check query params (?p=/inventory from 404 fallback or ?tab=...)
+        const searchParams = new URLSearchParams(window.location.search || '');
+        if (searchParams.has('p')) {
+          cleanPath = (searchParams.get('p') || '').replace(/^\/+|\/+$/g, '').toLowerCase();
+        }
+        if (searchParams.has('tab')) {
+          initialSubtab = searchParams.get('tab');
+        }
+
+        // 3. Fallback to hash if pathname is empty or index.html
+        if (!cleanPath || cleanPath === 'index.html') {
+          const h = (window.location.hash || '').replace(/^[#\/]+/, '').trim().toLowerCase();
+          if (h) cleanPath = h;
+        }
+
+        const segments = cleanPath ? cleanPath.split('/').filter(Boolean) : [];
+        const routeKey = segments[0] || '';
+        if (segments[1] && !initialSubtab) {
+          initialSubtab = segments[1];
+        }
+
+        const routeMap = {
+          '': 'home',
+          'home': 'home',
+          'login': 'login',
+          'dashboard': 'dashboard',
+          'inventory': 'inventory',
+          'machines': 'inventory',
+          'relocate': 'relocate',
+          'needle-operations': 'needle-operations',
+          'needle-flow': 'needle-operations',
+          'qr-codes': 'qr-codes',
+          'qr': 'qr-codes',
+          'transfers': 'transfers',
+          'transfer-workflows': 'transfer-workflows',
+          'parts-trace': 'parts-trace',
+          'machine-history': 'machine-history',
+          'passport': 'machine-history',
+          'preventive-maintenance': 'preventive-maintenance',
+          'pm': 'preventive-maintenance',
+          'reports': 'reports',
+          'resource-library': 'resource-library',
+          'documents': 'resource-library',
+          'excel-manager': 'excel-manager',
+          'excel-center': 'excel-manager',
+          'custom-fields': 'custom-fields',
+          'et-lab': 'et-lab',
+          'spare-parts': 'spare-parts',
+          'tools-management': 'tools-management',
+          'tools': 'tools-management',
+          'storage': 'storage',
+          'manpower': 'manpower',
+          'master-data': 'master-data',
+          'users': 'users',
+          'user-management': 'users',
+          'homepage-manager': 'homepage-manager',
+          'email-config': 'email-config',
+          'audit-logs': 'audit-logs',
+          'settings': 'settings',
+          'database-config': 'database-config',
+          'no-access': 'no-access'
+        };
+
+        const resolvedView = routeMap[routeKey] || (routeKey ? routeKey : 'home');
+
+        if (resolvedView && resolvedView !== 'home') {
+          if (!activeUserId && resolvedView !== 'login') {
             initialView = 'login';
           } else {
-            initialView = h;
+            initialView = resolvedView;
           }
         }
       }
@@ -58,6 +130,10 @@ class GlobalState {
 
     this.state = {
       currentView: initialView, // 'dashboard', 'inventory', 'master-data', 'custom-fields', 'approvals', 'users', 'reports', 'audit-logs', 'settings'
+      reportActiveTab: (initialView === 'reports' && initialSubtab) ? initialSubtab : 'machines',
+      manpowerActiveTab: (initialView === 'manpower' && initialSubtab) ? initialSubtab : 'active',
+      pmActiveTab: (initialView === 'preventive-maintenance' && initialSubtab) ? initialSubtab : 'dashboard',
+      masterDataActiveTab: (initialView === 'master-data' && initialSubtab) ? initialSubtab : 'machines',
       showCrossFloorIdle: false, // Explicit toggle for viewing cross-floor idle machines
       filters: {
         groupId: '',

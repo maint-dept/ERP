@@ -7,6 +7,7 @@ import { authService } from '../services/authService.js';
 import { notificationService } from '../services/notificationService.js';
 import { state } from '../state.js';
 import { storage } from '../db/storage.js';
+import { router } from '../services/router.js?v=4.26.48';
 import { 
   getEmployeeMap, 
   getUserCardNumber, 
@@ -527,14 +528,8 @@ export function initNavbarEvents() {
         state.set('currentUser', switched);
         state.resetFilters();
         const landingView = authService.getFirstAllowedView(switched) || 'dashboard';
+        router.navigate(landingView, { replace: true });
         state.set('currentView', landingView);
-        try {
-          if (window.history && window.history.replaceState) {
-            window.history.replaceState({ view: landingView }, '', '#' + landingView);
-          } else {
-            window.location.hash = '#' + landingView;
-          }
-        } catch (_) {}
         if (window.__erpApp && typeof window.__erpApp.render === 'function') {
           window.__erpApp.render();
           if (typeof window.__erpApp.showToast === 'function') {
@@ -718,6 +713,7 @@ export function initNavbarEvents() {
   if (btnHome) {
     btnHome.addEventListener('click', () => {
       closeDropdown();
+      router.navigate('home');
       state.set('currentView', 'home');
     });
   }
@@ -741,9 +737,7 @@ export function initNavbarEvents() {
           storage.flushImmediate();
         } catch (_) {}
         authService.logout();
-        try {
-          window.location.hash = '#login';
-        } catch (_) { }
+        router.navigate('login', { replace: true });
         state.set('currentView', 'login');
       }
     });
@@ -788,7 +782,7 @@ export function initNavbarEvents() {
   const btnNavMaint = document.getElementById('btn-nav-maint-badge');
   if (btnNavMaint) {
     btnNavMaint.addEventListener('click', () => {
-      window.location.hash = '#settings';
+      router.navigate('settings');
       state.set('currentView', 'settings');
       setTimeout(() => {
         document.getElementById('card-maintenance-mode')?.scrollIntoView({ behavior: 'smooth' });

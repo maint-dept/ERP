@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Al-Muslim Group — Maintenance Department ERP</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script>
+    // GitHub Pages SPA Single-Page Router Redirect Fallback
+    // Enables direct module URLs and browser refreshes on GitHub Pages
+    (function() {
+      var l = window.location;
+      var path = l.pathname;
+      var isGhSubpath = path.toLowerCase().startsWith('/erp');
+      var basePrefix = isGhSubpath ? '/ERP' : '';
+
+      // Extract module route after repository base
+      var routePath = path;
+      if (isGhSubpath) {
+        routePath = routePath.slice(4); // Remove '/ERP' or '/erp'
+      }
+      routePath = routePath.replace(/^\/+/, '');
+
+      // Preserve query params and hash
+      var search = l.search ? '&' + l.search.slice(1) : '';
+      var hash = l.hash ? '&hash=' + encodeURIComponent(l.hash.slice(1)) : '';
+
+      // Form redirect target to ERP root with router payload
+      var destination = l.protocol + '//' + l.host + basePrefix + '/?' +
+        'p=/' + encodeURIComponent(routePath) +
+        search + hash;
+
+      // Replace immediately without adding a 404 entry in browser history
+      l.replace(destination);
+    })();
+  </script>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #090d16;
+      color: #94a3b8;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+    .redirect-card {
+      text-align: center;
+      padding: 32px;
+      max-width: 420px;
+    }
+    .spinner {
+      font-size: 36px;
+      margin-bottom: 16px;
+      animation: spin 1.5s infinite linear;
+      display: inline-block;
+    }
+    h2 {
+      font-size: 18px;
+      color: #f1f5f9;
+      margin: 0 0 8px 0;
+      font-weight: 700;
+    }
+    p {
+      font-size: 13px;
+      margin: 0;
+      color: #64748b;
+    }
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="redirect-card">
+    <div class="spinner">⚙️</div>
+    <h2>Loading ERP Module...</h2>
+    <p>Directing to your requested workspace</p>
+  </div>
+</body>
+</html>

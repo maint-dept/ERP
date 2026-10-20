@@ -8,7 +8,51 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  
+  <!-- Dynamic Base Path for GitHub Pages & Local Hosting SPA Routing -->
+  <script>
+    (function() {
+      // 1. Unpack GitHub Pages 404 redirect (?p=/inventory&tab=...)
+      var l = window.location;
+      if (l.search) {
+        var q = {};
+        var raw = l.search.slice(1).split('&');
+        for (var i = 0; i < raw.length; i++) {
+          var parts = raw[i].split('=');
+          if (parts[0]) q[parts[0]] = parts.slice(1).join('=');
+        }
+        if (q.p !== undefined) {
+          var restoredPath = decodeURIComponent(q.p);
+          delete q.p;
+          var restoredHash = q.hash ? '#' + decodeURIComponent(q.hash) : (l.hash || '');
+          delete q.hash;
+
+          var remainingParams = Object.keys(q).map(function(k) {
+            return k + (q[k] ? '=' + q[k] : '');
+          }).join('&');
+
+          var isGh = l.pathname.toLowerCase().startsWith('/erp');
+          var basePrefix = isGh ? '/ERP' : '';
+          var normalizedRoute = restoredPath.startsWith('/') ? restoredPath : '/' + restoredPath;
+          var finalUrl = basePrefix + normalizedRoute + (remainingParams ? '?' + remainingParams : '') + restoredHash;
+
+          try {
+            window.history.replaceState(null, null, finalUrl);
+          } catch (_) {}
+        }
+      }
+
+      // 2. Set dynamic <base href> so relative stylesheets and modules resolve seamlessly
+      var pathname = window.location.pathname.toLowerCase();
+      var baseHref = pathname.startsWith('/erp') ? '/ERP/' : '/';
+      var baseEl = document.querySelector('base');
+      if (!baseEl) {
+        baseEl = document.createElement('base');
+        baseEl.href = baseHref;
+        document.head.insertBefore(baseEl, document.head.firstChild);
+      }
+    })();
+  </script>
+
   <!-- Modern Industrial Typography -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -192,8 +236,8 @@
       window.location.replace(base + '?t=' + Date.now() + window.location.hash);
     };
 
-    // Build version v4.26.44 — silent cache clear, NO URL redirect
-    var CURRENT_BUILD = '4.26.44';
+    // Build version v4.26.48 — SPA URL routing and deep linking
+    var CURRENT_BUILD = '4.26.48';
 
     // Silently unregister any old Service Workers and clear all caches
     (function() {
@@ -206,7 +250,7 @@
         if ('serviceWorker' in navigator) {
           navigator.serviceWorker.getRegistrations().then(function(regs) {
             regs.forEach(function(r) {
-              console.log('[ERP v4.26.44] Unregistering SW:', r.scope);
+              console.log('[ERP v4.26.48] Unregistering SW:', r.scope);
               r.unregister();
             });
           });
@@ -216,8 +260,8 @@
     })();
   </script>
 
-  <!-- Main ES Module Application Entrypoint (Cache-Busted v4.26.44) -->
-  <script type="module" src="js/app.js?v=4.26.44"></script>
+  <!-- Main ES Module Application Entrypoint (Cache-Busted v4.26.48) -->
+  <script type="module" src="js/app.js?v=4.26.48"></script>
 
   <style>
     @keyframes spin {
