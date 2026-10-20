@@ -28,8 +28,8 @@ import { historyService } from './services/historyService.js';
 import { auditService } from './services/auditService.js';
 import { notificationService } from './services/notificationService.js';
 import { syncManager } from './db/syncManager.js';
-import { router } from './services/router.js?v=4.26.50';
-import { moduleLoader } from './services/moduleLoader.js?v=4.26.50';
+import { router } from './services/router.js?v=4.26.51';
+import { moduleLoader } from './services/moduleLoader.js?v=4.26.51';
 
 /**
  * Captures all active scroll, viewport, and focused input states.

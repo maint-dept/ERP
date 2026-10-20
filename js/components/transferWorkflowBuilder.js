@@ -96,21 +96,39 @@ export function renderTransferWorkflowBuilder() {
   return `
     <div class="page-view wf-builder-wrapper">
       
-      <!-- 1. COMPACT TOP HEADER BAR -->
-      <div class="view-header-row" style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-xl); padding: 14px 18px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
-        <div style="min-width: 0; flex: 1;">
-          <h1 style="font-size: 20px; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 10px; margin: 0; word-break: break-word;">
-            <span>⚙️ Transfer Approval Configuration &amp; Workflows</span>
-          </h1>
-          <p style="font-size: 12.5px; color: var(--text-secondary); margin: 4px 0 0 0;">
-            Configure who authorizes machinery relocations between factory lines and manages gate pass policies.
-          </p>
+      <!-- 1. COMPACT UNIFIED TOP HEADER BAR -->
+      <div class="wf-header-card" style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-xl); padding: 14px 18px; display: flex; flex-direction: column; gap: 10px; width: 100%; box-sizing: border-box;">
+        
+        <!-- Top Row: Page Title + Badges + Quick Action Buttons -->
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; width: 100%;">
+          <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+            <h1 style="font-size: 18px; font-weight: 800; color: #fff; margin: 0; display: flex; align-items: center; gap: 8px; white-space: nowrap;">
+              <span style="font-size: 20px;">⚙️</span> Transfer Approval Configuration &amp; Workflows
+            </h1>
+            <span style="background: rgba(56, 189, 248, 0.12); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 6px; white-space: nowrap;">
+              Multi-Level Approval Pipeline
+            </span>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <button type="button" id="btn-create-new-workflow" class="btn btn-primary" style="height: 32px; font-weight: 700; font-size: 12px; padding: 0 14px; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; border-radius: 6px;">
+              <span>➕ New Workflow</span>
+            </button>
+            <button type="button" id="btn-top-save-workflow" class="btn btn-success" style="height: 32px; font-weight: 800; font-size: 12px; padding: 0 16px; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; border-radius: 6px; box-shadow: 0 2px 10px rgba(16, 185, 129, 0.35);">
+              <span>💾 Save Workflow</span>
+            </button>
+          </div>
         </div>
 
-        <div class="view-header-actions" style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-          <div style="display: flex; align-items: center; gap: 8px; flex: 1 1 240px; min-width: 0; width: 100%;">
-            <label style="font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; white-space: nowrap;">Active Rule:</label>
-            <select id="wf-select-switcher" class="form-control" style="flex: 1; min-width: 0; width: 100%; font-weight: 700; font-size: 13px; background: var(--bg-card); border-color: #38bdf8;">
+        <!-- Bottom Row: Subtitle + Active Rule Selector -->
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 10px; width: 100%;">
+          <p style="font-size: 12.5px; color: var(--text-secondary); margin: 0; flex: 1 1 280px; line-height: 1.4;">
+            Configure who authorizes machinery relocations between factory lines and manages gate pass policies.
+          </p>
+
+          <div style="display: inline-flex; align-items: center; gap: 8px; flex: 0 1 auto; max-width: 100%;">
+            <label style="font-size: 11.5px; font-weight: 800; color: #38bdf8; text-transform: uppercase; white-space: nowrap; margin: 0; letter-spacing: 0.3px;">Active Rule:</label>
+            <select id="wf-select-switcher" class="form-control" style="width: auto; min-width: 240px; max-width: 440px; height: 32px; font-weight: 700; font-size: 12.5px; background: rgba(15, 23, 42, 0.85); border: 1.5px solid #0284c7; color: #f8fafc; border-radius: 6px; padding: 0 10px; text-overflow: ellipsis;">
               ${workflows.map(w => `
                 <option value="${w.id}" ${currentWf.id === w.id ? 'selected' : ''}>
                   ${w.name} ${w.isDefault ? '⭐ [DEFAULT]' : ''}
@@ -118,26 +136,21 @@ export function renderTransferWorkflowBuilder() {
               `).join('')}
             </select>
           </div>
-
-          <button type="button" id="btn-create-new-workflow" class="btn btn-primary" style="font-weight: 800; display: flex; align-items: center; gap: 6px;">
-            <span>➕ New Workflow</span>
-          </button>
-
-          <button type="button" id="btn-top-save-workflow" class="btn btn-success" style="font-weight: 800; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 10px rgba(16, 185, 129, 0.3);">
-            <span>💾 Save Workflow</span>
-          </button>
         </div>
+
       </div>
 
       <!-- 2. QUICK STARTER TEMPLATES (1-Click Fast Presets) -->
-      <div class="wf-presets-container">
-        <div class="wf-presets-title">
+      <div class="wf-presets-container" style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-xl); padding: 14px 18px; width: 100%; box-sizing: border-box;">
+        <div class="wf-presets-title" style="display: flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 800; color: #38bdf8; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">
           <span>⚡ Quick Starter Templates — Click any template to instantly configure steps:</span>
         </div>
         
-        <div class="wf-presets-grid">
-          ${WORKFLOW_PRESETS.map(p => `
-            <div class="wf-preset-item-card btn-quick-preset-item" data-preset-id="${p.id}">
+        <div class="wf-presets-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; width: 100%;">
+          ${WORKFLOW_PRESETS.map(p => {
+            const isMatch = currentWf.id === p.id || (currentWf.name && p.name && (currentWf.name.toLowerCase().includes(p.name.toLowerCase().slice(0, 15)) || p.name.toLowerCase().includes(currentWf.name.toLowerCase().slice(0, 15))));
+            return `
+            <div class="wf-preset-item-card btn-quick-preset-item ${isMatch ? 'active' : ''}" data-preset-id="${p.id}" style="${isMatch ? 'border-color: #38bdf8; background: rgba(2, 132, 199, 0.12); box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.35);' : ''}">
               <div class="wf-preset-item-header">
                 <span class="wf-preset-item-icon">${p.icon || '⚡'}</span>
                 <span class="wf-preset-item-tag ${p.tagType || 'badge-fast'}">${p.tag || 'Template'}</span>
@@ -147,7 +160,8 @@ export function renderTransferWorkflowBuilder() {
                 <div class="wf-preset-item-desc">${p.description}</div>
               </div>
             </div>
-          `).join('')}
+            `;
+          }).join('')}
         </div>
       </div>
 

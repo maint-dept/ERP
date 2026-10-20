@@ -2939,7 +2939,22 @@ td.td-actions-active {
 .wf-builder-wrapper {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 16px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.wf-header-card h1 {
+  word-break: normal !important;
+  overflow-wrap: normal !important;
+}
+
+@media (max-width: 768px) {
+  .wf-header-card h1 {
+    white-space: normal !important;
+    font-size: 16px !important;
+  }
 }
 
 /* ==========================================================================

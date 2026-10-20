@@ -60,7 +60,7 @@ const MODULE_REGISTRY = {
     type: 'table'
   },
   'transfer-workflows': {
-    path: '../components/transferWorkflowBuilder.js?v=4.26.50',
+    path: '../components/transferWorkflowBuilder.js?v=4.26.51',
     renderName: 'renderTransferWorkflowBuilder',
     initName: 'initTransferWorkflowBuilderEvents',
     type: 'form'
