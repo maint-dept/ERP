@@ -1,7 +1,7 @@
 /**
  * Al-Muslim Group Garments Factory Maintenance Machine ERP
  * Dedicated Full-Page Login & Password Recovery Component
- * Premium Cyber-Executive Security Gateway Interface (v4.26.55)
+ * Premium Cyber-Executive Security Gateway Interface (v4.26.56)
  */
 
 import { authService } from '../services/authService.js';
@@ -261,18 +261,39 @@ export function renderLoginView(isAdminGateway = false) {
                   <span style="font-size: 10.5px; color: #6ee7b7; font-weight: 600;">1-Click Auto Fill</span>
                 </div>
                 <div style="display: flex; gap: 6px; flex-wrap: wrap;">
-                  <button type="button" class="btn-admin-quick-fill admin-quick-chip" data-user="motaher" style="background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.35); color: #6ee7b7; font-size: 11.5px; font-weight: 700; padding: 4px 9px; border-radius: 6px;">
+                  <button type="button" class="btn-admin-quick-fill admin-quick-chip" data-user="motaher" data-pass="Mr@304415" style="background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.35); color: #6ee7b7; font-size: 11.5px; font-weight: 700; padding: 4px 9px; border-radius: 6px;">
                     👑 Engr. Motaher
                   </button>
-                  <button type="button" class="btn-admin-quick-fill admin-quick-chip" data-user="superadmin" style="background: rgba(14, 165, 233, 0.12); border: 1px solid rgba(14, 165, 233, 0.35); color: #38bdf8; font-size: 11.5px; font-weight: 700; padding: 4px 9px; border-radius: 6px;">
+                  <button type="button" class="btn-admin-quick-fill admin-quick-chip" data-user="superadmin" data-pass="admin123" style="background: rgba(14, 165, 233, 0.12); border: 1px solid rgba(14, 165, 233, 0.35); color: #38bdf8; font-size: 11.5px; font-weight: 700; padding: 4px 9px; border-radius: 6px;">
                     🛡️ Super Admin
                   </button>
-                  <button type="button" class="btn-admin-quick-fill admin-quick-chip" data-user="admin" style="background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.35); color: #fbbf24; font-size: 11.5px; font-weight: 700; padding: 4px 9px; border-radius: 6px;">
+                  <button type="button" class="btn-admin-quick-fill admin-quick-chip" data-user="admin" data-pass="admin123" style="background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.35); color: #fbbf24; font-size: 11.5px; font-weight: 700; padding: 4px 9px; border-radius: 6px;">
                     ⚙️ Maintenance Admin
                   </button>
                 </div>
               </div>
-            ` : ''}
+            ` : `
+              <!-- Quick User Portal Select Chips (Instant 1-Click Auto Fill) -->
+              <div style="margin-bottom: 16px; padding: 10px 12px; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 10px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                  <span style="font-size: 11px; font-weight: 700; color: #cbd5e1; text-transform: uppercase; letter-spacing: 0.4px; display: flex; align-items: center; gap: 5px;">
+                    <span>⚡</span> 1-Click Instant User Fill:
+                  </span>
+                  <span style="font-size: 10.5px; color: #38bdf8; font-weight: 600;">Instant Login</span>
+                </div>
+                <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                  <button type="button" class="btn-admin-quick-fill admin-quick-chip" data-user="user" data-pass="user123" style="background: rgba(2, 132, 199, 0.15); border: 1px solid rgba(56, 189, 248, 0.35); color: #38bdf8; font-size: 11.5px; font-weight: 700; padding: 4px 9px; border-radius: 6px;">
+                    👤 Factory User (user)
+                  </button>
+                  <button type="button" class="btn-admin-quick-fill admin-quick-chip" data-user="admin" data-pass="admin123" style="background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.35); color: #fbbf24; font-size: 11.5px; font-weight: 700; padding: 4px 9px; border-radius: 6px;">
+                    ⚙️ Maintenance Admin
+                  </button>
+                  <button type="button" class="btn-admin-quick-fill admin-quick-chip" data-user="motaher" data-pass="Mr@304415" style="background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.35); color: #6ee7b7; font-size: 11.5px; font-weight: 700; padding: 4px 9px; border-radius: 6px;">
+                    👑 Engr. Motaher
+                  </button>
+                </div>
+              </div>
+            `}
 
             <form id="form-full-login">
               
@@ -501,7 +522,7 @@ export function renderLoginView(isAdminGateway = false) {
           <span>&bull;</span>
           <span>Garments Factory Maintenance Machine ERP</span>
           <span>&bull;</span>
-          <span style="color: ${accentLight}; font-weight: 600;">Enterprise Security Gateway v4.26.55</span>
+          <span style="color: ${accentLight}; font-weight: 600;">Enterprise Security Gateway v4.26.56</span>
         </div>
         <div style="font-size: 11px; color: #475569;">
           ISO/IEC 27001 Ready Architecture &bull; Primary MySQL Cloud Synchronized &bull; Strictly Confidential Gateway
@@ -576,15 +597,20 @@ export function initLoginViewEvents(isAdminGateway = false) {
     pwdInput.addEventListener('keyup', checkCaps);
   }
 
-  // Quick Administrator Select Auto-Fill Chips (1-Click Auto Fill)
+  // Quick Profile Select Auto-Fill Chips (1-Click Auto Fill Username & Password)
   document.querySelectorAll('.btn-admin-quick-fill').forEach(btn => {
     btn.addEventListener('click', () => {
       const u = btn.getAttribute('data-user');
+      const p = btn.getAttribute('data-pass');
       const inp = document.getElementById('inp-full-username');
       const pwd = document.getElementById('inp-full-password');
       if (inp && u) {
         inp.value = u;
         inp.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+      if (pwd && p) {
+        pwd.value = p;
+        pwd.dispatchEvent(new Event('input', { bubbles: true }));
       }
       if (pwd) pwd.focus();
     });
@@ -613,7 +639,7 @@ export function initLoginViewEvents(isAdminGateway = false) {
   if (inpUser) inpUser.value = '';
   if (inpPwd) inpPwd.value = '';
 
-  // Submit Standard Login Form
+  // Submit Standard Login Form with Instant Execution
   const loginForm = document.getElementById('form-full-login');
   if (loginForm) {
     loginForm.addEventListener('submit', async (e) => {
@@ -633,7 +659,7 @@ export function initLoginViewEvents(isAdminGateway = false) {
       const origBtnHtml = submitBtn ? submitBtn.innerHTML : '';
       if (submitBtn) {
         submitBtn.disabled = true;
-        submitBtn.innerHTML = '<span style="display:inline-block; animation:spin 1s linear infinite;">🔄</span> Authenticating...';
+        submitBtn.innerHTML = '<span style="display:inline-block; animation:spin 0.8s linear infinite;">⚡</span> Authenticating...';
       }
 
       try {
@@ -656,6 +682,11 @@ export function initLoginViewEvents(isAdminGateway = false) {
           router.navigate(returnView, { replace: true });
           state.set('currentView', returnView);
           return;
+        }
+
+        if (submitBtn) {
+          submitBtn.style.background = 'linear-gradient(135deg, #059669 0%, #10b981 100%)';
+          submitBtn.innerHTML = '<span style="font-size: 15px;">✓</span> Verified! Entering System...';
         }
 
         const redirectParam = router.parseCurrentRoute().params.redirect || 
@@ -681,15 +712,19 @@ export function initLoginViewEvents(isAdminGateway = false) {
           dest = authService.getFirstAllowedView(res.user) || 'dashboard';
         }
 
-        router.navigate(dest, { tab: destTab, replace: true });
-        state.set('currentView', dest);
-        state.emit('inventory:updated');
+        // Instant direct view transition into the ERP shell without double-render locks
+        if (window.app && typeof window.app.switchView === 'function') {
+          window.app.switchView(dest, { tab: destTab, replace: true });
+        } else {
+          router.navigate(dest, { tab: destTab, replace: true });
+          state.set('currentView', dest);
+        }
       } catch (err) {
         showAlert(err.message || 'Login failed. Please check your credentials.');
-      } finally {
         if (submitBtn) {
           submitBtn.disabled = false;
           submitBtn.innerHTML = origBtnHtml;
+          submitBtn.style.background = '';
         }
       }
     });
