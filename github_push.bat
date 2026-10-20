@@ -19,7 +19,7 @@ if %ERRORLEVEL% neq 0 (
 )
 
 echo [1/3] Mirroring all latest files from public/ to root...
-powershell -NoProfile -Command "Copy-Item -Path '%~dp0public\*' -Destination '%~dp0' -Recurse -Force"
+powershell -NoProfile -Command "Copy-Item -Path '%~dp0public\*' -Destination '%~dp0' -Recurse -Force; if (Test-Path '%~dp0public\.htaccess') { Copy-Item -Path '%~dp0public\.htaccess' -Destination '%~dp0.htaccess' -Force }; if (Test-Path '%~dp0public\404.html') { Copy-Item -Path '%~dp0public\404.html' -Destination '%~dp0404.html' -Force }"
 if %ERRORLEVEL% equ 0 (
     echo [OK] Files mirrored successfully.
 ) else (
