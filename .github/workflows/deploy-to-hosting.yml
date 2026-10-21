@@ -37,22 +37,28 @@ jobs:
       - name: 🔍 Diagnose host connectivity
         run: |
           python3 -c "
-          import socket
+          import socket, os
           targets = [
-              ('${{ secrets.FTP_SERVER }}', 21),
+              (os.environ.get('FTP_SERVER', ''), 21),
               ('galaxy.hostursite.us', 21),
               ('46.224.111.36', 21),
-              ('${{ secrets.FTP_SERVER }}', 22),
+              ('moviezonex.com', 21),
+              ('ftp.moviezonex.com', 21),
               ('46.224.111.36', 22)
           ]
           for host, port in targets:
+              if not host:
+                  continue
               try:
                   s = socket.create_connection((host, port), timeout=3)
-                  print(f'✅ Reached {host}:{port}')
+                  banner = s.recv(100).decode('utf-8', errors='ignore').strip()
+                  print(f'::notice title=Reachable::{host}:{port} -> {banner}')
                   s.close()
               except Exception as err:
-                  print(f'❌ Failed {host}:{port} -> {err}')
+                  print(f'::warning title=Unreachable::{host}:{port} -> {err}')
           "
+        env:
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
 
       - name: 🔄 Prepare Passenger restart file
         run: |
