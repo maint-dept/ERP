@@ -59,6 +59,57 @@ jobs:
           mkdir -p tmp
           date +%s > tmp/restart.txt
 
+      - name: 🔍 Test FTP Login & Print Diagnostics
+        run: |
+          python3 - << 'EOF' >> $GITHUB_STEP_SUMMARY
+          import os, ftplib, ssl
+
+          server = os.environ.get('FTP_SERVER') or 'moviezonex.com'
+          user = os.environ.get('FTP_USERNAME') or ''
+          pw = os.environ.get('FTP_PASSWORD') or ''
+          sdir = os.environ.get('FTP_SERVER_DIR') or 'moviezonex.com/'
+
+          print("### 🔍 FTP Deployment Diagnostics")
+          print(f"- **Server:** `{server}`")
+          print(f"- **Target Dir:** `{sdir}`")
+          print(f"- **User Secret Configured:** `{'YES' if user else 'NO (EMPTY!)'}`")
+          print(f"- **Password Secret Configured:** `{'YES' if pw else 'NO (EMPTY!)'}`")
+
+          if not user or not pw:
+              print("\n> ❌ **CRITICAL ERROR**: `FTP_USERNAME` or `FTP_PASSWORD` is not set in GitHub repository secrets!")
+              exit(1)
+
+          class LooseFTP_TLS(ftplib.FTP_TLS):
+              def connect(self, host='', port=0, timeout=-999):
+                  self.context = ssl._create_unverified_context()
+                  return super().connect(host, port, timeout)
+
+          for proto, client_cls in [('FTPS (Explicit TLS)', LooseFTP_TLS), ('Plain FTP', ftplib.FTP)]:
+              try:
+                  print(f"\n#### Testing {proto} to `{server}:21`...")
+                  ftp = client_cls(timeout=10)
+                  ftp.connect(server, 21)
+                  if proto.startswith('FTPS'):
+                      ftp.auth()
+                      ftp.login(user, pw)
+                      ftp.prot_p()
+                  else:
+                      ftp.login(user, pw)
+                  pwd = ftp.pwd()
+                  print(f"✅ **Login Successful!** Current Directory: `{pwd}`")
+                  files = ftp.nlst()
+                  print(f"- Directory listing ({len(files)} items): `{files[:15]}`")
+                  ftp.quit()
+                  break
+              except Exception as err:
+                  print(f"❌ **Failed {proto}**: `{err}`")
+          EOF
+        env:
+          FTP_SERVER: ${{ secrets.FTP_SERVER || 'moviezonex.com' }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+          FTP_SERVER_DIR: ${{ secrets.FTP_SERVER_DIR || 'moviezonex.com/' }}
+
       - name: 📤 Deploy all files to cPanel via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
@@ -66,7 +117,7 @@ jobs:
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           server-dir: ${{ secrets.FTP_SERVER_DIR || 'moviezonex.com/' }}
-          protocol: ftp
+          protocol: ftps
           security: loose
           # Exclude files that should NOT be uploaded / touched on the server
           exclude: |
