@@ -852,8 +852,11 @@ export function renderDashboard() {
         overflow-y: auto;
         overflow-x: hidden;
         background: #080d1a;
-        color: #f8fafc;
+        color: #ffffff;
         font-family: var(--font-main, 'Inter', system-ui, -apple-system, sans-serif);
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        text-rendering: optimizeLegibility;
       }
 
       /* 1. Header Hero Banner */
@@ -944,8 +947,8 @@ export function renderDashboard() {
       }
 
       .dash-hero-subtitle {
-        font-size: 11.5px;
-        color: #94a3b8;
+        font-size: 12px;
+        color: #cbd5e1;
         font-weight: 500;
         margin: 0;
         line-height: 1.3;
@@ -987,10 +990,10 @@ export function renderDashboard() {
 
       .btn-dash-date-filter {
         background: transparent;
-        color: #94a3b8;
+        color: #cbd5e1;
         border: 1px solid transparent;
-        padding: 3px 8px;
-        font-size: 11px;
+        padding: 4px 10px;
+        font-size: 11.5px;
         font-weight: 600;
         border-radius: 6px;
         cursor: pointer;
@@ -998,8 +1001,8 @@ export function renderDashboard() {
       }
 
       .btn-dash-date-filter:hover {
-        color: #f1f5f9;
-        background: rgba(255, 255, 255, 0.05);
+        color: #ffffff;
+        background: rgba(255, 255, 255, 0.1);
       }
 
       .btn-dash-date-filter.active {
@@ -1122,10 +1125,10 @@ export function renderDashboard() {
       .val-purple { color: #c084fc; }
 
       .dash-kpi-lbl {
-        font-size: 10px;
+        font-size: 11px;
         font-weight: 700;
-        color: #94a3b8;
-        letter-spacing: 0.5px;
+        color: #cbd5e1;
+        letter-spacing: 0.6px;
         margin-top: 4px;
         text-transform: uppercase;
         white-space: nowrap;
@@ -1230,73 +1233,74 @@ export function renderDashboard() {
       }
 
       .dash-dist-title {
-        font-size: 14px;
-        font-weight: 700;
+        font-size: 15px;
+        font-weight: 800;
         margin: 0;
-        letter-spacing: -0.1px;
+        letter-spacing: 0.1px;
         white-space: nowrap;
       }
 
-      .card-cyan .dash-dist-title { color: #38bdf8; }
-      .card-emerald .dash-dist-title { color: #34d399; }
-      .card-purple .dash-dist-title { color: #c084fc; }
-      .card-amber .dash-dist-title { color: #fbbf24; }
+      .card-cyan .dash-dist-title { color: #38bdf8; text-shadow: 0 0 12px rgba(56, 189, 248, 0.35); }
+      .card-emerald .dash-dist-title { color: #34d399; text-shadow: 0 0 12px rgba(52, 211, 153, 0.35); }
+      .card-purple .dash-dist-title { color: #c084fc; text-shadow: 0 0 12px rgba(192, 132, 252, 0.35); }
+      .card-amber .dash-dist-title { color: #fbbf24; text-shadow: 0 0 12px rgba(251, 191, 36, 0.35); }
 
       .dash-dist-pill {
-        font-size: 10px;
+        font-size: 11px;
         font-weight: 700;
-        padding: 2px 7px;
+        padding: 3px 9px;
         border-radius: 9999px;
         letter-spacing: 0.3px;
         white-space: nowrap;
         flex-shrink: 0;
       }
 
-      .pill-cyan { background: rgba(56, 189, 248, 0.1); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); }
-      .pill-emerald { background: rgba(16, 185, 129, 0.1); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
-      .pill-purple { background: rgba(168, 85, 247, 0.1); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3); }
-      .pill-amber { background: rgba(245, 158, 11, 0.1); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+      .pill-cyan { background: rgba(56, 189, 248, 0.15); color: #7dd3fc; border: 1px solid rgba(56, 189, 248, 0.4); }
+      .pill-emerald { background: rgba(16, 185, 129, 0.15); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.4); }
+      .pill-purple { background: rgba(168, 85, 247, 0.15); color: #d8b4fe; border: 1px solid rgba(168, 85, 247, 0.4); }
+      .pill-amber { background: rgba(245, 158, 11, 0.15); color: #fde68a; border: 1px solid rgba(245, 158, 11, 0.4); }
 
       /* Mini Telemetry Status Bar */
       .dash-dist-mini-status {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        font-size: 10.5px;
-        color: #94a3b8;
-        margin-bottom: 8px;
-        padding-bottom: 6px;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        font-size: 12px;
+        color: #cbd5e1;
+        font-weight: 500;
+        margin-bottom: 10px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
         flex-shrink: 0;
       }
 
-      .mini-status-label {
-        display: inline-flex;
-        align-items: center;
-        gap: 5px;
+      .mini-status-label strong {
+        color: #ffffff;
+        font-weight: 700;
       }
 
       .mini-status-value {
-        font-weight: 600;
+        color: #ffffff;
+        font-weight: 700;
       }
 
       .status-dot {
-        width: 6px;
-        height: 6px;
+        width: 7px;
+        height: 7px;
         border-radius: 50%;
         display: inline-block;
       }
 
-      .dot-emerald { background: #10b981; box-shadow: 0 0 5px #10b981; }
-      .dot-purple { background: #8b5cf6; box-shadow: 0 0 5px #8b5cf6; }
-      .dot-amber { background: #f59e0b; box-shadow: 0 0 5px #f59e0b; }
-      .dot-cyan { background: #0284c7; box-shadow: 0 0 5px #0284c7; }
+      .dot-emerald { background: #10b981; box-shadow: 0 0 6px #10b981; }
+      .dot-purple { background: #8b5cf6; box-shadow: 0 0 6px #8b5cf6; }
+      .dot-amber { background: #f59e0b; box-shadow: 0 0 6px #f59e0b; }
+      .dot-cyan { background: #0284c7; box-shadow: 0 0 6px #0284c7; }
 
       /* Scrollable Rows List */
       .dash-dist-list {
         display: flex;
         flex-direction: column;
-        gap: 8px;
+        gap: 9px;
         max-height: none;
         overflow: visible;
         padding-right: 2px;
@@ -1306,15 +1310,15 @@ export function renderDashboard() {
         display: flex;
         flex-direction: column;
         gap: 3px;
-        padding: 5px 6px;
-        border-radius: 6px;
+        padding: 6px 8px;
+        border-radius: 7px;
         cursor: pointer;
         transition: background-color 0.15s ease, transform 0.15s ease;
         user-select: none;
       }
 
       .dash-dist-row:hover {
-        background: rgba(255, 255, 255, 0.05);
+        background: rgba(255, 255, 255, 0.06);
         transform: translateX(2px);
       }
 
@@ -1326,67 +1330,73 @@ export function renderDashboard() {
       }
 
       .dash-dist-name {
-        font-size: 11.5px;
-        font-weight: 600;
-        color: #e2e8f0;
+        font-size: 13.5px;
+        font-weight: 700;
+        color: #ffffff;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
         flex: 1;
         min-width: 0;
+        letter-spacing: -0.1px;
       }
 
       .dash-dist-desc {
-        font-size: 10px;
-        color: #64748b;
-        margin-bottom: 2px;
+        font-size: 11.5px;
+        color: #94a3b8;
+        font-weight: 500;
+        margin-bottom: 4px;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
       }
 
       .needle-chip-desc {
-        font-size: 10px;
-        font-weight: 500;
-        color: #94a3b8;
+        font-size: 12px;
+        font-weight: 600;
+        color: #cbd5e1;
+        margin-left: 4px;
       }
 
       .dash-dist-stat {
-        font-size: 11px;
-        font-weight: 700;
+        font-size: 13px;
+        font-weight: 800;
         white-space: nowrap;
         font-family: var(--font-mono, monospace);
         font-variant-numeric: tabular-nums;
         flex-shrink: 0;
       }
 
-      .stat-cyan { color: #38bdf8; }
-      .stat-emerald { color: #34d399; }
-      .stat-purple { color: #c084fc; }
-      .stat-amber { color: #fbbf24; }
-      .stat-rose { color: #f87171; }
-      .stat-slate { color: #94a3b8; }
+      .stat-cyan { color: #38bdf8; text-shadow: 0 0 10px rgba(56, 189, 248, 0.35); }
+      .stat-emerald { color: #34d399; text-shadow: 0 0 10px rgba(52, 211, 153, 0.35); }
+      .stat-purple { color: #c084fc; text-shadow: 0 0 10px rgba(192, 132, 252, 0.35); }
+      .stat-amber { color: #fbbf24; text-shadow: 0 0 10px rgba(251, 191, 36, 0.35); }
+      .stat-rose { color: #f87171; text-shadow: 0 0 10px rgba(248, 113, 113, 0.35); }
+      .stat-slate { color: #cbd5e1; }
 
       .dash-dist-pct {
-        font-weight: 600;
-        opacity: 0.9;
-        font-size: 10px;
+        font-weight: 700;
+        opacity: 1;
+        font-size: 11px;
+        color: #f1f5f9;
+        margin-left: 2px;
       }
 
       .dash-needle-badge {
-        font-size: 9px;
+        font-size: 10px;
         font-weight: 800;
-        padding: 1px 5px;
+        padding: 2px 6px;
         border-radius: 4px;
-        margin-left: 4px;
+        margin-left: 6px;
         display: inline-block;
       }
 
       .dash-dist-track {
-        height: 5px;
-        background: rgba(255, 255, 255, 0.06);
+        height: 6px;
+        background: rgba(255, 255, 255, 0.1);
         border-radius: 9999px;
         overflow: hidden;
+        margin-top: 2px;
       }
 
       .dash-dist-bar {
@@ -1395,12 +1405,12 @@ export function renderDashboard() {
         transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
       }
 
-      .bar-cyan { background: linear-gradient(90deg, #0284c7 0%, #38bdf8 100%); }
-      .bar-emerald { background: linear-gradient(90deg, #059669 0%, #34d399 100%); }
-      .bar-purple { background: linear-gradient(90deg, #7c3aed 0%, #c084fc 100%); }
-      .bar-amber { background: linear-gradient(90deg, #d97706 0%, #fbbf24 100%); }
-      .bar-rose { background: linear-gradient(90deg, #dc2626 0%, #f87171 100%); }
-      .bar-slate { background: linear-gradient(90deg, #475569 0%, #94a3b8 100%); }
+      .bar-cyan { background: linear-gradient(90deg, #0284c7 0%, #38bdf8 100%); box-shadow: 0 0 6px rgba(56, 189, 248, 0.4); }
+      .bar-emerald { background: linear-gradient(90deg, #059669 0%, #34d399 100%); box-shadow: 0 0 6px rgba(52, 211, 153, 0.4); }
+      .bar-purple { background: linear-gradient(90deg, #7c3aed 0%, #c084fc 100%); box-shadow: 0 0 6px rgba(192, 132, 252, 0.4); }
+      .bar-amber { background: linear-gradient(90deg, #d97706 0%, #fbbf24 100%); box-shadow: 0 0 6px rgba(251, 191, 36, 0.4); }
+      .bar-rose { background: linear-gradient(90deg, #dc2626 0%, #f87171 100%); box-shadow: 0 0 6px rgba(248, 113, 113, 0.4); }
+      .bar-slate { background: linear-gradient(90deg, #64748b 0%, #cbd5e1 100%); }
 
       .needle-fleet-summary {
         background: rgba(255, 255, 255, 0.03);
