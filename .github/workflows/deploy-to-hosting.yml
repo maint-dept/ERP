@@ -21,6 +21,7 @@ on:
 #   5. SSH_HOST        → moviezonex.com
 #   6. SSH_USERNAME    → motaherh
 #   7. SSH_PASSWORD    → (Your cPanel login password)
+#   8. SSH_PORT        → 1004 (Custom SSH port)
 # ─────────────────────────────────────────────────────────────
 
 jobs:
@@ -37,94 +38,39 @@ jobs:
       - name: 🔍 Diagnose host connectivity
         run: |
           python3 -c "
-          import socket, os
+          import socket
           targets = [
-              (os.environ.get('FTP_SERVER', ''), 21),
+              ('${{ secrets.FTP_SERVER || 'ftp.moviezonex.com' }}', 21),
               ('galaxy.hostursite.us', 21),
               ('46.224.111.36', 21),
-              ('moviezonex.com', 21),
-              ('ftp.moviezonex.com', 21),
-              ('46.224.111.36', 22)
+              ('${{ secrets.FTP_SERVER || 'ftp.moviezonex.com' }}', 22),
+              ('46.224.111.36', 22),
+              ('moviezonex.com', 1004),
+              ('46.224.111.36', 1004)
           ]
           for host, port in targets:
               if not host:
                   continue
               try:
                   s = socket.create_connection((host, port), timeout=3)
-                  banner = s.recv(100).decode('utf-8', errors='ignore').strip()
-                  print(f'::notice title=Reachable::{host}:{port} -> {banner}')
+                  print(f'✅ Reached {host}:{port}')
                   s.close()
               except Exception as err:
-                  print(f'::warning title=Unreachable::{host}:{port} -> {err}')
+                  print(f'❌ Failed {host}:{port} -> {err}')
           "
-        env:
-          FTP_SERVER: ${{ secrets.FTP_SERVER }}
 
       - name: 🔄 Prepare Passenger restart file
         run: |
           mkdir -p tmp
           date +%s > tmp/restart.txt
 
-      - name: 🔍 Test FTP Login & Print Diagnostics
-        run: |
-          python3 - << 'EOF' >> $GITHUB_STEP_SUMMARY
-          import os, ftplib, ssl
-
-          server = os.environ.get('FTP_SERVER') or 'moviezonex.com'
-          user = os.environ.get('FTP_USERNAME') or ''
-          pw = os.environ.get('FTP_PASSWORD') or ''
-          sdir = os.environ.get('FTP_SERVER_DIR') or 'moviezonex.com/'
-
-          print("### 🔍 FTP Deployment Diagnostics")
-          print(f"- **Server:** `{server}`")
-          print(f"- **Target Dir:** `{sdir}`")
-          print(f"- **User Secret Configured:** `{'YES' if user else 'NO (EMPTY!)'}`")
-          print(f"- **Password Secret Configured:** `{'YES' if pw else 'NO (EMPTY!)'}`")
-
-          if not user or not pw:
-              print("\n> ❌ **CRITICAL ERROR**: `FTP_USERNAME` or `FTP_PASSWORD` is not set in GitHub repository secrets!")
-              exit(1)
-
-          class LooseFTP_TLS(ftplib.FTP_TLS):
-              def connect(self, host='', port=0, timeout=-999):
-                  self.context = ssl._create_unverified_context()
-                  return super().connect(host, port, timeout)
-
-          for proto, client_cls in [('FTPS (Explicit TLS)', LooseFTP_TLS), ('Plain FTP', ftplib.FTP)]:
-              try:
-                  print(f"\n#### Testing {proto} to `{server}:21`...")
-                  ftp = client_cls(timeout=10)
-                  ftp.connect(server, 21)
-                  if proto.startswith('FTPS'):
-                      ftp.auth()
-                      ftp.login(user, pw)
-                      ftp.prot_p()
-                  else:
-                      ftp.login(user, pw)
-                  pwd = ftp.pwd()
-                  print(f"✅ **Login Successful!** Current Directory: `{pwd}`")
-                  files = ftp.nlst()
-                  print(f"- Directory listing ({len(files)} items): `{files[:15]}`")
-                  ftp.quit()
-                  break
-              except Exception as err:
-                  print(f"❌ **Failed {proto}**: `{err}`")
-          EOF
-        env:
-          FTP_SERVER: ${{ secrets.FTP_SERVER || 'moviezonex.com' }}
-          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
-          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
-          FTP_SERVER_DIR: ${{ secrets.FTP_SERVER_DIR || 'moviezonex.com/' }}
-
       - name: 📤 Deploy all files to cPanel via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
-          server: ${{ secrets.FTP_SERVER || 'moviezonex.com' }}
+          server: ${{ secrets.FTP_SERVER || 'ftp.moviezonex.com' }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           server-dir: ${{ secrets.FTP_SERVER_DIR || 'moviezonex.com/' }}
-          protocol: ftps
-          security: loose
           # Exclude files that should NOT be uploaded / touched on the server
           exclude: |
             **/.git*
@@ -156,7 +102,7 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
           password: ${{ secrets.SSH_PASSWORD }}
-          port: 22
+          port: ${{ secrets.SSH_PORT || 1004 }}
           script: |
             echo "🚀 Starting ERP deployment on $(hostname)"
             cd /home/motaherh/moviezonex.com
