@@ -558,13 +558,15 @@ function renderEmployeeIdCardModal({ employeeId }) {
 function renderEmployeeImportModal() {
   return `
     <div class="modal-overlay active" id="modal-employee-overlay">
-      <div class="modal-card" style="max-width: 680px;">
-        <div class="modal-header" style="border-bottom: 1px solid var(--border-color); padding-bottom: 14px;">
+      <div class="modal-card" style="max-width: 680px; max-height: 86vh; max-height: 86dvh; display: flex; flex-direction: column; overflow: hidden; border-radius: 12px; margin: auto;">
+        
+        <!-- Fixed Header -->
+        <div class="modal-header" style="flex-shrink: 0; border-bottom: 1px solid var(--border-color); padding: 12px 18px; background: var(--bg-card);">
           <div style="display: flex; align-items: center; gap: 10px;">
-            <span style="font-size: 24px;">📥</span>
+            <span style="font-size: 20px;">📥</span>
             <div>
-              <h3 style="margin: 0; font-size: 17px; font-weight: 800; color: #fff;">Batch Manpower Excel Import &amp; Auto-Update</h3>
-              <p style="margin: 2px 0 0 0; font-size: 12px; color: var(--text-muted);">
+              <h3 style="margin: 0; font-size: 16px; font-weight: 800; color: #fff;">Batch Manpower Excel Import &amp; Auto-Update</h3>
+              <p style="margin: 2px 0 0 0; font-size: 11.5px; color: var(--text-muted);">
                 Bulk import workforce changes, designations/promotions, floor transfers, and new recruits
               </p>
             </div>
@@ -572,39 +574,42 @@ function renderEmployeeImportModal() {
           <button class="btn btn-ghost btn-sm" id="btn-close-employee-modal" style="font-size: 16px;">✕</button>
         </div>
 
-        <div style="padding: 16px 0; display: flex; flex-direction: column; gap: 14px;">
+        <!-- Scrollable Body with custom scrollbar -->
+        <div class="modal-body custom-scroll" style="overflow-y: auto; flex: 1 1 auto; min-height: 0; padding: 12px 18px; display: flex; flex-direction: column; gap: 10px;">
           
           <!-- Smart Auto-Detection Info Banner -->
-          <div style="background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 8px; padding: 10px 14px; font-size: 12px; color: #bae6fd; display: flex; gap: 10px; align-items: flex-start; line-height: 1.5;">
-            <span style="font-size: 18px; line-height: 1;">💡</span>
+          <div style="background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 8px; padding: 8px 12px; font-size: 11.5px; color: #bae6fd; display: flex; gap: 8px; align-items: center; line-height: 1.4;">
+            <span style="font-size: 16px; flex-shrink: 0;">💡</span>
             <div>
-              <strong style="color: #38bdf8;">Smart Card ID Normalization &amp; Auto-Sync Engine:</strong><br/>
-              Matches employees by Card ID whether formatted as <strong>Worker (AMG0000000)</strong>, <strong>Staff (AMG-0000000)</strong>, or numeric digits. Existing personnel are auto-updated with promotions &amp; floor transfers; new personnel are added. All changes automatically sync to <strong>Tools Management</strong>!
+              <strong style="color: #38bdf8;">Smart Card ID Engine:</strong> Auto-normalizes Worker (AMG0000000), Staff (AMG-0000000), &amp; numeric IDs. Auto-updates promotions &amp; floor transfers; syncs with Tools Management.
             </div>
           </div>
 
           <!-- Dropzone -->
-          <div style="background: var(--bg-card); border: 2px dashed #0284c7; border-radius: var(--radius-md); padding: 28px 20px; text-align: center; cursor: pointer; transition: all 0.2s ease;" id="emp-import-dropzone" onmouseover="this.style.background='rgba(2, 132, 199, 0.08)'" onmouseout="this.style.background='var(--bg-card)'">
-            <span style="font-size: 38px; display: block; margin-bottom: 6px;">📊</span>
-            <div style="font-weight: 800; color: #fff; font-size: 14px;">Click or Drag &amp; Drop Excel file (.xlsx, .xls, .csv)</div>
-            <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 4px;">
-              Auto-maps: Card Number / ID, Full Name, Designation, Department, Working Area, Floor, Phone
+          <div style="background: var(--bg-card); border: 2px dashed #0284c7; border-radius: var(--radius-md); padding: 16px 14px; text-align: center; cursor: pointer; transition: all 0.2s ease;" id="emp-import-dropzone" onmouseover="this.style.background='rgba(2, 132, 199, 0.08)'" onmouseout="this.style.background='var(--bg-card)'">
+            <div id="emp-dropzone-content">
+              <span style="font-size: 26px; display: block; margin-bottom: 2px;">📊</span>
+              <div style="font-weight: 800; color: #fff; font-size: 13.5px;">Click or Drag &amp; Drop Excel file (.xlsx, .xls, .csv)</div>
+              <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">
+                Auto-maps: Card Number / ID, Full Name, Designation, Department, Working Area, Floor, Phone
+              </div>
             </div>
             <input type="file" id="inp-employee-import-file" accept=".xlsx, .xls, .csv" style="display: none;" />
           </div>
 
           <!-- Live Preview & Status Box -->
-          <div id="emp-import-preview-status" style="display: none; padding: 14px; border-radius: var(--radius-md); font-size: 12.5px;"></div>
+          <div id="emp-import-preview-status" style="display: none; padding: 10px 14px; border-radius: var(--radius-md); font-size: 12px;"></div>
 
         </div>
 
-        <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); padding-top: 14px; flex-wrap: wrap; gap: 10px;">
-          <button class="btn btn-ghost btn-sm" id="btn-download-emp-template" style="color: #38bdf8; font-weight: 800; display: flex; align-items: center; gap: 6px;">
+        <!-- Fixed Footer: Always visible at bottom, no zoom needed! -->
+        <div class="modal-footer" style="flex-shrink: 0; border-top: 1px solid var(--border-color); padding: 11px 18px; background: var(--bg-card); display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+          <button class="btn btn-ghost btn-sm" id="btn-download-emp-template" style="color: #38bdf8; font-weight: 800; display: flex; align-items: center; gap: 6px; font-size: 11.5px;">
             📥 Download Sample Template (.xlsx)
           </button>
           <div style="display: flex; gap: 8px;">
-            <button class="btn btn-secondary" id="btn-cancel-employee-modal">Cancel</button>
-            <button class="btn btn-primary" id="btn-confirm-emp-import" style="font-weight: 800; background: linear-gradient(135deg, #0284c7, #0369a1); box-shadow: 0 2px 8px rgba(2, 132, 199, 0.4);" disabled>
+            <button class="btn btn-secondary btn-sm" id="btn-cancel-employee-modal">Cancel</button>
+            <button class="btn btn-primary btn-sm" id="btn-confirm-emp-import" style="font-weight: 800; background: linear-gradient(135deg, #0284c7, #0369a1); box-shadow: 0 2px 8px rgba(2, 132, 199, 0.4);" disabled>
               Confirm Import &amp; Auto-Update
             </button>
           </div>
@@ -1020,44 +1025,58 @@ export function initEmployeeModalEvents(refreshParentCallback) {
 
         const preview = employeeService.previewManpowerImport(rows);
 
+        // Auto-compact the dropzone upon file load to save vertical space
+        const dropzoneContent = document.getElementById('emp-dropzone-content');
+        if (dropzone && dropzoneContent) {
+          dropzone.style.padding = '8px 14px';
+          dropzoneContent.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px;">
+              <span style="color: #94a3b8; display: inline-flex; align-items: center; gap: 6px;">
+                <span>📊</span> <span>File selected. Click or drag another Excel file here to replace</span>
+              </span>
+              <span style="color: #38bdf8; font-weight: 700; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.35); padding: 2px 8px; border-radius: 4px;">Replace File &rarr;</span>
+            </div>
+          `;
+        }
+
         if (statusBox && btnConfirmImport) {
           statusBox.style.display = 'block';
-          statusBox.style.background = 'rgba(15, 23, 42, 0.9)';
+          statusBox.style.background = 'rgba(15, 23, 42, 0.95)';
           statusBox.style.border = '1.5px solid #0284c7';
           statusBox.style.color = '#fff';
 
           statusBox.innerHTML = `
-            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px; margin-bottom: 10px;">
-              <div style="font-weight: 800; color: #38bdf8; font-size: 13px; display: flex; align-items: center; gap: 6px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 6px; margin-bottom: 8px;">
+              <div style="font-weight: 800; color: #38bdf8; font-size: 12.5px; display: flex; align-items: center; gap: 6px;">
                 <span>📄</span> <span>File Loaded: <strong>${file.name}</strong> (${rows.length} total rows)</span>
               </div>
-              <span class="badge badge-active" style="font-size: 11px;">Ready to Process</span>
+              <span class="badge badge-active" style="font-size: 10.5px; padding: 2px 7px;">Ready to Process</span>
             </div>
 
             <!-- Metric Summary Grid -->
-            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 10px;">
-              <div style="background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 6px; padding: 8px 6px; text-align: center;">
-                <div style="font-size: 18px; font-weight: 900; color: #38bdf8;">${preview.updatedCount}</div>
-                <div style="font-size: 10.5px; color: #94a3b8; margin-top: 2px;">Update Existing</div>
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 8px;">
+              <div style="background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 6px; padding: 6px 4px; text-align: center;">
+                <div style="font-size: 16px; font-weight: 900; color: #38bdf8;">${preview.updatedCount}</div>
+                <div style="font-size: 10px; color: #cbd5e1; margin-top: 1px;">Update Existing</div>
               </div>
-              <div style="background: rgba(251, 191, 36, 0.1); border: 1px solid rgba(251, 191, 36, 0.3); border-radius: 6px; padding: 8px 6px; text-align: center;">
-                <div style="font-size: 18px; font-weight: 900; color: #fbbf24;">${preview.promotedCount}</div>
-                <div style="font-size: 10.5px; color: #94a3b8; margin-top: 2px;">Promotions</div>
+              <div style="background: rgba(251, 191, 36, 0.1); border: 1px solid rgba(251, 191, 36, 0.3); border-radius: 6px; padding: 6px 4px; text-align: center;">
+                <div style="font-size: 16px; font-weight: 900; color: #fbbf24;">${preview.promotedCount}</div>
+                <div style="font-size: 10px; color: #cbd5e1; margin-top: 1px;">Promotions</div>
               </div>
-              <div style="background: rgba(168, 85, 247, 0.1); border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 6px; padding: 8px 6px; text-align: center;">
-                <div style="font-size: 18px; font-weight: 900; color: #c084fc;">${preview.transferredCount}</div>
-                <div style="font-size: 10.5px; color: #94a3b8; margin-top: 2px;">Floor Transfers</div>
+              <div style="background: rgba(168, 85, 247, 0.1); border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 6px; padding: 6px 4px; text-align: center;">
+                <div style="font-size: 16px; font-weight: 900; color: #c084fc;">${preview.transferredCount}</div>
+                <div style="font-size: 10px; color: #cbd5e1; margin-top: 1px;">Floor Transfers</div>
               </div>
-              <div style="background: rgba(52, 211, 153, 0.1); border: 1px solid rgba(52, 211, 153, 0.3); border-radius: 6px; padding: 8px 6px; text-align: center;">
-                <div style="font-size: 18px; font-weight: 900; color: #34d399;">${preview.addedCount}</div>
-                <div style="font-size: 10.5px; color: #94a3b8; margin-top: 2px;">New Recruits</div>
+              <div style="background: rgba(52, 211, 153, 0.1); border: 1px solid rgba(52, 211, 153, 0.3); border-radius: 6px; padding: 6px 4px; text-align: center;">
+                <div style="font-size: 16px; font-weight: 900; color: #34d399;">${preview.addedCount}</div>
+                <div style="font-size: 10px; color: #cbd5e1; margin-top: 1px;">New Recruits</div>
               </div>
             </div>
 
             ${preview.samplePromotions && preview.samplePromotions.length > 0 ? `
-              <div style="background: rgba(251, 191, 36, 0.08); border-left: 3px solid #fbbf24; border-radius: 4px; padding: 6px 10px; font-size: 11.5px; margin-bottom: 8px; color: #fde68a;">
-                <strong>🎯 Promotion Samples Detected:</strong>
-                <div style="margin-top: 4px; display: flex; flex-direction: column; gap: 3px;">
+              <div style="background: rgba(251, 191, 36, 0.08); border-left: 3px solid #fbbf24; border-radius: 4px; padding: 6px 10px; font-size: 11px; margin-bottom: 6px; color: #fde68a;">
+                <strong style="color: #fbbf24;">🎯 Promotion Samples Detected:</strong>
+                <div style="margin-top: 3px; display: flex; flex-direction: column; gap: 3px; max-height: 80px; overflow-y: auto; padding-right: 4px;" class="custom-scroll">
                   ${preview.samplePromotions.map(p => `
                     <div>&bull; <strong>${p.name}</strong> [Card #${p.card}]: <span style="text-decoration: line-through; color: #94a3b8;">${p.from}</span> &rarr; <span style="color: #34d399; font-weight: 800;">${p.to}</span></div>
                   `).join('')}
@@ -1066,9 +1085,9 @@ export function initEmployeeModalEvents(refreshParentCallback) {
             ` : ''}
 
             ${preview.sampleTransfers && preview.sampleTransfers.length > 0 ? `
-              <div style="background: rgba(168, 85, 247, 0.08); border-left: 3px solid #c084fc; border-radius: 4px; padding: 6px 10px; font-size: 11.5px; margin-bottom: 8px; color: #e9d5ff;">
-                <strong>📍 Floor / Area Transfer Samples:</strong>
-                <div style="margin-top: 4px; display: flex; flex-direction: column; gap: 3px;">
+              <div style="background: rgba(168, 85, 247, 0.08); border-left: 3px solid #c084fc; border-radius: 4px; padding: 6px 10px; font-size: 11px; margin-bottom: 6px; color: #e9d5ff;">
+                <strong style="color: #c084fc;">📍 Floor / Area Transfer Samples:</strong>
+                <div style="margin-top: 3px; display: flex; flex-direction: column; gap: 3px; max-height: 80px; overflow-y: auto; padding-right: 4px;" class="custom-scroll">
                   ${preview.sampleTransfers.map(t => `
                     <div>&bull; <strong>${t.name}</strong> [Card #${t.card}]: <span style="color: #94a3b8;">${t.fromLoc}</span> &rarr; <span style="color: #38bdf8; font-weight: 800;">${t.toLoc}</span></div>
                   `).join('')}
@@ -1076,7 +1095,7 @@ export function initEmployeeModalEvents(refreshParentCallback) {
               </div>
             ` : ''}
 
-            <div style="font-size: 11px; color: #38bdf8; display: flex; align-items: center; gap: 6px; padding-top: 4px;">
+            <div style="font-size: 11px; color: #38bdf8; display: flex; align-items: center; gap: 6px; padding-top: 2px;">
               <span>⚡</span> <span>All updates will automatically synchronize with <strong>Tools Management</strong> registrations &amp; ID card printouts.</span>
             </div>
           `;
