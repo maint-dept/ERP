@@ -1,24 +1,36 @@
 /**
  * Al-Muslim Group Garments Factory Maintenance Machine ERP
- * Modern, Professional, Responsive Enterprise SaaS Maintenance Management Dashboard Component
+ * Ultra-Modern Enterprise Maintenance KPI & Equipment Analytics Dashboard Component
  * 
  * Features:
- * - 100% Fit-Screen Executive Command Center with Date-Wise Filtering (3D, 7D, 30D, 3 Months, All Time)
- * - 4 Balanced Modular Operational Cards (Overview, Transfers, Servicing, Needle Data)
- * - Micro-Health Progress Indicators (Uptime Rate, Transfer Clearance, Servicing Compliance, Needle Balance)
- * - Collapsible Live Servicing Schedule Preview Drawer with Urgency Indicators
- * - Tabular Monospace Alignment, Interactive Chevrons, Instant Visual Status Grasp
- * - 100% Preserved Business Logic, Scoped Filtering, Multi-DB Sync, & Click-Through Navigation
+ * - Executive Central Maintenance KPI Header Banner with Live Telemetry & Quick Navigation
+ * - 5 Modern KPI Cards (Total Physical Machines, Active Operational, Under Maintenance, Machine Breakdowns, Pending Approvals)
+ *   with big clean typography, glowing 3D status orbs, and colored status accents
+ * - 4 Sleek Modular Operational Cards Grid (1. Machine Overview, 2. Machine Transfers, 3. Machine Servicing, 4. Needle Data)
+ *   with clean progress tracks, tabular unit counts & percentages, dynamic badges, and responsive 4-column layout
+ * - Collapsible Live Servicing Schedules Preview Drawer with Urgency Indicators & Assigned Technicians
+ * - 100% Preserved Business Logic, Scoped Location Filtering, Multi-DB Sync, & Click-Through Navigation
  */
 
 import { storage } from '../db/storage.js';
 import { TABLE_NAMES, TRANSFER_STATUSES } from '../db/schema.js';
 import { authService } from '../services/authService.js';
+import { approvalService } from '../services/approvalService.js';
 import { machineService } from '../services/machineService.js';
 import { transferService } from '../services/transferService.js';
 import { preventiveMaintenanceService } from '../services/preventiveMaintenanceService.js';
 import { needleService } from '../services/needleService.js';
 import { state } from '../state.js';
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
 
 /**
  * Robust date parser supporting ISO strings, YYYY-MM-DD, and DD/MM/YYYY formats
@@ -102,7 +114,7 @@ export function renderDashboard() {
   const smList = storage.getTable(TABLE_NAMES.STORAGE_MASTER) || [];
 
   // =========================================================================
-  // 1. SECTION 1: MACHINE OVERVIEW
+  // 1. SECTION 1: MACHINE OVERVIEW & KPI TOTALS
   // =========================================================================
   const totalMachines = machines.length;
 
@@ -117,6 +129,9 @@ export function renderDashboard() {
     return m.status === 'MAINTENANCE' || m.status === 'UNDER_MAINTENANCE' || m.status === 'BREAKDOWN' || m.status === 'REPAIRABLE_IDLE' || rpQty > 0;
   });
   const underRepairCount = underRepairMachines.length;
+
+  const breakdownMachines = machines.filter(m => m.status === 'BREAKDOWN');
+  const breakdownCount = breakdownMachines.length;
 
   // Serviced / Repaired in active window
   let repairedMachines = machines.filter(m => {
@@ -133,14 +148,14 @@ export function renderDashboard() {
 
   const spareAmbiguousCount = Math.max(0, totalMachines - activeCount - underRepairCount);
 
-  // Health Metrics for Card 1
+  // Health Metrics
   const uptimeRate = totalMachines > 0 ? ((activeCount / totalMachines) * 100).toFixed(1) : '0.0';
   const activePercent = totalMachines > 0 ? (activeCount / totalMachines) * 100 : 0;
   const repairPercent = totalMachines > 0 ? (underRepairCount / totalMachines) * 100 : 0;
   const sparePercent = Math.max(0, 100 - activePercent - repairPercent);
 
   // =========================================================================
-  // 2. SECTION 2: MACHINE TRANSFER MANAGEMENT (Filtered by Date Range)
+  // 2. SECTION 2: MACHINE TRANSFERS & APPROVALS
   // =========================================================================
   const allTransfersRaw = transferService.getTransferRequests({ status: 'ALL' }) || [];
   const allTransfers = dateCutoff
@@ -175,10 +190,17 @@ export function renderDashboard() {
   );
   const pendingCount = pendingTransfers.length;
 
+  // Pending Approvals count (transfers + approval hub edits)
+  const pendingTransferCount = pendingCount;
+  const pendingApprovalEdits = (typeof approvalService?.getPendingCount === 'function') 
+    ? (approvalService.getPendingCount() || 0) 
+    : 0;
+  const pendingApprovals = pendingTransferCount + pendingApprovalEdits;
+
   const transferCompletionRate = totalTransfers > 0 ? Math.round((issuedTransferredCount / totalTransfers) * 100) : 100;
 
   // =========================================================================
-  // 3. SECTION 3: MACHINE SERVICING MANAGEMENT (Filtered by Date Range)
+  // 3. SECTION 3: MACHINE SERVICING MANAGEMENT
   // =========================================================================
   const pmMetrics = (typeof preventiveMaintenanceService.getDashboardMetrics === 'function') 
     ? preventiveMaintenanceService.getDashboardMetrics() 
@@ -202,7 +224,7 @@ export function renderDashboard() {
 
   const servicingComplianceRate = pmTotalMachines > 0 ? Math.min(100, Math.round((pmServicedCount / pmTotalMachines) * 100)) : 0;
 
-  // Servicing schedules preview: top urgent machines
+  // Top urgent machines for preview drawer
   const allMaintMachines = pmMetrics.filteredMachines || (
     (typeof preventiveMaintenanceService.getAllMachinesWithMaintenance === 'function')
       ? preventiveMaintenanceService.getAllMachinesWithMaintenance()
@@ -225,6 +247,7 @@ export function renderDashboard() {
     {
       code: 'DP×5',
       desc: 'Double Needle, Button Hole, Vertical',
+      shortDesc: 'Double Needle / Button Hole',
       matchFn: (spec, mName) => {
         const s = (spec || '').toLowerCase();
         const n = (mName || '').toLowerCase();
@@ -235,6 +258,7 @@ export function renderDashboard() {
     {
       code: 'DP×17',
       desc: 'Bar Tack, Heavy Duty, Pattern Attach',
+      shortDesc: 'Bar Tack / Heavy Duty',
       matchFn: (spec, mName) => {
         const s = (spec || '').toLowerCase();
         const n = (mName || '').toLowerCase();
@@ -245,6 +269,7 @@ export function renderDashboard() {
     {
       code: 'DB×1',
       desc: 'Single Needle Lockstitch & Plane',
+      shortDesc: 'Single Needle Lockstitch',
       matchFn: (spec, mName) => {
         const s = (spec || '').toLowerCase();
         const n = (mName || '').toLowerCase();
@@ -257,6 +282,7 @@ export function renderDashboard() {
     {
       code: 'DC×1',
       desc: 'Overlock, Safety Stitch & Trimming',
+      shortDesc: 'Overlock / Safety Stitch',
       matchFn: (spec, mName) => {
         const s = (spec || '').toLowerCase();
         const n = (mName || '').toLowerCase();
@@ -308,6 +334,7 @@ export function renderDashboard() {
     return {
       code: cfg.code,
       desc: cfg.desc,
+      shortDesc: cfg.shortDesc,
       machineCount,
       requiredQty,
       pendingQuantity,
@@ -316,768 +343,484 @@ export function renderDashboard() {
   });
 
   return `
-    <div class="page-view user-friendly-dashboard">
+    <div class="page-view modern-erp-dashboard">
       
-      <!-- Top Header Toolbar: Refined Enterprise Frosted Glass Bar -->
-      <header class="dash-toolbar">
-        
-        <!-- Left: Brand, Live Indicator, Scope -->
-        <div class="dash-brand-block">
-          <div class="dash-brand-icon">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M2 20h20M6 20V8l6 4V4l8 6v10H6z"/>
-              <path d="M10 16h4"/>
+      <!-- 1. Executive Central Maintenance KPI Header Banner -->
+      <header class="dash-hero-banner">
+        <div class="dash-hero-left">
+          <div class="dash-hero-icon-box">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="20" x2="18" y2="10"></line>
+              <line x1="12" y1="20" x2="12" y2="4"></line>
+              <line x1="6" y1="20" x2="6" y2="14"></line>
             </svg>
           </div>
-          <div class="dash-brand-info">
-            <div class="dash-title-row">
-              <h1 class="dash-title">Maintenance Dashboard</h1>
-              <span class="dash-live-badge">
+          <div class="dash-hero-headings">
+            <div class="dash-hero-title-row">
+              <h1 class="dash-hero-title">Central Maintenance KPI &amp; Equipment Analytics</h1>
+              <span class="dash-live-chip">
                 <span class="dash-live-dot"></span>
-                <span>Live Ops</span>
+                <span>${uptimeRate}% Uptime</span>
               </span>
             </div>
-            <div class="dash-subtitle">
-              <span>Al-Muslim Group</span>
-              <span class="dash-sep">&bull;</span>
-              <span>Industrial Plant Uptime</span>
-              <span class="dash-sep">&bull;</span>
-              <span class="dash-highlight-stat">${uptimeRate}% Operational</span>
+            <p class="dash-hero-subtitle">
+              Real-time physical asset health across Groups, Factories, Floors, and Production Lines.
+            </p>
+          </div>
+        </div>
+
+        <div class="dash-hero-actions">
+          <!-- Time Window Filter -->
+          <div class="dash-time-segmented-wrapper">
+            <div class="dash-segmented-label">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+              </svg>
+              <span>Range:</span>
+            </div>
+            <div class="dash-segmented-pills" role="group" aria-label="Date range selector">
+              <button type="button" class="btn-dash-date-filter ${activeDateFilter === 'ALL' ? 'active' : ''}" data-filter="ALL" title="View lifetime aggregate factory data">All Time</button>
+              <button type="button" class="btn-dash-date-filter ${activeDateFilter === '3D' ? 'active' : ''}" data-filter="3D" title="Past 3 days">3D</button>
+              <button type="button" class="btn-dash-date-filter ${activeDateFilter === '7D' ? 'active' : ''}" data-filter="7D" title="Past 7 days">7D</button>
+              <button type="button" class="btn-dash-date-filter ${activeDateFilter === '30D' ? 'active' : ''}" data-filter="30D" title="Past 30 days">30D</button>
+              <button type="button" class="btn-dash-date-filter ${activeDateFilter === '90D' ? 'active' : ''}" data-filter="90D" title="Past 3 months">3M</button>
             </div>
           </div>
-        </div>
 
-        <!-- Center: Interactive Date Range Segmented Switcher -->
-        <div class="dash-date-switcher-wrapper">
-          <div class="dash-date-switcher-label">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-              <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+          <!-- Open Inventory Grid Button -->
+          <button type="button" id="btn-dash-open-inventory" class="dash-btn-primary" title="Launch Main Inventory Master View">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="7" height="7"></rect>
+              <rect x="14" y="3" width="7" height="7"></rect>
+              <rect x="14" y="14" width="7" height="7"></rect>
+              <rect x="3" y="14" width="7" height="7"></rect>
             </svg>
-            <span>Time Range:</span>
-          </div>
-          <div class="dash-segmented-control" role="group" aria-label="Date range selector">
-            <button type="button" class="btn-dash-date-filter ${activeDateFilter === 'ALL' ? 'active' : ''}" data-filter="ALL" title="View lifetime aggregate factory data">
-              All Time
-            </button>
-            <button type="button" class="btn-dash-date-filter ${activeDateFilter === '3D' ? 'active' : ''}" data-filter="3D" title="Filter activities within past 3 days">
-              3 Days
-            </button>
-            <button type="button" class="btn-dash-date-filter ${activeDateFilter === '7D' ? 'active' : ''}" data-filter="7D" title="Filter activities within past 7 days">
-              7 Days
-            </button>
-            <button type="button" class="btn-dash-date-filter ${activeDateFilter === '30D' ? 'active' : ''}" data-filter="30D" title="Filter activities within past 30 days">
-              30 Days
-            </button>
-            <button type="button" class="btn-dash-date-filter ${activeDateFilter === '90D' ? 'active' : ''}" data-filter="90D" title="Filter activities within past 3 months (90 days)">
-              3 Months
-            </button>
-          </div>
-        </div>
+            <span>Open Inventory Grid</span>
+          </button>
 
-        <!-- Right: Quick Navigation Module Jump Buttons -->
-        <div class="dash-actions-block">
-          <div class="dash-quick-links">
-            <button type="button" id="btn-dash-goto-inventory" class="dash-nav-btn" title="Open Machine Inventory Table">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
-              </svg>
-              <span>Inventory</span>
-            </button>
-            <button type="button" id="btn-dash-goto-transfers" class="dash-nav-btn" title="Open Machine Transfer Management">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>
-              </svg>
-              <span>Transfers</span>
-            </button>
-            <button type="button" id="btn-dash-goto-servicing" class="dash-nav-btn" title="Open Preventive Maintenance & Servicing">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
-              </svg>
-              <span>Servicing</span>
-            </button>
-            <button type="button" id="btn-dash-goto-needles" class="dash-nav-btn" title="Open Needle Operations & Stock">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><line x1="4.93" y1="4.93" x2="9.17" y2="9.17"/><line x1="14.83" y1="14.83" x2="19.07" y2="19.07"/>
-              </svg>
-              <span>Needles</span>
-            </button>
-          </div>
-          <button type="button" id="btn-dash-refresh" class="dash-refresh-btn" title="Refresh Live Dashboard Metrics">
-            <svg class="dash-refresh-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-              <path d="M23 4v6h-6"/><path d="M1 20v-6h6"/>
-              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+          <!-- Refresh Button -->
+          <button type="button" id="btn-dash-refresh" class="dash-btn-icon" title="Refresh Live Analytics">
+            <svg class="dash-refresh-svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="23 4 23 10 17 10"></polyline>
+              <polyline points="1 20 1 14 7 14"></polyline>
+              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
             </svg>
-            <span>Refresh</span>
           </button>
         </div>
       </header>
 
-      <!-- Main 4 Sections Grid: Clean, Modern & Responsive Enterprise Grid -->
-      <main class="dash-2x2-grid">
+      <!-- 2. Top 5 Modern KPI Cards Row (Exact Match to Design Reference) -->
+      <section class="dash-kpi-row" aria-label="Key Plant Metrics">
+        
+        <!-- Card 1: Total Physical Machines -->
+        <div class="dash-kpi-card kpi-card-total" data-action="inv-filter" data-status="ALL" role="button" tabindex="0" title="Click to view all physical machines">
+          <div class="dash-kpi-content">
+            <div class="dash-kpi-val">${totalMachines.toLocaleString()}</div>
+            <div class="dash-kpi-lbl">TOTAL PHYSICAL MACHINES</div>
+          </div>
+          <div class="dash-kpi-badge badge-blue">
+            <span class="dash-kpi-emoji" title="Physical Machines">🏭</span>
+          </div>
+        </div>
 
-        <!-- ================================================================= -->
-        <!-- 1. SECTION 1: MACHINE OVERVIEW -->
-        <!-- ================================================================= -->
-        <section class="dash-card">
-          <!-- Card Header -->
-          <div class="dash-card-header">
-            <div class="dash-card-title-group">
-              <div class="dash-card-badge-icon icon-blue">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                  <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
-                </svg>
-              </div>
-              <h2 class="dash-card-title">1. Machine Overview</h2>
+        <!-- Card 2: Active Operational -->
+        <div class="dash-kpi-card kpi-card-active" data-action="inv-filter" data-status="ACTIVE" role="button" tabindex="0" title="Click to view Active operational machines">
+          <div class="dash-kpi-content">
+            <div class="dash-kpi-val val-emerald">${activeCount.toLocaleString()}</div>
+            <div class="dash-kpi-lbl">ACTIVE OPERATIONAL</div>
+          </div>
+          <div class="dash-kpi-badge badge-emerald">
+            <div class="glowing-orb orb-emerald" title="Operational Uptime"></div>
+          </div>
+        </div>
+
+        <!-- Card 3: Under Maintenance -->
+        <div class="dash-kpi-card kpi-card-maint" data-action="inv-filter" data-status="MAINTENANCE" role="button" tabindex="0" title="Click to view machines under maintenance">
+          <div class="dash-kpi-content">
+            <div class="dash-kpi-val val-amber">${underRepairCount.toLocaleString()}</div>
+            <div class="dash-kpi-lbl">UNDER MAINTENANCE</div>
+          </div>
+          <div class="dash-kpi-badge badge-amber">
+            <div class="glowing-orb orb-amber" title="Maintenance / Repair"></div>
+          </div>
+        </div>
+
+        <!-- Card 4: Machine Breakdowns -->
+        <div class="dash-kpi-card kpi-card-breakdown" data-action="inv-filter" data-status="BREAKDOWN" role="button" tabindex="0" title="Click to view critical breakdown machines">
+          <div class="dash-kpi-content">
+            <div class="dash-kpi-val val-rose">${breakdownCount.toLocaleString()}</div>
+            <div class="dash-kpi-lbl">MACHINE BREAKDOWNS</div>
+          </div>
+          <div class="dash-kpi-badge badge-rose">
+            <div class="glowing-orb orb-rose" title="Critical Breakdown"></div>
+          </div>
+        </div>
+
+        <!-- Card 5: Pending Approvals -->
+        <div class="dash-kpi-card kpi-card-pending" data-action="trf-filter" data-status="ALL" role="button" tabindex="0" title="Click to open Machine Transfers & Approvals Hub">
+          <div class="dash-kpi-content">
+            <div class="dash-kpi-val val-purple">${pendingApprovals.toLocaleString()}</div>
+            <div class="dash-kpi-lbl">PENDING APPROVALS</div>
+          </div>
+          <div class="dash-kpi-badge badge-purple">
+            <span class="dash-kpi-emoji" title="Approvals Hub">🛡️</span>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- 3. The 4 Modern Equipment Analytics Cards Grid (Side-by-Side 4-Column Layout) -->
+      <section class="dash-distributions-grid" aria-label="Operational Maintenance Sections">
+        
+        <!-- CARD 1: 1. Machine Overview -->
+        <div class="dash-dist-card card-cyan">
+          <div class="dash-dist-header">
+            <div class="dash-dist-title-box">
+              <span class="dash-dist-icon">🏭</span>
+              <h2 class="dash-dist-title">1. Machine Overview</h2>
             </div>
-            <div class="dash-card-meta-pill">
-              <span>Total: <strong>${totalMachines.toLocaleString()}</strong></span>
-              <span class="dash-pill-sep">&bull;</span>
-              <span>${currentFilterLabel}</span>
-            </div>
+            <span class="dash-dist-pill pill-cyan">Total: ${totalMachines.toLocaleString()} &bull; ${currentFilterLabel}</span>
+          </div>
+          
+          <div class="dash-dist-mini-status">
+            <span class="mini-status-label"><span class="status-dot dot-emerald"></span> Active Uptime: <strong>${uptimeRate}%</strong></span>
+            <span class="mini-status-value">${activeCount.toLocaleString()} Active / ${underRepairCount.toLocaleString()} In Repair</span>
           </div>
 
-          <!-- Summary Status Strip -->
-          <div class="dash-summary-strip">
-            <div class="dash-summary-strip-row">
-              <span class="dash-summary-metric">
-                <span class="dash-dot-indicator dot-emerald"></span>
-                <span>Active Uptime: <strong class="text-emerald">${uptimeRate}%</strong></span>
-              </span>
-              <span class="dash-summary-sub">
-                ${activeCount.toLocaleString()} Active / ${underRepairCount.toLocaleString()} In Repair
-              </span>
+          <div class="dash-dist-list custom-scroll">
+            
+            <div class="dash-dist-row" data-action="inv-filter" data-status="ALL" role="button" tabindex="0" title="Click to view all factory machines">
+              <div class="dash-dist-top-line">
+                <span class="dash-dist-name">Total Physical Machines</span>
+                <span class="dash-dist-stat stat-cyan">${totalMachines.toLocaleString()} Qty <span class="dash-dist-pct">(100%)</span></span>
+              </div>
+              <div class="dash-dist-desc">Complete Factory Inventory</div>
+              <div class="dash-dist-track">
+                <div class="dash-dist-bar bar-cyan" style="width: 100%;"></div>
+              </div>
             </div>
-            <div class="dash-progress-track">
-              <div class="dash-progress-seg seg-emerald" style="width: ${activePercent}%;" title="Active: ${activePercent.toFixed(1)}%"></div>
-              <div class="dash-progress-seg seg-amber" style="width: ${repairPercent}%;" title="Under Repair: ${repairPercent.toFixed(1)}%"></div>
-              <div class="dash-progress-seg seg-slate" style="width: ${sparePercent}%;" title="Spare/Standby: ${sparePercent.toFixed(1)}%"></div>
+
+            <div class="dash-dist-row" data-action="inv-filter" data-status="ACTIVE" role="button" tabindex="0" title="Click to view active machines">
+              <div class="dash-dist-top-line">
+                <span class="dash-dist-name">Active Machines</span>
+                <span class="dash-dist-stat stat-emerald">${activeCount.toLocaleString()} Qty <span class="dash-dist-pct">(${activePercent.toFixed(1)}%)</span></span>
+              </div>
+              <div class="dash-dist-desc">Running on Production Lines</div>
+              <div class="dash-dist-track">
+                <div class="dash-dist-bar bar-emerald" style="width: ${activePercent}%;"></div>
+              </div>
             </div>
+
+            <div class="dash-dist-row" data-action="inv-filter" data-status="REPAIRED" role="button" tabindex="0" title="Click to view serviced / repaired machines">
+              <div class="dash-dist-top-line">
+                <span class="dash-dist-name">Repaired / Serviced</span>
+                <span class="dash-dist-stat stat-cyan">${repairedCount.toLocaleString()} Qty <span class="dash-dist-pct">(${totalMachines > 0 ? ((repairedCount/totalMachines)*100).toFixed(1) : 0}%)</span></span>
+              </div>
+              <div class="dash-dist-desc">Serviced & Ready for Production</div>
+              <div class="dash-dist-track">
+                <div class="dash-dist-bar bar-cyan" style="width: ${totalMachines > 0 ? Math.min(100, (repairedCount/totalMachines)*100) : 0}%;"></div>
+              </div>
+            </div>
+
+            <div class="dash-dist-row" data-action="inv-filter" data-status="MAINTENANCE" role="button" tabindex="0" title="Click to view machines under repair">
+              <div class="dash-dist-top-line">
+                <span class="dash-dist-name">Under Repair Machines</span>
+                <span class="dash-dist-stat stat-amber">${underRepairCount.toLocaleString()} Qty <span class="dash-dist-pct">(${repairPercent.toFixed(1)}%)</span></span>
+              </div>
+              <div class="dash-dist-desc">In Maintenance Queue / Breakdown</div>
+              <div class="dash-dist-track">
+                <div class="dash-dist-bar bar-amber" style="width: ${repairPercent}%;"></div>
+              </div>
+            </div>
+
+            <div class="dash-dist-row" data-action="inv-filter" data-status="SPARE" role="button" tabindex="0" title="Click to view standby spare machines">
+              <div class="dash-dist-top-line">
+                <span class="dash-dist-name">Spare Machines / Standby</span>
+                <span class="dash-dist-stat stat-slate">${spareAmbiguousCount.toLocaleString()} Qty <span class="dash-dist-pct">(${sparePercent.toFixed(1)}%)</span></span>
+              </div>
+              <div class="dash-dist-desc">Idle Buffer Stock & Unassigned</div>
+              <div class="dash-dist-track">
+                <div class="dash-dist-bar bar-slate" style="width: ${sparePercent}%;"></div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- CARD 2: 2. Machine Transfers -->
+        <div class="dash-dist-card card-emerald">
+          <div class="dash-dist-header">
+            <div class="dash-dist-title-box">
+              <span class="dash-dist-icon">🔁</span>
+              <h2 class="dash-dist-title">2. Machine Transfers</h2>
+            </div>
+            <span class="dash-dist-pill pill-emerald">Total: ${totalTransfers.toLocaleString()} &bull; ${currentFilterLabel}</span>
           </div>
 
-          <!-- Table Header -->
-          <div class="dash-table-header">
-            <span>Machine Category</span>
-            <span style="text-align: center;">Status</span>
-            <span style="text-align: right;">Unit Count</span>
+          <div class="dash-dist-mini-status">
+            <span class="mini-status-label"><span class="status-dot dot-emerald"></span> Relocation Clearance: <strong>${transferCompletionRate}%</strong></span>
+            <span class="mini-status-value ${totalTransfers === 0 ? 'text-slate' : 'text-emerald'}">${totalTransfers === 0 ? 'No Transfers Logged' : '✓ Live Operations'}</span>
           </div>
 
-          <!-- Clean Data List Rows -->
-          <div class="dash-card-rows">
-            <!-- Row: Total Physical Machines -->
-            <div class="dash-clickable-row" data-action="inv-filter" data-status="ALL" role="button" tabindex="0" title="Click to view all machines in Inventory">
-              <div class="dash-row-left">
-                <span class="dash-dot-indicator dot-sky"></span>
-                <div class="dash-row-titles">
-                  <span class="dash-row-primary">Total Physical Machines</span>
-                  <span class="dash-row-secondary">Complete Factory Inventory</span>
-                </div>
+          <div class="dash-dist-list custom-scroll">
+            
+            <div class="dash-dist-row" data-action="trf-filter" data-status="ALL" role="button" tabindex="0" title="Click to view all transfer requests">
+              <div class="dash-dist-top-line">
+                <span class="dash-dist-name">Transfer Requests</span>
+                <span class="dash-dist-stat stat-cyan">${totalTransfers.toLocaleString()} Qty <span class="dash-dist-pct">(100%)</span></span>
               </div>
-              <div class="dash-row-center">
-                <span class="dash-status-pill pill-sky">All Fleet</span>
-              </div>
-              <div class="dash-row-right">
-                <span class="dash-qty-pill pill-sky">
-                  <strong>${totalMachines.toLocaleString()}</strong> <small>Qty</small>
-                  <span class="dash-chevron">&rsaquo;</span>
-                </span>
+              <div class="dash-dist-desc">All Logged Movement Records</div>
+              <div class="dash-dist-track">
+                <div class="dash-dist-bar bar-cyan" style="width: 100%;"></div>
               </div>
             </div>
 
-            <!-- Row: Active Machines -->
-            <div class="dash-clickable-row" data-action="inv-filter" data-status="ACTIVE" role="button" tabindex="0" title="Click to view Active machines on production lines">
-              <div class="dash-row-left">
-                <span class="dash-dot-indicator dot-emerald"></span>
-                <div class="dash-row-titles">
-                  <span class="dash-row-primary">Active Machines</span>
-                  <span class="dash-row-secondary">Running on Production Lines</span>
-                </div>
+            <div class="dash-dist-row" data-action="trf-filter" data-status="APPROVED" role="button" tabindex="0" title="Click to view approved transfer requests">
+              <div class="dash-dist-top-line">
+                <span class="dash-dist-name">Approved Requests</span>
+                <span class="dash-dist-stat stat-cyan">${approvedCount.toLocaleString()} Qty <span class="dash-dist-pct">(${totalTransfers > 0 ? Math.round((approvedCount/totalTransfers)*100) : 0}%)</span></span>
               </div>
-              <div class="dash-row-center">
-                <span class="dash-status-pill pill-emerald">Running</span>
-              </div>
-              <div class="dash-row-right">
-                <span class="dash-qty-pill pill-emerald">
-                  <strong>${activeCount.toLocaleString()}</strong> <small>Qty</small>
-                  <span class="dash-chevron">&rsaquo;</span>
-                </span>
+              <div class="dash-dist-desc">Cleared for Movement & Relocation</div>
+              <div class="dash-dist-track">
+                <div class="dash-dist-bar bar-cyan" style="width: ${totalTransfers > 0 ? Math.round((approvedCount/totalTransfers)*100) : 0}%;"></div>
               </div>
             </div>
 
-            <!-- Row: Repaired / Serviced Machines -->
-            <div class="dash-clickable-row" data-action="inv-filter" data-status="REPAIRED" role="button" tabindex="0" title="Click to view Repaired and Serviced machines">
-              <div class="dash-row-left">
-                <span class="dash-dot-indicator dot-cyan"></span>
-                <div class="dash-row-titles">
-                  <span class="dash-row-primary">Repaired / Serviced Machines</span>
-                  <span class="dash-row-secondary">${dateCutoff ? currentFilterLabel : 'Serviced & Ready for Production'}</span>
-                </div>
+            <div class="dash-dist-row" data-action="trf-filter" data-status="COMPLETED" role="button" tabindex="0" title="Click to view completed transfers">
+              <div class="dash-dist-top-line">
+                <span class="dash-dist-name">Issued / Transferred</span>
+                <span class="dash-dist-stat stat-emerald">${issuedTransferredCount.toLocaleString()} Qty <span class="dash-dist-pct">(${transferCompletionRate}%)</span></span>
               </div>
-              <div class="dash-row-center">
-                <span class="dash-status-pill pill-cyan">Operational</span>
-              </div>
-              <div class="dash-row-right">
-                <span class="dash-qty-pill pill-cyan">
-                  <strong>${repairedCount.toLocaleString()}</strong> <small>Qty</small>
-                  <span class="dash-chevron">&rsaquo;</span>
-                </span>
+              <div class="dash-dist-desc">Delivered & Verified at Destination</div>
+              <div class="dash-dist-track">
+                <div class="dash-dist-bar bar-emerald" style="width: ${transferCompletionRate}%;"></div>
               </div>
             </div>
 
-            <!-- Row: Under Repair Machines -->
-            <div class="dash-clickable-row" data-action="inv-filter" data-status="MAINTENANCE" role="button" tabindex="0" title="Click to view machines currently under maintenance">
-              <div class="dash-row-left">
-                <span class="dash-dot-indicator dot-amber"></span>
-                <div class="dash-row-titles">
-                  <span class="dash-row-primary">Under Repair Machines</span>
-                  <span class="dash-row-secondary">In Maintenance Queue / Breakdown</span>
-                </div>
+            <div class="dash-dist-row" data-action="trf-filter" data-status="PENDING_APPROVAL" role="button" tabindex="0" title="Click to view pending approval transfers">
+              <div class="dash-dist-top-line">
+                <span class="dash-dist-name">Pending Approval</span>
+                <span class="dash-dist-stat stat-amber">${pendingCount.toLocaleString()} Qty <span class="dash-dist-pct">(${totalTransfers > 0 ? Math.round((pendingCount/totalTransfers)*100) : 0}%)</span></span>
               </div>
-              <div class="dash-row-center">
-                <span class="dash-status-pill pill-amber">In Repair</span>
-              </div>
-              <div class="dash-row-right">
-                <span class="dash-qty-pill pill-amber">
-                  <strong>${underRepairCount.toLocaleString()}</strong> <small>Qty</small>
-                  <span class="dash-chevron">&rsaquo;</span>
-                </span>
+              <div class="dash-dist-desc">Awaiting Maintenance Authority Clearance</div>
+              <div class="dash-dist-track">
+                <div class="dash-dist-bar bar-amber" style="width: ${totalTransfers > 0 ? Math.round((pendingCount/totalTransfers)*100) : 0}%;"></div>
               </div>
             </div>
 
-            <!-- Row: Spare Machines / Ambiguous -->
-            <div class="dash-clickable-row" data-action="inv-filter" data-status="IDLE" role="button" tabindex="0" title="Click to view Spare, Idle & Standby machines">
-              <div class="dash-row-left">
-                <span class="dash-dot-indicator dot-slate"></span>
-                <div class="dash-row-titles">
-                  <span class="dash-row-primary">Spare Machines / Standby</span>
-                  <span class="dash-row-secondary">Idle Buffer Stock &amp; Unassigned</span>
-                </div>
+            <div class="dash-dist-row" data-action="trf-filter" data-status="REJECTED" role="button" tabindex="0" title="Click to view declined or cancelled transfers">
+              <div class="dash-dist-top-line">
+                <span class="dash-dist-name">Declined / Rejected</span>
+                <span class="dash-dist-stat stat-rose">${declinedRejectedCount.toLocaleString()} Qty <span class="dash-dist-pct">(${totalTransfers > 0 ? Math.round((declinedRejectedCount/totalTransfers)*100) : 0}%)</span></span>
               </div>
-              <div class="dash-row-center">
-                <span class="dash-status-pill pill-slate">Standby</span>
-              </div>
-              <div class="dash-row-right">
-                <span class="dash-qty-pill pill-slate">
-                  <strong>${spareAmbiguousCount.toLocaleString()}</strong> <small>Qty</small>
-                  <span class="dash-chevron">&rsaquo;</span>
-                </span>
+              <div class="dash-dist-desc">Cancelled or Disapproved by Management</div>
+              <div class="dash-dist-track">
+                <div class="dash-dist-bar bar-rose" style="width: ${totalTransfers > 0 ? Math.round((declinedRejectedCount/totalTransfers)*100) : 0}%;"></div>
               </div>
             </div>
+
           </div>
-        </section>
+        </div>
 
-        <!-- ================================================================= -->
-        <!-- 2. SECTION 2: MACHINE TRANSFERS -->
-        <!-- ================================================================= -->
-        <section class="dash-card">
-          <!-- Card Header -->
-          <div class="dash-card-header">
-            <div class="dash-card-title-group">
-              <div class="dash-card-badge-icon icon-teal">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                  <polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>
-                </svg>
-              </div>
-              <h2 class="dash-card-title">2. Machine Transfers</h2>
+        <!-- CARD 3: 3. Machine Servicing -->
+        <div class="dash-dist-card card-purple">
+          <div class="dash-dist-header">
+            <div class="dash-dist-title-box">
+              <span class="dash-dist-icon">🔧</span>
+              <h2 class="dash-dist-title">3. Machine Servicing</h2>
             </div>
-            <div class="dash-card-meta-pill">
-              <span>Total: <strong>${totalTransfers.toLocaleString()}</strong></span>
-              <span class="dash-pill-sep">&bull;</span>
-              <span>${currentFilterLabel}</span>
-            </div>
+            <span class="dash-dist-pill pill-purple">Scope: ${pmTotalMachines.toLocaleString()} &bull; ${currentFilterLabel}</span>
           </div>
 
-          <!-- Summary Status Strip -->
-          <div class="dash-summary-strip">
-            <div class="dash-summary-strip-row">
-              <span class="dash-summary-metric">
-                <span class="dash-dot-indicator dot-teal"></span>
-                <span>Relocation Clearance: <strong class="text-teal">${transferCompletionRate}%</strong></span>
-              </span>
-              <span class="dash-summary-sub">
-                ${pendingCount > 0 
-                  ? `<span class="text-amber">⚠️ ${pendingCount} Pending Approval</span>` 
-                  : `<span class="text-emerald">✓ All Clear</span>`}
-              </span>
-            </div>
-            <div class="dash-progress-track">
-              <div class="dash-progress-seg seg-emerald" style="width: ${transferCompletionRate}%;" title="Completed: ${transferCompletionRate}%"></div>
-              <div class="dash-progress-seg seg-amber" style="width: ${totalTransfers > 0 ? (pendingCount / totalTransfers) * 100 : 0}%;" title="Pending: ${pendingCount}"></div>
-            </div>
+          <div class="dash-dist-mini-status">
+            <span class="mini-status-label"><span class="status-dot dot-purple"></span> PM Compliance: <strong>${servicingComplianceRate}%</strong></span>
+            <span class="mini-status-value ${pmOverdue > 0 ? 'text-rose' : 'text-emerald'}">${pmOverdue > 0 ? `🚨 ${pmOverdue} Overdue Units` : '✓ Schedules on Track'}</span>
           </div>
 
-          <!-- Table Header -->
-          <div class="dash-table-header">
-            <span>Transfer Stage</span>
-            <span style="text-align: center;">Stage Status</span>
-            <span style="text-align: right;">Volume</span>
+          <div class="dash-dist-list custom-scroll">
+            
+            <div class="dash-dist-row" data-action="pm-filter" data-urgency="ALL" role="button" tabindex="0" title="Click to view full preventive maintenance scope">
+              <div class="dash-dist-top-line">
+                <span class="dash-dist-name">Total in Scope</span>
+                <span class="dash-dist-stat stat-cyan">${pmTotalMachines.toLocaleString()} units <span class="dash-dist-pct">(100%)</span></span>
+              </div>
+              <div class="dash-dist-desc">Scheduled Maintenance Fleet</div>
+              <div class="dash-dist-track">
+                <div class="dash-dist-bar bar-cyan" style="width: 100%;"></div>
+              </div>
+            </div>
+
+            <div class="dash-dist-row" data-action="pm-filter" data-urgency="COMPLETED" role="button" tabindex="0" title="Click to view completed maintenance routines">
+              <div class="dash-dist-top-line">
+                <span class="dash-dist-name">Serviced / Completed</span>
+                <span class="dash-dist-stat stat-emerald">${pmServicedCount.toLocaleString()} units <span class="dash-dist-pct">(${servicingComplianceRate}%)</span></span>
+              </div>
+              <div class="dash-dist-desc">Maintenance Routine Executed</div>
+              <div class="dash-dist-track">
+                <div class="dash-dist-bar bar-emerald" style="width: ${servicingComplianceRate}%;"></div>
+              </div>
+            </div>
+
+            <div class="dash-dist-row" data-action="pm-filter" data-urgency="OVERDUE" role="button" tabindex="0" title="Click to view overdue maintenance tasks">
+              <div class="dash-dist-top-line">
+                <span class="dash-dist-name">Overdue Servicing</span>
+                <span class="dash-dist-stat stat-rose">${pmOverdue.toLocaleString()} units <span class="dash-dist-pct">(${pmTotalMachines > 0 ? Math.min(100, Math.round((pmOverdue/pmTotalMachines)*100)) : 0}%)</span></span>
+              </div>
+              <div class="dash-dist-desc">Immediate Maintenance Attention Required</div>
+              <div class="dash-dist-track">
+                <div class="dash-dist-bar bar-rose" style="width: ${pmTotalMachines > 0 ? Math.min(100, Math.round((pmOverdue/pmTotalMachines)*100)) : 0}%;"></div>
+              </div>
+            </div>
+
+            <div class="dash-dist-row" data-action="pm-filter" data-urgency="DUE_TODAY" role="button" tabindex="0" title="Click to view servicing due today or soon">
+              <div class="dash-dist-top-line">
+                <span class="dash-dist-name">Due Today / Soon</span>
+                <span class="dash-dist-stat stat-amber">${pmDueToday.toLocaleString()} units <span class="dash-dist-pct">(${pmTotalMachines > 0 ? Math.min(100, Math.round((pmDueToday/pmTotalMachines)*100)) : 0}%)</span></span>
+              </div>
+              <div class="dash-dist-desc">Scheduled for Immediate Inspection</div>
+              <div class="dash-dist-track">
+                <div class="dash-dist-bar bar-amber" style="width: ${pmTotalMachines > 0 ? Math.min(100, Math.round((pmDueToday/pmTotalMachines)*100)) : 0}%;"></div>
+              </div>
+            </div>
+
+            <div class="dash-dist-row" data-action="pm-filter" data-urgency="SCHEDULED" role="button" tabindex="0" title="Click to view upcoming scheduled servicing">
+              <div class="dash-dist-top-line">
+                <span class="dash-dist-name">Upcoming (7 Days)</span>
+                <span class="dash-dist-stat stat-purple">${(pmDueWithin7Days + pmUpcoming).toLocaleString()} units <span class="dash-dist-pct">(${pmTotalMachines > 0 ? Math.min(100, Math.round(((pmDueWithin7Days + pmUpcoming)/pmTotalMachines)*100)) : 0}%)</span></span>
+              </div>
+              <div class="dash-dist-desc">Planned Maintenance Pipeline</div>
+              <div class="dash-dist-track">
+                <div class="dash-dist-bar bar-purple" style="width: ${pmTotalMachines > 0 ? Math.min(100, Math.round(((pmDueWithin7Days + pmUpcoming)/pmTotalMachines)*100)) : 0}%;"></div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- CARD 4: 4. Needle Data -->
+        <div class="dash-dist-card card-amber">
+          <div class="dash-dist-header">
+            <div class="dash-dist-title-box">
+              <span class="dash-dist-icon">🪡</span>
+              <h2 class="dash-dist-title">4. Needle Data</h2>
+            </div>
+            <span class="dash-dist-pill pill-amber">Total Stock: ${sumNeedleStock.toLocaleString()} &bull; 4 Types</span>
           </div>
 
-          <!-- Clean Data List Rows -->
-          <div class="dash-card-rows">
-            <!-- Row: Transfer Requests -->
-            <div class="dash-clickable-row" data-action="trf-filter" data-status="ALL" role="button" tabindex="0" title="Click to view all transfer requests">
-              <div class="dash-row-left">
-                <span class="dash-dot-indicator dot-sky"></span>
-                <div class="dash-row-titles">
-                  <span class="dash-row-primary">Transfer Requests</span>
-                  <span class="dash-row-secondary">All Logged Movement Records</span>
-                </div>
-              </div>
-              <div class="dash-row-center">
-                <span class="dash-status-pill pill-sky">All Records</span>
-              </div>
-              <div class="dash-row-right">
-                <span class="dash-qty-pill pill-sky">
-                  <strong>${totalTransfers.toLocaleString()}</strong> <small>Qty</small>
-                  <span class="dash-chevron">&rsaquo;</span>
-                </span>
-              </div>
-            </div>
-
-            <!-- Row: Approved -->
-            <div class="dash-clickable-row" data-action="trf-filter" data-status="APPROVED" role="button" tabindex="0" title="Click to view approved relocation requests">
-              <div class="dash-row-left">
-                <span class="dash-dot-indicator dot-cyan"></span>
-                <div class="dash-row-titles">
-                  <span class="dash-row-primary">Approved Requests</span>
-                  <span class="dash-row-secondary">Cleared for Movement &amp; Relocation</span>
-                </div>
-              </div>
-              <div class="dash-row-center">
-                <span class="dash-status-pill pill-cyan">Approved</span>
-              </div>
-              <div class="dash-row-right">
-                <span class="dash-qty-pill pill-cyan">
-                  <strong>${approvedCount.toLocaleString()}</strong> <small>Qty</small>
-                  <span class="dash-chevron">&rsaquo;</span>
-                </span>
-              </div>
-            </div>
-
-            <!-- Row: Issued / Transferred -->
-            <div class="dash-clickable-row" data-action="trf-filter" data-status="COMPLETED" role="button" tabindex="0" title="Click to view completed transfers">
-              <div class="dash-row-left">
-                <span class="dash-dot-indicator dot-emerald"></span>
-                <div class="dash-row-titles">
-                  <span class="dash-row-primary">Issued / Transferred</span>
-                  <span class="dash-row-secondary">Delivered &amp; Verified at Destination</span>
-                </div>
-              </div>
-              <div class="dash-row-center">
-                <span class="dash-status-pill pill-emerald">Completed</span>
-              </div>
-              <div class="dash-row-right">
-                <span class="dash-qty-pill pill-emerald">
-                  <strong>${issuedTransferredCount.toLocaleString()}</strong> <small>Qty</small>
-                  <span class="dash-chevron">&rsaquo;</span>
-                </span>
-              </div>
-            </div>
-
-            <!-- Row: Pending Approval -->
-            <div class="dash-clickable-row" data-action="trf-filter" data-status="PENDING_APPROVAL" role="button" tabindex="0" title="Click to view pending transfer requests">
-              <div class="dash-row-left">
-                <span class="dash-dot-indicator ${pendingCount > 0 ? 'dot-amber' : 'dot-slate'}"></span>
-                <div class="dash-row-titles">
-                  <span class="dash-row-primary">Pending Approval</span>
-                  <span class="dash-row-secondary">Awaiting Maintenance Authority Clearance</span>
-                </div>
-              </div>
-              <div class="dash-row-center">
-                <span class="dash-status-pill ${pendingCount > 0 ? 'pill-amber' : 'pill-slate'}">
-                  ${pendingCount > 0 ? 'Action Required' : 'Cleared'}
-                </span>
-              </div>
-              <div class="dash-row-right">
-                <span class="dash-qty-pill ${pendingCount > 0 ? 'pill-amber' : 'pill-slate'}">
-                  <strong>${pendingCount.toLocaleString()}</strong> <small>Qty</small>
-                  <span class="dash-chevron">&rsaquo;</span>
-                </span>
-              </div>
-            </div>
-
-            <!-- Row: Declined / Rejected -->
-            <div class="dash-clickable-row" data-action="trf-filter" data-status="REJECTED" role="button" tabindex="0" title="Click to view rejected transfer requests">
-              <div class="dash-row-left">
-                <span class="dash-dot-indicator dot-rose"></span>
-                <div class="dash-row-titles">
-                  <span class="dash-row-primary">Declined / Rejected</span>
-                  <span class="dash-row-secondary">Cancelled or Disapproved by Management</span>
-                </div>
-              </div>
-              <div class="dash-row-center">
-                <span class="dash-status-pill pill-rose">Rejected</span>
-              </div>
-              <div class="dash-row-right">
-                <span class="dash-qty-pill pill-rose">
-                  <strong>${declinedRejectedCount.toLocaleString()}</strong> <small>Qty</small>
-                  <span class="dash-chevron">&rsaquo;</span>
-                </span>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <!-- ================================================================= -->
-        <!-- 3. SECTION 3: MACHINE SERVICING -->
-        <!-- ================================================================= -->
-        <section class="dash-card">
-          <!-- Card Header -->
-          <div class="dash-card-header">
-            <div class="dash-card-title-group">
-              <div class="dash-card-badge-icon icon-purple">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                  <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
-                </svg>
-              </div>
-              <h2 class="dash-card-title">3. Machine Servicing</h2>
-            </div>
-            <div class="dash-card-meta-pill">
-              <span>Scope: <strong>${pmTotalMachines.toLocaleString()}</strong></span>
-              <span class="dash-pill-sep">&bull;</span>
-              <span>${currentFilterLabel}</span>
-            </div>
+          <div class="dash-dist-mini-status">
+            <span class="mini-status-label"><span class="status-dot dot-emerald"></span> Stock Coverage: <strong>${sumNeedlePending === 0 ? 'Fully Covered' : `${sumNeedlePending} Deficit`}</strong></span>
+            <span class="mini-status-value ${sumNeedlePending === 0 ? 'text-emerald' : 'text-amber'}">${sumNeedlePending === 0 ? '✓ Stock Sufficient' : '⚠️ Reorder Needed'}</span>
           </div>
 
-          <!-- Summary Status Strip -->
-          <div class="dash-summary-strip">
-            <div class="dash-summary-strip-row">
-              <span class="dash-summary-metric">
-                <span class="dash-dot-indicator dot-purple"></span>
-                <span>PM Compliance: <strong class="text-purple">${servicingComplianceRate}%</strong></span>
-              </span>
-              <span class="dash-summary-sub">
-                ${pmOverdue > 0 
-                  ? `<span class="text-rose">🔴 ${pmOverdue} Overdue Units</span>` 
-                  : `<span class="text-emerald">✓ Zero Overdue</span>`}
-              </span>
-            </div>
-            <div class="dash-progress-track">
-              <div class="dash-progress-seg seg-emerald" style="width: ${servicingComplianceRate}%;" title="Serviced: ${servicingComplianceRate}%"></div>
-              <div class="dash-progress-seg seg-rose" style="width: ${pmTotalMachines > 0 ? (pmOverdue / pmTotalMachines) * 100 : 0}%;" title="Overdue: ${pmOverdue}"></div>
-            </div>
-          </div>
-
-          <!-- Table Header -->
-          <div class="dash-table-header">
-            <span>Maintenance Schedule</span>
-            <span style="text-align: center;">Urgency</span>
-            <span style="text-align: right;">Machine Count</span>
-          </div>
-
-          <!-- Clean Data List Rows -->
-          <div class="dash-card-rows">
-            <!-- Row: Total in Scope -->
-            <div class="dash-clickable-row" data-action="pm-filter" data-urgency="ALL" role="button" tabindex="0" title="Click to view all preventive maintenance records">
-              <div class="dash-row-left">
-                <span class="dash-dot-indicator dot-sky"></span>
-                <div class="dash-row-titles">
-                  <span class="dash-row-primary">Total in Scope</span>
-                  <span class="dash-row-secondary">Active Maintenance Fleet</span>
+          <div class="dash-dist-list custom-scroll">
+            
+            ${needleTableRows.map(row => {
+              const covPct = row.requiredQty > 0 ? Math.min(100, Math.round((row.availableStock / row.requiredQty) * 100)) : 100;
+              const isDeficit = row.pendingQuantity > 0;
+              return `
+                <div class="dash-dist-row" data-action="needle-filter" data-needle="${escapeHtml(row.code)}" role="button" tabindex="0" title="Click to view stock and machines for ${escapeHtml(row.code)}">
+                  <div class="dash-dist-top-line">
+                    <span class="dash-dist-name font-mono font-bold text-amber">
+                      ${escapeHtml(row.code)}
+                      <span class="needle-chip-desc">(${escapeHtml(row.shortDesc)})</span>
+                    </span>
+                    <span class="dash-dist-stat ${isDeficit ? 'stat-rose' : 'stat-emerald'}">
+                      Req: ${row.requiredQty.toLocaleString()} | Stock: ${row.availableStock.toLocaleString()}
+                      <span class="dash-needle-badge ${isDeficit ? 'badge-rose' : 'badge-emerald'}">${isDeficit ? `-${row.pendingQuantity}` : '✓ OK'}</span>
+                    </span>
+                  </div>
+                  <div class="dash-dist-desc">${row.machineCount.toLocaleString()} Assigned Machines &bull; Required: ${row.requiredQty.toLocaleString()} pcs</div>
+                  <div class="dash-dist-track">
+                    <div class="dash-dist-bar ${isDeficit ? 'bar-rose' : 'bar-emerald'}" style="width: ${covPct}%;"></div>
+                  </div>
                 </div>
+              `;
+            }).join('')}
+
+            <!-- Fleet Demand Balance Summary Row -->
+            <div class="dash-dist-row needle-fleet-summary" data-action="needle-filter" data-needle="ALL" role="button" tabindex="0" title="Click to open Needle Operations Hub">
+              <div class="dash-dist-top-line">
+                <span class="dash-dist-name font-bold">Total Fleet Demand Balance</span>
+                <span class="dash-dist-stat stat-cyan">Req: ${sumNeedleRequired.toLocaleString()} | Stock: ${sumNeedleStock.toLocaleString()}</span>
               </div>
-              <div class="dash-row-center">
-                <span class="dash-status-pill pill-sky">Full Fleet</span>
-              </div>
-              <div class="dash-row-right">
-                <span class="dash-qty-pill pill-sky">
-                  <strong>${pmTotalMachines.toLocaleString()}</strong> <small>Qty</small>
-                  <span class="dash-chevron">&rsaquo;</span>
-                </span>
+              <div class="dash-dist-desc">Aggregate Balance across All Factory Specifications</div>
+              <div class="dash-dist-track">
+                <div class="dash-dist-bar bar-cyan" style="width: 100%;"></div>
               </div>
             </div>
 
-            <!-- Row: Serviced Machines -->
-            <div class="dash-clickable-row" data-action="pm-filter" data-urgency="COMPLETED" role="button" tabindex="0" title="Click to view serviced machines">
-              <div class="dash-row-left">
-                <span class="dash-dot-indicator dot-emerald"></span>
-                <div class="dash-row-titles">
-                  <span class="dash-row-primary">Serviced Machines</span>
-                  <span class="dash-row-secondary">Completed Cycles (${currentFilterLabel})</span>
-                </div>
-              </div>
-              <div class="dash-row-center">
-                <span class="dash-status-pill pill-emerald">Completed</span>
-              </div>
-              <div class="dash-row-right">
-                <span class="dash-qty-pill pill-emerald">
-                  <strong>${pmServicedCount}</strong> <small>Qty</small>
-                  <span class="dash-chevron">&rsaquo;</span>
-                </span>
-              </div>
-            </div>
-
-            <!-- Row: Overdue Servicing -->
-            <div class="dash-clickable-row" data-action="pm-filter" data-urgency="OVERDUE" role="button" tabindex="0" title="Click to view urgent overdue machines requiring service">
-              <div class="dash-row-left">
-                <span class="dash-dot-indicator dot-rose"></span>
-                <div class="dash-row-titles">
-                  <span class="dash-row-primary text-rose">Overdue Servicing</span>
-                  <span class="dash-row-secondary text-rose-sub">Critical: Requires Immediate Attention</span>
-                </div>
-              </div>
-              <div class="dash-row-center">
-                <span class="dash-status-pill pill-rose">Overdue</span>
-              </div>
-              <div class="dash-row-right">
-                <span class="dash-qty-pill pill-rose">
-                  <strong>${pmOverdue}</strong> <small>Qty</small>
-                  <span class="dash-chevron">&rsaquo;</span>
-                </span>
-              </div>
-            </div>
-
-            <!-- Row: Due Today -->
-            <div class="dash-clickable-row" data-action="pm-filter" data-urgency="DUE_TODAY" role="button" tabindex="0" title="Click to view machines due for service today">
-              <div class="dash-row-left">
-                <span class="dash-dot-indicator dot-amber"></span>
-                <div class="dash-row-titles">
-                  <span class="dash-row-primary">Due Today</span>
-                  <span class="dash-row-secondary">Scheduled for Current Shift</span>
-                </div>
-              </div>
-              <div class="dash-row-center">
-                <span class="dash-status-pill pill-amber">Today</span>
-              </div>
-              <div class="dash-row-right">
-                <span class="dash-qty-pill pill-amber">
-                  <strong>${pmDueToday}</strong> <small>Qty</small>
-                  <span class="dash-chevron">&rsaquo;</span>
-                </span>
-              </div>
-            </div>
-
-            <!-- Row: Due Within 7 Days -->
-            <div class="dash-clickable-row" data-action="pm-filter" data-urgency="DUE_SOON" role="button" tabindex="0" title="Click to view machines due within 7 days">
-              <div class="dash-row-left">
-                <span class="dash-dot-indicator dot-yellow"></span>
-                <div class="dash-row-titles">
-                  <span class="dash-row-primary">Due Within 7 Days</span>
-                  <span class="dash-row-secondary">Upcoming Weekly PM Cycle</span>
-                </div>
-              </div>
-              <div class="dash-row-center">
-                <span class="dash-status-pill pill-yellow">Within 7d</span>
-              </div>
-              <div class="dash-row-right">
-                <span class="dash-qty-pill pill-yellow">
-                  <strong>${pmDueWithin7Days}</strong> <small>Qty</small>
-                  <span class="dash-chevron">&rsaquo;</span>
-                </span>
-              </div>
-            </div>
-
-            <!-- Row: Upcoming Servicing -->
-            <div class="dash-clickable-row" data-action="pm-filter" data-urgency="SCHEDULED" role="button" tabindex="0" title="Click to view scheduled future cycles">
-              <div class="dash-row-left">
-                <span class="dash-dot-indicator dot-slate"></span>
-                <div class="dash-row-titles">
-                  <span class="dash-row-primary">Upcoming Servicing</span>
-                  <span class="dash-row-secondary">Future Maintenance Planning</span>
-                </div>
-              </div>
-              <div class="dash-row-center">
-                <span class="dash-status-pill pill-slate">Scheduled</span>
-              </div>
-              <div class="dash-row-right">
-                <span class="dash-qty-pill pill-slate">
-                  <strong>${pmUpcoming}</strong> <small>Qty</small>
-                  <span class="dash-chevron">&rsaquo;</span>
-                </span>
-              </div>
-            </div>
           </div>
-        </section>
+        </div>
 
-        <!-- ================================================================= -->
-        <!-- 4. SECTION 4: NEEDLE DATA -->
-        <!-- ================================================================= -->
-        <section class="dash-card">
-          <!-- Card Header -->
-          <div class="dash-card-header">
-            <div class="dash-card-title-group">
-              <div class="dash-card-badge-icon icon-emerald">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                  <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/>
-                </svg>
-              </div>
-              <h2 class="dash-card-title">4. Needle Data</h2>
-            </div>
-            <div class="dash-card-meta-pill">
-              <span>Total Stock: <strong>${sumNeedleStock.toLocaleString()}</strong></span>
-              <span class="dash-pill-sep">&bull;</span>
-              <span>4 Types</span>
-            </div>
-          </div>
+      </section>
 
-          <!-- Summary Status Strip -->
-          <div class="dash-summary-strip">
-            <div class="dash-summary-strip-row">
-              <span class="dash-summary-metric">
-                <span class="dash-dot-indicator dot-emerald"></span>
-                <span>Stock Coverage: <strong class="${sumNeedlePending > 0 ? 'text-amber' : 'text-emerald'}">${sumNeedlePending > 0 ? 'Deficit Detected' : 'Fully Covered'}</strong></span>
-              </span>
-              <span class="dash-summary-sub">
-                ${sumNeedlePending > 0 
-                  ? `<span class="text-rose">⚠️ ${sumNeedlePending.toLocaleString()} Deficit</span>` 
-                  : `<span class="text-emerald">✓ Stock Sufficient</span>`}
-              </span>
-            </div>
-            <div class="dash-progress-track">
-              <div class="dash-progress-seg seg-emerald" style="width: ${sumNeedleRequired > 0 ? Math.min(100, (sumNeedleStock / sumNeedleRequired) * 100) : 100}%;" title="Stock Coverage"></div>
-            </div>
-          </div>
-
-          <!-- Clean Data Table for Needle Data -->
-          <div class="dash-table-wrapper">
-            <table class="dash-clean-table">
-              <thead>
-                <tr>
-                  <th class="th-spec">Needle Spec &amp; Application</th>
-                  <th class="th-num">Machines</th>
-                  <th class="th-num">Required</th>
-                  <th class="th-num">In Stock</th>
-                  <th class="th-status">Deficit / Balance</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${needleTableRows.map(r => `
-                  <tr class="dash-clickable-row dash-table-tr" data-action="needle-filter" data-needle="${r.code}" role="button" tabindex="0" title="Click to open Needle Operations filtered by ${r.code}">
-                    <td class="td-spec">
-                      <div class="dash-needle-cell">
-                        <span class="needle-type-badge">${r.code}</span>
-                        <span class="needle-type-desc">${r.desc}</span>
-                      </div>
-                    </td>
-                    <td class="td-num">${r.machineCount.toLocaleString()}</td>
-                    <td class="td-num text-sky">${r.requiredQty.toLocaleString()}</td>
-                    <td class="td-num text-emerald">${r.availableStock.toLocaleString()}</td>
-                    <td class="td-status">
-                      ${r.pendingQuantity > 0 
-                        ? `<span class="dash-status-pill pill-rose">-${r.pendingQuantity.toLocaleString()}</span>` 
-                        : `<span class="dash-status-pill pill-emerald">Balanced</span>`}
-                    </td>
-                  </tr>
-                `).join('')}
-              </tbody>
-              <tfoot>
-                <tr class="dash-clickable-row dash-table-tr dash-summary-tr" data-action="needle-filter" data-needle="ALL" role="button" tabindex="0" title="Click to view all needle types">
-                  <td class="td-spec">
-                    <div class="dash-needle-cell">
-                      <span class="dash-summary-title">Total Fleet Demand</span>
-                      <span class="needle-type-desc">All 4 Production Types</span>
-                    </div>
-                  </td>
-                  <td class="td-num text-bold">${totalMachines.toLocaleString()}</td>
-                  <td class="td-num text-sky text-bold">${sumNeedleRequired.toLocaleString()}</td>
-                  <td class="td-num text-emerald text-bold">${sumNeedleStock.toLocaleString()}</td>
-                  <td class="td-status">
-                    ${sumNeedlePending > 0 
-                      ? `<span class="dash-status-pill pill-rose text-bold">-${sumNeedlePending.toLocaleString()} Deficit</span>` 
-                      : `<span class="dash-status-pill pill-emerald text-bold">Balanced</span>`}
-                  </td>
-                </tr>
-              </tfoot>
-            </table>
-          </div>
-        </section>
-
-      </main>
-
-      <!-- Collapsible Live Servicing Schedules Preview Drawer -->
+      <!-- 4. Collapsible Live Servicing Schedules Preview Drawer -->
       ${sortedMaintMachines.length > 0 ? `
         <footer class="dash-schedules-card">
-          
-          <!-- Drawer Header Bar -->
           <div id="btn-dash-toggle-schedules" class="dash-schedules-bar" role="button" tabindex="0" title="Toggle Live Servicing Schedules Preview">
             <div class="dash-schedules-left">
-              <div class="dash-schedules-pulse-icon">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                  <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 14 14"/>
-                </svg>
-              </div>
-              <div class="dash-schedules-heading">
-                <span class="dash-schedules-title">Live Servicing Schedules &amp; Assigned Technicians</span>
-                <span class="dash-schedules-caption">(Top 5 Most Urgent Maintenance Jobs)</span>
-              </div>
-              <div class="dash-schedules-chips">
-                ${pmOverdue > 0 ? `<span class="dash-chip-critical">${pmOverdue} Overdue</span>` : ''}
-                ${pmDueToday > 0 ? `<span class="dash-chip-amber">${pmDueToday} Due Today</span>` : ''}
-              </div>
+              <span class="dash-pulse-dot"></span>
+              <span class="dash-schedules-title">Live Servicing Schedules Preview</span>
+              <span class="dash-schedules-badge">${sortedMaintMachines.length} Urgent Machines</span>
             </div>
-            <div class="dash-schedules-right">
-              <span id="dash-schedules-arrow" class="dash-toggle-label">
+            <div class="dash-schedules-actions">
+              <button type="button" id="btn-dash-open-full-pm" class="btn-dash-link-pm" title="Open Full Preventive Maintenance Hub">
+                Open Maintenance Hub &rarr;
+              </button>
+              <span id="dash-schedules-arrow" class="dash-schedules-toggle-label">
                 ${isSchedulesDrawerOpen ? '▲ Collapse Table' : '▼ Expand Table'}
               </span>
-              <button type="button" class="dash-full-schedule-btn" id="btn-dash-open-full-pm" title="Go to full Preventive Maintenance schedule">
-                <span>Full Schedule</span>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                  <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
-                </svg>
-              </button>
             </div>
           </div>
 
-          <!-- Collapsible Content Table -->
           <div id="dash-schedules-drawer" class="dash-schedules-drawer" style="display: ${isSchedulesDrawerOpen ? 'block' : 'none'};">
-            <div class="dash-table-responsive-wrapper">
-              <table class="dash-drawer-table">
+            <div class="dash-table-responsive custom-scroll">
+              <table class="dash-live-pm-table">
                 <thead>
                   <tr>
-                    <th style="width: 25%;">Machine / Asset ID</th>
-                    <th style="width: 18%;">Location</th>
-                    <th style="width: 16%;">Last Servicing</th>
-                    <th style="width: 16%;">Next Due Date</th>
-                    <th style="width: 12%;">Status</th>
-                    <th style="width: 13%;">Technician</th>
+                    <th>Machine Code</th>
+                    <th>Machine Name</th>
+                    <th>Location (Unit &bull; Floor &bull; Line)</th>
+                    <th>Next Service Date</th>
+                    <th>Urgency Status</th>
+                    <th>Assigned Technician</th>
                   </tr>
                 </thead>
                 <tbody>
                   ${sortedMaintMachines.map(m => {
-                    const urgencyColors = {
-                      'OVERDUE': { bg: 'rgba(239, 68, 68, 0.15)', text: '#fca5a5', border: 'rgba(239, 68, 68, 0.4)', label: 'Overdue', dot: '#ef4444' },
-                      'DUE_TODAY': { bg: 'rgba(245, 158, 11, 0.15)', text: '#fcd34d', border: 'rgba(245, 158, 11, 0.4)', label: 'Due Today', dot: '#f59e0b' },
-                      'DUE_SOON': { bg: 'rgba(234, 179, 8, 0.15)', text: '#fef08a', border: 'rgba(234, 179, 8, 0.4)', label: 'Due in 7d', dot: '#eab308' },
-                      'SCHEDULED': { bg: 'rgba(59, 130, 246, 0.15)', text: '#93c5fd', border: 'rgba(59, 130, 246, 0.4)', label: 'Upcoming', dot: '#3b82f6' },
-                      'COMPLETED': { bg: 'rgba(16, 185, 129, 0.15)', text: '#6ee7b7', border: 'rgba(16, 185, 129, 0.4)', label: 'Completed', dot: '#10b981' }
-                    };
-                    const uStyle = urgencyColors[m.urgency?.status] || urgencyColors['SCHEDULED'];
-                    const assetId = m.assetId || m.systemAssetId || m.customValues?.system_asset_id || '';
+                    const statusClass = (m.urgency?.status || '').toLowerCase().replace(/_/g, '-');
+                    const techName = m.assignedTechnician || m.technician || 'Engineering Tech';
+                    const initials = techName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'ET';
+                    const mName = storage.resolveMachineName ? storage.resolveMachineName(m) : (m.machineNameStr || mnMap.get(m.machineNameId) || m.machineName || 'Machine');
                     return `
-                      <tr class="dash-drawer-row">
-                        <td>
-                          <div class="dash-maint-name">${m.machineName || 'Industrial Machine'}</div>
-                          <div class="dash-maint-sub">
-                            ${assetId ? `<span class="dash-asset-tag">${assetId}</span>` : ''}
-                            <span class="dash-serial-tag">SN: ${m.serialNumber || 'N/A'}</span>
-                          </div>
-                        </td>
+                      <tr class="dash-pm-row" data-action="pm-filter" data-urgency="${escapeHtml(m.urgency?.status || 'ALL')}">
+                        <td class="font-mono font-bold text-cyan">${escapeHtml(m.machineCode || m.code || 'M/C')}</td>
+                        <td>${escapeHtml(mName)}</td>
                         <td>
                           <div class="dash-location-badge">
-                            <span class="dash-loc-unit">${m.unit || 'Unit'}</span>
-                            <span class="dash-loc-arrow">&bull;</span>
-                            <span>${m.floor || 'Floor'}</span>
-                            <span class="dash-loc-arrow">&bull;</span>
-                            <span>${m.line || 'Line'}</span>
+                            <span class="dash-loc-unit">${escapeHtml(m.unitName || m.unitId || 'Unit 1')}</span>
+                            <span class="dash-loc-arrow">&rsaquo;</span>
+                            <span>${escapeHtml(m.floorName || m.floorId || 'Floor 1')}</span>
+                            <span class="dash-loc-arrow">&rsaquo;</span>
+                            <span>${escapeHtml(m.lineName || m.lineId || 'Line 01')}</span>
                           </div>
                         </td>
                         <td>
-                          <span class="dash-date-text">${m.lastServiceDate || 'None recorded'}</span>
-                        </td>
-                        <td>
-                          <span class="dash-date-highlight">${m.nextServiceDate || 'Not scheduled'}</span>
-                        </td>
-                        <td>
-                          <span class="dash-urgency-badge" style="background: ${uStyle.bg}; color: ${uStyle.text}; border-color: ${uStyle.border};">
-                            <span class="dash-urgency-dot" style="background: ${uStyle.dot};"></span>
-                            ${uStyle.label}
+                          <span class="dash-date-text ${m.urgency?.status === 'OVERDUE' ? 'dash-date-highlight text-rose' : ''}">
+                            ${escapeHtml(m.nextServiceDate || 'Scheduled')}
                           </span>
                         </td>
                         <td>
-                          <div class="dash-technician-tag">
-                            <span class="dash-tech-avatar">${(m.assignedTechnician || 'M')[0].toUpperCase()}</span>
-                            <span>${m.assignedTechnician || 'Maintenance Team'}</span>
-                          </div>
+                          <span class="dash-urgency-badge badge-${statusClass}">
+                            <span class="dash-urgency-dot"></span>
+                            ${escapeHtml(m.urgency?.label || m.urgency?.status || 'SCHEDULED')}
+                          </span>
+                        </td>
+                        <td>
+                          <span class="dash-technician-tag">
+                            <span class="dash-tech-avatar">${initials}</span>
+                            <span>${escapeHtml(techName)}</span>
+                          </span>
                         </td>
                       </tr>
                     `;
@@ -1091,89 +834,91 @@ export function renderDashboard() {
 
     </div>
 
-    <!-- Scoped Enterprise Modern SaaS Styling -->
+    <!-- Scoped Enterprise Modern Styling matching Screenshot Design Reference -->
     <style>
-      .user-friendly-dashboard {
-        height: 100%;
-        min-height: 100%;
+      .modern-erp-dashboard {
         display: flex;
         flex-direction: column;
-        padding: 10px 14px;
-        gap: 10px;
+        padding: 12px 16px;
+        gap: 12px;
         box-sizing: border-box;
         overflow-y: auto;
         overflow-x: hidden;
         background: #080d1a;
         color: #f8fafc;
-        font-family: var(--font-main, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
+        font-family: var(--font-main, 'Inter', system-ui, -apple-system, sans-serif);
       }
 
-      /* 1. Header Toolbar */
-      .dash-toolbar {
+      /* 1. Header Hero Banner */
+      .dash-hero-banner {
         flex-shrink: 0;
-        background: linear-gradient(180deg, rgba(17, 24, 39, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%);
+        background: linear-gradient(180deg, rgba(15, 23, 42, 0.95) 0%, rgba(11, 17, 32, 0.98) 100%);
         border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 10px;
-        padding: 7px 14px;
+        border-radius: 12px;
+        padding: 10px 16px;
         display: flex;
         justify-content: space-between;
         align-items: center;
         flex-wrap: wrap;
-        gap: 8px;
-        box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        gap: 10px;
+        box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.06);
       }
 
-      .dash-brand-block {
+      .dash-hero-left {
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 12px;
+        min-width: 0;
       }
 
-      .dash-brand-icon {
-        width: 34px;
-        height: 34px;
-        border-radius: 9px;
+      .dash-hero-icon-box {
+        width: 38px;
+        height: 38px;
+        border-radius: 10px;
         background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
         color: #ffffff;
         display: flex;
         align-items: center;
         justify-content: center;
-        box-shadow: 0 4px 12px rgba(2, 132, 199, 0.35);
+        box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35);
+        border: 1px solid rgba(56, 189, 248, 0.4);
         flex-shrink: 0;
       }
 
-      .dash-brand-info {
+      .dash-hero-headings {
         display: flex;
         flex-direction: column;
         gap: 2px;
+        min-width: 0;
       }
 
-      .dash-title-row {
+      .dash-hero-title-row {
         display: flex;
         align-items: center;
         gap: 8px;
+        flex-wrap: wrap;
       }
 
-      .dash-title {
-        font-size: 15px;
+      .dash-hero-title {
+        font-size: 16px;
         font-weight: 800;
         color: #ffffff;
         margin: 0;
         letter-spacing: -0.2px;
-        line-height: 1.2;
+        line-height: 1.25;
       }
 
-      .dash-live-badge {
+      .dash-live-chip {
         background: rgba(16, 185, 129, 0.12);
         color: #34d399;
-        border: 1px solid rgba(16, 185, 129, 0.3);
+        border: 1px solid rgba(16, 185, 129, 0.35);
         font-size: 10px;
         font-weight: 700;
-        padding: 1px 7px;
+        padding: 1.5px 7px;
         border-radius: 9999px;
         display: inline-flex;
         align-items: center;
-        gap: 4.5px;
+        gap: 4px;
         letter-spacing: 0.3px;
       }
 
@@ -1182,47 +927,43 @@ export function renderDashboard() {
         height: 5px;
         border-radius: 50%;
         background: #10b981;
-        box-shadow: 0 0 8px #10b981;
-        animation: dashPulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        box-shadow: 0 0 6px #10b981;
+        animation: heroPulse 2s infinite ease-in-out;
       }
 
-      @keyframes dashPulse {
+      @keyframes heroPulse {
         0%, 100% { opacity: 1; transform: scale(1); }
-        50% { opacity: 0.4; transform: scale(0.85); }
+        50% { opacity: 0.35; transform: scale(0.85); }
       }
 
-      .dash-subtitle {
-        font-size: 11px;
+      .dash-hero-subtitle {
+        font-size: 11.5px;
         color: #94a3b8;
         font-weight: 500;
+        margin: 0;
+        line-height: 1.3;
+      }
+
+      .dash-hero-actions {
         display: flex;
         align-items: center;
-        gap: 5px;
+        gap: 8px;
+        flex-wrap: wrap;
       }
 
-      .dash-sep {
-        color: #475569;
-        font-size: 9px;
-      }
-
-      .dash-highlight-stat {
-        color: #38bdf8;
-        font-weight: 700;
-      }
-
-      /* Segmented Date Switcher */
-      .dash-date-switcher-wrapper {
+      /* Time Segmented Control */
+      .dash-time-segmented-wrapper {
         display: flex;
         align-items: center;
         gap: 6px;
-        background: rgba(15, 23, 42, 0.8);
+        background: rgba(15, 23, 42, 0.75);
         border: 1px solid rgba(255, 255, 255, 0.08);
         padding: 3px 6px;
         border-radius: 8px;
       }
 
-      .dash-date-switcher-label {
-        font-size: 11px;
+      .dash-segmented-label {
+        font-size: 10.5px;
         font-weight: 700;
         color: #38bdf8;
         display: flex;
@@ -1231,7 +972,7 @@ export function renderDashboard() {
         padding-left: 2px;
       }
 
-      .dash-segmented-control {
+      .dash-segmented-pills {
         display: flex;
         align-items: center;
         gap: 2px;
@@ -1247,762 +988,550 @@ export function renderDashboard() {
         border-radius: 6px;
         cursor: pointer;
         transition: all 0.15s ease;
-        white-space: nowrap;
-        user-select: none;
       }
 
       .btn-dash-date-filter:hover {
-        background: rgba(255, 255, 255, 0.06);
-        color: #ffffff;
+        color: #f1f5f9;
+        background: rgba(255, 255, 255, 0.05);
       }
 
       .btn-dash-date-filter.active {
-        background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+        background: #0284c7;
         color: #ffffff;
         font-weight: 700;
         border-color: #38bdf8;
-        box-shadow: 0 2px 8px rgba(2, 132, 199, 0.4);
+        box-shadow: 0 1px 6px rgba(2, 132, 199, 0.4);
       }
 
-      /* Actions & Nav Buttons */
-      .dash-actions-block {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        flex-wrap: wrap;
-      }
-
-      .dash-quick-links {
-        display: flex;
-        gap: 4px;
-        align-items: center;
-      }
-
-      .dash-nav-btn {
-        background: rgba(255, 255, 255, 0.03);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        color: #cbd5e1;
-        height: 28px;
-        padding: 0 9px;
-        border-radius: 6px;
-        font-size: 11px;
-        font-weight: 600;
+      .dash-btn-primary {
+        background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+        color: #ffffff;
+        border: 1px solid rgba(56, 189, 248, 0.5);
+        padding: 5px 12px;
+        font-size: 11.5px;
+        font-weight: 700;
+        border-radius: 8px;
         display: inline-flex;
         align-items: center;
-        gap: 5px;
+        gap: 6px;
         cursor: pointer;
-        transition: all 0.15s ease;
+        box-shadow: 0 2px 10px rgba(2, 132, 199, 0.35);
+        transition: all 0.18s ease;
+        white-space: nowrap;
       }
 
-      .dash-nav-btn:hover {
-        background: rgba(56, 189, 248, 0.08);
-        border-color: rgba(56, 189, 248, 0.3);
-        color: #38bdf8;
+      .dash-btn-primary:hover {
+        background: linear-gradient(135deg, #0369a1 0%, #075985 100%);
+        border-color: #38bdf8;
+        box-shadow: 0 4px 14px rgba(2, 132, 199, 0.5);
         transform: translateY(-1px);
       }
 
-      .dash-refresh-btn {
-        background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
-        border: 1px solid rgba(56, 189, 248, 0.4);
-        color: #ffffff;
-        height: 28px;
-        padding: 0 10px;
-        border-radius: 6px;
-        font-size: 11px;
-        font-weight: 700;
+      .dash-btn-icon {
+        width: 30px;
+        height: 30px;
+        border-radius: 7px;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: #cbd5e1;
         display: inline-flex;
         align-items: center;
-        gap: 5px;
+        justify-content: center;
         cursor: pointer;
-        box-shadow: 0 2px 8px rgba(2, 132, 199, 0.35);
-        transition: all 0.15s ease;
+        transition: all 0.18s ease;
       }
 
-      .dash-refresh-btn:hover {
-        background: linear-gradient(135deg, #0369a1 0%, #075985 100%);
-        box-shadow: 0 3px 12px rgba(2, 132, 199, 0.5);
+      .dash-btn-icon:hover {
+        background: rgba(56, 189, 248, 0.12);
+        border-color: rgba(56, 189, 248, 0.35);
+        color: #38bdf8;
       }
 
-      .dash-refresh-btn:active .dash-refresh-icon {
-        transform: rotate(180deg);
-        transition: transform 0.3s ease;
-      }
-
-      /* 2. Main 2x2 Grid Layout: Balanced, Unsquished & Legible */
-      .dash-2x2-grid {
+      /* 2. Top 5 Modern KPI Cards Row */
+      .dash-kpi-row {
         display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-columns: repeat(5, minmax(0, 1fr));
         gap: 12px;
-        align-items: stretch;
-        margin-bottom: 2px;
+        flex-shrink: 0;
       }
 
-      /* 3. Section Cards */
-      .dash-card {
-        background: #0f172a;
+      .dash-kpi-card {
+        background: linear-gradient(180deg, #111827 0%, #0d1525 100%);
         border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 10px;
+        border-radius: 12px;
+        padding: 14px 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        cursor: pointer;
+        transition: transform 0.18s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.18s ease, box-shadow 0.18s ease;
+        user-select: none;
+        position: relative;
         overflow: hidden;
+      }
+
+      .dash-kpi-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+      }
+
+      .kpi-card-total { border-left: 3.5px solid #0284c7; }
+      .kpi-card-total:hover { border-color: rgba(56, 189, 248, 0.45); border-left-color: #38bdf8; }
+
+      .kpi-card-active { border-left: 3.5px solid #10b981; }
+      .kpi-card-active:hover { border-color: rgba(16, 185, 129, 0.45); border-left-color: #34d399; }
+
+      .kpi-card-maint { border-left: 3.5px solid #f59e0b; }
+      .kpi-card-maint:hover { border-color: rgba(245, 158, 11, 0.45); border-left-color: #fbbf24; }
+
+      .kpi-card-breakdown { border-left: 3.5px solid #ef4444; }
+      .kpi-card-breakdown:hover { border-color: rgba(239, 68, 68, 0.45); border-left-color: #f87171; }
+
+      .kpi-card-pending { border-left: 3.5px solid #8b5cf6; }
+      .kpi-card-pending:hover { border-color: rgba(168, 85, 247, 0.45); border-left-color: #c084fc; }
+
+      .dash-kpi-content {
+        min-width: 0;
         display: flex;
         flex-direction: column;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+        justify-content: center;
+      }
+
+      .dash-kpi-val {
+        font-size: 26px;
+        font-weight: 800;
+        line-height: 1.1;
+        color: #ffffff;
+        font-family: var(--font-mono, 'JetBrains Mono', monospace);
+        font-variant-numeric: tabular-nums;
+        letter-spacing: -0.5px;
+      }
+
+      .val-emerald { color: #34d399; }
+      .val-amber { color: #fbbf24; }
+      .val-rose { color: #f87171; }
+      .val-purple { color: #c084fc; }
+
+      .dash-kpi-lbl {
+        font-size: 10px;
+        font-weight: 700;
+        color: #94a3b8;
+        letter-spacing: 0.5px;
+        margin-top: 4px;
+        text-transform: uppercase;
+        white-space: nowrap;
+      }
+
+      .dash-kpi-badge {
+        width: 36px;
+        height: 36px;
+        border-radius: 9px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+
+      .badge-blue { background: rgba(2, 132, 199, 0.12); border: 1px solid rgba(2, 132, 199, 0.3); }
+      .badge-emerald { background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.3); }
+      .badge-amber { background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.3); }
+      .badge-rose { background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.3); }
+      .badge-purple { background: rgba(139, 92, 246, 0.12); border: 1px solid rgba(139, 92, 246, 0.3); }
+
+      .dash-kpi-emoji {
+        font-size: 16px;
+        line-height: 1;
+      }
+
+      /* 3D Glowing Orbs */
+      .glowing-orb {
+        width: 17px;
+        height: 17px;
+        border-radius: 50%;
+        display: inline-block;
+        flex-shrink: 0;
+      }
+
+      .orb-emerald {
+        background: radial-gradient(circle at 35% 35%, #86efac, #10b981 55%, #047857 100%);
+        box-shadow: 0 0 10px rgba(16, 185, 129, 0.6), inset 0 1px 2px rgba(255, 255, 255, 0.6);
+        border: 1px solid rgba(16, 185, 129, 0.4);
+      }
+
+      .orb-amber {
+        background: radial-gradient(circle at 35% 35%, #fde68a, #f59e0b 55%, #b45309 100%);
+        box-shadow: 0 0 10px rgba(245, 158, 11, 0.6), inset 0 1px 2px rgba(255, 255, 255, 0.6);
+        border: 1px solid rgba(245, 158, 11, 0.4);
+      }
+
+      .orb-rose {
+        background: radial-gradient(circle at 35% 35%, #fca5a5, #ef4444 55%, #b91c1c 100%);
+        box-shadow: 0 0 10px rgba(239, 68, 68, 0.6), inset 0 1px 2px rgba(255, 255, 255, 0.6);
+        border: 1px solid rgba(239, 68, 68, 0.4);
+      }
+
+      /* 3. The 4 Modern Equipment Analytics Modular Cards Grid */
+      .dash-distributions-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
+        flex-shrink: 0;
+      }
+
+      .dash-dist-card {
+        background: linear-gradient(180deg, #111827 0%, #0d1525 100%);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 12px;
+        padding: 14px 16px;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
         transition: border-color 0.2s ease, box-shadow 0.2s ease;
         min-height: 0;
       }
 
-      .dash-card:hover {
-        border-color: rgba(56, 189, 248, 0.25);
-        box-shadow: 0 6px 22px rgba(0, 0, 0, 0.45);
+      .dash-dist-card:hover {
+        border-color: rgba(255, 255, 255, 0.15);
+        box-shadow: 0 10px 28px -4px rgba(0, 0, 0, 0.5);
       }
 
-      .dash-card-header {
-        padding: 9px 14px;
-        background: rgba(255, 255, 255, 0.02);
-        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      .card-cyan:hover { border-color: rgba(56, 189, 248, 0.35); }
+      .card-emerald:hover { border-color: rgba(16, 185, 129, 0.35); }
+      .card-purple:hover { border-color: rgba(168, 85, 247, 0.35); }
+      .card-amber:hover { border-color: rgba(245, 158, 11, 0.35); }
+
+      .dash-dist-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        gap: 8px;
+        margin-bottom: 8px;
         flex-shrink: 0;
       }
 
-      .dash-card-title-group {
+      .dash-dist-title-box {
         display: flex;
-        align-items: center;
-        gap: 8px;
-      }
-
-      .dash-card-badge-icon {
-        width: 26px;
-        height: 26px;
-        border-radius: 6px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-      }
-
-      .icon-blue { background: rgba(56, 189, 248, 0.12); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.25); }
-      .icon-teal { background: rgba(20, 184, 166, 0.12); color: #2dd4bf; border: 1px solid rgba(20, 184, 166, 0.25); }
-      .icon-purple { background: rgba(168, 85, 247, 0.12); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.25); }
-      .icon-emerald { background: rgba(16, 185, 129, 0.12); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.25); }
-
-      .dash-card-title {
-        font-size: 13.5px;
-        font-weight: 700;
-        color: #f8fafc;
-        margin: 0;
-        letter-spacing: -0.1px;
-      }
-
-      .dash-card-meta-pill {
-        font-size: 11px;
-        font-weight: 600;
-        color: #94a3b8;
-        background: rgba(255, 255, 255, 0.04);
-        border: 1px solid rgba(255, 255, 255, 0.07);
-        padding: 2px 8px;
-        border-radius: 6px;
-        display: inline-flex;
-        align-items: center;
-        gap: 5px;
-        white-space: nowrap;
-      }
-
-      .dash-card-meta-pill strong {
-        color: #38bdf8;
-        font-family: var(--font-mono, monospace);
-        font-variant-numeric: tabular-nums;
-      }
-
-      .dash-pill-sep {
-        color: #475569;
-        font-size: 8px;
-      }
-
-      /* Clean Summary Status Strip */
-      .dash-summary-strip {
-        padding: 7px 14px;
-        background: rgba(0, 0, 0, 0.2);
-        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-        display: flex;
-        flex-direction: column;
-        gap: 5px;
-        flex-shrink: 0;
-      }
-
-      .dash-summary-strip-row {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        font-size: 11px;
-      }
-
-      .dash-summary-metric {
-        color: #cbd5e1;
-        font-weight: 600;
-        display: inline-flex;
         align-items: center;
         gap: 6px;
+        min-width: 0;
       }
 
-      .dash-summary-sub {
-        color: #94a3b8;
+      .dash-dist-icon {
+        font-size: 14px;
+        line-height: 1;
+      }
+
+      .dash-dist-title {
+        font-size: 13.5px;
+        font-weight: 700;
+        margin: 0;
+        letter-spacing: -0.1px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .card-cyan .dash-dist-title { color: #38bdf8; }
+      .card-emerald .dash-dist-title { color: #34d399; }
+      .card-purple .dash-dist-title { color: #c084fc; }
+      .card-amber .dash-dist-title { color: #fbbf24; }
+
+      .dash-dist-pill {
+        font-size: 10px;
+        font-weight: 700;
+        padding: 2px 7px;
+        border-radius: 9999px;
+        letter-spacing: 0.3px;
+        white-space: nowrap;
+        flex-shrink: 0;
+      }
+
+      .pill-cyan { background: rgba(56, 189, 248, 0.1); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); }
+      .pill-emerald { background: rgba(16, 185, 129, 0.1); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+      .pill-purple { background: rgba(168, 85, 247, 0.1); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3); }
+      .pill-amber { background: rgba(245, 158, 11, 0.1); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+
+      /* Mini Telemetry Status Bar */
+      .dash-dist-mini-status {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
         font-size: 10.5px;
+        color: #94a3b8;
+        margin-bottom: 8px;
+        padding-bottom: 6px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        flex-shrink: 0;
+      }
+
+      .mini-status-label {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+      }
+
+      .mini-status-value {
+        font-weight: 600;
+      }
+
+      .status-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        display: inline-block;
+      }
+
+      .dot-emerald { background: #10b981; box-shadow: 0 0 5px #10b981; }
+      .dot-purple { background: #8b5cf6; box-shadow: 0 0 5px #8b5cf6; }
+      .dot-amber { background: #f59e0b; box-shadow: 0 0 5px #f59e0b; }
+      .dot-cyan { background: #0284c7; box-shadow: 0 0 5px #0284c7; }
+
+      /* Scrollable Rows List */
+      .dash-dist-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        max-height: 310px;
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding-right: 4px;
+      }
+
+      .dash-dist-row {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        padding: 5px 6px;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: background-color 0.15s ease, transform 0.15s ease;
+        user-select: none;
+      }
+
+      .dash-dist-row:hover {
+        background: rgba(255, 255, 255, 0.05);
+        transform: translateX(2px);
+      }
+
+      .dash-dist-top-line {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 8px;
+      }
+
+      .dash-dist-name {
+        font-size: 11.5px;
+        font-weight: 600;
+        color: #e2e8f0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        flex: 1;
+        min-width: 0;
+      }
+
+      .dash-dist-desc {
+        font-size: 10px;
+        color: #64748b;
+        margin-bottom: 2px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .needle-chip-desc {
+        font-size: 10px;
         font-weight: 500;
+        color: #94a3b8;
+      }
+
+      .dash-dist-stat {
+        font-size: 11px;
+        font-weight: 700;
+        white-space: nowrap;
         font-family: var(--font-mono, monospace);
         font-variant-numeric: tabular-nums;
+        flex-shrink: 0;
       }
 
-      .dash-progress-track {
-        height: 4px;
+      .stat-cyan { color: #38bdf8; }
+      .stat-emerald { color: #34d399; }
+      .stat-purple { color: #c084fc; }
+      .stat-amber { color: #fbbf24; }
+      .stat-rose { color: #f87171; }
+      .stat-slate { color: #94a3b8; }
+
+      .dash-dist-pct {
+        font-weight: 600;
+        opacity: 0.9;
+        font-size: 10px;
+      }
+
+      .dash-needle-badge {
+        font-size: 9px;
+        font-weight: 800;
+        padding: 1px 5px;
+        border-radius: 4px;
+        margin-left: 4px;
+        display: inline-block;
+      }
+
+      .dash-dist-track {
+        height: 5px;
         background: rgba(255, 255, 255, 0.06);
         border-radius: 9999px;
         overflow: hidden;
-        display: flex;
-        width: 100%;
       }
 
-      .dash-progress-seg {
+      .dash-dist-bar {
         height: 100%;
-        transition: width 0.3s ease;
+        border-radius: 9999px;
+        transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
       }
 
-      .seg-emerald { background: #10b981; }
-      .seg-amber { background: #f59e0b; }
-      .seg-rose { background: #ef4444; }
-      .seg-slate { background: #475569; }
+      .bar-cyan { background: linear-gradient(90deg, #0284c7 0%, #38bdf8 100%); }
+      .bar-emerald { background: linear-gradient(90deg, #059669 0%, #34d399 100%); }
+      .bar-purple { background: linear-gradient(90deg, #7c3aed 0%, #c084fc 100%); }
+      .bar-amber { background: linear-gradient(90deg, #d97706 0%, #fbbf24 100%); }
+      .bar-rose { background: linear-gradient(90deg, #dc2626 0%, #f87171 100%); }
+      .bar-slate { background: linear-gradient(90deg, #475569 0%, #94a3b8 100%); }
 
-      /* Clean Data List / Table Header */
-      .dash-table-header {
-        display: grid;
-        grid-template-columns: 1fr 105px 115px;
-        align-items: center;
-        padding: 6px 14px;
-        background: rgba(0, 0, 0, 0.32);
-        font-size: 10px;
-        font-weight: 700;
-        color: #94a3b8;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-        flex-shrink: 0;
+      .needle-fleet-summary {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px dashed rgba(255, 255, 255, 0.1);
+        margin-top: 4px;
       }
 
-      /* Card Rows Container */
-      .dash-card-rows {
-        display: flex;
-        flex-direction: column;
-        flex: 1;
-      }
-
-      /* Clean Clickable Rows (Data List Style) */
-      .dash-clickable-row {
-        display: grid;
-        grid-template-columns: 1fr 105px 115px;
-        align-items: center;
-        padding: 8px 14px;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.035);
-        cursor: pointer;
-        transition: background 0.12s ease, border-color 0.12s ease;
-        user-select: none;
-        gap: 8px;
-        min-height: 44px;
-        box-sizing: border-box;
-      }
-
-      .dash-clickable-row:last-child {
-        border-bottom: none;
-      }
-
-      .dash-clickable-row:hover {
-        background: rgba(255, 255, 255, 0.04);
-      }
-
-      .dash-clickable-row:hover .dash-chevron {
-        transform: translateX(2px);
-        opacity: 1;
-        color: #ffffff;
-      }
-
-      .dash-row-left {
-        display: flex;
-        align-items: center;
-        gap: 9px;
-        min-width: 0;
-      }
-
-      .dash-dot-indicator {
-        width: 7px;
-        height: 7px;
-        border-radius: 50%;
-        flex-shrink: 0;
-      }
-
-      .dot-sky { background: #38bdf8; box-shadow: 0 0 6px rgba(56, 189, 248, 0.5); }
-      .dot-emerald { background: #10b981; box-shadow: 0 0 6px rgba(16, 185, 129, 0.5); }
-      .dot-cyan { background: #06b6d4; box-shadow: 0 0 6px rgba(6, 182, 212, 0.5); }
-      .dot-amber { background: #f59e0b; box-shadow: 0 0 6px rgba(245, 158, 11, 0.5); }
-      .dot-yellow { background: #eab308; box-shadow: 0 0 6px rgba(234, 179, 8, 0.5); }
-      .dot-rose { background: #ef4444; box-shadow: 0 0 6px rgba(239, 68, 68, 0.5); }
-      .dot-slate { background: #64748b; }
-      .dot-purple { background: #a855f7; box-shadow: 0 0 6px rgba(168, 85, 247, 0.5); }
-      .dot-teal { background: #14b8a6; box-shadow: 0 0 6px rgba(20, 184, 166, 0.5); }
-
-      .dash-row-titles {
-        display: flex;
-        flex-direction: column;
-        gap: 1px;
-        min-width: 0;
-      }
-
-      .dash-row-primary {
-        font-size: 12.5px;
-        font-weight: 600;
-        color: #f1f5f9;
-        line-height: 1.25;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-
-      .dash-row-secondary {
-        font-size: 10.5px;
-        color: #64748b;
-        line-height: 1.2;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-
-      .dash-row-center {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
-
-      .dash-status-pill {
-        font-size: 10px;
-        font-weight: 600;
-        padding: 2px 7px;
-        border-radius: 4px;
-        white-space: nowrap;
-        display: inline-flex;
-        align-items: center;
-        gap: 3px;
-      }
-
-      .dash-row-right {
-        display: flex;
-        align-items: center;
-        justify-content: flex-end;
-        gap: 6px;
-      }
-
-      /* Quantity Pills with Tabular Digits */
-      .dash-qty-pill {
-        border-radius: 5px;
-        padding: 2px 8px;
-        font-size: 12px;
-        font-weight: 700;
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        font-family: var(--font-mono, monospace);
-        font-variant-numeric: tabular-nums;
-        transition: all 0.15s ease;
-        white-space: nowrap;
-      }
-
-      .dash-qty-pill small {
-        font-size: 9.5px;
-        font-weight: 500;
-        opacity: 0.75;
-        font-family: var(--font-main, sans-serif);
-      }
-
-      .dash-chevron {
-        font-size: 11px;
-        line-height: 1;
-        opacity: 0.4;
-        transition: transform 0.15s ease, opacity 0.15s ease;
-      }
-
-      /* Color Pills */
-      .pill-sky {
-        background: rgba(56, 189, 248, 0.1);
-        color: #38bdf8;
-        border: 1px solid rgba(56, 189, 248, 0.25);
-      }
-
-      .pill-emerald {
-        background: rgba(16, 185, 129, 0.1);
-        color: #34d399;
-        border: 1px solid rgba(16, 185, 129, 0.25);
-      }
-
-      .pill-cyan {
-        background: rgba(6, 182, 212, 0.1);
-        color: #22d3ee;
-        border: 1px solid rgba(6, 182, 212, 0.25);
-      }
-
-      .pill-amber {
-        background: rgba(245, 158, 11, 0.1);
-        color: #fbbf24;
-        border: 1px solid rgba(245, 158, 11, 0.25);
-      }
-
-      .pill-yellow {
-        background: rgba(234, 179, 8, 0.1);
-        color: #fde047;
-        border: 1px solid rgba(234, 179, 8, 0.25);
-      }
-
-      .pill-rose {
-        background: rgba(239, 68, 68, 0.12);
-        color: #f87171;
-        border: 1px solid rgba(239, 68, 68, 0.3);
-      }
-
-      .pill-slate {
-        background: rgba(255, 255, 255, 0.04);
-        color: #94a3b8;
-        border: 1px solid rgba(255, 255, 255, 0.08);
-      }
-
-      .pill-purple {
-        background: rgba(168, 85, 247, 0.1);
-        color: #c084fc;
-        border: 1px solid rgba(168, 85, 247, 0.25);
-      }
-
-      .pill-teal {
-        background: rgba(20, 184, 166, 0.1);
-        color: #2dd4bf;
-        border: 1px solid rgba(20, 184, 166, 0.25);
-      }
-
-      /* 4. Needle Simple Clean Table */
-      .dash-table-wrapper {
-        width: 100%;
-        overflow-x: auto;
-        flex: 1;
-        -webkit-overflow-scrolling: touch;
-      }
-
-      .dash-clean-table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 12px;
-        text-align: left;
-      }
-
-      .dash-clean-table thead th {
-        padding: 7px 12px;
-        background: rgba(0, 0, 0, 0.32);
-        font-size: 10px;
-        font-weight: 700;
-        color: #94a3b8;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-        white-space: nowrap;
-      }
-
-      .dash-clean-table thead th.th-num,
-      .dash-clean-table tbody td.td-num,
-      .dash-clean-table tfoot td.td-num {
-        text-align: right;
-      }
-
-      .dash-clean-table thead th.th-status,
-      .dash-clean-table tbody td.td-status,
-      .dash-clean-table tfoot td.td-status {
-        text-align: center;
-      }
-
-      .dash-clean-table tbody td {
-        padding: 7px 12px;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.035);
-        vertical-align: middle;
-        color: #cbd5e1;
-      }
-
-      .dash-clean-table tfoot td {
-        padding: 8px 12px;
-        border-top: 1px solid rgba(56, 189, 248, 0.25);
-        background: rgba(56, 189, 248, 0.03);
-        vertical-align: middle;
-      }
-
-      .dash-clean-table tr.dash-table-tr {
-        display: table-row !important;
-        cursor: pointer;
-        transition: background 0.12s ease;
-      }
-
-      .dash-clean-table tbody tr.dash-table-tr:hover,
-      .dash-clean-table tfoot tr.dash-table-tr:hover {
-        background: rgba(255, 255, 255, 0.04);
-      }
-
-      .td-spec {
-        min-width: 160px;
-      }
-
-      .dash-needle-cell {
-        display: flex;
-        flex-direction: column;
-        gap: 2px;
-      }
-
-      .needle-type-badge {
-        font-family: var(--font-mono, monospace);
-        font-size: 11px;
-        font-weight: 800;
-        color: #38bdf8;
-        background: rgba(56, 189, 248, 0.1);
-        border: 1px solid rgba(56, 189, 248, 0.25);
-        padding: 1px 6px;
-        border-radius: 4px;
-        display: inline-block;
-        width: fit-content;
-      }
-
-      .needle-type-desc {
-        font-size: 10.5px;
-        color: #64748b;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        max-width: 220px;
-      }
-
-      .dash-summary-title {
-        font-size: 11.5px;
-        font-weight: 800;
-        color: #ffffff;
-      }
-
-      .td-num {
-        font-family: var(--font-mono, monospace);
-        font-variant-numeric: tabular-nums;
-        font-size: 12px;
-        font-weight: 600;
-        white-space: nowrap;
-      }
-
-      .text-bold { font-weight: 800; }
-      .text-sky { color: #38bdf8; }
-      .text-emerald { color: #34d399; }
-      .text-teal { color: #2dd4bf; }
-      .text-purple { color: #c084fc; }
-      .text-amber { color: #fbbf24; }
-      .text-rose { color: #f87171; }
-      .text-rose-sub { color: #fca5a5; }
-
-      /* 5. Live Servicing Schedules Drawer */
+      /* 4. Collapsible Live Servicing Schedules Preview Drawer */
       .dash-schedules-card {
-        flex-shrink: 0;
-        background: #0f172a;
+        background: linear-gradient(180deg, #111827 0%, #0d1525 100%);
         border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 10px;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
         overflow: hidden;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+        flex-shrink: 0;
       }
 
       .dash-schedules-bar {
-        padding: 6px 14px;
-        background: rgba(56, 189, 248, 0.05);
-        cursor: pointer;
+        padding: 9px 16px;
         display: flex;
         justify-content: space-between;
         align-items: center;
+        background: rgba(255, 255, 255, 0.02);
+        cursor: pointer;
         user-select: none;
-        transition: background 0.15s ease;
+        transition: background-color 0.15s ease;
       }
 
       .dash-schedules-bar:hover {
-        background: rgba(56, 189, 248, 0.09);
+        background: rgba(255, 255, 255, 0.05);
       }
 
       .dash-schedules-left {
         display: flex;
         align-items: center;
         gap: 8px;
-        flex-wrap: wrap;
       }
 
-      .dash-schedules-pulse-icon {
-        width: 22px;
-        height: 22px;
-        border-radius: 6px;
-        background: rgba(56, 189, 248, 0.15);
-        color: #38bdf8;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
-
-      .dash-schedules-heading {
-        display: flex;
-        align-items: center;
-        gap: 6px;
+      .dash-pulse-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: #38bdf8;
+        box-shadow: 0 0 6px #38bdf8;
       }
 
       .dash-schedules-title {
         font-size: 12.5px;
-        font-weight: 800;
+        font-weight: 700;
         color: #ffffff;
       }
 
-      .dash-schedules-caption {
-        font-size: 10.5px;
-        color: #94a3b8;
-        font-weight: 500;
-      }
-
-      .dash-schedules-chips {
-        display: flex;
-        gap: 4px;
-        align-items: center;
-      }
-
-      .dash-chip-critical {
+      .dash-schedules-badge {
+        font-size: 10px;
+        font-weight: 700;
         background: rgba(239, 68, 68, 0.15);
-        color: #fca5a5;
-        border: 1px solid rgba(239, 68, 68, 0.35);
-        font-size: 10px;
-        font-weight: 700;
-        padding: 1px 6px;
-        border-radius: 4px;
+        color: #f87171;
+        border: 1px solid rgba(239, 68, 68, 0.3);
+        padding: 1.5px 6px;
+        border-radius: 9999px;
       }
 
-      .dash-chip-amber {
-        background: rgba(245, 158, 11, 0.15);
-        color: #fcd34d;
-        border: 1px solid rgba(245, 158, 11, 0.35);
-        font-size: 10px;
-        font-weight: 700;
-        padding: 1px 6px;
-        border-radius: 4px;
-      }
-
-      .dash-schedules-right {
+      .dash-schedules-actions {
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 12px;
       }
 
-      .dash-toggle-label {
+      .btn-dash-link-pm {
+        background: transparent;
+        border: none;
+        color: #38bdf8;
         font-size: 11px;
         font-weight: 700;
-        color: #38bdf8;
-      }
-
-      .dash-full-schedule-btn {
-        background: rgba(56, 189, 248, 0.1);
-        border: 1px solid rgba(56, 189, 248, 0.3);
-        color: #38bdf8;
-        font-size: 10.5px;
-        font-weight: 700;
-        height: 24px;
-        padding: 0 8px;
-        border-radius: 5px;
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
         cursor: pointer;
-        transition: all 0.15s ease;
+        padding: 0;
+        transition: color 0.15s ease;
       }
 
-      .dash-full-schedule-btn:hover {
-        background: rgba(56, 189, 248, 0.2);
-        color: #ffffff;
+      .btn-dash-link-pm:hover {
+        color: #7dd3fc;
+        text-decoration: underline;
+      }
+
+      .dash-schedules-toggle-label {
+        font-size: 11px;
+        font-weight: 600;
+        color: #94a3b8;
       }
 
       .dash-schedules-drawer {
-        max-height: 190px;
-        overflow-y: auto;
         border-top: 1px solid rgba(255, 255, 255, 0.06);
+        padding: 8px 14px 14px;
+        background: rgba(10, 15, 28, 0.5);
       }
 
-      .dash-table-responsive-wrapper {
-        width: 100%;
-        overflow-x: auto;
+      .dash-table-responsive {
+        max-height: 220px;
+        overflow-y: auto;
       }
 
-      .dash-drawer-table {
+      .dash-live-pm-table {
         width: 100%;
         border-collapse: collapse;
-        margin: 0;
         font-size: 11.5px;
       }
 
-      .dash-drawer-table thead tr {
-        background: rgba(0, 0, 0, 0.4);
-        color: #94a3b8;
+      .dash-live-pm-table th {
+        text-align: left;
+        padding: 7px 10px;
         font-size: 10px;
         font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.3px;
-      }
-
-      .dash-drawer-table th {
-        padding: 6px 12px;
-        text-align: left;
-        white-space: nowrap;
-      }
-
-      .dash-drawer-row {
-        border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-        color: #cbd5e1;
-        transition: background 0.12s ease;
-      }
-
-      .dash-drawer-row:hover {
-        background: rgba(255, 255, 255, 0.035);
-      }
-
-      .dash-drawer-table td {
-        padding: 6px 12px;
-        vertical-align: middle;
-      }
-
-      .dash-maint-name {
-        font-weight: 700;
-        color: #ffffff;
-        font-size: 12px;
-      }
-
-      .dash-maint-sub {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        margin-top: 1px;
-      }
-
-      .dash-asset-tag {
-        font-family: var(--font-mono, monospace);
-        font-size: 9.5px;
-        font-weight: 700;
-        color: #38bdf8;
-        background: rgba(56, 189, 248, 0.12);
-        padding: 0 4px;
-        border-radius: 3px;
-        border: 1px solid rgba(56, 189, 248, 0.25);
-      }
-
-      .dash-serial-tag {
-        font-family: var(--font-mono, monospace);
-        font-size: 9.5px;
         color: #94a3b8;
+        text-transform: uppercase;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      }
+
+      .dash-live-pm-table td {
+        padding: 7px 10px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        color: #e2e8f0;
+      }
+
+      .dash-pm-row {
+        cursor: pointer;
+        transition: background-color 0.15s ease;
+      }
+
+      .dash-pm-row:hover {
+        background: rgba(255, 255, 255, 0.04);
       }
 
       .dash-location-badge {
         font-size: 10.5px;
-        color: #cbd5e1;
+        color: #94a3b8;
         display: inline-flex;
         align-items: center;
         gap: 4px;
@@ -2025,10 +1554,7 @@ export function renderDashboard() {
       }
 
       .dash-date-highlight {
-        font-size: 11px;
         font-weight: 700;
-        color: #ffffff;
-        font-family: var(--font-mono, monospace);
       }
 
       .dash-urgency-badge {
@@ -2036,17 +1562,23 @@ export function renderDashboard() {
         font-weight: 800;
         padding: 1.5px 6px;
         border-radius: 4px;
-        border: 1px solid transparent;
         display: inline-flex;
         align-items: center;
         gap: 4px;
         white-space: nowrap;
       }
 
+      .badge-overdue { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.35); }
+      .badge-due-today { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.35); }
+      .badge-due-tomorrow, .badge-due-soon { background: rgba(234, 179, 8, 0.15); color: #facc15; border: 1px solid rgba(234, 179, 8, 0.35); }
+      .badge-scheduled { background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); }
+      .badge-completed { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.35); }
+
       .dash-urgency-dot {
         width: 4px;
         height: 4px;
         border-radius: 50%;
+        background: currentColor;
       }
 
       .dash-technician-tag {
@@ -2054,7 +1586,7 @@ export function renderDashboard() {
         align-items: center;
         gap: 5px;
         font-size: 11px;
-        color: #e2e8f0;
+        color: #cbd5e1;
       }
 
       .dash-tech-avatar {
@@ -2063,44 +1595,61 @@ export function renderDashboard() {
         border-radius: 50%;
         background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
         color: #ffffff;
-        font-size: 9px;
+        font-size: 8.5px;
         font-weight: 800;
         display: inline-flex;
         align-items: center;
         justify-content: center;
       }
 
-      /* 6. Responsive Breakpoints */
-      @media (max-width: 1100px) {
-        .dash-2x2-grid {
-          grid-template-columns: 1fr;
-          gap: 12px;
+      /* Custom Scrollbars */
+      .custom-scroll::-webkit-scrollbar {
+        width: 4px;
+        height: 4px;
+      }
+
+      .custom-scroll::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.02);
+      }
+
+      .custom-scroll::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.15);
+        border-radius: 9999px;
+      }
+
+      .custom-scroll::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.25);
+      }
+
+      /* Responsive Breakpoints */
+      @media (max-width: 1200px) {
+        .dash-kpi-row {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
         }
-        .user-friendly-dashboard {
-          height: auto;
-          min-height: 100%;
+        .dash-distributions-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
         }
       }
 
-      @media (max-width: 768px) {
-        .dash-toolbar {
+      @media (max-width: 900px) {
+        .dash-kpi-row {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      @media (max-width: 640px) {
+        .dash-hero-banner {
           flex-direction: column;
           align-items: stretch;
-          gap: 10px;
         }
-        .dash-date-switcher-wrapper {
-          overflow-x: auto;
-          -webkit-overflow-scrolling: touch;
-        }
-        .dash-actions-block {
+        .dash-hero-actions {
           justify-content: space-between;
         }
-        .dash-table-header,
-        .dash-clickable-row {
-          grid-template-columns: 1fr auto auto;
+        .dash-kpi-row {
+          grid-template-columns: 1fr;
         }
-        .needle-type-desc {
-          max-width: 150px;
+        .dash-distributions-grid {
+          grid-template-columns: 1fr;
         }
       }
     </style>
@@ -2128,7 +1677,77 @@ export function attachDashboardEvents() {
     });
   });
 
-  // 2. Collapsible Servicing Schedules Drawer Toggle
+  // 2. Open Inventory Grid Button
+  const btnOpenInv = document.getElementById('btn-dash-open-inventory');
+  if (btnOpenInv) {
+    btnOpenInv.addEventListener('click', () => {
+      state.set('inventoryStatusFilter', null);
+      state.set('currentView', 'inventory');
+    });
+  }
+
+  // 3. Refresh Button
+  const btnRefresh = document.getElementById('btn-dash-refresh');
+  if (btnRefresh) {
+    btnRefresh.addEventListener('click', () => {
+      const svg = btnRefresh.querySelector('.dash-refresh-svg');
+      if (svg) {
+        svg.style.transform = 'rotate(360deg)';
+        svg.style.transition = 'transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)';
+        setTimeout(() => {
+          svg.style.transform = '';
+          svg.style.transition = '';
+        }, 500);
+      }
+      window.dispatchEvent(new CustomEvent('erp:storage-updated'));
+    });
+  }
+
+  // 4. Clickable Top KPI Cards & Inventory Filter Rows
+  document.querySelectorAll('[data-action="inv-filter"]').forEach(el => {
+    el.addEventListener('click', () => {
+      const status = el.getAttribute('data-status') || 'ALL';
+      if (status !== 'ALL') {
+        state.set('inventoryStatusFilter', status);
+      } else {
+        state.set('inventoryStatusFilter', null);
+      }
+      state.set('currentView', 'inventory');
+    });
+  });
+
+  // 5. Clickable Machine Transfers Rows
+  document.querySelectorAll('[data-action="trf-filter"]').forEach(el => {
+    el.addEventListener('click', () => {
+      const status = el.getAttribute('data-status') || 'ALL';
+      state.set('transferStatusFilter', status);
+      state.set('currentView', 'transfers');
+    });
+  });
+
+  // 6. Clickable Machine Servicing Rows
+  document.querySelectorAll('[data-action="pm-filter"]').forEach(el => {
+    el.addEventListener('click', () => {
+      const urgency = el.getAttribute('data-urgency') || 'ALL';
+      state.set('pmFilterUrgency', urgency);
+      state.set('currentView', 'preventive-maintenance');
+    });
+  });
+
+  // 7. Clickable Needle Rows
+  document.querySelectorAll('[data-action="needle-filter"]').forEach(el => {
+    el.addEventListener('click', () => {
+      const needle = el.getAttribute('data-needle');
+      if (needle && needle !== 'ALL') {
+        state.set('needleSearchQuery', needle.replace('×', 'x'));
+      } else {
+        state.set('needleSearchQuery', null);
+      }
+      state.set('currentView', 'needle-operations');
+    });
+  });
+
+  // 8. Collapsible Servicing Schedules Drawer Toggle
   const btnToggleSchedules = document.getElementById('btn-dash-toggle-schedules');
   if (btnToggleSchedules) {
     btnToggleSchedules.addEventListener('click', (e) => {
@@ -2146,38 +1765,6 @@ export function attachDashboardEvents() {
     });
   }
 
-  // 3. Navigation Header Buttons
-  const btnInv = document.getElementById('btn-dash-goto-inventory');
-  if (btnInv) {
-    btnInv.addEventListener('click', () => {
-      state.set('inventoryStatusFilter', null);
-      state.set('currentView', 'inventory');
-    });
-  }
-
-  const btnTransfers = document.getElementById('btn-dash-goto-transfers');
-  if (btnTransfers) {
-    btnTransfers.addEventListener('click', () => {
-      state.set('transferStatusFilter', 'ALL');
-      state.set('currentView', 'transfers');
-    });
-  }
-
-  const btnServicing = document.getElementById('btn-dash-goto-servicing');
-  if (btnServicing) {
-    btnServicing.addEventListener('click', () => {
-      state.set('pmFilterUrgency', 'ALL');
-      state.set('currentView', 'preventive-maintenance');
-    });
-  }
-
-  const btnNeedles = document.getElementById('btn-dash-goto-needles');
-  if (btnNeedles) {
-    btnNeedles.addEventListener('click', () => {
-      state.set('currentView', 'needle-operations');
-    });
-  }
-
   const btnFullPm = document.getElementById('btn-dash-open-full-pm');
   if (btnFullPm) {
     btnFullPm.addEventListener('click', () => {
@@ -2185,64 +1772,4 @@ export function attachDashboardEvents() {
       state.set('currentView', 'preventive-maintenance');
     });
   }
-
-  const btnRefresh = document.getElementById('btn-dash-refresh');
-  if (btnRefresh) {
-    btnRefresh.addEventListener('click', () => {
-      const refreshIcon = btnRefresh.querySelector('.dash-refresh-icon');
-      if (refreshIcon) {
-        refreshIcon.style.transform = 'rotate(360deg)';
-        refreshIcon.style.transition = 'transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)';
-        setTimeout(() => {
-          refreshIcon.style.transform = '';
-          refreshIcon.style.transition = '';
-        }, 500);
-      }
-      window.dispatchEvent(new CustomEvent('erp:storage-updated'));
-    });
-  }
-
-  // 4. Row Click Actions: Section 1 (Inventory)
-  document.querySelectorAll('[data-action="inv-filter"]').forEach(el => {
-    el.addEventListener('click', () => {
-      const status = el.getAttribute('data-status') || 'ALL';
-      if (status !== 'ALL') {
-        state.set('inventoryStatusFilter', status);
-      } else {
-        state.set('inventoryStatusFilter', null);
-      }
-      state.set('currentView', 'inventory');
-    });
-  });
-
-  // 5. Row Click Actions: Section 2 (Machine Transfers)
-  document.querySelectorAll('[data-action="trf-filter"]').forEach(el => {
-    el.addEventListener('click', () => {
-      const status = el.getAttribute('data-status') || 'ALL';
-      state.set('transferStatusFilter', status);
-      state.set('currentView', 'transfers');
-    });
-  });
-
-  // 6. Row Click Actions: Section 3 (Machine Servicing)
-  document.querySelectorAll('[data-action="pm-filter"]').forEach(el => {
-    el.addEventListener('click', () => {
-      const urgency = el.getAttribute('data-urgency') || 'ALL';
-      state.set('pmFilterUrgency', urgency);
-      state.set('currentView', 'preventive-maintenance');
-    });
-  });
-
-  // 7. Row Click Actions: Section 4 (Needle Operations)
-  document.querySelectorAll('[data-action="needle-filter"]').forEach(el => {
-    el.addEventListener('click', () => {
-      const needle = el.getAttribute('data-needle');
-      if (needle && needle !== 'ALL') {
-        state.set('needleSearchQuery', needle.replace('×', 'x'));
-      } else {
-        state.set('needleSearchQuery', null);
-      }
-      state.set('currentView', 'needle-operations');
-    });
-  });
 }
