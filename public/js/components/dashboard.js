@@ -1179,11 +1179,11 @@ export function renderDashboard() {
         border: 1px solid rgba(239, 68, 68, 0.4);
       }
 
-      /* 3. The 4 Modern Equipment Analytics Modular Cards Grid */
+      /* 3. The 4 Modern Equipment Analytics Modular Cards Grid (2-column Landscape layout) */
       .dash-distributions-grid {
         display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-        gap: 12px;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
         flex-shrink: 0;
       }
 
@@ -1230,13 +1230,11 @@ export function renderDashboard() {
       }
 
       .dash-dist-title {
-        font-size: 13.5px;
+        font-size: 14px;
         font-weight: 700;
         margin: 0;
         letter-spacing: -0.1px;
         white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
       }
 
       .card-cyan .dash-dist-title { color: #38bdf8; }
@@ -1299,10 +1297,9 @@ export function renderDashboard() {
         display: flex;
         flex-direction: column;
         gap: 8px;
-        max-height: 310px;
-        overflow-y: auto;
-        overflow-x: hidden;
-        padding-right: 4px;
+        max-height: none;
+        overflow: visible;
+        padding-right: 2px;
       }
 
       .dash-dist-row {
@@ -1633,14 +1630,17 @@ export function renderDashboard() {
         .dash-kpi-row {
           grid-template-columns: repeat(3, minmax(0, 1fr));
         }
-        .dash-distributions-grid {
-          grid-template-columns: repeat(2, minmax(0, 1fr));
-        }
       }
 
       @media (max-width: 900px) {
         .dash-kpi-row {
           grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      @media (max-width: 768px) {
+        .dash-distributions-grid {
+          grid-template-columns: 1fr;
         }
       }
 
@@ -1653,9 +1653,6 @@ export function renderDashboard() {
           justify-content: space-between;
         }
         .dash-kpi-row {
-          grid-template-columns: 1fr;
-        }
-        .dash-distributions-grid {
           grid-template-columns: 1fr;
         }
       }
