@@ -265,6 +265,37 @@ export function renderSettingsView() {
           </div>
         </div>
 
+        <!-- Card: Direct cPanel MySQL Database Connection -->
+        <div style="background: linear-gradient(135deg, rgba(2, 132, 199, 0.12) 0%, rgba(15, 23, 42, 0.85) 100%); border: 1.5px solid rgba(56, 189, 248, 0.4); border-radius: var(--radius-lg); padding: 22px; display: flex; flex-direction: column; gap: 14px; grid-column: 1 / -1; box-shadow: 0 4px 24px rgba(2, 132, 199, 0.12);">
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 12px; flex-wrap: wrap; gap: 12px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span style="font-size: 26px;">🐬</span>
+              <div>
+                <h3 style="font-size: 16px; font-weight: 800; color: #38bdf8; margin: 0; display: flex; align-items: center; gap: 8px;">
+                  <span>Direct cPanel MySQL Database Connection</span>
+                  <span style="background: rgba(16, 185, 129, 0.15); border: 1px solid #10b981; color: #34d399; font-size: 10.5px; font-weight: 700; padding: 2px 8px; border-radius: 999px;">
+                    Master Source of Truth
+                  </span>
+                </h3>
+                <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">
+                  Connect the ERP directly to your cPanel hosting MySQL database with live multi-device synchronization.
+                </div>
+              </div>
+            </div>
+            <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+              <a href="api/mysql_api.php" download="mysql_api.php" class="btn btn-secondary btn-sm" style="font-weight: 700; border-color: rgba(56, 189, 248, 0.3); color: #38bdf8; display: flex; align-items: center; gap: 6px; text-decoration: none;">
+                <span>📥</span> <span>Download mysql_api.php</span>
+              </a>
+              <button type="button" id="btn-settings-go-cpanel" class="btn btn-primary btn-sm" style="font-weight: 800; background: linear-gradient(135deg, #0284c7, #2563eb); border: none; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 15px rgba(2, 132, 199, 0.35);">
+                <span>🗄️</span> <span>Open Data Engine &amp; Configure cPanel</span>
+              </button>
+            </div>
+          </div>
+          <p style="font-size: 12.5px; color: #cbd5e1; margin: 0; line-height: 1.5;">
+            Configure your cPanel domain URL, MySQL database name, database user, and password. Access real-time multi-database sync topology (MySQL &rarr; PostgreSQL) and run live connection checks.
+          </p>
+        </div>
+
         <!-- Card 1: Enterprise Information & Branding -->
         <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 20px; display: flex; flex-direction: column; gap: 14px;">
           <h3 style="font-size: 15px; font-weight: 700; color: #38bdf8; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">
@@ -621,6 +652,12 @@ export function renderSettingsView() {
 }
 
 export function initSettingsEvents() {
+  document.getElementById('btn-settings-go-cpanel')?.addEventListener('click', () => {
+    if (window.location) {
+      window.location.hash = '#database-config';
+    }
+  });
+
   const saveGen = document.getElementById('btn-save-general-settings');
   if (saveGen) {
     saveGen.addEventListener('click', async () => {

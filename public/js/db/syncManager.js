@@ -149,15 +149,23 @@ class SyncManager {
             const t = (conf.type || '').toUpperCase();
             if (t === 'MYSQL') {
               let ep = (conf.endpoint || '').trim().replace(/\/$/, '');
-              if (!ep || ep === 'api/mysql_api.php' || ep === '/api/mysql_api.php' || ep.includes('://api/mysql_api.php') || ep === '/api/db/mysql' || (ep.includes('api/mysql_api.php') && !ep.startsWith('http'))) {
+              if (!ep || ep === '/api/db/mysql') {
                 ep = 'https://moviezonex.com/mysql_api.php';
-              } else if (!/^https?:\/\//i.test(ep) && typeof window !== 'undefined' && window.location && (window.location.hostname.includes('github.io') || window.location.hostname.includes('moviezonex.com'))) {
-                ep = 'https://moviezonex.com/mysql_api.php';
+              } else if (ep === 'api/mysql_api.php' || ep === '/api/mysql_api.php') {
+                if (typeof window !== 'undefined' && window.location && window.location.hostname.includes('github.io')) {
+                  ep = 'https://moviezonex.com/mysql_api.php';
+                } else if (typeof window !== 'undefined' && window.location && window.location.origin) {
+                  ep = window.location.origin + '/api/mysql_api.php';
+                } else {
+                  ep = 'https://moviezonex.com/mysql_api.php';
+                }
+              } else if (!/^https?:\/\//i.test(ep)) {
+                ep = (ep.startsWith('localhost') || ep.startsWith('127.0.0.1')) ? ('http://' + ep) : ('https://' + ep);
               }
               conf.endpoint = ep;
-              if (!conf.database || conf.database === 'al_muslim_erp' || conf.database === 'maint_erp') conf.database = 'motaherh_maint-erp';
-              if (!conf.username || conf.username === 'mainterp') conf.username = 'motaherh_mainterp';
-              if (!conf.password) conf.password = 'Maint@456';
+              if (!conf.database) conf.database = 'motaherh_maint-erp';
+              if (!conf.username) conf.username = 'motaherh_mainterp';
+              if (conf.password === undefined || conf.password === null) conf.password = 'Maint@456';
               adapter = new MysqlAdapter(conf);
             } else if (t === 'POSTGRESQL' || t === 'POSTGRES') {
               let ep = (conf.endpoint || '').trim().replace(/\/$/, '');
@@ -185,11 +193,13 @@ class SyncManager {
 
             if (adapter) {
               // If configured as PRIMARY, assign as primaryAdapter
-              if (conf.role === 'PRIMARY') {
-                adapter.id = conf.id;
+              if (conf.role === 'PRIMARY' || conf.id === 'mysql_primary') {
+                adapter.id = conf.id || 'mysql_primary';
                 adapter.name = conf.name || `${conf.type} Primary`;
                 adapter.config = {
                   ...conf,
+                  id: conf.id || 'mysql_primary',
+                  role: 'PRIMARY',
                   retryEnabled: conf.retryEnabled !== false,
                   autoSync: true,
                   enabled: true

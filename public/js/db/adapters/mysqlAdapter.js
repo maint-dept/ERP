@@ -11,23 +11,27 @@ export class MysqlAdapter extends BaseAdapter {
     this.type = 'MYSQL';
     this.name = config.name || 'MySQL Database';
     this.host = config.host || 'localhost';
-    this.port = config.port || 3306;
-    this.database = config.database && config.database !== 'al_muslim_erp' ? config.database : 'motaherh_maint-erp';
+    this.port = Number(config.port) || 3306;
+    this.database = (config.database && config.database !== 'al_muslim_erp') ? config.database : 'motaherh_maint-erp';
     this.username = config.username || 'motaherh_mainterp';
-    this.password = config.password || 'Maint@456';
+    this.password = (config.password !== undefined && config.password !== null) ? config.password : 'Maint@456';
     this.apiKey = config.apiKey || '';
     this.ssl = config.ssl !== false;
+
     let rawEndpoint = (config.endpoint || '').trim().replace(/\/$/, '');
-    if (!rawEndpoint ||
-        rawEndpoint === 'api/mysql_api.php' ||
-        rawEndpoint === '/api/mysql_api.php' ||
-        rawEndpoint.includes('://api/mysql_api.php') ||
-        rawEndpoint === '/api/db/mysql' ||
-        (rawEndpoint.includes('api/mysql_api.php') && !rawEndpoint.startsWith('http'))) {
+    if (!rawEndpoint || rawEndpoint === '/api/db/mysql') {
       rawEndpoint = 'https://moviezonex.com/mysql_api.php';
-    } else if (!/^https?:\/\//i.test(rawEndpoint)) {
-      if (typeof window !== 'undefined' && window.location && (window.location.hostname.includes('github.io') || window.location.hostname.includes('moviezonex.com'))) {
+    } else if (rawEndpoint === 'api/mysql_api.php' || rawEndpoint === '/api/mysql_api.php') {
+      if (typeof window !== 'undefined' && window.location && window.location.hostname.includes('github.io')) {
         rawEndpoint = 'https://moviezonex.com/mysql_api.php';
+      } else if (typeof window !== 'undefined' && window.location && window.location.origin) {
+        rawEndpoint = window.location.origin + '/api/mysql_api.php';
+      } else {
+        rawEndpoint = 'https://moviezonex.com/mysql_api.php';
+      }
+    } else if (!/^https?:\/\//i.test(rawEndpoint)) {
+      if (rawEndpoint.startsWith('localhost') || rawEndpoint.startsWith('127.0.0.1')) {
+        rawEndpoint = 'http://' + rawEndpoint;
       } else {
         rawEndpoint = 'https://' + rawEndpoint;
       }

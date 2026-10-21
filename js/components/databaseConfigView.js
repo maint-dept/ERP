@@ -23,19 +23,19 @@ import { MysqlAdapter } from '../db/adapters/mysqlAdapter.js';
 export const PROVIDER_SPECS = {
   MYSQL: {
     key: 'MYSQL',
-    name: 'MySQL Database',
-    badge: 'SQL · Primary RDBMS',
+    name: 'MySQL Database (cPanel / Paid Hosting)',
+    badge: 'SQL · Primary Master RDBMS',
     icon: '🐬',
     color: '#00758f',
-    description: 'High-performance SQL database engine with InnoDB transaction guarantees. Primary Master database for ERP on Paid Hosting.',
+    description: 'High-performance SQL database engine with InnoDB transaction guarantees. Authoritative Master database for ERP on cPanel / Paid Hosting.',
     fields: [
-      { id: 'endpoint', label: 'Hosting REST API Endpoint URL', type: 'text', placeholder: 'https://moviezonex.com/mysql_api.php', defaultValue: 'https://moviezonex.com/mysql_api.php', required: true, note: 'Upload mysql_api.php to your paid hosting and enter its full URL here.' },
-      { id: 'database', label: 'Database Name', type: 'text', placeholder: 'motaherh_maint-erp', defaultValue: 'motaherh_maint-erp', required: true },
-      { id: 'username', label: 'Database User', type: 'text', placeholder: 'motaherh_mainterp', defaultValue: 'motaherh_mainterp', required: true },
+      { id: 'endpoint', label: 'cPanel Hosting REST API Endpoint URL', type: 'text', placeholder: 'https://moviezonex.com/mysql_api.php', defaultValue: 'https://moviezonex.com/mysql_api.php', required: true, note: 'Upload mysql_api.php to your cPanel public_html/ and enter its full URL here.' },
+      { id: 'database', label: 'Database Name', type: 'text', placeholder: 'motaherh_maint-erp', defaultValue: 'motaherh_maint-erp', required: true, note: 'In cPanel: e.g. cpaneluser_dbname' },
+      { id: 'username', label: 'Database User', type: 'text', placeholder: 'motaherh_mainterp', defaultValue: 'motaherh_mainterp', required: true, note: 'In cPanel: e.g. cpaneluser_dbuser' },
       { id: 'password', label: 'Database Password', type: 'password', placeholder: 'Maint@456', defaultValue: 'Maint@456', required: true },
-      { id: 'host', label: 'Database Host', type: 'text', placeholder: 'localhost', defaultValue: 'localhost', required: false },
+      { id: 'host', label: 'Database Host', type: 'text', placeholder: 'localhost', defaultValue: 'localhost', required: false, note: 'Almost always localhost in cPanel' },
       { id: 'port', label: 'Port', type: 'number', placeholder: '3306', defaultValue: '3306', required: false },
-      { id: 'apiKey', label: 'API Secret Key (Optional)', type: 'password', placeholder: 'e.g. secret_key_123', note: 'Matches $API_KEY defined in mysql_api.php for secure authentication.' }
+      { id: 'apiKey', label: 'API Secret Key (Optional)', type: 'password', placeholder: 'e.g. secret_key_123', note: 'Matches $API_KEY defined in mysql_api.php (leave blank if none).' }
     ]
   },
   POSTGRESQL: {
@@ -181,14 +181,26 @@ function getDashboardSyncState() {
     try { localStorage.setItem('erp_multi_db_config', JSON.stringify(rawConfigs)); } catch (_) {}
   } else {
     // Normalize endpoint to live hosting URL if relative or outdated
-    if (!mysqlPrimary.endpoint || mysqlPrimary.endpoint === 'api/mysql_api.php' || !mysqlPrimary.endpoint.startsWith('http')) {
-      mysqlPrimary.endpoint = 'https://moviezonex.com/mysql_api.php';
-      mysqlPrimary.database = 'motaherh_maint-erp';
-      mysqlPrimary.username = 'motaherh_mainterp';
-      mysqlPrimary.password = 'Maint@456';
-      mysqlPrimary.role = 'PRIMARY';
-      try { localStorage.setItem('erp_multi_db_config', JSON.stringify(rawConfigs)); } catch (_) {}
+    let ep = (mysqlPrimary.endpoint || '').trim().replace(/\/$/, '');
+    if (!ep || ep === '/api/db/mysql') {
+      ep = 'https://moviezonex.com/mysql_api.php';
+    } else if (ep === 'api/mysql_api.php' || ep === '/api/mysql_api.php') {
+      if (typeof window !== 'undefined' && window.location && window.location.hostname.includes('github.io')) {
+        ep = 'https://moviezonex.com/mysql_api.php';
+      } else if (typeof window !== 'undefined' && window.location && window.location.origin) {
+        ep = window.location.origin + '/api/mysql_api.php';
+      } else {
+        ep = 'https://moviezonex.com/mysql_api.php';
+      }
+    } else if (!/^https?:\/\//i.test(ep)) {
+      ep = (ep.startsWith('localhost') || ep.startsWith('127.0.0.1')) ? ('http://' + ep) : ('https://' + ep);
     }
+    mysqlPrimary.endpoint = ep;
+    mysqlPrimary.database = mysqlPrimary.database || 'motaherh_maint-erp';
+    mysqlPrimary.username = mysqlPrimary.username || 'motaherh_mainterp';
+    mysqlPrimary.password = (mysqlPrimary.password !== undefined && mysqlPrimary.password !== null) ? mysqlPrimary.password : 'Maint@456';
+    mysqlPrimary.role = 'PRIMARY';
+    try { localStorage.setItem('erp_multi_db_config', JSON.stringify(rawConfigs)); } catch (_) {}
   }
 
   // Normalize PostgreSQL replica with verified credentials and permanent canonical ID
@@ -407,11 +419,17 @@ export function renderDatabaseConfigView() {
   const hasMissing = state.databases.some(d => d.missing > 0);
   const totalMissing = state.databases.reduce((acc, d) => acc + (d.missing || 0), 0);
 
+  const mysqlPrimary = (configs || []).find(c => c.id === 'mysql_primary' || (c.type === 'MYSQL' && c.role === 'PRIMARY')) || {
+    endpoint: 'https://moviezonex.com/mysql_api.php',
+    database: 'motaherh_maint-erp',
+    username: 'motaherh_mainterp'
+  };
+
   return `
     <div class="page-view" style="max-width: 1440px; margin: 0 auto; padding-bottom: 60px;">
       
       <!-- Top Title & Global Controls -->
-      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; flex-wrap: wrap; gap: 16px;">
         <div>
           <div style="display: flex; align-items: center; gap: 12px;">
             <h1 style="font-size: 26px; font-weight: 800; color: #fff; margin: 0; letter-spacing: -0.5px;">🗄️ Data Engine</h1>
@@ -423,7 +441,7 @@ export function renderDatabaseConfigView() {
             </span>
           </div>
           <p style="font-size: 13.5px; color: var(--text-secondary); margin: 6px 0 0;">
-            Real-time synchronization topology, single source of truth validation, and automatic difference reconciliation.
+            Direct cPanel MySQL Engine, real-time synchronization topology, single source of truth validation, and automatic difference reconciliation.
           </p>
         </div>
 
@@ -436,6 +454,37 @@ export function renderDatabaseConfigView() {
           </button>
           <button id="btn-fix-all-missing" class="btn btn-warning btn-sm" style="font-weight: 700; background: #f59e0b; color: #000; border: none; display: flex; align-items: center; gap: 6px;">
             <span>⚡ Fix &amp; Re-sync Missing (${totalMissing})</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Direct cPanel Connection Quick Banner -->
+      <div style="background: linear-gradient(135deg, rgba(2, 132, 199, 0.12) 0%, rgba(15, 23, 42, 0.85) 100%); border: 1.5px solid rgba(56, 189, 248, 0.35); border-radius: 12px; padding: 16px 20px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
+        <div style="display: flex; align-items: center; gap: 14px; min-width: 280px;">
+          <div style="width: 44px; height: 44px; border-radius: 10px; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.3); display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;">
+            🐬
+          </div>
+          <div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 15px; font-weight: 800; color: #fff;">Direct cPanel MySQL Connection</span>
+              <span id="cpanel-status-pill" style="background: rgba(16, 185, 129, 0.15); border: 1px solid #10b981; color: #34d399; font-size: 10.5px; font-weight: 700; padding: 2px 8px; border-radius: 999px;">
+                🟢 Connected · Master Source
+              </span>
+            </div>
+            <div style="font-size: 12.5px; color: var(--text-secondary); margin-top: 3px; font-family: monospace;">
+              Endpoint: <span style="color: #38bdf8;">${mysqlPrimary.endpoint || 'https://moviezonex.com/mysql_api.php'}</span> &bull; DB: <span style="color: #34d399;">${mysqlPrimary.database || 'motaherh_maint-erp'}</span> &bull; User: <span style="color: #fed7aa;">${mysqlPrimary.username || 'motaherh_mainterp'}</span>
+            </div>
+          </div>
+        </div>
+        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+          <a href="api/mysql_api.php" download="mysql_api.php" class="btn btn-secondary btn-sm" style="font-weight: 700; border-color: rgba(56, 189, 248, 0.3); color: #38bdf8; display: flex; align-items: center; gap: 6px; text-decoration: none;">
+            <span>📥</span> <span>Download mysql_api.php</span>
+          </a>
+          <button id="btn-quick-test-cpanel" class="btn btn-secondary btn-sm" style="font-weight: 700; border-color: #10b981; color: #34d399; display: flex; align-items: center; gap: 6px;">
+            <span>🔌</span> <span>Test cPanel Connection</span>
+          </button>
+          <button id="btn-quick-config-cpanel" class="btn btn-primary btn-sm" style="font-weight: 800; background: linear-gradient(135deg, #0284c7, #2563eb); border: none; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 15px rgba(2, 132, 199, 0.35);">
+            <span>⚙️</span> <span>Configure cPanel Directly</span>
           </button>
         </div>
       </div>
@@ -486,6 +535,14 @@ export function renderDatabaseConfigView() {
             </div>
             <div style="width: 100%; height: 6px; background: rgba(255,255,255,0.08); border-radius: 999px; margin-top: 8px; overflow: hidden;">
               <div style="width: 100%; height: 100%; background: linear-gradient(90deg, #10b981, #38bdf8); border-radius: 999px;"></div>
+            </div>
+            <div style="display: flex; gap: 8px; margin-top: 14px;">
+              <button id="btn-card-config-cpanel" class="btn btn-secondary btn-sm" style="flex: 1; font-weight: 700; border-color: rgba(56, 189, 248, 0.4); color: #38bdf8; font-size: 11.5px; padding: 6px 10px;">
+                ⚙️ Configure cPanel
+              </button>
+              <button id="btn-card-test-cpanel" class="btn btn-secondary btn-sm" style="flex: 1; font-weight: 700; border-color: rgba(16, 185, 129, 0.4); color: #34d399; font-size: 11.5px; padding: 6px 10px;">
+                🔌 Test Connection
+              </button>
             </div>
           </div>
         </div>
@@ -1085,6 +1142,55 @@ export function initDatabaseConfigEvents() {
   } else {
     renderProviderPlaceholder();
   }
+
+  // 1b. Direct cPanel Action Handlers
+  const handleOpenCpanelConfig = () => {
+    openConfigForm('MYSQL', 'mysql_primary');
+    notificationService.toast('Opened Direct cPanel MySQL Configuration.');
+  };
+
+  const handleTestCpanelConnection = async (btnEl) => {
+    const origHtml = btnEl ? btnEl.innerHTML : '';
+    if (btnEl) {
+      btnEl.disabled = true;
+      btnEl.innerHTML = '<span>⏳</span> <span>Testing...</span>';
+    }
+    notificationService.toast('Testing direct connection to cPanel MySQL...');
+    try {
+      const adapter = syncManager.primaryAdapter || new MysqlAdapter();
+      const res = await adapter.testConnection();
+      if (res && res.success) {
+        const stats = res.tablesCount !== undefined ? ` • ${res.tablesCount} Tables • ${(res.totalItems || 0).toLocaleString()} items` : '';
+        const latency = res.latency !== undefined ? ` (${res.latency}ms)` : '';
+        notificationService.toast(`✅ cPanel MySQL Connected!${latency}${stats}`);
+        const pill = document.getElementById('cpanel-status-pill');
+        if (pill) {
+          pill.style.borderColor = '#10b981';
+          pill.style.color = '#34d399';
+          pill.innerHTML = `🟢 Connected${latency}`;
+        }
+      } else {
+        notificationService.toast(`❌ cPanel MySQL Test Failed: ${res?.error || 'Could not reach endpoint'}`);
+      }
+    } catch (err) {
+      notificationService.toast(`❌ cPanel Connection Error: ${err.message}`);
+    } finally {
+      if (btnEl) {
+        btnEl.disabled = false;
+        btnEl.innerHTML = origHtml;
+      }
+    }
+  };
+
+  document.getElementById('btn-quick-config-cpanel')?.addEventListener('click', handleOpenCpanelConfig);
+  document.getElementById('btn-card-config-cpanel')?.addEventListener('click', handleOpenCpanelConfig);
+
+  document.getElementById('btn-quick-test-cpanel')?.addEventListener('click', (e) => {
+    handleTestCpanelConnection(e.currentTarget);
+  });
+  document.getElementById('btn-card-test-cpanel')?.addEventListener('click', (e) => {
+    handleTestCpanelConnection(e.currentTarget);
+  });
 
   // 2. "➕ Add New Database Connection" button
   document.getElementById('btn-create-new-db')?.addEventListener('click', () => {
@@ -1691,11 +1797,11 @@ function renderProviderForm(providerKey, dbId = null) {
 
 
       ${spec.key === 'MYSQL' ? `
-        <div style="background: rgba(0, 117, 143, 0.08); border: 1.5px solid rgba(0, 117, 143, 0.4); border-radius: 8px; padding: 14px 16px; margin-top: 4px;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
+        <div style="background: rgba(0, 117, 143, 0.08); border: 1.5px solid rgba(0, 117, 143, 0.4); border-radius: 8px; padding: 16px 18px; margin-top: 6px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
             <div style="display: flex; align-items: center; gap: 8px;">
-              <span style="font-size: 18px;">🐬</span>
-              <span style="font-size: 13.5px; font-weight: 800; color: #38bdf8;">MySQL Paid Hosting Setup (cPanel / Hostinger / VPS)</span>
+              <span style="font-size: 20px;">🐬</span>
+              <span style="font-size: 14px; font-weight: 800; color: #38bdf8;">Direct cPanel MySQL Connection Guide</span>
             </div>
             <div style="display: flex; gap: 8px; flex-wrap: wrap;">
               <a href="api/mysql_api.php" download="mysql_api.php" class="btn btn-sm" style="background: #0284c7; color: #fff; font-weight: 800; font-size: 11.5px; padding: 6px 12px; border-radius: 6px; text-decoration: none; display: flex; align-items: center; gap: 5px; box-shadow: 0 2px 8px rgba(2, 132, 199, 0.3);">
@@ -1706,14 +1812,14 @@ function renderProviderForm(providerKey, dbId = null) {
               </a>
             </div>
           </div>
-          <p style="font-size: 12px; color: #cbd5e1; margin: 0 0 10px; line-height: 1.5;">
-            Paid Hosting (cPanel / Hostinger / Namecheap / VPS) blocks direct TCP socket connections (port 3306) from browsers. Follow these 4 quick steps to connect seamlessly:
+          <p style="font-size: 12px; color: #cbd5e1; margin: 0 0 12px; line-height: 1.5;">
+            Web browsers cannot make raw TCP port 3306 connections due to sandbox security. The ERP connects directly to your cPanel MySQL via the lightweight REST bridge <code>mysql_api.php</code> on your cPanel hosting. Follow these 4 simple steps:
           </p>
-          <div style="background: #090d16; border: 1px solid rgba(255,255,255,0.08); padding: 12px 14px; border-radius: 6px; font-size: 11.5px; color: #e2e8f0; line-height: 1.6;">
-            <strong>Step 1:</strong> In your Paid Hosting cPanel, navigate to <em>MySQL Databases</em>, create database <code>maint_erp</code>, user <code>mainterp</code>, password <code>Maint@456</code>, and grant All Privileges.<br/>
-            <strong>Step 2:</strong> Open <em>phpMyAdmin</em>, select database <code>maint_erp</code>, click the <strong>Import</strong> tab, and upload <code>erp_mysql_dump.sql</code>. (All factory tables and records will be initialized instantly).<br/>
-            <strong>Step 3:</strong> In cPanel <em>File Manager</em>, upload <code>mysql_api.php</code> into <code>public_html/api/</code> (credentials are already pre-configured inside).<br/>
-            <strong>Step 4:</strong> Enter your hosting URL in the <strong>Hosting REST API Endpoint URL</strong> field above (e.g. <code>https://yourdomain.com/api/mysql_api.php</code>) and click <strong>[ Test Connection ]</strong> below!
+          <div style="background: #090d16; border: 1px solid rgba(255,255,255,0.08); padding: 14px 16px; border-radius: 6px; font-size: 12px; color: #e2e8f0; line-height: 1.7;">
+            <strong>Step 1 (cPanel Database &amp; User):</strong> In your cPanel, navigate to <strong>MySQL Databases</strong>. Note your Database Name (e.g. <code>motaherh_maint-erp</code>) and User (e.g. <code>motaherh_mainterp</code>). Under <em>"Add User to Database"</em>, select the user and database, click <strong>Add</strong>, and check <strong>ALL PRIVILEGES</strong>.<br/>
+            <strong>Step 2 (Upload File):</strong> Click <strong>Download mysql_api.php</strong> above. In cPanel <strong>File Manager</strong>, open <code>public_html/</code> (or <code>public_html/api/</code>) and click <strong>Upload</strong> to upload <code>mysql_api.php</code>.<br/>
+            <strong>Step 3 (Enter Credentials):</strong> Enter your hosting URL above (e.g. <code>https://yourdomain.com/mysql_api.php</code>) along with your Database Name, User, and Password.<br/>
+            <strong>Step 4 (Test &amp; Connect):</strong> Click <strong>[ Test Connection ]</strong> below to verify the live ping and table count, then click <strong>[ Update Database ]</strong> to establish the direct connection!
           </div>
         </div>
       ` : ''}
@@ -1782,8 +1888,6 @@ function renderProviderForm(providerKey, dbId = null) {
     closeConfigForm();
   });
 
-
-
   // Attach Test Connection Handler (Real check, real error)
   const btnTest = document.getElementById('btn-test-connection');
   if (btnTest) {
@@ -1805,8 +1909,11 @@ function renderProviderForm(providerKey, dbId = null) {
             resultBox.style.background = 'rgba(16, 185, 129, 0.12)';
             resultBox.style.border = '1px solid rgba(16, 185, 129, 0.4)';
             resultBox.style.color = '#34d399';
-            const latency = (testRes && testRes.latency) ? ` Latency: ${testRes.latency}ms` : '';
-            resultBox.innerHTML = `✅ <strong>Connected Successfully!</strong> Connection to ${spec.name} is verified and responsive.${latency}`;
+            const latency = (testRes && testRes.latency !== undefined) ? ` &bull; Latency: ${testRes.latency}ms` : '';
+            const ver = testRes.version ? ` &bull; ${testRes.version}` : '';
+            const dbName = testRes.database ? ` &bull; DB: <code>${testRes.database}</code>` : '';
+            const stats = (testRes.tablesCount !== undefined) ? ` &bull; ${testRes.tablesCount} Tables (${(testRes.totalItems || 0).toLocaleString()} items)` : '';
+            resultBox.innerHTML = `✅ <strong>Connected Successfully!</strong> Connection to ${spec.name} verified and active.${latency}${ver}${dbName}${stats}`;
           } else {
             resultBox.style.background = 'rgba(239, 68, 68, 0.12)';
             resultBox.style.border = '1px solid rgba(239, 68, 68, 0.4)';
@@ -1814,7 +1921,23 @@ function renderProviderForm(providerKey, dbId = null) {
             const errMsg = (testRes && testRes.error) ? testRes.error : 'Could not reach database endpoint. Please verify credentials.';
             let advice = '';
             const errLower = errMsg.toLowerCase();
-            if (errLower.includes('password authentication failed')) {
+            if (spec.key === 'MYSQL') {
+              if (errLower.includes('access denied')) {
+                advice = `<div style="margin-top: 10px; font-size: 12px; color: #fbbf24; line-height: 1.5; padding: 10px 12px; background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 6px;">
+                  <strong>⚠️ MySQL Access Denied:</strong><br/>
+                  MySQL rejected user <code>${payload.username || 'user'}</code> or password.<br/>
+                  <strong>How to fix in cPanel:</strong><br/>
+                  1. In cPanel, go to <strong>MySQL Databases</strong>.<br/>
+                  2. Under <em>Current Users</em>, change password for <code>${payload.username}</code>.<br/>
+                  3. Under <em>Add User to Database</em>, select user and database, click <strong>Add</strong>, and check <strong>ALL PRIVILEGES</strong>.
+                </div>`;
+              } else if (errLower.includes('cannot reach') || errLower.includes('failed to fetch') || errLower.includes('404')) {
+                advice = `<div style="margin-top: 10px; font-size: 12px; color: #fbbf24; line-height: 1.5; padding: 10px 12px; background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 6px;">
+                  <strong>⚠️ Endpoint URL Not Reachable:</strong><br/>
+                  Make sure <code>mysql_api.php</code> is uploaded to your cPanel <code>public_html/</code> folder and your domain has active SSL (https://).
+                </div>`;
+              }
+            } else if (errLower.includes('password authentication failed')) {
               advice = `<div style="margin-top: 10px; font-size: 12px; color: #fbbf24; line-height: 1.5; padding: 10px 12px; background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 6px;">
                 <strong>⚠️ PostgreSQL Password Authentication Failed:</strong><br/>
                 PostgreSQL rejected the password for user <code>${payload.username || 'user'}</code>.<br/>
@@ -1867,13 +1990,19 @@ function renderProviderForm(providerKey, dbId = null) {
         if (spec.key === 'POSTGRESQL') {
           targetId = 'db_postgresql_replica';
         }
+        if (spec.key === 'MYSQL' && (role === 'PRIMARY' || !targetId || targetId === 'mysql_primary')) {
+          targetId = 'mysql_primary';
+        }
         if (!targetId) {
           targetId = `db_${spec.key.toLowerCase()}_${Date.now()}`;
         }
 
-        // Clean out any duplicate or old ghost PostgreSQL instances to guarantee a single clean replica
+        // Clean out any duplicate or old ghost instances to guarantee a single clean replica/primary
         if (spec.key === 'POSTGRESQL') {
           currentConfigs = currentConfigs.filter(c => c.id !== targetId && (c.type || '').toUpperCase() !== 'POSTGRESQL' && (c.type || '').toUpperCase() !== 'POSTGRES');
+        }
+        if (spec.key === 'MYSQL' && role === 'PRIMARY') {
+          currentConfigs = currentConfigs.filter(c => c.id !== targetId && !(c.role === 'PRIMARY' && (c.type || '').toUpperCase() === 'MYSQL'));
         }
 
         const existingIdx = currentConfigs.findIndex(c => c.id === targetId);
@@ -1893,7 +2022,11 @@ function renderProviderForm(providerKey, dbId = null) {
         if (existingIdx !== -1) {
           currentConfigs[existingIdx] = configRecord;
         } else {
-          currentConfigs.push(configRecord);
+          if (role === 'PRIMARY') {
+            currentConfigs.unshift(configRecord);
+          } else {
+            currentConfigs.push(configRecord);
+          }
         }
 
         // Persist to localStorage
@@ -1909,13 +2042,27 @@ function renderProviderForm(providerKey, dbId = null) {
 
         isConfigFormOpen = false;
         currentEditingDbId = null;
-        notificationService.toast(`✅ "${connName}" saved! Auto-sync replica is initializing...`);
+        notificationService.toast(`✅ "${connName}" saved successfully!`);
 
         // Re-render full dashboard so the new/updated DB appears immediately in sync topology
         reRenderView();
 
-        // Trigger immediate background sync for the saved database if autoSync is ON
-        if (autoSync) {
+        // Trigger immediate background verification and sync
+        if (spec.key === 'MYSQL' && role === 'PRIMARY') {
+          syncManager.primaryAdapter.testConnection().then(res => {
+            if (res && res.success) {
+              notificationService.toast(`🐬 Connected to cPanel MySQL (${res.database})! Synchronizing dataset...`);
+              syncManager.runFullSync('mysql_primary').then(() => {
+                notificationService.toast(`✅ cPanel MySQL (${res.database}) sync complete!`);
+                reRenderView();
+              }).catch(err => {
+                console.warn('Initial sync notice:', err.message);
+              });
+            }
+          }).catch(err => {
+            console.warn('cPanel test notice:', err.message);
+          });
+        } else if (autoSync) {
           syncManager.runFullSync(targetId).then(() => {
             notificationService.toast(`✅ "${connName}" initial sync completed!`);
             reRenderView();

@@ -2590,19 +2590,23 @@ class StorageEngine {
       const clone = { ...c };
       if (clone.id === 'mysql_primary' || (clone.type === 'MYSQL' && clone.role === 'PRIMARY')) {
         let ep = (clone.endpoint || '').trim().replace(/\/$/, '');
-        if (!ep || ep === 'api/mysql_api.php' || ep === '/api/mysql_api.php' || ep.includes('://api/mysql_api.php') || ep === '/api/db/mysql' || (ep.includes('api/mysql_api.php') && !ep.startsWith('http'))) {
+        if (!ep || ep === '/api/db/mysql') {
           ep = 'https://moviezonex.com/mysql_api.php';
-        } else if (!/^https?:\/\//i.test(ep)) {
-          if (typeof window !== 'undefined' && window.location && (window.location.hostname.includes('github.io') || window.location.hostname.includes('moviezonex.com'))) {
+        } else if (ep === 'api/mysql_api.php' || ep === '/api/mysql_api.php') {
+          if (typeof window !== 'undefined' && window.location && window.location.hostname.includes('github.io')) {
             ep = 'https://moviezonex.com/mysql_api.php';
+          } else if (typeof window !== 'undefined' && window.location && window.location.origin) {
+            ep = window.location.origin + '/api/mysql_api.php';
           } else {
-            ep = 'https://' + ep;
+            ep = 'https://moviezonex.com/mysql_api.php';
           }
+        } else if (!/^https?:\/\//i.test(ep)) {
+          ep = (ep.startsWith('localhost') || ep.startsWith('127.0.0.1')) ? ('http://' + ep) : ('https://' + ep);
         }
         clone.endpoint = ep;
-        if (!clone.database || clone.database === 'al_muslim_erp' || clone.database === 'maint_erp') clone.database = 'motaherh_maint-erp';
-        if (!clone.username || clone.username === 'mainterp') clone.username = 'motaherh_mainterp';
-        if (!clone.password) clone.password = 'Maint@456';
+        if (!clone.database) clone.database = 'motaherh_maint-erp';
+        if (!clone.username) clone.username = 'motaherh_mainterp';
+        if (clone.password === undefined || clone.password === null) clone.password = 'Maint@456';
         clone.enabled = true;
         clone.autoSync = true;
         clone.role = 'PRIMARY';
