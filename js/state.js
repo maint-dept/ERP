@@ -213,6 +213,7 @@ class GlobalState {
       visibleColumns: new Set(savedCols && Array.isArray(savedCols) && savedCols.length > 0 ? savedCols : defaultCols),
       activeModal: null,
       activeMachineId: null,
+      dashboardDateFilter: 'TODAY',
       theme: 'dark'
     };
 

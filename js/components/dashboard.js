@@ -102,18 +102,18 @@ export function renderDashboard() {
     if (scopedFilter.lineIds?.length > 0) machines = machines.filter(m => scopedFilter.lineIds.includes(m.lineId));
   }
 
-  // Active Date Filter
-  const activeDateFilter = state.get('dashboardDateFilter') || 'ALL';
+  // Active Date Filter (Default to 'TODAY')
+  const activeDateFilter = state.get('dashboardDateFilter') || 'TODAY';
   const dateCutoff = getDateCutoff(activeDateFilter);
   const dateFilterLabels = {
-    'ALL': 'All Time',
     'TODAY': 'Today',
     '3D': 'Last 3 Days',
     '7D': 'Last 7 Days',
     '30D': 'Last 30 Days',
-    '90D': 'Last 3 Months'
+    '90D': 'Last 3 Months',
+    'ALL': 'All Time'
   };
-  const currentFilterLabel = dateFilterLabels[activeDateFilter] || 'All Time';
+  const currentFilterLabel = dateFilterLabels[activeDateFilter] || 'Today';
 
   // Master Data Lookups
   const mnMap = new Map((storage.getTable(TABLE_NAMES.MACHINE_NAMES) || []).filter(Boolean).map(x => [x.id, (x.name || '').toLowerCase()]));
@@ -385,12 +385,12 @@ export function renderDashboard() {
               <span>Range:</span>
             </div>
             <div class="dash-segmented-pills" role="group" aria-label="Date range selector">
-              <button type="button" class="btn-dash-date-filter ${activeDateFilter === 'ALL' ? 'active' : ''}" data-filter="ALL" title="View lifetime aggregate factory data">All Time</button>
               <button type="button" class="btn-dash-date-filter ${activeDateFilter === 'TODAY' ? 'active' : ''}" data-filter="TODAY" title="View today's operations">Today</button>
               <button type="button" class="btn-dash-date-filter ${activeDateFilter === '3D' ? 'active' : ''}" data-filter="3D" title="Past 3 days">3D</button>
               <button type="button" class="btn-dash-date-filter ${activeDateFilter === '7D' ? 'active' : ''}" data-filter="7D" title="Past 7 days">7D</button>
               <button type="button" class="btn-dash-date-filter ${activeDateFilter === '30D' ? 'active' : ''}" data-filter="30D" title="Past 30 days">30D</button>
               <button type="button" class="btn-dash-date-filter ${activeDateFilter === '90D' ? 'active' : ''}" data-filter="90D" title="Past 3 months">3M</button>
+              <button type="button" class="btn-dash-date-filter ${activeDateFilter === 'ALL' ? 'active' : ''}" data-filter="ALL" title="View lifetime aggregate factory data">All Time</button>
             </div>
           </div>
 
