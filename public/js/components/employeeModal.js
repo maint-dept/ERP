@@ -854,7 +854,7 @@ export function initEmployeeModalEvents(refreshParentCallback) {
         };
 
         if (activeModal.type === 'EDIT') {
-          await employeeService.updateEmployee(activeModal.employeeId, payload);
+          await employeeService.updateEmployee(activeModal.employeeId, payload, cardNumber);
           notificationService.success(`Updated profile for ${name}`);
         } else {
           await employeeService.createEmployee(payload);
@@ -1054,7 +1054,7 @@ export function initEmployeeModalEvents(refreshParentCallback) {
             </div>
 
             <!-- Metric Summary Grid -->
-            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 8px;">
+            <div style="display: grid; grid-template-columns: repeat(${preview.inactiveCount > 0 ? 5 : 4}, 1fr); gap: 6px; margin-bottom: 8px;">
               <div style="background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 6px; padding: 6px 4px; text-align: center;">
                 <div style="font-size: 16px; font-weight: 900; color: #38bdf8;">${preview.updatedCount}</div>
                 <div style="font-size: 10px; color: #cbd5e1; margin-top: 1px;">Update Existing</div>
@@ -1071,6 +1071,12 @@ export function initEmployeeModalEvents(refreshParentCallback) {
                 <div style="font-size: 16px; font-weight: 900; color: #34d399;">${preview.addedCount}</div>
                 <div style="font-size: 10px; color: #cbd5e1; margin-top: 1px;">New Recruits</div>
               </div>
+              ${preview.inactiveCount > 0 ? `
+                <div style="background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.35); border-radius: 6px; padding: 6px 4px; text-align: center;">
+                  <div style="font-size: 16px; font-weight: 900; color: #f87171;">${preview.inactiveCount}</div>
+                  <div style="font-size: 10px; color: #fca5a5; margin-top: 1px;">Inactive / Left</div>
+                </div>
+              ` : ''}
             </div>
 
             ${preview.samplePromotions && preview.samplePromotions.length > 0 ? `
@@ -1090,6 +1096,17 @@ export function initEmployeeModalEvents(refreshParentCallback) {
                 <div style="margin-top: 3px; display: flex; flex-direction: column; gap: 3px; max-height: 80px; overflow-y: auto; padding-right: 4px;" class="custom-scroll">
                   ${preview.sampleTransfers.map(t => `
                     <div>&bull; <strong>${t.name}</strong> [Card #${t.card}]: <span style="color: #94a3b8;">${t.fromLoc}</span> &rarr; <span style="color: #38bdf8; font-weight: 800;">${t.toLoc}</span></div>
+                  `).join('')}
+                </div>
+              </div>
+            ` : ''}
+
+            ${preview.sampleInactive && preview.sampleInactive.length > 0 ? `
+              <div style="background: rgba(239, 68, 68, 0.08); border-left: 3px solid #f87171; border-radius: 4px; padding: 6px 10px; font-size: 11px; margin-bottom: 6px; color: #fca5a5;">
+                <strong style="color: #f87171;">🔴 Inactive / Left Employees (${preview.inactiveCount}):</strong>
+                <div style="margin-top: 3px; display: flex; flex-direction: column; gap: 3px; max-height: 80px; overflow-y: auto; padding-right: 4px;" class="custom-scroll">
+                  ${preview.sampleInactive.map(item => `
+                    <div>&bull; <strong>${item.name}</strong> [Card #${item.card}]: <span style="font-weight: 800; color: #f87171;">${item.status}</span> &rarr; Will be placed in <strong>Inactive Tab</strong></div>
                   `).join('')}
                 </div>
               </div>
@@ -1115,21 +1132,22 @@ export function initEmployeeModalEvents(refreshParentCallback) {
   }
 
   if (btnConfirmImport) {
-    btnConfirmImport.addEventListener('click', () => {
+    btnConfirmImport.addEventListener('click', async () => {
       if (parsedImportRows.length === 0) return;
       btnConfirmImport.disabled = true;
       btnConfirmImport.innerText = 'Processing Import...';
 
       try {
-        const res = employeeService.importManpowerData(parsedImportRows);
+        const res = await employeeService.importManpowerData(parsedImportRows);
 
         // Also ensure tool service sync is run if loaded
         if (typeof window !== 'undefined' && window.toolService && typeof window.toolService.syncAllocationsWithManpower === 'function') {
           window.toolService.syncAllocationsWithManpower();
         }
 
+        const inactiveMsg = (res.inactiveCount && res.inactiveCount > 0) ? `, ${res.inactiveCount} marked Inactive` : '';
         notificationService.success(
-          `Import & Auto-Update Successful! Updated: ${res.updatedCount} (${res.promotedCount} promotions, ${res.transferredCount} transfers), Added: ${res.addedCount} new employees. Tools Management synchronized!`
+          `Import & Auto-Update Successful! Updated: ${res.updatedCount} (${res.promotedCount} promotions, ${res.transferredCount} transfers${inactiveMsg}), Added: ${res.addedCount} new employees. Tools Management synchronized!`
         );
         closeModal();
       } catch (err) {

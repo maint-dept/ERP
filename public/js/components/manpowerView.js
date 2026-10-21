@@ -511,11 +511,11 @@ function renderEmployeeListTable({ title, employees, isInactiveView, isFiltered,
 
                         <!-- Activate / Deactivate Toggle -->
                         ${isInactiveView ? `
-                          <button class="btn btn-success btn-xs btn-emp-quick-toggle" data-emp-id="${emp.id}" data-target-status="ACTIVE" title="Reactivate to Active" style="padding: 3px 7px; font-size: 10.5px; font-weight: 700;">
+                          <button class="btn btn-success btn-xs btn-emp-quick-toggle" data-emp-id="${emp.id}" data-card-number="${emp.cardNumber || ''}" data-target-status="ACTIVE" title="Reactivate to Active" style="padding: 3px 7px; font-size: 10.5px; font-weight: 700;">
                             ▶️ Activate
                           </button>
                         ` : `
-                          <button class="btn btn-ghost btn-xs btn-emp-quick-toggle" data-emp-id="${emp.id}" data-target-status="INACTIVE" title="Deactivate / Move to Inactive" style="color: #fbbf24; padding: 3px 7px; font-size: 10.5px; font-weight: 700; border: 1px solid rgba(251,191,36,0.3);">
+                          <button class="btn btn-ghost btn-xs btn-emp-quick-toggle" data-emp-id="${emp.id}" data-card-number="${emp.cardNumber || ''}" data-target-status="INACTIVE" title="Deactivate / Move to Inactive" style="color: #fbbf24; padding: 3px 7px; font-size: 10.5px; font-weight: 700; border: 1px solid rgba(251,191,36,0.3);">
                             ⏸️ Deactivate
                           </button>
                         `}
@@ -977,9 +977,10 @@ export function initManpowerEvents() {
     btn.addEventListener('click', async (e) => {
       e.stopPropagation();
       const empId = btn.getAttribute('data-emp-id');
+      const empCard = btn.getAttribute('data-card-number');
       const targetStatus = btn.getAttribute('data-target-status');
       try {
-        await employeeService.updateEmployee(empId, { status: targetStatus });
+        await employeeService.updateEmployee(empId, { status: targetStatus }, empCard);
         notificationService.success(`Employee status updated to ${targetStatus}`);
         refreshView();
       } catch (err) {

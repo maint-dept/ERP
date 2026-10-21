@@ -536,12 +536,44 @@ class EmployeeService {
 
   constructor() {
     this._ensureSeedData();
+    this.autoHealEmployeeIds();
     this.autoHealEmployeeUnits();
   }
 
   _ensureSeedData() {
     // Single source of truth is Firestore and StorageEngine.
     // Never resurrect deleted employees or overwrite user data with mock seeds.
+  }
+
+  /**
+   * Automatically heals and deduplicates employee IDs to prevent cross-employee contamination
+   * If two employees share an ID, Robin or any affected employee is given a guaranteed unique ID.
+   */
+  autoHealEmployeeIds() {
+    try {
+      const table = storage.getTable(TABLE_NAMES.EMPLOYEES) || [];
+      const seenIds = new Set();
+      let modified = false;
+
+      table.forEach((emp, index) => {
+        if (!emp) return;
+        const rawId = emp.id ? String(emp.id).trim() : '';
+        if (!rawId || seenIds.has(rawId)) {
+          const newId = `emp-${Date.now()}-${Math.random().toString(36).slice(2, 9)}-${index + 1}`;
+          console.warn(`[Employee Self-Heal] Deduplicated ID for '${emp.name}' (${emp.cardNumber || 'No Card'}): '${rawId}' -> '${newId}'`);
+          emp.id = newId;
+          modified = true;
+        }
+        seenIds.add(emp.id);
+      });
+
+      if (modified) {
+        storage.setTable(TABLE_NAMES.EMPLOYEES, table);
+        storage.saveTable(TABLE_NAMES.EMPLOYEES, true);
+      }
+    } catch (err) {
+      console.warn('[Employee Self-Heal] Notice during ID deduplication:', err);
+    }
   }
 
   /**
@@ -757,6 +789,7 @@ class EmployeeService {
    */
   getAllEmployees(filters = {}) {
     this._ensureSeedData();
+    this.autoHealEmployeeIds();
     let list = storage.getTable(TABLE_NAMES.EMPLOYEES) || [];
 
     const flrMap = new Map((storage.getTable(TABLE_NAMES.FLOORS) || []).map(x => [x.id, x.name]));
@@ -1026,7 +1059,7 @@ class EmployeeService {
     const resolvedGroupId = data.groupId || (resolvedUnitId ? masterDataService.getUnitById?.(resolvedUnitId)?.groupId : null) || 'grp-1';
 
     const newEmp = {
-      id: `emp-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      id: `emp-${Date.now()}-${Math.random().toString(36).slice(2, 9)}-${Math.floor(Math.random() * 1000000)}`,
       name,
       cardNumber,
       designation: (data.designation || 'Senior Machine Operator').trim(),
@@ -1073,8 +1106,27 @@ class EmployeeService {
     return this.enrichEmployee(newEmp);
   }
 
-  async updateEmployee(id, updates) {
-    const existing = this.getEmployeeById(id);
+  async updateEmployee(id, updates, expectedCardNumber = null) {
+    let existing = this.getEmployeeById(id);
+    if (!existing && expectedCardNumber) {
+      existing = this.findEmployeeByFlexibleCard(expectedCardNumber) || this.getEmployeeByCardNumber(expectedCardNumber);
+      if (existing) id = existing.id;
+    }
+
+    // Strict Card Number Safeguard:
+    // If expectedCardNumber is provided, ensure we target the exact employee with that card
+    if (expectedCardNumber && existing && existing.cardNumber) {
+      const cleanExpected = String(expectedCardNumber).trim().toLowerCase();
+      const cleanCurrent = String(existing.cardNumber).trim().toLowerCase();
+      if (cleanCurrent !== cleanExpected) {
+        const exactMatch = this.findEmployeeByFlexibleCard(expectedCardNumber) || this.getEmployeeByCardNumber(expectedCardNumber);
+        if (exactMatch) {
+          existing = exactMatch;
+          id = exactMatch.id;
+        }
+      }
+    }
+
     if (!existing) throw new Error('Employee record not found.');
 
     if (updates.cardNumber && String(updates.cardNumber).trim() !== String(existing.cardNumber).trim()) {
@@ -1477,6 +1529,71 @@ class EmployeeService {
     return null;
   }
 
+  getEmployeeByFlexibleCard(queryCard) {
+    return this.findEmployeeByFlexibleCard(queryCard);
+  }
+
+  /**
+   * Robust status normalizer for Excel import and manual inputs.
+   * Flexibly normalizes variations like 'Inactive', 'Deactive', 'Deactivated',
+   * 'Disabled', 'Terminated', 'Resigned', 'Left', 'On Leave', 'Active'.
+   */
+  normalizeStatus(val, defaultStatus = 'ACTIVE') {
+    if (val === undefined || val === null) return defaultStatus;
+    const clean = String(val).trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (!clean) return defaultStatus;
+
+    if (
+      clean === 'inactive' ||
+      clean === 'deactive' ||
+      clean === 'deactivated' ||
+      clean === 'disabled' ||
+      clean === 'inact' ||
+      clean === 'suspended' ||
+      clean === 'no' ||
+      clean === 'false' ||
+      clean === '0'
+    ) {
+      return 'INACTIVE';
+    }
+
+    if (
+      clean === 'terminated' ||
+      clean === 'resigned' ||
+      clean === 'left' ||
+      clean === 'dismissed' ||
+      clean === 'closed' ||
+      clean === 'retired'
+    ) {
+      return 'TERMINATED';
+    }
+
+    if (
+      clean === 'onleave' ||
+      clean === 'leave' ||
+      clean === 'vacation' ||
+      clean === 'sick' ||
+      clean === 'maternity'
+    ) {
+      return 'ON_LEAVE';
+    }
+
+    if (
+      clean === 'active' ||
+      clean === 'act' ||
+      clean === 'working' ||
+      clean === 'present' ||
+      clean === 'regular' ||
+      clean === 'yes' ||
+      clean === 'true' ||
+      clean === '1'
+    ) {
+      return 'ACTIVE';
+    }
+
+    return defaultStatus;
+  }
+
   exportManpowerData(filters = {}) {
     const employees = this.getAllEmployees(filters);
     const customFields = employeeCustomFieldService.getActiveFields();
@@ -1567,32 +1684,52 @@ class EmployeeService {
         }
       }
     }
+
+    // Secondary fallback for status columns if no exact candidate matched
+    if (candidateKeys.includes('Status') || candidateKeys.some(k => String(k).toLowerCase().includes('status'))) {
+      for (const k of rowKeys) {
+        const kNorm = String(k).toLowerCase().replace(/[^a-z0-9]/g, '');
+        if (
+          (kNorm.includes('status') || kNorm.includes('inactive') || kNorm.includes('active') || kNorm === 'state' || kNorm === 'condition') &&
+          !kNorm.includes('marital') &&
+          row[k] !== undefined &&
+          row[k] !== null &&
+          String(row[k]).trim() !== ''
+        ) {
+          return String(row[k]).trim();
+        }
+      }
+    }
+
     return '';
   }
 
   /**
    * Previews parsed Excel rows before applying changes:
    * Counts how many records will be updated, how many promotions detected,
-   * how many unit/floor transfers detected, how many new employees to add.
+   * how many unit/floor transfers detected, how many new employees to add,
+   * and how many inactive/deactivated employees detected.
    */
   previewManpowerImport(rows = []) {
     let updatedCount = 0;
     let addedCount = 0;
     let promotedCount = 0;
     let transferredCount = 0;
+    let inactiveCount = 0;
     let samplePromotions = [];
     let sampleTransfers = [];
     let sampleAdded = [];
+    let sampleInactive = [];
     let errors = [];
 
     rows.forEach((row, idx) => {
       const cardNumber = this._extractCell(row, [
         'Employee / Card ID', 'Card ID', 'Card Number', 'Card No', 'Card', 'ID',
-        'ID Number', 'ID Card', 'Employee ID', 'Emp ID'
+        'ID Number', 'ID Card', 'Employee ID', 'Emp ID', 'Staff ID', 'CardNo', 'CardNum'
       ]);
       const name = this._extractCell(row, [
         'Full Name', 'Name', 'Employee Name', 'Worker Name', 'Staff Name',
-        'Mechanic Name', 'Technician Name'
+        'Mechanic Name', 'Technician Name', 'Emp Name'
       ]);
 
       if (!cardNumber && !name) {
@@ -1604,17 +1741,41 @@ class EmployeeService {
         return;
       }
 
-      const designation = this._extractCell(row, ['Designation', 'Designation Name', 'Position', 'Rank', 'Job Title']);
+      const designation = this._extractCell(row, ['Designation', 'Designation Name', 'Position', 'Rank', 'Job Title', 'Post']);
       const unit = this._extractCell(row, [
         'Factory / Unit', 'Factory/Unit', 'Unit / Factory', 'Unit/Factory',
         'Unit', 'Factory', 'Plant', 'Company', 'Unit Name', 'Factory Name',
         'Company Name', 'Plant Unit'
       ]);
       const workingArea = this._extractCell(row, ['Line / Working Area', 'Working Area', 'Area', 'Line', 'Line Name', 'Section']);
-      const floor = this._extractCell(row, ['Plant Floor', 'Floor', 'Floor Name']);
+      const floor = this._extractCell(row, ['Plant Floor', 'Floor', 'Floor Name', 'Plant Section']);
+      const rawStatus = this._extractCell(row, [
+        'Status', 'Employee Status', 'Emp Status', 'Employment Status',
+        'Active / Inactive', 'Active/Inactive', 'Active Status', 'Current Status',
+        'Job Status', 'Work Status', 'Service Status', 'Staff Status', 'Worker Status',
+        'Active', 'State', 'Condition'
+      ]);
 
       const matchedUnit = this.resolveUnitFromMasterData(unit);
       const existing = this.findEmployeeByFlexibleCard(cardNumber);
+
+      // Check status resolution
+      const hasStatusInRow = Boolean(rawStatus && String(rawStatus).trim() !== '');
+      const resolvedStatus = hasStatusInRow
+        ? this.normalizeStatus(rawStatus, existing ? existing.status : 'ACTIVE')
+        : (existing ? existing.status : 'ACTIVE');
+
+      if (resolvedStatus === 'INACTIVE' || resolvedStatus === 'TERMINATED') {
+        inactiveCount++;
+        if (sampleInactive.length < 5) {
+          sampleInactive.push({
+            name: name || existing?.name || `Employee #${cardNumber}`,
+            card: cardNumber,
+            status: resolvedStatus
+          });
+        }
+      }
+
       if (existing) {
         updatedCount++;
         // Check promotion (designation change)
@@ -1664,9 +1825,11 @@ class EmployeeService {
       promotedCount,
       transferredCount,
       addedCount,
+      inactiveCount,
       samplePromotions,
       sampleTransfers,
       sampleAdded,
+      sampleInactive,
       errors
     };
   }
@@ -1676,31 +1839,86 @@ class EmployeeService {
    * 1. Matches employee by Card Number flexibly (supporting both worker 'AMG0000000' and staff 'AMG-0000000' hyphen formats)
    * 2. Resolves Factory / Unit, Floor, and Line from Master Data Hierarchy
    * 3. Auto-updates designations (promotions), units, working areas, plant floors, departments, phones, status
-   * 4. Creates new employees with correct Plant Hierarchy linking
-   * 5. Immediately synchronizes Tools Management allocations so ID Card printouts and registers update automatically!
+   * 4. Accurately preserves or sets ACTIVE / INACTIVE / TERMINATED / ON_LEAVE status
+   * 5. Atomically saves entire table once with verified unique collision-free IDs
+   * 6. Immediately synchronizes Tools Management allocations and User Access Management!
    */
-  importManpowerData(rows = []) {
+  async importManpowerData(rows = []) {
     let addedCount = 0;
     let updatedCount = 0;
     let promotedCount = 0;
     let transferredCount = 0;
+    let inactiveCount = 0;
     let promotionsList = [];
     let transfersList = [];
     let addedList = [];
     let errors = [];
 
     const customFields = employeeCustomFieldService.getActiveFields();
+    const table = storage.getTable(TABLE_NAMES.EMPLOYEES) || [];
+
+    // Ensure all existing records in table have guaranteed unique IDs before processing
+    const seenIds = new Set();
+    table.forEach((emp, i) => {
+      if (!emp.id || seenIds.has(emp.id)) {
+        emp.id = `emp-${Date.now()}-${Math.random().toString(36).slice(2, 9)}-${i + 1}`;
+      }
+      seenIds.add(emp.id);
+    });
+
+    // Helper for fast flexible card lookup in current memory table
+    const findInTable = (queryCard) => {
+      if (!queryCard) return null;
+      const raw = String(queryCard).trim();
+      if (!raw) return null;
+      const cleanLower = raw.toLowerCase();
+
+      // 1. Exact match
+      let exact = table.find(e =>
+        String(e.cardNumber || '').trim().toLowerCase() === cleanLower ||
+        String(e.id || '').trim().toLowerCase() === cleanLower
+      );
+      if (exact) return exact;
+
+      // 2. Alphanumeric match (AMG0144906 <-> AMG-0144906)
+      const rawAlpha = cleanLower.replace(/[^a-z0-9]/g, '');
+      if (rawAlpha.length >= 3) {
+        let alphaMatch = table.find(e => {
+          const eAlpha = String(e.cardNumber || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+          const eIdAlpha = String(e.id || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+          return eAlpha === rawAlpha || eIdAlpha === rawAlpha;
+        });
+        if (alphaMatch) return alphaMatch;
+      }
+
+      // 3. Digits match
+      const rawDigits = raw.replace(/[^\d]/g, '');
+      const rawDigitsNoZero = rawDigits.replace(/^0+/, '');
+      if (rawDigits.length >= 3) {
+        let digitMatch = table.find(e => {
+          const eDigits = String(e.cardNumber || '').replace(/[^\d]/g, '');
+          const eDigitsNoZero = eDigits.replace(/^0+/, '');
+          return eDigits === rawDigits ||
+            (rawDigitsNoZero && eDigitsNoZero === rawDigitsNoZero) ||
+            (rawDigits.length >= 5 && eDigits.endsWith(rawDigits)) ||
+            (eDigits.length >= 5 && rawDigits.endsWith(eDigits));
+        });
+        if (digitMatch) return digitMatch;
+      }
+
+      return null;
+    };
 
     rows.forEach((row, idx) => {
       try {
         const cardNumber = this._extractCell(row, [
           'Employee / Card ID', 'Card ID', 'Card Number', 'Card No', 'Card', 'ID',
-          'ID Number', 'ID Card', 'Employee ID', 'Emp ID', 'Staff ID'
+          'ID Number', 'ID Card', 'Employee ID', 'Emp ID', 'Staff ID', 'CardNo', 'CardNum'
         ]);
 
         const name = this._extractCell(row, [
           'Full Name', 'Name', 'Employee Name', 'Worker Name', 'Staff Name',
-          'Technician Name', 'Mechanic Name'
+          'Technician Name', 'Mechanic Name', 'Emp Name'
         ]);
 
         if (!cardNumber && !name) {
@@ -1712,19 +1930,23 @@ class EmployeeService {
           return;
         }
 
-        const designation = this._extractCell(row, ['Designation', 'Designation Name', 'Position', 'Rank', 'Job Title']);
-        const department = this._extractCell(row, ['Department', 'Dept', 'Department Name', 'Section']);
+        const designation = this._extractCell(row, ['Designation', 'Designation Name', 'Position', 'Rank', 'Job Title', 'Post']);
+        const department = this._extractCell(row, ['Department', 'Dept', 'Department Name', 'Section', 'Dept Name']);
         const unit = this._extractCell(row, [
           'Factory / Unit', 'Factory/Unit', 'Unit / Factory', 'Unit/Factory',
           'Unit', 'Factory', 'Plant', 'Company', 'Unit Name', 'Factory Name',
           'Company Name', 'Plant Unit'
         ]);
         const workingArea = this._extractCell(row, ['Line / Working Area', 'Working Area', 'Area', 'Line', 'Line Name', 'Production Bay', 'Section']);
-        const floor = this._extractCell(row, ['Plant Floor', 'Floor', 'Floor Name']);
-        const phone = this._extractCell(row, ['Phone Number', 'Phone', 'Mobile', 'Mobile No', 'Contact Number', 'Contact']);
+        const floor = this._extractCell(row, ['Plant Floor', 'Floor', 'Floor Name', 'Plant Section']);
+        const phone = this._extractCell(row, ['Phone Number', 'Phone', 'Mobile', 'Mobile No', 'Contact Number', 'Contact', 'Cell']);
         const joinDate = this._extractCell(row, ['Joining Date', 'Join Date', 'DOJ', 'Date of Joining']);
-        const rawStatus = this._extractCell(row, ['Status', 'Employment Status', 'Active']).toUpperCase();
-        const status = (rawStatus === 'INACTIVE' || rawStatus === 'TERMINATED' || rawStatus === 'ON_LEAVE') ? rawStatus : 'ACTIVE';
+        const rawStatus = this._extractCell(row, [
+          'Status', 'Employee Status', 'Emp Status', 'Employment Status',
+          'Active / Inactive', 'Active/Inactive', 'Active Status', 'Current Status',
+          'Job Status', 'Work Status', 'Service Status', 'Staff Status', 'Worker Status',
+          'Active', 'State', 'Condition'
+        ]);
 
         // Master Data Plant Hierarchy Resolution (Unit -> Floor -> Line)
         let matchedUnit = this.resolveUnitFromMasterData(unit);
@@ -1752,20 +1974,30 @@ class EmployeeService {
           }
         });
 
-        // 1. Flexible Card Lookup (Worker AMG0000000 <-> Staff AMG-0000000)
-        const existing = this.findEmployeeByFlexibleCard(cardNumber);
+        // 1. Flexible Card Lookup in current table
+        const existing = findInTable(cardNumber);
+
+        // Flexible status resolution:
+        // If row has an explicit status, normalize it; if blank and existing, PRESERVE existing status!
+        const hasStatusInRow = Boolean(rawStatus && String(rawStatus).trim() !== '');
+        const status = hasStatusInRow
+          ? this.normalizeStatus(rawStatus, existing ? existing.status : 'ACTIVE')
+          : (existing ? existing.status : 'ACTIVE');
+
+        if (status === 'INACTIVE' || status === 'TERMINATED') {
+          inactiveCount++;
+        }
 
         if (existing) {
-          const updates = {};
-          if (name && name !== existing.name) updates.name = name;
-          if (department && department !== existing.department) updates.department = department;
-          if (phone && phone !== existing.phone) updates.phone = phone;
-          if (joinDate && joinDate !== existing.joinDate) updates.joinDate = joinDate;
-          if (status && status !== existing.status) updates.status = status;
+          if (name && name !== existing.name) existing.name = name;
+          if (department && department !== existing.department) existing.department = department;
+          if (phone && phone !== existing.phone) existing.phone = phone;
+          if (joinDate && joinDate !== existing.joinDate) existing.joinDate = joinDate;
+          existing.status = status;
 
           // Designation change (Promotion)
           if (designation && designation.toLowerCase() !== (existing.designation || '').toLowerCase()) {
-            updates.designation = designation;
+            existing.designation = designation;
             promotedCount++;
             promotionsList.push({
               name: existing.name,
@@ -1777,48 +2009,55 @@ class EmployeeService {
 
           // Unit, Floor, and Working Area change (Relocation / Transfer)
           if (resolvedUnitId && resolvedUnitId !== existing.unitId) {
-            updates.unitId = resolvedUnitId;
-            updates.groupId = resolvedGroupId;
-            updates.unitName = matchedUnit?.name || unit || '';
+            existing.unitId = resolvedUnitId;
+            existing.groupId = resolvedGroupId;
+            existing.unitName = matchedUnit?.name || unit || '';
             transferredCount++;
             transfersList.push({
               name: existing.name,
               card: existing.cardNumber,
               from: existing.unitName || 'Unassigned',
-              to: updates.unitName
+              to: existing.unitName
             });
           }
           if (matchedFloor && matchedFloor.id !== existing.floorId) {
-            updates.floorId = matchedFloor.id;
-            if (!updates.unitId && matchedFloor.unitId) {
-              updates.unitId = matchedFloor.unitId;
-              updates.groupId = matchedFloor.groupId || resolvedGroupId;
+            existing.floorId = matchedFloor.id;
+            if (!existing.unitId && matchedFloor.unitId) {
+              existing.unitId = matchedFloor.unitId;
+              existing.groupId = matchedFloor.groupId || resolvedGroupId;
             }
           }
           if (matchedLine && matchedLine.id !== existing.lineId) {
-            updates.lineId = matchedLine.id;
+            existing.lineId = matchedLine.id;
           }
           if (workingArea && workingArea !== existing.workingArea) {
-            updates.workingArea = workingArea;
+            existing.workingArea = workingArea;
           }
 
           // Card Format Upgrade: If worker promoted to staff with hyphen (e.g. AMG0144906 -> AMG-0144906)
           if (cardNumber && cardNumber !== existing.cardNumber) {
             if (!this.checkDuplicateCardNumber(cardNumber, existing.id)) {
-              updates.cardNumber = cardNumber;
+              existing.cardNumber = cardNumber;
             }
           }
 
           if (Object.keys(empCustomFields).length > 0) {
-            updates.customFields = empCustomFields;
+            existing.customFields = {
+              ...(existing.customFields || {}),
+              ...empCustomFields
+            };
           }
 
-          this.updateEmployee(existing.id, updates);
+          existing.updatedAt = new Date().toISOString();
           updatedCount++;
 
         } else {
-          // Register new employee
-          const newEmpData = {
+          // Register new employee with collision-proof ID
+          const uniqueId = `emp-${Date.now()}-${Math.random().toString(36).slice(2, 9)}-${Math.floor(Math.random() * 1000000)}-${addedCount + 1}`;
+          seenIds.add(uniqueId);
+
+          const newEmp = {
+            id: uniqueId,
             name: name || `Employee #${cardNumber}`,
             cardNumber,
             designation: designation || 'Senior Machine Operator',
@@ -1832,16 +2071,17 @@ class EmployeeService {
             phone: phone || '',
             joinDate: joinDate || new Date().toISOString().split('T')[0],
             status: status || 'ACTIVE',
-            customFields: empCustomFields
+            customFields: empCustomFields,
+            createdAt: new Date().toISOString()
           };
 
-          const created = this.createEmployee(newEmpData);
+          table.unshift(newEmp);
           addedCount++;
           addedList.push({
-            name: created.name,
-            card: created.cardNumber,
-            designation: created.designation,
-            unit: created.unitName
+            name: newEmp.name,
+            card: newEmp.cardNumber,
+            designation: newEmp.designation,
+            unit: newEmp.unitName
           });
         }
       } catch (err) {
@@ -1849,7 +2089,11 @@ class EmployeeService {
       }
     });
 
-    // 2. Automatically synchronize Tools Management allocations with newly updated Manpower
+    // Save table atomically to IndexedDB, LocalStorage, and Cloud
+    storage.setTable(TABLE_NAMES.EMPLOYEES, table);
+    await storage.saveTable(TABLE_NAMES.EMPLOYEES, table);
+
+    // Automatically synchronize Tools Management allocations with newly updated Manpower
     let toolsSynced = 0;
     try {
       const ts = (typeof window !== 'undefined' && window.toolService) ? window.toolService : null;
@@ -1861,27 +2105,28 @@ class EmployeeService {
       console.warn('Auto-sync with Tools Management after Manpower import:', syncErr);
     }
 
-    // 3. Automatically synchronize Manpower with User Access Management
+    // Automatically synchronize Manpower with User Access Management
     try {
-      import('./userAccessService.js').then(({ userAccessService }) => {
-        if (userAccessService && typeof userAccessService.syncAllManpowerAccounts === 'function') {
-          userAccessService.syncAllManpowerAccounts().catch(e => console.warn('[Auto-Sync After Manpower Import]', e));
-        }
-      }).catch(err => console.warn('Could not load userAccessService for auto-sync:', err));
+      const { userAccessService } = await import('./userAccessService.js');
+      if (userAccessService && typeof userAccessService.syncAllManpowerAccounts === 'function') {
+        userAccessService.syncAllManpowerAccounts().catch(e => console.warn('[Auto-Sync After Manpower Import]', e));
+      }
     } catch (_) {}
 
     auditService.log(
       'MANPOWER_EXCEL_IMPORTED',
       'MANPOWER',
       'BULK_IMPORT',
-      `Bulk imported Excel: ${updatedCount} updated (${promotedCount} promotions, ${transfersList.length} transfers), ${addedCount} added. Tools synced: ${toolsSynced}.`
+      `Bulk imported Excel: ${updatedCount} updated (${promotedCount} promotions, ${transfersList.length} transfers, ${inactiveCount} inactive), ${addedCount} added. Tools synced: ${toolsSynced}.`
     );
 
     return {
+      totalRows: rows.length,
       addedCount,
       updatedCount,
       promotedCount,
       transferredCount,
+      inactiveCount,
       promotionsList,
       transfersList,
       addedList,
