@@ -412,7 +412,7 @@ export function renderDashboard() {
         </div>
       </header>
 
-      <!-- Main 4 Sections Grid: 100% Balanced Executive Grid -->
+      <!-- Main 4 Sections Grid: Clean, Modern & Responsive Enterprise Grid -->
       <main class="dash-2x2-grid">
 
         <!-- ================================================================= -->
@@ -423,7 +423,7 @@ export function renderDashboard() {
           <div class="dash-card-header">
             <div class="dash-card-title-group">
               <div class="dash-card-badge-icon icon-blue">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                   <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
                 </svg>
               </div>
@@ -436,14 +436,15 @@ export function renderDashboard() {
             </div>
           </div>
 
-          <!-- Micro Health Bar -->
-          <div class="dash-health-bar-container">
-            <div class="dash-health-bar-labels">
-              <span class="dash-health-label">
-                <span class="status-dot dot-emerald"></span> Active Uptime: <strong>${uptimeRate}%</strong>
+          <!-- Summary Status Strip -->
+          <div class="dash-summary-strip">
+            <div class="dash-summary-strip-row">
+              <span class="dash-summary-metric">
+                <span class="dash-dot-indicator dot-emerald"></span>
+                <span>Active Uptime: <strong class="text-emerald">${uptimeRate}%</strong></span>
               </span>
-              <span class="dash-health-sub">
-                ${activeCount.toLocaleString()} Active / ${underRepairCount} In Repair
+              <span class="dash-summary-sub">
+                ${activeCount.toLocaleString()} Active / ${underRepairCount.toLocaleString()} In Repair
               </span>
             </div>
             <div class="dash-progress-track">
@@ -455,21 +456,24 @@ export function renderDashboard() {
 
           <!-- Table Header -->
           <div class="dash-table-header">
-            <span>Machine Status Category</span>
+            <span>Machine Category</span>
+            <span style="text-align: center;">Status</span>
             <span style="text-align: right;">Unit Count</span>
           </div>
 
-          <!-- Table Rows (Evenly Distributed) -->
+          <!-- Clean Data List Rows -->
           <div class="dash-card-rows">
-            
             <!-- Row: Total Physical Machines -->
             <div class="dash-clickable-row" data-action="inv-filter" data-status="ALL" role="button" tabindex="0" title="Click to view all machines in Inventory">
               <div class="dash-row-left">
-                <div class="dash-icon-box icon-sky">📦</div>
+                <span class="dash-dot-indicator dot-sky"></span>
                 <div class="dash-row-titles">
                   <span class="dash-row-primary">Total Physical Machines</span>
                   <span class="dash-row-secondary">Complete Factory Inventory</span>
                 </div>
+              </div>
+              <div class="dash-row-center">
+                <span class="dash-status-pill pill-sky">All Fleet</span>
               </div>
               <div class="dash-row-right">
                 <span class="dash-qty-pill pill-sky">
@@ -482,11 +486,14 @@ export function renderDashboard() {
             <!-- Row: Active Machines -->
             <div class="dash-clickable-row" data-action="inv-filter" data-status="ACTIVE" role="button" tabindex="0" title="Click to view Active machines on production lines">
               <div class="dash-row-left">
-                <div class="dash-icon-box icon-emerald">🟢</div>
+                <span class="dash-dot-indicator dot-emerald"></span>
                 <div class="dash-row-titles">
                   <span class="dash-row-primary">Active Machines</span>
                   <span class="dash-row-secondary">Running on Production Lines</span>
                 </div>
+              </div>
+              <div class="dash-row-center">
+                <span class="dash-status-pill pill-emerald">Running</span>
               </div>
               <div class="dash-row-right">
                 <span class="dash-qty-pill pill-emerald">
@@ -499,11 +506,14 @@ export function renderDashboard() {
             <!-- Row: Repaired / Serviced Machines -->
             <div class="dash-clickable-row" data-action="inv-filter" data-status="REPAIRED" role="button" tabindex="0" title="Click to view Repaired and Serviced machines">
               <div class="dash-row-left">
-                <div class="dash-icon-box icon-cyan">🛠️</div>
+                <span class="dash-dot-indicator dot-cyan"></span>
                 <div class="dash-row-titles">
                   <span class="dash-row-primary">Repaired / Serviced Machines</span>
                   <span class="dash-row-secondary">${dateCutoff ? currentFilterLabel : 'Serviced & Ready for Production'}</span>
                 </div>
+              </div>
+              <div class="dash-row-center">
+                <span class="dash-status-pill pill-cyan">Operational</span>
               </div>
               <div class="dash-row-right">
                 <span class="dash-qty-pill pill-cyan">
@@ -516,11 +526,14 @@ export function renderDashboard() {
             <!-- Row: Under Repair Machines -->
             <div class="dash-clickable-row" data-action="inv-filter" data-status="MAINTENANCE" role="button" tabindex="0" title="Click to view machines currently under maintenance">
               <div class="dash-row-left">
-                <div class="dash-icon-box icon-amber">⚠️</div>
+                <span class="dash-dot-indicator dot-amber"></span>
                 <div class="dash-row-titles">
                   <span class="dash-row-primary">Under Repair Machines</span>
                   <span class="dash-row-secondary">In Maintenance Queue / Breakdown</span>
                 </div>
+              </div>
+              <div class="dash-row-center">
+                <span class="dash-status-pill pill-amber">In Repair</span>
               </div>
               <div class="dash-row-right">
                 <span class="dash-qty-pill pill-amber">
@@ -533,54 +546,57 @@ export function renderDashboard() {
             <!-- Row: Spare Machines / Ambiguous -->
             <div class="dash-clickable-row" data-action="inv-filter" data-status="IDLE" role="button" tabindex="0" title="Click to view Spare, Idle & Standby machines">
               <div class="dash-row-left">
-                <div class="dash-icon-box icon-indigo">🗄️</div>
+                <span class="dash-dot-indicator dot-slate"></span>
                 <div class="dash-row-titles">
                   <span class="dash-row-primary">Spare Machines / Standby</span>
-                  <span class="dash-row-secondary">Idle Buffer Stock & Unassigned</span>
+                  <span class="dash-row-secondary">Idle Buffer Stock &amp; Unassigned</span>
                 </div>
               </div>
+              <div class="dash-row-center">
+                <span class="dash-status-pill pill-slate">Standby</span>
+              </div>
               <div class="dash-row-right">
-                <span class="dash-qty-pill pill-indigo">
+                <span class="dash-qty-pill pill-slate">
                   <strong>${spareAmbiguousCount.toLocaleString()}</strong> <small>Qty</small>
                   <span class="dash-chevron">&rsaquo;</span>
                 </span>
               </div>
             </div>
-
           </div>
         </section>
 
         <!-- ================================================================= -->
-        <!-- 2. SECTION 2: MACHINE TRANSFER -->
+        <!-- 2. SECTION 2: MACHINE TRANSFERS -->
         <!-- ================================================================= -->
         <section class="dash-card">
           <!-- Card Header -->
           <div class="dash-card-header">
             <div class="dash-card-title-group">
               <div class="dash-card-badge-icon icon-teal">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                   <polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>
                 </svg>
               </div>
-              <h2 class="dash-card-title">2. Machine Transfer</h2>
+              <h2 class="dash-card-title">2. Machine Transfers</h2>
             </div>
             <div class="dash-card-meta-pill">
-              <span>Total: <strong>${totalTransfers}</strong></span>
+              <span>Total: <strong>${totalTransfers.toLocaleString()}</strong></span>
               <span class="dash-pill-sep">&bull;</span>
               <span>${currentFilterLabel}</span>
             </div>
           </div>
 
-          <!-- Micro Health Bar -->
-          <div class="dash-health-bar-container">
-            <div class="dash-health-bar-labels">
-              <span class="dash-health-label">
-                <span class="status-dot dot-teal"></span> Relocation Rate: <strong>${transferCompletionRate}%</strong>
+          <!-- Summary Status Strip -->
+          <div class="dash-summary-strip">
+            <div class="dash-summary-strip-row">
+              <span class="dash-summary-metric">
+                <span class="dash-dot-indicator dot-teal"></span>
+                <span>Relocation Clearance: <strong class="text-teal">${transferCompletionRate}%</strong></span>
               </span>
-              <span class="dash-health-sub">
+              <span class="dash-summary-sub">
                 ${pendingCount > 0 
-                  ? `<span class="badge-alert-inline">⚠️ ${pendingCount} Pending Approval</span>` 
-                  : `<span class="badge-ok-inline">✓ Zero Pending</span>`}
+                  ? `<span class="text-amber">⚠️ ${pendingCount} Pending Approval</span>` 
+                  : `<span class="text-emerald">✓ All Clear</span>`}
               </span>
             </div>
             <div class="dash-progress-track">
@@ -592,27 +608,27 @@ export function renderDashboard() {
           <!-- Table Header -->
           <div class="dash-table-header">
             <span>Transfer Stage</span>
+            <span style="text-align: center;">Stage Status</span>
             <span style="text-align: right;">Volume</span>
           </div>
 
-          <!-- Table Rows (Evenly Distributed) -->
+          <!-- Clean Data List Rows -->
           <div class="dash-card-rows">
-            
-            <!-- Row: Transfer Request -->
+            <!-- Row: Transfer Requests -->
             <div class="dash-clickable-row" data-action="trf-filter" data-status="ALL" role="button" tabindex="0" title="Click to view all transfer requests">
               <div class="dash-row-left">
-                <div class="dash-icon-box icon-sky">📋</div>
+                <span class="dash-dot-indicator dot-sky"></span>
                 <div class="dash-row-titles">
                   <span class="dash-row-primary">Transfer Requests</span>
-                  <span class="dash-row-secondary">
-                    Total Logged
-                    ${pendingCount > 0 ? `<strong style="color: #f59e0b; margin-left: 4px;">(${pendingCount} Pending Clearance)</strong>` : ''}
-                  </span>
+                  <span class="dash-row-secondary">All Logged Movement Records</span>
                 </div>
+              </div>
+              <div class="dash-row-center">
+                <span class="dash-status-pill pill-sky">All Records</span>
               </div>
               <div class="dash-row-right">
                 <span class="dash-qty-pill pill-sky">
-                  <strong>${totalTransfers}</strong> <small>Qty</small>
+                  <strong>${totalTransfers.toLocaleString()}</strong> <small>Qty</small>
                   <span class="dash-chevron">&rsaquo;</span>
                 </span>
               </div>
@@ -621,15 +637,18 @@ export function renderDashboard() {
             <!-- Row: Approved -->
             <div class="dash-clickable-row" data-action="trf-filter" data-status="APPROVED" role="button" tabindex="0" title="Click to view approved relocation requests">
               <div class="dash-row-left">
-                <div class="dash-icon-box icon-cyan">✅</div>
+                <span class="dash-dot-indicator dot-cyan"></span>
                 <div class="dash-row-titles">
-                  <span class="dash-row-primary">Approved</span>
-                  <span class="dash-row-secondary">Cleared for Movement & Relocation</span>
+                  <span class="dash-row-primary">Approved Requests</span>
+                  <span class="dash-row-secondary">Cleared for Movement &amp; Relocation</span>
                 </div>
+              </div>
+              <div class="dash-row-center">
+                <span class="dash-status-pill pill-cyan">Approved</span>
               </div>
               <div class="dash-row-right">
                 <span class="dash-qty-pill pill-cyan">
-                  <strong>${approvedCount}</strong> <small>Qty</small>
+                  <strong>${approvedCount.toLocaleString()}</strong> <small>Qty</small>
                   <span class="dash-chevron">&rsaquo;</span>
                 </span>
               </div>
@@ -638,15 +657,40 @@ export function renderDashboard() {
             <!-- Row: Issued / Transferred -->
             <div class="dash-clickable-row" data-action="trf-filter" data-status="COMPLETED" role="button" tabindex="0" title="Click to view completed transfers">
               <div class="dash-row-left">
-                <div class="dash-icon-box icon-emerald">🚚</div>
+                <span class="dash-dot-indicator dot-emerald"></span>
                 <div class="dash-row-titles">
                   <span class="dash-row-primary">Issued / Transferred</span>
-                  <span class="dash-row-secondary">Delivered & Verified at Destination</span>
+                  <span class="dash-row-secondary">Delivered &amp; Verified at Destination</span>
                 </div>
+              </div>
+              <div class="dash-row-center">
+                <span class="dash-status-pill pill-emerald">Completed</span>
               </div>
               <div class="dash-row-right">
                 <span class="dash-qty-pill pill-emerald">
-                  <strong>${issuedTransferredCount}</strong> <small>Qty</small>
+                  <strong>${issuedTransferredCount.toLocaleString()}</strong> <small>Qty</small>
+                  <span class="dash-chevron">&rsaquo;</span>
+                </span>
+              </div>
+            </div>
+
+            <!-- Row: Pending Approval -->
+            <div class="dash-clickable-row" data-action="trf-filter" data-status="PENDING_APPROVAL" role="button" tabindex="0" title="Click to view pending transfer requests">
+              <div class="dash-row-left">
+                <span class="dash-dot-indicator ${pendingCount > 0 ? 'dot-amber' : 'dot-slate'}"></span>
+                <div class="dash-row-titles">
+                  <span class="dash-row-primary">Pending Approval</span>
+                  <span class="dash-row-secondary">Awaiting Maintenance Authority Clearance</span>
+                </div>
+              </div>
+              <div class="dash-row-center">
+                <span class="dash-status-pill ${pendingCount > 0 ? 'pill-amber' : 'pill-slate'}">
+                  ${pendingCount > 0 ? 'Action Required' : 'Cleared'}
+                </span>
+              </div>
+              <div class="dash-row-right">
+                <span class="dash-qty-pill ${pendingCount > 0 ? 'pill-amber' : 'pill-slate'}">
+                  <strong>${pendingCount.toLocaleString()}</strong> <small>Qty</small>
                   <span class="dash-chevron">&rsaquo;</span>
                 </span>
               </div>
@@ -655,28 +699,22 @@ export function renderDashboard() {
             <!-- Row: Declined / Rejected -->
             <div class="dash-clickable-row" data-action="trf-filter" data-status="REJECTED" role="button" tabindex="0" title="Click to view rejected transfer requests">
               <div class="dash-row-left">
-                <div class="dash-icon-box icon-rose">❌</div>
+                <span class="dash-dot-indicator dot-rose"></span>
                 <div class="dash-row-titles">
                   <span class="dash-row-primary">Declined / Rejected</span>
-                  <span class="dash-row-secondary">Declined by Maintenance Authority</span>
+                  <span class="dash-row-secondary">Cancelled or Disapproved by Management</span>
                 </div>
+              </div>
+              <div class="dash-row-center">
+                <span class="dash-status-pill pill-rose">Rejected</span>
               </div>
               <div class="dash-row-right">
                 <span class="dash-qty-pill pill-rose">
-                  <strong>${declinedRejectedCount}</strong> <small>Qty</small>
+                  <strong>${declinedRejectedCount.toLocaleString()}</strong> <small>Qty</small>
                   <span class="dash-chevron">&rsaquo;</span>
                 </span>
               </div>
             </div>
-
-            <!-- Hint Strip -->
-            <div class="dash-card-footer-hint">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
-              </svg>
-              <span>Click any category to filter transfers instantly.</span>
-            </div>
-
           </div>
         </section>
 
@@ -688,7 +726,7 @@ export function renderDashboard() {
           <div class="dash-card-header">
             <div class="dash-card-title-group">
               <div class="dash-card-badge-icon icon-purple">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                   <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
                 </svg>
               </div>
@@ -701,16 +739,17 @@ export function renderDashboard() {
             </div>
           </div>
 
-          <!-- Micro Health Bar -->
-          <div class="dash-health-bar-container">
-            <div class="dash-health-bar-labels">
-              <span class="dash-health-label">
-                <span class="status-dot dot-purple"></span> Compliance: <strong>${servicingComplianceRate}%</strong>
+          <!-- Summary Status Strip -->
+          <div class="dash-summary-strip">
+            <div class="dash-summary-strip-row">
+              <span class="dash-summary-metric">
+                <span class="dash-dot-indicator dot-purple"></span>
+                <span>PM Compliance: <strong class="text-purple">${servicingComplianceRate}%</strong></span>
               </span>
-              <span class="dash-health-sub">
+              <span class="dash-summary-sub">
                 ${pmOverdue > 0 
-                  ? `<span class="badge-critical-inline"><span class="pulse-dot"></span>${pmOverdue} Overdue Units</span>` 
-                  : `<span class="badge-ok-inline">✓ Zero Overdue</span>`}
+                  ? `<span class="text-rose">🔴 ${pmOverdue} Overdue Units</span>` 
+                  : `<span class="text-emerald">✓ Zero Overdue</span>`}
               </span>
             </div>
             <div class="dash-progress-track">
@@ -722,20 +761,23 @@ export function renderDashboard() {
           <!-- Table Header -->
           <div class="dash-table-header">
             <span>Maintenance Schedule</span>
-            <span style="text-align: right;">Machines</span>
+            <span style="text-align: center;">Urgency</span>
+            <span style="text-align: right;">Machine Count</span>
           </div>
 
-          <!-- Table Rows (Evenly Distributed) -->
+          <!-- Clean Data List Rows -->
           <div class="dash-card-rows">
-            
-            <!-- Row: Total Machines -->
+            <!-- Row: Total in Scope -->
             <div class="dash-clickable-row" data-action="pm-filter" data-urgency="ALL" role="button" tabindex="0" title="Click to view all preventive maintenance records">
               <div class="dash-row-left">
-                <div class="dash-icon-box icon-sky">⚙️</div>
+                <span class="dash-dot-indicator dot-sky"></span>
                 <div class="dash-row-titles">
                   <span class="dash-row-primary">Total in Scope</span>
                   <span class="dash-row-secondary">Active Maintenance Fleet</span>
                 </div>
+              </div>
+              <div class="dash-row-center">
+                <span class="dash-status-pill pill-sky">Full Fleet</span>
               </div>
               <div class="dash-row-right">
                 <span class="dash-qty-pill pill-sky">
@@ -745,14 +787,17 @@ export function renderDashboard() {
               </div>
             </div>
 
-            <!-- Row: Serviced Machines (Green) -->
+            <!-- Row: Serviced Machines -->
             <div class="dash-clickable-row" data-action="pm-filter" data-urgency="COMPLETED" role="button" tabindex="0" title="Click to view serviced machines">
               <div class="dash-row-left">
-                <div class="dash-icon-box icon-emerald">✅</div>
+                <span class="dash-dot-indicator dot-emerald"></span>
                 <div class="dash-row-titles">
                   <span class="dash-row-primary">Serviced Machines</span>
                   <span class="dash-row-secondary">Completed Cycles (${currentFilterLabel})</span>
                 </div>
+              </div>
+              <div class="dash-row-center">
+                <span class="dash-status-pill pill-emerald">Completed</span>
               </div>
               <div class="dash-row-right">
                 <span class="dash-qty-pill pill-emerald">
@@ -762,31 +807,37 @@ export function renderDashboard() {
               </div>
             </div>
 
-            <!-- Row: Overdue Servicing (Red) -->
+            <!-- Row: Overdue Servicing -->
             <div class="dash-clickable-row" data-action="pm-filter" data-urgency="OVERDUE" role="button" tabindex="0" title="Click to view urgent overdue machines requiring service">
               <div class="dash-row-left">
-                <div class="dash-icon-box icon-rose">🔴</div>
+                <span class="dash-dot-indicator dot-rose"></span>
                 <div class="dash-row-titles">
-                  <span class="dash-row-primary" style="color: #fca5a5;">Overdue Servicing</span>
-                  <span class="dash-row-secondary" style="color: #f87171;">Critical: Requires Immediate Attention</span>
+                  <span class="dash-row-primary text-rose">Overdue Servicing</span>
+                  <span class="dash-row-secondary text-rose-sub">Critical: Requires Immediate Attention</span>
                 </div>
               </div>
+              <div class="dash-row-center">
+                <span class="dash-status-pill pill-rose">Overdue</span>
+              </div>
               <div class="dash-row-right">
-                <span class="dash-qty-pill pill-rose pill-pulse">
+                <span class="dash-qty-pill pill-rose">
                   <strong>${pmOverdue}</strong> <small>Qty</small>
                   <span class="dash-chevron">&rsaquo;</span>
                 </span>
               </div>
             </div>
 
-            <!-- Row: Due Today (Yellow/Amber) -->
+            <!-- Row: Due Today -->
             <div class="dash-clickable-row" data-action="pm-filter" data-urgency="DUE_TODAY" role="button" tabindex="0" title="Click to view machines due for service today">
               <div class="dash-row-left">
-                <div class="dash-icon-box icon-amber">🟡</div>
+                <span class="dash-dot-indicator dot-amber"></span>
                 <div class="dash-row-titles">
                   <span class="dash-row-primary">Due Today</span>
                   <span class="dash-row-secondary">Scheduled for Current Shift</span>
                 </div>
+              </div>
+              <div class="dash-row-center">
+                <span class="dash-status-pill pill-amber">Today</span>
               </div>
               <div class="dash-row-right">
                 <span class="dash-qty-pill pill-amber">
@@ -796,14 +847,17 @@ export function renderDashboard() {
               </div>
             </div>
 
-            <!-- Row: Due Within 7 Days (Amber) -->
+            <!-- Row: Due Within 7 Days -->
             <div class="dash-clickable-row" data-action="pm-filter" data-urgency="DUE_SOON" role="button" tabindex="0" title="Click to view machines due within 7 days">
               <div class="dash-row-left">
-                <div class="dash-icon-box icon-yellow">⏳</div>
+                <span class="dash-dot-indicator dot-yellow"></span>
                 <div class="dash-row-titles">
                   <span class="dash-row-primary">Due Within 7 Days</span>
                   <span class="dash-row-secondary">Upcoming Weekly PM Cycle</span>
                 </div>
+              </div>
+              <div class="dash-row-center">
+                <span class="dash-status-pill pill-yellow">Within 7d</span>
               </div>
               <div class="dash-row-right">
                 <span class="dash-qty-pill pill-yellow">
@@ -813,23 +867,25 @@ export function renderDashboard() {
               </div>
             </div>
 
-            <!-- Row: Upcoming Servicing (Blue) -->
+            <!-- Row: Upcoming Servicing -->
             <div class="dash-clickable-row" data-action="pm-filter" data-urgency="SCHEDULED" role="button" tabindex="0" title="Click to view scheduled future cycles">
               <div class="dash-row-left">
-                <div class="dash-icon-box icon-indigo">🗓️</div>
+                <span class="dash-dot-indicator dot-slate"></span>
                 <div class="dash-row-titles">
                   <span class="dash-row-primary">Upcoming Servicing</span>
                   <span class="dash-row-secondary">Future Maintenance Planning</span>
                 </div>
               </div>
+              <div class="dash-row-center">
+                <span class="dash-status-pill pill-slate">Scheduled</span>
+              </div>
               <div class="dash-row-right">
-                <span class="dash-qty-pill pill-indigo">
+                <span class="dash-qty-pill pill-slate">
                   <strong>${pmUpcoming}</strong> <small>Qty</small>
                   <span class="dash-chevron">&rsaquo;</span>
                 </span>
               </div>
             </div>
-
           </div>
         </section>
 
@@ -841,7 +897,7 @@ export function renderDashboard() {
           <div class="dash-card-header">
             <div class="dash-card-title-group">
               <div class="dash-card-badge-icon icon-emerald">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                   <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/>
                 </svg>
               </div>
@@ -854,17 +910,17 @@ export function renderDashboard() {
             </div>
           </div>
 
-          <!-- Micro Health Bar -->
-          <div class="dash-health-bar-container">
-            <div class="dash-health-bar-labels">
-              <span class="dash-health-label">
-                <span class="status-dot dot-emerald"></span> Inventory Health: 
-                <strong>${sumNeedlePending > 0 ? 'Action Needed' : 'Balanced'}</strong>
+          <!-- Summary Status Strip -->
+          <div class="dash-summary-strip">
+            <div class="dash-summary-strip-row">
+              <span class="dash-summary-metric">
+                <span class="dash-dot-indicator dot-emerald"></span>
+                <span>Stock Coverage: <strong class="${sumNeedlePending > 0 ? 'text-amber' : 'text-emerald'}">${sumNeedlePending > 0 ? 'Deficit Detected' : 'Fully Covered'}</strong></span>
               </span>
-              <span class="dash-health-sub">
+              <span class="dash-summary-sub">
                 ${sumNeedlePending > 0 
-                  ? `<span class="badge-alert-inline">⚠️ ${sumNeedlePending.toLocaleString()} Deficit</span>` 
-                  : `<span class="badge-ok-inline">✓ Sufficient Buffer</span>`}
+                  ? `<span class="text-rose">⚠️ ${sumNeedlePending.toLocaleString()} Deficit</span>` 
+                  : `<span class="text-emerald">✓ Stock Sufficient</span>`}
               </span>
             </div>
             <div class="dash-progress-track">
@@ -872,63 +928,57 @@ export function renderDashboard() {
             </div>
           </div>
 
-          <!-- Needle Table Header (4 Columns) -->
-          <div class="dash-needle-grid-header">
-            <span class="needle-col-spec">Needle Specification</span>
-            <span class="needle-col-val">Required</span>
-            <span class="needle-col-val">Pending</span>
-            <span class="needle-col-val">Stock</span>
-          </div>
-
-          <!-- Needle Table Rows (Evenly Distributed) -->
-          <div class="dash-card-rows">
-            ${needleTableRows.map(r => `
-              <div class="dash-clickable-row dash-needle-grid-row" data-action="needle-filter" data-needle="${r.code}" role="button" tabindex="0" title="Click to open Needle Operations filtered by ${r.code}">
-                <div class="needle-col-spec">
-                  <div class="dash-needle-badge">${r.code}</div>
-                  <div class="dash-needle-desc">${r.desc}</div>
-                </div>
-                <div class="needle-col-val">
-                  <span class="dash-num-tag tag-sky">
-                    ${r.requiredQty.toLocaleString()}
-                  </span>
-                </div>
-                <div class="needle-col-val">
-                  <span class="dash-num-tag ${r.pendingQuantity > 0 ? 'tag-rose' : 'tag-muted'}">
-                    ${r.pendingQuantity.toLocaleString()}
-                  </span>
-                </div>
-                <div class="needle-col-val">
-                  <span class="dash-num-tag tag-emerald">
-                    ${r.availableStock.toLocaleString()}
-                  </span>
-                </div>
-              </div>
-            `).join('')}
-
-            <!-- Summary Total Row -->
-            <div class="dash-clickable-row dash-needle-grid-row dash-needle-summary-row" data-action="needle-filter" data-needle="ALL" role="button" tabindex="0" title="Click to view all needle types">
-              <div class="needle-col-spec">
-                <span class="dash-summary-label">Total Fleet Demand</span>
-                <span class="dash-summary-sub">All 4 Production Types</span>
-              </div>
-              <div class="needle-col-val">
-                <span class="dash-num-tag tag-sky-bold">
-                  ${sumNeedleRequired.toLocaleString()}
-                </span>
-              </div>
-              <div class="needle-col-val">
-                <span class="dash-num-tag ${sumNeedlePending > 0 ? 'tag-rose-bold' : 'tag-muted-bold'}">
-                  ${sumNeedlePending.toLocaleString()}
-                </span>
-              </div>
-              <div class="needle-col-val">
-                <span class="dash-num-tag tag-emerald-bold">
-                  ${sumNeedleStock.toLocaleString()}
-                </span>
-              </div>
-            </div>
-
+          <!-- Clean Data Table for Needle Data -->
+          <div class="dash-table-wrapper">
+            <table class="dash-clean-table">
+              <thead>
+                <tr>
+                  <th class="th-spec">Needle Spec &amp; Application</th>
+                  <th class="th-num">Machines</th>
+                  <th class="th-num">Required</th>
+                  <th class="th-num">In Stock</th>
+                  <th class="th-status">Deficit / Balance</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${needleTableRows.map(r => `
+                  <tr class="dash-clickable-row dash-table-tr" data-action="needle-filter" data-needle="${r.code}" role="button" tabindex="0" title="Click to open Needle Operations filtered by ${r.code}">
+                    <td class="td-spec">
+                      <div class="dash-needle-cell">
+                        <span class="needle-type-badge">${r.code}</span>
+                        <span class="needle-type-desc">${r.desc}</span>
+                      </div>
+                    </td>
+                    <td class="td-num">${r.machineCount.toLocaleString()}</td>
+                    <td class="td-num text-sky">${r.requiredQty.toLocaleString()}</td>
+                    <td class="td-num text-emerald">${r.availableStock.toLocaleString()}</td>
+                    <td class="td-status">
+                      ${r.pendingQuantity > 0 
+                        ? `<span class="dash-status-pill pill-rose">-${r.pendingQuantity.toLocaleString()}</span>` 
+                        : `<span class="dash-status-pill pill-emerald">Balanced</span>`}
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+              <tfoot>
+                <tr class="dash-clickable-row dash-table-tr dash-summary-tr" data-action="needle-filter" data-needle="ALL" role="button" tabindex="0" title="Click to view all needle types">
+                  <td class="td-spec">
+                    <div class="dash-needle-cell">
+                      <span class="dash-summary-title">Total Fleet Demand</span>
+                      <span class="needle-type-desc">All 4 Production Types</span>
+                    </div>
+                  </td>
+                  <td class="td-num text-bold">${totalMachines.toLocaleString()}</td>
+                  <td class="td-num text-sky text-bold">${sumNeedleRequired.toLocaleString()}</td>
+                  <td class="td-num text-emerald text-bold">${sumNeedleStock.toLocaleString()}</td>
+                  <td class="td-status">
+                    ${sumNeedlePending > 0 
+                      ? `<span class="dash-status-pill pill-rose text-bold">-${sumNeedlePending.toLocaleString()} Deficit</span>` 
+                      : `<span class="dash-status-pill pill-emerald text-bold">Balanced</span>`}
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
           </div>
         </section>
 
@@ -1045,17 +1095,17 @@ export function renderDashboard() {
     <style>
       .user-friendly-dashboard {
         height: 100%;
-        max-height: 100%;
+        min-height: 100%;
         display: flex;
         flex-direction: column;
-        padding: 8px 12px;
-        gap: 8px;
+        padding: 10px 14px;
+        gap: 10px;
         box-sizing: border-box;
         overflow-y: auto;
         overflow-x: hidden;
         background: #080d1a;
         color: #f8fafc;
-        font-family: var(--font-main, system-ui, -apple-system, sans-serif);
+        font-family: var(--font-main, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
       }
 
       /* 1. Header Toolbar */
@@ -1278,88 +1328,91 @@ export function renderDashboard() {
         transition: transform 0.3s ease;
       }
 
-      /* 2. Main 2x2 Grid Layout */
+      /* 2. Main 2x2 Grid Layout: Balanced, Unsquished & Legible */
       .dash-2x2-grid {
-        flex: 1;
-        min-height: 0;
         display: grid;
-        grid-template-columns: 1fr 1fr;
-        grid-template-rows: 1fr 1fr;
-        gap: 8px;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+        align-items: stretch;
+        margin-bottom: 2px;
       }
 
       /* 3. Section Cards */
       .dash-card {
-        background: linear-gradient(180deg, #0f172a 0%, #0b1120 100%);
-        border: 1px solid rgba(255, 255, 255, 0.07);
-        border-radius: 9px;
+        background: #0f172a;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 10px;
         overflow: hidden;
         display: flex;
         flex-direction: column;
-        min-height: 0;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
         transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        min-height: 0;
       }
 
       .dash-card:hover {
-        border-color: rgba(56, 189, 248, 0.2);
-        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
+        border-color: rgba(56, 189, 248, 0.25);
+        box-shadow: 0 6px 22px rgba(0, 0, 0, 0.45);
       }
 
       .dash-card-header {
-        padding: 5.5px 12px;
-        background: rgba(255, 255, 255, 0.025);
+        padding: 9px 14px;
+        background: rgba(255, 255, 255, 0.02);
         border-bottom: 1px solid rgba(255, 255, 255, 0.06);
         display: flex;
         justify-content: space-between;
         align-items: center;
+        gap: 8px;
         flex-shrink: 0;
       }
 
       .dash-card-title-group {
         display: flex;
         align-items: center;
-        gap: 7px;
+        gap: 8px;
       }
 
       .dash-card-badge-icon {
-        width: 20px;
-        height: 20px;
-        border-radius: 5px;
+        width: 26px;
+        height: 26px;
+        border-radius: 6px;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 11px;
+        flex-shrink: 0;
       }
 
-      .icon-blue { background: rgba(56, 189, 248, 0.15); color: #38bdf8; }
-      .icon-teal { background: rgba(20, 184, 166, 0.15); color: #2dd4bf; }
-      .icon-purple { background: rgba(168, 85, 247, 0.15); color: #c084fc; }
-      .icon-emerald { background: rgba(16, 185, 129, 0.15); color: #34d399; }
+      .icon-blue { background: rgba(56, 189, 248, 0.12); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.25); }
+      .icon-teal { background: rgba(20, 184, 166, 0.12); color: #2dd4bf; border: 1px solid rgba(20, 184, 166, 0.25); }
+      .icon-purple { background: rgba(168, 85, 247, 0.12); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.25); }
+      .icon-emerald { background: rgba(16, 185, 129, 0.12); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.25); }
 
       .dash-card-title {
-        font-size: 13px;
-        font-weight: 800;
-        color: #ffffff;
+        font-size: 13.5px;
+        font-weight: 700;
+        color: #f8fafc;
         margin: 0;
         letter-spacing: -0.1px;
       }
 
       .dash-card-meta-pill {
-        font-size: 10.5px;
+        font-size: 11px;
         font-weight: 600;
         color: #94a3b8;
         background: rgba(255, 255, 255, 0.04);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        padding: 1.5px 7px;
-        border-radius: 5px;
-        display: flex;
+        border: 1px solid rgba(255, 255, 255, 0.07);
+        padding: 2px 8px;
+        border-radius: 6px;
+        display: inline-flex;
         align-items: center;
-        gap: 4px;
+        gap: 5px;
+        white-space: nowrap;
       }
 
       .dash-card-meta-pill strong {
         color: #38bdf8;
+        font-family: var(--font-mono, monospace);
+        font-variant-numeric: tabular-nums;
       }
 
       .dash-pill-sep {
@@ -1367,86 +1420,52 @@ export function renderDashboard() {
         font-size: 8px;
       }
 
-      /* Micro Health Bar */
-      .dash-health-bar-container {
-        padding: 3.5px 12px;
+      /* Clean Summary Status Strip */
+      .dash-summary-strip {
+        padding: 7px 14px;
         background: rgba(0, 0, 0, 0.2);
-        border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
         flex-shrink: 0;
       }
 
-      .dash-health-bar-labels {
+      .dash-summary-strip-row {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        font-size: 10px;
-        margin-bottom: 3px;
+        font-size: 11px;
       }
 
-      .dash-health-label {
+      .dash-summary-metric {
         color: #cbd5e1;
         font-weight: 600;
-        display: flex;
-        align-items: center;
-        gap: 4px;
-      }
-
-      .status-dot {
-        width: 6px;
-        height: 6px;
-        border-radius: 50%;
-        display: inline-block;
-      }
-
-      .dot-emerald { background: #10b981; }
-      .dot-teal { background: #14b8a6; }
-      .dot-purple { background: #a855f7; }
-
-      .dash-health-sub {
-        color: #94a3b8;
-        font-size: 9.5px;
-        font-weight: 500;
-      }
-
-      .badge-alert-inline {
-        color: #fbbf24;
-        font-weight: 700;
-      }
-
-      .badge-critical-inline {
-        color: #f87171;
-        font-weight: 700;
         display: inline-flex;
         align-items: center;
-        gap: 3px;
+        gap: 6px;
       }
 
-      .badge-ok-inline {
-        color: #34d399;
-        font-weight: 600;
-      }
-
-      .pulse-dot {
-        width: 5px;
-        height: 5px;
-        border-radius: 50%;
-        background: #ef4444;
-        display: inline-block;
-        box-shadow: 0 0 6px #ef4444;
-        animation: dashPulse 1.2s infinite;
+      .dash-summary-sub {
+        color: #94a3b8;
+        font-size: 10.5px;
+        font-weight: 500;
+        font-family: var(--font-mono, monospace);
+        font-variant-numeric: tabular-nums;
       }
 
       .dash-progress-track {
-        height: 3px;
+        height: 4px;
         background: rgba(255, 255, 255, 0.06);
-        border-radius: 3px;
+        border-radius: 9999px;
         overflow: hidden;
         display: flex;
+        width: 100%;
       }
 
       .dash-progress-seg {
         height: 100%;
-        transition: width 0.4s ease;
+        transition: width 0.3s ease;
       }
 
       .seg-emerald { background: #10b981; }
@@ -1454,41 +1473,42 @@ export function renderDashboard() {
       .seg-rose { background: #ef4444; }
       .seg-slate { background: #475569; }
 
-      /* Table Header */
+      /* Clean Data List / Table Header */
       .dash-table-header {
-        display: flex;
-        justify-content: space-between;
-        padding: 3px 12px;
-        background: rgba(0, 0, 0, 0.35);
+        display: grid;
+        grid-template-columns: 1fr 105px 115px;
+        align-items: center;
+        padding: 6px 14px;
+        background: rgba(0, 0, 0, 0.32);
         font-size: 10px;
         font-weight: 700;
         color: #94a3b8;
         text-transform: uppercase;
-        letter-spacing: 0.3px;
+        letter-spacing: 0.5px;
         border-bottom: 1px solid rgba(255, 255, 255, 0.05);
         flex-shrink: 0;
       }
 
       /* Card Rows Container */
       .dash-card-rows {
-        flex: 1;
-        min-height: 0;
         display: flex;
         flex-direction: column;
-        justify-content: space-evenly;
+        flex: 1;
       }
 
-      /* Clickable Rows */
+      /* Clean Clickable Rows (Data List Style) */
       .dash-clickable-row {
-        display: flex;
-        justify-content: space-between;
+        display: grid;
+        grid-template-columns: 1fr 105px 115px;
         align-items: center;
-        padding: 3.5px 12px;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+        padding: 8px 14px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.035);
         cursor: pointer;
         transition: background 0.12s ease, border-color 0.12s ease;
-        position: relative;
         user-select: none;
+        gap: 8px;
+        min-height: 44px;
+        box-sizing: border-box;
       }
 
       .dash-clickable-row:last-child {
@@ -1508,38 +1528,37 @@ export function renderDashboard() {
       .dash-row-left {
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 9px;
         min-width: 0;
       }
 
-      .dash-icon-box {
-        width: 24px;
-        height: 24px;
-        border-radius: 6px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 12px;
+      .dash-dot-indicator {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
         flex-shrink: 0;
       }
 
-      .icon-sky { background: rgba(56, 189, 248, 0.1); }
-      .icon-emerald { background: rgba(16, 185, 129, 0.1); }
-      .icon-cyan { background: rgba(6, 182, 212, 0.1); }
-      .icon-amber { background: rgba(245, 158, 11, 0.1); }
-      .icon-yellow { background: rgba(234, 179, 8, 0.1); }
-      .icon-rose { background: rgba(239, 68, 68, 0.1); }
-      .icon-indigo { background: rgba(99, 102, 241, 0.1); }
+      .dot-sky { background: #38bdf8; box-shadow: 0 0 6px rgba(56, 189, 248, 0.5); }
+      .dot-emerald { background: #10b981; box-shadow: 0 0 6px rgba(16, 185, 129, 0.5); }
+      .dot-cyan { background: #06b6d4; box-shadow: 0 0 6px rgba(6, 182, 212, 0.5); }
+      .dot-amber { background: #f59e0b; box-shadow: 0 0 6px rgba(245, 158, 11, 0.5); }
+      .dot-yellow { background: #eab308; box-shadow: 0 0 6px rgba(234, 179, 8, 0.5); }
+      .dot-rose { background: #ef4444; box-shadow: 0 0 6px rgba(239, 68, 68, 0.5); }
+      .dot-slate { background: #64748b; }
+      .dot-purple { background: #a855f7; box-shadow: 0 0 6px rgba(168, 85, 247, 0.5); }
+      .dot-teal { background: #14b8a6; box-shadow: 0 0 6px rgba(20, 184, 166, 0.5); }
 
       .dash-row-titles {
         display: flex;
         flex-direction: column;
+        gap: 1px;
         min-width: 0;
       }
 
       .dash-row-primary {
-        font-size: 12px;
-        font-weight: 700;
+        font-size: 12.5px;
+        font-weight: 600;
         color: #f1f5f9;
         line-height: 1.25;
         white-space: nowrap;
@@ -1548,7 +1567,7 @@ export function renderDashboard() {
       }
 
       .dash-row-secondary {
-        font-size: 10px;
+        font-size: 10.5px;
         color: #64748b;
         line-height: 1.2;
         white-space: nowrap;
@@ -1556,193 +1575,245 @@ export function renderDashboard() {
         text-overflow: ellipsis;
       }
 
+      .dash-row-center {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .dash-status-pill {
+        font-size: 10px;
+        font-weight: 600;
+        padding: 2px 7px;
+        border-radius: 4px;
+        white-space: nowrap;
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+      }
+
       .dash-row-right {
         display: flex;
         align-items: center;
+        justify-content: flex-end;
         gap: 6px;
-        flex-shrink: 0;
       }
 
       /* Quantity Pills with Tabular Digits */
       .dash-qty-pill {
-        border-radius: 9999px;
-        padding: 1.5px 8px;
-        font-size: 11.5px;
+        border-radius: 5px;
+        padding: 2px 8px;
+        font-size: 12px;
+        font-weight: 700;
         display: inline-flex;
         align-items: center;
         gap: 4px;
         font-family: var(--font-mono, monospace);
         font-variant-numeric: tabular-nums;
         transition: all 0.15s ease;
+        white-space: nowrap;
       }
 
       .dash-qty-pill small {
         font-size: 9.5px;
-        opacity: 0.8;
+        font-weight: 500;
+        opacity: 0.75;
         font-family: var(--font-main, sans-serif);
       }
 
       .dash-chevron {
-        font-size: 12px;
+        font-size: 11px;
         line-height: 1;
-        opacity: 0.5;
+        opacity: 0.4;
         transition: transform 0.15s ease, opacity 0.15s ease;
       }
 
+      /* Color Pills */
       .pill-sky {
-        background: rgba(56, 189, 248, 0.12);
+        background: rgba(56, 189, 248, 0.1);
         color: #38bdf8;
-        border: 1px solid rgba(56, 189, 248, 0.3);
+        border: 1px solid rgba(56, 189, 248, 0.25);
       }
 
       .pill-emerald {
-        background: rgba(16, 185, 129, 0.12);
+        background: rgba(16, 185, 129, 0.1);
         color: #34d399;
-        border: 1px solid rgba(16, 185, 129, 0.3);
+        border: 1px solid rgba(16, 185, 129, 0.25);
       }
 
       .pill-cyan {
-        background: rgba(6, 182, 212, 0.12);
+        background: rgba(6, 182, 212, 0.1);
         color: #22d3ee;
-        border: 1px solid rgba(6, 182, 212, 0.3);
+        border: 1px solid rgba(6, 182, 212, 0.25);
       }
 
       .pill-amber {
-        background: rgba(245, 158, 11, 0.12);
+        background: rgba(245, 158, 11, 0.1);
         color: #fbbf24;
-        border: 1px solid rgba(245, 158, 11, 0.3);
+        border: 1px solid rgba(245, 158, 11, 0.25);
       }
 
       .pill-yellow {
-        background: rgba(234, 179, 8, 0.12);
+        background: rgba(234, 179, 8, 0.1);
         color: #fde047;
-        border: 1px solid rgba(234, 179, 8, 0.3);
+        border: 1px solid rgba(234, 179, 8, 0.25);
       }
 
       .pill-rose {
-        background: rgba(239, 68, 68, 0.14);
+        background: rgba(239, 68, 68, 0.12);
         color: #f87171;
-        border: 1px solid rgba(239, 68, 68, 0.35);
+        border: 1px solid rgba(239, 68, 68, 0.3);
       }
 
-      .pill-indigo {
-        background: rgba(99, 102, 241, 0.12);
-        color: #a5b4fc;
-        border: 1px solid rgba(99, 102, 241, 0.3);
+      .pill-slate {
+        background: rgba(255, 255, 255, 0.04);
+        color: #94a3b8;
+        border: 1px solid rgba(255, 255, 255, 0.08);
       }
 
-      .pill-pulse {
-        box-shadow: 0 0 10px rgba(239, 68, 68, 0.25);
+      .pill-purple {
+        background: rgba(168, 85, 247, 0.1);
+        color: #c084fc;
+        border: 1px solid rgba(168, 85, 247, 0.25);
       }
 
-      .dash-card-footer-hint {
-        padding: 3px 12px;
-        background: rgba(56, 189, 248, 0.04);
-        border-top: 1px solid rgba(56, 189, 248, 0.08);
-        font-size: 10px;
-        font-weight: 500;
-        color: #38bdf8;
-        display: flex;
-        align-items: center;
-        gap: 5px;
+      .pill-teal {
+        background: rgba(20, 184, 166, 0.1);
+        color: #2dd4bf;
+        border: 1px solid rgba(20, 184, 166, 0.25);
       }
 
-      /* 4. Needle Grid Styling */
-      .dash-needle-grid-header {
-        display: grid;
-        grid-template-columns: 2.2fr 1fr 1fr 1fr;
-        padding: 3px 12px;
-        background: rgba(0, 0, 0, 0.35);
+      /* 4. Needle Simple Clean Table */
+      .dash-table-wrapper {
+        width: 100%;
+        overflow-x: auto;
+        flex: 1;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      .dash-clean-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+        text-align: left;
+      }
+
+      .dash-clean-table thead th {
+        padding: 7px 12px;
+        background: rgba(0, 0, 0, 0.32);
         font-size: 10px;
         font-weight: 700;
         color: #94a3b8;
         text-transform: uppercase;
-        letter-spacing: 0.3px;
+        letter-spacing: 0.5px;
         border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-        flex-shrink: 0;
+        white-space: nowrap;
       }
 
-      .dash-needle-grid-row {
-        display: grid;
-        grid-template-columns: 2.2fr 1fr 1fr 1fr;
-        align-items: center;
+      .dash-clean-table thead th.th-num,
+      .dash-clean-table tbody td.td-num,
+      .dash-clean-table tfoot td.td-num {
+        text-align: right;
       }
 
-      .needle-col-spec {
+      .dash-clean-table thead th.th-status,
+      .dash-clean-table tbody td.td-status,
+      .dash-clean-table tfoot td.td-status {
+        text-align: center;
+      }
+
+      .dash-clean-table tbody td {
+        padding: 7px 12px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.035);
+        vertical-align: middle;
+        color: #cbd5e1;
+      }
+
+      .dash-clean-table tfoot td {
+        padding: 8px 12px;
+        border-top: 1px solid rgba(56, 189, 248, 0.25);
+        background: rgba(56, 189, 248, 0.03);
+        vertical-align: middle;
+      }
+
+      .dash-clean-table tr.dash-table-tr {
+        display: table-row !important;
+        cursor: pointer;
+        transition: background 0.12s ease;
+      }
+
+      .dash-clean-table tbody tr.dash-table-tr:hover,
+      .dash-clean-table tfoot tr.dash-table-tr:hover {
+        background: rgba(255, 255, 255, 0.04);
+      }
+
+      .td-spec {
+        min-width: 160px;
+      }
+
+      .dash-needle-cell {
         display: flex;
         flex-direction: column;
-        text-align: left;
-        min-width: 0;
+        gap: 2px;
       }
 
-      .needle-col-val {
-        text-align: right;
-        padding-right: 4px;
-      }
-
-      .dash-needle-badge {
-        font-size: 12px;
+      .needle-type-badge {
+        font-family: var(--font-mono, monospace);
+        font-size: 11px;
         font-weight: 800;
         color: #38bdf8;
-        letter-spacing: 0.2px;
+        background: rgba(56, 189, 248, 0.1);
+        border: 1px solid rgba(56, 189, 248, 0.25);
+        padding: 1px 6px;
+        border-radius: 4px;
+        display: inline-block;
+        width: fit-content;
       }
 
-      .dash-needle-desc {
-        font-size: 9.5px;
+      .needle-type-desc {
+        font-size: 10.5px;
         color: #64748b;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+        max-width: 220px;
       }
 
-      .dash-num-tag {
-        font-family: var(--font-mono, monospace);
-        font-variant-numeric: tabular-nums;
-        font-size: 11px;
-        font-weight: 600;
-        padding: 1.5px 6px;
-        border-radius: 6px;
-        display: inline-block;
-      }
-
-      .tag-sky { background: rgba(56, 189, 248, 0.08); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.2); }
-      .tag-rose { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.35); font-weight: 700; }
-      .tag-muted { background: rgba(255, 255, 255, 0.04); color: #94a3b8; border: 1px solid rgba(255, 255, 255, 0.08); }
-      .tag-emerald { background: rgba(16, 185, 129, 0.1); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.25); font-weight: 700; }
-
-      .dash-needle-summary-row {
-        background: rgba(56, 189, 248, 0.03);
-        border-top: 1px solid rgba(56, 189, 248, 0.2) !important;
-      }
-
-      .dash-summary-label {
+      .dash-summary-title {
         font-size: 11.5px;
         font-weight: 800;
         color: #ffffff;
       }
 
-      .dash-summary-sub {
-        font-size: 9.5px;
-        color: #94a3b8;
+      .td-num {
+        font-family: var(--font-mono, monospace);
+        font-variant-numeric: tabular-nums;
+        font-size: 12px;
+        font-weight: 600;
+        white-space: nowrap;
       }
 
-      .tag-sky-bold { background: rgba(56, 189, 248, 0.18); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); font-weight: 800; }
-      .tag-rose-bold { background: rgba(239, 68, 68, 0.22); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.45); font-weight: 800; }
-      .tag-muted-bold { background: rgba(255, 255, 255, 0.06); color: #e2e8f0; border: 1px solid rgba(255, 255, 255, 0.12); font-weight: 800; }
-      .tag-emerald-bold { background: rgba(16, 185, 129, 0.18); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.35); font-weight: 800; }
+      .text-bold { font-weight: 800; }
+      .text-sky { color: #38bdf8; }
+      .text-emerald { color: #34d399; }
+      .text-teal { color: #2dd4bf; }
+      .text-purple { color: #c084fc; }
+      .text-amber { color: #fbbf24; }
+      .text-rose { color: #f87171; }
+      .text-rose-sub { color: #fca5a5; }
 
       /* 5. Live Servicing Schedules Drawer */
       .dash-schedules-card {
         flex-shrink: 0;
         background: #0f172a;
         border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 9px;
+        border-radius: 10px;
         overflow: hidden;
         box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
       }
 
       .dash-schedules-bar {
-        padding: 5px 12px;
+        padding: 6px 14px;
         background: rgba(56, 189, 248, 0.05);
         cursor: pointer;
         display: flex;
@@ -1879,7 +1950,7 @@ export function renderDashboard() {
       }
 
       .dash-drawer-table th {
-        padding: 5px 12px;
+        padding: 6px 12px;
         text-align: left;
         white-space: nowrap;
       }
@@ -1895,7 +1966,7 @@ export function renderDashboard() {
       }
 
       .dash-drawer-table td {
-        padding: 5px 12px;
+        padding: 6px 12px;
         vertical-align: middle;
       }
 
@@ -2000,14 +2071,14 @@ export function renderDashboard() {
       }
 
       /* 6. Responsive Breakpoints */
-      @media (max-width: 1024px) {
+      @media (max-width: 1100px) {
         .dash-2x2-grid {
-          grid-template-columns: 1fr !important;
-          grid-template-rows: auto !important;
+          grid-template-columns: 1fr;
+          gap: 12px;
         }
         .user-friendly-dashboard {
-          height: auto !important;
-          max-height: none !important;
+          height: auto;
+          min-height: 100%;
         }
       }
 
@@ -2024,9 +2095,12 @@ export function renderDashboard() {
         .dash-actions-block {
           justify-content: space-between;
         }
-        .dash-needle-grid-header,
-        .dash-needle-grid-row {
-          grid-template-columns: 1.8fr 1fr 1fr 1fr;
+        .dash-table-header,
+        .dash-clickable-row {
+          grid-template-columns: 1fr auto auto;
+        }
+        .needle-type-desc {
+          max-width: 150px;
         }
       }
     </style>
