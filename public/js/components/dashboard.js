@@ -58,6 +58,11 @@ function parseRecordDate(val) {
  */
 function getDateCutoff(filterKey) {
   const now = new Date();
+  if (filterKey === 'TODAY') {
+    const d = new Date(now);
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }
   if (filterKey === '3D') {
     const d = new Date(now);
     d.setDate(d.getDate() - 3);
@@ -102,6 +107,7 @@ export function renderDashboard() {
   const dateCutoff = getDateCutoff(activeDateFilter);
   const dateFilterLabels = {
     'ALL': 'All Time',
+    'TODAY': 'Today',
     '3D': 'Last 3 Days',
     '7D': 'Last 7 Days',
     '30D': 'Last 30 Days',
@@ -380,6 +386,7 @@ export function renderDashboard() {
             </div>
             <div class="dash-segmented-pills" role="group" aria-label="Date range selector">
               <button type="button" class="btn-dash-date-filter ${activeDateFilter === 'ALL' ? 'active' : ''}" data-filter="ALL" title="View lifetime aggregate factory data">All Time</button>
+              <button type="button" class="btn-dash-date-filter ${activeDateFilter === 'TODAY' ? 'active' : ''}" data-filter="TODAY" title="View today's operations">Today</button>
               <button type="button" class="btn-dash-date-filter ${activeDateFilter === '3D' ? 'active' : ''}" data-filter="3D" title="Past 3 days">3D</button>
               <button type="button" class="btn-dash-date-filter ${activeDateFilter === '7D' ? 'active' : ''}" data-filter="7D" title="Past 7 days">7D</button>
               <button type="button" class="btn-dash-date-filter ${activeDateFilter === '30D' ? 'active' : ''}" data-filter="30D" title="Past 30 days">30D</button>
