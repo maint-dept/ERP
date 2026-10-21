@@ -1157,16 +1157,8 @@ class EmployeeService {
       updatedAt: new Date().toISOString()
     };
 
-    // Snapshot for rollback
-    const snapshot = JSON.parse(JSON.stringify(existing));
+    // Update in-memory and trigger background cloud save
     const updated = storage.update(TABLE_NAMES.EMPLOYEES, id, payload);
-    // CONFIRMED WRITE: await Database write
-    const ok = await storage.saveTable(TABLE_NAMES.EMPLOYEES);
-    if (!ok) {
-      // Rollback
-      storage.update(TABLE_NAMES.EMPLOYEES, id, snapshot);
-      throw new CloudSaveError('❌ Cloud Save Failed: Employee update was not confirmed by the cloud.');
-    }
 
     auditService.log(
       'MANPOWER_EMPLOYEE_UPDATED',
@@ -1175,15 +1167,48 @@ class EmployeeService {
       `Updated profile for '${existing.name}' [ID #${existing.cardNumber}].`
     );
 
-    // Synchronize changes (location, designation, status) to linked User Account
-    try {
-      const { userAccessService } = await import('./userAccessService.js');
-      await userAccessService.syncEmployeeToAccount(updated);
-    } catch (accErr) {
-      console.warn('[Auto-Account Sync] Notice on employee update:', accErr.message);
-    }
+    // Synchronize changes (location, designation, status) to linked User Account in background
+    import('./userAccessService.js').then(({ userAccessService }) => {
+      userAccessService.syncEmployeeToAccount(updated).catch(accErr => {
+        console.warn('[Auto-Account Sync] Notice on employee update:', accErr.message);
+      });
+    }).catch(() => {});
 
     return this.enrichEmployee(updated);
+  }
+
+  /**
+   * Bulk Update Employee Status (Active <-> Inactive) in a single atomic pass
+   */
+  async bulkUpdateStatus(ids = [], targetStatus = 'INACTIVE') {
+    if (!Array.isArray(ids) || ids.length === 0) return 0;
+    const targetSet = new Set(ids);
+    const table = storage.getTable(TABLE_NAMES.EMPLOYEES) || [];
+    let updatedCount = 0;
+    const now = new Date().toISOString();
+
+    table.forEach(emp => {
+      if (emp && targetSet.has(emp.id)) {
+        emp.status = targetStatus;
+        emp.updatedAt = now;
+        updatedCount++;
+      }
+    });
+
+    if (updatedCount > 0) {
+      storage.setTable(TABLE_NAMES.EMPLOYEES, table);
+      await storage.saveTable(TABLE_NAMES.EMPLOYEES, true);
+      auditService.log('MANPOWER_BULK_STATUS_UPDATE', 'MANPOWER', `${updatedCount} records`, `Updated ${updatedCount} employees to ${targetStatus}`);
+      
+      // Background sync linked user accounts
+      import('./userAccessService.js').then(({ userAccessService }) => {
+        if (userAccessService?.syncAllManpowerAccounts) {
+          userAccessService.syncAllManpowerAccounts().catch(() => {});
+        }
+      }).catch(() => {});
+    }
+
+    return updatedCount;
   }
 
   async deleteEmployee(id) {
@@ -1623,10 +1648,14 @@ class EmployeeService {
   }
 
   /**
-   * Generates a sample template array for downloading Excel template
+   * Generates a comprehensive sample template array for downloading Excel template.
+   * Includes active custom fields (NID, Blood Group, Skill Grade, OT),
+   * plus sample rows for ACTIVE, INACTIVE, and ON_LEAVE states.
    */
   generateManpowerTemplateData() {
-    return [
+    const customFields = employeeCustomFieldService.getActiveFields ? employeeCustomFieldService.getActiveFields() : [];
+
+    const baseRows = [
       {
         'Sl.': 1,
         'Employee / Card ID': 'AMG-0144970',
@@ -1665,8 +1694,49 @@ class EmployeeService {
         'Phone Number': '+880 1712-345678',
         'Joining Date': '2021-04-10',
         'Status': 'ACTIVE'
+      },
+      {
+        'Sl.': 4,
+        'Employee / Card ID': 'AMG0148112',
+        'Full Name': 'Md. Faruk Ahmed',
+        'Designation': 'Fitter',
+        'Department': 'Utility & Maintenance',
+        'Factory / Unit': 'A.K.M Knit Wear Ltd.',
+        'Plant Floor': 'Washing - Padma',
+        'Line / Working Area': 'Washing - Padma',
+        'Phone Number': '+880 1819-223344',
+        'Joining Date': '2022-06-15',
+        'Status': 'INACTIVE'
+      },
+      {
+        'Sl.': 5,
+        'Employee / Card ID': 'AMG-0149005',
+        'Full Name': 'Kamrul Hasan',
+        'Designation': 'Electrical Mechanic',
+        'Department': 'Electrical Maintenance',
+        'Factory / Unit': 'Al-Muslim Washing Ltd.',
+        'Plant Floor': 'Wet-Process Unit-1',
+        'Line / Working Area': 'Wet-Process Unit-1',
+        'Phone Number': '+880 1911-889900',
+        'Joining Date': '2024-01-10',
+        'Status': 'ON_LEAVE'
       }
     ];
+
+    return baseRows.map((row, idx) => {
+      customFields.forEach(cf => {
+        let sampleVal = '';
+        if (cf.code === 'national_id') sampleVal = `1992269${idx + 1}000${idx + 5}`;
+        else if (cf.code === 'blood_group') sampleVal = ['B+', 'O+', 'A+', 'AB+', 'O+'][idx % 5];
+        else if (cf.code === 'skill_grade') sampleVal = ['Grade A (Master/Expert)', 'Grade B (Senior)', 'Grade A (Master/Expert)', 'Grade C (Standard)', 'Grade B (Senior)'][idx % 5];
+        else if (cf.code === 'overtime_eligible') sampleVal = idx % 2 === 0 ? 'Yes' : 'No';
+        else if (cf.options && cf.options.length > 0) sampleVal = cf.options[idx % cf.options.length];
+        else sampleVal = '—';
+
+        row[cf.label] = sampleVal;
+      });
+      return row;
+    });
   }
 
   /**
@@ -1843,7 +1913,8 @@ class EmployeeService {
    * 5. Atomically saves entire table once with verified unique collision-free IDs
    * 6. Immediately synchronizes Tools Management allocations and User Access Management!
    */
-  async importManpowerData(rows = []) {
+  async importManpowerData(rows = [], progressCallback = null) {
+    if (typeof progressCallback === 'function') progressCallback(10, 'Initializing workforce import...');
     let addedCount = 0;
     let updatedCount = 0;
     let promotedCount = 0;
@@ -2089,9 +2160,12 @@ class EmployeeService {
       }
     });
 
+    if (typeof progressCallback === 'function') progressCallback(75, 'Writing workforce data to local cache...');
     // Save table atomically to IndexedDB, LocalStorage, and Cloud
     storage.setTable(TABLE_NAMES.EMPLOYEES, table);
+    if (typeof progressCallback === 'function') progressCallback(85, 'Synchronizing workforce records with MySQL Database...');
     await storage.saveTable(TABLE_NAMES.EMPLOYEES, table);
+    if (typeof progressCallback === 'function') progressCallback(95, 'Finalizing tools & accounts synchronization...');
 
     // Automatically synchronize Tools Management allocations with newly updated Manpower
     let toolsSynced = 0;

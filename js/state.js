@@ -11,9 +11,10 @@ class GlobalState {
   constructor() {
     const defaultCols = [
       'sl', 'select', 'machineName', 'brand', 'model', 'serialNumber',
-      'systemAssetId', 'manufacturing_serial', 'unit', 'floor', 'line', 'running',
-      'usable_idle', 'repairable_idle', 'total_quantity', 'status',
-      'service_date', 'remarks', 'actions'
+      'systemAssetId', 'manufacturing_serial', 'manufacturing_year', 'unit', 'floor', 'line',
+      'running', 'usable_idle', 'repairable_idle', 'total_quantity', 'status',
+      'service_date', 'purchase_date', 'installation_date', 'supplier_name',
+      'country_of_origin', 'machine_capacity', 'remarks', 'actions'
     ];
 
     let savedCols = null;
@@ -21,15 +22,19 @@ class GlobalState {
       const stored = localStorage.getItem('erp_visible_columns_v3');
       if (stored) {
         savedCols = JSON.parse(stored);
-        if (Array.isArray(savedCols) && !savedCols.includes('manufacturing_serial') && !savedCols.includes('manufacturingSerial')) {
-          const serialIdx = savedCols.indexOf('serialNumber');
-          if (serialIdx >= 0) savedCols.splice(serialIdx + 1, 0, 'manufacturing_serial');
-          else savedCols.push('manufacturing_serial');
-        }
-        if (Array.isArray(savedCols) && !savedCols.includes('systemAssetId')) {
-          const serialIdx = savedCols.indexOf('serialNumber');
-          if (serialIdx >= 0) savedCols.splice(serialIdx + 1, 0, 'systemAssetId');
-          else savedCols.push('systemAssetId');
+        if (Array.isArray(savedCols)) {
+          // Guarantee core columns are never accidentally omitted
+          const essentialCols = [
+            'sl', 'select', 'machineName', 'brand', 'model', 'serialNumber',
+            'systemAssetId', 'manufacturing_serial', 'unit', 'floor', 'line',
+            'running', 'usable_idle', 'repairable_idle', 'total_quantity', 'status',
+            'service_date', 'remarks', 'actions'
+          ];
+          essentialCols.forEach(col => {
+            if (!savedCols.includes(col)) {
+              savedCols.push(col);
+            }
+          });
         }
       }
     } catch (e) {}

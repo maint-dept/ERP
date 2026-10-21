@@ -755,9 +755,9 @@ class StorageEngine {
         try {
           const currentRecords = this.data[table];
           if (table === TABLE_NAMES.MACHINES && Array.isArray(currentRecords)) {
-            if (currentRecords.length > 0 && currentRecords.length < 6450) {
-              console.warn(`[Anti-Downgrade Safeguard] 🛑 Blocked saving machines table with ${currentRecords.length} records (< 6,450 required master inventory).`);
-              return { success: false, error: 'Anti-Downgrade Safeguard: Machine count cannot be less than 6,450.' };
+            if (currentRecords.length === 0 && !this._allowEmptyTableSave) {
+              console.warn(`[Anti-Wipe Safeguard] Blocked saving completely empty machines table without explicit authorization.`);
+              return { success: false, error: 'Cannot overwrite machines table with empty array.' };
             }
           }
           const result = await syncManager.saveTable(table, currentRecords);

@@ -348,6 +348,25 @@ function renderImportStageContent() {
     return `
       <div style="display: flex; flex-direction: column; gap: 14px;">
 
+        <!-- Live Import Percentage Progress Bar (Active during Commit) -->
+        <div id="machine-import-progress-box" style="display: none; background: rgba(15, 23, 42, 0.98); border: 2px solid #0284c7; border-radius: 10px; padding: 14px 18px; box-shadow: 0 8px 30px rgba(2, 132, 199, 0.35);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="display: inline-block; animation: spin 1s linear infinite; font-size: 18px;">🔄</span>
+              <span id="machine-import-progress-msg" style="font-size: 13.5px; font-weight: 800; color: #38bdf8;">Uploading &amp; Locking into MySQL Database...</span>
+            </div>
+            <span id="machine-import-progress-pct" style="font-size: 17px; font-weight: 900; color: #34d399; font-family: var(--font-mono);">0%</span>
+          </div>
+          <div style="width: 100%; height: 12px; background: rgba(255, 255, 255, 0.1); border-radius: 6px; overflow: hidden; border: 1px solid rgba(56, 189, 248, 0.3);">
+            <div id="machine-import-progress-fill" style="width: 0%; height: 100%; background: linear-gradient(90deg, #0284c7 0%, #38bdf8 50%, #34d399 100%); transition: width 0.25s ease;"></div>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 11px; color: #94a3b8; margin-top: 5px;">
+            <span>1. Parsing Rows</span>
+            <span>2. Local Storage &amp; IndexedDB</span>
+            <span>3. Confirmed MySQL Cloud Lock</span>
+          </div>
+        </div>
+
         <!-- 🚨 Top Notification Center (Duplicates, Errors, and Auto-Fixes with exact Cell Addresses) -->
         <div style="display: flex; flex-direction: column; gap: 10px;">
           <!-- 1. Duplicate Records Notification Banner -->
@@ -1175,19 +1194,32 @@ export function initExcelImportEvents() {
   if (btnCommit) {
     btnCommit.addEventListener('click', async () => {
       const origText = btnCommit.innerHTML;
+      const progressBox = document.getElementById('machine-import-progress-box');
+      const progressMsg = document.getElementById('machine-import-progress-msg');
+      const progressPct = document.getElementById('machine-import-progress-pct');
+      const progressFill = document.getElementById('machine-import-progress-fill');
+
+      if (progressBox) progressBox.style.display = 'block';
+
       try {
         btnCommit.disabled = true;
         btnCommit.style.opacity = '0.7';
         btnCommit.style.cursor = 'wait';
-        btnCommit.innerHTML = '<span style="display:inline-block;animation:spin 1s linear infinite;margin-right:6px;">🔄</span> Importing &amp; Locking into MySQL Database...';
+        btnCommit.innerHTML = '<span style="display:inline-block;animation:spin 1s linear infinite;margin-right:6px;">🔄</span> [10%] Starting import...';
 
         const res = await excelService.commitMultiSheetImport(importState.validationResult.sheets, {
           fileName: importState.fileName,
           duplicatePolicy: importState.duplicatePolicy,
           replaceExisting: importState.duplicatePolicy === DUPLICATE_POLICIES.REPLACE_ALL
         }, (pct, msg) => {
+          if (progressPct) progressPct.textContent = `${pct}%`;
+          if (progressMsg) progressMsg.textContent = msg;
+          if (progressFill) progressFill.style.width = `${pct}%`;
           btnCommit.innerHTML = `<span style="display:inline-block;animation:spin 1s linear infinite;margin-right:6px;">🔄</span> [${pct}%] ${msg}`;
         });
+
+        if (progressPct) progressPct.textContent = '100%';
+        if (progressFill) progressFill.style.width = '100%';
 
         importState.importResult = res;
         importState.stage = 5;
@@ -1198,6 +1230,7 @@ export function initExcelImportEvents() {
           window.dispatchEvent(new CustomEvent('erp:storage-updated'));
         }
       } catch (err) {
+        if (progressBox) progressBox.style.display = 'none';
         btnCommit.disabled = false;
         btnCommit.style.opacity = '1';
         btnCommit.style.cursor = 'pointer';

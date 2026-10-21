@@ -899,17 +899,25 @@ export function initManpowerEvents() {
       });
 
       if (confirmed) {
-        notificationService.withLoading(btnBulkToggle, async () => {
-          for (const id of Array.from(selectedEmployeeIds)) {
-            try {
-              await employeeService.updateEmployee(id, { status: targetStatus });
-            } catch (err) {
-              console.error('Failed to update employee status ' + id, err);
-            }
-          }
-          selectedEmployeeIds.clear();
+        const idsToUpdate = Array.from(selectedEmployeeIds);
+        selectedEmployeeIds.clear();
+
+        // 1. Instant Optimistic UI Update
+        idsToUpdate.forEach(id => {
+          const emp = employeeService.getEmployeeById(id);
+          if (emp) emp.status = targetStatus;
+        });
+        refreshView();
+        notificationService.success(`Updated ${count} employee(s) to ${targetStatus}.`);
+
+        // 2. High-speed atomic persistence pass
+        try {
+          await employeeService.bulkUpdateStatus(idsToUpdate, targetStatus);
+        } catch (err) {
+          console.error('Failed to sync bulk employee status:', err);
+          notificationService.error('Failed to sync status update: ' + err.message);
           refreshView();
-        }, 'Updating Status...', `Successfully updated ${count} employee(s) to ${targetStatus}.`);
+        }
       }
     });
   }
@@ -972,19 +980,30 @@ export function initManpowerEvents() {
     });
   }
 
-  // 3. Quick Status Toggle (Active <-> Inactive)
+  // 3. Quick Status Toggle (Active <-> Inactive) - Instant Optimistic UI
   document.querySelectorAll('.btn-emp-quick-toggle').forEach(btn => {
     btn.addEventListener('click', async (e) => {
       e.stopPropagation();
       const empId = btn.getAttribute('data-emp-id');
       const empCard = btn.getAttribute('data-card-number');
       const targetStatus = btn.getAttribute('data-target-status');
+      const emp = employeeService.getEmployeeById(empId);
+      const prevStatus = emp ? emp.status : (targetStatus === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE');
+
+      // 1. Instant Optimistic UI Update (0ms latency!)
+      if (emp) emp.status = targetStatus;
+      btn.disabled = true;
+      btn.innerHTML = `<span style="display:inline-block;animation:spin 1s linear infinite;">🔄</span>`;
+      refreshView();
+      notificationService.success(`Employee ${emp?.name || ''} status set to ${targetStatus}`);
+
+      // 2. High-speed background cloud write with rollback on error
       try {
         await employeeService.updateEmployee(empId, { status: targetStatus }, empCard);
-        notificationService.success(`Employee status updated to ${targetStatus}`);
-        refreshView();
       } catch (err) {
-        notificationService.error('Failed to update status: ' + err.message);
+        if (emp) emp.status = prevStatus;
+        refreshView();
+        notificationService.error('Failed to update status on server: ' + err.message);
       }
     });
   });

@@ -600,6 +600,17 @@ function renderEmployeeImportModal() {
           <!-- Live Preview & Status Box -->
           <div id="emp-import-preview-status" style="display: none; padding: 10px 14px; border-radius: var(--radius-md); font-size: 12px;"></div>
 
+          <!-- Visual Percentage Progress Bar -->
+          <div id="emp-import-progress-container" style="display: none; background: rgba(15, 23, 42, 0.95); border: 1.5px solid #0284c7; border-radius: 8px; padding: 12px 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <span id="emp-import-progress-msg" style="font-size: 12px; font-weight: 700; color: #38bdf8;">Uploading &amp; Processing...</span>
+              <span id="emp-import-progress-pct" style="font-size: 13px; font-weight: 900; color: #34d399; font-family: var(--font-mono);">0%</span>
+            </div>
+            <div style="width: 100%; height: 9px; background: rgba(255, 255, 255, 0.1); border-radius: 4px; overflow: hidden;">
+              <div id="emp-import-progress-fill" style="width: 0%; height: 100%; background: linear-gradient(90deg, #0284c7, #38bdf8); transition: width 0.25s ease;"></div>
+            </div>
+          </div>
+
         </div>
 
         <!-- Fixed Footer: Always visible at bottom, no zoom needed! -->
@@ -1135,10 +1146,26 @@ export function initEmployeeModalEvents(refreshParentCallback) {
     btnConfirmImport.addEventListener('click', async () => {
       if (parsedImportRows.length === 0) return;
       btnConfirmImport.disabled = true;
-      btnConfirmImport.innerText = 'Processing Import...';
+
+      const progressBox = document.getElementById('emp-import-progress-container');
+      const progressMsg = document.getElementById('emp-import-progress-msg');
+      const progressPct = document.getElementById('emp-import-progress-pct');
+      const progressFill = document.getElementById('emp-import-progress-fill');
+
+      if (progressBox) progressBox.style.display = 'block';
+
+      const updateProgress = (pct, msg) => {
+        if (progressPct) progressPct.textContent = `${pct}%`;
+        if (progressMsg) progressMsg.textContent = msg;
+        if (progressFill) progressFill.style.width = `${pct}%`;
+        btnConfirmImport.innerHTML = `<span style="display:inline-block;animation:spin 1s linear infinite;margin-right:6px;">🔄</span> [${pct}%] ${msg}`;
+      };
+
+      updateProgress(10, 'Preparing records...');
 
       try {
-        const res = await employeeService.importManpowerData(parsedImportRows);
+        const res = await employeeService.importManpowerData(parsedImportRows, updateProgress);
+        updateProgress(100, 'Import completed successfully!');
 
         // Also ensure tool service sync is run if loaded
         if (typeof window !== 'undefined' && window.toolService && typeof window.toolService.syncAllocationsWithManpower === 'function') {
@@ -1149,11 +1176,12 @@ export function initEmployeeModalEvents(refreshParentCallback) {
         notificationService.success(
           `Import & Auto-Update Successful! Updated: ${res.updatedCount} (${res.promotedCount} promotions, ${res.transferredCount} transfers${inactiveMsg}), Added: ${res.addedCount} new employees. Tools Management synchronized!`
         );
-        closeModal();
+        setTimeout(closeModal, 600);
       } catch (err) {
         notificationService.error('Import failed: ' + err.message);
         btnConfirmImport.disabled = false;
         btnConfirmImport.innerText = 'Confirm Import & Auto-Update';
+        if (progressBox) progressBox.style.display = 'none';
       }
     });
   }

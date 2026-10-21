@@ -1999,6 +1999,17 @@ class ExcelService {
         if (mapped.manufacturing_serial || manufacturingSerial) customValues.manufacturing_serial = manufacturingSerial;
         if (mapped.manufacturing_year) customValues.manufacturing_year = mapped.manufacturing_year;
 
+        // Automatically preserve all other non-empty columns from the Excel row into customValues
+        const mappedHeaderNames = new Set(Object.values(mapping));
+        for (const [colName, cellVal] of Object.entries(row)) {
+          if (!mappedHeaderNames.has(colName) && cellVal !== undefined && cellVal !== null && String(cellVal).trim() !== '') {
+            const cleanColKey = colName.toLowerCase().replace(/[^a-z0-9_]/g, '_').replace(/^_+|_+$/g, '');
+            if (cleanColKey && !customValues[cleanColKey] && cleanColKey !== 'sl' && cleanColKey !== 'sl_no') {
+              customValues[cleanColKey] = String(cellVal).trim();
+            }
+          }
+        }
+
         // 5B. Preventive Maintenance Servicing Columns
         let rawServiceDate = mapped.service_date || mapped.servicedate || mapped.last_service_date || mapped.lastservicedate || '';
         if (!rawServiceDate) {

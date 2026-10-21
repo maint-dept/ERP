@@ -522,7 +522,9 @@ export function renderInventoryTable() {
   ];
 
   // Dynamic Custom Fields
+  const registeredCodes = new Set(allColDefs.map(c => c.key.toLowerCase()));
   customFields.forEach(cf => {
+    registeredCodes.add(cf.code.toLowerCase());
     allColDefs.push({
       key: cf.code,
       label: cf.label,
@@ -531,6 +533,32 @@ export function renderInventoryTable() {
       renderTd: (m, meta, tdStyle, tdClass) => `<td class="${tdClass}" style="width: 110px; min-width: 110px; max-width: 110px; text-align: center; ${tdStyle}">${m.customValues?.[cf.code] ?? '—'}</td>`
     });
   });
+
+  // Dynamic discovery of extra columns from machine records (e.g. from imported Excel sheets)
+  try {
+    const sampleMachines = (storage.getTable(TABLE_NAMES.MACHINES) || []).slice(0, 150);
+    const extraKeys = new Set();
+    sampleMachines.forEach(m => {
+      if (m && m.customValues && typeof m.customValues === 'object') {
+        Object.keys(m.customValues).forEach(k => {
+          if (!registeredCodes.has(k.toLowerCase()) && k.toLowerCase() !== 'manufacturing' && k.toLowerCase() !== 'manufacturing_serial' && k.toLowerCase() !== 'manufacturing_year') {
+            extraKeys.add(k);
+          }
+        });
+      }
+    });
+    extraKeys.forEach(extraKey => {
+      registeredCodes.add(extraKey.toLowerCase());
+      const label = extraKey.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+      allColDefs.push({
+        key: extraKey,
+        label: label,
+        width: 115,
+        renderTh: (thStyle, thClass) => `<th class="${thClass}" style="width: 115px; min-width: 115px; max-width: 115px; text-align: center; ${thStyle}">${label}</th>`,
+        renderTd: (m, meta, tdStyle, tdClass) => `<td class="${tdClass}" style="width: 115px; min-width: 115px; max-width: 115px; text-align: center; ${tdStyle}">${m.customValues?.[extraKey] ?? '—'}</td>`
+      });
+    });
+  } catch (_) {}
 
   // Actions Menu Column
   allColDefs.push({
@@ -1042,10 +1070,20 @@ export function renderInventoryTable() {
                 ↺ Reset
               </button>
 
+              <button id="btn-show-all-columns-quick" class="btn btn-ghost btn-sm" style="font-size: 11px; padding: 2px 10px; color: #34d399; height: 30px; display: inline-flex; align-items: center; gap: 5px; border: 1px solid rgba(52, 211, 153, 0.4); border-radius: 6px; background: rgba(52, 211, 153, 0.1);" title="Show all available columns from Excel and system">
+                <span>👁️ All Columns</span>
+              </button>
+
               <button id="btn-column-picker-inline" class="btn btn-ghost btn-sm" style="font-size: 11px; padding: 2px 10px; color: #38bdf8; height: 30px; display: inline-flex; align-items: center; gap: 5px; border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 6px; background: rgba(56, 189, 248, 0.1);" title="Configure visible and frozen columns">
                 <span>❄️ Columns &amp; Freeze ▾</span>
                 ${frozenColKeys.length > 0 ? `<span class="badge" style="background: rgba(56, 189, 248, 0.3); color: #fff; font-size: 10px; padding: 1px 5px; font-weight: 800; border-radius: 10px;">${frozenColKeys.length}</span>` : ''}
               </button>
+
+              <!-- Quick Horizontal Scroll Deck -->
+              <div style="display: inline-flex; align-items: center; border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 6px; overflow: hidden; height: 30px; background: rgba(15, 23, 42, 0.7);" title="Scroll columns horizontally">
+                <button type="button" id="btn-scroll-table-left" class="btn btn-ghost btn-xs" style="padding: 0 8px; height: 100%; border-radius: 0; color: #38bdf8; font-weight: 800; border-right: 1px solid rgba(255,255,255,0.08);" title="Scroll columns left">◀</button>
+                <button type="button" id="btn-scroll-table-right" class="btn btn-ghost btn-xs" style="padding: 0 8px; height: 100%; border-radius: 0; color: #38bdf8; font-weight: 800;" title="Scroll columns right">▶</button>
+              </div>
             </div>
 
           </div>
@@ -1118,6 +1156,20 @@ export function renderInventoryTable() {
         </div>
 
       </div> <!-- ── End of Pinned Top Control Deck ── -->
+
+      <!-- Columns & Horizontal Scroll Status Bar -->
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 4px 8px; font-size: 11px; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; flex-shrink: 0; margin-bottom: 2px;">
+        <span style="color: var(--text-secondary); display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+          <span>📋 Grid Layout: <strong style="color: #fff;">${columnLayout.length}</strong> Columns</span>
+          <span style="color: #94a3b8;">&bull;</span>
+          <span style="color: #38bdf8;">❄️ <strong>${frozenColKeys.length}</strong> Sticky Frozen</span>
+          <span style="color: #94a3b8;">&bull;</span>
+          <span style="color: #cbd5e1;">👉 Use ◀ ▶ buttons or Shift + Mouse Wheel to scroll columns</span>
+        </span>
+        <button type="button" id="link-show-all-cols-hint" class="btn btn-ghost btn-xs" style="color: #34d399; font-size: 11px; font-weight: 700; padding: 2px 8px; border: 1px solid rgba(52,211,153,0.4); border-radius: 4px; background: rgba(52,211,153,0.08);" title="Click to reveal all available columns in table">
+          👁️ Reveal All Available Columns (${allColDefs.length})
+        </button>
+      </div>
 
       <!-- 5. Real Excel-Style Machine Data Grid with Native Horizontal & Vertical Scroll -->
       <div class="inventory-table-scroll-container" id="inventory-table-scroll-viewport" style="flex: 1 1 0%; min-height: 250px; overflow: auto;">
@@ -1758,6 +1810,59 @@ export function initInventoryTableEvents() {
     btnColPickerInline.addEventListener('click', () => {
       state.set('activeModal', 'column-visibility');
     });
+  }
+
+  // Quick Show All Columns Handler
+  const btnShowAllCols = document.getElementById('btn-show-all-columns-quick');
+  const linkShowAllHint = document.getElementById('link-show-all-cols-hint');
+  const triggerRevealAllCols = () => {
+    const allKnownKeys = [
+      'sl', 'select', 'machineName', 'brand', 'model', 'serialNumber',
+      'systemAssetId', 'manufacturing_serial', 'manufacturing', 'manufacturing_year',
+      'group', 'unit', 'floor', 'line', 'running', 'usable_idle', 'repairable_idle',
+      'total_quantity', 'status', 'service_date', 'purchase_date', 'installation_date',
+      'supplier_name', 'country_of_origin', 'machine_capacity', 'remarks', 'actions'
+    ];
+    try {
+      const cfs = customFieldService.getActiveFields();
+      cfs.forEach(cf => allKnownKeys.push(cf.code));
+      const sampleMachines = (storage.getTable(TABLE_NAMES.MACHINES) || []).slice(0, 100);
+      sampleMachines.forEach(m => {
+        if (m?.customValues) {
+          Object.keys(m.customValues).forEach(k => allKnownKeys.push(k));
+        }
+      });
+    } catch (_) {}
+    state.setVisibleColumns(Array.from(new Set(allKnownKeys)));
+    notificationService.success('All machine columns and custom Excel fields are now revealed in the table!');
+  };
+  if (btnShowAllCols) btnShowAllCols.addEventListener('click', triggerRevealAllCols);
+  if (linkShowAllHint) linkShowAllHint.addEventListener('click', triggerRevealAllCols);
+
+  // Quick Horizontal Scroll Controls
+  const scrollContainer = document.getElementById('inventory-table-scroll-viewport');
+  const btnScrollLeft = document.getElementById('btn-scroll-table-left');
+  const btnScrollRight = document.getElementById('btn-scroll-table-right');
+  if (scrollContainer) {
+    if (btnScrollLeft) {
+      btnScrollLeft.addEventListener('click', () => {
+        scrollContainer.scrollBy({ left: -380, behavior: 'smooth' });
+      });
+    }
+    if (btnScrollRight) {
+      btnScrollRight.addEventListener('click', () => {
+        scrollContainer.scrollBy({ left: 380, behavior: 'smooth' });
+      });
+    }
+    // Shift + wheel horizontal scroll helper
+    scrollContainer.addEventListener('wheel', (e) => {
+      if (!e.ctrlKey && e.deltaY !== 0 && !e.shiftKey) {
+        // Smooth horizontal scrolling when hovering scroll container
+        if (scrollContainer.scrollWidth > scrollContainer.clientWidth) {
+          scrollContainer.scrollLeft += e.deltaY * 0.8;
+        }
+      }
+    }, { passive: true });
   }
 
   // 7. Table Header Sorting Handler

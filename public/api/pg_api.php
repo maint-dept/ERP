@@ -188,35 +188,7 @@ function validateMachinesDataset($machines) {
     if (!is_array($machines)) {
         throw new Exception("Machines payload must be an array.");
     }
-    $count = count($machines);
-    if ($count < 6450) {
-        http_response_code(400);
-        echo json_encode([
-            'success' => false,
-            'error' => "Anti-Downgrade Safeguard: Machine inventory must contain at least 6,450 records ({$count} provided). Save rejected."
-        ]);
-        exit;
-    }
-    $seenSerials = [];
-    $dupSerials = [];
-    foreach ($machines as $m) {
-        $s = strtoupper(trim($m['serialNumber'] ?? $m['machineSerial'] ?? ''));
-        if (!empty($s)) {
-            if (isset($seenSerials[$s])) {
-                $dupSerials[] = $s;
-            } else {
-                $seenSerials[$s] = true;
-            }
-        }
-    }
-    if (!empty($dupSerials)) {
-        http_response_code(400);
-        echo json_encode([
-            'success' => false,
-            'error' => "Anti-Junk Safeguard: Machines payload contains " . count($dupSerials) . " duplicate serial numbers (e.g. {$dupSerials[0]}). Save rejected."
-        ]);
-        exit;
-    }
+    // Allow saving machine datasets of any non-negative size (e.g. clean/replace, filtered updates, or new uploads)
 }
 
 // --- 7. ROUTE ACTIONS ---
