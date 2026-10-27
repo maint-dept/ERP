@@ -15,6 +15,7 @@ import { etLabService } from '../services/etLabService.js';
 import { authService } from '../services/authService.js';
 import { notificationService } from '../services/notificationService.js';
 import { qrCodeService } from '../services/qrCodeService.js';
+import { tempImportService } from '../services/tempImportService.js';
 import { renderQrScannerModal, initQrScannerModalEvents } from './qrScannerModal.js?v=4.7.4';
 import { renderSparePartsManagementView, initSparePartsManagementEvents } from './sparePartsManagementView.js';
 
@@ -4313,7 +4314,19 @@ export function openEntLabExcelImportModal() {
 
   document.body.insertAdjacentHTML('beforeend', modalHtml);
   const overlay = document.getElementById('ent-excel-import-modal-overlay');
-  const close = () => overlay?.remove();
+  let etLabTempId = null;
+  let etLabTempName = '';
+
+  const close = () => {
+    if (etLabTempId) {
+      tempImportService.purgeTempFile(etLabTempId, 'MODAL_CLOSED');
+      etLabTempId = null;
+      etLabTempName = '';
+    }
+    const inp = document.getElementById('ent-file-input');
+    if (inp) tempImportService.cleanInput(inp);
+    overlay?.remove();
+  };
 
   overlay.querySelectorAll('.btn-close-ent-import').forEach(b => b.addEventListener('click', close));
 
@@ -4384,37 +4397,48 @@ export function openEntLabExcelImportModal() {
     }
   });
 
-  function handleFileSelected(file) {
-    const reader = new FileReader();
-    reader.onload = (re) => {
-      try {
-        const data = new Uint8Array(re.target.result);
-        const wb = XLSX.read(data, { type: 'array' });
-        const firstSheetName = wb.SheetNames[0];
-        const sheet = wb.Sheets[firstSheetName];
-        const rows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+  async function handleFileSelected(file) {
+    if (!file) return;
 
-        if (!rows || rows.length === 0) {
-          notificationService.warning('The uploaded sheet contains no data rows.');
-          return;
-        }
+    if (etLabTempId) {
+      tempImportService.purgeTempFile(etLabTempId, 'FILE_REPLACED');
+      etLabTempId = null;
+    }
 
-        parsedRows = rows;
+    try {
+      const staged = await tempImportService.stageFile(file, 'ET_LAB', fileInput);
+      etLabTempId = staged.tempId;
+      etLabTempName = staged.tempFileName;
+      tempImportService.updateStatus(staged.tempId, 'PARSING');
 
-        // Update Dropzone visual
-        dropzone.innerHTML = `
-          <div style="font-size: 32px; color: #10b981; margin-bottom: 4px;">✅</div>
-          <div style="font-weight: 800; color: #fff; font-size: 14px;">${file.name}</div>
-          <div style="font-size: 11.5px; color: #38bdf8; margin-top: 2px;">
-            File loaded successfully &bull; ${(file.size / 1024).toFixed(1)} KB &bull; Sheet: "${firstSheetName}"
-          </div>
-        `;
-        dropzone.style.borderColor = '#10b981';
-        dropzone.style.background = 'rgba(16, 185, 129, 0.06)';
+      const data = new Uint8Array(staged.buffer);
+      const wb = XLSX.read(data, { type: 'array' });
+      const firstSheetName = wb.SheetNames[0];
+      const sheet = wb.Sheets[firstSheetName];
+      const rows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
 
-        // Update Preview
-        filenameLabel.textContent = file.name;
-        rowCountBadge.textContent = `${rows.length} rows detected`;
+      if (!rows || rows.length === 0) {
+        notificationService.warning('The uploaded sheet contains no data rows.');
+        return;
+      }
+
+      parsedRows = rows;
+      tempImportService.updateStatus(staged.tempId, 'VALIDATING', { rowCount: rows.length });
+
+      // Update Dropzone visual
+      dropzone.innerHTML = `
+        <div style="font-size: 32px; color: #10b981; margin-bottom: 4px;">✅</div>
+        <div style="font-weight: 800; color: #fff; font-size: 14px;">${file.name}</div>
+        <div style="font-size: 11.5px; color: #38bdf8; margin-top: 2px;">
+          Staged as: <code>${etLabTempName}</code> &bull; ${(file.size / 1024).toFixed(1)} KB &bull; Sheet: "${firstSheetName}"
+        </div>
+      `;
+      dropzone.style.borderColor = '#10b981';
+      dropzone.style.background = 'rgba(16, 185, 129, 0.06)';
+
+      // Update Preview
+      filenameLabel.textContent = file.name;
+      rowCountBadge.textContent = `${rows.length} rows detected`;
 
         const sampleRows = rows.slice(0, 5);
         previewTbody.innerHTML = sampleRows.map((r, i) => {
@@ -4466,6 +4490,15 @@ export function openEntLabExcelImportModal() {
         autoCategories,
         updateDuplicates
       });
+
+      // Purge temporary file after database write is confirmed
+      if (etLabTempId) {
+        tempImportService.purgeTempFile(etLabTempId, 'DATABASE_COMMITTED');
+        etLabTempId = null;
+        etLabTempName = '';
+      }
+      const entInp = document.getElementById('ent-file-input');
+      if (entInp) tempImportService.cleanInput(entInp);
 
       feedback.style.display = 'block';
       feedback.style.background = 'rgba(16, 185, 129, 0.15)';

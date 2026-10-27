@@ -811,6 +811,19 @@ class EmployeeService {
         const unitName = (untMap.get(e.unitId) || e.unitName || '').toLowerCase();
         const floorName = (flrMap.get(e.floorId) || e.floorName || '').toLowerCase();
 
+        let customMatch = false;
+        if (e.customFields && typeof e.customFields === 'object') {
+          for (const val of Object.values(e.customFields)) {
+            if (val !== null && val !== undefined) {
+              const sVal = String(val).toLowerCase();
+              if (sVal.includes(q) || (cleanQ && sVal.replace(/[^a-z0-9]/g, '').includes(cleanQ))) {
+                customMatch = true;
+                break;
+              }
+            }
+          }
+        }
+
         return (
           name.includes(q) ||
           card.includes(q) ||
@@ -820,7 +833,8 @@ class EmployeeService {
           phone.includes(q) ||
           area.includes(q) ||
           unitName.includes(q) ||
-          floorName.includes(q)
+          floorName.includes(q) ||
+          customMatch
         );
       });
     }
@@ -890,12 +904,13 @@ class EmployeeService {
     }
 
     // 6. Dynamic Custom Fields Filter (Matches any active custom field value)
-    if (filters.customFilters && typeof filters.customFilters === 'object') {
-      Object.entries(filters.customFilters).forEach(([fieldCode, filterVal]) => {
+    const activeCustomFilters = filters.customFilters || filters.customFields;
+    if (activeCustomFilters && typeof activeCustomFilters === 'object') {
+      Object.entries(activeCustomFilters).forEach(([fieldCode, filterVal]) => {
         if (filterVal && filterVal !== 'ALL' && String(filterVal).trim() !== '') {
           const expected = String(filterVal).toLowerCase().trim();
           list = list.filter(e => {
-            const actual = e.customFields ? String(e.customFields[fieldCode] || '').toLowerCase().trim() : '';
+            const actual = e.customFields ? String(e.customFields[fieldCode] ?? '').toLowerCase().trim() : '';
             return actual === expected || actual.includes(expected);
           });
         }
@@ -1023,6 +1038,18 @@ class EmployeeService {
       if (dept.includes(q)) score += 50;
       if (floor.includes(q)) score += 40;
       if (phone.includes(q)) score += 30;
+
+      // Custom fields match (e.g. NID, blood group, grade)
+      if (emp.customFields && typeof emp.customFields === 'object') {
+        for (const [cfKey, cfVal] of Object.entries(emp.customFields)) {
+          if (cfVal !== null && cfVal !== undefined) {
+            const s = String(cfVal).toLowerCase();
+            if (s === q) score += 90;
+            else if (s.startsWith(q)) score += 60;
+            else if (s.includes(q)) score += 40;
+          }
+        }
+      }
 
       if (score > 0) {
         matches.push({ emp, score });
@@ -1643,6 +1670,16 @@ class EmployeeService {
         row[cf.label] = emp.customFields ? (emp.customFields[cf.code] ?? '') : '';
       });
 
+      // Also export any extra fields in customFields not yet registered
+      if (emp.customFields && typeof emp.customFields === 'object') {
+        Object.entries(emp.customFields).forEach(([k, v]) => {
+          const already = customFields.some(cf => cf.code === k || cf.label === k);
+          if (!already && v !== undefined && v !== null && String(v).trim() !== '') {
+            row[k] = v;
+          }
+        });
+      }
+
       return row;
     });
   }
@@ -1774,6 +1811,28 @@ class EmployeeService {
     return '';
   }
 
+  getKnownStandardColumnNames() {
+    return [
+      'sl', 'sl.', 'sl no', 'serial', 'no', 'serial no',
+      'employee / card id', 'card id', 'card number', 'card no', 'card', 'id', 'id number', 'id card', 'employee id', 'emp id', 'staff id', 'cardno', 'cardnum',
+      'full name', 'name', 'employee name', 'worker name', 'staff name', 'technician name', 'mechanic name', 'emp name',
+      'designation', 'designation name', 'position', 'rank', 'job title', 'post',
+      'department', 'dept', 'department name', 'section', 'dept name',
+      'factory / unit', 'factory/unit', 'unit / factory', 'unit/factory', 'unit', 'factory', 'plant', 'company', 'unit name', 'factory name', 'company name', 'plant unit',
+      'line / working area', 'working area', 'area', 'line', 'line name', 'production bay',
+      'plant floor', 'floor', 'floor name', 'plant section',
+      'phone number', 'phone', 'mobile', 'mobile no', 'contact number', 'contact', 'cell',
+      'joining date', 'join date', 'doj', 'date of joining',
+      'status', 'employee status', 'emp status', 'employment status', 'active / inactive', 'active/inactive', 'active status', 'current status', 'job status', 'work status', 'service status', 'staff status', 'worker status', 'active', 'state', 'condition'
+    ];
+  }
+
+  isStandardColumn(header) {
+    if (!header) return true;
+    const clean = String(header).trim().toLowerCase();
+    return this.getKnownStandardColumnNames().includes(clean);
+  }
+
   /**
    * Previews parsed Excel rows before applying changes:
    * Counts how many records will be updated, how many promotions detected,
@@ -1791,6 +1850,26 @@ class EmployeeService {
     let sampleAdded = [];
     let sampleInactive = [];
     let errors = [];
+
+    // Detect custom columns in rows
+    const detectedCustomFieldMap = new Map();
+    rows.slice(0, 100).forEach(row => {
+      Object.keys(row || {}).forEach(k => {
+        if (!k || !k.trim()) return;
+        const col = k.trim();
+        if (this.isStandardColumn(col)) return;
+        const matched = employeeCustomFieldService.matchField(col);
+        if (matched) {
+          detectedCustomFieldMap.set(matched.code, { code: matched.code, label: matched.label, isNew: false });
+        } else {
+          const code = col.toLowerCase().replace(/[^a-z0-9_]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '') || `cf_${Date.now()}`;
+          if (!detectedCustomFieldMap.has(code)) {
+            detectedCustomFieldMap.set(code, { code, label: col, isNew: true });
+          }
+        }
+      });
+    });
+    const detectedCustomFields = Array.from(detectedCustomFieldMap.values());
 
     rows.forEach((row, idx) => {
       const cardNumber = this._extractCell(row, [
@@ -1900,6 +1979,7 @@ class EmployeeService {
       sampleTransfers,
       sampleAdded,
       sampleInactive,
+      detectedCustomFields,
       errors
     };
   }
@@ -1925,7 +2005,19 @@ class EmployeeService {
     let addedList = [];
     let errors = [];
 
-    const customFields = employeeCustomFieldService.getActiveFields();
+    // Auto-discover and register any new custom columns found in the imported rows
+    const uniqueFileHeaders = new Set();
+    rows.forEach(r => Object.keys(r || {}).forEach(k => k && k.trim() && uniqueFileHeaders.add(k.trim())));
+    uniqueFileHeaders.forEach(header => {
+      if (!this.isStandardColumn(header)) {
+        const existingCf = employeeCustomFieldService.matchField(header);
+        if (!existingCf) {
+          employeeCustomFieldService.autoRegisterFieldFromHeader(header);
+        }
+      }
+    });
+
+    const activeCustomFields = employeeCustomFieldService.getAllFields();
     const table = storage.getTable(TABLE_NAMES.EMPLOYEES) || [];
 
     // Ensure all existing records in table have guaranteed unique IDs before processing
@@ -2036,12 +2128,35 @@ class EmployeeService {
         const resolvedUnitId = matchedUnit?.id || matchedFloor?.unitId || null;
         const resolvedGroupId = matchedUnit?.groupId || (matchedFloor?.unitId ? masterDataService.getUnitById?.(matchedFloor.unitId)?.groupId : null) || 'grp-1';
 
-        // Dynamic custom fields extraction
+        // Dynamic custom fields extraction with intelligent alias & synonym matching
         const empCustomFields = {};
-        customFields.forEach(cf => {
-          const val = row[cf.label] !== undefined ? row[cf.label] : row[cf.code];
+        activeCustomFields.forEach(cf => {
+          let val = row[cf.label] !== undefined ? row[cf.label] : row[cf.code];
+          if (val === undefined || String(val).trim() === '') {
+            for (const [rKey, rVal] of Object.entries(row)) {
+              if (rVal !== undefined && String(rVal).trim() !== '') {
+                const matchedField = employeeCustomFieldService.matchField(rKey);
+                if (matchedField && matchedField.code === cf.code) {
+                  val = rVal;
+                  break;
+                }
+              }
+            }
+          }
           if (val !== undefined && String(val).trim() !== '') {
             empCustomFields[cf.code] = String(val).trim();
+          }
+        });
+
+        // Capture any other non-standard columns in this row
+        Object.entries(row).forEach(([colKey, colVal]) => {
+          if (!colKey || colVal === undefined || String(colVal).trim() === '') return;
+          const trimmedKey = colKey.trim();
+          if (this.isStandardColumn(trimmedKey)) return;
+          const matched = employeeCustomFieldService.matchField(trimmedKey);
+          const targetCode = matched ? matched.code : trimmedKey.toLowerCase().replace(/[^a-z0-9_]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
+          if (targetCode && empCustomFields[targetCode] === undefined) {
+            empCustomFields[targetCode] = String(colVal).trim();
           }
         });
 

@@ -15,7 +15,11 @@ import { barcodeService } from '../services/barcodeService.js';
 import { excelService } from '../services/excelService.js';
 import { authService } from '../services/authService.js';
 import { notificationService } from '../services/notificationService.js';
+import { tempImportService } from '../services/tempImportService.js';
 import { state } from '../state.js';
+
+let activeEmployeeImportTempId = null;
+let activeEmployeeImportTempName = '';
 
 export function renderEmployeeModal() {
   const activeModal = state.get('activeEmployeeModal'); // { type: 'ADD'|'EDIT'|'TRANSFER'|'LEAVE'|'ID_CARD'|'IMPORT', employeeId: string }
@@ -54,7 +58,21 @@ function renderAddEditEmployeeModal({ type, employeeId }) {
   const initialFloorId = emp.floorId || (floors[0]?.id || '');
   const lines = masterDataService.getLines(initialFloorId, null, null, true);
 
-  const customFields = employeeCustomFieldService.getActiveFields();
+  const customFields = [...employeeCustomFieldService.getActiveFields()];
+  // Ensure any extra custom keys in employee record are also rendered
+  if (emp.customFields && typeof emp.customFields === 'object') {
+    Object.keys(emp.customFields).forEach(k => {
+      if (!customFields.some(cf => cf.code === k)) {
+        customFields.push({
+          id: `extra-${k}`,
+          code: k,
+          label: k.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+          type: 'TEXT',
+          required: false
+        });
+      }
+    });
+  }
 
   return `
     <div class="modal-overlay active" id="modal-employee-overlay">
@@ -220,13 +238,17 @@ function renderCustomFieldInput(field, currentValue = '') {
         </div>
       `;
     case 'BOOLEAN':
+      const isYes = String(val).toLowerCase() === 'yes' || String(val).toLowerCase() === 'true' || String(val) === '1';
+      const isNo = String(val).toLowerCase() === 'no' || String(val).toLowerCase() === 'false' || String(val) === '0';
+      const isOther = val && !isYes && !isNo;
       return `
         <div class="form-group">
           <label class="form-label" style="font-size: 12px; font-weight: 700; color: #fff;">${field.label} ${field.required ? '*' : ''}</label>
           <select id="emp-cf-${field.code}" class="filter-select" data-emp-cf-code="${field.code}" ${reqStr}>
             <option value="">Select...</option>
-            <option value="Yes" ${String(val).toLowerCase() === 'yes' ? 'selected' : ''}>Yes</option>
-            <option value="No" ${String(val).toLowerCase() === 'no' ? 'selected' : ''}>No</option>
+            <option value="Yes" ${isYes ? 'selected' : ''}>Yes</option>
+            <option value="No" ${isNo ? 'selected' : ''}>No</option>
+            ${isOther ? `<option value="${val}" selected>${val}</option>` : ''}
           </select>
         </div>
       `;
@@ -475,7 +497,21 @@ function renderEmployeeIdCardModal({ employeeId }) {
 
   const barcodeSvg = barcodeService.generateBarcodeSVG(emp.cardNumber, { width: 1.8, height: 40 });
   const qrSvg = barcodeService.generateQRCodeSVG(`AL-MUSLIM-ERP://EMP/${emp.cardNumber}/${emp.id}`, { size: 90 });
-  const customFields = employeeCustomFieldService.getActiveFields();
+  const customFields = [...employeeCustomFieldService.getActiveFields()];
+  // Ensure any extra custom keys in employee record are also rendered
+  if (emp.customFields && typeof emp.customFields === 'object') {
+    Object.keys(emp.customFields).forEach(k => {
+      if (!customFields.some(cf => cf.code === k)) {
+        customFields.push({
+          id: `extra-${k}`,
+          code: k,
+          label: k.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+          type: 'TEXT',
+          required: false
+        });
+      }
+    });
+  }
 
   return `
     <div class="modal-overlay active" id="modal-employee-overlay">
@@ -636,6 +672,13 @@ function renderEmployeeImportModal() {
 // ---------------------------------------------------------------------------
 export function initEmployeeModalEvents(refreshParentCallback) {
   const closeModal = () => {
+    if (activeEmployeeImportTempId) {
+      tempImportService.purgeTempFile(activeEmployeeImportTempId, 'MODAL_CLOSED');
+      activeEmployeeImportTempId = null;
+      activeEmployeeImportTempName = '';
+    }
+    const inp = document.getElementById('inp-employee-import-file');
+    if (inp) tempImportService.cleanInput(inp);
     state.set('activeEmployeeModal', null);
     if (refreshParentCallback) refreshParentCallback();
   };
@@ -865,6 +908,8 @@ export function initEmployeeModalEvents(refreshParentCallback) {
         };
 
         if (activeModal.type === 'EDIT') {
+          const prev = employeeService.getEmployeeById(activeModal.employeeId);
+          payload.customFields = { ...(prev?.customFields || {}), ...customFields };
           await employeeService.updateEmployee(activeModal.employeeId, payload, cardNumber);
           notificationService.success(`Updated profile for ${name}`);
         } else {
@@ -1018,9 +1063,22 @@ export function initEmployeeModalEvents(refreshParentCallback) {
       const file = e.target.files[0];
       if (!file) return;
 
+      if (activeEmployeeImportTempId) {
+        tempImportService.purgeTempFile(activeEmployeeImportTempId, 'FILE_REPLACED');
+        activeEmployeeImportTempId = null;
+        activeEmployeeImportTempName = '';
+      }
+
       try {
+        // Stage file in temporary staging engine
+        const staged = await tempImportService.stageFile(file, 'MANPOWER', fileInp);
+        activeEmployeeImportTempId = staged.tempId;
+        activeEmployeeImportTempName = staged.tempFileName;
+
+        tempImportService.updateStatus(staged.tempId, 'PARSING');
         const rows = await excelService.parseExcelFile(file);
         parsedImportRows = rows;
+        tempImportService.updateStatus(staged.tempId, 'VALIDATING', { rowCount: rows.length });
 
         if (rows.length === 0) {
           if (statusBox) {
@@ -1059,7 +1117,7 @@ export function initEmployeeModalEvents(refreshParentCallback) {
           statusBox.innerHTML = `
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 6px; margin-bottom: 8px;">
               <div style="font-weight: 800; color: #38bdf8; font-size: 12.5px; display: flex; align-items: center; gap: 6px;">
-                <span>📄</span> <span>File Loaded: <strong>${file.name}</strong> (${rows.length} total rows)</span>
+                <span>📄</span> <span>File Loaded: <strong>${file.name}</strong> <span style="font-size:10.5px;padding:2px 6px;border-radius:4px;background:rgba(56,189,248,0.18);color:#bae6fd;font-family:var(--font-mono);">[Staged: ${activeEmployeeImportTempName}]</span> (${rows.length} total rows)</span>
               </div>
               <span class="badge badge-active" style="font-size: 10.5px; padding: 2px 7px;">Ready to Process</span>
             </div>
@@ -1123,6 +1181,19 @@ export function initEmployeeModalEvents(refreshParentCallback) {
               </div>
             ` : ''}
 
+            ${preview.detectedCustomFields && preview.detectedCustomFields.length > 0 ? `
+              <div style="background: rgba(56, 189, 248, 0.08); border-left: 3px solid #38bdf8; border-radius: 4px; padding: 6px 10px; font-size: 11px; margin-bottom: 6px;">
+                <strong style="color: #38bdf8;">⚙️ Custom Columns &amp; Parameters Detected (${preview.detectedCustomFields.length}):</strong>
+                <div style="margin-top: 4px; display: flex; flex-wrap: wrap; gap: 4px;">
+                  ${preview.detectedCustomFields.map(f => `
+                    <span class="badge" style="background: rgba(56, 189, 248, 0.18); color: #bae6fd; border: 1px solid rgba(56, 189, 248, 0.35); font-size: 10.5px; padding: 2px 7px;">
+                      ✓ ${f.label || f.code} ${f.isNew ? '<span style="color:#fbbf24;font-weight:800;">(Auto-Registered)</span>' : ''}
+                    </span>
+                  `).join('')}
+                </div>
+              </div>
+            ` : ''}
+
             <div style="font-size: 11px; color: #38bdf8; display: flex; align-items: center; gap: 6px; padding-top: 2px;">
               <span>⚡</span> <span>All updates will automatically synchronize with <strong>Tools Management</strong> registrations &amp; ID card printouts.</span>
             </div>
@@ -1165,7 +1236,16 @@ export function initEmployeeModalEvents(refreshParentCallback) {
 
       try {
         const res = await employeeService.importManpowerData(parsedImportRows, updateProgress);
-        updateProgress(100, 'Import completed successfully!');
+
+        // Purge temporary staging file immediately after database write is confirmed
+        if (activeEmployeeImportTempId) {
+          tempImportService.purgeTempFile(activeEmployeeImportTempId, 'DATABASE_COMMITTED');
+          activeEmployeeImportTempId = null;
+          activeEmployeeImportTempName = '';
+        }
+        tempImportService.cleanInput(fileInp);
+
+        updateProgress(100, 'Import & Temp File Purge completed successfully!');
 
         // Also ensure tool service sync is run if loaded
         if (typeof window !== 'undefined' && window.toolService && typeof window.toolService.syncAllocationsWithManpower === 'function') {
@@ -1174,7 +1254,7 @@ export function initEmployeeModalEvents(refreshParentCallback) {
 
         const inactiveMsg = (res.inactiveCount && res.inactiveCount > 0) ? `, ${res.inactiveCount} marked Inactive` : '';
         notificationService.success(
-          `Import & Auto-Update Successful! Updated: ${res.updatedCount} (${res.promotedCount} promotions, ${res.transferredCount} transfers${inactiveMsg}), Added: ${res.addedCount} new employees. Tools Management synchronized!`
+          `Import & Auto-Update Successful! Updated: ${res.updatedCount} (${res.promotedCount} promotions, ${res.transferredCount} transfers${inactiveMsg}), Added: ${res.addedCount} new employees. Temporary file purged & memory cleared!`
         );
         setTimeout(closeModal, 600);
       } catch (err) {

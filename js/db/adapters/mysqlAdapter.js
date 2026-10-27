@@ -76,6 +76,42 @@ export class MysqlAdapter extends BaseAdapter {
     return this.testConnection();
   }
 
+  /**
+   * Authoritative Backend Login & Role Verification
+   * Validates credentials and enforces Admin vs User Gateway separation on MySQL Primary
+   */
+  async verifyLogin(identifier, password, isAdminGateway = false) {
+    try {
+      const url = this._getUrl('verify_login');
+      const res = await fetch(url, {
+        method: 'POST',
+        cache: 'no-store',
+        headers: this._headers(),
+        body: JSON.stringify({
+          action: 'verify_login',
+          identifier: (identifier || '').trim(),
+          password: String(password || ''),
+          is_admin_gateway: Boolean(isAdminGateway),
+          apiKey: this.apiKey
+        })
+      });
+
+      if (res && res.ok) {
+        return await res.json();
+      }
+      const errText = await res.text().catch(() => '');
+      return {
+        success: false,
+        error: errText || `MySQL server returned HTTP ${res.status}`
+      };
+    } catch (e) {
+      return {
+        success: false,
+        error: `Cannot reach MySQL endpoint: ${e.message}`
+      };
+    }
+  }
+
   async testConnection() {
     try {
       const start = Date.now();
@@ -298,6 +334,63 @@ export class MysqlAdapter extends BaseAdapter {
       return { success: false, error: errText || `MySQL delete failed: HTTP ${res.status}` };
     } catch (e) {
       return { success: false, error: `MySQL delete failed: ${e.message}` };
+    }
+  }
+
+  /**
+   * Fast 0ms cache check (Option A: Stale-While-Revalidate)
+   */
+  async checkVersion(sinceTimestamp = '') {
+    try {
+      let url = this._getUrl('check_version');
+      if (sinceTimestamp) {
+        url += (url.includes('?') ? '&' : '?') + `since=${encodeURIComponent(sinceTimestamp)}`;
+      }
+      const res = await fetch(url, {
+        method: 'GET',
+        cache: 'no-store',
+        headers: this._headers()
+      });
+      if (res && res.ok) {
+        return await res.json();
+      }
+      return { success: false, modified: true };
+    } catch (e) {
+      return { success: false, modified: true, error: e.message };
+    }
+  }
+
+  /**
+   * High-Performance Structured & Indexed Machine Query (Option B)
+   */
+  async queryMachines(params = {}) {
+    try {
+      const url = this._getUrl('query_machines');
+      const res = await fetch(url, {
+        method: 'POST',
+        cache: 'no-store',
+        headers: this._headers(),
+        body: JSON.stringify({
+          action: 'query_machines',
+          search: params.search || '',
+          unit_id: params.unitId || params.unit_id || '',
+          floor_id: params.floorId || params.floor_id || '',
+          line_id: params.lineId || params.line_id || '',
+          status: params.status || '',
+          page: params.page || 1,
+          limit: params.limit || 50,
+          sort_field: params.sortField || params.sort_field || 'updated_at',
+          sort_order: params.sortOrder || params.sort_order || 'DESC',
+          apiKey: this.apiKey
+        })
+      });
+      if (res && res.ok) {
+        return await res.json();
+      }
+      const errText = await res.text().catch(() => '');
+      return { success: false, error: errText || `HTTP ${res.status}` };
+    } catch (e) {
+      return { success: false, error: e.message };
     }
   }
 }

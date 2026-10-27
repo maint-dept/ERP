@@ -27,6 +27,7 @@ import { chatService } from './services/chatService.js';
 import { historyService } from './services/historyService.js';
 import { auditService } from './services/auditService.js';
 import { notificationService } from './services/notificationService.js';
+import { tempImportService } from './services/tempImportService.js';
 import { router } from './services/router.js?v=4.26.57';
 import { moduleLoader } from './services/moduleLoader.js?v=4.26.57';
 
@@ -434,6 +435,26 @@ class ERPApplication {
         state.set('currentView', 'login');
         try {
           router.navigate('login', { replace: true, params: { redirect: attemptedView } });
+        } catch (_) { }
+      }
+
+      // Gateway Guard: Prevent logged-in general users from accessing private admin login gateway
+      if (currentUser && currentView === 'admin-login' && !authService.isAdmin(currentUser) && !authService.isSuperAdmin(currentUser)) {
+        const allowedView = authService.getFirstAllowedView(currentUser) || 'dashboard';
+        currentView = allowedView;
+        state.set('currentView', allowedView);
+        try {
+          router.navigate(allowedView, { replace: true });
+        } catch (_) { }
+      }
+
+      // Gateway Guard: Prevent logged-in administrators from opening standard user login portal
+      if (currentUser && currentView === 'login' && (authService.isAdmin(currentUser) || authService.isSuperAdmin(currentUser))) {
+        const allowedView = authService.getFirstAllowedView(currentUser) || 'dashboard';
+        currentView = allowedView;
+        state.set('currentView', allowedView);
+        try {
+          router.navigate(allowedView, { replace: true });
         } catch (_) { }
       }
 

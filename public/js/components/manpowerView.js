@@ -33,7 +33,8 @@ let filterState = {
   designation: 'ALL',
   groupId: 'ALL',
   unitId: 'ALL',
-  floorId: 'ALL'
+  floorId: 'ALL',
+  customFilters: {}
 };
 
 /**
@@ -76,6 +77,84 @@ function formatJoinDate(val) {
   return s || '—';
 }
 
+/**
+ * Formats dynamic custom field cells in the Manpower Table with clean, high-visibility badges
+ */
+function renderCustomFieldCell(cf, val) {
+  if (val === undefined || val === null || String(val).trim() === '') {
+    return `<td style="text-align: center; vertical-align: middle; color: var(--text-muted); font-size: 11px;">—</td>`;
+  }
+  const sVal = String(val).trim();
+  const lower = sVal.toLowerCase();
+
+  // Blood Group
+  if (cf.code === 'blood_group' || cf.label.toLowerCase().includes('blood')) {
+    return `
+      <td style="text-align: center; vertical-align: middle;">
+        <span class="badge" style="background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); font-weight: 800; font-size: 11px; padding: 2px 7px; white-space: nowrap;">
+          🩸 ${sVal}
+        </span>
+      </td>
+    `;
+  }
+
+  // Skill Grade
+  if (cf.code === 'skill_grade' || cf.label.toLowerCase().includes('grade')) {
+    return `
+      <td style="text-align: center; vertical-align: middle;">
+        <span class="badge" style="background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3); font-weight: 700; font-size: 10.5px; padding: 2px 7px; white-space: nowrap;">
+          ⭐ ${sVal}
+        </span>
+      </td>
+    `;
+  }
+
+  // Overtime Eligible
+  if (cf.code === 'overtime_eligible' || cf.label.toLowerCase().includes('overtime') || cf.label.toLowerCase().includes('ot')) {
+    if (lower === 'yes' || lower === 'true' || lower === '1') {
+      return `
+        <td style="text-align: center; vertical-align: middle;">
+          <span class="badge" style="background: rgba(34, 197, 94, 0.15); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.3); font-weight: 700; font-size: 10.5px; padding: 2px 7px; white-space: nowrap;">
+            ✓ OT Eligible
+          </span>
+        </td>
+      `;
+    }
+    if (lower === 'no' || lower === 'false' || lower === '0') {
+      return `
+        <td style="text-align: center; vertical-align: middle;">
+          <span class="badge" style="background: rgba(148, 163, 184, 0.15); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.3); font-size: 10px; padding: 2px 6px; white-space: nowrap;">
+            No OT
+          </span>
+        </td>
+      `;
+    }
+    return `
+      <td style="text-align: center; vertical-align: middle;">
+        <span class="badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); font-weight: 700; font-size: 10.5px; padding: 2px 7px; white-space: nowrap;">
+          ${sVal}
+        </span>
+      </td>
+    `;
+  }
+
+  // National ID / NID
+  if (cf.code === 'national_id' || cf.label.toLowerCase().includes('nid') || cf.label.toLowerCase().includes('national id')) {
+    return `
+      <td style="text-align: center; vertical-align: middle; font-family: var(--font-mono); font-size: 11px; color: #cbd5e1; letter-spacing: 0.3px; white-space: nowrap;">
+        🪪 ${sVal}
+      </td>
+    `;
+  }
+
+  // Standard text / number / date
+  return `
+    <td style="text-align: center; vertical-align: middle; font-size: 11.5px; color: #e2e8f0; white-space: nowrap;">
+      ${sVal}
+    </td>
+  `;
+}
+
 function formatEmployeesForExport(employees) {
   const customFields = employeeCustomFieldService.getActiveFields();
   return employees.map((emp, index) => {
@@ -110,13 +189,15 @@ export function renderManpowerView() {
   const stats = employeeService.getManpowerStats();
   const isAdmin = authService.isAdmin();
 
+  const customFilterEntries = Object.entries(filterState.customFilters || {}).filter(([_, v]) => v && v !== 'ALL');
   const isFiltered = Boolean(
     (filterState.search && filterState.search.trim()) ||
     (filterState.designation && filterState.designation !== 'ALL') ||
     (filterState.unitId && filterState.unitId !== 'ALL') ||
     (filterState.floorId && filterState.floorId !== 'ALL') ||
     (filterState.department && filterState.department !== 'ALL') ||
-    (filterState.groupId && filterState.groupId !== 'ALL')
+    (filterState.groupId && filterState.groupId !== 'ALL') ||
+    customFilterEntries.length > 0
   );
 
   let activeFilterCount = 0;
@@ -126,6 +207,7 @@ export function renderManpowerView() {
   if (filterState.floorId && filterState.floorId !== 'ALL') activeFilterCount++;
   if (filterState.department && filterState.department !== 'ALL') activeFilterCount++;
   if (filterState.groupId && filterState.groupId !== 'ALL') activeFilterCount++;
+  activeFilterCount += customFilterEntries.length;
 
   // Active employees list
   const activeEmployees = employeeService.getAllEmployees({
@@ -256,6 +338,9 @@ function renderEmployeeListTable({ title, employees, isInactiveView, isFiltered,
   const units  = masterDataService.getUnits(filterState.groupId !== 'ALL' ? filterState.groupId : null, true);
   const floorOptions = employeeService.getAvailableFloorOptions(filterState.unitId, filterState.groupId);
 
+  const tableCustomFields = employeeCustomFieldService.getTableFields();
+  const filterCustomFields = employeeCustomFieldService.getFilterFields().filter(f => f.type === 'DROPDOWN' || f.type === 'BOOLEAN' || (Array.isArray(f.options) && f.options.length > 0));
+
   const flrMap = new Map((storage.getTable(TABLE_NAMES.FLOORS) || []).map(x => [x.id, x.name]));
   const untMap = new Map((storage.getTable(TABLE_NAMES.UNITS) || []).map(x => [x.id, x.name]));
   const linMap = new Map((storage.getTable(TABLE_NAMES.LINES) || []).map(x => [x.id, x.name]));
@@ -279,7 +364,7 @@ function renderEmployeeListTable({ title, employees, isInactiveView, isFiltered,
             type="text" 
             id="mp-filter-search" 
             class="form-control" 
-            placeholder="🔍 Search card, name, unit, floor, phone..." 
+            placeholder="🔍 Search card, name, unit, floor, phone, NID, blood..." 
             value="${filterState.search}" 
             style="font-size: 12px; height: 30px; padding: 4px 8px;"
           />
@@ -318,6 +403,20 @@ function renderEmployeeListTable({ title, employees, isInactiveView, isFiltered,
             ${floorOptions.map(f => `<option value="${f.id}" ${filterState.floorId === f.id ? 'selected' : ''}>${f.label}</option>`).join('')}
           </select>
         </div>
+
+        <!-- Dynamic Custom Field Filters (e.g. Blood Group, Skill Grade, OT) -->
+        ${filterCustomFields.map(cf => {
+          const currentVal = (filterState.customFilters || {})[cf.code] || 'ALL';
+          const opts = cf.options && cf.options.length > 0 ? cf.options : (cf.type === 'BOOLEAN' ? ['Yes', 'No'] : []);
+          return `
+            <div style="flex: 0.9; min-width: 125px;">
+              <select class="filter-select mp-filter-custom" data-cf-code="${cf.code}" style="font-size: 11.5px; height: 30px; padding: 2px 6px;">
+                <option value="ALL">All ${cf.label.split('/')[0].trim()}</option>
+                ${opts.map(opt => `<option value="${opt}" ${currentVal === opt ? 'selected' : ''}>${opt}</option>`).join('')}
+              </select>
+            </div>
+          `;
+        }).join('')}
 
         <!-- Reset Button -->
         <button id="btn-mp-reset-filters" class="btn ${isFiltered ? 'btn-secondary' : 'btn-ghost'} btn-xs" style="font-weight: 700; color: ${isFiltered ? '#f87171' : 'var(--text-muted)'}; font-size: 11px; height: 30px; padding: 0 8px; white-space: nowrap;" title="Reset all filters">
@@ -375,7 +474,7 @@ function renderEmployeeListTable({ title, employees, isInactiveView, isFiltered,
 
         <!-- Table Scroll Container -->
         <div class="manpower-table-scroll-container">
-          <table class="excel-grid-table manpower-grid-table" style="margin: 0; width: 100%;">
+          <table class="excel-grid-table manpower-grid-table" style="margin: 0; width: 100%; min-width: ${Math.max(1200, 1100 + tableCustomFields.length * 140)}px !important;">
             <thead>
               <tr>
                 <th style="width: 40px; text-align: center; vertical-align: middle;">
@@ -395,14 +494,17 @@ function renderEmployeeListTable({ title, employees, isInactiveView, isFiltered,
                 <th style="min-width: 160px;">Designation</th>
                 <th style="min-width: 180px;">Floor / Unit</th>
                 <th style="text-align: center; width: 105px;">Joining Date</th>
+                ${tableCustomFields.map(cf => `
+                  <th style="min-width: 130px; text-align: center; white-space: nowrap;">${cf.label}</th>
+                `).join('')}
                 <th style="text-align: center; width: 100px;">Status</th>
-                <th style="text-align: center; width: 155px;">Actions</th>
+                <th class="col-actions-header" style="text-align: center; width: 155px;">Actions</th>
               </tr>
             </thead>
             <tbody>
               ${employees.length === 0 ? `
                 <tr>
-                  <td colspan="10" style="text-align: center; padding: 36px 20px; color: var(--text-muted);">
+                  <td colspan="${10 + tableCustomFields.length}" style="text-align: center; padding: 36px 20px; color: var(--text-muted);">
                     <div style="font-size: 28px; margin-bottom: 6px;">🔍</div>
                     <div style="font-size: 14px; font-weight: 700; color: #fff;">No employees match your search or filters</div>
                     <div style="font-size: 11.5px; color: var(--text-secondary); margin-top: 4px;">
@@ -483,6 +585,12 @@ function renderEmployeeListTable({ title, employees, isInactiveView, isFiltered,
                       ${formatJoinDate(emp.joinDate)}
                     </td>
 
+                    <!-- Dynamic Custom Fields -->
+                    ${tableCustomFields.map(cf => {
+                      const val = emp.customFields ? (emp.customFields[cf.code] ?? '') : '';
+                      return renderCustomFieldCell(cf, val);
+                    }).join('')}
+
                     <!-- Status -->
                     <td style="text-align: center; vertical-align: middle;">
                       <span class="badge ${statusBadge}" style="font-size: 10px; font-weight: 700; padding: 2px 7px;">
@@ -491,7 +599,7 @@ function renderEmployeeListTable({ title, employees, isInactiveView, isFiltered,
                     </td>
 
                     <!-- Actions -->
-                    <td style="text-align: center; vertical-align: middle;" onclick="event.stopPropagation();">
+                    <td class="col-actions-cell" style="text-align: center; vertical-align: middle;" onclick="event.stopPropagation();">
                       <div style="display: flex; gap: 4px; justify-content: center; align-items: center;">
                         
                         <!-- View / ID Badge -->
@@ -1143,6 +1251,16 @@ export function initManpowerEvents() {
     });
   }
 
+  // Dynamic Custom Field Filters change listeners
+  document.querySelectorAll('.mp-filter-custom').forEach(sel => {
+    sel.addEventListener('change', (e) => {
+      const code = sel.getAttribute('data-cf-code');
+      if (!filterState.customFilters) filterState.customFilters = {};
+      filterState.customFilters[code] = e.target.value;
+      refreshView();
+    });
+  });
+
   const btnReset = document.getElementById('btn-mp-reset-filters');
   if (btnReset) {
     btnReset.addEventListener('click', (e) => {
@@ -1153,7 +1271,8 @@ export function initManpowerEvents() {
         designation: 'ALL',
         groupId: 'ALL',
         unitId: 'ALL',
-        floorId: 'ALL'
+        floorId: 'ALL',
+        customFilters: {}
       };
       selectedEmployeeIds.clear();
       refreshView();
@@ -1263,4 +1382,12 @@ export function initManpowerEvents() {
     state.set('activeEmployeeModal', null);
     refreshView();
   });
+
+  // 9. Auto-sync when Admin modifies custom parameters in configuration
+  if (!window._erpEmpFieldsUpdatedHandlerAttached) {
+    window.addEventListener('erp:emp-fields-updated', () => {
+      refreshView();
+    });
+    window._erpEmpFieldsUpdatedHandlerAttached = true;
+  }
 }

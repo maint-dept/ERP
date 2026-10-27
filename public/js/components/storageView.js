@@ -16,6 +16,7 @@ import { storage } from '../db/storage.js';
 import { TABLE_NAMES } from '../db/schema.js';
 import { authService } from '../services/authService.js';
 import { notificationService } from '../services/notificationService.js';
+import { tempImportService } from '../services/tempImportService.js';
 import { state } from '../state.js';
 
 let activeTab = 'MACHINE'; // 'MACHINE' | 'SPARE_PART' | 'TOOL' | 'LOCATION' | 'SCHEMA_BUILDER' | 'RULES' | 'HEALTH_SCANNER' | custom keys
@@ -32,6 +33,8 @@ let qualityGateData = null;
 let excelImportParsedRows = [];
 let excelImportFileName = '';
 let excelImportActiveTab = 'UPLOAD'; // 'UPLOAD' | 'PASTE'
+let storageImportTempId = null;
+let storageImportTempName = '';
 
 export function renderStorageView() {
   const isAdmin = authService.isAdmin();
@@ -3133,6 +3136,13 @@ function initModalInteractions() {
   if (!modalLayer || !activeModalState) return;
 
   const closeModal = () => {
+    if (storageImportTempId) {
+      tempImportService.purgeTempFile(storageImportTempId, 'MODAL_CLOSED');
+      storageImportTempId = null;
+      storageImportTempName = '';
+    }
+    const inp = modalLayer.querySelector('#inp-excel-file-upload');
+    if (inp) tempImportService.cleanInput(inp);
     activeModalState = null;
     qualityGateData = null;
     excelImportParsedRows = [];
@@ -3428,46 +3438,58 @@ function initModalInteractions() {
         if (file) handleFile(file);
       });
 
-      const handleFile = (file) => {
+      const handleFile = async (file) => {
+        if (!file) return;
         if (typeof XLSX === 'undefined') {
           alert('Excel reader library (SheetJS) is loading. Please try again in a moment.');
           return;
         }
 
-        const reader = new FileReader();
-        reader.onload = (evt) => {
-          try {
-            const data = new Uint8Array(evt.target.result);
-            const workbook = XLSX.read(data, { type: 'array' });
-            const firstSheetName = workbook.SheetNames[0];
-            const worksheet = workbook.Sheets[firstSheetName];
+        if (storageImportTempId) {
+          tempImportService.purgeTempFile(storageImportTempId, 'FILE_REPLACED');
+          storageImportTempId = null;
+        }
 
-            // Propagate merged cells so merged machine names are available on all rows
-            if (worksheet && worksheet['!merges']) {
-              worksheet['!merges'].forEach(range => {
-                const firstCellRef = XLSX.utils.encode_cell(range.s);
-                const firstCell = worksheet[firstCellRef];
-                if (firstCell && firstCell.v !== undefined) {
-                  for (let R = range.s.r; R <= range.e.r; ++R) {
-                    for (let C = range.s.c; C <= range.e.c; ++C) {
-                      const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
-                      if (!worksheet[cellRef] || worksheet[cellRef].v === undefined || worksheet[cellRef].v === '') {
-                        worksheet[cellRef] = { ...firstCell };
-                      }
+        try {
+          const staged = await tempImportService.stageFile(file, 'STORAGE_MASTER', fileInp);
+          storageImportTempId = staged.tempId;
+          storageImportTempName = staged.tempFileName;
+          tempImportService.updateStatus(staged.tempId, 'PARSING');
+
+          const data = new Uint8Array(staged.buffer);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const firstSheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[firstSheetName];
+
+          // Propagate merged cells so merged machine names are available on all rows
+          if (worksheet && worksheet['!merges']) {
+            worksheet['!merges'].forEach(range => {
+              const firstCellRef = XLSX.utils.encode_cell(range.s);
+              const firstCell = worksheet[firstCellRef];
+              if (firstCell && firstCell.v !== undefined) {
+                for (let R = range.s.r; R <= range.e.r; ++R) {
+                  for (let C = range.s.c; C <= range.e.c; ++C) {
+                    const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
+                    if (!worksheet[cellRef] || worksheet[cellRef].v === undefined || worksheet[cellRef].v === '') {
+                      worksheet[cellRef] = { ...firstCell };
                     }
                   }
                 }
-              });
-            }
-
-            const jsonRows = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
-            processRawRows(jsonRows, file.name);
-          } catch (err) {
-            console.error('Excel parse error:', err);
-            alert('Failed to read Excel file: ' + err.message);
+              }
+            });
           }
-        };
-        reader.readAsArrayBuffer(file);
+
+          const jsonRows = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
+          processRawRows(jsonRows, file.name);
+          tempImportService.updateStatus(staged.tempId, 'VALIDATING', { rowCount: jsonRows.length });
+        } catch (err) {
+          if (storageImportTempId) {
+            tempImportService.purgeTempFile(storageImportTempId, 'PARSE_ERROR');
+            storageImportTempId = null;
+          }
+          console.error('Excel parse error:', err);
+          alert('Failed to read Excel file: ' + err.message);
+        }
       };
     }
 
@@ -3621,6 +3643,15 @@ function initModalInteractions() {
           } else {
             alert(`✅ Import & Synchronization Successful!\n\nImported: ${result.inserted} model specifications\nMachines: ${result.uniqueMachines}\nBrands: ${result.uniqueBrands}\nNeedle Flow: Synchronized!`);
           }
+
+          // Purge temporary file after database write is confirmed
+          if (storageImportTempId) {
+            tempImportService.purgeTempFile(storageImportTempId, 'DATABASE_COMMITTED');
+            storageImportTempId = null;
+            storageImportTempName = '';
+          }
+          const inp = modalLayer.querySelector('#inp-excel-file-upload');
+          if (inp) tempImportService.cleanInput(inp);
 
           closeModal();
           refreshStorageTabContent();

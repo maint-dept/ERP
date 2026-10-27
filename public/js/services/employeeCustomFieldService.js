@@ -52,8 +52,8 @@ const INITIAL_EMPLOYEE_FIELDS = [
     label: 'Emergency Contact Phone',
     type: 'TEXT',
     required: false,
-    showInTable: false,
-    showInFilter: false,
+    showInTable: true,
+    showInFilter: true,
     order: 4,
     status: 'ACTIVE',
     options: []
@@ -88,11 +88,94 @@ class EmployeeCustomFieldService {
   }
 
   getTableFields() {
-    return this.getActiveFields().filter(f => f.showInTable);
+    return this.getActiveFields().filter(f => f.showInTable !== false);
   }
 
   getFilterFields() {
-    return this.getActiveFields().filter(f => f.showInFilter);
+    return this.getActiveFields().filter(f => f.showInFilter !== false);
+  }
+
+  /**
+   * Matches any Excel header, column name, or field key to an existing Custom Field
+   * Supports exact, normalized, and rich Bangladeshi garment industry synonyms
+   */
+  matchField(headerOrKey) {
+    if (!headerOrKey) return null;
+    const raw = String(headerOrKey).trim();
+    const clean = raw.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const fields = this.getAllFields();
+
+    // 1. Exact code or label match
+    for (const f of fields) {
+      if (f.code.toLowerCase() === raw.toLowerCase() || f.label.toLowerCase() === raw.toLowerCase()) {
+        return f;
+      }
+    }
+
+    // 2. Alphanumeric normalized match
+    for (const f of fields) {
+      const fCodeNorm = f.code.toLowerCase().replace(/[^a-z0-9]/g, '');
+      const fLabelNorm = f.label.toLowerCase().replace(/[^a-z0-9]/g, '');
+      if (clean === fCodeNorm || clean === fLabelNorm) {
+        return f;
+      }
+    }
+
+    // 3. Known garment industry synonyms & abbreviations
+    const aliases = {
+      national_id: ['nid', 'nationalid', 'nidnumber', 'nationalidnumber', 'nationalidcard', 'nidno', 'voterid'],
+      blood_group: ['blood', 'bloodgroup', 'bloodgrp', 'bg', 'bloodtype'],
+      skill_grade: ['skill', 'grade', 'skillgrade', 'skilllevel', 'level', 'techgrade', 'operatorgrade'],
+      emergency_contact: ['emergencycontact', 'emergencyphone', 'emergencycell', 'emergencyno', 'emergencytel', 'guardianphone'],
+      overtime_eligible: ['ot', 'overtime', 'oteligible', 'overtimeeligible', 'otstatus', 'workerorstaff', 'empcategory', 'category', 'workertype']
+    };
+
+    for (const [code, syns] of Object.entries(aliases)) {
+      if (syns.includes(clean)) {
+        const found = fields.find(f => f.code === code);
+        if (found) return found;
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Automatically discovers and registers custom fields from incoming Excel columns or database records
+   * Ensures every extra column entered or imported is permanently tracked and visible
+   */
+  autoRegisterFieldFromHeader(headerName) {
+    if (!headerName || !String(headerName).trim()) return null;
+    const cleanLabel = String(headerName).trim();
+    
+    // Check if matches an existing field first
+    const matched = this.matchField(cleanLabel);
+    if (matched) return matched;
+
+    const cleanCode = cleanLabel.toLowerCase().replace(/[^a-z0-9_]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '') || `cf_${Date.now()}`;
+    const fields = this.getAllFields();
+    const existing = fields.find(f => f.code === cleanCode);
+    if (existing) return existing;
+
+    // Create and register new field definition
+    const maxOrder = fields.reduce((max, f) => Math.max(max, f.order || 0), 0);
+    const newField = {
+      id: `emp-cf-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      code: cleanCode,
+      label: cleanLabel,
+      type: 'TEXT',
+      required: false,
+      showInTable: true,
+      showInFilter: true,
+      order: maxOrder + 1,
+      status: 'ACTIVE',
+      options: []
+    };
+
+    const updatedList = [...fields, newField];
+    storage.saveTable(TABLE_NAMES.EMPLOYEE_CUSTOM_FIELDS, updatedList);
+    window.dispatchEvent(new CustomEvent('erp:emp-fields-updated'));
+    return newField;
   }
 
   getFieldTypes() {

@@ -250,51 +250,6 @@ export function renderLoginView(isAdminGateway = false) {
 
           <!-- FORM MODE 1: STANDARD LOGIN -->
           ${loginMode === 'LOGIN' ? `
-            
-            ${isAdminGateway ? `
-              <!-- Quick Administrator Select Chips (User-Friendly 1-Click Auto Fill) -->
-              <div style="margin-bottom: 16px; padding: 10px 12px; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 10px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                  <span style="font-size: 11px; font-weight: 700; color: #cbd5e1; text-transform: uppercase; letter-spacing: 0.4px; display: flex; align-items: center; gap: 5px;">
-                    <span>⚡</span> Administrator Profile Select:
-                  </span>
-                  <span style="font-size: 10.5px; color: #6ee7b7; font-weight: 600;">1-Click Auto Fill</span>
-                </div>
-                <div style="display: flex; gap: 6px; flex-wrap: wrap;">
-                  <button type="button" class="btn-admin-quick-fill admin-quick-chip" data-user="motaher" data-pass="Mr@304415" style="background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.35); color: #6ee7b7; font-size: 11.5px; font-weight: 700; padding: 4px 9px; border-radius: 6px;">
-                    👑 Engr. Motaher
-                  </button>
-                  <button type="button" class="btn-admin-quick-fill admin-quick-chip" data-user="superadmin" data-pass="admin123" style="background: rgba(14, 165, 233, 0.12); border: 1px solid rgba(14, 165, 233, 0.35); color: #38bdf8; font-size: 11.5px; font-weight: 700; padding: 4px 9px; border-radius: 6px;">
-                    🛡️ Super Admin
-                  </button>
-                  <button type="button" class="btn-admin-quick-fill admin-quick-chip" data-user="admin" data-pass="admin123" style="background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.35); color: #fbbf24; font-size: 11.5px; font-weight: 700; padding: 4px 9px; border-radius: 6px;">
-                    ⚙️ Maintenance Admin
-                  </button>
-                </div>
-              </div>
-            ` : `
-              <!-- Quick User Portal Select Chips (Instant 1-Click Auto Fill) -->
-              <div style="margin-bottom: 16px; padding: 10px 12px; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 10px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                  <span style="font-size: 11px; font-weight: 700; color: #cbd5e1; text-transform: uppercase; letter-spacing: 0.4px; display: flex; align-items: center; gap: 5px;">
-                    <span>⚡</span> 1-Click Instant User Fill:
-                  </span>
-                  <span style="font-size: 10.5px; color: #38bdf8; font-weight: 600;">Instant Login</span>
-                </div>
-                <div style="display: flex; gap: 6px; flex-wrap: wrap;">
-                  <button type="button" class="btn-admin-quick-fill admin-quick-chip" data-user="user" data-pass="user123" style="background: rgba(2, 132, 199, 0.15); border: 1px solid rgba(56, 189, 248, 0.35); color: #38bdf8; font-size: 11.5px; font-weight: 700; padding: 4px 9px; border-radius: 6px;">
-                    👤 Factory User (user)
-                  </button>
-                  <button type="button" class="btn-admin-quick-fill admin-quick-chip" data-user="admin" data-pass="admin123" style="background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.35); color: #fbbf24; font-size: 11.5px; font-weight: 700; padding: 4px 9px; border-radius: 6px;">
-                    ⚙️ Maintenance Admin
-                  </button>
-                  <button type="button" class="btn-admin-quick-fill admin-quick-chip" data-user="motaher" data-pass="Mr@304415" style="background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.35); color: #6ee7b7; font-size: 11.5px; font-weight: 700; padding: 4px 9px; border-radius: 6px;">
-                    👑 Engr. Motaher
-                  </button>
-                </div>
-              </div>
-            `}
-
             <form id="form-full-login">
               
               <!-- Username or Email -->
@@ -596,25 +551,6 @@ export function initLoginViewEvents(isAdminGateway = false) {
     pwdInput.addEventListener('keydown', checkCaps);
     pwdInput.addEventListener('keyup', checkCaps);
   }
-
-  // Quick Profile Select Auto-Fill Chips (1-Click Auto Fill Username & Password)
-  document.querySelectorAll('.btn-admin-quick-fill').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const u = btn.getAttribute('data-user');
-      const p = btn.getAttribute('data-pass');
-      const inp = document.getElementById('inp-full-username');
-      const pwd = document.getElementById('inp-full-password');
-      if (inp && u) {
-        inp.value = u;
-        inp.dispatchEvent(new Event('input', { bubbles: true }));
-      }
-      if (pwd && p) {
-        pwd.value = p;
-        pwd.dispatchEvent(new Event('input', { bubbles: true }));
-      }
-      if (pwd) pwd.focus();
-    });
-  });
 
   // Switch to User Portal Link from Admin Gateway
   document.getElementById('link-switch-to-user-portal')?.addEventListener('click', (e) => {

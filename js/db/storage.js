@@ -769,6 +769,9 @@ class StorageEngine {
               this.syncedDocVersions.set('mysql_' + table, confirmedTs);
               this.syncedDocVersions.set(table, confirmedTs);
             }
+            if (typeof localStorage !== 'undefined') {
+              try { localStorage.setItem('erp_last_mysql_sync_ts', String(Date.now())); } catch (_) {}
+            }
             this.updateStatusBadge('saved');
             return true;
           }
@@ -1106,6 +1109,41 @@ class StorageEngine {
             if (r) r.value = preservedMultiDb;
           }
           this.data[tbl] = recs;
+        } else if (tbl === TABLE_NAMES.USERS && Array.isArray(serverRecs[tbl])) {
+          // Anti-downgrade protection for users: NEVER overwrite newer local passwords with older server copies
+          const incomingUsers = serverRecs[tbl] || [];
+          const currentUsers = this.data[tbl] || [];
+          const userMap = new Map();
+          currentUsers.forEach(u => {
+            if (u) {
+              if (u.id) userMap.set(u.id, u);
+              if (u.username) userMap.set(String(u.username).toLowerCase(), u);
+            }
+          });
+
+          const mergedUsers = incomingUsers.map(inUser => {
+            if (!inUser) return inUser;
+            const local = userMap.get(inUser.id) || (inUser.username ? userMap.get(String(inUser.username).toLowerCase()) : null);
+            if (local) {
+              const localTs = new Date(local.passwordChangedAt || local.updatedAt || local.lastPasswordReset || 0).getTime();
+              const serverTs = new Date(inUser.passwordChangedAt || inUser.updatedAt || inUser.lastPasswordReset || 0).getTime();
+              if (localTs > serverTs) {
+                // Local password / credentials are newer than server record; preserve local!
+                return {
+                  ...inUser,
+                  password: local.password,
+                  passwordHash: local.passwordHash,
+                  passwordStatus: local.passwordStatus,
+                  mustChangePassword: local.mustChangePassword,
+                  passwordChangedAt: local.passwordChangedAt,
+                  lastPasswordReset: local.lastPasswordReset,
+                  updatedAt: local.updatedAt
+                };
+              }
+            }
+            return inUser;
+          });
+          this.data[tbl] = mergedUsers;
         } else {
           // Firestore / persistent database is the authoritative single source of truth
           this.data[tbl] = serverRecs[tbl];
@@ -1242,10 +1280,37 @@ class StorageEngine {
     let cloudLoadedSuccessfully = false;
     const fetchStartTime = Date.now();
 
-    // 0. Primary Adapter (MySQL) Startup Sync
+    // 0. Primary Adapter (MySQL) Startup Sync with Option A 0ms Cache Check
     try {
       await syncManager._ensureConfig();
       if (syncManager.primaryAdapter && syncManager.primaryAdapter.type === 'MYSQL') {
+        const hasLocalData = (this.data[TABLE_NAMES.MACHINES]?.length > 0) && (this.data[TABLE_NAMES.USERS]?.length > 0);
+        const lastSyncTs = typeof localStorage !== 'undefined' ? localStorage.getItem('erp_last_mysql_sync_ts') : '';
+
+        // OPTION A OPTIMIZATION: Check if MySQL Primary data was modified before making heavy download
+        if (hasLocalData && lastSyncTs && typeof syncManager.primaryAdapter.checkVersion === 'function') {
+          try {
+            const verRes = await syncManager.primaryAdapter.checkVersion(lastSyncTs);
+            if (verRes && verRes.success && verRes.modified === false) {
+              console.log(`[Storage Option A] ⚡ 0ms Cache Hit: MySQL Primary unchanged (${Date.now() - fetchStartTime}ms). 100% Data freshness verified from local store.`);
+              this._isCloudConnected = true;
+              cloudLoadedSuccessfully = true;
+              this._hasCriticalSyncCompleted = true;
+              this._hasInitialSyncCompleted = true;
+              this._hasFullSecondarySyncCompleted = true;
+              this._suppressServerPersist = false;
+              this.updateStatusBadge('saved');
+
+              if (typeof window !== 'undefined') {
+                window.dispatchEvent(new CustomEvent('erp:critical-data-ready'));
+                window.dispatchEvent(new CustomEvent('erp:storage-updated'));
+                window.dispatchEvent(new CustomEvent('erp:secondary-data-ready'));
+              }
+              return;
+            }
+          } catch (_) {}
+        }
+
         const mysqlRes = await syncManager.primaryAdapter.getAllTables();
         if (mysqlRes && mysqlRes.success && mysqlRes.tables && Object.keys(mysqlRes.tables).length > 0) {
           console.log(`[Storage] 🐬 Loaded ${Object.keys(mysqlRes.tables).length} tables from MySQL Primary (${syncManager.primaryAdapter.endpoint})`);
@@ -1258,6 +1323,9 @@ class StorageEngine {
           this._suppressServerPersist = false;
           Object.keys(mysqlRes.tables).forEach(t => this._loadedSecondaryTables.add(t));
           this.updateStatusBadge('saved');
+          if (typeof localStorage !== 'undefined') {
+            localStorage.setItem('erp_last_mysql_sync_ts', String(Date.now()));
+          }
 
           // Seed syncedDocVersions with initial MySQL timestamps so multi-device polling tracks incremental changes cleanly
           syncManager.primaryAdapter.getTableTimestamps().then(tsRes => {

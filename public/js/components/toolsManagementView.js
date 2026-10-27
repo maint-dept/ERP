@@ -15,6 +15,7 @@ import { toolService } from '../services/toolService.js?v=4.9.5';
 import { employeeService } from '../services/employeeService.js';
 import { authService } from '../services/authService.js';
 import { historyService } from '../services/historyService.js';
+import { tempImportService } from '../services/tempImportService.js';
 import { storage } from '../db/storage.js';
 import { TABLE_NAMES } from '../db/schema.js';
 
@@ -4961,7 +4962,21 @@ function openExcelImportModal() {
     </div>
   `;
 
-  document.getElementById('btn-close-imp-modal').onclick = () => { modalLayer.innerHTML = ''; };
+  let toolImportTempId = null;
+  let toolImportTempName = '';
+
+  const closeToolImpModal = () => {
+    if (toolImportTempId) {
+      tempImportService.purgeTempFile(toolImportTempId, 'MODAL_CLOSED');
+      toolImportTempId = null;
+      toolImportTempName = '';
+    }
+    const inp = document.getElementById('excel-file-input');
+    if (inp) tempImportService.cleanInput(inp);
+    modalLayer.innerHTML = '';
+  };
+
+  document.getElementById('btn-close-imp-modal').onclick = closeToolImpModal;
   document.getElementById('btn-dl-tmpl-from-modal').onclick = () => {
     toolService.generateAllocationTemplateExcel();
   };
@@ -4972,38 +4987,60 @@ function openExcelImportModal() {
   let parsedRows = [];
 
   if (fileInput) {
-    fileInput.onchange = (e) => {
+    fileInput.onchange = async (e) => {
       const file = e.target.files[0];
       if (!file) return;
-      fileLabel.innerText = `Selected: ${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
 
-      const reader = new FileReader();
-      reader.onload = (evt) => {
-        try {
-          const data = new Uint8Array(evt.target.result);
-          const workbook = XLSX.read(data, { type: 'array' });
-          const firstSheet = workbook.SheetNames[0];
-          parsedRows = XLSX.utils.sheet_to_json(workbook.Sheets[firstSheet]);
-          importBtn.disabled = false;
-          fileLabel.innerText += ` • ${parsedRows.length} rows found`;
-        } catch (err) {
-          alert('Error parsing Excel file: ' + err.message);
+      if (toolImportTempId) {
+        tempImportService.purgeTempFile(toolImportTempId, 'FILE_REPLACED');
+        toolImportTempId = null;
+      }
+
+      try {
+        const staged = await tempImportService.stageFile(file, 'TOOLS_ALLOCATIONS', fileInput);
+        toolImportTempId = staged.tempId;
+        toolImportTempName = staged.tempFileName;
+        fileLabel.innerText = `Selected: ${file.name} [Staged: ${toolImportTempName}] (${staged.formattedSize})`;
+
+        const data = new Uint8Array(staged.buffer);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const firstSheet = workbook.SheetNames[0];
+        parsedRows = XLSX.utils.sheet_to_json(workbook.Sheets[firstSheet]);
+        importBtn.disabled = false;
+        fileLabel.innerText += ` • ${parsedRows.length} rows found`;
+        tempImportService.updateStatus(staged.tempId, 'PARSED', { rowCount: parsedRows.length });
+      } catch (err) {
+        if (toolImportTempId) {
+          tempImportService.purgeTempFile(toolImportTempId, 'PARSE_ERROR');
+          toolImportTempId = null;
         }
-      };
-      reader.readAsArrayBuffer(file);
+        alert('Error parsing Excel file: ' + err.message);
+      }
     };
   }
 
   if (importBtn) {
-    importBtn.onclick = () => {
+    importBtn.onclick = async () => {
       try {
         if (parsedRows.length === 0) {
           alert('No data rows found in selected file.');
           return;
         }
-        const res = toolService.importAllocationsFromExcel(parsedRows);
+        importBtn.disabled = true;
+        importBtn.innerHTML = '<span>⏳</span> Saving &amp; Purging Temp File...';
+
+        const res = await toolService.importAllocationsFromExcel(parsedRows);
+
+        // Purge temporary file immediately after database write is confirmed
+        if (toolImportTempId) {
+          tempImportService.purgeTempFile(toolImportTempId, 'DATABASE_COMMITTED');
+          toolImportTempId = null;
+          toolImportTempName = '';
+        }
+        tempImportService.cleanInput(fileInput);
+
         modalLayer.innerHTML = '';
-        window.app?.showToast('Import Complete', `Successfully imported ${res.inserted} tool allocations into database.`, 'success');
+        window.app?.showToast('Import Complete', `Successfully imported ${res.inserted} tool allocations into database. Temporary file purged!`, 'success');
 
         const container = document.getElementById('tools-tab-content-container');
         if (container) {
@@ -5011,6 +5048,8 @@ function openExcelImportModal() {
           initToolsManagementEvents();
         }
       } catch (err) {
+        importBtn.disabled = false;
+        importBtn.innerHTML = '🚀 Import Allocations';
         alert('Import Error: ' + err.message);
       }
     };

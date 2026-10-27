@@ -128,6 +128,9 @@ class AuthService {
       if (!existingMotaher.password) {
         existingMotaher.password = '$sha256$6ad526a0cf737517d4609e058dc306b2$454c146535308e78f7597aa51ac660a043569dd70843ec7b9e0b50be956f14b3';
       }
+      if (!existingMotaher.passwordHash) {
+        existingMotaher.passwordHash = existingMotaher.password;
+      }
     }
 
     // Ensure fallback Super Admin exists (username: superadmin, password: admin123)
@@ -197,11 +200,15 @@ class AuthService {
       });
     }
 
-    // Ensure all stored passwords are cryptographically hashed
+    // Ensure all stored passwords are cryptographically hashed and normalized
     let changed = false;
     filtered.forEach(u => {
       if (u.password && !cryptoService.isHashed(u.password)) {
         u.password = cryptoService.hashPassword(u.password);
+        changed = true;
+      }
+      if (u.password && (!u.passwordHash || u.passwordHash !== u.password)) {
+        u.passwordHash = u.password;
         changed = true;
       }
     });
@@ -505,15 +512,42 @@ class AuthService {
   /**
    * User Login with Email Address or Username & secure password verification
    * Supports dedicated separation between standard User Portal and private Admin Gateway
+   * Verified on both authoritative Backend API and local security layer
    * Optimized for instant (<5ms) authentication with zero loading freeze
    */
   async login(identifier, password, options = {}) {
     let users = storage.getTable(TABLE_NAMES.USERS) || [];
     const cleanId = (identifier || '').trim().toLowerCase();
     const isAdminGateway = Boolean(options.isAdminGateway);
-    const allowAnyRole = options.allowAnyRole !== undefined ? Boolean(options.allowAnyRole) : !isAdminGateway;
+    const allowAnyRole = Boolean(options.allowAnyRole);
+
+    // 1. Authoritative Backend/API Verification & Role Gateway Check
+    try {
+      if (typeof syncManager !== 'undefined' && syncManager.primaryAdapter && typeof syncManager.primaryAdapter.verifyLogin === 'function') {
+        const timeoutPromise = new Promise(resolve => setTimeout(() => resolve(null), 1200));
+        const apiPromise = syncManager.primaryAdapter.verifyLogin(cleanId, password, isAdminGateway);
+        const apiRes = await Promise.race([apiPromise, timeoutPromise]);
+        if (apiRes) {
+          if (apiRes.success === false && apiRes.error) {
+            // Authoritative server explicit rejection (Role mismatch, bad password, inactive)
+            throw new Error(apiRes.error);
+          }
+        }
+      }
+    } catch (apiErr) {
+      if (apiErr.message && (
+        apiErr.message.includes('প্রবেশাধিকার') ||
+        apiErr.message.includes('Invalid credentials') ||
+        apiErr.message.includes('Incorrect password') ||
+        apiErr.message.includes('INACTIVE') ||
+        apiErr.message.includes('Access Denied')
+      )) {
+        throw apiErr;
+      }
+      console.warn('[AuthService] Backend API verification note:', apiErr.message);
+    }
     
-    // Support login by email, username, or employeeId
+    // 2. Local State Credential Resolution
     let user = users.find(u => 
       u.username?.toLowerCase() === cleanId || 
       u.email?.toLowerCase() === cleanId ||
@@ -524,7 +558,7 @@ class AuthService {
     let storedHash = user ? (user.password || user.passwordHash) : null;
     let isPasswordValid = (user && storedHash) ? cryptoService.verifyPassword(password, storedHash) : false;
 
-    // Fast-path: If user missing or password invalid locally, auto-heal standard seeded accounts immediately (<1ms)
+    // Fast-path: If user missing or password invalid locally, ensure fallback seeded accounts exist if needed (<1ms)
     if (!user || !isPasswordValid) {
       this.cleanDemoUsers();
       users = storage.getTable(TABLE_NAMES.USERS) || [];
@@ -572,18 +606,18 @@ class AuthService {
       throw new Error('Incorrect password. Please verify your credentials.');
     }
 
-    // Role Enforcement & Gateway Isolation Gate:
-    // Only Administrators can access via the private Admin URL Gateway.
-    // On the standard public User Portal (/login), all valid users can authenticate smoothly.
+    // Strict Role Enforcement & Dedicated Gateway Isolation:
+    // Only Administrators and Super Admins can access via the private Admin Gateway.
+    // On the standard public User Portal (/login), only general factory users may authenticate.
     const isUserAdmin = this.isAdmin(user) || this.isSuperAdmin(user);
 
     if (isAdminGateway) {
       if (!isUserAdmin) {
-        throw new Error('⛔ Access Denied: This administrative gateway is restricted exclusively to authorized System Administrators. Standard factory users must sign in via the standard User Login portal.');
+        throw new Error('⛔ প্রবেশাধিকার সংরক্ষিত: এটি শুধুমাত্র সিস্টেম এডমিনিস্ট্রেটরদের জন্য নির্ধারিত অ্যাডমিন গেটওয়ে। সাধারণ ব্যবহারকারী বা অপারেটরগণ অনুগ্রহ করে সাধারণ User Login পোর্টাল ব্যবহার করুন। (General users must sign in via User Login portal.)');
       }
     } else if (!allowAnyRole) {
       if (isUserAdmin) {
-        throw new Error('🔒 Administrative Account Restricted: Administrative accounts cannot sign in through the general user portal. Please access the system via the dedicated private Admin Login Gateway URL.');
+        throw new Error('🔒 প্রবেশাধিকার সংরক্ষিত: এটি সাধারণ ইউজার পোর্টাল। এডমিনিস্ট্রেটর এবং সুপার এডমিন অ্যাকাউন্ট এখানে অনুমোদিত নয়। অনুগ্রহ করে আপনার ডেডিকেটেড Admin Login Gateway ব্যবহার করুন। (Administrative accounts are restricted to the Admin Gateway.)');
       }
     }
 
@@ -2510,6 +2544,7 @@ class AuthService {
     this.currentUser = updated;
     if (typeof localStorage !== 'undefined') {
       localStorage.setItem('al_muslim_session_pwd_reset', newResetTimestamp);
+      localStorage.setItem('erp_last_mysql_sync_ts', String(Date.now()));
     }
 
     // Clear the temporary credential cache so admin panel shows SETUP (not TEMPORARY)
@@ -2570,6 +2605,7 @@ class AuthService {
     if (typeof localStorage !== 'undefined') {
       localStorage.setItem('al_muslim_active_user_id', userId);
       localStorage.setItem('al_muslim_session_pwd_reset', newResetTimestamp);
+      localStorage.setItem('erp_last_mysql_sync_ts', String(Date.now()));
     }
 
     // 3. Clear temporary credential cache immediately (0ms non-blocking)
@@ -2655,14 +2691,24 @@ class AuthService {
     }
 
     const hashedPassword = cryptoService.hashPassword(newPassword);
+    const newResetTimestamp = new Date().toISOString();
 
-    storage.update(TABLE_NAMES.USERS, user.id, {
+    await storage.updateConfirmed(TABLE_NAMES.USERS, user.id, {
       password: hashedPassword,
+      passwordHash: hashedPassword,
       resetOTP: null,
       resetOTPExpiry: null,
       mustChangePassword: false,
-      updatedAt: new Date().toISOString()
+      lastPasswordReset: newResetTimestamp,
+      passwordChangedAt: newResetTimestamp,
+      updatedAt: newResetTimestamp
     });
+
+    if (typeof localStorage !== 'undefined') {
+      try {
+        localStorage.setItem('erp_last_mysql_sync_ts', String(Date.now()));
+      } catch (_) {}
+    }
 
     auditService.log(
       'PASSWORD_RESET_COMPLETED',

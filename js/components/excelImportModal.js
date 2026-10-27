@@ -9,10 +9,13 @@ import { customFieldService } from '../services/customFieldService.js';
 import { DUPLICATE_POLICIES } from '../db/schema.js';
 import { authService } from '../services/authService.js';
 import { smartStorageService } from '../services/smartStorageService.js?v=4.22.19';
+import { tempImportService } from '../services/tempImportService.js';
 import { state } from '../state.js';
 
 let importState = {
   stage: 1, // 1: Upload, 2: Sheets & Mapping, 3: Master Data Resolver, 4: Pre-Import Preview & Errors, 5: Result Summary
+  tempId: null,
+  tempFileName: '',
   fileName: '',
   workbookData: null, // { fileName, sheetNames, sheets, totalRows }
   activeSheetTab: '', // Active worksheet in Stage 2 & 4
@@ -184,11 +187,12 @@ function renderImportStageContent() {
         <!-- Header Info Bar -->
         <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 14px 18px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
           <div>
-            <div style="font-weight: 800; color: #38bdf8; font-size: 14px;">
-              📑 Detected ${wb.sheets.length} Worksheet(s) in Workbook (${wb.totalRows} Total Data Rows)
+            <div style="font-weight: 800; color: #38bdf8; font-size: 14px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+              <span>📑 Detected ${wb.sheets.length} Worksheet(s) in Workbook (${wb.totalRows} Total Data Rows)</span>
+              ${importState.tempFileName ? `<span style="font-size: 11px; padding: 2px 8px; border-radius: 4px; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.35); color: #bae6fd; font-family: var(--font-mono);">📁 Staged: ${importState.tempFileName}</span>` : ''}
             </div>
             <div style="font-size: 11.5px; color: var(--text-secondary); margin-top: 2px;">
-              Verify column mapping connections and configure how duplicate machine records are processed.
+              Verify column mapping connections. Temporary file will be automatically purged upon database commit.
             </div>
           </div>
 
@@ -726,8 +730,13 @@ function renderImportStageContent() {
           <h3 style="font-size: 19px; font-weight: 800; color: ${res.failedCount === 0 ? '#34d399' : '#38bdf8'}; margin: 0;">
             ${res.failedCount === 0 ? 'Excel Import Completed Successfully!' : 'Import Completed with Row-Wise Reporting'}
           </h3>
-          <div style="margin-top: 6px; display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 999px; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); color: #34d399; font-size: 11.5px; font-weight: 700;">
-            <span>🐬</span> <span>MySQL Primary Synchronized (${storage.data['machines']?.length || 0} Total Machines in Registry)</span>
+          <div style="margin-top: 6px; display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap;">
+            <div style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 999px; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); color: #34d399; font-size: 11.5px; font-weight: 700;">
+              <span>🐬</span> <span>MySQL Primary Synchronized (${storage.data['machines']?.length || 0} Total Machines in Registry)</span>
+            </div>
+            <div style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 999px; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.4); color: #38bdf8; font-size: 11.5px; font-weight: 700;">
+              <span>🗑️</span> <span>Temporary file (${importState.tempFileName || 'tmp_machine_import.tmp'}) purged &amp; memory released</span>
+            </div>
           </div>
           <p style="font-size: 12.5px; color: var(--text-secondary); max-width: 580px; margin-top: 6px;">
             All valid rows were imported and locked into the primary MySQL database. Problematic rows were skipped and logged below for easy correction and re-import.
@@ -889,7 +898,11 @@ export function initExcelImportEvents() {
   const cancelBtn = document.getElementById('btn-cancel-import');
 
   const closeModal = () => {
-    importState = { stage: 1, fileName: '', workbookData: null, activeSheetTab: '', sheetMappings: {}, duplicatePolicy: DUPLICATE_POLICIES.UPDATE_EXISTING, unknownResolutions: {}, validationResult: null, importResult: null, errorSearchFilter: '' };
+    if (importState.tempId) {
+      tempImportService.purgeTempFile(importState.tempId, 'USER_CLOSED_MODAL');
+    }
+    tempImportService.cleanInput(fileInput);
+    importState = { stage: 1, tempId: null, tempFileName: '', fileName: '', workbookData: null, activeSheetTab: '', sheetMappings: {}, duplicatePolicy: DUPLICATE_POLICIES.UPDATE_EXISTING, unknownResolutions: {}, validationResult: null, importResult: null, errorSearchFilter: '' };
     state.set('activeModal', null);
   };
 
@@ -905,29 +918,36 @@ export function initExcelImportEvents() {
   const dropZone = document.getElementById('drop-zone');
   const fileInput = document.getElementById('excel-file-input');
 
-  const processSelectedFile = (file) => {
+  const processSelectedFile = async (file) => {
     if (!file) return;
 
-    importState.fileName = file.name;
-    const reader = new FileReader();
-    reader.onload = async (evt) => {
-      try {
-        const parsedWb = await excelService.parseMultiSheetWorkbook(evt.target.result, file.name);
-        importState.workbookData = parsedWb;
-        importState.activeSheetTab = parsedWb.sheets[0]?.name || '';
+    try {
+      // 1. Stage into temporary descriptor
+      const staged = await tempImportService.stageFile(file, 'MACHINE_INVENTORY', fileInput);
+      importState.tempId = staged.tempId;
+      importState.tempFileName = staged.tempFileName;
+      importState.fileName = file.name;
 
-        // Initialize sheet mappings
-        parsedWb.sheets.forEach(s => {
-          importState.sheetMappings[s.name] = { ...s.suggestedMapping };
-        });
+      tempImportService.updateStatus(staged.tempId, 'PARSING');
+      const parsedWb = await excelService.parseMultiSheetWorkbook(staged.buffer, file.name);
+      importState.workbookData = parsedWb;
+      importState.activeSheetTab = parsedWb.sheets[0]?.name || '';
 
-        importState.stage = 2;
-        updateModalDOM();
-      } catch (err) {
-        alert('Failed to process Excel workbook: ' + err.message);
+      // Initialize sheet mappings
+      parsedWb.sheets.forEach(s => {
+        importState.sheetMappings[s.name] = { ...s.suggestedMapping };
+      });
+
+      tempImportService.updateStatus(staged.tempId, 'VALIDATING', { rowCount: parsedWb.totalRows });
+      importState.stage = 2;
+      updateModalDOM();
+    } catch (err) {
+      if (importState.tempId) {
+        tempImportService.purgeTempFile(importState.tempId, 'PARSE_ERROR');
+        importState.tempId = null;
       }
-    };
-    reader.readAsArrayBuffer(file);
+      alert('Failed to process Excel workbook: ' + err.message);
+    }
   };
 
   if (dropZone && fileInput) {
@@ -1218,7 +1238,17 @@ export function initExcelImportEvents() {
           btnCommit.innerHTML = `<span style="display:inline-block;animation:spin 1s linear infinite;margin-right:6px;">🔄</span> [${pct}%] ${msg}`;
         });
 
+        if (progressPct) progressPct.textContent = '95%';
+        if (progressMsg) progressMsg.textContent = 'Database confirmed. Purging temporary file...';
+        if (progressFill) progressFill.style.width = '95%';
+
+        // Purge temporary file immediately after database write is confirmed
+        if (importState.tempId) {
+          tempImportService.purgeTempFile(importState.tempId, 'DATABASE_COMMITTED');
+        }
+
         if (progressPct) progressPct.textContent = '100%';
+        if (progressMsg) progressMsg.textContent = 'Import & Temp File Purge Completed!';
         if (progressFill) progressFill.style.width = '100%';
 
         importState.importResult = res;

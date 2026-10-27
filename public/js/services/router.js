@@ -60,6 +60,7 @@ const ROUTE_VIEW_MAP = {
   'database-config': 'database-config',
   'no-access': 'no-access',
   'admin-login': 'admin-login',
+  'maint-admin': 'admin-login',
   'secure-admin-gateway': 'admin-login'
 };
 
@@ -217,7 +218,7 @@ class SPAModuleRouter {
       ? authService.getAdminLoginSlug()
       : (typeof localStorage !== 'undefined' ? localStorage.getItem('al_muslim_admin_login_slug') : 'secure-admin-gateway') || 'secure-admin-gateway';
 
-    if (routeKey === activeAdminSlug || routeKey === 'admin-login' || routeKey === 'secure-admin-gateway') {
+    if (routeKey === activeAdminSlug || routeKey === 'admin-login' || routeKey === 'maint-admin' || routeKey === 'secure-admin-gateway') {
       routeKey = 'admin-login';
     }
 
@@ -454,6 +455,18 @@ class SPAModuleRouter {
     // Security & Authorization Guard on Back/Forward navigation
     if (!currentUser && targetView !== 'home' && targetView !== 'login' && targetView !== 'admin-login') {
       this.navigate('login', { replace: true, params: { redirect: targetView } });
+      return;
+    }
+
+    if (currentUser && targetView === 'admin-login' && !authService.isAdmin(currentUser) && !authService.isSuperAdmin(currentUser)) {
+      const allowedView = authService.getFirstAllowedView(currentUser) || 'dashboard';
+      this.navigate(allowedView, { replace: true });
+      return;
+    }
+
+    if (currentUser && targetView === 'login' && (authService.isAdmin(currentUser) || authService.isSuperAdmin(currentUser))) {
+      const allowedView = authService.getFirstAllowedView(currentUser) || 'dashboard';
+      this.navigate(allowedView, { replace: true });
       return;
     }
 

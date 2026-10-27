@@ -13,6 +13,7 @@ import { customFieldService } from './customFieldService.js';
 import { auditService } from './auditService.js';
 import { historyService } from './historyService.js';
 import { smartStorageService } from './smartStorageService.js?v=4.22.19';
+import { tempImportService } from './tempImportService.js';
 
 export function calculateLevenshtein(a, b) {
   if (a === b) return 0;
@@ -2647,6 +2648,10 @@ class ExcelService {
         storage.syncedDocVersions.set('mysql_' + TABLE_NAMES.MACHINES, confirmedTs);
         storage.syncedDocVersions.set(TABLE_NAMES.MACHINES, confirmedTs);
         console.log(`[Excel Import] ✅ Confirmed: All ${allMachines.length} machines synchronized to MySQL Primary (${cloudRes.itemCount || allMachines.length} confirmed).`);
+
+        if (metadata.tempId) {
+          tempImportService.purgeTempFile(metadata.tempId, 'DATABASE_COMMITTED');
+        }
       } else {
         storage.updateStatusBadge('error');
         console.warn('[Excel Import] ⚠️ MySQL save notice:', cloudRes?.error);
@@ -3347,29 +3352,73 @@ class ExcelService {
 
   /**
    * Parse an uploaded Excel file (.xlsx, .xls, .csv) into an array of row objects
+   * Integrated with Temporary Import Staging Engine: stages file into isolated temp descriptor
+   * and provides auto-purge upon database ingestion.
    */
-  async parseExcelFile(file) {
+  async parseExcelFile(file, options = {}) {
     await this.ensureXlsx();
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        try {
-          const data = new Uint8Array(e.target.result);
-          const workbook = XLSX.read(data, { type: 'array' });
-          const firstSheetName = workbook.SheetNames[0];
-          if (!firstSheetName) {
-            return resolve([]);
+
+    let buffer;
+    let tempId = null;
+
+    if (typeof File !== 'undefined' && file instanceof File) {
+      const staged = await tempImportService.stageFile(file, options.module || 'EXCEL_SERVICE', options.inputElement || null);
+      tempId = staged.tempId;
+      buffer = staged.buffer;
+    } else if (typeof Blob !== 'undefined' && file instanceof Blob) {
+      const staged = await tempImportService.stageFile(file, options.module || 'EXCEL_SERVICE', options.inputElement || null);
+      tempId = staged.tempId;
+      buffer = staged.buffer;
+    } else if (file instanceof ArrayBuffer || (typeof ArrayBuffer !== 'undefined' && ArrayBuffer.isView(file))) {
+      buffer = file;
+    } else {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          try {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+            const firstSheetName = workbook.SheetNames[0];
+            if (!firstSheetName) return resolve([]);
+            const worksheet = workbook.Sheets[firstSheetName];
+            const rows = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
+            resolve(rows || []);
+          } catch (err) {
+            reject(err);
           }
-          const worksheet = workbook.Sheets[firstSheetName];
-          const rows = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
-          resolve(rows || []);
-        } catch (err) {
-          reject(err);
-        }
-      };
-      reader.onerror = (err) => reject(err);
-      reader.readAsArrayBuffer(file);
-    });
+        };
+        reader.onerror = (err) => reject(err);
+        reader.readAsArrayBuffer(file);
+      });
+    }
+
+    try {
+      const data = new Uint8Array(buffer);
+      const workbook = XLSX.read(data, { type: 'array' });
+      const firstSheetName = workbook.SheetNames[0];
+      if (!firstSheetName) {
+        return [];
+      }
+      const worksheet = workbook.Sheets[firstSheetName];
+      const rows = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
+      if (tempId) {
+        Object.defineProperty(rows, '_tempId', { value: tempId, enumerable: false, writable: true });
+        tempImportService.updateStatus(tempId, 'PARSED', { rowCount: rows.length });
+      }
+      return rows || [];
+    } catch (err) {
+      if (tempId) {
+        tempImportService.purgeTempFile(tempId, 'PARSE_ERROR');
+      }
+      throw err;
+    }
+  }
+
+  /**
+   * Helper to purge temporary staging file once database commitment completes.
+   */
+  purgeTempFile(tempId, reason = 'DATABASE_COMMITTED') {
+    return tempImportService.purgeTempFile(tempId, reason);
   }
 
   /**
