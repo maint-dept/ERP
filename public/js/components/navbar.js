@@ -7,6 +7,7 @@ import { authService } from '../services/authService.js?v=4.26.60';
 import { notificationService } from '../services/notificationService.js';
 import { state } from '../state.js';
 import { storage } from '../db/storage.js';
+import { syncManager } from '../db/syncManager.js';
 import { router } from '../services/router.js?v=4.26.50';
 import { 
   getEmployeeMap, 
@@ -436,21 +437,51 @@ export function initNavbarEvents() {
     profilePill.addEventListener('click', toggleDropdown);
   }
 
-  // Click Database Status Pill to trigger manual sync with authoritative MySQL Primary
+  // Click Database Status Pill to trigger manual sync with authoritative MySQL Primary or check recovery
   const navDbStatus = document.getElementById('nav-db-status');
   if (navDbStatus) {
+    if (syncManager && syncManager.isFailoverActive) {
+      storage.updateStatusBadge('failover');
+    }
+
     navDbStatus.addEventListener('click', async () => {
       if (navDbStatus._isSyncing) return;
       navDbStatus._isSyncing = true;
       try {
+        if (syncManager && syncManager.isFailoverActive) {
+          notificationService.info('🐘 PostgreSQL Failover Mode Active. Checking MySQL Primary recovery...');
+          const res = await storage.syncWithMySQLPrimary();
+          if (res?.recovered) {
+            notificationService.success('🐬 MySQL Primary is back online! Reverse-sync verified and primary traffic restored.');
+          } else {
+            notificationService.warning('MySQL Primary is still unreachable. Safe PostgreSQL Failover remains active.');
+          }
+          return;
+        }
+
         notificationService.info('Synchronizing with MySQL Primary Database...');
         const res = await storage.syncWithMySQLPrimary();
-        notificationService.success(`MySQL Primary Synced at ${res.timestamp || new Date().toLocaleTimeString()} (PostgreSQL Backup Updated)`);
+        if (res?.failover) {
+          notificationService.warning('MySQL unreachable: Switched automatically to PostgreSQL Failover Mode.');
+        } else {
+          notificationService.success(`MySQL Primary Synced at ${res?.timestamp || new Date().toLocaleTimeString()} (PostgreSQL Backup Updated)`);
+        }
       } catch (err) {
         console.error('Manual navbar sync error:', err);
-        notificationService.error(`MySQL Sync Failed: ${err.message || 'Connection error'}. Check server status.`);
+        notificationService.error(`Sync notice: ${err.message || 'Connection error'}`);
       } finally {
         navDbStatus._isSyncing = false;
+      }
+    });
+  }
+
+  // Listen to failover events to ensure nav-db-status updates instantly across all views
+  if (!window._failoverListenerRegistered) {
+    window._failoverListenerRegistered = true;
+    window.addEventListener('erp:failover-status-changed', (e) => {
+      const isFailover = e.detail?.isFailover;
+      if (storage && typeof storage.updateStatusBadge === 'function') {
+        storage.updateStatusBadge(isFailover ? 'failover' : 'saved');
       }
     });
   }

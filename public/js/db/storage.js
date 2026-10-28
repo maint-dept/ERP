@@ -936,6 +936,53 @@ class StorageEngine {
     try {
       const isViewingSettings = typeof window !== 'undefined' && window.state && window.state.get('currentView') === 'settings';
 
+      // 0. Failover Route: If MySQL is offline, poll PostgreSQL replica for remote multi-device updates
+      if (syncManager && syncManager.isFailoverActive) {
+        const pgAdapter = syncManager.getPostgresAdapter();
+        if (pgAdapter && pgAdapter.config && pgAdapter.config.enabled) {
+          try {
+            const pgTsRes = await pgAdapter.getTableTimestamps();
+            if (pgTsRes && pgTsRes.success && pgTsRes.timestamps) {
+              const parseTs = (ts) => {
+                if (!ts) return 0;
+                const s = String(ts).trim().replace(' ', 'T');
+                const ms = Date.parse(s.endsWith('Z') || s.includes('+') ? s : s + 'Z');
+                return isNaN(ms) ? 0 : ms;
+              };
+              const updates = [];
+              for (const [tbl, remoteTs] of Object.entries(pgTsRes.timestamps)) {
+                if (!remoteTs) continue;
+                if (tbl === TABLE_NAMES.SETTINGS && isViewingSettings) continue;
+                if (this._tableSavePromises && this._tableSavePromises.has(tbl)) continue;
+                if (this.lastTableUpdates && (Date.now() - (this.lastTableUpdates[tbl] || 0) < 8000)) continue;
+                const knownTs = this.syncedDocVersions.get(tbl) || '';
+                if (parseTs(remoteTs) > parseTs(knownTs)) {
+                  updates.push({ tbl, remoteTs });
+                }
+              }
+              if (updates.length > 0) {
+                console.log(`[Storage Failover Multi-Device] 🐘 Remote PostgreSQL changes detected in ${updates.length} tables:`, updates.map(u => u.tbl));
+                for (const { tbl, remoteTs } of updates) {
+                  try {
+                    const res = await pgAdapter.getTable(tbl);
+                    if (res && res.success && res.data !== undefined) {
+                      this.data[tbl] = res.data;
+                      this._invalidateTableIdMap(tbl);
+                      this.syncedDocVersions.set(tbl, remoteTs);
+                    }
+                  } catch (_) {}
+                }
+                this.updateStatusBadge('failover');
+                if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('erp:storage-updated'));
+              }
+            }
+          } catch (pgErr) {
+            console.warn('[Storage Failover Multi-Device] PostgreSQL check notice:', pgErr.message);
+          }
+        }
+        return;
+      }
+
       // 1. Primary MySQL Adapter Real-Time Multi-Device Sync Check (<30ms check across all tables)
       if (syncManager && syncManager.primaryAdapter && syncManager.primaryAdapter.type === 'MYSQL') {
         try {
@@ -1358,10 +1405,41 @@ class StorageEngine {
       this._suppressServerPersist = false;
     }
 
-    // 1. Fallback / Failure Handling: MySQL Primary is the ONLY authoritative operational database.
-    // PostgreSQL is strictly a secondary backup replica and must NEVER automatically overwrite MySQL.
+    // 1. Enterprise Read Failover: If MySQL Primary is unreachable, seamlessly load all tables from PostgreSQL replica
     if (!cloudLoadedSuccessfully) {
-      console.warn('[Storage] ⚠️ MySQL Primary is unreachable. Preserving authoritative local cache without overwriting operational state.');
+      console.warn('[Storage] ⚠️ MySQL Primary is unreachable. Initiating Automatic Read Failover to PostgreSQL replica...');
+      const pgAdapter = syncManager.getPostgresAdapter();
+      if (pgAdapter && pgAdapter.config && pgAdapter.config.enabled) {
+        try {
+          const pgRes = await pgAdapter.getAllTables();
+          if (pgRes && pgRes.success && pgRes.tables && Object.keys(pgRes.tables).length > 0) {
+            console.log(`[Storage Failover] 🐘 Successfully loaded ${Object.keys(pgRes.tables).length} tables from PostgreSQL Fallback Replica!`);
+            this.applyIncomingDatabaseRecords(pgRes.tables, 'PostgreSQL Fallback Replica');
+            this._isCloudConnected = true;
+            cloudLoadedSuccessfully = true;
+            this._hasCriticalSyncCompleted = true;
+            this._hasInitialSyncCompleted = true;
+            this._hasFullSecondarySyncCompleted = true;
+            this._suppressServerPersist = false;
+            Object.keys(pgRes.tables).forEach(t => this._loadedSecondaryTables.add(t));
+
+            syncManager.setFailoverMode(true, 'MySQL Primary unreachable during startup');
+            this.updateStatusBadge('failover');
+
+            if (typeof window !== 'undefined') {
+              window.dispatchEvent(new CustomEvent('erp:critical-data-ready'));
+              window.dispatchEvent(new CustomEvent('erp:storage-updated'));
+              window.dispatchEvent(new CustomEvent('erp:secondary-data-ready'));
+              window.dispatchEvent(new CustomEvent('erp:tools-updated'));
+            }
+            return;
+          }
+        } catch (pgErr) {
+          console.error('[Storage Failover] PostgreSQL read fallback error:', pgErr);
+        }
+      }
+
+      console.warn('[Storage] ⚠️ Both MySQL and PostgreSQL are unreachable. Preserving authoritative local cache without overwriting operational state.');
       this._isCloudConnected = false;
       this._hasInitialSyncCompleted = true;
       this._suppressServerPersist = false;
@@ -1421,7 +1499,7 @@ class StorageEngine {
 
   /**
    * Fast, targeted refresh of a single table directly from MySQL Primary Database (<200ms).
-   * Ensures UI gets the latest committed operational records without downloading all 58 tables.
+   * Enterprise Failover: If MySQL is offline or in failover mode, seamlessly fetches from PostgreSQL replica.
    *
    * @param {string} tableName - e.g. TABLE_NAMES.USERS or TABLE_NAMES.EMPLOYEES
    * @returns {Promise<{success: boolean, count: number}>}
@@ -1430,46 +1508,100 @@ class StorageEngine {
     if (!tableName) return { success: false, count: 0 };
     try {
       await syncManager._ensureConfig();
+
+      // Failover Route: If failover is active, fetch from PostgreSQL replica
+      if (syncManager && syncManager.isFailoverActive) {
+        const pgAdapter = syncManager.getPostgresAdapter();
+        if (pgAdapter && pgAdapter.config && pgAdapter.config.enabled) {
+          console.log(`[Storage Failover] 🐘 Refreshing table '${tableName}' from PostgreSQL replica...`);
+          try {
+            const pgRes = await pgAdapter.getTable(tableName);
+            if (pgRes && pgRes.success && pgRes.data !== undefined) {
+              const records = pgRes.data;
+              this.data[tableName] = records;
+              this._invalidateTableIdMap(tableName);
+              try { await idbCache.setTable(tableName, records); } catch (_) {}
+              try { localStorage.setItem(STORAGE_KEY_PREFIX + tableName, JSON.stringify(records)); } catch (_) {}
+              const confirmedTs = pgRes.updateTime || new Date().toISOString();
+              this.syncedDocVersions.set(tableName, confirmedTs);
+              this.updateStatusBadge('failover');
+              const count = Array.isArray(records) ? records.length : (records && typeof records === 'object' ? Object.keys(records).length : 0);
+              return { success: true, count, failover: true };
+            }
+          } catch (pgErr) {
+            console.warn(`[Storage Failover] PostgreSQL getTable('${tableName}') failed:`, pgErr.message);
+          }
+        }
+      }
+
       if (!syncManager.primaryAdapter || syncManager.primaryAdapter.type !== 'MYSQL') {
         throw new Error('MySQL Primary adapter is not configured or offline.');
       }
 
       console.log(`[Storage] 🐬 Refreshing table '${tableName}' directly from MySQL Primary...`);
-      const res = await syncManager.primaryAdapter.getTable(tableName);
-      if (res && res.success && res.data !== undefined) {
-        const records = res.data;
-        this.data[tableName] = records;
-        this._invalidateTableIdMap(tableName);
-
-        // Update high-capacity caches
-        try { await idbCache.setTable(tableName, records); } catch (_) {}
-        try { localStorage.setItem(STORAGE_KEY_PREFIX + tableName, JSON.stringify(records)); } catch (_) {}
-
-        // Update sync timestamp
-        const confirmedTs = res.updateTime || new Date().toISOString();
-        this.syncedDocVersions.set('mysql_' + tableName, confirmedTs);
-        this.syncedDocVersions.set(tableName, confirmedTs);
-        if (!this.lastTableUpdates) this.lastTableUpdates = {};
-        this.lastTableUpdates[tableName] = Date.now();
-
-        // Dispatch events
-        if (typeof window !== 'undefined') {
-          if (tableName === TABLE_NAMES.USERS) {
-            window.dispatchEvent(new CustomEvent('erp:users-updated'));
-          } else if (tableName === TABLE_NAMES.EMPLOYEES) {
-            window.dispatchEvent(new CustomEvent('erp:employees-updated'));
-          } else if (tableName === TABLE_NAMES.MACHINES) {
-            this.rebuildAllIndexes();
-            window.dispatchEvent(new CustomEvent('erp:inventory-updated'));
-          }
-          window.dispatchEvent(new CustomEvent('erp:storage-updated'));
-        }
-
-        this.updateStatusBadge('saved');
-        const count = Array.isArray(records) ? records.length : (records && typeof records === 'object' ? Object.keys(records).length : 0);
-        return { success: true, count };
+      let res = null;
+      try {
+        res = await syncManager.primaryAdapter.getTable(tableName);
+      } catch (fetchErr) {
+        res = { success: false, error: fetchErr.message };
       }
-      return { success: false, count: 0, error: res?.error || 'Failed to fetch table from MySQL Primary' };
+
+      // If MySQL fails, failover to PostgreSQL
+      if (!res || !res.success || res.data === undefined) {
+        console.warn(`[Storage] MySQL getTable('${tableName}') failed. Triggering PostgreSQL fallback...`);
+        const pgAdapter = syncManager.getPostgresAdapter();
+        if (pgAdapter && pgAdapter.config && pgAdapter.config.enabled) {
+          try {
+            const pgRes = await pgAdapter.getTable(tableName);
+            if (pgRes && pgRes.success && pgRes.data !== undefined) {
+              syncManager.setFailoverMode(true, `MySQL getTable('${tableName}') failed`);
+              const records = pgRes.data;
+              this.data[tableName] = records;
+              this._invalidateTableIdMap(tableName);
+              try { await idbCache.setTable(tableName, records); } catch (_) {}
+              try { localStorage.setItem(STORAGE_KEY_PREFIX + tableName, JSON.stringify(records)); } catch (_) {}
+              const confirmedTs = pgRes.updateTime || new Date().toISOString();
+              this.syncedDocVersions.set(tableName, confirmedTs);
+              this.updateStatusBadge('failover');
+              const count = Array.isArray(records) ? records.length : (records && typeof records === 'object' ? Object.keys(records).length : 0);
+              return { success: true, count, failover: true };
+            }
+          } catch (_) {}
+        }
+        return { success: false, count: 0, error: res?.error || 'Failed to fetch table from MySQL Primary' };
+      }
+
+      const records = res.data;
+      this.data[tableName] = records;
+      this._invalidateTableIdMap(tableName);
+
+      // Update high-capacity caches
+      try { await idbCache.setTable(tableName, records); } catch (_) {}
+      try { localStorage.setItem(STORAGE_KEY_PREFIX + tableName, JSON.stringify(records)); } catch (_) {}
+
+      // Update sync timestamp
+      const confirmedTs = res.updateTime || new Date().toISOString();
+      this.syncedDocVersions.set('mysql_' + tableName, confirmedTs);
+      this.syncedDocVersions.set(tableName, confirmedTs);
+      if (!this.lastTableUpdates) this.lastTableUpdates = {};
+      this.lastTableUpdates[tableName] = Date.now();
+
+      // Dispatch events
+      if (typeof window !== 'undefined') {
+        if (tableName === TABLE_NAMES.USERS) {
+          window.dispatchEvent(new CustomEvent('erp:users-updated'));
+        } else if (tableName === TABLE_NAMES.EMPLOYEES) {
+          window.dispatchEvent(new CustomEvent('erp:employees-updated'));
+        } else if (tableName === TABLE_NAMES.MACHINES) {
+          this.rebuildAllIndexes();
+          window.dispatchEvent(new CustomEvent('erp:inventory-updated'));
+        }
+        window.dispatchEvent(new CustomEvent('erp:storage-updated'));
+      }
+
+      this.updateStatusBadge('saved');
+      const count = Array.isArray(records) ? records.length : (records && typeof records === 'object' ? Object.keys(records).length : 0);
+      return { success: true, count };
     } catch (err) {
       console.warn(`[Storage] Refresh table '${tableName}' failed:`, err.message);
       return { success: false, count: 0, error: err.message };
@@ -1479,32 +1611,51 @@ class StorageEngine {
   /**
    * Authoritative MySQL Primary Database Synchronization.
    * Triggered by the header status badge or manual sync actions.
-   * 1. Confirms live connectivity to MySQL Primary
-   * 2. Checks and fetches any remote updates from MySQL
-   * 3. Triggers background unidirectional backup fan-out to PostgreSQL replica
-   * 4. Updates status pill with verified timestamp
+   * If in Failover Mode: checks if MySQL Primary is back online and performs Auto-Recovery (Reverse Sync).
    */
   async syncWithMySQLPrimary() {
     this.updateStatusBadge('saving');
     try {
       await syncManager._ensureConfig();
+
+      // 1. Failover Mode Recovery Check
+      if (syncManager && syncManager.isFailoverActive) {
+        console.log('[Storage Sync] Currently in PostgreSQL Failover Mode. Checking if MySQL Primary has recovered...');
+        const recovered = await syncManager.checkPrimaryRecovery();
+        if (recovered) {
+          return { success: true, timestamp: new Date().toLocaleTimeString(), recovered: true };
+        } else {
+          this.updateStatusBadge('failover');
+          return { success: true, timestamp: new Date().toLocaleTimeString(), failover: true };
+        }
+      }
+
       if (!syncManager.primaryAdapter || syncManager.primaryAdapter.type !== 'MYSQL') {
         throw new Error('MySQL Primary adapter is not configured.');
       }
 
-      // Ping MySQL Primary
-      const pingFn = typeof syncManager.primaryAdapter.ping === 'function'
-        ? syncManager.primaryAdapter.ping.bind(syncManager.primaryAdapter)
-        : syncManager.primaryAdapter.testConnection.bind(syncManager.primaryAdapter);
-      const pingRes = await pingFn();
-      if (!pingRes || !pingRes.success) {
-        throw new Error(pingRes?.error || 'MySQL Primary Database is unreachable.');
+      // 2. Ping MySQL Primary
+      let pingRes = null;
+      try {
+        const pingFn = typeof syncManager.primaryAdapter.ping === 'function'
+          ? syncManager.primaryAdapter.ping.bind(syncManager.primaryAdapter)
+          : syncManager.primaryAdapter.testConnection.bind(syncManager.primaryAdapter);
+        pingRes = await pingFn();
+      } catch (pErr) {
+        pingRes = { success: false, error: pErr.message };
       }
 
-      // Sync remote table changes
+      if (!pingRes || !pingRes.success) {
+        console.warn('[Sync] MySQL Primary ping failed. Activating PostgreSQL Failover...');
+        syncManager.setFailoverMode(true, pingRes?.error || 'MySQL ping failed');
+        this.updateStatusBadge('failover');
+        return { success: true, timestamp: new Date().toLocaleTimeString(), failover: true };
+      }
+
+      // 3. Sync remote table changes
       await this.checkAndSyncRemoteChanges();
 
-      // Trigger unidirectional background backup to PostgreSQL Secondary Replica
+      // 4. Trigger unidirectional background backup to PostgreSQL Secondary Replica
       syncManager.backupToPostgres().catch(err => {
         console.warn('[Sync] Background PostgreSQL backup notice:', err.message);
       });
@@ -1735,6 +1886,18 @@ class StorageEngine {
       statusEl.style.color = '#fbbf24';
       statusEl.title = 'Syncing changes to MySQL Primary Database...';
       statusEl.innerHTML = '<span style="font-size: 12px; line-height: 1;">🐬</span><span class="db-status-text">Syncing...</span>';
+    } else if (status === 'failover') {
+      statusEl.style.borderColor = 'rgba(245, 158, 11, 0.6)';
+      statusEl.style.background = 'rgba(245, 158, 11, 0.16)';
+      statusEl.style.color = '#fbbf24';
+      statusEl.title = '🐘 PostgreSQL Live (Failover Active) — Reads & writes safe. Auto-recovery probing MySQL.';
+      statusEl.innerHTML = '<span style="font-size: 12px; line-height: 1;">🐘</span><span class="db-status-text">PG Fallback</span>';
+    } else if (status === 'recovering') {
+      statusEl.style.borderColor = 'rgba(56, 189, 248, 0.6)';
+      statusEl.style.background = 'rgba(56, 189, 248, 0.16)';
+      statusEl.style.color = '#38bdf8';
+      statusEl.title = '🔄 MySQL Back Online: Re-syncing failover records to MySQL Primary...';
+      statusEl.innerHTML = '<span style="font-size: 12px; line-height: 1;">🔄</span><span class="db-status-text">Recovering...</span>';
     } else if (status === 'saved' || status === 'synced') {
       statusEl.style.borderColor = 'rgba(16, 185, 129, 0.5)';
       statusEl.style.background = 'rgba(16, 185, 129, 0.15)';
