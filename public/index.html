@@ -1,16 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Al-Muslim Group — Maintenance Department ERP</title>
-  <meta name="description" content="Al-Muslim Group — Enterprise Maintenance Department ERP system for physical machinery, transfers, spare parts, and workforce management.">
+  <meta name="description"
+    content="Al-Muslim Group — Enterprise Maintenance Department ERP system for physical machinery, transfers, spare parts, and workforce management.">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <!-- Dynamic Base Path for GitHub Pages & Local Hosting SPA Routing -->
   <script>
-    (function() {
+    (function () {
       // 1. Unpack GitHub Pages 404 redirect (?p=/inventory&tab=...)
       var l = window.location;
       if (l.search) {
@@ -26,7 +28,7 @@
           var restoredHash = q.hash ? '#' + decodeURIComponent(q.hash) : (l.hash || '');
           delete q.hash;
 
-          var remainingParams = Object.keys(q).map(function(k) {
+          var remainingParams = Object.keys(q).map(function (k) {
             return k + (q[k] ? '=' + q[k] : '');
           }).join('&');
 
@@ -37,7 +39,7 @@
 
           try {
             window.history.replaceState(null, null, finalUrl);
-          } catch (_) {}
+          } catch (_) { }
         }
       }
 
@@ -59,20 +61,22 @@
       if (localStorage.getItem('al_muslim_theme') === 'light') {
         document.documentElement.classList.add('theme-light');
       }
-    } catch (_) {}
+    } catch (_) { }
   </script>
 
   <!-- Modern Industrial Typography -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap"
+    rel="stylesheet">
 
   <!-- Global Safe Startup Pre-Initializers -->
   <script>
     // Bulletproof JSON.parse defense against 'undefined', empty strings, or null values
-    (function() {
+    (function () {
       var _nativeJSONParse = JSON.parse;
-      JSON.parse = function(text, reviver) {
+      JSON.parse = function (text, reviver) {
         if (text === undefined || text === null || text === '' || text === 'undefined' || text === 'null') {
           return null;
         }
@@ -87,36 +91,44 @@
     })();
   </script>
 
-  <!-- Core ERP Stylesheets (Cache-Busted v4.26.70) -->
-  <link rel="stylesheet" href="css/app.css?v=4.26.70">
-  <link rel="stylesheet" href="css/grid.css?v=4.26.70">
-  <link rel="stylesheet" href="css/components.css?v=4.26.70">
-  <link rel="stylesheet" href="css/print.css?v=4.26.70">
+  <!-- Core ERP Stylesheets (Cache-Busted v4.26.75) -->
+  <link rel="stylesheet" href="css/app.css?v=4.26.75">
+  <link rel="stylesheet" href="css/grid.css?v=4.26.75">
+  <link rel="stylesheet" href="css/components.css?v=4.26.75">
+  <link rel="stylesheet" href="css/print.css?v=4.26.75">
 
   <!-- Deferred Heavy Third-Party Libraries (Non-Render Blocking) -->
   <!-- SheetJS (XLSX) Library for Excel Import & Export -->
-  <script defer src="lib/xlsx.full.min.js" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js'"></script>
+  <script defer src="lib/xlsx.full.min.js"
+    onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js'"></script>
 
   <!-- HTML5 QR Code Library for Camera & Mobile Scanning -->
-  <script defer src="lib/html5-qrcode.min.js" onerror="this.onerror=null;this.src='https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js'"></script>
+  <script defer src="lib/html5-qrcode.min.js"
+    onerror="this.onerror=null;this.src='https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js'"></script>
 
   <!-- QRCode.js Library for High-Resolution Client-Side QR Generation & A4 Label Printing -->
-  <script defer src="lib/qrcode.min.js" onerror="this.onerror=null;this.src='https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js'"></script>
+  <script defer src="lib/qrcode.min.js"
+    onerror="this.onerror=null;this.src='https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js'"></script>
 
   <!-- Tesseract.js Library for OCR Screenshot / PDF Snippet Auto-Fill -->
-  <script defer src="lib/tesseract.min.js" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js'"></script>
+  <script defer src="lib/tesseract.min.js"
+    onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js'"></script>
 
   <!-- PDF.js Library for Client-Side ERP Issue PDF Text & Table Extraction -->
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 </head>
+
 <body>
   <!-- Single Page Application Shell Root -->
   <div id="app-root">
-    <div id="loading-spinner-view" style="height: 100vh; display: flex; align-items: center; justify-content: center; background: #090d16; color: #fff; font-family: 'Inter', sans-serif;">
+    <div id="loading-spinner-view"
+      style="height: 100vh; display: flex; align-items: center; justify-content: center; background: #090d16; color: #fff; font-family: 'Inter', sans-serif;">
       <div style="text-align: center; max-width: 480px; padding: 24px;">
-        <div style="font-size: 44px; margin-bottom: 12px; animation: spin 2s infinite linear; display: inline-block;">⚙️</div>
+        <div style="font-size: 44px; margin-bottom: 12px; animation: spin 2s infinite linear; display: inline-block;">⚙️
+        </div>
         <h2 style="font-size: 20px; font-weight: 800; letter-spacing: 0.5px; color: #fff;">AL-MUSLIM GROUP</h2>
-        <p id="loading-status-text" style="font-size: 13px; color: #94a3b8; margin-top: 6px;">Loading Maintenance Department ERP System...</p>
+        <p id="loading-status-text" style="font-size: 13px; color: #94a3b8; margin-top: 6px;">Loading Maintenance
+          Department ERP System...</p>
       </div>
     </div>
   </div>
@@ -124,34 +136,34 @@
   <!-- Global Startup Error Handler & Watchdog -->
   <script>
     window.__appLoaded = false;
-    window.__showStartupError = function(errorMsg, detail) {
+    window.__showStartupError = function (errorMsg, detail) {
       if (window.__appLoaded) return;
       var root = document.getElementById('app-root');
       if (!root) return;
-      root.innerHTML = 
+      root.innerHTML =
         '<div style="height: 100vh; display: flex; align-items: center; justify-content: center; background: #090d16; color: #fff; font-family: sans-serif; padding: 20px;">' +
-          '<div style="max-width: 540px; width: 100%; background: #111827; border: 1px solid #ef4444; border-radius: 12px; padding: 28px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.6); text-align: center;">' +
-            '<div style="font-size: 42px; margin-bottom: 12px;">⚠️</div>' +
-            '<h2 style="font-size: 18px; font-weight: 800; color: #f87171; margin-bottom: 8px;">Startup Diagnostic Alert</h2>' +
-            '<p style="font-size: 13px; color: #cbd5e1; margin-bottom: 16px;">' + (errorMsg || 'The application encountered an issue while initializing components.') + '</p>' +
-            (detail ? '<div style="background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.25); border-radius: 6px; padding: 10px; font-family: monospace; font-size: 11px; color: #fca5a5; text-align: left; margin-bottom: 20px; word-break: break-word; max-height: 180px; overflow-y: auto; white-space: pre-wrap;">' + detail + '</div>' : '') +
-            '<div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">' +
-              '<button onclick="window.__forceFreshReload ? window.__forceFreshReload() : window.location.reload()" style="background: #2563eb; color: #fff; border: none; padding: 10px 20px; border-radius: 6px; font-weight: 700; font-size: 13px; cursor: pointer;">🔄 Fresh Reload &amp; Clear Cache</button>' +
-              '<button onclick="localStorage.clear(); sessionStorage.clear(); window.location.href = window.location.origin + window.location.pathname + \'?reset=\' + Date.now();" style="background: #374151; color: #e2e8f0; border: 1px solid #4b5563; padding: 10px 18px; border-radius: 6px; font-size: 13px; cursor: pointer;">🧹 Reset Storage &amp; Restart</button>' +
-            '</div>' +
-            '<p style="font-size: 11px; color: #94a3b8; margin-top: 14px; margin-bottom: 0;">Tip: Press <b>Ctrl + Shift + R</b> (or <b>Ctrl + F5</b>) to bypass browser cache.</p>' +
-          '</div>' +
+        '<div style="max-width: 540px; width: 100%; background: #111827; border: 1px solid #ef4444; border-radius: 12px; padding: 28px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.6); text-align: center;">' +
+        '<div style="font-size: 42px; margin-bottom: 12px;">⚠️</div>' +
+        '<h2 style="font-size: 18px; font-weight: 800; color: #f87171; margin-bottom: 8px;">Startup Diagnostic Alert</h2>' +
+        '<p style="font-size: 13px; color: #cbd5e1; margin-bottom: 16px;">' + (errorMsg || 'The application encountered an issue while initializing components.') + '</p>' +
+        (detail ? '<div style="background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.25); border-radius: 6px; padding: 10px; font-family: monospace; font-size: 11px; color: #fca5a5; text-align: left; margin-bottom: 20px; word-break: break-word; max-height: 180px; overflow-y: auto; white-space: pre-wrap;">' + detail + '</div>' : '') +
+        '<div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">' +
+        '<button onclick="window.__forceFreshReload ? window.__forceFreshReload() : window.location.reload()" style="background: #2563eb; color: #fff; border: none; padding: 10px 20px; border-radius: 6px; font-weight: 700; font-size: 13px; cursor: pointer;">🔄 Fresh Reload &amp; Clear Cache</button>' +
+        '<button onclick="localStorage.clear(); sessionStorage.clear(); window.location.href = window.location.origin + window.location.pathname + \'?reset=\' + Date.now();" style="background: #374151; color: #e2e8f0; border: 1px solid #4b5563; padding: 10px 18px; border-radius: 6px; font-size: 13px; cursor: pointer;">🧹 Reset Storage &amp; Restart</button>' +
+        '</div>' +
+        '<p style="font-size: 11px; color: #94a3b8; margin-top: 14px; margin-bottom: 0;">Tip: Press <b>Ctrl + Shift + R</b> (or <b>Ctrl + F5</b>) to bypass browser cache.</p>' +
+        '</div>' +
         '</div>';
     };
 
-    window.addEventListener('error', function(e) {
+    window.addEventListener('error', function (e) {
       try {
         fetch('/api/client-log', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ type: 'window.error', message: (e.message || '') + ' at ' + (e.filename || '') + ':' + (e.lineno || ''), stack: e.error ? e.error.stack : null })
-        }).catch(function(){});
-      } catch(_) {}
+        }).catch(function () { });
+      } catch (_) { }
       if (!window.__appLoaded) {
         var detailMsg = (e.message || 'Unknown script error') + ' at ' + (e.filename || '') + ':' + (e.lineno || '');
         if (e.error && e.error.stack) {
@@ -161,14 +173,14 @@
       }
     });
 
-    window.addEventListener('unhandledrejection', function(e) {
+    window.addEventListener('unhandledrejection', function (e) {
       try {
         fetch('/api/client-log', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ type: 'unhandledrejection', message: e.reason ? (e.reason.message || String(e.reason)) : 'Unhandled Promise rejection', stack: e.reason && e.reason.stack ? e.reason.stack : null })
-        }).catch(function(){});
-      } catch(_) {}
+        }).catch(function () { });
+      } catch (_) { }
       if (!window.__appLoaded) {
         var detailMsg = e.reason ? (e.reason.message || String(e.reason)) : 'Unhandled Promise rejection';
         if (e.reason && e.reason.stack) {
@@ -180,10 +192,10 @@
 
     // Global console.error capturer
     var origConsoleErr = console.error;
-    console.error = function() {
+    console.error = function () {
       origConsoleErr.apply(console, arguments);
       try {
-        var msg = Array.prototype.slice.call(arguments).map(function(arg) {
+        var msg = Array.prototype.slice.call(arguments).map(function (arg) {
           if (arg instanceof Error) return arg.stack || arg.message;
           if (typeof arg === 'object') return JSON.stringify(arg);
           return String(arg);
@@ -192,55 +204,55 @@
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ type: 'console.error', message: msg })
-        }).catch(function(){});
-      } catch(_) {}
+        }).catch(function () { });
+      } catch (_) { }
     };
 
     // Progressive Loading Feedback & Safety Watchdog
-    setTimeout(function() {
+    setTimeout(function () {
       if (!window.__appLoaded) {
         var statusEl = document.getElementById('loading-status-text');
         if (statusEl) statusEl.textContent = 'Connecting to Cloud Database & Loading Data...';
       }
     }, 3000);
 
-    setTimeout(function() {
+    setTimeout(function () {
       if (!window.__appLoaded) {
         var statusEl = document.getElementById('loading-status-text');
         if (statusEl) statusEl.textContent = 'Preparing Factory ERP Modules...';
       }
     }, 7000);
 
-    setTimeout(function() {
+    setTimeout(function () {
       if (!window.__appLoaded) {
         var statusEl = document.getElementById('loading-status-text');
         if (statusEl) statusEl.textContent = 'Synchronizing Master Schemas & Caches...';
       }
     }, 14000);
 
-    setTimeout(function() {
+    setTimeout(function () {
       if (!window.__appLoaded) {
         if (window.app && typeof window.app.init === 'function') {
           try {
             window.app.init();
             window.__appLoaded = true;
             return;
-          } catch(_) {}
+          } catch (_) { }
         }
         window.__showStartupError('Startup Timeout Notice', 'The application took longer than expected to launch. Click Retry to reload.');
       }
     }, 25000);
 
-    window.__forceFreshReload = function() {
+    window.__forceFreshReload = function () {
       try {
         if (window.caches) {
-          caches.keys().then(function(keys) {
-            keys.forEach(function(k) { caches.delete(k); });
+          caches.keys().then(function (keys) {
+            keys.forEach(function (k) { caches.delete(k); });
           });
         }
-      } catch(_) {}
-      try { localStorage.clear(); } catch(_) {}
-      try { sessionStorage.clear(); } catch(_) {}
+      } catch (_) { }
+      try { localStorage.clear(); } catch (_) { }
+      try { sessionStorage.clear(); } catch (_) { }
       var base = window.location.origin + window.location.pathname;
       window.location.replace(base + '?t=' + Date.now() + window.location.hash);
     };
@@ -249,34 +261,40 @@
     var CURRENT_BUILD = '4.26.60';
 
     // Silently unregister any old Service Workers and clear all caches
-    (function() {
+    (function () {
       try {
         if (window.caches) {
-          caches.keys().then(function(keys) {
-            keys.forEach(function(k) { caches.delete(k); });
+          caches.keys().then(function (keys) {
+            keys.forEach(function (k) { caches.delete(k); });
           });
         }
         if ('serviceWorker' in navigator) {
-          navigator.serviceWorker.getRegistrations().then(function(regs) {
-            regs.forEach(function(r) {
+          navigator.serviceWorker.getRegistrations().then(function (regs) {
+            regs.forEach(function (r) {
               console.log('[ERP v4.26.60] Unregistering SW:', r.scope);
               r.unregister();
             });
           });
         }
         localStorage.setItem('al_muslim_build_ver', CURRENT_BUILD);
-      } catch(e) { /* non-critical */ }
+      } catch (e) { /* non-critical */ }
     })();
   </script>
 
-  <!-- Main ES Module Application Entrypoint (Cache-Busted v4.26.70) -->
-  <script type="module" src="js/app.js?v=4.26.70"></script>
+  <!-- Main ES Module Application Entrypoint (Cache-Busted v4.26.75) -->
+  <script type="module" src="js/app.js?v=4.26.75"></script>
 
   <style>
     @keyframes spin {
-      from { transform: rotate(0deg); }
-      to { transform: rotate(360deg); }
+      from {
+        transform: rotate(0deg);
+      }
+
+      to {
+        transform: rotate(360deg);
+      }
     }
   </style>
 </body>
+
 </html>

@@ -482,18 +482,23 @@ export function initNavbarEvents() {
   // Dropdown Theme Toggle Button
   const dropdownThemeBtn = document.getElementById('btn-dropdown-theme-toggle');
   if (dropdownThemeBtn) {
-    dropdownThemeBtn.addEventListener('click', () => {
-      const isLight = document.body.classList.toggle('theme-light');
+    dropdownThemeBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isLight = !document.body.classList.contains('theme-light');
+      document.body.classList.toggle('theme-light', isLight);
+      document.documentElement.classList.toggle('theme-light', isLight);
       localStorage.setItem('al_muslim_theme', isLight ? 'light' : 'dark');
+
       const topThemeBtn = document.getElementById('btn-theme-toggle');
       if (topThemeBtn) {
         const topIcon = topThemeBtn.querySelector('.theme-icon') || topThemeBtn;
         topIcon.innerHTML = isLight ? '🌙' : '☀️';
+        topThemeBtn.title = isLight ? 'Theme: Switch to Dark Mode' : 'Theme: Switch to Daylight / Light Mode';
       }
       const icon = dropdownThemeBtn.querySelector('.dropdown-theme-icon') || dropdownThemeBtn;
       icon.innerHTML = isLight ? '🌙' : '☀️';
       const text = dropdownThemeBtn.querySelector('span:last-child');
-      if (text) text.textContent = isLight ? 'Dark' : 'Light';
+      if (text) text.textContent = isLight ? 'Dark Mode' : 'Daylight Mode';
     });
   }
 
@@ -760,7 +765,9 @@ export function initNavbarEvents() {
   const themeBtn = document.getElementById('btn-theme-toggle');
   if (themeBtn) {
     themeBtn.addEventListener('click', () => {
-      const isLight = document.body.classList.toggle('theme-light');
+      const isLight = !document.body.classList.contains('theme-light');
+      document.body.classList.toggle('theme-light', isLight);
+      document.documentElement.classList.toggle('theme-light', isLight);
       localStorage.setItem('al_muslim_theme', isLight ? 'light' : 'dark');
       const icon = themeBtn.querySelector('.theme-icon') || themeBtn;
       icon.innerHTML = isLight ? '🌙' : '☀️';
