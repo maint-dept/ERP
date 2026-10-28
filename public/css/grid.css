@@ -217,9 +217,9 @@
   scroll-behavior: auto;
   -webkit-overflow-scrolling: touch;
   background-color: var(--bg-surface);
-  border: 1px solid var(--border-color);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: var(--radius-md);
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   scrollbar-width: auto;
   scrollbar-color: #0284c7 #090e1a;
 }
@@ -547,14 +547,14 @@ tbody tr.selected td.col-frozen-cell {
 }
 
 .col-frozen-boundary {
-  border-right: 2.5px solid #38bdf8 !important;
-  box-shadow: 4px 0 14px rgba(0, 0, 0, 0.65) !important;
+  border-right: 2px solid #0284c7 !important;
+  box-shadow: 3px 0 8px rgba(0, 0, 0, 0.4) !important;
 }
 
 /* Table Cells */
 .excel-grid-table tbody td {
-  border-bottom: 1px solid var(--border-light);
-  border-right: 1px solid var(--border-light);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-right: 1px solid rgba(255, 255, 255, 0.04);
   padding: 6px 8px;
   white-space: nowrap;
   vertical-align: middle;

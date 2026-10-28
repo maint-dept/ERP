@@ -53,6 +53,15 @@
     })();
   </script>
 
+  <!-- Instant Daylight/Dark Theme Pre-Init (Zero Visual Flash) -->
+  <script>
+    try {
+      if (localStorage.getItem('al_muslim_theme') === 'light') {
+        document.documentElement.classList.add('theme-light');
+      }
+    } catch (_) {}
+  </script>
+
   <!-- Modern Industrial Typography -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -78,11 +87,11 @@
     })();
   </script>
 
-  <!-- Core ERP Stylesheets (Cache-Busted v4.26.68) -->
-  <link rel="stylesheet" href="css/app.css?v=4.26.68">
-  <link rel="stylesheet" href="css/grid.css?v=4.26.68">
-  <link rel="stylesheet" href="css/components.css?v=4.26.68">
-  <link rel="stylesheet" href="css/print.css?v=4.26.68">
+  <!-- Core ERP Stylesheets (Cache-Busted v4.26.70) -->
+  <link rel="stylesheet" href="css/app.css?v=4.26.70">
+  <link rel="stylesheet" href="css/grid.css?v=4.26.70">
+  <link rel="stylesheet" href="css/components.css?v=4.26.70">
+  <link rel="stylesheet" href="css/print.css?v=4.26.70">
 
   <!-- Deferred Heavy Third-Party Libraries (Non-Render Blocking) -->
   <!-- SheetJS (XLSX) Library for Excel Import & Export -->
@@ -260,8 +269,8 @@
     })();
   </script>
 
-  <!-- Main ES Module Application Entrypoint (Cache-Busted v4.26.68) -->
-  <script type="module" src="js/app.js?v=4.26.68"></script>
+  <!-- Main ES Module Application Entrypoint (Cache-Busted v4.26.70) -->
+  <script type="module" src="js/app.js?v=4.26.70"></script>
 
   <style>
     @keyframes spin {

@@ -212,9 +212,9 @@ export function renderNavbar() {
           <span class="db-status-text">MySQL Synced</span>
         </div>
 
-        <!-- Light / Dark Theme Switcher (Hidden) -->
-        <button id="btn-theme-toggle" class="nav-icon-btn" type="button" style="display: none !important;" title="Theme (${currentTheme === 'light' ? 'Switch to Dark' : 'Switch to Light'})" aria-label="Toggle Theme">
-          <span class="theme-icon">${currentTheme === 'light' ? '🌙' : '☀️'}</span>
+        <!-- Daylight / Dark Mode Switcher -->
+        <button id="btn-theme-toggle" class="nav-icon-btn" type="button" title="Theme: Switch to ${currentTheme === 'light' ? 'Dark' : 'Daylight / Light'} Mode" aria-label="Toggle Theme" style="display: inline-flex; align-items: center; justify-content: center; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 8px; width: 34px; height: 34px; cursor: pointer; color: #f8fafc; transition: all 0.2s;">
+          <span class="theme-icon" style="font-size: 15px;">${currentTheme === 'light' ? '🌙' : '☀️'}</span>
         </button>
 
         <!-- Notification Bell -->
@@ -275,9 +275,9 @@ export function renderNavbar() {
                   <span class="nav-db-pulse-dot" style="width: 7px; height: 7px;"></span>
                   <span>Cloud Synced</span>
                 </div>
-                <button type="button" id="btn-dropdown-theme-toggle" class="btn btn-ghost btn-xs" style="display: none !important;" title="Toggle Light / Dark Theme">
+                <button type="button" id="btn-dropdown-theme-toggle" class="btn btn-ghost btn-xs" style="display: inline-flex; align-items: center; gap: 5px; color: #cbd5e1; border: 1px solid rgba(255, 255, 255, 0.1); padding: 3px 8px; border-radius: 6px;" title="Toggle Light / Dark Theme">
                   <span class="dropdown-theme-icon">${currentTheme === 'light' ? '🌙' : '☀️'}</span>
-                  <span>${currentTheme === 'light' ? 'Dark' : 'Light'}</span>
+                  <span>${currentTheme === 'light' ? 'Dark Mode' : 'Daylight Mode'}</span>
                 </button>
               </div>
             </div>
@@ -764,7 +764,15 @@ export function initNavbarEvents() {
       localStorage.setItem('al_muslim_theme', isLight ? 'light' : 'dark');
       const icon = themeBtn.querySelector('.theme-icon') || themeBtn;
       icon.innerHTML = isLight ? '🌙' : '☀️';
-      themeBtn.title = isLight ? 'Theme (Switch to Dark)' : 'Theme (Switch to Light)';
+      themeBtn.title = isLight ? 'Theme: Switch to Dark Mode' : 'Theme: Switch to Daylight / Light Mode';
+
+      const dropdownThemeBtn = document.getElementById('btn-dropdown-theme-toggle');
+      if (dropdownThemeBtn) {
+        const dropIcon = dropdownThemeBtn.querySelector('.dropdown-theme-icon') || dropdownThemeBtn;
+        dropIcon.innerHTML = isLight ? '🌙' : '☀️';
+        const text = dropdownThemeBtn.querySelector('span:last-child');
+        if (text) text.textContent = isLight ? 'Dark Mode' : 'Daylight Mode';
+      }
     });
   }
 

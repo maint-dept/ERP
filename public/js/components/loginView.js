@@ -33,61 +33,28 @@ export function renderLoginView(isAdminGateway = false) {
 
   const accentColor = isAdminGateway ? '#10b981' : '#0284c7';
   const accentLight = isAdminGateway ? '#34d399' : '#38bdf8';
-  const cardBorder = isAdminGateway
-    ? '1.5px solid rgba(16, 185, 129, 0.4)'
-    : '1.5px solid rgba(56, 189, 248, 0.35)';
+  const cardBorder = '1px solid rgba(255, 255, 255, 0.1)';
 
   return `
     <style>
-      @keyframes adminGlowPulse {
-        0%, 100% {
-          box-shadow: 0 0 25px rgba(16, 185, 129, 0.35), inset 0 0 15px rgba(16, 185, 129, 0.2);
-          border-color: rgba(16, 185, 129, 0.65);
-        }
-        50% {
-          box-shadow: 0 0 45px rgba(16, 185, 129, 0.6), 0 0 70px rgba(14, 165, 233, 0.3), inset 0 0 25px rgba(16, 185, 129, 0.4);
-          border-color: rgba(52, 211, 153, 0.95);
-        }
-      }
-
-      @keyframes userGlowPulse {
-        0%, 100% {
-          box-shadow: 0 0 25px rgba(2, 132, 199, 0.35), inset 0 0 15px rgba(2, 132, 199, 0.2);
-          border-color: rgba(2, 132, 199, 0.65);
-        }
-        50% {
-          box-shadow: 0 0 45px rgba(2, 132, 199, 0.6), 0 0 70px rgba(56, 189, 248, 0.3), inset 0 0 25px rgba(2, 132, 199, 0.4);
-          border-color: rgba(56, 189, 248, 0.95);
-        }
-      }
-
-      @keyframes pulseDot {
-        0%, 100% { opacity: 1; transform: scale(1); }
-        50% { opacity: 0.4; transform: scale(0.85); }
-      }
-
-      @keyframes shimmerButton {
-        0% { background-position: 0% 50%; }
-        50% { background-position: 100% 50%; }
-        100% { background-position: 0% 50%; }
-      }
-
       .gateway-card {
-        background: rgba(10, 18, 30, 0.88) !important;
-        backdrop-filter: blur(28px) saturate(180%);
-        -webkit-backdrop-filter: blur(28px) saturate(180%);
+        background: rgba(11, 18, 30, 0.92) !important;
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
         border: ${cardBorder} !important;
-        border-radius: 20px !important;
-        box-shadow: 0 25px 70px rgba(0, 0, 0, 0.85), 0 0 45px ${isAdminGateway ? 'rgba(16, 185, 129, 0.16)' : 'rgba(2, 132, 199, 0.18)'}, inset 0 1px 0 rgba(255, 255, 255, 0.12) !important;
-        transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        border-radius: 16px !important;
+        box-shadow: 0 16px 36px -8px rgba(0, 0, 0, 0.7), 0 0 1px 1px rgba(255, 255, 255, 0.08) !important;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
       }
 
       .gateway-card:hover {
-        box-shadow: 0 30px 80px rgba(0, 0, 0, 0.9), 0 0 55px ${isAdminGateway ? 'rgba(16, 185, 129, 0.25)' : 'rgba(2, 132, 199, 0.25)'}, inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+        border-color: rgba(255, 255, 255, 0.15) !important;
+        box-shadow: 0 20px 40px -8px rgba(0, 0, 0, 0.8), 0 0 1px 1px rgba(255, 255, 255, 0.12) !important;
       }
 
       .gateway-icon-box {
-        animation: ${isAdminGateway ? 'adminGlowPulse' : 'userGlowPulse'} 3.5s infinite ease-in-out;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+        border: 1px solid rgba(255, 255, 255, 0.15) !important;
       }
 
       .gateway-input-box {
@@ -97,31 +64,25 @@ export function renderLoginView(isAdminGateway = false) {
         transition: all 0.2s ease;
       }
 
-      .gateway-input-box:focus-within {
-        filter: drop-shadow(0 0 12px ${isAdminGateway ? 'rgba(16, 185, 129, 0.4)' : 'rgba(2, 132, 199, 0.4)'});
-      }
-
       .gateway-input-box input:focus {
         border-color: ${accentColor} !important;
-        box-shadow: 0 0 0 3px ${isAdminGateway ? 'rgba(16, 185, 129, 0.22)' : 'rgba(2, 132, 199, 0.22)'} !important;
+        box-shadow: 0 0 0 2px ${isAdminGateway ? 'rgba(16, 185, 129, 0.25)' : 'rgba(2, 132, 199, 0.25)'} !important;
         background: rgba(15, 23, 42, 0.95) !important;
       }
 
       .gateway-submit-btn {
         background: ${isAdminGateway 
-          ? 'linear-gradient(135deg, #059669 0%, #10b981 45%, #0284c7 100%)' 
-          : 'linear-gradient(135deg, #0284c7 0%, #0369a1 45%, #1d4ed8 100%)'} !important;
-        background-size: 200% 200% !important;
-        animation: shimmerButton 6s ease infinite;
-        transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
-        border: none !important;
-        box-shadow: 0 4px 20px ${isAdminGateway ? 'rgba(5, 150, 105, 0.45)' : 'rgba(2, 132, 199, 0.5)'} !important;
+          ? 'linear-gradient(135deg, #059669 0%, #10b981 100%)' 
+          : 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)'} !important;
+        transition: all 0.2s ease !important;
+        border: 1px solid rgba(255, 255, 255, 0.15) !important;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
       }
 
       .gateway-submit-btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 30px ${isAdminGateway ? 'rgba(16, 185, 129, 0.65)' : 'rgba(2, 132, 199, 0.65)'} !important;
-        filter: brightness(1.1);
+        transform: translateY(-1px);
+        filter: brightness(1.08);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
       }
 
       .gateway-submit-btn:active {
@@ -129,11 +90,11 @@ export function renderLoginView(isAdminGateway = false) {
       }
     </style>
 
-    <div class="login-page-wrapper" style="min-height: 100vh; background: ${pageBg}; background-color: #040911; background-image: radial-gradient(${isAdminGateway ? 'rgba(16, 185, 129, 0.12)' : 'rgba(56, 189, 248, 0.12)'} 1px, transparent 1px); background-size: 28px 28px; display: flex; flex-direction: column; justify-content: space-between; font-family: var(--font-main); color: #fff; position: relative; overflow-x: hidden;">
+    <div class="login-page-wrapper" style="min-height: 100vh; background: ${pageBg}; background-color: #040911; background-image: radial-gradient(${isAdminGateway ? 'rgba(16, 185, 129, 0.08)' : 'rgba(56, 189, 248, 0.08)'} 1px, transparent 1px); background-size: 28px 28px; display: flex; flex-direction: column; justify-content: space-between; font-family: var(--font-main); color: #fff; position: relative; overflow-x: hidden;">
       
-      <!-- Ambient High-Tech Floating Glowing Halos in Background -->
-      <div style="position: absolute; top: -140px; left: 15%; width: 500px; height: 500px; border-radius: 50%; background: radial-gradient(circle, ${isAdminGateway ? 'rgba(16, 185, 129, 0.16)' : 'rgba(2, 132, 199, 0.18)'} 0%, transparent 70%); filter: blur(70px); pointer-events: none; z-index: 0;"></div>
-      <div style="position: absolute; bottom: -100px; right: 12%; width: 550px; height: 550px; border-radius: 50%; background: radial-gradient(circle, ${isAdminGateway ? 'rgba(14, 165, 233, 0.14)' : 'rgba(99, 102, 241, 0.15)'} 0%, transparent 70%); filter: blur(80px); pointer-events: none; z-index: 0;"></div>
+      <!-- Subtle Ambient Background Accents -->
+      <div style="position: absolute; top: -140px; left: 15%; width: 500px; height: 500px; border-radius: 50%; background: radial-gradient(circle, ${isAdminGateway ? 'rgba(16, 185, 129, 0.06)' : 'rgba(2, 132, 199, 0.07)'} 0%, transparent 70%); filter: blur(90px); pointer-events: none; z-index: 0;"></div>
+      <div style="position: absolute; bottom: -100px; right: 12%; width: 550px; height: 550px; border-radius: 50%; background: radial-gradient(circle, ${isAdminGateway ? 'rgba(14, 165, 233, 0.05)' : 'rgba(99, 102, 241, 0.06)'} 0%, transparent 70%); filter: blur(90px); pointer-events: none; z-index: 0;"></div>
 
       <!-- Top Executive Navigation Ribbon -->
       <header style="padding: 16px 28px; display: flex; justify-content: space-between; align-items: center; position: relative; z-index: 10; border-bottom: 1px solid rgba(255, 255, 255, 0.07); background: rgba(5, 10, 18, 0.75); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);">
