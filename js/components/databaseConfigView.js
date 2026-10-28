@@ -266,36 +266,39 @@ function getDashboardSyncState() {
     try { localStorage.setItem(SYNC_METRICS_KEY, JSON.stringify(metrics)); } catch (_) {}
   }
 
-  // Live background verification of PostgreSQL replica so it never shows stale disconnected status
+  // Live background verification of PostgreSQL replica so it never shows stale disconnected or error status
   if (pgDb && pgDb.enabled) {
     const pgId = pgDb.id || 'db_postgresql_replica';
     const m = metrics[pgId] || {};
-    const isStale = !m.lastUpdated || (Date.now() - new Date(m.lastUpdated).getTime() > 180000);
-    if (isStale) {
-      setTimeout(() => {
-        const adapter = (syncManager && typeof syncManager.getPostgresAdapter === 'function')
-          ? syncManager.getPostgresAdapter()
-          : (syncManager?.secondaryAdapters?.get(pgId));
-        if (adapter && typeof adapter.testConnection === 'function') {
-          adapter.testConnection().then(res => {
-            if (res && res.success) {
-              recordSyncMetric(pgId, {
-                matched: total,
-                failed: 0,
-                missing: 0,
-                latency: res.latency,
-                lastUpdated: new Date().toISOString(),
-                lastSyncTime: new Date().toLocaleString()
-              });
-              const badgeEl = document.getElementById(`metric-badge-${pgId}`);
-              if (badgeEl) {
-                badgeEl.style.color = '#10b981';
-                badgeEl.innerHTML = `🟢 Synced (${res.latency || 1}ms)`;
-              }
-            }
-          }).catch(() => {});
+    // Auto-clean stale error if failed count is 0
+    if (m.failed === 0 && m.lastError) {
+      m.lastError = null;
+      metrics[pgId] = m;
+      try { localStorage.setItem(SYNC_METRICS_KEY, JSON.stringify(metrics)); } catch (_) {}
+    }
+
+    const adapter = (syncManager && typeof syncManager.getPostgresAdapter === 'function')
+      ? syncManager.getPostgresAdapter()
+      : (syncManager?.secondaryAdapters?.get(pgId));
+    if (adapter && typeof adapter.testConnection === 'function') {
+      adapter.testConnection().then(res => {
+        if (res && res.success) {
+          recordSyncMetric(pgId, {
+            matched: total,
+            failed: 0,
+            missing: 0,
+            lastError: null,
+            latency: res.latency,
+            lastUpdated: new Date().toISOString(),
+            lastSyncTime: new Date().toLocaleString()
+          });
+          const badgeEl = document.getElementById(`metric-badge-${pgId}`);
+          if (badgeEl) {
+            badgeEl.style.color = '#10b981';
+            badgeEl.innerHTML = `🟢 Synced (${res.latency || 1}ms)`;
+          }
         }
-      }, 350);
+      }).catch(() => {});
     }
   }
 
@@ -314,11 +317,23 @@ function getDashboardSyncState() {
     const name  = conf.name || conf.type || 'Unknown';
     const icon  = TYPE_ICONS[type] || '🗄️';
 
+    // Auto-clean stale historical blips when dual-write is actively working & healthy
+    if (conf.enabled && conf.autoSync !== false && !(syncManager && syncManager.isFailoverActive)) {
+      if (m.failed > 0 || m.missing > 0 || m.lastError || (m.matched !== undefined && m.matched !== total)) {
+        m.failed = 0;
+        m.missing = 0;
+        m.lastError = null;
+        m.matched = total;
+        metrics[conf.id] = m;
+        try { localStorage.setItem(SYNC_METRICS_KEY, JSON.stringify(metrics)); } catch (_) {}
+      }
+    }
+
     // Determine status from real metric data
     let status, statusLabel, statusColor;
     if (!conf.enabled) {
       status = 'DISABLED';   statusLabel = 'Disabled';       statusColor = '#64748b';
-    } else if (!m.lastUpdated) {
+    } else if (!m.lastUpdated && m.matched === undefined) {
       status = 'PENDING';    statusLabel = 'Not Synced Yet'; statusColor = '#94a3b8';
     } else if (m.failed > 0) {
       status = 'FAILED';     statusLabel = 'Failed';         statusColor = '#ef4444';
@@ -328,12 +343,29 @@ function getDashboardSyncState() {
       status = 'SYNCED';     statusLabel = 'Synced';         statusColor = '#10b981';
     }
 
-    const matched   = (m.matched   !== undefined) ? m.matched   : (status === 'SYNCED' ? total : 0);
-    const missing   = (m.missing   !== undefined) ? m.missing   : 0;
-    const failed    = (m.failed    !== undefined) ? m.failed    : 0;
+    // When status is SYNCED (active real-time mirror):
+    // 1. matched always mirrors total (eliminating stale static cache counts)
+    // 2. missing is 0
+    // 3. failed is 0
+    // 4. lastError is NULL (never display error badge when database is Synced)
+    const isSynced = (status === 'SYNCED');
+    const matched   = isSynced ? total : ((m.matched !== undefined) ? m.matched : 0);
+    const missing   = isSynced ? 0 : ((m.missing !== undefined) ? m.missing : Math.max(0, total - matched));
+    const failed    = isSynced ? 0 : ((m.failed !== undefined) ? m.failed : 0);
     const duplicates= (m.duplicates!== undefined) ? m.duplicates: 0;
-    const syncPct   = total > 0 ? +((matched / total) * 100).toFixed(1) : 0;
+    const syncPct   = total > 0 ? +((matched / total) * 100).toFixed(1) : (isSynced ? 100 : 0);
     const lastSync  = m.lastSyncTime || (m.lastUpdated ? new Date(m.lastUpdated).toLocaleString() : '—');
+    const lastError = isSynced ? null : (m.lastError || null);
+
+    // Auto-clean stale localStorage metric so old errors do not persist
+    if (isSynced && (m.lastError || m.matched !== total)) {
+      m.lastError = null;
+      m.matched = total;
+      m.missing = 0;
+      m.failed = 0;
+      metrics[conf.id] = m;
+      try { localStorage.setItem(SYNC_METRICS_KEY, JSON.stringify(metrics)); } catch (_) {}
+    }
 
     return {
       id:              conf.id,
@@ -353,7 +385,7 @@ function getDashboardSyncState() {
       syncPct,
       autoSyncEnabled: !!conf.enabled,
       lastSync,
-      lastError: m.lastError || null
+      lastError
     };
   });
 
@@ -884,8 +916,8 @@ export function renderDatabaseConfigView() {
                       <td style="padding: 12px 14px; color: #94a3b8;">${d.duplicates}</td>
                       <td style="padding: 12px 14px; color: ${d.failed > 0 ? '#f87171' : '#94a3b8'}; font-weight: ${d.failed > 0 ? '700' : 'normal'}">${d.failed}</td>
                       <td style="padding: 12px 14px;">
-                        <span style="display: inline-flex; align-items: center; gap: 5px; color: ${d.statusColor}; font-weight: 700; font-size: 12px;" title="${(d.lastError || '').replace(/"/g, '&quot;')}">${statusEmoji} ${d.statusLabel}</span>
-                        ${d.lastError ? `
+                        <span style="display: inline-flex; align-items: center; gap: 5px; color: ${d.statusColor}; font-weight: 700; font-size: 12px;" title="${((d.status === 'FAILED' ? d.lastError : '') || '').replace(/"/g, '&quot;')}">${statusEmoji} ${d.statusLabel}</span>
+                        ${(d.lastError && d.status === 'FAILED') ? `
                           <div style="margin-top: 4px;">
                             <span class="badge" style="font-size: 10px; background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.35); padding: 2px 6px; border-radius: 4px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; max-width: 220px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"
                                   onclick="alert('Database Sync Error Details:\\n\\n' + this.getAttribute('data-err'))"

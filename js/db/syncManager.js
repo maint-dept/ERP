@@ -967,12 +967,31 @@ class SyncManager {
         if (!res.success) {
           console.warn(`[SyncManager] Fan-out failed for ${adapter.name} on ${collection}: ${res.error}`);
           this._queueRetry(adapter, collection, null, 'SAVE_TABLE', dataObj, res.error);
+          this._recordMetric(id, {
+            failed: 1,
+            lastError: res.error,
+            lastSyncTime: new Date().toLocaleString()
+          });
         } else {
           if (adapter.config) adapter.config.lastSync = new Date().toLocaleString();
-          this._recordMetric(id, { lastSyncTime: new Date().toLocaleString() });
+          const currentTotal = (typeof window !== 'undefined' && window.storage)
+            ? Object.values(window.storage.data || {}).reduce((sum, t) => sum + (Array.isArray(t) ? t.length : (t && typeof t === 'object' ? Object.keys(t).length : 0)), 0)
+            : 0;
+          this._recordMetric(id, {
+            matched: currentTotal || undefined,
+            missing: 0,
+            failed: 0,
+            lastError: null,
+            lastSyncTime: new Date().toLocaleString()
+          });
         }
       }).catch(err => {
         this._queueRetry(adapter, collection, null, 'SAVE_TABLE', dataObj, err.message);
+        this._recordMetric(id, {
+          failed: 1,
+          lastError: err.message,
+          lastSyncTime: new Date().toLocaleString()
+        });
       });
     }
   }
@@ -985,12 +1004,31 @@ class SyncManager {
       adapter.saveRecord(collection, docId, data).then(res => {
         if (!res.success) {
           this._queueRetry(adapter, collection, docId, 'SAVE_RECORD', data, res.error);
+          this._recordMetric(id, {
+            failed: 1,
+            lastError: res.error,
+            lastSyncTime: new Date().toLocaleString()
+          });
         } else {
           if (adapter.config) adapter.config.lastSync = new Date().toLocaleString();
-          this._recordMetric(id, { lastSyncTime: new Date().toLocaleString() });
+          const currentTotal = (typeof window !== 'undefined' && window.storage)
+            ? Object.values(window.storage.data || {}).reduce((sum, t) => sum + (Array.isArray(t) ? t.length : (t && typeof t === 'object' ? Object.keys(t).length : 0)), 0)
+            : 0;
+          this._recordMetric(id, {
+            matched: currentTotal || undefined,
+            missing: 0,
+            failed: 0,
+            lastError: null,
+            lastSyncTime: new Date().toLocaleString()
+          });
         }
       }).catch(err => {
         this._queueRetry(adapter, collection, docId, 'SAVE_RECORD', data, err.message);
+        this._recordMetric(id, {
+          failed: 1,
+          lastError: err.message,
+          lastSyncTime: new Date().toLocaleString()
+        });
       });
     }
   }

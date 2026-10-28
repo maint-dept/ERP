@@ -531,7 +531,7 @@ export function initNavbarEvents() {
       const appContainer = document.querySelector('.app-container');
       if (!appContainer) return;
 
-      const isMobile = window.innerWidth <= 992;
+      const isMobile = window.innerWidth <= 768;
       if (isMobile) {
         appContainer.classList.toggle('sidebar-mobile-open');
       } else {

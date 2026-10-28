@@ -222,29 +222,29 @@ export function renderSidebar() {
   const isNoAccessUser = user?.role === 'NO_ACCESS' || user?.roleId === 'role-no-access' || (!hasAnyAllowedSections && !isAdmin && !isSuperAdmin);
   const isMini = (typeof localStorage !== 'undefined' && 
     (localStorage.getItem('al_muslim_sidebar_mini') === 'true' || localStorage.getItem('al_muslim_sidebar_hidden') === 'true') && 
-    (typeof window !== 'undefined' && window.innerWidth > 992));
+    (typeof window !== 'undefined' && window.innerWidth > 768));
 
   let html = `
     <aside class="app-sidebar" id="app-sidebar-root">
       <!-- Fixed Sidebar Brand Header -->
-      <div class="sidebar-header" style="padding: 14px 16px 12px 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255, 255, 255, 0.07); background: rgba(9, 14, 26, 0.95); flex-shrink: 0; box-sizing: border-box; width: 100%;">
-        <div class="sidebar-brand-wrapper" style="display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1; overflow: visible;">
-          <div class="brand-logo-badge" title="Al-Muslim Group Maintenance Department ERP" style="width: 38px; height: 38px; border-radius: 10px; background: linear-gradient(135deg, #0284c7 0%, #0369a1 50%, #1e3a8a 100%); display: flex; align-items: center; justify-content: center; font-size: 19px; flex-shrink: 0; box-shadow: 0 0 16px rgba(2, 132, 199, 0.4); border: 1px solid rgba(56, 189, 248, 0.4);">🔧</div>
-          <div class="brand-text-container" style="min-width: 0; flex: 1; display: flex; flex-direction: column; justify-content: center; overflow: visible;">
-            <div class="brand-title-row" style="display: flex; align-items: center; justify-content: space-between; gap: 6px; min-width: 0; width: 100%;">
-              <span class="brand-text-title" style="font-weight: 800; font-size: 13.5px; letter-spacing: 0.5px; color: #ffffff; line-height: 1.2; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6); white-space: nowrap;">AL-MUSLIM GROUP</span>
-              <span class="brand-status-pill" title="Live System Active" style="display: inline-flex; align-items: center; gap: 4px; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); border-radius: 9999px; padding: 1.5px 7px; font-size: 8.5px; font-weight: 700; color: #34d399; letter-spacing: 0.5px; flex-shrink: 0; white-space: nowrap;">
-                <span class="brand-status-dot" style="width: 5px; height: 5px; border-radius: 50%; background: #10b981; box-shadow: 0 0 6px #10b981; display: inline-block;"></span>Live
+      <div class="sidebar-header" style="padding: 14px 14px 12px 14px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255, 255, 255, 0.08); background: #0c1222; flex-shrink: 0; box-sizing: border-box; width: 100%; gap: 10px;">
+        <div class="sidebar-brand-wrapper" style="display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1;">
+          <div class="brand-logo-badge" title="Al-Muslim Group Maintenance Department ERP" style="width: 36px; height: 36px; border-radius: 8px; background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; border: 1px solid rgba(56, 189, 248, 0.35);">🔧</div>
+          <div class="brand-text-container" style="min-width: 0; flex: 1; display: flex; flex-direction: column;">
+            <div style="display: flex; align-items: center; gap: 6px; min-width: 0;">
+              <span class="brand-text-title" style="font-weight: 800; font-size: 13.5px; color: #ffffff; letter-spacing: 0.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-transform: uppercase;">AL-MUSLIM GROUP</span>
+              <span class="brand-status-pill" title="Live System Active" style="display: inline-flex; align-items: center; gap: 3.5px; background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.35); border-radius: 9999px; padding: 1.5px 6px; font-size: 8.5px; font-weight: 700; color: #34d399; flex-shrink: 0;">
+                <span class="brand-status-dot" style="width: 4.5px; height: 4.5px; border-radius: 50%; background: #10b981; display: inline-block;"></span>Live
               </span>
             </div>
-            <div class="brand-text-sub" style="font-size: 8.5px; color: #38bdf8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; margin-top: 3px; line-height: 1.2; white-space: nowrap;" title="Industrial Machine & Assets System">
+            <div class="brand-text-sub" style="font-size: 9px; color: #38bdf8; font-weight: 700; margin-top: 2px; white-space: nowrap; letter-spacing: 0.5px; text-transform: uppercase;" title="Industrial Machine & Assets System">
               INDUSTRIAL MACHINE &amp; ASSETS SYSTEM
             </div>
           </div>
         </div>
         <!-- Desktop Collapse / Expand Toggle Button (< / >) -->
-        <button id="btn-sidebar-collapse" class="btn-sidebar-collapse" aria-label="Toggle Sidebar Compact Mode" title="${isMini ? 'Expand Sidebar (>)' : 'Collapse Sidebar (<)'}">
-          <svg class="sidebar-collapse-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <button id="btn-sidebar-collapse" class="btn-sidebar-collapse" aria-label="Toggle Sidebar Compact Mode" title="${isMini ? 'Expand Sidebar (>)' : 'Collapse Sidebar (<)'}" style="margin-left: auto;">
+          <svg class="sidebar-collapse-chevron" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="15 18 9 12 15 6"></polyline>
           </svg>
         </button>
