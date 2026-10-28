@@ -70,7 +70,7 @@ export function renderSidebar() {
     return `
       <div class="nav-group" data-group-id="${group.id}">
         <!-- Group Header -->
-        <div class="nav-group-header ${hasActiveChild ? 'parent-active' : ''}" data-group-toggle="${group.id}">
+        <div class="nav-group-header ${hasActiveChild ? 'parent-active' : ''}" data-group-toggle="${group.id}" title="${group.label}">
           <div class="nav-group-title">
             <span class="nav-icon-box">${group.icon}</span>
             <span>${group.label}</span>
@@ -220,6 +220,9 @@ export function renderSidebar() {
                                 (isReportsAllowed && reportItems.length > 0) ||
                                 (allowedAdminItems.length > 0);
   const isNoAccessUser = user?.role === 'NO_ACCESS' || user?.roleId === 'role-no-access' || (!hasAnyAllowedSections && !isAdmin && !isSuperAdmin);
+  const isMini = (typeof localStorage !== 'undefined' && 
+    (localStorage.getItem('al_muslim_sidebar_mini') === 'true' || localStorage.getItem('al_muslim_sidebar_hidden') === 'true') && 
+    (typeof window !== 'undefined' && window.innerWidth > 992));
 
   let html = `
     <aside class="app-sidebar" id="app-sidebar-root">
@@ -239,6 +242,12 @@ export function renderSidebar() {
             </div>
           </div>
         </div>
+        <!-- Desktop Collapse / Expand Toggle Button (< / >) -->
+        <button id="btn-sidebar-collapse" class="btn-sidebar-collapse" aria-label="Toggle Sidebar Compact Mode" title="${isMini ? 'Expand Sidebar (>)' : 'Collapse Sidebar (<)'}">
+          <svg class="sidebar-collapse-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+        </button>
         <button id="btn-sidebar-mobile-close" class="btn-sidebar-mobile-close" aria-label="Close navigation" title="Close navigation menu">✕</button>
       </div>
 
@@ -596,7 +605,61 @@ export function initSidebarEvents() {
     document.addEventListener('keydown', handleSearchHotkeys);
   }
 
-  // 4. Mobile sidebar close button
+  // 4. Desktop Sidebar Collapse / Expand Toggle (< / >)
+  const desktopCollapseBtn = document.getElementById('btn-sidebar-collapse');
+  if (desktopCollapseBtn && !desktopCollapseBtn._hasCollapseListener) {
+    desktopCollapseBtn._hasCollapseListener = true;
+    desktopCollapseBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const appContainer = document.querySelector('.app-container');
+      if (!appContainer) return;
+
+      const isMini = appContainer.classList.toggle('sidebar-mini');
+      appContainer.classList.toggle('sidebar-hidden', isMini);
+      try {
+        localStorage.setItem('al_muslim_sidebar_mini', isMini ? 'true' : 'false');
+        localStorage.setItem('al_muslim_sidebar_hidden', isMini ? 'true' : 'false');
+      } catch (_) {}
+
+      desktopCollapseBtn.setAttribute('title', isMini ? 'Expand Sidebar (>)' : 'Collapse Sidebar (<)');
+      const topToggleBtn = document.getElementById('btn-sidebar-toggle');
+      if (topToggleBtn) {
+        topToggleBtn.setAttribute('title', isMini ? 'Expand Sidebar' : 'Collapse Sidebar');
+      }
+
+      setTimeout(() => {
+        window.dispatchEvent(new Event('resize'));
+      }, 300);
+    });
+  }
+
+  // 4.1 Mini mode search box click auto-expands
+  const searchBox = sidebar.querySelector('.sidebar-search-box');
+  if (searchBox && !searchBox._hasMiniExpandListener) {
+    searchBox._hasMiniExpandListener = true;
+    searchBox.addEventListener('click', () => {
+      const appContainer = document.querySelector('.app-container');
+      if (appContainer && appContainer.classList.contains('sidebar-mini')) {
+        appContainer.classList.remove('sidebar-mini');
+        appContainer.classList.remove('sidebar-hidden');
+        try {
+          localStorage.setItem('al_muslim_sidebar_mini', 'false');
+          localStorage.setItem('al_muslim_sidebar_hidden', 'false');
+        } catch (_) {}
+        if (desktopCollapseBtn) {
+          desktopCollapseBtn.setAttribute('title', 'Collapse Sidebar (<)');
+        }
+        setTimeout(() => {
+          const input = document.getElementById('sidebar-menu-search');
+          if (input) input.focus();
+          window.dispatchEvent(new Event('resize'));
+        }, 300);
+      }
+    });
+  }
+
+  // 5. Mobile sidebar close button
   const mobileCloseBtn = document.getElementById('btn-sidebar-mobile-close');
   if (mobileCloseBtn) {
     mobileCloseBtn.addEventListener('click', () => {

@@ -469,11 +469,17 @@ export function initNavbarEvents() {
       if (isMobile) {
         appContainer.classList.toggle('sidebar-mobile-open');
       } else {
-        const isHidden = appContainer.classList.toggle('sidebar-hidden');
+        const isMini = appContainer.classList.toggle('sidebar-mini');
+        appContainer.classList.toggle('sidebar-hidden', isMini);
         try {
-          localStorage.setItem('al_muslim_sidebar_hidden', isHidden ? 'true' : 'false');
+          localStorage.setItem('al_muslim_sidebar_mini', isMini ? 'true' : 'false');
+          localStorage.setItem('al_muslim_sidebar_hidden', isMini ? 'true' : 'false');
         } catch (_) {}
-        sidebarToggleBtn.setAttribute('title', isHidden ? 'Expand Sidebar' : 'Collapse Sidebar');
+        sidebarToggleBtn.setAttribute('title', isMini ? 'Expand Sidebar' : 'Collapse Sidebar');
+        const collapseBtn = document.getElementById('btn-sidebar-collapse');
+        if (collapseBtn) {
+          collapseBtn.setAttribute('title', isMini ? 'Expand Sidebar (>)' : 'Collapse Sidebar (<)');
+        }
         setTimeout(() => {
           window.dispatchEvent(new Event('resize'));
         }, 300);

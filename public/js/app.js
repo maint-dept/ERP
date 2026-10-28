@@ -6,11 +6,11 @@
 
 import { state } from './state.js';
 import { storage } from './db/storage.js';
-import { authService } from './services/authService.js?v=4.26.80';
-import { renderNavbar, initNavbarEvents } from './components/navbar.js?v=4.26.80';
-import { renderSidebar, initSidebarEvents, updateSidebarActiveState } from './components/sidebar.js?v=4.26.52';
+import { authService } from './services/authService.js?v=4.26.85';
+import { renderNavbar, initNavbarEvents } from './components/navbar.js?v=4.26.85';
+import { renderSidebar, initSidebarEvents, updateSidebarActiveState } from './components/sidebar.js?v=4.26.85';
 import { renderHomepageView, initHomepageEvents } from './components/homepageView.js?v=4.26.52';
-import { renderLoginView, initLoginViewEvents } from './components/loginView.js?v=4.26.80';
+import { renderLoginView, initLoginViewEvents } from './components/loginView.js?v=4.26.85';
 import { renderDashboard, initDashboardEvents } from './components/dashboard.js?v=4.26.52';
 import { renderMachineModal, initMachineModalEvents } from './components/machineModal.js?v=4.26.50';
 import { renderMachineDetails, initMachineDetailsEvents } from './components/machineDetails.js?v=4.26.50';
@@ -507,10 +507,12 @@ class ERPApplication {
 
       // 3. Authenticated ERP Shell Layout (Sidebar + Navbar + View)
       const savedState = captureAppState();
-      const isSidebarHidden = (typeof localStorage !== 'undefined' && localStorage.getItem('al_muslim_sidebar_hidden') === 'true' && (typeof window !== 'undefined' && window.innerWidth > 992));
+      const isSidebarMini = (typeof localStorage !== 'undefined' && 
+        (localStorage.getItem('al_muslim_sidebar_mini') === 'true' || localStorage.getItem('al_muslim_sidebar_hidden') === 'true') && 
+        (typeof window !== 'undefined' && window.innerWidth > 992));
 
       root.innerHTML = `
-        <div class="app-container${isSidebarHidden ? ' sidebar-hidden' : ''}">
+        <div class="app-container${isSidebarMini ? ' sidebar-mini sidebar-hidden' : ''}">
           <!-- Sidebar Mobile Backdrop -->
           <div id="sidebar-backdrop" class="sidebar-backdrop"></div>
 
@@ -1281,8 +1283,8 @@ class ERPApplication {
 
     // 2.1 Sidebar Toggle & Mobile Drawer Handlers
     document.addEventListener('click', (e) => {
-      const toggleBtn = e.target.closest('#btn-sidebar-toggle, #btn-mobile-sidebar-toggle, .btn-sidebar-toggle');
-      if (toggleBtn && !toggleBtn._hasToggleListener) {
+      const toggleBtn = e.target.closest('#btn-sidebar-toggle, #btn-sidebar-collapse, #btn-mobile-sidebar-toggle, .btn-sidebar-toggle');
+      if (toggleBtn && !toggleBtn._hasToggleListener && !toggleBtn._hasCollapseListener) {
         e.preventDefault();
         e.stopPropagation();
         const appContainer = document.querySelector('.app-container');
@@ -1291,11 +1293,20 @@ class ERPApplication {
           if (isMobile) {
             appContainer.classList.toggle('sidebar-mobile-open');
           } else {
-            const isHidden = appContainer.classList.toggle('sidebar-hidden');
+            const isMini = appContainer.classList.toggle('sidebar-mini');
+            appContainer.classList.toggle('sidebar-hidden', isMini);
             try {
-              localStorage.setItem('al_muslim_sidebar_hidden', isHidden ? 'true' : 'false');
+              localStorage.setItem('al_muslim_sidebar_mini', isMini ? 'true' : 'false');
+              localStorage.setItem('al_muslim_sidebar_hidden', isMini ? 'true' : 'false');
             } catch (_) {}
-            toggleBtn.setAttribute('title', isHidden ? 'Expand Sidebar' : 'Collapse Sidebar');
+            const collapseBtn = document.getElementById('btn-sidebar-collapse');
+            if (collapseBtn) {
+              collapseBtn.setAttribute('title', isMini ? 'Expand Sidebar (>)' : 'Collapse Sidebar (<)');
+            }
+            const topToggleBtn = document.getElementById('btn-sidebar-toggle');
+            if (topToggleBtn) {
+              topToggleBtn.setAttribute('title', isMini ? 'Expand Sidebar' : 'Collapse Sidebar');
+            }
             setTimeout(() => {
               window.dispatchEvent(new Event('resize'));
             }, 300);
