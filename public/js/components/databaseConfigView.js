@@ -605,8 +605,28 @@ export function renderDatabaseConfigView() {
 
       </div>
 
+      ${syncManager.isRecoveryPending ? `
+      <!-- STRICT SAFETY RULE 3: ADMIN CONFIRMATION FOR CONTROLLED REVERSE SYNC -->
+      <div style="background: rgba(245, 158, 11, 0.16); border: 2px solid #f59e0b; border-radius: 12px; padding: 20px 24px; margin-bottom: 24px; box-shadow: 0 10px 30px rgba(245, 158, 11, 0.22); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+        <div style="display: flex; align-items: center; gap: 14px;">
+          <span style="font-size: 28px; line-height: 1;">🟡</span>
+          <div>
+            <h3 style="font-size: 15.5px; font-weight: 800; color: #fde68a; margin: 0; font-family: 'JetBrains Mono', monospace; letter-spacing: 0.3px;">
+              MySQL is back online. [${syncManager.recoveryPendingCount || syncManager.failoverModifiedRecords.size}] pending records found in Failover Queue.
+            </h3>
+            <p style="font-size: 12px; color: #e2e8f0; margin: 5px 0 0;">
+              <strong>Controlled Reverse Sync (Rule 1 &amp; 3):</strong> Automatic table overwrite is paused. Click to verify timestamps and execute Row-Level Upsert to MySQL. Older data will never overwrite newer data.
+            </p>
+          </div>
+        </div>
+        <button id="btn-admin-confirm-recovery" class="btn btn-warning" style="font-weight: 800; font-size: 13px; padding: 10px 22px; background: #f59e0b; color: #0f172a; border: none; border-radius: 6px; cursor: pointer; box-shadow: 0 4px 16px rgba(245, 158, 11, 0.45); display: inline-flex; align-items: center; gap: 8px;">
+          <span>⚡</span> Click to Verify &amp; Sync Delta Records
+        </button>
+      </div>
+      ` : ''}
+
       <!-- ENTERPRISE AUTOMATIC FAILOVER & RECOVERY STATUS -->
-      <div style="background: #090e1a; border: 1.5px solid ${syncManager.isFailoverActive ? 'rgba(245, 158, 11, 0.5)' : 'rgba(16, 185, 129, 0.35)'}; border-radius: 12px; padding: 20px 24px; margin-bottom: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+      <div style="background: #090e1a; border: 1.5px solid ${syncManager.isRecoveryPending ? 'rgba(245, 158, 11, 0.7)' : (syncManager.isFailoverActive ? 'rgba(245, 158, 11, 0.5)' : 'rgba(16, 185, 129, 0.35)')}; border-radius: 12px; padding: 20px 24px; margin-bottom: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
           <div style="display: flex; align-items: center; gap: 10px;">
             <span style="font-size: 20px;">🛡️</span>
@@ -615,17 +635,17 @@ export function renderDatabaseConfigView() {
                 ENTERPRISE AUTOMATIC FAILOVER &amp; RECOVERY ENGINE
               </h2>
               <p style="font-size: 11.5px; color: var(--text-secondary); margin: 3px 0 0;">
-                Zero-Downtime HA: Automatic query routing to PostgreSQL replica if MySQL fails, with background auto-recovery.
+                Production-Safe HA: Row-Level Delta Upsert (PostgreSQL -> MySQL), Read-Failover, Controlled Reverse Sync &amp; Write Protection.
               </p>
             </div>
           </div>
           <div style="display: flex; align-items: center; gap: 8px;">
-            <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 700; padding: 4px 12px; border-radius: 20px; ${syncManager.isFailoverActive ? 'background: rgba(245, 158, 11, 0.15); border: 1px solid #f59e0b; color: #fbbf24;' : 'background: rgba(16, 185, 129, 0.15); border: 1px solid #10b981; color: #34d399;'}">
-              <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: ${syncManager.isFailoverActive ? '#f59e0b' : '#10b981'}; box-shadow: 0 0 8px ${syncManager.isFailoverActive ? '#f59e0b' : '#10b981'};"></span>
-              ${syncManager.isFailoverActive ? '🐘 FAILOVER MODE ACTIVE (PostgreSQL)' : '🐬 PRIMARY MODE (MySQL Active)'}
+            <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 700; padding: 4px 12px; border-radius: 20px; ${syncManager.isRecoveryPending ? 'background: rgba(245, 158, 11, 0.25); border: 1.5px solid #f59e0b; color: #fde68a;' : (syncManager.isFailoverActive ? 'background: rgba(245, 158, 11, 0.15); border: 1px solid #f59e0b; color: #fbbf24;' : 'background: rgba(16, 185, 129, 0.15); border: 1px solid #10b981; color: #34d399;')}">
+              <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: ${syncManager.isRecoveryPending ? '#f59e0b' : (syncManager.isFailoverActive ? '#f59e0b' : '#10b981')}; box-shadow: 0 0 8px ${syncManager.isRecoveryPending || syncManager.isFailoverActive ? '#f59e0b' : '#10b981'};"></span>
+              ${syncManager.isRecoveryPending ? `🟡 RECOVERY PENDING (${syncManager.recoveryPendingCount || syncManager.failoverModifiedRecords.size} Records)` : (syncManager.isFailoverActive ? '🐘 FAILOVER MODE ACTIVE (PostgreSQL)' : '🐬 PRIMARY MODE (MySQL Active)')}
             </span>
             <button id="btn-trigger-recovery-check" class="btn btn-secondary btn-sm" style="font-size: 11.5px; padding: 4px 10px;">
-              🔄 Test &amp; Check Recovery
+              🔄 Probe MySQL &amp; Verify
             </button>
           </div>
         </div>
@@ -633,26 +653,26 @@ export function renderDatabaseConfigView() {
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; font-size: 12px; font-family: 'JetBrains Mono', monospace;">
           <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 12px 14px;">
             <div style="color: #94a3b8; font-size: 11px; margin-bottom: 4px;">READ / WRITE ROUTING</div>
-            <div style="color: ${syncManager.isFailoverActive ? '#fbbf24' : '#38bdf8'}; font-weight: 700; font-size: 13px;">
-              ${syncManager.isFailoverActive ? '🐘 Routed to PostgreSQL Mirror' : '🐬 Routed to MySQL Primary (Authoritative)'}
+            <div style="color: ${syncManager.isRecoveryPending ? '#fde68a' : (syncManager.isFailoverActive ? '#fbbf24' : '#38bdf8')}; font-weight: 700; font-size: 13px;">
+              ${syncManager.isRecoveryPending ? '🟡 MySQL Online (Awaiting Sync)' : (syncManager.isFailoverActive ? '🐘 Routed to PostgreSQL Mirror' : '🐬 Routed to MySQL Primary (Authoritative)')}
             </div>
           </div>
           <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 12px 14px;">
-            <div style="color: #94a3b8; font-size: 11px; margin-bottom: 4px;">FALLBACK QUEUE &amp; MODIFIED TABLES</div>
-            <div style="color: ${syncManager.failoverModifiedTables && syncManager.failoverModifiedTables.size > 0 ? '#fbbf24' : '#34d399'}; font-weight: 700; font-size: 13px;">
-              ${syncManager.failoverModifiedTables && syncManager.failoverModifiedTables.size > 0 ? `${syncManager.failoverModifiedTables.size} Table(s) Pending Sync` : '0 Pending (Parity 100%)'}
+            <div style="color: #94a3b8; font-size: 11px; margin-bottom: 4px;">FAILOVER QUEUE &amp; DELTA RECORDS</div>
+            <div style="color: ${(syncManager.recoveryPendingCount || syncManager.failoverModifiedRecords.size) > 0 ? '#fbbf24' : '#34d399'}; font-weight: 700; font-size: 13px;">
+              ${(syncManager.recoveryPendingCount || syncManager.failoverModifiedRecords.size) > 0 ? `${syncManager.recoveryPendingCount || syncManager.failoverModifiedRecords.size} Delta Record(s) Pending` : '0 Pending (100% Parity)'}
             </div>
           </div>
           <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 12px 14px;">
-            <div style="color: #94a3b8; font-size: 11px; margin-bottom: 4px;">AUTO-RECOVERY ENGINE</div>
+            <div style="color: #94a3b8; font-size: 11px; margin-bottom: 4px;">REVERSE SYNC SAFETY POLICY</div>
             <div style="color: #34d399; font-weight: 700; font-size: 13px;">
-              🛰️ Background Probe Active (7s)
+              🛡️ Row-Level Upsert (No Full-Table Wipe)
             </div>
           </div>
           <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 12px 14px;">
-            <div style="color: #94a3b8; font-size: 11px; margin-bottom: 4px;">DATA PROTECTION POLICY</div>
+            <div style="color: #94a3b8; font-size: 11px; margin-bottom: 4px;">SPLIT-BRAIN &amp; WRITE PROTECTION</div>
             <div style="color: #38bdf8; font-weight: 700; font-size: 13px;">
-              🔒 100% Zero-Loss Reverse-Sync
+              🔒 Timestamp-Verified Non-Destructive
             </div>
           </div>
         </div>
@@ -1609,16 +1629,46 @@ export function initDatabaseConfigEvents() {
     notificationService.toast('Sync topology refreshed from live config.');
   });
 
+  // Button: Admin Confirmation for Controlled Reverse Sync (Rule 1 & Rule 3)
+  document.getElementById('btn-admin-confirm-recovery')?.addEventListener('click', async () => {
+    const btn = document.getElementById('btn-admin-confirm-recovery');
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '⏳ Verifying & Syncing Row-Level Deltas...';
+    }
+    try {
+      notificationService.info('Starting Row-Level Delta Reverse Sync (PostgreSQL -> MySQL)...');
+      const res = await syncManager.executeControlledRecovery();
+      if (res && res.success) {
+        notificationService.success(`✅ Controlled Recovery Complete: ${res.syncedCount} delta record(s) safely synced to MySQL.`);
+        reRenderView();
+      } else {
+        notificationService.error(`Reverse Sync Failed: ${res?.error || 'Unknown error'}`);
+      }
+    } catch (err) {
+      notificationService.error(`Recovery execution error: ${err.message}`);
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '⚡ Click to Verify & Sync Delta Records';
+      }
+    }
+  });
+
   document.getElementById('btn-trigger-recovery-check')?.addEventListener('click', async () => {
     const btn = document.getElementById('btn-trigger-recovery-check');
     if (btn) btn.disabled = true;
     try {
       notificationService.info('Probing MySQL Primary connectivity...');
-      const ping = await syncManager.primaryAdapter.ping();
+      const pingFn = typeof syncManager.primaryAdapter.ping === 'function'
+        ? syncManager.primaryAdapter.ping.bind(syncManager.primaryAdapter)
+        : syncManager.primaryAdapter.testConnection.bind(syncManager.primaryAdapter);
+      const ping = await pingFn();
       if (ping && ping.success) {
-        if (syncManager.isFailoverActive) {
-          notificationService.info('🐬 MySQL Primary is online! Initiating reverse-sync & auto-recovery...');
-          await syncManager.performAutoRecovery();
+        if (syncManager.isFailoverActive || syncManager.isRecoveryPending) {
+          const pendingCount = await syncManager.getPendingRecoveryCount();
+          syncManager.setRecoveryPending(true, pendingCount);
+          notificationService.warning(`MySQL Primary is online! ${pendingCount} delta records found in Failover Queue. Controlled reverse sync ready.`);
           reRenderView();
         } else {
           notificationService.success('🐬 MySQL Primary is 100% online & healthy. Parity confirmed.');

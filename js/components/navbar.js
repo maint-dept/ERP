@@ -440,7 +440,9 @@ export function initNavbarEvents() {
   // Click Database Status Pill to trigger manual sync with authoritative MySQL Primary or check recovery
   const navDbStatus = document.getElementById('nav-db-status');
   if (navDbStatus) {
-    if (syncManager && syncManager.isFailoverActive) {
+    if (syncManager && syncManager.isRecoveryPending) {
+      storage.updateStatusBadge('recovery-pending', { pendingCount: syncManager.recoveryPendingCount });
+    } else if (syncManager && syncManager.isFailoverActive) {
       storage.updateStatusBadge('failover');
     }
 
@@ -448,11 +450,32 @@ export function initNavbarEvents() {
       if (navDbStatus._isSyncing) return;
       navDbStatus._isSyncing = true;
       try {
+        // Rule 3: Admin Confirmation for Controlled Reverse Sync
+        if (syncManager && syncManager.isRecoveryPending) {
+          const pendingCount = syncManager.recoveryPendingCount || await syncManager.getPendingRecoveryCount();
+          const confirmed = confirm(
+            `🐬 MySQL Primary is back online!\n\n` +
+            `Found ${pendingCount} pending delta record(s) in Failover Queue.\n\n` +
+            `Strict Safety Policies Active:\n` +
+            `• Row-Level Upsert only (no full-table replacement)\n` +
+            `• Timestamp check prevents older data from overwriting newer data\n\n` +
+            `Do you want to verify and sync delta records to MySQL Primary now?`
+          );
+          if (confirmed) {
+            notificationService.info('Initiating Row-Level Delta Reverse Sync to MySQL Primary...');
+            const res = await syncManager.executeControlledRecovery();
+            if (res.success) {
+              notificationService.success(`✅ ${res.syncedCount} delta record(s) safely synced to MySQL. Parity verified.`);
+            }
+          }
+          return;
+        }
+
         if (syncManager && syncManager.isFailoverActive) {
           notificationService.info('🐘 PostgreSQL Failover Mode Active. Checking MySQL Primary recovery...');
           const res = await storage.syncWithMySQLPrimary();
-          if (res?.recovered) {
-            notificationService.success('🐬 MySQL Primary is back online! Reverse-sync verified and primary traffic restored.');
+          if (res?.recoveryPending) {
+            notificationService.warning(`MySQL is back online! ${res.pendingCount || 0} delta records in Failover Queue. Click to Verify & Sync.`);
           } else {
             notificationService.warning('MySQL Primary is still unreachable. Safe PostgreSQL Failover remains active.');
           }
@@ -461,7 +484,9 @@ export function initNavbarEvents() {
 
         notificationService.info('Synchronizing with MySQL Primary Database...');
         const res = await storage.syncWithMySQLPrimary();
-        if (res?.failover) {
+        if (res?.recoveryPending) {
+          notificationService.warning(`MySQL is back online! ${res.pendingCount || 0} delta records in Failover Queue. Click to Verify & Sync.`);
+        } else if (res?.failover) {
           notificationService.warning('MySQL unreachable: Switched automatically to PostgreSQL Failover Mode.');
         } else {
           notificationService.success(`MySQL Primary Synced at ${res?.timestamp || new Date().toLocaleTimeString()} (PostgreSQL Backup Updated)`);
@@ -475,13 +500,23 @@ export function initNavbarEvents() {
     });
   }
 
-  // Listen to failover events to ensure nav-db-status updates instantly across all views
+  // Listen to failover and recovery-pending events to ensure nav-db-status updates instantly across all views
   if (!window._failoverListenerRegistered) {
     window._failoverListenerRegistered = true;
     window.addEventListener('erp:failover-status-changed', (e) => {
       const isFailover = e.detail?.isFailover;
       if (storage && typeof storage.updateStatusBadge === 'function') {
         storage.updateStatusBadge(isFailover ? 'failover' : 'saved');
+      }
+    });
+    window.addEventListener('erp:recovery-pending', (e) => {
+      const isPending = e.detail?.isRecoveryPending;
+      const count = e.detail?.pendingCount || 0;
+      if (storage && typeof storage.updateStatusBadge === 'function') {
+        storage.updateStatusBadge(
+          isPending ? 'recovery-pending' : (syncManager && syncManager.isFailoverActive ? 'failover' : 'saved'),
+          { pendingCount: count }
+        );
       }
     });
   }

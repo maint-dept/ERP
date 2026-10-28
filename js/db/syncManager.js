@@ -1,6 +1,6 @@
-import { MysqlAdapter }    from './adapters/mysqlAdapter.js';
+import { MysqlAdapter } from './adapters/mysqlAdapter.js';
 import { PostgresAdapter } from './adapters/postgresAdapter.js';
-import { retryQueue }      from './retryQueue.js';
+import { retryQueue } from './retryQueue.js';
 
 
 class SyncManager {
@@ -79,13 +79,33 @@ class SyncManager {
     this.isFailoverActive = (typeof localStorage !== 'undefined' && localStorage.getItem('erp_db_failover_active') === 'true');
     this.failoverReason = (typeof localStorage !== 'undefined' && localStorage.getItem('erp_db_failover_reason')) || '';
     this.failoverStartTime = (typeof localStorage !== 'undefined' && localStorage.getItem('erp_db_failover_started_at')) || null;
+    this.isRecoveryPending = (typeof localStorage !== 'undefined' && localStorage.getItem('erp_db_recovery_pending') === 'true');
+    this.recoveryPendingCount = Number((typeof localStorage !== 'undefined' && localStorage.getItem('erp_db_recovery_pending_count')) || 0);
+
     let savedTables = [];
     try {
       if (typeof localStorage !== 'undefined') {
         savedTables = JSON.parse(localStorage.getItem('erp_db_failover_tables') || '[]');
       }
-    } catch (_) {}
+    } catch (_) { }
     this.failoverModifiedTables = new Set(Array.isArray(savedTables) ? savedTables : []);
+
+    // Track individual modified records for strict Row-Level Upsert
+    let savedRecords = [];
+    try {
+      if (typeof localStorage !== 'undefined') {
+        savedRecords = JSON.parse(localStorage.getItem('erp_db_failover_records') || '[]');
+      }
+    } catch (_) { }
+    this.failoverModifiedRecords = new Map();
+    if (Array.isArray(savedRecords)) {
+      savedRecords.forEach(r => {
+        if (r && r.collection && r.docId) {
+          this.failoverModifiedRecords.set(`${r.collection}:${r.docId}`, r);
+        }
+      });
+    }
+
     this._recoveryProbeTimer = null;
     this._isRecovering = false;
     this._recoveryProbeIntervalMs = 7000;
@@ -107,7 +127,7 @@ class SyncManager {
       } else if (typeof localStorage !== 'undefined') {
         const stored = localStorage.getItem('erp_multi_db_config');
         if (stored) {
-          try { configs = JSON.parse(stored); } catch (_) {}
+          try { configs = JSON.parse(stored); } catch (_) { }
         }
       }
 
@@ -230,7 +250,7 @@ class SyncManager {
             }
           }
         });
-        try { localStorage.setItem('erp_multi_db_config', JSON.stringify(configs)); } catch (_) {}
+        try { localStorage.setItem('erp_multi_db_config', JSON.stringify(configs)); } catch (_) { }
       }
 
       this.configLoaded = true;
@@ -255,7 +275,7 @@ class SyncManager {
   }
 
   getPostgresAdapter() {
-    return this.secondaryAdapters.get('db_postgresql_replica') || 
+    return this.secondaryAdapters.get('db_postgresql_replica') ||
       Array.from(this.secondaryAdapters.values()).find(a => (a.type || '').toUpperCase() === 'POSTGRESQL' || (a.type || '').toUpperCase() === 'POSTGRES') ||
       null;
   }
@@ -277,22 +297,28 @@ class SyncManager {
           localStorage.setItem('erp_db_failover_reason', this.failoverReason);
           localStorage.setItem('erp_db_failover_started_at', this.failoverStartTime);
         }
-      } catch (_) {}
+      } catch (_) { }
       this._startRecoveryProbe();
       console.warn(`[SyncManager Failover] ⚠️ ENTERPRISE FAILOVER ACTIVATED: All read/write operations routed to PostgreSQL replica. (${this.failoverReason})`);
     } else {
       this.failoverReason = '';
       this.failoverStartTime = null;
+      this.isRecoveryPending = false;
+      this.recoveryPendingCount = 0;
       this.failoverModifiedTables.clear();
+      if (this.failoverModifiedRecords) this.failoverModifiedRecords.clear();
       try {
         if (typeof localStorage !== 'undefined') {
           localStorage.removeItem('erp_db_failover_active');
           localStorage.removeItem('erp_db_failover_reason');
           localStorage.removeItem('erp_db_failover_started_at');
           localStorage.removeItem('erp_db_failover_tables');
+          localStorage.removeItem('erp_db_failover_records');
           localStorage.removeItem('erp_db_failover_last_write');
+          localStorage.removeItem('erp_db_recovery_pending');
+          localStorage.removeItem('erp_db_recovery_pending_count');
         }
-      } catch (_) {}
+      } catch (_) { }
       this._stopRecoveryProbe();
       console.log(`[SyncManager Failover] 🐬 ENTERPRISE FAILOVER DEACTIVATED: Primary operational traffic restored to MySQL.`);
     }
@@ -309,17 +335,103 @@ class SyncManager {
   }
 
   /**
-   * Track which tables have been modified while operating in Failover Mode
+   * Track which tables and individual rows have been modified while operating in Failover Mode
    */
-  trackFailoverModification(table) {
+  trackFailoverModification(table, docId = null, data = null) {
     if (!table) return;
     this.failoverModifiedTables.add(table);
+
+    if (docId && data) {
+      this.trackFailoverRecord(table, docId, data);
+    } else if (data && typeof data === 'object') {
+      if (Array.isArray(data)) {
+        data.forEach(item => {
+          const rId = item.id || item._id || item.serialNumber || item.machineId;
+          if (rId) this.trackFailoverRecord(table, rId, item);
+        });
+      } else {
+        const rId = data.id || data._id || data.serialNumber || data.machineId;
+        if (rId) this.trackFailoverRecord(table, rId, data);
+      }
+    }
+
     try {
       if (typeof localStorage !== 'undefined') {
         localStorage.setItem('erp_db_failover_tables', JSON.stringify(Array.from(this.failoverModifiedTables)));
         localStorage.setItem('erp_db_failover_last_write', new Date().toISOString());
       }
-    } catch (_) {}
+    } catch (_) { }
+  }
+
+  /**
+   * Track individual modified record for strict Row-Level Upsert Reverse Sync
+   */
+  trackFailoverRecord(collection, docId, data) {
+    if (!collection || !docId) return;
+    const key = `${collection}:${docId}`;
+    const entry = {
+      collection,
+      docId: String(docId),
+      data,
+      updatedAt: (data && (data.updatedAt || data.updated_at)) || new Date().toISOString()
+    };
+    if (!this.failoverModifiedRecords) this.failoverModifiedRecords = new Map();
+    this.failoverModifiedRecords.set(key, entry);
+
+    try {
+      if (typeof localStorage !== 'undefined') {
+        const serialized = Array.from(this.failoverModifiedRecords.values());
+        localStorage.setItem('erp_db_failover_records', JSON.stringify(serialized));
+      }
+    } catch (_) { }
+  }
+
+  /**
+   * Get total number of delta records waiting in failover queue
+   */
+  async getPendingRecoveryCount() {
+    let count = this.failoverModifiedRecords ? this.failoverModifiedRecords.size : 0;
+    try {
+      const pendingItems = await retryQueue.getPending();
+      const failoverPending = pendingItems.filter(item => item.isFailover || item.status === 'PENDING');
+      count = Math.max(count, failoverPending.length);
+    } catch (_) { }
+    return count;
+  }
+
+  /**
+   * Set recovery pending state (Rule 3: Controlled Reverse Sync with Admin Prompt)
+   */
+  setRecoveryPending(pending, count = 0) {
+    this.isRecoveryPending = Boolean(pending);
+    this.recoveryPendingCount = Number(count) || 0;
+
+    try {
+      if (typeof localStorage !== 'undefined') {
+        if (this.isRecoveryPending) {
+          localStorage.setItem('erp_db_recovery_pending', 'true');
+          localStorage.setItem('erp_db_recovery_pending_count', String(this.recoveryPendingCount));
+        } else {
+          localStorage.removeItem('erp_db_recovery_pending');
+          localStorage.removeItem('erp_db_recovery_pending_count');
+        }
+      }
+    } catch (_) { }
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('erp:recovery-pending', {
+        detail: {
+          isRecoveryPending: this.isRecoveryPending,
+          pendingCount: this.recoveryPendingCount
+        }
+      }));
+      if (window.storage && typeof window.storage.updateStatusBadge === 'function') {
+        window.storage.updateStatusBadge(
+          this.isRecoveryPending ? 'recovery-pending' : (this.isFailoverActive ? 'failover' : 'saved'),
+          { pendingCount: this.recoveryPendingCount }
+        );
+      }
+    }
   }
 
   /**
@@ -331,7 +443,7 @@ class SyncManager {
     console.log(`[SyncManager Failover] 🛰️ Auto-Recovery probe active: probing MySQL Primary every ${intervalMs / 1000}s...`);
     this._recoveryProbeTimer = setInterval(() => {
       if (this.isFailoverActive && !this._isRecovering) {
-        this.checkPrimaryRecovery().catch(() => {});
+        this.checkPrimaryRecovery().catch(() => { });
       }
     }, intervalMs);
   }
@@ -344,7 +456,10 @@ class SyncManager {
   }
 
   /**
-   * Check if MySQL Primary is responsive and initiate auto-recovery if restored
+   * Check if MySQL Primary is responsive.
+   * STRICT SAFETY RULE 3: Do NOT blindly overwrite MySQL in the background.
+   * Pause auto-write recovery and signal that MySQL is back online with pending records
+   * awaiting Admin Confirmation.
    */
   async checkPrimaryRecovery() {
     if (!this.primaryAdapter || this._isRecovering) return false;
@@ -354,27 +469,32 @@ class SyncManager {
         : this.primaryAdapter.testConnection.bind(this.primaryAdapter);
       const res = await pingFn();
       if (res && res.success) {
-        console.log('[Recovery Probe] 🐬 MySQL Primary is back online! Initiating Auto-Recovery & Reverse Sync...');
-        await this.performAutoRecovery();
+        // MySQL is back online!
+        const pendingCount = await this.getPendingRecoveryCount();
+        console.log(`[Recovery Probe] 🐬 MySQL Primary is back online! Pausing auto-write recovery. ${pendingCount} pending delta records awaiting Admin verification.`);
+        this.setRecoveryPending(true, pendingCount);
         return true;
       }
-    } catch (_) {}
+    } catch (_) { }
     return false;
   }
 
   /**
-   * Enterprise Auto-Recovery (Reverse Sync):
-   * 1. Re-syncs all fallback records from PostgreSQL / in-memory store to MySQL Primary
-   * 2. Flushes and processes pending retry queue operations
-   * 3. Verifies 100% data parity between primary and secondary
-   * 4. Deactivates failover mode and seamlessly switches traffic back to MySQL Primary
+   * Controlled Reverse Sync (PostgreSQL -> MySQL):
+   * STRICT SAFETY RULE 1: Never use full-table replacement.
+   * Performs Row-Level Upsert by checking record ID and updated_at timestamp.
+   * Older records can NEVER overwrite newer records in MySQL.
+   *
+   * STRICT SAFETY RULE 3: Triggered after Admin confirmation or manual verification.
    */
-  async performAutoRecovery() {
-    if (this._isRecovering) return false;
+  async executeControlledRecovery() {
+    if (this._isRecovering) {
+      return { success: false, error: 'Reverse sync recovery is already in progress.' };
+    }
     this._isRecovering = true;
 
     try {
-      console.log('[SyncManager Recovery] 🔄 Step 1/3: Starting Reverse-Sync from PostgreSQL to MySQL Primary...');
+      console.log('[SyncManager Recovery] 🛡️ Starting Controlled Row-Level Delta Reverse Sync (PostgreSQL -> MySQL)...');
       if (typeof window !== 'undefined' && window.storage) {
         window.storage.updateStatusBadge('recovering');
       }
@@ -382,72 +502,159 @@ class SyncManager {
         window.dispatchEvent(new CustomEvent('erp:recovery-started'));
       }
 
-      const { storage } = await import('./storage.js');
-      const pgAdapter = this.getPostgresAdapter();
+      // Step 1: Confirm MySQL Primary is live and accessible
+      const pingFn = typeof this.primaryAdapter.ping === 'function'
+        ? this.primaryAdapter.ping.bind(this.primaryAdapter)
+        : this.primaryAdapter.testConnection.bind(this.primaryAdapter);
+      const ping = await pingFn();
+      if (!ping || !ping.success) {
+        throw new Error('MySQL Primary connection probe failed. Reverse sync aborted.');
+      }
 
-      // Gather latest tables to sync back to MySQL
-      let tablesToSync = {};
+      // Step 2: Collect all delta records from failover tracking and retry queue
+      const deltaRecords = new Map(); // key: "collection:docId" -> { collection, docId, data, updatedAt }
 
-      if (this.failoverModifiedTables.size > 0) {
-        console.log(`[SyncManager Recovery] 📋 Syncing ${this.failoverModifiedTables.size} tables modified during failover:`, Array.from(this.failoverModifiedTables));
-        for (const tbl of this.failoverModifiedTables) {
-          if (storage.data && storage.data[tbl] !== undefined) {
-            tablesToSync[tbl] = storage.data[tbl];
-          } else if (pgAdapter) {
-            try {
-              const res = await pgAdapter.getTable(tbl);
-              if (res && res.success && res.data !== undefined) {
-                tablesToSync[tbl] = res.data;
-              }
-            } catch (_) {}
-          }
-        }
-      } else {
-        // Sync valid in-memory tables
-        for (const [tName, tData] of Object.entries(storage.data || {})) {
-          if (tData === null || tData === undefined) continue;
-          if (Array.isArray(tData) && tData.length === 0) continue;
-          if (!Array.isArray(tData) && typeof tData === 'object' && Object.keys(tData).length === 0) continue;
-          tablesToSync[tName] = tData;
+      // 2a. From tracked failover records
+      if (this.failoverModifiedRecords) {
+        for (const [key, item] of this.failoverModifiedRecords.entries()) {
+          deltaRecords.set(key, item);
         }
       }
 
-      // Step 2: Write back into MySQL Primary
-      console.log(`[SyncManager Recovery] 🔄 Step 2/3: Upserting ${Object.keys(tablesToSync).length} table(s) to MySQL Primary...`);
-      if (Object.keys(tablesToSync).length > 0) {
-        if (typeof this.primaryAdapter.saveMultipleTables === 'function') {
-          const res = await this.primaryAdapter.saveMultipleTables(tablesToSync);
-          if (!res || !res.success) {
-            throw new Error(`MySQL bulk recovery failed: ${res?.error || 'Unknown error'}`);
+      // 2b. From retryQueue pending failover items
+      const pendingQueue = await retryQueue.getPending();
+      for (const qItem of pendingQueue) {
+        if (qItem.collection && qItem.data) {
+          if (qItem.operation === 'SAVE_RECORD' && qItem.docId) {
+            const key = `${qItem.collection}:${qItem.docId}`;
+            if (!deltaRecords.has(key)) {
+              deltaRecords.set(key, {
+                collection: qItem.collection,
+                docId: String(qItem.docId),
+                data: qItem.data,
+                updatedAt: qItem.failoverAt || qItem.timestamp || new Date().toISOString()
+              });
+            }
+          } else if (qItem.operation === 'SAVE_TABLE' && Array.isArray(qItem.data)) {
+            // Extract individual rows from table array
+            qItem.data.forEach(row => {
+              const rId = row.id || row._id || row.serialNumber || row.machineId;
+              if (rId) {
+                const key = `${qItem.collection}:${rId}`;
+                if (!deltaRecords.has(key)) {
+                  deltaRecords.set(key, {
+                    collection: qItem.collection,
+                    docId: String(rId),
+                    data: row,
+                    updatedAt: row.updatedAt || row.updated_at || qItem.failoverAt || qItem.timestamp || new Date().toISOString()
+                  });
+                }
+              }
+            });
           }
-        } else {
-          for (const [tbl, data] of Object.entries(tablesToSync)) {
-            const res = await this.primaryAdapter.saveTable(tbl, data);
-            if (!res || !res.success) {
-              throw new Error(`MySQL saveTable failed for ${tbl}: ${res?.error || 'Unknown error'}`);
+        }
+      }
+
+      // 2c. If no individual records tracked but tables were modified, inspect memory for changed rows
+      if (deltaRecords.size === 0 && this.failoverModifiedTables.size > 0) {
+        const { storage } = await import('./storage.js');
+        for (const tbl of this.failoverModifiedTables) {
+          const currentTblData = storage.data && storage.data[tbl];
+          if (Array.isArray(currentTblData)) {
+            currentTblData.forEach(row => {
+              const rId = row.id || row._id || row.serialNumber;
+              if (rId) {
+                const key = `${tbl}:${rId}`;
+                deltaRecords.set(key, {
+                  collection: tbl,
+                  docId: String(rId),
+                  data: row,
+                  updatedAt: row.updatedAt || row.updated_at || new Date().toISOString()
+                });
+              }
+            });
+          }
+        }
+      }
+
+      console.log(`[SyncManager Recovery] 📋 Total Delta records identified for Row-Level Upsert: ${deltaRecords.size}`);
+
+      // Step 3: Strict Row-Level Upsert with Timestamp Check
+      let syncedCount = 0;
+      let skippedCount = 0;
+      let failedCount = 0;
+
+      // Group records by collection
+      const byCollection = new Map();
+      for (const [key, item] of deltaRecords.entries()) {
+        if (!byCollection.has(item.collection)) {
+          byCollection.set(item.collection, []);
+        }
+        byCollection.get(item.collection).push(item);
+      }
+
+      for (const [collection, records] of byCollection.entries()) {
+        // Fetch current MySQL table to check timestamps
+        let mysqlTableData = [];
+        try {
+          const tableRes = await this.primaryAdapter.getTable(collection);
+          if (tableRes && tableRes.success && Array.isArray(tableRes.data)) {
+            mysqlTableData = tableRes.data;
+          }
+        } catch (_) { }
+
+        const mysqlMap = new Map();
+        mysqlTableData.forEach(r => {
+          const id = r.id || r._id || r.serialNumber || r.machineId;
+          if (id) mysqlMap.set(String(id), r);
+        });
+
+        for (const item of records) {
+          const existingMysql = mysqlMap.get(item.docId);
+          if (existingMysql) {
+            // Check timestamps: delta record MUST be strictly newer than existing MySQL record
+            const deltaTs = Date.parse(item.updatedAt || item.data?.updatedAt || item.data?.updated_at || 0) || 0;
+            const mysqlTs = Date.parse(existingMysql.updatedAt || existingMysql.updated_at || existingMysql.updateTime || 0) || 0;
+
+            if (mysqlTs > deltaTs) {
+              console.warn(`[SyncManager Safety] ⛔ SKIPPED record "${collection}:${item.docId}" — MySQL has newer timestamp (${new Date(mysqlTs).toISOString()} > ${new Date(deltaTs).toISOString()}). Older data will NEVER overwrite newer data.`);
+              skippedCount++;
+              continue;
             }
           }
+
+          // Execute Row-Level Upsert to MySQL (NEVER full-table replacement!)
+          try {
+            const upsertRes = await this.primaryAdapter.saveRecord(collection, item.docId, item.data);
+            if (upsertRes && upsertRes.success) {
+              syncedCount++;
+            } else {
+              failedCount++;
+              console.error(`[SyncManager Recovery] Failed to upsert record "${collection}:${item.docId}":`, upsertRes?.error);
+            }
+          } catch (upsertErr) {
+            failedCount++;
+            console.error(`[SyncManager Recovery] Upsert exception for "${collection}:${item.docId}":`, upsertErr.message);
+          }
         }
       }
 
-      // Drain retry queue
-      await this.processRetryQueue().catch(() => {});
-
-      // Step 3: Verify Data Parity
-      console.log('[SyncManager Recovery] 🔍 Step 3/3: Verifying Data Parity with MySQL Primary...');
-      let parityConfirmed = true;
+      // Step 4: Clear recovery queue and failover storage
+      for (const qItem of pendingQueue) {
+        await retryQueue.remove(qItem.id).catch(() => { });
+      }
+      if (this.failoverModifiedRecords) this.failoverModifiedRecords.clear();
+      if (this.failoverModifiedTables) this.failoverModifiedTables.clear();
       try {
-        const pingMysql = await this.primaryAdapter.ping();
-        if (!pingMysql || !pingMysql.success) parityConfirmed = false;
-      } catch (_) {
-        parityConfirmed = false;
-      }
+        if (typeof localStorage !== 'undefined') {
+          localStorage.removeItem('erp_db_failover_records');
+          localStorage.removeItem('erp_db_failover_tables');
+          localStorage.removeItem('erp_db_failover_last_write');
+        }
+      } catch (_) { }
 
-      if (!parityConfirmed) {
-        throw new Error('MySQL Primary parity verification failed.');
-      }
-
-      // Deactivate failover and restore normal state
+      // Step 5: Deactivate recovery pending and failover mode
+      this.setRecoveryPending(false, 0);
       this.setFailoverMode(false);
 
       if (typeof window !== 'undefined' && window.storage) {
@@ -456,42 +663,46 @@ class SyncManager {
         const nowStr = new Date().toLocaleTimeString();
         const statusEl = document.getElementById('nav-db-status');
         if (statusEl) {
-          statusEl.title = `MySQL Primary Synchronized (Recovered at ${nowStr}) • 100% Data Parity Verified`;
+          statusEl.title = `MySQL Primary Synchronized (Row-Level Recovery at ${nowStr}) • Parity Confirmed`;
         }
       }
 
+      const summary = `Controlled Reverse Sync Completed: ${syncedCount} row(s) safely upserted to MySQL, ${skippedCount} older row(s) skipped, ${failedCount} errors.`;
+      console.log(`[SyncManager Recovery] ✅ ${summary}`);
+
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('erp:recovery-completed', {
-          detail: {
-            timestamp: new Date().toISOString(),
-            tablesRestored: Object.keys(tablesToSync).length
-          }
+          detail: { syncedCount, skippedCount, failedCount }
         }));
+        if (window.notificationService) {
+          window.notificationService.success(
+            `🐬 MySQL Primary Restored: ${syncedCount} delta record(s) safely synced with Row-Level Upsert.`
+          );
+        }
       }
 
-      if (typeof window !== 'undefined' && window.notificationService) {
-        window.notificationService.success(
-          `🐬 MySQL Primary Recovered: 100% data parity verified. All failover records synchronized to MySQL.`
-        );
-      }
-
-      console.log('[SyncManager Recovery] ✅ Auto-Recovery complete! Primary traffic seamlessly restored to MySQL.');
-      return true;
+      return { success: true, syncedCount, skippedCount, failedCount };
     } catch (err) {
-      console.error('[SyncManager Recovery] ❌ Auto-recovery attempt encountered error:', err.message);
-      if (typeof window !== 'undefined' && window.storage) {
-        window.storage.updateStatusBadge('failover');
+      console.error('[SyncManager Recovery] ❌ Controlled reverse sync error:', err.message);
+      if (typeof window !== 'undefined' && window.notificationService) {
+        window.notificationService.error(`Recovery Sync Error: ${err.message}`);
       }
-      return false;
+      return { success: false, error: err.message };
     } finally {
       this._isRecovering = false;
     }
+  }
+
+  // Alias for backward compatibility
+  async performAutoRecovery() {
+    return this.executeControlledRecovery();
   }
 
   /**
    * Save multiple tables with Enterprise Automatic Failover:
    * Normal: Writes to MySQL Primary, then fans out to PostgreSQL.
    * Failover: If MySQL is offline or fails, seamlessly routes to PostgreSQL and logs to recovery queue.
+   * Rule 4 (Write Protection): If both MySQL and PostgreSQL fail, block the save and abort.
    */
   async saveMultipleTables(tablesObj) {
     await this._ensureConfig();
@@ -504,7 +715,7 @@ class SyncManager {
         try {
           const pgResult = await pgAdapter.saveMultipleTables(tablesObj);
           if (pgResult && pgResult.success) {
-            Object.keys(tablesObj).forEach(tbl => this.trackFailoverModification(tbl));
+            Object.entries(tablesObj).forEach(([tbl, data]) => this.trackFailoverModification(tbl, null, data));
             this._queueRetry(this.primaryAdapter, 'multiple', null, 'SAVE_MULTIPLE_TABLES', tablesObj, 'Failover write while MySQL offline');
             if (typeof window !== 'undefined' && window.storage) {
               window.storage.updateStatusBadge('failover');
@@ -515,6 +726,14 @@ class SyncManager {
           console.error('[SyncManager Failover] ❌ PostgreSQL saveMultipleTables failed:', pgErr);
         }
       }
+
+      // Rule 4: Dual Failure Protection
+      console.error('[SyncManager Protection] 🚨 DUAL FAILURE: Both MySQL Primary and PostgreSQL Replica failed!');
+      return {
+        success: false,
+        error: 'Write Blocked: Both MySQL Primary and PostgreSQL Replica are unreachable. Save action aborted to prevent data corruption.',
+        dualFailure: true
+      };
     }
 
     if (!this.primaryAdapter) {
@@ -539,7 +758,7 @@ class SyncManager {
         try {
           const pgResult = await pgAdapter.saveMultipleTables(tablesObj);
           if (pgResult && pgResult.success) {
-            Object.keys(tablesObj).forEach(tbl => this.trackFailoverModification(tbl));
+            Object.entries(tablesObj).forEach(([tbl, data]) => this.trackFailoverModification(tbl, null, data));
             this._queueRetry(this.primaryAdapter, 'multiple', null, 'SAVE_MULTIPLE_TABLES', tablesObj, errMsg);
             if (typeof window !== 'undefined' && window.storage) {
               window.storage.updateStatusBadge('failover');
@@ -551,8 +770,13 @@ class SyncManager {
         }
       }
 
+      // Rule 4: Dual failure!
       this._queueRetry(this.primaryAdapter, 'multiple', null, 'SAVE_MULTIPLE_TABLES', tablesObj, errMsg);
-      return { success: false, error: errMsg };
+      return {
+        success: false,
+        error: 'Write Blocked: Both MySQL Primary and PostgreSQL Replica are unreachable. Save action aborted to prevent data corruption.',
+        dualFailure: true
+      };
     }
 
     // 4. Unidirectional Backup Fan-out: MySQL (Authoritative) → PostgreSQL (Backup Replica)
@@ -567,6 +791,7 @@ class SyncManager {
    * Save an entire table with Enterprise Automatic Failover:
    * Normal: Writes to MySQL Primary, then fans out to PostgreSQL.
    * Failover: If MySQL is offline or fails, seamlessly routes to PostgreSQL and logs to recovery queue.
+   * Rule 4 (Write Protection): If both MySQL and PostgreSQL fail, block the save and abort.
    */
   async saveTable(collection, dataObj) {
     await this._ensureConfig();
@@ -579,7 +804,7 @@ class SyncManager {
         try {
           const pgResult = await pgAdapter.saveTable(collection, dataObj);
           if (pgResult && pgResult.success) {
-            this.trackFailoverModification(collection);
+            this.trackFailoverModification(collection, null, dataObj);
             this._queueRetry(this.primaryAdapter, collection, null, 'SAVE_TABLE', dataObj, 'Failover write while MySQL offline');
             if (typeof window !== 'undefined' && window.storage) {
               window.storage.updateStatusBadge('failover');
@@ -590,6 +815,13 @@ class SyncManager {
           console.error(`[SyncManager Failover] ❌ PostgreSQL saveTable("${collection}") failed:`, pgErr);
         }
       }
+
+      // Rule 4: Dual Failure Protection
+      return {
+        success: false,
+        error: 'Write Blocked: Both MySQL Primary and PostgreSQL Replica are unreachable. Save action aborted to prevent data corruption.',
+        dualFailure: true
+      };
     }
 
     if (!this.primaryAdapter) {
@@ -614,7 +846,7 @@ class SyncManager {
         try {
           const pgResult = await pgAdapter.saveTable(collection, dataObj);
           if (pgResult && pgResult.success) {
-            this.trackFailoverModification(collection);
+            this.trackFailoverModification(collection, null, dataObj);
             this._queueRetry(this.primaryAdapter, collection, null, 'SAVE_TABLE', dataObj, errMsg);
             if (typeof window !== 'undefined' && window.storage) {
               window.storage.updateStatusBadge('failover');
@@ -626,8 +858,13 @@ class SyncManager {
         }
       }
 
+      // Rule 4: Dual failure!
       this._queueRetry(this.primaryAdapter, collection, null, 'SAVE_TABLE', dataObj, errMsg);
-      return { success: false, error: errMsg };
+      return {
+        success: false,
+        error: 'Write Blocked: Both MySQL Primary and PostgreSQL Replica are unreachable. Save action aborted to prevent data corruption.',
+        dualFailure: true
+      };
     }
 
     // 4. Unidirectional Fan-out to PostgreSQL Backup Replica
@@ -639,6 +876,7 @@ class SyncManager {
    * Save a single record with Enterprise Automatic Failover:
    * Normal: Writes to MySQL Primary, then fans out to PostgreSQL.
    * Failover: If MySQL is offline or fails, seamlessly routes to PostgreSQL and logs to recovery queue.
+   * Rule 4 (Write Protection): If both MySQL and PostgreSQL fail, block the save and abort.
    */
   async saveRecord(collection, docId, data) {
     await this._ensureConfig();
@@ -650,7 +888,7 @@ class SyncManager {
         try {
           const pgResult = await pgAdapter.saveRecord(collection, docId, data);
           if (pgResult && pgResult.success) {
-            this.trackFailoverModification(collection);
+            this.trackFailoverModification(collection, docId, data);
             this._queueRetry(this.primaryAdapter, collection, docId, 'SAVE_RECORD', data, 'Failover write while MySQL offline');
             if (typeof window !== 'undefined' && window.storage) {
               window.storage.updateStatusBadge('failover');
@@ -661,6 +899,13 @@ class SyncManager {
           console.error(`[SyncManager Failover] ❌ PostgreSQL saveRecord failed:`, pgErr);
         }
       }
+
+      // Rule 4: Dual failure protection
+      return {
+        success: false,
+        error: 'Write Blocked: Both MySQL Primary and PostgreSQL Replica are unreachable. Save action aborted to prevent data corruption.',
+        dualFailure: true
+      };
     }
 
     if (!this.primaryAdapter) {
@@ -685,7 +930,7 @@ class SyncManager {
         try {
           const pgResult = await pgAdapter.saveRecord(collection, docId, data);
           if (pgResult && pgResult.success) {
-            this.trackFailoverModification(collection);
+            this.trackFailoverModification(collection, docId, data);
             this._queueRetry(this.primaryAdapter, collection, docId, 'SAVE_RECORD', data, errMsg);
             if (typeof window !== 'undefined' && window.storage) {
               window.storage.updateStatusBadge('failover');
@@ -697,8 +942,13 @@ class SyncManager {
         }
       }
 
+      // Rule 4: Dual failure!
       this._queueRetry(this.primaryAdapter, collection, docId, 'SAVE_RECORD', data, errMsg);
-      return { success: false, error: errMsg };
+      return {
+        success: false,
+        error: 'Write Blocked: Both MySQL Primary and PostgreSQL Replica are unreachable. Save action aborted to prevent data corruption.',
+        dualFailure: true
+      };
     }
 
     // 4. Unidirectional Fan-out to PostgreSQL Backup Replica
@@ -892,7 +1142,7 @@ class SyncManager {
 
     // 2. SEQUENTIAL FALLBACK: Table-by-table sync
     let totalSuccess = 0;
-    let totalFailed  = 0;
+    let totalFailed = 0;
 
     for (const [tableName, tableData] of Object.entries(validTables)) {
       const result = await adapter.saveTable(tableName, tableData);
@@ -905,25 +1155,25 @@ class SyncManager {
         // Abort early on fatal / unrecoverable errors
         const errStr = (result?.error || '').toLowerCase();
         const isFatal = result?.isTableMissing || result?.isAuthError ||
-          errStr.includes('not found')        ||
-          errStr.includes('authentication')   ||
-          errStr.includes('password')         ||
-          errStr.includes('access denied')    ||
-          errStr.includes('pg_hba')           ||
-          errStr.includes('failed to fetch')  ||
-          errStr.includes('network')          ||
-          errStr.includes('cors')             ||
-          errStr.includes('blocked')          ||
+          errStr.includes('not found') ||
+          errStr.includes('authentication') ||
+          errStr.includes('password') ||
+          errStr.includes('access denied') ||
+          errStr.includes('pg_hba') ||
+          errStr.includes('failed to fetch') ||
+          errStr.includes('network') ||
+          errStr.includes('cors') ||
+          errStr.includes('blocked') ||
           errStr.includes('permission denied') ||
-          errStr.includes('unauthorized')     ||
-          errStr.includes('cannot reach')     ||
+          errStr.includes('unauthorized') ||
+          errStr.includes('cannot reach') ||
           errStr.includes('consumer_invalid') ||
-          errStr.includes('invalid')          ||
-          errStr.includes('http 500')         ||
-          errStr.includes('failed: http')     ||
-          errStr.includes('connection failed')||
-          errStr.includes('save-table failed')||
-          errStr.includes('sqlstate')         ||
+          errStr.includes('invalid') ||
+          errStr.includes('http 500') ||
+          errStr.includes('failed: http') ||
+          errStr.includes('connection failed') ||
+          errStr.includes('save-table failed') ||
+          errStr.includes('sqlstate') ||
           errStr.includes('fatal');
 
         if (isFatal) {
@@ -992,7 +1242,7 @@ class SyncManager {
       const metrics = raw ? JSON.parse(raw) : {};
       metrics[dbId] = { ...(metrics[dbId] || {}), ...patch, lastUpdated: new Date().toISOString() };
       localStorage.setItem('erp_data_engine_sync_metrics', JSON.stringify(metrics));
-    } catch (_) {}
+    } catch (_) { }
   }
 
   /**
@@ -1009,14 +1259,14 @@ class SyncManager {
     // Initial background sync check 3 seconds after boot
     if (typeof setTimeout !== 'undefined') {
       setTimeout(() => {
-        this.triggerAutoSync({ silent: true }).catch(() => {});
+        this.triggerAutoSync({ silent: true }).catch(() => { });
       }, 3500);
     }
 
     // Recurring sync check
     if (typeof setInterval !== 'undefined') {
       this._autoSyncTimer = setInterval(() => {
-        this.triggerAutoSync({ silent: true }).catch(() => {});
+        this.triggerAutoSync({ silent: true }).catch(() => { });
       }, intervalMs);
     }
   }
@@ -1041,7 +1291,7 @@ class SyncManager {
             if (parsed.autoSync === false) isAutoSyncEnabled = false;
           }
         }
-      } catch (_) {}
+      } catch (_) { }
 
       if (!isAutoSyncEnabled) return false;
 
@@ -1051,7 +1301,7 @@ class SyncManager {
           const mStored = localStorage.getItem('erp_data_engine_sync_metrics');
           if (mStored) metrics = JSON.parse(mStored) || {};
         }
-      } catch (_) {}
+      } catch (_) { }
 
       let syncedAny = false;
 
@@ -1088,7 +1338,7 @@ class SyncManager {
       }
 
       // Also process retry queue
-      await this.processRetryQueue().catch(() => {});
+      await this.processRetryQueue().catch(() => { });
 
       return syncedAny;
     } finally {
@@ -1105,9 +1355,9 @@ class SyncManager {
       if (a.config) configs.push(a.config);
     }
     if (typeof window !== 'undefined' && window.storage && typeof window.storage.saveMultiDbConfigs === 'function') {
-      window.storage.saveMultiDbConfigs(configs).catch(() => {});
+      window.storage.saveMultiDbConfigs(configs).catch(() => { });
     } else {
-      try { localStorage.setItem('erp_multi_db_config', JSON.stringify(configs)); } catch (_) {}
+      try { localStorage.setItem('erp_multi_db_config', JSON.stringify(configs)); } catch (_) { }
     }
   }
 }

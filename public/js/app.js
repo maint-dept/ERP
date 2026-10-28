@@ -7,8 +7,8 @@
 import { state } from './state.js';
 import { storage } from './db/storage.js';
 import { authService } from './services/authService.js?v=4.26.85';
-import { renderNavbar, initNavbarEvents } from './components/navbar.js?v=4.26.95';
-import { renderSidebar, initSidebarEvents, updateSidebarActiveState } from './components/sidebar.js?v=4.26.95';
+import { renderNavbar, initNavbarEvents } from './components/navbar.js?v=4.26.98';
+import { renderSidebar, initSidebarEvents, updateSidebarActiveState } from './components/sidebar.js?v=4.26.98';
 import { renderHomepageView, initHomepageEvents } from './components/homepageView.js?v=4.26.52';
 import { renderLoginView, initLoginViewEvents } from './components/loginView.js?v=4.26.85';
 import { renderDashboard, initDashboardEvents } from './components/dashboard.js?v=4.26.52';
@@ -28,8 +28,8 @@ import { historyService } from './services/historyService.js';
 import { auditService } from './services/auditService.js';
 import { notificationService } from './services/notificationService.js';
 import { tempImportService } from './services/tempImportService.js';
-import { router } from './services/router.js?v=4.26.95';
-import { moduleLoader } from './services/moduleLoader.js?v=4.26.95';
+import { router } from './services/router.js?v=4.26.98';
+import { moduleLoader } from './services/moduleLoader.js?v=4.26.98';
 
 /**
  * Captures all active scroll, viewport, and focused input states.

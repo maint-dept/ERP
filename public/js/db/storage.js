@@ -775,8 +775,19 @@ class StorageEngine {
             this.updateStatusBadge('saved');
             return true;
           }
+
+          // Rule 4: Write Protection Triggered (Dual Database Failure / Network Disconnect)
           this._isCloudConnected = false;
           this.updateStatusBadge('error');
+          const errDetail = result?.error || 'Write Blocked: Both MySQL and PostgreSQL are unreachable. Save action blocked to prevent data corruption.';
+          console.error(`[Storage Protection] 🚨 ${errDetail}`);
+          if (typeof window !== 'undefined' && window.notificationService) {
+            window.notificationService.error(
+              result?.dualFailure 
+                ? '🚨 Write Protected: Both MySQL and PostgreSQL are unreachable. Save action blocked to prevent data corruption.' 
+                : (result?.error || 'Database save failed. Please check network connection.')
+            );
+          }
           return false;
         } catch (e) {
           console.warn(`[Storage] Remote save warning for ${table}:`, e.message);
@@ -853,7 +864,16 @@ class StorageEngine {
         this.updateStatusBadge('saved');
         return true;
       }
+
+      // Rule 4: Write Protection
       this.updateStatusBadge('error');
+      if (typeof window !== 'undefined' && window.notificationService) {
+        window.notificationService.error(
+          result?.dualFailure 
+            ? '🚨 Write Protected: Both MySQL and PostgreSQL are unreachable. Save action blocked to prevent data corruption.' 
+            : (result?.error || 'Database save failed. Please check network connection.')
+        );
+      }
       return false;
     } catch (e) {
       console.warn('[Storage] Remote saveMultipleTables warning:', e.message);
@@ -1623,7 +1643,8 @@ class StorageEngine {
         console.log('[Storage Sync] Currently in PostgreSQL Failover Mode. Checking if MySQL Primary has recovered...');
         const recovered = await syncManager.checkPrimaryRecovery();
         if (recovered) {
-          return { success: true, timestamp: new Date().toLocaleTimeString(), recovered: true };
+          const pendingCount = await syncManager.getPendingRecoveryCount();
+          return { success: true, timestamp: new Date().toLocaleTimeString(), recoveryPending: true, pendingCount };
         } else {
           this.updateStatusBadge('failover');
           return { success: true, timestamp: new Date().toLocaleTimeString(), failover: true };
@@ -1892,6 +1913,13 @@ class StorageEngine {
       statusEl.style.color = '#fbbf24';
       statusEl.title = '🐘 PostgreSQL Live (Failover Active) — Reads & writes safe. Auto-recovery probing MySQL.';
       statusEl.innerHTML = '<span style="font-size: 12px; line-height: 1;">🐘</span><span class="db-status-text">PG Fallback</span>';
+    } else if (status === 'recovery-pending') {
+      const pendingCount = details?.pendingCount ?? (typeof syncManager !== 'undefined' ? (syncManager.recoveryPendingCount || syncManager.failoverModifiedRecords.size) : 0);
+      statusEl.style.borderColor = 'rgba(245, 158, 11, 0.9)';
+      statusEl.style.background = 'rgba(245, 158, 11, 0.22)';
+      statusEl.style.color = '#fde68a';
+      statusEl.title = `MySQL is back online! ${pendingCount} delta records in Failover Queue. Click to Verify & Sync.`;
+      statusEl.innerHTML = `<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#f59e0b;box-shadow:0 0 8px #f59e0b;animation:pulse 1s infinite;"></span><span class="db-status-text">MySQL Online (${pendingCount} Pending)</span>`;
     } else if (status === 'recovering') {
       statusEl.style.borderColor = 'rgba(56, 189, 248, 0.6)';
       statusEl.style.background = 'rgba(56, 189, 248, 0.16)';
