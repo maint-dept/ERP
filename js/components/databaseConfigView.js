@@ -203,8 +203,8 @@ function getDashboardSyncState() {
     try { localStorage.setItem('erp_multi_db_config', JSON.stringify(rawConfigs)); } catch (_) {}
   }
 
-  // Normalize PostgreSQL replica with verified credentials and permanent canonical ID
-  let pgDb = rawConfigs.find(c => (c.type || '').toUpperCase() === 'POSTGRESQL' || (c.type || '').toUpperCase() === 'POSTGRES');
+  // Normalize primary PostgreSQL replica with verified credentials and permanent canonical ID
+  let pgDb = rawConfigs.find(c => c.id === 'db_postgresql_replica') || rawConfigs.find(c => ((c.type || '').toUpperCase() === 'POSTGRESQL' || (c.type || '').toUpperCase() === 'POSTGRES') && c.role !== 'PRIMARY');
   if (!pgDb) {
     pgDb = {
       id: 'db_postgresql_replica',
@@ -1361,8 +1361,7 @@ export function initDatabaseConfigEvents() {
 
       if (!confirm(`Are you sure you want to remove the database "${name}"?`)) return;
 
-      const isPg = target && (target.type === 'POSTGRESQL' || target.type === 'POSTGRES');
-      const updated = configs.filter(c => c.id !== dbId && !(isPg && (c.type === 'POSTGRESQL' || c.type === 'POSTGRES')));
+      const updated = configs.filter(c => c.id !== dbId);
       localStorage.setItem('erp_multi_db_config', JSON.stringify(updated));
       if (storage && typeof storage.saveMultiDbConfigs === 'function') {
         await storage.saveMultiDbConfigs(updated).catch(() => {});
@@ -1885,18 +1884,21 @@ function renderProviderForm(providerKey, dbId = null) {
   if (dbId) {
     existing = allConfigs.find(c => c.id === dbId) || {};
   }
-  // If editing/configuring PostgreSQL and no explicit id was found, auto-match the PostgreSQL instance
-  if ((!existing || !existing.id) && spec.key === 'POSTGRESQL') {
-    const pgMatch = allConfigs.find(c => (c.type || '').toUpperCase() === 'POSTGRESQL' || (c.type || '').toUpperCase() === 'POSTGRES');
-    if (pgMatch) {
-      existing = pgMatch;
-      dbId = pgMatch.id;
-      currentEditingDbId = pgMatch.id;
-    }
-  }
 
-  // Pre-seed PostgreSQL verified defaults if empty
-  if (spec.key === 'POSTGRESQL') {
+  const isEditing = !!(dbId && existing && existing.id);
+  if (!isEditing) {
+    existing = {};
+    const sameTypeCount = allConfigs.filter(c => (c.type || '').toUpperCase() === spec.key).length;
+    existing.name = sameTypeCount > 0 ? `${spec.name} Connection ${sameTypeCount + 1}` : `${spec.name} Connection`;
+    existing.role = 'BACKUP';
+    existing.autoSync = true;
+    if (spec.key === 'POSTGRESQL') {
+      existing.endpoint = 'https://moviezonex.com/api/pg_api.php';
+      existing.host = '127.0.0.1';
+      existing.port = 5432;
+    }
+  } else if (spec.key === 'POSTGRESQL' && existing.id === 'db_postgresql_replica') {
+    // Pre-seed primary PostgreSQL verified defaults if empty
     if (!existing.password) existing.password = 'ol(5_MK8mF{~7cdG';
     if (!existing.database || existing.database === 'motaherh_maint_pg') existing.database = 'motaherh_Maintenance';
     if (!existing.username || existing.username === 'motaherh_pguser') existing.username = 'motaherh_AMG-maint';
@@ -1905,7 +1907,6 @@ function renderProviderForm(providerKey, dbId = null) {
     }
   }
 
-  const isEditing = !!(existing && existing.id);
   const formTitle = isEditing ? `Edit: ${existing.name || spec.name}` : `Add New ${spec.name} Connection`;
   const badgeLabel = isEditing ? `EDITING (#${existing.id})` : '➕ NEW DATABASE INSTANCE';
   const badgeStyle = isEditing
@@ -2187,24 +2188,23 @@ function renderProviderForm(providerKey, dbId = null) {
 
         let currentConfigs = safeGetJson('erp_multi_db_config', []);
 
-        // Use permanent canonical ID for PostgreSQL replica to prevent random timestamp ID generation
         let targetId = currentEditingDbId;
-        if (spec.key === 'POSTGRESQL') {
-          targetId = 'db_postgresql_replica';
-        }
-        if (spec.key === 'MYSQL' && (role === 'PRIMARY' || !targetId || targetId === 'mysql_primary')) {
-          targetId = 'mysql_primary';
-        }
         if (!targetId) {
-          targetId = `db_${spec.key.toLowerCase()}_${Date.now()}`;
+          // Brand new database connection
+          if (spec.key === 'POSTGRESQL' && !currentConfigs.some(c => c.id === 'db_postgresql_replica')) {
+            targetId = 'db_postgresql_replica';
+          } else if (spec.key === 'MYSQL' && role === 'PRIMARY' && !currentConfigs.some(c => c.id === 'mysql_primary')) {
+            targetId = 'mysql_primary';
+          } else {
+            targetId = `db_${spec.key.toLowerCase()}_${Date.now()}`;
+          }
         }
 
-        // Clean out any duplicate or old ghost instances to guarantee a single clean replica/primary
-        if (spec.key === 'POSTGRESQL') {
-          currentConfigs = currentConfigs.filter(c => c.id !== targetId && (c.type || '').toUpperCase() !== 'POSTGRESQL' && (c.type || '').toUpperCase() !== 'POSTGRES');
-        }
-        if (spec.key === 'MYSQL' && role === 'PRIMARY') {
-          currentConfigs = currentConfigs.filter(c => c.id !== targetId && !(c.role === 'PRIMARY' && (c.type || '').toUpperCase() === 'MYSQL'));
+        // If newly designated as PRIMARY, demote previous primary to BACKUP
+        if (role === 'PRIMARY') {
+          currentConfigs.forEach(c => {
+            if (c.id !== targetId && c.role === 'PRIMARY') c.role = 'BACKUP';
+          });
         }
 
         const existingIdx = currentConfigs.findIndex(c => c.id === targetId);
@@ -2293,8 +2293,7 @@ function renderProviderForm(providerKey, dbId = null) {
 
       if (!confirm(`Are you sure you want to remove the database "${name}"?`)) return;
 
-      const isPg = existingRec && ((existingRec.type || '').toUpperCase() === 'POSTGRESQL' || (existingRec.type || '').toUpperCase() === 'POSTGRES');
-      const updated = currentConfigs.filter(c => c.id !== currentEditingDbId && !(isPg && ((c.type || '').toUpperCase() === 'POSTGRESQL' || (c.type || '').toUpperCase() === 'POSTGRES')));
+      const updated = currentConfigs.filter(c => c.id !== currentEditingDbId);
       localStorage.setItem('erp_multi_db_config', JSON.stringify(updated));
       if (storage && typeof storage.saveMultiDbConfigs === 'function') {
         await storage.saveMultiDbConfigs(updated).catch(() => {});

@@ -216,17 +216,19 @@ class SyncManager {
                 ep = 'https://' + ep;
               }
               conf.endpoint = ep || 'https://moviezonex.com/api/pg_api.php';
-              conf.id = 'db_postgresql_replica';
+              conf.id = conf.id || 'db_postgresql_replica';
               conf.name = conf.name || 'PostgreSQL Database Connection';
-              conf.role = 'BACKUP';
+              conf.role = conf.role || 'BACKUP';
               if (!conf.host) conf.host = '127.0.0.1';
               if (!conf.port) conf.port = 5432;
-              if (!conf.database || conf.database === 'motaherh_maint_pg') conf.database = 'motaherh_Maintenance';
-              if (!conf.username || conf.username === 'motaherh_pguser') conf.username = 'motaherh_AMG-maint';
-              if (!conf.password) conf.password = 'ol(5_MK8mF{~7cdG';
-              conf.enabled = true;
-              conf.autoSync = true;
-              conf.retryEnabled = true;
+              if (conf.id === 'db_postgresql_replica') {
+                if (!conf.database || conf.database === 'motaherh_maint_pg') conf.database = 'motaherh_Maintenance';
+                if (!conf.username || conf.username === 'motaherh_pguser') conf.username = 'motaherh_AMG-maint';
+                if (!conf.password) conf.password = 'ol(5_MK8mF{~7cdG';
+              }
+              if (conf.enabled === undefined) conf.enabled = true;
+              if (conf.autoSync === undefined) conf.autoSync = true;
+              if (conf.retryEnabled === undefined) conf.retryEnabled = true;
               adapter = new PostgresAdapter(conf);
             }
 

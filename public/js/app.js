@@ -7,8 +7,8 @@
 import { state } from './state.js';
 import { storage } from './db/storage.js';
 import { authService } from './services/authService.js?v=4.26.85';
-import { renderNavbar, initNavbarEvents } from './components/navbar.js?v=4.26.100';
-import { renderSidebar, initSidebarEvents, updateSidebarActiveState } from './components/sidebar.js?v=4.26.101';
+import { renderNavbar, initNavbarEvents } from './components/navbar.js?v=4.26.102';
+import { renderSidebar, initSidebarEvents, updateSidebarActiveState } from './components/sidebar.js?v=4.26.102';
 import { renderHomepageView, initHomepageEvents } from './components/homepageView.js?v=4.26.52';
 import { renderLoginView, initLoginViewEvents } from './components/loginView.js?v=4.26.85';
 import { renderDashboard, initDashboardEvents } from './components/dashboard.js?v=4.26.52';
@@ -206,7 +206,7 @@ class ERPApplication {
       if (parsedInitialRoute && parsedInitialRoute.view) {
         initialView = parsedInitialRoute.view;
       }
-    } catch (_) {}
+    } catch (_) { }
 
     // Pre-warm initial view module IMMEDIATELY in parallel with IndexedDB cache hydration
     const initialModuleWarmup = (typeof moduleLoader !== 'undefined' && moduleLoader.isLazyView(initialView) && !moduleLoader.isLoaded(initialView))
@@ -234,7 +234,7 @@ class ERPApplication {
         if (parsedRoute.view === 'admin-login') {
           state.set('currentView', 'admin-login', { silent: true });
         }
-      } catch (_) {}
+      } catch (_) { }
     } catch (e) {
       console.warn('[ERP] Pre-render hydration notice:', e);
     }
@@ -253,8 +253,8 @@ class ERPApplication {
 
     // Self-healing check: guarantee that all machines in inventory have valid model links
     try {
-      smartStorageService.autoHealMissingModels().catch(() => {});
-    } catch (_) {}
+      smartStorageService.autoHealMissingModels().catch(() => { });
+    } catch (_) { }
 
     // Global State & Event Subscriptions
     state.on('change:currentView', (view) => {
@@ -507,8 +507,8 @@ class ERPApplication {
 
       // 3. Authenticated ERP Shell Layout (Sidebar + Navbar + View)
       const savedState = captureAppState();
-      const isSidebarMini = (typeof localStorage !== 'undefined' && 
-        (localStorage.getItem('al_muslim_sidebar_mini') === 'true' || localStorage.getItem('al_muslim_sidebar_hidden') === 'true') && 
+      const isSidebarMini = (typeof localStorage !== 'undefined' &&
+        (localStorage.getItem('al_muslim_sidebar_mini') === 'true' || localStorage.getItem('al_muslim_sidebar_hidden') === 'true') &&
         (typeof window !== 'undefined' && window.innerWidth > 992));
 
       root.innerHTML = `
@@ -619,7 +619,7 @@ class ERPApplication {
 
       // Trigger non-blocking on-demand table loading for this view
       if (typeof storage !== 'undefined' && typeof storage.ensureTablesForView === 'function') {
-        storage.ensureTablesForView(newView).catch(() => {});
+        storage.ensureTablesForView(newView).catch(() => { });
       }
 
       // If entering or leaving standalone views (home or login or admin-login), do full render
@@ -697,8 +697,8 @@ class ERPApplication {
         const btn = document.querySelector(`[data-master-tab="${tab}"]`);
         if (btn) btn.click();
       } else if (view === 'users') {
-        const btn = document.querySelector(`.tab-btn-uam[data-tab="${tab}"]`) || 
-                    document.querySelector(`.tab-btn-uam[data-tab="${tab.toUpperCase()}"]`);
+        const btn = document.querySelector(`.tab-btn-uam[data-tab="${tab}"]`) ||
+          document.querySelector(`.tab-btn-uam[data-tab="${tab.toUpperCase()}"]`);
         if (btn) btn.click();
       } else if (view === 'tools-management') {
         const btn = document.querySelector(`.tools-tab-btn[data-tab="${tab}"]`);
@@ -763,7 +763,7 @@ class ERPApplication {
         const hasOpenMenu = document.querySelector('.actions-dropdown-menu.show, .dropdown-menu.show, .btn-actions-trigger.active, .table-row-actions-menu.show');
         if (hasOpenMenu) return true;
       }
-    } catch (_) {}
+    } catch (_) { }
     return false;
   }
 
@@ -998,7 +998,7 @@ class ERPApplication {
             state.set('currentView', allowedView);
             try {
               router.navigate(allowedView, { replace: true });
-            } catch (_) {}
+            } catch (_) { }
             this.render();
           }, 0);
         }
@@ -1298,7 +1298,7 @@ class ERPApplication {
             try {
               localStorage.setItem('al_muslim_sidebar_mini', isMini ? 'true' : 'false');
               localStorage.setItem('al_muslim_sidebar_hidden', isMini ? 'true' : 'false');
-            } catch (_) {}
+            } catch (_) { }
             const collapseBtn = document.getElementById('btn-sidebar-collapse');
             if (collapseBtn) {
               collapseBtn.setAttribute('title', isMini ? 'Expand Sidebar (>)' : 'Collapse Sidebar (<)');
