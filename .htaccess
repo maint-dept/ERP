@@ -9,12 +9,17 @@ Options -Indexes
   RewriteEngine On
   RewriteBase /
 
-  # 1. Allow direct access to real existing files and directories
+  # 1. Force HTTPS for secure data transmission
+  RewriteCond %{HTTPS} off
+  RewriteCond %{HTTP:X-Forwarded-Proto} !https
+  RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+  # 2. Allow direct access to real existing files and directories
   RewriteCond %{REQUEST_FILENAME} -f [OR]
   RewriteCond %{REQUEST_FILENAME} -d
   RewriteRule ^ - [L]
 
-  # 2. LiteSpeed & Apache: Rewrite all SPA module routes to /index.html
+  # 3. LiteSpeed & Apache: Rewrite all SPA module routes to /index.html
   RewriteRule ^(.*)$ /index.html [L,QSA]
 </IfModule>
 
