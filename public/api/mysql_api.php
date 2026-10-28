@@ -42,7 +42,7 @@ if (!in_array('ob_gzhandler', ob_list_handlers()) && extension_loaded('zlib') &&
     @ob_start('ob_gzhandler');
 }
 
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+if (isset($_SERVER['REQUEST_METHOD']) && $_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(204);
     exit;
 }

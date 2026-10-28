@@ -2671,7 +2671,7 @@ class AuthService {
     };
   }
 
-  completePasswordReset(identifier, otpCode, newPassword) {
+  async completePasswordReset(identifier, otpCode, newPassword) {
     const users = this.getAllUsers();
     const clean = (identifier || '').trim().toLowerCase();
     const user = users.find(u => u.username?.toLowerCase() === clean || u.email?.toLowerCase() === clean);

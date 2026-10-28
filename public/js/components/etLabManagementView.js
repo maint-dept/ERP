@@ -4471,8 +4471,6 @@ export function openEntLabExcelImportModal() {
       } catch (err) {
         notificationService.error(`Failed to parse Excel file: ${err.message}`);
       }
-    };
-    reader.readAsArrayBuffer(file);
   }
 
   // Commit Import
