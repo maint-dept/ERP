@@ -6,11 +6,11 @@
 
 import { state } from './state.js';
 import { storage } from './db/storage.js';
-import { authService } from './services/authService.js?v=4.26.60';
+import { authService } from './services/authService.js?v=4.26.65';
 import { renderNavbar, initNavbarEvents } from './components/navbar.js?v=4.26.52';
 import { renderSidebar, initSidebarEvents, updateSidebarActiveState } from './components/sidebar.js?v=4.26.52';
 import { renderHomepageView, initHomepageEvents } from './components/homepageView.js?v=4.26.52';
-import { renderLoginView, initLoginViewEvents } from './components/loginView.js?v=4.26.56';
+import { renderLoginView, initLoginViewEvents } from './components/loginView.js?v=4.26.65';
 import { renderDashboard, initDashboardEvents } from './components/dashboard.js?v=4.26.52';
 import { renderMachineModal, initMachineModalEvents } from './components/machineModal.js?v=4.26.50';
 import { renderMachineDetails, initMachineDetailsEvents } from './components/machineDetails.js?v=4.26.50';
@@ -587,6 +587,18 @@ class ERPApplication {
       if (!currentUser && newView !== 'home' && newView !== 'login' && newView !== 'admin-login') {
         newView = 'login';
         state.set('currentView', 'login', { silent: true });
+      }
+
+      // Gateway Guard: Prevent logged-in general users from opening admin login gateway
+      if (currentUser && newView === 'admin-login' && !authService.isAdmin(currentUser) && !authService.isSuperAdmin(currentUser)) {
+        newView = authService.getFirstAllowedView(currentUser) || 'dashboard';
+        state.set('currentView', newView, { silent: true });
+      }
+
+      // Gateway Guard: Prevent logged-in administrators from opening standard user login portal
+      if (currentUser && newView === 'login' && (authService.isAdmin(currentUser) || authService.isSuperAdmin(currentUser))) {
+        newView = authService.getFirstAllowedView(currentUser) || 'dashboard';
+        state.set('currentView', newView, { silent: true });
       }
 
       // Authorization Gate: Redirect unauthorized view requests straight to user's first allowed view

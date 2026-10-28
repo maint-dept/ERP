@@ -107,24 +107,6 @@ export function renderLoginView(isAdminGateway = false) {
         background: rgba(15, 23, 42, 0.95) !important;
       }
 
-      .admin-quick-chip {
-        transition: all 0.2s ease;
-        cursor: pointer;
-        user-select: none;
-      }
-
-      .admin-quick-chip:hover {
-        transform: translateY(-2px);
-        background: rgba(16, 185, 129, 0.25) !important;
-        border-color: #34d399 !important;
-        color: #ffffff !important;
-        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);
-      }
-
-      .admin-quick-chip:active {
-        transform: translateY(0);
-      }
-
       .gateway-submit-btn {
         background: ${isAdminGateway 
           ? 'linear-gradient(135deg, #059669 0%, #10b981 45%, #0284c7 100%)' 
@@ -154,7 +136,7 @@ export function renderLoginView(isAdminGateway = false) {
       <div style="position: absolute; bottom: -100px; right: 12%; width: 550px; height: 550px; border-radius: 50%; background: radial-gradient(circle, ${isAdminGateway ? 'rgba(14, 165, 233, 0.14)' : 'rgba(99, 102, 241, 0.15)'} 0%, transparent 70%); filter: blur(80px); pointer-events: none; z-index: 0;"></div>
 
       <!-- Top Executive Navigation Ribbon -->
-      <header style="padding: 18px 32px; display: flex; justify-content: space-between; align-items: center; position: relative; z-index: 10; border-bottom: 1px solid rgba(255, 255, 255, 0.07); background: rgba(5, 10, 18, 0.75); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);">
+      <header style="padding: 16px 28px; display: flex; justify-content: space-between; align-items: center; position: relative; z-index: 10; border-bottom: 1px solid rgba(255, 255, 255, 0.07); background: rgba(5, 10, 18, 0.75); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);">
         <div style="display: flex; align-items: center; gap: 14px; cursor: pointer;" id="login-nav-home">
           <div style="width: 40px; height: 40px; background: ${isAdminGateway ? 'linear-gradient(135deg, #059669, #0284c7)' : 'linear-gradient(135deg, #0284c7, #1d4ed8)'}; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; box-shadow: 0 0 20px ${isAdminGateway ? 'rgba(16, 185, 129, 0.4)' : 'rgba(2, 132, 199, 0.4)'}; border: 1px solid rgba(255, 255, 255, 0.2);">
             ${isAdminGateway ? '🛡️' : '🔧'}
@@ -164,11 +146,11 @@ export function renderLoginView(isAdminGateway = false) {
               <span style="font-weight: 800; font-size: 15px; color: #fff; letter-spacing: 0.8px;">AL-MUSLIM GROUP</span>
               <span class="badge" style="font-size: 10px; font-weight: 800; background: ${isAdminGateway ? 'rgba(16, 185, 129, 0.2)' : 'rgba(2, 132, 199, 0.2)'}; color: ${accentLight}; border: 1px solid ${isAdminGateway ? 'rgba(16, 185, 129, 0.4)' : 'rgba(2, 132, 199, 0.4)'}; padding: 2px 8px; border-radius: 12px; display: inline-flex; align-items: center; gap: 5px;">
                 <span style="width: 6px; height: 6px; border-radius: 50%; background: ${accentLight}; display: inline-block; animation: pulseDot 2s infinite;"></span>
-                ${isAdminGateway ? 'ADMIN GATEWAY ONLINE' : 'USER ACCESS PORTAL'}
+                ${isAdminGateway ? 'ADMIN PORTAL' : 'USER PORTAL'}
               </span>
             </div>
             <span style="font-size: 11px; color: #94a3b8; font-weight: 600; margin-top: 1px;">
-              ${isAdminGateway ? 'Garments Factory Maintenance Machine ERP • Confidential Admin Gateway' : 'Garments Factory Maintenance Machine ERP System'}
+              Garments Factory Maintenance Machine ERP System
             </span>
           </div>
         </div>
@@ -180,43 +162,26 @@ export function renderLoginView(isAdminGateway = false) {
       </header>
 
       <!-- Main Central Authentication Container -->
-      <main style="max-width: 500px; width: 100%; margin: 24px auto 36px; padding: 0 16px; position: relative; z-index: 5;">
+      <main style="max-width: 460px; width: 100%; margin: 28px auto 36px; padding: 0 16px; position: relative; z-index: 5;">
         
-        <div class="gateway-card" style="padding: 34px 30px;">
+        <div class="gateway-card" style="padding: 32px 28px;">
           
-          <!-- Card Header & Badge -->
-          <div style="text-align: center; margin-bottom: 22px;">
-            <div class="gateway-icon-box" style="width: 70px; height: 70px; background: linear-gradient(135deg, ${isAdminGateway ? 'rgba(16, 185, 129, 0.2), rgba(2, 132, 199, 0.15)' : 'rgba(2, 132, 199, 0.25), rgba(99, 102, 241, 0.15)'}); border: 1.5px solid ${isAdminGateway ? 'rgba(16, 185, 129, 0.55)' : 'rgba(56, 189, 248, 0.55)'}; border-radius: 18px; display: inline-flex; align-items: center; justify-content: center; font-size: 32px; margin-bottom: 14px;">
-              ${loginMode === 'LOGIN' ? (isAdminGateway ? '🛡️' : '🔐') : (loginMode === 'FIRST_LOGIN_CHANGE' ? '🔑' : '📩')}
-            </div>
-            
-            <!-- Category Security Badge -->
-            <div style="margin-bottom: 8px;">
-              <span class="badge" style="font-size: 11px; font-weight: 800; letter-spacing: 0.7px; padding: 5px 14px; border-radius: 20px; ${isAdminGateway ? 'background: rgba(16, 185, 129, 0.18); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.5);' : 'background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.4);'}">
-                ${isAdminGateway ? '🔒 CONFIDENTIAL ACCESS • SYSTEM ADMINISTRATORS ONLY' : '👤 USER ACCESS PORTAL'}
-              </span>
+          <!-- Card Header -->
+          <div style="text-align: center; margin-bottom: 24px;">
+            <div class="gateway-icon-box" style="width: 64px; height: 64px; background: linear-gradient(135deg, ${isAdminGateway ? 'rgba(16, 185, 129, 0.2), rgba(2, 132, 199, 0.15)' : 'rgba(2, 132, 199, 0.25), rgba(99, 102, 241, 0.15)'}); border: 1.5px solid ${isAdminGateway ? 'rgba(16, 185, 129, 0.55)' : 'rgba(56, 189, 248, 0.55)'}; border-radius: 16px; display: inline-flex; align-items: center; justify-content: center; font-size: 28px; margin-bottom: 14px;">
+              ${loginMode === 'LOGIN' ? (isAdminGateway ? '🛡️' : '👤') : (loginMode === 'FIRST_LOGIN_CHANGE' ? '🔑' : '📩')}
             </div>
 
             <h2 style="font-size: 22px; font-weight: 800; color: #ffffff; letter-spacing: -0.3px; margin: 0 0 6px 0;">
               ${loginMode === 'LOGIN' 
-                ? (isAdminGateway ? 'Administrative Security Gateway' : 'Sign in to Maintenance ERP') 
+                ? (isAdminGateway ? 'Administrator Login' : 'Sign in to Maintenance ERP') 
                 : (loginMode === 'FIRST_LOGIN_CHANGE' ? 'First Login Password Setup' : (loginMode === 'FORGOT_REQUEST' ? 'Password Recovery' : 'Set New Password'))}
             </h2>
-            <p style="font-size: 12.5px; color: #94a3b8; line-height: 1.5; margin: 0;">
+            <p style="font-size: 13px; color: #94a3b8; line-height: 1.5; margin: 0;">
               ${loginMode === 'LOGIN' 
-                ? (isAdminGateway ? 'Authorized Maintenance System Directors, Master Engineers & ERP System Admins.' : 'Enter your employee credentials to access factory equipment, maintenance requests, and spare parts.') 
+                ? (isAdminGateway ? 'Enter your administrative credentials to continue.' : 'Enter your employee credentials to access factory equipment and maintenance system.') 
                 : (loginMode === 'FIRST_LOGIN_CHANGE' ? 'Please configure your permanent private password to enter the system.' : (loginMode === 'FORGOT_REQUEST' ? 'Enter your registered Email address or Username to receive a password reset code.' : `Enter the 6-digit code sent for account '${resetTargetUsername}'.`))}
             </p>
-
-            ${isAdminGateway && loginMode === 'LOGIN' ? `
-              <div style="display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 8px 12px; font-size: 11px; color: #94a3b8; margin-top: 14px; padding: 8px 12px; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; font-family: var(--font-mono);">
-                <span style="color: #34d399; font-weight: 600;">🔒 256-Bit TLS 1.3</span>
-                <span>&bull;</span>
-                <span style="color: #38bdf8; font-weight: 600;">🛡️ Role-Gated Gateway</span>
-                <span>&bull;</span>
-                <span style="color: #cbd5e1; font-weight: 600;">🚫 Anti-Indexed</span>
-              </div>
-            ` : ''}
           </div>
 
           <!-- Maintenance Mode Notification Box -->
@@ -248,15 +213,14 @@ export function renderLoginView(isAdminGateway = false) {
           <!-- Alert / Error Display Container -->
           <div id="login-alert-box" style="display: none; padding: 12px 14px; border-radius: 8px; font-size: 12.5px; margin-bottom: 16px; font-weight: 600; line-height: 1.45;"></div>
 
-          <!-- FORM MODE 1: STANDARD LOGIN -->
+          <!-- FORM MODE 1: STANDARD LOGIN (Essential fields only) -->
           ${loginMode === 'LOGIN' ? `
             <form id="form-full-login">
               
               <!-- Username or Email -->
               <div class="form-group" style="margin-bottom: 16px;">
-                <label class="form-label" style="font-size: 12.5px; color: #e2e8f0; font-weight: 700; display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
-                  <span>${isAdminGateway ? 'Administrator Username or Email' : 'Employee ID, Username, or Email'}</span>
-                  <span style="font-size: 10.5px; color: ${accentLight}; font-weight: 600;">• Required</span>
+                <label class="form-label" style="font-size: 12.5px; color: #e2e8f0; font-weight: 700; display: block; margin-bottom: 6px;">
+                  ${isAdminGateway ? 'Username or Email' : 'Employee ID, Username, or Email'}
                 </label>
                 <div class="gateway-input-box">
                   <span style="position: absolute; left: 14px; font-size: 16px; opacity: 0.85; pointer-events: none; z-index: 5;">
@@ -266,7 +230,7 @@ export function renderLoginView(isAdminGateway = false) {
                     type="text" 
                     id="inp-full-username" 
                     class="form-control" 
-                    placeholder="${isAdminGateway ? 'e.g. motaher, superadmin, or admin' : 'Employee ID, username, or email (e.g. user)'}" 
+                    placeholder="${isAdminGateway ? 'Enter administrator username or email' : 'Employee ID, username, or email'}" 
                     value=""
                     required 
                     autocomplete="username"
@@ -277,7 +241,7 @@ export function renderLoginView(isAdminGateway = false) {
 
               <!-- Password -->
               <div class="form-group" style="margin-bottom: 14px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
                   <label class="form-label" style="font-size: 12.5px; color: #e2e8f0; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 8px;">
                     <span>Password</span>
                     <span id="caps-lock-warning" style="display: none; font-size: 10.5px; background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); padding: 1px 6px; border-radius: 4px; font-weight: 700;">
@@ -292,7 +256,7 @@ export function renderLoginView(isAdminGateway = false) {
                     type="password" 
                     id="inp-full-password" 
                     class="form-control" 
-                    placeholder="${isAdminGateway ? 'Enter master administrative password' : 'Enter account password'}" 
+                    placeholder="Enter your password" 
                     value=""
                     required 
                     autocomplete="current-password"
@@ -305,36 +269,31 @@ export function renderLoginView(isAdminGateway = false) {
               </div>
 
               <!-- Remember Me -->
-              <div style="display: flex; justify-content: space-between; align-items: center; margin: 14px 0 18px;">
-                <label style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #94a3b8; cursor: pointer; user-select: none;">
-                  <input type="checkbox" id="chk-remember-me" ${rememberMe ? 'checked' : ''} style="width: 15px; height: 15px; accent-color: ${accentColor}; cursor: pointer;" />
-                  <span>${isAdminGateway ? 'Remember administrator on this device' : 'Remember my username'}</span>
+              <div style="display: flex; justify-content: flex-start; align-items: center; margin: 14px 0 20px;">
+                <label style="display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: #cbd5e1; cursor: pointer; user-select: none;">
+                  <input type="checkbox" id="chk-remember-me" ${rememberMe ? 'checked' : ''} style="width: 16px; height: 16px; accent-color: ${accentColor}; cursor: pointer;" />
+                  <span>Remember me</span>
                 </label>
-                <span style="font-size: 11px; color: #64748b; font-family: var(--font-mono);">${isAdminGateway ? 'Session: 12h TLS' : 'Standard Session'}</span>
               </div>
 
               <!-- Submit Button -->
               <button type="submit" id="btn-submit-full-login" class="gateway-submit-btn btn btn-primary btn-block" style="font-weight: 800; font-size: 14.5px; padding: 12px; border-radius: 10px; letter-spacing: 0.3px; display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; cursor: pointer;">
-                <span>${isAdminGateway ? '🛡️ Authenticate &amp; Enter Admin Gateway' : '🔐 Sign In to User Portal'}</span>
+                <span>${isAdminGateway ? 'Login as Admin' : 'Sign In'}</span>
                 <span>➔</span>
               </button>
 
-              <div style="text-align: center; margin-top: 8px; font-size: 11px; color: #64748b;">
-                Press <kbd style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 4px; padding: 1px 5px; font-family: var(--font-mono); color: #cbd5e1;">Enter ↵</kbd> to sign in immediately
-              </div>
-
             </form>
 
-            ${isAdminGateway ? `
-              <!-- Zero-Trust Enterprise Separation Notice -->
-              <div style="margin-top: 20px; padding: 12px 14px; background: rgba(15, 23, 42, 0.6); border: 1px dashed rgba(16, 185, 129, 0.3); border-radius: 10px; font-size: 11.5px; color: #94a3b8; line-height: 1.5; text-align: left;">
-                <div style="font-weight: 700; color: #34d399; margin-bottom: 2px; display: flex; align-items: center; gap: 6px;">
-                  <span>🔐</span>
-                  <span>Zero-Trust Enterprise Separation:</span>
-                </div>
-                General garment factory users must log in via the <a href="#" id="link-switch-to-user-portal" style="color: #38bdf8; text-decoration: underline; font-weight: 700;">General User Portal</a>. Only authorized accounts with Admin or Super Admin privileges may authenticate through this gateway.
-              </div>
-            ` : ''}
+            <!-- Bottom Gateway Switcher -->
+            <div style="text-align: center; margin-top: 20px; font-size: 12.5px; color: #94a3b8;">
+              ${isAdminGateway ? `
+                <span>General factory user? </span>
+                <a href="#" id="link-switch-to-user-portal" style="color: #38bdf8; text-decoration: none; font-weight: 700;">Sign in to User Portal</a>
+              ` : `
+                <span>System Administrator? </span>
+                <a href="#" id="link-switch-to-admin-gateway" style="color: #34d399; text-decoration: none; font-weight: 700;">Sign in to Admin Portal</a>
+              `}
+            </div>
 
           ` : ''}
 
@@ -470,17 +429,12 @@ export function renderLoginView(isAdminGateway = false) {
 
       </main>
 
-      <!-- Executive Compliance & Build Footer -->
-      <footer style="text-align: center; padding: 20px 24px; font-size: 12px; color: #64748b; border-top: 1px solid rgba(255,255,255,0.06); background: rgba(5, 10, 18, 0.85); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); position: relative; z-index: 10;">
-        <div style="display: flex; justify-content: center; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 4px;">
+      <!-- Footer -->
+      <footer style="text-align: center; padding: 18px 24px; font-size: 12px; color: #64748b; border-top: 1px solid rgba(255,255,255,0.06); background: rgba(5, 10, 18, 0.85); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); position: relative; z-index: 10;">
+        <div style="display: flex; justify-content: center; align-items: center; gap: 12px; flex-wrap: wrap;">
           <span>&copy; 2026 Al-Muslim Group</span>
           <span>&bull;</span>
           <span>Garments Factory Maintenance Machine ERP</span>
-          <span>&bull;</span>
-          <span style="color: ${accentLight}; font-weight: 600;">Enterprise Security Gateway v4.26.56</span>
-        </div>
-        <div style="font-size: 11px; color: #475569;">
-          ISO/IEC 27001 Ready Architecture &bull; Primary MySQL Cloud Synchronized &bull; Strictly Confidential Gateway
         </div>
       </footer>
 
@@ -557,6 +511,13 @@ export function initLoginViewEvents(isAdminGateway = false) {
     e.preventDefault();
     router.navigate('login');
     state.set('currentView', 'login');
+  });
+
+  // Switch to Admin Gateway Link from User Portal
+  document.getElementById('link-switch-to-admin-gateway')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    router.navigate('admin-login');
+    state.set('currentView', 'admin-login');
   });
 
   // Back to Homepage Navigation

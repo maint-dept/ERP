@@ -421,7 +421,7 @@ try {
                 if (!$isUserAdmin) {
                     echo json_encode([
                         'success' => false,
-                        'error' => '⛔ প্রবেশাধিকার সংরক্ষিত: এটি শুধুমাত্র সিস্টেম এডমিনিস্ট্রেটরদের জন্য নির্ধারিত অ্যাডমিন গেটওয়ে। সাধারণ ব্যবহারকারী বা অপারেটরগণ অনুগ্রহ করে সাধারণ User Login পোর্টাল ব্যবহার করুন। (General users must sign in via User Login portal.)'
+                        'error' => "⛔ Access Denied: This login page is strictly for Administrators. General factory users must sign in from the User Login page (/login).\n(প্রবেশাধিকার সংরক্ষিত: এটি শুধুমাত্র অ্যাডমিনদের জন্য। সাধারণ ইউজারগণ অনুগ্রহ করে User Login পেজ থেকে লগইন করুন।)"
                     ]);
                     break;
                 }
@@ -429,7 +429,7 @@ try {
                 if ($isUserAdmin) {
                     echo json_encode([
                         'success' => false,
-                        'error' => '🔒 প্রবেশাধিকার সংরক্ষিত: এটি সাধারণ ইউজার পোর্টাল। এডমিনিস্ট্রেটর এবং সুপার এডমিন অ্যাকাউন্ট এখানে অনুমোদিত নয়। অনুগ্রহ করে আপনার ডেডিকেটেড Admin Login Gateway ব্যবহার করুন। (Administrative accounts are restricted to the Admin Gateway.)'
+                        'error' => "🔒 Access Denied: This is the User Portal. Administrators and Super Admins must sign in from the Admin Login page (/maint-admin).\n(প্রবেশাধিকার সংরক্ষিত: এটি সাধারণ ইউজার পোর্টাল। অ্যাডমিন ও সুপার অ্যাডমিনগণ অনুগ্রহ করে Admin Login পেজ থেকে লগইন করুন।)"
                     ]);
                     break;
                 }
