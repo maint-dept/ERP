@@ -185,7 +185,7 @@ export function renderNavbar() {
     <header class="app-header">
       <!-- Left: Navigation Toggle & View Title -->
       <div class="header-left">
-        <button id="btn-mobile-sidebar-toggle" class="btn-mobile-sidebar-toggle" aria-label="Toggle Navigation Menu" title="Open Navigation Menu">
+        <button id="btn-sidebar-toggle" class="btn-sidebar-toggle btn-mobile-sidebar-toggle" aria-label="Toggle Sidebar Navigation" title="Toggle Sidebar (Expand / Collapse)">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <line x1="3" y1="6" x2="21" y2="6"></line>
             <line x1="3" y1="12" x2="21" y2="12"></line>
@@ -455,15 +455,28 @@ export function initNavbarEvents() {
     });
   }
 
-  // Mobile Hamburger Toggle
-  const mobileSidebarBtn = document.getElementById('btn-mobile-sidebar-toggle');
-  if (mobileSidebarBtn) {
-    mobileSidebarBtn.addEventListener('click', (e) => {
+  // Sidebar Toggle (Desktop Collapse/Expand & Mobile Drawer)
+  const sidebarToggleBtn = document.getElementById('btn-sidebar-toggle') || document.getElementById('btn-mobile-sidebar-toggle');
+  if (sidebarToggleBtn && !sidebarToggleBtn._hasToggleListener) {
+    sidebarToggleBtn._hasToggleListener = true;
+    sidebarToggleBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       closeDropdown();
       const appContainer = document.querySelector('.app-container');
-      if (appContainer) {
+      if (!appContainer) return;
+
+      const isMobile = window.innerWidth <= 992;
+      if (isMobile) {
         appContainer.classList.toggle('sidebar-mobile-open');
+      } else {
+        const isHidden = appContainer.classList.toggle('sidebar-hidden');
+        try {
+          localStorage.setItem('al_muslim_sidebar_hidden', isHidden ? 'true' : 'false');
+        } catch (_) {}
+        sidebarToggleBtn.setAttribute('title', isHidden ? 'Expand Sidebar' : 'Collapse Sidebar');
+        setTimeout(() => {
+          window.dispatchEvent(new Event('resize'));
+        }, 300);
       }
     });
   }

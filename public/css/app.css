@@ -196,6 +196,17 @@ body.modal-open {
 }
 
 /* Sidebar Navigation - Ultra-Modern Enterprise Architecture */
+#sidebar-container {
+  display: flex;
+  flex-shrink: 0;
+  width: var(--sidebar-width);
+  min-width: var(--sidebar-width);
+  transition: width 0.28s cubic-bezier(0.4, 0, 0.2, 1),
+              min-width 0.28s cubic-bezier(0.4, 0, 0.2, 1),
+              margin-left 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
 .app-sidebar {
   width: var(--sidebar-width);
   min-width: var(--sidebar-width);
@@ -210,6 +221,32 @@ body.modal-open {
   position: relative;
   user-select: none;
   overflow: hidden;
+  flex-shrink: 0;
+  transition: opacity 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Dynamic Collapse & Expand Transitions (Desktop Full-Width Expansion) */
+@media (min-width: 993px) {
+  #sidebar-container {
+    width: var(--sidebar-width);
+    min-width: var(--sidebar-width);
+    margin-left: 0;
+    transition: margin-left 0.28s cubic-bezier(0.4, 0, 0.2, 1),
+                opacity 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .app-container.sidebar-hidden #sidebar-container {
+    margin-left: calc(-1 * var(--sidebar-width)) !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+  }
+
+  .app-container.sidebar-hidden .btn-sidebar-toggle,
+  .app-container.sidebar-hidden .btn-mobile-sidebar-toggle {
+    color: #38bdf8;
+    border-color: rgba(56, 189, 248, 0.55);
+    background: rgba(56, 189, 248, 0.15);
+  }
 }
 
 .sidebar-header {
@@ -1483,27 +1520,36 @@ body.modal-open {
    MOBILE & TABLET RESPONSIVE SYSTEM
    ========================================================================== */
 
-/* Hamburger Button (Hidden on Desktop) */
+/* Sidebar Toggle Button (Desktop & Mobile) */
+.btn-sidebar-toggle,
 .btn-mobile-sidebar-toggle {
-  display: none;
+  display: inline-flex !important;
   align-items: center;
   justify-content: center;
   width: 36px;
   height: 36px;
   border-radius: var(--radius-md);
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--bg-card);
   border: 1px solid var(--border-color);
   color: var(--text-primary);
   cursor: pointer;
   flex-shrink: 0;
   padding: 0;
-  transition: all 0.15s ease;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  margin-right: 4px;
 }
 
+.btn-sidebar-toggle:hover,
 .btn-mobile-sidebar-toggle:hover {
   background: var(--bg-hover);
   color: #38bdf8;
-  border-color: #38bdf8;
+  border-color: rgba(56, 189, 248, 0.5);
+  transform: translateY(-1px);
+}
+
+.btn-sidebar-toggle:active,
+.btn-mobile-sidebar-toggle:active {
+  transform: scale(0.96);
 }
 
 /* Sidebar Close Button (Hidden on Desktop) */

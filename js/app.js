@@ -6,11 +6,11 @@
 
 import { state } from './state.js';
 import { storage } from './db/storage.js';
-import { authService } from './services/authService.js?v=4.26.75';
-import { renderNavbar, initNavbarEvents } from './components/navbar.js?v=4.26.75';
+import { authService } from './services/authService.js?v=4.26.80';
+import { renderNavbar, initNavbarEvents } from './components/navbar.js?v=4.26.80';
 import { renderSidebar, initSidebarEvents, updateSidebarActiveState } from './components/sidebar.js?v=4.26.52';
 import { renderHomepageView, initHomepageEvents } from './components/homepageView.js?v=4.26.52';
-import { renderLoginView, initLoginViewEvents } from './components/loginView.js?v=4.26.75';
+import { renderLoginView, initLoginViewEvents } from './components/loginView.js?v=4.26.80';
 import { renderDashboard, initDashboardEvents } from './components/dashboard.js?v=4.26.52';
 import { renderMachineModal, initMachineModalEvents } from './components/machineModal.js?v=4.26.50';
 import { renderMachineDetails, initMachineDetailsEvents } from './components/machineDetails.js?v=4.26.50';
@@ -507,9 +507,10 @@ class ERPApplication {
 
       // 3. Authenticated ERP Shell Layout (Sidebar + Navbar + View)
       const savedState = captureAppState();
+      const isSidebarHidden = (typeof localStorage !== 'undefined' && localStorage.getItem('al_muslim_sidebar_hidden') === 'true' && (typeof window !== 'undefined' && window.innerWidth > 992));
 
       root.innerHTML = `
-        <div class="app-container">
+        <div class="app-container${isSidebarHidden ? ' sidebar-hidden' : ''}">
           <!-- Sidebar Mobile Backdrop -->
           <div id="sidebar-backdrop" class="sidebar-backdrop"></div>
 
@@ -1278,15 +1279,27 @@ class ERPApplication {
       }
     });
 
-    // 2.1 Mobile Sidebar Drawer Toggle & Backdrop Handlers
+    // 2.1 Sidebar Toggle & Mobile Drawer Handlers
     document.addEventListener('click', (e) => {
-      const toggleBtn = e.target.closest('#btn-mobile-sidebar-toggle');
-      if (toggleBtn) {
+      const toggleBtn = e.target.closest('#btn-sidebar-toggle, #btn-mobile-sidebar-toggle, .btn-sidebar-toggle');
+      if (toggleBtn && !toggleBtn._hasToggleListener) {
         e.preventDefault();
         e.stopPropagation();
         const appContainer = document.querySelector('.app-container');
         if (appContainer) {
-          appContainer.classList.toggle('sidebar-mobile-open');
+          const isMobile = window.innerWidth <= 992;
+          if (isMobile) {
+            appContainer.classList.toggle('sidebar-mobile-open');
+          } else {
+            const isHidden = appContainer.classList.toggle('sidebar-hidden');
+            try {
+              localStorage.setItem('al_muslim_sidebar_hidden', isHidden ? 'true' : 'false');
+            } catch (_) {}
+            toggleBtn.setAttribute('title', isHidden ? 'Expand Sidebar' : 'Collapse Sidebar');
+            setTimeout(() => {
+              window.dispatchEvent(new Event('resize'));
+            }, 300);
+          }
         }
         return;
       }
