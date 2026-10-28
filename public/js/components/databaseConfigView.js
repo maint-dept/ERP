@@ -30,12 +30,12 @@ export const PROVIDER_SPECS = {
     description: 'High-performance SQL database engine with InnoDB transaction guarantees. Authoritative Master database for ERP on cPanel / Paid Hosting.',
     fields: [
       { id: 'endpoint', label: 'cPanel Hosting REST API Endpoint URL', type: 'text', placeholder: 'https://moviezonex.com/mysql_api.php', defaultValue: 'https://moviezonex.com/mysql_api.php', required: true, note: 'Upload mysql_api.php to your cPanel public_html/ and enter its full URL here.' },
-      { id: 'database', label: 'Database Name', type: 'text', placeholder: 'motaherh_maint-erp', defaultValue: 'motaherh_maint-erp', required: true, note: 'In cPanel: e.g. cpaneluser_dbname' },
-      { id: 'username', label: 'Database User', type: 'text', placeholder: 'motaherh_mainterp', defaultValue: 'motaherh_mainterp', required: true, note: 'In cPanel: e.g. cpaneluser_dbuser' },
-      { id: 'password', label: 'Database Password', type: 'password', placeholder: 'Maint@456', defaultValue: 'Maint@456', required: true },
+      { id: 'database', label: 'Database Name', type: 'text', placeholder: 'e.g. cpaneluser_dbname', defaultValue: '', required: true, note: 'In cPanel: e.g. cpaneluser_dbname' },
+      { id: 'username', label: 'Database User', type: 'text', placeholder: 'e.g. cpaneluser_dbuser', defaultValue: '', required: true, note: 'In cPanel: e.g. cpaneluser_dbuser' },
+      { id: 'password', label: 'Database Password', type: 'password', placeholder: 'Enter database password', defaultValue: '', required: true },
       { id: 'host', label: 'Database Host', type: 'text', placeholder: 'localhost', defaultValue: 'localhost', required: false, note: 'Almost always localhost in cPanel' },
       { id: 'port', label: 'Port', type: 'number', placeholder: '3306', defaultValue: '3306', required: false },
-      { id: 'apiKey', label: 'API Secret Key (Optional)', type: 'password', placeholder: 'e.g. secret_key_123', note: 'Matches $API_KEY defined in mysql_api.php (leave blank if none).' }
+      { id: 'apiKey', label: 'API Secret Key (Optional)', type: 'password', placeholder: 'e.g. secret_key_123', defaultValue: '', note: 'Matches $API_KEY defined in mysql_api.php (leave blank if none).' }
     ]
   },
   POSTGRESQL: {
@@ -48,12 +48,12 @@ export const PROVIDER_SPECS = {
     fields: [
       { id: 'host', label: 'Host', type: 'text', placeholder: '127.0.0.1 or localhost', defaultValue: '127.0.0.1', required: true },
       { id: 'port', label: 'Port', type: 'number', placeholder: '5432', defaultValue: '5432', required: true },
-      { id: 'database', label: 'Database', type: 'text', placeholder: 'motaherh_Maintenance', defaultValue: 'motaherh_Maintenance', required: true },
-      { id: 'username', label: 'Username', type: 'text', placeholder: 'motaherh_AMG-maint', defaultValue: 'motaherh_AMG-maint', required: true },
-      { id: 'password', label: 'Password', type: 'password', placeholder: '••••••••••••', defaultValue: 'ol(5_MK8mF{~7cdG', required: true },
+      { id: 'database', label: 'Database', type: 'text', placeholder: 'e.g. cpaneluser_dbname', defaultValue: '', required: true },
+      { id: 'username', label: 'Username', type: 'text', placeholder: 'e.g. cpaneluser_dbuser', defaultValue: '', required: true },
+      { id: 'password', label: 'Password', type: 'password', placeholder: 'Enter database password', defaultValue: '', required: true },
       { id: 'ssl', label: 'Require SSL / TLS', type: 'checkbox', defaultValue: false, note: 'Enable for remote cloud PostgreSQL (Supabase/Neon). Uncheck for cPanel 127.0.0.1.' },
       { id: 'endpoint', label: 'Proxy Endpoint URL (PHP REST API)', type: 'text', placeholder: 'https://moviezonex.com/api/pg_api.php', defaultValue: 'https://moviezonex.com/api/pg_api.php', note: 'Direct TCP from browser is blocked by browsers. Communicates via pg_api.php on paid hosting or /api/db/pg.' },
-      { id: 'apiKey', label: 'API Secret Key (Optional)', type: 'password', placeholder: 'e.g. secret_key_123', note: 'Matches $API_KEY defined in pg_api.php (if configured).' }
+      { id: 'apiKey', label: 'API Secret Key (Optional)', type: 'password', placeholder: 'e.g. secret_key_123', defaultValue: '', note: 'Matches $API_KEY defined in pg_api.php (if configured).' }
     ]
   }
 };
@@ -1888,15 +1888,8 @@ function renderProviderForm(providerKey, dbId = null) {
   const isEditing = !!(dbId && existing && existing.id);
   if (!isEditing) {
     existing = {};
-    const sameTypeCount = allConfigs.filter(c => (c.type || '').toUpperCase() === spec.key).length;
-    existing.name = sameTypeCount > 0 ? `${spec.name} Connection ${sameTypeCount + 1}` : `${spec.name} Connection`;
     existing.role = 'BACKUP';
     existing.autoSync = true;
-    if (spec.key === 'POSTGRESQL') {
-      existing.endpoint = 'https://moviezonex.com/api/pg_api.php';
-      existing.host = '127.0.0.1';
-      existing.port = 5432;
-    }
   } else if (spec.key === 'POSTGRESQL' && existing.id === 'db_postgresql_replica') {
     // Pre-seed primary PostgreSQL verified defaults if empty
     if (!existing.password) existing.password = 'ol(5_MK8mF{~7cdG';
@@ -1958,7 +1951,7 @@ function renderProviderForm(providerKey, dbId = null) {
         <label style="display: block; font-size: 12px; font-weight: 700; color: #cbd5e1; margin-bottom: 4px;">
           Connection Name / Label <span style="color: #ef4444;">*</span>
         </label>
-        <input type="text" id="cfg-conn-name" class="form-control" value="${existing.name || spec.name + ' Connection'}" placeholder="e.g. Primary ${spec.name} or Branch 2 Replica" style="background: #0f172a; border-color: #334155; color: #fff; font-size: 13px;" required />
+        <input type="text" id="cfg-conn-name" class="form-control" value="${existing.name || ''}" placeholder="e.g. Branch 2 Database or Remote Backup" style="background: #0f172a; border-color: #334155; color: #fff; font-size: 13px;" required />
         <span style="font-size: 11px; color: #64748b; margin-top: 2px; display: block;">
           Displayed in Data Flow and Database Sync Status diagrams.
         </span>
@@ -1966,7 +1959,21 @@ function renderProviderForm(providerKey, dbId = null) {
 
       <!-- Specific Required Fields -->
       ${spec.fields.map(f => {
-        let val = existing[f.id] !== undefined ? existing[f.id] : (f.defaultValue || '');
+        let val = '';
+        if (isEditing) {
+          val = existing[f.id] !== undefined ? existing[f.id] : (f.defaultValue || '');
+        } else {
+          // New connection: keep credentials (database, username, password) completely empty
+          if (f.id === 'endpoint') {
+            val = f.defaultValue || (spec.key === 'MYSQL' ? 'https://moviezonex.com/mysql_api.php' : 'https://moviezonex.com/api/pg_api.php');
+          } else if (f.id === 'host') {
+            val = f.defaultValue || (spec.key === 'MYSQL' ? 'localhost' : '127.0.0.1');
+          } else if (f.id === 'port') {
+            val = f.defaultValue || (spec.key === 'MYSQL' ? 3306 : 5432);
+          } else {
+            val = '';
+          }
+        }
         if (f.type === 'checkbox') {
           return `
             <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">

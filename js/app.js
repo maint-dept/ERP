@@ -7,8 +7,8 @@
 import { state } from './state.js';
 import { storage } from './db/storage.js';
 import { authService } from './services/authService.js?v=4.26.85';
-import { renderNavbar, initNavbarEvents } from './components/navbar.js?v=4.26.102';
-import { renderSidebar, initSidebarEvents, updateSidebarActiveState } from './components/sidebar.js?v=4.26.102';
+import { renderNavbar, initNavbarEvents } from './components/navbar.js?v=4.26.103';
+import { renderSidebar, initSidebarEvents, updateSidebarActiveState } from './components/sidebar.js?v=4.26.103';
 import { renderHomepageView, initHomepageEvents } from './components/homepageView.js?v=4.26.52';
 import { renderLoginView, initLoginViewEvents } from './components/loginView.js?v=4.26.85';
 import { renderDashboard, initDashboardEvents } from './components/dashboard.js?v=4.26.52';
