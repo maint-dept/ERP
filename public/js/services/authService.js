@@ -536,11 +536,11 @@ class AuthService {
       }
     } catch (apiErr) {
       if (apiErr.message && (
-        apiErr.message.includes('প্রবেশাধিকার') ||
+        apiErr.message.includes('Access Denied') ||
         apiErr.message.includes('Invalid credentials') ||
         apiErr.message.includes('Incorrect password') ||
         apiErr.message.includes('INACTIVE') ||
-        apiErr.message.includes('Access Denied')
+        apiErr.message.includes('Unauthorized')
       )) {
         throw apiErr;
       }
@@ -613,11 +613,11 @@ class AuthService {
 
     if (isAdminGateway) {
       if (!isUserAdmin) {
-        throw new Error('⛔ Access Denied: This login page is strictly for Administrators. General factory users must sign in from the User Login page (/login).\n(প্রবেশাধিকার সংরক্ষিত: এটি শুধুমাত্র অ্যাডমিনদের জন্য। সাধারণ ইউজারগণ অনুগ্রহ করে User Login পেজ থেকে লগইন করুন।)');
+        throw new Error('⛔ Access Denied: This login page is strictly for Administrators. General factory users must sign in from the User Login portal (/login).');
       }
     } else if (!allowAnyRole) {
       if (isUserAdmin) {
-        throw new Error('🔒 Access Denied: This is the User Portal. Administrators and Super Admins must sign in from the Admin Login page (/maint-admin).\n(প্রবেশাধিকার সংরক্ষিত: এটি সাধারণ ইউজার পোর্টাল। অ্যাডমিন ও সুপার অ্যাডমিনগণ অনুগ্রহ করে Admin Login পেজ থেকে লগইন করুন।)');
+        throw new Error('🔒 Access Denied: This is the User Portal. Administrators and Super Admins must sign in from the Admin Login portal (/maint-admin).');
       }
     }
 

@@ -978,7 +978,7 @@ function renderPartsMasterTab() {
                     ${p.compatibleMachineTypes || 'Universal'}
                   </td>
                   <td style="font-family: var(--font-mono); font-weight: 700; color: #34d399;">
-                    ${p.unitPrice ? `৳${p.unitPrice}` : '—'}
+                    ${p.unitPrice ? `Tk ${p.unitPrice}` : '—'}
                   </td>
                   <td>
                     <span class="badge ${p.status === 'ACTIVE' ? 'badge-active' : 'badge-danger'}" style="font-size: 9.5px;">

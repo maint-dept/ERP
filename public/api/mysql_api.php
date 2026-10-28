@@ -421,7 +421,7 @@ try {
                 if (!$isUserAdmin) {
                     echo json_encode([
                         'success' => false,
-                        'error' => "⛔ Access Denied: This login page is strictly for Administrators. General factory users must sign in from the User Login page (/login).\n(প্রবেশাধিকার সংরক্ষিত: এটি শুধুমাত্র অ্যাডমিনদের জন্য। সাধারণ ইউজারগণ অনুগ্রহ করে User Login পেজ থেকে লগইন করুন।)"
+                        'error' => '⛔ Access Denied: This login page is strictly for Administrators. General factory users must sign in from the User Login portal (/login).'
                     ]);
                     break;
                 }
@@ -429,7 +429,7 @@ try {
                 if ($isUserAdmin) {
                     echo json_encode([
                         'success' => false,
-                        'error' => "🔒 Access Denied: This is the User Portal. Administrators and Super Admins must sign in from the Admin Login page (/maint-admin).\n(প্রবেশাধিকার সংরক্ষিত: এটি সাধারণ ইউজার পোর্টাল। অ্যাডমিন ও সুপার অ্যাডমিনগণ অনুগ্রহ করে Admin Login পেজ থেকে লগইন করুন।)"
+                        'error' => '🔒 Access Denied: This is the User Portal. Administrators and Super Admins must sign in from the Admin Login portal (/maint-admin).'
                     ]);
                     break;
                 }
