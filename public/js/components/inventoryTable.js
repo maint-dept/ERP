@@ -333,7 +333,7 @@ export function renderInventoryTable() {
             assetId = '—';
           }
         }
-        return `<td class="${tdClass}" style="width: 140px; min-width: 140px; max-width: 140px; text-align: center; ${tdStyle}"><a href="javascript:void(0)" class="btn-inspect-machine" data-id="${m.id}" style="text-decoration: none;" title="Permanent System Asset ID: ${assetId} (Click to inspect machine details)"><span class="badge system-asset-id-badge" style="background: rgba(16, 185, 129, 0.12); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.35); font-family: var(--font-mono); font-size: 11.5px; font-weight: 700; padding: 2px 7px; border-radius: 4px; display: inline-block; letter-spacing: 0.3px;">${assetId}</span></a></td>`;
+        return `<td class="${tdClass}" style="width: 140px; min-width: 140px; max-width: 140px; text-align: center; ${tdStyle}"><a href="javascript:void(0)" class="btn-inspect-machine" data-id="${m.id}" style="text-decoration: none;" title="Permanent System Asset ID: ${assetId} (Click to inspect machine details)"><span class="badge system-asset-id-badge">${assetId}</span></a></td>`;
       }
     },
     {

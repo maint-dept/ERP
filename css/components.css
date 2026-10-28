@@ -4120,34 +4120,47 @@ body.theme-light .kpi-pill.kpi-ambulance.active-kpi {
   box-shadow: 0 0 0 1px #e11d48 !important;
 }
 
-/* Light Theme: Machine Serial Number Clickable Link */
-body.theme-light .machine-serial-link {
-  color: #0369a1 !important;
-  background: #e0f2fe !important;
-  border: 1px solid #7dd3fc !important;
-  font-weight: 800 !important;
+/* Light Theme: Serial Numbers & Codes (Deep navy text #1e40af, bold 700, soft blue pill #eff6ff, border #93c5fd) */
+body.theme-light .machine-serial-link,
+body.theme-light .serial-pill,
+body.theme-light .badge-serial {
+  color: #1e40af !important;
+  background: #eff6ff !important;
+  border: 1px solid #93c5fd !important;
+  font-weight: 700 !important;
+  font-family: var(--font-mono) !important;
+  border-radius: 4px !important;
+  padding: 3px 8px !important;
+  display: inline-block !important;
 }
 body.theme-light .machine-serial-link:hover {
-  background: #bae6fd !important;
-  border-color: #0284c7 !important;
-  color: #0c4a6e !important;
+  background: #dbeafe !important;
+  border-color: #3b82f6 !important;
+  color: #1e3a8a !important;
 }
 
-/* Light Theme: Permanent System Asset ID Badge (AMG-MNT-XXXXXX) */
+/* Light Theme: Permanent System Asset ID Badge (Dark executive slate #0f172a, high-contrast cyan #38bdf8, mono 700) */
 body.theme-light .system-asset-id-badge {
-  background: #dcfce7 !important;
-  color: #166534 !important;
-  border: 1px solid #86efac !important;
-  font-weight: 800 !important;
+  background: #0f172a !important;
+  color: #38bdf8 !important;
+  border: 1px solid #334155 !important;
+  font-family: var(--font-mono) !important;
+  font-weight: 700 !important;
+  padding: 2px 7px !important;
+  border-radius: 4px !important;
+  display: inline-block !important;
+  letter-spacing: 0.3px !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25) !important;
 }
 body.theme-light .system-asset-id-badge:hover {
-  background: #bbf7d0 !important;
-  border-color: #22c55e !important;
+  background: #1e293b !important;
+  border-color: #0284c7 !important;
+  color: #7dd3fc !important;
 }
 
 /* Light Theme: Manufacturing Serial Text */
 body.theme-light .mfg-serial-text {
-  color: #0284c7 !important;
+  color: #1e40af !important;
   font-weight: 700 !important;
 }
 
@@ -4518,23 +4531,138 @@ body, input, select, textarea, button, table, th, td, label, p, span, h1, h2, h3
   color: #f8fafc;
 }
 
-/* Light Mode Universal Table Typography */
+/* ==========================================================================
+   GLOBAL DAYLIGHT / BRIGHT MODE DATA TABLE ARCHITECTURE (EXECUTIVE ERP STANDARD)
+   ========================================================================== */
+
+/* 1. Global Table Headers (TH): Solid neutral slate-gray (#e2e8f0), dark bold (#0f172a), bottom divider (#94a3b8) */
+body.theme-light table thead th,
 body.theme-light .data-table thead th,
 body.theme-light .excel-grid-table thead th,
+body.theme-light .table thead th,
+body.theme-light .transfers-table thead th,
 body.theme-light .pm-table thead th,
-body.theme-light .transfers-table thead th {
-  color: #090e1a !important;
-  background-color: #f1f5f9 !important;
-  border-color: #cbd5e1 !important;
+body.theme-light .dash-live-pm-table thead th,
+body.theme-light .pm-official-table thead th,
+body.theme-light .parts-trace-table thead th,
+body.theme-light .relocate-history-table-desktop thead th,
+body.theme-light .user-management-table thead th,
+body.theme-light .mach-summary-table thead th,
+body.theme-light .diff-table thead th,
+body.theme-light .permissions-matrix-table thead th {
+  background-color: #e2e8f0 !important;
+  color: #0f172a !important;
+  font-weight: 800 !important;
+  font-size: 11.5px !important;
+  letter-spacing: 0.3px !important;
+  border-bottom: 2px solid #94a3b8 !important;
+  border-right: 1px solid #cbd5e1 !important;
+  border-left: 1px solid #cbd5e1 !important;
+  border-top: 1px solid #cbd5e1 !important;
+  text-transform: uppercase;
 }
 
+body.theme-light table thead th:hover,
+body.theme-light .data-table thead th:hover,
+body.theme-light .excel-grid-table thead th:hover,
+body.theme-light .transfers-table thead th:hover,
+body.theme-light .pm-table thead th:hover {
+  background-color: #cbd5e1 !important;
+}
+
+/* 2. Global Table Rows: Odd = #ffffff, Even = #f1f5f9 (Zero mint/pastel tints) */
+body.theme-light table tbody tr:nth-child(odd) td,
+body.theme-light .data-table tbody tr:nth-child(odd) td,
+body.theme-light .excel-grid-table tbody tr:nth-child(odd) td,
+body.theme-light .table tbody tr:nth-child(odd) td,
+body.theme-light .transfers-table tbody tr:nth-child(odd) td,
+body.theme-light .pm-table tbody tr:nth-child(odd) td,
+body.theme-light .dash-live-pm-table tbody tr:nth-child(odd) td,
+body.theme-light .pm-official-table tbody tr:nth-child(odd) td,
+body.theme-light .parts-trace-table tbody tr:nth-child(odd) td,
+body.theme-light .relocate-history-table-desktop tbody tr:nth-child(odd) td,
+body.theme-light .user-management-table tbody tr:nth-child(odd) td,
+body.theme-light .mach-summary-table tbody tr:nth-child(odd) td,
+body.theme-light .diff-table tbody tr:nth-child(odd) td,
+body.theme-light .permissions-matrix-table tbody tr:nth-child(odd) td {
+  background-color: #ffffff !important;
+}
+
+body.theme-light table tbody tr:nth-child(even) td,
+body.theme-light .data-table tbody tr:nth-child(even) td,
+body.theme-light .excel-grid-table tbody tr:nth-child(even) td,
+body.theme-light .table tbody tr:nth-child(even) td,
+body.theme-light .transfers-table tbody tr:nth-child(even) td,
+body.theme-light .pm-table tbody tr:nth-child(even) td,
+body.theme-light .dash-live-pm-table tbody tr:nth-child(even) td,
+body.theme-light .pm-official-table tbody tr:nth-child(even) td,
+body.theme-light .parts-trace-table tbody tr:nth-child(even) td,
+body.theme-light .relocate-history-table-desktop tbody tr:nth-child(even) td,
+body.theme-light .user-management-table tbody tr:nth-child(even) td,
+body.theme-light .mach-summary-table tbody tr:nth-child(even) td,
+body.theme-light .diff-table tbody tr:nth-child(even) td,
+body.theme-light .permissions-matrix-table tbody tr:nth-child(even) td {
+  background-color: #f1f5f9 !important;
+}
+
+/* 3. Global Row Hover: Smooth cool light blue (#e0f2fe) across all cells & sticky columns */
+body.theme-light table tbody tr:hover td,
+body.theme-light .data-table tbody tr:hover td,
+body.theme-light .excel-grid-table tbody tr:hover td,
+body.theme-light .table tbody tr:hover td,
+body.theme-light .transfers-table tbody tr:hover td,
+body.theme-light .pm-table tbody tr:hover td,
+body.theme-light .dash-live-pm-table tbody tr:hover td,
+body.theme-light .pm-official-table tbody tr:hover td,
+body.theme-light .parts-trace-table tbody tr:hover td,
+body.theme-light .relocate-history-table-desktop tbody tr:hover td,
+body.theme-light .user-management-table tbody tr:hover td,
+body.theme-light .mach-summary-table tbody tr:hover td,
+body.theme-light .diff-table tbody tr:hover td,
+body.theme-light .permissions-matrix-table tbody tr:hover td,
+body.theme-light .excel-grid-table tbody tr:hover td.col-freeze-sl,
+body.theme-light .excel-grid-table tbody tr:hover td.col-freeze-check,
+body.theme-light .excel-grid-table tbody tr:hover td.col-freeze-name,
+body.theme-light .excel-grid-table tbody tr:hover td.col-frozen-cell,
+body.theme-light .user-management-table tbody tr:hover td.uam-col-sticky-check,
+body.theme-light .user-management-table tbody tr:hover td.uam-col-sticky-card,
+body.theme-light .user-management-table tbody tr:hover td.uam-col-sticky-card-pass {
+  background-color: #e0f2fe !important;
+}
+
+/* 4. Global Cell Borders & Pitch-Crisp Slate Black Typography (min font-weight: 500) */
+body.theme-light table tbody td,
 body.theme-light .data-table tbody td,
 body.theme-light .excel-grid-table tbody td,
+body.theme-light .table tbody td,
+body.theme-light .transfers-table tbody td,
 body.theme-light .pm-table tbody td,
-body.theme-light .transfers-table tbody td {
+body.theme-light .dash-live-pm-table tbody td,
+body.theme-light .pm-official-table tbody td,
+body.theme-light .parts-trace-table tbody td,
+body.theme-light .relocate-history-table-desktop tbody td,
+body.theme-light .user-management-table tbody td,
+body.theme-light .mach-summary-table tbody td,
+body.theme-light .diff-table tbody td,
+body.theme-light .permissions-matrix-table tbody td {
+  border-bottom: 1px solid #cbd5e1 !important;
+  border-right: 1px solid #cbd5e1 !important;
+  border-left: 1px solid #cbd5e1 !important;
   color: #0f172a !important;
-  background-color: #ffffff !important;
-  border-color: #e2e8f0 !important;
+  font-weight: 500 !important;
+  font-size: 12px;
+}
+
+body.theme-light table tbody td strong,
+body.theme-light table tbody td b,
+body.theme-light .excel-grid-table tbody td strong,
+body.theme-light .excel-grid-table tbody td b,
+body.theme-light .data-table tbody td strong,
+body.theme-light .data-table tbody td b,
+body.theme-light .transfers-table tbody td strong,
+body.theme-light .user-management-table tbody td strong {
+  color: #0f172a !important;
+  font-weight: 700 !important;
 }
 
 /* 9. Top Navbar Status Pill & Theme Button Enhancement */
