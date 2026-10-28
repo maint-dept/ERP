@@ -333,7 +333,7 @@ export function renderInventoryTable() {
             assetId = '—';
           }
         }
-        return `<td class="${tdClass}" style="width: 140px; min-width: 140px; max-width: 140px; text-align: center; ${tdStyle}"><a href="javascript:void(0)" class="btn-inspect-machine" data-id="${m.id}" style="text-decoration: none;" title="Permanent System Asset ID: ${assetId} (Click to inspect machine details)"><span class="badge" style="background: rgba(16, 185, 129, 0.12); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.35); font-family: var(--font-mono); font-size: 11.5px; font-weight: 700; padding: 2px 7px; border-radius: 4px; display: inline-block; letter-spacing: 0.3px;">${assetId}</span></a></td>`;
+        return `<td class="${tdClass}" style="width: 140px; min-width: 140px; max-width: 140px; text-align: center; ${tdStyle}"><a href="javascript:void(0)" class="btn-inspect-machine" data-id="${m.id}" style="text-decoration: none;" title="Permanent System Asset ID: ${assetId} (Click to inspect machine details)"><span class="badge system-asset-id-badge" style="background: rgba(16, 185, 129, 0.12); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.35); font-family: var(--font-mono); font-size: 11.5px; font-weight: 700; padding: 2px 7px; border-radius: 4px; display: inline-block; letter-spacing: 0.3px;">${assetId}</span></a></td>`;
       }
     },
     {
@@ -343,7 +343,7 @@ export function renderInventoryTable() {
       renderTh: (thStyle, thClass) => `<th class="th-sortable ${thClass}" data-sort="manufacturing_serial" style="width: 125px; min-width: 125px; max-width: 125px; text-align: center; cursor: pointer; ${thStyle}">Mfg Serial No</th>`,
       renderTd: (m, meta, tdStyle, tdClass) => {
         const mfg = m.manufacturing_serial || m.manufacturingSerial || m.customValues?.manufacturing_serial || m.customValues?.manufacturingSerial || m.manufacturingNo || m.mfgSerial || m.manufacturing || '—';
-        return `<td class="${tdClass}" style="width: 125px; min-width: 125px; max-width: 125px; text-align: center; overflow: hidden; text-overflow: ellipsis; font-family: var(--font-mono); font-size: 11.5px; ${tdStyle}" title="${mfg}"><span style="color: #38bdf8; font-weight: 600;">${mfg}</span></td>`;
+        return `<td class="${tdClass}" style="width: 125px; min-width: 125px; max-width: 125px; text-align: center; overflow: hidden; text-overflow: ellipsis; font-family: var(--font-mono); font-size: 11.5px; ${tdStyle}" title="${mfg}"><span class="mfg-serial-text" style="color: #38bdf8; font-weight: 600;">${mfg}</span></td>`;
       }
     },
     {
@@ -1158,13 +1158,13 @@ export function renderInventoryTable() {
       </div> <!-- ── End of Pinned Top Control Deck ── -->
 
       <!-- Columns & Horizontal Scroll Status Bar -->
-      <div style="display: flex; justify-content: space-between; align-items: center; padding: 4px 8px; font-size: 11px; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; flex-shrink: 0; margin-bottom: 2px;">
+      <div class="inventory-grid-info-bar" style="display: flex; justify-content: space-between; align-items: center; padding: 4px 8px; font-size: 11px; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; flex-shrink: 0; margin-bottom: 2px;">
         <span style="color: var(--text-secondary); display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap;">
-          <span>📋 Grid Layout: <strong style="color: #fff;">${columnLayout.length}</strong> Columns</span>
-          <span style="color: #94a3b8;">&bull;</span>
-          <span style="color: #38bdf8;">❄️ <strong>${frozenColKeys.length}</strong> Sticky Frozen</span>
-          <span style="color: #94a3b8;">&bull;</span>
-          <span style="color: #cbd5e1;">👉 Use ◀ ▶ buttons or Shift + Mouse Wheel to scroll columns</span>
+          <span>📋 Grid Layout: <strong class="info-cols-total" style="color: #fff;">${columnLayout.length}</strong> Columns</span>
+          <span class="info-sep" style="color: #94a3b8;">&bull;</span>
+          <span class="info-frozen" style="color: #38bdf8;">❄️ <strong>${frozenColKeys.length}</strong> Sticky Frozen</span>
+          <span class="info-sep" style="color: #94a3b8;">&bull;</span>
+          <span class="info-hint" style="color: #cbd5e1;">👉 Use ◀ ▶ buttons or Shift + Mouse Wheel to scroll columns</span>
         </span>
         <button type="button" id="link-show-all-cols-hint" class="btn btn-ghost btn-xs" style="color: #34d399; font-size: 11px; font-weight: 700; padding: 2px 8px; border: 1px solid rgba(52,211,153,0.4); border-radius: 4px; background: rgba(52,211,153,0.08);" title="Click to reveal all available columns in table">
           👁️ Reveal All Available Columns (${allColDefs.length})

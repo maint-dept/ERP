@@ -4071,24 +4071,208 @@ body.theme-light .compact-filter-bar {
   color: #090e1a !important;
 }
 
-/* Light Theme: KPI Pills & Stat Counters */
+/* Light Theme: KPI Pills & Stat Counters (Executive Contrast & Active Badges) */
 body.theme-light .kpi-pill {
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+}
+
+body.theme-light .kpi-pill:hover {
+  background: #f8fafc !important;
+  border-color: #94a3b8 !important;
+}
+
+body.theme-light .kpi-pill.kpi-total .kpi-val { color: #0f172a !important; }
+body.theme-light .kpi-pill.kpi-running .kpi-val { color: #15803d !important; }
+body.theme-light .kpi-pill.kpi-usable .kpi-val { color: #0284c7 !important; }
+body.theme-light .kpi-pill.kpi-repair .kpi-val { color: #b45309 !important; }
+body.theme-light .kpi-pill.kpi-ambulance .kpi-val { color: #be123c !important; }
+
+body.theme-light .kpi-pill .kpi-lbl {
+  color: #475569 !important;
+  font-weight: 700 !important;
+}
+
+body.theme-light .kpi-pill.kpi-total.active-kpi {
+  background: #e0f2fe !important;
+  border-color: #0284c7 !important;
+  box-shadow: 0 0 0 1px #0284c7 !important;
+}
+body.theme-light .kpi-pill.kpi-running.active-kpi {
+  background: #dcfce7 !important;
+  border-color: #16a34a !important;
+  box-shadow: 0 0 0 1px #16a34a !important;
+}
+body.theme-light .kpi-pill.kpi-usable.active-kpi {
+  background: #e0f2fe !important;
+  border-color: #0284c7 !important;
+  box-shadow: 0 0 0 1px #0284c7 !important;
+}
+body.theme-light .kpi-pill.kpi-repair.active-kpi {
+  background: #fef3c7 !important;
+  border-color: #d97706 !important;
+  box-shadow: 0 0 0 1px #d97706 !important;
+}
+body.theme-light .kpi-pill.kpi-ambulance.active-kpi {
+  background: #ffe4e6 !important;
+  border-color: #e11d48 !important;
+  box-shadow: 0 0 0 1px #e11d48 !important;
+}
+
+/* Light Theme: Machine Serial Number Clickable Link */
+body.theme-light .machine-serial-link {
+  color: #0369a1 !important;
+  background: #e0f2fe !important;
+  border: 1px solid #7dd3fc !important;
+  font-weight: 800 !important;
+}
+body.theme-light .machine-serial-link:hover {
+  background: #bae6fd !important;
+  border-color: #0284c7 !important;
+  color: #0c4a6e !important;
+}
+
+/* Light Theme: Permanent System Asset ID Badge (AMG-MNT-XXXXXX) */
+body.theme-light .system-asset-id-badge {
+  background: #dcfce7 !important;
+  color: #166534 !important;
+  border: 1px solid #86efac !important;
+  font-weight: 800 !important;
+}
+body.theme-light .system-asset-id-badge:hover {
+  background: #bbf7d0 !important;
+  border-color: #22c55e !important;
+}
+
+/* Light Theme: Manufacturing Serial Text */
+body.theme-light .mfg-serial-text {
+  color: #0284c7 !important;
+  font-weight: 700 !important;
+}
+
+/* Light Theme: Table Quantity Badges */
+body.theme-light .qty-running { color: #15803d !important; font-weight: 800 !important; }
+body.theme-light .qty-usable { color: #0369a1 !important; font-weight: 800 !important; }
+body.theme-light .qty-repair { color: #b45309 !important; font-weight: 800 !important; }
+body.theme-light .qty-total {
+  color: #0f172a !important;
+  background: #e0f2fe !important;
+  border: 1px solid #7dd3fc !important;
+  font-weight: 800 !important;
+}
+
+/* Light Theme: Action Buttons & Filter Tools */
+body.theme-light #btn-inventory-sync-db {
+  background: #ecfdf5 !important;
+  color: #047857 !important;
+  border: 1.5px solid #10b981 !important;
+  font-weight: 800 !important;
+}
+body.theme-light #btn-inventory-sync-db:hover {
+  background: #d1fae5 !important;
+}
+
+body.theme-light #btn-inventory-relocate {
+  background: #e0f2fe !important;
+  color: #0369a1 !important;
+  border: 1.5px solid #0284c7 !important;
+  font-weight: 800 !important;
+}
+body.theme-light #btn-inventory-relocate:hover {
+  background: #bae6fd !important;
+}
+
+body.theme-light #btn-inventory-qr-codes {
+  background: #f3e8ff !important;
+  color: #6b21a8 !important;
+  border: 1.5px solid #9333ea !important;
+  font-weight: 800 !important;
+}
+body.theme-light #btn-inventory-qr-codes:hover {
+  background: #e9d5ff !important;
+}
+
+body.theme-light #btn-show-all-columns-quick {
+  background: #ecfdf5 !important;
+  color: #047857 !important;
+  border: 1px solid #10b981 !important;
+  font-weight: 700 !important;
+}
+
+body.theme-light #btn-column-picker-inline {
+  background: #e0f2fe !important;
+  color: #0369a1 !important;
+  border: 1px solid #0284c7 !important;
+  font-weight: 700 !important;
+}
+
+body.theme-light #link-show-all-cols-hint {
+  background: #ecfdf5 !important;
+  color: #047857 !important;
+  border: 1px solid #10b981 !important;
+  font-weight: 700 !important;
+}
+
+body.theme-light #btn-toggle-advanced-filters {
+  color: #0369a1 !important;
+  border: 1px solid #7dd3fc !important;
+  background: #f0f9ff !important;
+  font-weight: 700 !important;
+}
+
+body.theme-light #btn-scroll-table-left,
+body.theme-light #btn-scroll-table-right {
+  color: #0369a1 !important;
+  background: #ffffff !important;
+  border-color: #cbd5e1 !important;
+}
+
+body.theme-light .active-filter-tag {
+  background: #e0f2fe !important;
+  color: #0369a1 !important;
+  border: 1px solid #7dd3fc !important;
+  font-weight: 600 !important;
+}
+
+/* Light Theme: Pinned Top Header & Pagination Card */
+body.theme-light .inventory-sticky-header-panel {
+  background: #f1f5f9 !important;
+  border-bottom: 1px solid #cbd5e1 !important;
+}
+
+body.theme-light .inventory-pagination-bar {
   background: #ffffff !important;
   border-color: #cbd5e1 !important;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
 }
 
-body.theme-light .kpi-pill:hover {
+body.theme-light .pagination-counter strong {
+  color: #0f172a !important;
+}
+
+body.theme-light .page-btn {
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #1e293b !important;
+}
+
+body.theme-light .page-btn:hover:not(:disabled) {
   background: #f1f5f9 !important;
   border-color: #0284c7 !important;
+  color: #0284c7 !important;
 }
 
-body.theme-light .kpi-pill .kpi-val {
-  color: #090e1a !important;
+body.theme-light .page-btn.active {
+  background: #0284c7 !important;
+  border-color: #0284c7 !important;
+  color: #ffffff !important;
 }
 
-body.theme-light .kpi-pill .kpi-lbl {
-  color: #475569 !important;
+body.theme-light .page-btn:disabled {
+  background: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+  color: #94a3b8 !important;
 }
 
 body.theme-light .mach-summary-table tfoot td,
@@ -4226,6 +4410,37 @@ body.theme-light .text-secondary {
   color: #1e293b !important;
 }
 
+/* Light Theme: Universal High-Contrast Neon Replacements */
+body.theme-light [style*="color: #38bdf8"],
+body.theme-light [style*="color: #7dd3fc"] {
+  color: #0369a1 !important;
+}
+body.theme-light [style*="color: #34d399"],
+body.theme-light [style*="color: #10b981"],
+body.theme-light [style*="color: #4ade80"] {
+  color: #15803d !important;
+}
+body.theme-light [style*="color: #fbbf24"],
+body.theme-light [style*="color: #f59e0b"],
+body.theme-light [style*="color: #fde047"] {
+  color: #b45309 !important;
+}
+body.theme-light [style*="color: #f43f5e"],
+body.theme-light [style*="color: #fda4af"] {
+  color: #be123c !important;
+}
+body.theme-light [style*="color: #a855f7"],
+body.theme-light [style*="color: #c084fc"],
+body.theme-light [style*="color: #d8b4fe"] {
+  color: #6b21a8 !important;
+}
+body.theme-light [style*="color: #cbd5e1"] {
+  color: #334155 !important;
+}
+body.theme-light [style*="color: #94a3b8"] {
+  color: #475569 !important;
+}
+
 /* Light Theme: Department & Table Badges Contrast Fix */
 body.theme-light [style*="background: rgba(255, 255, 255, 0.06)"],
 body.theme-light [style*="background: rgba(255, 255, 255, 0.08)"],
@@ -4331,6 +4546,26 @@ body.theme-light .transfers-table tbody td {
   box-shadow: 0 0 10px rgba(16, 185, 129, 0.25) !important;
 }
 
+body.theme-light .nav-db-status-pill {
+  background: #ecfdf5 !important;
+  border: 1.5px solid #10b981 !important;
+  color: #065f46 !important;
+  font-weight: 800 !important;
+  box-shadow: 0 1px 3px rgba(16, 185, 129, 0.2) !important;
+}
+
+body.theme-light .header-sub-text {
+  color: #0284c7 !important;
+  font-weight: 700 !important;
+}
+
+body.theme-light .nav-profile-role-badge {
+  background: #e0f2fe !important;
+  color: #0369a1 !important;
+  border: 1px solid #7dd3fc !important;
+  font-weight: 700 !important;
+}
+
 .nav-icon-btn#btn-theme-toggle,
 #btn-theme-toggle {
   display: inline-flex !important;
@@ -4352,6 +4587,20 @@ body.theme-light .transfers-table tbody td {
   border-color: rgba(56, 189, 248, 0.4) !important;
   color: #38bdf8 !important;
   transform: translateY(-1px);
+}
+
+body.theme-light .nav-icon-btn#btn-theme-toggle,
+body.theme-light #btn-theme-toggle {
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #0f172a !important;
+}
+
+body.theme-light .nav-icon-btn#btn-theme-toggle:hover,
+body.theme-light #btn-theme-toggle:hover {
+  background: #f1f5f9 !important;
+  border-color: #0284c7 !important;
+  color: #0284c7 !important;
 }
 
 #btn-dropdown-theme-toggle {
