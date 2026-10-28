@@ -3,7 +3,7 @@
  * Clean, User-Friendly Navbar with Streamlined Actions & Account Dropdown
  */
 
-import { authService } from '../services/authService.js';
+import { authService } from '../services/authService.js?v=4.26.60';
 import { notificationService } from '../services/notificationService.js';
 import { state } from '../state.js';
 import { storage } from '../db/storage.js';

@@ -4,7 +4,7 @@
  * Premium Cyber-Executive Security Gateway Interface (v4.26.56)
  */
 
-import { authService } from '../services/authService.js';
+import { authService } from '../services/authService.js?v=4.26.60';
 import { emailService } from '../services/emailService.js';
 import { state } from '../state.js';
 import { router } from '../services/router.js?v=4.26.54';

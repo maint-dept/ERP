@@ -3,7 +3,7 @@
  * Central Reactive State Store & Pub/Sub Event Bus
  */
 
-import { authService } from './services/authService.js';
+import { authService } from './services/authService.js?v=4.26.60';
 import { storage } from './db/storage.js';
 import { TABLE_NAMES } from './db/schema.js';
 

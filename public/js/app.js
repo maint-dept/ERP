@@ -6,7 +6,7 @@
 
 import { state } from './state.js';
 import { storage } from './db/storage.js';
-import { authService } from './services/authService.js';
+import { authService } from './services/authService.js?v=4.26.60';
 import { renderNavbar, initNavbarEvents } from './components/navbar.js?v=4.26.52';
 import { renderSidebar, initSidebarEvents, updateSidebarActiveState } from './components/sidebar.js?v=4.26.52';
 import { renderHomepageView, initHomepageEvents } from './components/homepageView.js?v=4.26.52';
