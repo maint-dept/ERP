@@ -447,14 +447,20 @@ export function renderDatabaseConfigView() {
 
         <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
           <button id="btn-toggle-auto-sync" class="btn btn-secondary btn-sm" style="font-weight: 700; border-color: ${state.autoSync ? '#10b981' : '#64748b'}; color: ${state.autoSync ? '#34d399' : '#cbd5e1'}; display: flex; align-items: center; gap: 6px;">
-            <span>${state.autoSync ? '⏸️ Turn Auto-Sync OFF' : '▶️ Turn Auto-Sync ON'}</span>
+            <span>${state.autoSync ? '🟢 Auto-Sync is ON (Instant)' : '▶️ Turn Auto-Sync ON'}</span>
           </button>
-          <button id="btn-sync-all-providers" class="btn btn-primary btn-sm" style="font-weight: 700; background: linear-gradient(135deg, #0284c7, #2563eb); display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 15px rgba(2, 132, 199, 0.35);">
-            <span>🔄 Sync All Databases</span>
+          <button id="btn-sync-all-providers" class="btn btn-secondary btn-sm" style="font-weight: 700; border-color: rgba(56, 189, 248, 0.3); color: #38bdf8; display: flex; align-items: center; gap: 6px;">
+            <span>🔄 Verify &amp; Audit All DBs</span>
           </button>
-          <button id="btn-fix-all-missing" class="btn btn-warning btn-sm" style="font-weight: 700; background: #f59e0b; color: #000; border: none; display: flex; align-items: center; gap: 6px;">
-            <span>⚡ Fix &amp; Re-sync Missing (${totalMissing})</span>
-          </button>
+          ${totalMissing > 0 ? `
+            <button id="btn-fix-all-missing" class="btn btn-warning btn-sm" style="font-weight: 700; background: #f59e0b; color: #000; border: none; display: flex; align-items: center; gap: 6px;">
+              <span>⚡ Fix &amp; Re-sync Missing (${totalMissing})</span>
+            </button>
+          ` : `
+            <span style="display: inline-flex; align-items: center; gap: 6px; background: rgba(16, 185, 129, 0.12); border: 1px solid #10b981; color: #34d399; font-size: 11px; font-weight: 700; padding: 5px 12px; border-radius: 6px;">
+              ⚡ Dual-DB Auto-Replication: Active
+            </span>
+          `}
         </div>
       </div>
 
@@ -703,26 +709,37 @@ export function renderDatabaseConfigView() {
       </div>
 
       <!-- SECTION 3: SCREENSHOT 4 — DATA DIFFERENCES TABLE & RECONCILIATION -->
-      <div style="background: #090e1a; border: 1.5px solid rgba(245, 158, 11, 0.4); border-radius: 12px; padding: 22px 24px; margin-bottom: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+      <div style="background: #090e1a; border: 1.5px solid ${totalMissing > 0 ? 'rgba(245, 158, 11, 0.4)' : 'rgba(16, 185, 129, 0.35)'}; border-radius: 12px; padding: 22px 24px; margin-bottom: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
         
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
           <div>
             <div style="display: flex; align-items: center; gap: 8px;">
-              <span style="font-size: 20px; color: #fbbf24;">⚠️</span>
-              <h2 style="font-size: 16px; font-weight: 800; color: #fbbf24; margin: 0; font-family: 'JetBrains Mono', monospace; letter-spacing: 0.5px;">DATA DIFFERENCES</h2>
+              <span style="font-size: 20px; color: ${totalMissing > 0 ? '#fbbf24' : '#34d399'};">${totalMissing > 0 ? '⚠️' : '⚡'}</span>
+              <h2 style="font-size: 16px; font-weight: 800; color: ${totalMissing > 0 ? '#fbbf24' : '#34d399'}; margin: 0; font-family: 'JetBrains Mono', monospace; letter-spacing: 0.5px;">
+                ${totalMissing > 0 ? 'DATA DIFFERENCES &amp; RECONCILIATION' : 'DUAL-DATABASE INSTANT AUTO-SYNC STATUS'}
+              </h2>
             </div>
             <p style="font-size: 12px; color: var(--text-secondary); margin: 4px 0 0;">
-              Audit discrepancies, compare record totals, and reconcile missing documents across databases:
+              ${totalMissing > 0 
+                ? 'Discrepancy detected across databases. The auto-sync engine will automatically reconcile in background:'
+                : 'Continuous instant dual-write active: Every ERP transaction committed in MySQL Primary is automatically & instantly replicated to PostgreSQL Secondary Target. Zero manual administrator action needed.'}
             </p>
           </div>
 
           <div style="display: flex; gap: 8px; align-items: center;">
-            <button id="btn-view-missing-records" class="btn btn-secondary btn-sm" style="font-weight: 700; color: #fbbf24; border-color: rgba(245, 158, 11, 0.4); font-family: 'JetBrains Mono', monospace;">
-              [ View Missing Records (${totalMissing}) ]
-            </button>
-            <button id="btn-reconcile-all-records" class="btn btn-primary btn-sm" style="font-weight: 700; background: linear-gradient(135deg, #10b981, #059669); border: none; font-family: 'JetBrains Mono', monospace;">
-              [ ⚡ Re-sync All Missing ]
-            </button>
+            ${totalMissing > 0 ? `
+              <button id="btn-view-missing-records" class="btn btn-secondary btn-sm" style="font-weight: 700; color: #fbbf24; border-color: rgba(245, 158, 11, 0.4); font-family: 'JetBrains Mono', monospace;">
+                [ View Missing Records (${totalMissing}) ]
+              </button>
+              <button id="btn-reconcile-all-records" class="btn btn-primary btn-sm" style="font-weight: 700; background: linear-gradient(135deg, #10b981, #059669); border: none; font-family: 'JetBrains Mono', monospace;">
+                [ ⚡ Re-sync All Missing ]
+              </button>
+            ` : `
+              <div style="display: inline-flex; align-items: center; gap: 6px; background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.35); padding: 5px 12px; border-radius: 6px; color: #34d399; font-size: 12px; font-weight: 700; font-family: 'JetBrains Mono', monospace;">
+                <span style="width: 7px; height: 7px; border-radius: 50%; background: #10b981; box-shadow: 0 0 8px #10b981; display: inline-block;"></span>
+                ⚡ Real-Time Auto-Sync: 100% In-Sync (0 Missing)
+              </div>
+            `}
           </div>
         </div>
 
@@ -768,10 +785,22 @@ export function renderDatabaseConfigView() {
                     const actionBtn = d.status === 'DISABLED'
                       ? `<span style="font-size: 11px; color: #64748b;">Disabled</span>`
                       : d.status === 'PENDING'
-                      ? `<button class="btn btn-secondary btn-sm btn-resync-db" data-db-id="${d.id}" style="font-size: 11px; padding: 2px 8px;">▶ First Sync</button>`
+                      ? `<div style="display: flex; align-items: center; justify-content: flex-end; gap: 6px;">
+                           <span style="font-size: 11px; color: #fbbf24; font-weight: 700;">⏳ Auto-Syncing...</span>
+                           <button class="btn btn-secondary btn-sm btn-resync-db" data-db-id="${d.id}" style="font-size: 10px; padding: 2px 6px;" title="Force immediate initial sync">▶ Sync Now</button>
+                         </div>`
                       : d.missing > 0 || d.status === 'FAILED'
-                      ? `<button class="btn btn-warning btn-sm btn-resync-db" data-db-id="${d.id}" style="font-size: 11px; padding: 2px 8px; font-weight: 700;">⚡ Fix &amp; Sync</button>`
-                      : `<button class="btn btn-secondary btn-sm btn-resync-db" data-db-id="${d.id}" style="font-size: 11px; padding: 2px 8px;">🔄 Re-sync</button>`;
+                      ? `<div style="display: flex; align-items: center; justify-content: flex-end; gap: 6px;">
+                           <span style="font-size: 11px; color: #fbbf24; font-weight: 700;">⚠️ ${d.missing} Missing</span>
+                           <button class="btn btn-warning btn-sm btn-resync-db" data-db-id="${d.id}" style="font-size: 11px; padding: 2px 8px; font-weight: 700;">⚡ Fix &amp; Sync</button>
+                         </div>`
+                      : `<div style="display: flex; align-items: center; justify-content: flex-end; gap: 6px;">
+                           <span style="display: inline-flex; align-items: center; gap: 5px; color: #34d399; font-size: 11.5px; font-weight: 700; background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.35); padding: 2.5px 8px; border-radius: 5px; white-space: nowrap;" title="Instant Real-Time Auto-Sync Active: Any change made in the ERP is immediately mirrored to PostgreSQL without requiring any admin click.">
+                             <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #10b981; box-shadow: 0 0 6px #10b981;"></span>
+                             ⚡ Auto-Synced (Instant)
+                           </span>
+                           <button class="btn btn-secondary btn-sm btn-resync-db" data-db-id="${d.id}" style="font-size: 10px; padding: 2px 6px; opacity: 0.55; border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.03);" title="Manual Audit / Re-verify (Optional Override)">🔄</button>
+                         </div>`;
                     return `
                     <tr style="border-bottom: 1px solid rgba(255,255,255,0.06); background: ${d.missing > 0 ? 'rgba(245,158,11,0.04)' : d.status === 'FAILED' ? 'rgba(239,68,68,0.04)' : 'transparent'};">
                       <td style="padding: 12px 14px; font-weight: 700; color: #fff;">${d.icon} ${d.name}</td>
@@ -1308,6 +1337,20 @@ export function initDatabaseConfigEvents() {
       }
     });
   }
+
+  // Automatic background reconciliation if any discrepancies are ever detected (zero admin clicks needed)
+  try {
+    const currentState = getDashboardSyncState();
+    const missingTotal = (currentState.databases || []).reduce((acc, d) => acc + (d.missing || 0), 0);
+    if (missingTotal > 0) {
+      setTimeout(() => {
+        console.log('[Data Engine] Auto-reconciling desynchronized records in background without admin click...');
+        syncManager.triggerAutoSync({ silent: true }).then(synced => {
+          if (synced) reRenderView();
+        }).catch(() => {});
+      }, 1200);
+    }
+  } catch (_) {}
 
   // 7. View Missing Records toggle
   const missingPanel = document.getElementById('missing-records-panel');

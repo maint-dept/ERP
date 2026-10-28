@@ -606,7 +606,7 @@ class SyncManager {
    * Periodically checks secondary databases and automatically reconciles/syncs
    * any secondary database that is enabled, pending, or desynchronized.
    */
-  startAutoSyncEngine(intervalMs = 45000) {
+  startAutoSyncEngine(intervalMs = 15000) {
     if (this._autoSyncTimer) {
       clearInterval(this._autoSyncTimer);
       this._autoSyncTimer = null;
