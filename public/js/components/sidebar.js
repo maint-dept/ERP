@@ -232,13 +232,13 @@ export function renderSidebar() {
           <div class="brand-logo-badge" title="Al-Muslim Group Maintenance Department ERP" style="width: 36px; height: 36px; border-radius: 8px; background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; border: 1px solid rgba(56, 189, 248, 0.35);">🔧</div>
           <div class="brand-text-container" style="min-width: 0; flex: 1; display: flex; flex-direction: column;">
             <div style="display: flex; align-items: center; gap: 6px; min-width: 0;">
-              <span class="brand-text-title" style="font-weight: 800; font-size: 13.5px; color: #ffffff; letter-spacing: 0.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-transform: uppercase;">AL-MUSLIM GROUP</span>
-              <span class="brand-status-pill" title="Live System Active" style="display: inline-flex; align-items: center; gap: 3.5px; background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.35); border-radius: 9999px; padding: 1.5px 6px; font-size: 8.5px; font-weight: 700; color: #34d399; flex-shrink: 0;">
+              <span class="brand-text-title" style="font-weight: 700; font-size: 14px; color: #ffffff; letter-spacing: -0.2px; white-space: nowrap;">Al-Muslim Group</span>
+              <span class="brand-status-pill" title="Live System Active" style="display: inline-flex; align-items: center; gap: 3.5px; background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.35); border-radius: 9999px; padding: 1.5px 6px; font-size: 8.5px; font-weight: 600; color: #34d399; flex-shrink: 0;">
                 <span class="brand-status-dot" style="width: 4.5px; height: 4.5px; border-radius: 50%; background: #10b981; display: inline-block;"></span>Live
               </span>
             </div>
-            <div class="brand-text-sub" style="font-size: 9px; color: #38bdf8; font-weight: 700; margin-top: 2px; white-space: nowrap; letter-spacing: 0.5px; text-transform: uppercase;" title="Industrial Machine & Assets System">
-              INDUSTRIAL MACHINE &amp; ASSETS SYSTEM
+            <div class="brand-text-sub" style="font-size: 10.5px; color: #94a3b8; font-weight: 500; margin-top: 2px; white-space: nowrap; letter-spacing: 0.1px;" title="Maintenance Department ERP">
+              Maintenance ERP
             </div>
           </div>
         </div>
