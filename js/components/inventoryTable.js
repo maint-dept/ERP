@@ -313,8 +313,8 @@ export function renderInventoryTable() {
     {
       key: 'systemAssetId',
       label: 'System Asset ID',
-      width: 140,
-      renderTh: (thStyle, thClass) => `<th class="th-sortable ${thClass}" data-sort="systemAssetId" style="width: 140px; min-width: 140px; max-width: 140px; text-align: center; cursor: pointer; ${thStyle}" title="Permanent System-Generated Asset ID">System Asset ID</th>`,
+      width: 145,
+      renderTh: (thStyle, thClass) => `<th class="th-sortable ${thClass}" data-sort="systemAssetId" style="width: 145px; min-width: 145px; max-width: 145px; text-align: center; cursor: pointer; ${thStyle}" title="Permanent System-Generated Asset ID">System Asset ID</th>`,
       renderTd: (m, meta, tdStyle, tdClass) => {
         let assetId = m.systemAssetId;
         if (assetId && /^MID-/i.test(assetId)) {
@@ -333,17 +333,19 @@ export function renderInventoryTable() {
             assetId = '—';
           }
         }
-        return `<td class="${tdClass}" style="width: 140px; min-width: 140px; max-width: 140px; text-align: center; ${tdStyle}"><a href="javascript:void(0)" class="btn-inspect-machine" data-id="${m.id}" style="text-decoration: none;" title="Permanent System Asset ID: ${assetId} (Click to inspect machine details)"><span class="badge system-asset-id-badge">${assetId}</span></a></td>`;
+        return `<td class="${tdClass}" style="width: 145px; min-width: 145px; max-width: 145px; text-align: center; overflow: visible; padding: 4px 2px; ${tdStyle}"><a href="javascript:void(0)" class="btn-inspect-machine" data-id="${m.id}" style="text-decoration: none;" title="Permanent System Asset ID: ${assetId} (Click to inspect machine details)"><span class="system-asset-id-badge">${assetId}</span></a></td>`;
       }
     },
     {
       key: 'manufacturing_serial',
       label: 'Manufacturing Serial Number',
       width: 125,
-      renderTh: (thStyle, thClass) => `<th class="th-sortable ${thClass}" data-sort="manufacturing_serial" style="width: 125px; min-width: 125px; max-width: 125px; text-align: center; cursor: pointer; ${thStyle}">Mfg Serial No</th>`,
+      renderTh: (thStyle, thClass) => `<th class="th-sortable ${thClass}" data-sort="manufacturing_serial" style="width: 130px; min-width: 130px; max-width: 130px; text-align: center; cursor: pointer; ${thStyle}">Mfg Serial No</th>`,
       renderTd: (m, meta, tdStyle, tdClass) => {
-        const mfg = m.manufacturing_serial || m.manufacturingSerial || m.customValues?.manufacturing_serial || m.customValues?.manufacturingSerial || m.manufacturingNo || m.mfgSerial || m.manufacturing || '—';
-        return `<td class="${tdClass}" style="width: 125px; min-width: 125px; max-width: 125px; text-align: center; overflow: hidden; text-overflow: ellipsis; font-family: var(--font-mono); font-size: 11.5px; ${tdStyle}" title="${mfg}"><span class="mfg-serial-text" style="color: #38bdf8; font-weight: 600;">${mfg}</span></td>`;
+        const rawMfg = m.manufacturing_serial || m.manufacturingSerial || m.customValues?.manufacturing_serial || m.customValues?.manufacturingSerial || m.manufacturingNo || m.mfgSerial || m.manufacturing;
+        const hasMfg = rawMfg && String(rawMfg).trim() !== '' && String(rawMfg).trim() !== '-' && String(rawMfg).trim() !== '—';
+        const mfg = hasMfg ? String(rawMfg).trim() : '—';
+        return `<td class="${tdClass}" style="width: 130px; min-width: 130px; max-width: 130px; text-align: center; overflow: hidden; text-overflow: ellipsis; font-family: var(--font-mono); font-size: 11.5px; ${tdStyle}" title="${mfg}">${hasMfg ? `<span class="mfg-serial-text" style="color: #38bdf8; font-weight: 700;">${mfg}</span>` : `<span style="color: #64748b; font-weight: 500;">—</span>`}</td>`;
       }
     },
     {
@@ -1156,66 +1158,6 @@ export function renderInventoryTable() {
         </div>
 
       </div> <!-- ── End of Pinned Top Control Deck ── -->
-
-      <!-- Columns & Horizontal Scroll Status Bar -->
-      <div class="inventory-grid-info-bar" style="display: flex; justify-content: space-between; align-items: center; padding: 4px 8px; font-size: 11px; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; flex-shrink: 0; margin-bottom: 2px;">
-        <span style="color: var(--text-secondary); display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap;">
-          <span>📋 Grid Layout: <strong class="info-cols-total" style="color: #fff;">${columnLayout.length}</strong> Columns</span>
-          <span class="info-sep" style="color: #94a3b8;">&bull;</span>
-          <span class="info-frozen" style="color: #38bdf8;">❄️ <strong>${frozenColKeys.length}</strong> Sticky Frozen</span>
-          <span class="info-sep" style="color: #94a3b8;">&bull;</span>
-          <span class="info-hint" style="color: #cbd5e1;">👉 Use ◀ ▶ buttons or Shift + Mouse Wheel to scroll columns</span>
-        </span>
-        <button type="button" id="link-show-all-cols-hint" class="btn btn-ghost btn-xs" style="color: #34d399; font-size: 11px; font-weight: 700; padding: 2px 8px; border: 1px solid rgba(52,211,153,0.4); border-radius: 4px; background: rgba(52,211,153,0.08);" title="Click to reveal all available columns in table">
-          👁️ Reveal All Available Columns (${allColDefs.length})
-        </button>
-      </div>
-
-      <!-- 5. Real Excel-Style Machine Data Grid with Native Horizontal & Vertical Scroll -->
-      <div class="inventory-table-scroll-container" id="inventory-table-scroll-viewport" style="flex: 1 1 0%; min-height: 250px; overflow: auto;">
-        <table class="excel-grid-table" style="min-width: 100%; width: ${columnLayout.reduce((sum, c) => sum + (c.width || 120), 94)}px; table-layout: fixed;">
-          <thead>
-            ${headerHtml}
-          </thead>
-          <tbody>
-            ${rowsHtml}
-          </tbody>
-        </table>
-      </div>
-
-      <!-- 6. Simplified Clean Pagination Bar -->
-      <div class="inventory-pagination-bar" style="flex-shrink: 0; margin-top: 2px;">
-        
-        <!-- Left: Showing 1–50 of 178 machines -->
-        <div class="pagination-counter">
-          ${isInitialSyncPending ? 'Connecting to database...' : `Showing <strong style="color: #fff;">${startItem}–${endItem}</strong> of <strong style="color: #38bdf8;">${queryResult.total}</strong> machines`}
-        </div>
-
-        <!-- Middle: Rows per page: [ 25 | 50 | 100 | All ] -->
-        <div style="display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--text-secondary);">
-          <span>Rows per page:</span>
-          <select id="select-per-page" class="filter-select-compact" style="width: 80px; height: 32px; font-size: 12px;">
-            <option value="25" ${!isAll && (queryResult.limit === 25 || filters.limit === 25 || filters.limit === '25') ? 'selected' : ''}>25</option>
-            <option value="50" ${!isAll && (queryResult.limit === 50 || filters.limit === 50 || filters.limit === '50') ? 'selected' : ''}>50</option>
-            <option value="100" ${!isAll && (queryResult.limit === 100 || filters.limit === 100 || filters.limit === '100') ? 'selected' : ''}>100</option>
-            <option value="ALL" ${isAll ? 'selected' : ''}>All</option>
-          </select>
-        </div>
-
-        <!-- Right: Previous | 1 | 2 | 3 | Next -->
-        <div class="pagination-controls">
-          <button id="btn-prev-page" class="page-btn" ${(isAll || curPage <= 1) ? 'disabled' : ''} title="Previous page">
-            ◀ Previous
-          </button>
-          
-          ${pageButtonsHtml}
-
-          <button id="btn-next-page" class="page-btn" ${(isAll || curPage >= totalPages) ? 'disabled' : ''} title="Next page">
-            Next ▶
-          </button>
-        </div>
-
-      </div>
 
     </div>
   `;

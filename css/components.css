@@ -4139,6 +4139,36 @@ body.theme-light .machine-serial-link:hover {
   color: #1e3a8a !important;
 }
 
+/* Permanent System Asset ID Badge - Default Dark Theme */
+.system-asset-id-badge {
+  background: rgba(16, 185, 129, 0.12) !important;
+  color: #10b981 !important;
+  border: 1px solid rgba(16, 185, 129, 0.35) !important;
+  font-family: var(--font-mono) !important;
+  font-size: 11.5px !important;
+  font-weight: 700 !important;
+  padding: 2px 7px !important;
+  border-radius: 4px !important;
+  display: inline-block !important;
+  letter-spacing: 0.3px !important;
+  white-space: nowrap !important;
+  text-decoration: none !important;
+  transition: all 0.15s ease;
+}
+
+.system-asset-id-badge:hover {
+  background: rgba(16, 185, 129, 0.25) !important;
+  border-color: #10b981 !important;
+  color: #34d399 !important;
+}
+
+/* Default Dark Theme: Table cell crisp text color */
+.excel-grid-table tbody td,
+.pm-table tbody td,
+.transfers-table tbody td {
+  color: #f8fafc;
+}
+
 /* Light Theme: Permanent System Asset ID Badge (Dark executive slate #0f172a, high-contrast cyan #38bdf8, mono 700) */
 body.theme-light .system-asset-id-badge {
   background: #0f172a !important;
