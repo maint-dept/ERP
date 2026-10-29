@@ -4778,3 +4778,5 @@ body.theme-light #btn-theme-toggle:hover {
 .pocket-card * {
   color: #000000 !important;
 }
+
+.inventory-grid-info-bar { display: none !important; }
