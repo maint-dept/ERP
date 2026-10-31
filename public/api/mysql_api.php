@@ -199,7 +199,12 @@ function ensureRelationalTablesExist($pdo) {
 function syncMachinesToRelationalTable($pdo, $machines, $cleanBefore = false) {
     if (!is_array($machines) || empty($machines)) return;
 
-    if ($cleanBefore) {
+    $existingCount = (int)$pdo->query("SELECT COUNT(*) FROM `erp_machines`")->fetchColumn();
+    $incomingCount = count($machines);
+
+    // Anti-Downgrade Safeguard: Only allow truncating table if incoming count is at least equal to existing count.
+    // If incoming count is smaller, NEVER truncate! Use ON DUPLICATE KEY UPDATE to merge and preserve existing machines.
+    if ($cleanBefore && ($existingCount === 0 || $incomingCount >= $existingCount)) {
         $pdo->exec("DELETE FROM `erp_machines`");
     }
 
@@ -284,11 +289,43 @@ if (empty($action)) {
     $action = 'ping';
 }
 
+function validateAndProtectMachinesDataset($pdo, &$machines) {
+    if (!is_array($machines)) {
+        throw new Exception("Machines payload must be an array.");
+    }
+
+    $incomingCount = count($machines);
+    $existingCount = (int)$pdo->query("SELECT COUNT(*) FROM `erp_machines`")->fetchColumn();
+
+    // Anti-Downgrade Safeguard:
+    // If incoming dataset is substantially smaller than existing dataset (> 50 machines fewer),
+    // NEVER discard existing machines! Merge incoming updates into existing records to prevent data loss.
+    if ($existingCount > 0 && $incomingCount < ($existingCount - 50)) {
+        error_log("[MySQL API Safeguard] 🛡️ PREVENTED DATA LOSS: Incoming machines ({$incomingCount}) < existing ({$existingCount}). Merging to protect factory dataset.");
+
+        $stmt = $pdo->query("SELECT raw_data FROM `erp_machines`");
+        $existingRows = $stmt->fetchAll(PDO::FETCH_COLUMN);
+
+        $mergedMap = [];
+        foreach ($existingRows as $raw) {
+            $m = json_decode($raw, true);
+            if ($m && !empty($m['id'])) {
+                $mergedMap[$m['id']] = $m;
+            }
+        }
+        foreach ($machines as $m) {
+            if ($m && !empty($m['id'])) {
+                $mergedMap[$m['id']] = $m;
+            }
+        }
+        $machines = array_values($mergedMap);
+    }
+}
+
 function validateMachinesDataset($machines) {
     if (!is_array($machines)) {
         throw new Exception("Machines payload must be an array.");
     }
-    // Allow saving machine datasets of any non-negative size (e.g. clean/replace, filtered updates, or new uploads)
 }
 
 function verifyErpPassword($rawPassword, $storedHash) {
@@ -478,7 +515,8 @@ try {
                 ]);
             }
             if (isset($tablesData['machines']) && is_array($tablesData['machines'])) {
-                syncMachinesToRelationalTable($pdo, $tablesData['machines'], true);
+                validateAndProtectMachinesDataset($pdo, $tablesData['machines']);
+                syncMachinesToRelationalTable($pdo, $tablesData['machines'], false);
             }
             $pdo->commit();
 
@@ -502,7 +540,11 @@ try {
             }
 
             if ($collection === 'machines') {
-                validateMachinesDataset($data);
+                $mList = is_array($data) ? $data : json_decode($data, true);
+                if (is_array($mList)) {
+                    validateAndProtectMachinesDataset($pdo, $mList);
+                    $data = $mList;
+                }
             }
 
             $jsonStr = is_string($data) ? $data : json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
@@ -524,7 +566,7 @@ try {
             if ($collection === 'machines') {
                 $mList = is_array($data) ? $data : json_decode($data, true);
                 if (is_array($mList)) {
-                    syncMachinesToRelationalTable($pdo, $mList, true);
+                    syncMachinesToRelationalTable($pdo, $mList, false);
                 }
             }
             $pdo->commit();

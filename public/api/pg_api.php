@@ -184,11 +184,45 @@ if (empty($action)) {
     $action = 'ping';
 }
 
+function validateAndProtectMachinesDataset($pdo, &$machines) {
+    if (!is_array($machines)) {
+        throw new Exception("Machines payload must be an array.");
+    }
+
+    $incomingCount = count($machines);
+    $existingStmt = $pdo->prepare("SELECT item_count, raw_json FROM erp_tables WHERE table_name = 'machines'");
+    $existingStmt->execute();
+    $existingRow = $existingStmt->fetch(PDO::FETCH_ASSOC);
+    $existingCount = (int)($existingRow['item_count'] ?? 0);
+
+    // Anti-Downgrade Safeguard:
+    // If incoming dataset is substantially smaller than existing dataset (> 50 machines fewer),
+    // NEVER discard existing machines! Merge incoming updates into existing records to prevent data loss.
+    if ($existingCount > 0 && $incomingCount < ($existingCount - 50) && !empty($existingRow['raw_json'])) {
+        error_log("[PostgreSQL API Safeguard] 🛡️ PREVENTED DATA LOSS: Incoming machines ({$incomingCount}) < existing ({$existingCount}). Merging to protect factory dataset.");
+
+        $existingMachines = json_decode($existingRow['raw_json'], true);
+        if (is_array($existingMachines)) {
+            $mergedMap = [];
+            foreach ($existingMachines as $m) {
+                if ($m && !empty($m['id'])) {
+                    $mergedMap[$m['id']] = $m;
+                }
+            }
+            foreach ($machines as $m) {
+                if ($m && !empty($m['id'])) {
+                    $mergedMap[$m['id']] = $m;
+                }
+            }
+            $machines = array_values($mergedMap);
+        }
+    }
+}
+
 function validateMachinesDataset($machines) {
     if (!is_array($machines)) {
         throw new Exception("Machines payload must be an array.");
     }
-    // Allow saving machine datasets of any non-negative size (e.g. clean/replace, filtered updates, or new uploads)
 }
 
 // --- 7. ROUTE ACTIONS ---
@@ -273,7 +307,11 @@ try {
             }
 
             if ($collection === 'machines') {
-                validateMachinesDataset($data);
+                $mList = is_array($data) ? $data : json_decode($data, true);
+                if (is_array($mList)) {
+                    validateAndProtectMachinesDataset($pdo, $mList);
+                    $data = $mList;
+                }
             }
 
             $jsonStr = is_string($data) ? $data : json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
