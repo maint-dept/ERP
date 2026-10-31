@@ -2464,6 +2464,24 @@ class AuthService {
     const newStatus = user.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
     const toggled = await storage.updateConfirmed(TABLE_NAMES.USERS, userId, { status: newStatus });
     if (!toggled) throw new CloudSaveError('❌ Cloud Save Failed: User status change was not confirmed by the cloud.');
+
+    // Crucial: Synchronize status to linked Manpower employee record so neither auto-resurrects the other!
+    try {
+      const employees = storage.getTable(TABLE_NAMES.EMPLOYEES) || [];
+      const cleanCard = String(user.cardNumber || user.employeeId || '').trim().toLowerCase();
+      const linkedEmp = employees.find(e => 
+        (user.manpowerId && (e.id === user.manpowerId || String(e.id) === String(user.manpowerId))) ||
+        (cleanCard && String(e.cardNumber || '').trim().toLowerCase() === cleanCard)
+      );
+      if (linkedEmp && linkedEmp.status !== newStatus) {
+        linkedEmp.status = newStatus;
+        linkedEmp.updatedAt = new Date().toISOString();
+        await storage.saveTable(TABLE_NAMES.EMPLOYEES, true);
+      }
+    } catch (empSyncErr) {
+      console.warn('[User Status Toggle] Linked manpower sync notice:', empSyncErr.message);
+    }
+
     auditService.log('USER_STATUS_TOGGLED', 'USER', userId, `Set user account '${user.name}' (${user.email || user.username}) status to ${newStatus}.`);
     return newStatus;
   }

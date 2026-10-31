@@ -1010,10 +1010,13 @@ export function initManpowerEvents() {
         const idsToUpdate = Array.from(selectedEmployeeIds);
         selectedEmployeeIds.clear();
 
-        // 1. Instant Optimistic UI Update
-        idsToUpdate.forEach(id => {
-          const emp = employeeService.getEmployeeById(id);
-          if (emp) emp.status = targetStatus;
+        // 1. Instant Optimistic UI Update directly on storage table records
+        const empTable = storage.getTable(TABLE_NAMES.EMPLOYEES) || [];
+        const idSet = new Set(idsToUpdate);
+        empTable.forEach(emp => {
+          if (emp && idSet.has(emp.id)) {
+            emp.status = targetStatus;
+          }
         });
         refreshView();
         notificationService.success(`Updated ${count} employee(s) to ${targetStatus}.`);
@@ -1021,6 +1024,7 @@ export function initManpowerEvents() {
         // 2. High-speed atomic persistence pass
         try {
           await employeeService.bulkUpdateStatus(idsToUpdate, targetStatus);
+          refreshView();
         } catch (err) {
           console.error('Failed to sync bulk employee status:', err);
           notificationService.error('Failed to sync status update: ' + err.message);
@@ -1095,21 +1099,35 @@ export function initManpowerEvents() {
       const empId = btn.getAttribute('data-emp-id');
       const empCard = btn.getAttribute('data-card-number');
       const targetStatus = btn.getAttribute('data-target-status');
-      const emp = employeeService.getEmployeeById(empId);
-      const prevStatus = emp ? emp.status : (targetStatus === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE');
 
-      // 1. Instant Optimistic UI Update (0ms latency!)
-      if (emp) emp.status = targetStatus;
-      btn.disabled = true;
-      btn.innerHTML = `<span style="display:inline-block;animation:spin 1s linear infinite;">🔄</span>`;
+      // Find the authentic in-memory employee record in the storage table
+      const empTable = storage.getTable(TABLE_NAMES.EMPLOYEES) || [];
+      const cleanTargetCard = String(empCard || '').trim().toLowerCase();
+      const realEmp = empTable.find(e => 
+        e.id === empId || 
+        String(e.id) === String(empId) ||
+        (cleanTargetCard && String(e.cardNumber || '').trim().toLowerCase() === cleanTargetCard)
+      );
+
+      if (!realEmp) {
+        notificationService.error('Employee record not found.');
+        return;
+      }
+
+      const prevStatus = realEmp.status || 'ACTIVE';
+
+      // 1. Instant Optimistic UI Update directly on storage record
+      realEmp.status = targetStatus;
+      realEmp.updatedAt = new Date().toISOString();
       refreshView();
-      notificationService.success(`Employee ${emp?.name || ''} status set to ${targetStatus}`);
+      notificationService.success(`Employee ${realEmp.name || ''} status set to ${targetStatus}`);
 
-      // 2. High-speed background cloud write with rollback on error
+      // 2. High-speed confirmed cloud write with automatic rollback on error
       try {
-        await employeeService.updateEmployee(empId, { status: targetStatus }, empCard);
+        await employeeService.updateEmployee(realEmp.id, { status: targetStatus }, empCard);
+        refreshView();
       } catch (err) {
-        if (emp) emp.status = prevStatus;
+        realEmp.status = prevStatus;
         refreshView();
         notificationService.error('Failed to update status on server: ' + err.message);
       }

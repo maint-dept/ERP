@@ -667,8 +667,24 @@ class UserAccessService {
           if (emp.unitName && existing.unitName !== emp.unitName) { existing.unitName = emp.unitName; userChanged = true; }
           if (emp.floorName && existing.floorName !== emp.floorName) { existing.floorName = emp.floorName; userChanged = true; }
           if ((emp.lineName || emp.workingArea) && existing.lineName !== (emp.lineName || emp.workingArea)) { existing.lineName = emp.lineName || emp.workingArea; userChanged = true; }
-          const targetStatus = emp.status === 'ACTIVE' ? 'ACTIVE' : 'INACTIVE';
-          if (existing.status !== targetStatus) { existing.status = targetStatus; userChanged = true; }
+          // Status synchronization:
+          // If either record is marked INACTIVE, preserve the INACTIVE status across both!
+          // Never auto-resurrect an inactive account back to ACTIVE!
+          let targetStatus = 'ACTIVE';
+          if (emp.status === 'INACTIVE' || emp.status === 'TERMINATED' || existing.status === 'INACTIVE' || existing.status === 'SUSPENDED') {
+            targetStatus = 'INACTIVE';
+          } else if (emp.status === 'ON_LEAVE') {
+            targetStatus = 'ACTIVE';
+          }
+          if (existing.status !== targetStatus) {
+            existing.status = targetStatus;
+            userChanged = true;
+          }
+          if (emp.status !== targetStatus && targetStatus === 'INACTIVE') {
+            emp.status = targetStatus;
+            emp.updatedAt = new Date().toISOString();
+            storage.saveTable(TABLE_NAMES.EMPLOYEES, true).catch(() => {});
+          }
           if (existing.manpowerId !== emp.id) { existing.manpowerId = emp.id; userChanged = true; }
 
           if (userChanged) {

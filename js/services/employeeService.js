@@ -1184,8 +1184,27 @@ class EmployeeService {
       updatedAt: new Date().toISOString()
     };
 
-    // Update in-memory and trigger background cloud save
-    const updated = storage.update(TABLE_NAMES.EMPLOYEES, id, payload);
+    // Update in-memory and trigger confirmed cloud save
+    let updated = null;
+    try {
+      updated = await storage.updateConfirmed(TABLE_NAMES.EMPLOYEES, id, payload);
+    } catch (saveErr) {
+      console.warn('[Employee Update] updateConfirmed notice, falling back to direct saveTable:', saveErr.message);
+    }
+
+    if (!updated) {
+      const table = storage.getTable(TABLE_NAMES.EMPLOYEES) || [];
+      const cleanExp = expectedCardNumber ? String(expectedCardNumber).trim().toLowerCase() : '';
+      const idx = table.findIndex(item => item && (item.id === id || String(item.id) === String(id) || (cleanExp && String(item.cardNumber || '').trim().toLowerCase() === cleanExp)));
+      if (idx !== -1) {
+        table[idx] = {
+          ...table[idx],
+          ...payload
+        };
+        await storage.saveTable(TABLE_NAMES.EMPLOYEES, table, true);
+        updated = table[idx];
+      }
+    }
 
     auditService.log(
       'MANPOWER_EMPLOYEE_UPDATED',
@@ -1194,14 +1213,17 @@ class EmployeeService {
       `Updated profile for '${existing.name}' [ID #${existing.cardNumber}].`
     );
 
-    // Synchronize changes (location, designation, status) to linked User Account in background
-    import('./userAccessService.js').then(({ userAccessService }) => {
-      userAccessService.syncEmployeeToAccount(updated).catch(accErr => {
-        console.warn('[Auto-Account Sync] Notice on employee update:', accErr.message);
-      });
-    }).catch(() => {});
+    // Synchronize changes (location, designation, status) to linked User Account
+    try {
+      const { userAccessService } = await import('./userAccessService.js');
+      if (userAccessService && typeof userAccessService.syncEmployeeToAccount === 'function') {
+        await userAccessService.syncEmployeeToAccount(updated || existing);
+      }
+    } catch (accErr) {
+      console.warn('[Auto-Account Sync] Notice on employee update:', accErr.message);
+    }
 
-    return this.enrichEmployee(updated);
+    return this.enrichEmployee(updated || existing);
   }
 
   /**
@@ -1227,12 +1249,15 @@ class EmployeeService {
       await storage.saveTable(TABLE_NAMES.EMPLOYEES, true);
       auditService.log('MANPOWER_BULK_STATUS_UPDATE', 'MANPOWER', `${updatedCount} records`, `Updated ${updatedCount} employees to ${targetStatus}`);
       
-      // Background sync linked user accounts
-      import('./userAccessService.js').then(({ userAccessService }) => {
-        if (userAccessService?.syncAllManpowerAccounts) {
-          userAccessService.syncAllManpowerAccounts().catch(() => {});
+      // Synchronize linked user accounts
+      try {
+        const { userAccessService } = await import('./userAccessService.js');
+        if (userAccessService && typeof userAccessService.syncAllManpowerAccounts === 'function') {
+          await userAccessService.syncAllManpowerAccounts();
         }
-      }).catch(() => {});
+      } catch (syncErr) {
+        console.warn('[Bulk Status Sync] User account sync notice:', syncErr.message);
+      }
     }
 
     return updatedCount;

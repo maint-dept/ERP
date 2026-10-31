@@ -330,6 +330,9 @@ try {
                 ':raw_json'   => $jsonStr,
                 ':item_count' => $itemCount
             ]);
+            $updatedAtStmt = $pdo->prepare("SELECT updated_at FROM erp_tables WHERE table_name = :table_name");
+            $updatedAtStmt->execute([':table_name' => $collection]);
+            $dbUpdatedAt = $updatedAtStmt->fetchColumn() ?: date('c');
             if ($pdo->inTransaction()) {
                 $pdo->commit();
             }
@@ -338,7 +341,7 @@ try {
                 'success' => true,
                 'collection' => $collection,
                 'itemCount' => $itemCount,
-                'updatedAt' => date('c')
+                'updatedAt' => $dbUpdatedAt
             ]);
             break;
 

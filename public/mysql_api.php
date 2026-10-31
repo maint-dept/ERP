@@ -569,13 +569,16 @@ try {
                     syncMachinesToRelationalTable($pdo, $mList, false);
                 }
             }
+            $updatedAtStmt = $pdo->prepare("SELECT `updated_at` FROM `erp_tables` WHERE `table_name` = :table_name");
+            $updatedAtStmt->execute([':table_name' => $collection]);
+            $dbUpdatedAt = $updatedAtStmt->fetchColumn() ?: date('c');
             $pdo->commit();
 
             echo json_encode([
                 'success' => true,
                 'collection' => $collection,
                 'itemCount' => $itemCount,
-                'updatedAt' => date('c')
+                'updatedAt' => $dbUpdatedAt
             ]);
             break;
 

@@ -1037,7 +1037,7 @@ class StorageEngine {
               const localMachCount = this.data[TABLE_NAMES.MACHINES]?.length || 0;
               const isMachinesDeficient = (tbl === TABLE_NAMES.MACHINES && localMachCount < 6400);
 
-              if (parseTs(remoteTs) > parseTs(knownTs) || isMachinesDeficient) {
+              if (parseTs(remoteTs) > (parseTs(knownTs) + 1500) || isMachinesDeficient) {
                 mysqlUpdates.push({ tbl, remoteTs });
               }
             }
@@ -2667,7 +2667,7 @@ class StorageEngine {
       index = table.findIndex(item => item.id === id && String(item.serialNumber || '').trim().toUpperCase() === sn);
     }
     if (index === -1) {
-      index = table.findIndex(item => item.id === id);
+      index = table.findIndex(item => item && (item.id === id || String(item.id) === String(id)));
     }
     if (index === -1) return null;
 
@@ -2718,7 +2718,7 @@ class StorageEngine {
     }
 
     const table = this.data[tableName] || [];
-    const index = table.findIndex(item => item.id === id);
+    const index = table.findIndex(item => item && (item.id === id || String(item.id) === String(id)));
     if (index === -1) return false;
 
     const removed = table.splice(index, 1)[0];
@@ -2778,7 +2778,7 @@ class StorageEngine {
 
   async updateConfirmed(tableName, id, updates) {
     const table = this.data[tableName] || [];
-    const index = table.findIndex(item => item.id === id);
+    const index = table.findIndex(item => item && (item.id === id || String(item.id) === String(id)));
     if (index === -1) return null;
 
     if (tableName === TABLE_NAMES.MACHINES && updates && updates.systemAssetId) {
@@ -2832,7 +2832,7 @@ class StorageEngine {
     }
 
     const table = this.data[tableName] || [];
-    const index = table.findIndex(item => item.id === id);
+    const index = table.findIndex(item => item && (item.id === id || String(item.id) === String(id)));
     if (index === -1) return false;
 
     const removed = table[index];
