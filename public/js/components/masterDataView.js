@@ -2077,7 +2077,6 @@ export function initMasterDataEvents() {
             });
           } catch (err) {}
         }
-        notificationService.info(`Selected ${existing.name} [Code: ${existing.code}]`);
         refreshView();
       } else {
         try {
@@ -2409,7 +2408,6 @@ export function initMasterDataEvents() {
         }
         updateLiveDuplicatePreview();
         textarea.focus({ preventScroll: true });
-        notificationService.info(`Queued Line "${letter}" to batch`);
       }
     });
   });
@@ -2436,7 +2434,6 @@ export function initMasterDataEvents() {
         }
         updateLiveDuplicatePreview();
         textarea.focus({ preventScroll: true });
-        notificationService.info(`Queued Section "${val}" to batch`);
       }
     });
   });
@@ -2573,7 +2570,6 @@ export function initMasterDataEvents() {
         }
         updateLiveDuplicatePreview();
         textarea.focus({ preventScroll: true });
-        notificationService.info(`Added "${val}" to line batch`);
       }
     });
   });

@@ -3697,7 +3697,7 @@ export function initUserManagementEvents() {
       try {
         const syncRes = await userAccessService.syncAllManpowerAccounts();
         if (syncRes && syncRes.newAccountsCount > 0) {
-          notificationService.success(`Auto-Sync: Created accounts for ${syncRes.newAccountsCount} Manpower employees (Zero Default Access).`);
+          // Background sync complete: state updated silently & recorded in Activity Log
           reRender();
         }
       } catch (err) {
@@ -3938,12 +3938,10 @@ export function initUserManagementEvents() {
           passwordMgmtCardSearch = cardNum;
           passwordMgmtPage = 1;
           reRender();
-          notificationService.info(`Filtered password accounts by Card ${cardNum}`);
         } else {
           cardSearchQuery = cardNum;
           currentPage = 1;
           reRender();
-          notificationService.info(`Filtered accounts by Card ${cardNum}`);
         }
       }
     });
@@ -4293,7 +4291,6 @@ export function initUserManagementEvents() {
       if (cIdx > 0) {
         selectUserForPermissions(users[cIdx - 1].id, true);
         reRender();
-        notificationService.info(`Switched to Card ${users[cIdx - 1].cardNumber || users[cIdx - 1].employeeId} (${users[cIdx - 1].name})`);
       }
     });
   }
@@ -4306,7 +4303,6 @@ export function initUserManagementEvents() {
       if (cIdx >= 0 && cIdx < users.length - 1) {
         selectUserForPermissions(users[cIdx + 1].id, true);
         reRender();
-        notificationService.info(`Switched to Card ${users[cIdx + 1].cardNumber || users[cIdx + 1].employeeId} (${users[cIdx + 1].name})`);
       }
     });
   }
@@ -4318,10 +4314,6 @@ export function initUserManagementEvents() {
       if (id) {
         selectUserForPermissions(id, true);
         reRender();
-        const u = storage.getItem(TABLE_NAMES.USERS, id);
-        if (u) {
-          notificationService.success(`Loaded permissions & location scope for ${u.name} (Card ${u.cardNumber || u.employeeId})`);
-        }
       }
     });
   });
@@ -4330,7 +4322,6 @@ export function initUserManagementEvents() {
   root.querySelectorAll('.btn-perm-deselect-user').forEach(btn => {
     btn.addEventListener('click', () => {
       selectUserForPermissions(null, true);
-      notificationService.info('Account deselected. Please search or select an account.');
       reRender();
     });
   });
@@ -4419,10 +4410,6 @@ export function initUserManagementEvents() {
             selectUserForPermissions(id, true);
             smartSearchDropdown.style.display = 'none';
             reRender();
-            const target = storage.getItem(TABLE_NAMES.USERS, id);
-            if (target) {
-              notificationService.success(`Loaded permissions & location scope for ${target.name} (Card ${target.cardNumber || target.employeeId})`);
-            }
           }
         });
       });
@@ -4460,7 +4447,6 @@ export function initUserManagementEvents() {
             selectUserForPermissions(matched.id, true);
             smartSearchDropdown.style.display = 'none';
             reRender();
-            notificationService.success(`Loaded permissions & location scope for ${matched.name} (Card ${matched.cardNumber || matched.employeeId})`);
           } else {
             notificationService.warning(`No account found matching "${smartSearchInp.value}"`);
           }
@@ -4497,13 +4483,8 @@ export function initUserManagementEvents() {
       const val = e.target.value;
       if (val) {
         selectUserForPermissions(val, true);
-        const u = storage.getItem(TABLE_NAMES.USERS, val);
-        if (u) {
-          notificationService.success(`Switched to ${u.name} (Card ${u.cardNumber || u.employeeId})`);
-        }
       } else {
         selectUserForPermissions(null, true);
-        notificationService.info('Account deselected. Please search or select an account.');
       }
       reRender();
     });

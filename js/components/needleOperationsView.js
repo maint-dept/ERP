@@ -910,7 +910,6 @@ export function initNeedleOperationsEvents() {
           if (m) {
             suggestionsBox.style.display = 'none';
             selectMachine(m);
-            notificationService.success('Machine Loaded', `Loaded [${m.serialNumber}] ${m.model || ''}. All specs auto-filled.`);
           }
         });
         el.addEventListener('mouseenter', () => {
@@ -939,7 +938,6 @@ export function initNeedleOperationsEvents() {
         if (exact) {
           suggestionsBox.style.display = 'none';
           selectMachine(exact);
-          notificationService.success('Machine Loaded', `Loaded [${exact.serialNumber}]. All specs auto-filled.`);
           return;
         }
 
@@ -956,7 +954,6 @@ export function initNeedleOperationsEvents() {
         if (partial) {
           suggestionsBox.style.display = 'none';
           selectMachine(partial);
-          notificationService.success('Machine Loaded', `Loaded [${partial.serialNumber}]. All specs auto-filled.`);
         } else {
           notificationService.warning('Machine Not Found', `No machine matching "${inpMachineSearch.value}".`);
         }

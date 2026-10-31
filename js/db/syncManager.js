@@ -489,11 +489,12 @@ class SyncManager {
    *
    * STRICT SAFETY RULE 3: Triggered after Admin confirmation or manual verification.
    */
-  async executeControlledRecovery() {
+  async executeControlledRecovery(isManual = false) {
     if (this._isRecovering) {
       return { success: false, error: 'Reverse sync recovery is already in progress.' };
     }
     this._isRecovering = true;
+    if (isManual) this._isManualRecovery = true;
 
     try {
       console.log('[SyncManager Recovery] 🛡️ Starting Controlled Row-Level Delta Reverse Sync (PostgreSQL -> MySQL)...');
@@ -676,9 +677,9 @@ class SyncManager {
         window.dispatchEvent(new CustomEvent('erp:recovery-completed', {
           detail: { syncedCount, skippedCount, failedCount }
         }));
-        if (window.notificationService) {
+        if (window.notificationService && (isManual || this._isManualRecovery)) {
           window.notificationService.success(
-            `🐬 MySQL Primary Restored: ${syncedCount} delta record(s) safely synced with Row-Level Upsert.`
+            `MySQL Primary Restored: ${syncedCount} delta record(s) safely synced with Row-Level Upsert.`
           );
         }
       }
@@ -686,12 +687,13 @@ class SyncManager {
       return { success: true, syncedCount, skippedCount, failedCount };
     } catch (err) {
       console.error('[SyncManager Recovery] ❌ Controlled reverse sync error:', err.message);
-      if (typeof window !== 'undefined' && window.notificationService) {
+      if (typeof window !== 'undefined' && window.notificationService && (isManual || this._isManualRecovery)) {
         window.notificationService.error(`Recovery Sync Error: ${err.message}`);
       }
       return { success: false, error: err.message };
     } finally {
       this._isRecovering = false;
+      this._isManualRecovery = false;
     }
   }
 

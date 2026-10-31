@@ -1280,7 +1280,6 @@ export function initDatabaseConfigEvents() {
   // 1b. Direct cPanel Action Handlers
   const handleOpenCpanelConfig = () => {
     openConfigForm('MYSQL', 'mysql_primary');
-    notificationService.toast('Opened Direct cPanel MySQL Configuration.');
   };
 
   const handleTestCpanelConnection = async (btnEl) => {
@@ -1329,7 +1328,6 @@ export function initDatabaseConfigEvents() {
   // 2. "➕ Add New Database Connection" button
   document.getElementById('btn-create-new-db')?.addEventListener('click', () => {
     openConfigForm('POSTGRESQL', null);
-    notificationService.toast('Ready to configure a new database connection.');
   });
 
   // 3. Configured Databases card clicks (select to edit, or toggle close)
@@ -1389,7 +1387,6 @@ export function initDatabaseConfigEvents() {
       const pKey = tpl.getAttribute('data-provider');
       if (!pKey || !PROVIDER_SPECS[pKey]) return;
       openConfigForm(pKey, null);
-      notificationService.toast(`Ready to configure a new ${PROVIDER_SPECS[pKey].name} connection.`);
     });
   });
 
@@ -1657,7 +1654,6 @@ export function initDatabaseConfigEvents() {
   // 11. Refresh Topology & Trigger Recovery buttons
   document.getElementById('btn-refresh-topology')?.addEventListener('click', () => {
     reRenderView();
-    notificationService.toast('Sync topology refreshed from live config.');
   });
 
   // Button: Admin Confirmation for Controlled Reverse Sync (Rule 1 & Rule 3)

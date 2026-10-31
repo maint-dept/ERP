@@ -6,10 +6,13 @@
 import { storage } from '../db/storage.js';
 import { TABLE_NAMES } from '../db/schema.js';
 import { authService } from './authService.js';
+import { auditService } from './auditService.js';
 
 class NotificationService {
   constructor() {
     this.toastContainer = null;
+    this._recentToasts = new Map();
+    this._dedupeWindowMs = 4500;
     this.initToastContainer();
   }
 
@@ -27,16 +30,44 @@ class NotificationService {
   }
 
   // ---------------------------------------------------------------------------
-  // 1. COMPACT, NON-BLOCKING MODERN TOAST NOTIFICATIONS
+  // 1. COMPACT, NON-BLOCKING MODERN TOAST NOTIFICATIONS (Enterprise SaaS UX)
   // ---------------------------------------------------------------------------
-  toast(message, type = 'success', title = '', duration = 2800) {
-    this.initToastContainer();
-    if (!this.toastContainer) return;
 
+  /**
+   * Identifies background tasks, auto-sync routines, and non-actionable status
+   * updates that should be logged silently to Activity Log without visual popups.
+   */
+  isBackgroundOrAutomatedTask(message, title = '', options = {}) {
+    if (options && (options.isBackground || options.silent || options.automated)) {
+      return true;
+    }
+    const combined = `${title || ''} ${message || ''}`.trim();
+    if (!combined) return false;
+
+    const backgroundPatterns = [
+      /auto-?sync/i,
+      /created accounts for \d+ manpower/i,
+      /reconciled \d+ manpower/i,
+      /zero default access/i,
+      /background (sync|syncing|replication|probing|check|task|worker|refresh|audit)/i,
+      /auto-?created \d+ missing user accounts/i,
+      /auto-?saved in background/i,
+      /periodic (health|check|sync|heartbeat)/i,
+      /sync topology refreshed/i,
+      /delta reverse sync.*safely synced/i,
+      /probing mysql primary connectivity/i,
+      /opened direct cpanel/i,
+      /ready to configure a new/i
+    ];
+
+    return backgroundPatterns.some(pattern => pattern.test(combined));
+  }
+
+  toast(message, type = 'success', title = '', duration = null, options = {}) {
     // Clean leading duplicate emojis
     const stripEmoji = (str) => {
       if (!str) return '';
-      return String(str).replace(/^[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F1E6}-\u{1F1FF}✅❌⚠️ℹ️⏳💾⚡]+\s*/u, '').trim();
+      return String(str).replace(/^[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F1E6}-\u{1F1FF}✅❌⚠️ℹ️⏳💾⚡🐬]+\s*/u, '').trim();
     };
 
     let cleanMsg = stripEmoji(message);
@@ -46,6 +77,47 @@ class NotificationService {
     if (cleanTitle && (cleanTitle.toLowerCase() === 'success' || cleanTitle.toLowerCase() === 'notice' || cleanTitle.toLowerCase() === 'info' || cleanTitle.toLowerCase() === cleanMsg.toLowerCase())) {
       cleanTitle = '';
     }
+
+    // 1. Background / Automated Operation Suppression: Route to Activity Log silently
+    if (this.isBackgroundOrAutomatedTask(cleanMsg, cleanTitle, options)) {
+      const logText = cleanTitle ? `${cleanTitle}: ${cleanMsg}` : cleanMsg;
+      try {
+        if (typeof auditService !== 'undefined' && auditService && auditService.log) {
+          auditService.log('AUTOMATED_TASK', 'SYSTEM', 'BACKGROUND', logText);
+        }
+      } catch (_) {}
+      console.log('[NotificationService (Silent Activity)]', logText);
+      return;
+    }
+
+    // 2. Anti-Spam / Deduplication Guard: Suppress identical toasts within dedupe window
+    const now = Date.now();
+    if (this._recentToasts.size > 40) {
+      for (const [k, ts] of this._recentToasts.entries()) {
+        if (now - ts > 10000) this._recentToasts.delete(k);
+      }
+    }
+
+    const dedupeKey = `${type}::${cleanTitle}::${cleanMsg}`;
+    const lastShown = this._recentToasts.get(dedupeKey);
+    if (lastShown && (now - lastShown < this._dedupeWindowMs)) {
+      // Identical toast already active or shown within last 4.5s; skip duplicate
+      return;
+    }
+    this._recentToasts.set(dedupeKey, now);
+
+    this.initToastContainer();
+    if (!this.toastContainer) return;
+
+    // SaaS Standard Durations: Subtle, quick auto-dismiss
+    const defaultDurations = {
+      success: 2200,
+      info: 2400,
+      warning: 3500,
+      error: 4500,
+      loading: 3000
+    };
+    const toastDuration = duration || defaultDurations[type] || 2400;
 
     const icons = {
       success: '✓',
@@ -57,7 +129,7 @@ class NotificationService {
 
     const icon = icons[type] || 'i';
 
-    // Remove oldest toast if 2 or more exist to prevent screen clutter
+    // Strict maximum of 2 toasts visible simultaneously to avoid viewport obstruction
     while (this.toastContainer.children.length >= 2) {
       const oldest = this.toastContainer.children[0];
       if (oldest.parentNode) oldest.parentNode.removeChild(oldest);
@@ -73,7 +145,7 @@ class NotificationService {
         <div class="toast-message">${cleanMsg || message}</div>
       </div>
       <button class="toast-close" title="Dismiss">✕</button>
-      <div class="toast-progress" style="animation-duration: ${duration}ms;"></div>
+      <div class="toast-progress" style="animation-duration: ${toastDuration}ms;"></div>
     `;
 
     const closeBtn = toastEl.querySelector('.toast-close');
@@ -89,49 +161,49 @@ class NotificationService {
     this.toastContainer.appendChild(toastEl);
 
     // Auto dismiss
-    const timer = setTimeout(dismiss, duration);
+    const timer = setTimeout(dismiss, toastDuration);
     toastEl.addEventListener('mouseenter', () => clearTimeout(timer));
     toastEl.addEventListener('mouseleave', () => setTimeout(dismiss, 1200));
   }
 
-  success(message, title = '') {
-    this.toast(message, 'success', title, 2600);
+  success(message, title = '', options = {}) {
+    this.toast(message, 'success', title, 2200, options);
   }
 
-  error(message, title = '') {
-    this.toast(message, 'error', title, 4500);
+  error(message, title = '', options = {}) {
+    this.toast(message, 'error', title, 4500, options);
   }
 
-  info(message, title = '') {
-    this.toast(message, 'info', title, 2800);
+  info(message, title = '', options = {}) {
+    this.toast(message, 'info', title, 2400, options);
   }
 
-  warning(message, title = '') {
-    this.toast(message, 'warning', title, 3500);
+  warning(message, title = '', options = {}) {
+    this.toast(message, 'warning', title, 3500, options);
   }
 
-  notifySuccess(titleOrMsg, msgOrTitle) {
+  notifySuccess(titleOrMsg, msgOrTitle, options = {}) {
     const title = msgOrTitle ? titleOrMsg : '';
     const message = msgOrTitle ? msgOrTitle : titleOrMsg;
-    this.toast(message, 'success', title);
+    this.toast(message, 'success', title, 2200, options);
   }
 
-  notifyError(titleOrMsg, msgOrTitle) {
+  notifyError(titleOrMsg, msgOrTitle, options = {}) {
     const title = msgOrTitle ? titleOrMsg : '';
     const message = msgOrTitle ? msgOrTitle : titleOrMsg;
-    this.toast(message, 'error', title, 4500);
+    this.toast(message, 'error', title, 4500, options);
   }
 
-  notifyWarning(titleOrMsg, msgOrTitle) {
+  notifyWarning(titleOrMsg, msgOrTitle, options = {}) {
     const title = msgOrTitle ? titleOrMsg : '';
     const message = msgOrTitle ? msgOrTitle : titleOrMsg;
-    this.toast(message, 'warning', title, 3500);
+    this.toast(message, 'warning', title, 3500, options);
   }
 
-  notifyInfo(titleOrMsg, msgOrTitle) {
+  notifyInfo(titleOrMsg, msgOrTitle, options = {}) {
     const title = msgOrTitle ? titleOrMsg : '';
     const message = msgOrTitle ? msgOrTitle : titleOrMsg;
-    this.toast(message, 'info', title);
+    this.toast(message, 'info', title, 2400, options);
   }
 
   // ---------------------------------------------------------------------------
@@ -218,8 +290,8 @@ class NotificationService {
 
     try {
       const result = await asyncFn();
-      if (successMsg) {
-        this.success(successMsg);
+      if (successMsg && result !== false && result?.cancelled !== true) {
+        this.success(typeof successMsg === 'function' ? successMsg(result) : successMsg);
       }
       return result;
     } catch (err) {

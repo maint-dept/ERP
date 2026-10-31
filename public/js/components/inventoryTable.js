@@ -1236,12 +1236,11 @@ export function initInventoryTableEvents() {
             container.innerHTML = renderInventoryTable();
             initInventoryTableEvents();
           }
-          notificationService.success('Machine Inventory successfully synchronized with MySQL Primary Database!');
         } catch (err) {
           console.error('Data Sync failed:', err);
-          notificationService.error('Data Sync failed: ' + (err.message || 'Check database connection.'));
+          throw err;
         }
-      }, 'Synchronizing with MySQL Primary...', 'Data synchronized!');
+      }, 'Synchronizing with MySQL Primary...', 'Machine Inventory successfully synchronized with MySQL Primary.');
     });
   }
 
@@ -1526,13 +1525,11 @@ export function initInventoryTableEvents() {
       state.set('showCrossFloorIdle', nextMode);
       if (nextMode) {
         state.updateFilters({ floorId: '', lineId: '', status: 'ALL', page: 1 });
-        notificationService.info('Cross-Floor Idle View activated — Showing idle machines across all floors.');
       } else {
         const u = authService.getCurrentUser();
         const defFloor = (u?.assignedScope?.floorIds?.length === 1) ? u.assignedScope.floorIds[0] : '';
         const defLine = (u?.assignedScope?.lineIds?.length === 1) ? u.assignedScope.lineIds[0] : '';
         state.updateFilters({ floorId: defFloor, lineId: defLine, status: 'ALL', page: 1 });
-        notificationService.success('Returned to default assigned location view.');
       }
     });
   }
@@ -1549,7 +1546,6 @@ export function initInventoryTableEvents() {
   if (resetBtn) {
     resetBtn.addEventListener('click', () => {
       state.resetFilters();
-      notificationService.info('All filters reset. Showing full machine inventory.');
     });
   }
 
@@ -1620,7 +1616,7 @@ export function initInventoryTableEvents() {
         
         if (qRes.items.length === 0) {
           notificationService.warning('No machines match current filters to export.');
-          return;
+          return false;
         }
 
         const dateStr = new Date().toISOString().split('T')[0];
@@ -1787,7 +1783,7 @@ export function initInventoryTableEvents() {
 
         if (qRes.items.length === 0) {
           notificationService.warning('No machines match current filters to generate PDF.');
-          return;
+          return false;
         }
 
         pdfService.generateReport({
@@ -2174,7 +2170,6 @@ export function initInventoryTableEvents() {
         // Select ALL operable machines currently matching the active filters
         const operableIds = (allFiltered.items || []).filter(m => authService.canOperateMachine(m)).map(m => m.id);
         state.selectAllMachines(operableIds);
-        notificationService.info(`Selected ${operableIds.length} operable machine(s). View-only machines excluded.`);
       } else {
         state.clearSelection();
       }
@@ -2188,7 +2183,6 @@ export function initInventoryTableEvents() {
       const allFiltered = machineService.getMachines({ ...curFilters, limit: 'ALL' });
       const operableIds = (allFiltered.items || []).filter(m => authService.canOperateMachine(m)).map(m => m.id);
       state.selectAllMachines(operableIds);
-      notificationService.info(`Selected ${operableIds.length} operable machine(s). View-only machines excluded.`);
     });
   }
 
