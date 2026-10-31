@@ -1024,7 +1024,10 @@ class StorageEngine {
               if (this.lastTableUpdates && (Date.now() - (this.lastTableUpdates[tbl] || 0) < 8000)) continue;
 
               const knownTs = this.syncedDocVersions.get('mysql_' + tbl) || '';
-              if (parseTs(remoteTs) > parseTs(knownTs)) {
+              const localMachCount = this.data[TABLE_NAMES.MACHINES]?.length || 0;
+              const isMachinesDeficient = (tbl === TABLE_NAMES.MACHINES && localMachCount < 6400);
+
+              if (parseTs(remoteTs) > parseTs(knownTs) || isMachinesDeficient) {
                 mysqlUpdates.push({ tbl, remoteTs });
               }
             }
@@ -1343,7 +1346,7 @@ class StorageEngine {
     return updated;
   }
 
-  async syncWithServerDatabase() {
+  async syncWithServerDatabase(force = false) {
     let cloudLoadedSuccessfully = false;
     const fetchStartTime = Date.now();
 
@@ -1351,15 +1354,17 @@ class StorageEngine {
     try {
       await syncManager._ensureConfig();
       if (syncManager.primaryAdapter && syncManager.primaryAdapter.type === 'MYSQL') {
-        const hasLocalData = (this.data[TABLE_NAMES.MACHINES]?.length > 0) && (this.data[TABLE_NAMES.USERS]?.length > 0);
+        const localMachCount = this.data[TABLE_NAMES.MACHINES]?.length || 0;
+        const hasFullLocalData = (localMachCount >= 6400) && (this.data[TABLE_NAMES.USERS]?.length > 0);
         const lastSyncTs = typeof localStorage !== 'undefined' ? localStorage.getItem('erp_last_mysql_sync_ts') : '';
 
         // OPTION A OPTIMIZATION: Check if MySQL Primary data was modified before making heavy download
-        if (hasLocalData && lastSyncTs && typeof syncManager.primaryAdapter.checkVersion === 'function') {
+        if (!force && hasFullLocalData && lastSyncTs && typeof syncManager.primaryAdapter.checkVersion === 'function') {
           try {
             const verRes = await syncManager.primaryAdapter.checkVersion(lastSyncTs);
-            if (verRes && verRes.success && verRes.modified === false) {
-              console.log(`[Storage Option A] ⚡ 0ms Cache Hit: MySQL Primary unchanged (${Date.now() - fetchStartTime}ms). 100% Data freshness verified from local store.`);
+            const serverMachCount = verRes?.tables?.machines?.count || 6450;
+            if (verRes && verRes.success && verRes.modified === false && localMachCount >= serverMachCount) {
+              console.log(`[Storage Option A] ⚡ 0ms Cache Hit: MySQL Primary unchanged (${Date.now() - fetchStartTime}ms). 100% Data freshness verified from local store (${localMachCount} machines).`);
               this._isCloudConnected = true;
               cloudLoadedSuccessfully = true;
               this._hasCriticalSyncCompleted = true;

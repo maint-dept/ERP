@@ -648,22 +648,44 @@ td.col-actions-cell {
 }
 
 /* Pagination Bar */
-.pagination-bar {
+.pagination-bar,
+.inventory-pagination-bar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 18px;
+  padding: 8px 16px;
   background-color: var(--bg-surface);
   border: 1px solid var(--border-color);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-md);
   font-size: 12.5px;
   color: var(--text-secondary);
+  box-sizing: border-box;
+}
+
+.inventory-pagination-bar-top {
+  margin-bottom: 4px;
+}
+
+@media (min-width: 769px) {
+  .inventory-pagination-bar-top {
+    display: none !important;
+  }
+}
+
+.inventory-pagination-bar-bottom {
+  margin-top: 4px;
 }
 
 .pagination-controls {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
+}
+
+.pagination-number-buttons {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .page-btn {
@@ -673,23 +695,33 @@ td.col-actions-cell {
   padding: 4px 10px;
   border-radius: var(--radius-sm);
   font-size: 12px;
+  font-weight: 700;
   cursor: pointer;
+  transition: all 0.15s ease;
+  min-width: 30px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .page-btn:hover:not(:disabled) {
   background: var(--primary);
-  border-color: var(--primary);
+  border-color: #38bdf8;
+  color: #fff;
 }
 
 .page-btn:disabled {
-  opacity: 0.4;
+  opacity: 0.35;
   cursor: not-allowed;
 }
 
 .page-btn.active {
-  background: var(--primary);
-  border-color: var(--primary);
-  font-weight: bold;
+  background: #0284c7;
+  border-color: #38bdf8;
+  color: #ffffff;
+  font-weight: 800;
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.4);
 }
 
 /* Machine History & Movement Passport Styles */
@@ -827,6 +859,72 @@ td.col-actions-cell {
   .filter-grid {
     grid-template-columns: repeat(2, 1fr);
     gap: 6px;
+  }
+
+  /* Mobile Responsive Inventory Pagination Bar */
+  .inventory-pagination-bar,
+  .pagination-bar {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    gap: 6px !important;
+    padding: 6px 8px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .inventory-pagination-bar-top {
+    display: flex !important;
+    margin-bottom: 4px !important;
+  }
+
+  .inventory-pagination-bar-bottom {
+    margin-top: 4px !important;
+    padding-bottom: 12px !important;
+  }
+
+  .pagination-number-buttons {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 2px !important;
+    flex-wrap: nowrap !important;
+  }
+
+  .pagination-counter {
+    font-size: 11px !important;
+    white-space: nowrap !important;
+  }
+
+  .pagination-per-page-container {
+    font-size: 11px !important;
+  }
+
+  .pagination-per-page-container select {
+    height: 26px !important;
+    font-size: 11px !important;
+    padding: 1px 4px !important;
+    width: 65px !important;
+  }
+
+  .pagination-controls {
+    display: flex !important;
+    align-items: center !important;
+    gap: 3px !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    max-width: 100% !important;
+  }
+  .pagination-controls::-webkit-scrollbar { display: none !important; }
+
+  .page-btn {
+    height: 26px !important;
+    min-width: 26px !important;
+    padding: 0 5px !important;
+    font-size: 11px !important;
   }
 }
 

@@ -70,13 +70,31 @@ export function renderInventoryTable() {
     state.set('inventoryStatusFilter', null);
   }
 
+  // Mobile Viewport Safeguard & Default Limit Setup:
+  // On mobile viewports, strictly enforce 50 machines per page (or 25/100) and prevent 'ALL' to eliminate scroll lag & browser hang.
+  const isMobileViewport = typeof window !== 'undefined' && (
+    (typeof window.innerWidth === 'number' && window.innerWidth <= 768) || 
+    (typeof navigator !== 'undefined' && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent || ''))
+  );
+
+  if (isMobileViewport) {
+    if (!filters.limit || filters.limit === 'ALL' || String(filters.limit).toUpperCase() === 'ALL') {
+      filters.limit = 50;
+      if (state.get('filters')) {
+        state.state.filters.limit = 50;
+      }
+    }
+  } else if (!filters.limit) {
+    filters.limit = 50;
+  }
+
   // 1. Fetch filtered machine dataset (cross-floor idle machines included only when explicitly toggled on)
   const queryResult = machineService.getMachines({
     ...filters,
     includeCrossFloorIdle: showCrossFloorIdle
   });
   const machines = queryResult.items;
-  const isAll = queryResult.limit === 'ALL' || filters.limit === 'ALL' || String(filters.limit).toUpperCase() === 'ALL';
+  const isAll = !isMobileViewport && (queryResult.limit === 'ALL' || filters.limit === 'ALL' || String(filters.limit).toUpperCase() === 'ALL');
   const numLimit = isAll ? queryResult.total : (parseInt(queryResult.limit || filters.limit, 10) || 50);
 
   // 2. Summary Metric Indicators (Total Machines, Running, Usable Idle, Repairable Idle)
@@ -815,20 +833,21 @@ export function renderInventoryTable() {
     });
   }
 
-  // 6. Pagination Page Numbers Generation
-  const totalPages = isAll ? 1 : Math.max(1, queryResult.totalPages || 1);
-  const curPage = isAll ? 1 : (queryResult.page || 1);
+  // 6. Pagination Page Numbers Generation & Dynamic Pagination Component Builder
+  const totalPages = isAll ? 1 : Math.max(1, queryResult.totalPages || Math.ceil((queryResult.total || 0) / numLimit) || 1);
+  const curPage = isAll ? 1 : Math.max(1, Math.min(queryResult.page || filters.page || 1, totalPages));
   const startItem = queryResult.total === 0 ? 0 : (isAll ? 1 : (curPage - 1) * numLimit + 1);
   const endItem = isAll ? queryResult.total : Math.min(curPage * numLimit, queryResult.total);
 
-  let pageButtonsHtml = '';
-  if (isAll || totalPages <= 1) {
-    pageButtonsHtml = `
-      <button class="page-btn btn-page-number active" data-page="1">
-        1
-      </button>
-    `;
-  } else {
+  const buildPageButtonsHtml = () => {
+    if (isAll || totalPages <= 1) {
+      return `
+        <button type="button" class="page-btn btn-page-number active" data-page="1">
+          1
+        </button>
+      `;
+    }
+
     const maxButtons = 5;
     let startP = Math.max(1, curPage - 2);
     let endP = Math.min(totalPages, startP + maxButtons - 1);
@@ -836,14 +855,75 @@ export function renderInventoryTable() {
       startP = Math.max(1, endP - maxButtons + 1);
     }
 
+    let btns = '';
+    if (startP > 1) {
+      btns += `<button type="button" class="page-btn btn-page-number" data-page="1">1</button>`;
+      if (startP > 2) {
+        btns += `<span style="padding: 0 3px; color: var(--text-muted); font-size: 11px;">…</span>`;
+      }
+    }
+
     for (let p = startP; p <= endP; p++) {
-      pageButtonsHtml += `
-        <button class="page-btn btn-page-number ${p === curPage ? 'active' : ''}" data-page="${p}">
+      btns += `
+        <button type="button" class="page-btn btn-page-number ${p === curPage ? 'active' : ''}" data-page="${p}">
           ${p}
         </button>
       `;
     }
-  }
+
+    if (endP < totalPages) {
+      if (endP < totalPages - 1) {
+        btns += `<span style="padding: 0 3px; color: var(--text-muted); font-size: 11px;">…</span>`;
+      }
+      btns += `<button type="button" class="page-btn btn-page-number" data-page="${totalPages}">${totalPages}</button>`;
+    }
+
+    return btns;
+  };
+
+  const renderPaginationBarHtml = (position = 'bottom') => {
+    const isTop = position === 'top';
+    const idPrefix = isTop ? 'top-' : '';
+    const extraClass = isTop ? 'inventory-pagination-bar-top' : 'inventory-pagination-bar-bottom';
+    const pageButtons = buildPageButtonsHtml();
+
+    return `
+      <div class="inventory-pagination-bar ${extraClass}" data-cur-page="${curPage}" data-total-pages="${totalPages}" style="flex-shrink: 0;">
+        
+        <!-- Left: Showing 1–50 of 6450 machines -->
+        <div class="pagination-counter">
+          ${isInitialSyncPending ? 'Connecting to database...' : `Showing <strong style="color: #fff;">${startItem}–${endItem}</strong> of <strong style="color: #38bdf8;">${queryResult.total}</strong> machines`}
+        </div>
+
+        <!-- Middle: Rows per page: [ 25 | 50 | 100 | All ] -->
+        <div class="pagination-per-page-container" style="display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--text-secondary);">
+          <span>Rows per page:</span>
+          <select id="${idPrefix}select-per-page" class="filter-select-compact select-inventory-per-page" style="width: 75px; height: 30px; font-size: 12px;">
+            <option value="25" ${!isAll && numLimit === 25 ? 'selected' : ''}>25</option>
+            <option value="50" ${!isAll && numLimit === 50 ? 'selected' : ''}>50</option>
+            <option value="100" ${!isAll && numLimit === 100 ? 'selected' : ''}>100</option>
+            ${!isMobileViewport ? `<option value="ALL" ${isAll ? 'selected' : ''}>All</option>` : ''}
+          </select>
+        </div>
+
+        <!-- Right: Previous | 1 | 2 | 3 | Next -->
+        <div class="pagination-controls">
+          <button type="button" id="${idPrefix}btn-prev-page" class="page-btn btn-inventory-prev" ${(isAll || curPage <= 1) ? 'disabled' : ''} title="Previous page">
+            ◀ Previous
+          </button>
+          
+          <div class="pagination-number-buttons">
+            ${pageButtons}
+          </div>
+
+          <button type="button" id="${idPrefix}btn-next-page" class="page-btn btn-inventory-next" ${(isAll || curPage >= totalPages) ? 'disabled' : ''} title="Next page">
+            Next ▶
+          </button>
+        </div>
+
+      </div>
+    `;
+  };
 
   // 7. Assemble Complete Redesigned Component Layout
   return `
@@ -1173,7 +1253,10 @@ export function renderInventoryTable() {
         </button>
       </div>
 
-      <!-- 5. Real Excel-Style Machine Data Grid with Native Horizontal & Vertical Scroll -->
+      <!-- 5. Top Pagination Bar (Instant Mobile One-Tap Access; Hidden on Desktop) -->
+      ${renderPaginationBarHtml('top')}
+
+      <!-- 6. Real Excel-Style Machine Data Grid with Native Horizontal & Vertical Scroll -->
       <div class="inventory-table-scroll-container" id="inventory-table-scroll-viewport" style="flex: 1 1 0%; min-height: 250px; overflow: auto;">
         <table class="excel-grid-table" style="min-width: 100%; width: ${columnLayout.reduce((sum, c) => sum + (c.width || 120), 94)}px; table-layout: fixed;">
           <thead>
@@ -1185,39 +1268,8 @@ export function renderInventoryTable() {
         </table>
       </div>
 
-      <!-- 6. Simplified Clean Pagination Bar -->
-      <div class="inventory-pagination-bar" style="flex-shrink: 0; margin-top: 2px;">
-        
-        <!-- Left: Showing 1–50 of 178 machines -->
-        <div class="pagination-counter">
-          ${isInitialSyncPending ? 'Connecting to database...' : `Showing <strong style="color: #fff;">${startItem}–${endItem}</strong> of <strong style="color: #38bdf8;">${queryResult.total}</strong> machines`}
-        </div>
-
-        <!-- Middle: Rows per page: [ 25 | 50 | 100 | All ] -->
-        <div style="display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--text-secondary);">
-          <span>Rows per page:</span>
-          <select id="select-per-page" class="filter-select-compact" style="width: 80px; height: 32px; font-size: 12px;">
-            <option value="25" ${!isAll && (queryResult.limit === 25 || filters.limit === 25 || filters.limit === '25') ? 'selected' : ''}>25</option>
-            <option value="50" ${!isAll && (queryResult.limit === 50 || filters.limit === 50 || filters.limit === '50') ? 'selected' : ''}>50</option>
-            <option value="100" ${!isAll && (queryResult.limit === 100 || filters.limit === 100 || filters.limit === '100') ? 'selected' : ''}>100</option>
-            <option value="ALL" ${isAll ? 'selected' : ''}>All</option>
-          </select>
-        </div>
-
-        <!-- Right: Previous | 1 | 2 | 3 | Next -->
-        <div class="pagination-controls">
-          <button id="btn-prev-page" class="page-btn" ${(isAll || curPage <= 1) ? 'disabled' : ''} title="Previous page">
-            ◀ Previous
-          </button>
-          
-          ${pageButtonsHtml}
-
-          <button id="btn-next-page" class="page-btn" ${(isAll || curPage >= totalPages) ? 'disabled' : ''} title="Next page">
-            Next ▶
-          </button>
-        </div>
-
-      </div>
+      <!-- 7. Bottom Pagination Bar (Standard Desktop & Mobile) -->
+      ${renderPaginationBarHtml('bottom')}
 
     </div>
   `;
@@ -1230,7 +1282,7 @@ export function initInventoryTableEvents() {
     btnSyncDb.addEventListener('click', async () => {
       notificationService.withLoading(btnSyncDb, async () => {
         try {
-          await storage.syncWithServerDatabase();
+          await storage.syncWithServerDatabase(true);
           const container = document.getElementById('main-view-container');
           if (container && state.get('currentView') === 'inventory') {
             container.innerHTML = renderInventoryTable();
@@ -2241,6 +2293,83 @@ export function initInventoryTableEvents() {
   if (btnTopBulkDelete) {
     btnTopBulkDelete.addEventListener('click', executeBulkDelete);
   }
+
+  // 12. Desktop & Mobile Pagination Event Handlers
+  const paginationBar = document.querySelector('.inventory-pagination-bar');
+  const paginationTotalPages = paginationBar ? parseInt(paginationBar.getAttribute('data-total-pages'), 10) || 1 : 1;
+  const paginationCurPage = paginationBar ? parseInt(paginationBar.getAttribute('data-cur-page'), 10) || 1 : 1;
+
+  const navigateToPage = (targetPage) => {
+    const pageNum = Math.max(1, Math.min(targetPage, paginationTotalPages));
+    if (pageNum === paginationCurPage) return;
+
+    window.__resetInventoryScrollTop = true;
+    const invViewport = document.getElementById('inventory-table-scroll-viewport');
+    if (invViewport) {
+      invViewport.scrollTop = 0;
+    }
+    state.updateFilters({ page: pageNum });
+  };
+
+  const changeRowsPerPage = (rawLimit) => {
+    const isMobile = typeof window !== 'undefined' && (
+      (typeof window.innerWidth === 'number' && window.innerWidth <= 768) || 
+      (typeof navigator !== 'undefined' && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent || ''))
+    );
+
+    let newLimit = rawLimit;
+    if (rawLimit !== 'ALL') {
+      newLimit = parseInt(rawLimit, 10) || 50;
+    } else if (isMobile) {
+      // Force 50 on mobile to prevent browser hang
+      newLimit = 50;
+    }
+
+    window.__resetInventoryScrollTop = true;
+    const invViewport = document.getElementById('inventory-table-scroll-viewport');
+    if (invViewport) {
+      invViewport.scrollTop = 0;
+    }
+    state.updateFilters({ limit: newLimit, page: 1 });
+  };
+
+  // Previous Page Buttons (Top & Bottom)
+  document.querySelectorAll('.btn-inventory-prev, #btn-prev-page, #top-btn-prev-page').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (paginationCurPage > 1) {
+        navigateToPage(paginationCurPage - 1);
+      }
+    });
+  });
+
+  // Next Page Buttons (Top & Bottom)
+  document.querySelectorAll('.btn-inventory-next, #btn-next-page, #top-btn-next-page').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (paginationCurPage < paginationTotalPages) {
+        navigateToPage(paginationCurPage + 1);
+      }
+    });
+  });
+
+  // Numbered Page Buttons (1, 2, 3, 4, 5, etc.)
+  document.querySelectorAll('.btn-page-number').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const p = parseInt(btn.getAttribute('data-page'), 10);
+      if (p && !isNaN(p)) {
+        navigateToPage(p);
+      }
+    });
+  });
+
+  // Rows Per Page Select Dropdowns (Top & Bottom)
+  document.querySelectorAll('.select-inventory-per-page, #select-per-page, #top-select-per-page').forEach(sel => {
+    sel.addEventListener('change', (e) => {
+      changeRowsPerPage(e.target.value);
+    });
+  });
 
   // Initial synchronization of selection state on load
   syncInventorySelectionDOM();
