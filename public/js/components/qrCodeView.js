@@ -1535,7 +1535,6 @@ export function initQrCodeEvents() {
       const startIndex = (qrPagination.page - 1) * pageSize;
       const pageMachines = filtered.slice(startIndex, startIndex + (pageSize || filtered.length));
       updateSelectionIndicators(pageMachines, filtered.length);
-      notificationService.notifySuccess('All Selected', `Selected all ${filtered.length} matching machines for print/export.`);
     });
   }
 

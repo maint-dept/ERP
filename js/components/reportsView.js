@@ -2368,7 +2368,6 @@ export function initReportsEvents() {
         search: '',
         viewMode: spareFilterState.viewMode || 'SUMMARY'
       };
-      notificationService.info('Spare parts filters cleared.');
       refreshReportsView();
     });
   }
@@ -2555,7 +2554,6 @@ export function initReportsEvents() {
         else if (currentUnit) locSummary = `Unit: ${currentUnit.name} (${currentGroup?.name || ''})`;
         else if (currentGroup) locSummary = `Group: ${currentGroup.name}`;
 
-        notificationService.info('Preparing Machine Summary Print / PDF Preview...');
         pdfService.generateMachineSummaryPDF({
           title: 'Machine Summary Report',
           subtitle: 'Al-Muslim Group Central Engineering & Maintenance Department',
@@ -2888,7 +2886,6 @@ export function initReportsEvents() {
         pageSize: 25,
         viewMode: transferReportFilterState.viewMode || 'TABLE'
       };
-      notificationService.info('Transfer report filters cleared.');
       refreshTransferReportsTabInPlace();
     });
   }
@@ -2983,7 +2980,6 @@ export function initReportsEvents() {
         if (transferReportFilterState.dateTo) filterSummary += ` | To Date: ${transferReportFilterState.dateTo}`;
         if (transferReportFilterState.search) filterSummary += ` | Search: "${transferReportFilterState.search}"`;
 
-        notificationService.info('Preparing Transfer Report Print / PDF Preview...');
         pdfService.generateTransferReportPDF({
           rows: sortedRows,
           filterSummary: `${filterSummary} | Total: ${sortedRows.length} records`
@@ -3123,7 +3119,6 @@ export function initReportsEvents() {
         const etBoards = etLabService.getBoards() || [];
         const allRows = getEtLabReportRows(etBoards);
         const filteredRows = filterEtLabReportRows(allRows);
-        notificationService.info('Preparing ENT Lab Print / PDF Preview...');
         pdfService.generateEtLabManagementReportPDF({
           rows: filteredRows,
           filterSummary: `Status: ${entReportFilterState.status} | Repair Type: ${entReportFilterState.repairType} | Records: ${filteredRows.length}`
@@ -3144,7 +3139,6 @@ export function initReportsEvents() {
         const etBoards = etLabService.getBoards() || [];
         const allRows = getEtLabReportRows(etBoards);
         const filteredRows = filterEtLabReportRows(allRows);
-        notificationService.info('Preparing ENT Lab Print / PDF Preview...');
         pdfService.generateEtLabManagementReportPDF({
           rows: filteredRows,
           filterSummary: `Status: ${entReportFilterState.status} | Repair Type: ${entReportFilterState.repairType} | Records: ${filteredRows.length}`

@@ -378,7 +378,6 @@ export function initColumnVisibilityEvents() {
     btnPresetDefault.addEventListener('click', () => {
       const defaultFrozen = ['machineName', 'model', 'serialNumber'];
       state.setFrozenColumns(defaultFrozen);
-      notificationService.success('Frozen columns set to: Machine Name, Model, Serial Number');
       reRenderModal();
     });
   }
@@ -388,7 +387,6 @@ export function initColumnVisibilityEvents() {
     btnPresetWithMfg.addEventListener('click', () => {
       const mfgFrozen = ['machineName', 'serialNumber', 'manufacturing_serial'];
       state.setFrozenColumns(mfgFrozen);
-      notificationService.success('Frozen columns set to: Machine Name, Serial, Mfg Serial');
       reRenderModal();
     });
   }
@@ -397,7 +395,6 @@ export function initColumnVisibilityEvents() {
   if (btnPresetNameOnly) {
     btnPresetNameOnly.addEventListener('click', () => {
       state.setFrozenColumns(['machineName']);
-      notificationService.info('Frozen column set to: Machine Name only');
       reRenderModal();
     });
   }
@@ -406,7 +403,6 @@ export function initColumnVisibilityEvents() {
   if (btnPresetUnfreeze) {
     btnPresetUnfreeze.addEventListener('click', () => {
       state.setFrozenColumns([]);
-      notificationService.info('All data columns unpinned. Only SL and Checkbox remain fixed.');
       reRenderModal();
     });
   }
@@ -435,7 +431,6 @@ export function initColumnVisibilityEvents() {
       });
       cols.push('actions');
       state.setVisibleColumns(cols);
-      notificationService.success(`Applied all ${activeCols.length} columns from ${struct?.name || 'Current Layout'}!`);
       reRenderModal();
     });
   }
@@ -454,7 +449,6 @@ export function initColumnVisibilityEvents() {
       const customFields = customFieldService.getActiveFields();
       customFields.forEach(cf => allPossible.push(cf.code));
       state.setVisibleColumns(allPossible);
-      notificationService.success('All available table columns are now visible!');
       reRenderModal();
     });
   }
@@ -464,7 +458,6 @@ export function initColumnVisibilityEvents() {
     btnMinimal.addEventListener('click', () => {
       const minCols = ['sl', 'select', 'machineName', 'model', 'serialNumber', 'unit', 'line', 'total_quantity', 'status', 'actions'];
       state.setVisibleColumns(minCols);
-      notificationService.info('Switched to minimal essential columns view.');
       reRenderModal();
     });
   }
@@ -473,7 +466,6 @@ export function initColumnVisibilityEvents() {
   if (btnDeselectAll) {
     btnDeselectAll.addEventListener('click', () => {
       state.setVisibleColumns(['sl', 'select', 'machineName', 'actions']);
-      notificationService.info('Columns hidden (only Machine Name & Actions retained).');
       reRenderModal();
     });
   }
