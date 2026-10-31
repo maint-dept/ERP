@@ -14,6 +14,10 @@ Options -Indexes
   RewriteCond %{HTTP:X-Forwarded-Proto} !https
   RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 
+  # 1.1 Block direct HTTP access to database backups and SQL dumps
+  RewriteRule ^backups/ - [F,L]
+  RewriteRule ^data/.*\.sql$ - [F,L]
+
   # 2. Allow direct access to real existing files and directories
   RewriteCond %{REQUEST_FILENAME} -f [OR]
   RewriteCond %{REQUEST_FILENAME} -d

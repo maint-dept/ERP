@@ -45,18 +45,23 @@ function captureAppState() {
   const invViewport = document.getElementById('inventory-table-scroll-viewport');
   const activeEl = document.activeElement;
 
+  const resetInv = Boolean(window.__resetInventoryScrollTop);
+  if (resetInv) {
+    window.__resetInventoryScrollTop = false;
+  }
+
   return {
     windowY: window.scrollY,
     windowX: window.scrollX,
     sidebarY: sidebar ? sidebar.scrollTop : 0,
-    containerY: container ? container.scrollTop : 0,
+    containerY: resetInv ? 0 : (container ? container.scrollTop : 0),
     containerX: container ? container.scrollLeft : 0,
-    pageViewY: pageView ? pageView.scrollTop : 0,
+    pageViewY: resetInv ? 0 : (pageView ? pageView.scrollTop : 0),
     pageViewX: pageView ? pageView.scrollLeft : 0,
-    gridY: grid ? grid.scrollTop : 0,
+    gridY: resetInv ? 0 : (grid ? grid.scrollTop : 0),
     gridX: grid ? grid.scrollLeft : 0,
     // Always record exact positions (including 0) so restore is pixel-perfect
-    invViewportY: invViewport ? invViewport.scrollTop : 0,
+    invViewportY: (resetInv || !invViewport) ? 0 : invViewport.scrollTop,
     invViewportX: invViewport ? invViewport.scrollLeft : 0,
     // Flag: was the inventory viewport actively rendered?
     hasInvViewport: !!invViewport,
@@ -273,6 +278,21 @@ class ERPApplication {
 
     window.addEventListener('erp:inventory-updated', () => {
       this.queueBackgroundRender();
+    });
+
+    window.addEventListener('erp:storage-updated', () => {
+      state.reloadColumnsFromSettings();
+    });
+
+    window.addEventListener('erp:critical-data-ready', () => {
+      state.reloadColumnsFromSettings();
+    });
+
+    window.addEventListener('erp:user-changed', () => {
+      state.reloadColumnsFromSettings(false);
+      this.renderNavbarOnly();
+      this.renderSidebarOnly();
+      this.renderMainContent();
     });
 
     window.addEventListener('erp:relocate-updated', () => {

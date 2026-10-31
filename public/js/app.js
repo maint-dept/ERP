@@ -280,6 +280,21 @@ class ERPApplication {
       this.queueBackgroundRender();
     });
 
+    window.addEventListener('erp:storage-updated', () => {
+      state.reloadColumnsFromSettings();
+    });
+
+    window.addEventListener('erp:critical-data-ready', () => {
+      state.reloadColumnsFromSettings();
+    });
+
+    window.addEventListener('erp:user-changed', () => {
+      state.reloadColumnsFromSettings(false);
+      this.renderNavbarOnly();
+      this.renderSidebarOnly();
+      this.renderMainContent();
+    });
+
     window.addEventListener('erp:relocate-updated', () => {
       if (state.get('currentView') === 'relocate') {
         this.queueBackgroundRender();

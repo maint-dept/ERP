@@ -664,6 +664,10 @@ class AuthService {
       { username: user.username, email: user.email, role: user.role, loginAt: now }
     );
 
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('erp:user-changed', { detail: { userId: user.id, user } }));
+    }
+
     return { 
       success: true, 
       user,
@@ -699,6 +703,10 @@ class AuthService {
       }
     } catch (_) {}
     this.currentUser = null;
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('erp:user-changed', { detail: { userId: null } }));
+    }
   }
 
   /**
@@ -781,6 +789,10 @@ class AuthService {
       null,
       { username: target.username, role: target.role }
     );
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('erp:user-changed', { detail: { userId: target.id, user: target } }));
+    }
 
     return target;
   }

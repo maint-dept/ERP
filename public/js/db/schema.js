@@ -981,6 +981,9 @@ export const DUPLICATE_POLICIES = {
 };
 
 export const DEFAULT_SETTINGS = {
+  default_visible_columns: null,
+  default_frozen_columns: null,
+  admin_columns_updated_at: null,
   requireApprovalForMaintenanceUsers: true,
   requireDeleteApproval: true,
   allowDuplicateSerialNumbers: false,

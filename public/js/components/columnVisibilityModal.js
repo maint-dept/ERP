@@ -398,6 +398,10 @@ export function initColumnVisibilityEvents() {
   const globalSaveBtn = document.getElementById('btn-colvis-save-global-default');
   if (globalSaveBtn) {
     globalSaveBtn.addEventListener('click', async () => {
+      const origHtml = globalSaveBtn.innerHTML;
+      globalSaveBtn.disabled = true;
+      globalSaveBtn.innerHTML = '<span>⏳</span> Saving to Cloud...';
+
       const checkedCols = [];
       document.querySelectorAll('.colvis-check:checked').forEach(el => {
         const col = el.getAttribute('data-col');
@@ -413,22 +417,16 @@ export function initColumnVisibilityEvents() {
 
       const currentFrozen = state.get('frozenColumns') || ['machineName', 'model', 'serialNumber'];
 
-      state.setVisibleColumns(checkedCols, true, false);
-      state.setFrozenColumns(currentFrozen, true, false);
-
       try {
-        const settings = (typeof storage !== 'undefined' && storage.getTable) ? (storage.getTable(TABLE_NAMES.SETTINGS) || {}) : {};
-        settings.default_visible_columns = checkedCols;
-        settings.default_frozen_columns = currentFrozen;
-        if (typeof storage !== 'undefined' && storage.saveTable) {
-          await storage.saveTable(TABLE_NAMES.SETTINGS, settings, true);
-        }
+        await state.saveAdminDefaultColumns(checkedCols, currentFrozen);
+        notificationService.success(`✅ Saved ${checkedCols.length} columns as organization default for all users and synced to cloud!`);
+        closeModal();
       } catch (err) {
-        console.warn('Error saving global settings:', err);
+        console.error('Error saving global settings:', err);
+        notificationService.error('Failed to save default columns to cloud: ' + (err.message || 'Network error'));
+        globalSaveBtn.disabled = false;
+        globalSaveBtn.innerHTML = origHtml;
       }
-
-      notificationService.success('✅ Column layout saved as organization default for all users!');
-      closeModal();
     });
   }
 
