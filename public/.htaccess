@@ -1,6 +1,7 @@
 # =========================================================================
 # Al-Muslim Group Garments Factory Maintenance Machine ERP
-# LiteSpeed & Apache Enterprise SPA Route Fallback Configuration
+# LiteSpeed & Apache Enterprise Production Configuration
+# High-Performance Caching, Compression & SPA Route Fallback
 # =========================================================================
 
 Options -Indexes
@@ -14,9 +15,12 @@ Options -Indexes
   RewriteCond %{HTTP:X-Forwarded-Proto} !https
   RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 
-  # 1.1 Block direct HTTP access to database backups and SQL dumps
+  # 1.1 Strict Security: Block direct HTTP access to backups, dumps & sensitive files
   RewriteRule ^backups/ - [F,L]
   RewriteRule ^data/.*\.sql$ - [F,L]
+
+  # 1.2 Route client-log to client-log.php if requested without extension
+  RewriteRule ^api/client-log/?$ /api/client-log.php [L,QSA]
 
   # 2. Allow direct access to real existing files and directories
   RewriteCond %{REQUEST_FILENAME} -f [OR]
@@ -27,25 +31,55 @@ Options -Indexes
   RewriteRule ^(.*)$ /index.html [L,QSA]
 </IfModule>
 
-# 3. LiteSpeed & Apache Native Fallback:
-# If mod_rewrite is disabled or bypassed by LiteSpeed, ErrorDocument 404 serves /index.html
+# 4. LiteSpeed & Apache Native Fallback
 ErrorDocument 404 /index.html
 
-# 4. Prevent browser caching of HTML entrypoints, JS modules & CSS assets
+# 5. Security: Deny direct access to database dumps, sqlite, bak, log and env files
+<FilesMatch "\.(sql|sqlite|db|json\.bak|env|log)$">
+  <IfModule mod_authz_core.c>
+    Require all denied
+  </IfModule>
+  <IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+  </IfModule>
+</FilesMatch>
+
+# 6. Gzip / Brotli Compression for maximum transmission speed
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/plain
+  AddOutputFilterByType DEFLATE text/html
+  AddOutputFilterByType DEFLATE text/xml
+  AddOutputFilterByType DEFLATE text/css
+  AddOutputFilterByType DEFLATE application/xml
+  AddOutputFilterByType DEFLATE application/xhtml+xml
+  AddOutputFilterByType DEFLATE application/rss+xml
+  AddOutputFilterByType DEFLATE application/javascript
+  AddOutputFilterByType DEFLATE application/x-javascript
+  AddOutputFilterByType DEFLATE application/json
+  AddOutputFilterByType DEFLATE image/svg+xml
+</IfModule>
+
+# 7. Enterprise Caching Headers (Sub-150ms Instant Reloads)
 <IfModule mod_headers.c>
+  # 7.1 HTML Entrypoints: Revalidate on navigation (ensures latest version always loads)
   <FilesMatch "\.(html|htm)$">
-    Header set Cache-Control "no-cache, no-store, must-revalidate, max-age=0"
+    Header set Cache-Control "no-cache, must-revalidate, max-age=0"
     Header set Pragma "no-cache"
     Header set Expires "0"
   </FilesMatch>
 
-  <FilesMatch "\.(js|mjs|css|json)$">
-    Header set Cache-Control "no-cache, no-store, must-revalidate, max-age=0"
-    Header set Pragma "no-cache"
-    Header set Expires "0"
+  # 7.2 JS Modules & CSS: Aggressive browser caching with stale-while-revalidate
+  <FilesMatch "\.(js|mjs|css)$">
+    Header set Cache-Control "public, max-age=86400, stale-while-revalidate=604800"
   </FilesMatch>
 
-  # Block Search Engine indexers on administrative and sensitive endpoints
+  # 7.3 Fonts & Images: Immutable 30-day cache
+  <FilesMatch "\.(woff|woff2|ttf|eot|otf|svg|png|jpg|jpeg|gif|webp|ico)$">
+    Header set Cache-Control "public, max-age=2592000, immutable"
+  </FilesMatch>
+
+  # 7.4 Block Search Engine indexers on administrative and sensitive endpoints
   <IfModule mod_setenvif.c>
     SetEnvIfNoCase Request_URI "(admin|gateway|api|backups)" IS_PRIVATE_ENDPOINT
   </IfModule>

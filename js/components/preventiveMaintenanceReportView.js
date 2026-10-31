@@ -35,7 +35,6 @@
 
 import { storage } from '../db/storage.js';
 import { TABLE_NAMES } from '../db/schema.js';
-import { INITIAL_DATA } from '../db/initialData.js';
 import { authService } from '../services/authService.js';
 import { masterDataService } from '../services/masterDataService.js';
 import { preventiveMaintenanceService } from '../services/preventiveMaintenanceService.js';
@@ -509,22 +508,17 @@ export function populateReportRowsFromMachines(machineList, startSlOffset = 0) {
 
   // Prepare master data lookup maps
   const initMap = new Map();
-  const initMachines = (typeof INITIAL_DATA !== 'undefined' && INITIAL_DATA.machines) ? INITIAL_DATA.machines : [];
-  initMachines.forEach(x => {
-    if (x.serialNumber) initMap.set(String(x.serialNumber).trim().toUpperCase(), x);
-    if (x.id) initMap.set(x.id, x);
-  });
 
   const mnMap = new Map();
-  const mnList = storage.getTable(TABLE_NAMES.MACHINE_NAMES) || (typeof INITIAL_DATA !== 'undefined' ? INITIAL_DATA.machine_names : []) || [];
+  const mnList = storage.getTable(TABLE_NAMES.MACHINE_NAMES) || [];
   mnList.forEach(x => mnMap.set(x.id, x.name));
 
   const mdlMap = new Map();
-  const mdlList = storage.getTable(TABLE_NAMES.MODELS) || (typeof INITIAL_DATA !== 'undefined' ? INITIAL_DATA.models : []) || [];
+  const mdlList = storage.getTable(TABLE_NAMES.MODELS) || [];
   mdlList.forEach(x => mdlMap.set(x.id, x.name));
 
   const brdMap = new Map();
-  const brdList = storage.getTable(TABLE_NAMES.BRANDS) || (typeof INITIAL_DATA !== 'undefined' ? INITIAL_DATA.brands : []) || [];
+  const brdList = storage.getTable(TABLE_NAMES.BRANDS) || [];
   brdList.forEach(x => brdMap.set(x.id, x.name));
 
   // Determine starting sticker number
@@ -1779,11 +1773,9 @@ export function initPreventiveMaintenanceReportEvents(container = document) {
     const clean = String(queryStr).trim().toUpperCase();
     if (!clean) return;
 
-    // Look up in live machines or INITIAL_DATA
+    // Look up in live machines
     const allM = storage.getTable(TABLE_NAMES.MACHINES) || [];
-    const initMachines = (typeof INITIAL_DATA !== 'undefined' && INITIAL_DATA.machines) ? INITIAL_DATA.machines : [];
     const rawM = allM.find(m => m.id === queryStr || (m.serialNumber && String(m.serialNumber).trim().toUpperCase() === clean)) ||
-                 initMachines.find(m => m.id === queryStr || (m.serialNumber && String(m.serialNumber).trim().toUpperCase() === clean)) ||
                  { serialNumber: clean };
 
     const pmRecords = storage.getTable(TABLE_NAMES.PREVENTIVE_MAINTENANCE) || [];
@@ -1795,21 +1787,17 @@ export function initPreventiveMaintenanceReportEvents(container = document) {
     });
 
     const initMap = new Map();
-    initMachines.forEach(x => {
-      if (x.serialNumber) initMap.set(String(x.serialNumber).trim().toUpperCase(), x);
-      if (x.id) initMap.set(x.id, x);
-    });
 
     const mnMap = new Map();
-    const mnList = storage.getTable(TABLE_NAMES.MACHINE_NAMES) || (typeof INITIAL_DATA !== 'undefined' ? INITIAL_DATA.machine_names : []) || [];
+    const mnList = storage.getTable(TABLE_NAMES.MACHINE_NAMES) || [];
     mnList.forEach(x => mnMap.set(x.id, x.name));
 
     const mdlMap = new Map();
-    const mdlList = storage.getTable(TABLE_NAMES.MODELS) || (typeof INITIAL_DATA !== 'undefined' ? INITIAL_DATA.models : []) || [];
+    const mdlList = storage.getTable(TABLE_NAMES.MODELS) || [];
     mdlList.forEach(x => mdlMap.set(x.id, x.name));
 
     const brdMap = new Map();
-    const brdList = storage.getTable(TABLE_NAMES.BRANDS) || (typeof INITIAL_DATA !== 'undefined' ? INITIAL_DATA.brands : []) || [];
+    const brdList = storage.getTable(TABLE_NAMES.BRANDS) || [];
     brdList.forEach(x => brdMap.set(x.id, x.name));
 
     let baseSticker = 45863;

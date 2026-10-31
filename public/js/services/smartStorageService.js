@@ -12,7 +12,6 @@
 
 import { storage, CloudSaveError } from '../db/storage.js';
 import { TABLE_NAMES, GARMENT_MACHINE_SHORT_CODES } from '../db/schema.js';
-import { INITIAL_DATA } from '../db/initialData.js';
 import { auditService } from './auditService.js';
 import { notificationService } from './notificationService.js';
 import { storageSchemaService } from './storageSchemaService.js';

@@ -2391,9 +2391,11 @@ function initBackupHandlers() {
 
   const btnReset = document.getElementById('btn-factory-reset');
   if (btnReset) {
-    btnReset.addEventListener('click', () => {
+    btnReset.addEventListener('click', async () => {
       if (confirm('Are you sure you want to perform a factory reset? All existing custom machines and modifications will be replaced with initial demo records.')) {
-        storage.resetToInitialData();
+        btnReset.disabled = true;
+        btnReset.textContent = '⏳ Resetting...';
+        await storage.resetToInitialData();
         alert('ERP reset to initial factory demo state.');
         window.location.reload();
       }

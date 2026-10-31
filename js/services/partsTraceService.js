@@ -6,7 +6,6 @@
 
 import { storage } from '../db/storage.js';
 import { TABLE_NAMES } from '../db/schema.js';
-import { INITIAL_DATA } from '../db/initialData.js';
 import { authService } from './authService.js';
 import { masterDataService } from './masterDataService.js';
 import { historyService } from './historyService.js';

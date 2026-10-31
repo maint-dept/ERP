@@ -13,7 +13,6 @@ import { workflowService } from './workflowService.js';
 import { auditService } from './auditService.js';
 import { notificationService } from './notificationService.js';
 import { historyService } from './historyService.js';
-import { INITIAL_DATA } from '../db/initialData.js';
 
 /**
  * Universal machine equipment details resolver for transfer requests.

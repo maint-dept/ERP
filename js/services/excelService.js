@@ -7,7 +7,6 @@ import { storage } from '../db/storage.js';
 import { syncManager } from '../db/syncManager.js';
 import { idbCache } from '../db/idbCache.js';
 import { TABLE_NAMES, DUPLICATE_POLICIES, GARMENT_MACHINE_SHORT_CODES } from '../db/schema.js';
-import { INITIAL_DATA } from '../db/initialData.js';
 import { authService } from './authService.js';
 import { customFieldService } from './customFieldService.js';
 import { auditService } from './auditService.js';
@@ -627,23 +626,19 @@ class ExcelService {
   }
 
   /**
-   * Comprehensive master data lookup maps across INITIAL_DATA, storage tables, and STORAGE_MASTER
+   * Fast master data lookup maps across storage tables and STORAGE_MASTER
    */
   getMasterLookupMaps() {
     const grpMap = new Map();
-    (INITIAL_DATA?.groups || []).forEach(x => x && x.id && grpMap.set(x.id, x.name));
     (storage.getTable(TABLE_NAMES.GROUPS) || []).forEach(x => x && x.id && grpMap.set(x.id, x.name));
 
     const mnMap = new Map();
-    (INITIAL_DATA?.machine_names || []).forEach(x => x && x.id && mnMap.set(x.id, x.name));
     (storage.getTable(TABLE_NAMES.MACHINE_NAMES) || []).forEach(x => x && x.id && mnMap.set(x.id, x.name));
 
     const brdMap = new Map();
-    (INITIAL_DATA?.brands || []).forEach(x => x && x.id && brdMap.set(x.id, x.name));
     (storage.getTable(TABLE_NAMES.BRANDS) || []).forEach(x => x && x.id && brdMap.set(x.id, x.name));
 
     const mdlMap = new Map();
-    (INITIAL_DATA?.models || []).forEach(x => x && x.id && mdlMap.set(x.id, x.name));
     (storage.getTable(TABLE_NAMES.MODELS) || []).forEach(x => x && x.id && mdlMap.set(x.id, x.name));
     const storageMaster = storage.getTable(TABLE_NAMES.STORAGE_MASTER) || [];
     storageMaster.forEach(sm => {
@@ -653,15 +648,12 @@ class ExcelService {
     });
 
     const untMap = new Map();
-    (INITIAL_DATA?.units || []).forEach(x => x && x.id && untMap.set(x.id, x.name));
     (storage.getTable(TABLE_NAMES.UNITS) || []).forEach(x => x && x.id && untMap.set(x.id, x.name));
 
     const flrMap = new Map();
-    (INITIAL_DATA?.floors || []).forEach(x => x && x.id && flrMap.set(x.id, x.name));
     (storage.getTable(TABLE_NAMES.FLOORS) || []).forEach(x => x && x.id && flrMap.set(x.id, x.name));
 
     const linMap = new Map();
-    (INITIAL_DATA?.lines || []).forEach(x => x && x.id && linMap.set(x.id, x.name));
     (storage.getTable(TABLE_NAMES.LINES) || []).forEach(x => x && x.id && linMap.set(x.id, x.name));
 
     return { grpMap, mnMap, brdMap, mdlMap, untMap, flrMap, linMap };

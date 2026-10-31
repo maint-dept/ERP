@@ -3,7 +3,6 @@
  * High-Performance Storage Engine with Fast In-Memory Indexes & Persistence
  */
 
-import { INITIAL_DATA } from './initialData.js';
 import { TABLE_NAMES, DEFAULT_SETTINGS, SCHEMA_VERSION, DEFAULT_PERMISSION_PRESETS } from './schema.js';
 import { syncManager } from './syncManager.js';
 import { idbCache } from './idbCache.js';
@@ -238,7 +237,7 @@ class StorageEngine {
 
       if (isCompletelyEmpty && !hasSeededBefore) {
         console.log('[Database Store] 🔄 Local cache empty. Seeding initial factory dataset...');
-        this.resetToInitialData(false);
+        this.resetToInitialData(false).catch(e => console.warn('Reset seed notice:', e));
         try { if (typeof localStorage !== 'undefined') localStorage.setItem('al_muslim_initial_seeded', '1'); } catch (_) {}
       }
 
@@ -307,15 +306,24 @@ class StorageEngine {
     } catch (err) {
       console.warn('LocalStorage error, falling back to memory seed:', err);
       this._suppressServerPersist = true;
-      this.resetToInitialData(false);
-      this.rebuildAllIndexes();
+      this.resetToInitialData(false).then(() => {
+        this.rebuildAllIndexes();
+        this._suppressServerPersist = false;
+        this.syncWithServerDatabase();
+      }).catch(e => console.error('Fallback seed error:', e));
       this.isInitialized = true;
-      this._suppressServerPersist = false;
-      this.syncWithServerDatabase();
     }
   }
 
-  resetToInitialData(persistToServer = false) {
+  async resetToInitialData(persistToServer = false) {
+    let INITIAL_DATA;
+    try {
+      const mod = await import('./initialData.js');
+      INITIAL_DATA = mod.INITIAL_DATA;
+    } catch (err) {
+      console.error('[Storage] Failed to dynamically load initialData.js:', err);
+      return false;
+    }
     this.data = {
       [TABLE_NAMES.GROUPS]: JSON.parse(JSON.stringify(INITIAL_DATA.groups || [])),
       [TABLE_NAMES.UNITS]: JSON.parse(JSON.stringify(INITIAL_DATA.units || [])),
@@ -526,7 +534,7 @@ class StorageEngine {
     const currentMN = this.data[TABLE_NAMES.MACHINE_NAMES] || [];
     const mnMapById = new Map();
     currentMN.forEach(mn => { if (mn && mn.id) mnMapById.set(mn.id, mn); });
-    if (Array.isArray(this.data[TABLE_NAMES.MACHINES])) {
+    if (typeof INITIAL_DATA !== 'undefined' && Array.isArray(this.data[TABLE_NAMES.MACHINES])) {
       const activeMnIds = new Set(this.data[TABLE_NAMES.MACHINES].map(m => m && m.machineNameId).filter(Boolean));
       (INITIAL_DATA.machine_names || []).forEach(mn => {
         if (mn && mn.id && activeMnIds.has(mn.id) && !mnMapById.has(mn.id)) {
@@ -536,27 +544,29 @@ class StorageEngine {
     }
     this.data[TABLE_NAMES.MACHINE_NAMES] = Array.from(mnMapById.values());
 
-    // Auto-heal empty or missing core master tables from INITIAL_DATA
-    if (!Array.isArray(this.data[TABLE_NAMES.MACHINE_NAMES]) || this.data[TABLE_NAMES.MACHINE_NAMES].length === 0) {
-      this.data[TABLE_NAMES.MACHINE_NAMES] = JSON.parse(JSON.stringify(INITIAL_DATA.machine_names || []));
-    }
-    if (!Array.isArray(this.data[TABLE_NAMES.MODELS]) || this.data[TABLE_NAMES.MODELS].length === 0) {
-      this.data[TABLE_NAMES.MODELS] = JSON.parse(JSON.stringify(INITIAL_DATA.models || []));
-    }
-    if (!Array.isArray(this.data[TABLE_NAMES.BRANDS]) || this.data[TABLE_NAMES.BRANDS].length === 0) {
-      this.data[TABLE_NAMES.BRANDS] = JSON.parse(JSON.stringify(INITIAL_DATA.brands || []));
-    }
-    if (!Array.isArray(this.data[TABLE_NAMES.GROUPS]) || this.data[TABLE_NAMES.GROUPS].length === 0) {
-      this.data[TABLE_NAMES.GROUPS] = JSON.parse(JSON.stringify(INITIAL_DATA.groups || []));
-    }
-    if (!Array.isArray(this.data[TABLE_NAMES.UNITS]) || this.data[TABLE_NAMES.UNITS].length === 0) {
-      this.data[TABLE_NAMES.UNITS] = JSON.parse(JSON.stringify(INITIAL_DATA.units || []));
-    }
-    if (!Array.isArray(this.data[TABLE_NAMES.FLOORS]) || this.data[TABLE_NAMES.FLOORS].length === 0) {
-      this.data[TABLE_NAMES.FLOORS] = JSON.parse(JSON.stringify(INITIAL_DATA.floors || []));
-    }
-    if (!Array.isArray(this.data[TABLE_NAMES.LINES]) || this.data[TABLE_NAMES.LINES].length === 0) {
-      this.data[TABLE_NAMES.LINES] = JSON.parse(JSON.stringify(INITIAL_DATA.lines || []));
+    // Auto-heal empty or missing core master tables from INITIAL_DATA if present
+    if (typeof INITIAL_DATA !== 'undefined') {
+      if (!Array.isArray(this.data[TABLE_NAMES.MACHINE_NAMES]) || this.data[TABLE_NAMES.MACHINE_NAMES].length === 0) {
+        this.data[TABLE_NAMES.MACHINE_NAMES] = JSON.parse(JSON.stringify(INITIAL_DATA.machine_names || []));
+      }
+      if (!Array.isArray(this.data[TABLE_NAMES.MODELS]) || this.data[TABLE_NAMES.MODELS].length === 0) {
+        this.data[TABLE_NAMES.MODELS] = JSON.parse(JSON.stringify(INITIAL_DATA.models || []));
+      }
+      if (!Array.isArray(this.data[TABLE_NAMES.BRANDS]) || this.data[TABLE_NAMES.BRANDS].length === 0) {
+        this.data[TABLE_NAMES.BRANDS] = JSON.parse(JSON.stringify(INITIAL_DATA.brands || []));
+      }
+      if (!Array.isArray(this.data[TABLE_NAMES.GROUPS]) || this.data[TABLE_NAMES.GROUPS].length === 0) {
+        this.data[TABLE_NAMES.GROUPS] = JSON.parse(JSON.stringify(INITIAL_DATA.groups || []));
+      }
+      if (!Array.isArray(this.data[TABLE_NAMES.UNITS]) || this.data[TABLE_NAMES.UNITS].length === 0) {
+        this.data[TABLE_NAMES.UNITS] = JSON.parse(JSON.stringify(INITIAL_DATA.units || []));
+      }
+      if (!Array.isArray(this.data[TABLE_NAMES.FLOORS]) || this.data[TABLE_NAMES.FLOORS].length === 0) {
+        this.data[TABLE_NAMES.FLOORS] = JSON.parse(JSON.stringify(INITIAL_DATA.floors || []));
+      }
+      if (!Array.isArray(this.data[TABLE_NAMES.LINES]) || this.data[TABLE_NAMES.LINES].length === 0) {
+        this.data[TABLE_NAMES.LINES] = JSON.parse(JSON.stringify(INITIAL_DATA.lines || []));
+      }
     }
 
     // Automatically purge dummy "test" machine and master data records
@@ -2006,7 +2016,9 @@ class StorageEngine {
     if (!m) return 'Plane Machine';
     const brandTable = this.data[TABLE_NAMES.BRANDS] || [];
     const brandSet = new Set(brandTable.map(b => (b?.name || '').trim().toLowerCase()).filter(Boolean));
-    (INITIAL_DATA.brands || []).forEach(b => { if (b?.name) brandSet.add(b.name.trim().toLowerCase()); });
+    if (typeof INITIAL_DATA !== 'undefined' && Array.isArray(INITIAL_DATA.brands)) {
+      INITIAL_DATA.brands.forEach(b => { if (b?.name) brandSet.add(b.name.trim().toLowerCase()); });
+    }
 
     let nameFromId = '';
     if (m.machineNameId) {

@@ -6,7 +6,6 @@
 
 import { storage, CloudSaveError } from '../db/storage.js';
 import { TABLE_NAMES, ACTIVITY_TYPES, SERVICE_TYPES } from '../db/schema.js';
-import { INITIAL_DATA } from '../db/initialData.js';
 import { auditService } from './auditService.js';
 import { authService } from './authService.js';
 import { masterDataService } from './masterDataService.js';

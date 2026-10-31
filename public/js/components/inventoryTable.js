@@ -6,7 +6,6 @@
 
 import { storage } from '../db/storage.js';
 import { TABLE_NAMES } from '../db/schema.js';
-import { INITIAL_DATA } from '../db/initialData.js';
 import { machineService, isAmbulanceMachine } from '../services/machineService.js';
 import { masterDataService } from '../services/masterDataService.js';
 import { customFieldService } from '../services/customFieldService.js';
@@ -117,21 +116,17 @@ export function renderInventoryTable() {
   const brands = masterDataService.getBrandsForMachineName(filters.machineNameId);
   const models = masterDataService.getModels(filters.brandId, filters.machineNameId);
 
-  // Helper map lookups for high performance rendering with INITIAL_DATA and STORAGE_MASTER fallbacks
+  // Helper map lookups for high performance rendering using storage tables
   const grpMap = new Map();
-  (INITIAL_DATA.groups || []).forEach(x => x && x.id && grpMap.set(x.id, x.name));
   (storage.getTable(TABLE_NAMES.GROUPS) || []).forEach(x => x && x.id && grpMap.set(x.id, x.name));
 
   const mnMap = new Map();
-  (INITIAL_DATA.machine_names || []).forEach(x => x && x.id && mnMap.set(x.id, x.name));
   (storage.getTable(TABLE_NAMES.MACHINE_NAMES) || []).forEach(x => x && x.id && mnMap.set(x.id, x.name));
 
   const brdMap = new Map();
-  (INITIAL_DATA.brands || []).forEach(x => x && x.id && brdMap.set(x.id, x.name));
   (storage.getTable(TABLE_NAMES.BRANDS) || []).forEach(x => x && x.id && brdMap.set(x.id, x.name));
 
   const mdlMap = new Map();
-  (INITIAL_DATA.models || []).forEach(x => x && x.id && mdlMap.set(x.id, x.name));
   const liveModels = storage.getTable(TABLE_NAMES.MODELS) || [];
   liveModels.forEach(x => x && x.id && mdlMap.set(x.id, x.name));
   const storageMaster = storage.getTable(TABLE_NAMES.STORAGE_MASTER) || [];
@@ -142,12 +137,6 @@ export function renderInventoryTable() {
   });
 
   const modelByBrandAndMachine = new Map();
-  (INITIAL_DATA.models || []).forEach(m => {
-    if (m && m.name && m.brandId && m.machineNameId && m.name.toLowerCase() !== 'standard') {
-      const key = `${m.brandId}:::${m.machineNameId}`;
-      if (!modelByBrandAndMachine.has(key)) modelByBrandAndMachine.set(key, m.name);
-    }
-  });
   liveModels.forEach(m => {
     if (m && m.name && m.brandId && m.machineNameId && m.name.toLowerCase() !== 'standard') {
       const key = `${m.brandId}:::${m.machineNameId}`;
@@ -155,25 +144,13 @@ export function renderInventoryTable() {
     }
   });
 
-  const initialMachineBySerial = new Map();
-  const initialMachineById = new Map();
-  if (typeof INITIAL_DATA !== 'undefined' && Array.isArray(INITIAL_DATA.machines)) {
-    INITIAL_DATA.machines.forEach(x => {
-      if (x && x.serialNumber) initialMachineBySerial.set(String(x.serialNumber).trim().toUpperCase(), x);
-      if (x && x.id) initialMachineById.set(x.id, x);
-    });
-  }
-
   const untMap = new Map();
-  (INITIAL_DATA.units || []).forEach(x => x && x.id && untMap.set(x.id, x.name));
   (storage.getTable(TABLE_NAMES.UNITS) || []).forEach(x => x && x.id && untMap.set(x.id, x.name));
 
   const flrMap = new Map();
-  (INITIAL_DATA.floors || []).forEach(x => x && x.id && flrMap.set(x.id, x.name));
   (storage.getTable(TABLE_NAMES.FLOORS) || []).forEach(x => x && x.id && flrMap.set(x.id, x.name));
 
   const linMap = new Map();
-  (INITIAL_DATA.lines || []).forEach(x => x && x.id && linMap.set(x.id, x.name));
   (storage.getTable(TABLE_NAMES.LINES) || []).forEach(x => x && x.id && linMap.set(x.id, x.name));
 
   // Active Filter Tags List
@@ -288,20 +265,12 @@ export function renderInventoryTable() {
             mdl = fromMap.trim();
           }
         }
-        // 4. Lookup canonical machine in INITIAL_DATA fallback
+        // 4. Fallback lookup on machine object properties
         if (!mdl) {
-          const sn = (m.serialNumber || '').trim().toUpperCase();
-          const canon = (sn && initialMachineBySerial.get(sn)) || (m.id && initialMachineById.get(m.id));
-          if (canon) {
-            for (const raw of [canon.model, canon.modelName, canon.modelStr]) {
-              if (raw && typeof raw === 'string' && raw.trim() && raw.trim().toLowerCase() !== 'standard') {
-                mdl = raw.trim();
-                break;
-              }
-            }
-            if (!mdl && canon.modelId && mdlMap.has(canon.modelId)) {
-              const cMdl = mdlMap.get(canon.modelId);
-              if (cMdl && cMdl.trim().toLowerCase() !== 'standard') mdl = cMdl.trim();
+          for (const raw of [m.model, m.modelName, m.modelStr, m.customValues?.model]) {
+            if (raw && typeof raw === 'string' && raw.trim() && raw.trim().toLowerCase() !== 'standard') {
+              mdl = raw.trim();
+              break;
             }
           }
         }

@@ -6,7 +6,6 @@
 
 import { storage } from '../db/storage.js';
 import { TABLE_NAMES } from '../db/schema.js';
-import { INITIAL_DATA } from '../db/initialData.js';
 import { authService } from '../services/authService.js';
 import { masterDataService } from '../services/masterDataService.js';
 import { employeeService } from '../services/employeeService.js';
@@ -1029,17 +1028,17 @@ function renderPartsMasterTab() {
 // 5. TRACEABILITY HISTORY TAB
 // ─────────────────────────────────────────────────────────────
 function renderHistoryTab() {
-  const allUnits = masterDataService.getUnits ? masterDataService.getUnits(null, true) : (storage.getTable(TABLE_NAMES.UNITS) || INITIAL_DATA.units || []);
+  const allUnits = masterDataService.getUnits ? masterDataService.getUnits(null, true) : (storage.getTable(TABLE_NAMES.UNITS) || []);
   
   // Cascading Floors based on selected unit
   const allFloors = historyFilters.unitId 
     ? (masterDataService.getFloors ? masterDataService.getFloors(historyFilters.unitId, null, true, true) : (storage.getTable(TABLE_NAMES.FLOORS) || []).filter(f => f.unitId === historyFilters.unitId))
-    : (masterDataService.getFloors ? masterDataService.getFloors(null, null, true, true) : (storage.getTable(TABLE_NAMES.FLOORS) || INITIAL_DATA.floors || []));
+    : (masterDataService.getFloors ? masterDataService.getFloors(null, null, true, true) : (storage.getTable(TABLE_NAMES.FLOORS) || []));
 
   // Cascading Lines based on selected floor
   const allLines = historyFilters.floorId
     ? (masterDataService.getLines ? masterDataService.getLines(historyFilters.floorId, null, null, true, true) : (storage.getTable(TABLE_NAMES.LINES) || []).filter(l => l.floorId === historyFilters.floorId))
-    : (masterDataService.getLines ? masterDataService.getLines(null, null, null, true, true) : (storage.getTable(TABLE_NAMES.LINES) || INITIAL_DATA.lines || []));
+    : (masterDataService.getLines ? masterDataService.getLines(null, null, null, true, true) : (storage.getTable(TABLE_NAMES.LINES) || []));
 
   const issues = partsTraceService.getAllIssues({ search: historySearch, ...historyFilters });
   const totalQty = issues.reduce((sum, i) => sum + (parseFloat(i.issueQty) || 1), 0);
@@ -1240,17 +1239,17 @@ function renderHistoryTab() {
 // 6. REPORTS TAB
 // ─────────────────────────────────────────────────────────────
 function renderReportsTab() {
-  const allUnits = masterDataService.getUnits ? masterDataService.getUnits(null, true) : (storage.getTable(TABLE_NAMES.UNITS) || INITIAL_DATA.units || []);
+  const allUnits = masterDataService.getUnits ? masterDataService.getUnits(null, true) : (storage.getTable(TABLE_NAMES.UNITS) || []);
   
   // Cascading Floors based on selected unit
   const allFloors = historyFilters.unitId 
     ? (masterDataService.getFloors ? masterDataService.getFloors(historyFilters.unitId, null, true, true) : (storage.getTable(TABLE_NAMES.FLOORS) || []).filter(f => f.unitId === historyFilters.unitId))
-    : (masterDataService.getFloors ? masterDataService.getFloors(null, null, true, true) : (storage.getTable(TABLE_NAMES.FLOORS) || INITIAL_DATA.floors || []));
+    : (masterDataService.getFloors ? masterDataService.getFloors(null, null, true, true) : (storage.getTable(TABLE_NAMES.FLOORS) || []));
 
   // Cascading Lines based on selected floor
   const allLines = historyFilters.floorId
     ? (masterDataService.getLines ? masterDataService.getLines(historyFilters.floorId, null, null, true, true) : (storage.getTable(TABLE_NAMES.LINES) || []).filter(l => l.floorId === historyFilters.floorId))
-    : (masterDataService.getLines ? masterDataService.getLines(null, null, null, true, true) : (storage.getTable(TABLE_NAMES.LINES) || INITIAL_DATA.lines || []));
+    : (masterDataService.getLines ? masterDataService.getLines(null, null, null, true, true) : (storage.getTable(TABLE_NAMES.LINES) || []));
 
   const issues = partsTraceService.getAllIssues({ search: historySearch, ...historyFilters });
 
