@@ -89,7 +89,7 @@ export function renderReportsView() {
   const replacementLogs = allHistory.filter(h => h.actionType === 'SPARE_PART_REPLACEMENT' || h.sparePart);
 
   return `
-    <div class="page-view" style="display: flex; flex-direction: column; gap: 8px; height: 100%; overflow: hidden; box-sizing: border-box; padding: 8px 14px;">
+    <div class="page-view reports-page-wrapper">
       
       <!-- Top Title Bar (Ultra Compact Header) -->
       <div class="reports-top-bar" style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 5px 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; flex-shrink: 0;">

@@ -847,7 +847,7 @@ export function renderInventoryTable() {
 
   // 7. Assemble Complete Redesigned Component Layout
   return `
-    <div class="page-view inventory-page-wrapper" style="display: flex; flex-direction: column; gap: 6px; height: 100%; min-height: 0; padding: 6px 12px; overflow: hidden;">
+    <div class="page-view inventory-page-wrapper">
       
       <!-- ── Pinned Top Control Deck (Never scrolls away) ── -->
       <div class="inventory-sticky-header-panel" style="display: flex; flex-direction: column; gap: 6px; flex-shrink: 0; position: sticky; top: 0; z-index: 35; background: var(--bg-surface, #0f172a);">

@@ -407,7 +407,7 @@ export function renderUserManagement() {
   const paginatedPassAccounts = filteredPassAccounts.slice(passStartIndex, passStartIndex + passwordMgmtRowsPerPage);
 
   return `
-    <div class="page-view uam-dashboard-page" style="display: flex; flex-direction: column; height: 100%; max-height: 100%; min-height: 0; padding: 4px 10px 4px 10px; gap: 4px; overflow: hidden; box-sizing: border-box;">
+    <div class="page-view uam-dashboard-page">
       
       <!-- =================================================================== -->
       <!-- FIXED TOP DECK: Sleek Header, Inline KPIs, Navigation Tabs & Filters -->

@@ -112,10 +112,20 @@ body {
   transition: background-color 0.2s ease, color 0.2s ease;
 }
 
-/* Background scroll lock when any modal is open (prevents touch-bleed jitter without resetting window scroll) */
+/* Background scroll lock when any modal is open (preserves internal touch scrolling for modal contents) */
 body.modal-open {
-  touch-action: none;
+  overflow: hidden;
   overscroll-behavior: none;
+}
+
+body.modal-open .modal-overlay,
+body.modal-open .modal-dialog,
+body.modal-open .modal-card,
+body.modal-open .modal-body,
+body.modal-open .modal-body-scroll,
+body.modal-open form,
+body.modal-open div {
+  touch-action: pan-y;
 }
 
 /* Single Page Application Shell Root */
@@ -2080,11 +2090,76 @@ body.theme-light .badge-archived {
     max-width: 110px;
   }
 
-  .page-view {
-    padding: 10px 10px 28px 10px;
-    gap: 8px;
-    max-width: 100%;
-    min-width: 0;
+  /* Mobile Page Vertical Scrolling Master Unlock across All Features */
+  #main-view-container {
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+    height: 100% !important;
+    max-height: 100% !important;
+    min-height: 0 !important;
+    flex: 1 1 auto !important;
+    touch-action: pan-y !important;
+  }
+
+  #main-view-container:has(.uam-dashboard-page),
+  .app-main:has(.uam-dashboard-page) #main-view-container {
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    height: 100% !important;
+    max-height: 100% !important;
+  }
+
+  .page-view,
+  .page-view[style*="overflow: hidden"],
+  .page-view[style*="overflow:hidden"],
+  .inventory-page-wrapper,
+  .uam-dashboard-page,
+  .ent-lab-page-container,
+  .tools-management-view,
+  .history-page-wrapper,
+  .parts-trace-view-root,
+  .relocate-view-root,
+  .qr-studio-root,
+  .preventive-maintenance-page,
+  .manpower-page-wrapper,
+  .reports-page-wrapper,
+  .storage-page-wrapper,
+  #storage-page-root,
+  #needle-ops-page-root {
+    height: auto !important;
+    min-height: 100% !important;
+    max-height: none !important;
+    overflow-y: visible !important;
+    overflow-x: hidden !important;
+    flex: 1 0 auto !important;
+    touch-action: pan-y !important;
+    padding: 8px 8px 36px 8px !important;
+    gap: 8px !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .inventory-sticky-header-panel,
+  .uam-fixed-top-deck {
+    position: static !important;
+    flex-shrink: 0 !important;
+    overflow: visible !important;
+  }
+
+  .inventory-table-scroll-container,
+  #inventory-table-scroll-viewport,
+  .uam-table-scroll-container,
+  .uam-tab-content-wrapper,
+  .responsive-table-wrapper,
+  .table-responsive {
+    height: auto !important;
+    min-height: 380px !important;
+    max-height: none !important;
+    flex: 1 0 auto !important;
+    overflow-x: auto !important;
+    overflow-y: visible !important;
+    -webkit-overflow-scrolling: touch !important;
   }
 
   /* Full-width responsive toolbars & action bars */

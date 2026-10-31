@@ -749,12 +749,12 @@ td.col-actions-cell {
   .excel-table-container,
   .spare-parts-table-container,
   .manpower-table-scroll-container {
-    max-height: calc(100dvh - 210px);
+    max-height: none !important;
     min-height: 280px;
     width: 100% !important;
     max-width: 100% !important;
     overflow-x: auto !important;
-    overflow-y: auto !important;
+    overflow-y: visible !important;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-x: contain;
   }

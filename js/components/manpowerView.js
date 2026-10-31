@@ -224,7 +224,7 @@ export function renderManpowerView() {
   const customFields = employeeCustomFieldService.getAllFields();
 
   return `
-    <div class="page-view" style="display: flex; flex-direction: column; gap: 8px; width: 100%; max-width: 100%; height: 100%; overflow: hidden; box-sizing: border-box; padding: 8px 14px;">
+    <div class="page-view manpower-page-wrapper">
       
       <!-- Compact Top Command Bar: Unified Header, Tabs & Actions in One Single Row -->
       <div class="view-header-row" style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 6px 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; flex-shrink: 0;">

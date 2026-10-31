@@ -54,7 +54,7 @@ export function renderStorageView() {
   const totalBrands = brandSet.size;
 
   return `
-    <div class="page-view" id="storage-page-root" style="padding: 8px 14px; display: flex; flex-direction: column; gap: 8px; height: 100%; overflow: hidden; box-sizing: border-box;">
+    <div class="page-view storage-page-wrapper" id="storage-page-root">
       
       <!-- Unified Compact Top Header: Title, Live KPIs & Primary Workflow Actions -->
       <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; min-height: 42px; flex-shrink: 0; background: var(--bg-surface); padding: 8px 14px; border: 1px solid var(--border-color); border-radius: var(--radius-md);">
