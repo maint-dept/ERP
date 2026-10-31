@@ -489,6 +489,67 @@ export function renderQrCodeView() {
         border-color: #38bdf8 !important;
         box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.45), 0 8px 20px rgba(0,0,0,0.5) !important;
       }
+
+      @media (max-width: 768px) {
+        .qr-studio-root {
+          height: auto !important;
+          min-height: 100% !important;
+          overflow-y: visible !important;
+          padding: 8px 8px 48px 8px !important;
+        }
+
+        .qr-studio-header-card {
+          flex-direction: column !important;
+          align-items: stretch !important;
+          gap: 6px !important;
+        }
+
+        .qr-header-left {
+          flex-direction: column !important;
+          align-items: flex-start !important;
+          gap: 6px !important;
+        }
+
+        .qr-studio-tabs {
+          overflow-x: auto !important;
+          flex-wrap: nowrap !important;
+          -webkit-overflow-scrolling: touch !important;
+          scrollbar-width: none !important;
+          width: 100% !important;
+        }
+
+        .btn-studio-tab {
+          flex: 0 0 auto !important;
+          white-space: nowrap !important;
+        }
+
+        .qr-studio-content-area {
+          height: auto !important;
+          min-height: 0 !important;
+          flex: 1 0 auto !important;
+          overflow-y: visible !important;
+        }
+
+        .qr-toolbar-card {
+          padding: 8px !important;
+        }
+
+        .qr-filters-row {
+          grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)) !important;
+        }
+
+        .qr-labels-grid {
+          display: grid !important;
+          grid-template-columns: 1fr !important;
+          height: auto !important;
+          min-height: 380px !important;
+          overflow-y: visible !important;
+        }
+
+        #qr-pagination-top {
+          display: none !important;
+        }
+      }
     </style>
   `;
 }

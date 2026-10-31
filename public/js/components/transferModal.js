@@ -402,13 +402,13 @@ export function renderTransferModal() {
         </form>
 
         <!-- Modal Footer -->
-        <div class="modal-footer" style="background: var(--bg-surface); border-top: 1.5px solid var(--border-color); padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
-          <div style="font-size: 13px; color: var(--text-primary);">
+        <div class="modal-footer" style="background: var(--bg-surface); border-top: 1.5px solid var(--border-color); padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+          <div style="font-size: 12.5px; color: var(--text-primary); line-height: 1.4;">
             Requester: <strong style="color: #0284c7; font-weight: 800;">${authService.getCurrentUser()?.name || 'User'}</strong> &bull; Status will be: <strong id="transfer-status-preview" style="color: #d97706; font-weight: 800;">${(machine && !authService.canOperateMachine(machine)) ? `Pending ${currentFloorName} Release Approval` : 'Pending Admin Approval'}</strong>
           </div>
-          <div style="display: flex; gap: 12px;">
-            <button type="button" id="btn-cancel-transfer" class="btn btn-secondary" style="font-weight: 700; height: 40px; padding: 0 18px; border-radius: 6px;">Cancel</button>
-            <button type="submit" form="form-transfer-request" id="btn-submit-transfer-request" class="btn btn-primary" style="font-weight: 800; height: 40px; padding: 0 24px; font-size: 13.5px; border-radius: 6px; background: linear-gradient(135deg, #0284c7, #0369a1); box-shadow: 0 4px 15px rgba(2, 132, 199, 0.4); ${activeExistingTransfer ? 'opacity: 0.45; cursor: not-allowed;' : ''}" ${activeExistingTransfer ? 'disabled title="Cannot submit: An active transfer request already exists for this machine."' : ''}>
+          <div class="modal-footer-actions" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; width: auto;">
+            <button type="button" id="btn-cancel-transfer" class="btn btn-secondary" style="font-weight: 700; height: 38px; padding: 0 16px; border-radius: 6px; flex: 1 1 auto; min-width: 90px;">Cancel</button>
+            <button type="submit" form="form-transfer-request" id="btn-submit-transfer-request" class="btn btn-primary" style="font-weight: 800; height: 38px; padding: 0 20px; font-size: 13px; border-radius: 6px; white-space: nowrap; flex: 2 1 auto; min-width: 180px; background: linear-gradient(135deg, #0284c7, #0369a1); box-shadow: 0 4px 15px rgba(2, 132, 199, 0.4); ${activeExistingTransfer ? 'opacity: 0.45; cursor: not-allowed;' : ''}" ${activeExistingTransfer ? 'disabled title="Cannot submit: An active transfer request already exists for this machine."' : ''}>
               🚀 Submit Transfer Request
             </button>
           </div>

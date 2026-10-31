@@ -567,10 +567,48 @@ export function renderRelocateView() {
       /* Bottom Sheet Modal Styles on Mobile */
       @media (max-width: 768px) {
         .relocate-view-root {
-          padding: 8px 10px 145px 10px !important;
+          padding: 8px 8px 48px 8px !important;
           height: auto !important;
           min-height: 100% !important;
           overflow-y: visible !important;
+        }
+
+        .relocate-tab-content-area {
+          height: auto !important;
+          min-height: 0 !important;
+          flex: 1 0 auto !important;
+          overflow: visible !important;
+        }
+
+        .relocate-idle-card {
+          height: auto !important;
+          min-height: 380px !important;
+          flex: 1 0 auto !important;
+          overflow: visible !important;
+        }
+
+        .relocate-idle-list {
+          height: auto !important;
+          overflow-y: visible !important;
+          flex: 1 0 auto !important;
+        }
+
+        .relocate-top-nav-card .relocate-tabs-bar {
+          display: flex !important;
+          flex-direction: row !important;
+          flex-wrap: nowrap !important;
+          overflow-x: auto !important;
+          -webkit-overflow-scrolling: touch !important;
+          scrollbar-width: none !important;
+          width: 100% !important;
+          margin-left: 0 !important;
+          padding: 2px 0 !important;
+        }
+
+        .relocate-top-nav-card .relocate-tabs-bar button,
+        .relocate-top-nav-card .relocate-tabs-bar a {
+          flex: 0 0 auto !important;
+          white-space: nowrap !important;
         }
 
         .relocate-desktop-actions {
@@ -586,7 +624,7 @@ export function renderRelocateView() {
         .relocate-scanned-list {
           overflow-y: visible !important;
           max-height: none !important;
-          padding: 8px 8px 145px 8px !important;
+          padding: 8px 8px 48px 8px !important;
           display: flex !important;
           flex-direction: column !important;
           gap: 10px !important;
@@ -1467,7 +1505,7 @@ function renderReconciliationModal(session) {
 // ─────────────────────────────────────────────────────────────
 function renderIdleMachinesTab(idleMachines) {
   return `
-    <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 12px 16px; display: flex; flex-direction: column; gap: 10px; flex: 1; min-height: 0;">
+    <div class="relocate-idle-card" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 12px 16px; display: flex; flex-direction: column; gap: 10px; flex: 1; min-height: 0;">
       
       <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
         <div>
@@ -1480,7 +1518,7 @@ function renderIdleMachinesTab(idleMachines) {
         </div>
       </div>
 
-      <div style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 6px;">
+      <div class="relocate-idle-list" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 6px;">
         ${idleMachines.length === 0 ? `
           <div style="text-align: center; padding: 40px; color: var(--text-muted);">
             No idle machines recorded in system.

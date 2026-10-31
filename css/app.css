@@ -2114,6 +2114,7 @@ body.theme-light .badge-archived {
   .page-view[style*="overflow: hidden"],
   .page-view[style*="overflow:hidden"],
   .inventory-page-wrapper,
+  .transfers-page-wrapper,
   .uam-dashboard-page,
   .ent-lab-page-container,
   .tools-management-view,
@@ -2152,7 +2153,15 @@ body.theme-light .badge-archived {
   .uam-table-scroll-container,
   .uam-tab-content-wrapper,
   .responsive-table-wrapper,
-  .table-responsive {
+  .table-responsive,
+  .transfers-table-container,
+  .qr-labels-grid,
+  #qr-machine-cards-grid,
+  .relocate-idle-list,
+  .relocate-history-list,
+  .relocate-approvals-list,
+  .relocate-scanned-list,
+  .tools-table-scroll-container {
     height: auto !important;
     min-height: 380px !important;
     max-height: none !important;
@@ -2160,6 +2169,20 @@ body.theme-light .badge-archived {
     overflow-x: auto !important;
     overflow-y: visible !important;
     -webkit-overflow-scrolling: touch !important;
+  }
+
+  #relocate-tab-content-area,
+  .qr-studio-content-area,
+  #parts-trace-content-area,
+  .tools-tab-content-wrapper,
+  .relocate-history-container,
+  .relocate-content-card,
+  .relocate-idle-card {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    flex: 1 0 auto !important;
+    overflow: visible !important;
   }
 
   /* Full-width responsive toolbars & action bars */
@@ -2334,51 +2357,53 @@ body.theme-light .badge-archived {
 }
 
 /* =========================================================
-   Dedicated User Access Management (UAM) Full-Screen Layout
+   Dedicated User Access Management (UAM) Full-Screen Layout (Desktop Only)
    ========================================================= */
-#main-view-container:has(.uam-dashboard-page),
-.app-main:has(.uam-dashboard-page) #main-view-container {
-  overflow: hidden !important;
-  height: calc(100vh - var(--header-height, 56px)) !important;
-  max-height: calc(100vh - var(--header-height, 56px)) !important;
-  padding: 0 !important;
-}
+@media (min-width: 769px) {
+  #main-view-container:has(.uam-dashboard-page),
+  .app-main:has(.uam-dashboard-page) #main-view-container {
+    overflow: hidden !important;
+    height: calc(100vh - var(--header-height, 56px)) !important;
+    max-height: calc(100vh - var(--header-height, 56px)) !important;
+    padding: 0 !important;
+  }
 
-.page-view.uam-dashboard-page,
-.uam-dashboard-page {
-  display: flex !important;
-  flex-direction: column !important;
-  height: 100% !important;
-  max-height: 100% !important;
-  min-height: 0 !important;
-  width: 100% !important;
-  max-width: 100% !important;
-  padding: 4px 10px 4px 10px !important;
-  gap: 4px !important;
-  overflow: hidden !important;
-  box-sizing: border-box !important;
-}
+  .page-view.uam-dashboard-page,
+  .uam-dashboard-page {
+    display: flex !important;
+    flex-direction: column !important;
+    height: 100% !important;
+    max-height: 100% !important;
+    min-height: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 4px 10px 4px 10px !important;
+    gap: 4px !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+  }
 
-/* Fixed Top Deck: Header, Summary Cards, Navigation Tabs, and Filters */
-.uam-fixed-top-deck {
-  flex-shrink: 0 !important;
-  display: flex !important;
-  flex-direction: column !important;
-  gap: 4px !important;
-  width: 100% !important;
-  z-index: 25 !important;
-}
+  /* Fixed Top Deck: Header, Summary Cards, Navigation Tabs, and Filters */
+  .uam-fixed-top-deck {
+    flex-shrink: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 4px !important;
+    width: 100% !important;
+    z-index: 25 !important;
+  }
 
-/* Tab 1 Dedicated Content Wrapper */
-.uam-tab-content-wrapper {
-  flex: 1 1 0% !important;
-  min-height: 0 !important;
-  height: 0 !important;
-  display: flex !important;
-  flex-direction: column !important;
-  gap: 4px !important;
-  overflow: hidden !important;
-  width: 100% !important;
+  /* Tab 1 Dedicated Content Wrapper */
+  .uam-tab-content-wrapper {
+    flex: 1 1 0% !important;
+    min-height: 0 !important;
+    height: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 4px !important;
+    overflow: hidden !important;
+    width: 100% !important;
+  }
 }
 
 /* Dedicated Scroll Container: ONLY Data Table scrolls vertically & horizontally */
@@ -2875,4 +2900,176 @@ body.theme-light .nav-switcher-item {
 body.theme-light .nav-switcher-item:hover {
   background: #f1f5f9 !important;
 }
+
+/* ==========================================================================
+   MASTER MOBILE VERTICAL SCROLL & POPUP ARCHITECTURE (<= 768px)
+   Guarantees all pages, tables, grids, and modal popups scroll smoothly down
+   ========================================================================== */
+@media (max-width: 768px) {
+  #main-view-container {
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+    height: 100% !important;
+    max-height: 100% !important;
+    min-height: 0 !important;
+    flex: 1 1 auto !important;
+    touch-action: pan-y !important;
+  }
+
+  .page-view,
+  .transfers-page-wrapper,
+  .inventory-page-wrapper,
+  .uam-dashboard-page,
+  .relocate-view-root,
+  .qr-studio-root,
+  .preventive-maintenance-page,
+  .tools-management-view,
+  .parts-trace-view-root,
+  .storage-page-wrapper,
+  .reports-page-wrapper,
+  .manpower-page-wrapper,
+  .history-page-wrapper,
+  .ent-lab-page-container {
+    height: auto !important;
+    min-height: 100% !important;
+    max-height: none !important;
+    overflow-y: visible !important;
+    overflow-x: hidden !important;
+    flex: 1 0 auto !important;
+    touch-action: pan-y !important;
+    padding: 8px 8px 48px 8px !important;
+  }
+
+  /* Intermediate Containers */
+  #relocate-tab-content-area,
+  .qr-studio-content-area,
+  #parts-trace-content-area,
+  .tools-tab-content-wrapper,
+  .relocate-history-container,
+  .relocate-content-card,
+  .relocate-idle-card {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    flex: 1 0 auto !important;
+    overflow: visible !important;
+  }
+
+  /* Data Tables & Cards List Viewports */
+  .transfers-table-container,
+  .inventory-table-scroll-container,
+  #inventory-table-scroll-viewport,
+  .uam-table-scroll-container,
+  .tools-table-scroll-container,
+  .relocate-idle-list,
+  .relocate-history-list,
+  .relocate-approvals-list,
+  .relocate-scanned-list,
+  .qr-labels-grid,
+  #qr-machine-cards-grid {
+    height: auto !important;
+    min-height: 380px !important;
+    max-height: none !important;
+    flex: 1 0 auto !important;
+    overflow-x: auto !important;
+    overflow-y: visible !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  /* Modals & Popups Full Screen Architecture */
+  .modal-overlay {
+    display: flex !important;
+    align-items: flex-start !important;
+    justify-content: center !important;
+    padding: 6px !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-y !important;
+  }
+
+  .modal-dialog,
+  .modal-card,
+  .modal-overlay > div {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: calc(100dvh - 12px) !important;
+    max-height: calc(100dvh - 12px) !important;
+    min-height: calc(100dvh - 12px) !important;
+    margin: 0 !important;
+    border-radius: var(--radius-lg) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+    touch-action: pan-y !important;
+    box-sizing: border-box !important;
+  }
+
+  .modal-dialog.modal-dialog-sm,
+  .modal-dialog.modal-confirm,
+  .modal-card.modal-confirm,
+  .modal-dialog-confirm {
+    height: auto !important;
+    min-height: auto !important;
+    max-height: 90dvh !important;
+  }
+
+  .modal-header {
+    padding: 10px 14px !important;
+    flex-shrink: 0 !important;
+    min-height: 48px !important;
+  }
+
+  .modal-body,
+  .modal-body-scroll,
+  .modal-card form,
+  .modal-dialog form,
+  .modal-dialog > form,
+  .modal-card > form,
+  form.modal-body,
+  .modal-content-scroll,
+  #account-switcher-results-container,
+  .qr-studio-body,
+  .custom-fields-modal-body,
+  #form-transfer-request {
+    padding: 12px 14px !important;
+    gap: 12px !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    touch-action: pan-y !important;
+  }
+
+  .modal-footer {
+    padding: 10px 14px !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+    flex-shrink: 0 !important;
+    min-height: auto !important;
+    background: var(--bg-surface) !important;
+  }
+
+  .modal-footer > div:has(button),
+  .modal-footer .modal-footer-actions {
+    display: flex !important;
+    gap: 8px !important;
+    width: 100% !important;
+  }
+
+  .modal-footer button,
+  .modal-footer .btn {
+    flex: 1 1 auto !important;
+    min-height: 40px !important;
+    font-size: 13px !important;
+    white-space: nowrap !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+}
+
 

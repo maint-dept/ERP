@@ -68,10 +68,10 @@ export function renderTransfersView() {
   }
 
   return `
-    <div class="page-view" style="padding: 6px 12px; display: flex; flex-direction: column; gap: 6px;">
+    <div class="page-view transfers-page-wrapper">
 
       <!-- ── Single Tight Toolbar Row: Title + KPIs + Actions ── -->
-      <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+      <div class="transfers-toolbar-row" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
 
         <!-- Title block -->
         <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
@@ -80,10 +80,10 @@ export function renderTransfersView() {
         </div>
 
         <!-- Separator -->
-        <div style="width: 1px; height: 22px; background: rgba(255,255,255,0.12); flex-shrink: 0;"></div>
+        <div class="desktop-only" style="width: 1px; height: 22px; background: rgba(255,255,255,0.12); flex-shrink: 0;"></div>
 
         <!-- KPI Chips (inline, very compact) -->
-        <div style="display: flex; gap: 5px; flex-wrap: wrap; align-items: center; flex: 1; min-width: 0;">
+        <div class="transfers-kpis-bar" style="display: flex; gap: 5px; flex-wrap: wrap; align-items: center; flex: 1; min-width: 0;">
 
           <div class="kpi-chip ${transferStatusFilter === 'ALL' ? 'kpi-chip-active' : ''}" data-status="ALL"
             style="display: inline-flex; align-items: center; gap: 5px; background: rgba(56,189,248,0.1); border: 1px solid ${transferStatusFilter === 'ALL' ? '#38bdf8' : 'rgba(56,189,248,0.25)'}; border-radius: 6px; padding: 3px 9px; cursor: pointer; white-space: nowrap;" title="All transfers">
@@ -111,7 +111,7 @@ export function renderTransfersView() {
         </div>
 
         <!-- Action Buttons (right side) -->
-        <div style="display: flex; gap: 5px; align-items: center; flex-shrink: 0; margin-left: auto;">
+        <div class="transfers-actions-bar" style="display: flex; gap: 5px; align-items: center; flex-shrink: 0; margin-left: auto;">
           <button id="btn-export-transfers-excel" class="btn btn-secondary btn-sm" title="Export to Excel"
             style="height: 28px; font-size: 11px; font-weight: 700; padding: 0 9px; display: inline-flex; align-items: center; gap: 4px; color: #f1f5f9;">
             📊 Export

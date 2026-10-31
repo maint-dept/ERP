@@ -27,10 +27,16 @@ Options -Indexes
 # If mod_rewrite is disabled or bypassed by LiteSpeed, ErrorDocument 404 serves /index.html
 ErrorDocument 404 /index.html
 
-# 4. Prevent browser caching of HTML entrypoints & search engine indexing defense
+# 4. Prevent browser caching of HTML entrypoints, JS modules & CSS assets
 <IfModule mod_headers.c>
-  <FilesMatch "^(index\.html|404\.html)$">
-    Header set Cache-Control "no-cache, no-store, must-revalidate"
+  <FilesMatch "\.(html|htm)$">
+    Header set Cache-Control "no-cache, no-store, must-revalidate, max-age=0"
+    Header set Pragma "no-cache"
+    Header set Expires "0"
+  </FilesMatch>
+
+  <FilesMatch "\.(js|mjs|css|json)$">
+    Header set Cache-Control "no-cache, no-store, must-revalidate, max-age=0"
     Header set Pragma "no-cache"
     Header set Expires "0"
   </FilesMatch>
