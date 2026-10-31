@@ -1856,15 +1856,15 @@ export function initInventoryTableEvents() {
         scrollContainer.scrollBy({ left: 380, behavior: 'smooth' });
       });
     }
-    // Shift + wheel horizontal scroll helper
+    // Shift + wheel horizontal scroll helper (only scroll horizontally when user explicitly holds Shift key)
     scrollContainer.addEventListener('wheel', (e) => {
-      if (!e.ctrlKey && e.deltaY !== 0 && !e.shiftKey) {
-        // Smooth horizontal scrolling when hovering scroll container
+      if (e.shiftKey && !e.ctrlKey && e.deltaY !== 0 && e.deltaX === 0) {
         if (scrollContainer.scrollWidth > scrollContainer.clientWidth) {
-          scrollContainer.scrollLeft += e.deltaY * 0.8;
+          scrollContainer.scrollLeft += e.deltaY;
+          e.preventDefault();
         }
       }
-    }, { passive: true });
+    }, { passive: false });
   }
 
   // 7. Table Header Sorting Handler

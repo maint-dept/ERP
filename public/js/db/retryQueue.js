@@ -43,7 +43,7 @@ export class RetryQueue {
   async enqueue(item) {
     try {
       await this.initPromise;
-    } catch (_) {}
+    } catch (_) { }
 
     if (!this.db) {
       try {
@@ -83,7 +83,7 @@ export class RetryQueue {
             const list = JSON.parse(raw);
             list.push({ ...payload, id: 'fb_' + Date.now() });
             localStorage.setItem('erp_sync_retry_queue_backup', JSON.stringify(list));
-          } catch (_) {}
+          } catch (_) { }
           resolve(null);
         };
       } catch (err) {
@@ -113,14 +113,14 @@ export class RetryQueue {
   async getPending(dbId = null) {
     try {
       await this.initPromise;
-    } catch (_) {}
+    } catch (_) { }
 
     let fallbackItems = [];
     try {
       const raw = localStorage.getItem('erp_sync_retry_queue_backup') || '[]';
       fallbackItems = JSON.parse(raw).filter(r => r.status === 'PENDING');
       if (dbId) fallbackItems = fallbackItems.filter(r => r.dbId === dbId);
-    } catch (_) {}
+    } catch (_) { }
 
     if (!this.db) {
       return fallbackItems.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
@@ -150,7 +150,7 @@ export class RetryQueue {
   async remove(id) {
     try {
       await this.initPromise;
-    } catch (_) {}
+    } catch (_) { }
 
     // Check localStorage fallback
     if (typeof id === 'string' && id.startsWith('fb_')) {
@@ -159,7 +159,7 @@ export class RetryQueue {
         const list = JSON.parse(raw).filter(r => r.id !== id);
         localStorage.setItem('erp_sync_retry_queue_backup', JSON.stringify(list));
         return true;
-      } catch (_) {}
+      } catch (_) { }
     }
 
     if (!this.db) return true;
@@ -183,7 +183,7 @@ export class RetryQueue {
   async update(id, updates) {
     try {
       await this.initPromise;
-    } catch (_) {}
+    } catch (_) { }
 
     // Check localStorage fallback
     if (typeof id === 'string' && id.startsWith('fb_')) {
@@ -196,7 +196,7 @@ export class RetryQueue {
           localStorage.setItem('erp_sync_retry_queue_backup', JSON.stringify(list));
         }
         return true;
-      } catch (_) {}
+      } catch (_) { }
     }
 
     if (!this.db) return true;

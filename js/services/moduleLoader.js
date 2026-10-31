@@ -11,7 +11,7 @@
  * - Race-condition guard for rapid switching & parallel startup hydration
  */
 
-export const BUILD_VER = '4.26.106';
+export const BUILD_VER = '4.26.109';
 
 const MODULE_REGISTRY = {
   'inventory': {

@@ -416,17 +416,25 @@ export function renderDashboard() {
         </div>
       </header>
 
-      <!-- 2. Top 5 Modern KPI Cards Row (Exact Match to Design Reference) -->
+      <!-- 2. Top 5 Modern KPI Cards Row (Clean, Professional, Enterprise Layout) -->
       <section class="dash-kpi-row" aria-label="Key Plant Metrics">
         
         <!-- Card 1: Total Physical Machines -->
         <div class="dash-kpi-card kpi-card-total" data-action="inv-filter" data-status="ALL" role="button" tabindex="0" title="Click to view all physical machines">
           <div class="dash-kpi-content">
             <div class="dash-kpi-val">${totalMachines.toLocaleString()}</div>
-            <div class="dash-kpi-lbl">TOTAL PHYSICAL MACHINES</div>
+            <div class="dash-kpi-lbl">Total Machines</div>
           </div>
           <div class="dash-kpi-badge badge-blue">
-            <span class="dash-kpi-emoji" title="Physical Machines">🏭</span>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/>
+              <path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/>
+              <path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/>
+              <path d="M10 6h4"/>
+              <path d="M10 10h4"/>
+              <path d="M10 14h4"/>
+              <path d="M10 18h4"/>
+            </svg>
           </div>
         </div>
 
@@ -434,10 +442,13 @@ export function renderDashboard() {
         <div class="dash-kpi-card kpi-card-active" data-action="inv-filter" data-status="ACTIVE" role="button" tabindex="0" title="Click to view Active operational machines">
           <div class="dash-kpi-content">
             <div class="dash-kpi-val val-emerald">${activeCount.toLocaleString()}</div>
-            <div class="dash-kpi-lbl">ACTIVE OPERATIONAL</div>
+            <div class="dash-kpi-lbl">Active &amp; Running</div>
           </div>
           <div class="dash-kpi-badge badge-emerald">
-            <div class="glowing-orb orb-emerald" title="Operational Uptime"></div>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+              <polyline points="22 4 12 14.01 9 11.01"/>
+            </svg>
           </div>
         </div>
 
@@ -445,10 +456,12 @@ export function renderDashboard() {
         <div class="dash-kpi-card kpi-card-maint" data-action="inv-filter" data-status="MAINTENANCE" role="button" tabindex="0" title="Click to view machines under maintenance">
           <div class="dash-kpi-content">
             <div class="dash-kpi-val val-amber">${underRepairCount.toLocaleString()}</div>
-            <div class="dash-kpi-lbl">UNDER MAINTENANCE</div>
+            <div class="dash-kpi-lbl">Under Maintenance</div>
           </div>
           <div class="dash-kpi-badge badge-amber">
-            <div class="glowing-orb orb-amber" title="Maintenance / Repair"></div>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
+            </svg>
           </div>
         </div>
 
@@ -456,10 +469,14 @@ export function renderDashboard() {
         <div class="dash-kpi-card kpi-card-breakdown" data-action="inv-filter" data-status="BREAKDOWN" role="button" tabindex="0" title="Click to view critical breakdown machines">
           <div class="dash-kpi-content">
             <div class="dash-kpi-val val-rose">${breakdownCount.toLocaleString()}</div>
-            <div class="dash-kpi-lbl">MACHINE BREAKDOWNS</div>
+            <div class="dash-kpi-lbl">Breakdowns</div>
           </div>
           <div class="dash-kpi-badge badge-rose">
-            <div class="glowing-orb orb-rose" title="Critical Breakdown"></div>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
+              <line x1="12" y1="9" x2="12" y2="13"/>
+              <line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
           </div>
         </div>
 
@@ -467,10 +484,13 @@ export function renderDashboard() {
         <div class="dash-kpi-card kpi-card-pending" data-action="trf-filter" data-status="ALL" role="button" tabindex="0" title="Click to open Machine Transfers & Approvals Hub">
           <div class="dash-kpi-content">
             <div class="dash-kpi-val val-purple">${pendingApprovals.toLocaleString()}</div>
-            <div class="dash-kpi-lbl">PENDING APPROVALS</div>
+            <div class="dash-kpi-lbl">Pending Approvals</div>
           </div>
           <div class="dash-kpi-badge badge-purple">
-            <span class="dash-kpi-emoji" title="Approvals Hub">🛡️</span>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#c084fc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              <path d="m9 12 2 2 4-4"/>
+            </svg>
           </div>
         </div>
 
@@ -1066,20 +1086,27 @@ export function renderDashboard() {
       }
 
       .dash-kpi-card {
-        background: linear-gradient(180deg, #111827 0%, #0d1525 100%);
+        background: #0f172a;
         border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 12px;
+        border-radius: 10px;
         padding: 14px 16px;
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: 8px;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        gap: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
         cursor: pointer;
-        transition: transform 0.18s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.18s ease, box-shadow 0.18s ease;
+        transition: all 0.18s ease;
         user-select: none;
         position: relative;
         overflow: hidden;
+      }
+
+      .dash-kpi-card:hover {
+        transform: translateY(-2px);
+        background: #131d33;
+        border-color: rgba(255, 255, 255, 0.16);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
       }
 
       .dash-kpi-card:hover {
@@ -1126,9 +1153,9 @@ export function renderDashboard() {
 
       .dash-kpi-lbl {
         font-size: 11px;
-        font-weight: 700;
-        color: #cbd5e1;
-        letter-spacing: 0.6px;
+        font-weight: 600;
+        color: #94a3b8;
+        letter-spacing: 0.3px;
         margin-top: 4px;
         text-transform: uppercase;
         white-space: nowrap;
