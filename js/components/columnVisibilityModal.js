@@ -16,6 +16,9 @@
 import { customFieldService } from '../services/customFieldService.js';
 import { notificationService } from '../services/notificationService.js';
 import { excelService, mapFieldKeyToTableKey, isColumnKeyVisible } from '../services/excelService.js';
+import { authService } from '../services/authService.js';
+import { storage } from '../db/storage.js';
+import { TABLE_NAMES } from '../db/schema.js';
 import { state } from '../state.js';
 
 let activeColVisTab = 'frozen'; // 'frozen' | 'visibility'
@@ -24,6 +27,7 @@ export function renderColumnVisibilityModal() {
   const visibleCols = state.get('visibleColumns') || new Set();
   const frozenCols = state.get('frozenColumns') || ['machineName', 'model', 'serialNumber'];
   const customFields = customFieldService.getActiveFields();
+  const isAdmin = Boolean(typeof authService !== 'undefined' && (authService.isAdmin() || authService.isSuperAdmin()));
 
   // Active Excel Structure layout integration
   const activeStructure = (typeof excelService !== 'undefined' && excelService.getActiveStructure)
@@ -97,8 +101,24 @@ export function renderColumnVisibilityModal() {
           <div class="modal-title" style="display: flex; align-items: center; gap: 10px;">
             <span style="font-size: 20px;">⚙️</span>
             <div>
-              <div style="font-size: 15px; font-weight: 800; color: #fff;">Table Columns &amp; Freeze Settings</div>
-              <div style="font-size: 11px; color: #38bdf8; font-weight: 600;">Sticky Frozen Left Columns &bull; Synchronized with Active Excel Layout</div>
+              <div style="font-size: 15px; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 8px;">
+                <span>Table Columns &amp; Freeze Settings</span>
+                ${isAdmin ? `
+                  <span class="badge" style="background: rgba(245, 158, 11, 0.18); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); font-size: 10px; font-weight: 800; padding: 2px 6px;">
+                    👑 Admin Default Control
+                  </span>
+                ` : `
+                  <span class="badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); font-size: 10px; font-weight: 800; padding: 2px 6px;">
+                    👤 Personal Customization
+                  </span>
+                `}
+              </div>
+              <div style="font-size: 11px; color: #38bdf8; font-weight: 600;">
+                ${isAdmin 
+                  ? 'Personalize your view or save default layout for all factory users &bull; Auto-persists across refresh' 
+                  : 'Customize columns for your workflow &bull; Saved preferences persist across refresh'
+                }
+              </div>
             </div>
           </div>
           <button id="btn-close-colvis-modal" class="btn btn-ghost btn-sm" style="font-size: 18px; color: #94a3b8;" title="Close modal">✕</button>
@@ -312,13 +332,21 @@ export function renderColumnVisibilityModal() {
         </div>
 
         <!-- Footer -->
-        <div class="modal-footer" style="background: #0f172a; border-top: 1px solid rgba(255,255,255,0.1); padding: 12px 20px; display: flex; justify-content: space-between; align-items: center;">
-          <button id="btn-colvis-reset-default" class="btn btn-secondary btn-sm" style="font-weight: 700;" title="Reset to standard layout defaults">
-            ↺ Reset Defaults
+        <div class="modal-footer" style="background: #0f172a; border-top: 1px solid rgba(255,255,255,0.1); padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+          <button type="button" id="btn-colvis-reset-default" class="btn btn-secondary btn-sm" style="font-weight: 700; font-size: 11.5px; padding: 6px 14px;" title="Reset your column layout to Admin organization defaults">
+            ↺ Reset to Admin Default
           </button>
-          <button id="btn-close-colvis-done" class="btn btn-primary btn-sm" style="font-weight: 800; padding: 6px 18px;">
-            Done &amp; Save
-          </button>
+          
+          <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+            ${isAdmin ? `
+              <button type="button" id="btn-colvis-save-global-default" class="btn btn-sm" style="font-weight: 800; font-size: 11.5px; background: linear-gradient(135deg, #d97706, #b45309); border: 1px solid #f59e0b; color: #fff; padding: 6px 14px; display: inline-flex; align-items: center; gap: 6px;" title="Set these visible columns as the organization default baseline for all users">
+                <span>💾</span> Save as Default for All Users
+              </button>
+            ` : ''}
+            <button type="button" id="btn-close-colvis-done" class="btn btn-primary btn-sm" style="font-weight: 800; font-size: 11.5px; padding: 6px 18px; display: inline-flex; align-items: center; gap: 6px;" title="Save your personal column preferences and close">
+              <span>✓</span> Done &amp; Save
+            </button>
+          </div>
         </div>
 
       </div>
@@ -338,10 +366,69 @@ export function initColumnVisibilityEvents() {
   const closeModal = () => state.set('activeModal', null);
 
   if (closeBtn) closeBtn.addEventListener('click', closeModal);
-  if (doneBtn) doneBtn.addEventListener('click', closeModal);
   if (overlay) {
     overlay.addEventListener('click', (e) => {
       if (e.target === overlay) closeModal();
+    });
+  }
+
+  // Done & Save: Commits user's chosen columns to personalized persistent state
+  if (doneBtn) {
+    doneBtn.addEventListener('click', () => {
+      const checkedCols = [];
+      document.querySelectorAll('.colvis-check:checked').forEach(el => {
+        const col = el.getAttribute('data-col');
+        const field = el.getAttribute('data-field');
+        if (col && !checkedCols.includes(col)) checkedCols.push(col);
+        if (field && !checkedCols.includes(field)) checkedCols.push(field);
+      });
+      if (checkedCols.length === 0) {
+        checkedCols.push('machineName', 'actions');
+      }
+      if (!checkedCols.includes('sl')) checkedCols.unshift('sl');
+      if (!checkedCols.includes('select')) checkedCols.splice(1, 0, 'select');
+
+      state.setVisibleColumns(checkedCols, false, true);
+      notificationService.success(`Saved personal column preferences (${checkedCols.length} columns active).`);
+      closeModal();
+    });
+  }
+
+  // Admin Save as Default for All Users: Persists organization default layout to Settings in MySQL & Storage
+  const globalSaveBtn = document.getElementById('btn-colvis-save-global-default');
+  if (globalSaveBtn) {
+    globalSaveBtn.addEventListener('click', async () => {
+      const checkedCols = [];
+      document.querySelectorAll('.colvis-check:checked').forEach(el => {
+        const col = el.getAttribute('data-col');
+        const field = el.getAttribute('data-field');
+        if (col && !checkedCols.includes(col)) checkedCols.push(col);
+        if (field && !checkedCols.includes(field)) checkedCols.push(field);
+      });
+      if (checkedCols.length === 0) {
+        checkedCols.push('machineName', 'actions');
+      }
+      if (!checkedCols.includes('sl')) checkedCols.unshift('sl');
+      if (!checkedCols.includes('select')) checkedCols.splice(1, 0, 'select');
+
+      const currentFrozen = state.get('frozenColumns') || ['machineName', 'model', 'serialNumber'];
+
+      state.setVisibleColumns(checkedCols, true, false);
+      state.setFrozenColumns(currentFrozen, true, false);
+
+      try {
+        const settings = (typeof storage !== 'undefined' && storage.getTable) ? (storage.getTable(TABLE_NAMES.SETTINGS) || {}) : {};
+        settings.default_visible_columns = checkedCols;
+        settings.default_frozen_columns = currentFrozen;
+        if (typeof storage !== 'undefined' && storage.saveTable) {
+          await storage.saveTable(TABLE_NAMES.SETTINGS, settings, true);
+        }
+      } catch (err) {
+        console.warn('Error saving global settings:', err);
+      }
+
+      notificationService.success('✅ Column layout saved as organization default for all users!');
+      closeModal();
     });
   }
 
@@ -487,25 +574,12 @@ export function initColumnVisibilityEvents() {
     });
   });
 
-  // Reset to Default Button
+  // Reset to Default Button (Restores Admin-configured organization default)
   const resetDefaultBtn = document.getElementById('btn-colvis-reset-default');
   if (resetDefaultBtn) {
     resetDefaultBtn.addEventListener('click', () => {
-      const struct = excelService.getActiveStructure();
-      const activeCols = struct?.columns || [];
-      const defaultCols = ['sl', 'select'];
-      activeCols.forEach(c => {
-        defaultCols.push(mapFieldKeyToTableKey(c.fieldKey));
-        defaultCols.push(c.fieldKey);
-      });
-      defaultCols.push('actions');
-
-      state.setVisibleColumns(defaultCols);
-
-      const defaultFrozen = ['machineName', 'model', 'serialNumber'];
-      state.setFrozenColumns(defaultFrozen);
-
-      notificationService.success(`Reset all columns and freeze settings to defaults for ${struct?.name || 'Standard Layout'}.`);
+      state.resetVisibleColumnsToAdminDefault();
+      notificationService.success('Reset columns to organization default layout.');
       closeModal();
     });
   }

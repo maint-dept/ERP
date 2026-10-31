@@ -16,37 +16,103 @@ class GlobalState {
       'service_date', 'purchase_date', 'installation_date', 'supplier_name',
       'country_of_origin', 'machine_capacity', 'remarks', 'actions'
     ];
+    const defaultFrozenCols = ['machineName', 'model', 'serialNumber'];
 
-    let savedCols = null;
+    const activeUserId = typeof localStorage !== 'undefined' ? localStorage.getItem('al_muslim_active_user_id') : null;
+
+    // 1. Resolve Admin-configured Organization Defaults from Settings (Database / Storage)
+    let adminDefaultCols = null;
+    let adminDefaultFrozen = null;
     try {
-      const stored = localStorage.getItem('erp_visible_columns_v3');
-      if (stored) {
-        savedCols = JSON.parse(stored);
-        if (Array.isArray(savedCols)) {
-          // Guarantee core columns are never accidentally omitted
-          const essentialCols = [
-            'sl', 'select', 'machineName', 'brand', 'model', 'serialNumber',
-            'systemAssetId', 'manufacturing_serial', 'unit', 'floor', 'line',
-            'running', 'usable_idle', 'repairable_idle', 'total_quantity', 'status',
-            'service_date', 'remarks', 'actions'
-          ];
-          essentialCols.forEach(col => {
-            if (!savedCols.includes(col)) {
-              savedCols.push(col);
+      if (typeof storage !== 'undefined' && storage.getTable) {
+        const s = storage.getTable(TABLE_NAMES.SETTINGS);
+        if (s) {
+          if (Array.isArray(s.default_visible_columns) && s.default_visible_columns.length > 0) {
+            adminDefaultCols = s.default_visible_columns;
+          }
+          if (Array.isArray(s.default_frozen_columns) && s.default_frozen_columns.length > 0) {
+            adminDefaultFrozen = s.default_frozen_columns;
+          }
+        }
+      }
+      if (!adminDefaultCols && typeof localStorage !== 'undefined') {
+        const rawSettings = localStorage.getItem('al_muslim_erp_settings');
+        if (rawSettings) {
+          const parsed = JSON.parse(rawSettings);
+          if (Array.isArray(parsed.default_visible_columns) && parsed.default_visible_columns.length > 0) {
+            adminDefaultCols = parsed.default_visible_columns;
+          }
+          if (Array.isArray(parsed.default_frozen_columns) && parsed.default_frozen_columns.length > 0) {
+            adminDefaultFrozen = parsed.default_frozen_columns;
+          }
+        }
+      }
+    } catch (_) {}
+
+    // 2. Resolve User Customization (Keyed by active user ID, then v4 fallback)
+    let resolvedCols = null;
+    try {
+      if (typeof localStorage !== 'undefined') {
+        // A. User-specific explicit customization
+        if (activeUserId) {
+          const userStored = localStorage.getItem('erp_user_visible_cols_' + activeUserId);
+          if (userStored) {
+            const parsedUser = JSON.parse(userStored);
+            if (Array.isArray(parsedUser) && parsedUser.length > 0) {
+              resolvedCols = parsedUser;
             }
-          });
+          }
+        }
+        // B. Version 4 local custom columns
+        if (!resolvedCols) {
+          const storedV4 = localStorage.getItem('erp_visible_columns_v4');
+          if (storedV4) {
+            const parsedV4 = JSON.parse(storedV4);
+            if (Array.isArray(parsedV4) && parsedV4.length > 0) {
+              resolvedCols = parsedV4;
+            }
+          }
         }
       }
     } catch (e) {}
 
-    const defaultFrozenCols = ['machineName', 'model', 'serialNumber'];
-    let savedFrozenCols = null;
+    // 3. Fallback Hierarchy: User Custom > Admin Organization Default > System Default
+    if (!resolvedCols || resolvedCols.length === 0) {
+      resolvedCols = adminDefaultCols || defaultCols;
+    }
+
+    // Resolve Frozen Columns Hierarchy: User Custom > Admin Organization Default > System Default
+    let resolvedFrozen = null;
     try {
-      const storedFrozen = localStorage.getItem('erp_frozen_columns_v1');
-      if (storedFrozen) savedFrozenCols = JSON.parse(storedFrozen);
+      if (typeof localStorage !== 'undefined') {
+        if (activeUserId) {
+          const uFrozen = localStorage.getItem('erp_user_frozen_cols_' + activeUserId);
+          if (uFrozen) {
+            const p = JSON.parse(uFrozen);
+            if (Array.isArray(p)) resolvedFrozen = p;
+          }
+        }
+        if (!resolvedFrozen) {
+          const storedF2 = localStorage.getItem('erp_frozen_columns_v2');
+          if (storedF2) {
+            const p2 = JSON.parse(storedF2);
+            if (Array.isArray(p2)) resolvedFrozen = p2;
+          }
+        }
+        if (!resolvedFrozen) {
+          const storedF1 = localStorage.getItem('erp_frozen_columns_v1');
+          if (storedF1) {
+            const p1 = JSON.parse(storedF1);
+            if (Array.isArray(p1)) resolvedFrozen = p1;
+          }
+        }
+      }
     } catch (e) {}
 
-    const activeUserId = typeof localStorage !== 'undefined' ? localStorage.getItem('al_muslim_active_user_id') : null;
+    if (!resolvedFrozen) {
+      resolvedFrozen = adminDefaultFrozen || defaultFrozenCols;
+    }
+
     let initialView = 'home';
     let initialSubtab = null;
     try {
@@ -214,8 +280,8 @@ class GlobalState {
         sortOrder: 'asc'
       },
       selectedMachineIds: new Set(),
-      frozenColumns: savedFrozenCols && Array.isArray(savedFrozenCols) ? savedFrozenCols : defaultFrozenCols,
-      visibleColumns: new Set(savedCols && Array.isArray(savedCols) && savedCols.length > 0 ? savedCols : defaultCols),
+      frozenColumns: resolvedFrozen && Array.isArray(resolvedFrozen) ? resolvedFrozen : defaultFrozenCols,
+      visibleColumns: new Set(resolvedCols && Array.isArray(resolvedCols) && resolvedCols.length > 0 ? resolvedCols : defaultCols),
       activeModal: null,
       activeMachineId: null,
       dashboardDateFilter: 'TODAY',
@@ -310,12 +376,38 @@ class GlobalState {
     this.emit('selection:changed', []);
   }
 
-  setVisibleColumns(colsArray) {
+  setVisibleColumns(colsArray, isGlobalAdmin = false, isUserCustom = true) {
     if (!Array.isArray(colsArray)) return;
     this.state.visibleColumns = new Set(colsArray);
+    const activeUserId = typeof localStorage !== 'undefined' ? localStorage.getItem('al_muslim_active_user_id') : null;
     try {
-      localStorage.setItem('erp_visible_columns_v3', JSON.stringify(colsArray));
+      if (typeof localStorage !== 'undefined') {
+        if (activeUserId) {
+          localStorage.setItem('erp_user_visible_cols_' + activeUserId, JSON.stringify(colsArray));
+          if (isUserCustom) {
+            localStorage.setItem('erp_user_has_custom_cols_' + activeUserId, 'true');
+          }
+        }
+        localStorage.setItem('erp_visible_columns_v4', JSON.stringify(colsArray));
+        localStorage.setItem('erp_visible_columns_v3', JSON.stringify(colsArray));
+      }
     } catch (e) {}
+
+    if (isGlobalAdmin) {
+      try {
+        const currentSettings = (typeof storage !== 'undefined' && storage.getTable) ? (storage.getTable(TABLE_NAMES.SETTINGS) || {}) : {};
+        currentSettings.default_visible_columns = colsArray;
+        if (typeof storage !== 'undefined' && storage.saveTable) {
+          storage.saveTable(TABLE_NAMES.SETTINGS, currentSettings, true);
+        }
+        if (typeof localStorage !== 'undefined') {
+          localStorage.setItem('al_muslim_erp_settings', JSON.stringify(currentSettings));
+        }
+      } catch (e) {
+        console.warn('Failed to save global default columns to settings:', e);
+      }
+    }
+
     this.emit('columns:changed', colsArray);
   }
 
@@ -341,18 +433,55 @@ class GlobalState {
       this.state.visibleColumns.add(colId);
       if (partner) this.state.visibleColumns.add(partner);
     }
+
+    const colsArray = Array.from(this.state.visibleColumns);
+    const activeUserId = typeof localStorage !== 'undefined' ? localStorage.getItem('al_muslim_active_user_id') : null;
     try {
-      localStorage.setItem('erp_visible_columns_v3', JSON.stringify(Array.from(this.state.visibleColumns)));
+      if (typeof localStorage !== 'undefined') {
+        if (activeUserId) {
+          localStorage.setItem('erp_user_visible_cols_' + activeUserId, JSON.stringify(colsArray));
+          localStorage.setItem('erp_user_has_custom_cols_' + activeUserId, 'true');
+        }
+        localStorage.setItem('erp_visible_columns_v4', JSON.stringify(colsArray));
+        localStorage.setItem('erp_visible_columns_v3', JSON.stringify(colsArray));
+      }
     } catch (e) {}
-    this.emit('columns:changed', Array.from(this.state.visibleColumns));
+
+    this.emit('columns:changed', colsArray);
   }
 
-  setFrozenColumns(colsArray) {
+  setFrozenColumns(colsArray, isGlobalAdmin = false, isUserCustom = true) {
     if (!Array.isArray(colsArray)) return;
     this.state.frozenColumns = colsArray;
+    const activeUserId = typeof localStorage !== 'undefined' ? localStorage.getItem('al_muslim_active_user_id') : null;
     try {
-      localStorage.setItem('erp_frozen_columns_v1', JSON.stringify(colsArray));
+      if (typeof localStorage !== 'undefined') {
+        if (activeUserId) {
+          localStorage.setItem('erp_user_frozen_cols_' + activeUserId, JSON.stringify(colsArray));
+          if (isUserCustom) {
+            localStorage.setItem('erp_user_has_custom_frozen_' + activeUserId, 'true');
+          }
+        }
+        localStorage.setItem('erp_frozen_columns_v2', JSON.stringify(colsArray));
+        localStorage.setItem('erp_frozen_columns_v1', JSON.stringify(colsArray));
+      }
     } catch (e) {}
+
+    if (isGlobalAdmin) {
+      try {
+        const currentSettings = (typeof storage !== 'undefined' && storage.getTable) ? (storage.getTable(TABLE_NAMES.SETTINGS) || {}) : {};
+        currentSettings.default_frozen_columns = colsArray;
+        if (typeof storage !== 'undefined' && storage.saveTable) {
+          storage.saveTable(TABLE_NAMES.SETTINGS, currentSettings, true);
+        }
+        if (typeof localStorage !== 'undefined') {
+          localStorage.setItem('al_muslim_erp_settings', JSON.stringify(currentSettings));
+        }
+      } catch (e) {
+        console.warn('Failed to save global default frozen columns to settings:', e);
+      }
+    }
+
     this.emit('frozenColumns:changed', colsArray);
     this.emit('columns:changed', Array.from(this.state.visibleColumns));
   }
@@ -365,7 +494,7 @@ class GlobalState {
     } else {
       current.push(colKey);
     }
-    this.setFrozenColumns(current);
+    this.setFrozenColumns(current, false, true);
   }
 
   isColumnFrozen(colKey) {
@@ -374,7 +503,75 @@ class GlobalState {
 
   resetFrozenColumns() {
     const defaultFrozenCols = ['machineName', 'model', 'serialNumber'];
-    this.setFrozenColumns(defaultFrozenCols);
+    this.setFrozenColumns(defaultFrozenCols, false, true);
+  }
+
+  resetVisibleColumnsToAdminDefault() {
+    const activeUserId = typeof localStorage !== 'undefined' ? localStorage.getItem('al_muslim_active_user_id') : null;
+    if (typeof localStorage !== 'undefined' && activeUserId) {
+      try {
+        localStorage.removeItem('erp_user_has_custom_cols_' + activeUserId);
+        localStorage.removeItem('erp_user_visible_cols_' + activeUserId);
+        localStorage.removeItem('erp_user_has_custom_frozen_' + activeUserId);
+        localStorage.removeItem('erp_user_frozen_cols_' + activeUserId);
+      } catch (_) {}
+    }
+
+    let adminCols = null;
+    let adminFrozen = null;
+    try {
+      if (typeof storage !== 'undefined' && storage.getTable) {
+        const s = storage.getTable(TABLE_NAMES.SETTINGS);
+        if (s) {
+          if (Array.isArray(s.default_visible_columns) && s.default_visible_columns.length > 0) {
+            adminCols = s.default_visible_columns;
+          }
+          if (Array.isArray(s.default_frozen_columns) && s.default_frozen_columns.length > 0) {
+            adminFrozen = s.default_frozen_columns;
+          }
+        }
+      }
+      if (!adminCols && typeof localStorage !== 'undefined') {
+        const raw = localStorage.getItem('al_muslim_erp_settings');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed.default_visible_columns) && parsed.default_visible_columns.length > 0) {
+            adminCols = parsed.default_visible_columns;
+          }
+          if (Array.isArray(parsed.default_frozen_columns) && parsed.default_frozen_columns.length > 0) {
+            adminFrozen = parsed.default_frozen_columns;
+          }
+        }
+      }
+    } catch (_) {}
+
+    const defaultCols = [
+      'sl', 'select', 'machineName', 'brand', 'model', 'serialNumber',
+      'systemAssetId', 'manufacturing_serial', 'manufacturing_year', 'unit', 'floor', 'line',
+      'running', 'usable_idle', 'repairable_idle', 'total_quantity', 'status',
+      'service_date', 'purchase_date', 'installation_date', 'supplier_name',
+      'country_of_origin', 'machine_capacity', 'remarks', 'actions'
+    ];
+    const defaultFrozen = ['machineName', 'model', 'serialNumber'];
+
+    const targetCols = adminCols || defaultCols;
+    const targetFrozen = adminFrozen || defaultFrozen;
+
+    this.state.visibleColumns = new Set(targetCols);
+    this.state.frozenColumns = targetFrozen;
+
+    try {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('erp_visible_columns_v4', JSON.stringify(targetCols));
+        localStorage.setItem('erp_visible_columns_v3', JSON.stringify(targetCols));
+        localStorage.setItem('erp_frozen_columns_v2', JSON.stringify(targetFrozen));
+        localStorage.setItem('erp_frozen_columns_v1', JSON.stringify(targetFrozen));
+      }
+    } catch (_) {}
+
+    this.emit('frozenColumns:changed', targetFrozen);
+    this.emit('columns:changed', targetCols);
+    return { columns: targetCols, frozen: targetFrozen };
   }
 
   on(event, callback) {
