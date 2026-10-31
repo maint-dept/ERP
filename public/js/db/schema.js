@@ -998,6 +998,10 @@ export const DEFAULT_SETTINGS = {
   serialNumberPadding: 2, // 2 digits: 01, 02...
   enforceFloorPrefix: true,
   allowManualSerialOverride: true,
+  // Dynamic & Customizable Permanent Asset ID Configuration
+  assetIdPrefix: 'AMG-MNT-',
+  assetIdDigitLength: 6, // default 6 digits (e.g. AMG-MNT-000001); auto-expands beyond limit
+  lastAssetSequence: 0,  // Monotonically increasing sequence tracker
   // Report Signature Signatories Configuration (Dynamic Add/Edit/Remove list)
   signatures: [
     { id: 'sig-1', name: 'Engr. Motaher Hossain', title: 'Prepared By (Engineer)', enabled: true },

@@ -343,13 +343,12 @@ export function renderInventoryTable() {
           assetId = String(m.permanentMachineId).trim().replace(/^MID-/i, 'AMG-MNT-');
           m.systemAssetId = assetId;
         }
-        if (!assetId || !assetId.startsWith('AMG-MNT-')) {
-          if (assetId && /^\d+$/.test(assetId)) {
-            assetId = `AMG-MNT-${assetId.padStart(6, '0')}`;
-            m.systemAssetId = assetId;
-          } else if (!assetId) {
-            assetId = '—';
-          }
+        if (!assetId) {
+          assetId = '—';
+        } else if (/^\d+$/.test(assetId)) {
+          const cfg = (typeof storage !== 'undefined' && storage.getAssetIdConfig) ? storage.getAssetIdConfig() : { prefix: 'AMG-MNT-', digitLength: 6 };
+          assetId = `${cfg.prefix}${assetId.padStart(cfg.digitLength, '0')}`;
+          m.systemAssetId = assetId;
         }
         return `<td class="${tdClass}" style="width: 145px; min-width: 145px; max-width: 145px; text-align: center; overflow: visible; padding: 4px 2px; ${tdStyle}"><a href="javascript:void(0)" class="btn-inspect-machine" data-id="${m.id}" style="text-decoration: none;" title="Permanent System Asset ID: ${assetId} (Click to inspect machine details)"><span class="system-asset-id-badge">${assetId}</span></a></td>`;
       }

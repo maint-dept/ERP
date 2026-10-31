@@ -2276,38 +2276,141 @@ class StorageEngine {
   }
 
   /**
-   * Generates the next sequential Permanent Unique System Asset ID formatted as AMG-MNT-XXXXXX (e.g. AMG-MNT-000001)
+   * Retrieves active Asset ID configuration from settings with fallback to defaults.
    */
-  generateNextSystemAssetId() {
-    const machines = this.data[TABLE_NAMES.MACHINES] || [];
-    let maxNum = 0;
-    const prefix = 'AMG-MNT-';
+  getAssetIdConfig() {
+    const settings = this.data[TABLE_NAMES.SETTINGS] || {};
+    let prefix = settings.assetIdPrefix !== undefined && settings.assetIdPrefix !== null
+      ? String(settings.assetIdPrefix)
+      : (DEFAULT_SETTINGS.assetIdPrefix || 'AMG-MNT-');
+    if (!prefix.trim()) prefix = 'AMG-MNT-';
 
+    let digitLength = parseInt(settings.assetIdDigitLength, 10);
+    if (isNaN(digitLength) || digitLength < 1) {
+      digitLength = parseInt(DEFAULT_SETTINGS.assetIdDigitLength, 10) || 6;
+    }
+    return { prefix, digitLength };
+  }
+
+  /**
+   * Formats a sequential number with the given prefix and digit length.
+   * Note: String(num).padStart(digitLength, '0') automatically expands if num has more digits than digitLength!
+   */
+  formatAssetId(seq, prefixOverride, digitLengthOverride) {
+    const cfg = this.getAssetIdConfig();
+    const prefix = prefixOverride !== undefined && prefixOverride !== null ? String(prefixOverride) : cfg.prefix;
+    const digitLength = digitLengthOverride !== undefined && !isNaN(digitLengthOverride) ? parseInt(digitLengthOverride, 10) : cfg.digitLength;
+    const num = Math.max(0, parseInt(seq, 10) || 0);
+    return `${prefix}${String(num).padStart(Math.max(1, digitLength), '0')}`;
+  }
+
+  /**
+   * Generates the next sequential Permanent Unique System Asset ID.
+   * - Fully dynamic: Reads prefix and digit length from Admin Settings.
+   * - Monotonically increasing: Scans all machines, metadata, and persistent sequence tracker.
+   * - Automatically zero-padded and automatically expands when exceeding configured length.
+   * - Guarantees globally unique IDs, zero collision, never resets or repeats.
+   */
+  generateNextSystemAssetId(prefixOverride, digitLengthOverride) {
+    const machines = this.data[TABLE_NAMES.MACHINES] || [];
+    const cfg = this.getAssetIdConfig();
+    const prefix = prefixOverride !== undefined && prefixOverride !== null ? String(prefixOverride) : cfg.prefix;
+    const digitLength = digitLengthOverride !== undefined && !isNaN(digitLengthOverride) ? parseInt(digitLengthOverride, 10) : cfg.digitLength;
+
+    this._reservedAssetIds = this._reservedAssetIds || new Set();
+
+    // 1. Gather all existing and reserved IDs
+    const existingAssetIds = new Set(this._reservedAssetIds);
+    let maxNum = 0;
+
+    // Check persistent lastAssetSequence from settings
+    const settings = this.data[TABLE_NAMES.SETTINGS] || {};
+    if (settings.lastAssetSequence && !isNaN(settings.lastAssetSequence)) {
+      maxNum = Math.max(maxNum, parseInt(settings.lastAssetSequence, 10));
+    }
+
+    // 2. Scan all machines for existing IDs and find max numerical sequence
     machines.forEach(m => {
       if (!m) return;
-      if (m.systemAssetId) {
-        const match = String(m.systemAssetId).trim().match(/^AMG-MNT-(\d+)$/i);
+      [m.systemAssetId, m.permanentMachineId].forEach(raw => {
+        if (!raw) return;
+        const s = String(raw).trim();
+        existingAssetIds.add(s.toUpperCase());
+        // Extract sequence number from any format (e.g. AMG-MNT-000761, MID-123, AST-00000042, etc.)
+        const match = s.match(/(\d+)$/);
         if (match && match[1]) {
           const num = parseInt(match[1], 10);
           if (!isNaN(num) && num > maxNum) maxNum = num;
         }
-      }
-      if (m.permanentMachineId) {
-        const pMatch = String(m.permanentMachineId).trim().match(/^(?:MID|AMG-MNT)-(\d+)$/i);
-        if (pMatch && pMatch[1]) {
-          const num = parseInt(pMatch[1], 10);
-          if (!isNaN(num) && num > maxNum) maxNum = num;
-        }
-      }
+      });
     });
 
-    const nextNum = Math.max(machines.length, maxNum) + 1;
-    return `${prefix}${String(nextNum).padStart(6, '0')}`;
+    // 3. Monotonically increment sequence
+    let nextSeq = Math.max(machines.length, maxNum) + 1;
+    let candidate = this.formatAssetId(nextSeq, prefix, digitLength);
+
+    // 4. Guarantee 100% collision-free uniqueness
+    while (existingAssetIds.has(candidate.toUpperCase())) {
+      nextSeq++;
+      candidate = this.formatAssetId(nextSeq, prefix, digitLength);
+    }
+
+    // 5. Reserve candidate in memory & persist latest sequence tracker
+    this._reservedAssetIds.add(candidate.toUpperCase());
+    if (this.data[TABLE_NAMES.SETTINGS]) {
+      this.data[TABLE_NAMES.SETTINGS].lastAssetSequence = Math.max(
+        Number(this.data[TABLE_NAMES.SETTINGS].lastAssetSequence) || 0,
+        nextSeq
+      );
+    }
+
+    return candidate;
   }
 
   /**
-   * Ensures all machines have unique serial numbers (retaining the most complete/recent record)
-   * and immutable, sequential System Asset IDs (AMG-MNT-XXXXXX) starting from 000001 with no gaps and no duplicates.
+   * Returns a live preview of the next Asset ID given current or hypothetical prefix & digit length
+   */
+  getAssetIdPreview(prefixOverride, digitLengthOverride) {
+    const machines = this.data[TABLE_NAMES.MACHINES] || [];
+    const cfg = this.getAssetIdConfig();
+    const prefix = prefixOverride !== undefined && prefixOverride !== null ? String(prefixOverride) : cfg.prefix;
+    const digitLength = digitLengthOverride !== undefined && !isNaN(digitLengthOverride) ? parseInt(digitLengthOverride, 10) : cfg.digitLength;
+
+    let maxNum = 0;
+    const settings = this.data[TABLE_NAMES.SETTINGS] || {};
+    if (settings.lastAssetSequence && !isNaN(settings.lastAssetSequence)) {
+      maxNum = Math.max(maxNum, parseInt(settings.lastAssetSequence, 10));
+    }
+
+    machines.forEach(m => {
+      if (!m) return;
+      [m.systemAssetId, m.permanentMachineId].forEach(raw => {
+        if (!raw) return;
+        const match = String(raw).trim().match(/(\d+)$/);
+        if (match && match[1]) {
+          const num = parseInt(match[1], 10);
+          if (!isNaN(num) && num > maxNum) maxNum = num;
+        }
+      });
+    });
+
+    const nextSeq = Math.max(machines.length, maxNum) + 1;
+    const previewId = this.formatAssetId(nextSeq, prefix, digitLength);
+    return {
+      previewId,
+      nextSeq,
+      maxNum,
+      prefix,
+      digitLength,
+      totalMachines: machines.length
+    };
+  }
+
+  /**
+   * Non-destructive verification and assignment of Machine System Asset IDs.
+   * - Preserves 100% of all existing Asset IDs (format, prefix, and digit length).
+   * - Only populates Asset IDs for records where it is currently missing.
+   * - Resolves accidental duplicates without overwriting the original record.
    */
   ensureMachineSystemAssetIds() {
     let machines = this.data[TABLE_NAMES.MACHINES];
@@ -2317,8 +2420,6 @@ class StorageEngine {
 
     // Step 1: Detect and deduplicate according to ERP 4-Field Composite Rules:
     // Core Rule: Composite Key = Machine Name + Brand + Model + Machine Serial Number
-    // - Record is duplicate when Machine Name, Brand, Model, and Serial Number match.
-    // - Serial Conflict with partial/blank specs: Retains the master record having complete 4-field specs & active relations.
     const cleanStr = (val) => String(val || '').trim().toUpperCase();
     const compositeMap = new Map();
     const serialMap = new Map();
@@ -2353,12 +2454,7 @@ class StorageEngine {
           retainedList.push(entries[0]);
         } else {
           hasUpdates = true;
-          // Sort to prioritize the most complete, validated record:
-          // 1. Full composite match (Machine Name + Brand + Model + Serial)
-          // 2. Most recent update timestamp
-          // 3. Highest spec completeness (Name, Brand, Model, Floor, Line, Status)
           const sorted = [...entries].sort((a, b) => {
-            // Check composite completeness (Machine Name, Brand, Model, Serial)
             const aComp = (a.machine.name || a.machine.machineName) && a.machine.brand && a.machine.model ? 1 : 0;
             const bComp = (b.machine.name || b.machine.machineName) && b.machine.brand && b.machine.model ? 1 : 0;
             if (aComp !== bComp) return bComp - aComp;
@@ -2384,7 +2480,7 @@ class StorageEngine {
           retainedList.push({ index: minIndex, machine: sorted[0].machine });
         }
       }
-      // Also retain any machines that had no serial
+      // Also retain machines without serial
       machines.forEach((m, idx) => {
         const s = String(m?.serialNumber || m?.machineSerial || '').trim().toUpperCase();
         if (!s && m) retainedList.push({ index: idx, machine: m });
@@ -2395,101 +2491,53 @@ class StorageEngine {
       this.data[TABLE_NAMES.MACHINES] = machines;
     }
 
-    const totalCount = machines.length;
-
-    // Step 2: Check for duplicate asset IDs or sequence drift
-    const seenMap = new Map();
-    let hasDuplicates = false;
-    let maxNum = 0;
-    let missingCount = 0;
+    // Step 2: Strict Preservation of Existing Asset IDs
+    // - Existing Asset IDs (regardless of prefix, digit length, or format) are NEVER changed, re-formatted, or renumbered.
+    // - Only missing IDs are populated using the dynamic generator.
+    // - If duplicate IDs exist across records, the original is preserved and only the duplicate gets a new ID.
+    const seenAssetIds = new Map();
 
     machines.forEach((m) => {
       if (!m) return;
       let raw = m.systemAssetId || m.permanentMachineId;
-      if (!raw) {
-        missingCount++;
-        return;
-      }
-      let str = String(raw).trim().toUpperCase();
-      if (/^MID-(\d+)$/i.test(str)) {
-        str = str.replace(/^MID-/i, 'AMG-MNT-');
+      if (raw) {
+        let str = String(raw).trim();
+        // Backward-compat for legacy MID- prefix only if not yet normalized
+        if (/^MID-(\d+)$/i.test(str)) {
+          str = str.replace(/^MID-/i, 'AMG-MNT-');
+          hasUpdates = true;
+        }
         m.systemAssetId = str;
-        m.permanentMachineId = str;
-        hasUpdates = true;
-      }
-      const match = str.match(/^AMG-MNT-(\d+)$/i);
-      if (!match) {
-        missingCount++;
-        return;
-      }
-      const num = parseInt(match[1], 10);
-      if (num > maxNum) maxNum = num;
-      if (seenMap.has(str)) {
-        hasDuplicates = true;
-      } else {
-        seenMap.set(str, m);
+        if (!m.permanentMachineId || m.permanentMachineId !== str) {
+          m.permanentMachineId = str;
+          hasUpdates = true;
+        }
+
+        const upper = str.toUpperCase();
+        if (seenAssetIds.has(upper)) {
+          console.warn(`[Asset ID Safeguard] ⚠️ Duplicate Asset ID '${str}' detected for machine ${m.id}. Generating new unique ID...`);
+          const newId = this.generateNextSystemAssetId();
+          m.systemAssetId = newId;
+          m.permanentMachineId = newId;
+          seenAssetIds.set(newId.toUpperCase(), m);
+          hasUpdates = true;
+        } else {
+          seenAssetIds.set(upper, m);
+        }
       }
     });
 
-    // Sequence drift occurs when duplicates exist, or max sequence doesn't match totalCount, or IDs are missing
-    const hasDrift = hasDuplicates || missingCount > 0 || maxNum !== totalCount || hasDuplicateRecords;
-
-    if (hasDrift) {
-      console.warn(`[Asset ID Safeguard] ⚠️ Normalizing Asset ID sequence strictly 1..${totalCount} (Max: ${maxNum}, Dupes: ${hasDuplicates}, Missing: ${missingCount})...`);
-      
-      const usedIds = new Set();
-      const claimedMachines = new Set();
-
-      // First pass: preserve valid unique IDs that fall strictly within [1..totalCount]
-      machines.forEach(m => {
-        if (!m) return;
-        const raw = m.systemAssetId;
-        if (raw) {
-          const match = String(raw).trim().match(/^AMG-MNT-(\d+)$/i);
-          if (match) {
-            const num = parseInt(match[1], 10);
-            const candidate = `AMG-MNT-${String(num).padStart(6, '0')}`;
-            if (num >= 1 && num <= totalCount && !usedIds.has(candidate)) {
-              usedIds.add(candidate);
-              claimedMachines.add(m);
-              if (m.systemAssetId !== candidate || m.permanentMachineId !== candidate) {
-                m.systemAssetId = candidate;
-                m.permanentMachineId = candidate;
-                hasUpdates = true;
-              }
-              return;
-            }
-          }
-        }
-      });
-
-      // Second pass: fill remaining unclaimed machines sequentially from 1 to totalCount
-      let seqCounter = 1;
-      machines.forEach(m => {
-        if (!m) return;
-        if (!claimedMachines.has(m)) {
-          while (usedIds.has(`AMG-MNT-${String(seqCounter).padStart(6, '0')}`)) {
-            seqCounter++;
-          }
-          const assigned = `AMG-MNT-${String(seqCounter).padStart(6, '0')}`;
-          usedIds.add(assigned);
-          claimedMachines.add(m);
-          seqCounter++;
-          m.systemAssetId = assigned;
-          m.permanentMachineId = assigned;
-          hasUpdates = true;
-        }
-      });
-    } else {
-      // Standard incremental check: ensure permanentMachineId matches systemAssetId
-      machines.forEach(m => {
-        if (!m) return;
-        if (m.systemAssetId && (!m.permanentMachineId || /^MID-/i.test(m.permanentMachineId))) {
-          m.permanentMachineId = m.systemAssetId;
-          hasUpdates = true;
-        }
-      });
-    }
+    // Step 3: Populate any completely missing Asset IDs
+    machines.forEach((m) => {
+      if (!m) return;
+      if (!m.systemAssetId) {
+        const newId = this.generateNextSystemAssetId();
+        m.systemAssetId = newId;
+        m.permanentMachineId = newId;
+        seenAssetIds.set(newId.toUpperCase(), m);
+        hasUpdates = true;
+      }
+    });
 
     if (hasUpdates) {
       try {
@@ -2516,13 +2564,15 @@ class StorageEngine {
     if (tableName === TABLE_NAMES.MACHINES) {
       const existingAssetIds = new Set(
         (this.data[TABLE_NAMES.MACHINES] || [])
-          .map(m => m.systemAssetId)
+          .map(m => m && m.systemAssetId ? String(m.systemAssetId).trim().toUpperCase() : null)
           .filter(Boolean)
       );
-      if (!item.systemAssetId || existingAssetIds.has(item.systemAssetId)) {
+      const curAssetId = item.systemAssetId ? String(item.systemAssetId).trim().toUpperCase() : '';
+      if (!curAssetId || existingAssetIds.has(curAssetId)) {
         item.systemAssetId = this.generateNextSystemAssetId();
       }
-      if (!item.permanentMachineId || existingAssetIds.has(item.permanentMachineId)) {
+      const curPermId = item.permanentMachineId ? String(item.permanentMachineId).trim().toUpperCase() : '';
+      if (!curPermId || existingAssetIds.has(curPermId)) {
         item.permanentMachineId = item.systemAssetId;
       }
       // Also prevent duplicate machine array insertion by id
@@ -2559,22 +2609,13 @@ class StorageEngine {
     const baseTime = Date.now();
     let counter = 0;
 
-    let nextSeqNum = 0;
     const existingAssetIds = new Set();
     if (tableName === TABLE_NAMES.MACHINES) {
-      let maxNum = 0;
       (this.data[TABLE_NAMES.MACHINES] || []).forEach(m => {
         if (!m) return;
-        if (m.systemAssetId) {
-          existingAssetIds.add(m.systemAssetId);
-          const match = String(m.systemAssetId).trim().match(/^AMG-MNT-(\d+)$/i);
-          if (match && match[1]) {
-            const num = parseInt(match[1], 10);
-            if (!isNaN(num) && num > maxNum) maxNum = num;
-          }
-        }
+        if (m.systemAssetId) existingAssetIds.add(String(m.systemAssetId).trim().toUpperCase());
+        if (m.permanentMachineId) existingAssetIds.add(String(m.permanentMachineId).trim().toUpperCase());
       });
-      nextSeqNum = Math.max((this.data[TABLE_NAMES.MACHINES] || []).length, maxNum);
     }
 
     items.forEach(item => {
@@ -2582,16 +2623,11 @@ class StorageEngine {
         item.id = `${tableName.substring(0, 3)}-${baseTime}-${++counter}-${Math.floor(Math.random() * 100000)}`;
       }
       if (tableName === TABLE_NAMES.MACHINES) {
-        if (!item.systemAssetId || existingAssetIds.has(item.systemAssetId)) {
-          nextSeqNum++;
-          let candidate = `AMG-MNT-${String(nextSeqNum).padStart(6, '0')}`;
-          while (existingAssetIds.has(candidate)) {
-            nextSeqNum++;
-            candidate = `AMG-MNT-${String(nextSeqNum).padStart(6, '0')}`;
-          }
-          item.systemAssetId = candidate;
+        const itemUpper = item.systemAssetId ? String(item.systemAssetId).trim().toUpperCase() : '';
+        if (!itemUpper || existingAssetIds.has(itemUpper)) {
+          item.systemAssetId = this.generateNextSystemAssetId();
         }
-        existingAssetIds.add(item.systemAssetId);
+        existingAssetIds.add(String(item.systemAssetId).trim().toUpperCase());
         if (!item.permanentMachineId) {
           item.permanentMachineId = item.systemAssetId;
         }
@@ -2696,13 +2732,15 @@ class StorageEngine {
     if (tableName === TABLE_NAMES.MACHINES) {
       const existingAssetIds = new Set(
         (this.data[TABLE_NAMES.MACHINES] || [])
-          .map(m => m.systemAssetId)
+          .map(m => m && m.systemAssetId ? String(m.systemAssetId).trim().toUpperCase() : null)
           .filter(Boolean)
       );
-      if (!item.systemAssetId || existingAssetIds.has(item.systemAssetId)) {
+      const curAssetId = item.systemAssetId ? String(item.systemAssetId).trim().toUpperCase() : '';
+      if (!curAssetId || existingAssetIds.has(curAssetId)) {
         item.systemAssetId = this.generateNextSystemAssetId();
       }
-      if (!item.permanentMachineId || existingAssetIds.has(item.permanentMachineId)) {
+      const curPermId = item.permanentMachineId ? String(item.permanentMachineId).trim().toUpperCase() : '';
+      if (!curPermId || existingAssetIds.has(curPermId)) {
         item.permanentMachineId = item.systemAssetId;
       }
     }

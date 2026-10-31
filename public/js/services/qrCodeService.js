@@ -146,8 +146,16 @@ class QrCodeService {
       };
     }
 
-    // 3. Raw System Asset ID or Permanent Machine ID (AMG-MNT-xxxxxx, MID-xxxxxx or mac-xxxxxx)
-    if (/^AMG-MNT-\d+/i.test(trimmed) || /^MID-\d+/i.test(trimmed) || /^mac-/i.test(trimmed)) {
+    // 3. Raw System Asset ID or Permanent Machine ID (Configured Prefix, AMG-MNT-xxxxxx, MID-xxxxxx or mac-xxxxxx)
+    let isConfigPrefix = false;
+    try {
+      const cfgPrefix = (storage?.getAssetIdConfig ? storage.getAssetIdConfig().prefix : 'AMG-MNT-').trim();
+      if (cfgPrefix && trimmed.toUpperCase().startsWith(cfgPrefix.toUpperCase())) {
+        isConfigPrefix = true;
+      }
+    } catch (_) {}
+
+    if (isConfigPrefix || /^AMG-MNT-\d+/i.test(trimmed) || /^MID-\d+/i.test(trimmed) || /^mac-/i.test(trimmed)) {
       return {
         type: 'MACHINE',
         identifier: trimmed,

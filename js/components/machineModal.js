@@ -247,6 +247,7 @@ export function renderMachineModal() {
   const totalQty = parseInt(machine?.totalQuantity || machine?.total_quantity || (rQty + uQty + rpQty > 0 ? (rQty + uQty + rpQty) : (machine?.quantity ?? 1)), 10) || 1;
 
   const remarks = machine?.remarks || '';
+  const nextAssetIdPreview = storage.getAssetIdPreview ? storage.getAssetIdPreview().previewId : (storage.generateNextSystemAssetId ? storage.generateNextSystemAssetId() : 'AMG-MNT-000001');
   const rawAssetId = machine?.systemAssetId || (machine?.permanentMachineId ? String(machine.permanentMachineId).replace(/^MID-/i, 'AMG-MNT-') : '');
   const currentSystemAssetId = rawAssetId || (isEdit ? '—' : nextAssetIdPreview);
 

@@ -184,6 +184,13 @@ export function renderSettingsView() {
     : (settings.adminLoginSlug || 'secure-admin-gateway');
   const fullAdminUrl = `${currentOrigin}${basePath}/${currentAdminSlug}`;
 
+  const assetCfg = (typeof storage !== 'undefined' && typeof storage.getAssetIdConfig === 'function')
+    ? storage.getAssetIdConfig()
+    : { prefix: settings.assetIdPrefix || 'AMG-MNT-', digitLength: parseInt(settings.assetIdDigitLength, 10) || 6 };
+  const previewInfo = (typeof storage !== 'undefined' && typeof storage.getAssetIdPreview === 'function')
+    ? storage.getAssetIdPreview(assetCfg.prefix, assetCfg.digitLength)
+    : { previewId: `${assetCfg.prefix}000001`, nextSeq: 1, maxNum: 0, prefix: assetCfg.prefix, digitLength: assetCfg.digitLength, totalMachines: 0 };
+
   return `
     <div class="page-view">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
@@ -646,7 +653,88 @@ export function renderSettingsView() {
           <button id="btn-save-serial-settings" class="btn btn-primary btn-sm" style="align-self: flex-start; font-weight: 700;">
             💾 Save Serial Number Configuration
           </button>
-      </div>
+        </div>
+
+        <!-- Card 4: Dynamic & Customizable Permanent Asset ID Generation System (ADMIN CONFIGURATION) -->
+        <div style="background: var(--bg-surface); border: 1.5px solid rgba(16, 185, 129, 0.4); border-radius: var(--radius-lg); padding: 22px; display: flex; flex-direction: column; gap: 16px; grid-column: 1 / -1; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);">
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; flex-wrap: wrap; gap: 8px;">
+            <h3 style="font-size: 15px; font-weight: 800; color: #34d399; display: flex; align-items: center; gap: 8px; margin: 0;">
+              <span>🏷️ Dynamic &amp; Customizable Permanent Asset ID Generation System</span>
+            </h3>
+            <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); font-weight: 800; font-size: 11px; padding: 4px 10px; border-radius: 6px;">
+              LIVE DYNAMIC SEQUENCE • NON-DESTRUCTIVE
+            </span>
+          </div>
+
+          <div style="font-size: 13px; color: var(--text-secondary); line-height: 1.6;">
+            Configure dynamic Permanent System Asset ID generation. Asset IDs are globally unique, tamper-proof, and permanently assigned to physical machines across the enterprise. Zero padding and automatic digit expansion are handled dynamically.
+          </div>
+
+          <!-- Bengali Historical Record Protection Alert -->
+          <div style="background: rgba(16, 185, 129, 0.08); border: 1.5px solid rgba(16, 185, 129, 0.35); border-radius: 8px; padding: 12px 16px; font-size: 12.5px; color: #ecfdf5; line-height: 1.55;">
+            🛡️ <strong>ঐতিহাসিক রেকর্ড সুরক্ষা (Historical Record Protection):</strong> Digit Length (যেমন: ৬ থেকে ৮ ডিজিট) অথবা Prefix পরিবর্তন করলে <em>পুরোনো কোনো Asset ID স্বয়ংক্রিয়ভাবে পরিবর্তিত বা ক্ষতিগ্রস্ত হবে না</em>। শুধুমাত্র নতুন নিবন্ধিত মেশিনগুলো নতুন Format অনুসরণ করবে। এতে পূর্বের সকল রেকর্ড ১০০% নিরাপদ ও অবিকৃত থাকবে।
+          </div>
+
+          <!-- Inputs & Live Preview Grid -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px; align-items: start;">
+            
+            <!-- Input 1: Asset ID Prefix -->
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label" style="font-weight: 700; color: #e2e8f0; font-size: 12.5px;">Asset ID Prefix</label>
+              <input type="text" id="setting-asset-id-prefix" class="form-control" value="${escapeHtml(assetCfg.prefix || 'AMG-MNT-')}" placeholder="e.g. AMG-MNT-" style="font-family: var(--font-mono); font-weight: 800; color: #34d399; background: #0f172a;" />
+              <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Default: <code>AMG-MNT-</code>. Can be customized (e.g. <code>AMG-</code>, <code>AST-</code>, <code>TEX-MNT-</code>).</div>
+            </div>
+
+            <!-- Input 2: Serial Number Digit Length -->
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label" style="font-weight: 700; color: #e2e8f0; font-size: 12.5px;">Serial Number Digit Length</label>
+              <div style="display: flex; gap: 8px; align-items: center;">
+                <input type="number" id="setting-asset-id-digits" min="3" max="16" step="1" class="form-control" value="${assetCfg.digitLength || 6}" style="font-family: var(--font-mono); font-weight: 800; color: #34d399; background: #0f172a; width: 100px;" />
+                <div style="display: flex; gap: 4px; flex-wrap: wrap;">
+                  <button type="button" class="btn btn-xs btn-secondary btn-quick-digits" data-digits="6" style="font-size: 11px; padding: 3px 8px; ${assetCfg.digitLength === 6 ? 'border-color: #34d399; color: #34d399;' : ''}">6 Digits</button>
+                  <button type="button" class="btn btn-xs btn-secondary btn-quick-digits" data-digits="7" style="font-size: 11px; padding: 3px 8px; ${assetCfg.digitLength === 7 ? 'border-color: #34d399; color: #34d399;' : ''}">7 Digits</button>
+                  <button type="button" class="btn btn-xs btn-secondary btn-quick-digits" data-digits="8" style="font-size: 11px; padding: 3px 8px; ${assetCfg.digitLength === 8 ? 'border-color: #34d399; color: #34d399;' : ''}">8 Digits</button>
+                  <button type="button" class="btn btn-xs btn-secondary btn-quick-digits" data-digits="9" style="font-size: 11px; padding: 3px 8px; ${assetCfg.digitLength === 9 ? 'border-color: #34d399; color: #34d399;' : ''}">9 Digits</button>
+                </div>
+              </div>
+              <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Zero-padded minimum length. Automatically expands if sequence exceeds limit.</div>
+            </div>
+
+            <!-- Box 3: Live Preview & Sequence Status -->
+            <div style="background: rgba(15, 23, 42, 0.85); border: 1.5px solid rgba(16, 185, 129, 0.35); border-radius: 8px; padding: 14px 16px; display: flex; flex-direction: column; gap: 8px;">
+              <div style="font-weight: 700; font-size: 11px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; display: flex; justify-content: space-between; align-items: center;">
+                <span>✨ Live Generation Preview</span>
+                <span style="color: #34d399; font-size: 10px;">AUTO-UPDATING</span>
+              </div>
+              <div style="display: flex; align-items: baseline; gap: 10px;">
+                <span id="asset-id-live-preview" style="font-family: var(--font-mono); font-size: 17px; font-weight: 900; color: #34d399; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); padding: 4px 12px; border-radius: 6px; letter-spacing: 0.5px;">
+                  ${previewInfo.previewId}
+                </span>
+                <span style="font-size: 11.5px; color: var(--text-muted);">(Next Asset ID)</span>
+              </div>
+              <div style="font-size: 11.5px; color: #cbd5e1; display: flex; flex-direction: column; gap: 3px; border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 6px;">
+                <div>• Current Recorded Max Sequence: <strong id="preview-max-num" style="color: #38bdf8;">${previewInfo.maxNum}</strong> (Next: <strong id="preview-next-seq" style="color: #34d399;">${previewInfo.nextSeq}</strong>)</div>
+                <div>• Total Machines in Inventory: <strong style="color: #cbd5e1;">${previewInfo.totalMachines}</strong></div>
+                <div style="font-size: 11px; color: #94a3b8;">• Auto-Expansion: Sequence <code>1000000</code> &rarr; <code id="preview-expansion-sample">${assetCfg.prefix}${String(1000000).padStart(assetCfg.digitLength, '0')}</code></div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Action Footer -->
+          <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); padding-top: 14px; margin-top: 4px; flex-wrap: wrap; gap: 10px;">
+            <div style="font-size: 12px; color: var(--text-muted);">
+              Changes apply instantly to future registrations and Excel bulk imports upon saving.
+            </div>
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <span id="save-asset-feedback-msg" style="font-size: 12.5px; color: #34d399; font-weight: 700; display: none;"></span>
+              <button type="button" id="btn-save-asset-id-settings" class="btn btn-primary btn-sm" style="font-weight: 800; background: linear-gradient(135deg, #10b981, #059669); border-color: #10b981; padding: 8px 24px; box-shadow: 0 4px 16px rgba(16, 185, 129, 0.35);">
+                💾 Save Asset ID Configuration
+              </button>
+            </div>
+          </div>
+
+        </div>
     </div>
   `;
 }
@@ -1179,6 +1267,107 @@ export function initSettingsEvents() {
     });
   }
 
+  // -------------------------------------------------------------
+  // Dynamic Asset ID Settings & Real-Time Live Preview
+  // -------------------------------------------------------------
+  const prefixInp = document.getElementById('setting-asset-id-prefix');
+  const digitsInp = document.getElementById('setting-asset-id-digits');
+  const previewBadge = document.getElementById('asset-id-live-preview');
+  const previewMaxNum = document.getElementById('preview-max-num');
+  const previewNextSeq = document.getElementById('preview-next-seq');
+  const previewExpansion = document.getElementById('preview-expansion-sample');
+  const quickDigitBtns = document.querySelectorAll('.btn-quick-digits');
+
+  const updateAssetIdLivePreview = () => {
+    const pfx = prefixInp ? prefixInp.value.trim() : 'AMG-MNT-';
+    const dgt = digitsInp ? parseInt(digitsInp.value, 10) : 6;
+    const validDgt = !isNaN(dgt) && dgt >= 1 ? dgt : 6;
+    if (typeof storage !== 'undefined' && typeof storage.getAssetIdPreview === 'function') {
+      const p = storage.getAssetIdPreview(pfx, validDgt);
+      if (previewBadge) previewBadge.textContent = p.previewId;
+      if (previewMaxNum) previewMaxNum.textContent = p.maxNum;
+      if (previewNextSeq) previewNextSeq.textContent = p.nextSeq;
+      if (previewExpansion) previewExpansion.textContent = storage.formatAssetId(1000000, pfx, validDgt);
+    }
+  };
+
+  if (prefixInp) {
+    prefixInp.addEventListener('input', updateAssetIdLivePreview);
+  }
+  if (digitsInp) {
+    digitsInp.addEventListener('input', () => {
+      const val = parseInt(digitsInp.value, 10);
+      quickDigitBtns.forEach(b => {
+        const bVal = parseInt(b.getAttribute('data-digits'), 10);
+        if (bVal === val) {
+          b.style.borderColor = '#34d399';
+          b.style.color = '#34d399';
+        } else {
+          b.style.borderColor = '';
+          b.style.color = '';
+        }
+      });
+      updateAssetIdLivePreview();
+    });
+  }
+
+  quickDigitBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const d = parseInt(btn.getAttribute('data-digits'), 10);
+      if (digitsInp && !isNaN(d)) {
+        digitsInp.value = d;
+        quickDigitBtns.forEach(b => {
+          b.style.borderColor = '';
+          b.style.color = '';
+        });
+        btn.style.borderColor = '#34d399';
+        btn.style.color = '#34d399';
+        updateAssetIdLivePreview();
+      }
+    });
+  });
+
+  const saveAssetBtn = document.getElementById('btn-save-asset-id-settings');
+  if (saveAssetBtn) {
+    saveAssetBtn.addEventListener('click', async () => {
+      const origText = saveAssetBtn.innerHTML;
+      saveAssetBtn.disabled = true;
+      saveAssetBtn.innerHTML = 'Saving...';
+
+      let pfx = prefixInp ? prefixInp.value.trim() : 'AMG-MNT-';
+      if (!pfx) pfx = 'AMG-MNT-';
+      let dgt = digitsInp ? parseInt(digitsInp.value, 10) : 6;
+      if (isNaN(dgt) || dgt < 1) dgt = 6;
+
+      const current = storage.getTable(TABLE_NAMES.SETTINGS) || {};
+      storage.data[TABLE_NAMES.SETTINGS] = {
+        ...current,
+        assetIdPrefix: pfx,
+        assetIdDigitLength: dgt
+      };
+
+      try {
+        await storage.saveTable(TABLE_NAMES.SETTINGS, true);
+        saveAssetBtn.innerHTML = '✓ Saved Changes';
+        const feedback = document.getElementById('save-asset-feedback-msg');
+        if (feedback) {
+          feedback.textContent = '✓ Dynamic Asset ID Configuration Saved to Cloud!';
+          feedback.style.display = 'inline-block';
+          setTimeout(() => { feedback.style.display = 'none'; }, 4000);
+        }
+        updateAssetIdLivePreview();
+      } catch (err) {
+        console.error('Failed to save asset ID configuration:', err);
+        saveAssetBtn.innerHTML = '❌ Save Error';
+      } finally {
+        setTimeout(() => {
+          saveAssetBtn.disabled = false;
+          saveAssetBtn.innerHTML = origText;
+        }, 1800);
+      }
+    });
+  }
+
   const syncSettingsInputsToMemory = () => {
     try {
       const container = document.getElementById('signatures-list-container');
@@ -1200,6 +1389,8 @@ export function initSettingsEvents() {
       const serialTpl = document.getElementById('setting-serial-template')?.value;
       const serialPad = Number(document.getElementById('setting-serial-padding')?.value);
       const enforcePrefix = document.getElementById('setting-enforce-prefix')?.checked;
+      const assetPrefix = document.getElementById('setting-asset-id-prefix')?.value?.trim();
+      const assetDigits = parseInt(document.getElementById('setting-asset-id-digits')?.value, 10);
 
       const current = storage.getTable(TABLE_NAMES.SETTINGS) || {};
       const sig1 = signaturesList[0] || {};
@@ -1232,7 +1423,9 @@ export function initSettingsEvents() {
         ...(reqDel !== undefined ? { requireDeleteApproval: reqDel } : {}),
         ...(serialTpl !== undefined ? { serialFormatTemplate: serialTpl } : {}),
         ...(serialPad ? { serialNumberPadding: serialPad } : {}),
-        ...(enforcePrefix !== undefined ? { enforceFloorPrefix: enforcePrefix } : {})
+        ...(enforcePrefix !== undefined ? { enforceFloorPrefix: enforcePrefix } : {}),
+        ...(assetPrefix !== undefined && assetPrefix !== '' ? { assetIdPrefix: assetPrefix } : {}),
+        ...(assetDigits && !isNaN(assetDigits) ? { assetIdDigitLength: assetDigits } : {})
       };
     } catch (e) {
       console.warn('[Settings] in-memory sync note:', e.message);

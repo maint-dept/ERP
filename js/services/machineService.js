@@ -165,10 +165,10 @@ class MachineService {
   }
 
   /**
-   * Generates the next sequential Permanent Unique System Asset ID (e.g. AMG-MNT-000001)
+   * Generates the next sequential Permanent Unique System Asset ID with dynamic prefix and digit length
    */
-  generateNextSystemAssetId() {
-    return storage.generateNextSystemAssetId();
+  generateNextSystemAssetId(prefix, digitLength) {
+    return storage.generateNextSystemAssetId(prefix, digitLength);
   }
 
   /**

@@ -737,12 +737,16 @@ class ExcelService {
       return record.machine_serial || record.serialNumber || record.serial || '';
     }
 
-    // 5A. Permanent System-Generated Asset ID (AMG-MNT-XXXXXX)
+    // 5A. Permanent System-Generated Asset ID
     if (key === 'system_asset_id' || key === 'systemassetid' || key === 'asset_id' || key === 'assetid' || key === 'system_asset' || key === 'systemasset') {
       let saId = record.systemAssetId || (record.permanentMachineId ? String(record.permanentMachineId).replace(/^MID-/i, 'AMG-MNT-') : '');
       if (!saId && record.id) {
         const numPart = String(record.id).replace(/\D/g, '');
-        if (numPart) saId = `AMG-MNT-${numPart.padStart(6, '0')}`;
+        if (numPart && typeof storage !== 'undefined' && typeof storage.formatAssetId === 'function') {
+          saId = storage.formatAssetId(numPart);
+        } else if (numPart) {
+          saId = `AMG-MNT-${numPart.padStart(6, '0')}`;
+        }
       }
       return saId || '';
     }
