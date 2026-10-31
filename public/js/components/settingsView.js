@@ -670,9 +670,9 @@ export function renderSettingsView() {
             Configure dynamic Permanent System Asset ID generation. Asset IDs are globally unique, tamper-proof, and permanently assigned to physical machines across the enterprise. Zero padding and automatic digit expansion are handled dynamically.
           </div>
 
-          <!-- Bengali Historical Record Protection Alert -->
+          <!-- Historical Record Protection Alert -->
           <div style="background: rgba(16, 185, 129, 0.08); border: 1.5px solid rgba(16, 185, 129, 0.35); border-radius: 8px; padding: 12px 16px; font-size: 12.5px; color: #ecfdf5; line-height: 1.55;">
-            🛡️ <strong>ঐতিহাসিক রেকর্ড সুরক্ষা (Historical Record Protection):</strong> Digit Length (যেমন: ৬ থেকে ৮ ডিজিট) অথবা Prefix পরিবর্তন করলে <em>পুরোনো কোনো Asset ID স্বয়ংক্রিয়ভাবে পরিবর্তিত বা ক্ষতিগ্রস্ত হবে না</em>। শুধুমাত্র নতুন নিবন্ধিত মেশিনগুলো নতুন Format অনুসরণ করবে। এতে পূর্বের সকল রেকর্ড ১০০% নিরাপদ ও অবিকৃত থাকবে।
+            🛡️ <strong>Historical Record Protection:</strong> Changing the Digit Length (e.g. from 6 to 8 digits) or Prefix will <em>never modify, overwrite, or renumber any existing Asset IDs</em>. Only newly registered machines will follow the updated format. All historical records and QR codes remain 100% secure and preserved.
           </div>
 
           <!-- Inputs & Live Preview Grid -->
