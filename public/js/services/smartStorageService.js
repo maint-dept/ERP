@@ -31,8 +31,8 @@ class SmartStorageService {
     const lower = clean.toLowerCase();
     const allMn = storage.getTable(TABLE_NAMES.MACHINE_NAMES) || [];
     const matched = allMn.find(m => m.name && m.name.trim().toLowerCase() === lower);
-    if (matched && matched.code && !/^[A-Z]{4}$/.test(matched.code)) {
-      return matched.code;
+    if (matched && (matched.shortName || matched.code) && !/^[A-Z]{4}$/.test(matched.shortName || matched.code)) {
+      return matched.shortName || matched.code;
     }
     if (GARMENT_MACHINE_SHORT_CODES && GARMENT_MACHINE_SHORT_CODES[lower]) {
       return GARMENT_MACHINE_SHORT_CODES[lower];
@@ -44,7 +44,100 @@ class SmartStorageService {
         }
       }
     }
-    return matched?.code || '';
+    return matched?.shortName || matched?.code || '';
+  }
+
+  /**
+   * Get configured unique Asset Code for machine type
+   */
+  getMachineAssetCode(machineName) {
+    if (!machineName) return '';
+    const clean = String(machineName).trim().toLowerCase();
+    const allMn = storage.getTable(TABLE_NAMES.MACHINE_NAMES) || [];
+    const matched = allMn.find(m => m.name && m.name.trim().toLowerCase() === clean);
+    return matched?.assetCode || '';
+  }
+
+  /**
+   * Generates the next sequential unique asset code (e.g. MC-001, MC-002, ...)
+   */
+  generateNextAssetCode() {
+    const allMn = storage.getTable(TABLE_NAMES.MACHINE_NAMES) || [];
+    let maxNum = 0;
+    allMn.forEach(m => {
+      const code = (m.assetCode || '').trim();
+      const match = code.match(/^(?:MC|AST|MAC)-0*([0-9]+)$/i);
+      if (match) {
+        const num = parseInt(match[1], 10);
+        if (num > maxNum) maxNum = num;
+      }
+    });
+    return `MC-${String(maxNum + 1).padStart(3, '0')}`;
+  }
+
+  /**
+   * Self-healing migration routine: Ensures all registered machine types have a permanent
+   * Unique Asset Code (e.g. MC-001, MC-002) and proper standard garments Short Name (e.g. V/T, D/N-A).
+   */
+  ensureUniqueAssetCodesAndShortNames() {
+    const allMn = storage.getTable(TABLE_NAMES.MACHINE_NAMES) || [];
+    if (!allMn || allMn.length === 0) return;
+
+    let changed = false;
+    let nextNum = 1;
+    const usedCodes = new Set();
+
+    // 1. Collect all explicitly existing assetCodes
+    allMn.forEach(m => {
+      if (m.assetCode && m.assetCode.trim()) {
+        const uc = m.assetCode.trim().toUpperCase();
+        usedCodes.add(uc);
+        const match = uc.match(/^(?:MC|AST|MAC)-0*([0-9]+)$/i);
+        if (match) {
+          const num = parseInt(match[1], 10);
+          if (num >= nextNum) nextNum = num + 1;
+        }
+      }
+    });
+
+    // 2. Sort machines deterministically by sortOrder
+    const sorted = [...allMn].sort((a, b) => (Number(a.sortOrder) || 9999) - (Number(b.sortOrder) || 9999));
+
+    sorted.forEach((m) => {
+      let mChanged = false;
+
+      // Assign assetCode if missing
+      if (!m.assetCode || !m.assetCode.trim()) {
+        while (usedCodes.has(`MC-${String(nextNum).padStart(3, '0')}`)) {
+          nextNum++;
+        }
+        const assignedCode = `MC-${String(nextNum).padStart(3, '0')}`;
+        m.assetCode = assignedCode;
+        usedCodes.add(assignedCode);
+        nextNum++;
+        mChanged = true;
+      }
+
+      // Assign proper standard garments short name
+      const standardShort = this.getMachineShortCode(m.name);
+      if (standardShort && (!m.code || /^[A-Z]{4}$/.test(m.code))) {
+        m.code = standardShort;
+        mChanged = true;
+      }
+      if (!m.shortName && (m.code || standardShort)) {
+        m.shortName = m.code || standardShort;
+        mChanged = true;
+      }
+
+      if (mChanged) {
+        m.updatedAt = new Date().toISOString();
+        changed = true;
+      }
+    });
+
+    if (changed) {
+      storage.saveTable(TABLE_NAMES.MACHINE_NAMES);
+    }
   }
 
   // ==========================================
@@ -333,6 +426,7 @@ class SmartStorageService {
 
   getMachineModelsHierarchy() {
     this.fixMisallocatedModels();
+    this.ensureUniqueAssetCodesAndShortNames();
     const mnTable = storage.getTable(TABLE_NAMES.MACHINE_NAMES) || [];
     const smTable = storage.getTable(TABLE_NAMES.STORAGE_MASTER) || [];
     const mdlTable = storage.getTable(TABLE_NAMES.MODELS) || [];
@@ -351,13 +445,16 @@ class SmartStorageService {
       const lower = cleanName.toLowerCase();
       const order = (mn.sortOrder !== undefined && mn.sortOrder !== null) ? Number(mn.sortOrder) : (idx + 1);
       mnOrderMap.set(lower, order);
-      const shortCode = this.getMachineShortCode(cleanName) || mn.code || '';
+      const shortCode = mn.shortName || this.getMachineShortCode(cleanName) || mn.code || '';
+      const assetCode = mn.assetCode || '';
       if (!map.has(lower)) {
         map.set(lower, {
           id: mn.id,
           machineName: cleanName,
           sortOrder: order,
           code: shortCode,
+          shortName: shortCode,
+          assetCode: assetCode,
           models: []
         });
       }
@@ -371,12 +468,17 @@ class SmartStorageService {
       const mName = this.resolveCanonicalMachineName(rawMName);
       const lower = mName.toLowerCase();
       if (!map.has(lower)) {
+        const matchedMn = mnTable.find(x => x && x.name && x.name.trim().toLowerCase() === lower);
         const order = mnOrderMap.has(lower) ? mnOrderMap.get(lower) : (1000 + map.size);
+        const sc = matchedMn?.shortName || this.getMachineShortCode(mName) || matchedMn?.code || '';
+        const ac = matchedMn?.assetCode || it.assetCode || '';
         map.set(lower, {
-          id: 'mn-' + lower,
+          id: matchedMn?.id || ('mn-' + lower),
           machineName: mName,
           sortOrder: order,
-          code: this.getMachineShortCode(mName),
+          code: sc,
+          shortName: sc,
+          assetCode: ac,
           models: []
         });
       }
@@ -418,12 +520,17 @@ class SmartStorageService {
       }
 
       if (!map.has(lower)) {
+        const matchedMn = mnTable.find(x => x && x.name && x.name.trim().toLowerCase() === lower);
         const order = mnOrderMap.has(lower) ? mnOrderMap.get(lower) : (1000 + map.size);
+        const sc = matchedMn?.shortName || this.getMachineShortCode(mName) || matchedMn?.code || '';
+        const ac = matchedMn?.assetCode || '';
         map.set(lower, {
-          id: 'mn-' + lower,
+          id: matchedMn?.id || ('mn-' + lower),
           machineName: mName,
           sortOrder: order,
-          code: '',
+          code: sc,
+          shortName: sc,
+          assetCode: ac,
           models: []
         });
       }
@@ -474,11 +581,17 @@ class SmartStorageService {
       return ordA - ordB;
     });
 
-    // Assign fixed 1-based serialNo to each machine group
-    return result.map((g, idx) => ({
-      ...g,
-      serialNo: idx + 1
-    }));
+    // Assign fixed 1-based serialNo to each machine group with permanent Asset Code
+    return result.map((g, idx) => {
+      const serialNo = idx + 1;
+      const assetCode = g.assetCode || `MC-${String(serialNo).padStart(3, '0')}`;
+      return {
+        ...g,
+        serialNo,
+        assetCode,
+        shortName: g.shortName || g.code || ''
+      };
+    });
   }
 
   getAllMachineNames() {
@@ -556,7 +669,7 @@ class SmartStorageService {
     return this.purgeUnusedMachineNames();
   }
 
-  addMachineName(name, code = '', sortOrder = null) {
+  addMachineName(name, code = '', sortOrder = null, assetCode = null) {
     const cleanName = String(name || '').trim();
     if (!cleanName) throw new Error('Machine Name is required');
 
@@ -583,10 +696,21 @@ class SmartStorageService {
     });
 
     if (existing) {
+      const updates = {};
       if (sortOrder !== null && sortOrder !== undefined) {
-        storage.update(TABLE_NAMES.MACHINE_NAMES, existing.id, { sortOrder: Number(sortOrder) });
+        updates.sortOrder = Number(sortOrder);
       }
-      return { added: false, name: existing.name, existingId: existing.id, message: 'Already registered' };
+      if (assetCode && (!existing.assetCode || existing.assetCode !== assetCode.trim().toUpperCase())) {
+        updates.assetCode = assetCode.trim().toUpperCase();
+      }
+      if (code && (!existing.code || existing.code !== code.trim())) {
+        updates.code = code.trim();
+        updates.shortName = code.trim();
+      }
+      if (Object.keys(updates).length > 0) {
+        storage.update(TABLE_NAMES.MACHINE_NAMES, existing.id, updates);
+      }
+      return { added: false, name: existing.name, existingId: existing.id, assetCode: existing.assetCode, message: 'Already registered' };
     }
 
     const maxOrder = mnList.reduce((max, m) => Math.max(max, Number(m.sortOrder || 0)), 0);
@@ -607,17 +731,22 @@ class SmartStorageService {
     }
 
     const assignedId = canonicalId || ('mn-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4));
+    const finalShort = code || this.getMachineShortCode(cleanName) || cleanName.substring(0, 4).toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const finalAsset = assetCode ? assetCode.trim().toUpperCase() : this.generateNextAssetCode();
+
     const newRecord = storage.insert(TABLE_NAMES.MACHINE_NAMES, {
       id: assignedId,
       name: cleanName,
-      code: code || cleanName.substring(0, 4).toUpperCase().replace(/[^A-Z0-9]/g, ''),
+      code: finalShort,
+      shortName: finalShort,
+      assetCode: finalAsset,
       sortOrder: assignedOrder,
       status: 'ACTIVE',
       createdAt: new Date().toISOString()
     });
 
     this._broadcastStorageChange();
-    return { added: true, name: cleanName, id: newRecord.id, sortOrder: assignedOrder };
+    return { added: true, name: cleanName, id: newRecord.id, assetCode: finalAsset, sortOrder: assignedOrder };
   }
 
   async addMultipleMachineNames(rawInput) {
@@ -770,11 +899,12 @@ class SmartStorageService {
     return deletedCount;
   }
 
-  async renameMachineName(oldName, newName, newCode = null) {
+  async renameMachineName(oldName, newName, newCode = null, newAssetCode = null) {
     const cleanOld = String(oldName || '').trim();
     const cleanNew = String(newName || '').trim();
     const cleanCode = newCode !== null && newCode !== undefined ? String(newCode).trim() : null;
-    if (!cleanOld) throw new Error('Existing machine name is required');
+    const cleanAsset = newAssetCode !== null && newAssetCode !== undefined ? String(newAssetCode).trim().toUpperCase() : null;
+    if (!cleanOld && !cleanAsset) throw new Error('Existing machine name or Asset Code is required');
     if (!cleanNew) throw new Error('New machine name is required');
 
     const lowerOld = cleanOld.toLowerCase();
@@ -782,29 +912,54 @@ class SmartStorageService {
 
     // 1. Update in MACHINE_NAMES
     const allMn = storage.getTable(TABLE_NAMES.MACHINE_NAMES) || [];
-    let matchedMn = allMn.find(m => m.name && m.name.trim().toLowerCase() === lowerOld);
+    let matchedMn = null;
+    if (cleanAsset) {
+      matchedMn = allMn.find(m => m.assetCode && m.assetCode.trim().toUpperCase() === cleanAsset);
+    }
+    if (!matchedMn && cleanOld) {
+      matchedMn = allMn.find(m => m.name && m.name.trim().toLowerCase() === lowerOld);
+    }
+
+    if (cleanAsset) {
+      const collision = allMn.find(m => m.id !== matchedMn?.id && m.assetCode && m.assetCode.trim().toUpperCase() === cleanAsset);
+      if (collision) {
+        throw new Error(`Asset Code "${cleanAsset}" is already assigned to "${collision.name}". Each machine type must have a unique Asset Code.`);
+      }
+    }
 
     const nameUnchanged = (cleanOld.toLowerCase() === cleanNew.toLowerCase() && cleanOld === cleanNew);
     const codeUnchanged = (cleanCode === null || (matchedMn && (matchedMn.code || '') === cleanCode));
-    if (nameUnchanged && codeUnchanged) {
-      return { success: true, renamed: false, message: 'Names and codes are identical' };
+    const assetUnchanged = (cleanAsset === null || (matchedMn && (matchedMn.assetCode || '') === cleanAsset));
+    if (nameUnchanged && codeUnchanged && assetUnchanged && matchedMn) {
+      return { success: true, renamed: false, message: 'Names, codes, and asset IDs are identical' };
     }
 
     if (matchedMn) {
       matchedMn.name = cleanNew;
+      if (cleanAsset) {
+        matchedMn.assetCode = cleanAsset;
+      } else if (!matchedMn.assetCode) {
+        matchedMn.assetCode = this.generateNextAssetCode();
+      }
       if (cleanCode !== null && cleanCode !== '') {
         matchedMn.code = cleanCode;
+        matchedMn.shortName = cleanCode;
       } else if (!matchedMn.code || /^[A-Z]{4}$/.test(matchedMn.code)) {
-        matchedMn.code = this.getMachineShortCode(cleanNew) || matchedMn.code;
+        const sc = this.getMachineShortCode(cleanNew) || matchedMn.code;
+        matchedMn.code = sc;
+        matchedMn.shortName = sc;
       }
       matchedMn.updatedAt = new Date().toISOString();
     } else {
       const maxOrder = allMn.reduce((max, m) => Math.max(max, Number(m.sortOrder || 0)), 0);
       const codeVal = (cleanCode !== null && cleanCode !== '') ? cleanCode : (this.getMachineShortCode(cleanNew) || cleanNew.substring(0, 4).toUpperCase().replace(/[^A-Z0-9]/g, ''));
+      const assetVal = cleanAsset || this.generateNextAssetCode();
       matchedMn = {
         id: 'mn-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4),
         name: cleanNew,
         code: codeVal,
+        shortName: codeVal,
+        assetCode: assetVal,
         sortOrder: maxOrder + 1,
         status: 'ACTIVE',
         createdAt: new Date().toISOString(),
@@ -817,8 +972,11 @@ class SmartStorageService {
     const allSm = storage.getTable(TABLE_NAMES.STORAGE_MASTER) || [];
     let smUpdatedCount = 0;
     allSm.forEach(it => {
-      if (it.category === 'MACHINE' && (it.machineName || '').trim().toLowerCase() === lowerOld) {
+      const matchByName = it.category === 'MACHINE' && cleanOld && (it.machineName || '').trim().toLowerCase() === lowerOld;
+      const matchByAsset = it.category === 'MACHINE' && matchedMn.assetCode && it.assetCode && it.assetCode.trim().toUpperCase() === matchedMn.assetCode;
+      if (matchByName || matchByAsset) {
         it.machineName = cleanNew;
+        it.assetCode = matchedMn.assetCode;
         it.updatedAt = new Date().toISOString();
         smUpdatedCount++;
       }
@@ -828,27 +986,38 @@ class SmartStorageService {
     const allMdl = storage.getTable(TABLE_NAMES.MODELS) || [];
     let mdlUpdatedCount = 0;
     allMdl.forEach(m => {
-      if ((m.machineName && m.machineName.trim().toLowerCase() === lowerOld) || (matchedMn && m.machineNameId === matchedMn.id)) {
+      const matchByName = cleanOld && m.machineName && m.machineName.trim().toLowerCase() === lowerOld;
+      const matchById = matchedMn && m.machineNameId === matchedMn.id;
+      const matchByAsset = matchedMn.assetCode && m.machineAssetCode && m.machineAssetCode.trim().toUpperCase() === matchedMn.assetCode;
+      if (matchByName || matchById || matchByAsset) {
         m.machineName = cleanNew;
-        if (matchedMn) m.machineNameId = matchedMn.id;
+        if (matchedMn) {
+          m.machineNameId = matchedMn.id;
+          m.machineAssetCode = matchedMn.assetCode;
+        }
         m.updatedAt = new Date().toISOString();
         mdlUpdatedCount++;
       }
     });
 
-    // 4. Update in MACHINES inventory table (auto-transform all linked inventory records)
+    // 4. Update in MACHINES inventory table (auto-transform all linked inventory records with 0 data loss)
     const allMachines = storage.getTable(TABLE_NAMES.MACHINES) || [];
     let invUpdatedCount = 0;
     allMachines.forEach(m => {
-      const matchByName = (m.machineName && m.machineName.trim().toLowerCase() === lowerOld) ||
+      const matchByName = cleanOld && ((m.machineName && m.machineName.trim().toLowerCase() === lowerOld) ||
                           (m.machineNameStr && m.machineNameStr.trim().toLowerCase() === lowerOld) ||
-                          (m.name && m.name.trim().toLowerCase() === lowerOld);
+                          (m.name && m.name.trim().toLowerCase() === lowerOld));
       const matchById = matchedMn && m.machineNameId === matchedMn.id;
-      if (matchByName || matchById) {
+      const matchByAsset = matchedMn.assetCode && m.machineAssetCode && m.machineAssetCode.trim().toUpperCase() === matchedMn.assetCode;
+      if (matchByName || matchById || matchByAsset) {
         m.machineName = cleanNew;
         m.machineNameStr = cleanNew;
-        if (m.name && m.name.trim().toLowerCase() === lowerOld) m.name = cleanNew;
-        if (matchedMn) m.machineNameId = matchedMn.id;
+        if (m.name && cleanOld && m.name.trim().toLowerCase() === lowerOld) m.name = cleanNew;
+        if (matchedMn) {
+          m.machineNameId = matchedMn.id;
+          m.machineAssetCode = matchedMn.assetCode;
+          m.machineShortCode = matchedMn.code || matchedMn.shortName;
+        }
         m.updatedAt = new Date().toISOString();
         invUpdatedCount++;
       }
@@ -2907,6 +3076,9 @@ class SmartStorageService {
   // ==========================================
 
   downloadTemplate(category) {
+    if ((category === 'MACHINE' || !category) && typeof XLSX !== 'undefined') {
+      return this.downloadMachineImportTemplate();
+    }
     const config = storageSchemaService.getTemplateConfig(category);
     const csvContent = '\uFEFF' + config.headers.join(',') + '\n' + config.sample.map(s => `"${s}"`).join(',') + '\n';
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -2959,11 +3131,11 @@ class SmartStorageService {
     }
 
     const overwriteExisting = options.overwriteExisting !== false;
-    const replaceExistingForImportedMachines = options.replaceExistingForImportedMachines !== false;
     let mnList = storage.getTable(TABLE_NAMES.MACHINE_NAMES) || [];
     let brdList = storage.getTable(TABLE_NAMES.BRANDS) || [];
     let mdlList = storage.getTable(TABLE_NAMES.MODELS) || [];
     let smList = storage.getTable(TABLE_NAMES.STORAGE_MASTER) || [];
+    let allMachines = storage.getTable(TABLE_NAMES.MACHINES) || [];
 
     const knownBrands = [
       'JUKI', 'BROTHER', 'PEGASUS', 'SIRUBA', 'YAMATO', 'KANSAI', 'KANSAI SPECIAL', 
@@ -2975,6 +3147,8 @@ class SmartStorageService {
     let addedBrandsCount = 0;
     let addedModelsCount = 0;
     let updatedModelsCount = 0;
+    let renamedMachinesCount = 0;
+    let inventoryMachinesRenamed = false;
     const errors = [];
 
     const getCell = (row, aliases) => {
@@ -2993,13 +3167,17 @@ class SmartStorageService {
       return '';
     };
 
-    // 1. Expand rows & carry forward machine names across merged/blank rows
+    // 1. Expand rows & carry forward Asset Code, Short Name & Machine Name across merged/blank rows
     const expandedRows = [];
     let lastCarriedMachineName = '';
+    let lastCarriedAssetCode = '';
+    let lastCarriedShortCode = '';
     const lastBrandByMachine = new Map();
 
     for (let idx = 0; idx < dataRows.length; idx++) {
       const row = dataRows[idx];
+      let assetCode = getCell(row, ['Asset Code', 'Asset ID', 'Machine Asset ID', 'AssetCode', 'Asset', 'Machine Code', 'Unique ID', 'Unique Asset ID', 'Asset No', 'Asset #']);
+      let shortCode = getCell(row, ['Machine Short Name', 'Short Name', 'Short Code', 'Machine Short Code', 'Machine Name (Sort Form)', 'Sort Form', 'Code', 'Short']);
       let machineName = getCell(row, ['Machine Name', 'Machine', 'Machine Type', 'Machinery Name', 'Type', 'Category']);
       let brand = getCell(row, ['Brand', 'Brand Name', 'Make', 'Manufacturer', 'Company']);
       let rawModel = getCell(row, ['Model', 'Model Number', 'Model No', 'Model #', 'Spec', 'Specification']);
@@ -3007,7 +3185,7 @@ class SmartStorageService {
       let requiredNeedleBrand = getCell(row, ['Needle Brand', 'Required Needle Brand', 'Needle Make', 'Needle Company', 'Needle Manufacturer', 'Needle Brand / System', 'Needle Brand/System', 'Brand Needle', 'Needle Master Brand']);
       let needleType = getCell(row, ['Needle Type', 'Needle System', 'Needle Size', 'Needle Type / Size', 'Needle Type/Size', 'Type/Size', 'Needle System / Code', 'Needle System/Code', 'Needle Spec', 'Needle Code', 'Needle System / Size']);
       let requiredNeedles = getCell(row, ['Required Needles', 'Required Needle', 'Required Needl', 'Needles Required', 'Needle Qty', 'Needle Quantity', 'Needle Count', 'Needle Requirement', 'Needles Per Machine', 'Per Machine Needles', 'Req Needle', 'Req Needles', 'Req', 'Needle Req']);
-      let shortCode = getCell(row, ['Short Code', 'Machine Short Code', 'Machine Name (Sort Form)', 'Sort Form', 'Code']);
+
       if (!shortCode) {
         const mcNum = getCell(row, ['Machine Number', 'Machine No.', 'Machine No']);
         if (mcNum && mcNum.includes('-')) {
@@ -3020,31 +3198,72 @@ class SmartStorageService {
       if (Array.isArray(row)) {
         const isFirstNum = /^\d+$/.test(String(row[0] || '').trim());
         const offset = isFirstNum ? 1 : 0;
-        machineName = String(row[offset] || '').trim();
-        brand = String(row[offset + 1] || '').trim();
-        rawModel = String(row[offset + 2] || '').trim();
-        if (row.length >= offset + 6) {
+        // Check if row has >= 8 items after offset (indicates Asset Code & Short Code present)
+        if (row.length >= offset + 8) {
+          const colA = String(row[offset] || '').trim();
+          const colB = String(row[offset + 1] || '').trim();
+          const isColAAsset = /^(MC|AST|MAC)-\d+/i.test(colA) || (colA.length <= 8 && colB.length <= 8 && String(row[offset + 2] || '').trim().length > 2);
+          if (isColAAsset) {
+            assetCode = colA;
+            shortCode = colB;
+            machineName = String(row[offset + 2] || '').trim();
+            brand = String(row[offset + 3] || '').trim();
+            rawModel = String(row[offset + 4] || '').trim();
+            requiredNeedleBrand = String(row[offset + 5] || '').trim();
+            needleType = String(row[offset + 6] || '').trim();
+            requiredNeedles = String(row[offset + 7] || '').trim();
+            remarks = String(row[offset + 8] || '').trim();
+          } else {
+            // Legacy 8-column layout without Asset Code / Short Code
+            machineName = colA;
+            brand = colB;
+            rawModel = String(row[offset + 2] || '').trim();
+            requiredNeedleBrand = String(row[offset + 3] || '').trim();
+            needleType = String(row[offset + 4] || '').trim();
+            requiredNeedles = String(row[offset + 5] || '').trim();
+            remarks = String(row[offset + 6] || '').trim();
+          }
+        } else if (row.length >= offset + 6) {
+          machineName = String(row[offset] || '').trim();
+          brand = String(row[offset + 1] || '').trim();
+          rawModel = String(row[offset + 2] || '').trim();
           requiredNeedleBrand = String(row[offset + 3] || '').trim();
           needleType = String(row[offset + 4] || '').trim();
           requiredNeedles = String(row[offset + 5] || '').trim();
           remarks = String(row[offset + 6] || '').trim();
         } else {
+          machineName = String(row[offset] || '').trim();
+          brand = String(row[offset + 1] || '').trim();
+          rawModel = String(row[offset + 2] || '').trim();
           remarks = String(row[offset + 3] || '').trim();
         }
       } else if (!machineName && !rawModel && !brand) {
         const vals = Object.values(row).map(v => String(v || '').trim()).filter(Boolean);
         if (vals.length >= 3) {
           if (/^\d+$/.test(vals[0])) {
-            machineName = vals[1];
-            brand = vals[2];
-            rawModel = vals[3] || '';
-            if (vals.length >= 7) {
-              requiredNeedleBrand = vals[4] || '';
-              needleType = vals[5] || '';
-              requiredNeedles = vals[6] || '';
-              remarks = vals[7] || '';
+            const isCol1Asset = /^(MC|AST|MAC)-\d+/i.test(vals[1]);
+            if (isCol1Asset && vals.length >= 9) {
+              assetCode = vals[1];
+              shortCode = vals[2];
+              machineName = vals[3];
+              brand = vals[4];
+              rawModel = vals[5];
+              requiredNeedleBrand = vals[6];
+              needleType = vals[7];
+              requiredNeedles = vals[8];
+              remarks = vals[9] || '';
             } else {
-              remarks = vals[4] || '';
+              machineName = vals[1];
+              brand = vals[2];
+              rawModel = vals[3] || '';
+              if (vals.length >= 7) {
+                requiredNeedleBrand = vals[4] || '';
+                needleType = vals[5] || '';
+                requiredNeedles = vals[6] || '';
+                remarks = vals[7] || '';
+              } else {
+                remarks = vals[4] || '';
+              }
             }
           } else {
             machineName = vals[0];
@@ -3065,6 +3284,8 @@ class SmartStorageService {
         }
       }
 
+      assetCode = String(assetCode || '').trim();
+      shortCode = String(shortCode || '').trim();
       machineName = String(machineName || '').trim();
       brand = String(brand || '').trim();
       rawModel = String(rawModel || '').trim();
@@ -3072,10 +3293,24 @@ class SmartStorageService {
       const mLower = machineName.toLowerCase();
       if (mLower === 'machinename' || mLower === 'machine name' || mLower === 'machine' || mLower === 'slno' || mLower === 'sl') continue;
 
+      if (assetCode) lastCarriedAssetCode = assetCode;
+      if (shortCode) lastCarriedShortCode = shortCode;
+
       if (machineName) {
         lastCarriedMachineName = machineName;
+      } else if (assetCode) {
+        // Resolve machineName from existing asset code if possible
+        const existingByAsset = mnList.find(m => m && m.assetCode && m.assetCode.toUpperCase() === assetCode.toUpperCase());
+        if (existingByAsset) {
+          machineName = existingByAsset.name;
+          lastCarriedMachineName = machineName;
+        } else if (lastCarriedMachineName) {
+          machineName = lastCarriedMachineName;
+        }
       } else if (lastCarriedMachineName && (rawModel || brand)) {
         machineName = lastCarriedMachineName;
+        if (!assetCode) assetCode = lastCarriedAssetCode;
+        if (!shortCode) shortCode = lastCarriedShortCode;
       }
 
       // If still missing machineName, infer from model prefix
@@ -3155,6 +3390,8 @@ class SmartStorageService {
           const bUpper = singleBrand.toUpperCase();
           const { nReq, nType, nBrand } = resolveNeedleSpec(machineName, singleBrand);
           expandedRows.push({
+            assetCode,
+            shortCode,
             machineName,
             brand: bUpper,
             model: singleBrand,
@@ -3162,7 +3399,6 @@ class SmartStorageService {
             requiredNeedleBrand: nBrand,
             needleType: nType,
             requiredNeedles: nReq,
-            shortCode,
             origIdx: idx + 1
           });
           if (machineName) lastBrandByMachine.set(machineName.toLowerCase(), bUpper);
@@ -3178,6 +3414,8 @@ class SmartStorageService {
             if (finalModel) {
               const { nReq, nType, nBrand } = resolveNeedleSpec(machineName, finalModel);
               expandedRows.push({
+                assetCode,
+                shortCode,
                 machineName,
                 brand: finalBrand,
                 model: finalModel,
@@ -3185,7 +3423,6 @@ class SmartStorageService {
                 requiredNeedleBrand: nBrand,
                 needleType: nType,
                 requiredNeedles: nReq,
-                shortCode,
                 origIdx: idx + 1
               });
               if (finalBrand) lastBrandByMachine.set(machineName.toLowerCase(), finalBrand);
@@ -3195,26 +3432,7 @@ class SmartStorageService {
       }
     }
 
-    // 2. Identify all canonical machine names in this import batch
-    const importedCanonicalMachines = new Set();
-    expandedRows.forEach(r => {
-      if (r.machineName) {
-        const cleanM = this.resolveCanonicalMachineName(r.machineName) || r.machineName;
-        importedCanonicalMachines.add(cleanM.toLowerCase());
-      }
-    });
-
-    // 3. If replaceExistingForImportedMachines is enabled, update specs safely in STORAGE_MASTER without purging active MODELS table
-    if (replaceExistingForImportedMachines && importedCanonicalMachines.size > 0) {
-      smList = smList.filter(item => {
-        if (!item || item.category !== 'MACHINE') return true;
-        const curMName = (item.machineName || '').trim().toLowerCase();
-        return !importedCanonicalMachines.has(curMName);
-      });
-      storage.setTable(TABLE_NAMES.STORAGE_MASTER, smList);
-    }
-
-    // Build fresh model norm map per machine
+    // 2. Build model lookup map for non-destructive upserting
     const existingModelPerMachineMap = new Map();
     smList.filter(m => m && m.category === 'MACHINE').forEach(m => {
       const key = `${(m.machineName || '').trim().toLowerCase()}:::${(m.brand || '').trim().toLowerCase()}:::${this.normalizePureAlphanumeric(m.model)}`;
@@ -3224,13 +3442,15 @@ class SmartStorageService {
     const affectedMachineNames = new Set();
     const affectedBrands = new Set();
 
-    // 4. Process each expanded row
+    // 3. Process each expanded row with Asset Code Matching & Safe Upsert
     for (const item of expandedRows) {
       try {
         let machineName = item.machineName;
         let brand = item.brand;
         let model = item.model;
         let remarks = item.remarks;
+        let cleanAsset = item.assetCode ? item.assetCode.trim().toUpperCase() : '';
+        let cleanShort = item.shortCode ? item.shortCode.trim() : '';
 
         // Auto-extract brand from parentheses if model has e.g. "TYPICAL (GC-6720)"
         if (/\(([^)]+)\)/.test(model)) {
@@ -3264,24 +3484,118 @@ class SmartStorageService {
         if (cleanMachine) affectedMachineNames.add(cleanMachine);
         if (brand) affectedBrands.add(brand);
 
-        // Ensure Machine Name is in MACHINE_NAMES table
-        let mnItem = mnList.find(m => m && m.name && m.name.toLowerCase() === cleanMachine.toLowerCase());
-        const codeVal = item.shortCode || this.getMachineShortCode(cleanMachine) || cleanMachine.substring(0, 4).toUpperCase().replace(/[^A-Z0-9]/g, '');
+        // --- UNIQUE ASSET CODE MATCHING & AUTO-RENAME RESOLVER ---
+        // Match machine primarily by Asset Code first to support safe renames & multi-model grouping!
+        let mnItem = null;
+        if (cleanAsset) {
+          mnItem = mnList.find(m => m && m.assetCode && m.assetCode.trim().toUpperCase() === cleanAsset);
+        }
         if (!mnItem && cleanMachine) {
+          mnItem = mnList.find(m => m && m.name && (
+            m.name.trim().toLowerCase() === cleanMachine.toLowerCase() ||
+            this.normalizePureAlphanumeric(m.name) === this.normalizePureAlphanumeric(cleanMachine)
+          ));
+        }
+
+        // If matched by Asset Code, but user edited/renamed the Machine Name in Excel:
+        if (mnItem && cleanMachine && mnItem.name.trim().toLowerCase() !== cleanMachine.toLowerCase()) {
+          const oldMachineName = mnItem.name;
+          mnItem.name = cleanMachine;
+          if (cleanShort) {
+            mnItem.code = cleanShort;
+            mnItem.shortName = cleanShort;
+          }
+          if (cleanAsset) mnItem.assetCode = cleanAsset;
+          mnItem.updatedAt = new Date().toISOString();
+          storage.update(TABLE_NAMES.MACHINE_NAMES, mnItem.id, {
+            name: cleanMachine,
+            code: mnItem.code,
+            shortName: mnItem.shortName,
+            assetCode: mnItem.assetCode,
+            updatedAt: mnItem.updatedAt
+          });
+          renamedMachinesCount++;
+
+          // Cascade machine rename to STORAGE_MASTER
+          smList.forEach(sm => {
+            if (sm && sm.category === 'MACHINE') {
+              if ((sm.machineName && sm.machineName.trim().toLowerCase() === oldMachineName.toLowerCase()) || (cleanAsset && sm.assetCode && sm.assetCode.toUpperCase() === cleanAsset)) {
+                sm.machineName = cleanMachine;
+                if (cleanAsset) sm.assetCode = cleanAsset;
+                sm.updatedAt = new Date().toISOString();
+              }
+            }
+          });
+
+          // Cascade machine rename to MODELS
+          mdlList.forEach(mdl => {
+            if (mdl) {
+              if (mdl.machineNameId === mnItem.id || (mdl.machineName && mdl.machineName.trim().toLowerCase() === oldMachineName.toLowerCase())) {
+                mdl.machineName = cleanMachine;
+                mdl.machineNameId = mnItem.id;
+                if (cleanAsset) mdl.machineAssetCode = cleanAsset;
+                mdl.updatedAt = new Date().toISOString();
+              }
+            }
+          });
+
+          // Cascade machine rename to physical inventory MACHINES (100% safe, 0 data loss!)
+          allMachines.forEach(m => {
+            if (m) {
+              const matchById = m.machineNameId === mnItem.id;
+              const matchByAsset = cleanAsset && m.machineAssetCode && m.machineAssetCode.trim().toUpperCase() === cleanAsset;
+              const matchByName = (m.machineName && m.machineName.trim().toLowerCase() === oldMachineName.toLowerCase()) ||
+                                  (m.machineNameStr && m.machineNameStr.trim().toLowerCase() === oldMachineName.toLowerCase()) ||
+                                  (m.name && m.name.trim().toLowerCase() === oldMachineName.toLowerCase());
+              if (matchById || matchByAsset || matchByName) {
+                m.machineName = cleanMachine;
+                m.machineNameStr = cleanMachine;
+                if (m.name && m.name.trim().toLowerCase() === oldMachineName.toLowerCase()) m.name = cleanMachine;
+                m.machineNameId = mnItem.id;
+                if (cleanAsset) m.machineAssetCode = cleanAsset;
+                if (mnItem.code || mnItem.shortName) m.machineShortCode = mnItem.code || mnItem.shortName;
+                m.updatedAt = new Date().toISOString();
+                inventoryMachinesRenamed = true;
+              }
+            }
+          });
+        } else if (mnItem) {
+          // Machine already exists, update assetCode and shortCode if needed
+          let mnUpdates = {};
+          if (cleanAsset && (!mnItem.assetCode || mnItem.assetCode !== cleanAsset)) {
+            mnItem.assetCode = cleanAsset;
+            mnUpdates.assetCode = cleanAsset;
+          } else if (!mnItem.assetCode) {
+            mnItem.assetCode = this.generateNextAssetCode();
+            mnUpdates.assetCode = mnItem.assetCode;
+          }
+          if (cleanShort && (!mnItem.code || mnItem.code !== cleanShort)) {
+            mnItem.code = cleanShort;
+            mnItem.shortName = cleanShort;
+            mnUpdates.code = cleanShort;
+            mnUpdates.shortName = cleanShort;
+          }
+          if (Object.keys(mnUpdates).length > 0) {
+            mnUpdates.updatedAt = new Date().toISOString();
+            storage.update(TABLE_NAMES.MACHINE_NAMES, mnItem.id, mnUpdates);
+          }
+        } else if (cleanMachine) {
+          // Brand new machine type
           const maxOrder = mnList.reduce((max, m) => Math.max(max, Number(m.sortOrder || 0)), 0);
+          const finalAsset = cleanAsset || this.generateNextAssetCode();
+          const finalShort = cleanShort || this.getMachineShortCode(cleanMachine) || cleanMachine.substring(0, 4).toUpperCase().replace(/[^A-Z0-9]/g, '');
           mnItem = storage.insert(TABLE_NAMES.MACHINE_NAMES, {
             id: 'mn-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4),
             name: cleanMachine,
-            code: codeVal,
+            code: finalShort,
+            shortName: finalShort,
+            assetCode: finalAsset,
             sortOrder: maxOrder + 1,
             status: 'ACTIVE',
             createdAt: new Date().toISOString()
           });
           mnList = storage.getTable(TABLE_NAMES.MACHINE_NAMES) || [];
           addedMachinesCount++;
-        } else if (mnItem && item.shortCode && (!mnItem.code || /^[A-Z]{4}$/.test(mnItem.code))) {
-          storage.update(TABLE_NAMES.MACHINE_NAMES, mnItem.id, { code: item.shortCode });
-          mnItem.code = item.shortCode;
         }
 
         // Ensure Brand is in BRANDS table
@@ -3311,6 +3625,7 @@ class SmartStorageService {
           if (overwriteExisting) {
             storage.update(TABLE_NAMES.STORAGE_MASTER, existingSmItem.id, {
               machineName: cleanMachine,
+              assetCode: mnItem?.assetCode || existingSmItem.assetCode || '',
               brand,
               model,
               remarks: remarks || existingSmItem.remarks || '',
@@ -3328,6 +3643,7 @@ class SmartStorageService {
             id: 'sm-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4),
             category: 'MACHINE',
             machineName: cleanMachine,
+            assetCode: mnItem?.assetCode || '',
             brand,
             model,
             sortOrder: maxSmOrder + 1,
@@ -3364,6 +3680,7 @@ class SmartStorageService {
               brandName: brand,
               machineNameId: mnItem?.id || mdlItem.machineNameId,
               machineName: cleanMachine,
+              machineAssetCode: mnItem?.assetCode || mdlItem.machineAssetCode || '',
               description: remarks || `${brand} ${model} under ${cleanMachine}`,
               requiredNeedleBrand: item.requiredNeedleBrand || mdlItem.requiredNeedleBrand || '',
               needleType: item.needleType || mdlItem.needleType || '',
@@ -3381,6 +3698,7 @@ class SmartStorageService {
             brandName: brand,
             machineNameId: mnItem?.id || '',
             machineName: cleanMachine,
+            machineAssetCode: mnItem?.assetCode || '',
             sortOrder: maxMdlOrder + 1,
             description: remarks || `${brand} ${model} under ${cleanMachine}`,
             requiredNeedleBrand: item.requiredNeedleBrand || '',
@@ -3417,7 +3735,6 @@ class SmartStorageService {
 
     // 6. Complete Model & Needle Flow Synchronization to Inventory Machines
     let syncedMachinesCount = 0;
-    let allMachines = storage.getTable(TABLE_NAMES.MACHINES) || [];
     const latestModels = storage.getTable(TABLE_NAMES.MODELS) || [];
     
     // Build comprehensive lookup caches
@@ -3502,7 +3819,7 @@ class SmartStorageService {
       }
     });
 
-    if (machinesChanged) {
+    if (machinesChanged || inventoryMachinesRenamed) {
       await storage.saveTable(TABLE_NAMES.MACHINES, true);
     }
 
@@ -3679,11 +3996,15 @@ class SmartStorageService {
     // Output according to machine name sort order
     sortedMnList.forEach(mn => {
       const mName = mn.name;
+      const assetCode = mn.assetCode || `MC-${String(sl).padStart(3, '0')}`;
+      const shortCode = mn.shortName || mn.code || this.getMachineShortCode(mName) || '';
       const models = grouped.get(mName) || [];
       if (models.length > 0) {
         models.forEach(mod => {
           exportRows.push({
             'Sl No': sl++,
+            'Asset Code': assetCode,
+            'Machine Short Name': shortCode,
             'Machine Name': mName,
             'Brand': mod.brand || 'JUKI',
             'Model': mod.model || '',
@@ -3697,6 +4018,8 @@ class SmartStorageService {
         // Machine name with no models yet
         exportRows.push({
           'Sl No': sl++,
+          'Asset Code': assetCode,
+          'Machine Short Name': shortCode,
           'Machine Name': mName,
           'Brand': '',
           'Model': '',
@@ -3711,9 +4034,14 @@ class SmartStorageService {
 
     // Any remaining machines
     for (const [mName, models] of grouped.entries()) {
+      const matchedMn = mnList.find(m => m && m.name && m.name.toLowerCase() === mName.toLowerCase());
+      const assetCode = matchedMn?.assetCode || `MC-${String(sl).padStart(3, '0')}`;
+      const shortCode = matchedMn?.shortName || matchedMn?.code || this.getMachineShortCode(mName) || '';
       models.forEach(mod => {
         exportRows.push({
           'Sl No': sl++,
+          'Asset Code': assetCode,
+          'Machine Short Name': shortCode,
           'Machine Name': mName,
           'Brand': mod.brand || 'JUKI',
           'Model': mod.model || '',
@@ -3728,9 +4056,11 @@ class SmartStorageService {
     if (exportRows.length === 0) {
       exportRows.push({
         'Sl No': 1,
-        'Machine Name': 'Single Needle Lock Stitch Machine',
+        'Asset Code': 'MC-001',
+        'Machine Short Name': 'V/T',
+        'Machine Name': 'Vertical Machine',
         'Brand': 'JUKI',
-        'Model': 'DDL-8700',
+        'Model': 'DLM-5200N',
         'Needle Brand': 'ORGAN',
         'Needle Type / Size': 'DBx1 #14',
         'Required Needles': 1,
@@ -3741,7 +4071,9 @@ class SmartStorageService {
     const ws = XLSX.utils.json_to_sheet(exportRows);
     ws['!cols'] = [
       { wch: 8 },  // Sl No
-      { wch: 30 }, // Machine Name
+      { wch: 14 }, // Asset Code
+      { wch: 20 }, // Machine Short Name
+      { wch: 32 }, // Machine Name
       { wch: 18 }, // Brand
       { wch: 25 }, // Model
       { wch: 18 }, // Needle Brand
@@ -3751,7 +4083,19 @@ class SmartStorageService {
     ];
 
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Machines_Brands_Models');
+    XLSX.utils.book_append_sheet(wb, ws, 'Machine_Master_Catalog');
+
+    try {
+      const guideData = this.getMachineMasterGuideRows();
+      const wsGuide = XLSX.utils.json_to_sheet(guideData);
+      wsGuide['!cols'] = [
+        { wch: 24 }, // Column / Topic
+        { wch: 20 }, // Requirement
+        { wch: 65 }, // Detailed Explanation
+        { wch: 42 }  // Factory Examples
+      ];
+      XLSX.utils.book_append_sheet(wb, wsGuide, 'System_Instructions_Guide');
+    } catch (_) {}
 
     const dateStr = new Date().toISOString().split('T')[0];
     const fileName = `Al_Muslim_ERP_Machine_Brand_Model_Master_${dateStr}.xlsx`;
@@ -3760,46 +4104,146 @@ class SmartStorageService {
   }
 
   /**
-   * Download a clean Excel template with sample Machine Name, Brand, and Model rows
+   * Reusable specifications and instructions guide rows for official Machine Master spreadsheets
+   */
+  getMachineMasterGuideRows() {
+    return [
+      {
+        'Column / Topic': 'Overview (New System)',
+        'Requirement': 'System Standard',
+        'Detailed Explanation': 'Al-Muslim Maintenance ERP Machine Master Architecture connects Machine Types, Models, and Needle Specifications directly to physical machine inventory.',
+        'Factory Examples': 'Guarantees zero data loss during renames & imports'
+      },
+      {
+        'Column / Topic': 'Sl No',
+        'Requirement': 'Optional',
+        'Detailed Explanation': 'Sequential row number for readability. The import parser automatically skips or handles numerical first columns.',
+        'Factory Examples': '1, 2, 3...'
+      },
+      {
+        'Column / Topic': 'Asset Code',
+        'Requirement': 'MANDATORY (Unique)',
+        'Detailed Explanation': 'Permanent unique identifier for each machine type (MC-001, MC-002, etc.). System matches imported rows by Asset Code. If you rename the machine name, the system auto-renames the machine across Master Data and all physical machines in inventory without losing any data.',
+        'Factory Examples': 'MC-001, MC-002, MC-003'
+      },
+      {
+        'Column / Topic': 'Machine Short Name',
+        'Requirement': 'Recommended',
+        'Detailed Explanation': 'Standard abbreviation code used in sewing lines, maintenance floor tickets, and machine serial prefixes.',
+        'Factory Examples': 'V/T, D/N-A, F/A, P/M, O/L, C/S, B/H, B/T'
+      },
+      {
+        'Column / Topic': 'Machine Name',
+        'Requirement': 'MANDATORY',
+        'Detailed Explanation': 'Full official machine category name. When linked by Asset Code, renaming this cell safely updates the system without duplicating records.',
+        'Factory Examples': 'Vertical Machine, Double Needle Machine, Feed of The Arm Machine'
+      },
+      {
+        'Column / Topic': 'Brand',
+        'Requirement': 'MANDATORY',
+        'Detailed Explanation': 'Machinery brand/manufacturer name. If a brand is new, the system automatically registers it under Master Brands.',
+        'Factory Examples': 'JUKI, BROTHER, PEGASUS, ZOJE, SIRUBA, JACK'
+      },
+      {
+        'Column / Topic': 'Model',
+        'Requirement': 'MANDATORY',
+        'Detailed Explanation': 'Specific machine model number. Multiple models can exist under the same machine type.',
+        'Factory Examples': 'DLM-5200N, LH-3588A, MS-1261, DA-928-A-5'
+      },
+      {
+        'Column / Topic': 'Multi-Brand / Multi-Model',
+        'Requirement': 'Supported Rule',
+        'Detailed Explanation': 'To register multiple brands or models under one machine type, simply repeat the same Asset Code, Short Name, and Machine Name on multiple rows with different Brand & Model (see rows 3 & 4 in Template sheet).',
+        'Factory Examples': 'MC-003 JUKI MS-1261 & MC-003 BROTHER DA-928-A-5'
+      },
+      {
+        'Column / Topic': 'Needle Brand',
+        'Requirement': 'Optional',
+        'Detailed Explanation': 'Brand of needle used on this machine model. Defaults to ORGAN if left blank.',
+        'Factory Examples': 'ORGAN, GROZ-BECKERT, SCHMETZ, N/A'
+      },
+      {
+        'Column / Topic': 'Needle Type / Size',
+        'Requirement': 'Optional',
+        'Detailed Explanation': 'System code & size of the needle. Automatically synchronized to inventory machines for Needle Flow tracking.',
+        'Factory Examples': 'DBx1 #14, DPx5 #14, UY128GAS #14, DCx1 #11'
+      },
+      {
+        'Column / Topic': 'Required Needles',
+        'Requirement': 'Optional',
+        'Detailed Explanation': 'Quantity of needles required per machine. Inferred automatically if left blank (e.g., 2 for Double Needle, 3 for Feed of the Arm / Flatlock).',
+        'Factory Examples': '1, 2, 3, 4'
+      },
+      {
+        'Column / Topic': 'Remarks',
+        'Requirement': 'Optional',
+        'Detailed Explanation': 'Special mechanical notes, attachments, motor configurations, or line usage descriptions.',
+        'Factory Examples': 'Direct drive, Auto thread trimmer, Heavy duty'
+      },
+      {
+        'Column / Topic': 'Non-Destructive Guarantee',
+        'Requirement': '100% Data Safety',
+        'Detailed Explanation': 'Importing this template updates existing models and appends new ones. It NEVER deletes unimported models or existing inventory records in the database.',
+        'Factory Examples': 'Zero data loss guarantee'
+      }
+    ];
+  }
+
+  /**
+   * Download the official Excel template (New System)
+   * Sheet 1: Machine_Master_Template (10-column layout with multi-brand & multi-model examples)
+   * Sheet 2: System_Instructions_Guide (Field rules, Asset Code inventory protection, and multi-model guides)
    */
   downloadMachineImportTemplate() {
     if (typeof XLSX === 'undefined') {
-      throw new Error('SheetJS (XLSX) library is not loaded.');
+      throw new Error('SheetJS (XLSX) library is not loaded. Please wait a moment or check your connection.');
     }
 
     const templateData = [
-      { 'Sl No': 1, 'Machine Name': 'Single Needle Lock Stitch Machine', 'Brand': 'JUKI', 'Model': 'DDL-8700', 'Needle Brand': 'ORGAN', 'Needle Type / Size': 'DBx1 #14', 'Required Needles': 1, 'Remarks': 'Single Needle High Speed Lockstitch' },
-      { 'Sl No': 2, 'Machine Name': 'Single Needle Lock Stitch Machine', 'Brand': 'JUKI', 'Model': 'DDL-9000C', 'Needle Brand': 'ORGAN', 'Needle Type / Size': 'DBx1 #14', 'Required Needles': 1, 'Remarks': 'Direct-Drive Computerized Lockstitch' },
-      { 'Sl No': 3, 'Machine Name': 'Single Needle Lock Stitch Machine', 'Brand': 'BROTHER', 'Model': 'S-7200C', 'Needle Brand': 'ORGAN', 'Needle Type / Size': 'DBx1 #14', 'Required Needles': 1, 'Remarks': 'Direct Drive Electronic Lockstitch' },
-      { 'Sl No': 4, 'Machine Name': 'Single Needle Lock Stitch Machine', 'Brand': 'JACK', 'Model': 'A4', 'Needle Brand': 'ORGAN', 'Needle Type / Size': 'DBx1 #14', 'Required Needles': 1, 'Remarks': 'Computerized Lockstitch Machine' },
-      { 'Sl No': 5, 'Machine Name': 'Overlock Machine', 'Brand': 'PEGASUS', 'Model': 'M952-52', 'Needle Brand': 'ORGAN', 'Needle Type / Size': 'DCx27 #11', 'Required Needles': 2, 'Remarks': '4-Thread High Speed Overlock' },
-      { 'Sl No': 6, 'Machine Name': 'Overlock Machine', 'Brand': 'JUKI', 'Model': 'MO-6814S', 'Needle Brand': 'ORGAN', 'Needle Type / Size': 'DCx27 #11', 'Required Needles': 2, 'Remarks': '4-Thread Super High Speed Overlock' },
-      { 'Sl No': 7, 'Machine Name': 'Overlock Machine', 'Brand': 'SIRUBA', 'Model': '747K-514M2-24', 'Needle Brand': 'ORGAN', 'Needle Type / Size': 'DCx27 #11', 'Required Needles': 2, 'Remarks': 'High Speed Overlock Machine' },
-      { 'Sl No': 8, 'Machine Name': 'Vertical Machine', 'Brand': 'BEDOLY', 'Model': 'BD-801', 'Needle Brand': 'ORGAN', 'Needle Type / Size': 'DPx5 #16', 'Required Needles': 1, 'Remarks': 'Vertical Machine Heavy Duty' },
-      { 'Sl No': 9, 'Machine Name': 'Button Hole Machine', 'Brand': 'JUKI', 'Model': 'LBH-1790', 'Needle Brand': 'ORGAN', 'Needle Type / Size': 'DPx5 #14', 'Required Needles': 1, 'Remarks': 'Computer Controlled Buttonhole' },
-      { 'Sl No': 10, 'Machine Name': 'Button Attach Machine', 'Brand': 'JUKI', 'Model': 'MB-1377', 'Needle Brand': 'ORGAN', 'Needle Type / Size': 'TQx1 #16', 'Required Needles': 1, 'Remarks': 'Single Thread Chainstitch Button Sew' },
-      { 'Sl No': 11, 'Machine Name': 'Bar Tack Machine', 'Brand': 'JUKI', 'Model': 'LK-1900', 'Needle Brand': 'ORGAN', 'Needle Type / Size': 'DPx17 #16', 'Required Needles': 1, 'Remarks': 'Computer Controlled Bartacking' },
-      { 'Sl No': 12, 'Machine Name': 'Feed of The Arm Machine', 'Brand': 'BROTHER', 'Model': 'DA-9270', 'Needle Brand': 'ORGAN', 'Needle Type / Size': 'TVx7 #14', 'Required Needles': 3, 'Remarks': '3-Needle Feed of the Arm Machine' },
-      { 'Sl No': 13, 'Machine Name': 'Double Needle Machine', 'Brand': 'JUKI', 'Model': 'LH-3568', 'Needle Brand': 'ORGAN', 'Needle Type / Size': 'DPx5 #14', 'Required Needles': 2, 'Remarks': '2-Needle Semi-Dry Head Lockstitch' }
+      { 'Sl No': 1, 'Asset Code': 'MC-001', 'Machine Short Name': 'V/T', 'Machine Name': 'Vertical Machine', 'Brand': 'JUKI', 'Model': 'DLM-5200N', 'Needle Brand': 'ORGAN', 'Needle Type / Size': 'DBx1 #14', 'Required Needles': 1, 'Remarks': 'Vertical 1-Needle Lockstitch' },
+      { 'Sl No': 2, 'Asset Code': 'MC-002', 'Machine Short Name': 'D/N-A', 'Machine Name': 'Double Needle Machine', 'Brand': 'JUKI', 'Model': 'LH-3588A', 'Needle Brand': 'ORGAN', 'Needle Type / Size': 'DPx5 #14', 'Required Needles': 2, 'Remarks': '2-Needle Auto Machine' },
+      { 'Sl No': 3, 'Asset Code': 'MC-003', 'Machine Short Name': 'F/A', 'Machine Name': 'Feed of The Arm Machine', 'Brand': 'JUKI', 'Model': 'MS-1261', 'Needle Brand': 'ORGAN', 'Needle Type / Size': 'UY128GAS #14', 'Required Needles': 3, 'Remarks': 'Feed of The Arm Heavy Duty (Multi-Model 1)' },
+      { 'Sl No': 4, 'Asset Code': 'MC-003', 'Machine Short Name': 'F/A', 'Machine Name': 'Feed of The Arm Machine', 'Brand': 'BROTHER', 'Model': 'DA-928-A-5', 'Needle Brand': 'ORGAN', 'Needle Type / Size': 'UY128GAS #14', 'Required Needles': 3, 'Remarks': '3-Needle Feed of the Arm (Multi-Model 2)' },
+      { 'Sl No': 5, 'Asset Code': 'MC-004', 'Machine Short Name': 'O/L', 'Machine Name': 'Over Lock Machine', 'Brand': 'JUKI', 'Model': 'MO-6714S', 'Needle Brand': 'N/A', 'Needle Type / Size': 'DCx1 #11', 'Required Needles': 2, 'Remarks': '4-Thread Overlock (Model 1)' },
+      { 'Sl No': 6, 'Asset Code': 'MC-004', 'Machine Short Name': 'O/L', 'Machine Name': 'Over Lock Machine', 'Brand': 'PEGASUS', 'Model': 'M952-52-2X4', 'Needle Brand': 'ORGAN', 'Needle Type / Size': 'DCx27 #11', 'Required Needles': 2, 'Remarks': 'Super High Speed Overlock (Model 2)' },
+      { 'Sl No': 7, 'Asset Code': 'MC-005', 'Machine Short Name': 'C/S', 'Machine Name': 'Chain Stitch Machine', 'Brand': 'ZOJE', 'Model': 'ZJ-3800', 'Needle Brand': 'ORGAN', 'Needle Type / Size': 'DBx1 #14', 'Required Needles': 1, 'Remarks': 'Chainstitch Standard' },
+      { 'Sl No': 8, 'Asset Code': 'MC-006', 'Machine Short Name': 'P/M', 'Machine Name': 'Single Needle Lock Stitch Machine', 'Brand': 'JUKI', 'Model': 'DDL-8700', 'Needle Brand': 'ORGAN', 'Needle Type / Size': 'DBx1 #14', 'Required Needles': 1, 'Remarks': 'Plain Machine High Speed Lockstitch' },
+      { 'Sl No': 9, 'Asset Code': 'MC-006', 'Machine Short Name': 'P/M', 'Machine Name': 'Single Needle Lock Stitch Machine', 'Brand': 'JUKI', 'Model': 'DDL-9000C', 'Needle Brand': 'ORGAN', 'Needle Type / Size': 'DBx1 #14', 'Required Needles': 1, 'Remarks': 'Direct-Drive Computerized Lockstitch' },
+      { 'Sl No': 10, 'Asset Code': 'MC-007', 'Machine Short Name': 'B/H', 'Machine Name': 'Button Hole Machine', 'Brand': 'JUKI', 'Model': 'LBH-1790', 'Needle Brand': 'ORGAN', 'Needle Type / Size': 'DPx5 #14', 'Required Needles': 1, 'Remarks': 'Computer Controlled Buttonhole' },
+      { 'Sl No': 11, 'Asset Code': 'MC-008', 'Machine Short Name': 'B/T', 'Machine Name': 'Bar Tack Machine', 'Brand': 'JUKI', 'Model': 'LK-1900', 'Needle Brand': 'ORGAN', 'Needle Type / Size': 'DPx17 #16', 'Required Needles': 1, 'Remarks': 'Electronic Bartacking Machine' },
+      { 'Sl No': 12, 'Asset Code': 'MC-009', 'Machine Short Name': 'B/A', 'Machine Name': 'Button Attach Machine', 'Brand': 'JUKI', 'Model': 'MB-1377', 'Needle Brand': 'ORGAN', 'Needle Type / Size': 'TQx1 #16', 'Required Needles': 1, 'Remarks': 'Single-Thread Chainstitch Button Attach' },
+      { 'Sl No': 13, 'Asset Code': 'MC-010', 'Machine Short Name': 'F/L', 'Machine Name': 'Flat Lock Machine', 'Brand': 'PEGASUS', 'Model': 'W562-01CB', 'Needle Brand': 'ORGAN', 'Needle Type / Size': 'UY128GAS #10', 'Required Needles': 3, 'Remarks': 'Interlock / Flatlock 3-Needle Machine' }
     ];
-
     const ws = XLSX.utils.json_to_sheet(templateData);
     ws['!cols'] = [
       { wch: 8 },  // Sl No
-      { wch: 28 }, // Machine Name
+      { wch: 14 }, // Asset Code
+      { wch: 20 }, // Machine Short Name
+      { wch: 34 }, // Machine Name
       { wch: 16 }, // Brand
       { wch: 22 }, // Model
       { wch: 16 }, // Needle Brand
-      { wch: 20 }, // Needle Type / Size
+      { wch: 22 }, // Needle Type / Size
       { wch: 16 }, // Required Needles
-      { wch: 42 }  // Remarks
+      { wch: 45 }  // Remarks
+    ];
+
+    const guideData = this.getMachineMasterGuideRows();
+    const wsGuide = XLSX.utils.json_to_sheet(guideData);
+    wsGuide['!cols'] = [
+      { wch: 24 }, // Column / Topic
+      { wch: 20 }, // Requirement
+      { wch: 65 }, // Detailed Explanation
+      { wch: 42 }  // Factory Examples
     ];
 
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Import_Template');
+    XLSX.utils.book_append_sheet(wb, ws, 'Machine_Master_Template');
+    XLSX.utils.book_append_sheet(wb, wsGuide, 'System_Instructions_Guide');
 
-    XLSX.writeFile(wb, 'Machine_Brand_Model_Needle_Import_Template.xlsx');
-    return true;
+    const fileName = 'Al_Muslim_Machine_Model_Master_Template_New_System.xlsx';
+    XLSX.writeFile(wb, fileName);
+    return { success: true, fileName };
   }
 
   _broadcastStorageChange() {

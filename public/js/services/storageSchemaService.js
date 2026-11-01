@@ -20,12 +20,15 @@ const DEFAULT_SCHEMAS = {
     description: 'Master sewing and finishing machine models and brand standards',
     isSystem: true,
     standardFields: [
-      { key: 'machineName', label: 'Machine Name', type: 'text', required: true, showInTable: true, placeholder: 'e.g. Plain Machine 1-Needle' },
-      { key: 'brand', label: 'Brand', type: 'text', required: true, showInTable: true, placeholder: 'e.g. JUKI, BROTHER' },
-      { key: 'model', label: 'Model Number', type: 'text', required: true, showInTable: true, placeholder: 'e.g. DDL-8700, S-7200C' },
-      { key: 'requiredNeedleBrand', label: 'Needle Brand', type: 'text', required: false, showInTable: true, placeholder: 'e.g. ORGAN, GROZ-BECKERT' },
-      { key: 'needleType', label: 'Needle Type / Size', type: 'text', required: false, showInTable: true, placeholder: 'e.g. DBx1 #14, DCx27 #11, DPx5 #14' },
-      { key: 'requiredNeedles', label: 'Required Needles', type: 'number', required: false, showInTable: true, placeholder: 'e.g. 1, 2, 3' }
+      { key: 'assetCode', label: 'Asset Code', type: 'text', required: true, showInTable: true, placeholder: 'e.g. MC-001, MC-002, MC-003' },
+      { key: 'shortCode', label: 'Machine Short Name', type: 'text', required: false, showInTable: true, placeholder: 'e.g. V/T, D/N-A, F/A, P/M, O/L, C/S' },
+      { key: 'machineName', label: 'Machine Name', type: 'text', required: true, showInTable: true, placeholder: 'e.g. Vertical Machine, Double Needle Machine, Feed of The Arm Machine' },
+      { key: 'brand', label: 'Brand', type: 'text', required: true, showInTable: true, placeholder: 'e.g. JUKI, BROTHER, PEGASUS, ZOJE' },
+      { key: 'model', label: 'Model Number', type: 'text', required: true, showInTable: true, placeholder: 'e.g. DLM-5200N, LH-3588A, MS-1261, DA-928-A-5' },
+      { key: 'requiredNeedleBrand', label: 'Needle Brand', type: 'text', required: false, showInTable: true, placeholder: 'e.g. ORGAN, GROZ-BECKERT, N/A' },
+      { key: 'needleType', label: 'Needle Type / Size', type: 'text', required: false, showInTable: true, placeholder: 'e.g. DBx1 #14, DPx5 #14, UY128GAS #14, DCx1' },
+      { key: 'requiredNeedles', label: 'Required Needles', type: 'number', required: false, showInTable: true, placeholder: 'e.g. 1, 2, 3' },
+      { key: 'remarks', label: 'Remarks', type: 'text', required: false, showInTable: true, placeholder: 'e.g. Standard lockstitch, 3-Needle Feed of the Arm' }
     ],
     customFields: []
   },

@@ -99,6 +99,9 @@ export function renderStorageView() {
             <button type="button" id="btn-open-excel-master-modal-top" class="btn btn-sm btn-open-excel-master-modal" style="font-weight: 800; background: linear-gradient(135deg, #059669 0%, #047857 100%); border: 1px solid #34d399; color: #fff; padding: 5px 12px; font-size: 11.5px; box-shadow: 0 2px 8px rgba(5, 150, 105, 0.35); cursor: pointer;" title="Bulk Import Machine Name, Brand & Model via Excel Sheet">
               📊 Excel Studio (Import / Export)
             </button>
+            <button type="button" id="btn-top-download-template" class="btn btn-sm" style="font-weight: 700; background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.45); color: #34d399; padding: 5px 11px; font-size: 11.5px; display: inline-flex; align-items: center; gap: 5px; cursor: pointer;" title="Download the official Excel template (New System: Asset Code, Short Name, Multi-Model & Needles)">
+              <span>📥</span> Template (.xlsx)
+            </button>
             <button type="button" id="btn-open-bulk-import-machine-names-top" class="btn btn-secondary btn-sm" style="font-weight: 700; border: 1px solid rgba(56, 189, 248, 0.4); color: #38bdf8; padding: 5px 10px; font-size: 11.5px;">
               🧵 Step 1: Add Machines
             </button>
@@ -149,6 +152,9 @@ function renderGroupedMachinesView() {
   if (q) {
     filteredGroups = groups.filter(g => {
       if (g.machineName.toLowerCase().includes(q)) return true;
+      if (g.assetCode && g.assetCode.toLowerCase().includes(q)) return true;
+      if (g.code && g.code.toLowerCase().includes(q)) return true;
+      if (g.shortName && g.shortName.toLowerCase().includes(q)) return true;
       return g.models.some(m => 
         (m.model && m.model.toLowerCase().includes(q)) ||
         (m.brand && m.brand.toLowerCase().includes(q)) ||
@@ -171,7 +177,7 @@ function renderGroupedMachinesView() {
           type="text" 
           id="inp-storage-search" 
           class="form-control" 
-          placeholder="Search machines or models..." 
+          placeholder="Search machines, asset code, or models..." 
           value="${searchQuery}"
           style="font-size: 11.5px; padding: 4px 10px; height: 30px;"
         />
@@ -254,8 +260,11 @@ function renderGroupedMachinesView() {
                 <span style="font-size: 15px; font-weight: 800; color: #fff; letter-spacing: -0.2px;">
                   ${grp.machineName}
                 </span>
+                <span class="badge" style="margin-left: 6px; font-size: 11px; font-weight: 800; background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.35); font-family: monospace;" title="Permanent Unique Asset Code: ${grp.assetCode || 'MC-' + String(grp.serialNo).padStart(3, '0')}">
+                  🆔 ${grp.assetCode || 'MC-' + String(grp.serialNo).padStart(3, '0')}
+                </span>
                 ${grp.code ? `
-                  <span class="badge" style="margin-left: 6px; font-size: 11px; font-weight: 800; background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); font-family: monospace;" title="Machine Short Code: ${grp.code}">
+                  <span class="badge" style="margin-left: 6px; font-size: 11px; font-weight: 800; background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); font-family: monospace;" title="Machine Short Name: ${grp.code}">
                     ${grp.code}
                   </span>
                 ` : ''}
@@ -272,8 +281,10 @@ function renderGroupedMachinesView() {
                   type="button" 
                   class="btn btn-ghost btn-sm btn-edit-machine-group" 
                   data-machine="${grp.machineName}" 
+                  data-asset="${grp.assetCode || ''}"
+                  data-code="${grp.code || ''}"
                   style="font-size: 11px; font-weight: 700; padding: 4px 10px; color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); background: rgba(56, 189, 248, 0.08); border-radius: 4px;" 
-                  title="Rename Machine Type & Edit Short Code"
+                  title="Rename Machine Type, Asset Code & Edit Short Name"
                 >
                   ✏️ Edit / Short Code
                 </button>
@@ -346,10 +357,14 @@ function renderStorageItemsTab() {
 
   let allRows = [];
   groups.forEach(g => {
+    const assetCode = g.assetCode || `MC-${String(g.serialNo).padStart(3, '0')}`;
+    const shortCode = g.code || g.shortName || '';
     g.models.forEach(m => {
       allRows.push({
         machineName: g.machineName,
         machineSerialNo: g.serialNo,
+        assetCode: assetCode,
+        shortCode: shortCode,
         brand: m.brand,
         model: m.model,
         serialNo: m.serialNo,
@@ -365,6 +380,8 @@ function renderStorageItemsTab() {
   if (q) {
     allRows = allRows.filter(r => 
       r.machineName.toLowerCase().includes(q) ||
+      (r.assetCode && r.assetCode.toLowerCase().includes(q)) ||
+      (r.shortCode && r.shortCode.toLowerCase().includes(q)) ||
       r.brand.toLowerCase().includes(q) ||
       r.model.toLowerCase().includes(q) ||
       (r.needleType && r.needleType.toLowerCase().includes(q)) ||
@@ -383,7 +400,7 @@ function renderStorageItemsTab() {
           type="text" 
           id="inp-storage-search" 
           class="form-control" 
-          placeholder="Search machines or models..." 
+          placeholder="Search machines, asset code, or models..." 
           value="${searchQuery}"
           style="font-size: 11.5px; padding: 4px 10px; height: 30px;"
         />
@@ -430,8 +447,10 @@ function renderStorageItemsTab() {
               </th>
             ` : ''}
             <th style="padding: 10px 14px; width: 60px; text-align: center; color: #38bdf8;">SL #</th>
-            <th style="padding: 10px 14px; color: #38bdf8;">Machine Name</th>
-            <th style="padding: 10px 14px; width: 120px; color: #34d399;">Brand</th>
+            <th style="padding: 10px 14px; width: 105px; color: #34d399;">Asset Code</th>
+            <th style="padding: 10px 14px; width: 100px; color: #38bdf8;">Short Name</th>
+            <th style="padding: 10px 14px; color: #fff;">Machine Name</th>
+            <th style="padding: 10px 14px; width: 115px; color: #34d399;">Brand</th>
             <th style="padding: 10px 14px; color: #fbbf24;">Model Number</th>
             <th style="padding: 10px 14px; width: 110px; color: #38bdf8;">Needle Brand</th>
             <th style="padding: 10px 14px; width: 130px; color: #a7f3d0;">Needle Type / Size</th>
@@ -443,7 +462,7 @@ function renderStorageItemsTab() {
         <tbody>
           ${allRows.length === 0 ? `
             <tr>
-              <td colspan="${isAdmin ? 10 : 8}" style="text-align: center; padding: 40px 20px; color: var(--text-muted);">
+              <td colspan="${isAdmin ? 12 : 10}" style="text-align: center; padding: 40px 20px; color: var(--text-muted);">
                 No model specifications found. Click <strong>"Step 2: Add Models"</strong> above to register models.
               </td>
             </tr>
@@ -455,6 +474,12 @@ function renderStorageItemsTab() {
                 </td>
               ` : ''}
               <td style="padding: 8px 14px; text-align: center; color: #38bdf8; font-family: var(--font-mono); font-weight: 800;">#${idx + 1}</td>
+              <td style="padding: 8px 14px;">
+                <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.35); font-family: monospace; font-weight: 800; font-size: 11px;">${row.assetCode || '—'}</span>
+              </td>
+              <td style="padding: 8px 14px;">
+                <span class="badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); font-family: monospace; font-weight: 800; font-size: 11px;">${row.shortCode || '—'}</span>
+              </td>
               <td style="padding: 8px 14px; font-weight: 700; color: #fff;">${row.machineName}</td>
               <td style="padding: 8px 14px;">
                 <span class="badge" style="background: rgba(52, 211, 153, 0.15); color: #34d399; font-weight: 800; font-size: 10.5px;">${row.brand}</span>
@@ -903,11 +928,13 @@ function renderExcelImportExportModal() {
           <!-- Quick Action Bar: Download Template & Export Master Data -->
           <div style="background: rgba(16, 185, 129, 0.08); border: 1px dashed rgba(16, 185, 129, 0.35); border-radius: var(--radius-md); padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
             <div>
-              <div style="font-size: 12.5px; font-weight: 700; color: #a7f3d0;">
-                📥 Need an Excel Template?
+              <div style="font-size: 12.5px; font-weight: 700; color: #a7f3d0; display: flex; align-items: center; gap: 6px;">
+                <span>📥</span> Need an Excel Template? (New System)
+                <span class="badge" style="background: rgba(16, 185, 129, 0.2); color: #34d399; font-size: 10px; padding: 2px 6px;">10 Columns + System Guide</span>
               </div>
-              <div style="font-size: 11px; color: #94a3b8; margin-top: 1px;">
-                Download pre-formatted spreadsheet with columns: <strong>Machine Name, Brand, Model, Needle Brand, Needle Type / Size, Required Needles, Remarks</strong>
+              <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">
+                Download pre-formatted spreadsheet with columns: <strong>Sl No, Asset Code, Machine Short Name, Machine Name, Brand, Model, Needle Brand, Needle Type / Size, Required Needles, Remarks</strong>.
+                <span style="color: #34d399;">Includes Multi-Brand &amp; Multi-Model sample rows (e.g. Feed of The Arm JUKI &amp; BROTHER) with zero inventory data loss guarantee.</span>
               </div>
             </div>
             <div style="display: flex; gap: 8px; flex-wrap: wrap;">
@@ -941,7 +968,7 @@ function renderExcelImportExportModal() {
                 ${excelImportFileName ? `Loaded: <span style="color: #34d399;">${excelImportFileName}</span>` : 'Click to select or Drag &amp; Drop Excel spreadsheet here'}
               </div>
               <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">
-                Supports Microsoft Excel (.xlsx, .xls) and CSV (.csv). Headers: Machine Name, Brand, Model, Needle Brand, Needle Type / Size, Required Needles, Remarks
+                Supports Microsoft Excel (.xlsx, .xls) and CSV (.csv). Columns: Asset Code, Machine Short Name, Machine Name, Brand, Model, Needle Brand, Needle Type / Size, Required Needles, Remarks
               </div>
               <button type="button" id="btn-browse-excel-file" class="btn btn-secondary btn-sm" style="margin-top: 12px; font-size: 11.5px; font-weight: 700;">
                 📂 Browse Spreadsheet File...
@@ -959,7 +986,7 @@ function renderExcelImportExportModal() {
                 id="txt-excel-paste-input" 
                 class="form-control" 
                 rows="6" 
-                placeholder="Machine Name	Brand	Model	Needle Brand	Needle Type / Size	Required Needles	Remarks&#10;Plane Machine	JUKI	DDL-8700	ORGAN	DBx1 #14	1	Lockstitch 1-Needle&#10;Double Needle Machine	JUKI	LH-3568	ORGAN	DPx5 #14	2	2-Needle Lockstitch&#10;Overlock Machine	PEGASUS	M952-52	ORGAN	DCx27 #11	2	4-Thread Overlock"
+                placeholder="Asset Code	Machine Short Name	Machine Name	Brand	Model	Needle Brand	Needle Type / Size	Required Needles	Remarks&#10;MC-001	V/T	Vertical Machine	JUKI	DLM-5200N	ORGAN	DBx1 #14	1	Vertical Machine&#10;MC-002	D/N-A	Double Needle Machine	JUKI	LH-3588A	ORGAN	DBx1 #14	1	2-Needle Auto Machine&#10;MC-003	F/A	Feed of The Arm Machine	JUKI	MS-1261	ORGAN	DBx1 #14	1	Feed of The Arm&#10;MC-003	F/A	Feed of The Arm Machine	BROTHER	DA-928-A-5	ORGAN	DBx1 #14	1	Feed of The Arm Brother"
                 style="font-family: monospace; font-size: 11.5px; line-height: 1.4; padding: 10px;"
               ></textarea>
               <div style="display: flex; justify-content: flex-end;">
@@ -1001,6 +1028,8 @@ function renderExcelImportExportModal() {
                   <thead style="background: var(--bg-surface); position: sticky; top: 0; z-index: 2;">
                     <tr>
                       <th style="padding: 6px 10px; width: 45px; text-align: center;">#</th>
+                      <th style="padding: 6px 10px; width: 90px; color: #34d399;">Asset Code</th>
+                      <th style="padding: 6px 10px; width: 85px; color: #38bdf8;">Short Name</th>
                       <th style="padding: 6px 10px;">Machine Name</th>
                       <th style="padding: 6px 10px;">Brand</th>
                       <th style="padding: 6px 10px;">Model</th>
@@ -1017,6 +1046,8 @@ function renderExcelImportExportModal() {
                       return `
                         <tr style="background: ${i % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'transparent'};">
                           <td style="padding: 5px 10px; text-align: center; color: var(--text-muted);">${i + 1}</td>
+                          <td style="padding: 5px 10px; font-family: monospace; font-weight: 700; color: #34d399;">${r.assetCode || '<span style="color:#94a3b8; font-size:10px;">(Auto)</span>'}</td>
+                          <td style="padding: 5px 10px; font-family: monospace; font-weight: 700; color: #38bdf8;">${r.shortCode || '-'}</td>
                           <td style="padding: 5px 10px; font-weight: 700; color: #fff;">${r.machineName || '<span style="color:#f87171;">(Missing)</span>'}</td>
                           <td style="padding: 5px 10px; color: #34d399; font-weight: 600;">${r.brand || '-'}</td>
                           <td style="padding: 5px 10px; color: #fbbf24; font-weight: 600;">${r.model || '-'}</td>
@@ -1032,7 +1063,7 @@ function renderExcelImportExportModal() {
                     }).join('')}
                     ${rows.length > 60 ? `
                       <tr>
-                        <td colspan="9" style="text-align: center; padding: 8px; color: var(--text-muted); font-size: 11px;">
+                        <td colspan="11" style="text-align: center; padding: 8px; color: var(--text-muted); font-size: 11px;">
                           ... and ${rows.length - 60} more rows ready for import
                         </td>
                       </tr>
@@ -1599,18 +1630,19 @@ function renderStorageModal() {
     `;
   }
 
-  // 1B-RENAME-MACHINE. RENAME MACHINE TYPE & SHORT CODE MODAL
+  // 1B-RENAME-MACHINE. RENAME MACHINE TYPE, ASSET CODE & SHORT CODE MODAL
   if (activeModalState.type === 'EDIT_MACHINE_NAME') {
     const curName = activeModalState.machineName || '';
     const curCode = activeModalState.code || smartStorageService.getMachineShortCode(curName) || '';
+    const curAsset = activeModalState.assetCode || smartStorageService.getMachineAssetCode(curName) || '';
     const returnTo = activeModalState.returnTo || null;
     return `
       <div class="modal-overlay" id="modal-edit-machine-name-overlay">
-        <div class="modal-dialog" style="max-width: 480px; width: 95%;">
+        <div class="modal-dialog" style="max-width: 500px; width: 95%;">
           <div class="modal-header" style="border-bottom: 1px solid var(--border-color); padding: 14px 18px;">
             <div class="modal-title" style="display: flex; align-items: center; gap: 8px;">
               <span style="font-size: 18px;">✏️</span>
-              <span style="font-weight: 800; font-size: 15px; color: #fff;">Edit Machine Type &amp; Short Code</span>
+              <span style="font-weight: 800; font-size: 15px; color: #fff;">Edit Machine Type, Asset Code &amp; Short Name</span>
             </div>
             <button type="button" id="btn-close-storage-modal" class="btn btn-ghost btn-sm">✕</button>
           </div>
@@ -1618,6 +1650,24 @@ function renderStorageModal() {
           <form id="form-edit-machine-name" class="modal-body" style="padding: 18px; display: flex; flex-direction: column; gap: 14px;">
             <input type="hidden" id="inp-orig-machine-name" value="${curName}" />
             <input type="hidden" id="inp-return-to" value="${returnTo || ''}" />
+
+            <div class="form-group" style="display: flex; flex-direction: column; gap: 6px;">
+              <label class="form-label" style="font-weight: 700; color: #34d399; font-size: 12.5px; margin: 0;">
+                Permanent Unique Asset ID / Code *
+              </label>
+              <input 
+                type="text" 
+                id="inp-machine-asset-code" 
+                class="form-control" 
+                value="${curAsset}" 
+                placeholder="e.g. MC-001, MC-002"
+                required
+                style="font-size: 13px; font-weight: 800; font-family: monospace; color: #34d399; max-width: 220px;"
+              />
+              <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 4px; padding: 7px 10px; font-size: 11px; color: #cbd5e1; line-height: 1.4;">
+                🛡️ <strong>Inventory Protection:</strong> System matches machines by this Asset Code during Excel imports. If you rename or fix the machine name in Excel, inventory records are safely updated without losing any data.
+              </div>
+            </div>
 
             <div class="form-group" style="display: flex; flex-direction: column; gap: 6px;">
               <label class="form-label" style="font-weight: 700; color: #38bdf8; font-size: 12.5px; margin: 0;">
@@ -1629,25 +1679,24 @@ function renderStorageModal() {
                 class="form-control" 
                 value="${curName}" 
                 required 
-                autofocus 
                 style="font-size: 13px; font-weight: 700;"
               />
             </div>
 
             <div class="form-group" style="display: flex; flex-direction: column; gap: 6px;">
               <label class="form-label" style="font-weight: 700; color: #38bdf8; font-size: 12.5px; margin: 0;">
-                Machine Short Code (e.g. P/M, D/N-A, O/L, B/T, C/S)
+                Machine Short Name (e.g. V/T, D/N-A, F/A, P/M, O/L, C/S)
               </label>
               <input 
                 type="text" 
                 id="inp-machine-short-code" 
                 class="form-control" 
                 value="${curCode}" 
-                placeholder="e.g. P/M"
-                style="font-size: 13px; font-weight: 700; font-family: monospace; max-width: 200px;"
+                placeholder="e.g. V/T"
+                style="font-size: 13px; font-weight: 700; font-family: monospace; max-width: 220px;"
               />
-              <div style="background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 4px; padding: 8px 10px; font-size: 11px; color: #cbd5e1; line-height: 1.4;">
-                ℹ️ This short code will automatically prefix Excel serial numbers during import (e.g. <code>P/M-400035</code>).
+              <div style="background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 4px; padding: 7px 10px; font-size: 11px; color: #cbd5e1; line-height: 1.4;">
+                ℹ️ Standard short abbreviation used in Excel exports, line reports, and machine serial prefixes.
               </div>
             </div>
 
@@ -1714,9 +1763,10 @@ function renderStorageModal() {
 
   // 1C. ADD NEW MACHINE NAME (ALL ENGLISH)
   if (activeModalState.type === 'ADD_MACHINE_NAME') {
+    const nextAssetCode = smartStorageService.generateNextAssetCode();
     return `
       <div class="modal-overlay" id="modal-add-machine-name-overlay">
-        <div class="modal-dialog" style="max-width: 480px;">
+        <div class="modal-dialog" style="max-width: 500px;">
           <div class="modal-header">
             <div class="modal-title">
               <span>➕ Add Machine Name / Type</span>
@@ -1726,12 +1776,27 @@ function renderStorageModal() {
 
           <form id="form-add-machine-name" class="modal-body" style="padding: 18px; display: flex; flex-direction: column; gap: 12px;">
             <div class="form-group">
+              <label class="form-label" style="font-weight: 700; color: #34d399;">Unique Asset Code *</label>
+              <input 
+                type="text" 
+                id="inp-new-machine-asset-code" 
+                class="form-control" 
+                value="${nextAssetCode}" 
+                required 
+                style="font-weight: 800; font-family: monospace; color: #34d399; max-width: 200px;"
+              />
+              <div style="font-size: 11px; color: var(--text-muted); margin-top: 3px;">
+                Permanent unique asset identifier for Excel import matching and inventory protection.
+              </div>
+            </div>
+
+            <div class="form-group">
               <label class="form-label" style="font-weight: 700; color: #fff;">Machine Name / Category *</label>
               <input 
                 type="text" 
                 id="inp-new-machine-name" 
                 class="form-control" 
-                placeholder="e.g. Plain Machine 1-Needle, Coverstitch Machine, Feed Off The Arm" 
+                placeholder="e.g. Vertical Machine, Double Needle Machine, Feed of The Arm Machine" 
                 required 
                 autofocus
                 style="font-weight: 700;"
@@ -1739,6 +1804,17 @@ function renderStorageModal() {
               <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">
                 Enter the machine type name. You can add model numbers under it anytime.
               </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" style="font-weight: 700; color: #38bdf8;">Machine Short Name (e.g. V/T, D/N-A, F/A)</label>
+              <input 
+                type="text" 
+                id="inp-new-machine-short-code" 
+                class="form-control" 
+                placeholder="e.g. V/T" 
+                style="font-weight: 700; font-family: monospace; max-width: 200px;"
+              />
             </div>
 
             <div class="modal-footer" style="padding: 10px 0 0; display: flex; justify-content: flex-end; gap: 8px;">
@@ -1804,14 +1880,20 @@ function renderStorageModal() {
                 </button>
               </div>
               <div style="display: flex; flex-wrap: wrap; gap: 6px; max-height: 130px; overflow-y: auto; padding: 6px; background: rgba(0,0,0,0.25); border-radius: var(--radius-sm); border: 1px solid rgba(255,255,255,0.06);">
-                ${existingNames.length === 0 ? '<div style="font-size: 11px; color: var(--text-muted); padding: 6px;">No machine names registered yet. Paste names above to start.</div>' : existingNames.map((name, idx) => `
+                ${existingNames.length === 0 ? '<div style="font-size: 11px; color: var(--text-muted); padding: 6px;">No machine names registered yet. Paste names above to start.</div>' : existingNames.map((name, idx) => {
+                  const assetCode = smartStorageService.getMachineAssetCode(name) || '';
+                  const shortCode = smartStorageService.getMachineShortCode(name) || '';
+                  return `
                   <span class="badge" style="background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.25); color: #e2e8f0; font-size: 11px; padding: 4px 8px; display: inline-flex; align-items: center; gap: 6px;">
                     <strong style="color: #38bdf8; font-family: var(--font-mono); font-weight: 800;">SL #${idx + 1}</strong>
+                    ${assetCode ? `<span class="badge" style="background: rgba(16, 185, 129, 0.2); color: #34d399; font-size: 9.5px; padding: 1px 4px; font-weight: 700;">🆔 ${assetCode}</span>` : ''}
+                    ${shortCode ? `<span class="badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; font-size: 9.5px; padding: 1px 4px; font-weight: 700;">${shortCode}</span>` : ''}
                     <span>${name}</span>
-                    <button type="button" class="btn-edit-single-mn" data-name="${name}" style="background: none; border: none; color: #38bdf8; cursor: pointer; padding: 0 2px; font-size: 11px; line-height: 1;" title="Rename this machine name">✏️</button>
+                    <button type="button" class="btn-edit-single-mn" data-name="${name}" data-asset="${assetCode}" data-code="${shortCode}" style="background: none; border: none; color: #38bdf8; cursor: pointer; padding: 0 2px; font-size: 11px; line-height: 1;" title="Rename this machine name">✏️</button>
                     <button type="button" class="btn-delete-single-mn" data-name="${name}" style="background: none; border: none; color: #f87171; cursor: pointer; padding: 0 2px; font-size: 11px; line-height: 1;" title="Delete this machine name">✕</button>
                   </span>
-                `).join('')}
+                `;
+                }).join('')}
               </div>
             </div>
 
@@ -2555,6 +2637,23 @@ export function initStorageEvents() {
     });
   }
 
+  // 0C. Top Header Direct Download Template (New System)
+  const btnTopTemplate = container.querySelector('#btn-top-download-template');
+  if (btnTopTemplate) {
+    btnTopTemplate.addEventListener('click', (e) => {
+      e.preventDefault();
+      try {
+        const res = smartStorageService.downloadMachineImportTemplate();
+        const fName = res?.fileName || 'Al_Muslim_Machine_Model_Master_Template_New_System.xlsx';
+        if (typeof notificationService !== 'undefined' && notificationService.success) {
+          notificationService.success('Template Downloaded', `Downloaded ${fName}`);
+        }
+      } catch (err) {
+        alert('Template download failed: ' + err.message);
+      }
+    });
+  }
+
   // 1. Top Header Step 1: Input Machine Names
   const btnTopBulkMn = container.querySelector('#btn-open-bulk-import-machine-names-top');
   if (btnTopBulkMn) {
@@ -2865,7 +2964,9 @@ function rebindContentEvents() {
       e.stopPropagation();
       activeModalState = {
         type: 'EDIT_MACHINE_NAME',
-        machineName: btn.dataset.machine || ''
+        machineName: btn.dataset.machine || '',
+        assetCode: btn.dataset.asset || '',
+        code: btn.dataset.code || ''
       };
       updateModalLayer();
     });
@@ -3174,9 +3275,10 @@ function initModalInteractions() {
       btnDlTemplate.addEventListener('click', (e) => {
         e.preventDefault();
         try {
-          smartStorageService.downloadMachineImportTemplate();
+          const res = smartStorageService.downloadMachineImportTemplate();
+          const fName = res?.fileName || 'Al_Muslim_Machine_Model_Master_Template_New_System.xlsx';
           if (typeof notificationService !== 'undefined' && notificationService.success) {
-            notificationService.success('Template Ready', 'Downloaded Machine_Brand_Model_Excel_Import_Template.xlsx');
+            notificationService.success('Template Ready', `Downloaded ${fName}`);
           }
         } catch (err) {
           alert('Template download failed: ' + err.message);
@@ -3221,11 +3323,15 @@ function initModalInteractions() {
 
       const parsed = [];
       let currentMachineName = '';
+      let currentAssetCode = '';
+      let currentShortCode = '';
       const lastBrandByMachine = new Map();
 
       rawRows.forEach((row) => {
         if (!row || typeof row !== 'object') return;
 
+        let assetCode = '';
+        let shortCode = '';
         let machineName = '';
         let brand = '';
         let model = '';
@@ -3238,7 +3344,11 @@ function initModalInteractions() {
           const cleanK = String(k).trim().toLowerCase().replace(/[^a-z0-9]/g, '');
           const cleanV = String(v ?? '').trim();
 
-          if (cleanK === 'machinename' || cleanK === 'machine' || cleanK === 'machinetype' || cleanK === 'name') {
+          if (cleanK === 'assetcode' || cleanK === 'assetid' || cleanK === 'asset' || cleanK === 'machineassetid' || cleanK === 'uniqueassetid' || cleanK === 'machinecode' || cleanK === 'assetno') {
+            assetCode = cleanV;
+          } else if (cleanK === 'machineshortname' || cleanK === 'shortname' || cleanK === 'shortcode' || cleanK === 'machineshortcode' || cleanK === 'code' || cleanK === 'sortform') {
+            shortCode = cleanV;
+          } else if (cleanK === 'machinename' || cleanK === 'machine' || cleanK === 'machinetype' || cleanK === 'name') {
             machineName = cleanV;
           } else if (cleanK === 'brand' || cleanK === 'machinerybrand' || cleanK === 'make') {
             brand = cleanV;
@@ -3258,15 +3368,41 @@ function initModalInteractions() {
         if (Array.isArray(row)) {
           const isFirstNum = /^\d+$/.test(String(row[0] || '').trim());
           const offset = isFirstNum ? 1 : 0;
-          machineName = String(row[offset] || '').trim();
-          brand = String(row[offset + 1] || '').trim();
-          model = String(row[offset + 2] || '').trim();
-          if (row.length >= offset + 6) {
+          if (row.length >= offset + 8) {
+            const colA = String(row[offset] || '').trim();
+            const colB = String(row[offset + 1] || '').trim();
+            const isColAAsset = /^(MC|AST|MAC)-\d+/i.test(colA) || (colA.length <= 8 && colB.length <= 8 && String(row[offset + 2] || '').trim().length > 2);
+            if (isColAAsset) {
+              assetCode = colA;
+              shortCode = colB;
+              machineName = String(row[offset + 2] || '').trim();
+              brand = String(row[offset + 3] || '').trim();
+              model = String(row[offset + 4] || '').trim();
+              requiredNeedleBrand = String(row[offset + 5] || '').trim();
+              needleType = String(row[offset + 6] || '').trim();
+              requiredNeedles = String(row[offset + 7] || '').trim();
+              remarks = String(row[offset + 8] || '').trim();
+            } else {
+              machineName = colA;
+              brand = colB;
+              model = String(row[offset + 2] || '').trim();
+              requiredNeedleBrand = String(row[offset + 3] || '').trim();
+              needleType = String(row[offset + 4] || '').trim();
+              requiredNeedles = String(row[offset + 5] || '').trim();
+              remarks = String(row[offset + 6] || '').trim();
+            }
+          } else if (row.length >= offset + 6) {
+            machineName = String(row[offset] || '').trim();
+            brand = String(row[offset + 1] || '').trim();
+            model = String(row[offset + 2] || '').trim();
             requiredNeedleBrand = String(row[offset + 3] || '').trim();
             needleType = String(row[offset + 4] || '').trim();
             requiredNeedles = String(row[offset + 5] || '').trim();
             remarks = String(row[offset + 6] || '').trim();
           } else {
+            machineName = String(row[offset] || '').trim();
+            brand = String(row[offset + 1] || '').trim();
+            model = String(row[offset + 2] || '').trim();
             remarks = String(row[offset + 3] || '').trim();
           }
         }
@@ -3274,11 +3410,16 @@ function initModalInteractions() {
         const mLower = machineName.toLowerCase();
         if (mLower === 'machinename' || mLower === 'machine name' || mLower === 'machine' || mLower === 'slno' || mLower === 'sl') return;
 
+        if (assetCode) currentAssetCode = assetCode;
+        if (shortCode) currentShortCode = shortCode;
+
         // Carry forward machine name across rows with merged/blank machine cells
         if (machineName) {
           currentMachineName = machineName;
         } else if (currentMachineName && (model || brand)) {
           machineName = currentMachineName;
+          if (!assetCode) assetCode = currentAssetCode;
+          if (!shortCode) shortCode = currentShortCode;
         }
 
         if (!machineName && !brand && !model) return;
@@ -3352,6 +3493,8 @@ function initModalInteractions() {
             const bUpper = singleBrand.toUpperCase();
             const { nReq, nType, nBrand } = resolveNeedle(machineName, singleBrand);
             parsed.push({
+              assetCode,
+              shortCode,
               machineName,
               brand: bUpper,
               model: singleBrand,
@@ -3373,6 +3516,8 @@ function initModalInteractions() {
               if (finalModel) {
                 const { nReq, nType, nBrand } = resolveNeedle(machineName, finalModel);
                 parsed.push({
+                  assetCode,
+                  shortCode,
                   machineName,
                   brand: finalBrand,
                   model: finalModel,
@@ -3526,6 +3671,8 @@ function initModalInteractions() {
         }
 
         const rows = [];
+        let headerAssetCodeIdx = -1;
+        let headerShortCodeIdx = -1;
         let headerMachineIdx = -1;
         let headerBrandIdx = -1;
         let headerModelIdx = -1;
@@ -3541,7 +3688,9 @@ function initModalInteractions() {
           if (lineIdx === 0) {
             cols.forEach((col, cIdx) => {
               const cNorm = col.toLowerCase().replace(/[^a-z0-9]/g, '');
-              if (cNorm === 'machinename' || cNorm === 'machine' || cNorm === 'name') headerMachineIdx = cIdx;
+              if (cNorm === 'assetcode' || cNorm === 'assetid' || cNorm === 'uniqueassetcode' || cNorm === 'asset' || cNorm === 'mcid') headerAssetCodeIdx = cIdx;
+              else if (cNorm === 'machineshortname' || cNorm === 'shortname' || cNorm === 'shortcode' || cNorm === 'machineshortcode' || cNorm === 'code' || cNorm === 'short') headerShortCodeIdx = cIdx;
+              else if (cNorm === 'machinename' || cNorm === 'machine' || cNorm === 'name') headerMachineIdx = cIdx;
               else if (cNorm === 'brand' || cNorm === 'make') headerBrandIdx = cIdx;
               else if (cNorm === 'model' || cNorm === 'modelno' || cNorm === 'modelnumber' || cNorm === 'spec' || cNorm === 'specification') headerModelIdx = cIdx;
               else if (cNorm.includes('needlebrand') || cNorm === 'brandneedle') headerNeedleBrandIdx = cIdx;
@@ -3550,11 +3699,13 @@ function initModalInteractions() {
               else if (cNorm === 'remarks' || cNorm === 'remark' || cNorm === 'description') headerRemarksIdx = cIdx;
             });
 
-            if (headerMachineIdx !== -1 || headerBrandIdx !== -1 || headerModelIdx !== -1) {
+            if (headerMachineIdx !== -1 || headerBrandIdx !== -1 || headerModelIdx !== -1 || headerAssetCodeIdx !== -1) {
               return;
             }
           }
 
+          let assetCode = '';
+          let shortCode = '';
           let machineName = '';
           let brand = '';
           let model = '';
@@ -3563,8 +3714,10 @@ function initModalInteractions() {
           let needleType = '';
           let requiredNeedles = '';
 
-          if (headerMachineIdx !== -1) {
-            machineName = cols[headerMachineIdx] || '';
+          if (headerMachineIdx !== -1 || headerAssetCodeIdx !== -1) {
+            assetCode = headerAssetCodeIdx !== -1 ? (cols[headerAssetCodeIdx] || '') : '';
+            shortCode = headerShortCodeIdx !== -1 ? (cols[headerShortCodeIdx] || '') : '';
+            machineName = headerMachineIdx !== -1 ? (cols[headerMachineIdx] || '') : '';
             brand = headerBrandIdx !== -1 ? (cols[headerBrandIdx] || '') : (cols[1] || '');
             model = headerModelIdx !== -1 ? (cols[headerModelIdx] || '') : (cols[2] || '');
             requiredNeedleBrand = headerNeedleBrandIdx !== -1 ? (cols[headerNeedleBrandIdx] || '') : '';
@@ -3575,21 +3728,43 @@ function initModalInteractions() {
             // First column is numeric Sl No (e.g. 1, 2, 8, 14, 18, 20)
             const isFirstColNumber = /^\d+$/.test(cols[0]);
             const offset = isFirstColNumber ? 1 : 0;
-            machineName = cols[offset] || '';
-            brand = cols[offset + 1] || '';
-            model = cols[offset + 2] || '';
-            if (cols.length >= offset + 6) {
-              requiredNeedleBrand = cols[offset + 3] || '';
-              needleType = cols[offset + 4] || '';
-              requiredNeedles = cols[offset + 5] || '';
-              remarks = cols[offset + 6] || '';
+            const remainingCols = cols.length - offset;
+
+            // Check if cols[offset] is an Asset Code (e.g. MC-001, AST-01, or short code with machine name at offset+2)
+            const colA = cols[offset] || '';
+            const colB = cols[offset + 1] || '';
+            const colC = cols[offset + 2] || '';
+            const isColAAsset = /^(MC|AST|MAC)-\d+/i.test(colA) || (colA.length <= 8 && colB.length <= 8 && colC.length > 2);
+
+            if (isColAAsset && remainingCols >= 5) {
+              // 10-column or 9-column layout
+              assetCode = colA;
+              shortCode = colB;
+              machineName = colC;
+              brand = cols[offset + 3] || '';
+              model = cols[offset + 4] || '';
+              requiredNeedleBrand = cols[offset + 5] || '';
+              needleType = cols[offset + 6] || '';
+              requiredNeedles = cols[offset + 7] || '';
+              remarks = cols[offset + 8] || '';
             } else {
-              remarks = cols[offset + 3] || '';
+              // Legacy 7 or 8 column layout
+              machineName = cols[offset] || '';
+              brand = cols[offset + 1] || '';
+              model = cols[offset + 2] || '';
+              if (cols.length >= offset + 6) {
+                requiredNeedleBrand = cols[offset + 3] || '';
+                needleType = cols[offset + 4] || '';
+                requiredNeedles = cols[offset + 5] || '';
+                remarks = cols[offset + 6] || '';
+              } else {
+                remarks = cols[offset + 3] || '';
+              }
             }
           }
 
-          if (machineName || brand || model) {
-            rows.push({ machineName, brand, model, requiredNeedleBrand, needleType, requiredNeedles, remarks });
+          if (machineName || brand || model || assetCode) {
+            rows.push({ assetCode, shortCode, machineName, brand, model, requiredNeedleBrand, needleType, requiredNeedles, remarks });
           }
         });
 
@@ -4131,17 +4306,19 @@ function initModalInteractions() {
   if (formAddMn) {
     formAddMn.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const name = modalLayer.querySelector('#inp-new-machine-name').value;
+      const name = modalLayer.querySelector('#inp-new-machine-name')?.value;
+      const assetCode = modalLayer.querySelector('#inp-new-machine-asset-code')?.value?.trim() || null;
+      const shortCode = modalLayer.querySelector('#inp-new-machine-short-code')?.value?.trim() || '';
       if (!name || !name.trim()) return;
       const clean = name.trim();
       closeModal();
       try {
-        const res = smartStorageService.addMachineName(clean);
+        const res = smartStorageService.addMachineName(clean, shortCode, null, assetCode);
         if (typeof storage.persistToServerDatabase === 'function') {
           storage.persistToServerDatabase();
         }
         if (res && res.added) {
-          const msg = `✅ Machine Name "${clean}" registered and saved to Database!`;
+          const msg = `✅ Machine Name "${clean}" [${res.assetCode || ''}] registered and saved to Database!`;
           if (typeof notificationService !== 'undefined' && notificationService.success) {
             notificationService.success(msg);
           }
@@ -4256,6 +4433,8 @@ function initModalInteractions() {
         activeModalState = {
           type: 'EDIT_MACHINE_NAME',
           machineName: name,
+          assetCode: btn.dataset.asset || smartStorageService.getMachineAssetCode(name) || '',
+          code: btn.dataset.code || smartStorageService.getMachineShortCode(name) || '',
           returnTo: 'BULK_IMPORT_MACHINE_NAMES'
         };
         updateModalLayer();
@@ -4611,6 +4790,7 @@ function initModalInteractions() {
         const oldName = modalLayer.querySelector('#inp-orig-machine-name')?.value?.trim();
         const newName = modalLayer.querySelector('#inp-new-renamed-machine-name')?.value?.trim();
         const newCode = modalLayer.querySelector('#inp-machine-short-code')?.value?.trim() || null;
+        const newAssetCode = modalLayer.querySelector('#inp-machine-asset-code')?.value?.trim() || null;
         const returnTo = modalLayer.querySelector('#inp-return-to')?.value?.trim();
 
         if (!newName) {
@@ -4626,7 +4806,7 @@ function initModalInteractions() {
         }
 
         try {
-          const res = await smartStorageService.renameMachineName(oldName, newName, newCode);
+          const res = await smartStorageService.renameMachineName(oldName, newName, newCode, newAssetCode);
 
           const invMsg = (res && res.invUpdatedCount > 0) ? ` & auto-renamed ${res.invUpdatedCount} machine(s) in Inventory!` : '';
           if (typeof notificationService !== 'undefined' && notificationService.success) {
