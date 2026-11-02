@@ -1242,10 +1242,7 @@ export function renderInventoryTable() {
         </button>
       </div>
 
-      <!-- 5. Top Pagination Bar (Instant Mobile One-Tap Access; Hidden on Desktop) -->
-      ${renderPaginationBarHtml('top')}
-
-      <!-- 6. Real Excel-Style Machine Data Grid with Native Horizontal & Vertical Scroll -->
+      <!-- 5. Real Excel-Style Machine Data Grid with Native Horizontal & Vertical Scroll -->
       <div class="inventory-table-scroll-container" id="inventory-table-scroll-viewport" style="flex: 1 1 0%; min-height: 250px; overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; touch-action: pan-x pan-y;">
         <table class="excel-grid-table" style="min-width: 100%; width: ${columnLayout.reduce((sum, c) => sum + (c.width || 120), slWidth + checkWidth)}px; table-layout: fixed;">
           <thead>

@@ -668,13 +668,7 @@ td.col-actions-cell {
 }
 
 .inventory-pagination-bar-top {
-  margin-bottom: 4px;
-}
-
-@media (min-width: 769px) {
-  .inventory-pagination-bar-top {
-    display: none !important;
-  }
+  display: none !important;
 }
 
 .inventory-pagination-bar-bottom {
@@ -956,8 +950,7 @@ td.col-actions-cell {
   }
 
   .inventory-pagination-bar-top {
-    display: flex !important;
-    margin-bottom: 4px !important;
+    display: none !important;
   }
 
   .inventory-pagination-bar-bottom {

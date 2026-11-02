@@ -12996,7 +12996,7 @@
       "updatedBy": "usr-super-admin",
       "id": "mac-1791545375469-45-88017",
       "createdAt": "2026-10-09T11:29:35.469Z",
-      "updatedAt": "2026-11-02T11:21:39.315Z",
+      "updatedAt": "2026-11-02T14:00:25.766Z",
       "line": "JA-B",
       "lineName": "JA-B",
       "floor": "Jamuna",
@@ -19008,7 +19008,7 @@
       "updatedBy": "usr-super-admin",
       "id": "mac-1791545375469-193-34357",
       "createdAt": "2026-10-09T11:29:35.469Z",
-      "updatedAt": "2026-11-02T11:21:39.315Z",
+      "updatedAt": "2026-11-02T14:00:25.766Z",
       "line": "JA-E",
       "lineName": "JA-E",
       "floor": "Jamuna",
@@ -20315,7 +20315,7 @@
       "updatedBy": "usr-super-admin",
       "id": "mac-1791545375469-225-5317",
       "createdAt": "2026-10-09T11:29:35.469Z",
-      "updatedAt": "2026-11-02T11:21:39.315Z",
+      "updatedAt": "2026-11-02T14:00:25.766Z",
       "line": "JA-E",
       "lineName": "JA-E",
       "floor": "Jamuna",
@@ -23587,7 +23587,7 @@
       "updatedBy": "usr-super-admin",
       "id": "mac-1791545375469-305-60201",
       "createdAt": "2026-10-09T11:29:35.469Z",
-      "updatedAt": "2026-11-02T11:21:39.315Z",
+      "updatedAt": "2026-11-02T14:00:25.766Z",
       "line": "JA-G",
       "lineName": "JA-G",
       "floor": "Jamuna",
@@ -25301,7 +25301,7 @@
       "updatedBy": "usr-super-admin",
       "id": "mac-1791545375469-347-75657",
       "createdAt": "2026-10-09T11:29:35.469Z",
-      "updatedAt": "2026-11-02T11:21:39.315Z",
+      "updatedAt": "2026-11-02T14:00:25.766Z",
       "line": "JA-H",
       "lineName": "JA-H",
       "floor": "Jamuna",
@@ -28449,7 +28449,7 @@
       "updatedBy": "usr-super-admin",
       "id": "mac-1791545375469-429-75800",
       "createdAt": "2026-10-09T11:29:35.469Z",
-      "updatedAt": "2026-11-02T11:21:39.315Z",
+      "updatedAt": "2026-11-02T14:00:25.766Z",
       "line": "JA-I",
       "lineName": "JA-I",
       "floor": "Jamuna",
@@ -37618,7 +37618,7 @@
       "updatedBy": "usr-super-admin",
       "id": "mac-1791545375469-657-55567",
       "createdAt": "2026-10-09T11:29:35.469Z",
-      "updatedAt": "2026-11-02T11:21:39.315Z",
+      "updatedAt": "2026-11-02T14:00:25.766Z",
       "line": "JA-L",
       "lineName": "JA-L",
       "floor": "Jamuna",
@@ -38597,7 +38597,7 @@
       "updatedBy": "usr-super-admin",
       "id": "mac-1791545375469-683-8172",
       "createdAt": "2026-10-09T11:29:35.469Z",
-      "updatedAt": "2026-11-02T11:21:39.315Z",
+      "updatedAt": "2026-11-02T14:00:25.766Z",
       "line": "JA-M",
       "lineName": "JA-M",
       "floor": "Jamuna",
@@ -41501,7 +41501,7 @@
       "updatedBy": "usr-super-admin",
       "id": "mac-1791545375469-754-90444",
       "createdAt": "2026-10-09T11:29:35.469Z",
-      "updatedAt": "2026-11-02T11:21:39.315Z",
+      "updatedAt": "2026-11-02T14:00:25.766Z",
       "line": "JA-N",
       "lineName": "JA-N",
       "floor": "Jamuna",
@@ -42279,7 +42279,7 @@
       "updatedBy": "usr-super-admin",
       "id": "mac-1791545375469-775-57567",
       "createdAt": "2026-10-09T11:29:35.469Z",
-      "updatedAt": "2026-11-02T11:21:39.315Z",
+      "updatedAt": "2026-11-02T14:00:25.766Z",
       "line": "JA-P",
       "lineName": "JA-P",
       "floor": "Jamuna",
@@ -43301,7 +43301,7 @@
       "updatedBy": "usr-super-admin",
       "id": "mac-1791545375469-800-80429",
       "createdAt": "2026-10-09T11:29:35.469Z",
-      "updatedAt": "2026-11-02T11:21:39.315Z",
+      "updatedAt": "2026-11-02T14:00:25.766Z",
       "line": "JA-P",
       "lineName": "JA-P",
       "floor": "Jamuna",
@@ -364712,11 +364712,14 @@
         "floorId": "flo-1788931702137-250",
         "lineId": "lin-1788931950637-6387"
       },
-      "read": false,
-      "readBy": [],
+      "read": true,
+      "readBy": [
+        "usr-super-admin"
+      ],
       "timestamp": "2026-10-31T03:59:54.305Z",
       "createdAt": "2026-10-31T03:59:54.305Z",
-      "updatedAt": "2026-10-31T03:59:54.305Z"
+      "updatedAt": "2026-11-02T13:29:31.098Z",
+      "readAt": "2026-11-02T13:29:31.098Z"
     }
   ],
   "settings": {
@@ -364801,7 +364804,7 @@
         "enabled": true,
         "autoSync": true,
         "retryEnabled": true,
-        "updatedAt": "2026-11-02T12:43:50.949Z"
+        "updatedAt": "2026-11-02T14:05:34.216Z"
       },
       {
         "id": "db_postgresql_replica",
@@ -364819,10 +364822,27 @@
         "enabled": true,
         "autoSync": true,
         "retryEnabled": true,
-        "updatedAt": "2026-11-02T12:43:50.950Z",
-        "lastSync": "11/2/2026, 7:43:53 AM"
+        "updatedAt": "2026-11-02T14:05:34.216Z",
+        "lastSync": "11/2/2026, 9:05:36 AM"
       }
-    ]
+    ],
+    "emailConfig": {
+      "fromName": "Al-Muslim ERP System",
+      "fromEmail": "maint.dept2023@gmail.com",
+      "smtpHost": "smtp.gmail.com",
+      "smtpPort": "587",
+      "smtpUser": "maint.dept2023@gmail.com",
+      "smtpPass": "zoxwqdrddjdveozf",
+      "encryption": "TLS",
+      "isConfigured": true,
+      "lastTestedAt": "2026-11-02T11:22:48.184Z",
+      "lastTestStatus": "FAILED",
+      "lastTestRecipient": null,
+      "lastTestMode": "HANDSHAKE",
+      "latencyMs": null,
+      "updatedAt": "2026-11-02T11:22:44.795Z",
+      "lastTestError": "Gmail Authentication Failed (535 BadCredentials): Google requires a 16-character App Password generated from this matching Google account (myaccount.google.com/apppasswords). Please ensure 2-Step Verification is active and the 16-char App Password was generated for this exact account."
+    }
   },
   "documents": [
     {
