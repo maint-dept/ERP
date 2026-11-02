@@ -1364,7 +1364,15 @@ export function initDatabaseConfigEvents() {
       const target = configs.find(c => c.id === dbId);
       const name = target ? (target.name || target.type) : 'this connection';
 
-      if (!confirm(`Are you sure you want to remove the database "${name}"?`)) return;
+      const confirmed = await notificationService.confirmDelete({
+        title: 'Remove Database Connection',
+        message: 'Are you sure you want to remove this database connection from the sync topology?',
+        itemName: name,
+        itemType: 'Database Connection',
+        count: 1,
+        isDestructive: true
+      });
+      if (!confirmed) return;
 
       const updated = configs.filter(c => c.id !== dbId);
       localStorage.setItem('erp_multi_db_config', JSON.stringify(updated));
@@ -2299,7 +2307,15 @@ function renderProviderForm(providerKey, dbId = null) {
       const existingRec = currentConfigs.find(c => c.id === currentEditingDbId);
       const name = existingRec ? (existingRec.name || existingRec.type) : 'this database';
 
-      if (!confirm(`Are you sure you want to remove the database "${name}"?`)) return;
+      const confirmed = await notificationService.confirmDelete({
+        title: 'Remove Database Connection',
+        message: 'Are you sure you want to remove this database connection from multi-provider sync?',
+        itemName: name,
+        itemType: 'Database Connection',
+        count: 1,
+        isDestructive: true
+      });
+      if (!confirmed) return;
 
       const updated = currentConfigs.filter(c => c.id !== currentEditingDbId);
       localStorage.setItem('erp_multi_db_config', JSON.stringify(updated));
@@ -2397,11 +2413,18 @@ function initBackupHandlers() {
   const btnReset = document.getElementById('btn-factory-reset');
   if (btnReset) {
     btnReset.addEventListener('click', async () => {
-      if (confirm('Are you sure you want to perform a factory reset? All existing custom machines and modifications will be replaced with initial demo records.')) {
+      const confirmed = await notificationService.confirmDelete({
+        title: 'Perform Factory Reset',
+        message: 'Are you sure you want to perform a factory reset? All existing custom machinery, logs, and modifications will be replaced with initial demo records.',
+        itemType: 'Entire System Database',
+        count: 1,
+        isDestructive: true
+      });
+      if (confirmed) {
         btnReset.disabled = true;
         btnReset.textContent = '⏳ Resetting...';
         await storage.resetToInitialData();
-        alert('ERP reset to initial factory demo state.');
+        notificationService.success('ERP reset to initial factory demo state.');
         window.location.reload();
       }
     });

@@ -249,18 +249,57 @@ class NotificationService {
   }
 
   // ---------------------------------------------------------------------------
-  // 2. MODERN ASYNC CONFIRMATION MODAL (Replaces crude window.confirm())
+  // 2. MODERN ASYNC CONFIRMATION MODAL & CENTRALIZED DELETE CONFIRMATION
   // ---------------------------------------------------------------------------
-  confirm({
-    title = 'Confirm Action',
-    message = 'Are you sure you want to proceed?',
-    icon = '❓',
-    confirmText = 'Confirm',
-    cancelText = 'Cancel',
-    isDestructive = false,
-    onConfirm = null,
-    onCancel = null
-  }) {
+  async confirm(options = {}) {
+    const isDestructive = Boolean(
+      options.isDestructive ||
+      options.requireTypeDelete ||
+      (options.title && /delete|purge|wipe|clear all/i.test(options.title)) ||
+      (options.confirmText && /delete|purge|wipe/i.test(options.confirmText))
+    );
+
+    if (isDestructive) {
+      const openFn = (typeof window !== 'undefined' && window.openDeleteConfirmationModal)
+        ? window.openDeleteConfirmationModal
+        : (await import('../components/deleteConfirmationModal.js')).openDeleteConfirmationModal;
+      let count = options.itemCount || options.count || 1;
+      if (count === 1 && typeof options.message === 'string') {
+        const strongMatch = options.message.match(/<strong>(\d+)<\/strong>/);
+        if (strongMatch) {
+          count = parseInt(strongMatch[1], 10) || 1;
+        } else {
+          const wordMatch = options.message.match(/\b(\d+)\s+(?:records?|items?|machines?|employees?|lines?|parts?|accounts?|allocations?)\b/i);
+          if (wordMatch) {
+            count = parseInt(wordMatch[1], 10) || 1;
+          }
+        }
+      }
+
+      return openFn({
+        title: options.title || 'Confirm Permanent Deletion',
+        message: options.message,
+        count: count,
+        itemName: options.itemName || '',
+        itemType: options.itemType || 'record',
+        details: options.details || '',
+        confirmButtonText: options.confirmText,
+        cancelButtonText: options.cancelText || 'Cancel',
+        onConfirm: options.onConfirm,
+        onCancel: options.onCancel
+      });
+    }
+
+    const {
+      title = 'Confirm Action',
+      message = 'Are you sure you want to proceed?',
+      icon = '❓',
+      confirmText = 'Confirm',
+      cancelText = 'Cancel',
+      onConfirm = null,
+      onCancel = null
+    } = options;
+
     return new Promise((resolve) => {
       // Remove any existing confirm modal
       const existing = document.getElementById('erp-custom-confirm-overlay');
@@ -276,7 +315,7 @@ class NotificationService {
           <div class="modal-header" style="border-bottom: 1px solid var(--border-color); padding-bottom: 12px;">
             <div style="display: flex; align-items: center; gap: 10px;">
               <span style="font-size: 22px;">${icon}</span>
-              <h3 style="margin: 0; font-size: 16px; font-weight: 800; color: ${isDestructive ? '#f87171' : '#fff'};">
+              <h3 style="margin: 0; font-size: 16px; font-weight: 800; color: #fff;">
                 ${title}
               </h3>
             </div>
@@ -291,7 +330,7 @@ class NotificationService {
             <button type="button" class="btn btn-secondary" id="btn-erp-confirm-cancel">
               ${cancelText}
             </button>
-            <button type="button" class="btn ${isDestructive ? 'btn-danger' : 'btn-primary'}" id="btn-erp-confirm-ok" style="font-weight: 700; ${isDestructive ? 'background: linear-gradient(135deg, #ef4444, #b91c1c);' : ''}">
+            <button type="button" class="btn btn-primary" id="btn-erp-confirm-ok" style="font-weight: 700;">
               ${confirmText}
             </button>
           </div>
@@ -314,6 +353,16 @@ class NotificationService {
         if (e.target === modalOverlay) closeConfirm(false);
       });
     });
+  }
+
+  /**
+   * Direct invocation of the centralized mandatory Delete Confirmation System
+   */
+  async confirmDelete(options = {}) {
+    const openFn = (typeof window !== 'undefined' && window.openDeleteConfirmationModal)
+      ? window.openDeleteConfirmationModal
+      : (await import('../components/deleteConfirmationModal.js')).openDeleteConfirmationModal;
+    return openFn(options);
   }
 
   // ---------------------------------------------------------------------------

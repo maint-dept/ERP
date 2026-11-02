@@ -633,10 +633,21 @@ export function initTransferWorkflowBuilderEvents() {
   // 9. Delete workflow
   const btnDelete = document.getElementById('btn-delete-workflow');
   if (btnDelete && editingWorkflow?.id) {
-    btnDelete.addEventListener('click', () => {
-      if (confirm(`Are you sure you want to delete workflow '${editingWorkflow.name}'?`)) {
+    btnDelete.addEventListener('click', async () => {
+      const targetName = editingWorkflow.name || 'this workflow';
+      const targetId = editingWorkflow.id;
+      const confirmed = await notificationService.confirmDelete({
+        title: 'Delete Transfer Workflow',
+        message: `Are you sure you want to delete workflow "${targetName}"? Any pending transfers will fall back to standard approval hierarchy.`,
+        itemName: targetName,
+        itemType: 'Transfer Workflow',
+        count: 1,
+        isDestructive: true
+      });
+
+      if (confirmed) {
         try {
-          workflowService.deleteWorkflow(editingWorkflow.id);
+          workflowService.deleteWorkflow(targetId);
           editingWorkflow = null;
           notificationService.toast('Workflow deleted successfully.', 'success', 'Workflow Removed');
           refreshUI();

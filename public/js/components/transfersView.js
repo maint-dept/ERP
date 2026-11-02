@@ -485,9 +485,14 @@ export function initTransfersViewEvents() {
       const num = btn.getAttribute('data-num');
       if (!id) return;
 
-      const confirmed = window.confirm(
-        `⚠️ DELETE Transfer Record\n\nRequest Number: ${num}\n\nAre you sure you want to permanently delete this transfer record and all its approval history? This cannot be undone.`
-      );
+      const confirmed = await notificationService.confirmDelete({
+        title: 'Delete Transfer Record',
+        message: 'Are you sure you want to permanently delete this transfer record and all its approval history? This cannot be undone.',
+        itemName: `Transfer Request #${num}`,
+        itemType: 'Transfer Record',
+        count: 1,
+        isDestructive: true
+      });
       if (!confirmed) return;
 
       try {

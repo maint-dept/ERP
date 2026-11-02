@@ -8,6 +8,7 @@ import { storage } from '../db/storage.js';
 import { TABLE_NAMES } from '../db/schema.js';
 import { auditService } from '../services/auditService.js';
 import { authService } from '../services/authService.js';
+import { notificationService } from '../services/notificationService.js';
 
 // Local view & filter state
 let auditFilters = {
@@ -1070,9 +1071,18 @@ export function initAuditLogsEvents() {
   });
 
   // 10. Clear All Logs (Superadmin)
-  document.getElementById('btn-clear-all-audit-logs')?.addEventListener('click', () => {
-    if (confirm('Are you sure you want to completely clear and purge all system audit logs? This action is permanent.')) {
+  document.getElementById('btn-clear-all-audit-logs')?.addEventListener('click', async () => {
+    const totalLogs = (storage.getTable(TABLE_NAMES.AUDIT_LOGS) || []).length;
+    const confirmed = await notificationService.confirmDelete({
+      title: 'Clear & Purge All System Audit Logs',
+      message: 'Are you sure you want to completely clear and purge all system audit logs? All historical traceability records will be erased.',
+      count: totalLogs,
+      itemType: 'Audit Log Entry',
+      isDestructive: true
+    });
+    if (confirmed) {
       auditService.clearAllLogs();
+      notificationService.success('All audit logs have been purged.');
       updateAuditView();
     }
   });

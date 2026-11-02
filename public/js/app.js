@@ -26,6 +26,7 @@ import { smartStorageService } from './services/smartStorageService.js';
 import { historyService } from './services/historyService.js';
 import { auditService } from './services/auditService.js';
 import { notificationService } from './services/notificationService.js';
+import { openDeleteConfirmationModal, confirmDelete } from './components/deleteConfirmationModal.js';
 import { tempImportService } from './services/tempImportService.js';
 import { router } from './services/router.js?v=4.26.106';
 import { moduleLoader } from './services/moduleLoader.js?v=4.26.106';
@@ -1389,8 +1390,15 @@ class ERPApplication {
 
     const resetSeedBtn = document.getElementById('btn-quick-seed');
     if (resetSeedBtn) {
-      resetSeedBtn.addEventListener('click', () => {
-        if (confirm('Are you sure you want to reset all data back to the original demo dataset? All manual edits will be re-seeded.')) {
+      resetSeedBtn.addEventListener('click', async () => {
+        const confirmed = await notificationService.confirmDelete({
+          title: 'Reset All Data to Demo Dataset',
+          message: 'Are you sure you want to reset all data back to the original demo dataset? All manual edits, custom records, and transactions will be cleared and re-seeded.',
+          count: 'ALL',
+          itemName: 'All ERP Database Records',
+          itemType: 'Database Record'
+        });
+        if (confirmed) {
           storage.clearAll();
           window.location.reload();
         }

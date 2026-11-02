@@ -2520,12 +2520,21 @@ function updateBulkBarInPlace() {
 
   const btnBulkDelete = barContainer.querySelector('#btn-bulk-delete-selected');
   if (btnBulkDelete) {
-    btnBulkDelete.addEventListener('click', (e) => {
+    btnBulkDelete.addEventListener('click', async (e) => {
       e.preventDefault();
       if (selectedItemIds.size === 0) return;
-      if (confirm(`Delete ${selectedItemIds.size} selected master records?`)) {
+      const count = selectedItemIds.size;
+      const confirmed = await notificationService.confirmDelete({
+        title: 'Delete Selected Master Records',
+        message: `Are you sure you want to delete ${count} selected master records from ${activeTab}?`,
+        count: count,
+        itemName: `${count} Master Records`,
+        itemType: 'Master Record'
+      });
+      if (confirmed) {
         smartStorageService.deleteStorageItemsBatch(Array.from(selectedItemIds));
         selectedItemIds.clear();
+        notificationService.success(`${count} master records deleted.`);
         refreshStorageTabContent();
       }
     });
@@ -2533,12 +2542,19 @@ function updateBulkBarInPlace() {
 
   const btnPurgeFlawed = barContainer.querySelector('#btn-purge-all-flawed');
   if (btnPurgeFlawed) {
-    btnPurgeFlawed.addEventListener('click', (e) => {
+    btnPurgeFlawed.addEventListener('click', async (e) => {
       e.preventDefault();
-      if (confirm(`Clean up and discard all flawed records in ${activeTab}?`)) {
+      const confirmed = await notificationService.confirmDelete({
+        title: 'Purge Flawed Records',
+        message: `Clean up and permanently discard all flawed records in ${activeTab}?`,
+        count: 'ALL',
+        itemName: `All Flawed Records in ${activeTab}`,
+        itemType: 'Flawed Record'
+      });
+      if (confirmed) {
         const count = smartStorageService.purgeFlawedItems(activeTab);
         selectedItemIds.clear();
-        alert(`🧹 Cleaned up ${count} flawed records!`);
+        notificationService.success(`🧹 Cleaned up ${count} flawed records!`);
         refreshStorageTabContent();
       }
     });
@@ -2689,11 +2705,13 @@ export function initStorageEvents() {
   if (btnClearAll) {
     btnClearAll.addEventListener('click', async (e) => {
       e.preventDefault();
-      const confirmed = confirm(
-        '⚠️ CLEAR ALL MACHINE DATA & START FULL FRESH?\n\n' +
-        'This will permanently delete all registered machine names and model specifications from the database so you can do a 100% clean fresh import.\n\n' +
-        'Are you sure you want to clear all data?'
-      );
+      const confirmed = await notificationService.confirmDelete({
+        title: 'Clear All Machine Data (Full Fresh Start)',
+        message: 'This will permanently delete all registered machine names and model specifications from the database so you can do a 100% clean fresh import.',
+        count: 'ALL',
+        itemName: 'All Machine Names & Model Specifications',
+        itemType: 'Catalog Record'
+      });
       if (!confirmed) return;
 
       const originalHtml = btnClearAll.innerHTML;
@@ -2829,7 +2847,14 @@ function rebindContentEvents() {
     btnDeleteSelectedMachines.addEventListener('click', async (e) => {
       e.preventDefault();
       if (selectedMachineNames.size === 0) return;
-      const confirmed = confirm(`Are you sure you want to permanently delete ${selectedMachineNames.size} selected machine types and all their registered models from the database?`);
+      const count = selectedMachineNames.size;
+      const confirmed = await notificationService.confirmDelete({
+        title: 'Delete Selected Machine Types',
+        message: `Are you sure you want to permanently delete ${count} selected machine types and all their registered models from the database?`,
+        count: count,
+        itemName: `${count} Machine Type Groups`,
+        itemType: 'Machine Type Group'
+      });
       if (!confirmed) return;
 
       btnDeleteSelectedMachines.disabled = true;
@@ -2900,7 +2925,14 @@ function rebindContentEvents() {
     btnDeleteSelectedRows.addEventListener('click', async (e) => {
       e.preventDefault();
       if (selectedItemIds.size === 0) return;
-      const confirmed = confirm(`Are you sure you want to permanently delete ${selectedItemIds.size} selected model specifications from the database?`);
+      const count = selectedItemIds.size;
+      const confirmed = await notificationService.confirmDelete({
+        title: 'Delete Selected Model Specifications',
+        message: `Are you sure you want to permanently delete ${count} selected model specifications from the database?`,
+        count: count,
+        itemName: `${count} Model Specifications`,
+        itemType: 'Model Specification'
+      });
       if (!confirmed) return;
 
       btnDeleteSelectedRows.disabled = true;
@@ -2927,9 +2959,17 @@ function rebindContentEvents() {
       e.stopPropagation();
       const id = btn.dataset.id;
       const modelName = btn.dataset.model || 'this model';
-      if (confirm(`Delete model "${modelName}"?`)) {
+      const confirmed = await notificationService.confirmDelete({
+        title: 'Delete Model Specification',
+        message: `Are you sure you want to permanently delete model specification "${modelName}"?`,
+        count: 1,
+        itemName: modelName,
+        itemType: 'Model Specification'
+      });
+      if (confirmed) {
         await smartStorageService.deleteStorageItem(id);
         selectedItemIds.delete(id);
+        notificationService.success(`Model "${modelName}" deleted.`);
         refreshStorageTabContent();
       }
     });
@@ -2978,9 +3018,17 @@ function rebindContentEvents() {
       e.preventDefault();
       e.stopPropagation();
       const machineName = btn.dataset.machine;
-      if (confirm(`Delete machine type "${machineName}" and all its registered models?`)) {
+      const confirmed = await notificationService.confirmDelete({
+        title: 'Delete Machine Type Group',
+        message: `Are you sure you want to permanently delete machine type "${machineName}" and all its registered model specifications?`,
+        count: 1,
+        itemName: machineName,
+        itemType: 'Machine Type Group'
+      });
+      if (confirmed) {
         await smartStorageService.deleteMachineNameAndModels(machineName);
         selectedMachineNames.delete(machineName);
+        notificationService.success(`Machine type "${machineName}" and its models deleted.`);
         refreshStorageTabContent();
       }
     });
@@ -3055,10 +3103,17 @@ function rebindContentEvents() {
 
   // Delete Correction Rule Button
   container.querySelectorAll('.btn-delete-correction-rule').forEach(btn => {
-    btn.addEventListener('click', (e) => {
+    btn.addEventListener('click', async (e) => {
       e.preventDefault();
       const id = btn.dataset.id;
-      if (confirm('Delete this correction rule?')) {
+      const confirmed = await notificationService.confirmDelete({
+        title: 'Delete Correction Rule',
+        message: 'Are you sure you want to delete this auto-correction rule?',
+        itemType: 'Correction Rule',
+        count: 1,
+        isDestructive: true
+      });
+      if (confirmed) {
         smartStorageService.deleteCorrectionRule(id);
         refreshStorageTabContent();
       }
@@ -3202,11 +3257,19 @@ function rebindBuilderPanelEvents() {
   });
 
   container.querySelectorAll('.btn-delete-custom-field').forEach(btn => {
-    btn.addEventListener('click', (e) => {
+    btn.addEventListener('click', async (e) => {
       e.preventDefault();
       const cat = btn.dataset.cat;
       const field = btn.dataset.field;
-      if (confirm(`Remove custom attribute "${field}" from category "${cat}"?`)) {
+      const confirmed = await notificationService.confirmDelete({
+        title: 'Remove Custom Attribute',
+        message: `Remove custom attribute "${field}" from category "${cat}"? Existing data stored under this attribute may become hidden.`,
+        itemName: `${cat} ➔ ${field}`,
+        itemType: 'Custom Attribute',
+        count: 1,
+        isDestructive: true
+      });
+      if (confirmed) {
         storageSchemaService.deleteCustomField(cat, field);
         const detailsPanel = container.querySelector('#builder-details-panel');
         if (detailsPanel) {
@@ -3218,11 +3281,19 @@ function rebindBuilderPanelEvents() {
   });
 
   container.querySelectorAll('.btn-delete-custom-category').forEach(btn => {
-    btn.addEventListener('click', (e) => {
+    btn.addEventListener('click', async (e) => {
       e.preventDefault();
       e.stopPropagation();
       const cat = btn.dataset.cat;
-      if (confirm(`Delete custom reference category "${cat}"?`)) {
+      const confirmed = await notificationService.confirmDelete({
+        title: 'Delete Custom Category',
+        message: `Permanently delete custom reference category "${cat}" and all its assigned custom fields?`,
+        itemName: cat,
+        itemType: 'Custom Category',
+        count: 1,
+        isDestructive: true
+      });
+      if (confirmed) {
         storageSchemaService.deleteCustomCategory(cat);
         activeBuilderCategory = 'MACHINE';
         if (activeTab === cat) activeTab = 'MACHINE';
@@ -3894,7 +3965,14 @@ function initModalInteractions() {
         const bName = btn.dataset.name;
         if (!bId && !bName) return;
 
-        const confirmed = confirm(`Are you sure you want to delete brand "${bName}"?`);
+        const confirmed = await notificationService.confirmDelete({
+          title: 'Delete Brand Record',
+          message: `Are you sure you want to delete brand "${bName}"? Any machines or models linked to this brand will have their brand link cleared.`,
+          itemName: bName,
+          itemType: 'Brand',
+          count: 1,
+          isDestructive: true
+        });
         if (!confirmed) return;
 
         if (bId) {
@@ -3933,11 +4011,14 @@ function initModalInteractions() {
     if (btnWipeAllBrands) {
       btnWipeAllBrands.addEventListener('click', async (e) => {
         e.preventDefault();
-        const confirmed = confirm(
-          '⚠️ DELETE ALL BRANDS?\n\n' +
-          'This will permanently delete all registered machinery brands from the database.\n\n' +
-          'Are you sure you want to proceed?'
-        );
+        const totalBrands = (storage.getTable(TABLE_NAMES.BRANDS) || []).length;
+        const confirmed = await notificationService.confirmDelete({
+          title: 'Wipe All Machinery Brands',
+          message: 'This will permanently delete all registered machinery brands from the database.',
+          count: totalBrands,
+          itemType: 'Brand',
+          isDestructive: true
+        });
         if (!confirmed) return;
 
         storage.setTable(TABLE_NAMES.BRANDS, []);
@@ -4447,11 +4528,20 @@ function initModalInteractions() {
         e.preventDefault();
         e.stopPropagation();
         const name = btn.dataset.name;
-        if (confirm(`Remove machine name "${name}" from registered list?`)) {
+        const confirmed = await notificationService.confirmDelete({
+          title: 'Remove Registered Machine Name',
+          message: `Are you sure you want to remove machine name "${name}" from the registered list?`,
+          itemName: name,
+          itemType: 'Machine Name',
+          count: 1,
+          isDestructive: true
+        });
+        if (confirmed) {
           smartStorageService.deleteMachineNameOnly(name);
           if (typeof storage.persistToServerDatabase === 'function') {
             await storage.persistToServerDatabase();
           }
+          notificationService.success(`Machine name "${name}" removed.`);
           updateModalLayer();
         }
       });
@@ -4461,12 +4551,19 @@ function initModalInteractions() {
     if (btnPurgeDummy) {
       btnPurgeDummy.addEventListener('click', async (e) => {
         e.preventDefault();
-        if (confirm('Clear all unused dummy machine names that have 0 models?')) {
+        const confirmed = await notificationService.confirmDelete({
+          title: 'Purge Unused Machine Names',
+          message: 'Clear all unused dummy machine names that have 0 models attached?',
+          itemType: 'Unused Machine Name',
+          count: 1,
+          isDestructive: true
+        });
+        if (confirmed) {
           const purged = smartStorageService.purgeUnusedMachineNames();
           if (typeof storage.persistToServerDatabase === 'function') {
             await storage.persistToServerDatabase();
           }
-          alert(`Cleaned ${purged} unused machine names!`);
+          notificationService.success(`Cleaned ${purged} unused machine names!`);
           updateModalLayer();
         }
       });

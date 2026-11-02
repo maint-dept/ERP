@@ -7,6 +7,7 @@
 import { emailService, getEmailApiBaseUrl } from '../services/emailService.js';
 import { authService } from '../services/authService.js';
 import { state } from '../state.js';
+import { notificationService } from '../services/notificationService.js';
 
 export function renderEmailConfigView() {
   const config = emailService.getConfig();
@@ -850,12 +851,17 @@ export function initEmailConfigEvents() {
   // 7. Clear Configuration
   const btnClear = document.getElementById('btn-clear-email-config');
   if (btnClear) {
-    btnClear.addEventListener('click', () => {
-      if (confirm('Are you sure you want to clear the email configuration? Automated email delivery will be disabled.')) {
+    btnClear.addEventListener('click', async () => {
+      const confirmed = await notificationService.confirmDelete({
+        title: 'Clear Email Configuration',
+        message: 'Are you sure you want to clear the email configuration? Automated email delivery will be disabled.',
+        itemType: 'Configuration',
+        count: 1,
+        isDestructive: true
+      });
+      if (confirmed) {
         emailService.clearConfig();
-        if (window.__erpApp?.showToast) {
-          window.__erpApp.showToast('🗑️ Cleared', 'Email configuration has been reset.', 'info');
-        }
+        notificationService.success('Email configuration has been reset.');
         if (window.__erpApp?.renderMainContent) {
           window.__erpApp.renderMainContent();
         }
@@ -866,9 +872,18 @@ export function initEmailConfigEvents() {
   // 8. Clear Email Activity Logs
   const btnClearLogs = document.getElementById('btn-clear-email-logs');
   if (btnClearLogs) {
-    btnClearLogs.addEventListener('click', () => {
-      if (confirm('Clear outgoing email activity history?')) {
+    btnClearLogs.addEventListener('click', async () => {
+      const totalLogs = emailService.getEmailLogs().length;
+      const confirmed = await notificationService.confirmDelete({
+        title: 'Clear Email Activity Logs',
+        message: 'Are you sure you want to clear outgoing email activity history?',
+        itemType: 'Email Log Entry',
+        count: totalLogs,
+        isDestructive: true
+      });
+      if (confirmed) {
         emailService.clearEmailLogs();
+        notificationService.success('Email activity history has been cleared.');
         if (window.__erpApp?.renderMainContent) {
           window.__erpApp.renderMainContent();
         }

@@ -2538,8 +2538,15 @@ export function initPartsTraceEvents() {
   // 8. Clear All Drafts
   const btnClearDrafts = root.querySelector('#btn-clear-all-drafts');
   if (btnClearDrafts) {
-    btnClearDrafts.addEventListener('click', () => {
-      if (confirm('Are you sure you want to discard all extracted draft rows?')) {
+    btnClearDrafts.addEventListener('click', async () => {
+      const confirmed = await notificationService.confirmDelete({
+        title: 'Discard Extracted Draft Rows',
+        message: 'Are you sure you want to discard all extracted draft rows? Any unconfirmed rows will be lost.',
+        count: activeDraftRows.length,
+        itemName: `${activeDraftRows.length} Draft Rows`,
+        itemType: 'Draft Row'
+      });
+      if (confirmed) {
         activeDraftRows = [];
         activeTab = 'upload';
         refresh();
@@ -3010,7 +3017,14 @@ export function initPartsTraceEvents() {
   root.querySelectorAll('.btn-delete-issue').forEach(btn => {
     btn.addEventListener('click', async () => {
       const id = btn.getAttribute('data-id');
-      if (confirm('Are you sure you want to delete this spare parts issue record?')) {
+      const confirmed = await notificationService.confirmDelete({
+        title: 'Delete Spare Parts Issue Record',
+        message: 'Permanently delete this spare parts issue record from the system?',
+        itemType: 'Issue Record',
+        count: 1,
+        isDestructive: true
+      });
+      if (confirmed) {
         await partsTraceService.deleteIssue(id);
         notificationService.notifySuccess('Issue Deleted', 'Record removed from system.');
         refresh();
@@ -3144,7 +3158,15 @@ export function initPartsTraceEvents() {
     btn.addEventListener('click', async () => {
       const id = btn.getAttribute('data-id');
       const name = btn.getAttribute('data-name') || 'this part';
-      if (!confirm(`Are you sure you want to delete spare part "${name}"?`)) {
+      const confirmed = await notificationService.confirmDelete({
+        title: 'Delete Master Spare Part',
+        message: 'Permanently remove this spare part from the master catalog?',
+        itemName: name,
+        itemType: 'Spare Part',
+        count: 1,
+        isDestructive: true
+      });
+      if (!confirmed) {
         return;
       }
       try {
@@ -3208,7 +3230,14 @@ export function initPartsTraceEvents() {
     btnBulkDelete.addEventListener('click', async () => {
       const count = masterSelectedPartIds.size;
       if (count === 0) return;
-      if (!confirm(`Are you sure you want to permanently delete ${count} selected spare part(s) from Parts Master?`)) {
+      const confirmed = await notificationService.confirmDelete({
+        title: 'Bulk Delete Spare Parts',
+        message: 'Permanently delete all selected spare parts from the Parts Master catalog?',
+        count: count,
+        itemType: 'Spare Part',
+        isDestructive: true
+      });
+      if (!confirmed) {
         return;
       }
       try {
@@ -3227,7 +3256,14 @@ export function initPartsTraceEvents() {
     btnClearAllMaster.addEventListener('click', async () => {
       const allParts = partsTraceService.getAllParts();
       if (allParts.length === 0) return;
-      if (!confirm(`⚠️ WARNING: Are you sure you want to permanently delete ALL ${allParts.length} spare parts from the Master catalog?\n\nThis will completely wipe the catalog so you can import a fresh Excel dataset.`)) {
+      const confirmed = await notificationService.confirmDelete({
+        title: 'Wipe All Spare Parts from Master Catalog',
+        message: 'Permanently delete ALL spare parts from the Master catalog to allow a clean fresh import?',
+        count: allParts.length,
+        itemType: 'Spare Part',
+        isDestructive: true
+      });
+      if (!confirmed) {
         return;
       }
       try {

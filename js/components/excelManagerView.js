@@ -8,6 +8,7 @@ import { TABLE_NAMES } from '../db/schema.js';
 import { excelService } from '../services/excelService.js';
 import { customFieldService } from '../services/customFieldService.js';
 import { authService } from '../services/authService.js';
+import { notificationService } from '../services/notificationService.js';
 import { state } from '../state.js';
 
 let activeTab = 'structure'; // 'structure', 'template', 'history'
@@ -635,14 +636,24 @@ export function initExcelManagerEvents() {
 
   // Remove Column
   document.querySelectorAll('.btn-del-col').forEach(btn => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', async () => {
       const id = btn.getAttribute('data-id');
-      if (confirm('Remove this column from the Excel layout?')) {
-        const struct = excelService.getActiveStructure();
+      const struct = excelService.getActiveStructure();
+      const col = (struct.columns || []).find(c => c.id === id);
+      const colHeader = col?.header || 'column';
+      const confirmed = await notificationService.confirmDelete({
+        title: 'Remove Layout Column',
+        message: `Are you sure you want to remove the column "${colHeader}" from the Excel layout?`,
+        count: 1,
+        itemName: colHeader,
+        itemType: 'Layout Column'
+      });
+      if (confirmed) {
         struct.columns = (struct.columns || []).filter(c => c.id !== id);
         excelService.saveStructure(struct);
         state.emit('inventory:updated');
         refreshStructureView();
+        notificationService.success(`Column "${colHeader}" removed from layout.`);
       }
     });
   });

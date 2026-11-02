@@ -6,6 +6,7 @@
 
 import { resourceLibraryService, RESOURCE_TYPES } from '../services/resourceLibraryService.js';
 import { authService } from '../services/authService.js';
+import { notificationService } from '../services/notificationService.js';
 
 let currentFolderId = null;
 let searchQuery = '';
@@ -388,13 +389,23 @@ export function initResourceLibraryEvents() {
 
   // 4. Delete Resource
   document.querySelectorAll('.btn-delete-resource').forEach(el => {
-    el.addEventListener('click', (e) => {
+    el.addEventListener('click', async (e) => {
       e.preventDefault();
       const resId = el.getAttribute('data-resource-id');
       const res = resourceLibraryService.getById(resId);
-      if (res && confirm(`Are you sure you want to delete '${res.name}'?`)) {
-        resourceLibraryService.deleteResource(resId);
-        renderUpdatedLibraryList();
+      if (res) {
+        const confirmed = await notificationService.confirmDelete({
+          title: 'Delete Resource',
+          message: `Are you sure you want to delete '${res.name}'? This action cannot be undone.`,
+          count: 1,
+          itemName: res.name,
+          itemType: 'Resource'
+        });
+        if (confirmed) {
+          resourceLibraryService.deleteResource(resId);
+          renderUpdatedLibraryList();
+          notificationService.success(`Resource "${res.name}" deleted successfully.`);
+        }
       }
     });
   });

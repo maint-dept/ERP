@@ -16,6 +16,7 @@ import { employeeService } from '../services/employeeService.js';
 import { authService } from '../services/authService.js';
 import { historyService } from '../services/historyService.js';
 import { tempImportService } from '../services/tempImportService.js';
+import { notificationService } from '../services/notificationService.js';
 import { storage } from '../db/storage.js';
 import { TABLE_NAMES } from '../db/schema.js';
 
@@ -3261,8 +3262,15 @@ export function initToolsManagementEvents() {
   const btnClearQ = document.getElementById('btn-clear-queue');
   if (btnClearQ) {
     btnClearQ.onclick = () => {
-      ensureAdminAccess('Clear Current Queue Table', () => {
-        if (confirm('Clear all items and reset employee fields from current allocation table?')) {
+      ensureAdminAccess('Clear Current Queue Table', async () => {
+        const confirmed = await notificationService.confirmDelete({
+          title: 'Clear Allocation Queue',
+          message: 'Clear all items and reset employee fields from current allocation table?',
+          count: liveAllocationQueue.length || 1,
+          itemName: `${liveAllocationQueue.length} Queue Items`,
+          itemType: 'Queue Item'
+        });
+        if (confirmed) {
           liveAllocationQueue = [];
           activeUserForm.userId = '';
           activeUserForm.userName = '';
@@ -3931,7 +3939,14 @@ export function initToolsManagementEvents() {
   if (btnBulkDelFind) {
     btnBulkDelFind.onclick = () => {
       ensureAdminAccess(`Bulk Delete ${findSelectedIds.size} Tool Allocations`, async () => {
-        if (confirm(`Are you sure you want to permanently delete ${findSelectedIds.size} selected tool allocation records?\n\nMaster inventory stock will be restored.`)) {
+        const confirmed = await notificationService.confirmDelete({
+          title: `Bulk Delete Tool Allocations`,
+          message: `Permanently delete selected tool allocation records? Master inventory stock will be restored automatically.`,
+          count: findSelectedIds.size,
+          itemType: 'Tool Allocation',
+          isDestructive: true
+        });
+        if (confirmed) {
           const origHtml = btnBulkDelFind.innerHTML;
           try {
             btnBulkDelFind.disabled = true;
@@ -4026,7 +4041,16 @@ export function initToolsManagementEvents() {
     btn.onclick = () => {
       const id = btn.getAttribute('data-id');
       ensureAdminAccess('Delete Tool Allocation Record', async () => {
-        if (confirm('Delete this tool allocation record permanently?\n\nMaster inventory stock will be restored.')) {
+        const alloc = toolService.getAllocationById(id);
+        const confirmed = await notificationService.confirmDelete({
+          title: 'Delete Tool Allocation Record',
+          message: `Permanently delete this tool allocation record? Master inventory stock will be restored automatically.`,
+          itemName: alloc ? `${alloc.itemName} (Reg #${alloc.regNo})` : id,
+          itemType: 'Tool Allocation',
+          count: 1,
+          isDestructive: true
+        });
+        if (confirmed) {
           try {
             await toolService.deleteAllocationItem(id);
             findSelectedIds.delete(id);
@@ -4332,7 +4356,7 @@ export function initToolsManagementEvents() {
       const name = btn.getAttribute('data-name');
       const code = btn.getAttribute('data-code');
 
-      ensureAdminAccess(`Delete Master Item "${name}" (${code})`, () => {
+      ensureAdminAccess(`Delete Master Item "${name}" (${code})`, async () => {
         const allAllocations = toolService.getAllocations() || [];
         const activeAllocations = allAllocations.filter(a =>
           (a.itemCode && String(a.itemCode).toLowerCase() === String(code).toLowerCase()) ||
@@ -4341,10 +4365,20 @@ export function initToolsManagementEvents() {
 
         let warningMsg = '';
         if (activeAllocations.length > 0) {
-          warningMsg = `\n\n⚠️ Caution: This item is currently allocated to ${activeAllocations.length} mechanic record(s). Deleting it from the master catalog will remove it from future issuance lists.`;
+          warningMsg = `Caution: This item is currently allocated to ${activeAllocations.length} mechanic record(s). Deleting it from the master catalog will remove it from future issuance lists.`;
         }
 
-        if (confirm(`🗑️ Delete Master Catalog Item?\n\nItem: ${name} [Code: ${code}]\nCategory: ${type}${warningMsg}\n\nAre you sure you want to permanently delete this item from the master catalog?`)) {
+        const confirmed = await notificationService.confirmDelete({
+          title: `Delete Master Catalog Item`,
+          message: `Permanently delete item from the master catalog?`,
+          itemName: `${name} [Code: ${code}] (${type})`,
+          itemType: 'Master Catalog Item',
+          count: 1,
+          details: warningMsg,
+          isDestructive: true
+        });
+
+        if (confirmed) {
           try {
             if (type === 'TOOL') {
               toolService.deleteMasterTool(id);
@@ -4376,8 +4410,16 @@ export function initToolsManagementEvents() {
       }
 
       const count = masterSelectedIds.size;
-      ensureAdminAccess(`Bulk Delete ${count} Master Catalog Items`, () => {
-        if (confirm(`⚠️ Admin Authorization Required:\n\nAre you sure you want to permanently delete ${count} selected master catalog items?\n\nThis action cannot be undone.`)) {
+      ensureAdminAccess(`Bulk Delete ${count} Master Catalog Items`, async () => {
+        const confirmed = await notificationService.confirmDelete({
+          title: `Bulk Delete Master Catalog Items`,
+          message: `Are you sure you want to permanently delete selected master catalog items? This action cannot be undone.`,
+          count: count,
+          itemType: 'Master Catalog Item',
+          isDestructive: true
+        });
+
+        if (confirmed) {
           let deletedCount = 0;
           masterSelectedIds.forEach(itemId => {
             try {
@@ -4667,7 +4709,15 @@ export function initToolsManagementEvents() {
   if (btnBulkDelDb) {
     btnBulkDelDb.onclick = () => {
       ensureAdminAccess(`Bulk Delete ${dbSelectedIds.size} Database Records`, async () => {
-        if (confirm(`Permanently delete ${dbSelectedIds.size} selected records from database?\n\nMaster inventory stock will be restored automatically.`)) {
+        const confirmed = await notificationService.confirmDelete({
+          title: 'Bulk Delete Database Records',
+          message: `Permanently delete selected records from database? Master inventory stock will be restored automatically.`,
+          count: dbSelectedIds.size,
+          itemType: 'Database Record',
+          isDestructive: true
+        });
+
+        if (confirmed) {
           const origHtml = btnBulkDelDb.innerHTML;
           try {
             btnBulkDelDb.disabled = true;
@@ -4711,7 +4761,17 @@ export function initToolsManagementEvents() {
     btn.onclick = () => {
       const id = btn.getAttribute('data-id');
       ensureAdminAccess('Delete Database Record', async () => {
-        if (confirm('Delete this tool allocation record permanently from database?\n\nMaster inventory stock will be restored automatically.')) {
+        const alloc = toolService.getAllocationById(id);
+        const confirmed = await notificationService.confirmDelete({
+          title: 'Delete Database Record',
+          message: `Permanently delete this tool allocation record from database? Master inventory stock will be restored automatically.`,
+          itemName: alloc ? `${alloc.itemName} (Reg #${alloc.regNo})` : id,
+          itemType: 'Database Record',
+          count: 1,
+          isDestructive: true
+        });
+
+        if (confirmed) {
           try {
             await toolService.deleteAllocationItem(id);
             dbSelectedIds.delete(id);
@@ -6478,7 +6538,16 @@ export function openEditAllocationModal(id) {
   // Modal Delete handler
   document.getElementById('btn-modal-del-alloc')?.addEventListener('click', () => {
     ensureAdminAccess('Delete Database Record', async () => {
-      if (confirm(`Permanently delete "${alloc.itemName}" from Reg #${alloc.regNo}?\n\nMaster inventory stock will be restored automatically.`)) {
+      const confirmed = await notificationService.confirmDelete({
+        title: 'Delete Database Record',
+        message: `Permanently delete record? Master inventory stock will be restored automatically.`,
+        itemName: `"${alloc.itemName}" from Reg #${alloc.regNo}`,
+        itemType: 'Allocation Record',
+        count: 1,
+        isDestructive: true
+      });
+
+      if (confirmed) {
         try {
           await toolService.deleteAllocationItem(id);
           dbSelectedIds.delete(id);

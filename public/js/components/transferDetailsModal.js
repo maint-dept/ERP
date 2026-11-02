@@ -524,8 +524,15 @@ export function initTransferDetailsModalEvents() {
   const btnDeleteModal = document.getElementById('btn-action-delete-transfer-modal');
   if (btnDeleteModal && req) {
     btnDeleteModal.addEventListener('click', async () => {
-      const confirmMsg = `⚠️ PERMANENTLY DELETE TRANSFER RECORD\n\nRequest Number: ${req.requestNumber || req.id}\nEquipment: ${req.machineInfo?.machineName || 'Machine'}\n\nAre you sure you want to permanently delete this transfer record and all its approval history? This action cannot be undone.`;
-      if (confirm(confirmMsg)) {
+      const confirmed = await notificationService.confirmDelete({
+        title: 'Delete Transfer Record',
+        message: 'Are you sure you want to permanently delete this transfer record and all its approval history? This action cannot be undone.',
+        itemName: `Transfer #${req.requestNumber || req.id} (${req.machineInfo?.machineName || 'Machine'})`,
+        itemType: 'Transfer Record',
+        count: 1,
+        isDestructive: true
+      });
+      if (confirmed) {
         try {
           closeModal();
           await transferService.deleteTransferRequest(req.id);

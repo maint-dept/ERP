@@ -6,6 +6,7 @@
 import { customFieldService } from '../services/customFieldService.js';
 import { FIELD_TYPES } from '../db/schema.js';
 import { state } from '../state.js';
+import { notificationService } from '../services/notificationService.js';
 
 export function renderCustomFieldsMgr() {
   const fields = customFieldService.getAllFields();
@@ -211,12 +212,23 @@ export function initCustomFieldsEvents() {
   document.querySelectorAll('.btn-delete-cf').forEach(btn => {
     btn.addEventListener('click', async () => {
       const id = btn.getAttribute('data-id');
-      if (confirm('Delete this dynamic custom field?')) {
+      const allFields = customFieldService.getAllFields();
+      const targetField = allFields.find(f => f.id === id);
+      const confirmed = await notificationService.confirmDelete({
+        title: 'Delete Custom Parameter Field',
+        message: 'Are you sure you want to permanently delete this dynamic custom field? Existing values stored under this field will no longer be visible.',
+        itemName: targetField ? `${targetField.label} (${targetField.name})` : id,
+        itemType: 'Custom Field',
+        count: 1,
+        isDestructive: true
+      });
+      if (confirmed) {
         try {
           await customFieldService.deleteField(id);
+          notificationService.success('Custom field deleted successfully.');
           state.emit('inventory:updated');
         } catch (err) {
-          alert('Error: ' + err.message);
+          notificationService.error('Error: ' + err.message);
         }
       }
     });

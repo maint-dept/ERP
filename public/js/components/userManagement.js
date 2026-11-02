@@ -5908,7 +5908,13 @@ export function initUserManagementEvents() {
   if (btnPresetDelete) {
     btnPresetDelete.addEventListener('click', async () => {
       if (!editingPreset || !editingPreset.id) return;
-      const confirmDel = confirm(`Are you sure you want to permanently delete preset "${editingPreset.name}"?`);
+      const confirmDel = await notificationService.confirmDelete({
+        title: 'Delete Permission Preset',
+        message: `Are you sure you want to permanently delete preset "${editingPreset.name}"? This operation cannot be undone.`,
+        count: 1,
+        itemName: editingPreset.name,
+        itemType: 'Permission Preset'
+      });
       if (!confirmDel) return;
       try {
         await authService.deletePreset(editingPreset.id);

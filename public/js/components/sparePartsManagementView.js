@@ -837,10 +837,20 @@ export function initSparePartsManagementEvents() {
 
   const btnBulkDel = document.getElementById('btn-spare-bulk-delete');
   if (btnBulkDel) {
-    btnBulkDel.addEventListener('click', () => {
-      if (confirm(`Process ${selectedItemIds.size} records? Items with machine maintenance history will be safely deactivated; unused items will be deleted.`)) {
+    btnBulkDel.addEventListener('click', async () => {
+      if (selectedItemIds.size === 0) return;
+      const count = selectedItemIds.size;
+      const confirmed = await notificationService.confirmDelete({
+        title: 'Delete Selected Spare Parts',
+        message: `Process ${count} records? Items with machine maintenance history will be safely deactivated; unused items will be permanently deleted.`,
+        count: count,
+        itemName: `${count} Selected Spare Part Records`,
+        itemType: 'Spare Part'
+      });
+      if (confirmed) {
         historyService.bulkDeleteSpareParts(Array.from(selectedItemIds));
         selectedItemIds.clear();
+        notificationService.success(`${count} spare part records processed successfully.`);
         refresh();
       }
     });

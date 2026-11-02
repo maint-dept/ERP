@@ -3497,13 +3497,19 @@ export function initRelocateViewEvents() {
     });
 
     root.querySelectorAll('.btn-delete-scan').forEach(btn => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', async () => {
         const scanId = btn.getAttribute('data-scan-id');
         const serial = btn.getAttribute('data-serial');
         const session = relocateService.getActiveSession();
         if (!session) return;
 
-        const confirmed = confirm(`Are you sure you want to remove machine [${serial}] from this session?\nIt will be restored to unscanned / idle status.`);
+        const confirmed = await notificationService.confirmDelete({
+          title: 'Remove Scanned Machine',
+          message: `Are you sure you want to remove machine [${serial}] from this relocation session? It will be restored to unscanned / idle status.`,
+          count: 1,
+          itemName: `Machine [${serial}]`,
+          itemType: 'Scanned Session Item'
+        });
         if (!confirmed) return;
 
         try {

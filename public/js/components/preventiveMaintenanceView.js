@@ -3429,9 +3429,18 @@ export function initPreventiveMaintenanceEvents() {
   });
 
   container.querySelectorAll('.btn-pm-delete-config').forEach(btn => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', async () => {
       const cfgId = btn.getAttribute('data-config-id');
-      if (confirm('Are you sure you want to delete this machine schedule configuration?')) {
+      const cfg = preventiveMaintenanceService.getConfigById(cfgId);
+      const machineType = cfg?.machineType || 'Schedule Configuration';
+      const confirmed = await notificationService.confirmDelete({
+        title: 'Delete Schedule Configuration',
+        message: `Are you sure you want to delete this schedule configuration for "${machineType}"? All scheduled interval settings for this type will be removed.`,
+        count: 1,
+        itemName: machineType,
+        itemType: 'Configuration'
+      });
+      if (confirmed) {
         preventiveMaintenanceService.deleteConfig(cfgId);
         notificationService.success('Configuration deleted successfully.');
         rerenderView();
@@ -3527,7 +3536,14 @@ function bindModalEvents(container) {
         const idx = parseInt(btn.getAttribute('data-index'), 10);
         const currentItems = getCurrentChecklistItems();
         const itemToRemove = currentItems[idx];
-        if (!confirm(`Are you sure you want to remove inspection checklist item:\n"${itemToRemove}"?`)) {
+        const confirmed = await notificationService.confirmDelete({
+          title: 'Remove Inspection Checklist Item',
+          message: `Are you sure you want to remove inspection checklist item for "${targetMachineType}"?`,
+          count: 1,
+          itemName: itemToRemove,
+          itemType: 'Checklist Item'
+        });
+        if (!confirmed) {
           return;
         }
         currentItems.splice(idx, 1);
