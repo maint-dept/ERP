@@ -364727,9 +364727,40 @@
     }
   ],
   "settings": {
-    "default_visible_columns": null,
-    "default_frozen_columns": null,
-    "admin_columns_updated_at": null,
+    "default_visible_columns": [
+      "sl",
+      "select",
+      "systemAssetId",
+      "system_asset_id",
+      "machineName",
+      "machine_name",
+      "brand",
+      "machine_brand",
+      "model",
+      "machine_model",
+      "serialNumber",
+      "machine_serial",
+      "manufacturing_serial",
+      "unit",
+      "unit_factory",
+      "floor",
+      "line",
+      "running",
+      "usable_idle",
+      "repairable_idle",
+      "total_quantity",
+      "status",
+      "machine_status",
+      "remarks",
+      "service_date",
+      "actions"
+    ],
+    "default_frozen_columns": [
+      "machineName",
+      "model",
+      "serialNumber"
+    ],
+    "admin_columns_updated_at": "2026-11-02T12:00:15.110Z",
     "requireApprovalForMaintenanceUsers": true,
     "requireDeleteApproval": true,
     "allowDuplicateSerialNumbers": false,
@@ -364827,7 +364858,7 @@
         "autoSync": true,
         "retryEnabled": true,
         "updatedAt": "2026-11-02T04:32:27.654Z",
-        "lastSync": "11/2/2026, 5:31:30 PM"
+        "lastSync": "11/2/2026, 6:05:34 PM"
       }
     ],
     "emailConfig": {

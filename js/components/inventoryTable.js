@@ -710,7 +710,7 @@ export function renderInventoryTable() {
 
   columnLayout.forEach(col => {
     const thStyle = col.isFrozen 
-      ? `position: sticky !important; left: ${col.leftOffset}px !important; z-index: 30 !important;` 
+      ? `position: sticky !important; left: ${col.leftOffset}px !important; z-index: 30 !important; background-color: #0b1329; background-clip: padding-box;` 
       : '';
     const boundaryClass = col.isLastFrozen ? 'col-frozen-boundary' : '';
     const thClass = col.isFrozen ? `col-frozen-cell ${boundaryClass}` : '';
@@ -797,7 +797,7 @@ export function renderInventoryTable() {
       // Render columns in calculated sequence
       columnLayout.forEach(col => {
         const tdStyle = col.isFrozen 
-          ? `position: sticky !important; left: ${col.leftOffset}px !important; z-index: 10 !important;` 
+          ? `position: sticky !important; left: ${col.leftOffset}px !important; z-index: 10 !important; background-color: #0b1329; background-clip: padding-box;` 
           : '';
         const boundaryClass = col.isLastFrozen ? 'col-frozen-boundary' : '';
         const tdClass = col.isFrozen ? `col-frozen-cell ${boundaryClass}` : '';
@@ -1233,8 +1233,8 @@ export function renderInventoryTable() {
       ${renderPaginationBarHtml('top')}
 
       <!-- 6. Real Excel-Style Machine Data Grid with Native Horizontal & Vertical Scroll -->
-      <div class="inventory-table-scroll-container" id="inventory-table-scroll-viewport" style="flex: 1 1 0%; min-height: 250px; overflow: auto;">
-        <table class="excel-grid-table" style="min-width: 100%; width: ${columnLayout.reduce((sum, c) => sum + (c.width || 120), 94)}px; table-layout: fixed;">
+      <div class="inventory-table-scroll-container" id="inventory-table-scroll-viewport" style="flex: 1 1 0%; min-height: 250px; overflow: auto; -webkit-overflow-scrolling: touch; touch-action: pan-x pan-y; overscroll-behavior: contain; isolation: isolate; position: relative;">
+        <table class="excel-grid-table" style="min-width: 100%; width: ${columnLayout.reduce((sum, c) => sum + (c.width || 120), 94)}px; table-layout: fixed; border-collapse: separate; border-spacing: 0;">
           <thead>
             ${headerHtml}
           </thead>
@@ -1252,6 +1252,31 @@ export function renderInventoryTable() {
 }
 
 export function initInventoryTableEvents() {
+  // ─── Mobile Performance: apply touch-action + will-change immediately after render ───
+  const _scrollVp = document.getElementById('inventory-table-scroll-viewport');
+  if (_scrollVp) {
+    _scrollVp.style.webkitOverflowScrolling = 'touch';
+    _scrollVp.style.touchAction = 'pan-x pan-y';
+    _scrollVp.style.overscrollBehavior = 'contain';
+    _scrollVp.style.willChange = 'scroll-position';
+    _scrollVp.style.isolation = 'isolate';
+    // On mobile: remove overflow:hidden from parent wrapper to allow natural scroll
+    const isMobile = window.innerWidth <= 768 || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '');
+    if (isMobile) {
+      const wrapper = _scrollVp.closest('.inventory-page-wrapper');
+      if (wrapper) {
+        wrapper.style.height = 'auto';
+        wrapper.style.overflow = 'visible';
+        wrapper.style.overflowX = 'hidden';
+        wrapper.style.minHeight = '100%';
+      }
+      // Set max-height on scroll viewport based on available window height
+      const topCtrl = document.querySelector('.inventory-sticky-header-panel');
+      const topH = topCtrl ? topCtrl.offsetHeight : 180;
+      _scrollVp.style.maxHeight = `calc(100dvh - ${topH + 100}px)`;
+    }
+  }
+
   // Refresh Machine Inventory from Central Cloud Database
   const btnSyncDb = document.getElementById('btn-inventory-sync-db');
   if (btnSyncDb) {
@@ -1872,23 +1897,26 @@ export function initInventoryTableEvents() {
   if (scrollContainer) {
     if (btnScrollLeft) {
       btnScrollLeft.addEventListener('click', () => {
-        scrollContainer.scrollBy({ left: -380, behavior: 'smooth' });
+        // No 'smooth' behavior - instant scroll is much faster on Android
+        scrollContainer.scrollLeft = Math.max(0, scrollContainer.scrollLeft - 320);
       });
     }
     if (btnScrollRight) {
       btnScrollRight.addEventListener('click', () => {
-        scrollContainer.scrollBy({ left: 380, behavior: 'smooth' });
+        scrollContainer.scrollLeft = Math.min(
+          scrollContainer.scrollWidth - scrollContainer.clientWidth,
+          scrollContainer.scrollLeft + 320
+        );
       });
     }
-    // Shift + wheel horizontal scroll helper (only scroll horizontally when user explicitly holds Shift key)
+    // Shift + wheel horizontal scroll helper — passive:true to never block Android scroll
     scrollContainer.addEventListener('wheel', (e) => {
       if (e.shiftKey && !e.ctrlKey && e.deltaY !== 0 && e.deltaX === 0) {
         if (scrollContainer.scrollWidth > scrollContainer.clientWidth) {
           scrollContainer.scrollLeft += e.deltaY;
-          e.preventDefault();
         }
       }
-    }, { passive: false });
+    }, { passive: true });
   }
 
   // 7. Table Header Sorting Handler
