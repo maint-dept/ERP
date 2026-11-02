@@ -11125,13 +11125,6 @@
       "machineName": "Single Needle Lock Stitch Machine",
       "machineNameId": "mn-1792077157398-8mma",
       "updatedAt": "2026-11-01T17:14:46.486Z"
-    },
-    {
-      "id": "sm-mod-1793554303887",
-      "brandId": "brd-1791365588525-v0qg",
-      "name": "Standard",
-      "status": "ACTIVE",
-      "createdAt": "2026-10-09T11:29:35.469Z"
     }
   ],
   "machines": [
@@ -321506,7 +321499,7 @@
       },
       "createdAt": "2026-01-01T00:00:00Z",
       "lastLoginAt": "2026-10-04T10:45:38.968Z",
-      "updatedAt": "2026-11-02T04:32:46.173Z",
+      "updatedAt": "2026-10-04T10:45:38.968Z",
       "presetId": "preset_super_admin",
       "presetName": "Super Admin",
       "passwordHash": "$sha256$6ad526a0cf737517d4609e058dc306b2$454c146535308e78f7597aa51ac660a043569dd70843ec7b9e0b50be956f14b3"
@@ -364727,40 +364720,9 @@
     }
   ],
   "settings": {
-    "default_visible_columns": [
-      "sl",
-      "select",
-      "systemAssetId",
-      "system_asset_id",
-      "machineName",
-      "machine_name",
-      "brand",
-      "machine_brand",
-      "model",
-      "machine_model",
-      "serialNumber",
-      "machine_serial",
-      "manufacturing_serial",
-      "unit",
-      "unit_factory",
-      "floor",
-      "line",
-      "running",
-      "usable_idle",
-      "repairable_idle",
-      "total_quantity",
-      "status",
-      "machine_status",
-      "remarks",
-      "service_date",
-      "actions"
-    ],
-    "default_frozen_columns": [
-      "machineName",
-      "model",
-      "serialNumber"
-    ],
-    "admin_columns_updated_at": "2026-11-02T12:00:15.110Z",
+    "default_visible_columns": null,
+    "default_frozen_columns": null,
+    "admin_columns_updated_at": null,
     "requireApprovalForMaintenanceUsers": true,
     "requireDeleteApproval": true,
     "allowDuplicateSerialNumbers": false,
@@ -364839,7 +364801,7 @@
         "enabled": true,
         "autoSync": true,
         "retryEnabled": true,
-        "updatedAt": "2026-11-02T04:32:27.654Z"
+        "updatedAt": "2026-11-02T12:43:50.949Z"
       },
       {
         "id": "db_postgresql_replica",
@@ -364857,27 +364819,10 @@
         "enabled": true,
         "autoSync": true,
         "retryEnabled": true,
-        "updatedAt": "2026-11-02T04:32:27.654Z",
-        "lastSync": "11/2/2026, 6:05:34 PM"
+        "updatedAt": "2026-11-02T12:43:50.950Z",
+        "lastSync": "11/2/2026, 7:43:53 AM"
       }
-    ],
-    "emailConfig": {
-      "fromName": "Al-Muslim ERP System",
-      "fromEmail": "maint.dept2023@gmail.com",
-      "smtpHost": "smtp.gmail.com",
-      "smtpPort": "587",
-      "smtpUser": "maint.dept2023@gmail.com",
-      "smtpPass": "zoxwqdrddjdveozf",
-      "encryption": "TLS",
-      "isConfigured": true,
-      "lastTestedAt": "2026-11-02T11:22:48.184Z",
-      "lastTestStatus": "FAILED",
-      "lastTestRecipient": null,
-      "lastTestMode": "HANDSHAKE",
-      "latencyMs": null,
-      "updatedAt": "2026-11-02T11:22:44.795Z",
-      "lastTestError": "Gmail Authentication Failed (535 BadCredentials): Google requires a 16-character App Password generated from this matching Google account (myaccount.google.com/apppasswords). Please ensure 2-Step Verification is active and the 16-char App Password was generated for this exact account."
-    }
+    ]
   },
   "documents": [
     {

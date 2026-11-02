@@ -2084,6 +2084,13 @@ body.theme-light .badge-archived {
     touch-action: pan-y !important;
   }
 
+  /* Unlock dual-axis panning on main-view-container when table or inventory page is loaded */
+  #main-view-container:has(.inventory-page-wrapper),
+  #main-view-container:has(#inventory-table-scroll-viewport),
+  #main-view-container:has(.excel-grid-table) {
+    touch-action: pan-x pan-y !important;
+  }
+
   #main-view-container:has(.uam-dashboard-page),
   .app-main:has(.uam-dashboard-page) #main-view-container {
     overflow-y: auto !important;
@@ -2131,7 +2138,21 @@ body.theme-light .badge-archived {
   }
 
   .inventory-table-scroll-container,
-  #inventory-table-scroll-viewport,
+  #inventory-table-scroll-viewport {
+    height: auto !important;
+    min-height: 380px !important;
+    max-height: none !important;
+    flex: 1 0 auto !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-x pan-y !important;
+    overscroll-behavior-x: contain !important;
+    overscroll-behavior-y: auto !important;
+    transform: translateZ(0);
+    will-change: scroll-position;
+  }
+
   .uam-table-scroll-container,
   .uam-tab-content-wrapper,
   .responsive-table-wrapper,
@@ -2955,9 +2976,23 @@ body.theme-light .nav-switcher-item:hover {
   }
 
   /* Data Tables & Cards List Viewports */
-  .transfers-table-container,
   .inventory-table-scroll-container,
-  #inventory-table-scroll-viewport,
+  #inventory-table-scroll-viewport {
+    height: auto !important;
+    min-height: 380px !important;
+    max-height: none !important;
+    flex: 1 0 auto !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-x pan-y !important;
+    overscroll-behavior-x: contain !important;
+    overscroll-behavior-y: auto !important;
+    transform: translateZ(0);
+    will-change: scroll-position;
+  }
+
+  .transfers-table-container,
   .uam-table-scroll-container,
   .tools-table-scroll-container,
   .relocate-idle-list,

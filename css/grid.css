@@ -796,24 +796,30 @@ td.col-actions-cell {
     overscroll-behavior-x: contain;
   }
 
-  /* Release wide data columns on mobile so they don't consume the screen width (584px) */
-  .excel-grid-table tbody td.col-frozen-cell {
-    position: static !important;
-    left: auto !important;
-    box-shadow: none !important;
-    border-right: 1px solid var(--border-color) !important;
+  /* Machine Inventory High-Performance Mobile Grid & Sticky Column Geometry */
+  .excel-grid-table {
+    table-layout: fixed !important;
+    contain: layout paint;
   }
 
-  .excel-grid-table thead th.col-frozen-cell {
-    position: sticky !important;
-    top: 0 !important;
-    left: auto !important;
-    box-shadow: none !important;
-    border-right: 1px solid var(--border-color) !important;
-    z-index: 20 !important;
+  .excel-grid-container,
+  .inventory-table-scroll-container,
+  #inventory-table-scroll-viewport {
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-x pan-y !important;
+    overscroll-behavior-x: contain !important;
+    overscroll-behavior-y: auto !important;
+    transform: translateZ(0);
+    will-change: scroll-position;
   }
 
-  /* Keep SL (38px) and Checkbox (38px) sticky so user always maintains row context */
+  .inventory-page-wrapper {
+    touch-action: pan-x pan-y !important;
+  }
+
+  /* SL (38px) and Checkbox (38px) left-pinned sticky layout on mobile */
   .col-freeze-sl {
     position: sticky !important;
     left: 0 !important;
@@ -825,6 +831,9 @@ td.col-actions-cell {
     padding: 6px 2px !important;
     text-align: center !important;
     font-size: 11px !important;
+    background-color: #0f172a !important;
+    background-clip: padding-box !important;
+    border-right: 1px solid var(--border-color) !important;
   }
 
   .col-freeze-check {
@@ -837,13 +846,52 @@ td.col-actions-cell {
     box-sizing: border-box !important;
     padding: 6px 2px !important;
     text-align: center !important;
-    border-right: 2px solid #38bdf8 !important;
+    background-color: #0f172a !important;
+    background-clip: padding-box !important;
+    border-right: 1px solid var(--border-color) !important;
+  }
+
+  /* Dynamic mobile frozen column (Primary column pinned at 76px with solid background) */
+  .col-frozen-cell {
+    position: sticky !important;
+    z-index: 20 !important;
+    background-color: #0f172a !important;
+    background-clip: padding-box !important;
   }
 
   thead th.col-freeze-sl,
   thead th.col-freeze-check {
     top: 0 !important;
     z-index: 35 !important;
+    background-color: #070d1e !important;
+    background-clip: padding-box !important;
+  }
+
+  thead th.col-frozen-cell {
+    top: 0 !important;
+    z-index: 30 !important;
+    background-color: #070d1e !important;
+    background-clip: padding-box !important;
+  }
+
+  /* Light Theme support for mobile frozen headers and cells */
+  body.theme-light .col-freeze-sl,
+  body.theme-light .col-freeze-check,
+  body.theme-light .col-frozen-cell {
+    background-color: #ffffff !important;
+    background-clip: padding-box !important;
+  }
+
+  body.theme-light thead th.col-freeze-sl,
+  body.theme-light thead th.col-freeze-check,
+  body.theme-light thead th.col-frozen-cell {
+    background-color: #f1f5f9 !important;
+    background-clip: padding-box !important;
+  }
+
+  .col-frozen-boundary {
+    border-right: 2px solid #0284c7 !important;
+    box-shadow: 3px 0 8px rgba(0, 0, 0, 0.45) !important;
   }
 
   /* Mobile Responsive Inventory Sticky Header Deck & Top Unified Bar */

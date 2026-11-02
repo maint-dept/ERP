@@ -677,43 +677,56 @@ export function renderInventoryTable() {
 
   const orderedCols = [...frozenList, ...unfrozenList];
 
-  // Dynamic sticky left offset calculation
-  let stickyOffset = 94; // SL (50px) + Check (44px)
+  // Dynamic sticky left offset calculation & responsive viewport geometry
+  const isMobile = isMobileViewport;
+  const slWidth = isMobile ? 38 : 50;
+  const checkWidth = isMobile ? 38 : 44;
+  let stickyOffset = slWidth + checkWidth; // 76px on mobile, 94px on desktop
+
+  // On mobile screens (320px - 480px), freezing multiple wide columns (e.g. 200px + 120px + 130px = 450px)
+  // consumes > 100% of the screen width and makes scrolling right impossible.
+  // Therefore, on mobile we freeze at most the 1st primary column from frozenList (compacted to 140px),
+  // leaving the rest of the screen (~150px - 260px) freely scrollable for all remaining data columns!
+  const effectiveFrozenCount = isMobile ? Math.min(1, frozenList.length) : frozenList.length;
+
   const columnLayout = orderedCols.map((c, idx) => {
-    const isFrozen = frozenList.includes(c) ||
-      frozenSet.has(String(c.key).toLowerCase()) ||
-      frozenSet.has(String(mapFieldKeyToTableKey(c.key)).toLowerCase());
+    const isFrozen = frozenList.includes(c) && (idx < effectiveFrozenCount);
     let leftOffset = 0;
+    let colWidth = c.width;
+    if (isMobile && isFrozen) {
+      colWidth = Math.min(140, c.width || 140);
+    }
     if (isFrozen) {
       leftOffset = stickyOffset;
-      stickyOffset += c.width;
+      stickyOffset += colWidth;
     }
-    const isLastFrozen = isFrozen && (idx === frozenList.length - 1);
+    const isLastFrozen = isFrozen && (idx === effectiveFrozenCount - 1);
     return {
       ...c,
+      width: colWidth,
       isFrozen,
       isLastFrozen,
       leftOffset
     };
   });
 
-  const checkIsLastFrozen = frozenList.length === 0;
+  const checkIsLastFrozen = effectiveFrozenCount === 0;
 
   // Build Table Header Columns
   let headerHtml = `
     <tr>
-      <th class="col-freeze-sl th-sortable" data-sort="sl" style="width: 50px; min-width: 50px; max-width: 50px; text-align: center; cursor: pointer;" title="Sort by Serial / Asset Sequence Number">SL</th>
-      <th class="col-freeze-check ${checkIsLastFrozen ? 'col-frozen-boundary' : ''}" style="width: 44px; min-width: 44px; max-width: 44px; text-align: center;">
+      <th class="col-freeze-sl th-sortable" data-sort="sl" style="width: ${slWidth}px; min-width: ${slWidth}px; max-width: ${slWidth}px; text-align: center; cursor: pointer; left: 0px !important;" title="Sort by Serial / Asset Sequence Number">SL</th>
+      <th class="col-freeze-check ${checkIsLastFrozen ? 'col-frozen-boundary' : ''}" style="width: ${checkWidth}px; min-width: ${checkWidth}px; max-width: ${checkWidth}px; text-align: center; left: ${slWidth}px !important;">
         <input type="checkbox" id="check-select-all" title="Select all visible machines" ${machines.length > 0 && selectedIds.size >= machines.length ? 'checked' : ''} />
       </th>
   `;
 
   columnLayout.forEach(col => {
-    const thStyle = col.isFrozen 
-      ? `position: sticky !important; left: ${col.leftOffset}px !important; z-index: 30 !important; background-color: #0b1329; background-clip: padding-box;` 
-      : '';
     const boundaryClass = col.isLastFrozen ? 'col-frozen-boundary' : '';
     const thClass = col.isFrozen ? `col-frozen-cell ${boundaryClass}` : '';
+    const thStyle = col.isFrozen 
+      ? `position: sticky !important; left: ${col.leftOffset}px !important; width: ${col.width}px !important; min-width: ${col.width}px !important; max-width: ${col.width}px !important; z-index: 30 !important; background-color: var(--bg-surface, #0f172a) !important; background-clip: padding-box !important;` 
+      : `width: ${col.width}px; min-width: ${col.width}px; max-width: ${col.width}px;`;
     headerHtml += col.renderTh(thStyle, thClass);
   });
 
@@ -788,19 +801,19 @@ export function renderInventoryTable() {
       let row = `<tr class="${isSelected ? 'selected' : ''}" data-id="${m.id}">`;
 
       // 1. SL (Sticky Left: 0px)
-      row += `<td class="col-freeze-sl" style="text-align: center; color: var(--text-muted); font-weight: 700; font-family: var(--font-mono); font-size: 11.5px;">${displaySlNo}</td>`;
+      row += `<td class="col-freeze-sl" style="width: ${slWidth}px; min-width: ${slWidth}px; max-width: ${slWidth}px; text-align: center; color: var(--text-muted); font-weight: 700; font-family: var(--font-mono); font-size: 11.5px; left: 0px !important;">${displaySlNo}</td>`;
 
-      // 2. Selection Checkbox (Sticky Left: 50px)
+      // 2. Selection Checkbox (Sticky Left: slWidth)
       const isOperable = authService.canOperateMachine(m);
-      row += `<td class="col-freeze-check ${checkIsLastFrozen ? 'col-frozen-boundary' : ''}" style="text-align: center;"><input type="checkbox" class="machine-row-check" data-id="${m.id}" ${isSelected ? 'checked' : ''} ${!isOperable ? 'disabled title="View-Only machine (cannot be bulk modified)" style="opacity: 0.35; cursor: not-allowed;"' : ''}/></td>`;
+      row += `<td class="col-freeze-check ${checkIsLastFrozen ? 'col-frozen-boundary' : ''}" style="width: ${checkWidth}px; min-width: ${checkWidth}px; max-width: ${checkWidth}px; text-align: center; left: ${slWidth}px !important;"><input type="checkbox" class="machine-row-check" data-id="${m.id}" ${isSelected ? 'checked' : ''} ${!isOperable ? 'disabled title="View-Only machine (cannot be bulk modified)" style="opacity: 0.35; cursor: not-allowed;"' : ''}/></td>`;
 
       // Render columns in calculated sequence
       columnLayout.forEach(col => {
-        const tdStyle = col.isFrozen 
-          ? `position: sticky !important; left: ${col.leftOffset}px !important; z-index: 10 !important; background-color: #0b1329; background-clip: padding-box;` 
-          : '';
         const boundaryClass = col.isLastFrozen ? 'col-frozen-boundary' : '';
         const tdClass = col.isFrozen ? `col-frozen-cell ${boundaryClass}` : '';
+        const tdStyle = col.isFrozen 
+          ? `position: sticky !important; left: ${col.leftOffset}px !important; width: ${col.width}px !important; min-width: ${col.width}px !important; max-width: ${col.width}px !important; z-index: 10 !important; background-color: var(--bg-surface, #0f172a) !important; background-clip: padding-box !important;` 
+          : `width: ${col.width}px; min-width: ${col.width}px; max-width: ${col.width}px;`;
         row += col.renderTd(m, { rQty, uQty, rpQty, totalQty, statusBadgeClass, displayStatus, isAmb }, tdStyle, tdClass);
       });
 
@@ -1233,8 +1246,8 @@ export function renderInventoryTable() {
       ${renderPaginationBarHtml('top')}
 
       <!-- 6. Real Excel-Style Machine Data Grid with Native Horizontal & Vertical Scroll -->
-      <div class="inventory-table-scroll-container" id="inventory-table-scroll-viewport" style="flex: 1 1 0%; min-height: 250px; overflow: auto; -webkit-overflow-scrolling: touch; touch-action: pan-x pan-y; overscroll-behavior: contain; isolation: isolate; position: relative;">
-        <table class="excel-grid-table" style="min-width: 100%; width: ${columnLayout.reduce((sum, c) => sum + (c.width || 120), 94)}px; table-layout: fixed; border-collapse: separate; border-spacing: 0;">
+      <div class="inventory-table-scroll-container" id="inventory-table-scroll-viewport" style="flex: 1 1 0%; min-height: 250px; overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; touch-action: pan-x pan-y;">
+        <table class="excel-grid-table" style="min-width: 100%; width: ${columnLayout.reduce((sum, c) => sum + (c.width || 120), slWidth + checkWidth)}px; table-layout: fixed;">
           <thead>
             ${headerHtml}
           </thead>
@@ -1252,31 +1265,6 @@ export function renderInventoryTable() {
 }
 
 export function initInventoryTableEvents() {
-  // ─── Mobile Performance: apply touch-action + will-change immediately after render ───
-  const _scrollVp = document.getElementById('inventory-table-scroll-viewport');
-  if (_scrollVp) {
-    _scrollVp.style.webkitOverflowScrolling = 'touch';
-    _scrollVp.style.touchAction = 'pan-x pan-y';
-    _scrollVp.style.overscrollBehavior = 'contain';
-    _scrollVp.style.willChange = 'scroll-position';
-    _scrollVp.style.isolation = 'isolate';
-    // On mobile: remove overflow:hidden from parent wrapper to allow natural scroll
-    const isMobile = window.innerWidth <= 768 || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '');
-    if (isMobile) {
-      const wrapper = _scrollVp.closest('.inventory-page-wrapper');
-      if (wrapper) {
-        wrapper.style.height = 'auto';
-        wrapper.style.overflow = 'visible';
-        wrapper.style.overflowX = 'hidden';
-        wrapper.style.minHeight = '100%';
-      }
-      // Set max-height on scroll viewport based on available window height
-      const topCtrl = document.querySelector('.inventory-sticky-header-panel');
-      const topH = topCtrl ? topCtrl.offsetHeight : 180;
-      _scrollVp.style.maxHeight = `calc(100dvh - ${topH + 100}px)`;
-    }
-  }
-
   // Refresh Machine Inventory from Central Cloud Database
   const btnSyncDb = document.getElementById('btn-inventory-sync-db');
   if (btnSyncDb) {
@@ -1806,7 +1794,10 @@ export function initInventoryTableEvents() {
   // Table horizontal and vertical scroll: dynamically repositions floating menu instead of abruptly closing it
   const scrollViewport = document.getElementById('inventory-table-scroll-viewport');
   if (scrollViewport) {
-    scrollViewport.addEventListener('scroll', repositionOpenMenu, { passive: true });
+    scrollViewport.addEventListener('scroll', () => {
+      if (!window.__isActionMenuOpen) return;
+      repositionOpenMenu();
+    }, { passive: true });
   }
 
   const btnExportCsv = document.getElementById('btn-export-csv');
@@ -1897,26 +1888,23 @@ export function initInventoryTableEvents() {
   if (scrollContainer) {
     if (btnScrollLeft) {
       btnScrollLeft.addEventListener('click', () => {
-        // No 'smooth' behavior - instant scroll is much faster on Android
-        scrollContainer.scrollLeft = Math.max(0, scrollContainer.scrollLeft - 320);
+        scrollContainer.scrollBy({ left: -380, behavior: 'smooth' });
       });
     }
     if (btnScrollRight) {
       btnScrollRight.addEventListener('click', () => {
-        scrollContainer.scrollLeft = Math.min(
-          scrollContainer.scrollWidth - scrollContainer.clientWidth,
-          scrollContainer.scrollLeft + 320
-        );
+        scrollContainer.scrollBy({ left: 380, behavior: 'smooth' });
       });
     }
-    // Shift + wheel horizontal scroll helper — passive:true to never block Android scroll
+    // Shift + wheel horizontal scroll helper (only scroll horizontally when user explicitly holds Shift key)
     scrollContainer.addEventListener('wheel', (e) => {
       if (e.shiftKey && !e.ctrlKey && e.deltaY !== 0 && e.deltaX === 0) {
         if (scrollContainer.scrollWidth > scrollContainer.clientWidth) {
           scrollContainer.scrollLeft += e.deltaY;
+          e.preventDefault();
         }
       }
-    }, { passive: true });
+    }, { passive: false });
   }
 
   // 7. Table Header Sorting Handler
