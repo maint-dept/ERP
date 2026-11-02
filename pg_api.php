@@ -25,7 +25,7 @@ $API_KEY = '';                      // Optional: Set a secret key if desired
 // --- 2. CORS & ANTI-CACHE HEADERS (Allows GitHub Pages & frontend to connect securely) ---
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, Authorization, X-API-Key, X-DB-Host, X-DB-Port, X-DB-Name, X-DB-User, X-DB-Pass, X-DB-SSL, X-User-Role, X-User-Id');
+header('Access-Control-Allow-Headers: Content-Type, Authorization, X-API-Key, X-DB-Host, X-DB-Port, X-DB-Name, X-DB-User, X-DB-Pass, X-DB-SSL, X-User-Role, X-User-Id, Cache-Control, Pragma, Expires, *');
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0, post-check=0, pre-check=0');
 header('Pragma: no-cache');

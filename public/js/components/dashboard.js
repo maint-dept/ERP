@@ -1215,6 +1215,9 @@ export function renderDashboard() {
         grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 14px;
         flex-shrink: 0;
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
       }
 
       .dash-dist-card {
@@ -1227,6 +1230,11 @@ export function renderDashboard() {
         box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
         transition: border-color 0.2s ease, box-shadow 0.2s ease;
         min-height: 0;
+        min-width: 0;
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+        overflow: hidden;
       }
 
       .dash-dist-card:hover {
@@ -1537,6 +1545,9 @@ export function renderDashboard() {
       .dash-table-responsive {
         max-height: 220px;
         overflow-y: auto;
+        overflow-x: auto;
+        width: 100%;
+        -webkit-overflow-scrolling: touch;
       }
 
       .dash-live-pm-table {
@@ -1676,8 +1687,140 @@ export function renderDashboard() {
       }
 
       @media (max-width: 768px) {
+        .modern-erp-dashboard {
+          padding: 8px 8px 16px !important;
+          width: 100% !important;
+          max-width: 100% !important;
+          box-sizing: border-box !important;
+        }
+
         .dash-distributions-grid {
-          grid-template-columns: 1fr;
+          grid-template-columns: minmax(0, 1fr) !important;
+          width: 100% !important;
+          max-width: 100% !important;
+          box-sizing: border-box !important;
+          gap: 12px !important;
+        }
+
+        .dash-dist-card {
+          min-width: 0 !important;
+          width: 100% !important;
+          max-width: 100% !important;
+          box-sizing: border-box !important;
+          padding: 12px !important;
+          overflow: hidden !important;
+        }
+
+        .dash-dist-header {
+          flex-wrap: wrap !important;
+          gap: 6px !important;
+          align-items: flex-start !important;
+          margin-bottom: 8px !important;
+          width: 100% !important;
+          max-width: 100% !important;
+        }
+
+        .dash-dist-title-box {
+          min-width: 0 !important;
+          flex: 1 1 auto !important;
+          gap: 6px !important;
+        }
+
+        .dash-dist-title {
+          font-size: 14px !important;
+          white-space: normal !important;
+          word-break: break-word !important;
+        }
+
+        .dash-dist-pill {
+          max-width: 100% !important;
+          white-space: normal !important;
+          word-break: break-word !important;
+          font-size: 10.5px !important;
+          padding: 2px 7px !important;
+          flex-shrink: 0 !important;
+        }
+
+        .dash-dist-mini-status {
+          flex-wrap: wrap !important;
+          gap: 4px !important;
+          font-size: 11px !important;
+          margin-bottom: 8px !important;
+          padding-bottom: 6px !important;
+          width: 100% !important;
+          max-width: 100% !important;
+        }
+
+        .dash-dist-list {
+          width: 100% !important;
+          max-width: 100% !important;
+          min-width: 0 !important;
+          box-sizing: border-box !important;
+          gap: 8px !important;
+        }
+
+        .dash-dist-row {
+          width: 100% !important;
+          max-width: 100% !important;
+          min-width: 0 !important;
+          box-sizing: border-box !important;
+          padding: 6px 8px !important;
+        }
+
+        .dash-dist-top-line {
+          width: 100% !important;
+          max-width: 100% !important;
+          min-width: 0 !important;
+          display: flex !important;
+          justify-content: space-between !important;
+          align-items: baseline !important;
+          gap: 6px !important;
+        }
+
+        .dash-dist-name {
+          flex: 1 1 auto !important;
+          min-width: 0 !important;
+          overflow: hidden !important;
+          text-overflow: ellipsis !important;
+          white-space: nowrap !important;
+          font-size: 12.5px !important;
+        }
+
+        .dash-dist-desc {
+          white-space: nowrap !important;
+          overflow: hidden !important;
+          text-overflow: ellipsis !important;
+          font-size: 11px !important;
+          margin-bottom: 3px !important;
+        }
+
+        .dash-dist-stat {
+          flex-shrink: 0 !important;
+          white-space: nowrap !important;
+          margin-left: auto !important;
+          font-size: 12px !important;
+          text-align: right !important;
+        }
+
+        .dash-dist-pct {
+          font-size: 10.5px !important;
+          margin-left: 2px !important;
+        }
+
+        .dash-schedules-bar {
+          flex-wrap: wrap !important;
+          gap: 8px !important;
+          padding: 8px 12px !important;
+        }
+
+        .dash-schedules-left {
+          flex-wrap: wrap !important;
+          gap: 6px !important;
+        }
+
+        .dash-schedules-actions {
+          width: 100% !important;
+          justify-content: space-between !important;
         }
       }
 

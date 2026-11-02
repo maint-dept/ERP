@@ -11,7 +11,7 @@ import { renderNavbar, initNavbarEvents } from './components/navbar.js?v=4.27.0'
 import { renderSidebar, initSidebarEvents, updateSidebarActiveState } from './components/sidebar.js?v=4.27.0';
 import { renderHomepageView, initHomepageEvents } from './components/homepageView.js?v=4.26.52';
 import { renderLoginView, initLoginViewEvents } from './components/loginView.js?v=4.26.85';
-import { renderDashboard, initDashboardEvents } from './components/dashboard.js?v=4.26.52';
+import { renderDashboard, initDashboardEvents } from './components/dashboard.js?v=4.27.2';
 import { renderMachineModal, initMachineModalEvents } from './components/machineModal.js?v=4.26.50';
 import { renderMachineDetails, initMachineDetailsEvents } from './components/machineDetails.js?v=4.26.50';
 import { renderTransferModal, initTransferModalEvents } from './components/transferModal.js?v=4.26.50';
@@ -764,6 +764,19 @@ class ERPApplication {
       }
     } catch (err) {
       console.error('Error rendering navbar:', err);
+    }
+  }
+
+  renderSidebarOnly() {
+    try {
+      const sidebarContainer = document.getElementById('sidebar-container');
+      if (sidebarContainer) {
+        sidebarContainer.innerHTML = renderSidebar();
+        initSidebarEvents();
+        updateSidebarActiveState(state.get('currentView'));
+      }
+    } catch (err) {
+      console.error('Error rendering sidebar:', err);
     }
   }
 
