@@ -5,12 +5,16 @@ import { retryQueue } from './retryQueue.js';
 
 class SyncManager {
   constructor() {
+    const defaultMysqlEndpoint = (typeof window !== 'undefined' && window.location && !window.location.hostname.includes('github.io'))
+      ? (window.location.origin + '/mysql_api.php')
+      : 'https://moviezonex.com/mysql_api.php';
+
     this.primaryAdapter = new MysqlAdapter({
       id: 'mysql_primary',
       name: 'MySQL (maint_erp)',
       type: 'MYSQL',
       role: 'PRIMARY',
-      endpoint: 'https://moviezonex.com/mysql_api.php',
+      endpoint: defaultMysqlEndpoint,
       database: 'motaherh_maint-erp',
       username: 'motaherh_mainterp',
       password: 'Maint@456',
@@ -25,7 +29,7 @@ class SyncManager {
       name: 'MySQL (maint_erp)',
       type: 'MYSQL',
       role: 'PRIMARY',
-      endpoint: 'https://moviezonex.com/mysql_api.php',
+      endpoint: defaultMysqlEndpoint,
       database: 'motaherh_maint-erp',
       username: 'motaherh_mainterp',
       password: 'Maint@456',
@@ -34,6 +38,10 @@ class SyncManager {
       autoSync: true
     };
     this.secondaryAdapters = new Map(); // dbId -> adapter
+
+    const defaultPgEndpoint = (typeof window !== 'undefined' && window.location && !window.location.hostname.includes('github.io'))
+      ? (window.location.origin + '/api/pg_api.php')
+      : 'https://moviezonex.com/api/pg_api.php';
 
     // Permanent Enterprise Secondary Backup Target (PostgreSQL)
     const defaultPg = new PostgresAdapter({
@@ -46,7 +54,7 @@ class SyncManager {
       database: 'motaherh_Maintenance',
       username: 'motaherh_AMG-maint',
       password: 'ol(5_MK8mF{~7cdG',
-      endpoint: 'https://moviezonex.com/api/pg_api.php',
+      endpoint: defaultPgEndpoint,
       apiKey: '',
       ssl: false,
       enabled: true,
@@ -65,7 +73,7 @@ class SyncManager {
       database: 'motaherh_Maintenance',
       username: 'motaherh_AMG-maint',
       password: 'ol(5_MK8mF{~7cdG',
-      endpoint: 'https://moviezonex.com/api/pg_api.php',
+      endpoint: defaultPgEndpoint,
       apiKey: '',
       ssl: false,
       enabled: true,
@@ -111,6 +119,10 @@ class SyncManager {
     this._recoveryProbeIntervalMs = 7000;
 
     if (this.isFailoverActive) {
+      // Proactively test if MySQL Primary is healthy on startup to clear stale failovers
+      setTimeout(() => {
+        this.checkPrimaryRecovery().catch(() => {});
+      }, 500);
       this._startRecoveryProbe();
     }
   }
@@ -134,6 +146,13 @@ class SyncManager {
       // Always clear old adapters before rebuilding (prevents stale adapter bug)
       this.secondaryAdapters.clear();
 
+      const defaultMysqlEndpoint = (typeof window !== 'undefined' && window.location && !window.location.hostname.includes('github.io'))
+        ? (window.location.origin + '/mysql_api.php')
+        : 'https://moviezonex.com/mysql_api.php';
+      const defaultPgEndpoint = (typeof window !== 'undefined' && window.location && !window.location.hostname.includes('github.io'))
+        ? (window.location.origin + '/api/pg_api.php')
+        : 'https://moviezonex.com/api/pg_api.php';
+
       if (!configs || !Array.isArray(configs) || configs.length === 0) {
         configs = [
           this.primaryAdapter.config,
@@ -147,7 +166,7 @@ class SyncManager {
             database: 'motaherh_Maintenance',
             username: 'motaherh_AMG-maint',
             password: 'ol(5_MK8mF{~7cdG',
-            endpoint: 'https://moviezonex.com/api/pg_api.php',
+            endpoint: defaultPgEndpoint,
             apiKey: '',
             ssl: false,
             enabled: true,
@@ -171,7 +190,7 @@ class SyncManager {
           database: 'motaherh_Maintenance',
           username: 'motaherh_AMG-maint',
           password: 'ol(5_MK8mF{~7cdG',
-          endpoint: 'https://moviezonex.com/api/pg_api.php',
+          endpoint: defaultPgEndpoint,
           apiKey: '',
           ssl: false,
           enabled: true,
@@ -188,18 +207,12 @@ class SyncManager {
             const t = (conf.type || '').toUpperCase();
             if (t === 'MYSQL') {
               let ep = (conf.endpoint || '').trim().replace(/\/$/, '');
-              if (!ep || ep === '/api/db/mysql') {
-                ep = 'https://moviezonex.com/mysql_api.php';
-              } else if (ep === 'api/mysql_api.php' || ep === '/api/mysql_api.php') {
-                if (typeof window !== 'undefined' && window.location && window.location.hostname.includes('github.io')) {
-                  ep = 'https://moviezonex.com/mysql_api.php';
-                } else if (typeof window !== 'undefined' && window.location && window.location.origin) {
-                  ep = window.location.origin + '/api/mysql_api.php';
-                } else {
-                  ep = 'https://moviezonex.com/mysql_api.php';
-                }
+              if (typeof window !== 'undefined' && window.location && window.location.hostname.includes('moviezonex.com')) {
+                ep = window.location.origin + '/mysql_api.php';
+              } else if (!ep || ep === '/api/db/mysql' || ep === 'mysql_api.php' || ep === '/mysql_api.php' || ep === 'api/mysql_api.php' || ep === '/api/mysql_api.php') {
+                ep = defaultMysqlEndpoint;
               } else if (!/^https?:\/\//i.test(ep)) {
-                ep = (ep.startsWith('localhost') || ep.startsWith('127.0.0.1')) ? ('http://' + ep) : ('https://' + ep);
+                ep = (typeof window !== 'undefined' && window.location?.protocol ? window.location.protocol : 'https:') + '//' + ep;
               }
               conf.endpoint = ep;
               if (!conf.database) conf.database = 'motaherh_maint-erp';
@@ -208,14 +221,14 @@ class SyncManager {
               adapter = new MysqlAdapter(conf);
             } else if (t === 'POSTGRESQL' || t === 'POSTGRES') {
               let ep = (conf.endpoint || '').trim().replace(/\/$/, '');
-              if (!ep || ep === 'api/pg_api.php' || ep === '/api/pg_api.php' || ep.includes('://api/pg_api.php') || ep === '/api/db/pg' || (ep.includes('api/pg_api.php') && !ep.startsWith('http'))) {
-                if (typeof window !== 'undefined' && window.location && (window.location.hostname.includes('github.io') || window.location.hostname.includes('moviezonex.com'))) {
-                  ep = 'https://moviezonex.com/api/pg_api.php';
-                }
+              if (typeof window !== 'undefined' && window.location && window.location.hostname.includes('moviezonex.com')) {
+                ep = window.location.origin + '/api/pg_api.php';
+              } else if (!ep || ep === 'api/pg_api.php' || ep === '/api/pg_api.php' || ep.includes('://api/pg_api.php') || ep === '/api/db/pg' || (ep.includes('api/pg_api.php') && !ep.startsWith('http'))) {
+                ep = defaultPgEndpoint;
               } else if (!/^https?:\/\//i.test(ep) && !ep.startsWith('/')) {
-                ep = 'https://' + ep;
+                ep = (typeof window !== 'undefined' && window.location?.protocol ? window.location.protocol : 'https:') + '//' + ep;
               }
-              conf.endpoint = ep || 'https://moviezonex.com/api/pg_api.php';
+              conf.endpoint = ep || defaultPgEndpoint;
               conf.id = conf.id || 'db_postgresql_replica';
               conf.name = conf.name || 'PostgreSQL Database Connection';
               conf.role = conf.role || 'BACKUP';
@@ -473,6 +486,11 @@ class SyncManager {
       if (res && res.success) {
         // MySQL is back online!
         const pendingCount = await this.getPendingRecoveryCount();
+        if (pendingCount === 0 && (!this.failoverModifiedTables || this.failoverModifiedTables.size === 0)) {
+          console.log('[Recovery Probe] 🐬 MySQL Primary is back online and 100% healthy with 0 pending delta records. Deactivating failover.');
+          this.setFailoverMode(false);
+          return true;
+        }
         console.log(`[Recovery Probe] 🐬 MySQL Primary is back online! Pausing auto-write recovery. ${pendingCount} pending delta records awaiting Admin verification.`);
         this.setRecoveryPending(true, pendingCount);
         return true;
@@ -666,7 +684,7 @@ class SyncManager {
         const nowStr = new Date().toLocaleTimeString();
         const statusEl = document.getElementById('nav-db-status');
         if (statusEl) {
-          statusEl.title = `MySQL Primary Synchronized (Row-Level Recovery at ${nowStr}) • Parity Confirmed`;
+          statusEl.title = `System Cloud Synchronized (Last Sync: ${nowStr})`;
         }
       }
 
@@ -679,7 +697,7 @@ class SyncManager {
         }));
         if (window.notificationService && (isManual || this._isManualRecovery)) {
           window.notificationService.success(
-            `MySQL Primary Restored: ${syncedCount} delta record(s) safely synced with Row-Level Upsert.`
+            `Data Restored: ${syncedCount} record(s) synchronized.`
           );
         }
       }
@@ -729,6 +747,18 @@ class SyncManager {
         } catch (pgErr) {
           console.error('[SyncManager Failover] ❌ PostgreSQL saveMultipleTables failed:', pgErr);
         }
+      }
+
+      // Resilient fallback check: test if MySQL Primary is responsive before failing
+      if (this.primaryAdapter) {
+        try {
+          const myResult = await this.primaryAdapter.saveMultipleTables(tablesObj);
+          if (myResult && myResult.success) {
+            console.log('[SyncManager Failover] 🐬 MySQL Primary responded successfully during saveMultipleTables! Restoring primary operation.');
+            this.setFailoverMode(false);
+            return myResult;
+          }
+        } catch (_) {}
       }
 
       // Rule 4: Dual Failure Protection
@@ -820,6 +850,18 @@ class SyncManager {
         }
       }
 
+      // Resilient fallback check: test if MySQL Primary is responsive before failing
+      if (this.primaryAdapter) {
+        try {
+          const myResult = await this.primaryAdapter.saveTable(collection, dataObj);
+          if (myResult && myResult.success) {
+            console.log(`[SyncManager Failover] 🐬 MySQL Primary responded successfully for "${collection}"! Restoring primary operation.`);
+            this.setFailoverMode(false);
+            return myResult;
+          }
+        } catch (_) {}
+      }
+
       // Rule 4: Dual Failure Protection
       return {
         success: false,
@@ -904,6 +946,18 @@ class SyncManager {
         }
       }
 
+      // Resilient fallback check: test if MySQL Primary is responsive before failing
+      if (this.primaryAdapter) {
+        try {
+          const myResult = await this.primaryAdapter.saveRecord(collection, docId, data);
+          if (myResult && myResult.success) {
+            console.log(`[SyncManager Failover] 🐬 MySQL Primary responded successfully for "${collection}/${docId}"! Restoring primary operation.`);
+            this.setFailoverMode(false);
+            return myResult;
+          }
+        } catch (_) {}
+      }
+
       // Rule 4: Dual failure protection
       return {
         success: false,
@@ -950,7 +1004,7 @@ class SyncManager {
       this._queueRetry(this.primaryAdapter, collection, docId, 'SAVE_RECORD', data, errMsg);
       return {
         success: false,
-        error: 'Write Blocked: Both MySQL Primary and PostgreSQL Replica are unreachable. Save action aborted to prevent data corruption.',
+        error: 'Write Blocked: Cloud database servers are currently unreachable. Save action paused to protect system data.',
         dualFailure: true
       };
     }

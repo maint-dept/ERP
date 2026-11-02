@@ -424,10 +424,10 @@ export function renderUserManagement() {
             </div>
             <div>
               <div style="display: flex; align-items: center; gap: 7px;">
-                <h1 style="font-size: 15px; font-weight: 800; color: #fff; margin: 0; letter-spacing: -0.2px; line-height: 1.2;">
+                <h1 class="uam-header-title" style="font-size: 15px; font-weight: 800; color: var(--text-primary, #fff); margin: 0; letter-spacing: -0.2px; line-height: 1.2;">
                   User Access Management
                 </h1>
-                <span class="badge" style="font-size: 9px; padding: 1px 6px; font-weight: 800; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.35); color: #38bdf8; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.4px;">
+                <span class="badge uam-security-matrix-badge" style="font-size: 9px; padding: 1px 6px; font-weight: 800; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.35); color: #0284c7; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.4px;">
                   Security Matrix
                 </span>
               </div>
@@ -441,38 +441,38 @@ export function renderUserManagement() {
           <div style="display: flex; align-items: center; gap: 5px; flex-wrap: wrap;">
             <!-- 1. Total Accounts -->
             <div class="uam-kpi-summary-card" data-action="TOTAL" style="background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 6px; padding: 3px 8px; display: inline-flex; align-items: center; gap: 5px; cursor: pointer; transition: all 0.15s ease;" title="Click to view all accounts">
-              <span style="font-size: 9.5px; font-weight: 700; color: #94a3b8; text-transform: uppercase;">Total</span>
-              <strong style="font-size: 12.5px; font-weight: 800; color: #fff;">${totalAccounts}</strong>
+              <span class="uam-kpi-label" style="font-size: 9.5px; font-weight: 700; color: #94a3b8; text-transform: uppercase;">Total</span>
+              <strong class="uam-kpi-value" style="font-size: 12.5px; font-weight: 800; color: #fff;">${totalAccounts}</strong>
             </div>
 
             <!-- 2. Active Accounts -->
             <div class="uam-kpi-summary-card" data-action="ACTIVE" style="background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 6px; padding: 3px 8px; display: inline-flex; align-items: center; gap: 5px; cursor: pointer; transition: all 0.15s ease;" title="Click to filter active accounts">
-              <span style="font-size: 9.5px; font-weight: 700; color: #34d399; text-transform: uppercase;">Active</span>
-              <strong style="font-size: 12.5px; font-weight: 800; color: #34d399;">${activeAccounts}</strong>
+              <span class="uam-kpi-label" style="font-size: 9.5px; font-weight: 700; color: #34d399; text-transform: uppercase;">Active</span>
+              <strong class="uam-kpi-value" style="font-size: 12.5px; font-weight: 800; color: #34d399;">${activeAccounts}</strong>
             </div>
 
             <!-- 3. Inactive Accounts -->
             <div class="uam-kpi-summary-card" data-action="INACTIVE" style="background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 6px; padding: 3px 8px; display: inline-flex; align-items: center; gap: 5px; cursor: pointer; transition: all 0.15s ease;" title="Click to filter inactive accounts">
-              <span style="font-size: 9.5px; font-weight: 700; color: #f87171; text-transform: uppercase;">Inactive</span>
-              <strong style="font-size: 12.5px; font-weight: 800; color: #f87171;">${inactiveAccounts}</strong>
+              <span class="uam-kpi-label" style="font-size: 9.5px; font-weight: 700; color: #f87171; text-transform: uppercase;">Inactive</span>
+              <strong class="uam-kpi-value" style="font-size: 12.5px; font-weight: 800; color: #f87171;">${inactiveAccounts}</strong>
             </div>
 
             <!-- 4. Accounts Pending Creation -->
             <div class="uam-kpi-summary-card" data-action="PENDING_CREATION" style="background: rgba(245, 158, 11, 0.1); border: 1px solid ${pendingCreation > 0 ? 'rgba(245, 158, 11, 0.5)' : 'rgba(255, 255, 255, 0.08)'}; border-radius: 6px; padding: 3px 8px; display: inline-flex; align-items: center; gap: 5px; cursor: pointer; transition: all 0.15s ease;" title="Click to filter manpower records missing user accounts">
-              <span style="font-size: 9.5px; font-weight: 700; color: #fbbf24; text-transform: uppercase;">Pending</span>
-              <strong style="font-size: 12.5px; font-weight: 800; color: ${pendingCreation > 0 ? '#fbbf24' : '#94a3b8'};">${pendingCreation}</strong>
+              <span class="uam-kpi-label" style="font-size: 9.5px; font-weight: 700; color: #fbbf24; text-transform: uppercase;">Pending</span>
+              <strong class="uam-kpi-value" style="font-size: 12.5px; font-weight: 800; color: ${pendingCreation > 0 ? '#fbbf24' : '#94a3b8'};">${pendingCreation}</strong>
             </div>
 
             <!-- 5. Accounts Pending Password Setup -->
             <div class="uam-kpi-summary-card" data-action="PENDING_PASSWORD" style="background: rgba(168, 85, 247, 0.1); border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 6px; padding: 3px 8px; display: inline-flex; align-items: center; gap: 5px; cursor: pointer; transition: all 0.15s ease;" title="Click to filter accounts with temporary passwords">
-              <span style="font-size: 9.5px; font-weight: 700; color: #c084fc; text-transform: uppercase;">Temp Pass</span>
-              <strong style="font-size: 12.5px; font-weight: 800; color: #c084fc;">${pendingPasswordSetup}</strong>
+              <span class="uam-kpi-label" style="font-size: 9.5px; font-weight: 700; color: #c084fc; text-transform: uppercase;">Temp Pass</span>
+              <strong class="uam-kpi-value" style="font-size: 12.5px; font-weight: 800; color: #c084fc;">${pendingPasswordSetup}</strong>
             </div>
 
             <!-- 6. Users with Permissions -->
             <div class="uam-kpi-summary-card" data-action="CONFIGURED_ACCESS" style="background: rgba(2, 132, 199, 0.1); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 6px; padding: 3px 8px; display: inline-flex; align-items: center; gap: 5px; cursor: pointer; transition: all 0.15s ease;" title="Click to view Access Permissions">
-              <span style="font-size: 9.5px; font-weight: 700; color: #38bdf8; text-transform: uppercase;">Access Set</span>
-              <strong style="font-size: 12.5px; font-weight: 800; color: #38bdf8;">${usersWithPermissions}</strong>
+              <span class="uam-kpi-label" style="font-size: 9.5px; font-weight: 700; color: #38bdf8; text-transform: uppercase;">Access Set</span>
+              <strong class="uam-kpi-value" style="font-size: 12.5px; font-weight: 800; color: #38bdf8;">${usersWithPermissions}</strong>
             </div>
           </div>
 
@@ -956,21 +956,21 @@ export function renderUserManagement() {
                       
                       <!-- Card Number (Sticky Left Freeze Pane) -->
                       <td class="uam-col-sticky-card" style="text-align: center; width: 115px; padding: 6px 8px;">
-                        <span class="badge uam-clickable-card-badge" data-card="${acc.cardNumber}" style="font-family: var(--font-mono); font-weight: 800; color: #38bdf8; font-size: 11.5px; background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.3); padding: 3px 8px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; white-space: nowrap; transition: all 0.15s ease;" title="Click to filter by Card ${acc.cardNumber}">
+                        <span class="badge uam-clickable-card-badge" data-card="${acc.cardNumber}" style="font-family: var(--font-mono); font-weight: 800; font-size: 11.5px; padding: 3px 8px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; white-space: nowrap; transition: all 0.15s ease;" title="Click to filter by Card ${acc.cardNumber}">
                           <span>${acc.cardNumber}</span>
                         </span>
                       </td>
 
                       <!-- Employee Name -->
                       <td style="text-align: left; width: 180px; padding: 6px 10px;">
-                        <div style="font-weight: 700; color: #fff; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${acc.employeeName}">${acc.employeeName}</div>
+                        <div class="uam-emp-name" style="font-weight: 700; color: var(--text-primary, #fff); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${acc.employeeName}">${acc.employeeName}</div>
                         <div style="font-size: 10px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${acc.department || ''}">${acc.department || '—'}</div>
                       </td>
 
                       <!-- Username -->
                       <td style="text-align: left; width: 135px; padding: 6px 10px;">
                         ${hasAccount ? `
-                          <span style="font-family: var(--font-mono); color: #cbd5e1; font-weight: 600; font-size: 11.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: inline-block; max-width: 125px;" title="@${acc.username}">
+                          <span class="uam-username-text" style="font-family: var(--font-mono); color: var(--text-secondary, #cbd5e1); font-weight: 700; font-size: 11.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: inline-block; max-width: 125px;" title="@${acc.username}">
                             @${acc.username}
                           </span>
                         ` : `
@@ -980,14 +980,14 @@ export function renderUserManagement() {
 
                       <!-- Designation -->
                       <td style="text-align: left; width: 155px; padding: 6px 10px;">
-                        <div style="font-size: 11.5px; color: #e2e8f0; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${acc.designation}">
+                        <div class="uam-designation-text" style="font-size: 11.5px; color: var(--text-primary, #e2e8f0); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${acc.designation}">
                           ${acc.designation}
                         </div>
                       </td>
 
                       <!-- Group -->
                       <td style="text-align: left; width: 130px; padding: 6px 10px;">
-                        <div style="font-size: 11.5px; color: #cbd5e1; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${acc.groupName || 'Al-Muslim Group'}">
+                        <div class="uam-group-text" style="font-size: 11.5px; color: var(--text-secondary, #cbd5e1); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${acc.groupName || 'Al-Muslim Group'}">
                           ${acc.groupName || 'Al-Muslim Group'}
                         </div>
                       </td>
@@ -1001,7 +1001,7 @@ export function renderUserManagement() {
 
                       <!-- Floor -->
                       <td style="text-align: center; width: 95px; padding: 6px 6px;">
-                        <div style="font-size: 11.5px; color: #38bdf8; font-weight: 600; white-space: nowrap;">
+                        <div class="uam-floor-text" style="font-size: 11.5px; color: var(--color-primary, #0284c7); font-weight: 700; white-space: nowrap;">
                           ${acc.floorName || '—'}
                         </div>
                       </td>
@@ -1029,10 +1029,10 @@ export function renderUserManagement() {
                         ${hasAccount ? `
                           <div style="display: flex; flex-direction: column; gap: 2px;">
                             <div style="display: flex; align-items: center; gap: 5px; flex-wrap: nowrap; overflow: hidden;">
-                              <span style="font-size: 11px; color: #e2e8f0; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${acc.permissionsSummary}">${acc.permissionsSummary}</span>
+                              <span class="uam-perm-summary" style="font-size: 11px; color: var(--text-primary, #e2e8f0); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${acc.permissionsSummary}">${acc.permissionsSummary}</span>
                               ${acc.presetName ? `<span class="badge badge-info" style="font-size: 9px; padding: 1px 5px; flex-shrink: 0;">${acc.presetName}</span>` : ''}
                             </div>
-                            <div style="font-size: 9.5px; color: #38bdf8; display: inline-flex; align-items: center; gap: 3px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="Assigned Scope: ${userAccessService.formatScopeSummary(acc.assignedScope)}">
+                            <div class="uam-scope-summary" style="font-size: 9.5px; color: var(--color-primary, #0284c7); display: inline-flex; align-items: center; gap: 3px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="Assigned Scope: ${userAccessService.formatScopeSummary(acc.assignedScope)}">
                               <span>📍</span> <span>${userAccessService.formatScopeSummary(acc.assignedScope)}</span>
                             </div>
                           </div>
@@ -1045,9 +1045,9 @@ export function renderUserManagement() {
                       <td style="text-align: center; width: 115px; padding: 6px 6px;">
                         ${hasAccount ? `
                           ${acc.passwordStatus === 'TEMPORARY' ? `
-                            <span class="badge" style="background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.4); color: #fbbf24; font-size: 10.5px; padding: 2px 8px; border-radius: 6px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;" title="Temporary password set. Click key icon to set active permanent password.">🟡 Temporary</span>
+                            <span class="badge badge-uam-temp-pass" style="background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.4); color: #fbbf24; font-size: 10.5px; padding: 2px 8px; border-radius: 6px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;" title="Temporary password set. Click key icon to set active permanent password.">🟡 Temporary</span>
                           ` : `
-                            <span class="badge" style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); color: #34d399; font-size: 10.5px; padding: 2px 8px; border-radius: 6px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;" title="Permanent active password configured">✅ Active</span>
+                            <span class="badge badge-uam-active-pass" style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); color: #34d399; font-size: 10.5px; padding: 2px 8px; border-radius: 6px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;" title="Permanent active password configured">✅ Active</span>
                           `}
                         ` : `
                           <span style="color: var(--text-muted); font-size: 11px;">—</span>
@@ -1060,7 +1060,7 @@ export function renderUserManagement() {
                           ${acc.lastLoginText === 'Never Logged In' || acc.lastLoginText === '—' || !acc.lastLoginText ? `
                             <span style="color: #64748b; font-style: italic;">Never Logged In</span>
                           ` : `
-                            <span style="color: #cbd5e1; font-weight: 600;">${acc.lastLoginText}</span>
+                            <span class="uam-last-login" style="color: var(--text-secondary, #cbd5e1); font-weight: 600;">${acc.lastLoginText}</span>
                           `}
                         </div>
                       </td>
@@ -4170,10 +4170,9 @@ export function initUserManagementEvents() {
     btnRefresh.addEventListener('click', async () => {
       btnRefresh.disabled = true;
       const originalHtml = btnRefresh.innerHTML;
-      btnRefresh.innerHTML = `<span style="display:inline-block; animation:spin 1s linear infinite;">🔄</span> Syncing...`;
-      notificationService.info('Synchronizing Manpower database and user access records...');
+      btnRefresh.innerHTML = `<span style="display:inline-block; animation:spin 1s linear infinite;">🔄</span> Refreshing...`;
       try {
-        // Targeted fast refresh directly from authoritative MySQL Primary (<250ms)
+        // Targeted fast refresh directly from cloud storage (<250ms)
         await storage.refreshTableFromMySQL(TABLE_NAMES.USERS);
         await storage.refreshTableFromMySQL(TABLE_NAMES.EMPLOYEES);
         await storage.refreshTableFromMySQL(TABLE_NAMES.ROLES);
@@ -4182,17 +4181,15 @@ export function initUserManagementEvents() {
         const res = await userAccessService.syncAllManpowerAccounts();
         if (res && res.success) {
           if (res.newAccountsCount > 0) {
-            notificationService.success(`Sync Succeeded: Auto-created ${res.newAccountsCount} new user accounts for Manpower employees! (Zero Default Permissions)`);
-          } else {
-            notificationService.success(`Sync Complete: All ${res.totalEmployees || 'registered'} Manpower employees & user accounts are fully in sync with MySQL Primary.`);
+            notificationService.success(`User directory updated: ${res.newAccountsCount} new user accounts created.`);
           }
           reRender();
         } else {
-          throw new Error(res?.error || 'Database synchronization returned an unsuccessful response.');
+          throw new Error(res?.error || 'User directory refresh returned an unsuccessful response.');
         }
       } catch (err) {
         console.error('[User Access Sync Error]', err);
-        notificationService.error(`Sync Failed: ${err.message || 'Unknown network/database error'}. Please check your connection and retry.`);
+        notificationService.error(`Refresh Failed: ${err.message || 'Unknown network error'}. Please check your connection and retry.`);
       } finally {
         btnRefresh.disabled = false;
         btnRefresh.innerHTML = originalHtml;

@@ -7,8 +7,8 @@
 import { state } from './state.js';
 import { storage } from './db/storage.js';
 import { authService } from './services/authService.js?v=4.26.85';
-import { renderNavbar, initNavbarEvents } from './components/navbar.js?v=4.26.106';
-import { renderSidebar, initSidebarEvents, updateSidebarActiveState } from './components/sidebar.js?v=4.26.106';
+import { renderNavbar, initNavbarEvents } from './components/navbar.js?v=4.27.0';
+import { renderSidebar, initSidebarEvents, updateSidebarActiveState } from './components/sidebar.js?v=4.27.0';
 import { renderHomepageView, initHomepageEvents } from './components/homepageView.js?v=4.26.52';
 import { renderLoginView, initLoginViewEvents } from './components/loginView.js?v=4.26.85';
 import { renderDashboard, initDashboardEvents } from './components/dashboard.js?v=4.26.52';
@@ -23,13 +23,13 @@ import { renderNotificationsDrawer, initNotificationsDrawerEvents } from './comp
 import { renderChangePasswordModal, initChangePasswordModalEvents } from './components/changePasswordModal.js';
 import { renderAccountSwitcherModal, initAccountSwitcherModalEvents } from './components/accountSwitcherModal.js';
 import { smartStorageService } from './services/smartStorageService.js';
-import { chatService } from './services/chatService.js';
 import { historyService } from './services/historyService.js';
 import { auditService } from './services/auditService.js';
 import { notificationService } from './services/notificationService.js';
 import { tempImportService } from './services/tempImportService.js';
 import { router } from './services/router.js?v=4.26.106';
 import { moduleLoader } from './services/moduleLoader.js?v=4.26.106';
+import { realtimeService } from './services/realtimeService.js';
 
 /**
  * Captures all active scroll, viewport, and focused input states.
@@ -246,6 +246,7 @@ class ERPApplication {
 
     this.render();
     window.__appLoaded = true;
+    realtimeService.init();
     router.init();
     this.bindEvents();
 
@@ -274,7 +275,6 @@ class ERPApplication {
     state.on('frozenColumns:changed', () => this.renderMainContent());
     state.on('inventory:updated', () => this.queueBackgroundRender());
     state.on('change:dashboardDateFilter', () => this.renderMainContent());
-    state.on('change:agentPanelOpen', () => this.renderAgentPanel());
 
     window.addEventListener('erp:inventory-updated', () => {
       this.queueBackgroundRender();
@@ -411,9 +411,6 @@ class ERPApplication {
     if (typeof window !== 'undefined' && !window.__pageUsableTime && typeof performance !== 'undefined') {
       window.__pageUsableTime = performance.now();
     }
-
-    // Initialize Agent Chat Service (loads from localStorage + server)
-    chatService.init().catch(e => console.warn('ChatService init notice:', e.message));
 
     // Ensure base URL reflects clean landing Home URL (/ERP/) without #home
     if (typeof window !== 'undefined' && window.location) {

@@ -578,10 +578,10 @@ function renderScreen2ToolsAddForm() {
     <div class="screen-tools-add" style="display: flex; flex-direction: column; gap: 14px;">
       
       <!-- Top Title Bar -->
-      <div style="background: linear-gradient(90deg, #84cc16, #a3e635); color: #000; padding: 8px 14px; border-radius: 6px; font-weight: 800; font-size: 15px; border: 1px solid #4d7c0f; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+      <div class="tools-allocation-top-bar" style="background: linear-gradient(135deg, #0f172a, #1e293b); color: #ffffff; padding: 10px 16px; border-radius: 8px; font-weight: 800; font-size: 14.5px; border: 1.5px solid rgba(56, 189, 248, 0.35); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; box-shadow: 0 4px 14px rgba(0,0,0,0.25);">
         <span style="display: flex; align-items: center; gap: 8px;">
           <span>🛠️ Tools Allocation Form:</span>
-          <span style="font-size: 11px; font-weight: 700; background: #0f172a; color: #fde047; padding: 2px 8px; border-radius: 4px; border: 1px solid #ca8a04;">
+          <span style="font-size: 11px; font-weight: 700; background: rgba(56, 189, 248, 0.15); color: #38bdf8; padding: 2px 8px; border-radius: 4px; border: 1px solid rgba(56, 189, 248, 0.4);">
             Active Reg #${currentRegNo}
           </span>
         </span>
@@ -612,7 +612,7 @@ function renderScreen2ToolsAddForm() {
           <div style="display: flex; align-items: center; gap: 10px;">
             <span style="font-size: 13.5px; font-weight: 800; color: #f1f5f9;">Registration No (Identity Number) :</span>
             <input type="text" id="input-tab-reg-no" value="${currentRegNo}" 
-              style="width: 110px; background: #eab308; color: #000; font-family: monospace; font-weight: 900; font-size: 16px; text-align: center; border: 2px solid #ca8a04; border-radius: 4px; padding: 4px 8px;" />
+              style="width: 110px; background: rgba(15, 23, 42, 0.85); color: #38bdf8; font-family: var(--font-mono); font-weight: 800; font-size: 15px; text-align: center; border: 1.5px solid #0284c7; border-radius: 6px; padding: 4px 8px;" />
             <button id="btn-generate-next-reg" title="Generate Next Dynamic Unique Sequential Reg No" style="background: #f59e0b; color: #000; border: 1px solid #d97706; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-weight: 800; font-size: 12px; display: flex; align-items: center; gap: 4px;">
               <span>🔄</span> Next Sequential
             </button>
@@ -830,10 +830,11 @@ function renderScreen2ToolsAddForm() {
             </div>
           </div>
 
-          <!-- Right Column: Big 3D SAVE Button matching screenshot -->
+          <!-- Right Column: Corporate Primary SAVE Action Card -->
           <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%;">
-            <button id="btn-save-allocation-batch" style="width: 100%; min-height: 120px; background: linear-gradient(145deg, #4ade80, #15803d); color: #ffffff; border: 3px solid #bbf7d0; border-radius: 12px; font-weight: 900; font-size: 24px; letter-spacing: 1.5px; cursor: pointer; box-shadow: 0 8px 16px -2px rgba(0,0,0,0.5), inset 0 2px 4px rgba(255,255,255,0.4); text-shadow: 0 2px 4px rgba(0,0,0,0.4); transition: transform 0.1s, box-shadow 0.1s;">
-              SAVE
+            <button id="btn-save-allocation-batch" class="btn-tools-save-action" style="width: 100%; min-height: 110px; background: linear-gradient(135deg, #16a34a, #15803d); color: #ffffff; border: 1.5px solid #22c55e; border-radius: 10px; font-weight: 900; font-size: 22px; letter-spacing: 1.5px; cursor: pointer; box-shadow: 0 4px 16px rgba(22, 163, 74, 0.35); transition: all 0.18s ease; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;">
+              <span>💾 SAVE</span>
+              <span style="font-size: 11px; font-weight: 600; opacity: 0.9; letter-spacing: 0.5px;">Commit to DB</span>
             </button>
             <span style="font-size: 11px; color: #94a3b8; margin-top: 6px; text-align: center;">Commit to Database</span>
           </div>
@@ -841,34 +842,34 @@ function renderScreen2ToolsAddForm() {
         </div>
       </div>
 
-      <!-- Live Data Table (Yellow / Golden Header Bar matching screenshot) -->
-      <div style="background: #1e293b; border-radius: 8px; border: 1.5px solid #ca8a04; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.2);">
-        <div style="background: #eab308; color: #000; padding: 6px 12px; font-weight: 800; font-size: 13.5px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+      <!-- Live Data Table (Clean Corporate Table Header) -->
+      <div class="tools-live-table-card" style="background: var(--bg-surface); border-radius: 8px; border: 1.5px solid var(--border-color); overflow: hidden; box-shadow: var(--shadow-sm);">
+        <div class="tools-live-table-header" style="background: rgba(15, 23, 42, 0.9); color: #f8fafc; padding: 8px 14px; font-weight: 800; font-size: 13.5px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; border-bottom: 1px solid var(--border-color);">
           <div style="display: flex; align-items: center; gap: 10px;">
             <span>Tools Allocated to Mechanic in Current Registration: (${liveAllocationQueue.length} Tools)</span>
-            <button id="btn-batch-add-shortcut" style="background: #0f172a; color: #38bdf8; border: 1px solid #0284c7; padding: 2px 10px; border-radius: 4px; font-size: 11px; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+            <button id="btn-batch-add-shortcut" style="background: #0284c7; color: #ffffff; border: 1px solid #38bdf8; padding: 3px 10px; border-radius: 4px; font-size: 11px; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 4px;">
               <span>➕</span> Batch Add Multiple Tools
             </button>
           </div>
-          <span style="font-size: 12px; font-weight: 600;">Double-check quantities before saving</span>
+          <span style="font-size: 11.5px; font-weight: 600; opacity: 0.85;">Double-check quantities before saving</span>
         </div>
 
         <div style="overflow-x: auto; max-height: 380px; overflow-y: auto;">
-          <table style="width: 100%; border-collapse: separate; border-spacing: 0; font-size: 12px;">
+          <table class="tools-queue-table" style="width: 100%; border-collapse: separate; border-spacing: 0; font-size: 12px;">
             <thead style="position: sticky; top: 0; z-index: 30;">
-              <tr style="background: #f59e0b; color: #000;">
-                <th style="position: sticky; top: 0; z-index: 30; background: #f59e0b; color: #000; padding: 8px 10px; text-align: center; width: 65px; border-bottom: 2px solid #b45309; box-shadow: 0 2px 4px rgba(0,0,0,0.3);">Reg. No</th>
-                <th style="position: sticky; top: 0; z-index: 30; background: #f59e0b; color: #000; padding: 8px 10px; text-align: center; width: 135px; border-bottom: 2px solid #b45309; box-shadow: 0 2px 4px rgba(0,0,0,0.3);">ERP Req #</th>
-                <th style="position: sticky; top: 0; z-index: 30; background: #f59e0b; color: #000; padding: 8px 10px; text-align: center; width: 90px; border-bottom: 2px solid #b45309; box-shadow: 0 2px 4px rgba(0,0,0,0.3);">Issue Date</th>
-                <th style="position: sticky; top: 0; z-index: 30; background: #f59e0b; color: #000; padding: 8px 10px; text-align: left; width: 110px; border-bottom: 2px solid #b45309; box-shadow: 0 2px 4px rgba(0,0,0,0.3);">ID Number</th>
-                <th style="position: sticky; top: 0; z-index: 30; background: #f59e0b; color: #000; padding: 8px 10px; text-align: left; width: 130px; border-bottom: 2px solid #b45309; box-shadow: 0 2px 4px rgba(0,0,0,0.3);">User Name</th>
-                <th style="position: sticky; top: 0; z-index: 30; background: #f59e0b; color: #000; padding: 8px 10px; text-align: left; width: 120px; border-bottom: 2px solid #b45309; box-shadow: 0 2px 4px rgba(0,0,0,0.3);">Job Title</th>
-                <th style="position: sticky; top: 0; z-index: 30; background: #f59e0b; color: #000; padding: 8px 10px; text-align: left; width: 120px; border-bottom: 2px solid #b45309; box-shadow: 0 2px 4px rgba(0,0,0,0.3);">Working Area</th>
-                <th style="position: sticky; top: 0; z-index: 30; background: #f59e0b; color: #000; padding: 8px 10px; text-align: left; border-bottom: 2px solid #b45309; box-shadow: 0 2px 4px rgba(0,0,0,0.3);">Equipment / Tool Name</th>
-                <th style="position: sticky; top: 0; z-index: 30; background: #f59e0b; color: #000; padding: 8px 10px; text-align: center; width: 75px; border-bottom: 2px solid #b45309; box-shadow: 0 2px 4px rgba(0,0,0,0.3);">Quantity</th>
-                <th style="position: sticky; top: 0; z-index: 30; background: #f59e0b; color: #000; padding: 8px 10px; text-align: center; width: 115px; border-bottom: 2px solid #b45309; box-shadow: 0 2px 4px rgba(0,0,0,0.3);">Status</th>
-                <th style="position: sticky; top: 0; z-index: 30; background: #f59e0b; color: #000; padding: 8px 10px; text-align: left; width: 180px; border-bottom: 2px solid #b45309; box-shadow: 0 2px 4px rgba(0,0,0,0.3);">Remarks</th>
-                <th style="position: sticky; top: 0; z-index: 30; background: #f59e0b; color: #000; padding: 8px 10px; text-align: center; width: 65px; border-bottom: 2px solid #b45309; box-shadow: 0 2px 4px rgba(0,0,0,0.3);">Action</th>
+              <tr class="tools-queue-thead-tr" style="background: #0f172a; color: #ffffff;">
+                <th style="position: sticky; top: 0; z-index: 30; padding: 8px 10px; text-align: center; width: 65px; border-bottom: 2px solid #0284c7;">Reg. No</th>
+                <th style="position: sticky; top: 0; z-index: 30; padding: 8px 10px; text-align: center; width: 135px; border-bottom: 2px solid #0284c7;">ERP Req #</th>
+                <th style="position: sticky; top: 0; z-index: 30; padding: 8px 10px; text-align: center; width: 90px; border-bottom: 2px solid #0284c7;">Issue Date</th>
+                <th style="position: sticky; top: 0; z-index: 30; padding: 8px 10px; text-align: left; width: 110px; border-bottom: 2px solid #0284c7;">ID Number</th>
+                <th style="position: sticky; top: 0; z-index: 30; padding: 8px 10px; text-align: left; width: 130px; border-bottom: 2px solid #0284c7;">User Name</th>
+                <th style="position: sticky; top: 0; z-index: 30; padding: 8px 10px; text-align: left; width: 120px; border-bottom: 2px solid #0284c7;">Job Title</th>
+                <th style="position: sticky; top: 0; z-index: 30; padding: 8px 10px; text-align: left; width: 120px; border-bottom: 2px solid #0284c7;">Working Area</th>
+                <th style="position: sticky; top: 0; z-index: 30; padding: 8px 10px; text-align: left; border-bottom: 2px solid #0284c7;">Equipment / Tool Name</th>
+                <th style="position: sticky; top: 0; z-index: 30; padding: 8px 10px; text-align: center; width: 75px; border-bottom: 2px solid #0284c7;">Quantity</th>
+                <th style="position: sticky; top: 0; z-index: 30; padding: 8px 10px; text-align: center; width: 115px; border-bottom: 2px solid #0284c7;">Status</th>
+                <th style="position: sticky; top: 0; z-index: 30; padding: 8px 10px; text-align: left; width: 180px; border-bottom: 2px solid #0284c7;">Remarks</th>
+                <th style="position: sticky; top: 0; z-index: 30; padding: 8px 10px; text-align: center; width: 65px; border-bottom: 2px solid #0284c7;">Action</th>
               </tr>
             </thead>
             <tbody id="allocation-queue-tbody">
@@ -2124,7 +2125,7 @@ function renderScreen6DatabasePage() {
       <div style="background: linear-gradient(90deg, #059669, #10b981); color: #fff; padding: 5px 12px; border-radius: 6px; font-weight: 800; font-size: 13.5px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; box-shadow: 0 4px 6px rgba(0,0,0,0.2);">
         <div style="display: flex; align-items: center; gap: 8px;">
           <span>🗄️ Database Management &amp; Raw Tables</span>
-          <span style="font-size: 10.5px; background: rgba(0,0,0,0.25); padding: 1px 7px; border-radius: 4px; font-weight: 600; color: #e2e8f0;">MySQL Synced</span>
+          <span style="font-size: 10.5px; background: rgba(0,0,0,0.25); padding: 1px 7px; border-radius: 4px; font-weight: 600; color: #e2e8f0;">Cloud Synced</span>
         </div>
         <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
           <button id="btn-toggle-db-import" style="background: ${dbShowImportDrawer || databaseDirectFileName ? '#15803d' : '#0f172a'}; color: ${dbShowImportDrawer || databaseDirectFileName ? '#fff' : '#86efac'}; border: 1.5px solid ${dbShowImportDrawer || databaseDirectFileName ? '#4ade80' : '#16a34a'}; padding: 3px 10px; border-radius: 4px; font-size: 11.5px; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 4px; box-shadow: ${dbShowImportDrawer ? '0 0 8px rgba(74,222,128,0.4)' : 'none'};">
@@ -2610,7 +2611,7 @@ export function initToolsManagementEvents() {
         initToolsManagementEvents();
       }
 
-      window.app?.showToast('Manpower Synced', `Successfully synced tool records with live Manpower (${res.updatedCount} record(s) updated).`, 'success');
+      // Silent sync: button animation and instant table refresh confirm success without intrusive toast popups
     } catch (err) {
       alert('Sync Error: ' + err.message);
     } finally {
@@ -3252,7 +3253,7 @@ export function initToolsManagementEvents() {
         container.innerHTML = renderActiveTab('tools-add');
         initToolsManagementEvents();
       }
-      window.app?.showToast('Tools Loaded', 'Loaded standard 28 tools for mechanic.', 'info');
+      // Instant table refresh provides immediate visual feedback; no blocking toast
     };
   }
 
@@ -3329,7 +3330,7 @@ export function initToolsManagementEvents() {
         container.innerHTML = renderActiveTab('tools-add');
         initToolsManagementEvents();
       }
-      window.app?.showToast('Item Added', `Added ${name} to allocation table.`, 'success');
+      // Direct table row addition provides clear visual feedback without covering Save button
     };
   }
 
@@ -4548,7 +4549,7 @@ export function initToolsManagementEvents() {
         try {
           btnDbSaveParsed.disabled = true;
           const origHtml = btnDbSaveParsed.innerHTML;
-          btnDbSaveParsed.innerHTML = '<span>⏳</span> Saving to MySQL Cloud Database...';
+          btnDbSaveParsed.innerHTML = '<span>⏳</span> Saving to Cloud Database...';
 
           let res = {};
           if (databaseDirectImportType === 'ALLOCATIONS') {
@@ -4913,8 +4914,7 @@ function openStaffSelectorModal() {
         if (document.getElementById('input-add-user-name')) document.getElementById('input-add-user-name').value = activeUserForm.userName;
         if (document.getElementById('input-add-job-title')) document.getElementById('input-add-job-title').value = activeUserForm.jobTitle;
         if (document.getElementById('input-add-working-area')) document.getElementById('input-add-working-area').value = activeUserForm.workingArea;
-
-        window.app?.showToast('Employee Assigned', `Auto-filled details for ${activeUserForm.userName} (${activeUserForm.userId})`, 'success');
+        // Form inputs are populated directly; no blocking popup needed
       };
     });
   }
@@ -5981,7 +5981,7 @@ function renderExcelImportCenterModal(initialTarget = 'ALLOCATIONS') {
       btnExecute.onclick = async () => {
         try {
           btnExecute.disabled = true;
-          btnExecute.innerHTML = '<span>⏳</span> Saving to MySQL Cloud Database...';
+          btnExecute.innerHTML = '<span>⏳</span> Saving to Cloud Database...';
 
           let result = {};
           if (activeImportTab === 'ALLOCATIONS') {
@@ -7145,8 +7145,7 @@ export function openBatchToolsAllocationModal() {
           container.innerHTML = renderActiveTab('tools-add');
           initToolsManagementEvents();
         }
-
-        window.app?.showToast('Batch Tools Allocated', `Successfully loaded ${addedCount} tools for ${uName}.`, 'success');
+        // Direct table update; no blocking toast
       };
     }
   }
@@ -8793,12 +8792,7 @@ Tools User - Shojib - 132694 [New]`;
           container.innerHTML = renderActiveTab('tools-add');
           initToolsManagementEvents();
         }
-
-        window.app?.showToast(
-          '✨ Auto-Fill Successful!',
-          `Successfully loaded ${count} items for ${uName} (${uId})${reqNoToSave ? ` [Req: #${reqNoToSave}]` : ''} into Live Allocation Table.`,
-          'success'
-        );
+        // Direct auto-fill population; silent so Save button remains fully accessible
       };
     }
   }

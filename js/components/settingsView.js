@@ -273,7 +273,7 @@ export function renderSettingsView() {
         </div>
 
         <!-- Card: Direct cPanel MySQL Database Connection -->
-        <div style="background: linear-gradient(135deg, rgba(2, 132, 199, 0.12) 0%, rgba(15, 23, 42, 0.85) 100%); border: 1.5px solid rgba(56, 189, 248, 0.4); border-radius: var(--radius-lg); padding: 22px; display: flex; flex-direction: column; gap: 14px; grid-column: 1 / -1; box-shadow: 0 4px 24px rgba(2, 132, 199, 0.12);">
+        <div class="cpanel-quick-banner" style="background: linear-gradient(135deg, rgba(2, 132, 199, 0.12) 0%, rgba(15, 23, 42, 0.85) 100%); border: 1.5px solid rgba(56, 189, 248, 0.4); border-radius: var(--radius-lg); padding: 22px; display: flex; flex-direction: column; gap: 14px; grid-column: 1 / -1; box-shadow: 0 4px 24px rgba(2, 132, 199, 0.12);">
           <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 12px; flex-wrap: wrap; gap: 12px;">
             <div style="display: flex; align-items: center; gap: 10px;">
               <span style="font-size: 26px;">🐬</span>

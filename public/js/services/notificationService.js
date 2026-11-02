@@ -34,6 +34,23 @@ class NotificationService {
   // ---------------------------------------------------------------------------
 
   /**
+   * Sanitizes internal database engine names and architecture jargon
+   * from any user-facing text, notifications, or toasts.
+   */
+  sanitizeEnterpriseText(str) {
+    if (!str || typeof str !== 'string') return '';
+    return str
+      .replace(/with live Manpower/gi, 'with Manpower')
+      .replace(/into Live Allocation Table/gi, 'into Allocation Table')
+      .replace(/Live Allocation Table/gi, 'Allocation Table')
+      .replace(/MySQL Primary/gi, 'Cloud Database')
+      .replace(/PostgreSQL (?:Failover|Replica|Secondary|Mirror|Backup)/gi, 'Cloud Backup')
+      .replace(/PostgreSQL/gi, 'Cloud Storage')
+      .replace(/MySQL/gi, 'Cloud Database')
+      .replace(/Failover Mode/gi, 'High Availability Mode');
+  }
+
+  /**
    * Identifies background tasks, auto-sync routines, and non-actionable status
    * updates that should be logged silently to Activity Log without visual popups.
    */
@@ -46,18 +63,34 @@ class NotificationService {
 
     const backgroundPatterns = [
       /auto-?sync/i,
+      /auto-?fill successful/i,
+      /manpower synced/i,
+      /successfully synced tool records/i,
+      /batch tools allocated/i,
+      /tools loaded/i,
+      /employee assigned/i,
       /created accounts for \d+ manpower/i,
       /reconciled \d+ manpower/i,
       /zero default access/i,
-      /background (sync|syncing|replication|probing|check|task|worker|refresh|audit)/i,
+      /background (sync|syncing|replication|probing|check|task|worker|refresh|audit|calculation|fetch|validation)/i,
       /auto-?created \d+ missing user accounts/i,
       /auto-?saved in background/i,
-      /periodic (health|check|sync|heartbeat)/i,
+      /periodic (health|check|sync|heartbeat|maintenance)/i,
+      /routine (database|system|health|maintenance|check)/i,
       /sync topology refreshed/i,
-      /delta reverse sync.*safely synced/i,
-      /probing mysql primary connectivity/i,
+      /delta reverse sync/i,
+      /probing (mysql|database|cloud)/i,
+      /checking (mysql|database|cloud) recovery/i,
+      /synchronizing manpower database/i,
+      /automatic (data sync|data loading|ui refresh|timestamp update|database check)/i,
       /opened direct cpanel/i,
-      /ready to configure a new/i
+      /ready to configure a new/i,
+      /fully in sync with mysql/i,
+      /synchronized with mysql/i,
+      /machine inventory successfully synchronized/i,
+      /switched automatically to.*failover/i,
+      /failover mode active/i,
+      /failover remains active/i
     ];
 
     return backgroundPatterns.some(pattern => pattern.test(combined));
@@ -70,8 +103,8 @@ class NotificationService {
       return String(str).replace(/^[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F1E6}-\u{1F1FF}✅❌⚠️ℹ️⏳💾⚡🐬]+\s*/u, '').trim();
     };
 
-    let cleanMsg = stripEmoji(message);
-    let cleanTitle = stripEmoji(title);
+    let cleanMsg = this.sanitizeEnterpriseText(stripEmoji(message));
+    let cleanTitle = this.sanitizeEnterpriseText(stripEmoji(title));
 
     // If title is generic or matches message, omit title for ultra-clean single-line toast
     if (cleanTitle && (cleanTitle.toLowerCase() === 'success' || cleanTitle.toLowerCase() === 'notice' || cleanTitle.toLowerCase() === 'info' || cleanTitle.toLowerCase() === cleanMsg.toLowerCase())) {
@@ -94,14 +127,23 @@ class NotificationService {
     const now = Date.now();
     if (this._recentToasts.size > 40) {
       for (const [k, ts] of this._recentToasts.entries()) {
-        if (now - ts > 10000) this._recentToasts.delete(k);
+        if (now - ts > 12000) this._recentToasts.delete(k);
       }
     }
 
-    const dedupeKey = `${type}::${cleanTitle}::${cleanMsg}`;
+    // Strip dynamic timestamps, IDs, and latency indicators for fuzzy dedupe
+    const normalizedMsg = cleanMsg
+      .replace(/\bat\s+\d{1,2}:\d{2}(?::\d{2})?\s*(?:AM|PM)?/gi, '')
+      .replace(/\b\d{4}-\d{2}-\d{2}[T\s]\d{2}:\d{2}:\d{2}(?:\.\d+)?Z?\b/gi, '')
+      .replace(/\(\d+(?:\.\d+)?(?:ms|s)\)/gi, '')
+      .replace(/\b[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}\b/gi, '')
+      .trim();
+
+    const dedupeWindow = type === 'error' ? 6000 : 5000;
+    const dedupeKey = `${type}::${cleanTitle}::${normalizedMsg}`;
     const lastShown = this._recentToasts.get(dedupeKey);
-    if (lastShown && (now - lastShown < this._dedupeWindowMs)) {
-      // Identical toast already active or shown within last 4.5s; skip duplicate
+    if (lastShown && (now - lastShown < dedupeWindow)) {
+      // Identical or equivalent toast already shown within dedupe window; skip duplicate
       return;
     }
     this._recentToasts.set(dedupeKey, now);
@@ -850,7 +892,50 @@ class NotificationService {
       };
     }
 
-    storage.insert(TABLE_NAMES.NOTIFICATIONS, item);
+    item.title = this.sanitizeEnterpriseText(item.title);
+    item.message = this.sanitizeEnterpriseText(item.message);
+
+    // Suppress background or automated tasks from populating the user's notification drawer
+    if (this.isBackgroundOrAutomatedTask(item.message, item.title, typeof optionsOrTitle === 'object' ? optionsOrTitle : {})) {
+      try {
+        if (typeof auditService !== 'undefined' && auditService && auditService.log) {
+          auditService.log('AUTOMATED_TASK', 'SYSTEM', 'BACKGROUND', `${item.title}: ${item.message}`);
+        }
+      } catch (_) {}
+      return null;
+    }
+
+    // Smart In-App Drawer Deduplication Guard:
+    // If an equivalent notification already exists, update it in-place instead of creating duplicate records
+    const existingList = storage.getTable(TABLE_NAMES.NOTIFICATIONS) || [];
+    let existingItem = null;
+
+    if (item.entityId && item.entityType) {
+      existingItem = existingList.find(n => 
+        n.entityId === item.entityId && 
+        n.entityType === item.entityType && 
+        n.type === item.type
+      );
+    } else if (item.title && item.message) {
+      const twelveHoursAgo = Date.now() - (12 * 60 * 60 * 1000);
+      existingItem = existingList.find(n => 
+        n.title === item.title && 
+        n.message === item.message && 
+        new Date(n.timestamp || 0).getTime() > twelveHoursAgo
+      );
+    }
+
+    if (existingItem) {
+      existingItem.timestamp = item.timestamp;
+      existingItem.read = false;
+      existingItem.readBy = [];
+      if (item.targetUrl) existingItem.targetUrl = item.targetUrl;
+      storage.update(TABLE_NAMES.NOTIFICATIONS, existingItem.id, existingItem);
+      item = existingItem;
+    } else {
+      storage.insert(TABLE_NAMES.NOTIFICATIONS, item);
+    }
+
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('erp:notification', { detail: item }));
       window.dispatchEvent(new CustomEvent('erp:notification-updated', { detail: item }));
@@ -869,10 +954,41 @@ class NotificationService {
   }
 
   /**
+   * One-time cleanup to prune duplicate historical records from notifications drawer
+   */
+  cleanDuplicateNotifications() {
+    try {
+      const notifs = storage.getTable(TABLE_NAMES.NOTIFICATIONS) || [];
+      if (!Array.isArray(notifs) || notifs.length === 0) return;
+      const seen = new Set();
+      const clean = [];
+      let hadDuplicates = false;
+
+      notifs.forEach(n => {
+        if (!n) return;
+        // Group by title, message, entityType, and entityId
+        const key = `${n.title || ''}::${n.message || ''}::${n.entityType || ''}::${n.entityId || ''}`;
+        if (seen.has(key)) {
+          hadDuplicates = true;
+        } else {
+          seen.add(key);
+          clean.push(n);
+        }
+      });
+
+      if (hadDuplicates) {
+        storage.setTable(TABLE_NAMES.NOTIFICATIONS, clean);
+        console.log(`[NotificationService] 🧹 Cleaned ${notifs.length - clean.length} duplicate drawer notifications.`);
+      }
+    } catch (_) {}
+  }
+
+  /**
    * Auto-seed requested concrete scenario showcase notifications if not present
    */
   ensureShowcaseSeeds() {
     try {
+      this.cleanDuplicateNotifications();
       const notifs = storage.getTable(TABLE_NAMES.NOTIFICATIONS) || [];
       let updated = false;
 

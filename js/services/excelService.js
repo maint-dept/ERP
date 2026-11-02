@@ -257,57 +257,116 @@ export function resolveLineSmart(rawLine, floorObj, linesList) {
   return null;
 }
 
-export function resolveMachineNameSmart(rawName, machineNamesList) {
-  if (!rawName) return null;
-  const raw = String(rawName).trim();
-  if (!raw) return null;
+export function resolveMachineNameSmart(rawName, machineNamesList, rawAssetCode = null) {
+  if (!rawName && !rawAssetCode) return null;
+  const raw = rawName ? String(rawName).trim() : '';
+  const assetCodeClean = rawAssetCode ? String(rawAssetCode).trim().toUpperCase() : '';
 
-  // 1. Direct ID match
-  let matched = machineNamesList.find(m => m.id === raw);
-  if (matched) return matched;
-
-  // 2. Exact name / code match (case-insensitive)
-  matched = machineNamesList.find(m => 
-    m.name && (m.name.toLowerCase() === raw.toLowerCase() || (m.code && m.code.toLowerCase() === raw.toLowerCase()))
-  );
-  if (matched) return matched;
-
-  // 3. Canonical dictionary resolution (e.g. "Over Lock Mechine" -> "Over Lock Machine", "Plain Machine" -> "Plane Machine", "Bartak Machine" -> "Bar tak Machine")
-  const canonical = (typeof smartStorageService !== 'undefined' && smartStorageService?.resolveCanonicalMachineName)
-    ? smartStorageService.resolveCanonicalMachineName(raw)
-    : raw;
-
-  if (canonical && canonical.toLowerCase() !== raw.toLowerCase()) {
-    matched = machineNamesList.find(m => m.name && m.name.toLowerCase() === canonical.toLowerCase());
-    if (matched) return matched;
+  // 1. Match primarily by Unique Machine Asset Code if provided
+  if (assetCodeClean) {
+    const matchedByAsset = machineNamesList.find(m => m && m.assetCode && m.assetCode.trim().toUpperCase() === assetCodeClean);
+    if (matchedByAsset) {
+      // If user edited or corrected the machine name in Excel, safely replace/update the name
+      if (raw && matchedByAsset.name && matchedByAsset.name.trim().toLowerCase() !== raw.toLowerCase() && !/^(MC|AST|MAC)-\d+/i.test(raw)) {
+        const oldName = matchedByAsset.name;
+        matchedByAsset.name = raw;
+        matchedByAsset.updatedAt = new Date().toISOString();
+        try {
+          storage.update(TABLE_NAMES.MACHINE_NAMES, matchedByAsset.id, { name: raw, updatedAt: matchedByAsset.updatedAt });
+          storage.saveTable(TABLE_NAMES.MACHINE_NAMES);
+          // Cascade to physical inventory MACHINES
+          const allM = storage.getTable(TABLE_NAMES.MACHINES) || [];
+          let cascadeCount = 0;
+          allM.forEach(m => {
+            if (m && (m.machineNameId === matchedByAsset.id || (m.machineAssetCode && m.machineAssetCode.toUpperCase() === assetCodeClean))) {
+              m.machineName = raw;
+              m.machineNameStr = raw;
+              cascadeCount++;
+            }
+          });
+          if (cascadeCount > 0) storage.saveTable(TABLE_NAMES.MACHINES);
+        } catch (_) {}
+      }
+      return matchedByAsset;
+    }
   }
 
-  // 4. Pure alphanumeric normalized match
-  const rawNorm = normalizePureAlphanumeric(raw);
-  const canonNorm = normalizePureAlphanumeric(canonical);
-  matched = machineNamesList.find(m => {
-    const mNorm = normalizePureAlphanumeric(m.name);
-    return mNorm === rawNorm || mNorm === canonNorm;
-  });
-  if (matched) return matched;
+  // 2. Direct ID or Asset Code match on rawName itself
+  if (raw) {
+    let matched = machineNamesList.find(m => m.id === raw || (m.assetCode && m.assetCode.toUpperCase() === raw.toUpperCase()));
+    if (matched) return matched;
 
-  // 5. Fuzzy similarity match (>= 0.80 similarity / Levenshtein <= 2)
-  let bestMN = null;
-  let bestScore = 0;
-  machineNamesList.forEach(m => {
-    const score = calculateSimilarity(raw, m.name);
-    if (score > bestScore && (score >= 0.80 || calculateLevenshtein(raw.toLowerCase(), m.name.toLowerCase()) <= 2)) {
-      bestScore = score;
-      bestMN = m;
+    // 3. Exact name / code match (case-insensitive)
+    matched = machineNamesList.find(m => 
+      m.name && (m.name.toLowerCase() === raw.toLowerCase() || (m.code && m.code.toLowerCase() === raw.toLowerCase()))
+    );
+    if (matched) {
+      if (assetCodeClean && (!matched.assetCode || matched.assetCode !== assetCodeClean)) {
+        matched.assetCode = assetCodeClean;
+        try { storage.update(TABLE_NAMES.MACHINE_NAMES, matched.id, { assetCode: assetCodeClean }); } catch (_) {}
+      }
+      return matched;
     }
-  });
-  if (bestMN) return bestMN;
 
-  // 6. Auto-register if new valid name
-  if (typeof smartStorageService !== 'undefined' && smartStorageService?.addMachineName) {
-    const newMN = smartStorageService.addMachineName(canonical || raw);
-    if (newMN && newMN.id) {
-      return storage.getItem(TABLE_NAMES.MACHINE_NAMES, newMN.id) || { id: newMN.id, name: canonical || raw };
+    // 4. Canonical dictionary resolution (e.g. "Over Lock Mechine" -> "Over Lock Machine", "Plain Machine" -> "Plane Machine", "Bartak Machine" -> "Bar tak Machine")
+    const canonical = (typeof smartStorageService !== 'undefined' && smartStorageService?.resolveCanonicalMachineName)
+      ? smartStorageService.resolveCanonicalMachineName(raw)
+      : raw;
+
+    if (canonical && canonical.toLowerCase() !== raw.toLowerCase()) {
+      matched = machineNamesList.find(m => m.name && m.name.toLowerCase() === canonical.toLowerCase());
+      if (matched) {
+        if (assetCodeClean && !matched.assetCode) {
+          matched.assetCode = assetCodeClean;
+          try { storage.update(TABLE_NAMES.MACHINE_NAMES, matched.id, { assetCode: assetCodeClean }); } catch (_) {}
+        }
+        return matched;
+      }
+    }
+
+    // 5. Pure alphanumeric normalized match
+    const rawNorm = normalizePureAlphanumeric(raw);
+    const canonNorm = normalizePureAlphanumeric(canonical);
+    matched = machineNamesList.find(m => {
+      const mNorm = normalizePureAlphanumeric(m.name);
+      return mNorm === rawNorm || mNorm === canonNorm;
+    });
+    if (matched) {
+      if (assetCodeClean && !matched.assetCode) {
+        matched.assetCode = assetCodeClean;
+        try { storage.update(TABLE_NAMES.MACHINE_NAMES, matched.id, { assetCode: assetCodeClean }); } catch (_) {}
+      }
+      return matched;
+    }
+
+    // 6. Fuzzy similarity match (>= 0.80 similarity / Levenshtein <= 2)
+    let bestMN = null;
+    let bestScore = 0;
+    machineNamesList.forEach(m => {
+      const score = calculateSimilarity(raw, m.name);
+      if (score > bestScore && (score >= 0.80 || calculateLevenshtein(raw.toLowerCase(), m.name.toLowerCase()) <= 2)) {
+        bestScore = score;
+        bestMN = m;
+      }
+    });
+    if (bestMN) {
+      if (assetCodeClean && !bestMN.assetCode) {
+        bestMN.assetCode = assetCodeClean;
+        try { storage.update(TABLE_NAMES.MACHINE_NAMES, bestMN.id, { assetCode: assetCodeClean }); } catch (_) {}
+      }
+      return bestMN;
+    }
+
+    // 7. Auto-register if new valid name
+    if (typeof smartStorageService !== 'undefined' && smartStorageService?.addMachineName) {
+      const newMN = smartStorageService.addMachineName(canonical || raw);
+      if (newMN && newMN.id) {
+        if (assetCodeClean) {
+          newMN.assetCode = assetCodeClean;
+          try { storage.update(TABLE_NAMES.MACHINE_NAMES, newMN.id, { assetCode: assetCodeClean }); } catch (_) {}
+        }
+        return storage.getItem(TABLE_NAMES.MACHINE_NAMES, newMN.id) || { id: newMN.id, name: canonical || raw, assetCode: assetCodeClean };
+      }
     }
   }
 
@@ -1193,9 +1252,13 @@ class ExcelService {
     const lowerHeaders = fileHeaders.map(h => ({ raw: h, clean: h.toLowerCase().replace(/[^a-z0-9]/g, '') }));
 
     const patterns = {
+      machine_asset_code: [
+        'machineassetcode', 'assetcode', 'uniqueassetcode', 'mcassetcode', 'mcassetid',
+        'machineassetid', 'uniqueassetid', 'mccode', 'machineuniqueid', 'assetidmc'
+      ],
       system_asset_id: [
         'systemassetid', 'systemasset', 'permanentmachineid', 'assetid', 'assetno',
-        'assettag', 'systemid', 'machineassetid', 'assetcode', 'amgmnt', 'amg'
+        'assettag', 'systemid', 'amgmnt', 'amg'
       ],
       machine_name: ['machinename', 'machinetype', 'mcname', 'itemname', 'machinedescription', 'type', 'machine'],
       machine_brand: ['machinebrand', 'brand', 'mcbrand', 'make', 'manufacturer', 'company'],
@@ -1538,8 +1601,9 @@ class ExcelService {
         // -------------------------------------------------------------------------
         // 1. Master Data Auto-Fix & Normalization (Spaces, Casing & Canonical Match)
         // -------------------------------------------------------------------------
-        // Machine Name
-        let foundMN = machineNameStr ? resolveMachineNameSmart(machineNameStr, machineNames) : null;
+        // Machine Name & Unique Asset Code Anchor
+        const rawAssetCode = mapping.machine_asset_code ? (row[mapping.machine_asset_code] || null) : (row['Asset Code'] || row['asset_code'] || row['Asset ID'] || row['asset_id'] || null);
+        let foundMN = (machineNameStr || rawAssetCode) ? resolveMachineNameSmart(machineNameStr, machineNames, rawAssetCode) : null;
         if (foundMN && foundMN.name) {
           if (foundMN.name !== machineNameStr) {
             const cell = getCellAddress(mapping.machine_name, rowNumber);
@@ -2057,6 +2121,7 @@ class ExcelService {
             serialNumber: serialNumber,
             machineNameId: foundMN?.id || (machineNames[0]?.id || 'mn-1'),
             machineNameStr: foundMN?.name || machineNameStr,
+            machineAssetCode: foundMN?.assetCode || rawAssetCode || '',
             brandId: foundBrand?.id || '',
             brandStr: foundBrand?.name || brandStr || '',
             modelId: foundModel?.id || '',
@@ -2400,6 +2465,11 @@ class ExcelService {
               if (d.floorId) updates.floorId = d.floorId;
               if (d.lineId) updates.lineId = d.lineId;
               if (d.machineNameId) updates.machineNameId = d.machineNameId;
+              if (d.machineNameStr) {
+                updates.machineName = d.machineNameStr;
+                updates.machineNameStr = d.machineNameStr;
+              }
+              if (d.machineAssetCode) updates.machineAssetCode = d.machineAssetCode;
               if (d.brandId) updates.brandId = d.brandId;
               if (d.modelId) {
                 updates.modelId = d.modelId;
@@ -2512,6 +2582,7 @@ class ExcelService {
 
             sheetNewMachines.push({
               machineNameId: d.machineNameId || 'mn-1',
+              machineAssetCode: d.machineAssetCode || '',
               brandId: d.brandId || '',
               modelId: modelId || '',
               serialNumber: d.serialNumber,

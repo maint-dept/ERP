@@ -305,7 +305,7 @@ function renderImportStageContent() {
 
           ${unknowns.models.length > 0 ? `
             <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 12px 16px;">
-              <div style="color: #c084fc; font-size: 12.5px; font-weight: 700; margin-bottom: 6px;">New Models (${unknowns.models.length}):</div>
+              <div style="color: #38bdf8; font-size: 12.5px; font-weight: 700; margin-bottom: 6px;">New Models (${unknowns.models.length}):</div>
               <div style="display: flex; flex-wrap: wrap; gap: 6px;">
                 ${unknowns.models.map(name => `<span class="badge badge-maint" style="font-size: 11px;">⚙️ ${name}</span>`).join('')}
               </div>
@@ -357,7 +357,7 @@ function renderImportStageContent() {
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
             <div style="display: flex; align-items: center; gap: 8px;">
               <span style="display: inline-block; animation: spin 1s linear infinite; font-size: 18px;">🔄</span>
-              <span id="machine-import-progress-msg" style="font-size: 13.5px; font-weight: 800; color: #38bdf8;">Uploading &amp; Locking into MySQL Database...</span>
+              <span id="machine-import-progress-msg" style="font-size: 13.5px; font-weight: 800; color: #38bdf8;">Uploading &amp; Syncing into Cloud Database...</span>
             </div>
             <span id="machine-import-progress-pct" style="font-size: 17px; font-weight: 900; color: #34d399; font-family: var(--font-mono);">0%</span>
           </div>
@@ -367,7 +367,7 @@ function renderImportStageContent() {
           <div style="display: flex; justify-content: space-between; font-size: 11px; color: #94a3b8; margin-top: 5px;">
             <span>1. Parsing Rows</span>
             <span>2. Local Storage &amp; IndexedDB</span>
-            <span>3. Confirmed MySQL Cloud Lock</span>
+            <span>3. Confirmed Cloud Sync</span>
           </div>
         </div>
 
@@ -518,7 +518,7 @@ function renderImportStageContent() {
                   <span style="color:#34d399;font-weight:700;">🟢 Running: <strong>${totalRunning}</strong></span>
                   <span style="color:#fbbf24;font-weight:700;">🟡 Usable Idle: <strong>${totalUsable}</strong></span>
                   <span style="color:#f87171;font-weight:700;">🔴 Repairable Idle: <strong>${totalRepairable}</strong></span>
-                  <span style="color:#c084fc;font-weight:700;">📦 Total Qty: <strong>${totalQty}</strong></span>
+                  <span style="color:#38bdf8;font-weight:700;">📦 Total Qty: <strong>${totalQty}</strong></span>
                   ${zeroQtyRows.length > 0 ? `<span style="color:#fb923c;font-weight:700;">⚠️ ${zeroQtyRows.length} rows with all-zero quantities (Running/Idle columns may be blank in Excel)</span>` : ''}
                 </div>
               </div>
@@ -543,9 +543,9 @@ function renderImportStageContent() {
             <div style="font-size: 10.5px; color: #34d399; font-weight: 700; text-transform: uppercase;">New Machines</div>
           </div>
 
-          <div style="background: var(--bg-card); border: 1px solid rgba(192, 132, 252, 0.4); border-radius: var(--radius-md); padding: 10px 12px; text-align: center;">
-            <div style="font-size: 18px; font-weight: 800; color: #c084fc;">${res.updateRows}</div>
-            <div style="font-size: 10.5px; color: #c084fc; font-weight: 700; text-transform: uppercase;">Updates</div>
+          <div style="background: var(--bg-card); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: var(--radius-md); padding: 10px 12px; text-align: center;">
+            <div style="font-size: 18px; font-weight: 800; color: #38bdf8;">${res.updateRows}</div>
+            <div style="font-size: 10.5px; color: #38bdf8; font-weight: 700; text-transform: uppercase;">Updates</div>
           </div>
 
           <div class="kpi-card-duplicates" style="background: var(--bg-card); border: 1.5px solid rgba(245, 158, 11, 0.4); border-radius: var(--radius-md); padding: 10px 12px; text-align: center; ${res.duplicateRows > 0 ? 'cursor: pointer;' : ''}" title="${res.duplicateRows > 0 ? 'Click to download duplicate records report' : 'No duplicates'}">
@@ -580,7 +580,7 @@ function renderImportStageContent() {
                 <th>Worksheet Name</th>
                 <th style="text-align: center;">Total Rows</th>
                 <th style="text-align: center; color: #34d399;">New Machines</th>
-                <th style="text-align: center; color: #c084fc;">Updates</th>
+                <th style="text-align: center; color: #38bdf8;">Updates</th>
                 <th style="text-align: center; color: #f87171;">Errors / Blocked</th>
               </tr>
             </thead>
@@ -590,7 +590,7 @@ function renderImportStageContent() {
                   <td style="font-weight: 700; color: #fff;">📄 ${s.name}</td>
                   <td style="text-align: center;">${s.totalRows}</td>
                   <td style="text-align: center; color: #34d399; font-weight: 700;">${s.newRows}</td>
-                  <td style="text-align: center; color: #c084fc; font-weight: 700;">${s.updateRows}</td>
+                  <td style="text-align: center; color: #38bdf8; font-weight: 700;">${s.updateRows}</td>
                   <td style="text-align: center; color: ${s.invalidRows > 0 ? '#f87171' : 'var(--text-muted)'}; font-weight: 700;">
                     ${s.invalidRows}
                   </td>
@@ -732,14 +732,14 @@ function renderImportStageContent() {
           </h3>
           <div style="margin-top: 6px; display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap;">
             <div style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 999px; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); color: #34d399; font-size: 11.5px; font-weight: 700;">
-              <span>🐬</span> <span>MySQL Primary Synchronized (${storage.data['machines']?.length || 0} Total Machines in Registry)</span>
+              <span>☁️</span> <span>Cloud Database Synchronized (${storage.data['machines']?.length || 0} Total Machines in Registry)</span>
             </div>
             <div style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 999px; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.4); color: #38bdf8; font-size: 11.5px; font-weight: 700;">
               <span>🗑️</span> <span>Temporary file (${importState.tempFileName || 'tmp_machine_import.tmp'}) purged &amp; memory released</span>
             </div>
           </div>
           <p style="font-size: 12.5px; color: var(--text-secondary); max-width: 580px; margin-top: 6px;">
-            All valid rows were imported and locked into the primary MySQL database. Problematic rows were skipped and logged below for easy correction and re-import.
+            All valid rows were imported and saved into the cloud registry. Problematic rows were skipped and logged below for easy correction and re-import.
           </p>
         </div>
 

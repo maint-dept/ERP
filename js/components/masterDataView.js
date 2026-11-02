@@ -199,6 +199,8 @@ function renderTabContent() {
     filtered = filtered.filter(it => 
       (it.name && it.name.toLowerCase().includes(q)) ||
       (it.code && it.code.toLowerCase().includes(q)) ||
+      (it.assetCode && it.assetCode.toLowerCase().includes(q)) ||
+      (it.shortName && it.shortName.toLowerCase().includes(q)) ||
       (it.location && it.location.toLowerCase().includes(q)) ||
       (it.supervisor && it.supervisor.toLowerCase().includes(q)) ||
       (it.country && it.country.toLowerCase().includes(q)) ||
@@ -355,12 +357,17 @@ function renderTabContent() {
                   </td>
                   <td style="text-align: center; color: var(--text-muted); font-family: var(--font-mono); font-size: 12px;">${idx + 1}</td>
                   <td>
-                    <div style="font-weight: 700; color: ${isActive ? '#fff' : 'var(--text-muted)'}; font-size: 13.5px;">
-                      ${it.name}
+                    <div style="font-weight: 700; color: ${isActive ? '#fff' : 'var(--text-muted)'}; font-size: 13.5px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                      <span>${it.name}</span>
+                      ${activeTab === 'machinenames' ? `
+                        <span class="badge" style="background: rgba(16, 185, 129, 0.15); border: 1.5px solid rgba(16, 185, 129, 0.45); color: #34d399; font-size: 11px; font-weight: 800; padding: 2px 8px; border-radius: 4px; font-family: var(--font-mono); letter-spacing: 0.5px;" title="Permanent Unique Machine Asset Code (Matching anchor for Excel import & renaming)">
+                          🏷️ ${it.assetCode || 'MC-—'}
+                        </span>
+                      ` : ''}
                     </div>
                     <div style="display: flex; align-items: center; gap: 8px; margin-top: 3px; flex-wrap: wrap;">
                       <span style="font-family: var(--font-mono); font-size: 11px; color: #38bdf8; font-weight: 700;">
-                        CODE: ${it.code || '—'}
+                        CODE: ${it.code || it.shortName || '—'}
                       </span>
                       ${activeTab === 'floors' ? `
                         <span style="background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.4); color: #38bdf8; font-size: 11px; font-weight: 800; padding: 1px 7px; border-radius: 4px;" title="QR Machine Tag Header Text (Admin Customizable)">
@@ -445,15 +452,18 @@ function renderParentBadge(tab, item) {
     }
     case 'machinenames': {
       const cat = storage.getItem(TABLE_NAMES.CATEGORIES, item.categoryId);
-      return `<span style="font-weight: 600; color: #c084fc; font-size: 12.5px;">📁 ${cat?.name || 'Sewing Machines'}</span>`;
+      return `<span style="font-weight: 600; color: #38bdf8; font-size: 12.5px;">📁 ${cat?.name || 'Sewing Machines'}</span>`;
     }
     case 'models': {
       const mn = masterDataService.getMachineNameById(item.machineNameId);
       const brd = masterDataService.getBrandById(item.brandId);
       return `
         <div style="font-size: 12px;">
-          <div><strong style="color: #38bdf8;">Machine:</strong> ${mn?.name || '—'}</div>
-          <div><strong style="color: #fbbf24;">Brand:</strong> ${brd?.name || '—'}</div>
+          <div>
+            <strong style="color: #38bdf8;">Machine:</strong> ${mn?.name || item.machineName || '—'}
+            ${(mn?.assetCode || item.machineAssetCode) ? `<span style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.35); color: #34d399; font-size: 10px; font-weight: 800; padding: 1px 5px; border-radius: 3px; font-family: var(--font-mono); margin-left: 4px;">🏷️ ${mn?.assetCode || item.machineAssetCode}</span>` : ''}
+          </div>
+          <div><strong style="color: #fbbf24;">Brand:</strong> ${brd?.name || item.brandName || '—'}</div>
         </div>
       `;
     }
@@ -639,7 +649,7 @@ function renderFastCascadingEntryView() {
           <span style="color: var(--text-muted);">&rarr;</span>
           <span style="color: #38bdf8;">🏗️ ${activeFloor ? `${activeFloor.name} [${activeFloorCode}]` : 'Ground Floor'}</span>
           <span style="color: var(--text-muted);">&rarr;</span>
-          <span style="color: #c084fc; font-weight: 800;">${linesOfFloor.length} Lines</span>
+          <span style="color: #38bdf8; font-weight: 800;">${linesOfFloor.length} Lines</span>
         </div>
       </div>
 
@@ -942,7 +952,7 @@ function renderFastCascadingEntryView() {
 
             <button type="button" class="btn btn-ghost btn-sm btn-quick-append-line" data-val="Idle" style="font-size: 10px; height: 22px; color: #f87171; padding: 1px 5px; border: 1px solid rgba(239, 68, 68, 0.4); font-weight: 700;" title="Add Idle Section">+ Idle</button>
             <button type="button" id="btn-clear-lines-input" class="btn btn-ghost btn-sm" style="font-size: 10px; height: 22px; color: #94a3b8; padding: 1px 5px; border: 1px solid rgba(148, 163, 184, 0.3); font-weight: 700;" title="Clear input">✕</button>
-            <button type="button" id="btn-fast-add-line" class="btn btn-ghost btn-sm" style="font-size: 10px; height: 22px; color: #c084fc; padding: 1px 6px; border: 1px solid rgba(192, 132, 252, 0.35); font-weight: 700; margin-left: auto;">+ Single Line Form</button>
+            <button type="button" id="btn-fast-add-line" class="btn btn-ghost btn-sm" style="font-size: 10px; height: 22px; color: #38bdf8; padding: 1px 6px; border: 1px solid rgba(56, 189, 248, 0.35); font-weight: 700; margin-left: auto;">+ Single Line Form</button>
           </div>
         </div>
 
@@ -1215,12 +1225,12 @@ function renderHierarchyTreeView() {
         <div style="display: flex; flex-direction: column; gap: 12px; max-height: 580px; overflow-y: auto; padding-right: 4px;">
           ${equipmentTree.map(cat => `
             <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 14px 16px;">
-              <div style="display: flex; justify-content: space-between; align-items: center; font-weight: 800; color: #c084fc; font-size: 13.5px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; font-weight: 800; color: #38bdf8; font-size: 13.5px;">
                 <span>📁 ${cat.name}</span>
                 <span class="badge badge-idle">${cat.machineNamesCount} Machine Types</span>
               </div>
 
-              <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 10px; padding-left: 12px; border-left: 2px solid rgba(192, 132, 252, 0.25);">
+              <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 10px; padding-left: 12px; border-left: 2px solid rgba(56, 189, 248, 0.25);">
                 ${cat.machineNames.map(mn => `
                   <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 10px 12px;">
                     <div style="display: flex; justify-content: space-between; font-weight: 700; color: #fff; font-size: 12.5px;">
@@ -1503,7 +1513,26 @@ function renderParentFormFields(type, item) {
     }
     case 'machinename': {
       const categories = masterDataService.getCategories(true);
+      const nextAsset = masterDataService.generateNextAssetCode();
+      const assetVal = item.assetCode || nextAsset;
       return `
+        <div class="form-group">
+          <label class="form-label" style="font-size: 12px; font-weight: 700; color: #34d399; display: flex; align-items: center; gap: 6px;">
+            <span>🏷️ Permanent Unique Machine Asset ID / Code *</span>
+          </label>
+          <input 
+            type="text" 
+            id="inp-entity-asset-code" 
+            class="form-control" 
+            required 
+            value="${assetVal}" 
+            placeholder="e.g. MC-001, MC-002" 
+            style="font-family: var(--font-mono); font-weight: 800; color: #34d399; max-width: 220px; text-transform: uppercase;"
+          />
+          <div style="font-size: 11px; color: #94a3b8; margin-top: 4px; line-height: 1.4;">
+            🛡️ <strong>Inventory Protection Anchor:</strong> This unique code connects all brands and models to inventory machines. Renaming the machine name in Excel or Master Data updates all physical machines cleanly without data loss.
+          </div>
+        </div>
         <div class="form-group">
           <label class="form-label" style="font-size: 12px; font-weight: 700; color: #fff;">Category *</label>
           <select id="inp-entity-category" class="filter-select" required>
@@ -1536,7 +1565,7 @@ function renderParentFormFields(type, item) {
           <label class="form-label" style="font-size: 12px; font-weight: 700; color: #fff;">Related Machine Name *</label>
           <select id="inp-entity-mn" class="filter-select" required>
             <option value="">Select Machine Name...</option>
-            ${machineNames.map(m => `<option value="${m.id}" ${item.machineNameId === m.id ? 'selected' : ''}>${m.name}</option>`).join('')}
+            ${machineNames.map(m => `<option value="${m.id}" ${item.machineNameId === m.id ? 'selected' : ''}>${m.assetCode ? '[' + m.assetCode + '] ' : ''}${m.name}</option>`).join('')}
           </select>
         </div>
         <div class="form-group">
@@ -3211,6 +3240,7 @@ export function initMasterDataEvents() {
       } else if (entityType === 'machinename') {
         payload.categoryId = document.getElementById('inp-entity-category')?.value;
         payload.description = document.getElementById('inp-entity-desc')?.value?.trim();
+        payload.assetCode = document.getElementById('inp-entity-asset-code')?.value?.trim().toUpperCase();
       } else if (entityType === 'brand') {
         payload.country = document.getElementById('inp-entity-country')?.value?.trim();
         payload.website = document.getElementById('inp-entity-website')?.value?.trim();

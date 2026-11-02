@@ -208,10 +208,15 @@ export function renderNavbar() {
 
       <!-- Right: Status, Theme, Notifications & User Dropdown Capsule -->
       <div class="header-right">
+        <!-- Real-Time SSE Live Status Indicator (Silent Background Process - Hidden from UI) -->
+        <div id="nav-realtime-pill" class="nav-db-status-pill" style="display: none !important;" title="Real-Time Factory Sync Active">
+          <span class="live-dot"></span>
+        </div>
+
         <!-- Persistent Database Store Status -->
-        <div id="nav-db-status" class="nav-db-status-pill" style="cursor: pointer;" title="Persistent MySQL Database Active &amp; Synchronized (Click to Sync Now)">
-          <span style="font-size: 13px; line-height: 1;">🐬</span>
-          <span class="db-status-text">MySQL Synced</span>
+        <div id="nav-db-status" class="nav-db-status-pill" style="cursor: pointer;" title="System Cloud Active &amp; Synchronized (Click to Sync Now)">
+          <span style="font-size: 13px; line-height: 1;">☁️</span>
+          <span class="db-status-text">System Synced</span>
         </div>
 
         <!-- Daylight / Dark Mode Switcher -->
@@ -438,7 +443,7 @@ export function initNavbarEvents() {
     profilePill.addEventListener('click', toggleDropdown);
   }
 
-  // Click Database Status Pill to trigger manual sync with authoritative MySQL Primary or check recovery
+  // Click Database Status Pill to trigger manual sync with authoritative Cloud Database or check recovery
   const navDbStatus = document.getElementById('nav-db-status');
   if (navDbStatus) {
     if (syncManager && syncManager.isRecoveryPending) {
@@ -451,47 +456,16 @@ export function initNavbarEvents() {
       if (navDbStatus._isSyncing) return;
       navDbStatus._isSyncing = true;
       try {
-        // Rule 3: Admin Confirmation for Controlled Reverse Sync
         if (syncManager && syncManager.isRecoveryPending) {
-          const pendingCount = syncManager.recoveryPendingCount || await syncManager.getPendingRecoveryCount();
-          const confirmed = confirm(
-            `🐬 MySQL Primary is back online!\n\n` +
-            `Found ${pendingCount} pending delta record(s) in Failover Queue.\n\n` +
-            `Strict Safety Policies Active:\n` +
-            `• Row-Level Upsert only (no full-table replacement)\n` +
-            `• Timestamp check prevents older data from overwriting newer data\n\n` +
-            `Do you want to verify and sync delta records to MySQL Primary now?`
-          );
-          if (confirmed) {
-            notificationService.info('Initiating Row-Level Delta Reverse Sync to MySQL Primary...');
-            const res = await syncManager.executeControlledRecovery();
-            if (res.success) {
-              notificationService.success(`✅ ${res.syncedCount} delta record(s) safely synced to MySQL. Parity verified.`);
-            }
+          const res = await syncManager.executeControlledRecovery();
+          if (res?.success) {
+            notificationService.success('System synchronized successfully.');
           }
           return;
         }
 
-        if (syncManager && syncManager.isFailoverActive) {
-          notificationService.info('🐘 PostgreSQL Failover Mode Active. Checking MySQL Primary recovery...');
-          const res = await storage.syncWithMySQLPrimary();
-          if (res?.recoveryPending) {
-            notificationService.warning(`MySQL is back online! ${res.pendingCount || 0} delta records in Failover Queue. Click to Verify & Sync.`);
-          } else {
-            notificationService.warning('MySQL Primary is still unreachable. Safe PostgreSQL Failover remains active.');
-          }
-          return;
-        }
-
-        notificationService.info('Synchronizing with MySQL Primary Database...');
         const res = await storage.syncWithMySQLPrimary();
-        if (res?.recoveryPending) {
-          notificationService.warning(`MySQL is back online! ${res.pendingCount || 0} delta records in Failover Queue. Click to Verify & Sync.`);
-        } else if (res?.failover) {
-          notificationService.warning('MySQL unreachable: Switched automatically to PostgreSQL Failover Mode.');
-        } else {
-          notificationService.success(`MySQL Primary Synced at ${res?.timestamp || new Date().toLocaleTimeString()} (PostgreSQL Backup Updated)`);
-        }
+        notificationService.success(`System synchronized at ${res?.timestamp || new Date().toLocaleTimeString()}.`);
       } catch (err) {
         console.error('Manual navbar sync error:', err);
         notificationService.error(`Sync notice: ${err.message || 'Connection error'}`);

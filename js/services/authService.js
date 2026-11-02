@@ -338,7 +338,9 @@ class AuthService {
 
       if (changed) {
         storage.setTable(TABLE_NAMES.USERS, users);
-        storage.saveTable(TABLE_NAMES.USERS, true).catch(() => {});
+        if (this.currentUser && (this.currentUser.role === 'ADMIN' || this.currentUser.role === 'SUPER_ADMIN')) {
+          storage.saveTable(TABLE_NAMES.USERS, true).catch(() => {});
+        }
         console.log('[AuthService] Auto-healed corrupted user roles and access profile bindings.');
       }
     } finally {

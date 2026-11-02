@@ -11,7 +11,7 @@
  */
 
 import { storage, CloudSaveError } from '../db/storage.js';
-import { TABLE_NAMES, GARMENT_MACHINE_SHORT_CODES } from '../db/schema.js';
+import { TABLE_NAMES, GARMENT_MACHINE_SHORT_CODES, GARMENT_MACHINE_ASSET_CODES } from '../db/schema.js';
 import { auditService } from './auditService.js';
 import { notificationService } from './notificationService.js';
 import { storageSchemaService } from './storageSchemaService.js';
@@ -48,36 +48,57 @@ class SmartStorageService {
   }
 
   /**
-   * Get configured unique Asset Code for machine type
+   * Get configured unique Asset Code for machine type (Matches User Excel Standards)
    */
   getMachineAssetCode(machineName) {
     if (!machineName) return '';
-    const clean = String(machineName).trim().toLowerCase();
+    const clean = String(machineName).trim();
+    const lower = clean.toLowerCase();
     const allMn = storage.getTable(TABLE_NAMES.MACHINE_NAMES) || [];
-    const matched = allMn.find(m => m.name && m.name.trim().toLowerCase() === clean);
-    return matched?.assetCode || '';
+    const matched = allMn.find(m => m.name && m.name.trim().toLowerCase() === lower);
+    if (matched && matched.assetCode && !/^MC-\d+$/i.test(matched.assetCode)) {
+      return matched.assetCode;
+    }
+    if (GARMENT_MACHINE_ASSET_CODES && GARMENT_MACHINE_ASSET_CODES[lower]) {
+      return GARMENT_MACHINE_ASSET_CODES[lower];
+    }
+    if (GARMENT_MACHINE_ASSET_CODES) {
+      for (const [key, code] of Object.entries(GARMENT_MACHINE_ASSET_CODES)) {
+        if (lower.includes(key) || key.includes(lower)) {
+          return code;
+        }
+      }
+    }
+    const shortCode = this.getMachineShortCode(machineName);
+    return shortCode ? `${shortCode}-01` : (matched?.assetCode || '');
   }
 
   /**
-   * Generates the next sequential unique asset code (e.g. MC-001, MC-002, ...)
+   * Generates the next sequential unique asset code (e.g. P/M-01, V/T-01, or fallback)
    */
-  generateNextAssetCode() {
+  generateNextAssetCode(machineName = '') {
+    if (machineName) {
+      const asset = this.getMachineAssetCode(machineName);
+      if (asset) return asset;
+      const short = this.getMachineShortCode(machineName);
+      if (short) return `${short}-01`;
+    }
     const allMn = storage.getTable(TABLE_NAMES.MACHINE_NAMES) || [];
     let maxNum = 0;
     allMn.forEach(m => {
       const code = (m.assetCode || '').trim();
-      const match = code.match(/^(?:MC|AST|MAC)-0*([0-9]+)$/i);
+      const match = code.match(/^[A-Z\/\-]+-0*([0-9]+)$/i);
       if (match) {
         const num = parseInt(match[1], 10);
         if (num > maxNum) maxNum = num;
       }
     });
-    return `MC-${String(maxNum + 1).padStart(3, '0')}`;
+    return `AST-${String(maxNum + 1).padStart(2, '0')}`;
   }
 
   /**
    * Self-healing migration routine: Ensures all registered machine types have a permanent
-   * Unique Asset Code (e.g. MC-001, MC-002) and proper standard garments Short Name (e.g. V/T, D/N-A).
+   * Unique Asset Code (e.g. P/M-01, V/T-01) and proper standard garments Short Name (e.g. P/M, V/T).
    */
   ensureUniqueAssetCodesAndShortNames() {
     const allMn = storage.getTable(TABLE_NAMES.MACHINE_NAMES) || [];
@@ -92,11 +113,6 @@ class SmartStorageService {
       if (m.assetCode && m.assetCode.trim()) {
         const uc = m.assetCode.trim().toUpperCase();
         usedCodes.add(uc);
-        const match = uc.match(/^(?:MC|AST|MAC)-0*([0-9]+)$/i);
-        if (match) {
-          const num = parseInt(match[1], 10);
-          if (num >= nextNum) nextNum = num + 1;
-        }
       }
     });
 
@@ -106,15 +122,11 @@ class SmartStorageService {
     sorted.forEach((m) => {
       let mChanged = false;
 
-      // Assign assetCode if missing
-      if (!m.assetCode || !m.assetCode.trim()) {
-        while (usedCodes.has(`MC-${String(nextNum).padStart(3, '0')}`)) {
-          nextNum++;
-        }
-        const assignedCode = `MC-${String(nextNum).padStart(3, '0')}`;
-        m.assetCode = assignedCode;
-        usedCodes.add(assignedCode);
-        nextNum++;
+      // Assign or upgrade assetCode if missing or if using old legacy dummy MC-xxx
+      const standardAsset = this.getMachineAssetCode(m.name);
+      if (!m.assetCode || !m.assetCode.trim() || /^MC-\d+$/i.test(m.assetCode)) {
+        m.assetCode = standardAsset || (this.getMachineShortCode(m.name) ? `${this.getMachineShortCode(m.name)}-01` : 'P/M-01');
+        usedCodes.add(m.assetCode);
         mChanged = true;
       }
 
@@ -581,15 +593,20 @@ class SmartStorageService {
       return ordA - ordB;
     });
 
-    // Assign fixed 1-based serialNo to each machine group with permanent Asset Code
+    // Assign fixed 1-based serialNo to each machine group with permanent Asset Code (Al-Muslim Excel Standard)
     return result.map((g, idx) => {
       const serialNo = idx + 1;
-      const assetCode = g.assetCode || `MC-${String(serialNo).padStart(3, '0')}`;
+      const standardAsset = this.getMachineAssetCode(g.machineName);
+      let assetCode = g.assetCode;
+      if (!assetCode || /^MC-\d+$/i.test(assetCode)) {
+        assetCode = standardAsset || (this.getMachineShortCode(g.machineName) ? `${this.getMachineShortCode(g.machineName)}-01` : 'P/M-01');
+      }
+      const shortName = g.shortName || g.code || this.getMachineShortCode(g.machineName) || '';
       return {
         ...g,
         serialNo,
         assetCode,
-        shortName: g.shortName || g.code || ''
+        shortName
       };
     });
   }
@@ -3951,14 +3968,20 @@ class SmartStorageService {
         }
       }
 
-      if (modelsChanged) {
-        await storage.saveTable(TABLE_NAMES.MODELS, true);
-      }
-      if (machinesChanged) {
-        await storage.saveTable(TABLE_NAMES.MACHINES, true);
-        if (typeof storage.persistToServerDatabase === 'function') {
-          try { await storage.persistToServerDatabase(); } catch (_) {}
+      const canSaveToCloud = typeof window !== 'undefined' && window.authService && typeof window.authService.isAdmin === 'function' && window.authService.isAdmin();
+      if (canSaveToCloud) {
+        if (modelsChanged) {
+          await storage.saveTable(TABLE_NAMES.MODELS, true);
         }
+        if (machinesChanged) {
+          await storage.saveTable(TABLE_NAMES.MACHINES, true);
+          if (typeof storage.persistToServerDatabase === 'function') {
+            try { await storage.persistToServerDatabase(); } catch (_) {}
+          }
+        }
+      } else {
+        if (modelsChanged) storage.setTable(TABLE_NAMES.MODELS, allModels);
+        if (machinesChanged) storage.setTable(TABLE_NAMES.MACHINES, allMachines);
       }
 
       return { healed: healedCount };
@@ -3996,7 +4019,7 @@ class SmartStorageService {
     // Output according to machine name sort order
     sortedMnList.forEach(mn => {
       const mName = mn.name;
-      const assetCode = mn.assetCode || `MC-${String(sl).padStart(3, '0')}`;
+      const assetCode = (mn.assetCode && !/^MC-\d+$/i.test(mn.assetCode)) ? mn.assetCode : (this.getMachineAssetCode(mName) || (mn.shortCode ? `${mn.shortCode}-01` : 'P/M-01'));
       const shortCode = mn.shortName || mn.code || this.getMachineShortCode(mName) || '';
       const models = grouped.get(mName) || [];
       if (models.length > 0) {
@@ -4035,7 +4058,7 @@ class SmartStorageService {
     // Any remaining machines
     for (const [mName, models] of grouped.entries()) {
       const matchedMn = mnList.find(m => m && m.name && m.name.toLowerCase() === mName.toLowerCase());
-      const assetCode = matchedMn?.assetCode || `MC-${String(sl).padStart(3, '0')}`;
+      const assetCode = (matchedMn?.assetCode && !/^MC-\d+$/i.test(matchedMn.assetCode)) ? matchedMn.assetCode : (this.getMachineAssetCode(mName) || (matchedMn?.shortCode ? `${matchedMn.shortCode}-01` : 'P/M-01'));
       const shortCode = matchedMn?.shortName || matchedMn?.code || this.getMachineShortCode(mName) || '';
       models.forEach(mod => {
         exportRows.push({
@@ -4056,7 +4079,7 @@ class SmartStorageService {
     if (exportRows.length === 0) {
       exportRows.push({
         'Sl No': 1,
-        'Asset Code': 'MC-001',
+        'Asset Code': 'V/T-01',
         'Machine Short Name': 'V/T',
         'Machine Name': 'Vertical Machine',
         'Brand': 'JUKI',
@@ -4123,20 +4146,20 @@ class SmartStorageService {
       {
         'Column / Topic': 'Asset Code',
         'Requirement': 'MANDATORY (Unique)',
-        'Detailed Explanation': 'Permanent unique identifier for each machine type (MC-001, MC-002, etc.). System matches imported rows by Asset Code. If you rename the machine name, the system auto-renames the machine across Master Data and all physical machines in inventory without losing any data.',
-        'Factory Examples': 'MC-001, MC-002, MC-003'
+        'Detailed Explanation': 'Permanent unique identifier for each machine type (P/M-01, V/T-01, D/N-A-01, etc. as per factory standard). System matches imported rows by Asset Code. If you rename the machine name, the system auto-renames the machine across Master Data and all physical machines in inventory without losing any data.',
+        'Factory Examples': 'P/M-01, V/T-01, D/N-A-01, F/A-01, O/L-01, C/S-01, B/T-01, B/H-01'
       },
       {
         'Column / Topic': 'Machine Short Name',
         'Requirement': 'Recommended',
         'Detailed Explanation': 'Standard abbreviation code used in sewing lines, maintenance floor tickets, and machine serial prefixes.',
-        'Factory Examples': 'V/T, D/N-A, F/A, P/M, O/L, C/S, B/H, B/T'
+        'Factory Examples': 'P/M, V/T, D/N-A, F/A, O/L, C/S, B/H, B/T, B/S, F/L'
       },
       {
         'Column / Topic': 'Machine Name',
         'Requirement': 'MANDATORY',
         'Detailed Explanation': 'Full official machine category name. When linked by Asset Code, renaming this cell safely updates the system without duplicating records.',
-        'Factory Examples': 'Vertical Machine, Double Needle Machine, Feed of The Arm Machine'
+        'Factory Examples': 'Single Needle Lock Stitch Machine, Vertical Machine, Double Needle Machine, Feed of The Arm Machine'
       },
       {
         'Column / Topic': 'Brand',
@@ -4148,13 +4171,13 @@ class SmartStorageService {
         'Column / Topic': 'Model',
         'Requirement': 'MANDATORY',
         'Detailed Explanation': 'Specific machine model number. Multiple models can exist under the same machine type.',
-        'Factory Examples': 'DLM-5200N, LH-3588A, MS-1261, DA-928-A-5'
+        'Factory Examples': 'DDL-9000C, DLM-5200N, LH-3588A, MS-1261, DA-928-A-5'
       },
       {
         'Column / Topic': 'Multi-Brand / Multi-Model',
         'Requirement': 'Supported Rule',
         'Detailed Explanation': 'To register multiple brands or models under one machine type, simply repeat the same Asset Code, Short Name, and Machine Name on multiple rows with different Brand & Model (see rows 3 & 4 in Template sheet).',
-        'Factory Examples': 'MC-003 JUKI MS-1261 & MC-003 BROTHER DA-928-A-5'
+        'Factory Examples': 'F/A-01 JUKI MS-1261 & F/A-01 BROTHER DA-928-A-5'
       },
       {
         'Column / Topic': 'Needle Brand',
@@ -4200,19 +4223,19 @@ class SmartStorageService {
     }
 
     const templateData = [
-      { 'Sl No': 1, 'Asset Code': 'MC-001', 'Machine Short Name': 'V/T', 'Machine Name': 'Vertical Machine', 'Brand': 'JUKI', 'Model': 'DLM-5200N', 'Needle Brand': 'ORGAN', 'Needle Type / Size': 'DBx1 #14', 'Required Needles': 1, 'Remarks': 'Vertical 1-Needle Lockstitch' },
-      { 'Sl No': 2, 'Asset Code': 'MC-002', 'Machine Short Name': 'D/N-A', 'Machine Name': 'Double Needle Machine', 'Brand': 'JUKI', 'Model': 'LH-3588A', 'Needle Brand': 'ORGAN', 'Needle Type / Size': 'DPx5 #14', 'Required Needles': 2, 'Remarks': '2-Needle Auto Machine' },
-      { 'Sl No': 3, 'Asset Code': 'MC-003', 'Machine Short Name': 'F/A', 'Machine Name': 'Feed of The Arm Machine', 'Brand': 'JUKI', 'Model': 'MS-1261', 'Needle Brand': 'ORGAN', 'Needle Type / Size': 'UY128GAS #14', 'Required Needles': 3, 'Remarks': 'Feed of The Arm Heavy Duty (Multi-Model 1)' },
-      { 'Sl No': 4, 'Asset Code': 'MC-003', 'Machine Short Name': 'F/A', 'Machine Name': 'Feed of The Arm Machine', 'Brand': 'BROTHER', 'Model': 'DA-928-A-5', 'Needle Brand': 'ORGAN', 'Needle Type / Size': 'UY128GAS #14', 'Required Needles': 3, 'Remarks': '3-Needle Feed of the Arm (Multi-Model 2)' },
-      { 'Sl No': 5, 'Asset Code': 'MC-004', 'Machine Short Name': 'O/L', 'Machine Name': 'Over Lock Machine', 'Brand': 'JUKI', 'Model': 'MO-6714S', 'Needle Brand': 'N/A', 'Needle Type / Size': 'DCx1 #11', 'Required Needles': 2, 'Remarks': '4-Thread Overlock (Model 1)' },
-      { 'Sl No': 6, 'Asset Code': 'MC-004', 'Machine Short Name': 'O/L', 'Machine Name': 'Over Lock Machine', 'Brand': 'PEGASUS', 'Model': 'M952-52-2X4', 'Needle Brand': 'ORGAN', 'Needle Type / Size': 'DCx27 #11', 'Required Needles': 2, 'Remarks': 'Super High Speed Overlock (Model 2)' },
-      { 'Sl No': 7, 'Asset Code': 'MC-005', 'Machine Short Name': 'C/S', 'Machine Name': 'Chain Stitch Machine', 'Brand': 'ZOJE', 'Model': 'ZJ-3800', 'Needle Brand': 'ORGAN', 'Needle Type / Size': 'DBx1 #14', 'Required Needles': 1, 'Remarks': 'Chainstitch Standard' },
-      { 'Sl No': 8, 'Asset Code': 'MC-006', 'Machine Short Name': 'P/M', 'Machine Name': 'Single Needle Lock Stitch Machine', 'Brand': 'JUKI', 'Model': 'DDL-8700', 'Needle Brand': 'ORGAN', 'Needle Type / Size': 'DBx1 #14', 'Required Needles': 1, 'Remarks': 'Plain Machine High Speed Lockstitch' },
-      { 'Sl No': 9, 'Asset Code': 'MC-006', 'Machine Short Name': 'P/M', 'Machine Name': 'Single Needle Lock Stitch Machine', 'Brand': 'JUKI', 'Model': 'DDL-9000C', 'Needle Brand': 'ORGAN', 'Needle Type / Size': 'DBx1 #14', 'Required Needles': 1, 'Remarks': 'Direct-Drive Computerized Lockstitch' },
-      { 'Sl No': 10, 'Asset Code': 'MC-007', 'Machine Short Name': 'B/H', 'Machine Name': 'Button Hole Machine', 'Brand': 'JUKI', 'Model': 'LBH-1790', 'Needle Brand': 'ORGAN', 'Needle Type / Size': 'DPx5 #14', 'Required Needles': 1, 'Remarks': 'Computer Controlled Buttonhole' },
-      { 'Sl No': 11, 'Asset Code': 'MC-008', 'Machine Short Name': 'B/T', 'Machine Name': 'Bar Tack Machine', 'Brand': 'JUKI', 'Model': 'LK-1900', 'Needle Brand': 'ORGAN', 'Needle Type / Size': 'DPx17 #16', 'Required Needles': 1, 'Remarks': 'Electronic Bartacking Machine' },
-      { 'Sl No': 12, 'Asset Code': 'MC-009', 'Machine Short Name': 'B/A', 'Machine Name': 'Button Attach Machine', 'Brand': 'JUKI', 'Model': 'MB-1377', 'Needle Brand': 'ORGAN', 'Needle Type / Size': 'TQx1 #16', 'Required Needles': 1, 'Remarks': 'Single-Thread Chainstitch Button Attach' },
-      { 'Sl No': 13, 'Asset Code': 'MC-010', 'Machine Short Name': 'F/L', 'Machine Name': 'Flat Lock Machine', 'Brand': 'PEGASUS', 'Model': 'W562-01CB', 'Needle Brand': 'ORGAN', 'Needle Type / Size': 'UY128GAS #10', 'Required Needles': 3, 'Remarks': 'Interlock / Flatlock 3-Needle Machine' }
+      { 'Sl No': 1, 'Asset Code': 'P/M-01', 'Machine Short Name': 'P/M', 'Machine Name': 'Single Needle Lock Stitch Machine', 'Brand': 'JUKI', 'Model': 'DDL-9000C', 'Needle Brand': 'ORGAN', 'Needle Type / Size': 'DBx1 #14', 'Required Needles': 1, 'Remarks': 'Plain Machine Direct Drive' },
+      { 'Sl No': 2, 'Asset Code': 'P/M-01', 'Machine Short Name': 'P/M', 'Machine Name': 'Single Needle Lock Stitch Machine', 'Brand': 'JUKI', 'Model': 'DDL-8700-7', 'Needle Brand': 'ORGAN', 'Needle Type / Size': 'DBx1 #14', 'Required Needles': 1, 'Remarks': 'Plain Machine High Speed Lockstitch' },
+      { 'Sl No': 3, 'Asset Code': 'V/T-01', 'Machine Short Name': 'V/T', 'Machine Name': 'Edge Cutter Machine (Vertical)', 'Brand': 'JUKI', 'Model': 'DLM-5200N', 'Needle Brand': 'ORGAN', 'Needle Type / Size': 'DBx1 #14', 'Required Needles': 1, 'Remarks': 'Vertical 1-Needle Edge Cutter' },
+      { 'Sl No': 4, 'Asset Code': 'D/N-A-01', 'Machine Short Name': 'D/N-A', 'Machine Name': 'Double Needle Lock Stitch Machine', 'Brand': 'JUKI', 'Model': 'LH-3588A-7', 'Needle Brand': 'ORGAN', 'Needle Type / Size': 'DPx5 #14', 'Required Needles': 2, 'Remarks': '2-Needle Auto Machine' },
+      { 'Sl No': 5, 'Asset Code': 'D/N-M-01', 'Machine Short Name': 'D/N-M', 'Machine Name': 'Double Needle Lock Stitch Machine', 'Brand': 'JUKI', 'Model': 'LH-3588A', 'Needle Brand': 'ORGAN', 'Needle Type / Size': 'DPx5 #14', 'Required Needles': 2, 'Remarks': '2-Needle Manual Machine' },
+      { 'Sl No': 6, 'Asset Code': 'F/A-01', 'Machine Short Name': 'F/A', 'Machine Name': 'Feed of The Arm Machine', 'Brand': 'JUKI', 'Model': 'MS-1261', 'Needle Brand': 'ORGAN', 'Needle Type / Size': 'UY128GAS #14', 'Required Needles': 3, 'Remarks': 'Feed of The Arm Heavy Duty (Model 1)' },
+      { 'Sl No': 7, 'Asset Code': 'F/A-01', 'Machine Short Name': 'F/A', 'Machine Name': 'Feed of The Arm Machine', 'Brand': 'BROTHER', 'Model': 'DA-928-A-5', 'Needle Brand': 'ORGAN', 'Needle Type / Size': 'UY128GAS #14', 'Required Needles': 3, 'Remarks': '3-Needle Feed of the Arm (Model 2)' },
+      { 'Sl No': 8, 'Asset Code': 'O/L-01', 'Machine Short Name': 'O/L', 'Machine Name': 'Over Lock Machine', 'Brand': 'JUKI', 'Model': 'MO-6714S', 'Needle Brand': 'ORGAN', 'Needle Type / Size': 'DCx1 #11', 'Required Needles': 2, 'Remarks': '4-Thread Overlock' },
+      { 'Sl No': 9, 'Asset Code': 'C/S-01', 'Machine Short Name': 'C/S', 'Machine Name': 'Chain Stitch Machine', 'Brand': 'ZOJE', 'Model': 'ZJ-3820-BD', 'Needle Brand': 'ORGAN', 'Needle Type / Size': 'DBx1 #14', 'Required Needles': 1, 'Remarks': 'Chainstitch Standard' },
+      { 'Sl No': 10, 'Asset Code': 'B/H-01', 'Machine Short Name': 'B/H', 'Machine Name': 'Button Hole Machine', 'Brand': 'JUKI', 'Model': 'LBH-1790S', 'Needle Brand': 'ORGAN', 'Needle Type / Size': 'DPx5 #14', 'Required Needles': 1, 'Remarks': 'Computer Controlled Buttonhole' },
+      { 'Sl No': 11, 'Asset Code': 'B/T-01', 'Machine Short Name': 'B/T', 'Machine Name': 'Bar tak Machine', 'Brand': 'JUKI', 'Model': 'LK-1900A-SS', 'Needle Brand': 'ORGAN', 'Needle Type / Size': 'DPx17 #16', 'Required Needles': 1, 'Remarks': 'Electronic Bartacking Machine' },
+      { 'Sl No': 12, 'Asset Code': 'B/S-01', 'Machine Short Name': 'B/S', 'Machine Name': 'Button Stitch Machine', 'Brand': 'JUKI', 'Model': 'LK-1903A-SS', 'Needle Brand': 'ORGAN', 'Needle Type / Size': 'TQx1 #16', 'Required Needles': 1, 'Remarks': 'Button Stitch Machine' },
+      { 'Sl No': 13, 'Asset Code': 'F/L-01', 'Machine Short Name': 'F/L', 'Machine Name': 'Flat Lock Machine', 'Brand': 'MAX', 'Model': 'MAX500-01GB', 'Needle Brand': 'ORGAN', 'Needle Type / Size': 'UY128GAS #10', 'Required Needles': 3, 'Remarks': 'Flatlock 3-Needle Machine' }
     ];
     const ws = XLSX.utils.json_to_sheet(templateData);
     ws['!cols'] = [

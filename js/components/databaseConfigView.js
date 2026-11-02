@@ -182,7 +182,9 @@ function getDashboardSyncState() {
   } else {
     // Normalize endpoint to live hosting URL if relative or outdated
     let ep = (mysqlPrimary.endpoint || '').trim().replace(/\/$/, '');
-    if (!ep || ep === '/api/db/mysql') {
+    if (typeof window !== 'undefined' && window.location && window.location.hostname.includes('moviezonex.com')) {
+      ep = window.location.origin + '/mysql_api.php';
+    } else if (!ep || ep === '/api/db/mysql') {
       ep = 'https://moviezonex.com/mysql_api.php';
     } else if (ep === 'api/mysql_api.php' || ep === '/api/mysql_api.php') {
       if (typeof window !== 'undefined' && window.location && window.location.hostname.includes('github.io')) {
@@ -244,7 +246,12 @@ function getDashboardSyncState() {
     if (!pgDb.password) { pgDb.password = 'ol(5_MK8mF{~7cdG'; pgUpdated = true; }
     if (!pgDb.database || pgDb.database === 'motaherh_maint_pg') { pgDb.database = 'motaherh_Maintenance'; pgUpdated = true; }
     if (!pgDb.username || pgDb.username === 'motaherh_pguser') { pgDb.username = 'motaherh_AMG-maint'; pgUpdated = true; }
-    if (!pgDb.endpoint || pgDb.endpoint === 'api/pg_api.php' || !pgDb.endpoint.startsWith('http')) {
+    if (typeof window !== 'undefined' && window.location && window.location.hostname.includes('moviezonex.com')) {
+      if (pgDb.endpoint !== window.location.origin + '/api/pg_api.php') {
+        pgDb.endpoint = window.location.origin + '/api/pg_api.php';
+        pgUpdated = true;
+      }
+    } else if (!pgDb.endpoint || pgDb.endpoint === 'api/pg_api.php' || !pgDb.endpoint.startsWith('http')) {
       pgDb.endpoint = 'https://moviezonex.com/api/pg_api.php';
       pgUpdated = true;
     }
@@ -497,20 +504,20 @@ export function renderDatabaseConfigView() {
       </div>
 
       <!-- Direct cPanel Connection Quick Banner -->
-      <div style="background: linear-gradient(135deg, rgba(2, 132, 199, 0.12) 0%, rgba(15, 23, 42, 0.85) 100%); border: 1.5px solid rgba(56, 189, 248, 0.35); border-radius: 12px; padding: 16px 20px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
+      <div class="cpanel-quick-banner" style="background: linear-gradient(135deg, rgba(2, 132, 199, 0.12) 0%, rgba(15, 23, 42, 0.85) 100%); border: 1.5px solid rgba(56, 189, 248, 0.35); border-radius: 12px; padding: 16px 20px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
         <div style="display: flex; align-items: center; gap: 14px; min-width: 280px;">
           <div style="width: 44px; height: 44px; border-radius: 10px; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.3); display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;">
             🐬
           </div>
           <div>
             <div style="display: flex; align-items: center; gap: 8px;">
-              <span style="font-size: 15px; font-weight: 800; color: #fff;">Direct cPanel MySQL Connection</span>
+              <span class="cpanel-title-text" style="font-size: 15px; font-weight: 800; color: #fff;">Direct cPanel MySQL Connection</span>
               <span id="cpanel-status-pill" style="background: rgba(16, 185, 129, 0.15); border: 1px solid #10b981; color: #34d399; font-size: 10.5px; font-weight: 700; padding: 2px 8px; border-radius: 999px;">
                 🟢 Connected · Master Source
               </span>
             </div>
-            <div style="font-size: 12.5px; color: var(--text-secondary); margin-top: 3px; font-family: monospace;">
-              Endpoint: <span style="color: #38bdf8;">${mysqlPrimary.endpoint || 'https://moviezonex.com/mysql_api.php'}</span> &bull; DB: <span style="color: #34d399;">${mysqlPrimary.database || 'motaherh_maint-erp'}</span> &bull; User: <span style="color: #fed7aa;">${mysqlPrimary.username || 'motaherh_mainterp'}</span>
+            <div class="cpanel-desc-text" style="font-size: 12.5px; color: var(--text-secondary); margin-top: 3px; font-family: monospace;">
+              Endpoint: <span style="color: #0284c7; font-weight: 700;">${mysqlPrimary.endpoint || 'https://moviezonex.com/mysql_api.php'}</span> &bull; DB: <span style="color: #15803d; font-weight: 700;">${mysqlPrimary.database || 'motaherh_maint-erp'}</span> &bull; User: <span style="color: #b45309; font-weight: 700;">${mysqlPrimary.username || 'motaherh_mainterp'}</span>
             </div>
           </div>
         </div>
@@ -528,10 +535,10 @@ export function renderDatabaseConfigView() {
       </div>
 
       <!-- SECTION 1: TWO-COLUMN OVERVIEW (Database Status Card & Data Flow Tree) -->
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 20px; margin-bottom: 24px;">
+      <div class="db-config-grid-overview" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 16px; margin-bottom: 24px;">
         
         <!-- Screenshot 1 Card: Database Status (MySQL Main Database) -->
-        <div style="background: #090e1a; border: 1.5px solid #10b981; border-left: 4px solid #10b981; border-radius: 12px; padding: 22px; box-shadow: 0 10px 30px rgba(0,0,0,0.45); display: flex; flex-direction: column; justify-content: space-between;">
+        <div class="db-status-card" style="background: #090e1a; border: 1.5px solid #10b981; border-left: 4px solid #10b981; border-radius: 12px; padding: 22px; box-shadow: 0 10px 30px rgba(0,0,0,0.45); display: flex; flex-direction: column; justify-content: space-between;">
           <div>
             <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
               <span style="font-size: 18px;">📊</span>
@@ -539,7 +546,7 @@ export function renderDatabaseConfigView() {
             </div>
 
             <div style="margin-bottom: 16px;">
-              <div style="font-size: 17px; font-weight: 800; color: #ffffff; letter-spacing: -0.2px;">
+              <div class="db-status-master-title" style="font-size: 17px; font-weight: 800; color: #ffffff; letter-spacing: -0.2px;">
                 ${state.master.icon} ${state.master.name} — Main Database
               </div>
               <div style="display: flex; align-items: center; gap: 6px; margin-top: 4px; font-size: 13px; font-weight: 700; color: #34d399;">
@@ -548,21 +555,21 @@ export function renderDatabaseConfigView() {
               </div>
             </div>
 
-            <div style="display: grid; grid-template-columns: 140px 1fr; row-gap: 8px; font-size: 13.5px; font-family: 'JetBrains Mono', monospace; margin-bottom: 18px; border-bottom: 1px dashed rgba(255,255,255,0.12); padding-bottom: 16px;">
-              <span style="color: #94a3b8;">Data Sync:</span>
-              <strong style="color: #ffffff;">100.0%</strong>
+            <div class="db-status-metrics-grid" style="display: grid; grid-template-columns: 140px 1fr; row-gap: 8px; font-size: 13.5px; font-family: 'JetBrains Mono', monospace; margin-bottom: 18px; border-bottom: 1px dashed rgba(255,255,255,0.12); padding-bottom: 16px;">
+              <span style="color: var(--text-muted, #94a3b8);">Data Sync:</span>
+              <strong style="color: var(--text-primary, #ffffff); font-weight: 800;">100.0%</strong>
 
-              <span style="color: #94a3b8;">Data Matched:</span>
-              <strong style="color: #ffffff;">100.0%</strong>
+              <span style="color: var(--text-muted, #94a3b8);">Data Matched:</span>
+              <strong style="color: var(--text-primary, #ffffff); font-weight: 800;">100.0%</strong>
 
-              <span style="color: #94a3b8;">Last Sync:</span>
-              <strong style="color: #ffffff;" id="stat-last-sync-time">${state.lastSyncTime}</strong>
+              <span style="color: var(--text-muted, #94a3b8);">Last Sync:</span>
+              <strong style="color: var(--text-primary, #ffffff); font-weight: 800;" id="stat-last-sync-time">${state.lastSyncTime}</strong>
 
-              <span style="color: #94a3b8;">Pending:</span>
-              <strong style="color: #ffffff;">${state.pendingCount}</strong>
+              <span style="color: var(--text-muted, #94a3b8);">Pending:</span>
+              <strong style="color: var(--text-primary, #ffffff); font-weight: 800;">${state.pendingCount}</strong>
 
-              <span style="color: #94a3b8;">Failed:</span>
-              <strong style="color: #ffffff;">${state.failedCount}</strong>
+              <span style="color: var(--text-muted, #94a3b8);">Failed:</span>
+              <strong style="color: var(--text-primary, #ffffff); font-weight: 800;">${state.failedCount}</strong>
             </div>
           </div>
 
@@ -586,7 +593,7 @@ export function renderDatabaseConfigView() {
         </div>
 
         <!-- DATA FLOW Card — dynamic from real configured databases -->
-        <div style="background: #090e1a; border: 1.5px solid rgba(56, 189, 248, 0.35); border-radius: 12px; padding: 22px; box-shadow: 0 10px 30px rgba(0,0,0,0.45); display: flex; flex-direction: column;">
+        <div class="db-dataflow-card" style="background: #090e1a; border: 1.5px solid rgba(56, 189, 248, 0.35); border-radius: 12px; padding: 22px; box-shadow: 0 10px 30px rgba(0,0,0,0.45); display: flex; flex-direction: column;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
             <div style="display: flex; align-items: center; gap: 8px;">
               <span style="font-size: 18px; color: #38bdf8;">🔄</span>
@@ -601,7 +608,7 @@ export function renderDatabaseConfigView() {
             Real-time broadcast flow: every ERP write in ${state.master.name} fans out to all configured secondary databases.
           </p>
 
-          <div style="background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 18px; font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size: 13.5px; line-height: 2;">
+          <div class="db-dataflow-box" style="background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 18px; font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size: 13.5px; line-height: 2;">
             <div style="color: #ffffff; font-weight: 700; margin-bottom: 4px;">
               ${state.master.icon} ${state.master.name} <span style="font-size: 11px; color: #38bdf8; font-weight: normal; margin-left: 6px;">(Main Database / Source)</span>
             </div>
@@ -1473,7 +1480,6 @@ export function initDatabaseConfigEvents() {
   // Helper: run a REAL full sync for a single configured database by its id
   const runRealSync = async (dbId, dbName, btn, originalLabel) => {
     if (btn) { btn.disabled = true; btn.textContent = '⏳ Syncing...'; }
-    notificationService.toast(`Syncing ${dbName || dbId}...`);
     try {
       await syncManager.reloadConfig();
       await syncManager.runFullSync(dbId);
@@ -1488,7 +1494,7 @@ export function initDatabaseConfigEvents() {
         lastError: null
       });
       saveDashboardSyncState({ lastSyncTime: new Date().toLocaleString() });
-      notificationService.toast(`✅ ${dbName || dbId}: sync complete — ${total.toLocaleString()} records written.`);
+      notificationService.success(`✅ ${dbName || dbId}: sync complete (${total.toLocaleString()} records).`);
     } catch (err) {
       // Record REAL failure metrics
       recordSyncMetric(dbId, {
@@ -1497,7 +1503,7 @@ export function initDatabaseConfigEvents() {
         lastSyncTime: new Date().toLocaleString(),
         lastError: err.message
       });
-      notificationService.toast(`❌ Sync FAILED for ${dbName || dbId}: ${err.message}`);
+      notificationService.error(`Sync failed for ${dbName || dbId}: ${err.message}`);
     } finally {
       if (btn) { btn.disabled = false; btn.textContent = originalLabel || '🔄 Re-sync'; }
       reRenderView();
@@ -1522,7 +1528,6 @@ export function initDatabaseConfigEvents() {
     const btn = document.getElementById('btn-sync-all-providers') || document.getElementById('btn-fix-all-missing') || document.getElementById('btn-reconcile-all-records') || document.getElementById('btn-reconcile-missing-now');
     const originalText = btn ? btn.innerHTML : '⚡ Sync All Real Databases';
     if (btn) { btn.disabled = true; btn.innerHTML = '⏳ Syncing all databases...'; }
-    notificationService.toast('Running full sync across all configured databases...');
     try {
       const cfgs = safeGetJson('erp_multi_db_config', []);
       await syncManager.reloadConfig();
@@ -1548,9 +1553,13 @@ export function initDatabaseConfigEvents() {
         }
       }
       saveDashboardSyncState({ lastSyncTime: new Date().toLocaleString() });
-      notificationService.toast(`⚡ Sync finished: ${successCount} successful, ${failCount} failed.`);
+      if (failCount === 0) {
+        notificationService.success(`⚡ Sync finished: ${successCount} database(s) synchronized.`);
+      } else {
+        notificationService.warning(`Sync completed with issues: ${successCount} ok, ${failCount} failed.`);
+      }
     } catch (err) {
-      notificationService.toast('Reconciliation failed: ' + err.message);
+      notificationService.error('Reconciliation failed: ' + err.message);
     } finally {
       if (btn) { btn.disabled = false; btn.innerHTML = originalText; }
       reRenderView();
@@ -1565,7 +1574,6 @@ export function initDatabaseConfigEvents() {
   document.getElementById('btn-sync-mysql-direct')?.addEventListener('click', async () => {
     const btn = document.getElementById('btn-sync-mysql-direct');
     if (btn) { btn.disabled = true; btn.textContent = '⏳ Syncing...'; }
-    notificationService.toast('Running full push to MySQL primary database...');
     try {
       await syncManager.reloadConfig();
       await syncManager.runFullSync('mysql_primary');
@@ -1575,10 +1583,10 @@ export function initDatabaseConfigEvents() {
         lastSyncTime: new Date().toLocaleString(), lastError: null
       });
       saveDashboardSyncState({ lastSyncTime: new Date().toLocaleString() });
-      notificationService.toast(`✅ MySQL Primary sync complete: ${total.toLocaleString()} records updated.`);
+      notificationService.success(`✅ MySQL Primary sync complete: ${total.toLocaleString()} records updated.`);
     } catch (err) {
       recordSyncMetric('mysql_primary', { failed: 1, matched: 0, lastSyncTime: new Date().toLocaleString(), lastError: err.message });
-      notificationService.toast('❌ MySQL sync failed: ' + err.message);
+      notificationService.error('MySQL sync failed: ' + err.message);
     } finally {
       if (btn) { btn.disabled = false; btn.textContent = '🔄 Sync Now'; }
       reRenderView();
@@ -2247,18 +2255,16 @@ function renderProviderForm(providerKey, dbId = null) {
 
         isConfigFormOpen = false;
         currentEditingDbId = null;
-        notificationService.toast(`✅ "${connName}" saved successfully!`);
+        notificationService.success(`✅ "${connName}" saved successfully!`);
 
         // Re-render full dashboard so the new/updated DB appears immediately in sync topology
         reRenderView();
 
-        // Trigger immediate background verification and sync
+        // Trigger immediate silent background verification and sync
         if (spec.key === 'MYSQL' && role === 'PRIMARY') {
           syncManager.primaryAdapter.testConnection().then(res => {
             if (res && res.success) {
-              notificationService.toast(`🐬 Connected to cPanel MySQL (${res.database})! Synchronizing dataset...`);
               syncManager.runFullSync('mysql_primary').then(() => {
-                notificationService.toast(`✅ cPanel MySQL (${res.database}) sync complete!`);
                 reRenderView();
               }).catch(err => {
                 console.warn('Initial sync notice:', err.message);
@@ -2269,7 +2275,6 @@ function renderProviderForm(providerKey, dbId = null) {
           });
         } else if (autoSync) {
           syncManager.runFullSync(targetId).then(() => {
-            notificationService.toast(`✅ "${connName}" initial sync completed!`);
             reRenderView();
           }).catch(err => {
             console.warn(`[SyncManager] Initial auto-sync notice for ${connName}:`, err.message);

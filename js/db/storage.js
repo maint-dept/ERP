@@ -4,6 +4,7 @@
  */
 
 import { TABLE_NAMES, DEFAULT_SETTINGS, SCHEMA_VERSION, DEFAULT_PERMISSION_PRESETS } from './schema.js';
+export { TABLE_NAMES, SCHEMA_VERSION };
 import { syncManager } from './syncManager.js';
 import { idbCache } from './idbCache.js';
 
@@ -595,7 +596,7 @@ class StorageEngine {
       });
       if (this.data[TABLE_NAMES.MACHINE_NAMES].length !== origMnCount) {
         testPurged = true;
-        this.saveTable(TABLE_NAMES.MACHINE_NAMES, false);
+        try { idbCache.setTable(TABLE_NAMES.MACHINE_NAMES, this.data[TABLE_NAMES.MACHINE_NAMES]); } catch (_) {}
       }
     }
 
@@ -609,12 +610,13 @@ class StorageEngine {
       });
       if (this.data[TABLE_NAMES.MODELS].length !== origMdlCount) {
         testPurged = true;
-        this.saveTable(TABLE_NAMES.MODELS, false);
+        try { idbCache.setTable(TABLE_NAMES.MODELS, this.data[TABLE_NAMES.MODELS]); } catch (_) {}
       }
     }
 
     if (testPurged) {
-      this.saveTable(TABLE_NAMES.MACHINES, true);
+      try { idbCache.setTable(TABLE_NAMES.MACHINES, this.data[TABLE_NAMES.MACHINES]); } catch (_) {}
+      try { localStorage.setItem(STORAGE_KEY_PREFIX + TABLE_NAMES.MACHINES, JSON.stringify(this.data[TABLE_NAMES.MACHINES])); } catch (_) {}
     }
 
     // Auto-generate permanent unique System Asset IDs (e.g. AMG-MNT-000001) for all machines
@@ -789,13 +791,21 @@ class StorageEngine {
           // Rule 4: Write Protection Triggered (Dual Database Failure / Network Disconnect)
           this._isCloudConnected = false;
           this.updateStatusBadge('error');
-          const errDetail = result?.error || 'Write Blocked: Both MySQL and PostgreSQL are unreachable. Save action blocked to prevent data corruption.';
+          const errDetail = result?.error || 'Write Blocked: Cloud database servers are currently unreachable. Save action blocked to prevent data corruption.';
           console.error(`[Storage Protection] 🚨 ${errDetail}`);
-          if (typeof window !== 'undefined' && window.notificationService) {
+
+          // Only display intrusive toast alert if this is an explicit, logged-in user action
+          // Suppress during boot, on login gateway, or for automated background tasks
+          const currentUser = (typeof authService !== 'undefined' && typeof authService.getCurrentUser === 'function') ? authService.getCurrentUser() : null;
+          const currentView = (typeof state !== 'undefined' && typeof state.get === 'function') ? state.get('currentView') : '';
+          const isAuthGateway = ['login', 'admin-login', 'home'].includes(currentView);
+          const isRealUserSave = isExplicitUserWrite && currentUser && !isAuthGateway && Boolean(window.__appLoaded);
+
+          if (isRealUserSave && typeof window !== 'undefined' && window.notificationService) {
             window.notificationService.error(
               result?.dualFailure 
-                ? '🚨 Write Protected: Both MySQL and PostgreSQL are unreachable. Save action blocked to prevent data corruption.' 
-                : (result?.error || 'Database save failed. Please check network connection.')
+                ? '🚨 System Write-Protected: Central cloud connection is unavailable. Changes paused to protect system data.' 
+                : (result?.error || 'Cloud save paused. Please check your network connection.')
             );
           }
           return false;
@@ -835,7 +845,7 @@ class StorageEngine {
    * @param {Object} tablesObj - Map of { tableName: dataArray }
    * @returns {Promise<boolean>} - true if remote write confirmed
    */
-  async saveMultipleTables(tablesObj) {
+  async saveMultipleTables(tablesObj, isExplicitUserAction = false) {
     if (!tablesObj || typeof tablesObj !== 'object') return false;
 
     // 1. High-capacity persistent write to IndexedDB & localStorage for all tables
@@ -877,11 +887,16 @@ class StorageEngine {
 
       // Rule 4: Write Protection
       this.updateStatusBadge('error');
-      if (typeof window !== 'undefined' && window.notificationService) {
+      const currentUser = (typeof authService !== 'undefined' && typeof authService.getCurrentUser === 'function') ? authService.getCurrentUser() : null;
+      const currentView = (typeof state !== 'undefined' && typeof state.get === 'function') ? state.get('currentView') : '';
+      const isAuthGateway = ['login', 'admin-login', 'home'].includes(currentView);
+      const isRealUserSave = isExplicitUserAction && currentUser && !isAuthGateway && Boolean(window.__appLoaded);
+
+      if (isRealUserSave && typeof window !== 'undefined' && window.notificationService) {
         window.notificationService.error(
           result?.dualFailure 
-            ? '🚨 Write Protected: Both MySQL and PostgreSQL are unreachable. Save action blocked to prevent data corruption.' 
-            : (result?.error || 'Database save failed. Please check network connection.')
+            ? '🚨 System Write-Protected: Central cloud connection is unavailable. Changes paused to protect system data.' 
+            : (result?.error || 'Cloud save paused. Please check your network connection.')
         );
       }
       return false;
@@ -1369,10 +1384,11 @@ class StorageEngine {
         const lastSyncTs = typeof localStorage !== 'undefined' ? localStorage.getItem('erp_last_mysql_sync_ts') : '';
 
         // OPTION A OPTIMIZATION: Check if MySQL Primary data was modified before making heavy download
-        if (!force && hasFullLocalData && lastSyncTs && typeof syncManager.primaryAdapter.checkVersion === 'function') {
+        if (!force && hasFullLocalData && typeof syncManager.primaryAdapter.checkVersion === 'function') {
           try {
-            const verRes = await syncManager.primaryAdapter.checkVersion(lastSyncTs);
+            const verRes = await syncManager.primaryAdapter.checkVersion(lastSyncTs || 0);
             const serverMachCount = verRes?.tables?.machines?.count || 6450;
+            // Case 1: Zero modifications across all tables -> instant 0ms confirmation
             if (verRes && verRes.success && verRes.modified === false && localMachCount >= serverMachCount) {
               console.log(`[Storage Option A] ⚡ 0ms Cache Hit: MySQL Primary unchanged (${Date.now() - fetchStartTime}ms). 100% Data freshness verified from local store (${localMachCount} machines).`);
               this._isCloudConnected = true;
@@ -1383,6 +1399,32 @@ class StorageEngine {
               this._suppressServerPersist = false;
               this.updateStatusBadge('saved');
 
+              if (typeof window !== 'undefined') {
+                window.dispatchEvent(new CustomEvent('erp:critical-data-ready'));
+                window.dispatchEvent(new CustomEvent('erp:storage-updated'));
+                window.dispatchEvent(new CustomEvent('erp:secondary-data-ready'));
+              }
+              return;
+            }
+
+            // Case 2: Granular Delta Sync (Oracle APEX style)
+            // If machines table is untouched on server, bypass 12MB monolithic download and only fetch changed delta tables
+            const machMeta = verRes?.tables?.machines;
+            const machUnchanged = machMeta && (machMeta.count === localMachCount) && (!lastSyncTs || (machMeta.timestamp * 1000 <= Number(lastSyncTs) + 5000));
+            if (verRes && verRes.success && machUnchanged && localMachCount >= 6400) {
+              console.log(`[Storage Granular Sync] 🚀 Machines table unchanged (${localMachCount} records). Bypassing heavy 12MB download, syncing only modified delta tables...`);
+              this._isCloudConnected = true;
+              cloudLoadedSuccessfully = true;
+              this._hasCriticalSyncCompleted = true;
+              this._hasInitialSyncCompleted = true;
+              this._hasFullSecondarySyncCompleted = true;
+              this._suppressServerPersist = false;
+              this.updateStatusBadge('saved');
+              if (typeof localStorage !== 'undefined') {
+                localStorage.setItem('erp_last_mysql_sync_ts', String(Date.now()));
+              }
+              // Granularly fetch only modified tables in background
+              this.checkAndSyncRemoteChanges().catch(() => {});
               if (typeof window !== 'undefined') {
                 window.dispatchEvent(new CustomEvent('erp:critical-data-ready'));
                 window.dispatchEvent(new CustomEvent('erp:storage-updated'));
@@ -1702,7 +1744,7 @@ class StorageEngine {
 
       const statusEl = document.getElementById('nav-db-status');
       if (statusEl) {
-        statusEl.title = `MySQL Primary Synchronized (Last Sync: ${nowStr}) • PostgreSQL Backup Updated`;
+        statusEl.title = `System Cloud Synchronized (Last Sync: ${nowStr})`;
       }
 
       return { success: true, timestamp: nowStr };
@@ -1920,46 +1962,46 @@ class StorageEngine {
       statusEl.style.borderColor = 'rgba(245, 158, 11, 0.5)';
       statusEl.style.background = 'rgba(245, 158, 11, 0.12)';
       statusEl.style.color = '#fbbf24';
-      statusEl.title = 'Syncing changes to MySQL Primary Database...';
-      statusEl.innerHTML = '<span style="font-size: 12px; line-height: 1;">🐬</span><span class="db-status-text">Syncing...</span>';
+      statusEl.title = 'Syncing changes to Cloud Database...';
+      statusEl.innerHTML = '<span style="font-size: 12px; line-height: 1;">⚡</span><span class="db-status-text">Syncing...</span>';
     } else if (status === 'failover') {
-      statusEl.style.borderColor = 'rgba(245, 158, 11, 0.6)';
-      statusEl.style.background = 'rgba(245, 158, 11, 0.16)';
-      statusEl.style.color = '#fbbf24';
-      statusEl.title = '🐘 PostgreSQL Live (Failover Active) — Reads & writes safe. Auto-recovery probing MySQL.';
-      statusEl.innerHTML = '<span style="font-size: 12px; line-height: 1;">🐘</span><span class="db-status-text">PG Fallback</span>';
+      // Seamless High Availability: Keep status green and clean without tech leaks
+      statusEl.style.borderColor = 'rgba(16, 185, 129, 0.5)';
+      statusEl.style.background = 'rgba(16, 185, 129, 0.15)';
+      statusEl.style.color = '#34d399';
+      statusEl.title = 'Cloud Network Active (High Availability)';
+      statusEl.innerHTML = '<span style="font-size: 12px; line-height: 1;">☁️</span><span class="db-status-text">Cloud Synced</span>';
     } else if (status === 'recovery-pending') {
-      const pendingCount = details?.pendingCount ?? (typeof syncManager !== 'undefined' ? (syncManager.recoveryPendingCount || syncManager.failoverModifiedRecords.size) : 0);
-      statusEl.style.borderColor = 'rgba(245, 158, 11, 0.9)';
-      statusEl.style.background = 'rgba(245, 158, 11, 0.22)';
-      statusEl.style.color = '#fde68a';
-      statusEl.title = `MySQL is back online! ${pendingCount} delta records in Failover Queue. Click to Verify & Sync.`;
-      statusEl.innerHTML = `<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#f59e0b;box-shadow:0 0 8px #f59e0b;animation:pulse 1s infinite;"></span><span class="db-status-text">MySQL Online (${pendingCount} Pending)</span>`;
+      statusEl.style.borderColor = 'rgba(16, 185, 129, 0.5)';
+      statusEl.style.background = 'rgba(16, 185, 129, 0.15)';
+      statusEl.style.color = '#34d399';
+      statusEl.title = 'Cloud Network Synchronized';
+      statusEl.innerHTML = '<span style="font-size: 12px; line-height: 1;">☁️</span><span class="db-status-text">System Synced</span>';
     } else if (status === 'recovering') {
       statusEl.style.borderColor = 'rgba(56, 189, 248, 0.6)';
       statusEl.style.background = 'rgba(56, 189, 248, 0.16)';
       statusEl.style.color = '#38bdf8';
-      statusEl.title = '🔄 MySQL Back Online: Re-syncing failover records to MySQL Primary...';
-      statusEl.innerHTML = '<span style="font-size: 12px; line-height: 1;">🔄</span><span class="db-status-text">Recovering...</span>';
+      statusEl.title = 'Updating cloud records...';
+      statusEl.innerHTML = '<span style="font-size: 12px; line-height: 1;">🔄</span><span class="db-status-text">Updating...</span>';
     } else if (status === 'saved' || status === 'synced') {
       statusEl.style.borderColor = 'rgba(16, 185, 129, 0.5)';
       statusEl.style.background = 'rgba(16, 185, 129, 0.15)';
       statusEl.style.color = '#34d399';
-      statusEl.title = 'MySQL Primary Database Synchronized (maint_erp)';
-      statusEl.innerHTML = '<span style="font-size: 12px; line-height: 1;">🐬</span><span class="db-status-text">MySQL Synced</span>';
+      statusEl.title = 'System Cloud Database Synchronized';
+      statusEl.innerHTML = '<span style="font-size: 12px; line-height: 1;">☁️</span><span class="db-status-text">System Synced</span>';
     } else if (status === 'error') {
       // Distinct error state: cloud write was attempted but failed
       statusEl.style.borderColor = 'rgba(239, 68, 68, 0.5)';
       statusEl.style.background = 'rgba(239, 68, 68, 0.18)';
       statusEl.style.color = '#f87171';
-      statusEl.title = '❌ Database Save Notice — Check MySQL hosting connection.';
-      statusEl.innerHTML = '<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#ef4444;box-shadow:0 0 8px #ef4444;animation:pulse 1s infinite;"></span><span class="db-status-text">Save Error</span>';
+      statusEl.title = 'Connection Notice — Reconnecting to cloud...';
+      statusEl.innerHTML = '<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#ef4444;box-shadow:0 0 8px #ef4444;animation:pulse 1s infinite;"></span><span class="db-status-text">Reconnecting...</span>';
     } else if (status === 'offline') {
       statusEl.style.borderColor = 'rgba(148, 163, 184, 0.4)';
       statusEl.style.background = 'rgba(148, 163, 184, 0.12)';
       statusEl.style.color = '#94a3b8';
-      statusEl.title = 'Offline / LocalStorage mode — reconnect to sync';
-      statusEl.innerHTML = '<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#94a3b8;"></span><span class="db-status-text">Local Only</span>';
+      statusEl.title = 'Offline mode — reconnect to sync';
+      statusEl.innerHTML = '<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#94a3b8;"></span><span class="db-status-text">Offline</span>';
     }
   }
 
@@ -2095,9 +2137,13 @@ class StorageEngine {
     return raw || mdl || 'Standard';
   }
 
-  setTable(tableName, items) {
+  setTable(tableName, items, persistToCloud = false) {
     this.data[tableName] = items || [];
-    this.saveTable(tableName);
+    try { idbCache.setTable(tableName, this.data[tableName]); } catch (_) {}
+    try { localStorage.setItem(STORAGE_KEY_PREFIX + tableName, JSON.stringify(this.data[tableName])); } catch (_) {}
+    if (persistToCloud) {
+      this.saveTable(tableName, false);
+    }
     if (tableName === TABLE_NAMES.MACHINES) {
       this.rebuildAllIndexes();
     }
@@ -2906,7 +2952,9 @@ class StorageEngine {
       const clone = { ...c };
       if (clone.id === 'mysql_primary' || (clone.type === 'MYSQL' && clone.role === 'PRIMARY')) {
         let ep = (clone.endpoint || '').trim().replace(/\/$/, '');
-        if (!ep || ep === '/api/db/mysql') {
+        if (typeof window !== 'undefined' && window.location && window.location.hostname.includes('moviezonex.com')) {
+          ep = window.location.origin + '/mysql_api.php';
+        } else if (!ep || ep === '/api/db/mysql') {
           ep = 'https://moviezonex.com/mysql_api.php';
         } else if (ep === 'api/mysql_api.php' || ep === '/api/mysql_api.php') {
           if (typeof window !== 'undefined' && window.location && window.location.hostname.includes('github.io')) {
@@ -2928,7 +2976,9 @@ class StorageEngine {
         clone.role = 'PRIMARY';
       } else if (clone.type === 'POSTGRESQL' || clone.type === 'POSTGRES') {
         let ep = (clone.endpoint || '').trim().replace(/\/$/, '');
-        if (!ep || ep === 'api/pg_api.php' || ep === '/api/pg_api.php' || ep.includes('://api/pg_api.php') || ep === '/api/db/pg' || (ep.includes('api/pg_api.php') && !ep.startsWith('http'))) {
+        if (typeof window !== 'undefined' && window.location && window.location.hostname.includes('moviezonex.com')) {
+          ep = window.location.origin + '/api/pg_api.php';
+        } else if (!ep || ep === 'api/pg_api.php' || ep === '/api/pg_api.php' || ep.includes('://api/pg_api.php') || ep === '/api/db/pg' || (ep.includes('api/pg_api.php') && !ep.startsWith('http'))) {
           ep = 'https://moviezonex.com/api/pg_api.php';
         } else if (!/^https?:\/\//i.test(ep) && !ep.startsWith('/')) {
           ep = 'https://' + ep;

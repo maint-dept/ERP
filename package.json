@@ -16,6 +16,7 @@
   "author": "Al-Muslim Group IT & Maintenance Systems",
   "license": "UNLICENSED",
   "dependencies": {
-    "nodemailer": "^10.0.10"
+    "nodemailer": "^10.0.10",
+    "puppeteer-core": "^19.11.1"
   }
 }

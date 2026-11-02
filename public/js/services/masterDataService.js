@@ -340,6 +340,34 @@ class MasterDataService {
     return found || null;
   }
 
+  getMachineNameByAssetCode(assetCode) {
+    if (!assetCode) return null;
+    const clean = String(assetCode).trim().toUpperCase();
+    const list = storage.getTable(TABLE_NAMES.MACHINE_NAMES) || [];
+    return list.find(m => m && m.assetCode && m.assetCode.trim().toUpperCase() === clean) || null;
+  }
+
+  generateNextAssetCode() {
+    const list = storage.getTable(TABLE_NAMES.MACHINE_NAMES) || [];
+    let nextNum = 1;
+    const usedCodes = new Set();
+    list.forEach(m => {
+      if (m && m.assetCode && m.assetCode.trim()) {
+        const uc = m.assetCode.trim().toUpperCase();
+        usedCodes.add(uc);
+        const match = uc.match(/^(?:MC|AST|MAC)-0*([0-9]+)$/i);
+        if (match) {
+          const num = parseInt(match[1], 10);
+          if (num >= nextNum) nextNum = num + 1;
+        }
+      }
+    });
+    while (usedCodes.has(`MC-${String(nextNum).padStart(3, '0')}`)) {
+      nextNum++;
+    }
+    return `MC-${String(nextNum).padStart(3, '0')}`;
+  }
+
   /**
    * Level 6: Brands (Filtered by Machine Name)
    */
@@ -1059,6 +1087,17 @@ class MasterDataService {
       }
     } catch (_) {}
 
+    // Determine & validate Unique Asset Code
+    let cleanAsset = data.assetCode ? String(data.assetCode).trim().toUpperCase() : null;
+    if (cleanAsset) {
+      const collision = existingList.find(m => m && m.assetCode && m.assetCode.trim().toUpperCase() === cleanAsset);
+      if (collision) {
+        throw new Error(`Unique Asset Code "${cleanAsset}" is already assigned to "${collision.name}". Each machine type must have a unique Asset Code.`);
+      }
+    } else {
+      cleanAsset = this.generateNextAssetCode();
+    }
+
     const normClean = cleanName.toLowerCase().replace(/[^a-z0-9]/g, '');
     const normCanon = canonical.toLowerCase().replace(/[^a-z0-9]/g, '');
 
@@ -1072,6 +1111,11 @@ class MasterDataService {
              mNorm === normCanon;
     });
     if (found) {
+      // If found existing machine by name, update assetCode if it was missing or provided
+      if (cleanAsset && (!found.assetCode || found.assetCode !== cleanAsset)) {
+        found.assetCode = cleanAsset;
+        await storage.saveTable(TABLE_NAMES.MACHINE_NAMES, true);
+      }
       return found;
     }
     let canonicalId = null;
@@ -1087,11 +1131,17 @@ class MasterDataService {
       }
     }
 
+    const shortCode = data.code?.trim() || data.shortName?.trim() || cleanName.substring(0, 4).toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const maxOrder = existingList.reduce((max, m) => Math.max(max, Number(m.sortOrder || 0)), 0);
+
     const created = storage.insert(TABLE_NAMES.MACHINE_NAMES, {
       id: canonicalId || undefined,
       categoryId: data.categoryId || 'cat-1',
       name: canonical || cleanName,
-      code: data.code?.trim() || cleanName.substring(0, 3).toUpperCase(),
+      code: shortCode,
+      shortName: shortCode,
+      assetCode: cleanAsset,
+      sortOrder: maxOrder + 1,
       description: data.description?.trim() || '',
       status: data.status || 'ACTIVE'
     });
@@ -1100,17 +1150,53 @@ class MasterDataService {
       storage.delete(TABLE_NAMES.MACHINE_NAMES, created.id);
       throw new CloudSaveError('❌ Cloud Save Failed: Machine Name creation not confirmed.');
     }
-    auditService.log('MASTER_MACHINENAME_CREATED', 'MACHINE_NAME', created.id, `Created Machine Name: ${created.name}`);
+    auditService.log('MASTER_MACHINENAME_CREATED', 'MACHINE_NAME', created.id, `Created Machine Name: ${created.name} [${created.assetCode}]`);
     this._broadcastChange();
     return created;
   }
 
   async updateMachineName(id, updates) {
     if (!authService.isAdmin()) throw new Error('Admin authorization required.');
-    const updated = storage.update(TABLE_NAMES.MACHINE_NAMES, id, updates);
+    const existingList = storage.getTable(TABLE_NAMES.MACHINE_NAMES) || [];
+    const existing = existingList.find(m => m.id === id);
+    if (!existing) throw new Error(`Machine Name ${id} not found.`);
+
+    const oldName = existing.name;
+    const oldAssetCode = existing.assetCode;
+    const newName = updates.name ? updates.name.trim() : existing.name;
+    const newAssetCode = updates.assetCode ? updates.assetCode.trim().toUpperCase() : (existing.assetCode || this.generateNextAssetCode());
+    const newCode = updates.code ? updates.code.trim() : (existing.code || '');
+
+    // Check collision on assetCode
+    if (newAssetCode && newAssetCode !== oldAssetCode) {
+      const collision = existingList.find(m => m.id !== id && m.assetCode && m.assetCode.trim().toUpperCase() === newAssetCode);
+      if (collision) {
+        throw new Error(`Unique Asset Code "${newAssetCode}" is already assigned to "${collision.name}". Each machine type must have a unique Asset Code.`);
+      }
+    }
+
+    // Call smartStorageService.renameMachineName to cascade changes cleanly to models, storage_master, and physical machines!
+    if (typeof smartStorageService !== 'undefined' && smartStorageService?.renameMachineName) {
+      try {
+        await smartStorageService.renameMachineName(oldName, newName, newCode, newAssetCode);
+      } catch (err) {
+        console.warn('[masterDataService] renameMachineName cascade notice:', err.message);
+      }
+    }
+
+    const payload = {
+      ...updates,
+      name: newName,
+      code: newCode,
+      shortName: newCode,
+      assetCode: newAssetCode,
+      updatedAt: new Date().toISOString()
+    };
+
+    const updated = storage.update(TABLE_NAMES.MACHINE_NAMES, id, payload);
     const ok = await storage.saveTable(TABLE_NAMES.MACHINE_NAMES, true);
     if (!ok) throw new CloudSaveError('❌ Cloud Save Failed: Machine Name update not confirmed.');
-    auditService.log('MASTER_MACHINENAME_UPDATED', 'MACHINE_NAME', id, `Updated Machine Name: ${updated.name}`);
+    auditService.log('MASTER_MACHINENAME_UPDATED', 'MACHINE_NAME', id, `Updated Machine Name: ${updated.name} [${updated.assetCode}]`);
     this._broadcastChange();
     return updated;
   }

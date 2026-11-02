@@ -352,17 +352,22 @@
 
 /* Light theme sticky support */
 body.theme-light .manpower-grid-table th.col-actions-header {
-  background-color: #f1f5f9 !important;
-  box-shadow: -3px 0 8px rgba(0, 0, 0, 0.12);
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+  font-weight: 800 !important;
+  border-bottom: 2.5px solid #0284c7 !important;
+  box-shadow: -3px 0 8px rgba(0, 0, 0, 0.08);
 }
 
 body.theme-light .manpower-grid-table td.col-actions-cell {
   background-color: #ffffff !important;
-  box-shadow: -3px 0 8px rgba(0, 0, 0, 0.12);
+  color: #0f172a !important;
+  font-weight: 600 !important;
+  box-shadow: -3px 0 8px rgba(0, 0, 0, 0.08);
 }
 
 body.theme-light .manpower-grid-table tr:hover td.col-actions-cell {
-  background-color: #f8fafc !important;
+  background-color: #e0f2fe !important;
 }
 
 .manpower-table-scroll-container {
@@ -841,15 +846,42 @@ td.col-actions-cell {
     z-index: 35 !important;
   }
 
+  /* Mobile Responsive Inventory Sticky Header Deck & Top Unified Bar */
+  .inventory-top-unified-bar {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+    padding: 6px 8px !important;
+  }
+
+  .inventory-top-unified-bar > div:first-child {
+    width: 100% !important;
+    min-width: 0 !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 6px !important;
+  }
+
+  .inventory-inline-kpis {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
   .quick-pills-bar {
     padding: 6px 0;
     gap: 5px;
     scrollbar-width: thin;
+    max-width: 100%;
+    min-width: 0;
   }
 
   .quick-pill {
-    padding: 4px 10px;
-    font-size: 11px;
+    padding: 6px 12px;
+    font-size: 11.5px;
+    min-height: 32px;
   }
 
   .filter-toolbar-card {
@@ -888,7 +920,7 @@ td.col-actions-cell {
   .pagination-number-buttons {
     display: inline-flex !important;
     align-items: center !important;
-    gap: 2px !important;
+    gap: 4px !important;
     flex-wrap: nowrap !important;
   }
 
@@ -902,7 +934,7 @@ td.col-actions-cell {
   }
 
   .pagination-per-page-container select {
-    height: 26px !important;
+    height: 30px !important;
     font-size: 11px !important;
     padding: 1px 4px !important;
     width: 65px !important;
@@ -911,7 +943,7 @@ td.col-actions-cell {
   .pagination-controls {
     display: flex !important;
     align-items: center !important;
-    gap: 3px !important;
+    gap: 4px !important;
     flex-wrap: nowrap !important;
     overflow-x: auto !important;
     -webkit-overflow-scrolling: touch !important;
@@ -921,10 +953,14 @@ td.col-actions-cell {
   .pagination-controls::-webkit-scrollbar { display: none !important; }
 
   .page-btn {
-    height: 26px !important;
-    min-width: 26px !important;
-    padding: 0 5px !important;
-    font-size: 11px !important;
+    height: 32px !important;
+    min-width: 32px !important;
+    padding: 0 6px !important;
+    font-size: 11.5px !important;
+    font-weight: 700 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
   }
 }
 
@@ -938,22 +974,24 @@ td.col-actions-cell {
 
 
 /* ==========================================================================
-   EXCEL GRID & TABLE LIGHT THEME FULL COMPATIBILITY
+   EXCEL GRID & TABLE LIGHT THEME FULL COMPATIBILITY (ORACLE APEX STANDARD)
    ========================================================================== */
 body.theme-light .excel-grid-table thead th {
-  background-color: #e2e8f0 !important;
+  background-color: #f8fafc !important;
   color: #0f172a !important;
   font-weight: 800 !important;
   font-size: 11.5px !important;
-  letter-spacing: 0.3px;
-  border-bottom: 2px solid #94a3b8 !important;
+  letter-spacing: 0.5px;
+  border-bottom: 2.5px solid #0284c7 !important;
   border-right: 1px solid #cbd5e1 !important;
   border-left: 1px solid #cbd5e1 !important;
   border-top: 1px solid #cbd5e1 !important;
+  text-transform: uppercase;
 }
 
 body.theme-light .excel-grid-table thead th:hover {
-  background-color: #cbd5e1 !important;
+  background-color: #f1f5f9 !important;
+  color: #0284c7 !important;
 }
 
 body.theme-light .col-freeze-sl,
@@ -969,9 +1007,9 @@ body.theme-light thead th.col-freeze-sl,
 body.theme-light thead th.col-freeze-check,
 body.theme-light thead th.col-freeze-name,
 body.theme-light thead th.col-frozen-cell {
-  background-color: #e2e8f0 !important;
+  background-color: #f8fafc !important;
   color: #0f172a !important;
-  border-bottom: 2px solid #94a3b8 !important;
+  border-bottom: 2.5px solid #0284c7 !important;
   border-right: 1px solid #cbd5e1 !important;
 }
 
@@ -1032,7 +1070,7 @@ body.theme-light .excel-grid-table tbody td {
   border-right: 1px solid #cbd5e1 !important;
   border-left: 1px solid #cbd5e1 !important;
   color: #0f172a !important;
-  font-weight: 500 !important;
+  font-weight: 600 !important;
   font-size: 12px;
 }
 

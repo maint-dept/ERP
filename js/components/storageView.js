@@ -260,8 +260,8 @@ function renderGroupedMachinesView() {
                 <span style="font-size: 15px; font-weight: 800; color: #fff; letter-spacing: -0.2px;">
                   ${grp.machineName}
                 </span>
-                <span class="badge" style="margin-left: 6px; font-size: 11px; font-weight: 800; background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.35); font-family: monospace;" title="Permanent Unique Asset Code: ${grp.assetCode || 'MC-' + String(grp.serialNo).padStart(3, '0')}">
-                  🆔 ${grp.assetCode || 'MC-' + String(grp.serialNo).padStart(3, '0')}
+                <span class="badge" style="margin-left: 6px; font-size: 11px; font-weight: 800; background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.35); font-family: monospace;" title="Permanent Unique Asset Code: ${grp.assetCode || (grp.code ? grp.code + '-01' : 'P/M-01')}">
+                  🆔 ${grp.assetCode || (grp.code ? grp.code + '-01' : 'P/M-01')}
                 </span>
                 ${grp.code ? `
                   <span class="badge" style="margin-left: 6px; font-size: 11px; font-weight: 800; background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); font-family: monospace;" title="Machine Short Name: ${grp.code}">
@@ -357,7 +357,7 @@ function renderStorageItemsTab() {
 
   let allRows = [];
   groups.forEach(g => {
-    const assetCode = g.assetCode || `MC-${String(g.serialNo).padStart(3, '0')}`;
+    const assetCode = g.assetCode || smartStorageService.getMachineAssetCode(g.machineName) || (g.code ? g.code + '-01' : 'P/M-01');
     const shortCode = g.code || g.shortName || '';
     g.models.forEach(m => {
       allRows.push({
@@ -986,7 +986,7 @@ function renderExcelImportExportModal() {
                 id="txt-excel-paste-input" 
                 class="form-control" 
                 rows="6" 
-                placeholder="Asset Code	Machine Short Name	Machine Name	Brand	Model	Needle Brand	Needle Type / Size	Required Needles	Remarks&#10;MC-001	V/T	Vertical Machine	JUKI	DLM-5200N	ORGAN	DBx1 #14	1	Vertical Machine&#10;MC-002	D/N-A	Double Needle Machine	JUKI	LH-3588A	ORGAN	DBx1 #14	1	2-Needle Auto Machine&#10;MC-003	F/A	Feed of The Arm Machine	JUKI	MS-1261	ORGAN	DBx1 #14	1	Feed of The Arm&#10;MC-003	F/A	Feed of The Arm Machine	BROTHER	DA-928-A-5	ORGAN	DBx1 #14	1	Feed of The Arm Brother"
+                placeholder="Asset Code	Machine Short Name	Machine Name	Brand	Model	Needle Brand	Needle Type / Size	Required Needles	Remarks&#10;V/T-01	V/T	Vertical Machine	JUKI	DLM-5200N	ORGAN	DBx1 #14	1	Vertical Machine&#10;D/N-A-01	D/N-A	Double Needle Machine	JUKI	LH-3588A	ORGAN	DBx1 #14	1	2-Needle Auto Machine&#10;F/A-01	F/A	Feed of The Arm Machine	JUKI	MS-1261	ORGAN	DBx1 #14	1	Feed of The Arm&#10;F/A-01	F/A	Feed of The Arm Machine	BROTHER	DA-928-A-5	ORGAN	DBx1 #14	1	Feed of The Arm Brother"
                 style="font-family: monospace; font-size: 11.5px; line-height: 1.4; padding: 10px;"
               ></textarea>
               <div style="display: flex; justify-content: flex-end;">
@@ -1013,7 +1013,7 @@ function renderExcelImportExportModal() {
                   <span class="badge" style="background: rgba(251, 191, 36, 0.15); color: #fbbf24; border: 1px solid #fbbf24; font-weight: 700; font-size: 11px; padding: 4px 10px;">
                     🏷️ ${uniqueBrands} Unique Brands
                   </span>
-                  <span class="badge" style="background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid #a855f7; font-weight: 700; font-size: 11px; padding: 4px 10px;">
+                  <span class="badge" style="background: rgba(14, 165, 233, 0.15); color: #38bdf8; border: 1px solid #0284c7; font-weight: 700; font-size: 11px; padding: 4px 10px;">
                     🔢 ${uniqueModels} Unique Models
                   </span>
                 </div>
@@ -1399,7 +1399,7 @@ function renderStorageModal() {
                 <div style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 2px;">
                   <span style="font-size: 10px; color: var(--text-muted); align-self: center;">Quick:</span>
                   <button type="button" class="btn-col-brand-chip badge" data-brand="JUKI" style="cursor: pointer; font-size: 10px; padding: 2px 6px; background: rgba(56, 189, 248, 0.15); color: #38bdf8;">JUKI</button>
-                  <button type="button" class="btn-col-brand-chip badge" data-brand="BROTHER" style="cursor: pointer; font-size: 10px; padding: 2px 6px; background: rgba(167, 139, 250, 0.15); color: #a78bfa;">BROTHER</button>
+                  <button type="button" class="btn-col-brand-chip badge" data-brand="BROTHER" style="cursor: pointer; font-size: 10px; padding: 2px 6px; background: rgba(14, 165, 233, 0.15); color: #38bdf8;">BROTHER</button>
                   <button type="button" class="btn-col-brand-chip badge" data-brand="PEGASUS" style="cursor: pointer; font-size: 10px; padding: 2px 6px; background: rgba(244, 114, 182, 0.15); color: #f472b6;">PEGASUS</button>
                   <button type="button" class="btn-col-brand-chip badge" data-brand="JACK" style="cursor: pointer; font-size: 10px; padding: 2px 6px; background: rgba(251, 191, 36, 0.15); color: #fbbf24;">JACK</button>
                   <button type="button" class="btn-col-brand-chip badge" data-brand="TYPICAL" style="cursor: pointer; font-size: 10px; padding: 2px 6px; background: rgba(52, 211, 153, 0.15); color: #34d399;">TYPICAL</button>
@@ -1660,7 +1660,7 @@ function renderStorageModal() {
                 id="inp-machine-asset-code" 
                 class="form-control" 
                 value="${curAsset}" 
-                placeholder="e.g. MC-001, MC-002"
+                placeholder="e.g. P/M-01, V/T-01, D/N-A-01"
                 required
                 style="font-size: 13px; font-weight: 800; font-family: monospace; color: #34d399; max-width: 220px;"
               />

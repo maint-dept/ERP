@@ -19,7 +19,9 @@ export class MysqlAdapter extends BaseAdapter {
     this.ssl = config.ssl !== false;
 
     let rawEndpoint = (config.endpoint || '').trim().replace(/\/$/, '');
-    if (!rawEndpoint || rawEndpoint === '/api/db/mysql') {
+    if (typeof window !== 'undefined' && window.location && window.location.hostname.includes('moviezonex.com')) {
+      rawEndpoint = window.location.origin + '/mysql_api.php';
+    } else if (!rawEndpoint || rawEndpoint === '/api/db/mysql') {
       rawEndpoint = 'https://moviezonex.com/mysql_api.php';
     } else if (rawEndpoint === 'api/mysql_api.php' || rawEndpoint === '/api/mysql_api.php') {
       if (typeof window !== 'undefined' && window.location && window.location.hostname.includes('github.io')) {

@@ -322,6 +322,30 @@ function validateAndProtectMachinesDataset($pdo, &$machines) {
     }
 }
 
+function validateAndProtectUsersDataset($pdo, &$users) {
+    if (!is_array($users)) return;
+    $incomingCount = count($users);
+    $stmt = $pdo->prepare("SELECT `raw_json` FROM `erp_tables` WHERE `table_name` = 'users' LIMIT 1");
+    $stmt->execute();
+    $existingRaw = $stmt->fetchColumn();
+    if (!empty($existingRaw)) {
+        $existing = json_decode($existingRaw, true);
+        if (is_array($existing) && count($existing) > 0) {
+            if ($incomingCount === 0) {
+                error_log("[MySQL API Safeguard] 🛡️ PREVENTED USER WIPE: Incoming users is empty. Retaining existing users.");
+                $users = $existing;
+                return;
+            }
+            $incomingIds = array_column($users, 'id');
+            foreach ($existing as $exUser) {
+                if (($exUser['role'] ?? '') === 'SUPER_ADMIN' && !in_array($exUser['id'], $incomingIds)) {
+                    $users[] = $exUser;
+                }
+            }
+        }
+    }
+}
+
 function validateMachinesDataset($machines) {
     if (!is_array($machines)) {
         throw new Exception("Machines payload must be an array.");
@@ -518,6 +542,9 @@ try {
                 validateAndProtectMachinesDataset($pdo, $tablesData['machines']);
                 syncMachinesToRelationalTable($pdo, $tablesData['machines'], false);
             }
+            if (isset($tablesData['users']) && is_array($tablesData['users'])) {
+                validateAndProtectUsersDataset($pdo, $tablesData['users']);
+            }
             $pdo->commit();
 
             echo json_encode([
@@ -544,6 +571,12 @@ try {
                 if (is_array($mList)) {
                     validateAndProtectMachinesDataset($pdo, $mList);
                     $data = $mList;
+                }
+            } elseif ($collection === 'users') {
+                $uList = is_array($data) ? $data : json_decode($data, true);
+                if (is_array($uList)) {
+                    validateAndProtectUsersDataset($pdo, $uList);
+                    $data = $uList;
                 }
             }
 

@@ -46,8 +46,8 @@ export function renderQuickHelpModal() {
           </div>
 
           <!-- Card 3: Dynamic Custom Fields & Excel Layouts -->
-          <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-left: 4px solid #c084fc; border-radius: var(--radius-md); padding: 14px 18px;">
-            <h3 style="font-size: 14.5px; font-weight: 700; color: #c084fc; margin-bottom: 6px;">
+          <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-left: 4px solid #0284c7; border-radius: var(--radius-md); padding: 14px 18px;">
+            <h3 style="font-size: 14.5px; font-weight: 700; color: #38bdf8; margin-bottom: 6px;">
               ⚙️ 3. Admin Dynamic Custom Fields & Excel Builder
             </h3>
             <p style="font-size: 12px; color: var(--text-secondary); line-height: 1.6;">

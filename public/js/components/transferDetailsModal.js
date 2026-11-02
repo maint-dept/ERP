@@ -314,7 +314,7 @@ export function renderTransferDetailsModal() {
 
           <!-- Immutable Approval Audit Trail Table -->
           <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 16px 18px;">
-            <div style="font-size: 13px; font-weight: 700; color: #c084fc; text-transform: uppercase; margin-bottom: 8px;">
+            <div style="font-size: 13px; font-weight: 700; color: #38bdf8; text-transform: uppercase; margin-bottom: 8px;">
               📜 Complete Approval History &amp; Audit Log
             </div>
             <div style="overflow-x: auto;">

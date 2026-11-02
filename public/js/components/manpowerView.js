@@ -425,7 +425,7 @@ function renderEmployeeListTable({ title, employees, isInactiveView, isFiltered,
       </div>
 
       <!-- Employee Table Card (Fills Remaining Viewport Space) -->
-      <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); flex: 1 1 0; min-height: 0; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);">
+      <div class="manpower-table-card" style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); flex: 1 1 0; min-height: 0; min-width: 0; max-width: 100%; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);">
         
         <!-- Streamlined Table Header Bar -->
         <div style="padding: 6px 12px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; flex-shrink: 0; background: rgba(15, 23, 42, 0.5); min-height: 34px;">

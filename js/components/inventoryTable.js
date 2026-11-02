@@ -947,8 +947,8 @@ export function renderInventoryTable() {
               </button>
             ` : ''}
 
-            <button id="btn-inventory-sync-db" class="btn btn-secondary btn-sm" style="font-weight: 800; height: 28px; padding: 0 10px; font-size: 11.5px; border: 1.5px solid #10b981; color: #34d399; background: rgba(16, 185, 129, 0.12);" title="Force Synchronize Machine Inventory with MySQL Primary Cloud Database">
-              🔄 Sync Data
+            <button id="btn-inventory-sync-db" class="btn btn-secondary btn-sm" style="font-weight: 800; height: 28px; padding: 0 10px; font-size: 11.5px; border: 1.5px solid #10b981; color: #34d399; background: rgba(16, 185, 129, 0.12);" title="Refresh Machine Inventory">
+              🔄 Refresh
             </button>
 
             <button id="btn-inventory-relocate" class="btn btn-secondary btn-sm" style="font-weight: 800; height: 28px; padding: 0 10px; font-size: 11.5px; border: 1.5px solid #38bdf8; color: #38bdf8; background: rgba(56, 189, 248, 0.12);" title="Physical Machine Verification &amp; Relocation">
@@ -1244,7 +1244,7 @@ export function renderInventoryTable() {
 }
 
 export function initInventoryTableEvents() {
-  // Dedicated MySQL Primary Cloud Database Synchronization
+  // Refresh Machine Inventory from Central Cloud Database
   const btnSyncDb = document.getElementById('btn-inventory-sync-db');
   if (btnSyncDb) {
     btnSyncDb.addEventListener('click', async () => {
@@ -1257,10 +1257,10 @@ export function initInventoryTableEvents() {
             initInventoryTableEvents();
           }
         } catch (err) {
-          console.error('Data Sync failed:', err);
+          console.error('Inventory refresh failed:', err);
           throw err;
         }
-      }, 'Synchronizing with MySQL Primary...', 'Machine Inventory successfully synchronized with MySQL Primary.');
+      }, 'Refreshing records...', null);
     });
   }
 

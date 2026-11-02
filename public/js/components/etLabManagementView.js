@@ -327,7 +327,7 @@ function renderEntBoardsContent(kpi, allBoards, filteredBoards, currentBoard, co
             <button 
               class="btn btn-quick-action" 
               data-action="SEND_OUTSIDE" 
-              style="height: 44px; font-weight: 800; font-size: 12.5px; background: rgba(168, 85, 247, 0.12); border: 1.5px solid #a855f7; color: #c084fc; display: flex; align-items: center; justify-content: center; gap: 6px; border-radius: 8px; cursor: pointer; transition: all 0.2s ease;"
+              style="height: 44px; font-weight: 800; font-size: 12.5px; background: rgba(2, 132, 199, 0.15); border: 1.5px solid #0284c7; color: #38bdf8; display: flex; align-items: center; justify-content: center; gap: 6px; border-radius: 8px; cursor: pointer; transition: all 0.2s ease;"
               title="Send this board to an external repair vendor"
             >
               <span style="font-size: 15px;">🚚</span>
@@ -443,14 +443,12 @@ function renderEntBoardsContent(kpi, allBoards, filteredBoards, currentBoard, co
               <button 
                 class="btn btn-sm btn-quick-select-board" 
                 data-serial="${b.boardSerial}"
-                style="background: rgba(30, 41, 59, 0.85); border: 1px solid rgba(56, 189, 248, 0.3); color: #e2e8f0; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 700; display: flex; align-items: center; gap: 6px; cursor: pointer; transition: all 0.15s ease;"
-                onmouseover="this.style.borderColor='#38bdf8'; this.style.background='rgba(56, 189, 248, 0.15)';"
-                onmouseout="this.style.borderColor='rgba(56, 189, 248, 0.3)'; this.style.background='rgba(30, 41, 59, 0.85)';"
+                style="padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 700; display: flex; align-items: center; gap: 6px; cursor: pointer; transition: all 0.15s ease;"
               >
-                <span style="font-family: var(--font-mono); color: #38bdf8;">${b.boardSerial}</span>
+                <span class="board-serial-chip" style="font-family: var(--font-mono); font-weight: 800;">${b.boardSerial}</span>
                 <span>&bull;</span>
-                <span style="color: #cbd5e1; font-size: 11.5px;">${b.partName}</span>
-                <span style="font-size: 10px; color: ${b.currentMachineSerial ? '#34d399' : '#94a3b8'};">(${b.currentMachineSerial ? `🧵 ${b.currentMachineSerial}` : 'In Spares'})</span>
+                <span class="board-part-name" style="font-size: 11.5px;">${b.partName}</span>
+                <span style="font-size: 10px; font-weight: 700; color: ${b.currentMachineSerial ? '#16a34a' : '#64748b'};">(${b.currentMachineSerial ? `🧵 ${b.currentMachineSerial}` : 'In Spares'})</span>
               </button>
             `).join('')}
           </div>
@@ -520,7 +518,7 @@ function renderResultBadge(h) {
     } else if (h.acceptanceStatus.includes('Partially')) {
       return `<span style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid #f59e0b; font-size: 10.5px; font-weight: 800; padding: 1px 6px; border-radius: 4px;">⚠️ Partial</span>`;
     } else if (h.acceptanceStatus.includes('Send Again')) {
-      return `<span style="background: rgba(168, 85, 247, 0.2); color: #c084fc; border: 1px solid #a855f7; font-size: 10.5px; font-weight: 800; padding: 1px 6px; border-radius: 4px;">🔄 Send Again</span>`;
+      return `<span style="background: rgba(2, 132, 199, 0.2); color: #38bdf8; border: 1px solid #0284c7; font-size: 10.5px; font-weight: 800; padding: 1px 6px; border-radius: 4px;">🔄 Send Again</span>`;
     }
   }
   return h.repairType ? `<span style="color: #cbd5e1; font-size: 11px;">${h.repairType}</span>` : '—';
@@ -544,7 +542,7 @@ function renderCurrentStatusBadge(board, connectedMachine) {
     case 'PARTIALLY_REPAIRED':
       return `<span style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1.5px solid #f59e0b; font-weight: 800; font-size: 12px; padding: 4px 10px; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px;">⚠️ Partially Repaired</span>`;
     case 'RETURNED':
-      return `<span style="background: rgba(168, 85, 247, 0.2); color: #c084fc; border: 1.5px solid #a855f7; font-weight: 800; font-size: 12px; padding: 4px 10px; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px;">🟣 Returned from External</span>`;
+      return `<span style="background: rgba(20, 184, 166, 0.2); color: #2dd4bf; border: 1.5px solid #14b8a6; font-weight: 800; font-size: 12px; padding: 4px 10px; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px;">📥 Returned from External</span>`;
     case 'DAMAGED_SCRAP':
       return `<span style="background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1.5px solid #ef4444; font-weight: 800; font-size: 12px; padding: 4px 10px; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px;">❌ Damaged / Scrap</span>`;
     default:
@@ -568,7 +566,7 @@ function renderSimpleStatusBadge(status) {
     case 'PARTIALLY_REPAIRED':
       return `<span class="badge" style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid #f59e0b; font-weight: 700;">⚠️ Partial</span>`;
     case 'RETURNED':
-      return `<span class="badge" style="background: rgba(168, 85, 247, 0.2); color: #c084fc; border: 1px solid #a855f7; font-weight: 700;">🟣 Returned</span>`;
+      return `<span class="badge" style="background: rgba(20, 184, 166, 0.2); color: #2dd4bf; border: 1px solid #14b8a6; font-weight: 700;">📥 Returned</span>`;
     case 'DAMAGED_SCRAP':
       return `<span class="badge" style="background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid #ef4444; font-weight: 700;">❌ Scrap</span>`;
     default:
@@ -945,7 +943,7 @@ function openEditCompanyModal(companyId = null, onSave = null) {
 
   const modalHtml = `
     <div class="modal-overlay" id="edit-company-modal-overlay" style="z-index: 10050;">
-      <div class="modal-dialog" style="max-width: 540px; box-shadow: 0 12px 40px rgba(0,0,0,0.85); border: 1.5px solid #a855f7;">
+      <div class="modal-dialog" style="max-width: 540px; box-shadow: 0 12px 40px rgba(0,0,0,0.85); border: 1.5px solid #0284c7;">
         
         <div class="modal-header" style="background: linear-gradient(135deg, #7e22ce, #6b21a8); padding: 14px 20px; display: flex; justify-content: space-between; align-items: center;">
           <div style="display: flex; align-items: center; gap: 10px; color: #fff;">
@@ -995,7 +993,7 @@ function openEditCompanyModal(companyId = null, onSave = null) {
 
           <div class="modal-footer" style="padding: 12px 20px; background: var(--bg-card); display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid var(--border-color);">
             <button type="button" class="btn btn-secondary btn-close-edit-comp-modal">Cancel</button>
-            <button type="submit" class="btn btn-primary" style="font-weight: 800; background: linear-gradient(135deg, #7e22ce, #6b21a8); border: 1px solid #c084fc;">
+            <button type="submit" class="btn btn-primary" style="font-weight: 800; background: linear-gradient(135deg, #0284c7, #0369a1); border: 1px solid #38bdf8;">
               ${isNew ? '➕ Register Vendor' : '💾 Save Changes'}
             </button>
           </div>
@@ -1293,11 +1291,11 @@ function renderEntLabConfigInlineView() {
           <!-- 3. External Repair Companies -->
           <div style="background: var(--bg-surface); border: 1.5px solid var(--border-color); border-radius: var(--radius-lg); padding: 18px; display: flex; flex-direction: column; gap: 10px;">
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
-              <div style="font-size: 13.5px; font-weight: 800; color: #a855f7; display: flex; align-items: center; gap: 6px;">
+              <div style="font-size: 13.5px; font-weight: 800; color: #38bdf8; display: flex; align-items: center; gap: 6px;">
                 <span>🏢</span>
                 <span>External Repair Companies &amp; Vendors (${companies.length})</span>
               </div>
-              <button id="btn-inline-open-add-comp-modal" class="btn btn-ghost btn-xs" style="color: #c084fc; font-size: 11.5px; font-weight: 700; padding: 3px 8px; border: 1px solid rgba(192, 132, 252, 0.4); border-radius: 4px; background: rgba(168, 85, 247, 0.1);" title="Register vendor with full contact &amp; address details">
+              <button id="btn-inline-open-add-comp-modal" class="btn btn-ghost btn-xs" style="color: #38bdf8; font-size: 11.5px; font-weight: 700; padding: 3px 8px; border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 4px; background: rgba(2, 132, 199, 0.1);" title="Register vendor with full contact &amp; address details">
                 ➕ Detailed Form
               </button>
             </div>
@@ -1305,7 +1303,7 @@ function renderEntLabConfigInlineView() {
             <div style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px;">
               <input type="text" id="inline-comp-name" class="form-control" placeholder="Company Name" style="height: 36px;" />
               <input type="text" id="inline-comp-contact" class="form-control" placeholder="Contact Person / Phone" style="height: 36px;" />
-              <button id="btn-inline-add-comp" class="btn btn-primary btn-sm" style="font-weight: 700; white-space: nowrap; background: linear-gradient(135deg, #7e22ce, #6b21a8); border: 1px solid #c084fc;">
+              <button id="btn-inline-add-comp" class="btn btn-primary btn-sm" style="font-weight: 700; white-space: nowrap; background: linear-gradient(135deg, #0284c7, #0369a1); border: 1px solid #38bdf8;">
                 ➕ Add
               </button>
             </div>

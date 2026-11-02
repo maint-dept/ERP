@@ -24,8 +24,8 @@
   --warning-light: rgba(245, 158, 11, 0.15);
   --danger: #ef4444;
   --danger-light: rgba(239, 68, 68, 0.15);
-  --info: #8b5cf6;
-  --info-light: rgba(139, 92, 246, 0.15);
+  --info: #0284c7;
+  --info-light: rgba(2, 132, 199, 0.15);
   
   --text-primary: #ffffff;
   --text-secondary: #f1f5f9;
@@ -49,15 +49,15 @@
   --sidebar-width: 280px;
 }
 
-/* Light Theme (For well-lit plant offices & print viewing) */
+/* Light Theme (Executive Enterprise Standard - High-Contrast & Eye Comfort) */
 html.theme-light,
 html.theme-light body,
 body.theme-light {
-  --bg-main: #f1f5f9;
-  --bg-sidebar: #0f172a;
+  --bg-main: #f1f4f8;
+  --bg-sidebar: #0c1222;
   --bg-surface: #ffffff;
   --bg-card: #ffffff;
-  --bg-hover: #e2e8f0;
+  --bg-hover: #e0f2fe;
   --border-color: #cbd5e1;
   --border-light: #e2e8f0;
   --border-subtle: #f1f5f9;
@@ -66,23 +66,23 @@ body.theme-light {
   --primary-hover: #0369a1;
   --primary-light: #e0f2fe;
   
-  --success: #15803d;
-  --success-light: #dcfce7;
-  --warning: #b45309;
-  --warning-light: #fef3c7;
-  --danger: #b91c1c;
-  --danger-light: #fee2e2;
-  --info: #6b21a8;
-  --info-light: #f3e8ff;
+  --success: #059669;
+  --success-light: #ecfdf5;
+  --warning: #d97706;
+  --warning-light: #fffbeb;
+  --danger: #dc2626;
+  --danger-light: #fff1f2;
+  --info: #0284c7;
+  --info-light: #f0f9ff;
 
   --text-primary: #0f172a;
-  --text-secondary: #334155;
-  --text-muted: #64748b;
+  --text-secondary: #1e293b;
+  --text-muted: #334155;
   --text-inverse: #ffffff;
 
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
+  --shadow-sm: 0 1px 2px 0 rgba(15, 23, 42, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.08), 0 2px 4px -1px rgba(15, 23, 42, 0.04);
+  --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.08), 0 4px 6px -2px rgba(15, 23, 42, 0.04);
 }
 
 * {
@@ -607,28 +607,10 @@ body.modal-open div {
   white-space: nowrap;
 }
 
-.brand-status-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 4.5px;
-  background: rgba(16, 185, 129, 0.12);
-  border: 1px solid rgba(16, 185, 129, 0.35);
-  border-radius: 9999px;
-  padding: 1.5px 6.5px;
-  font-size: 8.5px;
-  font-weight: 700;
-  color: #34d399;
-  letter-spacing: 0.5px;
-  flex-shrink: 0;
-}
-
-.brand-status-dot {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: #10b981;
-  box-shadow: 0 0 6px #10b981;
-  animation: statusPulse 2s infinite ease-in-out;
+.brand-status-pill,
+.brand-status-dot,
+#nav-realtime-pill {
+  display: none !important;
 }
 
 @keyframes statusPulse {
@@ -998,7 +980,7 @@ body.modal-open div {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #0284c7 0%, #8b5cf6 100%);
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1744,76 +1726,76 @@ body.modal-open div {
 .badge-idle, .badge-usable, .badge-usableidle { background: rgba(56, 189, 248, 0.25); color: #7dd3fc; border: 1.5px solid #38bdf8; font-weight: 800; }
 .badge-repairable, .badge-repairableidle { background: rgba(245, 158, 11, 0.25); color: #fde047; border: 1.5px solid #eab308; font-weight: 800; }
 .badge-ambulance { background: rgba(244, 63, 94, 0.25); color: #fda4af; border: 1.5px solid #f43f5e; font-weight: 800; }
-.badge-pending { background: rgba(168, 85, 247, 0.25); color: #d8b4fe; border: 1.5px solid #a855f7; font-weight: 800; }
+.badge-pending { background: rgba(245, 158, 11, 0.22); color: #fbbf24; border: 1.5px solid #f59e0b; font-weight: 800; }
 .badge-inactive { background: rgba(148, 163, 184, 0.25); color: #f1f5f9; border: 1.5px solid #64748b; font-weight: 800; }
 .badge-archived { background: rgba(71, 85, 105, 0.35); color: #ffffff; border: 1.5px solid #64748b; font-weight: 800; }
 
-/* Light Theme Universal High-Contrast Badges (Strict WCAG AAA Standard > 8.5:1) */
+/* Light Theme Universal High-Contrast Badges (Vibrant Saturated Enterprise Contrast) */
 body.theme-light .badge-active,
 body.theme-light .badge-running {
-  background: #dcfce7 !important;
-  color: #14532d !important;
-  border: 1px solid #86efac !important;
+  background: #ecfdf5 !important;
+  color: #047857 !important;
+  border: 1.5px solid #10b981 !important;
   font-weight: 800 !important;
 }
 
 body.theme-light .badge-maint,
 body.theme-light .badge-maintenance {
-  background: #fef3c7 !important;
-  color: #78350f !important;
-  border: 1px solid #fcd34d !important;
+  background: #fffbeb !important;
+  color: #b45309 !important;
+  border: 1.5px solid #f59e0b !important;
   font-weight: 800 !important;
 }
 
 body.theme-light .badge-breakdown {
-  background: #fee2e2 !important;
-  color: #7f1d1d !important;
-  border: 1px solid #fca5a5 !important;
+  background: #fff1f2 !important;
+  color: #be123c !important;
+  border: 1.5px solid #f43f5e !important;
   font-weight: 800 !important;
 }
 
 body.theme-light .badge-idle,
 body.theme-light .badge-usable,
 body.theme-light .badge-usableidle {
-  background: #dbeafe !important;
-  color: #1e3a8a !important;
-  border: 1px solid #93c5fd !important;
+  background: #f0f9ff !important;
+  color: #0369a1 !important;
+  border: 1.5px solid #0284c7 !important;
   font-weight: 800 !important;
 }
 
 body.theme-light .badge-repairable,
 body.theme-light .badge-repairableidle {
-  background: #fef3c7 !important;
-  color: #78350f !important;
-  border: 1px solid #fde68a !important;
+  background: #fffbeb !important;
+  color: #b45309 !important;
+  border: 1.5px solid #f59e0b !important;
   font-weight: 800 !important;
 }
 
 body.theme-light .badge-ambulance {
-  background: #ffe4e6 !important;
-  color: #881337 !important;
-  border: 1px solid #fda4af !important;
+  background: #fff1f2 !important;
+  color: #be123c !important;
+  border: 1.5px solid #f43f5e !important;
   font-weight: 800 !important;
 }
 
 body.theme-light .badge-pending {
-  background: #f3e8ff !important;
-  color: #581c87 !important;
-  border: 1px solid #d8b4fe !important;
+  background: #fffbeb !important;
+  color: #b45309 !important;
+  border: 1.5px solid #f59e0b !important;
   font-weight: 800 !important;
 }
 
 body.theme-light .badge-inactive {
   background: #f1f5f9 !important;
-  color: #0f172a !important;
-  border: 1px solid #cbd5e1 !important;
+  color: #334155 !important;
+  border: 1.5px solid #cbd5e1 !important;
   font-weight: 800 !important;
 }
 
 body.theme-light .badge-archived {
   background: #e2e8f0 !important;
   color: #0f172a !important;
-  border: 1px solid #94a3b8 !important;
+  border: 1.5px solid #94a3b8 !important;
   font-weight: 800 !important;
 }
 
@@ -2276,13 +2258,23 @@ body.theme-light .badge-archived {
   }
 
   .nav-icon-btn {
-    width: 34px !important;
-    height: 34px !important;
+    width: 38px !important;
+    height: 38px !important;
+    min-width: 38px !important;
+    min-height: 38px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
   }
 
   .btn-mobile-sidebar-toggle {
-    width: 34px !important;
-    height: 34px !important;
+    width: 38px !important;
+    height: 38px !important;
+    min-width: 38px !important;
+    min-height: 38px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
   }
 
   .nav-user-dropdown {
@@ -2299,7 +2291,7 @@ body.theme-light .badge-archived {
   }
 
   .page-view {
-    padding: 8px 8px 24px 8px !important;
+    padding: 8px 8px max(32px, env(safe-area-inset-bottom, 24px)) 8px !important;
   }
 
   .toast {
@@ -2335,13 +2327,17 @@ body.theme-light .badge-archived {
   }
 
   .nav-icon-btn {
-    width: 30px !important;
-    height: 30px !important;
+    width: 34px !important;
+    height: 34px !important;
+    min-width: 34px !important;
+    min-height: 34px !important;
   }
 
   .btn-mobile-sidebar-toggle {
-    width: 30px !important;
-    height: 30px !important;
+    width: 34px !important;
+    height: 34px !important;
+    min-width: 34px !important;
+    min-height: 34px !important;
   }
 
   .nav-user-dropdown {
@@ -2352,7 +2348,7 @@ body.theme-light .badge-archived {
   }
 
   .page-view {
-    padding: 6px 6px 20px 6px !important;
+    padding: 6px 6px max(28px, env(safe-area-inset-bottom, 20px)) 6px !important;
   }
 }
 
@@ -2434,15 +2430,15 @@ body.theme-light .badge-archived {
 }
 
 .uam-table-scroll-container::-webkit-scrollbar-track {
-  background: #090e1a !important;
-  border-top: 1px solid #1e293b !important;
-  border-radius: 4px !important;
+  background: var(--bg-main, #090e1a);
+  border-top: 1px solid var(--border-color, #1e293b);
+  border-radius: 4px;
 }
 
 .uam-table-scroll-container::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, #38bdf8 0%, #0284c7 100%) !important;
-  border-radius: 6px !important;
-  border: 2px solid #090e1a !important;
+  background: linear-gradient(180deg, #38bdf8 0%, #0284c7 100%);
+  border-radius: 6px;
+  border: 2px solid var(--bg-main, #090e1a);
 }
 
 .uam-table-scroll-container::-webkit-scrollbar-thumb:hover {
@@ -2462,12 +2458,12 @@ body.theme-light .badge-archived {
 
 .user-management-table th.uam-col-sticky-check {
   z-index: 32 !important;
-  background-color: #0b1329 !important;
+  background-color: var(--bg-card, #0b1329) !important;
 }
 
 .user-management-table td.uam-col-sticky-check {
   z-index: 12 !important;
-  background-color: #0b1329 !important;
+  background-color: var(--bg-card, #0b1329) !important;
 }
 
 .user-management-table th.uam-col-sticky-card,
@@ -2478,18 +2474,18 @@ body.theme-light .badge-archived {
   min-width: 120px !important;
   max-width: 120px !important;
   text-align: center !important;
-  border-right: 2px solid rgba(56, 189, 248, 0.45) !important;
+  border-right: 2px solid var(--border-color, rgba(56, 189, 248, 0.45)) !important;
   box-shadow: 3px 0 6px rgba(0, 0, 0, 0.4) !important;
 }
 
 .user-management-table th.uam-col-sticky-card {
   z-index: 32 !important;
-  background-color: #0b1329 !important;
+  background-color: var(--bg-card, #0b1329) !important;
 }
 
 .user-management-table td.uam-col-sticky-card {
   z-index: 12 !important;
-  background-color: #0b1329 !important;
+  background-color: var(--bg-card, #0b1329) !important;
 }
 
 .user-management-table th.uam-col-sticky-card-pass,
@@ -2500,9 +2496,9 @@ body.theme-light .badge-archived {
   min-width: 130px !important;
   max-width: 130px !important;
   text-align: center !important;
-  border-right: 2px solid rgba(56, 189, 248, 0.45) !important;
+  border-right: 2px solid var(--border-color, rgba(56, 189, 248, 0.45)) !important;
   box-shadow: 3px 0 8px rgba(0, 0, 0, 0.4) !important;
-  background-color: #0b1329 !important;
+  background-color: var(--bg-card, #0b1329) !important;
   box-sizing: border-box !important;
 }
 
@@ -2552,9 +2548,10 @@ body.theme-light .badge-archived {
 }
 
 body.theme-light .user-management-table.uam-logs-table thead th {
-  background-color: #e2e8f0 !important;
+  background-color: #f8fafc !important;
   color: #0f172a !important;
-  border-bottom: 2px solid #94a3b8 !important;
+  font-weight: 800 !important;
+  border-bottom: 2.5px solid #0284c7 !important;
   border-right: 1px solid #cbd5e1 !important;
 }
 
@@ -2565,6 +2562,7 @@ body.theme-light .user-management-table.uam-logs-table thead th {
 
 body.theme-light .user-management-table.uam-logs-table tbody td {
   color: #0f172a !important;
+  font-weight: 600 !important;
   border-bottom: 1px solid #cbd5e1 !important;
   border-right: 1px solid #cbd5e1 !important;
 }
@@ -2619,10 +2617,10 @@ body.theme-light .user-management-table.uam-logs-table tbody tr:hover td {
 
 /* Light Theme: User Management Data Table Full Support */
 body.theme-light .user-management-table thead th {
-  background-color: #e2e8f0 !important;
+  background-color: #f8fafc !important;
   color: #0f172a !important;
   font-weight: 800 !important;
-  border-bottom: 2px solid #94a3b8 !important;
+  border-bottom: 2.5px solid #0284c7 !important;
   border-right: 1px solid #cbd5e1 !important;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05) !important;
 }
@@ -2630,9 +2628,9 @@ body.theme-light .user-management-table thead th {
 body.theme-light .user-management-table th.uam-col-sticky-check,
 body.theme-light .user-management-table th.uam-col-sticky-card,
 body.theme-light .user-management-table th.uam-col-sticky-card-pass {
-  background-color: #e2e8f0 !important;
+  background-color: #f8fafc !important;
   color: #0f172a !important;
-  border-bottom: 2px solid #94a3b8 !important;
+  border-bottom: 2.5px solid #0284c7 !important;
   border-right: 1px solid #cbd5e1 !important;
 }
 
@@ -2662,7 +2660,7 @@ body.theme-light .user-management-table tbody tr:nth-child(even) td.uam-col-stic
 
 body.theme-light .user-management-table tbody td {
   color: #0f172a !important;
-  font-weight: 500 !important;
+  font-weight: 600 !important;
   border-bottom: 1px solid #cbd5e1 !important;
   border-right: 1px solid #cbd5e1 !important;
 }
@@ -3071,5 +3069,36 @@ body.theme-light .nav-switcher-item:hover {
     justify-content: center !important;
   }
 }
+
+/* Real-Time Live Row Flash Animation */
+@keyframes realtimeRowFlash {
+  0% { background-color: rgba(34, 197, 94, 0.25) !important; }
+  100% { background-color: transparent !important; }
+}
+
+.realtime-updated-highlight {
+  animation: realtimeRowFlash 1.5s ease-out forwards;
+}
+
+#nav-realtime-pill {
+  transition: all 0.3s ease;
+}
+
+#nav-realtime-pill .live-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: #22c55e;
+  box-shadow: 0 0 8px #22c55e;
+  animation: pulseLiveDot 2s infinite;
+}
+
+@keyframes pulseLiveDot {
+  0% { transform: scale(0.95); opacity: 0.8; }
+  50% { transform: scale(1.25); opacity: 1; }
+  100% { transform: scale(0.95); opacity: 0.8; }
+}
+
 
 

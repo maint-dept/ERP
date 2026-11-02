@@ -593,6 +593,20 @@ export function renderRelocateView() {
           flex: 1 0 auto !important;
         }
 
+        .relocate-top-nav-card {
+          flex-direction: column !important;
+          align-items: stretch !important;
+          gap: 8px !important;
+        }
+
+        .relocate-title-area {
+          width: 100% !important;
+          min-width: 0 !important;
+          flex-direction: column !important;
+          align-items: stretch !important;
+          gap: 8px !important;
+        }
+
         .relocate-top-nav-card .relocate-tabs-bar {
           display: flex !important;
           flex-direction: row !important;
@@ -601,8 +615,14 @@ export function renderRelocateView() {
           -webkit-overflow-scrolling: touch !important;
           scrollbar-width: none !important;
           width: 100% !important;
+          min-width: 0 !important;
           margin-left: 0 !important;
           padding: 2px 0 !important;
+        }
+
+        #btn-relocate-goto-qr-codes {
+          width: 100% !important;
+          justify-content: center !important;
         }
 
         .relocate-top-nav-card .relocate-tabs-bar button,
@@ -2970,7 +2990,7 @@ function renderNeedleBudgetModal() {
 
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
             <div class="form-group">
-              <label class="form-label" style="font-size: 12px; font-weight: 700; color: #c084fc;">Approved Budget Qty: <span class="req">*</span></label>
+              <label class="form-label" style="font-size: 12px; font-weight: 700; color: #34d399;">Approved Budget Qty: <span class="req">*</span></label>
               <input
                 type="number"
                 id="needle-budget-qty-input"
@@ -2978,7 +2998,7 @@ function renderNeedleBudgetModal() {
                 min="0"
                 required
                 value="${budgetRec?.budgetQuantity || 0}"
-                style="font-size: 16px; font-weight: 800; color: #c084fc; font-family: var(--font-mono);"
+                style="font-size: 16px; font-weight: 800; color: #34d399; font-family: var(--font-mono);"
               />
               <span style="font-size: 10px; color: var(--text-muted);">Floor monthly quota</span>
             </div>

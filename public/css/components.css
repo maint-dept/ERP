@@ -661,18 +661,19 @@ tr.draggable-row.drag-over-bottom {
 
 /* =========================================================================
    COMPACT SLEEK TOAST NOTIFICATIONS (Enterprise Minimalist Pill / Snackbar)
+   Positioned Top-Right under navbar so it NEVER blocks bottom Save / Form buttons
    ========================================================================= */
 .erp-toast-container {
   position: fixed;
-  bottom: 20px;
-  right: 20px;
+  top: 72px;
+  right: 24px;
   z-index: 100000;
   display: flex;
   flex-direction: column;
   gap: 8px;
   pointer-events: none;
-  max-width: 350px;
-  width: calc(100% - 40px);
+  max-width: 360px;
+  width: calc(100% - 48px);
 }
 
 .erp-toast {
@@ -810,13 +811,8 @@ tr.draggable-row.drag-over-bottom {
 @keyframes toastSlideIn {
   from {
     opacity: 0;
-    transform: translateY(12px) scale(0.97);
+    transform: translateY(-10px) scale(0.97);
   }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
@@ -2381,684 +2377,6 @@ td.td-actions-active {
 
 
 
-/* =========================================================================
-   AGENT CHAT PANEL — Slide-out Right Drawer
-   ========================================================================= */
-
-/* Backdrop */
-.agent-chat-backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.45);
-  backdrop-filter: blur(3px);
-  z-index: 9998;
-  animation: acpFadeIn 0.2s ease;
-}
-
-@keyframes acpFadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-/* Panel Container */
-.agent-chat-panel {
-  position: fixed;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  width: 400px;
-  max-width: 100vw;
-  background: rgba(9, 14, 26, 0.97);
-  backdrop-filter: blur(20px) saturate(1.5);
-  border-left: 1.5px solid rgba(56, 189, 248, 0.2);
-  box-shadow: -8px 0 40px rgba(0, 0, 0, 0.6), -2px 0 8px rgba(56, 189, 248, 0.08);
-  z-index: 9999;
-  display: flex;
-  flex-direction: column;
-  transform: translateX(100%);
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.agent-chat-panel.open {
-  transform: translateX(0);
-}
-
-/* Panel Header */
-.acp-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 14px 16px;
-  border-bottom: 1px solid rgba(56, 189, 248, 0.15);
-  background: rgba(15, 23, 42, 0.7);
-  flex-shrink: 0;
-  gap: 10px;
-}
-
-.acp-header-left {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
-}
-
-.acp-header-icon {
-  font-size: 22px;
-  flex-shrink: 0;
-}
-
-.acp-header-title {
-  font-size: 15px;
-  font-weight: 800;
-  color: #f1f5f9;
-  letter-spacing: 0.3px;
-  white-space: nowrap;
-}
-
-.acp-chat-title {
-  font-size: 14px;
-  font-weight: 700;
-  color: #e2e8f0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 220px;
-  cursor: pointer;
-  padding: 2px 6px;
-  border-radius: 4px;
-  transition: background 0.15s;
-}
-
-.acp-chat-title:hover {
-  background: rgba(56, 189, 248, 0.1);
-}
-
-.acp-header-actions {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-shrink: 0;
-}
-
-/* Buttons */
-.acp-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 6px 12px;
-  border: 1px solid rgba(56, 189, 248, 0.3);
-  border-radius: 8px;
-  background: rgba(56, 189, 248, 0.1);
-  color: #38bdf8;
-  font-size: 12px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  white-space: nowrap;
-}
-
-.acp-btn:hover {
-  background: rgba(56, 189, 248, 0.2);
-  border-color: #38bdf8;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(56, 189, 248, 0.2);
-}
-
-.acp-btn-new {
-  background: linear-gradient(135deg, rgba(56, 189, 248, 0.15), rgba(2, 132, 199, 0.15));
-  border-color: rgba(56, 189, 248, 0.4);
-}
-
-.acp-btn-new:hover {
-  background: linear-gradient(135deg, rgba(56, 189, 248, 0.3), rgba(2, 132, 199, 0.3));
-}
-
-.acp-btn-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 30px;
-  height: 30px;
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  background: transparent;
-  color: var(--text-secondary);
-  font-size: 14px;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-
-.acp-btn-icon:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: #f1f5f9;
-  border-color: rgba(255, 255, 255, 0.2);
-}
-
-.acp-btn-back {
-  font-size: 18px;
-  font-weight: 700;
-}
-
-.acp-btn-close:hover {
-  background: rgba(239, 68, 68, 0.15);
-  color: #f87171;
-  border-color: rgba(239, 68, 68, 0.4);
-}
-
-/* Panel Body */
-.acp-body {
-  flex: 1;
-  overflow-y: auto;
-  overflow-x: hidden;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(56, 189, 248, 0.3) transparent;
-}
-
-.acp-body::-webkit-scrollbar { width: 5px; }
-.acp-body::-webkit-scrollbar-track { background: transparent; }
-.acp-body::-webkit-scrollbar-thumb { background: rgba(56, 189, 248, 0.25); border-radius: 10px; }
-
-/* Empty State */
-.acp-empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  padding: 60px 30px;
-  gap: 12px;
-}
-
-.acp-empty-icon {
-  font-size: 52px;
-  opacity: 0.4;
-  animation: acpFloat 3s ease-in-out infinite;
-}
-
-@keyframes acpFloat {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-8px); }
-}
-
-.acp-empty-title {
-  font-size: 16px;
-  font-weight: 800;
-  color: #94a3b8;
-  margin: 0;
-}
-
-.acp-empty-text {
-  font-size: 13px;
-  color: #64748b;
-  line-height: 1.6;
-  max-width: 280px;
-  margin: 0;
-}
-
-.acp-empty-btn {
-  margin-top: 12px;
-  padding: 10px 20px;
-  font-size: 13px;
-}
-
-/* Conversation List */
-.acp-conv-list {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 8px;
-}
-
-.acp-conv-card {
-  display: flex;
-  align-items: stretch;
-  background: rgba(15, 23, 42, 0.5);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 10px;
-  transition: all 0.2s ease;
-  overflow: hidden;
-}
-
-.acp-conv-card:hover {
-  background: rgba(56, 189, 248, 0.06);
-  border-color: rgba(56, 189, 248, 0.2);
-  transform: translateX(-2px);
-  box-shadow: 2px 0 12px rgba(56, 189, 248, 0.08);
-}
-
-.acp-conv-card-main {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 14px;
-  flex: 1;
-  min-width: 0;
-  cursor: pointer;
-}
-
-.acp-conv-icon {
-  font-size: 24px;
-  flex-shrink: 0;
-  width: 36px;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(56, 189, 248, 0.1);
-  border-radius: 8px;
-  border: 1px solid rgba(56, 189, 248, 0.15);
-}
-
-.acp-conv-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.acp-conv-title {
-  font-size: 13px;
-  font-weight: 700;
-  color: #e2e8f0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  margin-bottom: 3px;
-}
-
-.acp-conv-preview {
-  font-size: 11.5px;
-  color: #64748b;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  margin-bottom: 4px;
-}
-
-.acp-conv-meta {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 10.5px;
-  color: #475569;
-  font-weight: 600;
-}
-
-.acp-conv-badge {
-  background: rgba(56, 189, 248, 0.1);
-  color: #38bdf8;
-  padding: 1px 6px;
-  border-radius: 4px;
-  font-size: 10px;
-  font-weight: 700;
-}
-
-.acp-conv-actions {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 2px;
-  padding: 4px 6px;
-  opacity: 0;
-  transition: opacity 0.15s;
-}
-
-.acp-conv-card:hover .acp-conv-actions {
-  opacity: 1;
-}
-
-.acp-conv-action-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 13px;
-  padding: 4px 6px;
-  border-radius: 4px;
-  transition: background 0.15s;
-  line-height: 1;
-}
-
-.acp-conv-action-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-}
-
-.acp-conv-del-btn:hover {
-  background: rgba(239, 68, 68, 0.2);
-}
-
-/* ─── Chat Messages Area ─── */
-.acp-messages {
-  flex: 1;
-  overflow-y: auto;
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(56, 189, 248, 0.2) transparent;
-}
-
-.acp-messages::-webkit-scrollbar { width: 4px; }
-.acp-messages::-webkit-scrollbar-track { background: transparent; }
-.acp-messages::-webkit-scrollbar-thumb { background: rgba(56, 189, 248, 0.2); border-radius: 10px; }
-
-/* Welcome Message */
-.acp-welcome-msg {
-  text-align: center;
-  padding: 40px 20px;
-  color: #94a3b8;
-  font-size: 13px;
-  line-height: 1.7;
-}
-
-.acp-welcome-icon {
-  font-size: 48px;
-  margin-bottom: 12px;
-  animation: acpFloat 3s ease-in-out infinite;
-}
-
-.acp-welcome-msg p {
-  margin: 4px 0;
-}
-
-.acp-welcome-msg strong {
-  color: #38bdf8;
-}
-
-/* Message Bubbles */
-.acp-msg {
-  display: flex;
-  gap: 8px;
-  align-items: flex-end;
-  max-width: 92%;
-  animation: acpMsgIn 0.25s ease;
-}
-
-@keyframes acpMsgIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.acp-msg-user {
-  align-self: flex-end;
-  flex-direction: row-reverse;
-}
-
-.acp-msg-agent {
-  align-self: flex-start;
-}
-
-.acp-msg-avatar {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
-  font-weight: 800;
-  flex-shrink: 0;
-  line-height: 1;
-}
-
-.acp-msg-user .acp-msg-avatar {
-  background: linear-gradient(135deg, #0284c7, #0ea5e9);
-  color: #fff;
-}
-
-.acp-msg-agent .acp-msg-avatar {
-  background: rgba(56, 189, 248, 0.12);
-  border: 1px solid rgba(56, 189, 248, 0.2);
-  font-size: 16px;
-}
-
-.acp-msg-bubble {
-  padding: 10px 14px;
-  border-radius: 14px;
-  max-width: 100%;
-  word-wrap: break-word;
-  overflow-wrap: break-word;
-}
-
-.acp-msg-user .acp-msg-bubble {
-  background: linear-gradient(135deg, #0284c7, #0369a1);
-  color: #f0f9ff;
-  border-bottom-right-radius: 4px;
-  box-shadow: 0 2px 8px rgba(2, 132, 199, 0.3);
-}
-
-.acp-msg-agent .acp-msg-bubble {
-  background: rgba(30, 41, 59, 0.8);
-  color: #e2e8f0;
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-bottom-left-radius: 4px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-}
-
-.acp-msg-content {
-  font-size: 13px;
-  line-height: 1.65;
-  font-weight: 500;
-}
-
-.acp-msg-time {
-  font-size: 10px;
-  margin-top: 4px;
-  opacity: 0.5;
-  font-weight: 600;
-  text-align: right;
-}
-
-/* Typing Indicator */
-.acp-typing-bubble {
-  padding: 12px 18px !important;
-}
-
-.acp-typing-indicator {
-  display: flex;
-  gap: 4px;
-  align-items: center;
-}
-
-.acp-typing-indicator span {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: #38bdf8;
-  animation: acpTypingDot 1.2s infinite ease-in-out;
-}
-
-.acp-typing-indicator span:nth-child(2) {
-  animation-delay: 0.15s;
-}
-
-.acp-typing-indicator span:nth-child(3) {
-  animation-delay: 0.3s;
-}
-
-@keyframes acpTypingDot {
-  0%, 60%, 100% { opacity: 0.3; transform: scale(0.8); }
-  30% { opacity: 1; transform: scale(1.1); }
-}
-
-/* Input Area */
-.acp-input-area {
-  display: flex;
-  align-items: flex-end;
-  gap: 8px;
-  padding: 12px 14px;
-  border-top: 1px solid rgba(56, 189, 248, 0.12);
-  background: rgba(15, 23, 42, 0.6);
-  flex-shrink: 0;
-}
-
-.acp-input {
-  flex: 1;
-  resize: none;
-  padding: 10px 14px;
-  font-size: 13px;
-  font-weight: 500;
-  font-family: 'Inter', sans-serif;
-  color: #f1f5f9;
-  background: rgba(30, 41, 59, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  outline: none;
-  min-height: 40px;
-  max-height: 120px;
-  line-height: 1.5;
-  transition: border-color 0.2s, box-shadow 0.2s;
-}
-
-.acp-input::placeholder {
-  color: #475569;
-  font-weight: 500;
-}
-
-.acp-input:focus {
-  border-color: rgba(56, 189, 248, 0.4);
-  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.1);
-  background: rgba(30, 41, 59, 0.9);
-}
-
-.acp-send-btn {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  border: none;
-  background: linear-gradient(135deg, #0284c7, #0ea5e9);
-  color: #fff;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 10px rgba(2, 132, 199, 0.4);
-}
-
-.acp-send-btn:hover {
-  transform: scale(1.08);
-  box-shadow: 0 4px 16px rgba(2, 132, 199, 0.6);
-  background: linear-gradient(135deg, #0ea5e9, #38bdf8);
-}
-
-.acp-send-btn:active {
-  transform: scale(0.95);
-}
-
-/* ─── Light Theme Adjustments ─── */
-.theme-light .agent-chat-backdrop {
-  background: rgba(0, 0, 0, 0.25);
-}
-
-.theme-light .agent-chat-panel {
-  background: rgba(255, 255, 255, 0.97);
-  border-left-color: rgba(2, 132, 199, 0.2);
-  box-shadow: -8px 0 40px rgba(0, 0, 0, 0.15);
-}
-
-.theme-light .acp-header {
-  background: rgba(248, 250, 252, 0.9);
-  border-bottom-color: rgba(0, 0, 0, 0.08);
-}
-
-.theme-light .acp-header-title { color: #0f172a; }
-.theme-light .acp-chat-title { color: #1e293b; }
-.theme-light .acp-chat-title:hover { background: rgba(2, 132, 199, 0.08); }
-
-.theme-light .acp-conv-card {
-  background: rgba(248, 250, 252, 0.8);
-  border-color: rgba(0, 0, 0, 0.06);
-}
-
-.theme-light .acp-conv-card:hover {
-  background: rgba(2, 132, 199, 0.06);
-  border-color: rgba(2, 132, 199, 0.15);
-}
-
-.theme-light .acp-conv-title { color: #1e293b; }
-.theme-light .acp-conv-preview { color: #64748b; }
-.theme-light .acp-empty-title { color: #475569; }
-.theme-light .acp-empty-text { color: #94a3b8; }
-
-.theme-light .acp-msg-agent .acp-msg-bubble {
-  background: rgba(241, 245, 249, 0.9);
-  color: #1e293b;
-  border-color: rgba(0, 0, 0, 0.08);
-}
-
-.theme-light .acp-input {
-  color: #1e293b;
-  background: rgba(241, 245, 249, 0.8);
-  border-color: rgba(0, 0, 0, 0.12);
-}
-
-.theme-light .acp-input::placeholder { color: #94a3b8; }
-
-.theme-light .acp-input:focus {
-  background: #fff;
-  border-color: rgba(2, 132, 199, 0.4);
-}
-
-.theme-light .acp-input-area {
-  background: rgba(248, 250, 252, 0.9);
-  border-top-color: rgba(0, 0, 0, 0.08);
-}
-
-.theme-light .acp-welcome-msg { color: #64748b; }
-.theme-light .acp-welcome-msg strong { color: #0284c7; }
-
-/* ─── Navbar Agent Button ─── */
-.btn-agent-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 5px 12px;
-  border: 1.5px solid rgba(139, 92, 246, 0.4);
-  border-radius: 8px;
-  background: linear-gradient(135deg, rgba(139, 92, 246, 0.12), rgba(59, 130, 246, 0.12));
-  color: #a78bfa;
-  font-size: 12px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  white-space: nowrap;
-}
-
-.btn-agent-toggle:hover {
-  background: linear-gradient(135deg, rgba(139, 92, 246, 0.25), rgba(59, 130, 246, 0.25));
-  border-color: #a78bfa;
-  color: #c4b5fd;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 16px rgba(139, 92, 246, 0.25);
-}
-
-.theme-light .btn-agent-toggle {
-  border-color: rgba(99, 102, 241, 0.3);
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(59, 130, 246, 0.08));
-  color: #6366f1;
-}
-
-.theme-light .btn-agent-toggle:hover {
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.18), rgba(59, 130, 246, 0.18));
-  border-color: #6366f1;
-  color: #4f46e5;
-}
-
-/* ─── Responsive ─── */
-@media (max-width: 768px) {
-  .agent-chat-panel {
-    width: 100% !important;
-    max-width: 100% !important;
-    border-left: none;
-  }
-}
-
-@media (max-width: 480px) {
-  .acp-msg { max-width: 96%; }
-  .acp-header { padding: 10px 12px; }
-  .acp-input-area { padding: 8px 10px; }
-}
-
 /* ==========================================================================
    Transfer Approval Workflow Builder — Ultra User-Friendly Styling
    ========================================================================== */
@@ -4116,15 +3434,16 @@ select option:checked,
 
 /* 6. Universal Light Theme Overrides (Full App Readability & Zero Washed-Out Text) */
 body.theme-light {
-  background-color: #f1f5f9;
-  color: #090e1a;
+  background-color: #f4f6f9;
+  color: #0f172a;
 }
 
 body.theme-light .page-view,
 body.theme-light .app-content,
-body.theme-light #main-view-container {
-  background-color: #f1f5f9;
-  color: #090e1a;
+body.theme-light #main-view-container,
+body.theme-light .app-main {
+  background-color: #f4f6f9 !important;
+  color: #0f172a !important;
 }
 
 body.theme-light .form-control,
@@ -4141,7 +3460,8 @@ body.theme-light textarea,
 body.theme-light select {
   background-color: #ffffff !important;
   border: 1.5px solid #cbd5e1 !important;
-  color: #090e1a !important;
+  color: #0f172a !important;
+  font-weight: 600 !important;
 }
 
 body.theme-light .form-control:focus,
@@ -4157,9 +3477,9 @@ body.theme-light input[type="date"]:focus,
 body.theme-light textarea:focus,
 body.theme-light select:focus {
   border-color: #0284c7 !important;
-  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.25) !important;
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.2) !important;
   background-color: #ffffff !important;
-  color: #090e1a !important;
+  color: #0f172a !important;
 }
 
 body.theme-light ::placeholder,
@@ -4169,12 +3489,13 @@ body.theme-light .form-control::placeholder,
 body.theme-light .filter-search-input::placeholder {
   color: #64748b !important;
   opacity: 1 !important;
+  font-weight: 500 !important;
 }
 
 body.theme-light select option,
 body.theme-light .filter-select option {
   background-color: #ffffff !important;
-  color: #090e1a !important;
+  color: #0f172a !important;
 }
 
 body.theme-light .form-label,
@@ -4194,15 +3515,16 @@ body.theme-light .card,
 body.theme-light .filter-toolbar-card,
 body.theme-light .compact-filter-bar {
   background: #ffffff !important;
-  border-color: #cbd5e1 !important;
-  color: #090e1a !important;
+  border: 1.5px solid #cbd5e1 !important;
+  color: #0f172a !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04) !important;
 }
 
 /* Light Theme: KPI Pills & Stat Counters (Executive Contrast & Active Badges) */
 body.theme-light .kpi-pill {
   background: #ffffff !important;
-  border: 1px solid #cbd5e1 !important;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+  border: 1.5px solid #cbd5e1 !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06) !important;
 }
 
 body.theme-light .kpi-pill:hover {
@@ -4210,15 +3532,15 @@ body.theme-light .kpi-pill:hover {
   border-color: #94a3b8 !important;
 }
 
-body.theme-light .kpi-pill.kpi-total .kpi-val { color: #0f172a !important; }
-body.theme-light .kpi-pill.kpi-running .kpi-val { color: #15803d !important; }
-body.theme-light .kpi-pill.kpi-usable .kpi-val { color: #0284c7 !important; }
-body.theme-light .kpi-pill.kpi-repair .kpi-val { color: #b45309 !important; }
-body.theme-light .kpi-pill.kpi-ambulance .kpi-val { color: #be123c !important; }
+body.theme-light .kpi-pill.kpi-total .kpi-val { color: #0f172a !important; font-weight: 900 !important; font-size: 14px !important; }
+body.theme-light .kpi-pill.kpi-running .kpi-val { color: #059669 !important; font-weight: 900 !important; font-size: 14px !important; }
+body.theme-light .kpi-pill.kpi-usable .kpi-val { color: #0284c7 !important; font-weight: 900 !important; font-size: 14px !important; }
+body.theme-light .kpi-pill.kpi-repair .kpi-val { color: #d97706 !important; font-weight: 900 !important; font-size: 14px !important; }
+body.theme-light .kpi-pill.kpi-ambulance .kpi-val { color: #dc2626 !important; font-weight: 900 !important; font-size: 14px !important; }
 
 body.theme-light .kpi-pill .kpi-lbl {
-  color: #475569 !important;
-  font-weight: 700 !important;
+  color: #334155 !important;
+  font-weight: 800 !important;
 }
 
 body.theme-light .kpi-pill.kpi-total.active-kpi {
@@ -4247,18 +3569,19 @@ body.theme-light .kpi-pill.kpi-ambulance.active-kpi {
   box-shadow: 0 0 0 1px #e11d48 !important;
 }
 
-/* Light Theme: Serial Numbers & Codes (Deep navy text #1e40af, bold 700, soft blue pill #eff6ff, border #93c5fd) */
+/* Light Theme: Serial Numbers & Codes (Deep vivid royal blue text #1d4ed8, bold 700, soft blue pill #eff6ff, border #93c5fd) */
 body.theme-light .machine-serial-link,
 body.theme-light .serial-pill,
 body.theme-light .badge-serial {
-  color: #1e40af !important;
+  color: #1d4ed8 !important;
   background: #eff6ff !important;
-  border: 1px solid #93c5fd !important;
+  border: 1.5px solid #93c5fd !important;
   font-weight: 700 !important;
   font-family: var(--font-mono) !important;
   border-radius: 4px !important;
   padding: 3px 8px !important;
   display: inline-block !important;
+  box-shadow: 0 1px 2px rgba(29, 78, 216, 0.08) !important;
 }
 body.theme-light .machine-serial-link:hover {
   background: #dbeafe !important;
@@ -4296,23 +3619,23 @@ body.theme-light .machine-serial-link:hover {
   color: #f8fafc;
 }
 
-/* Light Theme: Permanent System Asset ID Badge (Dark executive slate #0f172a, high-contrast cyan #38bdf8, mono 700) */
+/* Light Theme: Permanent System Asset ID Badge (High-Brilliance Executive Emerald Pill) */
 body.theme-light .system-asset-id-badge {
-  background: #0f172a !important;
-  color: #38bdf8 !important;
-  border: 1px solid #334155 !important;
+  background: #ecfdf5 !important;
+  color: #047857 !important;
+  border: 1.5px solid #10b981 !important;
   font-family: var(--font-mono) !important;
-  font-weight: 700 !important;
-  padding: 2px 7px !important;
-  border-radius: 4px !important;
+  font-weight: 800 !important;
+  padding: 3px 8px !important;
+  border-radius: 5px !important;
   display: inline-block !important;
-  letter-spacing: 0.3px !important;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25) !important;
+  letter-spacing: 0.4px !important;
+  box-shadow: 0 1px 2px rgba(16, 185, 129, 0.15) !important;
 }
 body.theme-light .system-asset-id-badge:hover {
-  background: #1e293b !important;
-  border-color: #0284c7 !important;
-  color: #7dd3fc !important;
+  background: #d1fae5 !important;
+  border-color: #059669 !important;
+  color: #065f46 !important;
 }
 
 /* Light Theme: Manufacturing Serial Text */
@@ -4328,7 +3651,7 @@ body.theme-light .qty-repair { color: #b45309 !important; font-weight: 800 !impo
 body.theme-light .qty-total {
   color: #0f172a !important;
   background: #e0f2fe !important;
-  border: 1px solid #7dd3fc !important;
+  border: 1.5px solid #7dd3fc !important;
   font-weight: 800 !important;
 }
 
@@ -4341,52 +3664,58 @@ body.theme-light #btn-inventory-sync-db {
 }
 body.theme-light #btn-inventory-sync-db:hover {
   background: #d1fae5 !important;
+  border-color: #059669 !important;
+  color: #065f46 !important;
 }
 
 body.theme-light #btn-inventory-relocate {
-  background: #e0f2fe !important;
-  color: #0369a1 !important;
-  border: 1.5px solid #0284c7 !important;
+  background: #eff6ff !important;
+  color: #1d4ed8 !important;
+  border: 1.5px solid #60a5fa !important;
   font-weight: 800 !important;
 }
 body.theme-light #btn-inventory-relocate:hover {
-  background: #bae6fd !important;
+  background: #dbeafe !important;
+  border-color: #2563eb !important;
+  color: #1e40af !important;
 }
 
 body.theme-light #btn-inventory-qr-codes {
-  background: #f3e8ff !important;
-  color: #6b21a8 !important;
-  border: 1.5px solid #9333ea !important;
+  background: #f0fdf4 !important;
+  color: #15803d !important;
+  border: 1.5px solid #4ade80 !important;
   font-weight: 800 !important;
 }
 body.theme-light #btn-inventory-qr-codes:hover {
-  background: #e9d5ff !important;
+  background: #dcfce7 !important;
+  border-color: #16a34a !important;
+  color: #166534 !important;
 }
 
 body.theme-light #btn-show-all-columns-quick {
   background: #ecfdf5 !important;
   color: #047857 !important;
-  border: 1px solid #10b981 !important;
+  border: 1.5px solid #10b981 !important;
   font-weight: 700 !important;
 }
 
 body.theme-light #btn-column-picker-inline {
   background: #e0f2fe !important;
   color: #0369a1 !important;
-  border: 1px solid #0284c7 !important;
+  border: 1.5px solid #0284c7 !important;
   font-weight: 700 !important;
 }
 
 body.theme-light #link-show-all-cols-hint {
   background: #ecfdf5 !important;
   color: #047857 !important;
-  border: 1px solid #10b981 !important;
+  border: 1.5px solid #10b981 !important;
   font-weight: 700 !important;
 }
 
 body.theme-light #btn-toggle-advanced-filters {
   color: #0369a1 !important;
-  border: 1px solid #7dd3fc !important;
+  border: 1.5px solid #7dd3fc !important;
   background: #f0f9ff !important;
   font-weight: 700 !important;
 }
@@ -4395,14 +3724,14 @@ body.theme-light #btn-scroll-table-left,
 body.theme-light #btn-scroll-table-right {
   color: #0369a1 !important;
   background: #ffffff !important;
-  border-color: #cbd5e1 !important;
+  border: 1.5px solid #cbd5e1 !important;
 }
 
 body.theme-light .active-filter-tag {
   background: #e0f2fe !important;
   color: #0369a1 !important;
-  border: 1px solid #7dd3fc !important;
-  font-weight: 600 !important;
+  border: 1.5px solid #7dd3fc !important;
+  font-weight: 700 !important;
 }
 
 /* Light Theme: Pinned Top Header & Pagination Card */
@@ -4562,12 +3891,40 @@ body.theme-light h6 {
   color: #0f172a !important;
 }
 
-body.theme-light [style*="color: #fff"],
-body.theme-light [style*="color: #ffffff"],
-body.theme-light [style*="color: #f8fafc"],
-body.theme-light [style*="color: #f1f5f9"],
-body.theme-light [style*="color: #e2e8f0"] {
+/* Light Theme: General Text Contrast (Except Buttons, Badges, Headers) */
+body.theme-light span:not(.btn *):not(.badge):not(.badge *):not(.modal-header *)[style*="color: #fff"],
+body.theme-light div:not(.btn):not(.btn *):not(.modal-header):not(.modal-header *)[style*="color: #fff"],
+body.theme-light p:not(.btn *):not(.modal-header *)[style*="color: #fff"],
+body.theme-light td:not(.btn *)[style*="color: #fff"],
+body.theme-light label[style*="color: #fff"],
+body.theme-light span:not(.btn *):not(.badge):not(.badge *):not(.modal-header *)[style*="color: #ffffff"],
+body.theme-light div:not(.btn):not(.btn *):not(.modal-header):not(.modal-header *)[style*="color: #ffffff"],
+body.theme-light p:not(.btn *):not(.modal-header *)[style*="color: #ffffff"],
+body.theme-light td:not(.btn *)[style*="color: #ffffff"],
+body.theme-light label[style*="color: #ffffff"],
+body.theme-light [style*="color: #f8fafc"]:not(.btn):not(.btn *):not(.modal-header *),
+body.theme-light [style*="color: #f1f5f9"]:not(.btn):not(.btn *):not(.modal-header *),
+body.theme-light [style*="color: #e2e8f0"]:not(.btn):not(.btn *):not(.modal-header *) {
   color: #0f172a !important;
+}
+
+/* Explicit Crisp White Text Preservation for Colored Buttons, Badges & Modal Headers */
+body.theme-light .btn-primary,
+body.theme-light .btn-primary *,
+body.theme-light .btn-danger,
+body.theme-light .btn-danger *,
+body.theme-light .btn-success,
+body.theme-light .btn-success *,
+body.theme-light .btn-export-excel,
+body.theme-light .btn-export-excel *,
+body.theme-light [class*="btn-primary"] *,
+body.theme-light [class*="btn-danger"] *,
+body.theme-light [class*="btn-success"] *,
+body.theme-light .modal-header,
+body.theme-light .modal-header *,
+body.theme-light .badge-primary,
+body.theme-light .badge-primary * {
+  color: #ffffff !important;
 }
 
 body.theme-light [style*="color: var(--text-muted)"],
@@ -4583,32 +3940,39 @@ body.theme-light .text-secondary {
 /* Light Theme: Universal High-Contrast Neon Replacements */
 body.theme-light [style*="color: #38bdf8"],
 body.theme-light [style*="color: #7dd3fc"] {
-  color: #0369a1 !important;
+  color: #0284c7 !important;
+  font-weight: 700 !important;
 }
 body.theme-light [style*="color: #34d399"],
 body.theme-light [style*="color: #10b981"],
 body.theme-light [style*="color: #4ade80"] {
-  color: #15803d !important;
+  color: #059669 !important;
+  font-weight: 700 !important;
 }
 body.theme-light [style*="color: #fbbf24"],
 body.theme-light [style*="color: #f59e0b"],
 body.theme-light [style*="color: #fde047"] {
-  color: #b45309 !important;
+  color: #d97706 !important;
+  font-weight: 700 !important;
 }
 body.theme-light [style*="color: #f43f5e"],
 body.theme-light [style*="color: #fda4af"] {
-  color: #be123c !important;
+  color: #dc2626 !important;
+  font-weight: 700 !important;
 }
 body.theme-light [style*="color: #a855f7"],
 body.theme-light [style*="color: #c084fc"],
 body.theme-light [style*="color: #d8b4fe"] {
-  color: #6b21a8 !important;
+  color: #7c3aed !important;
+  font-weight: 700 !important;
 }
 body.theme-light [style*="color: #cbd5e1"] {
-  color: #334155 !important;
+  color: #1e293b !important;
+  font-weight: 600 !important;
 }
 body.theme-light [style*="color: #94a3b8"] {
-  color: #475569 !important;
+  color: #334155 !important;
+  font-weight: 600 !important;
 }
 
 /* Light Theme: Department & Table Badges Contrast Fix */
@@ -4692,7 +4056,7 @@ body, input, select, textarea, button, table, th, td, label, p, span, h1, h2, h3
    GLOBAL DAYLIGHT / BRIGHT MODE DATA TABLE ARCHITECTURE (EXECUTIVE ERP STANDARD)
    ========================================================================== */
 
-/* 1. Global Table Headers (TH): Solid neutral slate-gray (#e2e8f0), dark bold (#0f172a), bottom divider (#94a3b8) */
+/* 1. Global Table Headers (TH): Crisp executive slate (#f8fafc), dark bold (#0f172a), APEX blue bottom divider (#0284c7) */
 body.theme-light table thead th,
 body.theme-light .data-table thead th,
 body.theme-light .excel-grid-table thead th,
@@ -4707,16 +4071,16 @@ body.theme-light .user-management-table thead th,
 body.theme-light .mach-summary-table thead th,
 body.theme-light .diff-table thead th,
 body.theme-light .permissions-matrix-table thead th {
-  background-color: #e2e8f0 !important;
+  background-color: #f8fafc !important;
   color: #0f172a !important;
   font-weight: 800 !important;
   font-size: 11.5px !important;
-  letter-spacing: 0.3px !important;
-  border-bottom: 2px solid #94a3b8 !important;
+  letter-spacing: 0.5px !important;
+  border-bottom: 2.5px solid #0284c7 !important;
   border-right: 1px solid #cbd5e1 !important;
   border-left: 1px solid #cbd5e1 !important;
   border-top: 1px solid #cbd5e1 !important;
-  text-transform: uppercase;
+  text-transform: uppercase !important;
 }
 
 body.theme-light table thead th:hover,
@@ -4724,7 +4088,8 @@ body.theme-light .data-table thead th:hover,
 body.theme-light .excel-grid-table thead th:hover,
 body.theme-light .transfers-table thead th:hover,
 body.theme-light .pm-table thead th:hover {
-  background-color: #cbd5e1 !important;
+  background-color: #f1f5f9 !important;
+  color: #0284c7 !important;
 }
 
 /* 2. Global Table Rows: Odd = #ffffff, Even = #f1f5f9 (Zero mint/pastel tints) */
@@ -4787,7 +4152,7 @@ body.theme-light .user-management-table tbody tr:hover td.uam-col-sticky-card-pa
   background-color: #e0f2fe !important;
 }
 
-/* 4. Global Cell Borders & Pitch-Crisp Slate Black Typography (min font-weight: 500) */
+/* 4. Global Cell Borders & Pitch-Crisp Slate Black Typography (min font-weight: 600) */
 body.theme-light table tbody td,
 body.theme-light .data-table tbody td,
 body.theme-light .excel-grid-table tbody td,
@@ -4806,7 +4171,7 @@ body.theme-light .permissions-matrix-table tbody td {
   border-right: 1px solid #cbd5e1 !important;
   border-left: 1px solid #cbd5e1 !important;
   color: #0f172a !important;
-  font-weight: 500 !important;
+  font-weight: 600 !important;
   font-size: 12px;
 }
 
@@ -5072,4 +4437,1699 @@ body.theme-light #btn-theme-toggle:hover {
   }
   .qr-studio-tabs::-webkit-scrollbar { display: none !important; }
   .qr-studio-tabs > * { flex-shrink: 0 !important; }
+
+  /* Universal Responsive Table Wrappers for All ERP Views */
+  .manpower-table-scroll-container,
+  .manpower-table-wrapper,
+  .uam-table-scroll-container,
+  .uam-role-matrix-container,
+  .excel-table-container,
+  .tools-table-scroll-container,
+  .needle-table-container,
+  .parts-trace-table-container,
+  .history-table-container,
+  .pm-table-container,
+  .reports-table-container,
+  .ent-table-container,
+  .storage-table-container,
+  .audit-page-root div:has(> table),
+  .audit-page-root div[style*="overflow: hidden"] div[style*="overflow-y: auto"],
+  div[style*="overflow-x: auto"]:has(> table) {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    overflow-x: auto !important;
+    overflow-y: visible !important;
+    -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-x pan-y !important;
+    overscroll-behavior-x: contain !important;
+  }
+
+  .table,
+  .excel-grid-table,
+  .uam-role-matrix,
+  .tools-inventory-table,
+  .storage-grid-table,
+  .manpower-grid-table {
+    min-width: 100% !important;
+  }
+
+  /* Universal Grid Clamp for Hardcoded Minmax Elements on Mobile */
+  div[style*="minmax(450px"],
+  div[style*="minmax(420px"],
+  div[style*="minmax(400px"],
+  div[style*="minmax(380px"],
+  div[style*="minmax(360px"],
+  div[style*="minmax(350px"],
+  div[style*="minmax(340px"],
+  div[style*="minmax(320px"],
+  div[style*="minmax(310px"],
+  div[style*="minmax(300px"],
+  div[style*="minmax(280px"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Universal Mobile Modal & Popup Shell (320px - 768px) */
+  .modal-overlay {
+    padding: 6px !important;
+    align-items: center !important;
+    justify-content: center !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  .modal-dialog,
+  .modal-card,
+  .modal-dialog-lg,
+  .modal-dialog-xl,
+  .modal-overlay > div {
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: calc(100dvh - 12px) !important;
+    height: auto !important;
+    margin: auto !important;
+    border-radius: 10px !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  .modal-header {
+    padding: 10px 14px !important;
+    gap: 8px !important;
+    flex-shrink: 0 !important;
+  }
+
+  .modal-title {
+    font-size: 14px !important;
+    line-height: 1.3 !important;
+    min-width: 0 !important;
+    flex: 1 1 auto !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  .modal-body,
+  .modal-body-scroll,
+  .modal-card form,
+  .modal-dialog form {
+    padding: 12px 14px !important;
+    gap: 12px !important;
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+    overscroll-behavior-y: contain !important;
+    touch-action: pan-y !important;
+  }
+
+  .modal-footer {
+    padding: 10px 14px !important;
+    gap: 8px !important;
+    flex-direction: column-reverse !important;
+    align-items: stretch !important;
+    flex-shrink: 0 !important;
+  }
+
+  .modal-footer button,
+  .modal-footer .btn {
+    width: 100% !important;
+    min-height: 42px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 13.5px !important;
+    font-weight: 700 !important;
+  }
+
+  /* Multi-column Form Grids inside Modals & Views */
+  .form-grid-2,
+  .form-grid-3,
+  .form-grid-4,
+  .uam-form-grid,
+  .et-form-grid,
+  .modal-form-grid {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+
+  #modal-field-serial-number {
+    min-width: 0 !important;
+    flex: 1 1 auto !important;
+  }
+
+  #btn-modal-scan-serial-qr {
+    min-height: 42px !important;
+    padding: 0 10px !important;
+  }
+
+  /* Audit Logs Page Mobile Responsiveness */
+  .audit-page-root {
+    padding: 8px 8px 36px 8px !important;
+    gap: 6px !important;
+  }
+  .audit-kpi-card {
+    flex: 0 0 auto !important;
+  }
+  #audit-search-input {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  #filter-audit-category,
+  #filter-audit-action-type,
+  #filter-audit-user {
+    width: 100% !important;
+    flex: 1 1 auto !important;
+    min-width: 100px !important;
+    height: 34px !important;
+  }
+
+  /* User Management (UAM) Mobile Layout */
+  .uam-top-deck {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+  }
+  .uam-tabs-bar {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    width: 100% !important;
+    padding-bottom: 4px !important;
+  }
+  .uam-tabs-bar::-webkit-scrollbar { display: none !important; }
+  .tab-btn-uam {
+    flex: 0 0 auto !important;
+    white-space: nowrap !important;
+  }
+
+  /* Tools Management Mobile Controls */
+  .tools-top-actions-bar {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+  }
+  .tools-tabs-nav {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    width: 100% !important;
+  }
+  .tools-tabs-nav::-webkit-scrollbar { display: none !important; }
+  .tools-tab-btn {
+    flex: 0 0 auto !important;
+    white-space: nowrap !important;
+  }
+
+  /* E&T Lab Mobile Header & Navigation */
+  .ent-lab-header-bar {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+  }
+  .ent-nav-tabs-strip {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    width: 100% !important;
+  }
+  .ent-nav-tabs-strip::-webkit-scrollbar { display: none !important; }
+  .ent-nav-tabs-strip button {
+    flex: 0 0 auto !important;
+    white-space: nowrap !important;
+  }
+
+  /* Manpower View Mobile Table & Tabs */
+  .manpower-page-wrapper {
+    padding: 8px 8px 36px 8px !important;
+  }
+  .manpower-nav-tabs {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    width: 100% !important;
+  }
+  .manpower-nav-tabs::-webkit-scrollbar { display: none !important; }
+  .manpower-nav-tabs button {
+    flex: 0 0 auto !important;
+    white-space: nowrap !important;
+  }
+
+  /* Machine Lifetime History Mobile Quick Switch & Profiles */
+  .hist-quick-switch-container {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+  .hist-chips-row {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    width: 100% !important;
+  }
+  .hist-chips-row::-webkit-scrollbar { display: none !important; }
+  .hist-chips-row > * {
+    flex: 0 0 auto !important;
+  }
+  .machine-profile-card {
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Needle Operations Mobile Layout */
+  #needle-ops-page-root {
+    padding: 8px 8px 36px 8px !important;
+  }
+  #needle-ops-page-root div:has(> table.table),
+  #needle-ops-page-root div[style*="overflow-x: auto"] {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  /* Action Menus, Drawers & Dropdowns within Mobile Viewport */
+  .actions-dropdown-menu,
+  .dropdown-menu {
+    max-width: calc(100vw - 20px) !important;
+    right: 8px !important;
+    left: auto !important;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.8) !important;
+  }
+
+  .drawer-panel,
+  .notifications-drawer {
+    width: min(100vw, 380px) !important;
+    max-width: 100vw !important;
+  }
 }
+
+
+/* ==========================================================================
+   ENTERPRISE BRIGHT MODE (LIGHT THEME) COMPLETE WORKSPACE STYLING
+   ========================================================================== */
+
+/* 1. App Shell & Main Content */
+html.theme-light body,
+body.theme-light {
+  background-color: #f1f4f8 !important;
+  color: #0f172a !important;
+}
+
+body.theme-light .app-container {
+  background-color: #f1f4f8 !important;
+}
+
+body.theme-light .app-main {
+  background-color: #f1f4f8 !important;
+}
+
+/* 2. Enterprise Bright Mode Sidebar - Dark Executive Anchor (Oracle Cloud / Jira Standard) */
+body.theme-light .app-sidebar,
+html.theme-light .app-sidebar {
+  background: #0c1222 !important;
+  border-right: 1.5px solid #1e293b !important;
+  box-shadow: 4px 0 20px rgba(15, 23, 42, 0.15) !important;
+}
+
+body.theme-light .sidebar-header,
+html.theme-light .sidebar-header {
+  background: #090e1a !important;
+  border-bottom: 1.5px solid #1e293b !important;
+}
+
+body.theme-light .brand-text-title,
+html.theme-light .brand-text-title {
+  color: #ffffff !important;
+  font-weight: 800 !important;
+}
+
+body.theme-light .brand-text-sub,
+html.theme-light .brand-text-sub {
+  color: #94a3b8 !important;
+}
+
+body.theme-light .sidebar-search-box {
+  background: transparent !important;
+}
+
+body.theme-light .sidebar-search-inner {
+  background: #111827 !important;
+  border: 1px solid #334155 !important;
+  color: #ffffff !important;
+}
+
+body.theme-light .sidebar-search-inner:focus-within {
+  border-color: #38bdf8 !important;
+  background: #0f172a !important;
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.25) !important;
+}
+
+body.theme-light .sidebar-search-input {
+  background: transparent !important;
+  color: #ffffff !important;
+}
+
+body.theme-light .sidebar-search-input::placeholder {
+  color: #64748b !important;
+}
+
+body.theme-light .menu-category-section {
+  border-top-color: #1e293b !important;
+}
+
+body.theme-light .nav-group-header {
+  color: #94a3b8 !important;
+  font-weight: 700 !important;
+  font-size: 11px !important;
+  letter-spacing: 0.6px !important;
+  text-transform: uppercase !important;
+}
+
+body.theme-light .nav-group-header:hover {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  color: #ffffff !important;
+}
+
+body.theme-light .nav-group-header.parent-active {
+  background-color: rgba(56, 189, 248, 0.1) !important;
+  color: #38bdf8 !important;
+  font-weight: 700 !important;
+}
+
+body.theme-light .nav-item {
+  color: #cbd5e1 !important;
+  font-weight: 600 !important;
+}
+
+body.theme-light .nav-item:hover {
+  background-color: rgba(255, 255, 255, 0.06) !important;
+  color: #ffffff !important;
+}
+
+body.theme-light .nav-item.active {
+  background-color: rgba(56, 189, 248, 0.15) !important;
+  color: #38bdf8 !important;
+  font-weight: 700 !important;
+  border-left: 3px solid #38bdf8 !important;
+}
+
+body.theme-light .nav-item.active .nav-icon,
+body.theme-light .nav-item.active .nav-icon-box {
+  color: #38bdf8 !important;
+}
+
+body.theme-light .nav-subitem {
+  color: #94a3b8 !important;
+  font-weight: 600 !important;
+}
+
+body.theme-light .nav-subitem:hover {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  color: #ffffff !important;
+}
+
+body.theme-light .nav-subitem.active {
+  background-color: rgba(56, 189, 248, 0.12) !important;
+  color: #38bdf8 !important;
+  font-weight: 700 !important;
+}
+
+body.theme-light .btn-sidebar-collapse {
+  background: #111827 !important;
+  border-color: #334155 !important;
+  color: #94a3b8 !important;
+}
+
+body.theme-light .btn-sidebar-collapse:hover {
+  background: #1e293b !important;
+  color: #ffffff !important;
+}
+
+body.theme-light .sidebar-footer {
+  background: #090e1a !important;
+  border-top: 1.5px solid #1e293b !important;
+}
+
+/* 3. Top Navbar / Header */
+body.theme-light .app-header {
+  background: #ffffff !important;
+  border-bottom: 1.5px solid #cbd5e1 !important;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.05) !important;
+}
+
+body.theme-light .header-title-text {
+  color: #0f172a !important;
+  font-weight: 800 !important;
+}
+
+body.theme-light .header-sub-text {
+  color: #0284c7 !important;
+  font-weight: 700 !important;
+}
+
+body.theme-light .nav-db-status-pill {
+  background: #ecfdf5 !important;
+  border: 1.5px solid #10b981 !important;
+  color: #047857 !important;
+  font-weight: 800 !important;
+  box-shadow: 0 1px 3px rgba(16, 185, 129, 0.2) !important;
+}
+
+body.theme-light .nav-icon-btn {
+  background: #f8fafc !important;
+  border: 1.5px solid #cbd5e1 !important;
+  color: #1e293b !important;
+  font-weight: 700 !important;
+}
+
+body.theme-light .nav-icon-btn:hover {
+  background: #e0f2fe !important;
+  border-color: #0284c7 !important;
+  color: #0284c7 !important;
+}
+}
+
+body.theme-light .nav-icon-btn:hover {
+  background: #e2e8f0 !important;
+  color: #0f172a !important;
+}
+
+body.theme-light .nav-profile-capsule {
+  background: #f8fafc !important;
+  border: 1.5px solid #cbd5e1 !important;
+  color: #0f172a !important;
+}
+
+body.theme-light .nav-profile-capsule:hover {
+  background: #f1f5f9 !important;
+  border-color: #94a3b8 !important;
+}
+
+body.theme-light .nav-profile-name {
+  color: #0f172a !important;
+  font-weight: 700 !important;
+}
+
+body.theme-light .nav-user-dropdown {
+  background: #ffffff !important;
+  border: 1.5px solid #cbd5e1 !important;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.12) !important;
+  color: #0f172a !important;
+}
+
+body.theme-light .nav-user-dropdown-header {
+  background: #f8fafc !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+
+body.theme-light .nav-user-dropdown-name {
+  color: #0f172a !important;
+  font-weight: 700 !important;
+}
+
+body.theme-light .nav-user-dropdown-email {
+  color: #64748b !important;
+}
+
+/* 4. Enterprise Cards, Panels & Stats */
+body.theme-light .card,
+body.theme-light .stat-card,
+body.theme-light .panel,
+body.theme-light .dashboard-kpi-card {
+  background: #ffffff !important;
+  border: 1.5px solid #e2e8f0 !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04) !important;
+  color: #0f172a !important;
+}
+
+body.theme-light .card-header,
+body.theme-light .panel-header {
+  background: #f8fafc !important;
+  border-bottom: 1.5px solid #e2e8f0 !important;
+  color: #0f172a !important;
+}
+
+body.theme-light .card-title,
+body.theme-light .panel-title {
+  color: #0f172a !important;
+  font-weight: 700 !important;
+}
+
+/* 5. Enterprise Form Controls */
+body.theme-light input:not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]),
+body.theme-light select,
+body.theme-light textarea {
+  background-color: #ffffff !important;
+  border: 1.5px solid #cbd5e1 !important;
+  color: #0f172a !important;
+}
+
+body.theme-light input:not([type="checkbox"]):not([type="radio"]):focus,
+body.theme-light select:focus,
+body.theme-light textarea:focus {
+  border-color: #0284c7 !important;
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15) !important;
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+
+body.theme-light select option {
+  background: #ffffff !important;
+  color: #0f172a !important;
+}
+
+/* 6. Tabs & Segmented Controls */
+body.theme-light .tab-btn,
+body.theme-light .tabs-nav button {
+  color: #475569 !important;
+  background: #f1f5f9 !important;
+  border-color: #cbd5e1 !important;
+}
+
+body.theme-light .tab-btn.active,
+body.theme-light .tabs-nav button.active {
+  background: #0284c7 !important;
+  color: #ffffff !important;
+  border-color: #0284c7 !important;
+  font-weight: 700 !important;
+}
+
+/* 7. Dropdowns & Floating Menus */
+body.theme-light .dropdown-menu,
+body.theme-light .floating-menu,
+body.theme-light .popover {
+  background: #ffffff !important;
+  border: 1.5px solid #cbd5e1 !important;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.1) !important;
+  color: #0f172a !important;
+}
+
+body.theme-light .dropdown-item {
+  color: #334155 !important;
+}
+
+body.theme-light .dropdown-item:hover {
+  background-color: #f1f5f9 !important;
+  color: #0f172a !important;
+}
+
+
+/* ==========================================================================
+   COMPLETE EXECUTIVE BRIGHT MODE (LIGHT THEME) SUITE - 100% ENTERPRISE
+   ========================================================================== */
+
+/* 1. Global Scrollbars in Bright Mode */
+body.theme-light ::-webkit-scrollbar-track,
+body.theme-light *::-webkit-scrollbar-track,
+html.theme-light ::-webkit-scrollbar-track,
+html.theme-light *::-webkit-scrollbar-track {
+  background: #f1f5f9 !important;
+}
+
+body.theme-light ::-webkit-scrollbar-thumb,
+body.theme-light *::-webkit-scrollbar-thumb,
+html.theme-light ::-webkit-scrollbar-thumb,
+html.theme-light *::-webkit-scrollbar-thumb {
+  background: #cbd5e1 !important;
+  border: 2px solid #f1f5f9 !important;
+  border-radius: 6px !important;
+}
+
+body.theme-light ::-webkit-scrollbar-thumb:hover,
+body.theme-light *::-webkit-scrollbar-thumb:hover,
+html.theme-light ::-webkit-scrollbar-thumb:hover,
+html.theme-light *::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8 !important;
+}
+
+/* 2. Modern ERP Dashboard Suite (Screenshot 1) */
+body.theme-light .modern-erp-dashboard,
+html.theme-light .modern-erp-dashboard {
+  background: #f1f5f9 !important;
+  color: #0f172a !important;
+}
+
+body.theme-light .dash-hero-banner {
+  background: #ffffff !important;
+  border: 1.5px solid #cbd5e1 !important;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.05) !important;
+}
+
+body.theme-light .dash-hero-title {
+  color: #0f172a !important;
+}
+
+body.theme-light .dash-hero-subtitle {
+  color: #475569 !important;
+}
+
+body.theme-light .dash-time-segmented-wrapper {
+  background: #f8fafc !important;
+  border: 1.5px solid #cbd5e1 !important;
+}
+
+body.theme-light .dash-segmented-label {
+  color: #0284c7 !important;
+}
+
+body.theme-light .btn-dash-date-filter {
+  color: #475569 !important;
+}
+
+body.theme-light .btn-dash-date-filter:hover {
+  background: #e2e8f0 !important;
+  color: #0f172a !important;
+}
+
+body.theme-light .btn-dash-date-filter.active {
+  background: #0284c7 !important;
+  color: #ffffff !important;
+  border-color: #0284c7 !important;
+  box-shadow: 0 1px 4px rgba(2, 132, 199, 0.3) !important;
+}
+
+body.theme-light .dash-btn-icon {
+  background: #f8fafc !important;
+  border: 1.5px solid #cbd5e1 !important;
+  color: #475569 !important;
+}
+
+body.theme-light .dash-btn-icon:hover {
+  background: #e2e8f0 !important;
+  color: #0284c7 !important;
+  border-color: #0284c7 !important;
+}
+
+/* Dashboard KPI Cards Row */
+body.theme-light .dash-kpi-card {
+  background: #ffffff !important;
+  border: 1.5px solid #e2e8f0 !important;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04) !important;
+}
+
+body.theme-light .dash-kpi-card:hover {
+  background: #f8fafc !important;
+  border-color: #cbd5e1 !important;
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08) !important;
+}
+
+body.theme-light .dash-kpi-val {
+  color: #0f172a !important;
+}
+
+body.theme-light .dash-kpi-val.val-emerald {
+  color: #15803d !important;
+}
+
+body.theme-light .dash-kpi-val.val-amber {
+  color: #b45309 !important;
+}
+
+body.theme-light .dash-kpi-val.val-rose {
+  color: #b91c1c !important;
+}
+
+body.theme-light .dash-kpi-val.val-purple {
+  color: #0284c7 !important;
+}
+
+body.theme-light .dash-kpi-lbl {
+  color: #64748b !important;
+  font-weight: 700 !important;
+}
+
+body.theme-light .dash-kpi-badge.badge-blue {
+  background: #e0f2fe !important;
+  border: 1px solid #bae6fd !important;
+}
+
+body.theme-light .dash-kpi-badge.badge-emerald {
+  background: #dcfce7 !important;
+  border: 1px solid #bbf7d0 !important;
+}
+
+body.theme-light .dash-kpi-badge.badge-amber {
+  background: #fef3c7 !important;
+  border: 1px solid #fde68a !important;
+}
+
+body.theme-light .dash-kpi-badge.badge-rose {
+  background: #fee2e2 !important;
+  border: 1px solid #fecaca !important;
+}
+
+body.theme-light .dash-kpi-badge.badge-purple {
+  background: #e0f2fe !important;
+  border: 1px solid #bae6fd !important;
+}
+
+/* Dashboard Modular Distribution / Overview Cards */
+body.theme-light .dash-dist-card {
+  background: #ffffff !important;
+  border: 1.5px solid #e2e8f0 !important;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04) !important;
+}
+
+body.theme-light .dash-dist-card:hover {
+  border-color: #cbd5e1 !important;
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08) !important;
+}
+
+body.theme-light .dash-dist-title {
+  text-shadow: none !important;
+  color: #0f172a !important;
+  font-weight: 800 !important;
+}
+
+body.theme-light .card-cyan .dash-dist-title,
+body.theme-light .card-purple .dash-dist-title {
+  color: #0369a1 !important;
+  text-shadow: none !important;
+}
+
+body.theme-light .card-emerald .dash-dist-title {
+  color: #15803d !important;
+  text-shadow: none !important;
+}
+
+body.theme-light .card-amber .dash-dist-title {
+  color: #b45309 !important;
+  text-shadow: none !important;
+}
+
+body.theme-light .dash-dist-pill.pill-cyan,
+body.theme-light .dash-dist-pill.pill-purple {
+  background: #e0f2fe !important;
+  color: #0369a1 !important;
+  border: 1px solid #bae6fd !important;
+}
+
+body.theme-light .dash-dist-pill.pill-emerald {
+  background: #dcfce7 !important;
+  color: #15803d !important;
+  border: 1px solid #bbf7d0 !important;
+}
+
+body.theme-light .dash-dist-pill.pill-amber {
+  background: #fef3c7 !important;
+  color: #b45309 !important;
+  border: 1px solid #fde68a !important;
+}
+
+body.theme-light .dash-dist-mini-status {
+  color: #64748b !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+
+body.theme-light .dash-dist-mini-status .mini-status-label strong,
+body.theme-light .dash-dist-mini-status .mini-status-value {
+  color: #0f172a !important;
+}
+
+body.theme-light .dash-dist-row {
+  color: #334155 !important;
+}
+
+body.theme-light .dash-dist-row:hover {
+  background: #f1f5f9 !important;
+}
+
+body.theme-light .dash-dist-row span[style*="color: #cbd5e1"],
+body.theme-light .dash-dist-row span[style*="color: #94a3b8"] {
+  color: #475569 !important;
+}
+
+body.theme-light .dash-dist-row span[style*="color: #ffffff"],
+body.theme-light .dash-dist-row strong {
+  color: #0f172a !important;
+}
+
+/* 3. Machine Lifetime & History Suite (Screenshot 2) */
+body.theme-light .hist-command-hub {
+  background: #ffffff !important;
+  border: 1.5px solid #cbd5e1 !important;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.04) !important;
+}
+
+body.theme-light .hist-command-hub span[style*="color: #ffffff"],
+body.theme-light .hist-command-hub [style*="color: #fff"] {
+  color: #0f172a !important;
+}
+
+body.theme-light .hist-command-hub input,
+body.theme-light .hist-command-hub select,
+body.theme-light #history-serial-search-input,
+body.theme-light #select-history-machine-dropdown,
+body.theme-light #filter-hist-group,
+body.theme-light #filter-hist-unit,
+body.theme-light #filter-hist-floor,
+body.theme-light #filter-hist-line {
+  background: #ffffff !important;
+  border: 1.5px solid #cbd5e1 !important;
+  color: #0f172a !important;
+}
+
+body.theme-light .history-tab-btn {
+  background: #ffffff !important;
+  border: 1.5px solid #cbd5e1 !important;
+  color: #334155 !important;
+  font-weight: 600 !important;
+}
+
+body.theme-light .history-tab-btn:hover {
+  background: #f1f5f9 !important;
+  color: #0f172a !important;
+}
+
+body.theme-light .history-tab-btn.btn-primary {
+  background: #0284c7 !important;
+  border-color: #0284c7 !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+}
+
+body.theme-light .machine-profile-card {
+  background: #ffffff !important;
+  border: 1.5px solid #cbd5e1 !important;
+  border-left: 5px solid #0284c7 !important;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04) !important;
+  color: #0f172a !important;
+}
+
+/* 4. ENT Lab Management Suite (Screenshot 3) */
+body.theme-light #ent-live-search-input {
+  background: #ffffff !important;
+  border: 1.5px solid #0284c7 !important;
+  color: #0f172a !important;
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15) !important;
+}
+
+body.theme-light .btn-quick-select-board {
+  background: #ffffff !important;
+  border: 1.5px solid #cbd5e1 !important;
+  color: #0f172a !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04) !important;
+}
+
+body.theme-light .btn-quick-select-board:hover {
+  background: #f0f9ff !important;
+  border-color: #0284c7 !important;
+}
+
+body.theme-light .btn-quick-select-board span[style*="color: #38bdf8"] {
+  color: #0284c7 !important;
+  font-weight: 700 !important;
+}
+
+body.theme-light .btn-quick-select-board span[style*="color: #cbd5e1"] {
+  color: #334155 !important;
+}
+
+/* 5. Tools & Equipment Management Suite (Screenshot 4) */
+body.theme-light .tools-allocation-top-bar {
+  background: #ffffff !important;
+  border: 1.5px solid #cbd5e1 !important;
+  color: #0f172a !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04) !important;
+}
+
+body.theme-light .tools-allocation-top-bar span {
+  color: #0f172a !important;
+}
+
+body.theme-light .screen-tools-add [style*="background: #1e293b"] {
+  background: #ffffff !important;
+  border: 1.5px solid #cbd5e1 !important;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04) !important;
+}
+
+body.theme-light #input-tab-reg-no {
+  background: #f8fafc !important;
+  color: #0284c7 !important;
+  border: 1.5px solid #0284c7 !important;
+  font-weight: 800 !important;
+}
+
+body.theme-light .btn-tool-cat-pill {
+  background: #f1f5f9 !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #475569 !important;
+}
+
+body.theme-light .btn-tool-cat-pill.active {
+  background: #0284c7 !important;
+  border-color: #0284c7 !important;
+  color: #ffffff !important;
+}
+
+body.theme-light #tool-details-preview-card {
+  background: #f8fafc !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #0f172a !important;
+}
+
+body.theme-light .tools-live-table-card {
+  background: #ffffff !important;
+  border: 1.5px solid #cbd5e1 !important;
+}
+
+body.theme-light .tools-live-table-header {
+  background: #f8fafc !important;
+  color: #0f172a !important;
+  border-bottom: 1.5px solid #cbd5e1 !important;
+}
+
+body.theme-light .tools-queue-thead-tr th {
+  background: #f1f5f9 !important;
+  color: #0f172a !important;
+  border-bottom: 1.5px solid #cbd5e1 !important;
+}
+
+body.theme-light .tools-queue-table tbody tr {
+  background: #ffffff !important;
+  color: #0f172a !important;
+}
+
+body.theme-light .tools-queue-table tbody tr:nth-child(even) {
+  background: #f8fafc !important;
+}
+
+body.theme-light .tools-queue-table tbody td {
+  color: #0f172a !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+
+/* 6. Data Tables & Footers Suite (Screenshot 5) */
+body.theme-light .data-table tfoot,
+body.theme-light .data-table tfoot tr,
+body.theme-light .data-table tfoot td,
+body.theme-light tfoot,
+body.theme-light tfoot tr,
+body.theme-light tfoot td,
+body.theme-light tfoot tr[style*="background"] td,
+body.theme-light [style*="position: sticky; bottom: 0"] {
+  background: #f8fafc !important;
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+  border-top: 2px solid #0284c7 !important;
+}
+
+body.theme-light tfoot td * {
+  color: #0f172a !important;
+}
+
+body.theme-light tfoot td[style*="background: rgba(16, 185, 129"] {
+  background: #dcfce7 !important;
+  color: #15803d !important;
+}
+
+body.theme-light tfoot td [style*="color: #34d399"] {
+  color: #15803d !important;
+}
+
+body.theme-light tfoot td [style*="color: #fbbf24"] {
+  color: #b45309 !important;
+}
+
+body.theme-light tfoot td [style*="color: #38bdf8"],
+body.theme-light tfoot td [style*="color: #c084fc"] {
+  color: #0284c7 !important;
+}
+
+/* 7. Universal Dark Gradient & Container Neutralizer in Bright Mode */
+body.theme-light [style*="background: linear-gradient(135deg, rgba(15, 23, 42"],
+body.theme-light [style*="background: linear-gradient(180deg, rgba(15, 23, 42"],
+body.theme-light [style*="background: linear-gradient(145deg, #0f172a"],
+body.theme-light [style*="background: linear-gradient(135deg, #080d1a"],
+body.theme-light [style*="background: linear-gradient(180deg, #111827"],
+body.theme-light [style*="background: linear-gradient(135deg, #111827"] {
+  background: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.04) !important;
+}
+
+body.theme-light [style*="background: linear-gradient(135deg, rgba(15, 23, 42"] *,
+body.theme-light [style*="background: linear-gradient(180deg, rgba(15, 23, 42"] *,
+body.theme-light [style*="background: linear-gradient(145deg, #0f172a"] * {
+  color: inherit;
+}
+
+body.theme-light [style*="background: linear-gradient(135deg, rgba(15, 23, 42"] [style*="color: #fff"],
+body.theme-light [style*="background: linear-gradient(135deg, rgba(15, 23, 42"] [style*="color: #ffffff"],
+body.theme-light [style*="background: linear-gradient(135deg, rgba(15, 23, 42"] [style*="color: #f8fafc"] {
+  color: #0f172a !important;
+}
+
+body.theme-light [style*="background: linear-gradient(135deg, rgba(15, 23, 42"] [style*="color: #94a3b8"],
+body.theme-light [style*="background: linear-gradient(135deg, rgba(15, 23, 42"] [style*="color: #cbd5e1"] {
+  color: #64748b !important;
+}
+
+/* Exclude buttons from being overridden */
+body.theme-light .btn-primary,
+body.theme-light .btn-primary *,
+body.theme-light .dash-btn-primary,
+body.theme-light .dash-btn-primary *,
+body.theme-light .btn-tools-save-action,
+body.theme-light .btn-tools-save-action *,
+body.theme-light .modal-header,
+body.theme-light .modal-header * {
+  color: #ffffff !important;
+}
+
+
+/* ==========================================================================
+   DEEP AUDIT BRIGHT MODE FIXES (ALL VIEWS: PM REPORT, DATA ENGINE, TOOLS, TRANSFERS, SETTINGS)
+   ========================================================================== */
+
+/* PM Report & Print Toolbar Suite (Screenshot 3) */
+body.theme-light .pm-report-toolbar,
+html.theme-light .pm-report-toolbar {
+  background: #ffffff !important;
+  border: 1.5px solid #cbd5e1 !important;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.05) !important;
+}
+
+body.theme-light .pm-report-toolbar h2,
+body.theme-light .pm-report-toolbar span {
+  color: #0f172a !important;
+}
+
+body.theme-light .pm-report-toolbar select,
+body.theme-light .pm-report-toolbar input {
+  color: #0f172a !important;
+  background-color: #ffffff !important;
+  border-color: #cbd5e1 !important;
+}
+
+body.theme-light .pm-report-toolbar [style*="background: rgba(15, 23, 42"] {
+  background: #f8fafc !important;
+  border-color: #cbd5e1 !important;
+}
+
+body.theme-light .pm-report-toolbar [style*="border-bottom: 1px solid rgba(255, 255, 255"] {
+  border-bottom-color: #e2e8f0 !important;
+}
+
+body.theme-light .pm-report-toolbar [style*="background: rgba(30, 41, 59"] {
+  background: #f1f5f9 !important;
+  border-color: #cbd5e1 !important;
+  color: #334155 !important;
+}
+
+/* cPanel MySQL Connection Quick Banner (Screenshots 4 & 5) */
+body.theme-light .cpanel-quick-banner,
+html.theme-light .cpanel-quick-banner {
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%) !important;
+  border: 1.5px solid #bae6fd !important;
+  box-shadow: 0 2px 8px rgba(2, 132, 199, 0.08) !important;
+  color: #0f172a !important;
+}
+
+body.theme-light .cpanel-quick-banner .cpanel-title-text,
+body.theme-light .cpanel-quick-banner h3,
+body.theme-light .cpanel-quick-banner [style*="color: #38bdf8"],
+body.theme-light .cpanel-quick-banner [style*="color: #fff"] {
+  color: #0284c7 !important;
+}
+
+body.theme-light .cpanel-quick-banner .cpanel-desc-text,
+body.theme-light .cpanel-quick-banner [style*="color: var(--text-muted)"],
+body.theme-light .cpanel-quick-banner [style*="color: var(--text-secondary)"] {
+  color: #475569 !important;
+}
+
+/* Database Status & Dataflow Cards in Data Engine (Screenshot 4) */
+body.theme-light .db-status-card,
+body.theme-light .db-dataflow-card,
+body.theme-light [style*="background: #090e1a; border: 1.5px solid #10b981"] {
+  background: #ffffff !important;
+  border-color: #10b981 !important;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04) !important;
+  color: #0f172a !important;
+}
+
+body.theme-light .db-status-master-title {
+  color: #0f172a !important;
+}
+
+body.theme-light .db-status-metrics-grid span {
+  color: #64748b !important;
+}
+
+body.theme-light .db-status-metrics-grid strong {
+  color: #0f172a !important;
+}
+
+body.theme-light .db-dataflow-card {
+  border-color: #cbd5e1 !important;
+}
+
+body.theme-light .db-dataflow-card h2 {
+  color: #0f172a !important;
+}
+
+body.theme-light .db-dataflow-box {
+  background: #f8fafc !important;
+  border: 1.5px solid #e2e8f0 !important;
+  color: #0f172a !important;
+}
+
+body.theme-light .db-dataflow-box div,
+body.theme-light .db-dataflow-box span {
+  color: #0f172a !important;
+}
+
+/* Tools & Equipment Tab Navigation Bar (Screenshot 1) */
+body.theme-light .tools-tab-navbar-wrapper,
+html.theme-light .tools-tab-navbar-wrapper {
+  background: #f1f5f9 !important;
+  border-bottom: 1.5px solid #cbd5e1 !important;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.04) !important;
+}
+
+body.theme-light .tools-tab-navbar,
+html.theme-light .tools-tab-navbar {
+  background: #ffffff !important;
+  border: 1.5px solid #cbd5e1 !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04) !important;
+}
+
+body.theme-light .tools-tab-btn:not(.active) {
+  background: #f8fafc !important;
+  color: #334155 !important;
+  border: 1px solid #cbd5e1 !important;
+}
+
+body.theme-light .tools-tab-btn:hover {
+  background: #f1f5f9 !important;
+  color: #0f172a !important;
+}
+
+body.theme-light .tools-tab-btn.active {
+  background: #0284c7 !important;
+  color: #ffffff !important;
+  border-color: #0284c7 !important;
+  font-weight: 800 !important;
+}
+
+body.theme-light #tools-current-screen-badge {
+  background: #e0f2fe !important;
+  border-color: #bae6fd !important;
+  color: #0284c7 !important;
+}
+
+body.theme-light #tools-current-reg-badge {
+  background: #f8fafc !important;
+  border-color: #cbd5e1 !important;
+  color: #b45309 !important;
+}
+
+/* Transfer Reports Status Badges & Table Row High Contrast (Screenshot 2) */
+body.theme-light .tr-kpi-card[data-tr-kpi-status="ALL"],
+body.theme-light .tr-kpi-card[data-tr-kpi-status="ALL"] span {
+  background: #e0f2fe !important;
+  border-color: #bae6fd !important;
+  color: #0284c7 !important;
+}
+
+body.theme-light .tr-kpi-card[data-tr-kpi-status="COMPLETED"],
+body.theme-light .tr-kpi-card[data-tr-kpi-status="COMPLETED"] span {
+  background: #dcfce7 !important;
+  border-color: #bbf7d0 !important;
+  color: #15803d !important;
+}
+
+body.theme-light .tr-kpi-card[data-tr-kpi-status="PENDING"],
+body.theme-light .tr-kpi-card[data-tr-kpi-status="PENDING"] span {
+  background: #fef3c7 !important;
+  border-color: #fde68a !important;
+  color: #b45309 !important;
+}
+
+body.theme-light .tr-kpi-card[data-tr-kpi-status="REJECTED"],
+body.theme-light .tr-kpi-card[data-tr-kpi-status="REJECTED"] span {
+  background: #fee2e2 !important;
+  border-color: #fecaca !important;
+  color: #b91c1c !important;
+}
+
+/* High Contrast Replacement for Light Green and Amber Table Text in Light Theme */
+body.theme-light [style*="color: #86efac"],
+body.theme-light [style*="color: rgba(134,239,172"],
+body.theme-light [style*="color: #6ee7b7"],
+body.theme-light [style*="color: #34d399"] {
+  color: #15803d !important;
+}
+
+body.theme-light [style*="color: #fbbf24"],
+body.theme-light [style*="color: #fde047"],
+body.theme-light [style*="color: #fed7aa"] {
+  color: #b45309 !important;
+}
+
+body.theme-light [style*="color: #38bdf8"],
+body.theme-light [style*="color: #7dd3fc"] {
+  color: #0284c7 !important;
+}
+
+body.theme-light [style*="color: #cbd5e1"] {
+  color: #334155 !important;
+}
+
+body.theme-light [style*="color: #e2e8f0"] {
+  color: #1e293b !important;
+}
+
+body.theme-light [style*="color: #c084fc"],
+body.theme-light [style*="color: #d8b4fe"] {
+  color: #0284c7 !important;
+}
+
+/* Table Row Borders and Hover States */
+body.theme-light .data-table tr,
+body.theme-light .table tr {
+  border-bottom-color: #e2e8f0 !important;
+}
+
+body.theme-light .data-table tbody tr:hover,
+body.theme-light .table tbody tr:hover,
+body.theme-light .hover-row:hover {
+  background-color: #f1f5f9 !important;
+}
+
+/* Table Pagination Bars in Bright Mode */
+body.theme-light [style*="background: rgba(15, 23, 42, 0.95)"] {
+  background: #f8fafc !important;
+  border-top-color: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+
+body.theme-light [style*="background: rgba(15, 23, 42, 0.95)"] * {
+  color: inherit;
+}
+
+body.theme-light [style*="background: rgba(15, 23, 42, 0.95)"] strong {
+  color: #0f172a !important;
+}
+
+/* Preserve White Text for Action Buttons */
+body.theme-light .btn-primary,
+body.theme-light .btn-primary *,
+body.theme-light .btn-tools-save-action,
+body.theme-light .btn-tools-save-action *,
+body.theme-light .btn-success,
+body.theme-light .btn-success *,
+body.theme-light .btn-danger,
+body.theme-light .btn-danger *,
+body.theme-light .modal-header,
+body.theme-light .modal-header * {
+  color: #ffffff !important;
+}
+
+/* ==========================================================================
+   ENTERPRISE BRIGHT MODE SUITE: USER MANAGEMENT, PASSPORT, ENT LAB & ALL VIEWS
+   ========================================================================== */
+
+/* 1. User Access Management (UAM) Header & KPI Cards */
+body.theme-light .uam-header-title {
+  color: #0f172a !important;
+}
+
+body.theme-light .uam-security-matrix-badge,
+body.theme-light span[style*="Security Matrix"] {
+  background: #e0f2fe !important;
+  border-color: #bae6fd !important;
+  color: #0369a1 !important;
+  font-weight: 800 !important;
+}
+
+body.theme-light .uam-kpi-summary-card {
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05) !important;
+}
+
+body.theme-light .uam-kpi-summary-card[data-action="TOTAL"] {
+  background: #f1f5f9 !important;
+  border: 1px solid #cbd5e1 !important;
+}
+body.theme-light .uam-kpi-summary-card[data-action="TOTAL"] .uam-kpi-label,
+body.theme-light .uam-kpi-summary-card[data-action="TOTAL"] span {
+  color: #64748b !important;
+}
+body.theme-light .uam-kpi-summary-card[data-action="TOTAL"] .uam-kpi-value,
+body.theme-light .uam-kpi-summary-card[data-action="TOTAL"] strong {
+  color: #0f172a !important;
+}
+
+body.theme-light .uam-kpi-summary-card[data-action="ACTIVE"] {
+  background: #dcfce7 !important;
+  border: 1px solid #bbf7d0 !important;
+}
+body.theme-light .uam-kpi-summary-card[data-action="ACTIVE"] .uam-kpi-label,
+body.theme-light .uam-kpi-summary-card[data-action="ACTIVE"] .uam-kpi-value,
+body.theme-light .uam-kpi-summary-card[data-action="ACTIVE"] span,
+body.theme-light .uam-kpi-summary-card[data-action="ACTIVE"] strong {
+  color: #15803d !important;
+}
+
+body.theme-light .uam-kpi-summary-card[data-action="INACTIVE"] {
+  background: #fee2e2 !important;
+  border: 1px solid #fecaca !important;
+}
+body.theme-light .uam-kpi-summary-card[data-action="INACTIVE"] .uam-kpi-label,
+body.theme-light .uam-kpi-summary-card[data-action="INACTIVE"] .uam-kpi-value,
+body.theme-light .uam-kpi-summary-card[data-action="INACTIVE"] span,
+body.theme-light .uam-kpi-summary-card[data-action="INACTIVE"] strong {
+  color: #b91c1c !important;
+}
+
+body.theme-light .uam-kpi-summary-card[data-action="PENDING_CREATION"] {
+  background: #fef3c7 !important;
+  border: 1px solid #fde68a !important;
+}
+body.theme-light .uam-kpi-summary-card[data-action="PENDING_CREATION"] .uam-kpi-label,
+body.theme-light .uam-kpi-summary-card[data-action="PENDING_CREATION"] .uam-kpi-value,
+body.theme-light .uam-kpi-summary-card[data-action="PENDING_CREATION"] span,
+body.theme-light .uam-kpi-summary-card[data-action="PENDING_CREATION"] strong {
+  color: #b45309 !important;
+}
+
+body.theme-light .uam-kpi-summary-card[data-action="PENDING_PASSWORD"] {
+  background: #f3e8ff !important;
+  border: 1px solid #e9d5ff !important;
+}
+body.theme-light .uam-kpi-summary-card[data-action="PENDING_PASSWORD"] .uam-kpi-label,
+body.theme-light .uam-kpi-summary-card[data-action="PENDING_PASSWORD"] .uam-kpi-value,
+body.theme-light .uam-kpi-summary-card[data-action="PENDING_PASSWORD"] span,
+body.theme-light .uam-kpi-summary-card[data-action="PENDING_PASSWORD"] strong {
+  color: #7e22ce !important;
+}
+
+body.theme-light .uam-kpi-summary-card[data-action="CONFIGURED_ACCESS"] {
+  background: #e0f2fe !important;
+  border: 1px solid #bae6fd !important;
+}
+body.theme-light .uam-kpi-summary-card[data-action="CONFIGURED_ACCESS"] .uam-kpi-label,
+body.theme-light .uam-kpi-summary-card[data-action="CONFIGURED_ACCESS"] .uam-kpi-value,
+body.theme-light .uam-kpi-summary-card[data-action="CONFIGURED_ACCESS"] span,
+body.theme-light .uam-kpi-summary-card[data-action="CONFIGURED_ACCESS"] strong {
+  color: #0369a1 !important;
+}
+
+/* 2. UAM Quick Filter Chips */
+body.theme-light .btn-uam-quick-chip {
+  background: #f1f5f9 !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #475569 !important;
+  font-weight: 700 !important;
+}
+
+body.theme-light .btn-uam-quick-chip:hover {
+  background: #e2e8f0 !important;
+  color: #0f172a !important;
+}
+
+body.theme-light .btn-uam-quick-chip[data-filter="ALL"],
+body.theme-light .btn-uam-quick-chip[data-filter="WITH_CARD"] {
+  border-color: #bae6fd !important;
+  color: #0369a1 !important;
+}
+
+body.theme-light .btn-uam-quick-chip[data-filter="ACTIVE"] {
+  border-color: #bbf7d0 !important;
+  color: #15803d !important;
+}
+
+body.theme-light .btn-uam-quick-chip[data-filter="INACTIVE"] {
+  border-color: #fecaca !important;
+  color: #b91c1c !important;
+}
+
+body.theme-light .btn-uam-quick-chip[data-filter="MISSING_ACCOUNT"] {
+  border-color: #fde68a !important;
+  color: #b45309 !important;
+}
+
+body.theme-light .btn-uam-quick-chip[data-filter="TEMP_PASS"] {
+  border-color: #e9d5ff !important;
+  color: #7e22ce !important;
+}
+
+/* 3. UAM Clickable Card Badges & Monospace Tags */
+body.theme-light .uam-clickable-card-badge,
+html.theme-light .uam-clickable-card-badge {
+  background: #e0f2fe !important;
+  border: 1px solid #bae6fd !important;
+  color: #0369a1 !important;
+  font-weight: 800 !important;
+}
+
+body.theme-light .uam-clickable-card-badge span {
+  color: #0369a1 !important;
+}
+
+body.theme-light .uam-clickable-card-badge:hover {
+  background: #bae6fd !important;
+  border-color: #7dd3fc !important;
+  color: #075985 !important;
+}
+
+/* 4. UAM Table Columns Typography & Action Buttons */
+body.theme-light .uam-emp-name {
+  color: #0f172a !important;
+  font-weight: 700 !important;
+}
+
+body.theme-light .uam-username-text,
+body.theme-light .user-management-table td span[style*="font-family: var(--font-mono)"] {
+  color: #334155 !important;
+  font-weight: 700 !important;
+}
+
+body.theme-light .uam-designation-text {
+  color: #0f172a !important;
+  font-weight: 600 !important;
+}
+
+body.theme-light .uam-group-text {
+  color: #475569 !important;
+  font-weight: 600 !important;
+}
+
+body.theme-light .uam-floor-text {
+  color: #0284c7 !important;
+  font-weight: 700 !important;
+}
+
+body.theme-light .uam-perm-summary {
+  color: #0f172a !important;
+  font-weight: 600 !important;
+}
+
+body.theme-light .uam-scope-summary {
+  color: #0284c7 !important;
+  font-weight: 700 !important;
+}
+
+body.theme-light .uam-last-login {
+  color: #475569 !important;
+  font-weight: 600 !important;
+}
+
+body.theme-light .user-management-table .btn-ghost {
+  background: #f8fafc !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #334155 !important;
+}
+
+body.theme-light .user-management-table .btn-ghost:hover {
+  background: #e2e8f0 !important;
+  border-color: #94a3b8 !important;
+  color: #0f172a !important;
+}
+
+/* 5. UAM Sticky Columns Background & Clean Borders */
+body.theme-light .user-management-table th.uam-col-sticky-check,
+body.theme-light .user-management-table th.uam-col-sticky-card,
+body.theme-light .user-management-table th.uam-col-sticky-card-pass {
+  background-color: #f1f5f9 !important;
+  color: #0f172a !important;
+  border-bottom: 2px solid #cbd5e1 !important;
+  border-right: 1.5px solid #cbd5e1 !important;
+  box-shadow: none !important;
+}
+
+body.theme-light .user-management-table tbody tr:nth-child(odd) td.uam-col-sticky-check,
+body.theme-light .user-management-table tbody tr:nth-child(odd) td.uam-col-sticky-card,
+body.theme-light .user-management-table tbody tr:nth-child(odd) td.uam-col-sticky-card-pass {
+  background-color: #ffffff !important;
+  border-right: 1.5px solid #e2e8f0 !important;
+  box-shadow: none !important;
+}
+
+body.theme-light .user-management-table tbody tr:nth-child(even) td.uam-col-sticky-check,
+body.theme-light .user-management-table tbody tr:nth-child(even) td.uam-col-sticky-card,
+body.theme-light .user-management-table tbody tr:nth-child(even) td.uam-col-sticky-card-pass {
+  background-color: #f8fafc !important;
+  border-right: 1.5px solid #e2e8f0 !important;
+  box-shadow: none !important;
+}
+
+body.theme-light .user-management-table tbody tr:hover td.uam-col-sticky-check,
+body.theme-light .user-management-table tbody tr:hover td.uam-col-sticky-card,
+body.theme-light .user-management-table tbody tr:hover td.uam-col-sticky-card-pass {
+  background-color: #e0f2fe !important;
+}
+
+/* 6. Universal Scrollbars in Bright Mode (Zero Dark Tracks Anywhere) */
+body.theme-light ::-webkit-scrollbar-track,
+body.theme-light *::-webkit-scrollbar-track,
+html.theme-light ::-webkit-scrollbar-track,
+html.theme-light *::-webkit-scrollbar-track,
+body.theme-light #main-view-container::-webkit-scrollbar-track,
+body.theme-light .page-view::-webkit-scrollbar-track,
+body.theme-light .uam-table-scroll-container::-webkit-scrollbar-track,
+body.theme-light .inventory-table-scroll-container::-webkit-scrollbar-track,
+body.theme-light .excel-table-container::-webkit-scrollbar-track,
+body.theme-light .spare-parts-table-container::-webkit-scrollbar-track,
+body.theme-light .transfers-table-container::-webkit-scrollbar-track,
+body.theme-light .manpower-table-scroll-container::-webkit-scrollbar-track {
+  background: #f1f5f9 !important;
+  border-top: 1px solid #cbd5e1 !important;
+  border-left: 1px solid #cbd5e1 !important;
+  border-radius: 4px !important;
+}
+
+body.theme-light ::-webkit-scrollbar-thumb,
+body.theme-light *::-webkit-scrollbar-thumb,
+html.theme-light ::-webkit-scrollbar-thumb,
+html.theme-light *::-webkit-scrollbar-thumb,
+body.theme-light #main-view-container::-webkit-scrollbar-thumb,
+body.theme-light .page-view::-webkit-scrollbar-thumb,
+body.theme-light .uam-table-scroll-container::-webkit-scrollbar-thumb,
+body.theme-light .inventory-table-scroll-container::-webkit-scrollbar-thumb,
+body.theme-light .excel-table-container::-webkit-scrollbar-thumb,
+body.theme-light .spare-parts-table-container::-webkit-scrollbar-thumb,
+body.theme-light .transfers-table-container::-webkit-scrollbar-thumb,
+body.theme-light .manpower-table-scroll-container::-webkit-scrollbar-thumb {
+  background: #cbd5e1 !important;
+  border: 2px solid #f1f5f9 !important;
+  border-radius: 6px !important;
+}
+
+body.theme-light ::-webkit-scrollbar-thumb:hover,
+body.theme-light *::-webkit-scrollbar-thumb:hover,
+html.theme-light ::-webkit-scrollbar-thumb:hover,
+html.theme-light *::-webkit-scrollbar-thumb:hover,
+body.theme-light #main-view-container::-webkit-scrollbar-thumb:hover,
+body.theme-light .page-view::-webkit-scrollbar-thumb:hover,
+body.theme-light .uam-table-scroll-container::-webkit-scrollbar-thumb:hover,
+body.theme-light .inventory-table-scroll-container::-webkit-scrollbar-thumb:hover,
+body.theme-light .excel-table-container::-webkit-scrollbar-thumb:hover,
+body.theme-light .spare-parts-table-container::-webkit-scrollbar-thumb:hover,
+body.theme-light .transfers-table-container::-webkit-scrollbar-thumb:hover,
+body.theme-light .manpower-table-scroll-container::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8 !important;
+}
+
+/* 7. Machine Lifetime Empty State Prompt */
+body.theme-light .hist-empty-state-prompt {
+  background: #ffffff !important;
+  border: 1.5px dashed #cbd5e1 !important;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04) !important;
+}
+
+body.theme-light .hist-empty-state-prompt div[style*="color: #f8fafc"],
+body.theme-light .hist-empty-state-prompt div[style*="color: #fff"] {
+  color: #0f172a !important;
+}
+
+body.theme-light .hist-empty-state-prompt div[style*="color: #94a3b8"] {
+  color: #475569 !important;
+}
+
+/* 8. ENT Lab Management Suite */
+body.theme-light .btn-quick-select-board {
+  background: #ffffff !important;
+  border: 1.5px solid #cbd5e1 !important;
+  color: #0f172a !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04) !important;
+}
+
+body.theme-light .btn-quick-select-board:hover {
+  background: #f0f9ff !important;
+  border-color: #0284c7 !important;
+}
+
+body.theme-light .btn-quick-select-board .board-serial-chip {
+  color: #0284c7 !important;
+}
+
+body.theme-light .btn-quick-select-board .board-part-name {
+  color: #334155 !important;
+}
+
+body.theme-light .et-cat-chip {
+  background: #f1f5f9 !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #0f172a !important;
+}
+
+/* 9. Universal Dark Container Neutralizer (Catch-all for Remaining Inline Dark Styles) */
+body.theme-light [style*="background: rgba(30, 41, 59"],
+body.theme-light [style*="background: rgba(15, 23, 42, 0.85)"],
+body.theme-light [style*="background: rgba(15, 23, 42, 0.7)"],
+body.theme-light [style*="background: rgba(15, 23, 42, 0.6)"],
+body.theme-light [style*="background: #0b1329"],
+body.theme-light [style*="background: #090e1a"] {
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+
+body.theme-light [style*="background: rgba(30, 41, 59"] strong,
+body.theme-light [style*="background: rgba(15, 23, 42, 0.7)"] strong,
+body.theme-light [style*="background: #0b1329"] strong {
+  color: #0f172a !important;
+}
+
+body.theme-light [style*="background: rgba(30, 41, 59"] [style*="color: #fff"],
+body.theme-light [style*="background: rgba(15, 23, 42, 0.7)"] [style*="color: #fff"],
+body.theme-light [style*="background: #0b1329"] [style*="color: #fff"] {
+  color: #0f172a !important;
+}
+
+/* 10. Re-Affirm White Text for Solid Buttons & Badges */
+body.theme-light .btn-primary,
+body.theme-light .btn-primary *,
+body.theme-light .dash-btn-primary,
+body.theme-light .dash-btn-primary *,
+body.theme-light .btn-tools-save-action,
+body.theme-light .btn-tools-save-action *,
+body.theme-light .btn-success,
+body.theme-light .btn-success *,
+body.theme-light .btn-danger,
+body.theme-light .btn-danger *,
+body.theme-light .modal-header,
+body.theme-light .modal-header * {
+  color: #ffffff !important;
+}
+

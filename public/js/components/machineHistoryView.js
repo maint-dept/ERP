@@ -353,8 +353,8 @@ export function renderMachineHistoryView() {
               <div style="font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">⚡ ENT Boards</div>
             </div>
 
-            <div class="hist-stat-counter-card" data-target-tab="timeline" style="background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(168, 85, 247, 0.25); border-radius: 8px; padding: 6px 12px; text-align: center; min-width: 80px; cursor: pointer; transition: all 0.2s;" title="Click to view Complete Lifetime Timeline">
-              <div style="font-size: 17px; font-weight: 800; color: #c084fc;">${historyList.length}</div>
+            <div class="hist-stat-counter-card" data-target-tab="timeline" style="background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(245, 158, 11, 0.35); border-radius: 8px; padding: 6px 12px; text-align: center; min-width: 80px; cursor: pointer; transition: all 0.2s;" title="Click to view Complete Lifetime Timeline">
+              <div style="font-size: 17px; font-weight: 800; color: #fbbf24;">${historyList.length}</div>
               <div style="font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">📜 Events</div>
             </div>
           </div>
@@ -375,7 +375,7 @@ export function renderMachineHistoryView() {
           </div>
         </div>
       ` : `
-        <div style="padding: 24px 18px; text-align: center; background: linear-gradient(135deg, rgba(15, 23, 42, 0.85), rgba(30, 41, 59, 0.85)); border: 1.5px dashed rgba(56, 189, 248, 0.35); border-radius: var(--radius-lg); display: flex; flex-direction: column; align-items: center; gap: 8px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);">
+        <div class="hist-empty-state-prompt" style="padding: 24px 18px; text-align: center; background: linear-gradient(135deg, rgba(15, 23, 42, 0.85), rgba(30, 41, 59, 0.85)); border: 1.5px dashed rgba(56, 189, 248, 0.35); border-radius: var(--radius-lg); display: flex; flex-direction: column; align-items: center; gap: 8px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);">
           <div style="width: 44px; height: 44px; border-radius: 50%; background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.35); display: flex; align-items: center; justify-content: center; font-size: 22px;">
             🔍
           </div>

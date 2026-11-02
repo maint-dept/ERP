@@ -625,7 +625,7 @@ export function renderMachineModal() {
 
           <!-- Section 5: Procurement & Supplier Details -->
           <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; padding: 14px 16px; display: flex; flex-direction: column; gap: 12px;">
-            <div style="font-size: 12px; font-weight: 800; color: #a78bfa; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;">
+            <div style="font-size: 12px; font-weight: 800; color: #38bdf8; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;">
               <span>📦 Procurement &amp; Supplier Details</span>
             </div>
 

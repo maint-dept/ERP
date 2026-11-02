@@ -111,6 +111,7 @@ foreach ($dbCandidates as $candidateDb) {
                 PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
                 PDO::ATTR_EMULATE_PREPARES   => false,
+                PDO::ATTR_PERSISTENT         => true,
                 PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci"
             ]);
             $DB_NAME = $candidateDb;
@@ -322,6 +323,30 @@ function validateAndProtectMachinesDataset($pdo, &$machines) {
     }
 }
 
+function validateAndProtectUsersDataset($pdo, &$users) {
+    if (!is_array($users)) return;
+    $incomingCount = count($users);
+    $stmt = $pdo->prepare("SELECT `raw_json` FROM `erp_tables` WHERE `table_name` = 'users' LIMIT 1");
+    $stmt->execute();
+    $existingRaw = $stmt->fetchColumn();
+    if (!empty($existingRaw)) {
+        $existing = json_decode($existingRaw, true);
+        if (is_array($existing) && count($existing) > 0) {
+            if ($incomingCount === 0) {
+                error_log("[MySQL API Safeguard] 🛡️ PREVENTED USER WIPE: Incoming users is empty. Retaining existing users.");
+                $users = $existing;
+                return;
+            }
+            $incomingIds = array_column($users, 'id');
+            foreach ($existing as $exUser) {
+                if (($exUser['role'] ?? '') === 'SUPER_ADMIN' && !in_array($exUser['id'], $incomingIds)) {
+                    $users[] = $exUser;
+                }
+            }
+        }
+    }
+}
+
 function validateMachinesDataset($machines) {
     if (!is_array($machines)) {
         throw new Exception("Machines payload must be an array.");
@@ -340,6 +365,32 @@ function verifyErpPassword($rawPassword, $storedHash) {
         }
     }
     return hash_equals((string)$storedHash, (string)$rawPassword);
+}
+
+/**
+ * Dispatch real-time change event to Node.js SSE Hub via internal localhost webhook
+ */
+function broadcastRealtimeChangeEvent($table, $action, $id = null, $data = null) {
+    if (!extension_loaded('curl')) return;
+    try {
+        $ch = curl_init('http://127.0.0.1:3030/api/realtime/broadcast');
+        $payload = json_encode([
+            'type'      => 'DATA_CHANGED',
+            'table'     => $table,
+            'action'    => $action,
+            'id'        => $id,
+            'data'      => $data,
+            'timestamp' => date('c')
+        ]);
+        curl_setopt($ch, CURLOPT_POST, 1);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_TIMEOUT_MS, 250);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT_MS, 80);
+        curl_exec($ch);
+        curl_close($ch);
+    } catch (Exception $e) {}
 }
 
 // --- 6. ROUTE ACTIONS ---
@@ -518,7 +569,15 @@ try {
                 validateAndProtectMachinesDataset($pdo, $tablesData['machines']);
                 syncMachinesToRelationalTable($pdo, $tablesData['machines'], false);
             }
+            if (isset($tablesData['users']) && is_array($tablesData['users'])) {
+                validateAndProtectUsersDataset($pdo, $tablesData['users']);
+            }
             $pdo->commit();
+
+            // Real-time SSE dispatch for all updated tables
+            foreach ($tablesData as $tName => $tRecords) {
+                broadcastRealtimeChangeEvent($tName, 'TABLE_SAVED', null, ['itemCount' => is_array($tRecords) ? count($tRecords) : 1]);
+            }
 
             echo json_encode([
                 'success' => true,
@@ -544,6 +603,12 @@ try {
                 if (is_array($mList)) {
                     validateAndProtectMachinesDataset($pdo, $mList);
                     $data = $mList;
+                }
+            } elseif ($collection === 'users') {
+                $uList = is_array($data) ? $data : json_decode($data, true);
+                if (is_array($uList)) {
+                    validateAndProtectUsersDataset($pdo, $uList);
+                    $data = $uList;
                 }
             }
 
@@ -573,6 +638,9 @@ try {
             $updatedAtStmt->execute([':table_name' => $collection]);
             $dbUpdatedAt = $updatedAtStmt->fetchColumn() ?: date('c');
             $pdo->commit();
+
+            // Real-time SSE dispatch
+            broadcastRealtimeChangeEvent($collection, 'TABLE_SAVED', null, ['itemCount' => $itemCount]);
 
             echo json_encode([
                 'success' => true,
@@ -695,6 +763,9 @@ try {
             }
             $pdo->commit();
 
+            // Real-time SSE dispatch for single record upsert
+            broadcastRealtimeChangeEvent($collection, 'RECORD_SAVED', $docId, $recordData);
+
             echo json_encode([
                 'success' => true,
                 'collection' => $collection,
@@ -743,6 +814,9 @@ try {
                 $delMStmt->execute([':id' => $docId]);
             }
             $pdo->commit();
+
+            // Real-time SSE dispatch for record deletion
+            broadcastRealtimeChangeEvent($collection, 'RECORD_DELETED', $docId);
 
             echo json_encode([
                 'success' => true,

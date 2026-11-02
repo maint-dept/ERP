@@ -6,7 +6,38 @@ const PORT = process.env.PORT || 3030;
 const PUBLIC_DIR = path.join(__dirname, 'public');
 const DATA_DIR = path.join(__dirname, 'data');
 const DB_FILE = path.join(DATA_DIR, 'erp_database.json');
-const CHAT_HISTORY_FILE = path.join(DATA_DIR, 'chat_history.json');
+
+// --- REAL-TIME SERVER-SENT EVENTS (SSE) HUB ---
+const sseClients = new Set();
+
+function broadcastRealtimeEvent(eventData) {
+  if (sseClients.size === 0) return 0;
+  const payload = `data: ${JSON.stringify(eventData)}\n\n`;
+  let sentCount = 0;
+  for (const client of sseClients) {
+    try {
+      client.write(payload);
+      sentCount++;
+    } catch (_) {
+      sseClients.delete(client);
+    }
+  }
+  return sentCount;
+}
+
+// Keep-alive heartbeat every 20 seconds to prevent proxy / firewall timeout
+setInterval(() => {
+  if (sseClients.size > 0) {
+    const pingMsg = `: keep-alive\n\n`;
+    for (const client of sseClients) {
+      try {
+        client.write(pingMsg);
+      } catch (_) {
+        sseClients.delete(client);
+      }
+    }
+  }
+}, 20000);
 
 if (!fs.existsSync(DATA_DIR)) {
   try {
@@ -165,6 +196,79 @@ const server = http.createServer((req, res) => {
   if (urlPath === '/api/health') {
     res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
     return res.end(JSON.stringify({ status: 'ok', system: 'Al-Muslim Group - Maintenance Department ERP' }));
+  }
+
+  // Server-Sent Events (SSE) Real-Time Stream Endpoint
+  if (urlPath === '/api/realtime/stream') {
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream; charset=utf-8',
+      'Cache-Control': 'no-cache, no-transform',
+      'Connection': 'keep-alive',
+      'Access-Control-Allow-Origin': '*',
+      'X-Accel-Buffering': 'no'
+    });
+
+    const initEvent = {
+      type: 'CONNECTED',
+      message: 'Real-Time SSE Hub connected successfully',
+      activeClients: sseClients.size + 1,
+      timestamp: new Date().toISOString()
+    };
+    res.write(`data: ${JSON.stringify(initEvent)}\n\n`);
+
+    sseClients.add(res);
+
+    req.on('close', () => {
+      sseClients.delete(res);
+    });
+    return;
+  }
+
+  // Real-Time Event Broadcast Endpoint (Internal & Client Dispatch)
+  if (urlPath === '/api/realtime/broadcast') {
+    if (req.method !== 'POST') {
+      res.writeHead(405, { 'Content-Type': 'application/json; charset=utf-8' });
+      return res.end(JSON.stringify({ status: 'error', message: 'Method Not Allowed' }));
+    }
+    let body = '';
+    req.on('data', chunk => { body += chunk; });
+    req.on('end', () => {
+      try {
+        const payload = JSON.parse(body || '{}');
+        const broadcastPayload = {
+          type: payload.type || 'DATA_CHANGED',
+          table: payload.table || '',
+          id: payload.id || null,
+          action: payload.action || 'UPDATE',
+          data: payload.data || null,
+          senderId: payload.senderId || null,
+          timestamp: payload.timestamp || new Date().toISOString()
+        };
+        const sentCount = broadcastRealtimeEvent(broadcastPayload);
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        return res.end(JSON.stringify({
+          status: 'ok',
+          sentCount,
+          activeClients: sseClients.size,
+          timestamp: new Date().toISOString()
+        }));
+      } catch (err) {
+        res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+        return res.end(JSON.stringify({ status: 'error', message: err.message }));
+      }
+    });
+    return;
+  }
+
+  // Real-Time Stats Endpoint
+  if (urlPath === '/api/realtime/stats') {
+    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+    return res.end(JSON.stringify({
+      status: 'ok',
+      activeClients: sseClients.size,
+      uptimeSeconds: Math.floor(process.uptime()),
+      timestamp: new Date().toISOString()
+    }));
   }
 
 
@@ -417,76 +521,6 @@ const server = http.createServer((req, res) => {
     }
   }
 
-  // ─── Agent Chat History Persistence API ───
-  if (urlPath === '/api/chat/history') {
-    if (req.method === 'GET') {
-      if (fs.existsSync(CHAT_HISTORY_FILE)) {
-        fs.readFile(CHAT_HISTORY_FILE, 'utf8', (err, content) => {
-          if (err) {
-            res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
-            return res.end(JSON.stringify({ status: 'error', message: 'Failed to read chat history file' }));
-          }
-          try {
-            const parsed = JSON.parse(content || '[]');
-            res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-            return res.end(JSON.stringify({ status: 'ok', conversations: parsed }));
-          } catch (parseErr) {
-            // Corrupted file — return empty array gracefully
-            res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-            return res.end(JSON.stringify({ status: 'ok', conversations: [] }));
-          }
-        });
-      } else {
-        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-        return res.end(JSON.stringify({ status: 'ok', conversations: [] }));
-      }
-      return;
-    }
-
-    if (req.method === 'POST') {
-      let body = '';
-      req.on('data', chunk => {
-        body += chunk;
-        if (body.length > 10 * 1024 * 1024) req.destroy(); // 10MB limit for chat data
-      });
-      req.on('end', () => {
-        try {
-          const parsed = JSON.parse(body);
-          if (!Array.isArray(parsed)) {
-            res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
-            return res.end(JSON.stringify({ status: 'error', message: 'Chat history payload must be a JSON array' }));
-          }
-
-          const serialized = JSON.stringify(parsed, null, 2);
-          fs.writeFile(CHAT_HISTORY_FILE, serialized, 'utf8', err => {
-            if (err) {
-              console.error('[SERVER CHAT ERROR] Failed to write chat history file:', err);
-              res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
-              return res.end(JSON.stringify({ status: 'error', message: 'Failed to write chat history to disk' }));
-            }
-
-            const byteCount = Buffer.byteLength(serialized);
-            console.log(`[SERVER CHAT] ✅ Stored ${parsed.length} conversations to data/chat_history.json (${byteCount} bytes) at ${new Date().toLocaleTimeString()}`);
-
-            res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-            return res.end(JSON.stringify({
-              status: 'ok',
-              message: 'Chat history saved successfully',
-              conversationCount: parsed.length,
-              bytes: byteCount,
-              timestamp: new Date().toISOString()
-            }));
-          });
-        } catch (parseErr) {
-          console.error('[SERVER CHAT ERROR] JSON parse failed:', parseErr.message);
-          res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
-          return res.end(JSON.stringify({ status: 'error', message: 'Invalid JSON payload' }));
-        }
-      });
-      return;
-    }
-  }
-
   // Real-time Client Diagnostic Logger Endpoint
   if (urlPath === '/api/client-log') {
     let body = '';
@@ -587,7 +621,7 @@ const server = http.createServer((req, res) => {
   });
 });
 
-server.listen(PORT, () => {
+server.listen(PORT, '0.0.0.0', () => {
   console.log('=========================================================================');
   console.log('  AL-MUSLIM GROUP - GARMENTS FACTORY MAINTENANCE MACHINE INVENTORY ERP');
   console.log('=========================================================================');

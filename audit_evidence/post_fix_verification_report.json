@@ -1,0 +1,1466 @@
+{
+  "timestamp": "2026-11-02T09:46:19.413Z",
+  "viewportsTested": [
+    "320px",
+    "360px",
+    "375px",
+    "390px",
+    "412px",
+    "430px",
+    "480px"
+  ],
+  "viewsAudited": [
+    {
+      "view": "dashboard",
+      "viewports": {
+        "320px": {
+          "scrollWidth": 320,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "360px": {
+          "scrollWidth": 360,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "375px": {
+          "scrollWidth": 375,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "390px": {
+          "scrollWidth": 390,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "412px": {
+          "scrollWidth": 412,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "430px": {
+          "scrollWidth": 430,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "480px": {
+          "scrollWidth": 480,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        }
+      }
+    },
+    {
+      "view": "inventory",
+      "viewports": {
+        "320px": {
+          "scrollWidth": 320,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "360px": {
+          "scrollWidth": 360,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "375px": {
+          "scrollWidth": 375,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "390px": {
+          "scrollWidth": 390,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "412px": {
+          "scrollWidth": 412,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "430px": {
+          "scrollWidth": 430,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "480px": {
+          "scrollWidth": 480,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        }
+      }
+    },
+    {
+      "view": "relocate",
+      "viewports": {
+        "320px": {
+          "scrollWidth": 320,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "360px": {
+          "scrollWidth": 360,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "375px": {
+          "scrollWidth": 375,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "390px": {
+          "scrollWidth": 390,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "412px": {
+          "scrollWidth": 412,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "430px": {
+          "scrollWidth": 430,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "480px": {
+          "scrollWidth": 480,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        }
+      }
+    },
+    {
+      "view": "needle-operations",
+      "viewports": {
+        "320px": {
+          "scrollWidth": 320,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "360px": {
+          "scrollWidth": 360,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "375px": {
+          "scrollWidth": 375,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "390px": {
+          "scrollWidth": 390,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "412px": {
+          "scrollWidth": 412,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "430px": {
+          "scrollWidth": 430,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "480px": {
+          "scrollWidth": 480,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        }
+      }
+    },
+    {
+      "view": "qr-codes",
+      "viewports": {
+        "320px": {
+          "scrollWidth": 320,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "360px": {
+          "scrollWidth": 360,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "375px": {
+          "scrollWidth": 375,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "390px": {
+          "scrollWidth": 390,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "412px": {
+          "scrollWidth": 412,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "430px": {
+          "scrollWidth": 430,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "480px": {
+          "scrollWidth": 480,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        }
+      }
+    },
+    {
+      "view": "transfers",
+      "viewports": {
+        "320px": {
+          "scrollWidth": 320,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "360px": {
+          "scrollWidth": 360,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "375px": {
+          "scrollWidth": 375,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "390px": {
+          "scrollWidth": 390,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "412px": {
+          "scrollWidth": 412,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "430px": {
+          "scrollWidth": 430,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "480px": {
+          "scrollWidth": 480,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        }
+      }
+    },
+    {
+      "view": "transfer-workflows",
+      "viewports": {
+        "320px": {
+          "scrollWidth": 320,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "360px": {
+          "scrollWidth": 360,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "375px": {
+          "scrollWidth": 375,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "390px": {
+          "scrollWidth": 390,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "412px": {
+          "scrollWidth": 412,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "430px": {
+          "scrollWidth": 430,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "480px": {
+          "scrollWidth": 480,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        }
+      }
+    },
+    {
+      "view": "parts-trace",
+      "viewports": {
+        "320px": {
+          "scrollWidth": 320,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "360px": {
+          "scrollWidth": 360,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "375px": {
+          "scrollWidth": 375,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "390px": {
+          "scrollWidth": 390,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "412px": {
+          "scrollWidth": 412,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "430px": {
+          "scrollWidth": 430,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "480px": {
+          "scrollWidth": 480,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        }
+      }
+    },
+    {
+      "view": "machine-history",
+      "viewports": {
+        "320px": {
+          "scrollWidth": 320,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "360px": {
+          "scrollWidth": 360,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "375px": {
+          "scrollWidth": 375,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "390px": {
+          "scrollWidth": 390,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "412px": {
+          "scrollWidth": 412,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "430px": {
+          "scrollWidth": 430,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "480px": {
+          "scrollWidth": 480,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        }
+      }
+    },
+    {
+      "view": "preventive-maintenance",
+      "viewports": {
+        "320px": {
+          "scrollWidth": 320,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "360px": {
+          "scrollWidth": 360,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "375px": {
+          "scrollWidth": 375,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "390px": {
+          "scrollWidth": 390,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "412px": {
+          "scrollWidth": 412,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "430px": {
+          "scrollWidth": 430,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "480px": {
+          "scrollWidth": 480,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        }
+      }
+    },
+    {
+      "view": "reports",
+      "viewports": {
+        "320px": {
+          "scrollWidth": 320,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "360px": {
+          "scrollWidth": 360,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "375px": {
+          "scrollWidth": 375,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "390px": {
+          "scrollWidth": 390,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "412px": {
+          "scrollWidth": 412,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "430px": {
+          "scrollWidth": 430,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "480px": {
+          "scrollWidth": 480,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        }
+      }
+    },
+    {
+      "view": "resource-library",
+      "viewports": {
+        "320px": {
+          "scrollWidth": 320,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "360px": {
+          "scrollWidth": 360,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "375px": {
+          "scrollWidth": 375,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "390px": {
+          "scrollWidth": 390,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "412px": {
+          "scrollWidth": 412,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "430px": {
+          "scrollWidth": 430,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "480px": {
+          "scrollWidth": 480,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        }
+      }
+    },
+    {
+      "view": "excel-manager",
+      "viewports": {
+        "320px": {
+          "scrollWidth": 320,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "360px": {
+          "scrollWidth": 360,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "375px": {
+          "scrollWidth": 375,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "390px": {
+          "scrollWidth": 390,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "412px": {
+          "scrollWidth": 412,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "430px": {
+          "scrollWidth": 430,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "480px": {
+          "scrollWidth": 480,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        }
+      }
+    },
+    {
+      "view": "custom-fields",
+      "viewports": {
+        "320px": {
+          "scrollWidth": 320,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "360px": {
+          "scrollWidth": 360,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "375px": {
+          "scrollWidth": 375,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "390px": {
+          "scrollWidth": 390,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "412px": {
+          "scrollWidth": 412,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "430px": {
+          "scrollWidth": 430,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "480px": {
+          "scrollWidth": 480,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        }
+      }
+    },
+    {
+      "view": "et-lab",
+      "viewports": {
+        "320px": {
+          "scrollWidth": 320,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "360px": {
+          "scrollWidth": 360,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "375px": {
+          "scrollWidth": 375,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "390px": {
+          "scrollWidth": 390,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "412px": {
+          "scrollWidth": 412,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "430px": {
+          "scrollWidth": 430,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "480px": {
+          "scrollWidth": 480,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        }
+      }
+    },
+    {
+      "view": "spare-parts",
+      "viewports": {
+        "320px": {
+          "scrollWidth": 320,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "360px": {
+          "scrollWidth": 360,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "375px": {
+          "scrollWidth": 375,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "390px": {
+          "scrollWidth": 390,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "412px": {
+          "scrollWidth": 412,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "430px": {
+          "scrollWidth": 430,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "480px": {
+          "scrollWidth": 480,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        }
+      }
+    },
+    {
+      "view": "tools-management",
+      "viewports": {
+        "320px": {
+          "scrollWidth": 320,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "360px": {
+          "scrollWidth": 360,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "375px": {
+          "scrollWidth": 375,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "390px": {
+          "scrollWidth": 390,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "412px": {
+          "scrollWidth": 412,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "430px": {
+          "scrollWidth": 430,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "480px": {
+          "scrollWidth": 480,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        }
+      }
+    },
+    {
+      "view": "storage",
+      "viewports": {
+        "320px": {
+          "scrollWidth": 320,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "360px": {
+          "scrollWidth": 360,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "375px": {
+          "scrollWidth": 375,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "390px": {
+          "scrollWidth": 390,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "412px": {
+          "scrollWidth": 412,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "430px": {
+          "scrollWidth": 430,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "480px": {
+          "scrollWidth": 480,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        }
+      }
+    },
+    {
+      "view": "manpower",
+      "viewports": {
+        "320px": {
+          "scrollWidth": 320,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "360px": {
+          "scrollWidth": 360,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "375px": {
+          "scrollWidth": 375,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "390px": {
+          "scrollWidth": 390,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "412px": {
+          "scrollWidth": 412,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "430px": {
+          "scrollWidth": 430,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "480px": {
+          "scrollWidth": 480,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        }
+      }
+    },
+    {
+      "view": "master-data",
+      "viewports": {
+        "320px": {
+          "scrollWidth": 320,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "360px": {
+          "scrollWidth": 360,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "375px": {
+          "scrollWidth": 375,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "390px": {
+          "scrollWidth": 390,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "412px": {
+          "scrollWidth": 412,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "430px": {
+          "scrollWidth": 430,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "480px": {
+          "scrollWidth": 480,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        }
+      }
+    },
+    {
+      "view": "users",
+      "viewports": {
+        "320px": {
+          "scrollWidth": 320,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "360px": {
+          "scrollWidth": 360,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "375px": {
+          "scrollWidth": 375,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "390px": {
+          "scrollWidth": 390,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "412px": {
+          "scrollWidth": 412,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "430px": {
+          "scrollWidth": 430,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "480px": {
+          "scrollWidth": 480,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        }
+      }
+    },
+    {
+      "view": "homepage-manager",
+      "viewports": {
+        "320px": {
+          "scrollWidth": 320,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "360px": {
+          "scrollWidth": 360,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "375px": {
+          "scrollWidth": 375,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "390px": {
+          "scrollWidth": 390,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "412px": {
+          "scrollWidth": 412,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "430px": {
+          "scrollWidth": 430,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "480px": {
+          "scrollWidth": 480,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        }
+      }
+    },
+    {
+      "view": "email-config",
+      "viewports": {
+        "320px": {
+          "scrollWidth": 320,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "360px": {
+          "scrollWidth": 360,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "375px": {
+          "scrollWidth": 375,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "390px": {
+          "scrollWidth": 390,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "412px": {
+          "scrollWidth": 412,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "430px": {
+          "scrollWidth": 430,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "480px": {
+          "scrollWidth": 480,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        }
+      }
+    },
+    {
+      "view": "audit-logs",
+      "viewports": {
+        "320px": {
+          "scrollWidth": 320,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "360px": {
+          "scrollWidth": 360,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "375px": {
+          "scrollWidth": 375,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "390px": {
+          "scrollWidth": 390,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "412px": {
+          "scrollWidth": 412,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "430px": {
+          "scrollWidth": 430,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "480px": {
+          "scrollWidth": 480,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        }
+      }
+    },
+    {
+      "view": "settings",
+      "viewports": {
+        "320px": {
+          "scrollWidth": 320,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "360px": {
+          "scrollWidth": 360,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "375px": {
+          "scrollWidth": 375,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "390px": {
+          "scrollWidth": 390,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "412px": {
+          "scrollWidth": 412,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "430px": {
+          "scrollWidth": 430,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "480px": {
+          "scrollWidth": 480,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        }
+      }
+    },
+    {
+      "view": "database-config",
+      "viewports": {
+        "320px": {
+          "scrollWidth": 320,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "360px": {
+          "scrollWidth": 360,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "375px": {
+          "scrollWidth": 375,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "390px": {
+          "scrollWidth": 390,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "412px": {
+          "scrollWidth": 412,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "430px": {
+          "scrollWidth": 430,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "480px": {
+          "scrollWidth": 480,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        }
+      }
+    },
+    {
+      "view": "home",
+      "viewports": {
+        "320px": {
+          "scrollWidth": 320,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "360px": {
+          "scrollWidth": 360,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "375px": {
+          "scrollWidth": 375,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "390px": {
+          "scrollWidth": 390,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "412px": {
+          "scrollWidth": 412,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "430px": {
+          "scrollWidth": 430,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "480px": {
+          "scrollWidth": 480,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        }
+      }
+    },
+    {
+      "view": "login",
+      "viewports": {
+        "320px": {
+          "scrollWidth": 320,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "360px": {
+          "scrollWidth": 360,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "375px": {
+          "scrollWidth": 375,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "390px": {
+          "scrollWidth": 390,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "412px": {
+          "scrollWidth": 412,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "430px": {
+          "scrollWidth": 430,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "480px": {
+          "scrollWidth": 480,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        }
+      }
+    },
+    {
+      "view": "admin-login",
+      "viewports": {
+        "320px": {
+          "scrollWidth": 320,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "360px": {
+          "scrollWidth": 360,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "375px": {
+          "scrollWidth": 375,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "390px": {
+          "scrollWidth": 390,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "412px": {
+          "scrollWidth": 412,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "430px": {
+          "scrollWidth": 430,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        },
+        "480px": {
+          "scrollWidth": 480,
+          "hasHorizontalOverflow": false,
+          "overflowDelta": 0,
+          "clippingCards": []
+        }
+      }
+    }
+  ],
+  "modalsAudited": [
+    {
+      "found": true,
+      "width": 348,
+      "height": 728,
+      "left": 6,
+      "right": 354,
+      "fitsWithinScreen": true,
+      "footerButtons": [
+        {
+          "text": "Cancel",
+          "width": 256,
+          "height": 42
+        },
+        {
+          "text": "💾 Register Machine",
+          "width": 256,
+          "height": 42
+        }
+      ],
+      "modalId": "add-machine-modal"
+    },
+    {
+      "found": false,
+      "modalId": "transfer-machine-modal"
+    },
+    {
+      "found": true,
+      "width": 348,
+      "height": 728,
+      "left": 6,
+      "right": 354,
+      "fitsWithinScreen": true,
+      "footerButtons": [
+        {
+          "text": "Cancel",
+          "width": 318,
+          "height": 42
+        }
+      ],
+      "modalId": "excel-import-modal"
+    },
+    {
+      "found": true,
+      "width": 348,
+      "height": 728,
+      "left": 6,
+      "right": 354,
+      "fitsWithinScreen": true,
+      "footerButtons": [
+        {
+          "text": "↺ Reset to Admin Default",
+          "width": 318,
+          "height": 42
+        },
+        {
+          "text": "💾\nSave as Default for All Users",
+          "width": 318,
+          "height": 42
+        },
+        {
+          "text": "✓\nDone & Save",
+          "width": 318,
+          "height": 42
+        }
+      ],
+      "modalId": "column-visibility-modal"
+    },
+    {
+      "found": true,
+      "width": 348,
+      "height": 728,
+      "left": 6,
+      "right": 354,
+      "fitsWithinScreen": true,
+      "footerButtons": [],
+      "modalId": "account-switcher"
+    },
+    {
+      "found": true,
+      "width": 348,
+      "height": 728,
+      "left": 6,
+      "right": 354,
+      "fitsWithinScreen": true,
+      "footerButtons": [],
+      "modalId": "change-password"
+    }
+  ]
+}

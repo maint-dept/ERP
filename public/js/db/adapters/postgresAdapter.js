@@ -24,7 +24,9 @@ export class PostgresAdapter extends BaseAdapter {
         rawEndpoint.includes('://api/pg_api.php') ||
         rawEndpoint === '/api/db/pg' ||
         (rawEndpoint.includes('api/pg_api.php') && !rawEndpoint.startsWith('http'))) {
-      if (typeof window !== 'undefined' && window.location && (window.location.hostname.includes('github.io') || window.location.hostname.includes('moviezonex.com'))) {
+      if (typeof window !== 'undefined' && window.location && window.location.hostname.includes('moviezonex.com')) {
+        rawEndpoint = window.location.origin + '/api/pg_api.php';
+      } else if (typeof window !== 'undefined' && window.location && window.location.hostname.includes('github.io')) {
         rawEndpoint = 'https://moviezonex.com/api/pg_api.php';
       } else {
         rawEndpoint = rawEndpoint || '/api/db/pg';

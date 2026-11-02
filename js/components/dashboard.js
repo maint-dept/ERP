@@ -1683,14 +1683,59 @@ export function renderDashboard() {
 
       @media (max-width: 640px) {
         .dash-hero-banner {
-          flex-direction: column;
-          align-items: stretch;
+          flex-direction: column !important;
+          align-items: stretch !important;
+          padding: 10px 12px !important;
+          gap: 10px !important;
+          width: 100% !important;
+          max-width: 100% !important;
+          box-sizing: border-box !important;
+        }
+        .dash-hero-left {
+          width: 100% !important;
+          min-width: 0 !important;
+        }
+        .dash-hero-headings {
+          width: 100% !important;
+          min-width: 0 !important;
+        }
+        .dash-hero-title {
+          font-size: 14.5px !important;
+          overflow-wrap: break-word !important;
+          word-break: break-word !important;
+        }
+        .dash-hero-subtitle {
+          font-size: 11.5px !important;
+          overflow-wrap: break-word !important;
         }
         .dash-hero-actions {
-          justify-content: space-between;
+          width: 100% !important;
+          min-width: 0 !important;
+          flex-direction: column !important;
+          align-items: stretch !important;
+          gap: 8px !important;
+        }
+        .dash-time-segmented-wrapper {
+          width: 100% !important;
+          max-width: 100% !important;
+          overflow-x: auto !important;
+          -webkit-overflow-scrolling: touch !important;
+          scrollbar-width: none !important;
+        }
+        .dash-segmented-pills {
+          display: flex !important;
+          flex-wrap: nowrap !important;
+          overflow-x: auto !important;
+          -webkit-overflow-scrolling: touch !important;
+          width: 100% !important;
+        }
+        .dash-segmented-pills button {
+          flex: 1 0 auto !important;
+          white-space: nowrap !important;
+          padding: 4px 8px !important;
         }
         .dash-kpi-row {
-          grid-template-columns: 1fr;
+          grid-template-columns: 1fr !important;
         }
       }
     </style>

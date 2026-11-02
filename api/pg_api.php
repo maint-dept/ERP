@@ -143,7 +143,8 @@ try {
     $pdo = new PDO($dsn, $DB_USER, $DB_PASS, [
         PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-        PDO::ATTR_EMULATE_PREPARES   => false
+        PDO::ATTR_EMULATE_PREPARES   => false,
+        PDO::ATTR_PERSISTENT         => true
     ]);
 } catch (PDOException $e) {
     $lastError = $e->getMessage();
@@ -225,6 +226,30 @@ function validateMachinesDataset($machines) {
     }
 }
 
+function validateAndProtectUsersDataset($pdo, &$users) {
+    if (!is_array($users)) return;
+    $incomingCount = count($users);
+    $stmt = $pdo->prepare("SELECT raw_json FROM erp_tables WHERE table_name = 'users' LIMIT 1");
+    $stmt->execute();
+    $existingRaw = $stmt->fetchColumn();
+    if (!empty($existingRaw)) {
+        $existing = json_decode($existingRaw, true);
+        if (is_array($existing) && count($existing) > 0) {
+            if ($incomingCount === 0) {
+                error_log("[PostgreSQL API Safeguard] 🛡️ PREVENTED USER WIPE: Incoming users is empty. Retaining existing users.");
+                $users = $existing;
+                return;
+            }
+            $incomingIds = array_column($users, 'id');
+            foreach ($existing as $exUser) {
+                if (($exUser['role'] ?? '') === 'SUPER_ADMIN' && !in_array($exUser['id'], $incomingIds)) {
+                    $users[] = $exUser;
+                }
+            }
+        }
+    }
+}
+
 // --- 7. ROUTE ACTIONS ---
 try {
     ensureTableExists($pdo);
@@ -263,8 +288,11 @@ try {
             if (empty($tablesData)) {
                 throw new Exception('Missing "tables" data.');
             }
-            if (isset($tablesData['machines'])) {
-                validateMachinesDataset($tablesData['machines']);
+            if (isset($tablesData['machines']) && is_array($tablesData['machines'])) {
+                validateAndProtectMachinesDataset($pdo, $tablesData['machines']);
+            }
+            if (isset($tablesData['users']) && is_array($tablesData['users'])) {
+                validateAndProtectUsersDataset($pdo, $tablesData['users']);
             }
             foreach ($tablesData as $collection => $data) {
                 $jsonStr = is_string($data) ? $data : json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
@@ -311,6 +339,12 @@ try {
                 if (is_array($mList)) {
                     validateAndProtectMachinesDataset($pdo, $mList);
                     $data = $mList;
+                }
+            } elseif ($collection === 'users') {
+                $uList = is_array($data) ? $data : json_decode($data, true);
+                if (is_array($uList)) {
+                    validateAndProtectUsersDataset($pdo, $uList);
+                    $data = $uList;
                 }
             }
 

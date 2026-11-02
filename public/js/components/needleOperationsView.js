@@ -285,7 +285,7 @@ export function renderNeedleOperationsView() {
         </div>
 
         <!-- Transactions Table -->
-        <div style="overflow-x: auto; flex: 1; border: 1px solid rgba(255,255,255,0.06); border-radius: var(--radius-sm); max-height: 520px;">
+        <div class="needle-table-container responsive-table-wrapper" style="overflow-x: auto; flex: 1; border: 1px solid rgba(255,255,255,0.06); border-radius: var(--radius-sm); max-height: 520px; width: 100%; max-width: 100%;">
           <table class="table" style="width: 100%; font-size: 11.5px; border-collapse: collapse; margin: 0;">
             <thead style="background: rgba(255,255,255,0.03); position: sticky; top: 0; z-index: 2;">
               <tr style="border-bottom: 1.5px solid var(--border-color); text-align: left; color: #cbd5e1;">

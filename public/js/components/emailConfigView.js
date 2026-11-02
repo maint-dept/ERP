@@ -90,8 +90,8 @@ export function renderEmailConfigView() {
               <button type="button" class="btn btn-secondary btn-sm btn-preset-smtp" data-host="smtp.office365.com" data-port="587" data-enc="TLS" style="font-size: 10.5px; padding: 2px 8px; height: 26px; border-color: rgba(56, 189, 248, 0.4); color: #38bdf8;">
                 🔵 Outlook / 365
               </button>
-              <button type="button" class="btn btn-secondary btn-sm btn-preset-smtp" data-host="smtp.mail.yahoo.com" data-port="587" data-enc="TLS" style="font-size: 10.5px; padding: 2px 8px; height: 26px; border-color: rgba(168, 85, 247, 0.4); color: #c084fc;">
-                🟣 Yahoo Mail
+              <button type="button" class="btn btn-secondary btn-sm btn-preset-smtp" data-host="smtp.mail.yahoo.com" data-port="587" data-enc="TLS" style="font-size: 10.5px; padding: 2px 8px; height: 26px; border-color: rgba(148, 163, 184, 0.4); color: #e2e8f0;">
+                ⚪ Yahoo Mail
               </button>
             </div>
           </div>
