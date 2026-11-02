@@ -1,7 +1,7 @@
 /**
  * Al-Muslim Group Garments Factory Maintenance Machine ERP
  * Email Configuration & SMTP Notification Service
- * Manages email settings, SMTP connection verification, test dispatches, and password reset delivery.
+ * Enterprise SMTP gateway, connection diagnostics, live test dispatch, and OTP delivery.
  */
 
 import { storage } from '../db/storage.js';
@@ -11,7 +11,26 @@ import { auditService } from './auditService.js';
 const STORAGE_KEY_EMAIL_CONFIG = 'al_muslim_email_config';
 const STORAGE_KEY_EMAIL_LOGS = 'al_muslim_email_outgoing_logs';
 
-async function fetchWithTimeout(url, options = {}, timeoutMs = 6000) {
+/**
+ * Resolve API Gateway Base URL
+ * - If running on localhost or 127.0.0.1 -> relative ''
+ * - If running on moviezonex.com -> relative ''
+ * - If running on GitHub Pages (maint-dept.github.io) -> https://moviezonex.com
+ */
+export function getEmailApiBaseUrl() {
+  if (typeof window !== 'undefined' && window.location) {
+    const host = window.location.hostname || '';
+    if (host === 'localhost' || host === '127.0.0.1' || host.includes('moviezonex.com')) {
+      return '';
+    }
+  }
+  return 'https://moviezonex.com';
+}
+
+/**
+ * Fetch wrapper with timeout and informative error handling
+ */
+async function fetchWithTimeout(url, options = {}, timeoutMs = 9000) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
@@ -22,7 +41,7 @@ async function fetchWithTimeout(url, options = {}, timeoutMs = 6000) {
     return res;
   } catch (err) {
     if (err.name === 'AbortError') {
-      throw new Error('Connection Timeout (6s): The server took too long to respond. Please check your internet connection and SMTP host/port.');
+      throw new Error(`Connection Timeout (${Math.round(timeoutMs / 1000)}s): Mail server did not respond in time. Please verify host, port, and network connection.`);
     }
     throw err;
   } finally {
@@ -36,7 +55,7 @@ class EmailService {
   }
 
   /**
-   * Load SMTP Email configuration from storage
+   * Load SMTP Email configuration from storage / settings
    */
   loadConfig() {
     try {
@@ -52,31 +71,33 @@ class EmailService {
       console.warn('Failed to parse email configuration:', e);
     }
 
-    // Verified working Gmail SMTP configuration
+    // Default factory baseline configuration
     return {
       fromName: 'Al-Muslim ERP System',
-      fromEmail: 'bdsmotaher@gmail.com',
+      fromEmail: 'maint.dept2023@gmail.com',
       smtpHost: 'smtp.gmail.com',
       smtpPort: '587',
-      smtpUser: 'bdsmotaher@gmail.com',
-      smtpPass: 'zoxw qdrd djdv eozf',
+      smtpUser: 'maint.dept2023@gmail.com',
+      smtpPass: '',
       encryption: 'TLS',
-      isConfigured: true,
-      lastTestedAt: new Date().toISOString(),
-      lastTestStatus: 'SUCCESS',
-      lastTestRecipient: 'maint.dept2023@gmail.com'
+      isConfigured: false,
+      lastTestedAt: null,
+      lastTestStatus: null,
+      lastTestRecipient: null,
+      lastTestMode: null,
+      latencyMs: null
     };
   }
 
   /**
-   * Get current email configuration (with password masked or included)
+   * Get current email configuration
    */
   getConfig() {
     return { ...this.config };
   }
 
   /**
-   * Check whether email service is properly configured
+   * Check whether email service has complete credentials
    */
   isEmailConfigured() {
     const c = this.config;
@@ -85,9 +106,35 @@ class EmailService {
     const hasPort = Boolean(c.smtpPort && c.smtpPort.toString().trim());
     const hasFrom = Boolean(c.fromEmail && c.fromEmail.trim() && c.fromEmail.includes('@'));
     const hasUser = Boolean(c.smtpUser && c.smtpUser.trim());
+    const hasPass = Boolean(c.smtpPass && c.smtpPass.trim());
     const isExplicitlyEnabled = c.isConfigured !== false;
 
-    return hasHost && hasPort && hasFrom && hasUser && isExplicitlyEnabled;
+    return hasHost && hasPort && hasFrom && hasUser && hasPass && isExplicitlyEnabled;
+  }
+
+  /**
+   * Persist configuration to localStorage, IndexedDB, and MySQL Cloud Settings
+   */
+  persistConfig() {
+    try {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem(STORAGE_KEY_EMAIL_CONFIG, JSON.stringify(this.config));
+      }
+      if (storage && storage.data) {
+        if (!storage.data[TABLE_NAMES.SETTINGS] || typeof storage.data[TABLE_NAMES.SETTINGS] !== 'object') {
+          storage.data[TABLE_NAMES.SETTINGS] = {};
+        }
+        storage.data[TABLE_NAMES.SETTINGS].emailConfig = { ...this.config };
+        if (typeof localStorage !== 'undefined') {
+          localStorage.setItem('al_muslim_erp_settings', JSON.stringify(storage.data[TABLE_NAMES.SETTINGS]));
+        }
+        if (storage.saveTable) {
+          storage.saveTable(TABLE_NAMES.SETTINGS, storage.data[TABLE_NAMES.SETTINGS], true).catch(() => {});
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to persist email config to cloud storage:', e);
+    }
   }
 
   /**
@@ -99,23 +146,24 @@ class EmailService {
     const smtpHost = (newConfig.smtpHost || '').trim();
     const smtpPort = (newConfig.smtpPort || '587').toString().trim();
     const smtpUser = (newConfig.smtpUser || '').trim();
-    const smtpPass = (newConfig.smtpPass || '').trim();
+    // Auto-sanitize: remove any spaces (Google App Passwords are 16 letters, often copied with spaces)
+    const smtpPass = (newConfig.smtpPass || '').trim().replace(/\s+/g, '');
     const encryption = (newConfig.encryption || 'TLS').toUpperCase();
 
     if (!fromEmail || !fromEmail.includes('@')) {
       throw new Error('Please enter a valid "From Email" address.');
     }
     if (!smtpHost) {
-      throw new Error('SMTP Host is required.');
+      throw new Error('SMTP Host is required (e.g. smtp.gmail.com).');
     }
     if (!smtpPort || isNaN(Number(smtpPort))) {
       throw new Error('SMTP Port must be a valid number (e.g. 587 or 465).');
     }
     if (!smtpUser) {
-      throw new Error('SMTP Username is required.');
+      throw new Error('SMTP Username is required (usually your full email address).');
     }
 
-    const isFullyConfigured = Boolean(fromEmail && smtpHost && smtpPort && smtpUser);
+    const isFullyConfigured = Boolean(fromEmail && smtpHost && smtpPort && smtpUser && smtpPass);
 
     this.config = {
       ...this.config,
@@ -130,24 +178,13 @@ class EmailService {
       updatedAt: new Date().toISOString()
     };
 
-    localStorage.setItem(STORAGE_KEY_EMAIL_CONFIG, JSON.stringify(this.config));
-
-    // Persist to Google Cloud Firestore synchronized settings
-    try {
-      if (storage && storage.data) {
-        if (!storage.data[TABLE_NAMES.SETTINGS] || typeof storage.data[TABLE_NAMES.SETTINGS] !== 'object') {
-          storage.data[TABLE_NAMES.SETTINGS] = {};
-        }
-        storage.data[TABLE_NAMES.SETTINGS].emailConfig = { ...this.config };
-        storage.saveTable(TABLE_NAMES.SETTINGS);
-      }
-    } catch (_) { }
+    this.persistConfig();
 
     auditService.log(
       'EMAIL_CONFIG_UPDATED',
       'ADMIN',
       'email-config',
-      `SMTP email configuration updated for '${fromEmail}' via host '${smtpHost}:${smtpPort}'.`,
+      `SMTP email configuration updated for '${fromEmail}' via host '${smtpHost}:${smtpPort}' (${encryption}).`,
       null,
       { fromEmail, smtpHost, smtpPort, encryption }
     );
@@ -170,54 +207,85 @@ class EmailService {
       isConfigured: false,
       lastTestedAt: null,
       lastTestStatus: null,
-      lastTestRecipient: null
+      lastTestRecipient: null,
+      lastTestMode: null,
+      latencyMs: null
     };
-    localStorage.removeItem(STORAGE_KEY_EMAIL_CONFIG);
+
+    if (typeof localStorage !== 'undefined') {
+      localStorage.removeItem(STORAGE_KEY_EMAIL_CONFIG);
+    }
+    if (storage && storage.data && storage.data[TABLE_NAMES.SETTINGS]) {
+      delete storage.data[TABLE_NAMES.SETTINGS].emailConfig;
+      if (storage.saveTable) {
+        storage.saveTable(TABLE_NAMES.SETTINGS, storage.data[TABLE_NAMES.SETTINGS], true).catch(() => {});
+      }
+    }
   }
 
   /**
    * Verify SMTP connection handshake and credentials
    */
   async verifyConnection(customConfig = null) {
-    const activeConfig = customConfig || this.config;
-    if (!activeConfig || !activeConfig.smtpHost || !activeConfig.smtpUser) {
+    const rawConfig = customConfig || this.config;
+    if (!rawConfig || !rawConfig.smtpHost || !rawConfig.smtpUser) {
       throw new Error('Please fill in SMTP Host and SMTP Username first.');
     }
 
-    const isStaticHost = typeof window !== 'undefined' &&
-      (window.location.hostname.includes('github.io') || window.location.protocol === 'file:');
+    const activeConfig = {
+      ...rawConfig,
+      smtpPass: (rawConfig.smtpPass || '').trim().replace(/\s+/g, '')
+    };
 
-    if (isStaticHost) {
-      return {
-        success: true,
-        staticMode: true,
-        message: 'Notice: GitHub Pages is a static host. SMTP live connections require the Node.js server (http://localhost:3030).'
-      };
-    }
+    const baseUrl = getEmailApiBaseUrl();
+    const endpoint = `${baseUrl}/api/email/verify`;
+    const startTime = Date.now();
 
     try {
-      const res = await fetchWithTimeout('/api/email/verify', {
+      const res = await fetchWithTimeout(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(activeConfig)
-      }, 6000);
+      }, 9000);
 
       const data = await res.json().catch(() => ({}));
+      const latency = Date.now() - startTime;
+
       if (res.ok && data.status === 'ok') {
+        this.config.lastTestedAt = new Date().toISOString();
+        this.config.lastTestStatus = 'SUCCESS';
+        this.config.lastTestMode = 'HANDSHAKE';
+        this.config.latencyMs = latency;
+        this.config.lastTestError = null;
+        this.persistConfig();
+
         return {
           success: true,
-          message: data.message || 'SMTP credentials verified successfully! Connected to mail server.'
+          latencyMs: latency,
+          message: `${data.message || 'SMTP Handshake verified successfully!'} (${latency}ms latency)`
         };
       } else {
-        throw new Error(data.message || 'SMTP Connection Verification Failed.');
+        const errorMsg = data.message || 'SMTP Connection Verification Failed.';
+        this.config.lastTestedAt = new Date().toISOString();
+        this.config.lastTestStatus = 'FAILED';
+        this.config.lastTestMode = 'HANDSHAKE';
+        this.config.lastTestError = errorMsg;
+        this.persistConfig();
+
+        throw new Error(errorMsg);
       }
     } catch (err) {
+      this.config.lastTestedAt = new Date().toISOString();
+      this.config.lastTestStatus = 'FAILED';
+      this.config.lastTestMode = 'HANDSHAKE';
+      this.config.lastTestError = err.message;
+      this.persistConfig();
       throw err;
     }
   }
 
   /**
-   * Send test email to verify SMTP configuration
+   * Send test email to verify live outgoing delivery
    */
   async sendTestEmail(recipientEmail, customConfig = null) {
     const target = (recipientEmail || '').trim().toLowerCase();
@@ -225,80 +293,172 @@ class EmailService {
       throw new Error('Please provide a valid recipient email address for testing.');
     }
 
-    const activeConfig = customConfig || this.config;
-    if (!activeConfig || !activeConfig.smtpHost || !activeConfig.smtpUser || !activeConfig.fromEmail) {
+    const rawConfig = customConfig || this.config;
+    if (!rawConfig || !rawConfig.smtpHost || !rawConfig.smtpUser || !rawConfig.fromEmail) {
       throw new Error('Email configuration is incomplete. Please fill in From Email, SMTP Host, and Username.');
     }
 
-    const testSubject = `[Al-Muslim Group] Maintenance Department ERP - SMTP Test Connection Successful - ${new Date().toLocaleTimeString()}`;
+    const activeConfig = {
+      ...rawConfig,
+      smtpPass: (rawConfig.smtpPass || '').trim().replace(/\s+/g, '')
+    };
+
+    const timestampStr = new Date().toLocaleString();
+    const testSubject = `[Al-Muslim Group] Maintenance ERP - SMTP Gateway Test Success (${new Date().toLocaleTimeString()})`;
+
     const testBody = `
 ========================================================================
-AL-MUSLIM GROUP - MAINTENANCE DEPARTMENT ERP - SMTP TEST
+AL-MUSLIM GROUP - MAINTENANCE DEPARTMENT ERP
+SMTP OUTGOING GATEWAY TEST NOTIFICATION
 ========================================================================
-This is a test notification verifying that the outgoing SMTP email
-service is properly configured and operational.
+This is a live test notification verifying that the outgoing SMTP email
+service is properly configured, authenticated, and operational.
 
-Configuration Details:
-- From: ${activeConfig.fromName || 'Al-Muslim ERP System'} <${activeConfig.fromEmail}>
+Configuration Parameters:
+- Sender Name: ${activeConfig.fromName || 'Al-Muslim ERP System'}
+- From Address: ${activeConfig.fromEmail}
 - SMTP Host: ${activeConfig.smtpHost}:${activeConfig.smtpPort || '587'}
 - Encryption: ${activeConfig.encryption || 'TLS'}
 - Authenticated User: ${activeConfig.smtpUser}
-- Test Recipient: ${target}
-- Timestamp: ${new Date().toLocaleString()}
+- Recipient Target: ${target}
+- Dispatch Timestamp: ${timestampStr}
 
 System Status: ONLINE & ACTIVE
 ========================================================================
+Automated Verification Notice — Al-Muslim Group Central IT & Engineering
     `.trim();
 
-    const isStaticHost = typeof window !== 'undefined' &&
-      (window.location.hostname.includes('github.io') || window.location.protocol === 'file:');
+    const testHtml = `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 620px; margin: 0 auto; background: #0f172a; color: #f8fafc; border-radius: 12px; overflow: hidden; border: 1px solid #38bdf8; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+        <div style="background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); padding: 24px 28px; text-align: center; border-bottom: 2px solid #38bdf8;">
+          <h1 style="margin: 0; font-size: 20px; font-weight: 800; color: #ffffff; letter-spacing: 0.5px;">AL-MUSLIM GROUP</h1>
+          <div style="font-size: 13px; color: #e0f2fe; margin-top: 4px; font-weight: 600;">Maintenance Department Machinery ERP System</div>
+        </div>
+        <div style="padding: 28px 28px 24px 28px;">
+          <div style="display: inline-block; background: rgba(34, 197, 94, 0.15); border: 1px solid #22c55e; color: #4ade80; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 800; margin-bottom: 20px;">
+            ● SMTP GATEWAY TEST SUCCESSFUL
+          </div>
+          <p style="font-size: 14px; line-height: 1.6; color: #cbd5e1; margin: 0 0 20px 0;">
+            This email confirms that the outgoing <strong>SMTP Mail Server Gateway</strong> is properly configured, authenticated, and successfully dispatching emails from the Al-Muslim ERP platform.
+          </p>
+          <div style="background: #1e293b; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 18px; margin-bottom: 22px;">
+            <div style="font-size: 11px; font-weight: 800; color: #38bdf8; text-transform: uppercase; margin-bottom: 12px; letter-spacing: 0.5px;">Configuration Audit Trail</div>
+            <table style="width: 100%; font-size: 12.5px; border-collapse: collapse; color: #e2e8f0;">
+              <tr>
+                <td style="padding: 5px 0; color: #94a3b8; width: 140px;">Sender Display:</td>
+                <td style="padding: 5px 0; font-weight: 700;">${activeConfig.fromName || 'Al-Muslim ERP System'}</td>
+              </tr>
+              <tr>
+                <td style="padding: 5px 0; color: #94a3b8;">From Address:</td>
+                <td style="padding: 5px 0; font-family: monospace; color: #38bdf8;">${activeConfig.fromEmail}</td>
+              </tr>
+              <tr>
+                <td style="padding: 5px 0; color: #94a3b8;">SMTP Relay Server:</td>
+                <td style="padding: 5px 0; font-family: monospace;">${activeConfig.smtpHost}:${activeConfig.smtpPort || '587'} (${activeConfig.encryption || 'TLS'})</td>
+              </tr>
+              <tr>
+                <td style="padding: 5px 0; color: #94a3b8;">Authenticated User:</td>
+                <td style="padding: 5px 0; font-family: monospace;">${activeConfig.smtpUser}</td>
+              </tr>
+              <tr>
+                <td style="padding: 5px 0; color: #94a3b8;">Test Recipient:</td>
+                <td style="padding: 5px 0; font-family: monospace; color: #4ade80;">${target}</td>
+              </tr>
+              <tr>
+                <td style="padding: 5px 0; color: #94a3b8;">Dispatched Time:</td>
+                <td style="padding: 5px 0;">${timestampStr}</td>
+              </tr>
+            </table>
+          </div>
+          <p style="font-size: 12px; color: #94a3b8; line-height: 1.5; margin: 0;">
+            Automated alerts, machine maintenance notifications, and password reset codes will be routed through this verified gateway.
+          </p>
+        </div>
+        <div style="background: #090d16; padding: 14px 28px; text-align: center; border-top: 1px solid rgba(255,255,255,0.08); font-size: 11px; color: #64748b;">
+          Al-Muslim Group &bull; Central Engineering &amp; Maintenance Department ERP System
+        </div>
+      </div>
+    `;
 
-    // Handle Static GitHub Pages host cleanly
-    if (isStaticHost) {
-      this.logEmail({
-        type: 'TEST_EMAIL',
-        to: target,
-        subject: testSubject,
-        status: 'SENT',
-        content: testBody + '\n(Simulated dispatch on static host)',
-        timestamp: new Date().toISOString()
-      });
+    const baseUrl = getEmailApiBaseUrl();
+    const endpoint = `${baseUrl}/api/email/send`;
 
-      return {
-        success: true,
-        recipient: target,
-        timestamp: new Date().toLocaleString(),
-        message: `[GitHub Pages Mode] Email configuration validated. (Live SMTP delivery operates via local server http://localhost:3030).`
-      };
-    }
-
-    // Attempt real SMTP dispatch via backend API with fast timeout
-    let serverOk = false;
-    let serverMessage = '';
     try {
-      const res = await fetchWithTimeout('/api/email/send', {
+      const res = await fetchWithTimeout(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           config: activeConfig,
           to: target,
           subject: testSubject,
-          text: testBody
+          text: testBody,
+          html: testHtml
         })
-      }, 6500);
+      }, 10000);
 
       const data = await res.json().catch(() => ({}));
       if (res.ok && data.status === 'ok') {
-        serverOk = true;
-        serverMessage = data.message || 'Email delivered successfully via SMTP!';
+        this.config.lastTestedAt = new Date().toISOString();
+        this.config.lastTestStatus = 'SUCCESS';
+        this.config.lastTestRecipient = target;
+        this.config.lastTestMode = 'DISPATCH';
+        this.config.lastTestError = null;
+        this.persistConfig();
+
+        // Log outgoing test email
+        this.logEmail({
+          type: 'TEST_EMAIL',
+          to: target,
+          subject: testSubject,
+          status: 'SENT',
+          content: testBody,
+          timestamp: new Date().toISOString()
+        });
+
+        auditService.log(
+          'EMAIL_TEST_SENT',
+          'ADMIN',
+          'email-config',
+          `Test email delivered to '${target}' via ${activeConfig.smtpHost}:${activeConfig.smtpPort}.`,
+          null,
+          { to: target, host: activeConfig.smtpHost, port: activeConfig.smtpPort }
+        );
+
+        return {
+          success: true,
+          recipient: target,
+          timestamp: timestampStr,
+          messageId: data.messageId,
+          message: `Live test email successfully delivered to ${target} via ${activeConfig.smtpHost}:${activeConfig.smtpPort} (${activeConfig.encryption || 'TLS'}).`
+        };
       } else {
-        throw new Error(data.message || 'SMTP Connection Error');
+        const errorMsg = data.message || 'SMTP Connection / Authentication Failed';
+        this.config.lastTestedAt = new Date().toISOString();
+        this.config.lastTestStatus = 'FAILED';
+        this.config.lastTestRecipient = target;
+        this.config.lastTestMode = 'DISPATCH';
+        this.config.lastTestError = errorMsg;
+        this.persistConfig();
+
+        this.logEmail({
+          type: 'TEST_EMAIL',
+          to: target,
+          subject: testSubject,
+          status: 'FAILED',
+          error: errorMsg,
+          content: testBody,
+          timestamp: new Date().toISOString()
+        });
+
+        throw new Error(errorMsg);
       }
     } catch (err) {
       this.config.lastTestedAt = new Date().toISOString();
       this.config.lastTestStatus = 'FAILED';
       this.config.lastTestRecipient = target;
-      localStorage.setItem(STORAGE_KEY_EMAIL_CONFIG, JSON.stringify(this.config));
+      this.config.lastTestMode = 'DISPATCH';
+      this.config.lastTestError = err.message;
+      this.persistConfig();
 
       this.logEmail({
         type: 'TEST_EMAIL',
@@ -312,41 +472,10 @@ System Status: ONLINE & ACTIVE
 
       throw err;
     }
-
-    // Log the outgoing email record
-    this.logEmail({
-      type: 'TEST_EMAIL',
-      to: target,
-      subject: testSubject,
-      status: 'SENT',
-      content: testBody,
-      timestamp: new Date().toISOString()
-    });
-
-    this.config.lastTestedAt = new Date().toISOString();
-    this.config.lastTestStatus = 'SUCCESS';
-    this.config.lastTestRecipient = target;
-    localStorage.setItem(STORAGE_KEY_EMAIL_CONFIG, JSON.stringify(this.config));
-
-    auditService.log(
-      'EMAIL_TEST_SENT',
-      'ADMIN',
-      'email-config',
-      `Test email sent successfully to '${target}'.`,
-      null,
-      { to: target, host: activeConfig.smtpHost, port: activeConfig.smtpPort }
-    );
-
-    return {
-      success: true,
-      recipient: target,
-      timestamp: new Date().toLocaleString(),
-      message: `Test email successfully delivered to ${target} via ${activeConfig.smtpHost}:${activeConfig.smtpPort} (${activeConfig.encryption || 'TLS'}).`
-    };
   }
 
   /**
-   * Send Password Reset Link / Code
+   * Send Password Reset Verification Email with formatted OTP code
    */
   async sendPasswordResetEmail(user, resetCode, resetLink = '') {
     if (!this.isEmailConfigured()) {
@@ -366,53 +495,91 @@ System Status: ONLINE & ACTIVE
       };
     }
 
-    const subject = `[Al-Muslim ERP] Password Reset Request for @${user.username}`;
+    const timestampStr = new Date().toLocaleString();
+    const subject = `[Al-Muslim ERP] Password Reset Verification Code: ${resetCode}`;
+
     const formattedBody = `
 ========================================================================
-AL-MUSLIM GROUP - PASSWORD RESET VERIFICATION
+AL-MUSLIM GROUP - MAINTENANCE MACHINERY ERP
+SECURITY VERIFICATION: PASSWORD RESET
 ========================================================================
 Hello ${user.name},
 
 A password reset request was initiated for your Al-Muslim Maintenance
-ERP user account (@${user.username}).
+ERP account (@${user.username}).
 
 Your 6-digit verification security code is:
 =========================================
       >>>  ${resetCode}  <<<
 =========================================
 
-This verification code will expire in 15 minutes.
+This code will expire in 15 minutes.
 If you did not request this password reset, please contact the system
 administrator immediately.
 
 Regards,
-${this.config.fromName}
+${this.config.fromName || 'Al-Muslim ERP System'}
 Central Maintenance & IT Department
+Timestamp: ${timestampStr}
 ========================================================================
     `.trim();
 
-    // Attempt real SMTP dispatch via backend API with timeout
+    const formattedHtml = `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 580px; margin: 0 auto; background: #0f172a; color: #f8fafc; border-radius: 12px; overflow: hidden; border: 1.5px solid #38bdf8; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+        <div style="background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); padding: 22px 24px; text-align: center; border-bottom: 2px solid #38bdf8;">
+          <h1 style="margin: 0; font-size: 18px; font-weight: 800; color: #ffffff;">AL-MUSLIM GROUP</h1>
+          <div style="font-size: 12px; color: #e0f2fe; margin-top: 3px;">Maintenance Machinery ERP &bull; Security Verification</div>
+        </div>
+        <div style="padding: 26px 26px 22px 26px;">
+          <p style="font-size: 14px; color: #e2e8f0; margin: 0 0 16px 0;">
+            Hello <strong>${user.name}</strong>,
+          </p>
+          <p style="font-size: 13px; line-height: 1.6; color: #cbd5e1; margin: 0 0 20px 0;">
+            A password recovery request was initiated for your ERP account (<strong>@${user.username}</strong>). Use the 6-digit verification code below to authorize your password reset:
+          </p>
+          <div style="background: #1e293b; border: 2px dashed #38bdf8; border-radius: 10px; padding: 20px; text-align: center; margin-bottom: 22px;">
+            <div style="font-size: 11px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;">Your One-Time Password (OTP)</div>
+            <div style="font-size: 34px; font-weight: 900; letter-spacing: 8px; color: #38bdf8; font-family: monospace;">
+              ${resetCode}
+            </div>
+            <div style="font-size: 11px; color: #f59e0b; font-weight: 700; margin-top: 8px;">⏱️ Valid for 15 minutes only</div>
+          </div>
+          <p style="font-size: 12px; color: #94a3b8; line-height: 1.5; margin: 0 0 12px 0;">
+            If you did not request this password reset, please contact the System Administrator immediately. Do not share this OTP code with anyone.
+          </p>
+        </div>
+        <div style="background: #090d16; padding: 12px 24px; text-align: center; border-top: 1px solid rgba(255,255,255,0.08); font-size: 11px; color: #64748b;">
+          Al-Muslim Group Central IT &bull; Dispatched at ${timestampStr}
+        </div>
+      </div>
+    `;
+
+    const baseUrl = getEmailApiBaseUrl();
+    const endpoint = `${baseUrl}/api/email/send`;
+
     try {
-      await fetchWithTimeout('/api/email/send', {
+      await fetchWithTimeout(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          config: this.config,
+          config: {
+            ...this.config,
+            smtpPass: (this.config.smtpPass || '').trim().replace(/\s+/g, '')
+          },
           to: recipientEmail,
           subject,
-          text: formattedBody
+          text: formattedBody,
+          html: formattedHtml
         })
-      }, 5000);
+      }, 9000);
     } catch (_) { }
 
     this.logEmail({
       type: 'PASSWORD_RESET',
       to: recipientEmail,
+      recipientName: user.name,
       subject,
       status: 'SENT',
-      resetCode,
-      recipientName: user.name,
-      username: user.username,
       content: formattedBody,
       timestamp: new Date().toISOString()
     });
@@ -431,7 +598,7 @@ Central Maintenance & IT Department
       isConfigured: true,
       recipientEmail,
       resetCode,
-      message: `Password reset instructions and verification code have been sent to ${recipientEmail}.`
+      message: `Password reset verification code has been dispatched to ${recipientEmail}.`
     };
   }
 
@@ -447,7 +614,9 @@ Central Maintenance & IT Department
       });
       // Keep last 50 emails
       const trimmed = logs.slice(0, 50);
-      localStorage.setItem(STORAGE_KEY_EMAIL_LOGS, JSON.stringify(trimmed));
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem(STORAGE_KEY_EMAIL_LOGS, JSON.stringify(trimmed));
+      }
     } catch (e) {
       console.warn('Failed to log outgoing email:', e);
     }
@@ -458,8 +627,10 @@ Central Maintenance & IT Department
    */
   getEmailLogs() {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY_EMAIL_LOGS);
-      if (saved) return JSON.parse(saved);
+      if (typeof localStorage !== 'undefined') {
+        const saved = localStorage.getItem(STORAGE_KEY_EMAIL_LOGS);
+        if (saved) return JSON.parse(saved);
+      }
     } catch (e) { }
     return [];
   }
@@ -468,7 +639,9 @@ Central Maintenance & IT Department
    * Clear Outgoing Email Logs
    */
   clearEmailLogs() {
-    localStorage.removeItem(STORAGE_KEY_EMAIL_LOGS);
+    if (typeof localStorage !== 'undefined') {
+      localStorage.removeItem(STORAGE_KEY_EMAIL_LOGS);
+    }
   }
 }
 

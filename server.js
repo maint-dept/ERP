@@ -288,9 +288,9 @@ const server = http.createServer((req, res) => {
       isSecure = true;
     }
 
-    // Remove any accidental spaces in app password (e.g. "abcd efgh ijkl mnop")
+    // Remove any accidental spaces in app password (Google displays app passwords as "abcd efgh ijkl mnop")
     let pass = (cfg.smtpPass || '').trim();
-    if (host === 'smtp.gmail.com' && pass.length === 19 && pass.includes(' ')) {
+    if (pass.includes(' ')) {
       pass = pass.replace(/\s+/g, '');
     }
 
@@ -302,23 +302,23 @@ const server = http.createServer((req, res) => {
         user: (cfg.smtpUser || '').trim(),
         pass
       },
-      connectionTimeout: 5000,
-      greetingTimeout: 5000,
-      socketTimeout: 6000,
+      connectionTimeout: 8000,
+      greetingTimeout: 8000,
+      socketTimeout: 10000,
       tls: { rejectUnauthorized: false }
     });
   }
 
   function formatSmtpError(err) {
     let userMsg = err.message || 'SMTP Error';
-    if (err.code === 'EAUTH' || (err.response && err.response.includes('BadCredentials'))) {
-      userMsg = 'Gmail Authentication Failed (535 BadCredentials): Google requires a 16-character App Password generated from this matching Google account (myaccount.google.com/apppasswords). Please ensure the App Password was created in this exact Gmail account.';
-    } else if (err.code === 'ETIMEDOUT' || err.code === 'ESOCKETTIMEDOUT' || err.message.includes('timed out')) {
-      userMsg = 'Connection Timeout (5s): Unable to reach the SMTP server. Please verify your host (smtp.gmail.com), port (587), and internet connection.';
+    if (err.code === 'EAUTH' || (err.response && (err.response.includes('BadCredentials') || err.response.includes('535')))) {
+      userMsg = 'Gmail Authentication Failed (535 BadCredentials): Google requires a 16-character App Password generated from this matching Google account (myaccount.google.com/apppasswords). Please ensure 2-Step Verification is active and the 16-char App Password was generated for this exact account.';
+    } else if (err.code === 'ETIMEDOUT' || err.code === 'ESOCKETTIMEDOUT' || (err.message && err.message.includes('timed out'))) {
+      userMsg = 'Connection Timeout (8s): Unable to reach the SMTP server. Please verify your host, port (587 TLS or 465 SSL), and network connection.';
     } else if (err.code === 'ENOTFOUND') {
-      userMsg = 'Host Not Found: The SMTP host is invalid. For Gmail, use smtp.gmail.com.';
+      userMsg = 'Host Not Found: The SMTP host address could not be resolved. For Gmail use smtp.gmail.com, for Outlook use smtp.office365.com.';
     } else if (err.code === 'ECONNREFUSED') {
-      userMsg = 'Connection Refused: The SMTP port rejected the connection. Please verify port 587 (TLS) or 465 (SSL).';
+      userMsg = 'Connection Refused: The SMTP port rejected the connection. Please check port 587 (TLS) or 465 (SSL).';
     }
     return userMsg;
   }
@@ -339,15 +339,15 @@ const server = http.createServer((req, res) => {
         const payload = JSON.parse(body || '{}');
         const transporter = createSmtpTransporter(payload);
         
-        // Hard 5.5s timeout promise wrapper
+        // 8.5s timeout promise wrapper
         const verifyPromise = transporter.verify();
         const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('Connection timed out after 5 seconds.')), 5500)
+          setTimeout(() => reject(new Error('Connection timed out after 8 seconds.')), 8500)
         );
 
         await Promise.race([verifyPromise, timeoutPromise]);
         res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-        res.end(JSON.stringify({ status: 'ok', message: 'SMTP credentials verified successfully! Connected to mail server.' }));
+        res.end(JSON.stringify({ status: 'ok', message: 'SMTP credentials verified successfully! Handshake completed with mail server.' }));
       } catch (err) {
         const userMsg = formatSmtpError(err);
         res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
@@ -386,9 +386,9 @@ const server = http.createServer((req, res) => {
           html: html || undefined
         });
 
-        // Hard 5.5s timeout promise wrapper
+        // 8.5s timeout promise wrapper
         const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('Mail dispatch timed out after 5 seconds.')), 5500)
+          setTimeout(() => reject(new Error('Mail dispatch timed out after 8 seconds.')), 8500)
         );
 
         const info = await Promise.race([sendPromise, timeoutPromise]);
