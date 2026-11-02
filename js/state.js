@@ -26,14 +26,14 @@ export function extractAdminDefaultsFromSettings(settingsObjOrArr) {
     const colRow = settingsObjOrArr.find(r => r && (r.key === 'default_visible_columns' || r.id === 'default_visible_columns'));
     if (colRow && Array.isArray(colRow.value) && colRow.value.length > 0) cols = colRow.value;
     const fzRow = settingsObjOrArr.find(r => r && (r.key === 'default_frozen_columns' || r.id === 'default_frozen_columns'));
-    if (fzRow && Array.isArray(fzRow.value) && fzRow.value.length > 0) frozen = fzRow.value;
+    if (fzRow && Array.isArray(fzRow.value)) frozen = fzRow.value;
     const tsRow = settingsObjOrArr.find(r => r && (r.key === 'admin_columns_updated_at' || r.id === 'admin_columns_updated_at'));
     if (tsRow && tsRow.value) updatedAt = tsRow.value;
   } else if (typeof settingsObjOrArr === 'object') {
     if (Array.isArray(settingsObjOrArr.default_visible_columns) && settingsObjOrArr.default_visible_columns.length > 0) {
       cols = settingsObjOrArr.default_visible_columns;
     }
-    if (Array.isArray(settingsObjOrArr.default_frozen_columns) && settingsObjOrArr.default_frozen_columns.length > 0) {
+    if (Array.isArray(settingsObjOrArr.default_frozen_columns)) {
       frozen = settingsObjOrArr.default_frozen_columns;
     }
     if (settingsObjOrArr.admin_columns_updated_at) {
@@ -341,7 +341,7 @@ class GlobalState {
     } catch (_) {}
 
     // 2. Resolve User Customization (Keyed strictly by active user ID ONLY IF explicitly saved by user)
-    const uid = activeUserId || (typeof localStorage !== 'undefined' ? localStorage.getItem('al_muslim_active_user_id') : null);
+    const uid = activeUserId || (typeof localStorage !== 'undefined' ? localStorage.getItem('al_muslim_active_user_id') : null) || 'usr-super-admin';
     let userCustomCols = null;
     let userCustomFrozen = null;
 
@@ -360,57 +360,91 @@ class GlobalState {
         const hasCustomFrozen = localStorage.getItem('erp_user_has_custom_frozen_' + uid) === 'true';
         if (hasCustomFrozen) {
           const uFrozen = localStorage.getItem('erp_user_frozen_cols_' + uid);
-          if (uFrozen) {
-            const p = JSON.parse(uFrozen);
-            if (Array.isArray(p) && p.length > 0) userCustomFrozen = p;
+          if (uFrozen !== null) {
+            try {
+              const p = JSON.parse(uFrozen);
+              if (Array.isArray(p)) userCustomFrozen = p;
+            } catch (_) {}
           }
+        }
+      } catch (_) {}
+    }
+
+    // Fallback: If user custom is not found for specific uid, check global/persistent cache keys
+    if ((!userCustomCols || userCustomCols.length === 0) && typeof localStorage !== 'undefined') {
+      try {
+        const fallbackCols = localStorage.getItem('erp_visible_columns_v4');
+        if (fallbackCols) {
+          const p = JSON.parse(fallbackCols);
+          if (Array.isArray(p) && p.length > 0) userCustomCols = p;
+        }
+      } catch (_) {}
+    }
+    if ((userCustomFrozen === null) && typeof localStorage !== 'undefined') {
+      try {
+        const fallbackFrozen = localStorage.getItem('erp_frozen_columns_v2');
+        if (fallbackFrozen !== null) {
+          const p = JSON.parse(fallbackFrozen);
+          if (Array.isArray(p)) userCustomFrozen = p;
         }
       } catch (_) {}
     }
 
     // 3. Fallback Hierarchy:
     // User Custom (ONLY IF explicitly customized by user) > Admin Organization Default > System Default
-    const finalCols = (userCustomCols && userCustomCols.length > 0)
-      ? userCustomCols
-      : (adminDefaultCols && adminDefaultCols.length > 0 ? adminDefaultCols : defaultCols);
+    let finalCols = (userCustomCols && userCustomCols.length > 0)
+      ? [...userCustomCols]
+      : (adminDefaultCols && adminDefaultCols.length > 0 ? [...adminDefaultCols] : defaultCols);
 
-    const finalFrozen = (userCustomFrozen && userCustomFrozen.length > 0)
-      ? userCustomFrozen
-      : (adminDefaultFrozen && adminDefaultFrozen.length > 0 ? adminDefaultFrozen : defaultFrozen);
+    let finalFrozen = (userCustomFrozen !== null && Array.isArray(userCustomFrozen))
+      ? [...userCustomFrozen]
+      : (adminDefaultFrozen && Array.isArray(adminDefaultFrozen) ? [...adminDefaultFrozen] : defaultFrozen);
+
+    // Sanitize columns: ensure sl, select, machineName, actions are always present
+    if (!finalCols.includes('machineName')) finalCols.push('machineName');
+    if (!finalCols.includes('actions')) finalCols.push('actions');
+    if (!finalCols.includes('sl')) finalCols.unshift('sl');
+    if (!finalCols.includes('select')) finalCols.splice(1, 0, 'select');
 
     return {
       visibleColumns: finalCols,
       frozenColumns: finalFrozen,
       adminDefaultCols,
       adminDefaultFrozen,
-      isUserCustomized: Boolean(userCustomCols && userCustomCols.length > 0)
+      isUserCustomized: Boolean((userCustomCols && userCustomCols.length > 0) || (userCustomFrozen !== null && Array.isArray(userCustomFrozen)))
     };
   }
 
   setVisibleColumns(colsArray, isGlobalAdmin = false, isUserCustom = true) {
     if (!Array.isArray(colsArray)) return;
-    this.state.visibleColumns = new Set(colsArray);
+    const finalCols = [...colsArray];
+    if (!finalCols.includes('machineName')) finalCols.push('machineName');
+    if (!finalCols.includes('actions')) finalCols.push('actions');
+    if (!finalCols.includes('sl')) finalCols.unshift('sl');
+    if (!finalCols.includes('select')) finalCols.splice(1, 0, 'select');
+
+    this.state.visibleColumns = new Set(finalCols);
     const activeUserId = typeof localStorage !== 'undefined' ? localStorage.getItem('al_muslim_active_user_id') : null;
+    const uid = activeUserId || 'usr-super-admin';
     try {
       if (typeof localStorage !== 'undefined') {
-        if (activeUserId) {
-          localStorage.setItem('erp_user_visible_cols_' + activeUserId, JSON.stringify(colsArray));
-          if (isUserCustom) {
-            localStorage.setItem('erp_user_has_custom_cols_' + activeUserId, 'true');
-            localStorage.setItem('erp_user_custom_cols_updated_at_' + activeUserId, new Date().toISOString());
-          }
+        localStorage.setItem('erp_user_visible_cols_' + uid, JSON.stringify(finalCols));
+        if (isUserCustom) {
+          localStorage.setItem('erp_user_has_custom_cols_' + uid, 'true');
+          localStorage.setItem('erp_user_custom_cols_updated_at_' + uid, new Date().toISOString());
         }
+        localStorage.setItem('erp_visible_columns_v4', JSON.stringify(finalCols));
       }
     } catch (e) {}
 
     if (isGlobalAdmin) {
-      this.saveAdminDefaultColumns(colsArray, this.state.frozenColumns).catch(err => {
+      this.saveAdminDefaultColumns(finalCols, this.state.frozenColumns).catch(err => {
         console.warn('Failed to save global default columns:', err);
       });
       return;
     }
 
-    this.emit('columns:changed', colsArray);
+    this.emit('columns:changed', finalCols);
   }
 
   toggleColumnVisibility(colId) {
@@ -438,13 +472,13 @@ class GlobalState {
 
     const colsArray = Array.from(this.state.visibleColumns);
     const activeUserId = typeof localStorage !== 'undefined' ? localStorage.getItem('al_muslim_active_user_id') : null;
+    const uid = activeUserId || 'usr-super-admin';
     try {
       if (typeof localStorage !== 'undefined') {
-        if (activeUserId) {
-          localStorage.setItem('erp_user_visible_cols_' + activeUserId, JSON.stringify(colsArray));
-          localStorage.setItem('erp_user_has_custom_cols_' + activeUserId, 'true');
-          localStorage.setItem('erp_user_custom_cols_updated_at_' + activeUserId, new Date().toISOString());
-        }
+        localStorage.setItem('erp_user_visible_cols_' + uid, JSON.stringify(colsArray));
+        localStorage.setItem('erp_user_has_custom_cols_' + uid, 'true');
+        localStorage.setItem('erp_user_custom_cols_updated_at_' + uid, new Date().toISOString());
+        localStorage.setItem('erp_visible_columns_v4', JSON.stringify(colsArray));
       }
     } catch (e) {}
 
@@ -455,14 +489,14 @@ class GlobalState {
     if (!Array.isArray(colsArray)) return;
     this.state.frozenColumns = colsArray;
     const activeUserId = typeof localStorage !== 'undefined' ? localStorage.getItem('al_muslim_active_user_id') : null;
+    const uid = activeUserId || 'usr-super-admin';
     try {
       if (typeof localStorage !== 'undefined') {
-        if (activeUserId) {
-          localStorage.setItem('erp_user_frozen_cols_' + activeUserId, JSON.stringify(colsArray));
-          if (isUserCustom) {
-            localStorage.setItem('erp_user_has_custom_frozen_' + activeUserId, 'true');
-          }
+        localStorage.setItem('erp_user_frozen_cols_' + uid, JSON.stringify(colsArray));
+        if (isUserCustom) {
+          localStorage.setItem('erp_user_has_custom_frozen_' + uid, 'true');
         }
+        localStorage.setItem('erp_frozen_columns_v2', JSON.stringify(colsArray));
       }
     } catch (e) {}
 
@@ -504,13 +538,16 @@ class GlobalState {
 
   reloadColumnsFromSettings(forceReset = false) {
     const activeUserId = typeof localStorage !== 'undefined' ? localStorage.getItem('al_muslim_active_user_id') : null;
-    if (forceReset && activeUserId && typeof localStorage !== 'undefined') {
+    const uid = activeUserId || 'usr-super-admin';
+    if (forceReset && typeof localStorage !== 'undefined') {
       try {
-        localStorage.removeItem('erp_user_has_custom_cols_' + activeUserId);
-        localStorage.removeItem('erp_user_visible_cols_' + activeUserId);
-        localStorage.removeItem('erp_user_has_custom_frozen_' + activeUserId);
-        localStorage.removeItem('erp_user_frozen_cols_' + activeUserId);
-        localStorage.removeItem('erp_user_custom_cols_updated_at_' + activeUserId);
+        localStorage.removeItem('erp_user_has_custom_cols_' + uid);
+        localStorage.removeItem('erp_user_visible_cols_' + uid);
+        localStorage.removeItem('erp_user_has_custom_frozen_' + uid);
+        localStorage.removeItem('erp_user_frozen_cols_' + uid);
+        localStorage.removeItem('erp_user_custom_cols_updated_at_' + uid);
+        localStorage.removeItem('erp_visible_columns_v4');
+        localStorage.removeItem('erp_frozen_columns_v2');
       } catch (_) {}
     }
 
@@ -549,28 +586,26 @@ class GlobalState {
     this.state.frozenColumns = finalFrozen;
 
     const activeUserId = typeof localStorage !== 'undefined' ? localStorage.getItem('al_muslim_active_user_id') : null;
+    const uid = activeUserId || 'usr-super-admin';
+    const now = new Date().toISOString();
 
-    // 2. Clear any personal custom column override on current admin so admin view stays identical to default
+    // 2. Persist to active user & local cache so reloading NEVER loses state
     if (typeof localStorage !== 'undefined') {
       try {
-        if (activeUserId) {
-          localStorage.removeItem('erp_user_has_custom_cols_' + activeUserId);
-          localStorage.removeItem('erp_user_visible_cols_' + activeUserId);
-          localStorage.removeItem('erp_user_has_custom_frozen_' + activeUserId);
-          localStorage.removeItem('erp_user_frozen_cols_' + activeUserId);
-          localStorage.removeItem('erp_user_custom_cols_updated_at_' + activeUserId);
-        }
-        localStorage.removeItem('erp_visible_columns_v4');
-        localStorage.removeItem('erp_visible_columns_v3');
-        localStorage.removeItem('erp_frozen_columns_v2');
-        localStorage.removeItem('erp_frozen_columns_v1');
+        localStorage.setItem('erp_user_visible_cols_' + uid, JSON.stringify(finalCols));
+        localStorage.setItem('erp_user_has_custom_cols_' + uid, 'true');
+        localStorage.setItem('erp_user_frozen_cols_' + uid, JSON.stringify(finalFrozen));
+        localStorage.setItem('erp_user_has_custom_frozen_' + uid, 'true');
+        localStorage.setItem('erp_user_custom_cols_updated_at_' + uid, now);
+
+        localStorage.setItem('erp_visible_columns_v4', JSON.stringify(finalCols));
+        localStorage.setItem('erp_frozen_columns_v2', JSON.stringify(finalFrozen));
       } catch (_) {}
     }
 
     // 3. Atomically update settings in memory, localStorage, and MySQL/PostgreSQL
     try {
       let settings = (typeof storage !== 'undefined' && storage.getTable) ? storage.getTable(TABLE_NAMES.SETTINGS) : {};
-      const now = new Date().toISOString();
       if (Array.isArray(settings)) {
         let colRow = settings.find(r => r && (r.key === 'default_visible_columns' || r.id === 'default_visible_columns'));
         if (colRow) colRow.value = finalCols;
@@ -599,8 +634,13 @@ class GlobalState {
       }
 
       // Persist to IndexedDB & MySQL Primary Cloud
-      if (typeof storage !== 'undefined' && storage.saveTable) {
-        await storage.saveTable(TABLE_NAMES.SETTINGS, settings, true);
+      if (typeof storage !== 'undefined') {
+        if (storage.saveTable) {
+          await storage.saveTable(TABLE_NAMES.SETTINGS, settings, true);
+        }
+        if (storage.persistToServerDatabase) {
+          storage.persistToServerDatabase().catch(() => {});
+        }
       }
     } catch (e) {
       console.error('Failed to save global default columns to database:', e);

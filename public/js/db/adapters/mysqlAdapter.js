@@ -44,9 +44,6 @@ export class MysqlAdapter extends BaseAdapter {
   _headers() {
     const headers = {
       'Content-Type': 'application/json',
-      'Cache-Control': 'no-cache, no-store, must-revalidate',
-      'Pragma': 'no-cache',
-      'Expires': '0',
       'X-DB-Host': this.host,
       'X-DB-Port': String(this.port),
       'X-DB-Name': this.database,

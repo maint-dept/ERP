@@ -651,9 +651,15 @@ export function renderInventoryTable() {
 
   // Partition: Frozen columns pinned to left in configured order, followed by unfrozen columns in Layout order
   const frozenList = [];
-  const frozenSet = new Set(frozenColKeys);
+  const frozenSet = new Set(frozenColKeys.map(k => String(k).toLowerCase()));
   frozenColKeys.forEach(k => {
-    const found = visibleColDefs.find(c => c.key === k || mapFieldKeyToTableKey(c.key) === mapFieldKeyToTableKey(k));
+    const kLower = String(k).toLowerCase();
+    const mappedK = String(mapFieldKeyToTableKey(k)).toLowerCase();
+    const found = visibleColDefs.find(c => {
+      const cLower = String(c.key).toLowerCase();
+      const mappedC = String(mapFieldKeyToTableKey(c.key)).toLowerCase();
+      return cLower === kLower || mappedC === mappedK || cLower === mappedK || mappedC === kLower;
+    });
     if (found && !frozenList.includes(found)) frozenList.push(found);
   });
 
@@ -674,7 +680,9 @@ export function renderInventoryTable() {
   // Dynamic sticky left offset calculation
   let stickyOffset = 94; // SL (50px) + Check (44px)
   const columnLayout = orderedCols.map((c, idx) => {
-    const isFrozen = frozenSet.has(c.key);
+    const isFrozen = frozenList.includes(c) ||
+      frozenSet.has(String(c.key).toLowerCase()) ||
+      frozenSet.has(String(mapFieldKeyToTableKey(c.key)).toLowerCase());
     let leftOffset = 0;
     if (isFrozen) {
       leftOffset = stickyOffset;

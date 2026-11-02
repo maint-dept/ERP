@@ -21,6 +21,27 @@ import { storage } from '../db/storage.js';
 import { TABLE_NAMES } from '../db/schema.js';
 import { state } from '../state.js';
 
+// Freezable columns list available across entire modal lifecycle
+export const FREEZABLE_COLUMNS = [
+  { key: 'machineName', label: 'Machine Name', width: '200px', desc: 'Identifies machine type' },
+  { key: 'brand', label: 'Machine Brand', width: '95px', desc: 'Manufacturer / Brand' },
+  { key: 'model', label: 'Machine Model', width: '120px', desc: 'Model specification number' },
+  { key: 'serialNumber', label: 'Machine Serial Number', width: '130px', desc: 'Unique asset identifier tag' },
+  { key: 'systemAssetId', label: 'System Asset ID', width: '140px', desc: 'Permanent system-generated asset ID' },
+  { key: 'manufacturing_serial', label: 'Manufacturing Serial Number', width: '125px', desc: 'Factory mfg serial tag' },
+  { key: 'group', label: 'Group / Conglomerate', width: '110px', desc: 'Corporate group' },
+  { key: 'unit', label: 'Unit / Factory', width: '140px', desc: 'Plant location' },
+  { key: 'floor', label: 'Floor', width: '95px', desc: 'Floor location' },
+  { key: 'line', label: 'Line', width: '95px', desc: 'Production line' },
+  { key: 'running', label: 'Running Quantity', width: '75px', desc: 'Operational machines' },
+  { key: 'usable_idle', label: 'Usable Idle Quantity', width: '80px', desc: 'Standby usable machines' },
+  { key: 'repairable_idle', label: 'Repairable Idle Quantity', width: '90px', desc: 'Under maintenance' },
+  { key: 'total_quantity', label: 'Total Quantity', width: '75px', desc: 'System total quantity' },
+  { key: 'status', label: 'Machine Status', width: '95px', desc: 'Current operational status' },
+  { key: 'service_date', label: 'Last Service Date', width: '125px', desc: 'PM maintenance servicing date' },
+  { key: 'remarks', label: 'Remarks / Notes', width: '120px', desc: 'Asset remarks' }
+];
+
 let activeColVisTab = 'frozen'; // 'frozen' | 'visibility'
 
 export function renderColumnVisibilityModal() {
@@ -38,26 +59,7 @@ export function renderColumnVisibilityModal() {
     : [];
   const structName = activeStructure?.name || 'Standard Garments Machinery Layout';
 
-  // Freezable columns list
-  const freezableCols = [
-    { key: 'machineName', label: 'Machine Name', width: '200px', desc: 'Identifies machine type' },
-    { key: 'brand', label: 'Machine Brand', width: '95px', desc: 'Manufacturer / Brand' },
-    { key: 'model', label: 'Machine Model', width: '120px', desc: 'Model specification number' },
-    { key: 'serialNumber', label: 'Machine Serial Number', width: '130px', desc: 'Unique asset identifier tag' },
-    { key: 'systemAssetId', label: 'System Asset ID', width: '140px', desc: 'Permanent system-generated asset ID' },
-    { key: 'manufacturing_serial', label: 'Manufacturing Serial Number', width: '125px', desc: 'Factory mfg serial tag' },
-    { key: 'group', label: 'Group / Conglomerate', width: '110px', desc: 'Corporate group' },
-    { key: 'unit', label: 'Unit / Factory', width: '140px', desc: 'Plant location' },
-    { key: 'floor', label: 'Floor', width: '95px', desc: 'Floor location' },
-    { key: 'line', label: 'Line', width: '95px', desc: 'Production line' },
-    { key: 'running', label: 'Running Quantity', width: '75px', desc: 'Operational machines' },
-    { key: 'usable_idle', label: 'Usable Idle Quantity', width: '80px', desc: 'Standby usable machines' },
-    { key: 'repairable_idle', label: 'Repairable Idle Quantity', width: '90px', desc: 'Under maintenance' },
-    { key: 'total_quantity', label: 'Total Quantity', width: '75px', desc: 'System total quantity' },
-    { key: 'status', label: 'Machine Status', width: '95px', desc: 'Current operational status' },
-    { key: 'service_date', label: 'Last Service Date', width: '125px', desc: 'PM maintenance servicing date' },
-    { key: 'remarks', label: 'Remarks / Notes', width: '120px', desc: 'Asset remarks' }
-  ];
+  const freezableCols = FREEZABLE_COLUMNS;
 
   // Set of keys already present in the active layout
   const layoutKeys = new Set();
@@ -182,7 +184,7 @@ export function renderColumnVisibilityModal() {
                 <span style="color: #94a3b8;">SL (50px)</span> ➔ 
                 <span style="color: #94a3b8;">Check (44px)</span>
                 ${frozenList.length > 0 ? frozenList.map(k => {
-                  const c = freezableCols.find(x => x.key === k || mapFieldKeyToTableKey(x.key) === mapFieldKeyToTableKey(k));
+                  const c = FREEZABLE_COLUMNS.find(x => x.key === k || mapFieldKeyToTableKey(x.key) === mapFieldKeyToTableKey(k));
                   return ` ➔ <strong style="color: #38bdf8;">${c ? c.label : k}</strong>`;
                 }).join('') : ' ➔ <span style="color: #94a3b8; font-style: italic;">(No data columns frozen)</span>'}
               </div>
@@ -372,24 +374,102 @@ export function initColumnVisibilityEvents() {
     });
   }
 
-  // Done & Save: Commits user's chosen columns to personalized persistent state
+  // Helper to read currently checked visible columns from modal DOM
+  const getCheckedVisibleCols = () => {
+    const checkedCols = [];
+    document.querySelectorAll('.colvis-check:checked').forEach(el => {
+      const col = el.getAttribute('data-col');
+      const field = el.getAttribute('data-field');
+      if (col && !checkedCols.includes(col)) checkedCols.push(col);
+      if (field && !checkedCols.includes(field)) checkedCols.push(field);
+    });
+    if (checkedCols.length === 0) {
+      checkedCols.push('machineName', 'actions');
+    }
+    if (!checkedCols.includes('sl')) checkedCols.unshift('sl');
+    if (!checkedCols.includes('select')) checkedCols.splice(1, 0, 'select');
+    return checkedCols;
+  };
+
+  // Helper to read currently checked frozen columns from modal DOM
+  const getCheckedFrozenCols = () => {
+    const checkedFrozen = [];
+    document.querySelectorAll('.colfreeze-check:checked').forEach(el => {
+      const col = el.getAttribute('data-col');
+      if (col && !checkedFrozen.includes(col)) checkedFrozen.push(col);
+    });
+    return checkedFrozen;
+  };
+
+  // Update Frozen Columns Summary UI in-place without destroying DOM
+  const updateFrozenSummaryUI = (frozenList) => {
+    const summaryContainer = document.getElementById('frozen-columns-summary');
+    if (summaryContainer) {
+      const colHtml = frozenList.length > 0 ? frozenList.map(k => {
+        const c = FREEZABLE_COLUMNS.find(x => x.key === k || mapFieldKeyToTableKey(x.key) === mapFieldKeyToTableKey(k));
+        return ` ➔ <strong style="color: #38bdf8;">${c ? c.label : k}</strong>`;
+      }).join('') : ' ➔ <span style="color: #94a3b8; font-style: italic;">(No data columns frozen)</span>';
+
+      summaryContainer.innerHTML = `
+        <div style="font-size: 11px; font-weight: 800; color: #38bdf8; text-transform: uppercase; margin-bottom: 4px;">
+          📍 Fixed Left Sequence (During Horizontal Scroll):
+        </div>
+        <div style="font-size: 12px; color: #e2e8f0; font-family: var(--font-mono); line-height: 1.6;">
+          <span style="color: #94a3b8;">SL (50px)</span> ➔ 
+          <span style="color: #94a3b8;">Check (44px)</span>
+          ${colHtml}
+        </div>
+      `;
+    }
+
+    // Update Tab 1 badge
+    if (tabBtnFrozen) {
+      const badge = tabBtnFrozen.querySelector('.badge');
+      if (badge) badge.textContent = String(frozenList.length);
+    }
+
+    // Update labels and checkboxes visual state
+    document.querySelectorAll('.colfreeze-check').forEach(chk => {
+      const colKey = chk.getAttribute('data-col');
+      const isChecked = frozenList.includes(colKey) || frozenList.includes(mapFieldKeyToTableKey(colKey));
+      chk.checked = isChecked;
+      const parentLabel = chk.closest('.freeze-col-item');
+      if (parentLabel) {
+        parentLabel.style.background = isChecked ? 'rgba(2, 132, 199, 0.15)' : 'rgba(15, 23, 42, 0.5)';
+        parentLabel.style.borderColor = isChecked ? '#38bdf8' : 'rgba(255,255,255,0.08)';
+        const badgeDiv = parentLabel.lastElementChild;
+        if (badgeDiv) {
+          badgeDiv.innerHTML = isChecked
+            ? '<span class="badge" style="background: rgba(34, 197, 94, 0.2); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.4); font-size: 10.5px; font-weight: 800;">❄️ Frozen</span>'
+            : '<span class="badge" style="background: rgba(148, 163, 184, 0.1); color: #94a3b8; font-size: 10.5px;">Unpinned</span>';
+        }
+      }
+    });
+  };
+
+  // Update Column Visibility Summary UI in-place
+  const updateVisibilitySummaryUI = () => {
+    const checked = document.querySelectorAll('.colvis-check:checked');
+    const total = document.querySelectorAll('.colvis-check').length || 16;
+    if (tabBtnVisibility) {
+      const badge = tabBtnVisibility.querySelector('.badge');
+      if (badge) {
+        badge.textContent = `${checked.length}/${total}`;
+      }
+    }
+  };
+
+  // Done & Save: Commits user's chosen columns & frozen settings to persistent state
   if (doneBtn) {
     doneBtn.addEventListener('click', () => {
-      const checkedCols = [];
-      document.querySelectorAll('.colvis-check:checked').forEach(el => {
-        const col = el.getAttribute('data-col');
-        const field = el.getAttribute('data-field');
-        if (col && !checkedCols.includes(col)) checkedCols.push(col);
-        if (field && !checkedCols.includes(field)) checkedCols.push(field);
-      });
-      if (checkedCols.length === 0) {
-        checkedCols.push('machineName', 'actions');
-      }
-      if (!checkedCols.includes('sl')) checkedCols.unshift('sl');
-      if (!checkedCols.includes('select')) checkedCols.splice(1, 0, 'select');
+      const checkedCols = getCheckedVisibleCols();
+      const checkedFrozen = getCheckedFrozenCols();
+      const finalFrozen = checkedFrozen;
 
       state.setVisibleColumns(checkedCols, false, true);
-      notificationService.success(`Saved personal column preferences (${checkedCols.length} columns active).`);
+      state.setFrozenColumns(finalFrozen, false, true);
+
+      notificationService.success(`Saved personal table column & freeze settings (${checkedCols.length} columns active, ${finalFrozen.length} frozen).`);
       closeModal();
     });
   }
@@ -402,24 +482,13 @@ export function initColumnVisibilityEvents() {
       globalSaveBtn.disabled = true;
       globalSaveBtn.innerHTML = '<span>⏳</span> Saving to Cloud...';
 
-      const checkedCols = [];
-      document.querySelectorAll('.colvis-check:checked').forEach(el => {
-        const col = el.getAttribute('data-col');
-        const field = el.getAttribute('data-field');
-        if (col && !checkedCols.includes(col)) checkedCols.push(col);
-        if (field && !checkedCols.includes(field)) checkedCols.push(field);
-      });
-      if (checkedCols.length === 0) {
-        checkedCols.push('machineName', 'actions');
-      }
-      if (!checkedCols.includes('sl')) checkedCols.unshift('sl');
-      if (!checkedCols.includes('select')) checkedCols.splice(1, 0, 'select');
-
-      const currentFrozen = state.get('frozenColumns') || ['machineName', 'model', 'serialNumber'];
+      const checkedCols = getCheckedVisibleCols();
+      const checkedFrozen = getCheckedFrozenCols();
+      const finalFrozen = checkedFrozen;
 
       try {
-        await state.saveAdminDefaultColumns(checkedCols, currentFrozen);
-        notificationService.success(`✅ Saved ${checkedCols.length} columns as organization default for all users and synced to cloud!`);
+        await state.saveAdminDefaultColumns(checkedCols, finalFrozen);
+        notificationService.success(`✅ Saved ${checkedCols.length} columns & ${finalFrozen.length} frozen columns as organization default for all users and synced to cloud!`);
         closeModal();
       } catch (err) {
         console.error('Error saving global settings:', err);
@@ -462,8 +531,8 @@ export function initColumnVisibilityEvents() {
   if (btnPresetDefault) {
     btnPresetDefault.addEventListener('click', () => {
       const defaultFrozen = ['machineName', 'model', 'serialNumber'];
-      state.setFrozenColumns(defaultFrozen);
-      reRenderModal();
+      state.setFrozenColumns(defaultFrozen, false, true);
+      updateFrozenSummaryUI(defaultFrozen);
     });
   }
 
@@ -471,35 +540,34 @@ export function initColumnVisibilityEvents() {
   if (btnPresetWithMfg) {
     btnPresetWithMfg.addEventListener('click', () => {
       const mfgFrozen = ['machineName', 'serialNumber', 'manufacturing_serial'];
-      state.setFrozenColumns(mfgFrozen);
-      reRenderModal();
+      state.setFrozenColumns(mfgFrozen, false, true);
+      updateFrozenSummaryUI(mfgFrozen);
     });
   }
 
   const btnPresetNameOnly = document.getElementById('btn-preset-name-only');
   if (btnPresetNameOnly) {
     btnPresetNameOnly.addEventListener('click', () => {
-      state.setFrozenColumns(['machineName']);
-      reRenderModal();
+      const nameFrozen = ['machineName'];
+      state.setFrozenColumns(nameFrozen, false, true);
+      updateFrozenSummaryUI(nameFrozen);
     });
   }
 
   const btnPresetUnfreeze = document.getElementById('btn-preset-unfreeze-all');
   if (btnPresetUnfreeze) {
     btnPresetUnfreeze.addEventListener('click', () => {
-      state.setFrozenColumns([]);
-      reRenderModal();
+      state.setFrozenColumns([], false, true);
+      updateFrozenSummaryUI([]);
     });
   }
 
   // Individual Column Freeze Checkboxes
   document.querySelectorAll('.colfreeze-check').forEach(chk => {
-    chk.addEventListener('change', (e) => {
-      const col = e.target.getAttribute('data-col');
-      if (col) {
-        state.toggleFreezeColumn(col);
-        reRenderModal();
-      }
+    chk.addEventListener('change', () => {
+      const currentFrozen = getCheckedFrozenCols();
+      state.setFrozenColumns(currentFrozen, false, true);
+      updateFrozenSummaryUI(currentFrozen);
     });
   });
 
@@ -515,8 +583,19 @@ export function initColumnVisibilityEvents() {
         cols.push(c.fieldKey);
       });
       cols.push('actions');
-      state.setVisibleColumns(cols);
-      reRenderModal();
+      state.setVisibleColumns(cols, false, true);
+      document.querySelectorAll('.colvis-check').forEach(c => {
+        const col = c.getAttribute('data-col');
+        const field = c.getAttribute('data-field');
+        const isChecked = cols.includes(col) || cols.includes(field);
+        c.checked = isChecked;
+        const parentLabel = c.closest('.colvis-item-label');
+        if (parentLabel) {
+          parentLabel.style.background = isChecked ? 'rgba(56, 189, 248, 0.08)' : 'rgba(15, 23, 42, 0.4)';
+          parentLabel.style.borderColor = isChecked ? 'rgba(56, 189, 248, 0.35)' : 'rgba(255,255,255,0.06)';
+        }
+      });
+      updateVisibilitySummaryUI();
     });
   }
 
@@ -533,8 +612,16 @@ export function initColumnVisibilityEvents() {
       ];
       const customFields = customFieldService.getActiveFields();
       customFields.forEach(cf => allPossible.push(cf.code));
-      state.setVisibleColumns(allPossible);
-      reRenderModal();
+      state.setVisibleColumns(allPossible, false, true);
+      document.querySelectorAll('.colvis-check').forEach(c => {
+        c.checked = true;
+        const parentLabel = c.closest('.colvis-item-label');
+        if (parentLabel) {
+          parentLabel.style.background = 'rgba(56, 189, 248, 0.08)';
+          parentLabel.style.borderColor = 'rgba(56, 189, 248, 0.35)';
+        }
+      });
+      updateVisibilitySummaryUI();
     });
   }
 
@@ -542,16 +629,38 @@ export function initColumnVisibilityEvents() {
   if (btnMinimal) {
     btnMinimal.addEventListener('click', () => {
       const minCols = ['sl', 'select', 'machineName', 'model', 'serialNumber', 'unit', 'line', 'total_quantity', 'status', 'actions'];
-      state.setVisibleColumns(minCols);
-      reRenderModal();
+      state.setVisibleColumns(minCols, false, true);
+      document.querySelectorAll('.colvis-check').forEach(c => {
+        const col = c.getAttribute('data-col');
+        const field = c.getAttribute('data-field');
+        const isChecked = minCols.includes(col) || minCols.includes(field);
+        c.checked = isChecked;
+        const parentLabel = c.closest('.colvis-item-label');
+        if (parentLabel) {
+          parentLabel.style.background = isChecked ? 'rgba(56, 189, 248, 0.08)' : 'rgba(15, 23, 42, 0.4)';
+          parentLabel.style.borderColor = isChecked ? 'rgba(56, 189, 248, 0.35)' : 'rgba(255,255,255,0.06)';
+        }
+      });
+      updateVisibilitySummaryUI();
     });
   }
 
   const btnDeselectAll = document.getElementById('btn-colvis-deselect-all');
   if (btnDeselectAll) {
     btnDeselectAll.addEventListener('click', () => {
-      state.setVisibleColumns(['sl', 'select', 'machineName', 'actions']);
-      reRenderModal();
+      const baseCols = ['sl', 'select', 'machineName', 'actions'];
+      state.setVisibleColumns(baseCols, false, true);
+      document.querySelectorAll('.colvis-check').forEach(c => {
+        const col = c.getAttribute('data-col');
+        const isBase = col === 'machineName' || col === 'actions';
+        c.checked = isBase;
+        const parentLabel = c.closest('.colvis-item-label');
+        if (parentLabel) {
+          parentLabel.style.background = isBase ? 'rgba(56, 189, 248, 0.08)' : 'rgba(15, 23, 42, 0.4)';
+          parentLabel.style.borderColor = isBase ? 'rgba(56, 189, 248, 0.35)' : 'rgba(255,255,255,0.06)';
+        }
+      });
+      updateVisibilitySummaryUI();
     });
   }
 
@@ -563,11 +672,16 @@ export function initColumnVisibilityEvents() {
       if (col) {
         state.toggleColumnVisibility(col);
         if (field && field !== col) {
-          // Keep both keys in sync
           const isNowVis = state.get('visibleColumns')?.has(col);
           if (isNowVis) state.get('visibleColumns')?.add(field);
           else state.get('visibleColumns')?.delete(field);
         }
+        const parentLabel = chk.closest('.colvis-item-label');
+        if (parentLabel) {
+          parentLabel.style.background = chk.checked ? 'rgba(56, 189, 248, 0.08)' : 'rgba(15, 23, 42, 0.4)';
+          parentLabel.style.borderColor = chk.checked ? 'rgba(56, 189, 248, 0.35)' : 'rgba(255,255,255,0.06)';
+        }
+        updateVisibilitySummaryUI();
       }
     });
   });
