@@ -30,6 +30,100 @@ function escapeHtml(str) {
     .replace(/'/g, '&#39;');
 }
 
+// Singleton Actions Menu Portal directly on document.body (immune to table transforms & overflow clipping)
+export function ensureActionsPortal() {
+  let portal = document.getElementById('inventory-row-actions-portal');
+  if (!portal) {
+    portal = document.createElement('div');
+    portal.id = 'inventory-row-actions-portal';
+    portal.className = 'actions-dropdown-menu table-row-actions-menu';
+    portal.style.display = 'none';
+    portal.style.position = 'fixed';
+    portal.style.zIndex = '9999999';
+    document.body.appendChild(portal);
+  }
+  return portal;
+}
+
+// Renders row actions HTML dynamically for any selected machine
+export function renderRowActionsMenuContent(m) {
+  if (!m) return '';
+  const showCrossFloorIdle = state.get('showCrossFloorIdle') || false;
+  const isViewOnly = authService.isMachineViewOnlyForUser(m, null, showCrossFloorIdle);
+  const meta = { isAmb: isAmbulanceMachine(m) };
+
+  if (isViewOnly) {
+    let html = `
+      <div style="padding: 6px 12px; font-size: 10.5px; font-weight: 700; color: #38bdf8; border-bottom: 1px solid rgba(255,255,255,0.08); background: rgba(56, 189, 248, 0.05); display: flex; align-items: center; justify-content: space-between;">
+        <span>🌐 Cross-Floor Idle</span>
+        <span class="badge" style="font-size: 9px; padding: 1px 4px; background: rgba(56, 189, 248, 0.2); color: #38bdf8;">View-Only</span>
+      </div>
+    `;
+    if (authService.canRequestTransfer()) {
+      html += `
+        <button type="button" class="actions-menu-item btn-transfer-machine" data-id="${m.id}" data-serial="${m.serialNumber || ''}" style="color: #38bdf8; font-weight: 800; background: rgba(56, 189, 248, 0.1); display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 14px;">🔄</span> Request Machine Transfer
+        </button>
+        <div class="actions-menu-divider"></div>
+      `;
+    }
+    html += `
+      <button type="button" class="actions-menu-item btn-inspect-machine" data-id="${m.id}">
+        🔍 Machine Details &amp; Lifetime
+      </button>
+      <button type="button" class="actions-menu-item btn-history-machine" data-id="${m.id}">
+        🕒 Timeline &amp; Transfer Log
+      </button>
+      <button type="button" class="actions-menu-item btn-spare-parts-machine" data-id="${m.id}">
+        ⚙️ Spare Parts Usage
+      </button>
+    `;
+    return html;
+  }
+
+  let html = `
+    <button type="button" class="actions-menu-item btn-inspect-machine" data-id="${m.id}">
+      🔍 Machine Details &amp; Lifetime
+    </button>
+    <button type="button" class="actions-menu-item btn-history-machine" data-id="${m.id}">
+      🕒 Timeline &amp; Transfer Log
+    </button>
+    <button type="button" class="actions-menu-item btn-spare-parts-machine" data-id="${m.id}">
+      ⚙️ Spare Parts Usage
+    </button>
+  `;
+
+  if (authService.hasAccess('transfers', 'ADD') && authService.canOperateMachine(m)) {
+    html += `
+      <button type="button" class="actions-menu-item btn-transfer-machine" data-id="${m.id}" data-serial="${m.serialNumber || ''}">
+        🔄 Transfer Machine
+      </button>
+    `;
+  }
+
+  if (authService.hasAccess('machines', 'EDIT') && authService.canOperateMachine(m)) {
+    html += `
+      <div class="actions-menu-divider"></div>
+      <button type="button" class="actions-menu-item btn-toggle-ambulance-machine" data-id="${m.id}" style="color: ${meta.isAmb ? '#fda4af' : '#38bdf8'}; font-weight: 600;">
+        ${meta.isAmb ? '🚑 Remove Ambulance Status' : '🚑 Set as Ambulance Machine'}
+      </button>
+      <button type="button" class="actions-menu-item btn-edit-machine" data-id="${m.id}">
+        ✏️ Edit Machine
+      </button>
+    `;
+  }
+
+  if (authService.hasAccess('machines', 'DELETE') && authService.canOperateMachine(m)) {
+    html += `
+      <button type="button" class="actions-menu-item danger-item btn-delete-machine" data-id="${m.id}">
+        🗑️ Delete Machine
+      </button>
+    `;
+  }
+
+  return html;
+}
+
 /**
  * Universal Single Machine Row HTML Builder (Supports Standard & Virtual Windowed Rendering)
  */
@@ -613,74 +707,12 @@ export function renderInventoryTable() {
     renderTh: (thStyle, thClass) => `<th class="col-actions-header ${thClass}" style="width: 115px; min-width: 115px; max-width: 115px; text-align: center; ${thStyle}">Actions</th>`,
     renderTd: (m, meta, tdStyle, tdClass) => {
       const isViewOnly = authService.isMachineViewOnlyForUser(m, null, showCrossFloorIdle);
-      if (isViewOnly) {
-        return `
-          <td class="col-actions-cell ${tdClass}" style="width: 115px; min-width: 115px; max-width: 115px; text-align: center; ${tdStyle}">
-            <div class="actions-dropdown-container">
-              <button type="button" class="btn-actions-trigger btn-trigger-row-actions" data-id="${m.id}" title="View options or request machine transfer" style="border-color: rgba(56, 189, 248, 0.45); color: #38bdf8; background: rgba(56, 189, 248, 0.12); font-weight: 700; font-size: 11.5px;">
-                👁️ Options ▾
-              </button>
-              <div id="actions-menu-${m.id}" class="actions-dropdown-menu table-row-actions-menu">
-                <div style="padding: 6px 12px; font-size: 10.5px; font-weight: 700; color: #38bdf8; border-bottom: 1px solid rgba(255,255,255,0.08); background: rgba(56, 189, 248, 0.05); display: flex; align-items: center; justify-content: space-between;">
-                  <span>🌐 Cross-Floor Idle</span>
-                  <span class="badge" style="font-size: 9px; padding: 1px 4px; background: rgba(56, 189, 248, 0.2); color: #38bdf8;">View-Only</span>
-                </div>
-                ${authService.canRequestTransfer() ? `
-                  <button type="button" class="actions-menu-item btn-transfer-machine" data-id="${m.id}" data-serial="${m.serialNumber || ''}" style="color: #38bdf8; font-weight: 800; background: rgba(56, 189, 248, 0.1); display: flex; align-items: center; gap: 8px;">
-                    <span style="font-size: 14px;">🔄</span> Request Machine Transfer
-                  </button>
-                  <div class="actions-menu-divider"></div>
-                ` : ''}
-                <button type="button" class="actions-menu-item btn-inspect-machine" data-id="${m.id}">
-                  🔍 Machine Details &amp; Lifetime
-                </button>
-                <button type="button" class="actions-menu-item btn-history-machine" data-id="${m.id}">
-                  🕒 Timeline &amp; Transfer Log
-                </button>
-                <button type="button" class="actions-menu-item btn-spare-parts-machine" data-id="${m.id}">
-                  ⚙️ Spare Parts Usage
-                </button>
-              </div>
-            </div>
-          </td>
-        `;
-      }
       return `
         <td class="col-actions-cell ${tdClass}" style="width: 115px; min-width: 115px; max-width: 115px; text-align: center; ${tdStyle}">
           <div class="actions-dropdown-container">
-            <button type="button" class="btn-actions-trigger btn-trigger-row-actions" data-id="${m.id}" title="Open Action Menu">
-              ⋮ Actions ▾
+            <button type="button" class="btn-actions-trigger btn-trigger-row-actions" data-id="${m.id}" title="${isViewOnly ? 'View options or request machine transfer' : 'Open Action Menu'}" style="${isViewOnly ? 'border-color: rgba(56, 189, 248, 0.45); color: #38bdf8; background: rgba(56, 189, 248, 0.12); font-weight: 700; font-size: 11.5px;' : ''}">
+              ${isViewOnly ? '👁️ Options ▾' : '⋮ Actions ▾'}
             </button>
-            <div id="actions-menu-${m.id}" class="actions-dropdown-menu table-row-actions-menu">
-              <button type="button" class="actions-menu-item btn-inspect-machine" data-id="${m.id}">
-                🔍 Machine Details &amp; Lifetime
-              </button>
-              <button type="button" class="actions-menu-item btn-history-machine" data-id="${m.id}">
-                🕒 Timeline &amp; Transfer Log
-              </button>
-              <button type="button" class="actions-menu-item btn-spare-parts-machine" data-id="${m.id}">
-                ⚙️ Spare Parts Usage
-              </button>
-              ${(authService.hasAccess('transfers', 'ADD') && authService.canOperateMachine(m)) ? `
-                <button type="button" class="actions-menu-item btn-transfer-machine" data-id="${m.id}" data-serial="${m.serialNumber || ''}">
-                  🔄 Transfer Machine
-                </button>
-              ` : ''}
-              ${(authService.hasAccess('machines', 'EDIT') && authService.canOperateMachine(m)) ? `
-                <div class="actions-menu-divider"></div>
-                <button type="button" class="actions-menu-item btn-toggle-ambulance-machine" data-id="${m.id}" style="color: ${meta.isAmb ? '#fda4af' : '#38bdf8'}; font-weight: 600;">
-                  ${meta.isAmb ? '🚑 Remove Ambulance Status' : '🚑 Set as Ambulance Machine'}
-                </button>
-                <button type="button" class="actions-menu-item btn-edit-machine" data-id="${m.id}">
-                  ✏️ Edit Machine
-                </button>
-              ` : ''}
-              ${(authService.hasAccess('machines', 'DELETE') && authService.canOperateMachine(m)) ? `
-                <button type="button" class="actions-menu-item danger-item btn-delete-machine" data-id="${m.id}">
-                  🗑️ Delete Machine
-                </button>
-              ` : ''}
-            </div>
           </div>
         </td>
       `;
@@ -1828,6 +1860,13 @@ export function initInventoryTableEvents() {
   const closeAllActionMenus = () => {
     window.__isActionMenuOpen = false;
     if (moreMenu) moreMenu.classList.remove('show');
+    const portal = document.getElementById('inventory-row-actions-portal');
+    if (portal) {
+      portal.classList.remove('show');
+      portal.style.display = 'none';
+      portal.removeAttribute('data-active-id');
+      portal.innerHTML = '';
+    }
     document.querySelectorAll('.actions-dropdown-menu.show').forEach(m => {
       m.classList.remove('show');
       m.style.display = 'none';
@@ -1844,11 +1883,14 @@ export function initInventoryTableEvents() {
 
   // Helper to dynamically track and reposition the open menu on table scroll without closing it abruptly
   const repositionOpenMenu = () => {
-    const activeBtn = document.querySelector('.btn-trigger-row-actions.active');
-    if (!activeBtn) return;
-    const id = activeBtn.getAttribute('data-id');
-    const menu = document.getElementById(`actions-menu-${id}`);
-    if (!menu || !menu.classList.contains('show')) return;
+    const portal = document.getElementById('inventory-row-actions-portal');
+    if (!portal || !portal.classList.contains('show')) return;
+    const activeId = portal.getAttribute('data-active-id');
+    const activeBtn = document.querySelector(`.btn-trigger-row-actions[data-id="${activeId}"]`);
+    if (!activeBtn) {
+      closeAllActionMenus();
+      return;
+    }
 
     const rect = activeBtn.getBoundingClientRect();
     const vp = document.getElementById('inventory-table-scroll-viewport');
@@ -1861,8 +1903,8 @@ export function initInventoryTableEvents() {
       }
     }
 
-    const menuWidth = 215;
-    const menuHeight = menu.offsetHeight || 235;
+    const menuWidth = 220;
+    const menuHeight = portal.offsetHeight || 235;
 
     const spaceBelow = window.innerHeight - rect.bottom;
     const spaceAbove = rect.top;
@@ -1892,13 +1934,9 @@ export function initInventoryTableEvents() {
       left = window.innerWidth - menuWidth - 10;
     }
 
-    menu.style.position = 'fixed';
-    menu.style.top = `${top}px`;
-    menu.style.left = `${left}px`;
-    menu.style.right = 'auto';
-    menu.style.bottom = 'auto';
-    menu.style.width = `${menuWidth}px`;
-    menu.style.zIndex = '999999';
+    portal.style.top = `${top}px`;
+    portal.style.left = `${left}px`;
+    portal.style.width = `${menuWidth}px`;
 
     const isOptionsBtn = activeBtn.title && activeBtn.title.includes('options');
     activeBtn.innerHTML = isOptionsBtn 
@@ -1906,30 +1944,245 @@ export function initInventoryTableEvents() {
       : (isDropup ? '⋮ Actions ▴' : '⋮ Actions ▾');
   };
 
+  // Row Actions Dropdown Toggle with Smart Floating Positioning & Auto-Flip
+  const handleOpenRowActionMenu = (btn, id) => {
+    const portal = ensureActionsPortal();
+    const tr = btn.closest('tr');
+    const td = btn.closest('td');
+    const wasOpen = portal.classList.contains('show') && portal.getAttribute('data-active-id') === id;
+    
+    // Close other open menus
+    closeAllActionMenus();
+
+    if (!wasOpen) {
+      const m = storage.getItem(TABLE_NAMES.MACHINES, id);
+      if (!m) return;
+
+      portal.innerHTML = renderRowActionsMenuContent(m);
+      portal.setAttribute('data-active-id', id);
+      portal.classList.add('show');
+      portal.style.display = 'flex';
+      btn.classList.add('active');
+      if (tr) tr.classList.add('row-actions-active');
+      if (td) td.classList.add('td-actions-active');
+      window.__isActionMenuOpen = true;
+
+      // Smart floating coordinates: completely escapes table overflow-y/x clipping
+      const rect = btn.getBoundingClientRect();
+      const menuWidth = 220;
+      const menuHeight = portal.offsetHeight || 235;
+
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const spaceAbove = rect.top;
+
+      let isDropup = false;
+      let top;
+
+      // If not enough room below (less than menuHeight + 15px) and there's more room above:
+      if (spaceBelow < (menuHeight + 15) && spaceAbove > spaceBelow) {
+        isDropup = true;
+        top = Math.max(10, rect.top - menuHeight - 4);
+      } else {
+        isDropup = false;
+        top = rect.bottom + 4;
+        // Guard against viewport overflow
+        if (top + menuHeight > window.innerHeight - 10) {
+          if (spaceAbove > menuHeight) {
+            isDropup = true;
+            top = Math.max(10, rect.top - menuHeight - 4);
+          } else {
+            top = Math.max(10, window.innerHeight - menuHeight - 10);
+          }
+        }
+      }
+
+      // Horizontal alignment: right-align with button, bounded within viewport
+      let left = rect.right - menuWidth;
+      if (left < 10) left = 10;
+      if (left + menuWidth > window.innerWidth - 10) {
+        left = window.innerWidth - menuWidth - 10;
+      }
+
+      portal.style.position = 'fixed';
+      portal.style.top = `${top}px`;
+      portal.style.left = `${left}px`;
+      portal.style.right = 'auto';
+      portal.style.bottom = 'auto';
+      portal.style.width = `${menuWidth}px`;
+      portal.style.zIndex = '9999999';
+
+      const isOptionsBtn = btn.title && btn.title.includes('options');
+      btn.innerHTML = isOptionsBtn 
+        ? (isDropup ? '👁️ Options ▴' : '👁️ Options ▾')
+        : (isDropup ? '⋮ Actions ▴' : '⋮ Actions ▾');
+    }
+  };
+
   window.__closeAllActionMenus = closeAllActionMenus;
   window.__repositionOpenActionMenu = repositionOpenMenu;
+  window.__handleOpenRowActionMenu = handleOpenRowActionMenu;
 
   // Single idempotent registration of global document/window listeners
   if (!window.__inventoryActionsGlobalListenersAttached) {
     window.__inventoryActionsGlobalListenersAttached = true;
 
-    // Close menus on outside click
+    // Single unified click delegation for ALL row action triggers and portal items
     document.addEventListener('click', (e) => {
-      if (!e.target.closest('.actions-dropdown-container') && !e.target.closest('.actions-dropdown-menu')) {
-        if (window.__closeAllActionMenus) window.__closeAllActionMenus();
+      // 1. Click on "⋮ Actions ▾" or "👁️ Options ▾" button
+      const triggerBtn = e.target.closest('.btn-trigger-row-actions');
+      if (triggerBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        const id = triggerBtn.getAttribute('data-id');
+        handleOpenRowActionMenu(triggerBtn, id);
+        return;
+      }
+
+      // 2. Click inside the actions portal
+      const portal = document.getElementById('inventory-row-actions-portal');
+      if (portal && portal.contains(e.target)) {
+        const inspectBtn = e.target.closest('.btn-inspect-machine');
+        if (inspectBtn) {
+          e.preventDefault();
+          e.stopPropagation();
+          const id = inspectBtn.getAttribute('data-id');
+          closeAllActionMenus();
+          if (id) {
+            state.set('activeMachineId', id);
+            state.set('activeModal', 'machine-details');
+          }
+          return;
+        }
+
+        const histBtn = e.target.closest('.btn-history-machine');
+        if (histBtn) {
+          e.preventDefault();
+          e.stopPropagation();
+          const id = histBtn.getAttribute('data-id');
+          closeAllActionMenus();
+          if (id) {
+            state.set('activeMachineId', id);
+            state.set('currentView', 'machine-history');
+          }
+          return;
+        }
+
+        const partsBtn = e.target.closest('.btn-spare-parts-machine');
+        if (partsBtn) {
+          e.preventDefault();
+          e.stopPropagation();
+          const id = partsBtn.getAttribute('data-id');
+          closeAllActionMenus();
+          if (id) {
+            state.set('activeMachineId', id);
+            state.set('currentView', 'machine-history');
+          }
+          return;
+        }
+
+        const transferBtn = e.target.closest('.btn-transfer-machine');
+        if (transferBtn) {
+          e.preventDefault();
+          e.stopPropagation();
+          const id = transferBtn.getAttribute('data-id');
+          const serial = transferBtn.getAttribute('data-serial');
+          closeAllActionMenus();
+          if (id || serial) {
+            state.set('activeMachineId', id || null);
+            state.set('activeMachineSerial', serial || null);
+            state.set('activeModal', 'transfer-machine');
+          }
+          return;
+        }
+
+        const ambBtn = e.target.closest('.btn-toggle-ambulance-machine');
+        if (ambBtn) {
+          e.preventDefault();
+          e.stopPropagation();
+          const id = ambBtn.getAttribute('data-id');
+          closeAllActionMenus();
+          if (id) {
+            const machine = storage.getItem(TABLE_NAMES.MACHINES, id);
+            if (machine) {
+              const nextAmb = !isAmbulanceMachine(machine);
+              machineService.updateMachine(id, {
+                isAmbulance: nextAmb,
+                status: nextAmb ? (machine.status === 'ACTIVE' ? 'ACTIVE' : 'AMBULANCE') : (machine.status === 'AMBULANCE' ? 'ACTIVE' : machine.status)
+              }).then(() => {
+                notificationService.success(`Machine #${machine.serialNumber || id} ${nextAmb ? 'designated as 🚑 Ambulance Machine' : 'removed from Ambulance status'}`);
+                state.emit('inventory:updated');
+              }).catch(err => {
+                notificationService.error(`Failed to update machine: ${err.message}`);
+              });
+            }
+          }
+          return;
+        }
+
+        const editBtn = e.target.closest('.btn-edit-machine');
+        if (editBtn) {
+          e.preventDefault();
+          e.stopPropagation();
+          const id = editBtn.getAttribute('data-id');
+          closeAllActionMenus();
+          if (id) {
+            state.set('activeMachineId', id);
+            state.set('activeModal', 'machine-form');
+          }
+          return;
+        }
+
+        const delBtn = e.target.closest('.btn-delete-machine');
+        if (delBtn) {
+          e.preventDefault();
+          e.stopPropagation();
+          const id = delBtn.getAttribute('data-id');
+          closeAllActionMenus();
+          if (id) {
+            const m = storage.getItem(TABLE_NAMES.MACHINES, id);
+            notificationService.confirm({
+              title: 'Delete Machine',
+              message: `Permanently delete machine <strong>${m?.serialNumber || id}</strong>?`,
+              icon: '🗑️',
+              confirmText: 'Delete Machine',
+              isDestructive: true
+            }).then(confirmed => {
+              if (confirmed) {
+                try {
+                  machineService.deleteMachine(id);
+                  state.emit('inventory:updated');
+                  notificationService.success('Machine deleted successfully.');
+                } catch (err) {
+                  notificationService.error(err.message);
+                }
+              }
+            });
+          }
+          return;
+        }
+        return;
+      }
+
+      // 3. Click outside -> close menus
+      if (!e.target.closest('.actions-dropdown-container') && !e.target.closest('#inventory-row-actions-portal')) {
+        closeAllActionMenus();
       }
     });
 
     // Close on Escape key
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
-        if (window.__closeAllActionMenus) window.__closeAllActionMenus();
+        closeAllActionMenus();
       }
     });
 
-    // Smoothly reposition menu on window resize
+    // Smoothly reposition menu on window resize and scroll
     window.addEventListener('resize', () => {
-      if (window.__repositionOpenActionMenu) window.__repositionOpenActionMenu();
+      repositionOpenMenu();
+    }, { passive: true });
+
+    window.addEventListener('scroll', () => {
+      if (window.__isActionMenuOpen) repositionOpenMenu();
     }, { passive: true });
   }
 
@@ -2101,84 +2354,6 @@ export function initInventoryTableEvents() {
     btn.addEventListener('click', () => {
       const p = parseInt(btn.getAttribute('data-page'), 10);
       if (p) state.updateFilters({ page: p });
-    });
-  });
-
-
-  // 9. Row Actions Dropdown Toggle with Smart Floating Positioning & Auto-Flip
-  const handleOpenRowActionMenu = (btn, id) => {
-    const menu = document.getElementById(`actions-menu-${id}`);
-    const tr = btn.closest('tr');
-    const td = btn.closest('td');
-    const wasOpen = menu && menu.classList.contains('show');
-    
-    // Close other open menus
-    closeAllActionMenus();
-
-    if (menu && !wasOpen) {
-      menu.classList.add('show');
-      menu.style.display = 'flex';
-      btn.classList.add('active');
-      if (tr) tr.classList.add('row-actions-active');
-      if (td) td.classList.add('td-actions-active');
-      window.__isActionMenuOpen = true;
-
-      // Smart floating coordinates: completely escapes table overflow-y/x clipping
-      const rect = btn.getBoundingClientRect();
-      const menuWidth = 215;
-      const menuHeight = menu.offsetHeight || 235;
-
-      const spaceBelow = window.innerHeight - rect.bottom;
-      const spaceAbove = rect.top;
-
-      let isDropup = false;
-      let top;
-
-      // If not enough room below (less than menuHeight + 15px) and there's more room above:
-      if (spaceBelow < (menuHeight + 15) && spaceAbove > spaceBelow) {
-        isDropup = true;
-        top = Math.max(10, rect.top - menuHeight - 4);
-      } else {
-        isDropup = false;
-        top = rect.bottom + 4;
-        // Guard against viewport overflow
-        if (top + menuHeight > window.innerHeight - 10) {
-          if (spaceAbove > menuHeight) {
-            isDropup = true;
-            top = Math.max(10, rect.top - menuHeight - 4);
-          } else {
-            top = Math.max(10, window.innerHeight - menuHeight - 10);
-          }
-        }
-      }
-
-      // Horizontal alignment: right-align with button, bounded within viewport
-      let left = rect.right - menuWidth;
-      if (left < 10) left = 10;
-      if (left + menuWidth > window.innerWidth - 10) {
-        left = window.innerWidth - menuWidth - 10;
-      }
-
-      menu.style.position = 'fixed';
-      menu.style.top = `${top}px`;
-      menu.style.left = `${left}px`;
-      menu.style.right = 'auto';
-      menu.style.bottom = 'auto';
-      menu.style.width = `${menuWidth}px`;
-      menu.style.zIndex = '999999';
-
-      const isOptionsBtn = btn.title && btn.title.includes('options');
-      btn.innerHTML = isOptionsBtn 
-        ? (isDropup ? '👁️ Options ▴' : '👁️ Options ▾')
-        : (isDropup ? '⋮ Actions ▴' : '⋮ Actions ▾');
-    }
-  };
-
-  document.querySelectorAll('.btn-trigger-row-actions').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const id = btn.getAttribute('data-id');
-      handleOpenRowActionMenu(btn, id);
     });
   });
 

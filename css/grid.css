@@ -807,7 +807,6 @@ td.col-actions-cell {
     touch-action: pan-x pan-y !important;
     overscroll-behavior-x: contain !important;
     overscroll-behavior-y: contain !important;
-    transform: translateZ(0);
     will-change: scroll-position;
   }
 
@@ -1197,9 +1196,7 @@ body.theme-light .inventory-grid-info-bar .info-sep {
   -webkit-overflow-scrolling: touch !important;
   touch-action: pan-x pan-y !important;
   overscroll-behavior: contain !important;
-  transform: translateZ(0); /* Hardware accelerated layer compositing */
   will-change: scroll-position;
-  contain: layout size;
 }
 
 #vscroll-top-spacer,

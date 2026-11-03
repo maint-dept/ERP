@@ -1349,14 +1349,15 @@ td.td-actions-active {
 }
 
 /* Floating table row dropdown: completely immune to table overflow-y/x clipping */
+#inventory-row-actions-portal,
 .table-row-actions-menu {
   position: fixed !important;
   background: #0c1427 !important;
   border: 1px solid rgba(255, 255, 255, 0.15) !important;
   border-radius: 8px !important;
   box-shadow: 0 16px 36px rgba(0, 0, 0, 0.8) !important;
-  z-index: 999999 !important;
-  min-width: 215px !important;
+  z-index: 9999999 !important;
+  min-width: 220px !important;
   max-width: 260px !important;
   max-height: calc(100vh - 30px) !important;
   overflow-y: auto !important;
