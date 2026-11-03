@@ -28,7 +28,7 @@ import { auditService } from './services/auditService.js';
 import { notificationService } from './services/notificationService.js';
 import { openDeleteConfirmationModal, confirmDelete } from './components/deleteConfirmationModal.js';
 import { tempImportService } from './services/tempImportService.js';
-import { router } from './services/router.js?v=4.27.8';
+import { router } from './services/router.js?v=4.27.9';
 import { moduleLoader } from './services/moduleLoader.js?v=4.27.7';
 import { realtimeService } from './services/realtimeService.js';
 import { homepageService } from './services/homepageService.js';
@@ -219,6 +219,7 @@ class ERPApplication {
 
     // Instant Zero-Delay Pipeline for Login, Admin Gateway, and Homepage (0ms Render)
     if (isStandaloneView) {
+      this.initGlobalEventSubscriptions();
       state.set('currentView', initialView, { silent: true });
       this.render();
       window.__appLoaded = true;
@@ -280,6 +281,50 @@ class ERPApplication {
     } catch (_) { }
 
     // Global State & Event Subscriptions
+    this.initGlobalEventSubscriptions();
+
+    window.__appLoaded = true;
+    if (typeof window !== 'undefined' && !window.__pageUsableTime && typeof performance !== 'undefined') {
+      window.__pageUsableTime = performance.now();
+    }
+
+    // Ensure base URL reflects clean landing Home URL (/ERP/) without #home when allowed
+    if (typeof window !== 'undefined' && window.location) {
+      const hash = window.location.hash ? window.location.hash.replace(/^#/, '').trim() : '';
+      if (!hash || hash === 'home') {
+        try {
+          const visibilityMode = (typeof localStorage !== 'undefined' ? localStorage.getItem('al_muslim_homepage_visibility_mode') : null) || 'login';
+          const isHomePreview = new URLSearchParams(window.location.search || '').get('preview') === '1' || new URLSearchParams(window.location.search || '').get('preview_home') === '1';
+          if (visibilityMode !== 'login' || isHomePreview) {
+            const cleanUrl = (window.location.pathname || '/') + (window.location.search || '');
+            window.history.replaceState({ view: 'home' }, '', cleanUrl);
+          }
+        } catch (_) { }
+      }
+    }
+
+    console.log('Al-Muslim Group Garments Maintenance ERP loaded successfully.');
+
+    // Boot background Auto-Sync Engine safely 6s after UI has completely loaded
+    setTimeout(() => {
+      try {
+        if (typeof syncManager !== 'undefined' && typeof syncManager.startAutoSyncEngine === 'function') {
+          syncManager.startAutoSyncEngine();
+        }
+      } catch (e) {
+        console.warn('Auto-sync engine boot notice:', e.message);
+      }
+    }, 6000);
+  }
+
+  /**
+   * Initializes all global state listeners and window event subscriptions.
+   * Guaranteed to be bound on startup regardless of standalone view or full shell.
+   */
+  initGlobalEventSubscriptions() {
+    if (this._globalSubscriptionsBound) return;
+    this._globalSubscriptionsBound = true;
+
     state.on('change:currentView', (view) => {
       if (!this._isSwitchingView && this._currentRenderedView !== view) {
         this.switchView(view);
@@ -387,7 +432,7 @@ class ERPApplication {
         const currentUser = authService.getCurrentUser();
         const isPreview = new URLSearchParams(window.location.search || '').get('preview') === '1';
         if (mode === 'login' && !isPreview) {
-          this.switchView(currentUser ? (authService.getFirstAllowedView(currentUser) || 'dashboard') : 'login');
+          router.navigate(currentUser ? (authService.getFirstAllowedView(currentUser) || 'dashboard') : 'login', { replace: true });
         } else {
           this.render();
         }
@@ -440,39 +485,6 @@ class ERPApplication {
         this.queueBackgroundRender();
       }
     });
-
-    window.__appLoaded = true;
-    if (typeof window !== 'undefined' && !window.__pageUsableTime && typeof performance !== 'undefined') {
-      window.__pageUsableTime = performance.now();
-    }
-
-    // Ensure base URL reflects clean landing Home URL (/ERP/) without #home when allowed
-    if (typeof window !== 'undefined' && window.location) {
-      const hash = window.location.hash ? window.location.hash.replace(/^#/, '').trim() : '';
-      if (!hash || hash === 'home') {
-        try {
-          const visibilityMode = (typeof localStorage !== 'undefined' ? localStorage.getItem('al_muslim_homepage_visibility_mode') : null) || 'public';
-          const isHomePreview = new URLSearchParams(window.location.search || '').get('preview') === '1' || new URLSearchParams(window.location.search || '').get('preview_home') === '1';
-          if (visibilityMode !== 'login' || isHomePreview) {
-            const cleanUrl = (window.location.pathname || '/') + (window.location.search || '');
-            window.history.replaceState({ view: 'home' }, '', cleanUrl);
-          }
-        } catch (_) { }
-      }
-    }
-
-    console.log('Al-Muslim Group Garments Maintenance ERP loaded successfully.');
-
-    // Boot background Auto-Sync Engine safely 6s after UI has completely loaded
-    setTimeout(() => {
-      try {
-        if (typeof syncManager !== 'undefined' && typeof syncManager.startAutoSyncEngine === 'function') {
-          syncManager.startAutoSyncEngine();
-        }
-      } catch (e) {
-        console.warn('Auto-sync engine boot notice:', e.message);
-      }
-    }, 6000);
   }
 
   render() {
@@ -488,7 +500,7 @@ class ERPApplication {
       const isHomePreview = searchParams.get('preview') === '1' || searchParams.get('preview_home') === '1';
       const visibilityMode = (typeof homepageService !== 'undefined' && typeof homepageService.getVisibilityMode === 'function')
         ? homepageService.getVisibilityMode()
-        : ((typeof localStorage !== 'undefined' ? localStorage.getItem('al_muslim_homepage_visibility_mode') : null) || 'public');
+        : ((typeof localStorage !== 'undefined' ? localStorage.getItem('al_muslim_homepage_visibility_mode') : null) || 'login');
 
       if (currentView === 'home' && !isHomePreview) {
         if (visibilityMode === 'login') {
@@ -664,7 +676,7 @@ class ERPApplication {
       const isHomePreview = options.params?.preview === '1' || (typeof window !== 'undefined' && new URLSearchParams(window.location.search || '').get('preview') === '1');
       const visibilityMode = (typeof homepageService !== 'undefined' && typeof homepageService.getVisibilityMode === 'function')
         ? homepageService.getVisibilityMode()
-        : ((typeof localStorage !== 'undefined' ? localStorage.getItem('al_muslim_homepage_visibility_mode') : null) || 'public');
+        : ((typeof localStorage !== 'undefined' ? localStorage.getItem('al_muslim_homepage_visibility_mode') : null) || 'login');
 
       if (newView === 'home' && !isHomePreview) {
         if (visibilityMode === 'login') {

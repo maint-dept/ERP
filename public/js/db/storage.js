@@ -437,7 +437,7 @@ class StorageEngine {
     }
 
     if (!this.data[TABLE_NAMES.SETTINGS].homepageVisibilityMode) {
-      this.data[TABLE_NAMES.SETTINGS].homepageVisibilityMode = DEFAULT_SETTINGS.homepageVisibilityMode || 'public';
+      this.data[TABLE_NAMES.SETTINGS].homepageVisibilityMode = DEFAULT_SETTINGS.homepageVisibilityMode || 'login';
     }
     if (!this.data[TABLE_NAMES.SETTINGS].adminLoginSlug) {
       this.data[TABLE_NAMES.SETTINGS].adminLoginSlug = DEFAULT_SETTINGS.adminLoginSlug || 'secure-admin-gateway';

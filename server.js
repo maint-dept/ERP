@@ -482,6 +482,32 @@ const server = http.createServer((req, res) => {
             }
           }
 
+          // Protect settings from accidental revert: preserve authoritative homepageVisibilityMode and adminLoginSlug
+          if (fs.existsSync(DB_FILE)) {
+            try {
+              const existing = JSON.parse(fs.readFileSync(DB_FILE, 'utf8') || '{}');
+              if (existing.settings && parsed.settings) {
+                if (existing.settings.homepageVisibilityMode && (parsed.settings.homepageVisibilityMode === 'public' || !parsed.settings.homepageVisibilityMode)) {
+                  const currTs = existing.settings.homepageVisibilityUpdatedAt ? new Date(existing.settings.homepageVisibilityUpdatedAt).getTime() : 0;
+                  const inTs = parsed.settings.homepageVisibilityUpdatedAt ? new Date(parsed.settings.homepageVisibilityUpdatedAt).getTime() : 0;
+                  if (currTs >= inTs) {
+                    parsed.settings.homepageVisibilityMode = existing.settings.homepageVisibilityMode;
+                    parsed.settings.homepageVisibilityUpdatedAt = existing.settings.homepageVisibilityUpdatedAt;
+                    parsed.settings.homepageVisibilityUpdatedBy = existing.settings.homepageVisibilityUpdatedBy;
+                  }
+                }
+                if (existing.settings.adminLoginSlug && (!parsed.settings.adminLoginSlug || parsed.settings.adminLoginSlug === 'secure-admin-gateway')) {
+                  const currSlugTs = existing.settings.adminLoginSlugUpdatedAt ? new Date(existing.settings.adminLoginSlugUpdatedAt).getTime() : 0;
+                  const inSlugTs = parsed.settings.adminLoginSlugUpdatedAt ? new Date(parsed.settings.adminLoginSlugUpdatedAt).getTime() : 0;
+                  if (currSlugTs >= inSlugTs) {
+                    parsed.settings.adminLoginSlug = existing.settings.adminLoginSlug;
+                    parsed.settings.adminLoginSlugUpdatedAt = existing.settings.adminLoginSlugUpdatedAt;
+                  }
+                }
+              }
+            } catch (_) {}
+          }
+
           // Create backup before overwrite if existing file exists
           const backupFile = path.join(DATA_DIR, 'erp_database.backup.json');
           if (fs.existsSync(DB_FILE)) {

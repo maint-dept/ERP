@@ -549,6 +549,37 @@ try {
                 validateMachinesDataset($tablesData['machines']);
             }
             foreach ($tablesData as $collection => $data) {
+                if ($collection === 'settings') {
+                    $sData = is_array($data) ? $data : json_decode($data, true);
+                    if (is_array($sData)) {
+                        $currStmt = $pdo->prepare("SELECT `raw_json` FROM `erp_tables` WHERE `table_name` = 'settings'");
+                        $currStmt->execute();
+                        $currJson = $currStmt->fetchColumn();
+                        if ($currJson) {
+                            $currSettings = json_decode($currJson, true);
+                            if (is_array($currSettings)) {
+                                if (!empty($currSettings['homepageVisibilityMode']) && (empty($sData['homepageVisibilityMode']) || $sData['homepageVisibilityMode'] === 'public')) {
+                                    $currTs = !empty($currSettings['homepageVisibilityUpdatedAt']) ? strtotime($currSettings['homepageVisibilityUpdatedAt']) : 0;
+                                    $inTs = !empty($sData['homepageVisibilityUpdatedAt']) ? strtotime($sData['homepageVisibilityUpdatedAt']) : 0;
+                                    if ($currTs >= $inTs) {
+                                        $sData['homepageVisibilityMode'] = $currSettings['homepageVisibilityMode'];
+                                        $sData['homepageVisibilityUpdatedAt'] = $currSettings['homepageVisibilityUpdatedAt'] ?? date('c');
+                                        $sData['homepageVisibilityUpdatedBy'] = $currSettings['homepageVisibilityUpdatedBy'] ?? 'System';
+                                    }
+                                }
+                                if (!empty($currSettings['adminLoginSlug']) && (empty($sData['adminLoginSlug']) || $sData['adminLoginSlug'] === 'secure-admin-gateway')) {
+                                    $currSlugTs = !empty($currSettings['adminLoginSlugUpdatedAt']) ? strtotime($currSettings['adminLoginSlugUpdatedAt']) : 0;
+                                    $inSlugTs = !empty($sData['adminLoginSlugUpdatedAt']) ? strtotime($sData['adminLoginSlugUpdatedAt']) : 0;
+                                    if ($currSlugTs >= $inSlugTs) {
+                                        $sData['adminLoginSlug'] = $currSettings['adminLoginSlug'];
+                                        $sData['adminLoginSlugUpdatedAt'] = $currSettings['adminLoginSlugUpdatedAt'] ?? date('c');
+                                    }
+                                }
+                            }
+                        }
+                        $data = $sData;
+                    }
+                }
                 $jsonStr = is_string($data) ? $data : json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
                 $itemCount = is_array($data) ? count($data) : 1;
                 $stmt = $pdo->prepare("
@@ -609,6 +640,38 @@ try {
                 if (is_array($uList)) {
                     validateAndProtectUsersDataset($pdo, $uList);
                     $data = $uList;
+                }
+            } elseif ($collection === 'settings') {
+                $sData = is_array($data) ? $data : json_decode($data, true);
+                if (is_array($sData)) {
+                    $currStmt = $pdo->prepare("SELECT `raw_json` FROM `erp_tables` WHERE `table_name` = 'settings'");
+                    $currStmt->execute();
+                    $currJson = $currStmt->fetchColumn();
+                    if ($currJson) {
+                        $currSettings = json_decode($currJson, true);
+                        if (is_array($currSettings)) {
+                            // Protect homepageVisibilityMode from reverting if current has valid mode and incoming is missing or older
+                            if (!empty($currSettings['homepageVisibilityMode']) && (empty($sData['homepageVisibilityMode']) || $sData['homepageVisibilityMode'] === 'public')) {
+                                $currTs = !empty($currSettings['homepageVisibilityUpdatedAt']) ? strtotime($currSettings['homepageVisibilityUpdatedAt']) : 0;
+                                $inTs = !empty($sData['homepageVisibilityUpdatedAt']) ? strtotime($sData['homepageVisibilityUpdatedAt']) : 0;
+                                if ($currTs >= $inTs) {
+                                    $sData['homepageVisibilityMode'] = $currSettings['homepageVisibilityMode'];
+                                    $sData['homepageVisibilityUpdatedAt'] = $currSettings['homepageVisibilityUpdatedAt'] ?? date('c');
+                                    $sData['homepageVisibilityUpdatedBy'] = $currSettings['homepageVisibilityUpdatedBy'] ?? 'System';
+                                }
+                            }
+                            // Protect adminLoginSlug from reverting
+                            if (!empty($currSettings['adminLoginSlug']) && (empty($sData['adminLoginSlug']) || $sData['adminLoginSlug'] === 'secure-admin-gateway')) {
+                                $currSlugTs = !empty($currSettings['adminLoginSlugUpdatedAt']) ? strtotime($currSettings['adminLoginSlugUpdatedAt']) : 0;
+                                $inSlugTs = !empty($sData['adminLoginSlugUpdatedAt']) ? strtotime($sData['adminLoginSlugUpdatedAt']) : 0;
+                                if ($currSlugTs >= $inSlugTs) {
+                                    $sData['adminLoginSlug'] = $currSettings['adminLoginSlug'];
+                                    $sData['adminLoginSlugUpdatedAt'] = $currSettings['adminLoginSlugUpdatedAt'] ?? date('c');
+                                }
+                            }
+                        }
+                    }
+                    $data = $sData;
                 }
             }
 

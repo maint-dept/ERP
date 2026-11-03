@@ -1259,7 +1259,7 @@ class AuthService {
   // ==========================================
   getMaintenanceModeConfig() {
     const settings = storage.getTable(TABLE_NAMES.SETTINGS) || {};
-    const visibilityMode = settings.homepageVisibilityMode || (typeof localStorage !== 'undefined' ? localStorage.getItem('al_muslim_homepage_visibility_mode') : null) || 'public';
+    const visibilityMode = settings.homepageVisibilityMode || (typeof localStorage !== 'undefined' ? localStorage.getItem('al_muslim_homepage_visibility_mode') : null) || 'login';
     const isMaintenance = Boolean(settings.maintenanceMode) || visibilityMode === 'maintenance';
     return {
       enabled: isMaintenance,

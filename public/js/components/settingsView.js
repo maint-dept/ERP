@@ -187,7 +187,7 @@ export function renderSettingsView() {
 
   const currentVisibilityMode = (typeof homepageService !== 'undefined' && typeof homepageService.getVisibilityMode === 'function')
     ? homepageService.getVisibilityMode()
-    : (settings.homepageVisibilityMode || 'public');
+    : (settings.homepageVisibilityMode || 'login');
 
   const assetCfg = (typeof storage !== 'undefined' && typeof storage.getAssetIdConfig === 'function')
     ? storage.getAssetIdConfig()
