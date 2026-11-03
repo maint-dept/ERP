@@ -373,18 +373,46 @@ export async function initQrScannerModalEvents({ onScanSuccess, onManualSearchRe
     }
   };
 
+  // Helper to ensure Html5Qrcode is loaded on-demand
+  const ensureHtml5Qrcode = async () => {
+    if (typeof Html5Qrcode !== 'undefined') return true;
+    return new Promise((resolve) => {
+      const s = document.createElement('script');
+      s.src = 'lib/html5-qrcode.min.js';
+      s.async = true;
+      s.onload = () => resolve(typeof Html5Qrcode !== 'undefined');
+      s.onerror = () => {
+        const fb = document.createElement('script');
+        fb.src = 'https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js';
+        fb.async = true;
+        fb.onload = () => resolve(typeof Html5Qrcode !== 'undefined');
+        fb.onerror = () => resolve(false);
+        document.head.appendChild(fb);
+      };
+      document.head.appendChild(s);
+    });
+  };
+
   // Robust Camera Startup Engine
   const startCamera = async (targetFacing = 'environment') => {
     // 1. Release previous camera cleanly
     await destroyScanner();
 
     if (typeof Html5Qrcode === 'undefined') {
-      if (loadingEl) loadingEl.style.display = 'none';
-      if (errorEl) {
-        errorEl.style.display = 'flex';
-        errorMsgEl.textContent = 'Camera scanner library not loaded. Please use Manual Search.';
+      if (loadingEl) {
+        loadingEl.style.display = 'block';
+        const textNode = loadingEl.querySelector('div:nth-child(2)');
+        if (textNode) textNode.textContent = 'Loading Camera Engine...';
       }
-      return;
+      const loaded = await ensureHtml5Qrcode();
+      if (!loaded || typeof Html5Qrcode === 'undefined') {
+        if (loadingEl) loadingEl.style.display = 'none';
+        if (errorEl) {
+          errorEl.style.display = 'flex';
+          errorMsgEl.textContent = 'Camera scanner library not loaded. Please use Manual Search.';
+        }
+        return;
+      }
     }
 
     if (loadingEl) {

@@ -1235,6 +1235,26 @@ function renderDesignerPreviewCard(cfg) {
   `;
 }
 
+function ensureQrCodeLib() {
+  if (typeof window !== 'undefined' && window.QRCode) return Promise.resolve(window.QRCode);
+  if (typeof QRCode !== 'undefined') return Promise.resolve(QRCode);
+  return new Promise((resolve) => {
+    const s = document.createElement('script');
+    s.src = 'lib/qrcode.min.js';
+    s.async = true;
+    s.onload = () => resolve(window.QRCode || null);
+    s.onerror = () => {
+      const fb = document.createElement('script');
+      fb.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
+      fb.async = true;
+      fb.onload = () => resolve(window.QRCode || null);
+      fb.onerror = () => resolve(null);
+      document.head.appendChild(fb);
+    };
+    document.head.appendChild(s);
+  });
+}
+
 /**
  * Updates the designer live preview card and draws sample QR
  */
@@ -1246,6 +1266,10 @@ function updateDesignerPreview(cfg) {
   const holder = document.getElementById('preview-sample-qr-holder');
   if (holder) {
     const QRLib = typeof window !== 'undefined' && window.QRCode ? window.QRCode : (typeof QRCode !== 'undefined' ? QRCode : null);
+    if (!QRLib) {
+      ensureQrCodeLib().then(() => updateDesignerPreview(cfg));
+      return;
+    }
     if (QRLib) {
       holder.innerHTML = '';
       const qrPx = parseInt(cfg.qrSize, 10) || 86;
@@ -1759,7 +1783,9 @@ export function initQrCodeEvents() {
 function renderAllVisibleQrCodes() {
   const QRLib = typeof window !== 'undefined' && window.QRCode ? window.QRCode : (typeof QRCode !== 'undefined' ? QRCode : null);
   if (!QRLib) {
-    setTimeout(renderAllVisibleQrCodes, 100);
+    ensureQrCodeLib().then(() => {
+      setTimeout(renderAllVisibleQrCodes, 50);
+    });
     return;
   }
 
