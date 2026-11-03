@@ -1014,6 +1014,85 @@ class SyncManager {
     return primaryResult;
   }
 
+  /**
+   * Delete a single record with Enterprise Automatic Failover:
+   * Normal: Deletes on MySQL Primary, then fans out to PostgreSQL.
+   * Failover: If MySQL is offline or fails, seamlessly routes delete to PostgreSQL.
+   */
+  async deleteRecord(collection, docId) {
+    await this._ensureConfig();
+    const pgAdapter = this.getPostgresAdapter();
+
+    if (this.isFailoverActive) {
+      if (pgAdapter && pgAdapter.config && pgAdapter.config.enabled) {
+        try {
+          const pgResult = await pgAdapter.deleteRecord(collection, docId);
+          if (pgResult && pgResult.success) {
+            this._queueRetry(this.primaryAdapter, collection, docId, 'DELETE_RECORD', null, 'Failover delete while MySQL offline');
+            return { success: true, failover: true, target: 'POSTGRESQL', updatedAt: new Date().toISOString() };
+          }
+        } catch (pgErr) {
+          console.error('[SyncManager Failover] ❌ PostgreSQL deleteRecord failed:', pgErr);
+        }
+      }
+
+      if (this.primaryAdapter) {
+        try {
+          const myResult = await this.primaryAdapter.deleteRecord(collection, docId);
+          if (myResult && myResult.success) {
+            this.setFailoverMode(false);
+            return myResult;
+          }
+        } catch (_) {}
+      }
+
+      return {
+        success: false,
+        error: 'Write Blocked: Both MySQL Primary and PostgreSQL Replica are unreachable. Delete action aborted.',
+        dualFailure: true
+      };
+    }
+
+    if (!this.primaryAdapter) {
+      throw new Error('CRITICAL: Primary MySQL database adapter is not initialized.');
+    }
+
+    let primaryResult = null;
+    try {
+      primaryResult = await this.primaryAdapter.deleteRecord(collection, docId);
+    } catch (netErr) {
+      primaryResult = { success: false, error: netErr.message };
+    }
+
+    if (!primaryResult || !primaryResult.success) {
+      const errMsg = primaryResult?.error || `Primary MySQL deleteRecord failed for "${collection}/${docId}".`;
+      console.warn(`[SyncManager] ⚠️ Primary MySQL deleteRecord failed (${errMsg}). Activating Automatic Failover to PostgreSQL...`);
+      this.setFailoverMode(true, errMsg);
+
+      if (pgAdapter && pgAdapter.config && pgAdapter.config.enabled) {
+        try {
+          const pgResult = await pgAdapter.deleteRecord(collection, docId);
+          if (pgResult && pgResult.success) {
+            this._queueRetry(this.primaryAdapter, collection, docId, 'DELETE_RECORD', null, errMsg);
+            return { success: true, failover: true, target: 'POSTGRESQL', updatedAt: new Date().toISOString() };
+          }
+        } catch (pgErr) {
+          console.error('[SyncManager] PostgreSQL failover deleteRecord also failed:', pgErr);
+        }
+      }
+
+      this._queueRetry(this.primaryAdapter, collection, docId, 'DELETE_RECORD', null, errMsg);
+      return {
+        success: false,
+        error: 'Write Blocked: Cloud database servers are currently unreachable.',
+        dualFailure: true
+      };
+    }
+
+    this._fanoutRecordDelete(collection, docId);
+    return primaryResult;
+  }
+
   async _fanoutTableSave(collection, dataObj, excludeDbId = null) {
     for (const [id, adapter] of this.secondaryAdapters.entries()) {
       // Primary gate: adapter must be enabled
@@ -1050,6 +1129,22 @@ class SyncManager {
           lastError: err.message,
           lastSyncTime: new Date().toLocaleString()
         });
+      });
+    }
+  }
+
+  async _fanoutRecordDelete(collection, docId, excludeDbId = null) {
+    for (const [id, adapter] of this.secondaryAdapters.entries()) {
+      if (!adapter.config.enabled || id === excludeDbId) continue;
+      if (adapter.config.autoSync === false) continue;
+      if (typeof adapter.deleteRecord !== 'function') continue;
+
+      adapter.deleteRecord(collection, docId).then(res => {
+        if (!res.success) {
+          this._queueRetry(adapter, collection, docId, 'DELETE_RECORD', null, res.error);
+        }
+      }).catch(err => {
+        this._queueRetry(adapter, collection, docId, 'DELETE_RECORD', null, err.message);
       });
     }
   }
@@ -1131,6 +1226,8 @@ class SyncManager {
           result = await adapter.saveTable(item.collection, item.data);
         } else if (item.operation === 'SAVE_RECORD') {
           result = await adapter.saveRecord(item.collection, item.docId, item.data);
+        } else if (item.operation === 'DELETE_RECORD') {
+          result = typeof adapter.deleteRecord === 'function' ? await adapter.deleteRecord(item.collection, item.docId) : { success: true };
         }
 
         if (result.success) {

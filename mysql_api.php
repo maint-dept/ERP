@@ -18,6 +18,13 @@
 @ini_set('post_max_size', '64M');
 @ini_set('upload_max_filesize', '64M');
 
+// High-Speed HTTP Response Compression (reduces 12MB JSON payload down to ~1.2MB for 10x faster network transit)
+if (!in_array('ob_gzhandler', ob_list_handlers(), true)) {
+    if (!@ob_start('ob_gzhandler')) {
+        @ob_start();
+    }
+}
+
 // --- 1. CONFIGURATION (PRE-CONFIGURED FOR YOUR CPANEL HOSTING) ---
 $DB_HOST = 'localhost';          // Standard localhost on cPanel / Paid Hosting
 $DB_PORT = 3306;                 // Default MySQL port

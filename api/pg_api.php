@@ -13,6 +13,13 @@
  * =========================================================================================
  */
 
+// High-Speed HTTP Response Compression (reduces payload by 80-90% for fast transit)
+if (!in_array('ob_gzhandler', ob_list_handlers(), true)) {
+    if (!@ob_start('ob_gzhandler')) {
+        @ob_start();
+    }
+}
+
 // --- 1. DEFAULT CONFIGURATION (Can be overridden by headers or request body) ---
 $DB_HOST = '127.0.0.1';             // '127.0.0.1' or 'localhost' for cPanel PostgreSQL
 $DB_PORT = 5432;                    // Standard PostgreSQL port

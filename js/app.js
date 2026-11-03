@@ -10,7 +10,7 @@ import { authService } from './services/authService.js?v=4.26.85';
 import { renderNavbar, initNavbarEvents } from './components/navbar.js?v=4.27.0';
 import { renderSidebar, initSidebarEvents, updateSidebarActiveState } from './components/sidebar.js?v=4.27.0';
 import { renderHomepageView, initHomepageEvents } from './components/homepageView.js?v=4.26.52';
-import { renderLoginView, initLoginViewEvents } from './components/loginView.js?v=4.27.7';
+import { renderLoginView, initLoginViewEvents } from './components/loginView.js?v=4.28.3';
 import { renderDashboard, initDashboardEvents } from './components/dashboard.js?v=4.27.2';
 import { renderMachineModal, initMachineModalEvents } from './components/machineModal.js?v=4.26.50';
 import { renderMachineDetails, initMachineDetailsEvents } from './components/machineDetails.js?v=4.26.50';
@@ -257,6 +257,9 @@ class ERPApplication {
         if (parsedRoute.view === 'admin-login') {
           state.set('currentView', 'admin-login', { silent: true });
         }
+        if (parsedRoute.tab) {
+          router.syncSubtabState(parsedRoute.view, parsedRoute.tab);
+        }
       } catch (_) { }
     } catch (e) {
       console.warn('[ERP] Pre-render hydration notice:', e);
@@ -332,13 +335,38 @@ class ERPApplication {
     });
     state.on('change:activeModal', () => this.renderModalsOnly());
     state.on('change:masterDataActiveTab', () => this.renderMainContent());
-    state.on('filters:changed', () => this.renderMainContent());
+    state.on('filters:changed', () => {
+      if (state.get('currentView') === 'inventory' && document.getElementById('inventory-table-body')) {
+        const invMod = moduleLoader.getLoaded('inventory');
+        const updateFn = invMod?.module?.updateInventoryTableRowsOnly;
+        if (typeof updateFn === 'function' && updateFn()) {
+          return;
+        }
+      }
+      this.renderMainContent();
+    });
     state.on('columns:changed', () => this.renderMainContent());
     state.on('frozenColumns:changed', () => this.renderMainContent());
-    state.on('inventory:updated', () => this.queueBackgroundRender());
+    state.on('inventory:updated', () => {
+      if (state.get('currentView') === 'inventory' && document.getElementById('inventory-table-body')) {
+        const invMod = moduleLoader.getLoaded('inventory');
+        const updateFn = invMod?.module?.updateInventoryTableRowsOnly;
+        if (typeof updateFn === 'function' && updateFn()) {
+          return;
+        }
+      }
+      this.queueBackgroundRender();
+    });
     state.on('change:dashboardDateFilter', () => this.renderMainContent());
 
     window.addEventListener('erp:inventory-updated', () => {
+      if (state.get('currentView') === 'inventory' && document.getElementById('inventory-table-body')) {
+        const invMod = moduleLoader.getLoaded('inventory');
+        const updateFn = invMod?.module?.updateInventoryTableRowsOnly;
+        if (typeof updateFn === 'function' && updateFn()) {
+          return;
+        }
+      }
       this.queueBackgroundRender();
     });
 
@@ -716,7 +744,7 @@ class ERPApplication {
       }
 
       // If a subtab is provided in options, synchronize it to reactive state
-      if (options.tab) {
+      if (options.tab !== undefined) {
         router.syncSubtabState(newView, options.tab);
       }
 

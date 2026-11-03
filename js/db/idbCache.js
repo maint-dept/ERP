@@ -2,6 +2,7 @@
  * Al-Muslim Group ERP — High-Capacity IndexedDB Cache Engine
  * Bypasses browser localStorage 5MB quota limit for large enterprise datasets
  * (Tool Allocations, Machine Inventories, Manpower Staff)
+ * Enhanced with Automatic Closed Connection Recovery & Resilient Transaction Guards
  */
 
 const DB_NAME = 'al_muslim_erp_idb_cache';
@@ -14,16 +15,28 @@ class IDBCache {
     this._initPromise = null;
   }
 
-  async _getDB() {
+  _resetConnection() {
+    try {
+      if (this._db) this._db.close();
+    } catch (_) {}
+    this._db = null;
+    this._initPromise = null;
+  }
+
+  async _getDB(forceFresh = false) {
+    if (forceFresh) {
+      this._resetConnection();
+    }
     if (this._db) return this._db;
     if (typeof indexedDB === 'undefined') return null;
 
     if (!this._initPromise) {
       this._initPromise = new Promise((resolve) => {
         const timer = setTimeout(() => {
-          console.warn('[IDBCache] Open timeout, fallback to memory');
+          console.warn('[IDBCache] Open timeout (1500ms), fallback to memory/storage');
+          this._initPromise = null;
           resolve(null);
-        }, 350);
+        }, 1500);
 
         try {
           const req = indexedDB.open(DB_NAME, DB_VERSION);
@@ -35,21 +48,29 @@ class IDBCache {
           };
           req.onsuccess = (e) => {
             clearTimeout(timer);
-            this._db = e.target.result;
+            const db = e.target.result;
+            db.onclose = () => {
+              this._resetConnection();
+            };
+            db.onversionchange = () => {
+              this._resetConnection();
+            };
+            this._db = db;
             resolve(this._db);
           };
           req.onerror = () => {
             clearTimeout(timer);
-            console.warn('[IDBCache] Open failed, fallback to memory');
+            this._resetConnection();
             resolve(null);
           };
           req.onblocked = () => {
             clearTimeout(timer);
-            console.warn('[IDBCache] Open blocked, fallback to memory');
+            this._resetConnection();
             resolve(null);
           };
         } catch (_) {
           clearTimeout(timer);
+          this._resetConnection();
           resolve(null);
         }
       });
@@ -57,46 +78,66 @@ class IDBCache {
     return this._initPromise;
   }
 
-  async setTable(tableName, data) {
+  async setTable(tableName, data, isRetry = false) {
     try {
       const db = await this._getDB();
       if (!db) return false;
       return new Promise((resolve) => {
-        const tx = db.transaction([STORE_NAME], 'readwrite');
-        const store = tx.objectStore(STORE_NAME);
-        const req = store.put(data, tableName);
-        req.onsuccess = () => resolve(true);
-        req.onerror = () => resolve(false);
+        try {
+          const tx = db.transaction([STORE_NAME], 'readwrite');
+          const store = tx.objectStore(STORE_NAME);
+          const req = store.put(data, tableName);
+          req.onsuccess = () => resolve(true);
+          req.onerror = () => resolve(false);
+          tx.onabort = () => resolve(false);
+        } catch (txErr) {
+          if (!isRetry) {
+            this._resetConnection();
+            this.setTable(tableName, data, true).then(resolve).catch(() => resolve(false));
+          } else {
+            resolve(false);
+          }
+        }
       });
     } catch (_) {
       return false;
     }
   }
 
-  async getTable(tableName) {
+  async getTable(tableName, isRetry = false) {
     try {
       const db = await this._getDB();
       if (!db) return null;
       return new Promise((resolve) => {
-        const tx = db.transaction([STORE_NAME], 'readonly');
-        const store = tx.objectStore(STORE_NAME);
-        const req = store.get(tableName);
-        req.onsuccess = () => resolve(req.result || null);
-        req.onerror = () => resolve(null);
+        try {
+          const tx = db.transaction([STORE_NAME], 'readonly');
+          const store = tx.objectStore(STORE_NAME);
+          const req = store.get(tableName);
+          req.onsuccess = () => resolve(req.result || null);
+          req.onerror = () => resolve(null);
+          tx.onabort = () => resolve(null);
+        } catch (txErr) {
+          if (!isRetry) {
+            this._resetConnection();
+            this.getTable(tableName, true).then(resolve).catch(() => resolve(null));
+          } else {
+            resolve(null);
+          }
+        }
       });
     } catch (_) {
       return null;
     }
   }
 
-  async getAllTables() {
+  async getAllTables(isRetry = false) {
     try {
       const db = await this._getDB();
       if (!db) return {};
       return new Promise((resolve) => {
         const timer = setTimeout(() => {
           resolve({});
-        }, 400);
+        }, 1500);
 
         try {
           const tx = db.transaction([STORE_NAME], 'readonly');
@@ -117,9 +158,18 @@ class IDBCache {
             clearTimeout(timer);
             resolve({});
           };
-        } catch (_) {
+          tx.onabort = () => {
+            clearTimeout(timer);
+            resolve({});
+          };
+        } catch (txErr) {
           clearTimeout(timer);
-          resolve({});
+          if (!isRetry) {
+            this._resetConnection();
+            this.getAllTables(true).then(resolve).catch(() => resolve({}));
+          } else {
+            resolve({});
+          }
         }
       });
     } catch (_) {

@@ -335,13 +335,38 @@ class ERPApplication {
     });
     state.on('change:activeModal', () => this.renderModalsOnly());
     state.on('change:masterDataActiveTab', () => this.renderMainContent());
-    state.on('filters:changed', () => this.renderMainContent());
+    state.on('filters:changed', () => {
+      if (state.get('currentView') === 'inventory' && document.getElementById('inventory-table-body')) {
+        const invMod = moduleLoader.getLoaded('inventory');
+        const updateFn = invMod?.module?.updateInventoryTableRowsOnly;
+        if (typeof updateFn === 'function' && updateFn()) {
+          return;
+        }
+      }
+      this.renderMainContent();
+    });
     state.on('columns:changed', () => this.renderMainContent());
     state.on('frozenColumns:changed', () => this.renderMainContent());
-    state.on('inventory:updated', () => this.queueBackgroundRender());
+    state.on('inventory:updated', () => {
+      if (state.get('currentView') === 'inventory' && document.getElementById('inventory-table-body')) {
+        const invMod = moduleLoader.getLoaded('inventory');
+        const updateFn = invMod?.module?.updateInventoryTableRowsOnly;
+        if (typeof updateFn === 'function' && updateFn()) {
+          return;
+        }
+      }
+      this.queueBackgroundRender();
+    });
     state.on('change:dashboardDateFilter', () => this.renderMainContent());
 
     window.addEventListener('erp:inventory-updated', () => {
+      if (state.get('currentView') === 'inventory' && document.getElementById('inventory-table-body')) {
+        const invMod = moduleLoader.getLoaded('inventory');
+        const updateFn = invMod?.module?.updateInventoryTableRowsOnly;
+        if (typeof updateFn === 'function' && updateFn()) {
+          return;
+        }
+      }
       this.queueBackgroundRender();
     });
 

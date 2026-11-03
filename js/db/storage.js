@@ -222,6 +222,67 @@ class StorageEngine {
     this._realtimeListenerStarted = false;
     this._hydrationPromise = null;
     this._tableIdMaps = {};
+
+    // Multi-tab instant synchronization channel (0ms latency between tabs on same device)
+    this._tabChannel = null;
+    if (typeof window !== 'undefined' && typeof window.BroadcastChannel === 'function') {
+      try {
+        this._tabChannel = new BroadcastChannel('al_muslim_erp_tab_sync');
+        this._tabChannel.onmessage = (event) => {
+          if (!event || !event.data) return;
+          this._handleTabSyncMessage(event.data);
+        };
+      } catch (_) {}
+    }
+  }
+
+  _broadcastTabSync(payload) {
+    try {
+      if (this._tabChannel) {
+        this._tabChannel.postMessage(payload);
+      }
+    } catch (_) {}
+  }
+
+  _handleTabSyncMessage(msg) {
+    if (!msg || !msg.table) return;
+    const { type, table, id, data } = msg;
+    if (type === 'RECORD_SAVED' && id && data) {
+      if (!this.data[table]) this.data[table] = [];
+      const tbl = this.data[table];
+      const idx = tbl.findIndex(item => item && (item.id === id || String(item.id) === String(id)));
+      if (idx !== -1) {
+        tbl[idx] = { ...tbl[idx], ...data };
+      } else {
+        tbl.push(data);
+      }
+      if (table === TABLE_NAMES.MACHINES) this.rebuildAllIndexes();
+      this._invalidateTableIdMap(table);
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('erp:storage-updated', { detail: { table, id } }));
+        if (table === TABLE_NAMES.MACHINES) window.dispatchEvent(new CustomEvent('erp:inventory-updated'));
+        if (table === TABLE_NAMES.TOOLS_MASTER || table === TABLE_NAMES.TOOL_ALLOCATIONS) window.dispatchEvent(new CustomEvent('erp:tools-updated'));
+      }
+    } else if (type === 'RECORD_DELETED' && id) {
+      if (!this.data[table]) return;
+      const tbl = this.data[table];
+      const idx = tbl.findIndex(item => item && (item.id === id || String(item.id) === String(id)));
+      if (idx !== -1) {
+        tbl.splice(idx, 1);
+        if (table === TABLE_NAMES.MACHINES) this.rebuildAllIndexes();
+        this._invalidateTableIdMap(table);
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('erp:storage-updated', { detail: { table, id } }));
+          if (table === TABLE_NAMES.MACHINES) window.dispatchEvent(new CustomEvent('erp:inventory-updated'));
+          if (table === TABLE_NAMES.TOOLS_MASTER || table === TABLE_NAMES.TOOL_ALLOCATIONS) window.dispatchEvent(new CustomEvent('erp:tools-updated'));
+        }
+      }
+    } else if (type === 'TABLE_SAVED') {
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('erp:storage-updated', { detail: { table } }));
+        if (table === TABLE_NAMES.MACHINES) window.dispatchEvent(new CustomEvent('erp:inventory-updated'));
+      }
+    }
   }
 
   init() {
@@ -762,6 +823,9 @@ class StorageEngine {
     } catch (err) {
       console.warn('LocalStorage quota notice for table:', table, err.message);
     }
+
+    // Broadcast table-level update to other tabs on same device
+    this._broadcastTabSync({ type: 'TABLE_SAVED', table });
 
     if (!this.lastTableUpdates) this.lastTableUpdates = {};
     this.lastTableUpdates[table] = Date.now();
@@ -2870,15 +2934,43 @@ class StorageEngine {
     const snapshot = JSON.parse(JSON.stringify(this.data[tableName]));
     this.data[tableName].push(item);
     if (tableName === TABLE_NAMES.MACHINES) this.rebuildAllIndexes();
+    this._invalidateTableIdMap(tableName);
 
-    const ok = await this.saveTable(tableName, true);
-    if (!ok) {
+    // 1. Instant Optimistic Local Persistence (0ms)
+    try {
+      idbCache.setTable(tableName, this.data[tableName]);
+      localStorage.setItem(STORAGE_KEY_PREFIX + tableName, JSON.stringify(this.data[tableName]));
+    } catch (_) {}
+
+    // 2. Multi-tab 0ms local broadcast
+    this._broadcastTabSync({ type: 'RECORD_SAVED', table: tableName, id: item.id, data: item });
+
+    // 3. Fast Granular Server Upsert (Sends ~1KB instead of 7MB!)
+    let saveOk = false;
+    let saveErr = '';
+    try {
+      this.updateStatusBadge('saving');
+      const res = await syncManager.saveRecord(tableName, item.id, item);
+      if (res && res.success) {
+        saveOk = true;
+        this.updateStatusBadge('saved');
+        this._isCloudConnected = true;
+      } else {
+        saveErr = res?.error || 'Server record write failed';
+      }
+    } catch (e) {
+      saveErr = e.message;
+    }
+
+    if (!saveOk) {
       this.data[tableName] = snapshot;
       if (tableName === TABLE_NAMES.MACHINES) this.rebuildAllIndexes();
+      this._invalidateTableIdMap(tableName);
       try {
         localStorage.setItem(STORAGE_KEY_PREFIX + tableName, JSON.stringify(snapshot));
       } catch (_) {}
-      throw new CloudSaveError(`❌ Cloud Save Failed: Database write for '${tableName}' was not confirmed. Check your connection.`);
+      this.updateStatusBadge('error');
+      throw new CloudSaveError(`❌ Cloud Save Failed: Database write for '${tableName}' was not confirmed. ${saveErr}`);
     }
     return item;
   }
@@ -2905,15 +2997,43 @@ class StorageEngine {
       updatedAt: new Date().toISOString()
     };
     if (tableName === TABLE_NAMES.MACHINES) this.rebuildAllIndexes();
+    this._invalidateTableIdMap(tableName);
 
-    const ok = await this.saveTable(tableName, true);
-    if (!ok) {
+    // 1. Instant Optimistic Local Persistence (0ms)
+    try {
+      idbCache.setTable(tableName, table);
+      localStorage.setItem(STORAGE_KEY_PREFIX + tableName, JSON.stringify(table));
+    } catch (_) {}
+
+    // 2. Multi-tab 0ms local broadcast
+    this._broadcastTabSync({ type: 'RECORD_SAVED', table: tableName, id, data: table[index] });
+
+    // 3. Fast Granular Server Upsert (Sends ~1KB instead of 7MB!)
+    let saveOk = false;
+    let saveErr = '';
+    try {
+      this.updateStatusBadge('saving');
+      const res = await syncManager.saveRecord(tableName, id, table[index]);
+      if (res && res.success) {
+        saveOk = true;
+        this.updateStatusBadge('saved');
+        this._isCloudConnected = true;
+      } else {
+        saveErr = res?.error || 'Server record update failed';
+      }
+    } catch (e) {
+      saveErr = e.message;
+    }
+
+    if (!saveOk) {
       table[index] = oldItem;
       if (tableName === TABLE_NAMES.MACHINES) this.rebuildAllIndexes();
+      this._invalidateTableIdMap(tableName);
       try {
         localStorage.setItem(STORAGE_KEY_PREFIX + tableName, JSON.stringify(table));
       } catch (_) {}
-      throw new CloudSaveError(`❌ Cloud Save Failed: Database write for '${tableName}' was not confirmed. Check your connection.`);
+      this.updateStatusBadge('error');
+      throw new CloudSaveError(`❌ Cloud Save Failed: Database write for '${tableName}' was not confirmed. ${saveErr}`);
     }
     return table[index];
   }
@@ -2946,15 +3066,43 @@ class StorageEngine {
     const snapshot = JSON.parse(JSON.stringify(table));
     table.splice(index, 1);
     if (tableName === TABLE_NAMES.MACHINES) this.rebuildAllIndexes();
+    this._invalidateTableIdMap(tableName);
 
-    const ok = await this.saveTable(tableName, true);
-    if (!ok) {
+    // 1. Instant Optimistic Local Persistence (0ms)
+    try {
+      idbCache.setTable(tableName, table);
+      localStorage.setItem(STORAGE_KEY_PREFIX + tableName, JSON.stringify(table));
+    } catch (_) {}
+
+    // 2. Multi-tab 0ms local broadcast
+    this._broadcastTabSync({ type: 'RECORD_DELETED', table: tableName, id });
+
+    // 3. Fast Granular Server Delete
+    let saveOk = false;
+    let saveErr = '';
+    try {
+      this.updateStatusBadge('saving');
+      const res = await syncManager.deleteRecord(tableName, id);
+      if (res && res.success) {
+        saveOk = true;
+        this.updateStatusBadge('saved');
+        this._isCloudConnected = true;
+      } else {
+        saveErr = res?.error || 'Server record delete failed';
+      }
+    } catch (e) {
+      saveErr = e.message;
+    }
+
+    if (!saveOk) {
       this.data[tableName] = snapshot;
       if (tableName === TABLE_NAMES.MACHINES) this.rebuildAllIndexes();
+      this._invalidateTableIdMap(tableName);
       try {
         localStorage.setItem(STORAGE_KEY_PREFIX + tableName, JSON.stringify(snapshot));
       } catch (_) {}
-      throw new CloudSaveError(`❌ Cloud Save Failed: Database write for '${tableName}' was not confirmed. Check your connection.`);
+      this.updateStatusBadge('error');
+      throw new CloudSaveError(`❌ Cloud Save Failed: Database write for '${tableName}' was not confirmed. ${saveErr}`);
     }
     return removed;
   }

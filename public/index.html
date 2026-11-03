@@ -12,9 +12,9 @@
   <meta http-equiv="Expires" content="0">
 
   <!-- High-Priority ES Module Preloading (Parallel Pipeline) -->
-  <link rel="modulepreload" href="js/app.js?v=4.28.3">
-  <link rel="modulepreload" href="js/state.js?v=4.28.3">
-  <link rel="modulepreload" href="js/db/storage.js">
+  <link rel="modulepreload" href="js/app.js?v=4.28.4">
+  <link rel="modulepreload" href="js/state.js?v=4.28.4">
+  <link rel="modulepreload" href="js/db/storage.js?v=4.28.4">
   <link rel="modulepreload" href="js/db/schema.js">
   <link rel="modulepreload" href="js/services/authService.js">
   <link rel="modulepreload" href="js/services/router.js?v=4.28.3">
@@ -122,25 +122,52 @@
   <link rel="stylesheet" href="css/components.css?v=4.28.2">
   <link rel="stylesheet" href="css/print.css?v=4.28.2">
 
-  <!-- Deferred Heavy Third-Party Libraries (Non-Render Blocking) -->
-  <!-- SheetJS (XLSX) Library for Excel Import & Export -->
-  <script defer src="lib/xlsx.full.min.js"
-    onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js'"></script>
+  <!-- Progressive Background Library Loader (Warms up heavy engines post-startup without blocking initial boot) -->
+  <script>
+    (function () {
+      function loadScript(src, fallback) {
+        var s = document.createElement('script');
+        s.src = src;
+        s.async = true;
+        if (fallback) {
+          s.onerror = function () {
+            s.onerror = null;
+            var fb = document.createElement('script');
+            fb.src = fallback;
+            fb.async = true;
+            document.head.appendChild(fb);
+          };
+        }
+        document.head.appendChild(s);
+      }
 
-  <!-- HTML5 QR Code Library for Camera & Mobile Scanning -->
-  <script defer src="lib/html5-qrcode.min.js"
-    onerror="this.onerror=null;this.src='https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js'"></script>
+      function warmHeavyLibs() {
+        if (!window.XLSX) {
+          loadScript('lib/xlsx.full.min.js', 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js');
+        }
+        if (!window.QRCode) {
+          loadScript('lib/qrcode.min.js', 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js');
+        }
+        if (!window.Html5Qrcode) {
+          loadScript('lib/html5-qrcode.min.js', 'https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js');
+        }
+        if (!window.Tesseract) {
+          loadScript('lib/tesseract.min.js', 'https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js');
+        }
+        if (!window.pdfjsLib) {
+          loadScript('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js');
+        }
+      }
 
-  <!-- QRCode.js Library for High-Resolution Client-Side QR Generation & A4 Label Printing -->
-  <script defer src="lib/qrcode.min.js"
-    onerror="this.onerror=null;this.src='https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js'"></script>
-
-  <!-- Tesseract.js Library for OCR Screenshot / PDF Snippet Auto-Fill -->
-  <script defer src="lib/tesseract.min.js"
-    onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js'"></script>
-
-  <!-- PDF.js Library for Client-Side ERP Issue PDF Text & Table Extraction -->
-  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+      if ('requestIdleCallback' in window) {
+        window.addEventListener('load', function () {
+          requestIdleCallback(warmHeavyLibs, { timeout: 2000 });
+        });
+      } else {
+        setTimeout(warmHeavyLibs, 1500);
+      }
+    })();
+  </script>
 </head>
 
 <body>
@@ -256,32 +283,27 @@
       window.location.replace(base + '?t=' + Date.now() + window.location.hash);
     };
 
-    // Build version v4.28.2 — High-Performance Virtual Scrolling & Instant Routing
-    var CURRENT_BUILD = '4.28.2';
+    // Build version v4.28.4 — High-Performance Virtual Scrolling & Instant Routing
+    var CURRENT_BUILD = '4.28.4';
 
-    // Silently unregister any old Service Workers and clear all caches
+    // Cache Lifecycle: Only invalidate browser caches when a new build is detected
     (function () {
       try {
-        if (window.caches) {
-          caches.keys().then(function (keys) {
-            keys.forEach(function (k) { caches.delete(k); });
-          });
-        }
-        if ('serviceWorker' in navigator) {
-          navigator.serviceWorker.getRegistrations().then(function (regs) {
-            regs.forEach(function (r) {
-              console.log('[ERP v4.26.60] Unregistering SW:', r.scope);
-              r.unregister();
+        var lastBuild = localStorage.getItem('al_muslim_build_ver');
+        if (lastBuild !== CURRENT_BUILD) {
+          if (window.caches) {
+            caches.keys().then(function (keys) {
+              keys.forEach(function (k) { caches.delete(k); });
             });
-          });
+          }
+          localStorage.setItem('al_muslim_build_ver', CURRENT_BUILD);
         }
-        localStorage.setItem('al_muslim_build_ver', CURRENT_BUILD);
       } catch (e) { /* non-critical */ }
     })();
   </script>
 
-  <!-- Main ES Module Application Entrypoint (Cache-Busted v4.28.3) -->
-  <script type="module" src="js/app.js?v=4.28.3"></script>
+  <!-- Main ES Module Application Entrypoint (Cache-Busted v4.28.4) -->
+  <script type="module" src="js/app.js?v=4.28.4"></script>
 
   <style>
     @keyframes execBarPulse {
