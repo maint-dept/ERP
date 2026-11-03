@@ -968,11 +968,18 @@ export function renderUserManagement() {
                       </td>
 
                       <!-- Username -->
-                      <td style="text-align: left; width: 135px; padding: 6px 10px;">
+                      <td style="text-align: left; width: 145px; padding: 6px 10px;">
                         ${hasAccount ? `
-                          <span class="uam-username-text" style="font-family: var(--font-mono); color: var(--text-secondary, #cbd5e1); font-weight: 700; font-size: 11.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: inline-block; max-width: 125px;" title="@${acc.username}">
-                            @${acc.username}
-                          </span>
+                          <div style="display: flex; align-items: center; gap: 5px;">
+                            <span class="uam-username-text" style="font-family: var(--font-mono); color: #38bdf8; font-weight: 700; font-size: 11.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: inline-block; max-width: 110px;" title="@${acc.username}">
+                              @${acc.username}
+                            </span>
+                            ${isAdmin ? `
+                              <button type="button" class="btn btn-ghost btn-xs btn-quick-change-username" data-user-id="${acc.userId || acc.id}" data-id="${acc.id}" data-current-username="${acc.username}" data-name="${escapeHtml(acc.employeeName)}" data-card="${acc.cardNumber}" title="Admin: Change Username for @${acc.username}" style="padding: 1px 4px; font-size: 10px; color: #38bdf8; background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 4px; cursor: pointer; line-height: 1;">
+                                ✏️
+                              </button>
+                            ` : ''}
+                          </div>
                         ` : `
                           <span style="color: #f59e0b; font-size: 11px; font-weight: 700; white-space: nowrap;">No Account Yet</span>
                         `}
@@ -1068,10 +1075,15 @@ export function renderUserManagement() {
                       <!-- Actions -->
                       <td style="text-align: center; width: 160px; padding: 6px 8px; white-space: nowrap;">
                         ${hasAccount ? `
-                          <div style="display: inline-flex; gap: 5px; align-items: center; justify-content: center;">
+                          <div style="display: inline-flex; gap: 4px; align-items: center; justify-content: center;">
                             <button class="btn btn-ghost btn-xs btn-row-view-details" data-id="${acc.id}" title="View Complete Details" style="padding: 3px 6px; font-size: 11.5px; border-radius: 5px; background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08);">
                               👁️
                             </button>
+                            ${isAdmin ? `
+                              <button class="btn btn-ghost btn-xs btn-quick-change-username" data-user-id="${acc.userId || acc.id}" data-id="${acc.id}" data-current-username="${acc.username}" data-name="${escapeHtml(acc.employeeName)}" data-card="${acc.cardNumber}" title="Admin: Change Username" style="padding: 3px 6px; font-size: 11px; color: #38bdf8; border-radius: 5px; background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.2);">
+                                ✏️
+                              </button>
+                            ` : ''}
                             <button class="btn btn-ghost btn-xs btn-row-manage-perms" data-id="${acc.id}" title="Manage Permissions" style="padding: 3px 6px; font-size: 11.5px; color: #38bdf8; border-radius: 5px; background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.2);">
                               🛡️
                             </button>
@@ -1939,6 +1951,7 @@ function renderBulkAssignmentTab() {
 }
 
 function renderPasswordManagementTab(paginatedAccountsList, totalCount) {
+  const isAdmin = authService.isAdmin();
   let accounts = paginatedAccountsList;
   let totalMatching = totalCount;
 
@@ -2075,9 +2088,16 @@ function renderPasswordManagementTab(paginatedAccountsList, totalCount) {
 
                 <!-- Username -->
                 <td style="text-align: left; width: 155px; min-width: 155px; padding: 6px 12px; background-color: #0b1329;">
-                  <span style="font-family: var(--font-mono); color: #cbd5e1; font-weight: 600; font-size: 11.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: inline-block; max-width: 140px;" title="@${acc.username}">
-                    @${acc.username}
-                  </span>
+                  <div style="display: flex; align-items: center; gap: 6px;">
+                    <span style="font-family: var(--font-mono); color: #38bdf8; font-weight: 700; font-size: 11.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: inline-block; max-width: 110px;" title="@${acc.username}">
+                      @${acc.username}
+                    </span>
+                    ${isAdmin ? `
+                      <button type="button" class="btn btn-ghost btn-xs btn-quick-change-username" data-user-id="${acc.userId || acc.id}" data-id="${acc.id}" data-current-username="${acc.username}" data-name="${escapeHtml(acc.employeeName)}" data-card="${acc.cardNumber}" title="Admin: Change Username for @${acc.username}" style="padding: 1px 4px; font-size: 10px; color: #38bdf8; background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 4px; cursor: pointer; line-height: 1;">
+                        ✏️
+                      </button>
+                    ` : ''}
+                  </div>
                 </td>
 
                 <!-- Designation -->
@@ -2149,9 +2169,16 @@ function renderPasswordManagementTab(paginatedAccountsList, totalCount) {
 
                 <!-- Actions -->
                 <td style="text-align: center; width: 165px; min-width: 165px; padding: 6px 8px; white-space: nowrap; background-color: #0b1329;">
-                  <button class="btn btn-secondary btn-xs btn-pass-gen-reset" data-id="${acc.id}" style="font-weight: 700; font-size: 11px; padding: 4px 10px; border-radius: 6px; color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); background: rgba(56, 189, 248, 0.1); white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; cursor: pointer;">
-                    <span>🔑</span> <span>Change Password</span>
-                  </button>
+                  <div style="display: inline-flex; gap: 4px; align-items: center; justify-content: center;">
+                    ${isAdmin ? `
+                      <button type="button" class="btn btn-ghost btn-xs btn-quick-change-username" data-user-id="${acc.userId || acc.id}" data-id="${acc.id}" data-current-username="${acc.username}" data-name="${escapeHtml(acc.employeeName)}" data-card="${acc.cardNumber}" title="Admin: Change Username" style="padding: 4px 6px; font-size: 11px; color: #38bdf8; border-radius: 5px; background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.25); line-height: 1;">
+                        ✏️
+                      </button>
+                    ` : ''}
+                    <button class="btn btn-secondary btn-xs btn-pass-gen-reset" data-id="${acc.id}" style="font-weight: 700; font-size: 11px; padding: 4px 8px; border-radius: 6px; color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); background: rgba(56, 189, 248, 0.1); white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; cursor: pointer;">
+                      <span>🔑</span> <span>Change Password</span>
+                    </button>
+                  </div>
                 </td>
               </tr>
             `;
@@ -2536,11 +2563,24 @@ function renderActiveModalHtml() {
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; background: rgba(15, 23, 42, 0.6); padding: 14px; border-radius: 8px; border: 1px solid var(--border-color);">
               <div><strong style="color: var(--text-muted);">Card ID:</strong> <span style="font-family: var(--font-mono); color: #38bdf8; font-weight: 800;">${acc.cardNumber}</span></div>
               <div><strong style="color: var(--text-muted);">Employee Name:</strong> <span style="color: #fff; font-weight: 700;">${acc.employeeName}</span></div>
-              <div><strong style="color: var(--text-muted);">Username:</strong> <span style="color: #cbd5e1; font-family: var(--font-mono);">@${acc.username}</span></div>
+              <div>
+                <strong style="color: var(--text-muted);">Username:</strong> 
+                <span style="color: #38bdf8; font-family: var(--font-mono); font-weight: 700;">@${acc.username}</span>
+                ${(authService.isAdmin() || authService.isSuperAdmin()) ? `
+                  <button type="button" class="btn btn-ghost btn-xs btn-modal-edit-username-trigger" data-user-id="${acc.userId || acc.id}" data-id="${acc.id}" data-current-username="${acc.username}" data-name="${escapeHtml(acc.employeeName)}" data-card="${acc.cardNumber}" title="Admin: Change Username" style="padding: 1px 6px; font-size: 10px; color: #38bdf8; background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 4px; cursor: pointer; margin-left: 6px;">
+                    ✏️ Edit
+                  </button>
+                ` : ''}
+              </div>
+              <div>
+                <strong style="color: var(--text-muted);">Email:</strong> 
+                <span style="color: #fff;">${acc.email || 'None'}</span>
+                ${acc.email ? (acc.emailVerified ? '<span class="badge badge-active" style="font-size: 9.5px; margin-left: 5px;">✓ Verified</span>' : '<span class="badge badge-warning" style="font-size: 9.5px; margin-left: 5px;">⚠️ Unverified</span>') : '<span style="color: var(--text-muted); font-size: 10.5px; margin-left: 5px;">(Optional)</span>'}
+              </div>
               <div><strong style="color: var(--text-muted);">Designation:</strong> <span style="color: #fff;">${acc.designation}</span></div>
               <div><strong style="color: var(--text-muted);">Department:</strong> <span style="color: #fff;">${acc.department}</span></div>
               <div><strong style="color: var(--text-muted);">Account Status:</strong> <span class="badge ${acc.accountStatus === 'ACTIVE' ? 'badge-active' : 'badge-maint'}" style="font-size: 10px;">${acc.accountStatus}</span></div>
-                            <div><strong style="color: var(--text-muted);">Password Status:</strong> <span class="badge ${acc.passwordStatus === 'TEMPORARY' ? 'badge-warning' : 'badge-active'}" style="font-size: 10px;">${acc.passwordStatus === 'TEMPORARY' ? '🟡 Temporary' : '✅ Active'}</span></div>
+              <div><strong style="color: var(--text-muted);">Password Status:</strong> <span class="badge ${acc.passwordStatus === 'TEMPORARY' ? 'badge-warning' : 'badge-active'}" style="font-size: 10px;">${acc.passwordStatus === 'TEMPORARY' ? '🟡 Temporary' : '✅ Active'}</span></div>
               <div><strong style="color: var(--text-muted);">Profile Preset:</strong> <span style="color: #38bdf8;">${acc.presetName || 'Standard User'}</span></div>
             </div>
 
@@ -2570,6 +2610,90 @@ function renderActiveModalHtml() {
           <div style="display: flex; justify-content: flex-end; gap: 8px; border-top: 1px solid var(--border-color); padding-top: 12px;">
             <button class="btn btn-secondary btn-sm btn-close-uam-modal">Close</button>
           </div>
+        </div>
+      </div>
+    `;
+  }
+
+  // 1a. Edit Username Modal (Admin / Super Admin privilege)
+  if (activeModalType === 'EDIT_USERNAME' && targetAccount) {
+    const acc = targetAccount;
+    return `
+      <div class="modal-overlay active" id="modal-uam-overlay">
+        <div class="modal-card" style="max-width: 480px; width: 94%; border-radius: 12px; background: var(--bg-card); border: 1.5px solid rgba(56, 189, 248, 0.4); box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5); overflow: hidden; padding: 0;">
+          <!-- Header -->
+          <div style="padding: 12px 18px; background: linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(30, 41, 59, 0.95)); border-bottom: 1px solid rgba(56, 189, 248, 0.2); display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <div style="width: 34px; height: 34px; border-radius: 8px; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.35); display: flex; align-items: center; justify-content: center; font-size: 17px;">✏️</div>
+              <div>
+                <h3 style="margin: 0; font-size: 15px; font-weight: 800; color: #fff;">Change Username (Admin)</h3>
+                <p style="margin: 2px 0 0 0; font-size: 11px; color: var(--text-muted);">
+                  User: <span style="color: #38bdf8; font-family: var(--font-mono); font-weight: 700;">@${acc.username}</span> • <span style="color: #cbd5e1;">${acc.cardNumber || ''}</span>
+                </p>
+              </div>
+            </div>
+            <button class="btn btn-ghost btn-sm btn-close-uam-modal" style="font-size: 16px; padding: 2px 8px; color: var(--text-muted); cursor: pointer;" title="Close">✕</button>
+          </div>
+
+          <!-- Body -->
+          <form id="form-admin-change-username" style="padding: 16px 20px; display: flex; flex-direction: column; gap: 14px;">
+            <input type="hidden" id="inp-edit-username-target-id" value="${acc.id || ''}" />
+            <input type="hidden" id="inp-edit-username-target-user-id" value="${acc.userId || acc.id || ''}" />
+
+            <!-- User Info Pill -->
+            <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 8px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <div style="font-size: 13.5px; font-weight: 800; color: #fff;">${acc.employeeName || acc.username}</div>
+                <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Card: ${acc.cardNumber || 'N/A'} • ${acc.designation || 'Staff'}</div>
+              </div>
+              <div style="text-align: right;">
+                <span style="font-size: 9.5px; color: var(--text-muted); display: block; margin-bottom: 2px; font-weight: 700; text-transform: uppercase;">Current Username</span>
+                <span style="font-family: var(--font-mono); color: #94a3b8; font-weight: 700; font-size: 12px;">@${acc.username}</span>
+              </div>
+            </div>
+
+            <!-- New Username Field -->
+            <div>
+              <label style="display: block; font-size: 11.5px; font-weight: 700; color: #cbd5e1; margin-bottom: 6px;">
+                New Username <span style="color: #ef4444;">*</span>
+              </label>
+              <div style="position: relative;">
+                <span style="position: absolute; left: 10px; top: 8px; font-size: 13px; font-family: var(--font-mono); color: #38bdf8; font-weight: 800;">@</span>
+                <input 
+                  type="text" 
+                  id="inp-new-username-val" 
+                  class="form-control font-mono" 
+                  value="${acc.username || ''}"
+                  placeholder="e.g. motaher, amg0128426" 
+                  required 
+                  minlength="3" 
+                  maxlength="30"
+                  pattern="^[a-zA-Z0-9_.-]+$"
+                  autocomplete="off" 
+                  style="height: 36px; padding-left: 28px; padding-right: 10px; font-size: 13.5px; font-weight: 700; border-radius: 6px; width: 100%; box-sizing: border-box; background: rgba(9, 14, 26, 0.85); border: 1.5px solid rgba(56, 189, 248, 0.45); color: #38bdf8;"
+                />
+              </div>
+              <div style="font-size: 10.5px; color: var(--text-muted); margin-top: 5px;">
+                Between 3 to 30 characters. Allowed characters: lowercase letters, numbers, dot (.), hyphen (-), and underscore (_).
+              </div>
+            </div>
+
+            <!-- Admin Privilege Notice -->
+            <div style="font-size: 11px; color: #38bdf8; background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 6px; padding: 8px 12px; line-height: 1.4; display: flex; align-items: flex-start; gap: 8px;">
+              <span style="font-size: 13px;">🛡️</span>
+              <div>
+                <strong>Admin Authority:</strong> Regular users cannot change their username. Changing it here immediately updates their login credentials across the entire ERP system.
+              </div>
+            </div>
+
+            <!-- Footer Actions -->
+            <div style="display: flex; justify-content: flex-end; gap: 8px; border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 12px; margin-top: 4px;">
+              <button type="button" class="btn btn-secondary btn-sm btn-close-uam-modal" style="height: 34px; padding: 0 16px; border-radius: 6px;">Cancel</button>
+              <button type="submit" id="btn-submit-change-username" class="btn btn-primary btn-sm" style="font-weight: 800; background: linear-gradient(135deg, #0284c7, #0369a1); height: 34px; padding: 0 20px; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 8px rgba(2, 132, 199, 0.35);">
+                <span>💾</span> <span>Save Username</span>
+              </button>
+            </div>
+          </form>
         </div>
       </div>
     `;
@@ -5126,6 +5250,22 @@ export function initUserManagementEvents() {
     });
   });
 
+  // Admin Quick Change Username trigger
+  root.querySelectorAll('.btn-quick-change-username, .btn-modal-edit-username-trigger').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const id = btn.getAttribute('data-id');
+      const userId = btn.getAttribute('data-user-id');
+      const curUser = btn.getAttribute('data-current-username');
+      const all = userAccessService.getAllAccountsWithManpower();
+      targetAccount = all.find(a => a.id === id || a.userId === userId || a.username === curUser) || null;
+      if (targetAccount) {
+        activeModalType = 'EDIT_USERNAME';
+        reRender();
+      }
+    });
+  });
+
   const btnBulkGenInitial = document.getElementById('btn-bulk-gen-initial-pass');
   if (btnBulkGenInitial) {
     btnBulkGenInitial.addEventListener('click', async () => {
@@ -5285,6 +5425,44 @@ export function initUserManagementEvents() {
         if (submitBtn) {
           submitBtn.disabled = false;
           submitBtn.innerHTML = '<span>💾</span> <span>Save Password</span>';
+        }
+      }
+    });
+  }
+
+  // Admin Change Username Modal Event Handlers
+  const formAdminChangeUsername = document.getElementById('form-admin-change-username');
+  if (formAdminChangeUsername && targetAccount) {
+    formAdminChangeUsername.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const targetId = document.getElementById('inp-edit-username-target-id')?.value;
+      const targetUserId = document.getElementById('inp-edit-username-target-user-id')?.value;
+      const inp = document.getElementById('inp-new-username-val');
+      const newUsername = (inp ? inp.value : '').trim().toLowerCase();
+
+      if (!newUsername || newUsername.length < 3) {
+        notificationService.error('Username must be at least 3 characters.');
+        return;
+      }
+
+      const submitBtn = document.getElementById('btn-submit-change-username');
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span>⏳</span> <span>Saving Username...</span>';
+      }
+
+      try {
+        const idToUpdate = targetUserId || targetId || targetAccount.id;
+        const res = await userAccessService.updateUsername(idToUpdate, newUsername);
+        notificationService.success(`Username successfully changed to @${res.username}!`);
+        activeModalType = null;
+        targetAccount = null;
+        reRender();
+      } catch (err) {
+        notificationService.error('Failed to change username: ' + (err.message || err));
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = '<span>💾</span> <span>Save Username</span>';
         }
       }
     });

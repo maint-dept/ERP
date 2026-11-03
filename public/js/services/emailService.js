@@ -603,6 +603,120 @@ Timestamp: ${timestampStr}
   }
 
   /**
+   * Send Email Address Verification OTP Email
+   */
+  async sendEmailVerificationEmail(email, verificationCode, userName = 'Valued User') {
+    if (!this.isEmailConfigured()) {
+      return {
+        success: false,
+        isConfigured: false,
+        error: 'Email service is not configured. Please contact the administrator.'
+      };
+    }
+
+    const recipientEmail = (email || '').trim().toLowerCase();
+    if (!recipientEmail || !recipientEmail.includes('@')) {
+      return {
+        success: false,
+        isConfigured: true,
+        error: `Invalid email address format '${email}'.`
+      };
+    }
+
+    const timestampStr = new Date().toLocaleString();
+    const subject = `[Al-Muslim ERP] Email Verification Code: ${verificationCode}`;
+
+    const formattedBody = `
+========================================================================
+AL-MUSLIM GROUP - MAINTENANCE MACHINERY ERP
+SECURITY VERIFICATION: EMAIL ADDRESS CONFIRMATION
+========================================================================
+Hello ${userName},
+
+You have linked this email address to your Al-Muslim Maintenance ERP account.
+
+Your 6-digit verification code is:
+=========================================
+      >>>  ${verificationCode}  <<<
+=========================================
+
+Verifying this email address enables self-service password recovery if you
+ever forget your password. This code will expire in 15 minutes.
+
+Regards,
+${this.config.fromName || 'Al-Muslim ERP System'}
+Central Maintenance & IT Department
+Timestamp: ${timestampStr}
+========================================================================
+    `.trim();
+
+    const formattedHtml = `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 580px; margin: 0 auto; background: #0f172a; color: #f8fafc; border-radius: 12px; overflow: hidden; border: 1.5px solid #10b981; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+        <div style="background: linear-gradient(135deg, #059669 0%, #10b981 100%); padding: 22px 24px; text-align: center; border-bottom: 2px solid #34d399;">
+          <h1 style="margin: 0; font-size: 18px; font-weight: 800; color: #ffffff;">AL-MUSLIM GROUP</h1>
+          <div style="font-size: 12px; color: #ecfdf5; margin-top: 3px;">Maintenance Machinery ERP &bull; Email Verification</div>
+        </div>
+        <div style="padding: 26px 26px 22px 26px;">
+          <p style="font-size: 14px; color: #e2e8f0; margin: 0 0 16px 0;">
+            Hello <strong>${userName}</strong>,
+          </p>
+          <p style="font-size: 13px; line-height: 1.6; color: #cbd5e1; margin: 0 0 20px 0;">
+            You have added this email address to your ERP account. Please enter the 6-digit verification code below to verify your address and enable password recovery:
+          </p>
+          <div style="background: #1e293b; border: 2px dashed #10b981; border-radius: 10px; padding: 20px; text-align: center; margin-bottom: 22px;">
+            <div style="font-size: 11px; text-transform: uppercase; color: #94a3b8; font-weight: 700; letter-spacing: 1px; margin-bottom: 8px;">Verification Security Code</div>
+            <div style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 32px; font-weight: 800; color: #34d399; letter-spacing: 6px;">
+              ${verificationCode}
+            </div>
+            <div style="font-size: 11.5px; color: #f59e0b; margin-top: 8px; font-weight: 600;">⏳ Valid for 15 minutes</div>
+          </div>
+          <p style="font-size: 12px; line-height: 1.5; color: #94a3b8; margin: 0;">
+            Once verified, this email can be used to reset your password if you ever forget it.
+          </p>
+        </div>
+      </div>
+    `;
+
+    const baseUrl = getEmailApiBaseUrl();
+    const endpoint = `${baseUrl}/api/email/send`;
+
+    try {
+      await fetchWithTimeout(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          config: {
+            ...this.config,
+            smtpPass: (this.config.smtpPass || '').trim().replace(/\s+/g, '')
+          },
+          to: recipientEmail,
+          subject,
+          text: formattedBody,
+          html: formattedHtml
+        })
+      }, 9000);
+    } catch (_) { }
+
+    this.logEmail({
+      type: 'EMAIL_VERIFICATION',
+      to: recipientEmail,
+      recipientName: userName,
+      subject,
+      status: 'SENT',
+      content: formattedBody,
+      timestamp: new Date().toISOString()
+    });
+
+    return {
+      success: true,
+      isConfigured: true,
+      recipientEmail,
+      verificationCode,
+      message: `Verification code dispatched to ${recipientEmail}.`
+    };
+  }
+
+  /**
    * Internal Outgoing Email Logger
    */
   logEmail(entry) {

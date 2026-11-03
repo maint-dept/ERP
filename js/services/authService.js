@@ -8,6 +8,7 @@ import { CloudSaveError } from '../db/storage.js';
 import { TABLE_NAMES, ROLES, ACTIONS, MODULES, DEFAULT_PERMISSION_TEMPLATES, PERMISSION_MODULES, DEFAULT_PERMISSION_PRESETS } from '../db/schema.js';
 import { auditService } from './auditService.js';
 import { cryptoService } from './cryptoService.js';
+import { emailService } from './emailService.js';
 
 class AuthService {
   constructor() {
@@ -2323,10 +2324,13 @@ class AuthService {
 
   /**
    * Update Self Profile (Name, Email, Username, Phone)
+   * Regular users CANNOT change their username! Admin & Super Admin can change usernames.
+   * Email is optional; updating email sets emailVerified to false until verified.
    */
   async updateProfile(profileData) {
     if (!this.currentUser) throw new Error('No active user session.');
     const userId = this.currentUser.id;
+    const isCallerAdmin = this.currentUser.role === 'ADMIN' || this.currentUser.role === 'SUPER_ADMIN';
 
     const updates = {};
     if (profileData.name && profileData.name.trim()) updates.name = profileData.name.trim();
@@ -2334,29 +2338,48 @@ class AuthService {
     if (profileData.designation !== undefined) updates.designation = (profileData.designation || '').trim();
     if (profileData.department !== undefined) updates.department = (profileData.department || '').trim();
 
-    // Username update
-    if (profileData.username) {
+    // Username update: Only Admin / Super Admin can change username!
+    if (profileData.username !== undefined) {
       const cleanUser = profileData.username.trim().toLowerCase().replace(/\s+/g, '_');
-      if (cleanUser.length < 3) throw new Error('Username must be at least 3 characters long.');
-      if (!/^[a-z0-9_.-]{3,30}$/.test(cleanUser)) {
-        throw new Error('Username may only contain letters, numbers, underscores, dots, and hyphens.');
+      if (cleanUser !== (this.currentUser.username || '').toLowerCase()) {
+        if (!isCallerAdmin) {
+          throw new Error('❌ Permission Denied: Regular users cannot change their username. Please contact a System Administrator.');
+        }
+        if (cleanUser.length < 3) throw new Error('Username must be at least 3 characters long.');
+        if (!/^[a-z0-9_.-]{3,30}$/.test(cleanUser)) {
+          throw new Error('Username may only contain letters, numbers, underscores, dots, and hyphens.');
+        }
+        const users = this.getAllUsers();
+        if (users.some(u => u.id !== userId && u.username?.toLowerCase() === cleanUser)) {
+          throw new Error(`Username '${cleanUser}' is already taken by another account.`);
+        }
+        updates.username = cleanUser;
       }
-      const users = this.getAllUsers();
-      if (users.some(u => u.id !== userId && u.username?.toLowerCase() === cleanUser)) {
-        throw new Error(`Username '${cleanUser}' is already taken by another account.`);
-      }
-      updates.username = cleanUser;
     }
 
-    // Email update
-    if (profileData.email) {
-      const cleanEmail = profileData.email.trim().toLowerCase();
-      if (!cleanEmail.includes('@')) throw new Error('Invalid email address format.');
-      const users = this.getAllUsers();
-      if (users.some(u => u.id !== userId && u.email?.toLowerCase() === cleanEmail)) {
-        throw new Error(`Email '${cleanEmail}' is already registered to another account.`);
+    // Email update: optional!
+    if (profileData.email !== undefined) {
+      const cleanEmail = (profileData.email || '').trim().toLowerCase();
+      if (!cleanEmail) {
+        // Clearing email
+        updates.email = '';
+        updates.emailVerified = false;
+        updates.emailVerifiedAt = null;
+      } else {
+        if (!cleanEmail.includes('@') || !cleanEmail.includes('.')) {
+          throw new Error('Please enter a valid email address (e.g. user@example.com).');
+        }
+        const users = this.getAllUsers();
+        if (users.some(u => u.id !== userId && u.email && u.email?.toLowerCase() === cleanEmail)) {
+          throw new Error(`Email '${cleanEmail}' is already registered to another account.`);
+        }
+        // If email changed, require verification
+        if (cleanEmail !== (this.currentUser.email || '').toLowerCase()) {
+          updates.email = cleanEmail;
+          updates.emailVerified = false;
+          updates.emailVerifiedAt = null;
+        }
       }
-      updates.email = cleanEmail;
     }
 
     const updated = storage.update(TABLE_NAMES.USERS, userId, {
@@ -2375,6 +2398,165 @@ class AuthService {
       'USER',
       userId,
       `User '${updated.name}' (@${updated.username}) updated their profile details.`
+    );
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('erp:user-profile-updated', { detail: updated }));
+    }
+
+    return updated;
+  }
+
+  /**
+   * Admin / Super Admin method to change any user's username
+   */
+  async changeUsername(userId, newUsername) {
+    if (!this.currentUser) throw new Error('No active user session.');
+    const isCallerAdmin = this.currentUser.role === 'ADMIN' || this.currentUser.role === 'SUPER_ADMIN';
+    if (!isCallerAdmin) {
+      throw new Error('❌ Permission Denied: Only Administrators can change usernames.');
+    }
+
+    if (!userId) throw new Error('User ID is required.');
+    const cleanUser = (newUsername || '').trim().toLowerCase().replace(/\s+/g, '_');
+    if (cleanUser.length < 3) throw new Error('Username must be at least 3 characters long.');
+    if (!/^[a-z0-9_.-]{3,30}$/.test(cleanUser)) {
+      throw new Error('Username may only contain letters, numbers, underscores, dots, and hyphens.');
+    }
+
+    const users = this.getAllUsers();
+    const target = users.find(u => u.id === userId);
+    if (!target) throw new Error('User account not found.');
+
+    const duplicate = users.find(u => u.id !== userId && u.username?.toLowerCase() === cleanUser);
+    if (duplicate) {
+      throw new Error(`Username '@${cleanUser}' is already taken by account '${duplicate.name}' (@${duplicate.username}).`);
+    }
+
+    const oldUsername = target.username;
+    if (oldUsername === cleanUser) return target;
+
+    const updated = storage.update(TABLE_NAMES.USERS, userId, {
+      username: cleanUser,
+      updatedAt: new Date().toISOString()
+    });
+
+    const ok = await storage.saveTable(TABLE_NAMES.USERS, true);
+    if (!ok) throw new CloudSaveError('❌ Cloud Save Failed: Username change was not confirmed by the cloud.');
+
+    auditService.log(
+      'USER_USERNAME_CHANGED',
+      'USER',
+      userId,
+      `Administrator '${this.currentUser.name}' changed username for user '${target.name}' from '@${oldUsername}' to '@${cleanUser}'.`
+    );
+
+    if (this.currentUser.id === userId) {
+      this.currentUser = updated;
+      localStorage.setItem('al_muslim_active_username', cleanUser);
+    }
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('erp:user-profile-updated', { detail: updated }));
+    }
+
+    return updated;
+  }
+
+  /**
+   * Send 6-digit OTP to verify user's email address
+   */
+  async sendEmailVerificationOTP(targetEmail) {
+    if (!this.currentUser) throw new Error('No active user session.');
+    const emailToVerify = (targetEmail || this.currentUser.email || '').trim().toLowerCase();
+    if (!emailToVerify || !emailToVerify.includes('@') || !emailToVerify.includes('.')) {
+      throw new Error('Please enter a valid email address before requesting verification.');
+    }
+
+    const users = this.getAllUsers();
+    if (users.some(u => u.id !== this.currentUser.id && u.email?.toLowerCase() === emailToVerify && (u.emailVerified === true || u.emailVerified === 'true'))) {
+      throw new Error(`Email '${emailToVerify}' is already verified on another account.`);
+    }
+
+    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiry = new Date(Date.now() + 15 * 60 * 1000).toISOString();
+
+    const updated = storage.update(TABLE_NAMES.USERS, this.currentUser.id, {
+      pendingEmail: emailToVerify,
+      emailVerifyOTP: otpCode,
+      emailVerifyOTPExpiry: expiry,
+      updatedAt: new Date().toISOString()
+    });
+
+    await storage.saveTable(TABLE_NAMES.USERS, true);
+    this.currentUser = updated;
+
+    let emailSent = false;
+    let emailError = null;
+    try {
+      const res = await emailService.sendEmailVerificationEmail(emailToVerify, otpCode, this.currentUser.name);
+      emailSent = Boolean(res?.success);
+    } catch (e) {
+      emailError = e.message;
+    }
+
+    auditService.log(
+      'EMAIL_VERIFICATION_REQUESTED',
+      'USER',
+      this.currentUser.id,
+      `Verification OTP dispatched for email '${emailToVerify}'.`
+    );
+
+    return {
+      success: true,
+      email: emailToVerify,
+      code: otpCode,
+      otpCode: otpCode,
+      emailSent: emailSent,
+      error: emailError
+    };
+  }
+
+  /**
+   * Confirm Email Verification with OTP
+   */
+  async verifyEmailWithOTP(otpCode) {
+    if (!this.currentUser) throw new Error('No active user session.');
+    const user = storage.getItem(TABLE_NAMES.USERS, this.currentUser.id) || this.currentUser;
+    const expectedOtp = user.emailVerifyOTP || this.currentUser.emailVerifyOTP;
+    const otpExpiry = user.emailVerifyOTPExpiry || this.currentUser.emailVerifyOTPExpiry;
+
+    if (!expectedOtp || !otpCode || String(expectedOtp).trim() !== String(otpCode).trim()) {
+      throw new Error('Invalid verification code. Please check your email and try again.');
+    }
+
+    if (otpExpiry && new Date() > new Date(otpExpiry)) {
+      throw new Error('Verification code has expired. Please request a new verification code.');
+    }
+
+    const verifiedEmail = user.pendingEmail || this.currentUser.pendingEmail || user.email || this.currentUser.email;
+    const nowIso = new Date().toISOString();
+
+    const updated = storage.update(TABLE_NAMES.USERS, this.currentUser.id, {
+      email: verifiedEmail,
+      emailVerified: true,
+      emailVerifiedAt: nowIso,
+      pendingEmail: null,
+      emailVerifyOTP: null,
+      emailVerifyOTPExpiry: null,
+      updatedAt: nowIso
+    });
+
+    const ok = await storage.saveTable(TABLE_NAMES.USERS, true);
+    if (!ok) throw new CloudSaveError('❌ Cloud Save Failed: Email verification was not confirmed.');
+
+    this.currentUser = updated;
+
+    auditService.log(
+      'EMAIL_VERIFIED',
+      'USER',
+      user.id,
+      `Email address '${verifiedEmail}' successfully verified for user '${user.name}' (@${user.username}).`
     );
 
     if (typeof window !== 'undefined') {
@@ -2675,10 +2857,16 @@ class AuthService {
   requestPasswordResetOTP(identifier) {
     const users = this.getAllUsers();
     const clean = (identifier || '').trim().toLowerCase();
-    const user = users.find(u => u.username?.toLowerCase() === clean || u.email?.toLowerCase() === clean);
+    const user = users.find(u => u.username?.toLowerCase() === clean || (u.email && u.email?.toLowerCase() === clean));
 
     if (!user) {
       throw new Error(`No account found matching username or email '${identifier}'.`);
+    }
+
+    // Check if account has a verified email address
+    const hasVerifiedEmail = Boolean(user.email && (user.emailVerified === true || user.emailVerified === 'true'));
+    if (!hasVerifiedEmail) {
+      throw new Error(`❌ Password recovery is disabled for account '@${user.username}'. This account has not linked and verified an email address. Please contact your factory System Administrator to reset your password.`);
     }
 
     const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
@@ -2693,14 +2881,14 @@ class AuthService {
       'PASSWORD_RESET_REQUESTED',
       'SECURITY',
       user.id,
-      `Password reset verification code generated for user '${user.username}'.`
+      `Password reset verification code generated for user '${user.username}' (Sent to verified email: ${user.email}).`
     );
 
     return {
       success: true,
       otpCode: otpCode,
       user: user,
-      email: user.email || `${user.username}@al-muslim.com`,
+      email: user.email,
       expiresInMinutes: 15
     };
   }

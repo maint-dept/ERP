@@ -361,6 +361,58 @@ class UserAccessService {
   }
 
   /**
+   * Admin / Super Admin: Update any user's username
+   */
+  async updateUsername(userId, newUsername) {
+    if (!userId) throw new Error('User ID is required.');
+    const cleanUser = (newUsername || '').trim().toLowerCase().replace(/\s+/g, '_');
+    if (cleanUser.length < 3) throw new Error('Username must be at least 3 characters long.');
+    if (!/^[a-z0-9_.-]{3,30}$/.test(cleanUser)) {
+      throw new Error('Username may only contain letters, numbers, underscores, dots, and hyphens.');
+    }
+
+    const users = storage.getTable(TABLE_NAMES.USERS) || [];
+    const target = users.find(u => u.id === userId);
+    if (!target) throw new Error('User account not found.');
+
+    const duplicate = users.find(u => u.id !== userId && u.username?.toLowerCase() === cleanUser);
+    if (duplicate) {
+      throw new Error(`Username '@${cleanUser}' is already taken by account '${duplicate.name}' (@${duplicate.username}).`);
+    }
+
+    const oldUsername = target.username;
+    if (oldUsername === cleanUser) {
+      return target; // No change needed
+    }
+
+    const updated = storage.update(TABLE_NAMES.USERS, userId, {
+      username: cleanUser,
+      updatedAt: new Date().toISOString()
+    });
+
+    await storage.saveTable(TABLE_NAMES.USERS, true);
+
+    auditService.log(
+      'USER_USERNAME_CHANGED',
+      'USER',
+      userId,
+      `Administrator changed username for user '${target.name}' from '@${oldUsername}' to '@${cleanUser}'.`
+    );
+
+    // If current logged-in user's username was changed, update active session
+    const currentUser = authService.getCurrentUser();
+    if (currentUser && currentUser.id === userId) {
+      currentUser.username = cleanUser;
+      localStorage.setItem('al_muslim_active_username', cleanUser);
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('erp:user-profile-updated', { detail: updated }));
+      }
+    }
+
+    return updated;
+  }
+
+  /**
    * 11. Active and Inactive Account Synchronization
    * Synchronizes changes to an employee's Location, Designation, Department, or Status
    * to their linked User Account.
