@@ -450,7 +450,9 @@ class StorageEngine {
 
   loadFromStorage() {
     if (typeof localStorage === 'undefined') return;
-    Object.values(TABLE_NAMES).forEach(table => {
+
+    // Fast Boot: Synchronously parse only critical tables needed for immediate UI shell & auth (<25ms)
+    CRITICAL_TABLES.forEach(table => {
       const stored = localStorage.getItem(STORAGE_KEY_PREFIX + table);
       if (stored) {
         try {
@@ -462,6 +464,33 @@ class StorageEngine {
         this.data[table] = [];
       }
     });
+
+    // Ensure all tables have an array/object reference to prevent undefined errors
+    Object.values(TABLE_NAMES).forEach(table => {
+      if (!this.data[table]) {
+        this.data[table] = [];
+      }
+    });
+
+    // Defer parsing secondary operational tables to browser idle time so initial load is instantaneous
+    const loadSecondaryTables = () => {
+      SECONDARY_TABLES.forEach(table => {
+        if (!this.data[table] || this.data[table].length === 0) {
+          const stored = localStorage.getItem(STORAGE_KEY_PREFIX + table);
+          if (stored) {
+            try {
+              this.data[table] = JSON.parse(stored);
+            } catch (_) {}
+          }
+        }
+      });
+    };
+
+    if (typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function') {
+      window.requestIdleCallback(loadSecondaryTables, { timeout: 1500 });
+    } else {
+      setTimeout(loadSecondaryTables, 500);
+    }
 
     // High-capacity IndexedDB recovery (bypasses 5MB localStorage quota limit for large enterprise tables)
     try {
@@ -2176,6 +2205,14 @@ class StorageEngine {
   }
 
   getTable(tableName) {
+    if ((!this.data[tableName] || this.data[tableName].length === 0) && typeof localStorage !== 'undefined') {
+      const stored = localStorage.getItem(STORAGE_KEY_PREFIX + tableName);
+      if (stored) {
+        try {
+          this.data[tableName] = JSON.parse(stored);
+        } catch (_) {}
+      }
+    }
     return this.data[tableName] || [];
   }
 
@@ -2286,6 +2323,9 @@ class StorageEngine {
 
   getItem(tableName, id) {
     if (!id) return null;
+    if ((!this.data[tableName] || this.data[tableName].length === 0) && typeof localStorage !== 'undefined') {
+      this.getTable(tableName);
+    }
     if (!this._tableIdMaps) this._tableIdMaps = {};
     let map = this._tableIdMaps[tableName];
     if (!map) {

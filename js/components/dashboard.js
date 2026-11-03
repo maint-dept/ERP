@@ -124,33 +124,39 @@ export function renderDashboard() {
   // =========================================================================
   const totalMachines = machines.length;
 
-  const activeMachines = machines.filter(m => {
+  // High-performance single-pass KPI accumulator (replaces multiple redundant O(N) array filter allocations)
+  let activeCount = 0;
+  let underRepairCount = 0;
+  let breakdownCount = 0;
+  let repairedCount = 0;
+
+  for (let i = 0; i < totalMachines; i++) {
+    const m = machines[i];
+    if (!m) continue;
+
     const rQty = parseInt(m.running ?? m.qty_running ?? 0, 10);
-    return m.status === 'ACTIVE' || rQty > 0;
-  });
-  const activeCount = activeMachines.length;
+    if (m.status === 'ACTIVE' || rQty > 0) {
+      activeCount++;
+    }
 
-  const underRepairMachines = machines.filter(m => {
     const rpQty = parseInt(m.repairable_idle ?? m.repairableIdle ?? 0, 10);
-    return m.status === 'MAINTENANCE' || m.status === 'UNDER_MAINTENANCE' || m.status === 'BREAKDOWN' || m.status === 'REPAIRABLE_IDLE' || rpQty > 0;
-  });
-  const underRepairCount = underRepairMachines.length;
+    if (m.status === 'MAINTENANCE' || m.status === 'UNDER_MAINTENANCE' || m.status === 'BREAKDOWN' || m.status === 'REPAIRABLE_IDLE' || rpQty > 0) {
+      underRepairCount++;
+    }
 
-  const breakdownMachines = machines.filter(m => m.status === 'BREAKDOWN');
-  const breakdownCount = breakdownMachines.length;
+    if (m.status === 'BREAKDOWN') {
+      breakdownCount++;
+    }
 
-  // Serviced / Repaired in active window
-  let repairedMachines = machines.filter(m => {
-    return m.status === 'REPAIRED' || (m.customValues?.status === 'REPAIRED');
-  });
-  if (dateCutoff) {
-    const servicedInRange = machines.filter(m => {
+    if (dateCutoff) {
       const d = parseRecordDate(m.lastServiceDate || m.service_date || m.customValues?.service_date || m.updatedAt);
-      return d && d >= dateCutoff;
-    });
-    repairedMachines = servicedInRange;
+      if (d && d >= dateCutoff) {
+        repairedCount++;
+      }
+    } else if (m.status === 'REPAIRED' || (m.customValues?.status === 'REPAIRED')) {
+      repairedCount++;
+    }
   }
-  const repairedCount = repairedMachines.length;
 
   const spareAmbiguousCount = Math.max(0, totalMachines - activeCount - underRepairCount);
 

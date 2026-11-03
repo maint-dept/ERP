@@ -300,6 +300,19 @@
         }
       } catch (e) { /* non-critical */ }
     })();
+
+    // Enterprise Service Worker Registration (0ms Instant Load from Cache)
+    (function () {
+      if ('serviceWorker' in navigator && (window.location.protocol === 'https:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+        window.addEventListener('load', function () {
+          var isGh = window.location.pathname.toLowerCase().startsWith('/erp');
+          var swUrl = (isGh ? '/ERP/' : '/') + 'sw.js?v=' + CURRENT_BUILD;
+          navigator.serviceWorker.register(swUrl).then(function (reg) {
+            reg.update();
+          }).catch(function () {});
+        });
+      }
+    })();
   </script>
 
   <!-- Main ES Module Application Entrypoint (Cache-Busted v4.28.4) -->
