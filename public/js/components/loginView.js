@@ -49,8 +49,8 @@ export function renderLoginView(isAdminGateway = false) {
 
   // Determine Homepage Visibility Mode: 'public' | 'login' | 'maintenance'
   const visibilityMode = getEffectiveHomepageVisibilityMode();
-  // Direct ERP Portal mode: active when mode is 'login' and viewing User Login
-  const isDirectPortal = !isAdminGateway && (visibilityMode === 'login');
+  // Direct Portal mode: active on Admin Gateway OR when mode is 'login' (hides top ribbon on both)
+  const isDirectPortal = isAdminGateway || (visibilityMode === 'login');
 
   // Page background: Cyber-emerald obsidian for Admin Gateway, deep navy for User Portal
   const pageBg = isAdminGateway
@@ -138,7 +138,7 @@ export function renderLoginView(isAdminGateway = false) {
                 </span>
               </div>
               <span style="font-size: 11px; color: #94a3b8; font-weight: 600; margin-top: 1px;">
-                Garments Factory Maintenance Machine ERP System
+                Information Management &amp; Control System
               </span>
             </div>
           </div>
@@ -421,10 +421,8 @@ export function renderLoginView(isAdminGateway = false) {
       <footer style="text-align: center; padding: 18px 24px; font-size: 12px; color: #64748b; border-top: 1px solid rgba(255,255,255,0.06); background: rgba(5, 10, 18, 0.85); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); position: relative; z-index: 10;">
         <div style="display: flex; justify-content: center; align-items: center; gap: 12px; flex-wrap: wrap;">
           <span>&copy; 2026 Al-Muslim Group</span>
-          ${!isDirectPortal ? `
-            <span>&bull;</span>
-            <span>Garments Factory Maintenance Machine ERP</span>
-          ` : ''}
+          <span>&bull;</span>
+          <span>Information Management &amp; Control System</span>
         </div>
       </footer>
 
