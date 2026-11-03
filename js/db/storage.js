@@ -415,10 +415,20 @@ class StorageEngine {
 
     if (!this.data[TABLE_NAMES.SETTINGS] || Object.keys(this.data[TABLE_NAMES.SETTINGS]).length === 0) {
       this.data[TABLE_NAMES.SETTINGS] = JSON.parse(JSON.stringify(DEFAULT_SETTINGS));
-    } else if (this.data[TABLE_NAMES.SETTINGS] && this.data[TABLE_NAMES.SETTINGS].adminLoginSlug && typeof localStorage !== 'undefined') {
-      try {
-        localStorage.setItem('al_muslim_admin_login_slug', this.data[TABLE_NAMES.SETTINGS].adminLoginSlug);
-      } catch (_) {}
+    } else {
+      if (!this.data[TABLE_NAMES.SETTINGS].homepageVisibilityMode) {
+        this.data[TABLE_NAMES.SETTINGS].homepageVisibilityMode = DEFAULT_SETTINGS.homepageVisibilityMode || 'public';
+      }
+      if (typeof localStorage !== 'undefined') {
+        try {
+          if (this.data[TABLE_NAMES.SETTINGS].adminLoginSlug) {
+            localStorage.setItem('al_muslim_admin_login_slug', this.data[TABLE_NAMES.SETTINGS].adminLoginSlug);
+          }
+          if (this.data[TABLE_NAMES.SETTINGS].homepageVisibilityMode) {
+            localStorage.setItem('al_muslim_homepage_visibility_mode', this.data[TABLE_NAMES.SETTINGS].homepageVisibilityMode);
+          }
+        } catch (_) {}
+      }
     }
 
     if (Array.isArray(this.data[TABLE_NAMES.EXCEL_STRUCTURES]) && this.data[TABLE_NAMES.EXCEL_STRUCTURES].length > 0) {
@@ -667,9 +677,14 @@ class StorageEngine {
                 ...(this.data[tbl] || {}),
                 ...records
               };
-              if (tbl === TABLE_NAMES.SETTINGS && this.data[tbl].adminLoginSlug && typeof localStorage !== 'undefined') {
+              if (tbl === TABLE_NAMES.SETTINGS && typeof localStorage !== 'undefined') {
                 try {
-                  localStorage.setItem('al_muslim_admin_login_slug', this.data[tbl].adminLoginSlug);
+                  if (this.data[tbl].adminLoginSlug) {
+                    localStorage.setItem('al_muslim_admin_login_slug', this.data[tbl].adminLoginSlug);
+                  }
+                  if (this.data[tbl].homepageVisibilityMode) {
+                    localStorage.setItem('al_muslim_homepage_visibility_mode', this.data[tbl].homepageVisibilityMode);
+                  }
                 } catch (_) {}
               }
               idbUpdated = true;

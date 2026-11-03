@@ -1171,5 +1171,10 @@ export const DEFAULT_SETTINGS = {
   // Admin Login URL Gateway Configuration (Obfuscated & Customizable)
   adminLoginSlug: 'secure-admin-gateway',
   adminLoginSlugUpdatedAt: null,
-  adminLoginSlugUpdatedBy: null
+  adminLoginSlugUpdatedBy: null,
+  // Homepage & Website Visibility Mode Configuration
+  // Modes: 'public' (Public Homepage - default) | 'login' (Login as Homepage) | 'maintenance' (Private / Maintenance Mode)
+  homepageVisibilityMode: 'public',
+  homepageVisibilityUpdatedAt: null,
+  homepageVisibilityUpdatedBy: null
 };

@@ -31,6 +31,7 @@ import { tempImportService } from './services/tempImportService.js';
 import { router } from './services/router.js?v=4.26.106';
 import { moduleLoader } from './services/moduleLoader.js?v=4.26.106';
 import { realtimeService } from './services/realtimeService.js';
+import { homepageService } from './services/homepageService.js';
 
 /**
  * Captures all active scroll, viewport, and focused input states.
@@ -363,6 +364,21 @@ class ERPApplication {
       refreshHomeIfActive();
     });
 
+    // Dynamic reaction when Homepage Visibility Mode changes
+    window.addEventListener('erp:homepage-visibility-changed', (e) => {
+      const mode = e.detail?.mode;
+      const cv = state.get('currentView');
+      if (cv === 'home') {
+        const currentUser = authService.getCurrentUser();
+        const isPreview = new URLSearchParams(window.location.search || '').get('preview') === '1';
+        if (mode === 'login' && !isPreview) {
+          this.switchView(currentUser ? (authService.getFirstAllowedView(currentUser) || 'dashboard') : 'login');
+        } else {
+          this.render();
+        }
+      }
+    });
+
     window.addEventListener('erp:preventive-maintenance-updated', () => {
       this.queueBackgroundRender();
     });
@@ -413,13 +429,17 @@ class ERPApplication {
       window.__pageUsableTime = performance.now();
     }
 
-    // Ensure base URL reflects clean landing Home URL (/ERP/) without #home
+    // Ensure base URL reflects clean landing Home URL (/ERP/) without #home when allowed
     if (typeof window !== 'undefined' && window.location) {
       const hash = window.location.hash ? window.location.hash.replace(/^#/, '').trim() : '';
       if (!hash || hash === 'home') {
         try {
-          const cleanUrl = (window.location.pathname || '/') + (window.location.search || '');
-          window.history.replaceState({ view: 'home' }, '', cleanUrl);
+          const visibilityMode = (typeof localStorage !== 'undefined' ? localStorage.getItem('al_muslim_homepage_visibility_mode') : null) || 'public';
+          const isHomePreview = new URLSearchParams(window.location.search || '').get('preview') === '1' || new URLSearchParams(window.location.search || '').get('preview_home') === '1';
+          if (visibilityMode !== 'login' || isHomePreview) {
+            const cleanUrl = (window.location.pathname || '/') + (window.location.search || '');
+            window.history.replaceState({ view: 'home' }, '', cleanUrl);
+          }
         } catch (_) { }
       }
     }
@@ -445,6 +465,24 @@ class ERPApplication {
 
       const currentUser = authService.getCurrentUser();
       let currentView = state.get('currentView') || 'home';
+
+      // Homepage Visibility Mode routing for initial home view
+      const searchParams = (typeof window !== 'undefined' && window.location) ? new URLSearchParams(window.location.search || '') : new URLSearchParams();
+      const isHomePreview = searchParams.get('preview') === '1' || searchParams.get('preview_home') === '1';
+      const visibilityMode = (typeof homepageService !== 'undefined' && typeof homepageService.getVisibilityMode === 'function')
+        ? homepageService.getVisibilityMode()
+        : ((typeof localStorage !== 'undefined' ? localStorage.getItem('al_muslim_homepage_visibility_mode') : null) || 'public');
+
+      if (currentView === 'home' && !isHomePreview) {
+        if (visibilityMode === 'login') {
+          if (currentUser) {
+            currentView = authService.getFirstAllowedView(currentUser) || 'dashboard';
+          } else {
+            currentView = 'login';
+          }
+          state.set('currentView', currentView, { silent: true });
+        }
+      }
 
       // Security Gate: Protect internal ERP shell from unauthenticated access
       if (!currentUser && currentView !== 'home' && currentView !== 'login' && currentView !== 'admin-login') {
@@ -604,6 +642,24 @@ class ERPApplication {
 
     try {
       const currentUser = authService.getCurrentUser();
+
+      // Homepage Visibility Mode check
+      const isHomePreview = options.params?.preview === '1' || (typeof window !== 'undefined' && new URLSearchParams(window.location.search || '').get('preview') === '1');
+      const visibilityMode = (typeof homepageService !== 'undefined' && typeof homepageService.getVisibilityMode === 'function')
+        ? homepageService.getVisibilityMode()
+        : ((typeof localStorage !== 'undefined' ? localStorage.getItem('al_muslim_homepage_visibility_mode') : null) || 'public');
+
+      if (newView === 'home' && !isHomePreview) {
+        if (visibilityMode === 'login') {
+          if (currentUser) {
+            newView = authService.getFirstAllowedView(currentUser) || 'dashboard';
+          } else {
+            newView = 'login';
+          }
+          state.set('currentView', newView, { silent: true });
+        }
+      }
+
       // Security Gate: Redirect unauthenticated requests to login
       if (!currentUser && newView !== 'home' && newView !== 'login' && newView !== 'admin-login') {
         newView = 'login';

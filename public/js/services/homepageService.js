@@ -12,6 +12,12 @@ import { storage } from '../db/storage.js';
 import { TABLE_NAMES } from '../db/schema.js';
 import { auditService } from './auditService.js';
 
+export const HOMEPAGE_VISIBILITY_MODES = {
+  PUBLIC: 'public',
+  LOGIN: 'login',
+  MAINTENANCE: 'maintenance'
+};
+
 export const DEFAULT_HOMEPAGE_CONFIG = {
   version: '2.6',
   lastPublishedAt: new Date().toISOString(),
@@ -631,6 +637,89 @@ class HomepageService {
     }
     throw new Error('Module not found.');
   }
+
+  // ── Homepage & Website Visibility Mode Controls ───────────────────────────
+
+  /**
+   * Returns current visibility mode: 'public' | 'login' | 'maintenance'
+   */
+  getVisibilityMode() {
+    try {
+      const settings = (typeof storage !== 'undefined' && typeof storage.getTable === 'function')
+        ? storage.getTable(TABLE_NAMES.SETTINGS)
+        : null;
+      let mode = settings?.homepageVisibilityMode;
+      if (!mode && typeof localStorage !== 'undefined') {
+        mode = localStorage.getItem('al_muslim_homepage_visibility_mode');
+      }
+      return mode || 'public';
+    } catch (_) {
+      return (typeof localStorage !== 'undefined' ? localStorage.getItem('al_muslim_homepage_visibility_mode') : null) || 'public';
+    }
+  }
+
+  /**
+   * Updates Homepage Visibility Mode and persists to Database & LocalStorage
+   * @param {'public'|'login'|'maintenance'} mode
+   * @param {Object} [user]
+   */
+  async setVisibilityMode(mode, user = null) {
+    const validModes = ['public', 'login', 'maintenance'];
+    if (!validModes.includes(mode)) {
+      throw new Error(`Invalid visibility mode: "${mode}". Valid modes are: ${validModes.join(', ')}`);
+    }
+
+    const currentSettings = storage.getTable(TABLE_NAMES.SETTINGS) || {};
+    const updated = {
+      ...currentSettings,
+      homepageVisibilityMode: mode,
+      homepageVisibilityUpdatedAt: new Date().toISOString(),
+      homepageVisibilityUpdatedBy: user?.name || user?.username || 'Administrator'
+    };
+
+    // Keep maintenanceMode aligned with visibility mode
+    if (mode === 'maintenance') {
+      updated.maintenanceMode = true;
+    } else if (currentSettings.homepageVisibilityMode === 'maintenance' && mode !== 'maintenance') {
+      updated.maintenanceMode = false;
+    }
+
+    storage.data[TABLE_NAMES.SETTINGS] = updated;
+
+    if (typeof localStorage !== 'undefined') {
+      try {
+        localStorage.setItem('al_muslim_homepage_visibility_mode', mode);
+        localStorage.setItem('al_muslim_erp_' + TABLE_NAMES.SETTINGS, JSON.stringify(updated));
+      } catch (_) {}
+    }
+
+    // Persist across IndexedDB, Local Disk & MySQL Primary via standard storage pipeline
+    try {
+      await storage.saveTable(TABLE_NAMES.SETTINGS, updated, true);
+    } catch (e) {
+      console.warn('[HomepageService] Failed to sync settings to remote database:', e);
+    }
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('erp:settings-updated', { detail: updated }));
+      window.dispatchEvent(new CustomEvent('erp:homepage-visibility-changed', { detail: { mode } }));
+    }
+
+    try {
+      auditService.log(
+        'HOMEPAGE_VISIBILITY_UPDATED',
+        user?.role || 'ADMIN',
+        'settings',
+        `Administrator updated Homepage & Website Visibility Mode to "${mode.toUpperCase()}".`
+      );
+    } catch (_) {}
+
+    return { success: true, mode };
+  }
 }
 
 export const homepageService = new HomepageService();
+
+if (typeof window !== 'undefined') {
+  window.homepageService = homepageService;
+}

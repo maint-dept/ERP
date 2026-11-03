@@ -9,6 +9,7 @@ import { state } from '../state.js';
 import { masterDataService } from '../services/masterDataService.js';
 import { authService } from '../services/authService.js';
 import { router } from '../services/router.js';
+import { homepageService } from '../services/homepageService.js';
 
 function escapeHtml(str) {
   if (!str) return '';
@@ -183,6 +184,10 @@ export function renderSettingsView() {
     ? authService.getAdminLoginSlug()
     : (settings.adminLoginSlug || 'secure-admin-gateway');
   const fullAdminUrl = `${currentOrigin}${basePath}/${currentAdminSlug}`;
+
+  const currentVisibilityMode = (typeof homepageService !== 'undefined' && typeof homepageService.getVisibilityMode === 'function')
+    ? homepageService.getVisibilityMode()
+    : (settings.homepageVisibilityMode || 'public');
 
   const assetCfg = (typeof storage !== 'undefined' && typeof storage.getAssetIdConfig === 'function')
     ? storage.getAssetIdConfig()
@@ -499,6 +504,159 @@ export function renderSettingsView() {
 
         </div>
 
+        <!-- Card: Homepage & Website Visibility Dynamic Control -->
+        <div id="card-homepage-visibility" style="background: var(--bg-surface); border: 1.5px solid rgba(56, 189, 248, 0.45); border-radius: var(--radius-lg); padding: 22px; display: flex; flex-direction: column; gap: 16px; grid-column: 1 / -1; box-shadow: 0 4px 24px rgba(56, 189, 248, 0.12);">
+          
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; flex-wrap: wrap; gap: 12px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span style="font-size: 26px;">🌐</span>
+              <div>
+                <h3 style="font-size: 16px; font-weight: 800; color: #38bdf8; margin: 0; display: flex; align-items: center; gap: 8px;">
+                  <span>Homepage &amp; Website Visibility Control</span>
+                  <span class="badge" style="background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.4); color: #7dd3fc; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 999px;">
+                    DYNAMIC ROUTING
+                  </span>
+                </h3>
+                <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">
+                  Control public access, visitor routing, and homepage visibility without deleting any source code, components, or design.
+                </div>
+              </div>
+            </div>
+
+            <!-- Live Status Indicator Pill -->
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span id="homepage-visibility-status-pill" class="badge" style="font-size: 12px; padding: 6px 14px; font-weight: 800; border-radius: 20px; ${
+                currentVisibilityMode === 'public'
+                  ? 'background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1.5px solid #10b981;'
+                  : currentVisibilityMode === 'login'
+                    ? 'background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1.5px solid #38bdf8;'
+                    : 'background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1.5px solid #f59e0b;'
+              }">
+                ${
+                  currentVisibilityMode === 'public'
+                    ? '🟢 MODE: PUBLIC HOMEPAGE (Full Public Access)'
+                    : currentVisibilityMode === 'login'
+                      ? '🔵 MODE: LOGIN AS HOMEPAGE (Direct Sign In Portal)'
+                      : '🟠 MODE: PRIVATE / MAINTENANCE (Restricted Access)'
+                }
+              </span>
+            </div>
+          </div>
+
+          <!-- Non-Destructive Architecture Guarantee Box -->
+          <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 8px; padding: 12px 16px; font-size: 12.5px; color: #e0f2fe; line-height: 1.55; display: flex; align-items: flex-start; gap: 10px;">
+            <span style="font-size: 18px; line-height: 1;">🛡️</span>
+            <div>
+              <strong>Non-Destructive System Guarantee:</strong> Changing the mode will <strong>NEVER delete, overwrite, or remove</strong> any homepage code, layouts, features, or design. The complete public homepage remains 100% intact in the codebase and can be switched back to Public at any time with a single click.
+            </div>
+          </div>
+
+          <!-- 3 Mode Selection Cards Grid -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px;" id="homepage-mode-cards-container">
+            
+            <!-- Mode 1: Public Homepage (Default) -->
+            <label class="homepage-mode-card ${currentVisibilityMode === 'public' ? 'active-mode-card' : ''}" data-mode="public" style="background: ${currentVisibilityMode === 'public' ? 'rgba(16, 185, 129, 0.12)' : 'rgba(15, 23, 42, 0.8)'}; border: 1.5px solid ${currentVisibilityMode === 'public' ? '#10b981' : 'rgba(255, 255, 255, 0.1)'}; border-radius: 12px; padding: 16px; cursor: pointer; display: flex; flex-direction: column; gap: 10px; transition: all 0.2s ease; position: relative;">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <span style="font-size: 24px;">🏛️</span>
+                  <div>
+                    <div style="font-weight: 800; font-size: 14.5px; color: #ffffff;">Public Homepage</div>
+                    <div style="font-size: 11px; font-weight: 700; color: #34d399;">(Recommended Default)</div>
+                  </div>
+                </div>
+                <input type="radio" name="homepage-visibility-mode" value="public" ${currentVisibilityMode === 'public' ? 'checked' : ''} style="width: 18px; height: 18px; cursor: pointer; accent-color: #10b981;" />
+              </div>
+              <p style="font-size: 12px; color: #cbd5e1; margin: 0; line-height: 1.5; flex: 1;">
+                Everyone visiting the main domain can see the website Homepage, company details, modules overview, and public navigation.
+              </p>
+              <div style="background: rgba(0, 0, 0, 0.3); border-radius: 6px; padding: 6px 10px; font-family: var(--font-mono); font-size: 11px; color: #a7f3d0; display: flex; align-items: center; gap: 6px;">
+                <span>🌐 Destination:</span>
+                <code>/ &rarr; Public Homepage</code>
+              </div>
+            </label>
+
+            <!-- Mode 2: Login as Homepage -->
+            <label class="homepage-mode-card ${currentVisibilityMode === 'login' ? 'active-mode-card' : ''}" data-mode="login" style="background: ${currentVisibilityMode === 'login' ? 'rgba(56, 189, 248, 0.12)' : 'rgba(15, 23, 42, 0.8)'}; border: 1.5px solid ${currentVisibilityMode === 'login' ? '#38bdf8' : 'rgba(255, 255, 255, 0.1)'}; border-radius: 12px; padding: 16px; cursor: pointer; display: flex; flex-direction: column; gap: 10px; transition: all 0.2s ease; position: relative;">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <span style="font-size: 24px;">🔐</span>
+                  <div>
+                    <div style="font-weight: 800; font-size: 14.5px; color: #ffffff;">Login as Homepage</div>
+                    <div style="font-size: 11px; font-weight: 700; color: #38bdf8;">(Direct ERP Portal)</div>
+                  </div>
+                </div>
+                <input type="radio" name="homepage-visibility-mode" value="login" ${currentVisibilityMode === 'login' ? 'checked' : ''} style="width: 18px; height: 18px; cursor: pointer; accent-color: #38bdf8;" />
+              </div>
+              <p style="font-size: 12px; color: #cbd5e1; margin: 0; line-height: 1.5; flex: 1;">
+                Visitors to the main domain are immediately redirected to User Login (/login). Existing URLs, Admin Panel, and Dashboard remain fully intact.
+              </p>
+              <div style="background: rgba(0, 0, 0, 0.3); border-radius: 6px; padding: 6px 10px; font-family: var(--font-mono); font-size: 11px; color: #bae6fd; display: flex; align-items: center; gap: 6px;">
+                <span>🔀 Destination:</span>
+                <code>/ &rarr; /login (Direct Sign In)</code>
+              </div>
+            </label>
+
+            <!-- Mode 3: Private / Maintenance Mode -->
+            <label class="homepage-mode-card ${currentVisibilityMode === 'maintenance' ? 'active-mode-card' : ''}" data-mode="maintenance" style="background: ${currentVisibilityMode === 'maintenance' ? 'rgba(245, 158, 11, 0.12)' : 'rgba(15, 23, 42, 0.8)'}; border: 1.5px solid ${currentVisibilityMode === 'maintenance' ? '#f59e0b' : 'rgba(255, 255, 255, 0.1)'}; border-radius: 12px; padding: 16px; cursor: pointer; display: flex; flex-direction: column; gap: 10px; transition: all 0.2s ease; position: relative;">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <span style="font-size: 24px;">🛠️</span>
+                  <div>
+                    <div style="font-weight: 800; font-size: 14.5px; color: #ffffff;">Private / Maintenance</div>
+                    <div style="font-size: 11px; font-weight: 700; color: #fbbf24;">(Restricted Access)</div>
+                  </div>
+                </div>
+                <input type="radio" name="homepage-visibility-mode" value="maintenance" ${currentVisibilityMode === 'maintenance' ? 'checked' : ''} style="width: 18px; height: 18px; cursor: pointer; accent-color: #f59e0b;" />
+              </div>
+              <p style="font-size: 12px; color: #cbd5e1; margin: 0; line-height: 1.5; flex: 1;">
+                Public homepage is hidden. Visitors see a branded Private / Maintenance Mode notice. Authorized staff &amp; Admins can sign in via gateway.
+              </p>
+              <div style="background: rgba(0, 0, 0, 0.3); border-radius: 6px; padding: 6px 10px; font-family: var(--font-mono); font-size: 11px; color: #fde68a; display: flex; align-items: center; gap: 6px;">
+                <span>🔒 Destination:</span>
+                <code>/ &rarr; Maintenance Notice</code>
+              </div>
+            </label>
+
+          </div>
+
+          <!-- Quick Test & Preview Toolbar -->
+          <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; padding: 10px 14px;">
+            <div style="font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 6px;">
+              <span>💡</span>
+              <span>Test visitor experience or preview pages:</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+              <a href="${currentOrigin}${basePath}/" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm" style="font-size: 11.5px; color: #38bdf8; border-color: rgba(56, 189, 248, 0.3); text-decoration: none; display: flex; align-items: center; gap: 5px;">
+                <span>🔗</span>
+                <span>Test Root URL (/)</span>
+              </a>
+              <a href="${currentOrigin}${basePath}/home?preview=1" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm" style="font-size: 11.5px; color: #a78bfa; border-color: rgba(167, 139, 250, 0.3); text-decoration: none; display: flex; align-items: center; gap: 5px;">
+                <span>👁️</span>
+                <span>Preview Public Homepage</span>
+              </a>
+              <button type="button" id="btn-settings-go-home-mgr" class="btn btn-secondary btn-sm" style="font-size: 11.5px; color: #34d399; border-color: rgba(52, 211, 153, 0.3); display: flex; align-items: center; gap: 5px;">
+                <span>🏠</span>
+                <span>Open Homepage Manager &rarr;</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Action Footer -->
+          <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); padding-top: 14px; margin-top: 4px; flex-wrap: wrap; gap: 10px;">
+            <button type="button" id="btn-reset-homepage-mode-default" class="btn btn-secondary btn-sm" style="font-size: 12px; color: #f59e0b; border-color: rgba(245, 158, 11, 0.4);" title="Revert to Public Homepage default">
+              🔄 Reset to Public Homepage (Default)
+            </button>
+
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <span id="save-visibility-feedback-msg" style="font-size: 12px; color: #34d399; font-weight: 600; display: none;"></span>
+              <button type="button" id="btn-save-homepage-visibility" class="btn btn-primary btn-sm" style="font-weight: 800; background: linear-gradient(135deg, #0284c7, #0369a1); border-color: #0284c7; padding: 8px 24px; box-shadow: 0 4px 16px rgba(2, 132, 199, 0.4);">
+                💾 Save Visibility Settings
+              </button>
+            </div>
+          </div>
+
+        </div>
+
         <!-- Card: System Maintenance Mode & Access Lockdown Control -->
         <div id="card-maintenance-mode" style="background: var(--bg-surface); border: 1.5px solid ${settings.maintenanceMode ? '#f59e0b' : 'rgba(245, 158, 11, 0.35)'}; border-radius: var(--radius-lg); padding: 22px; display: flex; flex-direction: column; gap: 16px; grid-column: 1 / -1; box-shadow: ${settings.maintenanceMode ? '0 0 25px rgba(245, 158, 11, 0.25)' : '0 4px 20px rgba(0,0,0,0.2)'};">
           
@@ -770,6 +928,120 @@ export function initSettingsEvents() {
         saveGen.disabled = false;
         saveGen.innerHTML = origText;
       }, 1500);
+    });
+  }
+
+  // ==========================================
+  // Homepage & Website Visibility Handlers
+  // ==========================================
+  const visibilityStatusPill = document.getElementById('homepage-visibility-status-pill');
+  const modeCards = document.querySelectorAll('.homepage-mode-card');
+  const modeRadios = document.querySelectorAll('input[name="homepage-visibility-mode"]');
+  const saveVisibilityBtn = document.getElementById('btn-save-homepage-visibility');
+  const resetVisibilityBtn = document.getElementById('btn-reset-homepage-mode-default');
+  const visibilityFeedback = document.getElementById('save-visibility-feedback-msg');
+  const goHomeMgrBtn = document.getElementById('btn-settings-go-home-mgr');
+
+  const updateVisibilityCardsVisual = (selectedMode) => {
+    modeCards.forEach(card => {
+      const mode = card.getAttribute('data-mode');
+      const radio = card.querySelector('input[type="radio"]');
+      if (mode === selectedMode) {
+        if (radio) radio.checked = true;
+        if (mode === 'public') {
+          card.style.background = 'rgba(16, 185, 129, 0.12)';
+          card.style.border = '1.5px solid #10b981';
+        } else if (mode === 'login') {
+          card.style.background = 'rgba(56, 189, 248, 0.12)';
+          card.style.border = '1.5px solid #38bdf8';
+        } else if (mode === 'maintenance') {
+          card.style.background = 'rgba(245, 158, 11, 0.12)';
+          card.style.border = '1.5px solid #f59e0b';
+        }
+      } else {
+        if (radio) radio.checked = false;
+        card.style.background = 'rgba(15, 23, 42, 0.8)';
+        card.style.border = '1.5px solid rgba(255, 255, 255, 0.1)';
+      }
+    });
+
+    if (visibilityStatusPill) {
+      if (selectedMode === 'public') {
+        visibilityStatusPill.textContent = '🟢 MODE: PUBLIC HOMEPAGE (Full Public Access)';
+        visibilityStatusPill.style.background = 'rgba(16, 185, 129, 0.15)';
+        visibilityStatusPill.style.color = '#34d399';
+        visibilityStatusPill.style.border = '1.5px solid #10b981';
+      } else if (selectedMode === 'login') {
+        visibilityStatusPill.textContent = '🔵 MODE: LOGIN AS HOMEPAGE (Direct Sign In Portal)';
+        visibilityStatusPill.style.background = 'rgba(56, 189, 248, 0.15)';
+        visibilityStatusPill.style.color = '#38bdf8';
+        visibilityStatusPill.style.border = '1.5px solid #38bdf8';
+      } else if (selectedMode === 'maintenance') {
+        visibilityStatusPill.textContent = '🟠 MODE: PRIVATE / MAINTENANCE (Restricted Access)';
+        visibilityStatusPill.style.background = 'rgba(245, 158, 11, 0.15)';
+        visibilityStatusPill.style.color = '#fbbf24';
+        visibilityStatusPill.style.border = '1.5px solid #f59e0b';
+      }
+    }
+  };
+
+  modeCards.forEach(card => {
+    card.addEventListener('click', (e) => {
+      const mode = card.getAttribute('data-mode');
+      if (mode) updateVisibilityCardsVisual(mode);
+    });
+  });
+
+  modeRadios.forEach(radio => {
+    radio.addEventListener('change', () => {
+      if (radio.checked) updateVisibilityCardsVisual(radio.value);
+    });
+  });
+
+  if (saveVisibilityBtn) {
+    saveVisibilityBtn.addEventListener('click', async () => {
+      const selectedRadio = document.querySelector('input[name="homepage-visibility-mode"]:checked');
+      const selectedMode = selectedRadio ? selectedRadio.value : 'public';
+      const origText = saveVisibilityBtn.innerHTML;
+
+      saveVisibilityBtn.disabled = true;
+      saveVisibilityBtn.innerHTML = 'Saving Settings...';
+
+      try {
+        const u = authService.getCurrentUser();
+        await homepageService.setVisibilityMode(selectedMode, u);
+
+        updateVisibilityCardsVisual(selectedMode);
+
+        if (visibilityFeedback) {
+          visibilityFeedback.textContent = `✓ Visibility Mode updated to "${selectedMode.toUpperCase()}"!`;
+          visibilityFeedback.style.display = 'inline-block';
+          setTimeout(() => { visibilityFeedback.style.display = 'none'; }, 3500);
+        }
+
+        saveVisibilityBtn.innerHTML = '✓ Saved Successfully!';
+        setTimeout(() => {
+          saveVisibilityBtn.disabled = false;
+          saveVisibilityBtn.innerHTML = origText;
+        }, 1500);
+      } catch (err) {
+        alert('Error saving Homepage Visibility Mode: ' + err.message);
+        saveVisibilityBtn.disabled = false;
+        saveVisibilityBtn.innerHTML = origText;
+      }
+    });
+  }
+
+  if (resetVisibilityBtn) {
+    resetVisibilityBtn.addEventListener('click', () => {
+      updateVisibilityCardsVisual('public');
+      if (saveVisibilityBtn) saveVisibilityBtn.click();
+    });
+  }
+
+  if (goHomeMgrBtn) {
+    goHomeMgrBtn.addEventListener('click', () => {
+      router.navigate('homepage-manager');
     });
   }
 

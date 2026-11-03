@@ -23,14 +23,18 @@ export function renderHomepageView(isDraft = false) {
   const isLoggedIn = !!currentUser;
   const userInitial = (currentUser?.name?.replace(/^(Engr\.|Dr\.|Mr\.|Mrs\.|Ms\.|Md\.)\s+/i, '') || currentUser?.name || currentUser?.username || 'U').trim().charAt(0).toUpperCase();
 
-  const isMaintenance = authService.isMaintenanceModeActive();
+  const visibilityMode = (typeof homepageService !== 'undefined' && typeof homepageService.getVisibilityMode === 'function')
+    ? homepageService.getVisibilityMode()
+    : 'public';
+  const isMaintenance = authService.isMaintenanceModeActive() || visibilityMode === 'maintenance';
   const maintConfig = authService.getMaintenanceModeConfig();
   const canBypass = authService.canBypassMaintenance(currentUser);
 
   // 1. MAINTENANCE MODE LOCKDOWN FOR VISITORS & NON-ADMINS:
-  // When Maintenance Mode is active, visitors and non-admin users ONLY see the official maintenance notice.
+  // When Maintenance Mode is active (or Homepage Visibility is 'maintenance'),
+  // visitors and non-admin users ONLY see the official maintenance notice.
   // NO operational machinery data, modules, or factory statistics are exposed.
-  if (isMaintenance && !canBypass) {
+  if (isMaintenance && !canBypass && !isDraft) {
     return renderMaintenanceLockdownHomepage({ currentUser, isLoggedIn, userInitial, maintConfig });
   }
 
@@ -544,6 +548,15 @@ export function initHomepageEvents() {
     btnMaintLogin.addEventListener('click', () => {
       router.navigate('login');
       state.set('currentView', 'login');
+    });
+  }
+
+  // Header Admin Login Button (Maintenance / Private Mode)
+  const btnHeaderAdmin = document.getElementById('btn-header-login-admin');
+  if (btnHeaderAdmin) {
+    btnHeaderAdmin.addEventListener('click', () => {
+      router.navigate('admin-login');
+      state.set('currentView', 'admin-login');
     });
   }
 

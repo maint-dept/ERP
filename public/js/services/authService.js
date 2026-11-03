@@ -1258,9 +1258,11 @@ class AuthService {
   // ==========================================
   getMaintenanceModeConfig() {
     const settings = storage.getTable(TABLE_NAMES.SETTINGS) || {};
+    const visibilityMode = settings.homepageVisibilityMode || (typeof localStorage !== 'undefined' ? localStorage.getItem('al_muslim_homepage_visibility_mode') : null) || 'public';
+    const isMaintenance = Boolean(settings.maintenanceMode) || visibilityMode === 'maintenance';
     return {
-      enabled: Boolean(settings.maintenanceMode),
-      message: settings.maintenanceMessage || 'Routine scheduled system maintenance is currently in progress. Normal operations will resume shortly.',
+      enabled: isMaintenance,
+      message: settings.maintenanceMessage || 'Routine scheduled system maintenance and server upgrade is currently in progress. Normal operations will resume shortly.',
       estimatedEnd: settings.maintenanceEstimatedEnd || '',
       allowAdmin: settings.maintenanceAllowAdmin !== false,
       enabledAt: settings.maintenanceEnabledAt || null,

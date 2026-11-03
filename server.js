@@ -498,6 +498,11 @@ const server = http.createServer((req, res) => {
               return res.end(JSON.stringify({ status: 'error', message: 'Failed to write database file to disk' }));
             }
 
+            try {
+              const publicDbFile = path.join(PUBLIC_DIR, 'data', 'erp_database.json');
+              fs.writeFileSync(publicDbFile, serialized, 'utf8');
+            } catch (_) {}
+
             const byteCount = Buffer.byteLength(serialized);
             console.log(`[SERVER DB] ✅ Stored ${parsed.machines.length} machines, ${parsed.lines.length} lines, ${parsed.floors.length} floors to data/erp_database.json (${byteCount} bytes) at ${new Date().toLocaleTimeString()}`);
 

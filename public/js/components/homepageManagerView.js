@@ -16,6 +16,7 @@ import { authService } from '../services/authService.js';
 import { notificationService } from '../services/notificationService.js';
 import { renderHomepageView, initHomepageEvents } from './homepageView.js';
 import { state } from '../state.js';
+import { router } from '../services/router.js';
 
 let activeEditorTab = 'sections'; // 'sections' | 'hero' | 'features' | 'modules' | 'about' | 'contact'
 let activeModalState = null; // { type: 'ADD_FEATURE'|'EDIT_FEATURE'|'ADD_MODULE'|'EDIT_MODULE'|'PREVIEW', item: Object }
@@ -28,6 +29,9 @@ export function renderHomepageManagerView() {
   const config = homepageService.getDraftConfig();
   const published = homepageService.getPublishedConfig();
   const isAdmin = authService.isAdmin();
+  const visMode = (typeof homepageService !== 'undefined' && typeof homepageService.getVisibilityMode === 'function')
+    ? homepageService.getVisibilityMode()
+    : 'public';
 
   return `
     <div class="page-view" style="gap: 16px; max-width: 1300px; margin: 0 auto; width: 100%;">
@@ -59,6 +63,32 @@ export function renderHomepageManagerView() {
             ↺ Reset Defaults
           </button>
         </div>
+      </div>
+
+      <!-- Homepage Visibility Mode Status Alert -->
+      <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: var(--radius-lg); padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+        <div style="display: flex; align-items: center; gap: 10px; font-size: 13px;">
+          <span>🌐</span>
+          <span>Website Homepage Visibility:</span>
+          <span class="badge" style="font-weight: 800; font-size: 11.5px; padding: 4px 10px; border-radius: 999px; ${
+            visMode === 'public'
+              ? 'background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid #10b981;'
+              : visMode === 'login'
+                ? 'background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid #38bdf8;'
+                : 'background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid #f59e0b;'
+          }">
+            ${
+              visMode === 'public'
+                ? '🟢 Public Homepage (Open Access)'
+                : visMode === 'login'
+                  ? '🔵 Login as Homepage (/login Direct)'
+                  : '🟠 Private / Maintenance Mode (Restricted)'
+            }
+          </span>
+        </div>
+        <button id="btn-home-mgr-configure-visibility" class="btn btn-secondary btn-sm" style="font-size: 12px; color: #38bdf8; border-color: rgba(56, 189, 248, 0.35); font-weight: 700; display: flex; align-items: center; gap: 6px;">
+          <span>⚙️</span> Configure Visibility in Settings &rarr;
+        </button>
       </div>
 
       <!-- Navigation Tabs -->
@@ -1157,7 +1187,18 @@ export function initHomepageManagerEvents() {
     });
   }
 
-  // 13. Close Modal
+  // 13. Configure Visibility shortcut
+  const btnCfgVis = document.getElementById('btn-home-mgr-configure-visibility');
+  if (btnCfgVis) {
+    btnCfgVis.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (typeof router !== 'undefined' && typeof router.navigate === 'function') {
+        router.navigate('settings');
+      }
+    });
+  }
+
+  // 14. Close Modal
   const btnClose = document.getElementById('btn-modal-close');
   const btnCancel = document.getElementById('btn-modal-cancel');
   if (btnClose) btnClose.addEventListener('click', closeModal);

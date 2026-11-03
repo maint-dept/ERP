@@ -364778,6 +364778,9 @@
     "adminLoginSlug": "secure-admin-gateway",
     "adminLoginSlugUpdatedAt": null,
     "adminLoginSlugUpdatedBy": null,
+    "homepageVisibilityMode": "public",
+    "homepageVisibilityUpdatedAt": null,
+    "homepageVisibilityUpdatedBy": null,
     "multi_db_config": [
       {
         "id": "mysql_primary",

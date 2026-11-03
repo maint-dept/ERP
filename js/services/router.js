@@ -144,6 +144,23 @@ class SPAModuleRouter {
   }
 
   /**
+   * Retrieves current Homepage Visibility Mode: 'public' | 'login' | 'maintenance'
+   */
+  getEffectiveHomepageVisibilityMode() {
+    try {
+      if (typeof localStorage !== 'undefined') {
+        const cached = localStorage.getItem('al_muslim_homepage_visibility_mode');
+        if (cached) return cached;
+      }
+      if (typeof storage !== 'undefined' && typeof storage.getTable === 'function') {
+        const settings = storage.getTable(TABLE_NAMES.SETTINGS);
+        if (settings?.homepageVisibilityMode) return settings.homepageVisibilityMode;
+      }
+    } catch (_) {}
+    return 'public';
+  }
+
+  /**
    * Detects base path:
    * Returns '/ERP' when deployed on GitHub Pages or subfolder,
    * otherwise returns '' for localhost, custom domains (cPanel), or root.
@@ -225,6 +242,24 @@ class SPAModuleRouter {
     // Determine target view
     let targetView = ROUTE_VIEW_MAP[routeKey] || (routeKey ? routeKey : 'home');
 
+    // Homepage Visibility Mode routing for root or home view
+    const isHomePreview = searchParams.get('preview') === '1' || searchParams.get('preview_home') === '1';
+    if (targetView === 'home' && !isHomePreview) {
+      const mode = this.getEffectiveHomepageVisibilityMode();
+      if (mode === 'login') {
+        const currentUser = (typeof authService !== 'undefined' && typeof authService.getCurrentUser === 'function')
+          ? authService.getCurrentUser()
+          : null;
+        if (currentUser) {
+          targetView = (typeof authService !== 'undefined' && typeof authService.getFirstAllowedView === 'function')
+            ? (authService.getFirstAllowedView(currentUser) || 'dashboard')
+            : 'dashboard';
+        } else {
+          targetView = 'login';
+        }
+      }
+    }
+
     // Extract subtab from query param or secondary path segment
     let rawTab = searchParams.get('tab') || subSegment || null;
     let tab = rawTab;
@@ -272,7 +307,23 @@ class SPAModuleRouter {
 
     let pathPart = '';
     if (!view || view === 'home') {
-      pathPart = base ? base + '/' : '/';
+      const isHomePreview = query?.preview === '1' || query?.preview_home === '1';
+      const mode = this.getEffectiveHomepageVisibilityMode();
+      if (mode === 'login' && !isHomePreview) {
+        const currentUser = (typeof authService !== 'undefined' && typeof authService.getCurrentUser === 'function')
+          ? authService.getCurrentUser()
+          : null;
+        if (currentUser) {
+          const allowedView = (typeof authService !== 'undefined' && typeof authService.getFirstAllowedView === 'function')
+            ? (authService.getFirstAllowedView(currentUser) || 'dashboard')
+            : 'dashboard';
+          pathPart = (base ? base : '') + '/' + encodeURIComponent(allowedView);
+        } else {
+          pathPart = (base ? base : '') + '/login';
+        }
+      } else {
+        pathPart = base ? base + '/' : '/';
+      }
     } else if (view === 'admin-login') {
       const activeAdminSlug = (typeof authService !== 'undefined' && typeof authService.getAdminLoginSlug === 'function')
         ? authService.getAdminLoginSlug()
@@ -403,14 +454,32 @@ class SPAModuleRouter {
   navigate(targetView, options = {}) {
     if (typeof window === 'undefined') return;
 
+    let effectiveTargetView = targetView;
+    const isHomePreview = options.params?.preview === '1' || (typeof window !== 'undefined' && new URLSearchParams(window.location.search || '').get('preview') === '1');
+    if (effectiveTargetView === 'home' && !isHomePreview) {
+      const mode = this.getEffectiveHomepageVisibilityMode();
+      if (mode === 'login') {
+        const currentUser = (typeof authService !== 'undefined' && typeof authService.getCurrentUser === 'function')
+          ? authService.getCurrentUser()
+          : null;
+        if (currentUser) {
+          effectiveTargetView = (typeof authService !== 'undefined' && typeof authService.getFirstAllowedView === 'function')
+            ? (authService.getFirstAllowedView(currentUser) || 'dashboard')
+            : 'dashboard';
+        } else {
+          effectiveTargetView = 'login';
+        }
+      }
+    }
+
     const replace = !!options.replace;
-    let tab = options.tab !== undefined ? options.tab : this.getCurrentSubtab(targetView);
+    let tab = options.tab !== undefined ? options.tab : this.getCurrentSubtab(effectiveTargetView);
     const params = options.params || {};
-    const targetUrl = this.buildUrl(targetView, { tab, params });
+    const targetUrl = this.buildUrl(effectiveTargetView, { tab, params });
 
     // Handle subtab state
     if (tab) {
-      this.syncSubtabState(targetView, tab);
+      this.syncSubtabState(effectiveTargetView, tab);
     }
 
     // Update browser URL state cleanly
@@ -418,9 +487,9 @@ class SPAModuleRouter {
       const currentFullUrl = window.location.pathname + window.location.search;
       if (currentFullUrl !== targetUrl || (window.location.hash && !options.preserveHash)) {
         if (replace) {
-          window.history.replaceState({ view: targetView, tab, params }, '', targetUrl);
+          window.history.replaceState({ view: effectiveTargetView, tab, params }, '', targetUrl);
         } else {
-          window.history.pushState({ view: targetView, tab, params }, '', targetUrl);
+          window.history.pushState({ view: effectiveTargetView, tab, params }, '', targetUrl);
         }
       }
     } catch (e) {
@@ -428,20 +497,20 @@ class SPAModuleRouter {
     }
 
     // Update document title
-    this.updateTitle(targetView, tab);
+    this.updateTitle(effectiveTargetView, tab);
 
     // Synchronize global reactive state if needed without triggering redundant untracked switchView
-    if (state.get('currentView') !== targetView) {
-      state.set('currentView', targetView, { silent: true });
+    if (state.get('currentView') !== effectiveTargetView) {
+      state.set('currentView', effectiveTargetView, { silent: true });
     }
 
     // Trigger view transition in app singleton unless skipped
     if (!options.skipViewSwitch && typeof window.app !== 'undefined' && typeof window.app.switchView === 'function') {
-      window.app.switchView(targetView, { tab, replace: true, skipHistory: true });
+      window.app.switchView(effectiveTargetView, { tab, replace: true, skipHistory: true });
     }
 
     // Notify registered router listeners
-    this._emit('route:changed', { view: targetView, tab, params, url: targetUrl });
+    this._emit('route:changed', { view: effectiveTargetView, tab, params, url: targetUrl });
   }
 
   /**
@@ -451,6 +520,19 @@ class SPAModuleRouter {
     const parsed = this.parseCurrentRoute();
     let targetView = parsed.view;
     const currentUser = authService.getCurrentUser();
+
+    // Homepage Visibility Mode routing on popstate
+    const isHomePreview = parsed.params?.preview === '1' || parsed.params?.preview_home === '1';
+    if (targetView === 'home' && !isHomePreview) {
+      const mode = this.getEffectiveHomepageVisibilityMode();
+      if (mode === 'login') {
+        if (currentUser) {
+          targetView = authService.getFirstAllowedView(currentUser) || 'dashboard';
+        } else {
+          targetView = 'login';
+        }
+      }
+    }
 
     // Security & Authorization Guard on Back/Forward navigation
     if (!currentUser && targetView !== 'home' && targetView !== 'login' && targetView !== 'admin-login') {
