@@ -376,6 +376,8 @@ class ERPApplication {
         } else {
           this.render();
         }
+      } else if (cv === 'login' || cv === 'admin-login') {
+        this.render();
       }
     });
 

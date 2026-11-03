@@ -8,6 +8,7 @@ import { authService } from '../services/authService.js?v=4.26.60';
 import { emailService } from '../services/emailService.js';
 import { state } from '../state.js';
 import { router } from '../services/router.js?v=4.26.54';
+import { homepageService } from '../services/homepageService.js';
 
 let loginMode = 'LOGIN'; // 'LOGIN' | 'FORGOT_REQUEST' | 'FORGOT_VERIFY' | 'FIRST_LOGIN_CHANGE'
 let resetTargetUsername = '';
@@ -15,6 +16,26 @@ let resetTargetEmail = '';
 let generatedDemoOtp = '';
 let pendingFirstLoginUserId = null;
 let _currentIsAdminGateway = false;
+
+function getEffectiveHomepageVisibilityMode() {
+  try {
+    if (typeof localStorage !== 'undefined') {
+      const cached = localStorage.getItem('al_muslim_homepage_visibility_mode');
+      if (cached) return cached;
+    }
+  } catch (_) {}
+  try {
+    if (typeof homepageService !== 'undefined' && typeof homepageService.getVisibilityMode === 'function') {
+      return homepageService.getVisibilityMode();
+    }
+  } catch (_) {}
+  try {
+    if (typeof router !== 'undefined' && typeof router.getEffectiveHomepageVisibilityMode === 'function') {
+      return router.getEffectiveHomepageVisibilityMode();
+    }
+  } catch (_) {}
+  return 'public';
+}
 
 export function renderLoginView(isAdminGateway = false) {
   _currentIsAdminGateway = Boolean(isAdminGateway);
@@ -25,6 +46,11 @@ export function renderLoginView(isAdminGateway = false) {
 
   const isMaintActive = authService.isMaintenanceModeActive();
   const maintConfig = authService.getMaintenanceModeConfig();
+
+  // Determine Homepage Visibility Mode: 'public' | 'login' | 'maintenance'
+  const visibilityMode = getEffectiveHomepageVisibilityMode();
+  // Direct ERP Portal mode: active when mode is 'login' and viewing User Login
+  const isDirectPortal = !isAdminGateway && (visibilityMode === 'login');
 
   // Page background: Cyber-emerald obsidian for Admin Gateway, deep navy for User Portal
   const pageBg = isAdminGateway
@@ -96,34 +122,38 @@ export function renderLoginView(isAdminGateway = false) {
       <div style="position: absolute; top: -140px; left: 15%; width: 500px; height: 500px; border-radius: 50%; background: radial-gradient(circle, ${isAdminGateway ? 'rgba(16, 185, 129, 0.06)' : 'rgba(2, 132, 199, 0.07)'} 0%, transparent 70%); filter: blur(90px); pointer-events: none; z-index: 0;"></div>
       <div style="position: absolute; bottom: -100px; right: 12%; width: 550px; height: 550px; border-radius: 50%; background: radial-gradient(circle, ${isAdminGateway ? 'rgba(14, 165, 233, 0.05)' : 'rgba(99, 102, 241, 0.06)'} 0%, transparent 70%); filter: blur(90px); pointer-events: none; z-index: 0;"></div>
 
-      <!-- Top Executive Navigation Ribbon -->
-      <header style="padding: 16px 28px; display: flex; justify-content: space-between; align-items: center; position: relative; z-index: 10; border-bottom: 1px solid rgba(255, 255, 255, 0.07); background: rgba(5, 10, 18, 0.75); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);">
-        <div style="display: flex; align-items: center; gap: 14px; cursor: pointer;" id="login-nav-home">
-          <div style="width: 40px; height: 40px; background: ${isAdminGateway ? 'linear-gradient(135deg, #059669, #0284c7)' : 'linear-gradient(135deg, #0284c7, #1d4ed8)'}; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; box-shadow: 0 0 20px ${isAdminGateway ? 'rgba(16, 185, 129, 0.4)' : 'rgba(2, 132, 199, 0.4)'}; border: 1px solid rgba(255, 255, 255, 0.2);">
-            ${isAdminGateway ? '🛡️' : '🔧'}
-          </div>
-          <div style="display: flex; flex-direction: column;">
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <span style="font-weight: 800; font-size: 15px; color: #fff; letter-spacing: 0.8px;">AL-MUSLIM GROUP</span>
-              <span class="badge" style="font-size: 10px; font-weight: 800; background: ${isAdminGateway ? 'rgba(16, 185, 129, 0.2)' : 'rgba(2, 132, 199, 0.2)'}; color: ${accentLight}; border: 1px solid ${isAdminGateway ? 'rgba(16, 185, 129, 0.4)' : 'rgba(2, 132, 199, 0.4)'}; padding: 2px 8px; border-radius: 12px; display: inline-flex; align-items: center; gap: 5px;">
-                <span style="width: 6px; height: 6px; border-radius: 50%; background: ${accentLight}; display: inline-block; animation: pulseDot 2s infinite;"></span>
-                ${isAdminGateway ? 'ADMIN PORTAL' : 'USER PORTAL'}
+      ${!isDirectPortal ? `
+        <!-- Top Executive Navigation Ribbon -->
+        <header style="padding: 16px 28px; display: flex; justify-content: space-between; align-items: center; position: relative; z-index: 10; border-bottom: 1px solid rgba(255, 255, 255, 0.07); background: rgba(5, 10, 18, 0.75); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);">
+          <div style="display: flex; align-items: center; gap: 14px; cursor: pointer;" id="login-nav-home">
+            <div style="width: 40px; height: 40px; background: ${isAdminGateway ? 'linear-gradient(135deg, #059669, #0284c7)' : 'linear-gradient(135deg, #0284c7, #1d4ed8)'}; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; box-shadow: 0 0 20px ${isAdminGateway ? 'rgba(16, 185, 129, 0.4)' : 'rgba(2, 132, 199, 0.4)'}; border: 1px solid rgba(255, 255, 255, 0.2);">
+              ${isAdminGateway ? '🛡️' : '🔧'}
+            </div>
+            <div style="display: flex; flex-direction: column;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-weight: 800; font-size: 15px; color: #fff; letter-spacing: 0.8px;">AL-MUSLIM GROUP</span>
+                <span class="badge" style="font-size: 10px; font-weight: 800; background: ${isAdminGateway ? 'rgba(16, 185, 129, 0.2)' : 'rgba(2, 132, 199, 0.2)'}; color: ${accentLight}; border: 1px solid ${isAdminGateway ? 'rgba(16, 185, 129, 0.4)' : 'rgba(2, 132, 199, 0.4)'}; padding: 2px 8px; border-radius: 12px; display: inline-flex; align-items: center; gap: 5px;">
+                  <span style="width: 6px; height: 6px; border-radius: 50%; background: ${accentLight}; display: inline-block; animation: pulseDot 2s infinite;"></span>
+                  ${isAdminGateway ? 'ADMIN PORTAL' : 'USER PORTAL'}
+                </span>
+              </div>
+              <span style="font-size: 11px; color: #94a3b8; font-weight: 600; margin-top: 1px;">
+                Garments Factory Maintenance Machine ERP System
               </span>
             </div>
-            <span style="font-size: 11px; color: #94a3b8; font-weight: 600; margin-top: 1px;">
-              Garments Factory Maintenance Machine ERP System
-            </span>
           </div>
-        </div>
 
-        <button id="btn-back-to-home" class="btn btn-ghost btn-sm" style="color: #cbd5e1; font-size: 12.5px; font-weight: 600; display: flex; align-items: center; gap: 8px; background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(255, 255, 255, 0.12); padding: 7px 14px; border-radius: 8px; transition: all 0.2s ease;">
-          <span>←</span>
-          <span>Public Homepage</span>
-        </button>
-      </header>
+          ${visibilityMode === 'public' ? `
+            <button id="btn-back-to-home" class="btn btn-ghost btn-sm" style="color: #cbd5e1; font-size: 12.5px; font-weight: 600; display: flex; align-items: center; gap: 8px; background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(255, 255, 255, 0.12); padding: 7px 14px; border-radius: 8px; transition: all 0.2s ease;">
+              <span>←</span>
+              <span>Public Homepage</span>
+            </button>
+          ` : ''}
+        </header>
+      ` : ''}
 
       <!-- Main Central Authentication Container -->
-      <main style="max-width: 460px; width: 100%; margin: 28px auto 36px; padding: 0 16px; position: relative; z-index: 5;">
+      <main style="max-width: 460px; width: 100%; margin: ${isDirectPortal ? 'auto' : '28px auto 36px'}; padding: ${isDirectPortal ? '32px 16px' : '0 16px'}; position: relative; z-index: 5;">
         
         <div class="gateway-card" style="padding: 32px 28px;">
           
@@ -394,8 +424,10 @@ export function renderLoginView(isAdminGateway = false) {
       <footer style="text-align: center; padding: 18px 24px; font-size: 12px; color: #64748b; border-top: 1px solid rgba(255,255,255,0.06); background: rgba(5, 10, 18, 0.85); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); position: relative; z-index: 10;">
         <div style="display: flex; justify-content: center; align-items: center; gap: 12px; flex-wrap: wrap;">
           <span>&copy; 2026 Al-Muslim Group</span>
-          <span>&bull;</span>
-          <span>Garments Factory Maintenance Machine ERP</span>
+          ${!isDirectPortal ? `
+            <span>&bull;</span>
+            <span>Garments Factory Maintenance Machine ERP</span>
+          ` : ''}
         </div>
       </footer>
 
