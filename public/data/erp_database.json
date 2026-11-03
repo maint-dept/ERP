@@ -321500,8 +321500,8 @@
         ]
       },
       "createdAt": "2026-01-01T00:00:00Z",
-      "lastLoginAt": "2026-11-03T12:32:04.747Z",
-      "updatedAt": "2026-11-03T12:32:04.747Z",
+      "lastLoginAt": "2026-11-03T12:38:52.042Z",
+      "updatedAt": "2026-11-03T12:38:52.042Z",
       "presetId": "preset_super_admin",
       "presetName": "Super Admin",
       "passwordHash": "$sha256$6ad526a0cf737517d4609e058dc306b2$454c146535308e78f7597aa51ac660a043569dd70843ec7b9e0b50be956f14b3"
@@ -330048,6 +330048,26 @@
       "timestamp": "2026-11-03T12:32:37.168Z",
       "createdAt": "2026-11-03T12:32:37.168Z",
       "updatedAt": "2026-11-03T12:32:37.168Z"
+    },
+    {
+      "id": "aud-1793709532042-762",
+      "userId": "usr-super-admin",
+      "username": "motaher",
+      "action": "USER_LOGIN",
+      "entity": "USER",
+      "entityId": "usr-super-admin",
+      "details": "User 'Engr. Motaher Hossain' (motaher.cse@gmail.com) logged in successfully as [SUPER_ADMIN].",
+      "oldData": null,
+      "newData": {
+        "username": "motaher",
+        "email": "motaher.cse@gmail.com",
+        "role": "SUPER_ADMIN",
+        "loginAt": "2026-11-03T12:38:52.042Z"
+      },
+      "ip": "127.0.0.1",
+      "timestamp": "2026-11-03T12:38:52.042Z",
+      "createdAt": "2026-11-03T12:38:52.043Z",
+      "updatedAt": "2026-11-03T12:38:52.043Z"
     }
   ],
   "notifications": [
@@ -332011,7 +332031,7 @@
         "enabled": true,
         "autoSync": true,
         "retryEnabled": true,
-        "updatedAt": "2026-11-03T12:26:53.464Z"
+        "updatedAt": "2026-11-03T12:37:58.172Z"
       },
       {
         "id": "db_postgresql_replica",
@@ -332029,8 +332049,8 @@
         "enabled": true,
         "autoSync": true,
         "retryEnabled": true,
-        "updatedAt": "2026-11-03T12:26:53.464Z",
-        "lastSync": "11/3/2026, 6:31:42 PM"
+        "updatedAt": "2026-11-03T12:37:58.172Z",
+        "lastSync": "11/3/2026, 6:38:19 PM"
       }
     ]
   },

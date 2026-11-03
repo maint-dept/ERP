@@ -1174,7 +1174,7 @@ export const DEFAULT_SETTINGS = {
   adminLoginSlugUpdatedBy: null,
   // Homepage & Website Visibility Mode Configuration
   // Modes: 'public' (Public Homepage - default) | 'login' (Login as Homepage) | 'maintenance' (Private / Maintenance Mode)
-  homepageVisibilityMode: 'public',
+  homepageVisibilityMode: 'login',
   homepageVisibilityUpdatedAt: null,
   homepageVisibilityUpdatedBy: null
 };

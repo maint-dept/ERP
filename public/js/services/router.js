@@ -157,7 +157,7 @@ class SPAModuleRouter {
         if (settings?.homepageVisibilityMode) return settings.homepageVisibilityMode;
       }
     } catch (_) {}
-    return 'public';
+    return 'login';
   }
 
   /**
@@ -609,11 +609,13 @@ class SPAModuleRouter {
       }
     });
 
-    // Clean up any 404 query param (?p=...) or normalize legacy hash URLs on startup to clean pathname
+    // Clean up any 404 query param (?p=...) or normalize legacy hash URLs / canonical view URLs on startup
     const searchParams = new URLSearchParams(window.location.search || '');
     const parsed = this.parseCurrentRoute();
-    if (searchParams.has('p') || (window.location.hash && (window.location.pathname === '/' || window.location.pathname.toLowerCase() === '/erp' || window.location.pathname.toLowerCase() === '/erp/'))) {
-      const cleanUrl = this.buildUrl(parsed.view, { tab: parsed.tab, params: parsed.params });
+    const cleanUrl = this.buildUrl(parsed.view, { tab: parsed.tab, params: parsed.params });
+    const currentFullRelative = (window.location.pathname || '/') + (window.location.search || '') + (window.location.hash || '');
+
+    if (searchParams.has('p') || window.location.hash || currentFullRelative !== cleanUrl) {
       try {
         window.history.replaceState({ view: parsed.view, tab: parsed.tab, params: parsed.params }, '', cleanUrl);
       } catch (_) {}

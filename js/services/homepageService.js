@@ -653,9 +653,9 @@ class HomepageService {
         ? storage.getTable(TABLE_NAMES.SETTINGS)
         : null;
       let mode = settings?.homepageVisibilityMode;
-      return mode || 'public';
+      return mode || 'login';
     } catch (_) {
-      return (typeof localStorage !== 'undefined' ? localStorage.getItem('al_muslim_homepage_visibility_mode') : null) || 'public';
+      return (typeof localStorage !== 'undefined' ? localStorage.getItem('al_muslim_homepage_visibility_mode') : null) || 'login';
     }
   }
 

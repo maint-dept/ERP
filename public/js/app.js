@@ -28,7 +28,7 @@ import { auditService } from './services/auditService.js';
 import { notificationService } from './services/notificationService.js';
 import { openDeleteConfirmationModal, confirmDelete } from './components/deleteConfirmationModal.js';
 import { tempImportService } from './services/tempImportService.js';
-import { router } from './services/router.js?v=4.27.7';
+import { router } from './services/router.js?v=4.27.8';
 import { moduleLoader } from './services/moduleLoader.js?v=4.27.7';
 import { realtimeService } from './services/realtimeService.js';
 import { homepageService } from './services/homepageService.js';

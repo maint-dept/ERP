@@ -12,20 +12,36 @@
   <meta http-equiv="Expires" content="0">
 
   <!-- High-Priority ES Module Preloading (Parallel Pipeline) -->
-  <link rel="modulepreload" href="js/app.js?v=4.27.7">
+  <link rel="modulepreload" href="js/app.js?v=4.27.8">
   <link rel="modulepreload" href="js/state.js">
   <link rel="modulepreload" href="js/db/storage.js">
   <link rel="modulepreload" href="js/db/schema.js">
   <link rel="modulepreload" href="js/services/authService.js">
-  <link rel="modulepreload" href="js/services/router.js?v=4.27.7">
-  <link rel="modulepreload" href="js/components/loginView.js?v=4.27.7">
+  <link rel="modulepreload" href="js/services/router.js?v=4.27.8">
+  <link rel="modulepreload" href="js/components/loginView.js?v=4.27.8">
   <link rel="modulepreload" href="js/components/sidebar.js">
-  <link rel="modulepreload" href="js/components/navbar.js?v=4.27.7">
+  <link rel="modulepreload" href="js/components/navbar.js?v=4.27.8">
   <!-- Dynamic Base Path for GitHub Pages & Local Hosting SPA Routing -->
   <script>
     (function () {
-      // 1. Unpack GitHub Pages 404 redirect (?p=/inventory&tab=...)
       var l = window.location;
+      var isGh = l.pathname.toLowerCase().startsWith('/erp');
+      var basePrefix = isGh ? '/ERP' : '';
+
+      // 1. Direct ERP Portal instant URL redirect if visiting root domain
+      try {
+        var mode = localStorage.getItem('al_muslim_homepage_visibility_mode') || 'login';
+        var hasUser = !!localStorage.getItem('al_muslim_active_user_id');
+        var isPreview = l.search && (l.search.indexOf('preview=1') !== -1 || l.search.indexOf('preview_home=1') !== -1);
+        var normPath = l.pathname.replace(/\/+$/, '').toLowerCase();
+        var isRoot = (normPath === '' || normPath === '/' || normPath === '/index.html' || normPath === '/erp');
+        if (mode === 'login' && !isPreview && isRoot) {
+          var targetLogin = basePrefix + (hasUser ? '/dashboard' : '/login') + (l.search || '') + (l.hash || '');
+          window.history.replaceState(null, null, targetLogin);
+        }
+      } catch (_) { }
+
+      // 2. Unpack GitHub Pages 404 redirect (?p=/inventory&tab=...)
       if (l.search) {
         var q = {};
         var raw = l.search.slice(1).split('&');
@@ -43,8 +59,6 @@
             return k + (q[k] ? '=' + q[k] : '');
           }).join('&');
 
-          var isGh = l.pathname.toLowerCase().startsWith('/erp');
-          var basePrefix = isGh ? '/ERP' : '';
           var normalizedRoute = restoredPath.startsWith('/') ? restoredPath : '/' + restoredPath;
           var finalUrl = basePrefix + normalizedRoute + (remainingParams ? '?' + remainingParams : '') + restoredHash;
 
@@ -54,7 +68,7 @@
         }
       }
 
-      // 2. Set dynamic <base href> so relative stylesheets and modules resolve seamlessly
+      // 3. Set dynamic <base href> so relative stylesheets and modules resolve seamlessly
       var pathname = window.location.pathname.toLowerCase();
       var baseHref = pathname.startsWith('/erp') ? '/ERP/' : '/';
       var baseEl = document.querySelector('base');
@@ -267,7 +281,7 @@
   </script>
 
   <!-- Main ES Module Application Entrypoint (Cache-Busted v4.27.7) -->
-  <script type="module" src="js/app.js?v=4.27.7"></script>
+  <script type="module" src="js/app.js?v=4.27.8"></script>
 
   <style>
     @keyframes execBarPulse {

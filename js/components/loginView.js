@@ -34,7 +34,7 @@ function getEffectiveHomepageVisibilityMode() {
       return router.getEffectiveHomepageVisibilityMode();
     }
   } catch (_) {}
-  return 'public';
+  return 'login';
 }
 
 export function renderLoginView(isAdminGateway = false) {
