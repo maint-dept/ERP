@@ -12,15 +12,15 @@
   <meta http-equiv="Expires" content="0">
 
   <!-- High-Priority ES Module Preloading (Parallel Pipeline) -->
-  <link rel="modulepreload" href="js/app.js?v=4.27.5">
+  <link rel="modulepreload" href="js/app.js?v=4.27.6">
   <link rel="modulepreload" href="js/state.js">
   <link rel="modulepreload" href="js/db/storage.js">
   <link rel="modulepreload" href="js/db/schema.js">
   <link rel="modulepreload" href="js/services/authService.js">
-  <link rel="modulepreload" href="js/services/router.js?v=4.27.5">
-  <link rel="modulepreload" href="js/components/loginView.js?v=4.27.5">
+  <link rel="modulepreload" href="js/services/router.js?v=4.27.6">
+  <link rel="modulepreload" href="js/components/loginView.js?v=4.27.6">
   <link rel="modulepreload" href="js/components/sidebar.js">
-  <link rel="modulepreload" href="js/components/navbar.js?v=4.27.5">
+  <link rel="modulepreload" href="js/components/navbar.js?v=4.27.6">
   <!-- Dynamic Base Path for GitHub Pages & Local Hosting SPA Routing -->
   <script>
     (function () {
@@ -132,15 +132,10 @@
 <body>
   <!-- Single Page Application Shell Root -->
   <div id="app-root">
-    <div id="loading-spinner-view"
-      style="height: 100vh; display: flex; align-items: center; justify-content: center; background: #090d16; color: #fff; font-family: 'Inter', sans-serif;">
-      <div style="text-align: center; max-width: 480px; padding: 24px;">
-        <div style="font-size: 44px; margin-bottom: 12px; animation: spin 2s infinite linear; display: inline-block;">⚙️
-        </div>
-        <h2 style="font-size: 20px; font-weight: 800; letter-spacing: 0.5px; color: #fff;">AL-MUSLIM GROUP</h2>
-        <p id="loading-status-text" style="font-size: 13px; color: #94a3b8; margin-top: 6px;">Loading Maintenance
-          Department ERP System...</p>
-      </div>
+    <div id="app-initial-shell"
+      style="min-height: 100vh; background-color: #040911; background-image: radial-gradient(rgba(56, 189, 248, 0.08) 1px, transparent 1px); background-size: 28px 28px; display: flex; align-items: center; justify-content: center;">
+      <!-- Subtle Executive Top Accent Line (Zero distracting emojis or bulky text) -->
+      <div style="position: fixed; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, #0284c7, #38bdf8, #10b981); z-index: 9999; animation: execBarPulse 1s infinite alternate ease-in-out;"></div>
     </div>
   </div>
 
@@ -219,28 +214,7 @@
       } catch (_) { }
     };
 
-    // Progressive Loading Feedback & Safety Watchdog
-    setTimeout(function () {
-      if (!window.__appLoaded) {
-        var statusEl = document.getElementById('loading-status-text');
-        if (statusEl) statusEl.textContent = 'Connecting to Cloud Database & Loading Data...';
-      }
-    }, 3000);
-
-    setTimeout(function () {
-      if (!window.__appLoaded) {
-        var statusEl = document.getElementById('loading-status-text');
-        if (statusEl) statusEl.textContent = 'Preparing Factory ERP Modules...';
-      }
-    }, 7000);
-
-    setTimeout(function () {
-      if (!window.__appLoaded) {
-        var statusEl = document.getElementById('loading-status-text');
-        if (statusEl) statusEl.textContent = 'Synchronizing Master Schemas & Caches...';
-      }
-    }, 14000);
-
+    // Startup Safety Watchdog
     setTimeout(function () {
       if (!window.__appLoaded) {
         if (window.app && typeof window.app.init === 'function') {
@@ -292,15 +266,18 @@
     })();
   </script>
 
-  <!-- Main ES Module Application Entrypoint (Cache-Busted v4.27.2) -->
-  <script type="module" src="js/app.js?v=4.27.5"></script>
+  <!-- Main ES Module Application Entrypoint (Cache-Busted v4.27.6) -->
+  <script type="module" src="js/app.js?v=4.27.6"></script>
 
   <style>
+    @keyframes execBarPulse {
+      0% { opacity: 0.4; }
+      100% { opacity: 1; }
+    }
     @keyframes spin {
       from {
         transform: rotate(0deg);
       }
-
       to {
         transform: rotate(360deg);
       }

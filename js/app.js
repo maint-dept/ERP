@@ -10,7 +10,7 @@ import { authService } from './services/authService.js?v=4.26.85';
 import { renderNavbar, initNavbarEvents } from './components/navbar.js?v=4.27.0';
 import { renderSidebar, initSidebarEvents, updateSidebarActiveState } from './components/sidebar.js?v=4.27.0';
 import { renderHomepageView, initHomepageEvents } from './components/homepageView.js?v=4.26.52';
-import { renderLoginView, initLoginViewEvents } from './components/loginView.js?v=4.27.5';
+import { renderLoginView, initLoginViewEvents } from './components/loginView.js?v=4.27.6';
 import { renderDashboard, initDashboardEvents } from './components/dashboard.js?v=4.27.2';
 import { renderMachineModal, initMachineModalEvents } from './components/machineModal.js?v=4.26.50';
 import { renderMachineDetails, initMachineDetailsEvents } from './components/machineDetails.js?v=4.26.50';
@@ -28,8 +28,8 @@ import { auditService } from './services/auditService.js';
 import { notificationService } from './services/notificationService.js';
 import { openDeleteConfirmationModal, confirmDelete } from './components/deleteConfirmationModal.js';
 import { tempImportService } from './services/tempImportService.js';
-import { router } from './services/router.js?v=4.27.5';
-import { moduleLoader } from './services/moduleLoader.js?v=4.27.5';
+import { router } from './services/router.js?v=4.27.6';
+import { moduleLoader } from './services/moduleLoader.js?v=4.27.6';
 import { realtimeService } from './services/realtimeService.js';
 import { homepageService } from './services/homepageService.js';
 
@@ -215,27 +215,42 @@ class ERPApplication {
       }
     } catch (_) { }
 
-    // Pre-warm initial view module IMMEDIATELY in parallel with IndexedDB cache hydration
+    const isStandaloneView = (initialView === 'login' || initialView === 'admin-login' || initialView === 'home');
+
+    // Instant Zero-Delay Pipeline for Login, Admin Gateway, and Homepage (0ms Render)
+    if (isStandaloneView) {
+      state.set('currentView', initialView, { silent: true });
+      this.render();
+      window.__appLoaded = true;
+      router.init();
+      this.bindEvents();
+
+      // Hydrate storage and real-time in background without blocking instant UI
+      storage.ensureHydrated().catch(() => {});
+      realtimeService.init();
+
+      if (typeof moduleLoader !== 'undefined' && typeof moduleLoader.preloadAllModules === 'function') {
+        setTimeout(() => { moduleLoader.preloadAllModules(); }, 200);
+      }
+      return;
+    }
+
+    // Pre-warm initial operational view module in parallel with IndexedDB cache hydration (Zero artificial delay)
     const initialModuleWarmup = (typeof moduleLoader !== 'undefined' && moduleLoader.isLazyView(initialView) && !moduleLoader.isLoaded(initialView))
       ? moduleLoader.load(initialView).catch(err => console.warn('[App] Initial module pre-warm notice:', err))
       : Promise.resolve();
 
-    // Await instant IndexedDB cache hydration AND initial view module in parallel (max 380ms safety guard)
     try {
       await Promise.all([
         Promise.race([
           storage.ensureHydrated(),
-          new Promise(resolve => setTimeout(resolve, 350))
+          new Promise(resolve => setTimeout(resolve, 250))
         ]),
-        Promise.race([
-          initialModuleWarmup,
-          new Promise(resolve => setTimeout(resolve, 380))
-        ])
+        initialModuleWarmup
       ]);
       if (typeof authService !== 'undefined' && typeof authService.recheckCurrentUser === 'function') {
         authService.recheckCurrentUser();
       }
-      // Re-verify route against freshly hydrated settings (e.g. if custom admin login slug was loaded)
       try {
         const parsedRoute = router.parseCurrentRoute();
         if (parsedRoute.view === 'admin-login') {
