@@ -1010,6 +1010,9 @@ export function initSettingsEvents() {
       try {
         const u = authService.getCurrentUser();
         await homepageService.setVisibilityMode(selectedMode, u);
+        if (typeof storage !== 'undefined' && typeof storage.persistToServerDatabase === 'function') {
+          storage.persistToServerDatabase().catch(() => {});
+        }
 
         updateVisibilityCardsVisual(selectedMode);
 
@@ -1167,6 +1170,9 @@ export function initSettingsEvents() {
 
       try {
         const savedSlug = await authService.setAdminLoginSlug(slugVal);
+        if (typeof storage !== 'undefined' && typeof storage.persistToServerDatabase === 'function') {
+          storage.persistToServerDatabase().catch(() => {});
+        }
         const origin = (typeof window !== 'undefined' && window.location) ? window.location.origin : 'https://maint-dept.github.io';
         const base = (typeof router !== 'undefined' && typeof router.getBasePath === 'function') ? router.getBasePath() : '';
         const savedFullUrl = `${origin}${base}/${savedSlug}`;

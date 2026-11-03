@@ -680,12 +680,13 @@ export function initLoginViewEvents(isAdminGateway = false) {
   }
 
   // Switch to Forgot Password Form
-  document.getElementById('link-forgot-password')?.addEventListener('click', (e) => {
+  const switchToForgot = (e) => {
     e.preventDefault();
     hideAlert();
     loginMode = 'FORGOT_REQUEST';
     triggerLoginReRender();
-  });
+  };
+  document.getElementById('link-forgot-password')?.addEventListener('click', switchToForgot);
 
   // Back to login links
   const returnToLogin = (e) => {
@@ -696,6 +697,25 @@ export function initLoginViewEvents(isAdminGateway = false) {
   };
   document.getElementById('link-back-to-login')?.addEventListener('click', returnToLogin);
   document.getElementById('link-back-to-login-2')?.addEventListener('click', returnToLogin);
+
+  // Global delegation failsafe for link-back-to-login & forgot-password
+  if (!window.__loginLinkDelegated) {
+    window.__loginLinkDelegated = true;
+    document.addEventListener('click', (e) => {
+      const backBtn = e.target.closest('#link-back-to-login, #link-back-to-login-2');
+      if (backBtn) {
+        e.preventDefault();
+        loginMode = 'LOGIN';
+        triggerLoginReRender();
+      }
+      const forgotBtn = e.target.closest('#link-forgot-password');
+      if (forgotBtn) {
+        e.preventDefault();
+        loginMode = 'FORGOT_REQUEST';
+        triggerLoginReRender();
+      }
+    });
+  }
 
   // Submit Forgot Password Request
   const forgotReqForm = document.getElementById('form-forgot-request');

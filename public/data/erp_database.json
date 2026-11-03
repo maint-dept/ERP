@@ -331754,12 +331754,12 @@
     "maintenanceAllowAdmin": true,
     "maintenanceEnabledAt": null,
     "maintenanceEnabledBy": null,
-    "adminLoginSlug": "secure-admin-gateway",
-    "adminLoginSlugUpdatedAt": null,
-    "adminLoginSlugUpdatedBy": null,
-    "homepageVisibilityMode": "public",
-    "homepageVisibilityUpdatedAt": null,
-    "homepageVisibilityUpdatedBy": null,
+    "adminLoginSlug": "maint-admin",
+    "adminLoginSlugUpdatedAt": "2026-11-03T12:02:06.982Z",
+    "adminLoginSlugUpdatedBy": "Engr. Motaher Hossain",
+    "homepageVisibilityMode": "login",
+    "homepageVisibilityUpdatedAt": "2026-11-03T12:02:06.982Z",
+    "homepageVisibilityUpdatedBy": "Engr. Motaher Hossain",
     "multi_db_config": [
       {
         "id": "mysql_primary",

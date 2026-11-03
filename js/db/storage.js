@@ -1887,10 +1887,10 @@ class StorageEngine {
   async persistToServerDatabase() {
     if (this._suppressServerPersist) return { status: 'suppressed' };
 
-    // On GitHub Pages, moviezonex.com, or static host, remote persistence is handled via MySQL Primary (syncManager)
+    // On GitHub Pages or static file host, remote persistence is handled via MySQL Primary (syncManager)
     const currentHost = (typeof window !== 'undefined' && window.location && window.location.hostname) ? window.location.hostname : '';
     const currentProto = (typeof window !== 'undefined' && window.location && window.location.protocol) ? window.location.protocol : '';
-    if (typeof window !== 'undefined' && window.location && (currentHost.includes('github.io') || currentHost.includes('moviezonex.com') || currentProto === 'file:')) {
+    if (typeof window !== 'undefined' && window.location && (currentHost.includes('github.io') || currentProto === 'file:')) {
       if (this._isCloudConnected) {
         this.updateStatusBadge('saved');
       }
