@@ -7878,11 +7878,41 @@ export function parseRealErpPdfData(rawInput) {
 }
 
 /**
+ * Helper to ensure Tesseract OCR is loaded on-demand
+ */
+async function ensureTesseract() {
+  if (typeof Tesseract !== 'undefined') return window.Tesseract;
+  return new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = 'lib/tesseract.min.js';
+    s.async = true;
+    s.onload = () => {
+      if (typeof Tesseract !== 'undefined') resolve(window.Tesseract);
+      else reject(new Error('Tesseract failed to initialize.'));
+    };
+    s.onerror = () => {
+      const fb = document.createElement('script');
+      fb.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js';
+      fb.async = true;
+      fb.onload = () => resolve(window.Tesseract);
+      fb.onerror = () => reject(new Error('Failed to load Tesseract OCR library.'));
+      document.head.appendChild(fb);
+    };
+    document.head.appendChild(s);
+  });
+}
+
+/**
  * Performs high-resolution Tesseract OCR on an image source with bicubic smoothing and contrast
  */
 async function runOcrOnImage(imageSource, onProgress) {
   if (typeof Tesseract === 'undefined') {
-    throw new Error('Tesseract OCR library is not available in browser runtime.');
+    if (typeof onProgress === 'function') onProgress('Loading OCR Engine...', 0.05);
+    try {
+      await ensureTesseract();
+    } catch (loadErr) {
+      throw new Error('Tesseract OCR library could not be loaded: ' + loadErr.message);
+    }
   }
 
   const img = new Image();
