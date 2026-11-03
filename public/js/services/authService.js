@@ -1323,17 +1323,23 @@ class AuthService {
   // ==========================================
   getAdminLoginSlug() {
     let slug = '';
-    try {
-      const settings = storage.getTable(TABLE_NAMES.SETTINGS) || {};
-      slug = settings.adminLoginSlug || settings.admin_login_slug;
-    } catch (_) {}
-    if (!slug && typeof localStorage !== 'undefined') {
+    if (typeof localStorage !== 'undefined') {
       try {
         slug = localStorage.getItem('al_muslim_admin_login_slug');
-        if (!slug) {
-          const saved = JSON.parse(localStorage.getItem('al_muslim_erp_settings') || '{}');
-          slug = saved.adminLoginSlug || saved.admin_login_slug || '';
-        }
+      } catch (_) {}
+    }
+    if (!slug) {
+      try {
+        const settings = (typeof storage !== 'undefined' && typeof storage.getTable === 'function')
+          ? storage.getTable(TABLE_NAMES.SETTINGS)
+          : null;
+        slug = settings?.adminLoginSlug || settings?.admin_login_slug;
+      } catch (_) {}
+    }
+    if (!slug && typeof localStorage !== 'undefined') {
+      try {
+        const saved = JSON.parse(localStorage.getItem('al_muslim_erp_settings') || '{}');
+        slug = saved.adminLoginSlug || saved.admin_login_slug || '';
       } catch (_) {}
     }
     return (slug || 'secure-admin-gateway').trim().toLowerCase();
@@ -1379,27 +1385,42 @@ class AuthService {
       throw new Error(`The slug '${raw}' is a reserved system route. Please choose a different custom admin URL slug.`);
     }
 
-    const current = storage.getTable(TABLE_NAMES.SETTINGS) || {};
+    const current = (typeof storage !== 'undefined' && typeof storage.getTable === 'function')
+      ? (storage.getTable(TABLE_NAMES.SETTINGS) || {})
+      : {};
     const oldSlug = current.adminLoginSlug || 'secure-admin-gateway';
     const u = this.getCurrentUser();
+    const nowIso = new Date().toISOString();
     const updated = {
       ...current,
       adminLoginSlug: raw,
-      adminLoginSlugUpdatedAt: new Date().toISOString(),
+      adminLoginSlugUpdatedAt: nowIso,
       adminLoginSlugUpdatedBy: u?.name || u?.username || 'Administrator'
     };
 
-    storage.data[TABLE_NAMES.SETTINGS] = updated;
-    await storage.saveTable(TABLE_NAMES.SETTINGS, true);
+    if (typeof storage !== 'undefined') {
+      storage.data[TABLE_NAMES.SETTINGS] = updated;
+    }
 
     try {
       localStorage.setItem('al_muslim_admin_login_slug', raw);
+      localStorage.setItem('al_muslim_admin_login_slug_updated_at', nowIso);
       localStorage.setItem('al_muslim_erp_settings', JSON.stringify(updated));
+      localStorage.setItem(STORAGE_KEY_PREFIX + TABLE_NAMES.SETTINGS, JSON.stringify(updated));
     } catch (_) {}
 
+    if (typeof storage !== 'undefined' && typeof storage.saveTable === 'function') {
+      await storage.saveTable(TABLE_NAMES.SETTINGS, updated, true);
+    }
+
     try {
-      if (typeof syncManager !== 'undefined' && syncManager.primaryAdapter) {
-        syncManager.primaryAdapter.saveTable(TABLE_NAMES.SETTINGS, updated).catch(() => {});
+      if (typeof syncManager !== 'undefined') {
+        if (syncManager.primaryAdapter) {
+          await syncManager.primaryAdapter.saveTable(TABLE_NAMES.SETTINGS, updated);
+        }
+        if (typeof syncManager._fanoutTableSave === 'function') {
+          syncManager._fanoutTableSave(TABLE_NAMES.SETTINGS, updated);
+        }
       }
     } catch (_) {}
 

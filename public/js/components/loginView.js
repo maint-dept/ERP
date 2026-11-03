@@ -432,6 +432,16 @@ export function renderLoginView(isAdminGateway = false) {
   `;
 }
 
+export function triggerLoginReRender() {
+  const container = document.getElementById('login-root-container');
+  if (container) {
+    container.innerHTML = renderLoginView(_currentIsAdminGateway);
+    initLoginViewEvents(_currentIsAdminGateway);
+  } else if (typeof window !== 'undefined' && window.app && typeof window.app.render === 'function') {
+    window.app.render();
+  }
+}
+
 export function initLoginViewEvents(isAdminGateway = false) {
   _currentIsAdminGateway = Boolean(isAdminGateway);
   const alertBox = document.getElementById('login-alert-box');
@@ -565,9 +575,7 @@ export function initLoginViewEvents(isAdminGateway = false) {
         if (res.mustChangePassword) {
           loginMode = 'FIRST_LOGIN_CHANGE';
           pendingFirstLoginUserId = res.user.id;
-          const returnView = _currentIsAdminGateway ? 'admin-login' : 'login';
-          router.navigate(returnView, { replace: true });
-          state.set('currentView', returnView);
+          triggerLoginReRender();
           return;
         }
 
@@ -676,8 +684,7 @@ export function initLoginViewEvents(isAdminGateway = false) {
     e.preventDefault();
     hideAlert();
     loginMode = 'FORGOT_REQUEST';
-    const target = _currentIsAdminGateway ? 'admin-login' : 'login';
-    state.set('currentView', target);
+    triggerLoginReRender();
   });
 
   // Back to login links
@@ -685,8 +692,7 @@ export function initLoginViewEvents(isAdminGateway = false) {
     e.preventDefault();
     hideAlert();
     loginMode = 'LOGIN';
-    const target = _currentIsAdminGateway ? 'admin-login' : 'login';
-    state.set('currentView', target);
+    triggerLoginReRender();
   };
   document.getElementById('link-back-to-login')?.addEventListener('click', returnToLogin);
   document.getElementById('link-back-to-login-2')?.addEventListener('click', returnToLogin);
@@ -712,8 +718,7 @@ export function initLoginViewEvents(isAdminGateway = false) {
         resetTargetEmail = res.email;
         generatedDemoOtp = res.otpCode;
         loginMode = 'FORGOT_VERIFY';
-        const target = _currentIsAdminGateway ? 'admin-login' : 'login';
-        state.set('currentView', target);
+        triggerLoginReRender();
       } catch (err) {
         showAlert(err.message);
       }
@@ -745,8 +750,7 @@ export function initLoginViewEvents(isAdminGateway = false) {
         authService.completePasswordReset(resetTargetUsername, otp, newPwd);
         alert('✅ Password reset successful! You can now sign in with your new password.');
         loginMode = 'LOGIN';
-        const target = _currentIsAdminGateway ? 'admin-login' : 'login';
-        state.set('currentView', target);
+        triggerLoginReRender();
       } catch (err) {
         showAlert(err.message);
       }

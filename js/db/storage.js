@@ -415,20 +415,32 @@ class StorageEngine {
 
     if (!this.data[TABLE_NAMES.SETTINGS] || Object.keys(this.data[TABLE_NAMES.SETTINGS]).length === 0) {
       this.data[TABLE_NAMES.SETTINGS] = JSON.parse(JSON.stringify(DEFAULT_SETTINGS));
-    } else {
-      if (!this.data[TABLE_NAMES.SETTINGS].homepageVisibilityMode) {
-        this.data[TABLE_NAMES.SETTINGS].homepageVisibilityMode = DEFAULT_SETTINGS.homepageVisibilityMode || 'public';
-      }
-      if (typeof localStorage !== 'undefined') {
-        try {
-          if (this.data[TABLE_NAMES.SETTINGS].adminLoginSlug) {
-            localStorage.setItem('al_muslim_admin_login_slug', this.data[TABLE_NAMES.SETTINGS].adminLoginSlug);
-          }
-          if (this.data[TABLE_NAMES.SETTINGS].homepageVisibilityMode) {
-            localStorage.setItem('al_muslim_homepage_visibility_mode', this.data[TABLE_NAMES.SETTINGS].homepageVisibilityMode);
-          }
-        } catch (_) {}
-      }
+    }
+
+    // Always hydrate custom admin slug and homepage visibility mode from dedicated localStorage keys if present
+    if (typeof localStorage !== 'undefined') {
+      try {
+        const cachedSlug = localStorage.getItem('al_muslim_admin_login_slug');
+        if (cachedSlug && (!this.data[TABLE_NAMES.SETTINGS].adminLoginSlug || this.data[TABLE_NAMES.SETTINGS].adminLoginSlug === 'secure-admin-gateway')) {
+          this.data[TABLE_NAMES.SETTINGS].adminLoginSlug = cachedSlug;
+        } else if (this.data[TABLE_NAMES.SETTINGS].adminLoginSlug) {
+          localStorage.setItem('al_muslim_admin_login_slug', this.data[TABLE_NAMES.SETTINGS].adminLoginSlug);
+        }
+
+        const cachedMode = localStorage.getItem('al_muslim_homepage_visibility_mode');
+        if (cachedMode && (!this.data[TABLE_NAMES.SETTINGS].homepageVisibilityMode || this.data[TABLE_NAMES.SETTINGS].homepageVisibilityMode === 'public')) {
+          this.data[TABLE_NAMES.SETTINGS].homepageVisibilityMode = cachedMode;
+        } else if (this.data[TABLE_NAMES.SETTINGS].homepageVisibilityMode) {
+          localStorage.setItem('al_muslim_homepage_visibility_mode', this.data[TABLE_NAMES.SETTINGS].homepageVisibilityMode);
+        }
+      } catch (_) {}
+    }
+
+    if (!this.data[TABLE_NAMES.SETTINGS].homepageVisibilityMode) {
+      this.data[TABLE_NAMES.SETTINGS].homepageVisibilityMode = DEFAULT_SETTINGS.homepageVisibilityMode || 'public';
+    }
+    if (!this.data[TABLE_NAMES.SETTINGS].adminLoginSlug) {
+      this.data[TABLE_NAMES.SETTINGS].adminLoginSlug = DEFAULT_SETTINGS.adminLoginSlug || 'secure-admin-gateway';
     }
 
     if (Array.isArray(this.data[TABLE_NAMES.EXCEL_STRUCTURES]) && this.data[TABLE_NAMES.EXCEL_STRUCTURES].length > 0) {
@@ -1279,10 +1291,30 @@ class StorageEngine {
                 try { preservedMultiDb = JSON.parse(localMultiDb); } catch (_) {}
               }
 
+              // Preserve locally updated admin slug and visibility mode if local has newer timestamp
+              const localSlug = this.data[tbl]?.adminLoginSlug || (typeof localStorage !== 'undefined' ? localStorage.getItem('al_muslim_admin_login_slug') : null);
+              const localSlugTs = this.data[tbl]?.adminLoginSlugUpdatedAt || (typeof localStorage !== 'undefined' ? localStorage.getItem('al_muslim_admin_login_slug_updated_at') : null);
+              const remoteSlugTs = incomingSettings.adminLoginSlugUpdatedAt;
+              const keepLocalSlug = Boolean(localSlug && localSlugTs && (!remoteSlugTs || new Date(localSlugTs) >= new Date(remoteSlugTs)));
+
+              const localMode = this.data[tbl]?.homepageVisibilityMode || (typeof localStorage !== 'undefined' ? localStorage.getItem('al_muslim_homepage_visibility_mode') : null);
+              const localModeTs = this.data[tbl]?.homepageVisibilityUpdatedAt || (typeof localStorage !== 'undefined' ? localStorage.getItem('al_muslim_homepage_visibility_updated_at') : null);
+              const remoteModeTs = incomingSettings.homepageVisibilityUpdatedAt;
+              const keepLocalMode = Boolean(localMode && localModeTs && (!remoteModeTs || new Date(localModeTs) >= new Date(remoteModeTs)));
+
               this.data[tbl] = {
                 ...(this.data[tbl] || {}),
                 ...incomingSettings
               };
+
+              if (keepLocalSlug) {
+                this.data[tbl].adminLoginSlug = localSlug;
+                this.data[tbl].adminLoginSlugUpdatedAt = localSlugTs;
+              }
+              if (keepLocalMode) {
+                this.data[tbl].homepageVisibilityMode = localMode;
+                this.data[tbl].homepageVisibilityUpdatedAt = localModeTs;
+              }
 
               if (preservedMultiDb && Array.isArray(preservedMultiDb)) {
                 this.data[tbl].multi_db_config = preservedMultiDb;
@@ -1292,6 +1324,17 @@ class StorageEngine {
                 try {
                   localStorage.setItem('al_muslim_admin_login_slug', this.data[tbl].adminLoginSlug);
                 } catch (_) {}
+              }
+
+              if (this.data[tbl].homepageVisibilityMode && typeof localStorage !== 'undefined') {
+                try {
+                  localStorage.setItem('al_muslim_homepage_visibility_mode', this.data[tbl].homepageVisibilityMode);
+                } catch (_) {}
+                if (typeof window !== 'undefined') {
+                  window.dispatchEvent(new CustomEvent('erp:homepage-visibility-changed', {
+                    detail: { mode: this.data[tbl].homepageVisibilityMode }
+                  }));
+                }
               }
 
               try {

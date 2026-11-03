@@ -645,13 +645,14 @@ class HomepageService {
    */
   getVisibilityMode() {
     try {
+      if (typeof localStorage !== 'undefined') {
+        const cached = localStorage.getItem('al_muslim_homepage_visibility_mode');
+        if (cached) return cached;
+      }
       const settings = (typeof storage !== 'undefined' && typeof storage.getTable === 'function')
         ? storage.getTable(TABLE_NAMES.SETTINGS)
         : null;
       let mode = settings?.homepageVisibilityMode;
-      if (!mode && typeof localStorage !== 'undefined') {
-        mode = localStorage.getItem('al_muslim_homepage_visibility_mode');
-      }
       return mode || 'public';
     } catch (_) {
       return (typeof localStorage !== 'undefined' ? localStorage.getItem('al_muslim_homepage_visibility_mode') : null) || 'public';
@@ -669,11 +670,14 @@ class HomepageService {
       throw new Error(`Invalid visibility mode: "${mode}". Valid modes are: ${validModes.join(', ')}`);
     }
 
-    const currentSettings = storage.getTable(TABLE_NAMES.SETTINGS) || {};
+    const currentSettings = (typeof storage !== 'undefined' && typeof storage.getTable === 'function')
+      ? (storage.getTable(TABLE_NAMES.SETTINGS) || {})
+      : {};
+    const nowIso = new Date().toISOString();
     const updated = {
       ...currentSettings,
       homepageVisibilityMode: mode,
-      homepageVisibilityUpdatedAt: new Date().toISOString(),
+      homepageVisibilityUpdatedAt: nowIso,
       homepageVisibilityUpdatedBy: user?.name || user?.username || 'Administrator'
     };
 
@@ -684,26 +688,38 @@ class HomepageService {
       updated.maintenanceMode = false;
     }
 
-    storage.data[TABLE_NAMES.SETTINGS] = updated;
+    if (typeof storage !== 'undefined') {
+      storage.data[TABLE_NAMES.SETTINGS] = updated;
+    }
 
     if (typeof localStorage !== 'undefined') {
       try {
         localStorage.setItem('al_muslim_homepage_visibility_mode', mode);
+        localStorage.setItem('al_muslim_homepage_visibility_updated_at', nowIso);
         localStorage.setItem('al_muslim_erp_' + TABLE_NAMES.SETTINGS, JSON.stringify(updated));
+        localStorage.setItem(STORAGE_KEY_PREFIX + TABLE_NAMES.SETTINGS, JSON.stringify(updated));
       } catch (_) {}
     }
 
-    // Persist to Primary Remote Database (MySQL / SQLite / Sync)
+    // Persist across IndexedDB, Local Disk & MySQL Primary via standard storage pipeline
     try {
-      if (storage.primaryAdapter && typeof storage.primaryAdapter.saveTable === 'function') {
-        await storage.primaryAdapter.saveTable(TABLE_NAMES.SETTINGS, updated);
-      }
-      if (typeof idbCache !== 'undefined' && typeof idbCache.setTable === 'function') {
-        await idbCache.setTable(TABLE_NAMES.SETTINGS, updated);
+      if (typeof storage !== 'undefined' && typeof storage.saveTable === 'function') {
+        await storage.saveTable(TABLE_NAMES.SETTINGS, updated, true);
       }
     } catch (e) {
       console.warn('[HomepageService] Failed to sync settings to remote database:', e);
     }
+
+    try {
+      if (typeof syncManager !== 'undefined') {
+        if (syncManager.primaryAdapter) {
+          await syncManager.primaryAdapter.saveTable(TABLE_NAMES.SETTINGS, updated);
+        }
+        if (typeof syncManager._fanoutTableSave === 'function') {
+          syncManager._fanoutTableSave(TABLE_NAMES.SETTINGS, updated);
+        }
+      }
+    } catch (_) {}
 
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('erp:settings-updated', { detail: updated }));
@@ -724,3 +740,7 @@ class HomepageService {
 }
 
 export const homepageService = new HomepageService();
+
+if (typeof window !== 'undefined') {
+  window.homepageService = homepageService;
+}

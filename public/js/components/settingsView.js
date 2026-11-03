@@ -1663,6 +1663,8 @@ export function initSettingsEvents() {
       const enforcePrefix = document.getElementById('setting-enforce-prefix')?.checked;
       const assetPrefix = document.getElementById('setting-asset-id-prefix')?.value?.trim();
       const assetDigits = parseInt(document.getElementById('setting-asset-id-digits')?.value, 10);
+      const rawSlug = document.getElementById('setting-admin-login-slug')?.value?.trim()?.toLowerCase()?.replace(/^\/+|\/+$/g, '');
+      const visMode = document.querySelector('input[name="homepage-visibility-mode"]:checked')?.value;
 
       const current = storage.getTable(TABLE_NAMES.SETTINGS) || {};
       const sig1 = signaturesList[0] || {};
@@ -1688,6 +1690,8 @@ export function initSettingsEvents() {
         signatory3Name: sig3.name || '',
         signatory3Title: sig3.title || '',
         showSignaturesOnPdf: signaturesList.some(s => s.enabled),
+        ...(rawSlug ? { adminLoginSlug: rawSlug } : {}),
+        ...(visMode ? { homepageVisibilityMode: visMode } : {}),
         ...(companyName !== undefined ? { companyName } : {}),
         ...(deptName !== undefined ? { departmentName: deptName } : {}),
         ...(pageSize ? { defaultRowsPerPage: pageSize } : {}),
