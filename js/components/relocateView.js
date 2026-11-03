@@ -3292,58 +3292,62 @@ export function initRelocateViewEvents() {
   }
 
   if (manualSearchInput && manualSearchResults) {
+    let manualSearchDebounceTimer = null;
     manualSearchInput.addEventListener('input', () => {
-      const q = manualSearchInput.value.trim().toLowerCase();
-      if (!q) {
-        manualSearchResults.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--text-muted);">Type to search machines.</div>';
-        return;
-      }
+      clearTimeout(manualSearchDebounceTimer);
+      manualSearchDebounceTimer = setTimeout(() => {
+        const q = manualSearchInput.value.trim().toLowerCase();
+        if (!q) {
+          manualSearchResults.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--text-muted);">Type to search machines.</div>';
+          return;
+        }
 
-      const allMachines = storage.getTable(TABLE_NAMES.MACHINES) || [];
-      const mnMap = new Map(storage.getTable(TABLE_NAMES.MACHINE_NAMES).map(x => [x.id, x.name]));
-      const brdMap = new Map(storage.getTable(TABLE_NAMES.BRANDS).map(x => [x.id, x.name]));
-      const mdlMap = new Map(storage.getTable(TABLE_NAMES.MODELS).map(x => [x.id, x.name]));
-      const flrMap = new Map(storage.getTable(TABLE_NAMES.FLOORS).map(x => [x.id, x.name]));
-      const linMap = new Map(storage.getTable(TABLE_NAMES.LINES).map(x => [x.id, x.name]));
+        const allMachines = storage.getTable(TABLE_NAMES.MACHINES) || [];
+        const mnMap = new Map(storage.getTable(TABLE_NAMES.MACHINE_NAMES).map(x => [x.id, x.name]));
+        const brdMap = new Map(storage.getTable(TABLE_NAMES.BRANDS).map(x => [x.id, x.name]));
+        const mdlMap = new Map(storage.getTable(TABLE_NAMES.MODELS).map(x => [x.id, x.name]));
+        const flrMap = new Map(storage.getTable(TABLE_NAMES.FLOORS).map(x => [x.id, x.name]));
+        const linMap = new Map(storage.getTable(TABLE_NAMES.LINES).map(x => [x.id, x.name]));
 
-      const matches = allMachines.filter(m => {
-        if (!m) return false;
-        const s = (m.serialNumber || '').toLowerCase();
-        const mfg = (m.manufacturing_serial || m.manufacturingSerial || '').toLowerCase();
-        const mn = (mnMap.get(m.machineNameId) || '').toLowerCase();
-        const mdl = (mdlMap.get(m.modelId) || '').toLowerCase();
-        return s.includes(q) || mfg.includes(q) || mn.includes(q) || mdl.includes(q);
-      }).slice(0, 15);
+        const matches = allMachines.filter(m => {
+          if (!m) return false;
+          const s = (m.serialNumber || '').toLowerCase();
+          const mfg = (m.manufacturing_serial || m.manufacturingSerial || '').toLowerCase();
+          const mn = (mnMap.get(m.machineNameId) || '').toLowerCase();
+          const mdl = (mdlMap.get(m.modelId) || '').toLowerCase();
+          return s.includes(q) || mfg.includes(q) || mn.includes(q) || mdl.includes(q);
+        }).slice(0, 15);
 
-      if (matches.length === 0) {
-        manualSearchResults.innerHTML = '<div style="text-align: center; padding: 20px; color: #f87171;">No matching machines found.</div>';
-        return;
-      }
+        if (matches.length === 0) {
+          manualSearchResults.innerHTML = '<div style="text-align: center; padding: 20px; color: #f87171;">No matching machines found.</div>';
+          return;
+        }
 
-      manualSearchResults.innerHTML = matches.map(m => {
-        const itemAssetId = m.systemAssetId || (m.permanentMachineId ? String(m.permanentMachineId).replace(/^MID-/i, 'AMG-MNT-') : '');
-        return `
-        <div class="manual-search-item" data-id="${m.id}" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 10px 12px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: all 0.2s ease;">
-          <div>
-            <div style="display: flex; align-items: center; gap: 6px;">
-              <span style="font-family: var(--font-mono); font-weight: 800; color: #38bdf8; font-size: 13.5px;">${m.serialNumber}</span>
-              ${itemAssetId ? `<span style="font-size: 10px; font-family: var(--font-mono); background: rgba(16,185,129,0.15); color: #10b981; border: 1px solid rgba(16,185,129,0.3); padding: 1px 5px; border-radius: 3px; font-weight: 700;">${itemAssetId}</span>` : ''}
+        manualSearchResults.innerHTML = matches.map(m => {
+          const itemAssetId = m.systemAssetId || (m.permanentMachineId ? String(m.permanentMachineId).replace(/^MID-/i, 'AMG-MNT-') : '');
+          return `
+          <div class="manual-search-item" data-id="${m.id}" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 10px 12px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: all 0.2s ease;">
+            <div>
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <span style="font-family: var(--font-mono); font-weight: 800; color: #38bdf8; font-size: 13.5px;">${m.serialNumber}</span>
+                ${itemAssetId ? `<span style="font-size: 10px; font-family: var(--font-mono); background: rgba(16,185,129,0.15); color: #10b981; border: 1px solid rgba(16,185,129,0.3); padding: 1px 5px; border-radius: 3px; font-weight: 700;">${itemAssetId}</span>` : ''}
+              </div>
+              <div style="font-size: 12.5px; color: #fff; font-weight: 600;">${mnMap.get(m.machineNameId) || 'Machine'}</div>
+              <div style="font-size: 11px; color: var(--text-muted);">${brdMap.get(m.brandId) || ''} &bull; ${mdlMap.get(m.modelId) || ''} &bull; Floor: ${flrMap.get(m.floorId) || ''} / ${linMap.get(m.lineId) || ''}</div>
             </div>
-            <div style="font-size: 12.5px; color: #fff; font-weight: 600;">${mnMap.get(m.machineNameId) || 'Machine'}</div>
-            <div style="font-size: 11px; color: var(--text-muted);">${brdMap.get(m.brandId) || ''} &bull; ${mdlMap.get(m.modelId) || ''} &bull; Floor: ${flrMap.get(m.floorId) || ''} / ${linMap.get(m.lineId) || ''}</div>
+            <button type="button" class="btn btn-primary btn-sm" style="font-size: 11.5px; padding: 6px 12px; min-height: 36px;">Select &rarr;</button>
           </div>
-          <button type="button" class="btn btn-primary btn-sm" style="font-size: 11.5px; padding: 6px 12px; min-height: 36px;">Select &rarr;</button>
-        </div>
-      `;
-      }).join('');
+        `;
+        }).join('');
 
-      manualSearchResults.querySelectorAll('.manual-search-item').forEach(item => {
-        item.addEventListener('click', () => {
-          const mId = item.getAttribute('data-id');
-          manualSearchModalOpen = false;
-          handleMachineIdentified(mId);
+        manualSearchResults.querySelectorAll('.manual-search-item').forEach(item => {
+          item.addEventListener('click', () => {
+            const mId = item.getAttribute('data-id');
+            manualSearchModalOpen = false;
+            handleMachineIdentified(mId);
+          });
         });
-      });
+      }, 150);
     });
   }
 
@@ -3528,14 +3532,19 @@ export function initRelocateViewEvents() {
   // 7c. Scanned Feed Live Filter & Search Events
   const inpScannedFilter = root.querySelector('#inp-scanned-filter-query');
   if (inpScannedFilter) {
+    let scannedFilterTimer = null;
     inpScannedFilter.addEventListener('input', (e) => {
-      scannedListSearch = e.target.value;
-      const container = root.querySelector('#relocate-scanned-items-container');
-      const session = relocateService.getActiveSession();
-      if (container && session) {
-        container.innerHTML = renderScannedItemsList(session);
-        attachCardActionListeners();
-      }
+      const val = e.target.value;
+      clearTimeout(scannedFilterTimer);
+      scannedFilterTimer = setTimeout(() => {
+        scannedListSearch = val;
+        const container = root.querySelector('#relocate-scanned-items-container');
+        const session = relocateService.getActiveSession();
+        if (container && session) {
+          container.innerHTML = renderScannedItemsList(session);
+          attachCardActionListeners();
+        }
+      }, 150);
     });
   }
 
@@ -3727,14 +3736,19 @@ export function initRelocateViewEvents() {
 
   const inpHistSearch = root.querySelector('#inp-history-search');
   if (inpHistSearch) {
+    let histSearchTimer = null;
     inpHistSearch.addEventListener('input', (e) => {
-      historySearch = e.target.value;
-      refreshView();
-      const newInp = document.getElementById('inp-history-search');
-      if (newInp) {
-        newInp.focus({ preventScroll: true });
-        newInp.setSelectionRange(newInp.value.length, newInp.value.length);
-      }
+      const val = e.target.value;
+      clearTimeout(histSearchTimer);
+      histSearchTimer = setTimeout(() => {
+        historySearch = val;
+        refreshView();
+        const newInp = document.getElementById('inp-history-search');
+        if (newInp) {
+          newInp.focus({ preventScroll: true });
+          newInp.setSelectionRange(newInp.value.length, newInp.value.length);
+        }
+      }, 150);
     });
   }
 
@@ -3875,9 +3889,19 @@ export function initRelocateViewEvents() {
 
   const inputNeedleSearch = root.querySelector('#relocate-needle-search-input');
   if (inputNeedleSearch) {
+    let needleSearchTimer = null;
     inputNeedleSearch.addEventListener('input', (e) => {
-      needleSearchQuery = e.target.value;
-      refreshView();
+      const val = e.target.value;
+      clearTimeout(needleSearchTimer);
+      needleSearchTimer = setTimeout(() => {
+        needleSearchQuery = val;
+        refreshView();
+        const newInp = document.getElementById('relocate-needle-search-input');
+        if (newInp) {
+          newInp.focus({ preventScroll: true });
+          newInp.setSelectionRange(newInp.value.length, newInp.value.length);
+        }
+      }, 150);
     });
   }
 

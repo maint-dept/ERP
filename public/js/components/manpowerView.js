@@ -1207,21 +1207,26 @@ export function initManpowerEvents() {
     });
   });
 
-  // 6. Search & Filter Listeners (Instant Search on Input with Focus Preservation)
+  // 6. Search & Filter Listeners (Instant Search on Input with Focus Preservation & Debounce)
   const inpSearch = document.getElementById('mp-filter-search');
   if (inpSearch) {
+    let mpSearchTimer = null;
     inpSearch.addEventListener('input', (e) => {
-      filterState.search = e.target.value;
+      const val = e.target.value;
       const start = e.target.selectionStart;
       const end = e.target.selectionEnd;
-      refreshView();
-      const newInp = document.getElementById('mp-filter-search');
-      if (newInp) {
-        newInp.focus();
-        try {
-          newInp.setSelectionRange(start, end);
-        } catch (_) { }
-      }
+      clearTimeout(mpSearchTimer);
+      mpSearchTimer = setTimeout(() => {
+        filterState.search = val;
+        refreshView();
+        const newInp = document.getElementById('mp-filter-search');
+        if (newInp) {
+          newInp.focus();
+          try {
+            newInp.setSelectionRange(start, end);
+          } catch (_) { }
+        }
+      }, 150);
     });
   }
 

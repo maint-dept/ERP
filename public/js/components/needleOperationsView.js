@@ -839,38 +839,44 @@ export function initNeedleOperationsEvents() {
       setTimeout(() => inpMachineSearch.focus({ preventScroll: true }), 60);
     }
 
+    let machineSearchTimer = null;
     inpMachineSearch.addEventListener('input', (e) => {
-      const q = (e.target.value || '').trim().toLowerCase();
-      smartMachineSearchQuery = e.target.value;
+      const val = e.target.value;
+      smartMachineSearchQuery = val;
+      clearTimeout(machineSearchTimer);
+      machineSearchTimer = setTimeout(() => {
+        const q = (val || '').trim().toLowerCase();
 
-      if (!q) {
-        suggestionsBox.style.display = 'none';
-        return;
-      }
+        if (!q) {
+          suggestionsBox.style.display = 'none';
+          return;
+        }
 
-      // Filter machines by Serial, ID, Asset Tag, Name, Brand, Model, Floor, Line
-      const matches = allMachines.filter(m => {
-        if (!m) return false;
-        const en = needleService.getEnrichedMachine(m);
-        const sn = String(m.serialNumber || '').toLowerCase();
-        const tag = String(m.permanentMachineId || m.id || '').toLowerCase();
-        const mName = String(en.machineNameStr || '').toLowerCase();
-        const brd = String(en.brandStr || '').toLowerCase();
-        const mdl = String(en.modelStr || '').toLowerCase();
-        const flr = String(en.floorStr || '').toLowerCase();
-        const lin = String(en.lineStr || '').toLowerCase();
-        return sn.includes(q) || tag.includes(q) || mName.includes(q) || brd.includes(q) || mdl.includes(q) || flr.includes(q) || lin.includes(q);
-      }).slice(0, 10);
+        // Fast Filter machines by Serial, ID, Asset Tag, Name, Brand, Model, Floor, Line
+        const matches = allMachines.filter(m => {
+          if (!m) return false;
+          const sn = String(m.serialNumber || '').toLowerCase();
+          const tag = String(m.permanentMachineId || m.id || '').toLowerCase();
+          if (sn.includes(q) || tag.includes(q)) return true;
+          const en = needleService.getEnrichedMachine(m);
+          if (!en) return false;
+          const mName = String(en.machineNameStr || '').toLowerCase();
+          const brd = String(en.brandStr || '').toLowerCase();
+          const mdl = String(en.modelStr || '').toLowerCase();
+          const flr = String(en.floorStr || '').toLowerCase();
+          const lin = String(en.lineStr || '').toLowerCase();
+          return mName.includes(q) || brd.includes(q) || mdl.includes(q) || flr.includes(q) || lin.includes(q);
+        }).slice(0, 10);
 
-      if (matches.length === 0) {
-        suggestionsBox.innerHTML = `
-          <div style="padding: 12px 14px; font-size: 12px; color: var(--text-muted); text-align: center;">
-            No machines found matching "<strong style="color: #cbd5e1;">${e.target.value}</strong>".
-          </div>
-        `;
-        suggestionsBox.style.display = 'block';
-        return;
-      }
+        if (matches.length === 0) {
+          suggestionsBox.innerHTML = `
+            <div style="padding: 12px 14px; font-size: 12px; color: var(--text-muted); text-align: center;">
+              No machines found matching "<strong style="color: #cbd5e1;">${val}</strong>".
+            </div>
+          `;
+          suggestionsBox.style.display = 'block';
+          return;
+        }
 
       suggestionsBox.innerHTML = matches.map((m, idx) => {
         const en = needleService.getEnrichedMachine(m);
@@ -919,7 +925,8 @@ export function initNeedleOperationsEvents() {
           el.style.background = '';
         });
       });
-    });
+    }, 150);
+  });
 
     // Enter Key Search / Instant Pick
     inpMachineSearch.addEventListener('keydown', (e) => {
@@ -1101,10 +1108,25 @@ export function initNeedleOperationsEvents() {
     refreshView();
   });
 
-  root.querySelector('#inp-needle-ops-search')?.addEventListener('input', (e) => {
-    searchQuery = e.target.value;
-    refreshView();
-  });
+  let opsSearchTimer = null;
+  const needleOpsSearchInp = root.querySelector('#inp-needle-ops-search');
+  if (needleOpsSearchInp) {
+    needleOpsSearchInp.addEventListener('input', (e) => {
+      const val = e.target.value;
+      const start = e.target.selectionStart;
+      const end = e.target.selectionEnd;
+      clearTimeout(opsSearchTimer);
+      opsSearchTimer = setTimeout(() => {
+        searchQuery = val;
+        refreshView();
+        const newInp = document.getElementById('inp-needle-ops-search');
+        if (newInp) {
+          newInp.focus();
+          try { newInp.setSelectionRange(start, end); } catch (_) {}
+        }
+      }, 150);
+    });
+  }
 
   // Toggle Floor Overview collapse/expand
   root.querySelector('#btn-toggle-floor-overview')?.addEventListener('click', () => {

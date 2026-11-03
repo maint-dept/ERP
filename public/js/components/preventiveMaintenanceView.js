@@ -3090,38 +3090,43 @@ export function initPreventiveMaintenanceEvents() {
   const suggestionsBox = document.getElementById('pm-search-suggestions-box');
 
   if (searchInput) {
+    let pmSearchDebounceTimer = null;
     searchInput.addEventListener('input', (e) => {
-      searchQuery = e.target.value;
-      const clean = searchQuery.trim();
+      const val = e.target.value;
+      clearTimeout(pmSearchDebounceTimer);
+      pmSearchDebounceTimer = setTimeout(() => {
+        searchQuery = val;
+        const clean = searchQuery.trim();
 
-      // Auto-suggest popup
-      if (clean.length >= 1) {
-        const matches = preventiveMaintenanceService.getAllMachinesWithMaintenance({ search: clean }).slice(0, 6);
-        if (matches.length > 0 && suggestionsBox) {
-          suggestionsBox.style.display = 'block';
-          suggestionsBox.innerHTML = matches.map(m => `
-            <div class="pm-suggestion-item" data-serial="${escapeHtml(m.serialNumber)}" style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center;">
-              <div>
-                <strong style="color: #38bdf8;">${escapeHtml(m.serialNumber)}</strong> &bull; <span style="color: #fff;">${escapeHtml(m.machineName)}</span>
-                <div style="font-size: 11px; color: var(--text-secondary);">${escapeHtml(m.floor)} &bull; Line: ${escapeHtml(m.line)}</div>
+        // Auto-suggest popup
+        if (clean.length >= 1) {
+          const matches = preventiveMaintenanceService.getAllMachinesWithMaintenance({ search: clean }).slice(0, 6);
+          if (matches.length > 0 && suggestionsBox) {
+            suggestionsBox.style.display = 'block';
+            suggestionsBox.innerHTML = matches.map(m => `
+              <div class="pm-suggestion-item" data-serial="${escapeHtml(m.serialNumber)}" style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                  <strong style="color: #38bdf8;">${escapeHtml(m.serialNumber)}</strong> &bull; <span style="color: #fff;">${escapeHtml(m.machineName)}</span>
+                  <div style="font-size: 11px; color: var(--text-secondary);">${escapeHtml(m.floor)} &bull; Line: ${escapeHtml(m.line)}</div>
+                </div>
+                <div>${m.urgency.displayBadge}</div>
               </div>
-              <div>${m.urgency.displayBadge}</div>
-            </div>
-          `).join('');
+            `).join('');
 
-          suggestionsBox.querySelectorAll('.pm-suggestion-item').forEach(item => {
-            item.addEventListener('click', () => {
-              const s = item.getAttribute('data-serial');
-              selectMachineBySerial(s);
-              suggestionsBox.style.display = 'none';
+            suggestionsBox.querySelectorAll('.pm-suggestion-item').forEach(item => {
+              item.addEventListener('click', () => {
+                const s = item.getAttribute('data-serial');
+                selectMachineBySerial(s);
+                suggestionsBox.style.display = 'none';
+              });
             });
-          });
+          } else if (suggestionsBox) {
+            suggestionsBox.style.display = 'none';
+          }
         } else if (suggestionsBox) {
           suggestionsBox.style.display = 'none';
         }
-      } else if (suggestionsBox) {
-        suggestionsBox.style.display = 'none';
-      }
+      }, 150);
     });
 
     searchInput.addEventListener('keydown', (e) => {
@@ -3387,14 +3392,18 @@ export function initPreventiveMaintenanceEvents() {
 
   const cfgSearchInput = document.getElementById('pm-config-search-input');
   if (cfgSearchInput) {
+    let cfgDebounce = null;
     cfgSearchInput.addEventListener('input', (e) => {
-      configSearchQuery = e.target.value;
-      rerenderView();
-      const refocused = document.getElementById('pm-config-search-input');
-      if (refocused) {
-        refocused.focus({ preventScroll: true });
-        refocused.setSelectionRange(refocused.value.length, refocused.value.length);
-      }
+      clearTimeout(cfgDebounce);
+      cfgDebounce = setTimeout(() => {
+        configSearchQuery = e.target.value;
+        rerenderView();
+        const refocused = document.getElementById('pm-config-search-input');
+        if (refocused) {
+          refocused.focus({ preventScroll: true });
+          refocused.setSelectionRange(refocused.value.length, refocused.value.length);
+        }
+      }, 150);
     });
   }
 
@@ -3732,8 +3741,13 @@ function bindModalEvents(container) {
       }
       updateMachineDropdown(machineSearchInput.value.split('—')[0].trim());
     });
+    let machineDropdownDebounce = null;
     machineSearchInput.addEventListener('input', (e) => {
-      updateMachineDropdown(e.target.value.trim());
+      const q = e.target.value.trim();
+      clearTimeout(machineDropdownDebounce);
+      machineDropdownDebounce = setTimeout(() => {
+        updateMachineDropdown(q);
+      }, 120);
     });
     machineSearchInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
@@ -4014,6 +4028,7 @@ function bindModalEvents(container) {
     manpowerInput.addEventListener('focus', () => {
       updateManpowerDropdown(manpowerInput.value.trim());
     });
+    let manpowerDebounceTimer = null;
     manpowerInput.addEventListener('input', (e) => {
       const q = e.target.value.trim();
       const nameHidden = document.getElementById('pm-manpower-name');
@@ -4026,7 +4041,10 @@ function bindModalEvents(container) {
         if (desigInput) desigInput.value = '';
         if (badgeBox) badgeBox.style.display = 'none';
       }
-      updateManpowerDropdown(q);
+      clearTimeout(manpowerDebounceTimer);
+      manpowerDebounceTimer = setTimeout(() => {
+        updateManpowerDropdown(q);
+      }, 120);
     });
     manpowerInput.addEventListener('blur', () => {
       // Delay slightly so click on dropdown item can register first

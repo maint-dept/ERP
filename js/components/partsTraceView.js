@@ -2487,9 +2487,18 @@ export function initPartsTraceEvents() {
 
   const inpDraftSearch = root.querySelector('#inp-draft-filter-query');
   if (inpDraftSearch) {
+    let draftDebounce = null;
     inpDraftSearch.addEventListener('input', (e) => {
-      reviewSearch = e.target.value;
-      refresh();
+      clearTimeout(draftDebounce);
+      draftDebounce = setTimeout(() => {
+        reviewSearch = e.target.value;
+        refresh();
+        const refocused = root.querySelector('#inp-draft-filter-query');
+        if (refocused) {
+          refocused.focus({ preventScroll: true });
+          refocused.setSelectionRange(refocused.value.length, refocused.value.length);
+        }
+      }, 150);
     });
   }
 
@@ -2680,67 +2689,71 @@ export function initPartsTraceEvents() {
 
   const inpSearchMachine = root.querySelector('#inp-search-smart-machine');
   if (inpSearchMachine) {
+    let searchMachineTimer = null;
     inpSearchMachine.addEventListener('input', (e) => {
       const q = e.target.value.toLowerCase().trim();
-      const listContainer = root.querySelector('#smart-machine-results-list');
-      if (!listContainer) return;
+      clearTimeout(searchMachineTimer);
+      searchMachineTimer = setTimeout(() => {
+        const listContainer = root.querySelector('#smart-machine-results-list');
+        if (!listContainer) return;
 
-      const enrichedMachines = getEnrichedMachinesList();
-      const matches = (!q ? enrichedMachines.slice(0, 35) : enrichedMachines.filter(m =>
-        (m.serialNumber && m.serialNumber.toLowerCase().includes(q)) ||
-        (m.permanentMachineId && m.permanentMachineId.toLowerCase().includes(q)) ||
-        (m.resolvedName && m.resolvedName.toLowerCase().includes(q)) ||
-        (m.resolvedBrand && m.resolvedBrand.toLowerCase().includes(q)) ||
-        (m.resolvedModel && m.resolvedModel.toLowerCase().includes(q)) ||
-        (m.resolvedFloor && m.resolvedFloor.toLowerCase().includes(q)) ||
-        (m.resolvedLine && m.resolvedLine.toLowerCase().includes(q)) ||
-        (m.customValues?.machine_code && String(m.customValues.machine_code).toLowerCase().includes(q))
-      )).slice(0, 40);
+        const enrichedMachines = getEnrichedMachinesList();
+        const matches = (!q ? enrichedMachines.slice(0, 35) : enrichedMachines.filter(m =>
+          (m.serialNumber && m.serialNumber.toLowerCase().includes(q)) ||
+          (m.permanentMachineId && m.permanentMachineId.toLowerCase().includes(q)) ||
+          (m.resolvedName && m.resolvedName.toLowerCase().includes(q)) ||
+          (m.resolvedBrand && m.resolvedBrand.toLowerCase().includes(q)) ||
+          (m.resolvedModel && m.resolvedModel.toLowerCase().includes(q)) ||
+          (m.resolvedFloor && m.resolvedFloor.toLowerCase().includes(q)) ||
+          (m.resolvedLine && m.resolvedLine.toLowerCase().includes(q)) ||
+          (m.customValues?.machine_code && String(m.customValues.machine_code).toLowerCase().includes(q))
+        )).slice(0, 40);
 
-      listContainer.innerHTML = matches.length === 0 ? `
-        <div style="color: #94a3b8; font-size: 11.5px; padding: 14px; text-align: center; background: rgba(255,255,255,0.02); border-radius: 6px;">
-          No matching machines found for "<strong>${q}</strong>". Enter custom serial below.
-        </div>
-      ` : matches.map(m => `
-        <div class="smart-item-row btn-pick-smart-machine-row" data-id="${m.id}" data-serial="${m.serialNumber}" data-name="${m.resolvedName}" data-brand="${m.resolvedBrand}" data-model="${m.resolvedModel}">
-          <div style="display: flex; flex-direction: column; gap: 3px; min-width: 0;">
-            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-              <span class="badge" style="font-family: var(--font-mono); background: rgba(56, 189, 248, 0.15); color: #38bdf8; font-size: 12px; font-weight: 900; border: 1px solid rgba(56, 189, 248, 0.35); padding: 2px 7px;">
-                SL: ${m.serialNumber}
-              </span>
-              <strong style="color: #ffffff; font-size: 12.5px; font-weight: 700;">${m.resolvedName}</strong>
-              ${m.customValues?.machine_code ? `<span style="font-size: 10px; color: #a78bfa; font-family: var(--font-mono); font-weight: 700;">[${m.customValues.machine_code}]</span>` : ''}
+        listContainer.innerHTML = matches.length === 0 ? `
+          <div style="color: #94a3b8; font-size: 11.5px; padding: 14px; text-align: center; background: rgba(255,255,255,0.02); border-radius: 6px;">
+            No matching machines found for "<strong>${q}</strong>". Enter custom serial below.
+          </div>
+        ` : matches.map(m => `
+          <div class="smart-item-row btn-pick-smart-machine-row" data-id="${m.id}" data-serial="${m.serialNumber}" data-name="${m.resolvedName}" data-brand="${m.resolvedBrand}" data-model="${m.resolvedModel}">
+            <div style="display: flex; flex-direction: column; gap: 3px; min-width: 0;">
+              <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <span class="badge" style="font-family: var(--font-mono); background: rgba(56, 189, 248, 0.15); color: #38bdf8; font-size: 12px; font-weight: 900; border: 1px solid rgba(56, 189, 248, 0.35); padding: 2px 7px;">
+                  SL: ${m.serialNumber}
+                </span>
+                <strong style="color: #ffffff; font-size: 12.5px; font-weight: 700;">${m.resolvedName}</strong>
+                ${m.customValues?.machine_code ? `<span style="font-size: 10px; color: #a78bfa; font-family: var(--font-mono); font-weight: 700;">[${m.customValues.machine_code}]</span>` : ''}
+              </div>
+              <div style="display: flex; align-items: center; gap: 6px; margin-top: 1px; flex-wrap: wrap;">
+                <span style="font-size: 10.5px; color: #e2e8f0; background: rgba(255,255,255,0.06); padding: 2px 7px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.12);">
+                  🏷️ <strong>${m.resolvedBrand}</strong> • ${m.resolvedModel}
+                </span>
+              </div>
             </div>
-            <div style="display: flex; align-items: center; gap: 6px; margin-top: 1px; flex-wrap: wrap;">
-              <span style="font-size: 10.5px; color: #e2e8f0; background: rgba(255,255,255,0.06); padding: 2px 7px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.12);">
-                🏷️ <strong>${m.resolvedBrand}</strong> • ${m.resolvedModel}
+            <div style="text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 2px; flex-shrink: 0; margin-left: 8px;">
+              <span class="badge" style="background: rgba(52, 211, 153, 0.15); color: #34d399; font-family: var(--font-mono); font-size: 11px; font-weight: 800; border: 1px solid rgba(52, 211, 153, 0.35); padding: 2px 8px; border-radius: 4px;">
+                📍 ${m.resolvedLine || 'Line —'}
+              </span>
+              <span style="font-size: 10px; color: #94a3b8; font-weight: 600;">
+                🏢 ${m.resolvedFloor || 'Floor'}
               </span>
             </div>
           </div>
-          <div style="text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 2px; flex-shrink: 0; margin-left: 8px;">
-            <span class="badge" style="background: rgba(52, 211, 153, 0.15); color: #34d399; font-family: var(--font-mono); font-size: 11px; font-weight: 800; border: 1px solid rgba(52, 211, 153, 0.35); padding: 2px 8px; border-radius: 4px;">
-              📍 ${m.resolvedLine || 'Line —'}
-            </span>
-            <span style="font-size: 10px; color: #94a3b8; font-weight: 600;">
-              🏢 ${m.resolvedFloor || 'Floor'}
-            </span>
-          </div>
-        </div>
-      `).join('');
+        `).join('');
 
-      listContainer.querySelectorAll('.btn-pick-smart-machine-row').forEach(row => {
-        row.addEventListener('click', () => {
-          const mData = {
-            id: row.getAttribute('data-id'),
-            serialNumber: row.getAttribute('data-serial'),
-            machineName: row.getAttribute('data-name'),
-            brand: row.getAttribute('data-brand'),
-            model: row.getAttribute('data-model')
-          };
-          const applyLine = root.querySelector('#chk-machine-apply-line')?.checked;
-          applyMachineSelection(mData, applyLine);
+        listContainer.querySelectorAll('.btn-pick-smart-machine-row').forEach(row => {
+          row.addEventListener('click', () => {
+            const mData = {
+              id: row.getAttribute('data-id'),
+              serialNumber: row.getAttribute('data-serial'),
+              machineName: row.getAttribute('data-name'),
+              brand: row.getAttribute('data-brand'),
+              model: row.getAttribute('data-model')
+            };
+            const applyLine = root.querySelector('#chk-machine-apply-line')?.checked;
+            applyMachineSelection(mData, applyLine);
+          });
         });
-      });
+      }, 150);
     });
   }
 
@@ -2816,64 +2829,68 @@ export function initPartsTraceEvents() {
 
   const inpSearchTech = root.querySelector('#inp-search-smart-tech');
   if (inpSearchTech) {
+    let searchTechTimer = null;
     inpSearchTech.addEventListener('input', (e) => {
       const q = e.target.value.toLowerCase().trim();
-      const listContainer = root.querySelector('#smart-tech-results-list');
-      if (!listContainer) return;
+      clearTimeout(searchTechTimer);
+      searchTechTimer = setTimeout(() => {
+        const listContainer = root.querySelector('#smart-tech-results-list');
+        if (!listContainer) return;
 
-      const enrichedEmployees = getEnrichedEmployeesList();
-      const matches = (!q ? enrichedEmployees.slice(0, 25) : enrichedEmployees.filter(emp =>
-        (emp.name && emp.name.toLowerCase().includes(q)) ||
-        (emp.cardNumber && String(emp.cardNumber).toLowerCase().includes(q)) ||
-        (emp.designation && emp.designation.toLowerCase().includes(q)) ||
-        (emp.workingArea && emp.workingArea.toLowerCase().includes(q)) ||
-        (emp.resolvedFloor && emp.resolvedFloor.toLowerCase().includes(q)) ||
-        (emp.resolvedUnit && emp.resolvedUnit.toLowerCase().includes(q)) ||
-        (emp.department && emp.department.toLowerCase().includes(q))
-      )).slice(0, 30);
+        const enrichedEmployees = getEnrichedEmployeesList();
+        const matches = (!q ? enrichedEmployees.slice(0, 25) : enrichedEmployees.filter(emp =>
+          (emp.name && emp.name.toLowerCase().includes(q)) ||
+          (emp.cardNumber && String(emp.cardNumber).toLowerCase().includes(q)) ||
+          (emp.designation && emp.designation.toLowerCase().includes(q)) ||
+          (emp.workingArea && emp.workingArea.toLowerCase().includes(q)) ||
+          (emp.resolvedFloor && emp.resolvedFloor.toLowerCase().includes(q)) ||
+          (emp.resolvedUnit && emp.resolvedUnit.toLowerCase().includes(q)) ||
+          (emp.department && emp.department.toLowerCase().includes(q))
+        )).slice(0, 30);
 
-      listContainer.innerHTML = matches.length === 0 ? `
-        <div style="color: #94a3b8; font-size: 11.5px; padding: 14px; text-align: center; background: rgba(255,255,255,0.02); border-radius: 6px;">
-          No matching employees found for "<strong>${q}</strong>". Enter custom name below.
-        </div>
-      ` : matches.map(emp => `
-        <div class="smart-item-row btn-pick-smart-tech-row" data-id="${emp.id}" data-name="${emp.name}" data-card="${emp.cardNumber || '—'}" data-desig="${emp.designation || 'Staff'}">
-          <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0;">
-            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-              <strong style="color: #ffffff; font-size: 12.5px; font-weight: 700;">${emp.name}</strong>
-              <span style="font-size: 10.5px; color: #38bdf8; font-family: var(--font-mono); font-weight: 800; background: rgba(56,189,248,0.1); padding: 1px 6px; border-radius: 3px; border: 1px solid rgba(56,189,248,0.25);">
-                Card: ${emp.cardNumber || '—'}
-              </span>
+        listContainer.innerHTML = matches.length === 0 ? `
+          <div style="color: #94a3b8; font-size: 11.5px; padding: 14px; text-align: center; background: rgba(255,255,255,0.02); border-radius: 6px;">
+            No matching employees found for "<strong>${q}</strong>". Enter custom name below.
+          </div>
+        ` : matches.map(emp => `
+          <div class="smart-item-row btn-pick-smart-tech-row" data-id="${emp.id}" data-name="${emp.name}" data-card="${emp.cardNumber || '—'}" data-desig="${emp.designation || 'Staff'}">
+            <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0;">
+              <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <strong style="color: #ffffff; font-size: 12.5px; font-weight: 700;">${emp.name}</strong>
+                <span style="font-size: 10.5px; color: #38bdf8; font-family: var(--font-mono); font-weight: 800; background: rgba(56,189,248,0.1); padding: 1px 6px; border-radius: 3px; border: 1px solid rgba(56,189,248,0.25);">
+                  Card: ${emp.cardNumber || '—'}
+                </span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 6px; margin-top: 2px; flex-wrap: wrap;">
+                <span style="font-size: 10px; color: #cbd5e1; background: rgba(255,255,255,0.06); padding: 1px 6px; border-radius: 4px;">
+                  🔧 ${emp.designation || 'Technician'}
+                </span>
+                <span style="font-size: 10px; color: #34d399;">
+                  📍 ${emp.workingArea || emp.resolvedFloor || 'Factory Floor'}
+                </span>
+              </div>
             </div>
-            <div style="display: flex; align-items: center; gap: 6px; margin-top: 2px; flex-wrap: wrap;">
-              <span style="font-size: 10px; color: #cbd5e1; background: rgba(255,255,255,0.06); padding: 1px 6px; border-radius: 4px;">
-                🔧 ${emp.designation || 'Technician'}
+            <div style="text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 2px; flex-shrink: 0; margin-left: 8px;">
+              <span class="badge" style="background: rgba(52, 211, 153, 0.12); color: #34d399; font-size: 10px; font-weight: 700; border: 1px solid rgba(52, 211, 153, 0.3); padding: 2px 6px; border-radius: 4px;">
+                ${emp.resolvedFloor || emp.workingArea || 'Padma'}
               </span>
-              <span style="font-size: 10px; color: #34d399;">
-                📍 ${emp.workingArea || emp.resolvedFloor || 'Factory Floor'}
-              </span>
+              ${emp.resolvedUnit ? `<span style="font-size: 9px; color: #94a3b8;">${emp.resolvedUnit}</span>` : ''}
             </div>
           </div>
-          <div style="text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 2px; flex-shrink: 0; margin-left: 8px;">
-            <span class="badge" style="background: rgba(52, 211, 153, 0.12); color: #34d399; font-size: 10px; font-weight: 700; border: 1px solid rgba(52, 211, 153, 0.3); padding: 2px 6px; border-radius: 4px;">
-              ${emp.resolvedFloor || emp.workingArea || 'Padma'}
-            </span>
-            ${emp.resolvedUnit ? `<span style="font-size: 9px; color: #94a3b8;">${emp.resolvedUnit}</span>` : ''}
-          </div>
-        </div>
-      `).join('');
+        `).join('');
 
-      listContainer.querySelectorAll('.btn-pick-smart-tech-row').forEach(row => {
-        row.addEventListener('click', () => {
-          const tData = {
-            id: row.getAttribute('data-id'),
-            name: row.getAttribute('data-name'),
-            cardNumber: row.getAttribute('data-card')
-          };
-          const applyAll = root.querySelector('#chk-tech-apply-all-drafts')?.checked;
-          applyTechSelection(tData, applyAll);
+        listContainer.querySelectorAll('.btn-pick-smart-tech-row').forEach(row => {
+          row.addEventListener('click', () => {
+            const tData = {
+              id: row.getAttribute('data-id'),
+              name: row.getAttribute('data-name'),
+              cardNumber: row.getAttribute('data-card')
+            };
+            const applyAll = root.querySelector('#chk-tech-apply-all-drafts')?.checked;
+            applyTechSelection(tData, applyAll);
+          });
         });
-      });
+      }, 120);
     });
   }
 
@@ -2921,46 +2938,50 @@ export function initPartsTraceEvents() {
 
   const inpSearchSmartPart = root.querySelector('#inp-search-smart-part');
   if (inpSearchSmartPart) {
+    let searchPartTimer = null;
     inpSearchSmartPart.addEventListener('input', (e) => {
       const q = e.target.value.toLowerCase().trim();
-      const listContainer = root.querySelector('#smart-part-results-list');
-      if (!listContainer) return;
+      clearTimeout(searchPartTimer);
+      searchPartTimer = setTimeout(() => {
+        const listContainer = root.querySelector('#smart-part-results-list');
+        if (!listContainer) return;
 
-      const allParts = partsTraceService.getAllParts();
-      const matches = allParts.filter(p =>
-        (p.code && p.code.toLowerCase().includes(q)) ||
-        (p.name && p.name.toLowerCase().includes(q)) ||
-        (p.altName && p.altName.toLowerCase().includes(q)) ||
-        (p.alias && p.alias.toLowerCase().includes(q)) ||
-        (p.brand && p.brand.toLowerCase().includes(q)) ||
-        (p.model && p.model.toLowerCase().includes(q))
-      ).slice(0, 40);
+        const allParts = partsTraceService.getAllParts();
+        const matches = allParts.filter(p =>
+          (p.code && p.code.toLowerCase().includes(q)) ||
+          (p.name && p.name.toLowerCase().includes(q)) ||
+          (p.altName && p.altName.toLowerCase().includes(q)) ||
+          (p.alias && p.alias.toLowerCase().includes(q)) ||
+          (p.brand && p.brand.toLowerCase().includes(q)) ||
+          (p.model && p.model.toLowerCase().includes(q))
+        ).slice(0, 40);
 
-      listContainer.innerHTML = matches.length === 0 ? `
-        <div style="color: var(--text-muted); font-size: 11px; padding: 10px; text-align: center;">
-          No matching parts found in 5k+ catalog.
-        </div>
-      ` : matches.map(p => `
-        <div class="smart-item-row btn-pick-smart-part-row" data-id="${p.id}" data-code="${p.code}" data-name="${p.name}" data-unit="${p.unit || 'PCS'}">
-          <div>
-            <span style="font-family: var(--font-mono); font-weight: 800; color: #38bdf8; margin-right: 6px;">${p.code}</span>
-            <strong style="color: #fff; font-size: 12px;">${p.name}</strong>
-            ${p.altName ? `<div style="font-size: 10px; color: var(--text-muted);">${p.altName}</div>` : ''}
+        listContainer.innerHTML = matches.length === 0 ? `
+          <div style="color: var(--text-muted); font-size: 11px; padding: 10px; text-align: center;">
+            No matching parts found in 5k+ catalog.
           </div>
-          <span style="font-size: 11px; font-weight: 700; color: #34d399;">${p.unit || 'PCS'}</span>
-        </div>
-      `).join('');
+        ` : matches.map(p => `
+          <div class="smart-item-row btn-pick-smart-part-row" data-id="${p.id}" data-code="${p.code}" data-name="${p.name}" data-unit="${p.unit || 'PCS'}">
+            <div>
+              <span style="font-family: var(--font-mono); font-weight: 800; color: #38bdf8; margin-right: 6px;">${p.code}</span>
+              <strong style="color: #fff; font-size: 12px;">${p.name}</strong>
+              ${p.altName ? `<div style="font-size: 10px; color: var(--text-muted);">${p.altName}</div>` : ''}
+            </div>
+            <span style="font-size: 11px; font-weight: 700; color: #34d399;">${p.unit || 'PCS'}</span>
+          </div>
+        `).join('');
 
-      listContainer.querySelectorAll('.btn-pick-smart-part-row').forEach(row => {
-        row.addEventListener('click', () => {
-          applyPartSelection({
-            id: row.getAttribute('data-id'),
-            code: row.getAttribute('data-code'),
-            name: row.getAttribute('data-name'),
-            unit: row.getAttribute('data-unit')
+        listContainer.querySelectorAll('.btn-pick-smart-part-row').forEach(row => {
+          row.addEventListener('click', () => {
+            applyPartSelection({
+              id: row.getAttribute('data-id'),
+              code: row.getAttribute('data-code'),
+              name: row.getAttribute('data-name'),
+              unit: row.getAttribute('data-unit')
+            });
           });
         });
-      });
+      }, 120);
     });
   }
 
@@ -3429,13 +3450,22 @@ export function initPartsTraceEvents() {
     });
   }
 
-  // 20. Search & Filter Inputs
+  // 20. Search & Filter Inputs (Debounced for instant smooth response)
   const inpMasterSearch = root.querySelector('#inp-master-parts-search');
   if (inpMasterSearch) {
+    let masterDebounce = null;
     inpMasterSearch.addEventListener('input', (e) => {
-      masterSearch = e.target.value;
-      masterCurrentPage = 1;
-      refresh();
+      clearTimeout(masterDebounce);
+      masterDebounce = setTimeout(() => {
+        masterSearch = e.target.value;
+        masterCurrentPage = 1;
+        refresh();
+        const refocused = root.querySelector('#inp-master-parts-search');
+        if (refocused) {
+          refocused.focus({ preventScroll: true });
+          refocused.setSelectionRange(refocused.value.length, refocused.value.length);
+        }
+      }, 150);
     });
   }
 
@@ -3450,9 +3480,18 @@ export function initPartsTraceEvents() {
 
   const inpHistSearch = root.querySelector('#inp-history-search');
   if (inpHistSearch) {
+    let histDebounce = null;
     inpHistSearch.addEventListener('input', (e) => {
-      historySearch = e.target.value;
-      refresh();
+      clearTimeout(histDebounce);
+      histDebounce = setTimeout(() => {
+        historySearch = e.target.value;
+        refresh();
+        const refocused = root.querySelector('#inp-history-search');
+        if (refocused) {
+          refocused.focus({ preventScroll: true });
+          refocused.setSelectionRange(refocused.value.length, refocused.value.length);
+        }
+      }, 150);
     });
   }
 

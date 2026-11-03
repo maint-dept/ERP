@@ -757,31 +757,36 @@ function openCompleteHistoryModal(board, historyList, connectedMachine) {
 
     const sInput = document.getElementById('ent-hist-modal-search');
     if (sInput) {
+      let entHistTimer = null;
       sInput.addEventListener('input', (e) => {
-        historySearch = e.target.value;
-        const body = overlay.querySelector('.modal-body');
-        if (body) {
-          const q = historySearch.trim().toLowerCase();
-          const filtered = historyList.filter(h => {
-            if (!q) return true;
-            return (h.actionLabel || h.action || '').toLowerCase().includes(q) ||
-                   (h.performedByName || '').toLowerCase().includes(q) ||
-                   (h.performedByCard || '').toLowerCase().includes(q) ||
-                   (h.performedByArea || '').toLowerCase().includes(q) ||
-                   (h.machineSerial || '').toLowerCase().includes(q) ||
-                   (h.location || '').toLowerCase().includes(q) ||
-                   (h.companyName || '').toLowerCase().includes(q) ||
-                   (h.acceptanceStatus || '').toLowerCase().includes(q) ||
-                   (h.repairDetails || '').toLowerCase().includes(q) ||
-                   (h.remarks || '').toLowerCase().includes(q) ||
-                   (h.timestamp || '').includes(q);
-          });
-          body.innerHTML = filtered.length === 0 ? `
-            <div style="text-align: center; padding: 40px; color: var(--text-muted);">
-              No events found matching your search.
-            </div>
-          ` : modalViewMode === 'table' ? renderHistoryTable(filtered) : renderHistoryTimeline(filtered);
-        }
+        const val = e.target.value;
+        clearTimeout(entHistTimer);
+        entHistTimer = setTimeout(() => {
+          historySearch = val;
+          const body = overlay.querySelector('.modal-body');
+          if (body) {
+            const q = historySearch.trim().toLowerCase();
+            const filtered = historyList.filter(h => {
+              if (!q) return true;
+              return (h.actionLabel || h.action || '').toLowerCase().includes(q) ||
+                     (h.performedByName || '').toLowerCase().includes(q) ||
+                     (h.performedByCard || '').toLowerCase().includes(q) ||
+                     (h.performedByArea || '').toLowerCase().includes(q) ||
+                     (h.machineSerial || '').toLowerCase().includes(q) ||
+                     (h.location || '').toLowerCase().includes(q) ||
+                     (h.companyName || '').toLowerCase().includes(q) ||
+                     (h.acceptanceStatus || '').toLowerCase().includes(q) ||
+                     (h.repairDetails || '').toLowerCase().includes(q) ||
+                     (h.remarks || '').toLowerCase().includes(q) ||
+                     (h.timestamp || '').includes(q);
+            });
+            body.innerHTML = filtered.length === 0 ? `
+              <div style="text-align: center; padding: 40px; color: var(--text-muted);">
+                No events found matching your search.
+              </div>
+            ` : modalViewMode === 'table' ? renderHistoryTable(filtered) : renderHistoryTimeline(filtered);
+          }
+        }, 150);
       });
     }
   };
@@ -1923,11 +1928,15 @@ export function initEtLabEvents() {
       renderDropdownItems(cleanVal);
     });
 
-    // Live search without page re-render while typing!
+    // Live search without page re-render while typing (debounced)
+    let searchDebounceTimer = null;
     searchInput.addEventListener('input', (e) => {
       const val = e.target.value;
       if (btnClearSearch) btnClearSearch.style.display = val.length > 0 ? 'block' : 'none';
-      renderDropdownItems(val);
+      clearTimeout(searchDebounceTimer);
+      searchDebounceTimer = setTimeout(() => {
+        renderDropdownItems(val);
+      }, 120);
     });
 
     // Keyboard navigation (Enter, Arrow Down, Arrow Up, Escape)
@@ -2852,9 +2861,14 @@ function openActionModal(board, initialActionType = null) {
     };
 
     searchBox.addEventListener('focus', () => renderMatches(searchBox.value));
+    let personDebounceTimer = null;
     searchBox.addEventListener('input', (e) => {
-      renderMatches(e.target.value);
-      syncCustomOrClear(e.target.value);
+      const val = e.target.value;
+      clearTimeout(personDebounceTimer);
+      personDebounceTimer = setTimeout(() => {
+        renderMatches(val);
+        syncCustomOrClear(val);
+      }, 120);
     });
   };
 

@@ -608,12 +608,17 @@ export function initSparePartsManagementEvents() {
     }
   };
 
-  // Search Input
+  // Search Input (debounced)
   const inpSearch = document.getElementById('inp-spare-search');
   if (inpSearch) {
+    let spareSearchTimer = null;
     inpSearch.addEventListener('input', (e) => {
-      searchFilter = e.target.value;
-      refresh();
+      const val = e.target.value;
+      clearTimeout(spareSearchTimer);
+      spareSearchTimer = setTimeout(() => {
+        searchFilter = val;
+        refresh();
+      }, 150);
     });
   }
 

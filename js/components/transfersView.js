@@ -341,13 +341,18 @@ export function renderTransfersView() {
 }
 
 export function initTransfersViewEvents() {
-  // Search filter
+  // Search filter (debounced)
   const searchInput = document.getElementById('transfers-search-input');
   if (searchInput) {
+    let transferSearchTimer = null;
     searchInput.addEventListener('input', (e) => {
-      transferSearchQuery = e.target.value;
-      transferCurrentPage = 1;
-      state.emit('inventory:updated');
+      const val = e.target.value;
+      clearTimeout(transferSearchTimer);
+      transferSearchTimer = setTimeout(() => {
+        transferSearchQuery = val;
+        transferCurrentPage = 1;
+        state.emit('inventory:updated');
+      }, 150);
     });
   }
 

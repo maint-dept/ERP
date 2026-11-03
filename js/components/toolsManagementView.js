@@ -3062,20 +3062,24 @@ export function initToolsManagementEvents() {
   };
 
   if (inpSmartSearch) {
+    let smartSearchTimer = null;
     inpSmartSearch.oninput = (e) => {
       const q = e.target.value.toLowerCase().trim();
-      const all = getAllCatalogItems(screen2CategoryFilter);
-      if (!q) {
-        renderSmartSuggestions(all);
-        return;
-      }
-      const matches = all.filter(it =>
-        (it.name && it.name.toLowerCase().includes(q)) ||
-        (it.code && String(it.code).toLowerCase().includes(q)) ||
-        (it.category && it.category.toLowerCase().includes(q)) ||
-        (it.remarks && it.remarks.toLowerCase().includes(q))
-      );
-      renderSmartSuggestions(matches);
+      clearTimeout(smartSearchTimer);
+      smartSearchTimer = setTimeout(() => {
+        const all = getAllCatalogItems(screen2CategoryFilter);
+        if (!q) {
+          renderSmartSuggestions(all);
+          return;
+        }
+        const matches = all.filter(it =>
+          (it.name && it.name.toLowerCase().includes(q)) ||
+          (it.code && String(it.code).toLowerCase().includes(q)) ||
+          (it.category && it.category.toLowerCase().includes(q)) ||
+          (it.remarks && it.remarks.toLowerCase().includes(q))
+        );
+        renderSmartSuggestions(matches);
+      }, 120);
     };
 
     inpSmartSearch.onfocus = () => {
@@ -3829,16 +3833,25 @@ export function initToolsManagementEvents() {
     };
   }
 
-  // 21a. Find & Select Filter Handlers
+  // 21a. Find & Select Filter Handlers (Debounced for instant fluid typing & focus preservation)
   const findSearch = document.getElementById('find-search-input');
   if (findSearch) {
+    let findDebounce = null;
     findSearch.oninput = () => {
-      findFilters.search = findSearch.value;
-      const container = document.getElementById('tools-tab-content-container');
-      if (container) {
-        container.innerHTML = renderActiveTab('find-select');
-        initToolsManagementEvents();
-      }
+      clearTimeout(findDebounce);
+      findDebounce = setTimeout(() => {
+        findFilters.search = findSearch.value;
+        const container = document.getElementById('tools-tab-content-container');
+        if (container) {
+          container.innerHTML = renderActiveTab('find-select');
+          initToolsManagementEvents();
+          const inputAfter = document.getElementById('find-search-input');
+          if (inputAfter) {
+            inputAfter.focus({ preventScroll: true });
+            inputAfter.setSelectionRange(inputAfter.value.length, inputAfter.value.length);
+          }
+        }
+      }, 150);
     };
   }
 
@@ -4231,16 +4244,25 @@ export function initToolsManagementEvents() {
     };
   });
 
-  // 26. Accessories Search
+  // 26. Accessories Search (Debounced & Focus Preserved)
   const accSearch = document.getElementById('acc-search-input');
   if (accSearch) {
+    let accDebounce = null;
     accSearch.oninput = () => {
-      accessorySearch = accSearch.value;
-      const container = document.getElementById('tools-tab-content-container');
-      if (container) {
-        container.innerHTML = renderActiveTab('accessories-page');
-        initToolsManagementEvents();
-      }
+      clearTimeout(accDebounce);
+      accDebounce = setTimeout(() => {
+        accessorySearch = accSearch.value;
+        const container = document.getElementById('tools-tab-content-container');
+        if (container) {
+          container.innerHTML = renderActiveTab('accessories-page');
+          initToolsManagementEvents();
+          const inputAfter = document.getElementById('acc-search-input');
+          if (inputAfter) {
+            inputAfter.focus({ preventScroll: true });
+            inputAfter.setSelectionRange(inputAfter.value.length, inputAfter.value.length);
+          }
+        }
+      }, 150);
     };
   }
 
@@ -4642,21 +4664,25 @@ export function initToolsManagementEvents() {
     };
   });
 
-  // Table Search Box
+  // Table Search Box (Debounced 150ms for instantaneous response & no stutter)
   const dbSearchInput = document.getElementById('db-search-input');
   if (dbSearchInput) {
+    let dbDebounce = null;
     dbSearchInput.oninput = () => {
-      databaseSearch = dbSearchInput.value;
-      const container = document.getElementById('tools-tab-content-container');
-      if (container) {
-        container.innerHTML = renderActiveTab('database-page');
-        initToolsManagementEvents();
-        const inputAfter = document.getElementById('db-search-input');
-        if (inputAfter) {
-          inputAfter.focus({ preventScroll: true });
-          inputAfter.setSelectionRange(inputAfter.value.length, inputAfter.value.length);
+      clearTimeout(dbDebounce);
+      dbDebounce = setTimeout(() => {
+        databaseSearch = dbSearchInput.value;
+        const container = document.getElementById('tools-tab-content-container');
+        if (container) {
+          container.innerHTML = renderActiveTab('database-page');
+          initToolsManagementEvents();
+          const inputAfter = document.getElementById('db-search-input');
+          if (inputAfter) {
+            inputAfter.focus({ preventScroll: true });
+            inputAfter.setSelectionRange(inputAfter.value.length, inputAfter.value.length);
+          }
         }
-      }
+      }, 150);
     };
   }
 
@@ -4919,15 +4945,18 @@ function openStaffSelectorModal() {
   const searchInp = document.getElementById('modal-staff-search');
   const staffList = document.getElementById('modal-staff-list');
   if (searchInp && staffList) {
+    let staffSearchTimer = null;
     searchInp.oninput = () => {
       const q = searchInp.value.toLowerCase().trim();
-      const filtered = allStaff.filter(s =>
-        (s.name && s.name.toLowerCase().includes(q)) ||
-        (s.cardNumber && String(s.cardNumber).toLowerCase().includes(q)) ||
-        (s.designation && s.designation.toLowerCase().includes(q)) ||
-        (s.workingArea && s.workingArea.toLowerCase().includes(q))
-      );
-      staffList.innerHTML = filtered.map(s => `
+      clearTimeout(staffSearchTimer);
+      staffSearchTimer = setTimeout(() => {
+        const filtered = allStaff.filter(s =>
+          (s.name && s.name.toLowerCase().includes(q)) ||
+          (s.cardNumber && String(s.cardNumber).toLowerCase().includes(q)) ||
+          (s.designation && s.designation.toLowerCase().includes(q)) ||
+          (s.workingArea && s.workingArea.toLowerCase().includes(q))
+        );
+        staffList.innerHTML = filtered.map(s => `
         <div class="staff-modal-item" data-id="${s.cardNumber || s.id}" data-name="${s.name}" data-title="${s.designation}" data-area="${s.workingArea}"
           style="padding: 10px 14px; border-radius: 6px; margin-bottom: 6px; background: #0f172a; border: 1px solid #334155; cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
           <div>
@@ -4944,6 +4973,7 @@ function openStaffSelectorModal() {
         </div>
       `).join('');
       bindStaffModalClicks();
+      }, 120);
     };
   }
 
@@ -7048,18 +7078,23 @@ export function openBatchToolsAllocationModal() {
       };
     });
 
-    // Search input
+    // Search input (debounced)
     const searchInp = document.getElementById('inp-batch-search');
     if (searchInp) {
+      let batchSearchTimer = null;
       searchInp.oninput = (e) => {
-        batchSearch = e.target.value;
-        bindBatchEvents();
-        // Restore focus to end of search input
-        const refreshed = document.getElementById('inp-batch-search');
-        if (refreshed) {
-          refreshed.focus({ preventScroll: true });
-          refreshed.setSelectionRange(refreshed.value.length, refreshed.value.length);
-        }
+        const val = e.target.value;
+        clearTimeout(batchSearchTimer);
+        batchSearchTimer = setTimeout(() => {
+          batchSearch = val;
+          bindBatchEvents();
+          // Restore focus to end of search input
+          const refreshed = document.getElementById('inp-batch-search');
+          if (refreshed) {
+            refreshed.focus({ preventScroll: true });
+            refreshed.setSelectionRange(refreshed.value.length, refreshed.value.length);
+          }
+        }, 120);
       };
     }
 
@@ -8519,20 +8554,25 @@ Tools User - Shojib - 132694 [New]`;
       };
     }
 
-    // Mechanic search filter — re-render dropdown with matched results
+    // Mechanic search filter — re-render dropdown with matched results (debounced)
     const inpSearch = document.getElementById('inp-search-modal-emp');
     if (inpSearch) {
+      let modalEmpSearchTimer = null;
       inpSearch.oninput = () => {
-        mechanicFilterText = inpSearch.value;
-        renderModalUI();
-        // After re-render, restore focus to the search input
-        const newInp = document.getElementById('inp-search-modal-emp');
-        if (newInp) {
-          newInp.focus();
-          // Move cursor to end
-          const len = newInp.value.length;
-          newInp.setSelectionRange(len, len);
-        }
+        const val = inpSearch.value;
+        clearTimeout(modalEmpSearchTimer);
+        modalEmpSearchTimer = setTimeout(() => {
+          mechanicFilterText = val;
+          renderModalUI();
+          // After re-render, restore focus to the search input
+          const newInp = document.getElementById('inp-search-modal-emp');
+          if (newInp) {
+            newInp.focus();
+            // Move cursor to end
+            const len = newInp.value.length;
+            newInp.setSelectionRange(len, len);
+          }
+        }, 120);
       };
     }
 
