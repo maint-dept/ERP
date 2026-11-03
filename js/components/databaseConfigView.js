@@ -555,7 +555,7 @@ export function renderDatabaseConfigView() {
               </div>
             </div>
 
-            <div class="db-status-metrics-grid" style="display: grid; grid-template-columns: 140px 1fr; row-gap: 8px; font-size: 13.5px; font-family: 'JetBrains Mono', monospace; margin-bottom: 18px; border-bottom: 1px dashed rgba(255,255,255,0.12); padding-bottom: 16px;">
+            <div class="db-status-metrics-grid" style="display: grid; grid-template-columns: 140px 1fr; row-gap: 8px; font-size: 13.5px; font-family: 'Fira Code', monospace; margin-bottom: 18px; border-bottom: 1px dashed rgba(255,255,255,0.12); padding-bottom: 16px;">
               <span style="color: var(--text-muted, #94a3b8);">Data Sync:</span>
               <strong style="color: var(--text-primary, #ffffff); font-weight: 800;">100.0%</strong>
 
@@ -574,7 +574,7 @@ export function renderDatabaseConfigView() {
           </div>
 
           <div>
-            <div style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #38bdf8; display: flex; justify-content: space-between; align-items: center;">
+            <div style="font-family: 'Fira Code', monospace; font-size: 13px; color: #38bdf8; display: flex; justify-content: space-between; align-items: center;">
               <span>Sync Progress:</span>
               <strong>${formattedTotal} / ${formattedTotal} records &rarr; 100.0%</strong>
             </div>
@@ -597,7 +597,7 @@ export function renderDatabaseConfigView() {
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
             <div style="display: flex; align-items: center; gap: 8px;">
               <span style="font-size: 18px; color: #38bdf8;">🔄</span>
-              <h2 style="font-size: 16px; font-weight: 800; color: #e2e8f0; margin: 0; font-family: 'JetBrains Mono', monospace; letter-spacing: 0.5px;">DATA FLOW</h2>
+              <h2 style="font-size: 16px; font-weight: 800; color: #e2e8f0; margin: 0; font-family: 'Fira Code', monospace; letter-spacing: 0.5px;">DATA FLOW</h2>
             </div>
             <span style="font-size: 11px; color: #94a3b8; background: rgba(255,255,255,0.06); padding: 3px 8px; border-radius: 6px;">
               ${state.databases.length > 0 ? 'Real-time Fan-Out Active' : 'No Targets Configured'}
@@ -608,7 +608,7 @@ export function renderDatabaseConfigView() {
             Real-time broadcast flow: every ERP write in ${state.master.name} fans out to all configured secondary databases.
           </p>
 
-          <div class="db-dataflow-box" style="background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 18px; font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size: 13.5px; line-height: 2;">
+          <div class="db-dataflow-box" style="background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 18px; font-family: 'Fira Code', monospace; font-size: 13.5px; line-height: 2;">
             <div style="color: #ffffff; font-weight: 700; margin-bottom: 4px;">
               ${state.master.icon} ${state.master.name} <span style="font-size: 11px; color: #38bdf8; font-weight: normal; margin-left: 6px;">(Main Database / Source)</span>
             </div>
@@ -650,7 +650,7 @@ export function renderDatabaseConfigView() {
         <div style="display: flex; align-items: center; gap: 14px;">
           <span style="font-size: 28px; line-height: 1;">🟡</span>
           <div>
-            <h3 style="font-size: 15.5px; font-weight: 800; color: #fde68a; margin: 0; font-family: 'JetBrains Mono', monospace; letter-spacing: 0.3px;">
+            <h3 style="font-size: 15.5px; font-weight: 800; color: #fde68a; margin: 0; font-family: 'Fira Code', monospace; letter-spacing: 0.3px;">
               MySQL is back online. [${syncManager.recoveryPendingCount || syncManager.failoverModifiedRecords.size}] pending records found in Failover Queue.
             </h3>
             <p style="font-size: 12px; color: #e2e8f0; margin: 5px 0 0;">
@@ -670,7 +670,7 @@ export function renderDatabaseConfigView() {
           <div style="display: flex; align-items: center; gap: 10px;">
             <span style="font-size: 20px;">🛡️</span>
             <div>
-              <h2 style="font-size: 15.5px; font-weight: 800; color: #ffffff; margin: 0; font-family: 'JetBrains Mono', monospace; letter-spacing: 0.5px;">
+              <h2 style="font-size: 15.5px; font-weight: 800; color: #ffffff; margin: 0; font-family: 'Fira Code', monospace; letter-spacing: 0.5px;">
                 ENTERPRISE AUTOMATIC FAILOVER &amp; RECOVERY ENGINE
               </h2>
               <p style="font-size: 11.5px; color: var(--text-secondary); margin: 3px 0 0;">
@@ -689,7 +689,7 @@ export function renderDatabaseConfigView() {
           </div>
         </div>
 
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; font-size: 12px; font-family: 'JetBrains Mono', monospace;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; font-size: 12px; font-family: 'Fira Code', monospace;">
           <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 12px 14px;">
             <div style="color: #94a3b8; font-size: 11px; margin-bottom: 4px;">READ / WRITE ROUTING</div>
             <div style="color: ${syncManager.isRecoveryPending ? '#fde68a' : (syncManager.isFailoverActive ? '#fbbf24' : '#38bdf8')}; font-weight: 700; font-size: 13px;">
@@ -709,7 +709,7 @@ export function renderDatabaseConfigView() {
             </div>
           </div>
           <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 12px 14px;">
-            <div style="color: #94a3b8; font-size: 11px; margin-bottom: 4px;">SPLIT-BRAIN &amp; WRITE PROTECTION</div>
+            <div style="color: #94a3b8; font-size: 11px; margin-bottom: 4px;">DATA COLLISION &amp; WRITE PROTECTION</div>
             <div style="color: #38bdf8; font-weight: 700; font-size: 13px;">
               🔒 Timestamp-Verified Non-Destructive
             </div>
@@ -723,7 +723,7 @@ export function renderDatabaseConfigView() {
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 12px;">
           <div style="display: flex; align-items: center; gap: 10px;">
             <span style="font-size: 20px;">📊</span>
-            <h2 style="font-size: 16px; font-weight: 800; color: #ffffff; margin: 0; font-family: 'JetBrains Mono', monospace; letter-spacing: 0.5px;">DATABASE SYNC STATUS</h2>
+            <h2 style="font-size: 16px; font-weight: 800; color: #ffffff; margin: 0; font-family: 'Fira Code', monospace; letter-spacing: 0.5px;">DATABASE SYNC STATUS</h2>
           </div>
           <div style="display: flex; gap: 8px;">
             <button id="btn-refresh-topology" class="btn btn-secondary btn-sm" style="font-size: 12px; padding: 4px 10px;">
@@ -736,7 +736,7 @@ export function renderDatabaseConfigView() {
         <div style="background: #050811; border: 1px solid #1e293b; border-radius: 10px; padding: 24px; overflow-x: auto;">
           
           <!-- Master Database Box -->
-          <div style="max-width: 680px; margin: 0 auto; background: rgba(15, 23, 42, 0.9); border: 1.5px solid #38bdf8; border-radius: 8px; padding: 14px 20px; font-family: 'JetBrains Mono', monospace; box-shadow: 0 4px 20px rgba(56, 189, 248, 0.15);">
+          <div style="max-width: 680px; margin: 0 auto; background: rgba(15, 23, 42, 0.9); border: 1.5px solid #38bdf8; border-radius: 8px; padding: 14px 20px; font-family: 'Fira Code', monospace; box-shadow: 0 4px 20px rgba(56, 189, 248, 0.15);">
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
               <div style="display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 14.5px; color: #ffffff;">
                 <span style="display: inline-block; width: 11px; height: 11px; border-radius: 50%; background: #10b981; box-shadow: 0 0 8px #10b981;"></span>
@@ -752,17 +752,17 @@ export function renderDatabaseConfigView() {
 
           <!-- Dynamic Tree Branches Connectors -->
           ${state.databases.length === 0 ? `
-            <div style="max-width: 680px; margin: 0 auto; text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 14px; line-height: 1.1; color: #64748b; padding: 8px 0;">
+            <div style="max-width: 680px; margin: 0 auto; text-align: center; font-family: 'Fira Code', monospace; font-size: 14px; line-height: 1.1; color: #64748b; padding: 8px 0;">
               <div style="color: #64748b;">│</div>
               <div style="color: #64748b;">▼</div>
             </div>
           ` : state.databases.length === 1 ? `
-            <div style="max-width: 680px; margin: 0 auto; text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 14px; line-height: 1.1; color: #38bdf8; padding: 8px 0;">
+            <div style="max-width: 680px; margin: 0 auto; text-align: center; font-family: 'Fira Code', monospace; font-size: 14px; line-height: 1.1; color: #38bdf8; padding: 8px 0;">
               <div style="color: #38bdf8;">│</div>
               <div style="color: #38bdf8;">▼</div>
             </div>
           ` : `
-            <div style="max-width: 680px; margin: 0 auto; text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 14px; line-height: 1.1; color: #38bdf8; padding: 8px 0;">
+            <div style="max-width: 680px; margin: 0 auto; text-align: center; font-family: 'Fira Code', monospace; font-size: 14px; line-height: 1.1; color: #38bdf8; padding: 8px 0;">
               <div style="color: #38bdf8;">│</div>
               <div style="color: #38bdf8;">┌────────────────────────┼────────────────────────┐</div>
               <div style="color: #38bdf8;">▼                        ▼                        ▼</div>
@@ -771,13 +771,13 @@ export function renderDatabaseConfigView() {
 
           <!-- Secondary Database Boxes — dynamically rendered from real config -->
           ${state.databases.length === 0
-            ? `<div style="max-width: 760px; margin: 0 auto; background: rgba(15,23,42,0.7); border: 1px dashed rgba(255,255,255,0.12); border-radius: 8px; padding: 20px; text-align: center; font-size: 13px; color: #64748b; font-family: 'JetBrains Mono', monospace;">
+            ? `<div style="max-width: 760px; margin: 0 auto; background: rgba(15,23,42,0.7); border: 1px dashed rgba(255,255,255,0.12); border-radius: 8px; padding: 20px; text-align: center; font-size: 13px; color: #64748b; font-family: 'Fira Code', monospace;">
                 No secondary databases configured yet.<br/>
                 <span style="font-size: 11.5px;">Add a provider below via <strong style="color:#38bdf8;">Database List &amp; Provider Settings</strong>.</span>
                </div>`
             : `<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; max-width: 760px; margin: 0 auto;">
                 ${state.databases.map(d => `
-                  <div style="background: rgba(15,23,42,0.9); border: 1.5px solid ${d.statusColor}; border-radius: 8px; padding: 14px; font-family: 'JetBrains Mono', monospace; box-shadow: ${d.status === 'MISSING' ? '0 0 15px rgba(245,158,11,0.2)' : 'none'};">
+                  <div style="background: rgba(15,23,42,0.9); border: 1.5px solid ${d.statusColor}; border-radius: 8px; padding: 14px; font-family: 'Fira Code', monospace; box-shadow: ${d.status === 'MISSING' ? '0 0 15px rgba(245,158,11,0.2)' : 'none'};">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                       <div style="font-weight: 800; font-size: 13.5px; color: #fff;">${d.icon} ${d.name}</div>
                       <div style="display: flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 700; color: ${d.statusColor};">
@@ -796,7 +796,7 @@ export function renderDatabaseConfigView() {
           }
 
           <!-- Bottom Summary Line from Screenshot 2 -->
-          <div style="max-width: 760px; margin: 24px auto 0; padding-top: 16px; border-top: 1px dashed rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; font-family: 'JetBrains Mono', monospace; font-size: 13px;">
+          <div style="max-width: 760px; margin: 24px auto 0; padding-top: 16px; border-top: 1px dashed rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; font-family: 'Fira Code', monospace; font-size: 13px;">
             <div style="display: flex; gap: 24px; flex-wrap: wrap;">
               <span style="color: #94a3b8;">Last Sync: <strong style="color: #fff;" id="tree-last-sync">${state.lastSyncTime}</strong></span>
               <span style="color: #94a3b8; display: flex; align-items: center; gap: 6px;">
@@ -827,7 +827,7 @@ export function renderDatabaseConfigView() {
           <div>
             <div style="display: flex; align-items: center; gap: 8px;">
               <span style="font-size: 20px; color: ${totalMissing > 0 ? '#fbbf24' : '#34d399'};">${totalMissing > 0 ? '⚠️' : '⚡'}</span>
-              <h2 style="font-size: 16px; font-weight: 800; color: ${totalMissing > 0 ? '#fbbf24' : '#34d399'}; margin: 0; font-family: 'JetBrains Mono', monospace; letter-spacing: 0.5px;">
+              <h2 style="font-size: 16px; font-weight: 800; color: ${totalMissing > 0 ? '#fbbf24' : '#34d399'}; margin: 0; font-family: 'Fira Code', monospace; letter-spacing: 0.5px;">
                 ${totalMissing > 0 ? 'DATA DIFFERENCES &amp; RECONCILIATION' : 'DUAL-DATABASE INSTANT AUTO-SYNC STATUS'}
               </h2>
             </div>
@@ -840,14 +840,14 @@ export function renderDatabaseConfigView() {
 
           <div style="display: flex; gap: 8px; align-items: center;">
             ${totalMissing > 0 ? `
-              <button id="btn-view-missing-records" class="btn btn-secondary btn-sm" style="font-weight: 700; color: #fbbf24; border-color: rgba(245, 158, 11, 0.4); font-family: 'JetBrains Mono', monospace;">
+              <button id="btn-view-missing-records" class="btn btn-secondary btn-sm" style="font-weight: 700; color: #fbbf24; border-color: rgba(245, 158, 11, 0.4); font-family: 'Fira Code', monospace;">
                 [ View Missing Records (${totalMissing}) ]
               </button>
-              <button id="btn-reconcile-all-records" class="btn btn-primary btn-sm" style="font-weight: 700; background: linear-gradient(135deg, #10b981, #059669); border: none; font-family: 'JetBrains Mono', monospace;">
+              <button id="btn-reconcile-all-records" class="btn btn-primary btn-sm" style="font-weight: 700; background: linear-gradient(135deg, #10b981, #059669); border: none; font-family: 'Fira Code', monospace;">
                 [ ⚡ Re-sync All Missing ]
               </button>
             ` : `
-              <div style="display: inline-flex; align-items: center; gap: 6px; background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.35); padding: 5px 12px; border-radius: 6px; color: #34d399; font-size: 12px; font-weight: 700; font-family: 'JetBrains Mono', monospace;">
+              <div style="display: inline-flex; align-items: center; gap: 6px; background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.35); padding: 5px 12px; border-radius: 6px; color: #34d399; font-size: 12px; font-weight: 700; font-family: 'Fira Code', monospace;">
                 <span style="width: 7px; height: 7px; border-radius: 50%; background: #10b981; box-shadow: 0 0 8px #10b981; display: inline-block;"></span>
                 ⚡ Real-Time Auto-Sync: 100% In-Sync (0 Missing)
               </div>
@@ -857,7 +857,7 @@ export function renderDatabaseConfigView() {
 
         <!-- Differences Table matching Screenshot 4 format -->
         <div style="overflow-x: auto;">
-          <table style="width: 100%; border-collapse: collapse; font-family: 'JetBrains Mono', monospace; font-size: 13.5px; text-align: left;">
+          <table style="width: 100%; border-collapse: collapse; font-family: 'Fira Code', monospace; font-size: 13.5px; text-align: left;">
             <thead>
               <tr style="border-bottom: 1.5px solid rgba(255,255,255,0.15); color: #94a3b8; font-size: 12.5px; text-transform: uppercase;">
                 <th style="padding: 10px 14px;">Database</th>
@@ -891,7 +891,7 @@ export function renderDatabaseConfigView() {
 
               <!-- Configured Secondary Databases (real data only) -->
               ${state.databases.length === 0
-                ? `<tr><td colspan="9" style="padding: 20px 14px; text-align: center; color: #64748b; font-size: 12.5px; font-family: 'JetBrains Mono', monospace;">No secondary databases configured. Add a provider below.</td></tr>`
+                ? `<tr><td colspan="9" style="padding: 20px 14px; text-align: center; color: #64748b; font-size: 12.5px; font-family: 'Fira Code', monospace;">No secondary databases configured. Add a provider below.</td></tr>`
                 : state.databases.map(d => {
                     const statusEmoji = d.status === 'SYNCED' ? '🟢' : d.status === 'MISSING' ? '🟡' : d.status === 'FAILED' ? '🔴' : '⚪';
                     const actionBtn = d.status === 'DISABLED'
@@ -947,7 +947,7 @@ export function renderDatabaseConfigView() {
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
             <div style="display: flex; align-items: center; gap: 8px;">
               <span style="font-size: 16px;">🔍</span>
-              <strong style="color: #fbbf24; font-size: 14px; font-family: 'JetBrains Mono', monospace;">
+              <strong style="color: #fbbf24; font-size: 14px; font-family: 'Fira Code', monospace;">
                 Missing &amp; Desynchronized Records (${state.missingRecords.length})
               </strong>
             </div>
@@ -964,8 +964,8 @@ export function renderDatabaseConfigView() {
 
           <div style="max-height: 260px; overflow-y: auto;">
             ${state.missingRecords.length === 0
-              ? `<div style="text-align: center; padding: 20px; color: #34d399; font-size: 13px; font-family: 'JetBrains Mono', monospace;">✅ No missing records — all databases are in sync.</div>`
-              : `<table style="width: 100%; border-collapse: collapse; font-family: 'JetBrains Mono', monospace; font-size: 12px; text-align: left;">
+              ? `<div style="text-align: center; padding: 20px; color: #34d399; font-size: 13px; font-family: 'Fira Code', monospace;">✅ No missing records — all databases are in sync.</div>`
+              : `<table style="width: 100%; border-collapse: collapse; font-family: 'Fira Code', monospace; font-size: 12px; text-align: left;">
               <thead>
                 <tr style="border-bottom: 1px solid rgba(255,255,255,0.1); color: #94a3b8;">
                   <th style="padding: 6px 10px;">Table</th>
@@ -1143,7 +1143,7 @@ export function renderDatabaseConfigView() {
           <div style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 8px;">
             Universal Repository API Example (Consistent Across All Databases)
           </div>
-          <pre style="margin: 0; font-family: 'JetBrains Mono', monospace; font-size: 12px; line-height: 1.6; color: #38bdf8; background: transparent; padding: 0;">
+          <pre style="margin: 0; font-family: 'Fira Code', monospace; font-size: 12px; line-height: 1.6; color: #38bdf8; background: transparent; padding: 0;">
 <span style="color: #64748b;">// 1. Machine Inventory Repository</span>
 <span style="color: #f43f5e;">const</span> machines = <span style="color: #f43f5e;">await</span> db.machines.getAll();
 <span style="color: #f43f5e;">const</span> newMachine = <span style="color: #f43f5e;">await</span> db.machines.create({ name: <span style="color: #a3e635;">'Brother S-7200C'</span>, categoryId: <span style="color: #a3e635;">'cat_snls'</span>, floor: <span style="color: #a3e635;">'Floor 3'</span> });

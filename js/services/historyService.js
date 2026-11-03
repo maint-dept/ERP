@@ -1801,7 +1801,7 @@ class HistoryService {
     const demoItems = [];
     const baseDate = '2026-08';
 
-    // Primary target matching user prompt: Group A -> AKM Knitwear -> 3rd Floor -> Line 5 (lin-2 / lin-1)
+    // Primary target matching target specification: Group A -> AKM Knitwear -> 3rd Floor -> Line 5 (lin-2 / lin-1)
     const targetLineMachines = allMachines.filter(m => m.floorId === 'flr-4' || m.lineId === 'lin-1' || m.lineId === 'lin-2');
     const m1 = targetLineMachines[0] || { id: 'mc-1', serialNumber: 'JK-PM-00001', groupId: 'grp-1', unitId: 'unt-1', floorId: 'flr-4', lineId: 'lin-1' };
     const m2 = targetLineMachines[1] || { id: 'mc-2', serialNumber: 'JK-PM-00002', groupId: 'grp-1', unitId: 'unt-1', floorId: 'flr-4', lineId: 'lin-2' };

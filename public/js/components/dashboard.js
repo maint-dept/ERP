@@ -1141,7 +1141,7 @@ export function renderDashboard() {
         font-weight: 800;
         line-height: 1.1;
         color: #ffffff;
-        font-family: var(--font-mono, 'JetBrains Mono', monospace);
+        font-family: var(--font-mono, 'Fira Code', monospace);
         font-variant-numeric: tabular-nums;
         letter-spacing: -0.5px;
       }

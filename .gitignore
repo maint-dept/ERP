@@ -11,3 +11,7 @@ data/*.backup.json
 data/*_backup*.json
 data/chat_history.json
 .vscode/
+
+# Local Assistant & Safety Rules (Local VPS Only, Hidden from Public Repo)
+AGENTS.md
+.agents/
