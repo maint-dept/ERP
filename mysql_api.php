@@ -24,10 +24,38 @@ $DB_PORT = 3306;                 // Default MySQL port
 $DB_NAME = 'motaherh_maint-erp'; // From your cPanel phpMyAdmin: motaherh_maint-erp
 $DB_USER = 'motaherh_mainterp';  // In cPanel, user is usually motaherh_mainterp
 $DB_PASS = 'Maint@456';          // User Database Password
-$API_KEY = '';                   // Optional: Set a secret key if desired
+$API_KEY = 'AMG_MNT_SECURE_API_v4_89f2a7'; // Authoritative Security Token
 
-// --- 2. CORS & ANTI-CACHE HEADERS (Allows GitHub Pages & frontend to connect without stale proxy caching) ---
-header('Access-Control-Allow-Origin: *');
+// --- 2. CORS & SECURITY HEADERS (Restricts origins to trusted factory portal domains) ---
+$allowedOrigins = [
+    'https://moviezonex.com',
+    'https://www.moviezonex.com',
+    'https://maint-dept.github.io',
+    'http://localhost',
+    'https://localhost',
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+    'http://localhost:8080',
+    'http://127.0.0.1:8080'
+];
+
+$httpOrigin = $_SERVER['HTTP_ORIGIN'] ?? '';
+if (!empty($httpOrigin)) {
+    $parsed = parse_url($httpOrigin);
+    $originHost = ($parsed['scheme'] ?? 'http') . '://' . ($parsed['host'] ?? '');
+    if (isset($parsed['port'])) $originHost .= ':' . $parsed['port'];
+    $isGhPages = isset($parsed['host']) && (substr($parsed['host'], -10) === '.github.io');
+
+    if (in_array($httpOrigin, $allowedOrigins, true) || in_array($originHost, $allowedOrigins, true) || $isGhPages) {
+        header("Access-Control-Allow-Origin: {$httpOrigin}");
+        header('Access-Control-Allow-Credentials: true');
+    } else {
+        header("Access-Control-Allow-Origin: https://moviezonex.com");
+    }
+} else {
+    header('Access-Control-Allow-Origin: *');
+}
+
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization, X-API-Key, X-DB-Host, X-DB-Port, X-DB-Name, X-DB-User, X-DB-Pass, X-DB-SSL, X-User-Role, X-User-Id, Cache-Control, Pragma, Expires, *');
 header('Content-Type: application/json; charset=utf-8');
@@ -36,6 +64,10 @@ header('Pragma: no-cache');
 header('Expires: 0');
 header('X-LiteSpeed-Cache-Control: no-cache');
 header('X-Accel-Buffering: no');
+header('X-Content-Type-Options: nosniff');
+header('X-Frame-Options: SAMEORIGIN');
+header('X-XSS-Protection: 1; mode=block');
+header('Referrer-Policy: strict-origin-when-cross-origin');
 
 // --- OPTION A: HTTP GZIP OUTPUT COMPRESSION BUFFER (Cuts API payload size by up to 80%) ---
 if (!in_array('ob_gzhandler', ob_list_handlers()) && extension_loaded('zlib') && !ini_get('zlib.output_compression')) {
@@ -47,9 +79,25 @@ if (isset($_SERVER['REQUEST_METHOD']) && $_SERVER['REQUEST_METHOD'] === 'OPTIONS
     exit;
 }
 
-// --- 3. SECURITY GATE: REJECT CALLS FROM NO_ACCESS ZERO PERMISSIONS ACCOUNTS ---
-$headers = function_exists('getallheaders') ? getallheaders() : [];
-$userRole = $headers['X-User-Role'] ?? $headers['x-user-role'] ?? '';
+// --- 3. UNIVERSAL HEADERS NORMALIZATION (Works on Apache, Nginx PHP-FPM, LiteSpeed, cPanel) ---
+$rawHeaders = function_exists('getallheaders') ? getallheaders() : [];
+$headers = [];
+foreach ($rawHeaders as $k => $v) {
+    $headers[strtolower($k)] = $v;
+}
+foreach ($_SERVER as $k => $v) {
+    if (strpos($k, 'HTTP_') === 0) {
+        $cleanKey = strtolower(str_replace('_', '-', substr($k, 5)));
+        if (!isset($headers[$cleanKey])) {
+            $headers[$cleanKey] = $v;
+        }
+    }
+}
+if (!isset($headers['authorization']) && isset($_SERVER['REDIRECT_HTTP_AUTHORIZATION'])) {
+    $headers['authorization'] = $_SERVER['REDIRECT_HTTP_AUTHORIZATION'];
+}
+
+$userRole = $headers['x-user-role'] ?? '';
 if ($userRole === 'NO_ACCESS') {
     http_response_code(403);
     echo json_encode([
@@ -60,39 +108,69 @@ if ($userRole === 'NO_ACCESS') {
     exit;
 }
 
-// --- 4. DYNAMIC CREDENTIAL OVERRIDE (Optional from client request) ---
-$headerKey = $headers['X-API-Key'] ?? $headers['x-api-key'] ?? '';
-$authHeader = $headers['Authorization'] ?? $headers['authorization'] ?? '';
+// --- 4. EXTRACT HEADERS & PAYLOAD ---
+$headerKey = $headers['x-api-key'] ?? '';
+$authHeader = $headers['authorization'] ?? '';
 if (strpos($authHeader, 'Bearer ') === 0) {
     $headerKey = substr($authHeader, 7);
-}
-
-if (!empty($headers['X-DB-Host']) || !empty($headers['x-db-host'])) {
-    $DB_HOST = $headers['X-DB-Host'] ?? $headers['x-db-host'];
-}
-if (!empty($headers['X-DB-Port']) || !empty($headers['x-db-port'])) {
-    $DB_PORT = intval($headers['X-DB-Port'] ?? $headers['x-db-port']);
-}
-if (!empty($headers['X-DB-Name']) || !empty($headers['x-db-name'])) {
-    $DB_NAME = $headers['X-DB-Name'] ?? $headers['x-db-name'];
-}
-if (!empty($headers['X-DB-User']) || !empty($headers['x-db-user'])) {
-    $DB_USER = $headers['X-DB-User'] ?? $headers['x-db-user'];
-}
-if (isset($headers['X-DB-Pass']) || isset($headers['x-db-pass'])) {
-    $DB_PASS = $headers['X-DB-Pass'] ?? $headers['x-db-pass'];
 }
 
 // Read JSON input
 $rawInput = file_get_contents('php://input');
 $body = json_decode($rawInput, true) ?: [];
 
-// Check API Key if configured
-if (!empty($API_KEY)) {
-    $clientKey = $headerKey ?: ($body['apiKey'] ?? $_GET['apiKey'] ?? '');
-    if ($clientKey !== $API_KEY) {
+// Determine action early for security policy enforcement
+$action = $_GET['action'] ?? $body['action'] ?? '';
+$pathInfo = $_SERVER['PATH_INFO'] ?? '';
+if (empty($action) && !empty($pathInfo)) {
+    $parts = explode('/', trim($pathInfo, '/'));
+    $action = end($parts);
+}
+if (empty($action)) {
+    $action = 'ping';
+}
+
+// Verify API Key
+$clientKey = $headerKey ?: ($body['apiKey'] ?? $_GET['apiKey'] ?? '');
+$isKeyValid = (!empty($API_KEY) && hash_equals($API_KEY, (string)$clientKey));
+
+// Security Gate: Restrict dynamic DB credentials override only to verified API Key holders
+if ($isKeyValid) {
+    if (!empty($headers['X-DB-Host']) || !empty($headers['x-db-host'])) {
+        $DB_HOST = $headers['X-DB-Host'] ?? $headers['x-db-host'];
+    }
+    if (!empty($headers['X-DB-Port']) || !empty($headers['x-db-port'])) {
+        $DB_PORT = intval($headers['X-DB-Port'] ?? $headers['x-db-port']);
+    }
+    if (!empty($headers['X-DB-Name']) || !empty($headers['x-db-name'])) {
+        $DB_NAME = $headers['X-DB-Name'] ?? $headers['x-db-name'];
+    }
+    if (!empty($headers['X-DB-User']) || !empty($headers['x-db-user'])) {
+        $DB_USER = $headers['X-DB-User'] ?? $headers['x-db-user'];
+    }
+    if (isset($headers['X-DB-Pass']) || isset($headers['x-db-pass'])) {
+        $DB_PASS = $headers['X-DB-Pass'] ?? $headers['x-db-pass'];
+    }
+}
+
+// Security Gate: Action-level Authorization
+$publicActions = ['ping', 'check_version', 'stats', 'verify_login', 'authenticate'];
+if ($action === 'query_machines') {
+    if (!$isKeyValid && ($userRole === 'NO_ACCESS' || empty($userRole))) {
         http_response_code(401);
-        echo json_encode(['success' => false, 'error' => 'Unauthorized: Invalid API Key']);
+        echo json_encode([
+            'success' => false,
+            'error' => 'Unauthorized: Valid API Key or authenticated session required for machine queries.'
+        ]);
+        exit;
+    }
+} elseif (!in_array($action, $publicActions, true)) {
+    if (!$isKeyValid) {
+        http_response_code(401);
+        echo json_encode([
+            'success' => false,
+            'error' => 'Unauthorized: Valid API Key required for database operations.'
+        ]);
         exit;
     }
 }
@@ -279,16 +357,8 @@ function syncMachinesToRelationalTable($pdo, $machines, $cleanBefore = false) {
     }
 }
 
-// Determine action
-$action = $_GET['action'] ?? $body['action'] ?? '';
-$pathInfo = $_SERVER['PATH_INFO'] ?? '';
-if (empty($action) && !empty($pathInfo)) {
-    $parts = explode('/', trim($pathInfo, '/'));
-    $action = end($parts);
-}
-if (empty($action)) {
-    $action = 'ping';
-}
+// Active action
+$action = $action ?: 'ping';
 
 function validateAndProtectMachinesDataset($pdo, &$machines) {
     if (!is_array($machines)) {
@@ -935,12 +1005,16 @@ try {
         case 'query_machines':
             $start = microtime(true);
             $search = trim($_GET['search'] ?? $body['search'] ?? '');
+            $groupId = trim($_GET['group_id'] ?? $body['group_id'] ?? '');
             $unitId = trim($_GET['unit_id'] ?? $body['unit_id'] ?? '');
             $floorId = trim($_GET['floor_id'] ?? $body['floor_id'] ?? '');
             $lineId = trim($_GET['line_id'] ?? $body['line_id'] ?? '');
+            $machineNameId = trim($_GET['machine_name_id'] ?? $body['machine_name_id'] ?? '');
+            $brandId = trim($_GET['brand_id'] ?? $body['brand_id'] ?? '');
+            $modelId = trim($_GET['model_id'] ?? $body['model_id'] ?? '');
             $status = strtoupper(trim($_GET['status'] ?? $body['status'] ?? ''));
             $page = max(1, intval($_GET['page'] ?? $body['page'] ?? 1));
-            $limit = max(1, min(250, intval($_GET['limit'] ?? $body['limit'] ?? 50)));
+            $limit = max(1, min(500, intval($_GET['limit'] ?? $body['limit'] ?? 50)));
             $offset = ($page - 1) * $limit;
             $sortField = trim($_GET['sort_field'] ?? $body['sort_field'] ?? 'updated_at');
             $sortOrder = strtoupper(trim($_GET['sort_order'] ?? $body['sort_order'] ?? 'DESC')) === 'ASC' ? 'ASC' : 'DESC';
@@ -960,21 +1034,80 @@ try {
             ];
             $orderCol = $allowedSorts[$sortField] ?? 'updated_at';
 
-            $whereParts = ["1=1"];
-            $params = [];
+            $scopeWhereParts = ["1=1"];
+            $scopeParams = [];
 
+            if (!empty($groupId)) {
+                $scopeWhereParts[] = "`group_id` = :group_id";
+                $scopeParams[':group_id'] = $groupId;
+            }
             if (!empty($unitId)) {
-                $whereParts[] = "`unit_id` = :unit_id";
-                $params[':unit_id'] = $unitId;
+                $scopeWhereParts[] = "`unit_id` = :unit_id";
+                $scopeParams[':unit_id'] = $unitId;
             }
             if (!empty($floorId)) {
-                $whereParts[] = "`floor_id` = :floor_id";
-                $params[':floor_id'] = $floorId;
+                $scopeWhereParts[] = "`floor_id` = :floor_id";
+                $scopeParams[':floor_id'] = $floorId;
             }
             if (!empty($lineId)) {
-                $whereParts[] = "`line_id` = :line_id";
-                $params[':line_id'] = $lineId;
+                $scopeWhereParts[] = "`line_id` = :line_id";
+                $scopeParams[':line_id'] = $lineId;
             }
+            if (!empty($machineNameId)) {
+                $scopeWhereParts[] = "(`raw_data` LIKE :mn_id OR `machine_name` = :mn_name)";
+                $scopeParams[':mn_id'] = '%"machineNameId":"' . $machineNameId . '"%';
+                $scopeParams[':mn_name'] = $machineNameId;
+            }
+            if (!empty($brandId)) {
+                $scopeWhereParts[] = "(`raw_data` LIKE :brd_id OR `brand` = :brd_name)";
+                $scopeParams[':brd_id'] = '%"brandId":"' . $brandId . '"%';
+                $scopeParams[':brd_name'] = $brandId;
+            }
+            if (!empty($modelId)) {
+                $scopeWhereParts[] = "(`raw_data` LIKE :mdl_id OR `model` = :mdl_name)";
+                $scopeParams[':mdl_id'] = '%"modelId":"' . $modelId . '"%';
+                $scopeParams[':mdl_name'] = $modelId;
+            }
+            if (!empty($search)) {
+                $scopeWhereParts[] = "(`serial_number` LIKE :s_sn OR `system_asset_id` LIKE :s_asset OR `machine_name` LIKE :s_mn OR `brand` LIKE :s_brd OR `model` LIKE :s_mdl OR `raw_data` LIKE :s_raw)";
+                $searchWildcard = "%{$search}%";
+                $scopeParams[':s_sn'] = $searchWildcard;
+                $scopeParams[':s_asset'] = $searchWildcard;
+                $scopeParams[':s_mn'] = $searchWildcard;
+                $scopeParams[':s_brd'] = $searchWildcard;
+                $scopeParams[':s_mdl'] = $searchWildcard;
+                $scopeParams[':s_raw'] = $searchWildcard;
+            }
+
+            $scopeWhereSql = implode(' AND ', $scopeWhereParts);
+
+            // Fast Indexed Aggregate for Scope KPI Metrics
+            $metricsStmt = $pdo->prepare("SELECT 
+                COUNT(*) AS total,
+                COALESCE(SUM(`running`), 0) AS running,
+                COALESCE(SUM(`usable_idle`), 0) AS usable,
+                COALESCE(SUM(`repairable_idle`), 0) AS repairable
+            FROM `erp_machines` WHERE {$scopeWhereSql}");
+            $metricsStmt->execute($scopeParams);
+            $metricsRow = $metricsStmt->fetch() ?: [];
+
+            // Fast Ambulance / Standby count
+            $ambStmt = $pdo->prepare("SELECT COUNT(*) AS ambulance FROM `erp_machines` WHERE {$scopeWhereSql} AND (`status` = 'AMBULANCE' OR `raw_data` LIKE '%\"isAmbulance\":true%' OR `raw_data` LIKE '%\"is_ambulance\":true%' OR `raw_data` LIKE '%\"ambulance\":true%' OR `raw_data` LIKE '%\"is_ambulance\":1%' OR `raw_data` LIKE '%\"status\":\"AMBULANCE\"%')");
+            $ambStmt->execute($scopeParams);
+            $ambulanceCount = intval($ambStmt->fetch()['ambulance'] ?? 0);
+
+            $metrics = [
+                'total' => intval($metricsRow['total'] ?? 0),
+                'running' => intval($metricsRow['running'] ?? 0),
+                'usable' => intval($metricsRow['usable'] ?? 0),
+                'repairable' => intval($metricsRow['repairable'] ?? 0),
+                'ambulance' => $ambulanceCount
+            ];
+
+            // Build status-filtered query
+            $whereParts = $scopeWhereParts;
+            $params = $scopeParams;
+
             if (!empty($status) && $status !== 'ALL') {
                 if ($status === 'RUNNING' || $status === 'ACTIVE') {
                     $whereParts[] = "(`status` = 'ACTIVE' OR `running` > 0)";
@@ -982,15 +1115,16 @@ try {
                     $whereParts[] = "(`status` IN ('IDLE', 'USABLE', 'USABLE_IDLE') OR `usable_idle` > 0)";
                 } else if ($status === 'REPAIRABLE' || $status === 'REPAIRABLE_IDLE') {
                     $whereParts[] = "(`status` IN ('REPAIRABLE', 'REPAIRABLE_IDLE') OR `repairable_idle` > 0)";
+                } else if ($status === 'MAINTENANCE') {
+                    $whereParts[] = "(`status` = 'MAINTENANCE' OR `repairable_idle` > 0)";
+                } else if ($status === 'BREAKDOWN') {
+                    $whereParts[] = "`status` = 'BREAKDOWN'";
+                } else if ($status === 'AMBULANCE') {
+                    $whereParts[] = "(`status` = 'AMBULANCE' OR `raw_data` LIKE '%\"isAmbulance\":true%' OR `raw_data` LIKE '%\"is_ambulance\":true%' OR `raw_data` LIKE '%\"ambulance\":true%' OR `raw_data` LIKE '%\"is_ambulance\":1%' OR `raw_data` LIKE '%\"status\":\"AMBULANCE\"%')";
                 } else {
                     $whereParts[] = "`status` = :status";
                     $params[':status'] = $status;
                 }
-            }
-            if (!empty($search)) {
-                $whereParts[] = "(`serial_number` LIKE :s_exact OR `system_asset_id` LIKE :s_exact OR `machine_name` LIKE :s_like OR `brand` LIKE :s_like OR `model` LIKE :s_like)";
-                $params[':s_exact'] = "%{$search}%";
-                $params[':s_like'] = "%{$search}%";
             }
 
             $whereSql = implode(' AND ', $whereParts);
@@ -1023,6 +1157,7 @@ try {
                 'page' => $page,
                 'limit' => $limit,
                 'totalPages' => ceil($totalCount / $limit) ?: 1,
+                'metrics' => $metrics,
                 'latencyMs' => $latency
             ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
             break;

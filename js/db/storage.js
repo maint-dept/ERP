@@ -1591,6 +1591,7 @@ class StorageEngine {
           method: 'POST',
           headers: { 
             'Content-Type': 'application/json',
+            'X-API-Key': 'AMG_MNT_SECURE_API_v4_89f2a7',
             'X-User-Role': cu?.role || '',
             'X-User-Id': cu?.id || ''
           },
@@ -1929,6 +1930,7 @@ class StorageEngine {
           method: 'POST',
           headers: { 
             'Content-Type': 'application/json',
+            'X-API-Key': 'AMG_MNT_SECURE_API_v4_89f2a7',
             'X-User-Role': cu?.role || '',
             'X-User-Id': cu?.id || '',
             'X-Location-Scope': cu?.assignedScope ? JSON.stringify(cu.assignedScope) : ''
@@ -2001,6 +2003,7 @@ class StorageEngine {
           method: 'POST',
           headers: { 
             'Content-Type': 'application/json',
+            'X-API-Key': 'AMG_MNT_SECURE_API_v4_89f2a7',
             'X-User-Role': cu?.role || '',
             'X-User-Id': cu?.id || ''
           },

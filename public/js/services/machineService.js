@@ -171,116 +171,166 @@ class MachineService {
   }
 
   /**
-   * High-Performance Scoped Query Engine (Handles infinite records with pagination & multi-filter)
+   * High-Performance Scoped Query Engine (Single-Pass Optimized with Zero GC overhead)
    */
   getMachines(params = {}) {
-    let allMachines = storage.getTable(TABLE_NAMES.MACHINES) || [];
+    const allMachines = storage.getTable(TABLE_NAMES.MACHINES) || [];
+    const len = allMachines.length;
 
-    // Filter out dummy test machines
-    allMachines = allMachines.filter(m => {
-      if (!m) return false;
-      const s = String(m.serialNumber || '').trim().toLowerCase();
-      const n = String(m.machineName || m.name || '').trim().toLowerCase();
-      const id = String(m.id || '').trim().toLowerCase();
-      return s !== 'test' && n !== 'test' && id !== 'test' && id !== 'test_item_999';
-    });
-
-    // 1. Strict Backend / Storage-level Organization Scoping (Cross-Floor Idle view is optional via includeCrossFloorIdle)
+    // 1. Pre-calculate lookup criteria
     const scoped = authService.getScopedFilter();
-    if (scoped || params.includeCrossFloorIdle) {
-      allMachines = allMachines.filter(m => authService.canViewMachine(m, null, Boolean(params.includeCrossFloorIdle)));
+    const hasScope = Boolean(scoped || params.includeCrossFloorIdle);
+    const groupId = params.groupId || null;
+    const unitId = params.unitId || null;
+    const floorId = params.floorId || null;
+    const lineId = params.lineId || null;
+    const machineNameId = params.machineNameId || null;
+    const brandId = params.brandId || null;
+    const modelId = params.modelId || null;
+
+    const rawSearch = (params.search || '').trim().toLowerCase();
+    const hasSearch = rawSearch.length > 0;
+
+    let grpMap, mnMap, brdMap, mdlMap, linMap, flrMap, untMap;
+    if (hasSearch) {
+      grpMap = new Map((storage.getTable(TABLE_NAMES.GROUPS) || []).map(x => [x.id, (x.name || '').toLowerCase()]));
+      mnMap = new Map((storage.getTable(TABLE_NAMES.MACHINE_NAMES) || []).map(x => [x.id, (x.name || '').toLowerCase()]));
+      brdMap = new Map((storage.getTable(TABLE_NAMES.BRANDS) || []).map(x => [x.id, (x.name || '').toLowerCase()]));
+      mdlMap = new Map((storage.getTable(TABLE_NAMES.MODELS) || []).map(x => [x.id, (x.name || '').toLowerCase()]));
+      linMap = new Map((storage.getTable(TABLE_NAMES.LINES) || []).map(x => [x.id, (x.name || '').toLowerCase()]));
+      flrMap = new Map((storage.getTable(TABLE_NAMES.FLOORS) || []).map(x => [x.id, (x.name || '').toLowerCase()]));
+      untMap = new Map((storage.getTable(TABLE_NAMES.UNITS) || []).map(x => [x.id, (x.name || '').toLowerCase()]));
     }
 
-    // 2. Cascading Primary Organization Filters
-    if (params.groupId) {
-      allMachines = allMachines.filter(m => m.groupId === params.groupId);
-    }
-    if (params.unitId) {
-      allMachines = allMachines.filter(m => m.unitId === params.unitId);
-    }
-    if (params.floorId) {
-      allMachines = allMachines.filter(m => m.floorId === params.floorId);
-    }
-    if (params.lineId) {
-      allMachines = allMachines.filter(m => m.lineId === params.lineId);
-    }
+    const customFilterEntries = params.customFilters 
+      ? Object.entries(params.customFilters).filter(([_, v]) => v !== undefined && v !== null && v !== '' && v !== 'ALL')
+      : null;
+    const hasCustomFilters = customFilterEntries && customFilterEntries.length > 0;
 
-    // 3. Machine Technical Hierarchy Filters
-    if (params.machineNameId) {
-      allMachines = allMachines.filter(m => m.machineNameId === params.machineNameId);
-    }
-    if (params.brandId) {
-      allMachines = allMachines.filter(m => m.brandId === params.brandId);
-    }
-    if (params.modelId) {
-      allMachines = allMachines.filter(m => m.modelId === params.modelId);
-    }
-    // 4. Global Multi-Field Search (Serial, Mfg Serial, Remarks, Model, Brand, Name, Line, Floor, Unit)
-    if (params.search) {
-      const q = params.search.trim().toLowerCase();
-      
-      // Look up master data maps for ultra-fast text matching
-      const grpMap = new Map(storage.getTable(TABLE_NAMES.GROUPS).map(x => [x.id, x.name.toLowerCase()]));
-      const mnMap = new Map(storage.getTable(TABLE_NAMES.MACHINE_NAMES).map(x => [x.id, x.name.toLowerCase()]));
-      const brdMap = new Map(storage.getTable(TABLE_NAMES.BRANDS).map(x => [x.id, x.name.toLowerCase()]));
-      const mdlMap = new Map(storage.getTable(TABLE_NAMES.MODELS).map(x => [x.id, x.name.toLowerCase()]));
-      const linMap = new Map(storage.getTable(TABLE_NAMES.LINES).map(x => [x.id, x.name.toLowerCase()]));
-      const flrMap = new Map(storage.getTable(TABLE_NAMES.FLOORS).map(x => [x.id, x.name.toLowerCase()]));
-      const untMap = new Map(storage.getTable(TABLE_NAMES.UNITS).map(x => [x.id, x.name.toLowerCase()]));
+    const statusFilter = params.status && params.status !== 'ALL' ? String(params.status).trim().toUpperCase() : null;
 
-      allMachines = allMachines.filter(m => {
-        // Serial Number & Manufacturer Serial Number search (Asset ID is identified exclusively via QR scan)
-        if (m.serialNumber?.toLowerCase().includes(q)) return true;
-        if (m.manufacturing_serial?.toLowerCase().includes(q) || m.manufacturingSerial?.toLowerCase().includes(q) || m.customValues?.manufacturing_serial?.toString().toLowerCase().includes(q)) return true;
-        if (m.remarks?.toLowerCase().includes(q)) return true;
-        if (mnMap.get(m.machineNameId)?.includes(q)) return true;
-        if (brdMap.get(m.brandId)?.includes(q)) return true;
-        if (mdlMap.get(m.modelId)?.includes(q)) return true;
-        if (m.model?.toLowerCase().includes(q) || m.modelName?.toLowerCase().includes(q) || m.modelStr?.toLowerCase().includes(q)) return true;
-        const lName = linMap.get(m.lineId) || m.line?.toLowerCase() || '';
-        if (lName.includes(q)) return true;
-        const cleanL = lName.replace(/^[a-z]{2,3}-/i, '').trim();
-        if (cleanL && (cleanL === q || `line ${cleanL}`.includes(q) || cleanL.includes(q))) return true;
-        if (flrMap.get(m.floorId)?.includes(q) || m.floor?.toLowerCase().includes(q)) return true;
-        if (untMap.get(m.unitId)?.includes(q) || m.unit?.toLowerCase().includes(q)) return true;
-        if (grpMap.get(m.groupId)?.includes(q) || m.group?.toLowerCase().includes(q)) return true;
-        // Check dynamic custom field values
-        if (m.customValues) {
-          for (const key in m.customValues) {
-            if (String(m.customValues[key]).toLowerCase().includes(q)) return true;
-          }
-        }
-        return false;
-      });
-    }
-
-    // 5. Dynamic Custom Field Filters
-    if (params.customFilters) {
-      for (const [key, val] of Object.entries(params.customFilters)) {
-        if (val !== undefined && val !== null && val !== '' && val !== 'ALL') {
-          allMachines = allMachines.filter(m => m.customValues && String(m.customValues[key]) === String(val));
-        }
-      }
-    }
-
-    // Dynamic Scope KPI Metrics (Computed across current location, search & hierarchy scope before narrowing by status)
-    const scopeTotal = allMachines.length;
+    let scopeTotal = 0;
     let runningQty = 0;
     let usableIdleQty = 0;
     let repairableIdleQty = 0;
     let ambulanceQty = 0;
 
-    allMachines.forEach(m => {
+    const matchedMachines = [];
+
+    // Single-Pass High Performance Evaluation Loop (Zero intermediate array allocations)
+    for (let i = 0; i < len; i++) {
+      const m = allMachines[i];
+      if (!m) continue;
+
+      // Discard test artifacts
+      const id = m.id || '';
+      if (id === 'test' || id === 'test_item_999') continue;
+      const s = m.serialNumber || '';
+      if (s === 'test' || s === 'TEST') continue;
+
+      // Primary Organization Filters
+      if (groupId && m.groupId !== groupId) continue;
+      if (unitId && m.unitId !== unitId) continue;
+      if (floorId && m.floorId !== floorId) continue;
+      if (lineId && m.lineId !== lineId) continue;
+
+      // Machine Technical Hierarchy Filters
+      if (machineNameId && m.machineNameId !== machineNameId) continue;
+      if (brandId && m.brandId !== brandId) continue;
+      if (modelId && m.modelId !== modelId) continue;
+
+      // User Assigned Location Scope
+      if (hasScope && !authService.canViewMachine(m, null, Boolean(params.includeCrossFloorIdle))) continue;
+
+      // Dynamic Custom Filters
+      if (hasCustomFilters) {
+        let matchCustom = true;
+        for (let j = 0; j < customFilterEntries.length; j++) {
+          const [key, val] = customFilterEntries[j];
+          if (!m.customValues || String(m.customValues[key]) !== String(val)) {
+            matchCustom = false;
+            break;
+          }
+        }
+        if (!matchCustom) continue;
+      }
+
+      // Global Multi-Field Search Match
+      if (hasSearch) {
+        let matchSearch = false;
+        if (s.toLowerCase().includes(rawSearch)) {
+          matchSearch = true;
+        } else if (m.manufacturing_serial?.toLowerCase().includes(rawSearch) || m.manufacturingSerial?.toLowerCase().includes(rawSearch) || m.customValues?.manufacturing_serial?.toString().toLowerCase().includes(rawSearch)) {
+          matchSearch = true;
+        } else if (m.remarks?.toLowerCase().includes(rawSearch)) {
+          matchSearch = true;
+        } else if (m.model?.toLowerCase().includes(rawSearch) || m.modelName?.toLowerCase().includes(rawSearch) || m.modelStr?.toLowerCase().includes(rawSearch)) {
+          matchSearch = true;
+        } else if (mnMap.get(m.machineNameId)?.includes(rawSearch)) {
+          matchSearch = true;
+        } else if (brdMap.get(m.brandId)?.includes(rawSearch)) {
+          matchSearch = true;
+        } else if (mdlMap.get(m.modelId)?.includes(rawSearch)) {
+          matchSearch = true;
+        } else {
+          const lName = linMap.get(m.lineId) || (m.line || '').toLowerCase();
+          if (lName.includes(rawSearch)) {
+            matchSearch = true;
+          } else {
+            const cleanL = lName.replace(/^[a-z]{2,3}-/i, '').trim();
+            if (cleanL && (cleanL === rawSearch || `line ${cleanL}`.includes(rawSearch) || cleanL.includes(rawSearch))) {
+              matchSearch = true;
+            } else if (flrMap.get(m.floorId)?.includes(rawSearch) || (m.floor || '').toLowerCase().includes(rawSearch)) {
+              matchSearch = true;
+            } else if (untMap.get(m.unitId)?.includes(rawSearch) || (m.unit || '').toLowerCase().includes(rawSearch)) {
+              matchSearch = true;
+            } else if (grpMap.get(m.groupId)?.includes(rawSearch) || (m.group || '').toLowerCase().includes(rawSearch)) {
+              matchSearch = true;
+            } else if (m.customValues) {
+              for (const ck in m.customValues) {
+                if (String(m.customValues[ck]).toLowerCase().includes(rawSearch)) {
+                  matchSearch = true;
+                  break;
+                }
+              }
+            }
+          }
+        }
+        if (!matchSearch) continue;
+      }
+
+      // Record passed location, hierarchy, and search scope: update Scope KPI Metrics
+      scopeTotal++;
       const r = parseInt(m.running ?? m.qty_running ?? (m.status === 'ACTIVE' ? (m.quantity ?? 1) : 0), 10) || 0;
       const u = parseInt(m.usable_idle ?? m.usableIdle ?? (m.status === 'IDLE' ? (m.quantity ?? 1) : 0), 10) || 0;
       const rp = parseInt(m.repairable_idle ?? m.repairableIdle ?? ((m.status === 'MAINTENANCE' || m.status === 'BREAKDOWN') ? (m.quantity ?? 1) : 0), 10) || 0;
       runningQty += r;
       usableIdleQty += u;
       repairableIdleQty += rp;
-      if (isAmbulanceMachine(m)) {
-        ambulanceQty++;
+      const isAmb = isAmbulanceMachine(m);
+      if (isAmb) ambulanceQty++;
+
+      // Status & Operational Filter Check
+      if (statusFilter) {
+        if (statusFilter === 'RUNNING' || statusFilter === 'ACTIVE') {
+          if (r === 0 && m.status !== 'ACTIVE') continue;
+        } else if (statusFilter === 'USABLE' || statusFilter === 'USABLE_IDLE' || statusFilter === 'IDLE') {
+          if (u === 0 && m.status !== 'IDLE' && m.status !== 'USABLE_IDLE' && m.status !== 'USABLE') continue;
+        } else if (statusFilter === 'REPAIRABLE' || statusFilter === 'REPAIRABLE_IDLE') {
+          if (rp === 0 && m.status !== 'REPAIRABLE' && m.status !== 'REPAIRABLE_IDLE') continue;
+        } else if (statusFilter === 'MAINTENANCE') {
+          if (m.status !== 'MAINTENANCE' && (rp === 0 || m.status === 'BREAKDOWN')) continue;
+        } else if (statusFilter === 'BREAKDOWN') {
+          if (m.status !== 'BREAKDOWN') continue;
+        } else if (statusFilter === 'AMBULANCE') {
+          if (!isAmb) continue;
+        } else if (m.status !== params.status) {
+          continue;
+        }
       }
-    });
+
+      matchedMachines.push(m);
+    }
 
     const metrics = {
       total: scopeTotal,
@@ -290,127 +340,97 @@ class MachineService {
       ambulance: ambulanceQty
     };
 
-    // 6. Unified Status & Operational Filter (RUNNING, USABLE, REPAIRABLE, AMBULANCE, MAINTENANCE, BREAKDOWN)
-    if (params.status && params.status !== 'ALL') {
-      const st = String(params.status).trim().toUpperCase();
-      if (st === 'RUNNING' || st === 'ACTIVE') {
-        allMachines = allMachines.filter(m => {
-          const r = parseInt(m.running ?? m.qty_running ?? (m.status === 'ACTIVE' ? (m.quantity ?? 1) : 0), 10) || 0;
-          return r > 0 || m.status === 'ACTIVE';
-        });
-      } else if (st === 'USABLE' || st === 'USABLE_IDLE' || st === 'IDLE') {
-        allMachines = allMachines.filter(m => {
-          const u = parseInt(m.usable_idle ?? m.usableIdle ?? (m.status === 'IDLE' ? (m.quantity ?? 1) : 0), 10) || 0;
-          return u > 0 || m.status === 'IDLE' || m.status === 'USABLE_IDLE' || m.status === 'USABLE';
-        });
-      } else if (st === 'REPAIRABLE' || st === 'REPAIRABLE_IDLE') {
-        allMachines = allMachines.filter(m => {
-          const rp = parseInt(m.repairable_idle ?? m.repairableIdle ?? ((m.status === 'MAINTENANCE' || m.status === 'BREAKDOWN') ? (m.quantity ?? 1) : 0), 10) || 0;
-          return rp > 0 || m.status === 'REPAIRABLE' || m.status === 'REPAIRABLE_IDLE';
-        });
-      } else if (st === 'MAINTENANCE') {
-        allMachines = allMachines.filter(m => {
-          const rp = parseInt(m.repairable_idle ?? m.repairableIdle ?? 0, 10) || 0;
-          return m.status === 'MAINTENANCE' || (rp > 0 && m.status !== 'BREAKDOWN');
-        });
-      } else if (st === 'BREAKDOWN') {
-        allMachines = allMachines.filter(m => m.status === 'BREAKDOWN');
-      } else if (st === 'AMBULANCE') {
-        allMachines = allMachines.filter(m => isAmbulanceMachine(m));
-      } else {
-        allMachines = allMachines.filter(m => m.status === params.status);
-      }
-    }
-
-    const totalRecords = allMachines.length;
+    const totalRecords = matchedMachines.length;
 
     // 6. Multi-Column Sorting
     const sortField = params.sortField || 'sl';
     const sortOrder = params.sortOrder === 'desc' ? -1 : 1;
 
-    allMachines.sort((a, b) => {
-      let valA = a[sortField];
-      let valB = b[sortField];
+    if (totalRecords > 1) {
+      matchedMachines.sort((a, b) => {
+        let valA = a[sortField];
+        let valB = b[sortField];
 
-      // Helper to extract true sequential asset number (000001 -> 006450)
-      const getAssetSeq = (m) => {
-        const idStr = String(m.systemAssetId || m.permanentMachineId || '');
-        const match = idStr.match(/\d+/);
-        if (match) return parseInt(match[0], 10);
-        if (m.sl !== undefined && m.sl !== null && m.sl !== '') return Number(m.sl);
-        return 0;
-      };
+        // Helper to extract true sequential asset number (000001 -> 006450)
+        const getAssetSeq = (m) => {
+          const idStr = String(m.systemAssetId || m.permanentMachineId || '');
+          const match = idStr.match(/\d+/);
+          if (match) return parseInt(match[0], 10);
+          if (m.sl !== undefined && m.sl !== null && m.sl !== '') return Number(m.sl);
+          return 0;
+        };
 
-      // Handle SL sequential order (Asset ID sequence 000001 -> 006450)
-      if (sortField === 'sl') {
-        const numA = getAssetSeq(a);
-        const numB = getAssetSeq(b);
-        return (numA - numB) * sortOrder;
-      }
+        // Handle SL sequential order (Asset ID sequence 000001 -> 006450)
+        if (sortField === 'sl') {
+          const numA = getAssetSeq(a);
+          const numB = getAssetSeq(b);
+          return (numA - numB) * sortOrder;
+        }
 
-      // Handle nested master data sort
-      if (sortField === 'machineName') {
-        const nameA = storage.getItem(TABLE_NAMES.MACHINE_NAMES, a.machineNameId)?.name || '';
-        const nameB = storage.getItem(TABLE_NAMES.MACHINE_NAMES, b.machineNameId)?.name || '';
-        return nameA.localeCompare(nameB) * sortOrder;
-      }
-      if (sortField === 'brand') {
-        const bA = storage.getItem(TABLE_NAMES.BRANDS, a.brandId)?.name || '';
-        const bB = storage.getItem(TABLE_NAMES.BRANDS, b.brandId)?.name || '';
-        return bA.localeCompare(bB) * sortOrder;
-      }
-      if (sortField === 'systemAssetId') {
-        const numA = getAssetSeq(a);
-        const numB = getAssetSeq(b);
-        if (numA !== numB) return (numA - numB) * sortOrder;
-        const saA = a.systemAssetId || (a.permanentMachineId ? String(a.permanentMachineId).replace(/^MID-/i, 'AMG-MNT-') : '') || '';
-        const saB = b.systemAssetId || (b.permanentMachineId ? String(b.permanentMachineId).replace(/^MID-/i, 'AMG-MNT-') : '') || '';
-        return String(saA).localeCompare(String(saB), undefined, { numeric: true }) * sortOrder;
-      }
-      if (sortField === 'manufacturing_serial' || sortField === 'manufacturingSerial') {
-        const msA = a.manufacturing_serial || a.manufacturingSerial || a.customValues?.manufacturing_serial || '';
-        const msB = b.manufacturing_serial || b.manufacturingSerial || b.customValues?.manufacturing_serial || '';
-        return String(msA).localeCompare(String(msB)) * sortOrder;
-      }
-      if (sortField === 'model') {
-        const mA = (storage.resolveMachineModel ? storage.resolveMachineModel(a) : (a.model || storage.getItem(TABLE_NAMES.MODELS, a.modelId)?.name || '')) || '';
-        const mB = (storage.resolveMachineModel ? storage.resolveMachineModel(b) : (b.model || storage.getItem(TABLE_NAMES.MODELS, b.modelId)?.name || '')) || '';
-        return String(mA).localeCompare(String(mB)) * sortOrder;
-      }
-      if (sortField === 'group') {
-        const gA = storage.getItem(TABLE_NAMES.GROUPS, a.groupId)?.name || a.group || '';
-        const gB = storage.getItem(TABLE_NAMES.GROUPS, b.groupId)?.name || b.group || '';
-        return gA.localeCompare(gB) * sortOrder;
-      }
-      if (sortField === 'unit') {
-        const uA = storage.getItem(TABLE_NAMES.UNITS, a.unitId)?.name || a.unit || '';
-        const uB = storage.getItem(TABLE_NAMES.UNITS, b.unitId)?.name || b.unit || '';
-        return uA.localeCompare(uB) * sortOrder;
-      }
-      if (sortField === 'floor') {
-        const fA = storage.getItem(TABLE_NAMES.FLOORS, a.floorId)?.name || a.floor || '';
-        const fB = storage.getItem(TABLE_NAMES.FLOORS, b.floorId)?.name || b.floor || '';
-        return fA.localeCompare(fB) * sortOrder;
-      }
-      if (sortField === 'line') {
-        const lA = storage.getItem(TABLE_NAMES.LINES, a.lineId)?.name || a.line || '';
-        const lB = storage.getItem(TABLE_NAMES.LINES, b.lineId)?.name || b.line || '';
-        return lA.localeCompare(lB) * sortOrder;
-      }
-      if (sortField.startsWith('cf_')) {
-        const cfKey = sortField.replace('cf_', '');
-        valA = a.customValues?.[cfKey] || '';
-        valB = b.customValues?.[cfKey] || '';
-      }
+        // Handle nested master data sort
+        if (sortField === 'machineName') {
+          const nameA = storage.getItem(TABLE_NAMES.MACHINE_NAMES, a.machineNameId)?.name || '';
+          const nameB = storage.getItem(TABLE_NAMES.MACHINE_NAMES, b.machineNameId)?.name || '';
+          return nameA.localeCompare(nameB) * sortOrder;
+        }
+        if (sortField === 'brand') {
+          const bA = storage.getItem(TABLE_NAMES.BRANDS, a.brandId)?.name || '';
+          const bB = storage.getItem(TABLE_NAMES.BRANDS, b.brandId)?.name || '';
+          return bA.localeCompare(bB) * sortOrder;
+        }
+        if (sortField === 'systemAssetId') {
+          const numA = getAssetSeq(a);
+          const numB = getAssetSeq(b);
+          if (numA !== numB) return (numA - numB) * sortOrder;
+          const saA = a.systemAssetId || (a.permanentMachineId ? String(a.permanentMachineId).replace(/^MID-/i, 'AMG-MNT-') : '') || '';
+          const saB = b.systemAssetId || (b.permanentMachineId ? String(b.permanentMachineId).replace(/^MID-/i, 'AMG-MNT-') : '') || '';
+          return String(saA).localeCompare(String(saB), undefined, { numeric: true }) * sortOrder;
+        }
+        if (sortField === 'manufacturing_serial' || sortField === 'manufacturingSerial') {
+          const msA = a.manufacturing_serial || a.manufacturingSerial || a.customValues?.manufacturing_serial || '';
+          const msB = b.manufacturing_serial || b.manufacturingSerial || b.customValues?.manufacturing_serial || '';
+          return String(msA).localeCompare(String(msB)) * sortOrder;
+        }
+        if (sortField === 'model') {
+          const mA = (storage.resolveMachineModel ? storage.resolveMachineModel(a) : (a.model || storage.getItem(TABLE_NAMES.MODELS, a.modelId)?.name || '')) || '';
+          const mB = (storage.resolveMachineModel ? storage.resolveMachineModel(b) : (b.model || storage.getItem(TABLE_NAMES.MODELS, b.modelId)?.name || '')) || '';
+          return String(mA).localeCompare(String(mB)) * sortOrder;
+        }
+        if (sortField === 'group') {
+          const gA = storage.getItem(TABLE_NAMES.GROUPS, a.groupId)?.name || a.group || '';
+          const gB = storage.getItem(TABLE_NAMES.GROUPS, b.groupId)?.name || b.group || '';
+          return gA.localeCompare(gB) * sortOrder;
+        }
+        if (sortField === 'unit') {
+          const uA = storage.getItem(TABLE_NAMES.UNITS, a.unitId)?.name || a.unit || '';
+          const uB = storage.getItem(TABLE_NAMES.UNITS, b.unitId)?.name || b.unit || '';
+          return uA.localeCompare(uB) * sortOrder;
+        }
+        if (sortField === 'floor') {
+          const fA = storage.getItem(TABLE_NAMES.FLOORS, a.floorId)?.name || a.floor || '';
+          const fB = storage.getItem(TABLE_NAMES.FLOORS, b.floorId)?.name || b.floor || '';
+          return fA.localeCompare(fB) * sortOrder;
+        }
+        if (sortField === 'line') {
+          const lA = storage.getItem(TABLE_NAMES.LINES, a.lineId)?.name || a.line || '';
+          const lB = storage.getItem(TABLE_NAMES.LINES, b.lineId)?.name || b.line || '';
+          return lA.localeCompare(lB) * sortOrder;
+        }
+        if (sortField.startsWith('cf_')) {
+          const cfKey = sortField.replace('cf_', '');
+          valA = a.customValues?.[cfKey] || '';
+          valB = b.customValues?.[cfKey] || '';
+        }
 
-      if (valA === undefined || valA === null) valA = '';
-      if (valB === undefined || valB === null) valB = '';
+        if (valA === undefined || valA === null) valA = '';
+        if (valB === undefined || valB === null) valB = '';
 
-      if (typeof valA === 'number' && typeof valB === 'number') {
-        return (valA - valB) * sortOrder;
-      }
-      return String(valA).localeCompare(String(valB), undefined, { numeric: true }) * sortOrder;
-    });
+        if (typeof valA === 'number' && typeof valB === 'number') {
+          return (valA - valB) * sortOrder;
+        }
+        return String(valA).localeCompare(String(valB), undefined, { numeric: true }) * sortOrder;
+      });
+    }
 
     // 7. High Performance Pagination
     const isAll = params.limit === 'ALL' || String(params.limit).toUpperCase() === 'ALL';
@@ -418,7 +438,7 @@ class MachineService {
     const limitNum = isAll ? totalRecords : Math.max(1, parseInt(params.limit, 10) || 50);
     const totalPages = isAll ? 1 : (Math.ceil(totalRecords / limitNum) || 1);
     const startIndex = isAll ? 0 : (page - 1) * limitNum;
-    const paginatedItems = isAll ? allMachines : allMachines.slice(startIndex, startIndex + limitNum);
+    const paginatedItems = isAll ? matchedMachines : matchedMachines.slice(startIndex, startIndex + limitNum);
 
     return {
       items: paginatedItems,
@@ -429,6 +449,34 @@ class MachineService {
       totalPages: totalPages,
       metrics
     };
+  }
+
+  /**
+   * High-Performance Server-Side Paginated Query Engine (Direct MySQL / Postgres Execution)
+   * Queries indexed database on server and returns structured paged items and metrics
+   */
+  async queryMachinesServer(params = {}) {
+    try {
+      if (syncManager && syncManager.primaryAdapter && typeof syncManager.primaryAdapter.queryMachines === 'function') {
+        const res = await syncManager.primaryAdapter.queryMachines(params);
+        if (res && res.success) {
+          return {
+            items: res.items || [],
+            total: res.total || 0,
+            page: res.page || 1,
+            limit: res.limit || 50,
+            pageSize: res.limit || 50,
+            totalPages: res.totalPages || 1,
+            metrics: res.metrics || { total: res.total, running: 0, usable: 0, repairable: 0, ambulance: 0 },
+            serverLatencyMs: res.latencyMs
+          };
+        }
+      }
+    } catch (e) {
+      console.warn('[MachineService] Server query fallback to local cache:', e.message);
+    }
+    // Transparent offline / local memory fallback
+    return this.getMachines(params);
   }
 
   getMachineById(id, allowCrossFloor = true) {

@@ -14,7 +14,7 @@ export class PostgresAdapter extends BaseAdapter {
     this.database = config.database || 'motaherh_Maintenance';
     this.username = config.username || 'motaherh_AMG-maint';
     this.password = config.password || 'ol(5_MK8mF{~7cdG';
-    this.apiKey = config.apiKey || '';
+    this.apiKey = (config.apiKey && config.apiKey.trim()) ? config.apiKey.trim() : 'AMG_MNT_SECURE_API_v4_89f2a7';
     this.ssl = config.ssl === true;
 
     let rawEndpoint = (config.endpoint || '').trim().replace(/\/$/, '');

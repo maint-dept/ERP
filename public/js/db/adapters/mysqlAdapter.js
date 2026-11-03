@@ -15,7 +15,7 @@ export class MysqlAdapter extends BaseAdapter {
     this.database = (config.database && config.database !== 'al_muslim_erp') ? config.database : 'motaherh_maint-erp';
     this.username = config.username || 'motaherh_mainterp';
     this.password = (config.password !== undefined && config.password !== null) ? config.password : 'Maint@456';
-    this.apiKey = config.apiKey || '';
+    this.apiKey = (config.apiKey && config.apiKey.trim()) ? config.apiKey.trim() : 'AMG_MNT_SECURE_API_v4_89f2a7';
     this.ssl = config.ssl !== false;
 
     let rawEndpoint = (config.endpoint || '').trim().replace(/\/$/, '');
@@ -372,9 +372,13 @@ export class MysqlAdapter extends BaseAdapter {
         body: JSON.stringify({
           action: 'query_machines',
           search: params.search || '',
+          group_id: params.groupId || params.group_id || '',
           unit_id: params.unitId || params.unit_id || '',
           floor_id: params.floorId || params.floor_id || '',
           line_id: params.lineId || params.line_id || '',
+          machine_name_id: params.machineNameId || params.machine_name_id || '',
+          brand_id: params.brandId || params.brand_id || '',
+          model_id: params.modelId || params.model_id || '',
           status: params.status || '',
           page: params.page || 1,
           limit: params.limit || 50,

@@ -6,6 +6,7 @@ const PORT = process.env.PORT || 3030;
 const PUBLIC_DIR = path.join(__dirname, 'public');
 const DATA_DIR = path.join(__dirname, 'data');
 const DB_FILE = path.join(DATA_DIR, 'erp_database.json');
+const SECURE_API_KEY = 'AMG_MNT_SECURE_API_v4_89f2a7';
 
 // --- REAL-TIME SERVER-SENT EVENTS (SSE) HUB ---
 const sseClients = new Set();
@@ -430,6 +431,21 @@ const server = http.createServer((req, res) => {
     }
 
     if (req.method === 'POST') {
+      // Security Gate: Restrict persistent write operations to authenticated sessions or verified API key
+      const reqApiKey = req.headers['x-api-key'] || (req.headers['authorization'] ? req.headers['authorization'].replace(/^Bearer\s+/i, '') : '');
+      const userRole = req.headers['x-user-role'] || '';
+      const isKeyValid = reqApiKey === SECURE_API_KEY;
+      const isAuthorizedRole = ['SUPER_ADMIN', 'ADMIN', 'MAINTENANCE_HEAD', 'MAINTENANCE_SUPERVISOR', 'MAINTENANCE_USER', 'DATA_ENTRY'].includes(userRole);
+
+      if (!isKeyValid && !isAuthorizedRole) {
+        res.writeHead(401, { 'Content-Type': 'application/json; charset=utf-8' });
+        return res.end(JSON.stringify({ 
+          status: 'error', 
+          code: 'UNAUTHORIZED', 
+          message: 'Security Policy: Valid API Key or authenticated session required to persist database records.' 
+        }));
+      }
+
       let body = '';
       req.on('data', chunk => {
         body += chunk;
