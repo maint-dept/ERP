@@ -10,7 +10,7 @@ import { authService } from './services/authService.js?v=4.26.85';
 import { renderNavbar, initNavbarEvents } from './components/navbar.js?v=4.27.0';
 import { renderSidebar, initSidebarEvents, updateSidebarActiveState } from './components/sidebar.js?v=4.27.0';
 import { renderHomepageView, initHomepageEvents } from './components/homepageView.js?v=4.26.52';
-import { renderLoginView, initLoginViewEvents } from './components/loginView.js?v=4.27.7';
+import { renderLoginView, initLoginViewEvents } from './components/loginView.js?v=4.28.3';
 import { renderDashboard, initDashboardEvents } from './components/dashboard.js?v=4.27.2';
 import { renderMachineModal, initMachineModalEvents } from './components/machineModal.js?v=4.26.50';
 import { renderMachineDetails, initMachineDetailsEvents } from './components/machineDetails.js?v=4.26.50';
@@ -256,6 +256,9 @@ class ERPApplication {
         const parsedRoute = router.parseCurrentRoute();
         if (parsedRoute.view === 'admin-login') {
           state.set('currentView', 'admin-login', { silent: true });
+        }
+        if (parsedRoute.tab) {
+          router.syncSubtabState(parsedRoute.view, parsedRoute.tab);
         }
       } catch (_) { }
     } catch (e) {
@@ -716,7 +719,7 @@ class ERPApplication {
       }
 
       // If a subtab is provided in options, synchronize it to reactive state
-      if (options.tab) {
+      if (options.tab !== undefined) {
         router.syncSubtabState(newView, options.tab);
       }
 

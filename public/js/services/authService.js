@@ -1342,7 +1342,7 @@ class AuthService {
         slug = saved.adminLoginSlug || saved.admin_login_slug || '';
       } catch (_) {}
     }
-    return (slug || 'secure-admin-gateway').trim().toLowerCase();
+    return (slug || 'maint-admin').trim().toLowerCase();
   }
 
   async setAdminLoginSlug(newSlug) {

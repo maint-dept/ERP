@@ -7,12 +7,16 @@ import { authService } from '../services/authService.js';
 import { emailService } from '../services/emailService.js';
 import { state } from '../state.js';
 import { storage } from '../db/storage.js';
+import { router } from '../services/router.js';
 
 let modalMode = 'LOGIN'; // 'LOGIN' or 'FIRST_PASSWORD_CHANGE'
 let pendingUserId = null;
 
 export function renderLoginModal() {
   const activeUser = authService.getCurrentUser();
+  const forgotHref = (typeof router !== 'undefined' && typeof router.buildUrl === 'function')
+    ? router.buildUrl('login', { tab: 'forgot-password' })
+    : '/forgot-password';
 
   return `
     <div class="modal-overlay" id="modal-login-overlay" style="display: flex; align-items: center; justify-content: center; background: rgba(8, 13, 26, 0.85); backdrop-filter: blur(8px); z-index: 9999;">
@@ -78,7 +82,7 @@ export function renderLoginModal() {
               <div class="form-group">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
                   <label class="form-label" style="font-size: 12px; font-weight: 700; color: #fff; margin: 0;">Account Password <span class="req">*</span></label>
-                  <a href="#" id="modal-link-forgot-password" style="font-size: 11.5px; color: #38bdf8; text-decoration: none; font-weight: 600;">Forgot Password?</a>
+                  <a href="${forgotHref}" id="modal-link-forgot-password" style="font-size: 11.5px; color: #38bdf8; text-decoration: none; font-weight: 600;">Forgot Password?</a>
                 </div>
                 <input 
                   type="password" 
@@ -171,10 +175,8 @@ export function initLoginModalEvents() {
     forgotLink.addEventListener('click', (e) => {
       e.preventDefault();
       closeModal();
-      try {
-        window.location.hash = '#login';
-      } catch (_) {}
-      state.set('currentView', 'login');
+      state.set('loginActiveTab', 'forgot-password');
+      router.navigate('login', { tab: 'forgot-password' });
     });
   }
 
