@@ -321500,7 +321500,7 @@
         ]
       },
       "createdAt": "2026-01-01T00:00:00Z",
-      "lastLoginAt": "2026-11-03T12:38:52.042Z",
+      "lastLoginAt": "2026-10-04T10:45:38.968Z",
       "updatedAt": "2026-11-03T12:38:52.042Z",
       "presetId": "preset_super_admin",
       "presetName": "Super Admin",
@@ -332031,7 +332031,7 @@
         "enabled": true,
         "autoSync": true,
         "retryEnabled": true,
-        "updatedAt": "2026-11-03T12:37:58.172Z"
+        "updatedAt": "2026-11-03T12:26:53.464Z"
       },
       {
         "id": "db_postgresql_replica",
@@ -332049,8 +332049,8 @@
         "enabled": true,
         "autoSync": true,
         "retryEnabled": true,
-        "updatedAt": "2026-11-03T12:37:58.172Z",
-        "lastSync": "11/3/2026, 6:38:19 PM"
+        "updatedAt": "2026-11-03T12:26:53.464Z",
+        "lastSync": "11/3/2026, 8:26:46 PM"
       }
     ]
   },

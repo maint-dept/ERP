@@ -30,6 +30,63 @@ function escapeHtml(str) {
     .replace(/'/g, '&#39;');
 }
 
+/**
+ * Universal Single Machine Row HTML Builder (Supports Standard & Virtual Windowed Rendering)
+ */
+export function renderSingleMachineRow(m, idx, ctx) {
+  const { isAll, queryResult, numLimit, selectedIds, slWidth, checkWidth, checkIsLastFrozen, columnLayout } = ctx;
+  const isSelected = selectedIds ? selectedIds.has(m.id) : false;
+  const slNo = isAll ? (idx + 1) : (((queryResult.page || 1) - 1) * numLimit + idx + 1);
+  const displaySlNo = String(slNo).padStart(2, '0');
+
+  // Quantities
+  const rQty = parseInt(m.running ?? m.qty_running ?? (m.status === 'ACTIVE' ? (m.quantity ?? 1) : 0), 10) || 0;
+  const uQty = parseInt(m.usable_idle ?? m.usableIdle ?? (m.status === 'IDLE' ? (m.quantity ?? 1) : 0), 10) || 0;
+  const rpQty = parseInt(m.repairable_idle ?? m.repairableIdle ?? ((m.status === 'MAINTENANCE' || m.status === 'BREAKDOWN') ? (m.quantity ?? 1) : 0), 10) || 0;
+  const totalQty = m.totalQuantity || m.total_quantity || (rQty + uQty + rpQty > 0 ? (rQty + uQty + rpQty) : (m.quantity ?? 1));
+
+  // Operational & Ambulance Status Determination
+  const isAmb = isAmbulanceMachine(m);
+  let displayStatus = (m.status || 'ACTIVE').replace(/_/g, ' ');
+  let statusBadgeClass = `badge-${(m.status || 'ACTIVE').toLowerCase().replace(/_/g, '')}`;
+
+  if (isAmb) {
+    displayStatus = 'AMBULANCE';
+    statusBadgeClass = 'badge-ambulance';
+  } else if (uQty > 0 && (m.status === 'INACTIVE' || m.status === 'IDLE' || m.status === 'USABLE_IDLE')) {
+    displayStatus = 'USABLE IDLE';
+    statusBadgeClass = 'badge-idle';
+  } else if (rpQty > 0 && (m.status === 'INACTIVE' || m.status === 'MAINTENANCE' || m.status === 'REPAIRABLE_IDLE')) {
+    displayStatus = 'REPAIRABLE IDLE';
+    statusBadgeClass = 'badge-maint';
+  } else if (m.status === 'ACTIVE') {
+    displayStatus = 'ACTIVE';
+    statusBadgeClass = 'badge-active';
+  }
+
+  let row = `<tr class="${isSelected ? 'selected' : ''}" data-id="${m.id}" data-row-idx="${idx}">`;
+
+  // 1. SL (Sticky Left: 0px)
+  row += `<td class="col-freeze-sl" style="width: ${slWidth}px; min-width: ${slWidth}px; max-width: ${slWidth}px; text-align: center; color: var(--text-muted); font-weight: 700; font-family: var(--font-mono); font-size: 11.5px; left: 0px !important;">${displaySlNo}</td>`;
+
+  // 2. Selection Checkbox (Sticky Left: slWidth)
+  const isOperable = authService.canOperateMachine(m);
+  row += `<td class="col-freeze-check ${checkIsLastFrozen ? 'col-frozen-boundary' : ''}" style="width: ${checkWidth}px; min-width: ${checkWidth}px; max-width: ${checkWidth}px; text-align: center; left: ${slWidth}px !important;"><input type="checkbox" class="machine-row-check" data-id="${m.id}" ${isSelected ? 'checked' : ''} ${!isOperable ? 'disabled title="View-Only machine (cannot be bulk modified)" style="opacity: 0.35; cursor: not-allowed;"' : ''}/></td>`;
+
+  // Render columns in calculated sequence
+  columnLayout.forEach(col => {
+    const boundaryClass = col.isLastFrozen ? 'col-frozen-boundary' : '';
+    const tdClass = col.isFrozen ? `col-frozen-cell ${boundaryClass}` : '';
+    const tdStyle = col.isFrozen 
+      ? `position: sticky !important; left: ${col.leftOffset}px !important; width: ${col.width}px !important; min-width: ${col.width}px !important; max-width: ${col.width}px !important; z-index: 10 !important; background-color: var(--bg-surface, #0f172a) !important; background-clip: padding-box !important;` 
+      : `width: ${col.width}px; min-width: ${col.width}px; max-width: ${col.width}px;`;
+    row += col.renderTd(m, { rQty, uQty, rpQty, totalQty, statusBadgeClass, displayStatus, isAmb }, tdStyle, tdClass);
+  });
+
+  row += `</tr>`;
+  return row;
+}
+
 export function renderInventoryTable() {
   const filters = state.get('filters') || {};
   const selectedIds = state.get('selectedMachineIds') || new Set();
@@ -768,58 +825,45 @@ export function renderInventoryTable() {
       </tr>
     `;
   } else {
-    machines.forEach((m, idx) => {
-      const isSelected = selectedIds.has(m.id);
-      const slNo = isAll ? (idx + 1) : ((queryResult.page - 1) * numLimit + idx + 1);
-      const displaySlNo = String(slNo).padStart(2, '0');
+    const totalCols = columnLayout.length + 2;
+    const VSCROLL_ROW_HEIGHT = 44;
+    const isVirtualScrollActive = machines.length > 50;
 
-      // Quantities
-      const rQty = parseInt(m.running ?? m.qty_running ?? (m.status === 'ACTIVE' ? (m.quantity ?? 1) : 0), 10) || 0;
-      const uQty = parseInt(m.usable_idle ?? m.usableIdle ?? (m.status === 'IDLE' ? (m.quantity ?? 1) : 0), 10) || 0;
-      const rpQty = parseInt(m.repairable_idle ?? m.repairableIdle ?? ((m.status === 'MAINTENANCE' || m.status === 'BREAKDOWN') ? (m.quantity ?? 1) : 0), 10) || 0;
-      const totalQty = m.totalQuantity || m.total_quantity || (rQty + uQty + rpQty > 0 ? (rQty + uQty + rpQty) : (m.quantity ?? 1));
+    const rowCtx = {
+      isAll,
+      queryResult,
+      numLimit,
+      selectedIds,
+      slWidth,
+      checkWidth,
+      checkIsLastFrozen,
+      columnLayout
+    };
 
-      // Operational & Ambulance Status Determination
-      const isAmb = isAmbulanceMachine(m);
-      let displayStatus = (m.status || 'ACTIVE').replace(/_/g, ' ');
-      let statusBadgeClass = `badge-${(m.status || 'ACTIVE').toLowerCase().replace(/_/g, '')}`;
+    // Store virtual scroll engine state globally for real-time windowing
+    window.__vscrollEngineData = {
+      machines,
+      rowCtx,
+      totalCols,
+      rowHeight: VSCROLL_ROW_HEIGHT,
+      isActive: isVirtualScrollActive
+    };
 
-      if (isAmb) {
-        displayStatus = 'AMBULANCE';
-        statusBadgeClass = 'badge-ambulance';
-      } else if (uQty > 0 && (m.status === 'INACTIVE' || m.status === 'IDLE' || m.status === 'USABLE_IDLE')) {
-        displayStatus = 'USABLE IDLE';
-        statusBadgeClass = 'badge-idle';
-      } else if (rpQty > 0 && (m.status === 'INACTIVE' || m.status === 'MAINTENANCE' || m.status === 'REPAIRABLE_IDLE')) {
-        displayStatus = 'REPAIRABLE IDLE';
-        statusBadgeClass = 'badge-maint';
-      } else if (m.status === 'ACTIVE') {
-        displayStatus = 'ACTIVE';
-        statusBadgeClass = 'badge-active';
+    if (isVirtualScrollActive) {
+      const initialVisibleCount = Math.min(machines.length, 36);
+      const topPadding = 0;
+      const bottomPadding = (machines.length - initialVisibleCount) * VSCROLL_ROW_HEIGHT;
+
+      rowsHtml = `<tr id="vscroll-top-spacer" style="height: ${topPadding}px; border: none; padding: 0;"><td colspan="${totalCols}" style="padding: 0; border: none; height: ${topPadding}px; background: transparent;"></td></tr>`;
+      for (let i = 0; i < initialVisibleCount; i++) {
+        rowsHtml += renderSingleMachineRow(machines[i], i, rowCtx);
       }
-
-      let row = `<tr class="${isSelected ? 'selected' : ''}" data-id="${m.id}">`;
-
-      // 1. SL (Sticky Left: 0px)
-      row += `<td class="col-freeze-sl" style="width: ${slWidth}px; min-width: ${slWidth}px; max-width: ${slWidth}px; text-align: center; color: var(--text-muted); font-weight: 700; font-family: var(--font-mono); font-size: 11.5px; left: 0px !important;">${displaySlNo}</td>`;
-
-      // 2. Selection Checkbox (Sticky Left: slWidth)
-      const isOperable = authService.canOperateMachine(m);
-      row += `<td class="col-freeze-check ${checkIsLastFrozen ? 'col-frozen-boundary' : ''}" style="width: ${checkWidth}px; min-width: ${checkWidth}px; max-width: ${checkWidth}px; text-align: center; left: ${slWidth}px !important;"><input type="checkbox" class="machine-row-check" data-id="${m.id}" ${isSelected ? 'checked' : ''} ${!isOperable ? 'disabled title="View-Only machine (cannot be bulk modified)" style="opacity: 0.35; cursor: not-allowed;"' : ''}/></td>`;
-
-      // Render columns in calculated sequence
-      columnLayout.forEach(col => {
-        const boundaryClass = col.isLastFrozen ? 'col-frozen-boundary' : '';
-        const tdClass = col.isFrozen ? `col-frozen-cell ${boundaryClass}` : '';
-        const tdStyle = col.isFrozen 
-          ? `position: sticky !important; left: ${col.leftOffset}px !important; width: ${col.width}px !important; min-width: ${col.width}px !important; max-width: ${col.width}px !important; z-index: 10 !important; background-color: var(--bg-surface, #0f172a) !important; background-clip: padding-box !important;` 
-          : `width: ${col.width}px; min-width: ${col.width}px; max-width: ${col.width}px;`;
-        row += col.renderTd(m, { rQty, uQty, rpQty, totalQty, statusBadgeClass, displayStatus, isAmb }, tdStyle, tdClass);
-      });
-
-      row += `</tr>`;
-      rowsHtml += row;
-    });
+      rowsHtml += `<tr id="vscroll-bottom-spacer" style="height: ${bottomPadding}px; border: none; padding: 0;"><td colspan="${totalCols}" style="padding: 0; border: none; height: ${bottomPadding}px; background: transparent;"></td></tr>`;
+    } else {
+      for (let i = 0; i < machines.length; i++) {
+        rowsHtml += renderSingleMachineRow(machines[i], i, rowCtx);
+      }
+    }
   }
 
   // 6. Pagination Page Numbers Generation & Dynamic Pagination Component Builder
@@ -1242,8 +1286,8 @@ export function renderInventoryTable() {
         </button>
       </div>
 
-      <!-- 5. Real Excel-Style Machine Data Grid with Native Horizontal & Vertical Scroll -->
-      <div class="inventory-table-scroll-container" id="inventory-table-scroll-viewport" style="flex: 1 1 0%; min-height: 250px; overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; touch-action: pan-x pan-y;">
+      <!-- 5. Real Excel-Style Machine Data Grid with Native Horizontal & Vertical Virtual Scroll -->
+      <div class="inventory-table-scroll-container" id="inventory-table-scroll-viewport" style="flex: 1 1 0%; min-height: 350px; max-height: calc(100vh - 275px); overflow-x: auto; overflow-y: auto; -webkit-overflow-scrolling: touch; touch-action: pan-x pan-y; position: relative;">
         <table class="excel-grid-table" style="min-width: 100%; width: ${columnLayout.reduce((sum, c) => sum + (c.width || 120), slWidth + checkWidth)}px; table-layout: fixed;">
           <thead>
             ${headerHtml}
@@ -1261,7 +1305,100 @@ export function renderInventoryTable() {
   `;
 }
 
+/**
+ * High-Performance 60FPS Virtual Scrolling Engine
+ * Dynamically swaps only visible rows into DOM + top/bottom spacers to achieve 0ms lag on large datasets.
+ */
+export function initVirtualScrollEngine() {
+  const viewport = document.getElementById('inventory-table-scroll-viewport');
+  if (!viewport) return;
+
+  const data = window.__vscrollEngineData;
+  if (!data || !data.isActive || !Array.isArray(data.machines) || data.machines.length <= 50) {
+    return;
+  }
+
+  const topSpacer = document.getElementById('vscroll-top-spacer');
+  const bottomSpacer = document.getElementById('vscroll-bottom-spacer');
+  if (!topSpacer || !bottomSpacer) return;
+
+  const machines = data.machines;
+  const totalRows = machines.length;
+  const rowHeight = data.rowHeight || 44;
+  const buffer = 15; // 15 rows buffer above and below viewport for instant scrolling
+
+  let lastStartIndex = 0;
+  let lastEndIndex = Math.min(totalRows, 36);
+  let isTicking = false;
+
+  const updateVirtualRows = () => {
+    isTicking = false;
+    const scrollTop = viewport.scrollTop;
+    const viewportHeight = viewport.clientHeight || 600;
+
+    const rawStart = Math.floor(scrollTop / rowHeight);
+    const rawEnd = Math.ceil((scrollTop + viewportHeight) / rowHeight);
+
+    const startIndex = Math.max(0, rawStart - buffer);
+    const endIndex = Math.min(totalRows, rawEnd + buffer);
+
+    if (Math.abs(startIndex - lastStartIndex) >= 4 || (endIndex !== lastEndIndex && (endIndex === totalRows || lastEndIndex === totalRows))) {
+      lastStartIndex = startIndex;
+      lastEndIndex = endIndex;
+
+      const topHeight = startIndex * rowHeight;
+      const bottomHeight = Math.max(0, (totalRows - endIndex) * rowHeight);
+
+      topSpacer.style.height = `${topHeight}px`;
+      if (topSpacer.firstElementChild) {
+        topSpacer.firstElementChild.style.height = `${topHeight}px`;
+      }
+
+      bottomSpacer.style.height = `${bottomHeight}px`;
+      if (bottomSpacer.firstElementChild) {
+        bottomSpacer.firstElementChild.style.height = `${bottomHeight}px`;
+      }
+
+      let sliceHtml = '';
+      for (let i = startIndex; i < endIndex; i++) {
+        sliceHtml += renderSingleMachineRow(machines[i], i, data.rowCtx);
+      }
+
+      const tbody = topSpacer.parentElement;
+      if (tbody) {
+        let node = topSpacer.nextSibling;
+        while (node && node !== bottomSpacer) {
+          const next = node.nextSibling;
+          tbody.removeChild(node);
+          node = next;
+        }
+
+        const temp = document.createElement('tbody');
+        temp.innerHTML = sliceHtml;
+        while (temp.firstChild) {
+          tbody.insertBefore(temp.firstChild, bottomSpacer);
+        }
+      }
+    }
+  };
+
+  const onScroll = () => {
+    if (!isTicking) {
+      isTicking = true;
+      requestAnimationFrame(updateVirtualRows);
+    }
+  };
+
+  if (viewport.__vscrollHandler) {
+    viewport.removeEventListener('scroll', viewport.__vscrollHandler);
+  }
+  viewport.__vscrollHandler = onScroll;
+  viewport.addEventListener('scroll', onScroll, { passive: true });
+}
+
 export function initInventoryTableEvents() {
+  // 0. Initialize Virtual Scrolling Engine
+  initVirtualScrollEngine();
   // Refresh Machine Inventory from Central Cloud Database
   const btnSyncDb = document.getElementById('btn-inventory-sync-db');
   if (btnSyncDb) {
@@ -1961,77 +2098,224 @@ export function initInventoryTableEvents() {
 
 
   // 9. Row Actions Dropdown Toggle with Smart Floating Positioning & Auto-Flip
+  const handleOpenRowActionMenu = (btn, id) => {
+    const menu = document.getElementById(`actions-menu-${id}`);
+    const tr = btn.closest('tr');
+    const td = btn.closest('td');
+    const wasOpen = menu && menu.classList.contains('show');
+    
+    // Close other open menus
+    closeAllActionMenus();
+
+    if (menu && !wasOpen) {
+      menu.classList.add('show');
+      menu.style.display = 'flex';
+      btn.classList.add('active');
+      if (tr) tr.classList.add('row-actions-active');
+      if (td) td.classList.add('td-actions-active');
+      window.__isActionMenuOpen = true;
+
+      // Smart floating coordinates: completely escapes table overflow-y/x clipping
+      const rect = btn.getBoundingClientRect();
+      const menuWidth = 215;
+      const menuHeight = menu.offsetHeight || 235;
+
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const spaceAbove = rect.top;
+
+      let isDropup = false;
+      let top;
+
+      // If not enough room below (less than menuHeight + 15px) and there's more room above:
+      if (spaceBelow < (menuHeight + 15) && spaceAbove > spaceBelow) {
+        isDropup = true;
+        top = Math.max(10, rect.top - menuHeight - 4);
+      } else {
+        isDropup = false;
+        top = rect.bottom + 4;
+        // Guard against viewport overflow
+        if (top + menuHeight > window.innerHeight - 10) {
+          if (spaceAbove > menuHeight) {
+            isDropup = true;
+            top = Math.max(10, rect.top - menuHeight - 4);
+          } else {
+            top = Math.max(10, window.innerHeight - menuHeight - 10);
+          }
+        }
+      }
+
+      // Horizontal alignment: right-align with button, bounded within viewport
+      let left = rect.right - menuWidth;
+      if (left < 10) left = 10;
+      if (left + menuWidth > window.innerWidth - 10) {
+        left = window.innerWidth - menuWidth - 10;
+      }
+
+      menu.style.position = 'fixed';
+      menu.style.top = `${top}px`;
+      menu.style.left = `${left}px`;
+      menu.style.right = 'auto';
+      menu.style.bottom = 'auto';
+      menu.style.width = `${menuWidth}px`;
+      menu.style.zIndex = '999999';
+
+      const isOptionsBtn = btn.title && btn.title.includes('options');
+      btn.innerHTML = isOptionsBtn 
+        ? (isDropup ? '👁️ Options ▴' : '👁️ Options ▾')
+        : (isDropup ? '⋮ Actions ▴' : '⋮ Actions ▾');
+    }
+  };
+
   document.querySelectorAll('.btn-trigger-row-actions').forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
       const id = btn.getAttribute('data-id');
-      const menu = document.getElementById(`actions-menu-${id}`);
-      const tr = btn.closest('tr');
-      const td = btn.closest('td');
-      const wasOpen = menu && menu.classList.contains('show');
-      
-      // Close other open menus
-      closeAllActionMenus();
-
-      if (menu && !wasOpen) {
-        menu.classList.add('show');
-        menu.style.display = 'flex';
-        btn.classList.add('active');
-        if (tr) tr.classList.add('row-actions-active');
-        if (td) td.classList.add('td-actions-active');
-        window.__isActionMenuOpen = true;
-
-        // Smart floating coordinates: completely escapes table overflow-y/x clipping
-        const rect = btn.getBoundingClientRect();
-        const menuWidth = 215;
-        const menuHeight = menu.offsetHeight || 235;
-
-        const spaceBelow = window.innerHeight - rect.bottom;
-        const spaceAbove = rect.top;
-
-        let isDropup = false;
-        let top;
-
-        // If not enough room below (less than menuHeight + 15px) and there's more room above:
-        if (spaceBelow < (menuHeight + 15) && spaceAbove > spaceBelow) {
-          isDropup = true;
-          top = Math.max(10, rect.top - menuHeight - 4);
-        } else {
-          isDropup = false;
-          top = rect.bottom + 4;
-          // Guard against viewport overflow
-          if (top + menuHeight > window.innerHeight - 10) {
-            if (spaceAbove > menuHeight) {
-              isDropup = true;
-              top = Math.max(10, rect.top - menuHeight - 4);
-            } else {
-              top = Math.max(10, window.innerHeight - menuHeight - 10);
-            }
-          }
-        }
-
-        // Horizontal alignment: right-align with button, bounded within viewport
-        let left = rect.right - menuWidth;
-        if (left < 10) left = 10;
-        if (left + menuWidth > window.innerWidth - 10) {
-          left = window.innerWidth - menuWidth - 10;
-        }
-
-        menu.style.position = 'fixed';
-        menu.style.top = `${top}px`;
-        menu.style.left = `${left}px`;
-        menu.style.right = 'auto';
-        menu.style.bottom = 'auto';
-        menu.style.width = `${menuWidth}px`;
-        menu.style.zIndex = '999999';
-
-        const isOptionsBtn = btn.title && btn.title.includes('options');
-        btn.innerHTML = isOptionsBtn 
-          ? (isDropup ? '👁️ Options ▴' : '👁️ Options ▾')
-          : (isDropup ? '⋮ Actions ▴' : '⋮ Actions ▾');
-      }
+      handleOpenRowActionMenu(btn, id);
     });
   });
+
+  // Delegated event listener on table scroll viewport for dynamically rendered virtual scroll rows
+  const vscrollVp = document.getElementById('inventory-table-scroll-viewport');
+  if (vscrollVp && !vscrollVp.__delegatedListenerBound) {
+    vscrollVp.__delegatedListenerBound = true;
+
+    // Checkbox delegation
+    vscrollVp.addEventListener('change', (e) => {
+      if (e.target && e.target.classList.contains('machine-row-check')) {
+        const id = e.target.getAttribute('data-id');
+        if (id) state.toggleSelectMachine(id);
+      }
+    });
+
+    // Row clicks & actions delegation
+    vscrollVp.addEventListener('click', (e) => {
+      const inspectBtn = e.target.closest('.btn-inspect-machine');
+      if (inspectBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        closeAllActionMenus();
+        const id = inspectBtn.getAttribute('data-id');
+        if (id) {
+          state.set('activeMachineId', id);
+          state.set('activeModal', 'machine-details');
+        }
+        return;
+      }
+
+      const histBtn = e.target.closest('.btn-history-machine');
+      if (histBtn) {
+        e.stopPropagation();
+        closeAllActionMenus();
+        const id = histBtn.getAttribute('data-id');
+        if (id) {
+          state.set('activeMachineId', id);
+          state.set('currentView', 'machine-history');
+        }
+        return;
+      }
+
+      const partsBtn = e.target.closest('.btn-spare-parts-machine');
+      if (partsBtn) {
+        e.stopPropagation();
+        closeAllActionMenus();
+        const id = partsBtn.getAttribute('data-id');
+        if (id) {
+          state.set('activeMachineId', id);
+          state.set('currentView', 'machine-history');
+        }
+        return;
+      }
+
+      const editBtn = e.target.closest('.btn-edit-machine');
+      if (editBtn) {
+        e.stopPropagation();
+        closeAllActionMenus();
+        const id = editBtn.getAttribute('data-id');
+        if (id) {
+          state.set('activeMachineId', id);
+          state.set('activeModal', 'machine-form');
+        }
+        return;
+      }
+
+      const transferBtn = e.target.closest('.btn-transfer-machine');
+      if (transferBtn) {
+        e.stopPropagation();
+        closeAllActionMenus();
+        const id = transferBtn.getAttribute('data-id');
+        const serial = transferBtn.getAttribute('data-serial');
+        if (id || serial) {
+          state.set('activeMachineId', id || null);
+          state.set('activeMachineSerial', serial || null);
+          state.set('activeModal', 'transfer-machine');
+        }
+        return;
+      }
+
+      const delBtn = e.target.closest('.btn-delete-machine');
+      if (delBtn) {
+        e.stopPropagation();
+        closeAllActionMenus();
+        const id = delBtn.getAttribute('data-id');
+        if (id) {
+          const m = storage.getItem(TABLE_NAMES.MACHINES, id);
+          notificationService.confirm({
+            title: 'Delete Machine',
+            message: `Permanently delete machine <strong>${m?.serialNumber || id}</strong>?`,
+            icon: '🗑️',
+            confirmText: 'Delete Machine',
+            isDestructive: true
+          }).then(confirmed => {
+            if (confirmed) {
+              try {
+                machineService.deleteMachine(id);
+                state.emit('inventory:updated');
+                notificationService.success('Machine deleted successfully.');
+              } catch (err) {
+                notificationService.error(err.message);
+              }
+            }
+          });
+        }
+        return;
+      }
+
+      const ambBtn = e.target.closest('.btn-toggle-ambulance-machine');
+      if (ambBtn) {
+        e.stopPropagation();
+        closeAllActionMenus();
+        const id = ambBtn.getAttribute('data-id');
+        if (id) {
+          const machine = storage.getItem(TABLE_NAMES.MACHINES, id);
+          if (machine) {
+            const nextAmb = !isAmbulanceMachine(machine);
+            machineService.updateMachine(id, {
+              isAmbulance: nextAmb,
+              status: nextAmb ? (machine.status === 'ACTIVE' ? 'ACTIVE' : 'AMBULANCE') : (machine.status === 'AMBULANCE' ? 'ACTIVE' : machine.status)
+            }).then(() => {
+              notificationService.success(`Machine #${machine.serialNumber || id} ${nextAmb ? 'designated as 🚑 Ambulance Machine' : 'removed from Ambulance status'}`);
+              const container = document.getElementById('main-view-container');
+              if (container && state.get('currentView') === 'inventory') {
+                container.innerHTML = renderInventoryTable();
+                initInventoryTableEvents();
+              }
+            }).catch(err => {
+              notificationService.error(`Failed to update machine: ${err.message}`);
+            });
+          }
+        }
+        return;
+      }
+
+      const actionBtn = e.target.closest('.btn-trigger-row-actions');
+      if (actionBtn) {
+        e.stopPropagation();
+        const id = actionBtn.getAttribute('data-id');
+        handleOpenRowActionMenu(actionBtn, id);
+        return;
+      }
+    });
+  }
 
   // 10. Inspect Machine (Click on Serial Number or View Details)
   document.querySelectorAll('.btn-inspect-machine').forEach(btn => {
