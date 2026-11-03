@@ -227,8 +227,17 @@ const server = http.createServer((req, res) => {
 
   // Real-Time Event Broadcast Endpoint (Internal & Client Dispatch)
   if (urlPath === '/api/realtime/broadcast') {
+    if (req.method === 'OPTIONS') {
+      res.writeHead(204, {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        'Access-Control-Max-Age': '86400'
+      });
+      return res.end();
+    }
     if (req.method !== 'POST') {
-      res.writeHead(405, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.writeHead(405, { 'Content-Type': 'application/json; charset=utf-8', 'Access-Control-Allow-Origin': '*' });
       return res.end(JSON.stringify({ status: 'error', message: 'Method Not Allowed' }));
     }
     let body = '';
@@ -240,13 +249,13 @@ const server = http.createServer((req, res) => {
           type: payload.type || 'DATA_CHANGED',
           table: payload.table || '',
           id: payload.id || null,
-          action: payload.action || 'UPDATE',
+          action: payload.action || 'RECORD_SAVED',
           data: payload.data || null,
           senderId: payload.senderId || null,
           timestamp: payload.timestamp || new Date().toISOString()
         };
         const sentCount = broadcastRealtimeEvent(broadcastPayload);
-        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Access-Control-Allow-Origin': '*' });
         return res.end(JSON.stringify({
           status: 'ok',
           sentCount,
@@ -254,7 +263,7 @@ const server = http.createServer((req, res) => {
           timestamp: new Date().toISOString()
         }));
       } catch (err) {
-        res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8', 'Access-Control-Allow-Origin': '*' });
         return res.end(JSON.stringify({ status: 'error', message: err.message }));
       }
     });

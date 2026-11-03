@@ -43,6 +43,8 @@ class RealtimeService {
     }
 
     try {
+      const isGhPages = typeof window !== 'undefined' && window.location && window.location.hostname.includes('github.io');
+      this._endpoint = isGhPages ? 'https://moviezonex.com/api/realtime/stream' : '/api/realtime/stream';
       this.eventSource = new EventSource(this._endpoint);
 
       this.eventSource.onopen = () => {
@@ -200,6 +202,31 @@ class RealtimeService {
         ? 'Real-Time SSE Connected: Live Factory Sync Active' 
         : 'Connecting to Real-Time SSE Hub...';
     }
+  }
+
+  /**
+   * Broadcast change event to Node.js real-time hub
+   */
+  broadcastChange(payload) {
+    if (!payload || !payload.table) return;
+    try {
+      const isGhPages = typeof window !== 'undefined' && window.location && window.location.hostname.includes('github.io');
+      const endpoint = isGhPages ? 'https://moviezonex.com/api/realtime/broadcast' : '/api/realtime/broadcast';
+
+      fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'DATA_CHANGED',
+          table: payload.table,
+          id: payload.id || null,
+          action: payload.type || 'RECORD_SAVED',
+          data: payload.data || null,
+          senderId: this.clientId || null,
+          timestamp: new Date().toISOString()
+        })
+      }).catch(() => {});
+    } catch (_) {}
   }
 
   /**

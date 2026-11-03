@@ -242,6 +242,11 @@ class StorageEngine {
         this._tabChannel.postMessage(payload);
       }
     } catch (_) {}
+    try {
+      if (typeof window !== 'undefined' && window.realtimeService && typeof window.realtimeService.broadcastChange === 'function') {
+        window.realtimeService.broadcastChange(payload);
+      }
+    } catch (_) {}
   }
 
   _handleTabSyncMessage(msg) {
