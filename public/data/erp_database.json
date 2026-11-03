@@ -320833,7 +320833,10 @@
       "brandId": "brd-1791365588525-v0qg",
       "name": "Standard",
       "status": "ACTIVE",
-      "createdAt": "2026-10-09T11:29:35.469Z"
+      "createdAt": "2026-10-09T11:29:35.469Z",
+      "machineName": "Single Needle Lock Stitch Machine",
+      "machineNameId": "mn-1792077157398-8mma",
+      "updatedAt": "2026-11-03T18:28:47.404Z"
     }
   ],
   "categories": [
@@ -320974,7 +320977,7 @@
         "autoSync": true,
         "retryEnabled": true,
         "updatedAt": "2026-11-02T16:36:19.616Z",
-        "lastSync": "11/4/2026, 12:02:02 AM"
+        "lastSync": "11/4/2026, 12:31:31 AM"
       }
     ],
     "homepageVisibilityMode": "login",

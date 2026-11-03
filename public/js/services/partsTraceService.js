@@ -1218,6 +1218,26 @@ class PartsTraceService {
     });
   }
 
+  async ensurePdfJs() {
+    if (typeof window !== 'undefined' && window.pdfjsLib) return window.pdfjsLib;
+    return new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+      script.onload = () => {
+        if (window.pdfjsLib) {
+          try {
+            window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+          } catch (_) {}
+          resolve(window.pdfjsLib);
+        } else {
+          reject(new Error('PDF.js failed to initialize'));
+        }
+      };
+      script.onerror = () => reject(new Error('Failed to load PDF.js library'));
+      document.head.appendChild(script);
+    });
+  }
+
   async parsePdfOrImageFile(file, onProgress = null) {
     if (!file) throw new Error('No file provided for upload.');
 
@@ -1230,8 +1250,9 @@ class PartsTraceService {
 
     if (onProgress) onProgress(20, 'Reading file contents...');
 
-    if (isPdf && typeof window !== 'undefined' && window.pdfjsLib) {
+    if (isPdf && typeof window !== 'undefined') {
       try {
+        await this.ensurePdfJs();
         const arrayBuffer = await file.arrayBuffer();
         const pdf = await window.pdfjsLib.getDocument({ data: arrayBuffer }).promise;
         let fullText = '';

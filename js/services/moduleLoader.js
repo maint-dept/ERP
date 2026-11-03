@@ -225,8 +225,36 @@ class ModuleLazyLoader {
     }
 
     const promise = (async () => {
+      let mod = null;
+      let lastErr = null;
+      const cleanPath = reg.path.split('?')[0];
+
+      // Attempt 1: Standard path with cache-busting version
       try {
-        const mod = await import(reg.path);
+        mod = await import(reg.path);
+      } catch (err1) {
+        lastErr = err1;
+        // Attempt 2: Clean path without query parameter (handles service worker or local server mismatches)
+        try {
+          mod = await import(cleanPath);
+        } catch (err2) {
+          lastErr = err2;
+          // Attempt 3: Small backoff and timestamp retry
+          await new Promise(r => setTimeout(r, 400));
+          try {
+            mod = await import(`${cleanPath}?_retry=${Date.now()}`);
+          } catch (err3) {
+            lastErr = err3;
+          }
+        }
+      }
+
+      if (!mod) {
+        console.error(`[LazyLoader] Failed to load module '${view}' after retries:`, lastErr);
+        throw lastErr;
+      }
+
+      try {
         const resolved = {
           render: mod[reg.renderName],
           initEvents: mod[reg.initName],
@@ -235,9 +263,6 @@ class ModuleLazyLoader {
         };
         this._loadedModules.set(view, resolved);
         return resolved;
-      } catch (err) {
-        console.error(`[LazyLoader] Failed to load module '${view}' from ${reg.path}:`, err);
-        throw err;
       } finally {
         this._loadingPromises.delete(view);
       }
