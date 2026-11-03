@@ -321500,8 +321500,8 @@
         ]
       },
       "createdAt": "2026-01-01T00:00:00Z",
-      "lastLoginAt": "2026-10-04T10:45:38.968Z",
-      "updatedAt": "2026-11-03T12:38:52.042Z",
+      "lastLoginAt": "2026-11-03T14:40:53.291Z",
+      "updatedAt": "2026-11-03T14:40:53.291Z",
       "presetId": "preset_super_admin",
       "presetName": "Super Admin",
       "passwordHash": "$sha256$6ad526a0cf737517d4609e058dc306b2$454c146535308e78f7597aa51ac660a043569dd70843ec7b9e0b50be956f14b3"
@@ -330068,6 +330068,26 @@
       "timestamp": "2026-11-03T12:38:52.042Z",
       "createdAt": "2026-11-03T12:38:52.043Z",
       "updatedAt": "2026-11-03T12:38:52.043Z"
+    },
+    {
+      "id": "aud-1793716853291-705",
+      "userId": "usr-super-admin",
+      "username": "motaher",
+      "action": "USER_LOGIN",
+      "entity": "USER",
+      "entityId": "usr-super-admin",
+      "details": "User 'Engr. Motaher Hossain' (motaher.cse@gmail.com) logged in successfully as [SUPER_ADMIN].",
+      "oldData": null,
+      "newData": {
+        "username": "motaher",
+        "email": "motaher.cse@gmail.com",
+        "role": "SUPER_ADMIN",
+        "loginAt": "2026-11-03T14:40:53.291Z"
+      },
+      "ip": "127.0.0.1",
+      "timestamp": "2026-11-03T14:40:53.291Z",
+      "createdAt": "2026-11-03T14:40:53.291Z",
+      "updatedAt": "2026-11-03T14:40:53.291Z"
     }
   ],
   "notifications": [
@@ -332050,7 +332070,7 @@
         "autoSync": true,
         "retryEnabled": true,
         "updatedAt": "2026-11-03T12:26:53.464Z",
-        "lastSync": "11/3/2026, 8:26:46 PM"
+        "lastSync": "11/3/2026, 8:41:27 PM"
       }
     ]
   },

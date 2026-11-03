@@ -825,9 +825,10 @@ export function renderInventoryTable() {
       </tr>
     `;
   } else {
+    const isMobile = (typeof window !== 'undefined' && window.innerWidth <= 768);
     const totalCols = columnLayout.length + 2;
     const VSCROLL_ROW_HEIGHT = 44;
-    const isVirtualScrollActive = machines.length > 50;
+    const isVirtualScrollActive = machines.length > (isMobile ? 18 : 30);
 
     const rowCtx = {
       isAll,
@@ -846,11 +847,12 @@ export function renderInventoryTable() {
       rowCtx,
       totalCols,
       rowHeight: VSCROLL_ROW_HEIGHT,
-      isActive: isVirtualScrollActive
+      isActive: isVirtualScrollActive,
+      isMobile
     };
 
     if (isVirtualScrollActive) {
-      const initialVisibleCount = Math.min(machines.length, 36);
+      const initialVisibleCount = Math.min(machines.length, isMobile ? 18 : 25);
       const topPadding = 0;
       const bottomPadding = (machines.length - initialVisibleCount) * VSCROLL_ROW_HEIGHT;
 
@@ -1314,7 +1316,7 @@ export function initVirtualScrollEngine() {
   if (!viewport) return;
 
   const data = window.__vscrollEngineData;
-  if (!data || !data.isActive || !Array.isArray(data.machines) || data.machines.length <= 50) {
+  if (!data || !data.isActive || !Array.isArray(data.machines)) {
     return;
   }
 
@@ -1325,16 +1327,19 @@ export function initVirtualScrollEngine() {
   const machines = data.machines;
   const totalRows = machines.length;
   const rowHeight = data.rowHeight || 44;
-  const buffer = 15; // 15 rows buffer above and below viewport for instant scrolling
+  const isMobile = Boolean(data.isMobile || (typeof window !== 'undefined' && window.innerWidth <= 768));
+  // Keep only 15-20 rows mounted in DOM on mobile (3 buffer rows), 20-25 rows on desktop (5 buffer rows)
+  const buffer = isMobile ? 3 : 5;
+  const defaultWindowCount = isMobile ? 18 : 25;
 
   let lastStartIndex = 0;
-  let lastEndIndex = Math.min(totalRows, 36);
+  let lastEndIndex = Math.min(totalRows, defaultWindowCount);
   let isTicking = false;
 
   const updateVirtualRows = () => {
     isTicking = false;
     const scrollTop = viewport.scrollTop;
-    const viewportHeight = viewport.clientHeight || 600;
+    const viewportHeight = viewport.clientHeight || 500;
 
     const rawStart = Math.floor(scrollTop / rowHeight);
     const rawEnd = Math.ceil((scrollTop + viewportHeight) / rowHeight);
@@ -1342,7 +1347,7 @@ export function initVirtualScrollEngine() {
     const startIndex = Math.max(0, rawStart - buffer);
     const endIndex = Math.min(totalRows, rawEnd + buffer);
 
-    if (Math.abs(startIndex - lastStartIndex) >= 4 || (endIndex !== lastEndIndex && (endIndex === totalRows || lastEndIndex === totalRows))) {
+    if (Math.abs(startIndex - lastStartIndex) >= 1 || (endIndex !== lastEndIndex && (endIndex === totalRows || lastEndIndex === totalRows))) {
       lastStartIndex = startIndex;
       lastEndIndex = endIndex;
 
@@ -1383,6 +1388,9 @@ export function initVirtualScrollEngine() {
   };
 
   const onScroll = () => {
+    if (window.__isActionMenuOpen && typeof closeAllActionMenus === 'function') {
+      closeAllActionMenus();
+    }
     if (!isTicking) {
       isTicking = true;
       requestAnimationFrame(updateVirtualRows);

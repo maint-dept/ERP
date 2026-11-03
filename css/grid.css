@@ -780,14 +780,16 @@ td.col-actions-cell {
   .excel-table-container,
   .spare-parts-table-container,
   .manpower-table-scroll-container {
-    max-height: none !important;
+    max-height: calc(100vh - 235px) !important;
+    max-height: calc(100dvh - 235px) !important;
     min-height: 280px;
     width: 100% !important;
     max-width: 100% !important;
     overflow-x: auto !important;
-    overflow-y: visible !important;
-    -webkit-overflow-scrolling: touch;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
     overscroll-behavior-x: contain;
+    overscroll-behavior-y: contain;
   }
 
   /* Machine Inventory High-Performance Mobile Grid & Sticky Column Geometry */
@@ -800,11 +802,11 @@ td.col-actions-cell {
   .inventory-table-scroll-container,
   #inventory-table-scroll-viewport {
     overflow-x: auto !important;
-    overflow-y: hidden !important;
+    overflow-y: auto !important;
     -webkit-overflow-scrolling: touch !important;
     touch-action: pan-x pan-y !important;
     overscroll-behavior-x: contain !important;
-    overscroll-behavior-y: auto !important;
+    overscroll-behavior-y: contain !important;
     transform: translateZ(0);
     will-change: scroll-position;
   }
@@ -1183,4 +1185,39 @@ body.theme-light .inventory-grid-info-bar .info-hint {
 
 body.theme-light .inventory-grid-info-bar .info-sep {
   color: #94a3b8 !important;
+}
+
+/* ==========================================================================
+   VIRTUAL SCROLLING ENGINE 60FPS OPTIMIZATIONS
+   ========================================================================== */
+#inventory-table-scroll-viewport {
+  position: relative;
+  overflow-x: auto !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+  touch-action: pan-x pan-y !important;
+  overscroll-behavior: contain !important;
+  transform: translateZ(0); /* Hardware accelerated layer compositing */
+  will-change: scroll-position;
+  contain: layout size;
+}
+
+#vscroll-top-spacer,
+#vscroll-bottom-spacer {
+  pointer-events: none !important;
+  border: none !important;
+  background: transparent !important;
+}
+
+#vscroll-top-spacer td,
+#vscroll-bottom-spacer td {
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+  background: transparent !important;
+  line-height: 0 !important;
+}
+
+.excel-grid-table tbody tr {
+  contain: layout paint; /* Isolates row geometry to prevent full table reflow */
 }
