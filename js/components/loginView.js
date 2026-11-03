@@ -275,16 +275,13 @@ export function renderLoginView(isAdminGateway = false) {
 
             </form>
 
-            <!-- Bottom Gateway Switcher -->
-            <div style="text-align: center; margin-top: 20px; font-size: 12.5px; color: #94a3b8;">
-              ${isAdminGateway ? `
+            <!-- Bottom Gateway Switcher (Shown ONLY on Admin Gateway) -->
+            ${isAdminGateway ? `
+              <div style="text-align: center; margin-top: 20px; font-size: 12.5px; color: #94a3b8;">
                 <span>General factory user? </span>
                 <a href="#" id="link-switch-to-user-portal" style="color: #38bdf8; text-decoration: none; font-weight: 700;">Sign in to User Portal</a>
-              ` : `
-                <span>System Administrator? </span>
-                <a href="#" id="link-switch-to-admin-gateway" style="color: #34d399; text-decoration: none; font-weight: 700;">Sign in to Admin Portal</a>
-              `}
-            </div>
+              </div>
+            ` : ''}
 
           ` : ''}
 
