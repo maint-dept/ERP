@@ -25,6 +25,9 @@ import { renderEmployeeModal, initEmployeeModalEvents } from './employeeModal.js
 let activeManpowerTab = 'active'; // 'active', 'inactive', 'transfers', 'leaves', 'custom-fields'
 let activeCustomFieldModal = null; // { type: 'ADD'|'EDIT', field: Object }
 let selectedEmployeeIds = new Set();
+let employeePage = 1;
+let employeePageSize = 25; // 25, 50, 100, 'ALL'
+let employeeTotalPages = 1;
 
 // Multi-Filter State
 let filterState = {
@@ -352,6 +355,18 @@ function renderEmployeeListTable({ title, employees, isInactiveView, isFiltered,
   const allSelected = employees.length > 0 && selectedCount === employees.length;
   const someSelected = selectedCount > 0 && selectedCount < employees.length;
 
+  // Calculate Employee Pagination
+  const totalFiltered = employees.length;
+  const isAll = employeePageSize === 'ALL';
+  const numLimit = isAll ? totalFiltered : (parseInt(employeePageSize, 10) || 25);
+  employeeTotalPages = isAll ? 1 : Math.max(1, Math.ceil(totalFiltered / numLimit));
+  if (employeePage > employeeTotalPages) employeePage = employeeTotalPages;
+  if (employeePage < 1) employeePage = 1;
+  const startIndex = isAll ? 0 : (employeePage - 1) * numLimit;
+  const pageEmps = isAll ? employees : employees.slice(startIndex, startIndex + numLimit);
+  const startItem = totalFiltered === 0 ? 0 : (startIndex + 1);
+  const endItem = Math.min(startIndex + pageEmps.length, totalFiltered);
+
   return `
     <div style="display: flex; flex-direction: column; gap: 8px; flex: 1 1 0; min-height: 0; overflow: hidden;">
       
@@ -512,7 +527,7 @@ function renderEmployeeListTable({ title, employees, isInactiveView, isFiltered,
                     </div>
                   </td>
                 </tr>
-              ` : employees.map((emp, idx) => {
+              ` : pageEmps.map((emp, idx) => {
     const isActive = emp.status === 'ACTIVE';
     const isSelected = selectedEmployeeIds.has(emp.id);
 
@@ -545,7 +560,7 @@ function renderEmployeeListTable({ title, employees, isInactiveView, isFiltered,
 
                     <!-- SL -->
                     <td class="col-mp-freeze-sl" style="text-align: center; color: var(--text-muted); font-family: var(--font-mono); font-size: 11.5px; vertical-align: middle;">
-                      ${idx + 1}
+                      ${startIndex + idx + 1}
                     </td>
                     
                     <!-- Card # / ID -->
@@ -642,10 +657,25 @@ function renderEmployeeListTable({ title, employees, isInactiveView, isFiltered,
           </table>
         </div>
 
-        <!-- Table Footer -->
-        <div style="padding: 6px 12px; font-size: 11px; color: var(--text-muted); display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); flex-shrink: 0; background: rgba(15, 23, 42, 0.4);">
-          <span>Showing <strong>${employees.length}</strong> workforce records${selectedCount > 0 ? ` (${selectedCount} selected)` : ''}</span>
-          <span>⚡ Select rows to perform bulk actions: Delete, Deactivate/Activate, or Export</span>
+        <!-- Table Footer / Pagination Bar -->
+        <div class="employee-pagination-bar" style="padding: 6px 12px; font-size: 11.5px; color: var(--text-muted); display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); flex-shrink: 0; background: rgba(15, 23, 42, 0.6); flex-wrap: wrap; gap: 8px;">
+          <div>
+            Showing <strong style="color: #fff;">${startItem}–${endItem}</strong> of <strong style="color: #38bdf8;">${totalFiltered}</strong> workforce records${selectedCount > 0 ? ` (<span style="color: #fbbf24; font-weight: 700;">${selectedCount} selected</span>)` : ''}
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="color: var(--text-secondary); font-size: 11.5px;">Rows per page:</span>
+            <select id="sel-employee-page-size" class="filter-select-compact" style="width: 75px; height: 26px; font-size: 11.5px; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255,255,255,0.15); color: #fff; border-radius: 4px;">
+              <option value="25" ${employeePageSize == 25 ? 'selected' : ''}>25</option>
+              <option value="50" ${employeePageSize == 50 ? 'selected' : ''}>50</option>
+              <option value="100" ${employeePageSize == 100 ? 'selected' : ''}>100</option>
+              <option value="ALL" ${isAll ? 'selected' : ''}>All</option>
+            </select>
+          </div>
+          <div class="pagination-controls" style="display: flex; align-items: center; gap: 4px;">
+            <button type="button" id="btn-employee-prev" class="btn btn-secondary btn-xs" ${(!isAll && employeePage > 1) ? '' : 'disabled'} style="padding: 3px 8px; font-size: 11.5px;">◀ Prev</button>
+            <span style="color: #cbd5e1; font-weight: 700; margin: 0 4px; font-size: 11.5px;">Page ${employeePage} of ${employeeTotalPages}</span>
+            <button type="button" id="btn-employee-next" class="btn btn-secondary btn-xs" ${(!isAll && employeePage < employeeTotalPages) ? '' : 'disabled'} style="padding: 3px 8px; font-size: 11.5px;">Next ▶</button>
+          </div>
         </div>
 
       </div>
@@ -907,6 +937,7 @@ export function initManpowerEvents() {
         router.navigate('manpower', { tab: activeManpowerTab, skipViewSwitch: true });
       } catch (_) {}
       selectedEmployeeIds.clear();
+      employeePage = 1;
       refreshView();
     });
   });
@@ -1218,6 +1249,7 @@ export function initManpowerEvents() {
       clearTimeout(mpSearchTimer);
       mpSearchTimer = setTimeout(() => {
         filterState.search = val;
+        employeePage = 1;
         refreshView();
         const newInp = document.getElementById('mp-filter-search');
         if (newInp) {
@@ -1234,6 +1266,7 @@ export function initManpowerEvents() {
   if (selDept) {
     selDept.addEventListener('change', (e) => {
       filterState.department = e.target.value;
+      employeePage = 1;
       refreshView();
     });
   }
@@ -1242,6 +1275,7 @@ export function initManpowerEvents() {
   if (selDesig) {
     selDesig.addEventListener('change', (e) => {
       filterState.designation = e.target.value;
+      employeePage = 1;
       refreshView();
     });
   }
@@ -1253,6 +1287,7 @@ export function initManpowerEvents() {
       filterState.groupId = e.target.value;
       filterState.unitId  = 'ALL';
       filterState.floorId = 'ALL';
+      employeePage = 1;
       refreshView();
     });
   }
@@ -1262,6 +1297,7 @@ export function initManpowerEvents() {
     selUnit.addEventListener('change', (e) => {
       filterState.unitId  = e.target.value;
       filterState.floorId = 'ALL';
+      employeePage = 1;
       refreshView();
     });
   }
@@ -1270,6 +1306,7 @@ export function initManpowerEvents() {
   if (selFloor) {
     selFloor.addEventListener('change', (e) => {
       filterState.floorId = e.target.value;
+      employeePage = 1;
       refreshView();
     });
   }
@@ -1280,6 +1317,7 @@ export function initManpowerEvents() {
       const code = sel.getAttribute('data-cf-code');
       if (!filterState.customFilters) filterState.customFilters = {};
       filterState.customFilters[code] = e.target.value;
+      employeePage = 1;
       refreshView();
     });
   });
@@ -1298,7 +1336,38 @@ export function initManpowerEvents() {
         customFilters: {}
       };
       selectedEmployeeIds.clear();
+      employeePage = 1;
       refreshView();
+    });
+  }
+
+  // Pagination Controls
+  const selEmpPageSize = document.getElementById('sel-employee-page-size');
+  if (selEmpPageSize) {
+    selEmpPageSize.addEventListener('change', (e) => {
+      employeePageSize = e.target.value === 'ALL' ? 'ALL' : (parseInt(e.target.value, 10) || 25);
+      employeePage = 1;
+      refreshView();
+    });
+  }
+
+  const btnEmpPrev = document.getElementById('btn-employee-prev');
+  if (btnEmpPrev) {
+    btnEmpPrev.addEventListener('click', () => {
+      if (employeePage > 1) {
+        employeePage--;
+        refreshView();
+      }
+    });
+  }
+
+  const btnEmpNext = document.getElementById('btn-employee-next');
+  if (btnEmpNext) {
+    btnEmpNext.addEventListener('click', () => {
+      if (employeePage < employeeTotalPages) {
+        employeePage++;
+        refreshView();
+      }
     });
   }
 
@@ -1361,8 +1430,23 @@ export function initManpowerEvents() {
   const btnCancelCfModal = document.getElementById('btn-cancel-cf-modal');
   const closeCfModal = () => {
     activeCustomFieldModal = null;
+    if (window._cfModalEscHandler) {
+      window.removeEventListener('keydown', window._cfModalEscHandler);
+      window._cfModalEscHandler = null;
+    }
     refreshView();
   };
+
+  if (activeCustomFieldModal) {
+    if (window._cfModalEscHandler) {
+      window.removeEventListener('keydown', window._cfModalEscHandler);
+    }
+    window._cfModalEscHandler = (e) => {
+      if (e.key === 'Escape') closeCfModal();
+    };
+    window.addEventListener('keydown', window._cfModalEscHandler);
+  }
+
   if (btnCloseCfModal) btnCloseCfModal.addEventListener('click', closeCfModal);
   if (btnCancelCfModal) btnCancelCfModal.addEventListener('click', closeCfModal);
 

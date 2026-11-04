@@ -365,7 +365,18 @@ export function initColumnVisibilityEvents() {
   const tabContentFrozen = document.getElementById('tab-content-frozen');
   const tabContentVisibility = document.getElementById('tab-content-visibility');
 
-  const closeModal = () => state.set('activeModal', null);
+  const handleEscape = (e) => {
+    if (e.key === 'Escape' || e.keyCode === 27) {
+      window.removeEventListener('keydown', handleEscape);
+      closeModal();
+    }
+  };
+  window.addEventListener('keydown', handleEscape);
+
+  const closeModal = () => {
+    window.removeEventListener('keydown', handleEscape);
+    state.set('activeModal', null);
+  };
 
   if (closeBtn) closeBtn.addEventListener('click', closeModal);
   if (overlay) {

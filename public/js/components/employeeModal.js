@@ -671,7 +671,16 @@ function renderEmployeeImportModal() {
 // EVENT BINDINGS FOR MODALS
 // ---------------------------------------------------------------------------
 export function initEmployeeModalEvents(refreshParentCallback) {
+  const handleEscape = (e) => {
+    if (e.key === 'Escape' || e.keyCode === 27) {
+      window.removeEventListener('keydown', handleEscape);
+      closeModal();
+    }
+  };
+  window.addEventListener('keydown', handleEscape);
+
   const closeModal = () => {
+    window.removeEventListener('keydown', handleEscape);
     if (activeEmployeeImportTempId) {
       tempImportService.purgeTempFile(activeEmployeeImportTempId, 'MODAL_CLOSED');
       activeEmployeeImportTempId = null;

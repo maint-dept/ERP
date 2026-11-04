@@ -421,7 +421,18 @@ export function initTransferDetailsModalEvents() {
   const closeBtn = document.getElementById('btn-close-transfer-details');
   const closeFooterBtn = document.getElementById('btn-close-transfer-modal-footer');
 
-  const closeModal = () => state.set('activeModal', null);
+  const handleEscape = (e) => {
+    if (e.key === 'Escape' || e.keyCode === 27) {
+      window.removeEventListener('keydown', handleEscape);
+      closeModal();
+    }
+  };
+  window.addEventListener('keydown', handleEscape);
+
+  const closeModal = () => {
+    window.removeEventListener('keydown', handleEscape);
+    state.set('activeModal', null);
+  };
 
   if (closeBtn) closeBtn.addEventListener('click', closeModal);
   if (closeFooterBtn) closeFooterBtn.addEventListener('click', closeModal);

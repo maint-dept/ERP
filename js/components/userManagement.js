@@ -4204,7 +4204,13 @@ export function initUserManagementEvents() {
       const id = btn.getAttribute('data-id');
       const currentStat = btn.getAttribute('data-status');
       const actionText = currentStat === 'ACTIVE' ? 'deactivate' : 'activate';
-      if (confirm(`Are you sure you want to ${actionText} this user account?`)) {
+      const confirmed = await notificationService.confirm({
+        title: `${actionText === 'activate' ? 'Activate' : 'Deactivate'} User Account`,
+        message: `Are you sure you want to ${actionText} this user account?`,
+        icon: actionText === 'activate' ? '✅' : '⏸️',
+        confirmText: `${actionText === 'activate' ? 'Activate' : 'Deactivate'} Account`
+      });
+      if (confirmed) {
         try {
           await authService.toggleUserStatus(id);
           notificationService.success(`User account status updated`);
@@ -4256,7 +4262,13 @@ export function initUserManagementEvents() {
   const btnAutoCreateAll = document.getElementById('btn-auto-create-all-missing');
   if (btnAutoCreateAll) {
     btnAutoCreateAll.addEventListener('click', async () => {
-      if (confirm('Scan all registered Manpower records and automatically generate unique User Accounts with ZERO default permissions for any missing accounts?')) {
+      const confirmed = await notificationService.confirm({
+        title: 'Auto-Create Missing Accounts',
+        message: 'Scan all registered Manpower records and automatically generate unique User Accounts with ZERO default permissions for any missing accounts?',
+        icon: '🤖',
+        confirmText: 'Scan & Auto-Create'
+      });
+      if (confirmed) {
         btnAutoCreateAll.disabled = true;
         btnAutoCreateAll.innerText = 'Syncing & Generating...';
         try {
@@ -4334,7 +4346,13 @@ export function initUserManagementEvents() {
   if (btnBulkResetPass) {
     btnBulkResetPass.addEventListener('click', async () => {
       const count = selectedAccountIds.size;
-      if (confirm(`Are you sure you want to bulk reset passwords for ${count} selected accounts? Unique 14-character passwords will be generated and stored.`)) {
+      const confirmed = await notificationService.confirm({
+        title: 'Bulk Reset Passwords',
+        message: `Are you sure you want to bulk reset passwords for <strong>${count}</strong> selected accounts?<br><br>Unique 14-character passwords will be generated and stored securely.`,
+        icon: '🔑',
+        confirmText: 'Reset Passwords'
+      });
+      if (confirmed) {
         try {
           const res = await userAccessService.bulkGenerateOrResetPasswords(Array.from(selectedAccountIds), true);
           notificationService.success(`Reset passwords for ${res.successful.length} accounts!`);
@@ -4365,7 +4383,14 @@ export function initUserManagementEvents() {
   const btnBulkDeactivate = document.getElementById('btn-bulk-deactivate-action');
   if (btnBulkDeactivate) {
     btnBulkDeactivate.addEventListener('click', async () => {
-      if (confirm(`Are you sure you want to deactivate ${selectedAccountIds.size} accounts? They will not be able to log in.`)) {
+      const confirmed = await notificationService.confirm({
+        title: 'Bulk Deactivate Accounts',
+        message: `Are you sure you want to deactivate <strong>${selectedAccountIds.size}</strong> accounts? They will not be able to log in.`,
+        icon: '⏸️',
+        confirmText: 'Deactivate Accounts',
+        isDestructive: true
+      });
+      if (confirmed) {
         try {
           for (const uid of selectedAccountIds) {
             await authService.updateUser(uid, { status: 'INACTIVE' });
@@ -4588,13 +4613,17 @@ export function initUserManagementEvents() {
     }
 
     // Close smart search dropdown when clicking outside
-    document.addEventListener('click', (e) => {
+    if (window._userSmartSearchClickHandler) {
+      document.removeEventListener('click', window._userSmartSearchClickHandler);
+    }
+    window._userSmartSearchClickHandler = (e) => {
       if (smartSearchInp && smartSearchDropdown) {
         if (!smartSearchInp.contains(e.target) && !smartSearchDropdown.contains(e.target)) {
           smartSearchDropdown.style.display = 'none';
         }
       }
-    });
+    };
+    document.addEventListener('click', window._userSmartSearchClickHandler);
   }
 
   // Synchronized User Switcher Dropdown ("Or Select Account")
@@ -4748,7 +4777,13 @@ export function initUserManagementEvents() {
   const btnPermResetDefault = document.getElementById('btn-perm-reset-default');
   if (btnPermResetDefault) {
     btnPermResetDefault.addEventListener('click', async () => {
-      if (confirm('Reset permissions to standard default maintenance user template?')) {
+      const confirmed = await notificationService.confirm({
+        title: 'Reset Template Permissions',
+        message: 'Reset permissions to standard default maintenance user template?',
+        icon: '🔄',
+        confirmText: 'Reset to Default'
+      });
+      if (confirmed) {
         const defaultPreset = authService.getPresetById ? authService.getPresetById('preset_maintenance_user') : null;
         editingPresetId = defaultPreset?.id || 'preset_maintenance_user';
         editingPresetName = defaultPreset?.name || 'Maintenance User';
@@ -4975,7 +5010,7 @@ export function initUserManagementEvents() {
     btnExecuteBulk.addEventListener('click', async () => {
       const targetIds = Array.from(selectedAccountIds);
       if (targetIds.length === 0) {
-        alert('Please select at least one account from User Accounts tab before applying bulk permissions.');
+        notificationService.warning('Please select at least one account from User Accounts tab before applying bulk permissions.');
         activeUserSection = 'ACCOUNTS';
         reRender();
         return;
@@ -4983,14 +5018,18 @@ export function initUserManagementEvents() {
 
       const modKeys = Object.keys(bulkTargetModulePerms).filter(k => (bulkTargetModulePerms[k] || []).length > 0);
       if (modKeys.length === 0) {
-        alert('Please select at least one module privilege to assign in Step 3.');
+        notificationService.warning('Please select at least one module privilege to assign in Step 3.');
         return;
       }
 
       if (bulkAssignmentMode === 'REPLACE') {
-        const confirmReplace = confirm(
-          `⚠️ WARNING: Mode B (Replace Permissions) will overwrite all existing custom permissions for ${targetIds.length} users with the selected set. Are you sure you wish to proceed?`
-        );
+        const confirmReplace = await notificationService.confirm({
+          title: 'Confirm Replace Permissions',
+          message: `⚠️ Mode B (Replace Permissions) will overwrite all existing custom permissions for <strong>${targetIds.length}</strong> users with the selected set. Are you sure you wish to proceed?`,
+          icon: '⚠️',
+          confirmText: 'Overwrite Permissions',
+          isDestructive: true
+        });
         if (!confirmReplace) return;
       }
 
@@ -5271,10 +5310,16 @@ export function initUserManagementEvents() {
     btnBulkGenInitial.addEventListener('click', async () => {
       const allAccounts = userAccessService.getAllAccountsWithManpower().filter(a => a.hasAccount && a.passwordStatus === 'TEMPORARY');
       if (allAccounts.length === 0) {
-        alert('All existing user accounts already have passwords setup.');
+        notificationService.info('All existing user accounts already have passwords setup.');
         return;
       }
-      if (confirm(`Generate secure initial passwords for ${allAccounts.length} eligible accounts?`)) {
+      const confirmed = await notificationService.confirm({
+        title: 'Generate Initial Passwords',
+        message: `Generate secure initial passwords for <strong>${allAccounts.length}</strong> eligible accounts?`,
+        icon: '🔑',
+        confirmText: 'Generate Passwords'
+      });
+      if (confirmed) {
         try {
           const res = await userAccessService.bulkGenerateOrResetPasswords(allAccounts.map(a => a.id), false);
           notificationService.success(`Generated initial passwords for ${res.successful.length} accounts.`);
@@ -5829,7 +5874,7 @@ export function initUserManagementEvents() {
   const btnExportLogs = document.getElementById('btn-export-uam-logs');
   if (btnExportLogs) {
     btnExportLogs.addEventListener('click', () => {
-      if (!window.XLSX) { alert('Excel library is loading...'); return; }
+      if (!window.XLSX) { notificationService.info('Excel library is loading...'); return; }
       const logs = userAccessService.getUserAccessLogs({ action: logActionFilter, query: logSearchQuery });
       const rows = logs.map(l => ({
         Timestamp: l.timestamp ? new Date(l.timestamp).toLocaleString() : '',
@@ -5887,7 +5932,13 @@ export function initUserManagementEvents() {
   const btnResetFactory = document.getElementById('btn-reset-factory-presets');
   if (btnResetFactory) {
     btnResetFactory.addEventListener('click', async () => {
-      const confirmReset = confirm('Are you sure you want to restore standard factory presets? Built-in presets will reset to factory defaults.');
+      const confirmReset = await notificationService.confirm({
+        title: 'Restore Factory Presets',
+        message: 'Are you sure you want to restore standard factory presets? Built-in presets will reset to factory defaults.',
+        icon: '🏭',
+        confirmText: 'Restore Defaults',
+        isDestructive: true
+      });
       if (!confirmReset) return;
       try {
         await authService.resetToDefaultPresets();

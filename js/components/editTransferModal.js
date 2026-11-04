@@ -301,7 +301,16 @@ export function initEditTransferModalEvents() {
   const cancelBtn = document.getElementById('btn-cancel-edit-transfer');
   const fallbackCloseBtn = document.getElementById('btn-close-edit-transfer-fallback');
 
+  const handleEscape = (e) => {
+    if (e.key === 'Escape' || e.keyCode === 27) {
+      window.removeEventListener('keydown', handleEscape);
+      closeModal();
+    }
+  };
+  window.addEventListener('keydown', handleEscape);
+
   const closeModal = () => {
+    window.removeEventListener('keydown', handleEscape);
     editSelectedDest = { groupId: '', unitId: '', floorId: '', lineId: '', searchQuery: '' };
     editAttachedDocs = [];
     state.set('activeModal', 'transfer-details');

@@ -31,6 +31,9 @@ let searchQuery = '';
 let txActionType = 'USAGE_REPLACE'; // 'USAGE_REPLACE' | 'USAGE_CONSUMED' | 'ADD_INSTALLED' | 'RETURN_STORE' | 'BALANCE_ADJUST'
 let txQuantity = 1;
 let floorOverviewCollapsed = true; // Default collapsed to maximize workspace table area
+let needlePage = 1;
+let needlePageSize = 25; // 25, 50, 100, 'ALL'
+let needleTotalPages = 1;
 
 export function renderNeedleOperationsView() {
   const needleQ = state.get('needleSearchQuery');
@@ -61,6 +64,19 @@ export function renderNeedleOperationsView() {
     }
     return true;
   });
+
+  // Calculate Needle Transactions Pagination
+  const totalFiltered = filteredTx.length;
+  const isAll = needlePageSize === 'ALL';
+  const numLimit = isAll ? totalFiltered : (parseInt(needlePageSize, 10) || 25);
+  needleTotalPages = isAll ? 1 : Math.max(1, Math.ceil(totalFiltered / numLimit));
+  const totalPages = needleTotalPages;
+  if (needlePage > totalPages) needlePage = totalPages;
+  if (needlePage < 1) needlePage = 1;
+  const startIndex = isAll ? 0 : (needlePage - 1) * numLimit;
+  const pageTx = isAll ? filteredTx : filteredTx.slice(startIndex, startIndex + numLimit);
+  const startItem = totalFiltered === 0 ? 0 : (startIndex + 1);
+  const endItem = Math.min(startIndex + pageTx.length, totalFiltered);
 
   // Calculate Overall Live Stats
   let totalUsed = 0;
@@ -279,8 +295,9 @@ export function renderNeedleOperationsView() {
 
           </div>
 
+          <!-- Pagination Metrics -->
           <div style="font-size: 11px; color: var(--text-muted);">
-            Showing <strong>${filteredTx.length}</strong> of ${transactions.length} records
+            Showing <strong>${startItem}–${endItem}</strong> of <strong>${totalFiltered}</strong> records
           </div>
         </div>
 
@@ -314,7 +331,8 @@ export function renderNeedleOperationsView() {
                     <div style="font-size: 11px; margin-top: 2px;">Click "+ New Needle Entry / Adjustment" above to log needle usage or changes.</div>
                   </td>
                 </tr>
-              ` : filteredTx.map((tx, idx) => {
+              ` : pageTx.map((tx, idx) => {
+                const rowNum = startIndex + idx + 1;
                 let badgeClass = 'badge-idle';
                 let actionLabel = tx.actionType;
                 let deltaColor = '#cbd5e1';
@@ -349,7 +367,7 @@ export function renderNeedleOperationsView() {
 
                 return `
                   <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); background: ${idx % 2 === 0 ? 'rgba(255,255,255,0.015)' : 'transparent'};">
-                    <td style="padding: 7px 10px; text-align: center; color: var(--text-muted);">${idx + 1}</td>
+                    <td style="padding: 7px 10px; text-align: center; color: var(--text-muted); font-weight: 700;">${rowNum}</td>
                     <td style="padding: 7px 10px;">
                       <span style="font-family: var(--font-mono); font-size: 11px; font-weight: 800; color: #38bdf8;">${tx.txId}</span>
                     </td>
@@ -405,6 +423,25 @@ export function renderNeedleOperationsView() {
               }).join('')}
             </tbody>
           </table>
+        </div>
+
+        <!-- Pagination Controls -->
+        <div class="needle-pagination-bar" style="margin-top: 8px; padding: 6px 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; font-size: 12px;">
+          <div>Showing <strong style="color: #fff;">${startItem}–${endItem}</strong> of <strong style="color: #38bdf8;">${totalFiltered}</strong> records</div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="color: var(--text-secondary); font-size: 11.5px;">Rows per page:</span>
+            <select id="sel-needle-page-size" class="filter-select-compact" style="width: 75px; height: 26px; font-size: 11.5px; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255,255,255,0.15); color: #fff; border-radius: 4px;">
+              <option value="25" ${needlePageSize == 25 ? 'selected' : ''}>25</option>
+              <option value="50" ${needlePageSize == 50 ? 'selected' : ''}>50</option>
+              <option value="100" ${needlePageSize == 100 ? 'selected' : ''}>100</option>
+              <option value="ALL" ${isAll ? 'selected' : ''}>All</option>
+            </select>
+          </div>
+          <div class="pagination-controls" style="display: flex; align-items: center; gap: 4px;">
+            <button type="button" id="btn-needle-prev" class="btn btn-secondary btn-xs" ${(!isAll && needlePage > 1) ? '' : 'disabled'} style="padding: 3px 8px; font-size: 11.5px;">◀ Prev</button>
+            <span style="color: #cbd5e1; font-weight: 700; margin: 0 4px; font-size: 11.5px;">Page ${needlePage} of ${totalPages}</span>
+            <button type="button" id="btn-needle-next" class="btn btn-secondary btn-xs" ${(!isAll && needlePage < totalPages) ? '' : 'disabled'} style="padding: 3px 8px; font-size: 11.5px;">Next ▶</button>
+          </div>
         </div>
 
       </div>
@@ -793,10 +830,24 @@ export function initNeedleOperationsEvents() {
   const closeModal = () => {
     activeTransactionModalOpen = false;
     smartMachineSearchQuery = '';
+    if (window._needleOpsEscHandler) {
+      window.removeEventListener('keydown', window._needleOpsEscHandler);
+      window._needleOpsEscHandler = null;
+    }
     refreshView();
   };
   root.querySelector('#btn-close-needle-tx-modal')?.addEventListener('click', closeModal);
   root.querySelector('#btn-cancel-needle-tx')?.addEventListener('click', closeModal);
+
+  if (activeTransactionModalOpen) {
+    if (window._needleOpsEscHandler) {
+      window.removeEventListener('keydown', window._needleOpsEscHandler);
+    }
+    window._needleOpsEscHandler = (e) => {
+      if (e.key === 'Escape') closeModal();
+    };
+    window.addEventListener('keydown', window._needleOpsEscHandler);
+  }
 
   const overlay = root.querySelector('#modal-needle-tx-overlay');
   if (overlay) {
@@ -1095,16 +1146,19 @@ export function initNeedleOperationsEvents() {
   root.querySelector('#sel-needle-ops-floor')?.addEventListener('change', (e) => {
     filterFloorId = e.target.value;
     filterLineId = 'ALL';
+    needlePage = 1;
     refreshView();
   });
 
   root.querySelector('#sel-needle-ops-line')?.addEventListener('change', (e) => {
     filterLineId = e.target.value;
+    needlePage = 1;
     refreshView();
   });
 
   root.querySelector('#sel-needle-ops-action')?.addEventListener('change', (e) => {
     filterActionType = e.target.value;
+    needlePage = 1;
     refreshView();
   });
 
@@ -1118,6 +1172,7 @@ export function initNeedleOperationsEvents() {
       clearTimeout(opsSearchTimer);
       opsSearchTimer = setTimeout(() => {
         searchQuery = val;
+        needlePage = 1;
         refreshView();
         const newInp = document.getElementById('inp-needle-ops-search');
         if (newInp) {
@@ -1127,6 +1182,27 @@ export function initNeedleOperationsEvents() {
       }, 150);
     });
   }
+
+  // Pagination controls
+  root.querySelector('#sel-needle-page-size')?.addEventListener('change', (e) => {
+    needlePageSize = e.target.value === 'ALL' ? 'ALL' : (parseInt(e.target.value, 10) || 25);
+    needlePage = 1;
+    refreshView();
+  });
+
+  root.querySelector('#btn-needle-prev')?.addEventListener('click', () => {
+    if (needlePage > 1) {
+      needlePage--;
+      refreshView();
+    }
+  });
+
+  root.querySelector('#btn-needle-next')?.addEventListener('click', () => {
+    if (needlePage < needleTotalPages) {
+      needlePage++;
+      refreshView();
+    }
+  });
 
   // Toggle Floor Overview collapse/expand
   root.querySelector('#btn-toggle-floor-overview')?.addEventListener('click', () => {

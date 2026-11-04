@@ -27,6 +27,9 @@ let categoryFilter = 'ALL';
 let usageFilter = 'ALL';
 let selectedItemIds = new Set();
 let activeModalState = null; // { type: 'ADD'|'EDIT'|'USAGE_HISTORY'|'PRESERVED_NOTICE'|'BULK_EDIT', item: {}, usageStats: {} }
+let sparePartPage = 1;
+let sparePartPageSize = 25; // 25, 50, 100, 'ALL'
+let sparePartTotalPages = 1;
 
 export function renderSparePartsManagementView() {
   const master = historyService.getSparePartsMaster() || [];
@@ -68,6 +71,18 @@ export function renderSparePartsManagementView() {
 
     return true;
   });
+
+  // Calculate Spare Parts Pagination
+  const totalFiltered = filtered.length;
+  const isAll = sparePartPageSize === 'ALL';
+  const numLimit = isAll ? totalFiltered : (parseInt(sparePartPageSize, 10) || 25);
+  sparePartTotalPages = isAll ? 1 : Math.max(1, Math.ceil(totalFiltered / numLimit));
+  if (sparePartPage > sparePartTotalPages) sparePartPage = sparePartTotalPages;
+  if (sparePartPage < 1) sparePartPage = 1;
+  const startIndex = isAll ? 0 : (sparePartPage - 1) * numLimit;
+  const pageParts = isAll ? filtered : filtered.slice(startIndex, startIndex + numLimit);
+  const startItem = totalFiltered === 0 ? 0 : (startIndex + 1);
+  const endItem = Math.min(startIndex + pageParts.length, totalFiltered);
 
   return `
     <div class="spare-parts-view-container" style="display: flex; flex-direction: column; gap: 8px; height: 100%; min-height: 0; overflow: hidden; width: 100%;">
@@ -210,10 +225,10 @@ export function renderSparePartsManagementView() {
                   <div style="font-size: 11.5px; margin-top: 4px; opacity: 0.7;">Try clearing filters or click 'Add Spare Part' to create a new master item.</div>
                 </td>
               </tr>
-            ` : filtered.map((it, idx) => {
+            ` : pageParts.map((it, idx) => {
               const isChecked = selectedItemIds.has(it.id);
               const stats = historyService.getSparePartUsageStats(it.id);
-              const slCode = String(idx + 1).padStart(3, '0');
+              const slCode = String(startIndex + idx + 1).padStart(3, '0');
 
               return `
                 <tr style="background: ${it.status === 'INACTIVE' ? 'rgba(255,255,255,0.02)' : 'transparent'};">
@@ -311,14 +326,24 @@ export function renderSparePartsManagementView() {
         </table>
       </div>
 
-      <!-- Compact Footer Status Strip (Screen Fit Indicator) -->
-      <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 14px; background: rgba(15, 23, 42, 0.7); border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 11.5px; color: var(--text-muted); flex-shrink: 0;">
+      <!-- Pagination Controls Bar -->
+      <div class="spare-pagination-bar" style="display: flex; justify-content: space-between; align-items: center; padding: 6px 14px; background: rgba(15, 23, 42, 0.7); border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 11.5px; color: var(--text-muted); flex-shrink: 0; flex-wrap: wrap; gap: 8px;">
         <div>
-          Showing <strong style="color: #fff;">${filtered.length}</strong> of <strong style="color: #38bdf8;">${master.length}</strong> master items
+          Showing <strong style="color: #fff;">${startItem}–${endItem}</strong> of <strong style="color: #38bdf8;">${totalFiltered}</strong> master items
         </div>
         <div style="display: flex; align-items: center; gap: 8px;">
-          <span style="display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #34d399; box-shadow: 0 0 6px rgba(52, 211, 153, 0.6);"></span>
-          <span>Screen Fit 100% Active</span>
+          <span style="color: var(--text-secondary); font-size: 11.5px;">Rows per page:</span>
+          <select id="sel-spare-page-size" class="filter-select-compact" style="width: 75px; height: 26px; font-size: 11.5px; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255,255,255,0.15); color: #fff; border-radius: 4px;">
+            <option value="25" ${sparePartPageSize == 25 ? 'selected' : ''}>25</option>
+            <option value="50" ${sparePartPageSize == 50 ? 'selected' : ''}>50</option>
+            <option value="100" ${sparePartPageSize == 100 ? 'selected' : ''}>100</option>
+            <option value="ALL" ${isAll ? 'selected' : ''}>All</option>
+          </select>
+        </div>
+        <div class="pagination-controls" style="display: flex; align-items: center; gap: 4px;">
+          <button type="button" id="btn-spare-prev" class="btn btn-secondary btn-xs" ${(!isAll && sparePartPage > 1) ? '' : 'disabled'} style="padding: 3px 8px; font-size: 11.5px;">◀ Prev</button>
+          <span style="color: #cbd5e1; font-weight: 700; margin: 0 4px; font-size: 11.5px;">Page ${sparePartPage} of ${sparePartTotalPages}</span>
+          <button type="button" id="btn-spare-next" class="btn btn-secondary btn-xs" ${(!isAll && sparePartPage < sparePartTotalPages) ? '' : 'disabled'} style="padding: 3px 8px; font-size: 11.5px;">Next ▶</button>
         </div>
       </div>
 
@@ -617,6 +642,7 @@ export function initSparePartsManagementEvents() {
       clearTimeout(spareSearchTimer);
       spareSearchTimer = setTimeout(() => {
         searchFilter = val;
+        sparePartPage = 1;
         refresh();
       }, 150);
     });
@@ -627,6 +653,7 @@ export function initSparePartsManagementEvents() {
   if (selCat) {
     selCat.addEventListener('change', (e) => {
       categoryFilter = e.target.value;
+      sparePartPage = 1;
       refresh();
     });
   }
@@ -636,6 +663,7 @@ export function initSparePartsManagementEvents() {
   if (selStatus) {
     selStatus.addEventListener('change', (e) => {
       statusFilter = e.target.value;
+      sparePartPage = 1;
       refresh();
     });
   }
@@ -645,7 +673,38 @@ export function initSparePartsManagementEvents() {
   if (selUsage) {
     selUsage.addEventListener('change', (e) => {
       usageFilter = e.target.value;
+      sparePartPage = 1;
       refresh();
+    });
+  }
+
+  // Pagination controls
+  const selPageSize = document.getElementById('sel-spare-page-size');
+  if (selPageSize) {
+    selPageSize.addEventListener('change', (e) => {
+      sparePartPageSize = e.target.value === 'ALL' ? 'ALL' : (parseInt(e.target.value, 10) || 25);
+      sparePartPage = 1;
+      refresh();
+    });
+  }
+
+  const btnPrev = document.getElementById('btn-spare-prev');
+  if (btnPrev) {
+    btnPrev.addEventListener('click', () => {
+      if (sparePartPage > 1) {
+        sparePartPage--;
+        refresh();
+      }
+    });
+  }
+
+  const btnNext = document.getElementById('btn-spare-next');
+  if (btnNext) {
+    btnNext.addEventListener('click', () => {
+      if (sparePartPage < sparePartTotalPages) {
+        sparePartPage++;
+        refresh();
+      }
     });
   }
 
@@ -868,8 +927,22 @@ export function initSparePartsManagementEvents() {
 
   const closeModal = () => {
     activeModalState = null;
+    if (window._spareModalEscHandler) {
+      window.removeEventListener('keydown', window._spareModalEscHandler);
+      window._spareModalEscHandler = null;
+    }
     refresh();
   };
+
+  if (activeModalState) {
+    if (window._spareModalEscHandler) {
+      window.removeEventListener('keydown', window._spareModalEscHandler);
+    }
+    window._spareModalEscHandler = (e) => {
+      if (e.key === 'Escape') closeModal();
+    };
+    window.addEventListener('keydown', window._spareModalEscHandler);
+  }
 
   if (btnClose) btnClose.addEventListener('click', closeModal);
   if (btnCancel) btnCancel.addEventListener('click', closeModal);

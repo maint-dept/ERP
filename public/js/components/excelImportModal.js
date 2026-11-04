@@ -10,6 +10,7 @@ import { DUPLICATE_POLICIES } from '../db/schema.js';
 import { authService } from '../services/authService.js';
 import { smartStorageService } from '../services/smartStorageService.js?v=4.22.19';
 import { tempImportService } from '../services/tempImportService.js';
+import { notificationService } from '../services/notificationService.js';
 import { state } from '../state.js';
 
 let importState = {
@@ -897,7 +898,16 @@ export function initExcelImportEvents() {
   const closeBtn = document.getElementById('btn-close-import-modal');
   const cancelBtn = document.getElementById('btn-cancel-import');
 
+  const handleEscape = (e) => {
+    if (e.key === 'Escape' || e.keyCode === 27) {
+      window.removeEventListener('keydown', handleEscape);
+      closeModal();
+    }
+  };
+  window.addEventListener('keydown', handleEscape);
+
   const closeModal = () => {
+    window.removeEventListener('keydown', handleEscape);
     if (importState.tempId) {
       tempImportService.purgeTempFile(importState.tempId, 'USER_CLOSED_MODAL');
     }
@@ -946,7 +956,7 @@ export function initExcelImportEvents() {
         tempImportService.purgeTempFile(importState.tempId, 'PARSE_ERROR');
         importState.tempId = null;
       }
-      alert('Failed to process Excel workbook: ' + err.message);
+      notificationService.notifyError('Parse Error', 'Failed to process Excel workbook: ' + err.message);
     }
   };
 
@@ -986,7 +996,7 @@ export function initExcelImportEvents() {
       try {
         await excelService.generateMultiSheetTemplate();
       } catch (err) {
-        alert('Failed to generate template: ' + err.message);
+        notificationService.notifyError('Template Error', 'Failed to generate template: ' + err.message);
       }
     });
   }
@@ -1028,7 +1038,7 @@ export function initExcelImportEvents() {
       importState.workbookData.sheets.forEach(s => {
         importState.sheetMappings[s.name] = { ...currentMapping };
       });
-      alert('Current column mapping applied to all worksheets.');
+      notificationService.notifySuccess('Mapping Applied', 'Current column mapping applied to all worksheets.');
     });
   }
 
@@ -1078,7 +1088,7 @@ export function initExcelImportEvents() {
         importState.stage = 4;
         updateModalDOM();
       } catch (err) {
-        alert('Error: ' + err.message);
+        notificationService.notifyError('Validation Error', 'Validation failed: ' + err.message);
       }
     });
   }
@@ -1151,7 +1161,7 @@ export function initExcelImportEvents() {
             importState.unknownResolutions
           );
           updateModalDOM();
-          alert(`✅ Successfully auto-corrected ${count} field(s) with standard storage values!`);
+          notificationService.notifySuccess('Auto-Corrected', `Successfully auto-corrected ${count} field(s) with standard storage values!`);
         }
       });
     });
@@ -1265,7 +1275,7 @@ export function initExcelImportEvents() {
         btnCommit.style.opacity = '1';
         btnCommit.style.cursor = 'pointer';
         btnCommit.innerHTML = origText || 'Confirm & Import';
-        alert('Commit Error: ' + err.message);
+        notificationService.notifyError('Commit Error', 'Failed to commit import: ' + err.message);
       }
     });
   }

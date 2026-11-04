@@ -3000,15 +3000,17 @@ export function initPreventiveMaintenanceEvents() {
   if (!container) return;
 
   // Handle deep-link navigation from notification drawer or router
-  const handlePmTabNav = (e) => {
+  if (window._pmTabNavHandler) {
+    window.removeEventListener('erp:navigate-pm-tab', window._pmTabNavHandler);
+  }
+  window._pmTabNavHandler = (e) => {
     const tab = e.detail?.tab;
     if (tab && tab !== activeTab) {
       setPmActiveTab(tab);
       rerenderView();
     }
   };
-  window.removeEventListener('erp:navigate-pm-tab', handlePmTabNav);
-  window.addEventListener('erp:navigate-pm-tab', handlePmTabNav);
+  window.addEventListener('erp:navigate-pm-tab', window._pmTabNavHandler);
 
   // 1. Tab switching
   container.querySelectorAll('.pm-tab-btn').forEach(btn => {

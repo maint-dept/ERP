@@ -748,7 +748,16 @@ export function initMachineModalEvents() {
   const closeBtn = document.getElementById('btn-close-machine-modal');
   const cancelBtn = document.getElementById('btn-cancel-machine');
 
+  const handleEscape = (e) => {
+    if (e.key === 'Escape' || e.keyCode === 27) {
+      window.removeEventListener('keydown', handleEscape);
+      closeModal();
+    }
+  };
+  window.addEventListener('keydown', handleEscape);
+
   const closeModal = () => {
+    window.removeEventListener('keydown', handleEscape);
     const scannerSlot = document.getElementById('machine-modal-qr-scanner-slot');
     if (scannerSlot) scannerSlot.remove();
     document.getElementById('modal-qr-scanner-overlay')?.remove();

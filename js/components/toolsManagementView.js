@@ -3102,11 +3102,15 @@ export function initToolsManagementEvents() {
   }
 
   // Close floating autocomplete dropdown when clicking outside
-  document.addEventListener('click', (e) => {
+  if (window._toolsAutoBoxClickHandler) {
+    document.removeEventListener('click', window._toolsAutoBoxClickHandler);
+  }
+  window._toolsAutoBoxClickHandler = (e) => {
     if (autoBox && inpSmartSearch && !inpSmartSearch.contains(e.target) && !autoBox.contains(e.target) && !btnToggleDropdown?.contains(e.target)) {
       autoBox.style.display = 'none';
     }
-  });
+  };
+  document.addEventListener('click', window._toolsAutoBoxClickHandler);
 
   // 11.2 Quantity Quick Buttons and Stepper
   const btnMinus = document.getElementById('btn-qty-minus');
@@ -3583,11 +3587,15 @@ export function initToolsManagementEvents() {
       }
     };
 
-    document.addEventListener('click', (e) => {
+    if (window._toolsPrintSuggestClickHandler) {
+      document.removeEventListener('click', window._toolsPrintSuggestClickHandler);
+    }
+    window._toolsPrintSuggestClickHandler = (e) => {
       if (!e.target.closest('#input-print-reg-no') && !e.target.closest('#print-search-suggestions')) {
         if (suggestionsBox) suggestionsBox.style.display = 'none';
       }
-    });
+    };
+    document.addEventListener('click', window._toolsPrintSuggestClickHandler);
   }
 
   // 19. Print Format Buttons
@@ -4015,8 +4023,14 @@ export function initToolsManagementEvents() {
   const btnBulkRetFind = document.getElementById('btn-admin-bulk-return-find');
   if (btnBulkRetFind) {
     btnBulkRetFind.onclick = () => {
-      ensureAdminAccess(`Mark ${findSelectedIds.size} items as Returned`, () => {
-        if (confirm(`Mark ${findSelectedIds.size} selected tools as returned to central maintenance store?`)) {
+      ensureAdminAccess(`Mark ${findSelectedIds.size} items as Returned`, async () => {
+        const confirmed = await notificationService.confirm({
+          title: 'Return Tools to Central Store',
+          message: `Mark <strong>${findSelectedIds.size}</strong> selected tools as returned to central maintenance store?`,
+          icon: '↩️',
+          confirmText: 'Return Tools'
+        });
+        if (confirmed) {
           const today = new Date().toISOString().split('T')[0];
           findSelectedIds.forEach(id => {
             toolService.updateAllocationItem(id, {
@@ -4151,8 +4165,14 @@ export function initToolsManagementEvents() {
   root.querySelectorAll('.btn-log-return').forEach(btn => {
     btn.onclick = () => {
       const id = btn.getAttribute('data-id');
-      ensureAdminAccess('Log Return to Central Store', () => {
-        if (confirm('Mark this tool as returned to central maintenance store?')) {
+      ensureAdminAccess('Log Return to Central Store', async () => {
+        const confirmed = await notificationService.confirm({
+          title: 'Return Tool to Central Store',
+          message: 'Mark this tool as returned to central maintenance store?',
+          icon: '↩️',
+          confirmText: 'Return Tool'
+        });
+        if (confirmed) {
           toolService.updateAllocationItem(id, {
             changeStatus: 'RETURNED',
             changeDate: new Date().toISOString().split('T')[0],
@@ -5706,8 +5726,15 @@ function renderAdminPrintTemplateModal() {
     // Reset Factory Default
     const btnReset = document.getElementById('btn-reset-factory-template');
     if (btnReset) {
-      btnReset.onclick = () => {
-        if (confirm('Reset template to standard factory default (Original 10 accessories, standard A4 layout & default SOP)?')) {
+      btnReset.onclick = async () => {
+        const confirmed = await notificationService.confirm({
+          title: 'Reset Print Template',
+          message: 'Reset template to standard factory default (Original 10 accessories, standard A4 layout & default SOP)?',
+          icon: '🔄',
+          confirmText: 'Reset to Factory Defaults',
+          isDestructive: true
+        });
+        if (confirmed) {
           toolService.resetPrintTemplateConfig();
           modalLayer.innerHTML = '';
           window.app?.showToast('Template Reset', 'Print template restored to factory defaults.', 'info');
