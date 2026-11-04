@@ -988,6 +988,11 @@ class NotificationService {
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('erp:notification', { detail: item }));
       window.dispatchEvent(new CustomEvent('erp:notification-updated', { detail: item }));
+
+      // Deliver Web Push Notification (Strictly Role & Location Scope Filtered)
+      import('./webPushService.js').then(({ webPushService }) => {
+        webPushService.sendPushNotification(item);
+      }).catch(() => {});
     }
 
     // Only display popup toast if explicitly requested via showToast: true AND user is permitted

@@ -8,7 +8,7 @@
  * 3. Database & REST APIs: Strict Network-Only bypass (zero caching of live MySQL/PostgreSQL/SSE streams)
  */
 
-const CACHE_NAME = 'amg-erp-v4.28.4';
+const CACHE_NAME = 'amg-erp-v4.28.5';
 
 const PRECACHE_ASSETS = [
   './',
@@ -22,6 +22,7 @@ const PRECACHE_ASSETS = [
   'js/db/storage.js?v=4.28.4',
   'js/db/schema.js',
   'js/services/authService.js',
+  'js/services/webPushService.js',
   'js/services/router.js?v=4.28.3',
   'js/components/loginView.js?v=4.28.3',
   'js/components/sidebar.js',
@@ -118,6 +119,70 @@ self.addEventListener('fetch', (event) => {
         }).catch(() => cachedRes);
 
         return cachedRes || fetchPromise;
+      })
+    );
+  }
+});
+
+// =========================================================================
+// 4. Web Push Notification Engine & Notification Click Handlers
+// =========================================================================
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const notifData = event.notification.data || {};
+  let targetUrl = notifData.url || './';
+
+  if (targetUrl.startsWith('#')) {
+    targetUrl = './' + targetUrl;
+  }
+
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
+      // 1. If an existing ERP window/tab is already open, focus it and navigate
+      for (let i = 0; i < windowClients.length; i++) {
+        const client = windowClients[i];
+        if ('focus' in client) {
+          if (targetUrl && client.navigate) {
+            client.navigate(targetUrl);
+          }
+          return client.focus();
+        }
+      }
+      // 2. Otherwise open a new window to the destination
+      if (clients.openWindow) {
+        return clients.openWindow(targetUrl);
+      }
+    })
+  );
+});
+
+self.addEventListener('push', (event) => {
+  if (!event.data) return;
+
+  try {
+    const payload = event.data.json();
+    const title = payload.title || 'Al-Muslim ERP Notice';
+    const options = {
+      body: payload.message || payload.body || 'New operational update received.',
+      icon: payload.icon || 'favicon.ico',
+      badge: 'favicon.ico',
+      tag: payload.tag || payload.id || 'amg-erp-notice',
+      data: {
+        url: payload.targetUrl || payload.url || './',
+        id: payload.id || null
+      },
+      vibrate: [200, 100, 200],
+      requireInteraction: Boolean(payload.requireInteraction || payload.action === 'APPROVE')
+    };
+    event.waitUntil(self.registration.showNotification(title, options));
+  } catch (_) {
+    const text = event.data.text();
+    event.waitUntil(
+      self.registration.showNotification('Al-Muslim ERP', {
+        body: text,
+        icon: 'favicon.ico',
+        badge: 'favicon.ico'
       })
     );
   }

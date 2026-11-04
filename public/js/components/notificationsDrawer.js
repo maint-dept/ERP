@@ -6,6 +6,7 @@
  */
 
 import { notificationService } from '../services/notificationService.js';
+import { webPushService } from '../services/webPushService.js';
 import { authService } from '../services/authService.js';
 import { state } from '../state.js';
 import { storage } from '../db/storage.js';
@@ -114,6 +115,11 @@ export function renderNotificationsDrawer() {
     }
   }
 
+  const isPushSupported = webPushService.isSupported();
+  const pushPermission = webPushService.getPermission();
+  const isPushActive = webPushService.isEnabled();
+  const isPushBlocked = pushPermission === 'denied';
+
   return `
     <div class="drawer-backdrop" id="drawer-notifs-backdrop"></div>
     <div class="drawer-panel" style="width: 520px; max-width: 95vw; background: #0b1120; border-left: 1px solid rgba(56, 189, 248, 0.2); box-shadow: -15px 0 45px rgba(0,0,0,0.7); display: flex; flex-direction: column;">
@@ -166,6 +172,56 @@ export function renderNotificationsDrawer() {
             <span>${scopeDesc}</span>
           </div>
         </div>
+
+        <!-- Web Push Notification Status & Control Bar -->
+        ${isPushSupported ? `
+          <div id="notifs-web-push-card" style="display: flex; align-items: center; justify-content: space-between; background: linear-gradient(135deg, rgba(15, 23, 42, 0.85), rgba(30, 41, 59, 0.85)); border: 1px solid ${isPushActive ? 'rgba(34, 197, 94, 0.35)' : 'rgba(56, 189, 248, 0.25)'}; border-radius: 8px; padding: 8px 12px; gap: 8px; flex-wrap: wrap;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 17px;">📲</span>
+              <div>
+                <div style="display: flex; align-items: center; gap: 6px;">
+                  <span style="font-size: 12px; font-weight: 700; color: #fff;">Web Push Notification</span>
+                  ${isPushActive ? `
+                    <span class="badge" style="background: rgba(34, 197, 94, 0.2); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.4); font-size: 10px; padding: 1px 6px; font-weight: 700;">
+                      ● Active
+                    </span>
+                  ` : isPushBlocked ? `
+                    <span class="badge" style="background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); font-size: 10px; padding: 1px 6px; font-weight: 700;">
+                      ✕ Blocked
+                    </span>
+                  ` : `
+                    <span class="badge" style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); font-size: 10px; padding: 1px 6px; font-weight: 700;">
+                      ○ Inactive
+                    </span>
+                  `}
+                </div>
+                <div style="font-size: 10.5px; color: var(--text-muted); margin-top: 1px;">
+                  ${isPushActive 
+                    ? 'Browser alerts are strictly filtered to your role &amp; factory floor.' 
+                    : isPushBlocked 
+                      ? 'Push blocked in browser settings. Please allow notifications for this site.' 
+                      : 'Enable to receive real-time alerts even when the browser tab is in background.'}
+                </div>
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 6px;">
+              ${isPushActive ? `
+                <button id="btn-web-push-test" type="button" class="btn btn-secondary btn-xs" style="font-size: 10.5px; font-weight: 700; padding: 3px 8px; border-radius: 6px; color: #38bdf8; border-color: rgba(56, 189, 248, 0.35);" title="Send test push alert for your current role &amp; floor">
+                  🔔 Test Alert
+                </button>
+                <button id="btn-web-push-toggle" type="button" class="btn btn-ghost btn-xs" style="font-size: 10.5px; color: #94a3b8; padding: 3px 6px;" title="Mute Web Push Notifications">
+                  Mute
+                </button>
+              ` : isPushBlocked ? `
+                <span style="font-size: 10.5px; color: #f87171; font-weight: 600;">Blocked by Browser</span>
+              ` : `
+                <button id="btn-web-push-enable" type="button" class="btn btn-primary btn-xs" style="font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 6px; background: linear-gradient(135deg, #0284c7, #0369a1); box-shadow: 0 2px 8px rgba(2, 132, 199, 0.35);">
+                  🔔 Turn On Web Push
+                </button>
+              `}
+            </div>
+          </div>
+        ` : ''}
 
         <!-- Access Boundary Assurance Banner -->
         <div style="display: flex; align-items: center; gap: 6px; font-size: 11px; color: #94a3b8; background: rgba(56, 189, 248, 0.06); border: 1px dashed rgba(56, 189, 248, 0.25); border-radius: 6px; padding: 4px 10px;">
@@ -369,6 +425,60 @@ export function initNotificationsDrawerEvents() {
         modalLayer.innerHTML = renderNotificationsDrawer();
         initNotificationsDrawerEvents();
       }
+    });
+  }
+
+  // Web Push Notification Enable Button
+  const btnWebPushEnable = document.getElementById('btn-web-push-enable');
+  if (btnWebPushEnable) {
+    btnWebPushEnable.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      btnWebPushEnable.disabled = true;
+      btnWebPushEnable.textContent = '⏳ Requesting...';
+      const res = await webPushService.requestPermission();
+      if (res?.success) {
+        notificationService.success('Web Push Notifications successfully activated!');
+      } else if (res?.error) {
+        notificationService.error(res.error);
+      }
+      const modalLayer = document.getElementById('modal-layer');
+      if (modalLayer) {
+        modalLayer.innerHTML = renderNotificationsDrawer();
+        initNotificationsDrawerEvents();
+      }
+    });
+  }
+
+  // Web Push Mute/Disable Button
+  const btnWebPushToggle = document.getElementById('btn-web-push-toggle');
+  if (btnWebPushToggle) {
+    btnWebPushToggle.addEventListener('click', (e) => {
+      e.stopPropagation();
+      webPushService.disable();
+      notificationService.info('Web Push Notifications muted.');
+      const modalLayer = document.getElementById('modal-layer');
+      if (modalLayer) {
+        modalLayer.innerHTML = renderNotificationsDrawer();
+        initNotificationsDrawerEvents();
+      }
+    });
+  }
+
+  // Web Push Test Alert Button
+  const btnWebPushTest = document.getElementById('btn-web-push-test');
+  if (btnWebPushTest) {
+    btnWebPushTest.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      btnWebPushTest.disabled = true;
+      btnWebPushTest.textContent = '⏳ Sending...';
+      const res = await webPushService.sendTestNotification();
+      if (res?.success) {
+        notificationService.success('Role-filtered test push sent to your screen!');
+      } else {
+        notificationService.error(res?.error || 'Failed to trigger test push.');
+      }
+      btnWebPushTest.disabled = false;
+      btnWebPushTest.textContent = '🔔 Test Alert';
     });
   }
 

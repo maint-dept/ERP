@@ -110,6 +110,11 @@ class RealtimeService {
     } else if (table === TABLE_NAMES.NOTIFICATIONS) {
       window.dispatchEvent(new CustomEvent('erp:realtime-notification-updated', { detail: payload }));
       window.dispatchEvent(new CustomEvent('erp:notifications-updated', { detail: payload }));
+      if (data && typeof data === 'object') {
+        import('./webPushService.js').then(({ webPushService }) => {
+          webPushService.sendPushNotification(data);
+        }).catch(() => {});
+      }
     } else if (table === TABLE_NAMES.TRANSFERS || table === TABLE_NAMES.TRANSFER_REQUESTS) {
       window.dispatchEvent(new CustomEvent('erp:realtime-transfer-updated', { detail: payload }));
       window.dispatchEvent(new CustomEvent('erp:transfers-updated', { detail: payload }));

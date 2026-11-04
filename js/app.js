@@ -32,6 +32,7 @@ import { router } from './services/router.js?v=4.27.9';
 import { moduleLoader } from './services/moduleLoader.js?v=4.27.7';
 import { realtimeService } from './services/realtimeService.js';
 import { homepageService } from './services/homepageService.js';
+import { webPushService } from './services/webPushService.js';
 
 /**
  * Captures all active scroll, viewport, and focused input states.
@@ -229,6 +230,8 @@ class ERPApplication {
       // Hydrate storage and real-time in background without blocking instant UI
       storage.ensureHydrated().catch(() => {});
       realtimeService.init();
+    webPushService.init();
+      webPushService.init();
 
       if (typeof moduleLoader !== 'undefined' && typeof moduleLoader.preloadAllModules === 'function') {
         setTimeout(() => { moduleLoader.preloadAllModules(); }, 200);
@@ -268,6 +271,7 @@ class ERPApplication {
     this.render();
     window.__appLoaded = true;
     realtimeService.init();
+    webPushService.init();
     router.init();
     this.bindEvents();
 
