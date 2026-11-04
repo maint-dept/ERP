@@ -1366,11 +1366,11 @@ export function initVirtualScrollEngine() {
   if (!initialTop || !initialBottom) return;
 
   const rowHeight = data.rowHeight || 44;
-  const buffer = 25; // 25 rows buffer above and below
-  const defaultWindowCount = 75; // 75 rows mounted
+  const buffer = 35; // 35 rows buffer above and below
+  const defaultWindowCount = 90; // 90 rows mounted
 
-  let lastStartIndex = 0;
-  let lastEndIndex = Math.min(data.machines.length, defaultWindowCount);
+  let lastStartIndex = -1;
+  let lastEndIndex = -1;
   let isTicking = false;
 
   const updateVirtualRows = () => {
@@ -1394,7 +1394,7 @@ export function initVirtualScrollEngine() {
     const startIndex = Math.max(0, rawStart - buffer);
     const endIndex = Math.min(totalRows, rawEnd + buffer);
 
-    if (Math.abs(startIndex - lastStartIndex) >= 5 || (endIndex !== lastEndIndex && (endIndex === totalRows || lastEndIndex === totalRows))) {
+    if (lastStartIndex === -1 || Math.abs(startIndex - lastStartIndex) >= 5 || (endIndex !== lastEndIndex && (endIndex === totalRows || lastEndIndex === totalRows))) {
       lastStartIndex = startIndex;
       lastEndIndex = endIndex;
 
@@ -1449,6 +1449,9 @@ export function initVirtualScrollEngine() {
   }
   viewport.__vscrollHandler = onScroll;
   viewport.addEventListener('scroll', onScroll, { passive: true });
+
+  // Immediately mount matching rows based on current viewport scrollTop on initialization
+  updateVirtualRows();
 }
 
 export function initInventoryTableEvents() {
@@ -1463,6 +1466,9 @@ export function initInventoryTableEvents() {
           await storage.syncWithServerDatabase(true);
           const container = document.getElementById('main-view-container');
           if (container && state.get('currentView') === 'inventory') {
+            if (typeof updateInventoryTableRowsOnly === 'function' && updateInventoryTableRowsOnly()) {
+              return;
+            }
             container.innerHTML = renderInventoryTable();
             initInventoryTableEvents();
           }
@@ -1479,6 +1485,10 @@ export function initInventoryTableEvents() {
     if (state.get('currentView') === 'inventory') {
       const container = document.getElementById('main-view-container');
       if (container) {
+        // Fast, in-place non-destructive row reconciliation: preserves scroll position, inputs and focus
+        if (typeof updateInventoryTableRowsOnly === 'function' && updateInventoryTableRowsOnly()) {
+          return;
+        }
         container.innerHTML = renderInventoryTable();
         initInventoryTableEvents();
       }
@@ -3007,6 +3017,12 @@ export function updateInventoryTableRowsOnly() {
 
   tbody.innerHTML = rowsHtml;
 
+  const invViewport = document.getElementById('inventory-table-scroll-viewport');
+  if (invViewport && window.__resetInventoryScrollTop) {
+    invViewport.scrollTop = 0;
+    window.__resetInventoryScrollTop = false;
+  }
+
   // Re-synchronize virtual scroll engine listeners for the updated dataset
   initVirtualScrollEngine();
 
@@ -3071,12 +3087,6 @@ export function updateInventoryTableRowsOnly() {
 
   // Synchronize selection state in DOM
   syncInventorySelectionDOM();
-
-  const invViewport = document.getElementById('inventory-table-scroll-viewport');
-  if (invViewport && window.__resetInventoryScrollTop) {
-    invViewport.scrollTop = 0;
-    window.__resetInventoryScrollTop = false;
-  }
 
   return true;
 }

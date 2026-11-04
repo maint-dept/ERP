@@ -190,6 +190,13 @@
   overflow: hidden; /* Prevents outer page vertical scrollbar so toolbar stays fixed */
 }
 
+@media (min-width: 769px) {
+  #main-view-container:has(.inventory-page-wrapper),
+  #main-view-container:has(.manpower-page-wrapper) {
+    overflow-y: hidden !important;
+  }
+}
+
 .inventory-sticky-header-panel {
   flex-shrink: 0;
   display: flex;
@@ -417,7 +424,7 @@ body.theme-light .manpower-grid-table tr:hover td.col-actions-cell {
 }
 
 .manpower-grid-table tbody tr:hover td:first-child {
-  border-left: 3px solid #38bdf8 !important;
+  box-shadow: inset 3px 0 0 #38bdf8, inset 0 1px 0 rgba(56, 189, 248, 0.35), inset 0 -1px 0 rgba(56, 189, 248, 0.35) !important;
 }
 
 .manpower-bulk-bar {
@@ -603,7 +610,7 @@ td.col-actions-cell {
 
 .excel-grid-table tbody tr:hover td:first-child,
 .excel-grid-table tbody tr:hover td.col-freeze-sl {
-  border-left: 3px solid #38bdf8 !important;
+  box-shadow: inset 3px 0 0 #38bdf8, inset 0 1px 0 rgba(56, 189, 248, 0.35), inset 0 -1px 0 rgba(56, 189, 248, 0.35) !important;
 }
 
 .excel-grid-table tbody tr:hover td.col-freeze-1,
@@ -627,7 +634,7 @@ td.col-actions-cell {
 
 .excel-grid-table tbody tr.selected td:first-child,
 .excel-grid-table tbody tr.selected td.col-freeze-sl {
-  border-left: 3px solid #60a5fa !important;
+  box-shadow: inset 3px 0 0 #60a5fa, inset 0 1px 0 rgba(56, 189, 248, 0.45), inset 0 -1px 0 rgba(56, 189, 248, 0.45) !important;
 }
 
 .excel-grid-table tbody tr.selected td.col-freeze-1,

@@ -3186,7 +3186,7 @@ td.td-actions-active {
 }
 
 .transfers-table tbody tr:hover td:first-child {
-  border-left: 3px solid #38bdf8 !important;
+  box-shadow: inset 3px 0 0 #38bdf8, inset 0 1px 0 rgba(56, 189, 248, 0.35), inset 0 -1px 0 rgba(56, 189, 248, 0.35) !important;
 }
 
 .transfer-id-badge {
@@ -3307,7 +3307,7 @@ td.td-actions-active {
 }
 
 .data-table tbody tr:hover td:first-child {
-  border-left: 3px solid #38bdf8 !important;
+  box-shadow: inset 3px 0 0 #38bdf8, inset 0 1px 0 rgba(56, 189, 248, 0.35), inset 0 -1px 0 rgba(56, 189, 248, 0.35) !important;
 }
 
 .data-table tfoot td {
@@ -4192,7 +4192,7 @@ table tbody tr:hover td:first-child,
 .transfers-table tbody tr:hover td:first-child,
 .manpower-grid-table tbody tr:hover td:first-child,
 .user-management-table tbody tr:hover td:first-child {
-  border-left: 3px solid #38bdf8 !important;
+  box-shadow: inset 3px 0 0 #38bdf8, inset 0 1px 0 rgba(56, 189, 248, 0.35), inset 0 -1px 0 rgba(56, 189, 248, 0.35) !important;
 }
 
 /* Universal Dark Mode Selected Row Highlight across ALL columns */
