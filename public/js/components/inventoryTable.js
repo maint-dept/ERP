@@ -891,9 +891,9 @@ export function renderInventoryTable() {
       let startIndex = 0;
       if (currentScrollTop > 0) {
         const rawStart = Math.floor(currentScrollTop / VSCROLL_ROW_HEIGHT);
-        startIndex = Math.max(0, rawStart - 25);
+        startIndex = Math.max(0, rawStart - 55);
       }
-      const initialVisibleCount = Math.min(machines.length - startIndex, 80);
+      const initialVisibleCount = Math.min(machines.length - startIndex, 120);
       const endIndex = Math.min(machines.length, startIndex + initialVisibleCount);
       const topPadding = startIndex * VSCROLL_ROW_HEIGHT;
       const bottomPadding = Math.max(0, (machines.length - endIndex) * VSCROLL_ROW_HEIGHT);
@@ -1386,14 +1386,14 @@ export function initVirtualScrollEngine() {
   if (!initialTop || !initialBottom) return;
 
   const rowHeight = data.rowHeight || 44;
-  const buffer = 35; // 35 rows buffer above and below
-  const defaultWindowCount = 90; // 90 rows mounted
+  const buffer = 55; // 55 rows buffer above and below (~2,400px safety zone in each direction)
+  const defaultWindowCount = 120; // 120 rows mounted
 
   let lastStartIndex = -1;
   let lastEndIndex = -1;
   let isTicking = false;
 
-  const updateVirtualRows = () => {
+  const updateVirtualRows = (force = false) => {
     isTicking = false;
     const currentData = window.__vscrollEngineData;
     if (!currentData || !currentData.isActive || !Array.isArray(currentData.machines)) return;
@@ -1415,7 +1415,12 @@ export function initVirtualScrollEngine() {
     const endIndex = Math.min(totalRows, rawEnd + buffer);
 
     const threshold = 12;
-    if (lastStartIndex === -1 || Math.abs(startIndex - lastStartIndex) >= threshold || (endIndex !== lastEndIndex && (endIndex === totalRows || lastEndIndex === totalRows))) {
+    const needsUpdate = force || 
+      lastStartIndex === -1 || 
+      Math.abs(startIndex - lastStartIndex) >= threshold || 
+      (endIndex !== lastEndIndex && (endIndex === totalRows || lastEndIndex === totalRows));
+
+    if (needsUpdate) {
       lastStartIndex = startIndex;
       lastEndIndex = endIndex;
 
@@ -1460,9 +1465,27 @@ export function initVirtualScrollEngine() {
     if (window.__isActionMenuOpen && typeof closeAllActionMenus === 'function') {
       closeAllActionMenus();
     }
-    if (!isTicking) {
+
+    const scrollTop = viewport.scrollTop;
+    const viewportHeight = viewport.clientHeight || 550;
+    const renderedTopPx = lastStartIndex * rowHeight;
+    const renderedBottomPx = lastEndIndex * rowHeight;
+
+    // Detect if current scroll position has jumped outside or is nearing the buffer boundary:
+    const isNearOrOutsideBuffer = (
+      lastStartIndex === -1 || 
+      scrollTop <= (renderedTopPx + 8 * rowHeight) || 
+      (scrollTop + viewportHeight) >= (renderedBottomPx - 8 * rowHeight)
+    );
+
+    if (isNearOrOutsideBuffer) {
+      // Immediate synchronous update: when user drags the scrollbar thumb or jumps,
+      // update the DOM synchronously before the browser paints. This completely eliminates blank/flashing frames
+      // and guarantees data never disappears during vertical scroll!
+      updateVirtualRows(true);
+    } else if (!isTicking) {
       isTicking = true;
-      requestAnimationFrame(updateVirtualRows);
+      requestAnimationFrame(() => updateVirtualRows(false));
     }
   };
 
@@ -1473,7 +1496,7 @@ export function initVirtualScrollEngine() {
   viewport.addEventListener('scroll', onScroll, { passive: true });
 
   // Immediately mount matching rows based on current viewport scrollTop on initialization
-  updateVirtualRows();
+  updateVirtualRows(true);
 }
 
 export function initInventoryTableEvents() {
@@ -3046,9 +3069,9 @@ export function updateInventoryTableRowsOnly() {
     let startIndex = 0;
     if (currentScrollTop > 0) {
       const rawStart = Math.floor(currentScrollTop / VSCROLL_ROW_HEIGHT);
-      startIndex = Math.max(0, rawStart - 25);
+      startIndex = Math.max(0, rawStart - 55);
     }
-    const initialVisibleCount = Math.min(machines.length - startIndex, 80);
+    const initialVisibleCount = Math.min(machines.length - startIndex, 120);
     const endIndex = Math.min(machines.length, startIndex + initialVisibleCount);
     const topPadding = startIndex * VSCROLL_ROW_HEIGHT;
     const bottomPadding = Math.max(0, (machines.length - endIndex) * VSCROLL_ROW_HEIGHT);
