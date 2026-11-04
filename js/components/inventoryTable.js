@@ -172,7 +172,7 @@ export function renderSingleMachineRow(m, idx, ctx) {
     const boundaryClass = col.isLastFrozen ? 'col-frozen-boundary' : '';
     const tdClass = col.isFrozen ? `col-frozen-cell ${boundaryClass}` : '';
     const tdStyle = col.isFrozen 
-      ? `position: sticky !important; left: ${col.leftOffset}px !important; width: ${col.width}px !important; min-width: ${col.width}px !important; max-width: ${col.width}px !important; z-index: 10 !important; background-color: var(--bg-surface, #0f172a) !important; background-clip: padding-box !important;` 
+      ? `position: sticky !important; left: ${col.leftOffset}px !important; width: ${col.width}px !important; min-width: ${col.width}px !important; max-width: ${col.width}px !important; z-index: 10 !important; background-clip: padding-box !important;` 
       : `width: ${col.width}px; min-width: ${col.width}px; max-width: ${col.width}px;`;
     row += col.renderTd(m, { rQty, uQty, rpQty, totalQty, statusBadgeClass, displayStatus, isAmb }, tdStyle, tdClass);
   });

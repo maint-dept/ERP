@@ -411,8 +411,13 @@ body.theme-light .manpower-grid-table tr:hover td.col-actions-cell {
   transition: background-color 0.15s ease;
 }
 
-.manpower-grid-table tbody tr:hover {
-  background-color: rgba(56, 189, 248, 0.08) !important;
+.manpower-grid-table tbody tr:hover td {
+  background-color: #172554 !important;
+  box-shadow: inset 0 1px 0 rgba(56, 189, 248, 0.35), inset 0 -1px 0 rgba(56, 189, 248, 0.35) !important;
+}
+
+.manpower-grid-table tbody tr:hover td:first-child {
+  border-left: 3px solid #38bdf8 !important;
 }
 
 .manpower-bulk-bar {
@@ -590,25 +595,46 @@ td.col-actions-cell {
   transition: background-color 0.1s ease;
 }
 
-.excel-grid-table tbody tr:hover {
-  background-color: rgba(2, 132, 199, 0.08) !important;
+/* Universal High-Visibility Row Hover Highlight across ALL Columns */
+.excel-grid-table tbody tr:hover td {
+  background-color: #172554 !important;
+  box-shadow: inset 0 1px 0 rgba(56, 189, 248, 0.35), inset 0 -1px 0 rgba(56, 189, 248, 0.35) !important;
+}
+
+.excel-grid-table tbody tr:hover td:first-child,
+.excel-grid-table tbody tr:hover td.col-freeze-sl {
+  border-left: 3px solid #38bdf8 !important;
 }
 
 .excel-grid-table tbody tr:hover td.col-freeze-1,
 .excel-grid-table tbody tr:hover td.col-freeze-2,
 .excel-grid-table tbody tr:hover td.col-freeze-3,
-.excel-grid-table tbody tr:hover td.col-freeze-4 {
+.excel-grid-table tbody tr:hover td.col-freeze-4,
+.excel-grid-table tbody tr:hover td.col-frozen-cell {
   background-color: #172554 !important;
 }
 
-.excel-grid-table tbody tr.selected {
-  background-color: rgba(2, 132, 199, 0.18) !important;
+/* Universal Selected Row Highlight across ALL Columns */
+.excel-grid-table tbody tr.selected td {
+  background-color: #1e3a8a !important;
+  box-shadow: inset 0 1px 0 rgba(56, 189, 248, 0.45), inset 0 -1px 0 rgba(56, 189, 248, 0.45) !important;
+}
+
+.excel-grid-table tbody tr.selected:hover td {
+  background-color: #1d4ed8 !important;
+  box-shadow: inset 0 1px 0 #38bdf8, inset 0 -1px 0 #38bdf8 !important;
+}
+
+.excel-grid-table tbody tr.selected td:first-child,
+.excel-grid-table tbody tr.selected td.col-freeze-sl {
+  border-left: 3px solid #60a5fa !important;
 }
 
 .excel-grid-table tbody tr.selected td.col-freeze-1,
 .excel-grid-table tbody tr.selected td.col-freeze-2,
 .excel-grid-table tbody tr.selected td.col-freeze-3,
-.excel-grid-table tbody tr.selected td.col-freeze-4 {
+.excel-grid-table tbody tr.selected td.col-freeze-4,
+.excel-grid-table tbody tr.selected td.col-frozen-cell {
   background-color: #1e3a8a !important;
 }
 
