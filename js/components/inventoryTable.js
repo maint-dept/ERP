@@ -860,7 +860,9 @@ export function renderInventoryTable() {
     const isMobile = (typeof window !== 'undefined' && window.innerWidth <= 768);
     const totalCols = columnLayout.length + 2;
     const VSCROLL_ROW_HEIGHT = 44;
-    const isVirtualScrollActive = machines.length > (isMobile ? 18 : 30);
+    // Native high-speed 60FPS / 120FPS GPU composited rendering for up to 250 rows (25, 50, 100, 200).
+    // Virtual windowing is only activated for massive datasets (>250 rows), eliminating lag, scroll jitter & clipping!
+    const isVirtualScrollActive = machines.length > 250;
 
     const rowCtx = {
       isAll,
@@ -884,7 +886,7 @@ export function renderInventoryTable() {
     };
 
     if (isVirtualScrollActive) {
-      const initialVisibleCount = Math.min(machines.length, isMobile ? 18 : 25);
+      const initialVisibleCount = Math.min(machines.length, 80);
       const topPadding = 0;
       const bottomPadding = (machines.length - initialVisibleCount) * VSCROLL_ROW_HEIGHT;
 
@@ -894,6 +896,7 @@ export function renderInventoryTable() {
       }
       rowsHtml += `<tr id="vscroll-bottom-spacer" style="height: ${bottomPadding}px; border: none; padding: 0;"><td colspan="${totalCols}" style="padding: 0; border: none; height: ${bottomPadding}px; background: transparent;"></td></tr>`;
     } else {
+      // 100% Native rendering: all rows directly in DOM. Zero JS on scroll, zero lag!
       for (let i = 0; i < machines.length; i++) {
         rowsHtml += renderSingleMachineRow(machines[i], i, rowCtx);
       }
@@ -965,10 +968,11 @@ export function renderInventoryTable() {
         <!-- Middle: Rows per page: [ 25 | 50 | 100 | All ] -->
         <div class="pagination-per-page-container" style="display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--text-secondary);">
           <span>Rows per page:</span>
-          <select id="${idPrefix}select-per-page" class="filter-select-compact select-inventory-per-page" style="width: 75px; height: 30px; font-size: 12px;">
+          <select id="${idPrefix}select-per-page" class="filter-select-compact select-inventory-per-page" style="width: 80px; height: 30px; font-size: 12px;">
             <option value="25" ${!isAll && numLimit === 25 ? 'selected' : ''}>25</option>
             <option value="50" ${!isAll && numLimit === 50 ? 'selected' : ''}>50</option>
             <option value="100" ${!isAll && numLimit === 100 ? 'selected' : ''}>100</option>
+            <option value="200" ${!isAll && numLimit === 200 ? 'selected' : ''}>200</option>
             ${!isMobileViewport ? `<option value="ALL" ${isAll ? 'selected' : ''}>All</option>` : ''}
           </select>
         </div>
@@ -1340,38 +1344,49 @@ export function renderInventoryTable() {
 }
 
 /**
- * High-Performance 60FPS Virtual Scrolling Engine
- * Dynamically swaps only visible rows into DOM + top/bottom spacers to achieve 0ms lag on large datasets.
+ * High-Performance Virtual Scrolling Engine for Massive Unpaginated Datasets (>250 Rows)
+ * Dynamically updates rows with generous buffer windows to achieve buttery smooth scrolling without lag or empty screens.
  */
 export function initVirtualScrollEngine() {
   const viewport = document.getElementById('inventory-table-scroll-viewport');
   if (!viewport) return;
 
   const data = window.__vscrollEngineData;
+  // If dataset <= 250 rows (standard 25/50/100/200 pagination), disable virtual scroll completely for 100% native GPU scroll!
   if (!data || !data.isActive || !Array.isArray(data.machines)) {
+    if (viewport.__vscrollHandler) {
+      viewport.removeEventListener('scroll', viewport.__vscrollHandler);
+      viewport.__vscrollHandler = null;
+    }
     return;
   }
 
-  const topSpacer = document.getElementById('vscroll-top-spacer');
-  const bottomSpacer = document.getElementById('vscroll-bottom-spacer');
-  if (!topSpacer || !bottomSpacer) return;
+  const initialTop = document.getElementById('vscroll-top-spacer');
+  const initialBottom = document.getElementById('vscroll-bottom-spacer');
+  if (!initialTop || !initialBottom) return;
 
-  const machines = data.machines;
-  const totalRows = machines.length;
   const rowHeight = data.rowHeight || 44;
-  const isMobile = Boolean(data.isMobile || (typeof window !== 'undefined' && window.innerWidth <= 768));
-  // Keep only 15-20 rows mounted in DOM on mobile (3 buffer rows), 20-25 rows on desktop (5 buffer rows)
-  const buffer = isMobile ? 3 : 5;
-  const defaultWindowCount = isMobile ? 18 : 25;
+  const buffer = 25; // 25 rows buffer above and below
+  const defaultWindowCount = 75; // 75 rows mounted
 
   let lastStartIndex = 0;
-  let lastEndIndex = Math.min(totalRows, defaultWindowCount);
+  let lastEndIndex = Math.min(data.machines.length, defaultWindowCount);
   let isTicking = false;
 
   const updateVirtualRows = () => {
     isTicking = false;
+    const currentData = window.__vscrollEngineData;
+    if (!currentData || !currentData.isActive || !Array.isArray(currentData.machines)) return;
+    const machines = currentData.machines;
+    const totalRows = machines.length;
+
+    // Always query fresh spacers from live DOM (prevents detached closure bugs)
+    const topSpacer = document.getElementById('vscroll-top-spacer');
+    const bottomSpacer = document.getElementById('vscroll-bottom-spacer');
+    if (!topSpacer || !bottomSpacer) return;
+
     const scrollTop = viewport.scrollTop;
-    const viewportHeight = viewport.clientHeight || 500;
+    const viewportHeight = viewport.clientHeight || 550;
 
     const rawStart = Math.floor(scrollTop / rowHeight);
     const rawEnd = Math.ceil((scrollTop + viewportHeight) / rowHeight);
@@ -1379,7 +1394,7 @@ export function initVirtualScrollEngine() {
     const startIndex = Math.max(0, rawStart - buffer);
     const endIndex = Math.min(totalRows, rawEnd + buffer);
 
-    if (Math.abs(startIndex - lastStartIndex) >= 1 || (endIndex !== lastEndIndex && (endIndex === totalRows || lastEndIndex === totalRows))) {
+    if (Math.abs(startIndex - lastStartIndex) >= 5 || (endIndex !== lastEndIndex && (endIndex === totalRows || lastEndIndex === totalRows))) {
       lastStartIndex = startIndex;
       lastEndIndex = endIndex;
 
@@ -1398,7 +1413,7 @@ export function initVirtualScrollEngine() {
 
       let sliceHtml = '';
       for (let i = startIndex; i < endIndex; i++) {
-        sliceHtml += renderSingleMachineRow(machines[i], i, data.rowCtx);
+        sliceHtml += renderSingleMachineRow(machines[i], i, currentData.rowCtx);
       }
 
       const tbody = topSpacer.parentElement;
@@ -2939,7 +2954,9 @@ export function updateInventoryTableRowsOnly() {
   const isMobile = (typeof window !== 'undefined' && window.innerWidth <= 768);
   const totalCols = rowCtx.columnLayout.length + 2;
   const VSCROLL_ROW_HEIGHT = 44;
-  const isVirtualScrollActive = machines.length > (isMobile ? 18 : 30);
+  // Native high-speed 60FPS / 120FPS GPU composited rendering for up to 250 rows (25, 50, 100, 200).
+  // Virtual windowing is only activated for massive datasets (>250 rows), eliminating lag, scroll jitter & clipping!
+  const isVirtualScrollActive = machines.length > 250;
 
   rowCtx = {
     ...rowCtx,
@@ -2972,7 +2989,7 @@ export function updateInventoryTableRowsOnly() {
       </tr>
     `;
   } else if (isVirtualScrollActive) {
-    const initialVisibleCount = Math.min(machines.length, isMobile ? 18 : 25);
+    const initialVisibleCount = Math.min(machines.length, 80);
     const topPadding = 0;
     const bottomPadding = (machines.length - initialVisibleCount) * VSCROLL_ROW_HEIGHT;
 
@@ -2982,12 +2999,16 @@ export function updateInventoryTableRowsOnly() {
     }
     rowsHtml += `<tr id="vscroll-bottom-spacer" style="height: ${bottomPadding}px; border: none; padding: 0;"><td colspan="${totalCols}" style="padding: 0; border: none; height: ${bottomPadding}px; background: transparent;"></td></tr>`;
   } else {
+    // 100% Native rendering: all rows directly in DOM. Zero JS on scroll, zero lag!
     for (let i = 0; i < machines.length; i++) {
       rowsHtml += renderSingleMachineRow(machines[i], i, rowCtx);
     }
   }
 
   tbody.innerHTML = rowsHtml;
+
+  // Re-synchronize virtual scroll engine listeners for the updated dataset
+  initVirtualScrollEngine();
 
   // In-place pagination counter & controls sync
   const totalPages = isAll ? 1 : Math.max(1, queryResult.totalPages || Math.ceil((queryResult.total || 0) / numLimit) || 1);
@@ -3002,6 +3023,10 @@ export function updateInventoryTableRowsOnly() {
   document.querySelectorAll('.inventory-pagination-bar').forEach(bar => {
     bar.setAttribute('data-cur-page', String(curPage));
     bar.setAttribute('data-total-pages', String(totalPages));
+  });
+
+  document.querySelectorAll('.select-inventory-per-page, #select-per-page, #top-select-per-page').forEach(sel => {
+    sel.value = isAll ? 'ALL' : String(numLimit);
   });
 
   document.querySelectorAll('.btn-inventory-prev, #btn-prev-page, #top-btn-prev-page').forEach(btn => {
