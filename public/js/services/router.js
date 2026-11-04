@@ -59,6 +59,9 @@ const ROUTE_VIEW_MAP = {
   'settings': 'settings',
   'database-config': 'database-config',
   'no-access': 'no-access',
+  'user': 'login',
+  'user-login': 'login',
+  'user-forgot-password': 'login',
   'admin-login': 'admin-login',
   'maint-admin': 'admin-login',
   'secure-admin-gateway': 'admin-login',
@@ -112,7 +115,7 @@ const REPORT_SLUG_MAP = {
 // Document titles for each view
 const VIEW_TITLES = {
   'home': 'Al-Muslim Group — Maintenance Department ERP',
-  'login': 'Sign In — Maintenance ERP | Al-Muslim Group',
+  'login': 'User Login — Maintenance ERP | Al-Muslim Group',
   'dashboard': 'Dashboard — Factory Maintenance ERP',
   'inventory': 'Machine Inventory — Al-Muslim Group ERP',
   'relocate': 'Relocate & Verify — Al-Muslim Group ERP',
@@ -237,12 +240,23 @@ class SPAModuleRouter {
     }
 
     // Check if routeKey matches user forgot password aliases
-    if (routeKey === 'forgot-password' || routeKey === 'forgot' || routeKey === 'password-recovery' || routeKey === 'reset-password') {
+    if (routeKey === 'forgot-password' || routeKey === 'forgot' || routeKey === 'password-recovery' || routeKey === 'reset-password' || routeKey === 'user-forgot-password') {
       routeKey = 'login';
       if (!subSegment) subSegment = 'forgot-password';
     } else if (routeKey === 'admin-forgot-password' || routeKey === 'admin-forgot') {
       routeKey = 'admin-login';
       if (!subSegment) subSegment = 'forgot-password';
+    }
+
+    // Check if routeKey is 'user' (e.g. /user/forgot-password or /user/login or /user)
+    if (routeKey === 'user') {
+      if (subSegment === 'forgot-password' || subSegment === 'forgot' || subSegment === 'reset-password' || subSegment === 'password-recovery') {
+        routeKey = 'login';
+        subSegment = 'forgot-password';
+      } else {
+        routeKey = 'login';
+        if (subSegment === 'login') subSegment = null;
+      }
     }
 
     // Check if routeKey matches active custom admin login slug
@@ -365,12 +379,12 @@ class SPAModuleRouter {
       }
     } else if (view === 'login') {
       if (tab === 'forgot-password' || tab === 'forgot') {
-        pathPart = (base ? base : '') + '/forgot-password';
+        pathPart = (base ? base : '') + '/user/forgot-password';
       } else {
         pathPart = (base ? base : '') + '/login';
       }
-    } else if (view === 'forgot-password' || view === 'forgot') {
-      pathPart = (base ? base : '') + '/forgot-password';
+    } else if (view === 'forgot-password' || view === 'forgot' || view === 'user-forgot-password') {
+      pathPart = (base ? base : '') + '/user/forgot-password';
     } else {
       pathPart = (base ? base : '') + '/' + encodeURIComponent(view);
       if (tab) {
@@ -395,7 +409,7 @@ class SPAModuleRouter {
     if ((view === 'login' || view === 'admin-login') && (tab === 'forgot-password' || tab === 'forgot')) {
       baseTitle = (view === 'admin-login')
         ? 'Password Recovery — Admin Security Gateway | Al-Muslim Group ERP'
-        : 'Password Recovery — Maintenance ERP | Al-Muslim Group';
+        : 'Forgot Password — User | Al-Muslim Group ERP';
     } else if (tab && tab !== 'dashboard' && tab !== 'machines' && tab !== 'active' && tab !== 'tools-list' && tab !== 'boards' && tab !== 'scan') {
       const displayTab = USER_TAB_TO_SLUG[tab] || tab;
       const formattedTab = displayTab.replace(/[-_]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
@@ -506,7 +520,7 @@ class SPAModuleRouter {
     let effectiveTargetView = targetView;
     let tab = options.tab !== undefined ? options.tab : this.getCurrentSubtab(effectiveTargetView);
 
-    if (effectiveTargetView === 'forgot-password' || effectiveTargetView === 'forgot') {
+    if (effectiveTargetView === 'forgot-password' || effectiveTargetView === 'forgot' || effectiveTargetView === 'user-forgot-password') {
       effectiveTargetView = 'login';
       tab = 'forgot-password';
     } else if (effectiveTargetView === 'admin-forgot-password' || effectiveTargetView === 'admin-forgot') {

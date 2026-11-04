@@ -7,7 +7,7 @@
 import { authService } from '../services/authService.js?v=4.26.60';
 import { emailService } from '../services/emailService.js';
 import { state } from '../state.js';
-import { router } from '../services/router.js?v=4.26.54';
+import { router } from '../services/router.js?v=4.28.3';
 import { homepageService } from '../services/homepageService.js';
 
 let loginMode = 'LOGIN'; // 'LOGIN' | 'FORGOT_REQUEST' | 'FORGOT_VERIFY' | 'FIRST_LOGIN_CHANGE'
@@ -43,6 +43,35 @@ export function renderLoginView(isAdminGateway = false) {
   try {
     localStorage.removeItem('al_muslim_saved_username');
   } catch (_) {}
+
+  // Sync mode based on router subtab / URL
+  const activeTab = state.get('loginActiveTab') || (typeof router !== 'undefined' && typeof router.getCurrentSubtab === 'function' ? router.getCurrentSubtab(isAdminGateway ? 'admin-login' : 'login') : null);
+  const parsed = (typeof router !== 'undefined' && typeof router.parseCurrentRoute === 'function') ? router.parseCurrentRoute() : null;
+  const isForgotPath = (activeTab === 'forgot-password' || activeTab === 'forgot') || 
+                       (parsed && (parsed.tab === 'forgot-password' || parsed.tab === 'forgot' || parsed.params?.mode === 'forgot'));
+
+  if (isForgotPath) {
+    if (loginMode !== 'FORGOT_VERIFY') {
+      loginMode = 'FORGOT_REQUEST';
+    }
+  } else if (loginMode === 'FORGOT_REQUEST' || loginMode === 'FORGOT_VERIFY') {
+    loginMode = 'LOGIN';
+    resetTargetUsername = '';
+    resetTargetEmail = '';
+    generatedDemoOtp = '';
+  }
+
+  const forgotHref = (typeof router !== 'undefined' && typeof router.buildUrl === 'function')
+    ? router.buildUrl(isAdminGateway ? 'admin-login' : 'login', { tab: 'forgot-password' })
+    : (isAdminGateway ? '/maint-admin/forgot-password' : '/user/forgot-password');
+
+  const loginHref = (typeof router !== 'undefined' && typeof router.buildUrl === 'function')
+    ? router.buildUrl(isAdminGateway ? 'admin-login' : 'login')
+    : (isAdminGateway ? '/maint-admin' : '/login');
+
+  const userPortalHref = (typeof router !== 'undefined' && typeof router.buildUrl === 'function')
+    ? router.buildUrl('login')
+    : '/login';
 
   const isMaintActive = authService.isMaintenanceModeActive();
   const maintConfig = authService.getMaintenanceModeConfig();
@@ -158,21 +187,22 @@ export function renderLoginView(isAdminGateway = false) {
         <div class="gateway-card" style="padding: 32px 28px;">
           
           <!-- Card Header -->
-          <div style="text-align: center; margin-bottom: 24px;">
-            <div class="gateway-icon-box" style="width: 64px; height: 64px; background: linear-gradient(135deg, ${isAdminGateway ? 'rgba(16, 185, 129, 0.2), rgba(2, 132, 199, 0.15)' : 'rgba(2, 132, 199, 0.25), rgba(99, 102, 241, 0.15)'}); border: 1.5px solid ${isAdminGateway ? 'rgba(16, 185, 129, 0.55)' : 'rgba(56, 189, 248, 0.55)'}; border-radius: 16px; display: inline-flex; align-items: center; justify-content: center; font-size: 28px; margin-bottom: 14px;">
+          <div style="text-align: center; margin-bottom: 22px;">
+            <div class="gateway-icon-box" style="width: 58px; height: 58px; background: linear-gradient(135deg, ${isAdminGateway ? 'rgba(16, 185, 129, 0.2), rgba(2, 132, 199, 0.15)' : 'rgba(2, 132, 199, 0.25), rgba(99, 102, 241, 0.15)'}); border: 1.5px solid ${isAdminGateway ? 'rgba(16, 185, 129, 0.55)' : 'rgba(56, 189, 248, 0.55)'}; border-radius: 16px; display: inline-flex; align-items: center; justify-content: center; font-size: 26px; margin-bottom: 12px;">
               ${loginMode === 'LOGIN' ? (isAdminGateway ? '🛡️' : '👤') : (loginMode === 'FIRST_LOGIN_CHANGE' ? '🔑' : '📩')}
             </div>
 
-            <h2 style="font-size: 22px; font-weight: 800; color: #ffffff; letter-spacing: -0.3px; margin: 0 0 6px 0;">
+            <h2 style="font-size: 22px; font-weight: 800; color: #ffffff; letter-spacing: -0.3px; margin: 0 0 ${(loginMode === 'LOGIN' && !isAdminGateway) ? '0' : '6px'} 0;">
               ${loginMode === 'LOGIN' 
-                ? (isAdminGateway ? 'Administrator Login' : 'Sign in to Maintenance ERP') 
-                : (loginMode === 'FIRST_LOGIN_CHANGE' ? 'First Login Password Setup' : (loginMode === 'FORGOT_REQUEST' ? 'Password Recovery' : 'Set New Password'))}
+                ? (isAdminGateway ? 'Administrator Login' : 'User Login') 
+                : (loginMode === 'FIRST_LOGIN_CHANGE' ? 'First Login Password Setup' : (loginMode === 'FORGOT_REQUEST' ? 'Forgot Password' : 'Set New Password'))}
             </h2>
+            ${(loginMode === 'LOGIN' && !isAdminGateway) ? '' : `
             <p style="font-size: 13px; color: #94a3b8; line-height: 1.5; margin: 0;">
               ${loginMode === 'LOGIN' 
-                ? (isAdminGateway ? 'Enter your administrative credentials to continue.' : 'Enter your employee credentials to access factory equipment and maintenance system.') 
+                ? 'Enter your administrative credentials to continue.' 
                 : (loginMode === 'FIRST_LOGIN_CHANGE' ? 'Please configure your permanent private password to enter the system.' : (loginMode === 'FORGOT_REQUEST' ? 'Enter your registered Email address or Username to receive a password reset code.' : `Enter the 6-digit code sent for account '${resetTargetUsername}'.`))}
-            </p>
+            </p>`}
           </div>
 
           <!-- Maintenance Mode Notification Box -->
@@ -239,7 +269,7 @@ export function renderLoginView(isAdminGateway = false) {
                       ⚠️ Caps Lock is ON
                     </span>
                   </label>
-                  <a href="#" id="link-forgot-password" style="font-size: 12px; color: ${accentLight}; text-decoration: none; font-weight: 700;">Forgot Password?</a>
+                  <a href="${forgotHref}" id="link-forgot-password" style="font-size: 12px; color: ${accentLight}; text-decoration: none; font-weight: 700;">Forgot Password?</a>
                 </div>
                 <div class="gateway-input-box">
                   <span style="position: absolute; left: 14px; font-size: 16px; opacity: 0.85; pointer-events: none; z-index: 5;">🔒</span>
@@ -279,7 +309,7 @@ export function renderLoginView(isAdminGateway = false) {
             ${isAdminGateway ? `
               <div style="text-align: center; margin-top: 20px; font-size: 12.5px; color: #94a3b8;">
                 <span>General factory user? </span>
-                <a href="#" id="link-switch-to-user-portal" style="color: #38bdf8; text-decoration: none; font-weight: 700;">Sign in to User Portal</a>
+                <a href="${userPortalHref}" id="link-switch-to-user-portal" style="color: #38bdf8; text-decoration: none; font-weight: 700;">Sign in to User Portal</a>
               </div>
             ` : ''}
 
@@ -344,7 +374,7 @@ export function renderLoginView(isAdminGateway = false) {
               </button>
 
               <div style="text-align: center; margin-top: 16px;">
-                <a href="#" id="link-back-to-login" style="font-size: 12.5px; color: #94a3b8; text-decoration: none;">← Return to Sign In</a>
+                <a href="${loginHref}" id="link-back-to-login" style="font-size: 12.5px; color: #94a3b8; text-decoration: none;">← Return to Login</a>
               </div>
             </form>
           ` : ''}
@@ -408,7 +438,7 @@ export function renderLoginView(isAdminGateway = false) {
               </button>
 
               <div style="text-align: center; margin-top: 16px;">
-                <a href="#" id="link-back-to-login-2" style="font-size: 12.5px; color: #94a3b8; text-decoration: none;">← Return to Sign In</a>
+                <a href="${loginHref}" id="link-back-to-login-2" style="font-size: 12.5px; color: #94a3b8; text-decoration: none;">← Return to Login</a>
               </div>
             </form>
           ` : ''}
@@ -507,15 +537,21 @@ export function initLoginViewEvents(isAdminGateway = false) {
   // Switch to User Portal Link from Admin Gateway
   document.getElementById('link-switch-to-user-portal')?.addEventListener('click', (e) => {
     e.preventDefault();
+    loginMode = 'LOGIN';
+    state.set('loginActiveTab', null);
     router.navigate('login');
     state.set('currentView', 'login');
+    triggerLoginReRender();
   });
 
   // Switch to Admin Gateway Link from User Portal
   document.getElementById('link-switch-to-admin-gateway')?.addEventListener('click', (e) => {
     e.preventDefault();
+    loginMode = 'LOGIN';
+    state.set('loginActiveTab', null);
     router.navigate('admin-login');
     state.set('currentView', 'admin-login');
+    triggerLoginReRender();
   });
 
   // Back to Homepage Navigation
@@ -679,18 +715,30 @@ export function initLoginViewEvents(isAdminGateway = false) {
 
   // Switch to Forgot Password Form
   const switchToForgot = (e) => {
-    e.preventDefault();
+    if (e && e.preventDefault) e.preventDefault();
     hideAlert();
     loginMode = 'FORGOT_REQUEST';
+    state.set('loginActiveTab', 'forgot-password');
+    if (_currentIsAdminGateway) {
+      router.navigate('admin-login', { tab: 'forgot-password' });
+    } else {
+      router.navigate('login', { tab: 'forgot-password' });
+    }
     triggerLoginReRender();
   };
   document.getElementById('link-forgot-password')?.addEventListener('click', switchToForgot);
 
   // Back to login links
   const returnToLogin = (e) => {
-    e.preventDefault();
+    if (e && e.preventDefault) e.preventDefault();
     hideAlert();
     loginMode = 'LOGIN';
+    state.set('loginActiveTab', null);
+    if (_currentIsAdminGateway) {
+      router.navigate('admin-login');
+    } else {
+      router.navigate('login');
+    }
     triggerLoginReRender();
   };
   document.getElementById('link-back-to-login')?.addEventListener('click', returnToLogin);
@@ -703,14 +751,12 @@ export function initLoginViewEvents(isAdminGateway = false) {
       const backBtn = e.target.closest('#link-back-to-login, #link-back-to-login-2');
       if (backBtn) {
         e.preventDefault();
-        loginMode = 'LOGIN';
-        triggerLoginReRender();
+        returnToLogin(e);
       }
       const forgotBtn = e.target.closest('#link-forgot-password');
       if (forgotBtn) {
         e.preventDefault();
-        loginMode = 'FORGOT_REQUEST';
-        triggerLoginReRender();
+        switchToForgot(e);
       }
     });
   }
@@ -768,10 +814,20 @@ export function initLoginViewEvents(isAdminGateway = false) {
         authService.completePasswordReset(resetTargetUsername, otp, newPwd);
         alert('✅ Password reset successful! You can now sign in with your new password.');
         loginMode = 'LOGIN';
+        state.set('loginActiveTab', null);
+        if (_currentIsAdminGateway) {
+          router.navigate('admin-login');
+        } else {
+          router.navigate('login');
+        }
         triggerLoginReRender();
       } catch (err) {
         showAlert(err.message);
       }
     });
   }
+}
+
+if (typeof window !== 'undefined') {
+  window.triggerLoginReRender = triggerLoginReRender;
 }

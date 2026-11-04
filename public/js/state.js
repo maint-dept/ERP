@@ -136,6 +136,9 @@ class GlobalState {
           'settings': 'settings',
           'database-config': 'database-config',
           'no-access': 'no-access',
+          'user': 'login',
+          'user-login': 'login',
+          'user-forgot-password': 'login',
           'admin-login': 'admin-login',
           'secure-admin-gateway': 'admin-login',
           'maint-admin': 'admin-login',
@@ -148,7 +151,15 @@ class GlobalState {
           [activeAdminSlug]: 'admin-login'
         };
 
-        if (routeKey === 'forgot-password' || routeKey === 'forgot' || routeKey === 'password-recovery' || routeKey === 'reset-password') {
+        if (routeKey === 'user') {
+          if (initialSubtab === 'forgot-password' || initialSubtab === 'forgot' || initialSubtab === 'reset-password' || initialSubtab === 'password-recovery') {
+            routeKey = 'login';
+            initialSubtab = 'forgot-password';
+          } else {
+            routeKey = 'login';
+            if (initialSubtab === 'login') initialSubtab = null;
+          }
+        } else if (routeKey === 'forgot-password' || routeKey === 'forgot' || routeKey === 'password-recovery' || routeKey === 'reset-password' || routeKey === 'user-forgot-password') {
           routeKey = 'login';
           initialSubtab = 'forgot-password';
         } else if (routeKey === 'admin-forgot-password' || routeKey === 'admin-forgot') {

@@ -16,7 +16,7 @@ export function renderLoginModal() {
   const activeUser = authService.getCurrentUser();
   const forgotHref = (typeof router !== 'undefined' && typeof router.buildUrl === 'function')
     ? router.buildUrl('login', { tab: 'forgot-password' })
-    : '/forgot-password';
+    : '/user/forgot-password';
 
   return `
     <div class="modal-overlay" id="modal-login-overlay" style="display: flex; align-items: center; justify-content: center; background: rgba(8, 13, 26, 0.85); backdrop-filter: blur(8px); z-index: 9999;">

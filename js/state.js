@@ -136,14 +136,46 @@ class GlobalState {
           'settings': 'settings',
           'database-config': 'database-config',
           'no-access': 'no-access',
+          'user': 'login',
+          'user-login': 'login',
+          'user-forgot-password': 'login',
           'admin-login': 'admin-login',
           'secure-admin-gateway': 'admin-login',
+          'maint-admin': 'admin-login',
+          'forgot-password': 'login',
+          'forgot': 'login',
+          'password-recovery': 'login',
+          'reset-password': 'login',
+          'admin-forgot-password': 'admin-login',
+          'admin-forgot': 'admin-login',
           [activeAdminSlug]: 'admin-login'
         };
 
+        if (routeKey === 'user') {
+          if (initialSubtab === 'forgot-password' || initialSubtab === 'forgot' || initialSubtab === 'reset-password' || initialSubtab === 'password-recovery') {
+            routeKey = 'login';
+            initialSubtab = 'forgot-password';
+          } else {
+            routeKey = 'login';
+            if (initialSubtab === 'login') initialSubtab = null;
+          }
+        } else if (routeKey === 'forgot-password' || routeKey === 'forgot' || routeKey === 'password-recovery' || routeKey === 'reset-password' || routeKey === 'user-forgot-password') {
+          routeKey = 'login';
+          initialSubtab = 'forgot-password';
+        } else if (routeKey === 'admin-forgot-password' || routeKey === 'admin-forgot') {
+          routeKey = 'admin-login';
+          initialSubtab = 'forgot-password';
+        }
+
         let resolvedView = routeMap[routeKey] || (routeKey ? routeKey : 'home');
-        if (routeKey === activeAdminSlug || routeKey === 'secure-admin-gateway') {
+        if (routeKey === activeAdminSlug || routeKey === 'secure-admin-gateway' || routeKey === 'maint-admin' || routeKey === 'admin-login') {
           resolvedView = 'admin-login';
+          if (initialSubtab === 'forgot-password' || initialSubtab === 'forgot' || initialSubtab === 'reset-password') {
+            initialSubtab = 'forgot-password';
+          }
+        }
+        if (resolvedView === 'login' && (initialSubtab === 'forgot-password' || initialSubtab === 'forgot' || initialSubtab === 'reset-password')) {
+          initialSubtab = 'forgot-password';
         }
 
         if (resolvedView && resolvedView !== 'home') {
@@ -184,6 +216,7 @@ class GlobalState {
 
     this.state = {
       currentView: initialView,
+      loginActiveTab: ((initialView === 'login' || initialView === 'admin-login') && (initialSubtab === 'forgot-password' || initialSubtab === 'forgot')) ? 'forgot-password' : null,
       reportActiveTab: resolvedReportTab,
       manpowerActiveTab: (initialView === 'manpower' && initialSubtab) ? initialSubtab : 'active',
       pmActiveTab: (initialView === 'preventive-maintenance' && initialSubtab) ? initialSubtab : 'dashboard',

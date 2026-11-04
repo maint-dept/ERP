@@ -59,9 +59,18 @@ const ROUTE_VIEW_MAP = {
   'settings': 'settings',
   'database-config': 'database-config',
   'no-access': 'no-access',
+  'user': 'login',
+  'user-login': 'login',
+  'user-forgot-password': 'login',
   'admin-login': 'admin-login',
   'maint-admin': 'admin-login',
-  'secure-admin-gateway': 'admin-login'
+  'secure-admin-gateway': 'admin-login',
+  'forgot-password': 'login',
+  'forgot': 'login',
+  'password-recovery': 'login',
+  'reset-password': 'login',
+  'admin-forgot-password': 'admin-login',
+  'admin-forgot': 'admin-login'
 };
 
 // Map clean URL tab slugs to internal component state keys and vice versa
@@ -106,7 +115,7 @@ const REPORT_SLUG_MAP = {
 // Document titles for each view
 const VIEW_TITLES = {
   'home': 'Al-Muslim Group — Maintenance Department ERP',
-  'login': 'Sign In — Maintenance ERP | Al-Muslim Group',
+  'login': 'User Login — Maintenance ERP | Al-Muslim Group',
   'dashboard': 'Dashboard — Factory Maintenance ERP',
   'inventory': 'Machine Inventory — Al-Muslim Group ERP',
   'relocate': 'Relocate & Verify — Al-Muslim Group ERP',
@@ -230,13 +239,43 @@ class SPAModuleRouter {
       }
     }
 
+    // Check if routeKey matches user forgot password aliases
+    if (routeKey === 'forgot-password' || routeKey === 'forgot' || routeKey === 'password-recovery' || routeKey === 'reset-password' || routeKey === 'user-forgot-password') {
+      routeKey = 'login';
+      if (!subSegment) subSegment = 'forgot-password';
+    } else if (routeKey === 'admin-forgot-password' || routeKey === 'admin-forgot') {
+      routeKey = 'admin-login';
+      if (!subSegment) subSegment = 'forgot-password';
+    }
+
+    // Check if routeKey is 'user' (e.g. /user/forgot-password or /user/login or /user)
+    if (routeKey === 'user') {
+      if (subSegment === 'forgot-password' || subSegment === 'forgot' || subSegment === 'reset-password' || subSegment === 'password-recovery') {
+        routeKey = 'login';
+        subSegment = 'forgot-password';
+      } else {
+        routeKey = 'login';
+        if (subSegment === 'login') subSegment = null;
+      }
+    }
+
     // Check if routeKey matches active custom admin login slug
     const activeAdminSlug = (typeof authService !== 'undefined' && typeof authService.getAdminLoginSlug === 'function')
       ? authService.getAdminLoginSlug()
-      : (typeof localStorage !== 'undefined' ? localStorage.getItem('al_muslim_admin_login_slug') : 'secure-admin-gateway') || 'secure-admin-gateway';
+      : (typeof localStorage !== 'undefined' ? localStorage.getItem('al_muslim_admin_login_slug') : 'maint-admin') || 'maint-admin';
 
     if (routeKey === activeAdminSlug || routeKey === 'admin-login' || routeKey === 'maint-admin' || routeKey === 'secure-admin-gateway') {
+      if (routeKey === 'maint-admin' && typeof localStorage !== 'undefined') {
+        try { localStorage.setItem('al_muslim_admin_login_slug', 'maint-admin'); } catch (_) {}
+      }
       routeKey = 'admin-login';
+      if (subSegment === 'forgot-password' || subSegment === 'forgot' || subSegment === 'reset-password') {
+        subSegment = 'forgot-password';
+      }
+    } else if (routeKey === 'login') {
+      if (subSegment === 'forgot-password' || subSegment === 'forgot' || subSegment === 'reset-password') {
+        subSegment = 'forgot-password';
+      }
     }
 
     // Determine target view
@@ -261,10 +300,14 @@ class SPAModuleRouter {
     }
 
     // Extract subtab from query param or secondary path segment
-    let rawTab = searchParams.get('tab') || subSegment || null;
+    let rawTab = searchParams.get('tab') || searchParams.get('mode') || subSegment || null;
     let tab = rawTab;
 
-    if (targetView === 'reports' && tab) {
+    if (targetView === 'login' || targetView === 'admin-login') {
+      if (tab === 'forgot-password' || tab === 'forgot' || tab === 'reset-password' || searchParams.get('mode') === 'forgot') {
+        tab = 'forgot-password';
+      }
+    } else if (targetView === 'reports' && tab) {
       tab = REPORT_SLUG_MAP[tab] || tab;
     } else if (targetView === 'users' && tab) {
       tab = USER_SLUG_TO_TAB[tab.toLowerCase()] || tab;
@@ -327,11 +370,21 @@ class SPAModuleRouter {
     } else if (view === 'admin-login') {
       const activeAdminSlug = (typeof authService !== 'undefined' && typeof authService.getAdminLoginSlug === 'function')
         ? authService.getAdminLoginSlug()
-        : (typeof localStorage !== 'undefined' ? localStorage.getItem('al_muslim_admin_login_slug') : 'secure-admin-gateway') || 'secure-admin-gateway';
+        : (typeof localStorage !== 'undefined' ? localStorage.getItem('al_muslim_admin_login_slug') : 'maint-admin') || 'maint-admin';
       pathPart = (base ? base : '') + '/' + encodeURIComponent(activeAdminSlug);
-      if (tab) {
+      if (tab === 'forgot-password' || tab === 'forgot') {
+        pathPart += '/forgot-password';
+      } else if (tab) {
         pathPart += '/' + encodeURIComponent(tab);
       }
+    } else if (view === 'login') {
+      if (tab === 'forgot-password' || tab === 'forgot') {
+        pathPart = (base ? base : '') + '/user/forgot-password';
+      } else {
+        pathPart = (base ? base : '') + '/login';
+      }
+    } else if (view === 'forgot-password' || view === 'forgot' || view === 'user-forgot-password') {
+      pathPart = (base ? base : '') + '/user/forgot-password';
     } else {
       pathPart = (base ? base : '') + '/' + encodeURIComponent(view);
       if (tab) {
@@ -353,7 +406,11 @@ class SPAModuleRouter {
   updateTitle(view, tab = null) {
     if (typeof document === 'undefined') return;
     let baseTitle = VIEW_TITLES[view] || (view ? `${view.charAt(0).toUpperCase() + view.slice(1)} — Al-Muslim Group ERP` : 'Al-Muslim Group ERP');
-    if (tab && tab !== 'dashboard' && tab !== 'machines' && tab !== 'active' && tab !== 'tools-list' && tab !== 'boards' && tab !== 'scan') {
+    if ((view === 'login' || view === 'admin-login') && (tab === 'forgot-password' || tab === 'forgot')) {
+      baseTitle = (view === 'admin-login')
+        ? 'Password Recovery — Admin Security Gateway | Al-Muslim Group ERP'
+        : 'Forgot Password — User | Al-Muslim Group ERP';
+    } else if (tab && tab !== 'dashboard' && tab !== 'machines' && tab !== 'active' && tab !== 'tools-list' && tab !== 'boards' && tab !== 'scan') {
       const displayTab = USER_TAB_TO_SLUG[tab] || tab;
       const formattedTab = displayTab.replace(/[-_]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
       baseTitle = `${formattedTab} | ${baseTitle}`;
@@ -387,6 +444,7 @@ class SPAModuleRouter {
    */
   getCurrentSubtab(view) {
     if (!view) return null;
+    if (view === 'login' || view === 'admin-login') return state.get('loginActiveTab') || null;
     if (view === 'reports') return state.get('reportActiveTab') || 'machines';
     if (view === 'manpower') return state.get('manpowerActiveTab') || 'active';
     if (view === 'preventive-maintenance') return state.get('pmActiveTab') || 'dashboard';
@@ -410,6 +468,11 @@ class SPAModuleRouter {
    * Synchronizes subtab state in GlobalState if provided in URL or options
    */
   syncSubtabState(view, tab) {
+    if (view === 'login' || view === 'admin-login') {
+      const normalized = (tab === 'forgot-password' || tab === 'forgot' || tab === 'reset-password') ? 'forgot-password' : null;
+      state.set('loginActiveTab', normalized);
+      return;
+    }
     if (!tab) return;
     const lowerTab = String(tab).toLowerCase();
     if (view === 'reports') {
@@ -455,6 +518,16 @@ class SPAModuleRouter {
     if (typeof window === 'undefined') return;
 
     let effectiveTargetView = targetView;
+    let tab = options.tab !== undefined ? options.tab : this.getCurrentSubtab(effectiveTargetView);
+
+    if (effectiveTargetView === 'forgot-password' || effectiveTargetView === 'forgot' || effectiveTargetView === 'user-forgot-password') {
+      effectiveTargetView = 'login';
+      tab = 'forgot-password';
+    } else if (effectiveTargetView === 'admin-forgot-password' || effectiveTargetView === 'admin-forgot') {
+      effectiveTargetView = 'admin-login';
+      tab = 'forgot-password';
+    }
+
     const isHomePreview = options.params?.preview === '1' || (typeof window !== 'undefined' && new URLSearchParams(window.location.search || '').get('preview') === '1');
     if (effectiveTargetView === 'home' && !isHomePreview) {
       const mode = this.getEffectiveHomepageVisibilityMode();
@@ -473,12 +546,11 @@ class SPAModuleRouter {
     }
 
     const replace = !!options.replace;
-    let tab = options.tab !== undefined ? options.tab : this.getCurrentSubtab(effectiveTargetView);
     const params = options.params || {};
     const targetUrl = this.buildUrl(effectiveTargetView, { tab, params });
 
     // Handle subtab state
-    if (tab) {
+    if (tab !== undefined) {
       this.syncSubtabState(effectiveTargetView, tab);
     }
 
@@ -560,10 +632,8 @@ class SPAModuleRouter {
       }
     }
 
-    // Sync subtabs if URL contains tab
-    if (parsed.tab) {
-      this.syncSubtabState(targetView, parsed.tab);
-    }
+    // Sync subtabs if URL contains tab (or clear subtab)
+    this.syncSubtabState(targetView, parsed.tab);
 
     this.updateTitle(targetView, parsed.tab);
 
@@ -572,6 +642,12 @@ class SPAModuleRouter {
       window.app.switchView(targetView, { tab: parsed.tab, replace: true, skipHistory: true });
     } else {
       state.set('currentView', targetView, { silent: true });
+    }
+
+    if (targetView === 'login' || targetView === 'admin-login') {
+      if (typeof window.triggerLoginReRender === 'function') {
+        window.triggerLoginReRender();
+      }
     }
 
     this._emit('route:changed', { view: targetView, tab: parsed.tab, params: parsed.params });
@@ -621,6 +697,7 @@ class SPAModuleRouter {
       } catch (_) {}
     }
 
+    this.syncSubtabState(parsed.view, parsed.tab);
     this.updateTitle(parsed.view, parsed.tab);
   }
 
