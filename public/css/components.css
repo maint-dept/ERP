@@ -903,7 +903,9 @@ tr.draggable-row.drag-over-bottom {
 /* All user-configured frozen data columns */
 .excel-grid-table thead th.col-frozen-cell,
 .excel-grid-table tbody td.col-frozen-cell {
-  background-color: #0b1329;
+  background-color: #0b1329 !important;
+  background-clip: border-box !important;
+  border-right: 1px solid #1e293b !important;
 }
 .excel-grid-table thead th.col-frozen-cell { z-index: 32; }
 .excel-grid-table tbody td.col-frozen-cell { z-index: 12; }
@@ -911,8 +913,8 @@ tr.draggable-row.drag-over-bottom {
 /* Frozen boundary right-edge shadow indicator */
 .excel-grid-table th.col-frozen-boundary,
 .excel-grid-table td.col-frozen-boundary {
-  border-right: 2px solid rgba(56, 189, 248, 0.55) !important;
-  box-shadow: 3px 0 8px rgba(0,0,0,0.45);
+  border-right: 2.5px solid #38bdf8 !important;
+  box-shadow: 6px 0 16px rgba(0, 0, 0, 0.75) !important;
 }
 
 /* Row hover - keep frozen cells highlighted (dark theme) */
@@ -6373,7 +6375,8 @@ body.theme-light .modal-header * {
     left: 0 !important;
     z-index: 25 !important;
     background-color: #0b1329 !important;
-    background-clip: padding-box !important;
+    background-clip: border-box !important;
+    border-right: 1px solid #1e293b !important;
   }
   .excel-grid-table thead th.col-freeze-sl { z-index: 35 !important; }
 
@@ -6384,7 +6387,8 @@ body.theme-light .modal-header * {
     left: 50px !important;
     z-index: 24 !important;
     background-color: #0b1329 !important;
-    background-clip: padding-box !important;
+    background-clip: border-box !important;
+    border-right: 1px solid #1e293b !important;
   }
   .excel-grid-table thead th.col-freeze-check { z-index: 34 !important; }
 
@@ -6393,14 +6397,16 @@ body.theme-light .modal-header * {
     position: sticky !important;
     z-index: 33 !important;
     background-color: #0b1329 !important;
-    background-clip: padding-box !important;
+    background-clip: border-box !important;
+    border-right: 1px solid #1e293b !important;
   }
   .excel-grid-table tbody td.col-frozen-cell {
     position: -webkit-sticky !important;
     position: sticky !important;
     z-index: 13 !important;
     background-color: #0b1329 !important;
-    background-clip: padding-box !important;
+    background-clip: border-box !important;
+    border-right: 1px solid #1e293b !important;
   }
 
   /* Row hover: keep frozen cells visibly highlighted on touch */
@@ -6438,7 +6444,8 @@ body.theme-light .modal-header * {
   body.theme-light .excel-grid-table thead th.col-frozen-cell,
   body.theme-light .excel-grid-table tbody td.col-frozen-cell {
     background-color: #f8fafc !important;
-    background-clip: padding-box !important;
+    background-clip: border-box !important;
+    border-right: 1px solid #cbd5e1 !important;
   }
   body.theme-light .excel-grid-table tbody tr:nth-child(odd) td.col-freeze-sl,
   body.theme-light .excel-grid-table tbody tr:nth-child(odd) td.col-freeze-check,

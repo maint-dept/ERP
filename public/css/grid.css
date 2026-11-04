@@ -542,55 +542,80 @@ body.theme-light .manpower-grid-table td.col-mp-freeze-sl {
 /* Frozen Headers have highest z-index (Intersection of Sticky Top + Sticky Left) */
 thead th.col-freeze-sl,
 thead th.col-freeze-check,
-thead th.col-freeze-name {
+thead th.col-freeze-name,
+thead th.col-frozen-cell {
+  position: sticky !important;
   z-index: 30 !important;
-  background-color: #070d1e !important;
+  background-color: #0b1329 !important;
+  background-clip: border-box !important;
+  border-right: 1px solid #1e293b !important;
+  border-bottom: 2px solid #0284c7 !important;
 }
 
 tbody tr td.col-freeze-sl,
 tbody tr td.col-freeze-check,
-tbody tr td.col-freeze-name {
-  background-color: var(--bg-surface) !important;
+tbody tr td.col-freeze-name,
+tbody tr td.col-frozen-cell {
+  position: sticky !important;
+  z-index: 10 !important;
+  background-color: #0f172a !important;
+  background-clip: border-box !important;
+  border-right: 1px solid #1e293b !important;
+}
+
+/* 100% OPAQUE Zebra Striping for Frozen Sticky Cells (Prevents Underneath Text Bleed) */
+tbody tr:nth-child(even) td.col-freeze-sl,
+tbody tr:nth-child(even) td.col-freeze-check,
+tbody tr:nth-child(even) td.col-freeze-name,
+tbody tr:nth-child(even) td.col-frozen-cell {
+  background-color: #0f172a !important;
+  background-clip: border-box !important;
+  border-right: 1px solid #1e293b !important;
+}
+
+tbody tr:nth-child(odd) td.col-freeze-sl,
+tbody tr:nth-child(odd) td.col-freeze-check,
+tbody tr:nth-child(odd) td.col-freeze-name,
+tbody tr:nth-child(odd) td.col-frozen-cell {
+  background-color: #0c1427 !important;
+  background-clip: border-box !important;
+  border-right: 1px solid #1e293b !important;
 }
 
 tbody tr:hover td.col-freeze-sl,
 tbody tr:hover td.col-freeze-check,
-tbody tr:hover td.col-freeze-name {
-  background-color: #172554 !important;
+tbody tr:hover td.col-freeze-name,
+tbody tr:hover td.col-frozen-cell {
+  background-color: #1e3a5f !important;
+  background-clip: border-box !important;
+  border-right: 1px solid #2563eb !important;
 }
 
 tbody tr.selected td.col-freeze-sl,
 tbody tr.selected td.col-freeze-check,
-tbody tr.selected td.col-freeze-name {
-  background-color: #1e3a8a !important;
-}
-
-/* Dynamic Admin-Configurable Frozen Table Columns */
-.col-frozen-cell {
-  position: sticky !important;
-  background-color: #0f172a !important;
-}
-
-thead th.col-frozen-cell {
-  z-index: 30 !important;
-  background-color: #070d1e !important;
-}
-
-tbody tr td.col-frozen-cell {
-  background-color: var(--bg-surface) !important;
-}
-
-tbody tr:hover td.col-frozen-cell {
-  background-color: #172554 !important;
-}
-
+tbody tr.selected td.col-freeze-name,
 tbody tr.selected td.col-frozen-cell {
-  background-color: #1e3a8a !important;
+  background-color: #1e40af !important;
+  background-clip: border-box !important;
+  border-right: 1px solid #3b82f6 !important;
 }
 
-.col-frozen-boundary {
-  border-right: 2px solid #0284c7 !important;
-  box-shadow: 3px 0 8px rgba(0, 0, 0, 0.4) !important;
+/* Elevated Frozen Boundary (Last Frozen Column Separator) */
+.col-frozen-boundary,
+th.col-frozen-boundary,
+td.col-frozen-boundary {
+  border-right: 2.5px solid #38bdf8 !important;
+  box-shadow: 6px 0 16px rgba(0, 0, 0, 0.75) !important;
+}
+
+thead th.col-frozen-boundary {
+  z-index: 35 !important;
+  border-right: 2.5px solid #38bdf8 !important;
+  box-shadow: 6px 0 16px rgba(0, 0, 0, 0.75) !important;
+}
+
+tbody tr td.col-frozen-boundary {
+  z-index: 12 !important;
 }
 
 /* Table Cells */
@@ -619,7 +644,7 @@ td.col-actions-cell {
   word-break: break-word !important;
   overflow-wrap: break-word !important;
   text-overflow: clip !important;
-  overflow: visible !important;
+  overflow: hidden !important;
   line-height: 1.35 !important;
 }
 
@@ -892,8 +917,8 @@ td.col-actions-cell {
     text-align: center !important;
     font-size: 11px !important;
     background-color: #0f172a !important;
-    background-clip: padding-box !important;
-    border-right: 1px solid var(--border-color) !important;
+    background-clip: border-box !important;
+    border-right: 1px solid #1e293b !important;
   }
 
   .col-freeze-check {
@@ -907,8 +932,8 @@ td.col-actions-cell {
     padding: 6px 2px !important;
     text-align: center !important;
     background-color: #0f172a !important;
-    background-clip: padding-box !important;
-    border-right: 1px solid var(--border-color) !important;
+    background-clip: border-box !important;
+    border-right: 1px solid #1e293b !important;
   }
 
   /* Dynamic mobile frozen column (Primary column pinned at 76px with solid background) */
@@ -916,22 +941,25 @@ td.col-actions-cell {
     position: sticky !important;
     z-index: 20 !important;
     background-color: #0f172a !important;
-    background-clip: padding-box !important;
+    background-clip: border-box !important;
+    border-right: 1px solid #1e293b !important;
   }
 
   thead th.col-freeze-sl,
   thead th.col-freeze-check {
     top: 0 !important;
     z-index: 35 !important;
-    background-color: #070d1e !important;
-    background-clip: padding-box !important;
+    background-color: #0b1329 !important;
+    background-clip: border-box !important;
+    border-right: 1px solid #1e293b !important;
   }
 
   thead th.col-frozen-cell {
     top: 0 !important;
     z-index: 30 !important;
-    background-color: #070d1e !important;
-    background-clip: padding-box !important;
+    background-color: #0b1329 !important;
+    background-clip: border-box !important;
+    border-right: 1px solid #1e293b !important;
   }
 
   /* Light Theme support for mobile frozen headers and cells */
@@ -939,19 +967,21 @@ td.col-actions-cell {
   body.theme-light .col-freeze-check,
   body.theme-light .col-frozen-cell {
     background-color: #ffffff !important;
-    background-clip: padding-box !important;
+    background-clip: border-box !important;
+    border-right: 1px solid #cbd5e1 !important;
   }
 
   body.theme-light thead th.col-freeze-sl,
   body.theme-light thead th.col-freeze-check,
   body.theme-light thead th.col-frozen-cell {
     background-color: #f1f5f9 !important;
-    background-clip: padding-box !important;
+    background-clip: border-box !important;
+    border-right: 1px solid #cbd5e1 !important;
   }
 
   .col-frozen-boundary {
-    border-right: 2px solid #0284c7 !important;
-    box-shadow: 3px 0 8px rgba(0, 0, 0, 0.45) !important;
+    border-right: 2.5px solid #38bdf8 !important;
+    box-shadow: 6px 0 16px rgba(0, 0, 0, 0.75) !important;
   }
 
   /* Mobile Responsive Inventory Sticky Header Deck & Top Unified Bar */

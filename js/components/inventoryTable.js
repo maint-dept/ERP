@@ -161,18 +161,18 @@ export function renderSingleMachineRow(m, idx, ctx) {
   let row = `<tr class="machine-row ${isSelected ? 'selected' : ''}" data-id="${m.id}" data-row-idx="${idx}">`;
 
   // 1. SL (Sticky Left: 0px)
-  row += `<td class="col-freeze-sl" style="width: ${slWidth}px; min-width: ${slWidth}px; max-width: ${slWidth}px; text-align: center; color: var(--text-muted); font-weight: 700; font-family: var(--font-mono); font-size: 11.5px; left: 0px !important;">${displaySlNo}</td>`;
+  row += `<td class="col-freeze-sl" style="width: ${slWidth}px; min-width: ${slWidth}px; max-width: ${slWidth}px; text-align: center; color: var(--text-muted); font-weight: 700; font-family: var(--font-mono); font-size: 11.5px; left: 0px !important; background-clip: border-box !important; border-right: 1px solid #1e293b !important;">${displaySlNo}</td>`;
 
   // 2. Selection Checkbox (Sticky Left: slWidth)
   const isOperable = authService.canOperateMachine(m);
-  row += `<td class="col-freeze-check ${checkIsLastFrozen ? 'col-frozen-boundary' : ''}" style="width: ${checkWidth}px; min-width: ${checkWidth}px; max-width: ${checkWidth}px; text-align: center; left: ${slWidth}px !important;"><input type="checkbox" class="machine-row-check" data-id="${m.id}" ${isSelected ? 'checked' : ''} ${!isOperable ? 'disabled title="View-Only machine (cannot be bulk modified)" style="opacity: 0.35; cursor: not-allowed;"' : ''}/></td>`;
+  row += `<td class="col-freeze-check ${checkIsLastFrozen ? 'col-frozen-boundary' : ''}" style="width: ${checkWidth}px; min-width: ${checkWidth}px; max-width: ${checkWidth}px; text-align: center; left: ${slWidth}px !important; background-clip: border-box !important; border-right: ${checkIsLastFrozen ? '2.5px solid #38bdf8' : '1px solid #1e293b'} !important;"><input type="checkbox" class="machine-row-check" data-id="${m.id}" ${isSelected ? 'checked' : ''} ${!isOperable ? 'disabled title="View-Only machine (cannot be bulk modified)" style="opacity: 0.35; cursor: not-allowed;"' : ''}/></td>`;
 
   // Render columns in calculated sequence
   columnLayout.forEach(col => {
     const boundaryClass = col.isLastFrozen ? 'col-frozen-boundary' : '';
     const tdClass = col.isFrozen ? `col-frozen-cell ${boundaryClass}` : '';
     const tdStyle = col.isFrozen 
-      ? `position: sticky !important; left: ${col.leftOffset}px !important; width: ${col.width}px !important; min-width: ${col.width}px !important; max-width: ${col.width}px !important; z-index: 10 !important; background-clip: padding-box !important;` 
+      ? `position: sticky !important; left: ${col.leftOffset}px !important; width: ${col.width}px !important; min-width: ${col.width}px !important; max-width: ${col.width}px !important; z-index: ${col.isLastFrozen ? 12 : 10} !important; background-clip: border-box !important; border-right: ${col.isLastFrozen ? '2.5px solid #38bdf8' : '1px solid #1e293b'} !important;` 
       : `width: ${col.width}px; min-width: ${col.width}px; max-width: ${col.width}px;`;
     row += col.renderTd(m, { rQty, uQty, rpQty, totalQty, statusBadgeClass, displayStatus, isAmb }, tdStyle, tdClass);
   });
@@ -385,7 +385,7 @@ export function renderInventoryTable() {
         const viewOnlyBadge = isViewOnly 
           ? `<span class="badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); font-size: 10px; padding: 1px 6px; margin-left: 6px; vertical-align: middle; font-weight: 600; white-space: nowrap;" title="View-Only: This machine belongs to another floor or Central Idle">👁️ View Only</span>` 
           : '';
-        return `<td class="${tdClass} col-wrap-text" style="width: 200px; min-width: 200px; max-width: 200px; font-weight: 600; color: var(--text-primary); white-space: normal !important; word-break: break-word; overflow-wrap: break-word; text-overflow: clip !important; overflow: visible !important; line-height: 1.35; padding: 6px 10px; ${tdStyle}" title="${name}"><span style="display: inline; line-height: 1.35;">${name}</span>${viewOnlyBadge}</td>`;
+        return `<td class="${tdClass} col-wrap-text" style="width: 200px; min-width: 200px; max-width: 200px; font-weight: 600; color: var(--text-primary); white-space: normal !important; word-break: break-word; overflow-wrap: break-word; text-overflow: ellipsis; overflow: hidden !important; line-height: 1.35; padding: 6px 10px; ${tdStyle}" title="${name}"><span style="display: inline; line-height: 1.35;">${name}</span>${viewOnlyBadge}</td>`;
       }
     },
     {
@@ -470,7 +470,7 @@ export function renderInventoryTable() {
           assetId = `${cfg.prefix}${assetId.padStart(cfg.digitLength, '0')}`;
           m.systemAssetId = assetId;
         }
-        return `<td class="${tdClass}" style="width: 145px; min-width: 145px; max-width: 145px; text-align: center; overflow: visible; padding: 4px 2px; ${tdStyle}"><a href="javascript:void(0)" class="btn-inspect-machine" data-id="${m.id}" style="text-decoration: none;" title="Permanent System Asset ID: ${assetId} (Click to inspect machine details)"><span class="system-asset-id-badge">${assetId}</span></a></td>`;
+        return `<td class="${tdClass}" style="width: 145px; min-width: 145px; max-width: 145px; text-align: center; overflow: hidden; text-overflow: ellipsis; padding: 4px 2px; ${tdStyle}"><a href="javascript:void(0)" class="btn-inspect-machine" data-id="${m.id}" style="text-decoration: none;" title="Permanent System Asset ID: ${assetId} (Click to inspect machine details)"><span class="system-asset-id-badge">${assetId}</span></a></td>`;
       }
     },
     {
@@ -804,8 +804,8 @@ export function renderInventoryTable() {
   // Build Table Header Columns
   let headerHtml = `
     <tr>
-      <th class="col-freeze-sl th-sortable" data-sort="sl" style="width: ${slWidth}px; min-width: ${slWidth}px; max-width: ${slWidth}px; text-align: center; cursor: pointer; left: 0px !important;" title="Sort by Serial / Asset Sequence Number">SL</th>
-      <th class="col-freeze-check ${checkIsLastFrozen ? 'col-frozen-boundary' : ''}" style="width: ${checkWidth}px; min-width: ${checkWidth}px; max-width: ${checkWidth}px; text-align: center; left: ${slWidth}px !important;">
+      <th class="col-freeze-sl th-sortable" data-sort="sl" style="width: ${slWidth}px; min-width: ${slWidth}px; max-width: ${slWidth}px; text-align: center; cursor: pointer; left: 0px !important; background-clip: border-box !important; border-right: 1px solid #1e293b !important;" title="Sort by Serial / Asset Sequence Number">SL</th>
+      <th class="col-freeze-check ${checkIsLastFrozen ? 'col-frozen-boundary' : ''}" style="width: ${checkWidth}px; min-width: ${checkWidth}px; max-width: ${checkWidth}px; text-align: center; left: ${slWidth}px !important; background-clip: border-box !important; border-right: ${checkIsLastFrozen ? '2.5px solid #38bdf8' : '1px solid #1e293b'} !important;">
         <input type="checkbox" id="check-select-all" title="Select all visible machines" ${machines.length > 0 && selectedIds.size >= machines.length ? 'checked' : ''} />
       </th>
   `;
@@ -814,7 +814,7 @@ export function renderInventoryTable() {
     const boundaryClass = col.isLastFrozen ? 'col-frozen-boundary' : '';
     const thClass = col.isFrozen ? `col-frozen-cell ${boundaryClass}` : '';
     const thStyle = col.isFrozen 
-      ? `position: sticky !important; left: ${col.leftOffset}px !important; width: ${col.width}px !important; min-width: ${col.width}px !important; max-width: ${col.width}px !important; z-index: 30 !important; background-color: var(--bg-surface, #0f172a) !important; background-clip: padding-box !important;` 
+      ? `position: sticky !important; left: ${col.leftOffset}px !important; width: ${col.width}px !important; min-width: ${col.width}px !important; max-width: ${col.width}px !important; z-index: ${col.isLastFrozen ? 35 : 30} !important; background-color: #0b1329 !important; background-clip: border-box !important; border-right: ${col.isLastFrozen ? '2.5px solid #38bdf8' : '1px solid #1e293b'} !important;` 
       : `width: ${col.width}px; min-width: ${col.width}px; max-width: ${col.width}px;`;
     headerHtml += col.renderTh(thStyle, thClass);
   });
