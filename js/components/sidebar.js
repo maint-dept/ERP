@@ -11,8 +11,8 @@
 
 import { authService } from '../services/authService.js?v=4.26.60';
 import { state } from '../state.js';
-import { router } from '../services/router.js?v=4.30.9';
-import { moduleLoader } from '../services/moduleLoader.js?v=4.30.9';
+import { router } from '../services/router.js?v=4.31.0';
+import { moduleLoader } from '../services/moduleLoader.js?v=4.31.0';
 
 const STORAGE_KEY_EXPANDED = 'al_muslim_sidebar_expanded_menus';
 

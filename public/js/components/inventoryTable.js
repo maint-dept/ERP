@@ -20,6 +20,10 @@ import { state } from '../state.js';
 // Local UI state for collapsible advanced filters
 let showAdvancedFilters = false;
 
+// Universal Virtual Scroll Configuration Constants
+export const VSCROLL_ROW_HEIGHT = 44;
+export const VSCROLL_SPACER_BG = 'background: repeating-linear-gradient(to bottom, rgba(15, 23, 42, 0.98) 0px, rgba(15, 23, 42, 0.98) 43px, rgba(30, 41, 59, 0.5) 43px, rgba(30, 41, 59, 0.5) 44px);';
+
 function escapeHtml(str) {
   if (str === null || str === undefined) return '';
   return String(str)
@@ -899,11 +903,11 @@ export function renderInventoryTable() {
       const topPadding = startIndex * VSCROLL_ROW_HEIGHT;
       const bottomPadding = Math.max(0, (machines.length - endIndex) * VSCROLL_ROW_HEIGHT);
 
-      rowsHtml = `<tr id="vscroll-top-spacer" style="height: ${topPadding}px; display: table-row !important; border: none; padding: 0;"><td colspan="${totalCols}" style="padding: 0; border: none; height: ${topPadding}px; background: transparent;"></td></tr>`;
+      rowsHtml = `<tr id="vscroll-top-spacer" style="height: ${topPadding}px; display: table-row !important; border: none; padding: 0;"><td colspan="${totalCols}" style="padding: 0; border: none; height: ${topPadding}px; ${topPadding > 0 ? VSCROLL_SPACER_BG : 'background: transparent;'}"></td></tr>`;
       for (let i = startIndex; i < endIndex; i++) {
         rowsHtml += renderSingleMachineRow(machines[i], i, rowCtx);
       }
-      rowsHtml += `<tr id="vscroll-bottom-spacer" style="height: ${bottomPadding}px; display: table-row !important; border: none; padding: 0;"><td colspan="${totalCols}" style="padding: 0; border: none; height: ${bottomPadding}px; background: transparent;"></td></tr>`;
+      rowsHtml += `<tr id="vscroll-bottom-spacer" style="height: ${bottomPadding}px; display: table-row !important; border: none; padding: 0;"><td colspan="${totalCols}" style="padding: 0; border: none; height: ${bottomPadding}px; ${bottomPadding > 0 ? VSCROLL_SPACER_BG : 'background: transparent;'}"></td></tr>`;
     } else {
       // 100% Native rendering: all rows directly in DOM. Zero JS on scroll, zero lag!
       for (let i = 0; i < machines.length; i++) {
@@ -1393,14 +1397,17 @@ export function initVirtualScrollEngine() {
   if (!initialTop || !initialBottom) return;
 
   const rowHeight = data.rowHeight || 44;
-  const buffer = 30; // 30 rows buffer above and below (~1,320px cushion, total ~75 rows rendered)
+  const buffer = 35; // 35 rows buffer above and below (~1,540px cushion, total ~85 rows rendered)
   const totalCols = data.totalCols;
 
   let lastStartIndex = -1;
   let lastEndIndex = -1;
   let trailingTimer = null;
   let lastPaintTime = 0;
-  const MIN_FRAME_INTERVAL = 14; // ~70 FPS synchronous frame throttle
+  const MIN_FRAME_INTERVAL = 12; // ~80 FPS frame throttle
+
+  // Repeating grid pattern for spacers so that the canvas never shows a blank dark void even during supersonic drags
+  const spacerBg = 'background: repeating-linear-gradient(to bottom, rgba(15, 23, 42, 0.98) 0px, rgba(15, 23, 42, 0.98) 43px, rgba(30, 41, 59, 0.5) 43px, rgba(30, 41, 59, 0.5) 44px);';
 
   // Clean up any legacy HUD pill from DOM
   const existingHud = document.getElementById('vscroll-hud-pill');
@@ -1427,7 +1434,7 @@ export function initVirtualScrollEngine() {
     const startIndex = Math.max(0, rawStart - buffer);
     const endIndex = Math.min(totalRows, rawEnd + buffer);
 
-    const threshold = 4;
+    const threshold = 3;
     const needsUpdate = force || 
       lastStartIndex === -1 || 
       Math.abs(startIndex - lastStartIndex) >= threshold || 
@@ -1454,10 +1461,9 @@ export function initVirtualScrollEngine() {
         sliceHtml += rowHtml;
       }
 
-      // Single atomic C++ replacement (0.2ms vs 35ms): eliminates delay and keeps scrollbar 100% responsive
-      tbody.innerHTML = `<tr id="vscroll-top-spacer" style="height: ${topHeight}px; min-height: ${topHeight}px; display: table-row !important; border: none; padding: 0;"><td colspan="${totalCols}" style="padding: 0; border: none; height: ${topHeight}px; background: transparent;"></td></tr>`
+      tbody.innerHTML = `<tr id="vscroll-top-spacer" style="height: ${topHeight}px; min-height: ${topHeight}px; display: table-row !important; border: none; padding: 0;"><td colspan="${totalCols}" style="padding: 0; border: none; height: ${topHeight}px; ${topHeight > 0 ? spacerBg : 'background: transparent;'}"></td></tr>`
         + sliceHtml
-        + `<tr id="vscroll-bottom-spacer" style="height: ${bottomHeight}px; min-height: ${bottomHeight}px; display: table-row !important; border: none; padding: 0;"><td colspan="${totalCols}" style="padding: 0; border: none; height: ${bottomHeight}px; background: transparent;"></td></tr>`;
+        + `<tr id="vscroll-bottom-spacer" style="height: ${bottomHeight}px; min-height: ${bottomHeight}px; display: table-row !important; border: none; padding: 0;"><td colspan="${totalCols}" style="padding: 0; border: none; height: ${bottomHeight}px; ${bottomHeight > 0 ? spacerBg : 'background: transparent;'}"></td></tr>`;
     }
   };
 
@@ -1471,23 +1477,24 @@ export function initVirtualScrollEngine() {
     const elapsed = now - lastPaintTime;
     const vpHeight = viewport.clientHeight || 550;
 
-    // Check if the viewport has outrun the rendered rows slice (critical for fast mouse dragging)
-    const isOut = lastStartIndex === -1 || 
-      (scrollTop < lastStartIndex * rowHeight) || 
-      ((scrollTop + vpHeight) > lastEndIndex * rowHeight);
+    // Safety margin (15 rows = 660px): Repaint BEFORE the viewport can ever touch the edge of the rendered slice!
+    const safetyMargin = 15 * rowHeight;
+    const isNearEdge = lastStartIndex === -1 || 
+      (scrollTop < (lastStartIndex * rowHeight + safetyMargin)) || 
+      ((scrollTop + vpHeight) > (lastEndIndex * rowHeight - safetyMargin));
 
-    if (isOut || elapsed >= MIN_FRAME_INTERVAL) {
-      // Synchronous immediate paint when out-of-bounds or frame interval met
+    if (isNearEdge || elapsed >= MIN_FRAME_INTERVAL) {
+      // Synchronous immediate paint when near buffer edge or frame interval elapsed
       lastPaintTime = now;
       clearTimeout(trailingTimer);
       updateVirtualRows(false);
     } else {
-      // Coalesce continuous sub-frame scroll events within 14ms window
+      // Coalesce continuous sub-frame scroll events within 12ms window
       clearTimeout(trailingTimer);
       trailingTimer = setTimeout(() => {
         lastPaintTime = performance.now();
         updateVirtualRows(true);
-      }, Math.max(4, MIN_FRAME_INTERVAL - elapsed));
+      }, Math.max(3, MIN_FRAME_INTERVAL - elapsed));
     }
   };
 
@@ -3115,11 +3122,11 @@ export function updateInventoryTableRowsOnly() {
     const topPadding = startIndex * VSCROLL_ROW_HEIGHT;
     const bottomPadding = Math.max(0, (machines.length - endIndex) * VSCROLL_ROW_HEIGHT);
 
-    rowsHtml = `<tr id="vscroll-top-spacer" style="height: ${topPadding}px; display: table-row !important; border: none; padding: 0;"><td colspan="${totalCols}" style="padding: 0; border: none; height: ${topPadding}px; background: transparent;"></td></tr>`;
+    rowsHtml = `<tr id="vscroll-top-spacer" style="height: ${topPadding}px; display: table-row !important; border: none; padding: 0;"><td colspan="${totalCols}" style="padding: 0; border: none; height: ${topPadding}px; ${topPadding > 0 ? VSCROLL_SPACER_BG : 'background: transparent;'}"></td></tr>`;
     for (let i = startIndex; i < endIndex; i++) {
       rowsHtml += renderSingleMachineRow(machines[i], i, rowCtx);
     }
-    rowsHtml += `<tr id="vscroll-bottom-spacer" style="height: ${bottomPadding}px; display: table-row !important; border: none; padding: 0;"><td colspan="${totalCols}" style="padding: 0; border: none; height: ${bottomPadding}px; background: transparent;"></td></tr>`;
+    rowsHtml += `<tr id="vscroll-bottom-spacer" style="height: ${bottomPadding}px; display: table-row !important; border: none; padding: 0;"><td colspan="${totalCols}" style="padding: 0; border: none; height: ${bottomPadding}px; ${bottomPadding > 0 ? VSCROLL_SPACER_BG : 'background: transparent;'}"></td></tr>`;
   } else {
     // 100% Native rendering: all rows directly in DOM. Zero JS on scroll, zero lag!
     for (let i = 0; i < machines.length; i++) {
