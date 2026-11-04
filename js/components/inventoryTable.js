@@ -1393,13 +1393,41 @@ export function initVirtualScrollEngine() {
   if (!initialTop || !initialBottom) return;
 
   const rowHeight = data.rowHeight || 44;
-  const buffer = 20; // 20 rows buffer above and below (~880px cushion, total ~55 rows rendered)
+  const buffer = 30; // 30 rows buffer above and below (~1,320px cushion, total ~75 rows rendered)
   const totalCols = data.totalCols;
 
   let lastStartIndex = -1;
   let lastEndIndex = -1;
-  let rafId = null;
   let trailingTimer = null;
+  let lastPaintTime = 0;
+  const MIN_FRAME_INTERVAL = 14; // ~70 FPS synchronous frame throttle
+
+  // Floating live HUD pill tracking exact machine position during scrollbar drag
+  let hudPill = document.getElementById('vscroll-hud-pill');
+  if (!hudPill && viewport.parentElement) {
+    hudPill = document.createElement('div');
+    hudPill.id = 'vscroll-hud-pill';
+    hudPill.style.cssText = 'position: absolute; right: 28px; top: 12px; z-index: 50; background: rgba(15, 23, 42, 0.96); border: 1.5px solid #38bdf8; border-radius: 20px; padding: 5px 14px; color: #fff; font-size: 12px; font-weight: 800; box-shadow: 0 4px 16px rgba(0,0,0,0.7); pointer-events: none; display: none; align-items: center; gap: 6px; backdrop-filter: blur(8px); transition: opacity 0.2s ease;';
+    viewport.parentElement.style.position = 'relative';
+    viewport.parentElement.appendChild(hudPill);
+  }
+
+  let hideHudTimer = null;
+  const updateHud = (curRow, total, machine) => {
+    if (!hudPill) return;
+    hudPill.style.display = 'flex';
+    hudPill.style.opacity = '1';
+    hudPill.innerHTML = `<span>📍</span> <span>Machine <strong style="color: #38bdf8;">#${curRow}</strong> of <strong>${total}</strong></span>` +
+      (machine ? ` <span style="color: #94a3b8; font-weight: 600; font-size: 11px;">(${machine.machineName || ''} • ${machine.model || ''})</span>` : '');
+    
+    clearTimeout(hideHudTimer);
+    hideHudTimer = setTimeout(() => {
+      if (hudPill) {
+        hudPill.style.opacity = '0';
+        setTimeout(() => { if (hudPill && hudPill.style.opacity === '0') hudPill.style.display = 'none'; }, 220);
+      }
+    }, 600);
+  };
 
   const updateVirtualRows = (force = false) => {
     const currentData = window.__vscrollEngineData;
@@ -1461,22 +1489,71 @@ export function initVirtualScrollEngine() {
       closeAllActionMenus();
     }
 
-    // Coalesce continuous scroll events (like fast scrollbar drag) to at most 1 DOM update per frame (60 FPS/120 FPS).
-    // This completely eliminates main-thread lockups and prevents the browser compositor from rendering a blank navy void!
-    if (!rafId) {
-      rafId = requestAnimationFrame(() => {
-        rafId = null;
-        updateVirtualRows(false);
-      });
+    const scrollTop = viewport.scrollTop;
+    const now = performance.now();
+    const elapsed = now - lastPaintTime;
+    const vpHeight = viewport.clientHeight || 550;
+
+    // Check if the viewport has outrun the rendered rows slice (critical for fast mouse dragging)
+    const isOut = lastStartIndex === -1 || 
+      (scrollTop < lastStartIndex * rowHeight) || 
+      ((scrollTop + vpHeight) > lastEndIndex * rowHeight);
+
+    // Show live HUD pill during scrollbar drag
+    const currentData = window.__vscrollEngineData;
+    if (currentData && Array.isArray(currentData.machines)) {
+      const curRow = Math.min(currentData.machines.length, Math.max(1, Math.floor(scrollTop / rowHeight) + 1));
+      updateHud(curRow, currentData.machines.length, currentData.machines[curRow - 1]);
     }
 
-    // Trailing edge timer ensures that the moment the user stops dragging or scrolling,
-    // the final exact resting position is immediately painted without any dropped pixel.
-    clearTimeout(trailingTimer);
-    trailingTimer = setTimeout(() => {
-      updateVirtualRows(true);
-    }, 45);
+    if (isOut || elapsed >= MIN_FRAME_INTERVAL) {
+      // Synchronous immediate paint when out-of-bounds or frame interval met
+      lastPaintTime = now;
+      clearTimeout(trailingTimer);
+      updateVirtualRows(false);
+    } else {
+      // Coalesce continuous sub-frame scroll events within 14ms window
+      clearTimeout(trailingTimer);
+      trailingTimer = setTimeout(() => {
+        lastPaintTime = performance.now();
+        updateVirtualRows(true);
+      }, Math.max(4, MIN_FRAME_INTERVAL - elapsed));
+    }
   };
+
+  // Proactive background pre-warming of row HTML cache in idle slices (ensures instantaneous drag)
+  const preWarmRowCache = () => {
+    const currentData = window.__vscrollEngineData;
+    if (!currentData || !Array.isArray(currentData.machines)) return;
+    const machines = currentData.machines;
+    const total = machines.length;
+    if (!vscrollRowCache || vscrollRowCache.length !== total) {
+      vscrollRowCache = new Array(total);
+    }
+    let cur = 0;
+    const step = () => {
+      const end = Math.min(total, cur + 300);
+      for (let i = cur; i < end; i++) {
+        if (!vscrollRowCache[i]) {
+          vscrollRowCache[i] = renderSingleMachineRow(machines[i], i, currentData.rowCtx);
+        }
+      }
+      cur = end;
+      if (cur < total) {
+        if (typeof window.requestIdleCallback === 'function') {
+          window.requestIdleCallback(step, { timeout: 150 });
+        } else {
+          setTimeout(step, 15);
+        }
+      }
+    };
+    if (typeof window.requestIdleCallback === 'function') {
+      window.requestIdleCallback(step, { timeout: 150 });
+    } else {
+      setTimeout(step, 40);
+    }
+  };
+  preWarmRowCache();
 
   if (viewport.__vscrollHandler) {
     viewport.removeEventListener('scroll', viewport.__vscrollHandler);
