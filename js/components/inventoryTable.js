@@ -1402,32 +1402,9 @@ export function initVirtualScrollEngine() {
   let lastPaintTime = 0;
   const MIN_FRAME_INTERVAL = 14; // ~70 FPS synchronous frame throttle
 
-  // Floating live HUD pill tracking exact machine position during scrollbar drag
-  let hudPill = document.getElementById('vscroll-hud-pill');
-  if (!hudPill && viewport.parentElement) {
-    hudPill = document.createElement('div');
-    hudPill.id = 'vscroll-hud-pill';
-    hudPill.style.cssText = 'position: absolute; right: 28px; top: 12px; z-index: 50; background: rgba(15, 23, 42, 0.96); border: 1.5px solid #38bdf8; border-radius: 20px; padding: 5px 14px; color: #fff; font-size: 12px; font-weight: 800; box-shadow: 0 4px 16px rgba(0,0,0,0.7); pointer-events: none; display: none; align-items: center; gap: 6px; backdrop-filter: blur(8px); transition: opacity 0.2s ease;';
-    viewport.parentElement.style.position = 'relative';
-    viewport.parentElement.appendChild(hudPill);
-  }
-
-  let hideHudTimer = null;
-  const updateHud = (curRow, total, machine) => {
-    if (!hudPill) return;
-    hudPill.style.display = 'flex';
-    hudPill.style.opacity = '1';
-    hudPill.innerHTML = `<span>📍</span> <span>Machine <strong style="color: #38bdf8;">#${curRow}</strong> of <strong>${total}</strong></span>` +
-      (machine ? ` <span style="color: #94a3b8; font-weight: 600; font-size: 11px;">(${machine.machineName || ''} • ${machine.model || ''})</span>` : '');
-    
-    clearTimeout(hideHudTimer);
-    hideHudTimer = setTimeout(() => {
-      if (hudPill) {
-        hudPill.style.opacity = '0';
-        setTimeout(() => { if (hudPill && hudPill.style.opacity === '0') hudPill.style.display = 'none'; }, 220);
-      }
-    }, 600);
-  };
+  // Clean up any legacy HUD pill from DOM
+  const existingHud = document.getElementById('vscroll-hud-pill');
+  if (existingHud) existingHud.remove();
 
   const updateVirtualRows = (force = false) => {
     const currentData = window.__vscrollEngineData;
@@ -1498,13 +1475,6 @@ export function initVirtualScrollEngine() {
     const isOut = lastStartIndex === -1 || 
       (scrollTop < lastStartIndex * rowHeight) || 
       ((scrollTop + vpHeight) > lastEndIndex * rowHeight);
-
-    // Show live HUD pill during scrollbar drag
-    const currentData = window.__vscrollEngineData;
-    if (currentData && Array.isArray(currentData.machines)) {
-      const curRow = Math.min(currentData.machines.length, Math.max(1, Math.floor(scrollTop / rowHeight) + 1));
-      updateHud(curRow, currentData.machines.length, currentData.machines[curRow - 1]);
-    }
 
     if (isOut || elapsed >= MIN_FRAME_INTERVAL) {
       // Synchronous immediate paint when out-of-bounds or frame interval met
