@@ -892,9 +892,9 @@ export function renderInventoryTable() {
       let startIndex = 0;
       if (currentScrollTop > 0) {
         const rawStart = Math.floor(currentScrollTop / VSCROLL_ROW_HEIGHT);
-        startIndex = Math.max(0, rawStart - 35);
+        startIndex = Math.max(0, rawStart - 20);
       }
-      const initialVisibleCount = Math.min(machines.length - startIndex, 85);
+      const initialVisibleCount = Math.min(machines.length - startIndex, 55);
       const endIndex = Math.min(machines.length, startIndex + initialVisibleCount);
       const topPadding = startIndex * VSCROLL_ROW_HEIGHT;
       const bottomPadding = Math.max(0, (machines.length - endIndex) * VSCROLL_ROW_HEIGHT);
@@ -1393,15 +1393,15 @@ export function initVirtualScrollEngine() {
   if (!initialTop || !initialBottom) return;
 
   const rowHeight = data.rowHeight || 44;
-  const buffer = 35; // 35 rows buffer above and below (~1,540px cushion)
+  const buffer = 20; // 20 rows buffer above and below (~880px cushion, total ~55 rows rendered)
   const totalCols = data.totalCols;
 
   let lastStartIndex = -1;
   let lastEndIndex = -1;
-  let isTicking = false;
+  let rafId = null;
+  let trailingTimer = null;
 
   const updateVirtualRows = (force = false) => {
-    isTicking = false;
     const currentData = window.__vscrollEngineData;
     if (!currentData || !currentData.isActive || !Array.isArray(currentData.machines)) return;
     const machines = currentData.machines;
@@ -1422,7 +1422,7 @@ export function initVirtualScrollEngine() {
     const startIndex = Math.max(0, rawStart - buffer);
     const endIndex = Math.min(totalRows, rawEnd + buffer);
 
-    const threshold = 6;
+    const threshold = 4;
     const needsUpdate = force || 
       lastStartIndex === -1 || 
       Math.abs(startIndex - lastStartIndex) >= threshold || 
@@ -1461,27 +1461,21 @@ export function initVirtualScrollEngine() {
       closeAllActionMenus();
     }
 
-    const scrollTop = viewport.scrollTop;
-    const viewportHeight = viewport.clientHeight || 550;
-    const renderedTopPx = lastStartIndex * rowHeight;
-    const renderedBottomPx = lastEndIndex * rowHeight;
-
-    // Detect if current scroll position has jumped outside the rendered buffer:
-    const isOutsideBuffer = (
-      lastStartIndex === -1 || 
-      scrollTop < renderedTopPx || 
-      (scrollTop + viewportHeight) > renderedBottomPx
-    );
-
-    if (isOutsideBuffer) {
-      // Immediate synchronous update: when user jumps or drags faster than buffer,
-      // update the DOM synchronously before the browser paints so there is ZERO delay!
-      updateVirtualRows(true);
-    } else if (!isTicking) {
-      // Smooth 60FPS update inside buffer:
-      isTicking = true;
-      requestAnimationFrame(() => updateVirtualRows(false));
+    // Coalesce continuous scroll events (like fast scrollbar drag) to at most 1 DOM update per frame (60 FPS/120 FPS).
+    // This completely eliminates main-thread lockups and prevents the browser compositor from rendering a blank navy void!
+    if (!rafId) {
+      rafId = requestAnimationFrame(() => {
+        rafId = null;
+        updateVirtualRows(false);
+      });
     }
+
+    // Trailing edge timer ensures that the moment the user stops dragging or scrolling,
+    // the final exact resting position is immediately painted without any dropped pixel.
+    clearTimeout(trailingTimer);
+    trailingTimer = setTimeout(() => {
+      updateVirtualRows(true);
+    }, 45);
   };
 
   if (viewport.__vscrollHandler) {
