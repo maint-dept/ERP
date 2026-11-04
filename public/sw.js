@@ -8,25 +8,25 @@
  * 3. Database & REST APIs: Strict Network-Only bypass (zero caching of live MySQL/PostgreSQL/SSE streams)
  */
 
-const CACHE_NAME = 'amg-erp-v4.28.5';
+const CACHE_NAME = 'amg-erp-v4.29.0';
 
 const PRECACHE_ASSETS = [
   './',
   'index.html',
-  'css/app.css?v=4.28.2',
-  'css/grid.css?v=4.28.2',
-  'css/components.css?v=4.28.2',
-  'css/print.css?v=4.28.2',
-  'js/app.js?v=4.28.4',
-  'js/state.js?v=4.28.4',
-  'js/db/storage.js?v=4.28.4',
+  'css/app.css?v=4.29.0',
+  'css/grid.css?v=4.29.0',
+  'css/components.css?v=4.29.0',
+  'css/print.css?v=4.29.0',
+  'js/app.js?v=4.29.0',
+  'js/state.js?v=4.29.0',
+  'js/db/storage.js?v=4.29.0',
   'js/db/schema.js',
   'js/services/authService.js',
   'js/services/webPushService.js',
-  'js/services/router.js?v=4.28.3',
-  'js/components/loginView.js?v=4.28.3',
+  'js/services/router.js?v=4.29.0',
+  'js/components/loginView.js?v=4.29.0',
   'js/components/sidebar.js',
-  'js/components/navbar.js?v=4.27.9'
+  'js/components/navbar.js?v=4.29.0'
 ];
 
 self.addEventListener('install', (event) => {

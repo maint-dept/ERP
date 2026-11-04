@@ -1332,6 +1332,14 @@ td.td-actions-active {
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
 }
 
+@media (max-width: 768px) {
+  .btn-actions-trigger {
+    padding: 6px 10px !important;
+    min-height: 32px !important;
+    touch-action: manipulation !important;
+  }
+}
+
 .actions-dropdown-menu {
   position: absolute;
   right: 0;

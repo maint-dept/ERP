@@ -351,9 +351,19 @@ class StorageEngine {
         // 1. Start official Google Cloud Firestore onSnapshot real-time listener
         this.initRealtimeSyncListener();
 
-        // 2. Multi-device sync backup heartbeat (polls every 3.5s for fast multi-device sync)
+        // 2. Multi-device sync adaptive heartbeat (polls every 3.5s when active, throttles when hidden)
         if (!this._remoteSyncTimer) {
+          let lastHiddenTick = 0;
           this._remoteSyncTimer = setInterval(() => {
+            const isHidden = typeof document !== 'undefined' && document.visibilityState === 'hidden';
+            if (isHidden) {
+              const now = Date.now();
+              if (now - lastHiddenTick < 25000) {
+                return; // Throttle to 25s when tab/app is hidden in background
+              }
+              lastHiddenTick = now;
+            }
+
             if (this._pendingRemoteManifest && !this.isUserTyping()) {
               const pending = this._pendingRemoteManifest;
               this._pendingRemoteManifest = null;
