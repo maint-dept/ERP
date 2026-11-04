@@ -8,7 +8,7 @@
  * 3. Database & REST APIs: Strict Network-Only bypass (zero caching of live MySQL/PostgreSQL/SSE streams)
  */
 
-const CACHE_NAME = 'amg-erp-v4.30.2';
+const CACHE_NAME = 'amg-erp-v4.30.3';
 
 const PRECACHE_ASSETS = [
   './',

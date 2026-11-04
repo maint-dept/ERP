@@ -2229,21 +2229,26 @@ export function initInventoryTableEvents() {
       }
     });
 
-    // Close on Escape key
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') {
-        closeAllActionMenus();
-      }
-    });
+    // Register global window/document listeners strictly ONCE to prevent listener leaks and CPU lag
+    if (!window.__inventoryGlobalListenersBound) {
+      window.__inventoryGlobalListenersBound = true;
 
-    // Smoothly reposition menu on window resize and scroll
-    window.addEventListener('resize', () => {
-      repositionOpenMenu();
-    }, { passive: true });
+      // Close on Escape key
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          closeAllActionMenus();
+        }
+      });
 
-    window.addEventListener('scroll', () => {
-      if (window.__isActionMenuOpen) repositionOpenMenu();
-    }, { passive: true });
+      // Smoothly reposition menu on window resize and scroll
+      window.addEventListener('resize', () => {
+        if (window.__isActionMenuOpen) repositionOpenMenu();
+      }, { passive: true });
+
+      window.addEventListener('scroll', () => {
+        if (window.__isActionMenuOpen) repositionOpenMenu();
+      }, { passive: true });
+    }
   }
 
   // Table horizontal and vertical scroll: dynamically repositions floating menu instead of abruptly closing it

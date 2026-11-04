@@ -1383,22 +1383,41 @@ class MasterDataService {
         const lines = (storage.getTable(TABLE_NAMES.LINES) || []).filter(l => floorIds.has(l.floorId));
         const lineIds = new Set(lines.map(l => l.id));
 
-        // Detach machines
+        // Detach machines in-memory in ONE pass
+        let machinesChanged = false;
+        const nowIso = new Date().toISOString();
         machines.forEach(m => {
           if (m.groupId === id || unitIds.has(m.unitId) || floorIds.has(m.floorId) || lineIds.has(m.lineId)) {
-            storage.update(TABLE_NAMES.MACHINES, m.id, {
-              groupId: null,
-              unitId: null,
-              floorId: null,
-              lineId: null
-            });
+            m.groupId = null;
+            m.unitId = null;
+            m.floorId = null;
+            m.lineId = null;
+            m.updatedAt = nowIso;
+            machinesChanged = true;
           }
         });
+        if (machinesChanged) {
+          storage._invalidateTableIdMap(TABLE_NAMES.MACHINES);
+          storage.saveTable(TABLE_NAMES.MACHINES, true);
+          storage.rebuildAllIndexes();
+        }
 
-        // Delete lines, floors, units, group
-        lines.forEach(l => storage.delete(TABLE_NAMES.LINES, l.id));
-        floors.forEach(f => storage.delete(TABLE_NAMES.FLOORS, f.id));
-        units.forEach(u => storage.delete(TABLE_NAMES.UNITS, u.id));
+        // Batch delete lines, floors, units, group (single save per table)
+        if (lineIds.size > 0) {
+          storage.data[TABLE_NAMES.LINES] = (storage.data[TABLE_NAMES.LINES] || []).filter(l => !lineIds.has(l.id));
+          storage._invalidateTableIdMap(TABLE_NAMES.LINES);
+          storage.saveTable(TABLE_NAMES.LINES, true);
+        }
+        if (floorIds.size > 0) {
+          storage.data[TABLE_NAMES.FLOORS] = (storage.data[TABLE_NAMES.FLOORS] || []).filter(f => !floorIds.has(f.id));
+          storage._invalidateTableIdMap(TABLE_NAMES.FLOORS);
+          storage.saveTable(TABLE_NAMES.FLOORS, true);
+        }
+        if (unitIds.size > 0) {
+          storage.data[TABLE_NAMES.UNITS] = (storage.data[TABLE_NAMES.UNITS] || []).filter(u => !unitIds.has(u.id));
+          storage._invalidateTableIdMap(TABLE_NAMES.UNITS);
+          storage.saveTable(TABLE_NAMES.UNITS, true);
+        }
         storage.delete(TABLE_NAMES.GROUPS, id);
 
         auditService.log('MASTER_CASCADE_DELETE', 'GROUP', id, `Cascade deleted Group ${id} along with ${units.length} units, ${floors.length} floors, ${lines.length} lines`);
@@ -1412,20 +1431,35 @@ class MasterDataService {
         const lines = (storage.getTable(TABLE_NAMES.LINES) || []).filter(l => floorIds.has(l.floorId));
         const lineIds = new Set(lines.map(l => l.id));
 
-        // Detach machines
+        // Detach machines in-memory in ONE pass
+        let machinesChanged = false;
+        const nowIso = new Date().toISOString();
         machines.forEach(m => {
           if (m.unitId === id || floorIds.has(m.floorId) || lineIds.has(m.lineId)) {
-            storage.update(TABLE_NAMES.MACHINES, m.id, {
-              unitId: null,
-              floorId: null,
-              lineId: null
-            });
+            m.unitId = null;
+            m.floorId = null;
+            m.lineId = null;
+            m.updatedAt = nowIso;
+            machinesChanged = true;
           }
         });
+        if (machinesChanged) {
+          storage._invalidateTableIdMap(TABLE_NAMES.MACHINES);
+          storage.saveTable(TABLE_NAMES.MACHINES, true);
+          storage.rebuildAllIndexes();
+        }
 
-        // Delete lines, floors, unit
-        lines.forEach(l => storage.delete(TABLE_NAMES.LINES, l.id));
-        floors.forEach(f => storage.delete(TABLE_NAMES.FLOORS, f.id));
+        // Batch delete lines, floors, unit
+        if (lineIds.size > 0) {
+          storage.data[TABLE_NAMES.LINES] = (storage.data[TABLE_NAMES.LINES] || []).filter(l => !lineIds.has(l.id));
+          storage._invalidateTableIdMap(TABLE_NAMES.LINES);
+          storage.saveTable(TABLE_NAMES.LINES, true);
+        }
+        if (floorIds.size > 0) {
+          storage.data[TABLE_NAMES.FLOORS] = (storage.data[TABLE_NAMES.FLOORS] || []).filter(f => !floorIds.has(f.id));
+          storage._invalidateTableIdMap(TABLE_NAMES.FLOORS);
+          storage.saveTable(TABLE_NAMES.FLOORS, true);
+        }
         storage.delete(TABLE_NAMES.UNITS, id);
 
         auditService.log('MASTER_CASCADE_DELETE', 'UNIT', id, `Cascade deleted Unit ${id} along with ${floors.length} floors, ${lines.length} lines`);
@@ -1437,17 +1471,28 @@ class MasterDataService {
         const lines = (storage.getTable(TABLE_NAMES.LINES) || []).filter(l => l.floorId === id);
         const lineIds = new Set(lines.map(l => l.id));
 
-        // Detach machines
+        // Detach machines in-memory in ONE pass
+        let machinesChanged = false;
+        const nowIso = new Date().toISOString();
         machines.forEach(m => {
           if (m.floorId === id || lineIds.has(m.lineId)) {
-            storage.update(TABLE_NAMES.MACHINES, m.id, {
-              floorId: null,
-              lineId: null
-            });
+            m.floorId = null;
+            m.lineId = null;
+            m.updatedAt = nowIso;
+            machinesChanged = true;
           }
         });
+        if (machinesChanged) {
+          storage._invalidateTableIdMap(TABLE_NAMES.MACHINES);
+          storage.saveTable(TABLE_NAMES.MACHINES, true);
+          storage.rebuildAllIndexes();
+        }
 
-        lines.forEach(l => storage.delete(TABLE_NAMES.LINES, l.id));
+        if (lineIds.size > 0) {
+          storage.data[TABLE_NAMES.LINES] = (storage.data[TABLE_NAMES.LINES] || []).filter(l => !lineIds.has(l.id));
+          storage._invalidateTableIdMap(TABLE_NAMES.LINES);
+          storage.saveTable(TABLE_NAMES.LINES, true);
+        }
         storage.delete(TABLE_NAMES.FLOORS, id);
 
         auditService.log('MASTER_CASCADE_DELETE', 'FLOOR', id, `Cascade deleted Floor ${id} along with ${lines.length} lines`);
@@ -1456,11 +1501,20 @@ class MasterDataService {
       }
 
       case 'line': {
+        let machinesChanged = false;
+        const nowIso = new Date().toISOString();
         machines.forEach(m => {
           if (m.lineId === id) {
-            storage.update(TABLE_NAMES.MACHINES, m.id, { lineId: null });
+            m.lineId = null;
+            m.updatedAt = nowIso;
+            machinesChanged = true;
           }
         });
+        if (machinesChanged) {
+          storage._invalidateTableIdMap(TABLE_NAMES.MACHINES);
+          storage.saveTable(TABLE_NAMES.MACHINES, true);
+          storage.rebuildAllIndexes();
+        }
         storage.delete(TABLE_NAMES.LINES, id);
         auditService.log('MASTER_LINE_DELETED', 'LINE', id, `Permanently deleted Line ${id} and detached machines`);
         this._broadcastChange();
@@ -1468,15 +1522,30 @@ class MasterDataService {
       }
 
       case 'machinename': {
-        // Detach physical machines
+        // Detach physical machines in-memory
+        let machinesChanged = false;
+        const nowIso = new Date().toISOString();
         machines.forEach(m => {
           if (m.machineNameId === id) {
-            storage.update(TABLE_NAMES.MACHINES, m.id, { machineNameId: null, modelId: null });
+            m.machineNameId = null;
+            m.modelId = null;
+            m.updatedAt = nowIso;
+            machinesChanged = true;
           }
         });
-        // Delete child models
+        if (machinesChanged) {
+          storage._invalidateTableIdMap(TABLE_NAMES.MACHINES);
+          storage.saveTable(TABLE_NAMES.MACHINES, true);
+          storage.rebuildAllIndexes();
+        }
+        // Delete child models in-memory batch
         const models = (storage.getTable(TABLE_NAMES.MODELS) || []).filter(m => m.machineNameId === id);
-        models.forEach(mdl => storage.delete(TABLE_NAMES.MODELS, mdl.id));
+        const mdlIds = new Set(models.map(m => m.id));
+        if (mdlIds.size > 0) {
+          storage.data[TABLE_NAMES.MODELS] = (storage.data[TABLE_NAMES.MODELS] || []).filter(m => !mdlIds.has(m.id));
+          storage._invalidateTableIdMap(TABLE_NAMES.MODELS);
+          storage.saveTable(TABLE_NAMES.MODELS, true);
+        }
         storage.delete(TABLE_NAMES.MACHINE_NAMES, id);
         auditService.log('MASTER_CASCADE_DELETE', 'MACHINE_NAME', id, `Cascade deleted Machine Name ${id} and ${models.length} child models`);
         this._broadcastChange();
@@ -1484,15 +1553,30 @@ class MasterDataService {
       }
 
       case 'brand': {
-        // Detach physical machines
+        // Detach physical machines in-memory
+        let machinesChanged = false;
+        const nowIso = new Date().toISOString();
         machines.forEach(m => {
           if (m.brandId === id) {
-            storage.update(TABLE_NAMES.MACHINES, m.id, { brandId: null, modelId: null });
+            m.brandId = null;
+            m.modelId = null;
+            m.updatedAt = nowIso;
+            machinesChanged = true;
           }
         });
-        // Delete child models
+        if (machinesChanged) {
+          storage._invalidateTableIdMap(TABLE_NAMES.MACHINES);
+          storage.saveTable(TABLE_NAMES.MACHINES, true);
+          storage.rebuildAllIndexes();
+        }
+        // Delete child models in-memory batch
         const models = (storage.getTable(TABLE_NAMES.MODELS) || []).filter(m => m.brandId === id);
-        models.forEach(mdl => storage.delete(TABLE_NAMES.MODELS, mdl.id));
+        const mdlIds = new Set(models.map(m => m.id));
+        if (mdlIds.size > 0) {
+          storage.data[TABLE_NAMES.MODELS] = (storage.data[TABLE_NAMES.MODELS] || []).filter(m => !mdlIds.has(m.id));
+          storage._invalidateTableIdMap(TABLE_NAMES.MODELS);
+          storage.saveTable(TABLE_NAMES.MODELS, true);
+        }
         storage.delete(TABLE_NAMES.BRANDS, id);
         auditService.log('MASTER_CASCADE_DELETE', 'BRAND', id, `Cascade deleted Brand ${id} and ${models.length} child models`);
         this._broadcastChange();
@@ -1500,12 +1584,21 @@ class MasterDataService {
       }
 
       case 'model': {
-        // Detach physical machines
+        // Detach physical machines in-memory
+        let machinesChanged = false;
+        const nowIso = new Date().toISOString();
         machines.forEach(m => {
           if (m.modelId === id) {
-            storage.update(TABLE_NAMES.MACHINES, m.id, { modelId: null });
+            m.modelId = null;
+            m.updatedAt = nowIso;
+            machinesChanged = true;
           }
         });
+        if (machinesChanged) {
+          storage._invalidateTableIdMap(TABLE_NAMES.MACHINES);
+          storage.saveTable(TABLE_NAMES.MACHINES, true);
+          storage.rebuildAllIndexes();
+        }
         storage.delete(TABLE_NAMES.MODELS, id);
         auditService.log('MASTER_CASCADE_DELETE', 'MODEL', id, `Permanently deleted Model ${id} and detached machines`);
         this._broadcastChange();
@@ -1537,50 +1630,42 @@ class MasterDataService {
       'lin-16', 'lin-17', 'lin-18', 'lin-19', 'lin-20', 'lin-21', 'lin-22'
     ]);
 
-    // Detach any machines pointing to these mock locations
+    // Detach any machines pointing to these mock locations in-memory
     const machines = storage.getTable(TABLE_NAMES.MACHINES) || [];
+    let machinesChanged = false;
+    const nowIso = new Date().toISOString();
     machines.forEach(m => {
       if (mockGroupIds.has(m.groupId) || mockUnitIds.has(m.unitId) || mockFloorIds.has(m.floorId) || mockLineIds.has(m.lineId)) {
-        storage.update(TABLE_NAMES.MACHINES, m.id, {
-          groupId: null,
-          unitId: null,
-          floorId: null,
-          lineId: null
-        });
+        m.groupId = null;
+        m.unitId = null;
+        m.floorId = null;
+        m.lineId = null;
+        m.updatedAt = nowIso;
+        machinesChanged = true;
       }
     });
+    if (machinesChanged) {
+      storage._invalidateTableIdMap(TABLE_NAMES.MACHINES);
+      storage.saveTable(TABLE_NAMES.MACHINES, true);
+      storage.rebuildAllIndexes();
+    }
 
-    // Delete mock lines
-    const currentLines = storage.getTable(TABLE_NAMES.LINES) || [];
-    currentLines.forEach(l => {
-      if (mockLineIds.has(l.id) || mockFloorIds.has(l.floorId)) {
-        storage.delete(TABLE_NAMES.LINES, l.id);
-      }
-    });
+    // Batch delete mock lines, floors, units, groups
+    storage.data[TABLE_NAMES.LINES] = (storage.data[TABLE_NAMES.LINES] || []).filter(l => !mockLineIds.has(l.id) && !mockFloorIds.has(l.floorId));
+    storage._invalidateTableIdMap(TABLE_NAMES.LINES);
+    storage.saveTable(TABLE_NAMES.LINES, true);
 
-    // Delete mock floors
-    const currentFloors = storage.getTable(TABLE_NAMES.FLOORS) || [];
-    currentFloors.forEach(f => {
-      if (mockFloorIds.has(f.id) || mockUnitIds.has(f.unitId)) {
-        storage.delete(TABLE_NAMES.FLOORS, f.id);
-      }
-    });
+    storage.data[TABLE_NAMES.FLOORS] = (storage.data[TABLE_NAMES.FLOORS] || []).filter(f => !mockFloorIds.has(f.id) && !mockUnitIds.has(f.unitId));
+    storage._invalidateTableIdMap(TABLE_NAMES.FLOORS);
+    storage.saveTable(TABLE_NAMES.FLOORS, true);
 
-    // Delete mock units
-    const currentUnits = storage.getTable(TABLE_NAMES.UNITS) || [];
-    currentUnits.forEach(u => {
-      if (mockUnitIds.has(u.id) || mockGroupIds.has(u.groupId)) {
-        storage.delete(TABLE_NAMES.UNITS, u.id);
-      }
-    });
+    storage.data[TABLE_NAMES.UNITS] = (storage.data[TABLE_NAMES.UNITS] || []).filter(u => !mockUnitIds.has(u.id) && !mockGroupIds.has(u.groupId));
+    storage._invalidateTableIdMap(TABLE_NAMES.UNITS);
+    storage.saveTable(TABLE_NAMES.UNITS, true);
 
-    // Delete mock groups
-    const currentGroups = storage.getTable(TABLE_NAMES.GROUPS) || [];
-    currentGroups.forEach(g => {
-      if (mockGroupIds.has(g.id)) {
-        storage.delete(TABLE_NAMES.GROUPS, g.id);
-      }
-    });
+    storage.data[TABLE_NAMES.GROUPS] = (storage.data[TABLE_NAMES.GROUPS] || []).filter(g => !mockGroupIds.has(g.id));
+    storage._invalidateTableIdMap(TABLE_NAMES.GROUPS);
+    storage.saveTable(TABLE_NAMES.GROUPS, true);
 
     auditService.log('MASTER_MOCK_PURGED', 'HIERARCHY', 'ALL', 'Purged all default mock groups, units, floors, and lines');
     this._broadcastChange();

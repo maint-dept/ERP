@@ -857,18 +857,21 @@ class StorageEngine {
     const records = this.data[table];
     this._invalidateTableIdMap(table);
 
-    // 1. High-capacity persistent write to IndexedDB (no 5MB quota crashes)
+    // 1. High-capacity persistent write to IndexedDB (no 5MB quota crashes, supports 100MB+)
     try {
       await idbCache.setTable(table, records ?? []);
     } catch (_) {}
 
-    // 2. Write to localStorage immediately (local cache)
-    try {
-      localStorage.setItem(STORAGE_KEY_PREFIX + table, JSON.stringify(records ?? []));
-      localStorage.setItem(STORAGE_KEY_PREFIX + 'version', SCHEMA_VERSION);
-      localStorage.setItem(STORAGE_KEY_PREFIX + 'last_saved', new Date().toISOString());
-    } catch (err) {
-      console.warn('LocalStorage quota notice for table:', table, err.message);
+    // 2. LocalStorage cache for critical/small tables (bypass for massive tables >2MB to prevent QuotaExceededError)
+    const isMassiveTable = (table === TABLE_NAMES.MACHINES || table === TABLE_NAMES.AUDIT_LOGS);
+    if (!isMassiveTable) {
+      try {
+        localStorage.setItem(STORAGE_KEY_PREFIX + table, JSON.stringify(records ?? []));
+        localStorage.setItem(STORAGE_KEY_PREFIX + 'version', SCHEMA_VERSION);
+        localStorage.setItem(STORAGE_KEY_PREFIX + 'last_saved', new Date().toISOString());
+      } catch (err) {
+        console.warn('LocalStorage quota notice for table:', table, err.message);
+      }
     }
 
     // Broadcast table-level update to other tabs on same device

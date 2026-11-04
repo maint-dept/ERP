@@ -2404,6 +2404,7 @@ class ExcelService {
       let sheetUpdated = 0;
       let sheetFailed = 0;
       let sheetSkipped = 0;
+      let sheetHasMachineUpdates = false;
       const sheetNewMachines = [];
 
       sheet.records.forEach((item, recIdx) => {
@@ -2535,17 +2536,16 @@ class ExcelService {
                 updates.customValues = { ...(existing.customValues || {}), ...d.customValues };
               }
 
-              storage.update(TABLE_NAMES.MACHINES, existing.id, updates);
+              // Apply update directly in-memory to prevent N full-database saves
+              Object.assign(existing, updates, { updatedAt: new Date().toISOString() });
               if (d.serviceDate) {
-                const mergedExisting = { ...existing, ...updates };
-                this._syncPreventiveMaintenanceRecord(mergedExisting, d, user);
+                this._syncPreventiveMaintenanceRecord(existing, d, user);
               } else if (sheet.mapping && (sheet.mapping.service_date || sheet.mapping.last_service_date || sheet.mapping.servicedate)) {
                 // Explicitly clear service dates if the sheet has a service date column and this row was left blank
-                storage.update(TABLE_NAMES.MACHINES, existing.id, {
-                  lastServiceDate: null,
-                  nextServiceDate: null
-                });
+                existing.lastServiceDate = null;
+                existing.nextServiceDate = null;
               }
+              sheetHasMachineUpdates = true;
               sheetUpdated++;
               updatedCount++;
             } else {
@@ -2648,6 +2648,13 @@ class ExcelService {
             nm.nextServiceDate = null;
           }
         });
+      }
+
+      // Batch persist all modified existing machines for this sheet in a single pass
+      if (sheetHasMachineUpdates) {
+        storage._invalidateTableIdMap(TABLE_NAMES.MACHINES);
+        storage.saveTable(TABLE_NAMES.MACHINES, true);
+        storage.rebuildAllIndexes();
       }
 
       sheetStats.push({

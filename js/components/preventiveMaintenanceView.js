@@ -64,11 +64,11 @@ function formatDisplayDate(d) {
  */
 function renderPaginationBar(totalItems, currentPage, pageSize, itemLabel = 'records') {
   const isAll = pageSize === 'ALL';
-  const limit = isAll ? totalItems : parseInt(pageSize, 10);
+  const limit = isAll ? Math.min(totalItems || 200, 200) : parseInt(pageSize, 10);
   const totalPages = Math.max(1, isAll ? 1 : Math.ceil(totalItems / limit));
   const curPage = Math.min(currentPage, totalPages);
   const startItem = totalItems === 0 ? 0 : (curPage - 1) * limit + 1;
-  const endItem = isAll ? totalItems : Math.min(curPage * limit, totalItems);
+  const endItem = isAll ? Math.min(limit, totalItems) : Math.min(curPage * limit, totalItems);
 
   let pageButtonsHtml = '';
   const maxButtons = 5;
@@ -89,16 +89,16 @@ function renderPaginationBar(totalItems, currentPage, pageSize, itemLabel = 'rec
   return `
     <div class="inventory-pagination-bar" style="margin-top: 8px; padding: 6px 14px;">
       <div class="pagination-counter" style="font-size: 12px;">
-        Showing <strong style="color: #fff;">${startItem}–${endItem}</strong> of <strong style="color: #38bdf8;">${totalItems}</strong> ${itemLabel}
+        Showing <strong style="color: #fff;">${startItem}–${endItem}</strong> of <strong style="color: #38bdf8;">${totalItems}</strong> ${itemLabel} ${isAll && totalItems > 200 ? '<span style="font-size: 10.5px; color: #38bdf8;">(Safe View: max 200)</span>' : ''}
       </div>
 
       <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-secondary);">
         <span>Rows per page:</span>
-        <select class="filter-select-compact sel-pm-page-size" style="width: 72px; height: 28px; font-size: 11.5px; padding: 0 6px;">
+        <select class="filter-select-compact sel-pm-page-size" style="width: 78px; height: 28px; font-size: 11.5px; padding: 0 6px;">
           <option value="25" ${pageSize === 25 || pageSize === '25' ? 'selected' : ''}>25</option>
           <option value="50" ${pageSize === 50 || pageSize === '50' ? 'selected' : ''}>50</option>
           <option value="100" ${pageSize === 100 || pageSize === '100' ? 'selected' : ''}>100</option>
-          <option value="ALL" ${pageSize === 'ALL' ? 'selected' : ''}>All</option>
+          <option value="200" ${pageSize === 200 || pageSize === '200' ? 'selected' : ''}>200</option>
         </select>
       </div>
 
@@ -484,11 +484,11 @@ function renderDashboardAndRemindersTab() {
 
   const total = upcomingMachines.length;
   const isAll = pmPageSize === 'ALL';
-  const limit = isAll ? total : parseInt(pmPageSize, 10);
+  const limit = isAll ? Math.min(total || 200, 200) : parseInt(pmPageSize, 10);
   const totalPages = Math.max(1, isAll ? 1 : Math.ceil(total / limit));
   const curPage = Math.min(pmCurrentPage, totalPages);
   const startIndex = (curPage - 1) * limit;
-  const pagedMachines = isAll ? upcomingMachines : upcomingMachines.slice(startIndex, startIndex + limit);
+  const pagedMachines = upcomingMachines.slice(startIndex, startIndex + limit);
 
   return `
     <div style="display: flex; flex-direction: column; gap: 5px;">
@@ -652,11 +652,11 @@ function renderRecentlyServicedTab() {
 
   const total = records.length;
   const isAll = pmPageSize === 'ALL';
-  const limit = isAll ? total : parseInt(pmPageSize, 10);
+  const limit = isAll ? Math.min(total || 200, 200) : parseInt(pmPageSize, 10);
   const totalPages = Math.max(1, isAll ? 1 : Math.ceil(total / limit));
   const curPage = Math.min(pmCurrentPage, totalPages);
   const startIndex = (curPage - 1) * limit;
-  const pagedRecords = isAll ? records : records.slice(startIndex, startIndex + limit);
+  const pagedRecords = records.slice(startIndex, startIndex + limit);
 
   return `
     <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); overflow: hidden; box-shadow: var(--shadow-sm);">
@@ -1211,11 +1211,11 @@ function renderMasterScheduleTab() {
 
   const total = machines.length;
   const isAll = pmPageSize === 'ALL';
-  const limit = isAll ? total : parseInt(pmPageSize, 10);
+  const limit = isAll ? Math.min(total || 200, 200) : parseInt(pmPageSize, 10);
   const totalPages = Math.max(1, isAll ? 1 : Math.ceil(total / limit));
   const curPage = Math.min(pmCurrentPage, totalPages);
   const startIndex = (curPage - 1) * limit;
-  const pagedMachines = isAll ? machines : machines.slice(startIndex, startIndex + limit);
+  const pagedMachines = machines.slice(startIndex, startIndex + limit);
 
   return `
     <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md); overflow: hidden; box-shadow: var(--shadow-sm);">

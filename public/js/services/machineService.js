@@ -1209,22 +1209,22 @@ class MachineService {
     let deletedCount = 0;
     const deletedSerials = [];
     const deletedRecords = [];
+    const targetSet = new Set(machineIds);
+    const allMachines = storage.getTable(TABLE_NAMES.MACHINES) || [];
+    const operableIdSet = new Set();
 
-    machineIds.forEach(id => {
-      const m = storage.getItem(TABLE_NAMES.MACHINES, id);
-      if (m && authService.canOperateMachine(m)) {
-        const ok = storage.delete(TABLE_NAMES.MACHINES, id);
-        if (ok) {
-          deletedCount++;
-          deletedSerials.push(m.serialNumber);
-          deletedRecords.push(m);
-        }
+    allMachines.forEach(m => {
+      if (m && targetSet.has(m.id) && authService.canOperateMachine(m)) {
+        operableIdSet.add(m.id);
+        deletedCount++;
+        if (m.serialNumber) deletedSerials.push(m.serialNumber);
+        deletedRecords.push(m);
       }
     });
 
     if (deletedCount > 0) {
-      // PREPARE UPDATED TABLE IN MEMORY FIRST
-      const newTable = storage.getTable(TABLE_NAMES.MACHINES).filter(m => !machineIds.includes(m.id));
+      // PREPARE UPDATED TABLE IN MEMORY FIRST (Single pass)
+      const newTable = allMachines.filter(m => !operableIdSet.has(m.id));
 
       // CONFIRMED CLOUD WRITE FIRST (MySQL Single Source of Truth)
       const dbResult = await syncManager.primaryAdapter.saveTable(TABLE_NAMES.MACHINES, newTable);
@@ -1232,15 +1232,16 @@ class MachineService {
         throw new CloudSaveError('❌ Database Transaction Failed: ' + dbResult.error);
       }
 
-      // NOW update local memory & cache
+      // NOW update local memory & cache in single operation
       storage.data[TABLE_NAMES.MACHINES] = newTable;
+      storage._invalidateTableIdMap(TABLE_NAMES.MACHINES);
       storage.rebuildAllIndexes();
       try {
         localStorage.setItem('al_muslim_erp_' + TABLE_NAMES.MACHINES, JSON.stringify(newTable));
       } catch (_) {}
 
       // Clean up orphaned pending requests for deleted machines
-      const delSet = new Set(machineIds);
+      const delSet = operableIdSet;
       const curApprovals = storage.getTable(TABLE_NAMES.APPROVAL_REQUESTS) || [];
       const filteredApprovals = curApprovals.filter(r => r && !delSet.has(r.machineId));
       if (filteredApprovals.length !== curApprovals.length) {
