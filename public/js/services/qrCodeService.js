@@ -12,7 +12,7 @@ class QrCodeService {
    * Generates or retrieves an immutable, permanent Unique Machine ID.
    * Machine QR is permanently tied to this ID, even if Serial Number or Location is updated.
    */
-  getPermanentMachineId(machine) {
+  getPermanentMachineId(machine, persist = true) {
     if (!machine) return '';
     if (machine.systemAssetId) {
       return machine.systemAssetId;
@@ -34,12 +34,14 @@ class QrCodeService {
     if (!machine.qrGeneratedAt) {
       machine.qrGeneratedAt = machine.createdAt || new Date().toISOString();
     }
-    storage.update(TABLE_NAMES.MACHINES, machine.id, {
-      systemAssetId: nextId,
-      permanentMachineId: nextId,
-      qrStatus: machine.qrStatus,
-      qrGeneratedAt: machine.qrGeneratedAt
-    });
+    if (persist) {
+      storage.update(TABLE_NAMES.MACHINES, machine.id, {
+        systemAssetId: nextId,
+        permanentMachineId: nextId,
+        qrStatus: machine.qrStatus,
+        qrGeneratedAt: machine.qrGeneratedAt
+      });
+    }
 
     return nextId;
   }
@@ -274,22 +276,30 @@ class QrCodeService {
   }
 
   /**
-   * Bulk updates QR generation metadata
+   * Bulk updates QR generation metadata with high-performance single-pass save
    */
   bulkGenerateMachineQrs(machineIds) {
     const machines = storage.getTable(TABLE_NAMES.MACHINES) || [];
     const idSet = new Set(machineIds);
     let count = 0;
+    const nowIso = new Date().toISOString();
 
-    machines.forEach(m => {
-      if (idSet.has(m.id)) {
-        this.getPermanentMachineId(m);
+    for (let i = 0; i < machines.length; i++) {
+      const m = machines[i];
+      if (m && idSet.has(m.id)) {
+        this.getPermanentMachineId(m, false);
         m.qrStatus = 'ACTIVE';
-        m.qrGeneratedAt = new Date().toISOString();
-        storage.update(TABLE_NAMES.MACHINES, m.id, m);
+        m.qrGeneratedAt = m.qrGeneratedAt || nowIso;
+        m.updatedAt = nowIso;
         count++;
       }
-    });
+    }
+
+    if (count > 0) {
+      storage._invalidateTableIdMap(TABLE_NAMES.MACHINES);
+      storage.saveTable(TABLE_NAMES.MACHINES, true);
+      storage.rebuildAllIndexes();
+    }
 
     return count;
   }

@@ -43,6 +43,8 @@ let printSettings = {
 
 let labelDesignerModalOpen = false;
 let tempLabelConfig = null;
+let batchPrintModalOpen = false;
+let pendingPrintMachines = [];
 
 export function renderQrCodeView() {
   const stateTab = state.get('qrStudioTab');
@@ -122,6 +124,7 @@ export function renderQrCodeView() {
       <div id="qr-print-container" class="qr-print-container" style="display: none;"></div>
 
       ${renderLabelDesignerModal()}
+      ${renderBatchPrintModal()}
 
     </div>
 
@@ -1291,6 +1294,64 @@ function updateDesignerPreview(cfg) {
 }
 
 // ─────────────────────────────────────────────────────────────
+// 4. A4 BATCH PRINT SELECTION MODAL
+// ─────────────────────────────────────────────────────────────
+function renderBatchPrintModal() {
+  if (!batchPrintModalOpen || !pendingPrintMachines || pendingPrintMachines.length === 0) return '';
+  const batchSize = 120;
+  const total = pendingPrintMachines.length;
+  const numBatches = Math.ceil(total / batchSize);
+
+  let batchOptions = '';
+  for (let b = 0; b < numBatches; b++) {
+    const start = b * batchSize + 1;
+    const end = Math.min((b + 1) * batchSize, total);
+    const count = end - start + 1;
+    const sheets = Math.ceil(count / (printSettings.labelsPerPage || 12));
+    batchOptions += `<option value="${b}">Batch ${b + 1}: Machines ${start} – ${end} (${count} labels / ${sheets} A4 sheets)</option>`;
+  }
+
+  return `
+    <div class="modal-overlay" id="modal-batch-print-overlay" style="z-index: 10050;">
+      <div class="modal-dialog" style="max-width: 540px; width: 92%; max-height: 90vh; background: #0f172a; border: 1px solid #1e293b; border-radius: 12px; box-shadow: 0 20px 40px rgba(0,0,0,0.8); overflow: hidden;">
+        
+        <div class="modal-header" style="padding: 14px 18px; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center; background: #0b1329;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 22px;">🖨️</span>
+            <div>
+              <div style="font-size: 15px; font-weight: 800; color: #fff;">A4 Batch Label Print</div>
+              <div style="font-size: 11px; color: #38bdf8;">High-Capacity Browser &amp; Printer Spooler Safeguard</div>
+            </div>
+          </div>
+          <button type="button" id="btn-close-batch-print" class="btn btn-ghost btn-sm" style="font-size: 16px; border-radius: 50%; color: #94a3b8;">✕</button>
+        </div>
+        
+        <div class="modal-body" style="padding: 18px; display: flex; flex-direction: column; gap: 14px;">
+          <div style="background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 8px; padding: 12px; font-size: 12px; color: #cbd5e1; line-height: 1.5;">
+            You have selected <strong style="color: #38bdf8;">${total} machines</strong> (~${Math.ceil(total / (printSettings.labelsPerPage || 12))} A4 sheets).<br/>
+            Printing thousands of QR sticker canvases in one document will freeze the browser tab. Please choose a safe print batch (up to 120 labels per print spool):
+          </div>
+
+          <div>
+            <label style="font-size: 12px; font-weight: 700; color: #fff; margin-bottom: 6px; display: block;">Select Batch to Print:</label>
+            <select id="select-print-batch" style="width: 100%; height: 38px; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); color: #fff; border-radius: 6px; padding: 0 10px; font-size: 12.5px;">
+              <option value="current_page">📄 Current Page Only (${qrPagination.pageSize || 24} labels)</option>
+              ${batchOptions}
+            </select>
+          </div>
+
+          <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px;">
+            <button type="button" id="btn-cancel-batch-print" class="btn btn-secondary btn-sm" style="padding: 6px 14px; border-radius: 6px;">Cancel</button>
+            <button type="button" id="btn-execute-batch-print" class="btn btn-primary btn-sm" style="padding: 6px 18px; font-weight: 800; background: #0284c7; border-color: #0284c7; border-radius: 6px;">🖨️ Print Batch</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  `;
+}
+
+// ─────────────────────────────────────────────────────────────
 // EVENT HANDLERS & CONTROLLER
 // ─────────────────────────────────────────────────────────────
 export function initQrCodeEvents() {
@@ -1640,27 +1701,40 @@ export function initQrCodeEvents() {
     });
   }
 
-  // 6. Bulk Generate Button
+  // 6. Bulk Generate Button (Ultra-Fast Batch Update)
   const btnBulkGenerate = root.querySelector('#btn-qr-bulk-generate');
   if (btnBulkGenerate) {
-    btnBulkGenerate.addEventListener('click', () => {
+    btnBulkGenerate.addEventListener('click', async () => {
       const allMachines = storage.getTable(TABLE_NAMES.MACHINES) || [];
       const targetIds = selectedMachineIds.size > 0
         ? Array.from(selectedMachineIds)
         : filterMachines(allMachines).map(m => m.id);
 
       if (targetIds.length === 0) {
-        alert('No machines selected for QR generation.');
+        notificationService.notifyWarning('No Selection', 'No machines selected for QR generation.');
         return;
       }
 
-      const generatedCount = qrCodeService.bulkGenerateMachineQrs(targetIds);
-      notificationService.notifySuccess('QR Codes Generated', `Successfully activated QR codes for ${generatedCount} machines!`);
-      updateCardsAndPagination();
+      btnBulkGenerate.disabled = true;
+      const origHtml = btnBulkGenerate.innerHTML;
+      btnBulkGenerate.innerHTML = `⚡ Activating (${targetIds.length})...`;
+      await new Promise(r => setTimeout(r, 20));
+
+      try {
+        const generatedCount = qrCodeService.bulkGenerateMachineQrs(targetIds);
+        notificationService.notifySuccess('QR Codes Activated', `Successfully activated QR codes for ${generatedCount} machines!`);
+        updateCardsAndPagination();
+      } catch (err) {
+        console.error('Bulk generate error:', err);
+        notificationService.notifyError('Generation Error', 'Failed to generate QR codes: ' + err.message);
+      } finally {
+        btnBulkGenerate.disabled = false;
+        btnBulkGenerate.innerHTML = origHtml;
+      }
     });
   }
 
-  // 7. A4 Sheet Print Button
+  // 7. A4 Sheet Print Button (Safeguarded with Smart Batching)
   const btnPrintA4 = root.querySelector('#btn-qr-print-a4');
   if (btnPrintA4) {
     btnPrintA4.addEventListener('click', () => {
@@ -1674,7 +1748,58 @@ export function initQrCodeEvents() {
         return;
       }
 
+      if (targetMachines.length > 120) {
+        pendingPrintMachines = targetMachines;
+        batchPrintModalOpen = true;
+        refreshView();
+        return;
+      }
+
       printA4LabelSheet(targetMachines);
+    });
+  }
+
+  // 7b. Batch Print Modal Event Listeners
+  const closeBatchPrint = () => {
+    batchPrintModalOpen = false;
+    pendingPrintMachines = [];
+    refreshView();
+  };
+  const btnCloseBatchPrint = root.querySelector('#btn-close-batch-print');
+  const btnCancelBatchPrint = root.querySelector('#btn-cancel-batch-print');
+  const batchOverlay = root.querySelector('#modal-batch-print-overlay');
+  if (btnCloseBatchPrint) btnCloseBatchPrint.addEventListener('click', closeBatchPrint);
+  if (btnCancelBatchPrint) btnCancelBatchPrint.addEventListener('click', closeBatchPrint);
+  if (batchOverlay) {
+    batchOverlay.addEventListener('click', (e) => {
+      if (e.target === batchOverlay) closeBatchPrint();
+    });
+  }
+
+  const btnExecuteBatchPrint = root.querySelector('#btn-execute-batch-print');
+  if (btnExecuteBatchPrint) {
+    btnExecuteBatchPrint.addEventListener('click', () => {
+      const sel = root.querySelector('#select-print-batch');
+      const val = sel ? sel.value : '0';
+      let sliceToPrint = [];
+
+      if (val === 'current_page') {
+        const allMachines = storage.getTable(TABLE_NAMES.MACHINES) || [];
+        const filtered = filterMachines(allMachines);
+        const pageSize = qrPagination.pageSize > 0 ? qrPagination.pageSize : filtered.length;
+        const startIndex = (qrPagination.page - 1) * pageSize;
+        sliceToPrint = filtered.slice(startIndex, startIndex + (pageSize || filtered.length));
+      } else {
+        const b = parseInt(val, 10) || 0;
+        const start = b * 120;
+        sliceToPrint = pendingPrintMachines.slice(start, start + 120);
+      }
+
+      batchPrintModalOpen = false;
+      refreshView();
+      if (sliceToPrint.length > 0) {
+        printA4LabelSheet(sliceToPrint);
+      }
     });
   }
 
@@ -2119,19 +2244,30 @@ function printA4LabelSheet(machines) {
             setTimeout(drawAll, 100);
             return;
           }
-          items.forEach((payload, idx) => {
-            const el = document.getElementById('print-qr-' + idx);
-            if (el) {
-              new QRLib(el, {
-                text: payload,
-                width: 80,
-                height: 80,
-                colorDark: '#000000',
-                colorLight: '#ffffff'
-              });
+          let currentIdx = 0;
+          const chunkSize = 20;
+          function renderChunk() {
+            const end = Math.min(items.length, currentIdx + chunkSize);
+            for (let idx = currentIdx; idx < end; idx++) {
+              const el = document.getElementById('print-qr-' + idx);
+              if (el && !el.hasChildNodes()) {
+                new QRLib(el, {
+                  text: items[idx],
+                  width: 80,
+                  height: 80,
+                  colorDark: '#000000',
+                  colorLight: '#ffffff'
+                });
+              }
             }
-          });
-          setTimeout(() => { window.print(); }, 700);
+            currentIdx = end;
+            if (currentIdx < items.length) {
+              requestAnimationFrame(renderChunk);
+            } else {
+              setTimeout(() => { window.print(); }, 400);
+            }
+          }
+          renderChunk();
         }
         if (document.readyState === 'complete') {
           drawAll();
