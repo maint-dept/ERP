@@ -28,6 +28,10 @@ let completeModalOpen = false;
 let editingScanItem = null; // Item being edited in modal
 let scannedListSearch = ''; // Search query on scanned machines
 let scannedListFilter = 'ALL'; // 'ALL' | 'CORRECT' | 'LINE_MISMATCH' | 'FLOOR_MISMATCH'
+let selectedLineFilter = ''; // Filter scanned feed by line name
+let isLinesBreakdownOpen = (typeof localStorage !== 'undefined')
+  ? (localStorage.getItem('al_muslim_lines_breakdown_open') !== 'false')
+  : true; // Floor lines breakdown drawer toggle state
 let kpisCollapsedOnMobile = (typeof window !== 'undefined' && window.innerWidth <= 768); // Default to compact on mobile to maximize card feed area
 let historySubTab = 'movements'; // 'movements' | 'sessions'
 let historySearch = '';
@@ -980,6 +984,15 @@ function renderScannedItemsList(session) {
     filtered = filtered.filter(s => s.matchType === scannedListFilter);
   }
 
+  if (selectedLineFilter && selectedLineFilter.trim()) {
+    const targetLineLower = selectedLineFilter.trim().toLowerCase();
+    filtered = filtered.filter(s => {
+      const lineObj = masterDataService.getLineById(s.scannedLineId);
+      const lineNameLower = (lineObj?.name || s.scannedLineId || '').toLowerCase();
+      return lineNameLower === targetLineLower || lineNameLower.includes(targetLineLower);
+    });
+  }
+
   if (scannedListSearch && scannedListSearch.trim()) {
     const q = scannedListSearch.trim().toLowerCase();
     filtered = filtered.filter(s => 
@@ -997,7 +1010,9 @@ function renderScannedItemsList(session) {
       <div style="text-align: center; padding: 30px 16px; color: var(--text-muted);">
         <div style="font-size: 28px; margin-bottom: 6px;">🔍</div>
         <div style="font-weight: 700; font-size: 13px; color: #cbd5e1;">No matching scanned machines</div>
-        <div style="font-size: 11.5px; margin-top: 3px;">Try clearing your search query or filter pills.</div>
+        <div style="font-size: 11.5px; margin-top: 3px;">
+          ${selectedLineFilter ? `Filtered by Line <strong>${selectedLineFilter}</strong>. <button type="button" id="btn-empty-clear-line" style="background: none; border: none; color: #38bdf8; cursor: pointer; text-decoration: underline; font-size: 11.5px;">Show all lines</button>` : 'Try clearing your search query or filter pills.'}
+        </div>
       </div>
     `;
   }
@@ -1086,6 +1101,11 @@ function renderLiveScanView(session) {
   const verifiedCount = session.scanned.filter(s => s.matchType === 'CORRECT').length;
   const lineMoveCount = session.scanned.filter(s => s.matchType === 'LINE_MISMATCH').length;
   const floorMoveCount = session.scanned.filter(s => s.matchType === 'FLOOR_MISMATCH').length;
+  const expectedTotal = metrics?.expectedTotal || 0;
+  const scannedTotal = metrics?.scannedTotal || 0;
+  const progressPct = expectedTotal > 0 ? Math.min(100, Math.round((scannedTotal / expectedTotal) * 100)) : 0;
+  const lineBreakdown = metrics?.lineBreakdown || [];
+  const completedLinesCount = lineBreakdown.filter(lb => lb.scanned >= lb.expected && lb.expected > 0).length;
 
   return `
     <div style="display: flex; flex-direction: column; gap: 8px; flex: 1; min-height: 0;">
@@ -1119,27 +1139,110 @@ function renderLiveScanView(session) {
         </div>
       </div>
 
-      <!-- Compact Statistics & Progress Strip (Single Line ~28px) -->
-      <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 6px; padding: 4px 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; font-size: 11px;">
-        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-          <span>Target: <strong style="color: #fff;">${metrics.expectedTotal}</strong></span>
-          <span style="color: rgba(255,255,255,0.15);">|</span>
-          <span>Verified: <strong style="color: #34d399;">${metrics.scannedTotal}</strong></span>
-          <span style="color: rgba(255,255,255,0.15);">|</span>
-          <span>Unscanned (Pending Idle): <strong style="color: #fbbf24;">${metrics.idleCount}</strong></span>
-          <span style="color: rgba(255,255,255,0.15);">|</span>
-          <span>Pending Move: <strong style="color: #38bdf8;">${metrics.pendingRelocationCount}</strong></span>
+      <!-- Modern Live Audit KPI Summary & Line Progress Component -->
+      <div class="relocate-kpi-summary-strip" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 7px 12px; display: flex; flex-direction: column; gap: 7px; box-shadow: 0 2px 8px rgba(0,0,0,0.25);">
+        
+        <!-- Row 1: KPI Metrics & Overall Progress -->
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+          
+          <!-- Key Metrics Badges -->
+          <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+            
+            <!-- Target Badge -->
+            <div style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.12); padding: 3px 9px; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px; font-size: 11px;">
+              <span style="color: #94a3b8; font-size: 11px;">🎯 Target:</span>
+              <strong style="color: #ffffff; font-family: var(--font-mono); font-size: 12.5px;">${expectedTotal.toLocaleString()}</strong>
+            </div>
+
+            <!-- Verified Badge -->
+            <div style="background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.35); padding: 3px 9px; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px; font-size: 11px;">
+              <span style="color: #6ee7b7; font-size: 11px;">✅ Verified:</span>
+              <strong style="color: #34d399; font-family: var(--font-mono); font-size: 12.5px;">${scannedTotal.toLocaleString()}</strong>
+              <span style="font-size: 10px; color: #a7f3d0; background: rgba(16,185,129,0.2); padding: 1px 5px; border-radius: 4px; font-weight: 700;">${progressPct}%</span>
+            </div>
+
+            <!-- Unscanned (Pending Idle) Badge -->
+            <div style="background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.35); padding: 3px 9px; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px; font-size: 11px;">
+              <span style="color: #fde68a; font-size: 11px;">⏳ Pending Idle:</span>
+              <strong style="color: #fbbf24; font-family: var(--font-mono); font-size: 12.5px;">${(metrics?.idleCount || 0).toLocaleString()}</strong>
+            </div>
+
+            <!-- Pending Move Badge -->
+            <div style="background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.35); padding: 3px 9px; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px; font-size: 11px;">
+              <span style="color: #bae6fd; font-size: 11px;">🔀 Line Move:</span>
+              <strong style="color: #38bdf8; font-family: var(--font-mono); font-size: 12.5px;">${(metrics?.pendingRelocationCount || 0).toLocaleString()}</strong>
+            </div>
+
+          </div>
+
+          <!-- Right: Progress Bar & Line Toggle Button -->
+          <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+            
+            <!-- Overall Progress Bar -->
+            <div style="display: flex; align-items: center; gap: 6px;" title="${progressPct}% of floor machines verified">
+              <div style="width: 70px; height: 6px; background: rgba(255,255,255,0.08); border-radius: 4px; overflow: hidden;">
+                <div style="width: ${progressPct}%; height: 100%; background: linear-gradient(90deg, #0284c7, #10b981); border-radius: 4px; transition: width 0.3s ease;"></div>
+              </div>
+              <span style="font-size: 10.5px; font-weight: 800; color: #cbd5e1; font-family: var(--font-mono);">${progressPct}%</span>
+            </div>
+
+            ${lineBreakdown.length > 0 ? `
+              <!-- Lines Breakdown Toggle Button -->
+              <button type="button" id="btn-toggle-lines-breakdown" class="btn btn-ghost btn-sm" style="font-size: 11px; font-weight: 700; padding: 4px 10px; height: 28px; border-radius: 6px; background: ${isLinesBreakdownOpen ? 'rgba(56,189,248,0.2)' : 'rgba(56,189,248,0.08)'}; border: 1px solid rgba(56,189,248,0.3); color: #38bdf8; display: inline-flex; align-items: center; gap: 6px; cursor: pointer;" title="Toggle Lines Breakdown Drawer">
+                <span>📊 Lines (${lineBreakdown.length})</span>
+                <span style="font-size: 10px; opacity: 0.85;">${completedLinesCount}/${lineBreakdown.length} Done</span>
+                <span style="font-size: 9px;">${isLinesBreakdownOpen ? '▲' : '▼'}</span>
+              </button>
+            ` : ''}
+
+          </div>
+
         </div>
 
-        <div style="display: flex; gap: 5px; align-items: center; overflow-x: auto; -webkit-overflow-scrolling: touch;">
-          <span style="color: var(--text-muted); font-size: 10.5px;">Lines:</span>
-          ${metrics.lineBreakdown.map(lb => {
-            const isDone = lb.scanned >= lb.expected && lb.expected > 0;
-            return `<span style="background: rgba(0,0,0,0.3); border: 1px solid ${isDone ? '#34d399' : 'rgba(255,255,255,0.1)'}; padding: 1px 6px; border-radius: 4px; font-size: 10px; white-space: nowrap;">
-              ${lb.lineName}: <strong style="color: ${isDone ? '#34d399' : '#38bdf8'}; font-family: var(--font-mono);">${lb.scanned}/${lb.expected}</strong>
-            </span>`;
-          }).join('')}
-        </div>
+        <!-- Row 2 (Collapsible Drawer): Clean Multi-Column Grid of Floor Lines without any horizontal scrollbar -->
+        ${(isLinesBreakdownOpen && lineBreakdown.length > 0) ? `
+          <div id="relocate-lines-breakdown-drawer" style="border-top: 1px dashed rgba(255, 255, 255, 0.1); padding-top: 7px; margin-top: 2px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; flex-wrap: wrap; gap: 6px;">
+              <div style="font-size: 10.5px; color: #94a3b8; display: flex; align-items: center; gap: 6px;">
+                <span>Click any line to filter feed:</span>
+                ${selectedLineFilter ? `
+                  <span class="badge" style="background: rgba(56,189,248,0.2); color: #38bdf8; border: 1px solid rgba(56,189,248,0.4); font-size: 10px; padding: 1px 6px; border-radius: 4px;">
+                    Filtered: <strong>${selectedLineFilter}</strong>
+                  </span>
+                  <button type="button" id="btn-clear-line-filter" class="btn btn-ghost btn-sm" style="color: #f87171; font-size: 10px; padding: 0 4px; height: 18px; cursor: pointer;" title="Clear line filter">
+                    ✕ Reset
+                  </button>
+                ` : `
+                  <span style="color: #64748b;">(Showing all lines)</span>
+                `}
+              </div>
+              <span style="font-size: 10px; color: #64748b;">${lineBreakdown.length} lines on floor</span>
+            </div>
+
+            <!-- Responsive Wrap Grid: NO HORIZONTAL SCROLLBAR! All lines wrap naturally -->
+            <div style="display: flex; flex-wrap: wrap; gap: 6px; max-height: 160px; overflow-y: auto; padding-right: 2px;">
+              ${lineBreakdown.map(lb => {
+                const isDone = lb.scanned >= lb.expected && lb.expected > 0;
+                const isSelected = selectedLineFilter === lb.lineName;
+                const linePct = lb.expected > 0 ? Math.min(100, Math.round((lb.scanned / lb.expected) * 100)) : 0;
+                return `
+                  <div class="line-breakdown-chip" data-line-name="${lb.lineName}" style="flex: 1 1 calc(14.28% - 6px); min-width: 105px; max-width: 155px; background: ${isSelected ? 'rgba(56,189,248,0.25)' : (isDone ? 'rgba(16,185,129,0.12)' : 'rgba(15,23,42,0.85)')}; border: 1.5px solid ${isSelected ? '#38bdf8' : (isDone ? 'rgba(52,211,153,0.5)' : 'rgba(255,255,255,0.1)')}; border-radius: 6px; padding: 4px 8px; cursor: pointer; transition: all 0.15s ease; box-shadow: ${isSelected ? '0 0 8px rgba(56,189,248,0.3)' : 'none'}; user-select: none;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+                      <strong style="font-size: 11px; color: ${isDone ? '#34d399' : (isSelected ? '#38bdf8' : '#e2e8f0')};">${lb.lineName}</strong>
+                      <span style="font-size: 10px; font-weight: 800; font-family: var(--font-mono); color: ${isDone ? '#34d399' : (lb.scanned > 0 ? '#38bdf8' : '#94a3b8')};">
+                        ${lb.scanned}/${lb.expected} ${isDone ? '✓' : ''}
+                      </span>
+                    </div>
+                    <div style="width: 100%; height: 3px; background: rgba(255,255,255,0.08); border-radius: 2px; overflow: hidden;">
+                      <div style="width: ${linePct}%; height: 100%; background: ${isDone ? '#10b981' : (isSelected ? '#38bdf8' : '#0284c7')};"></div>
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+        ` : ''}
+
       </div>
 
       <!-- Feed of Scanned Machines in Current Session -->
@@ -3225,6 +3328,7 @@ export function initRelocateViewEvents() {
       if (!active) return;
       if (!confirm(`Cancel active physical scan session ${active.id}?`)) return;
       relocateService.cancelSession(active.id, 'User cancelled');
+      selectedLineFilter = '';
       refreshView();
     });
   }
@@ -3576,6 +3680,44 @@ export function initRelocateViewEvents() {
     });
   }
 
+  // 7d. Lines Breakdown Toggle & Line Filter Listeners
+  const btnToggleLines = root.querySelector('#btn-toggle-lines-breakdown');
+  if (btnToggleLines) {
+    btnToggleLines.addEventListener('click', () => {
+      isLinesBreakdownOpen = !isLinesBreakdownOpen;
+      try {
+        localStorage.setItem('al_muslim_lines_breakdown_open', isLinesBreakdownOpen ? 'true' : 'false');
+      } catch (_) {}
+      refreshView();
+    });
+  }
+
+  const btnClearLineFilter = root.querySelector('#btn-clear-line-filter');
+  if (btnClearLineFilter) {
+    btnClearLineFilter.addEventListener('click', () => {
+      selectedLineFilter = '';
+      refreshView();
+    });
+  }
+
+  const btnEmptyClearLine = root.querySelector('#btn-empty-clear-line');
+  if (btnEmptyClearLine) {
+    btnEmptyClearLine.addEventListener('click', () => {
+      selectedLineFilter = '';
+      refreshView();
+    });
+  }
+
+  root.querySelectorAll('.line-breakdown-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      const lineName = chip.getAttribute('data-line-name');
+      if (lineName) {
+        selectedLineFilter = (selectedLineFilter === lineName) ? '' : lineName;
+        refreshView();
+      }
+    });
+  });
+
   // 8. Open Complete Scan Modal (Header + Sticky Mobile Dock)
   const openCompleteModal = () => {
     completeModalOpen = true;
@@ -3617,6 +3759,7 @@ export function initRelocateViewEvents() {
         btnConfirmComplete.innerHTML = '<span class="btn-spinner"></span> Submitting...';
         await relocateService.completeSession(active.id, notes);
         completeModalOpen = false;
+        selectedLineFilter = '';
         activeTab = 'approvals';
         notificationService.notifySuccess('Verification Finalized', `Session ${active.id} reconciled. Missing machines submitted for Floor Manager Approval!`);
         refreshView();
