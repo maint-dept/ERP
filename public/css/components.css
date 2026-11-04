@@ -919,14 +919,14 @@ tr.draggable-row.drag-over-bottom {
 .excel-grid-table tbody tr:hover td.col-freeze-sl,
 .excel-grid-table tbody tr:hover td.col-freeze-check,
 .excel-grid-table tbody tr:hover td.col-frozen-cell {
-  background-color: #172554 !important;
+  background-color: #1e3a5f !important;
 }
 
 /* Selected row - frozen cells */
 .excel-grid-table tbody tr.selected td.col-freeze-sl,
 .excel-grid-table tbody tr.selected td.col-freeze-check,
 .excel-grid-table tbody tr.selected td.col-frozen-cell {
-  background-color: #1e3a8a !important;
+  background-color: #1e40af !important;
 }
 
 /* Table scroll container: proper touch & isolation */
@@ -4166,7 +4166,7 @@ body, input, select, textarea, button, table, th, td, label, p, span, h1, h2, h3
   color: #f8fafc;
 }
 
-/* Universal Dark Mode Table Row Hover: Deep Executive Navy (#172554) with subtle cyan track lines across ALL cells & sticky columns */
+/* Universal Dark Mode Table Row Hover: Deep Executive Vibrant Cyan-Navy (#1e3a5f) with crisp track lines across ALL cells & sticky columns */
 table tbody tr:hover td,
 .data-table tbody tr:hover td,
 .excel-grid-table tbody tr:hover td,
@@ -4189,8 +4189,8 @@ table tbody tr:hover td,
 .user-management-table tbody tr:hover td.uam-col-sticky-check,
 .user-management-table tbody tr:hover td.uam-col-sticky-card,
 .user-management-table tbody tr:hover td.uam-col-sticky-card-pass {
-  background-color: #172554 !important;
-  box-shadow: inset 0 1px 0 rgba(56, 189, 248, 0.35), inset 0 -1px 0 rgba(56, 189, 248, 0.35) !important;
+  background-color: #1e3a5f !important;
+  box-shadow: inset 0 1px 0 rgba(56, 189, 248, 0.5), inset 0 -1px 0 rgba(56, 189, 248, 0.5) !important;
 }
 
 /* Dark Mode Left Accent Indicator on Hover */
@@ -4200,7 +4200,7 @@ table tbody tr:hover td:first-child,
 .transfers-table tbody tr:hover td:first-child,
 .manpower-grid-table tbody tr:hover td:first-child,
 .user-management-table tbody tr:hover td:first-child {
-  box-shadow: inset 3px 0 0 #38bdf8, inset 0 1px 0 rgba(56, 189, 248, 0.35), inset 0 -1px 0 rgba(56, 189, 248, 0.35) !important;
+  box-shadow: inset 4px 0 0 #38bdf8, inset 0 1px 0 rgba(56, 189, 248, 0.5), inset 0 -1px 0 rgba(56, 189, 248, 0.5) !important;
 }
 
 /* Universal Dark Mode Selected Row Highlight across ALL columns */
@@ -4215,8 +4215,8 @@ table tbody tr.selected td,
 .excel-grid-table tbody tr.selected td.col-freeze-check,
 .excel-grid-table tbody tr.selected td.col-freeze-name,
 .excel-grid-table tbody tr.selected td.col-frozen-cell {
-  background-color: #1e3a8a !important;
-  box-shadow: inset 0 1px 0 rgba(56, 189, 248, 0.45), inset 0 -1px 0 rgba(56, 189, 248, 0.45) !important;
+  background-color: #1e40af !important;
+  box-shadow: inset 0 1px 0 #38bdf8, inset 0 -1px 0 #38bdf8 !important;
 }
 
 table tbody tr.selected:hover td,
@@ -4226,8 +4226,8 @@ table tbody tr.selected:hover td,
 .transfers-table tbody tr.selected:hover td,
 .manpower-grid-table tbody tr.selected:hover td,
 .user-management-table tbody tr.selected:hover td {
-  background-color: #1d4ed8 !important;
-  box-shadow: inset 0 1px 0 #38bdf8, inset 0 -1px 0 #38bdf8 !important;
+  background-color: #2563eb !important;
+  box-shadow: inset 0 1px 0 #7dd3fc, inset 0 -1px 0 #7dd3fc !important;
 }
 
 /* ==========================================================================
@@ -6407,12 +6407,12 @@ body.theme-light .modal-header * {
   .excel-grid-table tbody tr:hover td.col-freeze-sl,
   .excel-grid-table tbody tr:hover td.col-freeze-check,
   .excel-grid-table tbody tr:hover td.col-frozen-cell {
-    background-color: #172554 !important;
+    background-color: #1e3a5f !important;
   }
   .excel-grid-table tbody tr.selected td.col-freeze-sl,
   .excel-grid-table tbody tr.selected td.col-freeze-check,
   .excel-grid-table tbody tr.selected td.col-frozen-cell {
-    background-color: #1e3a8a !important;
+    background-color: #1e40af !important;
   }
 
   /* Sticky header panel: don't use position:sticky inside overflow hidden */

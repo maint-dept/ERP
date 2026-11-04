@@ -158,7 +158,7 @@ export function renderSingleMachineRow(m, idx, ctx) {
     statusBadgeClass = 'badge-active';
   }
 
-  let row = `<tr class="${isSelected ? 'selected' : ''}" data-id="${m.id}" data-row-idx="${idx}">`;
+  let row = `<tr class="machine-row ${isSelected ? 'selected' : ''}" data-id="${m.id}" data-row-idx="${idx}">`;
 
   // 1. SL (Sticky Left: 0px)
   row += `<td class="col-freeze-sl" style="width: ${slWidth}px; min-width: ${slWidth}px; max-width: ${slWidth}px; text-align: center; color: var(--text-muted); font-weight: 700; font-family: var(--font-mono); font-size: 11.5px; left: 0px !important;">${displaySlNo}</td>`;
@@ -886,15 +886,23 @@ export function renderInventoryTable() {
     };
 
     if (isVirtualScrollActive) {
-      const initialVisibleCount = Math.min(machines.length, 80);
-      const topPadding = 0;
-      const bottomPadding = (machines.length - initialVisibleCount) * VSCROLL_ROW_HEIGHT;
+      const existingVp = (typeof document !== 'undefined') ? document.getElementById('inventory-table-scroll-viewport') : null;
+      const currentScrollTop = existingVp ? existingVp.scrollTop : 0;
+      let startIndex = 0;
+      if (currentScrollTop > 0) {
+        const rawStart = Math.floor(currentScrollTop / VSCROLL_ROW_HEIGHT);
+        startIndex = Math.max(0, rawStart - 25);
+      }
+      const initialVisibleCount = Math.min(machines.length - startIndex, 80);
+      const endIndex = Math.min(machines.length, startIndex + initialVisibleCount);
+      const topPadding = startIndex * VSCROLL_ROW_HEIGHT;
+      const bottomPadding = Math.max(0, (machines.length - endIndex) * VSCROLL_ROW_HEIGHT);
 
-      rowsHtml = `<tr id="vscroll-top-spacer" style="height: ${topPadding}px; border: none; padding: 0;"><td colspan="${totalCols}" style="padding: 0; border: none; height: ${topPadding}px; background: transparent;"></td></tr>`;
-      for (let i = 0; i < initialVisibleCount; i++) {
+      rowsHtml = `<tr id="vscroll-top-spacer" style="height: ${topPadding}px; display: table-row !important; border: none; padding: 0;"><td colspan="${totalCols}" style="padding: 0; border: none; height: ${topPadding}px; background: transparent;"></td></tr>`;
+      for (let i = startIndex; i < endIndex; i++) {
         rowsHtml += renderSingleMachineRow(machines[i], i, rowCtx);
       }
-      rowsHtml += `<tr id="vscroll-bottom-spacer" style="height: ${bottomPadding}px; border: none; padding: 0;"><td colspan="${totalCols}" style="padding: 0; border: none; height: ${bottomPadding}px; background: transparent;"></td></tr>`;
+      rowsHtml += `<tr id="vscroll-bottom-spacer" style="height: ${bottomPadding}px; display: table-row !important; border: none; padding: 0;"><td colspan="${totalCols}" style="padding: 0; border: none; height: ${bottomPadding}px; background: transparent;"></td></tr>`;
     } else {
       // 100% Native rendering: all rows directly in DOM. Zero JS on scroll, zero lag!
       for (let i = 0; i < machines.length; i++) {
@@ -1142,40 +1150,52 @@ export function renderInventoryTable() {
               </div>
             </div>
 
-            <!-- Group -->
-            <div class="filter-select-item" style="flex: 1 1 120px; min-width: 115px;">
-              <select id="filter-group" class="filter-select-compact" style="height: 30px; font-size: 11.5px; width: 100%;">
-                <option value="">All Groups (${groups.length})</option>
-                ${groups.map(g => `<option value="${g.id}" ${filters.groupId === g.id ? 'selected' : ''}>${g.name}</option>`).join('')}
-              </select>
-            </div>
+            <!-- Mobile Filter Drawer Toggle Button (Visible on screens <= 768px) -->
+            <button type="button" id="btn-toggle-mobile-filter-drawer" class="mobile-filter-drawer-toggle" title="Toggle Location & Machine Filters">
+              <span>⚙️ Filters &amp; Location</span>
+              ${activeTags.length > 0 ? `<span class="badge" style="background: #0284c7; color: #fff; font-size: 10px; padding: 1px 6px; border-radius: 10px; font-weight: 800;">${activeTags.length}</span>` : ''}
+              <span id="mobile-filter-drawer-arrow" style="font-size: 10px;">▾</span>
+            </button>
 
-            <!-- Unit / Factory -->
-            <div class="filter-select-item" style="flex: 1 1 130px; min-width: 125px;">
-              <select id="filter-unit" class="filter-select-compact" style="height: 30px; font-size: 11.5px; width: 100%;">
-                <option value="">All Units (${units.length})</option>
-                ${units.map(u => `<option value="${u.id}" ${filters.unitId === u.id ? 'selected' : ''}>${u.name}</option>`).join('')}
-              </select>
-            </div>
+            <!-- Collapsible Mobile Drawer Panel / Desktop Direct Flow Grid -->
+            <div id="inventory-filter-drawer-panel" class="mobile-filter-drawer-panel" style="flex: 10 1 auto; align-items: center; gap: 6px; flex-wrap: wrap;">
+              
+              <!-- Group -->
+              <div class="filter-select-item" style="flex: 1 1 120px; min-width: 115px;">
+                <select id="filter-group" class="filter-select-compact" style="height: 30px; font-size: 11.5px; width: 100%;">
+                  <option value="">All Groups (${groups.length})</option>
+                  ${groups.map(g => `<option value="${g.id}" ${filters.groupId === g.id ? 'selected' : ''}>${g.name}</option>`).join('')}
+                </select>
+              </div>
 
-            <!-- Floor -->
-            <div class="filter-select-item" style="flex: 1 1 120px; min-width: 115px;">
-              <select id="filter-floor" class="filter-select-compact" style="height: 30px; font-size: 11.5px; width: 100%;">
-                <option value="">${showCrossFloorIdle ? 'All Other Floors' : (isScopedUser ? 'Assigned Floor' : 'All Floors')} (${floors.length})</option>
-                ${floors.map(f => `<option value="${f.id}" ${filters.floorId === f.id ? 'selected' : ''}>${f.name}</option>`).join('')}
-              </select>
-            </div>
+              <!-- Unit / Factory -->
+              <div class="filter-select-item" style="flex: 1 1 130px; min-width: 125px;">
+                <select id="filter-unit" class="filter-select-compact" style="height: 30px; font-size: 11.5px; width: 100%;">
+                  <option value="">All Units (${units.length})</option>
+                  ${units.map(u => `<option value="${u.id}" ${filters.unitId === u.id ? 'selected' : ''}>${u.name}</option>`).join('')}
+                </select>
+              </div>
 
-            <!-- Line -->
-            <div class="filter-select-item" style="flex: 1 1 120px; min-width: 115px;">
-              <select id="filter-line" class="filter-select-compact" style="height: 30px; font-size: 11.5px; width: 100%;">
-                <option value="">All Lines (${lines.length})</option>
-                ${lines.map(l => {
-                  const clean = formatDisplayLine(l.name, 'NORMAL');
-                  const label = clean !== l.name ? `${clean} (${l.name})` : l.name;
-                  return `<option value="${l.id}" ${filters.lineId === l.id ? 'selected' : ''}>${label}</option>`;
-                }).join('')}
-              </select>
+              <!-- Floor -->
+              <div class="filter-select-item" style="flex: 1 1 120px; min-width: 115px;">
+                <select id="filter-floor" class="filter-select-compact" style="height: 30px; font-size: 11.5px; width: 100%;">
+                  <option value="">${showCrossFloorIdle ? 'All Other Floors' : (isScopedUser ? 'Assigned Floor' : 'All Floors')} (${floors.length})</option>
+                  ${floors.map(f => `<option value="${f.id}" ${filters.floorId === f.id ? 'selected' : ''}>${f.name}</option>`).join('')}
+                </select>
+              </div>
+
+              <!-- Line -->
+              <div class="filter-select-item" style="flex: 1 1 120px; min-width: 115px;">
+                <select id="filter-line" class="filter-select-compact" style="height: 30px; font-size: 11.5px; width: 100%;">
+                  <option value="">All Lines (${lines.length})</option>
+                  ${lines.map(l => {
+                    const clean = formatDisplayLine(l.name, 'NORMAL');
+                    const label = clean !== l.name ? `${clean} (${l.name})` : l.name;
+                    return `<option value="${l.id}" ${filters.lineId === l.id ? 'selected' : ''}>${label}</option>`;
+                  }).join('')}
+                </select>
+              </div>
+
             </div>
 
           </div>
@@ -1394,7 +1414,8 @@ export function initVirtualScrollEngine() {
     const startIndex = Math.max(0, rawStart - buffer);
     const endIndex = Math.min(totalRows, rawEnd + buffer);
 
-    if (lastStartIndex === -1 || Math.abs(startIndex - lastStartIndex) >= 5 || (endIndex !== lastEndIndex && (endIndex === totalRows || lastEndIndex === totalRows))) {
+    const threshold = 12;
+    if (lastStartIndex === -1 || Math.abs(startIndex - lastStartIndex) >= threshold || (endIndex !== lastEndIndex && (endIndex === totalRows || lastEndIndex === totalRows))) {
       lastStartIndex = startIndex;
       lastEndIndex = endIndex;
 
@@ -1402,11 +1423,13 @@ export function initVirtualScrollEngine() {
       const bottomHeight = Math.max(0, (totalRows - endIndex) * rowHeight);
 
       topSpacer.style.height = `${topHeight}px`;
+      topSpacer.style.minHeight = `${topHeight}px`;
       if (topSpacer.firstElementChild) {
         topSpacer.firstElementChild.style.height = `${topHeight}px`;
       }
 
       bottomSpacer.style.height = `${bottomHeight}px`;
+      bottomSpacer.style.minHeight = `${bottomHeight}px`;
       if (bottomSpacer.firstElementChild) {
         bottomSpacer.firstElementChild.style.height = `${bottomHeight}px`;
       }
@@ -1425,11 +1448,10 @@ export function initVirtualScrollEngine() {
           node = next;
         }
 
-        const temp = document.createElement('tbody');
-        temp.innerHTML = sliceHtml;
-        while (temp.firstChild) {
-          tbody.insertBefore(temp.firstChild, bottomSpacer);
-        }
+        const range = document.createRange();
+        range.selectNodeContents(tbody);
+        const fragment = range.createContextualFragment(sliceHtml);
+        tbody.insertBefore(fragment, bottomSpacer);
       }
     }
   };
@@ -1743,6 +1765,19 @@ export function initInventoryTableEvents() {
         modelId: e.target.value, 
         page: 1 
       });
+    });
+  }
+
+  // Toggle Mobile Filter Drawer
+  const btnToggleMobileDrawer = document.getElementById('btn-toggle-mobile-filter-drawer');
+  const mobileDrawerPanel = document.getElementById('inventory-filter-drawer-panel');
+  const drawerArrow = document.getElementById('mobile-filter-drawer-arrow');
+  if (btnToggleMobileDrawer && mobileDrawerPanel) {
+    btnToggleMobileDrawer.addEventListener('click', () => {
+      const isOpen = mobileDrawerPanel.classList.toggle('is-open');
+      if (drawerArrow) {
+        drawerArrow.textContent = isOpen ? '▲' : '▾';
+      }
     });
   }
 
@@ -2344,14 +2379,16 @@ export function initInventoryTableEvents() {
     });
   });
 
-  // 8. Pagination Handlers
-  const perPageSelect = document.getElementById('select-per-page');
-  if (perPageSelect) {
-    perPageSelect.addEventListener('change', (e) => {
+  // 8. Pagination Handlers (Sync both top and bottom per-page dropdowns and reset scroll)
+  document.querySelectorAll('.select-inventory-per-page, #select-per-page, #top-select-per-page').forEach(sel => {
+    sel.addEventListener('change', (e) => {
+      const invViewport = document.getElementById('inventory-table-scroll-viewport');
+      if (invViewport) invViewport.scrollTop = 0;
+      window.__resetInventoryScrollTop = true;
       const val = e.target.value === 'ALL' ? 'ALL' : parseInt(e.target.value, 10);
       state.updateFilters({ limit: val, page: 1 });
     });
-  }
+  });
 
   const btnPrev = document.getElementById('btn-prev-page');
   if (btnPrev) {
@@ -2999,15 +3036,23 @@ export function updateInventoryTableRowsOnly() {
       </tr>
     `;
   } else if (isVirtualScrollActive) {
-    const initialVisibleCount = Math.min(machines.length, 80);
-    const topPadding = 0;
-    const bottomPadding = (machines.length - initialVisibleCount) * VSCROLL_ROW_HEIGHT;
+    const existingVp = (typeof document !== 'undefined') ? document.getElementById('inventory-table-scroll-viewport') : null;
+    const currentScrollTop = (window.__resetInventoryScrollTop || !existingVp) ? 0 : existingVp.scrollTop;
+    let startIndex = 0;
+    if (currentScrollTop > 0) {
+      const rawStart = Math.floor(currentScrollTop / VSCROLL_ROW_HEIGHT);
+      startIndex = Math.max(0, rawStart - 25);
+    }
+    const initialVisibleCount = Math.min(machines.length - startIndex, 80);
+    const endIndex = Math.min(machines.length, startIndex + initialVisibleCount);
+    const topPadding = startIndex * VSCROLL_ROW_HEIGHT;
+    const bottomPadding = Math.max(0, (machines.length - endIndex) * VSCROLL_ROW_HEIGHT);
 
-    rowsHtml = `<tr id="vscroll-top-spacer" style="height: ${topPadding}px; border: none; padding: 0;"><td colspan="${totalCols}" style="padding: 0; border: none; height: ${topPadding}px; background: transparent;"></td></tr>`;
-    for (let i = 0; i < initialVisibleCount; i++) {
+    rowsHtml = `<tr id="vscroll-top-spacer" style="height: ${topPadding}px; display: table-row !important; border: none; padding: 0;"><td colspan="${totalCols}" style="padding: 0; border: none; height: ${topPadding}px; background: transparent;"></td></tr>`;
+    for (let i = startIndex; i < endIndex; i++) {
       rowsHtml += renderSingleMachineRow(machines[i], i, rowCtx);
     }
-    rowsHtml += `<tr id="vscroll-bottom-spacer" style="height: ${bottomPadding}px; border: none; padding: 0;"><td colspan="${totalCols}" style="padding: 0; border: none; height: ${bottomPadding}px; background: transparent;"></td></tr>`;
+    rowsHtml += `<tr id="vscroll-bottom-spacer" style="height: ${bottomPadding}px; display: table-row !important; border: none; padding: 0;"><td colspan="${totalCols}" style="padding: 0; border: none; height: ${bottomPadding}px; background: transparent;"></td></tr>`;
   } else {
     // 100% Native rendering: all rows directly in DOM. Zero JS on scroll, zero lag!
     for (let i = 0; i < machines.length; i++) {

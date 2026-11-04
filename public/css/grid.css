@@ -627,15 +627,23 @@ td.col-actions-cell {
   transition: background-color 0.1s ease;
 }
 
+/* Subtle Zebra Striping for Pristine Visual Rhythm */
+.excel-grid-table tbody tr:nth-child(even) td {
+  background-color: rgba(255, 255, 255, 0.015);
+}
+.excel-grid-table tbody tr:nth-child(odd) td {
+  background-color: rgba(0, 0, 0, 0.12);
+}
+
 /* Universal High-Visibility Row Hover Highlight across ALL Columns */
 .excel-grid-table tbody tr:hover td {
-  background-color: #172554 !important;
-  box-shadow: inset 0 1px 0 rgba(56, 189, 248, 0.35), inset 0 -1px 0 rgba(56, 189, 248, 0.35) !important;
+  background-color: #1e3a5f !important;
+  box-shadow: inset 0 1px 0 rgba(56, 189, 248, 0.5), inset 0 -1px 0 rgba(56, 189, 248, 0.5) !important;
 }
 
 .excel-grid-table tbody tr:hover td:first-child,
 .excel-grid-table tbody tr:hover td.col-freeze-sl {
-  box-shadow: inset 3px 0 0 #38bdf8, inset 0 1px 0 rgba(56, 189, 248, 0.35), inset 0 -1px 0 rgba(56, 189, 248, 0.35) !important;
+  box-shadow: inset 4px 0 0 #38bdf8, inset 0 1px 0 rgba(56, 189, 248, 0.5), inset 0 -1px 0 rgba(56, 189, 248, 0.5) !important;
 }
 
 .excel-grid-table tbody tr:hover td.col-freeze-1,
@@ -643,23 +651,23 @@ td.col-actions-cell {
 .excel-grid-table tbody tr:hover td.col-freeze-3,
 .excel-grid-table tbody tr:hover td.col-freeze-4,
 .excel-grid-table tbody tr:hover td.col-frozen-cell {
-  background-color: #172554 !important;
+  background-color: #1e3a5f !important;
 }
 
 /* Universal Selected Row Highlight across ALL Columns */
 .excel-grid-table tbody tr.selected td {
-  background-color: #1e3a8a !important;
-  box-shadow: inset 0 1px 0 rgba(56, 189, 248, 0.45), inset 0 -1px 0 rgba(56, 189, 248, 0.45) !important;
+  background-color: #1e40af !important;
+  box-shadow: inset 0 1px 0 #38bdf8, inset 0 -1px 0 #38bdf8 !important;
 }
 
 .excel-grid-table tbody tr.selected:hover td {
-  background-color: #1d4ed8 !important;
-  box-shadow: inset 0 1px 0 #38bdf8, inset 0 -1px 0 #38bdf8 !important;
+  background-color: #2563eb !important;
+  box-shadow: inset 0 1px 0 #7dd3fc, inset 0 -1px 0 #7dd3fc !important;
 }
 
 .excel-grid-table tbody tr.selected td:first-child,
 .excel-grid-table tbody tr.selected td.col-freeze-sl {
-  box-shadow: inset 3px 0 0 #60a5fa, inset 0 1px 0 rgba(56, 189, 248, 0.45), inset 0 -1px 0 rgba(56, 189, 248, 0.45) !important;
+  box-shadow: inset 4px 0 0 #93c5fd, inset 0 1px 0 #38bdf8, inset 0 -1px 0 #38bdf8 !important;
 }
 
 .excel-grid-table tbody tr.selected td.col-freeze-1,
@@ -667,7 +675,7 @@ td.col-actions-cell {
 .excel-grid-table tbody tr.selected td.col-freeze-3,
 .excel-grid-table tbody tr.selected td.col-freeze-4,
 .excel-grid-table tbody tr.selected td.col-frozen-cell {
-  background-color: #1e3a8a !important;
+  background-color: #1e40af !important;
 }
 
 /* Serial Number Cell Highlighting */
@@ -853,7 +861,6 @@ td.col-actions-cell {
   /* Machine Inventory High-Performance Mobile Grid & Sticky Column Geometry */
   .excel-grid-table {
     table-layout: fixed !important;
-    contain: layout paint;
   }
 
   .excel-grid-container,
@@ -861,11 +868,11 @@ td.col-actions-cell {
   #inventory-table-scroll-viewport {
     overflow-x: auto !important;
     overflow-y: auto !important;
+    overflow-anchor: none !important;
     -webkit-overflow-scrolling: touch !important;
     touch-action: pan-x pan-y !important;
     overscroll-behavior-x: contain !important;
     overscroll-behavior-y: contain !important;
-    will-change: scroll-position;
   }
 
   .inventory-page-wrapper {
@@ -1251,14 +1258,15 @@ body.theme-light .inventory-grid-info-bar .info-sep {
   position: relative;
   overflow-x: auto !important;
   overflow-y: auto !important;
+  overflow-anchor: none !important;
   -webkit-overflow-scrolling: touch !important;
   touch-action: pan-x pan-y !important;
   overscroll-behavior: contain !important;
-  will-change: scroll-position;
 }
 
 #vscroll-top-spacer,
 #vscroll-bottom-spacer {
+  display: table-row !important;
   pointer-events: none !important;
   border: none !important;
   background: transparent !important;
@@ -1273,6 +1281,54 @@ body.theme-light .inventory-grid-info-bar .info-sep {
   line-height: 0 !important;
 }
 
-.excel-grid-table tbody tr {
-  contain: layout paint; /* Isolates row geometry to prevent full table reflow */
+/* ── Mobile Filter Drawer & Responsive Reflow ── */
+.mobile-filter-drawer-toggle {
+  display: none;
+}
+
+.mobile-filter-drawer-panel {
+  display: flex;
+}
+
+@media (max-width: 768px) {
+  .mobile-filter-drawer-toggle {
+    display: inline-flex !important;
+    align-items: center;
+    gap: 6px;
+    height: 32px;
+    padding: 0 12px;
+    font-size: 12px;
+    font-weight: 700;
+    border-radius: 6px;
+    background: rgba(56, 189, 248, 0.12);
+    border: 1px solid rgba(56, 189, 248, 0.35);
+    color: #38bdf8;
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+
+  .mobile-filter-drawer-toggle:active {
+    background: rgba(56, 189, 248, 0.25);
+  }
+
+  .mobile-filter-drawer-panel {
+    display: none; /* Collapsed by default on mobile */
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px;
+    background: rgba(15, 23, 42, 0.95);
+    border: 1px solid rgba(56, 189, 248, 0.25);
+    border-radius: 8px;
+    margin-top: 4px;
+    animation: drawerSlideDown 0.18s ease-out;
+  }
+
+  .mobile-filter-drawer-panel.is-open {
+    display: flex !important;
+  }
+
+  @keyframes drawerSlideDown {
+    from { opacity: 0; transform: translateY(-6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
 }
