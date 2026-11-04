@@ -139,7 +139,10 @@ export class PostgresAdapter extends BaseAdapter {
         headers: this._headers(),
         body: JSON.stringify(this._dbPayload({ action: 'upsert', collection, docId, data }))
       });
-      if (res && res.ok) return { success: true };
+      if (res && res.ok) {
+        const json = await res.json().catch(() => ({}));
+        return { success: true, ...json, updatedAt: json.updatedAt || json.updateTime || new Date().toISOString() };
+      }
       const errText = await res.text().catch(() => '');
       let parsedErr = '';
       try {

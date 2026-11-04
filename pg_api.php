@@ -461,8 +461,12 @@ try {
             // Update or append
             if (is_array($tableArray)) {
                 $found = false;
+                $cardToMatch = !empty($recordData['cardNumber']) ? strtolower(trim((string)$recordData['cardNumber'])) : '';
                 foreach ($tableArray as $idx => $item) {
-                    if (is_array($item) && (($item['id'] ?? '') === $docId || ($item['_id'] ?? '') === $docId)) {
+                    if (!is_array($item)) continue;
+                    $idMatch = (($item['id'] ?? '') === $docId || ($item['_id'] ?? '') === $docId);
+                    $cardMatch = ($collection === 'employees' && !empty($cardToMatch) && !empty($item['cardNumber']) && strtolower(trim((string)$item['cardNumber'])) === $cardToMatch);
+                    if ($idMatch || $cardMatch) {
                         $tableArray[$idx] = array_merge($item, $recordData);
                         $found = true;
                         break;

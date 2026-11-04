@@ -126,8 +126,27 @@ class RealtimeService {
     const currentTable = storage.data[tableName];
     if (!Array.isArray(currentTable)) return;
 
-    const idx = currentTable.findIndex(item => item && (item.id === docId || item._id === docId));
+    let idx = currentTable.findIndex(item => item && (item.id === docId || item._id === docId));
+    if (idx === -1 && tableName === TABLE_NAMES.EMPLOYEES && recordData && recordData.cardNumber) {
+      const cleanCard = String(recordData.cardNumber).trim().toUpperCase();
+      idx = currentTable.findIndex(item => item && String(item.cardNumber || '').trim().toUpperCase() === cleanCard);
+    }
+
     if (idx !== -1) {
+      // 🛡️ Anti-Auto-Resurrect Safeguard for Employees
+      if (tableName === TABLE_NAMES.EMPLOYEES) {
+        const local = currentTable[idx];
+        const localInactive = local && (local.status === 'INACTIVE' || local.status === 'TERMINATED' || local.status === 'ON_LEAVE');
+        const incomingActive = recordData && recordData.status === 'ACTIVE';
+        if (localInactive && incomingActive) {
+          const localTs = new Date(local.updatedAt || 0).getTime();
+          const incomingTs = new Date(recordData.updatedAt || 0).getTime();
+          // If local was marked inactive and incoming is not strictly newer, protect local inactive status!
+          if (!recordData.updatedAt || incomingTs <= localTs) {
+            recordData = { ...recordData, status: local.status, updatedAt: local.updatedAt };
+          }
+        }
+      }
       currentTable[idx] = { ...currentTable[idx], ...recordData };
     } else {
       currentTable.unshift(recordData);
@@ -136,14 +155,22 @@ class RealtimeService {
     if (tableName === TABLE_NAMES.MACHINES && typeof storage.rebuildAllIndexes === 'function') {
       storage.rebuildAllIndexes();
     }
+    if (typeof storage._invalidateTableIdMap === 'function') {
+      storage._invalidateTableIdMap(tableName);
+    }
 
     // Persist to IndexedDB locally
     if (typeof idbCache !== 'undefined' && idbCache.setTable) {
       idbCache.setTable(tableName, currentTable).catch(() => {});
     }
 
-    // Trigger row update in inventory if visible
-    this._highlightInventoryRow(docId);
+    // Trigger row update in UI
+    if (tableName === TABLE_NAMES.EMPLOYEES && typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('erp:employees-updated', { detail: { id: docId, record: currentTable[idx] } }));
+      window.dispatchEvent(new CustomEvent('erp:storage-updated', { detail: { table: tableName, id: docId } }));
+    } else {
+      this._highlightInventoryRow(docId);
+    }
   }
 
   /**
@@ -159,9 +186,17 @@ class RealtimeService {
     if (tableName === TABLE_NAMES.MACHINES && typeof storage.rebuildAllIndexes === 'function') {
       storage.rebuildAllIndexes();
     }
+    if (typeof storage._invalidateTableIdMap === 'function') {
+      storage._invalidateTableIdMap(tableName);
+    }
 
     if (typeof idbCache !== 'undefined' && idbCache.setTable) {
       idbCache.setTable(tableName, storage.data[tableName]).catch(() => {});
+    }
+
+    if (tableName === TABLE_NAMES.EMPLOYEES && typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('erp:employees-updated', { detail: { id: docId } }));
+      window.dispatchEvent(new CustomEvent('erp:storage-updated', { detail: { table: tableName, id: docId } }));
     }
   }
 

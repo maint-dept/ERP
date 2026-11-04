@@ -166,7 +166,10 @@ export class MysqlAdapter extends BaseAdapter {
         headers: this._headers(),
         body: JSON.stringify({ action: 'upsert', collection, docId, data, apiKey: this.apiKey })
       });
-      if (res && res.ok) return { success: true };
+      if (res && res.ok) {
+        const json = await res.json().catch(() => ({}));
+        return { success: true, ...json, updatedAt: json.updatedAt || json.updateTime || new Date().toISOString() };
+      }
       const errText = await res.text().catch(() => '');
       return { success: false, error: errText || `MySQL upsert failed: HTTP ${res.status}` };
     } catch (e) {

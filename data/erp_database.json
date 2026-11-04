@@ -320974,10 +320974,10 @@
           "autoSync": true,
           "retryEnabled": true,
           "updatedAt": "2026-11-03T12:26:53.464Z",
-          "lastSync": "11/4/2026, 8:54:06 AM"
+          "lastSync": "11/4/2026, 9:08:26 AM"
         }
       ],
-      "updatedAt": "2026-11-04T02:54:06.318Z"
+      "updatedAt": "2026-11-04T03:08:26.261Z"
     }
   ],
   "users": [
@@ -345725,12 +345725,12 @@
       "workingArea": "Turag-3",
       "phone": "",
       "joinDate": "45444",
-      "status": "ACTIVE",
+      "status": "INACTIVE",
       "customFields": {
         "overtime_eligible": "Worker"
       },
       "createdAt": "2026-09-29T07:58:38.236Z",
-      "updatedAt": "2026-09-29T08:14:49.986Z"
+      "updatedAt": "2026-11-04T03:44:52.952Z"
     },
     {
       "id": "emp-1790668718234-316",

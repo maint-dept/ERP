@@ -267,6 +267,7 @@ class StorageEngine {
         window.dispatchEvent(new CustomEvent('erp:storage-updated', { detail: { table, id } }));
         if (table === TABLE_NAMES.MACHINES) window.dispatchEvent(new CustomEvent('erp:inventory-updated'));
         if (table === TABLE_NAMES.TOOLS_MASTER || table === TABLE_NAMES.TOOL_ALLOCATIONS) window.dispatchEvent(new CustomEvent('erp:tools-updated'));
+        if (table === TABLE_NAMES.EMPLOYEES) window.dispatchEvent(new CustomEvent('erp:employees-updated', { detail: { id, data } }));
       }
     } else if (type === 'RECORD_DELETED' && id) {
       if (!this.data[table]) return;
@@ -280,12 +281,14 @@ class StorageEngine {
           window.dispatchEvent(new CustomEvent('erp:storage-updated', { detail: { table, id } }));
           if (table === TABLE_NAMES.MACHINES) window.dispatchEvent(new CustomEvent('erp:inventory-updated'));
           if (table === TABLE_NAMES.TOOLS_MASTER || table === TABLE_NAMES.TOOL_ALLOCATIONS) window.dispatchEvent(new CustomEvent('erp:tools-updated'));
+          if (table === TABLE_NAMES.EMPLOYEES) window.dispatchEvent(new CustomEvent('erp:employees-updated', { detail: { id } }));
         }
       }
     } else if (type === 'TABLE_SAVED') {
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('erp:storage-updated', { detail: { table } }));
         if (table === TABLE_NAMES.MACHINES) window.dispatchEvent(new CustomEvent('erp:inventory-updated'));
+        if (table === TABLE_NAMES.EMPLOYEES) window.dispatchEvent(new CustomEvent('erp:employees-updated'));
       }
     }
   }
@@ -1364,6 +1367,68 @@ class StorageEngine {
             return inUser;
           });
           this.data[tbl] = mergedUsers;
+        } else if (tbl === TABLE_NAMES.EMPLOYEES) {
+          // 🛡️ ANTI-AUTO-RESURRECT & STATUS PRESERVATION FOR EMPLOYEES:
+          // Never allow stale incoming snapshots or remote background polling to blindly revive inactive employees.
+          const incomingEmployees = serverRecs[tbl] || [];
+          const currentEmployees = this.data[tbl] || [];
+
+          if (incomingEmployees.length > 0) {
+            // Build fast lookup maps by ID and CardNumber
+            const localById = new Map();
+            const localByCard = new Map();
+            currentEmployees.forEach(emp => {
+              if (!emp) return;
+              if (emp.id) localById.set(String(emp.id), emp);
+              if (emp.cardNumber) localByCard.set(String(emp.cardNumber).trim().toUpperCase(), emp);
+            });
+
+            const mergedEmployees = incomingEmployees.map(inEmp => {
+              if (!inEmp) return inEmp;
+              const cleanCard = inEmp.cardNumber ? String(inEmp.cardNumber).trim().toUpperCase() : '';
+              const localMatch = (inEmp.id && localById.get(String(inEmp.id))) || (cleanCard && localByCard.get(cleanCard));
+
+              if (localMatch) {
+                const localIsInactive = localMatch.status === 'INACTIVE' || localMatch.status === 'TERMINATED' || localMatch.status === 'ON_LEAVE';
+                const incomingIsActive = inEmp.status === 'ACTIVE';
+
+                if (localIsInactive && incomingIsActive) {
+                  const localTs = new Date(localMatch.updatedAt || 0).getTime();
+                  const incomingTs = new Date(inEmp.updatedAt || 0).getTime();
+
+                  // If local was marked inactive and incoming does NOT have a strictly newer timestamp,
+                  // PRESERVE the local inactive status!
+                  if (!inEmp.updatedAt || incomingTs <= localTs) {
+                    console.log(`[Storage Anti-Resurrect] 🛡️ Preserving INACTIVE status for employee '${localMatch.name}' [${localMatch.cardNumber || localMatch.id}] against stale incoming ACTIVE payload.`);
+                    return {
+                      ...inEmp,
+                      status: localMatch.status,
+                      updatedAt: localMatch.updatedAt
+                    };
+                  }
+                }
+              }
+              return inEmp;
+            });
+
+            // Safeguard: If local has employees not yet present in incoming server dataset, preserve them!
+            const serverCardSet = new Set(mergedEmployees.map(e => e && e.cardNumber ? String(e.cardNumber).trim().toUpperCase() : '').filter(Boolean));
+            const serverIdSet = new Set(mergedEmployees.map(e => e && e.id ? String(e.id) : '').filter(Boolean));
+
+            const uncommittedLocal = currentEmployees.filter(e => {
+              if (!e) return false;
+              const card = e.cardNumber ? String(e.cardNumber).trim().toUpperCase() : '';
+              const id = e.id ? String(e.id) : '';
+              return (!card || !serverCardSet.has(card)) && (!id || !serverIdSet.has(id));
+            });
+
+            if (uncommittedLocal.length > 0) {
+              console.log(`[Storage Anti-Downgrade] 🛡️ Preserving ${uncommittedLocal.length} local employees not found in server payload.`);
+              this.data[tbl] = [...mergedEmployees, ...uncommittedLocal];
+            } else {
+              this.data[tbl] = mergedEmployees;
+            }
+          }
         } else {
           // Firestore / persistent database is the authoritative single source of truth
           this.data[tbl] = serverRecs[tbl];
@@ -1752,10 +1817,14 @@ class StorageEngine {
             const pgRes = await pgAdapter.getTable(tableName);
             if (pgRes && pgRes.success && pgRes.data !== undefined) {
               const records = pgRes.data;
-              this.data[tableName] = records;
-              this._invalidateTableIdMap(tableName);
-              try { await idbCache.setTable(tableName, records); } catch (_) {}
-              try { localStorage.setItem(STORAGE_KEY_PREFIX + tableName, JSON.stringify(records)); } catch (_) {}
+              if (tableName === TABLE_NAMES.EMPLOYEES) {
+                this.applyIncomingDatabaseRecords({ [tableName]: records }, 'PostgreSQL replica');
+              } else {
+                this.data[tableName] = records;
+                this._invalidateTableIdMap(tableName);
+                try { await idbCache.setTable(tableName, records); } catch (_) {}
+                try { localStorage.setItem(STORAGE_KEY_PREFIX + tableName, JSON.stringify(records)); } catch (_) {}
+              }
               const confirmedTs = pgRes.updateTime || new Date().toISOString();
               this.syncedDocVersions.set(tableName, confirmedTs);
               this.updateStatusBadge('failover');
@@ -1790,10 +1859,14 @@ class StorageEngine {
             if (pgRes && pgRes.success && pgRes.data !== undefined) {
               syncManager.setFailoverMode(true, `MySQL getTable('${tableName}') failed`);
               const records = pgRes.data;
-              this.data[tableName] = records;
-              this._invalidateTableIdMap(tableName);
-              try { await idbCache.setTable(tableName, records); } catch (_) {}
-              try { localStorage.setItem(STORAGE_KEY_PREFIX + tableName, JSON.stringify(records)); } catch (_) {}
+              if (tableName === TABLE_NAMES.EMPLOYEES) {
+                this.applyIncomingDatabaseRecords({ [tableName]: records }, 'PostgreSQL replica');
+              } else {
+                this.data[tableName] = records;
+                this._invalidateTableIdMap(tableName);
+                try { await idbCache.setTable(tableName, records); } catch (_) {}
+                try { localStorage.setItem(STORAGE_KEY_PREFIX + tableName, JSON.stringify(records)); } catch (_) {}
+              }
               const confirmedTs = pgRes.updateTime || new Date().toISOString();
               this.syncedDocVersions.set(tableName, confirmedTs);
               this.updateStatusBadge('failover');
@@ -1806,12 +1879,15 @@ class StorageEngine {
       }
 
       const records = res.data;
-      this.data[tableName] = records;
-      this._invalidateTableIdMap(tableName);
-
-      // Update high-capacity caches
-      try { await idbCache.setTable(tableName, records); } catch (_) {}
-      try { localStorage.setItem(STORAGE_KEY_PREFIX + tableName, JSON.stringify(records)); } catch (_) {}
+      if (tableName === TABLE_NAMES.EMPLOYEES) {
+        this.applyIncomingDatabaseRecords({ [tableName]: records }, 'MySQL Primary');
+      } else {
+        this.data[tableName] = records;
+        this._invalidateTableIdMap(tableName);
+        // Update high-capacity caches
+        try { await idbCache.setTable(tableName, records); } catch (_) {}
+        try { localStorage.setItem(STORAGE_KEY_PREFIX + tableName, JSON.stringify(records)); } catch (_) {}
+      }
 
       // Update sync timestamp
       const confirmedTs = res.updateTime || new Date().toISOString();
@@ -3000,6 +3076,24 @@ class StorageEngine {
         saveOk = true;
         this.updateStatusBadge('saved');
         this._isCloudConnected = true;
+        if (!this.lastTableUpdates) this.lastTableUpdates = {};
+        this.lastTableUpdates[tableName] = Date.now();
+        const confirmedTs = res.updatedAt || res.updateTime || new Date().toISOString();
+        this.syncedDocVersions.set('mysql_' + tableName, confirmedTs);
+        this.syncedDocVersions.set(tableName, confirmedTs);
+        if (typeof localStorage !== 'undefined') {
+          try { localStorage.setItem('erp_last_mysql_sync_ts', String(Date.now())); } catch (_) {}
+        }
+        if (this._autoPersistDebounce) clearTimeout(this._autoPersistDebounce);
+        this._autoPersistDebounce = setTimeout(() => {
+          this.persistToServerDatabase();
+        }, 400);
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('erp:storage-updated', { detail: { table: tableName, id: item.id } }));
+          if (tableName === TABLE_NAMES.EMPLOYEES) {
+            window.dispatchEvent(new CustomEvent('erp:employees-updated', { detail: { id: item.id, record: item } }));
+          }
+        }
       } else {
         saveErr = res?.error || 'Server record write failed';
       }
@@ -3063,6 +3157,24 @@ class StorageEngine {
         saveOk = true;
         this.updateStatusBadge('saved');
         this._isCloudConnected = true;
+        if (!this.lastTableUpdates) this.lastTableUpdates = {};
+        this.lastTableUpdates[tableName] = Date.now();
+        const confirmedTs = res.updatedAt || res.updateTime || new Date().toISOString();
+        this.syncedDocVersions.set('mysql_' + tableName, confirmedTs);
+        this.syncedDocVersions.set(tableName, confirmedTs);
+        if (typeof localStorage !== 'undefined') {
+          try { localStorage.setItem('erp_last_mysql_sync_ts', String(Date.now())); } catch (_) {}
+        }
+        if (this._autoPersistDebounce) clearTimeout(this._autoPersistDebounce);
+        this._autoPersistDebounce = setTimeout(() => {
+          this.persistToServerDatabase();
+        }, 400);
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('erp:storage-updated', { detail: { table: tableName, id } }));
+          if (tableName === TABLE_NAMES.EMPLOYEES) {
+            window.dispatchEvent(new CustomEvent('erp:employees-updated', { detail: { id, record: table[index] } }));
+          }
+        }
       } else {
         saveErr = res?.error || 'Server record update failed';
       }
@@ -3132,6 +3244,24 @@ class StorageEngine {
         saveOk = true;
         this.updateStatusBadge('saved');
         this._isCloudConnected = true;
+        if (!this.lastTableUpdates) this.lastTableUpdates = {};
+        this.lastTableUpdates[tableName] = Date.now();
+        const confirmedTs = res.updatedAt || res.updateTime || new Date().toISOString();
+        this.syncedDocVersions.set('mysql_' + tableName, confirmedTs);
+        this.syncedDocVersions.set(tableName, confirmedTs);
+        if (typeof localStorage !== 'undefined') {
+          try { localStorage.setItem('erp_last_mysql_sync_ts', String(Date.now())); } catch (_) {}
+        }
+        if (this._autoPersistDebounce) clearTimeout(this._autoPersistDebounce);
+        this._autoPersistDebounce = setTimeout(() => {
+          this.persistToServerDatabase();
+        }, 400);
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('erp:storage-updated', { detail: { table: tableName, id } }));
+          if (tableName === TABLE_NAMES.EMPLOYEES) {
+            window.dispatchEvent(new CustomEvent('erp:employees-updated', { detail: { id } }));
+          }
+        }
       } else {
         saveErr = res?.error || 'Server record delete failed';
       }

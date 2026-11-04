@@ -1413,4 +1413,14 @@ export function initManpowerEvents() {
     });
     window._erpEmpFieldsUpdatedHandlerAttached = true;
   }
+
+  // 10. Auto-sync workforce table when employees are updated or synced across tabs/cloud
+  if (!window._erpEmployeesUpdatedHandlerAttached) {
+    window.addEventListener('erp:employees-updated', () => {
+      if (state.get('currentView') === 'manpower' && !state.get('activeEmployeeModal')) {
+        refreshView();
+      }
+    });
+    window._erpEmployeesUpdatedHandlerAttached = true;
+  }
 }
