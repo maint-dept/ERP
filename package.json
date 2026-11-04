@@ -18,5 +18,8 @@
   "dependencies": {
     "nodemailer": "^10.0.10",
     "puppeteer-core": "^19.11.1"
+  },
+  "devDependencies": {
+    "playwright-core": "^1.64.1"
   }
 }

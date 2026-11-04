@@ -427,6 +427,31 @@ body.theme-light .manpower-grid-table tr:hover td.col-actions-cell {
   box-shadow: inset 3px 0 0 #38bdf8, inset 0 1px 0 rgba(56, 189, 248, 0.35), inset 0 -1px 0 rgba(56, 189, 248, 0.35) !important;
 }
 
+/* Sticky Left Frozen Columns for Manpower Table (Mobile & Desktop) */
+.manpower-grid-table th.col-mp-freeze-check,
+.manpower-grid-table td.col-mp-freeze-check {
+  position: sticky !important;
+  left: 0px !important;
+  z-index: 10 !important;
+  background-color: var(--bg-surface, #0f172a) !important;
+}
+
+.manpower-grid-table th.col-mp-freeze-sl,
+.manpower-grid-table td.col-mp-freeze-sl {
+  position: sticky !important;
+  left: 40px !important;
+  z-index: 10 !important;
+  background-color: var(--bg-surface, #0f172a) !important;
+  border-right: 1.5px solid rgba(56, 189, 248, 0.3) !important;
+}
+
+body.theme-light .manpower-grid-table th.col-mp-freeze-check,
+body.theme-light .manpower-grid-table td.col-mp-freeze-check,
+body.theme-light .manpower-grid-table th.col-mp-freeze-sl,
+body.theme-light .manpower-grid-table td.col-mp-freeze-sl {
+  background-color: #ffffff !important;
+}
+
 .manpower-bulk-bar {
   background: linear-gradient(90deg, #0b1329 0%, #111e38 100%);
   border: 1px solid rgba(56, 189, 248, 0.45);

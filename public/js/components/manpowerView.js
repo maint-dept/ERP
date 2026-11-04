@@ -477,7 +477,7 @@ function renderEmployeeListTable({ title, employees, isInactiveView, isFiltered,
           <table class="excel-grid-table manpower-grid-table" style="margin: 0; width: 100%; min-width: ${Math.max(1200, 1100 + tableCustomFields.length * 140)}px !important;">
             <thead>
               <tr>
-                <th style="width: 40px; text-align: center; vertical-align: middle;">
+                <th class="col-mp-freeze-check" style="width: 40px; text-align: center; vertical-align: middle;">
                   <input 
                     type="checkbox" 
                     id="mp-select-all" 
@@ -487,7 +487,7 @@ function renderEmployeeListTable({ title, employees, isInactiveView, isFiltered,
                     style="cursor: pointer; width: 14px; height: 14px; accent-color: #0284c7; vertical-align: middle;" 
                   />
                 </th>
-                <th style="width: 42px; text-align: center;">SL</th>
+                <th class="col-mp-freeze-sl" style="width: 42px; text-align: center;">SL</th>
                 <th style="width: 120px;">Card Number</th>
                 <th style="min-width: 175px;">Employee Name</th>
                 <th style="min-width: 150px;">Department</th>
@@ -533,7 +533,7 @@ function renderEmployeeListTable({ title, employees, isInactiveView, isFiltered,
     return `
                   <tr class="${isSelected ? 'manpower-row-selected' : ''}" style="background: ${isSelected ? 'rgba(2, 132, 199, 0.16) !important;' : (!isActive ? 'rgba(239, 68, 68, 0.03)' : 'transparent')}; cursor: pointer;" data-row-emp-id="${emp.id}">
                     <!-- Checkbox -->
-                    <td style="text-align: center; vertical-align: middle;" onclick="event.stopPropagation();">
+                    <td class="col-mp-freeze-check" style="text-align: center; vertical-align: middle;" onclick="event.stopPropagation();">
                       <input 
                         type="checkbox" 
                         class="mp-row-checkbox" 
@@ -544,7 +544,7 @@ function renderEmployeeListTable({ title, employees, isInactiveView, isFiltered,
                     </td>
 
                     <!-- SL -->
-                    <td style="text-align: center; color: var(--text-muted); font-family: var(--font-mono); font-size: 11.5px; vertical-align: middle;">
+                    <td class="col-mp-freeze-sl" style="text-align: center; color: var(--text-muted); font-family: var(--font-mono); font-size: 11.5px; vertical-align: middle;">
                       ${idx + 1}
                     </td>
                     
