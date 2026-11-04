@@ -891,9 +891,9 @@ export function renderInventoryTable() {
       let startIndex = 0;
       if (currentScrollTop > 0) {
         const rawStart = Math.floor(currentScrollTop / VSCROLL_ROW_HEIGHT);
-        startIndex = Math.max(0, rawStart - 55);
+        startIndex = Math.max(0, rawStart - 80);
       }
-      const initialVisibleCount = Math.min(machines.length - startIndex, 120);
+      const initialVisibleCount = Math.min(machines.length - startIndex, 175);
       const endIndex = Math.min(machines.length, startIndex + initialVisibleCount);
       const topPadding = startIndex * VSCROLL_ROW_HEIGHT;
       const bottomPadding = Math.max(0, (machines.length - endIndex) * VSCROLL_ROW_HEIGHT);
@@ -1386,8 +1386,8 @@ export function initVirtualScrollEngine() {
   if (!initialTop || !initialBottom) return;
 
   const rowHeight = data.rowHeight || 44;
-  const buffer = 55; // 55 rows buffer above and below (~2,400px safety zone in each direction)
-  const defaultWindowCount = 120; // 120 rows mounted
+  const buffer = 80; // 80 rows buffer above and below (~3,520px safety cushion in each direction)
+  const defaultWindowCount = 175; // 175 rows mounted
 
   let lastStartIndex = -1;
   let lastEndIndex = -1;
@@ -1414,7 +1414,7 @@ export function initVirtualScrollEngine() {
     const startIndex = Math.max(0, rawStart - buffer);
     const endIndex = Math.min(totalRows, rawEnd + buffer);
 
-    const threshold = 12;
+    const threshold = 10;
     const needsUpdate = force || 
       lastStartIndex === -1 || 
       Math.abs(startIndex - lastStartIndex) >= threshold || 
@@ -1446,6 +1446,11 @@ export function initVirtualScrollEngine() {
 
       const tbody = topSpacer.parentElement;
       if (tbody) {
+        // Parse fragment FIRST before deleting old rows to prevent whiteout
+        const range = document.createRange();
+        range.selectNodeContents(tbody);
+        const fragment = range.createContextualFragment(sliceHtml);
+
         let node = topSpacer.nextSibling;
         while (node && node !== bottomSpacer) {
           const next = node.nextSibling;
@@ -1453,9 +1458,6 @@ export function initVirtualScrollEngine() {
           node = next;
         }
 
-        const range = document.createRange();
-        range.selectNodeContents(tbody);
-        const fragment = range.createContextualFragment(sliceHtml);
         tbody.insertBefore(fragment, bottomSpacer);
       }
     }
@@ -1474,8 +1476,8 @@ export function initVirtualScrollEngine() {
     // Detect if current scroll position has jumped outside or is nearing the buffer boundary:
     const isNearOrOutsideBuffer = (
       lastStartIndex === -1 || 
-      scrollTop <= (renderedTopPx + 8 * rowHeight) || 
-      (scrollTop + viewportHeight) >= (renderedBottomPx - 8 * rowHeight)
+      scrollTop < (renderedTopPx + 20 * rowHeight) || 
+      (scrollTop + viewportHeight) > (renderedBottomPx - 20 * rowHeight)
     );
 
     if (isNearOrOutsideBuffer) {
@@ -3069,9 +3071,9 @@ export function updateInventoryTableRowsOnly() {
     let startIndex = 0;
     if (currentScrollTop > 0) {
       const rawStart = Math.floor(currentScrollTop / VSCROLL_ROW_HEIGHT);
-      startIndex = Math.max(0, rawStart - 55);
+      startIndex = Math.max(0, rawStart - 80);
     }
-    const initialVisibleCount = Math.min(machines.length - startIndex, 120);
+    const initialVisibleCount = Math.min(machines.length - startIndex, 175);
     const endIndex = Math.min(machines.length, startIndex + initialVisibleCount);
     const topPadding = startIndex * VSCROLL_ROW_HEIGHT;
     const bottomPadding = Math.max(0, (machines.length - endIndex) * VSCROLL_ROW_HEIGHT);

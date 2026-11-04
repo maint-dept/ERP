@@ -8,18 +8,18 @@
  * 3. Database & REST APIs: Strict Network-Only bypass (zero caching of live MySQL/PostgreSQL/SSE streams)
  */
 
-const CACHE_NAME = 'amg-erp-v4.30.4';
+const CACHE_NAME = 'amg-erp-v4.30.5';
 
 const PRECACHE_ASSETS = [
   './',
   'index.html',
-  'css/app.css?v=4.29.0',
-  'css/grid.css?v=4.29.0',
-  'css/components.css?v=4.29.0',
-  'css/print.css?v=4.29.0',
-  'js/app.js?v=4.29.0',
-  'js/state.js?v=4.29.0',
-  'js/db/storage.js?v=4.29.0',
+  'css/app.css?v=4.30.5',
+  'css/grid.css?v=4.30.5',
+  'css/components.css?v=4.30.5',
+  'css/print.css?v=4.30.5',
+  'js/app.js?v=4.30.5',
+  'js/state.js',
+  'js/db/storage.js',
   'js/db/schema.js',
   'js/services/authService.js',
   'js/services/webPushService.js',
