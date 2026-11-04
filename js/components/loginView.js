@@ -143,9 +143,26 @@ export function renderLoginView(isAdminGateway = false) {
       .gateway-submit-btn:active {
         transform: translateY(0);
       }
+
+      .login-page-wrapper {
+        height: 100vh;
+        height: 100dvh;
+        max-height: 100vh;
+        max-height: 100dvh;
+        overflow: hidden;
+      }
+
+      @media (max-height: 520px) {
+        .login-page-wrapper {
+          height: auto !important;
+          min-height: 100vh !important;
+          max-height: none !important;
+          overflow-y: auto !important;
+        }
+      }
     </style>
 
-    <div class="login-page-wrapper" style="min-height: 100vh; background: ${pageBg}; background-color: #040911; background-image: radial-gradient(${isAdminGateway ? 'rgba(16, 185, 129, 0.08)' : 'rgba(56, 189, 248, 0.08)'} 1px, transparent 1px); background-size: 28px 28px; display: flex; flex-direction: column; justify-content: space-between; font-family: var(--font-main); color: #fff; position: relative; overflow-x: hidden;">
+    <div class="login-page-wrapper" style="height: 100vh; height: 100dvh; max-height: 100vh; max-height: 100dvh; background: ${pageBg}; background-color: #040911; background-image: radial-gradient(${isAdminGateway ? 'rgba(16, 185, 129, 0.08)' : 'rgba(56, 189, 248, 0.08)'} 1px, transparent 1px); background-size: 28px 28px; display: flex; flex-direction: column; justify-content: space-between; font-family: var(--font-main); color: #fff; position: relative; overflow: hidden;">
       
       <!-- Subtle Ambient Background Accents -->
       <div style="position: absolute; top: -140px; left: 15%; width: 500px; height: 500px; border-radius: 50%; background: radial-gradient(circle, ${isAdminGateway ? 'rgba(16, 185, 129, 0.06)' : 'rgba(2, 132, 199, 0.07)'} 0%, transparent 70%); filter: blur(90px); pointer-events: none; z-index: 0;"></div>
@@ -153,27 +170,27 @@ export function renderLoginView(isAdminGateway = false) {
 
       ${!isDirectPortal ? `
         <!-- Top Executive Navigation Ribbon -->
-        <header style="padding: 16px 28px; display: flex; justify-content: space-between; align-items: center; position: relative; z-index: 10; border-bottom: 1px solid rgba(255, 255, 255, 0.07); background: rgba(5, 10, 18, 0.75); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);">
+        <header style="padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; position: relative; z-index: 10; border-bottom: 1px solid rgba(255, 255, 255, 0.07); background: rgba(5, 10, 18, 0.75); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); flex-shrink: 0;">
           <div style="display: flex; align-items: center; gap: 14px; cursor: pointer;" id="login-nav-home">
-            <div style="width: 40px; height: 40px; background: ${isAdminGateway ? 'linear-gradient(135deg, #059669, #0284c7)' : 'linear-gradient(135deg, #0284c7, #1d4ed8)'}; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; box-shadow: 0 0 20px ${isAdminGateway ? 'rgba(16, 185, 129, 0.4)' : 'rgba(2, 132, 199, 0.4)'}; border: 1px solid rgba(255, 255, 255, 0.2);">
+            <div style="width: 36px; height: 36px; background: ${isAdminGateway ? 'linear-gradient(135deg, #059669, #0284c7)' : 'linear-gradient(135deg, #0284c7, #1d4ed8)'}; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 18px; box-shadow: 0 0 20px ${isAdminGateway ? 'rgba(16, 185, 129, 0.4)' : 'rgba(2, 132, 199, 0.4)'}; border: 1px solid rgba(255, 255, 255, 0.2);">
               ${isAdminGateway ? '🛡️' : '🔧'}
             </div>
             <div style="display: flex; flex-direction: column;">
               <div style="display: flex; align-items: center; gap: 8px;">
-                <span style="font-weight: 800; font-size: 15px; color: #fff; letter-spacing: 0.8px;">AL-MUSLIM GROUP</span>
-                <span class="badge" style="font-size: 10px; font-weight: 800; background: ${isAdminGateway ? 'rgba(16, 185, 129, 0.2)' : 'rgba(2, 132, 199, 0.2)'}; color: ${accentLight}; border: 1px solid ${isAdminGateway ? 'rgba(16, 185, 129, 0.4)' : 'rgba(2, 132, 199, 0.4)'}; padding: 2px 8px; border-radius: 12px; display: inline-flex; align-items: center; gap: 5px;">
-                  <span style="width: 6px; height: 6px; border-radius: 50%; background: ${accentLight}; display: inline-block; animation: pulseDot 2s infinite;"></span>
+                <span style="font-weight: 800; font-size: 14px; color: #fff; letter-spacing: 0.8px;">AL-MUSLIM GROUP</span>
+                <span class="badge" style="font-size: 9.5px; font-weight: 800; background: ${isAdminGateway ? 'rgba(16, 185, 129, 0.2)' : 'rgba(2, 132, 199, 0.2)'}; color: ${accentLight}; border: 1px solid ${isAdminGateway ? 'rgba(16, 185, 129, 0.4)' : 'rgba(2, 132, 199, 0.4)'}; padding: 2px 7px; border-radius: 10px; display: inline-flex; align-items: center; gap: 5px;">
+                  <span style="width: 5px; height: 5px; border-radius: 50%; background: ${accentLight}; display: inline-block; animation: pulseDot 2s infinite;"></span>
                   ${isAdminGateway ? 'ADMIN PORTAL' : 'USER PORTAL'}
                 </span>
               </div>
-              <span style="font-size: 11px; color: #94a3b8; font-weight: 600; margin-top: 1px;">
+              <span style="font-size: 10.5px; color: #94a3b8; font-weight: 600;">
                 Information Management &amp; Control System
               </span>
             </div>
           </div>
 
           ${visibilityMode === 'public' ? `
-            <button id="btn-back-to-home" class="btn btn-ghost btn-sm" style="color: #cbd5e1; font-size: 12.5px; font-weight: 600; display: flex; align-items: center; gap: 8px; background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(255, 255, 255, 0.12); padding: 7px 14px; border-radius: 8px; transition: all 0.2s ease;">
+            <button id="btn-back-to-home" class="btn btn-ghost btn-sm" style="color: #cbd5e1; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 6px; background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(255, 255, 255, 0.12); padding: 5px 12px; border-radius: 7px; transition: all 0.2s ease;">
               <span>←</span>
               <span>Public Homepage</span>
             </button>
@@ -182,23 +199,23 @@ export function renderLoginView(isAdminGateway = false) {
       ` : ''}
 
       <!-- Main Central Authentication Container -->
-      <main style="max-width: 460px; width: 100%; margin: ${isDirectPortal ? 'auto' : '28px auto 36px'}; padding: ${isDirectPortal ? '32px 16px' : '0 16px'}; position: relative; z-index: 5;">
+      <main style="max-width: 440px; width: 100%; margin: auto; padding: 12px 16px; position: relative; z-index: 5;">
         
-        <div class="gateway-card" style="padding: 32px 28px;">
+        <div class="gateway-card" style="padding: 24px 24px;">
           
           <!-- Card Header -->
-          <div style="text-align: center; margin-bottom: 22px;">
-            <div class="gateway-icon-box" style="width: 58px; height: 58px; background: linear-gradient(135deg, ${isAdminGateway ? 'rgba(16, 185, 129, 0.2), rgba(2, 132, 199, 0.15)' : 'rgba(2, 132, 199, 0.25), rgba(99, 102, 241, 0.15)'}); border: 1.5px solid ${isAdminGateway ? 'rgba(16, 185, 129, 0.55)' : 'rgba(56, 189, 248, 0.55)'}; border-radius: 16px; display: inline-flex; align-items: center; justify-content: center; font-size: 26px; margin-bottom: 12px;">
+          <div style="text-align: center; margin-bottom: 18px;">
+            <div class="gateway-icon-box" style="width: 52px; height: 52px; background: linear-gradient(135deg, ${isAdminGateway ? 'rgba(16, 185, 129, 0.2), rgba(2, 132, 199, 0.15)' : 'rgba(2, 132, 199, 0.25), rgba(99, 102, 241, 0.15)'}); border: 1.5px solid ${isAdminGateway ? 'rgba(16, 185, 129, 0.55)' : 'rgba(56, 189, 248, 0.55)'}; border-radius: 14px; display: inline-flex; align-items: center; justify-content: center; font-size: 24px; margin-bottom: 10px;">
               ${loginMode === 'LOGIN' ? (isAdminGateway ? '🛡️' : '👤') : (loginMode === 'FIRST_LOGIN_CHANGE' ? '🔑' : '📩')}
             </div>
 
-            <h2 style="font-size: 22px; font-weight: 800; color: #ffffff; letter-spacing: -0.3px; margin: 0 0 ${(loginMode === 'LOGIN' && !isAdminGateway) ? '0' : '6px'} 0;">
+            <h2 style="font-size: 21px; font-weight: 800; color: #ffffff; letter-spacing: -0.3px; margin: 0 0 ${(loginMode === 'LOGIN' && !isAdminGateway) ? '0' : '4px'} 0;">
               ${loginMode === 'LOGIN' 
                 ? (isAdminGateway ? 'Administrator Login' : 'User Login') 
                 : (loginMode === 'FIRST_LOGIN_CHANGE' ? 'First Login Password Setup' : (loginMode === 'FORGOT_REQUEST' ? 'Forgot Password' : 'Set New Password'))}
             </h2>
             ${(loginMode === 'LOGIN' && !isAdminGateway) ? '' : `
-            <p style="font-size: 13px; color: #94a3b8; line-height: 1.5; margin: 0;">
+            <p style="font-size: 12.5px; color: #94a3b8; line-height: 1.4; margin: 0;">
               ${loginMode === 'LOGIN' 
                 ? 'Enter your administrative credentials to continue.' 
                 : (loginMode === 'FIRST_LOGIN_CHANGE' ? 'Please configure your permanent private password to enter the system.' : (loginMode === 'FORGOT_REQUEST' ? 'Enter your registered Email address or Username to receive a password reset code.' : `Enter the 6-digit code sent for account '${resetTargetUsername}'.`))}
@@ -239,12 +256,12 @@ export function renderLoginView(isAdminGateway = false) {
             <form id="form-full-login">
               
               <!-- Username or Email -->
-              <div class="form-group" style="margin-bottom: 16px;">
-                <label class="form-label" style="font-size: 12.5px; color: #e2e8f0; font-weight: 700; display: block; margin-bottom: 6px;">
+              <div class="form-group" style="margin-bottom: 13px;">
+                <label class="form-label" style="font-size: 12px; color: #e2e8f0; font-weight: 700; display: block; margin-bottom: 5px;">
                   ${isAdminGateway ? 'Username or Email' : 'Employee ID, Username, or Email'}
                 </label>
                 <div class="gateway-input-box">
-                  <span style="position: absolute; left: 14px; font-size: 16px; opacity: 0.85; pointer-events: none; z-index: 5;">
+                  <span style="position: absolute; left: 14px; font-size: 15px; opacity: 0.85; pointer-events: none; z-index: 5;">
                     ${isAdminGateway ? '🛡️' : '👤'}
                   </span>
                   <input 
@@ -255,15 +272,15 @@ export function renderLoginView(isAdminGateway = false) {
                     value=""
                     required 
                     autocomplete="username"
-                    style="padding-left: 44px !important; background: rgba(15, 23, 42, 0.85); border: 1.5px solid ${isAdminGateway ? 'rgba(16, 185, 129, 0.3)' : 'rgba(56, 189, 248, 0.25)'}; border-radius: 10px; color: #fff; font-size: 13.5px; height: 44px; font-weight: 600;"
+                    style="padding-left: 42px !important; background: rgba(15, 23, 42, 0.85); border: 1.5px solid ${isAdminGateway ? 'rgba(16, 185, 129, 0.3)' : 'rgba(56, 189, 248, 0.25)'}; border-radius: 9px; color: #fff; font-size: 13px; height: 42px; font-weight: 600;"
                   />
                 </div>
               </div>
 
               <!-- Password -->
-              <div class="form-group" style="margin-bottom: 14px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                  <label class="form-label" style="font-size: 12.5px; color: #e2e8f0; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 8px;">
+              <div class="form-group" style="margin-bottom: 12px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                  <label class="form-label" style="font-size: 12px; color: #e2e8f0; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 8px;">
                     <span>Password</span>
                     <span id="caps-lock-warning" style="display: none; font-size: 10.5px; background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); padding: 1px 6px; border-radius: 4px; font-weight: 700;">
                       ⚠️ Caps Lock is ON
@@ -272,7 +289,7 @@ export function renderLoginView(isAdminGateway = false) {
                   <a href="${forgotHref}" id="link-forgot-password" style="font-size: 12px; color: ${accentLight}; text-decoration: none; font-weight: 700;">Forgot Password?</a>
                 </div>
                 <div class="gateway-input-box">
-                  <span style="position: absolute; left: 14px; font-size: 16px; opacity: 0.85; pointer-events: none; z-index: 5;">🔒</span>
+                  <span style="position: absolute; left: 14px; font-size: 15px; opacity: 0.85; pointer-events: none; z-index: 5;">🔒</span>
                   <input 
                     type="password" 
                     id="inp-full-password" 
@@ -281,24 +298,24 @@ export function renderLoginView(isAdminGateway = false) {
                     value=""
                     required 
                     autocomplete="current-password"
-                    style="padding-left: 44px !important; padding-right: 48px !important; background: rgba(15, 23, 42, 0.85); border: 1.5px solid ${isAdminGateway ? 'rgba(16, 185, 129, 0.3)' : 'rgba(56, 189, 248, 0.25)'}; border-radius: 10px; color: #fff; font-size: 13.5px; height: 44px;"
+                    style="padding-left: 42px !important; padding-right: 46px !important; background: rgba(15, 23, 42, 0.85); border: 1.5px solid ${isAdminGateway ? 'rgba(16, 185, 129, 0.3)' : 'rgba(56, 189, 248, 0.25)'}; border-radius: 9px; color: #fff; font-size: 13px; height: 42px;"
                   />
-                  <button type="button" id="btn-toggle-pwd-visibility" style="position: absolute; right: 12px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 4px 8px; cursor: pointer; color: #94a3b8; font-size: 14px; transition: all 0.2s;" title="Toggle Password Visibility">
+                  <button type="button" id="btn-toggle-pwd-visibility" style="position: absolute; right: 10px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 3px 7px; cursor: pointer; color: #94a3b8; font-size: 13px; transition: all 0.2s;" title="Toggle Password Visibility">
                     👁️
                   </button>
                 </div>
               </div>
 
               <!-- Remember Me -->
-              <div style="display: flex; justify-content: flex-start; align-items: center; margin: 14px 0 20px;">
-                <label style="display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: #cbd5e1; cursor: pointer; user-select: none;">
-                  <input type="checkbox" id="chk-remember-me" ${rememberMe ? 'checked' : ''} style="width: 16px; height: 16px; accent-color: ${accentColor}; cursor: pointer;" />
+              <div style="display: flex; justify-content: flex-start; align-items: center; margin: 10px 0 16px;">
+                <label style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #cbd5e1; cursor: pointer; user-select: none;">
+                  <input type="checkbox" id="chk-remember-me" ${rememberMe ? 'checked' : ''} style="width: 15px; height: 15px; accent-color: ${accentColor}; cursor: pointer;" />
                   <span>Remember me</span>
                 </label>
               </div>
 
               <!-- Submit Button -->
-              <button type="submit" id="btn-submit-full-login" class="gateway-submit-btn btn btn-primary btn-block" style="font-weight: 800; font-size: 14.5px; padding: 12px; border-radius: 10px; letter-spacing: 0.3px; display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; cursor: pointer;">
+              <button type="submit" id="btn-submit-full-login" class="gateway-submit-btn btn btn-primary btn-block" style="font-weight: 800; font-size: 14px; padding: 11px; border-radius: 9px; letter-spacing: 0.3px; display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; cursor: pointer;">
                 <span>${isAdminGateway ? 'Login as Admin' : 'Sign In'}</span>
                 <span>➔</span>
               </button>
@@ -307,7 +324,7 @@ export function renderLoginView(isAdminGateway = false) {
 
             <!-- Bottom Gateway Switcher (Shown ONLY on Admin Gateway) -->
             ${isAdminGateway ? `
-              <div style="text-align: center; margin-top: 20px; font-size: 12.5px; color: #94a3b8;">
+              <div style="text-align: center; margin-top: 14px; font-size: 12px; color: #94a3b8;">
                 <span>General factory user? </span>
                 <a href="${userPortalHref}" id="link-switch-to-user-portal" style="color: #38bdf8; text-decoration: none; font-weight: 700;">Sign in to User Portal</a>
               </div>
@@ -448,7 +465,7 @@ export function renderLoginView(isAdminGateway = false) {
       </main>
 
       <!-- Footer -->
-      <footer style="text-align: center; padding: 18px 24px; font-size: 12px; color: #64748b; border-top: 1px solid rgba(255,255,255,0.06); background: rgba(5, 10, 18, 0.85); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); position: relative; z-index: 10;">
+      <footer style="text-align: center; padding: 12px 20px; font-size: 11.5px; color: #64748b; border-top: 1px solid rgba(255,255,255,0.06); background: rgba(5, 10, 18, 0.85); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); position: relative; z-index: 10; flex-shrink: 0;">
         <div style="display: flex; justify-content: center; align-items: center; gap: 12px; flex-wrap: wrap;">
           <span>&copy; 2026 Al-Muslim Group</span>
           <span>&bull;</span>
