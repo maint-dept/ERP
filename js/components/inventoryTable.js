@@ -72,6 +72,9 @@ export function renderRowActionsMenuContent(m) {
       `;
     }
     html += `
+      <button type="button" class="actions-menu-item btn-pocket-card-trigger" data-id="${m.id}" style="color: #38bdf8; font-weight: 800; display: flex; align-items: center; gap: 8px;">
+        <span style="font-size: 14px;">🏷️</span> Pocket Card (Offline HUD)
+      </button>
       <button type="button" class="actions-menu-item btn-inspect-machine" data-id="${m.id}">
         🔍 Machine Details &amp; Lifetime
       </button>
@@ -86,6 +89,9 @@ export function renderRowActionsMenuContent(m) {
   }
 
   let html = `
+    <button type="button" class="actions-menu-item btn-pocket-card-trigger" data-id="${m.id}" style="color: #38bdf8; font-weight: 800; display: flex; align-items: center; gap: 8px;">
+      <span style="font-size: 14px;">🏷️</span> Pocket Card (Offline HUD)
+    </button>
     <button type="button" class="actions-menu-item btn-inspect-machine" data-id="${m.id}">
       🔍 Machine Details &amp; Lifetime
     </button>
@@ -2649,6 +2655,17 @@ export function initInventoryTableEvents() {
   }
 
   // 10. Inspect Machine (Click on Serial Number or View Details)
+  document.querySelectorAll('.btn-pocket-card-trigger').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      closeAllActionMenus();
+      const id = btn.getAttribute('data-id');
+      if (id && window.openMachinePocketCard) {
+        window.openMachinePocketCard(id);
+      }
+    });
+  });
+
   document.querySelectorAll('.btn-inspect-machine').forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
