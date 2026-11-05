@@ -54,6 +54,10 @@ let reportState = {
   lineId: 'ALL',
   lineName: '',
   filterMode: 'ALL', // 'ALL' = All Machines on Floor/Line, 'DUE' = Overdue / Due Soon, 'RECENT' = Recently Serviced
+  dateMode: 'SINGLE', // 'SINGLE' = Single Servicing Date, 'MONTHLY' = Month Picker, 'RANGE' = From Date - To Date
+  selectedMonth: new Date().toISOString().slice(0, 7), // 'YYYY-MM' (e.g. '2026-11')
+  dateFrom: '', // 'YYYY-MM-DD'
+  dateTo: '', // 'YYYY-MM-DD'
   servicingDate: new Date().toISOString().split('T')[0],
   nextServicingDate: '',
   defaultServicer: '',
@@ -138,6 +142,48 @@ function computeNextDate(servicingDate, days = 90) {
   } catch (_) {
     return '';
   }
+}
+
+/**
+ * Calculates start date, end date, and month label from a YYYY-MM string
+ */
+export function getMonthDateRange(yearMonth) {
+  if (!yearMonth) {
+    yearMonth = new Date().toISOString().slice(0, 7);
+  }
+  const [yStr, mStr] = yearMonth.split('-');
+  const y = parseInt(yStr, 10);
+  const m = parseInt(mStr, 10);
+  const from = `${yStr}-${String(mStr).padStart(2, '0')}-01`;
+  const lastDay = new Date(y, m, 0).getDate();
+  const to = `${yStr}-${String(mStr).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+  
+  const monthNames = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
+  const label = `${monthNames[m - 1] || ''} ${y}`;
+  return { from, to, label };
+}
+
+/**
+ * Returns human-readable servicing period text for Official Sheet Header & Exports
+ */
+export function formatReportDateDisplay() {
+  if (reportState.dateMode === 'MONTHLY') {
+    const info = getMonthDateRange(reportState.selectedMonth);
+    const fromStr = reportState.dateFrom || info.from;
+    const toStr = reportState.dateTo || info.to;
+    return `${info.label} (${formatDMY(fromStr)} to ${formatDMY(toStr)})`;
+  }
+  if (reportState.dateMode === 'RANGE') {
+    if (reportState.dateFrom && reportState.dateTo) {
+      return `${formatDMY(reportState.dateFrom)} to ${formatDMY(reportState.dateTo)}`;
+    }
+    if (reportState.dateFrom) return `From ${formatDMY(reportState.dateFrom)}`;
+    if (reportState.dateTo) return `Up to ${formatDMY(reportState.dateTo)}`;
+  }
+  return formatDMY(reportState.servicingDate);
 }
 
 /**
@@ -278,16 +324,75 @@ export function fetchMachinesByFilters() {
     });
   }
 
-  // 5. Filter Mode (All, Due, Recently Serviced)
-  if (reportState.filterMode === 'DUE') {
-    list = list.filter(m => {
-      const prof = preventiveMaintenanceService.getMachinePreventiveProfile(m);
-      return prof?.urgency?.status === 'OVERDUE' || prof?.urgency?.status === 'DUE_TODAY' || prof?.urgency?.status === 'DUE_SOON';
-    });
-  } else if (reportState.filterMode === 'RECENT') {
+  // 5. Date Range & Filter Mode (All, Due, Recently Serviced)
+  const isDateFiltering = (reportState.dateMode === 'RANGE' || reportState.dateMode === 'MONTHLY') && (reportState.dateFrom || reportState.dateTo);
+  const from = reportState.dateFrom || '';
+  const to = reportState.dateTo || '';
+
+  if (isDateFiltering) {
     const pmRecs = storage.getTable(TABLE_NAMES.PREVENTIVE_MAINTENANCE) || [];
-    const recentSerials = new Set(pmRecs.map(r => String(r.serialNumber || '').trim().toUpperCase()));
-    list = list.filter(m => recentSerials.has(String(m.serialNumber || '').trim().toUpperCase()));
+
+    if (reportState.filterMode === 'RECENT') {
+      // Filter strictly to machines that were serviced in this date range
+      const matchingSerials = new Set();
+      pmRecs.forEach(r => {
+        const d = (r.serviceDate || r.lastServiceDate || r.createdAt || '').slice(0, 10);
+        if (d && (!from || d >= from) && (!to || d <= to)) {
+          if (r.serialNumber) matchingSerials.add(String(r.serialNumber).trim().toUpperCase());
+          if (r.machineId) matchingSerials.add(String(r.machineId).trim().toUpperCase());
+        }
+      });
+      list = list.filter(m => {
+        const s = String(m.serialNumber || '').trim().toUpperCase();
+        const mid = String(m.id || '').trim().toUpperCase();
+        const mDate = (m.lastServiceDate || m.customValues?.service_date || '').slice(0, 10);
+        return matchingSerials.has(s) || matchingSerials.has(mid) || (mDate && (!from || mDate >= from) && (!to || mDate <= to));
+      });
+    } else if (reportState.filterMode === 'DUE') {
+      // Filter to machines that are due in this date range
+      list = list.filter(m => {
+        const prof = preventiveMaintenanceService.getMachinePreventiveProfile(m);
+        const nextD = (prof?.nextServiceDate || m.nextServiceDate || '').slice(0, 10);
+        return nextD && (!from || nextD >= from) && (!to || nextD <= to);
+      });
+    } else {
+      // filterMode === 'ALL'
+      // If user selected a specific floor or line, load all machines on that floor/line for the monthly sheet
+      // If Unit/Floor/Line is ALL, filter to machines with PM activity or schedule in that period
+      if (reportState.floorId === 'ALL' && reportState.unitId === 'ALL' && reportState.lineId === 'ALL') {
+        const activeSerials = new Set();
+        pmRecs.forEach(r => {
+          const d = (r.serviceDate || r.lastServiceDate || r.createdAt || '').slice(0, 10);
+          const nextD = (r.nextServiceDate || '').slice(0, 10);
+          if ((d && (!from || d >= from) && (!to || d <= to)) || (nextD && (!from || nextD >= from) && (!to || nextD <= to))) {
+            if (r.serialNumber) activeSerials.add(String(r.serialNumber).trim().toUpperCase());
+            if (r.machineId) activeSerials.add(String(r.machineId).trim().toUpperCase());
+          }
+        });
+        const periodFiltered = list.filter(m => {
+          const s = String(m.serialNumber || '').trim().toUpperCase();
+          const mid = String(m.id || '').trim().toUpperCase();
+          const mDate = (m.lastServiceDate || m.customValues?.service_date || '').slice(0, 10);
+          const nextD = (m.nextServiceDate || '').slice(0, 10);
+          return activeSerials.has(s) || activeSerials.has(mid) || (mDate && (!from || mDate >= from) && (!to || mDate <= to)) || (nextD && (!from || nextD >= from) && (!to || nextD <= to));
+        });
+        if (periodFiltered.length > 0) {
+          list = periodFiltered;
+        }
+      }
+    }
+  } else {
+    // Standard Single Date filtering
+    if (reportState.filterMode === 'DUE') {
+      list = list.filter(m => {
+        const prof = preventiveMaintenanceService.getMachinePreventiveProfile(m);
+        return prof?.urgency?.status === 'OVERDUE' || prof?.urgency?.status === 'DUE_TODAY' || prof?.urgency?.status === 'DUE_SOON';
+      });
+    } else if (reportState.filterMode === 'RECENT') {
+      const pmRecs = storage.getTable(TABLE_NAMES.PREVENTIVE_MAINTENANCE) || [];
+      const recentSerials = new Set(pmRecs.map(r => String(r.serialNumber || '').trim().toUpperCase()));
+      list = list.filter(m => recentSerials.has(String(m.serialNumber || '').trim().toUpperCase()));
+    }
   }
 
   // 6. Active Search Query
@@ -499,8 +604,25 @@ export function resolveMachineReportRow(rawM, index = 0, startSlOffset = 0, base
  */
 export function populateReportRowsFromMachines(machineList, startSlOffset = 0) {
   const pmRecords = storage.getTable(TABLE_NAMES.PREVENTIVE_MAINTENANCE) || [];
+  const from = (reportState.dateMode === 'RANGE' || reportState.dateMode === 'MONTHLY') ? reportState.dateFrom : null;
+  const to = (reportState.dateMode === 'RANGE' || reportState.dateMode === 'MONTHLY') ? reportState.dateTo : null;
+
   const recIndex = new Map();
-  pmRecords.forEach(r => {
+  const sortedPm = [...pmRecords].sort((a, b) => new Date(b.serviceDate || b.createdAt || 0) - new Date(a.serviceDate || a.createdAt || 0));
+
+  // Match records inside the selected date range first
+  if (from || to) {
+    sortedPm.forEach(r => {
+      const d = (r.serviceDate || r.createdAt || '').slice(0, 10);
+      if (d && (!from || d >= from) && (!to || d <= to)) {
+        const s = String(r.serialNumber || '').trim().toUpperCase();
+        if (s && !recIndex.has(s)) recIndex.set(s, r);
+        if (r.machineId && !recIndex.has(r.machineId)) recIndex.set(r.machineId, r);
+      }
+    });
+  }
+  // Fallback to most recent record
+  sortedPm.forEach(r => {
     const s = String(r.serialNumber || '').trim().toUpperCase();
     if (s && !recIndex.has(s)) recIndex.set(s, r);
     if (r.machineId && !recIndex.has(r.machineId)) recIndex.set(r.machineId, r);
@@ -946,19 +1068,70 @@ export function renderPreventiveMaintenanceReportView() {
             <!-- Visual Divider -->
             <div style="width: 1px; height: 16px; background: rgba(255, 255, 255, 0.15); margin: 0 2px;"></div>
 
-            <!-- Servicing Date -->
-            <div style="display: inline-flex; align-items: center; gap: 3px; background: rgba(15, 23, 42, 0.7); padding: 1px 5px; border-radius: 4px; border: 1px solid rgba(56, 189, 248, 0.35);">
-              <span style="font-size: 11px;">📅</span>
-              <span style="color: #38bdf8; font-weight: 800; font-size: 10.5px; white-space: nowrap;">Date:</span>
-              <input 
-                type="date" 
-                id="pm-rep-servicing-date" 
-                class="filter-search-input" 
-                value="${reportState.servicingDate || ''}" 
-                style="height: 22px; width: 115px; font-size: 11px; font-weight: 700; padding: 0 2px; background: transparent; color: #ffffff; border: none; outline: none;" 
-                title="Servicing Date" 
-              />
+            <!-- Date Filter Mode Selector: Single Day | Monthly (মাসিক) | Date Range (তারিখ থেকে তারিখ) -->
+            <div style="display: inline-flex; align-items: center; gap: 3px; background: rgba(15, 23, 42, 0.75); padding: 1px 4px; border-radius: 4px; border: 1px solid rgba(56, 189, 248, 0.35);">
+              <span style="color: #38bdf8; font-weight: 800; font-size: 10.5px; white-space: nowrap;">📅 Period:</span>
+              <select id="pm-rep-date-mode" class="filter-select-compact" style="height: 24px; font-size: 10.5px; font-weight: 700; padding: 1px 3px; background: transparent; color: #38bdf8; border: none; outline: none; cursor: pointer;">
+                <option value="SINGLE" ${reportState.dateMode === 'SINGLE' ? 'selected' : ''}>📅 Single Date</option>
+                <option value="MONTHLY" ${reportState.dateMode === 'MONTHLY' ? 'selected' : ''}>🗓️ Monthly (মাসিক)</option>
+                <option value="RANGE" ${reportState.dateMode === 'RANGE' ? 'selected' : ''}>📆 Date Range (তারিখ থেকে তারিখ)</option>
+              </select>
             </div>
+
+            ${reportState.dateMode === 'MONTHLY' ? `
+              <!-- Monthly Picker Cluster -->
+              <div style="display: inline-flex; align-items: center; gap: 4px; background: rgba(15, 23, 42, 0.75); padding: 1px 6px; border-radius: 4px; border: 1px solid rgba(16, 185, 129, 0.4);">
+                <span style="font-size: 11px;">🗓️</span>
+                <span style="color: #10b981; font-weight: 800; font-size: 10.5px; white-space: nowrap;">Month:</span>
+                <input 
+                  type="month" 
+                  id="pm-rep-filter-month" 
+                  class="filter-search-input" 
+                  value="${reportState.selectedMonth || new Date().toISOString().slice(0, 7)}" 
+                  style="height: 22px; width: 118px; font-size: 11px; font-weight: 700; padding: 0 4px; background: transparent; color: #ffffff; border: none; outline: none; cursor: pointer;" 
+                  title="Select Month for Monthly PM Report" 
+                />
+                <button type="button" id="btn-pm-this-month" class="btn btn-ghost btn-xs" style="height: 20px; font-size: 9.5px; font-weight: 800; padding: 0 5px; color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 3px;" title="Current Month">This Mo.</button>
+                <button type="button" id="btn-pm-last-month" class="btn btn-ghost btn-xs" style="height: 20px; font-size: 9.5px; font-weight: 800; padding: 0 5px; color: #94a3b8; border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 3px;" title="Previous Month">Last Mo.</button>
+              </div>
+            ` : reportState.dateMode === 'RANGE' ? `
+              <!-- Date Range: From Date - To Date Cluster -->
+              <div style="display: inline-flex; align-items: center; gap: 3px; background: rgba(15, 23, 42, 0.75); padding: 1px 6px; border-radius: 4px; border: 1px solid rgba(245, 158, 11, 0.4);">
+                <span style="font-size: 11px;">📆</span>
+                <span style="color: #f59e0b; font-weight: 800; font-size: 10.5px; white-space: nowrap;">From:</span>
+                <input 
+                  type="date" 
+                  id="pm-rep-date-from" 
+                  class="filter-search-input" 
+                  value="${reportState.dateFrom || ''}" 
+                  style="height: 22px; width: 112px; font-size: 11px; font-weight: 700; padding: 0 2px; background: transparent; color: #ffffff; border: none; outline: none;" 
+                  title="From Date (শুরুর তারিখ)" 
+                />
+                <span style="color: #f59e0b; font-weight: 800; font-size: 10.5px; white-space: nowrap; margin: 0 2px;">To:</span>
+                <input 
+                  type="date" 
+                  id="pm-rep-date-to" 
+                  class="filter-search-input" 
+                  value="${reportState.dateTo || ''}" 
+                  style="height: 22px; width: 112px; font-size: 11px; font-weight: 700; padding: 0 2px; background: transparent; color: #ffffff; border: none; outline: none;" 
+                  title="To Date (শেষের তারিখ)" 
+                />
+              </div>
+            ` : `
+              <!-- Single Servicing Date -->
+              <div style="display: inline-flex; align-items: center; gap: 3px; background: rgba(15, 23, 42, 0.7); padding: 1px 5px; border-radius: 4px; border: 1px solid rgba(56, 189, 248, 0.35);">
+                <span style="font-size: 11px;">📅</span>
+                <span style="color: #38bdf8; font-weight: 800; font-size: 10.5px; white-space: nowrap;">Date:</span>
+                <input 
+                  type="date" 
+                  id="pm-rep-servicing-date" 
+                  class="filter-search-input" 
+                  value="${reportState.servicingDate || ''}" 
+                  style="height: 22px; width: 115px; font-size: 11px; font-weight: 700; padding: 0 2px; background: transparent; color: #ffffff; border: none; outline: none;" 
+                  title="Servicing Date" 
+                />
+              </div>
+            `}
 
             <!-- Next Servicing Date -->
             <div style="display: inline-flex; align-items: center; gap: 3px; background: rgba(15, 23, 42, 0.7); padding: 1px 5px; border-radius: 4px; border: 1px solid rgba(16, 185, 129, 0.35);">
@@ -1129,9 +1302,9 @@ export function renderPreventiveMaintenanceReportView() {
             <div style="border-right: 1.5px solid #000000; padding: 4px 8px; display: flex; align-items: center; min-height: 24px;">
               <span style="font-weight: 800; font-size: 12px; margin-right: 6px; white-space: nowrap;">Servicing Date :</span>
               ${reportState.previewMode ? `
-                <span style="font-weight: 700; font-size: 12px;">${formatDMY(reportState.servicingDate)}</span>
+                <span style="font-weight: 700; font-size: 12px;">${escapeHtml(formatReportDateDisplay())}</span>
               ` : `
-                <input type="text" id="pm-meta-input-date" class="pm-sheet-inline-input" placeholder="DD-MM-YYYY" value="${formatDMY(reportState.servicingDate)}" style="border: none; border-bottom: 1px dotted #999; width: 100%; font-size: 12px; font-weight: 600; padding: 1px 4px; outline: none; background: transparent; color: #000;" />
+                <input type="text" id="pm-meta-input-date" class="pm-sheet-inline-input" placeholder="DD-MM-YYYY or Period" value="${escapeHtml(formatReportDateDisplay())}" style="border: none; border-bottom: 1px dotted #999; width: 100%; font-size: 12px; font-weight: 600; padding: 1px 4px; outline: none; background: transparent; color: #000;" />
               `}
             </div>
 
@@ -1510,7 +1683,110 @@ export function initPreventiveMaintenanceReportEvents(container = document) {
     });
   }
 
-  // 5. Servicing Date & Next Servicing Date
+  // 5. Date Filter Mode Selector (Single Day | Monthly | Date Range)
+  const dateModeSelect = root.querySelector('#pm-rep-date-mode');
+  if (dateModeSelect) {
+    dateModeSelect.addEventListener('change', (e) => {
+      reportState.dateMode = e.target.value;
+      if (reportState.dateMode === 'MONTHLY') {
+        if (!reportState.selectedMonth) {
+          reportState.selectedMonth = new Date().toISOString().slice(0, 7);
+        }
+        const r = getMonthDateRange(reportState.selectedMonth);
+        reportState.dateFrom = r.from;
+        reportState.dateTo = r.to;
+        reportState.servicingDate = r.from;
+        reportState.nextServicingDate = computeNextDate(r.to, 90);
+      } else if (reportState.dateMode === 'RANGE') {
+        if (!reportState.dateFrom) {
+          const now = new Date();
+          reportState.dateFrom = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+        }
+        if (!reportState.dateTo) {
+          reportState.dateTo = new Date().toISOString().split('T')[0];
+        }
+        reportState.servicingDate = reportState.dateFrom;
+        reportState.nextServicingDate = computeNextDate(reportState.dateTo, 90);
+      } else {
+        // SINGLE
+        if (!reportState.servicingDate) {
+          reportState.servicingDate = new Date().toISOString().split('T')[0];
+        }
+        reportState.nextServicingDate = computeNextDate(reportState.servicingDate, 90);
+      }
+      reloadMachinesAndRows();
+    });
+  }
+
+  // 6. Month Picker Input
+  const monthInput = root.querySelector('#pm-rep-filter-month');
+  if (monthInput) {
+    monthInput.addEventListener('change', (e) => {
+      reportState.selectedMonth = e.target.value;
+      const r = getMonthDateRange(reportState.selectedMonth);
+      reportState.dateFrom = r.from;
+      reportState.dateTo = r.to;
+      reportState.servicingDate = r.from;
+      reportState.nextServicingDate = computeNextDate(r.to, 90);
+      reloadMachinesAndRows();
+    });
+  }
+
+  // Quick Preset: This Month
+  const thisMonthBtn = root.querySelector('#btn-pm-this-month');
+  if (thisMonthBtn) {
+    thisMonthBtn.addEventListener('click', () => {
+      reportState.selectedMonth = new Date().toISOString().slice(0, 7);
+      const r = getMonthDateRange(reportState.selectedMonth);
+      reportState.dateFrom = r.from;
+      reportState.dateTo = r.to;
+      reportState.servicingDate = r.from;
+      reportState.nextServicingDate = computeNextDate(r.to, 90);
+      reloadMachinesAndRows();
+    });
+  }
+
+  // Quick Preset: Last Month
+  const lastMonthBtn = root.querySelector('#btn-pm-last-month');
+  if (lastMonthBtn) {
+    lastMonthBtn.addEventListener('click', () => {
+      const d = new Date();
+      d.setMonth(d.getMonth() - 1);
+      reportState.selectedMonth = d.toISOString().slice(0, 7);
+      const r = getMonthDateRange(reportState.selectedMonth);
+      reportState.dateFrom = r.from;
+      reportState.dateTo = r.to;
+      reportState.servicingDate = r.from;
+      reportState.nextServicingDate = computeNextDate(r.to, 90);
+      reloadMachinesAndRows();
+    });
+  }
+
+  // 7. Date Range Inputs (From Date & To Date)
+  const dateFromInput = root.querySelector('#pm-rep-date-from');
+  if (dateFromInput) {
+    dateFromInput.addEventListener('change', (e) => {
+      reportState.dateFrom = e.target.value;
+      reportState.servicingDate = reportState.dateFrom;
+      if (reportState.dateTo) {
+        reportState.nextServicingDate = computeNextDate(reportState.dateTo, 90);
+      }
+      reloadMachinesAndRows();
+    });
+  }
+
+  const dateToInput = root.querySelector('#pm-rep-date-to');
+  if (dateToInput) {
+    dateToInput.addEventListener('change', (e) => {
+      reportState.dateTo = e.target.value;
+      if (reportState.dateTo) {
+        reportState.nextServicingDate = computeNextDate(reportState.dateTo, 90);
+      }
+      reloadMachinesAndRows();
+    });
+  }
+
+  // 8. Servicing Date & Next Servicing Date (Single Date Mode)
   const sDateInput = root.querySelector('#pm-rep-servicing-date');
   if (sDateInput) {
     sDateInput.addEventListener('change', (e) => {
@@ -1519,7 +1795,7 @@ export function initPreventiveMaintenanceReportEvents(container = document) {
       const nextInput = root.querySelector('#pm-rep-next-servicing-date');
       if (nextInput) nextInput.value = reportState.nextServicingDate;
       const metaDate = root.querySelector('#pm-meta-input-date');
-      if (metaDate) metaDate.value = formatDMY(reportState.servicingDate);
+      if (metaDate) metaDate.value = formatReportDateDisplay();
       const metaNext = root.querySelector('#pm-meta-input-next-date');
       if (metaNext) metaNext.value = formatDMY(reportState.nextServicingDate);
     });
@@ -1704,6 +1980,12 @@ export function initPreventiveMaintenanceReportEvents(container = document) {
         reportState.lineId = 'ALL';
         reportState.lineName = '';
         reportState.filterMode = 'ALL';
+        reportState.dateMode = 'SINGLE';
+        reportState.selectedMonth = new Date().toISOString().slice(0, 7);
+        reportState.dateFrom = '';
+        reportState.dateTo = '';
+        reportState.servicingDate = new Date().toISOString().split('T')[0];
+        reportState.nextServicingDate = computeNextDate(reportState.servicingDate, 90);
         reportState.page = 1;
         reportState.pageSize = 10;
         reloadMachinesAndRows();
@@ -1851,7 +2133,7 @@ export function initPreventiveMaintenanceReportEvents(container = document) {
       <!DOCTYPE html>
       <html>
       <head>
-        <title>Preventive_Machine_Maintenance_Report_${reportState.servicingDate || 'Al-Muslim'}</title>
+        <title>Preventive_Machine_Maintenance_Report_${reportState.dateMode === 'MONTHLY' ? (reportState.selectedMonth || 'Monthly') : reportState.dateMode === 'RANGE' ? `${reportState.dateFrom}_to_${reportState.dateTo}` : (reportState.servicingDate || 'Al-Muslim')}</title>
         <meta charset="utf-8">
         <style>
           @page {
@@ -2022,7 +2304,7 @@ export function initPreventiveMaintenanceReportEvents(container = document) {
         '',
         `Floor/Area: ${reportState.floorName || 'All Floors'}`,
         '',
-        `Servicing Date: ${formatDMY(reportState.servicingDate)}`,
+        `Servicing Date: ${formatReportDateDisplay()}`,
         '',
         `Next Servicing Date: ${formatDMY(reportState.nextServicingDate)}`
       ],
@@ -2086,7 +2368,12 @@ export function initPreventiveMaintenanceReportEvents(container = document) {
     ];
 
     window.XLSX.utils.book_append_sheet(wb, ws, 'Preventive Maintenance');
-    const fileName = `Preventive_Machine_Maintenance_${reportState.floorName ? reportState.floorName + '_' : ''}${reportState.servicingDate || 'Report'}.xlsx`;
+    const periodSlug = reportState.dateMode === 'MONTHLY' 
+      ? (reportState.selectedMonth || 'Monthly') 
+      : reportState.dateMode === 'RANGE' 
+        ? `${reportState.dateFrom || 'start'}_to_${reportState.dateTo || 'end'}` 
+        : (reportState.servicingDate || 'Report');
+    const fileName = `Preventive_Machine_Maintenance_${reportState.floorName ? reportState.floorName + '_' : ''}${periodSlug}.xlsx`;
     window.XLSX.writeFile(wb, fileName);
 
     auditService.log('EXPORT_PREVENTIVE_REPORT_EXCEL', 'PREVENTIVE_MAINTENANCE', fileName, `Exported ${rowsToExport.length} records to Excel.`);
@@ -2117,7 +2404,7 @@ export function initPreventiveMaintenanceReportEvents(container = document) {
 
     const csvRows = [];
     csvRows.push(['AL-MUSLIM GROUP - MAINTENANCE DEPARTMENT - PREVENTIVE MACHINE MAINTENANCE']);
-    csvRows.push([`Unit: ${reportState.unitName || 'All'}`, `Floor: ${reportState.floorName || 'All'}`, `Servicing Date: ${formatDMY(reportState.servicingDate)}`, `Next Servicing Date: ${formatDMY(reportState.nextServicingDate)}`]);
+    csvRows.push([`Unit: ${reportState.unitName || 'All'}`, `Floor: ${reportState.floorName || 'All'}`, `Servicing Date: ${formatReportDateDisplay()}`, `Next Servicing Date: ${formatDMY(reportState.nextServicingDate)}`]);
     csvRows.push([]);
     csvRows.push(headers);
 
@@ -2143,8 +2430,13 @@ export function initPreventiveMaintenanceReportEvents(container = document) {
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
+    const periodSlug = reportState.dateMode === 'MONTHLY' 
+      ? (reportState.selectedMonth || 'Monthly') 
+      : reportState.dateMode === 'RANGE' 
+        ? `${reportState.dateFrom || 'start'}_to_${reportState.dateTo || 'end'}` 
+        : (reportState.servicingDate || 'Report');
     link.setAttribute('href', url);
-    link.setAttribute('download', `Preventive_Machine_Maintenance_${reportState.floorName ? reportState.floorName + '_' : ''}${reportState.servicingDate || 'Report'}.csv`);
+    link.setAttribute('download', `Preventive_Machine_Maintenance_${reportState.floorName ? reportState.floorName + '_' : ''}${periodSlug}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
