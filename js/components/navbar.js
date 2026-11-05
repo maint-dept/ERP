@@ -3,12 +3,12 @@
  * Clean, User-Friendly Navbar with Streamlined Actions & Account Dropdown
  */
 
-import { authService } from '../services/authService.js?v=4.26.60';
-import { notificationService } from '../services/notificationService.js';
-import { state } from '../state.js';
-import { storage } from '../db/storage.js';
-import { syncManager } from '../db/syncManager.js';
-import { router } from '../services/router.js?v=4.26.50';
+import { authService } from '../services/authService.js?v=4.33.0';
+import { notificationService } from '../services/notificationService.js?v=4.33.0';
+import { state } from '../state.js?v=4.33.0';
+import { storage } from '../db/storage.js?v=4.33.0';
+import { syncManager } from '../db/syncManager.js?v=4.33.0';
+import { router } from '../services/router.js?v=4.33.0';
 import { 
   getEmployeeMap, 
   getUserCardNumber, 

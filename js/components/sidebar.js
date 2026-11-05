@@ -9,10 +9,10 @@
  * 4. ADMINISTRATION: System Administration & Configuration
  */
 
-import { authService } from '../services/authService.js?v=4.26.60';
-import { state } from '../state.js';
-import { router } from '../services/router.js?v=4.32.0';
-import { moduleLoader } from '../services/moduleLoader.js?v=4.32.0';
+import { authService } from '../services/authService.js?v=4.33.0';
+import { state } from '../state.js?v=4.33.0';
+import { router } from '../services/router.js?v=4.33.0';
+import { moduleLoader } from '../services/moduleLoader.js?v=4.33.0';
 
 const STORAGE_KEY_EXPANDED = 'al_muslim_sidebar_expanded_menus';
 

@@ -4,11 +4,11 @@
  * Premium Cyber-Executive Security Gateway Interface (v4.26.56)
  */
 
-import { authService } from '../services/authService.js?v=4.26.60';
-import { emailService } from '../services/emailService.js';
-import { state } from '../state.js';
-import { router } from '../services/router.js?v=4.28.3';
-import { homepageService } from '../services/homepageService.js';
+import { authService } from '../services/authService.js?v=4.33.0';
+import { emailService } from '../services/emailService.js?v=4.33.0';
+import { state } from '../state.js?v=4.33.0';
+import { router } from '../services/router.js?v=4.33.0';
+import { homepageService } from '../services/homepageService.js?v=4.33.0';
 
 let loginMode = 'LOGIN'; // 'LOGIN' | 'FORGOT_REQUEST' | 'FORGOT_VERIFY' | 'FIRST_LOGIN_CHANGE'
 let resetTargetUsername = '';

@@ -8,25 +8,28 @@
  * 3. Database & REST APIs: Strict Network-Only bypass (zero caching of live MySQL/PostgreSQL/SSE streams)
  */
 
-const CACHE_NAME = 'amg-erp-v4.32.0';
+const BUILD_VER = '4.33.0';
+const CACHE_NAME = 'amg-erp-v4.33.0';
 
 const PRECACHE_ASSETS = [
   './',
   'index.html',
-  'css/app.css?v=4.32.0',
-  'css/grid.css?v=4.32.0',
-  'css/components.css?v=4.32.0',
-  'css/print.css?v=4.32.0',
-  'js/app.js?v=4.32.0',
-  'js/state.js',
-  'js/db/storage.js',
-  'js/db/schema.js',
-  'js/services/authService.js',
-  'js/services/webPushService.js',
-  'js/services/router.js?v=4.29.0',
-  'js/components/loginView.js?v=4.29.0',
-  'js/components/sidebar.js',
-  'js/components/navbar.js?v=4.29.0'
+  `css/app.css?v=${BUILD_VER}`,
+  `css/grid.css?v=${BUILD_VER}`,
+  `css/components.css?v=${BUILD_VER}`,
+  `css/print.css?v=${BUILD_VER}`,
+  `js/app.js?v=${BUILD_VER}`,
+  `js/state.js?v=${BUILD_VER}`,
+  `js/db/storage.js?v=${BUILD_VER}`,
+  `js/db/schema.js?v=${BUILD_VER}`,
+  `js/services/authService.js?v=${BUILD_VER}`,
+  `js/services/webPushService.js?v=${BUILD_VER}`,
+  `js/services/router.js?v=${BUILD_VER}`,
+  `js/services/moduleLoader.js?v=${BUILD_VER}`,
+  `js/components/loginView.js?v=${BUILD_VER}`,
+  `js/components/sidebar.js?v=${BUILD_VER}`,
+  `js/components/navbar.js?v=${BUILD_VER}`,
+  `js/components/dashboard.js?v=${BUILD_VER}`
 ];
 
 self.addEventListener('install', (event) => {
@@ -110,6 +113,9 @@ self.addEventListener('fetch', (event) => {
   if (isStaticAsset) {
     event.respondWith(
       caches.match(req).then((cachedRes) => {
+        if (cachedRes) return cachedRes;
+        return caches.match(req, { ignoreSearch: true });
+      }).then((cachedRes) => {
         const fetchPromise = fetch(req).then((networkRes) => {
           if (networkRes && networkRes.status === 200) {
             const resClone = networkRes.clone();

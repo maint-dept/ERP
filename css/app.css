@@ -1707,6 +1707,7 @@ body.modal-open div {
   flex-direction: column;
   gap: 10px;
   min-height: 0;
+  contain: layout;
 }
 
 .excel-grid-container, .table-responsive {

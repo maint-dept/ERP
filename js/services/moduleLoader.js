@@ -11,7 +11,7 @@
  * - Race-condition guard for rapid switching & parallel startup hydration
  */
 
-export const BUILD_VER = '4.32.0';
+export const BUILD_VER = '4.33.0';
 
 const MODULE_REGISTRY = {
   'inventory': {
@@ -351,8 +351,14 @@ class ModuleLazyLoader {
       if (!this.isLoaded(view) && this.isLazyView(view)) {
         try {
           await this.load(view);
-          // Yield to UI thread between module compiles
-          await new Promise(resolve => setTimeout(resolve, 40));
+          // Yield to UI thread politely between module compiles (prevents main thread jank)
+          await new Promise(resolve => {
+            if (typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function') {
+              window.requestIdleCallback(resolve, { timeout: 250 });
+            } else {
+              setTimeout(resolve, 80);
+            }
+          });
         } catch (_) {}
       }
     }

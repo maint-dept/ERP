@@ -4,35 +4,35 @@
  * Enhanced with Global Scroll & Focus State Preservation Engine (Zero Jitter, Zero Scroll Loss)
  */
 
-import { state } from './state.js';
-import { storage } from './db/storage.js';
-import { authService } from './services/authService.js?v=4.26.85';
-import { renderNavbar, initNavbarEvents } from './components/navbar.js?v=4.27.0';
-import { renderSidebar, initSidebarEvents, updateSidebarActiveState } from './components/sidebar.js?v=4.27.0';
-import { renderHomepageView, initHomepageEvents } from './components/homepageView.js?v=4.26.52';
-import { renderLoginView, initLoginViewEvents } from './components/loginView.js?v=4.28.3';
-import { renderDashboard, initDashboardEvents } from './components/dashboard.js?v=4.27.2';
-import { renderMachineModal, initMachineModalEvents } from './components/machineModal.js?v=4.26.50';
-import { renderMachineDetails, initMachineDetailsEvents } from './components/machineDetails.js?v=4.26.50';
-import { renderTransferModal, initTransferModalEvents } from './components/transferModal.js?v=4.26.50';
-import { renderTransferDetailsModal, initTransferDetailsModalEvents } from './components/transferDetailsModal.js';
-import { renderEditTransferModal, initEditTransferModalEvents } from './components/editTransferModal.js?v=4.26.50';
-import { renderExcelImportModal, initExcelImportEvents } from './components/excelImportModal.js';
-import { renderColumnVisibilityModal, initColumnVisibilityEvents } from './components/columnVisibilityModal.js';
-import { renderNotificationsDrawer, initNotificationsDrawerEvents } from './components/notificationsDrawer.js';
-import { renderChangePasswordModal, initChangePasswordModalEvents } from './components/changePasswordModal.js';
-import { renderAccountSwitcherModal, initAccountSwitcherModalEvents } from './components/accountSwitcherModal.js';
-import { smartStorageService } from './services/smartStorageService.js';
-import { historyService } from './services/historyService.js';
-import { auditService } from './services/auditService.js';
-import { notificationService } from './services/notificationService.js';
-import { openDeleteConfirmationModal, confirmDelete } from './components/deleteConfirmationModal.js';
-import { tempImportService } from './services/tempImportService.js';
-import { router } from './services/router.js?v=4.32.0';
-import { moduleLoader } from './services/moduleLoader.js?v=4.32.0';
-import { realtimeService } from './services/realtimeService.js';
-import { homepageService } from './services/homepageService.js';
-import { webPushService } from './services/webPushService.js';
+import { state } from './state.js?v=4.33.0';
+import { storage } from './db/storage.js?v=4.33.0';
+import { authService } from './services/authService.js?v=4.33.0';
+import { renderNavbar, initNavbarEvents } from './components/navbar.js?v=4.33.0';
+import { renderSidebar, initSidebarEvents, updateSidebarActiveState } from './components/sidebar.js?v=4.33.0';
+import { renderHomepageView, initHomepageEvents } from './components/homepageView.js?v=4.33.0';
+import { renderLoginView, initLoginViewEvents } from './components/loginView.js?v=4.33.0';
+import { renderDashboard, initDashboardEvents } from './components/dashboard.js?v=4.33.0';
+import { renderMachineModal, initMachineModalEvents } from './components/machineModal.js?v=4.33.0';
+import { renderMachineDetails, initMachineDetailsEvents } from './components/machineDetails.js?v=4.33.0';
+import { renderTransferModal, initTransferModalEvents } from './components/transferModal.js?v=4.33.0';
+import { renderTransferDetailsModal, initTransferDetailsModalEvents } from './components/transferDetailsModal.js?v=4.33.0';
+import { renderEditTransferModal, initEditTransferModalEvents } from './components/editTransferModal.js?v=4.33.0';
+import { renderExcelImportModal, initExcelImportEvents } from './components/excelImportModal.js?v=4.33.0';
+import { renderColumnVisibilityModal, initColumnVisibilityEvents } from './components/columnVisibilityModal.js?v=4.33.0';
+import { renderNotificationsDrawer, initNotificationsDrawerEvents } from './components/notificationsDrawer.js?v=4.33.0';
+import { renderChangePasswordModal, initChangePasswordModalEvents } from './components/changePasswordModal.js?v=4.33.0';
+import { renderAccountSwitcherModal, initAccountSwitcherModalEvents } from './components/accountSwitcherModal.js?v=4.33.0';
+import { smartStorageService } from './services/smartStorageService.js?v=4.33.0';
+import { historyService } from './services/historyService.js?v=4.33.0';
+import { auditService } from './services/auditService.js?v=4.33.0';
+import { notificationService } from './services/notificationService.js?v=4.33.0';
+import { openDeleteConfirmationModal, confirmDelete } from './components/deleteConfirmationModal.js?v=4.33.0';
+import { tempImportService } from './services/tempImportService.js?v=4.33.0';
+import { router } from './services/router.js?v=4.33.0';
+import { moduleLoader } from './services/moduleLoader.js?v=4.33.0';
+import { realtimeService } from './services/realtimeService.js?v=4.33.0';
+import { homepageService } from './services/homepageService.js?v=4.33.0';
+import { webPushService } from './services/webPushService.js?v=4.33.0';
 
 /**
  * Captures all active scroll, viewport, and focused input states.
@@ -230,11 +230,14 @@ class ERPApplication {
       // Hydrate storage and real-time in background without blocking instant UI
       storage.ensureHydrated().catch(() => {});
       realtimeService.init();
-    webPushService.init();
       webPushService.init();
 
       if (typeof moduleLoader !== 'undefined' && typeof moduleLoader.preloadAllModules === 'function') {
-        setTimeout(() => { moduleLoader.preloadAllModules(); }, 200);
+        if (typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function') {
+          window.requestIdleCallback(() => { moduleLoader.preloadAllModules(); }, { timeout: 4000 });
+        } else {
+          setTimeout(() => { moduleLoader.preloadAllModules(); }, 2500);
+        }
       }
       return;
     }
@@ -275,11 +278,17 @@ class ERPApplication {
     router.init();
     this.bindEvents();
 
-    // Proactive background module preloading: warms up all operational ERP modules post-startup
+    // Proactive background module preloading: warms up all operational ERP modules when browser is idle
     if (typeof moduleLoader !== 'undefined' && typeof moduleLoader.preloadAllModules === 'function') {
-      setTimeout(() => {
-        moduleLoader.preloadAllModules();
-      }, 100);
+      if (typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function') {
+        window.requestIdleCallback(() => {
+          moduleLoader.preloadAllModules();
+        }, { timeout: 4000 });
+      } else {
+        setTimeout(() => {
+          moduleLoader.preloadAllModules();
+        }, 2000);
+      }
     }
 
     // Self-healing check: guarantee that all machines in inventory have valid model links

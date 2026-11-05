@@ -1369,8 +1369,18 @@ export function renderInventoryTable() {
 }
 
 let vscrollRowCache = null;
+let vscrollIdleCallbackId = null;
+let vscrollTimeoutId = null;
 
 export function clearVscrollRowCache() {
+  if (vscrollIdleCallbackId && typeof window !== 'undefined' && typeof window.cancelIdleCallback === 'function') {
+    try { window.cancelIdleCallback(vscrollIdleCallbackId); } catch (_) {}
+  }
+  if (vscrollTimeoutId) {
+    clearTimeout(vscrollTimeoutId);
+  }
+  vscrollIdleCallbackId = null;
+  vscrollTimeoutId = null;
   vscrollRowCache = null;
 }
 
@@ -1509,25 +1519,30 @@ export function initVirtualScrollEngine() {
     }
     let cur = 0;
     const step = () => {
+      // Guard: if cache was cleared, or data changed, abort gracefully
+      if (!vscrollRowCache || !window.__vscrollEngineData || window.__vscrollEngineData.machines !== machines) {
+        return;
+      }
       const end = Math.min(total, cur + 300);
       for (let i = cur; i < end; i++) {
+        if (!vscrollRowCache) return;
         if (!vscrollRowCache[i]) {
           vscrollRowCache[i] = renderSingleMachineRow(machines[i], i, currentData.rowCtx);
         }
       }
       cur = end;
-      if (cur < total) {
+      if (cur < total && vscrollRowCache) {
         if (typeof window.requestIdleCallback === 'function') {
-          window.requestIdleCallback(step, { timeout: 150 });
+          vscrollIdleCallbackId = window.requestIdleCallback(step, { timeout: 150 });
         } else {
-          setTimeout(step, 15);
+          vscrollTimeoutId = setTimeout(step, 15);
         }
       }
     };
     if (typeof window.requestIdleCallback === 'function') {
-      window.requestIdleCallback(step, { timeout: 150 });
+      vscrollIdleCallbackId = window.requestIdleCallback(step, { timeout: 150 });
     } else {
-      setTimeout(step, 40);
+      vscrollTimeoutId = setTimeout(step, 40);
     }
   };
   preWarmRowCache();
