@@ -337,13 +337,26 @@ class StorageEngine {
             this.flushImmediate();
           } else if (document.visibilityState === 'visible') {
             if (!this.isUserTyping()) {
-              this.checkAndSyncRemoteChanges();
+              this.syncWithServerDatabase(true);
+              this.checkAndSyncRemoteChanges(true);
             }
+          }
+        });
+        window.addEventListener('pageshow', () => {
+          if (!this.isUserTyping()) {
+            this.syncWithServerDatabase(true);
+            this.checkAndSyncRemoteChanges(true);
+          }
+        });
+        window.addEventListener('online', () => {
+          if (!this.isUserTyping()) {
+            this.syncWithServerDatabase(true);
+            this.checkAndSyncRemoteChanges(true);
           }
         });
         window.addEventListener('focus', () => {
           if (!this.isUserTyping()) {
-            this.checkAndSyncRemoteChanges();
+            this.checkAndSyncRemoteChanges(true);
           }
         });
         window.addEventListener('erp:modal-closed', () => {
@@ -1138,8 +1151,8 @@ class StorageEngine {
     return false;
   }
 
-  async checkAndSyncRemoteChanges() {
-    if (this._isCheckingRemote || this.isUserTyping()) return;
+  async checkAndSyncRemoteChanges(force = false) {
+    if (this._isCheckingRemote || (!force && this.isUserTyping())) return;
     this._isCheckingRemote = true;
     try {
       const isViewingSettings = typeof window !== 'undefined' && window.state && window.state.get('currentView') === 'settings';
@@ -1254,6 +1267,37 @@ class StorageEngine {
         } catch (myErr) {
           console.warn('[Storage Multi-Device Sync] MySQL check note:', myErr.message);
         }
+      }
+
+      // 2. Static / Server JSON Multi-Device Sync (Instant updates for mobile & GitHub Pages)
+      if (!this._isCloudConnected) {
+        try {
+          const now = Date.now();
+          if (force || !this._lastStaticSyncCheck || now - this._lastStaticSyncCheck > 10000) {
+            this._lastStaticSyncCheck = now;
+            const staticRes = await fetch('data/erp_database.json?v=' + now, { cache: 'no-store' });
+            if (staticRes.ok) {
+              const staticData = await staticRes.json();
+              if (staticData && Array.isArray(staticData.machines) && staticData.machines.length > 0) {
+                const incomingSyncTs = staticData.settings?.lastSync || staticData.version || '';
+                const lastKnownSyncTs = (typeof localStorage !== 'undefined') ? localStorage.getItem('erp_last_static_sync_ts') : '';
+                const machCount = staticData.machines.length;
+                const localMachCount = this.data[TABLE_NAMES.MACHINES]?.length || 0;
+
+                if (force || incomingSyncTs !== lastKnownSyncTs || Math.abs(machCount - localMachCount) > 0) {
+                  if (typeof localStorage !== 'undefined') {
+                    localStorage.setItem('erp_last_static_sync_ts', incomingSyncTs || String(now));
+                  }
+                  this.applyIncomingDatabaseRecords(staticData, 'Remote Factory Cloud (data/erp_database.json)');
+                  if (typeof window !== 'undefined') {
+                    window.dispatchEvent(new CustomEvent('erp:storage-updated'));
+                    window.dispatchEvent(new CustomEvent('erp:inventory-updated'));
+                  }
+                }
+              }
+            }
+          }
+        } catch (_) {}
       }
     } catch (err) {
       console.warn('[Storage Multi-Device Sync] Remote check note:', err.message);

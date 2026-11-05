@@ -233,8 +233,8 @@ export function openMachinePocketCard(machineOrQuery) {
   }
 
   const modalHtml = `
-    <div id="machine-pocket-card-modal" class="modal-overlay" style="z-index: 10060; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; padding: 12px;">
-      <div class="pocket-card-sheet" style="background: #0f172a; border: 1.5px solid #38bdf8; border-radius: 16px; width: 100%; max-width: 540px; max-height: 92vh; overflow-y: auto; box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.9), 0 0 30px rgba(56, 189, 248, 0.25); display: flex; flex-direction: column;">
+    <div id="machine-pocket-card-modal" class="modal-overlay" style="z-index: 10060; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; padding: 12px; touch-action: pan-y;">
+      <div class="pocket-card-sheet" style="background: #0f172a; border: 1.5px solid #38bdf8; border-radius: 16px; width: 100%; max-width: 540px; max-height: calc(100dvh - 24px); overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.9), 0 0 30px rgba(56, 189, 248, 0.25); display: flex; flex-direction: column;">
         
         <!-- Header Strip -->
         <div style="display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid rgba(255,255,255,0.1); background: rgba(30, 41, 59, 0.6); gap: 10px;">
@@ -375,6 +375,12 @@ export function openMachinePocketCard(machineOrQuery) {
                 <span>🔍</span>
                 <span>Full Details</span>
               </button>
+
+              <!-- 5. Edit Machine Specifications -->
+              <button id="btn-pocket-action-edit" type="button" class="btn btn-sm" style="grid-column: span 2; background: rgba(59, 130, 246, 0.18); border: 1.5px solid #3b82f6; color: #60a5fa; font-weight: 700; font-size: 11.5px; padding: 8px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer; transition: all 0.2s;">
+                <span>✏️</span>
+                <span>Edit Machine Specifications</span>
+              </button>
             </div>
           </div>
 
@@ -435,10 +441,10 @@ export function openMachinePocketCard(machineOrQuery) {
   if (relocateBtn) {
     relocateBtn.addEventListener('click', () => {
       closeMachinePocketCard();
-      // Pre-set relocate machine and navigate to relocate view
       try {
-        state.set('preSelectedRelocateMachineId', machine.id);
-        router.navigate('relocate');
+        state.set('activeMachineId', machine.id);
+        state.set('activeMachineSerial', machine.serialNumber || null);
+        state.set('activeModal', 'transfer-machine');
       } catch (_) {}
     });
   }
@@ -449,6 +455,8 @@ export function openMachinePocketCard(machineOrQuery) {
       closeMachinePocketCard();
       try {
         state.set('preSelectedPMMachineId', machine.id);
+        state.set('pmFilterMachineSerial', machine.serialNumber);
+        state.set('pmActiveTab', 'machine-profile');
         router.navigate('preventive-maintenance');
       } catch (_) {}
     });
@@ -459,7 +467,8 @@ export function openMachinePocketCard(machineOrQuery) {
     historyBtn.addEventListener('click', () => {
       closeMachinePocketCard();
       try {
-        state.set('historySearchQuery', (machine.machineId && !machine.machineId.startsWith('mac-') ? machine.machineId : '') || machine.serialNumber || assetId);
+        state.set('activeMachineId', machine.id);
+        state.set('historySearchedSerial', machine.serialNumber);
         router.navigate('machine-history');
       } catch (_) {}
     });
@@ -471,12 +480,18 @@ export function openMachinePocketCard(machineOrQuery) {
       closeMachinePocketCard();
       try {
         state.set('activeMachineId', machine.id);
-        const drawer = document.getElementById('machine-details-drawer');
-        if (drawer) {
-          drawer.classList.add('open');
-        } else {
-          router.navigate('machines');
-        }
+        state.set('activeModal', 'machine-details');
+      } catch (_) {}
+    });
+  }
+
+  const editBtn = document.getElementById('btn-pocket-action-edit');
+  if (editBtn) {
+    editBtn.addEventListener('click', () => {
+      closeMachinePocketCard();
+      try {
+        state.set('activeMachineId', machine.id);
+        state.set('activeModal', 'machine-form');
       } catch (_) {}
     });
   }

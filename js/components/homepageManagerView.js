@@ -588,16 +588,16 @@ function renderHomeManagerModalDOM(config) {
     const item = activeModalState.item || {};
 
     return `
-      <div class="modal-overlay" style="display: flex; align-items: center; justify-content: center; background: rgba(8, 13, 26, 0.85); backdrop-filter: blur(8px); z-index: 9999;">
-        <div class="modal-card" style="width: 500px; max-width: 95vw; background: linear-gradient(145deg, #0f172a, #1e293b); border: 1.5px solid rgba(56, 189, 248, 0.4); border-radius: var(--radius-xl); padding: 24px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);">
-          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; margin-bottom: 16px;">
+      <div class="modal-overlay" id="home-mgr-modal-overlay" style="display: flex; align-items: center; justify-content: center; background: rgba(8, 13, 26, 0.85); backdrop-filter: blur(8px); z-index: 9999; padding: 12px; touch-action: pan-y;">
+        <div class="modal-card" style="width: 500px; max-width: 95vw; max-height: calc(100dvh - 24px); overflow-y: auto; -webkit-overflow-scrolling: touch; background: linear-gradient(145deg, #0f172a, #1e293b); border: 1.5px solid rgba(56, 189, 248, 0.4); border-radius: var(--radius-xl); padding: 24px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8); display: flex; flex-direction: column;">
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; margin-bottom: 16px; flex-shrink: 0;">
             <h3 style="margin: 0; font-size: 16px; font-weight: 800; color: #fff;">
               ${isEdit ? 'Edit Feature Card' : 'Add New Feature Card'}
             </h3>
             <button id="btn-modal-close" style="background: none; border: none; font-size: 18px; color: var(--text-muted); cursor: pointer;">✕</button>
           </div>
 
-          <form id="form-feature-modal-submit" style="display: flex; flex-direction: column; gap: 14px;">
+          <form id="form-feature-modal-submit" style="display: flex; flex-direction: column; gap: 14px; overflow-y: auto; -webkit-overflow-scrolling: touch; flex: 1 1 auto; min-height: 0;">
             <div style="display: grid; grid-template-columns: 80px 1fr; gap: 12px;">
               <div class="form-group">
                 <label class="form-label" style="font-size: 12px; font-weight: 700; color: #fff;">Icon</label>
@@ -640,16 +640,16 @@ function renderHomeManagerModalDOM(config) {
     const item = activeModalState.item || {};
 
     return `
-      <div class="modal-overlay" style="display: flex; align-items: center; justify-content: center; background: rgba(8, 13, 26, 0.85); backdrop-filter: blur(8px); z-index: 9999;">
-        <div class="modal-card" style="width: 520px; max-width: 95vw; background: linear-gradient(145deg, #0f172a, #1e293b); border: 1.5px solid rgba(56, 189, 248, 0.4); border-radius: var(--radius-xl); padding: 24px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);">
-          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; margin-bottom: 16px;">
+      <div class="modal-overlay" id="home-mgr-modal-overlay" style="display: flex; align-items: center; justify-content: center; background: rgba(8, 13, 26, 0.85); backdrop-filter: blur(8px); z-index: 9999; padding: 12px; touch-action: pan-y;">
+        <div class="modal-card" style="width: 520px; max-width: 95vw; max-height: calc(100dvh - 24px); overflow-y: auto; -webkit-overflow-scrolling: touch; background: linear-gradient(145deg, #0f172a, #1e293b); border: 1.5px solid rgba(56, 189, 248, 0.4); border-radius: var(--radius-xl); padding: 24px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8); display: flex; flex-direction: column;">
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; margin-bottom: 16px; flex-shrink: 0;">
             <h3 style="margin: 0; font-size: 16px; font-weight: 800; color: #fff;">
               ${isEdit ? 'Edit ERP Module Card' : 'Add ERP Module Card'}
             </h3>
             <button id="btn-modal-close" style="background: none; border: none; font-size: 18px; color: var(--text-muted); cursor: pointer;">✕</button>
           </div>
 
-          <form id="form-module-modal-submit" style="display: flex; flex-direction: column; gap: 14px;">
+          <form id="form-module-modal-submit" style="display: flex; flex-direction: column; gap: 14px; overflow-y: auto; -webkit-overflow-scrolling: touch; flex: 1 1 auto; min-height: 0;">
             <div style="display: grid; grid-template-columns: 80px 1fr; gap: 12px;">
               <div class="form-group">
                 <label class="form-label" style="font-size: 12px; font-weight: 700; color: #fff;">Icon</label>
@@ -1203,4 +1203,11 @@ export function initHomepageManagerEvents() {
   const btnCancel = document.getElementById('btn-modal-cancel');
   if (btnClose) btnClose.addEventListener('click', closeModal);
   if (btnCancel) btnCancel.addEventListener('click', closeModal);
+
+  const homeModalOverlay = document.getElementById('home-mgr-modal-overlay');
+  if (homeModalOverlay) {
+    homeModalOverlay.addEventListener('click', (e) => {
+      if (e.target === homeModalOverlay) closeModal();
+    });
+  }
 }

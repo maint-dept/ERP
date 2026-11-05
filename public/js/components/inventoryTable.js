@@ -2284,6 +2284,18 @@ export function initInventoryTableEvents() {
           return;
         }
 
+        const pocketBtn = e.target.closest('.btn-pocket-card-trigger');
+        if (pocketBtn) {
+          e.preventDefault();
+          e.stopPropagation();
+          const id = pocketBtn.getAttribute('data-id');
+          closeAllActionMenus();
+          if (id && typeof window.openMachinePocketCard === 'function') {
+            window.openMachinePocketCard(id);
+          }
+          return;
+        }
+
         const delBtn = e.target.closest('.btn-delete-machine');
         if (delBtn) {
           e.preventDefault();
@@ -2581,6 +2593,18 @@ export function initInventoryTableEvents() {
         return;
       }
 
+      const pocketBtn = e.target.closest('.btn-pocket-card-trigger');
+      if (pocketBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        closeAllActionMenus();
+        const id = pocketBtn.getAttribute('data-id');
+        if (id && typeof window.openMachinePocketCard === 'function') {
+          window.openMachinePocketCard(id);
+        }
+        return;
+      }
+
       const transferBtn = e.target.closest('.btn-transfer-machine');
       if (transferBtn) {
         e.stopPropagation();
@@ -2720,6 +2744,18 @@ export function initInventoryTableEvents() {
       if (id) {
         state.set('activeMachineId', id);
         state.set('activeModal', 'machine-form');
+      }
+    });
+  });
+
+  // Pocket Card (Offline HUD)
+  document.querySelectorAll('.btn-pocket-card-trigger').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      closeAllActionMenus();
+      const id = btn.getAttribute('data-id');
+      if (id && typeof window.openMachinePocketCard === 'function') {
+        window.openMachinePocketCard(id);
       }
     });
   });

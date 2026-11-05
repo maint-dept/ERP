@@ -142,6 +142,9 @@ self.addEventListener('fetch', (event) => {
     url.pathname.endsWith('.php') ||
     url.pathname.includes('mysql_api.php') ||
     url.pathname.includes('pg_api.php') ||
+    url.pathname.includes('erp_database.json') ||
+    url.pathname.includes('/data/') ||
+    url.pathname.endsWith('.json') ||
     url.searchParams.has('action') ||
     url.searchParams.has('reset') ||
     url.hostname.includes('firebaseio.com') ||

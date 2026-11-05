@@ -2971,10 +2971,10 @@ class AuthService {
 
     const scope = u.assignedScope;
     // If no scope is assigned at all:
-    // Legacy Super Admin accounts without scope record default to global bypass.
+    // Legacy Super Admin and Admin accounts without scope record default to global bypass.
     // Regular accounts without scope record have no location access.
     if (!scope) {
-      return this.isSuperAdmin(u);
+      return this.isSuperAdmin(u) || this.isAdmin(u);
     }
 
     // Explicit factory-wide unrestricted scope (All Groups / Factory-Wide)
@@ -3097,7 +3097,7 @@ class AuthService {
     if (!u) return null;
     const scope = u.assignedScope;
     if (!scope) {
-      return this.isSuperAdmin(u) ? null : { allGroups: false, unitIds: [], floorIds: [], lineIds: [] };
+      return (this.isSuperAdmin(u) || this.isAdmin(u)) ? null : { allGroups: false, unitIds: [], floorIds: [], lineIds: [] };
     }
     const isGlobal = Boolean(scope.allGroups) && 
       (Boolean(scope.allUnits) || (!scope.unitIds?.length && !scope.floorIds?.length && !scope.lineIds?.length));

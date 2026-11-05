@@ -1756,10 +1756,10 @@ td.td-actions-active {
   .modal-overlay > div {
     max-width: 100% !important;
     width: 100% !important;
-    height: calc(100dvh - 12px) !important;
     max-height: calc(100dvh - 12px) !important;
-    min-height: calc(100dvh - 12px) !important;
-    margin: 0 !important;
+    height: auto !important;
+    min-height: 0 !important;
+    margin: auto 0 !important;
     border-radius: var(--radius-lg) !important;
     display: flex !important;
     flex-direction: column !important;
@@ -1768,13 +1768,24 @@ td.td-actions-active {
     box-sizing: border-box !important;
   }
 
+  /* Fullscreen / Full-dialog mobile overlays */
+  .modal-dialog.modal-dialog-lg,
+  .modal-dialog.modal-dialog-xl,
+  .modal-dialog.modal-fullscreen,
+  #modal-machine-overlay > div,
+  .drawer-panel {
+    height: calc(100dvh - 12px) !important;
+    min-height: calc(100dvh - 12px) !important;
+  }
+
   .modal-dialog.modal-dialog-sm,
   .modal-dialog.modal-confirm,
   .modal-card.modal-confirm,
-  .modal-dialog-confirm {
+  .modal-dialog-confirm,
+  .pocket-card-sheet {
     height: auto !important;
     min-height: auto !important;
-    max-height: 90dvh !important;
+    max-height: calc(100dvh - 16px) !important;
   }
 
   .modal-header {
@@ -1796,10 +1807,16 @@ td.td-actions-active {
   .modal-card > form,
   form.modal-body,
   .modal-content-scroll,
+  .modal-overlay form,
+  .modal-overlay > div > form,
   #account-switcher-results-container,
   .qr-studio-body,
   .custom-fields-modal-body,
-  #form-transfer-request {
+  #form-transfer-request,
+  #form-machine,
+  #form-master-entity,
+  #form-feature-modal-submit,
+  #form-module-modal-submit {
     padding: 12px 14px !important;
     gap: 12px !important;
     overflow-y: auto !important;
