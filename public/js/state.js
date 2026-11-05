@@ -228,7 +228,7 @@ class GlobalState {
       homeManagerActiveTab: (initialView === 'homepage-manager' && initialSubtab) ? initialSubtab : 'sections',
       relocateActiveTab: (initialView === 'relocate' && initialSubtab) ? initialSubtab : 'scan',
       partsTraceActiveTab: (initialView === 'parts-trace' && initialSubtab) ? initialSubtab : 'dashboard',
-      historyActiveTab: (initialView === 'machine-history' && initialSubtab) ? initialSubtab : 'timeline',
+      historyActiveTab: (initialView === 'machine-history' && initialSubtab) ? initialSubtab : 'all',
       qrStudioTab: (initialView === 'qr-codes' && initialSubtab) ? initialSubtab : 'machine',
       showCrossFloorIdle: false, // Explicit toggle for viewing cross-floor idle machines
       filters: {

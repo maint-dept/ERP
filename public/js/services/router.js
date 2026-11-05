@@ -459,7 +459,7 @@ class SPAModuleRouter {
     if (view === 'homepage-manager') return state.get('homeManagerActiveTab') || 'sections';
     if (view === 'relocate') return state.get('relocateActiveTab') || 'scan';
     if (view === 'parts-trace') return state.get('partsTraceActiveTab') || 'dashboard';
-    if (view === 'machine-history') return state.get('historyActiveTab') || 'timeline';
+    if (view === 'machine-history') return state.get('historyActiveTab') || 'all';
     if (view === 'qr-codes') return state.get('qrStudioTab') || 'machine';
     return null;
   }

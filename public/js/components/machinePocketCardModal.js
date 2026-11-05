@@ -35,6 +35,15 @@ export function getMachineAssetId(machine) {
   if (!assetId && machine.machineAssetCode) {
     assetId = String(machine.machineAssetCode).trim();
   }
+  if (!assetId && machine.sl) {
+    assetId = `AMG-MNT-${String(machine.sl).padStart(6, '0')}`;
+  }
+  if (!assetId && machine.serialNumber) {
+    const numOnly = String(machine.serialNumber).replace(/[^0-9]/g, '');
+    if (numOnly) {
+      assetId = `AMG-MNT-${numOnly.padStart(6, '0')}`;
+    }
+  }
   return assetId || '';
 }
 
@@ -208,29 +217,14 @@ export function openMachinePocketCard(machineOrQuery) {
   const assetId = getMachineAssetId(machine);
 
   // Determine top hero identifier:
-  // If machine has user-defined machineId (not starting with internal 'mac-'), use that.
-  // Otherwise show the official Machine Asset ID.
-  // If neither, fallback to Serial Number or internal ID.
-  let displayHeroId = '';
-  if (machine.machineId && !String(machine.machineId).startsWith('mac-')) {
-    displayHeroId = machine.machineId;
-  } else if (assetId) {
-    displayHeroId = assetId;
-  } else if (machine.serialNumber) {
-    displayHeroId = machine.serialNumber;
-  } else {
-    displayHeroId = machine.id;
-  }
+  // Strictly prioritize the official Machine Asset ID.
+  let displayHeroId = assetId || (machine.machineId && !String(machine.machineId).startsWith('mac-') ? machine.machineId : '') || machine.serialNumber || 'AMG-MNT-PENDING';
 
   // Machine Asset ID / Tag display:
-  // Prioritize official Machine Asset ID, then custom barcode (if non-UUID), fallback to Pending Tag
-  let displayTagId = assetId;
-  if (!displayTagId && machine.barcode && !String(machine.barcode).startsWith('mac-')) {
-    displayTagId = machine.barcode;
-  }
-  if (!displayTagId) {
-    displayTagId = 'Pending Tag';
-  }
+  // User explicitly requested to use Machine Asset ID for barcode/tag:
+  // "বারকোড যে ট্যাগ আইডি ব্যবহার করেছো, ati মেশিন এসেট আইডি ব্যবহার করতে পারো নাকি?"
+  let displayTagId = assetId || (machine.serialNumber ? `AMG-MNT-${machine.serialNumber}` : 'Pending Tag');
+  let secondaryBarcode = (machine.barcode && !String(machine.barcode).startsWith('mac-') && machine.barcode !== displayTagId) ? String(machine.barcode).trim() : '';
 
   const modalHtml = `
     <div id="machine-pocket-card-modal" class="modal-overlay" style="z-index: 10060; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; padding: 12px; touch-action: pan-y;">
@@ -268,12 +262,12 @@ export function openMachinePocketCard(machineOrQuery) {
             
             <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
               <div>
-                <div style="font-size: 10px; font-weight: 800; color: #38bdf8; text-transform: uppercase; letter-spacing: 1px;">Machine Asset / ID</div>
+                <div style="font-size: 10px; font-weight: 800; color: #38bdf8; text-transform: uppercase; letter-spacing: 1px;">Machine Asset ID</div>
                 <div style="font-size: 22px; font-weight: 900; color: #fff; font-family: monospace; letter-spacing: 0.5px; margin: 2px 0 4px;">
                   ${escapeHtml(displayHeroId)}
                 </div>
                 <div style="font-size: 14px; font-weight: 700; color: #cbd5e1;">
-                  ${escapeHtml(machineName)}
+                  ${escapeHtml(machineName)} <span style="font-size: 12px; color: #94a3b8; font-weight: 600;">(S/N: ${escapeHtml(machine.serialNumber || 'N/A')})</span>
                 </div>
               </div>
 
@@ -317,16 +311,16 @@ export function openMachinePocketCard(machineOrQuery) {
           <div style="background: rgba(15, 23, 42, 0.5); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 12px 14px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; font-size: 11.5px;">
             <div>
               <span style="color: #64748b; font-size: 10.5px; text-transform: uppercase; font-weight: 700;">Serial Number:</span>
-              <div style="color: #f8fafc; font-weight: 700; font-family: monospace; font-size: 12px; margin-top: 2px;">
+              <div style="color: #f8fafc; font-weight: 700; font-family: monospace; font-size: 12.5px; margin-top: 2px;">
                 ${escapeHtml(machine.serialNumber || 'N/A')}
               </div>
             </div>
 
             <div>
-              <span style="color: #64748b; font-size: 10.5px; text-transform: uppercase; font-weight: 700;">Machine Asset ID / Tag:</span>
+              <span style="color: #64748b; font-size: 10.5px; text-transform: uppercase; font-weight: 700;">Barcode / Asset Tag:</span>
               <div style="color: #38bdf8; font-weight: 800; font-family: monospace; font-size: 12px; margin-top: 2px;">
                 ${escapeHtml(displayTagId)}
-                ${(machine.barcode && !String(machine.barcode).startsWith('mac-') && machine.barcode !== displayTagId) ? `<span style="color: #94a3b8; font-size: 10px; font-weight: 400; margin-left: 4px;">(${escapeHtml(machine.barcode)})</span>` : ''}
+                ${secondaryBarcode ? `<span style="color: #94a3b8; font-size: 10px; font-weight: 400; margin-left: 4px;">(${escapeHtml(secondaryBarcode)})</span>` : ''}
               </div>
             </div>
 
@@ -364,16 +358,16 @@ export function openMachinePocketCard(machineOrQuery) {
                 <span>PM Servicing</span>
               </button>
 
-              <!-- 3. Full Lifetime History -->
+              <!-- 3. Full Lifetime Passport -->
               <button id="btn-pocket-action-history" type="button" class="btn btn-sm" style="background: rgba(168, 85, 247, 0.15); border: 1.5px solid #a855f7; color: #c084fc; font-weight: 700; font-size: 11.5px; padding: 8px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer; transition: all 0.2s;">
                 <span>📜</span>
-                <span>Lifetime History</span>
+                <span>Lifetime Passport</span>
               </button>
 
               <!-- 4. Machine Details -->
               <button id="btn-pocket-action-details" type="button" class="btn btn-sm" style="background: rgba(255, 255, 255, 0.08); border: 1.5px solid rgba(255, 255, 255, 0.2); color: #f8fafc; font-weight: 700; font-size: 11.5px; padding: 8px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer; transition: all 0.2s;">
                 <span>🔍</span>
-                <span>Full Details</span>
+                <span>Specs Drawer</span>
               </button>
 
               <!-- 5. Edit Machine Specifications -->
@@ -468,8 +462,9 @@ export function openMachinePocketCard(machineOrQuery) {
       closeMachinePocketCard();
       try {
         state.set('activeMachineId', machine.id);
-        state.set('historySearchedSerial', machine.serialNumber);
-        router.navigate('machine-history');
+        state.set('historySearchedSerial', machine.serialNumber || assetId || machine.id);
+        state.set('historyActiveTab', 'all');
+        router.navigate('machine-history', { tab: 'all' });
       } catch (_) {}
     });
   }

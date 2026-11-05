@@ -68,8 +68,29 @@ export function renderMachineHistoryView() {
     state.set('activeMachineId', null); // Consumed once, reset
   }
 
-  // Look up machine strictly by Machine Serial Number if provided
+  // Look up machine strictly by Machine Serial Number or Asset ID if provided
   let matchedMachine = searchedSerial ? historyService.findMachineBySerialOnly(searchedSerial) : null;
+
+  // Auto-Select Default Machine: Ensure user immediately sees complete Lifetime Passport instead of an empty screen
+  if (!matchedMachine && allMachines.length > 0) {
+    const savedSerial = (typeof localStorage !== 'undefined') ? localStorage.getItem('last_inspected_machine_serial') : null;
+    if (savedSerial) {
+      matchedMachine = historyService.findMachineBySerialOnly(savedSerial);
+    }
+    if (!matchedMachine) {
+      matchedMachine = allMachines[0];
+    }
+    if (matchedMachine) {
+      searchedSerial = matchedMachine.serialNumber || matchedMachine.systemAssetId || matchedMachine.id;
+    }
+  }
+
+  // Remember last viewed machine
+  if (matchedMachine?.serialNumber && typeof localStorage !== 'undefined') {
+    try {
+      localStorage.setItem('last_inspected_machine_serial', matchedMachine.serialNumber);
+    } catch (_) {}
+  }
 
   // Enrich matched machine details using Master Data
   let enrichedMachine = null;
@@ -548,8 +569,14 @@ function renderCompletePassportDossierTab(machine, historyList, locationTrail, s
   const totalQty = machine.totalQuantity || machine.total_quantity || (rQty + uQty + rpQty > 0 ? (rQty + uQty + rpQty) : (machine.quantity ?? 1));
 
   const mfgSerialNumber = machine.manufacturing_serial || machine.manufacturingSerial || machine.customValues?.manufacturing_serial || machine.customValues?.manufacturingSerial || machine.manufacturingNo || machine.mfgSerial || machine.manufacturing || '—';
-  const displayAssetId = machine.systemAssetId || (machine.permanentMachineId ? String(machine.permanentMachineId).replace(/^MID-/i, 'AMG-MNT-') : '') || '—';
-  const displayBarcode = machine.barcode || machine.tagId || displayAssetId || machine.id || '—';
+  const displayAssetId = machine.systemAssetId || (machine.permanentMachineId ? String(machine.permanentMachineId).replace(/^MID-/i, 'AMG-MNT-') : '') || (machine.sl ? `AMG-MNT-${String(machine.sl).padStart(6, '0')}` : '') || (machine.serialNumber ? `AMG-MNT-${String(machine.serialNumber).replace(/[^0-9]/g, '').padStart(6, '0') || machine.serialNumber}` : '—');
+  let displayBarcode = (machine.barcode && !String(machine.barcode).startsWith('mac-')) ? machine.barcode : '';
+  if (!displayBarcode && machine.tagId && !String(machine.tagId).startsWith('mac-')) {
+    displayBarcode = machine.tagId;
+  }
+  if (!displayBarcode) {
+    displayBarcode = (displayAssetId && displayAssetId !== '—') ? displayAssetId : (machine.serialNumber ? `TAG-${machine.serialNumber}` : '—');
+  }
 
   let rawServiceDate = machine.lastServiceDate || machine.service_date || machine.serviceDate || machine.customValues?.service_date || '';
   if (!rawServiceDate && (machine.id || machine.serialNumber)) {
@@ -1896,6 +1923,21 @@ export function initMachineHistoryEvents() {
       state.set('currentView', 'master-data');
     });
   });
+
+  // Smooth-scroll to target section in All-in-One Dossier if triggered from row menu shortcuts
+  const pendingScrollTarget = state.get('historyScrollTarget');
+  if (pendingScrollTarget) {
+    state.set('historyScrollTarget', null);
+    setTimeout(() => {
+      const targetSec = document.getElementById(pendingScrollTarget);
+      if (targetSec) {
+        targetSec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        targetSec.style.transition = 'all 0.4s ease';
+        targetSec.style.boxShadow = '0 0 0 3px #38bdf8';
+        setTimeout(() => { targetSec.style.boxShadow = ''; }, 2200);
+      }
+    }, 120);
+  }
 
   // Clickable Stat Counter Cards to switch tabs or smooth-scroll in All-in-One view
   document.querySelectorAll('.hist-stat-counter-card').forEach(card => {

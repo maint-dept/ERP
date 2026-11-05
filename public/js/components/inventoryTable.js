@@ -98,7 +98,27 @@ export function ensureActionsPortal() {
           state.set('historyActiveTab', 'all');
           state.set('currentView', 'machine-history');
           if (window.router && typeof window.router.navigate === 'function') {
-            window.router.navigate('machine-history');
+            window.router.navigate('machine-history', { tab: 'all' });
+          }
+        }
+        return;
+      }
+
+      const timelineBtn = e.target.closest('.btn-timeline-machine');
+      if (timelineBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        const id = timelineBtn.getAttribute('data-id') || portal.getAttribute('data-active-id');
+        const serial = timelineBtn.getAttribute('data-serial') || '';
+        if (typeof window.__closeAllActionMenus === 'function') window.__closeAllActionMenus();
+        if (id || serial) {
+          if (id) state.set('activeMachineId', id);
+          if (serial) state.set('historySearchedSerial', serial);
+          state.set('historyActiveTab', 'all');
+          state.set('historyScrollTarget', 'dossier-sec-locations');
+          state.set('currentView', 'machine-history');
+          if (window.router && typeof window.router.navigate === 'function') {
+            window.router.navigate('machine-history', { tab: 'all' });
           }
         }
         return;
@@ -109,11 +129,17 @@ export function ensureActionsPortal() {
         e.preventDefault();
         e.stopPropagation();
         const id = partsBtn.getAttribute('data-id') || portal.getAttribute('data-active-id');
+        const serial = partsBtn.getAttribute('data-serial') || '';
         if (typeof window.__closeAllActionMenus === 'function') window.__closeAllActionMenus();
-        if (id) {
-          state.set('activeMachineId', id);
-          state.set('historyActiveTab', 'spare-parts');
+        if (id || serial) {
+          if (id) state.set('activeMachineId', id);
+          if (serial) state.set('historySearchedSerial', serial);
+          state.set('historyActiveTab', 'all');
+          state.set('historyScrollTarget', 'dossier-sec-spare-parts');
           state.set('currentView', 'machine-history');
+          if (window.router && typeof window.router.navigate === 'function') {
+            window.router.navigate('machine-history', { tab: 'all' });
+          }
         }
         return;
       }
@@ -175,10 +201,13 @@ export function renderRowActionsMenuContent(m) {
     }
     html += `
       <button type="button" class="actions-menu-item btn-passport-machine" data-id="${m.id}" data-serial="${m.serialNumber || ''}" style="color: #38bdf8; font-weight: 800; background: rgba(56, 189, 248, 0.1); display: flex; align-items: center; gap: 8px;">
-        <span style="font-size: 14px;">📜</span> Machine Lifetime (Passport)
+        <span style="font-size: 14px;">🔍</span> Machine Details &amp; Lifetime
       </button>
-      <button type="button" class="actions-menu-item btn-inspect-machine" data-id="${m.id}" style="display: flex; align-items: center; gap: 8px;">
-        <span style="font-size: 13px;">🔍</span> Quick Specs Drawer
+      <button type="button" class="actions-menu-item btn-timeline-machine" data-id="${m.id}" data-serial="${m.serialNumber || ''}" style="display: flex; align-items: center; gap: 8px;">
+        <span style="font-size: 14px;">🕒</span> Timeline &amp; Transfer Log
+      </button>
+      <button type="button" class="actions-menu-item btn-spare-parts-machine" data-id="${m.id}" data-serial="${m.serialNumber || ''}" style="display: flex; align-items: center; gap: 8px;">
+        <span style="font-size: 14px;">⚙️</span> Spare Parts Usage
       </button>
       <button type="button" class="actions-menu-item btn-pocket-card-trigger" data-id="${m.id}" data-serial="${m.serialNumber || ''}" style="color: #38bdf8; font-weight: 700; display: flex; align-items: center; gap: 8px;">
         <span style="font-size: 14px;">🏷️</span> Pocket Card (Offline HUD)
@@ -189,17 +218,20 @@ export function renderRowActionsMenuContent(m) {
 
   let html = `
     <button type="button" class="actions-menu-item btn-passport-machine" data-id="${m.id}" data-serial="${m.serialNumber || ''}" style="color: #38bdf8; font-weight: 800; background: rgba(56, 189, 248, 0.1); display: flex; align-items: center; gap: 8px;">
-      <span style="font-size: 14px;">📜</span> Machine Lifetime (Passport)
+      <span style="font-size: 14px;">🔍</span> Machine Details &amp; Lifetime
     </button>
-    <button type="button" class="actions-menu-item btn-inspect-machine" data-id="${m.id}" style="display: flex; align-items: center; gap: 8px;">
-      <span style="font-size: 13px;">🔍</span> Quick Specs Drawer
+    <button type="button" class="actions-menu-item btn-timeline-machine" data-id="${m.id}" data-serial="${m.serialNumber || ''}" style="display: flex; align-items: center; gap: 8px;">
+      <span style="font-size: 14px;">🕒</span> Timeline &amp; Transfer Log
+    </button>
+    <button type="button" class="actions-menu-item btn-spare-parts-machine" data-id="${m.id}" data-serial="${m.serialNumber || ''}" style="display: flex; align-items: center; gap: 8px;">
+      <span style="font-size: 14px;">⚙️</span> Spare Parts Usage
     </button>
   `;
 
   if (authService.hasAccess('transfers', 'ADD') && authService.canOperateMachine(m)) {
     html += `
-      <button type="button" class="actions-menu-item btn-transfer-machine" data-id="${m.id}" data-serial="${m.serialNumber || ''}">
-        🔄 Transfer Machine
+      <button type="button" class="actions-menu-item btn-transfer-machine" data-id="${m.id}" data-serial="${m.serialNumber || ''}" style="display: flex; align-items: center; gap: 8px;">
+        <span style="font-size: 14px;">🔄</span> Transfer Machine
       </button>
     `;
   }
@@ -207,11 +239,11 @@ export function renderRowActionsMenuContent(m) {
   if (authService.hasAccess('machines', 'EDIT') && authService.canOperateMachine(m)) {
     html += `
       <div class="actions-menu-divider"></div>
-      <button type="button" class="actions-menu-item btn-toggle-ambulance-machine" data-id="${m.id}" style="color: ${meta.isAmb ? '#fda4af' : '#38bdf8'}; font-weight: 600;">
-        ${meta.isAmb ? '🚑 Remove Ambulance Status' : '🚑 Set as Ambulance Machine'}
+      <button type="button" class="actions-menu-item btn-toggle-ambulance-machine" data-id="${m.id}" style="color: ${meta.isAmb ? '#fda4af' : '#38bdf8'}; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+        <span style="font-size: 14px;">🚑</span> ${meta.isAmb ? 'Remove Ambulance Status' : 'Set as Ambulance Machine'}
       </button>
-      <button type="button" class="actions-menu-item btn-edit-machine" data-id="${m.id}">
-        ✏️ Edit Machine
+      <button type="button" class="actions-menu-item btn-edit-machine" data-id="${m.id}" style="display: flex; align-items: center; gap: 8px;">
+        <span style="font-size: 14px;">✏️</span> Edit Machine
       </button>
     `;
   }
@@ -225,8 +257,8 @@ export function renderRowActionsMenuContent(m) {
 
   if (authService.hasAccess('machines', 'DELETE') && authService.canOperateMachine(m)) {
     html += `
-      <button type="button" class="actions-menu-item danger-item btn-delete-machine" data-id="${m.id}">
-        🗑️ Delete Machine
+      <button type="button" class="actions-menu-item danger-item btn-delete-machine" data-id="${m.id}" style="display: flex; align-items: center; gap: 8px;">
+        <span style="font-size: 14px;">🗑️</span> Delete Machine
       </button>
     `;
   }
@@ -2678,7 +2710,26 @@ export function initInventoryTableEvents() {
           state.set('historyActiveTab', 'all');
           state.set('currentView', 'machine-history');
           if (window.router && typeof window.router.navigate === 'function') {
-            window.router.navigate('machine-history');
+            window.router.navigate('machine-history', { tab: 'all' });
+          }
+        }
+        return;
+      }
+
+      const timelineBtn = e.target.closest('.btn-timeline-machine');
+      if (timelineBtn) {
+        e.stopPropagation();
+        closeAllActionMenus();
+        const id = timelineBtn.getAttribute('data-id');
+        const serial = timelineBtn.getAttribute('data-serial') || '';
+        if (id || serial) {
+          if (id) state.set('activeMachineId', id);
+          if (serial) state.set('historySearchedSerial', serial);
+          state.set('historyActiveTab', 'all');
+          state.set('historyScrollTarget', 'dossier-sec-locations');
+          state.set('currentView', 'machine-history');
+          if (window.router && typeof window.router.navigate === 'function') {
+            window.router.navigate('machine-history', { tab: 'all' });
           }
         }
         return;
@@ -2689,10 +2740,16 @@ export function initInventoryTableEvents() {
         e.stopPropagation();
         closeAllActionMenus();
         const id = partsBtn.getAttribute('data-id');
-        if (id) {
-          state.set('activeMachineId', id);
-          state.set('historyActiveTab', 'spare-parts');
+        const serial = partsBtn.getAttribute('data-serial') || '';
+        if (id || serial) {
+          if (id) state.set('activeMachineId', id);
+          if (serial) state.set('historySearchedSerial', serial);
+          state.set('historyActiveTab', 'all');
+          state.set('historyScrollTarget', 'dossier-sec-spare-parts');
           state.set('currentView', 'machine-history');
+          if (window.router && typeof window.router.navigate === 'function') {
+            window.router.navigate('machine-history', { tab: 'all' });
+          }
         }
         return;
       }
@@ -2845,7 +2902,27 @@ export function initInventoryTableEvents() {
         state.set('historyActiveTab', 'all');
         state.set('currentView', 'machine-history');
         if (window.router && typeof window.router.navigate === 'function') {
-          window.router.navigate('machine-history');
+          window.router.navigate('machine-history', { tab: 'all' });
+        }
+      }
+    });
+  });
+
+  // Timeline & Transfer Log
+  document.querySelectorAll('.btn-timeline-machine').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      closeAllActionMenus();
+      const id = btn.getAttribute('data-id');
+      const serial = btn.getAttribute('data-serial') || '';
+      if (id || serial) {
+        if (id) state.set('activeMachineId', id);
+        if (serial) state.set('historySearchedSerial', serial);
+        state.set('historyActiveTab', 'all');
+        state.set('historyScrollTarget', 'dossier-sec-locations');
+        state.set('currentView', 'machine-history');
+        if (window.router && typeof window.router.navigate === 'function') {
+          window.router.navigate('machine-history', { tab: 'all' });
         }
       }
     });
@@ -2857,10 +2934,16 @@ export function initInventoryTableEvents() {
       e.stopPropagation();
       closeAllActionMenus();
       const id = btn.getAttribute('data-id');
-      if (id) {
-        state.set('activeMachineId', id);
-        state.set('historyActiveTab', 'spare-parts');
+      const serial = btn.getAttribute('data-serial') || '';
+      if (id || serial) {
+        if (id) state.set('activeMachineId', id);
+        if (serial) state.set('historySearchedSerial', serial);
+        state.set('historyActiveTab', 'all');
+        state.set('historyScrollTarget', 'dossier-sec-spare-parts');
         state.set('currentView', 'machine-history');
+        if (window.router && typeof window.router.navigate === 'function') {
+          window.router.navigate('machine-history', { tab: 'all' });
+        }
       }
     });
   });

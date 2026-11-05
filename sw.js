@@ -11,7 +11,7 @@
  */
 
 const BUILD_VER = '4.37.0';
-const CACHE_NAME = 'amg-erp-v4.38.0';
+const CACHE_NAME = 'amg-erp-v4.39.0';
 const IMAGE_CACHE_NAME = 'amg-erp-images-v1';
 
 const PRECACHE_ASSETS = [
