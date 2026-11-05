@@ -54,7 +54,7 @@ export function renderQrScannerModal() {
             <!-- Rapid Multi-Scan Mode Toggle -->
             <button type="button" id="btn-toggle-batch-scan" class="btn btn-sm" style="background: rgba(255,255,255,0.06); border: 1.5px solid rgba(56, 189, 248, 0.4); color: #cbd5e1; border-radius: 20px; font-size: 11px; font-weight: 700; padding: 4px 10px; display: inline-flex; align-items: center; gap: 5px; cursor: pointer; transition: all 0.2s ease;" title="Continuous Rapid Scanning Mode (No modal closing on scan)">
               <span id="qr-batch-mode-indicator" style="width: 8px; height: 8px; border-radius: 50%; background: #64748b; display: inline-block;"></span>
-              <span id="qr-batch-mode-label">⚡ Batch Scan (মাল্টি-স্ক্যান)</span>
+              <span id="qr-batch-mode-label">⚡ Rapid Multi-Scan</span>
             </button>
 
             <button type="button" id="btn-close-qr-scanner" class="btn btn-ghost" style="font-size: 18px; color: #94a3b8; width: 38px; height: 38px; padding: 0; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.06);" aria-label="Close Scanner">
@@ -162,7 +162,7 @@ export function renderQrScannerModal() {
           <div style="display: flex; gap: 8px; align-items: center;">
             <!-- Batch Done Button -->
             <button type="button" id="btn-qr-batch-done" class="btn btn-success btn-sm" style="display: none; min-height: 42px; padding: 6px 14px; font-weight: 800; font-size: 12px; background: #16a34a; border: 1.5px solid #4ade80; color: #fff; border-radius: 8px; align-items: center; gap: 6px;">
-              ✓ Done / সম্পন্ন (<span id="qr-batch-btn-count">0</span>)
+              ✓ Done (<span id="qr-batch-btn-count">0</span>)
             </button>
 
             <!-- Fallback to manual search -->
@@ -295,7 +295,7 @@ export async function initQrScannerModalEvents({ onScanSuccess, onManualSearchRe
         batchIndicator.style.background = '#64748b';
         batchIndicator.style.boxShadow = 'none';
       }
-      if (batchLabel) batchLabel.textContent = '⚡ Batch Scan (মাল্টি-স্ক্যান)';
+      if (batchLabel) batchLabel.textContent = '⚡ Rapid Multi-Scan';
       if (toggleBatchBtn) {
         toggleBatchBtn.style.background = 'rgba(255,255,255,0.06)';
         toggleBatchBtn.style.borderColor = 'rgba(56, 189, 248, 0.4)';

@@ -1068,13 +1068,13 @@ export function renderPreventiveMaintenanceReportView() {
             <!-- Visual Divider -->
             <div style="width: 1px; height: 16px; background: rgba(255, 255, 255, 0.15); margin: 0 2px;"></div>
 
-            <!-- Date Filter Mode Selector: Single Day | Monthly (মাসিক) | Date Range (তারিখ থেকে তারিখ) -->
+            <!-- Date Filter Mode Selector: Single Day | Monthly | Date Range -->
             <div style="display: inline-flex; align-items: center; gap: 3px; background: rgba(15, 23, 42, 0.75); padding: 1px 4px; border-radius: 4px; border: 1px solid rgba(56, 189, 248, 0.35);">
               <span style="color: #38bdf8; font-weight: 800; font-size: 10.5px; white-space: nowrap;">📅 Period:</span>
               <select id="pm-rep-date-mode" class="filter-select-compact" style="height: 24px; font-size: 10.5px; font-weight: 700; padding: 1px 3px; background: transparent; color: #38bdf8; border: none; outline: none; cursor: pointer;">
                 <option value="SINGLE" ${reportState.dateMode === 'SINGLE' ? 'selected' : ''}>📅 Single Date</option>
-                <option value="MONTHLY" ${reportState.dateMode === 'MONTHLY' ? 'selected' : ''}>🗓️ Monthly (মাসিক)</option>
-                <option value="RANGE" ${reportState.dateMode === 'RANGE' ? 'selected' : ''}>📆 Date Range (তারিখ থেকে তারিখ)</option>
+                <option value="MONTHLY" ${reportState.dateMode === 'MONTHLY' ? 'selected' : ''}>🗓️ Monthly</option>
+                <option value="RANGE" ${reportState.dateMode === 'RANGE' ? 'selected' : ''}>📆 Date Range</option>
               </select>
             </div>
 
@@ -1105,7 +1105,7 @@ export function renderPreventiveMaintenanceReportView() {
                   class="filter-search-input" 
                   value="${reportState.dateFrom || ''}" 
                   style="height: 22px; width: 112px; font-size: 11px; font-weight: 700; padding: 0 2px; background: transparent; color: #ffffff; border: none; outline: none;" 
-                  title="From Date (শুরুর তারিখ)" 
+                  title="From Date" 
                 />
                 <span style="color: #f59e0b; font-weight: 800; font-size: 10.5px; white-space: nowrap; margin: 0 2px;">To:</span>
                 <input 
@@ -1114,7 +1114,7 @@ export function renderPreventiveMaintenanceReportView() {
                   class="filter-search-input" 
                   value="${reportState.dateTo || ''}" 
                   style="height: 22px; width: 112px; font-size: 11px; font-weight: 700; padding: 0 2px; background: transparent; color: #ffffff; border: none; outline: none;" 
-                  title="To Date (শেষের তারিখ)" 
+                  title="To Date" 
                 />
               </div>
             ` : `
