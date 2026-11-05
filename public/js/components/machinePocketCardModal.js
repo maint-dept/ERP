@@ -21,7 +21,25 @@ function escapeHtml(str) {
 }
 
 /**
- * Robust machine resolution by ID, machineNumber, serialNumber, barcode, or QR text
+ * Resolves the official, clean Machine Asset ID (e.g. AMG-MNT-005551)
+ */
+export function getMachineAssetId(machine) {
+  if (!machine) return '';
+  let assetId = machine.systemAssetId;
+  if (assetId && /^MID-/i.test(assetId)) {
+    assetId = assetId.replace(/^MID-/i, 'AMG-MNT-');
+  }
+  if (!assetId && machine.permanentMachineId) {
+    assetId = String(machine.permanentMachineId).trim().replace(/^MID-/i, 'AMG-MNT-');
+  }
+  if (!assetId && machine.machineAssetCode) {
+    assetId = String(machine.machineAssetCode).trim();
+  }
+  return assetId || '';
+}
+
+/**
+ * Robust machine resolution by Asset ID, Machine Number, Serial Number, Barcode, or QR text
  */
 export function findMachineByQuery(query) {
   if (!query) return null;
@@ -41,40 +59,80 @@ export function findMachineByQuery(query) {
         const m = machines.find(x => x.machineId?.toLowerCase() === String(parsed.machineId).toLowerCase());
         if (m) return m;
       }
+      if (parsed.systemAssetId || parsed.permanentMachineId) {
+        const target = String(parsed.systemAssetId || parsed.permanentMachineId).toLowerCase();
+        const m = machines.find(x => (x.systemAssetId && x.systemAssetId.toLowerCase() === target) || (x.permanentMachineId && x.permanentMachineId.toLowerCase() === target));
+        if (m) return m;
+      }
     } catch (_) {}
   }
 
-  // 2. Check if URL containing ID or machineId
+  // 2. Check if URL containing ID or machineId or assetId
   if (lowerQ.includes('#') || lowerQ.includes('?') || lowerQ.includes('/')) {
-    const match = lowerQ.match(/[?&#](?:id|machineid)=([a-z0-9\-]+)/i);
+    const match = lowerQ.match(/[?&#](?:id|machineid|assetid)=([a-z0-9\-]+)/i);
     if (match && match[1]) {
-      const m = machines.find(x => x.id === match[1] || x.machineId?.toLowerCase() === match[1].toLowerCase());
+      const m = machines.find(x => 
+        x.id === match[1] || 
+        x.machineId?.toLowerCase() === match[1].toLowerCase() ||
+        x.systemAssetId?.toLowerCase() === match[1].toLowerCase() ||
+        x.permanentMachineId?.toLowerCase() === match[1].toLowerCase()
+      );
       if (m) return m;
     }
   }
 
-  // 3. Exact ID match
-  let found = machines.find(m => m.id === cleanQ || m.id?.toLowerCase() === lowerQ);
+  // Handle standard ERP QR format: AL-MUSLIM-ERP://MC/{payload}
+  let queryText = lowerQ;
+  if (queryText.includes('://mc/')) {
+    queryText = queryText.split('://mc/')[1].trim();
+  }
+
+  // 3. Exact System Asset ID or Permanent Machine ID match (e.g. AMG-MNT-005551 or MID-005551)
+  let found = machines.find(m => 
+    (m.systemAssetId && m.systemAssetId.toLowerCase() === queryText) ||
+    (m.permanentMachineId && m.permanentMachineId.toLowerCase() === queryText) ||
+    (m.systemAssetId && m.systemAssetId.replace(/^mid-/i, 'amg-mnt-').toLowerCase() === queryText) ||
+    (m.permanentMachineId && m.permanentMachineId.replace(/^mid-/i, 'amg-mnt-').toLowerCase() === queryText)
+  );
   if (found) return found;
 
-  // 4. Exact Machine Number (machineId) match
-  found = machines.find(m => m.machineId?.toLowerCase() === lowerQ);
+  // Numeric asset sequence match (e.g. searching '5551' -> matches 'AMG-MNT-005551')
+  if (/^\d+$/.test(queryText)) {
+    const padded = queryText.padStart(6, '0');
+    found = machines.find(m => 
+      (m.systemAssetId && m.systemAssetId.includes(padded)) ||
+      (m.permanentMachineId && m.permanentMachineId.includes(padded)) ||
+      (m.sl && String(m.sl) === queryText)
+    );
+    if (found) return found;
+  }
+
+  // 4. Exact Machine Asset Code match (e.g. MC-095)
+  found = machines.find(m => m.machineAssetCode?.toLowerCase() === queryText);
   if (found) return found;
 
   // 5. Exact Serial Number match
-  found = machines.find(m => m.serialNumber?.toLowerCase() === lowerQ);
+  found = machines.find(m => m.serialNumber?.toLowerCase() === queryText);
   if (found) return found;
 
   // 6. Barcode match
-  found = machines.find(m => m.barcode?.toLowerCase() === lowerQ);
+  found = machines.find(m => m.barcode?.toLowerCase() === queryText);
   if (found) return found;
 
-  // 7. Case-insensitive substring match on Machine Number
-  found = machines.find(m => m.machineId && m.machineId.toLowerCase().includes(lowerQ));
+  // 7. Exact ID match
+  found = machines.find(m => m.id === cleanQ || m.id?.toLowerCase() === queryText);
   if (found) return found;
 
-  // 8. Case-insensitive substring match on Serial Number
-  found = machines.find(m => m.serialNumber && m.serialNumber.toLowerCase().includes(lowerQ));
+  // 8. Exact Machine Number (machineId) match
+  found = machines.find(m => m.machineId?.toLowerCase() === queryText);
+  if (found) return found;
+
+  // 9. Case-insensitive substring match on Machine Number
+  found = machines.find(m => m.machineId && m.machineId.toLowerCase().includes(queryText));
+  if (found) return found;
+
+  // 10. Case-insensitive substring match on Serial Number
+  found = machines.find(m => m.serialNumber && m.serialNumber.toLowerCase().includes(queryText));
   if (found) return found;
 
   return null;
@@ -146,6 +204,34 @@ export function openMachinePocketCard(machineOrQuery) {
   const lastServiced = machine.lastServicingDate || machine.lastServiceDate || 'Not Recorded';
   const nextServiced = machine.nextServicingDate || machine.nextServiceDate || 'Schedule Pending';
 
+  // Resolve Official Machine Asset ID (e.g. AMG-MNT-005551)
+  const assetId = getMachineAssetId(machine);
+
+  // Determine top hero identifier:
+  // If machine has user-defined machineId (not starting with internal 'mac-'), use that.
+  // Otherwise show the official Machine Asset ID.
+  // If neither, fallback to Serial Number or internal ID.
+  let displayHeroId = '';
+  if (machine.machineId && !String(machine.machineId).startsWith('mac-')) {
+    displayHeroId = machine.machineId;
+  } else if (assetId) {
+    displayHeroId = assetId;
+  } else if (machine.serialNumber) {
+    displayHeroId = machine.serialNumber;
+  } else {
+    displayHeroId = machine.id;
+  }
+
+  // Machine Asset ID / Tag display:
+  // Prioritize official Machine Asset ID, then custom barcode (if non-UUID), fallback to Pending Tag
+  let displayTagId = assetId;
+  if (!displayTagId && machine.barcode && !String(machine.barcode).startsWith('mac-')) {
+    displayTagId = machine.barcode;
+  }
+  if (!displayTagId) {
+    displayTagId = 'Pending Tag';
+  }
+
   const modalHtml = `
     <div id="machine-pocket-card-modal" class="modal-overlay" style="z-index: 10060; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; padding: 12px;">
       <div class="pocket-card-sheet" style="background: #0f172a; border: 1.5px solid #38bdf8; border-radius: 16px; width: 100%; max-width: 540px; max-height: 92vh; overflow-y: auto; box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.9), 0 0 30px rgba(56, 189, 248, 0.25); display: flex; flex-direction: column;">
@@ -182,9 +268,9 @@ export function openMachinePocketCard(machineOrQuery) {
             
             <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
               <div>
-                <div style="font-size: 10px; font-weight: 800; color: #38bdf8; text-transform: uppercase; letter-spacing: 1px;">Machine Number / ID</div>
+                <div style="font-size: 10px; font-weight: 800; color: #38bdf8; text-transform: uppercase; letter-spacing: 1px;">Machine Asset / ID</div>
                 <div style="font-size: 22px; font-weight: 900; color: #fff; font-family: monospace; letter-spacing: 0.5px; margin: 2px 0 4px;">
-                  ${escapeHtml(machine.machineId || machine.id)}
+                  ${escapeHtml(displayHeroId)}
                 </div>
                 <div style="font-size: 14px; font-weight: 700; color: #cbd5e1;">
                   ${escapeHtml(machineName)}
@@ -237,9 +323,10 @@ export function openMachinePocketCard(machineOrQuery) {
             </div>
 
             <div>
-              <span style="color: #64748b; font-size: 10.5px; text-transform: uppercase; font-weight: 700;">Barcode / Tag ID:</span>
-              <div style="color: #f8fafc; font-weight: 700; font-family: monospace; font-size: 12px; margin-top: 2px;">
-                ${escapeHtml(machine.barcode || machine.id || 'N/A')}
+              <span style="color: #64748b; font-size: 10.5px; text-transform: uppercase; font-weight: 700;">Machine Asset ID / Tag:</span>
+              <div style="color: #38bdf8; font-weight: 800; font-family: monospace; font-size: 12px; margin-top: 2px;">
+                ${escapeHtml(displayTagId)}
+                ${(machine.barcode && !String(machine.barcode).startsWith('mac-') && machine.barcode !== displayTagId) ? `<span style="color: #94a3b8; font-size: 10px; font-weight: 400; margin-left: 4px;">(${escapeHtml(machine.barcode)})</span>` : ''}
               </div>
             </div>
 
@@ -372,7 +459,7 @@ export function openMachinePocketCard(machineOrQuery) {
     historyBtn.addEventListener('click', () => {
       closeMachinePocketCard();
       try {
-        state.set('historySearchQuery', machine.machineId || machine.serialNumber);
+        state.set('historySearchQuery', (machine.machineId && !machine.machineId.startsWith('mac-') ? machine.machineId : '') || machine.serialNumber || assetId);
         router.navigate('machine-history');
       } catch (_) {}
     });
