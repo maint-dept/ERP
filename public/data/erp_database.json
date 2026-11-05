@@ -328685,7 +328685,7 @@
         "enabled": true,
         "autoSync": true,
         "retryEnabled": true,
-        "updatedAt": "2026-11-05T09:33:07.202Z"
+        "updatedAt": "2026-11-03T06:15:11.213Z"
       },
       {
         "id": "db_postgresql_replica",
@@ -328703,8 +328703,8 @@
         "enabled": true,
         "autoSync": true,
         "retryEnabled": true,
-        "updatedAt": "2026-11-05T09:33:07.202Z",
-        "lastSync": "11/5/2026, 6:32:46 PM"
+        "updatedAt": "2026-11-03T06:15:11.213Z",
+        "lastSync": "11/5/2026, 7:13:41 PM"
       }
     ],
     "pushNotificationPolicy": "MANDATORY",

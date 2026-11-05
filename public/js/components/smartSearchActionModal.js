@@ -495,6 +495,8 @@ export function openSmartMachineActionModal(machineOrQuery) {
     actTransfer.addEventListener('click', () => {
       closeSmartMachineActionModal();
       try {
+        state.set('activeMachineId', machine.id);
+        state.set('activeMachineSerial', machine.serialNumber || machine.systemAssetId || '');
         state.set('transferMachineId', machine.id);
         state.set('activeModal', 'transfer-machine');
       } catch (_) {}
@@ -516,6 +518,7 @@ export function openSmartMachineActionModal(machineOrQuery) {
       closeSmartMachineActionModal();
       try {
         state.set('preSelectedPMMachineId', machine.id);
+        state.set('activeMachineId', machine.id);
         state.set('currentView', 'preventive-maintenance');
         router.navigate('preventive-maintenance');
       } catch (_) {}
@@ -542,7 +545,6 @@ export function openSmartMachineActionModal(machineOrQuery) {
       closeSmartMachineActionModal();
       try {
         state.set('activeMachineId', machine.id);
-        state.set('historySearchQuery', machine.machineId || machine.serialNumber);
         state.set('currentView', 'machine-history');
         router.navigate('machine-history');
       } catch (_) {}
@@ -556,12 +558,9 @@ export function openSmartMachineActionModal(machineOrQuery) {
       closeSmartMachineActionModal();
       try {
         state.set('activeMachineId', machine.id);
+        state.set('activeModal', 'machine-details');
         const drawer = document.getElementById('machine-details-drawer');
-        if (drawer) {
-          drawer.classList.add('open');
-        } else {
-          router.navigate('machines');
-        }
+        if (drawer) drawer.classList.add('open');
       } catch (_) {}
     });
   }
@@ -573,6 +572,7 @@ export function openSmartMachineActionModal(machineOrQuery) {
       closeSmartMachineActionModal();
       try {
         state.set('editingMachineId', machine.id);
+        state.set('activeMachineId', machine.id);
         state.set('activeModal', 'edit-machine');
       } catch (_) {}
     });
@@ -674,17 +674,21 @@ function renderInlineQuickRelocateForm(machine, currentFloorStr, currentLineStr)
         });
 
         // Add history audit record
-        const historyTable = storage.getTable(TABLE_NAMES.MACHINE_LOCATION_HISTORY) || [];
-        storage.insert(TABLE_NAMES.MACHINE_LOCATION_HISTORY, {
-          id: `mlh-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+        const historyTable = storage.getTable(TABLE_NAMES.MACHINE_HISTORY) || [];
+        storage.insert(TABLE_NAMES.MACHINE_HISTORY, {
+          id: `hist-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
           machineId: machine.id,
           serialNumber: machine.serialNumber,
+          actionType: 'RELOCATION',
+          title: 'Machine Relocated via Smart Quick Action',
+          details: `Machine relocated from ${currentFloorStr} (${currentLineStr}) to ${targetFloorObj?.name || 'Floor'} (${targetLineObj?.name || 'Line'}). Reason: ${reason}`,
+          performedBy: authService.getCurrentUser()?.id,
+          performedByName: authService.getCurrentUser()?.name || 'User',
           previousFloor: currentFloorStr,
           previousLine: currentLineStr,
           newFloor: targetFloorObj?.name || 'Floor',
           newLine: targetLineObj?.name || 'Line',
           reason,
-          transferredBy: authService.getCurrentUser()?.name || 'User',
           timestamp: new Date().toISOString()
         });
 
@@ -785,15 +789,19 @@ function renderInlineQuickServiceForm(machine) {
         });
 
         // Log Service Record
-        const serviceTable = storage.getTable(TABLE_NAMES.MACHINE_SERVICE_HISTORY) || [];
-        storage.insert(TABLE_NAMES.MACHINE_SERVICE_HISTORY, {
-          id: `msh-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+        const serviceTable = storage.getTable(TABLE_NAMES.MACHINE_HISTORY) || [];
+        storage.insert(TABLE_NAMES.MACHINE_HISTORY, {
+          id: `hist-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
           machineId: machine.id,
           serialNumber: machine.serialNumber,
+          actionType: 'SERVICE_REPAIR',
+          title: `Repair Logged: ${category}`,
+          details: `Service performed: ${category}. Resolution: ${resolution}. Notes: ${notes}`,
+          performedBy: authService.getCurrentUser()?.id,
+          performedByName: authService.getCurrentUser()?.name || 'Mechanic',
           category,
           resolution,
           notes,
-          technician: authService.getCurrentUser()?.name || 'Mechanic',
           servicingDate: todayStr,
           timestamp: new Date().toISOString()
         });

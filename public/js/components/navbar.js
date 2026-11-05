@@ -1063,17 +1063,38 @@ export function initNavbarEvents() {
         `;
         searchDropdown.style.display = 'block';
 
-        // Bind clicks on items
-        searchDropdown.querySelectorAll('.universal-search-item').forEach(itemEl => {
-          itemEl.addEventListener('click', () => {
-            const idx = parseInt(itemEl.getAttribute('data-idx'), 10);
-            if (currentSearchResults[idx]) {
-              playScanBeep('success');
-              closeSearchDropdown();
-              inpSearch.value = '';
-              if (btnSearchClear) btnSearchClear.style.display = 'none';
-              openSmartMachineActionModal(currentSearchResults[idx].machine);
+        const handleSelectItem = (idx) => {
+          const target = currentSearchResults[idx];
+          if (!target || !target.machine) return;
+          const selectedMachine = target.machine;
+          try {
+            playScanBeep('success');
+          } catch (_) {}
+          closeSearchDropdown();
+          inpSearch.value = '';
+          if (btnSearchClear) btnSearchClear.style.display = 'none';
+          try {
+            if (typeof openSmartMachineActionModal === 'function') {
+              openSmartMachineActionModal(selectedMachine);
+            } else if (typeof window.openSmartMachineActionModal === 'function') {
+              window.openSmartMachineActionModal(selectedMachine);
             }
+          } catch (err) {
+            console.error('Error opening Smart Machine Action Modal:', err);
+          }
+        };
+
+        // Bind clicks and mousedown on items
+        searchDropdown.querySelectorAll('.universal-search-item').forEach(itemEl => {
+          itemEl.addEventListener('mousedown', (e) => {
+            // Prevent input blur from dismissing dropdown before click registers
+            e.preventDefault();
+          });
+          itemEl.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const idx = parseInt(itemEl.getAttribute('data-idx'), 10);
+            handleSelectItem(idx);
           });
         });
       }, 120);
@@ -1101,13 +1122,7 @@ export function initNavbarEvents() {
       } else if (e.key === 'Enter') {
         e.preventDefault();
         const targetIdx = highlightedIndex >= 0 ? highlightedIndex : 0;
-        if (currentSearchResults[targetIdx]) {
-          playScanBeep('success');
-          closeSearchDropdown();
-          inpSearch.value = '';
-          if (btnSearchClear) btnSearchClear.style.display = 'none';
-          openSmartMachineActionModal(currentSearchResults[targetIdx].machine);
-        }
+        handleSelectItem(targetIdx);
       } else if (e.key === 'Escape') {
         e.preventDefault();
         closeSearchDropdown();
