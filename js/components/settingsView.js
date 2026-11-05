@@ -10,6 +10,7 @@ import { masterDataService } from '../services/masterDataService.js';
 import { authService } from '../services/authService.js';
 import { router } from '../services/router.js';
 import { homepageService } from '../services/homepageService.js';
+import { webPushService } from '../services/webPushService.js';
 
 function escapeHtml(str) {
   if (!str) return '';
@@ -188,6 +189,10 @@ export function renderSettingsView() {
   const currentVisibilityMode = (typeof homepageService !== 'undefined' && typeof homepageService.getVisibilityMode === 'function')
     ? homepageService.getVisibilityMode()
     : (settings.homepageVisibilityMode || 'login');
+
+  const pushPolicy = (typeof webPushService !== 'undefined' && webPushService.getSystemPolicy)
+    ? webPushService.getSystemPolicy()
+    : (settings.pushNotificationPolicy || 'DEFAULT_ON');
 
   const assetCfg = (typeof storage !== 'undefined' && typeof storage.getAssetIdConfig === 'function')
     ? storage.getAssetIdConfig()
@@ -372,6 +377,88 @@ export function renderSettingsView() {
           <button id="btn-save-approval-settings" class="btn btn-success btn-sm" style="align-self: flex-start;">
             💾 Save Approval Policies
           </button>
+        </div>
+
+        <!-- Card: Enterprise Web Push Notification System Policy -->
+        <div id="card-push-notification-policy" style="background: var(--bg-surface); border: 1.5px solid rgba(56, 189, 248, 0.45); border-radius: var(--radius-lg); padding: 22px; display: flex; flex-direction: column; gap: 16px; grid-column: 1 / -1; box-shadow: 0 4px 24px rgba(56, 189, 248, 0.12);">
+          
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid var(--border-color); padding-bottom: 14px; flex-wrap: wrap; gap: 14px;">
+            <div style="flex: 1; min-width: 320px;">
+              <h3 style="font-size: 16px; font-weight: 800; color: #38bdf8; display: flex; align-items: center; gap: 8px; margin: 0;">
+                <span>🔔 Enterprise Web Push Notification Policy &amp; Global Control</span>
+              </h3>
+              <div style="font-size: 12.5px; color: var(--text-secondary); margin-top: 4px;">
+                Configure the factory-wide Web Push Notification policy. Admin can enforce notifications for all floor staff, allow users to toggle on/off, or shut down notifications system-wide.
+              </div>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span id="push-policy-status-pill" class="badge" style="font-size: 11.5px; font-weight: 800; padding: 5px 12px; border-radius: 20px;">
+                ${pushPolicy === 'MANDATORY' ? '🛡️ MANDATORY: ENFORCED ON FOR ALL' : (pushPolicy === 'DISABLED' ? '🚫 GLOBALLY DISABLED BY ADMIN' : '👤 DEFAULT ON: USER TOGGLE ALLOWED')}
+              </span>
+            </div>
+          </div>
+
+          <!-- 3 Mode Selection Cards -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px;">
+            
+            <!-- Option 1: Mandatory / Enforce ON for All Users -->
+            <div class="push-policy-card" data-policy="MANDATORY" style="display: flex; flex-direction: column; gap: 10px; padding: 16px 18px; border-radius: 10px; cursor: pointer; transition: all 0.2s ease; background: ${pushPolicy === 'MANDATORY' ? 'rgba(245, 158, 11, 0.15)' : 'rgba(15, 23, 42, 0.8)'}; border: 1.5px solid ${pushPolicy === 'MANDATORY' ? '#f59e0b' : 'rgba(255, 255, 255, 0.1)'};">
+              <div style="display: flex; align-items: center; justify-content: space-between;">
+                <label style="display: flex; align-items: center; gap: 8px; margin: 0; cursor: pointer;">
+                  <input type="radio" name="admin-push-policy" value="MANDATORY" ${pushPolicy === 'MANDATORY' ? 'checked' : ''} style="width: 17px; height: 17px; accent-color: #f59e0b;" />
+                  <span style="font-size: 14px; font-weight: 800; color: #fbbf24;">🛡️ Enforce ON for All Users</span>
+                </label>
+                <span class="badge" style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); font-size: 10px;">Mandatory</span>
+              </div>
+              <p style="font-size: 12px; color: #cbd5e1; margin: 0; line-height: 1.5;">
+                Requires all personnel to enable Web Push notifications upon logging in. Staff cannot mute push alerts; critical breakdown and gate pass notifications are strictly delivered.
+              </p>
+            </div>
+
+            <!-- Option 2: Default ON / User Toggle Allowed (Recommended) -->
+            <div class="push-policy-card" data-policy="DEFAULT_ON" style="display: flex; flex-direction: column; gap: 10px; padding: 16px 18px; border-radius: 10px; cursor: pointer; transition: all 0.2s ease; background: ${pushPolicy === 'DEFAULT_ON' ? 'rgba(56, 189, 248, 0.15)' : 'rgba(15, 23, 42, 0.8)'}; border: 1.5px solid ${pushPolicy === 'DEFAULT_ON' ? '#38bdf8' : 'rgba(255, 255, 255, 0.1)'};">
+              <div style="display: flex; align-items: center; justify-content: space-between;">
+                <label style="display: flex; align-items: center; gap: 8px; margin: 0; cursor: pointer;">
+                  <input type="radio" name="admin-push-policy" value="DEFAULT_ON" ${pushPolicy === 'DEFAULT_ON' ? 'checked' : ''} style="width: 17px; height: 17px; accent-color: #38bdf8;" />
+                  <span style="font-size: 14px; font-weight: 800; color: #38bdf8;">👤 Default ON (User Toggle Allowed)</span>
+                </label>
+                <span class="badge" style="background: rgba(56, 189, 248, 0.2); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.4); font-size: 10px;">Recommended</span>
+              </div>
+              <p style="font-size: 12px; color: #cbd5e1; margin: 0; line-height: 1.5;">
+                Enabled by default with friendly prompt. Individual users retain full freedom to turn Web Push ON, OFF, or Mute from their top notification bell drawer at any time.
+              </p>
+            </div>
+
+            <!-- Option 3: Globally Disabled -->
+            <div class="push-policy-card" data-policy="DISABLED" style="display: flex; flex-direction: column; gap: 10px; padding: 16px 18px; border-radius: 10px; cursor: pointer; transition: all 0.2s ease; background: ${pushPolicy === 'DISABLED' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(15, 23, 42, 0.8)'}; border: 1.5px solid ${pushPolicy === 'DISABLED' ? '#ef4444' : 'rgba(255, 255, 255, 0.1)'};">
+              <div style="display: flex; align-items: center; justify-content: space-between;">
+                <label style="display: flex; align-items: center; gap: 8px; margin: 0; cursor: pointer;">
+                  <input type="radio" name="admin-push-policy" value="DISABLED" ${pushPolicy === 'DISABLED' ? 'checked' : ''} style="width: 17px; height: 17px; accent-color: #ef4444;" />
+                  <span style="font-size: 14px; font-weight: 800; color: #f87171;">🚫 Disable Globally (Forced OFF)</span>
+                </label>
+                <span class="badge" style="background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); font-size: 10px;">Shut Down</span>
+              </div>
+              <p style="font-size: 12px; color: #cbd5e1; margin: 0; line-height: 1.5;">
+                Completely shuts off all browser push notifications across all devices and terminals. Zero desktop or mobile popups will be triggered regardless of individual settings.
+              </p>
+            </div>
+
+          </div>
+
+          <!-- Action bar -->
+          <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); padding-top: 14px; flex-wrap: wrap; gap: 10px;">
+            <div style="font-size: 11.5px; color: #94a3b8;">
+              🔒 System Administrator Security Policy &bull; Synced across all connected clients in real-time
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span id="push-policy-feedback-msg" style="font-size: 12px; color: #34d399; font-weight: 700; display: none;"></span>
+              <button type="button" id="btn-save-push-policy" class="btn btn-primary btn-sm" style="font-weight: 800; background: linear-gradient(135deg, #0284c7, #0369a1); border: 1.5px solid #38bdf8; padding: 8px 22px;">
+                💾 Save Push Policy
+              </button>
+            </div>
+          </div>
+
         </div>
 
         <!-- Card: Admin Login URL Customization & Gateway Security -->
@@ -1045,6 +1132,96 @@ export function initSettingsEvents() {
   if (goHomeMgrBtn) {
     goHomeMgrBtn.addEventListener('click', () => {
       router.navigate('homepage-manager');
+    });
+  }
+
+  // ==========================================
+  // Web Push Notification Policy Handlers
+  // ==========================================
+  const pushPolicyStatusPill = document.getElementById('push-policy-status-pill');
+  const pushPolicyCards = document.querySelectorAll('.push-policy-card');
+  const pushPolicyRadios = document.querySelectorAll('input[name="admin-push-policy"]');
+  const savePushPolicyBtn = document.getElementById('btn-save-push-policy');
+  const pushPolicyFeedback = document.getElementById('push-policy-feedback-msg');
+
+  const updatePushPolicyVisual = (selectedPolicy) => {
+    pushPolicyCards.forEach(card => {
+      const pol = card.getAttribute('data-policy');
+      const radio = card.querySelector('input[type="radio"]');
+      if (pol === selectedPolicy) {
+        if (radio) radio.checked = true;
+        if (pol === 'MANDATORY') {
+          card.style.background = 'rgba(245, 158, 11, 0.15)';
+          card.style.border = '1.5px solid #f59e0b';
+        } else if (pol === 'DEFAULT_ON') {
+          card.style.background = 'rgba(56, 189, 248, 0.15)';
+          card.style.border = '1.5px solid #38bdf8';
+        } else if (pol === 'DISABLED') {
+          card.style.background = 'rgba(239, 68, 68, 0.15)';
+          card.style.border = '1.5px solid #ef4444';
+        }
+      } else {
+        if (radio) radio.checked = false;
+        card.style.background = 'rgba(15, 23, 42, 0.8)';
+        card.style.border = '1.5px solid rgba(255, 255, 255, 0.1)';
+      }
+    });
+
+    if (pushPolicyStatusPill) {
+      if (selectedPolicy === 'MANDATORY') {
+        pushPolicyStatusPill.textContent = '🛡️ MANDATORY: ENFORCED ON FOR ALL';
+        pushPolicyStatusPill.style.background = 'rgba(245, 158, 11, 0.2)';
+        pushPolicyStatusPill.style.color = '#fbbf24';
+        pushPolicyStatusPill.style.border = '1.5px solid #f59e0b';
+      } else if (selectedPolicy === 'DEFAULT_ON') {
+        pushPolicyStatusPill.textContent = '👤 DEFAULT ON: USER TOGGLE ALLOWED';
+        pushPolicyStatusPill.style.background = 'rgba(56, 189, 248, 0.2)';
+        pushPolicyStatusPill.style.color = '#38bdf8';
+        pushPolicyStatusPill.style.border = '1.5px solid #38bdf8';
+      } else if (selectedPolicy === 'DISABLED') {
+        pushPolicyStatusPill.textContent = '🚫 GLOBALLY DISABLED BY ADMIN';
+        pushPolicyStatusPill.style.background = 'rgba(239, 68, 68, 0.2)';
+        pushPolicyStatusPill.style.color = '#f87171';
+        pushPolicyStatusPill.style.border = '1.5px solid #ef4444';
+      }
+    }
+  };
+
+  pushPolicyCards.forEach(card => {
+    card.addEventListener('click', (e) => {
+      const pol = card.getAttribute('data-policy');
+      if (pol) updatePushPolicyVisual(pol);
+    });
+  });
+
+  pushPolicyRadios.forEach(radio => {
+    radio.addEventListener('change', () => {
+      if (radio.checked) updatePushPolicyVisual(radio.value);
+    });
+  });
+
+  if (savePushPolicyBtn) {
+    savePushPolicyBtn.addEventListener('click', async () => {
+      const selectedRadio = document.querySelector('input[name="admin-push-policy"]:checked');
+      const selectedPolicy = selectedRadio ? selectedRadio.value : 'DEFAULT_ON';
+      const origText = savePushPolicyBtn.innerHTML;
+
+      savePushPolicyBtn.disabled = true;
+      savePushPolicyBtn.innerHTML = 'Saving Policy...';
+
+      try {
+        await webPushService.setSystemPolicy(selectedPolicy);
+        if (pushPolicyFeedback) {
+          pushPolicyFeedback.textContent = '✓ Push Notification Policy Saved & Active!';
+          pushPolicyFeedback.style.display = 'inline-block';
+          setTimeout(() => { pushPolicyFeedback.style.display = 'none'; }, 3000);
+        }
+      } catch (err) {
+        alert('Could not save policy: ' + err.message);
+      } finally {
+        savePushPolicyBtn.disabled = false;
+        savePushPolicyBtn.innerHTML = origText;
+      }
     });
   }
 

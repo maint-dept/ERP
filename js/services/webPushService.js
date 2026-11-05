@@ -74,7 +74,12 @@ class WebPushService {
       }
     });
 
-    console.log('[WebPushService] 🔔 Web Push Service initialized. Supported:', this.isSupported(), 'Permission:', this.getPermission());
+    console.log('[WebPushService] 🔔 Web Push Service initialized. Supported:', this.isSupported(), 'Permission:', this.getPermission(), 'Policy:', this.getSystemPolicy());
+
+    // Evaluate mandatory policy prompt if configured by Admin
+    setTimeout(() => {
+      this.checkAndPromptMandatoryPolicy();
+    }, 1800);
   }
 
   /**
@@ -116,6 +121,120 @@ class WebPushService {
     try {
       localStorage.setItem(STORAGE_KEY_PUSH_SOUND, enabled ? '1' : '0');
     } catch (_) {}
+  }
+
+  /**
+   * Get global Push Notification Policy configured by Admin:
+   * - 'MANDATORY': Admin enforced ON for all staff (auto-prompts on login, mute locked)
+   * - 'DEFAULT_ON': Enabled by default, users can freely toggle ON/OFF in drawer (Recommended)
+   * - 'DISABLED': Globally disabled by Admin (zero push alerts delivered across entire system)
+   */
+  getSystemPolicy() {
+    try {
+      const settings = (typeof storage !== 'undefined' && storage.getTable) 
+        ? (storage.getTable(TABLE_NAMES.SETTINGS) || {}) 
+        : {};
+      return settings.pushNotificationPolicy || 'DEFAULT_ON';
+    } catch (_) {
+      return 'DEFAULT_ON';
+    }
+  }
+
+  /**
+   * Check if push notifications are globally disabled by Admin
+   */
+  isGloballyDisabled() {
+    return this.getSystemPolicy() === 'DISABLED';
+  }
+
+  /**
+   * Check if push notifications are enforced mandatory by Admin
+   */
+  isMandatory() {
+    return this.getSystemPolicy() === 'MANDATORY';
+  }
+
+  /**
+   * Update global system push policy (Admin only)
+   */
+  async setSystemPolicy(policy) {
+    const valid = ['MANDATORY', 'DEFAULT_ON', 'DISABLED'].includes(policy) ? policy : 'DEFAULT_ON';
+    if (typeof storage !== 'undefined' && storage.getTable) {
+      const current = storage.getTable(TABLE_NAMES.SETTINGS) || {};
+      storage.data[TABLE_NAMES.SETTINGS] = {
+        ...current,
+        pushNotificationPolicy: valid,
+        pushNotificationPolicyUpdatedAt: new Date().toISOString()
+      };
+      await storage.saveTable(TABLE_NAMES.SETTINGS, true);
+      window.dispatchEvent(new CustomEvent('erp:web-push-policy-changed', { detail: { policy: valid } }));
+    }
+    return valid;
+  }
+
+  /**
+   * If Admin set policy to MANDATORY, prompt user to enable push if not already granted
+   */
+  checkAndPromptMandatoryPolicy() {
+    if (typeof window === 'undefined' || typeof document === 'undefined') return;
+    if (!this.isSupported() || !this.isMandatory()) return;
+    if (this.getPermission() === 'granted') return;
+
+    const user = typeof authService !== 'undefined' ? authService.getCurrentUser() : null;
+    if (!user || user.status !== 'ACTIVE' || user.role === 'NO_ACCESS') return;
+
+    if (document.getElementById('modal-mandatory-push-overlay')) return;
+
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.id = 'modal-mandatory-push-overlay';
+    overlay.style.cssText = 'z-index: 10090; background: rgba(0, 0, 0, 0.88); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; padding: 16px;';
+
+    overlay.innerHTML = `
+      <div class="modal-dialog" style="max-width: 480px; width: 100%; background: #0f172a; border: 1.5px solid #f59e0b; border-radius: 12px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.85); overflow: hidden; display: flex; flex-direction: column;">
+        <div style="padding: 16px 20px; background: linear-gradient(135deg, #0f172a, #78350f); border-bottom: 1px solid rgba(245, 158, 11, 0.3); display: flex; align-items: center; gap: 10px;">
+          <div style="font-size: 24px;">🛡️</div>
+          <div>
+            <h3 style="margin: 0; font-size: 15px; font-weight: 800; color: #fff;">Web Push Notification Required</h3>
+            <div style="font-size: 11px; color: #fde68a; margin-top: 1px;">Factory Floor Policy Enforced by Administrator</div>
+          </div>
+        </div>
+        <div style="padding: 20px; display: flex; flex-direction: column; gap: 12px;">
+          <p style="font-size: 12.5px; color: #e2e8f0; line-height: 1.55; margin: 0;">
+            To ensure zero machine downtime and immediate response to critical breakdowns and floor transfer gate passes, <strong>Web Push Notifications are mandatory</strong> for all active personnel.
+          </p>
+          <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 10px 14px; font-size: 11.5px; color: #94a3b8;">
+            👤 Target User: <strong style="color: #38bdf8;">${user.name}</strong> (${user.presetName || user.role})
+          </div>
+          <div style="display: flex; gap: 10px; margin-top: 8px;">
+            <button type="button" id="btn-allow-mandatory-push" class="btn btn-primary" style="flex: 1; min-height: 42px; font-weight: 800; font-size: 13px; background: #0284c7; border: 1.5px solid #38bdf8;">
+              🔔 Allow Push Notifications
+            </button>
+            <button type="button" id="btn-dismiss-mandatory-push" class="btn btn-ghost" style="font-size: 12px; color: #94a3b8;">
+              Later
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    const allowBtn = overlay.querySelector('#btn-allow-mandatory-push');
+    const dismissBtn = overlay.querySelector('#btn-dismiss-mandatory-push');
+
+    if (allowBtn) {
+      allowBtn.addEventListener('click', async () => {
+        overlay.remove();
+        await this.requestPermission();
+      });
+    }
+
+    if (dismissBtn) {
+      dismissBtn.addEventListener('click', () => {
+        overlay.remove();
+      });
+    }
   }
 
   /**
@@ -246,6 +365,11 @@ class WebPushService {
    */
   async sendPushNotification(notif) {
     if (!this.isSupported() || !this.isEnabled() || !notif) {
+      return false;
+    }
+
+    // 0. Global Admin Policy check: If Admin disabled push globally, drop immediately
+    if (this.isGloballyDisabled()) {
       return false;
     }
 

@@ -119,6 +119,9 @@ export function renderNotificationsDrawer() {
   const pushPermission = webPushService.getPermission();
   const isPushActive = webPushService.isEnabled();
   const isPushBlocked = pushPermission === 'denied';
+  const isPushDisabledGlobally = webPushService.isGloballyDisabled();
+  const isPushMandatory = webPushService.isMandatory();
+  const isSuperAdmin = authService.isSuperAdmin(user);
 
   return `
     <div class="drawer-backdrop" id="drawer-notifs-backdrop"></div>
@@ -175,52 +178,83 @@ export function renderNotificationsDrawer() {
 
         <!-- Web Push Notification Status & Control Bar -->
         ${isPushSupported ? `
-          <div id="notifs-web-push-card" style="display: flex; align-items: center; justify-content: space-between; background: linear-gradient(135deg, rgba(15, 23, 42, 0.85), rgba(30, 41, 59, 0.85)); border: 1px solid ${isPushActive ? 'rgba(34, 197, 94, 0.35)' : 'rgba(56, 189, 248, 0.25)'}; border-radius: 8px; padding: 8px 12px; gap: 8px; flex-wrap: wrap;">
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <span style="font-size: 17px;">📲</span>
-              <div>
-                <div style="display: flex; align-items: center; gap: 6px;">
-                  <span style="font-size: 12px; font-weight: 700; color: #fff;">Web Push Notification</span>
-                  ${isPushActive ? `
-                    <span class="badge" style="background: rgba(34, 197, 94, 0.2); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.4); font-size: 10px; padding: 1px 6px; font-weight: 700;">
-                      ● Active
-                    </span>
-                  ` : isPushBlocked ? `
+          ${isPushDisabledGlobally ? `
+            <div id="notifs-web-push-card" style="display: flex; align-items: center; justify-content: space-between; background: rgba(239, 68, 68, 0.08); border: 1.5px solid rgba(239, 68, 68, 0.3); border-radius: 8px; padding: 10px 14px; gap: 8px; flex-wrap: wrap;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 18px;">🚫</span>
+                <div>
+                  <div style="display: flex; align-items: center; gap: 6px;">
+                    <span style="font-size: 12px; font-weight: 700; color: #fca5a5;">Web Push Notification</span>
                     <span class="badge" style="background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); font-size: 10px; padding: 1px 6px; font-weight: 700;">
-                      ✕ Blocked
+                      Globally Disabled by Admin
                     </span>
-                  ` : `
-                    <span class="badge" style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); font-size: 10px; padding: 1px 6px; font-weight: 700;">
-                      ○ Inactive
-                    </span>
-                  `}
-                </div>
-                <div style="font-size: 10.5px; color: var(--text-muted); margin-top: 1px;">
-                  ${isPushActive 
-                    ? 'Browser alerts are strictly filtered to your role &amp; factory floor.' 
-                    : isPushBlocked 
-                      ? 'Push blocked in browser settings. Please allow notifications for this site.' 
-                      : 'Enable to receive real-time alerts even when the browser tab is in background.'}
+                  </div>
+                  <div style="font-size: 10.5px; color: #94a3b8; margin-top: 1px;">
+                    Push notifications are turned OFF system-wide by Administrator Policy.
+                  </div>
                 </div>
               </div>
+              ${isSuperAdmin ? `
+                <a href="#settings" class="btn btn-ghost btn-xs" style="color: #38bdf8; font-size: 11px; text-decoration: none;">⚙️ Settings</a>
+              ` : ''}
             </div>
-            <div style="display: flex; align-items: center; gap: 6px;">
-              ${isPushActive ? `
-                <button id="btn-web-push-test" type="button" class="btn btn-secondary btn-xs" style="font-size: 10.5px; font-weight: 700; padding: 3px 8px; border-radius: 6px; color: #38bdf8; border-color: rgba(56, 189, 248, 0.35);" title="Send test push alert for your current role &amp; floor">
-                  🔔 Test Alert
-                </button>
-                <button id="btn-web-push-toggle" type="button" class="btn btn-ghost btn-xs" style="font-size: 10.5px; color: #94a3b8; padding: 3px 6px;" title="Mute Web Push Notifications">
-                  Mute
-                </button>
-              ` : isPushBlocked ? `
-                <span style="font-size: 10.5px; color: #f87171; font-weight: 600;">Blocked by Browser</span>
-              ` : `
-                <button id="btn-web-push-enable" type="button" class="btn btn-primary btn-xs" style="font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 6px; background: linear-gradient(135deg, #0284c7, #0369a1); box-shadow: 0 2px 8px rgba(2, 132, 199, 0.35);">
-                  🔔 Turn On Web Push
-                </button>
-              `}
+          ` : `
+            <div id="notifs-web-push-card" style="display: flex; align-items: center; justify-content: space-between; background: linear-gradient(135deg, rgba(15, 23, 42, 0.85), rgba(30, 41, 59, 0.85)); border: 1px solid ${isPushActive ? 'rgba(34, 197, 94, 0.35)' : 'rgba(56, 189, 248, 0.25)'}; border-radius: 8px; padding: 8px 12px; gap: 8px; flex-wrap: wrap;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 17px;">📲</span>
+                <div>
+                  <div style="display: flex; align-items: center; gap: 6px;">
+                    <span style="font-size: 12px; font-weight: 700; color: #fff;">Web Push Notification</span>
+                    ${isPushMandatory ? `
+                      <span class="badge" style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); font-size: 10px; padding: 1px 6px; font-weight: 700;">
+                        🛡️ Mandatory Policy
+                      </span>
+                    ` : ''}
+                    ${isPushActive ? `
+                      <span class="badge" style="background: rgba(34, 197, 94, 0.2); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.4); font-size: 10px; padding: 1px 6px; font-weight: 700;">
+                        ● Active
+                      </span>
+                    ` : isPushBlocked ? `
+                      <span class="badge" style="background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); font-size: 10px; padding: 1px 6px; font-weight: 700;">
+                        ✕ Blocked
+                      </span>
+                    ` : `
+                      <span class="badge" style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); font-size: 10px; padding: 1px 6px; font-weight: 700;">
+                        ○ Inactive
+                      </span>
+                    `}
+                  </div>
+                  <div style="font-size: 10.5px; color: var(--text-muted); margin-top: 1px;">
+                    ${isPushActive 
+                      ? 'Browser alerts are strictly filtered to your role &amp; factory floor.' 
+                      : isPushBlocked 
+                        ? 'Push blocked in browser settings. Please allow notifications for this site.' 
+                        : (isPushMandatory ? 'Required by Admin. Tap Turn On to activate floor alerts.' : 'Enable to receive real-time alerts even when the browser tab is in background.')}
+                  </div>
+                </div>
+              </div>
+              <div style="display: flex; align-items: center; gap: 6px;">
+                ${isPushActive ? `
+                  <button id="btn-web-push-test" type="button" class="btn btn-secondary btn-xs" style="font-size: 10.5px; font-weight: 700; padding: 3px 8px; border-radius: 6px; color: #38bdf8; border-color: rgba(56, 189, 248, 0.35);" title="Send test push alert for your current role &amp; floor">
+                    🔔 Test Alert
+                  </button>
+                  ${isPushMandatory ? `
+                    <span style="font-size: 10px; color: #f59e0b; padding: 2px 6px; background: rgba(245, 158, 11, 0.1); border-radius: 4px; border: 1px solid rgba(245, 158, 11, 0.25);" title="Push notifications are enforced mandatory by Admin policy">🔒 Locked</span>
+                  ` : `
+                    <button id="btn-web-push-toggle" type="button" class="btn btn-ghost btn-xs" style="font-size: 10.5px; color: #94a3b8; padding: 3px 6px;" title="Mute Web Push Notifications">
+                      Mute
+                    </button>
+                  `}
+                ` : isPushBlocked ? `
+                  <span style="font-size: 10.5px; color: #f87171; font-weight: 600;">Blocked by Browser</span>
+                ` : `
+                  <button id="btn-web-push-enable" type="button" class="btn btn-primary btn-xs" style="font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 6px; background: linear-gradient(135deg, #0284c7, #0369a1); box-shadow: 0 2px 8px rgba(2, 132, 199, 0.35);">
+                    🔔 Turn On Web Push
+                  </button>
+                `}
+              </div>
             </div>
-          </div>
+          `}
         ` : ''}
 
         <!-- Access Boundary Assurance Banner -->
