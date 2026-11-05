@@ -210,31 +210,41 @@ export function renderNavbar() {
       </div>
 
       <!-- Center: Universal Sticky Smart Search & QR/Barcode Command Bar -->
-      <div class="header-center-search-wrap" style="flex: 1; max-width: 480px; margin: 0 12px; position: relative; min-width: 0;">
-        <div class="nav-smart-search-box" style="display: flex; align-items: center; background: rgba(15, 23, 42, 0.75); border: 1.5px solid rgba(56, 189, 248, 0.35); border-radius: 9px; height: 35px; padding: 0 4px 0 10px; gap: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.25); transition: all 0.2s;">
-          <span style="font-size: 13px; color: #38bdf8; line-height: 1; pointer-events: none; flex-shrink: 0;">🔍</span>
+      <div id="header-search-wrap" class="header-center-search-wrap">
+        <button 
+          type="button" 
+          id="btn-mobile-search-close" 
+          class="btn-mobile-search-close mobile-only" 
+          title="Back / Close Search" 
+          aria-label="Back / Close Search"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+        </button>
+
+        <div class="nav-smart-search-box">
+          <span class="nav-search-icon" style="font-size: 13px; color: #38bdf8; line-height: 1; pointer-events: none; flex-shrink: 0;">🔍</span>
           <input 
             type="text" 
             id="inp-universal-smart-search" 
             placeholder="Search Machine #, Serial, Brand, Line... (Ctrl + K)" 
             autocomplete="off" 
             spellcheck="false"
-            style="flex: 1; background: transparent; border: none; color: #fff; font-size: 12px; font-weight: 600; outline: none; min-width: 0;"
           />
           <button 
             type="button" 
             id="btn-nav-search-clear" 
             title="Clear Search"
-            style="display: none; background: none; border: none; color: #64748b; font-size: 14px; cursor: pointer; padding: 2px 4px; line-height: 1; flex-shrink: 0;"
+            style="display: none; background: none; border: none; color: #94a3b8; font-size: 14px; cursor: pointer; padding: 2px 6px; line-height: 1; flex-shrink: 0;"
           >✕</button>
 
           <!-- Integrated QR / Barcode Scanner Button attached right beside search bar -->
           <button 
             type="button" 
             id="btn-header-qr-scanner" 
-            class="btn btn-xs" 
+            class="btn btn-xs btn-header-qr" 
             title="Scan Machine QR Tag / Barcode" 
-            style="background: rgba(56, 189, 248, 0.15); border: 1px solid #38bdf8; color: #38bdf8; font-weight: 800; font-size: 11px; height: 26px; padding: 0 8px; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px; cursor: pointer; flex-shrink: 0;"
           >
             <span style="font-size: 13px;">📷</span>
             <span class="desktop-only" style="letter-spacing: 0.3px;">Scan</span>
@@ -242,12 +252,20 @@ export function renderNavbar() {
         </div>
 
         <!-- Floating Live Auto-Suggest Results Dropdown -->
-        <div id="universal-search-dropdown" class="universal-search-results-dropdown custom-scrollbar" style="display: none; position: absolute; top: calc(100% + 8px); left: 50%; transform: translateX(-50%); width: 540px; max-width: min(540px, calc(100vw - 20px)); min-width: 320px; max-height: 420px; overflow-y: auto; background: #0f172a; border: 1.5px solid #38bdf8; border-radius: 14px; box-shadow: 0 20px 45px -10px rgba(0,0,0,0.9), 0 0 25px rgba(56,189,248,0.25); z-index: 10000; padding: 6px 0;">
+        <div id="universal-search-dropdown" class="universal-search-results-dropdown custom-scrollbar" style="display: none;">
         </div>
       </div>
 
       <!-- Right: Status, Theme, Notifications & User Dropdown Capsule -->
       <div class="header-right">
+        <!-- Mobile Search & Scan Quick Triggers (<= 768px) -->
+        <button id="btn-mobile-search-trigger" class="nav-icon-btn mobile-only" type="button" title="Search Machines" aria-label="Search Machines">
+          <span style="font-size: 15px;">🔍</span>
+        </button>
+        <button id="btn-mobile-qr-trigger" class="nav-icon-btn mobile-only" type="button" title="Scan Machine QR Tag" aria-label="Scan QR Code">
+          <span style="font-size: 15px;">📷</span>
+        </button>
+
         <!-- Real-Time SSE Live Status Indicator (Silent Background Process - Hidden from UI) -->
         <div id="nav-realtime-pill" class="nav-db-status-pill" style="display: none !important;" title="Real-Time Factory Sync Active">
           <span class="live-dot"></span>
@@ -947,22 +965,26 @@ export function initNavbarEvents() {
         openSmartMachineActionModal(decodedText);
       },
       onManualSearchRequest: () => {
-        const topSearch = document.getElementById('inp-universal-smart-search');
-        if (topSearch) {
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-          setTimeout(() => {
-            topSearch.focus();
-            topSearch.select();
-            const searchBox = topSearch.closest('.nav-smart-search-box');
-            if (searchBox) {
-              searchBox.style.boxShadow = '0 0 25px #38bdf8';
-              searchBox.style.borderColor = '#38bdf8';
-              setTimeout(() => {
-                searchBox.style.boxShadow = '';
-                searchBox.style.borderColor = '';
-              }, 1200);
-            }
-          }, 150);
+        if (window.innerWidth <= 768) {
+          openMobileSearch();
+        } else {
+          const topSearch = document.getElementById('inp-universal-smart-search');
+          if (topSearch) {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            setTimeout(() => {
+              topSearch.focus();
+              topSearch.select();
+              const searchBox = topSearch.closest('.nav-smart-search-box');
+              if (searchBox) {
+                searchBox.style.boxShadow = '0 0 25px #38bdf8';
+                searchBox.style.borderColor = '#38bdf8';
+                setTimeout(() => {
+                  searchBox.style.boxShadow = '';
+                  searchBox.style.borderColor = '';
+                }, 1200);
+              }
+            }, 150);
+          }
         }
       },
       onClose: () => {}
@@ -974,7 +996,11 @@ export function initNavbarEvents() {
     btnHeaderQrScanner.addEventListener('click', triggerGlobalQuickScanner);
   }
 
-  // Universal Sticky Search Bar with Live Suggestions Dropdown
+  // Universal Sticky Search Bar & Mobile Full-Width Overlay Controller
+  const headerSearchWrap = document.getElementById('header-search-wrap');
+  const btnMobileSearchTrigger = document.getElementById('btn-mobile-search-trigger');
+  const btnMobileQrTrigger = document.getElementById('btn-mobile-qr-trigger');
+  const btnMobileSearchClose = document.getElementById('btn-mobile-search-close');
   const inpSearch = document.getElementById('inp-universal-smart-search');
   const btnSearchClear = document.getElementById('btn-nav-search-clear');
   const searchDropdown = document.getElementById('universal-search-dropdown');
@@ -990,6 +1016,50 @@ export function initNavbarEvents() {
     highlightedIndex = -1;
     currentSearchResults = [];
   };
+
+  const openMobileSearch = () => {
+    closeDropdown();
+    if (headerSearchWrap) {
+      headerSearchWrap.classList.add('mobile-search-expanded');
+    }
+    if (inpSearch) {
+      setTimeout(() => {
+        inpSearch.focus();
+        inpSearch.select();
+      }, 50);
+    }
+  };
+
+  const closeMobileSearch = () => {
+    if (headerSearchWrap) {
+      headerSearchWrap.classList.remove('mobile-search-expanded');
+    }
+    closeSearchDropdown();
+    if (inpSearch) inpSearch.value = '';
+    if (btnSearchClear) btnSearchClear.style.display = 'none';
+  };
+
+  if (btnMobileSearchTrigger) {
+    btnMobileSearchTrigger.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openMobileSearch();
+    });
+  }
+
+  if (btnMobileSearchClose) {
+    btnMobileSearchClose.addEventListener('click', (e) => {
+      e.stopPropagation();
+      closeMobileSearch();
+    });
+  }
+
+  if (btnMobileQrTrigger) {
+    btnMobileQrTrigger.addEventListener('click', (e) => {
+      e.stopPropagation();
+      closeMobileSearch();
+      triggerGlobalQuickScanner();
+    });
+  }
 
   if (inpSearch && searchDropdown) {
     inpSearch.addEventListener('input', (e) => {
@@ -1009,8 +1079,8 @@ export function initNavbarEvents() {
 
         if (matches.length === 0) {
           searchDropdown.innerHTML = `
-            <div style="padding: 20px 16px; text-align: center; color: #94a3b8; font-size: 12.5px;">
-              <div style="font-size: 26px; margin-bottom: 6px;">🔍</div>
+            <div style="padding: 24px 16px; text-align: center; color: #94a3b8; font-size: 13px;">
+              <div style="font-size: 28px; margin-bottom: 6px;">🔍</div>
               <div>No machines found matching <strong style="color: #f8fafc;">"${escapeHtml(q)}"</strong></div>
               <div style="font-size: 11px; color: #64748b; margin-top: 6px;">Try searching by Serial Number (e.g. D/N-A-92, 450), Brand (Juki, Brother), or Line Name</div>
             </div>
@@ -1023,29 +1093,28 @@ export function initNavbarEvents() {
           const serialTag = res.displayId || res.machine.serialNumber || 'N/A';
           const assetTag = res.displayAssetId || res.machine.systemAssetId || res.machine.permanentMachineId || '';
           return `
-            <div class="universal-search-item" data-idx="${idx}" style="padding: 10px 14px; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; align-items: center; justify-content: space-between; gap: 12px; transition: background 0.15s ease;">
-              <div style="min-width: 0; flex: 1;">
-                <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
-                  <span class="search-tag-badge" style="font-family: monospace; font-size: 13px; font-weight: 900; color: #38bdf8; background: rgba(56,189,248,0.12); padding: 2px 7px; border-radius: 6px; border: 1.5px solid rgba(56,189,248,0.35); flex-shrink: 0; white-space: nowrap;">
-                    🏷️ ${escapeHtml(serialTag)}
-                  </span>
-                  <span style="font-size: 13px; font-weight: 700; color: #f8fafc; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                    ${escapeHtml(res.machineNameStr)}
-                  </span>
+            <div class="universal-search-item" data-idx="${idx}">
+              <div class="search-item-header">
+                <div class="search-item-tags">
+                  <span class="search-tag-badge">🏷️ ${escapeHtml(serialTag)}</span>
+                  ${assetTag ? `<span class="search-asset-pill">${escapeHtml(assetTag)}</span>` : ''}
                 </div>
-                <div style="font-size: 11px; color: #94a3b8; margin-top: 4px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
-                  <span>Brand: <strong style="color: #cbd5e1;">${escapeHtml(res.brandStr)}</strong></span>
-                  <span>&bull;</span>
-                  <span>Model: <strong style="color: #cbd5e1;">${escapeHtml(res.modelStr)}</strong></span>
-                  ${assetTag ? `<span>&bull;</span><span>Asset: <strong style="color: #cbd5e1; font-family: monospace;">${escapeHtml(assetTag)}</strong></span>` : ''}
+                <div class="search-item-location">
+                  <span class="search-line-tag">📍 ${escapeHtml(res.lineName)}</span>
+                  <span class="search-floor-tag">${escapeHtml(res.floorName)}</span>
                 </div>
               </div>
-              
-              <div style="text-align: right; flex-shrink: 0; display: flex; flex-direction: column; align-items: flex-end; gap: 3px;">
-                <div style="font-size: 12px; font-weight: 900; color: #34d399; white-space: nowrap;">📍 ${escapeHtml(res.lineName)}</div>
-                <div style="font-size: 10.5px; color: #94a3b8; white-space: nowrap;">${escapeHtml(res.floorName)}</div>
-                <div style="margin-top: 2px;">
-                  ${res.canOperate ? `<span style="font-size: 9.5px; color: #34d399; font-weight: 800; background: rgba(34,197,94,0.15); border: 1px solid rgba(34,197,94,0.3); padding: 1px 6px; border-radius: 4px; white-space: nowrap;">✓ Authorized</span>` : `<span style="font-size: 9.5px; color: #f87171; font-weight: 800; background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.3); padding: 1px 6px; border-radius: 4px; white-space: nowrap;">🔒 View-Only</span>`}
+              <div class="search-item-name">
+                ${escapeHtml(res.machineNameStr)}
+              </div>
+              <div class="search-item-footer">
+                <div class="search-item-specs">
+                  <span>Brand: <strong>${escapeHtml(res.brandStr)}</strong></span>
+                  <span>&bull;</span>
+                  <span>Model: <strong>${escapeHtml(res.modelStr)}</strong></span>
+                </div>
+                <div class="search-item-auth">
+                  ${res.canOperate ? `<span class="auth-badge-green">✓ Authorized</span>` : `<span class="auth-badge-gray">🔒 View-Only</span>`}
                 </div>
               </div>
             </div>
@@ -1053,9 +1122,9 @@ export function initNavbarEvents() {
         }).join('');
 
         searchDropdown.innerHTML = `
-          <div style="padding: 6px 14px 6px; font-size: 10.5px; font-weight: 900; color: #38bdf8; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; justify-content: space-between; align-items: center; background: rgba(15,23,42,0.95);">
-            <span>Found ${matches.length} Matching Machine${matches.length > 1 ? 's' : ''}</span>
-            <span style="color: #94a3b8; font-size: 10px; font-weight: 700;">Tap to Open Action Hub</span>
+          <div class="search-dropdown-header">
+            <span class="search-dropdown-count">Found ${matches.length} Matching Machine${matches.length > 1 ? 's' : ''}</span>
+            <span class="search-dropdown-action-hint">Tap to Open Action Hub</span>
           </div>
           <div class="search-items-wrap">
             ${itemsHtml}
@@ -1070,6 +1139,7 @@ export function initNavbarEvents() {
           try {
             playScanBeep('success');
           } catch (_) {}
+          closeMobileSearch();
           closeSearchDropdown();
           inpSearch.value = '';
           if (btnSearchClear) btnSearchClear.style.display = 'none';
@@ -1104,6 +1174,7 @@ export function initNavbarEvents() {
     inpSearch.addEventListener('keydown', (e) => {
       if (!currentSearchResults.length || searchDropdown.style.display === 'none') {
         if (e.key === 'Escape') {
+          closeMobileSearch();
           closeSearchDropdown();
           inpSearch.blur();
         }
@@ -1122,9 +1193,27 @@ export function initNavbarEvents() {
       } else if (e.key === 'Enter') {
         e.preventDefault();
         const targetIdx = highlightedIndex >= 0 ? highlightedIndex : 0;
-        handleSelectItem(targetIdx);
+        const target = currentSearchResults[targetIdx];
+        if (target && target.machine) {
+          const selectedMachine = target.machine;
+          try { playScanBeep('success'); } catch (_) {}
+          closeMobileSearch();
+          closeSearchDropdown();
+          inpSearch.value = '';
+          if (btnSearchClear) btnSearchClear.style.display = 'none';
+          try {
+            if (typeof openSmartMachineActionModal === 'function') {
+              openSmartMachineActionModal(selectedMachine);
+            } else if (typeof window.openSmartMachineActionModal === 'function') {
+              window.openSmartMachineActionModal(selectedMachine);
+            }
+          } catch (err) {
+            console.error('Error opening Smart Machine Action Modal:', err);
+          }
+        }
       } else if (e.key === 'Escape') {
         e.preventDefault();
+        closeMobileSearch();
         closeSearchDropdown();
         inpSearch.blur();
       }
@@ -1141,8 +1230,12 @@ export function initNavbarEvents() {
 
     // Close on outside click
     document.addEventListener('click', (e) => {
-      if (!e.target.closest('.header-center-search-wrap')) {
-        closeSearchDropdown();
+      if (!e.target.closest('#header-search-wrap') && !e.target.closest('#btn-mobile-search-trigger')) {
+        if (headerSearchWrap && headerSearchWrap.classList.contains('mobile-search-expanded')) {
+          closeMobileSearch();
+        } else {
+          closeSearchDropdown();
+        }
       }
     });
   }
@@ -1168,7 +1261,9 @@ export function initNavbarEvents() {
       }
       if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K')) {
         e.preventDefault();
-        if (inpSearch) {
+        if (window.innerWidth <= 768) {
+          openMobileSearch();
+        } else if (inpSearch) {
           inpSearch.focus();
           inpSearch.select();
         } else {
