@@ -151,6 +151,28 @@ export function renderPreventiveMaintenanceView() {
   const canCreate = isAdmin || (typeof authService.hasAccess === 'function' ? authService.hasAccess('preventive_maintenance', 'CREATE_SERVICE') : true);
   const canConfig = isAdmin || (typeof authService.hasAccess === 'function' ? authService.hasAccess('preventive_maintenance', 'CONFIGURATION') : true);
 
+  // Consume any pre-selected machine passed from Smart Action Hub, Pocket Card, or Universal Search
+  const preSelectedId = state.get('preSelectedPMMachineId') || state.get('activeMachineId');
+  const targetSerial = state.get('pmFilterMachineSerial');
+  if (preSelectedId || targetSerial) {
+    const prof = (preSelectedId ? preventiveMaintenanceService.getMachinePreventiveProfile(preSelectedId) : null)
+      || (targetSerial ? preventiveMaintenanceService.getMachinePreventiveProfile(targetSerial) : null);
+    if (prof) {
+      selectedMachineId = prof.machineId;
+      searchQuery = prof.serialNumber || targetSerial || '';
+      filterFloorId = 'ALL';
+      filterLineId = 'ALL';
+      filterMachineType = 'ALL';
+      filterUrgency = 'ALL';
+      pmCurrentPage = 1;
+      activeTab = 'machine-profile';
+      state.set('pmActiveTab', 'machine-profile');
+    }
+    state.set('preSelectedPMMachineId', null);
+    state.set('activeMachineId', null);
+    state.set('pmFilterMachineSerial', null);
+  }
+
   // Consume any urgency filter passed from dashboard
   const stateUrgency = state.get('pmFilterUrgency');
   if (stateUrgency !== undefined && stateUrgency !== null) {

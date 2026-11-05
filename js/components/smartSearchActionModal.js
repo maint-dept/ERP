@@ -511,7 +511,7 @@ export function openSmartMachineActionModal(machineOrQuery) {
     });
   }
 
-  // 4. Preventive Maintenance Action
+  // 4. Preventive Maintenance Action (Opens only the selected machine's PM Profile & Schedule)
   const actPM = document.getElementById('act-btn-pm');
   if (actPM && canLogPM) {
     actPM.addEventListener('click', () => {
@@ -519,21 +519,35 @@ export function openSmartMachineActionModal(machineOrQuery) {
       try {
         state.set('preSelectedPMMachineId', machine.id);
         state.set('activeMachineId', machine.id);
+        state.set('pmFilterMachineSerial', machine.serialNumber);
+        state.set('pmActiveTab', 'machine-profile');
         state.set('currentView', 'preventive-maintenance');
-        router.navigate('preventive-maintenance');
+        if (typeof window.app !== 'undefined' && typeof window.app.switchView === 'function') {
+          window.app._currentRenderedView = null;
+          window.app.switchView('preventive-maintenance', { tab: 'machine-profile' });
+        } else {
+          router.navigate('preventive-maintenance', { tab: 'machine-profile' });
+        }
       } catch (_) {}
     });
   }
 
-  // 5. Spare Parts Replacement Action
+  // 5. Spare Parts Replacement Action (Opens only the selected machine's Spare Parts History & Log)
   const actParts = document.getElementById('act-btn-parts');
   if (actParts && canReplaceParts) {
     actParts.addEventListener('click', () => {
       closeSmartMachineActionModal();
       try {
         state.set('activeMachineId', machine.id);
-        state.set('currentView', 'spare-parts');
-        router.navigate('spare-parts');
+        state.set('historyActiveTab', 'spare-parts');
+        state.set('historySearchedSerial', machine.serialNumber);
+        state.set('currentView', 'machine-history');
+        if (typeof window.app !== 'undefined' && typeof window.app.switchView === 'function') {
+          window.app._currentRenderedView = null;
+          window.app.switchView('machine-history', { tab: 'spare-parts' });
+        } else {
+          router.navigate('machine-history', { tab: 'spare-parts' });
+        }
       } catch (_) {}
     });
   }

@@ -34,6 +34,7 @@ export function renderMachineHistoryView() {
   const stateTab = state.get('historyActiveTab');
   if (stateTab) {
     activeTab = stateTab;
+    state.set('historyActiveTab', null);
   }
   const allMachines = storage.getTable(TABLE_NAMES.MACHINES) || [];
   const allGroups = masterDataService.getGroups(true);
@@ -49,7 +50,12 @@ export function renderMachineHistoryView() {
     if (m.floorId) floorMachineCounts[m.floorId] = (floorMachineCounts[m.floorId] || 0) + 1;
   });
 
-  // If global activeMachineId is set, sync searchedSerial
+  // If explicit serial or global activeMachineId is set, sync searchedSerial
+  const explicitSerial = state.get('historySearchedSerial');
+  if (explicitSerial) {
+    searchedSerial = explicitSerial;
+    state.set('historySearchedSerial', null);
+  }
   const globalActiveId = state.get('activeMachineId');
   if (globalActiveId && globalActiveId !== 'ALL') {
     const matched = storage.getItem(TABLE_NAMES.MACHINES, globalActiveId);

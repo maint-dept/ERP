@@ -2226,6 +2226,7 @@ export function initInventoryTableEvents() {
           closeAllActionMenus();
           if (id) {
             state.set('activeMachineId', id);
+            state.set('historyActiveTab', 'spare-parts');
             state.set('currentView', 'machine-history');
           }
           return;
@@ -2562,6 +2563,7 @@ export function initInventoryTableEvents() {
         const id = partsBtn.getAttribute('data-id');
         if (id) {
           state.set('activeMachineId', id);
+          state.set('historyActiveTab', 'spare-parts');
           state.set('currentView', 'machine-history');
         }
         return;
@@ -2703,6 +2705,7 @@ export function initInventoryTableEvents() {
       const id = btn.getAttribute('data-id');
       if (id) {
         state.set('activeMachineId', id);
+        state.set('historyActiveTab', 'spare-parts');
         state.set('currentView', 'machine-history');
       }
     });
