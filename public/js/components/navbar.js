@@ -259,19 +259,6 @@ export function renderNavbar() {
           <span class="db-status-text">System Synced</span>
         </div>
 
-        <!-- Universal Global Quick Scanner (Floor Camera / Barcode Lookup) -->
-        <button id="btn-global-quick-scan" class="nav-icon-btn" type="button" title="Quick Scan Machine (Ctrl + K)" aria-label="Quick Scan Machine" style="display: inline-flex; align-items: center; justify-content: center; background: rgba(56, 189, 248, 0.12); border: 1.5px solid rgba(56, 189, 248, 0.4); border-radius: 8px; height: 34px; padding: 0 10px; cursor: pointer; color: #38bdf8; gap: 6px; transition: all 0.2s; box-shadow: 0 0 10px rgba(56, 189, 248, 0.15);">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M3 7V5a2 2 0 0 1 2-2h2"></path>
-            <path d="M17 3h2a2 2 0 0 1 2 2v2"></path>
-            <path d="M21 17v2a2 2 0 0 1-2 2h-2"></path>
-            <path d="M7 21H5a2 2 0 0 1-2-2v-2"></path>
-            <rect x="7" y="7" width="10" height="10" rx="1.5"></rect>
-          </svg>
-          <span class="desktop-only" style="font-size: 11.5px; font-weight: 800; letter-spacing: 0.3px;">Quick Scan</span>
-          <kbd class="desktop-only" style="font-size: 9.5px; background: rgba(0,0,0,0.3); padding: 1px 5px; border-radius: 4px; border: 1px solid rgba(56, 189, 248, 0.3); color: #bae6fd;">Ctrl K</kbd>
-        </button>
-
         <!-- Daylight / Dark Mode Switcher -->
         <button id="btn-theme-toggle" class="nav-icon-btn" type="button" title="Theme: Switch to ${currentTheme === 'light' ? 'Dark' : 'Daylight / Light'} Mode" aria-label="Toggle Theme" style="display: inline-flex; align-items: center; justify-content: center; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 8px; width: 34px; height: 34px; cursor: pointer; color: #f8fafc; transition: all 0.2s;">
           <span class="theme-icon" style="font-size: 15px;">${currentTheme === 'light' ? '🌙' : '☀️'}</span>
@@ -968,11 +955,6 @@ export function initNavbarEvents() {
       onClose: () => {}
     });
   };
-
-  const btnQuickScan = document.getElementById('btn-global-quick-scan');
-  if (btnQuickScan) {
-    btnQuickScan.addEventListener('click', triggerGlobalQuickScanner);
-  }
 
   const btnHeaderQrScanner = document.getElementById('btn-header-qr-scanner');
   if (btnHeaderQrScanner) {

@@ -72,9 +72,6 @@ export function renderRowActionsMenuContent(m) {
       `;
     }
     html += `
-      <button type="button" class="actions-menu-item btn-pocket-card-trigger" data-id="${m.id}" style="color: #38bdf8; font-weight: 800; display: flex; align-items: center; gap: 8px;">
-        <span style="font-size: 14px;">🏷️</span> Pocket Card (Offline HUD)
-      </button>
       <button type="button" class="actions-menu-item btn-inspect-machine" data-id="${m.id}">
         🔍 Machine Details &amp; Lifetime
       </button>
@@ -84,14 +81,14 @@ export function renderRowActionsMenuContent(m) {
       <button type="button" class="actions-menu-item btn-spare-parts-machine" data-id="${m.id}">
         ⚙️ Spare Parts Usage
       </button>
+      <button type="button" class="actions-menu-item btn-pocket-card-trigger" data-id="${m.id}" style="color: #38bdf8; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+        <span style="font-size: 14px;">🏷️</span> Pocket Card (Offline HUD)
+      </button>
     `;
     return html;
   }
 
   let html = `
-    <button type="button" class="actions-menu-item btn-pocket-card-trigger" data-id="${m.id}" style="color: #38bdf8; font-weight: 800; display: flex; align-items: center; gap: 8px;">
-      <span style="font-size: 14px;">🏷️</span> Pocket Card (Offline HUD)
-    </button>
     <button type="button" class="actions-menu-item btn-inspect-machine" data-id="${m.id}">
       🔍 Machine Details &amp; Lifetime
     </button>
@@ -122,6 +119,13 @@ export function renderRowActionsMenuContent(m) {
       </button>
     `;
   }
+
+  html += `
+    <div class="actions-menu-divider"></div>
+    <button type="button" class="actions-menu-item btn-pocket-card-trigger" data-id="${m.id}" style="color: #38bdf8; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+      <span style="font-size: 14px;">🏷️</span> Pocket Card (Offline HUD)
+    </button>
+  `;
 
   if (authService.hasAccess('machines', 'DELETE') && authService.canOperateMachine(m)) {
     html += `
