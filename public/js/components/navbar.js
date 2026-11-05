@@ -242,7 +242,7 @@ export function renderNavbar() {
         </div>
 
         <!-- Floating Live Auto-Suggest Results Dropdown -->
-        <div id="universal-search-dropdown" class="universal-search-results-dropdown custom-scrollbar" style="display: none; position: absolute; top: calc(100% + 6px); left: 0; right: 0; max-height: 420px; overflow-y: auto; background: #0f172a; border: 1.5px solid #38bdf8; border-radius: 12px; box-shadow: 0 20px 45px -10px rgba(0,0,0,0.9), 0 0 20px rgba(56,189,248,0.25); z-index: 10000; padding: 6px 0;">
+        <div id="universal-search-dropdown" class="universal-search-results-dropdown custom-scrollbar" style="display: none; position: absolute; top: calc(100% + 8px); left: 50%; transform: translateX(-50%); width: 540px; max-width: min(540px, calc(100vw - 20px)); min-width: 320px; max-height: 420px; overflow-y: auto; background: #0f172a; border: 1.5px solid #38bdf8; border-radius: 14px; box-shadow: 0 20px 45px -10px rgba(0,0,0,0.9), 0 0 25px rgba(56,189,248,0.25); z-index: 10000; padding: 6px 0;">
         </div>
       </div>
 
@@ -947,9 +947,22 @@ export function initNavbarEvents() {
         openSmartMachineActionModal(decodedText);
       },
       onManualSearchRequest: () => {
-        const query = prompt('Enter Machine Number, Serial Number, or Barcode:');
-        if (query && query.trim()) {
-          openSmartMachineActionModal(query.trim());
+        const topSearch = document.getElementById('inp-universal-smart-search');
+        if (topSearch) {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+          setTimeout(() => {
+            topSearch.focus();
+            topSearch.select();
+            const searchBox = topSearch.closest('.nav-smart-search-box');
+            if (searchBox) {
+              searchBox.style.boxShadow = '0 0 25px #38bdf8';
+              searchBox.style.borderColor = '#38bdf8';
+              setTimeout(() => {
+                searchBox.style.boxShadow = '';
+                searchBox.style.borderColor = '';
+              }, 1200);
+            }
+          }, 150);
         }
       },
       onClose: () => {}
@@ -996,50 +1009,53 @@ export function initNavbarEvents() {
 
         if (matches.length === 0) {
           searchDropdown.innerHTML = `
-            <div style="padding: 16px; text-align: center; color: #94a3b8; font-size: 12px;">
-              <div style="font-size: 22px; margin-bottom: 4px;">🔍</div>
+            <div style="padding: 20px 16px; text-align: center; color: #94a3b8; font-size: 12.5px;">
+              <div style="font-size: 26px; margin-bottom: 6px;">🔍</div>
               <div>No machines found matching <strong style="color: #f8fafc;">"${escapeHtml(q)}"</strong></div>
-              <div style="font-size: 11px; color: #64748b; margin-top: 4px;">Try searching by Serial Number, Brand (Juki, Brother), or Line Name</div>
+              <div style="font-size: 11px; color: #64748b; margin-top: 6px;">Try searching by Serial Number (e.g. D/N-A-92, 450), Brand (Juki, Brother), or Line Name</div>
             </div>
           `;
           searchDropdown.style.display = 'block';
           return;
         }
 
-        const itemsHtml = matches.map((res, idx) => `
-          <div class="universal-search-item" data-idx="${idx}" style="padding: 9px 14px; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: space-between; gap: 10px; transition: background 0.15s ease;">
-            <div style="min-width: 0; flex: 1;">
-              <div style="display: flex; align-items: center; gap: 8px;">
-                <span style="font-family: monospace; font-size: 13.5px; font-weight: 900; color: #38bdf8; background: rgba(56,189,248,0.12); padding: 1px 6px; border-radius: 4px; border: 1px solid rgba(56,189,248,0.25);">
-                  ${escapeHtml(res.machine.machineId || res.machine.id)}
-                </span>
-                <span style="font-size: 12px; font-weight: 700; color: #f8fafc; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                  ${escapeHtml(res.machineNameStr)}
-                </span>
+        const itemsHtml = matches.map((res, idx) => {
+          const serialTag = res.displayId || res.machine.serialNumber || 'N/A';
+          const assetTag = res.displayAssetId || res.machine.systemAssetId || res.machine.permanentMachineId || '';
+          return `
+            <div class="universal-search-item" data-idx="${idx}" style="padding: 10px 14px; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; align-items: center; justify-content: space-between; gap: 12px; transition: background 0.15s ease;">
+              <div style="min-width: 0; flex: 1;">
+                <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
+                  <span class="search-tag-badge" style="font-family: monospace; font-size: 13px; font-weight: 900; color: #38bdf8; background: rgba(56,189,248,0.12); padding: 2px 7px; border-radius: 6px; border: 1.5px solid rgba(56,189,248,0.35); flex-shrink: 0; white-space: nowrap;">
+                    🏷️ ${escapeHtml(serialTag)}
+                  </span>
+                  <span style="font-size: 13px; font-weight: 700; color: #f8fafc; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                    ${escapeHtml(res.machineNameStr)}
+                  </span>
+                </div>
+                <div style="font-size: 11px; color: #94a3b8; margin-top: 4px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                  <span>Brand: <strong style="color: #cbd5e1;">${escapeHtml(res.brandStr)}</strong></span>
+                  <span>&bull;</span>
+                  <span>Model: <strong style="color: #cbd5e1;">${escapeHtml(res.modelStr)}</strong></span>
+                  ${assetTag ? `<span>&bull;</span><span>Asset: <strong style="color: #cbd5e1; font-family: monospace;">${escapeHtml(assetTag)}</strong></span>` : ''}
+                </div>
               </div>
-              <div style="font-size: 11px; color: #94a3b8; margin-top: 3px; display: flex; align-items: center; gap: 6px;">
-                <span>Brand: <strong style="color: #cbd5e1;">${escapeHtml(res.brandStr)}</strong></span>
-                <span>&bull;</span>
-                <span>Model: <strong style="color: #cbd5e1;">${escapeHtml(res.modelStr)}</strong></span>
-                <span>&bull;</span>
-                <span>Serial: <strong style="color: #38bdf8; font-family: monospace;">${escapeHtml(res.machine.serialNumber || 'N/A')}</strong></span>
+              
+              <div style="text-align: right; flex-shrink: 0; display: flex; flex-direction: column; align-items: flex-end; gap: 3px;">
+                <div style="font-size: 12px; font-weight: 900; color: #34d399; white-space: nowrap;">📍 ${escapeHtml(res.lineName)}</div>
+                <div style="font-size: 10.5px; color: #94a3b8; white-space: nowrap;">${escapeHtml(res.floorName)}</div>
+                <div style="margin-top: 2px;">
+                  ${res.canOperate ? `<span style="font-size: 9.5px; color: #34d399; font-weight: 800; background: rgba(34,197,94,0.15); border: 1px solid rgba(34,197,94,0.3); padding: 1px 6px; border-radius: 4px; white-space: nowrap;">✓ Authorized</span>` : `<span style="font-size: 9.5px; color: #f87171; font-weight: 800; background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.3); padding: 1px 6px; border-radius: 4px; white-space: nowrap;">🔒 View-Only</span>`}
+                </div>
               </div>
             </div>
-            
-            <div style="text-align: right; flex-shrink: 0; display: flex; flex-direction: column; align-items: flex-end; gap: 2px;">
-              <div style="font-size: 11.5px; font-weight: 900; color: #34d399;">📍 ${escapeHtml(res.lineName)}</div>
-              <div style="font-size: 10px; color: #94a3b8;">${escapeHtml(res.floorName)}</div>
-              <div>
-                ${res.canOperate ? `<span style="font-size: 9.5px; color: #38bdf8; font-weight: 800; background: rgba(56,189,248,0.15); padding: 1px 5px; border-radius: 4px;">✓ Full Access</span>` : `<span style="font-size: 9.5px; color: #f87171; font-weight: 800; background: rgba(239,68,68,0.15); padding: 1px 5px; border-radius: 4px;">🔒 View-Only</span>`}
-              </div>
-            </div>
-          </div>
-        `).join('');
+          `;
+        }).join('');
 
         searchDropdown.innerHTML = `
-          <div style="padding: 4px 14px 6px; font-size: 10px; font-weight: 900; color: #38bdf8; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; justify-content: space-between;">
-            <span>Found ${matches.length} Matching Machines</span>
-            <span>Tap to Execute Action</span>
+          <div style="padding: 6px 14px 6px; font-size: 10.5px; font-weight: 900; color: #38bdf8; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; justify-content: space-between; align-items: center; background: rgba(15,23,42,0.95);">
+            <span>Found ${matches.length} Matching Machine${matches.length > 1 ? 's' : ''}</span>
+            <span style="color: #94a3b8; font-size: 10px; font-weight: 700;">Tap to Open Action Hub</span>
           </div>
           <div class="search-items-wrap">
             ${itemsHtml}

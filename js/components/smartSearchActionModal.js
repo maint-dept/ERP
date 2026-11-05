@@ -22,8 +22,43 @@ function escapeHtml(str) {
 }
 
 /**
+ * Returns the human-readable physical machine identifier tag.
+ * Prioritizes physical factory serial number and permanent asset ID.
+ * Strictly NEVER outputs internal database UUIDs (e.g. 'mac-179...').
+ */
+export function getMachineDisplayId(machine) {
+  if (!machine) return 'N/A';
+  if (machine.serialNumber && String(machine.serialNumber).trim()) {
+    return String(machine.serialNumber).trim();
+  }
+  if (machine.systemAssetId && String(machine.systemAssetId).trim()) {
+    return String(machine.systemAssetId).trim();
+  }
+  if (machine.permanentMachineId && String(machine.permanentMachineId).trim()) {
+    return String(machine.permanentMachineId).trim();
+  }
+  if (machine.machineId && !String(machine.machineId).startsWith('mac-')) {
+    return String(machine.machineId).trim();
+  }
+  if (machine.barcode && !String(machine.barcode).startsWith('mac-')) {
+    return String(machine.barcode).trim();
+  }
+  return machine.machineAssetCode || machine.machineShortCode || 'Machine';
+}
+
+/**
+ * Returns the permanent factory asset ID (e.g. AMG-MNT-000013)
+ */
+export function getMachineAssetId(machine) {
+  if (!machine) return '';
+  return machine.systemAssetId || machine.permanentMachineId || machine.machineAssetCode || '';
+}
+
+/**
  * Searches machines across the ERP with intelligent multi-field matching
  * and attaches user location-scope authorization metadata to each result.
+ * Matches physical serial numbers, permanent asset IDs, and machine attributes.
+ * Excludes internal database UUID timestamps to guarantee relevant results.
  */
 export function searchMachinesWithScope(query, limit = 8) {
   if (!query || !query.trim()) return [];
@@ -47,12 +82,14 @@ export function searchMachinesWithScope(query, limit = 8) {
 
   const currentUser = authService.getCurrentUser();
   const results = [];
+  const isNumericOnly = /^\d+$/.test(cleanQ);
 
   for (let i = 0; i < machines.length; i++) {
     const m = machines[i];
-    const mId = (m.machineId || m.id || '').toLowerCase();
     const sNo = (m.serialNumber || '').toLowerCase();
-    const bCode = (m.barcode || '').toLowerCase();
+    const assetId = (m.systemAssetId || m.permanentMachineId || '').toLowerCase();
+    const userMachineId = (m.machineId && !m.machineId.startsWith('mac-')) ? m.machineId.toLowerCase() : '';
+    const bCode = (m.barcode && !m.barcode.startsWith('mac-')) ? m.barcode.toLowerCase() : '';
     const mName = (nameMap.get(m.machineNameId) || m.machineName || m.name || '').toLowerCase();
     const bName = (brandMap.get(m.brandId) || m.brand || m.brandName || '').toLowerCase();
     const modName = (modelMap.get(m.modelId) || m.model || m.modelName || '').toLowerCase();
@@ -60,29 +97,48 @@ export function searchMachinesWithScope(query, limit = 8) {
     const fName = (floorMap.get(m.floorId) || m.floor || m.floorName || '').toLowerCase();
     const lName = (lineMap.get(m.lineId) || m.line || m.lineName || '').toLowerCase();
 
-    // Scoring: exact matches get priority
+    // Scoring: Physical factory Serial Number gets highest priority
     let score = 0;
-    if (mId === cleanQ) score += 100;
-    else if (mId.startsWith(cleanQ)) score += 60;
-    else if (mId.includes(cleanQ)) score += 40;
+    if (sNo === cleanQ) score += 120;
+    else if (sNo.startsWith(cleanQ)) score += 80;
+    else if (sNo.includes(cleanQ)) score += 55;
 
-    if (sNo === cleanQ) score += 90;
-    else if (sNo.startsWith(cleanQ)) score += 50;
-    else if (sNo.includes(cleanQ)) score += 35;
+    // Asset ID (e.g. AMG-MNT-000450)
+    if (assetId === cleanQ) score += 110;
+    else if (assetId.includes(cleanQ)) score += 70;
+    else if (isNumericOnly) {
+      const numPad = cleanQ.padStart(6, '0');
+      if (assetId.includes(numPad)) score += 65;
+    }
 
-    if (bCode === cleanQ) score += 85;
-    else if (bCode.includes(cleanQ)) score += 30;
+    // Custom user Machine ID (not mac- uuid)
+    if (userMachineId) {
+      if (userMachineId === cleanQ) score += 100;
+      else if (userMachineId.includes(cleanQ)) score += 50;
+    }
 
-    // Multi-term check
-    const searchableCorpus = `${mId} ${sNo} ${bCode} ${mName} ${bName} ${modName} ${uName} ${fName} ${lName}`;
+    // Barcode
+    if (bCode) {
+      if (bCode === cleanQ) score += 95;
+      else if (bCode.includes(cleanQ)) score += 40;
+    }
+
+    // Model Name
+    if (modName === cleanQ) score += 60;
+    else if (modName.includes(cleanQ)) score += 35;
+
+    // Machine Name / Brand / Line / Floor
+    if (mName.includes(cleanQ)) score += 30;
+    if (bName.includes(cleanQ)) score += 25;
+    if (lName.includes(cleanQ)) score += 20;
+    if (fName.includes(cleanQ)) score += 15;
+
+    // Multi-term check against real searchable corpus (strictly excluding internal mac- DB UUIDs)
+    const searchableCorpus = `${sNo} ${assetId} ${userMachineId} ${bCode} ${mName} ${bName} ${modName} ${uName} ${fName} ${lName}`;
     const allTermsMatch = terms.every(t => searchableCorpus.includes(t));
 
     if (allTermsMatch || score > 0) {
       if (score === 0) score = 10;
-      // Additional weight if model or machine name matches
-      if (mName.includes(cleanQ)) score += 15;
-      if (modName.includes(cleanQ)) score += 15;
-      if (lName.includes(cleanQ)) score += 10;
 
       // Check User Location Scope & Permissions
       const canOperate = authService.canOperateMachine(m, currentUser);
@@ -96,6 +152,8 @@ export function searchMachinesWithScope(query, limit = 8) {
           score,
           canOperate,
           isViewOnly,
+          displayId: getMachineDisplayId(m),
+          displayAssetId: getMachineAssetId(m),
           unitName: unitMap.get(m.unitId) || m.unit || m.unitName || 'Central Plant',
           floorName: floorMap.get(m.floorId) || m.floor || m.floorName || 'Unassigned',
           lineName: lineMap.get(m.lineId) || m.line || m.lineName || 'Unassigned',
@@ -208,6 +266,9 @@ export function openSmartMachineActionModal(machineOrQuery) {
     scopeStatusHtml = `<span style="color: #f87171; font-weight: 700;">🔒 View-Only Mode &bull; Outside Your Assigned Location Scope</span>`;
   }
 
+  const displaySerial = getMachineDisplayId(machine);
+  const displayAsset = getMachineAssetId(machine);
+
   const modalHtml = `
     <div id="smart-action-modal-overlay" class="modal-overlay" style="z-index: 10070; background: rgba(0, 0, 0, 0.88); backdrop-filter: blur(10px); display: flex; align-items: center; justify-content: center; padding: 12px;">
       <div class="smart-action-sheet" style="background: #0f172a; border: 1.5px solid #38bdf8; border-radius: 18px; width: 100%; max-width: 620px; max-height: 94vh; overflow-y: auto; box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.95), 0 0 35px rgba(56, 189, 248, 0.3); display: flex; flex-direction: column;">
@@ -236,16 +297,24 @@ export function openSmartMachineActionModal(machineOrQuery) {
           <div style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(30, 41, 59, 0.95)); border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 14px; padding: 16px; position: relative; overflow: hidden;">
             <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; flex-wrap: wrap;">
               <div>
-                <div style="font-size: 10.5px; font-weight: 800; color: #38bdf8; text-transform: uppercase; letter-spacing: 1px;">Target Machine Number</div>
-                <div style="font-size: 24px; font-weight: 900; color: #fff; font-family: monospace; letter-spacing: 0.5px; margin: 2px 0 4px; display: flex; align-items: center; gap: 8px;">
-                  <span>${escapeHtml(machine.machineId || machine.id)}</span>
-                  <button type="button" id="btn-copy-machine-id" title="Copy Machine Number" style="background: none; border: none; color: #38bdf8; cursor: pointer; font-size: 14px; padding: 2px 6px;">📋</button>
+                <div style="font-size: 11px; font-weight: 800; color: #38bdf8; text-transform: uppercase; letter-spacing: 1px; display: flex; align-items: center; gap: 8px;">
+                  <span>🏷️ Machine Serial Number</span>
+                  ${displayAsset ? `<span style="font-size: 10px; background: rgba(56,189,248,0.15); border: 1px solid rgba(56,189,248,0.3); color: #7dd3fc; padding: 1px 7px; border-radius: 4px; font-family: monospace;">Asset: ${escapeHtml(displayAsset)}</span>` : ''}
                 </div>
-                <div style="font-size: 14.5px; font-weight: 700; color: #f1f5f9;">
+                <div style="font-size: 24px; font-weight: 900; color: #fff; font-family: monospace; letter-spacing: 0.5px; margin: 4px 0 6px; display: flex; align-items: center; gap: 8px;">
+                  <span>${escapeHtml(displaySerial)}</span>
+                  <button type="button" id="btn-copy-machine-id" title="Copy Machine Serial Tag" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); border-radius: 6px; color: #38bdf8; cursor: pointer; font-size: 12px; font-weight: 700; padding: 3px 8px; display: inline-flex; align-items: center; gap: 4px;">
+                    <span>📋</span>
+                    <span>Copy</span>
+                  </button>
+                </div>
+                <div style="font-size: 15px; font-weight: 700; color: #f1f5f9;">
                   ${escapeHtml(machineName)}
                 </div>
-                <div style="font-size: 12px; color: #94a3b8; margin-top: 4px;">
-                  Brand: <strong style="color: #f8fafc;">${escapeHtml(brandName)}</strong> &bull; Model: <strong style="color: #f8fafc;">${escapeHtml(modelName)}</strong> &bull; Serial: <strong style="color: #38bdf8; font-family: monospace;">${escapeHtml(machine.serialNumber || 'N/A')}</strong>
+                <div style="font-size: 12px; color: #94a3b8; margin-top: 4px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                  <span>Brand: <strong style="color: #f8fafc;">${escapeHtml(brandName)}</strong></span>
+                  <span>&bull;</span>
+                  <span>Model: <strong style="color: #f8fafc;">${escapeHtml(modelName)}</strong></span>
                 </div>
               </div>
 
@@ -255,7 +324,7 @@ export function openSmartMachineActionModal(machineOrQuery) {
                   <span>${escapeHtml(statusText)}</span>
                 </span>
                 <span style="font-size: 11px; color: #64748b;">
-                  Barcode: <code style="color: #cbd5e1; font-family: monospace;">${escapeHtml(machine.barcode || machine.id)}</code>
+                  Tag / Barcode: <code style="color: #cbd5e1; font-family: monospace;">${escapeHtml(machine.barcode || displayAsset || displaySerial)}</code>
                 </span>
               </div>
             </div>
@@ -392,11 +461,11 @@ export function openSmartMachineActionModal(machineOrQuery) {
   const copyBtn = document.getElementById('btn-copy-machine-id');
   if (copyBtn) {
     copyBtn.addEventListener('click', () => {
-      const text = machine.machineId || machine.id;
+      const text = displaySerial || displayAsset || machine.id;
       if (navigator.clipboard) {
         navigator.clipboard.writeText(text);
-        copyBtn.textContent = '✓';
-        setTimeout(() => { if (copyBtn) copyBtn.textContent = '📋'; }, 1500);
+        copyBtn.innerHTML = '<span>✓</span><span>Copied</span>';
+        setTimeout(() => { if (copyBtn) copyBtn.innerHTML = '<span>📋</span><span>Copy</span>'; }, 1500);
       }
     });
   }
@@ -794,4 +863,6 @@ export function closeSmartMachineActionModal() {
 if (typeof window !== 'undefined') {
   window.openSmartMachineActionModal = openSmartMachineActionModal;
   window.searchMachinesWithScope = searchMachinesWithScope;
+  window.getMachineDisplayId = getMachineDisplayId;
+  window.getMachineAssetId = getMachineAssetId;
 }

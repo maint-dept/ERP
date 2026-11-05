@@ -131,22 +131,38 @@ export function renderQrScannerModal() {
           </div>
 
           <!-- Error Alert View -->
-          <div id="qr-camera-error" style="display: none; position: absolute; inset: 0; background: rgba(15,23,42,0.96); padding: 24px; text-align: center; flex-direction: column; align-items: center; justify-content: center; gap: 14px; z-index: 20;">
-            <div style="font-size: 42px;">📷⚠️</div>
-            <div style="color: #f87171; font-weight: 800; font-size: 15px;" id="qr-camera-error-msg">Camera Access Blocked or Not Available</div>
-            <div style="color: #cbd5e1; font-size: 12.5px; line-height: 1.5; max-width: 320px;">
-              Please grant camera permission in your phone browser, check if another app is using the camera, or tap retry below.
+          <div id="qr-camera-error" style="display: none; position: absolute; inset: 0; background: rgba(15,23,42,0.96); padding: 20px; text-align: center; flex-direction: column; align-items: center; justify-content: center; gap: 12px; z-index: 20;">
+            <div style="font-size: 38px;">📷⚠️</div>
+            <div style="color: #f87171; font-weight: 800; font-size: 14.5px;" id="qr-camera-error-msg">Camera Access Blocked or Not Available</div>
+            <div style="color: #cbd5e1; font-size: 12px; line-height: 1.4; max-width: 320px;">
+              Please grant camera permission in your browser or enter the machine serial number below:
             </div>
-            <div style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 8px;">
-              <button type="button" id="btn-qr-retry-camera" class="btn btn-primary btn-sm" style="padding: 10px 18px; font-weight: 800; background: #0284c7; border: 1.5px solid #38bdf8; display: inline-flex; align-items: center; gap: 6px;">
-                🔄 Tap to Retry
+
+            <!-- In-Modal Direct Serial Search Form -->
+            <form id="form-qr-manual-search" style="width: 100%; max-width: 340px; margin: 4px 0 6px; display: flex; gap: 6px;" onsubmit="return false;">
+              <input 
+                type="text" 
+                id="inp-qr-modal-manual-search" 
+                placeholder="Serial # (e.g. D/N-A-92 or 450)..." 
+                autocomplete="off"
+                spellcheck="false"
+                style="flex: 1; background: rgba(0, 0, 0, 0.6); border: 1.5px solid #38bdf8; border-radius: 8px; color: #fff; padding: 8px 12px; font-size: 13px; font-weight: 700; outline: none;"
+              />
+              <button type="submit" id="btn-qr-modal-manual-go" class="btn btn-primary btn-sm" style="padding: 8px 16px; font-weight: 800; font-size: 12px; background: #0284c7; border: 1.5px solid #38bdf8; border-radius: 8px; cursor: pointer;">
+                Find
               </button>
-              <label class="btn btn-secondary btn-sm" style="cursor: pointer; padding: 10px 16px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
-                📁 Upload QR Image
+            </form>
+
+            <div style="display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-top: 4px;">
+              <button type="button" id="btn-qr-retry-camera" class="btn btn-primary btn-sm" style="padding: 8px 14px; font-weight: 800; background: rgba(56, 189, 248, 0.15); border: 1.5px solid #38bdf8; color: #38bdf8; display: inline-flex; align-items: center; gap: 5px;">
+                🔄 Retry Camera
+              </button>
+              <label class="btn btn-secondary btn-sm" style="cursor: pointer; padding: 8px 14px; font-weight: 700; display: inline-flex; align-items: center; gap: 5px;">
+                📁 Upload Photo
                 <input type="file" id="file-qr-upload" accept="image/*" style="display: none;" />
               </label>
-              <button type="button" id="btn-qr-error-manual" class="btn btn-secondary btn-sm" style="padding: 10px 16px; font-weight: 700;">
-                🔎 Manual Search
+              <button type="button" id="btn-qr-error-manual" class="btn btn-secondary btn-sm" style="padding: 8px 14px; font-weight: 700;">
+                🔎 Header Search
               </button>
             </div>
           </div>
@@ -411,11 +427,47 @@ export async function initQrScannerModalEvents({ onScanSuccess, onManualSearchRe
 
   const triggerManualFallback = async () => {
     await closeScannerModal();
-    if (onManualSearchRequest) onManualSearchRequest();
+    if (onManualSearchRequest) {
+      onManualSearchRequest();
+    } else {
+      const topSearch = document.getElementById('inp-universal-smart-search');
+      if (topSearch) {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        setTimeout(() => {
+          topSearch.focus();
+          topSearch.select();
+        }, 150);
+      }
+    }
   };
 
   if (manualBtn) manualBtn.addEventListener('click', triggerManualFallback);
   if (errorManualBtn) errorManualBtn.addEventListener('click', triggerManualFallback);
+
+  // In-modal manual input submit handler
+  const formManual = document.getElementById('form-qr-manual-search');
+  const inpManual = document.getElementById('inp-qr-modal-manual-search');
+  const submitInModalManual = async () => {
+    const val = (inpManual?.value || '').trim();
+    if (!val) return;
+    await closeScannerModal();
+    if (onScanSuccess) {
+      onScanSuccess(val);
+    } else if (typeof window.openSmartMachineActionModal === 'function') {
+      window.openSmartMachineActionModal(val);
+    }
+  };
+
+  if (formManual) {
+    formManual.addEventListener('submit', (e) => {
+      e.preventDefault();
+      submitInModalManual();
+    });
+  }
+  const btnManualGo = document.getElementById('btn-qr-modal-manual-go');
+  if (btnManualGo) {
+    btnManualGo.addEventListener('click', submitInModalManual);
+  }
 
   // Handle successful scan
   const handleDecoded = async (decodedText) => {
@@ -647,72 +699,105 @@ export async function initQrScannerModalEvents({ onScanSuccess, onManualSearchRe
 
       const containerEl = document.getElementById('qr-reader-container');
       if (!containerEl) return;
+      containerEl.innerHTML = '';
 
+      const config = {
+        fps: 20,
+        qrbox: (viewfinderWidth, viewfinderHeight) => {
+          const minDim = Math.min(viewfinderWidth, viewfinderHeight);
+          const boxSize = Math.max(180, Math.floor(minDim * 0.72));
+          return { width: boxSize, height: boxSize };
+        }
+      };
+
+      let startSuccessful = false;
+      let lastError = null;
+
+      // 1. Query available video devices upfront
+      let cams = [];
       try {
-        activeScanner = new Html5Qrcode('qr-reader-container');
+        cams = await Html5Qrcode.getCameras();
+      } catch (camErr) {
+        console.warn('Enumerating cameras upfront failed:', camErr);
+      }
 
-        const config = {
-          fps: 20,
-          qrbox: (viewfinderWidth, viewfinderHeight) => {
-            const minDim = Math.min(viewfinderWidth, viewfinderHeight);
-            const boxSize = Math.max(180, Math.floor(minDim * 0.72));
-            return { width: boxSize, height: boxSize };
-          }
-        };
-
-        // Cascade Strategy:
-        // Step A: Standard standard WebRTC mobile facing constraint: { facingMode: "environment" } or "user"
-        try {
-          await activeScanner.start({ facingMode: targetFacing }, config, handleDecoded, () => {});
-        } catch (errA) {
-          console.warn(`Direct facingMode ${targetFacing} failed, trying ideal constraint:`, errA);
-          // Step B: Ideal facingMode constraint
-          try {
-            await activeScanner.start({ facingMode: { ideal: targetFacing } }, config, handleDecoded, () => {});
-          } catch (errB) {
-            console.warn('Ideal constraint failed, querying camera device IDs:', errB);
-            // Step C: Specific Camera deviceId
-            const cams = await Html5Qrcode.getCameras().catch(() => []);
-            if (cams && cams.length > 0) {
-              let chosenCam = null;
-              if (targetFacing === 'environment') {
-                chosenCam = cams.find(c => {
-                  const l = (c.label || '').toLowerCase();
-                  return l.includes('back') || l.includes('rear') || l.includes('environment');
-                }) || cams[cams.length - 1];
-              } else {
-                chosenCam = cams.find(c => {
-                  const l = (c.label || '').toLowerCase();
-                  return l.includes('front') || l.includes('user') || l.includes('selfie');
-                }) || cams[0];
-              }
-              await activeScanner.start(chosenCam.id, config, handleDecoded, () => {});
-            } else {
-              // Step D: Any camera (boolean true)
-              await activeScanner.start(true, config, handleDecoded, () => {});
-            }
-          }
+      // Strategy A: If specific cameras exist, pick the best matching deviceId
+      if (cams && cams.length > 0) {
+        let chosenCam = null;
+        if (targetFacing === 'environment') {
+          chosenCam = cams.find(c => {
+            const l = (c.label || '').toLowerCase();
+            return l.includes('back') || l.includes('rear') || l.includes('environment');
+          }) || cams[cams.length - 1]; // On phones, environment camera is usually last
+        } else {
+          chosenCam = cams.find(c => {
+            const l = (c.label || '').toLowerCase();
+            return l.includes('front') || l.includes('user') || l.includes('selfie');
+          }) || cams[0];
         }
 
-        isScanningActive = true;
-        if (loadingEl) loadingEl.style.display = 'none';
-        isBackFacing = (targetFacing === 'environment');
-        updateCameraUI(isBackFacing);
+        try {
+          activeScanner = new Html5Qrcode('qr-reader-container');
+          await activeScanner.start(chosenCam.id, config, handleDecoded, () => {});
+          startSuccessful = true;
+        } catch (errA) {
+          lastError = errA;
+          console.warn('Device ID camera start failed, resetting scanner cleanly:', errA);
+          await destroyScanner();
+          if (containerEl) containerEl.innerHTML = '';
+        }
+      }
 
-      } catch (finalErr) {
-        console.error('All camera attempts failed:', finalErr);
-        if (loadingEl) loadingEl.style.display = 'none';
-        if (errorEl) {
-          errorEl.style.display = 'flex';
-          const msg = (finalErr && finalErr.message) ? finalErr.message : String(finalErr);
-          if (errorMsgEl) {
-            if (msg.includes('Permission') || msg.includes('NotAllowed')) {
-              errorMsgEl.textContent = 'Camera Permission Blocked: Tap the lock icon in your browser address bar to allow camera access.';
-            } else if (msg.includes('NotReadable') || msg.includes('busy') || msg.includes('Could not start')) {
-              errorMsgEl.textContent = 'Camera Sensor Busy: Tap Retry below or close any background apps using camera.';
-            } else {
-              errorMsgEl.textContent = 'Camera Sensor Initialization Failed (' + msg.substring(0, 60) + '). Tap Retry below.';
-            }
+      // Strategy B: Standard facingMode constraint (if deviceId start was not successful)
+      if (!startSuccessful) {
+        try {
+          activeScanner = new Html5Qrcode('qr-reader-container');
+          await activeScanner.start({ facingMode: targetFacing }, config, handleDecoded, () => {});
+          startSuccessful = true;
+        } catch (errB) {
+          lastError = errB;
+          console.warn('facingMode start failed, resetting scanner cleanly:', errB);
+          await destroyScanner();
+          if (containerEl) containerEl.innerHTML = '';
+        }
+      }
+
+      // Strategy C: Generic fallback to any available camera
+      if (!startSuccessful) {
+        try {
+          activeScanner = new Html5Qrcode('qr-reader-container');
+          await activeScanner.start(true, config, handleDecoded, () => {});
+          startSuccessful = true;
+        } catch (errC) {
+          lastError = errC;
+          console.error('Generic camera start failed:', errC);
+          await destroyScanner();
+          if (containerEl) containerEl.innerHTML = '';
+          throw (lastError || errC);
+        }
+      }
+
+      isScanningActive = true;
+      if (loadingEl) loadingEl.style.display = 'none';
+      isBackFacing = (targetFacing === 'environment');
+      updateCameraUI(isBackFacing);
+
+    } catch (finalErr) {
+      console.error('All camera attempts failed:', finalErr);
+      if (loadingEl) loadingEl.style.display = 'none';
+      if (errorEl) {
+        errorEl.style.display = 'flex';
+        const msg = (finalErr && finalErr.message) ? finalErr.message : String(finalErr);
+        if (errorMsgEl) {
+          const lowMsg = msg.toLowerCase();
+          if (lowMsg.includes('permission') || lowMsg.includes('notallowed') || lowMsg.includes('denied')) {
+            errorMsgEl.textContent = 'Camera Permission Blocked: Please allow camera access in browser site settings.';
+          } else if (lowMsg.includes('notreadable') || lowMsg.includes('busy') || lowMsg.includes('could not start')) {
+            errorMsgEl.textContent = 'Camera Sensor Busy: Close other apps using camera and tap retry below.';
+          } else if (lowMsg.includes('notfound') || lowMsg.includes('no camera')) {
+            errorMsgEl.textContent = 'No Camera Device Found: Enter machine serial number below.';
+          } else {
+            errorMsgEl.textContent = 'Camera Unavailable: Enter machine serial number below.';
           }
         }
       }
