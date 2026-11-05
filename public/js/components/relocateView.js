@@ -3338,8 +3338,22 @@ export function initRelocateViewEvents() {
     const slot = document.getElementById('relocate-scanner-slot') || document.getElementById('relocate-modal-container');
     if (slot) {
       slot.innerHTML = renderQrScannerModal();
+      const hasActiveSession = Boolean(relocateService.getActiveSession());
       initQrScannerModalEvents({
-        onScanSuccess: (decodedText) => {
+        initialBatchMode: hasActiveSession,
+        onScanSuccess: (decodedText, meta) => {
+          if (meta && meta.isBatch) {
+            if (meta.isDone) {
+              slot.innerHTML = '';
+              refreshView();
+              if (meta.count > 0) {
+                notificationService.notifySuccess('Batch Complete', `${meta.count} machines processed in audit session.`);
+              }
+              return;
+            }
+            handleBatchMachineIdentified(decodedText);
+            return;
+          }
           slot.innerHTML = '';
           handleMachineIdentified(decodedText);
         },
@@ -4240,5 +4254,55 @@ export function initRelocateViewEvents() {
     // Open confirmation modal
     pendingScanMachine = machine;
     refreshView();
+  }
+
+  // Rapid Batch Scanner handler (continuous audit scanning without modal closing)
+  function handleBatchMachineIdentified(identifier) {
+    const session = relocateService.getActiveSession();
+    if (!session) {
+      handleMachineIdentified(identifier);
+      return;
+    }
+
+    const locResult = relocateService.parseLocationQr(identifier);
+    if (locResult.isLocationQr) {
+      if (session.floorId === locResult.floorId) {
+        notificationService.notifySuccess('Location Verified', `Scanned ${locResult.locationTag} for active session.`);
+      } else {
+        notificationService.notifyError('Location Mismatch', `Scanned ${locResult.locationTag}, but active session is on floor ${session.floorId}.`);
+      }
+      return;
+    }
+
+    const machine = relocateService.lookupMachine(identifier);
+    if (!machine) {
+      notificationService.notifyError('Not Found', `Machine not found for tag: "${identifier}".`);
+      return;
+    }
+
+    const isAlreadyScanned = session.scanned.some(s => s.machineId === machine.id);
+    if (isAlreadyScanned) {
+      notificationService.notifyWarning('Already Scanned', `Machine [${machine.serialNumber}] was already recorded in this session.`);
+      return;
+    }
+
+    const targetLineId = session.lineId || machine.lineId;
+    const result = relocateService.recordScan(session.id, machine.id, {
+      scannedLineId: targetLineId,
+      needleQuantity: machine.needleQuantity || '',
+      presentNeedle: machine.presentNeedle || '',
+      remarks: 'Rapid Batch Audit Scan'
+    });
+
+    if (result && result.success) {
+      notificationService.notifySuccess('Verified ✓', `[${machine.serialNumber}] ${machine.modelStr || machine.machineNameStr || ''} recorded.`);
+      const counterEl = root.querySelector('#relocate-stat-verified');
+      if (counterEl) {
+        const vCount = parseInt(counterEl.textContent, 10) || 0;
+        counterEl.textContent = vCount + 1;
+      }
+    } else {
+      notificationService.notifyWarning('Notice', result?.message || 'Could not record scan');
+    }
   }
 }

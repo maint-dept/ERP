@@ -17,6 +17,7 @@ import { preventiveMaintenanceService } from '../services/preventiveMaintenanceS
 import { CloudSaveError } from '../db/storage.js?v=4.33.0';
 import { qrCodeService } from '../services/qrCodeService.js';
 import { renderQrScannerModal, initQrScannerModalEvents } from './qrScannerModal.js?v=4.33.0';
+import { notificationGateway } from '../services/notificationGatewayService.js?v=4.33.0';
 import { state } from '../state.js';
 
 function escapeHtml(str) {
@@ -455,8 +456,8 @@ export function renderMachineModal() {
             </div>
 
             <!-- Ambulance Machine Standby Designation -->
-            <div style="margin-top: 4px;">
-              <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 8px 12px; background: rgba(244, 63, 94, 0.08); border: 1px solid rgba(244, 63, 94, 0.25); border-radius: 6px;">
+            <div style="margin-top: 4px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+              <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 8px 12px; background: rgba(244, 63, 94, 0.08); border: 1px solid rgba(244, 63, 94, 0.25); border-radius: 6px; flex: 1; min-width: 240px;">
                 <input
                   type="checkbox"
                   id="modal-field-is-ambulance"
@@ -469,6 +470,17 @@ export function renderMachineModal() {
                   <span style="font-size: 11px; color: var(--text-muted); display: block; margin-top: 1px;">Ready backup standby machine used to immediately replace line breakdown machines</span>
                 </div>
               </label>
+
+              <!-- Quick WhatsApp Breakdown / Maintenance Alert Shortcut -->
+              <button
+                type="button"
+                id="btn-machine-wa-breakdown"
+                class="btn btn-sm"
+                style="background: rgba(239, 68, 68, 0.12); border: 1.5px solid #ef4444; color: #fca5a5; font-size: 11.5px; font-weight: 800; border-radius: 6px; padding: 7px 12px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer;"
+                title="Send WhatsApp or SMS Breakdown Notification to Floor In-Charge"
+              >
+                <span>🚨</span> WhatsApp Floor Alert
+              </button>
             </div>
           </div>
 
@@ -769,6 +781,42 @@ export function initMachineModalEvents() {
   if (overlay) {
     overlay.addEventListener('click', (e) => {
       if (e.target === overlay) closeModal();
+    });
+  }
+
+  // WhatsApp / SMS Floor Breakdown Alert Shortcut
+  const btnWaBreakdown = document.getElementById('btn-machine-wa-breakdown');
+  if (btnWaBreakdown) {
+    btnWaBreakdown.addEventListener('click', () => {
+      const currentStatus = document.getElementById('modal-field-status')?.value || machine?.status || 'BREAKDOWN';
+      const mnObj = mnSelect ? storage.getItem(TABLE_NAMES.MACHINE_NAMES, mnSelect.value) : null;
+      const bObj = brandSelect ? storage.getItem(TABLE_NAMES.BRANDS, brandSelect.value) : null;
+      const modObj = modelSelect ? storage.getItem(TABLE_NAMES.MODELS, modelSelect.value) : null;
+      const mName = mnObj?.name || machine?.machineNameStr || 'Sewing Machine';
+      const bName = bObj?.name || machine?.brandStr || '';
+      const modName = modObj?.name || machine?.modelStr || '';
+      const sNo = document.getElementById('modal-field-serial')?.value || machine?.serialNumber || 'N/A';
+      
+      const selUnit = document.getElementById('modal-field-unit');
+      const selFloor = document.getElementById('modal-field-floor');
+      const selLine = document.getElementById('modal-field-line');
+      const uName = selUnit && selUnit.selectedOptions[0] ? selUnit.selectedOptions[0].textContent : (machine?.unitStr || '');
+      const fName = selFloor && selFloor.selectedOptions[0] ? selFloor.selectedOptions[0].textContent : (machine?.floorStr || '');
+      const lName = selLine && selLine.selectedOptions[0] ? selLine.selectedOptions[0].textContent : (machine?.lineStr || '');
+      const loc = [uName, fName, lName].filter(Boolean).join(' > ');
+
+      const msg = notificationGateway.generateBreakdownMessage({
+        machine: { machineNameStr: mName, serialNumber: sNo, brandStr: bName, modelStr: modName },
+        location: loc,
+        reportedBy: authService.getCurrentUser()?.name || 'Floor Supervisor',
+        remarks: `Machine status set to ${currentStatus}. Immediate mechanic required.`
+      });
+
+      notificationGateway.openNotificationGatewayModal({
+        title: 'Breakdown Floor Alert',
+        message: msg,
+        type: 'BREAKDOWN'
+      });
     });
   }
 

@@ -33,6 +33,7 @@ import { moduleLoader } from './services/moduleLoader.js?v=4.33.0';
 import { realtimeService } from './services/realtimeService.js?v=4.33.0';
 import { homepageService } from './services/homepageService.js?v=4.33.0';
 import { webPushService } from './services/webPushService.js?v=4.33.0';
+import { notificationGateway } from './services/notificationGatewayService.js?v=4.33.0';
 
 /**
  * Captures all active scroll, viewport, and focused input states.
@@ -1580,6 +1581,7 @@ if (typeof window !== 'undefined') {
   window.authService = authService;
   window.historyService = historyService;
   window.auditService = auditService;
+  window.notificationGateway = notificationGateway;
   window.moduleLoader = moduleLoader;
   window.router = router;
 }

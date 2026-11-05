@@ -39,20 +39,28 @@ export function renderQrScannerModal() {
       <div class="qr-scanner-modal-card" style="display: flex; flex-direction: column; background: #0b1120; border: 1.5px solid #38bdf8; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.9);">
         
         <!-- Header -->
-        <div class="qr-scanner-header" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-bottom: 1px solid rgba(255,255,255,0.12); background: #0f172a; flex-shrink: 0;">
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <div style="font-size: 20px; width: 36px; height: 36px; border-radius: 8px; background: rgba(56, 189, 248, 0.15); border: 1px solid #38bdf8; display: flex; align-items: center; justify-content: center;">
+        <div class="qr-scanner-header" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-bottom: 1px solid rgba(255,255,255,0.12); background: #0f172a; flex-shrink: 0; gap: 8px;">
+          <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
+            <div style="font-size: 20px; width: 36px; height: 36px; border-radius: 8px; background: rgba(56, 189, 248, 0.15); border: 1px solid #38bdf8; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
               📷
             </div>
-            <div>
-              <h3 style="margin: 0; font-size: 15px; font-weight: 800; color: #fff; line-height: 1.2;">Scan Machine QR Code</h3>
+            <div style="min-width: 0;">
+              <h3 style="margin: 0; font-size: 15px; font-weight: 800; color: #fff; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Scan Machine QR Code</h3>
               <div style="font-size: 11px; color: #38bdf8; margin-top: 1px;">Point camera at QR / Barcode tag</div>
             </div>
           </div>
           
-          <button type="button" id="btn-close-qr-scanner" class="btn btn-ghost" style="font-size: 18px; color: #94a3b8; width: 42px; height: 42px; padding: 0; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.06);" aria-label="Close Scanner">
-            ✕
-          </button>
+          <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
+            <!-- Rapid Multi-Scan Mode Toggle -->
+            <button type="button" id="btn-toggle-batch-scan" class="btn btn-sm" style="background: rgba(255,255,255,0.06); border: 1.5px solid rgba(56, 189, 248, 0.4); color: #cbd5e1; border-radius: 20px; font-size: 11px; font-weight: 700; padding: 4px 10px; display: inline-flex; align-items: center; gap: 5px; cursor: pointer; transition: all 0.2s ease;" title="Continuous Rapid Scanning Mode (No modal closing on scan)">
+              <span id="qr-batch-mode-indicator" style="width: 8px; height: 8px; border-radius: 50%; background: #64748b; display: inline-block;"></span>
+              <span id="qr-batch-mode-label">⚡ Batch Scan (মাল্টি-স্ক্যান)</span>
+            </button>
+
+            <button type="button" id="btn-close-qr-scanner" class="btn btn-ghost" style="font-size: 18px; color: #94a3b8; width: 38px; height: 38px; padding: 0; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.06);" aria-label="Close Scanner">
+              ✕
+            </button>
+          </div>
         </div>
 
         <!-- Camera Viewport Area -->
@@ -67,6 +75,16 @@ export function renderQrScannerModal() {
             <span id="qr-camera-mode-text">📷 Back Camera (Rear)</span>
             <span style="font-size: 10px; opacity: 0.75; margin-left: 2px;">⇄ Flip</span>
           </button>
+
+          <!-- Batch HUD Live Badge -->
+          <div id="qr-batch-hud" style="display: none; position: absolute; top: 52px; z-index: 15; background: rgba(15, 23, 42, 0.94); backdrop-filter: blur(8px); border: 1.5px solid #22c55e; border-radius: 20px; padding: 5px 14px; font-size: 11.5px; font-weight: 800; color: #fff; box-shadow: 0 4px 16px rgba(0,0,0,0.6); align-items: center; gap: 8px;">
+            <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 8px #22c55e;"></span>
+            <span>⚡ Rapid Multi-Scan Active &bull; Scanned:</span>
+            <span id="qr-batch-count-badge" style="background: #22c55e; color: #000; font-weight: 900; font-family: monospace; padding: 1px 7px; border-radius: 10px; font-size: 11px;">0</span>
+          </div>
+
+          <!-- Live Scan Notification Toast -->
+          <div id="qr-scan-toast" style="display: none; position: absolute; top: 96px; z-index: 18; background: rgba(34, 197, 94, 0.95); color: #000; font-weight: 800; font-size: 12px; padding: 6px 16px; border-radius: 20px; box-shadow: 0 4px 14px rgba(0,0,0,0.6); pointer-events: none; transition: opacity 0.3s ease;"></div>
 
           <!-- Crosshair / Aiming Box -->
           <div class="qr-aiming-box" style="position: absolute; width: min(72vw, 250px); height: min(72vw, 250px); border: 2.5px solid #38bdf8; border-radius: 18px; box-shadow: 0 0 0 4000px rgba(0,0,0,0.55); pointer-events: none; display: flex; align-items: center; justify-content: center; transition: border-color 0.15s ease, box-shadow 0.15s ease;">
@@ -108,8 +126,14 @@ export function renderQrScannerModal() {
             </div>
           </div>
 
+          <!-- Recent scanned tags horizontal scroll strip -->
+          <div id="qr-batch-recent-strip" style="display: none; position: absolute; bottom: 8px; left: 8px; right: 8px; z-index: 15; max-height: 40px; overflow-x: auto; overflow-y: hidden; background: rgba(15, 23, 42, 0.92); backdrop-filter: blur(8px); border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 10px; padding: 4px 8px; align-items: center; gap: 6px; white-space: nowrap;">
+            <span style="font-size: 10px; font-weight: 700; color: #38bdf8; flex-shrink: 0;">Recent:</span>
+            <div id="qr-batch-chips" style="display: flex; gap: 6px; align-items: center;"></div>
+          </div>
+
           <!-- Helpful floor hint pill -->
-          <div style="position: absolute; bottom: 12px; z-index: 5; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(6px); border: 1px solid rgba(255,255,255,0.15); border-radius: 20px; padding: 6px 14px; font-size: 11px; color: #cbd5e1; pointer-events: none; text-align: center;">
+          <div id="qr-floor-hint" style="position: absolute; bottom: 12px; z-index: 5; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(6px); border: 1px solid rgba(255,255,255,0.15); border-radius: 20px; padding: 6px 14px; font-size: 11px; color: #cbd5e1; pointer-events: none; text-align: center;">
             💡 Hold phone 6-12 inches away from tag
           </div>
         </div>
@@ -135,13 +159,22 @@ export function renderQrScannerModal() {
             </label>
           </div>
 
-          <!-- Fallback to manual search -->
-          <button type="button" id="btn-qr-manual-fallback" class="btn btn-ghost btn-sm" style="min-height: 42px; font-size: 12.5px; color: #38bdf8; font-weight: 800; padding: 6px 12px;">
-            🔎 Search
-          </button>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <!-- Batch Done Button -->
+            <button type="button" id="btn-qr-batch-done" class="btn btn-success btn-sm" style="display: none; min-height: 42px; padding: 6px 14px; font-weight: 800; font-size: 12px; background: #16a34a; border: 1.5px solid #4ade80; color: #fff; border-radius: 8px; align-items: center; gap: 6px;">
+              ✓ Done / সম্পন্ন (<span id="qr-batch-btn-count">0</span>)
+            </button>
+
+            <!-- Fallback to manual search -->
+            <button type="button" id="btn-qr-manual-fallback" class="btn btn-ghost btn-sm" style="min-height: 42px; font-size: 12.5px; color: #38bdf8; font-weight: 800; padding: 6px 12px;">
+              🔎 Search
+            </button>
+          </div>
         </div>
 
       </div>
+
+    </div>
 
     </div>
 
@@ -205,7 +238,7 @@ export function renderQrScannerModal() {
   `;
 }
 
-export async function initQrScannerModalEvents({ onScanSuccess, onManualSearchRequest, onClose }) {
+export async function initQrScannerModalEvents({ onScanSuccess, onManualSearchRequest, onClose, initialBatchMode = false }) {
   const overlay = document.getElementById('modal-qr-scanner-overlay');
   const closeBtn = document.getElementById('btn-close-qr-scanner');
   const loadingEl = document.getElementById('qr-camera-loading');
@@ -219,11 +252,71 @@ export async function initQrScannerModalEvents({ onScanSuccess, onManualSearchRe
   const errorManualBtn = document.getElementById('btn-qr-error-manual');
   const fileUploadInp = document.getElementById('file-qr-upload');
   const fileUploadBtnInp = document.getElementById('file-qr-upload-btn');
+  const toggleBatchBtn = document.getElementById('btn-toggle-batch-scan');
+  const doneBatchBtn = document.getElementById('btn-qr-batch-done');
+  const batchIndicator = document.getElementById('qr-batch-mode-indicator');
+  const batchLabel = document.getElementById('qr-batch-mode-label');
+  const batchHud = document.getElementById('qr-batch-hud');
+  const batchRecentStrip = document.getElementById('qr-batch-recent-strip');
+  const batchCountBadge = document.getElementById('qr-batch-count-badge');
+  const batchBtnCount = document.getElementById('qr-batch-btn-count');
+  const batchChipsContainer = document.getElementById('qr-batch-chips');
+  const scanToast = document.getElementById('qr-scan-toast');
+  const floorHint = document.getElementById('qr-floor-hint');
 
   let isScanningActive = false;
   let isBackFacing = true; // Always default to Rear / Environment Camera
   let isSwitching = false;
+  let isBatchMode = Boolean(initialBatchMode);
+  const scannedBatchSet = new Set();
+  const batchList = [];
+  let lastScannedText = '';
+  let lastScannedTimestamp = 0;
   isTorchOn = false;
+
+  const updateBatchUI = () => {
+    if (isBatchMode) {
+      if (batchIndicator) {
+        batchIndicator.style.background = '#22c55e';
+        batchIndicator.style.boxShadow = '0 0 8px #22c55e';
+      }
+      if (batchLabel) batchLabel.textContent = '⚡ Batch Mode (ON)';
+      if (toggleBatchBtn) {
+        toggleBatchBtn.style.background = 'rgba(34, 197, 94, 0.18)';
+        toggleBatchBtn.style.borderColor = '#22c55e';
+        toggleBatchBtn.style.color = '#4ade80';
+      }
+      if (batchHud) batchHud.style.display = 'flex';
+      if (batchRecentStrip) batchRecentStrip.style.display = 'flex';
+      if (doneBatchBtn) doneBatchBtn.style.display = 'inline-flex';
+      if (floorHint) floorHint.style.display = 'none';
+    } else {
+      if (batchIndicator) {
+        batchIndicator.style.background = '#64748b';
+        batchIndicator.style.boxShadow = 'none';
+      }
+      if (batchLabel) batchLabel.textContent = '⚡ Batch Scan (মাল্টি-স্ক্যান)';
+      if (toggleBatchBtn) {
+        toggleBatchBtn.style.background = 'rgba(255,255,255,0.06)';
+        toggleBatchBtn.style.borderColor = 'rgba(56, 189, 248, 0.4)';
+        toggleBatchBtn.style.color = '#cbd5e1';
+      }
+      if (batchHud) batchHud.style.display = 'none';
+      if (batchRecentStrip) batchRecentStrip.style.display = 'none';
+      if (doneBatchBtn) doneBatchBtn.style.display = 'none';
+      if (floorHint) floorHint.style.display = 'block';
+    }
+  };
+
+  if (toggleBatchBtn) {
+    toggleBatchBtn.addEventListener('click', () => {
+      isBatchMode = !isBatchMode;
+      updateBatchUI();
+    });
+  }
+
+  // Initial batch UI setup
+  updateBatchUI();
 
   // Thorough, hardware-level media stream and scanner release
   const destroyScanner = async () => {
@@ -277,6 +370,20 @@ export async function initQrScannerModalEvents({ onScanSuccess, onManualSearchRe
     });
   }
 
+  if (doneBatchBtn) {
+    doneBatchBtn.addEventListener('click', async () => {
+      await closeScannerModal();
+      if (onScanSuccess) {
+        onScanSuccess(null, {
+          isBatch: true,
+          isDone: true,
+          count: scannedBatchSet.size,
+          items: Array.from(scannedBatchSet)
+        });
+      }
+    });
+  }
+
   const triggerManualFallback = async () => {
     await closeScannerModal();
     if (onManualSearchRequest) onManualSearchRequest();
@@ -288,15 +395,79 @@ export async function initQrScannerModalEvents({ onScanSuccess, onManualSearchRe
   // Handle successful scan
   const handleDecoded = async (decodedText) => {
     if (!decodedText) return;
+    const now = Date.now();
+
+    // Debounce duplicate camera trigger within 2000ms
+    if (decodedText === lastScannedText && (now - lastScannedTimestamp) < 2000) {
+      return;
+    }
+    lastScannedText = decodedText;
+    lastScannedTimestamp = now;
+
     playScanBeep();
+
     const aimingBox = document.querySelector('.qr-aiming-box');
     if (aimingBox) {
       aimingBox.style.borderColor = '#22c55e';
       aimingBox.style.boxShadow = '0 0 28px rgba(34, 197, 94, 0.85), 0 0 0 4000px rgba(0,0,0,0.65)';
+      setTimeout(() => {
+        if (aimingBox) {
+          aimingBox.style.borderColor = '#38bdf8';
+          aimingBox.style.boxShadow = '0 0 0 4000px rgba(0,0,0,0.55)';
+        }
+      }, 400);
     }
-    await new Promise(r => setTimeout(r, 120));
-    await closeScannerModal();
-    if (onScanSuccess) onScanSuccess(decodedText);
+
+    if (!isBatchMode) {
+      await new Promise(r => setTimeout(r, 120));
+      await closeScannerModal();
+      if (onScanSuccess) onScanSuccess(decodedText, { isBatch: false });
+      return;
+    }
+
+    // Rapid Multi-Scan Batch Mode: keep camera running!
+    const isDuplicate = scannedBatchSet.has(decodedText);
+    if (scanToast) {
+      if (isDuplicate) {
+        scanToast.style.background = 'rgba(245, 158, 11, 0.95)';
+        scanToast.style.color = '#000';
+        scanToast.textContent = `⚠️ Already scanned: ${decodedText.length > 20 ? decodedText.substring(0, 20) + '…' : decodedText}`;
+      } else {
+        scanToast.style.background = 'rgba(34, 197, 94, 0.95)';
+        scanToast.style.color = '#000';
+        scanToast.textContent = `✓ Scanned: ${decodedText.length > 20 ? decodedText.substring(0, 20) + '…' : decodedText}`;
+      }
+      scanToast.style.display = 'block';
+      clearTimeout(scanToast.__timer);
+      scanToast.__timer = setTimeout(() => {
+        if (scanToast) scanToast.style.display = 'none';
+      }, 1600);
+    }
+
+    if (!isDuplicate) {
+      scannedBatchSet.add(decodedText);
+      batchList.push({ code: decodedText, time: now });
+
+      if (batchCountBadge) batchCountBadge.textContent = scannedBatchSet.size;
+      if (batchBtnCount) batchBtnCount.textContent = scannedBatchSet.size;
+
+      if (batchChipsContainer) {
+        const chip = document.createElement('span');
+        chip.style.cssText = 'background: rgba(34,197,94,0.25); border: 1px solid #22c55e; color: #4ade80; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 10px; display: inline-flex; align-items: center; gap: 4px;';
+        chip.textContent = `✓ ${decodedText.length > 14 ? decodedText.substring(0, 14) + '…' : decodedText}`;
+        batchChipsContainer.prepend(chip);
+      }
+    }
+
+    if (onScanSuccess) {
+      onScanSuccess(decodedText, {
+        isBatch: true,
+        isDone: false,
+        isDuplicate,
+        count: scannedBatchSet.size,
+        items: Array.from(scannedBatchSet)
+      });
+    }
   };
 
   // Image file QR decoding fallback

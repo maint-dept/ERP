@@ -11,6 +11,7 @@ import { authService } from '../services/authService.js';
 import { pdfService } from '../services/pdfService.js';
 import { notificationService } from '../services/notificationService.js';
 import { masterDataService } from '../services/masterDataService.js';
+import { notificationGateway } from '../services/notificationGatewayService.js';
 import { state } from '../state.js';
 
 export function renderTransferDetailsModal() {
@@ -49,6 +50,9 @@ export function renderTransferDetailsModal() {
             </span>
           </div>
           <div style="display: flex; gap: 8px; align-items: center;">
+            <button id="btn-wa-transfer-alert" class="btn btn-secondary btn-sm" style="border-color: #22c55e; color: #4ade80; font-weight: 700; display: inline-flex; align-items: center; gap: 5px;" title="Send WhatsApp/SMS Transfer Alert to Floor In-Charge">
+              📲 WhatsApp / SMS Pass
+            </button>
             <button id="btn-print-transfer-pass" class="btn btn-secondary btn-sm" title="Generate Official PDF Pass">
               🖨️ Official PDF Pass
             </button>
@@ -450,6 +454,20 @@ export function initTransferDetailsModalEvents() {
   if (btnPrint && req) {
     btnPrint.addEventListener('click', () => {
       pdfService.generateTransferGatePassPDF(req);
+    });
+  }
+
+  // WhatsApp / SMS Gate Pass Dispatch
+  const btnWaAlert = document.getElementById('btn-wa-transfer-alert');
+  if (btnWaAlert && req) {
+    btnWaAlert.addEventListener('click', () => {
+      const eq = resolveTransferMachineDetails(req);
+      const msg = notificationGateway.generateTransferMessage({ req, details: eq });
+      notificationGateway.openNotificationGatewayModal({
+        title: 'Transfer Pass Dispatch',
+        message: msg,
+        type: 'TRANSFER'
+      });
     });
   }
 

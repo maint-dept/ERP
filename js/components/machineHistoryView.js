@@ -2626,7 +2626,7 @@ function openMachinePassportModal(serialNumber) {
           </div>
         </div>
 
-        <div class="modal-body passport-printable-area" id="passport-print-content" style="padding: 24px; overflow-y: auto; background: #ffffff; color: #0f172a; font-family: sans-serif;">
+        <div class="modal-body passport-printable-area" id="passport-print-content" style="padding: 24px; overflow-y: auto; background: #ffffff; color: #0f172a; font-family: 'Inter', 'Hind Siliguri', 'Kalpurush', 'SolaimanLipi', 'Noto Sans Bengali', sans-serif;">
           
           <!-- Passport Header -->
           <div style="border-bottom: 2px solid #0f172a; padding-bottom: 12px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;">
@@ -2775,17 +2775,23 @@ function openMachinePassportModal(serialNumber) {
     const printWin = window.open('', '_blank', 'width=900,height=700');
     printWin.document.write(`
       <!DOCTYPE html>
-      <html>
+      <html lang="bn">
         <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1">
           <title>Machine Passport - ${machine.serialNumber}</title>
+          <link rel="preconnect" href="https://fonts.googleapis.com">
+          <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+          <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet">
           <style>
-            body { font-family: sans-serif; padding: 20px; color: #0f172a; }
+            * { box-sizing: border-box; }
+            body { font-family: 'Inter', 'Hind Siliguri', 'Kalpurush', 'SolaimanLipi', 'Noto Sans Bengali', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 20px; color: #0f172a; }
             table { width: 100%; border-collapse: collapse; margin-top: 6px; }
-            th, td { border: 1px solid #cbd5e1; padding: 6px 8px; font-size: 11px; text-align: left; }
+            th, td { border: 1px solid #cbd5e1; padding: 6px 8px; font-size: 11px; text-align: left; font-family: inherit; }
             th { background: #f1f5f9; font-weight: 700; }
             @media print {
               body { padding: 0; }
-              @page { margin: 15mm; }
+              @page { margin: 12mm; }
             }
           </style>
         </head>

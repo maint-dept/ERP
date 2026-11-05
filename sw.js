@@ -1,15 +1,17 @@
 /**
  * Al-Muslim Group ERP — High-Performance Production Service Worker
- * Build: v4.28.4
+ * Build: v4.34.0
  *
  * Architecture:
- * 1. Static Assets (CSS, JS, Fonts, Images): Stale-While-Revalidate (0ms instantaneous boot from cache)
- * 2. HTML Documents: Network-First with Cache Fallback (guarantees fresh builds online, opens offline)
- * 3. Database & REST APIs: Strict Network-Only bypass (zero caching of live MySQL/PostgreSQL/SSE streams)
+ * 1. Offline Machine Image Caching: Cache-First + Stale-While-Revalidate (Instant offline access for factory floor technicians)
+ * 2. Static Assets (CSS, JS, Fonts): Stale-While-Revalidate (0ms instantaneous boot from cache)
+ * 3. HTML Documents: Network-First with Cache Fallback (guarantees fresh builds online, opens offline)
+ * 4. Database & REST APIs: Strict Network-Only bypass (zero caching of live MySQL/PostgreSQL/SSE streams)
  */
 
-const BUILD_VER = '4.33.0';
-const CACHE_NAME = 'amg-erp-v4.33.0';
+const BUILD_VER = '4.34.0';
+const CACHE_NAME = 'amg-erp-v4.34.0';
+const IMAGE_CACHE_NAME = 'amg-erp-images-v1';
 
 const PRECACHE_ASSETS = [
   './',
@@ -29,6 +31,7 @@ const PRECACHE_ASSETS = [
   `js/db/schema.js?v=${BUILD_VER}`,
   `js/services/authService.js?v=${BUILD_VER}`,
   `js/services/webPushService.js?v=${BUILD_VER}`,
+  `js/services/notificationGatewayService.js?v=${BUILD_VER}`,
   `js/services/router.js?v=${BUILD_VER}`,
   `js/services/moduleLoader.js?v=${BUILD_VER}`,
   `js/components/loginView.js?v=${BUILD_VER}`,
@@ -53,7 +56,8 @@ self.addEventListener('activate', (event) => {
     caches.keys().then((keys) => {
       return Promise.all(
         keys.map((key) => {
-          if (key !== CACHE_NAME) {
+          // Preserve current app cache and persistent offline image cache
+          if (key !== CACHE_NAME && key !== IMAGE_CACHE_NAME) {
             console.log('[SW] Purging outdated cache:', key);
             return caches.delete(key);
           }
@@ -70,19 +74,52 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(req.url);
 
   // 1. Strict Bypass: Never cache database requests, PHP scripts, APIs, or real-time endpoints
-  if (
+  const isApiBypass = (
     url.pathname.includes('/api/') ||
     url.pathname.endsWith('.php') ||
+    url.pathname.includes('mysql_api.php') ||
+    url.pathname.includes('pg_api.php') ||
     url.searchParams.has('action') ||
     url.searchParams.has('reset') ||
-    url.hostname.includes('moviezonex.com') ||
     url.hostname.includes('firebaseio.com') ||
     url.hostname.includes('googleapis.com')
-  ) {
+  );
+
+  if (isApiBypass) {
     return;
   }
 
-  // 2. HTML Entrypoints: Network-First with Cache Fallback
+  // 2. Offline Machine Images Caching: Cache-First with Stale-While-Revalidate
+  // Technicians can view uploaded machine pictures offline on the factory floor
+  const isImageRequest = (
+    req.destination === 'image' ||
+    url.pathname.match(/\.(?:png|jpe?g|gif|webp|svg|ico|bmp|avif)$/i) ||
+    url.pathname.includes('/uploads/') ||
+    url.pathname.includes('/images/') ||
+    url.pathname.includes('/img/')
+  );
+
+  if (isImageRequest) {
+    event.respondWith(
+      caches.open(IMAGE_CACHE_NAME).then((imgCache) => {
+        return imgCache.match(req).then((cachedRes) => {
+          const fetchPromise = fetch(req).then((networkRes) => {
+            if (networkRes && networkRes.status === 200) {
+              imgCache.put(req, networkRes.clone());
+            }
+            return networkRes;
+          }).catch(() => {
+            return cachedRes;
+          });
+
+          return cachedRes || fetchPromise;
+        });
+      })
+    );
+    return;
+  }
+
+  // 3. HTML Entrypoints: Network-First with Cache Fallback
   const isHtml = req.mode === 'navigate' || (req.headers.get('accept') && req.headers.get('accept').includes('text/html'));
   if (isHtml) {
     event.respondWith(
@@ -101,18 +138,13 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 3. Static Assets: Stale-While-Revalidate (Instant 0ms delivery from cache, background refresh)
+  // 4. Static Assets: Stale-While-Revalidate (Instant 0ms delivery from cache, background refresh)
   const isStaticAsset = (
     url.pathname.endsWith('.js') ||
     url.pathname.endsWith('.css') ||
-    url.pathname.endsWith('.png') ||
-    url.pathname.endsWith('.jpg') ||
-    url.pathname.endsWith('.jpeg') ||
-    url.pathname.endsWith('.svg') ||
     url.pathname.endsWith('.woff2') ||
     url.pathname.endsWith('.woff') ||
-    url.pathname.endsWith('.ttf') ||
-    url.pathname.endsWith('.ico')
+    url.pathname.endsWith('.ttf')
   );
 
   if (isStaticAsset) {

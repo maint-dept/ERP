@@ -328570,6 +328570,8 @@
       ],
       "updatedAt": "2026-11-04T07:53:25.068Z"
     },
+    "adminLoginSlug": "secure-admin-gateway",
+    "homepageVisibilityMode": "login",
     "default_visible_columns": [
       "sl",
       "select",
@@ -328663,10 +328665,8 @@
     "maintenanceAllowAdmin": true,
     "maintenanceEnabledAt": null,
     "maintenanceEnabledBy": null,
-    "adminLoginSlug": "secure-admin-gateway",
     "adminLoginSlugUpdatedAt": "2026-11-04T09:34:11+00:00",
     "adminLoginSlugUpdatedBy": null,
-    "homepageVisibilityMode": "login",
     "homepageVisibilityUpdatedAt": "2026-11-03T12:30:05.123Z",
     "homepageVisibilityUpdatedBy": null,
     "multi_db_config": [
@@ -328685,7 +328685,7 @@
         "enabled": true,
         "autoSync": true,
         "retryEnabled": true,
-        "updatedAt": "2026-11-03T06:15:11.213Z"
+        "updatedAt": "2026-11-03T12:26:53.464Z"
       },
       {
         "id": "db_postgresql_replica",
@@ -328703,8 +328703,8 @@
         "enabled": true,
         "autoSync": true,
         "retryEnabled": true,
-        "updatedAt": "2026-11-03T06:15:11.213Z",
-        "lastSync": "11/5/2026, 12:01:55 PM"
+        "updatedAt": "2026-11-03T12:26:53.464Z",
+        "lastSync": "11/5/2026, 12:46:11 PM"
       }
     ]
   },

@@ -61,13 +61,14 @@ class PDFService {
       <head>
         <title>${title} - ${companyName}</title>
         <meta charset="utf-8">
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap">
         <style>
           @page {
             size: A4 landscape;
             margin: 12mm 10mm 15mm 10mm;
           }
           body {
-            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+            font-family: 'Inter', 'Hind Siliguri', 'Kalpurush', 'SolaimanLipi', 'Noto Sans Bengali', 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
             color: #1e293b;
             background: #fff;
             margin: 0;
@@ -368,13 +369,14 @@ class PDFService {
       <head>
         <title>Transfer Authorization Pass - ${req.requestNumber}</title>
         <meta charset="utf-8">
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap">
         <style>
           @page {
             size: A4 portrait;
             margin: 12mm 12mm 15mm 12mm;
           }
           body {
-            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+            font-family: 'Inter', 'Hind Siliguri', 'Kalpurush', 'SolaimanLipi', 'Noto Sans Bengali', 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
             color: #0f172a;
             background: #fff;
             margin: 0;
@@ -719,6 +721,7 @@ class PDFService {
       <head>
         <title>${title || 'Machine Summary Report'} - ${companyName}</title>
         <meta charset="utf-8">
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap">
         <style id="page-orientation-style">
           @page {
             size: A4 portrait;
@@ -730,7 +733,7 @@ class PDFService {
             box-sizing: border-box;
           }
           body {
-            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+            font-family: 'Inter', 'Hind Siliguri', 'Kalpurush', 'SolaimanLipi', 'Noto Sans Bengali', 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
             color: #1e293b;
             background: #e2e8f0;
             margin: 0;
@@ -1132,13 +1135,14 @@ class PDFService {
       <head>
         <title>ENT Lab Report - ${companyName}</title>
         <meta charset="utf-8">
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap">
         <style>
           @page {
             size: A4 landscape;
             margin: 8mm 6mm 10mm 6mm;
           }
           body {
-            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+            font-family: 'Inter', 'Hind Siliguri', 'Kalpurush', 'SolaimanLipi', 'Noto Sans Bengali', 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
             color: #1e293b;
             background: #fff;
             margin: 0;
@@ -1383,9 +1387,10 @@ class PDFService {
       <head>
         <meta charset="utf-8"/>
         <title>Machine Transfer &amp; Relocation Audit Report - ${companyName}</title>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap">
         <style>
           @page { size: landscape; margin: 10mm; }
-          body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10px; color: #1e293b; background: #fff; margin: 0; padding: 12px; }
+          body { font-family: 'Inter', 'Hind Siliguri', 'Kalpurush', 'SolaimanLipi', 'Noto Sans Bengali', 'Segoe UI', Arial, sans-serif; font-size: 10px; color: #1e293b; background: #fff; margin: 0; padding: 12px; }
           .report-header { border-bottom: 2px solid #0284c7; padding-bottom: 8px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
           .company-title { font-size: 18px; font-weight: 800; color: #0f172a; }
           .dept-title { font-size: 11px; font-weight: 600; color: #0284c7; }
