@@ -10,7 +10,7 @@ import { storage } from '../db/storage.js?v=4.36.0';
 import { syncManager } from '../db/syncManager.js?v=4.36.0';
 import { router } from '../services/router.js?v=4.36.0';
 import { renderQrScannerModal, initQrScannerModalEvents, playScanBeep } from './qrScannerModal.js?v=4.36.0';
-import { openMachinePocketCard } from './machinePocketCardModal.js?v=4.36.0';
+import { openMachinePocketCard } from './machinePocketCardModal.js?v=4.37.0';
 import { searchMachinesWithScope, openSmartMachineActionModal } from './smartSearchActionModal.js?v=4.36.0';
 import { 
   getEmployeeMap, 

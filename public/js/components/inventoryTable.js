@@ -14,7 +14,8 @@ import { excelService, formatDisplayLine, mapFieldKeyToTableKey, isColumnKeyVisi
 import { pdfService } from '../services/pdfService.js';
 import { notificationService } from '../services/notificationService.js';
 import { qrCodeService } from '../services/qrCodeService.js';
-import { renderQrScannerModal, initQrScannerModalEvents } from './qrScannerModal.js?v=4.36.0';
+import { renderQrScannerModal, initQrScannerModalEvents } from './qrScannerModal.js?v=4.37.0';
+import { openMachinePocketCard } from './machinePocketCardModal.js?v=4.37.0';
 import { state } from '../state.js';
 
 // Local UI state for collapsible advanced filters
@@ -46,6 +47,101 @@ export function ensureActionsPortal() {
     portal.style.zIndex = '9999999';
     document.body.appendChild(portal);
   }
+
+  // Idempotent direct click delegation on portal element itself
+  if (!portal._hasDirectActionClickListener) {
+    portal._hasDirectActionClickListener = true;
+    portal.addEventListener('click', (e) => {
+      const pocketBtn = e.target.closest('.btn-pocket-card-trigger');
+      if (pocketBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        const id = pocketBtn.getAttribute('data-id') || portal.getAttribute('data-active-id');
+        const serial = pocketBtn.getAttribute('data-serial');
+        if (typeof window.__closeAllActionMenus === 'function') window.__closeAllActionMenus();
+        const machine = id ? storage.getItem(TABLE_NAMES.MACHINES, id) : null;
+        try {
+          if (typeof openMachinePocketCard === 'function') {
+            openMachinePocketCard(machine || id || serial);
+          } else if (typeof window.openMachinePocketCard === 'function') {
+            window.openMachinePocketCard(machine || id || serial);
+          }
+        } catch (err) {
+          console.error('[Inventory Portal] Error opening pocket card:', err);
+        }
+        return;
+      }
+
+      const inspectBtn = e.target.closest('.btn-inspect-machine');
+      if (inspectBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        const id = inspectBtn.getAttribute('data-id') || portal.getAttribute('data-active-id');
+        if (typeof window.__closeAllActionMenus === 'function') window.__closeAllActionMenus();
+        if (id) {
+          state.set('activeMachineId', id);
+          state.set('activeModal', 'machine-details');
+        }
+        return;
+      }
+
+      const histBtn = e.target.closest('.btn-history-machine');
+      if (histBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        const id = histBtn.getAttribute('data-id') || portal.getAttribute('data-active-id');
+        if (typeof window.__closeAllActionMenus === 'function') window.__closeAllActionMenus();
+        if (id) {
+          state.set('activeMachineId', id);
+          state.set('currentView', 'machine-history');
+        }
+        return;
+      }
+
+      const partsBtn = e.target.closest('.btn-spare-parts-machine');
+      if (partsBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        const id = partsBtn.getAttribute('data-id') || portal.getAttribute('data-active-id');
+        if (typeof window.__closeAllActionMenus === 'function') window.__closeAllActionMenus();
+        if (id) {
+          state.set('activeMachineId', id);
+          state.set('historyActiveTab', 'spare-parts');
+          state.set('currentView', 'machine-history');
+        }
+        return;
+      }
+
+      const transferBtn = e.target.closest('.btn-transfer-machine');
+      if (transferBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        const id = transferBtn.getAttribute('data-id') || portal.getAttribute('data-active-id');
+        const serial = transferBtn.getAttribute('data-serial');
+        if (typeof window.__closeAllActionMenus === 'function') window.__closeAllActionMenus();
+        if (id || serial) {
+          state.set('activeMachineId', id || null);
+          state.set('activeMachineSerial', serial || null);
+          state.set('activeModal', 'transfer-machine');
+        }
+        return;
+      }
+
+      const editBtn = e.target.closest('.btn-edit-machine');
+      if (editBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        const id = editBtn.getAttribute('data-id') || portal.getAttribute('data-active-id');
+        if (typeof window.__closeAllActionMenus === 'function') window.__closeAllActionMenus();
+        if (id) {
+          state.set('activeMachineId', id);
+          state.set('activeModal', 'machine-form');
+        }
+        return;
+      }
+    });
+  }
+
   return portal;
 }
 
@@ -81,7 +177,7 @@ export function renderRowActionsMenuContent(m) {
       <button type="button" class="actions-menu-item btn-spare-parts-machine" data-id="${m.id}">
         ⚙️ Spare Parts Usage
       </button>
-      <button type="button" class="actions-menu-item btn-pocket-card-trigger" data-id="${m.id}" style="color: #38bdf8; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+      <button type="button" class="actions-menu-item btn-pocket-card-trigger" data-id="${m.id}" data-serial="${m.serialNumber || ''}" style="color: #38bdf8; font-weight: 700; display: flex; align-items: center; gap: 8px;">
         <span style="font-size: 14px;">🏷️</span> Pocket Card (Offline HUD)
       </button>
     `;
@@ -122,7 +218,7 @@ export function renderRowActionsMenuContent(m) {
 
   html += `
     <div class="actions-menu-divider"></div>
-    <button type="button" class="actions-menu-item btn-pocket-card-trigger" data-id="${m.id}" style="color: #38bdf8; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+    <button type="button" class="actions-menu-item btn-pocket-card-trigger" data-id="${m.id}" data-serial="${m.serialNumber || ''}" style="color: #38bdf8; font-weight: 700; display: flex; align-items: center; gap: 8px;">
       <span style="font-size: 14px;">🏷️</span> Pocket Card (Offline HUD)
     </button>
   `;
@@ -2288,10 +2384,18 @@ export function initInventoryTableEvents() {
         if (pocketBtn) {
           e.preventDefault();
           e.stopPropagation();
-          const id = pocketBtn.getAttribute('data-id');
+          const id = pocketBtn.getAttribute('data-id') || portal.getAttribute('data-active-id');
+          const serial = pocketBtn.getAttribute('data-serial');
           closeAllActionMenus();
-          if (id && typeof window.openMachinePocketCard === 'function') {
-            window.openMachinePocketCard(id);
+          const machine = id ? storage.getItem(TABLE_NAMES.MACHINES, id) : null;
+          try {
+            if (typeof openMachinePocketCard === 'function') {
+              openMachinePocketCard(machine || id || serial);
+            } else if (typeof window.openMachinePocketCard === 'function') {
+              window.openMachinePocketCard(machine || id || serial);
+            }
+          } catch (err) {
+            console.error('[Inventory] Error opening pocket card:', err);
           }
           return;
         }
@@ -2599,8 +2703,16 @@ export function initInventoryTableEvents() {
         e.stopPropagation();
         closeAllActionMenus();
         const id = pocketBtn.getAttribute('data-id');
-        if (id && typeof window.openMachinePocketCard === 'function') {
-          window.openMachinePocketCard(id);
+        const serial = pocketBtn.getAttribute('data-serial');
+        const machine = id ? storage.getItem(TABLE_NAMES.MACHINES, id) : null;
+        try {
+          if (typeof openMachinePocketCard === 'function') {
+            openMachinePocketCard(machine || id || serial);
+          } else if (typeof window.openMachinePocketCard === 'function') {
+            window.openMachinePocketCard(machine || id || serial);
+          }
+        } catch (err) {
+          console.error('[Inventory vscroll] Error opening pocket card:', err);
         }
         return;
       }
@@ -2754,8 +2866,16 @@ export function initInventoryTableEvents() {
       e.stopPropagation();
       closeAllActionMenus();
       const id = btn.getAttribute('data-id');
-      if (id && typeof window.openMachinePocketCard === 'function') {
-        window.openMachinePocketCard(id);
+      const serial = btn.getAttribute('data-serial');
+      const machine = id ? storage.getItem(TABLE_NAMES.MACHINES, id) : null;
+      try {
+        if (typeof openMachinePocketCard === 'function') {
+          openMachinePocketCard(machine || id || serial);
+        } else if (typeof window.openMachinePocketCard === 'function') {
+          window.openMachinePocketCard(machine || id || serial);
+        }
+      } catch (err) {
+        console.error('[Inventory fallback] Error opening pocket card:', err);
       }
     });
   });

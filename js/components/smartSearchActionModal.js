@@ -10,7 +10,7 @@ import { authService } from '../services/authService.js?v=4.36.0';
 import { router } from '../services/router.js?v=4.36.0';
 import { state } from '../state.js?v=4.36.0';
 import { playScanBeep } from './qrScannerModal.js?v=4.36.0';
-import { openMachinePocketCard } from './machinePocketCardModal.js?v=4.36.0';
+import { openMachinePocketCard } from './machinePocketCardModal.js?v=4.37.0';
 import { openMachinePassportModal } from './machineHistoryView.js?v=4.36.0';
 
 function escapeHtml(str) {

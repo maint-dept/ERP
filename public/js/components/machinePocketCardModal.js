@@ -145,8 +145,8 @@ export function openMachinePocketCard(machineOrQuery) {
   let machine = null;
   if (typeof machineOrQuery === 'object' && machineOrQuery !== null) {
     machine = machineOrQuery;
-  } else {
-    machine = findMachineByQuery(machineOrQuery);
+  } else if (machineOrQuery) {
+    machine = storage.getItem(TABLE_NAMES.MACHINES, machineOrQuery) || findMachineByQuery(machineOrQuery);
   }
 
   // Remove existing modal if open
