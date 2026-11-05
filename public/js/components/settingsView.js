@@ -980,6 +980,58 @@ export function renderSettingsView() {
           </div>
 
         </div>
+
+        <!-- Card 5: Enterprise Automated Daily Rolling Backups & Snapshots (30-Day Retention) -->
+        <div style="background: var(--bg-surface); border: 1.5px solid rgba(56, 189, 248, 0.4); border-radius: var(--radius-lg); padding: 22px; display: flex; flex-direction: column; gap: 16px; grid-column: 1 / -1; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);">
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; flex-wrap: wrap; gap: 10px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span style="font-size: 26px;">💾</span>
+              <div>
+                <h3 style="font-size: 16px; font-weight: 800; color: #38bdf8; margin: 0; display: flex; align-items: center; gap: 8px;">
+                  <span>Enterprise Database Automated Rolling Backups &amp; Snapshots</span>
+                </h3>
+                <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">
+                  Automatic daily snapshots with rolling 30-day retention policy + 1-click full JSON export.
+                </div>
+              </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+              <button type="button" id="btn-create-instant-snapshot" class="btn btn-secondary btn-sm" style="font-weight: 700; color: #34d399; border-color: rgba(16, 185, 129, 0.4); background: rgba(16, 185, 129, 0.12); cursor: pointer;">
+                📸 Create Snapshot Now
+              </button>
+              <button type="button" id="btn-download-live-backup" class="btn btn-primary btn-sm" style="font-weight: 800; background: linear-gradient(135deg, #0284c7, #0369a1); border-color: #0284c7; box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35); cursor: pointer;">
+                ⬇️ Download Live Database (JSON)
+              </button>
+            </div>
+          </div>
+
+          <!-- Retention Policy Info Banner -->
+          <div style="background: rgba(14, 165, 233, 0.08); border: 1.5px solid rgba(56, 189, 248, 0.3); border-radius: 8px; padding: 12px 16px; font-size: 12.5px; color: #e0f2fe; line-height: 1.55; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <div>
+              🛡️ <strong>Automated Protection Guarantee:</strong> The system automatically captures a daily snapshot upon database updates and securely stores it in <code>/data/backups/</code>. Snapshots older than 30 days are automatically pruned to prevent disk bloat.
+            </div>
+            <span class="badge" style="background: rgba(56, 189, 248, 0.2); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.4); font-weight: 800; font-size: 11px; padding: 4px 10px; border-radius: 6px;">
+              30-DAY RETENTION ACTIVE
+            </span>
+          </div>
+
+          <!-- Dynamic Snapshots Table Container -->
+          <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden;">
+            <div style="padding: 10px 16px; background: rgba(15, 23, 42, 0.9); border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-weight: 700; font-size: 12px; color: #cbd5e1; text-transform: uppercase;">
+                Available Rolling Daily Snapshots
+              </span>
+              <button type="button" id="btn-refresh-snapshots-list" class="btn btn-ghost btn-xs" style="color: #38bdf8; font-size: 11px; cursor: pointer;">
+                🔄 Refresh List
+              </button>
+            </div>
+            <div id="backup-snapshots-table-body" style="padding: 16px; font-size: 12.5px; color: var(--text-muted); text-align: center;">
+              ⏳ Loading snapshots from server...
+            </div>
+          </div>
+        </div>
     </div>
   `;
 }
@@ -1896,4 +1948,143 @@ export function initSettingsEvents() {
     pageContainer.addEventListener('input', syncSettingsInputsToMemory);
     pageContainer.addEventListener('change', syncSettingsInputsToMemory);
   }
+
+  // ==========================================
+  // Enterprise Rolling Backup & Snapshot Handlers
+  // ==========================================
+  const loadBackupSnapshots = async () => {
+    const tableContainer = document.getElementById('backup-snapshots-table-body');
+    if (!tableContainer) return;
+
+    try {
+      const res = await fetch('/api/backup/list').then(r => r.json()).catch(() => null);
+      if (res && res.status === 'ok' && Array.isArray(res.backups)) {
+        if (res.backups.length === 0) {
+          tableContainer.innerHTML = `
+            <div style="padding: 20px; text-align: center; color: var(--text-muted);">
+              No previous daily snapshots found. Tap <strong>📸 Create Snapshot Now</strong> to generate one.
+            </div>
+          `;
+          return;
+        }
+
+        tableContainer.innerHTML = `
+          <div style="overflow-x: auto;">
+            <table class="table" style="width: 100%; font-size: 12.5px; border-collapse: collapse;">
+              <thead>
+                <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.1); color: #94a3b8; text-align: left;">
+                  <th style="padding: 10px 14px;">Snapshot Date</th>
+                  <th style="padding: 10px 14px;">File Name</th>
+                  <th style="padding: 10px 14px;">File Size</th>
+                  <th style="padding: 10px 14px;">Created / Modified</th>
+                  <th style="padding: 10px 14px; text-align: right;">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${res.backups.map(b => `
+                  <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.05); color: #cbd5e1;">
+                    <td style="padding: 10px 14px;">
+                      <span class="badge" style="background: rgba(14, 165, 233, 0.15); color: #38bdf8; font-weight: 700; border: 1px solid rgba(56, 189, 248, 0.3);">
+                        📅 ${b.date || 'Snapshot'}
+                      </span>
+                    </td>
+                    <td style="padding: 10px 14px; font-family: var(--font-mono); font-size: 11.5px; color: #fff;">
+                      ${b.filename}
+                    </td>
+                    <td style="padding: 10px 14px; color: #34d399; font-weight: 600;">
+                      ${b.sizeFormatted || ((b.sizeBytes / (1024 * 1024)).toFixed(2) + ' MB')}
+                    </td>
+                    <td style="padding: 10px 14px; color: var(--text-muted); font-size: 11.5px;">
+                      ${new Date(b.lastModified).toLocaleString()}
+                    </td>
+                    <td style="padding: 10px 14px; text-align: right;">
+                      <a 
+                        href="/api/backup/download?file=${encodeURIComponent(b.filename)}" 
+                        download="${b.filename}"
+                        class="btn btn-xs btn-secondary" 
+                        style="color: #38bdf8; border-color: rgba(56, 189, 248, 0.35); text-decoration: none; padding: 4px 10px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;"
+                      >
+                        ⬇️ Download
+                      </a>
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        `;
+      } else {
+        tableContainer.innerHTML = `
+          <div style="padding: 20px; text-align: center; color: var(--text-muted);">
+            Unable to connect to server backup service (Offline mode or static host). Live JSON export is available above.
+          </div>
+        `;
+      }
+    } catch (err) {
+      tableContainer.innerHTML = `<div style="padding: 20px; color: #f87171;">Failed to load snapshots: ${err.message}</div>`;
+    }
+  };
+
+  // Initial load of snapshots
+  loadBackupSnapshots();
+
+  // Refresh snapshots button
+  document.getElementById('btn-refresh-snapshots-list')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    loadBackupSnapshots();
+  });
+
+  // Download Live Database button
+  document.getElementById('btn-download-live-backup')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    const isGh = typeof window !== 'undefined' && window.location.pathname.toLowerCase().startsWith('/erp');
+    if (!isGh) {
+      window.location.href = '/api/backup/download';
+    } else {
+      try {
+        const fullData = storage.data || {};
+        const jsonStr = JSON.stringify(fullData, null, 2);
+        const blob = new Blob([jsonStr], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `AMG_ERP_Database_Backup_${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      } catch (err) {
+        alert('Download error: ' + err.message);
+      }
+    }
+  });
+
+  // Create Instant Snapshot button
+  document.getElementById('btn-create-instant-snapshot')?.addEventListener('click', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('btn-create-instant-snapshot');
+    const origText = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '⏳ Creating Snapshot...';
+
+    try {
+      const res = await fetch('/api/backup/create', { method: 'POST' }).then(r => r.json());
+      if (res && res.status === 'ok') {
+        btn.innerHTML = '✓ Snapshot Created!';
+        setTimeout(() => {
+          btn.disabled = false;
+          btn.innerHTML = origText;
+        }, 2000);
+        loadBackupSnapshots();
+      } else {
+        alert(res?.message || 'Failed to create snapshot.');
+        btn.disabled = false;
+        btn.innerHTML = origText;
+      }
+    } catch (err) {
+      alert('Snapshot request error: ' + err.message);
+      btn.disabled = false;
+      btn.innerHTML = origText;
+    }
+  });
 }

@@ -46,6 +46,59 @@ if (!fs.existsSync(DATA_DIR)) {
   } catch (_) {}
 }
 
+const BACKUPS_DIR = path.join(DATA_DIR, 'backups');
+if (!fs.existsSync(BACKUPS_DIR)) {
+  try {
+    fs.mkdirSync(BACKUPS_DIR, { recursive: true });
+  } catch (_) {}
+}
+
+/**
+ * Creates automated daily rolling backup snapshots with 30-day retention
+ */
+function createRollingSnapshot() {
+  if (!fs.existsSync(DB_FILE)) return null;
+  try {
+    if (!fs.existsSync(BACKUPS_DIR)) {
+      fs.mkdirSync(BACKUPS_DIR, { recursive: true });
+    }
+    const todayStr = new Date().toISOString().split('T')[0];
+    const snapshotName = `erp_backup_${todayStr}.json`;
+    const snapshotPath = path.join(BACKUPS_DIR, snapshotName);
+    fs.copyFileSync(DB_FILE, snapshotPath);
+
+    // Prune snapshots older than 30 days
+    const files = fs.readdirSync(BACKUPS_DIR);
+    const now = Date.now();
+    const MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
+    files.forEach(f => {
+      if (f.startsWith('erp_backup_') && f.endsWith('.json')) {
+        const filePath = path.join(BACKUPS_DIR, f);
+        try {
+          const stats = fs.statSync(filePath);
+          if (now - stats.mtimeMs > MAX_AGE_MS) {
+            fs.unlinkSync(filePath);
+            console.log(`[SERVER BACKUP] Pruned expired snapshot: ${f}`);
+          }
+        } catch (_) {}
+      }
+    });
+
+    const stats = fs.statSync(snapshotPath);
+    return { name: snapshotName, path: snapshotPath, date: todayStr, bytes: stats.size };
+  } catch (err) {
+    console.error('[SERVER BACKUP ERROR]:', err.message);
+    return null;
+  }
+}
+
+// Initial snapshot on boot
+setTimeout(() => {
+  try {
+    createRollingSnapshot();
+  } catch (_) {}
+}, 2000);
+
 const MIME_TYPES = {
   '.html': 'text/html; charset=utf-8',
   '.htm': 'text/html; charset=utf-8',
@@ -554,6 +607,10 @@ const server = http.createServer((req, res) => {
               fs.writeFileSync(publicDbFile, serialized, 'utf8');
             } catch (_) {}
 
+            try {
+              createRollingSnapshot();
+            } catch (_) {}
+
             const byteCount = Buffer.byteLength(serialized);
             console.log(`[SERVER DB] ✅ Stored ${parsed.machines.length} machines, ${parsed.lines.length} lines, ${parsed.floors.length} floors to data/erp_database.json (${byteCount} bytes) at ${new Date().toLocaleTimeString()}`);
 
@@ -611,6 +668,94 @@ const server = http.createServer((req, res) => {
       sizeBytes: size,
       lastModified: mtime
     }));
+  }
+
+  // --- AUTOMATED DAILY ROLLING BACKUPS & SNAPSHOTS API ---
+
+  // 1. List daily database snapshots
+  if (urlPath === '/api/backup/list') {
+    if (!fs.existsSync(BACKUPS_DIR)) {
+      try { fs.mkdirSync(BACKUPS_DIR, { recursive: true }); } catch (_) {}
+    }
+    try {
+      const files = fs.readdirSync(BACKUPS_DIR).filter(f => f.startsWith('erp_backup_') && f.endsWith('.json'));
+      const list = files.map(f => {
+        const p = path.join(BACKUPS_DIR, f);
+        const st = fs.statSync(p);
+        const dateMatch = f.match(/erp_backup_(\d{4}-\d{2}-\d{2})\.json/);
+        return {
+          filename: f,
+          date: dateMatch ? dateMatch[1] : '',
+          sizeBytes: st.size,
+          sizeFormatted: (st.size / (1024 * 1024)).toFixed(2) + ' MB',
+          lastModified: st.mtime
+        };
+      }).sort((a, b) => new Date(b.lastModified).getTime() - new Date(a.lastModified).getTime());
+
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+      return res.end(JSON.stringify({ 
+        status: 'ok', 
+        backups: list, 
+        total: list.length,
+        retentionPolicy: '30-Day Rolling Daily Snapshots'
+      }));
+    } catch (err) {
+      res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
+      return res.end(JSON.stringify({ status: 'error', message: err.message }));
+    }
+  }
+
+  // 2. Create immediate manual snapshot
+  if (urlPath === '/api/backup/create') {
+    if (req.method !== 'POST') {
+      res.writeHead(405, { 'Content-Type': 'application/json; charset=utf-8' });
+      return res.end(JSON.stringify({ status: 'error', message: 'Method Not Allowed' }));
+    }
+    const snap = createRollingSnapshot();
+    if (snap) {
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+      return res.end(JSON.stringify({ 
+        status: 'ok', 
+        message: 'Daily backup snapshot created successfully', 
+        backup: snap 
+      }));
+    } else {
+      res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
+      return res.end(JSON.stringify({ status: 'error', message: 'Failed to create backup snapshot' }));
+    }
+  }
+
+  // 3. Download complete live database or specific snapshot
+  if (urlPath === '/api/backup/download') {
+    const parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+    const fileParam = parsedUrl.searchParams.get('file');
+    let targetFile = DB_FILE;
+    let downloadName = `AMG_ERP_Database_Backup_${new Date().toISOString().split('T')[0]}.json`;
+
+    if (fileParam) {
+      // Prevent directory traversal
+      const safeName = path.basename(fileParam);
+      const requestedPath = path.join(BACKUPS_DIR, safeName);
+      if (fs.existsSync(requestedPath)) {
+        targetFile = requestedPath;
+        downloadName = safeName;
+      }
+    }
+
+    if (!fs.existsSync(targetFile)) {
+      res.writeHead(404, { 'Content-Type': 'application/json; charset=utf-8' });
+      return res.end(JSON.stringify({ status: 'error', message: 'Backup file not found' }));
+    }
+
+    const st = fs.statSync(targetFile);
+    res.writeHead(200, {
+      'Content-Type': 'application/json; charset=utf-8',
+      'Content-Length': st.size,
+      'Content-Disposition': `attachment; filename="${downloadName}"`
+    });
+    const readStream = fs.createReadStream(targetFile);
+    readStream.pipe(res);
+    return;
   }
 
   // Tools & Equipment Management API Endpoints

@@ -9,6 +9,7 @@ Thumbs.db
 data/*serviceAccountKey*.json
 data/*.backup.json
 data/*_backup*.json
+data/backups/
 data/chat_history.json
 .vscode/
 

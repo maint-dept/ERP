@@ -8,26 +8,51 @@ let activeScanner = null;
 let scanAudio = null;
 let isTorchOn = false;
 
-function playScanBeep() {
+/**
+ * Synthesizes specialized audio frequencies & haptic vibration patterns
+ * for verified scans, floor mismatches, and duplicate records.
+ */
+export function playScanBeep(type = 'success') {
   try {
-    if (!scanAudio) {
-      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-      if (AudioContextClass) {
-        const audioCtx = new AudioContextClass();
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (AudioContextClass) {
+      const audioCtx = new AudioContextClass();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      const now = audioCtx.currentTime;
+
+      if (type === 'error' || type === 'mismatch') {
+        // Low Warning Buzz: 260Hz -> 180Hz sawtooth wave (Location Mismatch / Invalid ID)
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(260, now);
+        osc.frequency.exponentialRampToValueAtTime(180, now + 0.28);
+        gain.gain.setValueAtTime(0.22, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+        osc.start(now);
+        osc.stop(now + 0.28);
+        if (navigator.vibrate) navigator.vibrate([220, 80, 220]);
+      } else if (type === 'warning' || type === 'already_scanned') {
+        // Neutral Double Chirp: 587Hz triangle wave (Already Scanned in this session)
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(587, now);
+        gain.gain.setValueAtTime(0.18, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.14);
+        osc.start(now);
+        osc.stop(now + 0.14);
+        if (navigator.vibrate) navigator.vibrate([90]);
+      } else {
+        // Crisp High Double-Chime: 880Hz -> 1046Hz sine wave (Machine Verified ✓)
         osc.type = 'sine';
-        osc.frequency.value = 880; // A5 note
-        gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
-        osc.start();
-        osc.stop(audioCtx.currentTime + 0.15);
+        osc.frequency.setValueAtTime(880, now);
+        osc.frequency.setValueAtTime(1046, now + 0.08);
+        gain.gain.setValueAtTime(0.2, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+        osc.start(now);
+        osc.stop(now + 0.18);
+        if (navigator.vibrate) navigator.vibrate([60, 40, 60]);
       }
-    }
-    if (navigator.vibrate) {
-      navigator.vibrate([80, 40, 80]);
     }
   } catch (_) {}
 }

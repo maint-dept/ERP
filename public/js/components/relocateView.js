@@ -10,7 +10,7 @@ import { authService } from '../services/authService.js';
 import { masterDataService } from '../services/masterDataService.js';
 import { relocateService } from '../services/relocateService.js';
 import { notificationService } from '../services/notificationService.js';
-import { renderQrScannerModal, initQrScannerModalEvents } from './qrScannerModal.js?v=4.33.0';
+import { renderQrScannerModal, initQrScannerModalEvents, playScanBeep } from './qrScannerModal.js?v=4.33.0';
 import { state } from '../state.js?v=4.33.0';
 import { needleService } from '../services/needleService.js?v=4.33.0';
 
@@ -4267,8 +4267,10 @@ export function initRelocateViewEvents() {
     const locResult = relocateService.parseLocationQr(identifier);
     if (locResult.isLocationQr) {
       if (session.floorId === locResult.floorId) {
+        playScanBeep('success');
         notificationService.notifySuccess('Location Verified', `Scanned ${locResult.locationTag} for active session.`);
       } else {
+        playScanBeep('mismatch');
         notificationService.notifyError('Location Mismatch', `Scanned ${locResult.locationTag}, but active session is on floor ${session.floorId}.`);
       }
       return;
@@ -4276,12 +4278,14 @@ export function initRelocateViewEvents() {
 
     const machine = relocateService.lookupMachine(identifier);
     if (!machine) {
+      playScanBeep('error');
       notificationService.notifyError('Not Found', `Machine not found for tag: "${identifier}".`);
       return;
     }
 
     const isAlreadyScanned = session.scanned.some(s => s.machineId === machine.id);
     if (isAlreadyScanned) {
+      playScanBeep('already_scanned');
       notificationService.notifyWarning('Already Scanned', `Machine [${machine.serialNumber}] was already recorded in this session.`);
       return;
     }
@@ -4295,6 +4299,7 @@ export function initRelocateViewEvents() {
     });
 
     if (result && result.success) {
+      playScanBeep('success');
       notificationService.notifySuccess('Verified ✓', `[${machine.serialNumber}] ${machine.modelStr || machine.machineNameStr || ''} recorded.`);
       const counterEl = root.querySelector('#relocate-stat-verified');
       if (counterEl) {
@@ -4302,6 +4307,7 @@ export function initRelocateViewEvents() {
         counterEl.textContent = vCount + 1;
       }
     } else {
+      playScanBeep('error');
       notificationService.notifyWarning('Notice', result?.message || 'Could not record scan');
     }
   }
