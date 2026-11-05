@@ -2559,19 +2559,22 @@ export function initToolsManagementEvents() {
   const root = document.getElementById('tools-mgmt-root');
   if (!root) return;
 
-  // Multi-device and remote MySQL automatic live re-render listener
+  // Multi-device and remote MySQL automatic live re-render listener (Debounced for 60FPS fluid transitions)
   if (typeof window !== 'undefined' && !window._toolsMgmtSyncListenerAttached) {
     window._toolsMgmtSyncListenerAttached = true;
+    let _refreshTimer = null;
     const onDataRefreshed = (e) => {
       const activeRoot = document.getElementById('tools-mgmt-root');
       if (!activeRoot) return;
       if (storage && typeof storage.isUserTyping === 'function' && storage.isUserTyping()) return;
-      const container = document.getElementById('tools-tab-content-container');
-      if (container) {
-        console.log('[ToolsManagementView] 🐬 Remote MySQL storage sync update received:', e.type);
-        container.innerHTML = renderActiveTab(currentActiveTab);
-        initToolsManagementEvents();
-      }
+      clearTimeout(_refreshTimer);
+      _refreshTimer = setTimeout(() => {
+        const container = document.getElementById('tools-tab-content-container');
+        if (container) {
+          container.innerHTML = renderActiveTab(currentActiveTab);
+          initToolsManagementEvents();
+        }
+      }, 80);
     };
     window.addEventListener('erp:storage-updated', onDataRefreshed);
     window.addEventListener('erp:tools-updated', onDataRefreshed);

@@ -1562,6 +1562,20 @@ body.modal-open div {
   user-select: none;
 }
 
+/* Tactile Touch & Click Feedback (Instant Physical Response) */
+.btn:active,
+.btn-primary:active,
+.btn-secondary:active,
+.page-btn:active,
+.btn-page-number:active,
+.tab-btn:active,
+.btn-action:active,
+.grid-quick-pill:active,
+.btn-trigger-row-actions:active {
+  transform: scale(0.972) !important;
+  transition: transform 0.05s ease !important;
+}
+
 .btn-sm {
   padding: 5px 10px;
   font-size: 12px;
@@ -1700,6 +1714,17 @@ body.modal-open div {
   background: #38bdf8;
 }
 
+@keyframes viewFadeGlide {
+  0% {
+    opacity: 0.88;
+    transform: translateY(3px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .page-view {
   flex: 1;
   padding: 12px 18px 48px 18px;
@@ -1708,6 +1733,8 @@ body.modal-open div {
   gap: 10px;
   min-height: 0;
   contain: layout;
+  animation: viewFadeGlide 0.14s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
 }
 
 .excel-grid-container, .table-responsive {
