@@ -526,6 +526,30 @@ class ERPApplication {
         this.queueBackgroundRender();
       }
     });
+
+    // Real-Time Online / Offline Connectivity Detection
+    window.addEventListener('online', async () => {
+      console.log('[Connectivity] Restored connection to network.');
+      if (storage && typeof storage.updateStatusBadge === 'function') {
+        storage.updateStatusBadge('saved');
+      }
+      try {
+        await storage.syncWithMySQLPrimary();
+        if (notificationService && typeof notificationService.success === 'function') {
+          notificationService.success('Connection restored: Cloud synchronized.');
+        }
+      } catch (_) {}
+    });
+
+    window.addEventListener('offline', () => {
+      console.warn('[Connectivity] Lost connection to network.');
+      if (storage && typeof storage.updateStatusBadge === 'function') {
+        storage.updateStatusBadge('offline');
+      }
+      if (notificationService && typeof notificationService.warning === 'function') {
+        notificationService.warning('Offline mode active: Local storage in use. Data will sync when back online.');
+      }
+    });
   }
 
   render() {

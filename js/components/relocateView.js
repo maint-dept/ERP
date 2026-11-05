@@ -571,7 +571,7 @@ export function renderRelocateView() {
       /* Bottom Sheet Modal Styles on Mobile */
       @media (max-width: 768px) {
         .relocate-view-root {
-          padding: 8px 8px 48px 8px !important;
+          padding: 8px 8px calc(80px + env(safe-area-inset-bottom, 16px)) 8px !important;
           height: auto !important;
           min-height: 100% !important;
           overflow-y: visible !important;

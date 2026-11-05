@@ -69,9 +69,9 @@ export function renderQrScannerModal() {
           </button>
 
           <!-- Crosshair / Aiming Box -->
-          <div class="qr-aiming-box" style="position: absolute; width: min(72vw, 250px); height: min(72vw, 250px); border: 2.5px solid #38bdf8; border-radius: 18px; box-shadow: 0 0 0 4000px rgba(0,0,0,0.55); pointer-events: none; display: flex; align-items: center; justify-content: center;">
+          <div class="qr-aiming-box" style="position: absolute; width: min(72vw, 250px); height: min(72vw, 250px); border: 2.5px solid #38bdf8; border-radius: 18px; box-shadow: 0 0 0 4000px rgba(0,0,0,0.55); pointer-events: none; display: flex; align-items: center; justify-content: center; transition: border-color 0.15s ease, box-shadow 0.15s ease;">
             <!-- Laser scanning sweep -->
-            <div class="qr-scanline" style="width: 90%; height: 2.5px; background: linear-gradient(90deg, transparent, #38bdf8, #67e8f9, #38bdf8, transparent); box-shadow: 0 0 10px #38bdf8; animation: qrScanline 1.8s infinite ease-in-out;"></div>
+            <div class="qr-scanline" style="position: absolute; width: 92%; height: 3px; background: linear-gradient(90deg, transparent 0%, #38bdf8 20%, #ffffff 50%, #38bdf8 80%, transparent 100%); box-shadow: 0 0 16px 2px #38bdf8, 0 0 4px #fff; border-radius: 2px; animation: qrScanline 2.2s infinite ease-in-out;"></div>
             
             <!-- Corner accent brackets -->
             <div style="position: absolute; top: -3px; left: -3px; width: 18px; height: 18px; border-top: 4px solid #fff; border-left: 4px solid #fff; border-top-left-radius: 8px;"></div>
@@ -147,9 +147,22 @@ export function renderQrScannerModal() {
 
     <style>
       @keyframes qrScanline {
-        0% { transform: translateY(-90px); opacity: 0.2; }
-        50% { opacity: 1; }
-        100% { transform: translateY(90px); opacity: 0.2; }
+        0% { transform: translateY(-108px); opacity: 0.25; }
+        50% { transform: translateY(108px); opacity: 1; }
+        100% { transform: translateY(-108px); opacity: 0.25; }
+      }
+
+      #qr-reader-container video {
+        width: 100% !important;
+        height: 100% !important;
+        object-fit: cover !important;
+        transform: translateZ(0);
+      }
+      #qr-reader-container {
+        overflow: hidden;
+      }
+      #qr-shaded-region {
+        display: none !important;
       }
 
       /* Desktop layout */
@@ -276,6 +289,12 @@ export async function initQrScannerModalEvents({ onScanSuccess, onManualSearchRe
   const handleDecoded = async (decodedText) => {
     if (!decodedText) return;
     playScanBeep();
+    const aimingBox = document.querySelector('.qr-aiming-box');
+    if (aimingBox) {
+      aimingBox.style.borderColor = '#22c55e';
+      aimingBox.style.boxShadow = '0 0 28px rgba(34, 197, 94, 0.85), 0 0 0 4000px rgba(0,0,0,0.65)';
+    }
+    await new Promise(r => setTimeout(r, 120));
     await closeScannerModal();
     if (onScanSuccess) onScanSuccess(decodedText);
   };
