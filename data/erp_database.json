@@ -328421,13 +328421,6 @@
       "machineName": "Single Needle Lock Stitch Machine",
       "machineNameId": "mn-1792077157398-8mma",
       "updatedAt": "2026-11-01T17:14:46.486Z"
-    },
-    {
-      "id": "sm-mod-1793554303887",
-      "brandId": "brd-1791365588525-v0qg",
-      "name": "Standard",
-      "status": "ACTIVE",
-      "createdAt": "2026-10-09T11:29:35.469Z"
     }
   ],
   "categories": [
@@ -328704,7 +328697,7 @@
         "autoSync": true,
         "retryEnabled": true,
         "updatedAt": "2026-11-03T12:26:53.464Z",
-        "lastSync": "11/5/2026, 12:46:11 PM"
+        "lastSync": "11/5/2026, 2:23:25 PM"
       }
     ]
   },
@@ -351684,6 +351677,21 @@
       "timestamp": "2026-11-05T06:28:46.610Z",
       "createdAt": "2026-11-05T06:28:46.610Z",
       "updatedAt": "2026-11-05T06:28:46.610Z"
+    },
+    {
+      "id": "aud-1793867133303-945",
+      "userId": "usr-super-admin",
+      "username": "motaher",
+      "action": "TRANSFER_PDF_GENERATED",
+      "entity": "TRANSFER",
+      "entityId": "TR-2026-000023",
+      "details": "Generated Official Transfer PDF Pass for TR-2026-000023",
+      "oldData": null,
+      "newData": null,
+      "ip": "127.0.0.1",
+      "timestamp": "2026-11-05T08:25:33.303Z",
+      "createdAt": "2026-11-05T08:25:33.303Z",
+      "updatedAt": "2026-11-05T08:25:33.303Z"
     }
   ],
   "notifications": [

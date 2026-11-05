@@ -208,7 +208,7 @@ self.addEventListener('push', (event) => {
     const title = payload.title || 'Al-Muslim ERP Notice';
     const options = {
       body: payload.message || payload.body || 'New operational update received.',
-      icon: payload.icon || 'favicon.ico',
+      icon: payload.icon || 'icon-192.png',
       badge: 'favicon.ico',
       tag: payload.tag || payload.id || 'amg-erp-notice',
       data: {
@@ -224,7 +224,7 @@ self.addEventListener('push', (event) => {
     event.waitUntil(
       self.registration.showNotification('Al-Muslim ERP', {
         body: text,
-        icon: 'favicon.ico',
+        icon: 'icon-192.png',
         badge: 'favicon.ico'
       })
     );

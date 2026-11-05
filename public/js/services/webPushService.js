@@ -298,11 +298,13 @@ class WebPushService {
     const body = notif.message || 'New operational update.';
     const targetUrl = notif.targetUrl || '#dashboard';
     const isApproval = notif.action === 'APPROVE' || notif.type === 'APPROVAL_REQUEST';
+    const isGh = typeof window !== 'undefined' && window.location.pathname.toLowerCase().startsWith('/erp');
+    const basePath = isGh ? '/ERP/' : './';
 
     const options = {
       body: body,
-      icon: './assets/icons/icon-192.png',
-      badge: './assets/icons/icon-192.png',
+      icon: basePath + 'icon-192.png',
+      badge: basePath + 'favicon.ico',
       tag: notif.id || `amg-erp-${Date.now()}`,
       data: {
         url: targetUrl,
