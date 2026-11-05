@@ -6746,6 +6746,53 @@ body.theme-light .modal-header * {
   white-space: nowrap;
 }
 
+/* ==========================================================================
+   Smart Machine Action Hub Sheet & Tiles
+   ========================================================================== */
+.smart-action-sheet {
+  background: #0f172a !important;
+  border: 1.5px solid #38bdf8 !important;
+  border-radius: 18px !important;
+  width: 100% !important;
+  max-width: 640px !important;
+  max-height: min(94vh, 880px) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.95), 0 0 35px rgba(56, 189, 248, 0.3) !important;
+}
+
+.smart-action-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 12px 18px !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+  background: rgba(30, 41, 59, 0.85) !important;
+  flex-shrink: 0 !important;
+  gap: 10px !important;
+}
+
+.smart-action-modal-body {
+  padding: 14px 18px 24px 18px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 12px !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  -webkit-overflow-scrolling: touch !important;
+  touch-action: pan-y !important;
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  overscroll-behavior: contain !important;
+}
+
+.smart-actions-grid {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)) !important;
+  gap: 10px !important;
+}
+
 /* Action Tiles in Smart Modal */
 .action-tile-btn {
   background: rgba(15, 23, 42, 0.7);
@@ -6919,6 +6966,69 @@ body.theme-light .btn-mobile-search-close {
   #nav-db-status {
     padding: 0 6px !important;
   }
+
+  /* Smart Machine Action Hub on Mobile: Smooth Touch Scroll & 2-Column Grid */
+  #smart-action-modal-overlay {
+    padding: 6px !important;
+    align-items: flex-start !important;
+    justify-content: center !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  .smart-action-sheet {
+    max-height: calc(100dvh - 12px) !important;
+    height: calc(100dvh - 12px) !important;
+    min-height: 0 !important;
+    border-radius: 14px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+  }
+
+  .smart-action-header {
+    padding: 10px 14px !important;
+  }
+
+  .smart-action-modal-body {
+    padding: 12px 12px 28px 12px !important;
+    gap: 10px !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-y !important;
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    overscroll-behavior: contain !important;
+  }
+
+  /* Responsive 2-Column Action Tiles Grid on Mobile */
+  .smart-actions-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+  }
+
+  .action-tile-btn {
+    padding: 10px 8px !important;
+    min-height: 76px !important;
+    border-radius: 10px !important;
+  }
+
+  .action-tile-btn .action-tile-icon {
+    font-size: 20px !important;
+    margin-bottom: 3px !important;
+  }
+
+  .action-tile-btn .action-tile-title {
+    font-size: 11.5px !important;
+    line-height: 1.2 !important;
+  }
+
+  .action-tile-btn .action-tile-desc {
+    font-size: 9.5px !important;
+    line-height: 1.15 !important;
+    margin-top: 2px !important;
+  }
 }
 
 @media (max-width: 480px) {
@@ -6932,6 +7042,28 @@ body.theme-light .btn-mobile-search-close {
     left: 6px !important;
     right: 6px !important;
     max-width: calc(100vw - 12px) !important;
+  }
+
+  .smart-actions-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 6px !important;
+  }
+
+  .action-tile-btn {
+    padding: 8px 6px !important;
+    min-height: 70px !important;
+  }
+
+  .action-tile-btn .action-tile-icon {
+    font-size: 18px !important;
+  }
+
+  .action-tile-btn .action-tile-title {
+    font-size: 10.5px !important;
+  }
+
+  .action-tile-btn .action-tile-desc {
+    font-size: 9px !important;
   }
 }
 

@@ -328685,7 +328685,7 @@
         "enabled": true,
         "autoSync": true,
         "retryEnabled": true,
-        "updatedAt": "2026-11-05T09:33:07.202Z"
+        "updatedAt": "2026-11-03T06:15:11.213Z"
       },
       {
         "id": "db_postgresql_replica",
@@ -328703,8 +328703,8 @@
         "enabled": true,
         "autoSync": true,
         "retryEnabled": true,
-        "updatedAt": "2026-11-05T09:33:07.202Z",
-        "lastSync": "11/5/2026, 7:39:19 PM"
+        "updatedAt": "2026-11-03T06:15:11.213Z",
+        "lastSync": "11/5/2026, 8:02:44 PM"
       }
     ],
     "pushNotificationPolicy": "MANDATORY",
@@ -351821,8 +351821,9 @@
         "usr-super-admin"
       ],
       "timestamp": "2026-09-26T14:44:51.133Z",
-      "readAt": "2026-11-02T04:57:22.712Z",
-      "updatedAt": "2026-11-02T04:57:22.712Z"
+      "readAt": "2026-11-05T14:00:05.825Z",
+      "updatedAt": "2026-11-05T14:00:05.825Z",
+      "version": 2
     },
     {
       "id": "notif-showcase-tr-1",
@@ -351839,8 +351840,9 @@
         "usr-super-admin"
       ],
       "timestamp": "2026-09-26T15:29:51.133Z",
-      "readAt": "2026-09-27T05:35:39.704Z",
-      "updatedAt": "2026-09-27T05:35:39.704Z"
+      "readAt": "2026-11-05T14:00:05.824Z",
+      "updatedAt": "2026-11-05T14:00:05.824Z",
+      "version": 2
     },
     {
       "id": "notif-showcase-pm-1",
@@ -351857,8 +351859,9 @@
         "usr-super-admin"
       ],
       "timestamp": "2026-09-26T16:04:51.133Z",
-      "readAt": "2026-10-28T13:24:12.215Z",
-      "updatedAt": "2026-10-28T13:24:12.215Z"
+      "readAt": "2026-11-05T14:00:05.824Z",
+      "updatedAt": "2026-11-05T14:00:05.824Z",
+      "version": 2
     },
     {
       "id": "notif-1790440530352-467",
@@ -351874,8 +351877,9 @@
       ],
       "timestamp": "2026-09-26T16:35:30.352Z",
       "createdAt": "2026-09-26T16:35:30.352Z",
-      "updatedAt": "2026-09-27T05:35:39.703Z",
-      "readAt": "2026-09-27T05:35:39.703Z"
+      "updatedAt": "2026-11-05T14:00:05.823Z",
+      "readAt": "2026-11-05T14:00:05.823Z",
+      "version": 2
     },
     {
       "id": "notif-1790440533567-91",
@@ -351891,8 +351895,9 @@
       ],
       "timestamp": "2026-09-26T16:35:33.567Z",
       "createdAt": "2026-09-26T16:35:33.567Z",
-      "updatedAt": "2026-09-27T05:35:39.703Z",
-      "readAt": "2026-09-27T05:35:39.703Z"
+      "updatedAt": "2026-11-05T14:00:05.822Z",
+      "readAt": "2026-11-05T14:00:05.821Z",
+      "version": 2
     },
     {
       "id": "notif-1790478431248-760",
@@ -351916,8 +351921,9 @@
       ],
       "timestamp": "2026-09-27T03:07:11.249Z",
       "createdAt": "2026-09-27T03:07:11.249Z",
-      "updatedAt": "2026-09-27T05:35:39.703Z",
-      "readAt": "2026-09-27T05:35:39.703Z"
+      "updatedAt": "2026-11-05T14:00:05.817Z",
+      "readAt": "2026-11-05T14:00:05.817Z",
+      "version": 2
     },
     {
       "id": "notif-1790478453918-778",
@@ -351933,8 +351939,9 @@
       ],
       "timestamp": "2026-09-27T03:07:33.918Z",
       "createdAt": "2026-09-27T03:07:33.918Z",
-      "updatedAt": "2026-09-27T05:35:39.702Z",
-      "readAt": "2026-09-27T05:35:39.702Z"
+      "updatedAt": "2026-11-05T14:00:05.813Z",
+      "readAt": "2026-11-05T14:00:05.813Z",
+      "version": 2
     },
     {
       "id": "notif-1790503831674-407",
@@ -351952,11 +351959,15 @@
         "unitId": "unt-1",
         "floorId": "flo-1788686928901-929"
       },
-      "read": false,
-      "readBy": [],
+      "read": true,
+      "readBy": [
+        "usr-super-admin"
+      ],
       "timestamp": "2026-09-27T10:10:31.674Z",
       "createdAt": "2026-09-27T10:10:31.674Z",
-      "updatedAt": "2026-09-27T10:10:31.674Z"
+      "updatedAt": "2026-11-05T14:00:05.810Z",
+      "readAt": "2026-11-05T14:00:05.809Z",
+      "version": 2
     },
     {
       "id": "notif-1790503879918-79",
@@ -351966,11 +351977,15 @@
       "module": "machines",
       "action": "VIEW",
       "targetUrl": "#inventory",
-      "read": false,
-      "readBy": [],
+      "read": true,
+      "readBy": [
+        "usr-super-admin"
+      ],
       "timestamp": "2026-09-27T10:11:19.918Z",
       "createdAt": "2026-09-27T10:11:19.918Z",
-      "updatedAt": "2026-09-27T10:11:19.918Z"
+      "updatedAt": "2026-11-05T14:00:05.806Z",
+      "readAt": "2026-11-05T14:00:05.806Z",
+      "version": 2
     },
     {
       "id": "notif-1790509545724-387",
@@ -351988,11 +352003,15 @@
         "unitId": "unt-1",
         "floorId": "flo-1788686936556-310"
       },
-      "read": false,
-      "readBy": [],
+      "read": true,
+      "readBy": [
+        "usr-super-admin"
+      ],
       "timestamp": "2026-09-27T11:45:45.724Z",
       "createdAt": "2026-09-27T11:45:45.724Z",
-      "updatedAt": "2026-09-27T11:45:45.724Z"
+      "updatedAt": "2026-11-05T14:00:05.802Z",
+      "readAt": "2026-11-05T14:00:05.802Z",
+      "version": 2
     },
     {
       "id": "notif-1790509558984-245",
@@ -352008,8 +352027,9 @@
       ],
       "timestamp": "2026-09-27T11:45:58.984Z",
       "createdAt": "2026-09-27T11:45:58.984Z",
-      "updatedAt": "2026-09-27T11:50:15.159Z",
-      "readAt": "2026-09-27T11:50:15.159Z"
+      "updatedAt": "2026-11-05T14:00:05.798Z",
+      "readAt": "2026-11-05T14:00:05.797Z",
+      "version": 2
     },
     {
       "id": "notif-1790509851470-654",
@@ -352027,11 +352047,15 @@
         "unitId": "unt-1",
         "floorId": "flo-1788686930004-760"
       },
-      "read": false,
-      "readBy": [],
+      "read": true,
+      "readBy": [
+        "usr-super-admin"
+      ],
       "timestamp": "2026-09-27T11:50:51.470Z",
       "createdAt": "2026-09-27T11:50:51.470Z",
-      "updatedAt": "2026-09-27T11:50:51.470Z"
+      "updatedAt": "2026-11-05T14:00:05.794Z",
+      "readAt": "2026-11-05T14:00:05.794Z",
+      "version": 2
     },
     {
       "id": "notif-1790509863134-401",
@@ -352041,11 +352065,15 @@
       "module": "machines",
       "action": "VIEW",
       "targetUrl": "#inventory",
-      "read": false,
-      "readBy": [],
+      "read": true,
+      "readBy": [
+        "usr-super-admin"
+      ],
       "timestamp": "2026-09-27T11:51:03.134Z",
       "createdAt": "2026-09-27T11:51:03.134Z",
-      "updatedAt": "2026-09-27T11:51:03.134Z"
+      "updatedAt": "2026-11-05T14:00:05.793Z",
+      "readAt": "2026-11-05T14:00:05.793Z",
+      "version": 2
     },
     {
       "id": "notif-1790567767309-548",
@@ -352063,11 +352091,15 @@
         "unitId": "unt-1",
         "floorId": "flo-1788686931468-982"
       },
-      "read": false,
-      "readBy": [],
+      "read": true,
+      "readBy": [
+        "usr-super-admin"
+      ],
       "timestamp": "2026-09-28T03:56:07.309Z",
       "createdAt": "2026-09-28T03:56:07.309Z",
-      "updatedAt": "2026-09-28T03:56:07.309Z"
+      "updatedAt": "2026-11-05T14:00:05.792Z",
+      "readAt": "2026-11-05T14:00:05.792Z",
+      "version": 2
     },
     {
       "id": "notif-1790567820229-608",
@@ -352077,11 +352109,15 @@
       "module": "machines",
       "action": "VIEW",
       "targetUrl": "#inventory",
-      "read": false,
-      "readBy": [],
+      "read": true,
+      "readBy": [
+        "usr-super-admin"
+      ],
       "timestamp": "2026-09-28T03:57:00.229Z",
       "createdAt": "2026-09-28T03:57:00.229Z",
-      "updatedAt": "2026-09-28T03:57:00.229Z"
+      "updatedAt": "2026-11-05T14:00:05.792Z",
+      "readAt": "2026-11-05T14:00:05.792Z",
+      "version": 2
     },
     {
       "id": "notif-1790568223886-739",
@@ -352099,11 +352135,15 @@
         "unitId": "unt-1",
         "floorId": "flo-1788686928901-929"
       },
-      "read": false,
-      "readBy": [],
+      "read": true,
+      "readBy": [
+        "usr-super-admin"
+      ],
       "timestamp": "2026-09-28T04:03:43.886Z",
       "createdAt": "2026-09-28T04:03:43.886Z",
-      "updatedAt": "2026-09-28T04:03:43.886Z"
+      "updatedAt": "2026-11-05T14:00:05.791Z",
+      "readAt": "2026-11-05T14:00:05.791Z",
+      "version": 2
     },
     {
       "id": "notif-1790568234184-485",
@@ -352113,11 +352153,15 @@
       "module": "machines",
       "action": "VIEW",
       "targetUrl": "#inventory",
-      "read": false,
-      "readBy": [],
+      "read": true,
+      "readBy": [
+        "usr-super-admin"
+      ],
       "timestamp": "2026-09-28T04:03:54.184Z",
       "createdAt": "2026-09-28T04:03:54.184Z",
-      "updatedAt": "2026-09-28T04:03:54.184Z"
+      "updatedAt": "2026-11-05T14:00:05.791Z",
+      "readAt": "2026-11-05T14:00:05.791Z",
+      "version": 2
     },
     {
       "id": "notif-1790583797747-647",
@@ -352141,8 +352185,9 @@
       ],
       "timestamp": "2026-09-28T08:23:17.747Z",
       "createdAt": "2026-09-28T08:23:17.747Z",
-      "updatedAt": "2026-09-28T08:23:29.700Z",
-      "readAt": "2026-09-28T08:23:29.700Z"
+      "updatedAt": "2026-11-05T14:00:05.790Z",
+      "readAt": "2026-11-05T14:00:05.790Z",
+      "version": 2
     },
     {
       "id": "notif-1790583831794-72",
@@ -352152,11 +352197,15 @@
       "module": "machines",
       "action": "VIEW",
       "targetUrl": "#inventory",
-      "read": false,
-      "readBy": [],
+      "read": true,
+      "readBy": [
+        "usr-super-admin"
+      ],
       "timestamp": "2026-09-28T08:23:51.794Z",
       "createdAt": "2026-09-28T08:23:51.794Z",
-      "updatedAt": "2026-09-28T08:23:51.794Z"
+      "updatedAt": "2026-11-05T14:00:05.789Z",
+      "readAt": "2026-11-05T14:00:05.789Z",
+      "version": 2
     },
     {
       "id": "notif-1790589764715-477",
@@ -352174,11 +352223,15 @@
         "unitId": "unt-1",
         "floorId": "flo-1788686936556-310"
       },
-      "read": false,
-      "readBy": [],
+      "read": true,
+      "readBy": [
+        "usr-super-admin"
+      ],
       "timestamp": "2026-09-28T10:02:44.715Z",
       "createdAt": "2026-09-28T10:02:44.715Z",
-      "updatedAt": "2026-09-28T10:02:44.715Z"
+      "updatedAt": "2026-11-05T14:00:05.789Z",
+      "readAt": "2026-11-05T14:00:05.789Z",
+      "version": 2
     },
     {
       "id": "notif-1790589798861-414",
@@ -352188,11 +352241,15 @@
       "module": "machines",
       "action": "VIEW",
       "targetUrl": "#inventory",
-      "read": false,
-      "readBy": [],
+      "read": true,
+      "readBy": [
+        "usr-super-admin"
+      ],
       "timestamp": "2026-09-28T10:03:18.861Z",
       "createdAt": "2026-09-28T10:03:18.861Z",
-      "updatedAt": "2026-09-28T10:03:18.861Z"
+      "updatedAt": "2026-11-05T14:00:05.788Z",
+      "readAt": "2026-11-05T14:00:05.788Z",
+      "version": 2
     },
     {
       "id": "notif-1790597648458-513",
@@ -352210,11 +352267,15 @@
         "unitId": "unt-1",
         "floorId": "flo-1788686928901-929"
       },
-      "read": false,
-      "readBy": [],
+      "read": true,
+      "readBy": [
+        "usr-super-admin"
+      ],
       "timestamp": "2026-09-28T12:14:08.458Z",
       "createdAt": "2026-09-28T12:14:08.458Z",
-      "updatedAt": "2026-09-28T12:14:08.458Z"
+      "updatedAt": "2026-11-05T14:00:05.785Z",
+      "readAt": "2026-11-05T14:00:05.785Z",
+      "version": 2
     },
     {
       "id": "notif-1790597675153-620",
@@ -352224,11 +352285,15 @@
       "module": "machines",
       "action": "VIEW",
       "targetUrl": "#inventory",
-      "read": false,
-      "readBy": [],
+      "read": true,
+      "readBy": [
+        "usr-super-admin"
+      ],
       "timestamp": "2026-09-28T12:14:35.153Z",
       "createdAt": "2026-09-28T12:14:35.153Z",
-      "updatedAt": "2026-09-28T12:14:35.153Z"
+      "updatedAt": "2026-11-05T14:00:05.785Z",
+      "readAt": "2026-11-05T14:00:05.784Z",
+      "version": 2
     },
     {
       "id": "notif-1790600946295-552",
@@ -352252,8 +352317,9 @@
       ],
       "timestamp": "2026-09-28T13:09:06.295Z",
       "createdAt": "2026-09-28T13:09:06.295Z",
-      "updatedAt": "2026-09-29T09:18:11.520Z",
-      "readAt": "2026-09-29T09:18:11.519Z"
+      "updatedAt": "2026-11-05T14:00:05.784Z",
+      "readAt": "2026-11-05T14:00:05.784Z",
+      "version": 2
     },
     {
       "id": "notif-1790600977545-423",
@@ -352263,11 +352329,15 @@
       "module": "machines",
       "action": "VIEW",
       "targetUrl": "#inventory",
-      "read": false,
-      "readBy": [],
+      "read": true,
+      "readBy": [
+        "usr-super-admin"
+      ],
       "timestamp": "2026-09-28T13:09:37.545Z",
       "createdAt": "2026-09-28T13:09:37.545Z",
-      "updatedAt": "2026-09-28T13:09:37.545Z"
+      "updatedAt": "2026-11-05T14:00:05.783Z",
+      "readAt": "2026-11-05T14:00:05.783Z",
+      "version": 2
     },
     {
       "id": "notif-1790688791595-405",
@@ -352291,8 +352361,9 @@
       ],
       "timestamp": "2026-09-29T13:33:11.595Z",
       "createdAt": "2026-09-29T13:33:11.595Z",
-      "updatedAt": "2026-09-30T08:19:14.415Z",
-      "readAt": "2026-09-30T08:19:14.415Z"
+      "updatedAt": "2026-11-05T14:00:05.783Z",
+      "readAt": "2026-11-05T14:00:05.783Z",
+      "version": 2
     },
     {
       "id": "notif-1790691391746-174",
@@ -352302,11 +352373,15 @@
       "module": "machines",
       "action": "VIEW",
       "targetUrl": "#inventory",
-      "read": false,
-      "readBy": [],
+      "read": true,
+      "readBy": [
+        "usr-super-admin"
+      ],
       "timestamp": "2026-09-29T14:16:31.746Z",
       "createdAt": "2026-09-29T14:16:31.746Z",
-      "updatedAt": "2026-09-29T14:16:31.746Z"
+      "updatedAt": "2026-11-05T14:00:05.775Z",
+      "readAt": "2026-11-05T14:00:05.775Z",
+      "version": 2
     },
     {
       "id": "notif-1790761506311-547",
@@ -352324,11 +352399,15 @@
         "unitId": "unt-1",
         "floorId": "flo-1788686935780-806"
       },
-      "read": false,
-      "readBy": [],
+      "read": true,
+      "readBy": [
+        "usr-super-admin"
+      ],
       "timestamp": "2026-09-30T09:45:06.311Z",
       "createdAt": "2026-09-30T09:45:06.311Z",
-      "updatedAt": "2026-09-30T09:45:06.311Z"
+      "updatedAt": "2026-11-05T14:00:05.775Z",
+      "readAt": "2026-11-05T14:00:05.775Z",
+      "version": 2
     },
     {
       "id": "notif-1790761524762-193",
@@ -352338,11 +352417,15 @@
       "module": "machines",
       "action": "VIEW",
       "targetUrl": "#inventory",
-      "read": false,
-      "readBy": [],
+      "read": true,
+      "readBy": [
+        "usr-super-admin"
+      ],
       "timestamp": "2026-09-30T09:45:24.762Z",
       "createdAt": "2026-09-30T09:45:24.762Z",
-      "updatedAt": "2026-09-30T09:45:24.762Z"
+      "updatedAt": "2026-11-05T14:00:05.773Z",
+      "readAt": "2026-11-05T14:00:05.773Z",
+      "version": 2
     },
     {
       "id": "notif-1790763853109-391",
@@ -352360,11 +352443,15 @@
         "unitId": "unt-1",
         "floorId": "flo-1788686930004-760"
       },
-      "read": false,
-      "readBy": [],
+      "read": true,
+      "readBy": [
+        "usr-super-admin"
+      ],
       "timestamp": "2026-09-30T10:24:13.109Z",
       "createdAt": "2026-09-30T10:24:13.109Z",
-      "updatedAt": "2026-09-30T10:24:13.109Z"
+      "updatedAt": "2026-11-05T14:00:05.772Z",
+      "readAt": "2026-11-05T14:00:05.772Z",
+      "version": 2
     },
     {
       "id": "notif-1790763870563-368",
@@ -352374,11 +352461,15 @@
       "module": "machines",
       "action": "VIEW",
       "targetUrl": "#inventory",
-      "read": false,
-      "readBy": [],
+      "read": true,
+      "readBy": [
+        "usr-super-admin"
+      ],
       "timestamp": "2026-09-30T10:24:30.563Z",
       "createdAt": "2026-09-30T10:24:30.563Z",
-      "updatedAt": "2026-09-30T10:24:30.563Z"
+      "updatedAt": "2026-11-05T14:00:05.771Z",
+      "readAt": "2026-11-05T14:00:05.771Z",
+      "version": 2
     },
     {
       "id": "notif-1790775278403-55",
@@ -352402,8 +352493,9 @@
       ],
       "timestamp": "2026-09-30T13:34:38.403Z",
       "createdAt": "2026-09-30T13:34:38.403Z",
-      "updatedAt": "2026-09-30T13:59:15.700Z",
-      "readAt": "2026-09-30T13:59:15.700Z"
+      "updatedAt": "2026-11-05T14:00:05.769Z",
+      "readAt": "2026-11-05T14:00:05.769Z",
+      "version": 2
     },
     {
       "id": "notif-1790775285361-493",
@@ -352413,11 +352505,15 @@
       "module": "machines",
       "action": "VIEW",
       "targetUrl": "#inventory",
-      "read": false,
-      "readBy": [],
+      "read": true,
+      "readBy": [
+        "usr-super-admin"
+      ],
       "timestamp": "2026-09-30T13:34:45.361Z",
       "createdAt": "2026-09-30T13:34:45.361Z",
-      "updatedAt": "2026-09-30T13:34:45.361Z"
+      "updatedAt": "2026-11-05T14:00:05.768Z",
+      "readAt": "2026-11-05T14:00:05.768Z",
+      "version": 2
     },
     {
       "id": "notif-1790827241084-864",
@@ -352441,8 +352537,9 @@
       ],
       "timestamp": "2026-10-01T04:00:41.084Z",
       "createdAt": "2026-10-01T04:00:41.084Z",
-      "updatedAt": "2026-10-03T12:02:40.788Z",
-      "readAt": "2026-10-03T12:02:40.788Z"
+      "updatedAt": "2026-11-05T14:00:05.768Z",
+      "readAt": "2026-11-05T14:00:05.768Z",
+      "version": 2
     },
     {
       "id": "notif-1790827255508-427",
@@ -352452,11 +352549,15 @@
       "module": "machines",
       "action": "VIEW",
       "targetUrl": "#inventory",
-      "read": false,
-      "readBy": [],
+      "read": true,
+      "readBy": [
+        "usr-super-admin"
+      ],
       "timestamp": "2026-10-01T04:00:55.508Z",
       "createdAt": "2026-10-01T04:00:55.508Z",
-      "updatedAt": "2026-10-01T04:00:55.508Z"
+      "updatedAt": "2026-11-05T14:00:05.767Z",
+      "readAt": "2026-11-05T14:00:05.767Z",
+      "version": 2
     },
     {
       "id": "notif-1791035952908-436",
@@ -352474,11 +352575,15 @@
         "unitId": "unt-1",
         "floorId": "flo-1788686935780-806"
       },
-      "read": false,
-      "readBy": [],
+      "read": true,
+      "readBy": [
+        "usr-super-admin"
+      ],
       "timestamp": "2026-10-03T13:59:12.908Z",
       "createdAt": "2026-10-03T13:59:12.908Z",
-      "updatedAt": "2026-10-03T13:59:12.908Z"
+      "updatedAt": "2026-11-05T14:00:05.767Z",
+      "readAt": "2026-11-05T14:00:05.767Z",
+      "version": 2
     },
     {
       "id": "notif-1791040497753-178",
@@ -352502,8 +352607,9 @@
       ],
       "timestamp": "2026-10-03T15:14:57.753Z",
       "createdAt": "2026-10-03T15:14:57.753Z",
-      "updatedAt": "2026-10-03T15:15:10.835Z",
-      "readAt": "2026-10-03T15:15:10.835Z"
+      "updatedAt": "2026-11-05T14:00:05.765Z",
+      "readAt": "2026-11-05T14:00:05.765Z",
+      "version": 2
     },
     {
       "id": "notif-1791040514432-973",
@@ -352513,11 +352619,15 @@
       "module": "machines",
       "action": "VIEW",
       "targetUrl": "#inventory",
-      "read": false,
-      "readBy": [],
+      "read": true,
+      "readBy": [
+        "usr-super-admin"
+      ],
       "timestamp": "2026-10-03T15:15:14.432Z",
       "createdAt": "2026-10-03T15:15:14.432Z",
-      "updatedAt": "2026-10-03T15:15:14.432Z"
+      "updatedAt": "2026-11-05T14:00:05.765Z",
+      "readAt": "2026-11-05T14:00:05.765Z",
+      "version": 2
     },
     {
       "id": "notif-1791081267610-234",
@@ -352527,11 +352637,15 @@
       "module": "machines",
       "action": "VIEW",
       "targetUrl": "#inventory",
-      "read": false,
-      "readBy": [],
+      "read": true,
+      "readBy": [
+        "usr-super-admin"
+      ],
       "timestamp": "2026-10-04T02:34:27.610Z",
       "createdAt": "2026-10-04T02:34:27.610Z",
-      "updatedAt": "2026-10-04T02:34:27.610Z"
+      "updatedAt": "2026-11-05T14:00:05.763Z",
+      "readAt": "2026-11-05T14:00:05.763Z",
+      "version": 2
     },
     {
       "id": "notif-1791081305558-361",
@@ -352549,11 +352663,15 @@
         "unitId": "unt-1",
         "floorId": "flo-1788686931468-982"
       },
-      "read": false,
-      "readBy": [],
+      "read": true,
+      "readBy": [
+        "usr-super-admin"
+      ],
       "timestamp": "2026-10-04T02:35:05.558Z",
       "createdAt": "2026-10-04T02:35:05.558Z",
-      "updatedAt": "2026-10-04T02:35:05.558Z"
+      "updatedAt": "2026-11-05T14:00:05.762Z",
+      "readAt": "2026-11-05T14:00:05.762Z",
+      "version": 2
     },
     {
       "id": "notif-1791081327691-352",
@@ -352571,11 +352689,15 @@
         "unitId": "unt-1",
         "floorId": "flo-1788686931468-982"
       },
-      "read": false,
-      "readBy": [],
+      "read": true,
+      "readBy": [
+        "usr-super-admin"
+      ],
       "timestamp": "2026-10-04T02:35:27.691Z",
       "createdAt": "2026-10-04T02:35:27.691Z",
-      "updatedAt": "2026-10-04T02:35:27.691Z"
+      "updatedAt": "2026-11-05T14:00:05.761Z",
+      "readAt": "2026-11-05T14:00:05.761Z",
+      "version": 2
     },
     {
       "id": "notif-1791081340018-127",
@@ -352585,11 +352707,15 @@
       "module": "machines",
       "action": "VIEW",
       "targetUrl": "#inventory",
-      "read": false,
-      "readBy": [],
+      "read": true,
+      "readBy": [
+        "usr-super-admin"
+      ],
       "timestamp": "2026-10-04T02:35:40.018Z",
       "createdAt": "2026-10-04T02:35:40.018Z",
-      "updatedAt": "2026-10-04T02:35:40.018Z"
+      "updatedAt": "2026-11-05T14:00:05.761Z",
+      "readAt": "2026-11-05T14:00:05.760Z",
+      "version": 2
     },
     {
       "id": "notif-1791081345456-918",
@@ -352599,11 +352725,15 @@
       "module": "machines",
       "action": "VIEW",
       "targetUrl": "#inventory",
-      "read": false,
-      "readBy": [],
+      "read": true,
+      "readBy": [
+        "usr-super-admin"
+      ],
       "timestamp": "2026-10-04T02:35:45.456Z",
       "createdAt": "2026-10-04T02:35:45.456Z",
-      "updatedAt": "2026-10-04T02:35:45.456Z"
+      "updatedAt": "2026-11-05T14:00:05.760Z",
+      "readAt": "2026-11-05T14:00:05.760Z",
+      "version": 2
     },
     {
       "id": "notif-1791081394990-562",
@@ -352627,8 +352757,9 @@
       ],
       "timestamp": "2026-10-04T02:36:34.990Z",
       "createdAt": "2026-10-04T02:36:34.990Z",
-      "updatedAt": "2026-10-04T05:24:15.789Z",
-      "readAt": "2026-10-04T05:24:15.789Z"
+      "updatedAt": "2026-11-05T14:00:05.759Z",
+      "readAt": "2026-11-05T14:00:05.759Z",
+      "version": 2
     },
     {
       "id": "notif-1791092390219-648",
@@ -352646,11 +352777,15 @@
         "unitId": "unt-1",
         "floorId": "flo-1788686930004-760"
       },
-      "read": false,
-      "readBy": [],
+      "read": true,
+      "readBy": [
+        "usr-super-admin"
+      ],
       "timestamp": "2026-10-04T05:39:50.219Z",
       "createdAt": "2026-10-04T05:39:50.219Z",
-      "updatedAt": "2026-10-04T05:39:50.219Z"
+      "updatedAt": "2026-11-05T14:00:05.759Z",
+      "readAt": "2026-11-05T14:00:05.759Z",
+      "version": 2
     },
     {
       "id": "notif-1791092407212-361",
@@ -352666,8 +352801,9 @@
       ],
       "timestamp": "2026-10-04T05:40:07.212Z",
       "createdAt": "2026-10-04T05:40:07.212Z",
-      "updatedAt": "2026-10-21T12:14:32.648Z",
-      "readAt": "2026-10-21T12:14:32.647Z"
+      "updatedAt": "2026-11-05T14:00:05.758Z",
+      "readAt": "2026-11-05T14:00:05.758Z",
+      "version": 2
     },
     {
       "id": "notif-1792732482516-50",
@@ -352689,11 +352825,15 @@
         "floorId": "flo-1791375228035-692",
         "unitId": "unt-1"
       },
-      "read": false,
-      "readBy": [],
+      "read": true,
+      "readBy": [
+        "usr-super-admin"
+      ],
       "timestamp": "2026-10-23T05:14:42.516Z",
       "createdAt": "2026-10-23T05:14:42.516Z",
-      "updatedAt": "2026-10-23T05:14:42.516Z"
+      "updatedAt": "2026-11-05T14:00:05.758Z",
+      "readAt": "2026-11-05T14:00:05.758Z",
+      "version": 2
     },
     {
       "id": "notif-1792732482517-473",
@@ -352718,11 +352858,15 @@
         "unitId": "unt-2",
         "floorId": "flo-1792732446261-632"
       },
-      "read": false,
-      "readBy": [],
+      "read": true,
+      "readBy": [
+        "usr-super-admin"
+      ],
       "timestamp": "2026-10-23T05:14:42.517Z",
       "createdAt": "2026-10-23T05:14:42.517Z",
-      "updatedAt": "2026-10-23T05:14:42.517Z"
+      "updatedAt": "2026-11-05T14:00:05.757Z",
+      "readAt": "2026-11-05T14:00:05.757Z",
+      "version": 2
     },
     {
       "id": "notif-1792732516645-63",
@@ -352744,11 +352888,15 @@
         "floorId": "flo-1791375228035-692",
         "unitId": "unt-1"
       },
-      "read": false,
-      "readBy": [],
+      "read": true,
+      "readBy": [
+        "usr-super-admin"
+      ],
       "timestamp": "2026-10-23T05:15:16.645Z",
       "createdAt": "2026-10-23T05:15:16.645Z",
-      "updatedAt": "2026-10-23T05:15:16.645Z"
+      "updatedAt": "2026-11-05T14:00:05.757Z",
+      "readAt": "2026-11-05T14:00:05.757Z",
+      "version": 2
     },
     {
       "id": "notif-1792732516646-628",
@@ -352773,11 +352921,15 @@
         "unitId": "unt-2",
         "floorId": "flo-1792732446261-632"
       },
-      "read": false,
-      "readBy": [],
+      "read": true,
+      "readBy": [
+        "usr-super-admin"
+      ],
       "timestamp": "2026-10-23T05:15:16.646Z",
       "createdAt": "2026-10-23T05:15:16.646Z",
-      "updatedAt": "2026-10-23T05:15:16.646Z"
+      "updatedAt": "2026-11-05T14:00:05.756Z",
+      "readAt": "2026-11-05T14:00:05.756Z",
+      "version": 2
     },
     {
       "id": "notif-1792732529937-983",
@@ -352799,11 +352951,15 @@
         "unitId": "unt-2",
         "floorId": "flo-1792732446261-632"
       },
-      "read": false,
-      "readBy": [],
+      "read": true,
+      "readBy": [
+        "usr-super-admin"
+      ],
       "timestamp": "2026-10-23T05:15:29.937Z",
       "createdAt": "2026-10-23T05:15:29.937Z",
-      "updatedAt": "2026-10-23T05:15:29.937Z"
+      "updatedAt": "2026-11-05T14:00:05.755Z",
+      "readAt": "2026-11-05T14:00:05.755Z",
+      "version": 2
     },
     {
       "id": "notif-1792732531832-730",
@@ -352825,11 +352981,15 @@
         "unitId": "unt-2",
         "floorId": "flo-1792732446261-632"
       },
-      "read": false,
-      "readBy": [],
+      "read": true,
+      "readBy": [
+        "usr-super-admin"
+      ],
       "timestamp": "2026-10-23T05:15:31.832Z",
       "createdAt": "2026-10-23T05:15:31.832Z",
-      "updatedAt": "2026-10-23T05:15:31.832Z"
+      "updatedAt": "2026-11-05T14:00:05.755Z",
+      "readAt": "2026-11-05T14:00:05.755Z",
+      "version": 2
     },
     {
       "id": "notif-1792732534781-642",
@@ -352852,11 +353012,15 @@
         "floorId": "flo-1792732446261-632",
         "lineId": "lin-1792732446261-493"
       },
-      "read": false,
-      "readBy": [],
+      "read": true,
+      "readBy": [
+        "usr-super-admin"
+      ],
       "timestamp": "2026-10-23T05:15:34.781Z",
       "createdAt": "2026-10-23T05:15:34.781Z",
-      "updatedAt": "2026-10-23T05:15:34.781Z"
+      "updatedAt": "2026-11-05T14:00:05.754Z",
+      "readAt": "2026-11-05T14:00:05.754Z",
+      "version": 2
     },
     {
       "id": "notif-1792732536739-689",
@@ -352885,8 +353049,9 @@
       ],
       "timestamp": "2026-10-23T05:15:36.739Z",
       "createdAt": "2026-10-23T05:15:36.739Z",
-      "updatedAt": "2026-10-28T06:17:00.521Z",
-      "readAt": "2026-10-28T06:17:00.521Z"
+      "updatedAt": "2026-11-05T14:00:05.754Z",
+      "readAt": "2026-11-05T14:00:05.754Z",
+      "version": 2
     },
     {
       "id": "notif-1793418929115-261",
@@ -352908,11 +353073,15 @@
         "floorId": "flo-1788686936556-310",
         "unitId": "unt-1"
       },
-      "read": false,
-      "readBy": [],
+      "read": true,
+      "readBy": [
+        "usr-super-admin"
+      ],
       "timestamp": "2026-10-31T03:55:29.115Z",
       "createdAt": "2026-10-31T03:55:29.115Z",
-      "updatedAt": "2026-10-31T03:55:29.115Z"
+      "updatedAt": "2026-11-05T14:00:05.753Z",
+      "readAt": "2026-11-05T14:00:05.753Z",
+      "version": 2
     },
     {
       "id": "notif-1793418929115-778",
@@ -352937,11 +353106,15 @@
         "unitId": "unt-1",
         "floorId": "flo-1788931702137-250"
       },
-      "read": false,
-      "readBy": [],
+      "read": true,
+      "readBy": [
+        "usr-super-admin"
+      ],
       "timestamp": "2026-10-31T03:55:29.115Z",
       "createdAt": "2026-10-31T03:55:29.115Z",
-      "updatedAt": "2026-10-31T03:55:29.115Z"
+      "updatedAt": "2026-11-05T14:00:05.753Z",
+      "readAt": "2026-11-05T14:00:05.753Z",
+      "version": 2
     },
     {
       "id": "notif-1793418936548-512",
@@ -352963,11 +353136,15 @@
         "unitId": "unt-1",
         "floorId": "flo-1788931702137-250"
       },
-      "read": false,
-      "readBy": [],
+      "read": true,
+      "readBy": [
+        "usr-super-admin"
+      ],
       "timestamp": "2026-10-31T03:55:36.548Z",
       "createdAt": "2026-10-31T03:55:36.548Z",
-      "updatedAt": "2026-10-31T03:55:36.548Z"
+      "updatedAt": "2026-11-05T14:00:05.752Z",
+      "readAt": "2026-11-05T14:00:05.752Z",
+      "version": 2
     },
     {
       "id": "notif-1793418937902-915",
@@ -352990,11 +353167,15 @@
         "floorId": "flo-1788931702137-250",
         "lineId": "lin-1788931950637-6387"
       },
-      "read": false,
-      "readBy": [],
+      "read": true,
+      "readBy": [
+        "usr-super-admin"
+      ],
       "timestamp": "2026-10-31T03:55:37.902Z",
       "createdAt": "2026-10-31T03:55:37.902Z",
-      "updatedAt": "2026-10-31T03:55:37.902Z"
+      "updatedAt": "2026-11-05T14:00:05.751Z",
+      "readAt": "2026-11-05T14:00:05.751Z",
+      "version": 2
     },
     {
       "id": "notif-1793418983346-330",
@@ -353016,11 +353197,15 @@
         "floorId": "flo-1788686936556-310",
         "unitId": "unt-1"
       },
-      "read": false,
-      "readBy": [],
+      "read": true,
+      "readBy": [
+        "usr-super-admin"
+      ],
       "timestamp": "2026-10-31T03:56:23.346Z",
       "createdAt": "2026-10-31T03:56:23.346Z",
-      "updatedAt": "2026-10-31T03:56:23.346Z"
+      "updatedAt": "2026-11-05T14:00:05.750Z",
+      "readAt": "2026-11-05T14:00:05.750Z",
+      "version": 2
     },
     {
       "id": "notif-1793418983346-472",
@@ -353045,11 +353230,15 @@
         "unitId": "unt-1",
         "floorId": "flo-1788931702137-250"
       },
-      "read": false,
-      "readBy": [],
+      "read": true,
+      "readBy": [
+        "usr-super-admin"
+      ],
       "timestamp": "2026-10-31T03:56:23.346Z",
       "createdAt": "2026-10-31T03:56:23.346Z",
-      "updatedAt": "2026-10-31T03:56:23.346Z"
+      "updatedAt": "2026-11-05T14:00:05.751Z",
+      "readAt": "2026-11-05T14:00:05.751Z",
+      "version": 2
     },
     {
       "id": "notif-1793418986956-808",
@@ -353071,11 +353260,15 @@
         "unitId": "unt-1",
         "floorId": "flo-1788931702137-250"
       },
-      "read": false,
-      "readBy": [],
+      "read": true,
+      "readBy": [
+        "usr-super-admin"
+      ],
       "timestamp": "2026-10-31T03:56:26.956Z",
       "createdAt": "2026-10-31T03:56:26.956Z",
-      "updatedAt": "2026-10-31T03:56:26.956Z"
+      "updatedAt": "2026-11-05T14:00:05.750Z",
+      "readAt": "2026-11-05T14:00:05.750Z",
+      "version": 2
     },
     {
       "id": "notif-1793418987823-589",
@@ -353098,11 +353291,15 @@
         "floorId": "flo-1788931702137-250",
         "lineId": "lin-1788931950637-6387"
       },
-      "read": false,
-      "readBy": [],
+      "read": true,
+      "readBy": [
+        "usr-super-admin"
+      ],
       "timestamp": "2026-10-31T03:56:27.823Z",
       "createdAt": "2026-10-31T03:56:27.823Z",
-      "updatedAt": "2026-10-31T03:56:27.823Z"
+      "updatedAt": "2026-11-05T14:00:05.749Z",
+      "readAt": "2026-11-05T14:00:05.749Z",
+      "version": 2
     },
     {
       "id": "notif-1793419018659-61",
@@ -353124,11 +353321,15 @@
         "floorId": "flo-1788686936556-310",
         "unitId": "unt-1"
       },
-      "read": false,
-      "readBy": [],
+      "read": true,
+      "readBy": [
+        "usr-super-admin"
+      ],
       "timestamp": "2026-10-31T03:56:58.659Z",
       "createdAt": "2026-10-31T03:56:58.659Z",
-      "updatedAt": "2026-10-31T03:56:58.659Z"
+      "updatedAt": "2026-11-05T14:00:05.749Z",
+      "readAt": "2026-11-05T14:00:05.749Z",
+      "version": 2
     },
     {
       "id": "notif-1793419018660-529",
@@ -353159,8 +353360,9 @@
       ],
       "timestamp": "2026-10-31T03:56:58.660Z",
       "createdAt": "2026-10-31T03:56:58.660Z",
-      "updatedAt": "2026-11-05T09:32:05.164Z",
-      "readAt": "2026-11-05T09:32:05.164Z"
+      "updatedAt": "2026-11-05T14:00:05.748Z",
+      "readAt": "2026-11-05T14:00:05.748Z",
+      "version": 2
     },
     {
       "id": "notif-1793419023563-144",
@@ -353182,11 +353384,15 @@
         "unitId": "unt-1",
         "floorId": "flo-1788931702137-250"
       },
-      "read": false,
-      "readBy": [],
+      "read": true,
+      "readBy": [
+        "usr-super-admin"
+      ],
       "timestamp": "2026-10-31T03:57:03.563Z",
       "createdAt": "2026-10-31T03:57:03.563Z",
-      "updatedAt": "2026-10-31T03:57:03.563Z"
+      "updatedAt": "2026-11-05T14:00:05.748Z",
+      "readAt": "2026-11-05T14:00:05.747Z",
+      "version": 2
     },
     {
       "id": "notif-1793419024279-214",
@@ -353209,11 +353415,15 @@
         "floorId": "flo-1788931702137-250",
         "lineId": "lin-1788931950637-6387"
       },
-      "read": false,
-      "readBy": [],
+      "read": true,
+      "readBy": [
+        "usr-super-admin"
+      ],
       "timestamp": "2026-10-31T03:57:04.279Z",
       "createdAt": "2026-10-31T03:57:04.279Z",
-      "updatedAt": "2026-10-31T03:57:04.279Z"
+      "updatedAt": "2026-11-05T14:00:05.747Z",
+      "readAt": "2026-11-05T14:00:05.747Z",
+      "version": 2
     },
     {
       "id": "notif-1793419045019-827",
@@ -353235,11 +353445,15 @@
         "floorId": "flo-1788686936556-310",
         "unitId": "unt-1"
       },
-      "read": false,
-      "readBy": [],
+      "read": true,
+      "readBy": [
+        "usr-super-admin"
+      ],
       "timestamp": "2026-10-31T03:57:25.019Z",
       "createdAt": "2026-10-31T03:57:25.019Z",
-      "updatedAt": "2026-10-31T03:57:25.019Z"
+      "updatedAt": "2026-11-05T14:00:05.746Z",
+      "readAt": "2026-11-05T14:00:05.746Z",
+      "version": 2
     },
     {
       "id": "notif-1793419045020-382",
@@ -353264,11 +353478,15 @@
         "unitId": "unt-1",
         "floorId": "flo-1788931702137-250"
       },
-      "read": false,
-      "readBy": [],
+      "read": true,
+      "readBy": [
+        "usr-super-admin"
+      ],
       "timestamp": "2026-10-31T03:57:25.020Z",
       "createdAt": "2026-10-31T03:57:25.020Z",
-      "updatedAt": "2026-10-31T03:57:25.020Z"
+      "updatedAt": "2026-11-05T14:00:05.746Z",
+      "readAt": "2026-11-05T14:00:05.746Z",
+      "version": 2
     },
     {
       "id": "notif-1793419048125-28",
@@ -353290,11 +353508,15 @@
         "unitId": "unt-1",
         "floorId": "flo-1788931702137-250"
       },
-      "read": false,
-      "readBy": [],
+      "read": true,
+      "readBy": [
+        "usr-super-admin"
+      ],
       "timestamp": "2026-10-31T03:57:28.125Z",
       "createdAt": "2026-10-31T03:57:28.125Z",
-      "updatedAt": "2026-10-31T03:57:28.125Z"
+      "updatedAt": "2026-11-05T14:00:05.745Z",
+      "readAt": "2026-11-05T14:00:05.745Z",
+      "version": 2
     },
     {
       "id": "notif-1793419048644-585",
@@ -353317,11 +353539,15 @@
         "floorId": "flo-1788931702137-250",
         "lineId": "lin-1788931950637-6387"
       },
-      "read": false,
-      "readBy": [],
+      "read": true,
+      "readBy": [
+        "usr-super-admin"
+      ],
       "timestamp": "2026-10-31T03:57:28.644Z",
       "createdAt": "2026-10-31T03:57:28.644Z",
-      "updatedAt": "2026-10-31T03:57:28.644Z"
+      "updatedAt": "2026-11-05T14:00:05.745Z",
+      "readAt": "2026-11-05T14:00:05.744Z",
+      "version": 2
     },
     {
       "id": "notif-1793419072860-894",
@@ -353343,11 +353569,15 @@
         "floorId": "flo-1788686936556-310",
         "unitId": "unt-1"
       },
-      "read": false,
-      "readBy": [],
+      "read": true,
+      "readBy": [
+        "usr-super-admin"
+      ],
       "timestamp": "2026-10-31T03:57:52.860Z",
       "createdAt": "2026-10-31T03:57:52.860Z",
-      "updatedAt": "2026-10-31T03:57:52.860Z"
+      "updatedAt": "2026-11-05T14:00:05.742Z",
+      "readAt": "2026-11-05T14:00:05.742Z",
+      "version": 2
     },
     {
       "id": "notif-1793419072860-26",
@@ -353372,11 +353602,15 @@
         "unitId": "unt-1",
         "floorId": "flo-1788931702137-250"
       },
-      "read": false,
-      "readBy": [],
+      "read": true,
+      "readBy": [
+        "usr-super-admin"
+      ],
       "timestamp": "2026-10-31T03:57:52.860Z",
       "createdAt": "2026-10-31T03:57:52.860Z",
-      "updatedAt": "2026-10-31T03:57:52.860Z"
+      "updatedAt": "2026-11-05T14:00:05.743Z",
+      "readAt": "2026-11-05T14:00:05.743Z",
+      "version": 2
     },
     {
       "id": "notif-1793419083171-437",
@@ -353398,11 +353632,15 @@
         "unitId": "unt-1",
         "floorId": "flo-1788931702137-250"
       },
-      "read": false,
-      "readBy": [],
+      "read": true,
+      "readBy": [
+        "usr-super-admin"
+      ],
       "timestamp": "2026-10-31T03:58:03.171Z",
       "createdAt": "2026-10-31T03:58:03.171Z",
-      "updatedAt": "2026-10-31T03:58:03.171Z"
+      "updatedAt": "2026-11-05T14:00:05.741Z",
+      "readAt": "2026-11-05T14:00:05.741Z",
+      "version": 2
     },
     {
       "id": "notif-1793419088196-651",
@@ -353424,11 +353662,15 @@
         "unitId": "unt-1",
         "floorId": "flo-1788931702137-250"
       },
-      "read": false,
-      "readBy": [],
+      "read": true,
+      "readBy": [
+        "usr-super-admin"
+      ],
       "timestamp": "2026-10-31T03:58:08.196Z",
       "createdAt": "2026-10-31T03:58:08.196Z",
-      "updatedAt": "2026-10-31T03:58:08.196Z"
+      "updatedAt": "2026-11-05T14:00:05.739Z",
+      "readAt": "2026-11-05T14:00:05.738Z",
+      "version": 2
     },
     {
       "id": "notif-1793419089740-392",
@@ -353451,11 +353693,15 @@
         "floorId": "flo-1788931702137-250",
         "lineId": "lin-1788931950637-6387"
       },
-      "read": false,
-      "readBy": [],
+      "read": true,
+      "readBy": [
+        "usr-super-admin"
+      ],
       "timestamp": "2026-10-31T03:58:09.740Z",
       "createdAt": "2026-10-31T03:58:09.740Z",
-      "updatedAt": "2026-10-31T03:58:09.740Z"
+      "updatedAt": "2026-11-05T14:00:05.737Z",
+      "readAt": "2026-11-05T14:00:05.737Z",
+      "version": 2
     },
     {
       "id": "notif-1793419123862-297",
@@ -353477,11 +353723,15 @@
         "floorId": "flo-1788686936556-310",
         "unitId": "unt-1"
       },
-      "read": false,
-      "readBy": [],
+      "read": true,
+      "readBy": [
+        "usr-super-admin"
+      ],
       "timestamp": "2026-10-31T03:58:43.862Z",
       "createdAt": "2026-10-31T03:58:43.862Z",
-      "updatedAt": "2026-10-31T03:58:43.862Z"
+      "updatedAt": "2026-11-05T14:00:05.733Z",
+      "readAt": "2026-11-05T14:00:05.733Z",
+      "version": 2
     },
     {
       "id": "notif-1793419123865-892",
@@ -353506,11 +353756,15 @@
         "unitId": "unt-1",
         "floorId": "flo-1788931702137-250"
       },
-      "read": false,
-      "readBy": [],
+      "read": true,
+      "readBy": [
+        "usr-super-admin"
+      ],
       "timestamp": "2026-10-31T03:58:43.865Z",
       "createdAt": "2026-10-31T03:58:43.865Z",
-      "updatedAt": "2026-10-31T03:58:43.865Z"
+      "updatedAt": "2026-11-05T14:00:05.732Z",
+      "readAt": "2026-11-05T14:00:05.732Z",
+      "version": 2
     },
     {
       "id": "notif-1793419127260-519",
@@ -353538,8 +353792,9 @@
       ],
       "timestamp": "2026-10-31T03:58:47.260Z",
       "createdAt": "2026-10-31T03:58:47.260Z",
-      "updatedAt": "2026-11-02T04:53:03.387Z",
-      "readAt": "2026-11-02T04:53:03.387Z"
+      "updatedAt": "2026-11-05T14:00:05.724Z",
+      "readAt": "2026-11-05T14:00:05.724Z",
+      "version": 2
     },
     {
       "id": "notif-1793419127792-669",
@@ -353562,11 +353817,15 @@
         "floorId": "flo-1788931702137-250",
         "lineId": "lin-1788931950637-6387"
       },
-      "read": false,
-      "readBy": [],
+      "read": true,
+      "readBy": [
+        "usr-super-admin"
+      ],
       "timestamp": "2026-10-31T03:58:47.792Z",
       "createdAt": "2026-10-31T03:58:47.792Z",
-      "updatedAt": "2026-10-31T03:58:47.792Z"
+      "updatedAt": "2026-11-05T14:00:05.723Z",
+      "readAt": "2026-11-05T14:00:05.723Z",
+      "version": 2
     },
     {
       "id": "notif-1793419187840-604",
@@ -353588,11 +353847,15 @@
         "floorId": "flo-1788686936556-310",
         "unitId": "unt-1"
       },
-      "read": false,
-      "readBy": [],
+      "read": true,
+      "readBy": [
+        "usr-super-admin"
+      ],
       "timestamp": "2026-10-31T03:59:47.840Z",
       "createdAt": "2026-10-31T03:59:47.840Z",
-      "updatedAt": "2026-10-31T03:59:47.840Z"
+      "updatedAt": "2026-11-05T14:00:05.722Z",
+      "readAt": "2026-11-05T14:00:05.722Z",
+      "version": 2
     },
     {
       "id": "notif-1793419187842-598",
@@ -353617,11 +353880,15 @@
         "unitId": "unt-1",
         "floorId": "flo-1788931702137-250"
       },
-      "read": false,
-      "readBy": [],
+      "read": true,
+      "readBy": [
+        "usr-super-admin"
+      ],
       "timestamp": "2026-10-31T03:59:47.842Z",
       "createdAt": "2026-10-31T03:59:47.842Z",
-      "updatedAt": "2026-10-31T03:59:47.842Z"
+      "updatedAt": "2026-11-05T14:00:05.721Z",
+      "readAt": "2026-11-05T14:00:05.721Z",
+      "version": 2
     },
     {
       "id": "notif-1793419193259-585",
@@ -353643,11 +353910,15 @@
         "unitId": "unt-1",
         "floorId": "flo-1788931702137-250"
       },
-      "read": false,
-      "readBy": [],
+      "read": true,
+      "readBy": [
+        "usr-super-admin"
+      ],
       "timestamp": "2026-10-31T03:59:53.259Z",
       "createdAt": "2026-10-31T03:59:53.259Z",
-      "updatedAt": "2026-10-31T03:59:53.259Z"
+      "updatedAt": "2026-11-05T14:00:05.720Z",
+      "readAt": "2026-11-05T14:00:05.720Z",
+      "version": 2
     },
     {
       "id": "notif-1793419194305-21",
@@ -353676,8 +353947,9 @@
       ],
       "timestamp": "2026-10-31T03:59:54.305Z",
       "createdAt": "2026-10-31T03:59:54.305Z",
-      "updatedAt": "2026-11-02T13:29:31.098Z",
-      "readAt": "2026-11-02T13:29:31.098Z"
+      "updatedAt": "2026-11-05T14:04:57.154Z",
+      "readAt": "2026-11-05T14:04:57.146Z",
+      "version": 3
     }
   ],
   "documents": [

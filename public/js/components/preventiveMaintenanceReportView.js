@@ -741,6 +741,19 @@ export function renderPreventiveMaintenanceReportView() {
     reportState.nextServicingDate = computeNextDate(reportState.servicingDate, 90);
   }
 
+  // Check for pre-filtered single machine request from Smart Action Hub or URL
+  const targetReportSerial = state.get('pmReportFilterSerial');
+  if (targetReportSerial) {
+    reportState.activeSearchQuery = String(targetReportSerial).trim();
+    reportState.unitId = 'ALL';
+    reportState.floorId = 'ALL';
+    reportState.lineId = 'ALL';
+    reportState.filterMode = 'ALL';
+    reportState.page = 1;
+    reportState.isInitialized = false;
+    state.set('pmReportFilterSerial', null);
+  }
+
   // Initial Load of matching machines if first time rendering
   if (!reportState.isInitialized) {
     reportState.isInitialized = true;

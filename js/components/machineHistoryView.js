@@ -2598,7 +2598,7 @@ export function openSparePartsImportModal() {
 /**
  * Official Printable Machine History Passport Modal
  */
-function openMachinePassportModal(serialNumber) {
+export function openMachinePassportModal(serialNumber) {
   const machine = historyService.findMachineBySerialOnly(serialNumber);
   if (!machine) {
     alert('Machine not found for serial: ' + serialNumber);
@@ -2814,3 +2814,9 @@ function openMachinePassportModal(serialNumber) {
     printWin.document.close();
   });
 }
+
+// Global attachment for universal cross-module access (Action Hub, Universal Search, Pocket Card)
+if (typeof window !== 'undefined') {
+  window.openMachinePassportModal = openMachinePassportModal;
+}
+

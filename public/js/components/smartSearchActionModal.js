@@ -10,6 +10,8 @@ import { authService } from '../services/authService.js?v=4.36.0';
 import { router } from '../services/router.js?v=4.36.0';
 import { state } from '../state.js?v=4.36.0';
 import { playScanBeep } from './qrScannerModal.js?v=4.36.0';
+import { openMachinePocketCard } from './machinePocketCardModal.js?v=4.36.0';
+import { openMachinePassportModal } from './machineHistoryView.js?v=4.36.0';
 
 function escapeHtml(str) {
   if (str === null || str === undefined) return '';
@@ -271,10 +273,10 @@ export function openSmartMachineActionModal(machineOrQuery) {
 
   const modalHtml = `
     <div id="smart-action-modal-overlay" class="modal-overlay" style="z-index: 10070; background: rgba(0, 0, 0, 0.88); backdrop-filter: blur(10px); display: flex; align-items: center; justify-content: center; padding: 12px;">
-      <div class="smart-action-sheet" style="background: #0f172a; border: 1.5px solid #38bdf8; border-radius: 18px; width: 100%; max-width: 620px; max-height: 94vh; overflow-y: auto; box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.95), 0 0 35px rgba(56, 189, 248, 0.3); display: flex; flex-direction: column;">
+      <div class="smart-action-sheet">
         
         <!-- Header Strip -->
-        <div style="display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; border-bottom: 1px solid rgba(255,255,255,0.1); background: rgba(30, 41, 59, 0.7); gap: 10px;">
+        <div class="modal-header smart-action-header">
           <div style="display: flex; align-items: center; gap: 10px;">
             <div style="width: 38px; height: 38px; border-radius: 10px; background: rgba(56, 189, 248, 0.15); border: 1.5px solid #38bdf8; display: flex; align-items: center; justify-content: center; font-size: 20px;">
               ⚡
@@ -290,11 +292,11 @@ export function openSmartMachineActionModal(machineOrQuery) {
           </button>
         </div>
 
-        <!-- Body -->
-        <div style="padding: 18px 20px; display: flex; flex-direction: column; gap: 16px;">
+        <!-- Body with dedicated custom scrolling -->
+        <div class="modal-body smart-action-modal-body custom-scrollbar">
           
           <!-- Machine Identity Hero Card -->
-          <div style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(30, 41, 59, 0.95)); border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 14px; padding: 16px; position: relative; overflow: hidden;">
+          <div style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(30, 41, 59, 0.95)); border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 14px; padding: 16px; position: relative; overflow: hidden; flex-shrink: 0;">
             <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; flex-wrap: wrap;">
               <div>
                 <div style="font-size: 11px; font-weight: 800; color: #38bdf8; text-transform: uppercase; letter-spacing: 1px; display: flex; align-items: center; gap: 8px;">
@@ -350,7 +352,7 @@ export function openSmartMachineActionModal(machineOrQuery) {
           </div>
 
           <!-- Quick Action Tiles Grid (Filtered by Role & Scope) -->
-          <div>
+          <div style="flex-shrink: 0;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
               <div style="font-size: 11.5px; font-weight: 900; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">
                 ⚡ Select Authorized Action
@@ -360,72 +362,79 @@ export function openSmartMachineActionModal(machineOrQuery) {
               </div>
             </div>
 
-            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(175px, 1fr)); gap: 10px;">
+            <div class="smart-actions-grid">
               
               <!-- 1. Relocate Machine -->
               <button type="button" id="act-btn-relocate" class="action-tile-btn ${canRelocate ? '' : 'disabled'}" style="${canRelocate ? 'border-color: #38bdf8;' : 'opacity: 0.45; pointer-events: none; border-color: rgba(255,255,255,0.08);'}" title="${canRelocate ? 'Move this machine to a new Line or Floor' : 'Restricted: Relocation requires Floor/Admin access for this machine location'}">
-                <div style="font-size: 22px; margin-bottom: 4px;">🔄</div>
-                <div style="font-size: 12.5px; font-weight: 800; color: #f8fafc;">Relocate Machine</div>
-                <div style="font-size: 10.5px; color: #94a3b8;">Change Line / Floor</div>
+                <div class="action-tile-icon" style="font-size: 22px; margin-bottom: 4px;">🔄</div>
+                <div class="action-tile-title" style="font-size: 12.5px; font-weight: 800; color: #f8fafc;">Relocate Machine</div>
+                <div class="action-tile-desc" style="font-size: 10.5px; color: #94a3b8;">Change Line / Floor</div>
               </button>
 
               <!-- 2. Transfer Request -->
               <button type="button" id="act-btn-transfer" class="action-tile-btn ${canTransferRequest ? '' : 'disabled'}" style="${canTransferRequest ? 'border-color: #60a5fa;' : 'opacity: 0.45; pointer-events: none; border-color: rgba(255,255,255,0.08);'}" title="${canTransferRequest ? 'Initiate multi-tier Machine Transfer Request' : 'No Transfer Permission'}">
-                <div style="font-size: 22px; margin-bottom: 4px;">🔁</div>
-                <div style="font-size: 12.5px; font-weight: 800; color: #f8fafc;">Machine Transfer</div>
-                <div style="font-size: 10.5px; color: #94a3b8;">Inter-Unit / Floor Gate Pass</div>
+                <div class="action-tile-icon" style="font-size: 22px; margin-bottom: 4px;">🔁</div>
+                <div class="action-tile-title" style="font-size: 12.5px; font-weight: 800; color: #f8fafc;">Machine Transfer</div>
+                <div class="action-tile-desc" style="font-size: 10.5px; color: #94a3b8;">Inter-Unit / Floor Gate Pass</div>
               </button>
 
               <!-- 3. Log Servicing / Breakdown Repair -->
               <button type="button" id="act-btn-service" class="action-tile-btn ${canLogRepair ? '' : 'disabled'}" style="${canLogRepair ? 'border-color: #f87171;' : 'opacity: 0.45; pointer-events: none; border-color: rgba(255,255,255,0.08);'}" title="${canLogRepair ? 'Log repair work or report breakdown defect' : 'Restricted: Mechanic / Service permission required'}">
-                <div style="font-size: 22px; margin-bottom: 4px;">🛠️</div>
-                <div style="font-size: 12.5px; font-weight: 800; color: #f8fafc;">Machine Servicing</div>
-                <div style="font-size: 10.5px; color: #94a3b8;">Log Repair / Breakdown</div>
+                <div class="action-tile-icon" style="font-size: 22px; margin-bottom: 4px;">🛠️</div>
+                <div class="action-tile-title" style="font-size: 12.5px; font-weight: 800; color: #f8fafc;">Machine Servicing</div>
+                <div class="action-tile-desc" style="font-size: 10.5px; color: #94a3b8;">Log Repair / Breakdown</div>
               </button>
 
               <!-- 4. Preventive Maintenance (PM) -->
               <button type="button" id="act-btn-pm" class="action-tile-btn ${canLogPM ? '' : 'disabled'}" style="${canLogPM ? 'border-color: #34d399;' : 'opacity: 0.45; pointer-events: none; border-color: rgba(255,255,255,0.08);'}" title="${canLogPM ? 'Mark PM Servicing Done & Advance Next 90d Cycle' : 'Restricted: PM Service permission required'}">
-                <div style="font-size: 22px; margin-bottom: 4px;">🛡️</div>
-                <div style="font-size: 12.5px; font-weight: 800; color: #f8fafc;">Preventive Maint.</div>
-                <div style="font-size: 10.5px; color: #94a3b8;">90-Day Audit Cycle</div>
+                <div class="action-tile-icon" style="font-size: 22px; margin-bottom: 4px;">🛡️</div>
+                <div class="action-tile-title" style="font-size: 12.5px; font-weight: 800; color: #f8fafc;">Preventive Maint.</div>
+                <div class="action-tile-desc" style="font-size: 10.5px; color: #94a3b8;">90-Day Audit Cycle</div>
               </button>
 
               <!-- 5. Spare Parts Replacement -->
               <button type="button" id="act-btn-parts" class="action-tile-btn ${canReplaceParts ? '' : 'disabled'}" style="${canReplaceParts ? 'border-color: #f59e0b;' : 'opacity: 0.45; pointer-events: none; border-color: rgba(255,255,255,0.08);'}" title="${canReplaceParts ? 'Record replacement spare parts consumption' : 'Restricted: Spare Parts permission required'}">
-                <div style="font-size: 22px; margin-bottom: 4px;">⚙️</div>
-                <div style="font-size: 12.5px; font-weight: 800; color: #f8fafc;">Spare Parts Log</div>
-                <div style="font-size: 10.5px; color: #94a3b8;">Log Replacement Part</div>
+                <div class="action-tile-icon" style="font-size: 22px; margin-bottom: 4px;">⚙️</div>
+                <div class="action-tile-title" style="font-size: 12.5px; font-weight: 800; color: #f8fafc;">Spare Parts Log</div>
+                <div class="action-tile-desc" style="font-size: 10.5px; color: #94a3b8;">Log Replacement Part</div>
               </button>
 
-              <!-- 6. Machine Lifetime Passport -->
-              <button type="button" id="act-btn-passport" class="action-tile-btn ${canViewLifetime ? '' : 'disabled'}" style="${canViewLifetime ? 'border-color: #a855f7;' : 'opacity: 0.45; pointer-events: none; border-color: rgba(255,255,255,0.08);'}" title="View Complete Lifetime History Passport">
-                <div style="font-size: 22px; margin-bottom: 4px;">📜</div>
-                <div style="font-size: 12.5px; font-weight: 800; color: #f8fafc;">Lifetime Passport</div>
-                <div style="font-size: 10.5px; color: #94a3b8;">Transfers &amp; Repair History</div>
+              <!-- 6. Machine Report & Official Documentation -->
+              <button type="button" id="act-btn-report" class="action-tile-btn" style="border-color: #38bdf8;" title="View & Print Official Machine PM Sheet or Lifetime Passport">
+                <div class="action-tile-icon" style="font-size: 22px; margin-bottom: 4px;">📑</div>
+                <div class="action-tile-title" style="font-size: 12.5px; font-weight: 800; color: #f8fafc;">Machine Report</div>
+                <div class="action-tile-desc" style="font-size: 10.5px; color: #94a3b8;">PM &amp; Audit Sheet</div>
               </button>
 
-              <!-- 7. Machine Technical Details -->
+              <!-- 7. Machine Lifetime Passport -->
+              <button type="button" id="act-btn-passport" class="action-tile-btn ${canViewLifetime ? '' : 'disabled'}" style="${canViewLifetime ? 'border-color: #a855f7;' : 'opacity: 0.45; pointer-events: none; border-color: rgba(255,255,255,0.08);'}" title="View Complete Lifetime History Passport & PDF">
+                <div class="action-tile-icon" style="font-size: 22px; margin-bottom: 4px;">📜</div>
+                <div class="action-tile-title" style="font-size: 12.5px; font-weight: 800; color: #f8fafc;">Lifetime Passport</div>
+                <div class="action-tile-desc" style="font-size: 10.5px; color: #94a3b8;">Transfers &amp; Repair History</div>
+              </button>
+
+              <!-- 8. Machine Technical Details -->
               <button type="button" id="act-btn-details" class="action-tile-btn" style="border-color: rgba(255,255,255,0.2);" title="Open Machine Specifications Drawer">
-                <div style="font-size: 22px; margin-bottom: 4px;">🔍</div>
-                <div style="font-size: 12.5px; font-weight: 800; color: #f8fafc;">Technical Details</div>
-                <div style="font-size: 10.5px; color: #94a3b8;">Specs &amp; Parameters</div>
+                <div class="action-tile-icon" style="font-size: 22px; margin-bottom: 4px;">🔍</div>
+                <div class="action-tile-title" style="font-size: 12.5px; font-weight: 800; color: #f8fafc;">Technical Details</div>
+                <div class="action-tile-desc" style="font-size: 10.5px; color: #94a3b8;">Specs &amp; Parameters</div>
               </button>
 
-              <!-- 8. Edit Machine Master -->
+              <!-- 9. Edit Machine Master -->
               <button type="button" id="act-btn-edit" class="action-tile-btn ${canEditMaster ? '' : 'disabled'}" style="${canEditMaster ? 'border-color: #ec4899;' : 'opacity: 0.45; pointer-events: none; border-color: rgba(255,255,255,0.08);'}" title="${canEditMaster ? 'Edit Machine Master Specifications' : 'Restricted: Edit Machine permission required'}">
-                <div style="font-size: 22px; margin-bottom: 4px;">✏️</div>
-                <div style="font-size: 12.5px; font-weight: 800; color: #f8fafc;">Edit Master Data</div>
-                <div style="font-size: 10.5px; color: #94a3b8;">Update Attributes</div>
+                <div class="action-tile-icon" style="font-size: 22px; margin-bottom: 4px;">✏️</div>
+                <div class="action-tile-title" style="font-size: 12.5px; font-weight: 800; color: #f8fafc;">Edit Master Data</div>
+                <div class="action-tile-desc" style="font-size: 10.5px; color: #94a3b8;">Update Attributes</div>
               </button>
 
             </div>
           </div>
 
           <!-- Dynamic Action Sub-Form Container (Rendered on Demand) -->
-          <div id="smart-action-subform-box" style="display: none; background: rgba(15, 23, 42, 0.9); border: 1.5px solid #38bdf8; border-radius: 12px; padding: 14px 16px;"></div>
+          <div id="smart-action-subform-box" style="display: none; background: rgba(15, 23, 42, 0.9); border: 1.5px solid #38bdf8; border-radius: 12px; padding: 14px 16px; flex-shrink: 0;"></div>
 
           <!-- Footer Guidance -->
-          <div style="display: flex; align-items: center; justify-content: space-between; font-size: 11px; color: #64748b; padding-top: 6px; border-top: 1px solid rgba(255,255,255,0.06);">
+          <div style="display: flex; align-items: center; justify-content: space-between; font-size: 11px; color: #64748b; padding-top: 6px; border-top: 1px solid rgba(255,255,255,0.06); flex-shrink: 0; flex-wrap: wrap; gap: 6px;">
             <span>💡 Press <strong>Esc</strong> to close &bull; Selected machine automatically binds to action forms</span>
             <button type="button" id="btn-smart-action-pocket" class="btn btn-ghost btn-xs" style="color: #38bdf8; font-weight: 700; text-decoration: underline;">
               View Pocket HUD Card ↗
@@ -552,20 +561,34 @@ export function openSmartMachineActionModal(machineOrQuery) {
     });
   }
 
-  // 6. Machine Lifetime Passport
+  // 6. Machine Report & Official Documentation Selector
+  const actReport = document.getElementById('act-btn-report');
+  if (actReport) {
+    actReport.addEventListener('click', () => {
+      renderInlineQuickReportOptions(machine);
+    });
+  }
+
+  // 7. Machine Lifetime Passport
   const actPassport = document.getElementById('act-btn-passport');
   if (actPassport && canViewLifetime) {
     actPassport.addEventListener('click', () => {
       closeSmartMachineActionModal();
-      try {
-        state.set('activeMachineId', machine.id);
-        state.set('currentView', 'machine-history');
-        router.navigate('machine-history');
-      } catch (_) {}
+      if (typeof openMachinePassportModal === 'function') {
+        openMachinePassportModal(machine.serialNumber);
+      } else if (typeof window.openMachinePassportModal === 'function') {
+        window.openMachinePassportModal(machine.serialNumber);
+      } else {
+        try {
+          state.set('activeMachineId', machine.id);
+          state.set('currentView', 'machine-history');
+          router.navigate('machine-history');
+        } catch (_) {}
+      }
     });
   }
 
-  // 7. Technical Details
+  // 8. Technical Details
   const actDetails = document.getElementById('act-btn-details');
   if (actDetails) {
     actDetails.addEventListener('click', () => {
@@ -579,7 +602,7 @@ export function openSmartMachineActionModal(machineOrQuery) {
     });
   }
 
-  // 8. Edit Master Data
+  // 9. Edit Master Data
   const actEdit = document.getElementById('act-btn-edit');
   if (actEdit && canEditMaster) {
     actEdit.addEventListener('click', () => {
@@ -594,12 +617,162 @@ export function openSmartMachineActionModal(machineOrQuery) {
 }
 
 /**
+ * In-Modal Machine Report & Official Documentation Selector
+ * Directly opens:
+ * 1. Official PM Maintenance Report & Print Sheet (A4 Sheet scoped to this machine)
+ * 2. Lifetime Machine Passport & Audit PDF (complete history of movement, repairs, parts)
+ * 3. Offline Machine Pocket Card HUD (mobile quick-glance card)
+ */
+function renderInlineQuickReportOptions(machine) {
+  const box = document.getElementById('smart-action-subform-box');
+  if (!box) return;
+
+  // Toggle behavior: if already open with report options, close it
+  if (box.style.display !== 'none' && box.dataset.activeForm === 'report') {
+    box.style.display = 'none';
+    box.dataset.activeForm = '';
+    return;
+  }
+
+  box.dataset.activeForm = 'report';
+  box.style.display = 'block';
+
+  const serial = machine.serialNumber || getMachineDisplayId(machine);
+
+  box.innerHTML = `
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 8px;">
+      <div style="font-size: 13px; font-weight: 800; color: #38bdf8; display: flex; align-items: center; gap: 6px;">
+        <span>📑</span> Machine Reports &amp; Official Documentation
+      </div>
+      <button type="button" id="btn-cancel-report-box" class="btn btn-ghost btn-xs" style="color: #94a3b8;">✕ Close</button>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      
+      <!-- Option 1: Official PM Report Sheet -->
+      <button type="button" id="btn-quick-rep-pm-sheet" class="btn" style="background: rgba(56, 189, 248, 0.08); border: 1.5px solid rgba(56, 189, 248, 0.4); border-radius: 10px; padding: 10px 12px; display: flex; align-items: center; justify-content: space-between; text-align: left; cursor: pointer; transition: all 0.2s; gap: 10px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(56, 189, 248, 0.15); border: 1px solid #38bdf8; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0;">
+            📄
+          </div>
+          <div>
+            <div style="font-size: 12px; font-weight: 800; color: #f8fafc;">Official PM Maintenance Report &amp; Print Sheet</div>
+            <div style="font-size: 10.5px; color: #94a3b8;">Al-Muslim standard A4 preventive servicing checklist scoped to this machine</div>
+          </div>
+        </div>
+        <span style="color: #38bdf8; font-size: 13px; font-weight: 800; flex-shrink: 0;">Open ➔</span>
+      </button>
+
+      <!-- Option 2: Lifetime Passport & Audit PDF -->
+      <button type="button" id="btn-quick-rep-passport" class="btn" style="background: rgba(168, 85, 247, 0.08); border: 1.5px solid rgba(168, 85, 247, 0.4); border-radius: 10px; padding: 10px 12px; display: flex; align-items: center; justify-content: space-between; text-align: left; cursor: pointer; transition: all 0.2s; gap: 10px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(168, 85, 247, 0.15); border: 1px solid #c084fc; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0;">
+            📜
+          </div>
+          <div>
+            <div style="font-size: 12px; font-weight: 800; color: #f8fafc;">Lifetime Machine Passport &amp; Audit PDF</div>
+            <div style="font-size: 10.5px; color: #94a3b8;">Complete lifetime audit trail: location movements, repairs, and replaced spare parts</div>
+          </div>
+        </div>
+        <span style="color: #c084fc; font-size: 13px; font-weight: 800; flex-shrink: 0;">View ➔</span>
+      </button>
+
+      <!-- Option 3: Pocket HUD Card -->
+      <button type="button" id="btn-quick-rep-pocket" class="btn" style="background: rgba(34, 197, 94, 0.08); border: 1.5px solid rgba(34, 197, 94, 0.4); border-radius: 10px; padding: 10px 12px; display: flex; align-items: center; justify-content: space-between; text-align: left; cursor: pointer; transition: all 0.2s; gap: 10px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(34, 197, 94, 0.15); border: 1px solid #4ade80; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0;">
+            🏷️
+          </div>
+          <div>
+            <div style="font-size: 12px; font-weight: 800; color: #f8fafc;">Offline Machine Pocket Card (HUD)</div>
+            <div style="font-size: 10.5px; color: #94a3b8;">High-density offline quick-glance card with QR scanner tag and technical specs</div>
+          </div>
+        </div>
+        <span style="color: #4ade80; font-size: 13px; font-weight: 800; flex-shrink: 0;">Display ➔</span>
+      </button>
+
+    </div>
+  `;
+
+  // Scroll subform smoothly into view within modal body
+  setTimeout(() => {
+    box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }, 50);
+
+  // Wire buttons
+  const btnClose = document.getElementById('btn-cancel-report-box');
+  if (btnClose) {
+    btnClose.addEventListener('click', () => {
+      box.style.display = 'none';
+      box.dataset.activeForm = '';
+    });
+  }
+
+  const btnPmSheet = document.getElementById('btn-quick-rep-pm-sheet');
+  if (btnPmSheet) {
+    btnPmSheet.addEventListener('click', () => {
+      closeSmartMachineActionModal();
+      try {
+        state.set('pmReportFilterSerial', serial);
+        state.set('pmActiveTab', 'maintenance-report');
+        state.set('currentView', 'preventive-maintenance');
+        if (typeof window.app !== 'undefined' && typeof window.app.switchView === 'function') {
+          window.app._currentRenderedView = null;
+          window.app.switchView('preventive-maintenance', { tab: 'maintenance-report' });
+        } else {
+          router.navigate('preventive-maintenance', { tab: 'maintenance-report' });
+        }
+      } catch (_) {}
+    });
+  }
+
+  const btnPassport = document.getElementById('btn-quick-rep-passport');
+  if (btnPassport) {
+    btnPassport.addEventListener('click', () => {
+      closeSmartMachineActionModal();
+      if (typeof openMachinePassportModal === 'function') {
+        openMachinePassportModal(machine.serialNumber);
+      } else if (typeof window.openMachinePassportModal === 'function') {
+        window.openMachinePassportModal(machine.serialNumber);
+      } else {
+        state.set('activeMachineId', machine.id);
+        state.set('currentView', 'machine-history');
+        router.navigate('machine-history');
+      }
+    });
+  }
+
+  const btnPocket = document.getElementById('btn-quick-rep-pocket');
+  if (btnPocket) {
+    btnPocket.addEventListener('click', () => {
+      closeSmartMachineActionModal();
+      if (typeof openMachinePocketCard === 'function') {
+        openMachinePocketCard(machine);
+      } else if (typeof window.openMachinePocketCard === 'function') {
+        window.openMachinePocketCard(machine);
+      }
+    });
+  }
+}
+
+/**
  * In-Modal Instant Relocation Execution
  * Allows changing machine Floor / Line directly without navigating to other modules!
  */
 function renderInlineQuickRelocateForm(machine, currentFloorStr, currentLineStr) {
   const box = document.getElementById('smart-action-subform-box');
   if (!box) return;
+
+  if (box.style.display !== 'none' && box.dataset.activeForm === 'relocate') {
+    box.style.display = 'none';
+    box.dataset.activeForm = '';
+    return;
+  }
+  box.dataset.activeForm = 'relocate';
+  box.style.display = 'block';
+  setTimeout(() => {
+    box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }, 50);
 
   const floors = storage.getTable(TABLE_NAMES.FLOORS) || [];
   const lines = storage.getTable(TABLE_NAMES.LINES) || [];
@@ -662,7 +835,12 @@ function renderInlineQuickRelocateForm(machine, currentFloorStr, currentLineStr)
   }
 
   const cancelBtn = document.getElementById('btn-cancel-inline-relocate');
-  if (cancelBtn) cancelBtn.addEventListener('click', () => { box.style.display = 'none'; });
+  if (cancelBtn) {
+    cancelBtn.addEventListener('click', () => {
+      box.style.display = 'none';
+      box.dataset.activeForm = '';
+    });
+  }
 
   const saveBtn = document.getElementById('btn-save-inline-relocate');
   if (saveBtn) {
@@ -734,6 +912,17 @@ function renderInlineQuickServiceForm(machine) {
   const box = document.getElementById('smart-action-subform-box');
   if (!box) return;
 
+  if (box.style.display !== 'none' && box.dataset.activeForm === 'service') {
+    box.style.display = 'none';
+    box.dataset.activeForm = '';
+    return;
+  }
+  box.dataset.activeForm = 'service';
+  box.style.display = 'block';
+  setTimeout(() => {
+    box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }, 50);
+
   box.innerHTML = `
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 8px;">
       <div style="font-size: 13px; font-weight: 800; color: #f87171; display: flex; align-items: center; gap: 6px;">
@@ -778,7 +967,12 @@ function renderInlineQuickServiceForm(machine) {
   box.style.display = 'block';
 
   const cancelBtn = document.getElementById('btn-cancel-inline-service');
-  if (cancelBtn) cancelBtn.addEventListener('click', () => { box.style.display = 'none'; });
+  if (cancelBtn) {
+    cancelBtn.addEventListener('click', () => {
+      box.style.display = 'none';
+      box.dataset.activeForm = '';
+    });
+  }
 
   const saveBtn = document.getElementById('btn-save-inline-service');
   if (saveBtn) {
