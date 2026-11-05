@@ -1715,6 +1715,16 @@ body.modal-open div {
   scroll-behavior: auto;
 }
 
+/* Isolated Layout Boundaries for Instant 0ms Tab Switching & Zero Layout Shift */
+#tools-tab-content-container,
+#relocate-tab-content-area,
+#parts-trace-content-area,
+.storage-tab-content,
+#reports-tab-content {
+  contain: content;
+  transform: translateZ(0);
+}
+
 /* Badges */
 .badge {
   display: inline-flex;

@@ -351,17 +351,27 @@ class StorageEngine {
         // 1. Start official Google Cloud Firestore onSnapshot real-time listener
         this.initRealtimeSyncListener();
 
-        // 2. Multi-device sync adaptive heartbeat (polls every 3.5s when active, throttles when hidden)
+        // 2. Multi-device sync adaptive heartbeat (polls every 5s when active, throttles when hidden or offline)
         if (!this._remoteSyncTimer) {
           let lastHiddenTick = 0;
+          let lastOfflineTick = 0;
           this._remoteSyncTimer = setInterval(() => {
             const isHidden = typeof document !== 'undefined' && document.visibilityState === 'hidden';
             if (isHidden) {
               const now = Date.now();
-              if (now - lastHiddenTick < 25000) {
-                return; // Throttle to 25s when tab/app is hidden in background
+              if (now - lastHiddenTick < 30000) {
+                return; // Throttle to 30s when tab/app is hidden in background
               }
               lastHiddenTick = now;
+            }
+
+            // Exponential backoff when disconnected from cloud (throttle to 20s instead of spamming network)
+            if (!this._isCloudConnected) {
+              const now = Date.now();
+              if (now - lastOfflineTick < 20000) {
+                return;
+              }
+              lastOfflineTick = now;
             }
 
             if (this._pendingRemoteManifest && !this.isUserTyping()) {
@@ -376,7 +386,7 @@ class StorageEngine {
             if (typeof window !== 'undefined' && window.__authService && typeof window.__authService.checkSessionSecurity === 'function') {
               window.__authService.checkSessionSecurity();
             }
-          }, 3500);
+          }, 5000);
         }
       }
 

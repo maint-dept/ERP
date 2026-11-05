@@ -1630,7 +1630,7 @@ export function initInventoryTableEvents() {
       clearTimeout(timeout);
       timeout = setTimeout(() => {
         state.updateFilters({ search: e.target.value, page: 1 });
-      }, 150);
+      }, 45);
     });
 
     searchInput.addEventListener('keydown', (e) => {

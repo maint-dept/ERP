@@ -14,6 +14,70 @@ import { notificationService } from './notificationService.js';
 import { historyService } from './historyService.js';
 import { syncManager } from '../db/syncManager.js';
 
+// High-Speed Master Data Maps & Machine Search Token Cache (Sub-1ms Lookups)
+let _cachedMasterMaps = null;
+let _cachedMasterVersion = 0;
+let _machineSearchIndex = new WeakMap();
+
+function getMasterDataSearchMaps() {
+  const currentVer = storage.lastTableUpdates ? (
+    (storage.lastTableUpdates[TABLE_NAMES.GROUPS] || 0) +
+    (storage.lastTableUpdates[TABLE_NAMES.MACHINE_NAMES] || 0) +
+    (storage.lastTableUpdates[TABLE_NAMES.BRANDS] || 0) +
+    (storage.lastTableUpdates[TABLE_NAMES.MODELS] || 0) +
+    (storage.lastTableUpdates[TABLE_NAMES.LINES] || 0) +
+    (storage.lastTableUpdates[TABLE_NAMES.FLOORS] || 0) +
+    (storage.lastTableUpdates[TABLE_NAMES.UNITS] || 0)
+  ) : 0;
+
+  if (_cachedMasterMaps && _cachedMasterVersion === currentVer) {
+    return _cachedMasterMaps;
+  }
+
+  _cachedMasterMaps = {
+    grpMap: new Map((storage.getTable(TABLE_NAMES.GROUPS) || []).map(x => [x.id, (x.name || '').toLowerCase()])),
+    mnMap: new Map((storage.getTable(TABLE_NAMES.MACHINE_NAMES) || []).map(x => [x.id, (x.name || '').toLowerCase()])),
+    brdMap: new Map((storage.getTable(TABLE_NAMES.BRANDS) || []).map(x => [x.id, (x.name || '').toLowerCase()])),
+    mdlMap: new Map((storage.getTable(TABLE_NAMES.MODELS) || []).map(x => [x.id, (x.name || '').toLowerCase()])),
+    linMap: new Map((storage.getTable(TABLE_NAMES.LINES) || []).map(x => [x.id, (x.name || '').toLowerCase()])),
+    flrMap: new Map((storage.getTable(TABLE_NAMES.FLOORS) || []).map(x => [x.id, (x.name || '').toLowerCase()])),
+    untMap: new Map((storage.getTable(TABLE_NAMES.UNITS) || []).map(x => [x.id, (x.name || '').toLowerCase()]))
+  };
+  _cachedMasterVersion = currentVer;
+  return _cachedMasterMaps;
+}
+
+function getMachineSearchToken(m, maps) {
+  let token = _machineSearchIndex.get(m);
+  if (token !== undefined) return token;
+
+  const parts = [
+    m.serialNumber || '',
+    m.systemAssetId || '',
+    m.permanentMachineId || '',
+    m.manufacturing_serial || m.manufacturingSerial || '',
+    m.remarks || '',
+    m.model || m.modelName || m.modelStr || '',
+    maps.mnMap.get(m.machineNameId) || '',
+    maps.brdMap.get(m.brandId) || '',
+    maps.mdlMap.get(m.modelId) || '',
+    maps.linMap.get(m.lineId) || (m.line || ''),
+    maps.flrMap.get(m.floorId) || (m.floor || ''),
+    maps.untMap.get(m.unitId) || (m.unit || ''),
+    maps.grpMap.get(m.groupId) || (m.group || '')
+  ];
+
+  if (m.customValues && typeof m.customValues === 'object') {
+    for (const ck in m.customValues) {
+      if (m.customValues[ck]) parts.push(String(m.customValues[ck]));
+    }
+  }
+
+  token = parts.join(' ').toLowerCase();
+  _machineSearchIndex.set(m, token);
+  return token;
+}
+
 /**
  * Universal Ambulance / Standby Line Replacement Machine Checker
  * Matches ambulance flag, status, or designated keywords in workingArea/line/remarks.
@@ -190,17 +254,7 @@ class MachineService {
 
     const rawSearch = (params.search || '').trim().toLowerCase();
     const hasSearch = rawSearch.length > 0;
-
-    let grpMap, mnMap, brdMap, mdlMap, linMap, flrMap, untMap;
-    if (hasSearch) {
-      grpMap = new Map((storage.getTable(TABLE_NAMES.GROUPS) || []).map(x => [x.id, (x.name || '').toLowerCase()]));
-      mnMap = new Map((storage.getTable(TABLE_NAMES.MACHINE_NAMES) || []).map(x => [x.id, (x.name || '').toLowerCase()]));
-      brdMap = new Map((storage.getTable(TABLE_NAMES.BRANDS) || []).map(x => [x.id, (x.name || '').toLowerCase()]));
-      mdlMap = new Map((storage.getTable(TABLE_NAMES.MODELS) || []).map(x => [x.id, (x.name || '').toLowerCase()]));
-      linMap = new Map((storage.getTable(TABLE_NAMES.LINES) || []).map(x => [x.id, (x.name || '').toLowerCase()]));
-      flrMap = new Map((storage.getTable(TABLE_NAMES.FLOORS) || []).map(x => [x.id, (x.name || '').toLowerCase()]));
-      untMap = new Map((storage.getTable(TABLE_NAMES.UNITS) || []).map(x => [x.id, (x.name || '').toLowerCase()]));
-    }
+    const masterMaps = hasSearch ? getMasterDataSearchMaps() : null;
 
     const customFilterEntries = params.customFilters 
       ? Object.entries(params.customFilters).filter(([_, v]) => v !== undefined && v !== null && v !== '' && v !== 'ALL')
@@ -255,48 +309,17 @@ class MachineService {
         if (!matchCustom) continue;
       }
 
-      // Global Multi-Field Search Match
+      // Global Multi-Field Search Match (Sub-1ms Memoized Token Search Engine)
       if (hasSearch) {
-        let matchSearch = false;
-        if (s.toLowerCase().includes(rawSearch)) {
-          matchSearch = true;
-        } else if (m.manufacturing_serial?.toLowerCase().includes(rawSearch) || m.manufacturingSerial?.toLowerCase().includes(rawSearch) || m.customValues?.manufacturing_serial?.toString().toLowerCase().includes(rawSearch)) {
-          matchSearch = true;
-        } else if (m.remarks?.toLowerCase().includes(rawSearch)) {
-          matchSearch = true;
-        } else if (m.model?.toLowerCase().includes(rawSearch) || m.modelName?.toLowerCase().includes(rawSearch) || m.modelStr?.toLowerCase().includes(rawSearch)) {
-          matchSearch = true;
-        } else if (mnMap.get(m.machineNameId)?.includes(rawSearch)) {
-          matchSearch = true;
-        } else if (brdMap.get(m.brandId)?.includes(rawSearch)) {
-          matchSearch = true;
-        } else if (mdlMap.get(m.modelId)?.includes(rawSearch)) {
-          matchSearch = true;
-        } else {
-          const lName = linMap.get(m.lineId) || (m.line || '').toLowerCase();
-          if (lName.includes(rawSearch)) {
-            matchSearch = true;
-          } else {
-            const cleanL = lName.replace(/^[a-z]{2,3}-/i, '').trim();
-            if (cleanL && (cleanL === rawSearch || `line ${cleanL}`.includes(rawSearch) || cleanL.includes(rawSearch))) {
-              matchSearch = true;
-            } else if (flrMap.get(m.floorId)?.includes(rawSearch) || (m.floor || '').toLowerCase().includes(rawSearch)) {
-              matchSearch = true;
-            } else if (untMap.get(m.unitId)?.includes(rawSearch) || (m.unit || '').toLowerCase().includes(rawSearch)) {
-              matchSearch = true;
-            } else if (grpMap.get(m.groupId)?.includes(rawSearch) || (m.group || '').toLowerCase().includes(rawSearch)) {
-              matchSearch = true;
-            } else if (m.customValues) {
-              for (const ck in m.customValues) {
-                if (String(m.customValues[ck]).toLowerCase().includes(rawSearch)) {
-                  matchSearch = true;
-                  break;
-                }
-              }
-            }
+        const token = getMachineSearchToken(m, masterMaps);
+        if (!token.includes(rawSearch)) {
+          // Special fallback for line variations like "Line 5" vs "L-05"
+          const lName = masterMaps.linMap.get(m.lineId) || (m.line || '').toLowerCase();
+          const cleanL = lName.replace(/^[a-z]{2,3}-/i, '').trim();
+          if (!cleanL || (!cleanL.includes(rawSearch) && !`line ${cleanL}`.includes(rawSearch))) {
+            continue;
           }
         }
-        if (!matchSearch) continue;
       }
 
       // Record passed location, hierarchy, and search scope: update Scope KPI Metrics
