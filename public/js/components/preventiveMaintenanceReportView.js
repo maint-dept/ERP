@@ -1934,10 +1934,17 @@ export function initPreventiveMaintenanceReportEvents(container = document) {
         machinesToExport = populateReportRowsFromMachines(reportState.allMatchingMachines, 0);
       }
 
+      const units = storage.getTable(TABLE_NAMES.UNITS) || [];
+      const floors = storage.getTable(TABLE_NAMES.FLOORS) || [];
+      const uObj = units.find(u => u.id === reportState.unitId);
+      const fObj = floors.find(f => f.id === reportState.floorId);
+      const uLabel = uObj?.name || reportState.unitName || 'All Units';
+      const fLabel = fObj?.name || reportState.floorName || 'All Floors';
+
       pdfService.generateOfficialPMReportPDF({
         reportState,
         rows: machinesToExport,
-        filterSummary: `Unit: ${activeUnitLabel || 'All'} | Floor: ${activeFloorLabel || 'All'}`
+        filterSummary: `Unit: ${uLabel} | Floor: ${fLabel}`
       });
     });
   }

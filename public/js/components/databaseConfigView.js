@@ -1119,7 +1119,7 @@ export function renderDatabaseConfigView() {
             </p>
           </div>
           <span style="font-size: 11.5px; color: #a5f3fc; background: rgba(56,189,248,0.1); border: 1px solid rgba(56,189,248,0.25); padding: 4px 10px; border-radius: 6px; font-family: monospace;">
-            import { db } from './public/js/db/dbClient.js';
+            import { db } from './js/db/dbClient.js';
           </span>
         </div>
 

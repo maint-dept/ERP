@@ -608,108 +608,116 @@ export async function initQrScannerModalEvents({ onScanSuccess, onManualSearchRe
     });
   };
 
+  let isStartingCamera = false;
+
   // Robust Camera Startup Engine
   const startCamera = async (targetFacing = 'environment') => {
-    // 1. Release previous camera cleanly
-    await destroyScanner();
+    if (isStartingCamera) return;
+    isStartingCamera = true;
+    try {
+      // 1. Release previous camera cleanly
+      await destroyScanner();
 
-    if (typeof Html5Qrcode === 'undefined') {
+      if (typeof Html5Qrcode === 'undefined') {
+        if (loadingEl) {
+          loadingEl.style.display = 'block';
+          const textNode = loadingEl.querySelector('div:nth-child(2)');
+          if (textNode) textNode.textContent = 'Loading Camera Engine...';
+        }
+        const loaded = await ensureHtml5Qrcode();
+        if (!loaded || typeof Html5Qrcode === 'undefined') {
+          if (loadingEl) loadingEl.style.display = 'none';
+          if (errorEl) {
+            errorEl.style.display = 'flex';
+            errorMsgEl.textContent = 'Camera scanner library not loaded. Please use Manual Search.';
+          }
+          return;
+        }
+      }
+
       if (loadingEl) {
         loadingEl.style.display = 'block';
         const textNode = loadingEl.querySelector('div:nth-child(2)');
-        if (textNode) textNode.textContent = 'Loading Camera Engine...';
+        if (textNode) textNode.textContent = targetFacing === 'environment' ? 'Opening Rear Camera...' : 'Opening Front Camera...';
       }
-      const loaded = await ensureHtml5Qrcode();
-      if (!loaded || typeof Html5Qrcode === 'undefined') {
+      if (errorEl) errorEl.style.display = 'none';
+
+      // Allow DOM to compute real viewport dimensions
+      await new Promise(resolve => setTimeout(resolve, 80));
+
+      const containerEl = document.getElementById('qr-reader-container');
+      if (!containerEl) return;
+
+      try {
+        activeScanner = new Html5Qrcode('qr-reader-container');
+
+        const config = {
+          fps: 20,
+          qrbox: (viewfinderWidth, viewfinderHeight) => {
+            const minDim = Math.min(viewfinderWidth, viewfinderHeight);
+            const boxSize = Math.max(180, Math.floor(minDim * 0.72));
+            return { width: boxSize, height: boxSize };
+          }
+        };
+
+        // Cascade Strategy:
+        // Step A: Standard standard WebRTC mobile facing constraint: { facingMode: "environment" } or "user"
+        try {
+          await activeScanner.start({ facingMode: targetFacing }, config, handleDecoded, () => {});
+        } catch (errA) {
+          console.warn(`Direct facingMode ${targetFacing} failed, trying ideal constraint:`, errA);
+          // Step B: Ideal facingMode constraint
+          try {
+            await activeScanner.start({ facingMode: { ideal: targetFacing } }, config, handleDecoded, () => {});
+          } catch (errB) {
+            console.warn('Ideal constraint failed, querying camera device IDs:', errB);
+            // Step C: Specific Camera deviceId
+            const cams = await Html5Qrcode.getCameras().catch(() => []);
+            if (cams && cams.length > 0) {
+              let chosenCam = null;
+              if (targetFacing === 'environment') {
+                chosenCam = cams.find(c => {
+                  const l = (c.label || '').toLowerCase();
+                  return l.includes('back') || l.includes('rear') || l.includes('environment');
+                }) || cams[cams.length - 1];
+              } else {
+                chosenCam = cams.find(c => {
+                  const l = (c.label || '').toLowerCase();
+                  return l.includes('front') || l.includes('user') || l.includes('selfie');
+                }) || cams[0];
+              }
+              await activeScanner.start(chosenCam.id, config, handleDecoded, () => {});
+            } else {
+              // Step D: Any camera (boolean true)
+              await activeScanner.start(true, config, handleDecoded, () => {});
+            }
+          }
+        }
+
+        isScanningActive = true;
+        if (loadingEl) loadingEl.style.display = 'none';
+        isBackFacing = (targetFacing === 'environment');
+        updateCameraUI(isBackFacing);
+
+      } catch (finalErr) {
+        console.error('All camera attempts failed:', finalErr);
         if (loadingEl) loadingEl.style.display = 'none';
         if (errorEl) {
           errorEl.style.display = 'flex';
-          errorMsgEl.textContent = 'Camera scanner library not loaded. Please use Manual Search.';
-        }
-        return;
-      }
-    }
-
-    if (loadingEl) {
-      loadingEl.style.display = 'block';
-      const textNode = loadingEl.querySelector('div:nth-child(2)');
-      if (textNode) textNode.textContent = targetFacing === 'environment' ? 'Opening Rear Camera...' : 'Opening Front Camera...';
-    }
-    if (errorEl) errorEl.style.display = 'none';
-
-    // Allow DOM to compute real viewport dimensions
-    await new Promise(resolve => setTimeout(resolve, 80));
-
-    const containerEl = document.getElementById('qr-reader-container');
-    if (!containerEl) return;
-
-    try {
-      activeScanner = new Html5Qrcode('qr-reader-container');
-
-      const config = {
-        fps: 20,
-        qrbox: (viewfinderWidth, viewfinderHeight) => {
-          const minDim = Math.min(viewfinderWidth, viewfinderHeight);
-          const boxSize = Math.max(180, Math.floor(minDim * 0.72));
-          return { width: boxSize, height: boxSize };
-        }
-      };
-
-      // Cascade Strategy:
-      // Step A: Standard standard WebRTC mobile facing constraint: { facingMode: "environment" } or "user"
-      try {
-        await activeScanner.start({ facingMode: targetFacing }, config, handleDecoded, () => {});
-      } catch (errA) {
-        console.warn(`Direct facingMode ${targetFacing} failed, trying ideal constraint:`, errA);
-        // Step B: Ideal facingMode constraint
-        try {
-          await activeScanner.start({ facingMode: { ideal: targetFacing } }, config, handleDecoded, () => {});
-        } catch (errB) {
-          console.warn('Ideal constraint failed, querying camera device IDs:', errB);
-          // Step C: Specific Camera deviceId
-          const cams = await Html5Qrcode.getCameras().catch(() => []);
-          if (cams && cams.length > 0) {
-            let chosenCam = null;
-            if (targetFacing === 'environment') {
-              chosenCam = cams.find(c => {
-                const l = (c.label || '').toLowerCase();
-                return l.includes('back') || l.includes('rear') || l.includes('environment');
-              }) || cams[cams.length - 1];
+          const msg = (finalErr && finalErr.message) ? finalErr.message : String(finalErr);
+          if (errorMsgEl) {
+            if (msg.includes('Permission') || msg.includes('NotAllowed')) {
+              errorMsgEl.textContent = 'Camera Permission Blocked: Tap the lock icon in your browser address bar to allow camera access.';
+            } else if (msg.includes('NotReadable') || msg.includes('busy') || msg.includes('Could not start')) {
+              errorMsgEl.textContent = 'Camera Sensor Busy: Tap Retry below or close any background apps using camera.';
             } else {
-              chosenCam = cams.find(c => {
-                const l = (c.label || '').toLowerCase();
-                return l.includes('front') || l.includes('user') || l.includes('selfie');
-              }) || cams[0];
+              errorMsgEl.textContent = 'Camera Sensor Initialization Failed (' + msg.substring(0, 60) + '). Tap Retry below.';
             }
-            await activeScanner.start(chosenCam.id, config, handleDecoded, () => {});
-          } else {
-            // Step D: Any camera (boolean true)
-            await activeScanner.start(true, config, handleDecoded, () => {});
           }
         }
       }
-
-      isScanningActive = true;
-      if (loadingEl) loadingEl.style.display = 'none';
-      isBackFacing = (targetFacing === 'environment');
-      updateCameraUI(isBackFacing);
-
-    } catch (finalErr) {
-      console.error('All camera attempts failed:', finalErr);
-      if (loadingEl) loadingEl.style.display = 'none';
-      if (errorEl) {
-        errorEl.style.display = 'flex';
-        const msg = (finalErr && finalErr.message) ? finalErr.message : String(finalErr);
-        if (errorMsgEl) {
-          if (msg.includes('Permission') || msg.includes('NotAllowed')) {
-            errorMsgEl.textContent = 'Camera Permission Blocked: Tap the lock icon in your browser address bar to allow camera access.';
-          } else if (msg.includes('NotReadable') || msg.includes('busy') || msg.includes('Could not start')) {
-            errorMsgEl.textContent = 'Camera Sensor Busy: Tap Retry below or close any background apps using camera.';
-          } else {
-            errorMsgEl.textContent = 'Camera Sensor Initialization Failed (' + msg.substring(0, 60) + '). Tap Retry below.';
-          }
-        }
-      }
+    } finally {
+      isStartingCamera = false;
     }
   };
 

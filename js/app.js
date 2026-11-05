@@ -4,36 +4,36 @@
  * Enhanced with Global Scroll & Focus State Preservation Engine (Zero Jitter, Zero Scroll Loss)
  */
 
-import { state } from './state.js?v=4.33.0';
-import { storage } from './db/storage.js?v=4.33.0';
-import { authService } from './services/authService.js?v=4.33.0';
-import { renderNavbar, initNavbarEvents } from './components/navbar.js?v=4.33.0';
-import { renderSidebar, initSidebarEvents, updateSidebarActiveState } from './components/sidebar.js?v=4.33.0';
-import { renderHomepageView, initHomepageEvents } from './components/homepageView.js?v=4.33.0';
-import { renderLoginView, initLoginViewEvents } from './components/loginView.js?v=4.33.0';
-import { renderDashboard, initDashboardEvents } from './components/dashboard.js?v=4.33.0';
-import { renderMachineModal, initMachineModalEvents } from './components/machineModal.js?v=4.33.0';
-import { renderMachineDetails, initMachineDetailsEvents } from './components/machineDetails.js?v=4.33.0';
-import { renderTransferModal, initTransferModalEvents } from './components/transferModal.js?v=4.33.0';
-import { renderTransferDetailsModal, initTransferDetailsModalEvents } from './components/transferDetailsModal.js?v=4.33.0';
-import { renderEditTransferModal, initEditTransferModalEvents } from './components/editTransferModal.js?v=4.33.0';
-import { renderExcelImportModal, initExcelImportEvents } from './components/excelImportModal.js?v=4.33.0';
-import { renderColumnVisibilityModal, initColumnVisibilityEvents } from './components/columnVisibilityModal.js?v=4.33.0';
-import { renderNotificationsDrawer, initNotificationsDrawerEvents } from './components/notificationsDrawer.js?v=4.33.0';
-import { renderChangePasswordModal, initChangePasswordModalEvents } from './components/changePasswordModal.js?v=4.33.0';
-import { renderAccountSwitcherModal, initAccountSwitcherModalEvents } from './components/accountSwitcherModal.js?v=4.33.0';
-import { smartStorageService } from './services/smartStorageService.js?v=4.33.0';
-import { historyService } from './services/historyService.js?v=4.33.0';
-import { auditService } from './services/auditService.js?v=4.33.0';
-import { notificationService } from './services/notificationService.js?v=4.33.0';
-import { openDeleteConfirmationModal, confirmDelete } from './components/deleteConfirmationModal.js?v=4.33.0';
-import { tempImportService } from './services/tempImportService.js?v=4.33.0';
-import { router } from './services/router.js?v=4.33.0';
-import { moduleLoader } from './services/moduleLoader.js?v=4.33.0';
-import { realtimeService } from './services/realtimeService.js?v=4.33.0';
-import { homepageService } from './services/homepageService.js?v=4.33.0';
-import { webPushService } from './services/webPushService.js?v=4.33.0';
-import { notificationGateway } from './services/notificationGatewayService.js?v=4.33.0';
+import { state } from './state.js?v=4.36.0';
+import { storage } from './db/storage.js?v=4.36.0';
+import { authService } from './services/authService.js?v=4.36.0';
+import { renderNavbar, initNavbarEvents } from './components/navbar.js?v=4.36.0';
+import { renderSidebar, initSidebarEvents, updateSidebarActiveState } from './components/sidebar.js?v=4.36.0';
+import { renderHomepageView, initHomepageEvents } from './components/homepageView.js?v=4.36.0';
+import { renderLoginView, initLoginViewEvents } from './components/loginView.js?v=4.36.0';
+import { renderDashboard, initDashboardEvents } from './components/dashboard.js?v=4.36.0';
+import { renderMachineModal, initMachineModalEvents } from './components/machineModal.js?v=4.36.0';
+import { renderMachineDetails, initMachineDetailsEvents } from './components/machineDetails.js?v=4.36.0';
+import { renderTransferModal, initTransferModalEvents } from './components/transferModal.js?v=4.36.0';
+import { renderTransferDetailsModal, initTransferDetailsModalEvents } from './components/transferDetailsModal.js?v=4.36.0';
+import { renderEditTransferModal, initEditTransferModalEvents } from './components/editTransferModal.js?v=4.36.0';
+import { renderExcelImportModal, initExcelImportEvents } from './components/excelImportModal.js?v=4.36.0';
+import { renderColumnVisibilityModal, initColumnVisibilityEvents } from './components/columnVisibilityModal.js?v=4.36.0';
+import { renderNotificationsDrawer, initNotificationsDrawerEvents } from './components/notificationsDrawer.js?v=4.36.0';
+import { renderChangePasswordModal, initChangePasswordModalEvents } from './components/changePasswordModal.js?v=4.36.0';
+import { renderAccountSwitcherModal, initAccountSwitcherModalEvents } from './components/accountSwitcherModal.js?v=4.36.0';
+import { smartStorageService } from './services/smartStorageService.js?v=4.36.0';
+import { historyService } from './services/historyService.js?v=4.36.0';
+import { auditService } from './services/auditService.js?v=4.36.0';
+import { notificationService } from './services/notificationService.js?v=4.36.0';
+import { openDeleteConfirmationModal, confirmDelete } from './components/deleteConfirmationModal.js?v=4.36.0';
+import { tempImportService } from './services/tempImportService.js?v=4.36.0';
+import { router } from './services/router.js?v=4.36.0';
+import { moduleLoader } from './services/moduleLoader.js?v=4.36.0';
+import { realtimeService } from './services/realtimeService.js?v=4.36.0';
+import { homepageService } from './services/homepageService.js?v=4.36.0';
+import { webPushService } from './services/webPushService.js?v=4.36.0';
+import { notificationGateway } from './services/notificationGatewayService.js?v=4.36.0';
 
 /**
  * Captures all active scroll, viewport, and focused input states.

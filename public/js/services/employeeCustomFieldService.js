@@ -6,7 +6,7 @@
 
 import { storage } from '../db/storage.js';
 import { TABLE_NAMES, FIELD_TYPES } from '../db/schema.js';
-import { authService } from './authService.js?v=4.33.0';
+import { authService } from './authService.js?v=4.36.0';
 import { auditService } from './auditService.js';
 
 const INITIAL_EMPLOYEE_FIELDS = [
