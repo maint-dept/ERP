@@ -1516,12 +1516,11 @@ export function initMachineModalEvents() {
         supplier_name: supplier,
         systemAssetId: machine?.systemAssetId || (machine?.permanentMachineId ? String(machine.permanentMachineId).replace(/^MID-/i, 'AMG-MNT-') : undefined),
         permanentMachineId: machine?.systemAssetId || (machine?.permanentMachineId ? String(machine.permanentMachineId).replace(/^MID-/i, 'AMG-MNT-') : undefined),
+        expectedUpdatedAt: machine?.updatedAt,
+        expectedVersion: machine?.version,
         remarks,
         customValues
       };
-
-      // Close modal only after passing client-side validation
-      closeModal();
 
       try {
         if (isEdit) {
@@ -1541,6 +1540,9 @@ export function initMachineModalEvents() {
             sortOrder: 'desc'
           });
         }
+
+        // Close modal on successful operation
+        closeModal();
 
         // Also sync PM table if serviceDate is present
         if (serviceDate) {
@@ -1576,7 +1578,31 @@ export function initMachineModalEvents() {
           saveBtn.innerHTML = originalBtnText;
         }
 
-        if (err.name === 'CloudSaveError') {
+        if (err.name === 'ConcurrencyConflictError') {
+          notificationService.error(err.message || '⚠️ Record was modified by another session. Please reload latest data.', 'Conflict Detected');
+          const existingBanner = document.getElementById('machine-modal-conflict-banner');
+          if (!existingBanner) {
+            const formEl = document.getElementById('modal-machine-form') || overlay?.querySelector('.modal-content') || document.querySelector('.modal-body');
+            if (formEl) {
+              const banner = document.createElement('div');
+              banner.id = 'machine-modal-conflict-banner';
+              banner.style.cssText = 'margin: 10px 0; padding: 10px 14px; background: rgba(239, 68, 68, 0.15); border: 1.5px solid #ef4444; border-radius: 6px; color: #fca5a5; font-size: 11.5px; display: flex; align-items: center; justify-content: space-between; gap: 8px;';
+              banner.innerHTML = `
+                <div>
+                  <strong>⚠️ Concurrent Edit Conflict:</strong> Record was modified by another user or session.
+                </div>
+                <button type="button" id="btn-reload-conflict-data" class="btn btn-sm" style="background: #ef4444; color: #fff; font-weight: 700; font-size: 11px; white-space: nowrap; border: none; padding: 4px 10px; border-radius: 4px; cursor: pointer;">
+                  🔄 Reload Latest
+                </button>
+              `;
+              formEl.prepend(banner);
+              banner.querySelector('#btn-reload-conflict-data')?.addEventListener('click', () => {
+                state.set('activeMachineId', machineId);
+                state.set('activeModal', 'machine');
+              });
+            }
+          }
+        } else if (err.name === 'CloudSaveError') {
           notificationService.error(err.message || '❌ Cloud Save Failed: Database write was not confirmed.');
         } else {
           notificationService.error(err.message || 'Failed to save machine record.');

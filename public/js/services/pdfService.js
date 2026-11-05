@@ -1483,6 +1483,389 @@ class PDFService {
     }
   }
 
+  _escape(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  /**
+   * Generates Official Factory Audit Preventive Maintenance Report (A4 Landscape Multi-Page)
+   * Exact replica of physical sheet AM-MNT-PMM-01 with 4-tier ISO compliance signature blocks
+   */
+  generateOfficialPMReportPDF({ reportState = {}, rows = [], filterSummary = '', generatedBy = null }) {
+    const user = generatedBy || authService.getCurrentUser();
+    const settings = storage.getTable(TABLE_NAMES.SETTINGS) || {};
+    const companyName = settings.companyName || 'AL-MUSLIM GROUP';
+    const deptName = settings.departmentName || 'Central Maintenance & Mechanical Engineering Department';
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+
+    // 1. Resolve Scope & Metadata Labels
+    const unitsTable = storage.getTable(TABLE_NAMES.UNITS) || [];
+    const floorsTable = storage.getTable(TABLE_NAMES.FLOORS) || [];
+    const linesTable = storage.getTable(TABLE_NAMES.LINES) || [];
+
+    const unitObj = reportState.unitId && reportState.unitId !== 'ALL' ? unitsTable.find(u => u.id === reportState.unitId) : null;
+    const floorObj = reportState.floorId && reportState.floorId !== 'ALL' ? floorsTable.find(f => f.id === reportState.floorId) : null;
+    const lineObj = reportState.lineId && reportState.lineId !== 'ALL' ? linesTable.find(l => l.id === reportState.lineId) : null;
+
+    const unitLabel = unitObj?.name || reportState.unitName || 'A.K.M Knit Wear Ltd.';
+    const floorLabel = floorObj?.name ? `${floorObj.name}${lineObj?.name ? ' - Line: ' + lineObj.name : ''}` : (reportState.floorName || 'Factory Production Floor');
+
+    let servicingDateDisplay = '';
+    if (reportState.dateMode === 'MONTHLY') {
+      servicingDateDisplay = `Monthly: ${reportState.selectedMonth || 'Current Month'}`;
+    } else if (reportState.dateMode === 'RANGE') {
+      servicingDateDisplay = `${reportState.dateFrom || 'Start'} to ${reportState.dateTo || 'End'}`;
+    } else {
+      servicingDateDisplay = reportState.servicingDate || dateStr;
+    }
+
+    const formatDMY = (dStr) => {
+      if (!dStr || dStr === 'N/A' || dStr === 'Never' || dStr === '-' || dStr === '—') return '—';
+      try {
+        const parts = String(dStr).split('T')[0].split('-');
+        if (parts.length === 3) {
+          if (parts[0].length === 4) return `${parts[2]}-${parts[1]}-${parts[0]}`;
+          return `${parts[0]}-${parts[1]}-${parts[2]}`;
+        }
+        return dStr;
+      } catch (_) {
+        return dStr;
+      }
+    };
+
+    const nextServicingDisplay = reportState.nextServicingDate ? formatDMY(reportState.nextServicingDate) : '—';
+
+    // 2. Filter valid rows
+    const validRows = (rows || []).filter(r => r && (r.machineNumber || r.machineName || r.stickerSerial));
+    const activeRows = validRows.length > 0 ? validRows : (rows || []);
+
+    // 3. Multi-Page Chunking (10 rows per sheet matching physical standard)
+    const ROWS_PER_PAGE = 10;
+    const totalPages = Math.max(1, Math.ceil(activeRows.length / ROWS_PER_PAGE));
+    const pages = [];
+
+    for (let p = 0; p < totalPages; p++) {
+      let pageRows = activeRows.slice(p * ROWS_PER_PAGE, (p + 1) * ROWS_PER_PAGE);
+      if (pageRows.length < ROWS_PER_PAGE) {
+        const needed = ROWS_PER_PAGE - pageRows.length;
+        const currentCount = p * ROWS_PER_PAGE + pageRows.length;
+        for (let pad = 0; pad < needed; pad++) {
+          pageRows.push({
+            slNo: String(currentCount + pad + 1).padStart(2, '0'),
+            machineName: '',
+            machineNumber: '',
+            machineModel: '',
+            previousServicingDate: '',
+            stickerSerial: '',
+            lineOrSection: '',
+            workSummary: '',
+            servicerName: '',
+            signature: '',
+            isPad: true
+          });
+        }
+      }
+      pages.push(pageRows);
+    }
+
+    const ASSOCIATE_COMPANIES = [
+      'A.K.M Knit Wear Ltd.',
+      'Pacific Blue (Smart Wear) Ltd.',
+      'Al-Muslim Washing Ltd.',
+      'Al-Muslim Garments Accessories Ltd.',
+      'Al-Muslim Yarn Dyeing Ltd.',
+      'Al-Muslim Apparels Ltd.'
+    ];
+
+    const pagesHtml = pages.map((pageRows, pageIdx) => {
+      const isLastPage = (pageIdx === totalPages - 1);
+      const rowsHtml = pageRows.map((r, rIdx) => {
+        const sl = String(pageIdx * ROWS_PER_PAGE + rIdx + 1).padStart(2, '0');
+        return `
+          <tr style="height: 34px; min-height: 34px;">
+            <td style="border: 1px solid #000; text-align: center; font-weight: 700; font-size: 9.5px; padding: 3px 2px;">${sl}</td>
+            <td style="border: 1px solid #000; text-align: left; padding: 3px 5px; font-size: 9.5px; line-height: 1.25;">${this._escape(r.machineName || '')}</td>
+            <td style="border: 1px solid #000; text-align: center; font-weight: 700; padding: 3px 2px; font-size: 9.5px; font-family: monospace;">${this._escape(r.machineNumber || '')}</td>
+            <td style="border: 1px solid #000; text-align: center; padding: 3px 2px; font-size: 9.5px; line-height: 1.25;">${this._escape(r.machineModel || '')}</td>
+            <td style="border: 1px solid #000; text-align: center; padding: 3px 2px; font-size: 9.5px; line-height: 1.2;">${formatDMY(r.previousServicingDate)}</td>
+            <td style="border: 1px solid #000; text-align: center; font-weight: 600; padding: 3px 2px; font-size: 9.5px; font-family: monospace;">${this._escape(r.stickerSerial || '')}</td>
+            <td style="border: 1px solid #000; text-align: center; padding: 3px 3px; font-size: 9.5px; line-height: 1.25;">${this._escape(r.lineOrSection || '')}</td>
+            <td style="border: 1px solid #000; text-align: left; padding: 3px 5px; font-size: 9px; line-height: 1.25;">${this._escape(r.workSummary || '')}</td>
+            <td style="border: 1px solid #000; text-align: center; padding: 3px 3px; font-size: 9px; line-height: 1.25;">${this._escape(r.servicerName || '')}</td>
+            <td style="border: 1px solid #000; text-align: center; padding: 3px 2px; font-size: 9.5px;">${r.signature ? `<span style="font-family: cursive; font-size: 11px; color: #1e3a8a;">${this._escape(r.signature)}</span>` : ''}</td>
+          </tr>
+        `;
+      }).join('');
+
+      return `
+        <div class="pm-official-sheet ${!isLastPage ? 'pm-page-break' : ''}">
+          <!-- A. OFFICIAL REPORT HEADER -->
+          <div class="pm-official-header" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;">
+            <div style="flex: 1 1 280px; min-width: 250px;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <svg width="34" height="34" viewBox="0 0 100 100" style="display: block; flex-shrink: 0;">
+                  <polygon points="50,8 92,88 8,88" fill="none" stroke="#000000" stroke-width="7" />
+                  <text x="50" y="68" font-size="34" font-weight="900" font-family="'Segoe UI', Arial, sans-serif" text-anchor="middle" fill="#000000">AM</text>
+                </svg>
+                <div style="display: flex; flex-direction: column;">
+                  <span style="font-size: 21px; font-weight: 800; font-style: italic; font-family: 'Times New Roman', Georgia, serif; letter-spacing: -0.5px; color: #000000; line-height: 1;">
+                    al-muslim group
+                  </span>
+                  <span style="font-size: 12px; font-weight: 800; letter-spacing: 0.6px; font-family: Arial, Helvetica, sans-serif; color: #000000; text-transform: uppercase; margin-top: 2px;">
+                    MAINTENANCE DEPARTMENT
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div style="flex: 1 1 340px; text-align: center; display: flex; justify-content: center; align-items: center; padding-top: 2px;">
+              <div style="border: 1.5px solid #000000; padding: 4px 22px; display: inline-block; border-radius: 2px; background: #ffffff;">
+                <h1 style="font-size: 15px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: #000000; margin: 0; font-family: Arial, Helvetica, sans-serif;">
+                  PREVENTIVE MACHINE MAINTENANCE
+                </h1>
+              </div>
+            </div>
+
+            <div style="flex: 1 1 240px; text-align: right; display: flex; justify-content: flex-end;">
+              <div style="font-size: 8.5px; line-height: 1.25; color: #111111; text-align: left; max-width: 210px;">
+                <div style="font-weight: 700; text-decoration: underline; margin-bottom: 2px;">Our Associate Companies are:</div>
+                ${ASSOCIATE_COMPANIES.map(comp => `<div>• ${this._escape(comp)}</div>`).join('')}
+              </div>
+            </div>
+          </div>
+
+          <!-- B. HEADER METADATA 2x2 GRID BOX -->
+          <div class="pm-official-meta-box" style="border: 1.5px solid #000000; margin-bottom: 6px; background: #ffffff; display: grid; grid-template-columns: 1fr 1fr;">
+            <div style="border-right: 1.5px solid #000000; border-bottom: 1.5px solid #000000; padding: 4px 8px; display: flex; align-items: center; min-height: 24px;">
+              <span style="font-weight: 800; font-size: 11.5px; margin-right: 6px; white-space: nowrap;">Unit :</span>
+              <span style="font-weight: 700; font-size: 11.5px;">${this._escape(unitLabel)}</span>
+            </div>
+            <div style="border-bottom: 1.5px solid #000000; padding: 4px 8px; display: flex; align-items: center; min-height: 24px;">
+              <span style="font-weight: 800; font-size: 11.5px; margin-right: 6px; white-space: nowrap;">Floor / Area :</span>
+              <span style="font-weight: 700; font-size: 11.5px;">${this._escape(floorLabel)}</span>
+            </div>
+            <div style="border-right: 1.5px solid #000000; padding: 4px 8px; display: flex; align-items: center; min-height: 24px;">
+              <span style="font-weight: 800; font-size: 11.5px; margin-right: 6px; white-space: nowrap;">Servicing Date :</span>
+              <span style="font-weight: 700; font-size: 11.5px;">${this._escape(servicingDateDisplay)}</span>
+            </div>
+            <div style="padding: 4px 8px; display: flex; align-items: center; min-height: 24px;">
+              <span style="font-weight: 800; font-size: 11.5px; margin-right: 6px; white-space: nowrap;">Next Servicing Date :</span>
+              <span style="font-weight: 700; font-size: 11.5px;">${this._escape(nextServicingDisplay)}</span>
+            </div>
+          </div>
+
+          <!-- C. MAIN REPORT DATA TABLE (10 COLUMNS) -->
+          <table class="pm-official-table" style="width: 100%; border-collapse: collapse; table-layout: fixed; border: 1.5px solid #000000; font-size: 9.5px;">
+            <colgroup>
+              <col style="width: 4%;" />
+              <col style="width: 12%;" />
+              <col style="width: 10%;" />
+              <col style="width: 11%;" />
+              <col style="width: 9.5%;" />
+              <col style="width: 8%;" />
+              <col style="width: 8.5%;" />
+              <col style="width: 23%;" />
+              <col style="width: 9%;" />
+              <col style="width: 5%;" />
+            </colgroup>
+            <thead>
+              <tr style="border-bottom: 1.5px solid #000000;">
+                <th style="border: 1px solid #000; padding: 5px 2px; text-align: center; vertical-align: middle; font-weight: 800; font-size: 9px; background: #fff; color: #000;">Sl.<br/>No.</th>
+                <th style="border: 1px solid #000; padding: 5px 3px; text-align: center; vertical-align: middle; font-weight: 800; font-size: 9px; background: #fff; color: #000;">M/C Name</th>
+                <th style="border: 1px solid #000; padding: 5px 3px; text-align: center; vertical-align: middle; font-weight: 800; font-size: 9px; background: #fff; color: #000;">M/C<br/>Number</th>
+                <th style="border: 1px solid #000; padding: 5px 3px; text-align: center; vertical-align: middle; font-weight: 800; font-size: 9px; background: #fff; color: #000;">M/C Model/Type</th>
+                <th style="border: 1px solid #000; padding: 5px 3px; text-align: center; vertical-align: middle; font-weight: 800; font-size: 9px; background: #fff; color: #000;">Previous<br/>Servicing<br/>Date:</th>
+                <th style="border: 1px solid #000; padding: 5px 3px; text-align: center; vertical-align: middle; font-weight: 800; font-size: 9px; background: #fff; color: #000;">Sticker Sl.<br/>No.</th>
+                <th style="border: 1px solid #000; padding: 5px 3px; text-align: center; vertical-align: middle; font-weight: 800; font-size: 9px; background: #fff; color: #000;">Line or<br/>Section</th>
+                <th style="border: 1px solid #000; padding: 5px 4px; text-align: center; vertical-align: middle; font-weight: 800; font-size: 9px; background: #fff; color: #000;">Work Summary</th>
+                <th style="border: 1px solid #000; padding: 5px 3px; text-align: center; vertical-align: middle; font-weight: 800; font-size: 9px; background: #fff; color: #000;">Servicer Name</th>
+                <th style="border: 1px solid #000; padding: 5px 2px; text-align: center; vertical-align: middle; font-weight: 800; font-size: 9px; background: #fff; color: #000;">Signature</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rowsHtml}
+            </tbody>
+          </table>
+
+          <!-- D. FOUR APPROVAL SIGNATURE POSITIONS (EQUAL WIDTH) -->
+          <div class="pm-official-signatures" style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: auto; padding-top: 14px; width: 100%;">
+            <div class="pm-sign-col" style="flex: 1 1 25%; max-width: 25%; width: 25%; text-align: center; padding: 0 8px;">
+              <div class="pm-sign-box" style="width: 100%; max-width: 160px; margin: 0 auto; text-align: center;">
+                <div style="min-height: 34px;"></div>
+                <div class="pm-sign-line" style="border-top: 1.5px solid #000000; padding-top: 4px; font-weight: 800; font-size: 11px; color: #000000;">
+                  Engineer
+                </div>
+              </div>
+            </div>
+            <div class="pm-sign-col" style="flex: 1 1 25%; max-width: 25%; width: 25%; text-align: center; padding: 0 8px;">
+              <div class="pm-sign-box" style="width: 100%; max-width: 160px; margin: 0 auto; text-align: center;">
+                <div style="min-height: 34px;"></div>
+                <div class="pm-sign-line" style="border-top: 1.5px solid #000000; padding-top: 4px; font-weight: 800; font-size: 11px; color: #000000;">
+                  Manager
+                </div>
+              </div>
+            </div>
+            <div class="pm-sign-col" style="flex: 1 1 25%; max-width: 25%; width: 25%; text-align: center; padding: 0 8px;">
+              <div class="pm-sign-box" style="width: 100%; max-width: 160px; margin: 0 auto; text-align: center;">
+                <div style="min-height: 34px;"></div>
+                <div class="pm-sign-line" style="border-top: 1.5px solid #000000; padding-top: 4px; font-weight: 800; font-size: 11px; color: #000000;">
+                  Sr. Manager/AGM
+                </div>
+              </div>
+            </div>
+            <div class="pm-sign-col" style="flex: 1 1 25%; max-width: 25%; width: 25%; text-align: center; padding: 0 8px;">
+              <div class="pm-sign-box" style="width: 100%; max-width: 160px; margin: 0 auto; text-align: center;">
+                <div style="min-height: 34px;"></div>
+                <div class="pm-sign-line" style="border-top: 1.5px solid #000000; padding-top: 4px; font-weight: 800; font-size: 11px; color: #000000;">
+                  General Manager
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom Footer Note -->
+          <div style="margin-top: 8px; display: flex; justify-content: space-between; align-items: center; font-size: 8.5px; color: #555555; border-top: 1px dotted #cccccc; padding-top: 3px;">
+            <span>Form Ref: AM-MNT-PMM-01 (A4 Landscape) | Audit Security Checksum: AMG-PM-${Date.now().toString(36).toUpperCase()}</span>
+            <span>Generated from Al-Muslim Central Maintenance Department ERP System</span>
+            <span>Page ${pageIdx + 1} of ${totalPages}</span>
+          </div>
+        </div>
+      `;
+    }).join('\n');
+
+    const fullDocumentHtml = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Preventive_Machine_Maintenance_Report_${servicingDateDisplay.replace(/[^a-zA-Z0-9_-]/g, '_')}</title>
+        <meta charset="utf-8">
+        <style>
+          @page {
+            size: A4 landscape;
+            margin: 5mm 6mm;
+          }
+          * {
+            box-sizing: border-box !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+          html, body {
+            font-family: 'Segoe UI', Arial, Helvetica, sans-serif !important;
+            background: #ffffff !important;
+            color: #000000 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            font-size: 10px !important;
+          }
+          .pm-official-sheet {
+            width: 100% !important;
+            max-width: 285mm !important;
+            min-height: 198mm !important;
+            height: 198mm !important;
+            max-height: 198mm !important;
+            box-sizing: border-box !important;
+            padding: 4mm 6mm 3mm 6mm !important;
+            margin: 0 auto !important;
+            box-shadow: none !important;
+            border: none !important;
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: space-between !important;
+            overflow: hidden !important;
+          }
+          .pm-page-break {
+            page-break-after: always !important;
+            break-after: page !important;
+          }
+          .pm-official-table {
+            width: 100% !important;
+            border-collapse: collapse !important;
+            table-layout: fixed !important;
+            border: 1.5px solid #000000 !important;
+            font-size: 9.5px !important;
+            color: #000000 !important;
+            background: #ffffff !important;
+          }
+          .pm-official-table th {
+            color: #000000 !important;
+            background: #ffffff !important;
+            border: 1px solid #000000 !important;
+            font-weight: 800 !important;
+          }
+          .pm-official-table td {
+            color: #000000 !important;
+            background: #ffffff !important;
+            border: 1px solid #000000 !important;
+            vertical-align: middle !important;
+          }
+          .pm-official-signatures {
+            display: flex !important;
+            justify-content: space-between !important;
+            align-items: flex-end !important;
+            margin-top: auto !important;
+            padding-top: 12px !important;
+            width: 100% !important;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+          }
+          .pm-official-signatures .pm-sign-col {
+            flex: 1 1 25% !important;
+            width: 25% !important;
+            max-width: 25% !important;
+            text-align: center !important;
+            padding: 0 6px !important;
+          }
+          .pm-official-signatures .pm-sign-line {
+            border-top: 1.5px solid #000000 !important;
+            padding-top: 4px !important;
+            font-weight: 800 !important;
+            font-size: 11px !important;
+            color: #000000 !important;
+            text-align: center !important;
+            white-space: nowrap !important;
+          }
+        </style>
+      </head>
+      <body>
+        ${pagesHtml}
+        <script>
+          window.onload = function() {
+            setTimeout(function() {
+              window.focus();
+              window.print();
+            }, 300);
+          };
+        </script>
+      </body>
+      </html>
+    `;
+
+    const printWin = window.open('', '_blank');
+    if (printWin) {
+      try {
+        printWin.document.open();
+        printWin.document.write(fullDocumentHtml);
+        printWin.document.close();
+        printWin.document.title = `PM_Audit_Report_${servicingDateDisplay}`;
+        printWin.focus();
+        auditService.log('PM_OFFICIAL_AUDIT_PDF_GENERATED', 'PREVENTIVE_MAINTENANCE', 'PM Report', `Generated official PM Audit PDF Report (${activeRows.length} machines, ${totalPages} pages).`);
+      } catch (err) {
+        console.warn('Direct PM PDF print window open failed, fallback to iframe:', err);
+        this._fallbackIframePrint(fullDocumentHtml);
+      }
+    } else {
+      this._fallbackIframePrint(fullDocumentHtml);
+      auditService.log('PM_OFFICIAL_AUDIT_PDF_GENERATED', 'PREVENTIVE_MAINTENANCE', 'PM Report', `Generated official PM Audit PDF Report via iframe (${activeRows.length} machines).`);
+    }
+  }
+
   /**
    * Seamless Iframe Print Fallback
    * Automatically prints via hidden iframe when window.open is blocked by browser popup blockers.

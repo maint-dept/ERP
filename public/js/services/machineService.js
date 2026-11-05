@@ -769,10 +769,13 @@ class MachineService {
    * Update machine with inline/form validation and visual diff approval.
    * CONFIRMED WRITE: awaits Firestore HTTP 200 before returning. Throws CloudSaveError on failure.
    */
-  async updateMachine(id, updates) {
+  async updateMachine(id, updates, options = {}) {
     const user = authService.getCurrentUser();
     const existing = this.getMachineById(id);
     if (!existing) throw new Error('Machine not found.');
+
+    const expectedUpdatedAt = options?.expectedUpdatedAt || updates?.expectedUpdatedAt || updates?._expectedUpdatedAt;
+    const expectedVersion = options?.expectedVersion !== undefined ? options.expectedVersion : (updates?.expectedVersion !== undefined ? updates.expectedVersion : updates?._expectedVersion);
 
     // Check action authorization
     if (!authService.hasAccess('machines', 'EDIT')) {
@@ -884,8 +887,11 @@ class MachineService {
     // PREPARE UPDATED OBJECT
     const targetUpdateObj = { ...existing, ...enrichedUpdates };
 
-    // 1. Instant local memory & cache update (Zero-wait)
-    const updated = storage.update(TABLE_NAMES.MACHINES, id, enrichedUpdates);
+    // 1. Instant local memory & cache update with Optimistic Concurrency Guard
+    const updated = storage.update(TABLE_NAMES.MACHINES, id, enrichedUpdates, {
+      expectedUpdatedAt,
+      expectedVersion
+    });
     try {
       localStorage.setItem('al_muslim_erp_' + TABLE_NAMES.MACHINES, JSON.stringify(storage.data[TABLE_NAMES.MACHINES]));
     } catch (_) {}

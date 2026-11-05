@@ -43,6 +43,7 @@ import { employeeService } from '../services/employeeService.js';
 import { historyService } from '../services/historyService.js';
 import { notificationService } from '../services/notificationService.js';
 import { auditService } from '../services/auditService.js';
+import { pdfService } from '../services/pdfService.js';
 import { state } from '../state.js';
 
 // Local State for the Preventive Maintenance Report Module
@@ -1896,11 +1897,21 @@ export function initPreventiveMaintenanceReportEvents(container = document) {
     });
   }
 
-  // 9. Export PDF
+  // 9. Export Official Audit PDF
   const exportPdfBtn = root.querySelector('#btn-pm-report-export-pdf');
   if (exportPdfBtn) {
     exportPdfBtn.addEventListener('click', () => {
-      triggerOfficialPrint();
+      // If user has filtered a large batch of machines, export all matching machines across pages
+      let machinesToExport = reportState.rows;
+      if (reportState.allMatchingMachines && reportState.allMatchingMachines.length > reportState.rows.length) {
+        machinesToExport = populateReportRowsFromMachines(reportState.allMatchingMachines, 0);
+      }
+
+      pdfService.generateOfficialPMReportPDF({
+        reportState,
+        rows: machinesToExport,
+        filterSummary: `Unit: ${activeUnitLabel || 'All'} | Floor: ${activeFloorLabel || 'All'}`
+      });
     });
   }
 

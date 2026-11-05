@@ -1,16 +1,17 @@
 /**
  * Al-Muslim Group ERP — High-Performance Production Service Worker
- * Build: v4.34.0
+ * Build: v4.35.0
  *
  * Architecture:
  * 1. Offline Machine Image Caching: Cache-First + Stale-While-Revalidate (Instant offline access for factory floor technicians)
- * 2. Static Assets (CSS, JS, Fonts): Stale-While-Revalidate (0ms instantaneous boot from cache)
- * 3. HTML Documents: Network-First with Cache Fallback (guarantees fresh builds online, opens offline)
- * 4. Database & REST APIs: Strict Network-Only bypass (zero caching of live MySQL/PostgreSQL/SSE streams)
+ * 2. 60-Day Auto-Pruning & Storage Quota Guard: Automatically cleans up inspection photos older than 60 days
+ * 3. Static Assets (CSS, JS, Fonts): Stale-While-Revalidate (0ms instantaneous boot from cache)
+ * 4. HTML Documents: Network-First with Cache Fallback (guarantees fresh builds online, opens offline)
+ * 5. Database & REST APIs: Strict Network-Only bypass (zero caching of live MySQL/PostgreSQL/SSE streams)
  */
 
-const BUILD_VER = '4.34.0';
-const CACHE_NAME = 'amg-erp-v4.34.0';
+const BUILD_VER = '4.35.0';
+const CACHE_NAME = 'amg-erp-v4.35.0';
 const IMAGE_CACHE_NAME = 'amg-erp-images-v1';
 
 const PRECACHE_ASSETS = [
@@ -40,6 +41,62 @@ const PRECACHE_ASSETS = [
   `js/components/dashboard.js?v=${BUILD_VER}`
 ];
 
+/**
+ * 60-Day Auto-Pruning & Storage Quota Guard for Machine Images
+ * Prevents mobile technician phones from running out of storage.
+ */
+async function pruneExpiredImageCache() {
+  try {
+    const imgCache = await caches.open(IMAGE_CACHE_NAME);
+    const requests = await imgCache.keys();
+    const now = Date.now();
+    const MAX_IMAGE_AGE_MS = 60 * 24 * 60 * 60 * 1000; // 60 Days
+    const MAX_IMAGE_COUNT = 500; // Cap at 500 images max
+
+    // Check browser storage quota
+    let isQuotaCritical = false;
+    if (navigator.storage && navigator.storage.estimate) {
+      const estimate = await navigator.storage.estimate();
+      if (estimate.quota && (estimate.usage / estimate.quota) > 0.8) {
+        isQuotaCritical = true;
+      }
+    }
+
+    let deletedCount = 0;
+    const itemsWithDates = [];
+
+    for (const req of requests) {
+      const res = await imgCache.match(req);
+      if (!res) continue;
+      const dateHeader = res.headers.get('date');
+      const fetchTime = dateHeader ? new Date(dateHeader).getTime() : now;
+      itemsWithDates.push({ req, ageMs: now - fetchTime });
+
+      // Evict if older than 60 days
+      if (now - fetchTime > MAX_IMAGE_AGE_MS) {
+        await imgCache.delete(req);
+        deletedCount++;
+      }
+    }
+
+    // If quota critical or over 500 images, prune oldest
+    if (isQuotaCritical || requests.length > MAX_IMAGE_COUNT) {
+      itemsWithDates.sort((a, b) => b.ageMs - a.ageMs); // Oldest first
+      const excess = Math.max(0, requests.length - deletedCount - 350);
+      for (let i = 0; i < excess && i < itemsWithDates.length; i++) {
+        await imgCache.delete(itemsWithDates[i].req);
+        deletedCount++;
+      }
+    }
+
+    if (deletedCount > 0) {
+      console.log(`[SW Image Cache] Pruned ${deletedCount} expired/excess machine images.`);
+    }
+  } catch (err) {
+    console.warn('[SW Image Cache Prune Notice]:', err.message);
+  }
+}
+
 self.addEventListener('install', (event) => {
   self.skipWaiting();
   event.waitUntil(
@@ -63,6 +120,9 @@ self.addEventListener('activate', (event) => {
           }
         })
       );
+    }).then(() => {
+      // Run 60-day auto-pruning & storage quota check
+      return pruneExpiredImageCache();
     }).then(() => self.clients.claim())
   );
 });

@@ -100,6 +100,18 @@ export class CloudSaveError extends Error {
 }
 
 /**
+ * ConcurrencyConflictError — thrown when a record update is rejected due to concurrent modification.
+ * Prevents multiple users/sessions on factory floor from silently overwriting each other's changes.
+ */
+export class ConcurrencyConflictError extends Error {
+  constructor(message = 'Concurrency Conflict: Record was modified by another user.', details = {}) {
+    super(message);
+    this.name = 'ConcurrencyConflictError';
+    this.details = details;
+  }
+}
+
+/**
  * Critical Tables required for initial page shell, auth, and primary dashboard/inventory view
  * Loaded in parallel immediately on startup (<400ms target)
  */
@@ -2974,7 +2986,7 @@ class StorageEngine {
     return items;
   }
 
-  update(tableName, id, updates) {
+  update(tableName, id, updates, options = {}) {
     const table = this.data[tableName] || [];
     let index = -1;
     if (tableName === TABLE_NAMES.MACHINES && updates && updates.serialNumber) {
@@ -2986,6 +2998,34 @@ class StorageEngine {
     }
     if (index === -1) return null;
 
+    const currentItem = table[index];
+
+    // Optimistic Concurrency Control (Version Conflict Guard)
+    const expectedUpdatedAt = options?.expectedUpdatedAt || updates?._expectedUpdatedAt || updates?.expectedUpdatedAt;
+    const expectedVersion = options?.expectedVersion !== undefined ? options.expectedVersion : (updates?._expectedVersion !== undefined ? updates._expectedVersion : updates?.expectedVersion);
+
+    if (expectedUpdatedAt && currentItem && currentItem.updatedAt) {
+      const expectedTime = new Date(expectedUpdatedAt).getTime();
+      const currentTime = new Date(currentItem.updatedAt).getTime();
+      if (!isNaN(expectedTime) && !isNaN(currentTime) && Math.abs(currentTime - expectedTime) > 500) {
+        console.warn(`[Concurrency Guard] ⚠️ Conflict on ${tableName} #${id}: expected ${expectedUpdatedAt}, found ${currentItem.updatedAt}`);
+        throw new ConcurrencyConflictError(
+          `Record was modified by another session or user (at ${new Date(currentItem.updatedAt).toLocaleTimeString()}). Please reload latest data before saving.`,
+          { currentRecord: currentItem, expectedUpdatedAt, conflictingUpdatedAt: currentItem.updatedAt }
+        );
+      }
+    }
+
+    if (expectedVersion !== undefined && expectedVersion !== null && currentItem && currentItem.version !== undefined) {
+      if (Number(currentItem.version) !== Number(expectedVersion)) {
+        console.warn(`[Concurrency Guard] ⚠️ Version conflict on ${tableName} #${id}: expected v${expectedVersion}, found v${currentItem.version}`);
+        throw new ConcurrencyConflictError(
+          `Record version mismatch (Current v${currentItem.version} vs Expected v${expectedVersion}). Another user updated this machine.`,
+          { currentRecord: currentItem, expectedVersion, currentVersion: currentItem.version }
+        );
+      }
+    }
+
     if (tableName === TABLE_NAMES.MACHINES && updates && updates.systemAssetId) {
       const isDuplicate = (this.data[TABLE_NAMES.MACHINES] || []).some(
         m => m && m.id !== id && m.systemAssetId === updates.systemAssetId
@@ -2996,9 +3036,18 @@ class StorageEngine {
       }
     }
 
+    const cleanUpdates = { ...updates };
+    delete cleanUpdates._expectedUpdatedAt;
+    delete cleanUpdates._expectedVersion;
+    delete cleanUpdates.expectedUpdatedAt;
+    delete cleanUpdates.expectedVersion;
+
+    const nextVersion = (Number(currentItem.version) || 1) + 1;
+
     table[index] = {
       ...table[index],
-      ...updates,
+      ...cleanUpdates,
+      version: nextVersion,
       updatedAt: new Date().toISOString()
     };
 
@@ -3137,10 +3186,38 @@ class StorageEngine {
     return item;
   }
 
-  async updateConfirmed(tableName, id, updates) {
+  async updateConfirmed(tableName, id, updates, options = {}) {
     const table = this.data[tableName] || [];
     const index = table.findIndex(item => item && (item.id === id || String(item.id) === String(id)));
     if (index === -1) return null;
+
+    const currentItem = table[index];
+
+    // Optimistic Concurrency Control (Version Conflict Guard)
+    const expectedUpdatedAt = options?.expectedUpdatedAt || updates?._expectedUpdatedAt || updates?.expectedUpdatedAt;
+    const expectedVersion = options?.expectedVersion !== undefined ? options.expectedVersion : (updates?._expectedVersion !== undefined ? updates._expectedVersion : updates?.expectedVersion);
+
+    if (expectedUpdatedAt && currentItem && currentItem.updatedAt) {
+      const expectedTime = new Date(expectedUpdatedAt).getTime();
+      const currentTime = new Date(currentItem.updatedAt).getTime();
+      if (!isNaN(expectedTime) && !isNaN(currentTime) && Math.abs(currentTime - expectedTime) > 500) {
+        console.warn(`[Concurrency Guard] ⚠️ Conflict on ${tableName} #${id}: expected ${expectedUpdatedAt}, found ${currentItem.updatedAt}`);
+        throw new ConcurrencyConflictError(
+          `Record was modified by another session or user (at ${new Date(currentItem.updatedAt).toLocaleTimeString()}). Please reload latest data before saving.`,
+          { currentRecord: currentItem, expectedUpdatedAt, conflictingUpdatedAt: currentItem.updatedAt }
+        );
+      }
+    }
+
+    if (expectedVersion !== undefined && expectedVersion !== null && currentItem && currentItem.version !== undefined) {
+      if (Number(currentItem.version) !== Number(expectedVersion)) {
+        console.warn(`[Concurrency Guard] ⚠️ Version conflict on ${tableName} #${id}: expected v${expectedVersion}, found v${currentItem.version}`);
+        throw new ConcurrencyConflictError(
+          `Record version mismatch (Current v${currentItem.version} vs Expected v${expectedVersion}). Another user updated this machine.`,
+          { currentRecord: currentItem, expectedVersion, currentVersion: currentItem.version }
+        );
+      }
+    }
 
     if (tableName === TABLE_NAMES.MACHINES && updates && updates.systemAssetId) {
       const isDuplicate = (this.data[TABLE_NAMES.MACHINES] || []).some(
@@ -3152,10 +3229,19 @@ class StorageEngine {
       }
     }
 
+    const cleanUpdates = { ...updates };
+    delete cleanUpdates._expectedUpdatedAt;
+    delete cleanUpdates._expectedVersion;
+    delete cleanUpdates.expectedUpdatedAt;
+    delete cleanUpdates.expectedVersion;
+
     const oldItem = JSON.parse(JSON.stringify(table[index]));
+    const nextVersion = (Number(currentItem.version) || 1) + 1;
+
     table[index] = {
       ...table[index],
-      ...updates,
+      ...cleanUpdates,
+      version: nextVersion,
       updatedAt: new Date().toISOString()
     };
     if (tableName === TABLE_NAMES.MACHINES) this.rebuildAllIndexes();
