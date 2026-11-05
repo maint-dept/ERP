@@ -38,22 +38,131 @@ function formatNotifTime(dateStr) {
 }
 
 /**
- * Module metadata resolver (Icon, Label, Color)
+ * Module metadata resolver (Icon, Label, ShortLabel, Color, Background, ActionText)
  */
 function getModuleMeta(moduleKey) {
   const map = {
-    'preventive_maintenance': { label: 'Preventive Maintenance', icon: '🔧', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.15)' },
-    'transfers': { label: 'Machine Transfers', icon: '🔄', color: '#a855f7', bg: 'rgba(168, 85, 247, 0.15)' },
-    'machines': { label: 'Machinery Inventory', icon: '📦', color: '#0ea5e9', bg: 'rgba(14, 165, 233, 0.15)' },
-    'user_management': { label: 'User & Access Mgmt', icon: '👤', color: '#10b981', bg: 'rgba(16, 185, 129, 0.15)' },
-    'spare_parts': { label: 'Spare Parts', icon: '⚙️', color: '#06b6d4', bg: 'rgba(6, 182, 212, 0.15)' },
-    'tools_management': { label: 'Tools Management', icon: '🧰', color: '#ec4899', bg: 'rgba(236, 72, 153, 0.15)' },
-    'et_lab': { label: 'ENT Lab Management', icon: '🔬', color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.15)' },
-    'reports': { label: 'Reports & Analytics', icon: '📊', color: '#6366f1', bg: 'rgba(99, 102, 241, 0.15)' },
-    'master_data': { label: 'Plant Master Data', icon: '🏢', color: '#84cc16', bg: 'rgba(132, 204, 22, 0.15)' },
-    'audit_logs': { label: 'System Audit Logs', icon: '📝', color: '#94a3b8', bg: 'rgba(148, 163, 184, 0.15)' }
+    'transfers': { 
+      label: 'Machine Transfers', 
+      shortLabel: 'Transfers', 
+      icon: '🔄', 
+      color: '#a855f7', 
+      bg: 'rgba(168, 85, 247, 0.15)',
+      actionText: 'Inspect Gate Pass'
+    },
+    'machines': { 
+      label: 'Machinery Inventory', 
+      shortLabel: 'Inventory', 
+      icon: '📦', 
+      color: '#0ea5e9', 
+      bg: 'rgba(14, 165, 233, 0.15)',
+      actionText: 'View Machine'
+    },
+    'preventive_maintenance': { 
+      label: 'Preventive Maintenance', 
+      shortLabel: 'PM Servicing', 
+      icon: '🔧', 
+      color: '#f59e0b', 
+      bg: 'rgba(245, 158, 11, 0.15)',
+      actionText: 'Open PM Sheet'
+    },
+    'breakdowns': { 
+      label: 'Machine Breakdowns', 
+      shortLabel: 'Breakdowns', 
+      icon: '🚨', 
+      color: '#ef4444', 
+      bg: 'rgba(239, 68, 68, 0.15)',
+      actionText: 'View Breakdown'
+    },
+    'spare_parts': { 
+      label: 'Spare Parts & Stores', 
+      shortLabel: 'Spare Parts', 
+      icon: '⚙️', 
+      color: '#06b6d4', 
+      bg: 'rgba(6, 182, 212, 0.15)',
+      actionText: 'View Spare Part'
+    },
+    'tools_management': { 
+      label: 'Tools & Accessories', 
+      shortLabel: 'Tools', 
+      icon: '🧰', 
+      color: '#ec4899', 
+      bg: 'rgba(236, 72, 153, 0.15)',
+      actionText: 'View Tool Kit'
+    },
+    'et_lab': { 
+      label: 'Electronic Lab (ET/ENT)', 
+      shortLabel: 'ET Lab', 
+      icon: '🔬', 
+      color: '#3b82f6', 
+      bg: 'rgba(59, 130, 246, 0.15)',
+      actionText: 'View Circuit Board'
+    },
+    'relocate': { 
+      label: 'Line Relocation & Audit', 
+      shortLabel: 'Relocation', 
+      icon: '📍', 
+      color: '#8b5cf6', 
+      bg: 'rgba(139, 92, 246, 0.15)',
+      actionText: 'Open Relocate'
+    },
+    'qr_codes': { 
+      label: 'QR Code Management', 
+      shortLabel: 'QR Codes', 
+      icon: '📱', 
+      color: '#14b8a6', 
+      bg: 'rgba(20, 184, 166, 0.15)',
+      actionText: 'View QR Studio'
+    },
+    'user_management': { 
+      label: 'User & Access Mgmt', 
+      shortLabel: 'User Access', 
+      icon: '👤', 
+      color: '#10b981', 
+      bg: 'rgba(16, 185, 129, 0.15)',
+      actionText: 'View User Profile'
+    },
+    'reports': { 
+      label: 'Reports & Analytics', 
+      shortLabel: 'Reports', 
+      icon: '📊', 
+      color: '#6366f1', 
+      bg: 'rgba(99, 102, 241, 0.15)',
+      actionText: 'Open Report'
+    },
+    'master_data': { 
+      label: 'Plant Master Data', 
+      shortLabel: 'Master Data', 
+      icon: '🏢', 
+      color: '#84cc16', 
+      bg: 'rgba(132, 204, 22, 0.15)',
+      actionText: 'View Master Data'
+    },
+    'audit_logs': { 
+      label: 'System Audit Logs', 
+      shortLabel: 'Audit Logs', 
+      icon: '📝', 
+      color: '#94a3b8', 
+      bg: 'rgba(148, 163, 184, 0.15)',
+      actionText: 'View Audit Trail'
+    },
+    'settings': { 
+      label: 'System Settings', 
+      shortLabel: 'Settings', 
+      icon: '⚙️', 
+      color: '#64748b', 
+      bg: 'rgba(100, 116, 139, 0.15)',
+      actionText: 'Open Settings'
+    }
   };
-  return map[moduleKey] || { label: 'General ERP Notice', icon: '🔔', color: '#38bdf8', bg: 'rgba(56, 189, 248, 0.15)' };
+  return map[moduleKey] || { 
+    label: 'General ERP Notice', 
+    shortLabel: 'General', 
+    icon: '🔔', 
+    color: '#38bdf8', 
+    bg: 'rgba(56, 189, 248, 0.15)',
+    actionText: 'Open Details'
+  };
 }
 
 /**
@@ -66,8 +175,14 @@ function getTypeBadge(type, action) {
   if (act === 'APPROVE' || t === 'APPROVAL_REQUEST') {
     return { label: 'APPROVAL REQUIRED', color: '#ef4444', bg: 'rgba(239, 68, 68, 0.2)', border: 'rgba(239, 68, 68, 0.4)' };
   }
+  if (t === 'BREAKDOWN' || t === 'CRITICAL' || t === 'STOPPAGE') {
+    return { label: 'BREAKDOWN ALERT', color: '#ef4444', bg: 'rgba(239, 68, 68, 0.2)', border: 'rgba(239, 68, 68, 0.4)' };
+  }
   if (t === 'DUE' || t === 'WARNING') {
     return { label: 'ACTION DUE', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.2)', border: 'rgba(245, 158, 11, 0.4)' };
+  }
+  if (t === 'TRANSFER_REVISION') {
+    return { label: 'REVISION REQUESTED', color: '#f97316', bg: 'rgba(249, 115, 22, 0.2)', border: 'rgba(249, 115, 22, 0.4)' };
   }
   if (t === 'SUCCESS' || t === 'TRANSFER_COMPLETED') {
     return { label: 'COMPLETED', color: '#10b981', bg: 'rgba(16, 185, 129, 0.2)', border: 'rgba(16, 185, 129, 0.4)' };
@@ -79,6 +194,64 @@ function getTypeBadge(type, action) {
     return { label: 'REJECTED', color: '#f87171', bg: 'rgba(248, 113, 113, 0.2)', border: 'rgba(248, 113, 113, 0.4)' };
   }
   return { label: 'NOTICE', color: '#94a3b8', bg: 'rgba(148, 163, 184, 0.15)', border: 'rgba(148, 163, 184, 0.3)' };
+}
+
+/**
+ * Resolves and formats factory location tag (Unit / Floor / Line or Transfer Path)
+ */
+function formatNotificationLocation(notif) {
+  if (!notif) return '';
+  try {
+    const loc = notificationService.resolveNotificationLocation ? notificationService.resolveNotificationLocation(notif) : null;
+    const floors = storage.getTable(TABLE_NAMES.FLOORS) || [];
+    const lines = storage.getTable(TABLE_NAMES.LINES) || [];
+
+    const getFloorName = (fid) => {
+      if (!fid) return '';
+      const f = floors.find(x => x.id === fid || (x.name && x.name.toLowerCase() === String(fid).toLowerCase()));
+      return f ? f.name : fid;
+    };
+    const getLineName = (lid) => {
+      if (!lid) return '';
+      const l = lines.find(x => x.id === lid || (x.name && x.name.toLowerCase() === String(lid).toLowerCase()));
+      return l ? l.name : lid;
+    };
+
+    if (loc) {
+      if (loc.isTransfer) {
+        const sFloor = getFloorName(loc.sourceFloorId);
+        const dFloor = getFloorName(loc.destFloorId);
+        if (sFloor && dFloor && sFloor !== dFloor) {
+          return `📍 ${sFloor} ➔ ${dFloor}`;
+        }
+        if (loc.sourceLineId || loc.destLineId) {
+          const sLine = getLineName(loc.sourceLineId);
+          const dLine = getLineName(loc.destLineId);
+          if (sLine && dLine && sLine !== dLine) {
+            return `📍 Line ${sLine} ➔ ${dLine}`;
+          }
+        }
+        if (dFloor) return `📍 ${dFloor}`;
+      } else {
+        const fName = getFloorName(loc.floorId);
+        const lName = getLineName(loc.lineId);
+        if (fName && lName) return `📍 ${fName} > ${lName}`;
+        if (fName) return `📍 ${fName}`;
+      }
+    }
+
+    // Fallback: extract floor/line from notification title or message
+    const text = `${notif.title || ''} ${notif.message || ''}`;
+    const arrowMatch = text.match(/Line\s+([^→\n]+)\s*→\s*Line\s*([^.,\n)]+)/i);
+    if (arrowMatch) {
+      return `📍 Line ${arrowMatch[1].trim()} ➔ Line ${arrowMatch[2].trim()}`;
+    }
+    const floorMatch = text.match(/(Jamuna|Tista|Meghna|Karnafuli|Rupsha|Surma|Padma)\s*(Floor)?/i);
+    if (floorMatch) {
+      return `📍 ${floorMatch[1]} Floor`;
+    }
+  } catch (_) {}
+  return '';
 }
 
 export function renderNotificationsDrawer() {
@@ -296,9 +469,10 @@ export function renderNotificationsDrawer() {
                 type="button" 
                 class="btn-notif-filter btn btn-xs" 
                 data-filter="${modKey}" 
+                title="Filter by ${meta.label}"
                 style="padding: 3px 10px; font-size: 11px; font-weight: 700; border-radius: 20px; border: 1px solid ${isSelected ? meta.color : 'var(--border-color)'}; background: ${isSelected ? meta.bg : 'rgba(15, 23, 42, 0.6)'}; color: ${isSelected ? '#fff' : 'var(--text-muted)'}; cursor: pointer;"
               >
-                ${meta.icon} ${meta.label.split(' ')[0]} (${count})
+                ${meta.icon} ${meta.shortLabel || meta.label} (${count})
               </button>
             `;
           }).join('')}
@@ -325,6 +499,7 @@ export function renderNotificationsDrawer() {
               const meta = getModuleMeta(module);
               const badge = getTypeBadge(n.type, action);
               const formattedTime = formatNotifTime(n.timestamp);
+              const locationBadge = formatNotificationLocation(n);
 
               return `
                 <div 
@@ -335,6 +510,7 @@ export function renderNotificationsDrawer() {
                   data-action="${action || ''}" 
                   data-entity-type="${n.entityType || ''}" 
                   data-entity-id="${n.entityId || ''}"
+                  data-title="${n.title || ''}"
                   style="
                     background: ${isRead ? 'rgba(15, 23, 42, 0.55)' : 'rgba(15, 23, 42, 0.95)'}; 
                     border: 1px solid ${isRead ? 'rgba(255, 255, 255, 0.07)' : 'rgba(56, 189, 248, 0.35)'}; 
@@ -347,18 +523,23 @@ export function renderNotificationsDrawer() {
                     box-shadow: ${isRead ? 'none' : '0 4px 16px rgba(0, 0, 0, 0.3)'};
                   "
                 >
-                  <!-- Card Header: Module Tag + Type Badge + Time -->
-                  <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 6px;">
+                  <!-- Card Header: Module Tag + Type Badge + Location Tag + Time -->
+                  <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 6px;">
                     <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
                       <span class="badge" style="font-size: 10px; padding: 2px 7px; background: ${meta.bg}; color: ${meta.color}; border: 1px solid ${meta.color}40; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
-                        <span>${meta.icon}</span> ${meta.label}
+                        <span>${meta.icon}</span> ${meta.shortLabel || meta.label}
                       </span>
                       <span class="badge" style="font-size: 9.5px; padding: 2px 6px; background: ${badge.bg}; color: ${badge.color}; border: 1px solid ${badge.border}; font-weight: 800;">
                         ${badge.label}
                       </span>
+                      ${locationBadge ? `
+                        <span class="badge" style="font-size: 9.5px; padding: 2px 6px; background: rgba(56, 189, 248, 0.1); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.25); font-weight: 600;">
+                          ${locationBadge}
+                        </span>
+                      ` : ''}
                     </div>
 
-                    <div style="display: flex; align-items: center; gap: 6px;">
+                    <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
                       ${!isRead ? `
                         <span style="display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #38bdf8; box-shadow: 0 0 6px #38bdf8;" title="Unread"></span>
                       ` : ''}
@@ -381,7 +562,7 @@ export function renderNotificationsDrawer() {
                   <!-- Card Footer: Deep Link Prompt & Item Actions -->
                   <div style="border-top: 1px solid rgba(255, 255, 255, 0.06); padding-top: 8px; display: flex; justify-content: space-between; align-items: center; font-size: 11px;">
                     <span style="color: #38bdf8; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
-                      Open Details &rarr;
+                      ${meta.actionText || 'Open Details'} &rarr;
                     </span>
 
                     <div style="display: flex; gap: 8px; align-items: center;" class="notif-actions-stop-propagation">
@@ -629,15 +810,24 @@ export function initNotificationsDrawerEvents() {
 
         // 3. Machinery Inventory
         if (module === 'machines' || url.includes('inventory') || url.includes('machine')) {
+          const machines = storage.getTable(TABLE_NAMES.MACHINES) || [];
+          let mc = null;
           if (entityId) {
-            const machines = storage.getTable(TABLE_NAMES.MACHINES) || [];
-            const mc = machines.find(m => m.id === entityId || m.serialNumber === entityId);
-            if (mc) {
-              state.set('activeMachineId', mc.id);
-              state.set('currentView', 'inventory');
-              state.set('activeModal', 'machine-details');
-              return;
+            mc = machines.find(m => m.id === entityId || m.serialNumber === entityId);
+          }
+          if (!mc) {
+            const cardTitle = item.getAttribute('data-title') || '';
+            const mMatch = `${cardTitle} ${item.textContent || ''}`.match(/Machine\s+([A-Za-z0-9_-]+)/i);
+            if (mMatch) {
+              const sn = mMatch[1].trim();
+              mc = machines.find(m => m.serialNumber === sn || m.id === sn);
             }
+          }
+          if (mc) {
+            state.set('activeMachineId', mc.id);
+            state.set('currentView', 'inventory');
+            state.set('activeModal', 'machine-details');
+            return;
           }
           state.set('currentView', 'inventory');
           return;

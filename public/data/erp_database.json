@@ -1910,7 +1910,7 @@
       "updatedBy": "usr-super-admin",
       "id": "mac-1791545375469-45-88017",
       "createdAt": "2026-10-09T11:29:35.469Z",
-      "updatedAt": "2026-11-05T09:02:30.632Z",
+      "updatedAt": "2026-11-05T09:13:54.082Z",
       "line": "JA-B",
       "lineName": "JA-B",
       "floor": "Jamuna",
@@ -8214,7 +8214,7 @@
       "updatedBy": "usr-super-admin",
       "id": "mac-1791545375469-193-34357",
       "createdAt": "2026-10-09T11:29:35.469Z",
-      "updatedAt": "2026-11-05T09:02:30.632Z",
+      "updatedAt": "2026-11-05T09:13:54.082Z",
       "line": "JA-E",
       "lineName": "JA-E",
       "floor": "Jamuna",
@@ -9585,7 +9585,7 @@
       "updatedBy": "usr-super-admin",
       "id": "mac-1791545375469-225-5317",
       "createdAt": "2026-10-09T11:29:35.469Z",
-      "updatedAt": "2026-11-05T09:02:30.632Z",
+      "updatedAt": "2026-11-05T09:13:54.082Z",
       "line": "JA-E",
       "lineName": "JA-E",
       "floor": "Jamuna",
@@ -13017,7 +13017,7 @@
       "updatedBy": "usr-super-admin",
       "id": "mac-1791545375469-305-60201",
       "createdAt": "2026-10-09T11:29:35.469Z",
-      "updatedAt": "2026-11-05T09:02:30.632Z",
+      "updatedAt": "2026-11-05T09:13:54.082Z",
       "line": "JA-G",
       "lineName": "JA-G",
       "floor": "Jamuna",
@@ -14815,7 +14815,7 @@
       "updatedBy": "usr-super-admin",
       "id": "mac-1791545375469-347-75657",
       "createdAt": "2026-10-09T11:29:35.469Z",
-      "updatedAt": "2026-11-05T09:02:30.632Z",
+      "updatedAt": "2026-11-05T09:13:54.082Z",
       "line": "JA-H",
       "lineName": "JA-H",
       "floor": "Jamuna",
@@ -18117,7 +18117,7 @@
       "updatedBy": "usr-super-admin",
       "id": "mac-1791545375469-429-75800",
       "createdAt": "2026-10-09T11:29:35.469Z",
-      "updatedAt": "2026-11-05T09:02:30.632Z",
+      "updatedAt": "2026-11-05T09:13:54.082Z",
       "line": "JA-I",
       "lineName": "JA-I",
       "floor": "Jamuna",
@@ -27732,7 +27732,7 @@
       "updatedBy": "usr-super-admin",
       "id": "mac-1791545375469-657-55567",
       "createdAt": "2026-10-09T11:29:35.469Z",
-      "updatedAt": "2026-11-05T09:02:30.632Z",
+      "updatedAt": "2026-11-05T09:13:54.082Z",
       "line": "JA-L",
       "lineName": "JA-L",
       "floor": "Jamuna",
@@ -28759,7 +28759,7 @@
       "updatedBy": "usr-super-admin",
       "id": "mac-1791545375469-683-8172",
       "createdAt": "2026-10-09T11:29:35.469Z",
-      "updatedAt": "2026-11-05T09:02:30.632Z",
+      "updatedAt": "2026-11-05T09:13:54.082Z",
       "line": "JA-M",
       "lineName": "JA-M",
       "floor": "Jamuna",
@@ -31805,7 +31805,7 @@
       "updatedBy": "usr-super-admin",
       "id": "mac-1791545375469-754-90444",
       "createdAt": "2026-10-09T11:29:35.469Z",
-      "updatedAt": "2026-11-05T09:02:30.632Z",
+      "updatedAt": "2026-11-05T09:13:54.082Z",
       "line": "JA-N",
       "lineName": "JA-N",
       "floor": "Jamuna",
@@ -32621,7 +32621,7 @@
       "updatedBy": "usr-super-admin",
       "id": "mac-1791545375469-775-57567",
       "createdAt": "2026-10-09T11:29:35.469Z",
-      "updatedAt": "2026-11-05T09:02:30.632Z",
+      "updatedAt": "2026-11-05T09:13:54.082Z",
       "line": "JA-P",
       "lineName": "JA-P",
       "floor": "Jamuna",
@@ -33693,7 +33693,7 @@
       "updatedBy": "usr-super-admin",
       "id": "mac-1791545375469-800-80429",
       "createdAt": "2026-10-09T11:29:35.469Z",
-      "updatedAt": "2026-11-05T09:02:30.632Z",
+      "updatedAt": "2026-11-05T09:13:54.082Z",
       "line": "JA-P",
       "lineName": "JA-P",
       "floor": "Jamuna",
@@ -328421,6 +328421,13 @@
       "machineName": "Single Needle Lock Stitch Machine",
       "machineNameId": "mn-1792077157398-8mma",
       "updatedAt": "2026-11-01T17:14:46.486Z"
+    },
+    {
+      "id": "sm-mod-1793554303887",
+      "brandId": "brd-1791365588525-v0qg",
+      "name": "Standard",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-09T11:29:35.469Z"
     }
   ],
   "categories": [
@@ -328563,7 +328570,7 @@
       ],
       "updatedAt": "2026-11-04T07:53:25.068Z"
     },
-    "adminLoginSlug": "secure-admin-gateway",
+    "adminLoginSlug": "maint-admin",
     "homepageVisibilityMode": "login",
     "default_visible_columns": [
       "sl",
@@ -328658,8 +328665,8 @@
     "maintenanceAllowAdmin": true,
     "maintenanceEnabledAt": null,
     "maintenanceEnabledBy": null,
-    "adminLoginSlugUpdatedAt": "2026-11-04T09:34:11+00:00",
-    "adminLoginSlugUpdatedBy": null,
+    "adminLoginSlugUpdatedAt": "2026-11-05T09:13:22.230Z",
+    "adminLoginSlugUpdatedBy": "Engr. Motaher Hossain",
     "homepageVisibilityUpdatedAt": "2026-11-03T12:30:05.123Z",
     "homepageVisibilityUpdatedBy": null,
     "multi_db_config": [
@@ -328697,9 +328704,11 @@
         "autoSync": true,
         "retryEnabled": true,
         "updatedAt": "2026-11-03T12:26:53.464Z",
-        "lastSync": "11/5/2026, 3:05:57 PM"
+        "lastSync": "11/5/2026, 3:17:22 PM"
       }
-    ]
+    ],
+    "pushNotificationPolicy": "MANDATORY",
+    "pushNotificationPolicyUpdatedAt": "2026-11-05T09:14:28.533Z"
   },
   "users": [
     {
@@ -351692,6 +351701,39 @@
       "timestamp": "2026-11-05T08:25:33.303Z",
       "createdAt": "2026-11-05T08:25:33.303Z",
       "updatedAt": "2026-11-05T08:25:33.303Z"
+    },
+    {
+      "id": "aud-1793870002303-925",
+      "userId": "usr-super-admin",
+      "username": "motaher",
+      "action": "ADMIN_URL_SLUG_UPDATED",
+      "entity": "SETTINGS",
+      "entityId": "system_settings",
+      "details": "Admin Login Gateway URL slug was updated from 'maint-admin' to 'maint-admin' by 'Engr. Motaher Hossain'.",
+      "oldData": null,
+      "newData": {
+        "oldSlug": "maint-admin",
+        "newSlug": "maint-admin"
+      },
+      "ip": "127.0.0.1",
+      "timestamp": "2026-11-05T09:13:22.303Z",
+      "createdAt": "2026-11-05T09:13:22.303Z",
+      "updatedAt": "2026-11-05T09:13:22.303Z"
+    },
+    {
+      "id": "aud-1793870665831-611",
+      "userId": "usr-super-admin",
+      "username": "motaher",
+      "action": "TRANSFER_PDF_GENERATED",
+      "entity": "TRANSFER",
+      "entityId": "TR-2026-000023",
+      "details": "Generated Official Transfer PDF Pass for TR-2026-000023",
+      "oldData": null,
+      "newData": null,
+      "ip": "127.0.0.1",
+      "timestamp": "2026-11-05T09:24:25.831Z",
+      "createdAt": "2026-11-05T09:24:25.831Z",
+      "updatedAt": "2026-11-05T09:24:25.831Z"
     }
   ],
   "notifications": [
