@@ -40,7 +40,8 @@ const PRECACHE_ASSETS = [
   `js/components/navbar.js?v=${BUILD_VER}`,
   `js/components/dashboard.js?v=${BUILD_VER}`,
   `js/components/qrScannerModal.js?v=${BUILD_VER}`,
-  `js/components/machinePocketCardModal.js?v=${BUILD_VER}`
+  `js/components/machinePocketCardModal.js?v=${BUILD_VER}`,
+  `js/components/smartSearchActionModal.js?v=${BUILD_VER}`
 ];
 
 /**

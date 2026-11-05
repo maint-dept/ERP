@@ -11,6 +11,7 @@ import { syncManager } from '../db/syncManager.js?v=4.36.0';
 import { router } from '../services/router.js?v=4.36.0';
 import { renderQrScannerModal, initQrScannerModalEvents, playScanBeep } from './qrScannerModal.js?v=4.36.0';
 import { openMachinePocketCard } from './machinePocketCardModal.js?v=4.36.0';
+import { searchMachinesWithScope, openSmartMachineActionModal } from './smartSearchActionModal.js?v=4.36.0';
 import { 
   getEmployeeMap, 
   getUserCardNumber, 
@@ -205,6 +206,43 @@ export function renderNavbar() {
             </h1>
             <div class="header-sub-text">${headerInfo.sub}</div>
           </div>
+        </div>
+      </div>
+
+      <!-- Center: Universal Sticky Smart Search & QR/Barcode Command Bar -->
+      <div class="header-center-search-wrap" style="flex: 1; max-width: 480px; margin: 0 12px; position: relative; min-width: 0;">
+        <div class="nav-smart-search-box" style="display: flex; align-items: center; background: rgba(15, 23, 42, 0.75); border: 1.5px solid rgba(56, 189, 248, 0.35); border-radius: 9px; height: 35px; padding: 0 4px 0 10px; gap: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.25); transition: all 0.2s;">
+          <span style="font-size: 13px; color: #38bdf8; line-height: 1; pointer-events: none; flex-shrink: 0;">🔍</span>
+          <input 
+            type="text" 
+            id="inp-universal-smart-search" 
+            placeholder="Search Machine #, Serial, Brand, Line... (Ctrl + K)" 
+            autocomplete="off" 
+            spellcheck="false"
+            style="flex: 1; background: transparent; border: none; color: #fff; font-size: 12px; font-weight: 600; outline: none; min-width: 0;"
+          />
+          <button 
+            type="button" 
+            id="btn-nav-search-clear" 
+            title="Clear Search"
+            style="display: none; background: none; border: none; color: #64748b; font-size: 14px; cursor: pointer; padding: 2px 4px; line-height: 1; flex-shrink: 0;"
+          >✕</button>
+
+          <!-- Integrated QR / Barcode Scanner Button attached right beside search bar -->
+          <button 
+            type="button" 
+            id="btn-header-qr-scanner" 
+            class="btn btn-xs" 
+            title="Scan Machine QR Tag / Barcode" 
+            style="background: rgba(56, 189, 248, 0.15); border: 1px solid #38bdf8; color: #38bdf8; font-weight: 800; font-size: 11px; height: 26px; padding: 0 8px; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px; cursor: pointer; flex-shrink: 0;"
+          >
+            <span style="font-size: 13px;">📷</span>
+            <span class="desktop-only" style="letter-spacing: 0.3px;">Scan</span>
+          </button>
+        </div>
+
+        <!-- Floating Live Auto-Suggest Results Dropdown -->
+        <div id="universal-search-dropdown" class="universal-search-results-dropdown custom-scrollbar" style="display: none; position: absolute; top: calc(100% + 6px); left: 0; right: 0; max-height: 420px; overflow-y: auto; background: #0f172a; border: 1.5px solid #38bdf8; border-radius: 12px; box-shadow: 0 20px 45px -10px rgba(0,0,0,0.9), 0 0 20px rgba(56,189,248,0.25); z-index: 10000; padding: 6px 0;">
         </div>
       </div>
 
@@ -919,12 +957,12 @@ export function initNavbarEvents() {
     initQrScannerModalEvents({
       onScanSuccess: (decodedText) => {
         playScanBeep('success');
-        openMachinePocketCard(decodedText);
+        openSmartMachineActionModal(decodedText);
       },
       onManualSearchRequest: () => {
         const query = prompt('Enter Machine Number, Serial Number, or Barcode:');
         if (query && query.trim()) {
-          openMachinePocketCard(query.trim());
+          openSmartMachineActionModal(query.trim());
         }
       },
       onClose: () => {}
@@ -936,17 +974,193 @@ export function initNavbarEvents() {
     btnQuickScan.addEventListener('click', triggerGlobalQuickScanner);
   }
 
-  // Bind Global Keyboard Shortcut Ctrl+K / Cmd+K (singleton listener)
+  const btnHeaderQrScanner = document.getElementById('btn-header-qr-scanner');
+  if (btnHeaderQrScanner) {
+    btnHeaderQrScanner.addEventListener('click', triggerGlobalQuickScanner);
+  }
+
+  // Universal Sticky Search Bar with Live Suggestions Dropdown
+  const inpSearch = document.getElementById('inp-universal-smart-search');
+  const btnSearchClear = document.getElementById('btn-nav-search-clear');
+  const searchDropdown = document.getElementById('universal-search-dropdown');
+  let searchTimer = null;
+  let highlightedIndex = -1;
+  let currentSearchResults = [];
+
+  const closeSearchDropdown = () => {
+    if (searchDropdown) {
+      searchDropdown.style.display = 'none';
+      searchDropdown.innerHTML = '';
+    }
+    highlightedIndex = -1;
+    currentSearchResults = [];
+  };
+
+  if (inpSearch && searchDropdown) {
+    inpSearch.addEventListener('input', (e) => {
+      const q = e.target.value.trim();
+      if (btnSearchClear) btnSearchClear.style.display = q ? 'block' : 'none';
+
+      clearTimeout(searchTimer);
+      if (!q) {
+        closeSearchDropdown();
+        return;
+      }
+
+      searchTimer = setTimeout(() => {
+        const matches = searchMachinesWithScope(q, 8);
+        currentSearchResults = matches;
+        highlightedIndex = -1;
+
+        if (matches.length === 0) {
+          searchDropdown.innerHTML = `
+            <div style="padding: 16px; text-align: center; color: #94a3b8; font-size: 12px;">
+              <div style="font-size: 22px; margin-bottom: 4px;">🔍</div>
+              <div>No machines found matching <strong style="color: #f8fafc;">"${escapeHtml(q)}"</strong></div>
+              <div style="font-size: 11px; color: #64748b; margin-top: 4px;">Try searching by Serial Number, Brand (Juki, Brother), or Line Name</div>
+            </div>
+          `;
+          searchDropdown.style.display = 'block';
+          return;
+        }
+
+        const itemsHtml = matches.map((res, idx) => `
+          <div class="universal-search-item" data-idx="${idx}" style="padding: 9px 14px; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: space-between; gap: 10px; transition: background 0.15s ease;">
+            <div style="min-width: 0; flex: 1;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-family: monospace; font-size: 13.5px; font-weight: 900; color: #38bdf8; background: rgba(56,189,248,0.12); padding: 1px 6px; border-radius: 4px; border: 1px solid rgba(56,189,248,0.25);">
+                  ${escapeHtml(res.machine.machineId || res.machine.id)}
+                </span>
+                <span style="font-size: 12px; font-weight: 700; color: #f8fafc; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                  ${escapeHtml(res.machineNameStr)}
+                </span>
+              </div>
+              <div style="font-size: 11px; color: #94a3b8; margin-top: 3px; display: flex; align-items: center; gap: 6px;">
+                <span>Brand: <strong style="color: #cbd5e1;">${escapeHtml(res.brandStr)}</strong></span>
+                <span>&bull;</span>
+                <span>Model: <strong style="color: #cbd5e1;">${escapeHtml(res.modelStr)}</strong></span>
+                <span>&bull;</span>
+                <span>Serial: <strong style="color: #38bdf8; font-family: monospace;">${escapeHtml(res.machine.serialNumber || 'N/A')}</strong></span>
+              </div>
+            </div>
+            
+            <div style="text-align: right; flex-shrink: 0; display: flex; flex-direction: column; align-items: flex-end; gap: 2px;">
+              <div style="font-size: 11.5px; font-weight: 900; color: #34d399;">📍 ${escapeHtml(res.lineName)}</div>
+              <div style="font-size: 10px; color: #94a3b8;">${escapeHtml(res.floorName)}</div>
+              <div>
+                ${res.canOperate ? `<span style="font-size: 9.5px; color: #38bdf8; font-weight: 800; background: rgba(56,189,248,0.15); padding: 1px 5px; border-radius: 4px;">✓ Full Access</span>` : `<span style="font-size: 9.5px; color: #f87171; font-weight: 800; background: rgba(239,68,68,0.15); padding: 1px 5px; border-radius: 4px;">🔒 View-Only</span>`}
+              </div>
+            </div>
+          </div>
+        `).join('');
+
+        searchDropdown.innerHTML = `
+          <div style="padding: 4px 14px 6px; font-size: 10px; font-weight: 900; color: #38bdf8; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; justify-content: space-between;">
+            <span>Found ${matches.length} Matching Machines</span>
+            <span>Tap to Execute Action</span>
+          </div>
+          <div class="search-items-wrap">
+            ${itemsHtml}
+          </div>
+        `;
+        searchDropdown.style.display = 'block';
+
+        // Bind clicks on items
+        searchDropdown.querySelectorAll('.universal-search-item').forEach(itemEl => {
+          itemEl.addEventListener('click', () => {
+            const idx = parseInt(itemEl.getAttribute('data-idx'), 10);
+            if (currentSearchResults[idx]) {
+              playScanBeep('success');
+              closeSearchDropdown();
+              inpSearch.value = '';
+              if (btnSearchClear) btnSearchClear.style.display = 'none';
+              openSmartMachineActionModal(currentSearchResults[idx].machine);
+            }
+          });
+        });
+      }, 120);
+    });
+
+    // Keyboard Navigation for Search Bar
+    inpSearch.addEventListener('keydown', (e) => {
+      if (!currentSearchResults.length || searchDropdown.style.display === 'none') {
+        if (e.key === 'Escape') {
+          closeSearchDropdown();
+          inpSearch.blur();
+        }
+        return;
+      }
+
+      const items = searchDropdown.querySelectorAll('.universal-search-item');
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        highlightedIndex = (highlightedIndex + 1) % items.length;
+        updateItemHighlight(items, highlightedIndex);
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        highlightedIndex = (highlightedIndex - 1 + items.length) % items.length;
+        updateItemHighlight(items, highlightedIndex);
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        const targetIdx = highlightedIndex >= 0 ? highlightedIndex : 0;
+        if (currentSearchResults[targetIdx]) {
+          playScanBeep('success');
+          closeSearchDropdown();
+          inpSearch.value = '';
+          if (btnSearchClear) btnSearchClear.style.display = 'none';
+          openSmartMachineActionModal(currentSearchResults[targetIdx].machine);
+        }
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        closeSearchDropdown();
+        inpSearch.blur();
+      }
+    });
+
+    if (btnSearchClear) {
+      btnSearchClear.addEventListener('click', () => {
+        inpSearch.value = '';
+        btnSearchClear.style.display = 'none';
+        closeSearchDropdown();
+        inpSearch.focus();
+      });
+    }
+
+    // Close on outside click
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.header-center-search-wrap')) {
+        closeSearchDropdown();
+      }
+    });
+  }
+
+  function updateItemHighlight(items, activeIdx) {
+    items.forEach((el, i) => {
+      if (i === activeIdx) {
+        el.style.background = 'rgba(56, 189, 248, 0.2)';
+        el.scrollIntoView({ block: 'nearest' });
+      } else {
+        el.style.background = 'transparent';
+      }
+    });
+  }
+
+  // Bind Global Keyboard Shortcut Ctrl+K / Cmd+K (Focuses Search Bar instantly!)
   if (!window._globalQuickScanKeyBound) {
     window._globalQuickScanKeyBound = true;
     window.addEventListener('keydown', (e) => {
       const tag = e.target?.tagName?.toLowerCase();
-      if (tag === 'input' || tag === 'textarea' || e.target?.isContentEditable) {
+      if ((tag === 'input' || tag === 'textarea' || e.target?.isContentEditable) && e.target !== inpSearch) {
         return;
       }
       if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K')) {
         e.preventDefault();
-        triggerGlobalQuickScanner();
+        if (inpSearch) {
+          inpSearch.focus();
+          inpSearch.select();
+        } else {
+          triggerGlobalQuickScanner();
+        }
       }
     });
   }
