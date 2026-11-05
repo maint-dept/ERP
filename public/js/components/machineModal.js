@@ -11,12 +11,12 @@ import { customFieldService } from '../services/customFieldService.js';
 import { machineService } from '../services/machineService.js';
 import { authService } from '../services/authService.js';
 import { notificationService } from '../services/notificationService.js';
-import { smartStorageService } from '../services/smartStorageService.js?v=4.22.19';
+import { smartStorageService } from '../services/smartStorageService.js?v=4.33.0';
 import { excelService, formatDisplayLine } from '../services/excelService.js';
 import { preventiveMaintenanceService } from '../services/preventiveMaintenanceService.js';
-import { CloudSaveError } from '../db/storage.js';
+import { CloudSaveError } from '../db/storage.js?v=4.33.0';
 import { qrCodeService } from '../services/qrCodeService.js';
-import { renderQrScannerModal, initQrScannerModalEvents } from './qrScannerModal.js?v=4.7.4';
+import { renderQrScannerModal, initQrScannerModalEvents } from './qrScannerModal.js?v=4.33.0';
 import { state } from '../state.js';
 
 function escapeHtml(str) {

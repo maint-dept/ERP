@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0b1329" />
+      <stop offset="50%" stop-color="#0f172a" />
+      <stop offset="100%" stop-color="#030712" />
+    </linearGradient>
+    <linearGradient id="primaryGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8" />
+      <stop offset="100%" stop-color="#0284c7" />
+    </linearGradient>
+    <linearGradient id="glowGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.25" />
+      <stop offset="100%" stop-color="#0284c7" stop-opacity="0" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="512" height="512" rx="108" fill="url(#bgGrad)" />
+  <circle cx="256" cy="256" r="210" fill="url(#glowGrad)" />
+
+  <!-- Outer Cogwheel / Gear teeth -->
+  <g fill="url(#primaryGrad)">
+    <path d="M256 70 C265 70, 272 77, 273 86 L278 120 C293 124, 307 130, 320 138 L348 116 C355 110, 365 111, 371 117 L395 141 C401 147, 402 157, 396 164 L374 192 C382 205, 388 219, 392 234 L426 239 C435 240, 442 247, 442 256 C442 265, 435 272, 426 273 L392 278 C388 293, 382 307, 374 320 L396 348 C402 355, 401 365, 395 371 L371 395 C365 401, 355 402, 348 396 L320 374 C307 382, 293 388, 278 392 L273 426 C272 435, 265 442, 256 442 C247 442, 240 435, 239 426 L234 392 C219 388, 205 382, 192 374 L164 396 C157 402, 147 401, 141 395 L117 371 C111 365, 110 355, 116 348 L138 320 C130 307, 124 293, 120 278 L86 273 C77 272, 70 265, 70 256 C70 247, 77 240, 86 239 L120 234 C124 219, 130 205, 138 192 L116 164 C110 157, 111 147, 117 141 L141 117 C147 111, 157 110, 164 116 L192 138 C205 130, 219 124, 234 120 L239 86 C240 77, 247 70, 256 70 Z" />
+  </g>
+
+  <!-- Inner Center Cutout -->
+  <circle cx="256" cy="256" r="102" fill="#0b1329" stroke="#38bdf8" stroke-width="6" />
+
+  <!-- Monogram Logo / AMG -->
+  <text x="256" y="274" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="62" font-weight="900" fill="#38bdf8" text-anchor="middle" letter-spacing="2">AMG</text>
+  <text x="256" y="315" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="20" font-weight="700" fill="#94a3b8" text-anchor="middle" letter-spacing="4">ERP</text>
+</svg>

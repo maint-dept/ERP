@@ -389,6 +389,15 @@ export function renderNavbar() {
                   <span class="dropdown-item-desc">Open visitor portal & company overview</span>
                 </div>
               </button>
+
+              <!-- Native PWA Install App Button -->
+              <button type="button" id="btn-navbar-install-pwa" class="nav-user-dropdown-item" style="display: none;" title="Install AMG ERP on your device">
+                <span class="dropdown-item-icon">📱</span>
+                <div class="dropdown-item-content">
+                  <span class="dropdown-item-title" style="color: #38bdf8;">Install Mobile App</span>
+                  <span class="dropdown-item-desc">Add to Home Screen for fast offline access</span>
+                </div>
+              </button>
             </div>
 
             <div class="nav-user-dropdown-divider"></div>
@@ -804,6 +813,37 @@ export function initNavbarEvents() {
         authService.logout();
         router.navigate('login', { replace: true });
         state.set('currentView', 'login');
+      }
+    });
+  }
+
+  // PWA Mobile App Install Handler
+  const btnInstallPwa = document.getElementById('btn-navbar-install-pwa');
+  if (btnInstallPwa) {
+    const checkPwaInstallable = () => {
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+      if (!isStandalone && window.__amgInstallPrompt) {
+        btnInstallPwa.style.display = 'flex';
+      } else {
+        btnInstallPwa.style.display = 'none';
+      }
+    };
+    checkPwaInstallable();
+    window.addEventListener('amg-pwa-ready', checkPwaInstallable);
+    btnInstallPwa.addEventListener('click', async () => {
+      closeDropdown();
+      if (window.__amgInstallPrompt) {
+        window.__amgInstallPrompt.prompt();
+        const choice = await window.__amgInstallPrompt.userChoice;
+        if (choice && choice.outcome === 'accepted') {
+          btnInstallPwa.style.display = 'none';
+          if (notificationService && typeof notificationService.success === 'function') {
+            notificationService.success('AMG ERP installed successfully!');
+          }
+        }
+        window.__amgInstallPrompt = null;
+      } else {
+        alert('To install on iOS Safari: Tap the Share icon (box with arrow) at the bottom of Safari, then choose "Add to Home Screen".');
       }
     });
   }

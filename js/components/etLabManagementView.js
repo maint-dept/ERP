@@ -16,7 +16,7 @@ import { authService } from '../services/authService.js';
 import { notificationService } from '../services/notificationService.js';
 import { qrCodeService } from '../services/qrCodeService.js';
 import { tempImportService } from '../services/tempImportService.js';
-import { renderQrScannerModal, initQrScannerModalEvents } from './qrScannerModal.js?v=4.7.4';
+import { renderQrScannerModal, initQrScannerModalEvents } from './qrScannerModal.js?v=4.33.0';
 import { renderSparePartsManagementView, initSparePartsManagementEvents } from './sparePartsManagementView.js';
 
 // Local view state

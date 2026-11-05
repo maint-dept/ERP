@@ -14,6 +14,11 @@ const CACHE_NAME = 'amg-erp-v4.33.0';
 const PRECACHE_ASSETS = [
   './',
   'index.html',
+  'manifest.json',
+  'favicon.ico',
+  'icon.svg',
+  'icon-192.png',
+  'apple-touch-icon.png',
   `css/app.css?v=${BUILD_VER}`,
   `css/grid.css?v=${BUILD_VER}`,
   `css/components.css?v=${BUILD_VER}`,
