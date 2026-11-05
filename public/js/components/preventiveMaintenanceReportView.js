@@ -54,7 +54,7 @@ let reportState = {
   floorName: '',
   lineId: 'ALL',
   lineName: '',
-  filterMode: 'ALL', // 'ALL' = All Machines on Floor/Line, 'DUE' = Overdue / Due Soon, 'RECENT' = Recently Serviced
+  filterMode: 'RECENT', // Default to 'RECENT' (Serviced) machines as per factory standard
   dateMode: 'SINGLE', // 'SINGLE' = Single Servicing Date, 'MONTHLY' = Month Picker, 'RANGE' = From Date - To Date
   selectedMonth: new Date().toISOString().slice(0, 7), // 'YYYY-MM' (e.g. '2026-11')
   dateFrom: '', // 'YYYY-MM-DD'
@@ -143,6 +143,56 @@ function computeNextDate(servicingDate, days = 90) {
   } catch (_) {
     return '';
   }
+}
+
+/**
+ * Normalizes any date format (DD-MM-YYYY, YYYY-MM-DD, ISO) into standard comparable YYYY-MM-DD
+ */
+export function toStandardDateStr(raw) {
+  if (!raw || raw === 'N/A' || raw === 'Never' || raw === '-' || raw === '—') return '';
+  const s = String(raw).trim().split('T')[0];
+  const parts = s.split(/[-/.]/);
+  if (parts.length === 3) {
+    if (parts[0].length === 4) {
+      return `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
+    } else if (parts[2].length === 4) {
+      return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+    }
+  }
+  return s;
+}
+
+/**
+ * Checks whether a machine has officially been serviced
+ */
+export function isMachineServiced(m, pmRecMap = null) {
+  if (!m) return false;
+  const s = String(m.serialNumber || '').trim().toUpperCase();
+  const mid = String(m.id || '').trim().toUpperCase();
+  if (pmRecMap && ((s && pmRecMap.has(s)) || (mid && pmRecMap.has(mid)))) return true;
+  const rawDate = m.lastServiceDate || m.service_date || m.serviceDate || m.customValues?.service_date;
+  if (!rawDate) return false;
+  const std = toStandardDateStr(rawDate);
+  return Boolean(std && std !== 'N/A' && std !== 'Never');
+}
+
+/**
+ * Resolves standard YYYY-MM-DD service date for a machine
+ */
+export function getMachineServiceDate(m, pmRecMap = null) {
+  if (!m) return '';
+  const s = String(m.serialNumber || '').trim().toUpperCase();
+  const mid = String(m.id || '').trim().toUpperCase();
+  if (pmRecMap) {
+    const r = (s && pmRecMap.get(s)) || (mid && pmRecMap.get(mid));
+    if (r) {
+      const rd = r.serviceDate || r.lastServiceDate || r.createdAt;
+      const std = toStandardDateStr(rd);
+      if (std) return std;
+    }
+  }
+  const rawDate = m.lastServiceDate || m.service_date || m.serviceDate || m.customValues?.service_date;
+  return toStandardDateStr(rawDate);
 }
 
 /**
@@ -325,74 +375,46 @@ export function fetchMachinesByFilters() {
     });
   }
 
-  // 5. Date Range & Filter Mode (All, Due, Recently Serviced)
-  const isDateFiltering = (reportState.dateMode === 'RANGE' || reportState.dateMode === 'MONTHLY') && (reportState.dateFrom || reportState.dateTo);
-  const from = reportState.dateFrom || '';
-  const to = reportState.dateTo || '';
+  // 5. Date Range & Filter Mode (All, Due, Serviced)
+  const isDateFiltering = (reportState.dateMode === 'RANGE' || reportState.dateMode === 'MONTHLY') && Boolean(reportState.dateFrom || reportState.dateTo);
+  const from = reportState.dateFrom ? toStandardDateStr(reportState.dateFrom) : '';
+  const to = reportState.dateTo ? toStandardDateStr(reportState.dateTo) : '';
 
-  if (isDateFiltering) {
-    const pmRecs = storage.getTable(TABLE_NAMES.PREVENTIVE_MAINTENANCE) || [];
+  const pmRecs = storage.getTable(TABLE_NAMES.PREVENTIVE_MAINTENANCE) || [];
+  const pmRecMap = new Map();
+  pmRecs.forEach(r => {
+    if (r.serialNumber) pmRecMap.set(String(r.serialNumber).trim().toUpperCase(), r);
+    if (r.machineId) pmRecMap.set(String(r.machineId).trim().toUpperCase(), r);
+  });
 
-    if (reportState.filterMode === 'RECENT') {
-      // Filter strictly to machines that were serviced in this date range
-      const matchingSerials = new Set();
-      pmRecs.forEach(r => {
-        const d = (r.serviceDate || r.lastServiceDate || r.createdAt || '').slice(0, 10);
-        if (d && (!from || d >= from) && (!to || d <= to)) {
-          if (r.serialNumber) matchingSerials.add(String(r.serialNumber).trim().toUpperCase());
-          if (r.machineId) matchingSerials.add(String(r.machineId).trim().toUpperCase());
-        }
-      });
+  if (reportState.filterMode === 'RECENT') {
+    // Serviced: strictly machines that HAVE been serviced (default behavior)
+    list = list.filter(m => isMachineServiced(m, pmRecMap));
+
+    if (isDateFiltering && (from || to)) {
       list = list.filter(m => {
-        const s = String(m.serialNumber || '').trim().toUpperCase();
-        const mid = String(m.id || '').trim().toUpperCase();
-        const mDate = (m.lastServiceDate || m.customValues?.service_date || '').slice(0, 10);
-        return matchingSerials.has(s) || matchingSerials.has(mid) || (mDate && (!from || mDate >= from) && (!to || mDate <= to));
+        const d = getMachineServiceDate(m, pmRecMap);
+        return d && (!from || d >= from) && (!to || d <= to);
       });
-    } else if (reportState.filterMode === 'DUE') {
-      // Filter to machines that are due in this date range
+    }
+  } else if (reportState.filterMode === 'DUE') {
+    // Due: machines that have NOT been serviced yet (Pending Service list)
+    list = list.filter(m => !isMachineServiced(m, pmRecMap));
+
+    if (isDateFiltering && (from || to)) {
       list = list.filter(m => {
-        const prof = preventiveMaintenanceService.getMachinePreventiveProfile(m);
-        const nextD = (prof?.nextServiceDate || m.nextServiceDate || '').slice(0, 10);
-        return nextD && (!from || nextD >= from) && (!to || nextD <= to);
+        const nextD = toStandardDateStr(m.nextServiceDate);
+        return !nextD || ((!from || nextD >= from) && (!to || nextD <= to));
       });
-    } else {
-      // filterMode === 'ALL'
-      // If user selected a specific floor or line, load all machines on that floor/line for the monthly sheet
-      // If Unit/Floor/Line is ALL, filter to machines with PM activity or schedule in that period
-      if (reportState.floorId === 'ALL' && reportState.unitId === 'ALL' && reportState.lineId === 'ALL') {
-        const activeSerials = new Set();
-        pmRecs.forEach(r => {
-          const d = (r.serviceDate || r.lastServiceDate || r.createdAt || '').slice(0, 10);
-          const nextD = (r.nextServiceDate || '').slice(0, 10);
-          if ((d && (!from || d >= from) && (!to || d <= to)) || (nextD && (!from || nextD >= from) && (!to || nextD <= to))) {
-            if (r.serialNumber) activeSerials.add(String(r.serialNumber).trim().toUpperCase());
-            if (r.machineId) activeSerials.add(String(r.machineId).trim().toUpperCase());
-          }
-        });
-        const periodFiltered = list.filter(m => {
-          const s = String(m.serialNumber || '').trim().toUpperCase();
-          const mid = String(m.id || '').trim().toUpperCase();
-          const mDate = (m.lastServiceDate || m.customValues?.service_date || '').slice(0, 10);
-          const nextD = (m.nextServiceDate || '').slice(0, 10);
-          return activeSerials.has(s) || activeSerials.has(mid) || (mDate && (!from || mDate >= from) && (!to || mDate <= to)) || (nextD && (!from || nextD >= from) && (!to || nextD <= to));
-        });
-        if (periodFiltered.length > 0) {
-          list = periodFiltered;
-        }
-      }
     }
   } else {
-    // Standard Single Date filtering
-    if (reportState.filterMode === 'DUE') {
+    // filterMode === 'ALL'
+    if (isDateFiltering && (from || to)) {
       list = list.filter(m => {
-        const prof = preventiveMaintenanceService.getMachinePreventiveProfile(m);
-        return prof?.urgency?.status === 'OVERDUE' || prof?.urgency?.status === 'DUE_TODAY' || prof?.urgency?.status === 'DUE_SOON';
+        const d = getMachineServiceDate(m, pmRecMap);
+        const nextD = toStandardDateStr(m.nextServiceDate);
+        return (d && (!from || d >= from) && (!to || d <= to)) || (nextD && (!from || nextD >= from) && (!to || nextD <= to));
       });
-    } else if (reportState.filterMode === 'RECENT') {
-      const pmRecs = storage.getTable(TABLE_NAMES.PREVENTIVE_MAINTENANCE) || [];
-      const recentSerials = new Set(pmRecs.map(r => String(r.serialNumber || '').trim().toUpperCase()));
-      list = list.filter(m => recentSerials.has(String(m.serialNumber || '').trim().toUpperCase()));
     }
   }
 
@@ -543,39 +565,51 @@ export function resolveMachineReportRow(rawM, index = 0, startSlOffset = 0, base
                  pmProfile?.lastServiceDate || 
                  '';
   if (!prevDate || prevDate === 'N/A' || prevDate === 'None' || prevDate === 'Never' || prevDate === '—') {
-    prevDate = '03-10-2026';
+    prevDate = '';
   }
 
-  // 4. Resolve Sticker Serial (NEVER print STK-PENDING!)
+  // 4. Resolve Sticker Serial
   let sticker = '';
   const rawStk = pmRecord?.serviceStickerSerial || rawM.serviceStickerSerial || '';
   if (rawStk && !rawStk.toUpperCase().includes('PENDING')) {
     sticker = rawStk;
-  } else {
+  } else if (prevDate) {
     sticker = String(baseSticker + startSlOffset + index);
+  } else {
+    sticker = 'Pending';
   }
 
   // 5. Resolve Line or Section
   const lineVal = rawM.line || rawM.lineName || initMatch?.line || initMatch?.lineName || reportState.lineName || 'PD-A';
 
   // 6. Resolve Work Summary
-  const workSum = generateMachineWorkSummary(
-    { ...rawM, machineName: mName, model: fullModel, serialNumber: cleanSerial },
-    pmProfile,
-    pmRecord
-  );
+  let workSum = '';
+  if (prevDate) {
+    workSum = generateMachineWorkSummary(
+      { ...rawM, machineName: mName, model: fullModel, serialNumber: cleanSerial },
+      pmProfile,
+      pmRecord
+    );
+  } else {
+    workSum = 'Pending Routine Maintenance';
+  }
 
-  // 7. Resolve Servicer Name (NEVER print Assigned Mech)
-  let servicer = pmRecord?.servicedBy || rawM.assignedManpower || pmProfile?.assignedManpower || reportState.defaultServicer || '';
-  if (!servicer || servicer.toLowerCase().includes('assigned') || servicer.toLowerCase().includes('routine')) {
-    const factoryMechs = [
-      'Engr. Motaher Hossain',
-      'Md. Jakaria',
-      'Md. Shipon',
-      'Sofiullah',
-      'Abdullah Al Mamun'
-    ];
-    servicer = factoryMechs[(startSlOffset + index) % factoryMechs.length];
+  // 7. Resolve Servicer Name
+  let servicer = '';
+  if (prevDate) {
+    servicer = pmRecord?.servicedBy || rawM.assignedManpower || pmProfile?.assignedManpower || reportState.defaultServicer || '';
+    if (!servicer || servicer.toLowerCase().includes('assigned') || servicer.toLowerCase().includes('routine')) {
+      const factoryMechs = [
+        'Engr. Motaher Hossain',
+        'Md. Jakaria',
+        'Md. Shipon',
+        'Sofiullah',
+        'Abdullah Al Mamun'
+      ];
+      servicer = factoryMechs[(startSlOffset + index) % factoryMechs.length];
+    }
+  } else {
+    servicer = 'Unassigned';
   }
 
   // 8. Unit name
@@ -1059,10 +1093,10 @@ export function renderPreventiveMaintenanceReportView() {
             <!-- Status Selector -->
             <div style="display: inline-flex; align-items: center; gap: 3px; background: rgba(15, 23, 42, 0.6); padding: 1px 4px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.1);">
               <span style="color: #94a3b8; font-weight: 800; font-size: 10.5px; white-space: nowrap;">Status:</span>
-              <select id="pm-rep-filter-mode" class="filter-select-compact" style="height: 24px; width: 90px; font-size: 10.5px; font-weight: 600; padding: 1px 3px; background: transparent; color: #ffffff; border: none; outline: none;">
+              <select id="pm-rep-filter-mode" class="filter-select-compact" style="height: 24px; font-size: 10.5px; font-weight: 700; padding: 1px 4px; background: transparent; color: #ffffff; border: none; outline: none; cursor: pointer;">
+                <option value="RECENT" ${reportState.filterMode === 'RECENT' ? 'selected' : ''}>🕒 Serviced (Default)</option>
+                <option value="DUE" ${reportState.filterMode === 'DUE' ? 'selected' : ''}>🚨 Due (Pending Service)</option>
                 <option value="ALL" ${reportState.filterMode === 'ALL' ? 'selected' : ''}>📋 All M/C</option>
-                <option value="DUE" ${reportState.filterMode === 'DUE' ? 'selected' : ''}>🚨 Due</option>
-                <option value="RECENT" ${reportState.filterMode === 'RECENT' ? 'selected' : ''}>🕒 Serviced</option>
               </select>
             </div>
 
@@ -1344,9 +1378,9 @@ export function renderPreventiveMaintenanceReportView() {
             <thead>
               <tr style="border-bottom: 1.5px solid #000000;">
                 <th style="border: 1px solid #000000; padding: 5px 2px; text-align: center; vertical-align: middle; font-weight: 800; font-size: 9.5px; background: #ffffff !important; color: #000000 !important; white-space: normal; word-break: break-word;">Sl.<br/>No.</th>
-                <th style="border: 1px solid #000000; padding: 5px 3px; text-align: center; vertical-align: middle; font-weight: 800; font-size: 9.5px; background: #ffffff !important; color: #000000 !important; white-space: normal; word-break: break-word;">M/C Name</th>
-                <th style="border: 1px solid #000000; padding: 5px 3px; text-align: center; vertical-align: middle; font-weight: 800; font-size: 9.5px; background: #ffffff !important; color: #000000 !important; white-space: normal; word-break: break-word;">M/C<br/>Number</th>
-                <th style="border: 1px solid #000000; padding: 5px 3px; text-align: center; vertical-align: middle; font-weight: 800; font-size: 9.5px; background: #ffffff !important; color: #000000 !important; white-space: normal; word-break: break-word;">M/C Model/Type</th>
+                <th style="border: 1px solid #000000; padding: 5px 3px; text-align: center; vertical-align: middle; font-weight: 800; font-size: 9.5px; background: #ffffff !important; color: #000000 !important; white-space: normal; word-break: break-word;">Machine Name</th>
+                <th style="border: 1px solid #000000; padding: 5px 3px; text-align: center; vertical-align: middle; font-weight: 800; font-size: 9.5px; background: #ffffff !important; color: #000000 !important; white-space: normal; word-break: break-word;">Machine<br/>Number</th>
+                <th style="border: 1px solid #000000; padding: 5px 3px; text-align: center; vertical-align: middle; font-weight: 800; font-size: 9.5px; background: #ffffff !important; color: #000000 !important; white-space: normal; word-break: break-word;">Brand/Model</th>
                 <th style="border: 1px solid #000000; padding: 5px 3px; text-align: center; vertical-align: middle; font-weight: 800; font-size: 9.5px; background: #ffffff !important; color: #000000 !important; white-space: normal; word-break: break-word;">Previous<br/>Servicing<br/>Date:</th>
                 <th style="border: 1px solid #000000; padding: 5px 3px; text-align: center; vertical-align: middle; font-weight: 800; font-size: 9.5px; background: #ffffff !important; color: #000000 !important; white-space: normal; word-break: break-word;">Sticker Sl.<br/>No.</th>
                 <th style="border: 1px solid #000000; padding: 5px 3px; text-align: center; vertical-align: middle; font-weight: 800; font-size: 9.5px; background: #ffffff !important; color: #000000 !important; white-space: normal; word-break: break-word;">Line or<br/>Section</th>
@@ -1592,13 +1626,6 @@ export function renderPreventiveMaintenanceReportView() {
               </div>
             </div>
 
-          </div>
-
-          <!-- Bottom Footer Note for Official Print -->
-          <div style="margin-top: 8px; display: flex; justify-content: space-between; align-items: center; font-size: 8.5px; color: #555555; border-top: 1px dotted #cccccc; padding-top: 3px;">
-            <span>Form Ref: AM-MNT-PMM-01 (A4 Landscape)</span>
-            <span>Generated from Al-Muslim Central Maintenance Department ERP System</span>
-            <span>Page ${curPage} of ${totalPages}</span>
           </div>
 
         </div>
@@ -1990,7 +2017,7 @@ export function initPreventiveMaintenanceReportEvents(container = document) {
         reportState.floorName = '';
         reportState.lineId = 'ALL';
         reportState.lineName = '';
-        reportState.filterMode = 'ALL';
+        reportState.filterMode = 'RECENT';
         reportState.dateMode = 'SINGLE';
         reportState.selectedMonth = new Date().toISOString().slice(0, 7);
         reportState.dateFrom = '';
@@ -2299,16 +2326,25 @@ export function initPreventiveMaintenanceReportEvents(container = document) {
       return;
     }
 
-    const rowsToExport = reportState.rows.filter(r => (r.machineNumber && r.machineNumber.trim()) || (r.machineName && r.machineName.trim()));
+    let exportSource = reportState.rows;
+    if (reportState.allMatchingMachines && reportState.allMatchingMachines.length > reportState.rows.length) {
+      exportSource = populateReportRowsFromMachines(reportState.allMatchingMachines, 0);
+    }
+
+    const rowsToExport = exportSource.filter(r => (r.machineNumber && r.machineNumber.trim()) || (r.machineName && r.machineName.trim()));
     if (rowsToExport.length === 0) {
       alert('No filled machine records to export. Please select a Floor or add machines first.');
       return;
     }
 
+    const reportTitle = reportState.filterMode === 'DUE' 
+      ? 'PREVENTIVE MAINTENANCE PENDING / DUE AUDIT LIST' 
+      : 'PREVENTIVE MACHINE MAINTENANCE SERVICING REPORT';
+
     const aoa = [
       ['AL-MUSLIM GROUP'],
       ['MAINTENANCE DEPARTMENT'],
-      ['PREVENTIVE MACHINE MAINTENANCE REPORT'],
+      [reportTitle],
       [],
       [
         `Unit: ${reportState.unitName || 'All Units'}`,
@@ -2322,9 +2358,9 @@ export function initPreventiveMaintenanceReportEvents(container = document) {
       [],
       [
         'Sl. No.',
-        'M/C Name',
-        'M/C Number',
-        'M/C Model/Type',
+        'Machine Name',
+        'Machine Number',
+        'Brand/Model',
         'Previous Servicing Date',
         'Sticker Sl. No.',
         'Line or Section',
@@ -2367,9 +2403,9 @@ export function initPreventiveMaintenanceReportEvents(container = document) {
 
     ws['!cols'] = [
       { wch: 8 },  // Sl. No.
-      { wch: 26 }, // M/C Name
-      { wch: 16 }, // M/C Number
-      { wch: 20 }, // M/C Model/Type
+      { wch: 28 }, // Machine Name
+      { wch: 18 }, // Machine Number
+      { wch: 22 }, // Brand/Model
       { wch: 16 }, // Previous Servicing Date
       { wch: 16 }, // Sticker Sl. No.
       { wch: 18 }, // Line or Section
@@ -2384,7 +2420,8 @@ export function initPreventiveMaintenanceReportEvents(container = document) {
       : reportState.dateMode === 'RANGE' 
         ? `${reportState.dateFrom || 'start'}_to_${reportState.dateTo || 'end'}` 
         : (reportState.servicingDate || 'Report');
-    const fileName = `Preventive_Machine_Maintenance_${reportState.floorName ? reportState.floorName + '_' : ''}${periodSlug}.xlsx`;
+    const prefix = reportState.filterMode === 'DUE' ? 'PM_Due_Pending_List_' : 'Preventive_Machine_Maintenance_';
+    const fileName = `${prefix}${reportState.floorName ? reportState.floorName + '_' : ''}${periodSlug}.xlsx`;
     window.XLSX.writeFile(wb, fileName);
 
     auditService.log('EXPORT_PREVENTIVE_REPORT_EXCEL', 'PREVENTIVE_MAINTENANCE', fileName, `Exported ${rowsToExport.length} records to Excel.`);
@@ -2394,7 +2431,12 @@ export function initPreventiveMaintenanceReportEvents(container = document) {
    * Export to CSV (.csv) matching exact columns
    */
   function exportReportToCsv() {
-    const rowsToExport = reportState.rows.filter(r => (r.machineNumber && r.machineNumber.trim()) || (r.machineName && r.machineName.trim()));
+    let exportSource = reportState.rows;
+    if (reportState.allMatchingMachines && reportState.allMatchingMachines.length > reportState.rows.length) {
+      exportSource = populateReportRowsFromMachines(reportState.allMatchingMachines, 0);
+    }
+
+    const rowsToExport = exportSource.filter(r => (r.machineNumber && r.machineNumber.trim()) || (r.machineName && r.machineName.trim()));
     if (rowsToExport.length === 0) {
       alert('No filled machine records to export. Please select a Floor or add machines first.');
       return;
@@ -2402,9 +2444,9 @@ export function initPreventiveMaintenanceReportEvents(container = document) {
 
     const headers = [
       'Sl. No.',
-      'M/C Name',
-      'M/C Number',
-      'M/C Model/Type',
+      'Machine Name',
+      'Machine Number',
+      'Brand/Model',
       'Previous Servicing Date',
       'Sticker Sl. No.',
       'Line or Section',
@@ -2414,7 +2456,11 @@ export function initPreventiveMaintenanceReportEvents(container = document) {
     ];
 
     const csvRows = [];
-    csvRows.push(['AL-MUSLIM GROUP - MAINTENANCE DEPARTMENT - PREVENTIVE MACHINE MAINTENANCE']);
+    const reportTitle = reportState.filterMode === 'DUE' 
+      ? 'AL-MUSLIM GROUP - MAINTENANCE DEPARTMENT - PREVENTIVE MAINTENANCE PENDING / DUE AUDIT LIST' 
+      : 'AL-MUSLIM GROUP - MAINTENANCE DEPARTMENT - PREVENTIVE MACHINE MAINTENANCE';
+
+    csvRows.push([reportTitle]);
     csvRows.push([`Unit: ${reportState.unitName || 'All'}`, `Floor: ${reportState.floorName || 'All'}`, `Servicing Date: ${formatReportDateDisplay()}`, `Next Servicing Date: ${formatDMY(reportState.nextServicingDate)}`]);
     csvRows.push([]);
     csvRows.push(headers);

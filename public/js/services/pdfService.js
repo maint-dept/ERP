@@ -1628,7 +1628,7 @@ class PDFService {
             <div style="flex: 1 1 340px; text-align: center; display: flex; justify-content: center; align-items: center; padding-top: 2px;">
               <div style="border: 1.5px solid #000000; padding: 4px 22px; display: inline-block; border-radius: 2px; background: #ffffff;">
                 <h1 style="font-size: 15px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: #000000; margin: 0; font-family: Arial, Helvetica, sans-serif;">
-                  PREVENTIVE MACHINE MAINTENANCE
+                  ${reportState.filterMode === 'DUE' ? 'PREVENTIVE MAINTENANCE PENDING / DUE AUDIT LIST' : 'PREVENTIVE MACHINE MAINTENANCE'}
                 </h1>
               </div>
             </div>
@@ -1678,9 +1678,9 @@ class PDFService {
             <thead>
               <tr style="border-bottom: 1.5px solid #000000;">
                 <th style="border: 1px solid #000; padding: 5px 2px; text-align: center; vertical-align: middle; font-weight: 800; font-size: 9px; background: #fff; color: #000;">Sl.<br/>No.</th>
-                <th style="border: 1px solid #000; padding: 5px 3px; text-align: center; vertical-align: middle; font-weight: 800; font-size: 9px; background: #fff; color: #000;">M/C Name</th>
-                <th style="border: 1px solid #000; padding: 5px 3px; text-align: center; vertical-align: middle; font-weight: 800; font-size: 9px; background: #fff; color: #000;">M/C<br/>Number</th>
-                <th style="border: 1px solid #000; padding: 5px 3px; text-align: center; vertical-align: middle; font-weight: 800; font-size: 9px; background: #fff; color: #000;">M/C Model/Type</th>
+                <th style="border: 1px solid #000; padding: 5px 3px; text-align: center; vertical-align: middle; font-weight: 800; font-size: 9px; background: #fff; color: #000;">Machine Name</th>
+                <th style="border: 1px solid #000; padding: 5px 3px; text-align: center; vertical-align: middle; font-weight: 800; font-size: 9px; background: #fff; color: #000;">Machine<br/>Number</th>
+                <th style="border: 1px solid #000; padding: 5px 3px; text-align: center; vertical-align: middle; font-weight: 800; font-size: 9px; background: #fff; color: #000;">Brand/Model</th>
                 <th style="border: 1px solid #000; padding: 5px 3px; text-align: center; vertical-align: middle; font-weight: 800; font-size: 9px; background: #fff; color: #000;">Previous<br/>Servicing<br/>Date:</th>
                 <th style="border: 1px solid #000; padding: 5px 3px; text-align: center; vertical-align: middle; font-weight: 800; font-size: 9px; background: #fff; color: #000;">Sticker Sl.<br/>No.</th>
                 <th style="border: 1px solid #000; padding: 5px 3px; text-align: center; vertical-align: middle; font-weight: 800; font-size: 9px; background: #fff; color: #000;">Line or<br/>Section</th>
@@ -1728,13 +1728,6 @@ class PDFService {
                 </div>
               </div>
             </div>
-          </div>
-
-          <!-- Bottom Footer Note -->
-          <div style="margin-top: 8px; display: flex; justify-content: space-between; align-items: center; font-size: 8.5px; color: #555555; border-top: 1px dotted #cccccc; padding-top: 3px;">
-            <span>Form Ref: AM-MNT-PMM-01 (A4 Landscape) | Audit Security Checksum: AMG-PM-${Date.now().toString(36).toUpperCase()}</span>
-            <span>Generated from Al-Muslim Central Maintenance Department ERP System</span>
-            <span>Page ${pageIdx + 1} of ${totalPages}</span>
           </div>
         </div>
       `;
