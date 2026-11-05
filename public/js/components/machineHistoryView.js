@@ -13,6 +13,9 @@ import { masterDataService } from '../services/masterDataService.js';
 import { employeeService } from '../services/employeeService.js';
 import { notificationService } from '../services/notificationService.js';
 import { etLabService } from '../services/etLabService.js';
+import { barcodeService } from '../services/barcodeService.js';
+import { isAmbulanceMachine } from '../services/machineService.js';
+import { openMachinePocketCard } from './machinePocketCardModal.js';
 import { state } from '../state.js';
 
 // Local view state
@@ -21,7 +24,7 @@ let historySelectedGroupId = 'ALL';
 let historySelectedUnitId = 'ALL';
 let historySelectedFloorId = 'ALL';
 let historySelectedLineId = 'ALL';
-let activeTab = 'timeline'; // 'timeline', 'locations', 'service-repairs', 'spare-parts', 'admin-log'
+let activeTab = 'all'; // 'all' (Complete Lifetime Passport), 'timeline', 'locations', 'service-repairs', 'spare-parts', 'et-boards', 'admin-log'
 let serviceTypeFilter = 'ALL'; // 'ALL', 'REPAIR', 'SERVICING', 'PREVENTIVE_MAINTENANCE', 'BREAKDOWN'
 let historyFilters = {
   startDate: '',
@@ -58,9 +61,9 @@ export function renderMachineHistoryView() {
   }
   const globalActiveId = state.get('activeMachineId');
   if (globalActiveId && globalActiveId !== 'ALL') {
-    const matched = storage.getItem(TABLE_NAMES.MACHINES, globalActiveId);
-    if (matched && matched.serialNumber) {
-      searchedSerial = matched.serialNumber;
+    const matched = storage.getItem(TABLE_NAMES.MACHINES, globalActiveId) || historyService.findMachineBySerialOnly(globalActiveId);
+    if (matched) {
+      searchedSerial = matched.serialNumber || matched.systemAssetId || matched.barcode || matched.id;
     }
     state.set('activeMachineId', null); // Consumed once, reset
   }
@@ -386,34 +389,46 @@ export function renderMachineHistoryView() {
             🔍
           </div>
           <div style="font-size: 15px; font-weight: 800; color: #f8fafc; letter-spacing: 0.2px;">
-            Select or Search a Machine to View Lifetime History &amp; Passport
+            Select or Search a Machine to View Complete Lifetime History &amp; Passport
           </div>
           <div style="font-size: 12.5px; color: #94a3b8; max-width: 540px; line-height: 1.5;">
-            Pick any machine from the dropdown above or enter a serial number to view its full movement trail, service logs, and passport.
+            Pick any machine from the dropdown above or click a machine below to view its complete technical specifications, location movements, maintenance ledger, and spare parts.
           </div>
+          ${allMachines.length > 0 ? `
+            <div style="display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; margin-top: 6px;">
+              ${allMachines.slice(0, 6).map(m => `
+                <button type="button" class="btn btn-secondary btn-sm btn-quick-serial" data-serial="${m.serialNumber}" style="font-family: var(--font-mono); font-weight: 700; font-size: 11px;">
+                  ⚡ ${m.serialNumber}
+                </button>
+              `).join('')}
+            </div>
+          ` : ''}
         </div>
       `)}
 
-      <!-- 6-Tab Navigation Ribbon -->
+      <!-- Tab Navigation Ribbon -->
       <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border-color); padding-bottom: 8px; flex-wrap: wrap; gap: 8px; margin-top: 4px;">
         <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <button class="btn history-tab-btn ${activeTab === 'all' ? 'btn-primary' : 'btn-ghost'}" data-tab="all" style="font-size: 13px; font-weight: 800; padding: 7px 16px; ${activeTab === 'all' ? 'background: linear-gradient(135deg, #0284c7, #0369a1); border: 1.5px solid #38bdf8; box-shadow: 0 2px 10px rgba(2, 132, 199, 0.4); color: #fff;' : 'color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.4);'}">
+            🌟 Complete Lifetime Passport (All-in-One)
+          </button>
           <button class="btn history-tab-btn ${activeTab === 'timeline' ? 'btn-primary' : 'btn-ghost'}" data-tab="timeline" style="font-size: 13px; font-weight: 700; padding: 7px 16px;">
-            🕒 Complete Lifetime Timeline (${historyList.length})
+            🕒 Timeline (${historyList.length})
           </button>
           <button class="btn history-tab-btn ${activeTab === 'locations' ? 'btn-primary' : 'btn-ghost'}" data-tab="locations" style="font-size: 13px; font-weight: 700; padding: 7px 16px;">
-            📍 Location Movement History (${locationTrail.length})
+            📍 Location Trail (${locationTrail.length})
           </button>
           <button class="btn history-tab-btn ${activeTab === 'service-repairs' ? 'btn-primary' : 'btn-ghost'}" data-tab="service-repairs" style="font-size: 13px; font-weight: 700; padding: 7px 16px;">
-            🛠️ Service &amp; Repair History (${serviceRepairsList.length})
+            🛠️ Service &amp; Repairs (${serviceRepairsList.length})
           </button>
           <button class="btn history-tab-btn ${activeTab === 'spare-parts' ? 'btn-primary' : 'btn-ghost'}" data-tab="spare-parts" style="font-size: 13px; font-weight: 700; padding: 7px 16px;">
-            ⚙️ Spare Parts History (${sparePartsList.length})
+            ⚙️ Spare Parts (${sparePartsList.length})
           </button>
           <button class="btn history-tab-btn ${activeTab === 'et-boards' ? 'btn-primary' : 'btn-ghost'}" data-tab="et-boards" style="font-size: 13px; font-weight: 700; padding: 7px 16px;">
-            ⚡ ENT Lab Boards (${boardHistory.length})
+            ⚡ ENT Boards (${boardHistory.length})
           </button>
           <button class="btn history-tab-btn ${activeTab === 'admin-log' ? 'btn-primary' : 'btn-ghost'}" data-tab="admin-log" style="font-size: 13px; font-weight: 700; padding: 7px 16px;">
-            📜 Admin Activity Log (${historyList.length})
+            📜 Admin Log
           </button>
         </div>
 
@@ -472,6 +487,20 @@ export function renderMachineHistoryView() {
 }
 
 /**
+ * Date formatting helper for Machine Lifetime Passport
+ */
+function formatPassportDate(d) {
+  if (!d) return '—';
+  try {
+    const dt = new Date(d);
+    if (isNaN(dt.getTime())) return String(d);
+    return dt.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+  } catch (_) {
+    return String(d);
+  }
+}
+
+/**
  * Tab Router
  */
 function renderActiveTabContent(tab, enrichedMachine, historyList, locationTrail, serviceRepairsList, sparePartsList, boardHistory = []) {
@@ -486,6 +515,8 @@ function renderActiveTabContent(tab, enrichedMachine, historyList, locationTrail
   }
 
   switch (tab) {
+    case 'all':
+      return renderCompletePassportDossierTab(enrichedMachine, historyList, locationTrail, serviceRepairsList, sparePartsList, boardHistory);
     case 'timeline':
       return renderTimelineTab(historyList, enrichedMachine);
     case 'locations':
@@ -499,8 +530,518 @@ function renderActiveTabContent(tab, enrichedMachine, historyList, locationTrail
     case 'admin-log':
       return renderAdminLogTab(historyList, enrichedMachine);
     default:
-      return renderTimelineTab(historyList, enrichedMachine);
+      return renderCompletePassportDossierTab(enrichedMachine, historyList, locationTrail, serviceRepairsList, sparePartsList, boardHistory);
   }
+}
+
+/**
+ * Tab 0: Unified All-in-One Machine Lifetime Passport Dossier
+ * Consolidates technical specifications, location movement trail, maintenance history,
+ * spare parts replacements, ENT lab boards, and chronological event ledger into a single comprehensive view.
+ */
+function renderCompletePassportDossierTab(machine, historyList, locationTrail, serviceRepairsList, sparePartsList, boardHistory = []) {
+  if (!machine) return '';
+
+  const rQty = parseInt(machine.running ?? machine.qty_running ?? (machine.status === 'ACTIVE' ? (machine.quantity ?? 1) : 0), 10) || 0;
+  const uQty = parseInt(machine.usable_idle ?? machine.usableIdle ?? (machine.status === 'IDLE' ? (machine.quantity ?? 1) : 0), 10) || 0;
+  const rpQty = parseInt(machine.repairable_idle ?? machine.repairableIdle ?? ((machine.status === 'MAINTENANCE' || machine.status === 'BREAKDOWN') ? (machine.quantity ?? 1) : 0), 10) || 0;
+  const totalQty = machine.totalQuantity || machine.total_quantity || (rQty + uQty + rpQty > 0 ? (rQty + uQty + rpQty) : (machine.quantity ?? 1));
+
+  const mfgSerialNumber = machine.manufacturing_serial || machine.manufacturingSerial || machine.customValues?.manufacturing_serial || machine.customValues?.manufacturingSerial || machine.manufacturingNo || machine.mfgSerial || machine.manufacturing || '—';
+  const displayAssetId = machine.systemAssetId || (machine.permanentMachineId ? String(machine.permanentMachineId).replace(/^MID-/i, 'AMG-MNT-') : '') || '—';
+  const displayBarcode = machine.barcode || machine.tagId || displayAssetId || machine.id || '—';
+
+  let rawServiceDate = machine.lastServiceDate || machine.service_date || machine.serviceDate || machine.customValues?.service_date || '';
+  if (!rawServiceDate && (machine.id || machine.serialNumber)) {
+    const pmTable = storage.getTable(TABLE_NAMES.PREVENTIVE_MAINTENANCE) || [];
+    const pm = pmTable.filter(r => (r.machineId === machine.id || (r.serialNumber && machine.serialNumber && String(r.serialNumber).trim().toUpperCase() === String(machine.serialNumber).trim().toUpperCase())))
+                      .sort((a, b) => (b.serviceDate || '').localeCompare(a.serviceDate || ''))[0];
+    if (pm?.serviceDate) rawServiceDate = pm.serviceDate;
+  }
+  const lastServiceStr = rawServiceDate ? formatPassportDate(rawServiceDate) : 'Not Recorded';
+  const nextServiceStr = machine.nextServiceDate ? formatPassportDate(machine.nextServiceDate) : 'Schedule Pending';
+
+  const isAmb = isAmbulanceMachine(machine);
+  const statusStr = (machine.status || 'ACTIVE').toUpperCase();
+  const currentLocation = `${machine.unit?.name || 'Unit'} > ${machine.floor?.name || 'Floor'} > ${machine.line?.name || 'Line'}`;
+
+  // Generate Barcode SVG & QR Code SVG
+  let barcodeSvg = '';
+  let qrSvg = '';
+  try {
+    if (barcodeService) {
+      barcodeSvg = barcodeService.generateBarcodeSVG(machine.serialNumber, { width: 1.5, height: 32 });
+      qrSvg = barcodeService.generateQRCodeSVG(`AL-MUSLIM-ERP://MC/${machine.serialNumber}`, { size: 76 });
+    }
+  } catch (err) {
+    console.warn('Error generating passport code SVG:', err);
+  }
+
+  // Active ENT Board
+  const allBoards = etLabService.getBoards ? etLabService.getBoards() : [];
+  const currentBoard = allBoards.find(b => (b.currentMachineSerial || '').toUpperCase() === (machine.serialNumber || '').toUpperCase() && b.status === 'INSTALLED');
+
+  return `
+    <div class="passport-all-in-one-dossier" style="display: flex; flex-direction: column; gap: 16px; margin-top: 6px;">
+
+      <!-- ================= 1. MASTER IDENTITY & TECHNICAL SPECIFICATIONS CARD ================= -->
+      <div style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(30, 41, 59, 0.96)); border: 1.5px solid rgba(56, 189, 248, 0.4); border-left: 6px solid #0284c7; border-radius: var(--radius-xl); padding: 18px 22px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);">
+        
+        <!-- Top Row: Passport Header & Quick Actions -->
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding-bottom: 12px; margin-bottom: 14px;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(2, 132, 199, 0.2); border: 1.5px solid rgba(56, 189, 248, 0.5); display: flex; align-items: center; justify-content: center; font-size: 26px; box-shadow: 0 0 15px rgba(2, 132, 199, 0.3);">
+              📜
+            </div>
+            <div>
+              <div style="font-size: 11px; font-weight: 800; color: #38bdf8; text-transform: uppercase; letter-spacing: 0.6px; display: flex; align-items: center; gap: 6px;">
+                <span>Al-Muslim Group Machinery ERP</span>
+                <span style="color: var(--text-muted);">&bull;</span>
+                <span style="color: #34d399;">Official Machine Lifetime Passport</span>
+              </div>
+              <div style="font-size: 18px; font-weight: 900; color: #ffffff; margin-top: 1px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <span>${machine.machineName?.name || 'Sewing Machine'} — ${machine.brand?.name || 'JUKI'} ${machine.model?.name || ''}</span>
+                ${isAmb ? '<span class="badge" style="background: rgba(244, 63, 94, 0.2); color: #fda4af; border: 1px solid rgba(244, 63, 94, 0.5); font-size: 10px; padding: 2px 7px;">🚑 AMBULANCE</span>' : ''}
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Action Buttons -->
+          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <button id="btn-passport-print-action" class="btn btn-secondary btn-sm" style="font-weight: 700; height: 32px; font-size: 11.5px; padding: 0 12px; border-color: rgba(56, 189, 248, 0.5); color: #38bdf8;" title="Print official passport document">
+              🖨️ Print Passport
+            </button>
+            <button id="btn-passport-pocket-action" class="btn btn-secondary btn-sm" style="font-weight: 700; height: 32px; font-size: 11.5px; padding: 0 12px; border-color: rgba(245, 158, 11, 0.5); color: #fbbf24;" title="Open floor HUD pocket card">
+              🏷️ Pocket Card HUD
+            </button>
+            <button id="btn-passport-transfer-action" class="btn btn-secondary btn-sm" style="font-weight: 700; height: 32px; font-size: 11.5px; padding: 0 12px; border-color: rgba(16, 185, 129, 0.5); color: #34d399;" title="Transfer this machine">
+              🔄 Transfer
+            </button>
+            ${authService.hasAccess('service_repair', 'ADD') ? `
+              <button id="btn-passport-service-action" class="btn btn-primary btn-sm" style="font-weight: 800; height: 32px; font-size: 11.5px; padding: 0 12px; background: linear-gradient(135deg, #0284c7, #0369a1);" title="Log service or repair">
+                🛠️ Log Service
+              </button>
+            ` : ''}
+          </div>
+        </div>
+
+        <!-- 3-Column Comprehensive Specifications Matrix -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px;">
+          
+          <!-- Column 1: Identity & Serial Numbers -->
+          <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px;">
+            <div style="font-size: 11px; font-weight: 800; color: #38bdf8; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;">
+              <span>🆔 Identity &amp; System Tags</span>
+            </div>
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed rgba(255, 255, 255, 0.06); padding-bottom: 4px;">
+              <span style="font-size: 11.5px; color: var(--text-muted);">Machine Serial Number:</span>
+              <span style="font-family: var(--font-mono); font-size: 15px; font-weight: 900; color: #38bdf8;">${machine.serialNumber}</span>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed rgba(255, 255, 255, 0.06); padding-bottom: 4px;">
+              <span style="font-size: 11.5px; color: var(--text-muted);">System Asset ID:</span>
+              <span style="font-family: var(--font-mono); font-size: 12.5px; font-weight: 800; color: #a78bfa; background: rgba(167, 139, 250, 0.1); padding: 1px 6px; border-radius: 4px; border: 1px solid rgba(167, 139, 250, 0.3);">${displayAssetId}</span>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed rgba(255, 255, 255, 0.06); padding-bottom: 4px;">
+              <span style="font-size: 11.5px; color: var(--text-muted);">Mfg Serial Number:</span>
+              <span style="font-family: var(--font-mono); font-size: 12px; color: #e2e8f0; font-weight: 700;">${mfgSerialNumber}</span>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-size: 11.5px; color: var(--text-muted);">Barcode / Tag ID:</span>
+              <span style="font-family: var(--font-mono); font-size: 11px; color: #cbd5e1; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${displayBarcode}</span>
+            </div>
+          </div>
+
+          <!-- Column 2: Stationed Location & Quantities -->
+          <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px;">
+            <div style="font-size: 11px; font-weight: 800; color: #34d399; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;">
+              <span>📍 Current Location &amp; Status</span>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed rgba(255, 255, 255, 0.06); padding-bottom: 4px;">
+              <span style="font-size: 11.5px; color: var(--text-muted);">Operating Status:</span>
+              <span class="badge badge-${statusStr.toLowerCase().replace('_', '')}" style="font-size: 11px; padding: 2px 8px; font-weight: 800;">${statusStr.replace('_', ' ')}</span>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed rgba(255, 255, 255, 0.06); padding-bottom: 4px;">
+              <span style="font-size: 11.5px; color: var(--text-muted);">Stationed Factory Unit:</span>
+              <span style="font-size: 12.5px; font-weight: 700; color: #fff;">${machine.unit?.name || 'Unit'}</span>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed rgba(255, 255, 255, 0.06); padding-bottom: 4px;">
+              <span style="font-size: 11.5px; color: var(--text-muted);">Floor &amp; Sewing Line:</span>
+              <strong style="font-size: 12.5px; color: #86efac;">${machine.floor?.name || 'Floor'} &rarr; ${machine.line?.name || 'Line'}</strong>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-size: 11.5px; color: var(--text-muted);">Quantity Distribution:</span>
+              <span style="font-size: 11.5px; font-weight: 700; color: #38bdf8;">Running: <strong style="color: #34d399;">${rQty}</strong> | Idle: <strong style="color: #fbbf24;">${uQty}</strong> | Rep: <strong style="color: #f87171;">${rpQty}</strong></span>
+            </div>
+          </div>
+
+          <!-- Column 3: Technical Specs & Maintenance Schedule -->
+          <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px;">
+            <div style="font-size: 11px; font-weight: 800; color: #fbbf24; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;">
+              <span>⚙️ Technical &amp; Maintenance Specs</span>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed rgba(255, 255, 255, 0.06); padding-bottom: 4px;">
+              <span style="font-size: 11.5px; color: var(--text-muted);">Needle Type &amp; Brand:</span>
+              <span style="font-size: 12px; font-weight: 700; color: #cbd5e1;">${machine.needleType || 'DP×17'} &bull; ${machine.needleBrand || 'Groz-Beckert'}</span>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed rgba(255, 255, 255, 0.06); padding-bottom: 4px;">
+              <span style="font-size: 11.5px; color: var(--text-muted);">Motor &amp; Speed:</span>
+              <span style="font-size: 12px; font-weight: 600; color: #e2e8f0;">${machine.motorType || 'Direct Drive Servo'} (${machine.motorRpm || '5000 RPM'})</span>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed rgba(255, 255, 255, 0.06); padding-bottom: 4px;">
+              <span style="font-size: 11.5px; color: var(--text-muted);">Last Servicing Date:</span>
+              <span style="font-size: 12px; font-weight: 700; color: #93c5fd;">${lastServiceStr}</span>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-size: 11.5px; color: var(--text-muted);">Next PM Due Date:</span>
+              <span style="font-size: 12px; font-weight: 800; color: #34d399;">${nextServiceStr}</span>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Barcode / QR Preview Strip -->
+        ${(barcodeSvg || qrSvg) ? `
+          <div style="margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(255, 255, 255, 0.08); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; background: rgba(0,0,0,0.2); border-radius: 8px; padding: 8px 14px;">
+            <div style="display: flex; align-items: center; gap: 14px;">
+              ${qrSvg ? `<div style="background: #fff; padding: 4px; border-radius: 6px; display: inline-flex;">${qrSvg}</div>` : ''}
+              <div>
+                <div style="font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Factory Floor Digital Pass</div>
+                <div style="font-size: 12px; font-weight: 700; color: #fff;">Scan with any mobile camera or ERP barcode scanner</div>
+                <div style="font-size: 11px; color: #38bdf8; font-family: var(--font-mono); margin-top: 2px;">Asset: ${displayAssetId} &bull; S/N: ${machine.serialNumber}</div>
+              </div>
+            </div>
+            ${barcodeSvg ? `
+              <div style="display: flex; flex-direction: column; align-items: flex-end; background: #fff; padding: 4px 8px; border-radius: 6px;">
+                ${barcodeSvg}
+                <span style="font-size: 9px; font-family: var(--font-mono); color: #000; font-weight: 800; letter-spacing: 1px;">${machine.serialNumber}</span>
+              </div>
+            ` : ''}
+          </div>
+        ` : ''}
+
+      </div>
+
+      <!-- ================= 2. PERMANENT LOCATION MOVEMENT TRAIL ================= -->
+      <div id="dossier-sec-locations" style="display: flex; flex-direction: column; gap: 10px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0 4px;">
+          <div style="font-size: 14px; font-weight: 800; color: #38bdf8; display: flex; align-items: center; gap: 8px;">
+            <span>📍 1. Permanent Location Movement Trail</span>
+            <span class="badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; font-size: 11px;">${locationTrail.length} Relocations</span>
+          </div>
+          <button type="button" class="btn btn-ghost btn-sm history-tab-btn" data-tab="locations" style="font-size: 11px; color: #94a3b8;">
+            View Detailed Tab &rarr;
+          </button>
+        </div>
+
+        <!-- Horizontal Flow Arrow Visualization -->
+        <div style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(30, 41, 59, 0.85)); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: var(--radius-lg); padding: 12px 18px;">
+          <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 8px;">
+            ${locationTrail.length > 0 ? locationTrail.map((loc, idx) => {
+              const dateStr = formatPassportDate(loc.timestamp);
+              const targetFloor = loc.toLocation?.floorName || loc.toLocation?.lineName || 'Commissioning';
+              const isCurrent = idx === locationTrail.length - 1;
+
+              return `
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <div style="background: ${isCurrent ? 'rgba(16, 185, 129, 0.2)' : 'rgba(15, 23, 42, 0.9)'}; border: 1.5px solid ${isCurrent ? '#10b981' : 'rgba(56, 189, 248, 0.35)'}; border-radius: 6px; padding: 6px 10px; display: flex; flex-direction: column; gap: 1px;">
+                    <div style="font-weight: 800; font-size: 12px; color: ${isCurrent ? '#86efac' : '#fff'}; display: flex; align-items: center; gap: 4px;">
+                      <span>📍 ${targetFloor}</span>
+                      ${isCurrent ? `<span class="badge" style="background: #10b981; color: #fff; font-size: 8.5px; padding: 1px 4px;">Current</span>` : ''}
+                    </div>
+                    <div style="font-size: 10px; color: var(--text-muted); font-family: var(--font-mono);">
+                      📅 ${dateStr}
+                    </div>
+                  </div>
+                  ${idx < locationTrail.length - 1 ? `<div style="color: #38bdf8; font-size: 15px; font-weight: 800;">&rarr;</div>` : ''}
+                </div>
+              `;
+            }).join('') : `
+              <div style="font-size: 12px; color: #94a3b8;">
+                🌱 Commissioned at current location (<strong>${currentLocation}</strong>). No prior transfers recorded.
+              </div>
+            `}
+          </div>
+        </div>
+
+        <!-- Relocations Table -->
+        <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); overflow-x: auto;">
+          <table class="excel-grid-table" style="width: 100%; min-width: 800px; border-collapse: collapse;">
+            <thead>
+              <tr>
+                <th style="width: 45px; text-align: center;">Sl.</th>
+                <th style="width: 120px;">Date</th>
+                <th style="width: 200px;">From Location</th>
+                <th style="width: 200px;">To Location</th>
+                <th style="width: 220px;">Reason / Order</th>
+                <th style="width: 150px;">Authorized By</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${locationTrail.length > 0 ? locationTrail.map((t, idx) => {
+                const fromStr = t.fromLocation ? `${t.fromLocation.unitName || ''} > ${t.fromLocation.floorName || ''} > ${t.fromLocation.lineName || ''}` : 'Factory Initial Commissioning';
+                const toStr = t.toLocation ? `${t.toLocation.unitName || ''} > ${t.toLocation.floorName || ''} > ${t.toLocation.lineName || ''}` : 'N/A';
+                const isCurrent = idx === locationTrail.length - 1;
+
+                return `
+                  <tr style="${isCurrent ? 'background: rgba(16, 185, 129, 0.05);' : ''}">
+                    <td style="text-align: center; font-family: var(--font-mono); color: var(--text-muted);">${String(idx + 1).padStart(2, '0')}</td>
+                    <td style="font-size: 11.5px; font-weight: 600;">${formatPassportDate(t.timestamp)}</td>
+                    <td style="color: #fca5a5; font-size: 11.5px;">${fromStr}</td>
+                    <td style="color: #86efac; font-size: 11.5px; font-weight: 700;">
+                      ${toStr} ${isCurrent ? `<span class="badge" style="background: #10b981; color: #fff; font-size: 8.5px; margin-left: 4px;">Active</span>` : ''}
+                    </td>
+                    <td style="font-size: 11.5px; color: var(--text-secondary);">${t.remarks || t.details || '—'}</td>
+                    <td style="font-size: 11.5px; font-weight: 600;">${t.performedByName || 'Authorized'}</td>
+                  </tr>
+                `;
+              }).join('') : `
+                <tr>
+                  <td colspan="6" style="text-align: center; padding: 18px; font-size: 12px; color: var(--text-muted);">
+                    No relocation history. Machine stationed at initial commissioning location: <strong>${currentLocation}</strong>.
+                  </td>
+                </tr>
+              `}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ================= 3. MAINTENANCE, PM & REPAIR LEDGER ================= -->
+      <div id="dossier-sec-service-repairs" style="display: flex; flex-direction: column; gap: 10px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0 4px;">
+          <div style="font-size: 14px; font-weight: 800; color: #f59e0b; display: flex; align-items: center; gap: 8px;">
+            <span>🛠️ 2. Maintenance, Servicing &amp; PM Ledger</span>
+            <span class="badge" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; font-size: 11px;">${serviceRepairsList.length} Interventions</span>
+          </div>
+          <div style="display: flex; gap: 6px; align-items: center;">
+            <button type="button" class="btn btn-primary btn-sm" id="btn-dossier-quick-log-service" style="font-size: 11px; height: 26px; padding: 0 8px; font-weight: 700;">
+              + Log Service
+            </button>
+            <button type="button" class="btn btn-ghost btn-sm history-tab-btn" data-tab="service-repairs" style="font-size: 11px; color: #94a3b8;">
+              View Tab &rarr;
+            </button>
+          </div>
+        </div>
+
+        <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); overflow-x: auto;">
+          <table class="excel-grid-table" style="width: 100%; min-width: 900px; border-collapse: collapse;">
+            <thead>
+              <tr>
+                <th style="width: 45px; text-align: center;">Sl.</th>
+                <th style="width: 110px;">Service Date</th>
+                <th style="width: 130px;">Floor / Location</th>
+                <th style="width: 140px;">Service Type</th>
+                <th style="width: 200px;">Problem / Complaint</th>
+                <th style="width: 200px;">Work Performed</th>
+                <th style="width: 160px;">Spare Part Used</th>
+                <th style="width: 50px; text-align: center;">Qty</th>
+                <th style="width: 140px;">Technician</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${serviceRepairsList.length > 0 ? serviceRepairsList.map((item, idx) => {
+                const sr = item.serviceRecord || {};
+                const sType = (sr.serviceType || item.maintenance?.serviceType || 'REPAIR').toUpperCase();
+                const meta = SERVICE_TYPES[sType] || SERVICE_TYPES.REPAIR;
+
+                return `
+                  <tr>
+                    <td style="text-align: center; font-family: var(--font-mono); color: var(--text-muted);">${String(idx + 1).padStart(2, '0')}</td>
+                    <td style="font-size: 11.5px; font-weight: 600;">${sr.serviceDate || formatPassportDate(item.timestamp)}</td>
+                    <td style="font-size: 11.5px; font-weight: 600; color: #f1f5f9;">📍 ${sr.floorLocation || 'Floor'}</td>
+                    <td>
+                      <span class="badge" style="background: ${meta.bg}; color: ${meta.color}; border: 1px solid ${meta.borderColor}66; font-weight: 700; font-size: 10.5px; padding: 1px 6px;">
+                        ${meta.icon} ${meta.label}
+                      </span>
+                    </td>
+                    <td style="font-size: 11.5px; color: #fca5a5;">${sr.problemComplaint || item.details || '—'}</td>
+                    <td style="font-size: 11.5px; color: #86efac;">${sr.workPerformed || item.remarks || '—'}</td>
+                    <td style="font-size: 11.5px; font-weight: 600; color: #93c5fd;">${sr.sparePartsUsed || item.sparePart?.partName || 'None'}</td>
+                    <td style="text-align: center; font-weight: 700; font-size: 11.5px;">${sr.sparePartQty || item.sparePart?.quantity || 0}</td>
+                    <td style="font-size: 11.5px; font-weight: 600; color: #fff;">${sr.technician || item.performedByName}</td>
+                  </tr>
+                `;
+              }).join('') : `
+                <tr>
+                  <td colspan="9" style="text-align: center; padding: 20px; font-size: 12px; color: var(--text-muted);">
+                    🛡️ No breakdowns or service interventions recorded yet. Machine is operating smoothly.
+                  </td>
+                </tr>
+              `}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ================= 4. SPARE PARTS REPLACEMENT HISTORY ================= -->
+      <div id="dossier-sec-spare-parts" style="display: flex; flex-direction: column; gap: 10px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0 4px;">
+          <div style="font-size: 14px; font-weight: 800; color: #10b981; display: flex; align-items: center; gap: 8px;">
+            <span>⚙️ 3. Spare Parts Consumption &amp; Replacement Ledger</span>
+            <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981; font-size: 11px;">${sparePartsList.length} Replaced Parts</span>
+          </div>
+          <div style="display: flex; gap: 6px; align-items: center;">
+            <button type="button" class="btn btn-secondary btn-sm" id="btn-dossier-quick-log-spare" style="font-size: 11px; height: 26px; padding: 0 8px; font-weight: 700;">
+              + Log Spare Part
+            </button>
+            <button type="button" class="btn btn-ghost btn-sm history-tab-btn" data-tab="spare-parts" style="font-size: 11px; color: #94a3b8;">
+              View Tab &rarr;
+            </button>
+          </div>
+        </div>
+
+        <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); overflow-x: auto;">
+          <table class="excel-grid-table" style="width: 100%; min-width: 850px; border-collapse: collapse;">
+            <thead>
+              <tr>
+                <th style="width: 45px; text-align: center;">Sl.</th>
+                <th style="width: 110px;">Date</th>
+                <th style="width: 130px;">Floor / Location</th>
+                <th style="width: 220px;">Spare Part Name</th>
+                <th style="width: 140px;">Part S/N</th>
+                <th style="width: 50px; text-align: center;">Qty</th>
+                <th style="width: 150px;">Technician / Mechanic</th>
+                <th style="width: 200px;">Remarks</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${sparePartsList.length > 0 ? sparePartsList.map((p, idx) => `
+                <tr>
+                  <td style="text-align: center; font-family: var(--font-mono); color: var(--text-muted);">${String(idx + 1).padStart(2, '0')}</td>
+                  <td style="font-size: 11.5px; font-weight: 600;">${p.replacementDate || formatPassportDate(p.createdAt)}</td>
+                  <td style="font-size: 11.5px; font-weight: 600; color: #f1f5f9;">📍 ${p.floorLocation || 'Floor'}</td>
+                  <td style="font-size: 12px; font-weight: 700; color: #86efac;">${p.partName}</td>
+                  <td style="font-family: var(--font-mono); font-size: 11px; color: #cbd5e1;">${p.partSerialNumber || '—'}</td>
+                  <td style="text-align: center; font-weight: 800; font-size: 12px; color: #38bdf8;">${p.quantity || 1}</td>
+                  <td style="font-size: 11.5px; font-weight: 600; color: #fff;">${p.technician || p.createdByName || '—'}</td>
+                  <td style="font-size: 11px; color: var(--text-muted);">${p.remarks || p.replacementReason || '—'}</td>
+                </tr>
+              `).join('') : `
+                <tr>
+                  <td colspan="8" style="text-align: center; padding: 20px; font-size: 12px; color: var(--text-muted);">
+                    ⚙️ No spare parts have been replaced on this machine yet.
+                  </td>
+                </tr>
+              `}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ================= 5. ENT LAB ELECTRONIC BOARDS ================= -->
+      <div id="dossier-sec-et-boards" style="display: flex; flex-direction: column; gap: 10px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0 4px;">
+          <div style="font-size: 14px; font-weight: 800; color: #38bdf8; display: flex; align-items: center; gap: 8px;">
+            <span>⚡ 4. ENT Lab Electronic Boards</span>
+            <span class="badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; font-size: 11px;">${boardHistory.length} Board Events</span>
+          </div>
+          <button type="button" class="btn btn-ghost btn-sm history-tab-btn" data-tab="et-boards" style="font-size: 11px; color: #94a3b8;">
+            View Tab &rarr;
+          </button>
+        </div>
+
+        <div style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(30, 41, 59, 0.85)); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: var(--radius-lg); padding: 12px 18px;">
+          ${currentBoard ? `
+            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 24px;">⚡</span>
+                <div>
+                  <div style="font-size: 10px; font-weight: 800; color: #38bdf8; text-transform: uppercase;">Active Installed Board</div>
+                  <div style="font-size: 14px; font-weight: 800; color: #fff;">
+                    <span style="font-family: var(--font-mono); color: #38bdf8;">${currentBoard.boardSerial}</span> &bull; ${currentBoard.partName}
+                  </div>
+                  <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 2px;">
+                    Model: <strong style="color: #e2e8f0;">${currentBoard.modelNo || 'N/A'}</strong> &bull; Part No: <strong style="color: #e2e8f0;">${currentBoard.partNo || 'N/A'}</strong> &bull; JUKI SL: <strong style="color: #38bdf8;">${currentBoard.jukiSlNo || 'N/A'}</strong>
+                  </div>
+                </div>
+              </div>
+              <span class="badge" style="background: #10b981; color: #fff; font-size: 10px; padding: 2px 8px;">Installed &amp; Active</span>
+            </div>
+          ` : `
+            <div style="font-size: 12px; color: #94a3b8; display: flex; align-items: center; gap: 8px;">
+              <span>⚡</span> No ENT Lab circuit board is currently bound to this machine.
+            </div>
+          `}
+        </div>
+      </div>
+
+      <!-- ================= 6. MASTER CHRONOLOGICAL LIFETIME EVENT LOG ================= -->
+      <div id="dossier-sec-timeline" style="display: flex; flex-direction: column; gap: 10px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0 4px;">
+          <div style="font-size: 14px; font-weight: 800; color: #fbbf24; display: flex; align-items: center; gap: 8px;">
+            <span>📜 5. Complete Lifetime Chronological Event Log</span>
+            <span class="badge" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24; font-size: 11px;">${historyList.length} Total Milestones</span>
+          </div>
+          <button type="button" class="btn btn-ghost btn-sm history-tab-btn" data-tab="timeline" style="font-size: 11px; color: #94a3b8;">
+            View Tab &rarr;
+          </button>
+        </div>
+
+        <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 14px 18px;">
+          ${historyList.length > 0 ? `
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              ${historyList.slice(0, 15).map((evt, idx) => {
+                const dateStr = formatPassportDate(evt.timestamp);
+                let badgeColor = '#38bdf8';
+                let icon = '📌';
+                if (evt.actionType?.includes('SERVICE') || evt.actionType?.includes('MAINTENANCE')) {
+                  badgeColor = '#f59e0b';
+                  icon = '🛠️';
+                } else if (evt.actionType?.includes('TRANSFER') || evt.actionType?.includes('LOCATION')) {
+                  badgeColor = '#10b981';
+                  icon = '📍';
+                } else if (evt.actionType?.includes('PART')) {
+                  badgeColor = '#a78bfa';
+                  icon = '⚙️';
+                } else if (evt.actionType?.includes('ADD')) {
+                  badgeColor = '#34d399';
+                  icon = '✨';
+                }
+
+                return `
+                  <div style="display: flex; align-items: flex-start; gap: 12px; padding: 8px 12px; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 6px; font-size: 12px;">
+                    <span style="font-size: 16px; margin-top: 1px;">${icon}</span>
+                    <div style="flex: 1; display: flex; flex-direction: column; gap: 2px;">
+                      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
+                        <strong style="color: ${badgeColor}; font-size: 12.5px;">${evt.title || evt.actionType?.replace(/_/g, ' ')}</strong>
+                        <span style="font-family: var(--font-mono); font-size: 11px; color: var(--text-muted);">📅 ${dateStr}</span>
+                      </div>
+                      <div style="color: #cbd5e1; font-size: 11.5px;">${evt.details || evt.remarks || 'Event logged in machine passport.'}</div>
+                      <div style="font-size: 10.5px; color: var(--text-muted); margin-top: 2px;">By: <strong style="color: #94a3b8;">${evt.performedByName || 'System'}</strong></div>
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+              ${historyList.length > 15 ? `
+                <div style="text-align: center; padding-top: 8px;">
+                  <button type="button" class="btn btn-ghost btn-sm history-tab-btn" data-tab="timeline" style="font-size: 11.5px; color: #38bdf8; font-weight: 700;">
+                    + View all ${historyList.length} events in Timeline Tab &rarr;
+                  </button>
+                </div>
+              ` : ''}
+            </div>
+          ` : `
+            <div style="text-align: center; padding: 20px; font-size: 12px; color: var(--text-muted);">
+              No chronological events logged yet for machine [${machine.serialNumber}].
+            </div>
+          `}
+        </div>
+      </div>
+
+    </div>
+  `;
 }
 
 /**
@@ -1356,15 +1897,45 @@ export function initMachineHistoryEvents() {
     });
   });
 
-  // Clickable Stat Counter Cards to switch tabs
+  // Clickable Stat Counter Cards to switch tabs or smooth-scroll in All-in-One view
   document.querySelectorAll('.hist-stat-counter-card').forEach(card => {
     card.addEventListener('click', () => {
       const target = card.getAttribute('data-target-tab');
       if (target) {
+        if (activeTab === 'all') {
+          const sec = document.getElementById(`dossier-sec-${target}`);
+          if (sec) {
+            sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            return;
+          }
+        }
         activeTab = target;
+        state.set('historyActiveTab', activeTab);
         window.dispatchEvent(new CustomEvent('erp:master-data-updated'));
       }
     });
+  });
+
+  // Actions from Complete Lifetime Passport Dossier
+  document.getElementById('btn-passport-print-action')?.addEventListener('click', () => {
+    if (searchedSerial) openMachinePassportModal(searchedSerial);
+  });
+  document.getElementById('btn-passport-pocket-action')?.addEventListener('click', () => {
+    if (searchedSerial) openMachinePocketCard(searchedSerial);
+  });
+  document.getElementById('btn-passport-transfer-action')?.addEventListener('click', () => {
+    const machine = historyService.findMachineBySerialOnly(searchedSerial);
+    if (machine) state.set('activeMachineId', machine.id);
+    state.set('activeModal', 'transfer-machine');
+  });
+  document.getElementById('btn-passport-service-action')?.addEventListener('click', () => {
+    openLogServiceModal();
+  });
+  document.getElementById('btn-dossier-quick-log-service')?.addEventListener('click', () => {
+    openLogServiceModal();
+  });
+  document.getElementById('btn-dossier-quick-log-spare')?.addEventListener('click', () => {
+    openAddSparePartModal();
   });
 
   // Action Buttons from Empty State Cards

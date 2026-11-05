@@ -85,15 +85,21 @@ export function ensureActionsPortal() {
         return;
       }
 
-      const histBtn = e.target.closest('.btn-history-machine');
+      const histBtn = e.target.closest('.btn-passport-machine') || e.target.closest('.btn-history-machine');
       if (histBtn) {
         e.preventDefault();
         e.stopPropagation();
         const id = histBtn.getAttribute('data-id') || portal.getAttribute('data-active-id');
+        const serial = histBtn.getAttribute('data-serial') || '';
         if (typeof window.__closeAllActionMenus === 'function') window.__closeAllActionMenus();
-        if (id) {
-          state.set('activeMachineId', id);
+        if (id || serial) {
+          if (id) state.set('activeMachineId', id);
+          if (serial) state.set('historySearchedSerial', serial);
+          state.set('historyActiveTab', 'all');
           state.set('currentView', 'machine-history');
+          if (window.router && typeof window.router.navigate === 'function') {
+            window.router.navigate('machine-history');
+          }
         }
         return;
       }
@@ -168,14 +174,11 @@ export function renderRowActionsMenuContent(m) {
       `;
     }
     html += `
-      <button type="button" class="actions-menu-item btn-inspect-machine" data-id="${m.id}">
-        🔍 Machine Details &amp; Lifetime
+      <button type="button" class="actions-menu-item btn-passport-machine" data-id="${m.id}" data-serial="${m.serialNumber || ''}" style="color: #38bdf8; font-weight: 800; background: rgba(56, 189, 248, 0.1); display: flex; align-items: center; gap: 8px;">
+        <span style="font-size: 14px;">📜</span> Machine Lifetime (Passport)
       </button>
-      <button type="button" class="actions-menu-item btn-history-machine" data-id="${m.id}">
-        🕒 Timeline &amp; Transfer Log
-      </button>
-      <button type="button" class="actions-menu-item btn-spare-parts-machine" data-id="${m.id}">
-        ⚙️ Spare Parts Usage
+      <button type="button" class="actions-menu-item btn-inspect-machine" data-id="${m.id}" style="display: flex; align-items: center; gap: 8px;">
+        <span style="font-size: 13px;">🔍</span> Quick Specs Drawer
       </button>
       <button type="button" class="actions-menu-item btn-pocket-card-trigger" data-id="${m.id}" data-serial="${m.serialNumber || ''}" style="color: #38bdf8; font-weight: 700; display: flex; align-items: center; gap: 8px;">
         <span style="font-size: 14px;">🏷️</span> Pocket Card (Offline HUD)
@@ -185,14 +188,11 @@ export function renderRowActionsMenuContent(m) {
   }
 
   let html = `
-    <button type="button" class="actions-menu-item btn-inspect-machine" data-id="${m.id}">
-      🔍 Machine Details &amp; Lifetime
+    <button type="button" class="actions-menu-item btn-passport-machine" data-id="${m.id}" data-serial="${m.serialNumber || ''}" style="color: #38bdf8; font-weight: 800; background: rgba(56, 189, 248, 0.1); display: flex; align-items: center; gap: 8px;">
+      <span style="font-size: 14px;">📜</span> Machine Lifetime (Passport)
     </button>
-    <button type="button" class="actions-menu-item btn-history-machine" data-id="${m.id}">
-      🕒 Timeline &amp; Transfer Log
-    </button>
-    <button type="button" class="actions-menu-item btn-spare-parts-machine" data-id="${m.id}">
-      ⚙️ Spare Parts Usage
+    <button type="button" class="actions-menu-item btn-inspect-machine" data-id="${m.id}" style="display: flex; align-items: center; gap: 8px;">
+      <span style="font-size: 13px;">🔍</span> Quick Specs Drawer
     </button>
   `;
 
@@ -2301,15 +2301,21 @@ export function initInventoryTableEvents() {
           return;
         }
 
-        const histBtn = e.target.closest('.btn-history-machine');
+        const histBtn = e.target.closest('.btn-passport-machine') || e.target.closest('.btn-history-machine');
         if (histBtn) {
           e.preventDefault();
           e.stopPropagation();
           const id = histBtn.getAttribute('data-id');
+          const serial = histBtn.getAttribute('data-serial') || '';
           closeAllActionMenus();
-          if (id) {
-            state.set('activeMachineId', id);
+          if (id || serial) {
+            if (id) state.set('activeMachineId', id);
+            if (serial) state.set('historySearchedSerial', serial);
+            state.set('historyActiveTab', 'all');
             state.set('currentView', 'machine-history');
+            if (window.router && typeof window.router.navigate === 'function') {
+              window.router.navigate('machine-history');
+            }
           }
           return;
         }
@@ -2660,14 +2666,20 @@ export function initInventoryTableEvents() {
         return;
       }
 
-      const histBtn = e.target.closest('.btn-history-machine');
+      const histBtn = e.target.closest('.btn-passport-machine') || e.target.closest('.btn-history-machine');
       if (histBtn) {
         e.stopPropagation();
         closeAllActionMenus();
         const id = histBtn.getAttribute('data-id');
-        if (id) {
-          state.set('activeMachineId', id);
+        const serial = histBtn.getAttribute('data-serial') || '';
+        if (id || serial) {
+          if (id) state.set('activeMachineId', id);
+          if (serial) state.set('historySearchedSerial', serial);
+          state.set('historyActiveTab', 'all');
           state.set('currentView', 'machine-history');
+          if (window.router && typeof window.router.navigate === 'function') {
+            window.router.navigate('machine-history');
+          }
         }
         return;
       }
@@ -2820,15 +2832,21 @@ export function initInventoryTableEvents() {
     });
   });
 
-  // Machine History & Timeline
-  document.querySelectorAll('.btn-history-machine').forEach(btn => {
+  // Machine Lifetime (Passport)
+  document.querySelectorAll('.btn-passport-machine, .btn-history-machine').forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
       closeAllActionMenus();
       const id = btn.getAttribute('data-id');
-      if (id) {
-        state.set('activeMachineId', id);
+      const serial = btn.getAttribute('data-serial') || '';
+      if (id || serial) {
+        if (id) state.set('activeMachineId', id);
+        if (serial) state.set('historySearchedSerial', serial);
+        state.set('historyActiveTab', 'all');
         state.set('currentView', 'machine-history');
+        if (window.router && typeof window.router.navigate === 'function') {
+          window.router.navigate('machine-history');
+        }
       }
     });
   });

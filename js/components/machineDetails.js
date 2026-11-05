@@ -78,17 +78,22 @@ export function renderMachineDetails() {
       <div class="drawer-panel" style="max-width: 820px; width: 100%;">
         
         <!-- Header -->
-        <div class="drawer-header" style="background: var(--bg-surface); padding: 16px 22px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
-          <div>
+        <div class="drawer-header" style="background: var(--bg-surface); padding: 14px 20px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap;">
+          <div style="flex: 1; min-width: 200px;">
             <div style="font-size: 11px; color: #38bdf8; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;">
               <span>Machine Lifetime &amp; Details</span>
               ${isAmbulanceMachine(machine) ? '<span class="badge badge-ambulance" style="font-size: 9.5px; padding: 1px 6px;">🚑 AMBULANCE MACHINE</span>' : ''}
             </div>
-            <div style="font-size: 17px; font-weight: 800; color: #fff; margin-top: 2px;">
+            <div style="font-size: 16px; font-weight: 800; color: #fff; margin-top: 2px;">
               ${mn?.name || machine.machineName || 'Machine'} — ${brd?.name || machine.brand || ''} ${mdl?.name || machine.model || ''}
             </div>
           </div>
-          <button id="btn-close-details-drawer" class="btn btn-ghost btn-sm" style="font-size: 18px;" title="Close">✕</button>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <button id="btn-details-open-full-passport" class="btn btn-primary btn-sm" style="font-weight: 800; font-size: 11.5px; height: 32px; padding: 0 12px; background: linear-gradient(135deg, #0284c7, #0369a1); border: 1px solid #38bdf8; color: #fff; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 8px rgba(2, 132, 199, 0.4);" title="Open Complete Lifetime Passport Dossier">
+              <span>📜</span> Complete Lifetime Passport &rarr;
+            </button>
+            <button id="btn-close-details-drawer" class="btn btn-ghost btn-sm" style="font-size: 18px;" title="Close">✕</button>
+          </div>
         </div>
 
         <!-- Subheader Tabs (Compact, user-friendly, non-clipping pill navigation) -->
@@ -427,12 +432,27 @@ export function initMachineDetailsEvents() {
     });
   });
 
+  const handleOpenPassport = () => {
+    state.set('activeModal', null);
+    if (machine) {
+      state.set('activeMachineId', machine.id);
+      state.set('historySearchedSerial', machine.serialNumber || '');
+    }
+    state.set('historyActiveTab', 'all');
+    state.set('currentView', 'machine-history');
+    if (window.router && typeof window.router.navigate === 'function') {
+      window.router.navigate('machine-history');
+    }
+  };
+
+  const btnPassportHeader = document.getElementById('btn-details-open-full-passport');
+  if (btnPassportHeader) {
+    btnPassportHeader.addEventListener('click', handleOpenPassport);
+  }
+
   const btnFullHistory = document.getElementById('btn-drawer-full-history');
   if (btnFullHistory) {
-    btnFullHistory.addEventListener('click', () => {
-      state.set('activeModal', null);
-      state.set('currentView', 'machine-history');
-    });
+    btnFullHistory.addEventListener('click', handleOpenPassport);
   }
 
   const btnPreventive = document.getElementById('btn-drawer-preventive');

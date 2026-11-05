@@ -124,23 +124,37 @@ class HistoryService {
   }
 
   /**
-   * Find machine using Machine Serial Number only (Case-insensitive, whitespace trimmed)
+   * Find machine using Machine Serial Number, System Asset ID, or Barcode
+   * (Case-insensitive, whitespace trimmed)
    */
   findMachineBySerialOnly(serialNumber) {
     if (!serialNumber) return null;
-    const clean = serialNumber.trim().toUpperCase();
+    const clean = String(serialNumber).trim().toUpperCase();
     if (!clean) return null;
 
     const allMachines = storage.getTable(TABLE_NAMES.MACHINES) || [];
     
-    // 1. Exact match
-    const exact = allMachines.find(m => m.serialNumber && m.serialNumber.trim().toUpperCase() === clean);
-    if (exact) return exact;
+    // 1. Exact match by serialNumber
+    const exactSerial = allMachines.find(m => m.serialNumber && String(m.serialNumber).trim().toUpperCase() === clean);
+    if (exactSerial) return exactSerial;
 
-    // 2. Substring or ID match
+    // 2. Exact match by systemAssetId, permanentMachineId, barcode, or manufacturing_serial
+    const exactAsset = allMachines.find(m => 
+      (m.systemAssetId && String(m.systemAssetId).trim().toUpperCase() === clean) ||
+      (m.permanentMachineId && String(m.permanentMachineId).trim().toUpperCase() === clean) ||
+      (m.barcode && String(m.barcode).trim().toUpperCase() === clean) ||
+      (m.id && String(m.id).trim().toUpperCase() === clean) ||
+      (m.manufacturing_serial && String(m.manufacturing_serial).trim().toUpperCase() === clean) ||
+      (m.manufacturingSerial && String(m.manufacturingSerial).trim().toUpperCase() === clean)
+    );
+    if (exactAsset) return exactAsset;
+
+    // 3. Substring match
     const partial = allMachines.find(m => 
-      (m.serialNumber && m.serialNumber.trim().toUpperCase().includes(clean)) ||
-      (m.id && m.id.trim().toUpperCase() === clean)
+      (m.serialNumber && String(m.serialNumber).trim().toUpperCase().includes(clean)) ||
+      (m.systemAssetId && String(m.systemAssetId).trim().toUpperCase().includes(clean)) ||
+      (m.barcode && String(m.barcode).trim().toUpperCase().includes(clean)) ||
+      (m.id && String(m.id).trim().toUpperCase().includes(clean))
     );
     return partial || null;
   }
