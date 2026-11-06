@@ -306,6 +306,14 @@ class WorkflowService {
       return true;
     }
 
+    // Special Ambulance Machine Approval Rule:
+    // "Ambulance machine approval floor manager"
+    // An ambulance machine transfer strictly requires Floor Manager authority for that machine's floor.
+    if (transferRequest.isAmbulanceWorkflow || transferRequest.isAmbulance || transferRequest.machineInfo?.isAmbulance) {
+      const targetFloorId = transferRequest.sourceFloorId || transferRequest.destFloorId;
+      return authService.isFloorManager(targetFloorId, currentUser);
+    }
+
     // 2. Explicit APPROVE permission grant (user-level access control)
     if (authService.hasAccess('transfers', 'APPROVE')) {
       return true;

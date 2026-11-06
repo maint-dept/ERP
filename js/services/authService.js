@@ -3030,6 +3030,98 @@ class AuthService {
   }
 
   /**
+   * Universal Ambulance / Standby Line Replacement Machine Checker
+   */
+  isAmbulanceMachine(m) {
+    if (!m) return false;
+    if (m.isAmbulance === true || m.isAmbulance === 1 || m.isAmbulance === 'true') return true;
+    if (m.is_ambulance === true || m.is_ambulance === 1 || m.is_ambulance === 'true' || m.is_ambulance === '1') return true;
+    if (m.ambulance === true || m.ambulance === 1 || m.ambulance === 'true') return true;
+    if (String(m.status || '').toUpperCase() === 'AMBULANCE') return true;
+    if (m.customValues?.is_ambulance || m.customValues?.ambulance) return true;
+    const rem = String(m.remarks || m.specialInstruction || '').toLowerCase();
+    if (rem.includes('ambulance') || rem.includes('standby line replacement') || rem.includes('stand-by replacement')) return true;
+    const lin = String(m.lineId || m.line || '').toLowerCase();
+    if (lin.includes('ambulance')) return true;
+    const wa = String(m.workingArea || '').toLowerCase();
+    if (wa.includes('ambulance')) return true;
+    return false;
+  }
+
+  /**
+   * Check if a user has access to a specific floor.
+   * Considers explicit scope floorIds, primary placement floorId, allFloors, allUnits, allGroups,
+   * and lines belonging to that floor in scope.lineIds.
+   */
+  isFloorAllowed(floorId, user = null) {
+    if (!floorId) return false;
+    const u = user || this.getCurrentUser();
+    if (!u) return false;
+    if (u.role === 'NO_ACCESS') return false;
+    if (this.isSuperAdmin(u) || this.isAdmin(u)) return true;
+
+    const scope = u.assignedScope;
+    if (!scope) {
+      // Fallback to user's assigned placement floor
+      return u.floorId && String(u.floorId) === String(floorId);
+    }
+
+    if (scope.allGroups || scope.allUnits || scope.allFloors) {
+      return true;
+    }
+
+    // Direct match in floorIds
+    if (Array.isArray(scope.floorIds) && scope.floorIds.includes(floorId)) {
+      return true;
+    }
+
+    // User's base floor placement
+    if (u.floorId && String(u.floorId) === String(floorId)) {
+      return true;
+    }
+
+    // Check if any assigned lines belong to this floor
+    if (Array.isArray(scope.lineIds) && scope.lineIds.length > 0) {
+      const allLines = storage.getTable(TABLE_NAMES.LINES) || [];
+      const hasLineOnFloor = scope.lineIds.some(lid => {
+        const line = allLines.find(l => l.id === lid);
+        return line && String(line.floorId) === String(floorId);
+      });
+      if (hasLineOnFloor) return true;
+    }
+
+    return false;
+  }
+
+  /**
+   * Check if a user is an authorized Floor Manager / Floor In-Charge for a given floor.
+   * Required for Ambulance Machine approvals.
+   */
+  isFloorManager(floorId = null, user = null) {
+    const u = user || this.getCurrentUser();
+    if (!u) return false;
+    if (this.isSuperAdmin(u) || this.isAdmin(u)) return true;
+
+    const des = String(u.designation || '').toLowerCase();
+    const role = String(u.role || '').toUpperCase();
+    const isMgrOrLead = this.isManager(u) || 
+      role.includes('SUPERVISOR') || 
+      role.includes('MANAGER') || 
+      des.includes('manager') || 
+      des.includes('in-charge') || 
+      des.includes('incharge') || 
+      des.includes('supervisor') ||
+      this.hasAccess('transfers', 'APPROVE');
+
+    if (!isMgrOrLead) return false;
+
+    if (floorId) {
+      return this.isFloorAllowed(floorId, u);
+    }
+    return true;
+  }
+
+  /**
    * Check if a machine is an Idle machine (Usable Idle, Idle, Repairable Idle, or on Central Idle floor)
    */
   isIdleMachine(machine) {
@@ -3043,6 +3135,7 @@ class AuthService {
       status === 'INACTIVE' ||
       status === 'SPARE'
     ) return true;
+
     const uQty = parseInt(machine.usable_idle ?? machine.usableIdle ?? 0, 10) || 0;
     if (uQty > 0) return true;
     const rpQty = parseInt(machine.repairable_idle ?? machine.repairableIdle ?? 0, 10) || 0;
@@ -3065,8 +3158,9 @@ class AuthService {
 
   /**
    * Check if a machine can be viewed by the user:
-   * 1. If includeCrossFloorIdle is true: view idle machines across factory floors.
-   * 2. Otherwise: strictly respect assigned Unit, Floor, and Line location scope.
+   * 1. Ambulance Machine Rule: ONLY users who have access to that machine's floor can view it!
+   * 2. If includeCrossFloorIdle is true: view general idle machines across factory floors.
+   * 3. Otherwise: strictly respect assigned Unit, Floor, and Line location scope.
    */
   canViewMachine(machine, user = null, includeCrossFloorIdle = false) {
     if (!machine) return false;
@@ -3074,7 +3168,13 @@ class AuthService {
     if (!u) return false;
     if (u.role === 'NO_ACCESS') return false;
 
-    // Cross-Floor Idle exception
+    // Strict Floor-Gated Rule:
+    // Ambulance Machine khali je floor ar machine oi floor ar j access pabe tara dakta parbe!
+    if (this.isAmbulanceMachine(machine)) {
+      return this.isFloorAllowed(machine.floorId, u);
+    }
+
+    // Cross-Floor Idle exception (for general usable/repairable idle machines)
     if (includeCrossFloorIdle && this.isIdleMachine(machine)) {
       return true;
     }

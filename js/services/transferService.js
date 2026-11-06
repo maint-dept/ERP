@@ -446,6 +446,11 @@ class TransferService {
     const u = user || authService.getCurrentUser();
     if (!u || !machine) return false;
 
+    // Strict Rule: Ambulance Machine deployment CANNOT be auto-transferred without Floor Manager approval!
+    if (authService.isAmbulanceMachine(machine)) {
+      return false;
+    }
+
     // Must be same floor
     const isSameFloor = Boolean(
       machine.floorId && 
@@ -811,34 +816,52 @@ class TransferService {
       };
     }
 
-    const isCrossFloor = Boolean(machine.floorId && destFloorId && machine.floorId !== destFloorId);
-    if (isCrossFloor) {
+    const isAmbulance = authService.isAmbulanceMachine(machine);
+    if (isAmbulance) {
       workflow = {
-        id: 'wf-smart-cross-floor',
-        name: `Inter-Floor Transfer (${sourceFloor} Release Approval)`,
+        id: 'wf-ambulance-floor-manager',
+        name: `Emergency Ambulance Machine Allocation (${sourceFloor} Floor Manager Approval)`,
+        isAmbulanceWorkflow: true,
         levels: [
           {
             level: 1,
-            title: `Source Floor Release Approval (${sourceFloor})`,
+            title: `Floor Manager / In-Charge Approval (${sourceFloor})`,
             approverType: APPROVER_TYPES.SOURCE_LOCATION,
-            description: `Requires release authorization from ${sourceFloor} Floor In-Charge or Central Admin before machine can be taken.`
-          },
-          {
-            level: 2,
-            title: `Destination Acceptance & Admin Confirmation (${destFloor})`,
-            approverType: APPROVER_TYPES.ADMIN,
-            description: `Requires destination acceptance by ${destFloor} and Central Maintenance Admin confirmation.`
+            approverRole: 'FLOOR_MANAGER',
+            description: `Emergency ambulance standby machine allocation requires approval from ${sourceFloor} Floor Manager before deployment to Line ${destLine}.`
           }
         ]
       };
-    } else if (!workflow || !workflow.levels || workflow.levels.length === 0) {
-      workflow = {
-        id: 'wf-default',
-        name: 'Standard Management Approval Workflow',
-        levels: [
-          { level: 1, title: 'Central Maintenance Admin Approval', approverType: 'ADMIN' }
-        ]
-      };
+    } else {
+      const isCrossFloor = Boolean(machine.floorId && destFloorId && machine.floorId !== destFloorId);
+      if (isCrossFloor) {
+        workflow = {
+          id: 'wf-smart-cross-floor',
+          name: `Inter-Floor Transfer (${sourceFloor} Release Approval)`,
+          levels: [
+            {
+              level: 1,
+              title: `Source Floor Release Approval (${sourceFloor})`,
+              approverType: APPROVER_TYPES.SOURCE_LOCATION,
+              description: `Requires release authorization from ${sourceFloor} Floor In-Charge or Central Admin before machine can be taken.`
+            },
+            {
+              level: 2,
+              title: `Destination Acceptance & Admin Confirmation (${destFloor})`,
+              approverType: APPROVER_TYPES.ADMIN,
+              description: `Requires destination acceptance by ${destFloor} and Central Maintenance Admin confirmation.`
+            }
+          ]
+        };
+      } else if (!workflow || !workflow.levels || workflow.levels.length === 0) {
+        workflow = {
+          id: 'wf-default',
+          name: 'Standard Management Approval Workflow',
+          levels: [
+            { level: 1, title: 'Central Maintenance Admin Approval', approverType: 'ADMIN' }
+          ]
+        };
+      }
     }
 
     // 4. Process attached documents
@@ -884,8 +907,11 @@ class TransferService {
         brand: resolvedEquip.brand,
         model: resolvedEquip.model,
         serialNumber: machine.serialNumber,
-        category: resolvedEquip.category
+        category: resolvedEquip.category,
+        isAmbulance: Boolean(isAmbulance)
       },
+      isAmbulanceWorkflow: Boolean(isAmbulance),
+      isAmbulance: Boolean(isAmbulance),
       sourceGroupId: machine.groupId,
       sourceUnitId: machine.unitId,
       sourceFloorId: machine.floorId,

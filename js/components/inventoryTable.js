@@ -186,15 +186,15 @@ export function renderRowActionsMenuContent(m) {
 
   if (isViewOnly) {
     let html = `
-      <div style="padding: 6px 12px; font-size: 10.5px; font-weight: 700; color: #38bdf8; border-bottom: 1px solid rgba(255,255,255,0.08); background: rgba(56, 189, 248, 0.05); display: flex; align-items: center; justify-content: space-between;">
-        <span>🌐 Cross-Floor Idle</span>
-        <span class="badge" style="font-size: 9px; padding: 1px 4px; background: rgba(56, 189, 248, 0.2); color: #38bdf8;">View-Only</span>
+      <div style="padding: 6px 12px; font-size: 10.5px; font-weight: 700; color: ${meta.isAmb ? '#fda4af' : '#38bdf8'}; border-bottom: 1px solid rgba(255,255,255,0.08); background: ${meta.isAmb ? 'rgba(244, 63, 94, 0.1)' : 'rgba(56, 189, 248, 0.05)'}; display: flex; align-items: center; justify-content: space-between;">
+        <span>${meta.isAmb ? '🚑 Ambulance Standby' : '🌐 Cross-Floor Idle'}</span>
+        <span class="badge" style="font-size: 9px; padding: 1px 4px; background: ${meta.isAmb ? 'rgba(244, 63, 94, 0.25); color: #fda4af' : 'rgba(56, 189, 248, 0.2); color: #38bdf8'};">View-Only</span>
       </div>
     `;
     if (authService.canRequestTransfer()) {
       html += `
-        <button type="button" class="actions-menu-item btn-transfer-machine" data-id="${m.id}" data-serial="${m.serialNumber || ''}" style="color: #38bdf8; font-weight: 800; background: rgba(56, 189, 248, 0.1); display: flex; align-items: center; gap: 8px;">
-          <span style="font-size: 14px;">🔄</span> Request Machine Transfer
+        <button type="button" class="actions-menu-item btn-transfer-machine" data-id="${m.id}" data-serial="${m.serialNumber || ''}" style="color: ${meta.isAmb ? '#fda4af' : '#38bdf8'}; font-weight: 800; background: ${meta.isAmb ? 'rgba(244, 63, 94, 0.12)' : 'rgba(56, 189, 248, 0.1)'}; display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 14px;">${meta.isAmb ? '🚑' : '🔄'}</span> ${meta.isAmb ? 'Request Ambulance Swap' : 'Request Machine Transfer'}
         </button>
         <div class="actions-menu-divider"></div>
       `;
@@ -331,7 +331,7 @@ export function renderInventoryTable() {
   const customFields = customFieldService.getTableFields();
   const user = authService.getCurrentUser();
   const userScope = user?.assignedScope;
-  const isScopedUser = userScope && !userScope.allGroups && ((userScope.floorIds?.length > 0) || (userScope.unitIds?.length > 0));
+  const isScopedUser = userScope && !userScope.allGroups && ((userScope.floorIds?.length > 0) || (userScope.unitIds?.length > 0) || (userScope.lineIds?.length > 0));
   const showCrossFloorIdle = Boolean(state.get('showCrossFloorIdle'));
   const ignoreScopeForDropdowns = Boolean(showCrossFloorIdle);
 
@@ -488,10 +488,20 @@ export function renderInventoryTable() {
   let scopeLabel = '';
   if (isScopedUser) {
     const scopeFloorNames = (userScope.floorIds || []).map(fid => flrMap.get(fid) || fid).filter(Boolean);
-    scopeLabel = scopeFloorNames.length > 0 ? scopeFloorNames.join(', ') : 'Assigned Location';
+    const scopeLineNames = (userScope.lineIds || []).map(lid => linMap.get(lid) || lid).filter(Boolean);
+    if (scopeFloorNames.length > 0 && scopeLineNames.length > 0) {
+      scopeLabel = `${scopeFloorNames.join(', ')} (${scopeLineNames.length} Lines)`;
+    } else if (scopeLineNames.length > 0) {
+      scopeLabel = `Lines: ${scopeLineNames.join(', ')}`;
+    } else if (scopeFloorNames.length > 0) {
+      scopeLabel = scopeFloorNames.join(', ');
+    } else {
+      scopeLabel = 'Assigned Location';
+    }
+
     scopeBadgeHtml = `
-      <span class="badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); padding: 2px 8px; font-size: 11px; border-radius: 5px; display: inline-flex; align-items: center; gap: 4px; font-weight: 700;" title="Default View: Operational machines on your assigned floor">
-        📍 ASSIGNED: <strong>${scopeLabel.toUpperCase()}</strong>
+      <span class="badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); padding: 2px 8px; font-size: 11px; border-radius: 5px; display: inline-flex; align-items: center; gap: 4px; font-weight: 700;" title="Default View: Operational machines on your assigned scope">
+        📍 ASSIGNED: <strong>${escapeHtml(scopeLabel.toUpperCase())}</strong>
       </span>
       <button 
         id="btn-toggle-cross-floor-idle" 
@@ -502,9 +512,9 @@ export function renderInventoryTable() {
             ? 'background: #0284c7; color: #fff; border: 1px solid #38bdf8; box-shadow: 0 0 10px rgba(56, 189, 248, 0.45);' 
             : 'background: rgba(15, 23, 42, 0.65); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.3);'
         }"
-        title="${showCrossFloorIdle ? 'Click to exit Cross-Floor Idle View and return strictly to your assigned floor machines' : 'Click to view standby & idle machines across all other factory floors'}"
+        title="${showCrossFloorIdle ? 'Click to exit Cross View and return strictly to your assigned scope machines' : 'Click to view standby, idle & ambulance machines across other factory lines and floors'}"
       >
-        <span>👁️</span> CROSS-FLOOR IDLE VIEW
+        <span>👁️</span> CROSS VIEW (IDLE &amp; AMBULANCE)
         <span class="badge" style="font-size: 9px; padding: 1px 5px; border-radius: 3px; font-weight: 800; ${showCrossFloorIdle ? 'background: #22c55e; color: #fff;' : 'background: rgba(148, 163, 184, 0.25); color: #94a3b8;'}">
           ${showCrossFloorIdle ? 'ON' : 'OFF'}
         </span>
