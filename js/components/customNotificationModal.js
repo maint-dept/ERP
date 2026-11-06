@@ -772,7 +772,7 @@ export function showInstantAlertHUD(notif) {
 
             <button id="btn-hud-acknowledge" class="btn btn-primary" style="background: linear-gradient(135deg, #10b981, #059669); border: none; color: #fff; font-size: 13.5px; font-weight: 800; padding: 10px 22px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);">
               <span>✓</span>
-              <span>Acknowledge (স্বীকৃতি প্রদান)</span>
+              <span>Acknowledge Alert</span>
             </button>
           </div>
         </div>

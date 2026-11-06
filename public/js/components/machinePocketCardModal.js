@@ -221,8 +221,7 @@ export function openMachinePocketCard(machineOrQuery) {
   let displayHeroId = assetId || (machine.machineId && !String(machine.machineId).startsWith('mac-') ? machine.machineId : '') || machine.serialNumber || 'AMG-MNT-PENDING';
 
   // Machine Asset ID / Tag display:
-  // User explicitly requested to use Machine Asset ID for barcode/tag:
-  // "বারকোড যে ট্যাগ আইডি ব্যবহার করেছো, ati মেশিন এসেট আইডি ব্যবহার করতে পারো নাকি?"
+  // User explicitly requested to prioritize official Machine Asset ID for barcode/tag:
   let displayTagId = assetId || (machine.serialNumber ? `AMG-MNT-${machine.serialNumber}` : 'Pending Tag');
   let secondaryBarcode = (machine.barcode && !String(machine.barcode).startsWith('mac-') && machine.barcode !== displayTagId) ? String(machine.barcode).trim() : '';
 
