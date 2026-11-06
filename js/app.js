@@ -22,6 +22,7 @@ import { renderColumnVisibilityModal, initColumnVisibilityEvents } from './compo
 import { renderNotificationsDrawer, initNotificationsDrawerEvents } from './components/notificationsDrawer.js?v=4.36.0';
 import { renderChangePasswordModal, initChangePasswordModalEvents } from './components/changePasswordModal.js?v=4.36.0';
 import { renderAccountSwitcherModal, initAccountSwitcherModalEvents } from './components/accountSwitcherModal.js?v=4.36.0';
+import { renderCustomNotificationModal, initCustomNotificationModalEvents, showInstantAlertHUD } from './components/customNotificationModal.js?v=4.36.0';
 import { smartStorageService } from './services/smartStorageService.js?v=4.36.0';
 import { historyService } from './services/historyService.js?v=4.36.0';
 import { auditService } from './services/auditService.js?v=4.36.0';
@@ -1283,6 +1284,8 @@ class ERPApplication {
         return renderColumnVisibilityModal();
       case 'notifications':
         return renderNotificationsDrawer();
+      case 'custom-notification':
+        return renderCustomNotificationModal();
       case 'account-switcher':
         return renderAccountSwitcherModal();
       default:
@@ -1427,6 +1430,9 @@ class ERPApplication {
       case 'notifications':
         initNotificationsDrawerEvents();
         break;
+      case 'custom-notification':
+        initCustomNotificationModalEvents();
+        break;
       case 'account-switcher':
         initAccountSwitcherModalEvents();
         break;
@@ -1456,10 +1462,21 @@ class ERPApplication {
     window.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
         state.set('activeModal', null);
+        const hud = document.getElementById('instant-alert-hud-root');
+        if (hud) hud.remove();
+        const customNotif = document.getElementById('custom-notif-modal-root');
+        if (customNotif) customNotif.remove();
         const appContainer = document.querySelector('.app-container');
         if (appContainer && appContainer.classList.contains('sidebar-mobile-open')) {
           appContainer.classList.remove('sidebar-mobile-open');
         }
+      }
+    });
+
+    // 2.0. Instant Factory Alert HUD Event Listener
+    window.addEventListener('erp:instant-alert', (e) => {
+      if (e.detail && typeof showInstantAlertHUD === 'function') {
+        showInstantAlertHUD(e.detail);
       }
     });
 

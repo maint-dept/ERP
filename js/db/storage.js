@@ -280,6 +280,13 @@ class StorageEngine {
         if (table === TABLE_NAMES.MACHINES) window.dispatchEvent(new CustomEvent('erp:inventory-updated'));
         if (table === TABLE_NAMES.TOOLS_MASTER || table === TABLE_NAMES.TOOL_ALLOCATIONS) window.dispatchEvent(new CustomEvent('erp:tools-updated'));
         if (table === TABLE_NAMES.EMPLOYEES) window.dispatchEvent(new CustomEvent('erp:employees-updated', { detail: { id, data } }));
+        if (table === TABLE_NAMES.NOTIFICATIONS) {
+          window.dispatchEvent(new CustomEvent('erp:notification', { detail: data }));
+          window.dispatchEvent(new CustomEvent('erp:notification-updated', { detail: data }));
+          if (data && (data.isInstantAlert || data.popupHUD || data.type === 'EMERGENCY' || data.severity === 'EMERGENCY')) {
+            window.dispatchEvent(new CustomEvent('erp:instant-alert', { detail: data }));
+          }
+        }
       }
     } else if (type === 'RECORD_DELETED' && id) {
       if (!this.data[table]) return;
@@ -301,6 +308,7 @@ class StorageEngine {
         window.dispatchEvent(new CustomEvent('erp:storage-updated', { detail: { table } }));
         if (table === TABLE_NAMES.MACHINES) window.dispatchEvent(new CustomEvent('erp:inventory-updated'));
         if (table === TABLE_NAMES.EMPLOYEES) window.dispatchEvent(new CustomEvent('erp:employees-updated'));
+        if (table === TABLE_NAMES.NOTIFICATIONS) window.dispatchEvent(new CustomEvent('erp:notification-updated'));
       }
     }
   }

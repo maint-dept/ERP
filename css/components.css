@@ -7291,5 +7291,121 @@ body.theme-light .btn-mobile-search-close {
   }
 }
 
+/* ==========================================================================
+   Factory Custom Notification & Instant Emergency Alert HUD Styles
+   ========================================================================== */
+
+@keyframes alertZoomIn {
+  from {
+    opacity: 0;
+    transform: scale(0.92) translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes emergencyPulseGlow {
+  0% {
+    box-shadow: 0 0 25px rgba(239, 68, 68, 0.4), 0 20px 50px rgba(0, 0, 0, 0.85);
+  }
+  50% {
+    box-shadow: 0 0 65px rgba(239, 68, 68, 0.85), 0 25px 70px rgba(220, 38, 38, 0.5);
+  }
+  100% {
+    box-shadow: 0 0 25px rgba(239, 68, 68, 0.4), 0 20px 50px rgba(0, 0, 0, 0.85);
+  }
+}
+
+.instant-alert-card.pulse-emergency {
+  animation: alertZoomIn 0.3s cubic-bezier(0.16, 1, 0.3, 1), emergencyPulseGlow 1.8s infinite ease-in-out;
+}
+
+.btn-preset-card:hover {
+  background: rgba(56, 189, 248, 0.15) !important;
+  border-color: rgba(56, 189, 248, 0.45) !important;
+  transform: translateY(-1px);
+}
+
+.severity-pill:hover {
+  transform: translateY(-2px);
+}
+
+.custom-notif-dialog {
+  animation: alertZoomIn 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Bright Theme (Microsoft Fluent Light Mode) Adaptations */
+body.theme-light .custom-notif-dialog {
+  background: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  box-shadow: 0 25px 60px -15px rgba(15, 23, 42, 0.25), 0 0 20px rgba(2, 132, 199, 0.12) !important;
+}
+
+body.theme-light .custom-notif-header {
+  background: linear-gradient(135deg, #f8fafc, #f1f5f9) !important;
+  border-bottom-color: #e2e8f0 !important;
+}
+
+body.theme-light .custom-notif-header h3 {
+  color: #0f172a !important;
+}
+
+body.theme-light .custom-notif-header p {
+  color: #64748b !important;
+}
+
+body.theme-light .custom-notif-body {
+  background: #ffffff !important;
+}
+
+body.theme-light .btn-preset-card {
+  background: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+  color: #1e293b !important;
+}
+
+body.theme-light .btn-preset-card:hover {
+  background: #f0f9ff !important;
+  border-color: #38bdf8 !important;
+}
+
+body.theme-light .custom-notif-dialog input[type="text"],
+body.theme-light .custom-notif-dialog textarea,
+body.theme-light .custom-notif-dialog select {
+  background: #f8fafc !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+
+body.theme-light .custom-notif-dialog input[type="text"]:focus,
+body.theme-light .custom-notif-dialog textarea:focus,
+body.theme-light .custom-notif-dialog select:focus {
+  background: #ffffff !important;
+  border-color: #0284c7 !important;
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15) !important;
+}
+
+body.theme-light .custom-notif-dialog label {
+  color: #334155 !important;
+}
+
+body.theme-light .sent-alert-card {
+  background: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+}
+
+body.theme-light .sent-alert-card span,
+body.theme-light .sent-alert-card div {
+  color: #1e293b !important;
+}
+
+body.theme-light .instant-alert-card {
+  background: #ffffff !important;
+  color: #0f172a !important;
+}
+
+
 
 

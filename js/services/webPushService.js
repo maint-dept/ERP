@@ -354,6 +354,44 @@ class WebPushService {
   }
 
   /**
+   * Synthesize high-urgency emergency siren audio alert using Web Audio API (Offline & Zero-Asset)
+   */
+  playEmergencySiren() {
+    if (!this.isSoundEnabled() || typeof window === 'undefined') return;
+
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      if (ctx.state === 'suspended') {
+        ctx.resume();
+      }
+
+      const now = ctx.currentTime;
+      // High-low alternating siren tones for emergency warnings
+      const tones = [
+        { freq: 987.77, start: 0, dur: 0.18, type: 'sawtooth' },
+        { freq: 659.25, start: 0.18, dur: 0.18, type: 'sawtooth' },
+        { freq: 987.77, start: 0.36, dur: 0.18, type: 'sawtooth' },
+        { freq: 659.25, start: 0.54, dur: 0.22, type: 'sawtooth' }
+      ];
+
+      tones.forEach(t => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = t.type;
+        osc.frequency.setValueAtTime(t.freq, now + t.start);
+        gain.gain.setValueAtTime(0.12, now + t.start);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + t.start + t.dur);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now + t.start);
+        osc.stop(now + t.start + t.dur);
+      });
+    } catch (_) {}
+  }
+
+  /**
    * Main Dispatcher: Evaluates user access rules and delivers Web Push Notification
    * 
    * Strict Rule ("je jar access onujay notification pabe"):

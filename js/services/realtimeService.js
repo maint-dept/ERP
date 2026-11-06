@@ -110,10 +110,18 @@ class RealtimeService {
     } else if (table === TABLE_NAMES.NOTIFICATIONS) {
       window.dispatchEvent(new CustomEvent('erp:realtime-notification-updated', { detail: payload }));
       window.dispatchEvent(new CustomEvent('erp:notifications-updated', { detail: payload }));
+      window.dispatchEvent(new CustomEvent('erp:notification-updated', { detail: data }));
       if (data && typeof data === 'object') {
+        const isInstant = data.isInstantAlert || data.popupHUD || data.type === 'EMERGENCY' || data.severity === 'EMERGENCY';
         import('./webPushService.js').then(({ webPushService }) => {
           webPushService.sendPushNotification(data);
+          if (isInstant && typeof webPushService.playEmergencySiren === 'function') {
+            webPushService.playEmergencySiren();
+          }
         }).catch(() => {});
+        if (isInstant) {
+          window.dispatchEvent(new CustomEvent('erp:instant-alert', { detail: data }));
+        }
       }
     } else if (table === TABLE_NAMES.TRANSFERS || table === TABLE_NAMES.TRANSFER_REQUESTS) {
       window.dispatchEvent(new CustomEvent('erp:realtime-transfer-updated', { detail: payload }));

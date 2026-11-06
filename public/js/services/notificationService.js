@@ -1134,6 +1134,144 @@ class NotificationService {
       console.warn('ensureShowcaseSeeds notice:', e.message);
     }
   }
+
+  /**
+   * Broadcast a user-composed custom notification or instant emergency alert
+   */
+  async sendCustomAlert({
+    title,
+    message,
+    severity = 'ALERT', // 'EMERGENCY', 'ALERT', 'WARNING', 'INFO', 'MAINTENANCE', 'SUCCESS'
+    targetType = 'ALL', // 'ALL', 'LOCATION', 'ROLE', 'USER'
+    unitId = null,
+    floorId = null,
+    lineId = null,
+    targetRoles = null,
+    targetUserId = null,
+    targetUrl = '#dashboard',
+    popupHUD = true,
+    channels = { inApp: true, push: true, hud: true }
+  }) {
+    const activeUser = typeof authService !== 'undefined' ? authService.getCurrentUser() : null;
+    const cleanTitle = this.sanitizeEnterpriseText(title || 'Factory Alert');
+    const cleanMessage = this.sanitizeEnterpriseText(message || '');
+    const isEmergency = severity.toUpperCase() === 'EMERGENCY';
+    const isInstant = popupHUD === true || isEmergency;
+
+    const notifItem = {
+      id: `notif-custom-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      title: cleanTitle,
+      message: cleanMessage,
+      type: isEmergency ? 'EMERGENCY' : severity.toUpperCase(),
+      module: 'broadcast',
+      action: 'VIEW',
+      targetUrl: targetUrl || '#dashboard',
+      isBroadcast: targetType === 'ALL',
+      isCustomAlert: true,
+      isInstantAlert: isInstant,
+      popupHUD: isInstant,
+      severity: severity.toUpperCase(),
+      targetRoles: (targetType === 'ROLE' && Array.isArray(targetRoles) && targetRoles.length > 0) ? targetRoles : (targetType === 'ALL' ? ['ALL'] : null),
+      targetUserId: targetType === 'USER' ? targetUserId : null,
+      locationScope: (targetType === 'LOCATION' || unitId || floorId || lineId) ? {
+        unitId: unitId || null,
+        floorId: floorId || null,
+        lineId: lineId || null
+      } : null,
+      senderId: activeUser?.id || 'system',
+      senderName: activeUser?.name || activeUser?.username || 'Maintenance Staff',
+      senderRole: activeUser?.presetName || activeUser?.role || 'Staff',
+      acknowledgedBy: [],
+      read: false,
+      readBy: [],
+      timestamp: new Date().toISOString()
+    };
+
+    // 1. Insert into local storage & trigger background save
+    storage.insert(TABLE_NAMES.NOTIFICATIONS, notifItem);
+    storage.saveTable(TABLE_NAMES.NOTIFICATIONS, true).catch(err => {
+      console.warn('[NotificationService] Cloud sync notice:', err);
+    });
+
+    // 2. Audit Trail Logging
+    try {
+      if (typeof auditService !== 'undefined' && auditService && auditService.log) {
+        auditService.log('BROADCAST_ALERT', 'NOTIFICATIONS', notifItem.id, `Dispatched [${severity}] custom alert: "${cleanTitle}" to ${targetType}`);
+      }
+    } catch (_) {}
+
+    // 3. Local Dispatch Events
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('erp:notification', { detail: notifItem }));
+      window.dispatchEvent(new CustomEvent('erp:notification-updated', { detail: notifItem }));
+
+      // 4. Audio Alert Chime / Siren
+      try {
+        const { webPushService } = await import('./webPushService.js');
+        if (isEmergency && typeof webPushService.playEmergencySiren === 'function') {
+          webPushService.playEmergencySiren();
+        } else if (typeof webPushService.playChime === 'function') {
+          webPushService.playChime();
+        }
+        // Native Web Push Dispatch
+        if (channels.push !== false && typeof webPushService.sendPushNotification === 'function') {
+          webPushService.sendPushNotification(notifItem);
+        }
+      } catch (_) {}
+
+      // 5. Instant HUD popup on current screen
+      if (isInstant && typeof window.showInstantAlertHUD === 'function') {
+        window.showInstantAlertHUD(notifItem);
+      }
+    }
+
+    // 6. Show confirmation toast
+    this.success(`Alert dispatched successfully to ${targetType === 'ALL' ? 'all factory staff' : targetType.toLowerCase()}!`);
+    return notifItem;
+  }
+
+  /**
+   * Record recipient acknowledgment of an emergency or priority alert
+   */
+  acknowledgeAlert(notifId, user = null) {
+    const activeUser = user || (typeof authService !== 'undefined' ? authService.getCurrentUser() : null);
+    if (!activeUser || !notifId) return false;
+
+    const notif = storage.getItem(TABLE_NAMES.NOTIFICATIONS, notifId);
+    if (!notif) return false;
+
+    if (!Array.isArray(notif.acknowledgedBy)) notif.acknowledgedBy = [];
+    const alreadyAcked = notif.acknowledgedBy.some(a => a.userId === activeUser.id);
+    if (!alreadyAcked) {
+      notif.acknowledgedBy.push({
+        userId: activeUser.id,
+        userName: activeUser.name || activeUser.username,
+        role: activeUser.presetName || activeUser.role,
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    // Mark as read for this user
+    this.markAsRead(notifId, activeUser.id);
+    storage.update(TABLE_NAMES.NOTIFICATIONS, notifId, notif);
+    storage.saveTable(TABLE_NAMES.NOTIFICATIONS, true).catch(() => {});
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('erp:notification-updated', { detail: notif }));
+    }
+    return true;
+  }
+
+  /**
+   * Get list of custom alerts previously dispatched (filtered to active user or all for admins)
+   */
+  getSentCustomAlerts(user = null) {
+    const allNotifs = storage.getTable(TABLE_NAMES.NOTIFICATIONS) || [];
+    const customAlerts = allNotifs.filter(n => n.isCustomAlert === true || n.type === 'EMERGENCY' || n.module === 'broadcast');
+    
+    // Sort newest first
+    return customAlerts.sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0));
+  }
 }
 
 export const notificationService = new NotificationService();
