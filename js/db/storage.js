@@ -10,6 +10,52 @@ import { idbCache } from './idbCache.js';
 
 const STORAGE_KEY_PREFIX = 'al_muslim_erp_';
 
+/**
+ * Enterprise Large Tables (>1MB) that MUST NOT be written to 5MB localStorage.
+ * Stored exclusively in high-capacity IndexedDB (idbCache, 100MB+).
+ */
+export const MASSIVE_TABLES = new Set([
+  TABLE_NAMES.MACHINES,
+  TABLE_NAMES.AUDIT_LOGS,
+  TABLE_NAMES.MACHINE_HISTORY,
+  TABLE_NAMES.PARTS_TRACE_ISSUES,
+  TABLE_NAMES.PARTS_TRACE_PDFS,
+  TABLE_NAMES.TOOL_ALLOCATIONS,
+  TABLE_NAMES.TOOL_CHANGE_HISTORY,
+  TABLE_NAMES.RELOCATION_HISTORY,
+  TABLE_NAMES.TRANSFER_REQUESTS,
+  TABLE_NAMES.TRANSFERS,
+  TABLE_NAMES.PREVENTIVE_MAINTENANCE,
+  TABLE_NAMES.EMPLOYEES,
+  TABLE_NAMES.SPARE_PARTS,
+  TABLE_NAMES.SPARE_PARTS_MASTER,
+  TABLE_NAMES.ET_BOARDS,
+  TABLE_NAMES.ET_BOARD_HISTORY
+]);
+
+export function isMassiveTable(table) {
+  return MASSIVE_TABLES.has(table);
+}
+
+/**
+ * Safe LocalStorage setter: bypasses massive tables and actively purges
+ * any lingering legacy keys from localStorage to guarantee quota headroom.
+ */
+export function safeLocalStorageSetTable(table, data) {
+  if (typeof localStorage === 'undefined') return;
+  if (isMassiveTable(table)) {
+    try {
+      localStorage.removeItem(STORAGE_KEY_PREFIX + table);
+    } catch (_) {}
+    return;
+  }
+  try {
+    localStorage.setItem(STORAGE_KEY_PREFIX + table, JSON.stringify(data ?? []));
+  } catch (err) {
+    console.warn(`[Storage] LocalStorage setItem failed for table '${table}':`, err.message);
+  }
+}
+
 function getApiEndpoint(path) {
   if (typeof window !== 'undefined' && window.location && window.location.protocol === 'file:') {
     return 'http://localhost:3030' + path;
@@ -495,7 +541,8 @@ class StorageEngine {
 
     Object.values(TABLE_NAMES).forEach(table => {
       try {
-        localStorage.setItem(STORAGE_KEY_PREFIX + table, JSON.stringify(this.data[table] || []));
+        idbCache.setTable(table, this.data[table] || []);
+        safeLocalStorageSetTable(table, this.data[table] || []);
       } catch (_) {}
     });
     try {
@@ -512,8 +559,19 @@ class StorageEngine {
   loadFromStorage() {
     if (typeof localStorage === 'undefined') return;
 
-    // Fast Boot: Synchronously parse only critical tables needed for immediate UI shell & auth (<25ms)
+    // Quota Self-Heal: Automatically evict any lingering legacy massive tables from localStorage
+    MASSIVE_TABLES.forEach(table => {
+      try {
+        localStorage.removeItem(STORAGE_KEY_PREFIX + table);
+      } catch (_) {}
+    });
+
+    // Fast Boot: Synchronously parse only compact critical tables needed for immediate UI shell & auth (<25ms)
     CRITICAL_TABLES.forEach(table => {
+      if (isMassiveTable(table)) {
+        if (!this.data[table]) this.data[table] = [];
+        return;
+      }
       const stored = localStorage.getItem(STORAGE_KEY_PREFIX + table);
       if (stored) {
         try {
@@ -536,6 +594,7 @@ class StorageEngine {
     // Defer parsing secondary operational tables to browser idle time so initial load is instantaneous
     const loadSecondaryTables = () => {
       SECONDARY_TABLES.forEach(table => {
+        if (isMassiveTable(table)) return; // Massive tables hydrated via idbCache
         if (!this.data[table] || this.data[table].length === 0) {
           const stored = localStorage.getItem(STORAGE_KEY_PREFIX + table);
           if (stored) {
@@ -789,7 +848,7 @@ class StorageEngine {
 
     if (testPurged) {
       try { idbCache.setTable(TABLE_NAMES.MACHINES, this.data[TABLE_NAMES.MACHINES]); } catch (_) {}
-      try { localStorage.setItem(STORAGE_KEY_PREFIX + TABLE_NAMES.MACHINES, JSON.stringify(this.data[TABLE_NAMES.MACHINES])); } catch (_) {}
+      safeLocalStorageSetTable(TABLE_NAMES.MACHINES, this.data[TABLE_NAMES.MACHINES]);
     }
 
     // Auto-generate permanent unique System Asset IDs (e.g. AMG-MNT-000001) for all machines
@@ -905,16 +964,13 @@ class StorageEngine {
       await idbCache.setTable(table, records ?? []);
     } catch (_) {}
 
-    // 2. LocalStorage cache for critical/small tables (bypass for massive tables >2MB to prevent QuotaExceededError)
-    const isMassiveTable = (table === TABLE_NAMES.MACHINES || table === TABLE_NAMES.AUDIT_LOGS);
-    if (!isMassiveTable) {
-      try {
-        localStorage.setItem(STORAGE_KEY_PREFIX + table, JSON.stringify(records ?? []));
-        localStorage.setItem(STORAGE_KEY_PREFIX + 'version', SCHEMA_VERSION);
-        localStorage.setItem(STORAGE_KEY_PREFIX + 'last_saved', new Date().toISOString());
-      } catch (err) {
-        console.warn('LocalStorage quota notice for table:', table, err.message);
-      }
+    // 2. Safe LocalStorage cache (massive tables bypassed to prevent QuotaExceededError)
+    safeLocalStorageSetTable(table, records ?? []);
+    try {
+      localStorage.setItem(STORAGE_KEY_PREFIX + 'version', SCHEMA_VERSION);
+      localStorage.setItem(STORAGE_KEY_PREFIX + 'last_saved', new Date().toISOString());
+    } catch (err) {
+      console.warn('LocalStorage quota notice for table:', table, err.message);
     }
 
     // Broadcast table-level update to other tabs on same device
@@ -1032,15 +1088,13 @@ class StorageEngine {
   async saveMultipleTables(tablesObj, isExplicitUserAction = false) {
     if (!tablesObj || typeof tablesObj !== 'object') return false;
 
-    // 1. High-capacity persistent write to IndexedDB & localStorage for all tables
+    // 1. High-capacity persistent write to IndexedDB & safe localStorage for all tables
     for (const [table, records] of Object.entries(tablesObj)) {
       this.data[table] = records ?? [];
       try {
         await idbCache.setTable(table, this.data[table]);
       } catch (_) {}
-      try {
-        localStorage.setItem(STORAGE_KEY_PREFIX + table, JSON.stringify(this.data[table]));
-      } catch (_) {}
+      safeLocalStorageSetTable(table, this.data[table]);
       if (!this.lastTableUpdates) this.lastTableUpdates = {};
       this.lastTableUpdates[table] = Date.now();
     }
@@ -1125,9 +1179,7 @@ class StorageEngine {
       if (tableName === TABLE_NAMES.MACHINES) {
         this.rebuildAllIndexes();
       }
-      try {
-        localStorage.setItem(STORAGE_KEY_PREFIX + tableName, JSON.stringify(snapshot));
-      } catch (_) {}
+      safeLocalStorageSetTable(tableName, snapshot);
       this.updateStatusBadge('error');
       throw new CloudSaveError(`❌ Cloud Save Failed: Database write for '${tableName}' was not confirmed. Check your connection.`);
     }
@@ -1332,7 +1384,8 @@ class StorageEngine {
   saveAll() {
     Object.values(TABLE_NAMES).forEach(table => {
       try {
-        localStorage.setItem(STORAGE_KEY_PREFIX + table, JSON.stringify(this.data[table] || []));
+        idbCache.setTable(table, this.data[table] || []);
+        safeLocalStorageSetTable(table, this.data[table] || []);
       } catch (_) {}
     });
     try {
@@ -1524,9 +1577,7 @@ class StorageEngine {
         try {
           idbCache.setTable(tbl, this.data[tbl]);
         } catch (_) {}
-        try {
-          localStorage.setItem(STORAGE_KEY_PREFIX + tbl, JSON.stringify(this.data[tbl]));
-        } catch (_) {}
+        safeLocalStorageSetTable(tbl, this.data[tbl]);
         updated = true;
       } else if (serverRecs[tbl] && typeof serverRecs[tbl] === 'object' && !Array.isArray(serverRecs[tbl])) {
         // Handle object tables such as settings and homepage_config
@@ -1910,7 +1961,7 @@ class StorageEngine {
                 this.data[tableName] = records;
                 this._invalidateTableIdMap(tableName);
                 try { await idbCache.setTable(tableName, records); } catch (_) {}
-                try { localStorage.setItem(STORAGE_KEY_PREFIX + tableName, JSON.stringify(records)); } catch (_) {}
+                safeLocalStorageSetTable(tableName, records);
               }
               const confirmedTs = pgRes.updateTime || new Date().toISOString();
               this.syncedDocVersions.set(tableName, confirmedTs);
@@ -1952,7 +2003,7 @@ class StorageEngine {
                 this.data[tableName] = records;
                 this._invalidateTableIdMap(tableName);
                 try { await idbCache.setTable(tableName, records); } catch (_) {}
-                try { localStorage.setItem(STORAGE_KEY_PREFIX + tableName, JSON.stringify(records)); } catch (_) {}
+                safeLocalStorageSetTable(tableName, records);
               }
               const confirmedTs = pgRes.updateTime || new Date().toISOString();
               this.syncedDocVersions.set(tableName, confirmedTs);
@@ -1973,7 +2024,7 @@ class StorageEngine {
         this._invalidateTableIdMap(tableName);
         // Update high-capacity caches
         try { await idbCache.setTable(tableName, records); } catch (_) {}
-        try { localStorage.setItem(STORAGE_KEY_PREFIX + tableName, JSON.stringify(records)); } catch (_) {}
+        safeLocalStorageSetTable(tableName, records);
       }
 
       // Update sync timestamp
@@ -2470,7 +2521,7 @@ class StorageEngine {
   setTable(tableName, items, persistToCloud = false) {
     this.data[tableName] = items || [];
     try { idbCache.setTable(tableName, this.data[tableName]); } catch (_) {}
-    try { localStorage.setItem(STORAGE_KEY_PREFIX + tableName, JSON.stringify(this.data[tableName])); } catch (_) {}
+    safeLocalStorageSetTable(tableName, this.data[tableName]);
     if (persistToCloud) {
       this.saveTable(tableName, false);
     }
@@ -2934,9 +2985,7 @@ class StorageEngine {
       try {
         idbCache.setTable(TABLE_NAMES.MACHINES, machines);
       } catch (_) {}
-      try {
-        localStorage.setItem(STORAGE_KEY_PREFIX + TABLE_NAMES.MACHINES, JSON.stringify(machines));
-      } catch (_) {}
+      safeLocalStorageSetTable(TABLE_NAMES.MACHINES, machines);
       this._invalidateTableIdMap(TABLE_NAMES.MACHINES);
     }
 
@@ -3184,7 +3233,7 @@ class StorageEngine {
     // 1. Instant Optimistic Local Persistence (0ms)
     try {
       idbCache.setTable(tableName, this.data[tableName]);
-      localStorage.setItem(STORAGE_KEY_PREFIX + tableName, JSON.stringify(this.data[tableName]));
+      safeLocalStorageSetTable(tableName, this.data[tableName]);
     } catch (_) {}
 
     // 2. Multi-tab 0ms local broadcast
@@ -3229,9 +3278,7 @@ class StorageEngine {
       this.data[tableName] = snapshot;
       if (tableName === TABLE_NAMES.MACHINES) this.rebuildAllIndexes();
       this._invalidateTableIdMap(tableName);
-      try {
-        localStorage.setItem(STORAGE_KEY_PREFIX + tableName, JSON.stringify(snapshot));
-      } catch (_) {}
+      safeLocalStorageSetTable(tableName, snapshot);
       this.updateStatusBadge('error');
       throw new CloudSaveError(`❌ Cloud Save Failed: Database write for '${tableName}' was not confirmed. ${saveErr}`);
     }
@@ -3302,7 +3349,7 @@ class StorageEngine {
     // 1. Instant Optimistic Local Persistence (0ms)
     try {
       idbCache.setTable(tableName, table);
-      localStorage.setItem(STORAGE_KEY_PREFIX + tableName, JSON.stringify(table));
+      safeLocalStorageSetTable(tableName, table);
     } catch (_) {}
 
     // 2. Multi-tab 0ms local broadcast
@@ -3347,9 +3394,7 @@ class StorageEngine {
       table[index] = oldItem;
       if (tableName === TABLE_NAMES.MACHINES) this.rebuildAllIndexes();
       this._invalidateTableIdMap(tableName);
-      try {
-        localStorage.setItem(STORAGE_KEY_PREFIX + tableName, JSON.stringify(table));
-      } catch (_) {}
+      safeLocalStorageSetTable(tableName, table);
       this.updateStatusBadge('error');
       throw new CloudSaveError(`❌ Cloud Save Failed: Database write for '${tableName}' was not confirmed. ${saveErr}`);
     }
@@ -3389,7 +3434,7 @@ class StorageEngine {
     // 1. Instant Optimistic Local Persistence (0ms)
     try {
       idbCache.setTable(tableName, table);
-      localStorage.setItem(STORAGE_KEY_PREFIX + tableName, JSON.stringify(table));
+      safeLocalStorageSetTable(tableName, table);
     } catch (_) {}
 
     // 2. Multi-tab 0ms local broadcast
@@ -3434,9 +3479,7 @@ class StorageEngine {
       this.data[tableName] = snapshot;
       if (tableName === TABLE_NAMES.MACHINES) this.rebuildAllIndexes();
       this._invalidateTableIdMap(tableName);
-      try {
-        localStorage.setItem(STORAGE_KEY_PREFIX + tableName, JSON.stringify(snapshot));
-      } catch (_) {}
+      safeLocalStorageSetTable(tableName, snapshot);
       this.updateStatusBadge('error');
       throw new CloudSaveError(`❌ Cloud Save Failed: Database write for '${tableName}' was not confirmed. ${saveErr}`);
     }
@@ -3452,9 +3495,7 @@ class StorageEngine {
     if (!ok) {
       this.data[tableName] = snapshot;
       if (tableName === TABLE_NAMES.MACHINES) this.rebuildAllIndexes();
-      try {
-        localStorage.setItem(STORAGE_KEY_PREFIX + tableName, JSON.stringify(snapshot));
-      } catch (_) {}
+      safeLocalStorageSetTable(tableName, snapshot);
       throw new CloudSaveError(`❌ Cloud Save Failed: Database write for '${tableName}' was not confirmed. Check your connection.`);
     }
     return this.data[tableName];

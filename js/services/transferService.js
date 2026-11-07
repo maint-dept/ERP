@@ -723,13 +723,6 @@ class TransferService {
       storage.insert(TABLE_NAMES.TRANSFERS, transferRecord);
       storage.insert(TABLE_NAMES.RELOCATION_HISTORY, relHistRecord);
 
-      try {
-        localStorage.setItem('al_muslim_erp_' + TABLE_NAMES.MACHINES, JSON.stringify(storage.data[TABLE_NAMES.MACHINES]));
-        localStorage.setItem('al_muslim_erp_' + TABLE_NAMES.TRANSFER_REQUESTS, JSON.stringify(storage.data[TABLE_NAMES.TRANSFER_REQUESTS]));
-        localStorage.setItem('al_muslim_erp_' + TABLE_NAMES.TRANSFERS, JSON.stringify(storage.data[TABLE_NAMES.TRANSFERS]));
-        localStorage.setItem('al_muslim_erp_' + TABLE_NAMES.RELOCATION_HISTORY, JSON.stringify(storage.data[TABLE_NAMES.RELOCATION_HISTORY]));
-      } catch (_) {}
-
       // Trigger cross-component updates immediately
       window.dispatchEvent(new CustomEvent('erp:transfers-updated'));
       window.dispatchEvent(new CustomEvent('erp:inventory-updated'));
@@ -976,11 +969,6 @@ class TransferService {
       updatedAt: new Date().toISOString()
     });
     storage.insert(TABLE_NAMES.TRANSFER_REQUESTS, newRequest);
-    
-    try {
-      localStorage.setItem('al_muslim_erp_' + TABLE_NAMES.MACHINES, JSON.stringify(storage.data[TABLE_NAMES.MACHINES]));
-      localStorage.setItem('al_muslim_erp_' + TABLE_NAMES.TRANSFER_REQUESTS, JSON.stringify(storage.data[TABLE_NAMES.TRANSFER_REQUESTS]));
-    } catch (_) {}
 
     // Trigger local and cross-component updates immediately
     window.dispatchEvent(new CustomEvent('erp:transfers-updated'));
@@ -1146,10 +1134,6 @@ class TransferService {
         approvalHistory: updatedHistory,
         updatedAt: now.toISOString()
       });
-      try {
-        localStorage.setItem('al_muslim_erp_' + TABLE_NAMES.TRANSFER_REQUESTS, JSON.stringify(storage.data[TABLE_NAMES.TRANSFER_REQUESTS]));
-      } catch (_) {}
-
 
       notificationService.notify({
         title: 'Transfer Advanced to Next Level',

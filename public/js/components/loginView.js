@@ -611,12 +611,12 @@ export function initLoginViewEvents(isAdminGateway = false) {
       }
 
       try {
-        if (rememberMe) {
-          localStorage.setItem('al_muslim_remember_me', 'true');
-        } else {
-          localStorage.removeItem('al_muslim_remember_me');
-        }
         try {
+          if (rememberMe) {
+            localStorage.setItem('al_muslim_remember_me', 'true');
+          } else {
+            localStorage.removeItem('al_muslim_remember_me');
+          }
           localStorage.removeItem('al_muslim_saved_username');
         } catch (_) {}
 

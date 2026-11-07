@@ -100,6 +100,90 @@
     })();
   </script>
 
+  <!-- Storage Self-Healing & Quota Protection: Automatically evict massive database tables from 5MB LocalStorage to IndexedDB -->
+  <script>
+    (function () {
+      var massiveKeys = [
+        'al_muslim_erp_machines',
+        'al_muslim_erp_audit_logs',
+        'al_muslim_erp_machine_history',
+        'al_muslim_erp_parts_trace',
+        'al_muslim_erp_parts_trace_issues',
+        'al_muslim_erp_parts_trace_pdfs',
+        'al_muslim_erp_tools_allocations',
+        'al_muslim_erp_tool_allocations',
+        'al_muslim_erp_tool_change_history',
+        'al_muslim_erp_relocation_history',
+        'al_muslim_erp_transfer_requests',
+        'al_muslim_erp_transfers',
+        'al_muslim_erp_preventive_maintenance',
+        'al_muslim_erp_employees',
+        'al_muslim_erp_spare_parts',
+        'al_muslim_erp_spare_parts_master',
+        'al_muslim_erp_et_boards',
+        'al_muslim_erp_et_board_history'
+      ];
+
+      function purgeMassiveKeys() {
+        for (var i = 0; i < massiveKeys.length; i++) {
+          try {
+            if (localStorage.getItem(massiveKeys[i])) {
+              localStorage.removeItem(massiveKeys[i]);
+            }
+          } catch (_) {}
+        }
+      }
+
+      // 1. Instant execution on page boot to free up ~5MB quota immediately
+      purgeMassiveKeys();
+
+      // 2. Resilient setItem guard to catch QuotaExceededError and retry after eviction or fallback to sessionStorage
+      try {
+        var _origSetItem = Storage.prototype.setItem;
+        Storage.prototype.setItem = function (key, value) {
+          try {
+            return _origSetItem.call(this, key, value);
+          } catch (quotaErr) {
+            if (this === localStorage) {
+              purgeMassiveKeys();
+              try {
+                return _origSetItem.call(this, key, value);
+              } catch (retryErr) {
+                console.warn('[Storage Guard] LocalStorage quota reached for "' + key + '". Falling back to sessionStorage.');
+                try {
+                  if (typeof sessionStorage !== 'undefined') {
+                    sessionStorage.setItem(key, value);
+                  }
+                } catch (_) {}
+                return;
+              }
+            }
+            throw quotaErr;
+          }
+        };
+
+        var _origGetItem = Storage.prototype.getItem;
+        Storage.prototype.getItem = function (key) {
+          var val = _origGetItem.call(this, key);
+          if (val === null && this === localStorage && typeof sessionStorage !== 'undefined') {
+            try { val = sessionStorage.getItem(key); } catch (_) {}
+          }
+          return val;
+        };
+
+        var _origRemoveItem = Storage.prototype.removeItem;
+        Storage.prototype.removeItem = function (key) {
+          _origRemoveItem.call(this, key);
+          if (this === localStorage && typeof sessionStorage !== 'undefined') {
+            try { sessionStorage.removeItem(key); } catch (_) {}
+          }
+        };
+      } catch (err) {
+        console.warn('[Storage Guard] Could not wrap Storage prototype:', err);
+      }
+    })();
+  </script>
+
   <!-- Instant Daylight/Dark Theme Pre-Init (Zero Visual Flash) -->
   <script>
     try {

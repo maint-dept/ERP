@@ -726,9 +726,6 @@ class MachineService {
     }
     storage.rebuildAllIndexes();
     try {
-      localStorage.setItem('al_muslim_erp_' + TABLE_NAMES.MACHINES, JSON.stringify(storage.data[TABLE_NAMES.MACHINES]));
-    } catch (_) {}
-    try {
       if (typeof idbCache !== 'undefined' && idbCache.setTable) {
         idbCache.setTable(TABLE_NAMES.MACHINES, storage.data[TABLE_NAMES.MACHINES]);
       }
@@ -892,9 +889,6 @@ class MachineService {
       expectedUpdatedAt,
       expectedVersion
     });
-    try {
-      localStorage.setItem('al_muslim_erp_' + TABLE_NAMES.MACHINES, JSON.stringify(storage.data[TABLE_NAMES.MACHINES]));
-    } catch (_) {}
 
     // Synchronize preventive maintenance table if service date was modified
     if (enrichedUpdates.lastServiceDate || enrichedUpdates.service_date) {
@@ -1190,9 +1184,6 @@ class MachineService {
     const removed = storage.delete(TABLE_NAMES.MACHINES, id);
     if (removed) {
       storage.rebuildAllIndexes();
-      try {
-        localStorage.setItem('al_muslim_erp_' + TABLE_NAMES.MACHINES, JSON.stringify(storage.data[TABLE_NAMES.MACHINES]));
-      } catch (_) {}
 
       auditService.log(
         'MACHINE_PERMANENT_DELETED',
@@ -1266,7 +1257,9 @@ class MachineService {
       storage._invalidateTableIdMap(TABLE_NAMES.MACHINES);
       storage.rebuildAllIndexes();
       try {
-        localStorage.setItem('al_muslim_erp_' + TABLE_NAMES.MACHINES, JSON.stringify(newTable));
+        if (typeof idbCache !== 'undefined' && idbCache.setTable) {
+          idbCache.setTable(TABLE_NAMES.MACHINES, newTable);
+        }
       } catch (_) {}
 
       // Clean up orphaned pending requests for deleted machines

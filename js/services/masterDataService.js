@@ -6,6 +6,7 @@
 
 import { storage } from '../db/storage.js';
 import { CloudSaveError } from '../db/storage.js';
+import { idbCache } from '../db/idbCache.js';
 import { TABLE_NAMES } from '../db/schema.js';
 import { authService } from './authService.js';
 import { auditService } from './auditService.js';
@@ -1993,7 +1994,7 @@ class MasterDataService {
           storage.saveTable(TABLE_NAMES.MACHINES);
         } else {
           try {
-            localStorage.setItem('al_muslim_erp_' + TABLE_NAMES.MACHINES, JSON.stringify(machines));
+            idbCache.setTable(TABLE_NAMES.MACHINES, machines);
           } catch (_) {}
         }
         storage.rebuildAllIndexes();

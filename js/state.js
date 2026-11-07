@@ -45,7 +45,8 @@ export function extractAdminDefaultsFromSettings(settingsObjOrArr) {
 
 class GlobalState {
   constructor() {
-    const activeUserId = typeof localStorage !== 'undefined' ? localStorage.getItem('al_muslim_active_user_id') : null;
+    const activeUserId = (typeof localStorage !== 'undefined' ? localStorage.getItem('al_muslim_active_user_id') : null) ||
+                         (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('al_muslim_active_user_id') : null);
     const resolved = this.resolveActiveColumns(activeUserId);
 
     let initialView = 'home';
@@ -374,7 +375,10 @@ class GlobalState {
     } catch (_) {}
 
     // 2. Resolve User Customization (Keyed strictly by active user ID ONLY IF explicitly saved by user)
-    const uid = activeUserId || (typeof localStorage !== 'undefined' ? localStorage.getItem('al_muslim_active_user_id') : null) || 'usr-super-admin';
+    const uid = activeUserId || 
+                (typeof localStorage !== 'undefined' ? localStorage.getItem('al_muslim_active_user_id') : null) || 
+                (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('al_muslim_active_user_id') : null) || 
+                'usr-super-admin';
     let userCustomCols = null;
     let userCustomFrozen = null;
 
