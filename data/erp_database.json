@@ -321072,12 +321072,12 @@
         "database": "motaherh_maint-erp",
         "username": "motaherh_mainterp",
         "password": "Maint@456",
-        "endpoint": "https://moviezonex.com/mysql_api.php",
+        "endpoint": "https://erp.moviezonex.com/mysql_api.php",
         "apiKey": "",
         "enabled": true,
         "autoSync": true,
         "retryEnabled": true,
-        "updatedAt": "2026-11-07T05:58:37.770Z"
+        "updatedAt": "2026-11-07T12:26:14.605Z"
       },
       {
         "id": "db_postgresql_replica",
@@ -321089,13 +321089,13 @@
         "database": "motaherh_Maintenance",
         "username": "motaherh_AMG-maint",
         "password": "ol(5_MK8mF{~7cdG",
-        "endpoint": "https://moviezonex.com/api/pg_api.php",
+        "endpoint": "https://erp.moviezonex.com/api/pg_api.php",
         "apiKey": "",
         "ssl": false,
         "enabled": true,
         "autoSync": true,
         "retryEnabled": true,
-        "updatedAt": "2026-11-07T05:58:37.770Z"
+        "updatedAt": "2026-11-07T12:26:14.605Z"
       }
     ],
     "emailConfig": {
@@ -333011,11 +333011,12 @@
         ]
       },
       "createdAt": "2026-01-01T00:00:00Z",
-      "lastLoginAt": "2026-11-05T09:33:30.354Z",
-      "updatedAt": "2026-11-05T09:33:30.354Z",
+      "lastLoginAt": "2026-11-07T08:26:35.792Z",
+      "updatedAt": "2026-11-07T12:26:17.417Z",
       "presetId": "preset_super_admin",
       "presetName": "Super Admin",
-      "passwordHash": "$sha256$6ad526a0cf737517d4609e058dc306b2$454c146535308e78f7597aa51ac660a043569dd70843ec7b9e0b50be956f14b3"
+      "passwordHash": "$sha256$6ad526a0cf737517d4609e058dc306b2$454c146535308e78f7597aa51ac660a043569dd70843ec7b9e0b50be956f14b3",
+      "version": 2
     },
     {
       "id": "usr-1789211116425-361",
@@ -344309,6 +344310,26 @@
       "timestamp": "2026-11-06T15:46:25.730Z",
       "createdAt": "2026-11-06T15:46:25.730Z",
       "updatedAt": "2026-11-06T15:46:25.730Z"
+    },
+    {
+      "id": "aud-1794039995793-199",
+      "userId": "usr-super-admin",
+      "username": "motaher",
+      "action": "USER_LOGIN",
+      "entity": "USER",
+      "entityId": "usr-super-admin",
+      "details": "User 'Engr. Motaher Hossain' (motaher.cse@gmail.com) logged in successfully as [SUPER_ADMIN].",
+      "oldData": null,
+      "newData": {
+        "username": "motaher",
+        "email": "motaher.cse@gmail.com",
+        "role": "SUPER_ADMIN",
+        "loginAt": "2026-11-07T08:26:35.792Z"
+      },
+      "ip": "127.0.0.1",
+      "timestamp": "2026-11-07T08:26:35.793Z",
+      "createdAt": "2026-11-07T08:26:35.793Z",
+      "updatedAt": "2026-11-07T08:26:35.793Z"
     }
   ],
   "notifications": [

@@ -4,12 +4,12 @@
  * Optimized for One-Handed Factory Floor Operation (Thumb-Friendly, 60-120fps)
  */
 
-import { router } from '../services/router.js?v=4.46.0';
-import { state } from '../state.js?v=4.46.0';
-import { authService } from '../services/authService.js?v=4.46.0';
-import { moduleLoader } from '../services/moduleLoader.js?v=4.46.0';
-import { renderQrScannerModal, initQrScannerModalEvents, playScanBeep } from './qrScannerModal.js?v=4.46.0';
-import { openSmartMachineActionModal } from './smartSearchActionModal.js?v=4.46.0';
+import { router } from '../services/router.js?v=4.46.1';
+import { state } from '../state.js?v=4.46.1';
+import { authService } from '../services/authService.js?v=4.46.1';
+import { moduleLoader } from '../services/moduleLoader.js?v=4.46.1';
+import { renderQrScannerModal, initQrScannerModalEvents, playScanBeep } from './qrScannerModal.js?v=4.46.1';
+import { openSmartMachineActionModal } from './smartSearchActionModal.js?v=4.46.1';
 
 export function renderMobileBottomNav(currentView = null) {
   const user = authService.getCurrentUser();

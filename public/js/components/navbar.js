@@ -3,15 +3,15 @@
  * Clean, User-Friendly Navbar with Streamlined Actions & Account Dropdown
  */
 
-import { authService } from '../services/authService.js?v=4.46.0';
-import { notificationService } from '../services/notificationService.js?v=4.46.0';
-import { state } from '../state.js?v=4.46.0';
-import { storage } from '../db/storage.js?v=4.46.0';
-import { syncManager } from '../db/syncManager.js?v=4.46.0';
-import { router } from '../services/router.js?v=4.46.0';
-import { renderQrScannerModal, initQrScannerModalEvents, playScanBeep } from './qrScannerModal.js?v=4.46.0';
-import { openMachinePocketCard } from './machinePocketCardModal.js?v=4.46.0';
-import { searchMachinesWithScope, openSmartMachineActionModal } from './smartSearchActionModal.js?v=4.46.0';
+import { authService } from '../services/authService.js?v=4.46.1';
+import { notificationService } from '../services/notificationService.js?v=4.46.1';
+import { state } from '../state.js?v=4.46.1';
+import { storage } from '../db/storage.js?v=4.46.1';
+import { syncManager } from '../db/syncManager.js?v=4.46.1';
+import { router } from '../services/router.js?v=4.46.1';
+import { renderQrScannerModal, initQrScannerModalEvents, playScanBeep } from './qrScannerModal.js?v=4.46.1';
+import { openMachinePocketCard } from './machinePocketCardModal.js?v=4.46.1';
+import { searchMachinesWithScope, openSmartMachineActionModal } from './smartSearchActionModal.js?v=4.46.1';
 import { 
   getEmployeeMap, 
   getUserCardNumber, 

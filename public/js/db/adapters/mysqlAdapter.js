@@ -19,17 +19,19 @@ export class MysqlAdapter extends BaseAdapter {
     this.ssl = config.ssl !== false;
 
     let rawEndpoint = (config.endpoint || '').trim().replace(/\/$/, '');
-    if (typeof window !== 'undefined' && window.location && window.location.hostname.includes('moviezonex.com')) {
+    if (typeof window !== 'undefined' && window.location && window.location.hostname === 'erp.moviezonex.com') {
       rawEndpoint = window.location.origin + '/mysql_api.php';
+    } else if (typeof window !== 'undefined' && window.location && window.location.hostname.includes('moviezonex.com')) {
+      rawEndpoint = 'https://erp.moviezonex.com/mysql_api.php';
     } else if (!rawEndpoint || rawEndpoint === '/api/db/mysql') {
-      rawEndpoint = 'https://moviezonex.com/mysql_api.php';
+      rawEndpoint = 'https://erp.moviezonex.com/mysql_api.php';
     } else if (rawEndpoint === 'api/mysql_api.php' || rawEndpoint === '/api/mysql_api.php') {
       if (typeof window !== 'undefined' && window.location && window.location.hostname.includes('github.io')) {
-        rawEndpoint = 'https://moviezonex.com/mysql_api.php';
+        rawEndpoint = 'https://erp.moviezonex.com/mysql_api.php';
       } else if (typeof window !== 'undefined' && window.location && window.location.origin) {
         rawEndpoint = window.location.origin + '/api/mysql_api.php';
       } else {
-        rawEndpoint = 'https://moviezonex.com/mysql_api.php';
+        rawEndpoint = 'https://erp.moviezonex.com/mysql_api.php';
       }
     } else if (!/^https?:\/\//i.test(rawEndpoint)) {
       if (rawEndpoint.startsWith('localhost') || rawEndpoint.startsWith('127.0.0.1')) {

@@ -11,13 +11,13 @@ import { customFieldService } from '../services/customFieldService.js';
 import { machineService } from '../services/machineService.js';
 import { authService } from '../services/authService.js';
 import { notificationService } from '../services/notificationService.js';
-import { smartStorageService } from '../services/smartStorageService.js?v=4.46.0';
+import { smartStorageService } from '../services/smartStorageService.js?v=4.46.1';
 import { excelService, formatDisplayLine } from '../services/excelService.js';
 import { preventiveMaintenanceService } from '../services/preventiveMaintenanceService.js';
-import { CloudSaveError } from '../db/storage.js?v=4.46.0';
+import { CloudSaveError } from '../db/storage.js?v=4.46.1';
 import { qrCodeService } from '../services/qrCodeService.js';
-import { renderQrScannerModal, initQrScannerModalEvents } from './qrScannerModal.js?v=4.46.0';
-import { notificationGateway } from '../services/notificationGatewayService.js?v=4.46.0';
+import { renderQrScannerModal, initQrScannerModalEvents } from './qrScannerModal.js?v=4.46.1';
+import { notificationGateway } from '../services/notificationGatewayService.js?v=4.46.1';
 import { state } from '../state.js';
 
 function escapeHtml(str) {

@@ -1,6 +1,6 @@
 /**
  * Al-Muslim Group ERP — High-Performance Production Service Worker
- * Build: v4.46.0
+ * Build: v4.46.1
  *
  * Architecture:
  * 1. Offline Machine Image Caching: Cache-First + Stale-While-Revalidate (Instant offline access for factory floor technicians)
@@ -10,8 +10,8 @@
  * 5. Database & REST APIs: Strict Network-Only bypass (zero caching of live MySQL/PostgreSQL/SSE streams)
  */
 
-const BUILD_VER = '4.46.0';
-const CACHE_NAME = 'amg-erp-v4.46.0';
+const BUILD_VER = '4.46.1';
+const CACHE_NAME = 'amg-erp-v4.46.1';
 const IMAGE_CACHE_NAME = 'amg-erp-images-v1';
 
 const PRECACHE_ASSETS = [

@@ -13,7 +13,7 @@
 
 import { storage, CloudSaveError } from '../db/storage.js';
 import { TABLE_NAMES, DEFAULT_PERMISSION_TEMPLATES, DEFAULT_PERMISSION_PRESETS } from '../db/schema.js';
-import { authService } from './authService.js?v=4.46.0';
+import { authService } from './authService.js?v=4.46.1';
 import { cryptoService } from './cryptoService.js';
 import { auditService } from './auditService.js';
 import { masterDataService } from './masterDataService.js';

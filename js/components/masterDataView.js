@@ -10,8 +10,8 @@ import { masterDataService, KNOWN_NAMED_SECTIONS, formatLineName } from '../serv
 import { qrCodeService } from '../services/qrCodeService.js';
 import { authService } from '../services/authService.js';
 import { notificationService } from '../services/notificationService.js';
-import { state } from '../state.js?v=4.46.0';
-import { router } from '../services/router.js?v=4.46.0';
+import { state } from '../state.js?v=4.46.1';
+import { router } from '../services/router.js?v=4.46.1';
 
 let activeTab = 'fast-entry'; // 'fast-entry', 'tree', 'groups', 'units', 'floors', 'lines', 'machinenames', 'brands', 'models'
 let cascadeGroupId = '';

@@ -3538,17 +3538,19 @@ class StorageEngine {
       const clone = { ...c };
       if (clone.id === 'mysql_primary' || (clone.type === 'MYSQL' && clone.role === 'PRIMARY')) {
         let ep = (clone.endpoint || '').trim().replace(/\/$/, '');
-        if (typeof window !== 'undefined' && window.location && window.location.hostname.includes('moviezonex.com')) {
+        if (typeof window !== 'undefined' && window.location && window.location.hostname === 'erp.moviezonex.com') {
           ep = window.location.origin + '/mysql_api.php';
+        } else if (typeof window !== 'undefined' && window.location && window.location.hostname.includes('moviezonex.com')) {
+          ep = 'https://erp.moviezonex.com/mysql_api.php';
         } else if (!ep || ep === '/api/db/mysql') {
-          ep = 'https://moviezonex.com/mysql_api.php';
+          ep = 'https://erp.moviezonex.com/mysql_api.php';
         } else if (ep === 'api/mysql_api.php' || ep === '/api/mysql_api.php') {
           if (typeof window !== 'undefined' && window.location && window.location.hostname.includes('github.io')) {
-            ep = 'https://moviezonex.com/mysql_api.php';
+            ep = 'https://erp.moviezonex.com/mysql_api.php';
           } else if (typeof window !== 'undefined' && window.location && window.location.origin) {
             ep = window.location.origin + '/api/mysql_api.php';
           } else {
-            ep = 'https://moviezonex.com/mysql_api.php';
+            ep = 'https://erp.moviezonex.com/mysql_api.php';
           }
         } else if (!/^https?:\/\//i.test(ep)) {
           ep = (ep.startsWith('localhost') || ep.startsWith('127.0.0.1')) ? ('http://' + ep) : ('https://' + ep);
@@ -3562,14 +3564,16 @@ class StorageEngine {
         clone.role = 'PRIMARY';
       } else if (clone.type === 'POSTGRESQL' || clone.type === 'POSTGRES') {
         let ep = (clone.endpoint || '').trim().replace(/\/$/, '');
-        if (typeof window !== 'undefined' && window.location && window.location.hostname.includes('moviezonex.com')) {
+        if (typeof window !== 'undefined' && window.location && window.location.hostname === 'erp.moviezonex.com') {
           ep = window.location.origin + '/api/pg_api.php';
+        } else if (typeof window !== 'undefined' && window.location && window.location.hostname.includes('moviezonex.com')) {
+          ep = 'https://erp.moviezonex.com/api/pg_api.php';
         } else if (!ep || ep === 'api/pg_api.php' || ep === '/api/pg_api.php' || ep.includes('://api/pg_api.php') || ep === '/api/db/pg' || (ep.includes('api/pg_api.php') && !ep.startsWith('http'))) {
-          ep = 'https://moviezonex.com/api/pg_api.php';
+          ep = 'https://erp.moviezonex.com/api/pg_api.php';
         } else if (!/^https?:\/\//i.test(ep) && !ep.startsWith('/')) {
           ep = 'https://' + ep;
         }
-        clone.endpoint = ep || 'https://moviezonex.com/api/pg_api.php';
+        clone.endpoint = ep || 'https://erp.moviezonex.com/api/pg_api.php';
         clone.id = 'db_postgresql_replica';
         clone.name = clone.name || 'PostgreSQL Database Connection';
         clone.role = 'BACKUP';
@@ -3606,7 +3610,7 @@ class StorageEngine {
               database: 'motaherh_Maintenance',
               username: 'motaherh_AMG-maint',
               password: 'ol(5_MK8mF{~7cdG',
-              endpoint: 'https://moviezonex.com/api/pg_api.php',
+              endpoint: 'https://erp.moviezonex.com/api/pg_api.php',
               apiKey: '',
               ssl: false,
               enabled: true,
@@ -3652,7 +3656,7 @@ class StorageEngine {
         database: 'motaherh_maint-erp',
         username: 'motaherh_mainterp',
         password: 'Maint@456',
-        endpoint: 'https://moviezonex.com/mysql_api.php',
+        endpoint: 'https://erp.moviezonex.com/mysql_api.php',
         apiKey: '',
         enabled: true,
         autoSync: true,
@@ -3669,7 +3673,7 @@ class StorageEngine {
         database: 'motaherh_Maintenance',
         username: 'motaherh_AMG-maint',
         password: 'ol(5_MK8mF{~7cdG',
-        endpoint: 'https://moviezonex.com/api/pg_api.php',
+        endpoint: 'https://erp.moviezonex.com/api/pg_api.php',
         apiKey: '',
         ssl: false,
         enabled: true,

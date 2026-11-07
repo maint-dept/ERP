@@ -614,15 +614,26 @@ class AuthService {
     const allowAnyRole = Boolean(options.allowAnyRole);
 
     // 1. Authoritative Backend/API Verification & Role Gateway Check
+    let authoritativeUser = null;
     try {
-      if (typeof syncManager !== 'undefined' && syncManager.primaryAdapter && typeof syncManager.primaryAdapter.verifyLogin === 'function') {
-        const timeoutPromise = new Promise(resolve => setTimeout(() => resolve(null), 1200));
-        const apiPromise = syncManager.primaryAdapter.verifyLogin(cleanId, password, isAdminGateway);
+      let activeSyncMgr = (typeof syncManager !== 'undefined') ? syncManager : (typeof window !== 'undefined' ? window.syncManager : null);
+      if (!activeSyncMgr) {
+        try {
+          const mod = await import('../db/syncManager.js');
+          activeSyncMgr = mod.syncManager;
+        } catch (_) {}
+      }
+      if (activeSyncMgr && activeSyncMgr.primaryAdapter && typeof activeSyncMgr.primaryAdapter.verifyLogin === 'function') {
+        const timeoutPromise = new Promise(resolve => setTimeout(() => resolve(null), 2500));
+        const apiPromise = activeSyncMgr.primaryAdapter.verifyLogin(cleanId, password, isAdminGateway);
         const apiRes = await Promise.race([apiPromise, timeoutPromise]);
         if (apiRes) {
           if (apiRes.success === false && apiRes.error) {
             // Authoritative server explicit rejection (Role mismatch, bad password, inactive)
             throw new Error(apiRes.error);
+          }
+          if (apiRes.success === true && apiRes.user) {
+            authoritativeUser = apiRes.user;
           }
         }
       }
@@ -646,9 +657,25 @@ class AuthService {
       u.employeeId?.toLowerCase() === cleanId
     );
     
-    // Verify password against local cache first (0ms)
+    // If backend verified user directly, adopt authoritative server record immediately
     let storedHash = user ? (user.password || user.passwordHash) : null;
-    let isPasswordValid = (user && storedHash) ? cryptoService.verifyPassword(password, storedHash) : false;
+    let isPasswordValid = false;
+
+    if (authoritativeUser) {
+      user = { ...(user || {}), ...authoritativeUser };
+      storedHash = user.password || user.passwordHash;
+      isPasswordValid = true;
+      const existingIdx = users.findIndex(u => u.id === user.id);
+      if (existingIdx !== -1) {
+        users[existingIdx] = { ...users[existingIdx], ...user };
+      } else {
+        users.push(user);
+      }
+      storage.data[TABLE_NAMES.USERS] = users;
+      try { storage.saveTable(TABLE_NAMES.USERS, false); } catch (_) {}
+    } else {
+      isPasswordValid = (user && storedHash) ? cryptoService.verifyPassword(password, storedHash) : false;
+    }
 
     // Fast-path: If user missing or password invalid locally, ensure fallback seeded accounts exist if needed (<1ms)
     if (!user || !isPasswordValid) {
@@ -663,12 +690,12 @@ class AuthService {
       isPasswordValid = (user && storedHash) ? cryptoService.verifyPassword(password, storedHash) : false;
     }
 
-    // If STILL not found locally or invalid, check MySQL Primary with an aggressive 1000ms timeout guard
+    // If STILL not found locally or invalid, check MySQL Primary with an aggressive timeout guard
     // so login NEVER freezes or stays spinning indefinitely on slow network
     if (!user || !isPasswordValid) {
       try {
-        console.log('[AuthService] 🐬 Checking authoritative credentials with MySQL Primary (max 1000ms)...');
-        const timeoutPromise = new Promise(resolve => setTimeout(() => resolve({ success: false, timeout: true }), 1000));
+        console.log('[AuthService] 🐬 Checking authoritative credentials with MySQL Primary (max 1500ms)...');
+        const timeoutPromise = new Promise(resolve => setTimeout(() => resolve({ success: false, timeout: true }), 1500));
         const refreshPromise = storage.refreshTableFromMySQL(TABLE_NAMES.USERS);
         const refreshRes = await Promise.race([refreshPromise, timeoutPromise]);
         if (refreshRes && refreshRes.success) {

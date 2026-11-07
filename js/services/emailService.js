@@ -24,7 +24,7 @@ export function getEmailApiBaseUrl() {
       return '';
     }
   }
-  return 'https://moviezonex.com';
+  return 'https://erp.moviezonex.com';
 }
 
 /**

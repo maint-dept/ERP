@@ -44,7 +44,7 @@ class RealtimeService {
 
     try {
       const isGhPages = typeof window !== 'undefined' && window.location && window.location.hostname.includes('github.io');
-      this._endpoint = isGhPages ? 'https://moviezonex.com/api/realtime/stream' : '/api/realtime/stream';
+      this._endpoint = isGhPages ? 'https://erp.moviezonex.com/api/realtime/stream' : '/api/realtime/stream';
       this.eventSource = new EventSource(this._endpoint);
 
       this.eventSource.onopen = () => {
@@ -259,7 +259,7 @@ class RealtimeService {
     if (!payload || !payload.table) return;
     try {
       const isGhPages = typeof window !== 'undefined' && window.location && window.location.hostname.includes('github.io');
-      const endpoint = isGhPages ? 'https://moviezonex.com/api/realtime/broadcast' : '/api/realtime/broadcast';
+      const endpoint = isGhPages ? 'https://erp.moviezonex.com/api/realtime/broadcast' : '/api/realtime/broadcast';
 
       fetch(endpoint, {
         method: 'POST',

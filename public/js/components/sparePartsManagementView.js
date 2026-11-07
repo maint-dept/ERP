@@ -17,7 +17,7 @@ import { authService } from '../services/authService.js';
 import { storage } from '../db/storage.js';
 import { TABLE_NAMES } from '../db/schema.js';
 import { notificationService } from '../services/notificationService.js';
-import { smartStorageService } from '../services/smartStorageService.js?v=4.46.0';
+import { smartStorageService } from '../services/smartStorageService.js?v=4.46.1';
 import { state } from '../state.js';
 import { openSparePartsImportModal } from './machineHistoryView.js';
 

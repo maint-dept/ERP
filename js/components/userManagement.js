@@ -20,8 +20,8 @@ import { userAccessService } from '../services/userAccessService.js';
 import { masterDataService } from '../services/masterDataService.js';
 import { employeeService } from '../services/employeeService.js';
 import { notificationService } from '../services/notificationService.js';
-import { state } from '../state.js?v=4.46.0';
-import { router } from '../services/router.js?v=4.46.0';
+import { state } from '../state.js?v=4.46.1';
+import { router } from '../services/router.js?v=4.46.1';
 
 // Active Sub-feature Section
 // 'ACCOUNTS' | 'PERMISSIONS' | 'BULK_ASSIGN' | 'PASSWORD_MGMT' | 'EXPORT_ACCOUNTS' | 'ACTIVITY_LOGS' | 'PRESETS'

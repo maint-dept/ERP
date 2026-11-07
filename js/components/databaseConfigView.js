@@ -29,7 +29,7 @@ export const PROVIDER_SPECS = {
     color: '#00758f',
     description: 'High-performance SQL database engine with InnoDB transaction guarantees. Authoritative Master database for ERP on cPanel / Paid Hosting.',
     fields: [
-      { id: 'endpoint', label: 'cPanel Hosting REST API Endpoint URL', type: 'text', placeholder: 'https://moviezonex.com/mysql_api.php', defaultValue: 'https://moviezonex.com/mysql_api.php', required: true, note: 'Upload mysql_api.php to your cPanel public_html/ and enter its full URL here.' },
+      { id: 'endpoint', label: 'cPanel Hosting REST API Endpoint URL', type: 'text', placeholder: 'https://erp.moviezonex.com/mysql_api.php', defaultValue: 'https://erp.moviezonex.com/mysql_api.php', required: true, note: 'Upload mysql_api.php to your cPanel public_html/ and enter its full URL here.' },
       { id: 'database', label: 'Database Name', type: 'text', placeholder: 'e.g. cpaneluser_dbname', defaultValue: '', required: true, note: 'In cPanel: e.g. cpaneluser_dbname' },
       { id: 'username', label: 'Database User', type: 'text', placeholder: 'e.g. cpaneluser_dbuser', defaultValue: '', required: true, note: 'In cPanel: e.g. cpaneluser_dbuser' },
       { id: 'password', label: 'Database Password', type: 'password', placeholder: 'Enter database password', defaultValue: '', required: true },
@@ -52,7 +52,7 @@ export const PROVIDER_SPECS = {
       { id: 'username', label: 'Username', type: 'text', placeholder: 'e.g. cpaneluser_dbuser', defaultValue: '', required: true },
       { id: 'password', label: 'Password', type: 'password', placeholder: 'Enter database password', defaultValue: '', required: true },
       { id: 'ssl', label: 'Require SSL / TLS', type: 'checkbox', defaultValue: false, note: 'Enable for remote cloud PostgreSQL (Supabase/Neon). Uncheck for cPanel 127.0.0.1.' },
-      { id: 'endpoint', label: 'Proxy Endpoint URL (PHP REST API)', type: 'text', placeholder: 'https://moviezonex.com/api/pg_api.php', defaultValue: 'https://moviezonex.com/api/pg_api.php', note: 'Direct TCP from browser is blocked by browsers. Communicates via pg_api.php on paid hosting or /api/db/pg.' },
+      { id: 'endpoint', label: 'Proxy Endpoint URL (PHP REST API)', type: 'text', placeholder: 'https://erp.moviezonex.com/api/pg_api.php', defaultValue: 'https://erp.moviezonex.com/api/pg_api.php', note: 'Direct TCP from browser is blocked by browsers. Communicates via pg_api.php on paid hosting or /api/db/pg.' },
       { id: 'apiKey', label: 'API Secret Key (Optional)', type: 'password', placeholder: 'e.g. secret_key_123', defaultValue: '', note: 'Matches $API_KEY defined in pg_api.php (if configured).' }
     ]
   }
@@ -170,7 +170,7 @@ function getDashboardSyncState() {
       database: 'motaherh_maint-erp',
       username: 'motaherh_mainterp',
       password: 'Maint@456',
-      endpoint: 'https://moviezonex.com/mysql_api.php',
+      endpoint: 'https://erp.moviezonex.com/mysql_api.php',
       apiKey: '',
       enabled: true,
       autoSync: true,
@@ -185,14 +185,14 @@ function getDashboardSyncState() {
     if (typeof window !== 'undefined' && window.location && window.location.hostname.includes('moviezonex.com')) {
       ep = window.location.origin + '/mysql_api.php';
     } else if (!ep || ep === '/api/db/mysql') {
-      ep = 'https://moviezonex.com/mysql_api.php';
+      ep = 'https://erp.moviezonex.com/mysql_api.php';
     } else if (ep === 'api/mysql_api.php' || ep === '/api/mysql_api.php') {
       if (typeof window !== 'undefined' && window.location && window.location.hostname.includes('github.io')) {
-        ep = 'https://moviezonex.com/mysql_api.php';
+        ep = 'https://erp.moviezonex.com/mysql_api.php';
       } else if (typeof window !== 'undefined' && window.location && window.location.origin) {
         ep = window.location.origin + '/api/mysql_api.php';
       } else {
-        ep = 'https://moviezonex.com/mysql_api.php';
+        ep = 'https://erp.moviezonex.com/mysql_api.php';
       }
     } else if (!/^https?:\/\//i.test(ep)) {
       ep = (ep.startsWith('localhost') || ep.startsWith('127.0.0.1')) ? ('http://' + ep) : ('https://' + ep);
@@ -218,7 +218,7 @@ function getDashboardSyncState() {
       database: 'motaherh_Maintenance',
       username: 'motaherh_AMG-maint',
       password: 'ol(5_MK8mF{~7cdG',
-      endpoint: 'https://moviezonex.com/api/pg_api.php',
+      endpoint: 'https://erp.moviezonex.com/api/pg_api.php',
       apiKey: '',
       ssl: false,
       enabled: true,
@@ -252,7 +252,7 @@ function getDashboardSyncState() {
         pgUpdated = true;
       }
     } else if (!pgDb.endpoint || pgDb.endpoint === 'api/pg_api.php' || !pgDb.endpoint.startsWith('http')) {
-      pgDb.endpoint = 'https://moviezonex.com/api/pg_api.php';
+      pgDb.endpoint = 'https://erp.moviezonex.com/api/pg_api.php';
       pgUpdated = true;
     }
     if (pgDb.enabled !== true) { pgDb.enabled = true; pgUpdated = true; }
@@ -459,7 +459,7 @@ export function renderDatabaseConfigView() {
   const totalMissing = state.databases.reduce((acc, d) => acc + (d.missing || 0), 0);
 
   const mysqlPrimary = (configs || []).find(c => c.id === 'mysql_primary' || (c.type === 'MYSQL' && c.role === 'PRIMARY')) || {
-    endpoint: 'https://moviezonex.com/mysql_api.php',
+    endpoint: 'https://erp.moviezonex.com/mysql_api.php',
     database: 'motaherh_maint-erp',
     username: 'motaherh_mainterp'
   };
@@ -517,7 +517,7 @@ export function renderDatabaseConfigView() {
               </span>
             </div>
             <div class="cpanel-desc-text" style="font-size: 12.5px; color: var(--text-secondary); margin-top: 3px; font-family: monospace;">
-              Endpoint: <span style="color: #0284c7; font-weight: 700;">${mysqlPrimary.endpoint || 'https://moviezonex.com/mysql_api.php'}</span> &bull; DB: <span style="color: #15803d; font-weight: 700;">${mysqlPrimary.database || 'motaherh_maint-erp'}</span> &bull; User: <span style="color: #b45309; font-weight: 700;">${mysqlPrimary.username || 'motaherh_mainterp'}</span>
+              Endpoint: <span style="color: #0284c7; font-weight: 700;">${mysqlPrimary.endpoint || 'https://erp.moviezonex.com/mysql_api.php'}</span> &bull; DB: <span style="color: #15803d; font-weight: 700;">${mysqlPrimary.database || 'motaherh_maint-erp'}</span> &bull; User: <span style="color: #b45309; font-weight: 700;">${mysqlPrimary.username || 'motaherh_mainterp'}</span>
             </div>
           </div>
         </div>
@@ -1797,7 +1797,7 @@ function renderProviderPlaceholder() {
 
             <div style="font-size: 12px; color: #cbd5e1; line-height: 1.6; font-family: monospace; background: rgba(0,0,0,0.3); padding: 10px 12px; border-radius: 6px; display: flex; flex-direction: column; gap: 3px;">
               <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                <span style="color: #64748b;">Endpoint:</span> <span style="color: #38bdf8;">${mysqlDb && mysqlDb.endpoint ? mysqlDb.endpoint : 'https://moviezonex.com/mysql_api.php'}</span>
+                <span style="color: #64748b;">Endpoint:</span> <span style="color: #38bdf8;">${mysqlDb && mysqlDb.endpoint ? mysqlDb.endpoint : 'https://erp.moviezonex.com/mysql_api.php'}</span>
               </div>
               <div>
                 <span style="color: #64748b;">Database:</span> <span style="color: #34d399;">${mysqlDb && mysqlDb.database ? mysqlDb.database : 'motaherh_maint-erp'}</span>
@@ -1908,7 +1908,7 @@ function renderProviderForm(providerKey, dbId = null) {
     if (!existing.database || existing.database === 'motaherh_maint_pg') existing.database = 'motaherh_Maintenance';
     if (!existing.username || existing.username === 'motaherh_pguser') existing.username = 'motaherh_AMG-maint';
     if (!existing.endpoint || existing.endpoint === 'api/pg_api.php' || !existing.endpoint.startsWith('http')) {
-      existing.endpoint = 'https://moviezonex.com/api/pg_api.php';
+      existing.endpoint = 'https://erp.moviezonex.com/api/pg_api.php';
     }
   }
 
@@ -1977,7 +1977,7 @@ function renderProviderForm(providerKey, dbId = null) {
         } else {
           // New connection: keep credentials (database, username, password) completely empty
           if (f.id === 'endpoint') {
-            val = f.defaultValue || (spec.key === 'MYSQL' ? 'https://moviezonex.com/mysql_api.php' : 'https://moviezonex.com/api/pg_api.php');
+            val = f.defaultValue || (spec.key === 'MYSQL' ? 'https://erp.moviezonex.com/mysql_api.php' : 'https://erp.moviezonex.com/api/pg_api.php');
           } else if (f.id === 'host') {
             val = f.defaultValue || (spec.key === 'MYSQL' ? 'localhost' : '127.0.0.1');
           } else if (f.id === 'port') {

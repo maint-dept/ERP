@@ -5,9 +5,9 @@ import { retryQueue } from './retryQueue.js';
 
 class SyncManager {
   constructor() {
-    const defaultMysqlEndpoint = (typeof window !== 'undefined' && window.location && !window.location.hostname.includes('github.io'))
+    const defaultMysqlEndpoint = (typeof window !== 'undefined' && window.location && window.location.hostname === 'erp.moviezonex.com')
       ? (window.location.origin + '/mysql_api.php')
-      : 'https://moviezonex.com/mysql_api.php';
+      : 'https://erp.moviezonex.com/mysql_api.php';
 
     this.primaryAdapter = new MysqlAdapter({
       id: 'mysql_primary',
@@ -39,9 +39,9 @@ class SyncManager {
     };
     this.secondaryAdapters = new Map(); // dbId -> adapter
 
-    const defaultPgEndpoint = (typeof window !== 'undefined' && window.location && !window.location.hostname.includes('github.io'))
+    const defaultPgEndpoint = (typeof window !== 'undefined' && window.location && window.location.hostname === 'erp.moviezonex.com')
       ? (window.location.origin + '/api/pg_api.php')
-      : 'https://moviezonex.com/api/pg_api.php';
+      : 'https://erp.moviezonex.com/api/pg_api.php';
 
     // Permanent Enterprise Secondary Backup Target (PostgreSQL)
     const defaultPg = new PostgresAdapter({
@@ -146,12 +146,12 @@ class SyncManager {
       // Always clear old adapters before rebuilding (prevents stale adapter bug)
       this.secondaryAdapters.clear();
 
-      const defaultMysqlEndpoint = (typeof window !== 'undefined' && window.location && !window.location.hostname.includes('github.io'))
+      const defaultMysqlEndpoint = (typeof window !== 'undefined' && window.location && window.location.hostname === 'erp.moviezonex.com')
         ? (window.location.origin + '/mysql_api.php')
-        : 'https://moviezonex.com/mysql_api.php';
-      const defaultPgEndpoint = (typeof window !== 'undefined' && window.location && !window.location.hostname.includes('github.io'))
+        : 'https://erp.moviezonex.com/mysql_api.php';
+      const defaultPgEndpoint = (typeof window !== 'undefined' && window.location && window.location.hostname === 'erp.moviezonex.com')
         ? (window.location.origin + '/api/pg_api.php')
-        : 'https://moviezonex.com/api/pg_api.php';
+        : 'https://erp.moviezonex.com/api/pg_api.php';
 
       if (!configs || !Array.isArray(configs) || configs.length === 0) {
         configs = [

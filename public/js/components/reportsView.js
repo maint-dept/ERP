@@ -22,9 +22,9 @@ import { notificationService } from '../services/notificationService.js';
 import { etLabService } from '../services/etLabService.js';
 import { pdfService } from '../services/pdfService.js';
 import { updateSidebarActiveState } from './sidebar.js';
-import { renderPreventiveMaintenanceReportView, initPreventiveMaintenanceReportEvents } from './preventiveMaintenanceReportView.js?v=4.46.0';
-import { state } from '../state.js?v=4.46.0';
-import { router } from '../services/router.js?v=4.46.0';
+import { renderPreventiveMaintenanceReportView, initPreventiveMaintenanceReportEvents } from './preventiveMaintenanceReportView.js?v=4.46.1';
+import { state } from '../state.js?v=4.46.1';
+import { router } from '../services/router.js?v=4.46.1';
 
 let currentReportTab = 'machines'; // 'machines', 'transfers', 'spareparts', 'export'
 let filterFloor = 'ALL';

@@ -17,7 +17,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="AMG ERP">
-  <link rel="manifest" href="manifest.json?v=4.46.0">
+  <link rel="manifest" href="manifest.json?v=4.46.1">
 
   <!-- Crisp PWA Icons & Native App Favicon -->
   <link rel="icon" type="image/x-icon" href="favicon.ico">
@@ -26,25 +26,29 @@
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
 
   <!-- High-Priority ES Module Preloading (Parallel Pipeline) -->
-  <link rel="modulepreload" href="js/app.js?v=4.46.0">
-  <link rel="modulepreload" href="js/state.js?v=4.46.0">
-  <link rel="modulepreload" href="js/db/storage.js?v=4.46.0">
-  <link rel="modulepreload" href="js/db/schema.js?v=4.46.0">
-  <link rel="modulepreload" href="js/services/authService.js?v=4.46.0">
-  <link rel="modulepreload" href="js/services/router.js?v=4.46.0">
-  <link rel="modulepreload" href="js/services/moduleLoader.js?v=4.46.0">
-  <link rel="modulepreload" href="js/components/loginView.js?v=4.46.0">
-  <link rel="modulepreload" href="js/components/sidebar.js?v=4.46.0">
-  <link rel="modulepreload" href="js/components/navbar.js?v=4.46.0">
-  <link rel="modulepreload" href="js/components/mobileNav.js?v=4.46.0">
-  <link rel="modulepreload" href="js/components/qrScannerModal.js?v=4.46.0">
-  <link rel="modulepreload" href="js/components/machinePocketCardModal.js?v=4.46.0">
-  <link rel="modulepreload" href="js/components/customNotificationModal.js?v=4.46.0">
-  <link rel="modulepreload" href="js/components/smartSearchActionModal.js?v=4.46.0">
+  <link rel="modulepreload" href="js/app.js?v=4.46.1">
+  <link rel="modulepreload" href="js/state.js?v=4.46.1">
+  <link rel="modulepreload" href="js/db/storage.js?v=4.46.1">
+  <link rel="modulepreload" href="js/db/schema.js?v=4.46.1">
+  <link rel="modulepreload" href="js/services/authService.js?v=4.46.1">
+  <link rel="modulepreload" href="js/services/router.js?v=4.46.1">
+  <link rel="modulepreload" href="js/services/moduleLoader.js?v=4.46.1">
+  <link rel="modulepreload" href="js/components/loginView.js?v=4.46.1">
+  <link rel="modulepreload" href="js/components/sidebar.js?v=4.46.1">
+  <link rel="modulepreload" href="js/components/navbar.js?v=4.46.1">
+  <link rel="modulepreload" href="js/components/mobileNav.js?v=4.46.1">
+  <link rel="modulepreload" href="js/components/qrScannerModal.js?v=4.46.1">
+  <link rel="modulepreload" href="js/components/machinePocketCardModal.js?v=4.46.1">
+  <link rel="modulepreload" href="js/components/customNotificationModal.js?v=4.46.1">
+  <link rel="modulepreload" href="js/components/smartSearchActionModal.js?v=4.46.1">
   <!-- Dynamic Base Path for GitHub Pages & Local Hosting SPA Routing -->
   <script>
     (function () {
       var l = window.location;
+      if (l.hostname === 'moviezonex.com' || l.hostname === 'www.moviezonex.com') {
+        window.location.replace('https://erp.moviezonex.com' + l.pathname + l.search + l.hash);
+        return;
+      }
       var isGh = l.pathname.toLowerCase().startsWith('/erp');
       var basePrefix = isGh ? '/ERP' : '';
 
@@ -250,10 +254,10 @@
   </script>
 
   <!-- Core ERP Stylesheets (Cache-Busted v4.36.0) -->
-  <link rel="stylesheet" href="css/app.css?v=4.46.0">
-  <link rel="stylesheet" href="css/grid.css?v=4.46.0">
-  <link rel="stylesheet" href="css/components.css?v=4.46.0">
-  <link rel="stylesheet" href="css/print.css?v=4.46.0">
+  <link rel="stylesheet" href="css/app.css?v=4.46.1">
+  <link rel="stylesheet" href="css/grid.css?v=4.46.1">
+  <link rel="stylesheet" href="css/components.css?v=4.46.1">
+  <link rel="stylesheet" href="css/print.css?v=4.46.1">
 
   <!-- Ultra-Fast Boot: All heavy third-party libraries (SheetJS, QRCode, Camera Scanner, Tesseract OCR, PDF.js) are loaded 100% on demand when explicitly requested -->
 </head>
@@ -371,8 +375,8 @@
       window.location.replace(base + '?t=' + Date.now() + window.location.hash);
     };
 
-    // Build version v4.46.0 — High-Performance & Smooth UI Engine
-    var CURRENT_BUILD = '4.46.0';
+    // Build version v4.46.1 — High-Performance & Smooth UI Engine
+    var CURRENT_BUILD = '4.46.1';
 
     // Cache Lifecycle: Only invalidate browser caches when a new build is detected
     (function () {
@@ -434,8 +438,8 @@
     })();
   </script>
 
-  <!-- Main ES Module Application Entrypoint (Cache-Busted v4.46.0) -->
-  <script type="module" src="js/app.js?v=4.46.0"></script>
+  <!-- Main ES Module Application Entrypoint (Cache-Busted v4.46.1) -->
+  <script type="module" src="js/app.js?v=4.46.1"></script>
 
   <style>
     @keyframes execBarPulse {

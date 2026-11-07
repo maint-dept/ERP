@@ -10,8 +10,8 @@
  * 5. Accessories Page (Master Catalog Stock Management, Excel Import/Export)
  */
 
-import { state } from '../state.js?v=4.46.0';
-import { toolService } from '../services/toolService.js?v=4.46.0';
+import { state } from '../state.js?v=4.46.1';
+import { toolService } from '../services/toolService.js?v=4.46.1';
 import { employeeService } from '../services/employeeService.js';
 import { authService } from '../services/authService.js';
 import { historyService } from '../services/historyService.js';

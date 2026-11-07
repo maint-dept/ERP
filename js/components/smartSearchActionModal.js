@@ -4,14 +4,14 @@
  * Universal Floor Command HUD with Strict Location & Permission Scoping
  */
 
-import { storage } from '../db/storage.js?v=4.46.0';
-import { TABLE_NAMES } from '../db/schema.js?v=4.46.0';
-import { authService } from '../services/authService.js?v=4.46.0';
-import { router } from '../services/router.js?v=4.46.0';
-import { state } from '../state.js?v=4.46.0';
-import { playScanBeep } from './qrScannerModal.js?v=4.46.0';
-import { openMachinePocketCard } from './machinePocketCardModal.js?v=4.46.0';
-import { openMachinePassportModal } from './machineHistoryView.js?v=4.46.0';
+import { storage } from '../db/storage.js?v=4.46.1';
+import { TABLE_NAMES } from '../db/schema.js?v=4.46.1';
+import { authService } from '../services/authService.js?v=4.46.1';
+import { router } from '../services/router.js?v=4.46.1';
+import { state } from '../state.js?v=4.46.1';
+import { playScanBeep } from './qrScannerModal.js?v=4.46.1';
+import { openMachinePocketCard } from './machinePocketCardModal.js?v=4.46.1';
+import { openMachinePassportModal } from './machineHistoryView.js?v=4.46.1';
 
 function escapeHtml(str) {
   if (str === null || str === undefined) return '';
