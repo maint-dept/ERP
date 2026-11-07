@@ -41,10 +41,21 @@ class AuthService {
       purgeKeys.forEach(k => {
         try { localStorage.removeItem(k); } catch (_) {}
       });
+      if (typeof localStorage !== 'undefined') {
+        for (let i = localStorage.length - 1; i >= 0; i--) {
+          const k = localStorage.key(i);
+          if (k && k.startsWith('al_muslim_erp_') && k !== 'al_muslim_erp_users' && k !== 'al_muslim_erp_settings') {
+            try { localStorage.removeItem(k); } catch (_) {}
+          }
+        }
+      }
     } catch (_) {}
   }
 
   _safeSetSessionKey(key, value) {
+    if (!this._inMemorySession) this._inMemorySession = {};
+    this._inMemorySession[key] = value;
+
     try {
       if (typeof localStorage !== 'undefined') {
         localStorage.setItem(key, value);
@@ -80,10 +91,16 @@ class AuthService {
         if (typeof sessionStorage !== 'undefined') val = sessionStorage.getItem(key);
       } catch (_) {}
     }
+    if (!val && this._inMemorySession) {
+      val = this._inMemorySession[key] || null;
+    }
     return val;
   }
 
   _safeRemoveSessionKey(key) {
+    if (this._inMemorySession) {
+      delete this._inMemorySession[key];
+    }
     try {
       if (typeof localStorage !== 'undefined') localStorage.removeItem(key);
     } catch (_) {}

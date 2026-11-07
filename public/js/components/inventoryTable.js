@@ -14,8 +14,8 @@ import { excelService, formatDisplayLine, mapFieldKeyToTableKey, isColumnKeyVisi
 import { pdfService } from '../services/pdfService.js';
 import { notificationService } from '../services/notificationService.js';
 import { qrCodeService } from '../services/qrCodeService.js';
-import { renderQrScannerModal, initQrScannerModalEvents } from './qrScannerModal.js?v=4.45.0';
-import { openMachinePocketCard } from './machinePocketCardModal.js?v=4.45.0';
+import { renderQrScannerModal, initQrScannerModalEvents } from './qrScannerModal.js?v=4.46.0';
+import { openMachinePocketCard } from './machinePocketCardModal.js?v=4.46.0';
 import { state } from '../state.js';
 
 // Local UI state for collapsible advanced filters

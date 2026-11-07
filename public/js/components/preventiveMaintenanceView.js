@@ -19,9 +19,9 @@
  * 12. Admin Schedule Configuration (Machine Type Intervals & Inspection Checklists)
  */
 
-import { state } from '../state.js?v=4.45.0';
-import { router } from '../services/router.js?v=4.45.0';
-import { authService } from '../services/authService.js?v=4.45.0';
+import { state } from '../state.js?v=4.46.0';
+import { router } from '../services/router.js?v=4.46.0';
+import { authService } from '../services/authService.js?v=4.46.0';
 import { barcodeService } from '../services/barcodeService.js';
 import { masterDataService } from '../services/masterDataService.js';
 import { preventiveMaintenanceService } from '../services/preventiveMaintenanceService.js';
@@ -29,9 +29,9 @@ import { machineService } from '../services/machineService.js';
 import { employeeService } from '../services/employeeService.js';
 import { notificationService } from '../services/notificationService.js';
 import { excelService } from '../services/excelService.js';
-import { storage } from '../db/storage.js?v=4.45.0';
-import { TABLE_NAMES } from '../db/schema.js?v=4.45.0';
-import { renderPreventiveMaintenanceReportView, initPreventiveMaintenanceReportEvents } from './preventiveMaintenanceReportView.js?v=4.45.0';
+import { storage } from '../db/storage.js?v=4.46.0';
+import { TABLE_NAMES } from '../db/schema.js?v=4.46.0';
+import { renderPreventiveMaintenanceReportView, initPreventiveMaintenanceReportEvents } from './preventiveMaintenanceReportView.js?v=4.46.0';
 
 // Local view state to preserve working session across tab switches
 let activeTab = 'dashboard'; // 'dashboard' | 'pending-approvals' | 'recently-serviced' | 'machine-profile' | 'master-schedule' | 'admin-config' | 'maintenance-report'

@@ -4,11 +4,11 @@
  * Instantaneous, Zero-Internet Local HUD Profile for Factory Floor Operators
  */
 
-import { storage } from '../db/storage.js?v=4.45.0';
-import { TABLE_NAMES } from '../db/schema.js?v=4.45.0';
-import { authService } from '../services/authService.js?v=4.45.0';
-import { router } from '../services/router.js?v=4.45.0';
-import { state } from '../state.js?v=4.45.0';
+import { storage } from '../db/storage.js?v=4.46.0';
+import { TABLE_NAMES } from '../db/schema.js?v=4.46.0';
+import { authService } from '../services/authService.js?v=4.46.0';
+import { router } from '../services/router.js?v=4.46.0';
+import { state } from '../state.js?v=4.46.0';
 
 function escapeHtml(str) {
   if (str === null || str === undefined) return '';
