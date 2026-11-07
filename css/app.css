@@ -335,9 +335,23 @@ body.modal-open div {
 
   .app-container.sidebar-mini .btn-sidebar-collapse,
   .app-container.sidebar-hidden .btn-sidebar-collapse {
-    color: #38bdf8;
-    border-color: rgba(56, 189, 248, 0.45);
-    background: rgba(56, 189, 248, 0.15);
+    width: 32px !important;
+    height: 32px !important;
+    color: #cbd5e1 !important;
+    border-color: rgba(255, 255, 255, 0.15) !important;
+    background: rgba(255, 255, 255, 0.06) !important;
+    border-radius: 8px !important;
+    margin: 0 auto !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  .app-container.sidebar-mini .btn-sidebar-collapse:hover,
+  .app-container.sidebar-hidden .btn-sidebar-collapse:hover {
+    color: #38bdf8 !important;
+    border-color: rgba(56, 189, 248, 0.5) !important;
+    background: rgba(56, 189, 248, 0.18) !important;
   }
 
   .app-container.sidebar-mini .btn-sidebar-toggle,
@@ -444,19 +458,18 @@ body.modal-open div {
   .app-container.sidebar-mini .nav-group-header,
   .app-container.sidebar-hidden .nav-item,
   .app-container.sidebar-hidden .nav-group-header {
-    padding: 6px 0 !important;
+    padding: 0 !important;
     width: 44px !important;
-    height: 40px !important;
+    height: 42px !important;
+    display: flex !important;
+    align-items: center !important;
     justify-content: center !important;
-    margin: 2px auto !important;
-    border-left: 1px solid transparent !important;
-  }
-
-  .app-container.sidebar-mini .nav-item.active,
-  .app-container.sidebar-hidden .nav-item.active {
-    border: 1px solid rgba(56, 189, 248, 0.45) !important;
-    border-radius: 8px !important;
-    background: rgba(56, 189, 248, 0.15) !important;
+    margin: 4px auto !important;
+    border-radius: 9px !important;
+    border: 1px solid transparent !important;
+    background: transparent !important;
+    color: #94a3b8 !important;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
   }
 
   .app-container.sidebar-mini .nav-item:hover,
@@ -464,13 +477,27 @@ body.modal-open div {
   .app-container.sidebar-hidden .nav-item:hover,
   .app-container.sidebar-hidden .nav-group-header:hover {
     transform: none !important;
-    background: rgba(56, 189, 248, 0.12) !important;
+    background: rgba(255, 255, 255, 0.08) !important;
+    border-color: rgba(255, 255, 255, 0.12) !important;
+    color: #ffffff !important;
+  }
+
+  .app-container.sidebar-mini .nav-item.active,
+  .app-container.sidebar-mini .nav-group-header.parent-active,
+  .app-container.sidebar-hidden .nav-item.active,
+  .app-container.sidebar-hidden .nav-group-header.parent-active {
+    border: 1px solid rgba(56, 189, 248, 0.45) !important;
+    border-radius: 9px !important;
+    background: rgba(2, 132, 199, 0.18) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+    color: #38bdf8 !important;
   }
 
   .app-container.sidebar-mini .nav-group-title,
   .app-container.sidebar-hidden .nav-group-title {
     justify-content: center !important;
     width: 100% !important;
+    height: 100% !important;
     gap: 0 !important;
   }
 
@@ -488,10 +515,22 @@ body.modal-open div {
 
   .app-container.sidebar-mini .nav-icon-box,
   .app-container.sidebar-hidden .nav-icon-box {
-    width: 32px !important;
-    height: 32px !important;
-    font-size: 16px !important;
-    margin: 0 auto !important;
+    width: 100% !important;
+    height: 100% !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin: 0 !important;
+    color: inherit !important;
+  }
+
+  .app-container.sidebar-mini .nav-icon-box svg,
+  .app-container.sidebar-hidden .nav-icon-box svg {
+    width: 20px !important;
+    height: 20px !important;
   }
 
   /* Mini Submenus (Only Sub-icons Visible) */
@@ -505,12 +544,35 @@ body.modal-open div {
 
   .app-container.sidebar-mini .nav-subitem,
   .app-container.sidebar-hidden .nav-subitem {
-    padding: 5px 0 !important;
-    width: 38px !important;
-    height: 34px !important;
-    margin: 2px auto !important;
+    padding: 0 !important;
+    width: 40px !important;
+    height: 38px !important;
+    margin: 3px auto !important;
+    display: flex !important;
+    align-items: center !important;
     justify-content: center !important;
-    border-radius: 6px !important;
+    border-radius: 8px !important;
+    border: 1px solid transparent !important;
+    background: transparent !important;
+    color: #94a3b8 !important;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  }
+
+  .app-container.sidebar-mini .nav-subitem:hover,
+  .app-container.sidebar-hidden .nav-subitem:hover {
+    transform: none !important;
+    background: rgba(255, 255, 255, 0.08) !important;
+    border-color: rgba(255, 255, 255, 0.12) !important;
+    color: #ffffff !important;
+  }
+
+  .app-container.sidebar-mini .nav-subitem.active,
+  .app-container.sidebar-hidden .nav-subitem.active {
+    border: 1px solid rgba(56, 189, 248, 0.45) !important;
+    border-radius: 8px !important;
+    background: rgba(2, 132, 199, 0.18) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+    color: #38bdf8 !important;
   }
 
   .app-container.sidebar-mini .nav-subitem > span:not(.sub-icon-box),
@@ -520,10 +582,22 @@ body.modal-open div {
 
   .app-container.sidebar-mini .sub-icon-box,
   .app-container.sidebar-hidden .sub-icon-box {
-    width: 26px !important;
-    height: 26px !important;
-    font-size: 13px !important;
-    margin: 0 auto !important;
+    width: 100% !important;
+    height: 100% !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin: 0 !important;
+    color: inherit !important;
+  }
+
+  .app-container.sidebar-mini .sub-icon-box svg,
+  .app-container.sidebar-hidden .sub-icon-box svg {
+    width: 18px !important;
+    height: 18px !important;
   }
 
   /* Mini Footer */
@@ -815,28 +889,38 @@ body.modal-open div {
 }
 
 .nav-icon-box {
-  width: 26px;
-  height: 26px;
-  border-radius: 6px;
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
   background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.07);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 13px;
   flex-shrink: 0;
-  transition: all 0.2s ease;
+  color: #94a3b8;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.nav-icon-box svg,
+.sub-icon-box svg {
+  display: block;
+  pointer-events: none;
+  flex-shrink: 0;
+  transition: color 0.18s ease, stroke 0.18s ease, transform 0.18s ease;
 }
 
 .nav-item:hover .nav-icon-box, .nav-group-header:hover .nav-icon-box {
   background: rgba(56, 189, 248, 0.12);
-  border-color: rgba(56, 189, 248, 0.25);
+  border-color: rgba(56, 189, 248, 0.3);
+  color: #38bdf8;
 }
 
 .nav-item.active .nav-icon-box, .nav-group-header.parent-active .nav-icon-box {
-  background: rgba(56, 189, 248, 0.16);
-  border-color: rgba(56, 189, 248, 0.35);
-  box-shadow: none;
+  background: rgba(2, 132, 199, 0.24);
+  border-color: rgba(56, 189, 248, 0.45);
+  color: #38bdf8;
+  box-shadow: 0 1px 4px rgba(2, 132, 199, 0.25);
 }
 
 .group-chevron {
@@ -935,20 +1019,29 @@ body.modal-open div {
 }
 
 .sub-icon-box {
-  width: 20px;
-  height: 20px;
-  border-radius: 4px;
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
   background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 11.5px;
   flex-shrink: 0;
-  transition: all 0.15s ease;
+  color: #94a3b8;
+  transition: all 0.18s ease;
+}
+
+.nav-subitem:hover .sub-icon-box {
+  background: rgba(56, 189, 248, 0.12);
+  border-color: rgba(56, 189, 248, 0.25);
+  color: #38bdf8;
 }
 
 .nav-subitem.active .sub-icon-box {
-  background: rgba(56, 189, 248, 0.15);
+  background: rgba(2, 132, 199, 0.22);
+  border-color: rgba(56, 189, 248, 0.4);
+  color: #38bdf8;
 }
 
 /* Filter / Search Hide Class */
@@ -1101,6 +1194,13 @@ body.modal-open div {
   font-size: 18px;
   flex-shrink: 0;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.header-view-icon-wrap svg {
+  width: 20px;
+  height: 20px;
+  display: block;
+  stroke: #38bdf8;
 }
 
 .header-title-container {

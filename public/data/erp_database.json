@@ -321077,7 +321077,7 @@
         "enabled": true,
         "autoSync": true,
         "retryEnabled": true,
-        "updatedAt": "2026-11-07T12:26:14.605Z"
+        "updatedAt": "2026-11-07T14:52:56.762Z"
       },
       {
         "id": "db_postgresql_replica",
@@ -321095,7 +321095,8 @@
         "enabled": true,
         "autoSync": true,
         "retryEnabled": true,
-        "updatedAt": "2026-11-07T12:26:14.605Z"
+        "updatedAt": "2026-11-07T14:52:56.762Z",
+        "lastSync": "11/7/2026, 9:53:03 AM"
       }
     ],
     "emailConfig": {
@@ -333011,12 +333012,12 @@
         ]
       },
       "createdAt": "2026-01-01T00:00:00Z",
-      "lastLoginAt": "2026-11-07T08:26:35.792Z",
-      "updatedAt": "2026-11-07T12:26:17.417Z",
+      "lastLoginAt": "2026-11-07T14:25:19.785Z",
+      "updatedAt": "2026-11-07T14:52:57.691Z",
       "presetId": "preset_super_admin",
       "presetName": "Super Admin",
       "passwordHash": "$sha256$6ad526a0cf737517d4609e058dc306b2$454c146535308e78f7597aa51ac660a043569dd70843ec7b9e0b50be956f14b3",
-      "version": 2
+      "version": 4
     },
     {
       "id": "usr-1789211116425-361",
@@ -344330,6 +344331,26 @@
       "timestamp": "2026-11-07T08:26:35.793Z",
       "createdAt": "2026-11-07T08:26:35.793Z",
       "updatedAt": "2026-11-07T08:26:35.793Z"
+    },
+    {
+      "id": "aud-1794061519787-664",
+      "userId": "usr-super-admin",
+      "username": "motaher",
+      "action": "USER_LOGIN",
+      "entity": "USER",
+      "entityId": "usr-super-admin",
+      "details": "User 'Engr. Motaher Hossain' (motaher.cse@gmail.com) logged in successfully as [SUPER_ADMIN].",
+      "oldData": null,
+      "newData": {
+        "username": "motaher",
+        "email": "motaher.cse@gmail.com",
+        "role": "SUPER_ADMIN",
+        "loginAt": "2026-11-07T14:25:19.785Z"
+      },
+      "ip": "127.0.0.1",
+      "timestamp": "2026-11-07T14:25:19.787Z",
+      "createdAt": "2026-11-07T14:25:19.787Z",
+      "updatedAt": "2026-11-07T14:25:19.787Z"
     }
   ],
   "notifications": [
