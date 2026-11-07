@@ -15,6 +15,7 @@ import { pdfService } from '../services/pdfService.js';
 import { notificationService } from '../services/notificationService.js';
 import { preventiveMaintenanceService } from '../services/preventiveMaintenanceService.js';
 import { state } from '../state.js';
+import { icon, replaceEmojiInHtml } from './icons.js?v=4.47.0';
 
 let activeApprovalTab = 'transfers'; // 'transfers' | 'edits' | 'pm-servicing'
 let transferFilter = 'PENDING'; // 'ALL' | 'PENDING' | 'COMPLETED' | 'REJECTED'
@@ -51,7 +52,7 @@ export function renderApprovalCenter() {
   const pmPendingCount = pmPendingRecords.length;
   const canApprovePm = isAdmin || authService.isSuperAdmin() || authService.hasAccess('preventive_maintenance', 'APPROVE');
 
-  return `
+  return replaceEmojiInHtml(`
     <div class="page-view">
       <!-- Header -->
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
@@ -405,7 +406,7 @@ export function renderApprovalCenter() {
         </div>
       `}
     </div>
-  `;
+  `);
 }
 
 export function initApprovalCenterEvents() {

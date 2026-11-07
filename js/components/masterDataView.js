@@ -12,6 +12,7 @@ import { authService } from '../services/authService.js';
 import { notificationService } from '../services/notificationService.js';
 import { state } from '../state.js?v=4.46.1';
 import { router } from '../services/router.js?v=4.46.1';
+import { icon, replaceEmojiInHtml } from './icons.js?v=4.47.0';
 
 let activeTab = 'fast-entry'; // 'fast-entry', 'tree', 'groups', 'units', 'floors', 'lines', 'machinenames', 'brands', 'models'
 let cascadeGroupId = '';
@@ -44,7 +45,7 @@ export function renderMasterDataView() {
   const brands = masterDataService.getBrands(true);
   const models = masterDataService.getModels(null, null, true);
 
-  return `
+  return replaceEmojiInHtml(`
     <div class="page-view" style="padding: 8px 14px; display: flex; flex-direction: column; gap: 8px; box-sizing: border-box;">
       
       <!-- Unified Compact Top Header: Title, Main Views, Tables & Action -->
@@ -114,7 +115,7 @@ export function renderMasterDataView() {
       <!-- Modal Layer (Add / Edit / View / Dependency Dialog) -->
       ${renderMasterModalDOM()}
     </div>
-  `;
+  `);
 }
 
 function getEntityDisplayName(tab) {

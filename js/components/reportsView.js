@@ -25,6 +25,7 @@ import { updateSidebarActiveState } from './sidebar.js';
 import { renderPreventiveMaintenanceReportView, initPreventiveMaintenanceReportEvents } from './preventiveMaintenanceReportView.js?v=4.46.1';
 import { state } from '../state.js?v=4.46.1';
 import { router } from '../services/router.js?v=4.46.1';
+import { icon, replaceEmojiInHtml } from './icons.js?v=4.47.0';
 
 let currentReportTab = 'machines'; // 'machines', 'transfers', 'spareparts', 'export'
 let filterFloor = 'ALL';
@@ -87,7 +88,7 @@ export function renderReportsView() {
   // Spare parts replacement logs
   const replacementLogs = allHistory.filter(h => h.actionType === 'SPARE_PART_REPLACEMENT' || h.sparePart);
 
-  return `
+  return replaceEmojiInHtml(`
     <div class="page-view reports-page-wrapper">
       
       <!-- Top Title Bar (Ultra Compact Header) -->
@@ -173,7 +174,7 @@ export function renderReportsView() {
         ${renderActiveTabHtml({ allMachines, allTransfers, completedTransfers, replacementLogs, sparePartsMaster, etLabBoards, floors })}
       </div>
     </div>
-  `;
+  `);
 }
 
 function renderActiveTabHtml({ allMachines, allTransfers, completedTransfers, replacementLogs, sparePartsMaster, etLabBoards, floors }) {

@@ -19,6 +19,7 @@ import { tempImportService } from '../services/tempImportService.js';
 import { notificationService } from '../services/notificationService.js';
 import { storage } from '../db/storage.js';
 import { TABLE_NAMES } from '../db/schema.js';
+import { icon, replaceEmojiInHtml } from './icons.js?v=4.47.0';
 
 // Local component state to preserve active working session
 let currentActiveTab = 'tools-add'; // 'tools-add' | 'print-page' | 'find-select' | 'accessories-page' | 'database-page'
@@ -267,7 +268,7 @@ export function renderToolsManagementView() {
   currentActiveTab = activeTab;
   const currentTabTheme = TOOLS_TAB_CONFIG[activeTab] || TOOLS_TAB_CONFIG['tools-add'];
 
-  return `
+  return replaceEmojiInHtml(`
     <div class="page-view tools-management-view" id="tools-mgmt-root" style="padding: 0 14px 14px 14px; display: flex; flex-direction: column; gap: 8px; min-height: 100%;">
       
       <style>
@@ -342,7 +343,7 @@ export function renderToolsManagementView() {
       <div id="tools-modal-layer"></div>
 
     </div>
-  `;
+  `);
 }
 
 function renderActiveTab(tab) {

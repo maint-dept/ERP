@@ -10,6 +10,7 @@ import { customFieldService } from '../services/customFieldService.js';
 import { authService } from '../services/authService.js';
 import { notificationService } from '../services/notificationService.js';
 import { state } from '../state.js';
+import { icon, replaceEmojiInHtml } from './icons.js?v=4.47.0';
 
 let activeTab = 'structure'; // 'structure', 'template', 'history'
 
@@ -23,7 +24,7 @@ export function renderExcelManagerView() {
   const customFields = customFieldService.getAllFields();
   const importHistory = storage.getTable(TABLE_NAMES.IMPORT_HISTORY) || [];
 
-  return `
+  return replaceEmojiInHtml(`
     <div class="page-view" style="padding: 10px 14px; gap: 10px;">
       <!-- Title Bar -->
       <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
@@ -54,7 +55,7 @@ export function renderExcelManagerView() {
       <!-- Tab Content Area -->
       ${renderTabContent(activeTab, struct, columns, customFields, importHistory)}
     </div>
-  `;
+  `);
 }
 
 function renderTabContent(tab, struct, columns, customFields, importHistory) {

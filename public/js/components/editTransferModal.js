@@ -13,6 +13,7 @@ import { transferService, resolveTransferMachineDetails } from '../services/tran
 import { authService } from '../services/authService.js';
 import { notificationService } from '../services/notificationService.js';
 import { state } from '../state.js';
+import { icon, replaceEmojiInHtml } from './icons.js?v=4.47.0';
 
 let editSelectedDest = {
   groupId: '',
@@ -26,7 +27,7 @@ let editAttachedDocs = [];
 export function renderEditTransferModal() {
   const requestId = state.get('activeTransferRequestId');
   if (!requestId) {
-    return `
+    return replaceEmojiInHtml(`
       <div class="modal-overlay" id="modal-edit-transfer-overlay">
         <div class="modal-dialog" style="max-width: 500px; padding: 24px; text-align: center;">
           <div style="font-size: 32px; margin-bottom: 8px;">⚠️</div>
@@ -34,12 +35,12 @@ export function renderEditTransferModal() {
           <button type="button" id="btn-close-edit-transfer-fallback" class="btn btn-secondary btn-sm" style="margin-top: 14px;">Close</button>
         </div>
       </div>
-    `;
+    `);
   }
 
   const req = transferService.getTransferRequestById(requestId);
   if (!req) {
-    return `
+    return replaceEmojiInHtml(`
       <div class="modal-overlay" id="modal-edit-transfer-overlay">
         <div class="modal-dialog" style="max-width: 500px; padding: 24px; text-align: center;">
           <div style="font-size: 32px; margin-bottom: 8px;">❌</div>
@@ -47,7 +48,7 @@ export function renderEditTransferModal() {
           <button type="button" id="btn-close-edit-transfer-fallback" class="btn btn-secondary btn-sm" style="margin-top: 14px;">Close</button>
         </div>
       </div>
-    `;
+    `);
   }
 
   const eq = resolveTransferMachineDetails(req);
@@ -59,7 +60,7 @@ export function renderEditTransferModal() {
   const isAdmin = authService.isAdmin();
 
   if ((isCompleted || isRejected) && !isAdmin) {
-    return `
+    return replaceEmojiInHtml(`
       <div class="modal-overlay" id="modal-edit-transfer-overlay">
         <div class="modal-dialog" style="max-width: 540px; padding: 24px; text-align: center; background: #0f172a; border: 1.5px solid #ef4444;">
           <div style="font-size: 36px; margin-bottom: 8px;">🔒</div>
@@ -73,7 +74,7 @@ export function renderEditTransferModal() {
           </button>
         </div>
       </div>
-    `;
+    `);
   }
 
   // Pre-seed selected destination from existing request if not already modified
@@ -94,7 +95,7 @@ export function renderEditTransferModal() {
   const lines = destFloorId ? masterDataService.getLines(destFloorId, null, null, false, true) : [];
   const destLineId = editSelectedDest.lineId || req.destLineId || '';
 
-  return `
+  return replaceEmojiInHtml(`
     <div class="modal-overlay" id="modal-edit-transfer-overlay">
       <div class="modal-dialog modal-dialog-lg" style="max-width: 880px; max-height: 90vh; display: flex; flex-direction: column; min-height: 0;">
         
@@ -277,7 +278,7 @@ export function renderEditTransferModal() {
 
       </div>
     </div>
-  `;
+  `);
 }
 
 function renderEditAttachedDocsHtml() {
@@ -286,8 +287,9 @@ function renderEditAttachedDocsHtml() {
   }
   return editAttachedDocs.map((doc, idx) => `
     <div style="background: var(--bg-surface); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 4px; padding: 6px 10px; display: flex; justify-content: space-between; align-items: center; font-size: 11.5px;">
-      <div>
-        <strong style="color: #fff;">📄 ${doc.name}</strong>
+      <div style="display: flex; align-items: center; gap: 6px;">
+        <span style="display: inline-flex; align-items: center;">${icon('fileText', { size: 14, color: '#38bdf8' })}</span>
+        <strong style="color: #fff;">${doc.name}</strong>
         <span style="color: var(--text-muted); margin-left: 6px;">(${doc.size || 'Attachment'})</span>
       </div>
       <button type="button" class="btn-remove-edit-doc" data-idx="${idx}" style="background: none; border: none; color: #f87171; cursor: pointer; font-weight: 800; font-size: 13px;" title="Remove attachment">✕</button>
@@ -648,7 +650,7 @@ export function initEditTransferModalEvents() {
       const submitBtn = document.getElementById('btn-save-edit-transfer');
       const cancelBtn = document.getElementById('btn-cancel-edit-transfer');
       const closeBtn = document.getElementById('btn-close-edit-transfer-modal');
-      const originalText = submitBtn ? submitBtn.innerHTML : '💾 Save & Update Transfer Request';
+      const originalText = submitBtn ? submitBtn.innerHTML : `${icon('save', { size: 14, color: '#fff' })} Save & Update Transfer Request`;
 
       try {
         const destGroupId = groupSelect?.value;

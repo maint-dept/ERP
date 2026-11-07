@@ -45,6 +45,7 @@ import { notificationService } from '../services/notificationService.js';
 import { auditService } from '../services/auditService.js';
 import { pdfService } from '../services/pdfService.js';
 import { state } from '../state.js';
+import { icon, replaceEmojiInHtml } from './icons.js?v=4.47.0';
 
 // Local State for the Preventive Maintenance Report Module
 let reportState = {
@@ -819,7 +820,7 @@ export function renderPreventiveMaintenanceReportView() {
   const curPage = Math.min(reportState.page, totalPages);
   const filledCount = reportState.rows.filter(r => r.machineNumber && r.machineNumber.trim()).length;
 
-  return `
+  return replaceEmojiInHtml(`
     <div class="pm-report-module-wrapper" style="display: flex; flex-direction: column; gap: 8px; width: 100%; box-sizing: border-box;">
       
       <!-- Embedded Typography, Text-Wrap & Fixed A4 Landscape Layout Rules -->
@@ -1646,7 +1647,7 @@ export function renderPreventiveMaintenanceReportView() {
       </div>
 
     </div>
-  `;
+  `);
 }
 
 /**

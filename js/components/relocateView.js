@@ -13,6 +13,7 @@ import { notificationService } from '../services/notificationService.js';
 import { renderQrScannerModal, initQrScannerModalEvents, playScanBeep } from './qrScannerModal.js?v=4.46.1';
 import { state } from '../state.js?v=4.46.1';
 import { needleService } from '../services/needleService.js?v=4.46.1';
+import { icon, replaceEmojiInHtml } from './icons.js?v=4.47.0';
 
 let activeTab = 'scan'; // 'scan' | 'idle' | 'approvals' | 'history' | 'needle'
 let needleFilterUnitId = '';
@@ -49,7 +50,7 @@ export function renderRelocateView() {
   const idleMachines = relocateService.getIdleMachines();
   const allSessions = relocateService.getAllSessions();
 
-  return `
+  return replaceEmojiInHtml(`
     <div class="page-view relocate-view-root" id="relocate-page-root">
       
       <!-- Top Title & Navigation Bar (Compact & Space Efficient) -->
@@ -850,7 +851,7 @@ export function renderRelocateView() {
         }
       }
     </style>
-  `;
+  `);
 }
 
 function renderActiveTabContent(activeSession, pendingApprovals, idleMachines, allSessions) {

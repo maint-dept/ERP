@@ -17,6 +17,7 @@ import { storage } from '../db/storage.js';
 import { TABLE_NAMES } from '../db/schema.js';
 import { state } from '../state.js';
 import { router } from '../services/router.js';
+import { icon, replaceEmojiInHtml } from './icons.js?v=4.47.0';
 
 let activeCustomNotifTab = 'compose'; // 'compose' or 'history'
 
@@ -102,7 +103,7 @@ const ALERT_PRESETS = [
 export function renderCustomNotificationModal() {
   const currentUser = authService.getCurrentUser();
   if (!authService.canBroadcastNotification(currentUser)) {
-    return `
+    return replaceEmojiInHtml(`
       <div id="modal-custom-notification-overlay" class="modal-backdrop custom-notif-modal-backdrop" style="position: fixed; inset: 0; background: rgba(2, 6, 23, 0.85); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 100050; display: flex; align-items: center; justify-content: center; padding: 16px;">
         <div style="background: #0f172a; border: 1.5px solid #ef4444; border-radius: 16px; padding: 28px; max-width: 440px; text-align: center; color: #fff; box-shadow: 0 20px 50px rgba(0,0,0,0.8);">
           <div style="font-size: 40px; margin-bottom: 12px;">⛔</div>
@@ -111,7 +112,7 @@ export function renderCustomNotificationModal() {
           <button id="btn-close-custom-notif-modal" class="btn btn-primary btn-sm" style="font-weight: 700; padding: 6px 18px;">Understood</button>
         </div>
       </div>
-    `;
+    `);
   }
 
   const units = storage.getTable(TABLE_NAMES.UNITS) || [];
@@ -120,7 +121,7 @@ export function renderCustomNotificationModal() {
   const allUsers = authService.getAllUsers() || [];
   const sentAlerts = notificationService.getSentCustomAlerts(currentUser) || [];
 
-  return `
+  return replaceEmojiInHtml(`
     <div id="modal-custom-notification-overlay" class="modal-backdrop custom-notif-modal-backdrop" style="position: fixed; inset: 0; background: rgba(2, 6, 23, 0.82); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 100050; display: flex; align-items: center; justify-content: center; padding: 16px; overflow-y: auto;">
       <div class="custom-notif-dialog" style="width: 100%; max-width: 740px; background: #0f172a; border: 1px solid rgba(56, 189, 248, 0.28); border-radius: 18px; box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.85), 0 0 35px rgba(56, 189, 248, 0.15); display: flex; flex-direction: column; overflow: hidden; max-height: 92vh;">
         
@@ -465,7 +466,7 @@ export function renderCustomNotificationModal() {
 
       </div>
     </div>
-  `;
+  `);
 }
 
 /**

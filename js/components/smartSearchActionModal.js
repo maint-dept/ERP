@@ -12,6 +12,7 @@ import { state } from '../state.js?v=4.46.1';
 import { playScanBeep } from './qrScannerModal.js?v=4.46.1';
 import { openMachinePocketCard } from './machinePocketCardModal.js?v=4.46.1';
 import { openMachinePassportModal } from './machineHistoryView.js?v=4.46.1';
+import { icon, replaceEmojiInHtml } from './icons.js?v=4.47.0';
 
 function escapeHtml(str) {
   if (str === null || str === undefined) return '';
@@ -446,7 +447,7 @@ export function openSmartMachineActionModal(machineOrQuery) {
     </div>
   `;
 
-  document.body.insertAdjacentHTML('beforeend', modalHtml);
+  document.body.insertAdjacentHTML('beforeend', replaceEmojiInHtml(modalHtml));
 
   // Wire Events
   const overlay = document.getElementById('smart-action-modal-overlay');
@@ -1056,7 +1057,7 @@ function showNotFoundActionDialog(query) {
       </div>
     </div>
   `;
-  document.body.insertAdjacentHTML('beforeend', notFoundHtml);
+  document.body.insertAdjacentHTML('beforeend', replaceEmojiInHtml(notFoundHtml));
   const closeBtn = document.getElementById('btn-close-not-found-smart');
   if (closeBtn) closeBtn.addEventListener('click', () => closeSmartMachineActionModal());
   const overlay = document.getElementById('smart-action-modal-overlay');

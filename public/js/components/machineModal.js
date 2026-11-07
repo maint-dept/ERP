@@ -19,6 +19,7 @@ import { qrCodeService } from '../services/qrCodeService.js';
 import { renderQrScannerModal, initQrScannerModalEvents } from './qrScannerModal.js?v=4.46.1';
 import { notificationGateway } from '../services/notificationGatewayService.js?v=4.46.1';
 import { state } from '../state.js';
+import { icon, replaceEmojiInHtml } from './icons.js?v=4.47.0';
 
 function escapeHtml(str) {
   if (str === null || str === undefined) return '';
@@ -252,7 +253,7 @@ export function renderMachineModal() {
   const rawAssetId = machine?.systemAssetId || (machine?.permanentMachineId ? String(machine.permanentMachineId).replace(/^MID-/i, 'AMG-MNT-') : '');
   const currentSystemAssetId = rawAssetId || (isEdit ? '—' : nextAssetIdPreview);
 
-  return `
+  return replaceEmojiInHtml(`
     <div class="modal-overlay" id="modal-machine-overlay">
       <div class="modal-dialog modal-dialog-lg" style="max-width: 960px; width: 100%; max-height: 92vh; display: flex; flex-direction: column;">
         <div class="modal-header" style="background: linear-gradient(135deg, #0f172a, #1e293b); border-bottom: 1px solid rgba(56, 189, 248, 0.2); padding: 14px 22px;">
@@ -749,7 +750,7 @@ export function renderMachineModal() {
         </div>
       </div>
     </div>
-  `;
+  `);
 }
 
 export function initMachineModalEvents() {

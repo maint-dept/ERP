@@ -14,6 +14,7 @@ import { authService } from '../services/authService.js';
 import { workflowService } from '../services/workflowService.js';
 import { notificationService } from '../services/notificationService.js';
 import { state } from '../state.js';
+import { icon, replaceEmojiInHtml } from './icons.js?v=4.47.0';
 
 let transferSearchQuery = '';
 let transferStatusFilter = 'ALL';
@@ -67,7 +68,7 @@ export function renderTransfersView() {
     `;
   }
 
-  return `
+  return replaceEmojiInHtml(`
     <div class="page-view transfers-page-wrapper">
 
       <!-- ── Single Tight Toolbar Row: Title + KPIs + Actions ── -->
@@ -337,7 +338,7 @@ export function renderTransfersView() {
       ` : ''}
 
     </div>
-  `;
+  `);
 }
 
 export function initTransfersViewEvents() {
@@ -434,7 +435,7 @@ export function initTransfersViewEvents() {
       const originalText = btn.innerHTML;
       try {
         btn.disabled = true;
-        btn.innerHTML = '⚡ Approved!';
+        btn.innerHTML = `${icon('checkCircle', { size: 14, color: '#34d399' })} Approved!`;
         await transferService.approveStep(id, '1-Click Approved for relocation.');
         notificationService.success(`Transfer Request ${req.requestNumber} approved successfully!`);
         state.emit('inventory:updated');

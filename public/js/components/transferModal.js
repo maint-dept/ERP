@@ -22,6 +22,7 @@ import { notificationService } from '../services/notificationService.js';
 import { qrCodeService } from '../services/qrCodeService.js';
 import { renderQrScannerModal, initQrScannerModalEvents } from './qrScannerModal.js?v=4.46.1';
 import { state } from '../state.js';
+import { icon, replaceEmojiInHtml } from './icons.js?v=4.47.0';
 
 let attachedDocuments = [];
 let serialSearchQuery = '';
@@ -111,7 +112,7 @@ export function renderTransferModal() {
   const currentPath = machine ? `${currentGroupName ? currentGroupName + ' > ' : ''}${machine.unit?.name || 'Unit'} > ${machine.floor?.name || 'Floor'} > ${machine.line?.name || 'Line'}` : 'Not Selected';
   const currentFloorName = machine?.floor?.name || 'Current Floor';
 
-  return `
+  return replaceEmojiInHtml(`
     <div class="modal-overlay" id="modal-transfer-overlay">
       <div class="modal-dialog modal-dialog-lg" style="max-width: 900px; max-height: 90vh; display: flex; flex-direction: column; min-height: 0; background: var(--bg-card); border: 1.5px solid var(--border-color); box-shadow: 0 25px 60px rgba(0,0,0,0.5);">
         
@@ -415,7 +416,7 @@ export function renderTransferModal() {
         </div>
       </div>
     </div>
-  `;
+  `);
 }
 
 function renderAttachedDocsHtml() {
@@ -428,14 +429,14 @@ function renderAttachedDocsHtml() {
   }
 
   return attachedDocuments.map((doc, idx) => {
-    let icon = '📄';
-    if (doc.type?.includes('image') || doc.name?.match(/\.(jpg|jpeg|png)$/i)) icon = '🖼️';
-    else if (doc.name?.match(/\.(xlsx|xls)$/i)) icon = '📊';
+    let docSvg = icon('fileText', { size: 20, color: '#38bdf8' });
+    if (doc.type?.includes('image') || doc.name?.match(/\.(jpg|jpeg|png)$/i)) docSvg = icon('camera', { size: 20, color: '#a855f7' });
+    else if (doc.name?.match(/\.(xlsx|xls)$/i)) docSvg = icon('chart', { size: 20, color: '#10b981' });
 
     return `
       <div style="background: var(--bg-surface); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: var(--radius-md); padding: 10px 14px; display: flex; justify-content: space-between; align-items: center;">
         <div style="display: flex; align-items: center; gap: 10px;">
-          <span style="font-size: 20px;">${icon}</span>
+          <span style="font-size: 20px; display: inline-flex; align-items: center;">${docSvg}</span>
           <div>
             <div style="font-size: 12.5px; font-weight: 700; color: var(--text-primary);">${doc.name}</div>
             <div style="font-size: 11px; color: var(--text-secondary); margin-top: 1px;">
@@ -444,11 +445,11 @@ function renderAttachedDocsHtml() {
           </div>
         </div>
         <div style="display: flex; align-items: center; gap: 6px;">
-          <button type="button" class="btn btn-ghost btn-sm btn-replace-doc" data-idx="${idx}" title="Replace this document" style="font-size: 11.5px; color: #38bdf8;">
-            🔄 Replace
+          <button type="button" class="btn btn-ghost btn-sm btn-replace-doc" data-idx="${idx}" title="Replace this document" style="font-size: 11.5px; color: #38bdf8; display: inline-flex; align-items: center; gap: 4px;">
+            ${icon('refresh', { size: 12, color: '#38bdf8' })} Replace
           </button>
-          <button type="button" class="btn btn-ghost btn-sm btn-remove-doc" data-idx="${idx}" title="Remove document" style="color: #f87171; font-size: 14px;">
-            🗑️
+          <button type="button" class="btn btn-ghost btn-sm btn-remove-doc" data-idx="${idx}" title="Remove document" style="color: #f87171; font-size: 14px; display: inline-flex; align-items: center;">
+            ${icon('trash', { size: 14, color: '#f87171' })}
           </button>
         </div>
       </div>
@@ -791,10 +792,10 @@ export function initTransferModalEvents() {
         `;
       }
       if (statusPreview) {
-        statusPreview.innerHTML = '<span style="color: #059669; font-weight: 800;">✓ Auto-Approved (Direct Line Transfer)</span>';
+        statusPreview.innerHTML = `<span style="color: #059669; font-weight: 800; display: inline-flex; align-items: center; gap: 5px;">${icon('checkCircle', { size: 14, color: '#059669' })} Auto-Approved (Direct Line Transfer)</span>`;
       }
       if (submitBtn && !activeExistingTransfer) {
-        submitBtn.innerHTML = '⚡ Execute Direct Transfer';
+        submitBtn.innerHTML = `${icon('zap', { size: 14, color: '#fff' })} Execute Direct Transfer`;
         submitBtn.style.background = 'linear-gradient(135deg, #059669, #047857)';
         submitBtn.style.boxShadow = '0 4px 15px rgba(16, 185, 129, 0.4)';
       }
@@ -811,7 +812,7 @@ export function initTransferModalEvents() {
         statusPreview.style.color = '#fde047';
       }
       if (submitBtn && !activeExistingTransfer) {
-        submitBtn.innerHTML = '🚀 Submit Transfer Request';
+        submitBtn.innerHTML = `${icon('arrowRight', { size: 14, color: '#fff' })} Submit Transfer Request`;
         submitBtn.style.background = 'linear-gradient(135deg, #0284c7, #0369a1)';
         submitBtn.style.boxShadow = '0 4px 15px rgba(2, 132, 199, 0.4)';
       }
@@ -1262,7 +1263,7 @@ export function initTransferModalEvents() {
       const submitBtn = document.getElementById('btn-submit-transfer-request') || form.querySelector('button[type="submit"]');
       const cancelBtn = document.getElementById('btn-cancel-transfer');
       const closeBtn = document.getElementById('btn-close-transfer-modal');
-      const originalBtnText = submitBtn ? submitBtn.innerHTML : '🚀 Submit Transfer Request';
+      const originalBtnText = submitBtn ? submitBtn.innerHTML : `${icon('arrowRight', { size: 14, color: '#fff' })} Submit Transfer Request`;
 
       try {
         let machineId = state.get('activeMachineId');

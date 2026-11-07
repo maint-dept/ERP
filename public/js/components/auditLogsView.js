@@ -9,6 +9,7 @@ import { TABLE_NAMES } from '../db/schema.js';
 import { auditService } from '../services/auditService.js';
 import { authService } from '../services/authService.js';
 import { notificationService } from '../services/notificationService.js';
+import { icon, replaceEmojiInHtml } from './icons.js?v=4.47.0';
 
 // Local view & filter state
 let auditFilters = {
@@ -202,7 +203,7 @@ export function renderAuditLogsView() {
   const endIndex = Math.min(startIndex + pageSize, totalEntries);
   const paginatedLogs = filteredLogs.slice(startIndex, endIndex);
 
-  return `
+  return replaceEmojiInHtml(`
     <div class="page-view audit-page-root" style="gap: 8px; padding: 10px 14px; display: flex; flex-direction: column; flex: 1; min-height: 0;">
       
       <!-- 1. Compact Header & Action Bar -->
@@ -526,7 +527,7 @@ export function renderAuditLogsView() {
       ${renderLogDetailModal(activeLogDetail)}
 
     </div>
-  `;
+  `);
 }
 
 /**

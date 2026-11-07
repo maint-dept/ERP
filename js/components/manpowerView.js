@@ -21,6 +21,7 @@ import { notificationService } from '../services/notificationService.js';
 import { state } from '../state.js?v=4.46.1';
 import { router } from '../services/router.js?v=4.46.1';
 import { renderEmployeeModal, initEmployeeModalEvents } from './employeeModal.js';
+import { icon, replaceEmojiInHtml } from './icons.js?v=4.47.0';
 
 let activeManpowerTab = 'active'; // 'active', 'inactive', 'transfers', 'leaves', 'custom-fields'
 let activeCustomFieldModal = null; // { type: 'ADD'|'EDIT', field: Object }
@@ -226,7 +227,7 @@ export function renderManpowerView() {
   const leaves = employeeService.getEmployeeLeaves();
   const customFields = employeeCustomFieldService.getAllFields();
 
-  return `
+  return replaceEmojiInHtml(`
     <div class="page-view manpower-page-wrapper">
       
       <!-- Compact Top Command Bar: Unified Header, Tabs & Actions in One Single Row -->
@@ -295,7 +296,7 @@ export function renderManpowerView() {
       ${renderCustomFieldDesignerModal()}
 
     </div>
-  `;
+  `);
 }
 
 function renderActiveTabContent({ stats, activeEmployees, inactiveEmployees, transfers, leaves, customFields, isAdmin, isFiltered, activeFilterCount }) {

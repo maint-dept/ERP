@@ -18,6 +18,7 @@ import { authService } from '../services/authService.js';
 import { notificationService } from '../services/notificationService.js';
 import { tempImportService } from '../services/tempImportService.js';
 import { state } from '../state.js';
+import { icon, replaceEmojiInHtml } from './icons.js?v=4.47.0';
 
 let activeTab = 'MACHINE'; // 'MACHINE' | 'SPARE_PART' | 'TOOL' | 'LOCATION' | 'SCHEMA_BUILDER' | 'RULES' | 'HEALTH_SCANNER' | custom keys
 let machineViewMode = 'GROUPED'; // 'GROUPED' | 'FLAT'
@@ -53,7 +54,7 @@ export function renderStorageView() {
   });
   const totalBrands = brandSet.size;
 
-  return `
+  return replaceEmojiInHtml(`
     <div class="page-view storage-page-wrapper" id="storage-page-root">
       
       <!-- Unified Compact Top Header: Title, Live KPIs & Primary Workflow Actions -->
@@ -131,7 +132,7 @@ export function renderStorageView() {
         ${renderStorageModal()}
       </div>
     </div>
-  `;
+  `);
 }
 
 function renderActiveTabContent() {

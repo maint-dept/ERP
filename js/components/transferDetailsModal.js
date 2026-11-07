@@ -13,6 +13,7 @@ import { notificationService } from '../services/notificationService.js';
 import { masterDataService } from '../services/masterDataService.js';
 import { notificationGateway } from '../services/notificationGatewayService.js';
 import { state } from '../state.js';
+import { icon, replaceEmojiInHtml } from './icons.js?v=4.47.0';
 
 export function renderTransferDetailsModal() {
   const requestId = state.get('activeTransferRequestId');
@@ -35,7 +36,7 @@ export function renderTransferDetailsModal() {
 
   const statusBadge = isCompleted ? 'badge-active' : (isRejected ? 'badge-breakdown' : (isRevision ? 'badge-maint' : 'badge-idle'));
 
-  return `
+  return replaceEmojiInHtml(`
     <div class="modal-overlay" id="modal-transfer-details-overlay">
       <div class="modal-dialog modal-dialog-lg" style="max-width: 960px;">
         <!-- Header -->
@@ -417,7 +418,7 @@ export function renderTransferDetailsModal() {
         </div>
       </div>
     </div>
-  `;
+  `);
 }
 
 export function initTransferDetailsModalEvents() {

@@ -17,6 +17,7 @@ import { barcodeService } from '../services/barcodeService.js';
 import { isAmbulanceMachine } from '../services/machineService.js';
 import { openMachinePocketCard } from './machinePocketCardModal.js';
 import { state } from '../state.js';
+import { icon, replaceEmojiInHtml } from './icons.js?v=4.47.0';
 
 // Local view state
 let searchedSerial = ''; // Default to empty (no auto-selected machine)
@@ -218,7 +219,7 @@ export function renderMachineHistoryView() {
   const boardHistory = enrichedMachine ? 
     etLabService.getBoardHistoryForMachine(enrichedMachine.serialNumber) : [];
 
-  return `
+  return replaceEmojiInHtml(`
     <div class="page-view history-page-wrapper" style="gap: 10px; padding: 12px 16px;">
       
       <!-- Unified Compact Command Hub -->
@@ -504,7 +505,7 @@ export function renderMachineHistoryView() {
       </div>
 
     </div>
-  `;
+  `);
 }
 
 /**

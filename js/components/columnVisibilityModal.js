@@ -20,6 +20,7 @@ import { authService } from '../services/authService.js';
 import { storage } from '../db/storage.js';
 import { TABLE_NAMES } from '../db/schema.js';
 import { state } from '../state.js';
+import { icon, replaceEmojiInHtml } from './icons.js?v=4.47.0';
 
 // Freezable columns list available across entire modal lifecycle
 export const FREEZABLE_COLUMNS = [
@@ -94,7 +95,7 @@ export function renderColumnVisibilityModal() {
     }
   });
 
-  return `
+  return replaceEmojiInHtml(`
     <div class="modal-overlay" id="modal-column-vis-overlay">
       <div class="modal-dialog" style="max-width: 660px; max-height: 90vh; display: flex; flex-direction: column; background: #0b1120; border: 1.5px solid #38bdf8; border-radius: 14px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.9);">
         
@@ -353,7 +354,7 @@ export function renderColumnVisibilityModal() {
 
       </div>
     </div>
-  `;
+  `);
 }
 
 export function initColumnVisibilityEvents() {

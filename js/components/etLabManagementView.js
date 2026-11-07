@@ -18,6 +18,7 @@ import { qrCodeService } from '../services/qrCodeService.js';
 import { tempImportService } from '../services/tempImportService.js';
 import { renderQrScannerModal, initQrScannerModalEvents } from './qrScannerModal.js?v=4.46.1';
 import { renderSparePartsManagementView, initSparePartsManagementEvents } from './sparePartsManagementView.js';
+import { icon, replaceEmojiInHtml } from './icons.js?v=4.47.0';
 
 // Local view state
 let selectedBoardSerial = null; // Blank by default, user searches or clicks a board
@@ -61,7 +62,7 @@ export function renderEtLabManagementView() {
 
   const isSparePartsTab = activeEntTab === 'spare-parts';
 
-  return `
+  return replaceEmojiInHtml(`
     <div class="page-view ent-lab-page-container" style="${isSparePartsTab ? 'padding: 10px 18px 8px 18px; display: flex; flex-direction: column; gap: 8px; overflow: hidden; height: 100%; box-sizing: border-box;' : 'padding: 16px 22px; display: flex; flex-direction: column; gap: 14px; overflow-y: auto; height: 100%;'}">
       
       <!-- Top Navigation Tabs for ENT Lab Management -->
@@ -107,7 +108,7 @@ export function renderEtLabManagementView() {
       </div>
 
     </div>
-  `;
+  `);
 }
 
 function renderEntBoardsContent(kpi, allBoards, filteredBoards, currentBoard, connectedMachine, boardHistory, recentHistory, isAdmin) {

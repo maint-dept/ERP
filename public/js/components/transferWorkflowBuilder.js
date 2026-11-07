@@ -10,6 +10,7 @@ import { masterDataService } from '../services/masterDataService.js';
 import { APPROVER_TYPES } from '../db/schema.js';
 import { state } from '../state.js';
 import { notificationService } from '../services/notificationService.js';
+import { icon, replaceEmojiInHtml } from './icons.js?v=4.47.0';
 
 let editingWorkflow = null;
 let showAdvancedScope = false;
@@ -93,7 +94,7 @@ export function renderTransferWorkflowBuilder() {
 
   const levels = currentWf.levels || [];
 
-  return `
+  return replaceEmojiInHtml(`
     <div class="page-view wf-builder-wrapper">
       
       <!-- 1. COMPACT UNIFIED TOP HEADER BAR -->
@@ -413,7 +414,7 @@ export function renderTransferWorkflowBuilder() {
       </form>
 
     </div>
-  `;
+  `);
 }
 
 export function initTransferWorkflowBuilderEvents() {

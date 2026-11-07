@@ -10,6 +10,7 @@ import { masterDataService } from '../services/masterDataService.js';
 import { qrCodeService } from '../services/qrCodeService.js';
 import { notificationService } from '../services/notificationService.js';
 import { state } from '../state.js';
+import { icon, replaceEmojiInHtml } from './icons.js?v=4.47.0';
 
 let activeStudioTab = 'machine'; // 'machine' | 'location'
 let selectedMachineIds = new Set();
@@ -75,7 +76,7 @@ export function renderQrCodeView() {
   const machineNames = masterDataService.getMachineNames();
   const brands = masterDataService.getBrands();
 
-  return `
+  return replaceEmojiInHtml(`
     <div class="page-view qr-studio-root" id="qr-studio-root">
       
       <!-- Studio Header Bar (Compact & Space Efficient) -->
@@ -554,7 +555,7 @@ export function renderQrCodeView() {
         }
       }
     </style>
-  `;
+  `);
 }
 
 /**

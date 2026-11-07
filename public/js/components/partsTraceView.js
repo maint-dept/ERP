@@ -12,6 +12,7 @@ import { employeeService } from '../services/employeeService.js';
 import { notificationService } from '../services/notificationService.js';
 import { partsTraceService } from '../services/partsTraceService.js';
 import { state } from '../state.js';
+import { icon, replaceEmojiInHtml } from './icons.js?v=4.47.0';
 
 let activeTab = 'dashboard'; // 'dashboard' | 'upload' | 'review' | 'parts-master' | 'history' | 'reports'
 let activeDraftRows = [];
@@ -46,7 +47,7 @@ export function renderPartsTraceView() {
   const canUpload = authService.isSuperAdmin() || authService.isAdmin() || authService.hasAccess('parts_trace', 'UPLOAD_PDF');
   const canManageMaster = authService.isSuperAdmin() || authService.isAdmin() || authService.hasAccess('parts_trace', 'MANAGE_MASTER');
 
-  return `
+  return replaceEmojiInHtml(`
     <div class="page-view parts-trace-view-root" id="parts-trace-root">
       
       <!-- Top Navigation Header Bar -->
@@ -361,7 +362,7 @@ export function renderPartsTraceView() {
         }
       }
     </style>
-  `;
+  `);
 }
 
 function renderActiveTab(stats, canUpload, canManageMaster) {

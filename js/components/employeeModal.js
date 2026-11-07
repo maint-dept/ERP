@@ -17,6 +17,7 @@ import { authService } from '../services/authService.js?v=4.46.1';
 import { notificationService } from '../services/notificationService.js';
 import { tempImportService } from '../services/tempImportService.js';
 import { state } from '../state.js';
+import { icon, replaceEmojiInHtml } from './icons.js?v=4.47.0';
 
 let activeEmployeeImportTempId = null;
 let activeEmployeeImportTempName = '';
@@ -25,21 +26,29 @@ export function renderEmployeeModal() {
   const activeModal = state.get('activeEmployeeModal'); // { type: 'ADD'|'EDIT'|'TRANSFER'|'LEAVE'|'ID_CARD'|'IMPORT', employeeId: string }
   if (!activeModal) return '';
 
+  let html = '';
   switch (activeModal.type) {
     case 'ADD':
     case 'EDIT':
-      return renderAddEditEmployeeModal(activeModal);
+      html = renderAddEditEmployeeModal(activeModal);
+      break;
     case 'TRANSFER':
-      return renderTransferEmployeeModal(activeModal);
+      html = renderTransferEmployeeModal(activeModal);
+      break;
     case 'LEAVE':
-      return renderLeaveEmployeeModal(activeModal);
+      html = renderLeaveEmployeeModal(activeModal);
+      break;
     case 'ID_CARD':
-      return renderEmployeeIdCardModal(activeModal);
+      html = renderEmployeeIdCardModal(activeModal);
+      break;
     case 'IMPORT':
-      return renderEmployeeImportModal();
+      html = renderEmployeeImportModal();
+      break;
     default:
-      return '';
+      html = '';
+      break;
   }
+  return html ? replaceEmojiInHtml(html) : '';
 }
 
 // ---------------------------------------------------------------------------

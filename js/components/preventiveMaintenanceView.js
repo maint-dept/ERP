@@ -32,6 +32,7 @@ import { excelService } from '../services/excelService.js';
 import { storage } from '../db/storage.js?v=4.46.1';
 import { TABLE_NAMES } from '../db/schema.js?v=4.46.1';
 import { renderPreventiveMaintenanceReportView, initPreventiveMaintenanceReportEvents } from './preventiveMaintenanceReportView.js?v=4.46.1';
+import { icon, replaceEmojiInHtml } from './icons.js?v=4.47.0';
 
 // Local view state to preserve working session across tab switches
 let activeTab = 'dashboard'; // 'dashboard' | 'pending-approvals' | 'recently-serviced' | 'machine-profile' | 'master-schedule' | 'admin-config' | 'maintenance-report'
@@ -224,7 +225,7 @@ export function renderPreventiveMaintenanceView() {
   }
   const hasActiveFilters = activeTags.length > 0;
 
-  return `
+  return replaceEmojiInHtml(`
     <div class="page-view preventive-maintenance-page inventory-page-wrapper" style="display: flex; flex-direction: column; gap: 4px; height: 100%; min-height: 0; background: var(--bg-main); color: var(--text-primary); overflow-y: auto; overflow-x: hidden; max-width: 100%; box-sizing: border-box; padding: 4px 10px;">
       
       <!-- 1. ULTRA-COMPACT TOP BAR (Title + KPI Status Pills + Quick Action Buttons) -->
@@ -443,7 +444,7 @@ export function renderPreventiveMaintenanceView() {
       </div>
 
     </div>
-  `;
+  `);
 }
 
 // =========================================================================
@@ -1477,31 +1478,44 @@ function renderAdminConfigTab() {
 function renderActivePmModal() {
   if (!activePmModal) return '';
 
+  let html = '';
   switch (activePmModal) {
     case 'service-entry':
-      return renderServiceEntryModal();
+      html = renderServiceEntryModal();
+      break;
     case 'review-approval':
-      return renderReviewApprovalModal();
+      html = renderReviewApprovalModal();
+      break;
     case 'checklist-modal':
-      return renderChecklistManagerModal();
+      html = renderChecklistManagerModal();
+      break;
     case 'qr-scanner':
-      return renderQrScannerModal();
+      html = renderQrScannerModal();
+      break;
     case 'print-sticker':
-      return renderPrintStickerModal();
+      html = renderPrintStickerModal();
+      break;
     case 'edit-service-record':
-      return renderEditServiceRecordModal();
+      html = renderEditServiceRecordModal();
+      break;
     case 'edit-sticker':
     case 'replace-sticker':
-      return renderReplaceStickerModal();
+      html = renderReplaceStickerModal();
+      break;
     case 'config-modal':
-      return renderConfigModal();
+      html = renderConfigModal();
+      break;
     case 'bulk-excel-modal':
-      return renderBulkExcelConfigModal();
+      html = renderBulkExcelConfigModal();
+      break;
     case 'bulk-servicing-modal':
-      return renderBulkServicingModal();
+      html = renderBulkServicingModal();
+      break;
     default:
-      return '';
+      html = '';
+      break;
   }
+  return html ? replaceEmojiInHtml(html) : '';
 }
 
 /**

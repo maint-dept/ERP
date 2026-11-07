@@ -20,6 +20,7 @@ import { notificationService } from '../services/notificationService.js';
 import { authService } from '../services/authService.js';
 import { state } from '../state.js';
 import { renderQrScannerModal, initQrScannerModalEvents } from './qrScannerModal.js';
+import { icon, replaceEmojiInHtml } from './icons.js?v=4.47.0';
 
 let activeTransactionModalOpen = false;
 let selectedMachineId = '';
@@ -92,7 +93,7 @@ export function renderNeedleOperationsView() {
   // Available lines for filter if floor is chosen
   const filterLines = filterFloorId !== 'ALL' ? masterDataService.getLines(filterFloorId) : [];
 
-  return `
+  return replaceEmojiInHtml(`
     <div class="page-view needle-ops-root" id="needle-ops-page-root" style="padding: 8px 12px 20px 12px; display: flex; flex-direction: column; gap: 8px; height: 100%; overflow-y: auto; box-sizing: border-box; font-family: var(--font-main);">
       
       <!-- Top Header & Primary Navigation Bar (Ultra-Compact & Space Efficient) -->
@@ -450,7 +451,7 @@ export function renderNeedleOperationsView() {
       ${activeTransactionModalOpen ? renderTransactionModal() : ''}
 
     </div>
-  `;
+  `);
 }
 
 /**

@@ -12,6 +12,7 @@ import { smartStorageService } from '../services/smartStorageService.js?v=4.46.1
 import { tempImportService } from '../services/tempImportService.js';
 import { notificationService } from '../services/notificationService.js';
 import { state } from '../state.js';
+import { icon, replaceEmojiInHtml } from './icons.js?v=4.47.0';
 
 let importState = {
   stage: 1, // 1: Upload, 2: Sheets & Mapping, 3: Master Data Resolver, 4: Pre-Import Preview & Errors, 5: Result Summary
@@ -29,7 +30,7 @@ let importState = {
 };
 
 export function renderExcelImportModal() {
-  return `
+  return replaceEmojiInHtml(`
     <div class="modal-overlay" id="modal-import-excel-overlay">
       <div class="modal-dialog modal-dialog-xl" style="max-width: 1050px;">
         <div class="modal-header" style="background: var(--bg-card); border-bottom: 1px solid var(--border-color); padding: 16px 22px;">
@@ -51,7 +52,7 @@ export function renderExcelImportModal() {
         </div>
       </div>
     </div>
-  `;
+  `);
 }
 
 function detectStorageFixableErrors(validationResult, workbookData, sheetMappings) {

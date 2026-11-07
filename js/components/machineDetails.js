@@ -15,6 +15,7 @@ import { authService } from '../services/authService.js';
 import { excelService } from '../services/excelService.js';
 import { isAmbulanceMachine } from '../services/machineService.js';
 import { state } from '../state.js';
+import { icon, replaceEmojiInHtml } from './icons.js?v=4.47.0';
 
 let activeDetailsTab = 'overview'; // 'overview', 'location-history', 'spare-parts', 'service-history', 'transfers'
 
@@ -73,7 +74,7 @@ export function renderMachineDetails() {
   const barcodeSvg = barcodeService.generateBarcodeSVG(machine.serialNumber, { width: 1.8, height: 38 });
   const qrSvg = barcodeService.generateQRCodeSVG(`AL-MUSLIM-ERP://MC/${machine.serialNumber}`, { size: 90 });
 
-  return `
+  return replaceEmojiInHtml(`
     <div class="drawer-overlay" id="drawer-machine-details-overlay">
       <div class="drawer-panel" style="max-width: 820px; width: 100%;">
         
@@ -393,7 +394,7 @@ export function renderMachineDetails() {
         </div>
       </div>
     </div>
-  `;
+  `);
 }
 
 export function initMachineDetailsEvents() {

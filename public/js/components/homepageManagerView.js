@@ -17,6 +17,7 @@ import { notificationService } from '../services/notificationService.js';
 import { renderHomepageView, initHomepageEvents } from './homepageView.js';
 import { state } from '../state.js';
 import { router } from '../services/router.js';
+import { icon, replaceEmojiInHtml } from './icons.js?v=4.47.0';
 
 let activeEditorTab = 'sections'; // 'sections' | 'hero' | 'features' | 'modules' | 'about' | 'contact'
 let activeModalState = null; // { type: 'ADD_FEATURE'|'EDIT_FEATURE'|'ADD_MODULE'|'EDIT_MODULE'|'PREVIEW', item: Object }
@@ -33,7 +34,7 @@ export function renderHomepageManagerView() {
     ? homepageService.getVisibilityMode()
     : 'public';
 
-  return `
+  return replaceEmojiInHtml(`
     <div class="page-view" style="gap: 16px; max-width: 1300px; margin: 0 auto; width: 100%;">
       
       <!-- Top Command Bar -->
@@ -122,7 +123,7 @@ export function renderHomepageManagerView() {
       ${renderHomeManagerModalDOM(config)}
 
     </div>
-  `;
+  `);
 }
 
 function renderEditorTabContent(config) {

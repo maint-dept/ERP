@@ -16,6 +16,7 @@ import { TABLE_NAMES } from '../db/schema.js';
 import { homepageService } from '../services/homepageService.js';
 import { state } from '../state.js';
 import { router } from '../services/router.js?v=4.46.1';
+import { icon, replaceEmojiInHtml } from './icons.js?v=4.47.0';
 
 export function renderHomepageView(isDraft = false) {
   const config = isDraft ? homepageService.getDraftConfig() : homepageService.getPublishedConfig();
@@ -55,7 +56,7 @@ export function renderHomepageView(isDraft = false) {
   const activeFeatures = (features.items || []).filter(f => f.status !== 'INACTIVE');
   const activeModules = (modules.items || []).filter(m => m.status !== 'INACTIVE');
 
-  return `
+  return replaceEmojiInHtml(`
     <div class="public-homepage-wrapper" style="min-height: 100%; width: 100%; background: #0b0f19; color: #f8fafc; font-family: var(--font-main); overflow: visible; display: flex; flex-direction: column; position: relative;">
       
       <!-- 1. STICKY USER-FRIENDLY PUBLIC HEADER -->
@@ -374,7 +375,7 @@ export function renderHomepageView(isDraft = false) {
       ` : ''}
 
     </div>
-  `;
+  `);
 }
 
 /**

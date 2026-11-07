@@ -36,7 +36,7 @@ import { realtimeService } from './services/realtimeService.js?v=4.47.0';
 import { homepageService } from './services/homepageService.js?v=4.47.0';
 import { webPushService } from './services/webPushService.js?v=4.47.0';
 import { notificationGateway } from './services/notificationGatewayService.js?v=4.47.0';
-import { icon, enhanceDomIcons } from './components/icons.js?v=4.47.0';
+import { icon, enhanceDomIcons, replaceEmojiInHtml } from './components/icons.js?v=4.47.0';
 
 /**
  * Captures all active scroll, viewport, and focused input states.
@@ -1018,7 +1018,7 @@ class ERPApplication {
             return;
           }
           if (loaded.beforeRender) loaded.beforeRender();
-          container.innerHTML = loaded.render();
+          container.innerHTML = replaceEmojiInHtml(loaded.render());
           enhanceDomIcons(container);
           if (typeof loaded.initEvents === 'function') {
             loaded.initEvents();
@@ -1258,65 +1258,80 @@ class ERPApplication {
           </div>
         `;
       }
-      if (currentView === 'home') return renderHomepageView();
-      if (currentView === 'login' || currentView === 'admin-login') return renderLoginView(currentView === 'admin-login');
-      if (currentView === 'dashboard') return renderDashboard();
-
-      // Check if module is managed by lazy moduleLoader
-      if (moduleLoader.isLazyView(currentView)) {
+      let rawHtml = '';
+      if (currentView === 'home') rawHtml = renderHomepageView();
+      else if (currentView === 'login' || currentView === 'admin-login') rawHtml = renderLoginView(currentView === 'admin-login');
+      else if (currentView === 'dashboard') rawHtml = renderDashboard();
+      else if (moduleLoader.isLazyView(currentView)) {
         if (moduleLoader.isLoaded(currentView)) {
           const loaded = moduleLoader.getLoaded(currentView);
           if (loaded.beforeRender) loaded.beforeRender();
-          return loaded.render();
+          rawHtml = loaded.render();
         } else {
-          return moduleLoader.renderSkeleton(currentView);
+          rawHtml = moduleLoader.renderSkeleton(currentView);
         }
+      } else {
+        rawHtml = renderDashboard();
       }
 
-      return renderDashboard();
+      return rawHtml ? replaceEmojiInHtml(rawHtml) : '';
     } catch (viewErr) {
       console.error('Component render error:', viewErr);
-      return `
+      return replaceEmojiInHtml(`
         <div style="padding: 30px; text-align: center; background: var(--bg-surface); border: 1px solid #ef4444; border-radius: var(--radius-lg); margin: 20px;">
           <div style="margin-bottom: 8px;">${icon('alertTriangle', { size: 32, color: '#f59e0b' })}</div>
           <h3 style="color: #f87171; font-weight: 700; margin-bottom: 8px;">View Render Notice</h3>
           <p style="color: var(--text-secondary); font-size: 13px; margin-bottom: 14px;">An error occurred while loading this view: ${viewErr.message}</p>
           <button onclick="state.set('currentView', 'dashboard')" class="btn btn-primary btn-sm">Return to Dashboard</button>
         </div>
-      `;
+      `);
     }
   }
 
   getActiveModalHtml() {
     const activeModal = state.get('activeModal');
+    let modalHtml = '';
     switch (activeModal) {
       case 'change-password':
-        return renderChangePasswordModal();
+        modalHtml = renderChangePasswordModal();
+        break;
       case 'machine-form':
       case 'add-machine':
       case 'edit-machine':
-        return renderMachineModal();
+        modalHtml = renderMachineModal();
+        break;
       case 'machine-details':
-        return renderMachineDetails();
+        modalHtml = renderMachineDetails();
+        break;
       case 'transfer-machine':
-        return renderTransferModal();
+        modalHtml = renderTransferModal();
+        break;
       case 'transfer-details':
-        return renderTransferDetailsModal();
+        modalHtml = renderTransferDetailsModal();
+        break;
       case 'edit-transfer':
-        return renderEditTransferModal();
+        modalHtml = renderEditTransferModal();
+        break;
       case 'import-excel':
-        return renderExcelImportModal();
+        modalHtml = renderExcelImportModal();
+        break;
       case 'column-visibility':
-        return renderColumnVisibilityModal();
+        modalHtml = renderColumnVisibilityModal();
+        break;
       case 'notifications':
-        return renderNotificationsDrawer();
+        modalHtml = renderNotificationsDrawer();
+        break;
       case 'custom-notification':
-        return renderCustomNotificationModal();
+        modalHtml = renderCustomNotificationModal();
+        break;
       case 'account-switcher':
-        return renderAccountSwitcherModal();
+        modalHtml = renderAccountSwitcherModal();
+        break;
       default:
-        return '';
+        modalHtml = '';
+        break;
     }
+    return modalHtml ? replaceEmojiInHtml(modalHtml) : '';
   }
 
   initComponentEvents() {

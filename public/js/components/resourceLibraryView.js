@@ -7,6 +7,7 @@
 import { resourceLibraryService, RESOURCE_TYPES } from '../services/resourceLibraryService.js';
 import { authService } from '../services/authService.js';
 import { notificationService } from '../services/notificationService.js';
+import { icon, replaceEmojiInHtml } from './icons.js?v=4.47.0';
 
 let currentFolderId = null;
 let searchQuery = '';
@@ -98,7 +99,7 @@ export function renderResourceLibraryView() {
   const currentFolderObj = currentFolderId ? resourceLibraryService.getById(currentFolderId) : null;
   const parentFolderId = currentFolderObj ? (currentFolderObj.parentId || null) : null;
 
-  return `
+  return replaceEmojiInHtml(`
     <div class="page-view" style="display: flex; flex-direction: column; gap: 18px;">
       
       <!-- Top Action Bar -->
@@ -349,7 +350,7 @@ export function renderResourceLibraryView() {
       <!-- Modal Layer Container -->
       <div id="library-modal-root"></div>
     </div>
-  `;
+  `);
 }
 
 export function initResourceLibraryEvents() {

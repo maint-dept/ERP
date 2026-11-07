@@ -11,6 +11,7 @@ import { authService } from '../services/authService.js';
 import { router } from '../services/router.js';
 import { homepageService } from '../services/homepageService.js';
 import { webPushService } from '../services/webPushService.js';
+import { icon, replaceEmojiInHtml } from './icons.js?v=4.47.0';
 
 function escapeHtml(str) {
   if (!str) return '';
@@ -201,7 +202,7 @@ export function renderSettingsView() {
     ? storage.getAssetIdPreview(assetCfg.prefix, assetCfg.digitLength)
     : { previewId: `${assetCfg.prefix}000001`, nextSeq: 1, maxNum: 0, prefix: assetCfg.prefix, digitLength: assetCfg.digitLength, totalMachines: 0 };
 
-  return `
+  return replaceEmojiInHtml(`
     <div class="page-view">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
         <div>
@@ -1033,7 +1034,7 @@ export function renderSettingsView() {
           </div>
         </div>
     </div>
-  `;
+  `);
 }
 
 export function initSettingsEvents() {

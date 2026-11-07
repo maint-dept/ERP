@@ -9,6 +9,7 @@ import { TABLE_NAMES } from '../db/schema.js?v=4.46.1';
 import { authService } from '../services/authService.js?v=4.46.1';
 import { router } from '../services/router.js?v=4.46.1';
 import { state } from '../state.js?v=4.46.1';
+import { icon, replaceEmojiInHtml } from './icons.js?v=4.47.0';
 
 function escapeHtml(str) {
   if (str === null || str === undefined) return '';
@@ -388,7 +389,7 @@ export function openMachinePocketCard(machineOrQuery) {
     </div>
   `;
 
-  document.body.insertAdjacentHTML('beforeend', modalHtml);
+  document.body.insertAdjacentHTML('beforeend', replaceEmojiInHtml(modalHtml));
 
   // Bind Events
   const modalEl = document.getElementById('machine-pocket-card-modal');
@@ -515,7 +516,7 @@ function showNotFoundPocketCard(query) {
       </div>
     </div>
   `;
-  document.body.insertAdjacentHTML('beforeend', notFoundHtml);
+  document.body.insertAdjacentHTML('beforeend', replaceEmojiInHtml(notFoundHtml));
   const closeBtn = document.getElementById('btn-close-not-found-card');
   if (closeBtn) closeBtn.addEventListener('click', () => closeMachinePocketCard());
   const modalEl = document.getElementById('machine-pocket-card-modal');

@@ -20,6 +20,7 @@ import { notificationService } from '../services/notificationService.js';
 import { smartStorageService } from '../services/smartStorageService.js?v=4.46.1';
 import { state } from '../state.js';
 import { openSparePartsImportModal } from './machineHistoryView.js';
+import { icon, replaceEmojiInHtml } from './icons.js?v=4.47.0';
 
 let searchFilter = '';
 let statusFilter = 'ALL';
@@ -84,7 +85,7 @@ export function renderSparePartsManagementView() {
   const startItem = totalFiltered === 0 ? 0 : (startIndex + 1);
   const endItem = Math.min(startIndex + pageParts.length, totalFiltered);
 
-  return `
+  return replaceEmojiInHtml(`
     <div class="spare-parts-view-container" style="display: flex; flex-direction: column; gap: 8px; height: 100%; min-height: 0; overflow: hidden; width: 100%;">
       
       <!-- Top Title & KPI Cards Header -->
@@ -350,7 +351,7 @@ export function renderSparePartsManagementView() {
       <!-- Active Modal Rendering Layer -->
       ${renderSpareModalLayer()}
     </div>
-  `;
+  `);
 }
 
 function renderSpareModalLayer() {
